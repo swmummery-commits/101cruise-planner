@@ -8,8 +8,13 @@ let currentUser = null;
 let currentProfile = null;
 let cruiseLines = [];
 let ships = [];
+let checklistSections = [];
+let checklistItems = [];
 let activeTab = "cruise-lines";
 let editingShipId = null;
+let editingChecklistItemId = null;
+let editingChecklistSectionId = null;
+let selectedChecklistSectionId = "all";
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -29,7 +34,7 @@ function renderLogin(message = "") {
   app.innerHTML = `
     <div class="admin-card">
       <h2>101cruise Admin</h2>
-      <p class="admin-muted">Sign in with your admin account to manage cruise lines and ships.</p>
+      <p class="admin-muted">Sign in with your admin account to manage planner content.</p>
 
       <div class="admin-field">
         <label>Email address</label>
@@ -103,6 +108,18 @@ async function loadAdminData() {
     .select("*, cruise_lines(name)")
     .order("name", { ascending: true });
 
+  const { data: sectionRows, error: sectionsError } = await supabaseClient
+    .from("checklist_sections")
+    .select("*")
+    .order("display_order", { ascending: true })
+    .order("name", { ascending: true });
+
+  const { data: itemRows, error: itemsError } = await supabaseClient
+    .from("checklist_items")
+    .select("*, checklist_sections(name)")
+    .order("display_order", { ascending: true })
+    .order("title", { ascending: true });
+
   if (linesError) {
     console.error("Cruise line load error", linesError);
     cruiseLines = [];
@@ -116,11 +133,27 @@ async function loadAdminData() {
   } else {
     ships = shipRows || [];
   }
+
+  if (sectionsError) {
+    console.error("Checklist section load error", sectionsError);
+    checklistSections = [];
+  } else {
+    checklistSections = sectionRows || [];
+  }
+
+  if (itemsError) {
+    console.error("Checklist item load error", itemsError);
+    checklistItems = [];
+  } else {
+    checklistItems = itemRows || [];
+  }
 }
 
 function setTab(tab) {
   activeTab = tab;
   editingShipId = null;
+  editingChecklistItemId = null;
+  editingChecklistSectionId = null;
   renderAdmin();
 }
 
@@ -130,7 +163,7 @@ function renderAdmin() {
       <div class="admin-list-top">
         <div>
           <h2>101cruise Admin</h2>
-          <p class="admin-muted">Manage cruise lines, logos, ships and hero images for My Cruise Planner.</p>
+          <p class="admin-muted">Manage the content used throughout My Cruise Planner.</p>
         </div>
         <div>
           <button class="admin-button black" onclick="adminSignOut()">Sign Out</button>
@@ -141,9 +174,12 @@ function renderAdmin() {
     <div class="admin-tabs">
       <button class="admin-tab ${activeTab === "cruise-lines" ? "active" : ""}" onclick="setTab('cruise-lines')">Cruise Lines</button>
       <button class="admin-tab ${activeTab === "ships" ? "active" : ""}" onclick="setTab('ships')">Ships</button>
+      <button class="admin-tab ${activeTab === "checklist" ? "active" : ""}" onclick="setTab('checklist')">Checklist</button>
     </div>
 
-    ${activeTab === "cruise-lines" ? renderCruiseLinesPanel() : renderShipsPanel()}
+    ${activeTab === "cruise-lines" ? renderCruiseLinesPanel() : ""}
+    ${activeTab === "ships" ? renderShipsPanel() : ""}
+    ${activeTab === "checklist" ? renderChecklistPanel() : ""}
   `;
 }
 
@@ -151,7 +187,7 @@ function renderCruiseLinesPanel() {
   return `
     <div class="admin-card">
       <h3>Cruise Lines</h3>
-      <p class="admin-muted">Paste the Squarespace logo URL beside the correct cruise line, then click <strong>Save Logo</strong>. This updates the existing cruise line rather than creating a new one.</p>
+      <p class="admin-muted">Paste the Squarespace logo URL beside the correct cruise line, then click <strong>Save Logo</strong>.</p>
       <div id="line-global-message" class="admin-message"></div>
 
       ${cruiseLines.length ? cruiseLines.map(line => `
@@ -160,7 +196,7 @@ function renderCruiseLinesPanel() {
             <div>
               <h3 style="margin-bottom:4px;">${esc(line.name)}</h3>
               <div class="admin-small">Display order: ${esc(line.display_order || 999)}</div>
-              ${line.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill">Inactive</span>`}
+              ${line.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill inactive">Inactive</span>`}
 
               <div class="admin-field" style="margin-top:14px;">
                 <label>Logo URL</label>
@@ -263,7 +299,7 @@ function renderShipsPanel() {
                   <strong>${esc(ship.name)}</strong>
                   <div class="admin-small">${esc(ship.cruise_lines?.name || "Cruise line not found")}</div>
                   <div class="admin-small">${ship.hero_image_url ? esc(ship.hero_image_url) : "No hero image URL saved"}</div>
-                  ${ship.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill">Inactive</span>`}<br>
+                  ${ship.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill inactive">Inactive</span>`}<br>
                   <button class="admin-button secondary" onclick="editShip(${ship.id})">Edit</button>
                 </div>
                 <div>
@@ -277,6 +313,212 @@ function renderShipsPanel() {
           `).join("") : `<p>No ships found.</p>`}
         </div>
       </div>
+    </div>
+  `;
+}
+
+function getPriorityEmoji(priority) {
+  if (priority === "Essential") return "🔴";
+  if (priority === "Tip") return "💡";
+  return "⚪";
+}
+
+function getFilteredChecklistItems() {
+  if (selectedChecklistSectionId === "all") return checklistItems;
+  return checklistItems.filter(item => String(item.section_id) === String(selectedChecklistSectionId));
+}
+
+function renderChecklistPanel() {
+  const editingItem = checklistItems.find(item => item.id === editingChecklistItemId);
+  const editingSection = checklistSections.find(section => section.id === editingChecklistSectionId);
+  const filteredItems = getFilteredChecklistItems();
+
+  return `
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Cruise Preparation Checklist</h3>
+          <p class="admin-muted">Add and edit the checklist sections and tasks shown in My Cruise Planner.</p>
+        </div>
+        <div>
+          <button class="admin-button secondary" onclick="refreshAdminData()">Refresh</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <div class="admin-card">
+        <h3>${editingSection ? "Edit Section" : "Add Section"}</h3>
+
+        <input type="hidden" id="sectionId" value="${editingSection ? editingSection.id : ""}">
+
+        <div class="admin-field">
+          <label>Section name</label>
+          <input type="text" id="sectionName" value="${editingSection ? esc(editingSection.name) : ""}" placeholder="After Booking">
+        </div>
+
+        <div class="admin-field">
+          <label>Description</label>
+          <textarea id="sectionDescription" placeholder="Short introduction shown at the top of the section">${editingSection ? esc(editingSection.description || "") : ""}</textarea>
+        </div>
+
+        <div class="admin-grid compact">
+          <div class="admin-field">
+            <label>Display order</label>
+            <input type="number" id="sectionDisplayOrder" value="${editingSection ? esc(editingSection.display_order || 0) : "0"}">
+          </div>
+          <div class="admin-field">
+            <label>Status</label>
+            <select id="sectionActive">
+              <option value="true" ${!editingSection || editingSection.active ? "selected" : ""}>Published</option>
+              <option value="false" ${editingSection && !editingSection.active ? "selected" : ""}>Unpublished</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="admin-button" onclick="saveChecklistSection()">${editingSection ? "Save Section" : "Add Section"}</button>
+        ${editingSection ? `<button class="admin-button secondary" onclick="cancelChecklistSectionEdit()">Cancel</button>` : ""}
+        <div id="section-message" class="admin-message"></div>
+      </div>
+
+      <div class="admin-card">
+        <h3>Sections</h3>
+        ${checklistSections.length ? checklistSections.map(section => `
+          <div class="admin-list-item compact-item">
+            <div class="admin-list-top">
+              <div>
+                <strong>${esc(section.name)}</strong>
+                <div class="admin-small">Order: ${esc(section.display_order || 0)}</div>
+                <div class="admin-small">${esc(section.description || "No description")}</div>
+                ${section.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
+              </div>
+              <div>
+                <button class="admin-button secondary" onclick="editChecklistSection(${section.id})">Edit</button>
+              </div>
+            </div>
+          </div>
+        `).join("") : `<p>No checklist sections found.</p>`}
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>${editingItem ? "Edit Checklist Item" : "Add Checklist Item"}</h3>
+
+      <input type="hidden" id="checklistItemId" value="${editingItem ? editingItem.id : ""}">
+
+      <div class="admin-grid">
+        <div class="admin-field">
+          <label>Section</label>
+          <select id="itemSectionId">
+            <option value="">Select section</option>
+            ${checklistSections.map(section => `
+              <option value="${section.id}" ${editingItem && editingItem.section_id === section.id ? "selected" : ""}>${esc(section.name)}</option>
+            `).join("")}
+          </select>
+        </div>
+
+        <div class="admin-field">
+          <label>Priority</label>
+          <select id="itemPriority">
+            ${["Essential", "Tip", "Optional"].map(priority => `
+              <option value="${priority}" ${editingItem && editingItem.priority === priority ? "selected" : ""}>${priority}</option>
+            `).join("")}
+          </select>
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>Title</label>
+        <input type="text" id="itemTitle" value="${editingItem ? esc(editingItem.title) : ""}" placeholder="Purchase travel insurance">
+      </div>
+
+      <div class="admin-field">
+        <label>Description</label>
+        <textarea id="itemDescription" placeholder="Short description shown under the task">${editingItem ? esc(editingItem.description || "") : ""}</textarea>
+      </div>
+
+      <div class="admin-field">
+        <label>Why it matters</label>
+        <textarea id="itemWhyItMatters" placeholder="Explain why this task is important">${editingItem ? esc(editingItem.why_it_matters || "") : ""}</textarea>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-field">
+          <label>Button 1 text</label>
+          <input type="text" id="itemButton1Text" value="${editingItem ? esc(editingItem.button1_text || "") : ""}" placeholder="Compare Travel Insurance">
+        </div>
+        <div class="admin-field">
+          <label>Button 1 URL</label>
+          <input type="text" id="itemButton1Url" value="${editingItem ? esc(editingItem.button1_url || "") : ""}" placeholder="/travel-insurance">
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-field">
+          <label>Button 2 text</label>
+          <input type="text" id="itemButton2Text" value="${editingItem ? esc(editingItem.button2_text || "") : ""}" placeholder="Read our guide">
+        </div>
+        <div class="admin-field">
+          <label>Button 2 URL</label>
+          <input type="text" id="itemButton2Url" value="${editingItem ? esc(editingItem.button2_url || "") : ""}" placeholder="/cruise-guides">
+        </div>
+      </div>
+
+      <div class="admin-grid compact">
+        <div class="admin-field">
+          <label>Display order</label>
+          <input type="number" id="itemDisplayOrder" value="${editingItem ? esc(editingItem.display_order || 0) : "0"}">
+        </div>
+        <div class="admin-field">
+          <label>Status</label>
+          <select id="itemActive">
+            <option value="true" ${!editingItem || editingItem.active ? "selected" : ""}>Published</option>
+            <option value="false" ${editingItem && !editingItem.active ? "selected" : ""}>Unpublished</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="admin-button" onclick="saveChecklistItem()">${editingItem ? "Save Item" : "Add Item"}</button>
+      ${editingItem ? `<button class="admin-button secondary" onclick="cancelChecklistItemEdit()">Cancel</button>` : ""}
+      <div id="item-message" class="admin-message"></div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Checklist Items</h3>
+          <p class="admin-muted">Filter by section, edit wording, publish/unpublish items, and set their display order.</p>
+        </div>
+        <div class="admin-field admin-filter-field">
+          <label>Filter by section</label>
+          <select id="checklistSectionFilter" onchange="setChecklistSectionFilter(this.value)">
+            <option value="all" ${selectedChecklistSectionId === "all" ? "selected" : ""}>All sections</option>
+            ${checklistSections.map(section => `
+              <option value="${section.id}" ${String(selectedChecklistSectionId) === String(section.id) ? "selected" : ""}>${esc(section.name)}</option>
+            `).join("")}
+          </select>
+        </div>
+      </div>
+
+      ${filteredItems.length ? filteredItems.map(item => `
+        <div class="admin-list-item checklist-admin-item">
+          <div class="admin-list-top">
+            <div>
+              <div class="checklist-admin-title">${getPriorityEmoji(item.priority)} ${esc(item.title)}</div>
+              <div class="admin-small"><strong>Section:</strong> ${esc(item.checklist_sections?.name || "Section not found")}</div>
+              <div class="admin-small"><strong>Priority:</strong> ${esc(item.priority || "Tip")} | <strong>Order:</strong> ${esc(item.display_order || 0)}</div>
+              ${item.description ? `<div class="admin-small checklist-admin-copy">${esc(item.description)}</div>` : ""}
+              ${item.why_it_matters ? `<div class="admin-small checklist-admin-copy"><strong>Why:</strong> ${esc(item.why_it_matters)}</div>` : ""}
+              ${item.button1_text || item.button2_text ? `<div class="admin-small checklist-admin-copy"><strong>Links:</strong> ${esc([item.button1_text, item.button2_text].filter(Boolean).join(" / "))}</div>` : ""}
+              ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
+            </div>
+            <div>
+              <button class="admin-button secondary" onclick="editChecklistItem(${item.id})">Edit</button>
+              <button class="admin-button secondary" onclick="toggleChecklistItemActive(${item.id}, ${item.active ? "false" : "true"})">${item.active ? "Unpublish" : "Publish"}</button>
+            </div>
+          </div>
+        </div>
+      `).join("") : `<p>No checklist items found.</p>`}
     </div>
   `;
 }
@@ -423,6 +665,179 @@ async function saveShip() {
   message.innerText = "Saved successfully.";
 
   editingShipId = null;
+  await loadAdminData();
+  renderAdmin();
+}
+
+function editChecklistSection(id) {
+  editingChecklistSectionId = id;
+  activeTab = "checklist";
+  renderAdmin();
+}
+
+function cancelChecklistSectionEdit() {
+  editingChecklistSectionId = null;
+  renderAdmin();
+}
+
+async function saveChecklistSection() {
+  const id = document.getElementById("sectionId").value;
+  const name = document.getElementById("sectionName").value.trim();
+  const description = document.getElementById("sectionDescription").value.trim();
+  const displayOrder = Number(document.getElementById("sectionDisplayOrder").value) || 0;
+  const active = document.getElementById("sectionActive").value === "true";
+  const message = document.getElementById("section-message");
+
+  if (!name) {
+    message.className = "admin-message admin-error";
+    message.innerText = "Please enter the section name.";
+    return;
+  }
+
+  const payload = {
+    name,
+    description: description || null,
+    display_order: displayOrder,
+    active
+  };
+
+  message.className = "admin-message";
+  message.innerText = "Saving...";
+
+  let result;
+  if (id) {
+    result = await supabaseClient
+      .from("checklist_sections")
+      .update(payload)
+      .eq("id", Number(id))
+      .select();
+  } else {
+    result = await supabaseClient
+      .from("checklist_sections")
+      .insert(payload)
+      .select();
+  }
+
+  if (result.error) {
+    console.error("Save checklist section error", result.error);
+    message.className = "admin-message admin-error";
+    message.innerText = result.error.message;
+    return;
+  }
+
+  message.className = "admin-message admin-success";
+  message.innerText = "Saved successfully.";
+
+  editingChecklistSectionId = null;
+  await loadAdminData();
+  renderAdmin();
+}
+
+function editChecklistItem(id) {
+  editingChecklistItemId = id;
+  activeTab = "checklist";
+  renderAdmin();
+}
+
+function cancelChecklistItemEdit() {
+  editingChecklistItemId = null;
+  renderAdmin();
+}
+
+function setChecklistSectionFilter(value) {
+  selectedChecklistSectionId = value;
+  renderAdmin();
+}
+
+async function saveChecklistItem() {
+  const id = document.getElementById("checklistItemId").value;
+  const sectionId = Number(document.getElementById("itemSectionId").value);
+  const priority = document.getElementById("itemPriority").value;
+  const title = document.getElementById("itemTitle").value.trim();
+  const description = document.getElementById("itemDescription").value.trim();
+  const whyItMatters = document.getElementById("itemWhyItMatters").value.trim();
+  const button1Text = document.getElementById("itemButton1Text").value.trim();
+  const button1Url = normalizeUrl(document.getElementById("itemButton1Url").value);
+  const button2Text = document.getElementById("itemButton2Text").value.trim();
+  const button2Url = normalizeUrl(document.getElementById("itemButton2Url").value);
+  const displayOrder = Number(document.getElementById("itemDisplayOrder").value) || 0;
+  const active = document.getElementById("itemActive").value === "true";
+  const message = document.getElementById("item-message");
+
+  if (!sectionId) {
+    message.className = "admin-message admin-error";
+    message.innerText = "Please select a section.";
+    return;
+  }
+
+  if (!title) {
+    message.className = "admin-message admin-error";
+    message.innerText = "Please enter the item title.";
+    return;
+  }
+
+  const payload = {
+    section_id: sectionId,
+    title,
+    description: description || null,
+    priority,
+    why_it_matters: whyItMatters || null,
+    button1_text: button1Text || null,
+    button1_url: button1Url || null,
+    button2_text: button2Text || null,
+    button2_url: button2Url || null,
+    display_order: displayOrder,
+    active
+  };
+
+  message.className = "admin-message";
+  message.innerText = "Saving...";
+
+  let result;
+  if (id) {
+    result = await supabaseClient
+      .from("checklist_items")
+      .update(payload)
+      .eq("id", Number(id))
+      .select();
+  } else {
+    result = await supabaseClient
+      .from("checklist_items")
+      .insert(payload)
+      .select();
+  }
+
+  if (result.error) {
+    console.error("Save checklist item error", result.error);
+    message.className = "admin-message admin-error";
+    message.innerText = result.error.message;
+    return;
+  }
+
+  message.className = "admin-message admin-success";
+  message.innerText = "Saved successfully.";
+
+  editingChecklistItemId = null;
+  await loadAdminData();
+  renderAdmin();
+}
+
+async function toggleChecklistItemActive(itemId, newActiveValue) {
+  const { error } = await supabaseClient
+    .from("checklist_items")
+    .update({ active: newActiveValue })
+    .eq("id", itemId);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  await loadAdminData();
+  renderAdmin();
+}
+
+async function refreshAdminData() {
   await loadAdminData();
   renderAdmin();
 }

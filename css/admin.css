@@ -172,3 +172,45 @@
     }
     .admin-list-top { flex-direction: column; }
   }
+
+.admin-pill.inactive {
+  background: #f4f4f4;
+  color: #777;
+}
+
+.admin-grid.compact {
+  grid-template-columns: 1fr 1fr;
+}
+
+.compact-item {
+  padding: 14px;
+}
+
+.admin-filter-field {
+  min-width: 260px;
+  margin-bottom: 0;
+}
+
+.checklist-admin-item {
+  border-left: 5px solid #8DD9BF;
+}
+
+.checklist-admin-title {
+  font-size: 18px;
+  font-weight: 900;
+  margin-bottom: 6px;
+}
+
+.checklist-admin-copy {
+  margin-top: 8px;
+}
+
+@media (max-width: 820px) {
+  .admin-grid.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-filter-field {
+    min-width: 100%;
+  }
+}
