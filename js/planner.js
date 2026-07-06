@@ -840,7 +840,7 @@ function renderDashboardSnapshot(cruise) {
         <div class="dashboard-snapshot-row"><span>Insurance</span>${renderStatusValue(insurance)}</div>
         <div class="dashboard-snapshot-row"><span>Flights</span>${renderStatusValue(flights)}</div>
       </div>
-      <button class="dashboard-outline-action" onclick="alert('Booking details will connect to Base44 in a future release')">Open Booking →</button>
+      <button class="dashboard-outline-action" onclick="renderBookingDetails()">Open Booking →</button>
     </article>
   `;
 }
@@ -1366,6 +1366,166 @@ async function renderChecklist() {
       </div>
     </div>
   `;
+}
+
+
+async function loadUserBookingDetails(cruise) {
+  if (!currentUser?.id || !cruise?.id) return null;
+
+  const { data, error } = await supabaseClient
+    .from("user_booking_details")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .eq("cruise_id", cruise.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("User booking details load failed", error);
+    return null;
+  }
+
+  return data || null;
+}
+
+function renderBookingDetailRow(label, value) {
+  const safeValue = value === null || value === undefined || String(value).trim() === "" ? "Not added" : String(value).trim();
+  return `<div class="dashboard-snapshot-row"><span>${escapeHtml(label)}</span>${renderStatusValue(safeValue)}</div>`;
+}
+
+function renderBookingTextarea(id, label, value, placeholder) {
+  return `
+    <div class="planner-field">
+      <label>${escapeHtml(label)}</label>
+      <textarea id="${escapeHtml(id)}" placeholder="${escapeHtml(placeholder || "")}">${escapeHtml(value || "")}</textarea>
+    </div>
+  `;
+}
+
+async function renderBookingDetails() {
+  clearCountdownTimer();
+
+  const cruise = await loadCurrentCruise();
+
+  if (!cruise) {
+    app.innerHTML = `
+      <div class="planner-card">
+        <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
+        <h2>Booking Details</h2>
+        <p>Add a cruise before viewing booking details.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const bookingDetails = await loadUserBookingDetails(cruise);
+  const bookingReference = getCruiseBookingReference(cruise) || "Not added";
+  const embarkation = getDashboardValue(cruise, ["embarkation_port", "departure_port", "from_port", "departure_city"], "Not added");
+  const disembarkation = getDashboardValue(cruise, ["disembarkation_port", "arrival_port", "to_port", "destination"], "Not added");
+  const cabin = getDashboardValue(cruise, ["cabin_number", "cabin", "stateroom", "suite"], "Not added");
+  const cabinType = getDashboardValue(cruise, ["cabin_type", "stateroom_type", "suite_type"], "Not added");
+  const deck = getDashboardValue(cruise, ["deck", "deck_number"], "Not added");
+  const dining = getDashboardValue(cruise, ["dining_time", "dining", "dining_preference"], "Not added");
+  const travellers = getTravellerSummary(cruise);
+
+  app.innerHTML = `
+    <div class="booking-details-page">
+      ${renderPlannerNav("dashboard")}
+
+      <div class="planner-card slim-card">
+        <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
+        <h2>Booking Details</h2>
+        <p class="planner-muted">Your cruise booking information and personal travel notes in one place.</p>
+      </div>
+
+      <div class="planner-grid booking-details-grid">
+        <section class="planner-card">
+          <h3>Cruise</h3>
+          <div class="dashboard-snapshot-list">
+            ${renderBookingDetailRow("Cruise line", cruise.cruise_line)}
+            ${renderBookingDetailRow("Ship", cruise.ship_name)}
+            ${renderBookingDetailRow("Booking reference", bookingReference)}
+            ${renderBookingDetailRow("Departure", formatDate(cruise.departure_date))}
+            ${renderBookingDetailRow("Return", formatDate(cruise.return_date))}
+            ${renderBookingDetailRow("Nights", cruise.nights ? `${cruise.nights} Nights` : "Not added")}
+            ${renderBookingDetailRow("Embarkation", embarkation)}
+            ${renderBookingDetailRow("Disembarkation", disembarkation)}
+          </div>
+        </section>
+
+        <section class="planner-card">
+          <h3>Travellers & Cabin</h3>
+          <div class="dashboard-snapshot-list">
+            ${renderBookingDetailRow("Travellers", travellers)}
+            ${renderBookingDetailRow("Cabin", cabin)}
+            ${renderBookingDetailRow("Cabin type", cabinType)}
+            ${renderBookingDetailRow("Deck", deck)}
+            ${renderBookingDetailRow("Dining", dining)}
+          </div>
+        </section>
+      </div>
+
+      <section class="planner-card section-spaced">
+        <h3>Your Travel Arrangements</h3>
+        <p class="planner-muted">Add your own flights, hotels and transfers here. 101CRUISE manages your cruise booking; these fields are for your personal planning notes.</p>
+
+        <div class="planner-grid">
+          <div>
+            ${renderBookingTextarea("bookingFlightDetails", "Flights", bookingDetails?.flight_details, "Example: QF123 Sydney to Auckland, 24 July, 9:30am")}
+            ${renderBookingTextarea("bookingHotelDetails", "Hotels", bookingDetails?.hotel_details, "Example: 2 nights at the Hilton Auckland before sailing")}
+          </div>
+          <div>
+            ${renderBookingTextarea("bookingTransferDetails", "Transfers", bookingDetails?.transfer_details, "Example: Taxi from airport to hotel, private transfer to cruise terminal")}
+            ${renderBookingTextarea("bookingInsuranceDetails", "Insurance", bookingDetails?.insurance_details, "Example: Policy number, insurer and emergency contact number")}
+          </div>
+        </div>
+
+        ${renderBookingTextarea("bookingExtraNotes", "Other notes", bookingDetails?.notes, "Anything else you want to remember for this cruise")}
+
+        <button class="planner-button" onclick="saveUserBookingDetails()">Save Travel Details</button>
+        <div id="booking-details-message" class="planner-message"></div>
+      </section>
+
+      <section class="planner-card section-spaced">
+        <h3>Documents</h3>
+        <p class="planner-muted">Documents will be added in a future release. This will eventually hold cruise confirmations, invoices, insurance certificates and other useful files.</p>
+      </section>
+    </div>
+  `;
+}
+
+async function saveUserBookingDetails() {
+  const cruise = await loadCurrentCruise();
+  const message = document.getElementById("booking-details-message");
+
+  if (!cruise) {
+    if (message) message.innerText = "Please add a cruise before saving travel details.";
+    return;
+  }
+
+  const payload = {
+    user_id: currentUser.id,
+    cruise_id: cruise.id,
+    flight_details: document.getElementById("bookingFlightDetails")?.value.trim() || null,
+    hotel_details: document.getElementById("bookingHotelDetails")?.value.trim() || null,
+    transfer_details: document.getElementById("bookingTransferDetails")?.value.trim() || null,
+    insurance_details: document.getElementById("bookingInsuranceDetails")?.value.trim() || null,
+    notes: document.getElementById("bookingExtraNotes")?.value.trim() || null,
+    updated_at: new Date().toISOString()
+  };
+
+  if (message) message.innerText = "Saving...";
+
+  const { error } = await supabaseClient
+    .from("user_booking_details")
+    .upsert(payload, { onConflict: "user_id,cruise_id" });
+
+  if (error) {
+    console.error("Booking details save error", error);
+    if (message) message.innerText = "Could not save travel details. Please try again.";
+    return;
+  }
+
+  if (message) message.innerText = "Travel details saved.";
 }
 
 async function addCruise() {
