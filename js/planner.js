@@ -939,6 +939,41 @@ function isItemCompleted(progressRows, itemId) {
   return (progressRows || []).some(row => row.checklist_item_id === itemId && row.completed === true);
 }
 
+function groupPersonalItemsBySection(items) {
+  const grouped = {};
+  (items || []).forEach(item => {
+    if (!grouped[item.section_id]) grouped[item.section_id] = [];
+    grouped[item.section_id].push(item);
+  });
+  return grouped;
+}
+
+function renderPersonalChecklistRow(item) {
+  return `
+    <div class="checklist-row personal-checklist-row ${item.completed ? "is-complete" : ""}" data-personal-row="${item.id}">
+      <div class="checklist-main-cell">
+        <input class="checklist-checkbox" type="checkbox" ${item.completed ? "checked" : ""} onchange="togglePersonalChecklistItem(${item.id}, this.checked)">
+        <button class="checklist-row-toggle" onclick="togglePersonalChecklistDetails(${item.id})" aria-label="Toggle personal task details">
+          <span class="checklist-title">${escapeHtml(item.title)}</span>
+          <span class="checklist-description">Your own task</span>
+        </button>
+      </div>
+
+      <div class="checklist-type-cell">
+        <span class="priority-badge priority-personal">Personal</span>
+      </div>
+
+      <div class="checklist-action-cell">
+        <button class="checklist-action-button secondary" onclick="deletePersonalChecklistItem(${item.id})">Delete</button>
+      </div>
+
+      <div class="checklist-details" id="personal-checklist-details-${item.id}">
+        <p>This task was added by you and only appears in your own planner.</p>
+      </div>
+    </div>
+  `;
+}
+
 function renderChecklistRow(item, completed) {
   const description = item.description || item.why_it_matters || "";
   const priorityLabel = getPriorityLabel(item.priority);
@@ -973,6 +1008,78 @@ function renderChecklistRow(item, completed) {
 function toggleChecklistDetails(itemId) {
   const details = document.getElementById(`checklist-details-${itemId}`);
   if (details) details.classList.toggle("open");
+}
+
+function togglePersonalChecklistDetails(itemId) {
+  const details = document.getElementById(`personal-checklist-details-${itemId}`);
+  if (details) details.classList.toggle("open");
+}
+
+async function addPersonalChecklistItem(sectionId) {
+  const cruise = await loadCurrentCruise();
+
+  if (!cruise) {
+    alert("Please add a cruise before adding your own checklist items.");
+    return;
+  }
+
+  const title = prompt("Add your own task");
+  if (!title || !title.trim()) return;
+
+  const { error } = await supabaseClient
+    .from("user_checklist_items")
+    .insert({
+      user_id: currentUser.id,
+      cruise_id: cruise.id,
+      section_id: sectionId,
+      title: title.trim(),
+      completed: false
+    });
+
+  if (error) {
+    console.error("Personal checklist item save error", error);
+    alert("Could not add your task. Please try again.");
+    return;
+  }
+
+  renderChecklist();
+}
+
+async function togglePersonalChecklistItem(itemId, completed) {
+  const { error } = await supabaseClient
+    .from("user_checklist_items")
+    .update({
+      completed,
+      completed_at: completed ? new Date().toISOString() : null
+    })
+    .eq("id", itemId)
+    .eq("user_id", currentUser.id);
+
+  if (error) {
+    console.error("Personal checklist progress save error", error);
+    alert("Could not save your task. Please try again.");
+    return;
+  }
+
+  renderChecklist();
+}
+
+async function deletePersonalChecklistItem(itemId) {
+  if (!confirm("Delete this personal task?")) return;
+
+  const { error } = await supabaseClient
+    .from("user_checklist_items")
+    .delete()
+    .eq("id", itemId)
+    .eq("user_id", currentUser.id);
+
+  if (error) {
+    console.error("Personal checklist item delete error", error);
+    alert("Could not delete your task. Please try again.");
+    return;
+  }
+
+  renderChecklist();
 }
 
 async function toggleChecklistItem(itemId, completed) {
@@ -1042,6 +1149,7 @@ async function renderChecklist() {
     .order("display_order", { ascending: true });
 
   let progressRows = [];
+  let personalItems = [];
   if (cruise) {
     const { data: progressData } = await supabaseClient
       .from("checklist_progress")
@@ -1049,6 +1157,19 @@ async function renderChecklist() {
       .eq("user_id", currentUser.id)
       .eq("cruise_id", cruise.id);
     progressRows = progressData || [];
+
+    const { data: personalData, error: personalError } = await supabaseClient
+      .from("user_checklist_items")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .eq("cruise_id", cruise.id)
+      .order("created_at", { ascending: true });
+
+    if (personalError) {
+      console.warn("Personal checklist load failed", personalError);
+    } else {
+      personalItems = personalData || [];
+    }
   }
 
   if (sectionError || itemError) {
@@ -1063,10 +1184,13 @@ async function renderChecklist() {
   }
 
   const allItems = items || [];
-  const completedCount = allItems.filter(item => isItemCompleted(progressRows, item.id)).length;
-  const totalCount = allItems.length;
+  const completedSystemCount = allItems.filter(item => isItemCompleted(progressRows, item.id)).length;
+  const completedPersonalCount = personalItems.filter(item => item.completed === true).length;
+  const completedCount = completedSystemCount + completedPersonalCount;
+  const totalCount = allItems.length + personalItems.length;
   const percent = getProgressPercent(completedCount, totalCount);
   const groupedItems = groupItemsBySection(allItems);
+  const groupedPersonalItems = groupPersonalItemsBySection(personalItems);
 
   app.innerHTML = `
     <div id="checklist-page" class="checklist-page">
@@ -1089,8 +1213,12 @@ async function renderChecklist() {
         <main class="checklist-content">
           ${(sections || []).map(section => {
             const sectionItems = groupedItems[section.id] || [];
-            const sectionCompleted = sectionItems.filter(item => isItemCompleted(progressRows, item.id)).length;
-            const sectionPercent = getProgressPercent(sectionCompleted, sectionItems.length);
+            const sectionPersonalItems = groupedPersonalItems[section.id] || [];
+            const sectionCompletedSystem = sectionItems.filter(item => isItemCompleted(progressRows, item.id)).length;
+            const sectionCompletedPersonal = sectionPersonalItems.filter(item => item.completed === true).length;
+            const sectionCompleted = sectionCompletedSystem + sectionCompletedPersonal;
+            const sectionTotal = sectionItems.length + sectionPersonalItems.length;
+            const sectionPercent = getProgressPercent(sectionCompleted, sectionTotal);
 
             return `
               <section class="checklist-section-block">
@@ -1099,7 +1227,7 @@ async function renderChecklist() {
                     <h3>${escapeHtml(section.name)}</h3>
                     ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ""}
                   </div>
-                  <div class="section-progress-pill">${sectionCompleted}/${sectionItems.length} Complete</div>
+                  <div class="section-progress-pill">${sectionCompleted}/${sectionTotal} Complete</div>
                 </div>
                 <div class="section-progress-bar"><span style="width:${sectionPercent}%"></span></div>
                 <div class="checklist-table-header">
@@ -1107,7 +1235,10 @@ async function renderChecklist() {
                   <span>Type</span>
                   <span>Action</span>
                 </div>
-                ${sectionItems.length ? sectionItems.map(item => renderChecklistRow(item, isItemCompleted(progressRows, item.id))).join("") : `<p class="planner-muted empty-checklist-message">No checklist items added yet.</p>`}
+                ${sectionItems.length ? sectionItems.map(item => renderChecklistRow(item, isItemCompleted(progressRows, item.id))).join("") : ""}
+                ${sectionPersonalItems.length ? sectionPersonalItems.map(item => renderPersonalChecklistRow(item)).join("") : ""}
+                ${!sectionItems.length && !sectionPersonalItems.length ? `<p class="planner-muted empty-checklist-message">No checklist items added yet.</p>` : ""}
+                <button class="add-personal-task-button" onclick="addPersonalChecklistItem(${section.id})">+ Add your own task</button>
               </section>
             `;
           }).join("")}
