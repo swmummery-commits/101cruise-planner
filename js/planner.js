@@ -691,3 +691,80 @@ async function initPlanner() {
 }
 
 initPlanner();
+async function renderChecklist() {
+  clearCountdownTimer();
+
+  const { data: sections, error: sectionError } = await supabaseClient
+    .from("checklist_sections")
+    .select("*")
+    .eq("active", true)
+    .order("display_order", { ascending: true });
+
+  const { data: items, error: itemError } = await supabaseClient
+    .from("checklist_items")
+    .select("*")
+    .eq("active", true)
+    .order("display_order", { ascending: true });
+
+  if (sectionError || itemError) {
+    app.innerHTML = `
+      <div class="planner-card">
+        <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
+        <h2>Cruise Preparation Checklist</h2>
+        <p>Could not load the checklist. Please try again.</p>
+      </div>
+    `;
+    return;
+  }
+
+  app.innerHTML = `
+    <div class="planner-card">
+      <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
+      <h2>Cruise Preparation Checklist</h2>
+      <p class="planner-muted">Stay organised from booking through to embarkation day.</p>
+    </div>
+
+    ${
+      sections && sections.length
+        ? sections.map(section => {
+            const sectionItems = (items || []).filter(item => item.section_id === section.id);
+
+            return `
+              <div class="planner-card">
+                <h2>${section.name}</h2>
+                <p class="planner-muted">${section.description || ""}</p>
+
+                ${
+                  sectionItems.length
+                    ? sectionItems.map(item => `
+                        <div class="checklist-item">
+                          <div class="checklist-priority">${item.priority || "Tip"}</div>
+                          <h3>${item.title}</h3>
+                          <p>${item.description || item.why_it_matters || ""}</p>
+
+                          ${
+                            item.button1_text && item.button1_url
+                              ? `<a class="planner-button" href="${item.button1_url}" target="_blank">${item.button1_text}</a>`
+                              : ""
+                          }
+
+                          ${
+                            item.button2_text && item.button2_url
+                              ? `<a class="planner-button secondary" href="${item.button2_url}" target="_blank">${item.button2_text}</a>`
+                              : ""
+                          }
+                        </div>
+                      `).join("")
+                    : `<p class="planner-muted">No checklist items added yet.</p>`
+                }
+              </div>
+            `;
+          }).join("")
+        : `
+          <div class="planner-card">
+            <p>No checklist sections found.</p>
+          </div>
+        `
+    }
+  `;
+}
