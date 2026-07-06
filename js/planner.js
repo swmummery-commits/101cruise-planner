@@ -637,6 +637,7 @@ async function renderDashboard() {
   const routeText = getCruiseRouteText(mainCruise);
   const nightsText = mainCruise?.nights ? `${mainCruise.nights} Nights` : "";
   const routeLine = [routeText, nightsText].filter(Boolean).join(" • ");
+  const countdownParts = getCountdownParts(mainCruise);
 
   app.innerHTML = `
     <div class="dashboard-page">
@@ -718,6 +719,10 @@ async function renderDashboard() {
       </div>
     </div>
   `;
+
+  if (mainCruise) {
+    startLiveCountdown(mainCruise);
+  }
 }
 
 
