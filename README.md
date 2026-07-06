@@ -1,19 +1,8 @@
-# 101cruise Planner
+101CRUISE Planner v0.5.3
 
-Static web app deployed via Netlify and backed by Supabase.
+Replace:
+- css/planner.css
+- js/planner.js
 
-## Files
-
-- `index.html` - customer-facing planner shell
-- `admin.html` - admin app shell
-- `css/planner.css` - planner styles
-- `css/admin.css` - admin styles
-- `js/planner.js` - planner logic
-- `js/admin.js` - admin logic
-
-## Workflow
-
-1. Edit files in VS Code.
-2. Commit in GitHub Desktop.
-3. Push to GitHub.
-4. Netlify deploys automatically.
+Commit summary:
+Finalise dashboard and cruise snapshot

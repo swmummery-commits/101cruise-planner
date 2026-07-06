@@ -618,6 +618,47 @@ function renderDashboardCruiseList(cruises, error, mainCruise) {
   `;
 }
 
+
+function getDashboardValue(cruise, keys, fallback = "Not added") {
+  for (const key of keys) {
+    const value = cruise && cruise[key];
+    if (value !== null && value !== undefined && String(value).trim() !== "") return value;
+  }
+  return fallback;
+}
+
+function getTravellerSummary(cruise) {
+  const names = getDashboardValue(cruise, ["traveller_names", "travellers", "guest_names", "passenger_names"], "");
+  if (names) return names;
+  const count = getDashboardValue(cruise, ["traveller_count", "guests", "passengers", "guest_count"], "");
+  if (count) return `${count} ${Number(count) === 1 ? "Traveller" : "Travellers"}`;
+  return "Not added";
+}
+
+function renderDashboardSnapshot(cruise) {
+  const embarkation = getDashboardValue(cruise, ["embarkation_port", "departure_port", "from_port", "departure_city"], "Not added");
+  const disembarkation = getDashboardValue(cruise, ["disembarkation_port", "arrival_port", "to_port", "destination"], "Not added");
+  const cabin = getDashboardValue(cruise, ["cabin_number", "cabin", "stateroom", "suite"], "Not added");
+  const bookingRef = getDashboardValue(cruise, ["booking_reference", "booking_ref", "booking_number", "reservation_number"], "Not added");
+  const travellers = getTravellerSummary(cruise);
+
+  return `
+    <article class="dashboard-summary-card dashboard-snapshot-card">
+      <div class="dashboard-snapshot-heading">
+        <p class="dashboard-card-label">Cruise Snapshot</p>
+      </div>
+      <div class="dashboard-snapshot-list">
+        <div class="dashboard-snapshot-row"><span>Travellers</span><strong>${escapeHtml(travellers)}</strong></div>
+        <div class="dashboard-snapshot-row"><span>Cabin</span><strong>${escapeHtml(cabin)}</strong></div>
+        <div class="dashboard-snapshot-row"><span>Embarkation</span><strong>${escapeHtml(embarkation)}</strong></div>
+        <div class="dashboard-snapshot-row"><span>Disembarkation</span><strong>${escapeHtml(disembarkation)}</strong></div>
+        <div class="dashboard-snapshot-row"><span>Booking Ref</span><strong>${escapeHtml(bookingRef)}</strong></div>
+      </div>
+      <button class="dashboard-outline-action" onclick="alert('Booking details will connect to Base44 in a future release')">Open Booking →</button>
+    </article>
+  `;
+}
+
 async function renderDashboard() {
   clearCountdownTimer();
 
@@ -638,6 +679,10 @@ async function renderDashboard() {
   const nightsText = mainCruise?.nights ? `${mainCruise.nights} Nights` : "";
   const routeLine = [routeText, nightsText].filter(Boolean).join(" • ");
   const countdownParts = getCountdownParts(mainCruise);
+  const mainLogo = mainCruise ? getCruiseLineLogo(mainCruise.cruise_line) : "";
+  const daysUntilText = countdownParts.totalDays === null
+    ? "Your next adventure awaits."
+    : `${countdownParts.days} ${countdownParts.days === 1 ? "day" : "days"} until you sail`;
 
   app.innerHTML = `
     <div class="dashboard-page">
@@ -654,7 +699,7 @@ async function renderDashboard() {
           </div>
 
           <div class="dashboard-countdown-panel">
-            <p>Countdown to your cruise</p>
+            <p>Sailing in</p>
             <div class="dashboard-countdown-grid">
               <div>
                 <span id="countdownDays">${countdownParts.days}</span>
@@ -673,10 +718,11 @@ async function renderDashboard() {
                 <small>Seconds</small>
               </div>
             </div>
-            <div class="dashboard-countdown-date">${escapeHtml(formatDate(mainCruise.departure_date))}</div>
+            <div class="dashboard-countdown-logo">
+              ${mainLogo ? `<img src="${escapeHtml(mainLogo)}" alt="${escapeHtml(mainCruise.cruise_line || "Cruise line")} logo">` : ""}
+              <span>${escapeHtml(mainCruise.cruise_line || "")}</span>
+            </div>
           </div>
-
-          <div class="dashboard-hero-curve" aria-hidden="true"></div>
         </section>
       ` : `
         <section class="dashboard-empty-hero">
@@ -687,35 +733,46 @@ async function renderDashboard() {
       `}
 
       <div class="dashboard-content-wrap">
-      <section class="dashboard-summary-grid">
-        <article class="dashboard-summary-card next-task-card">
-          <p class="dashboard-card-label">Next Essential Task</p>
-          <h2>${escapeHtml(nextStepTitle)}</h2>
-          <span class="priority-badge ${getPriorityClass(nextStepType)}">${escapeHtml(nextStepType)}</span>
-          <button class="dashboard-card-action" onclick="renderChecklist()">Continue →</button>
-        </article>
+        <section class="dashboard-welcome-strip">
+          <div class="dashboard-welcome-avatar">${escapeHtml(String(firstName).slice(0, 2).toUpperCase())}</div>
+          <div>
+            <h2>Welcome back, ${escapeHtml(firstName)}!</h2>
+            <p>You're <strong>${checklistData.percent}% cruise ready</strong>. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.</p>
+          </div>
+          <div class="dashboard-welcome-days">${escapeHtml(daysUntilText)}</div>
+        </section>
 
-        <article class="dashboard-summary-card cruise-ready-card">
-          <p class="dashboard-card-label">Cruise Ready</p>
-          ${renderProgressCircle(checklistData.percent)}
-          <p class="dashboard-ready-copy"><strong>${checklistData.completedCount}</strong> of <strong>${checklistData.totalCount}</strong> tasks complete</p>
-        </article>
-      </section>
+        <section class="dashboard-summary-grid">
+          <article class="dashboard-summary-card next-task-card">
+            <p class="dashboard-card-label">Next Essential Task</p>
+            <h2>${escapeHtml(nextStepTitle)}</h2>
+            <span class="priority-badge ${getPriorityClass(nextStepType)}">${escapeHtml(nextStepType)}</span>
+            <button class="dashboard-card-action" onclick="renderChecklist()">Continue →</button>
+          </article>
 
-      <section class="dashboard-module-grid">
-        ${renderDashboardModuleCard({
-          title: "Preparation",
-          subtitle: `${checklistData.completedCount} of ${checklistData.totalCount} tasks complete`,
-          action: "renderChecklist()",
-          buttonText: checklistData.completedCount ? "Continue" : "Start"
-        })}
-        ${renderDashboardModuleCard({ title: "Packing", subtitle: "Coming soon", action: "alert('Packing List coming soon')", buttonText: "Start", disabled: true })}
-        ${renderDashboardModuleCard({ title: "Budget", subtitle: "Coming soon", action: "alert('Budget Planner coming soon')", buttonText: "Open", disabled: true })}
-        ${renderDashboardModuleCard({ title: "Documents", subtitle: "Coming soon", action: "alert('Documents coming soon')", buttonText: "View", disabled: true })}
-      </section>
+          <article class="dashboard-summary-card cruise-ready-card">
+            <p class="dashboard-card-label">Cruise Ready</p>
+            ${renderProgressCircle(checklistData.percent)}
+            <p class="dashboard-ready-copy"><strong>${checklistData.completedCount}</strong> of <strong>${checklistData.totalCount}</strong> tasks complete</p>
+          </article>
 
-      ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
-      ${renderDashboardCruiseList(safeCruises, error, mainCruise)}
+          ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
+        </section>
+
+        <section class="dashboard-module-grid">
+          ${renderDashboardModuleCard({
+            title: "Preparation",
+            subtitle: `${checklistData.completedCount} of ${checklistData.totalCount} tasks complete`,
+            action: "renderChecklist()",
+            buttonText: checklistData.completedCount ? "Continue" : "Start"
+          })}
+          ${renderDashboardModuleCard({ title: "Packing", subtitle: "Coming soon", action: "alert('Packing List coming soon')", buttonText: "Start", disabled: true })}
+          ${renderDashboardModuleCard({ title: "Budget", subtitle: "Coming soon", action: "alert('Budget Planner coming soon')", buttonText: "Open", disabled: true })}
+          ${renderDashboardModuleCard({ title: "Documents", subtitle: "Coming soon", action: "alert('Documents coming soon')", buttonText: "View", disabled: true })}
+        </section>
+
+        ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
+        ${renderDashboardCruiseList(safeCruises, error, mainCruise)}
       </div>
     </div>
   `;
@@ -724,7 +781,6 @@ async function renderDashboard() {
     startLiveCountdown(mainCruise);
   }
 }
-
 
 function escapeHtml(value) {
   if (value === null || value === undefined) return "";
