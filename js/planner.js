@@ -178,6 +178,121 @@ async function loadProfile() {
   currentProfile = data;
 }
 
+async function loadPlannerPreference() {
+  if (!currentUser?.id) return null;
+
+  const { data, error } = await supabaseClient
+    .from("user_planner_preferences")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Planner preference load failed", error);
+    return null;
+  }
+
+  return data || null;
+}
+
+async function savePlannerPreferenceForCruise(cruise) {
+  if (!currentUser?.id || !cruise) return;
+
+  const bookingReference = getCruiseBookingReference(cruise);
+
+  const { error } = await supabaseClient
+    .from("user_planner_preferences")
+    .upsert({
+      user_id: currentUser.id,
+      last_active_cruise_id: cruise.id || null,
+      last_active_booking_reference: bookingReference || null,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id" });
+
+  if (error) console.warn("Planner preference save failed", error);
+}
+
+function getCruiseBookingReference(cruise) {
+  return String(
+    cruise?.booking_reference ||
+    cruise?.cruise_booking_reference ||
+    cruise?.booking_ref ||
+    cruise?.reference ||
+    ""
+  ).trim();
+}
+
+function isUpcomingCruise(cruise) {
+  if (!cruise?.departure_date) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const depart = new Date(`${cruise.departure_date}T00:00:00`);
+  return !Number.isNaN(depart.getTime()) && depart >= today;
+}
+
+function selectActiveCruise(cruises, preference) {
+  const safeCruises = cruises || [];
+  if (!safeCruises.length) return null;
+
+  if (preference?.last_active_cruise_id) {
+    const byId = safeCruises.find(cruise => String(cruise.id) === String(preference.last_active_cruise_id));
+    if (byId) return byId;
+  }
+
+  if (preference?.last_active_booking_reference) {
+    const byReference = safeCruises.find(cruise =>
+      getCruiseBookingReference(cruise) &&
+      getCruiseBookingReference(cruise) === String(preference.last_active_booking_reference).trim()
+    );
+    if (byReference) return byReference;
+  }
+
+  return safeCruises.find(isUpcomingCruise) || safeCruises[0];
+}
+
+function renderCruiseSwitcher(cruises, activeCruise) {
+  const safeCruises = cruises || [];
+  if (safeCruises.length <= 1) return "";
+
+  return `
+    <div class="cruise-switcher">
+      <button class="cruise-switcher-button" onclick="toggleCruiseSwitcher()">Switch Cruise ▾</button>
+      <div id="cruiseSwitcherMenu" class="cruise-switcher-menu" hidden>
+        <div class="cruise-switcher-heading">Your cruises</div>
+        ${safeCruises.map(cruise => `
+          <button class="cruise-switcher-item ${cruise.id === activeCruise?.id ? "active" : ""}" onclick="switchActiveCruise(${cruise.id})">
+            <span>${escapeHtml(cruise.ship_name || cruise.cruise_line || "Cruise")}</span>
+            <small>${escapeHtml(formatDateShort(cruise.departure_date))}</small>
+          </button>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function toggleCruiseSwitcher() {
+  const menu = document.getElementById("cruiseSwitcherMenu");
+  if (!menu) return;
+  menu.hidden = !menu.hidden;
+}
+
+async function switchActiveCruise(cruiseId) {
+  const { data, error } = await supabaseClient
+    .from("cruises")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .eq("id", cruiseId)
+    .maybeSingle();
+
+  if (error || !data) {
+    console.warn("Could not switch cruise", error);
+    return;
+  }
+
+  await savePlannerPreferenceForCruise(data);
+  renderDashboard();
+}
+
 
 function normaliseName(value) {
   return String(value || "").trim().toLowerCase();
@@ -740,7 +855,8 @@ async function renderDashboard() {
 
   const firstName = getUserDisplayName();
   const safeCruises = cruises || [];
-  const mainCruise = safeCruises.length ? safeCruises[0] : null;
+  const plannerPreference = await loadPlannerPreference();
+  const mainCruise = selectActiveCruise(safeCruises, plannerPreference);
   const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
   const checklistData = await loadDashboardChecklistData(mainCruise);
   const nextItem = checklistData.nextItem;
@@ -792,8 +908,9 @@ async function renderDashboard() {
           <div class="dashboard-welcome-avatar">${escapeHtml(String(firstName).slice(0, 2).toUpperCase())}</div>
           <div>
             <h2>Welcome back, ${escapeHtml(firstName)}! 👋</h2>
-            <p>You're <strong>${checklistData.percent}% cruise ready</strong>. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.</p>
+            <p>${mainCruise ? `You're currently planning <strong>${escapeHtml(mainCruise.ship_name || mainCruise.cruise_line || "your cruise")}</strong>. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.` : `You're <strong>${checklistData.percent}% cruise ready</strong>. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.`}</p>
           </div>
+          ${renderCruiseSwitcher(safeCruises, mainCruise)}
         </section>
 
         <section class="dashboard-summary-grid dashboard-summary-grid-final">
@@ -858,8 +975,8 @@ function getPriorityLabel(priority) {
   return "Tip";
 }
 
-function getCurrentCruiseFromList(cruises) {
-  return cruises && cruises.length ? cruises[0] : null;
+function getCurrentCruiseFromList(cruises, preference = null) {
+  return selectActiveCruise(cruises || [], preference);
 }
 
 async function loadCurrentCruise() {
@@ -868,7 +985,8 @@ async function loadCurrentCruise() {
     .select("*")
     .order("departure_date", { ascending: true });
 
-  return getCurrentCruiseFromList(data || []);
+  const preference = await loadPlannerPreference();
+  return getCurrentCruiseFromList(data || [], preference);
 }
 
 function getProgressPercent(completed, total) {
@@ -1262,20 +1380,21 @@ async function addCruise() {
     return;
   }
 
-  const { error } = await supabaseClient.from("cruises").insert({
+  const { data, error } = await supabaseClient.from("cruises").insert({
     user_id: currentUser.id,
     cruise_line: cruiseLine,
     ship_name: shipName,
     departure_date: departureDate || null,
     departure_time: departureTime || "17:00",
     nights: nights || null
-  });
+  }).select("*").single();
 
   if (error) {
     document.getElementById("cruise-message").innerText = error.message;
     return;
   }
 
+  if (data) await savePlannerPreferenceForCruise(data);
   renderDashboard();
 }
 
