@@ -1,0 +1,449 @@
+#cruise-planner-app {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 32px 20px;
+    font-family: "Halyard Display", Arial, sans-serif;
+    color: #111;
+  }
+
+  .planner-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 22px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    margin-bottom: 28px;
+  }
+
+  .planner-card h1,
+  .planner-card h2,
+  .planner-card h3 {
+    margin-top: 0;
+  }
+
+  .planner-card h2 {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+
+  .planner-muted {
+    color: #666;
+  }
+
+  .planner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    align-items: stretch;
+  }
+
+  .auth-grid {
+    align-items: stretch;
+  }
+
+  .auth-card {
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .auth-card .planner-button {
+    align-self: flex-start;
+    margin-top: auto;
+  }
+
+  .planner-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+    margin-bottom: 56px;
+  }
+
+  .feature-card {
+    border: 1px solid #eee;
+    border-radius: 18px;
+    padding: 22px;
+    background: #fafafa;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+    border-color: #d8f3ea;
+  }
+
+  .feature-card strong {
+    display: block;
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  .feature-card p {
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .coming-soon {
+    display: table;
+    margin-top: 12px;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #8DD9BF;
+    color: #000;
+    line-height: 1;
+  }
+
+  .planner-field {
+    margin-bottom: 16px;
+  }
+
+  .planner-field label {
+    display: block;
+    font-weight: 700;
+    margin-bottom: 7px;
+  }
+
+  .planner-field input,
+  .planner-field select {
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    font-size: 16px;
+    box-sizing: border-box;
+    background: #fff;
+  }
+
+  .planner-button {
+    background: #8DD9BF;
+    color: #000;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 20px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-right: 8px;
+    margin-top: 8px;
+    font-size: 15px;
+  }
+
+  .planner-button.black {
+    background: #000;
+    color: #fff;
+  }
+
+  .planner-button.secondary {
+    background: #f1f1f1;
+    color: #000;
+  }
+
+  .planner-message {
+    margin-top: 16px;
+    font-weight: 700;
+  }
+
+  .section-spaced {
+    margin-top: 0;
+  }
+
+  .cruise-main-card {
+    padding: 0;
+    border-radius: 20px;
+    background: #111;
+    color: #fff;
+    margin-top: 18px;
+    overflow: hidden;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.18);
+    position: relative;
+  }
+
+  .cruise-main-inner {
+    display: grid;
+    grid-template-columns: 0.9fr 1.35fr;
+    gap: 0;
+    min-height: 260px;
+  }
+
+  .cruise-hero-left,
+  .cruise-hero-right {
+    padding: 30px;
+  }
+
+  .cruise-hero-left {
+    border-right: 1px solid rgba(255,255,255,0.22);
+  }
+
+  .cruise-kicker {
+    color: #8DD9BF;
+    font-size: 14px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 12px;
+  }
+
+  .cruise-main-card h2 {
+    font-size: 34px;
+    margin-bottom: 10px;
+    color: #fff;
+  }
+
+  .cruise-main-card p {
+    margin: 8px 0;
+  }
+
+  .simple-days {
+    margin-top: 24px;
+  }
+
+  .simple-days-number {
+    display: block;
+    font-size: 54px;
+    line-height: 0.9;
+    font-weight: 950;
+    color: #8DD9BF;
+  }
+
+  .simple-days-label {
+    display: block;
+    font-size: 17px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .live-countdown-title {
+    margin: 0 0 22px;
+    color: #8DD9BF;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .live-countdown-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-bottom: 24px;
+  }
+
+  .countdown-unit {
+    text-align: center;
+    border-right: 1px solid rgba(255,255,255,0.22);
+  }
+
+  .countdown-unit:last-child {
+    border-right: none;
+  }
+
+  .countdown-value {
+    display: block;
+    color: #8DD9BF;
+    font-size: 48px;
+    font-weight: 950;
+    line-height: 1;
+  }
+
+  .countdown-label {
+    display: block;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .planner-logo {
+    max-width: 160px;
+    max-height: 54px;
+    object-fit: contain;
+    display: block;
+    margin: 0 0 18px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 8px 10px;
+  }
+
+  .cruise-hero-right {
+    position: relative;
+    background: linear-gradient(135deg, rgba(0,0,0,0.15), rgba(141,217,191,0.08));
+  }
+
+  .hero-image-area {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.24;
+    z-index: 0;
+  }
+
+  .hero-image-area:after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(17,17,17,0.84), rgba(17,17,17,0.45));
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .next-step-card {
+    border: 1px solid rgba(141,217,191,0.45);
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+  }
+
+  .next-step-label {
+    color: #8DD9BF;
+    font-size: 12px;
+    font-weight: 950;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+
+  .next-step-title {
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 6px;
+  }
+
+  .next-step-copy {
+    color: rgba(255,255,255,0.84);
+    font-size: 14px;
+    line-height: 1.4;
+  }
+
+  .next-step-button {
+    display: inline-block;
+    margin-top: 12px;
+    background: #8DD9BF;
+    color: #000;
+    border-radius: 999px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 900;
+    text-decoration: none;
+  }
+
+  .progress-wrap {
+    margin-top: 16px;
+  }
+
+  .progress-wrap p {
+    margin-bottom: 10px;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 12px;
+    background: rgba(255,255,255,0.22);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    width: 0%;
+    height: 100%;
+    background: #8DD9BF;
+  }
+
+  .cruise-list-item {
+    padding: 20px;
+    border: 1px solid #eee;
+    border-radius: 18px;
+    margin-top: 14px;
+    background: #fafafa;
+    display: grid;
+    grid-template-columns: 1.2fr 1fr 0.7fr auto;
+    gap: 18px;
+    align-items: center;
+  }
+
+  .cruise-list-title {
+    font-size: 18px;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+
+  .cruise-pill {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: #8DD9BF;
+    color: #000;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 900px) {
+    .cruise-main-inner {
+      grid-template-columns: 1fr;
+    }
+
+    .cruise-hero-left {
+      border-right: none;
+      border-bottom: 1px solid rgba(255,255,255,0.22);
+    }
+  }
+
+  @media (max-width: 800px) {
+    .planner-grid,
+    .planner-feature-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .auth-card {
+      min-height: auto;
+    }
+
+    .auth-card .planner-button {
+      margin-top: 8px;
+    }
+
+    .cruise-list-item {
+      grid-template-columns: 1fr;
+      align-items: flex-start;
+    }
+
+    .countdown-value {
+      font-size: 34px;
+    }
+
+    .cruise-main-card h2 {
+      font-size: 28px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    #cruise-planner-app {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+
+    .planner-card,
+    .cruise-hero-left,
+    .cruise-hero-right {
+      padding: 22px;
+    }
+
+    .live-countdown-grid {
+      grid-template-columns: repeat(2, 1fr);
+      row-gap: 18px;
+    }
+
+    .countdown-unit:nth-child(2) {
+      border-right: none;
+    }
+  }
