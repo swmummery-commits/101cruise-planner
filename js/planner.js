@@ -441,7 +441,9 @@ function updateLiveCountdown(cruise) {
   const nextStepTitleEl = document.getElementById("nextStepTitle");
   const nextStepCopyEl = document.getElementById("nextStepCopy");
   const nextStepButtonEl = document.getElementById("nextStepButton");
+  const heroCountdownTextEl = document.getElementById("heroCountdownText");
 
+  if (heroCountdownTextEl) heroCountdownTextEl.innerText = getDashboardCountdownText(cruise);
   if (daysEl) daysEl.innerText = parts.days;
   if (hoursEl) hoursEl.innerText = padNumber(parts.hours);
   if (minutesEl) minutesEl.innerText = padNumber(parts.minutes);
@@ -469,129 +471,74 @@ function startLiveCountdown(cruise) {
   countdownTimer = setInterval(() => updateLiveCountdown(cruise), 1000);
 }
 
-async function renderDashboard() {
-  clearCountdownTimer();
-
-  const { data: cruises, error } = await supabaseClient
-    .from("cruises")
+async function loadDashboardChecklistData(cruise) {
+  const { data: items, error: itemError } = await supabaseClient
+    .from("checklist_items")
     .select("*")
-    .order("departure_date", { ascending: true });
+    .eq("active", true)
+    .order("display_order", { ascending: true });
 
-  const firstName = currentProfile?.first_name || currentUser.email;
-  const mainCruise = cruises && cruises.length ? cruises[0] : null;
-  const countdownParts = mainCruise ? getCountdownParts(mainCruise) : null;
-  const nextStep = mainCruise ? getNextStep(countdownParts.totalDays) : null;
-  const mainLogo = mainCruise ? getCruiseLineLogo(mainCruise.cruise_line) : "";
-  const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
+  let progressRows = [];
+  if (cruise) {
+    const { data: progressData } = await supabaseClient
+      .from("checklist_progress")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .eq("cruise_id", cruise.id);
+    progressRows = progressData || [];
+  }
 
-  app.innerHTML = `
-    <div class="planner-card">
-      <h2>Welcome back, ${firstName}</h2>
-      <p class="planner-muted">Your next adventure awaits.</p>
-      <button class="planner-button black" onclick="signOut()">Sign Out</button>
+  if (itemError) {
+    console.warn("Dashboard checklist load failed", itemError);
+  }
 
-      ${
-        mainCruise
-          ? `
-            <div class="cruise-main-card">
-              <div class="cruise-main-inner">
-                <div class="cruise-hero-left">
-                  ${mainLogo ? `<img class="planner-logo" src="${mainLogo}" alt="${mainCruise.cruise_line} logo">` : ``}
-                  <p class="cruise-kicker">Current Cruise</p>
-                  <h2>${mainCruise.cruise_line}</h2>
-                  <p><strong>${mainCruise.ship_name || "Ship not added"}</strong></p>
-                  <p>Departs ${formatDate(mainCruise.departure_date)} at ${formatTime(mainCruise.departure_time)}</p>
+  const checklistItems = items || [];
+  const completedCount = checklistItems.filter(item => isItemCompleted(progressRows, item.id)).length;
+  const totalCount = checklistItems.length;
+  const essentialItem = checklistItems.find(item =>
+    getPriorityLabel(item.priority) === "Essential" && !isItemCompleted(progressRows, item.id)
+  );
+  const nextItem = essentialItem || checklistItems.find(item => !isItemCompleted(progressRows, item.id));
 
-                  <div class="simple-days">
-                    <span class="simple-days-number" id="simpleDays">${countdownParts.days}</span>
-                    <span class="simple-days-label">${countdownParts.days === 1 ? "day to go" : "days to go"}</span>
-                  </div>
-                </div>
+  return {
+    checklistItems,
+    completedCount,
+    totalCount,
+    percent: getProgressPercent(completedCount, totalCount),
+    nextItem
+  };
+}
 
-                <div class="cruise-hero-right">
-                  ${mainShipImage ? `<div class="hero-image-area" style="background-image:url('${mainShipImage}')"></div>` : `<div class="hero-image-area"></div>`}
-                  <div class="hero-content">
-                    <p class="live-countdown-title">Your next adventure begins in</p>
+function getDashboardCountdownText(cruise) {
+  const parts = getCountdownParts(cruise);
+  if (parts.totalDays === null) return "Add your sail date";
+  if (parts.totalDays <= 0) return "Bon Voyage";
+  if (parts.totalDays === 1) return "1 Day Until You Sail";
+  return `${parts.totalDays} Days Until You Sail`;
+}
 
-                    <div class="live-countdown-grid">
-                      <div class="countdown-unit">
-                        <span class="countdown-value" id="countdownDays">${countdownParts.days}</span>
-                        <span class="countdown-label">Days</span>
-                      </div>
-                      <div class="countdown-unit">
-                        <span class="countdown-value" id="countdownHours">${padNumber(countdownParts.hours)}</span>
-                        <span class="countdown-label">Hours</span>
-                      </div>
-                      <div class="countdown-unit">
-                        <span class="countdown-value" id="countdownMinutes">${padNumber(countdownParts.minutes)}</span>
-                        <span class="countdown-label">Minutes</span>
-                      </div>
-                      <div class="countdown-unit">
-                        <span class="countdown-value" id="countdownSeconds">${padNumber(countdownParts.seconds)}</span>
-                        <span class="countdown-label">Seconds</span>
-                      </div>
-                    </div>
+function getCruiseRouteText(cruise) {
+  if (!cruise) return "";
+  const from = cruise.departure_port || cruise.embarkation_port || cruise.from_port || cruise.departure_city || "";
+  const to = cruise.arrival_port || cruise.disembarkation_port || cruise.destination || cruise.to_port || "";
+  if (from && to) return `${from} → ${to}`;
+  if (from) return from;
+  if (to) return to;
+  return cruise.cruise_line || "";
+}
 
-                    <div class="next-step-card">
-                      <div class="next-step-label">Next Step</div>
-                      <div class="next-step-title"><span id="nextStepIcon">${nextStep.icon}</span> <span id="nextStepTitle">${nextStep.title}</span></div>
-                      <div class="next-step-copy" id="nextStepCopy">${nextStep.copy}</div>
-                      <a class="next-step-button" id="nextStepButton" href="${nextStep.buttonUrl || '#'}" style="${nextStep.buttonText && nextStep.buttonUrl ? '' : 'display:none;'}">${nextStep.buttonText || ''}</a>
-                    </div>
+function renderDashboardModuleCard({ title, subtitle, action, buttonText = "Open", disabled = false }) {
+  return `
+    <button class="dashboard-module-card ${disabled ? "is-disabled" : ""}" onclick="${disabled ? "" : action}">
+      <span class="dashboard-module-title">${escapeHtml(title)}</span>
+      <span class="dashboard-module-subtitle">${escapeHtml(subtitle || "")}</span>
+      <span class="dashboard-module-link">${escapeHtml(buttonText)} →</span>
+    </button>
+  `;
+}
 
-                    <div class="progress-wrap">
-                      <p>Planning progress: 0%</p>
-                      <div class="progress-bar">
-                        <div class="progress-fill"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          `
-          : `<p>You have not added a cruise yet. Add your first cruise below.</p>`
-      }
-    </div>
-
-    <div class="planner-feature-grid">
-      <div class="feature-card" onclick="renderChecklist()" style="cursor:pointer;">
-        <strong>📋 Cruise Preparation</strong>
-        <p>Stay on top of what needs to be done before you sail.</p>
-        <span class="coming-soon">Open Checklist</span>
-      </div>
-
-      <div class="feature-card">
-        <strong>🧳 Packing List</strong>
-        <p>Keep track of what to pack and what to buy.</p>
-        <span class="coming-soon">Coming soon</span>
-      </div>
-
-      <div class="feature-card">
-        <strong>💰 Budget Planner</strong>
-        <p>Plan onboard spending, shore tours and extras.</p>
-        <span class="coming-soon">Coming soon</span>
-      </div>
-
-      <div class="feature-card">
-        <strong>🍹 Drinks Calculator</strong>
-        <p>Compare package value against buying drinks as you go.</p>
-        <span class="coming-soon">Coming soon</span>
-      </div>
-
-      <div class="feature-card">
-        <strong>📄 Documents</strong>
-        <p>Keep important cruise details in one place.</p>
-        <span class="coming-soon">Coming soon</span>
-      </div>
-
-      <div class="feature-card">
-        <strong>📝 Notes</strong>
-        <p>Save your own reminders and planning notes.</p>
-        <span class="coming-soon">Coming soon</span>
-      </div>
-    </div>
-
+function renderDashboardAddCruiseForm() {
+  return `
     <div class="planner-card section-spaced">
       <h2>Add Cruise</h2>
 
@@ -633,8 +580,12 @@ async function renderDashboard() {
       <button class="planner-button" onclick="addCruise()">+ Save Cruise</button>
       <div id="cruise-message" class="planner-message"></div>
     </div>
+  `;
+}
 
-    <div class="planner-card">
+function renderDashboardCruiseList(cruises, error, mainCruise) {
+  return `
+    <div class="planner-card dashboard-cruises-card">
       <h2>Your Cruises</h2>
       ${
         error
@@ -644,17 +595,17 @@ async function renderDashboard() {
                 <div class="cruise-list-item">
                   <div>
                     ${renderLogoMarkup(cruise.cruise_line)}
-                    <div class="cruise-list-title">${cruise.cruise_line}</div>
-                    <div>${cruise.ship_name || "Ship not added"}</div>
+                    <div class="cruise-list-title">${escapeHtml(cruise.cruise_line)}</div>
+                    <div>${escapeHtml(cruise.ship_name || "Ship not added")}</div>
                   </div>
                   <div>
                     <strong>Departs</strong><br>
-                    ${formatDate(cruise.departure_date)}<br>
-                    ${formatTime(cruise.departure_time)}
+                    ${escapeHtml(formatDate(cruise.departure_date))}<br>
+                    ${escapeHtml(formatTime(cruise.departure_time))}
                   </div>
                   <div>
                     <strong>Nights</strong><br>
-                    ${cruise.nights || "Not added"}
+                    ${escapeHtml(cruise.nights || "Not added")}
                   </div>
                   <div>
                     ${cruise.id === mainCruise?.id ? `<span class="cruise-pill">Current Cruise</span>` : ``}
@@ -665,10 +616,83 @@ async function renderDashboard() {
       }
     </div>
   `;
+}
 
-  if (mainCruise) {
-    startLiveCountdown(mainCruise);
-  }
+async function renderDashboard() {
+  clearCountdownTimer();
+
+  const { data: cruises, error } = await supabaseClient
+    .from("cruises")
+    .select("*")
+    .order("departure_date", { ascending: true });
+
+  const firstName = currentProfile?.first_name || currentUser.email;
+  const safeCruises = cruises || [];
+  const mainCruise = safeCruises.length ? safeCruises[0] : null;
+  const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
+  const checklistData = await loadDashboardChecklistData(mainCruise);
+  const nextItem = checklistData.nextItem;
+  const nextStepTitle = nextItem?.title || "Open your preparation checklist";
+  const nextStepType = nextItem ? getPriorityLabel(nextItem.priority) : "Preparation";
+  const routeText = getCruiseRouteText(mainCruise);
+  const nightsText = mainCruise?.nights ? `${mainCruise.nights} Nights` : "";
+  const routeLine = [routeText, nightsText].filter(Boolean).join(" • ");
+
+  app.innerHTML = `
+    <div class="dashboard-page">
+      ${mainCruise ? `
+        <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
+          <div class="dashboard-hero-overlay"></div>
+          <div class="dashboard-hero-content">
+            <p class="dashboard-hero-kicker">MY CRUISE PLANNER</p>
+            <h1>${escapeHtml(mainCruise.ship_name || mainCruise.cruise_line || "Your Cruise")}</h1>
+            <p class="dashboard-hero-countdown" id="heroCountdownText">${escapeHtml(getDashboardCountdownText(mainCruise))}</p>
+            <p class="dashboard-hero-route">${escapeHtml(routeLine || formatDate(mainCruise.departure_date))}</p>
+          </div>
+          <div class="dashboard-hero-curve" aria-hidden="true"></div>
+        </section>
+      ` : `
+        <section class="dashboard-empty-hero">
+          <h1>MY CRUISE PLANNER</h1>
+          <p>Welcome back, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.</p>
+        </section>
+      `}
+
+      <div class="dashboard-top-actions">
+        <button class="planner-button secondary" onclick="signOut()">Sign Out</button>
+      </div>
+
+      <section class="dashboard-summary-grid">
+        <article class="dashboard-summary-card next-task-card">
+          <p class="dashboard-card-label">Next Essential Task</p>
+          <h2>${escapeHtml(nextStepTitle)}</h2>
+          <span class="priority-badge ${getPriorityClass(nextStepType)}">${escapeHtml(nextStepType)}</span>
+          <button class="dashboard-card-action" onclick="renderChecklist()">Continue →</button>
+        </article>
+
+        <article class="dashboard-summary-card cruise-ready-card">
+          <p class="dashboard-card-label">Cruise Ready</p>
+          ${renderProgressCircle(checklistData.percent)}
+          <p class="dashboard-ready-copy"><strong>${checklistData.completedCount}</strong> of <strong>${checklistData.totalCount}</strong> tasks complete</p>
+        </article>
+      </section>
+
+      <section class="dashboard-module-grid">
+        ${renderDashboardModuleCard({
+          title: "Preparation",
+          subtitle: `${checklistData.completedCount} of ${checklistData.totalCount} tasks complete`,
+          action: "renderChecklist()",
+          buttonText: checklistData.completedCount ? "Continue" : "Start"
+        })}
+        ${renderDashboardModuleCard({ title: "Packing", subtitle: "Coming soon", action: "alert('Packing List coming soon')", buttonText: "Start", disabled: true })}
+        ${renderDashboardModuleCard({ title: "Budget", subtitle: "Coming soon", action: "alert('Budget Planner coming soon')", buttonText: "Open", disabled: true })}
+        ${renderDashboardModuleCard({ title: "Documents", subtitle: "Coming soon", action: "alert('Documents coming soon')", buttonText: "View", disabled: true })}
+      </section>
+
+      ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
+      ${renderDashboardCruiseList(safeCruises, error, mainCruise)}
+    </div>
+  `;
 }
 
 

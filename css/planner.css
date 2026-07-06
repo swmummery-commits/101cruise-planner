@@ -891,3 +891,288 @@
     display: block;
   }
 }
+
+/* =========================================================
+   v0.5 Dashboard redesign
+   ========================================================= */
+#cruise-planner-app {
+  max-width: 1180px;
+}
+
+.dashboard-page {
+  width: 100%;
+}
+
+.dashboard-top-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 14px 0 24px;
+}
+
+.dashboard-hero {
+  position: relative;
+  min-height: 440px;
+  border-radius: 28px 28px 0 0;
+  overflow: hidden;
+  background: linear-gradient(135deg, #111, #26332f);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 18px 42px rgba(0,0,0,0.16);
+  margin-bottom: 34px;
+}
+
+.dashboard-hero.has-image {
+  background-size: cover;
+  background-position: center center;
+}
+
+.dashboard-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.08) 45%, rgba(0,0,0,0.62) 100%);
+  z-index: 1;
+}
+
+.dashboard-hero-content {
+  position: absolute;
+  left: 50%;
+  bottom: 56px;
+  transform: translateX(-50%);
+  z-index: 2;
+  width: min(760px, calc(100% - 48px));
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.35);
+}
+
+.dashboard-hero-kicker {
+  margin: 0 0 10px;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.dashboard-hero h1 {
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: 34px;
+  line-height: 1.1;
+  font-weight: 850;
+}
+
+.dashboard-hero-countdown {
+  margin: 0 0 8px;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1.2;
+  font-weight: 850;
+}
+
+.dashboard-hero-route {
+  margin: 0;
+  color: rgba(255,255,255,0.9);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.dashboard-hero-curve {
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: -70px;
+  height: 130px;
+  background: #fff;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+  z-index: 3;
+}
+
+.dashboard-empty-hero {
+  background: #111;
+  color: #fff;
+  border-radius: 28px;
+  padding: 60px 34px;
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.dashboard-empty-hero h1 {
+  color: #fff;
+  margin: 0 0 12px;
+  font-size: 44px;
+  line-height: 1;
+}
+
+.dashboard-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr);
+  gap: 22px;
+  margin-bottom: 22px;
+}
+
+.dashboard-summary-card,
+.dashboard-module-card {
+  background: #fff;
+  border: 1px solid #eeeeee;
+  border-radius: 22px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.06);
+}
+
+.dashboard-summary-card {
+  padding: 28px;
+}
+
+.dashboard-card-label {
+  margin: 0 0 14px;
+  color: #666;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.next-task-card h2 {
+  margin: 0 0 16px;
+  color: #111;
+  font-size: 26px;
+  line-height: 1.18;
+}
+
+.dashboard-card-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 18px;
+  border: 0;
+  border-radius: 999px;
+  background: #ff0019;
+  color: #fff;
+  padding: 12px 18px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.cruise-ready-card {
+  text-align: center;
+}
+
+.dashboard-ready-copy {
+  margin: 8px 0 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.dashboard-module-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 30px;
+}
+
+.dashboard-module-card {
+  appearance: none;
+  border: 1px solid #eeeeee;
+  text-align: left;
+  padding: 24px;
+  min-height: 150px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.dashboard-module-card:hover:not(.is-disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.08);
+  border-color: #ffccd1;
+}
+
+.dashboard-module-card.is-disabled {
+  opacity: 0.64;
+  cursor: default;
+}
+
+.dashboard-module-title {
+  display: block;
+  margin-bottom: 8px;
+  color: #111;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.dashboard-module-subtitle {
+  display: block;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.dashboard-module-link {
+  display: block;
+  margin-top: auto;
+  color: #ff0019;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.dashboard-cruises-card {
+  margin-top: 18px;
+}
+
+@media (max-width: 900px) {
+  .dashboard-hero {
+    min-height: 340px;
+    border-radius: 22px 22px 0 0;
+  }
+
+  .dashboard-hero-kicker {
+    font-size: 34px;
+  }
+
+  .dashboard-hero h1 {
+    font-size: 26px;
+  }
+
+  .dashboard-hero-countdown {
+    font-size: 20px;
+  }
+
+  .dashboard-summary-grid,
+  .dashboard-module-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .dashboard-top-actions {
+    justify-content: flex-start;
+  }
+
+  .dashboard-hero {
+    min-height: 300px;
+  }
+
+  .dashboard-hero-content {
+    bottom: 44px;
+    width: calc(100% - 34px);
+  }
+
+  .dashboard-hero-kicker {
+    font-size: 28px;
+  }
+
+  .dashboard-hero h1 {
+    font-size: 22px;
+  }
+
+  .dashboard-summary-grid,
+  .dashboard-module-grid {
+    grid-template-columns: 1fr;
+  }
+}
