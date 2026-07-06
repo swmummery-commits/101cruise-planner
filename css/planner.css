@@ -1637,3 +1637,104 @@
     white-space: normal;
   }
 }
+
+/* =========================================================
+   v0.5.4 Dashboard polish
+   ========================================================= */
+
+/* Hero should break out full width while app content remains centred. */
+.dashboard-page {
+  width: 100%;
+  overflow-x: clip;
+}
+
+.dashboard-hero {
+  width: 100vw !important;
+  max-width: none !important;
+  margin-left: calc(50% - 50vw) !important;
+  margin-right: calc(50% - 50vw) !important;
+  border-radius: 0 !important;
+  min-height: 545px;
+  background-position: center center;
+}
+
+.dashboard-hero-overlay {
+  background:
+    linear-gradient(90deg, rgba(0,0,0,0.56) 0%, rgba(0,0,0,0.35) 31%, rgba(0,0,0,0.08) 60%, rgba(0,0,0,0.18) 100%),
+    linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0.16) 100%) !important;
+}
+
+.dashboard-signout {
+  padding: 9px 14px !important;
+  font-size: 12px !important;
+  border-radius: 999px !important;
+  top: 24px !important;
+}
+
+.dashboard-hero-kicker {
+  font-size: clamp(42px, 4.2vw, 66px) !important;
+  line-height: 1.04 !important;
+  font-weight: 400 !important;
+  white-space: nowrap !important;
+}
+
+.dashboard-hero h1 {
+  font-weight: 600 !important;
+}
+
+.dashboard-hero-date,
+.dashboard-hero-route {
+  font-weight: 400 !important;
+}
+
+.dashboard-countdown-logo {
+  margin-top: 18px !important;
+}
+
+.dashboard-countdown-logo img {
+  max-height: 42px !important;
+  max-width: 150px !important;
+  border-radius: 8px !important;
+  background: rgba(255,255,255,0.96) !important;
+  padding: 6px 8px !important;
+}
+
+.dashboard-countdown-logo span {
+  font-weight: 600 !important;
+}
+
+.dashboard-content-wrap {
+  width: min(1180px, calc(100% - 48px)) !important;
+  max-width: 1180px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.dashboard-welcome-strip {
+  grid-template-columns: auto 1fr !important;
+}
+
+.dashboard-welcome-spacer {
+  display: none;
+}
+
+.dashboard-module-title {
+  font-size: 17px !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+}
+
+.dashboard-module-subtitle {
+  font-size: 13px !important;
+}
+
+.dashboard-module-link {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+}
+
+@media (max-width: 760px) {
+  .dashboard-hero-kicker {
+    white-space: normal !important;
+  }
+}

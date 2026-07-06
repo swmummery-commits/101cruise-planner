@@ -209,6 +209,29 @@ function getCruiseLineLogo(cruiseLine) {
   return CRUISE_LINE_LOGOS[cruiseLine] || "";
 }
 
+async function loadCruiseLineLogo(cruiseLine) {
+  const fallbackLogo = getCruiseLineLogo(cruiseLine);
+  if (!cruiseLine) return fallbackLogo;
+
+  const safeCruiseLine = String(cruiseLine).trim();
+  if (!safeCruiseLine) return fallbackLogo;
+
+  const { data, error } = await supabaseClient
+    .from("cruise_lines")
+    .select("name, logo_url")
+    .ilike("name", safeCruiseLine)
+    .eq("active", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Cruise line logo lookup failed", error);
+    return fallbackLogo;
+  }
+
+  return data?.logo_url || fallbackLogo;
+}
+
 function getShipImage(shipName) {
   return SHIP_IMAGES[shipName] || "";
 }
@@ -249,6 +272,18 @@ function formatDate(dateString) {
 
   return date.toLocaleDateString("en-AU", {
     weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
+}
+
+function formatDateShort(dateString) {
+  if (!dateString) return "Date not added";
+
+  const date = new Date(dateString + "T00:00:00");
+
+  return date.toLocaleDateString("en-AU", {
     day: "numeric",
     month: "long",
     year: "numeric"
@@ -679,7 +714,7 @@ async function renderDashboard() {
   const nightsText = mainCruise?.nights ? `${mainCruise.nights} Nights` : "";
   const routeLine = [routeText, nightsText].filter(Boolean).join(" • ");
   const countdownParts = getCountdownParts(mainCruise);
-  const mainLogo = mainCruise ? getCruiseLineLogo(mainCruise.cruise_line) : "";
+  const mainLogo = mainCruise ? await loadCruiseLineLogo(mainCruise.cruise_line) : "";
   const daysUntilText = countdownParts.totalDays === null
     ? "Your next adventure awaits."
     : `${countdownParts.days} ${countdownParts.days === 1 ? "day" : "days"} until you sail`;
@@ -694,7 +729,7 @@ async function renderDashboard() {
           <div class="dashboard-hero-content">
             <p class="dashboard-hero-kicker">My Cruise Planner</p>
             <h1>${escapeHtml(mainCruise.ship_name || mainCruise.cruise_line || "Your Cruise")}</h1>
-            <p class="dashboard-hero-date">Departs ${escapeHtml(formatDate(mainCruise.departure_date))}</p>
+            <p class="dashboard-hero-date">Departs ${escapeHtml(formatDateShort(mainCruise.departure_date))}</p>
             <p class="dashboard-hero-route">${escapeHtml(routeLine || mainCruise.cruise_line || "Your upcoming cruise")}</p>
           </div>
 
@@ -739,7 +774,7 @@ async function renderDashboard() {
             <h2>Welcome back, ${escapeHtml(firstName)}!</h2>
             <p>You're <strong>${checklistData.percent}% cruise ready</strong>. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.</p>
           </div>
-          <div class="dashboard-welcome-days">${escapeHtml(daysUntilText)}</div>
+          <span class="dashboard-welcome-spacer" aria-hidden="true"></span>
         </section>
 
         <section class="dashboard-summary-grid">
@@ -761,14 +796,14 @@ async function renderDashboard() {
 
         <section class="dashboard-module-grid">
           ${renderDashboardModuleCard({
-            title: "Preparation",
+            title: "Preparation Checklist",
             subtitle: `${checklistData.completedCount} of ${checklistData.totalCount} tasks complete`,
             action: "renderChecklist()",
             buttonText: checklistData.completedCount ? "Continue" : "Start"
           })}
-          ${renderDashboardModuleCard({ title: "Packing", subtitle: "Coming soon", action: "alert('Packing List coming soon')", buttonText: "Start", disabled: true })}
-          ${renderDashboardModuleCard({ title: "Budget", subtitle: "Coming soon", action: "alert('Budget Planner coming soon')", buttonText: "Open", disabled: true })}
-          ${renderDashboardModuleCard({ title: "Documents", subtitle: "Coming soon", action: "alert('Documents coming soon')", buttonText: "View", disabled: true })}
+          ${renderDashboardModuleCard({ title: "Packing Checklist", subtitle: "Coming soon", action: "alert('Packing List coming soon')", buttonText: "Start", disabled: true })}
+          ${renderDashboardModuleCard({ title: "Budget Planner", subtitle: "Coming soon", action: "alert('Budget Planner coming soon')", buttonText: "Open", disabled: true })}
+          ${renderDashboardModuleCard({ title: "Documents Checklist", subtitle: "Coming soon", action: "alert('Documents coming soon')", buttonText: "View", disabled: true })}
         </section>
 
         ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
