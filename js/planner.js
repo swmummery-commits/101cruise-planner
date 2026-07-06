@@ -213,6 +213,29 @@ function getShipImage(shipName) {
   return SHIP_IMAGES[shipName] || "";
 }
 
+async function loadShipHeroImage(shipName) {
+  const fallbackImage = getShipImage(shipName);
+  if (!shipName) return fallbackImage;
+
+  const safeShipName = String(shipName).trim();
+  if (!safeShipName) return fallbackImage;
+
+  const { data, error } = await supabaseClient
+    .from("ships")
+    .select("name, hero_image_url")
+    .ilike("name", safeShipName)
+    .eq("active", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Ship hero image lookup failed", error);
+    return fallbackImage;
+  }
+
+  return data?.hero_image_url || fallbackImage;
+}
+
 function renderLogoMarkup(cruiseLine) {
   const logo = getCruiseLineLogo(cruiseLine);
   if (!logo) return "";
@@ -459,7 +482,7 @@ async function renderDashboard() {
   const countdownParts = mainCruise ? getCountdownParts(mainCruise) : null;
   const nextStep = mainCruise ? getNextStep(countdownParts.totalDays) : null;
   const mainLogo = mainCruise ? getCruiseLineLogo(mainCruise.cruise_line) : "";
-  const mainShipImage = mainCruise ? getShipImage(mainCruise.ship_name) : "";
+  const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
 
   app.innerHTML = `
     <div class="planner-card">

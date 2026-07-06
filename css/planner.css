@@ -582,8 +582,8 @@
 
 .checklist-table-header {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 150px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 105px 230px;
+  gap: 14px;
   padding: 10px 22px;
   background: #fafafa;
   border-top: 1px solid #eee;
@@ -597,8 +597,8 @@
 
 .checklist-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 120px 150px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) 105px 230px;
+  gap: 14px;
   align-items: center;
   padding: 13px 22px;
   border-bottom: 1px solid #f0f0f0;
@@ -696,6 +696,7 @@
   align-items: center;
   gap: 8px;
   min-height: 32px;
+  min-width: 0;
 }
 
 .checklist-action-button {
@@ -708,8 +709,12 @@
   padding: 8px 12px;
   font-size: 12px;
   font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
   text-decoration: none;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .checklist-action-button.secondary {
