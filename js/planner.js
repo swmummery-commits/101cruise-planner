@@ -532,11 +532,11 @@ async function renderDashboard() {
     </div>
 
     <div class="planner-feature-grid">
-      <div class="feature-card">
-        <strong>📋 Cruise Checklist</strong>
-        <p>Stay on top of what needs to be done before you sail.</p>
-        <span class="coming-soon">Coming soon</span>
-      </div>
+      <div class="feature-card" onclick="renderChecklist()" style="cursor:pointer;">
+  <strong>📋 Cruise Checklist</strong>
+  <p>Stay on top of what needs to be done before you sail.</p>
+  <span class="coming-soon">Open Checklist</span>
+</div>
 
       <div class="feature-card">
         <strong>🧳 Packing List</strong>
