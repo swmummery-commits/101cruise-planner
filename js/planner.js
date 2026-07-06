@@ -216,13 +216,32 @@ async function loadCruiseLineLogo(cruiseLine) {
   const safeCruiseLine = String(cruiseLine).trim();
   if (!safeCruiseLine) return fallbackLogo;
 
-  const { data, error } = await supabaseClient
+  // First try a normal case-insensitive exact match.
+  let { data, error } = await supabaseClient
     .from("cruise_lines")
     .select("name, logo_url")
     .ilike("name", safeCruiseLine)
     .eq("active", true)
     .limit(1)
     .maybeSingle();
+
+  // If the stored cruise value is shortened, for example "Explora" instead of
+  // "Explora Journeys", try a partial match as a fallback.
+  if (!error && !data?.logo_url) {
+    const partial = safeCruiseLine.replace(/[%_]/g, "").trim();
+    if (partial.length >= 3) {
+      const partialResult = await supabaseClient
+        .from("cruise_lines")
+        .select("name, logo_url")
+        .ilike("name", `%${partial}%`)
+        .eq("active", true)
+        .limit(1)
+        .maybeSingle();
+
+      data = partialResult.data || data;
+      error = partialResult.error || error;
+    }
+  }
 
   if (error) {
     console.warn("Cruise line logo lookup failed", error);
