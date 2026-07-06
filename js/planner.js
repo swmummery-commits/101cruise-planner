@@ -725,8 +725,133 @@ function renderDashboardSnapshot(cruise) {
         <div class="dashboard-snapshot-row"><span>Insurance</span>${renderStatusValue(insurance)}</div>
         <div class="dashboard-snapshot-row"><span>Flights</span>${renderStatusValue(flights)}</div>
       </div>
-      <button class="dashboard-outline-action" onclick="alert('Booking details will connect to Base44 in a future release')">Open Booking →</button>
+      <button class="dashboard-outline-action" onclick="renderBookingDetails()">Open Booking →</button>
     </article>
+  `;
+}
+
+
+function renderBookingDetailRow(label, value, options = {}) {
+  const safeValue = value === null || value === undefined || String(value).trim() === "" ? "Not added" : String(value).trim();
+  const missing = safeValue.toLowerCase() === "not added" || safeValue.toLowerCase() === "pending" || safeValue.toLowerCase() === "required";
+  return `
+    <div class="booking-detail-row ${options.full ? "booking-detail-row-full" : ""}">
+      <span>${escapeHtml(label)}</span>
+      <strong class="${missing ? "is-alert" : ""}">${escapeHtml(safeValue)}</strong>
+    </div>
+  `;
+}
+
+function renderBookingDetailCard(title, rows, intro = "") {
+  return `
+    <section class="booking-detail-card">
+      <div class="booking-detail-card-header">
+        <p class="dashboard-card-label">${escapeHtml(title)}</p>
+        ${intro ? `<p>${escapeHtml(intro)}</p>` : ""}
+      </div>
+      <div class="booking-detail-list">
+        ${rows.join("")}
+      </div>
+    </section>
+  `;
+}
+
+async function renderBookingDetails() {
+  clearCountdownTimer();
+
+  const cruise = await loadCurrentCruise();
+  const firstName = getUserDisplayName();
+
+  if (!cruise) {
+    app.innerHTML = `
+      <div class="booking-page">
+        ${renderPlannerNav("booking")}
+        <section class="booking-detail-hero booking-detail-empty">
+          <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
+          <h1>Booking Details</h1>
+          <p>Add a cruise first, then your booking details will appear here.</p>
+        </section>
+      </div>
+    `;
+    return;
+  }
+
+  const embarkation = getDashboardValue(cruise, ["embarkation_port", "departure_port", "from_port", "departure_city"], "Not added");
+  const disembarkation = getDashboardValue(cruise, ["disembarkation_port", "arrival_port", "to_port", "destination"], "Not added");
+  const cabin = getDashboardValue(cruise, ["cabin_number", "cabin", "stateroom", "suite"], "Not added");
+  const cabinType = getDashboardValue(cruise, ["cabin_type", "stateroom_type", "suite_type"], "Not added");
+  const deck = getDashboardValue(cruise, ["deck", "deck_number"], "Not added");
+  const dining = getDashboardValue(cruise, ["dining_time", "dining", "dining_preference"], "Not added");
+  const travellers = getTravellerSummary(cruise);
+  const bookingReference = getDashboardValue(cruise, ["booking_reference", "booking_ref", "reservation_number", "confirmation_number"], "Not added");
+  const returnDate = getDashboardValue(cruise, ["return_date", "disembarkation_date", "arrival_date"], "Not added");
+  const flights = getDashboardValue(cruise, ["flight_status", "flights", "flights_booked", "air_status"], "Not added");
+  const hotel = getDashboardValue(cruise, ["hotel_status", "hotel", "pre_cruise_hotel", "post_cruise_hotel"], "Not added");
+  const transfers = getDashboardValue(cruise, ["transfer_status", "transfers", "airport_transfers"], "Not added");
+  const insurance = getDashboardValue(cruise, ["insurance_status", "travel_insurance", "insurance", "insurance_purchased"], "Not added");
+  const notes = getDashboardValue(cruise, ["booking_notes", "notes", "special_requests"], "Not added");
+
+  const cruiseRows = [
+    renderBookingDetailRow("Cruise line", cruise.cruise_line),
+    renderBookingDetailRow("Ship", cruise.ship_name),
+    renderBookingDetailRow("Booking reference", bookingReference),
+    renderBookingDetailRow("Sailing date", formatDateShort(cruise.departure_date)),
+    renderBookingDetailRow("Return date", returnDate === "Not added" ? "Not added" : formatDateShort(returnDate)),
+    renderBookingDetailRow("Nights", cruise.nights ? `${cruise.nights} Nights` : "Not added"),
+    renderBookingDetailRow("Embarkation", embarkation),
+    renderBookingDetailRow("Disembarkation", disembarkation)
+  ];
+
+  const travellerRows = [
+    renderBookingDetailRow("Travellers", travellers),
+    renderBookingDetailRow("Adults", getDashboardValue(cruise, ["adults", "adult_count"], "Not added")),
+    renderBookingDetailRow("Children", getDashboardValue(cruise, ["children", "child_count", "kids"], "Not added"))
+  ];
+
+  const cabinRows = [
+    renderBookingDetailRow("Cabin", cabin),
+    renderBookingDetailRow("Cabin type", cabinType),
+    renderBookingDetailRow("Deck", deck),
+    renderBookingDetailRow("Dining", dining)
+  ];
+
+  const extrasRows = [
+    renderBookingDetailRow("Flights", flights),
+    renderBookingDetailRow("Hotel", hotel),
+    renderBookingDetailRow("Transfers", transfers),
+    renderBookingDetailRow("Insurance", insurance)
+  ];
+
+  const documentRows = [
+    renderBookingDetailRow("Cruise confirmation", getDashboardValue(cruise, ["cruise_confirmation", "confirmation_document"], "Not added")),
+    renderBookingDetailRow("Invoice", getDashboardValue(cruise, ["invoice", "invoice_document"], "Not added")),
+    renderBookingDetailRow("Insurance certificate", getDashboardValue(cruise, ["insurance_certificate"], "Not added")),
+    renderBookingDetailRow("Flight itinerary", getDashboardValue(cruise, ["flight_itinerary"], "Not added")),
+    renderBookingDetailRow("Boarding documents", getDashboardValue(cruise, ["boarding_documents", "boarding_pass"], "Not added"))
+  ];
+
+  app.innerHTML = `
+    <div class="booking-page">
+      ${renderPlannerNav("booking")}
+
+      <section class="booking-detail-hero">
+        <div>
+          <p class="dashboard-card-label">Booking Details</p>
+          <h1>${escapeHtml(cruise.ship_name || cruise.cruise_line || "Your Cruise")}</h1>
+          <p>Hi ${escapeHtml(firstName)}, this is your read-only cruise booking summary. Later, this will be populated automatically from Base44.</p>
+        </div>
+        <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
+      </section>
+
+      <section class="booking-detail-grid">
+        ${renderBookingDetailCard("Cruise", cruiseRows)}
+        ${renderBookingDetailCard("Travellers", travellerRows)}
+        ${renderBookingDetailCard("Cabin & Dining", cabinRows)}
+        ${renderBookingDetailCard("Travel Extras", extrasRows)}
+        ${renderBookingDetailCard("Documents", documentRows, "Document links will connect here once the document vault is built.")}
+        ${renderBookingDetailCard("Notes", [renderBookingDetailRow("Booking notes", notes, { full: true })], "Internal notes and special requests can appear here later if you choose to show them.")}
+      </section>
+    </div>
   `;
 }
 
@@ -891,6 +1016,7 @@ function renderProgressCircle(percent) {
 function renderPlannerNav(active = "preparation") {
   const items = [
     { key: "dashboard", label: "Dashboard", action: "renderDashboard()" },
+    { key: "booking", label: "Booking", action: "renderBookingDetails()" },
     { key: "preparation", label: "Preparation", action: "renderChecklist()" },
     { key: "packing", label: "Packing", action: "alert('Packing List coming soon')" },
     { key: "budget", label: "Budget", action: "alert('Budget Planner coming soon')" },
