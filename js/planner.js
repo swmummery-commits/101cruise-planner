@@ -533,10 +533,10 @@ async function renderDashboard() {
 
     <div class="planner-feature-grid">
       <div class="feature-card" onclick="renderChecklist()" style="cursor:pointer;">
-  <strong>📋 Cruise Checklist</strong>
-  <p>Stay on top of what needs to be done before you sail.</p>
-  <span class="coming-soon">Open Checklist</span>
-</div>
+        <strong>📋 Cruise Preparation</strong>
+        <p>Stay on top of what needs to be done before you sail.</p>
+        <span class="coming-soon">Open Checklist</span>
+      </div>
 
       <div class="feature-card">
         <strong>🧳 Packing List</strong>
@@ -648,6 +648,292 @@ async function renderDashboard() {
   }
 }
 
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function getPriorityClass(priority) {
+  const normalized = String(priority || "Tip").toLowerCase();
+  if (normalized === "essential") return "priority-essential";
+  if (normalized === "optional") return "priority-optional";
+  return "priority-tip";
+}
+
+function getPriorityLabel(priority) {
+  const normalized = String(priority || "Tip").toLowerCase();
+  if (normalized === "essential") return "Essential";
+  if (normalized === "optional") return "Optional";
+  return "Tip";
+}
+
+function getCurrentCruiseFromList(cruises) {
+  return cruises && cruises.length ? cruises[0] : null;
+}
+
+async function loadCurrentCruise() {
+  const { data } = await supabaseClient
+    .from("cruises")
+    .select("*")
+    .order("departure_date", { ascending: true });
+
+  return getCurrentCruiseFromList(data || []);
+}
+
+function getProgressPercent(completed, total) {
+  if (!total) return 0;
+  return Math.round((completed / total) * 100);
+}
+
+function renderProgressCircle(percent) {
+  const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+  return `
+    <div class="cruise-ready-circle" style="--progress:${safePercent};">
+      <div class="cruise-ready-circle-inner">
+        <strong>${safePercent}%</strong>
+        <span>Cruise Ready</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderPlannerNav(active = "preparation") {
+  const items = [
+    { key: "dashboard", label: "Dashboard", action: "renderDashboard()" },
+    { key: "preparation", label: "Preparation", action: "renderChecklist()" },
+    { key: "packing", label: "Packing", action: "alert('Packing List coming soon')" },
+    { key: "budget", label: "Budget", action: "alert('Budget Planner coming soon')" },
+    { key: "documents", label: "Documents", action: "alert('Documents coming soon')" }
+  ];
+
+  return `
+    <div class="planner-module-nav">
+      ${items.map(item => `
+        <button class="planner-module-nav-button ${active === item.key ? "active" : ""}" onclick="${item.action}">${item.label}</button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderCruiseSnapshot(cruise, completed, total) {
+  const percent = getProgressPercent(completed, total);
+  return `
+    <aside class="checklist-sidebar">
+      <div class="snapshot-card">
+        <h3>Cruise Snapshot</h3>
+        <div class="snapshot-row"><span>🚢 Ship</span><strong>${escapeHtml(cruise?.ship_name || "Not added")}</strong></div>
+        <div class="snapshot-row"><span>⚓ Line</span><strong>${escapeHtml(cruise?.cruise_line || "Not added")}</strong></div>
+        <div class="snapshot-row"><span>📅 Departure</span><strong>${escapeHtml(formatDate(cruise?.departure_date))}</strong></div>
+        <div class="snapshot-row"><span>🌙 Nights</span><strong>${escapeHtml(cruise?.nights || "Not added")}</strong></div>
+      </div>
+
+      <div class="snapshot-card progress-snapshot-card">
+        ${renderProgressCircle(percent)}
+        <p><strong>${completed}</strong> of <strong>${total}</strong> tasks complete</p>
+      </div>
+    </aside>
+  `;
+}
+
+function groupItemsBySection(items) {
+  const grouped = {};
+  (items || []).forEach(item => {
+    if (!grouped[item.section_id]) grouped[item.section_id] = [];
+    grouped[item.section_id].push(item);
+  });
+  return grouped;
+}
+
+function isItemCompleted(progressRows, itemId) {
+  return (progressRows || []).some(row => row.checklist_item_id === itemId && row.completed === true);
+}
+
+function renderChecklistRow(item, completed) {
+  const description = item.description || item.why_it_matters || "";
+  const priorityLabel = getPriorityLabel(item.priority);
+  const priorityClass = getPriorityClass(item.priority);
+
+  return `
+    <div class="checklist-row ${completed ? "is-complete" : ""}" data-checklist-row="${item.id}">
+      <div class="checklist-main-cell">
+        <input class="checklist-checkbox" type="checkbox" ${completed ? "checked" : ""} onchange="toggleChecklistItem(${item.id}, this.checked)">
+        <button class="checklist-row-toggle" onclick="toggleChecklistDetails(${item.id})" aria-label="Toggle details">
+          <span class="checklist-title">${escapeHtml(item.title)}</span>
+          ${description ? `<span class="checklist-description">${escapeHtml(description)}</span>` : ""}
+        </button>
+      </div>
+
+      <div class="checklist-type-cell">
+        <span class="priority-badge ${priorityClass}">${priorityLabel}</span>
+      </div>
+
+      <div class="checklist-action-cell">
+        ${item.button1_text && item.button1_url ? `<a class="checklist-action-button" href="${escapeHtml(item.button1_url)}" target="_blank" rel="noopener">${escapeHtml(item.button1_text)}</a>` : ""}
+        ${item.button2_text && item.button2_url ? `<a class="checklist-action-button secondary" href="${escapeHtml(item.button2_url)}" target="_blank" rel="noopener">${escapeHtml(item.button2_text)}</a>` : ""}
+      </div>
+
+      <div class="checklist-details" id="checklist-details-${item.id}">
+        ${item.why_it_matters ? `<p><strong>Why it matters:</strong> ${escapeHtml(item.why_it_matters)}</p>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function toggleChecklistDetails(itemId) {
+  const details = document.getElementById(`checklist-details-${itemId}`);
+  if (details) details.classList.toggle("open");
+}
+
+async function toggleChecklistItem(itemId, completed) {
+  const cruise = await loadCurrentCruise();
+
+  if (!cruise) {
+    alert("Please add a cruise before saving checklist progress.");
+    renderChecklist();
+    return;
+  }
+
+  const payload = {
+    user_id: currentUser.id,
+    cruise_id: cruise.id,
+    checklist_item_id: itemId,
+    completed,
+    completed_at: completed ? new Date().toISOString() : null
+  };
+
+  const { error } = await supabaseClient
+    .from("checklist_progress")
+    .upsert(payload, { onConflict: "user_id,cruise_id,checklist_item_id" });
+
+  if (error) {
+    console.error("Checklist progress save error", error);
+    alert("Could not save checklist progress. Please try again.");
+    return;
+  }
+
+  renderChecklist();
+}
+
+function toggleHideCompleted() {
+  const page = document.getElementById("checklist-page");
+  if (!page) return;
+  page.classList.toggle("hide-completed");
+
+  const button = document.getElementById("hideCompletedButton");
+  if (button) {
+    button.innerText = page.classList.contains("hide-completed") ? "Show Checked" : "Hide Checked";
+  }
+}
+
+function printChecklist() {
+  window.print();
+}
+
+function saveChecklistPdf() {
+  window.print();
+}
+
+async function renderChecklist() {
+  clearCountdownTimer();
+
+  const cruise = await loadCurrentCruise();
+
+  const { data: sections, error: sectionError } = await supabaseClient
+    .from("checklist_sections")
+    .select("*")
+    .eq("active", true)
+    .order("display_order", { ascending: true });
+
+  const { data: items, error: itemError } = await supabaseClient
+    .from("checklist_items")
+    .select("*")
+    .eq("active", true)
+    .order("display_order", { ascending: true });
+
+  let progressRows = [];
+  if (cruise) {
+    const { data: progressData } = await supabaseClient
+      .from("checklist_progress")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .eq("cruise_id", cruise.id);
+    progressRows = progressData || [];
+  }
+
+  if (sectionError || itemError) {
+    app.innerHTML = `
+      <div class="planner-card">
+        <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
+        <h2>Preparation</h2>
+        <p>Could not load the checklist. Please try again.</p>
+      </div>
+    `;
+    return;
+  }
+
+  const allItems = items || [];
+  const completedCount = allItems.filter(item => isItemCompleted(progressRows, item.id)).length;
+  const totalCount = allItems.length;
+  const percent = getProgressPercent(completedCount, totalCount);
+  const groupedItems = groupItemsBySection(allItems);
+
+  app.innerHTML = `
+    <div id="checklist-page" class="checklist-page">
+      ${renderPlannerNav("preparation")}
+
+      <div class="checklist-toolbar planner-card slim-card">
+        <div>
+          <h2>Preparation</h2>
+          <p class="planner-muted">${completedCount} of ${totalCount} tasks complete</p>
+          <div class="checklist-top-progress"><span style="width:${percent}%"></span></div>
+        </div>
+        <div class="checklist-toolbar-actions">
+          <button class="planner-button secondary" id="hideCompletedButton" onclick="toggleHideCompleted()">Hide Checked</button>
+          <button class="planner-button secondary" onclick="printChecklist()">Print</button>
+          <button class="planner-button" onclick="saveChecklistPdf()">Save PDF</button>
+        </div>
+      </div>
+
+      <div class="checklist-layout">
+        <main class="checklist-content">
+          ${(sections || []).map(section => {
+            const sectionItems = groupedItems[section.id] || [];
+            const sectionCompleted = sectionItems.filter(item => isItemCompleted(progressRows, item.id)).length;
+            const sectionPercent = getProgressPercent(sectionCompleted, sectionItems.length);
+
+            return `
+              <section class="checklist-section-block">
+                <div class="checklist-section-header">
+                  <div>
+                    <h3>${escapeHtml(section.name)}</h3>
+                    ${section.description ? `<p>${escapeHtml(section.description)}</p>` : ""}
+                  </div>
+                  <div class="section-progress-pill">${sectionCompleted}/${sectionItems.length} Complete</div>
+                </div>
+                <div class="section-progress-bar"><span style="width:${sectionPercent}%"></span></div>
+                <div class="checklist-table-header">
+                  <span>Task</span>
+                  <span>Type</span>
+                  <span>Action</span>
+                </div>
+                ${sectionItems.length ? sectionItems.map(item => renderChecklistRow(item, isItemCompleted(progressRows, item.id))).join("") : `<p class="planner-muted empty-checklist-message">No checklist items added yet.</p>`}
+              </section>
+            `;
+          }).join("")}
+        </main>
+
+        ${renderCruiseSnapshot(cruise, completedCount, totalCount)}
+      </div>
+    </div>
+  `;
+}
+
 async function addCruise() {
   const cruiseLine = document.getElementById("cruiseLine").value;
   const shipName = document.getElementById("shipName").value;
@@ -691,80 +977,3 @@ async function initPlanner() {
 }
 
 initPlanner();
-async function renderChecklist() {
-  clearCountdownTimer();
-
-  const { data: sections, error: sectionError } = await supabaseClient
-    .from("checklist_sections")
-    .select("*")
-    .eq("active", true)
-    .order("display_order", { ascending: true });
-
-  const { data: items, error: itemError } = await supabaseClient
-    .from("checklist_items")
-    .select("*")
-    .eq("active", true)
-    .order("display_order", { ascending: true });
-
-  if (sectionError || itemError) {
-    app.innerHTML = `
-      <div class="planner-card">
-        <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
-        <h2>Cruise Preparation Checklist</h2>
-        <p>Could not load the checklist. Please try again.</p>
-      </div>
-    `;
-    return;
-  }
-
-  app.innerHTML = `
-    <div class="planner-card">
-      <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
-      <h2>Cruise Preparation Checklist</h2>
-      <p class="planner-muted">Stay organised from booking through to embarkation day.</p>
-    </div>
-
-    ${
-      sections && sections.length
-        ? sections.map(section => {
-            const sectionItems = (items || []).filter(item => item.section_id === section.id);
-
-            return `
-              <div class="planner-card">
-                <h2>${section.name}</h2>
-                <p class="planner-muted">${section.description || ""}</p>
-
-                ${
-                  sectionItems.length
-                    ? sectionItems.map(item => `
-                        <div class="checklist-item">
-                          <div class="checklist-priority">${item.priority || "Tip"}</div>
-                          <h3>${item.title}</h3>
-                          <p>${item.description || item.why_it_matters || ""}</p>
-
-                          ${
-                            item.button1_text && item.button1_url
-                              ? `<a class="planner-button" href="${item.button1_url}" target="_blank">${item.button1_text}</a>`
-                              : ""
-                          }
-
-                          ${
-                            item.button2_text && item.button2_url
-                              ? `<a class="planner-button secondary" href="${item.button2_url}" target="_blank">${item.button2_text}</a>`
-                              : ""
-                          }
-                        </div>
-                      `).join("")
-                    : `<p class="planner-muted">No checklist items added yet.</p>`
-                }
-              </div>
-            `;
-          }).join("")
-        : `
-          <div class="planner-card">
-            <p>No checklist sections found.</p>
-          </div>
-        `
-    }
-  `;
-}
