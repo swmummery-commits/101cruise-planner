@@ -643,25 +643,49 @@ async function renderDashboard() {
       ${mainCruise ? `
         <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
           <div class="dashboard-hero-overlay"></div>
+          <button class="dashboard-signout" onclick="signOut()">Sign Out</button>
+
           <div class="dashboard-hero-content">
-            <p class="dashboard-hero-kicker">MY CRUISE PLANNER</p>
+            <p class="dashboard-hero-kicker">My Cruise Planner</p>
             <h1>${escapeHtml(mainCruise.ship_name || mainCruise.cruise_line || "Your Cruise")}</h1>
-            <p class="dashboard-hero-countdown" id="heroCountdownText">${escapeHtml(getDashboardCountdownText(mainCruise))}</p>
-            <p class="dashboard-hero-route">${escapeHtml(routeLine || formatDate(mainCruise.departure_date))}</p>
+            <p class="dashboard-hero-date">Departs ${escapeHtml(formatDate(mainCruise.departure_date))}</p>
+            <p class="dashboard-hero-route">${escapeHtml(routeLine || mainCruise.cruise_line || "Your upcoming cruise")}</p>
           </div>
+
+          <div class="dashboard-countdown-panel">
+            <p>Countdown to your cruise</p>
+            <div class="dashboard-countdown-grid">
+              <div>
+                <span id="countdownDays">${countdownParts.days}</span>
+                <small>Days</small>
+              </div>
+              <div>
+                <span id="countdownHours">${padNumber(countdownParts.hours)}</span>
+                <small>Hours</small>
+              </div>
+              <div>
+                <span id="countdownMinutes">${padNumber(countdownParts.minutes)}</span>
+                <small>Minutes</small>
+              </div>
+              <div>
+                <span id="countdownSeconds">${padNumber(countdownParts.seconds)}</span>
+                <small>Seconds</small>
+              </div>
+            </div>
+            <div class="dashboard-countdown-date">${escapeHtml(formatDate(mainCruise.departure_date))}</div>
+          </div>
+
           <div class="dashboard-hero-curve" aria-hidden="true"></div>
         </section>
       ` : `
         <section class="dashboard-empty-hero">
-          <h1>MY CRUISE PLANNER</h1>
+          <h1>My Cruise Planner</h1>
           <p>Welcome back, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.</p>
+          <button class="planner-button secondary" onclick="signOut()">Sign Out</button>
         </section>
       `}
 
-      <div class="dashboard-top-actions">
-        <button class="planner-button secondary" onclick="signOut()">Sign Out</button>
-      </div>
-
+      <div class="dashboard-content-wrap">
       <section class="dashboard-summary-grid">
         <article class="dashboard-summary-card next-task-card">
           <p class="dashboard-card-label">Next Essential Task</p>
@@ -691,6 +715,7 @@ async function renderDashboard() {
 
       ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
       ${renderDashboardCruiseList(safeCruises, error, mainCruise)}
+      </div>
     </div>
   `;
 }
