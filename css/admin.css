@@ -626,3 +626,94 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Sprint 8: Smart Profiles */
+.admin-profile-type-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.admin-profile-type-card {
+  appearance: none;
+  border: 1px solid var(--admin-border, #e5e7eb);
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--admin-text, #2c2c2c);
+  transition: border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.admin-profile-type-card:hover {
+  background: #fafafa;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+}
+
+.admin-profile-type-card.active {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+.admin-profile-type-card strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.admin-profile-type-card small {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 400;
+  opacity: .72;
+}
+
+.profile-type-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f3f4f6;
+  font-size: 14px;
+  flex: 0 0 auto;
+}
+
+.admin-profile-type-card.active .profile-type-icon {
+  background: rgba(255,255,255,.16);
+}
+
+.admin-profile-selector {
+  border: 1px solid var(--admin-border, #e5e7eb);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 14px 0;
+  background: #fbfbfb;
+}
+
+.admin-section-mini-title {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--admin-text, #2c2c2c);
+}
+
+.admin-profile-picker-group {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--admin-border, #e5e7eb);
+}
+
+.admin-check-grid.compact-chips {
+  margin-top: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, max-content));
+}
