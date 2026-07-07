@@ -982,7 +982,7 @@ async function renderDashboard() {
           <article class="dashboard-summary-card dashboard-planner-card">
             <p class="dashboard-card-label">My Planner</p>
             <button onclick="renderChecklist()"><span>Preparation Checklist</span><strong>→</strong></button>
-            <button onclick="alert('Packing Checklist coming soon')"><span>Packing Checklist</span><strong>→</strong></button>
+            <button onclick="renderPackingPlanner()"><span>Smart Packing Planner</span><strong>→</strong></button>
             <button onclick="alert('Documents Checklist coming soon')"><span>Documents Checklist</span><strong>→</strong></button>
             <button onclick="alert('Budget Planner coming soon')"><span>Budget Planner</span><strong>→</strong></button>
             <button class="dashboard-planner-main" onclick="renderChecklist()">Go to Planner →</button>
@@ -1058,7 +1058,7 @@ function renderPlannerNav(active = "preparation") {
   const items = [
     { key: "dashboard", label: "Dashboard", action: "renderDashboard()" },
     { key: "preparation", label: "Preparation", action: "renderChecklist()" },
-    { key: "packing", label: "Packing", action: "alert('Packing List coming soon')" },
+    { key: "packing", label: "Packing", action: "renderPackingPlanner()" },
     { key: "budget", label: "Budget", action: "alert('Budget Planner coming soon')" },
     { key: "documents", label: "Documents", action: "alert('Documents coming soon')" }
   ];
@@ -1574,6 +1574,437 @@ async function saveUserBookingDetails() {
   }
 
   if (message) message.innerText = "Travel details saved.";
+}
+
+
+const PACKING_DESTINATIONS = [
+  "Caribbean / Bahamas",
+  "Mediterranean / Greek Isles",
+  "Alaska",
+  "Norway / Northern Europe",
+  "Bermuda",
+  "Mexican Riviera",
+  "Hawaii",
+  "Asia / Southeast Asia",
+  "UK & Ireland",
+  "Canary Islands",
+  "Australia & New Zealand",
+  "Transatlantic Crossing",
+  "Transpacific Crossing",
+  "Canada & New England",
+  "Panama Canal",
+  "Antarctica"
+];
+
+function getDefaultPackingDestination(cruise) {
+  const text = [
+    cruise?.destination,
+    cruise?.arrival_port,
+    cruise?.disembarkation_port,
+    cruise?.to_port,
+    cruise?.itinerary,
+    cruise?.cruise_region
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  if (text.includes("alaska")) return "Alaska";
+  if (text.includes("norway") || text.includes("northern europe") || text.includes("fjord")) return "Norway / Northern Europe";
+  if (text.includes("mediterranean") || text.includes("greek") || text.includes("greece") || text.includes("italy") || text.includes("spain")) return "Mediterranean / Greek Isles";
+  if (text.includes("caribbean") || text.includes("bahamas")) return "Caribbean / Bahamas";
+  if (text.includes("hawaii")) return "Hawaii";
+  if (text.includes("asia") || text.includes("singapore") || text.includes("thailand") || text.includes("vietnam")) return "Asia / Southeast Asia";
+  if (text.includes("australia") || text.includes("new zealand")) return "Australia & New Zealand";
+  if (text.includes("antarctica")) return "Antarctica";
+  return "Mediterranean / Greek Isles";
+}
+
+function getDefaultDressCode(cruise) {
+  const line = String(cruise?.cruise_line || "").toLowerCase();
+  if (line.includes("cunard")) return "Formal";
+  if (line.includes("virgin")) return "Casual";
+  if (line.includes("explora") || line.includes("regent") || line.includes("silversea") || line.includes("seabourn")) return "Semi Formal";
+  return "Semi Formal";
+}
+
+function getDefaultTravellerType(cruise) {
+  const travellers = String(getTravellerSummary(cruise) || "").toLowerCase();
+  if (travellers.includes("family") || travellers.includes("child") || travellers.includes("kid")) return "Family";
+  const count = Number(getDashboardValue(cruise, ["traveller_count", "guests", "passengers", "guest_count"], 0));
+  if (count === 1) return "Solo";
+  if (count >= 3) return "Group";
+  return "Couple";
+}
+
+async function loadPackingPreferences(cruise) {
+  if (!currentUser?.id || !cruise?.id) return null;
+  const { data, error } = await supabaseClient
+    .from("user_packing_preferences")
+    .select("*")
+    .eq("user_id", currentUser.id)
+    .eq("cruise_id", cruise.id)
+    .maybeSingle();
+  if (error) {
+    console.warn("Packing preferences load failed", error);
+    return null;
+  }
+  return data || null;
+}
+
+async function savePackingPreferencesFromForm() {
+  const cruise = await loadCurrentCruise();
+  if (!cruise) return;
+
+  const payload = {
+    user_id: currentUser.id,
+    cruise_id: cruise.id,
+    traveller_type: document.getElementById("packingTravellerType")?.value || getDefaultTravellerType(cruise),
+    destination: document.getElementById("packingDestination")?.value || getDefaultPackingDestination(cruise),
+    dress_code: document.getElementById("packingDressCode")?.value || getDefaultDressCode(cruise),
+    baggage_limit_kg: Number(document.getElementById("packingBaggageLimit")?.value || 20),
+    updated_at: new Date().toISOString()
+  };
+
+  const { error } = await supabaseClient
+    .from("user_packing_preferences")
+    .upsert(payload, { onConflict: "user_id,cruise_id" });
+
+  if (error) {
+    console.error("Packing preferences save error", error);
+    alert("Could not save packing settings. Please try again.");
+    return;
+  }
+
+  renderPackingPlanner();
+}
+
+function splitRuleTags(value) {
+  return String(value || "")
+    .split(",")
+    .map(part => part.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function ruleMatches(value, selected) {
+  const tags = splitRuleTags(value);
+  if (!tags.length) return true;
+  const s = String(selected || "").trim().toLowerCase();
+  return tags.some(tag => tag === s || s.includes(tag) || tag.includes(s));
+}
+
+function packingItemApplies(item, context) {
+  return ruleMatches(item.destination_tags, context.destination)
+    && ruleMatches(item.climate_tags, context.climate)
+    && ruleMatches(item.traveller_types, context.travellerType)
+    && ruleMatches(item.dress_codes, context.dressCode)
+    && ruleMatches(item.cruise_line_tags, context.cruiseLine);
+}
+
+function getClimateFromDestination(destination) {
+  const value = String(destination || "").toLowerCase();
+  if (value.includes("alaska") || value.includes("norway") || value.includes("antarctica")) return "Cold";
+  if (value.includes("caribbean") || value.includes("bahamas") || value.includes("hawaii") || value.includes("asia")) return "Tropical";
+  return "Warm";
+}
+
+function calculatePackingQuantity(item, cruise, travellerType) {
+  const nights = Number(cruise?.nights || 7);
+  const base = Number(item.base_quantity || 1);
+  const perNight = Number(item.quantity_per_night || 0);
+  let qty = Math.max(1, Math.ceil(base + (perNight * nights)));
+  if (travellerType === "Couple") qty = Math.ceil(qty * Number(item.couple_multiplier || 1));
+  if (travellerType === "Family") qty = Math.ceil(qty * Number(item.family_multiplier || 1.5));
+  if (travellerType === "Group") qty = Math.ceil(qty * Number(item.group_multiplier || 1));
+  return qty;
+}
+
+function getPackingItemKey(item) {
+  return item.source === "personal" ? `personal:${item.id}` : `system:${item.id}`;
+}
+
+function isPackingItemPacked(progressRows, item) {
+  if (item.source === "personal") return item.packed === true;
+  return (progressRows || []).some(row => row.packing_item_id === item.id && row.packed === true);
+}
+
+function groupPackingItems(items) {
+  const grouped = {};
+  (items || []).forEach(item => {
+    const key = item.category_id || "personal";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(item);
+  });
+  return grouped;
+}
+
+function getPackingTypeClass(type) {
+  const value = String(type || "Recommended").toLowerCase();
+  if (value === "required") return "priority-essential";
+  if (value === "optional") return "priority-optional";
+  return "priority-tip";
+}
+
+function getPackingTypeLabel(type) {
+  const value = String(type || "Recommended").toLowerCase();
+  if (value === "required") return "Required";
+  if (value === "optional") return "Optional";
+  return "Recommended";
+}
+
+function renderPackingRow(item, packed, quantity) {
+  const typeClass = getPackingTypeClass(item.item_type);
+  const typeLabel = getPackingTypeLabel(item.item_type);
+  const key = getPackingItemKey(item);
+  const weight = Number(item.weight_kg || 0) * Number(quantity || 1);
+  return `
+    <div class="packing-row ${packed ? "is-packed" : ""}" data-packing-row="${escapeHtml(key)}">
+      <div class="packing-main-cell">
+        <input class="checklist-checkbox" type="checkbox" ${packed ? "checked" : ""} onchange="togglePackingItem('${escapeHtml(key)}', this.checked)">
+        <div>
+          <div class="packing-item-title">${escapeHtml(item.name)} ${quantity ? `<span class="packing-qty">(${quantity})</span>` : ""}</div>
+          ${item.description ? `<div class="packing-item-description">${escapeHtml(item.description)}</div>` : ""}
+          ${item.help_text ? `<div class="packing-item-help">ⓘ ${escapeHtml(item.help_text)}</div>` : ""}
+        </div>
+      </div>
+      <div class="packing-type-cell"><span class="priority-badge ${typeClass}">${typeLabel}</span></div>
+      <div class="packing-weight-cell">${weight ? `${weight.toFixed(2)} kg` : "—"}</div>
+      ${item.source === "personal" ? `<button class="packing-delete-button" onclick="deletePersonalPackingItem(${item.id})">Delete</button>` : ""}
+    </div>
+  `;
+}
+
+function renderPackingControls(preferences, cruise) {
+  const destination = preferences?.destination || getDefaultPackingDestination(cruise);
+  const travellerType = preferences?.traveller_type || getDefaultTravellerType(cruise);
+  const dressCode = preferences?.dress_code || getDefaultDressCode(cruise);
+  const limit = preferences?.baggage_limit_kg || 20;
+
+  return `
+    <section class="planner-card packing-settings-card">
+      <div>
+        <h3>Smart Packing Settings</h3>
+        <p class="planner-muted">We have prepared this list using your cruise details. Adjust these settings if needed.</p>
+      </div>
+      <div class="packing-settings-grid">
+        <div class="planner-field">
+          <label>Who is travelling?</label>
+          <select id="packingTravellerType">
+            ${["Solo", "Couple", "Family", "Group"].map(type => `<option value="${type}" ${travellerType === type ? "selected" : ""}>${type}</option>`).join("")}
+          </select>
+        </div>
+        <div class="planner-field">
+          <label>Destination</label>
+          <select id="packingDestination">
+            ${PACKING_DESTINATIONS.map(dest => `<option value="${dest}" ${destination === dest ? "selected" : ""}>${dest}</option>`).join("")}
+          </select>
+        </div>
+        <div class="planner-field">
+          <label>Dress code</label>
+          <select id="packingDressCode">
+            ${["Casual", "Semi Formal", "Formal"].map(code => `<option value="${code}" ${dressCode === code ? "selected" : ""}>${code}</option>`).join("")}
+          </select>
+        </div>
+        <div class="planner-field">
+          <label>Baggage limit (kg)</label>
+          <input id="packingBaggageLimit" type="number" min="5" step="1" value="${escapeHtml(limit)}">
+        </div>
+      </div>
+      <button class="planner-button" onclick="savePackingPreferencesFromForm()">Update Packing List</button>
+    </section>
+  `;
+}
+
+function getWeightStatus(totalWeight, baggageLimit) {
+  const limit = Number(baggageLimit || 20);
+  if (!totalWeight) return "Start packing to estimate your luggage weight.";
+  if (totalWeight <= limit * 0.75) return "Comfortable for most standard baggage allowances.";
+  if (totalWeight <= limit) return "Getting close to your selected baggage limit.";
+  return "Likely to exceed your selected baggage limit.";
+}
+
+function renderPackingWeightGauge(totalWeight, baggageLimit) {
+  const limit = Number(baggageLimit || 20);
+  const percent = Math.max(0, Math.min(100, Math.round((totalWeight / limit) * 100)));
+  return `
+    <div class="packing-weight-gauge">
+      <div class="packing-weight-labels"><strong>${totalWeight.toFixed(1)} kg</strong><span>Limit: ${limit} kg</span></div>
+      <div class="packing-weight-bar"><span style="width:${percent}%"></span></div>
+      <p>${escapeHtml(getWeightStatus(totalWeight, limit))}</p>
+      <small>Estimated weight is a guide only. Actual luggage weight may vary depending on item size, brand, fabric and quantity. Always check your airline or cruise line baggage limits.</small>
+    </div>
+  `;
+}
+
+function toggleHidePacked() {
+  const page = document.getElementById("packing-page");
+  if (!page) return;
+  page.classList.toggle("hide-packed");
+  const button = document.getElementById("hidePackedButton");
+  if (button) button.innerText = page.classList.contains("hide-packed") ? "Show Packed" : "Hide Packed";
+}
+
+function filterPackingList() {
+  const query = String(document.getElementById("packingSearch")?.value || "").toLowerCase().trim();
+  document.querySelectorAll(".packing-row").forEach(row => {
+    row.style.display = !query || row.textContent.toLowerCase().includes(query) ? "grid" : "none";
+  });
+}
+
+function printPackingList() {
+  window.print();
+}
+
+function savePackingPdf() {
+  window.print();
+}
+
+async function resetPackingProgress() {
+  if (!confirm("Reset all packing progress for this cruise?")) return;
+  const cruise = await loadCurrentCruise();
+  if (!cruise) return;
+  await supabaseClient.from("user_packing_progress").delete().eq("user_id", currentUser.id).eq("cruise_id", cruise.id);
+  await supabaseClient.from("user_packing_items").update({ packed: false, packed_at: null }).eq("user_id", currentUser.id).eq("cruise_id", cruise.id);
+  renderPackingPlanner();
+}
+
+async function addPersonalPackingItem(categoryId) {
+  const cruise = await loadCurrentCruise();
+  if (!cruise) {
+    alert("Please add a cruise before adding packing items.");
+    return;
+  }
+  const name = prompt("Add your own packing item");
+  if (!name || !name.trim()) return;
+  const { error } = await supabaseClient.from("user_packing_items").insert({
+    user_id: currentUser.id,
+    cruise_id: cruise.id,
+    category_id: categoryId,
+    name: name.trim(),
+    quantity: 1,
+    weight_kg: 0,
+    packed: false
+  });
+  if (error) {
+    console.error("Personal packing item save error", error);
+    alert("Could not add your item. Please try again.");
+    return;
+  }
+  renderPackingPlanner();
+}
+
+async function togglePackingItem(key, packed) {
+  const cruise = await loadCurrentCruise();
+  if (!cruise) return;
+  if (String(key).startsWith("personal:")) {
+    const id = Number(String(key).replace("personal:", ""));
+    const { error } = await supabaseClient.from("user_packing_items").update({ packed, packed_at: packed ? new Date().toISOString() : null }).eq("id", id).eq("user_id", currentUser.id);
+    if (error) alert("Could not save packing item.");
+  } else {
+    const id = Number(String(key).replace("system:", ""));
+    const payload = { user_id: currentUser.id, cruise_id: cruise.id, packing_item_id: id, packed, packed_at: packed ? new Date().toISOString() : null };
+    const { error } = await supabaseClient.from("user_packing_progress").upsert(payload, { onConflict: "user_id,cruise_id,packing_item_id" });
+    if (error) alert("Could not save packing progress.");
+  }
+  renderPackingPlanner();
+}
+
+async function deletePersonalPackingItem(id) {
+  if (!confirm("Delete this packing item?")) return;
+  const { error } = await supabaseClient.from("user_packing_items").delete().eq("id", id).eq("user_id", currentUser.id);
+  if (error) alert("Could not delete packing item.");
+  renderPackingPlanner();
+}
+
+async function renderPackingPlanner() {
+  clearCountdownTimer();
+  const cruise = await loadCurrentCruise();
+  if (!cruise) {
+    app.innerHTML = `<div class="planner-card"><button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button><h2>Smart Packing Planner</h2><p>Add a cruise before generating your packing list.</p></div>`;
+    return;
+  }
+
+  const preferences = await loadPackingPreferences(cruise);
+  const context = {
+    destination: preferences?.destination || getDefaultPackingDestination(cruise),
+    travellerType: preferences?.traveller_type || getDefaultTravellerType(cruise),
+    dressCode: preferences?.dress_code || getDefaultDressCode(cruise),
+    climate: getClimateFromDestination(preferences?.destination || getDefaultPackingDestination(cruise)),
+    cruiseLine: cruise.cruise_line || ""
+  };
+
+  const [{ data: categories }, { data: items }, { data: progress }, { data: personal }] = await Promise.all([
+    supabaseClient.from("packing_categories").select("*").eq("active", true).order("display_order", { ascending: true }),
+    supabaseClient.from("packing_items").select("*, packing_categories(name)").eq("active", true).order("display_order", { ascending: true }),
+    supabaseClient.from("user_packing_progress").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id),
+    supabaseClient.from("user_packing_items").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id).order("created_at", { ascending: true })
+  ]);
+
+  const systemItems = (items || [])
+    .filter(item => packingItemApplies(item, context))
+    .map(item => ({ ...item, source: "system", calculated_quantity: calculatePackingQuantity(item, cruise, context.travellerType) }));
+  const personalItems = (personal || []).map(item => ({ ...item, source: "personal", calculated_quantity: item.quantity || 1, item_type: "Optional", description: item.note || "Personal packing item" }));
+  const allPackingItems = [...systemItems, ...personalItems];
+  const packedCount = allPackingItems.filter(item => isPackingItemPacked(progress || [], item)).length;
+  const totalCount = allPackingItems.length;
+  const percent = getProgressPercent(packedCount, totalCount);
+  const totalWeight = allPackingItems.reduce((sum, item) => sum + (Number(item.weight_kg || 0) * Number(item.calculated_quantity || 1)), 0);
+  const baggageLimit = preferences?.baggage_limit_kg || 20;
+  const grouped = groupPackingItems(allPackingItems);
+
+  app.innerHTML = `
+    <div id="packing-page" class="packing-page">
+      ${renderPlannerNav("packing")}
+
+      <div class="checklist-toolbar planner-card slim-card packing-toolbar">
+        <div>
+          <h2>Smart Packing Planner</h2>
+          <p class="planner-muted">${escapeHtml(cruise.ship_name || cruise.cruise_line || "Your cruise")} • ${escapeHtml(context.destination)} • ${escapeHtml(context.travellerType)} • ${escapeHtml(context.dressCode)}</p>
+          <div class="checklist-top-progress"><span style="width:${percent}%"></span></div>
+        </div>
+        <div class="checklist-toolbar-actions">
+          <button class="planner-button secondary" id="hidePackedButton" onclick="toggleHidePacked()">Hide Packed</button>
+          <button class="planner-button secondary" onclick="resetPackingProgress()">Reset</button>
+          <button class="planner-button secondary" onclick="printPackingList()">Print</button>
+          <button class="planner-button" onclick="savePackingPdf()">Save PDF</button>
+        </div>
+      </div>
+
+      ${renderPackingControls(preferences, cruise)}
+
+      <section class="planner-card packing-summary-card">
+        <div>
+          <span>Packing Progress</span>
+          <strong>${percent}%</strong>
+          <small>${packedCount} of ${totalCount} items packed</small>
+        </div>
+        ${renderPackingWeightGauge(totalWeight, baggageLimit)}
+      </section>
+
+      <section class="planner-card packing-search-card">
+        <input id="packingSearch" type="search" placeholder="Search packing list..." oninput="filterPackingList()">
+      </section>
+
+      <main class="packing-content">
+        ${(categories || []).map(category => {
+          const categoryItems = grouped[category.id] || [];
+          if (!categoryItems.length && category.name !== "Last Minute Items") return "";
+          const catPacked = categoryItems.filter(item => isPackingItemPacked(progress || [], item)).length;
+          return `
+            <section class="checklist-section-block packing-category-block">
+              <div class="checklist-section-header">
+                <div>
+                  <h3>${escapeHtml(category.icon || "🧳")} ${escapeHtml(category.name)}</h3>
+                  ${category.description ? `<p>${escapeHtml(category.description)}</p>` : ""}
+                </div>
+                <div class="section-progress-pill">${catPacked}/${categoryItems.length} Packed</div>
+              </div>
+              <div class="packing-table-header"><span>Item</span><span>Type</span><span>Weight</span></div>
+              ${categoryItems.map(item => renderPackingRow(item, isPackingItemPacked(progress || [], item), item.calculated_quantity)).join("")}
+              <button class="add-personal-task-button" onclick="addPersonalPackingItem(${category.id})">+ Add your own item</button>
+            </section>
+          `;
+        }).join("")}
+      </main>
+    </div>
+  `;
 }
 
 async function addCruise() {

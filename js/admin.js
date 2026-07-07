@@ -10,12 +10,17 @@ let cruiseLines = [];
 let ships = [];
 let checklistSections = [];
 let checklistItems = [];
+let packingCategories = [];
+let packingItems = [];
 let activeTab = "cruise-lines";
 let editingShipId = null;
 let editingCruiseLineId = null;
 let editingChecklistItemId = null;
 let editingChecklistSectionId = null;
 let selectedChecklistSectionId = "all";
+let editingPackingCategoryId = null;
+let editingPackingItemId = null;
+let selectedPackingCategoryId = "all";
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -120,6 +125,18 @@ async function loadAdminData() {
     .order("display_order", { ascending: true })
     .order("title", { ascending: true });
 
+  const { data: packingCategoryRows, error: packingCategoriesError } = await supabaseClient
+    .from("packing_categories")
+    .select("*")
+    .order("display_order", { ascending: true })
+    .order("name", { ascending: true });
+
+  const { data: packingItemRows, error: packingItemsError } = await supabaseClient
+    .from("packing_items")
+    .select("*, packing_categories(name)")
+    .order("display_order", { ascending: true })
+    .order("name", { ascending: true });
+
   if (linesError) {
     console.error("Cruise line load error", linesError);
     cruiseLines = [];
@@ -147,6 +164,20 @@ async function loadAdminData() {
   } else {
     checklistItems = itemRows || [];
   }
+
+  if (packingCategoriesError) {
+    console.error("Packing category load error", packingCategoriesError);
+    packingCategories = [];
+  } else {
+    packingCategories = packingCategoryRows || [];
+  }
+
+  if (packingItemsError) {
+    console.error("Packing item load error", packingItemsError);
+    packingItems = [];
+  } else {
+    packingItems = packingItemRows || [];
+  }
 }
 
 function setTab(tab) {
@@ -155,6 +186,8 @@ function setTab(tab) {
   editingCruiseLineId = null;
   editingChecklistItemId = null;
   editingChecklistSectionId = null;
+  editingPackingCategoryId = null;
+  editingPackingItemId = null;
   renderAdmin();
 }
 
@@ -176,11 +209,13 @@ function renderAdmin() {
       <button class="admin-tab ${activeTab === "cruise-lines" ? "active" : ""}" onclick="setTab('cruise-lines')">Cruise Lines</button>
       <button class="admin-tab ${activeTab === "ships" ? "active" : ""}" onclick="setTab('ships')">Ships</button>
       <button class="admin-tab ${activeTab === "checklist" ? "active" : ""}" onclick="setTab('checklist')">Checklist</button>
+      <button class="admin-tab ${activeTab === "packing" ? "active" : ""}" onclick="setTab('packing')">Packing</button>
     </div>
 
     ${activeTab === "cruise-lines" ? renderCruiseLinesPanel() : ""}
     ${activeTab === "ships" ? renderShipsPanel() : ""}
     ${activeTab === "checklist" ? renderChecklistPanel() : ""}
+    ${activeTab === "packing" ? renderPackingPanel() : ""}
   `;
 }
 
@@ -904,7 +939,374 @@ async function refreshAdminData() {
 }
 
 async function initAdmin() {
-  const { data } = await supabaseClient.auth.getSession();
+  const { data } = await 
+
+function getFilteredPackingItems() {
+  if (selectedPackingCategoryId === "all" || selectedPackingCategoryId === "by-category") return packingItems;
+  return packingItems.filter(item => String(item.category_id) === String(selectedPackingCategoryId));
+}
+
+function getPackingItemsByCategory() {
+  return [...packingCategories]
+    .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0) || String(a.name || "").localeCompare(String(b.name || "")))
+    .map(category => ({
+      category,
+      items: packingItems
+        .filter(item => String(item.category_id) === String(category.id))
+        .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0) || String(a.name || "").localeCompare(String(b.name || "")))
+    }));
+}
+
+function renderPackingPanel() {
+  const editingCategory = packingCategories.find(category => category.id === editingPackingCategoryId);
+  const filteredItems = getFilteredPackingItems();
+
+  return `
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Smart Packing Planner</h3>
+          <p class="admin-muted">Manage packing categories, default items, quantities, weights and the rules that create each customer’s packing list.</p>
+        </div>
+        <div><button class="admin-button secondary" onclick="refreshAdminData()">Refresh</button></div>
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <div class="admin-card">
+        <h3>${editingCategory ? "Edit Packing Category" : "Add Packing Category"}</h3>
+        <input type="hidden" id="packingCategoryId" value="${editingCategory ? editingCategory.id : ""}">
+
+        <div class="admin-field">
+          <label>Category name</label>
+          <input type="text" id="packingCategoryName" value="${editingCategory ? esc(editingCategory.name) : ""}" placeholder="Clothing">
+        </div>
+
+        <div class="admin-field">
+          <label>Description</label>
+          <textarea id="packingCategoryDescription" placeholder="Short description shown above this category">${editingCategory ? esc(editingCategory.description || "") : ""}</textarea>
+        </div>
+
+        <div class="admin-grid compact">
+          <div class="admin-field">
+            <label>Icon</label>
+            <input type="text" id="packingCategoryIcon" value="${editingCategory ? esc(editingCategory.icon || "") : ""}" placeholder="👕">
+          </div>
+          <div class="admin-field">
+            <label>Display order</label>
+            <input type="number" id="packingCategoryDisplayOrder" value="${editingCategory ? esc(editingCategory.display_order || 0) : "0"}">
+          </div>
+        </div>
+
+        <div class="admin-field">
+          <label>Status</label>
+          <select id="packingCategoryActive">
+            <option value="true" ${!editingCategory || editingCategory.active ? "selected" : ""}>Published</option>
+            <option value="false" ${editingCategory && !editingCategory.active ? "selected" : ""}>Unpublished</option>
+          </select>
+        </div>
+
+        <button class="admin-button" onclick="savePackingCategory()">${editingCategory ? "Save Category" : "Add Category"}</button>
+        ${editingCategory ? `<button class="admin-button secondary" onclick="cancelPackingCategoryEdit()">Cancel</button>` : ""}
+        <div id="packing-category-message" class="admin-message"></div>
+      </div>
+
+      <div class="admin-card">
+        <h3>Packing Categories</h3>
+        ${packingCategories.length ? packingCategories.map(category => `
+          <div class="admin-list-item compact-item">
+            <div class="admin-list-top">
+              <div>
+                <strong>${esc(category.icon || "🧳")} ${esc(category.name)}</strong>
+                <div class="admin-small">Order: ${esc(category.display_order || 0)}</div>
+                <div class="admin-small">${esc(category.description || "No description")}</div>
+                ${category.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
+              </div>
+              <button class="admin-button secondary small" onclick="editPackingCategory(${category.id})">Edit</button>
+            </div>
+          </div>
+        `).join("") : `<p>No packing categories found.</p>`}
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>Add Packing Item</h3>
+      ${renderPackingItemForm(null)}
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Packing Items</h3>
+          <p class="admin-muted">Items are displayed by category order. Empty rule fields apply to everyone.</p>
+        </div>
+        <div class="admin-field admin-filter-field">
+          <label>Display</label>
+          <select id="packingCategoryFilter" onchange="setPackingCategoryFilter(this.value)">
+            <option value="all" ${selectedPackingCategoryId === "all" ? "selected" : ""}>All items</option>
+            <option value="by-category" ${selectedPackingCategoryId === "by-category" ? "selected" : ""}>Display by Category order</option>
+            ${packingCategories.map(category => `<option value="${category.id}" ${String(selectedPackingCategoryId) === String(category.id) ? "selected" : ""}>${esc(category.name)}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+      ${selectedPackingCategoryId === "by-category" ? renderPackingItemsByCategory() : renderPackingItemsList(filteredItems)}
+    </div>
+  `;
+}
+
+function renderPackingItemForm(editingItem) {
+  const applies = value => esc(editingItem ? (editingItem[value] || "") : "");
+  return `
+    <input type="hidden" id="packingItemId" value="${editingItem ? editingItem.id : ""}">
+
+    <div class="admin-grid">
+      <div class="admin-field">
+        <label>Category</label>
+        <select id="packingItemCategoryId">
+          <option value="">Select category</option>
+          ${packingCategories.map(category => `<option value="${category.id}" ${editingItem && editingItem.category_id === category.id ? "selected" : ""}>${esc(category.name)}</option>`).join("")}
+        </select>
+      </div>
+      <div class="admin-field">
+        <label>Type</label>
+        <select id="packingItemType">
+          ${["Required", "Recommended", "Optional"].map(type => `<option value="${type}" ${editingItem && editingItem.item_type === type ? "selected" : ""}>${type}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+
+    <div class="admin-field">
+      <label>Item name</label>
+      <input type="text" id="packingItemName" value="${editingItem ? esc(editingItem.name) : ""}" placeholder="Polo shirts">
+    </div>
+
+    <div class="admin-field">
+      <label>Description / packing note</label>
+      <textarea id="packingItemDescription" placeholder="Short note shown under the item">${editingItem ? esc(editingItem.description || "") : ""}</textarea>
+    </div>
+
+    <div class="admin-grid compact">
+      <div class="admin-field">
+        <label>Base quantity</label>
+        <input type="number" id="packingItemBaseQty" value="${editingItem ? esc(editingItem.base_quantity || 1) : "1"}" min="0" step="1">
+      </div>
+      <div class="admin-field">
+        <label>Qty per night</label>
+        <input type="number" id="packingItemQtyPerNight" value="${editingItem ? esc(editingItem.quantity_per_night || 0) : "0"}" min="0" step="0.1">
+      </div>
+      <div class="admin-field">
+        <label>Weight each (kg)</label>
+        <input type="number" id="packingItemWeightKg" value="${editingItem ? esc(editingItem.weight_kg || 0) : "0"}" min="0" step="0.01">
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <div class="admin-field">
+        <label>Destinations (comma separated)</label>
+        <input type="text" id="packingItemDestinations" value="${applies("destination_tags")}" placeholder="Mediterranean / Greek Isles, Alaska">
+      </div>
+      <div class="admin-field">
+        <label>Climates (comma separated)</label>
+        <input type="text" id="packingItemClimates" value="${applies("climate_tags")}" placeholder="Warm, Cold, Tropical">
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <div class="admin-field">
+        <label>Traveller types</label>
+        <input type="text" id="packingItemTravellers" value="${applies("traveller_types")}" placeholder="Solo, Couple, Family, Group">
+      </div>
+      <div class="admin-field">
+        <label>Dress codes</label>
+        <input type="text" id="packingItemDressCodes" value="${applies("dress_codes")}" placeholder="Casual, Semi Formal, Formal">
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <div class="admin-field">
+        <label>Cruise lines</label>
+        <input type="text" id="packingItemCruiseLines" value="${applies("cruise_line_tags")}" placeholder="Virgin Voyages, Cunard">
+      </div>
+      <div class="admin-field">
+        <label>Why am I packing this?</label>
+        <input type="text" id="packingItemHelpText" value="${editingItem ? esc(editingItem.help_text || "") : ""}" placeholder="Useful for glacier viewing, formal nights, etc.">
+      </div>
+    </div>
+
+    <div class="admin-grid compact">
+      <div class="admin-field">
+        <label>Display order</label>
+        <input type="number" id="packingItemDisplayOrder" value="${editingItem ? esc(editingItem.display_order || 0) : "0"}">
+      </div>
+      <div class="admin-field">
+        <label>Status</label>
+        <select id="packingItemActive">
+          <option value="true" ${!editingItem || editingItem.active ? "selected" : ""}>Published</option>
+          <option value="false" ${editingItem && !editingItem.active ? "selected" : ""}>Unpublished</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="admin-button" onclick="savePackingItem()">${editingItem ? "Save Item" : "Add Item"}</button>
+    ${editingItem ? `<button class="admin-button secondary" onclick="cancelPackingItemEdit()">Cancel</button>` : ""}
+    <div id="packing-item-message" class="admin-message"></div>
+  `;
+}
+
+function renderPackingItemsByCategory() {
+  return getPackingItemsByCategory().map(group => `
+    <div class="admin-section-group">
+      <h3>${esc(group.category.icon || "🧳")} ${esc(group.category.name)}</h3>
+      ${group.items.length ? renderPackingItemsList(group.items) : `<p class="admin-small">No packing items in this category.</p>`}
+    </div>
+  `).join("");
+}
+
+function renderPackingItemsList(items) {
+  return items.length ? items.map(item => `
+    <div class="admin-list-item checklist-admin-item" id="packing-item-${item.id}">
+      ${editingPackingItemId === item.id ? `
+        <h3>Edit Packing Item</h3>
+        ${renderPackingItemForm(item)}
+      ` : `
+        <div class="admin-list-top">
+          <div>
+            <div class="checklist-admin-title">${esc(item.name)}</div>
+            <div class="admin-small"><strong>Category:</strong> ${esc(item.packing_categories?.name || "Category not found")}</div>
+            <div class="admin-small"><strong>Qty:</strong> ${esc(calculateAdminQtyLabel(item))} &nbsp; <strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
+            ${item.description ? `<div class="admin-small checklist-admin-copy">${esc(item.description)}</div>` : ""}
+            ${item.help_text ? `<div class="admin-small checklist-admin-copy"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
+            <div class="admin-small checklist-admin-copy"><strong>Rules:</strong> ${esc(formatPackingRulesSummary(item))}</div>
+            ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
+          </div>
+          <button class="admin-button secondary small" onclick="editPackingItem(${item.id})">Edit</button>
+        </div>
+      `}
+    </div>
+  `).join("") : `<p>No packing items found.</p>`;
+}
+
+function calculateAdminQtyLabel(item) {
+  const base = Number(item.base_quantity || 0);
+  const perNight = Number(item.quantity_per_night || 0);
+  if (perNight) return `${base} + ${perNight}/night`;
+  return String(base || 1);
+}
+
+function formatPackingRulesSummary(item) {
+  const bits = [];
+  if (item.destination_tags) bits.push(`Destinations: ${item.destination_tags}`);
+  if (item.climate_tags) bits.push(`Climates: ${item.climate_tags}`);
+  if (item.traveller_types) bits.push(`Travellers: ${item.traveller_types}`);
+  if (item.dress_codes) bits.push(`Dress: ${item.dress_codes}`);
+  if (item.cruise_line_tags) bits.push(`Lines: ${item.cruise_line_tags}`);
+  return bits.length ? bits.join(" | ") : "Applies to all cruises";
+}
+
+function setPackingCategoryFilter(value) {
+  selectedPackingCategoryId = value;
+  renderAdmin();
+}
+
+function editPackingCategory(id) {
+  editingPackingCategoryId = id;
+  activeTab = "packing";
+  renderAdmin();
+}
+
+function cancelPackingCategoryEdit() {
+  editingPackingCategoryId = null;
+  renderAdmin();
+}
+
+async function savePackingCategory() {
+  const id = document.getElementById("packingCategoryId").value;
+  const payload = {
+    name: document.getElementById("packingCategoryName").value.trim(),
+    description: document.getElementById("packingCategoryDescription").value.trim() || null,
+    icon: document.getElementById("packingCategoryIcon").value.trim() || null,
+    display_order: Number(document.getElementById("packingCategoryDisplayOrder").value || 0),
+    active: document.getElementById("packingCategoryActive").value === "true"
+  };
+
+  const message = document.getElementById("packing-category-message");
+  if (!payload.name) {
+    if (message) message.innerText = "Please enter a category name.";
+    return;
+  }
+
+  const result = id
+    ? await supabaseClient.from("packing_categories").update(payload).eq("id", id)
+    : await supabaseClient.from("packing_categories").insert(payload);
+
+  if (result.error) {
+    console.error("Save packing category error", result.error);
+    if (message) message.innerText = result.error.message;
+    return;
+  }
+
+  editingPackingCategoryId = null;
+  await loadAdminData();
+  renderAdmin();
+}
+
+function editPackingItem(id) {
+  editingPackingItemId = id;
+  activeTab = "packing";
+  renderAdmin();
+  setTimeout(() => {
+    const el = document.getElementById(`packing-item-${id}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 50);
+}
+
+function cancelPackingItemEdit() {
+  editingPackingItemId = null;
+  renderAdmin();
+}
+
+async function savePackingItem() {
+  const id = document.getElementById("packingItemId").value;
+  const payload = {
+    category_id: Number(document.getElementById("packingItemCategoryId").value),
+    name: document.getElementById("packingItemName").value.trim(),
+    description: document.getElementById("packingItemDescription").value.trim() || null,
+    item_type: document.getElementById("packingItemType").value,
+    base_quantity: Number(document.getElementById("packingItemBaseQty").value || 1),
+    quantity_per_night: Number(document.getElementById("packingItemQtyPerNight").value || 0),
+    weight_kg: Number(document.getElementById("packingItemWeightKg").value || 0),
+    destination_tags: document.getElementById("packingItemDestinations").value.trim() || null,
+    climate_tags: document.getElementById("packingItemClimates").value.trim() || null,
+    traveller_types: document.getElementById("packingItemTravellers").value.trim() || null,
+    dress_codes: document.getElementById("packingItemDressCodes").value.trim() || null,
+    cruise_line_tags: document.getElementById("packingItemCruiseLines").value.trim() || null,
+    help_text: document.getElementById("packingItemHelpText").value.trim() || null,
+    display_order: Number(document.getElementById("packingItemDisplayOrder").value || 0),
+    active: document.getElementById("packingItemActive").value === "true"
+  };
+
+  const message = document.getElementById("packing-item-message");
+  if (!payload.category_id || !payload.name) {
+    if (message) message.innerText = "Please select a category and enter an item name.";
+    return;
+  }
+
+  const result = id
+    ? await supabaseClient.from("packing_items").update(payload).eq("id", id)
+    : await supabaseClient.from("packing_items").insert(payload);
+
+  if (result.error) {
+    console.error("Save packing item error", result.error);
+    if (message) message.innerText = result.error.message;
+    return;
+  }
+
+  editingPackingItemId = null;
+  await loadAdminData();
+  renderAdmin();
+}
+
+supabaseClient.auth.getSession();
 
   if (!data.session) {
     renderLogin();

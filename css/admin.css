@@ -280,3 +280,16 @@
     min-width: 100%;
   }
 }
+
+/* Packing Admin */
+.admin-field input[type="number"] {
+  max-width: 100%;
+}
+
+#packingItemDestinations,
+#packingItemClimates,
+#packingItemTravellers,
+#packingItemDressCodes,
+#packingItemCruiseLines {
+  font-size: 12px;
+}
