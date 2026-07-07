@@ -2947,3 +2947,50 @@
     padding: 1mm 2mm !important;
   }
 }
+@media print {
+  body {
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+  }
+
+  .checklist-row,
+  .checklist-print-item {
+    padding: 6px 0 !important;
+    margin: 0 !important;
+    page-break-inside: avoid;
+  }
+
+  .checklist-title,
+  .checklist-item-title,
+  .task-title {
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    margin-bottom: 2px !important;
+  }
+
+  .checklist-description,
+  .checklist-item-description,
+  .task-description {
+    font-size: 9.5px !important;
+    line-height: 1.25 !important;
+    margin: 2px 0 3px !important;
+  }
+
+  .priority-badge,
+  .checklist-priority {
+    font-size: 8px !important;
+    padding: 2px 5px !important;
+  }
+
+  .checklist-section,
+  .planner-section {
+    margin-bottom: 10px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .checklist-section h2,
+  .planner-section h2 {
+    font-size: 14px !important;
+    margin: 12px 0 6px !important;
+  }
+}
