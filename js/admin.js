@@ -1090,6 +1090,139 @@ function getPackingItemsByCategory() {
 }
 
 
+
+function getPackingCategoryName(categoryId) {
+  const category = packingCategories.find(item => String(item.id) === String(categoryId));
+  return category ? category.name : "Uncategorised";
+}
+
+function getPackingCategoryIcon(categoryId) {
+  const category = packingCategories.find(item => String(item.id) === String(categoryId));
+  return category ? (category.icon || "🧳") : "🧳";
+}
+
+function formatPackingRule(value, fallback = "Applies to all") {
+  const text = String(value || "").trim();
+  return text ? esc(text) : fallback;
+}
+
+function renderPackingItemCard(item) {
+  const isEditing = String(editingPackingItemId || "") === String(item.id);
+  return `
+    <div class="admin-list-item admin-clickable-row packing-item-row ${isEditing ? "is-editing" : ""}" onclick="editPackingItem(${item.id})">
+      ${isEditing ? `
+        <div onclick="event.stopPropagation()">
+          ${renderPackingItemForm(item)}
+        </div>
+      ` : `
+        <div class="admin-list-top">
+          <div>
+            <strong class="checklist-admin-title">${esc(item.name)}</strong>
+            <div class="admin-small">Category: ${esc(getPackingCategoryName(item.category_id))}</div>
+            <div class="admin-small"><strong>Qty:</strong> ${esc(item.base_quantity ?? 1)} &nbsp; <strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
+            ${item.description ? `<div class="admin-small">${esc(item.description)}</div>` : ""}
+            ${item.help_text ? `<div class="admin-small"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
+            <div class="admin-small"><strong>Rules:</strong> ${formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags)}</div>
+            ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
+          </div>
+          <span class="admin-row-hint">Click to edit</span>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function renderPackingItemsList(items) {
+  const sortedItems = [...(items || [])].sort((a, b) => {
+    const catCompare = String(getPackingCategoryName(a.category_id)).localeCompare(String(getPackingCategoryName(b.category_id)));
+    if (catCompare !== 0) return catCompare;
+    const orderCompare = Number(a.display_order || 0) - Number(b.display_order || 0);
+    if (orderCompare !== 0) return orderCompare;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+
+  if (!sortedItems.length) return `<p class="admin-muted">No packing items found.</p>`;
+  return sortedItems.map(renderPackingItemCard).join("");
+}
+
+function renderPackingItemsByCategory() {
+  const groups = getPackingItemsByCategory();
+  const html = groups.map(({ category, items }) => `
+    <div class="admin-category-block">
+      <div class="admin-list-top admin-category-heading">
+        <div>
+          <h4>${esc(category.icon || "🧳")} ${esc(category.name)}</h4>
+          ${category.description ? `<p class="admin-muted">${esc(category.description)}</p>` : ""}
+        </div>
+        <span class="admin-pill">${items.length} item${items.length === 1 ? "" : "s"}</span>
+      </div>
+      ${items.length ? items.map(renderPackingItemCard).join("") : `<p class="admin-muted">No items in this category.</p>`}
+    </div>
+  `).join("");
+
+  return html || `<p class="admin-muted">No packing categories found.</p>`;
+}
+
+function setPackingCategoryFilter(value) {
+  selectedPackingCategoryId = value || "all";
+  editingPackingItemId = null;
+  renderAdmin();
+}
+
+function editPackingItem(itemId) {
+  editingPackingItemId = itemId;
+  editingPackingCategoryId = null;
+  renderAdmin();
+}
+
+function cancelPackingItemEdit() {
+  editingPackingItemId = null;
+  renderAdmin();
+}
+
+function editPackingCategory(categoryId) {
+  editingPackingCategoryId = categoryId;
+  editingPackingItemId = null;
+  renderAdmin();
+}
+
+function cancelPackingCategoryEdit() {
+  editingPackingCategoryId = null;
+  renderAdmin();
+}
+
+async function savePackingCategory() {
+  const id = document.getElementById("packingCategoryId").value;
+  const payload = {
+    name: document.getElementById("packingCategoryName").value.trim(),
+    description: document.getElementById("packingCategoryDescription").value.trim() || null,
+    icon: document.getElementById("packingCategoryIcon").value.trim() || null,
+    display_order: Number(document.getElementById("packingCategoryDisplayOrder").value || 0),
+    active: document.getElementById("packingCategoryActive").value === "true"
+  };
+
+  const message = document.getElementById("packing-category-message");
+  if (!payload.name) {
+    if (message) message.innerText = "Please enter a category name.";
+    return;
+  }
+
+  const result = id
+    ? await supabaseClient.from("packing_categories").update(payload).eq("id", id)
+    : await supabaseClient.from("packing_categories").insert(payload);
+
+  if (result.error) {
+    console.error("Save packing category error", result.error);
+    if (message) message.innerText = result.error.message;
+    return;
+  }
+
+  editingPackingCategoryId = null;
+  await loadAdminData();
+  renderAdmin();
+}
+
+
 function renderPackingImportPanel() {
   return `
     <div class="admin-card packing-import-card">
