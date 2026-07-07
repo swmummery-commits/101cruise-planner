@@ -3130,3 +3130,74 @@
 }
 
 /* Keep headings neutral. Colour is reserved for status, icons and action states only. */
+
+/* v1.0.1 Unified thin pill controls
+   Matches the cleaner Admin pill style across My Cruise Planner. */
+.planner-module-nav {
+  gap: 8px !important;
+  margin-bottom: 18px !important;
+}
+
+.planner-module-nav-button,
+.checklist-toolbar .planner-button,
+.planner-button,
+.checklist-action-button,
+.dashboard-card-action,
+.dashboard-outline-action,
+.next-step-button,
+.add-personal-task-button,
+.cruise-switcher-button {
+  min-height: 30px !important;
+  padding: 7px 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid var(--planner-border, #e5e7eb) !important;
+  background: #fff !important;
+  color: var(--planner-text, #2c2c2c) !important;
+  font-size: 12px !important;
+  font-weight: 450 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+  letter-spacing: -0.01em !important;
+}
+
+.planner-module-nav-button:hover,
+.checklist-toolbar .planner-button:hover,
+.planner-button:hover,
+.checklist-action-button:hover,
+.dashboard-card-action:hover,
+.dashboard-outline-action:hover,
+.next-step-button:hover,
+.add-personal-task-button:hover,
+.cruise-switcher-button:hover {
+  background: #f7f7f7 !important;
+  border-color: #d8d8d8 !important;
+}
+
+.planner-module-nav-button.active,
+.planner-button.black,
+.checklist-action-button.black,
+.dashboard-card-action.primary,
+.next-step-button.primary {
+  background: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+
+/* Keep Save PDF as the only soft-colour primary action in checklist toolbars. */
+.checklist-toolbar .planner-button.primary,
+.checklist-toolbar .planner-button.save-pdf,
+.checklist-toolbar .planner-button[onclick*="PDF"],
+.checklist-toolbar .planner-button[onclick*="Pdf"],
+.checklist-toolbar .planner-button[onclick*="pdf"] {
+  background: var(--planner-accent, #8ad9c2) !important;
+  border-color: var(--planner-accent, #8ad9c2) !important;
+  color: #0f2f28 !important;
+}
+
+/* Keep destructive / warning buttons meaningful, but still small and quiet. */
+.checklist-action-button.danger,
+.planner-button.danger {
+  background: #fff !important;
+  border-color: #ead0d0 !important;
+  color: #b85c5c !important;
+}
