@@ -21,6 +21,7 @@ let selectedChecklistSectionId = "all";
 let editingPackingCategoryId = null;
 let editingPackingItemId = null;
 let selectedPackingCategoryId = "all";
+let showImportDataPanel = false;
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -199,11 +200,14 @@ function renderAdmin() {
           <h2>101cruise Admin</h2>
           <p class="admin-muted">Manage the content used throughout My Cruise Planner.</p>
         </div>
-        <div>
-          <button class="admin-button black" onclick="adminSignOut()">Sign Out</button>
+        <div class="admin-actions-row">
+          <button class="admin-button secondary small" onclick="toggleImportDataPanel()">${showImportDataPanel ? "Close Import" : "Import Data"}</button>
+          <button class="admin-button black small" onclick="adminSignOut()">Sign Out</button>
         </div>
       </div>
     </div>
+
+    ${showImportDataPanel ? renderImportDataPanel() : ""}
 
     <div class="admin-tabs">
       <button class="admin-tab ${activeTab === "cruise-lines" ? "active" : ""}" onclick="setTab('cruise-lines')">Cruise Lines</button>
@@ -216,6 +220,33 @@ function renderAdmin() {
     ${activeTab === "ships" ? renderShipsPanel() : ""}
     ${activeTab === "checklist" ? renderChecklistPanel() : ""}
     ${activeTab === "packing" ? renderPackingPanel() : ""}
+  `;
+}
+
+function toggleImportDataPanel() {
+  showImportDataPanel = !showImportDataPanel;
+  renderAdmin();
+}
+
+function renderImportDataPanel() {
+  return `
+    <div class="admin-card admin-import-panel">
+      <div class="admin-list-top">
+        <div>
+          <h3>Import Data</h3>
+          <p class="admin-muted">Use this global import tool for reusable 101CRUISE data. Today it supports the Smart Packing Planner library; later we can add ships, ports, cruise line links and checklist templates.</p>
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>What are you importing?</label>
+        <select id="globalImportType" onchange="renderAdmin()">
+          <option value="packing-library">Packing Library</option>
+        </select>
+      </div>
+
+      ${renderPackingImportPanel()}
+    </div>
   `;
 }
 
@@ -312,8 +343,6 @@ function renderShipsPanel() {
   const editing = ships.find(ship => ship.id === editingShipId);
 
   return `
-    ${renderPackingImportPanel()}
-
     <div class="admin-grid">
       <div class="admin-card">
         <h3>${editing ? "Edit Ship" : "Add Ship"}</h3>
