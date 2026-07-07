@@ -21,6 +21,8 @@ let selectedChecklistSectionId = "all";
 let editingPackingCategoryId = null;
 let editingPackingItemId = null;
 let selectedPackingCategoryId = "all";
+let showPackingCategoryForm = false;
+let showPackingItemForm = false;
 let showImportDataPanel = false;
 
 function esc(value) {
@@ -292,6 +294,8 @@ function setTab(tab) {
   editingChecklistSectionId = null;
   editingPackingCategoryId = null;
   editingPackingItemId = null;
+  showPackingCategoryForm = false;
+  showPackingItemForm = false;
   renderAdmin();
 }
 
@@ -1142,7 +1146,7 @@ function renderPackingItemsList(items) {
   });
 
   if (!sortedItems.length) return `<p class="admin-muted">No packing items found.</p>`;
-  return sortedItems.map(renderPackingItemCard).join("");
+  return `<div class="admin-packing-item-grid">${sortedItems.map(renderPackingItemCard).join("")}</div>`;
 }
 
 function renderPackingItemsByCategory() {
@@ -1156,7 +1160,7 @@ function renderPackingItemsByCategory() {
         </div>
         <span class="admin-pill">${items.length} item${items.length === 1 ? "" : "s"}</span>
       </div>
-      ${items.length ? items.map(renderPackingItemCard).join("") : `<p class="admin-muted">No items in this category.</p>`}
+      ${items.length ? `<div class="admin-packing-item-grid">${items.map(renderPackingItemCard).join("")}</div>` : `<p class="admin-muted">No items in this category.</p>`}
     </div>
   `).join("");
 
@@ -1172,22 +1176,44 @@ function setPackingCategoryFilter(value) {
 function editPackingItem(itemId) {
   editingPackingItemId = itemId;
   editingPackingCategoryId = null;
+  showPackingItemForm = false;
+  showPackingCategoryForm = false;
   renderAdmin();
 }
 
 function cancelPackingItemEdit() {
   editingPackingItemId = null;
+  showPackingItemForm = false;
+  renderAdmin();
+}
+
+function showNewPackingCategoryForm() {
+  editingPackingCategoryId = null;
+  editingPackingItemId = null;
+  showPackingCategoryForm = true;
+  showPackingItemForm = false;
+  renderAdmin();
+}
+
+function showNewPackingItemForm() {
+  editingPackingCategoryId = null;
+  editingPackingItemId = null;
+  showPackingItemForm = true;
+  showPackingCategoryForm = false;
   renderAdmin();
 }
 
 function editPackingCategory(categoryId) {
   editingPackingCategoryId = categoryId;
   editingPackingItemId = null;
+  showPackingCategoryForm = true;
+  showPackingItemForm = false;
   renderAdmin();
 }
 
 function cancelPackingCategoryEdit() {
   editingPackingCategoryId = null;
+  showPackingCategoryForm = false;
   renderAdmin();
 }
 
@@ -1218,6 +1244,7 @@ async function savePackingCategory() {
   }
 
   editingPackingCategoryId = null;
+  showPackingCategoryForm = false;
   await loadAdminData();
   renderAdmin();
 }
@@ -1263,81 +1290,99 @@ function renderPackingImportPanel() {
   `;
 }
 
+function renderPackingCategoryForm(editingCategory) {
+  return `
+    <div class="admin-card admin-form-card">
+      <h3>${editingCategory ? "Edit Packing Category" : "Add Packing Category"}</h3>
+      <input type="hidden" id="packingCategoryId" value="${editingCategory ? editingCategory.id : ""}">
+
+      <div class="admin-field">
+        <label>Category name</label>
+        <input type="text" id="packingCategoryName" value="${editingCategory ? esc(editingCategory.name) : ""}" placeholder="Clothing">
+      </div>
+
+      <div class="admin-field">
+        <label>Description</label>
+        <textarea id="packingCategoryDescription" placeholder="Short description shown above this category">${editingCategory ? esc(editingCategory.description || "") : ""}</textarea>
+      </div>
+
+      <div class="admin-grid compact">
+        <div class="admin-field">
+          <label>Icon</label>
+          <input type="text" id="packingCategoryIcon" value="${editingCategory ? esc(editingCategory.icon || "") : ""}" placeholder="👕">
+        </div>
+        <div class="admin-field">
+          <label>Display order</label>
+          <input type="number" id="packingCategoryDisplayOrder" value="${editingCategory ? esc(editingCategory.display_order || 0) : "0"}">
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>Status</label>
+        <select id="packingCategoryActive">
+          <option value="true" ${!editingCategory || editingCategory.active ? "selected" : ""}>Published</option>
+          <option value="false" ${editingCategory && !editingCategory.active ? "selected" : ""}>Unpublished</option>
+        </select>
+      </div>
+
+      <button class="admin-button" onclick="savePackingCategory()">${editingCategory ? "Save Category" : "Add Category"}</button>
+      <button class="admin-button secondary" onclick="cancelPackingCategoryEdit()">Cancel</button>
+      <div id="packing-category-message" class="admin-message"></div>
+    </div>
+  `;
+}
+
+function renderPackingCategoryCard(category) {
+  const count = packingItems.filter(item => String(item.category_id) === String(category.id)).length;
+  return `
+    <div class="admin-list-item compact-item admin-clickable-row admin-category-tile" onclick="editPackingCategory(${category.id})">
+      <div class="admin-category-tile-icon">${esc(category.icon || "🧳")}</div>
+      <div>
+        <strong>${esc(category.name)}</strong>
+        <div class="admin-small">${count} item${count === 1 ? "" : "s"}</div>
+        ${category.description ? `<div class="admin-small">${esc(category.description)}</div>` : ""}
+        ${category.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
+      </div>
+    </div>
+  `;
+}
+
 function renderPackingPanel() {
   const editingCategory = packingCategories.find(category => category.id === editingPackingCategoryId);
   const filteredItems = getFilteredPackingItems();
 
   return `
-    <div class="admin-card">
+    <div class="admin-card admin-packing-hero-card">
       <div class="admin-list-top">
         <div>
           <h3>Smart Packing Planner</h3>
           <p class="admin-muted">Manage packing categories, default items, quantities, weights and the rules that create each customer’s packing list.</p>
         </div>
-        <div><button class="admin-button secondary" onclick="refreshAdminData()">Refresh</button></div>
+        <div class="admin-actions-row compact-actions">
+          <button class="admin-button secondary" onclick="showNewPackingCategoryForm()">Add Packing Category</button>
+          <button class="admin-button secondary" onclick="showNewPackingItemForm()">Add Packing Item</button>
+          <button class="admin-button secondary" onclick="refreshAdminData()">Refresh</button>
+        </div>
       </div>
     </div>
 
-    <div class="admin-grid">
-      <div class="admin-card">
-        <h3>${editingCategory ? "Edit Packing Category" : "Add Packing Category"}</h3>
-        <input type="hidden" id="packingCategoryId" value="${editingCategory ? editingCategory.id : ""}">
+    ${showPackingCategoryForm ? renderPackingCategoryForm(editingCategory) : ""}
 
-        <div class="admin-field">
-          <label>Category name</label>
-          <input type="text" id="packingCategoryName" value="${editingCategory ? esc(editingCategory.name) : ""}" placeholder="Clothing">
-        </div>
-
-        <div class="admin-field">
-          <label>Description</label>
-          <textarea id="packingCategoryDescription" placeholder="Short description shown above this category">${editingCategory ? esc(editingCategory.description || "") : ""}</textarea>
-        </div>
-
-        <div class="admin-grid compact">
-          <div class="admin-field">
-            <label>Icon</label>
-            <input type="text" id="packingCategoryIcon" value="${editingCategory ? esc(editingCategory.icon || "") : ""}" placeholder="👕">
-          </div>
-          <div class="admin-field">
-            <label>Display order</label>
-            <input type="number" id="packingCategoryDisplayOrder" value="${editingCategory ? esc(editingCategory.display_order || 0) : "0"}">
-          </div>
-        </div>
-
-        <div class="admin-field">
-          <label>Status</label>
-          <select id="packingCategoryActive">
-            <option value="true" ${!editingCategory || editingCategory.active ? "selected" : ""}>Published</option>
-            <option value="false" ${editingCategory && !editingCategory.active ? "selected" : ""}>Unpublished</option>
-          </select>
-        </div>
-
-        <button class="admin-button" onclick="savePackingCategory()">${editingCategory ? "Save Category" : "Add Category"}</button>
-        ${editingCategory ? `<button class="admin-button secondary" onclick="cancelPackingCategoryEdit()">Cancel</button>` : ""}
-        <div id="packing-category-message" class="admin-message"></div>
+    ${showPackingItemForm ? `
+      <div class="admin-card admin-form-card">
+        <h3>Add Packing Item</h3>
+        ${renderPackingItemForm(null)}
       </div>
-
-      <div class="admin-card">
-        <h3>Packing Categories</h3>
-        ${packingCategories.length ? packingCategories.map(category => `
-          <div class="admin-list-item compact-item">
-            <div class="admin-list-top">
-              <div>
-                <strong>${esc(category.icon || "🧳")} ${esc(category.name)}</strong>
-                <div class="admin-small">Order: ${esc(category.display_order || 0)}</div>
-                <div class="admin-small">${esc(category.description || "No description")}</div>
-                ${category.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
-              </div>
-              <button class="admin-button secondary small" onclick="editPackingCategory(${category.id})">Edit</button>
-            </div>
-          </div>
-        `).join("") : `<p>No packing categories found.</p>`}
-      </div>
-    </div>
+    ` : ""}
 
     <div class="admin-card">
-      <h3>Add Packing Item</h3>
-      ${renderPackingItemForm(null)}
+      <div class="admin-list-top">
+        <div>
+          <h3>Packing Categories</h3>
+          <p class="admin-muted">Click a category to edit it. These control how packing items are grouped in the customer planner.</p>
+        </div>
+      </div>
+      ${packingCategories.length ? `<div class="admin-category-tile-grid">${packingCategories.map(renderPackingCategoryCard).join("")}</div>` : `<p>No packing categories found.</p>`}
     </div>
 
     <div class="admin-card">
