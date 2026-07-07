@@ -281,15 +281,146 @@
   }
 }
 
-/* Packing Admin */
-.admin-field input[type="number"] {
-  max-width: 100%;
+/* =========================================================
+   101CRUISE Admin v2 Design Standard
+   Calm, clean, Apple-like typography and spacing
+   ========================================================= */
+#cruise-admin-app {
+  --admin-text: #2c2c2c;
+  --admin-muted: #6b7280;
+  --admin-border: #e5e7eb;
+  --admin-panel: #ffffff;
+  --admin-page: #f8f9fa;
+  --admin-soft: #f5f6f7;
+  --admin-accent: #2f6f5e;
+  color: var(--admin-text);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-#packingItemDestinations,
-#packingItemClimates,
-#packingItemTravellers,
-#packingItemDressCodes,
-#packingItemCruiseLines {
-  font-size: 12px;
+#cruise-admin-app h1,
+#cruise-admin-app h2,
+#cruise-admin-app h3,
+#cruise-admin-app h4,
+#cruise-admin-app h5,
+#cruise-admin-app h6 {
+  color: var(--admin-text) !important;
+  font-weight: 450 !important;
+  letter-spacing: -0.01em;
+}
+
+.admin-card {
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 16px rgba(17, 24, 39, 0.035);
+}
+
+.admin-card h2 { font-size: 18px !important; }
+.admin-card h3 { font-size: 16px !important; }
+.admin-card h4 { font-size: 14px !important; }
+
+.admin-muted,
+.admin-small,
+.admin-empty-preview,
+.admin-logo-thumb.placeholder {
+  color: var(--admin-muted) !important;
+  font-weight: 400 !important;
+}
+
+.admin-muted { font-size: 12px !important; }
+.admin-small { font-size: 11px !important; }
+
+.admin-field { margin-bottom: 12px; }
+
+.admin-field label {
+  color: var(--admin-muted);
+  font-weight: 400 !important;
+  font-size: 12px !important;
+  margin-bottom: 5px;
+}
+
+.admin-field input,
+.admin-field select,
+.admin-field textarea {
+  border-color: var(--admin-border);
+  border-radius: 10px;
+  font-size: 13px !important;
+  padding: 9px 10px;
+  color: var(--admin-text);
+  background: #fff;
+}
+
+.admin-field input:focus,
+.admin-field select:focus,
+.admin-field textarea:focus {
+  outline: none;
+  border-color: #b9c7c1;
+  box-shadow: 0 0 0 3px rgba(47, 111, 94, 0.08);
+}
+
+.admin-button,
+.admin-tab {
+  font-size: 12px !important;
+  font-weight: 450 !important;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.admin-button {
+  padding: 8px 12px;
+}
+
+.admin-button.small {
+  padding: 6px 10px;
+  font-size: 11px !important;
+}
+
+.admin-button.secondary,
+.admin-tab {
+  background: #fff;
+  color: var(--admin-text);
+  border: 1px solid var(--admin-border);
+}
+
+.admin-button.black,
+.admin-tab.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.admin-list-item,
+.compact-item {
+  background: #fff;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: none;
+}
+
+.admin-list-item:hover,
+.compact-item:hover {
+  border-color: #d1d5db;
+  background: #fbfbfb;
+}
+
+.checklist-admin-title {
+  color: var(--admin-text) !important;
+  font-size: 14px !important;
+  font-weight: 450 !important;
+}
+
+.admin-pill {
+  font-size: 10.5px !important;
+  font-weight: 450 !important;
+  background: #f3f6f5;
+  color: #2f6f5e;
+}
+
+.admin-message {
+  font-size: 12px !important;
+  font-weight: 400 !important;
 }
