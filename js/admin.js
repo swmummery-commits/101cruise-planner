@@ -12,6 +12,7 @@ let checklistSections = [];
 let checklistItems = [];
 let activeTab = "cruise-lines";
 let editingShipId = null;
+let editingCruiseLineId = null;
 let editingChecklistItemId = null;
 let editingChecklistSectionId = null;
 let selectedChecklistSectionId = "all";
@@ -100,7 +101,6 @@ async function loadAdminData() {
   const { data: lines, error: linesError } = await supabaseClient
     .from("cruise_lines")
     .select("*")
-    .order("display_order", { ascending: true })
     .order("name", { ascending: true });
 
   const { data: shipRows, error: shipsError } = await supabaseClient
@@ -152,6 +152,7 @@ async function loadAdminData() {
 function setTab(tab) {
   activeTab = tab;
   editingShipId = null;
+  editingCruiseLineId = null;
   editingChecklistItemId = null;
   editingChecklistSectionId = null;
   renderAdmin();
@@ -184,57 +185,26 @@ function renderAdmin() {
 }
 
 function renderCruiseLinesPanel() {
+  const sortedLines = [...cruiseLines].sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+
   return `
     <div class="admin-card">
       <h3>Cruise Lines</h3>
-      <p class="admin-muted">Paste the Squarespace logo URL beside the correct cruise line, then click <strong>Save Logo</strong>.</p>
+      <p class="admin-muted">Manage cruise line names and logos. Lines display alphabetically.</p>
       <div id="line-global-message" class="admin-message"></div>
 
-      ${cruiseLines.length ? cruiseLines.map(line => `
-        <div class="admin-list-item" id="line-card-${line.id}">
-          <div class="admin-inline-grid">
-            <div>
-              <h3 style="margin-bottom:4px;">${esc(line.name)}</h3>
-              <div class="admin-small">Display order: ${esc(line.display_order || 999)}</div>
-              ${line.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill inactive">Inactive</span>`}
+      <div class="admin-compact-list">
+        ${sortedLines.length ? sortedLines.map(line => renderCruiseLineRow(line)).join("") : `<p>No cruise lines found.</p>`}
+      </div>
 
-              <div class="admin-field" style="margin-top:14px;">
-                <label>Logo URL</label>
-                <textarea id="logo-url-${line.id}" placeholder="Paste the Squarespace logo URL here">${esc(line.logo_url || "")}</textarea>
-              </div>
-
-              <div class="admin-field">
-                <label>Display order</label>
-                <input type="number" id="line-order-${line.id}" value="${esc(line.display_order || 999)}">
-              </div>
-
-              <button class="admin-button" onclick="saveLineLogo(${line.id})">Save Logo</button>
-              <div id="line-message-${line.id}" class="admin-message"></div>
-            </div>
-            <div>
-              ${line.logo_url
-                ? `<img class="admin-logo-preview" src="${esc(line.logo_url)}" alt="${esc(line.name)} logo" onerror="this.outerHTML='<div class=&quot;admin-empty-preview&quot;>Image could not load</div>'">`
-                : `<div class="admin-empty-preview">No logo saved yet</div>`
-              }
-            </div>
-          </div>
-        </div>
-      `).join("") : `<p>No cruise lines found.</p>`}
-
-      <hr style="border:none;border-top:1px solid #eee;margin:28px 0;">
+      <hr style="border:none;border-top:1px solid #eee;margin:24px 0;">
 
       <h3>Add New Cruise Line</h3>
       <p class="admin-small">Use this only for a brand-new cruise line that is not already listed above.</p>
 
-      <div class="admin-grid">
-        <div class="admin-field">
-          <label>Cruise line name</label>
-          <input type="text" id="newLineName" placeholder="Example: Azamara">
-        </div>
-        <div class="admin-field">
-          <label>Display order</label>
-          <input type="number" id="newLineOrder" value="999">
-        </div>
+      <div class="admin-field">
+        <label>Cruise line name</label>
+        <input type="text" id="newLineName" placeholder="Example: Azamara">
       </div>
 
       <div class="admin-field">
@@ -246,6 +216,61 @@ function renderCruiseLinesPanel() {
       <div id="new-line-message" class="admin-message"></div>
     </div>
   `;
+}
+
+function renderCruiseLineRow(line) {
+  const isEditing = editingCruiseLineId === line.id || !line.logo_url;
+
+  if (!isEditing) {
+    return `
+      <div class="admin-list-item admin-line-compact" id="line-card-${line.id}">
+        <div class="admin-line-summary">
+          <img class="admin-logo-thumb" src="${esc(line.logo_url)}" alt="${esc(line.name)} logo" onerror="this.outerHTML='<div class=&quot;admin-logo-thumb placeholder&quot;>No logo</div>'">
+          <div>
+            <strong>${esc(line.name)}</strong>
+            ${line.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill inactive">Inactive</span>`}
+          </div>
+        </div>
+        <button class="admin-button secondary small" onclick="editCruiseLineLogo(${line.id})">Change Logo</button>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="admin-list-item" id="line-card-${line.id}">
+      <div class="admin-inline-grid">
+        <div>
+          <h3 style="margin-bottom:4px;">${esc(line.name)}</h3>
+          ${line.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill inactive">Inactive</span>`}
+
+          <div class="admin-field" style="margin-top:14px;">
+            <label>Logo URL</label>
+            <textarea id="logo-url-${line.id}" placeholder="Paste the Squarespace logo URL here">${esc(line.logo_url || "")}</textarea>
+          </div>
+
+          <button class="admin-button" onclick="saveLineLogo(${line.id})">Save Logo</button>
+          ${line.logo_url ? `<button class="admin-button secondary" onclick="cancelCruiseLineLogoEdit()">Cancel</button>` : ""}
+          <div id="line-message-${line.id}" class="admin-message"></div>
+        </div>
+        <div>
+          ${line.logo_url
+            ? `<img class="admin-logo-preview" src="${esc(line.logo_url)}" alt="${esc(line.name)} logo" onerror="this.outerHTML='<div class=&quot;admin-empty-preview&quot;>Image could not load</div>'">`
+            : `<div class="admin-empty-preview">No logo saved yet</div>`
+          }
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function editCruiseLineLogo(lineId) {
+  editingCruiseLineId = lineId;
+  renderAdmin();
+}
+
+function cancelCruiseLineLogoEdit() {
+  editingCruiseLineId = null;
+  renderAdmin();
 }
 
 function renderShipsPanel() {
@@ -324,12 +349,22 @@ function getPriorityEmoji(priority) {
 }
 
 function getFilteredChecklistItems() {
-  if (selectedChecklistSectionId === "all") return checklistItems;
+  if (selectedChecklistSectionId === "all" || selectedChecklistSectionId === "by-section") return checklistItems;
   return checklistItems.filter(item => String(item.section_id) === String(selectedChecklistSectionId));
 }
 
+function getChecklistItemsBySection() {
+  return [...checklistSections]
+    .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0) || String(a.name || "").localeCompare(String(b.name || "")))
+    .map(section => ({
+      section,
+      items: checklistItems
+        .filter(item => String(item.section_id) === String(section.id))
+        .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0) || String(a.title || "").localeCompare(String(b.title || "")))
+    }));
+}
+
 function renderChecklistPanel() {
-  const editingItem = checklistItems.find(item => item.id === editingChecklistItemId);
   const editingSection = checklistSections.find(section => section.id === editingChecklistSectionId);
   const filteredItems = getFilteredChecklistItems();
 
@@ -393,7 +428,7 @@ function renderChecklistPanel() {
                 ${section.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
               </div>
               <div>
-                <button class="admin-button secondary" onclick="editChecklistSection(${section.id})">Edit</button>
+                <button class="admin-button secondary small" onclick="editChecklistSection(${section.id})">Edit</button>
               </div>
             </div>
           </div>
@@ -402,97 +437,21 @@ function renderChecklistPanel() {
     </div>
 
     <div class="admin-card">
-      <h3>${editingItem ? "Edit Checklist Item" : "Add Checklist Item"}</h3>
-
-      <input type="hidden" id="checklistItemId" value="${editingItem ? editingItem.id : ""}">
-
-      <div class="admin-grid">
-        <div class="admin-field">
-          <label>Section</label>
-          <select id="itemSectionId">
-            <option value="">Select section</option>
-            ${checklistSections.map(section => `
-              <option value="${section.id}" ${editingItem && editingItem.section_id === section.id ? "selected" : ""}>${esc(section.name)}</option>
-            `).join("")}
-          </select>
-        </div>
-
-        <div class="admin-field">
-          <label>Priority</label>
-          <select id="itemPriority">
-            ${["Essential", "Tip", "Optional"].map(priority => `
-              <option value="${priority}" ${editingItem && editingItem.priority === priority ? "selected" : ""}>${priority}</option>
-            `).join("")}
-          </select>
-        </div>
-      </div>
-
-      <div class="admin-field">
-        <label>Title</label>
-        <input type="text" id="itemTitle" value="${editingItem ? esc(editingItem.title) : ""}" placeholder="Purchase travel insurance">
-      </div>
-
-      <div class="admin-field">
-        <label>Description</label>
-        <textarea id="itemDescription" placeholder="Short description shown under the task">${editingItem ? esc(editingItem.description || "") : ""}</textarea>
-      </div>
-
-      <div class="admin-field">
-        <label>Why it matters</label>
-        <textarea id="itemWhyItMatters" placeholder="Explain why this task is important">${editingItem ? esc(editingItem.why_it_matters || "") : ""}</textarea>
-      </div>
-
-      <div class="admin-grid">
-        <div class="admin-field">
-          <label>Button 1 text</label>
-          <input type="text" id="itemButton1Text" value="${editingItem ? esc(editingItem.button1_text || "") : ""}" placeholder="Compare Travel Insurance">
-        </div>
-        <div class="admin-field">
-          <label>Button 1 URL</label>
-          <input type="text" id="itemButton1Url" value="${editingItem ? esc(editingItem.button1_url || "") : ""}" placeholder="/travel-insurance">
-        </div>
-      </div>
-
-      <div class="admin-grid">
-        <div class="admin-field">
-          <label>Button 2 text</label>
-          <input type="text" id="itemButton2Text" value="${editingItem ? esc(editingItem.button2_text || "") : ""}" placeholder="Read our guide">
-        </div>
-        <div class="admin-field">
-          <label>Button 2 URL</label>
-          <input type="text" id="itemButton2Url" value="${editingItem ? esc(editingItem.button2_url || "") : ""}" placeholder="/cruise-guides">
-        </div>
-      </div>
-
-      <div class="admin-grid compact">
-        <div class="admin-field">
-          <label>Display order</label>
-          <input type="number" id="itemDisplayOrder" value="${editingItem ? esc(editingItem.display_order || 0) : "0"}">
-        </div>
-        <div class="admin-field">
-          <label>Status</label>
-          <select id="itemActive">
-            <option value="true" ${!editingItem || editingItem.active ? "selected" : ""}>Published</option>
-            <option value="false" ${editingItem && !editingItem.active ? "selected" : ""}>Unpublished</option>
-          </select>
-        </div>
-      </div>
-
-      <button class="admin-button" onclick="saveChecklistItem()">${editingItem ? "Save Item" : "Add Item"}</button>
-      ${editingItem ? `<button class="admin-button secondary" onclick="cancelChecklistItemEdit()">Cancel</button>` : ""}
-      <div id="item-message" class="admin-message"></div>
+      <h3>Add Checklist Item</h3>
+      ${renderChecklistItemForm(null)}
     </div>
 
     <div class="admin-card">
       <div class="admin-list-top">
         <div>
           <h3>Checklist Items</h3>
-          <p class="admin-muted">Filter by section, edit wording, publish/unpublish items, and set their display order.</p>
+          <p class="admin-muted">Filter by section, display items grouped by section order, edit wording, and publish/unpublish items.</p>
         </div>
         <div class="admin-field admin-filter-field">
-          <label>Filter by section</label>
+          <label>Display</label>
           <select id="checklistSectionFilter" onchange="setChecklistSectionFilter(this.value)">
-            <option value="all" ${selectedChecklistSectionId === "all" ? "selected" : ""}>All sections</option>
+            <option value="all" ${selectedChecklistSectionId === "all" ? "selected" : ""}>All items</option>
+            <option value="by-section" ${selectedChecklistSectionId === "by-section" ? "selected" : ""}>Display by Section order</option>
             ${checklistSections.map(section => `
               <option value="${section.id}" ${String(selectedChecklistSectionId) === String(section.id) ? "selected" : ""}>${esc(section.name)}</option>
             `).join("")}
@@ -500,32 +459,132 @@ function renderChecklistPanel() {
         </div>
       </div>
 
-      ${filteredItems.length ? filteredItems.map(item => `
-        <div class="admin-list-item checklist-admin-item">
-          <div class="admin-list-top">
-            <div>
-              <div class="checklist-admin-title">${getPriorityEmoji(item.priority)} ${esc(item.title)}</div>
-              <div class="admin-small"><strong>Section:</strong> ${esc(item.checklist_sections?.name || "Section not found")}</div>
-              <div class="admin-small"><strong>Priority:</strong> ${esc(item.priority || "Tip")} | <strong>Order:</strong> ${esc(item.display_order || 0)}</div>
-              ${item.description ? `<div class="admin-small checklist-admin-copy">${esc(item.description)}</div>` : ""}
-              ${item.why_it_matters ? `<div class="admin-small checklist-admin-copy"><strong>Why:</strong> ${esc(item.why_it_matters)}</div>` : ""}
-              ${item.button1_text || item.button2_text ? `<div class="admin-small checklist-admin-copy"><strong>Links:</strong> ${esc([item.button1_text, item.button2_text].filter(Boolean).join(" / "))}</div>` : ""}
-              ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
-            </div>
-            <div>
-              <button class="admin-button secondary" onclick="editChecklistItem(${item.id})">Edit</button>
-              <button class="admin-button secondary" onclick="toggleChecklistItemActive(${item.id}, ${item.active ? "false" : "true"})">${item.active ? "Unpublish" : "Publish"}</button>
-            </div>
-          </div>
-        </div>
-      `).join("") : `<p>No checklist items found.</p>`}
+      ${selectedChecklistSectionId === "by-section" ? renderChecklistItemsBySection() : renderChecklistItemsList(filteredItems)}
     </div>
   `;
 }
 
+function renderChecklistItemForm(editingItem) {
+  return `
+    <input type="hidden" id="checklistItemId" value="${editingItem ? editingItem.id : ""}">
+
+    <div class="admin-grid">
+      <div class="admin-field">
+        <label>Section</label>
+        <select id="itemSectionId">
+          <option value="">Select section</option>
+          ${checklistSections.map(section => `
+            <option value="${section.id}" ${editingItem && editingItem.section_id === section.id ? "selected" : ""}>${esc(section.name)}</option>
+          `).join("")}
+        </select>
+      </div>
+
+      <div class="admin-field">
+        <label>Priority</label>
+        <select id="itemPriority">
+          ${["Essential", "Tip", "Optional"].map(priority => `
+            <option value="${priority}" ${editingItem && editingItem.priority === priority ? "selected" : ""}>${priority}</option>
+          `).join("")}
+        </select>
+      </div>
+    </div>
+
+    <div class="admin-field">
+      <label>Title</label>
+      <input type="text" id="itemTitle" value="${editingItem ? esc(editingItem.title) : ""}" placeholder="Purchase travel insurance">
+    </div>
+
+    <div class="admin-field">
+      <label>Description</label>
+      <textarea id="itemDescription" placeholder="Short description shown under the task">${editingItem ? esc(editingItem.description || "") : ""}</textarea>
+    </div>
+
+    <div class="admin-field">
+      <label>Why it matters</label>
+      <textarea id="itemWhyItMatters" placeholder="Explain why this task is important">${editingItem ? esc(editingItem.why_it_matters || "") : ""}</textarea>
+    </div>
+
+    <div class="admin-grid">
+      <div class="admin-field">
+        <label>Button 1 text</label>
+        <input type="text" id="itemButton1Text" value="${editingItem ? esc(editingItem.button1_text || "") : ""}" placeholder="Compare Travel Insurance">
+      </div>
+      <div class="admin-field">
+        <label>Button 1 URL</label>
+        <input type="text" id="itemButton1Url" value="${editingItem ? esc(editingItem.button1_url || "") : ""}" placeholder="/travel-insurance">
+      </div>
+    </div>
+
+    <div class="admin-grid">
+      <div class="admin-field">
+        <label>Button 2 text</label>
+        <input type="text" id="itemButton2Text" value="${editingItem ? esc(editingItem.button2_text || "") : ""}" placeholder="Read our guide">
+      </div>
+      <div class="admin-field">
+        <label>Button 2 URL</label>
+        <input type="text" id="itemButton2Url" value="${editingItem ? esc(editingItem.button2_url || "") : ""}" placeholder="/cruise-guides">
+      </div>
+    </div>
+
+    <div class="admin-grid compact">
+      <div class="admin-field">
+        <label>Display order</label>
+        <input type="number" id="itemDisplayOrder" value="${editingItem ? esc(editingItem.display_order || 0) : "0"}">
+      </div>
+      <div class="admin-field">
+        <label>Status</label>
+        <select id="itemActive">
+          <option value="true" ${!editingItem || editingItem.active ? "selected" : ""}>Published</option>
+          <option value="false" ${editingItem && !editingItem.active ? "selected" : ""}>Unpublished</option>
+        </select>
+      </div>
+    </div>
+
+    <button class="admin-button" onclick="saveChecklistItem()">${editingItem ? "Save Item" : "Add Item"}</button>
+    ${editingItem ? `<button class="admin-button secondary" onclick="cancelChecklistItemEdit()">Cancel</button>` : ""}
+    <div id="item-message" class="admin-message"></div>
+  `;
+}
+
+function renderChecklistItemsBySection() {
+  const groups = getChecklistItemsBySection();
+  return groups.map(group => `
+    <div class="admin-section-group">
+      <h4>${esc(group.section.name)}</h4>
+      ${group.items.length ? renderChecklistItemsList(group.items) : `<p class="admin-small">No checklist items in this section.</p>`}
+    </div>
+  `).join("");
+}
+
+function renderChecklistItemsList(items) {
+  return items.length ? items.map(item => `
+    <div class="admin-list-item checklist-admin-item" id="checklist-item-${item.id}">
+      ${editingChecklistItemId === item.id ? `
+        <h3>Edit Checklist Item</h3>
+        ${renderChecklistItemForm(item)}
+      ` : `
+        <div class="admin-list-top">
+          <div>
+            <div class="checklist-admin-title">${getPriorityEmoji(item.priority)} ${esc(item.title)}</div>
+            <div class="admin-small"><strong>Section:</strong> ${esc(item.checklist_sections?.name || "Section not found")}</div>
+            <div class="admin-small"><strong>Priority:</strong> ${esc(item.priority || "Tip")} | <strong>Order:</strong> ${esc(item.display_order || 0)}</div>
+            ${item.description ? `<div class="admin-small checklist-admin-copy">${esc(item.description)}</div>` : ""}
+            ${item.why_it_matters ? `<div class="admin-small checklist-admin-copy"><strong>Why:</strong> ${esc(item.why_it_matters)}</div>` : ""}
+            ${item.button1_text || item.button2_text ? `<div class="admin-small checklist-admin-copy"><strong>Links:</strong> ${esc([item.button1_text, item.button2_text].filter(Boolean).join(" / "))}</div>` : ""}
+            ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
+          </div>
+          <div>
+            <button class="admin-button secondary small" onclick="editChecklistItem(${item.id})">Edit</button>
+            <button class="admin-button secondary small" onclick="toggleChecklistItemActive(${item.id}, ${item.active ? "false" : "true"})">${item.active ? "Unpublish" : "Publish"}</button>
+          </div>
+        </div>
+      `}
+    </div>
+  `).join("") : `<p>No checklist items found.</p>`;
+}
+
 async function saveLineLogo(lineId) {
   const logoUrl = normalizeUrl(document.getElementById(`logo-url-${lineId}`).value);
-  const displayOrder = Number(document.getElementById(`line-order-${lineId}`).value) || 999;
   const message = document.getElementById(`line-message-${lineId}`);
 
   message.className = "admin-message";
@@ -535,11 +594,10 @@ async function saveLineLogo(lineId) {
     .from("cruise_lines")
     .update({
       logo_url: logoUrl || null,
-      display_order: displayOrder,
       active: true
     })
     .eq("id", lineId)
-    .select("id, name, logo_url, display_order, active");
+    .select("id, name, logo_url, active");
 
   if (error) {
     console.error("Save logo error", error);
@@ -564,7 +622,6 @@ async function saveLineLogo(lineId) {
 async function addNewCruiseLine() {
   const name = document.getElementById("newLineName").value.trim();
   const logoUrl = normalizeUrl(document.getElementById("newLineLogoUrl").value);
-  const displayOrder = Number(document.getElementById("newLineOrder").value) || 999;
   const message = document.getElementById("new-line-message");
 
   if (!name) {
@@ -578,7 +635,7 @@ async function addNewCruiseLine() {
 
   const { data, error } = await supabaseClient
     .from("cruise_lines")
-    .insert({ name, logo_url: logoUrl || null, display_order: displayOrder, active: true })
+    .insert({ name, logo_url: logoUrl || null, display_order: 999, active: true })
     .select();
 
   if (error) {
@@ -737,6 +794,10 @@ function editChecklistItem(id) {
   editingChecklistItemId = id;
   activeTab = "checklist";
   renderAdmin();
+  setTimeout(() => {
+    const el = document.getElementById(`checklist-item-${id}`);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 0);
 }
 
 function cancelChecklistItemEdit() {
