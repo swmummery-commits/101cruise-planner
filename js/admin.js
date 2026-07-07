@@ -938,8 +938,6 @@ async function refreshAdminData() {
   renderAdmin();
 }
 
-async function initAdmin() {
-  const { data } = await 
 
 function getFilteredPackingItems() {
   if (selectedPackingCategoryId === "all" || selectedPackingCategoryId === "by-category") return packingItems;
@@ -1306,7 +1304,10 @@ async function savePackingItem() {
   renderAdmin();
 }
 
-supabaseClient.auth.getSession();
+
+
+async function initAdmin() {
+  const { data } = await supabaseClient.auth.getSession();
 
   if (!data.session) {
     renderLogin();
