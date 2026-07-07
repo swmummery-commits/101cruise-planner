@@ -312,6 +312,8 @@ function renderShipsPanel() {
   const editing = ships.find(ship => ship.id === editingShipId);
 
   return `
+    ${renderPackingImportPanel()}
+
     <div class="admin-grid">
       <div class="admin-card">
         <h3>${editing ? "Edit Ship" : "Add Ship"}</h3>
@@ -955,6 +957,47 @@ function getPackingItemsByCategory() {
     }));
 }
 
+
+function renderPackingImportPanel() {
+  return `
+    <div class="admin-card packing-import-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Bulk Import Packing Library</h3>
+          <p class="admin-muted">Export the <strong>Packing Items</strong> tab from Google Sheets as CSV, then paste it here or upload the CSV file. This updates categories and packing items in bulk.</p>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-field">
+          <label>Upload CSV file</label>
+          <input type="file" accept=".csv,text/csv" onchange="handlePackingCsvFile(this)">
+        </div>
+        <div class="admin-field">
+          <label>Import mode</label>
+          <select id="packingImportMode">
+            <option value="upsert">Update existing items and add new ones</option>
+            <option value="replace-active">Update/add items and mark missing imported items unpublished</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="admin-field">
+        <label>CSV content</label>
+        <textarea id="packingImportCsv" rows="8" placeholder="Paste CSV exported from the Packing Items tab here"></textarea>
+      </div>
+
+      <div class="admin-actions-row">
+        <button class="admin-button" onclick="importPackingLibraryCsv()">Import Packing Library</button>
+        <button class="admin-button secondary" onclick="previewPackingLibraryCsv()">Preview CSV</button>
+        <button class="admin-button secondary" onclick="clearPackingImportCsv()">Clear</button>
+      </div>
+      <div id="packing-import-message" class="admin-message"></div>
+      <p class="admin-small">Required columns: Category and Item. Recommended columns: Priority, Base Qty, Qty Formula, Weight kg, Traveller Type, Climate, Destination, Dress Code, Cruise Line, Paul's Tip, Why, Active.</p>
+    </div>
+  `;
+}
+
 function renderPackingPanel() {
   const editingCategory = packingCategories.find(category => category.id === editingPackingCategoryId);
   const filteredItems = getFilteredPackingItems();
@@ -1304,6 +1347,326 @@ async function savePackingItem() {
   renderAdmin();
 }
 
+
+
+function normalizeImportHeader(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function parseCsvText(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < String(text || "").length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        cell += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") i++;
+      row.push(cell);
+      if (row.some(value => String(value || "").trim() !== "")) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += char;
+    }
+  }
+
+  row.push(cell);
+  if (row.some(value => String(value || "").trim() !== "")) rows.push(row);
+  return rows;
+}
+
+function getImportValue(record, names) {
+  for (const name of names) {
+    const key = normalizeImportHeader(name);
+    if (record[key] !== undefined && record[key] !== null) return String(record[key]).trim();
+  }
+  return "";
+}
+
+function csvRowsToRecords(rows) {
+  if (!rows.length) return [];
+  const headers = rows[0].map(normalizeImportHeader);
+  return rows.slice(1).map(row => {
+    const record = {};
+    headers.forEach((header, index) => {
+      if (header) record[header] = row[index] === undefined ? "" : row[index];
+    });
+    return record;
+  });
+}
+
+function normalizeImportList(value) {
+  const cleaned = String(value || "").trim();
+  if (!cleaned || cleaned.toLowerCase() === "all" || cleaned.toLowerCase() === "any") return null;
+  return cleaned.replace(/\s*;\s*/g, ", ");
+}
+
+function normalizePackingImportType(value) {
+  const type = String(value || "").trim().toLowerCase();
+  if (["essential", "required", "must have", "must-have", "musthave"].includes(type)) return "Required";
+  if (["optional", "nice to have", "nice-to-have"].includes(type)) return "Optional";
+  return "Recommended";
+}
+
+function parseImportNumber(value, fallback = 0) {
+  const text = String(value || "").replace(/kg|g/gi, "").trim();
+  const number = Number(text);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function parseImportActive(value) {
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return true;
+  return !["no", "false", "0", "inactive", "unpublished", "hide"].includes(text);
+}
+
+function parseQuantityRule(baseValue, formulaValue) {
+  const baseFromColumn = parseImportNumber(baseValue, 1);
+  const formula = String(formulaValue || "").trim();
+  const normalized = formula.toLowerCase().replace(/\s+/g, " ");
+
+  if (!formula || normalized === "fixed") {
+    return { base_quantity: baseFromColumn || 1, quantity_per_night: 0 };
+  }
+
+  if (/^\d+(\.\d+)?$/.test(normalized)) {
+    return { base_quantity: Number(normalized), quantity_per_night: 0 };
+  }
+
+  if (normalized === "nights + 2") return { base_quantity: 2, quantity_per_night: 1 };
+  if (normalized === "trip days + 3") return { base_quantity: 3, quantity_per_night: 1 };
+  if (normalized === "trip days + 4") return { base_quantity: 4, quantity_per_night: 1 };
+  if (normalized === "formal nights") return { base_quantity: Math.max(1, baseFromColumn || 1), quantity_per_night: 0 };
+
+  const plusCeiling = normalized.match(/^(\d+(?:\.\d+)?)\s*\+\s*ceiling\(nights\*(\d+(?:\.\d+)?)\)$/);
+  if (plusCeiling) {
+    return { base_quantity: Number(plusCeiling[1]), quantity_per_night: Number(plusCeiling[2]) };
+  }
+
+  const ceilingOnly = normalized.match(/^ceiling\(nights\*(\d+(?:\.\d+)?)\)$/);
+  if (ceilingOnly) {
+    return { base_quantity: 0, quantity_per_night: Number(ceilingOnly[1]) };
+  }
+
+  return { base_quantity: baseFromColumn || 1, quantity_per_night: 0 };
+}
+
+function getPackingCategoryIcon(name) {
+  const value = String(name || "").toLowerCase();
+  if (value.includes("document")) return "📄";
+  if (value.includes("money") || value.includes("payment")) return "💳";
+  if (value.includes("cloth")) return "👕";
+  if (value.includes("evening") || value.includes("formal")) return "🎩";
+  if (value.includes("swim") || value.includes("pool") || value.includes("beach")) return "🏖";
+  if (value.includes("shoe") || value.includes("foot")) return "👞";
+  if (value.includes("toiletr") || value.includes("health")) return "🧴";
+  if (value.includes("medication") || value.includes("medicine")) return "💊";
+  if (value.includes("tech") || value.includes("electronic")) return "📱";
+  if (value.includes("bag") || value.includes("luggage")) return "🧳";
+  if (value.includes("shore") || value.includes("excursion")) return "🎒";
+  if (value.includes("cabin")) return "🛏";
+  if (value.includes("kid") || value.includes("baby") || value.includes("family")) return "👶";
+  if (value.includes("last")) return "🧳";
+  return "🧳";
+}
+
+function buildPackingImportData(csvText) {
+  const rows = parseCsvText(csvText);
+  const records = csvRowsToRecords(rows);
+  const categories = [];
+  const categoryOrder = new Map();
+  const items = [];
+
+  records.forEach((record, index) => {
+    const category = getImportValue(record, ["Category"]);
+    const name = getImportValue(record, ["Item", "Item Name", "Name"]);
+    if (!category || !name) return;
+
+    if (!categoryOrder.has(category)) {
+      categoryOrder.set(category, categoryOrder.size + 1);
+      categories.push({
+        name: category,
+        icon: getPackingCategoryIcon(category),
+        description: null,
+        display_order: categoryOrder.get(category),
+        active: true
+      });
+    }
+
+    const qty = parseQuantityRule(
+      getImportValue(record, ["Base Qty", "Base Quantity", "Qty"]),
+      getImportValue(record, ["Qty Formula", "Quantity Formula", "Nights Rule"])
+    );
+
+    const paulsTip = getImportValue(record, ["Paul's Tip", "Pauls Tip", "Description", "Packing Note"]);
+    const why = getImportValue(record, ["Why", "Why Pack This", "Help Text"]);
+
+    items.push({
+      category_name: category,
+      name,
+      description: paulsTip || null,
+      item_type: normalizePackingImportType(getImportValue(record, ["Priority", "Importance", "Type"])),
+      base_quantity: qty.base_quantity,
+      quantity_per_night: qty.quantity_per_night,
+      weight_kg: parseImportNumber(getImportValue(record, ["Weight kg", "Weight (kg)", "Weight"]), 0),
+      destination_tags: normalizeImportList(getImportValue(record, ["Destination", "Destinations"])),
+      climate_tags: normalizeImportList(getImportValue(record, ["Climate", "Climates", "Climate Profile"])),
+      traveller_types: normalizeImportList(getImportValue(record, ["Traveller Type", "Traveller", "Travellers"])),
+      dress_codes: normalizeImportList(getImportValue(record, ["Dress Code", "Dress Codes"])),
+      cruise_line_tags: normalizeImportList(getImportValue(record, ["Cruise Line", "Cruise Lines"])),
+      help_text: why || null,
+      display_order: index + 1,
+      active: parseImportActive(getImportValue(record, ["Active", "Status", "Published"])),
+      couple_multiplier: 1,
+      family_multiplier: 1.5,
+      group_multiplier: 1
+    });
+  });
+
+  return { categories, items, rowCount: records.length };
+}
+
+async function handlePackingCsvFile(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const text = await file.text();
+  const textarea = document.getElementById("packingImportCsv");
+  if (textarea) textarea.value = text;
+  previewPackingLibraryCsv();
+}
+
+function previewPackingLibraryCsv() {
+  const textarea = document.getElementById("packingImportCsv");
+  const message = document.getElementById("packing-import-message");
+  try {
+    const data = buildPackingImportData(textarea ? textarea.value : "");
+    if (message) {
+      message.className = "admin-message";
+      message.innerText = `Preview: ${data.items.length} packing items across ${data.categories.length} categories found.`;
+    }
+  } catch (error) {
+    if (message) {
+      message.className = "admin-message admin-error";
+      message.innerText = `Could not read CSV: ${error.message}`;
+    }
+  }
+}
+
+function clearPackingImportCsv() {
+  const textarea = document.getElementById("packingImportCsv");
+  if (textarea) textarea.value = "";
+  const message = document.getElementById("packing-import-message");
+  if (message) message.innerText = "";
+}
+
+async function importPackingLibraryCsv() {
+  const textarea = document.getElementById("packingImportCsv");
+  const message = document.getElementById("packing-import-message");
+  const mode = document.getElementById("packingImportMode")?.value || "upsert";
+
+  try {
+    const data = buildPackingImportData(textarea ? textarea.value : "");
+    if (!data.items.length) {
+      if (message) {
+        message.className = "admin-message admin-error";
+        message.innerText = "No valid packing items found. Make sure the CSV includes Category and Item columns.";
+      }
+      return;
+    }
+
+    if (message) {
+      message.className = "admin-message";
+      message.innerText = `Importing ${data.items.length} items...`;
+    }
+
+    const { error: categoryError } = await supabaseClient
+      .from("packing_categories")
+      .upsert(data.categories, { onConflict: "name" });
+
+    if (categoryError) throw categoryError;
+
+    const { data: categoryRows, error: categoryLoadError } = await supabaseClient
+      .from("packing_categories")
+      .select("id,name");
+
+    if (categoryLoadError) throw categoryLoadError;
+
+    const categoryMap = new Map((categoryRows || []).map(category => [String(category.name).trim().toLowerCase(), category.id]));
+    const itemPayloads = data.items
+      .map(item => {
+        const categoryId = categoryMap.get(String(item.category_name).trim().toLowerCase());
+        if (!categoryId) return null;
+        const { category_name, ...payload } = item;
+        return { ...payload, category_id: categoryId };
+      })
+      .filter(Boolean);
+
+    const batchSize = 100;
+    for (let i = 0; i < itemPayloads.length; i += batchSize) {
+      const batch = itemPayloads.slice(i, i + batchSize);
+      const { error } = await supabaseClient
+        .from("packing_items")
+        .upsert(batch, { onConflict: "category_id,name" });
+      if (error) throw error;
+    }
+
+    if (mode === "replace-active") {
+      const importedNames = new Set(itemPayloads.map(item => `${item.category_id}::${String(item.name).trim().toLowerCase()}`));
+      const { data: existingItems, error: existingError } = await supabaseClient
+        .from("packing_items")
+        .select("id,category_id,name");
+      if (existingError) throw existingError;
+      const missingIds = (existingItems || [])
+        .filter(item => !importedNames.has(`${item.category_id}::${String(item.name).trim().toLowerCase()}`))
+        .map(item => item.id);
+      if (missingIds.length) {
+        const { error: inactiveError } = await supabaseClient
+          .from("packing_items")
+          .update({ active: false })
+          .in("id", missingIds);
+        if (inactiveError) throw inactiveError;
+      }
+    }
+
+    await loadAdminData();
+    activeTab = "packing";
+    selectedPackingCategoryId = "by-category";
+    renderAdmin();
+
+    setTimeout(() => {
+      const doneMessage = document.getElementById("packing-import-message");
+      if (doneMessage) {
+        doneMessage.className = "admin-message";
+        doneMessage.innerText = `Imported ${itemPayloads.length} packing items across ${data.categories.length} categories.`;
+      }
+    }, 50);
+  } catch (error) {
+    console.error("Packing import failed", error);
+    if (message) {
+      message.className = "admin-message admin-error";
+      message.innerText = `Import failed: ${error.message || error}`;
+    }
+  }
+}
 
 
 async function initAdmin() {
