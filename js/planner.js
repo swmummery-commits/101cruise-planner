@@ -654,6 +654,7 @@ async function loadDashboardChecklistData(cruise) {
       .select("*")
       .eq("user_id", currentUser.id)
       .eq("cruise_id", cruise.id);
+
     progressRows = progressData || [];
   }
 
@@ -664,10 +665,24 @@ async function loadDashboardChecklistData(cruise) {
   const checklistItems = items || [];
   const completedCount = checklistItems.filter(item => isItemCompleted(progressRows, item.id)).length;
   const totalCount = checklistItems.length;
-  const essentialItem = checklistItems.find(item =>
-    getPriorityLabel(item.priority) === "Essential" && !isItemCompleted(progressRows, item.id)
+  const daysUntil = cruise ? getCountdownParts(cruise).totalDays : null;
+
+  const incompleteItems = checklistItems.filter(item => !isItemCompleted(progressRows, item.id));
+
+  const timedItems = incompleteItems.filter(item =>
+    isChecklistItemRelevantToday(item, daysUntil)
   );
-  const nextItem = essentialItem || checklistItems.find(item => !isItemCompleted(progressRows, item.id));
+
+  const candidateItems = timedItems.length ? timedItems : incompleteItems;
+
+  const essentialItems = candidateItems.filter(item =>
+    getPriorityLabel(item.priority) === "Essential"
+  );
+
+  const nextItem = sortChecklistItemsForToday(
+    essentialItems.length ? essentialItems : candidateItems,
+    daysUntil
+  )[0] || null;
 
   return {
     checklistItems,
@@ -676,6 +691,39 @@ async function loadDashboardChecklistData(cruise) {
     percent: getProgressPercent(completedCount, totalCount),
     nextItem
   };
+}
+
+function isChecklistItemRelevantToday(item, daysUntil) {
+  if (daysUntil === null || daysUntil === undefined) return true;
+
+  const showFrom = item.show_from_days;
+  const showUntil = item.show_until_days;
+
+  if (showFrom !== null && showFrom !== undefined && daysUntil > Number(showFrom)) {
+    return false;
+  }
+
+  if (showUntil !== null && showUntil !== undefined && daysUntil < Number(showUntil)) {
+    return false;
+  }
+
+  return true;
+}
+
+function sortChecklistItemsForToday(items, daysUntil) {
+  return [...items].sort((a, b) => {
+    const aFrom = Number.isFinite(Number(a.show_from_days)) ? Number(a.show_from_days) : 9999;
+    const bFrom = Number.isFinite(Number(b.show_from_days)) ? Number(b.show_from_days) : 9999;
+
+    if (daysUntil !== null && daysUntil !== undefined) {
+      const aDistance = Math.abs(daysUntil - aFrom);
+      const bDistance = Math.abs(daysUntil - bFrom);
+
+      if (aDistance !== bDistance) return aDistance - bDistance;
+    }
+
+    return Number(a.display_order || 999) - Number(b.display_order || 999);
+  });
 }
 
 function getDashboardCountdownText(cruise) {
