@@ -37,6 +37,109 @@ function normalizeUrl(value) {
   return String(value || "").trim();
 }
 
+const PACKING_DESTINATION_OPTIONS = [
+  "Caribbean / Bahamas",
+  "Mediterranean / Greek Isles",
+  "Alaska",
+  "Norway / Northern Europe",
+  "Bermuda",
+  "Mexican Riviera",
+  "Hawaii",
+  "Asia / Southeast Asia",
+  "UK & Ireland",
+  "Canary Islands",
+  "Australia & New Zealand",
+  "Transatlantic Crossing",
+  "Transpacific Crossing",
+  "Canada & New England",
+  "Panama Canal",
+  "Antarctica"
+];
+
+const PACKING_CLIMATE_OPTIONS = ["Tropical", "Warm", "Temperate", "Cool", "Cold", "Polar"];
+const PACKING_TRAVELLER_OPTIONS = ["Solo", "Couple", "Family", "Group"];
+const PACKING_DRESS_CODE_OPTIONS = ["Casual", "Semi Formal", "Formal"];
+
+function parseAdminTags(value) {
+  return String(value || "")
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function renderAdminMultiSelect({ id, label, allLabel, options, value }) {
+  const selectedValues = parseAdminTags(value);
+  const isAll = selectedValues.length === 0;
+  const optionHtml = options.map(option => {
+    const checked = isAll || selectedValues.includes(option);
+    return `
+      <label class="admin-check-chip ${checked ? "is-selected" : ""}" data-multiselect-option="${esc(id)}">
+        <input type="checkbox" value="${esc(option)}" ${checked ? "checked" : ""} ${isAll ? "disabled" : ""} onchange="updateAdminMultiSelect('${esc(id)}')">
+        <span>${esc(option)}</span>
+      </label>
+    `;
+  }).join("");
+
+  return `
+    <div class="admin-field admin-multiselect-field" data-multiselect="${esc(id)}">
+      <label>${esc(label)}</label>
+      <label class="admin-check-chip admin-all-chip ${isAll ? "is-selected" : ""}">
+        <input type="checkbox" id="${esc(id)}All" ${isAll ? "checked" : ""} onchange="toggleAdminMultiSelectAll('${esc(id)}')">
+        <span>${esc(allLabel)}</span>
+      </label>
+      <div class="admin-check-grid" id="${esc(id)}Options">${optionHtml}</div>
+      <input type="hidden" id="${esc(id)}" value="${esc(isAll ? "" : selectedValues.join(", "))}">
+      <div class="admin-helper">Leave <strong>${esc(allLabel)}</strong> selected unless this item should only appear for specific options.</div>
+    </div>
+  `;
+}
+
+function toggleAdminMultiSelectAll(id) {
+  const allInput = document.getElementById(`${id}All`);
+  const hidden = document.getElementById(id);
+  const wrapper = document.querySelector(`[data-multiselect="${id}"]`);
+  const optionInputs = wrapper ? Array.from(wrapper.querySelectorAll(`[data-multiselect-option="${id}"] input`)) : [];
+
+  if (!allInput || !hidden) return;
+
+  if (allInput.checked) {
+    hidden.value = "";
+    optionInputs.forEach(input => {
+      input.checked = true;
+      input.disabled = true;
+      input.closest(".admin-check-chip")?.classList.add("is-selected");
+    });
+  } else {
+    optionInputs.forEach(input => {
+      input.disabled = false;
+      input.checked = false;
+      input.closest(".admin-check-chip")?.classList.remove("is-selected");
+    });
+    hidden.value = "";
+  }
+
+  allInput.closest(".admin-check-chip")?.classList.toggle("is-selected", allInput.checked);
+}
+
+function updateAdminMultiSelect(id) {
+  const wrapper = document.querySelector(`[data-multiselect="${id}"]`);
+  const hidden = document.getElementById(id);
+  const allInput = document.getElementById(`${id}All`);
+  if (!wrapper || !hidden || !allInput) return;
+
+  const optionInputs = Array.from(wrapper.querySelectorAll(`[data-multiselect-option="${id}"] input`));
+  const selected = optionInputs.filter(input => input.checked).map(input => input.value);
+
+  optionInputs.forEach(input => {
+    input.closest(".admin-check-chip")?.classList.toggle("is-selected", input.checked);
+  });
+
+  hidden.value = selected.join(", ");
+  allInput.checked = selected.length === 0;
+  allInput.closest(".admin-check-chip")?.classList.toggle("is-selected", allInput.checked);
+}
+
+
 function renderLogin(message = "") {
   app.innerHTML = `
     <div class="admin-card">
@@ -1125,7 +1228,9 @@ function renderPackingPanel() {
 }
 
 function renderPackingItemForm(editingItem) {
-  const applies = value => esc(editingItem ? (editingItem[value] || "") : "");
+  const applies = key => editingItem ? (editingItem[key] || "") : "";
+  const cruiseLineOptions = cruiseLines.map(line => line.name).filter(Boolean).sort((a, b) => a.localeCompare(b));
+
   return `
     <input type="hidden" id="packingItemId" value="${editingItem ? editingItem.id : ""}">
 
@@ -1170,37 +1275,49 @@ function renderPackingItemForm(editingItem) {
       </div>
     </div>
 
-    <div class="admin-grid">
-      <div class="admin-field">
-        <label>Destinations (comma separated)</label>
-        <input type="text" id="packingItemDestinations" value="${applies("destination_tags")}" placeholder="Mediterranean / Greek Isles, Alaska">
-      </div>
-      <div class="admin-field">
-        <label>Climates (comma separated)</label>
-        <input type="text" id="packingItemClimates" value="${applies("climate_tags")}" placeholder="Warm, Cold, Tropical">
-      </div>
-    </div>
+    ${renderAdminMultiSelect({
+      id: "packingItemDestinations",
+      label: "Applies to destinations",
+      allLabel: "All destinations",
+      options: PACKING_DESTINATION_OPTIONS,
+      value: applies("destination_tags")
+    })}
 
-    <div class="admin-grid">
-      <div class="admin-field">
-        <label>Traveller types</label>
-        <input type="text" id="packingItemTravellers" value="${applies("traveller_types")}" placeholder="Solo, Couple, Family, Group">
-      </div>
-      <div class="admin-field">
-        <label>Dress codes</label>
-        <input type="text" id="packingItemDressCodes" value="${applies("dress_codes")}" placeholder="Casual, Semi Formal, Formal">
-      </div>
-    </div>
+    ${renderAdminMultiSelect({
+      id: "packingItemClimates",
+      label: "Applies to climates",
+      allLabel: "All climates",
+      options: PACKING_CLIMATE_OPTIONS,
+      value: applies("climate_tags")
+    })}
 
-    <div class="admin-grid">
-      <div class="admin-field">
-        <label>Cruise lines</label>
-        <input type="text" id="packingItemCruiseLines" value="${applies("cruise_line_tags")}" placeholder="Virgin Voyages, Cunard">
-      </div>
-      <div class="admin-field">
-        <label>Why am I packing this?</label>
-        <input type="text" id="packingItemHelpText" value="${editingItem ? esc(editingItem.help_text || "") : ""}" placeholder="Useful for glacier viewing, formal nights, etc.">
-      </div>
+    ${renderAdminMultiSelect({
+      id: "packingItemTravellers",
+      label: "Applies to traveller types",
+      allLabel: "All traveller types",
+      options: PACKING_TRAVELLER_OPTIONS,
+      value: applies("traveller_types")
+    })}
+
+    ${renderAdminMultiSelect({
+      id: "packingItemDressCodes",
+      label: "Applies to dress codes",
+      allLabel: "All dress codes",
+      options: PACKING_DRESS_CODE_OPTIONS,
+      value: applies("dress_codes")
+    })}
+
+    ${renderAdminMultiSelect({
+      id: "packingItemCruiseLines",
+      label: "Applies to cruise lines",
+      allLabel: "All cruise lines",
+      options: cruiseLineOptions,
+      value: applies("cruise_line_tags")
+    })}
+
+    <div class="admin-field">
+      <label>Why am I packing this?</label>
+      <input type="text" id="packingItemHelpText" value="${editingItem ? esc(editingItem.help_text || "") : ""}" placeholder="Useful for glacier viewing, formal nights, etc.">
     </div>
 
     <div class="admin-grid compact">
@@ -1221,118 +1338,6 @@ function renderPackingItemForm(editingItem) {
     ${editingItem ? `<button class="admin-button secondary" onclick="cancelPackingItemEdit()">Cancel</button>` : ""}
     <div id="packing-item-message" class="admin-message"></div>
   `;
-}
-
-function renderPackingItemsByCategory() {
-  return getPackingItemsByCategory().map(group => `
-    <div class="admin-section-group">
-      <h3>${esc(group.category.icon || "🧳")} ${esc(group.category.name)}</h3>
-      ${group.items.length ? renderPackingItemsList(group.items) : `<p class="admin-small">No packing items in this category.</p>`}
-    </div>
-  `).join("");
-}
-
-function renderPackingItemsList(items) {
-  return items.length ? items.map(item => `
-    <div class="admin-list-item checklist-admin-item" id="packing-item-${item.id}">
-      ${editingPackingItemId === item.id ? `
-        <h3>Edit Packing Item</h3>
-        ${renderPackingItemForm(item)}
-      ` : `
-        <div class="admin-list-top">
-          <div>
-            <div class="checklist-admin-title">${esc(item.name)}</div>
-            <div class="admin-small"><strong>Category:</strong> ${esc(item.packing_categories?.name || "Category not found")}</div>
-            <div class="admin-small"><strong>Qty:</strong> ${esc(calculateAdminQtyLabel(item))} &nbsp; <strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
-            ${item.description ? `<div class="admin-small checklist-admin-copy">${esc(item.description)}</div>` : ""}
-            ${item.help_text ? `<div class="admin-small checklist-admin-copy"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
-            <div class="admin-small checklist-admin-copy"><strong>Rules:</strong> ${esc(formatPackingRulesSummary(item))}</div>
-            ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
-          </div>
-          <button class="admin-button secondary small" onclick="editPackingItem(${item.id})">Edit</button>
-        </div>
-      `}
-    </div>
-  `).join("") : `<p>No packing items found.</p>`;
-}
-
-function calculateAdminQtyLabel(item) {
-  const base = Number(item.base_quantity || 0);
-  const perNight = Number(item.quantity_per_night || 0);
-  if (perNight) return `${base} + ${perNight}/night`;
-  return String(base || 1);
-}
-
-function formatPackingRulesSummary(item) {
-  const bits = [];
-  if (item.destination_tags) bits.push(`Destinations: ${item.destination_tags}`);
-  if (item.climate_tags) bits.push(`Climates: ${item.climate_tags}`);
-  if (item.traveller_types) bits.push(`Travellers: ${item.traveller_types}`);
-  if (item.dress_codes) bits.push(`Dress: ${item.dress_codes}`);
-  if (item.cruise_line_tags) bits.push(`Lines: ${item.cruise_line_tags}`);
-  return bits.length ? bits.join(" | ") : "Applies to all cruises";
-}
-
-function setPackingCategoryFilter(value) {
-  selectedPackingCategoryId = value;
-  renderAdmin();
-}
-
-function editPackingCategory(id) {
-  editingPackingCategoryId = id;
-  activeTab = "packing";
-  renderAdmin();
-}
-
-function cancelPackingCategoryEdit() {
-  editingPackingCategoryId = null;
-  renderAdmin();
-}
-
-async function savePackingCategory() {
-  const id = document.getElementById("packingCategoryId").value;
-  const payload = {
-    name: document.getElementById("packingCategoryName").value.trim(),
-    description: document.getElementById("packingCategoryDescription").value.trim() || null,
-    icon: document.getElementById("packingCategoryIcon").value.trim() || null,
-    display_order: Number(document.getElementById("packingCategoryDisplayOrder").value || 0),
-    active: document.getElementById("packingCategoryActive").value === "true"
-  };
-
-  const message = document.getElementById("packing-category-message");
-  if (!payload.name) {
-    if (message) message.innerText = "Please enter a category name.";
-    return;
-  }
-
-  const result = id
-    ? await supabaseClient.from("packing_categories").update(payload).eq("id", id)
-    : await supabaseClient.from("packing_categories").insert(payload);
-
-  if (result.error) {
-    console.error("Save packing category error", result.error);
-    if (message) message.innerText = result.error.message;
-    return;
-  }
-
-  editingPackingCategoryId = null;
-  await loadAdminData();
-  renderAdmin();
-}
-
-function editPackingItem(id) {
-  editingPackingItemId = id;
-  activeTab = "packing";
-  renderAdmin();
-  setTimeout(() => {
-    const el = document.getElementById(`packing-item-${id}`);
-    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 50);
-}
-
-function cancelPackingItemEdit() {
-  editingPackingItemId = null;
-  renderAdmin();
 }
 
 async function savePackingItem() {
