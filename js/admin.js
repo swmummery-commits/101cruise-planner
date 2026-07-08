@@ -1528,6 +1528,80 @@ function setSmartProfilePackingCheckboxes(checked) {
   setSmartProfileSelectorGroup(".smartProfilePackingCheckbox", checked);
 }
 
+function canonicalPackingCategoryName(name) {
+  const raw = String(name || "Uncategorised").trim();
+  const normalised = raw.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim();
+
+  const aliases = {
+    "documents": "Travel Documents",
+    "travel documents": "Travel Documents",
+    "money payments": "Money & Payments",
+    "money and payments": "Money & Payments",
+    "shoes": "Footwear",
+    "footwear": "Footwear",
+    "swimwear pool": "Pool & Beach",
+    "swimwear and pool": "Pool & Beach",
+    "pool beach": "Pool & Beach",
+    "pool and beach": "Pool & Beach",
+    "toiletries": "Toiletries & Personal Care",
+    "toiletries personal care": "Toiletries & Personal Care",
+    "toiletries and personal care": "Toiletries & Personal Care",
+    "medication": "Health & Medication",
+    "health medication": "Health & Medication",
+    "health and medication": "Health & Medication",
+    "electronics": "Electronics & Charging",
+    "electronics charging": "Electronics & Charging",
+    "electronics and charging": "Electronics & Charging",
+    "bags luggage": "Bags & Luggage",
+    "bags and luggage": "Bags & Luggage",
+    "cabin comfort": "Cabin Essentials",
+    "cabin essentials": "Cabin Essentials",
+    "laundry care": "Laundry & Care",
+    "laundry and care": "Laundry & Care",
+    "kids family": "Kids & Family",
+    "kids and family": "Kids & Family",
+    "cold weather gear": "Cold Weather Gear",
+    "polar expedition": "Polar & Expedition",
+    "polar and expedition": "Polar & Expedition",
+    "last minute": "Last Minute",
+    "last minute items": "Last Minute",
+    "shore excursions": "Shore Excursions",
+    "evening wear": "Evening Wear",
+    "clothing": "Clothing"
+  };
+
+  return aliases[normalised] || raw;
+}
+
+function canonicalPackingCategoryIcon(categoryName) {
+  const icons = {
+    "Travel Documents": "📄",
+    "Money & Payments": "💳",
+    "Clothing": "👕",
+    "Footwear": "👞",
+    "Pool & Beach": "🏖️",
+    "Toiletries & Personal Care": "🧴",
+    "Health & Medication": "💊",
+    "Evening Wear": "🎩",
+    "Electronics & Charging": "🔌",
+    "Bags & Luggage": "🧳",
+    "Cabin Essentials": "🛏️",
+    "Laundry & Care": "🧺",
+    "Kids & Family": "👶",
+    "Cold Weather Gear": "🧥",
+    "Polar & Expedition": "🧳",
+    "Last Minute": "🚨",
+    "Shore Excursions": "🎒"
+  };
+  return icons[categoryName] || "🧳";
+}
+
+function setSmartProfilePackingCategoryCheckboxes(categoryKey, checked) {
+  const selector = `.smartProfilePackingCheckbox[data-category-key="${CSS.escape(categoryKey)}"]`;
+  setSmartProfileSelectorGroup(selector, checked);
+}
+
+
 function filterSmartProfilePackingItems() {
   const search = String(document.getElementById("smartProfilePackingSearch")?.value || "").trim().toLowerCase();
   document.querySelectorAll(".smart-profile-packing-row").forEach(row => {
@@ -1588,7 +1662,32 @@ function renderSmartProfilePackingItemSelector(editingProfile) {
   }
 
   const selectedItemIds = getPackingItemIdsForProfile(editingProfile.id);
-  const sortedCategories = [...packingCategories].sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0) || String(a.name || "").localeCompare(String(b.name || "")));
+  const categoryById = new Map(packingCategories.map(category => [String(category.id), category]));
+  const categoryGroups = new Map();
+
+  packingItems.forEach(item => {
+    const originalCategory = categoryById.get(String(item.category_id));
+    const canonicalName = canonicalPackingCategoryName(originalCategory?.name || "Uncategorised");
+    const categoryKey = profileKeyFromName(canonicalName || "uncategorised");
+
+    if (!categoryGroups.has(categoryKey)) {
+      categoryGroups.set(categoryKey, {
+        key: categoryKey,
+        name: canonicalName,
+        icon: canonicalPackingCategoryIcon(canonicalName),
+        displayOrder: Number(originalCategory?.display_order || 999),
+        items: []
+      });
+    }
+
+    categoryGroups.get(categoryKey).items.push({ item, originalCategory });
+  });
+
+  const sortedGroups = Array.from(categoryGroups.values()).sort((a, b) => {
+    const orderCompare = Number(a.displayOrder || 0) - Number(b.displayOrder || 0);
+    if (orderCompare !== 0) return orderCompare;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
 
   return `
     <div class="admin-profile-selector smart-profile-packing-selector">
@@ -1609,21 +1708,27 @@ function renderSmartProfilePackingItemSelector(editingProfile) {
       </div>
 
       <div class="smart-profile-packing-groups">
-        ${sortedCategories.map(category => {
-          const items = packingItems
-            .filter(item => String(item.category_id) === String(category.id))
-            .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0) || String(a.name || "").localeCompare(String(b.name || "")));
+        ${sortedGroups.map(group => {
+          const items = group.items
+            .sort((a, b) => Number(a.item.display_order || 0) - Number(b.item.display_order || 0) || String(a.item.name || "").localeCompare(String(b.item.name || "")));
           if (!items.length) return "";
+          const selectedCount = items.filter(({ item }) => selectedItemIds.includes(String(item.id))).length;
           return `
-            <div class="smart-profile-packing-group">
-              <h4>${esc(category.icon || "🧳")} ${esc(category.name)}</h4>
+            <div class="smart-profile-packing-group" data-category-key="${esc(group.key)}">
+              <div class="smart-profile-packing-group-header">
+                <h4>${esc(group.icon)} ${esc(group.name)} <span class="admin-small">(${selectedCount}/${items.length})</span></h4>
+                <div class="admin-actions-row compact-actions">
+                  <button type="button" class="admin-button secondary mini" onclick="setSmartProfilePackingCategoryCheckboxes('${esc(group.key)}', true)">Select All</button>
+                  <button type="button" class="admin-button secondary mini" onclick="setSmartProfilePackingCategoryCheckboxes('${esc(group.key)}', false)">Clear All</button>
+                </div>
+              </div>
               <div class="admin-check-grid smart-profile-packing-grid">
-                ${items.map(item => {
+                ${items.map(({ item, originalCategory }) => {
                   const checked = selectedItemIds.includes(String(item.id));
-                  const searchText = `${item.name || ""} ${category.name || ""} ${item.description || ""}`;
+                  const searchText = `${item.name || ""} ${group.name || ""} ${originalCategory?.name || ""} ${item.description || ""}`;
                   return `
                     <label class="admin-check-chip smart-profile-packing-row ${checked ? "is-selected" : ""}" data-search="${esc(searchText)}">
-                      <input type="checkbox" class="smartProfilePackingCheckbox" value="${esc(item.id)}" ${checked ? "checked" : ""} onchange="toggleSmartProfileChip(this)">
+                      <input type="checkbox" class="smartProfilePackingCheckbox" data-category-key="${esc(group.key)}" value="${esc(item.id)}" ${checked ? "checked" : ""} onchange="toggleSmartProfileChip(this)">
                       <span>${esc(item.name)}</span>
                     </label>
                   `;

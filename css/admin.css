@@ -866,3 +866,22 @@
     max-height: none;
   }
 }
+
+/* Smart Profile packing selector refinements */
+.smart-profile-packing-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0 8px;
+}
+
+.smart-profile-packing-group-header h4 {
+  margin: 0;
+}
+
+.admin-button.mini {
+  padding: 5px 10px;
+  font-size: 11px;
+  line-height: 1.2;
+}
