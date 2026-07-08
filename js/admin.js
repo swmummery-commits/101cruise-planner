@@ -2046,7 +2046,10 @@ function renderPackingItemCard(item) {
             <div class="admin-small"><strong>Rules:</strong> ${formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags)}</div>
             ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
           </div>
-          <span class="admin-row-hint">Click to edit</span>
+          <div class="admin-row-actions" onclick="event.stopPropagation()">
+            <span class="admin-row-hint">Click to edit</span>
+            <button class="admin-button danger small" onclick="deletePackingItem(${item.id})">Delete</button>
+          </div>
         </div>
       `}
     </div>
@@ -2433,6 +2436,7 @@ function renderPackingItemForm(editingItem) {
 
     <button class="admin-button" onclick="savePackingItem()">${editingItem ? "Save Item" : "Add Item"}</button>
     ${editingItem ? `<button class="admin-button secondary" onclick="cancelPackingItemEdit()">Cancel</button>` : ""}
+    ${editingItem ? `<button class="admin-button danger" onclick="deletePackingItem(${editingItem.id})">Delete Item</button>` : ""}
     <div id="packing-item-message" class="admin-message"></div>
   `;
 }
@@ -2501,6 +2505,40 @@ async function savePackingItemProfileSelections(itemId, message) {
     console.error("Packing profile mapping insert error", insertResult.error);
     if (message) message.innerText = insertResult.error.message;
     throw insertResult.error;
+  }
+}
+
+
+
+async function deletePackingItem(itemId) {
+  const item = packingItems.find(row => String(row.id) === String(itemId));
+  const itemName = item ? item.name : "this packing item";
+
+  const confirmed = window.confirm(`Delete "${itemName}"?\n\nThis will permanently remove the item and remove it from any Smart Profiles.`);
+  if (!confirmed) return;
+
+  try {
+    const profileDelete = await supabaseClient
+      .from("packing_item_profiles")
+      .delete()
+      .eq("packing_item_id", itemId);
+
+    if (profileDelete.error) throw profileDelete.error;
+
+    const itemDelete = await supabaseClient
+      .from("packing_items")
+      .delete()
+      .eq("id", itemId);
+
+    if (itemDelete.error) throw itemDelete.error;
+
+    editingPackingItemId = null;
+    showPackingItemForm = false;
+    await loadAdminData();
+    renderAdmin();
+  } catch (error) {
+    console.error("Delete packing item error", error);
+    alert(error.message || "Unable to delete this packing item.");
   }
 }
 

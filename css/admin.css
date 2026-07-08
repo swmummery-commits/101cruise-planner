@@ -885,3 +885,26 @@
   font-size: 11px;
   line-height: 1.2;
 }
+
+.admin-button.danger {
+  background: #fff;
+  color: #9f3a38;
+  border: 1px solid #e7c6c3;
+}
+
+.admin-button.danger:hover {
+  background: #fff7f6;
+  border-color: #d9aaa6;
+}
+
+.admin-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-row-actions .admin-button {
+  margin: 0;
+}
