@@ -534,8 +534,16 @@ async function syncCrmBooking() {
       throw new Error(data.error || `HTTP ${response.status}`);
     }
 
-    crmSyncResult = data;
-    crmSyncMessage = "Booking retrieved successfully from Base44.";
+   crmSyncResult = data;
+
+const saveResult = await saveBase44BookingToSupabase(data.booking);
+
+if (!saveResult.success) {
+  throw new Error(saveResult.error || "Booking retrieved but could not be saved.");
+}
+
+crmSyncMessage = "Booking retrieved from Base44 and saved to 101CRUISE.";
+
   } catch (error) {
     console.error("CRM sync failed", error);
     crmSyncResult = null;
@@ -544,6 +552,55 @@ async function syncCrmBooking() {
     crmSyncLoading = false;
     renderAdmin();
   }
+}
+
+async function saveBase44BookingToSupabase(booking) {
+  if (!booking) {
+    return { success: false, error: "No booking data supplied." };
+  }
+
+  const payload = {
+    base44_booking_id: booking.base44_booking_id || null,
+    booking_reference: booking.booking_reference || null,
+
+    passenger1_first_name: booking.passenger1_first_name || null,
+    passenger1_last_name: booking.passenger1_last_name || null,
+    passenger1_email: booking.passenger1_email || null,
+    passenger1_mobile: booking.passenger1_mobile || null,
+
+    passenger2_first_name: booking.passenger2_first_name || null,
+    passenger2_last_name: booking.passenger2_last_name || null,
+    passenger2_email: booking.passenger2_email || null,
+    passenger2_mobile: booking.passenger2_mobile || null,
+
+    cruise_line: booking.cruise_line || null,
+    cruise_ship: booking.cruise_ship || null,
+
+    departing_date: booking.departing_date || null,
+    arriving_date: booking.arriving_date || null,
+
+    departing_port: booking.departing_port || null,
+    arriving_port: booking.arriving_port || null,
+
+    room_number: booking.room_number || null,
+    room_type: booking.room_type || null,
+    category_class: booking.category_class || null,
+
+    booking_status: booking.booking_status || null,
+
+    raw_payload: booking
+  };
+
+  const { error } = await supabaseClient
+    .from("base44_booking_cache")
+    .upsert(payload, { onConflict: "base44_booking_id" });
+
+  if (error) {
+    console.error("Base44 booking save error", error);
+    return { success: false, error: error.message };
+  }
+
+  return { success: true };
 }
 
 function renderImportDataPanel() {
