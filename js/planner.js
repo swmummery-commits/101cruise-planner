@@ -7,6 +7,9 @@ const app = document.getElementById("cruise-planner-app");
 let currentUser = null;
 let currentProfile = null;
 let countdownTimer = null;
+let pendingInvitationBid = null;
+let invitationSyncMessage = "";
+let invitationSyncLoading = false;
 
 const CRUISE_LINES = [
   "Carnival Cruise Line",
@@ -54,10 +57,151 @@ const SHIP_IMAGES = {
 };
 
 
+function getInvitationBookingIdFromUrl() {
+  const params = new URLSearchParams(window.location.search || "");
+  return String(params.get("bid") || params.get("booking_id") || "").trim();
+}
+
+function getStoredInvitationBookingId() {
+  return String(localStorage.getItem("101cruise_pending_bid") || "").trim();
+}
+
+function setStoredInvitationBookingId(value) {
+  const safeValue = String(value || "").trim();
+  if (safeValue) {
+    localStorage.setItem("101cruise_pending_bid", safeValue);
+    pendingInvitationBid = safeValue;
+  }
+}
+
+function clearStoredInvitationBookingId() {
+  localStorage.removeItem("101cruise_pending_bid");
+  pendingInvitationBid = null;
+}
+
+function captureInvitationBookingId() {
+  const bid = getInvitationBookingIdFromUrl();
+  if (bid) setStoredInvitationBookingId(bid);
+  pendingInvitationBid = getStoredInvitationBookingId();
+}
+
+function renderInvitationIntro() {
+  const bid = pendingInvitationBid || getStoredInvitationBookingId();
+  if (!bid) return "";
+
+  return `
+    <div class="planner-card invitation-card">
+      <p class="planner-kicker">101CRUISE invitation</p>
+      <h2>Welcome to your cruise planner</h2>
+      <p class="planner-muted">Create your password or sign in below. Your cruise booking will be retrieved automatically and added to My Cruise.</p>
+      ${invitationSyncMessage ? `<div class="planner-message ${invitationSyncMessage.toLowerCase().includes("error") ? "planner-error" : "planner-success"}">${escapeHtml(invitationSyncMessage)}</div>` : ""}
+    </div>
+  `;
+}
+
+function calculateCruiseNights(departingDate, arrivingDate) {
+  if (!departingDate || !arrivingDate) return null;
+  const start = new Date(`${departingDate}T00:00:00`);
+  const end = new Date(`${arrivingDate}T00:00:00`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+  const diff = Math.round((end - start) / 86400000);
+  return diff > 0 ? diff : null;
+}
+
+function getPassengerNamesFromBase44Booking(booking) {
+  const passenger1 = [booking.passenger1_first_name, booking.passenger1_last_name].filter(Boolean).join(" ").trim();
+  const passenger2 = [booking.passenger2_first_name, booking.passenger2_last_name].filter(Boolean).join(" ").trim();
+  return [passenger1, passenger2].filter(Boolean).join(", ");
+}
+
+function getPassengerCountFromBase44Booking(booking) {
+  return [booking.passenger1_first_name, booking.passenger2_first_name].filter(Boolean).length || 1;
+}
+
+async function syncInvitationBookingForCurrentUser() {
+  if (!currentUser?.id) return null;
+
+  const bookingId = pendingInvitationBid || getStoredInvitationBookingId();
+  if (!bookingId) return null;
+
+  invitationSyncLoading = true;
+  invitationSyncMessage = "Retrieving your cruise booking...";
+
+  try {
+    const response = await fetch("/.netlify/functions/get-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ booking_id: bookingId })
+    });
+
+    const data = await response.json().catch(() => ({ success: false, error: "Invalid response from booking service" }));
+
+    if (!response.ok || data.success === false || !data.booking) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    const cruise = await createOrUpdateCruiseFromBase44Booking(data.booking, data.cache_id || null);
+    await savePlannerPreferenceForCruise(cruise);
+    clearStoredInvitationBookingId();
+    invitationSyncMessage = "Your cruise booking has been added to My Cruise.";
+    return cruise;
+  } catch (error) {
+    console.error("Invitation booking sync failed", error);
+    invitationSyncMessage = `Error: ${error.message || "Unable to retrieve your cruise booking"}`;
+    return null;
+  } finally {
+    invitationSyncLoading = false;
+  }
+}
+
+async function createOrUpdateCruiseFromBase44Booking(booking, cacheId = null) {
+  const nights = calculateCruiseNights(booking.departing_date, booking.arriving_date);
+  const passengerNames = getPassengerNamesFromBase44Booking(booking);
+  const passengerCount = getPassengerCountFromBase44Booking(booking);
+
+  const payload = {
+    user_id: currentUser.id,
+    base44_booking_id: booking.base44_booking_id || null,
+    base44_booking_cache_id: cacheId,
+    booking_reference: booking.booking_reference || null,
+    cruise_line: booking.cruise_line || null,
+    ship_name: booking.cruise_ship || null,
+    departure_date: booking.departing_date || null,
+    return_date: booking.arriving_date || null,
+    arrival_date: booking.arriving_date || null,
+    departure_time: "17:00",
+    nights,
+    embarkation_port: booking.departing_port || null,
+    departure_port: booking.departing_port || null,
+    disembarkation_port: booking.arriving_port || null,
+    arrival_port: booking.arriving_port || null,
+    cabin_number: booking.room_number || null,
+    cabin: booking.room_number || null,
+    cabin_type: booking.room_type || booking.category_class || null,
+    traveller_names: passengerNames || null,
+    traveller_count: passengerCount,
+    booking_status: booking.booking_status || null
+  };
+
+  const { data, error } = await supabaseClient
+    .from("cruises")
+    .upsert(payload, { onConflict: "user_id,base44_booking_id" })
+    .select("*")
+    .single();
+
+  if (error) {
+    console.error("Create/update cruise from Base44 failed", error);
+    throw error;
+  }
+
+  return data;
+}
+
 function renderLogin() {
   clearCountdownTimer();
 
   app.innerHTML = `
+    ${renderInvitationIntro()}
     <div class="planner-grid auth-grid">
       <div class="planner-card auth-card">
         <h2>Create Account</h2>
@@ -114,7 +258,7 @@ async function signUp() {
   const email = document.getElementById("signupEmail").value.trim();
   const password = document.getElementById("signupPassword").value;
 
-  const { error } = await supabaseClient.auth.signUp({
+  const { data, error } = await supabaseClient.auth.signUp({
     email,
     password,
     options: {
@@ -125,9 +269,21 @@ async function signUp() {
     }
   });
 
-  document.getElementById("signup-message").innerText = error
-    ? error.message
-    : "Account created. Please check your email to confirm your account before signing in.";
+  if (error) {
+    document.getElementById("signup-message").innerText = error.message;
+    return;
+  }
+
+  if (data.session && data.user) {
+    currentUser = data.user;
+    await ensureProfile();
+    await loadProfile();
+    await syncInvitationBookingForCurrentUser();
+    renderDashboard();
+    return;
+  }
+
+  document.getElementById("signup-message").innerText = "Account created. Please check your email to confirm your account, then sign in here to open My Cruise.";
 }
 
 async function signIn() {
@@ -147,6 +303,7 @@ async function signIn() {
   currentUser = data.user;
   await ensureProfile();
   await loadProfile();
+  await syncInvitationBookingForCurrentUser();
   renderDashboard();
 }
 
@@ -2038,12 +2195,15 @@ async function addCruise() {
 }
 
 async function initPlanner() {
+  captureInvitationBookingId();
+
   const { data } = await supabaseClient.auth.getSession();
 
   if (data.session) {
     currentUser = data.session.user;
     await ensureProfile();
     await loadProfile();
+    await syncInvitationBookingForCurrentUser();
     renderDashboard();
   } else {
     renderLogin();

@@ -801,3 +801,68 @@
     max-width: none;
   }
 }
+
+/* Sprint 12: Smart Profile editor assignment interface */
+.smart-profile-editor-card {
+  max-width: 980px;
+}
+
+.compact-list-top {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.smart-profile-member-selector,
+.smart-profile-packing-selector {
+  background: #fff;
+}
+
+.smart-profile-member-grid,
+.smart-profile-packing-grid {
+  gap: 8px;
+}
+
+.smart-profile-search-field {
+  max-width: 420px;
+  margin-top: 14px;
+}
+
+.smart-profile-packing-groups {
+  margin-top: 12px;
+  max-height: 520px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.smart-profile-packing-group {
+  padding: 12px 0;
+  border-top: 1px solid var(--admin-border, #e5e7eb);
+}
+
+.smart-profile-packing-group:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.smart-profile-packing-group h4 {
+  margin: 0 0 8px;
+  color: var(--admin-text, #2c2c2c);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.smart-profile-packing-row {
+  max-width: 100%;
+}
+
+.smart-profile-packing-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .smart-profile-packing-groups {
+    max-height: none;
+  }
+}

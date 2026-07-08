@@ -1,2 +1,12 @@
 [functions]
   directory = "netlify/functions"
+
+[[redirects]]
+  from = "/planner"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/welcome"
+  to = "/index.html"
+  status = 200
