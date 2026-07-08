@@ -31,6 +31,9 @@ let showImportDataPanel = false;
 let selectedSmartProfileType = "climate";
 let editingSmartProfileId = null;
 let showSmartProfileForm = false;
+let crmSyncResult = null;
+let crmSyncMessage = "";
+let crmSyncLoading = false;
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -356,6 +359,8 @@ function setTab(tab) {
   showPackingItemForm = false;
   editingSmartProfileId = null;
   showSmartProfileForm = false;
+  crmSyncMessage = "";
+  crmSyncLoading = false;
   renderAdmin();
 }
 
@@ -382,6 +387,7 @@ function renderAdmin() {
       <button class="admin-tab ${activeTab === "checklist" ? "active" : ""}" onclick="setTab('checklist')">Checklist</button>
       <button class="admin-tab ${activeTab === "packing" ? "active" : ""}" onclick="setTab('packing')">Packing</button>
       <button class="admin-tab ${activeTab === "smart-profiles" ? "active" : ""}" onclick="setTab('smart-profiles')">Smart Profiles</button>
+      <button class="admin-tab ${activeTab === "crm-sync" ? "active" : ""}" onclick="setTab('crm-sync')">CRM Sync</button>
     </div>
 
     ${activeTab === "cruise-lines" ? renderCruiseLinesPanel() : ""}
@@ -389,12 +395,155 @@ function renderAdmin() {
     ${activeTab === "checklist" ? renderChecklistPanel() : ""}
     ${activeTab === "packing" ? renderPackingPanel() : ""}
     ${activeTab === "smart-profiles" ? renderSmartProfilesPanel() : ""}
+    ${activeTab === "crm-sync" ? renderCrmSyncPanel() : ""}
   `;
 }
 
 function toggleImportDataPanel() {
   showImportDataPanel = !showImportDataPanel;
   renderAdmin();
+}
+
+function renderCrmSyncPanel() {
+  const booking = crmSyncResult && crmSyncResult.booking ? crmSyncResult.booking : null;
+  const messageClass = crmSyncMessage && crmSyncMessage.toLowerCase().includes("error") ? "admin-error" : "";
+
+  return `
+    <div class="admin-card crm-sync-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>CRM Sync</h3>
+          <p class="admin-muted">Test the secure connection between Base44 and 101CRUISE using a booking reference.</p>
+        </div>
+      </div>
+
+      <div class="crm-sync-form">
+        <div class="admin-field crm-sync-input">
+          <label>Booking reference</label>
+          <input type="text" id="crmBookingReference" placeholder="Example: 4118719" onkeydown="handleCrmSyncKeydown(event)">
+        </div>
+        <button class="admin-button black" onclick="syncCrmBooking()" ${crmSyncLoading ? "disabled" : ""}>${crmSyncLoading ? "Syncing..." : "Sync Booking"}</button>
+      </div>
+
+      <div id="crm-sync-message" class="admin-message ${messageClass}">${esc(crmSyncMessage)}</div>
+    </div>
+
+    ${booking ? renderCrmBookingPreview(booking) : `
+      <div class="admin-card crm-empty-card">
+        <p class="admin-muted">Enter a booking reference above to confirm the Base44 connection and preview the booking data returned to 101CRUISE.</p>
+      </div>
+    `}
+  `;
+}
+
+function handleCrmSyncKeydown(event) {
+  if (event.key === "Enter") {
+    syncCrmBooking();
+  }
+}
+
+function renderCrmBookingPreview(booking) {
+  const passenger1 = [booking.passenger1_first_name, booking.passenger1_last_name].filter(Boolean).join(" ");
+  const passenger2 = [booking.passenger2_first_name, booking.passenger2_last_name].filter(Boolean).join(" ");
+  const sailingDate = formatAdminDate(booking.departing_date);
+  const returnDate = formatAdminDate(booking.arriving_date);
+
+  return `
+    <div class="admin-card crm-booking-preview">
+      <div class="admin-list-top">
+        <div>
+          <h3>Booking Retrieved</h3>
+          <p class="admin-muted">This is the booking data returned from Base44.</p>
+        </div>
+        <span class="admin-pill">${esc(booking.booking_status || "Status unknown")}</span>
+      </div>
+
+      <div class="crm-booking-grid">
+        <div class="crm-detail-card">
+          <span>Booking Reference</span>
+          <strong>${esc(booking.booking_reference || "Not supplied")}</strong>
+        </div>
+        <div class="crm-detail-card">
+          <span>Primary Passenger</span>
+          <strong>${esc(passenger1 || "Not supplied")}</strong>
+          <small>${esc(booking.passenger1_email || "")}</small>
+        </div>
+        <div class="crm-detail-card">
+          <span>Second Passenger</span>
+          <strong>${esc(passenger2 || "Not supplied")}</strong>
+          <small>${esc(booking.passenger2_email || "")}</small>
+        </div>
+        <div class="crm-detail-card">
+          <span>Cruise</span>
+          <strong>${esc([booking.cruise_line, booking.cruise_ship].filter(Boolean).join(" - ") || "Not supplied")}</strong>
+        </div>
+        <div class="crm-detail-card">
+          <span>Dates</span>
+          <strong>${esc(sailingDate)} to ${esc(returnDate)}</strong>
+        </div>
+        <div class="crm-detail-card">
+          <span>Ports</span>
+          <strong>${esc([booking.departing_port, booking.arriving_port].filter(Boolean).join(" to ") || "Not supplied")}</strong>
+        </div>
+        <div class="crm-detail-card">
+          <span>Cabin</span>
+          <strong>${esc(booking.room_number || "Not supplied")}</strong>
+          <small>${esc([booking.room_type, booking.category_class].filter(Boolean).join(" • "))}</small>
+        </div>
+        <div class="crm-detail-card">
+          <span>Base44 Booking ID</span>
+          <strong>${esc(booking.base44_booking_id || "Not supplied")}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function formatAdminDate(value) {
+  if (!value) return "Not supplied";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-AU", { day: "2-digit", month: "short", year: "numeric" });
+}
+
+async function syncCrmBooking() {
+  const input = document.getElementById("crmBookingReference");
+  const bookingReference = input ? input.value.trim() : "";
+
+  if (!bookingReference) {
+    crmSyncMessage = "Enter a booking reference first.";
+    crmSyncResult = null;
+    renderAdmin();
+    return;
+  }
+
+  crmSyncLoading = true;
+  crmSyncMessage = "Syncing booking from Base44...";
+  renderAdmin();
+
+  try {
+    const response = await fetch("/.netlify/functions/get-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ booking_reference: bookingReference })
+    });
+
+    const data = await response.json().catch(() => ({ success: false, error: "Invalid response from server" }));
+
+    if (!response.ok || data.success === false) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    crmSyncResult = data;
+    crmSyncMessage = "Booking retrieved successfully from Base44.";
+  } catch (error) {
+    console.error("CRM sync failed", error);
+    crmSyncResult = null;
+    crmSyncMessage = `Error: ${error.message || "Unable to sync booking"}`;
+  } finally {
+    crmSyncLoading = false;
+    renderAdmin();
+  }
 }
 
 function renderImportDataPanel() {
@@ -1328,6 +1477,8 @@ function setSmartProfileType(type) {
   selectedSmartProfileType = type;
   editingSmartProfileId = null;
   showSmartProfileForm = false;
+  crmSyncMessage = "";
+  crmSyncLoading = false;
   renderAdmin();
 }
 
@@ -1346,6 +1497,8 @@ function editSmartProfile(profileId) {
 function cancelSmartProfileEdit() {
   editingSmartProfileId = null;
   showSmartProfileForm = false;
+  crmSyncMessage = "";
+  crmSyncLoading = false;
   renderAdmin();
 }
 

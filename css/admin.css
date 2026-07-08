@@ -717,3 +717,87 @@
   margin-top: 8px;
   grid-template-columns: repeat(auto-fit, minmax(140px, max-content));
 }
+
+/* CRM Sync */
+.crm-sync-card .admin-list-top {
+  margin-bottom: 14px;
+}
+
+.crm-sync-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.crm-sync-input {
+  min-width: 240px;
+  max-width: 340px;
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.crm-booking-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.crm-detail-card {
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  padding: 11px 12px;
+  background: #fff;
+  min-height: 70px;
+}
+
+.crm-detail-card span {
+  display: block;
+  color: var(--admin-muted);
+  font-size: 11px;
+  font-weight: 400;
+  margin-bottom: 5px;
+}
+
+.crm-detail-card strong {
+  display: block;
+  color: var(--admin-text);
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1.35;
+}
+
+.crm-detail-card small {
+  display: block;
+  color: var(--admin-muted);
+  font-size: 11px;
+  line-height: 1.35;
+  margin-top: 3px;
+}
+
+.crm-empty-card {
+  padding: 14px 18px;
+}
+
+@media (max-width: 1000px) {
+  .crm-booking-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .crm-booking-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .crm-sync-form {
+    align-items: stretch;
+  }
+
+  .crm-sync-input,
+  .crm-sync-form .admin-button {
+    width: 100%;
+    max-width: none;
+  }
+}
