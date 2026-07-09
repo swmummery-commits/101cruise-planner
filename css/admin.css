@@ -909,13 +909,38 @@
   margin: 0;
 }
 
-
-.admin-toggle-field {
-  margin-top: 10px;
-  margin-bottom: 16px;
+/* Include on Every Cruise / Essential packing item refinements */
+.admin-essential-field {
+  border: 1px solid var(--admin-border, #e5e7eb);
+  background: #fafafa;
+  border-radius: 14px;
+  padding: 12px 14px;
 }
 
-.admin-toggle-field .admin-check-chip {
+.admin-check-line {
   display: inline-flex;
-  width: auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--admin-text, #2c2c2c);
+}
+
+.admin-check-line input {
+  margin: 0;
+}
+
+.admin-profile-selector.is-disabled {
+  opacity: 0.62;
+  background: #fafafa;
+}
+
+.admin-profile-selector.is-disabled .admin-check-chip {
+  cursor: not-allowed;
+}
+
+.essential-pill {
+  background: rgba(142, 223, 200, 0.24);
+  border-color: rgba(91, 138, 114, 0.28);
+  color: #1f4d3f;
 }

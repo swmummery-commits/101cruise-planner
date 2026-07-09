@@ -1508,6 +1508,25 @@ function getPackingItemIdsForProfile(profileId) {
     .map(row => String(row.packing_item_id));
 }
 
+function isEssentialPackingItem(item) {
+  return item && (item.include_on_every_cruise === true || String(item.include_on_every_cruise).toLowerCase() === "true");
+}
+
+function togglePackingEssentialMode() {
+  const checkbox = document.getElementById("packingItemEssential");
+  const intelligence = document.getElementById("packingItemSmartProfileBlock");
+  if (!checkbox || !intelligence) return;
+
+  intelligence.classList.toggle("is-disabled", checkbox.checked);
+  intelligence.querySelectorAll("input[type='checkbox']").forEach(input => {
+    input.disabled = checkbox.checked;
+    if (checkbox.checked) {
+      input.checked = false;
+      input.closest(".admin-check-chip")?.classList.remove("is-selected");
+    }
+  });
+}
+
 function toggleSmartProfileChip(input) {
   if (!input) return;
   input.closest(".admin-check-chip")?.classList.toggle("is-selected", input.checked);
@@ -1665,7 +1684,7 @@ function renderSmartProfilePackingItemSelector(editingProfile) {
   const categoryById = new Map(packingCategories.map(category => [String(category.id), category]));
   const categoryGroups = new Map();
 
-  packingItems.filter(item => !item.include_every_cruise).forEach(item => {
+  packingItems.filter(item => !isEssentialPackingItem(item)).forEach(item => {
     const originalCategory = categoryById.get(String(item.category_id));
     const canonicalName = canonicalPackingCategoryName(originalCategory?.name || "Uncategorised");
     const categoryKey = profileKeyFromName(canonicalName || "uncategorised");
@@ -1689,12 +1708,21 @@ function renderSmartProfilePackingItemSelector(editingProfile) {
     return String(a.name || "").localeCompare(String(b.name || ""));
   });
 
+  if (!sortedGroups.length) {
+    return `
+      <div class="admin-profile-selector smart-profile-packing-selector">
+        <div class="admin-section-mini-title">Additional Packing Items</div>
+        <p class="admin-helper">All packing items are currently marked as Essential, so there are no profile-specific items to assign.</p>
+      </div>
+    `;
+  }
+
   return `
     <div class="admin-profile-selector smart-profile-packing-selector">
       <div class="admin-list-top compact-list-top">
         <div>
           <div class="admin-section-mini-title">Additional Packing Items</div>
-          <p class="admin-helper">Tick only the extra items that should appear when this profile applies. Items marked “Include on Every Cruise” are hidden here because they already appear for everyone.</p>
+          <p class="admin-helper">Tick only the extra items that should appear when this profile applies. Essential items are included on every cruise and are hidden here.</p>
         </div>
         <div class="admin-actions-row compact-actions">
           <button type="button" class="admin-button secondary small" onclick="setSmartProfilePackingCheckboxes(true)">Select All</button>
@@ -1748,10 +1776,11 @@ function renderPackingProfileSelector(item) {
   }
   const selectedIds = item ? getPackingProfileIdsForItem(item.id) : [];
   const groups = smartProfileGroups.length ? [...smartProfileGroups].sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)) : [];
+  const essential = isEssentialPackingItem(item);
   return `
-    <div class="admin-profile-selector">
-      <div class="admin-section-mini-title">Smart Profiles</div>
-      <p class="admin-helper">Select profiles only when this item is specific. Leave everything unselected if the item applies to all cruises.</p>
+    <div class="admin-profile-selector ${essential ? "is-disabled" : ""}" id="packingItemSmartProfileBlock">
+      <div class="admin-section-mini-title">When should this item be added?</div>
+      <p class="admin-helper">Use this only for items that vary by destination, climate, traveller type, cruise type or dress profile. Essential items do not need Smart Profiles.</p>
       ${groups.map(group => {
         const profiles = getProfilesByType(group.profile_type);
         if (!profiles.length) return "";
@@ -1763,7 +1792,7 @@ function renderPackingProfileSelector(item) {
                 const checked = selectedIds.includes(String(profile.id));
                 return `
                   <label class="admin-check-chip ${checked ? "is-selected" : ""}">
-                    <input type="checkbox" class="packingProfileCheckbox" value="${profile.id}" ${checked ? "checked" : ""} onchange="this.closest('.admin-check-chip').classList.toggle('is-selected', this.checked)">
+                    <input type="checkbox" class="packingProfileCheckbox" value="${profile.id}" ${checked ? "checked" : ""} ${essential ? "disabled" : ""} onchange="this.closest('.admin-check-chip').classList.toggle('is-selected', this.checked)">
                     <span>${esc(profile.name)}</span>
                   </label>
                 `;
@@ -2029,6 +2058,10 @@ async function saveSmartProfile() {
 
 function renderPackingItemCard(item) {
   const isEditing = String(editingPackingItemId || "") === String(item.id);
+  const assignedProfileCount = getPackingProfileIdsForItem(item.id).length;
+  const ruleText = isEssentialPackingItem(item)
+    ? "Essential item included on every cruise"
+    : (assignedProfileCount ? `Smart Profile item (${assignedProfileCount} profile${assignedProfileCount === 1 ? "" : "s"})` : formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags, "Profile-specific item"));
   return `
     <div class="admin-list-item admin-clickable-row packing-item-row ${isEditing ? "is-editing" : ""}" onclick="editPackingItem(${item.id})">
       ${isEditing ? `
@@ -2043,8 +2076,8 @@ function renderPackingItemCard(item) {
             <div class="admin-small"><strong>Qty:</strong> ${esc(item.base_quantity ?? 1)} &nbsp; <strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
             ${item.description ? `<div class="admin-small">${esc(item.description)}</div>` : ""}
             ${item.help_text ? `<div class="admin-small"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
-            ${item.include_every_cruise ? `<div class="admin-small"><strong>Rules:</strong> Include on every cruise</div>` : `<div class="admin-small"><strong>Rules:</strong> ${formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags)}</div>`}
-            ${item.include_every_cruise ? `<span class="admin-pill">Every Cruise</span>` : ""}
+            <div class="admin-small"><strong>Logic:</strong> ${esc(ruleText)}</div>
+            ${isEssentialPackingItem(item) ? `<span class="admin-pill essential-pill">Essential</span>` : ""}
             ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
           </div>
           <div class="admin-row-actions" onclick="event.stopPropagation()">
@@ -2172,32 +2205,35 @@ async function savePackingCategory() {
 
 async function deletePackingCategory(categoryId) {
   const category = packingCategories.find(row => String(row.id) === String(categoryId));
-  const categoryName = category ? category.name : "this packing category";
+  const categoryName = category ? category.name : "this category";
   const itemCount = packingItems.filter(item => String(item.category_id) === String(categoryId)).length;
 
   if (itemCount > 0) {
-    alert(`Cannot delete "${categoryName}" yet. Move or delete the ${itemCount} packing item${itemCount === 1 ? "" : "s"} in this category first.`);
+    alert(`Cannot delete "${categoryName}" because it still contains ${itemCount} packing item${itemCount === 1 ? "" : "s"}. Move or delete those items first.`);
     return;
   }
 
-  const confirmed = window.confirm(`Delete empty category "${categoryName}"?`);
+  const confirmed = window.confirm(`Delete "${categoryName}"?\n\nThis category is empty, so no packing items will be deleted.`);
   if (!confirmed) return;
 
-  const { error } = await supabaseClient
-    .from("packing_categories")
-    .delete()
-    .eq("id", categoryId);
+  try {
+    const result = await supabaseClient
+      .from("packing_categories")
+      .delete()
+      .eq("id", categoryId);
 
-  if (error) {
-    alert(error.message);
-    return;
+    if (result.error) throw result.error;
+
+    editingPackingCategoryId = null;
+    showPackingCategoryForm = false;
+    await loadAdminData();
+    renderAdmin();
+  } catch (error) {
+    console.error("Delete packing category error", error);
+    alert(error.message || "Unable to delete this packing category.");
   }
-
-  editingPackingCategoryId = null;
-  showPackingCategoryForm = false;
-  await loadAdminData();
-  renderAdmin();
 }
+
 
 function renderPackingImportPanel() {
   return `
@@ -2293,7 +2329,6 @@ function renderPackingCategoryCard(category) {
         ${category.description ? `<div class="admin-small">${esc(category.description)}</div>` : ""}
         ${category.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
       </div>
-      ${count === 0 ? `<div class="admin-row-actions" onclick="event.stopPropagation()"><button class="admin-button danger small" onclick="deletePackingCategory(${category.id})">Delete</button></div>` : ""}
     </div>
   `;
 }
@@ -2389,14 +2424,6 @@ function renderPackingItemForm(editingItem) {
       <textarea id="packingItemDescription" placeholder="Short note shown under the item">${editingItem ? esc(editingItem.description || "") : ""}</textarea>
     </div>
 
-    <div class="admin-field admin-toggle-field">
-      <label class="admin-check-chip ${editingItem && editingItem.include_every_cruise ? "is-selected" : ""}">
-        <input type="checkbox" id="packingItemIncludeEveryCruise" ${editingItem && editingItem.include_every_cruise ? "checked" : ""} onchange="toggleSmartProfileChip(this)">
-        <span>Include on Every Cruise</span>
-      </label>
-      <div class="admin-helper">Use this for items almost every traveller should pack. These items do not need Smart Profile assignments.</div>
-    </div>
-
     <div class="admin-grid compact">
       <div class="admin-field">
         <label>Base quantity</label>
@@ -2452,6 +2479,14 @@ function renderPackingItemForm(editingItem) {
       value: applies("cruise_line_tags")
     })}
 
+    <div class="admin-field admin-essential-field">
+      <label class="admin-check-line">
+        <input type="checkbox" id="packingItemEssential" ${editingItem && isEssentialPackingItem(editingItem) ? "checked" : ""} onchange="togglePackingEssentialMode()">
+        <span>Essential</span>
+      </label>
+      <div class="admin-helper">Tick this when the item should be included on every cruise. Essential items do not need Smart Profile assignments.</div>
+    </div>
+
     ${renderPackingProfileSelector(editingItem)}
 
     <div class="admin-field">
@@ -2496,7 +2531,7 @@ async function savePackingItem() {
     dress_codes: document.getElementById("packingItemDressCodes").value.trim() || null,
     cruise_line_tags: document.getElementById("packingItemCruiseLines").value.trim() || null,
     help_text: document.getElementById("packingItemHelpText").value.trim() || null,
-    include_every_cruise: document.getElementById("packingItemIncludeEveryCruise")?.checked === true,
+    include_on_every_cruise: document.getElementById("packingItemEssential")?.checked === true,
     display_order: Number(document.getElementById("packingItemDisplayOrder").value || 0),
     active: document.getElementById("packingItemActive").value === "true"
   };
@@ -2518,11 +2553,7 @@ async function savePackingItem() {
   }
 
   const savedItemId = result.data?.id || id;
-  if (payload.include_every_cruise) {
-    await supabaseClient.from("packing_item_profiles").delete().eq("packing_item_id", savedItemId);
-  } else {
-    await savePackingItemProfileSelections(savedItemId, message);
-  }
+  await savePackingItemProfileSelections(savedItemId, message);
 
   editingPackingItemId = null;
   await loadAdminData();
