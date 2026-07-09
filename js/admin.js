@@ -1665,7 +1665,7 @@ function renderSmartProfilePackingItemSelector(editingProfile) {
   const categoryById = new Map(packingCategories.map(category => [String(category.id), category]));
   const categoryGroups = new Map();
 
-  packingItems.forEach(item => {
+  packingItems.filter(item => !item.include_every_cruise).forEach(item => {
     const originalCategory = categoryById.get(String(item.category_id));
     const canonicalName = canonicalPackingCategoryName(originalCategory?.name || "Uncategorised");
     const categoryKey = profileKeyFromName(canonicalName || "uncategorised");
@@ -1693,8 +1693,8 @@ function renderSmartProfilePackingItemSelector(editingProfile) {
     <div class="admin-profile-selector smart-profile-packing-selector">
       <div class="admin-list-top compact-list-top">
         <div>
-          <div class="admin-section-mini-title">Packing Items</div>
-          <p class="admin-helper">Tick the packing items that should appear when this profile applies.</p>
+          <div class="admin-section-mini-title">Additional Packing Items</div>
+          <p class="admin-helper">Tick only the extra items that should appear when this profile applies. Items marked “Include on Every Cruise” are hidden here because they already appear for everyone.</p>
         </div>
         <div class="admin-actions-row compact-actions">
           <button type="button" class="admin-button secondary small" onclick="setSmartProfilePackingCheckboxes(true)">Select All</button>
@@ -2043,7 +2043,8 @@ function renderPackingItemCard(item) {
             <div class="admin-small"><strong>Qty:</strong> ${esc(item.base_quantity ?? 1)} &nbsp; <strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
             ${item.description ? `<div class="admin-small">${esc(item.description)}</div>` : ""}
             ${item.help_text ? `<div class="admin-small"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
-            <div class="admin-small"><strong>Rules:</strong> ${formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags)}</div>
+            ${item.include_every_cruise ? `<div class="admin-small"><strong>Rules:</strong> Include on every cruise</div>` : `<div class="admin-small"><strong>Rules:</strong> ${formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags)}</div>`}
+            ${item.include_every_cruise ? `<span class="admin-pill">Every Cruise</span>` : ""}
             ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
           </div>
           <div class="admin-row-actions" onclick="event.stopPropagation()">
@@ -2169,6 +2170,34 @@ async function savePackingCategory() {
   renderAdmin();
 }
 
+async function deletePackingCategory(categoryId) {
+  const category = packingCategories.find(row => String(row.id) === String(categoryId));
+  const categoryName = category ? category.name : "this packing category";
+  const itemCount = packingItems.filter(item => String(item.category_id) === String(categoryId)).length;
+
+  if (itemCount > 0) {
+    alert(`Cannot delete "${categoryName}" yet. Move or delete the ${itemCount} packing item${itemCount === 1 ? "" : "s"} in this category first.`);
+    return;
+  }
+
+  const confirmed = window.confirm(`Delete empty category "${categoryName}"?`);
+  if (!confirmed) return;
+
+  const { error } = await supabaseClient
+    .from("packing_categories")
+    .delete()
+    .eq("id", categoryId);
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  editingPackingCategoryId = null;
+  showPackingCategoryForm = false;
+  await loadAdminData();
+  renderAdmin();
+}
 
 function renderPackingImportPanel() {
   return `
@@ -2247,6 +2276,7 @@ function renderPackingCategoryForm(editingCategory) {
 
       <button class="admin-button" onclick="savePackingCategory()">${editingCategory ? "Save Category" : "Add Category"}</button>
       <button class="admin-button secondary" onclick="cancelPackingCategoryEdit()">Cancel</button>
+      ${editingCategory ? `<button class="admin-button danger" onclick="deletePackingCategory(${editingCategory.id})">Delete Category</button>` : ""}
       <div id="packing-category-message" class="admin-message"></div>
     </div>
   `;
@@ -2263,6 +2293,7 @@ function renderPackingCategoryCard(category) {
         ${category.description ? `<div class="admin-small">${esc(category.description)}</div>` : ""}
         ${category.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
       </div>
+      ${count === 0 ? `<div class="admin-row-actions" onclick="event.stopPropagation()"><button class="admin-button danger small" onclick="deletePackingCategory(${category.id})">Delete</button></div>` : ""}
     </div>
   `;
 }
@@ -2356,6 +2387,14 @@ function renderPackingItemForm(editingItem) {
     <div class="admin-field">
       <label>Description / packing note</label>
       <textarea id="packingItemDescription" placeholder="Short note shown under the item">${editingItem ? esc(editingItem.description || "") : ""}</textarea>
+    </div>
+
+    <div class="admin-field admin-toggle-field">
+      <label class="admin-check-chip ${editingItem && editingItem.include_every_cruise ? "is-selected" : ""}">
+        <input type="checkbox" id="packingItemIncludeEveryCruise" ${editingItem && editingItem.include_every_cruise ? "checked" : ""} onchange="toggleSmartProfileChip(this)">
+        <span>Include on Every Cruise</span>
+      </label>
+      <div class="admin-helper">Use this for items almost every traveller should pack. These items do not need Smart Profile assignments.</div>
     </div>
 
     <div class="admin-grid compact">
@@ -2457,6 +2496,7 @@ async function savePackingItem() {
     dress_codes: document.getElementById("packingItemDressCodes").value.trim() || null,
     cruise_line_tags: document.getElementById("packingItemCruiseLines").value.trim() || null,
     help_text: document.getElementById("packingItemHelpText").value.trim() || null,
+    include_every_cruise: document.getElementById("packingItemIncludeEveryCruise")?.checked === true,
     display_order: Number(document.getElementById("packingItemDisplayOrder").value || 0),
     active: document.getElementById("packingItemActive").value === "true"
   };
@@ -2478,7 +2518,11 @@ async function savePackingItem() {
   }
 
   const savedItemId = result.data?.id || id;
-  await savePackingItemProfileSelections(savedItemId, message);
+  if (payload.include_every_cruise) {
+    await supabaseClient.from("packing_item_profiles").delete().eq("packing_item_id", savedItemId);
+  } else {
+    await savePackingItemProfileSelections(savedItemId, message);
+  }
 
   editingPackingItemId = null;
   await loadAdminData();

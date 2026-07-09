@@ -908,3 +908,14 @@
 .admin-row-actions .admin-button {
   margin: 0;
 }
+
+
+.admin-toggle-field {
+  margin-top: 10px;
+  margin-bottom: 16px;
+}
+
+.admin-toggle-field .admin-check-chip {
+  display: inline-flex;
+  width: auto;
+}

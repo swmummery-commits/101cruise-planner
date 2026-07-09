@@ -39,6 +39,9 @@
 
   .auth-grid {
     align-items: stretch;
+    max-width: 860px;
+    margin: 0 auto;
+    justify-content: center;
   }
 
   .auth-card {
