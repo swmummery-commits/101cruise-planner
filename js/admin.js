@@ -35,6 +35,7 @@ let showSmartProfileForm = false;
 let crmSyncResult = null;
 let crmSyncMessage = "";
 let crmSyncLoading = false;
+let plannerPreviewMessage = "";
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -362,6 +363,7 @@ function setTab(tab) {
   showSmartProfileForm = false;
   crmSyncMessage = "";
   crmSyncLoading = false;
+  plannerPreviewMessage = "";
   renderAdmin();
 }
 
@@ -389,6 +391,7 @@ function renderAdmin() {
       <button class="admin-tab ${activeTab === "packing" ? "active" : ""}" onclick="setTab('packing')">Packing</button>
       <button class="admin-tab ${activeTab === "smart-profiles" ? "active" : ""}" onclick="setTab('smart-profiles')">Smart Profiles</button>
       <button class="admin-tab ${activeTab === "crm-sync" ? "active" : ""}" onclick="setTab('crm-sync')">CRM Sync</button>
+      <button class="admin-tab ${activeTab === "planner-preview" ? "active" : ""}" onclick="setTab('planner-preview')">Planner Preview</button>
     </div>
 
     ${activeTab === "cruise-lines" ? renderCruiseLinesPanel() : ""}
@@ -397,6 +400,7 @@ function renderAdmin() {
     ${activeTab === "packing" ? renderPackingPanel() : ""}
     ${activeTab === "smart-profiles" ? renderSmartProfilesPanel() : ""}
     ${activeTab === "crm-sync" ? renderCrmSyncPanel() : ""}
+    ${activeTab === "planner-preview" ? renderPlannerPreviewPanel() : ""}
   `;
 }
 
@@ -496,8 +500,67 @@ function renderCrmBookingPreview(booking) {
           <strong>${esc(booking.base44_booking_id || "Not supplied")}</strong>
         </div>
       </div>
+      <div class="admin-actions-row crm-preview-actions">
+        <button class="admin-button black" onclick="openPlannerPreview('${esc(booking.base44_booking_id || booking.booking_reference || '')}')">Preview Planner</button>
+      </div>
     </div>
   `;
+}
+
+function renderPlannerPreviewPanel() {
+  const messageClass = plannerPreviewMessage && plannerPreviewMessage.toLowerCase().includes("enter") ? "admin-error" : "";
+
+  return `
+    <div class="admin-card planner-preview-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Planner Preview</h3>
+          <p class="admin-muted">Preview a customer planner without signing in as the customer or sending account emails.</p>
+        </div>
+      </div>
+
+      <div class="crm-sync-form">
+        <div class="admin-field crm-sync-input">
+          <label>Booking reference or Base44 booking ID</label>
+          <input type="text" id="plannerPreviewLookup" placeholder="Example: 4118719 or 6a080226fdbea57912141f3e" onkeydown="handlePlannerPreviewKeydown(event)">
+          <div class="admin-helper">Use a booking already in Base44. The preview opens in a new tab and does not require a customer login.</div>
+        </div>
+        <button class="admin-button black" onclick="openPlannerPreviewFromInput()">Preview Planner</button>
+      </div>
+
+      <div class="admin-message ${messageClass}">${esc(plannerPreviewMessage)}</div>
+    </div>
+
+    <div class="admin-card crm-empty-card">
+      <p class="admin-muted">Use this for testing and demonstrations. Customers will still access their planner through the normal invitation and login flow.</p>
+    </div>
+  `;
+}
+
+function handlePlannerPreviewKeydown(event) {
+  if (event.key === "Enter") {
+    openPlannerPreviewFromInput();
+  }
+}
+
+function openPlannerPreviewFromInput() {
+  const input = document.getElementById("plannerPreviewLookup");
+  const lookup = input ? input.value.trim() : "";
+  openPlannerPreview(lookup);
+}
+
+function openPlannerPreview(lookup) {
+  const safeLookup = String(lookup || "").trim();
+  if (!safeLookup) {
+    plannerPreviewMessage = "Enter a booking reference or Base44 booking ID first.";
+    renderAdmin();
+    return;
+  }
+
+  const previewUrl = `${window.location.origin}/?preview=${encodeURIComponent(safeLookup)}`;
+  window.open(previewUrl, "_blank", "noopener");
+  plannerPreviewMessage = "Planner preview opened in a new tab.";
+  renderAdmin();
 }
 
 function formatAdminDate(value) {

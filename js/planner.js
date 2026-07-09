@@ -10,6 +10,10 @@ let countdownTimer = null;
 let pendingInvitationBid = null;
 let invitationSyncMessage = "";
 let invitationSyncLoading = false;
+let adminPreviewMode = false;
+let adminPreviewLookup = "";
+let adminPreviewCruise = null;
+let adminPreviewError = "";
 
 const CRUISE_LINES = [
   "Carnival Cruise Line",
@@ -83,6 +87,127 @@ function captureInvitationBookingId() {
   const bid = getInvitationBookingIdFromUrl();
   if (bid) setStoredInvitationBookingId(bid);
   pendingInvitationBid = getStoredInvitationBookingId();
+}
+
+function getAdminPreviewLookupFromUrl() {
+  const params = new URLSearchParams(window.location.search || "");
+  return String(params.get("preview") || params.get("admin_preview") || "").trim();
+}
+
+function isLikelyBase44BookingId(value) {
+  return /^[a-f0-9]{24}$/i.test(String(value || "").trim());
+}
+
+function createPreviewCruiseFromBase44Booking(booking) {
+  const nights = calculateCruiseNights(booking.departing_date, booking.arriving_date);
+  const passengerNames = getPassengerNamesFromBase44Booking(booking);
+  const passengerCount = getPassengerCountFromBase44Booking(booking);
+
+  return {
+    id: `preview-${booking.base44_booking_id || booking.booking_reference || "booking"}`,
+    base44_booking_id: booking.base44_booking_id || null,
+    booking_reference: booking.booking_reference || null,
+    cruise_line: booking.cruise_line || null,
+    ship_name: booking.cruise_ship || null,
+    departure_date: booking.departing_date || null,
+    return_date: booking.arriving_date || null,
+    arrival_date: booking.arriving_date || null,
+    departure_time: "17:00",
+    nights,
+    embarkation_port: booking.departing_port || null,
+    departure_port: booking.departing_port || null,
+    disembarkation_port: booking.arriving_port || null,
+    arrival_port: booking.arriving_port || null,
+    cabin_number: booking.room_number || null,
+    cabin: booking.room_number || null,
+    cabin_type: booking.room_type || booking.category_class || null,
+    traveller_names: passengerNames || null,
+    traveller_count: passengerCount,
+    booking_status: booking.booking_status || null,
+    _preview_booking: booking
+  };
+}
+
+function renderAdminPreviewLoading(lookup) {
+  clearCountdownTimer();
+  app.innerHTML = `
+    <div class="planner-preview-loading">
+      <div class="planner-card">
+        <p class="planner-kicker">Admin preview mode</p>
+        <h2>Loading planner preview</h2>
+        <p class="planner-muted">Retrieving booking ${escapeHtml(lookup)} from Base44.</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderAdminPreviewError(message) {
+  clearCountdownTimer();
+  app.innerHTML = `
+    <div class="planner-preview-loading">
+      <div class="planner-card">
+        <p class="planner-kicker">Admin preview mode</p>
+        <h2>Preview could not be loaded</h2>
+        <p class="planner-muted">${escapeHtml(message || "Unable to retrieve this booking.")}</p>
+        <button class="planner-button secondary" onclick="window.close()">Close Preview</button>
+      </div>
+    </div>
+  `;
+}
+
+async function loadAdminPreview(lookup) {
+  adminPreviewMode = true;
+  adminPreviewLookup = lookup;
+  adminPreviewCruise = null;
+  adminPreviewError = "";
+  currentUser = { id: "admin-preview", email: "admin-preview@101cruise.com.au", user_metadata: { first_name: "Admin" } };
+  currentProfile = { first_name: "Admin" };
+
+  renderAdminPreviewLoading(lookup);
+
+  try {
+    const payload = isLikelyBase44BookingId(lookup)
+      ? { booking_id: lookup }
+      : { booking_reference: lookup };
+
+    const response = await fetch("/.netlify/functions/get-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json().catch(() => ({ success: false, error: "Invalid response from booking service" }));
+
+    if (!response.ok || data.success === false || !data.booking) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    adminPreviewCruise = createPreviewCruiseFromBase44Booking(data.booking);
+    currentProfile = { first_name: data.booking.passenger1_first_name || "Admin" };
+    await renderDashboard();
+  } catch (error) {
+    console.error("Admin preview failed", error);
+    adminPreviewError = error.message || "Unable to load preview";
+    renderAdminPreviewError(adminPreviewError);
+  }
+}
+
+function exitAdminPreview() {
+  window.location.href = window.location.origin;
+}
+
+function renderAdminPreviewBanner(cruise) {
+  if (!adminPreviewMode) return "";
+  const reference = getCruiseBookingReference(cruise) || adminPreviewLookup;
+  return `
+    <div class="admin-preview-banner">
+      <div>
+        <strong>Admin Preview Mode</strong>
+        <span>Viewing booking ${escapeHtml(reference || "preview")}. Customer login is not required.</span>
+      </div>
+      <button onclick="exitAdminPreview()">Exit Preview</button>
+    </div>
+  `;
 }
 
 function renderInvitationIntro() {
@@ -805,7 +930,7 @@ async function loadDashboardChecklistData(cruise) {
     .order("display_order", { ascending: true });
 
   let progressRows = [];
-  if (cruise) {
+  if (cruise && currentUser?.id && !adminPreviewMode) {
     const { data: progressData } = await supabaseClient
       .from("checklist_progress")
       .select("*")
@@ -1117,15 +1242,26 @@ function renderDashboardSnapshot(cruise) {
 async function renderDashboard() {
   clearCountdownTimer();
 
-  const { data: cruises, error } = await supabaseClient
-    .from("cruises")
-    .select("*")
-    .order("departure_date", { ascending: true });
+  let safeCruises = [];
+  let mainCruise = null;
+  let error = null;
+
+  if (adminPreviewMode && adminPreviewCruise) {
+    safeCruises = [adminPreviewCruise];
+    mainCruise = adminPreviewCruise;
+  } else {
+    const result = await supabaseClient
+      .from("cruises")
+      .select("*")
+      .order("departure_date", { ascending: true });
+
+    error = result.error;
+    safeCruises = result.data || [];
+    const plannerPreference = await loadPlannerPreference();
+    mainCruise = selectActiveCruise(safeCruises, plannerPreference);
+  }
 
   const firstName = getUserDisplayName();
-  const safeCruises = cruises || [];
-  const plannerPreference = await loadPlannerPreference();
-  const mainCruise = selectActiveCruise(safeCruises, plannerPreference);
   const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
   const checklistData = await loadDashboardChecklistData(mainCruise);
   const nextItem = checklistData.nextItem;
@@ -1144,10 +1280,11 @@ async function renderDashboard() {
 
   app.innerHTML = `
     <div class="dashboard-page">
+      ${renderAdminPreviewBanner(mainCruise)}
       ${mainCruise ? `
         <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
           <div class="dashboard-hero-overlay"></div>
-          <button class="dashboard-signout" onclick="signOut()">Sign Out</button>
+          ${adminPreviewMode ? `<button class="dashboard-signout" onclick="exitAdminPreview()">Exit Preview</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
 
           <div class="dashboard-hero-content">
             <p class="dashboard-hero-kicker">Welcome back, ${escapeHtml(firstName)}</p>
@@ -1182,7 +1319,7 @@ async function renderDashboard() {
             <h2>My Cruise</h2>
             <p>${mainCruise ? `Everything for <strong>${escapeHtml(heroTitle || "your cruise")}</strong> is now in one place. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.` : `Welcome back, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.`}</p>
           </div>
-          ${renderCruiseSwitcher(safeCruises, mainCruise)}
+          ${adminPreviewMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
         </section>
 
         ${renderMyCruiseOverview(mainCruise)}
@@ -2264,6 +2401,12 @@ async function addCruise() {
 }
 
 async function initPlanner() {
+  const previewLookup = getAdminPreviewLookupFromUrl();
+  if (previewLookup) {
+    await loadAdminPreview(previewLookup);
+    return;
+  }
+
   captureInvitationBookingId();
 
   const { data } = await supabaseClient.auth.getSession();

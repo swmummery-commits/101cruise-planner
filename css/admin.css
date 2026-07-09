@@ -980,3 +980,13 @@
 .admin-subtab:hover {
   border-color: var(--admin-text, #2c2c2c);
 }
+
+/* Planner Preview */
+.crm-preview-actions {
+  margin-top: 18px;
+  justify-content: flex-end;
+}
+
+.planner-preview-card .crm-sync-form {
+  align-items: flex-end;
+}
