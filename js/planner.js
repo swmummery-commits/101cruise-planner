@@ -1009,6 +1009,70 @@ function getTravellerSummary(cruise) {
   return "Not added";
 }
 
+function getCruiseDateRangeText(cruise) {
+  const depart = cruise?.departure_date ? formatDateShort(cruise.departure_date) : "Departure not added";
+  const ret = cruise?.return_date || cruise?.arrival_date;
+  const arrival = ret ? formatDateShort(ret) : "Return not added";
+  return `${depart} to ${arrival}`;
+}
+
+function getCabinSummary(cruise) {
+  const cabin = getDashboardValue(cruise, ["cabin_number", "cabin", "stateroom", "suite"], "Cabin not added");
+  const cabinType = getDashboardValue(cruise, ["cabin_type", "room_type", "category_class"], "");
+  return cabinType ? `${cabin} · ${cabinType}` : cabin;
+}
+
+function getBookingReferenceSummary(cruise) {
+  return getCruiseBookingReference(cruise) || "Not added";
+}
+
+function renderMyCruiseOverview(cruise) {
+  if (!cruise) return "";
+
+  const route = getCruiseRouteText(cruise) || "Route not added";
+  const travellers = getTravellerSummary(cruise);
+  const cabin = getCabinSummary(cruise);
+  const dateRange = getCruiseDateRangeText(cruise);
+  const nights = cruise?.nights ? `${cruise.nights} nights` : "Nights not added";
+  const bookingReference = getBookingReferenceSummary(cruise);
+
+  return `
+    <section class="my-cruise-overview-grid">
+      <article class="my-cruise-overview-card primary">
+        <span class="overview-icon">🚢</span>
+        <p>Cruise</p>
+        <strong>${escapeHtml([cruise.cruise_line, cruise.ship_name].filter(Boolean).join(" · ") || "Your cruise")}</strong>
+        <small>${escapeHtml(nights)}</small>
+      </article>
+      <article class="my-cruise-overview-card">
+        <span class="overview-icon">📅</span>
+        <p>Dates</p>
+        <strong>${escapeHtml(dateRange)}</strong>
+      </article>
+      <article class="my-cruise-overview-card">
+        <span class="overview-icon">📍</span>
+        <p>Route</p>
+        <strong>${escapeHtml(route)}</strong>
+      </article>
+      <article class="my-cruise-overview-card">
+        <span class="overview-icon">🛏️</span>
+        <p>Cabin</p>
+        <strong>${escapeHtml(cabin)}</strong>
+      </article>
+      <article class="my-cruise-overview-card wide">
+        <span class="overview-icon">👥</span>
+        <p>Travellers</p>
+        <strong>${escapeHtml(travellers)}</strong>
+      </article>
+      <article class="my-cruise-overview-card">
+        <span class="overview-icon">🔖</span>
+        <p>Booking Reference</p>
+        <strong>${escapeHtml(bookingReference)}</strong>
+      </article>
+    </section>
+  `;
+}
+
 function getUserDisplayName() {
   const profileName = currentProfile?.first_name || currentUser?.user_metadata?.first_name || "";
   if (profileName && String(profileName).trim()) return String(profileName).trim();
@@ -1017,7 +1081,7 @@ function getUserDisplayName() {
   if (emailName.toLowerCase().startsWith("steve")) return "Steve";
 
   const cleaned = emailName.replace(/[._-]+/g, " ").replace(/\d+/g, "").trim();
-  return cleaned ? cleaned.replace(/\w/g, char => char.toUpperCase()) : "Cruiser";
+  return cleaned ? cleaned.replace(/\b\w/g, char => char.toUpperCase()) : "Cruiser";
 }
 
 function renderStatusValue(value) {
@@ -1074,6 +1138,9 @@ async function renderDashboard() {
   const routeLine = [cruiseLineText, nightsText].filter(Boolean).join(" • ");
   const countdownParts = getCountdownParts(mainCruise);
   const mainLogo = mainCruise ? await loadCruiseLineLogo(mainCruise.cruise_line) : "";
+  const heroTitle = mainCruise ? [mainCruise.cruise_line, mainCruise.ship_name].filter(Boolean).join(" · ") : "My Cruise";
+  const heroDateRange = mainCruise ? getCruiseDateRangeText(mainCruise) : "";
+  const cabinSummary = mainCruise ? getCabinSummary(mainCruise) : "";
 
   app.innerHTML = `
     <div class="dashboard-page">
@@ -1083,10 +1150,10 @@ async function renderDashboard() {
           <button class="dashboard-signout" onclick="signOut()">Sign Out</button>
 
           <div class="dashboard-hero-content">
-            <p class="dashboard-hero-kicker">My Cruise Planner</p>
-            <h1>${escapeHtml(mainCruise.ship_name || mainCruise.cruise_line || "Your Cruise")}</h1>
-            <p class="dashboard-hero-date">Departs ${escapeHtml(formatDateShort(mainCruise.departure_date))}</p>
-            <p class="dashboard-hero-route">${escapeHtml(routeLine || routeText || "Your upcoming cruise")}</p>
+            <p class="dashboard-hero-kicker">Welcome back, ${escapeHtml(firstName)}</p>
+            <h1>${escapeHtml(heroTitle || "Your Cruise")}</h1>
+            <p class="dashboard-hero-date">${escapeHtml(heroDateRange)}</p>
+            <p class="dashboard-hero-route">${escapeHtml(routeText || routeLine || "Your upcoming cruise")}${cabinSummary ? ` · ${escapeHtml(cabinSummary)}` : ""}</p>
           </div>
 
           <div class="dashboard-countdown-panel">
@@ -1112,11 +1179,13 @@ async function renderDashboard() {
         <section class="dashboard-welcome-strip">
           <div class="dashboard-welcome-avatar">${escapeHtml(String(firstName).slice(0, 2).toUpperCase())}</div>
           <div>
-            <h2>Welcome back, ${escapeHtml(firstName)}! 👋</h2>
-            <p>${mainCruise ? `You're currently planning <strong>${escapeHtml(mainCruise.ship_name || mainCruise.cruise_line || "your cruise")}</strong>. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.` : `You're <strong>${checklistData.percent}% cruise ready</strong>. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.`}</p>
+            <h2>My Cruise</h2>
+            <p>${mainCruise ? `Everything for <strong>${escapeHtml(heroTitle || "your cruise")}</strong> is now in one place. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.` : `Welcome back, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.`}</p>
           </div>
           ${renderCruiseSwitcher(safeCruises, mainCruise)}
         </section>
+
+        ${renderMyCruiseOverview(mainCruise)}
 
         <section class="dashboard-summary-grid dashboard-summary-grid-final">
           <article class="dashboard-summary-card next-task-card">

@@ -1,8 +1,15 @@
-# 101CRUISE Dashboard v0.5.5
+Sprint 11B - My Cruise landing page polish
 
-Changes:
-- Improves cruise line logo lookup so shortened cruise line names can still find logos, for example Explora -> Explora Journeys.
-- Keeps the existing dashboard styling from v0.5.4.
+Replace only:
+- js/planner.js
+- css/planner.css
 
-Important Squarespace step:
-To make the Planner app full browser width, update the Squarespace iframe wrapper as instructed in chat. CSS inside the app cannot escape a Squarespace iframe if the iframe itself is constrained.
+GitHub Desktop summary:
+Polish customer My Cruise dashboard
+
+What changed:
+- Customer dashboard hero now welcomes the user by name.
+- Cruise line and ship display together as the main cruise title.
+- Date range, route, and cabin summary display in the hero.
+- Added My Cruise overview cards for cruise, dates, route, cabin, travellers, and booking reference.
+- Kept existing countdown, checklist progress, packing, documents and budget cards.
