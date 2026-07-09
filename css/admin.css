@@ -949,3 +949,34 @@
 .admin-profile-selector.is-hidden {
   display: none;
 }
+
+/* Packing admin sub-tabs */
+.admin-subtabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--admin-border, #e5e7eb);
+}
+
+.admin-subtab {
+  border: 1px solid var(--admin-border, #d9e2dd);
+  background: #ffffff;
+  color: var(--admin-text, #2c2c2c);
+  border-radius: 999px;
+  padding: 7px 13px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.admin-subtab.active {
+  background: var(--admin-mint, #8edfc8);
+  border-color: var(--admin-mint, #8edfc8);
+  color: #111111;
+}
+
+.admin-subtab:hover {
+  border-color: var(--admin-text, #2c2c2c);
+}

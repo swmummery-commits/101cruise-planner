@@ -25,6 +25,7 @@ let selectedChecklistSectionId = "all";
 let editingPackingCategoryId = null;
 let editingPackingItemId = null;
 let selectedPackingCategoryId = "all";
+let activePackingAdminView = "items";
 let showPackingCategoryForm = false;
 let showPackingItemForm = false;
 let showImportDataPanel = false;
@@ -2127,7 +2128,17 @@ function setPackingCategoryFilter(value) {
   renderAdmin();
 }
 
+function setPackingAdminView(view) {
+  activePackingAdminView = view === "categories" ? "categories" : "items";
+  editingPackingCategoryId = null;
+  editingPackingItemId = null;
+  showPackingCategoryForm = false;
+  showPackingItemForm = false;
+  renderAdmin();
+}
+
 function editPackingItem(itemId) {
+  activePackingAdminView = "items";
   editingPackingItemId = itemId;
   editingPackingCategoryId = null;
   showPackingItemForm = false;
@@ -2142,6 +2153,7 @@ function cancelPackingItemEdit() {
 }
 
 function showNewPackingCategoryForm() {
+  activePackingAdminView = "categories";
   editingPackingCategoryId = null;
   editingPackingItemId = null;
   showPackingCategoryForm = true;
@@ -2150,6 +2162,7 @@ function showNewPackingCategoryForm() {
 }
 
 function showNewPackingItemForm() {
+  activePackingAdminView = "items";
   editingPackingCategoryId = null;
   editingPackingItemId = null;
   showPackingItemForm = true;
@@ -2158,6 +2171,7 @@ function showNewPackingItemForm() {
 }
 
 function editPackingCategory(categoryId) {
+  activePackingAdminView = "categories";
   editingPackingCategoryId = categoryId;
   editingPackingItemId = null;
   showPackingCategoryForm = true;
@@ -2336,6 +2350,7 @@ function renderPackingCategoryCard(category) {
 function renderPackingPanel() {
   const editingCategory = packingCategories.find(category => category.id === editingPackingCategoryId);
   const filteredItems = getFilteredPackingItems();
+  const showingItems = activePackingAdminView !== "categories";
 
   return `
     <div class="admin-card admin-packing-hero-card">
@@ -2345,49 +2360,56 @@ function renderPackingPanel() {
           <p class="admin-muted">Manage packing categories, default items, quantities, weights and the rules that create each customer’s packing list.</p>
         </div>
         <div class="admin-actions-row compact-actions">
-          <button class="admin-button secondary" onclick="showNewPackingCategoryForm()">Add Packing Category</button>
           <button class="admin-button secondary" onclick="showNewPackingItemForm()">Add Packing Item</button>
+          <button class="admin-button secondary" onclick="showNewPackingCategoryForm()">Add Packing Category</button>
           <button class="admin-button secondary" onclick="refreshAdminData()">Refresh</button>
         </div>
       </div>
+
+      <div class="admin-subtabs packing-subtabs" role="tablist" aria-label="Packing admin sections">
+        <button class="admin-subtab ${showingItems ? "active" : ""}" onclick="setPackingAdminView('items')" type="button">Packing Items</button>
+        <button class="admin-subtab ${!showingItems ? "active" : ""}" onclick="setPackingAdminView('categories')" type="button">Packing Categories</button>
+      </div>
     </div>
 
-    ${showPackingCategoryForm ? renderPackingCategoryForm(editingCategory) : ""}
+    ${!showingItems && showPackingCategoryForm ? renderPackingCategoryForm(editingCategory) : ""}
 
-    ${showPackingItemForm ? `
+    ${showingItems && showPackingItemForm ? `
       <div class="admin-card admin-form-card">
         <h3>Add Packing Item</h3>
         ${renderPackingItemForm(null)}
       </div>
     ` : ""}
 
-    <div class="admin-card">
-      <div class="admin-list-top">
-        <div>
-          <h3>Packing Categories</h3>
-          <p class="admin-muted">Click a category to edit it. These control how packing items are grouped in the customer planner.</p>
+    ${!showingItems ? `
+      <div class="admin-card">
+        <div class="admin-list-top">
+          <div>
+            <h3>Packing Categories</h3>
+            <p class="admin-muted">Click a category to edit it. These control how packing items are grouped in the customer planner.</p>
+          </div>
         </div>
+        ${packingCategories.length ? `<div class="admin-category-tile-grid">${packingCategories.map(renderPackingCategoryCard).join("")}</div>` : `<p>No packing categories found.</p>`}
       </div>
-      ${packingCategories.length ? `<div class="admin-category-tile-grid">${packingCategories.map(renderPackingCategoryCard).join("")}</div>` : `<p>No packing categories found.</p>`}
-    </div>
-
-    <div class="admin-card">
-      <div class="admin-list-top">
-        <div>
-          <h3>Packing Items</h3>
-          <p class="admin-muted">Items are displayed by category order. Empty rule fields apply to everyone.</p>
+    ` : `
+      <div class="admin-card">
+        <div class="admin-list-top">
+          <div>
+            <h3>Packing Items</h3>
+            <p class="admin-muted">Items are displayed by category order. Essential items are included on every cruise; profile-based items are added only when rules match.</p>
+          </div>
+          <div class="admin-field admin-filter-field">
+            <label>Display</label>
+            <select id="packingCategoryFilter" onchange="setPackingCategoryFilter(this.value)">
+              <option value="all" ${selectedPackingCategoryId === "all" ? "selected" : ""}>All items</option>
+              <option value="by-category" ${selectedPackingCategoryId === "by-category" ? "selected" : ""}>Display by Category order</option>
+              ${packingCategories.map(category => `<option value="${category.id}" ${String(selectedPackingCategoryId) === String(category.id) ? "selected" : ""}>${esc(category.name)}</option>`).join("")}
+            </select>
+          </div>
         </div>
-        <div class="admin-field admin-filter-field">
-          <label>Display</label>
-          <select id="packingCategoryFilter" onchange="setPackingCategoryFilter(this.value)">
-            <option value="all" ${selectedPackingCategoryId === "all" ? "selected" : ""}>All items</option>
-            <option value="by-category" ${selectedPackingCategoryId === "by-category" ? "selected" : ""}>Display by Category order</option>
-            ${packingCategories.map(category => `<option value="${category.id}" ${String(selectedPackingCategoryId) === String(category.id) ? "selected" : ""}>${esc(category.name)}</option>`).join("")}
-          </select>
-        </div>
+        ${selectedPackingCategoryId === "by-category" ? renderPackingItemsByCategory() : renderPackingItemsList(filteredItems)}
       </div>
-      ${selectedPackingCategoryId === "by-category" ? renderPackingItemsByCategory() : renderPackingItemsList(filteredItems)}
-    </div>
+    `}
   `;
 }
 
