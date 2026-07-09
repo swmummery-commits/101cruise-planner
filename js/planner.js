@@ -14,6 +14,7 @@ let adminPreviewMode = false;
 let adminPreviewLookup = "";
 let adminPreviewCruise = null;
 let adminPreviewError = "";
+let adminPreviewPackedKeys = new Set();
 
 const CRUISE_LINES = [
   "Carnival Cruise Line",
@@ -160,6 +161,7 @@ async function loadAdminPreview(lookup) {
   adminPreviewLookup = lookup;
   adminPreviewCruise = null;
   adminPreviewError = "";
+  adminPreviewPackedKeys = new Set();
   currentUser = { id: "admin-preview", email: "admin-preview@101cruise.com.au", user_metadata: { first_name: "Admin" } };
   currentProfile = { first_name: "Admin" };
 
@@ -1126,6 +1128,42 @@ function getDashboardValue(cruise, keys, fallback = "Not added") {
   return fallback;
 }
 
+function toDisplayName(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  return text
+    .toLowerCase()
+    .split(/(\s+|-|')/)
+    .map(part => {
+      if (/^\s+$/.test(part) || part === "-" || part === "'") return part;
+      if (!part) return part;
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    })
+    .join("")
+    .replace(/Mc([a-z])/g, (_, letter) => `Mc${letter.toUpperCase()}`);
+}
+
+function getGreetingName() {
+  return toDisplayName(getUserDisplayName()) || "Cruiser";
+}
+
+function getGreetingText(name) {
+  const hour = new Date().getHours();
+  if (hour < 12) return `Good morning, ${name}`;
+  if (hour < 18) return `Good afternoon, ${name}`;
+  return `Good evening, ${name}`;
+}
+
+function formatPortDateTime(port, dateValue, timeValue = "") {
+  const portText = String(port || "").trim();
+  const dateText = dateValue ? formatDateShort(dateValue) : "";
+  const timeText = timeValue ? formatTime(timeValue) : "";
+  const detail = [dateText, timeText].filter(Boolean).join(" · ");
+  if (portText && detail) return `${portText} · ${detail}`;
+  return portText || detail || "Not added";
+}
+
 function getTravellerSummary(cruise) {
   const names = getDashboardValue(cruise, ["traveller_names", "travellers", "guest_names", "passenger_names"], "");
   if (names) return names;
@@ -1216,12 +1254,16 @@ function renderStatusValue(value) {
 }
 
 function renderDashboardSnapshot(cruise) {
-  const embarkation = getDashboardValue(cruise, ["embarkation_port", "departure_port", "from_port", "departure_city"], "Not added");
-  const disembarkation = getDashboardValue(cruise, ["disembarkation_port", "arrival_port", "to_port", "destination"], "Not added");
+  const embarkationPort = getDashboardValue(cruise, ["embarkation_port", "departure_port", "from_port", "departure_city"], "");
+  const disembarkationPort = getDashboardValue(cruise, ["disembarkation_port", "arrival_port", "to_port", "destination"], "");
+  const embarkation = formatPortDateTime(embarkationPort, cruise?.departure_date, cruise?.departure_time);
+  const disembarkation = formatPortDateTime(disembarkationPort, cruise?.return_date || cruise?.arrival_date, cruise?.arrival_time);
   const cabin = getDashboardValue(cruise, ["cabin_number", "cabin", "stateroom", "suite"], "Not added");
+  const cabinType = getDashboardValue(cruise, ["cabin_type", "room_type", "category_class"], "Not added");
   const travellers = getTravellerSummary(cruise);
   const insurance = getDashboardValue(cruise, ["insurance_status", "travel_insurance", "insurance", "insurance_purchased"], "Not added");
   const flights = getDashboardValue(cruise, ["flight_status", "flights", "flights_booked", "air_status"], "Not added");
+  const status = getDashboardValue(cruise, ["booking_status"], "Not added");
 
   return `
     <article class="dashboard-summary-card dashboard-snapshot-card">
@@ -1229,8 +1271,10 @@ function renderDashboardSnapshot(cruise) {
       <div class="dashboard-snapshot-list">
         <div class="dashboard-snapshot-row"><span>Travellers</span>${renderStatusValue(travellers)}</div>
         <div class="dashboard-snapshot-row"><span>Cabin</span>${renderStatusValue(cabin)}</div>
+        <div class="dashboard-snapshot-row"><span>Category</span>${renderStatusValue(cabinType)}</div>
         <div class="dashboard-snapshot-row"><span>Embarkation</span>${renderStatusValue(embarkation)}</div>
         <div class="dashboard-snapshot-row"><span>Disembarkation</span>${renderStatusValue(disembarkation)}</div>
+        <div class="dashboard-snapshot-row"><span>Booking Status</span>${renderStatusValue(status)}</div>
         <div class="dashboard-snapshot-row"><span>Insurance</span>${renderStatusValue(insurance)}</div>
         <div class="dashboard-snapshot-row"><span>Flights</span>${renderStatusValue(flights)}</div>
       </div>
@@ -1261,7 +1305,8 @@ async function renderDashboard() {
     mainCruise = selectActiveCruise(safeCruises, plannerPreference);
   }
 
-  const firstName = getUserDisplayName();
+  const firstName = getGreetingName();
+  const greetingText = getGreetingText(firstName);
   const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
   const checklistData = await loadDashboardChecklistData(mainCruise);
   const nextItem = checklistData.nextItem;
@@ -1287,7 +1332,7 @@ async function renderDashboard() {
           ${adminPreviewMode ? `<button class="dashboard-signout" onclick="exitAdminPreview()">Exit Preview</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
 
           <div class="dashboard-hero-content">
-            <p class="dashboard-hero-kicker">Welcome back, ${escapeHtml(firstName)}</p>
+            <p class="dashboard-hero-kicker">${escapeHtml(greetingText)}</p>
             <h1>${escapeHtml(heroTitle || "Your Cruise")}</h1>
             <p class="dashboard-hero-date">${escapeHtml(heroDateRange)}</p>
             <p class="dashboard-hero-route">${escapeHtml(routeText || routeLine || "Your upcoming cruise")}${cabinSummary ? ` · ${escapeHtml(cabinSummary)}` : ""}</p>
@@ -1307,7 +1352,7 @@ async function renderDashboard() {
       ` : `
         <section class="dashboard-empty-hero">
           <h1>My Cruise Planner</h1>
-          <p>Welcome back, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.</p>
+          <p>Welcome, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.</p>
           <button class="planner-button secondary" onclick="signOut()">Sign Out</button>
         </section>
       `}
@@ -1317,7 +1362,7 @@ async function renderDashboard() {
           <div class="dashboard-welcome-avatar">${escapeHtml(String(firstName).slice(0, 2).toUpperCase())}</div>
           <div>
             <h2>My Cruise</h2>
-            <p>${mainCruise ? `Everything for <strong>${escapeHtml(heroTitle || "your cruise")}</strong> is now in one place. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.` : `Welcome back, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.`}</p>
+            <p>${mainCruise ? `Everything for <strong>${escapeHtml(heroTitle || "your cruise")}</strong> is now in one place. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.` : `Welcome, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.`}</p>
           </div>
           ${adminPreviewMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
         </section>
@@ -1342,13 +1387,18 @@ async function renderDashboard() {
 
           ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
 
-          <article class="dashboard-summary-card dashboard-planner-card">
-            <p class="dashboard-card-label">My Planner</p>
-            <button onclick="renderChecklist()"><span>Preparation Checklist</span><strong>→</strong></button>
-            <button onclick="renderPackingPlanner()"><span>Smart Packing Planner</span><strong>→</strong></button>
-            <button onclick="alert('Documents Checklist coming soon')"><span>Documents Checklist</span><strong>→</strong></button>
-            <button onclick="alert('Budget Planner coming soon')"><span>Budget Planner</span><strong>→</strong></button>
-            <button class="dashboard-planner-main" onclick="renderChecklist()">Go to Planner →</button>
+          <article class="dashboard-summary-card dashboard-planner-card dashboard-planner-feature-card">
+            <div class="dashboard-planner-heading">
+              <p class="dashboard-card-label">My Planner</p>
+              <h2>Start planning your cruise</h2>
+              <p>These are the key tools your clients will use most. Open a section to start checking things off, building the packing list, or managing cruise details.</p>
+            </div>
+            <div class="dashboard-feature-grid">
+              <button class="dashboard-feature-button" onclick="renderChecklist()"><span>📋</span><strong>Preparation Checklist</strong><small>Tasks, reminders and cruise-ready progress</small></button>
+              <button class="dashboard-feature-button" onclick="renderPackingPlanner()"><span>🧳</span><strong>Smart Packing Planner</strong><small>Personalised packing list for this sailing</small></button>
+              <button class="dashboard-feature-button" onclick="alert('Documents Checklist coming soon')"><span>📄</span><strong>Documents Checklist</strong><small>Passports, visas, insurance and travel papers</small></button>
+              <button class="dashboard-feature-button" onclick="alert('Budget Planner coming soon')"><span>💳</span><strong>Budget Planner</strong><small>Track cruise payments and spending plans</small></button>
+            </div>
           </article>
         </section>
 
@@ -1391,6 +1441,7 @@ function getCurrentCruiseFromList(cruises, preference = null) {
 }
 
 async function loadCurrentCruise() {
+  if (adminPreviewMode && adminPreviewCruise) return adminPreviewCruise;
   const { data } = await supabaseClient
     .from("cruises")
     .select("*")
@@ -1998,6 +2049,7 @@ function getDefaultTravellerType(cruise) {
 }
 
 async function loadPackingPreferences(cruise) {
+  if (adminPreviewMode) return null;
   if (!currentUser?.id || !cruise?.id) return null;
   const { data, error } = await supabaseClient
     .from("user_packing_preferences")
@@ -2015,6 +2067,10 @@ async function loadPackingPreferences(cruise) {
 async function savePackingPreferencesFromForm() {
   const cruise = await loadCurrentCruise();
   if (!cruise) return;
+  if (adminPreviewMode) {
+    alert("Preview mode does not save packing settings. Customer accounts will save their own settings.");
+    return;
+  }
 
   const payload = {
     user_id: currentUser.id,
@@ -2084,6 +2140,7 @@ function getPackingItemKey(item) {
 }
 
 function isPackingItemPacked(progressRows, item) {
+  if (adminPreviewMode) return adminPreviewPackedKeys.has(getPackingItemKey(item));
   if (item.source === "personal") return item.packed === true;
   return (progressRows || []).some(row => row.packing_item_id === item.id && row.packed === true);
 }
@@ -2221,6 +2278,11 @@ function savePackingPdf() {
 
 async function resetPackingProgress() {
   if (!confirm("Reset all packing progress for this cruise?")) return;
+  if (adminPreviewMode) {
+    adminPreviewPackedKeys = new Set();
+    renderPackingPlanner();
+    return;
+  }
   const cruise = await loadCurrentCruise();
   if (!cruise) return;
   await supabaseClient.from("user_packing_progress").delete().eq("user_id", currentUser.id).eq("cruise_id", cruise.id);
@@ -2229,6 +2291,10 @@ async function resetPackingProgress() {
 }
 
 async function addPersonalPackingItem(categoryId) {
+  if (adminPreviewMode) {
+    alert("Preview mode does not save personal packing items.");
+    return;
+  }
   const cruise = await loadCurrentCruise();
   if (!cruise) {
     alert("Please add a cruise before adding packing items.");
@@ -2256,6 +2322,11 @@ async function addPersonalPackingItem(categoryId) {
 async function togglePackingItem(key, packed) {
   const cruise = await loadCurrentCruise();
   if (!cruise) return;
+  if (adminPreviewMode) {
+    if (packed) adminPreviewPackedKeys.add(key);
+    else adminPreviewPackedKeys.delete(key);
+    return;
+  }
   if (String(key).startsWith("personal:")) {
     const id = Number(String(key).replace("personal:", ""));
     const { error } = await supabaseClient.from("user_packing_items").update({ packed, packed_at: packed ? new Date().toISOString() : null }).eq("id", id).eq("user_id", currentUser.id);
@@ -2293,12 +2364,14 @@ async function renderPackingPlanner() {
     cruiseLine: cruise.cruise_line || ""
   };
 
-  const [{ data: categories }, { data: items }, { data: progress }, { data: personal }] = await Promise.all([
+  const [{ data: categories }, { data: items }, progressResult, personalResult] = await Promise.all([
     supabaseClient.from("packing_categories").select("*").eq("active", true).order("display_order", { ascending: true }),
     supabaseClient.from("packing_items").select("*, packing_categories(name)").eq("active", true).order("display_order", { ascending: true }),
-    supabaseClient.from("user_packing_progress").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id),
-    supabaseClient.from("user_packing_items").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id).order("created_at", { ascending: true })
+    adminPreviewMode ? Promise.resolve({ data: [] }) : supabaseClient.from("user_packing_progress").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id),
+    adminPreviewMode ? Promise.resolve({ data: [] }) : supabaseClient.from("user_packing_items").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id).order("created_at", { ascending: true })
   ]);
+  const progress = progressResult?.data || [];
+  const personal = personalResult?.data || [];
 
   const systemItems = (items || [])
     .filter(item => packingItemApplies(item, context))
