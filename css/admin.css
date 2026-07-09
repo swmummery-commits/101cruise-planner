@@ -944,3 +944,8 @@
   border-color: rgba(91, 138, 114, 0.28);
   color: #1f4d3f;
 }
+
+
+.admin-profile-selector.is-hidden {
+  display: none;
+}

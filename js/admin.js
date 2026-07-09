@@ -1517,7 +1517,7 @@ function togglePackingEssentialMode() {
   const intelligence = document.getElementById("packingItemSmartProfileBlock");
   if (!checkbox || !intelligence) return;
 
-  intelligence.classList.toggle("is-disabled", checkbox.checked);
+  intelligence.classList.toggle("is-hidden", checkbox.checked);
   intelligence.querySelectorAll("input[type='checkbox']").forEach(input => {
     input.disabled = checkbox.checked;
     if (checkbox.checked) {
@@ -1778,7 +1778,7 @@ function renderPackingProfileSelector(item) {
   const groups = smartProfileGroups.length ? [...smartProfileGroups].sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)) : [];
   const essential = isEssentialPackingItem(item);
   return `
-    <div class="admin-profile-selector ${essential ? "is-disabled" : ""}" id="packingItemSmartProfileBlock">
+    <div class="admin-profile-selector ${essential ? "is-hidden" : ""}" id="packingItemSmartProfileBlock">
       <div class="admin-section-mini-title">When should this item be added?</div>
       <p class="admin-helper">Use this only for items that vary by destination, climate, traveller type, cruise type or dress profile. Essential items do not need Smart Profiles.</p>
       ${groups.map(group => {
@@ -2424,6 +2424,14 @@ function renderPackingItemForm(editingItem) {
       <textarea id="packingItemDescription" placeholder="Short note shown under the item">${editingItem ? esc(editingItem.description || "") : ""}</textarea>
     </div>
 
+    <div class="admin-field admin-essential-field">
+      <label class="admin-check-line">
+        <input type="checkbox" id="packingItemEssential" ${editingItem && isEssentialPackingItem(editingItem) ? "checked" : ""} onchange="togglePackingEssentialMode()">
+        <span>Essential</span>
+      </label>
+      <div class="admin-helper">Tick this when the item should be included on every cruise. Essential items do not need destination, climate, traveller, cruise type or dress profile rules.</div>
+    </div>
+
     <div class="admin-grid compact">
       <div class="admin-field">
         <label>Base quantity</label>
@@ -2479,13 +2487,6 @@ function renderPackingItemForm(editingItem) {
       value: applies("cruise_line_tags")
     })}
 
-    <div class="admin-field admin-essential-field">
-      <label class="admin-check-line">
-        <input type="checkbox" id="packingItemEssential" ${editingItem && isEssentialPackingItem(editingItem) ? "checked" : ""} onchange="togglePackingEssentialMode()">
-        <span>Essential</span>
-      </label>
-      <div class="admin-helper">Tick this when the item should be included on every cruise. Essential items do not need Smart Profile assignments.</div>
-    </div>
 
     ${renderPackingProfileSelector(editingItem)}
 
