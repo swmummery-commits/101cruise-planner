@@ -2120,6 +2120,134 @@ async function saveSmartProfile() {
   renderAdmin();
 }
 
+
+function formatPackingPrintValue(value, fallback = "—") {
+  if (Array.isArray(value)) {
+    const cleaned = value.map(item => String(item || "").trim()).filter(Boolean);
+    return cleaned.length ? cleaned.join(", ") : fallback;
+  }
+
+  const text = String(value ?? "").trim();
+  if (!text || text.toLowerCase() === "all") return fallback;
+  return text;
+}
+
+function getPackingProfileNamesForItem(itemId) {
+  const profileIds = getPackingProfileIdsForItem(itemId).map(String);
+  if (!profileIds.length) return [];
+
+  return smartProfiles
+    .filter(profile => profileIds.includes(String(profile.id)))
+    .map(profile => profile.name || profile.profile_name || `Profile ${profile.id}`)
+    .filter(Boolean)
+    .sort((a, b) => String(a).localeCompare(String(b)));
+}
+
+function printPackingItemLibrary() {
+  const sortedItems = [...(packingItems || [])].sort((a, b) => {
+    const categoryCompare = String(getPackingCategoryName(a.category_id)).localeCompare(String(getPackingCategoryName(b.category_id)));
+    if (categoryCompare !== 0) return categoryCompare;
+    const orderCompare = Number(a.display_order || 0) - Number(b.display_order || 0);
+    if (orderCompare !== 0) return orderCompare;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+
+  if (!sortedItems.length) {
+    alert("There are no packing items to print.");
+    return;
+  }
+
+  const rows = sortedItems.map(item => {
+    const profiles = getPackingProfileNamesForItem(item.id);
+    const essential = isEssentialPackingItem(item);
+    return `
+      <tr>
+        <td>${esc(getPackingCategoryName(item.category_id))}</td>
+        <td><strong>${esc(item.name || "")}</strong></td>
+        <td>${esc(item.item_type || "—")}</td>
+        <td>${essential ? "Yes" : "No"}</td>
+        <td class="number">${esc(item.base_quantity ?? 1)}</td>
+        <td class="number">${esc(item.quantity_per_night ?? 0)}</td>
+        <td class="number">${esc(Number(item.weight_kg || 0).toFixed(2))}</td>
+        <td>${item.active ? "Published" : "Unpublished"}</td>
+        <td class="number">${esc(item.display_order ?? 0)}</td>
+        <td>${esc(formatPackingPrintValue(profiles))}</td>
+        <td>${esc(formatPackingPrintValue(item.destination_tags))}</td>
+        <td>${esc(formatPackingPrintValue(item.climate_tags))}</td>
+        <td>${esc(formatPackingPrintValue(item.traveller_types))}</td>
+        <td>${esc(formatPackingPrintValue(item.dress_codes))}</td>
+        <td>${esc(formatPackingPrintValue(item.cruise_line_tags))}</td>
+        <td>${esc(item.description || "—")}</td>
+        <td>${esc(item.help_text || "—")}</td>
+      </tr>`;
+  }).join("");
+
+  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  if (!printWindow) {
+    alert("Your browser blocked the print window. Allow pop-ups for this site and try again.");
+    return;
+  }
+
+  const generatedAt = new Date().toLocaleString();
+  printWindow.document.open();
+  printWindow.document.write(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>101CRUISE Packing Item Library</title>
+  <style>
+    @page { size: A3 landscape; margin: 8mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #111827; }
+    h1 { margin: 0 0 3px; font-size: 18px; }
+    .meta { margin: 0 0 10px; color: #4b5563; font-size: 9px; }
+    table { width: 100%; border-collapse: collapse; table-layout: auto; font-size: 7px; }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
+    th, td { border: 1px solid #cbd5e1; padding: 3px 4px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    th { background: #eef2f7; font-weight: 700; white-space: nowrap; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    .number { text-align: right; white-space: nowrap; }
+    .screen-actions { margin-bottom: 12px; }
+    button { appearance: none; border: 0; border-radius: 8px; background: #111827; color: white; padding: 8px 13px; font: inherit; cursor: pointer; }
+    @media print { .screen-actions { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="screen-actions"><button onclick="window.print()">Print</button></div>
+  <h1>101CRUISE Packing Item Library</h1>
+  <p class="meta">${sortedItems.length} items · Generated ${esc(generatedAt)} · One row per packing item</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Item</th>
+        <th>Type</th>
+        <th>Essential</th>
+        <th>Base Qty</th>
+        <th>Qty/Night</th>
+        <th>Weight kg</th>
+        <th>Status</th>
+        <th>Order</th>
+        <th>Smart Profiles</th>
+        <th>Destinations</th>
+        <th>Climates</th>
+        <th>Travellers</th>
+        <th>Dress Codes</th>
+        <th>Cruise Lines</th>
+        <th>Description</th>
+        <th>Help Text</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+</body>
+</html>`);
+  printWindow.document.close();
+  printWindow.focus();
+}
+
 function renderPackingItemCard(item) {
   const isEditing = String(editingPackingItemId || "") === String(item.id);
   const assignedProfileCount = getPackingProfileIdsForItem(item.id).length;
@@ -2425,6 +2553,7 @@ function renderPackingPanel() {
         <div class="admin-actions-row compact-actions">
           <button class="admin-button secondary" onclick="showNewPackingItemForm()">Add Packing Item</button>
           <button class="admin-button secondary" onclick="showNewPackingCategoryForm()">Add Packing Category</button>
+          <button class="admin-button secondary" onclick="printPackingItemLibrary()">Print Full Item List</button>
           <button class="admin-button secondary" onclick="refreshAdminData()">Refresh</button>
         </div>
       </div>
