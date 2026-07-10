@@ -536,7 +536,7 @@ function selectActiveCruise(cruises, preference) {
 
 function renderCruiseSwitcher(cruises, activeCruise) {
   const safeCruises = cruises || [];
-  if (safeCruises.length <= 1) return "";
+  if (!safeCruises.length) return "";
 
   return `
     <div class="cruise-switcher">
@@ -655,7 +655,8 @@ function getShipImage(shipName) {
 }
 
 async function loadShipHeroImage(shipName) {
-  const fallbackImage = getShipImage(shipName);
+  const defaultImage = "assets/default-cruise-hero.jpg";
+  const fallbackImage = getShipImage(shipName) || defaultImage;
   if (!shipName) return fallbackImage;
 
   const safeShipName = String(shipName).trim();
@@ -1403,6 +1404,7 @@ async function renderDashboard() {
       ${mainCruise ? `
         <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
           <div class="dashboard-hero-overlay"></div>
+          <img class="dashboard-brand-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
           ${adminPreviewMode ? `<button class="dashboard-signout" onclick="exitAdminPreview()">Exit Preview</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
 
           <div class="dashboard-hero-content">
@@ -1441,37 +1443,39 @@ async function renderDashboard() {
           ${adminPreviewMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
         </section>
 
-        <section class="dashboard-summary-grid dashboard-summary-grid-final">
-          ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
-
-          <article class="dashboard-summary-card cruise-ready-card">
-            <p class="dashboard-card-label">Cruise Ready</p>
-            <div class="dashboard-ready-stat"><strong>${checklistData.percent}%</strong><span>${checklistData.percent > 0 ? "Your plans are taking shape." : "Your planning starts here."}</span></div>
-            ${renderProgressCircle(checklistData.percent)}
-            <button class="dashboard-link-action" onclick="renderChecklist()">View Progress →</button>
-          </article>
-
-          <article class="dashboard-summary-card next-task-card">
-            <p class="dashboard-card-label">Next Essential Task</p>
-            <div class="dashboard-card-icon">✓</div>
-            <h2>${escapeHtml(nextStepTitle)}</h2>
-            <p class="dashboard-card-copy">${escapeHtml(nextStepDescription)}</p>
-            <button class="dashboard-card-action" onclick="renderChecklist()">Start Task →</button>
-          </article>
-
-          <article class="dashboard-summary-card dashboard-planner-card dashboard-planner-feature-card">
+        <section class="dashboard-home-grid">
+          <article class="dashboard-summary-card dashboard-planner-card dashboard-planner-feature-card dashboard-planner-column">
             <div class="dashboard-planner-heading">
               <p class="dashboard-card-label">My Planner</p>
               <h2>${checklistData.percent > 0 ? "Continue planning your cruise" : "Start planning your cruise"}</h2>
-              <p>Your essential cruise tools are together in one place. Choose where you would like to continue.</p>
+              <p>Your essential cruise tools are together in one place.</p>
             </div>
-            <div class="dashboard-feature-grid">
-              <button class="dashboard-feature-button" onclick="renderChecklist()"><span>📋</span><strong>Preparation Checklist</strong><small>Tasks, reminders and cruise-ready progress</small></button>
-              <button class="dashboard-feature-button" onclick="renderPackingPlanner()"><span>🧳</span><strong>Smart Packing Planner</strong><small>Personalised packing list for this sailing</small></button>
-              <button class="dashboard-feature-button" onclick="alert('Documents Checklist coming soon')"><span>📄</span><strong>Documents Checklist</strong><small>Passports, visas, insurance and travel papers</small></button>
-              <button class="dashboard-feature-button" onclick="alert('Budget Planner coming soon')"><span>💳</span><strong>Budget Planner</strong><small>Track cruise payments and spending plans</small></button>
+            <div class="dashboard-feature-list">
+              <button class="dashboard-feature-row" onclick="renderChecklist()"><span>📋</span><span><strong>Preparation Checklist</strong><small>Tasks, reminders and cruise-ready progress</small></span><b>→</b></button>
+              <button class="dashboard-feature-row" onclick="renderPackingPlanner()"><span>🧳</span><span><strong>Smart Packing Planner</strong><small>Personalised packing for this sailing</small></span><b>→</b></button>
+              <button class="dashboard-feature-row" onclick="alert('Documents Checklist coming soon')"><span>📄</span><span><strong>Documents Checklist</strong><small>Passports, visas and travel papers</small></span><b>→</b></button>
+              <button class="dashboard-feature-row" onclick="alert('Budget Planner coming soon')"><span>💳</span><span><strong>Budget Planner</strong><small>Payments and spending plans</small></span><b>→</b></button>
             </div>
           </article>
+
+          <div class="dashboard-status-stack">
+            <article class="dashboard-summary-card cruise-ready-card">
+              <p class="dashboard-card-label">Cruise Ready</p>
+              <div class="dashboard-ready-stat"><strong>${checklistData.percent}%</strong><span>${checklistData.percent > 0 ? "Your plans are taking shape." : "Your planning starts here."}</span></div>
+              ${renderProgressCircle(checklistData.percent)}
+              <button class="dashboard-card-action" onclick="renderChecklist()">View Progress →</button>
+            </article>
+
+            <article class="dashboard-summary-card next-task-card">
+              <p class="dashboard-card-label">Next Essential Task</p>
+              <div class="dashboard-card-icon">✓</div>
+              <h2>${escapeHtml(nextStepTitle)}</h2>
+              <p class="dashboard-card-copy">${escapeHtml(nextStepDescription)}</p>
+              <button class="dashboard-card-action" onclick="renderChecklist()">Start Task →</button>
+            </article>
+          </div>
+
+          ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
         </section>
 
         ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
