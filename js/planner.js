@@ -2208,18 +2208,122 @@ function getClimateFromDestination(destination) {
   return "Warm";
 }
 
+let activePackingProfileKey = null;
+let packingV2Profiles = [];
+let packingV2State = [];
+let packingV2CurrentCruiseKey = null;
+
+const PACKING_CABIN_CATEGORIES = new Set([
+  "cabin essentials",
+  "travel documents",
+  "money & payments",
+  "last minute"
+]);
+
 function calculatePackingQuantity() {
-  return 1;
+  return 0;
+}
+
+function normalisePackingProfileKey(value, fallback = "traveller") {
+  const cleaned = String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return cleaned || fallback;
+}
+
+function getPackingTravellerNames(cruise) {
+  const raw = String(getDashboardValue(cruise, ["traveller_names", "travellers", "guest_names", "passenger_names"], "") || "").trim();
+  const names = raw
+    ? raw.split(/,|\s+&\s+|\s+and\s+/i).map(name => name.trim()).filter(Boolean)
+    : [];
+  const count = Math.max(1, Number(getDashboardValue(cruise, ["traveller_count", "guests", "passengers", "guest_count"], names.length || 1)) || 1);
+  while (names.length < count) names.push(`Traveller ${names.length + 1}`);
+  return names.slice(0, Math.max(count, names.length));
+}
+
+function buildPackingProfiles(cruise, savedProfiles = []) {
+  const used = new Set();
+  const travellers = getPackingTravellerNames(cruise).map((name, index) => {
+    const firstName = String(name || `Traveller ${index + 1}`).trim().split(/\s+/)[0] || `Traveller ${index + 1}`;
+    let key = normalisePackingProfileKey(firstName, `traveller-${index + 1}`);
+    if (used.has(key)) key = `${key}-${index + 1}`;
+    used.add(key);
+    const saved = savedProfiles.find(row => row.profile_key === key);
+    return {
+      profile_key: key,
+      profile_name: firstName,
+      profile_type: "traveller",
+      display_order: index,
+      checked_baggage_allowance_kg: saved?.checked_baggage_allowance_kg ?? null,
+      cabin_baggage_allowance_kg: saved?.cabin_baggage_allowance_kg ?? null
+    };
+  });
+  const cabinSaved = savedProfiles.find(row => row.profile_key === "cabin");
+  return [...travellers, {
+    profile_key: "cabin",
+    profile_name: "Cabin",
+    profile_type: "cabin",
+    display_order: travellers.length,
+    checked_baggage_allowance_kg: cabinSaved?.checked_baggage_allowance_kg ?? null,
+    cabin_baggage_allowance_kg: cabinSaved?.cabin_baggage_allowance_kg ?? null
+  }];
+}
+
+async function loadPackingV2Data(cruise) {
+  const cruiseKey = String(cruise.id);
+  packingV2CurrentCruiseKey = cruiseKey;
+  if (adminPreviewMode || !currentUser?.id) {
+    packingV2Profiles = buildPackingProfiles(cruise, []);
+    packingV2State = [];
+    return;
+  }
+  const [profilesResult, stateResult] = await Promise.all([
+    supabaseClient.from("user_packing_v2_profiles").select("*").eq("user_id", currentUser.id).eq("cruise_key", cruiseKey).order("display_order", { ascending: true }),
+    supabaseClient.from("user_packing_v2_state").select("*").eq("user_id", currentUser.id).eq("cruise_key", cruiseKey)
+  ]);
+  if (profilesResult.error) console.warn("Packing v2 profiles load failed", profilesResult.error);
+  if (stateResult.error) console.warn("Packing v2 state load failed", stateResult.error);
+  const savedProfiles = profilesResult.data || [];
+  packingV2Profiles = buildPackingProfiles(cruise, savedProfiles);
+  packingV2State = stateResult.data || [];
+
+  const missingProfiles = packingV2Profiles.filter(profile => !savedProfiles.some(saved => saved.profile_key === profile.profile_key));
+  if (missingProfiles.length) {
+    const payload = missingProfiles.map(profile => ({
+      user_id: currentUser.id,
+      cruise_key: cruiseKey,
+      ...profile,
+      updated_at: new Date().toISOString()
+    }));
+    const { error } = await supabaseClient.from("user_packing_v2_profiles").upsert(payload, { onConflict: "user_id,cruise_key,profile_key" });
+    if (error) console.warn("Packing v2 profile setup failed", error);
+  }
+}
+
+function getActivePackingProfile() {
+  return packingV2Profiles.find(profile => profile.profile_key === activePackingProfileKey) || packingV2Profiles[0] || null;
+}
+
+function selectPackingProfile(profileKey) {
+  activePackingProfileKey = profileKey;
+  localStorage.setItem(`101cruise_packing_profile_${packingV2CurrentCruiseKey || "current"}`, profileKey);
+  renderPackingPlanner();
 }
 
 function getPackingItemKey(item) {
   return item.source === "personal" ? `personal:${item.id}` : `system:${item.id}`;
 }
 
-function isPackingItemPacked(progressRows, item) {
-  if (adminPreviewMode) return adminPreviewPackedKeys.has(getPackingItemKey(item));
-  if (item.source === "personal") return item.packed === true;
-  return (progressRows || []).some(row => row.packing_item_id === item.id && row.packed === true);
+function getPackingState(itemKey, profileKey = activePackingProfileKey) {
+  return packingV2State.find(row => row.profile_key === profileKey && row.item_key === itemKey) || null;
+}
+
+function isPackingItemPacked(_progressRows, item) {
+  if (adminPreviewMode) return adminPreviewPackedKeys.has(`${activePackingProfileKey}:${getPackingItemKey(item)}`);
+  return getPackingState(getPackingItemKey(item))?.packed === true;
 }
 
 function groupPackingItems(items) {
@@ -2241,7 +2345,7 @@ function getPackingTypeClass(type) {
 
 function getPackingTypeLabel(type) {
   const value = String(type || "Recommended").toLowerCase();
-  if (value === "required") return "Required";
+  if (value === "required") return "Recommended";
   if (value === "optional") return "Optional";
   return "Recommended";
 }
@@ -2250,23 +2354,50 @@ const PACKING_NON_WEIGHT_CATEGORIES = new Set([
   "travel documents",
   "money & payments",
   "health & medication",
-  "last minute"
+  "last minute",
+  "cabin essentials"
 ]);
 
-function packingCategoryUsesQuantityAndWeight(categoryName) {
+function packingCategoryUsesQuantityAndWeight(categoryName, profile = getActivePackingProfile()) {
+  if (profile?.profile_type === "cabin") return false;
   return !PACKING_NON_WEIGHT_CATEGORIES.has(String(categoryName || "").trim().toLowerCase());
 }
 
+function packingItemBelongsToProfile(item, categoryName, profile) {
+  const isCabinCategory = PACKING_CABIN_CATEGORIES.has(String(categoryName || "").trim().toLowerCase());
+  return profile?.profile_type === "cabin" ? isCabinCategory : !isCabinCategory;
+}
+
+function formatPackingWeight(weightKg) {
+  const value = Math.max(0, Number(weightKg || 0));
+  if (value > 0 && value < 1) return `${Math.round(value * 1000)} g`;
+  return `${value.toFixed(value >= 10 ? 1 : 2)} kg`;
+}
+
+function renderPackingLocationSelector(key, location, visible) {
+  const options = [
+    ["checked", "Checked"],
+    ["carry-on", "Carry-on"],
+    ["wearing", "Wearing"]
+  ];
+  return `<div class="packing-location-selector ${visible ? "" : "is-hidden"}" data-location-selector>
+    ${options.map(([value, label]) => `<button type="button" class="packing-location-option ${location === value ? "is-active" : ""}" onclick="updatePackingLocation('${escapeHtml(key)}','${value}')">${label}</button>`).join("")}
+  </div>`;
+}
+
 function renderPackingRow(item, packed, quantity, categoryName = "") {
+  const profile = getActivePackingProfile();
   const typeClass = getPackingTypeClass(item.item_type);
   const typeLabel = getPackingTypeLabel(item.item_type);
   const key = getPackingItemKey(item);
-  const usesQuantityAndWeight = packingCategoryUsesQuantityAndWeight(categoryName);
-  const safeQuantity = usesQuantityAndWeight ? Math.max(0, Number(quantity ?? 1)) : 1;
+  const usesQuantityAndWeight = packingCategoryUsesQuantityAndWeight(categoryName, profile);
+  const safeQuantity = usesQuantityAndWeight ? Math.max(0, Number(quantity ?? 0)) : 0;
+  const state = getPackingState(key);
+  const location = usesQuantityAndWeight ? (state?.packing_location || "checked") : "checklist";
   const unitWeight = usesQuantityAndWeight ? Math.max(0, Number(item.weight_kg || 0)) : 0;
   const weight = unitWeight * safeQuantity;
   return `
-    <div class="packing-row ${packed ? "is-packed" : ""} ${usesQuantityAndWeight ? "" : "packing-row-no-weight"}" data-packing-row="${escapeHtml(key)}" data-unit-weight="${unitWeight}" data-uses-weight="${usesQuantityAndWeight}">
+    <div class="packing-row ${packed ? "is-packed" : ""} ${usesQuantityAndWeight ? "" : "packing-row-no-weight"}" data-packing-row="${escapeHtml(key)}" data-unit-weight="${unitWeight}" data-uses-weight="${usesQuantityAndWeight}" data-location="${escapeHtml(location)}">
       <div class="packing-check-cell">
         <input class="checklist-checkbox" type="checkbox" ${packed ? "checked" : ""} onchange="togglePackingItem('${escapeHtml(key)}', this.checked)">
       </div>
@@ -2281,10 +2412,11 @@ function renderPackingRow(item, packed, quantity, categoryName = "") {
           <div class="packing-item-title">${escapeHtml(item.name)}</div>
           ${item.description ? `<div class="packing-item-description">${escapeHtml(item.description)}</div>` : ""}
           ${item.help_text ? `<div class="packing-item-help">ⓘ ${escapeHtml(item.help_text)}</div>` : ""}
+          ${usesQuantityAndWeight ? renderPackingLocationSelector(key, location, safeQuantity > 0) : ""}
         </div>
       </div>
       <div class="packing-type-cell"><span class="priority-badge ${typeClass}">${typeLabel}</span></div>
-      <div class="packing-weight-cell" data-item-weight>${usesQuantityAndWeight ? (weight ? `${weight.toFixed(2)} kg` : "0.00 kg") : "—"}</div>
+      <div class="packing-weight-cell" data-item-weight>${usesQuantityAndWeight ? formatPackingWeight(weight) : "—"}</div>
       ${item.source === "personal" ? `<button class="packing-delete-button" onclick="deletePersonalPackingItem(${item.id})">Delete</button>` : ""}
     </div>
   `;
@@ -2300,163 +2432,235 @@ function updatePackingQuantity(key, rawValue) {
   if (input && String(input.value) !== String(quantity)) input.value = quantity;
   const unitWeight = Number(row.dataset.unitWeight || 0);
   const weightCell = row.querySelector("[data-item-weight]");
-  if (weightCell) weightCell.textContent = `${(unitWeight * quantity).toFixed(2)} kg`;
+  if (weightCell) weightCell.textContent = formatPackingWeight(unitWeight * quantity);
+  row.querySelector("[data-location-selector]")?.classList.toggle("is-hidden", quantity <= 0);
   recalculatePackingSummary();
 
   if (adminPreviewMode) return;
-  clearTimeout(packingQuantitySaveTimers.get(key));
-  packingQuantitySaveTimers.set(key, setTimeout(() => savePackingQuantity(key, quantity), 450));
+  clearTimeout(packingQuantitySaveTimers.get(`${activePackingProfileKey}:${key}`));
+  packingQuantitySaveTimers.set(`${activePackingProfileKey}:${key}`, setTimeout(() => savePackingV2State(key, { quantity }), 450));
 }
 
-async function savePackingQuantity(key, quantity) {
-  const cruise = await loadCurrentCruise();
-  if (!cruise || !currentUser?.id) return;
-  if (String(key).startsWith("personal:")) {
-    const id = Number(String(key).replace("personal:", ""));
-    const { error } = await supabaseClient.from("user_packing_items").update({ quantity }).eq("id", id).eq("user_id", currentUser.id);
-    if (error) console.error("Personal packing quantity save error", error);
-    return;
-  }
-
-  const id = Number(String(key).replace("system:", ""));
+async function updatePackingLocation(key, location) {
   const row = document.querySelector(`[data-packing-row="${CSS.escape(key)}"]`);
-  const packed = row?.querySelector(".checklist-checkbox")?.checked === true;
+  if (row) {
+    row.dataset.location = location;
+    row.querySelectorAll(".packing-location-option").forEach(button => button.classList.toggle("is-active", button.textContent.trim().toLowerCase() === location || (location === "carry-on" && button.textContent.trim() === "Carry-on")));
+  }
+  recalculatePackingSummary();
+  if (!adminPreviewMode) await savePackingV2State(key, { packing_location: location });
+}
+
+async function savePackingV2State(itemKey, changes = {}) {
+  if (!currentUser?.id || !packingV2CurrentCruiseKey || !activePackingProfileKey) return;
+  const existing = getPackingState(itemKey) || {};
   const payload = {
     user_id: currentUser.id,
-    cruise_id: cruise.id,
-    packing_item_id: id,
-    quantity,
-    packed,
-    packed_at: packed ? new Date().toISOString() : null
+    cruise_key: packingV2CurrentCruiseKey,
+    profile_key: activePackingProfileKey,
+    item_key: itemKey,
+    quantity: changes.quantity ?? existing.quantity ?? 0,
+    packed: changes.packed ?? existing.packed ?? false,
+    packing_location: changes.packing_location ?? existing.packing_location ?? "checked",
+    packed_at: (changes.packed ?? existing.packed) ? (existing.packed_at || new Date().toISOString()) : null,
+    updated_at: new Date().toISOString()
   };
-  const { error } = await supabaseClient.from("user_packing_progress").upsert(payload, { onConflict: "user_id,cruise_id,packing_item_id" });
-  if (error) console.error("Packing quantity save error", error);
+  const { data, error } = await supabaseClient.from("user_packing_v2_state").upsert(payload, { onConflict: "user_id,cruise_key,profile_key,item_key" }).select("*").single();
+  if (error) {
+    console.error("Packing v2 state save error", error);
+    return;
+  }
+  const index = packingV2State.findIndex(row => row.profile_key === activePackingProfileKey && row.item_key === itemKey);
+  if (index >= 0) packingV2State[index] = data;
+  else packingV2State.push(data);
+}
+
+function collectPackingSummaryFromDom() {
+  const summary = { selected: 0, packed: 0, checked: 0, carryOn: 0, wearing: 0, checklistTotal: 0, checklistPacked: 0 };
+  document.querySelectorAll(".packing-row").forEach(row => {
+    if (row.style.display === "none") return;
+    const packed = row.querySelector(".checklist-checkbox")?.checked === true;
+    if (row.dataset.usesWeight === "true") {
+      const quantity = Math.max(0, Number(row.querySelector(".packing-quantity-input")?.value || 0));
+      if (quantity > 0) {
+        summary.selected += 1;
+        if (packed) summary.packed += 1;
+        const weight = Number(row.dataset.unitWeight || 0) * quantity;
+        if (row.dataset.location === "carry-on") summary.carryOn += weight;
+        else if (row.dataset.location === "wearing") summary.wearing += weight;
+        else summary.checked += weight;
+      }
+    } else {
+      summary.checklistTotal += 1;
+      if (packed) summary.checklistPacked += 1;
+    }
+  });
+  return summary;
 }
 
 function recalculatePackingSummary() {
-  let totalWeight = 0;
-  document.querySelectorAll(".packing-row").forEach(row => {
-    if (row.dataset.usesWeight !== "true") return;
-    const quantity = Math.max(0, Number(row.querySelector(".packing-quantity-input")?.value || 0));
-    totalWeight += Number(row.dataset.unitWeight || 0) * quantity;
-  });
-
-  const checkedAllowance = parseOptionalPackingNumber("packingCheckedBaggageAllowance");
-  const cabinAllowance = parseOptionalPackingNumber("packingCabinBaggageAllowance");
-  const weightValue = document.getElementById("packingEstimatedWeight");
-  const allowanceValue = document.getElementById("packingCheckedAllowanceValue");
-  const remainingValue = document.getElementById("packingRemainingWeight");
-  const cabinValue = document.getElementById("packingCabinAllowanceValue");
-  const status = document.getElementById("packingWeightStatus");
-  const donut = document.getElementById("packingWeightDonut");
-  const donutPercent = document.getElementById("packingWeightDonutPercent");
-  const donutLabel = document.getElementById("packingWeightDonutLabel");
-
-  if (weightValue) weightValue.textContent = `${totalWeight.toFixed(1)} kg`;
-  if (allowanceValue) allowanceValue.textContent = checkedAllowance === null ? "Not entered" : `${checkedAllowance.toFixed(1)} kg`;
-  if (cabinValue) cabinValue.textContent = cabinAllowance === null ? "Not entered" : `${cabinAllowance.toFixed(1)} kg`;
-  if (remainingValue) {
-    if (checkedAllowance === null) remainingValue.textContent = "—";
-    else {
-      const remaining = checkedAllowance - totalWeight;
-      remainingValue.textContent = remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`;
-    }
+  const profile = getActivePackingProfile();
+  const summary = collectPackingSummaryFromDom();
+  if (profile?.profile_type === "cabin") {
+    const percent = getProgressPercent(summary.checklistPacked, summary.checklistTotal);
+    const value = document.getElementById("packingProgressPercent");
+    const detail = document.getElementById("packingProgressDetail");
+    if (value) value.textContent = `${percent}%`;
+    if (detail) detail.textContent = `${summary.checklistPacked} of ${summary.checklistTotal} complete`;
+    return;
   }
-  if (status) status.textContent = getWeightStatus(totalWeight, checkedAllowance);
-  const rawPercent = checkedAllowance && checkedAllowance > 0 ? Math.max(0, Math.round((totalWeight / checkedAllowance) * 100)) : 0;
-  if (donut) {
-    donut.style.setProperty("--packing-weight-percent", `${Math.min(100, rawPercent) * 3.6}deg`);
-    donut.classList.toggle("is-over", checkedAllowance !== null && totalWeight > checkedAllowance);
-    donut.classList.toggle("has-no-allowance", checkedAllowance === null);
-  }
-  if (donutPercent) donutPercent.textContent = checkedAllowance === null ? "—" : `${rawPercent}%`;
-  if (donutLabel) donutLabel.textContent = checkedAllowance === null ? "Enter allowance" : (totalWeight > checkedAllowance ? "Over allowance" : "Allowance used");
+  const percent = getProgressPercent(summary.packed, summary.selected);
+  const progressValue = document.getElementById("packingProgressPercent");
+  const progressDetail = document.getElementById("packingProgressDetail");
+  if (progressValue) progressValue.textContent = `${percent}%`;
+  if (progressDetail) progressDetail.textContent = `${summary.packed} of ${summary.selected} selected items packed`;
+  updatePackingWeightDisplay(summary);
 }
 
-function renderPackingControls(preferences, cruise) {
-  const destination = preferences?.destination || getDefaultPackingDestination(cruise);
-  const travellerType = preferences?.traveller_type === "Group" ? getDefaultTravellerType(cruise) : (preferences?.traveller_type || getDefaultTravellerType(cruise));
-  const dressCode = preferences?.dress_code || getDefaultDressCode(cruise);
-  const checkedAllowance = preferences?.checked_baggage_allowance_kg ?? preferences?.baggage_limit_kg ?? "";
-  const cabinAllowance = preferences?.cabin_baggage_allowance_kg ?? "";
+async function savePackingPreferencesFromForm() {
+  const cruise = await loadCurrentCruise();
+  const profile = getActivePackingProfile();
+  if (!cruise || !profile) return;
+  if (adminPreviewMode) {
+    alert("Preview mode does not save packing settings. Customer accounts will save their own settings.");
+    return;
+  }
 
+  const globalPayload = {
+    user_id: currentUser.id,
+    cruise_id: cruise.id,
+    traveller_type: document.getElementById("packingTravellerType")?.value || getDefaultTravellerType(cruise),
+    destination: document.getElementById("packingDestination")?.value || getDefaultPackingDestination(cruise),
+    dress_code: document.getElementById("packingDressCode")?.value || getDefaultDressCode(cruise),
+    updated_at: new Date().toISOString()
+  };
+  const profilePayload = {
+    user_id: currentUser.id,
+    cruise_key: String(cruise.id),
+    profile_key: profile.profile_key,
+    profile_name: profile.profile_name,
+    profile_type: profile.profile_type,
+    display_order: profile.display_order,
+    checked_baggage_allowance_kg: profile.profile_type === "traveller" ? parseOptionalPackingNumber("packingCheckedBaggageAllowance") : null,
+    cabin_baggage_allowance_kg: profile.profile_type === "traveller" ? parseOptionalPackingNumber("packingCabinBaggageAllowance") : null,
+    updated_at: new Date().toISOString()
+  };
+
+  const [globalResult, profileResult] = await Promise.all([
+    supabaseClient.from("user_packing_preferences").upsert(globalPayload, { onConflict: "user_id,cruise_id" }),
+    supabaseClient.from("user_packing_v2_profiles").upsert(profilePayload, { onConflict: "user_id,cruise_key,profile_key" })
+  ]);
+  if (globalResult.error || profileResult.error) {
+    console.error("Packing settings save error", globalResult.error || profileResult.error);
+    alert("Could not save packing settings. Please try again.");
+    return;
+  }
+  await renderPackingPlanner();
+}
+
+function parseOptionalPackingNumber(id) {
+  const raw = String(document.getElementById(id)?.value || "").trim();
+  if (raw === "") return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+function renderPackingControls(preferences, cruise, profile = getActivePackingProfile()) {
+  const travellerType = preferences?.traveller_type === "Group" ? getDefaultTravellerType(cruise) : (preferences?.traveller_type || getDefaultTravellerType(cruise));
+  const destination = preferences?.destination || getDefaultPackingDestination(cruise);
+  const dressCode = preferences?.dress_code || getDefaultDressCode(cruise);
+  const isCabin = profile?.profile_type === "cabin";
   return `
-    <section class="planner-card packing-settings-card">
-      <div>
-        <h3>Smart Packing Settings</h3>
-        <p class="planner-muted">Enter the baggage allowances shown on your airline booking. They are not estimated from traveller type or fare class.</p>
+    <section class="planner-card packing-settings-card ${isCabin ? "is-cabin" : ""}">
+      <div class="packing-settings-heading">
+        <div>
+          <h3>${isCabin ? "Cabin checklist" : `${escapeHtml(profile?.profile_name || "Traveller")}'s packing settings`}</h3>
+          <p class="planner-muted">${isCabin ? "Shared cabin and departure items are kept simple: check them off once for the booking." : "Allowances are entered for this traveller only and are never estimated from fare class."}</p>
+        </div>
       </div>
-      <div class="packing-settings-grid">
-        <div class="planner-field">
-          <label>Who is travelling?</label>
+      <div class="packing-settings-grid ${isCabin ? "packing-settings-grid-cabin" : ""}">
+        <label><span>Who is travelling?</span>
           <select id="packingTravellerType">
             ${["Solo", "Couple", "Family"].map(type => `<option value="${type}" ${travellerType === type ? "selected" : ""}>${type}</option>`).join("")}
           </select>
-        </div>
-        <div class="planner-field">
-          <label>Destination</label>
+        </label>
+        <label><span>Destination</span>
           <select id="packingDestination">
-            ${PACKING_DESTINATIONS.map(dest => `<option value="${dest}" ${destination === dest ? "selected" : ""}>${dest}</option>`).join("")}
+            ${PACKING_DESTINATIONS.map(value => `<option value="${escapeHtml(value)}" ${destination === value ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}
           </select>
-        </div>
-        <div class="planner-field">
-          <label>Dress code</label>
+        </label>
+        <label><span>Dress code</span>
           <select id="packingDressCode">
-            ${["Casual", "Semi Formal", "Formal"].map(code => `<option value="${code}" ${dressCode === code ? "selected" : ""}>${code}</option>`).join("")}
+            ${["Casual", "Smart Casual", "Semi Formal", "Formal"].map(value => `<option value="${value}" ${dressCode === value ? "selected" : ""}>${value}</option>`).join("")}
           </select>
-        </div>
-        <div class="planner-field">
-          <label>Checked baggage allowance (kg)</label>
-          <input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(checkedAllowance)}" placeholder="Enter allowance" oninput="recalculatePackingSummary()">
-        </div>
-        <div class="planner-field">
-          <label>Cabin baggage allowance (kg)</label>
-          <input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(cabinAllowance)}" placeholder="Enter allowance" oninput="recalculatePackingSummary()">
-        </div>
+        </label>
+        ${isCabin ? "" : `
+          <label><span>Checked baggage (kg)</span><input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.checked_baggage_allowance_kg ?? "")}" placeholder="Enter allowance" oninput="recalculatePackingSummary()"></label>
+          <label><span>Cabin baggage (kg)</span><input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.cabin_baggage_allowance_kg ?? "")}" placeholder="Enter allowance" oninput="recalculatePackingSummary()"></label>
+        `}
       </div>
-      <div class="packing-settings-note">Allowances can differ by airline, route, fare and passenger. Check the booking confirmation before entering them.</div>
-      <button class="planner-button" onclick="savePackingPreferencesFromForm()">Save Packing Settings</button>
+      <div class="packing-settings-actions"><button class="planner-button" onclick="savePackingPreferencesFromForm()">Save Packing Settings</button></div>
     </section>
   `;
 }
 
 function getWeightStatus(totalWeight, baggageLimit) {
-  if (baggageLimit === null || baggageLimit === undefined || baggageLimit === "") return "Enter your checked baggage allowance to compare it with the packing estimate.";
+  if (baggageLimit === null || baggageLimit === undefined || baggageLimit === "") return "Enter this traveller's allowance to compare it with the packing plan.";
   const limit = Number(baggageLimit);
-  if (!totalWeight) return "Start packing to estimate your luggage weight.";
-  if (totalWeight <= limit * 0.75) return "You have comfortable room within the entered checked baggage allowance.";
-  if (totalWeight <= limit) return "You are getting close to the entered checked baggage allowance.";
-  return "The current estimate exceeds the entered checked baggage allowance.";
+  if (!totalWeight) return "Add quantities to build this traveller's packing plan.";
+  if (totalWeight <= limit * 0.75) return "There is comfortable room within the entered allowance.";
+  if (totalWeight <= limit) return "This traveller is getting close to the entered allowance.";
+  return "This traveller's current plan exceeds the entered allowance.";
 }
 
-function renderPackingWeightGauge(totalWeight, baggageLimit, cabinAllowance) {
-  const hasLimit = baggageLimit !== null && baggageLimit !== undefined && baggageLimit !== "";
-  const limit = hasLimit ? Number(baggageLimit) : null;
-  const hasCabinAllowance = cabinAllowance !== null && cabinAllowance !== undefined && cabinAllowance !== "";
-  const cabinLimit = hasCabinAllowance ? Number(cabinAllowance) : null;
-  const rawPercent = limit && limit > 0 ? Math.max(0, Math.round((totalWeight / limit) * 100)) : 0;
-  const remaining = limit === null ? null : limit - totalWeight;
-  const isOver = limit !== null && totalWeight > limit;
+function renderPackingWeightGauge(summary, profile) {
+  const checkedLimit = profile?.checked_baggage_allowance_kg === null || profile?.checked_baggage_allowance_kg === undefined ? null : Number(profile.checked_baggage_allowance_kg);
+  const cabinLimit = profile?.cabin_baggage_allowance_kg === null || profile?.cabin_baggage_allowance_kg === undefined ? null : Number(profile.cabin_baggage_allowance_kg);
+  const rawPercent = checkedLimit && checkedLimit > 0 ? Math.max(0, Math.round((summary.checked / checkedLimit) * 100)) : 0;
+  const remaining = checkedLimit === null ? null : checkedLimit - summary.checked;
+  const isOver = checkedLimit !== null && summary.checked > checkedLimit;
   return `
     <div class="packing-weight-gauge">
-      <div id="packingWeightDonut" class="packing-weight-donut ${isOver ? "is-over" : ""} ${limit === null ? "has-no-allowance" : ""}" style="--packing-weight-percent:${Math.min(100, rawPercent) * 3.6}deg">
-        <div class="packing-weight-donut-centre">
-          <strong id="packingWeightDonutPercent">${limit === null ? "—" : `${rawPercent}%`}</strong>
-          <span id="packingWeightDonutLabel">${limit === null ? "Enter allowance" : (isOver ? "Over allowance" : "Allowance used")}</span>
-        </div>
+      <div id="packingWeightDonut" class="packing-weight-donut ${isOver ? "is-over" : ""} ${checkedLimit === null ? "has-no-allowance" : ""}" style="--packing-weight-percent:${Math.min(100, rawPercent) * 3.6}deg">
+        <div class="packing-weight-donut-centre"><strong id="packingWeightDonutPercent">${checkedLimit === null ? "—" : `${rawPercent}%`}</strong><span id="packingWeightDonutLabel">${checkedLimit === null ? "Enter allowance" : (isOver ? "Over allowance" : "Checked used")}</span></div>
       </div>
       <div class="packing-weight-details">
         <div class="packing-weight-metrics">
-          <div><span>Estimated checked baggage</span><strong id="packingEstimatedWeight">${totalWeight.toFixed(1)} kg</strong></div>
-          <div><span>Checked allowance</span><strong id="packingCheckedAllowanceValue">${limit === null ? "Not entered" : `${limit.toFixed(1)} kg`}</strong></div>
-          <div><span>Remaining</span><strong id="packingRemainingWeight" class="${isOver ? "is-over" : ""}">${remaining === null ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`)}</strong></div>
+          <div><span>Checked</span><strong id="packingEstimatedWeight">${formatPackingWeight(summary.checked)}</strong></div>
+          <div><span>Carry-on</span><strong id="packingCarryOnWeight">${formatPackingWeight(summary.carryOn)}</strong></div>
+          <div><span>Wearing</span><strong id="packingWearingWeight">${formatPackingWeight(summary.wearing)}</strong></div>
+          <div><span>Checked allowance</span><strong id="packingCheckedAllowanceValue">${checkedLimit === null ? "Not entered" : `${checkedLimit.toFixed(1)} kg`}</strong></div>
           <div><span>Cabin allowance</span><strong id="packingCabinAllowanceValue">${cabinLimit === null ? "Not entered" : `${cabinLimit.toFixed(1)} kg`}</strong></div>
+          <div><span>Checked remaining</span><strong id="packingRemainingWeight" class="${isOver ? "is-over" : ""}">${remaining === null ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`)}</strong></div>
         </div>
-        <p id="packingWeightStatus">${escapeHtml(getWeightStatus(totalWeight, limit))}</p>
-        <small>This is an estimated checked-baggage comparison. Cabin allowance is shown for reference; individual items are not yet allocated between checked baggage and carry-on. Actual weight varies by item size, brand and fabric.</small>
+        <p id="packingWeightStatus">${escapeHtml(getWeightStatus(summary.checked, checkedLimit))}</p>
       </div>
-    </div>
-  `;
+    </div>`;
+}
+
+function updatePackingWeightDisplay(summary) {
+  const checkedLimit = parseOptionalPackingNumber("packingCheckedBaggageAllowance");
+  const cabinLimit = parseOptionalPackingNumber("packingCabinBaggageAllowance");
+  const rawPercent = checkedLimit && checkedLimit > 0 ? Math.max(0, Math.round((summary.checked / checkedLimit) * 100)) : 0;
+  const remaining = checkedLimit === null ? null : checkedLimit - summary.checked;
+  const isOver = checkedLimit !== null && summary.checked > checkedLimit;
+  const setText = (id, text) => { const node = document.getElementById(id); if (node) node.textContent = text; };
+  setText("packingEstimatedWeight", formatPackingWeight(summary.checked));
+  setText("packingCarryOnWeight", formatPackingWeight(summary.carryOn));
+  setText("packingWearingWeight", formatPackingWeight(summary.wearing));
+  setText("packingCheckedAllowanceValue", checkedLimit === null ? "Not entered" : `${checkedLimit.toFixed(1)} kg`);
+  setText("packingCabinAllowanceValue", cabinLimit === null ? "Not entered" : `${cabinLimit.toFixed(1)} kg`);
+  setText("packingRemainingWeight", remaining === null ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`));
+  setText("packingWeightDonutPercent", checkedLimit === null ? "—" : `${rawPercent}%`);
+  setText("packingWeightDonutLabel", checkedLimit === null ? "Enter allowance" : (isOver ? "Over allowance" : "Checked used"));
+  setText("packingWeightStatus", getWeightStatus(summary.checked, checkedLimit));
+  const donut = document.getElementById("packingWeightDonut");
+  if (donut) {
+    donut.style.setProperty("--packing-weight-percent", `${Math.min(100, rawPercent) * 3.6}deg`);
+    donut.classList.toggle("is-over", isOver);
+    donut.classList.toggle("has-no-allowance", checkedLimit === null);
+  }
+  document.getElementById("packingRemainingWeight")?.classList.toggle("is-over", isOver);
 }
 
 function toggleHidePacked() {
@@ -2469,99 +2673,76 @@ function toggleHidePacked() {
 
 function filterPackingList() {
   const query = String(document.getElementById("packingSearch")?.value || "").toLowerCase().trim();
-  document.querySelectorAll(".packing-row").forEach(row => {
-    row.style.display = !query || row.textContent.toLowerCase().includes(query) ? "grid" : "none";
-  });
+  document.querySelectorAll(".packing-row").forEach(row => { row.style.display = !query || row.textContent.toLowerCase().includes(query) ? "grid" : "none"; });
 }
 
-function printPackingList() {
-  window.print();
-}
-
-function savePackingPdf() {
-  window.print();
-}
+function printPackingList() { window.print(); }
+function savePackingPdf() { window.print(); }
 
 async function resetPackingProgress() {
-  if (!confirm("Reset all packing progress for this cruise?")) return;
+  const profile = getActivePackingProfile();
+  if (!profile || !confirm(`Reset ${profile.profile_name}'s packing progress and quantities?`)) return;
   if (adminPreviewMode) {
     adminPreviewPackedKeys = new Set();
     renderPackingPlanner();
     return;
   }
-  const cruise = await loadCurrentCruise();
-  if (!cruise) return;
-  await supabaseClient.from("user_packing_progress").delete().eq("user_id", currentUser.id).eq("cruise_id", cruise.id);
-  await supabaseClient.from("user_packing_items").update({ packed: false, packed_at: null }).eq("user_id", currentUser.id).eq("cruise_id", cruise.id);
+  await supabaseClient.from("user_packing_v2_state").delete().eq("user_id", currentUser.id).eq("cruise_key", packingV2CurrentCruiseKey).eq("profile_key", profile.profile_key);
   renderPackingPlanner();
 }
 
 async function addPersonalPackingItem(categoryId) {
-  if (adminPreviewMode) {
-    alert("Preview mode does not save personal packing items.");
-    return;
-  }
+  if (adminPreviewMode) { alert("Preview mode does not save personal packing items."); return; }
   const cruise = await loadCurrentCruise();
-  if (!cruise) {
-    alert("Please add a cruise before adding packing items.");
-    return;
-  }
+  if (!cruise) return;
   const name = prompt("Add your own packing item");
   if (!name || !name.trim()) return;
-  const { error } = await supabaseClient.from("user_packing_items").insert({
-    user_id: currentUser.id,
-    cruise_id: cruise.id,
-    category_id: categoryId,
-    name: name.trim(),
-    quantity: 1,
-    weight_kg: 0,
-    packed: false
-  });
-  if (error) {
-    console.error("Personal packing item save error", error);
-    alert("Could not add your item. Please try again.");
-    return;
-  }
+  const { data, error } = await supabaseClient.from("user_packing_items").insert({ user_id: currentUser.id, cruise_id: cruise.id, category_id: categoryId, name: name.trim(), quantity: 0, weight_kg: 0, packed: false }).select("*").single();
+  if (error) { alert("Could not add your item. Please try again."); return; }
+  await savePackingV2State(`personal:${data.id}`, { quantity: 0, packed: false, packing_location: getActivePackingProfile()?.profile_type === "cabin" ? "checklist" : "checked" });
   renderPackingPlanner();
 }
 
 async function togglePackingItem(key, packed) {
-  const cruise = await loadCurrentCruise();
-  if (!cruise) return;
   if (adminPreviewMode) {
-    if (packed) adminPreviewPackedKeys.add(key);
-    else adminPreviewPackedKeys.delete(key);
+    const previewKey = `${activePackingProfileKey}:${key}`;
+    if (packed) adminPreviewPackedKeys.add(previewKey); else adminPreviewPackedKeys.delete(previewKey);
+    recalculatePackingSummary();
     return;
   }
-  if (String(key).startsWith("personal:")) {
-    const id = Number(String(key).replace("personal:", ""));
-    const { error } = await supabaseClient.from("user_packing_items").update({ packed, packed_at: packed ? new Date().toISOString() : null }).eq("id", id).eq("user_id", currentUser.id);
-    if (error) alert("Could not save packing item.");
-  } else {
-    const id = Number(String(key).replace("system:", ""));
-    const payload = { user_id: currentUser.id, cruise_id: cruise.id, packing_item_id: id, packed, packed_at: packed ? new Date().toISOString() : null };
-    const { error } = await supabaseClient.from("user_packing_progress").upsert(payload, { onConflict: "user_id,cruise_id,packing_item_id" });
-    if (error) alert("Could not save packing progress.");
-  }
-  renderPackingPlanner();
+  await savePackingV2State(key, { packed });
+  const row = document.querySelector(`[data-packing-row="${CSS.escape(key)}"]`);
+  row?.classList.toggle("is-packed", packed);
+  recalculatePackingSummary();
 }
 
 async function deletePersonalPackingItem(id) {
   if (!confirm("Delete this packing item?")) return;
+  const itemKey = `personal:${id}`;
   const { error } = await supabaseClient.from("user_packing_items").delete().eq("id", id).eq("user_id", currentUser.id);
+  if (!error) await supabaseClient.from("user_packing_v2_state").delete().eq("user_id", currentUser.id).eq("cruise_key", packingV2CurrentCruiseKey).eq("item_key", itemKey);
   if (error) alert("Could not delete packing item.");
   renderPackingPlanner();
+}
+
+function renderPackingProfileTabs(profiles) {
+  return `<div class="packing-profile-tabs" role="tablist" aria-label="Packing profiles">
+    ${profiles.map(profile => `<button type="button" role="tab" aria-selected="${profile.profile_key === activePackingProfileKey}" class="packing-profile-tab ${profile.profile_key === activePackingProfileKey ? "is-active" : ""}" onclick="selectPackingProfile('${escapeHtml(profile.profile_key)}')">${escapeHtml(profile.profile_name)}</button>`).join("")}
+  </div>`;
 }
 
 async function renderPackingPlanner() {
   clearCountdownTimer();
   const cruise = await loadCurrentCruise();
   if (!cruise) {
-    app.innerHTML = `<div class="planner-card"><button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button><h2>Smart Packing Planner</h2><p>Add a cruise before generating your packing list.</p></div>`;
+    app.innerHTML = `<div class="planner-card"><button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button><h2>Packing Assistant</h2><p>Add a cruise before generating your packing list.</p></div>`;
     return;
   }
-
   const preferences = await loadPackingPreferences(cruise);
+  await loadPackingV2Data(cruise);
+  const storedProfile = localStorage.getItem(`101cruise_packing_profile_${String(cruise.id)}`);
+  if (!activePackingProfileKey || !packingV2Profiles.some(profile => profile.profile_key === activePackingProfileKey)) activePackingProfileKey = storedProfile || packingV2Profiles[0]?.profile_key;
+  const profile = getActivePackingProfile();
   const context = {
     destination: preferences?.destination || getDefaultPackingDestination(cruise),
     travellerType: preferences?.traveller_type || getDefaultTravellerType(cruise),
@@ -2570,105 +2751,86 @@ async function renderPackingPlanner() {
     cruiseLine: cruise.cruise_line || ""
   };
 
-  const [{ data: categories }, { data: items }, progressResult, personalResult] = await Promise.all([
+  const [{ data: categories }, { data: items }, personalResult] = await Promise.all([
     supabaseClient.from("packing_categories").select("*").eq("active", true).order("display_order", { ascending: true }),
     supabaseClient.from("packing_items").select("*, packing_categories(name)").eq("active", true).order("display_order", { ascending: true }),
-    adminPreviewMode ? Promise.resolve({ data: [] }) : supabaseClient.from("user_packing_progress").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id),
     adminPreviewMode ? Promise.resolve({ data: [] }) : supabaseClient.from("user_packing_items").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id).order("created_at", { ascending: true })
   ]);
-  const progress = progressResult?.data || [];
-  const personal = personalResult?.data || [];
-
-  const systemItems = (items || [])
-    .filter(item => packingItemApplies(item, context))
-    .map(item => {
-      const saved = progress.find(row => String(row.packing_item_id) === String(item.id));
-      return { ...item, source: "system", calculated_quantity: saved?.quantity ?? calculatePackingQuantity() };
-    });
   const categoryNameById = new Map((categories || []).map(category => [String(category.id), category.name]));
-  const personalItems = (personal || []).map(item => ({
+  const systemItems = (items || []).filter(item => packingItemApplies(item, context)).map(item => ({
+    ...item,
+    source: "system",
+    calculated_quantity: getPackingState(`system:${item.id}`, profile.profile_key)?.quantity ?? 0
+  }));
+  const personalItems = (personalResult?.data || []).map(item => ({
     ...item,
     source: "personal",
-    calculated_quantity: item.quantity ?? 1,
+    calculated_quantity: getPackingState(`personal:${item.id}`, profile.profile_key)?.quantity ?? 0,
     item_type: "Optional",
     description: item.note || "Personal packing item",
     packing_categories: { name: categoryNameById.get(String(item.category_id)) || "" }
   }));
-  const allPackingItems = [...systemItems, ...personalItems];
-  const packedCount = allPackingItems.filter(item => isPackingItemPacked(progress || [], item)).length;
-  const totalCount = allPackingItems.length;
-  const percent = getProgressPercent(packedCount, totalCount);
-  const totalWeight = allPackingItems.reduce((sum, item) => {
+  const allPackingItems = [...systemItems, ...personalItems].filter(item => {
     const categoryName = item.packing_categories?.name || categoryNameById.get(String(item.category_id)) || "";
-    if (!packingCategoryUsesQuantityAndWeight(categoryName)) return sum;
-    return sum + (Number(item.weight_kg || 0) * Number(item.calculated_quantity ?? 1));
-  }, 0);
-  const baggageLimit = preferences?.checked_baggage_allowance_kg ?? preferences?.baggage_limit_kg ?? null;
-  const cabinAllowance = preferences?.cabin_baggage_allowance_kg ?? null;
+    return packingItemBelongsToProfile(item, categoryName, profile);
+  });
   const grouped = groupPackingItems(allPackingItems);
+  const summary = { selected: 0, packed: 0, checked: 0, carryOn: 0, wearing: 0, checklistTotal: 0, checklistPacked: 0 };
+  allPackingItems.forEach(item => {
+    const categoryName = item.packing_categories?.name || categoryNameById.get(String(item.category_id)) || "";
+    const state = getPackingState(getPackingItemKey(item), profile.profile_key);
+    if (packingCategoryUsesQuantityAndWeight(categoryName, profile)) {
+      const quantity = Math.max(0, Number(state?.quantity ?? 0));
+      if (quantity > 0) {
+        summary.selected += 1;
+        if (state?.packed) summary.packed += 1;
+        const weight = Number(item.weight_kg || 0) * quantity;
+        if (state?.packing_location === "carry-on") summary.carryOn += weight;
+        else if (state?.packing_location === "wearing") summary.wearing += weight;
+        else summary.checked += weight;
+      }
+    } else {
+      summary.checklistTotal += 1;
+      if (state?.packed) summary.checklistPacked += 1;
+    }
+  });
+  const percent = profile.profile_type === "cabin" ? getProgressPercent(summary.checklistPacked, summary.checklistTotal) : getProgressPercent(summary.packed, summary.selected);
 
   app.innerHTML = `
-    <div id="packing-page" class="packing-page">
+    <div id="packing-page" class="packing-page packing-assistant-v2">
       ${renderPlannerNav("packing")}
-
       <div class="checklist-toolbar planner-card slim-card packing-toolbar">
-        <div>
-          <h2>Smart Packing Planner</h2>
-          <p class="planner-muted">${escapeHtml(cruise.ship_name || cruise.cruise_line || "Your cruise")} • ${escapeHtml(context.destination)} • ${escapeHtml(context.travellerType)} • ${escapeHtml(context.dressCode)}</p>
-          <div class="checklist-top-progress"><span style="width:${percent}%"></span></div>
-        </div>
-        <div class="checklist-toolbar-actions">
-          <button class="planner-button secondary" id="hidePackedButton" onclick="toggleHidePacked()">Hide Packed</button>
-          <button class="planner-button secondary" onclick="resetPackingProgress()">Reset</button>
-          <button class="planner-button secondary" onclick="printPackingList()">Print</button>
-          <button class="planner-button" onclick="savePackingPdf()">Save PDF</button>
-        </div>
+        <div><p class="planner-kicker">Packing Assistant</p><h2>${escapeHtml(profile.profile_name)}${profile.profile_type === "traveller" ? "'s Packing" : " Checklist"}</h2><p class="planner-muted">${escapeHtml(cruise.ship_name || cruise.cruise_line || "Your cruise")} • ${escapeHtml(context.destination)} • ${escapeHtml(context.dressCode)}</p></div>
+        <div class="checklist-toolbar-actions"><button class="planner-button secondary" id="hidePackedButton" onclick="toggleHidePacked()">Hide Packed</button><button class="planner-button secondary" onclick="resetPackingProgress()">Reset</button><button class="planner-button secondary" onclick="printPackingList()">Print</button><button class="planner-button" onclick="savePackingPdf()">Save PDF</button></div>
       </div>
-
-      ${renderPackingControls(preferences, cruise)}
-
+      ${renderPackingProfileTabs(packingV2Profiles)}
+      ${renderPackingControls(preferences, cruise, profile)}
       <div class="packing-workspace">
         <div class="packing-list-column">
-          <section class="planner-card packing-search-card">
-            <input id="packingSearch" type="search" placeholder="Search packing list..." oninput="filterPackingList()">
-          </section>
-
+          <section class="planner-card packing-search-card"><input id="packingSearch" type="search" placeholder="Search ${escapeHtml(profile.profile_name)}'s list..." oninput="filterPackingList()"></section>
           <main class="packing-content">
             ${(categories || []).map(category => {
-          const categoryItems = grouped[category.id] || [];
-          if (!categoryItems.length && category.name !== "Last Minute Items") return "";
-          const catPacked = categoryItems.filter(item => isPackingItemPacked(progress || [], item)).length;
-          return `
-            <section class="checklist-section-block packing-category-block">
-              <div class="checklist-section-header">
-                <div>
-                  <h3>${escapeHtml(category.icon || "🧳")} ${escapeHtml(category.name)}</h3>
-                  ${category.description ? `<p>${escapeHtml(category.description)}</p>` : ""}
-                </div>
-                <div class="section-progress-pill">${catPacked}/${categoryItems.length} Packed</div>
-              </div>
-              <div class="packing-table-header ${packingCategoryUsesQuantityAndWeight(category.name) ? "" : "packing-table-header-no-weight"}">
-                <span aria-hidden="true"></span><span>Quantity</span><span>Item</span><span>Type</span><span>Weight</span>
-              </div>
-              ${categoryItems.map(item => renderPackingRow(item, isPackingItemPacked(progress || [], item), item.calculated_quantity, category.name)).join("")}
-              <button class="add-personal-task-button" onclick="addPersonalPackingItem(${category.id})">+ Add your own item</button>
-            </section>
-          `;
+              const categoryItems = grouped[category.id] || [];
+              if (!categoryItems.length) return "";
+              const usesWeight = packingCategoryUsesQuantityAndWeight(category.name, profile);
+              const catPlanned = usesWeight ? categoryItems.filter(item => Number(getPackingState(getPackingItemKey(item), profile.profile_key)?.quantity || 0) > 0).length : categoryItems.length;
+              const catPacked = categoryItems.filter(item => getPackingState(getPackingItemKey(item), profile.profile_key)?.packed === true && (!usesWeight || Number(getPackingState(getPackingItemKey(item), profile.profile_key)?.quantity || 0) > 0)).length;
+              return `<section class="checklist-section-block packing-category-block">
+                <div class="checklist-section-header"><div><h3>${escapeHtml(category.icon || "🧳")} ${escapeHtml(category.name)}</h3>${category.description ? `<p>${escapeHtml(category.description)}</p>` : ""}</div><div class="section-progress-pill">${profile.profile_type === "cabin" ? `${catPacked}/${catPlanned} Complete` : (catPlanned ? `${catPacked}/${catPlanned} Packed` : "No items selected")}</div></div>
+                <div class="packing-table-header ${usesWeight ? "" : "packing-table-header-no-weight"}"><span></span><span>Quantity</span><span>Item</span><span>Type</span><span>Weight</span></div>
+                ${categoryItems.map(item => renderPackingRow(item, getPackingState(getPackingItemKey(item), profile.profile_key)?.packed === true, getPackingState(getPackingItemKey(item), profile.profile_key)?.quantity ?? 0, category.name)).join("")}
+                <button class="add-personal-task-button" onclick="addPersonalPackingItem(${category.id})">+ Add your own item</button>
+              </section>`;
             }).join("")}
           </main>
         </div>
-
         <aside class="planner-card packing-summary-card packing-summary-sticky" aria-label="Packing progress and baggage summary">
-          <div class="packing-progress-summary">
-            <span>Packing Progress</span>
-            <strong>${percent}%</strong>
-            <small>${packedCount} of ${totalCount} items packed</small>
-          </div>
-          ${renderPackingWeightGauge(totalWeight, baggageLimit, cabinAllowance)}
+          <div class="packing-profile-summary-name">${escapeHtml(profile.profile_name)}</div>
+          <div class="packing-progress-summary"><span>${profile.profile_type === "cabin" ? "Cabin checklist" : "Ready to Cruise"}</span><strong id="packingProgressPercent">${percent}%</strong><small id="packingProgressDetail">${profile.profile_type === "cabin" ? `${summary.checklistPacked} of ${summary.checklistTotal} complete` : `${summary.packed} of ${summary.selected} selected items packed`}</small></div>
+          ${profile.profile_type === "cabin" ? `<div class="cabin-summary-note"><strong>Simple shared checklist</strong><p>No quantities, weights or baggage allocation. Pack each shared item once for the booking.</p></div>` : renderPackingWeightGauge(summary, profile)}
         </aside>
       </div>
-    </div>
-  `;
+    </div>`;
 }
 
 async function addCruise() {
