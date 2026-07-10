@@ -2346,7 +2346,9 @@ function recalculatePackingSummary() {
   const allowanceValue = document.getElementById("packingCheckedAllowanceValue");
   const remainingValue = document.getElementById("packingRemainingWeight");
   const status = document.getElementById("packingWeightStatus");
-  const bar = document.getElementById("packingWeightBarFill");
+  const donut = document.getElementById("packingWeightDonut");
+  const donutPercent = document.getElementById("packingWeightDonutPercent");
+  const donutLabel = document.getElementById("packingWeightDonutLabel");
 
   if (weightValue) weightValue.textContent = `${totalWeight.toFixed(1)} kg`;
   if (allowanceValue) allowanceValue.textContent = checkedAllowance === null ? "Not entered" : `${checkedAllowance.toFixed(1)} kg`;
@@ -2358,11 +2360,14 @@ function recalculatePackingSummary() {
     }
   }
   if (status) status.textContent = getWeightStatus(totalWeight, checkedAllowance);
-  if (bar) {
-    const percent = checkedAllowance && checkedAllowance > 0 ? Math.max(0, Math.min(100, Math.round((totalWeight / checkedAllowance) * 100))) : 0;
-    bar.style.width = `${percent}%`;
-    bar.classList.toggle("is-over", checkedAllowance !== null && totalWeight > checkedAllowance);
+  const rawPercent = checkedAllowance && checkedAllowance > 0 ? Math.max(0, Math.round((totalWeight / checkedAllowance) * 100)) : 0;
+  if (donut) {
+    donut.style.setProperty("--packing-weight-percent", `${Math.min(100, rawPercent) * 3.6}deg`);
+    donut.classList.toggle("is-over", checkedAllowance !== null && totalWeight > checkedAllowance);
+    donut.classList.toggle("has-no-allowance", checkedAllowance === null);
   }
+  if (donutPercent) donutPercent.textContent = checkedAllowance === null ? "—" : `${rawPercent}%`;
+  if (donutLabel) donutLabel.textContent = checkedAllowance === null ? "Enter allowance" : (totalWeight > checkedAllowance ? "Over allowance" : "Allowance used");
 }
 
 function renderPackingControls(preferences, cruise) {
@@ -2421,21 +2426,32 @@ function getWeightStatus(totalWeight, baggageLimit) {
   return "The current estimate exceeds the entered checked baggage allowance.";
 }
 
-function renderPackingWeightGauge(totalWeight, baggageLimit) {
+function renderPackingWeightGauge(totalWeight, baggageLimit, cabinAllowance) {
   const hasLimit = baggageLimit !== null && baggageLimit !== undefined && baggageLimit !== "";
   const limit = hasLimit ? Number(baggageLimit) : null;
-  const percent = limit && limit > 0 ? Math.max(0, Math.min(100, Math.round((totalWeight / limit) * 100))) : 0;
+  const hasCabinAllowance = cabinAllowance !== null && cabinAllowance !== undefined && cabinAllowance !== "";
+  const cabinLimit = hasCabinAllowance ? Number(cabinAllowance) : null;
+  const rawPercent = limit && limit > 0 ? Math.max(0, Math.round((totalWeight / limit) * 100)) : 0;
   const remaining = limit === null ? null : limit - totalWeight;
+  const isOver = limit !== null && totalWeight > limit;
   return `
     <div class="packing-weight-gauge">
-      <div class="packing-weight-metrics">
-        <div><span>Estimated packed weight</span><strong id="packingEstimatedWeight">${totalWeight.toFixed(1)} kg</strong></div>
-        <div><span>Checked allowance</span><strong id="packingCheckedAllowanceValue">${limit === null ? "Not entered" : `${limit.toFixed(1)} kg`}</strong></div>
-        <div><span>Remaining</span><strong id="packingRemainingWeight">${remaining === null ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`)}</strong></div>
+      <div id="packingWeightDonut" class="packing-weight-donut ${isOver ? "is-over" : ""} ${limit === null ? "has-no-allowance" : ""}" style="--packing-weight-percent:${Math.min(100, rawPercent) * 3.6}deg">
+        <div class="packing-weight-donut-centre">
+          <strong id="packingWeightDonutPercent">${limit === null ? "—" : `${rawPercent}%`}</strong>
+          <span id="packingWeightDonutLabel">${limit === null ? "Enter allowance" : (isOver ? "Over allowance" : "Allowance used")}</span>
+        </div>
       </div>
-      <div class="packing-weight-bar"><span id="packingWeightBarFill" class="${limit !== null && totalWeight > limit ? "is-over" : ""}" style="width:${percent}%"></span></div>
-      <p id="packingWeightStatus">${escapeHtml(getWeightStatus(totalWeight, limit))}</p>
-      <small>The estimate currently represents the full packing list. Cabin and checked item allocation will be added separately. Actual weight varies by item size, brand and fabric.</small>
+      <div class="packing-weight-details">
+        <div class="packing-weight-metrics">
+          <div><span>Estimated checked baggage</span><strong id="packingEstimatedWeight">${totalWeight.toFixed(1)} kg</strong></div>
+          <div><span>Checked allowance</span><strong id="packingCheckedAllowanceValue">${limit === null ? "Not entered" : `${limit.toFixed(1)} kg`}</strong></div>
+          <div><span>Remaining</span><strong id="packingRemainingWeight" class="${isOver ? "is-over" : ""}">${remaining === null ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`)}</strong></div>
+          <div><span>Cabin allowance</span><strong>${cabinLimit === null ? "Not entered" : `${cabinLimit.toFixed(1)} kg`}</strong></div>
+        </div>
+        <p id="packingWeightStatus">${escapeHtml(getWeightStatus(totalWeight, limit))}</p>
+        <small>This is an estimated checked-baggage comparison. Cabin allowance is shown for reference; individual items are not yet allocated between checked baggage and carry-on. Actual weight varies by item size, brand and fabric.</small>
+      </div>
     </div>
   `;
 }
@@ -2585,6 +2601,7 @@ async function renderPackingPlanner() {
     return sum + (Number(item.weight_kg || 0) * Number(item.calculated_quantity ?? 1));
   }, 0);
   const baggageLimit = preferences?.checked_baggage_allowance_kg ?? preferences?.baggage_limit_kg ?? null;
+  const cabinAllowance = preferences?.cabin_baggage_allowance_kg ?? null;
   const grouped = groupPackingItems(allPackingItems);
 
   app.innerHTML = `
@@ -2613,7 +2630,7 @@ async function renderPackingPlanner() {
           <strong>${percent}%</strong>
           <small>${packedCount} of ${totalCount} items packed</small>
         </div>
-        ${renderPackingWeightGauge(totalWeight, baggageLimit)}
+        ${renderPackingWeightGauge(totalWeight, baggageLimit, cabinAllowance)}
       </section>
 
       <section class="planner-card packing-search-card">

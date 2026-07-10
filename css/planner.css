@@ -4424,3 +4424,108 @@
     grid-row: 2;
   }
 }
+
+/* Sprint 2: checked baggage summary and donut chart */
+.packing-weight-gauge {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+}
+
+.packing-weight-donut {
+  --packing-weight-percent: 0deg;
+  width: 142px;
+  aspect-ratio: 1;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(#16856c 0 var(--packing-weight-percent), #edf0f2 var(--packing-weight-percent) 360deg);
+  transition: background 0.25s ease;
+}
+
+.packing-weight-donut::before {
+  content: "";
+  position: absolute;
+  inset: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px rgba(17, 24, 39, 0.04);
+}
+
+.packing-weight-donut.is-over {
+  background: conic-gradient(#c45b5b 0 var(--packing-weight-percent), #f2dddd var(--packing-weight-percent) 360deg);
+}
+
+.packing-weight-donut.has-no-allowance {
+  background: #edf0f2;
+}
+
+.packing-weight-donut-centre {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 3px;
+  text-align: center;
+}
+
+.packing-weight-donut-centre strong {
+  color: #20252b;
+  font-size: 25px;
+  line-height: 1;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.packing-weight-donut-centre span {
+  max-width: 86px;
+  color: #7a828c;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+.packing-weight-details {
+  min-width: 0;
+}
+
+.packing-weight-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.packing-weight-metrics strong.is-over {
+  color: #a94444;
+}
+
+@media (max-width: 900px) {
+  .packing-summary-card {
+    grid-template-columns: 1fr;
+  }
+
+  .packing-weight-gauge {
+    grid-template-columns: 130px minmax(0, 1fr);
+  }
+
+  .packing-weight-donut {
+    width: 124px;
+  }
+
+  .packing-weight-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 580px) {
+  .packing-weight-gauge {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .packing-weight-details {
+    width: 100%;
+  }
+
+  .packing-weight-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+}
