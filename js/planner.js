@@ -2120,7 +2120,7 @@ function getDefaultTravellerType(cruise) {
   if (travellers.includes("family") || travellers.includes("child") || travellers.includes("kid")) return "Family";
   const count = Number(getDashboardValue(cruise, ["traveller_count", "guests", "passengers", "guest_count"], 0));
   if (count === 1) return "Solo";
-  if (count >= 3) return "Group";
+  if (count >= 3) return "Family";
   return "Couple";
 }
 
@@ -2154,7 +2154,8 @@ async function savePackingPreferencesFromForm() {
     traveller_type: document.getElementById("packingTravellerType")?.value || getDefaultTravellerType(cruise),
     destination: document.getElementById("packingDestination")?.value || getDefaultPackingDestination(cruise),
     dress_code: document.getElementById("packingDressCode")?.value || getDefaultDressCode(cruise),
-    baggage_limit_kg: Number(document.getElementById("packingBaggageLimit")?.value || 20),
+    checked_baggage_allowance_kg: parseOptionalPackingNumber("packingCheckedBaggageAllowance"),
+    cabin_baggage_allowance_kg: parseOptionalPackingNumber("packingCabinBaggageAllowance"),
     updated_at: new Date().toISOString()
   };
 
@@ -2169,6 +2170,13 @@ async function savePackingPreferencesFromForm() {
   }
 
   renderPackingPlanner();
+}
+
+function parseOptionalPackingNumber(id) {
+  const raw = String(document.getElementById(id)?.value || "").trim();
+  if (raw === "") return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
 function splitRuleTags(value) {
@@ -2200,15 +2208,8 @@ function getClimateFromDestination(destination) {
   return "Warm";
 }
 
-function calculatePackingQuantity(item, cruise, travellerType) {
-  const nights = Number(cruise?.nights || 7);
-  const base = Number(item.base_quantity || 1);
-  const perNight = Number(item.quantity_per_night || 0);
-  let qty = Math.max(1, Math.ceil(base + (perNight * nights)));
-  if (travellerType === "Couple") qty = Math.ceil(qty * Number(item.couple_multiplier || 1));
-  if (travellerType === "Family") qty = Math.ceil(qty * Number(item.family_multiplier || 1.5));
-  if (travellerType === "Group") qty = Math.ceil(qty * Number(item.group_multiplier || 1));
-  return qty;
+function calculatePackingQuantity() {
+  return 1;
 }
 
 function getPackingItemKey(item) {
@@ -2249,41 +2250,122 @@ function renderPackingRow(item, packed, quantity) {
   const typeClass = getPackingTypeClass(item.item_type);
   const typeLabel = getPackingTypeLabel(item.item_type);
   const key = getPackingItemKey(item);
-  const weight = Number(item.weight_kg || 0) * Number(quantity || 1);
+  const safeQuantity = Math.max(0, Number(quantity ?? 1));
+  const unitWeight = Math.max(0, Number(item.weight_kg || 0));
+  const weight = unitWeight * safeQuantity;
   return `
-    <div class="packing-row ${packed ? "is-packed" : ""}" data-packing-row="${escapeHtml(key)}">
+    <div class="packing-row ${packed ? "is-packed" : ""}" data-packing-row="${escapeHtml(key)}" data-unit-weight="${unitWeight}">
       <div class="packing-main-cell">
         <input class="checklist-checkbox" type="checkbox" ${packed ? "checked" : ""} onchange="togglePackingItem('${escapeHtml(key)}', this.checked)">
         <div>
-          <div class="packing-item-title">${escapeHtml(item.name)} ${quantity ? `<span class="packing-qty">(${quantity})</span>` : ""}</div>
+          <div class="packing-item-title">${escapeHtml(item.name)}</div>
           ${item.description ? `<div class="packing-item-description">${escapeHtml(item.description)}</div>` : ""}
           ${item.help_text ? `<div class="packing-item-help">ⓘ ${escapeHtml(item.help_text)}</div>` : ""}
         </div>
       </div>
       <div class="packing-type-cell"><span class="priority-badge ${typeClass}">${typeLabel}</span></div>
-      <div class="packing-weight-cell">${weight ? `${weight.toFixed(2)} kg` : "—"}</div>
+      <div class="packing-quantity-cell">
+        <label class="sr-only" for="packingQuantity-${escapeHtml(key)}">Quantity for ${escapeHtml(item.name)}</label>
+        <input id="packingQuantity-${escapeHtml(key)}" class="packing-quantity-input" type="number" min="0" step="1" inputmode="numeric" value="${safeQuantity}" oninput="updatePackingQuantity('${escapeHtml(key)}', this.value)">
+      </div>
+      <div class="packing-weight-cell" data-item-weight>${weight ? `${weight.toFixed(2)} kg` : "0.00 kg"}</div>
       ${item.source === "personal" ? `<button class="packing-delete-button" onclick="deletePersonalPackingItem(${item.id})">Delete</button>` : ""}
     </div>
   `;
 }
 
+const packingQuantitySaveTimers = new Map();
+
+function updatePackingQuantity(key, rawValue) {
+  const row = document.querySelector(`[data-packing-row="${CSS.escape(key)}"]`);
+  if (!row) return;
+  const quantity = Math.max(0, Math.round(Number(rawValue) || 0));
+  const input = row.querySelector(".packing-quantity-input");
+  if (input && String(input.value) !== String(quantity)) input.value = quantity;
+  const unitWeight = Number(row.dataset.unitWeight || 0);
+  const weightCell = row.querySelector("[data-item-weight]");
+  if (weightCell) weightCell.textContent = `${(unitWeight * quantity).toFixed(2)} kg`;
+  recalculatePackingSummary();
+
+  if (adminPreviewMode) return;
+  clearTimeout(packingQuantitySaveTimers.get(key));
+  packingQuantitySaveTimers.set(key, setTimeout(() => savePackingQuantity(key, quantity), 450));
+}
+
+async function savePackingQuantity(key, quantity) {
+  const cruise = await loadCurrentCruise();
+  if (!cruise || !currentUser?.id) return;
+  if (String(key).startsWith("personal:")) {
+    const id = Number(String(key).replace("personal:", ""));
+    const { error } = await supabaseClient.from("user_packing_items").update({ quantity }).eq("id", id).eq("user_id", currentUser.id);
+    if (error) console.error("Personal packing quantity save error", error);
+    return;
+  }
+
+  const id = Number(String(key).replace("system:", ""));
+  const row = document.querySelector(`[data-packing-row="${CSS.escape(key)}"]`);
+  const packed = row?.querySelector(".checklist-checkbox")?.checked === true;
+  const payload = {
+    user_id: currentUser.id,
+    cruise_id: cruise.id,
+    packing_item_id: id,
+    quantity,
+    packed,
+    packed_at: packed ? new Date().toISOString() : null
+  };
+  const { error } = await supabaseClient.from("user_packing_progress").upsert(payload, { onConflict: "user_id,cruise_id,packing_item_id" });
+  if (error) console.error("Packing quantity save error", error);
+}
+
+function recalculatePackingSummary() {
+  let totalWeight = 0;
+  document.querySelectorAll(".packing-row").forEach(row => {
+    const quantity = Math.max(0, Number(row.querySelector(".packing-quantity-input")?.value || 0));
+    totalWeight += Number(row.dataset.unitWeight || 0) * quantity;
+  });
+
+  const checkedAllowance = parseOptionalPackingNumber("packingCheckedBaggageAllowance");
+  const weightValue = document.getElementById("packingEstimatedWeight");
+  const allowanceValue = document.getElementById("packingCheckedAllowanceValue");
+  const remainingValue = document.getElementById("packingRemainingWeight");
+  const status = document.getElementById("packingWeightStatus");
+  const bar = document.getElementById("packingWeightBarFill");
+
+  if (weightValue) weightValue.textContent = `${totalWeight.toFixed(1)} kg`;
+  if (allowanceValue) allowanceValue.textContent = checkedAllowance === null ? "Not entered" : `${checkedAllowance.toFixed(1)} kg`;
+  if (remainingValue) {
+    if (checkedAllowance === null) remainingValue.textContent = "—";
+    else {
+      const remaining = checkedAllowance - totalWeight;
+      remainingValue.textContent = remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`;
+    }
+  }
+  if (status) status.textContent = getWeightStatus(totalWeight, checkedAllowance);
+  if (bar) {
+    const percent = checkedAllowance && checkedAllowance > 0 ? Math.max(0, Math.min(100, Math.round((totalWeight / checkedAllowance) * 100))) : 0;
+    bar.style.width = `${percent}%`;
+    bar.classList.toggle("is-over", checkedAllowance !== null && totalWeight > checkedAllowance);
+  }
+}
+
 function renderPackingControls(preferences, cruise) {
   const destination = preferences?.destination || getDefaultPackingDestination(cruise);
-  const travellerType = preferences?.traveller_type || getDefaultTravellerType(cruise);
+  const travellerType = preferences?.traveller_type === "Group" ? getDefaultTravellerType(cruise) : (preferences?.traveller_type || getDefaultTravellerType(cruise));
   const dressCode = preferences?.dress_code || getDefaultDressCode(cruise);
-  const limit = preferences?.baggage_limit_kg || 20;
+  const checkedAllowance = preferences?.checked_baggage_allowance_kg ?? preferences?.baggage_limit_kg ?? "";
+  const cabinAllowance = preferences?.cabin_baggage_allowance_kg ?? "";
 
   return `
     <section class="planner-card packing-settings-card">
       <div>
         <h3>Smart Packing Settings</h3>
-        <p class="planner-muted">We have prepared this list using your cruise details. Adjust these settings if needed.</p>
+        <p class="planner-muted">Enter the baggage allowances shown on your airline booking. They are not estimated from traveller type or fare class.</p>
       </div>
       <div class="packing-settings-grid">
         <div class="planner-field">
           <label>Who is travelling?</label>
           <select id="packingTravellerType">
-            ${["Solo", "Couple", "Family", "Group"].map(type => `<option value="${type}" ${travellerType === type ? "selected" : ""}>${type}</option>`).join("")}
+            ${["Solo", "Couple", "Family"].map(type => `<option value="${type}" ${travellerType === type ? "selected" : ""}>${type}</option>`).join("")}
           </select>
         </div>
         <div class="planner-field">
@@ -2299,32 +2381,44 @@ function renderPackingControls(preferences, cruise) {
           </select>
         </div>
         <div class="planner-field">
-          <label>Baggage limit (kg)</label>
-          <input id="packingBaggageLimit" type="number" min="5" step="1" value="${escapeHtml(limit)}">
+          <label>Checked baggage allowance (kg)</label>
+          <input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(checkedAllowance)}" placeholder="Enter allowance" oninput="recalculatePackingSummary()">
+        </div>
+        <div class="planner-field">
+          <label>Cabin baggage allowance (kg)</label>
+          <input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(cabinAllowance)}" placeholder="Enter allowance">
         </div>
       </div>
-      <button class="planner-button" onclick="savePackingPreferencesFromForm()">Update Packing List</button>
+      <div class="packing-settings-note">Allowances can differ by airline, route, fare and passenger. Check the booking confirmation before entering them.</div>
+      <button class="planner-button" onclick="savePackingPreferencesFromForm()">Save Packing Settings</button>
     </section>
   `;
 }
 
 function getWeightStatus(totalWeight, baggageLimit) {
-  const limit = Number(baggageLimit || 20);
+  if (baggageLimit === null || baggageLimit === undefined || baggageLimit === "") return "Enter your checked baggage allowance to compare it with the packing estimate.";
+  const limit = Number(baggageLimit);
   if (!totalWeight) return "Start packing to estimate your luggage weight.";
-  if (totalWeight <= limit * 0.75) return "Comfortable for most standard baggage allowances.";
-  if (totalWeight <= limit) return "Getting close to your selected baggage limit.";
-  return "Likely to exceed your selected baggage limit.";
+  if (totalWeight <= limit * 0.75) return "You have comfortable room within the entered checked baggage allowance.";
+  if (totalWeight <= limit) return "You are getting close to the entered checked baggage allowance.";
+  return "The current estimate exceeds the entered checked baggage allowance.";
 }
 
 function renderPackingWeightGauge(totalWeight, baggageLimit) {
-  const limit = Number(baggageLimit || 20);
-  const percent = Math.max(0, Math.min(100, Math.round((totalWeight / limit) * 100)));
+  const hasLimit = baggageLimit !== null && baggageLimit !== undefined && baggageLimit !== "";
+  const limit = hasLimit ? Number(baggageLimit) : null;
+  const percent = limit && limit > 0 ? Math.max(0, Math.min(100, Math.round((totalWeight / limit) * 100))) : 0;
+  const remaining = limit === null ? null : limit - totalWeight;
   return `
     <div class="packing-weight-gauge">
-      <div class="packing-weight-labels"><strong>${totalWeight.toFixed(1)} kg</strong><span>Limit: ${limit} kg</span></div>
-      <div class="packing-weight-bar"><span style="width:${percent}%"></span></div>
-      <p>${escapeHtml(getWeightStatus(totalWeight, limit))}</p>
-      <small>Estimated weight is a guide only. Actual luggage weight may vary depending on item size, brand, fabric and quantity. Always check your airline or cruise line baggage limits.</small>
+      <div class="packing-weight-metrics">
+        <div><span>Estimated packed weight</span><strong id="packingEstimatedWeight">${totalWeight.toFixed(1)} kg</strong></div>
+        <div><span>Checked allowance</span><strong id="packingCheckedAllowanceValue">${limit === null ? "Not entered" : `${limit.toFixed(1)} kg`}</strong></div>
+        <div><span>Remaining</span><strong id="packingRemainingWeight">${remaining === null ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`)}</strong></div>
+      </div>
+      <div class="packing-weight-bar"><span id="packingWeightBarFill" class="${limit !== null && totalWeight > limit ? "is-over" : ""}" style="width:${percent}%"></span></div>
+      <p id="packingWeightStatus">${escapeHtml(getWeightStatus(totalWeight, limit))}</p>
+      <small>The estimate currently represents the full packing list. Cabin and checked item allocation will be added separately. Actual weight varies by item size, brand and fabric.</small>
     </div>
   `;
 }
@@ -2451,14 +2545,17 @@ async function renderPackingPlanner() {
 
   const systemItems = (items || [])
     .filter(item => packingItemApplies(item, context))
-    .map(item => ({ ...item, source: "system", calculated_quantity: calculatePackingQuantity(item, cruise, context.travellerType) }));
+    .map(item => {
+      const saved = progress.find(row => String(row.packing_item_id) === String(item.id));
+      return { ...item, source: "system", calculated_quantity: saved?.quantity ?? calculatePackingQuantity() };
+    });
   const personalItems = (personal || []).map(item => ({ ...item, source: "personal", calculated_quantity: item.quantity || 1, item_type: "Optional", description: item.note || "Personal packing item" }));
   const allPackingItems = [...systemItems, ...personalItems];
   const packedCount = allPackingItems.filter(item => isPackingItemPacked(progress || [], item)).length;
   const totalCount = allPackingItems.length;
   const percent = getProgressPercent(packedCount, totalCount);
   const totalWeight = allPackingItems.reduce((sum, item) => sum + (Number(item.weight_kg || 0) * Number(item.calculated_quantity || 1)), 0);
-  const baggageLimit = preferences?.baggage_limit_kg || 20;
+  const baggageLimit = preferences?.checked_baggage_allowance_kg ?? preferences?.baggage_limit_kg ?? null;
   const grouped = groupPackingItems(allPackingItems);
 
   app.innerHTML = `
@@ -2508,7 +2605,7 @@ async function renderPackingPlanner() {
                 </div>
                 <div class="section-progress-pill">${catPacked}/${categoryItems.length} Packed</div>
               </div>
-              <div class="packing-table-header"><span>Item</span><span>Type</span><span>Weight</span></div>
+              <div class="packing-table-header"><span>Item</span><span>Type</span><span>Quantity</span><span>Weight</span></div>
               ${categoryItems.map(item => renderPackingRow(item, isPackingItemPacked(progress || [], item), item.calculated_quantity)).join("")}
               <button class="add-personal-task-button" onclick="addPersonalPackingItem(${category.id})">+ Add your own item</button>
             </section>

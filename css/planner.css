@@ -4261,3 +4261,97 @@
     padding: 16px;
   }
 }
+
+/* Sprint 2: manual packing quantities and user-entered baggage allowances */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.packing-settings-note {
+  margin: -4px 0 16px;
+  color: #7a828c;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.packing-weight-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.packing-weight-metrics > div {
+  display: grid;
+  gap: 4px;
+}
+
+.packing-weight-metrics span {
+  color: #7a828c;
+  font-size: 11px;
+}
+
+.packing-weight-metrics strong {
+  color: #20252b;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.packing-weight-bar > span.is-over {
+  background: #c45b5b;
+}
+
+.packing-table-header,
+.packing-row {
+  grid-template-columns: minmax(0, 1fr) 120px 88px 90px;
+}
+
+.packing-quantity-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.packing-quantity-input {
+  width: 68px;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid #d9dee5;
+  border-radius: 10px;
+  background: #fff;
+  color: #20252b;
+  font: inherit;
+  font-size: 13px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.packing-quantity-input:focus {
+  outline: 2px solid rgba(22, 133, 108, 0.16);
+  border-color: #16856c;
+}
+
+@media (max-width: 640px) {
+  .packing-weight-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .packing-quantity-cell {
+    grid-column: 1;
+    justify-content: flex-start;
+    padding-left: 31px;
+  }
+
+  .packing-weight-cell {
+    grid-column: 2;
+  }
+}

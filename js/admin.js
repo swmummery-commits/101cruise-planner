@@ -71,7 +71,7 @@ const PACKING_DESTINATION_OPTIONS = [
 ];
 
 const PACKING_CLIMATE_OPTIONS = ["Tropical", "Warm", "Temperate", "Cool", "Cold", "Polar"];
-const PACKING_TRAVELLER_OPTIONS = ["Solo", "Couple", "Family", "Group"];
+const PACKING_TRAVELLER_OPTIONS = ["Solo", "Couple", "Family"];
 const PACKING_DRESS_CODE_OPTIONS = ["Casual", "Semi Formal", "Formal"];
 
 function parseAdminTags(value) {
@@ -1873,7 +1873,7 @@ function renderPackingProfileSelector(item) {
 function renderSmartProfilesPanel() {
   const groups = smartProfileGroups.length ? smartProfileGroups : [
     { profile_type: "climate", name: "Climate Profiles", description: "Climate rules used by packing and future planner intelligence." },
-    { profile_type: "traveller", name: "Traveller Profiles", description: "Solo, couple, family and group profiles." },
+    { profile_type: "traveller", name: "Traveller Profiles", description: "Solo, couple and family profiles." },
     { profile_type: "dress", name: "Dress Profiles", description: "Casual, semi-formal and formal dress expectations." },
     { profile_type: "cruise_type", name: "Cruise Type Profiles", description: "Ocean, river, expedition and other cruise styles." },
     { profile_type: "destination", name: "Destination Profiles", description: "Reusable destination and region profiles." }
