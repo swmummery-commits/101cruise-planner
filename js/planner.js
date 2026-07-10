@@ -2210,6 +2210,7 @@ function getClimateFromDestination(destination) {
 
 let activePackingProfileKey = null;
 let packingV2Profiles = [];
+let packingShowSelectedOnly = false;
 let packingV2State = [];
 let packingV2CurrentCruiseKey = null;
 
@@ -2244,11 +2245,19 @@ function getPackingTravellerNames(cruise) {
   return names.slice(0, Math.max(count, names.length));
 }
 
+function formatPackingDisplayName(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "Traveller";
+  if (raw !== raw.toUpperCase()) return raw;
+  return raw.toLowerCase().replace(/(^|[\s'’-])([a-z])/g, (_, prefix, letter) => `${prefix}${letter.toUpperCase()}`);
+}
+
 function buildPackingProfiles(cruise, savedProfiles = []) {
   const used = new Set();
   const travellers = getPackingTravellerNames(cruise).map((name, index) => {
-    const firstName = String(name || `Traveller ${index + 1}`).trim().split(/\s+/)[0] || `Traveller ${index + 1}`;
-    let key = normalisePackingProfileKey(firstName, `traveller-${index + 1}`);
+    const rawFirstName = String(name || `Traveller ${index + 1}`).trim().split(/\s+/)[0] || `Traveller ${index + 1}`;
+    const firstName = formatPackingDisplayName(rawFirstName);
+    let key = normalisePackingProfileKey(rawFirstName, `traveller-${index + 1}`);
     if (used.has(key)) key = `${key}-${index + 1}`;
     used.add(key);
     const saved = savedProfiles.find(row => row.profile_key === key);
@@ -2397,7 +2406,7 @@ function renderPackingRow(item, packed, quantity, categoryName = "") {
   const unitWeight = usesQuantityAndWeight ? Math.max(0, Number(item.weight_kg || 0)) : 0;
   const weight = unitWeight * safeQuantity;
   return `
-    <div class="packing-row ${packed ? "is-packed" : ""} ${usesQuantityAndWeight ? "" : "packing-row-no-weight"}" data-packing-row="${escapeHtml(key)}" data-unit-weight="${unitWeight}" data-uses-weight="${usesQuantityAndWeight}" data-location="${escapeHtml(location)}">
+    <div class="packing-row ${safeQuantity > 0 ? "is-selected" : ""} ${packed ? "is-packed" : ""} ${usesQuantityAndWeight ? "" : "packing-row-no-weight"}" data-packing-row="${escapeHtml(key)}" data-unit-weight="${unitWeight}" data-uses-weight="${usesQuantityAndWeight}" data-location="${escapeHtml(location)}">
       <div class="packing-check-cell">
         <input class="checklist-checkbox" type="checkbox" ${packed ? "checked" : ""} onchange="togglePackingItem('${escapeHtml(key)}', this.checked)">
       </div>
@@ -2434,6 +2443,8 @@ function updatePackingQuantity(key, rawValue) {
   const weightCell = row.querySelector("[data-item-weight]");
   if (weightCell) weightCell.textContent = formatPackingWeight(unitWeight * quantity);
   row.querySelector("[data-location-selector]")?.classList.toggle("is-hidden", quantity <= 0);
+  row.classList.toggle("is-selected", quantity > 0);
+  applyPackingFilters();
   recalculatePackingSummary();
 
   if (adminPreviewMode) return;
@@ -2478,7 +2489,6 @@ async function savePackingV2State(itemKey, changes = {}) {
 function collectPackingSummaryFromDom() {
   const summary = { selected: 0, packed: 0, checked: 0, carryOn: 0, wearing: 0, checklistTotal: 0, checklistPacked: 0 };
   document.querySelectorAll(".packing-row").forEach(row => {
-    if (row.style.display === "none") return;
     const packed = row.querySelector(".checklist-checkbox")?.checked === true;
     if (row.dataset.usesWeight === "true") {
       const quantity = Math.max(0, Number(row.querySelector(".packing-quantity-input")?.value || 0));
@@ -2595,8 +2605,8 @@ function renderPackingControls(preferences, cruise, profile = getActivePackingPr
           </select>
         </label>
         ${isCabin ? "" : `
-          <label><span>Checked baggage (kg)</span><input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.checked_baggage_allowance_kg ?? "")}" placeholder="Enter allowance" oninput="recalculatePackingSummary()"></label>
-          <label><span>Cabin baggage (kg)</span><input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.cabin_baggage_allowance_kg ?? "")}" placeholder="Enter allowance" oninput="recalculatePackingSummary()"></label>
+          <label class="packing-baggage-field"><span>Checked baggage</span><div class="packing-allowance-input"><input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.checked_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary()"><span>kg</span></div></label>
+          <label class="packing-baggage-field"><span>Cabin baggage</span><div class="packing-allowance-input"><input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.cabin_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary()"><span>kg</span></div></label>
         `}
       </div>
       <div class="packing-settings-actions"><button class="planner-button" onclick="savePackingPreferencesFromForm()">Save Packing Settings</button></div>
@@ -2669,12 +2679,49 @@ function toggleHidePacked() {
   page.classList.toggle("hide-packed");
   const button = document.getElementById("hidePackedButton");
   if (button) button.innerText = page.classList.contains("hide-packed") ? "Show Packed" : "Hide Packed";
+  applyPackingFilters();
 }
 
-function filterPackingList() {
-  const query = String(document.getElementById("packingSearch")?.value || "").toLowerCase().trim();
-  document.querySelectorAll(".packing-row").forEach(row => { row.style.display = !query || row.textContent.toLowerCase().includes(query) ? "grid" : "none"; });
+function toggleSelectedOnly() {
+  packingShowSelectedOnly = !packingShowSelectedOnly;
+  localStorage.setItem(`101cruise_selected_only_${packingV2CurrentCruiseKey || "current"}_${activePackingProfileKey || "profile"}`, packingShowSelectedOnly ? "1" : "0");
+  const button = document.getElementById("selectedOnlyButton");
+  if (button) {
+    button.classList.toggle("is-active", packingShowSelectedOnly);
+    button.innerText = packingShowSelectedOnly ? "Show All Items" : "Show Selected Only";
+  }
+  applyPackingFilters();
 }
+
+function updatePackingListStatus() {
+  const rows = [...document.querySelectorAll(".packing-row")];
+  const weightedRows = rows.filter(row => row.dataset.usesWeight === "true");
+  const selected = weightedRows.filter(row => row.classList.contains("is-selected")).length;
+  const visible = rows.filter(row => !row.classList.contains("is-filtered-out") && getComputedStyle(row).display !== "none").length;
+  const status = document.getElementById("packingListStatus");
+  if (!status) return;
+  const profile = getActivePackingProfile();
+  if (profile?.profile_type === "cabin") status.textContent = `${visible} checklist items`;
+  else status.textContent = packingShowSelectedOnly ? `Showing ${visible} selected items` : `${selected} selected from ${weightedRows.length} recommendations`;
+}
+
+function applyPackingFilters() {
+  const query = String(document.getElementById("packingSearch")?.value || "").toLowerCase().trim();
+  const hidePacked = document.getElementById("packing-page")?.classList.contains("hide-packed") === true;
+  document.querySelectorAll(".packing-row").forEach(row => {
+    const matchesSearch = !query || row.textContent.toLowerCase().includes(query);
+    const matchesSelected = !packingShowSelectedOnly || row.dataset.usesWeight !== "true" || row.classList.contains("is-selected");
+    const matchesPacked = !hidePacked || !row.classList.contains("is-packed");
+    row.classList.toggle("is-filtered-out", !(matchesSearch && matchesSelected && matchesPacked));
+  });
+  document.querySelectorAll(".packing-category-block").forEach(block => {
+    const hasVisibleRows = [...block.querySelectorAll(".packing-row")].some(row => !row.classList.contains("is-filtered-out"));
+    block.classList.toggle("is-filtered-out", !hasVisibleRows);
+  });
+  updatePackingListStatus();
+}
+
+function filterPackingList() { applyPackingFilters(); }
 
 function printPackingList() { window.print(); }
 function savePackingPdf() { window.print(); }
@@ -2743,6 +2790,7 @@ async function renderPackingPlanner() {
   const storedProfile = localStorage.getItem(`101cruise_packing_profile_${String(cruise.id)}`);
   if (!activePackingProfileKey || !packingV2Profiles.some(profile => profile.profile_key === activePackingProfileKey)) activePackingProfileKey = storedProfile || packingV2Profiles[0]?.profile_key;
   const profile = getActivePackingProfile();
+  packingShowSelectedOnly = localStorage.getItem(`101cruise_selected_only_${String(cruise.id)}_${profile?.profile_key || "profile"}`) === "1";
   const context = {
     destination: preferences?.destination || getDefaultPackingDestination(cruise),
     travellerType: preferences?.traveller_type || getDefaultTravellerType(cruise),
@@ -2801,13 +2849,13 @@ async function renderPackingPlanner() {
       ${renderPlannerNav("packing")}
       <div class="checklist-toolbar planner-card slim-card packing-toolbar">
         <div><p class="planner-kicker">Packing Assistant</p><h2>${escapeHtml(profile.profile_name)}${profile.profile_type === "traveller" ? "'s Packing" : " Checklist"}</h2><p class="planner-muted">${escapeHtml(cruise.ship_name || cruise.cruise_line || "Your cruise")} • ${escapeHtml(context.destination)} • ${escapeHtml(context.dressCode)}</p></div>
-        <div class="checklist-toolbar-actions"><button class="planner-button secondary" id="hidePackedButton" onclick="toggleHidePacked()">Hide Packed</button><button class="planner-button secondary" onclick="resetPackingProgress()">Reset</button><button class="planner-button secondary" onclick="printPackingList()">Print</button><button class="planner-button" onclick="savePackingPdf()">Save PDF</button></div>
+        <div class="checklist-toolbar-actions"><button class="planner-button secondary" id="selectedOnlyButton" onclick="toggleSelectedOnly()">Show Selected Only</button><button class="planner-button secondary" id="hidePackedButton" onclick="toggleHidePacked()">Hide Packed</button><button class="planner-button secondary" onclick="resetPackingProgress()">Reset</button><button class="planner-button secondary" onclick="printPackingList()">Print</button><button class="planner-button" onclick="savePackingPdf()">Save PDF</button></div>
       </div>
       ${renderPackingProfileTabs(packingV2Profiles)}
       ${renderPackingControls(preferences, cruise, profile)}
       <div class="packing-workspace">
         <div class="packing-list-column">
-          <section class="planner-card packing-search-card"><input id="packingSearch" type="search" placeholder="Search ${escapeHtml(profile.profile_name)}'s list..." oninput="filterPackingList()"></section>
+          <section class="planner-card packing-search-card"><input id="packingSearch" type="search" placeholder="Search ${escapeHtml(profile.profile_name)}'s list..." oninput="filterPackingList()"><span id="packingListStatus" class="packing-list-status"></span></section>
           <main class="packing-content">
             ${(categories || []).map(category => {
               const categoryItems = grouped[category.id] || [];
@@ -2831,6 +2879,12 @@ async function renderPackingPlanner() {
         </aside>
       </div>
     </div>`;
+  const selectedOnlyButton = document.getElementById("selectedOnlyButton");
+  if (selectedOnlyButton) {
+    selectedOnlyButton.classList.toggle("is-active", packingShowSelectedOnly);
+    selectedOnlyButton.innerText = packingShowSelectedOnly ? "Show All Items" : "Show Selected Only";
+  }
+  applyPackingFilters();
 }
 
 async function addCruise() {
