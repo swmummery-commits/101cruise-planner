@@ -2182,15 +2182,27 @@ function printPackingItemLibrary() {
       </tr>`;
   }).join("");
 
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!printWindow) {
-    alert("Your browser blocked the print window. Allow pop-ups for this site and try again.");
+  const generatedAt = new Date().toLocaleString();
+  const printFrame = document.createElement("iframe");
+  printFrame.setAttribute("title", "Packing item print view");
+  printFrame.style.position = "fixed";
+  printFrame.style.right = "0";
+  printFrame.style.bottom = "0";
+  printFrame.style.width = "0";
+  printFrame.style.height = "0";
+  printFrame.style.border = "0";
+  printFrame.style.visibility = "hidden";
+  document.body.appendChild(printFrame);
+
+  const printDocument = printFrame.contentDocument || printFrame.contentWindow?.document;
+  if (!printDocument) {
+    printFrame.remove();
+    alert("The print view could not be created. Please reload the page and try again.");
     return;
   }
 
-  const generatedAt = new Date().toLocaleString();
-  printWindow.document.open();
-  printWindow.document.write(`<!doctype html>
+  printDocument.open();
+  printDocument.write(`<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -2244,8 +2256,19 @@ function printPackingItemLibrary() {
   </table>
 </body>
 </html>`);
-  printWindow.document.close();
-  printWindow.focus();
+  printDocument.close();
+
+  window.setTimeout(() => {
+    try {
+      printFrame.contentWindow?.focus();
+      printFrame.contentWindow?.print();
+    } catch (error) {
+      console.error("Unable to print packing item library:", error);
+      alert("The print dialog could not be opened. Please reload the page and try again.");
+    }
+  }, 250);
+
+  window.setTimeout(() => printFrame.remove(), 60000);
 }
 
 function renderPackingItemCard(item) {
