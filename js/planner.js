@@ -2249,7 +2249,8 @@ function getPackingTypeLabel(type) {
 const PACKING_NON_WEIGHT_CATEGORIES = new Set([
   "travel documents",
   "money & payments",
-  "health & medication"
+  "health & medication",
+  "last minute"
 ]);
 
 function packingCategoryUsesQuantityAndWeight(categoryName) {
