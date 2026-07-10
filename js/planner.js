@@ -113,7 +113,7 @@ function createPreviewCruiseFromBase44Booking(booking) {
     departure_date: booking.departing_date || null,
     return_date: booking.arriving_date || null,
     arrival_date: booking.arriving_date || null,
-    departure_time: "17:00",
+    departure_time: null,
     nights,
     embarkation_port: booking.departing_port || null,
     departure_port: booking.departing_port || null,
@@ -296,7 +296,7 @@ async function createOrUpdateCruiseFromBase44Booking(booking, cacheId = null) {
     departure_date: booking.departing_date || null,
     return_date: booking.arriving_date || null,
     arrival_date: booking.arriving_date || null,
-    departure_time: "17:00",
+    departure_time: null,
     nights,
     embarkation_port: booking.departing_port || null,
     departure_port: booking.departing_port || null,
@@ -1253,30 +1253,104 @@ function renderStatusValue(value) {
   return `<strong class="${isMissing ? "is-alert" : ""}">${escapeHtml(safeValue)}</strong>`;
 }
 
+
+function getDashboardBookingSource(cruise) {
+  return cruise?._preview_booking || cruise || {};
+}
+
+function formatCurrencyValue(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "Not added";
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0
+  }).format(number);
+}
+
+function getPassportStatusSummary(cruise) {
+  const booking = getDashboardBookingSource(cruise);
+  const returnDate = booking.arriving_date || cruise?.return_date || cruise?.arrival_date;
+  const threshold = returnDate ? new Date(returnDate) : null;
+  if (threshold && !Number.isNaN(threshold.getTime())) threshold.setMonth(threshold.getMonth() + 6);
+
+  const passengers = [1, 2].map(index => ({
+    name: toDisplayName([booking[`passenger${index}_first_name`], booking[`passenger${index}_last_name`]].filter(Boolean).join(" ")),
+    expiry: booking[`passenger${index}_passport_exp_date`]
+  })).filter(passenger => passenger.name || passenger.expiry);
+
+  if (!passengers.length) return "Not added";
+
+  const warnings = passengers.filter(passenger => {
+    if (!passenger.expiry || !threshold) return false;
+    const expiryDate = new Date(passenger.expiry);
+    return !Number.isNaN(expiryDate.getTime()) && expiryDate < threshold;
+  });
+
+  if (warnings.length) {
+    return `${warnings.map(item => item.name || "Traveller").join(", ")} needs passport review`;
+  }
+
+  const missing = passengers.filter(passenger => !passenger.expiry);
+  if (missing.length) return `${missing.length} passport expiry date${missing.length === 1 ? "" : "s"} missing`;
+  return "Valid for 6+ months after cruise";
+}
+
+function getPaymentSummary(cruise) {
+  const booking = getDashboardBookingSource(cruise);
+  if (booking.payment_status) {
+    const label = String(booking.payment_status).replaceAll("_", " ");
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }
+  if (booking.balance_owing !== undefined && booking.balance_owing !== null) {
+    return `${formatCurrencyValue(booking.balance_owing)} owing`;
+  }
+  return "Not added";
+}
+
+function getInclusionsSummary(cruise) {
+  const booking = getDashboardBookingSource(cruise);
+  const inclusions = Array.isArray(booking.inclusions) ? booking.inclusions.filter(Boolean) : [];
+  return inclusions.length ? inclusions.join(", ") : "None recorded";
+}
+
 function renderDashboardSnapshot(cruise) {
+  const booking = getDashboardBookingSource(cruise);
   const embarkationPort = getDashboardValue(cruise, ["embarkation_port", "departure_port", "from_port", "departure_city"], "");
   const disembarkationPort = getDashboardValue(cruise, ["disembarkation_port", "arrival_port", "to_port", "destination"], "");
   const embarkation = formatPortDateTime(embarkationPort, cruise?.departure_date, cruise?.departure_time);
   const disembarkation = formatPortDateTime(disembarkationPort, cruise?.return_date || cruise?.arrival_date, cruise?.arrival_time);
   const cabin = getDashboardValue(cruise, ["cabin_number", "cabin", "stateroom", "suite"], "Not added");
-  const cabinType = getDashboardValue(cruise, ["cabin_type", "room_type", "category_class"], "Not added");
+  const roomType = booking.room_type || getDashboardValue(cruise, ["cabin_type", "room_type"], "Not added");
+  const category = booking.category_class || getDashboardValue(cruise, ["category_class"], "Not added");
   const travellers = getTravellerSummary(cruise);
-  const insurance = getDashboardValue(cruise, ["insurance_status", "travel_insurance", "insurance", "insurance_purchased"], "Not added");
-  const flights = getDashboardValue(cruise, ["flight_status", "flights", "flights_booked", "air_status"], "Not added");
+  const travellerCount = booking.total_passengers || cruise?.traveller_count || "Not added";
+  const duration = booking.cruise_duration || cruise?.nights || "Not added";
   const status = getDashboardValue(cruise, ["booking_status"], "Not added");
+  const payment = getPaymentSummary(cruise);
+  const totalPrice = booking.total_price ?? booking.cruise_price_usd;
+  const finalDue = booking.final_payment_due_date || booking.reminder_final_payment_due;
+  const passportStatus = getPassportStatusSummary(cruise);
+  const inclusions = getInclusionsSummary(cruise);
 
   return `
     <article class="dashboard-summary-card dashboard-snapshot-card">
       <p class="dashboard-card-label">Cruise Snapshot</p>
       <div class="dashboard-snapshot-list">
         <div class="dashboard-snapshot-row"><span>Travellers</span>${renderStatusValue(travellers)}</div>
+        <div class="dashboard-snapshot-row"><span>Traveller count</span>${renderStatusValue(travellerCount)}</div>
         <div class="dashboard-snapshot-row"><span>Cabin</span>${renderStatusValue(cabin)}</div>
-        <div class="dashboard-snapshot-row"><span>Category</span>${renderStatusValue(cabinType)}</div>
+        <div class="dashboard-snapshot-row"><span>Room type</span>${renderStatusValue(roomType)}</div>
+        <div class="dashboard-snapshot-row"><span>Category</span>${renderStatusValue(category)}</div>
+        <div class="dashboard-snapshot-row"><span>Duration</span>${renderStatusValue(duration === "Not added" ? duration : `${duration} nights`)}</div>
         <div class="dashboard-snapshot-row"><span>Embarkation</span>${renderStatusValue(embarkation)}</div>
         <div class="dashboard-snapshot-row"><span>Disembarkation</span>${renderStatusValue(disembarkation)}</div>
-        <div class="dashboard-snapshot-row"><span>Booking Status</span>${renderStatusValue(status)}</div>
-        <div class="dashboard-snapshot-row"><span>Insurance</span>${renderStatusValue(insurance)}</div>
-        <div class="dashboard-snapshot-row"><span>Flights</span>${renderStatusValue(flights)}</div>
+        <div class="dashboard-snapshot-row"><span>Passport check</span>${renderStatusValue(passportStatus)}</div>
+        <div class="dashboard-snapshot-row"><span>Booking status</span>${renderStatusValue(status)}</div>
+        <div class="dashboard-snapshot-row"><span>Payment status</span>${renderStatusValue(payment)}</div>
+        ${totalPrice !== undefined && totalPrice !== null ? `<div class="dashboard-snapshot-row"><span>Cruise price</span>${renderStatusValue(formatCurrencyValue(totalPrice))}</div>` : ""}
+        ${finalDue ? `<div class="dashboard-snapshot-row"><span>Final payment due</span>${renderStatusValue(formatDateShort(finalDue))}</div>` : ""}
+        <div class="dashboard-snapshot-row"><span>Included extras</span>${renderStatusValue(inclusions)}</div>
       </div>
       <button class="dashboard-outline-action" onclick="renderBookingDetails()">Open Booking →</button>
     </article>
@@ -1362,14 +1436,21 @@ async function renderDashboard() {
           <div class="dashboard-welcome-avatar">${escapeHtml(String(firstName).slice(0, 2).toUpperCase())}</div>
           <div>
             <h2>My Cruise</h2>
-            <p>${mainCruise ? `Everything for <strong>${escapeHtml(heroTitle || "your cruise")}</strong> is now in one place. Your next priority is <strong>${escapeHtml(nextStepTitle)}</strong>.` : `Welcome, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.`}</p>
+            <p>${mainCruise ? `Everything for ${escapeHtml(heroTitle || "your cruise")} is in one place. Your next priority is ${escapeHtml(nextStepTitle)}.` : `Welcome, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.`}</p>
           </div>
           ${adminPreviewMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
         </section>
 
-        ${renderMyCruiseOverview(mainCruise)}
-
         <section class="dashboard-summary-grid dashboard-summary-grid-final">
+          ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
+
+          <article class="dashboard-summary-card cruise-ready-card">
+            <p class="dashboard-card-label">Cruise Ready</p>
+            <div class="dashboard-ready-stat"><strong>${checklistData.percent}%</strong><span>${checklistData.percent > 0 ? "Your plans are taking shape." : "Your planning starts here."}</span></div>
+            ${renderProgressCircle(checklistData.percent)}
+            <button class="dashboard-link-action" onclick="renderChecklist()">View Progress →</button>
+          </article>
+
           <article class="dashboard-summary-card next-task-card">
             <p class="dashboard-card-label">Next Essential Task</p>
             <div class="dashboard-card-icon">✓</div>
@@ -1378,20 +1459,11 @@ async function renderDashboard() {
             <button class="dashboard-card-action" onclick="renderChecklist()">Start Task →</button>
           </article>
 
-          <article class="dashboard-summary-card cruise-ready-card">
-            <p class="dashboard-card-label">Cruise Ready</p>
-            <div class="dashboard-ready-stat"><strong>${checklistData.percent}%</strong><span>You're making great progress!</span></div>
-            ${renderProgressCircle(checklistData.percent)}
-            <button class="dashboard-link-action" onclick="renderChecklist()">View Progress →</button>
-          </article>
-
-          ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
-
           <article class="dashboard-summary-card dashboard-planner-card dashboard-planner-feature-card">
             <div class="dashboard-planner-heading">
               <p class="dashboard-card-label">My Planner</p>
-              <h2>Start planning your cruise</h2>
-              <p>These are the key tools your clients will use most. Open a section to start checking things off, building the packing list, or managing cruise details.</p>
+              <h2>${checklistData.percent > 0 ? "Continue planning your cruise" : "Start planning your cruise"}</h2>
+              <p>Your essential cruise tools are together in one place. Choose where you would like to continue.</p>
             </div>
             <div class="dashboard-feature-grid">
               <button class="dashboard-feature-button" onclick="renderChecklist()"><span>📋</span><strong>Preparation Checklist</strong><small>Tasks, reminders and cruise-ready progress</small></button>
