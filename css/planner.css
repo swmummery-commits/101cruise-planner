@@ -4936,3 +4936,24 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Packing Assistant v2.1.1: prevent Safari number controls overlapping kg suffix */
+.packing-settings-grid .packing-allowance-input input[type="number"] {
+  appearance: textfield;
+  -webkit-appearance: textfield;
+  padding-right: 8px;
+}
+
+.packing-settings-grid .packing-allowance-input input[type="number"]::-webkit-inner-spin-button,
+.packing-settings-grid .packing-allowance-input input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.packing-allowance-input > span {
+  min-width: 30px;
+  padding: 0 10px 0 6px;
+  text-align: right;
+  pointer-events: none;
+}
