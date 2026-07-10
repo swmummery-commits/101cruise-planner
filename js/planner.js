@@ -2342,9 +2342,11 @@ function recalculatePackingSummary() {
   });
 
   const checkedAllowance = parseOptionalPackingNumber("packingCheckedBaggageAllowance");
+  const cabinAllowance = parseOptionalPackingNumber("packingCabinBaggageAllowance");
   const weightValue = document.getElementById("packingEstimatedWeight");
   const allowanceValue = document.getElementById("packingCheckedAllowanceValue");
   const remainingValue = document.getElementById("packingRemainingWeight");
+  const cabinValue = document.getElementById("packingCabinAllowanceValue");
   const status = document.getElementById("packingWeightStatus");
   const donut = document.getElementById("packingWeightDonut");
   const donutPercent = document.getElementById("packingWeightDonutPercent");
@@ -2352,6 +2354,7 @@ function recalculatePackingSummary() {
 
   if (weightValue) weightValue.textContent = `${totalWeight.toFixed(1)} kg`;
   if (allowanceValue) allowanceValue.textContent = checkedAllowance === null ? "Not entered" : `${checkedAllowance.toFixed(1)} kg`;
+  if (cabinValue) cabinValue.textContent = cabinAllowance === null ? "Not entered" : `${cabinAllowance.toFixed(1)} kg`;
   if (remainingValue) {
     if (checkedAllowance === null) remainingValue.textContent = "—";
     else {
@@ -2408,7 +2411,7 @@ function renderPackingControls(preferences, cruise) {
         </div>
         <div class="planner-field">
           <label>Cabin baggage allowance (kg)</label>
-          <input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(cabinAllowance)}" placeholder="Enter allowance">
+          <input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(cabinAllowance)}" placeholder="Enter allowance" oninput="recalculatePackingSummary()">
         </div>
       </div>
       <div class="packing-settings-note">Allowances can differ by airline, route, fare and passenger. Check the booking confirmation before entering them.</div>
@@ -2447,7 +2450,7 @@ function renderPackingWeightGauge(totalWeight, baggageLimit, cabinAllowance) {
           <div><span>Estimated checked baggage</span><strong id="packingEstimatedWeight">${totalWeight.toFixed(1)} kg</strong></div>
           <div><span>Checked allowance</span><strong id="packingCheckedAllowanceValue">${limit === null ? "Not entered" : `${limit.toFixed(1)} kg`}</strong></div>
           <div><span>Remaining</span><strong id="packingRemainingWeight" class="${isOver ? "is-over" : ""}">${remaining === null ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`)}</strong></div>
-          <div><span>Cabin allowance</span><strong>${cabinLimit === null ? "Not entered" : `${cabinLimit.toFixed(1)} kg`}</strong></div>
+          <div><span>Cabin allowance</span><strong id="packingCabinAllowanceValue">${cabinLimit === null ? "Not entered" : `${cabinLimit.toFixed(1)} kg`}</strong></div>
         </div>
         <p id="packingWeightStatus">${escapeHtml(getWeightStatus(totalWeight, limit))}</p>
         <small>This is an estimated checked-baggage comparison. Cabin allowance is shown for reference; individual items are not yet allocated between checked baggage and carry-on. Actual weight varies by item size, brand and fabric.</small>
@@ -2624,21 +2627,14 @@ async function renderPackingPlanner() {
 
       ${renderPackingControls(preferences, cruise)}
 
-      <section class="planner-card packing-summary-card">
-        <div>
-          <span>Packing Progress</span>
-          <strong>${percent}%</strong>
-          <small>${packedCount} of ${totalCount} items packed</small>
-        </div>
-        ${renderPackingWeightGauge(totalWeight, baggageLimit, cabinAllowance)}
-      </section>
+      <div class="packing-workspace">
+        <div class="packing-list-column">
+          <section class="planner-card packing-search-card">
+            <input id="packingSearch" type="search" placeholder="Search packing list..." oninput="filterPackingList()">
+          </section>
 
-      <section class="planner-card packing-search-card">
-        <input id="packingSearch" type="search" placeholder="Search packing list..." oninput="filterPackingList()">
-      </section>
-
-      <main class="packing-content">
-        ${(categories || []).map(category => {
+          <main class="packing-content">
+            ${(categories || []).map(category => {
           const categoryItems = grouped[category.id] || [];
           if (!categoryItems.length && category.name !== "Last Minute Items") return "";
           const catPacked = categoryItems.filter(item => isPackingItemPacked(progress || [], item)).length;
@@ -2658,8 +2654,19 @@ async function renderPackingPlanner() {
               <button class="add-personal-task-button" onclick="addPersonalPackingItem(${category.id})">+ Add your own item</button>
             </section>
           `;
-        }).join("")}
-      </main>
+            }).join("")}
+          </main>
+        </div>
+
+        <aside class="planner-card packing-summary-card packing-summary-sticky" aria-label="Packing progress and baggage summary">
+          <div class="packing-progress-summary">
+            <span>Packing Progress</span>
+            <strong>${percent}%</strong>
+            <small>${packedCount} of ${totalCount} items packed</small>
+          </div>
+          ${renderPackingWeightGauge(totalWeight, baggageLimit, cabinAllowance)}
+        </aside>
+      </div>
     </div>
   `;
 }
