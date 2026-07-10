@@ -4957,3 +4957,82 @@
   text-align: right;
   pointer-events: none;
 }
+
+/* Customer booking access */
+.customer-access-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+  background: linear-gradient(180deg, #f6f8fb 0%, #eef2f6 100%);
+}
+
+.customer-access-card {
+  width: min(100%, 460px);
+  padding: 34px;
+}
+
+.customer-access-logo {
+  display: block;
+  width: min(210px, 64%);
+  height: auto;
+  margin: 0 auto 28px;
+}
+
+.customer-access-card h1 {
+  margin: 4px 0 10px;
+  font-size: clamp(2rem, 5vw, 3rem);
+  letter-spacing: -0.04em;
+}
+
+.customer-access-card .planner-field {
+  margin-top: 18px;
+}
+
+.customer-access-card input[type="text"],
+.customer-access-card input[type="email"],
+.customer-access-card input[type="password"] {
+  width: 100%;
+}
+
+.customer-remember-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0;
+  font-size: 0.92rem;
+  color: #4f5965;
+}
+
+.customer-remember-row input {
+  width: 18px;
+  height: 18px;
+}
+
+.customer-access-button {
+  width: 100%;
+}
+
+.customer-existing-account {
+  margin-top: 24px;
+  border-top: 1px solid rgba(24, 32, 42, 0.1);
+  padding-top: 18px;
+  color: #66717d;
+}
+
+.customer-existing-account summary {
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.customer-account-login {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+@media (max-width: 520px) {
+  .customer-access-page { padding: 16px; }
+  .customer-access-card { padding: 26px 20px; }
+}

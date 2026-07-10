@@ -15,6 +15,12 @@ let adminPreviewLookup = "";
 let adminPreviewCruise = null;
 let adminPreviewError = "";
 let adminPreviewPackedKeys = new Set();
+let customerMode = false;
+let customerSessionToken = "";
+let customerBooking = null;
+let customerCruise = null;
+let customerPackingPreferences = null;
+const CUSTOMER_SESSION_STORAGE_KEY = "101cruise_customer_session";
 
 const CRUISE_LINES = [
   "Carnival Cruise Line",
@@ -324,6 +330,129 @@ async function createOrUpdateCruiseFromBase44Booking(booking, cacheId = null) {
   return data;
 }
 
+
+function getStoredCustomerSession() {
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY) || sessionStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function storeCustomerSession(session, remember) {
+  localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+  sessionStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+  const storage = remember ? localStorage : sessionStorage;
+  storage.setItem(CUSTOMER_SESSION_STORAGE_KEY, JSON.stringify(session));
+}
+
+function clearCustomerSession() {
+  localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+  sessionStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
+  customerMode = false;
+  customerSessionToken = "";
+  customerBooking = null;
+  customerCruise = null;
+  customerPackingPreferences = null;
+}
+
+function activateCustomerSession(session) {
+  if (!session?.token || !session?.booking) return false;
+  customerMode = true;
+  customerSessionToken = session.token;
+  customerBooking = session.booking;
+  customerCruise = createPreviewCruiseFromBase44Booking(session.booking);
+  currentUser = {
+    id: `customer:${session.booking.base44_booking_id || session.booking.booking_reference}`,
+    email: session.booking.passenger1_email || "",
+    user_metadata: { first_name: session.booking.passenger1_first_name || "Guest" }
+  };
+  currentProfile = {
+    first_name: formatPackingDisplayName(session.booking.passenger1_first_name || "Guest"),
+    last_name: formatPackingDisplayName(session.booking.passenger1_last_name || "")
+  };
+  return true;
+}
+
+function renderCustomerAccess(message = "", isError = false) {
+  clearCountdownTimer();
+  app.innerHTML = `
+    <main class="customer-access-page">
+      <section class="customer-access-card planner-card">
+        <img class="customer-access-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
+        <p class="planner-kicker">My Cruise</p>
+        <h1>Welcome back.</h1>
+        <p class="planner-muted">Enter the details from your cruise confirmation to access your personalised planner.</p>
+        <div class="planner-field">
+          <label for="customerBookingNumber">Booking number</label>
+          <input id="customerBookingNumber" type="text" autocomplete="off" autocapitalize="characters" placeholder="SWM123456">
+        </div>
+        <div class="planner-field">
+          <label for="customerSurname">Lead traveller surname</label>
+          <input id="customerSurname" type="text" autocomplete="family-name" autocapitalize="characters" placeholder="MUMMERY" onkeydown="if(event.key === 'Enter') accessMyCruise()">
+        </div>
+        <label class="customer-remember-row"><input id="rememberCustomerBooking" type="checkbox" checked><span>Remember this booking on this device</span></label>
+        <button id="customerAccessButton" class="planner-button black customer-access-button" onclick="accessMyCruise()">Access My Cruise</button>
+        <div id="customer-access-message" class="planner-message ${isError ? "planner-error" : ""}">${escapeHtml(message)}</div>
+        <details class="customer-existing-account"><summary>Use an existing planner account</summary><div class="customer-account-login"><input id="signinEmail" type="email" placeholder="Email address"><input id="signinPassword" type="password" placeholder="Password"><button class="planner-button secondary" onclick="signIn()">Sign In</button><div id="signin-message" class="planner-message"></div></div></details>
+      </section>
+    </main>`;
+}
+
+async function accessMyCruise() {
+  const bookingReference = String(document.getElementById("customerBookingNumber")?.value || "").trim().toUpperCase();
+  const surname = String(document.getElementById("customerSurname")?.value || "").trim().toUpperCase();
+  const remember = document.getElementById("rememberCustomerBooking")?.checked === true;
+  const button = document.getElementById("customerAccessButton");
+  const message = document.getElementById("customer-access-message");
+  if (!bookingReference || !surname) {
+    if (message) message.textContent = "Enter both the booking number and lead traveller surname.";
+    return;
+  }
+  if (button) { button.disabled = true; button.textContent = "Checking booking…"; }
+  if (message) message.textContent = "";
+  try {
+    const response = await fetch("/.netlify/functions/customer-access", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ booking_reference: bookingReference, surname })
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.success) throw new Error(data?.error || "We could not access this booking.");
+    const session = { token: data.token, booking: data.booking };
+    storeCustomerSession(session, remember);
+    activateCustomerSession(session);
+    await renderDashboard();
+  } catch (error) {
+    if (message) message.textContent = error.message || "We could not access this booking.";
+    if (button) { button.disabled = false; button.textContent = "Access My Cruise"; }
+  }
+}
+
+function changeCustomerBooking() {
+  clearCustomerSession();
+  activePackingProfileKey = null;
+  packingV2Profiles = [];
+  packingV2State = [];
+  renderCustomerAccess();
+}
+
+async function customerPackingRequest(action, payload = {}) {
+  const response = await fetch("/.netlify/functions/customer-packing", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${customerSessionToken}` },
+    body: JSON.stringify({ action, ...payload })
+  });
+  const data = await response.json().catch(() => null);
+  if (response.status === 401) {
+    clearCustomerSession();
+    renderCustomerAccess("Your booking session has expired. Please access My Cruise again.", true);
+    throw new Error("Customer session expired");
+  }
+  if (!response.ok || !data?.success) throw new Error(data?.error || "Could not save your packing changes.");
+  return data;
+}
+
 function renderLogin() {
   clearCountdownTimer();
 
@@ -435,6 +564,7 @@ async function signIn() {
 }
 
 async function signOut() {
+  if (customerMode) { changeCustomerBooking(); return; }
   await supabaseClient.auth.signOut();
   currentUser = null;
   currentProfile = null;
@@ -933,7 +1063,7 @@ async function loadDashboardChecklistData(cruise) {
     .order("display_order", { ascending: true });
 
   let progressRows = [];
-  if (cruise && currentUser?.id && !adminPreviewMode) {
+  if (cruise && currentUser?.id && !adminPreviewMode && !customerMode) {
     const { data: progressData } = await supabaseClient
       .from("checklist_progress")
       .select("*")
@@ -1365,7 +1495,10 @@ async function renderDashboard() {
   let mainCruise = null;
   let error = null;
 
-  if (adminPreviewMode && adminPreviewCruise) {
+  if (customerMode && customerCruise) {
+    safeCruises = [customerCruise];
+    mainCruise = customerCruise;
+  } else if (adminPreviewMode && adminPreviewCruise) {
     safeCruises = [adminPreviewCruise];
     mainCruise = adminPreviewCruise;
   } else {
@@ -1405,7 +1538,7 @@ async function renderDashboard() {
         <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
           <div class="dashboard-hero-overlay"></div>
           <img class="dashboard-brand-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
-          ${adminPreviewMode ? `<button class="dashboard-signout" onclick="exitAdminPreview()">Exit Preview</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
+          ${adminPreviewMode ? `<button class="dashboard-signout" onclick="exitAdminPreview()">Exit Preview</button>` : customerMode ? `<button class="dashboard-signout" onclick="changeCustomerBooking()">Change Booking</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
 
           <div class="dashboard-hero-content">
             <p class="dashboard-hero-kicker">${escapeHtml(greetingText)}</p>
@@ -1440,7 +1573,7 @@ async function renderDashboard() {
             <h2>My Cruise</h2>
             <p>${mainCruise ? `Everything for ${escapeHtml(heroTitle || "your cruise")} is in one place. Your next priority is ${escapeHtml(nextStepTitle)}.` : `Welcome, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.`}</p>
           </div>
-          ${adminPreviewMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
+          ${adminPreviewMode || customerMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
         </section>
 
         <section class="dashboard-home-grid">
@@ -1517,6 +1650,7 @@ function getCurrentCruiseFromList(cruises, preference = null) {
 }
 
 async function loadCurrentCruise() {
+  if (customerMode && customerCruise) return customerCruise;
   if (adminPreviewMode && adminPreviewCruise) return adminPreviewCruise;
   const { data } = await supabaseClient
     .from("cruises")
@@ -2289,6 +2423,16 @@ async function loadPackingV2Data(cruise) {
     packingV2State = [];
     return;
   }
+  if (customerMode) {
+    const data = await customerPackingRequest("load");
+    const savedProfiles = data.profiles || [];
+    customerPackingPreferences = data.preferences || null;
+    packingV2Profiles = buildPackingProfiles(cruise, savedProfiles);
+    packingV2State = data.state || [];
+    const missingProfiles = packingV2Profiles.filter(profile => !savedProfiles.some(saved => saved.profile_key === profile.profile_key));
+    if (missingProfiles.length) await customerPackingRequest("save_profiles", { profiles: missingProfiles });
+    return;
+  }
   const [profilesResult, stateResult] = await Promise.all([
     supabaseClient.from("user_packing_v2_profiles").select("*").eq("user_id", currentUser.id).eq("cruise_key", cruiseKey).order("display_order", { ascending: true }),
     supabaseClient.from("user_packing_v2_state").select("*").eq("user_id", currentUser.id).eq("cruise_key", cruiseKey)
@@ -2476,6 +2620,17 @@ async function savePackingV2State(itemKey, changes = {}) {
     packed_at: (changes.packed ?? existing.packed) ? (existing.packed_at || new Date().toISOString()) : null,
     updated_at: new Date().toISOString()
   };
+  if (customerMode) {
+    const customerPayload = { ...payload };
+    delete customerPayload.user_id;
+    delete customerPayload.cruise_key;
+    const result = await customerPackingRequest("save_state", { state: customerPayload });
+    const saved = result.state;
+    const index = packingV2State.findIndex(row => row.profile_key === activePackingProfileKey && row.item_key === itemKey);
+    if (index >= 0) packingV2State[index] = saved;
+    else packingV2State.push(saved);
+    return;
+  }
   const { data, error } = await supabaseClient.from("user_packing_v2_state").upsert(payload, { onConflict: "user_id,cruise_key,profile_key,item_key" }).select("*").single();
   if (error) {
     console.error("Packing v2 state save error", error);
@@ -2556,6 +2711,22 @@ async function savePackingPreferencesFromForm() {
     updated_at: new Date().toISOString()
   };
 
+  if (customerMode) {
+    const preferencesPayload = {
+      traveller_type: globalPayload.traveller_type,
+      destination: globalPayload.destination,
+      dress_code: globalPayload.dress_code
+    };
+    const profileForCustomer = { ...profilePayload };
+    delete profileForCustomer.user_id;
+    delete profileForCustomer.cruise_key;
+    await Promise.all([
+      customerPackingRequest("save_preferences", { preferences: preferencesPayload }),
+      customerPackingRequest("save_profiles", { profiles: [profileForCustomer] })
+    ]);
+    await renderPackingPlanner();
+    return;
+  }
   const [globalResult, profileResult] = await Promise.all([
     supabaseClient.from("user_packing_preferences").upsert(globalPayload, { onConflict: "user_id,cruise_id" }),
     supabaseClient.from("user_packing_v2_profiles").upsert(profilePayload, { onConflict: "user_id,cruise_key,profile_key" })
@@ -2734,12 +2905,18 @@ async function resetPackingProgress() {
     renderPackingPlanner();
     return;
   }
+  if (customerMode) {
+    await customerPackingRequest("reset_profile", { profile_key: profile.profile_key });
+    renderPackingPlanner();
+    return;
+  }
   await supabaseClient.from("user_packing_v2_state").delete().eq("user_id", currentUser.id).eq("cruise_key", packingV2CurrentCruiseKey).eq("profile_key", profile.profile_key);
   renderPackingPlanner();
 }
 
 async function addPersonalPackingItem(categoryId) {
   if (adminPreviewMode) { alert("Preview mode does not save personal packing items."); return; }
+  if (customerMode) { alert("Adding personal items will be enabled in the next customer-access update."); return; }
   const cruise = await loadCurrentCruise();
   if (!cruise) return;
   const name = prompt("Add your own packing item");
@@ -2785,8 +2962,9 @@ async function renderPackingPlanner() {
     app.innerHTML = `<div class="planner-card"><button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button><h2>Packing Assistant</h2><p>Add a cruise before generating your packing list.</p></div>`;
     return;
   }
-  const preferences = await loadPackingPreferences(cruise);
+  let preferences = customerMode ? null : await loadPackingPreferences(cruise);
   await loadPackingV2Data(cruise);
+  if (customerMode) preferences = customerPackingPreferences;
   const storedProfile = localStorage.getItem(`101cruise_packing_profile_${String(cruise.id)}`);
   if (!activePackingProfileKey || !packingV2Profiles.some(profile => profile.profile_key === activePackingProfileKey)) activePackingProfileKey = storedProfile || packingV2Profiles[0]?.profile_key;
   const profile = getActivePackingProfile();
@@ -2802,7 +2980,7 @@ async function renderPackingPlanner() {
   const [{ data: categories }, { data: items }, personalResult] = await Promise.all([
     supabaseClient.from("packing_categories").select("*").eq("active", true).order("display_order", { ascending: true }),
     supabaseClient.from("packing_items").select("*, packing_categories(name)").eq("active", true).order("display_order", { ascending: true }),
-    adminPreviewMode ? Promise.resolve({ data: [] }) : supabaseClient.from("user_packing_items").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id).order("created_at", { ascending: true })
+    (adminPreviewMode || customerMode) ? Promise.resolve({ data: [] }) : supabaseClient.from("user_packing_items").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id).order("created_at", { ascending: true })
   ]);
   const categoryNameById = new Map((categories || []).map(category => [String(category.id), category.name]));
   const systemItems = (items || []).filter(item => packingItemApplies(item, context)).map(item => ({
@@ -2924,6 +3102,18 @@ async function initPlanner() {
     return;
   }
 
+  const storedCustomerSession = getStoredCustomerSession();
+  if (storedCustomerSession && activateCustomerSession(storedCustomerSession)) {
+    try {
+      await customerPackingRequest("load");
+      await renderDashboard();
+      return;
+    } catch (error) {
+      console.warn("Stored customer session could not be restored", error);
+      clearCustomerSession();
+    }
+  }
+
   captureInvitationBookingId();
 
   const { data } = await supabaseClient.auth.getSession();
@@ -2935,7 +3125,7 @@ async function initPlanner() {
     await syncInvitationBookingForCurrentUser();
     renderDashboard();
   } else {
-    renderLogin();
+    renderCustomerAccess();
   }
 }
 
