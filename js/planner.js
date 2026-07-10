@@ -2246,17 +2246,36 @@ function getPackingTypeLabel(type) {
   return "Recommended";
 }
 
-function renderPackingRow(item, packed, quantity) {
+const PACKING_NON_WEIGHT_CATEGORIES = new Set([
+  "travel documents",
+  "money & payments",
+  "health & medication"
+]);
+
+function packingCategoryUsesQuantityAndWeight(categoryName) {
+  return !PACKING_NON_WEIGHT_CATEGORIES.has(String(categoryName || "").trim().toLowerCase());
+}
+
+function renderPackingRow(item, packed, quantity, categoryName = "") {
   const typeClass = getPackingTypeClass(item.item_type);
   const typeLabel = getPackingTypeLabel(item.item_type);
   const key = getPackingItemKey(item);
-  const safeQuantity = Math.max(0, Number(quantity ?? 1));
-  const unitWeight = Math.max(0, Number(item.weight_kg || 0));
+  const usesQuantityAndWeight = packingCategoryUsesQuantityAndWeight(categoryName);
+  const safeQuantity = usesQuantityAndWeight ? Math.max(0, Number(quantity ?? 1)) : 1;
+  const unitWeight = usesQuantityAndWeight ? Math.max(0, Number(item.weight_kg || 0)) : 0;
   const weight = unitWeight * safeQuantity;
   return `
-    <div class="packing-row ${packed ? "is-packed" : ""}" data-packing-row="${escapeHtml(key)}" data-unit-weight="${unitWeight}">
-      <div class="packing-main-cell">
+    <div class="packing-row ${packed ? "is-packed" : ""} ${usesQuantityAndWeight ? "" : "packing-row-no-weight"}" data-packing-row="${escapeHtml(key)}" data-unit-weight="${unitWeight}" data-uses-weight="${usesQuantityAndWeight}">
+      <div class="packing-check-cell">
         <input class="checklist-checkbox" type="checkbox" ${packed ? "checked" : ""} onchange="togglePackingItem('${escapeHtml(key)}', this.checked)">
+      </div>
+      <div class="packing-quantity-cell">
+        ${usesQuantityAndWeight ? `
+          <label class="sr-only" for="packingQuantity-${escapeHtml(key)}">Quantity for ${escapeHtml(item.name)}</label>
+          <input id="packingQuantity-${escapeHtml(key)}" class="packing-quantity-input" type="number" min="0" step="1" inputmode="numeric" value="${safeQuantity}" oninput="updatePackingQuantity('${escapeHtml(key)}', this.value)">
+        ` : `<span class="packing-not-applicable" aria-label="Quantity not applicable">—</span>`}
+      </div>
+      <div class="packing-main-cell">
         <div>
           <div class="packing-item-title">${escapeHtml(item.name)}</div>
           ${item.description ? `<div class="packing-item-description">${escapeHtml(item.description)}</div>` : ""}
@@ -2264,11 +2283,7 @@ function renderPackingRow(item, packed, quantity) {
         </div>
       </div>
       <div class="packing-type-cell"><span class="priority-badge ${typeClass}">${typeLabel}</span></div>
-      <div class="packing-quantity-cell">
-        <label class="sr-only" for="packingQuantity-${escapeHtml(key)}">Quantity for ${escapeHtml(item.name)}</label>
-        <input id="packingQuantity-${escapeHtml(key)}" class="packing-quantity-input" type="number" min="0" step="1" inputmode="numeric" value="${safeQuantity}" oninput="updatePackingQuantity('${escapeHtml(key)}', this.value)">
-      </div>
-      <div class="packing-weight-cell" data-item-weight>${weight ? `${weight.toFixed(2)} kg` : "0.00 kg"}</div>
+      <div class="packing-weight-cell" data-item-weight>${usesQuantityAndWeight ? (weight ? `${weight.toFixed(2)} kg` : "0.00 kg") : "—"}</div>
       ${item.source === "personal" ? `<button class="packing-delete-button" onclick="deletePersonalPackingItem(${item.id})">Delete</button>` : ""}
     </div>
   `;
@@ -2320,6 +2335,7 @@ async function savePackingQuantity(key, quantity) {
 function recalculatePackingSummary() {
   let totalWeight = 0;
   document.querySelectorAll(".packing-row").forEach(row => {
+    if (row.dataset.usesWeight !== "true") return;
     const quantity = Math.max(0, Number(row.querySelector(".packing-quantity-input")?.value || 0));
     totalWeight += Number(row.dataset.unitWeight || 0) * quantity;
   });
@@ -2549,12 +2565,24 @@ async function renderPackingPlanner() {
       const saved = progress.find(row => String(row.packing_item_id) === String(item.id));
       return { ...item, source: "system", calculated_quantity: saved?.quantity ?? calculatePackingQuantity() };
     });
-  const personalItems = (personal || []).map(item => ({ ...item, source: "personal", calculated_quantity: item.quantity || 1, item_type: "Optional", description: item.note || "Personal packing item" }));
+  const categoryNameById = new Map((categories || []).map(category => [String(category.id), category.name]));
+  const personalItems = (personal || []).map(item => ({
+    ...item,
+    source: "personal",
+    calculated_quantity: item.quantity ?? 1,
+    item_type: "Optional",
+    description: item.note || "Personal packing item",
+    packing_categories: { name: categoryNameById.get(String(item.category_id)) || "" }
+  }));
   const allPackingItems = [...systemItems, ...personalItems];
   const packedCount = allPackingItems.filter(item => isPackingItemPacked(progress || [], item)).length;
   const totalCount = allPackingItems.length;
   const percent = getProgressPercent(packedCount, totalCount);
-  const totalWeight = allPackingItems.reduce((sum, item) => sum + (Number(item.weight_kg || 0) * Number(item.calculated_quantity || 1)), 0);
+  const totalWeight = allPackingItems.reduce((sum, item) => {
+    const categoryName = item.packing_categories?.name || categoryNameById.get(String(item.category_id)) || "";
+    if (!packingCategoryUsesQuantityAndWeight(categoryName)) return sum;
+    return sum + (Number(item.weight_kg || 0) * Number(item.calculated_quantity ?? 1));
+  }, 0);
   const baggageLimit = preferences?.checked_baggage_allowance_kg ?? preferences?.baggage_limit_kg ?? null;
   const grouped = groupPackingItems(allPackingItems);
 
@@ -2605,8 +2633,10 @@ async function renderPackingPlanner() {
                 </div>
                 <div class="section-progress-pill">${catPacked}/${categoryItems.length} Packed</div>
               </div>
-              <div class="packing-table-header"><span>Item</span><span>Type</span><span>Quantity</span><span>Weight</span></div>
-              ${categoryItems.map(item => renderPackingRow(item, isPackingItemPacked(progress || [], item), item.calculated_quantity)).join("")}
+              <div class="packing-table-header ${packingCategoryUsesQuantityAndWeight(category.name) ? "" : "packing-table-header-no-weight"}">
+                <span aria-hidden="true"></span><span>Quantity</span><span>Item</span><span>Type</span><span>Weight</span>
+              </div>
+              ${categoryItems.map(item => renderPackingRow(item, isPackingItemPacked(progress || [], item), item.calculated_quantity, category.name)).join("")}
               <button class="add-personal-task-button" onclick="addPersonalPackingItem(${category.id})">+ Add your own item</button>
             </section>
           `;

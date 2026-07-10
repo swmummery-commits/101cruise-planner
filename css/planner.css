@@ -4355,3 +4355,72 @@
     grid-column: 2;
   }
 }
+
+/* Sprint 2 refinement: quantity immediately after checkbox and non-weight categories */
+.packing-table-header,
+.packing-row {
+  grid-template-columns: 22px 88px minmax(0, 1fr) 120px 90px;
+}
+
+.packing-check-cell {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.packing-check-cell .checklist-checkbox {
+  width: 19px;
+  height: 19px;
+  margin: 2px 0 0;
+  accent-color: #16856c;
+}
+
+.packing-main-cell {
+  display: block;
+  min-width: 0;
+}
+
+.packing-not-applicable {
+  color: #a1a8b0;
+  font-size: 13px;
+}
+
+.packing-row-no-weight .packing-weight-cell,
+.packing-row-no-weight .packing-quantity-cell {
+  color: #a1a8b0;
+}
+
+@media (max-width: 640px) {
+  .packing-row {
+    grid-template-columns: 22px 76px minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  .packing-check-cell {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .packing-quantity-cell {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: flex-start;
+    padding-left: 0;
+  }
+
+  .packing-main-cell {
+    grid-column: 3 / -1;
+    grid-row: 1;
+  }
+
+  .packing-type-cell {
+    grid-column: 3;
+    grid-row: 2;
+    padding-left: 0;
+  }
+
+  .packing-weight-cell {
+    grid-column: 4;
+    grid-row: 2;
+  }
+}
