@@ -3789,3 +3789,31 @@
   .dashboard-status-stack { order: 2; }
   .dashboard-snapshot-card { order: 3; grid-column: auto; }
 }
+
+/* Fix: keep the dashboard's three primary columns on the same row.
+   Earlier full-width planner-card rules were still forcing My Planner
+   to span the entire grid. */
+.dashboard-home-grid > .dashboard-planner-column {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  margin-top: 0 !important;
+}
+
+.dashboard-home-grid > .dashboard-status-stack,
+.dashboard-home-grid > .dashboard-snapshot-card {
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+@media (min-width: 1081px) {
+  .dashboard-home-grid {
+    grid-template-columns: minmax(300px, 0.95fr) minmax(260px, 0.78fr) minmax(390px, 1.27fr);
+    align-items: stretch;
+  }
+
+  .dashboard-planner-column,
+  .dashboard-status-stack,
+  .dashboard-snapshot-card {
+    height: 100%;
+  }
+}
