@@ -1619,80 +1619,8 @@ function renderDashboardProgressCard(label, percent, detail, action) {
   `;
 }
 
-function projectDashboardMapPoint(lat, lng) {
-  const minLng = 125.4;
-  const maxLng = 140.8;
-  const minLat = 30.2;
-  const maxLat = 38.5;
-  const x = 56 + ((lng - minLng) / (maxLng - minLng)) * 488;
-  const y = 310 - ((lat - minLat) / (maxLat - minLat)) * 262;
-  return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
-}
-
-function dashboardMapLabel(name) {
-  return String(name || "").replace(/\s*\(.+?\)\s*/g, "").trim();
-}
-
-function renderDashboardGeographicMap(journey) {
-  const routeStops = journey.stops.filter(stop => Number.isFinite(stop.lat) && Number.isFinite(stop.lng));
-  const uniqueStops = routeStops.filter((stop, index, list) => index === list.findIndex(item => item.lat === stop.lat && item.lng === stop.lng));
-  const points = uniqueStops.map(stop => ({ ...stop, ...projectDashboardMapPoint(stop.lat, stop.lng) }));
-  const pathData = points.map((point, index) => `${index ? "L" : "M"}${point.x},${point.y}`).join(" ");
-  const labelOffsets = [
-    { dx: 12, dy: -9, anchor: "start" }, { dx: 12, dy: -8, anchor: "start" },
-    { dx: 10, dy: -10, anchor: "start" }, { dx: -12, dy: 15, anchor: "end" },
-    { dx: -12, dy: 15, anchor: "end" }, { dx: -12, dy: 14, anchor: "end" },
-    { dx: 12, dy: 15, anchor: "start" }, { dx: 12, dy: 15, anchor: "start" },
-    { dx: 12, dy: -9, anchor: "start" }, { dx: -12, dy: -9, anchor: "end" }
-  ];
-
-  return `
-    <div class="dashboard-route-map dashboard-route-map-svg" aria-label="Illustrative cruise route map from Tokyo to Seoul">
-      <svg viewBox="0 0 600 350" role="img" aria-labelledby="dashboardMapTitle dashboardMapDescription">
-        <title id="dashboardMapTitle">${escapeHtml(journey.title)} cruise route</title>
-        <desc id="dashboardMapDescription">Illustrative map showing the route through Japan to South Korea.</desc>
-        <rect class="dashboard-map-ocean" x="0" y="0" width="600" height="350" rx="18"></rect>
-        <g class="dashboard-map-grid" aria-hidden="true">
-          <path d="M0 88H600M0 176H600M0 264H600"></path>
-          <path d="M150 0V350M300 0V350M450 0V350"></path>
-        </g>
-        <g class="dashboard-map-land" aria-hidden="true">
-          <path d="M44 34 C75 12 121 5 153 17 C176 27 183 48 170 66 C154 88 134 108 123 136 C110 167 92 189 66 197 C41 204 24 190 27 168 C31 142 50 124 57 102 C64 80 43 63 44 34 Z"></path>
-          <path d="M167 111 C185 91 211 80 233 84 C251 87 257 101 245 116 C230 135 209 146 189 143 C171 140 158 128 167 111 Z"></path>
-          <path d="M242 163 C265 143 293 135 321 139 C342 142 349 156 336 171 C320 189 297 198 271 194 C251 191 231 181 242 163 Z"></path>
-          <path d="M331 132 C344 111 364 99 384 102 C401 105 406 118 397 132 C387 148 367 157 350 153 C335 150 324 143 331 132 Z"></path>
-          <path d="M402 92 C421 65 446 52 469 55 C486 58 493 72 485 87 C476 105 456 119 437 118 C419 117 394 105 402 92 Z"></path>
-          <path d="M468 38 C493 20 525 16 548 26 C568 35 575 52 563 68 C550 86 526 98 505 94 C484 91 455 61 468 38 Z"></path>
-          <path d="M351 205 C365 191 383 187 397 194 C409 200 410 211 402 220 C391 232 374 235 361 228 C349 222 342 214 351 205 Z"></path>
-          <path d="M318 234 C333 218 353 213 369 221 C382 227 385 239 374 249 C362 261 343 264 329 256 C316 249 308 244 318 234 Z"></path>
-          <path d="M260 249 C278 232 302 228 320 237 C334 244 337 258 325 269 C310 282 287 284 271 275 C257 268 248 260 260 249 Z"></path>
-          <path d="M215 280 C232 262 255 258 274 267 C289 274 291 287 279 299 C264 313 241 315 225 307 C210 299 204 291 215 280 Z"></path>
-          <path d="M128 130 C149 111 177 105 198 114 C216 122 220 138 207 151 C191 168 166 173 145 166 C126 160 112 144 128 130 Z"></path>
-        </g>
-        <g class="dashboard-map-country-labels" aria-hidden="true">
-          <text x="104" y="76">South Korea</text>
-          <text x="404" y="36">Japan</text>
-        </g>
-        <path id="dashboardCruiseRoutePath" class="dashboard-map-route" d="${pathData}"></path>
-        ${points.map((point, index) => {
-          const offset = labelOffsets[index] || { dx: 10, dy: -8, anchor: "start" };
-          return `<g class="dashboard-map-stop">
-            <circle cx="${point.x}" cy="${point.y}" r="7"></circle>
-            <text class="dashboard-map-stop-number" x="${point.x}" y="${point.y + 3}">${index + 1}</text>
-            <text class="dashboard-map-stop-label" x="${point.x + offset.dx}" y="${point.y + offset.dy}" text-anchor="${offset.anchor}">${escapeHtml(dashboardMapLabel(point.name))}</text>
-          </g>`;
-        }).join("")}
-        ${points.length > 1 ? `<g class="dashboard-map-ship" aria-hidden="true">
-          <circle r="10"></circle>
-          <text x="0" y="4" text-anchor="middle">⛴</text>
-          <animateMotion dur="16s" repeatCount="indefinite" rotate="auto" keyTimes="0;0.94;1" keyPoints="0;1;1" calcMode="linear">
-            <mpath href="#dashboardCruiseRoutePath"></mpath>
-          </animateMotion>
-        </g>` : ""}
-      </svg>
-      <div class="dashboard-map-note">Illustrative route. It does not show the ship’s exact sailing track.</div>
-    </div>`;
-}
+let dashboardLeafletMap = null;
+let dashboardShipAnimationFrame = null;
 
 function renderJourneyMap(journey) {
   if (!journey) {
@@ -1711,7 +1639,7 @@ function renderJourneyMap(journey) {
       <div class="dashboard-journey-heading">
         <div><p class="dashboard-card-label">Your Journey</p><h2>${escapeHtml(journey.title)}</h2></div>
       </div>
-      ${renderDashboardGeographicMap(journey)}
+      ${renderEditorialJourneyMap(journey)}
       <div class="dashboard-itinerary-preview" id="dashboardItineraryPreview">
         ${previewStops.map((stop, index) => renderDashboardItineraryPreviewDay(stop, index)).join("")}
         <div id="dashboardItineraryExtra" class="dashboard-itinerary-extra" hidden>
@@ -1721,6 +1649,72 @@ function renderJourneyMap(journey) {
       ${remainingStops.length ? `<button id="dashboardItineraryToggle" class="dashboard-outline-action dashboard-card-button dashboard-itinerary-toggle" onclick="toggleDashboardItinerary()">Open Full Itinerary →</button>` : ""}
     </article>
   `;
+}
+
+function renderEditorialJourneyMap(journey) {
+  const ports = journey.stops.filter(stop => Number.isFinite(stop.lat) && Number.isFinite(stop.lng));
+  const uniquePorts = ports.filter((stop, index, list) => index === list.findIndex(item => item.lat === stop.lat && item.lng === stop.lng));
+  const points = [
+    [510, 96], [470, 118], [405, 178], [326, 242], [280, 222], [250, 277], [203, 302], [165, 278], [118, 248], [84, 214]
+  ];
+  const labels = [
+    [526, 91, "start"], [485, 116, "start"], [420, 176, "start"], [342, 247, "start"],
+    [268, 210, "end"], [238, 292, "end"], [190, 318, "end"], [151, 268, "end"],
+    [105, 238, "end"], [72, 201, "end"]
+  ];
+  const mapped = uniquePorts.slice(0, points.length).map((stop, index) => ({ stop, x: points[index][0], y: points[index][1], label: labels[index] }));
+  const routePath = "M510 96 C500 105 487 113 470 118 C448 128 428 152 405 178 C378 207 351 232 326 242 C310 245 293 237 280 222 C268 231 259 253 250 277 C236 291 219 300 203 302 C187 298 176 287 165 278 C145 269 130 258 118 248 C102 235 91 224 84 214";
+  return `
+    <div class="dashboard-route-map dashboard-editorial-map" aria-label="Illustrative cruise route map from Tokyo to Seoul">
+      <svg viewBox="0 0 620 350" role="img" aria-labelledby="dashboardMapTitle dashboardMapDesc">
+        <title id="dashboardMapTitle">${escapeHtml(journey.title)} cruise route</title>
+        <desc id="dashboardMapDesc">An illustrative map showing the sequence of cruise ports between Japan and South Korea.</desc>
+        <defs>
+          <linearGradient id="seaWash" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#dceff5"/>
+            <stop offset="1" stop-color="#c8e2eb"/>
+          </linearGradient>
+          <filter id="shipShadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity=".22"/></filter>
+          <marker id="routeArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#167d6a"/>
+          </marker>
+          <path id="dashboardRoutePath" d="${routePath}"/>
+        </defs>
+        <rect width="620" height="350" rx="18" fill="url(#seaWash)"/>
+        <g class="dashboard-map-land" fill="#f6efe4" stroke="#b9ae9d" stroke-width="1.4">
+          <path d="M548 34 C579 39 602 63 609 92 C616 121 606 146 590 168 C573 191 566 214 560 239 C553 269 536 303 507 325 L486 316 C498 285 506 257 513 228 C521 194 538 165 551 139 C565 112 567 83 548 34 Z"/>
+          <path d="M446 124 C460 132 470 146 474 161 C478 176 470 188 459 196 C446 204 434 198 430 186 C426 174 431 157 438 143 Z"/>
+          <path d="M395 174 C410 183 420 198 421 213 C422 228 410 238 397 236 C384 234 376 222 378 208 C380 194 386 182 395 174 Z"/>
+          <path d="M315 207 C337 212 352 226 355 241 C358 256 348 268 332 270 C316 272 300 264 294 251 C288 237 297 219 315 207 Z"/>
+          <path d="M252 257 C270 260 283 272 285 287 C287 301 276 312 260 314 C244 316 229 308 224 296 C219 283 233 265 252 257 Z"/>
+          <path d="M147 183 C174 183 195 199 202 224 C210 250 198 276 179 294 C158 313 127 316 102 303 C79 291 67 269 72 244 C77 219 96 198 119 190 Z"/>
+          <path d="M58 157 C76 158 91 168 98 183 C105 199 99 215 86 224 C72 234 52 232 40 220 C28 208 27 190 36 176 C42 166 49 160 58 157 Z"/>
+        </g>
+        <g class="dashboard-map-islands" fill="#f6efe4" stroke="#b9ae9d" stroke-width="1">
+          <circle cx="365" cy="257" r="6"/><circle cx="348" cy="274" r="4"/><circle cx="333" cy="285" r="3"/>
+          <circle cx="304" cy="299" r="3"/><circle cx="289" cy="311" r="2.5"/><circle cx="226" cy="329" r="4"/>
+        </g>
+        <use href="#dashboardRoutePath" fill="none" stroke="#167d6a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" opacity=".95"/>
+        <g class="dashboard-route-arrows" fill="#167d6a" opacity=".92">
+          <path d="M0 -4 L8 0 L0 4 Z" transform="translate(446 130) rotate(137)"/>
+          <path d="M0 -4 L8 0 L0 4 Z" transform="translate(306 240) rotate(174)"/>
+          <path d="M0 -4 L8 0 L0 4 Z" transform="translate(139 261) rotate(-143)"/>
+        </g>
+        ${mapped.map(({stop,x,y,label}, index) => `
+          <g class="dashboard-map-port">
+            <circle cx="${x}" cy="${y}" r="10" fill="#fff" stroke="#167d6a" stroke-width="2"/>
+            <text x="${x}" y="${y + 3.5}" text-anchor="middle" class="dashboard-map-port-number">${index + 1}</text>
+            <text x="${label[0]}" y="${label[1]}" text-anchor="${label[2]}" class="dashboard-map-port-label">${escapeHtml(stop.name.replace(/\s*\(.+?\)\s*/g, ""))}</text>
+          </g>`).join("")}
+        <g class="dashboard-map-ship" filter="url(#shipShadow)">
+          <path d="M-8 2 L8 2 L5 6 L-5 6 Z M-3 -2 L3 -2 L4 2 L-4 2 Z" fill="#0d5f55" stroke="#fff" stroke-width=".9"/>
+          <animateMotion dur="18s" repeatCount="indefinite" rotate="auto" keyPoints="0;1" keyTimes="0;1" calcMode="linear">
+            <mpath href="#dashboardRoutePath"/>
+          </animateMotion>
+        </g>
+      </svg>
+      <div class="dashboard-map-note">Illustrative route only. The line shows port sequence, not the ship’s exact navigational track.</div>
+    </div>`;
 }
 
 function renderDashboardItineraryPreviewDay(stop, index) {
@@ -1741,6 +1735,10 @@ function toggleDashboardItinerary() {
   const willOpen = extra.hidden;
   extra.hidden = !willOpen;
   button.textContent = willOpen ? "Show Less ↑" : "Open Full Itinerary →";
+}
+
+function initialiseDashboardRouteMap() {
+  // The dashboard map is self-contained SVG, so no external map initialisation is required.
 }
 
 async function renderDashboard() {
@@ -1856,6 +1854,7 @@ async function renderDashboard() {
 
   if (mainCruise) {
     startLiveCountdown(mainCruise);
+    initialiseDashboardRouteMap(dashboardJourney);
   }
 }
 
@@ -3011,14 +3010,22 @@ function formatPackingWeight(weightKg) {
   return `${value.toFixed(value >= 10 ? 1 : 2)} kg`;
 }
 
-function isCarryOnOnlyPackingItem(item) {
-  return /(?:power\s*bank|portable\s+battery\s+(?:pack|bank))/i.test(String(item?.name || ""));
+function getPackingRestriction(item) {
+  const explicit = String(item?.packing_restriction || "").trim().toLowerCase();
+  if (["carry-on-only", "checked-only", "any"].includes(explicit)) return explicit;
+  if (/(?:power\s*bank|portable\s+battery\s+(?:pack|bank))/i.test(String(item?.name || ""))) return "carry-on-only";
+  return "any";
 }
 
-function renderPackingLocationSelector(key, location, visible, carryOnOnly = false) {
-  if (carryOnOnly) {
+function renderPackingLocationSelector(key, location, visible, restriction = "any") {
+  if (restriction === "carry-on-only") {
     return `<div class="packing-location-selector ${visible ? "" : "is-hidden"}" data-location-selector>
       <span class="packing-location-option is-active is-locked">Carry-on only</span>
+    </div>`;
+  }
+  if (restriction === "checked-only") {
+    return `<div class="packing-location-selector ${visible ? "" : "is-hidden"}" data-location-selector>
+      <span class="packing-location-option is-active is-locked">Checked luggage only</span>
     </div>`;
   }
   const options = [
@@ -3039,8 +3046,8 @@ function renderPackingRow(item, packed, quantity, categoryName = "") {
   const usesQuantityAndWeight = packingCategoryUsesQuantityAndWeight(categoryName, profile);
   const safeQuantity = usesQuantityAndWeight ? Math.max(0, Number(quantity ?? 0)) : 0;
   const state = getPackingState(key);
-  const carryOnOnly = usesQuantityAndWeight && isCarryOnOnlyPackingItem(item);
-  const location = usesQuantityAndWeight ? (carryOnOnly ? "carry-on" : (state?.packing_location || "checked")) : "checklist";
+  const restriction = usesQuantityAndWeight ? getPackingRestriction(item) : "any";
+  const location = usesQuantityAndWeight ? (restriction === "carry-on-only" ? "carry-on" : restriction === "checked-only" ? "checked" : (state?.packing_location || "checked")) : "checklist";
   const rawUnitWeight = Math.max(0, Number(item.weight_kg || 0));
   const unitWeight = usesQuantityAndWeight ? rawUnitWeight : 0;
   const cabinWeight = profile?.profile_type === "cabin" && String(categoryName || "").trim().toLowerCase() === "cabin essentials" ? rawUnitWeight : 0;
@@ -3061,8 +3068,9 @@ function renderPackingRow(item, packed, quantity, categoryName = "") {
           <div class="packing-item-title">${escapeHtml(item.name)}</div>
           ${item.description ? `<div class="packing-item-description">${escapeHtml(item.description)}</div>` : ""}
           ${item.help_text ? `<div class="packing-item-help">ⓘ ${escapeHtml(item.help_text)}</div>` : ""}
-          ${usesQuantityAndWeight ? renderPackingLocationSelector(key, location, safeQuantity > 0, carryOnOnly) : ""}
-          ${carryOnOnly ? `<div class="packing-safety-note">Carry-on only. Power banks are not permitted in checked baggage.</div>` : ""}
+          ${usesQuantityAndWeight ? renderPackingLocationSelector(key, location, safeQuantity > 0, restriction) : ""}
+          ${restriction === "carry-on-only" ? `<div class="packing-safety-note">Carry-on only. Airline safety rules require this item to travel in cabin baggage.</div>` : ""}
+          ${restriction === "checked-only" ? `<div class="packing-safety-note">Checked luggage only. This item should not be packed in cabin baggage.</div>` : ""}
         </div>
       </div>
       <div class="packing-type-cell"><span class="priority-badge ${typeClass}">${typeLabel}</span></div>

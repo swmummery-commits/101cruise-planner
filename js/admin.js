@@ -2512,7 +2512,7 @@ function renderPackingItemCard(item) {
     ? "Essential item included on every cruise"
     : (assignedProfileCount ? `Smart Profile item (${assignedProfileCount} profile${assignedProfileCount === 1 ? "" : "s"})` : formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags, "Profile-specific item"));
   return `
-    <div class="admin-list-item admin-clickable-row packing-item-row ${isEditing ? "is-editing" : ""}" onclick="editPackingItem(${item.id})">
+    <div class="admin-list-item admin-clickable-row packing-item-row ${isEditing ? "is-editing" : ""}" data-packing-item-id="${item.id}" onclick="editPackingItem(${item.id})">
       ${isEditing ? `
         <div onclick="event.stopPropagation()">
           ${renderPackingItemForm(item)}
@@ -2911,6 +2911,19 @@ function renderPackingItemForm(editingItem) {
       </div>
     </div>
 
+    <div class="admin-field admin-packing-restriction">
+      <label>Packing restriction</label>
+      <select id="packingItemRestriction" onchange="togglePackingRestrictionHelp()">
+        <option value="any" ${!editingItem || !editingItem.packing_restriction || editingItem.packing_restriction === "any" ? "selected" : ""}>Any location</option>
+        <option value="carry-on-only" ${editingItem?.packing_restriction === "carry-on-only" ? "selected" : ""}>Carry-on only</option>
+        <option value="checked-only" ${editingItem?.packing_restriction === "checked-only" ? "selected" : ""}>Checked luggage only</option>
+      </select>
+      <div id="packingRestrictionHelp" class="admin-restriction-help ${editingItem?.packing_restriction && editingItem.packing_restriction !== "any" ? "is-visible" : ""}">
+        <strong>Airline safety notice</strong>
+        <span>This restriction is enforced automatically in My Cruise. Use it only when an item must travel in a particular baggage location.</span>
+      </div>
+    </div>
+
     <div class="admin-form-section-intro">
       <div class="admin-section-mini-title">Show this item for</div>
       <p class="admin-helper">Choose when this item should appear in the customer packing list. Leave the relevant “All” option selected unless the item only applies to specific destinations, climates, traveller types, dress codes or cruise lines. These are the only visibility rules you need to set.</p>
@@ -2983,6 +2996,11 @@ function renderPackingItemForm(editingItem) {
   `;
 }
 
+function togglePackingRestrictionHelp() {
+  const value = document.getElementById("packingItemRestriction")?.value || "any";
+  document.getElementById("packingRestrictionHelp")?.classList.toggle("is-visible", value !== "any");
+}
+
 async function savePackingItem() {
   const id = document.getElementById("packingItemId").value;
   const payload = {
@@ -2991,6 +3009,7 @@ async function savePackingItem() {
     description: document.getElementById("packingItemDescription").value.trim() || null,
     item_type: document.getElementById("packingItemType").value,
     weight_kg: Number(document.getElementById("packingItemWeightKg").value || 0),
+    packing_restriction: document.getElementById("packingItemRestriction")?.value || "any",
     destination_tags: document.getElementById("packingItemDestinations").value.trim() || null,
     climate_tags: document.getElementById("packingItemClimates").value.trim() || null,
     traveller_types: document.getElementById("packingItemTravellers").value.trim() || null,
@@ -3024,6 +3043,13 @@ async function savePackingItem() {
   editingPackingItemId = null;
   await loadAdminData();
   renderAdmin();
+  requestAnimationFrame(() => {
+    const savedCard = document.querySelector(`[data-packing-item-id="${CSS.escape(String(savedItemId))}"]`);
+    if (!savedCard) return;
+    savedCard.scrollIntoView({ behavior: "smooth", block: "center" });
+    savedCard.classList.add("is-just-saved");
+    window.setTimeout(() => savedCard.classList.remove("is-just-saved"), 2200);
+  });
 }
 
 async function savePackingItemProfileSelections(itemId, message) {

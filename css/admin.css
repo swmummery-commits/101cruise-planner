@@ -1105,3 +1105,27 @@
   tab-size: 2;
 }
 .itinerary-empty { margin: 14px 0 0; }
+
+/* Packing item restrictions and save-position feedback */
+.admin-restriction-help {
+  display: none;
+  margin-top: 10px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  background: #fff7e8;
+  border: 1px solid #efd49d;
+  color: #604b25;
+  font-size: .82rem;
+  line-height: 1.45;
+}
+.admin-restriction-help.is-visible {
+  display: grid;
+  gap: 2px;
+}
+.packing-item-row.is-just-saved {
+  animation: packingItemSavedPulse 2.2s ease-out;
+}
+@keyframes packingItemSavedPulse {
+  0%, 35% { background: #e7f7ef; box-shadow: 0 0 0 3px rgba(24, 134, 111, .16); }
+  100% { background: #fff; box-shadow: none; }
+}
