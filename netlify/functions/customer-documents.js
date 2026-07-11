@@ -45,14 +45,15 @@ function config() {
 
 async function rest(path, options = {}) {
   const { url, key } = config();
+  const headers = {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    ...(options.headers || {})
+  };
+  if (options.body !== undefined && options.body !== null) headers['Content-Type'] = 'application/json';
   const response = await fetch(`${url}/rest/v1/${path}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      ...(options.headers || {})
-    }
+    headers
   });
   const text = await response.text();
   const data = text ? JSON.parse(text) : null;
@@ -62,14 +63,15 @@ async function rest(path, options = {}) {
 
 async function storage(path, options = {}) {
   const { url, key } = config();
+  const headers = {
+    apikey: key,
+    Authorization: `Bearer ${key}`,
+    ...(options.headers || {})
+  };
+  if (options.body !== undefined && options.body !== null) headers['Content-Type'] = 'application/json';
   const response = await fetch(`${url}/storage/v1/${path}`, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      ...(options.headers || {})
-    }
+    headers
   });
   const text = await response.text();
   let data = null;
