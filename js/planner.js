@@ -379,10 +379,10 @@ function renderCustomerAccess(message = "", isError = false) {
   app.innerHTML = `
     <main class="customer-access-page">
       <section class="customer-access-card planner-card">
-        <img class="customer-access-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
+        <img class="customer-access-logo" src="assets/101cruise-logo-black.png" alt="101cruise">
         <p class="planner-kicker">My Cruise</p>
-        <h1>Welcome back.</h1>
-        <p class="planner-muted">Enter the details from your cruise confirmation to access your personalised planner.</p>
+        <h1>Welcome to My Cruise</h1>
+        <p class="planner-muted">Access your personalised cruise planner using your booking number and surname.</p>
         <div class="planner-field">
           <label for="customerBookingNumber">Booking number</label>
           <input id="customerBookingNumber" type="text" autocomplete="off" autocapitalize="characters" placeholder="SWM123456">
@@ -391,8 +391,8 @@ function renderCustomerAccess(message = "", isError = false) {
           <label for="customerSurname">Lead traveller surname</label>
           <input id="customerSurname" type="text" autocomplete="family-name" autocapitalize="characters" placeholder="MUMMERY" onkeydown="if(event.key === 'Enter') accessMyCruise()">
         </div>
-        <label class="customer-remember-row"><input id="rememberCustomerBooking" type="checkbox" checked><span>Remember this booking on this device</span></label>
-        <button id="customerAccessButton" class="planner-button black customer-access-button" onclick="accessMyCruise()">Access My Cruise</button>
+        <label class="customer-remember-row"><input id="rememberCustomerBooking" type="checkbox" checked><span>Remember me on this device</span></label>
+        <button id="customerAccessButton" class="planner-button black customer-access-button" onclick="accessMyCruise()">Open My Cruise</button>
         <div id="customer-access-message" class="planner-message ${isError ? "planner-error" : ""}">${escapeHtml(message)}</div>
         <details class="customer-existing-account"><summary>Use an existing planner account</summary><div class="customer-account-login"><input id="signinEmail" type="email" placeholder="Email address"><input id="signinPassword" type="password" placeholder="Password"><button class="planner-button secondary" onclick="signIn()">Sign In</button><div id="signin-message" class="planner-message"></div></div></details>
       </section>
@@ -409,7 +409,7 @@ async function accessMyCruise() {
     if (message) message.textContent = "Enter both the booking number and lead traveller surname.";
     return;
   }
-  if (button) { button.disabled = true; button.textContent = "Checking booking…"; }
+  if (button) { button.disabled = true; button.textContent = "Opening My Cruise…"; }
   if (message) message.textContent = "";
   try {
     const response = await fetch("/.netlify/functions/customer-access", {
@@ -418,14 +418,14 @@ async function accessMyCruise() {
       body: JSON.stringify({ booking_reference: bookingReference, surname })
     });
     const data = await response.json().catch(() => null);
-    if (!response.ok || !data?.success) throw new Error(data?.error || "We could not access this booking.");
+    if (!response.ok || !data?.success) throw new Error(data?.error || "We couldn't find a booking matching those details. Please check the booking number and lead traveller surname.");
     const session = { token: data.token, booking: data.booking };
     storeCustomerSession(session, remember);
     activateCustomerSession(session);
     await renderDashboard();
   } catch (error) {
-    if (message) message.textContent = error.message || "We could not access this booking.";
-    if (button) { button.disabled = false; button.textContent = "Access My Cruise"; }
+    if (message) message.textContent = error.message || "We couldn't find a booking matching those details. Please check the booking number and lead traveller surname.";
+    if (button) { button.disabled = false; button.textContent = "Open My Cruise"; }
   }
 }
 
@@ -466,6 +466,22 @@ async function customerPackingRequest(action, payload = {}) {
     throw new Error("Customer session expired");
   }
   if (!response.ok || !data?.success) throw new Error(data?.error || "Could not save your packing changes.");
+  return data;
+}
+
+async function customerDocumentsRequest(action, payload = {}) {
+  const response = await fetch("/.netlify/functions/customer-documents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${customerSessionToken}` },
+    body: JSON.stringify({ action, ...payload })
+  });
+  const data = await response.json().catch(() => null);
+  if (response.status === 401) {
+    clearCustomerSession();
+    renderCustomerAccess("Your booking session has expired. Please access My Cruise again.", true);
+    throw new Error("Customer session expired");
+  }
+  if (!response.ok || !data?.success) throw new Error(data?.error || "Could not access your documents.");
   return data;
 }
 
@@ -1609,7 +1625,7 @@ async function renderDashboard() {
             <div class="dashboard-feature-list">
               <button class="dashboard-feature-row" onclick="renderChecklist()"><span>📋</span><span><strong>Preparation Checklist</strong><small>Tasks, reminders and cruise-ready progress</small></span><b>→</b></button>
               <button class="dashboard-feature-row" onclick="renderPackingPlanner()"><span>🧳</span><span><strong>Smart Packing Planner</strong><small>Personalised packing for this sailing</small></span><b>→</b></button>
-              <button class="dashboard-feature-row" onclick="alert('Documents Checklist coming soon')"><span>📄</span><span><strong>Documents Checklist</strong><small>Passports, visas and travel papers</small></span><b>→</b></button>
+              <button class="dashboard-feature-row" onclick="renderDocuments()"><span>📄</span><span><strong>Documents</strong><small>Confirmations, tickets and travel papers</small></span><b>→</b></button>
               <button class="dashboard-feature-row" onclick="alert('Budget Planner coming soon')"><span>💳</span><span><strong>Budget Planner</strong><small>Payments and spending plans</small></span><b>→</b></button>
             </div>
           </article>
@@ -1707,7 +1723,7 @@ function renderPlannerNav(active = "preparation") {
     { key: "preparation", label: "Preparation", action: "renderChecklist()" },
     { key: "packing", label: "Packing", action: "renderPackingPlanner()" },
     { key: "budget", label: "Budget", action: "alert('Budget Planner coming soon')" },
-    { key: "documents", label: "Documents", action: "alert('Documents coming soon')" }
+    { key: "documents", label: "Documents", action: "renderDocuments()" }
   ];
 
   return `
@@ -2198,12 +2214,242 @@ async function renderBookingDetails() {
         <div id="booking-details-message" class="planner-message"></div>
       </section>
 
-      <section class="planner-card section-spaced">
-        <h3>Documents</h3>
-        <p class="planner-muted">Documents will be added in a future release. This will eventually hold cruise confirmations, invoices, insurance certificates and other useful files.</p>
+      <section class="planner-card section-spaced booking-documents-prompt">
+        <div>
+          <h3>Documents</h3>
+          <p class="planner-muted">Open your booking confirmation, tickets and uploaded travel documents in one place.</p>
+        </div>
+        <button class="planner-button secondary" onclick="renderDocuments()">View Documents</button>
       </section>
     </div>
   `;
+}
+
+
+const CUSTOMER_DOCUMENT_TYPES = [
+  "Insurance Policy",
+  "Passport Copy",
+  "Visa",
+  "Vaccination Certificate",
+  "Flight Confirmation",
+  "Hotel Confirmation",
+  "Shore Excursion Ticket",
+  "Electronic Ticket / Boarding Pass",
+  "Other"
+];
+
+function normaliseDocumentType(value) {
+  return String(value || "Other").trim() || "Other";
+}
+
+function getDocumentIcon(document) {
+  const type = normaliseDocumentType(document.document_type).toLowerCase();
+  const filename = String(document.filename || "").toLowerCase();
+  if (type.includes("booking confirmation")) return "📘";
+  if (type.includes("ticket") || type.includes("boarding")) return "🎫";
+  if (type.includes("insurance")) return "🛡️";
+  if (type.includes("passport") || type.includes("visa")) return "🛂";
+  if (type.includes("flight")) return "✈️";
+  if (type.includes("hotel")) return "🏨";
+  if (type.includes("shore excursion")) return "🗺️";
+  if (filename.endsWith(".png") || filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "🖼️";
+  return "📄";
+}
+
+function formatDocumentDate(value) {
+  if (!value) return "Date not supplied";
+  const date = new Date(String(value).length === 10 ? `${value}T00:00:00` : value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric" }).format(date);
+}
+
+function getDocumentPriority(document) {
+  const type = normaliseDocumentType(document.document_type).toLowerCase();
+  if (type === "booking confirmation") return 0;
+  if (type.includes("ticket") || type.includes("boarding pass")) return 1;
+  return 2;
+}
+
+function sortDocuments(documents) {
+  return [...documents].sort((a, b) => {
+    const priority = getDocumentPriority(a) - getDocumentPriority(b);
+    if (priority) return priority;
+    return new Date(b.uploaded_date || b.uploaded_at || 0) - new Date(a.uploaded_date || a.uploaded_at || 0);
+  });
+}
+
+function openDocument(url) {
+  if (!url) return;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function downloadDocument(url, filename) {
+  if (!url) return;
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename || "travel-document";
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+function printDocument(url) {
+  if (!url) return;
+  const printWindow = window.open(url, "_blank", "noopener,noreferrer");
+  if (!printWindow) alert("Your browser blocked the document window. Please use Open and print from the new tab.");
+}
+
+function renderDocumentCard(document) {
+  const source = document.source === "customer" ? "You" : "101cruise";
+  const primary = normaliseDocumentType(document.document_type).toLowerCase() === "booking confirmation";
+  const encodedUrl = encodeURIComponent(document.file_url || "");
+  const encodedFilename = encodeURIComponent(document.filename || "travel-document");
+  return `
+    <article class="document-card ${primary ? "document-card-primary" : ""}">
+      <div class="document-card-icon" aria-hidden="true">${getDocumentIcon(document)}</div>
+      <div class="document-card-content">
+        <div class="document-card-heading">
+          <div>
+            ${primary ? '<span class="document-primary-badge">Primary travel document</span>' : ""}
+            <h3>${escapeHtml(normaliseDocumentType(document.document_type))}</h3>
+          </div>
+          <span class="document-source-badge">${escapeHtml(source)}</span>
+        </div>
+        <p class="document-filename">${escapeHtml(document.filename || "Travel document")}</p>
+        <p class="document-meta">Added ${escapeHtml(formatDocumentDate(document.uploaded_date || document.uploaded_at))}</p>
+        ${document.notes ? `<p class="document-notes">${escapeHtml(document.notes)}</p>` : ""}
+        <div class="document-actions">
+          <button class="planner-button secondary" onclick="openDocument(decodeURIComponent('${encodedUrl}'))">Open</button>
+          <button class="planner-button secondary" onclick="downloadDocument(decodeURIComponent('${encodedUrl}'), decodeURIComponent('${encodedFilename}'))">Download</button>
+          <button class="planner-button secondary" onclick="printDocument(decodeURIComponent('${encodedUrl}'))">Print</button>
+          ${document.source === "customer" ? `<button class="document-delete-button" onclick="deleteCustomerDocument('${escapeHtml(document.id)}')">Delete</button>` : ""}
+        </div>
+      </div>
+    </article>`;
+}
+
+async function renderDocuments() {
+  clearCountdownTimer();
+  const cruise = await loadCurrentCruise();
+  app.innerHTML = `
+    ${renderAdminPreviewBanner(cruise)}
+    <div class="planner-shell">
+      ${renderPlannerNav("documents")}
+      <section class="documents-header planner-card">
+        <div>
+          <p class="planner-kicker">My Cruise</p>
+          <h2>Documents</h2>
+          <p class="planner-muted">Your cruise confirmations, tickets and personal travel documents in one secure library.</p>
+        </div>
+        ${customerMode ? '<button class="planner-button black" onclick="openDocumentUpload()">+ Upload Document</button>' : ""}
+      </section>
+      <div id="documents-message" class="planner-message"></div>
+      <section id="documents-list" class="documents-list">
+        <div class="planner-card"><p class="planner-muted">Loading documents…</p></div>
+      </section>
+    </div>`;
+
+  try {
+    const base44Documents = (customerBooking?._preview_booking?.documents || customerBooking?.documents || cruise?._preview_booking?.documents || []).map((document, index) => ({
+      ...document,
+      id: `base44-${index}`,
+      source: "base44"
+    }));
+    let customerDocuments = [];
+    if (customerMode) {
+      const data = await customerDocumentsRequest("list");
+      customerDocuments = (data.documents || []).map(document => ({ ...document, source: "customer" }));
+    }
+    const documents = sortDocuments([...base44Documents, ...customerDocuments]);
+    const list = document.getElementById("documents-list");
+    if (!documents.length) {
+      list.innerHTML = `<div class="planner-card documents-empty"><div class="documents-empty-icon">📄</div><h3>No travel documents have been uploaded yet.</h3><p class="planner-muted">Your 101cruise consultant will add booking documents here as they become available. You can also upload your own insurance, passport, visa, flight, hotel or excursion documents.</p></div>`;
+      return;
+    }
+    list.innerHTML = `<div class="documents-count">${documents.length} ${documents.length === 1 ? "document" : "documents"}</div>${documents.map(renderDocumentCard).join("")}`;
+  } catch (error) {
+    console.error("Documents load error", error);
+    const list = document.getElementById("documents-list");
+    if (list) list.innerHTML = `<div class="planner-card documents-empty"><h3>Documents could not be loaded</h3><p class="planner-muted">${escapeHtml(error.message || "Please try again.")}</p><button class="planner-button secondary" onclick="renderDocuments()">Try Again</button></div>`;
+  }
+}
+
+function openDocumentUpload() {
+  const modal = document.createElement("div");
+  modal.className = "document-upload-overlay";
+  modal.id = "documentUploadOverlay";
+  modal.innerHTML = `
+    <section class="document-upload-modal planner-card" role="dialog" aria-modal="true" aria-labelledby="documentUploadTitle">
+      <div class="document-upload-heading"><div><p class="planner-kicker">My Documents</p><h2 id="documentUploadTitle">Upload a document</h2></div><button class="document-modal-close" onclick="closeDocumentUpload()" aria-label="Close">×</button></div>
+      <div class="planner-field"><label for="customerDocumentType">Document type</label><select id="customerDocumentType">${CUSTOMER_DOCUMENT_TYPES.map(type => `<option>${escapeHtml(type)}</option>`).join("")}</select></div>
+      <div class="planner-field"><label for="customerDocumentFile">Choose file</label><input id="customerDocumentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
+      <div class="planner-field"><label for="customerDocumentNotes">Notes <span class="planner-muted">(optional)</span></label><textarea id="customerDocumentNotes" rows="3" placeholder="Add a short reminder about this document"></textarea></div>
+      <p class="planner-muted document-upload-help">PDF, JPG, PNG, DOC or DOCX. Maximum 10 MB.</p>
+      <div id="document-upload-message" class="planner-message"></div>
+      <div class="document-upload-actions"><button class="planner-button secondary" onclick="closeDocumentUpload()">Cancel</button><button id="documentUploadButton" class="planner-button black" onclick="uploadCustomerDocument()">Upload Document</button></div>
+    </section>`;
+  document.body.appendChild(modal);
+}
+
+function closeDocumentUpload() {
+  document.getElementById("documentUploadOverlay")?.remove();
+}
+
+async function uploadCustomerDocument() {
+  const file = document.getElementById("customerDocumentFile")?.files?.[0];
+  const documentType = document.getElementById("customerDocumentType")?.value || "Other";
+  const notes = document.getElementById("customerDocumentNotes")?.value.trim() || "";
+  const message = document.getElementById("document-upload-message");
+  const button = document.getElementById("documentUploadButton");
+  if (!file) { if (message) message.textContent = "Choose a document to upload."; return; }
+  if (file.size > 10 * 1024 * 1024) { if (message) message.textContent = "The file must be no larger than 10 MB."; return; }
+  try {
+    if (button) { button.disabled = true; button.textContent = "Uploading…"; }
+    if (message) message.textContent = "Preparing secure upload…";
+    const prepared = await customerDocumentsRequest("create_upload", {
+      filename: file.name,
+      document_type: documentType,
+      mime_type: file.type,
+      size_bytes: file.size
+    });
+    const upload = prepared.upload;
+    if (!upload.token) throw new Error("The secure upload token was not returned.");
+    const { error: storageError } = await supabaseClient.storage
+      .from("customer-documents")
+      .uploadToSignedUrl(upload.storage_path, upload.token, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false
+      });
+    if (storageError) throw storageError;
+    await customerDocumentsRequest("complete_upload", {
+      id: upload.id,
+      storage_path: upload.storage_path,
+      document_type: documentType,
+      filename: file.name,
+      mime_type: file.type,
+      size_bytes: file.size,
+      notes
+    });
+    closeDocumentUpload();
+    await renderDocuments();
+  } catch (error) {
+    console.error("Document upload error", error);
+    if (message) message.textContent = error.message || "The document could not be uploaded.";
+    if (button) { button.disabled = false; button.textContent = "Upload Document"; }
+  }
+}
+
+async function deleteCustomerDocument(id) {
+  if (!window.confirm("Delete this document from My Cruise?")) return;
+  try {
+    await customerDocumentsRequest("delete", { id });
+    await renderDocuments();
+  } catch (error) {
+    const message = document.getElementById("documents-message");
+    if (message) message.textContent = error.message || "The document could not be deleted.";
+  }
 }
 
 async function saveUserBookingDetails() {

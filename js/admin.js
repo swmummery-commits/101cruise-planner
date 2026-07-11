@@ -36,8 +36,6 @@ let crmSyncResult = null;
 let crmSyncMessage = "";
 let crmSyncLoading = false;
 let plannerPreviewMessage = "";
-let rawBookingInspectorOpen = false;
-let rawBookingSearch = "";
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -503,90 +501,10 @@ function renderCrmBookingPreview(booking) {
         </div>
       </div>
       <div class="admin-actions-row crm-preview-actions">
-        <button class="admin-button secondary" onclick="toggleRawBookingInspector()">${rawBookingInspectorOpen ? "Hide Raw Booking Data" : "View Raw Booking Data"}</button>
         <button class="admin-button black" onclick="openPlannerPreview('${esc(booking.base44_booking_id || booking.booking_reference || '')}')">Preview Planner</button>
       </div>
-      ${rawBookingInspectorOpen ? renderRawBookingInspector() : ""}
     </div>
   `;
-}
-
-function toggleRawBookingInspector() {
-  rawBookingInspectorOpen = !rawBookingInspectorOpen;
-  if (!rawBookingInspectorOpen) rawBookingSearch = "";
-  renderAdmin();
-}
-
-function getRawBookingInspectorData() {
-  if (!crmSyncResult) return null;
-  return crmSyncResult.raw_booking_response || crmSyncResult.source || crmSyncResult;
-}
-
-function renderRawBookingInspector() {
-  const rawData = getRawBookingInspectorData();
-  const json = JSON.stringify(rawData || {}, null, 2);
-  const search = String(rawBookingSearch || "").trim();
-  let displayJson = esc(json);
-
-  if (search) {
-    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    try {
-      displayJson = displayJson.replace(new RegExp(escapedSearch, "gi"), match => `<mark>${match}</mark>`);
-    } catch (error) {
-      console.warn("Could not highlight raw booking search", error);
-    }
-  }
-
-  return `
-    <section class="raw-booking-inspector">
-      <div class="raw-booking-header">
-        <div>
-          <h4>Raw Base44 booking response</h4>
-          <p class="admin-muted">Search for document, file, attachment, URL, folder or PDF to identify how Base44 stores uploaded documents.</p>
-        </div>
-        <button class="admin-button mini" onclick="copyRawBookingData()">Copy JSON</button>
-      </div>
-      <div class="raw-booking-tools">
-        <input type="search" id="rawBookingSearch" value="${esc(rawBookingSearch)}" placeholder="Search raw booking data" oninput="updateRawBookingSearch(this.value)">
-        <span class="raw-booking-search-hint">${search ? `Highlighting “${esc(search)}”` : "Try: document, file, attachment, url, folder, pdf"}</span>
-      </div>
-      <pre id="rawBookingJson" class="raw-booking-json">${displayJson}</pre>
-    </section>
-  `;
-}
-
-function updateRawBookingSearch(value) {
-  rawBookingSearch = String(value || "");
-  const inspector = document.querySelector(".raw-booking-inspector");
-  if (!inspector) return;
-  const rawData = getRawBookingInspectorData();
-  const json = JSON.stringify(rawData || {}, null, 2);
-  const search = rawBookingSearch.trim();
-  let displayJson = esc(json);
-  if (search) {
-    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    try {
-      displayJson = displayJson.replace(new RegExp(escapedSearch, "gi"), match => `<mark>${match}</mark>`);
-    } catch (error) {}
-  }
-  const pre = document.getElementById("rawBookingJson");
-  if (pre) pre.innerHTML = displayJson;
-  const hint = inspector.querySelector(".raw-booking-search-hint");
-  if (hint) hint.textContent = search ? `Highlighting “${search}”` : "Try: document, file, attachment, url, folder, pdf";
-  const firstMatch = pre && pre.querySelector("mark");
-  if (firstMatch) firstMatch.scrollIntoView({ block: "center", behavior: "smooth" });
-}
-
-async function copyRawBookingData() {
-  const rawData = getRawBookingInspectorData();
-  const json = JSON.stringify(rawData || {}, null, 2);
-  try {
-    await navigator.clipboard.writeText(json);
-    crmSyncMessage = "Raw booking data copied to clipboard.";
-  } catch (error) {
-    crmSyncMessage = "Could not copy automatically. Select the JSON and copy it manually.";
-  }
-  renderAdmin();
 }
 
 function renderPlannerPreviewPanel() {
@@ -664,8 +582,6 @@ async function syncCrmBooking() {
   }
 
   crmSyncLoading = true;
-  rawBookingInspectorOpen = false;
-  rawBookingSearch = "";
   crmSyncMessage = "Syncing booking from Base44...";
   renderAdmin();
 
