@@ -2166,8 +2166,6 @@ function printPackingItemLibrary() {
         <td><strong>${esc(item.name || "")}</strong></td>
         <td>${esc(item.item_type || "—")}</td>
         <td>${essential ? "Yes" : "No"}</td>
-        <td class="number">${esc(item.base_quantity ?? 1)}</td>
-        <td class="number">${esc(item.quantity_per_night ?? 0)}</td>
         <td class="number">${esc(Number(item.weight_kg || 0).toFixed(2))}</td>
         <td>${item.active ? "Published" : "Unpublished"}</td>
         <td class="number">${esc(item.display_order ?? 0)}</td>
@@ -2237,8 +2235,6 @@ function printPackingItemLibrary() {
         <th>Item</th>
         <th>Type</th>
         <th>Essential</th>
-        <th>Base Qty</th>
-        <th>Qty/Night</th>
         <th>Weight kg</th>
         <th>Status</th>
         <th>Order</th>
@@ -2271,6 +2267,118 @@ function printPackingItemLibrary() {
   window.setTimeout(() => printFrame.remove(), 60000);
 }
 
+
+function printPackingItemAuditList() {
+  const sortedItems = [...(packingItems || [])].sort((a, b) => {
+    const categoryCompare = String(getPackingCategoryName(a.category_id)).localeCompare(String(getPackingCategoryName(b.category_id)));
+    if (categoryCompare !== 0) return categoryCompare;
+    const orderCompare = Number(a.display_order || 0) - Number(b.display_order || 0);
+    if (orderCompare !== 0) return orderCompare;
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+
+  if (!sortedItems.length) {
+    alert("There are no packing items to print.");
+    return;
+  }
+
+  const rows = sortedItems.map(item => {
+    const profiles = getPackingProfileNamesForItem(item.id);
+    return `
+      <tr>
+        <td>${esc(getPackingCategoryName(item.category_id))}</td>
+        <td><strong>${esc(item.name || "")}</strong></td>
+        <td>${esc(item.item_type || "—")}</td>
+        <td class="number">${esc(Number(item.weight_kg || 0).toFixed(2))} kg</td>
+        <td>${esc(formatPackingPrintValue(item.climate_tags))}</td>
+        <td>${esc(formatPackingPrintValue(profiles))}</td>
+      </tr>`;
+  }).join("");
+
+  const generatedAt = new Date().toLocaleString();
+  const printFrame = document.createElement("iframe");
+  printFrame.setAttribute("title", "Packing item audit print view");
+  printFrame.style.position = "fixed";
+  printFrame.style.right = "0";
+  printFrame.style.bottom = "0";
+  printFrame.style.width = "0";
+  printFrame.style.height = "0";
+  printFrame.style.border = "0";
+  printFrame.style.visibility = "hidden";
+  document.body.appendChild(printFrame);
+
+  const printDocument = printFrame.contentDocument || printFrame.contentWindow?.document;
+  if (!printDocument) {
+    printFrame.remove();
+    alert("The print view could not be created. Please reload the page and try again.");
+    return;
+  }
+
+  printDocument.open();
+  printDocument.write(`<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>101CRUISE Packing Item Audit List</title>
+  <style>
+    @page { size: A4 landscape; margin: 9mm; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #111827; }
+    h1 { margin: 0 0 3px; font-size: 18px; }
+    .meta { margin: 0 0 10px; color: #4b5563; font-size: 9px; }
+    table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 8px; }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
+    th, td { border: 1px solid #cbd5e1; padding: 4px 5px; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+    th { background: #eef2f7; font-weight: 700; white-space: nowrap; }
+    tbody tr:nth-child(even) { background: #f8fafc; }
+    .number { text-align: right; white-space: nowrap; }
+    .screen-actions { margin-bottom: 12px; }
+    button { appearance: none; border: 0; border-radius: 8px; background: #111827; color: white; padding: 8px 13px; font: inherit; cursor: pointer; }
+    th:nth-child(1), td:nth-child(1) { width: 16%; }
+    th:nth-child(2), td:nth-child(2) { width: 22%; }
+    th:nth-child(3), td:nth-child(3) { width: 11%; }
+    th:nth-child(4), td:nth-child(4) { width: 10%; }
+    th:nth-child(5), td:nth-child(5) { width: 18%; }
+    th:nth-child(6), td:nth-child(6) { width: 23%; }
+    @media print { .screen-actions { display: none; } }
+  </style>
+</head>
+<body>
+  <div class="screen-actions"><button onclick="window.print()">Print</button></div>
+  <h1>101CRUISE Packing Item Audit List</h1>
+  <p class="meta">${sortedItems.length} items · Generated ${esc(generatedAt)} · One row per packing item</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Item</th>
+        <th>Item Type</th>
+        <th>Weight</th>
+        <th>Climates</th>
+        <th>Smart Profiles</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+</body>
+</html>`);
+  printDocument.close();
+
+  window.setTimeout(() => {
+    try {
+      printFrame.contentWindow?.focus();
+      printFrame.contentWindow?.print();
+    } catch (error) {
+      console.error("Unable to print packing item audit list:", error);
+      alert("The print dialog could not be opened. Please reload the page and try again.");
+    }
+  }, 250);
+
+  window.setTimeout(() => printFrame.remove(), 60000);
+}
+
 function renderPackingItemCard(item) {
   const isEditing = String(editingPackingItemId || "") === String(item.id);
   const assignedProfileCount = getPackingProfileIdsForItem(item.id).length;
@@ -2288,7 +2396,7 @@ function renderPackingItemCard(item) {
           <div>
             <strong class="checklist-admin-title">${esc(item.name)}</strong>
             <div class="admin-small">Category: ${esc(getPackingCategoryName(item.category_id))}</div>
-            <div class="admin-small"><strong>Qty:</strong> ${esc(item.base_quantity ?? 1)} &nbsp; <strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
+            <div class="admin-small"><strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
             ${item.description ? `<div class="admin-small">${esc(item.description)}</div>` : ""}
             ${item.help_text ? `<div class="admin-small"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
             <div class="admin-small"><strong>Logic:</strong> ${esc(ruleText)}</div>
@@ -2498,7 +2606,7 @@ function renderPackingImportPanel() {
         <button class="admin-button secondary" onclick="clearPackingImportCsv()">Clear</button>
       </div>
       <div id="packing-import-message" class="admin-message"></div>
-      <p class="admin-small">Required columns: Category and Item. Recommended columns: Priority, Base Qty, Qty Formula, Weight kg, Traveller Type, Climate, Destination, Dress Code, Cruise Line, Paul's Tip, Why, Active.</p>
+      <p class="admin-small">Required columns: Category and Item. Recommended columns: Priority, Weight kg, Traveller Type, Climate, Destination, Dress Code, Cruise Line, Paul's Tip, Why, Active.</p>
     </div>
   `;
 }
@@ -2577,6 +2685,7 @@ function renderPackingPanel() {
           <button class="admin-button secondary" onclick="showNewPackingItemForm()">Add Packing Item</button>
           <button class="admin-button secondary" onclick="showNewPackingCategoryForm()">Add Packing Category</button>
           <button class="admin-button secondary" onclick="printPackingItemLibrary()">Print Full Item List</button>
+          <button class="admin-button secondary" onclick="printPackingItemAuditList()">Print Audit List</button>
           <button class="admin-button secondary" onclick="refreshAdminData()">Refresh</button>
         </div>
       </div>
@@ -2671,14 +2780,6 @@ function renderPackingItemForm(editingItem) {
 
     <div class="admin-grid compact">
       <div class="admin-field">
-        <label>Base quantity</label>
-        <input type="number" id="packingItemBaseQty" value="${editingItem ? esc(editingItem.base_quantity || 1) : "1"}" min="0" step="1">
-      </div>
-      <div class="admin-field">
-        <label>Qty per night</label>
-        <input type="number" id="packingItemQtyPerNight" value="${editingItem ? esc(editingItem.quantity_per_night || 0) : "0"}" min="0" step="0.1">
-      </div>
-      <div class="admin-field">
         <label>Weight each (kg)</label>
         <input type="number" id="packingItemWeightKg" value="${editingItem ? esc(editingItem.weight_kg || 0) : "0"}" min="0" step="0.01">
       </div>
@@ -2763,8 +2864,6 @@ async function savePackingItem() {
     name: document.getElementById("packingItemName").value.trim(),
     description: document.getElementById("packingItemDescription").value.trim() || null,
     item_type: document.getElementById("packingItemType").value,
-    base_quantity: Number(document.getElementById("packingItemBaseQty").value || 1),
-    quantity_per_night: Number(document.getElementById("packingItemQtyPerNight").value || 0),
     weight_kg: Number(document.getElementById("packingItemWeightKg").value || 0),
     destination_tags: document.getElementById("packingItemDestinations").value.trim() || null,
     climate_tags: document.getElementById("packingItemClimates").value.trim() || null,
@@ -2950,37 +3049,6 @@ function parseImportActive(value) {
   return !["no", "false", "0", "inactive", "unpublished", "hide"].includes(text);
 }
 
-function parseQuantityRule(baseValue, formulaValue) {
-  const baseFromColumn = parseImportNumber(baseValue, 1);
-  const formula = String(formulaValue || "").trim();
-  const normalized = formula.toLowerCase().replace(/\s+/g, " ");
-
-  if (!formula || normalized === "fixed") {
-    return { base_quantity: baseFromColumn || 1, quantity_per_night: 0 };
-  }
-
-  if (/^\d+(\.\d+)?$/.test(normalized)) {
-    return { base_quantity: Number(normalized), quantity_per_night: 0 };
-  }
-
-  if (normalized === "nights + 2") return { base_quantity: 2, quantity_per_night: 1 };
-  if (normalized === "trip days + 3") return { base_quantity: 3, quantity_per_night: 1 };
-  if (normalized === "trip days + 4") return { base_quantity: 4, quantity_per_night: 1 };
-  if (normalized === "formal nights") return { base_quantity: Math.max(1, baseFromColumn || 1), quantity_per_night: 0 };
-
-  const plusCeiling = normalized.match(/^(\d+(?:\.\d+)?)\s*\+\s*ceiling\(nights\*(\d+(?:\.\d+)?)\)$/);
-  if (plusCeiling) {
-    return { base_quantity: Number(plusCeiling[1]), quantity_per_night: Number(plusCeiling[2]) };
-  }
-
-  const ceilingOnly = normalized.match(/^ceiling\(nights\*(\d+(?:\.\d+)?)\)$/);
-  if (ceilingOnly) {
-    return { base_quantity: 0, quantity_per_night: Number(ceilingOnly[1]) };
-  }
-
-  return { base_quantity: baseFromColumn || 1, quantity_per_night: 0 };
-}
-
 function getPackingCategoryIcon(name) {
   const value = String(name || "").toLowerCase();
   if (value.includes("document")) return "📄";
@@ -3023,11 +3091,6 @@ function buildPackingImportData(csvText) {
       });
     }
 
-    const qty = parseQuantityRule(
-      getImportValue(record, ["Base Qty", "Base Quantity", "Qty"]),
-      getImportValue(record, ["Qty Formula", "Quantity Formula", "Nights Rule"])
-    );
-
     const paulsTip = getImportValue(record, ["Paul's Tip", "Pauls Tip", "Description", "Packing Note"]);
     const why = getImportValue(record, ["Why", "Why Pack This", "Help Text"]);
 
@@ -3036,8 +3099,6 @@ function buildPackingImportData(csvText) {
       name,
       description: paulsTip || null,
       item_type: normalizePackingImportType(getImportValue(record, ["Priority", "Importance", "Type"])),
-      base_quantity: qty.base_quantity,
-      quantity_per_night: qty.quantity_per_night,
       weight_kg: parseImportNumber(getImportValue(record, ["Weight kg", "Weight (kg)", "Weight"]), 0),
       destination_tags: normalizeImportList(getImportValue(record, ["Destination", "Destinations"])),
       climate_tags: normalizeImportList(getImportValue(record, ["Climate", "Climates", "Climate Profile"])),

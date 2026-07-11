@@ -2397,9 +2397,6 @@ const PACKING_CABIN_CATEGORIES = new Set([
   "last minute"
 ]);
 
-function calculatePackingQuantity() {
-  return 0;
-}
 
 function normalisePackingProfileKey(value, fallback = "traveller") {
   const cleaned = String(value || "")
