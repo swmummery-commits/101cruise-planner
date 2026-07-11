@@ -2388,6 +2388,7 @@ let packingV2Profiles = [];
 let packingShowSelectedOnly = false;
 let packingV2State = [];
 let packingV2CurrentCruiseKey = null;
+let packingCabinSharePerTraveller = 0;
 
 const PACKING_CABIN_CATEGORIES = new Set([
   "cabin essentials",
@@ -2568,7 +2569,16 @@ function formatPackingWeight(weightKg) {
   return `${value.toFixed(value >= 10 ? 1 : 2)} kg`;
 }
 
-function renderPackingLocationSelector(key, location, visible) {
+function isCarryOnOnlyPackingItem(item) {
+  return /(?:power\s*bank|portable\s+battery\s+(?:pack|bank))/i.test(String(item?.name || ""));
+}
+
+function renderPackingLocationSelector(key, location, visible, carryOnOnly = false) {
+  if (carryOnOnly) {
+    return `<div class="packing-location-selector ${visible ? "" : "is-hidden"}" data-location-selector>
+      <span class="packing-location-option is-active is-locked">Carry-on only</span>
+    </div>`;
+  }
   const options = [
     ["checked", "Checked"],
     ["carry-on", "Carry-on"],
@@ -2587,11 +2597,14 @@ function renderPackingRow(item, packed, quantity, categoryName = "") {
   const usesQuantityAndWeight = packingCategoryUsesQuantityAndWeight(categoryName, profile);
   const safeQuantity = usesQuantityAndWeight ? Math.max(0, Number(quantity ?? 0)) : 0;
   const state = getPackingState(key);
-  const location = usesQuantityAndWeight ? (state?.packing_location || "checked") : "checklist";
-  const unitWeight = usesQuantityAndWeight ? Math.max(0, Number(item.weight_kg || 0)) : 0;
+  const carryOnOnly = usesQuantityAndWeight && isCarryOnOnlyPackingItem(item);
+  const location = usesQuantityAndWeight ? (carryOnOnly ? "carry-on" : (state?.packing_location || "checked")) : "checklist";
+  const rawUnitWeight = Math.max(0, Number(item.weight_kg || 0));
+  const unitWeight = usesQuantityAndWeight ? rawUnitWeight : 0;
+  const cabinWeight = profile?.profile_type === "cabin" && String(categoryName || "").trim().toLowerCase() === "cabin essentials" ? rawUnitWeight : 0;
   const weight = unitWeight * safeQuantity;
   return `
-    <div class="packing-row ${safeQuantity > 0 ? "is-selected" : ""} ${packed ? "is-packed" : ""} ${usesQuantityAndWeight ? "" : "packing-row-no-weight"}" data-packing-row="${escapeHtml(key)}" data-unit-weight="${unitWeight}" data-uses-weight="${usesQuantityAndWeight}" data-location="${escapeHtml(location)}">
+    <div class="packing-row ${safeQuantity > 0 ? "is-selected" : ""} ${packed ? "is-packed" : ""} ${usesQuantityAndWeight ? "" : "packing-row-no-weight"}" data-packing-row="${escapeHtml(key)}" data-unit-weight="${unitWeight}" data-cabin-weight="${cabinWeight}" data-uses-weight="${usesQuantityAndWeight}" data-location="${escapeHtml(location)}">
       <div class="packing-check-cell">
         <input class="checklist-checkbox" type="checkbox" ${packed ? "checked" : ""} onchange="togglePackingItem('${escapeHtml(key)}', this.checked)">
       </div>
@@ -2606,7 +2619,8 @@ function renderPackingRow(item, packed, quantity, categoryName = "") {
           <div class="packing-item-title">${escapeHtml(item.name)}</div>
           ${item.description ? `<div class="packing-item-description">${escapeHtml(item.description)}</div>` : ""}
           ${item.help_text ? `<div class="packing-item-help">ⓘ ${escapeHtml(item.help_text)}</div>` : ""}
-          ${usesQuantityAndWeight ? renderPackingLocationSelector(key, location, safeQuantity > 0) : ""}
+          ${usesQuantityAndWeight ? renderPackingLocationSelector(key, location, safeQuantity > 0, carryOnOnly) : ""}
+          ${carryOnOnly ? `<div class="packing-safety-note">Carry-on only. Power banks are not permitted in checked baggage.</div>` : ""}
         </div>
       </div>
       <div class="packing-type-cell"><span class="priority-badge ${typeClass}">${typeLabel}</span></div>
@@ -2634,7 +2648,8 @@ function updatePackingQuantity(key, rawValue) {
 
   if (adminPreviewMode) return;
   clearTimeout(packingQuantitySaveTimers.get(`${activePackingProfileKey}:${key}`));
-  packingQuantitySaveTimers.set(`${activePackingProfileKey}:${key}`, setTimeout(() => savePackingV2State(key, { quantity }), 450));
+  const forcedLocation = row.querySelector(".packing-location-option.is-locked") ? "carry-on" : undefined;
+  packingQuantitySaveTimers.set(`${activePackingProfileKey}:${key}`, setTimeout(() => savePackingV2State(key, { quantity, ...(forcedLocation ? { packing_location: forcedLocation } : {}) }), 450));
 }
 
 async function updatePackingLocation(key, location) {
@@ -2683,7 +2698,7 @@ async function savePackingV2State(itemKey, changes = {}) {
 }
 
 function collectPackingSummaryFromDom() {
-  const summary = { selected: 0, packed: 0, checked: 0, carryOn: 0, wearing: 0, checklistTotal: 0, checklistPacked: 0 };
+  const summary = { selected: 0, packed: 0, checked: 0, carryOn: 0, wearing: 0, checklistTotal: 0, checklistPacked: 0, cabinWeight: 0 };
   document.querySelectorAll(".packing-row").forEach(row => {
     const packed = row.querySelector(".checklist-checkbox")?.checked === true;
     if (row.dataset.usesWeight === "true") {
@@ -2698,7 +2713,10 @@ function collectPackingSummaryFromDom() {
       }
     } else {
       summary.checklistTotal += 1;
-      if (packed) summary.checklistPacked += 1;
+      if (packed) {
+        summary.checklistPacked += 1;
+        summary.cabinWeight += Number(row.dataset.cabinWeight || 0);
+      }
     }
   });
   return summary;
@@ -2713,8 +2731,17 @@ function recalculatePackingSummary() {
     const detail = document.getElementById("packingProgressDetail");
     if (value) value.textContent = `${percent}%`;
     if (detail) detail.textContent = `${summary.checklistPacked} of ${summary.checklistTotal} complete`;
+    const totalNode = document.getElementById("cabinEssentialsWeightTotal");
+    if (totalNode) totalNode.textContent = formatPackingWeight(summary.cabinWeight);
+    const travellers = packingV2Profiles.filter(item => item.profile_type === "traveller");
+    const share = travellers.length ? summary.cabinWeight / travellers.length : 0;
+    travellers.forEach(item => {
+      const node = document.querySelector(`[data-cabin-share="${CSS.escape(item.profile_key)}"]`);
+      if (node) node.textContent = formatPackingWeight(share);
+    });
     return;
   }
+  summary.checked += packingCabinSharePerTraveller;
   const percent = getProgressPercent(summary.packed, summary.selected);
   const progressValue = document.getElementById("packingProgressPercent");
   const progressDetail = document.getElementById("packingProgressDetail");
@@ -2761,11 +2788,14 @@ async function savePackingPreferencesFromForm() {
     const profileForCustomer = { ...profilePayload };
     delete profileForCustomer.user_id;
     delete profileForCustomer.cruise_key;
-    await Promise.all([
+    const [, profileResult] = await Promise.all([
       customerPackingRequest("save_preferences", { preferences: preferencesPayload }),
       customerPackingRequest("save_profiles", { profiles: [profileForCustomer] })
     ]);
-    await renderPackingPlanner();
+    customerPackingPreferences = { ...(customerPackingPreferences || {}), ...preferencesPayload };
+    const savedProfile = profileResult?.profiles?.[0] || profileForCustomer;
+    const index = packingV2Profiles.findIndex(item => item.profile_key === profile.profile_key);
+    if (index >= 0) packingV2Profiles[index] = { ...packingV2Profiles[index], ...savedProfile };
     return;
   }
   const [globalResult, profileResult] = await Promise.all([
@@ -2777,7 +2807,15 @@ async function savePackingPreferencesFromForm() {
     alert("Could not save packing settings. Please try again.");
     return;
   }
-  await renderPackingPlanner();
+  const index = packingV2Profiles.findIndex(item => item.profile_key === profile.profile_key);
+  if (index >= 0) packingV2Profiles[index] = { ...packingV2Profiles[index], ...profilePayload };
+}
+
+let packingPreferencesAutoSaveTimer = null;
+function schedulePackingPreferencesSave(immediate = false) {
+  if (adminPreviewMode) return;
+  clearTimeout(packingPreferencesAutoSaveTimer);
+  packingPreferencesAutoSaveTimer = setTimeout(() => savePackingPreferencesFromForm(), immediate ? 0 : 650);
 }
 
 function parseOptionalPackingNumber(id) {
@@ -2797,31 +2835,31 @@ function renderPackingControls(preferences, cruise, profile = getActivePackingPr
       <div class="packing-settings-heading">
         <div>
           <h3>${isCabin ? "Cabin checklist" : `${escapeHtml(profile?.profile_name || "Traveller")}'s packing settings`}</h3>
-          <p class="planner-muted">${isCabin ? "Shared cabin and departure items are kept simple: check them off once for the booking." : "Allowances are entered for this traveller only and are never estimated from fare class."}</p>
+          <p class="planner-muted">${isCabin ? "Shared cabin and departure items are kept simple: check them off once for the booking." : "Allowances are entered for this traveller only and save automatically."}</p>
+          ${isCabin ? `<p class="cabin-pooling-warning"><strong>NOTE:</strong> Some airlines enforce per-bag or per-passenger weight limits rather than allowing the total baggage allowance to be pooled across everyone travelling. To avoid exceeding an individual allowance, it is recommended that Cabin Essentials are distributed amongst all travellers when packing.</p>` : ""}
         </div>
       </div>
       <div class="packing-settings-grid ${isCabin ? "packing-settings-grid-cabin" : ""}">
         <label><span>Who is travelling?</span>
-          <select id="packingTravellerType">
+          <select id="packingTravellerType" onchange="schedulePackingPreferencesSave(true)">
             ${["Solo", "Couple", "Family"].map(type => `<option value="${type}" ${travellerType === type ? "selected" : ""}>${type}</option>`).join("")}
           </select>
         </label>
         <label><span>Destination</span>
-          <select id="packingDestination">
+          <select id="packingDestination" onchange="schedulePackingPreferencesSave(true)">
             ${PACKING_DESTINATIONS.map(value => `<option value="${escapeHtml(value)}" ${destination === value ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}
           </select>
         </label>
         <label><span>Dress code</span>
-          <select id="packingDressCode">
+          <select id="packingDressCode" onchange="schedulePackingPreferencesSave(true)">
             ${["Casual", "Smart Casual", "Semi Formal", "Formal"].map(value => `<option value="${value}" ${dressCode === value ? "selected" : ""}>${value}</option>`).join("")}
           </select>
         </label>
         ${isCabin ? "" : `
-          <label class="packing-baggage-field"><span>Checked baggage</span><div class="packing-allowance-input"><input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.checked_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary()"><span>kg</span></div></label>
-          <label class="packing-baggage-field"><span>Cabin baggage</span><div class="packing-allowance-input"><input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.cabin_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary()"><span>kg</span></div></label>
+          <label class="packing-baggage-field"><span>Checked baggage</span><div class="packing-allowance-input"><input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.checked_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
+          <label class="packing-baggage-field"><span>Cabin baggage</span><div class="packing-allowance-input"><input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.cabin_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
         `}
       </div>
-      <div class="packing-settings-actions"><button class="planner-button" onclick="savePackingPreferencesFromForm()">Save Packing Settings</button></div>
     </section>
   `;
 }
@@ -3042,7 +3080,7 @@ async function renderPackingPlanner() {
     return packingItemBelongsToProfile(item, categoryName, profile);
   });
   const grouped = groupPackingItems(allPackingItems);
-  const summary = { selected: 0, packed: 0, checked: 0, carryOn: 0, wearing: 0, checklistTotal: 0, checklistPacked: 0 };
+  const summary = { selected: 0, packed: 0, checked: 0, carryOn: 0, wearing: 0, checklistTotal: 0, checklistPacked: 0, cabinWeight: 0 };
   allPackingItems.forEach(item => {
     const categoryName = item.packing_categories?.name || categoryNameById.get(String(item.category_id)) || "";
     const state = getPackingState(getPackingItemKey(item), profile.profile_key);
@@ -3058,9 +3096,26 @@ async function renderPackingPlanner() {
       }
     } else {
       summary.checklistTotal += 1;
-      if (state?.packed) summary.checklistPacked += 1;
+      if (state?.packed) {
+        summary.checklistPacked += 1;
+        if (profile.profile_type === "cabin" && String(categoryName || "").trim().toLowerCase() === "cabin essentials") summary.cabinWeight += Number(item.weight_kg || 0);
+      }
     }
   });
+  const travellerProfiles = packingV2Profiles.filter(item => item.profile_type === "traveller");
+  const cabinProfile = packingV2Profiles.find(item => item.profile_type === "cabin");
+  let totalCabinEssentialsWeight = 0;
+  if (cabinProfile) {
+    (items || []).filter(item => packingItemApplies(item, context)).forEach(item => {
+      const categoryName = item.packing_categories?.name || categoryNameById.get(String(item.category_id)) || "";
+      if (String(categoryName).trim().toLowerCase() !== "cabin essentials") return;
+      const cabinState = getPackingState(`system:${item.id}`, cabinProfile.profile_key);
+      if (cabinState?.packed) totalCabinEssentialsWeight += Number(item.weight_kg || 0);
+    });
+  }
+  const cabinSharePerTraveller = travellerProfiles.length ? totalCabinEssentialsWeight / travellerProfiles.length : 0;
+  packingCabinSharePerTraveller = profile.profile_type === "traveller" ? cabinSharePerTraveller : 0;
+  if (profile.profile_type === "traveller") summary.checked += cabinSharePerTraveller;
   const percent = profile.profile_type === "cabin" ? getProgressPercent(summary.checklistPacked, summary.checklistTotal) : getProgressPercent(summary.packed, summary.selected);
 
   app.innerHTML = `
@@ -3094,7 +3149,7 @@ async function renderPackingPlanner() {
         <aside class="planner-card packing-summary-card packing-summary-sticky" aria-label="Packing progress and baggage summary">
           <div class="packing-profile-summary-name">${escapeHtml(profile.profile_name)}</div>
           <div class="packing-progress-summary"><span>${profile.profile_type === "cabin" ? "Cabin checklist" : "Ready to Cruise"}</span><strong id="packingProgressPercent">${percent}%</strong><small id="packingProgressDetail">${profile.profile_type === "cabin" ? `${summary.checklistPacked} of ${summary.checklistTotal} complete` : `${summary.packed} of ${summary.selected} selected items packed`}</small></div>
-          ${profile.profile_type === "cabin" ? `<div class="cabin-summary-note"><strong>Simple shared checklist</strong><p>No quantities, weights or baggage allocation. Pack each shared item once for the booking.</p></div>` : renderPackingWeightGauge(summary, profile)}
+          ${profile.profile_type === "cabin" ? `<div class="cabin-summary-note"><strong>Cabin Essentials weight</strong><p>Total selected weight: <b id="cabinEssentialsWeightTotal">${formatPackingWeight(summary.cabinWeight)}</b></p><p>Automatically distributed:</p><div class="cabin-weight-distribution">${travellerProfiles.map(item => `<span>${escapeHtml(item.profile_name)} <b data-cabin-share="${escapeHtml(item.profile_key)}">${formatPackingWeight(cabinSharePerTraveller)}</b></span>`).join("")}</div></div>` : renderPackingWeightGauge(summary, profile)}
         </aside>
       </div>
     </div>`;

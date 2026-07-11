@@ -2611,7 +2611,7 @@ function renderPackingPanel() {
         <div class="admin-list-top">
           <div>
             <h3>Packing Items</h3>
-            <p class="admin-muted">Items are displayed by category order. Essential items are included on every cruise; profile-based items are added only when rules match.</p>
+            <p class="admin-muted">Items are displayed by category order. Essential items are included on every cruise; other items appear when the visibility rules in “Show this item for” match.</p>
           </div>
           <div class="admin-field admin-filter-field">
             <label>Display</label>
@@ -2684,6 +2684,11 @@ function renderPackingItemForm(editingItem) {
       </div>
     </div>
 
+    <div class="admin-form-section-intro">
+      <div class="admin-section-mini-title">Show this item for</div>
+      <p class="admin-helper">Choose when this item should appear in the customer packing list. Leave the relevant “All” option selected unless the item only applies to specific destinations, climates, traveller types, dress codes or cruise lines. These are the only visibility rules you need to set.</p>
+    </div>
+
     ${renderAdminMultiSelect({
       id: "packingItemDestinations",
       label: "Applies to destinations",
@@ -2724,8 +2729,6 @@ function renderPackingItemForm(editingItem) {
       value: applies("cruise_line_tags")
     })}
 
-
-    ${renderPackingProfileSelector(editingItem)}
 
     <div class="admin-field">
       <label>Why am I packing this?</label>

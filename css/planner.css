@@ -5036,3 +5036,39 @@
   .customer-access-page { padding: 16px; }
   .customer-access-card { padding: 26px 20px; }
 }
+
+/* Sprint 2 bundled packing refinements */
+.cabin-pooling-warning {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(220, 38, 38, 0.18);
+  border-radius: 12px;
+  background: rgba(220, 38, 38, 0.035);
+  color: var(--planner-text, #1d1d1f);
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+.cabin-pooling-warning strong { color: #c62828; }
+.cabin-weight-distribution { display: grid; gap: 7px; margin-top: 8px; }
+.cabin-weight-distribution span { display: flex; justify-content: space-between; gap: 18px; }
+.packing-location-option.is-locked {
+  cursor: default;
+  pointer-events: none;
+  border-color: rgba(28, 120, 91, 0.25);
+  background: rgba(28, 120, 91, 0.10);
+  color: #176b52;
+}
+.packing-safety-note {
+  margin-top: 7px;
+  color: #a33a2b;
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+.admin-form-section-intro {
+  margin: 22px 0 10px;
+  padding: 14px 16px;
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.025);
+}
+.admin-form-section-intro .admin-helper { margin-bottom: 0; }

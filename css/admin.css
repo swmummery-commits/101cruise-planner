@@ -990,3 +990,13 @@
 .planner-preview-card .crm-sync-form {
   align-items: flex-end;
 }
+
+/* Simplified packing item visibility guidance */
+.admin-form-section-intro {
+  margin: 22px 0 10px;
+  padding: 14px 16px;
+  border: 1px solid rgba(15, 23, 42, 0.09);
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.025);
+}
+.admin-form-section-intro .admin-helper { margin-bottom: 0; }
