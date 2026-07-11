@@ -1527,6 +1527,176 @@ function renderDashboardSnapshot(cruise) {
   `;
 }
 
+
+const DASHBOARD_JOURNEY_PROTOTYPES = {
+  "SWM123456": {
+    title: "Tokyo to Seoul",
+    stops: [
+      { date: "2026-09-11", name: "Tokyo (Yokohama)", type: "embarkation", arrival: "", departure: "5:00 pm", x: 82, y: 78 },
+      { date: "2026-09-12", name: "Mt Fuji (Shimizu)", type: "port", arrival: "7:00 am", departure: "6:00 pm", x: 76, y: 72 },
+      { date: "2026-09-13", name: "Kyoto (Osaka)", type: "port", arrival: "11:00 am", departure: "", x: 58, y: 68 },
+      { date: "2026-09-14", name: "Kyoto (Osaka)", type: "port", arrival: "", departure: "6:00 pm", x: 58, y: 68 },
+      { date: "2026-09-15", name: "Kochi", type: "port", arrival: "8:00 am", departure: "5:00 pm", x: 52, y: 76 },
+      { date: "2026-09-16", name: "Hiroshima", type: "port", arrival: "9:00 am", departure: "6:00 pm", x: 43, y: 69 },
+      { date: "2026-09-17", name: "At Sea", type: "sea_day", arrival: "", departure: "" },
+      { date: "2026-09-18", name: "Kagoshima", type: "port", arrival: "8:00 am", departure: "5:00 pm", x: 38, y: 84 },
+      { date: "2026-09-19", name: "Nagasaki", type: "port", arrival: "8:00 am", departure: "5:00 pm", x: 31, y: 72 },
+      { date: "2026-09-20", name: "Fukuoka", type: "port", arrival: "8:00 am", departure: "5:00 pm", x: 28, y: 65 },
+      { date: "2026-09-21", name: "Busan", type: "port", arrival: "7:00 am", departure: "6:00 pm", x: 20, y: 58 },
+      { date: "2026-09-22", name: "At Sea", type: "sea_day", arrival: "", departure: "" },
+      { date: "2026-09-23", name: "Seoul (Incheon)", type: "disembarkation", arrival: "5:00 am", departure: "", x: 12, y: 42 }
+    ]
+  }
+};
+
+function getDashboardJourney(cruise) {
+  const reference = String(cruise?.booking_reference || customerBooking?.booking_reference || adminPreviewCruise?.booking_reference || "").trim().toUpperCase();
+  return DASHBOARD_JOURNEY_PROTOTYPES[reference] || null;
+}
+
+async function loadDashboardPackingData(cruise) {
+  try {
+    if (customerMode) {
+      const data = await customerPackingRequest("load");
+      const profiles = data.profiles || [];
+      const states = data.state || [];
+      const profileTypes = new Map(profiles.map(profile => [profile.profile_key, profile.profile_type]));
+      let selected = 0;
+      let packed = 0;
+      states.forEach(row => {
+        const isCabin = profileTypes.get(row.profile_key) === "cabin" || row.profile_key === "cabin";
+        const isSelected = isCabin ? row.packed === true : Number(row.quantity || 0) > 0;
+        if (!isSelected) return;
+        selected += 1;
+        if (row.packed === true) packed += 1;
+      });
+      return { selected, packed, percent: selected ? Math.round((packed / selected) * 100) : 0 };
+    }
+    if (!currentUser?.id || adminPreviewMode) return { selected: 0, packed: 0, percent: 0 };
+    const cruiseKey = String(cruise?.id || "");
+    const { data, error } = await supabaseClient
+      .from("user_packing_v2_state")
+      .select("profile_key,quantity,packed")
+      .eq("user_id", currentUser.id)
+      .eq("cruise_key", cruiseKey);
+    if (error) throw error;
+    let selected = 0;
+    let packed = 0;
+    (data || []).forEach(row => {
+      const isSelected = row.profile_key === "cabin" ? row.packed === true : Number(row.quantity || 0) > 0;
+      if (!isSelected) return;
+      selected += 1;
+      if (row.packed === true) packed += 1;
+    });
+    return { selected, packed, percent: selected ? Math.round((packed / selected) * 100) : 0 };
+  } catch (error) {
+    console.warn("Dashboard packing progress load failed", error);
+    return { selected: 0, packed: 0, percent: 0 };
+  }
+}
+
+function renderDashboardQuickAccess() {
+  return `
+    <nav class="dashboard-quick-access" aria-label="My Cruise tools">
+      <button onclick="renderPackingPlanner()"><span aria-hidden="true">🧳</span><strong>Packing List</strong></button>
+      <button onclick="renderChecklist()"><span aria-hidden="true">✓</span><strong>Checklist</strong></button>
+      <button onclick="renderDocuments()"><span aria-hidden="true">📄</span><strong>Documents</strong></button>
+      <button onclick="alert('Budget Planner coming soon')"><span aria-hidden="true">💳</span><strong>Budget</strong></button>
+    </nav>
+  `;
+}
+
+function renderDashboardProgressCard(label, percent, detail, action) {
+  const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+  return `
+    <article class="dashboard-mini-progress">
+      <div class="dashboard-mini-progress-circle" style="--progress:${safePercent * 3.6}deg">
+        <div><strong>${safePercent}%</strong><span>${escapeHtml(label)}</span></div>
+      </div>
+      <p>${escapeHtml(detail)}</p>
+      <button onclick="${action}">Open ${escapeHtml(label)} →</button>
+    </article>
+  `;
+}
+
+function renderJourneyMap(journey) {
+  if (!journey) {
+    return `
+      <article class="dashboard-summary-card dashboard-journey-card">
+        <p class="dashboard-card-label">Your Cruise Route</p>
+        <h2>Journey map coming soon</h2>
+        <p class="dashboard-card-copy">Your itinerary will appear here once it has been added.</p>
+      </article>
+    `;
+  }
+  const mapStops = journey.stops.filter(stop => Number.isFinite(stop.x) && Number.isFinite(stop.y));
+  const uniqueMapStops = mapStops.filter((stop, index, list) => index === list.findIndex(item => item.name === stop.name));
+  const points = uniqueMapStops.map(stop => `${stop.x},${stop.y}`).join(" ");
+  const firstThree = journey.stops.filter(stop => stop.type !== "sea_day").slice(0, 3);
+  return `
+    <article class="dashboard-summary-card dashboard-journey-card">
+      <div class="dashboard-journey-heading">
+        <div><p class="dashboard-card-label">Your Cruise Route</p><h2>${escapeHtml(journey.title)}</h2></div>
+        <button onclick="showDashboardFullItinerary()">View full itinerary →</button>
+      </div>
+      <div class="dashboard-route-map" role="img" aria-label="Stylised cruise route map from Tokyo to Seoul">
+        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="routeOcean" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#e8f3f5"/>
+              <stop offset="100%" stop-color="#dcebed"/>
+            </linearGradient>
+          </defs>
+          <rect width="100" height="100" rx="6" fill="url(#routeOcean)"/>
+          <path d="M88 18 C79 27,81 43,72 50 C62 59,50 55,43 69 C35 80,26 78,12 42" fill="none" stroke="#b8d2d5" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
+          <polyline points="${points}" fill="none" stroke="#147b69" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2"/>
+          ${uniqueMapStops.map((stop, index) => `
+            <g transform="translate(${stop.x} ${stop.y})">
+              <circle r="${index === 0 || index === uniqueMapStops.length - 1 ? 3.4 : 2.7}" fill="#fff" stroke="#147b69" stroke-width="1.4"/>
+              <text x="0" y=".9" text-anchor="middle" font-size="3.1" font-weight="700" fill="#147b69">${index + 1}</text>
+              <text x="${stop.x > 66 ? -5 : 5}" y="-3.4" text-anchor="${stop.x > 66 ? "end" : "start"}" font-size="3.1" font-weight="600" fill="#183834">${escapeHtml(stop.name.replace(/\s*\(.+?\)\s*/g, ""))}</text>
+            </g>
+          `).join("")}
+        </svg>
+        <span class="dashboard-map-note">Route is illustrative and does not show the ship’s exact sailing track.</span>
+      </div>
+      <div class="dashboard-itinerary-preview">
+        ${firstThree.map((stop, index) => `
+          <div><span>Day ${index + 1}</span><strong>${escapeHtml(stop.name)}</strong><small>${escapeHtml([stop.arrival && `Arrive ${stop.arrival}`, stop.departure && `Depart ${stop.departure}`].filter(Boolean).join(" · ") || formatDateShort(stop.date))}</small></div>
+        `).join("")}
+        <div class="dashboard-itinerary-more"><strong>+ ${Math.max(0, journey.stops.length - 3)} more days</strong></div>
+      </div>
+    </article>
+  `;
+}
+
+function showDashboardFullItinerary() {
+  const cruise = customerMode ? customerCruise : adminPreviewMode ? adminPreviewCruise : null;
+  const journey = getDashboardJourney(cruise);
+  if (!journey) return alert("No itinerary has been added yet.");
+  const existing = document.getElementById("dashboardItineraryDialog");
+  if (existing) existing.remove();
+  const dialog = document.createElement("dialog");
+  dialog.id = "dashboardItineraryDialog";
+  dialog.className = "dashboard-itinerary-dialog";
+  dialog.innerHTML = `
+    <div class="dashboard-itinerary-dialog-head">
+      <div><p class="dashboard-card-label">Cruise Itinerary</p><h2>${escapeHtml(journey.title)}</h2></div>
+      <button onclick="document.getElementById('dashboardItineraryDialog').close()">Close</button>
+    </div>
+    <div class="dashboard-itinerary-timeline">
+      ${journey.stops.map((stop, index) => `
+        <article class="dashboard-itinerary-day ${stop.type === "sea_day" ? "is-sea-day" : ""}">
+          <div class="dashboard-itinerary-day-number">${index + 1}</div>
+          <div><span>${escapeHtml(formatDateShort(stop.date))}</span><h3>${escapeHtml(stop.name)}</h3><p>${escapeHtml([stop.arrival && `Arrive ${stop.arrival}`, stop.departure && `Depart ${stop.departure}`].filter(Boolean).join(" · ") || (stop.type === "sea_day" ? "A relaxing day at sea" : ""))}</p></div>
+        </article>
+      `).join("")}
+    </div>
+  `;
+  document.body.appendChild(dialog);
+  dialog.showModal();
+}
+
 async function renderDashboard() {
   clearCountdownTimer();
 
@@ -1556,6 +1726,8 @@ async function renderDashboard() {
   const greetingText = getGreetingText(firstName);
   const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
   const checklistData = await loadDashboardChecklistData(mainCruise);
+  const packingData = await loadDashboardPackingData(mainCruise);
+  const dashboardJourney = getDashboardJourney(mainCruise);
   const nextItem = checklistData.nextItem;
   const nextStepTitle = nextItem?.title || "Open your preparation checklist";
   const nextStepDescription = nextItem?.description || nextItem?.why_it_matters || "Protect your investment and travel with peace of mind.";
@@ -1606,48 +1778,29 @@ async function renderDashboard() {
       `}
 
       <div class="dashboard-content-wrap">
-        <section class="dashboard-welcome-strip">
-          <div class="dashboard-welcome-avatar">${escapeHtml(String(firstName).slice(0, 2).toUpperCase())}</div>
-          <div>
-            <h2>My Cruise</h2>
-            <p>${mainCruise ? `Everything for ${escapeHtml(heroTitle || "your cruise")} is in one place. Your next priority is ${escapeHtml(nextStepTitle)}.` : `Welcome, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.`}</p>
-          </div>
+        <section class="dashboard-welcome-strip dashboard-quick-access-strip">
+          ${renderDashboardQuickAccess()}
           ${adminPreviewMode || customerMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
         </section>
 
-        <section class="dashboard-home-grid">
-          <article class="dashboard-summary-card dashboard-planner-card dashboard-planner-feature-card dashboard-planner-column">
-            <div class="dashboard-planner-heading">
-              <p class="dashboard-card-label">My Planner</p>
-              <h2>${checklistData.percent > 0 ? "Continue planning your cruise" : "Start planning your cruise"}</h2>
-              <p>Your essential cruise tools are together in one place.</p>
-            </div>
-            <div class="dashboard-feature-list">
-              <button class="dashboard-feature-row" onclick="renderChecklist()"><span>📋</span><span><strong>Preparation Checklist</strong><small>Tasks, reminders and cruise-ready progress</small></span><b>→</b></button>
-              <button class="dashboard-feature-row" onclick="renderPackingPlanner()"><span>🧳</span><span><strong>Smart Packing Planner</strong><small>Personalised packing for this sailing</small></span><b>→</b></button>
-              <button class="dashboard-feature-row" onclick="renderDocuments()"><span>📄</span><span><strong>Documents</strong><small>Confirmations, tickets and travel papers</small></span><b>→</b></button>
-              <button class="dashboard-feature-row" onclick="alert('Budget Planner coming soon')"><span>💳</span><span><strong>Budget Planner</strong><small>Payments and spending plans</small></span><b>→</b></button>
-            </div>
-          </article>
+        <section class="dashboard-v2-grid">
+          ${renderJourneyMap(dashboardJourney)}
 
-          <div class="dashboard-status-stack">
-            <article class="dashboard-summary-card cruise-ready-card">
-              <p class="dashboard-card-label">Cruise Ready</p>
-              <div class="dashboard-ready-stat"><strong>${checklistData.percent}%</strong><span>${checklistData.percent > 0 ? "Your plans are taking shape." : "Your planning starts here."}</span></div>
-              ${renderProgressCircle(checklistData.percent)}
-              <button class="dashboard-card-action" onclick="renderChecklist()">View Progress →</button>
-            </article>
-
-            <article class="dashboard-summary-card next-task-card">
-              <p class="dashboard-card-label">Next Essential Task</p>
-              <div class="dashboard-card-icon">✓</div>
-              <h2>${escapeHtml(nextStepTitle)}</h2>
-              <p class="dashboard-card-copy">${escapeHtml(nextStepDescription)}</p>
-              <button class="dashboard-card-action" onclick="renderChecklist()">Start Task →</button>
-            </article>
+          <div class="dashboard-progress-column">
+            ${renderDashboardProgressCard("Packing", packingData.percent, packingData.selected ? `${packingData.packed} of ${packingData.selected} selected items packed` : "Start building your packing list", "renderPackingPlanner()")}
+            ${renderDashboardProgressCard("Preparation", checklistData.percent, checklistData.totalCount ? `${checklistData.completedCount} of ${checklistData.totalCount} tasks complete` : "Your planning starts here", "renderChecklist()")}
           </div>
 
           ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
+
+          <article class="dashboard-summary-card dashboard-next-step-wide">
+            <div>
+              <p class="dashboard-card-label">Next Essential Step</p>
+              <h2>${escapeHtml(nextStepTitle)}</h2>
+              <p class="dashboard-card-copy">${escapeHtml(nextStepDescription)}</p>
+            </div>
+            <button class="dashboard-card-action" onclick="renderChecklist()">Start Task →</button>
+          </article>
         </section>
 
         ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
