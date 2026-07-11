@@ -1,5 +1,33 @@
 const { fetchBase44Booking, cacheBookingInSupabase } = require('./booking-service');
 
+function sanitiseRawResponse(value) {
+  const blockedKeys = new Set([
+    'api_key', 'apikey', 'apiKey', 'authorization', 'Authorization',
+    'token', 'access_token', 'refresh_token', 'secret', 'password'
+  ]);
+
+  function walk(input, seen = new WeakSet()) {
+    if (input === null || input === undefined) return input;
+    if (typeof input !== 'object') return input;
+    if (seen.has(input)) return '[Circular]';
+    seen.add(input);
+
+    if (Array.isArray(input)) return input.map(item => walk(item, seen));
+
+    const output = {};
+    for (const [key, item] of Object.entries(input)) {
+      if (blockedKeys.has(key) || /(^|_)(secret|password|token|api[_-]?key)$/i.test(key)) {
+        output[key] = '[REDACTED]';
+      } else {
+        output[key] = walk(item, seen);
+      }
+    }
+    return output;
+  }
+
+  return walk(value);
+}
+
 function jsonResponse(statusCode, body) {
   return {
     statusCode,
@@ -36,7 +64,8 @@ exports.handler = async function (event) {
       success: true,
       booking,
       cache_id: cached?.id || null,
-      documents: source?.documents || booking.documents || null
+      documents: source?.documents || booking.documents || null,
+      raw_booking_response: sanitiseRawResponse(source)
     });
   } catch (error) {
     console.error('Get booking error', error);
