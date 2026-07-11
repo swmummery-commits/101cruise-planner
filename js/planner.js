@@ -1532,19 +1532,19 @@ const DASHBOARD_JOURNEY_PROTOTYPES = {
   "SWM123456": {
     title: "Tokyo to Seoul",
     stops: [
-      { date: "2026-09-11", name: "Tokyo (Yokohama)", type: "embarkation", arrival: "", departure: "5:00 pm", x: 82, y: 78 },
-      { date: "2026-09-12", name: "Mt Fuji (Shimizu)", type: "port", arrival: "7:00 am", departure: "6:00 pm", x: 76, y: 72 },
-      { date: "2026-09-13", name: "Kyoto (Osaka)", type: "port", arrival: "11:00 am", departure: "", x: 58, y: 68 },
-      { date: "2026-09-14", name: "Kyoto (Osaka)", type: "port", arrival: "", departure: "6:00 pm", x: 58, y: 68 },
-      { date: "2026-09-15", name: "Kochi", type: "port", arrival: "8:00 am", departure: "5:00 pm", x: 52, y: 76 },
-      { date: "2026-09-16", name: "Hiroshima", type: "port", arrival: "9:00 am", departure: "6:00 pm", x: 43, y: 69 },
+      { date: "2026-09-11", name: "Tokyo (Yokohama)", type: "embarkation", arrival: "", departure: "5:00 pm", lat: 35.4437, lng: 139.6380 },
+      { date: "2026-09-12", name: "Mt Fuji (Shimizu)", type: "port", arrival: "7:00 am", departure: "6:00 pm", lat: 35.0159, lng: 138.4897 },
+      { date: "2026-09-13", name: "Kyoto (Osaka)", type: "port", arrival: "11:00 am", departure: "", lat: 34.6573, lng: 135.4323 },
+      { date: "2026-09-14", name: "Kyoto (Osaka)", type: "port", arrival: "", departure: "6:00 pm", lat: 34.6573, lng: 135.4323 },
+      { date: "2026-09-15", name: "Kochi", type: "port", arrival: "8:00 am", departure: "5:00 pm", lat: 33.5008, lng: 133.5589 },
+      { date: "2026-09-16", name: "Hiroshima", type: "port", arrival: "9:00 am", departure: "6:00 pm", lat: 34.3523, lng: 132.4553 },
       { date: "2026-09-17", name: "At Sea", type: "sea_day", arrival: "", departure: "" },
-      { date: "2026-09-18", name: "Kagoshima", type: "port", arrival: "8:00 am", departure: "5:00 pm", x: 38, y: 84 },
-      { date: "2026-09-19", name: "Nagasaki", type: "port", arrival: "8:00 am", departure: "5:00 pm", x: 31, y: 72 },
-      { date: "2026-09-20", name: "Fukuoka", type: "port", arrival: "8:00 am", departure: "5:00 pm", x: 28, y: 65 },
-      { date: "2026-09-21", name: "Busan", type: "port", arrival: "7:00 am", departure: "6:00 pm", x: 20, y: 58 },
+      { date: "2026-09-18", name: "Kagoshima", type: "port", arrival: "8:00 am", departure: "5:00 pm", lat: 31.5894, lng: 130.5611 },
+      { date: "2026-09-19", name: "Nagasaki", type: "port", arrival: "8:00 am", departure: "5:00 pm", lat: 32.7503, lng: 129.8779 },
+      { date: "2026-09-20", name: "Fukuoka", type: "port", arrival: "8:00 am", departure: "5:00 pm", lat: 33.5904, lng: 130.4017 },
+      { date: "2026-09-21", name: "Busan", type: "port", arrival: "7:00 am", departure: "6:00 pm", lat: 35.1028, lng: 129.0403 },
       { date: "2026-09-22", name: "At Sea", type: "sea_day", arrival: "", departure: "" },
-      { date: "2026-09-23", name: "Seoul (Incheon)", type: "disembarkation", arrival: "5:00 am", departure: "", x: 12, y: 42 }
+      { date: "2026-09-23", name: "Seoul (Incheon)", type: "disembarkation", arrival: "5:00 am", departure: "", lat: 37.4563, lng: 126.7052 }
     ]
   }
 };
@@ -1614,10 +1614,13 @@ function renderDashboardProgressCard(label, percent, detail, action) {
         <div><strong>${safePercent}%</strong><span>${escapeHtml(label)}</span></div>
       </div>
       <p>${escapeHtml(detail)}</p>
-      <button onclick="${action}">Open ${escapeHtml(label)} →</button>
+      <button class="dashboard-outline-action dashboard-card-button" onclick="${action}">Open ${escapeHtml(label)} →</button>
     </article>
   `;
 }
+
+let dashboardLeafletMap = null;
+let dashboardShipAnimationFrame = null;
 
 function renderJourneyMap(journey) {
   if (!journey) {
@@ -1629,72 +1632,148 @@ function renderJourneyMap(journey) {
       </article>
     `;
   }
-  const mapStops = journey.stops.filter(stop => Number.isFinite(stop.x) && Number.isFinite(stop.y));
-  const uniqueMapStops = mapStops.filter((stop, index, list) => index === list.findIndex(item => item.name === stop.name));
-  const points = uniqueMapStops.map(stop => `${stop.x},${stop.y}`).join(" ");
-  const firstThree = journey.stops.filter(stop => stop.type !== "sea_day").slice(0, 3);
+  const previewStops = journey.stops.slice(0, 3);
+  const remainingStops = journey.stops.slice(3);
   return `
     <article class="dashboard-summary-card dashboard-journey-card">
       <div class="dashboard-journey-heading">
         <div><p class="dashboard-card-label">Your Cruise Route</p><h2>${escapeHtml(journey.title)}</h2></div>
-        <button onclick="showDashboardFullItinerary()">View full itinerary →</button>
       </div>
-      <div class="dashboard-route-map" role="img" aria-label="Stylised cruise route map from Tokyo to Seoul">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <linearGradient id="routeOcean" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stop-color="#e8f3f5"/>
-              <stop offset="100%" stop-color="#dcebed"/>
-            </linearGradient>
-          </defs>
-          <rect width="100" height="100" rx="6" fill="url(#routeOcean)"/>
-          <path d="M88 18 C79 27,81 43,72 50 C62 59,50 55,43 69 C35 80,26 78,12 42" fill="none" stroke="#b8d2d5" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
-          <polyline points="${points}" fill="none" stroke="#147b69" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2"/>
-          ${uniqueMapStops.map((stop, index) => `
-            <g transform="translate(${stop.x} ${stop.y})">
-              <circle r="${index === 0 || index === uniqueMapStops.length - 1 ? 3.4 : 2.7}" fill="#fff" stroke="#147b69" stroke-width="1.4"/>
-              <text x="0" y=".9" text-anchor="middle" font-size="3.1" font-weight="700" fill="#147b69">${index + 1}</text>
-              <text x="${stop.x > 66 ? -5 : 5}" y="-3.4" text-anchor="${stop.x > 66 ? "end" : "start"}" font-size="3.1" font-weight="600" fill="#183834">${escapeHtml(stop.name.replace(/\s*\(.+?\)\s*/g, ""))}</text>
-            </g>
-          `).join("")}
-        </svg>
-        <span class="dashboard-map-note">Route is illustrative and does not show the ship’s exact sailing track.</span>
+      <div id="dashboardRouteMap" class="dashboard-route-map" aria-label="Cruise route map from Tokyo to Seoul"></div>
+      <div class="dashboard-itinerary-preview" id="dashboardItineraryPreview">
+        ${previewStops.map((stop, index) => renderDashboardItineraryPreviewDay(stop, index)).join("")}
+        <div id="dashboardItineraryExtra" class="dashboard-itinerary-extra" hidden>
+          ${remainingStops.map((stop, index) => renderDashboardItineraryPreviewDay(stop, index + 3)).join("")}
+        </div>
       </div>
-      <div class="dashboard-itinerary-preview">
-        ${firstThree.map((stop, index) => `
-          <div><span>Day ${index + 1}</span><strong>${escapeHtml(stop.name)}</strong><small>${escapeHtml([stop.arrival && `Arrive ${stop.arrival}`, stop.departure && `Depart ${stop.departure}`].filter(Boolean).join(" · ") || formatDateShort(stop.date))}</small></div>
-        `).join("")}
-        <div class="dashboard-itinerary-more"><strong>+ ${Math.max(0, journey.stops.length - 3)} more days</strong></div>
-      </div>
+      ${remainingStops.length ? `<button id="dashboardItineraryToggle" class="dashboard-outline-action dashboard-card-button dashboard-itinerary-toggle" onclick="toggleDashboardItinerary()">Open Full Itinerary →</button>` : ""}
     </article>
   `;
 }
 
-function showDashboardFullItinerary() {
-  const cruise = customerMode ? customerCruise : adminPreviewMode ? adminPreviewCruise : null;
-  const journey = getDashboardJourney(cruise);
-  if (!journey) return alert("No itinerary has been added yet.");
-  const existing = document.getElementById("dashboardItineraryDialog");
-  if (existing) existing.remove();
-  const dialog = document.createElement("dialog");
-  dialog.id = "dashboardItineraryDialog";
-  dialog.className = "dashboard-itinerary-dialog";
-  dialog.innerHTML = `
-    <div class="dashboard-itinerary-dialog-head">
-      <div><p class="dashboard-card-label">Cruise Itinerary</p><h2>${escapeHtml(journey.title)}</h2></div>
-      <button onclick="document.getElementById('dashboardItineraryDialog').close()">Close</button>
-    </div>
-    <div class="dashboard-itinerary-timeline">
-      ${journey.stops.map((stop, index) => `
-        <article class="dashboard-itinerary-day ${stop.type === "sea_day" ? "is-sea-day" : ""}">
-          <div class="dashboard-itinerary-day-number">${index + 1}</div>
-          <div><span>${escapeHtml(formatDateShort(stop.date))}</span><h3>${escapeHtml(stop.name)}</h3><p>${escapeHtml([stop.arrival && `Arrive ${stop.arrival}`, stop.departure && `Depart ${stop.departure}`].filter(Boolean).join(" · ") || (stop.type === "sea_day" ? "A relaxing day at sea" : ""))}</p></div>
-        </article>
-      `).join("")}
+function renderDashboardItineraryPreviewDay(stop, index) {
+  const timing = [stop.arrival && `Arrive ${stop.arrival}`, stop.departure && `Depart ${stop.departure}`].filter(Boolean).join(" · ") || (stop.type === "sea_day" ? "A relaxing day at sea" : formatDateShort(stop.date));
+  return `
+    <div class="dashboard-itinerary-preview-day ${stop.type === "sea_day" ? "is-sea-day" : ""}">
+      <span>Day ${index + 1} · ${escapeHtml(formatDateShort(stop.date))}</span>
+      <strong>${escapeHtml(stop.name)}</strong>
+      <small>${escapeHtml(timing)}</small>
     </div>
   `;
-  document.body.appendChild(dialog);
-  dialog.showModal();
+}
+
+function toggleDashboardItinerary() {
+  const extra = document.getElementById("dashboardItineraryExtra");
+  const button = document.getElementById("dashboardItineraryToggle");
+  if (!extra || !button) return;
+  const willOpen = extra.hidden;
+  extra.hidden = !willOpen;
+  button.textContent = willOpen ? "Show Less ↑" : "Open Full Itinerary →";
+}
+
+function initialiseDashboardRouteMap(journey) {
+  const mapElement = document.getElementById("dashboardRouteMap");
+  if (!mapElement || !journey || typeof L === "undefined") return;
+
+  if (dashboardShipAnimationFrame) {
+    cancelAnimationFrame(dashboardShipAnimationFrame);
+    dashboardShipAnimationFrame = null;
+  }
+  if (dashboardLeafletMap) {
+    dashboardLeafletMap.remove();
+    dashboardLeafletMap = null;
+  }
+
+  const routeStops = journey.stops.filter(stop => Number.isFinite(stop.lat) && Number.isFinite(stop.lng));
+  const uniqueStops = routeStops.filter((stop, index, list) => index === list.findIndex(item => item.lat === stop.lat && item.lng === stop.lng));
+  if (!uniqueStops.length) return;
+
+  dashboardLeafletMap = L.map(mapElement, {
+    zoomControl: true,
+    attributionControl: true,
+    scrollWheelZoom: false,
+    dragging: true,
+    tap: true
+  });
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(dashboardLeafletMap);
+
+  const latLngs = uniqueStops.map(stop => [stop.lat, stop.lng]);
+  const routeLine = L.polyline(latLngs, {
+    color: "#147b69",
+    weight: 2.5,
+    opacity: 0.9,
+    dashArray: "7 7",
+    lineCap: "round",
+    lineJoin: "round"
+  }).addTo(dashboardLeafletMap);
+
+  uniqueStops.forEach((stop, index) => {
+    const icon = L.divIcon({
+      className: "dashboard-port-marker-wrap",
+      html: `<span class="dashboard-port-marker">${index + 1}</span>`,
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+    const marker = L.marker([stop.lat, stop.lng], { icon }).addTo(dashboardLeafletMap);
+    marker.bindTooltip(stop.name.replace(/\s*\(.+?\)\s*/g, ""), {
+      permanent: true,
+      direction: index % 2 ? "left" : "right",
+      className: "dashboard-port-label",
+      offset: index % 2 ? [-9, 0] : [9, 0]
+    });
+  });
+
+  dashboardLeafletMap.fitBounds(routeLine.getBounds(), { padding: [34, 34], maxZoom: 6 });
+
+  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+  if (!reducedMotion && latLngs.length > 1) {
+    const shipIcon = L.divIcon({
+      className: "dashboard-ship-marker-wrap",
+      html: '<span class="dashboard-ship-marker" aria-hidden="true">⛴</span>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+    const shipMarker = L.marker(latLngs[0], { icon: shipIcon, interactive: false }).addTo(dashboardLeafletMap);
+    animateDashboardShip(shipMarker, latLngs);
+  }
+
+  setTimeout(() => dashboardLeafletMap?.invalidateSize(), 60);
+}
+
+function animateDashboardShip(marker, points) {
+  const segmentDurations = points.slice(1).map((point, index) => {
+    const a = L.latLng(points[index]);
+    const b = L.latLng(point);
+    return Math.max(450, a.distanceTo(b));
+  });
+  const totalDistance = segmentDurations.reduce((sum, value) => sum + value, 0);
+  const loopDuration = 16000;
+  let started = null;
+
+  function frame(timestamp) {
+    if (!document.body.contains(marker._icon)) return;
+    if (started === null) started = timestamp;
+    const progress = ((timestamp - started) % loopDuration) / loopDuration;
+    let distance = progress * totalDistance;
+    let segmentIndex = 0;
+    while (segmentIndex < segmentDurations.length - 1 && distance > segmentDurations[segmentIndex]) {
+      distance -= segmentDurations[segmentIndex];
+      segmentIndex += 1;
+    }
+    const segmentProgress = Math.min(1, distance / segmentDurations[segmentIndex]);
+    const start = points[segmentIndex];
+    const end = points[segmentIndex + 1];
+    marker.setLatLng([
+      start[0] + (end[0] - start[0]) * segmentProgress,
+      start[1] + (end[1] - start[1]) * segmentProgress
+    ]);
+    dashboardShipAnimationFrame = requestAnimationFrame(frame);
+  }
+  dashboardShipAnimationFrame = requestAnimationFrame(frame);
 }
 
 async function renderDashboard() {
@@ -1799,7 +1878,7 @@ async function renderDashboard() {
               <h2>${escapeHtml(nextStepTitle)}</h2>
               <p class="dashboard-card-copy">${escapeHtml(nextStepDescription)}</p>
             </div>
-            <button class="dashboard-card-action" onclick="renderChecklist()">Start Task →</button>
+            <button class="dashboard-outline-action dashboard-card-button" onclick="renderChecklist()">Start Task →</button>
           </article>
         </section>
 
@@ -1810,6 +1889,7 @@ async function renderDashboard() {
 
   if (mainCruise) {
     startLiveCountdown(mainCruise);
+    initialiseDashboardRouteMap(dashboardJourney);
   }
 }
 

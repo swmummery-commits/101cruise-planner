@@ -5455,3 +5455,182 @@
   .dashboard-route-map, .dashboard-route-map svg { min-height: 250px; }
 }
 
+
+/* Dashboard journey refinement */
+.dashboard-v2-grid {
+  align-items: stretch;
+}
+.dashboard-v2-grid > .dashboard-snapshot-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+.dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.dashboard-v2-grid > .dashboard-snapshot-card .dashboard-outline-action {
+  margin-top: auto;
+}
+.dashboard-route-map {
+  min-height: 330px;
+  background: #dfecef;
+}
+.dashboard-route-map .leaflet-container,
+.dashboard-route-map.leaflet-container {
+  width: 100%;
+  height: 330px;
+  min-height: 330px;
+  font-family: inherit;
+}
+.dashboard-route-map .leaflet-control-attribution {
+  font-size: 9px;
+  background: rgba(255,255,255,.82);
+}
+.dashboard-route-map .leaflet-control-zoom a {
+  color: #183834;
+}
+.dashboard-port-marker-wrap,
+.dashboard-ship-marker-wrap {
+  background: transparent;
+  border: 0;
+}
+.dashboard-port-marker {
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 2px solid #147b69;
+  box-shadow: 0 2px 8px rgba(8, 55, 47, .18);
+  color: #147b69;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1;
+}
+.dashboard-port-label {
+  border: 0 !important;
+  border-radius: 7px !important;
+  background: rgba(255,255,255,.88) !important;
+  box-shadow: 0 2px 8px rgba(8, 40, 35, .10) !important;
+  color: #203c37 !important;
+  font-size: 10px !important;
+  font-weight: 650 !important;
+  padding: 3px 6px !important;
+  white-space: nowrap;
+}
+.dashboard-port-label::before { display: none !important; }
+.dashboard-ship-marker {
+  display: block;
+  font-size: 18px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 3px rgba(0,0,0,.2));
+  transform: rotate(-12deg);
+}
+.dashboard-itinerary-preview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.dashboard-itinerary-preview-day {
+  padding: 13px;
+  border-radius: 14px;
+  background: #f7faf9;
+  border: 1px solid rgba(24, 56, 52, .08);
+}
+.dashboard-itinerary-preview-day.is-sea-day {
+  background: #f3f7fb;
+}
+.dashboard-itinerary-preview-day span,
+.dashboard-itinerary-preview-day small {
+  display: block;
+  color: #70807d;
+  font-size: .72rem;
+}
+.dashboard-itinerary-preview-day strong {
+  display: block;
+  margin: 4px 0;
+  font-size: .86rem;
+}
+.dashboard-itinerary-extra {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.dashboard-itinerary-extra[hidden] { display: none; }
+.dashboard-itinerary-toggle {
+  width: 100%;
+  margin-top: -2px;
+}
+.dashboard-card-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px 16px !important;
+  border: 1px solid #dfe6e4 !important;
+  border-radius: 999px !important;
+  background: #fff !important;
+  color: #263b37 !important;
+  font-size: .78rem !important;
+  font-weight: 600 !important;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.dashboard-card-button:hover {
+  background: #f7faf9 !important;
+  border-color: #cfdad7 !important;
+}
+.dashboard-card-button:active { transform: scale(.985); }
+.dashboard-mini-progress .dashboard-card-button { margin-top: 2px; }
+.dashboard-next-step-wide {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 28px;
+}
+.dashboard-next-step-wide > div {
+  min-width: 0;
+  max-width: 760px;
+}
+.dashboard-next-step-wide h2,
+.dashboard-next-step-wide .dashboard-card-copy,
+.dashboard-next-step-wide .dashboard-card-label {
+  max-width: none;
+  width: auto;
+}
+.dashboard-next-step-wide .dashboard-card-button {
+  min-width: 150px;
+}
+@media (max-width: 760px) {
+  .dashboard-next-step-wide {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+  .dashboard-next-step-wide .dashboard-card-button { width: 100%; }
+  .dashboard-itinerary-preview,
+  .dashboard-itinerary-extra { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .dashboard-route-map,
+  .dashboard-route-map .leaflet-container,
+  .dashboard-route-map.leaflet-container {
+    min-height: 280px;
+    height: 280px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-ship-marker { display: none; }
+}
+@media (min-width: 1081px) {
+  .dashboard-v2-grid > .dashboard-snapshot-card {
+    max-height: 650px;
+  }
+}
