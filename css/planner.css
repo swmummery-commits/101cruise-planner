@@ -5750,3 +5750,53 @@
     height: 285px !important;
   }
 }
+
+
+/* Dashboard final composition */
+@media (min-width: 1081px) {
+  .dashboard-hero { min-height: 465px !important; background-position: center 44% !important; }
+  .dashboard-brand-logo { left: clamp(28px, 2.3vw, 52px) !important; top: 28px !important; }
+  .dashboard-hero-content { left: clamp(28px, 2.3vw, 52px) !important; width: min(560px, 42vw) !important; max-width: 560px !important; top: 126px !important; }
+  .dashboard-countdown-panel { right: clamp(28px, 2.3vw, 52px) !important; width: min(460px, 33vw) !important; }
+  .dashboard-hero h1 { white-space: nowrap; font-size: clamp(2.25rem, 3vw, 3.25rem) !important; }
+  .dashboard-hero-date, .dashboard-hero-route { white-space: nowrap; }
+  .dashboard-v2-grid {
+    grid-template-columns: minmax(0, 1.18fr) minmax(390px, .92fr) minmax(350px, .9fr) !important;
+    grid-template-rows: 520px auto !important;
+    gap: 18px !important;
+  }
+  .dashboard-journey-card { grid-column: 1 !important; grid-row: 1 / span 2 !important; }
+  .dashboard-combined-progress-card { grid-column: 2 !important; grid-row: 1 !important; }
+  .dashboard-v2-grid > .dashboard-snapshot-card { grid-column: 3 !important; grid-row: 1 !important; height: 520px !important; max-height: 520px !important; }
+  .dashboard-next-step-wide { grid-column: 2 / 4 !important; grid-row: 2 !important; padding: 16px 20px !important; }
+}
+.dashboard-combined-progress-card { display:flex; flex-direction:column; min-width:0; }
+.dashboard-combined-progress-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; flex:1; align-items:center; }
+.dashboard-combined-progress-item { display:flex; flex-direction:column; align-items:center; text-align:center; padding:10px 20px; min-width:0; }
+.dashboard-combined-progress-item + .dashboard-combined-progress-item { border-left:1px solid #e8edeb; }
+.dashboard-combined-progress-item h2 { margin:0 0 14px; font-size:1rem; }
+.dashboard-combined-progress-item p { min-height:34px; margin:12px 0 10px; color:#687873; font-size:.78rem; }
+.dashboard-combined-progress-item .dashboard-mini-progress-circle { width:118px; height:118px; margin:0; }
+.dashboard-combined-progress-item .dashboard-mini-progress-circle > div { width:90px; height:90px; }
+.dashboard-final-map { height:350px !important; min-height:350px !important; background:#dff1f7 !important; }
+.dashboard-final-map svg { width:100%; height:350px; display:block; }
+.dashboard-map-land path { fill:#e8f0d8; stroke:#b6c9a9; stroke-width:1.1; vector-effect:non-scaling-stroke; }
+.dashboard-map-water-label { font: italic 600 12px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#47728a; text-anchor:middle; }
+.dashboard-map-port circle { fill:#fff; stroke:#0c7664; stroke-width:2; }
+.dashboard-map-port-number { font:700 8.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#0c7664; }
+.dashboard-map-port-label { font:650 10px/1.1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#173c37; paint-order:stroke; stroke:#fff; stroke-width:4px; stroke-linejoin:round; }
+.dashboard-map-ship { transform-box:fill-box; transform-origin:center; }
+.dashboard-next-step-wide h2 { margin:3px 0; font-size:1rem !important; }
+.dashboard-next-step-wide .dashboard-card-copy { margin:0; font-size:.8rem; }
+.dashboard-next-step-wide .dashboard-card-button { min-width:140px; }
+.dashboard-journey-card { overflow:visible !important; }
+.dashboard-itinerary-extra { position:relative; z-index:1; }
+@media (max-width:1080px) {
+  .dashboard-combined-progress-grid { grid-template-columns:1fr 1fr; }
+  .dashboard-combined-progress-card, .dashboard-next-step-wide { grid-column:auto !important; grid-row:auto !important; }
+}
+@media (max-width:620px) {
+  .dashboard-combined-progress-grid { grid-template-columns:1fr; }
+  .dashboard-combined-progress-item + .dashboard-combined-progress-item { border-left:0; border-top:1px solid #e8edeb; }
+  .dashboard-hero h1, .dashboard-hero-date, .dashboard-hero-route { white-space:normal; }
+}
