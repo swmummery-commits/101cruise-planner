@@ -5800,3 +5800,29 @@
   .dashboard-combined-progress-item + .dashboard-combined-progress-item { border-left:0; border-top:1px solid #e8edeb; }
   .dashboard-hero h1, .dashboard-hero-date, .dashboard-hero-route { white-space:normal; }
 }
+
+
+/* Dashboard final alignment corrections */
+@media (min-width:1081px) {
+  .dashboard-hero-content { top: 164px !important; width: min(650px, 48vw) !important; max-width: 650px !important; }
+  .dashboard-hero h1 { font-size: clamp(2rem, 2.65vw, 3rem) !important; white-space: nowrap !important; }
+  .dashboard-hero-date, .dashboard-hero-route { white-space: nowrap !important; }
+  .dashboard-v2-grid > .dashboard-snapshot-card {
+    height: 520px !important;
+    max-height: 520px !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+  }
+  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 6px;
+  }
+  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-outline-action { flex: 0 0 auto; }
+  .dashboard-next-step-wide { align-self: start !important; min-height: 0 !important; margin-top: 0 !important; }
+}
+.dashboard-map-ship { pointer-events:none; }

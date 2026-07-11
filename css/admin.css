@@ -1129,3 +1129,14 @@
   0%, 35% { background: #e7f7ef; box-shadow: 0 0 0 3px rgba(24, 134, 111, .16); }
   100% { background: #fff; box-shadow: none; }
 }
+
+
+/* Packing item preview audit details */
+.packing-card-main { position:relative; padding-left:48px; min-width:0; }
+.packing-order-badge { position:absolute; left:0; top:0; min-width:34px; height:28px; padding:0 8px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:#edf4f1; color:#285a50; border:1px solid #d7e5df; font-size:.76rem; font-weight:800; font-variant-numeric:tabular-nums; }
+.packing-restriction-badge { margin-top:8px; }
+.packing-restriction-badge.carry-on { background:#fff3df; border-color:#f0d39d; color:#8a5a0a; }
+.packing-restriction-badge.checked-only { background:#eaf1fb; border-color:#c8d8ee; color:#315e91; }
+.packing-restriction-badge.any-location { background:#eef6f2; border-color:#d4e6dc; color:#356455; }
+.packing-item-row.is-just-saved { animation:packingSavedPulse 2.2s ease; }
+@keyframes packingSavedPulse { 0%,100%{box-shadow:inherit} 20%{box-shadow:0 0 0 3px rgba(60,150,110,.25); background:#f0faf5} }

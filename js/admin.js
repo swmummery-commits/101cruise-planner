@@ -2507,7 +2507,15 @@ function printPackingItemAuditList() {
 
 function renderPackingItemCard(item) {
   const isEditing = String(editingPackingItemId || "") === String(item.id);
-  const assignedProfileCount = getPackingProfileIdsForItem(item.id).length;
+  const assignedProfileIds = getPackingProfileIdsForItem(item.id);
+  const assignedProfiles = assignedProfileIds
+    .map(profileId => smartProfiles.find(profile => String(profile.id) === String(profileId))?.name)
+    .filter(Boolean);
+  const profilePreview = assignedProfiles.length ? assignedProfiles.join(" • ") : "None assigned";
+  const restriction = item.packing_restriction || "any";
+  const restrictionLabel = restriction === "carry-on-only" ? "Carry-on only" : restriction === "checked-only" ? "Checked luggage only" : "Any location";
+  const restrictionClass = restriction === "carry-on-only" ? "carry-on" : restriction === "checked-only" ? "checked-only" : "any-location";
+  const assignedProfileCount = assignedProfileIds.length;
   const ruleText = isEssentialPackingItem(item)
     ? "Essential item included on every cruise"
     : (assignedProfileCount ? `Smart Profile item (${assignedProfileCount} profile${assignedProfileCount === 1 ? "" : "s"})` : formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags, "Profile-specific item"));
@@ -2519,13 +2527,16 @@ function renderPackingItemCard(item) {
         </div>
       ` : `
         <div class="admin-list-top">
-          <div>
+          <div class="packing-card-main">
+            <div class="packing-order-badge" title="Display order">${esc(item.display_order ?? 0)}</div>
             <strong class="checklist-admin-title">${esc(item.name)}</strong>
-            <div class="admin-small">Category: ${esc(getPackingCategoryName(item.category_id))}</div>
+            <div class="admin-small"><strong>Category:</strong> ${esc(getPackingCategoryName(item.category_id))}</div>
+            <div class="admin-small"><strong>Smart Profiles:</strong> ${esc(profilePreview)}</div>
             <div class="admin-small"><strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
             ${item.description ? `<div class="admin-small">${esc(item.description)}</div>` : ""}
             ${item.help_text ? `<div class="admin-small"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
             <div class="admin-small"><strong>Logic:</strong> ${esc(ruleText)}</div>
+            <span class="admin-pill packing-restriction-badge ${restrictionClass}">${esc(restrictionLabel)}</span>
             ${isEssentialPackingItem(item) ? `<span class="admin-pill essential-pill">Essential</span>` : ""}
             ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
           </div>
