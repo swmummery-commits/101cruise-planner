@@ -5634,3 +5634,125 @@
     max-height: 650px;
   }
 }
+
+/* Dashboard journey correction: self-contained geographic map and compact cards */
+.dashboard-v2-grid {
+  grid-template-rows: 600px auto;
+  align-items: stretch;
+}
+.dashboard-journey-card,
+.dashboard-progress-column,
+.dashboard-v2-grid > .dashboard-snapshot-card {
+  height: 600px;
+  max-height: 600px;
+  box-sizing: border-box;
+}
+.dashboard-v2-grid > .dashboard-snapshot-card {
+  overflow: hidden;
+}
+.dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.dashboard-next-step-wide {
+  min-height: 0;
+  padding: 18px 24px;
+  align-self: start;
+}
+.dashboard-next-step-wide h2 {
+  margin: 3px 0 4px;
+  font-size: 1.05rem;
+}
+.dashboard-next-step-wide .dashboard-card-copy {
+  font-size: .78rem;
+  line-height: 1.4;
+}
+.dashboard-next-step-wide .dashboard-card-button {
+  min-width: 130px;
+}
+.dashboard-route-map-svg {
+  min-height: 320px;
+  height: 320px;
+  background: #dceef1;
+}
+.dashboard-route-map-svg svg {
+  width: 100%;
+  height: 320px;
+  min-height: 320px;
+}
+.dashboard-map-ocean { fill: #dceef1; }
+.dashboard-map-grid path {
+  stroke: rgba(255,255,255,.45);
+  stroke-width: 1;
+  fill: none;
+}
+.dashboard-map-land path {
+  fill: #f5f2e8;
+  stroke: #bbc8c4;
+  stroke-width: 1.3;
+}
+.dashboard-map-country-labels text {
+  fill: #8a9692;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.dashboard-map-route {
+  fill: none;
+  stroke: #147b69;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 7 7;
+}
+.dashboard-map-stop circle {
+  fill: #fff;
+  stroke: #147b69;
+  stroke-width: 2;
+}
+.dashboard-map-stop-number {
+  fill: #147b69;
+  font-size: 8px;
+  font-weight: 800;
+  text-anchor: middle;
+  pointer-events: none;
+}
+.dashboard-map-stop-label {
+  fill: #23413b;
+  font-size: 9px;
+  font-weight: 650;
+  paint-order: stroke;
+  stroke: rgba(255,255,255,.92);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+.dashboard-map-ship circle {
+  fill: rgba(255,255,255,.95);
+  stroke: #147b69;
+  stroke-width: 1.5;
+}
+.dashboard-map-ship text {
+  font-size: 12px;
+}
+.dashboard-itinerary-extra:not([hidden]) {
+  display: contents;
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-map-ship { display: none; }
+}
+@media (max-width: 1080px) {
+  .dashboard-v2-grid { grid-template-rows: auto; }
+  .dashboard-journey-card,
+  .dashboard-progress-column,
+  .dashboard-v2-grid > .dashboard-snapshot-card {
+    height: auto;
+    max-height: none;
+  }
+}
+@media (max-width: 760px) {
+  .dashboard-next-step-wide { padding: 18px; }
+  .dashboard-route-map-svg,
+  .dashboard-route-map-svg svg { height: 280px; min-height: 280px; }
+}

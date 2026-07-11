@@ -1619,14 +1619,86 @@ function renderDashboardProgressCard(label, percent, detail, action) {
   `;
 }
 
-let dashboardLeafletMap = null;
-let dashboardShipAnimationFrame = null;
+function projectDashboardMapPoint(lat, lng) {
+  const minLng = 125.4;
+  const maxLng = 140.8;
+  const minLat = 30.2;
+  const maxLat = 38.5;
+  const x = 56 + ((lng - minLng) / (maxLng - minLng)) * 488;
+  const y = 310 - ((lat - minLat) / (maxLat - minLat)) * 262;
+  return { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+}
+
+function dashboardMapLabel(name) {
+  return String(name || "").replace(/\s*\(.+?\)\s*/g, "").trim();
+}
+
+function renderDashboardGeographicMap(journey) {
+  const routeStops = journey.stops.filter(stop => Number.isFinite(stop.lat) && Number.isFinite(stop.lng));
+  const uniqueStops = routeStops.filter((stop, index, list) => index === list.findIndex(item => item.lat === stop.lat && item.lng === stop.lng));
+  const points = uniqueStops.map(stop => ({ ...stop, ...projectDashboardMapPoint(stop.lat, stop.lng) }));
+  const pathData = points.map((point, index) => `${index ? "L" : "M"}${point.x},${point.y}`).join(" ");
+  const labelOffsets = [
+    { dx: 12, dy: -9, anchor: "start" }, { dx: 12, dy: -8, anchor: "start" },
+    { dx: 10, dy: -10, anchor: "start" }, { dx: -12, dy: 15, anchor: "end" },
+    { dx: -12, dy: 15, anchor: "end" }, { dx: -12, dy: 14, anchor: "end" },
+    { dx: 12, dy: 15, anchor: "start" }, { dx: 12, dy: 15, anchor: "start" },
+    { dx: 12, dy: -9, anchor: "start" }, { dx: -12, dy: -9, anchor: "end" }
+  ];
+
+  return `
+    <div class="dashboard-route-map dashboard-route-map-svg" aria-label="Illustrative cruise route map from Tokyo to Seoul">
+      <svg viewBox="0 0 600 350" role="img" aria-labelledby="dashboardMapTitle dashboardMapDescription">
+        <title id="dashboardMapTitle">${escapeHtml(journey.title)} cruise route</title>
+        <desc id="dashboardMapDescription">Illustrative map showing the route through Japan to South Korea.</desc>
+        <rect class="dashboard-map-ocean" x="0" y="0" width="600" height="350" rx="18"></rect>
+        <g class="dashboard-map-grid" aria-hidden="true">
+          <path d="M0 88H600M0 176H600M0 264H600"></path>
+          <path d="M150 0V350M300 0V350M450 0V350"></path>
+        </g>
+        <g class="dashboard-map-land" aria-hidden="true">
+          <path d="M44 34 C75 12 121 5 153 17 C176 27 183 48 170 66 C154 88 134 108 123 136 C110 167 92 189 66 197 C41 204 24 190 27 168 C31 142 50 124 57 102 C64 80 43 63 44 34 Z"></path>
+          <path d="M167 111 C185 91 211 80 233 84 C251 87 257 101 245 116 C230 135 209 146 189 143 C171 140 158 128 167 111 Z"></path>
+          <path d="M242 163 C265 143 293 135 321 139 C342 142 349 156 336 171 C320 189 297 198 271 194 C251 191 231 181 242 163 Z"></path>
+          <path d="M331 132 C344 111 364 99 384 102 C401 105 406 118 397 132 C387 148 367 157 350 153 C335 150 324 143 331 132 Z"></path>
+          <path d="M402 92 C421 65 446 52 469 55 C486 58 493 72 485 87 C476 105 456 119 437 118 C419 117 394 105 402 92 Z"></path>
+          <path d="M468 38 C493 20 525 16 548 26 C568 35 575 52 563 68 C550 86 526 98 505 94 C484 91 455 61 468 38 Z"></path>
+          <path d="M351 205 C365 191 383 187 397 194 C409 200 410 211 402 220 C391 232 374 235 361 228 C349 222 342 214 351 205 Z"></path>
+          <path d="M318 234 C333 218 353 213 369 221 C382 227 385 239 374 249 C362 261 343 264 329 256 C316 249 308 244 318 234 Z"></path>
+          <path d="M260 249 C278 232 302 228 320 237 C334 244 337 258 325 269 C310 282 287 284 271 275 C257 268 248 260 260 249 Z"></path>
+          <path d="M215 280 C232 262 255 258 274 267 C289 274 291 287 279 299 C264 313 241 315 225 307 C210 299 204 291 215 280 Z"></path>
+          <path d="M128 130 C149 111 177 105 198 114 C216 122 220 138 207 151 C191 168 166 173 145 166 C126 160 112 144 128 130 Z"></path>
+        </g>
+        <g class="dashboard-map-country-labels" aria-hidden="true">
+          <text x="104" y="76">South Korea</text>
+          <text x="404" y="36">Japan</text>
+        </g>
+        <path id="dashboardCruiseRoutePath" class="dashboard-map-route" d="${pathData}"></path>
+        ${points.map((point, index) => {
+          const offset = labelOffsets[index] || { dx: 10, dy: -8, anchor: "start" };
+          return `<g class="dashboard-map-stop">
+            <circle cx="${point.x}" cy="${point.y}" r="7"></circle>
+            <text class="dashboard-map-stop-number" x="${point.x}" y="${point.y + 3}">${index + 1}</text>
+            <text class="dashboard-map-stop-label" x="${point.x + offset.dx}" y="${point.y + offset.dy}" text-anchor="${offset.anchor}">${escapeHtml(dashboardMapLabel(point.name))}</text>
+          </g>`;
+        }).join("")}
+        ${points.length > 1 ? `<g class="dashboard-map-ship" aria-hidden="true">
+          <circle r="10"></circle>
+          <text x="0" y="4" text-anchor="middle">⛴</text>
+          <animateMotion dur="16s" repeatCount="indefinite" rotate="auto" keyTimes="0;0.94;1" keyPoints="0;1;1" calcMode="linear">
+            <mpath href="#dashboardCruiseRoutePath"></mpath>
+          </animateMotion>
+        </g>` : ""}
+      </svg>
+      <div class="dashboard-map-note">Illustrative route. It does not show the ship’s exact sailing track.</div>
+    </div>`;
+}
 
 function renderJourneyMap(journey) {
   if (!journey) {
     return `
       <article class="dashboard-summary-card dashboard-journey-card">
-        <p class="dashboard-card-label">Your Cruise Route</p>
+        <p class="dashboard-card-label">Your Journey</p>
         <h2>Journey map coming soon</h2>
         <p class="dashboard-card-copy">Your itinerary will appear here once it has been added.</p>
       </article>
@@ -1637,9 +1709,9 @@ function renderJourneyMap(journey) {
   return `
     <article class="dashboard-summary-card dashboard-journey-card">
       <div class="dashboard-journey-heading">
-        <div><p class="dashboard-card-label">Your Cruise Route</p><h2>${escapeHtml(journey.title)}</h2></div>
+        <div><p class="dashboard-card-label">Your Journey</p><h2>${escapeHtml(journey.title)}</h2></div>
       </div>
-      <div id="dashboardRouteMap" class="dashboard-route-map" aria-label="Cruise route map from Tokyo to Seoul"></div>
+      ${renderDashboardGeographicMap(journey)}
       <div class="dashboard-itinerary-preview" id="dashboardItineraryPreview">
         ${previewStops.map((stop, index) => renderDashboardItineraryPreviewDay(stop, index)).join("")}
         <div id="dashboardItineraryExtra" class="dashboard-itinerary-extra" hidden>
@@ -1669,111 +1741,6 @@ function toggleDashboardItinerary() {
   const willOpen = extra.hidden;
   extra.hidden = !willOpen;
   button.textContent = willOpen ? "Show Less ↑" : "Open Full Itinerary →";
-}
-
-function initialiseDashboardRouteMap(journey) {
-  const mapElement = document.getElementById("dashboardRouteMap");
-  if (!mapElement || !journey || typeof L === "undefined") return;
-
-  if (dashboardShipAnimationFrame) {
-    cancelAnimationFrame(dashboardShipAnimationFrame);
-    dashboardShipAnimationFrame = null;
-  }
-  if (dashboardLeafletMap) {
-    dashboardLeafletMap.remove();
-    dashboardLeafletMap = null;
-  }
-
-  const routeStops = journey.stops.filter(stop => Number.isFinite(stop.lat) && Number.isFinite(stop.lng));
-  const uniqueStops = routeStops.filter((stop, index, list) => index === list.findIndex(item => item.lat === stop.lat && item.lng === stop.lng));
-  if (!uniqueStops.length) return;
-
-  dashboardLeafletMap = L.map(mapElement, {
-    zoomControl: true,
-    attributionControl: true,
-    scrollWheelZoom: false,
-    dragging: true,
-    tap: true
-  });
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 18,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(dashboardLeafletMap);
-
-  const latLngs = uniqueStops.map(stop => [stop.lat, stop.lng]);
-  const routeLine = L.polyline(latLngs, {
-    color: "#147b69",
-    weight: 2.5,
-    opacity: 0.9,
-    dashArray: "7 7",
-    lineCap: "round",
-    lineJoin: "round"
-  }).addTo(dashboardLeafletMap);
-
-  uniqueStops.forEach((stop, index) => {
-    const icon = L.divIcon({
-      className: "dashboard-port-marker-wrap",
-      html: `<span class="dashboard-port-marker">${index + 1}</span>`,
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
-    });
-    const marker = L.marker([stop.lat, stop.lng], { icon }).addTo(dashboardLeafletMap);
-    marker.bindTooltip(stop.name.replace(/\s*\(.+?\)\s*/g, ""), {
-      permanent: true,
-      direction: index % 2 ? "left" : "right",
-      className: "dashboard-port-label",
-      offset: index % 2 ? [-9, 0] : [9, 0]
-    });
-  });
-
-  dashboardLeafletMap.fitBounds(routeLine.getBounds(), { padding: [34, 34], maxZoom: 6 });
-
-  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
-  if (!reducedMotion && latLngs.length > 1) {
-    const shipIcon = L.divIcon({
-      className: "dashboard-ship-marker-wrap",
-      html: '<span class="dashboard-ship-marker" aria-hidden="true">⛴</span>',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12]
-    });
-    const shipMarker = L.marker(latLngs[0], { icon: shipIcon, interactive: false }).addTo(dashboardLeafletMap);
-    animateDashboardShip(shipMarker, latLngs);
-  }
-
-  setTimeout(() => dashboardLeafletMap?.invalidateSize(), 60);
-}
-
-function animateDashboardShip(marker, points) {
-  const segmentDurations = points.slice(1).map((point, index) => {
-    const a = L.latLng(points[index]);
-    const b = L.latLng(point);
-    return Math.max(450, a.distanceTo(b));
-  });
-  const totalDistance = segmentDurations.reduce((sum, value) => sum + value, 0);
-  const loopDuration = 16000;
-  let started = null;
-
-  function frame(timestamp) {
-    if (!document.body.contains(marker._icon)) return;
-    if (started === null) started = timestamp;
-    const progress = ((timestamp - started) % loopDuration) / loopDuration;
-    let distance = progress * totalDistance;
-    let segmentIndex = 0;
-    while (segmentIndex < segmentDurations.length - 1 && distance > segmentDurations[segmentIndex]) {
-      distance -= segmentDurations[segmentIndex];
-      segmentIndex += 1;
-    }
-    const segmentProgress = Math.min(1, distance / segmentDurations[segmentIndex]);
-    const start = points[segmentIndex];
-    const end = points[segmentIndex + 1];
-    marker.setLatLng([
-      start[0] + (end[0] - start[0]) * segmentProgress,
-      start[1] + (end[1] - start[1]) * segmentProgress
-    ]);
-    dashboardShipAnimationFrame = requestAnimationFrame(frame);
-  }
-  dashboardShipAnimationFrame = requestAnimationFrame(frame);
 }
 
 async function renderDashboard() {
@@ -1889,7 +1856,6 @@ async function renderDashboard() {
 
   if (mainCruise) {
     startLiveCountdown(mainCruise);
-    initialiseDashboardRouteMap(dashboardJourney);
   }
 }
 
