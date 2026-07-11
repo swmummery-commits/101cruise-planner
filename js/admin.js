@@ -36,6 +36,9 @@ let crmSyncResult = null;
 let crmSyncMessage = "";
 let crmSyncLoading = false;
 let plannerPreviewMessage = "";
+let itineraryReview = null;
+let itineraryMessage = "";
+let itineraryLoading = false;
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -502,9 +505,130 @@ function renderCrmBookingPreview(booking) {
       </div>
       <div class="admin-actions-row crm-preview-actions">
         <button class="admin-button black" onclick="openPlannerPreview('${esc(booking.base44_booking_id || booking.booking_reference || '')}')">Preview Planner</button>
+        <button class="admin-button secondary" onclick="loadItineraryReview('${esc(booking.base44_booking_id || '')}')">Review Itinerary</button>
+        <button class="admin-button secondary" onclick="extractBookingItinerary()" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading ? "Extracting…" : "Extract Booking Confirmation"}</button>
       </div>
+      ${renderItineraryReview(booking)}
     </div>
   `;
+}
+
+
+function itineraryAuthHeaders() {
+  return supabaseClient.auth.getSession().then(({ data }) => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${data.session?.access_token || ""}`
+  }));
+}
+
+function renderItineraryReview(booking) {
+  const messageClass = itineraryMessage.toLowerCase().includes("error") ? "admin-error" : "";
+  const data = itineraryReview?.itinerary_data || null;
+  return `
+    <section class="itinerary-review-panel">
+      <div class="admin-list-top">
+        <div>
+          <h4>Smart Itinerary Review</h4>
+          <p class="admin-muted">Extract the Booking Confirmation, inspect the structured itinerary, correct anything necessary, then approve it. The customer map is not included in this first release.</p>
+        </div>
+        ${itineraryReview?.status ? `<span class="admin-pill">${esc(itineraryReview.status.replaceAll("_", " "))}</span>` : ""}
+      </div>
+      <div class="admin-message ${messageClass}">${esc(itineraryMessage)}</div>
+      ${data ? `
+        <div class="itinerary-source-note">
+          <strong>Source:</strong> ${esc(itineraryReview.source_filename || "Booking Confirmation")}
+          ${itineraryReview.extraction_confidence != null ? `<span>Overall confidence: ${Math.round(Number(itineraryReview.extraction_confidence) * 100)}%</span>` : ""}
+        </div>
+        <div class="admin-field">
+          <label>Extracted itinerary JSON</label>
+          <textarea id="itineraryJsonEditor" class="itinerary-json-editor" spellcheck="false">${esc(JSON.stringify(data, null, 2))}</textarea>
+          <div class="admin-helper">Dates must use YYYY-MM-DD and times must use 24-hour HH:MM. Keep the official Booking Confirmation as the source of truth.</div>
+        </div>
+        <div class="admin-actions-row">
+          <button class="admin-button secondary" onclick="saveItineraryReview(false)">Save Draft</button>
+          <button class="admin-button black" onclick="saveItineraryReview(true)">Approve Itinerary</button>
+        </div>
+      ` : `<p class="admin-muted itinerary-empty">No extracted itinerary has been loaded for this booking yet.</p>`}
+    </section>
+  `;
+}
+
+async function loadItineraryReview(bookingId) {
+  if (!bookingId) {
+    itineraryMessage = "Error: Base44 booking ID is missing.";
+    renderAdmin();
+    return;
+  }
+  itineraryLoading = true;
+  itineraryMessage = "Loading saved itinerary…";
+  renderAdmin();
+  try {
+    const headers = await itineraryAuthHeaders();
+    const response = await fetch(`/.netlify/functions/admin-itinerary?booking_id=${encodeURIComponent(bookingId)}`, { headers });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
+    itineraryReview = data.itinerary;
+    itineraryMessage = itineraryReview ? "Saved itinerary loaded." : "No itinerary has been extracted yet.";
+  } catch (error) {
+    itineraryMessage = `Error: ${error.message || error}`;
+  } finally {
+    itineraryLoading = false;
+    renderAdmin();
+  }
+}
+
+async function extractBookingItinerary() {
+  const booking = crmSyncResult?.booking;
+  if (!booking) return;
+  itineraryLoading = true;
+  itineraryMessage = "Reading the Booking Confirmation and extracting the itinerary. This can take up to a minute…";
+  renderAdmin();
+  try {
+    const headers = await itineraryAuthHeaders();
+    const response = await fetch("/.netlify/functions/admin-itinerary", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ booking_id: booking.base44_booking_id, booking_reference: booking.booking_reference })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
+    itineraryReview = data.itinerary;
+    itineraryMessage = "Extraction complete. Review every stop before approving.";
+  } catch (error) {
+    itineraryMessage = `Error: ${error.message || error}`;
+  } finally {
+    itineraryLoading = false;
+    renderAdmin();
+  }
+}
+
+async function saveItineraryReview(approve) {
+  const booking = crmSyncResult?.booking;
+  const editor = document.getElementById("itineraryJsonEditor");
+  if (!booking || !editor) return;
+  try {
+    const itineraryData = JSON.parse(editor.value);
+    if (!Array.isArray(itineraryData.stops)) throw new Error("The itinerary must contain a stops array.");
+    itineraryMessage = approve ? "Approving itinerary…" : "Saving draft…";
+    renderAdmin();
+    const headers = await itineraryAuthHeaders();
+    const response = await fetch("/.netlify/functions/admin-itinerary", {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify({
+        booking_id: booking.base44_booking_id,
+        status: approve ? "approved" : "review_required",
+        itinerary_data: itineraryData
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
+    itineraryReview = data.itinerary;
+    itineraryMessage = approve ? "Itinerary approved." : "Draft saved.";
+  } catch (error) {
+    itineraryMessage = `Error: ${error.message || error}`;
+  }
+  renderAdmin();
 }
 
 function renderPlannerPreviewPanel() {
@@ -582,6 +706,8 @@ async function syncCrmBooking() {
   }
 
   crmSyncLoading = true;
+  itineraryReview = null;
+  itineraryMessage = "";
   crmSyncMessage = "Syncing booking from Base44...";
   renderAdmin();
 

@@ -1074,3 +1074,34 @@
     flex-direction: column;
   }
 }
+
+/* Smart itinerary extraction review */
+.itinerary-review-panel {
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--admin-border, #e3e8e5);
+}
+.itinerary-review-panel h4 { margin: 0 0 5px; font-size: 17px; }
+.itinerary-source-note {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f6f8f7;
+  font-size: 13px;
+}
+.itinerary-json-editor {
+  width: 100%;
+  min-height: 430px;
+  resize: vertical;
+  border: 1px solid var(--admin-border, #d9e2dd);
+  border-radius: 12px;
+  padding: 14px;
+  background: #111714;
+  color: #eaf3ee;
+  font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  tab-size: 2;
+}
+.itinerary-empty { margin: 14px 0 0; }
