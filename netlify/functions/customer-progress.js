@@ -6,7 +6,7 @@ function jsonResponse(statusCode, body) {
 
 function verifyToken(token, secret) {
   const [encoded, signature] = String(token || '').split('.');
-  if (!encoded || !signature) return null;
+  if (!encoded || !signature || !secret) return null;
   const expected = crypto.createHmac('sha256', secret).update(encoded).digest('base64url');
   const a = Buffer.from(signature);
   const b = Buffer.from(expected);
@@ -40,43 +40,33 @@ exports.handler = async function(event) {
     if (!session) return jsonResponse(401, { success: false, error: 'Your booking session has expired. Please access My Cruise again.' });
     const body = JSON.parse(event.body || '{}');
     const bookingId = session.booking_id;
-    const action = body.action;
 
-    if (action === 'load') {
-      const [profiles, state, preferences] = await Promise.all([
-        rest(`customer_packing_profiles?booking_id=eq.${encodeURIComponent(bookingId)}&order=display_order.asc`, { method: 'GET' }),
-        rest(`customer_packing_state?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: 'GET' }),
-        rest(`customer_packing_preferences?booking_id=eq.${encodeURIComponent(bookingId)}&limit=1`, { method: 'GET' })
-      ]);
-      return jsonResponse(200, { success: true, profiles, state, preferences: preferences?.[0] || null });
+    if (body.action === 'load_checklist') {
+      const rows = await rest(`customer_checklist_progress?booking_id=eq.${encodeURIComponent(bookingId)}`, { method: 'GET' });
+      return jsonResponse(200, { success: true, progress: rows || [] });
     }
 
-    if (action === 'save_profiles') {
-      const rows = (body.profiles || []).map(row => ({ ...row, booking_id: bookingId, updated_at: new Date().toISOString() }));
-      const data = await rest('customer_packing_profiles?on_conflict=booking_id,profile_key', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(rows) });
-      return jsonResponse(200, { success: true, profiles: data });
-    }
-
-    if (action === 'save_state') {
-      const row = { ...body.state, booking_id: bookingId, updated_at: new Date().toISOString() };
-      const data = await rest('customer_packing_state?on_conflict=booking_id,profile_key,item_key', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(row) });
-      return jsonResponse(200, { success: true, state: data?.[0] || data });
-    }
-
-    if (action === 'save_preferences') {
-      const row = { ...body.preferences, booking_id: bookingId, updated_at: new Date().toISOString() };
-      const data = await rest('customer_packing_preferences?on_conflict=booking_id', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(row) });
-      return jsonResponse(200, { success: true, preferences: data?.[0] || data });
-    }
-
-    if (action === 'reset_profile') {
-      await rest(`customer_packing_state?booking_id=eq.${encodeURIComponent(bookingId)}&profile_key=eq.${encodeURIComponent(body.profile_key)}`, { method: 'DELETE' });
-      return jsonResponse(200, { success: true });
+    if (body.action === 'save_checklist') {
+      const itemId = Number(body.checklist_item_id);
+      if (!Number.isInteger(itemId) || itemId <= 0) return jsonResponse(400, { success: false, error: 'Invalid checklist item' });
+      const row = {
+        booking_id: bookingId,
+        checklist_item_id: itemId,
+        completed: body.completed === true,
+        completed_at: body.completed === true ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString()
+      };
+      const data = await rest('customer_checklist_progress?on_conflict=booking_id,checklist_item_id', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+        body: JSON.stringify(row)
+      });
+      return jsonResponse(200, { success: true, progress: data?.[0] || data });
     }
 
     return jsonResponse(400, { success: false, error: 'Unsupported action' });
   } catch (error) {
-    console.error('Customer packing error', error);
+    console.error('Customer progress error', error);
     return jsonResponse(500, { success: false, error: error.message || 'Unexpected server error' });
   }
 };

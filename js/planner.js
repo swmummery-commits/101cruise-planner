@@ -437,6 +437,22 @@ function changeCustomerBooking() {
   renderCustomerAccess();
 }
 
+async function customerProgressRequest(action, payload = {}) {
+  const response = await fetch("/.netlify/functions/customer-progress", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${customerSessionToken}` },
+    body: JSON.stringify({ action, ...payload })
+  });
+  const data = await response.json().catch(() => null);
+  if (response.status === 401) {
+    clearCustomerSession();
+    renderCustomerAccess("Your booking session has expired. Please access My Cruise again.", true);
+    throw new Error("Customer session expired");
+  }
+  if (!response.ok || !data?.success) throw new Error(data?.error || "Could not save your progress.");
+  return data;
+}
+
 async function customerPackingRequest(action, payload = {}) {
   const response = await fetch("/.netlify/functions/customer-packing", {
     method: "POST",
@@ -1063,7 +1079,14 @@ async function loadDashboardChecklistData(cruise) {
     .order("display_order", { ascending: true });
 
   let progressRows = [];
-  if (cruise && currentUser?.id && !adminPreviewMode && !customerMode) {
+  if (cruise && customerMode) {
+    try {
+      const data = await customerProgressRequest("load_checklist");
+      progressRows = data.progress || [];
+    } catch (error) {
+      console.warn("Customer dashboard checklist load failed", error);
+    }
+  } else if (cruise && currentUser?.id && !adminPreviewMode) {
     const { data: progressData } = await supabaseClient
       .from("checklist_progress")
       .select("*")
@@ -1881,6 +1904,17 @@ async function toggleChecklistItem(itemId, completed) {
     return;
   }
 
+  if (customerMode) {
+    try {
+      await customerProgressRequest("save_checklist", { checklist_item_id: itemId, completed });
+      await renderChecklist();
+    } catch (error) {
+      console.error("Customer checklist progress save error", error);
+      alert("Could not save checklist progress. Please try again.");
+    }
+    return;
+  }
+
   const payload = {
     user_id: currentUser.id,
     cruise_id: cruise.id,
@@ -1940,7 +1974,14 @@ async function renderChecklist() {
 
   let progressRows = [];
   let personalItems = [];
-  if (cruise) {
+  if (cruise && customerMode) {
+    try {
+      const data = await customerProgressRequest("load_checklist");
+      progressRows = data.progress || [];
+    } catch (error) {
+      console.warn("Customer checklist load failed", error);
+    }
+  } else if (cruise) {
     const { data: progressData } = await supabaseClient
       .from("checklist_progress")
       .select("*")
@@ -2028,7 +2069,7 @@ async function renderChecklist() {
                 ${sectionItems.length ? sectionItems.map(item => renderChecklistRow(item, isItemCompleted(progressRows, item.id))).join("") : ""}
                 ${sectionPersonalItems.length ? sectionPersonalItems.map(item => renderPersonalChecklistRow(item)).join("") : ""}
                 ${!sectionItems.length && !sectionPersonalItems.length ? `<p class="planner-muted empty-checklist-message">No checklist items added yet.</p>` : ""}
-                <button class="add-personal-task-button" onclick="addPersonalChecklistItem(${section.id})">+ Add your own task</button>
+                ${customerMode ? "" : `<button class="add-personal-task-button" onclick="addPersonalChecklistItem(${section.id})">+ Add your own task</button>`}
               </section>
             `;
           }).join("")}
