@@ -3805,9 +3805,24 @@ function getBudgetItemParts(item) {
   return { primary: item.name || "Other expense", meta: "" };
 }
 
+const BUDGET_CATEGORY_ICONS = {
+  flights: "✈",
+  accommodation: "🏨",
+  cars: "🚗",
+  food_beverage: "🍽",
+  travel_insurance: "🛡",
+  excursions: "🚢",
+  other: "💳",
+  cruise: "🚢"
+};
+
+function renderBudgetCategoryIcon(icon) {
+  return `<span class="budget-category-icon" aria-hidden="true">${icon}</span>`;
+}
+
 function renderBudgetCategory(category, title, buttonLabel) {
   const totals = getBudgetTotals();
-  return `<section class="planner-card budget-category-card"><div class="budget-category-heading"><div><p class="planner-kicker">${escapeHtml(title)}</p><h2>${formatAud(totals[category])}</h2></div><button class="planner-button secondary budget-add-button" onclick="openBudgetItemForm('${category}')">+ ${escapeHtml(buttonLabel)}</button></div>${renderBudgetItems(category)}<div id="budget-form-${category}"></div></section>`;
+  return `<section class="planner-card budget-category-card"><div class="budget-category-heading"><div class="budget-category-title-block">${renderBudgetCategoryIcon(BUDGET_CATEGORY_ICONS[category] || "")}<div class="budget-category-title-copy"><p class="planner-kicker budget-category-kicker">${escapeHtml(title)}</p><h2>${formatAud(totals[category])}</h2></div></div><button class="planner-button secondary budget-add-button" onclick="openBudgetItemForm('${category}')">+ ${escapeHtml(buttonLabel)}</button></div>${renderBudgetItems(category)}<div id="budget-form-${category}"></div></section>`;
 }
 
 function renderBudgetGettingStarted() {
@@ -3823,11 +3838,11 @@ function renderBudgetSaveMessage() {
 }
 
 function renderBudgetHeroCard(totals) {
-  return `<section class="planner-card budget-hero-card"><div class="budget-hero-card-head"><p class="budget-hero-label">Estimated Holiday Total</p></div><div class="budget-hero-card-body"><h1 class="budget-hero-total">${formatAud(totals.total)}</h1><p class="budget-hero-note">Based on your current budget.</p></div></section>`;
+  return `<section class="planner-card budget-hero-card"><span class="budget-hero-icon" aria-hidden="true">$</span><p class="budget-hero-label">Estimated Holiday Total</p><h1 class="budget-hero-total">${formatAud(totals.total)}</h1><p class="budget-hero-note">Based on your current budget.</p></section>`;
 }
 
 function renderBudgetCruiseCard(totals) {
-  return `<section class="planner-card budget-category-card budget-cruise-card"><div class="budget-category-heading"><div><p class="planner-kicker">Cruise</p><h2>${formatAud(totals.cruiseAud)}</h2></div></div><p class="planner-muted budget-cruise-booking-price">Booking price ${formatUsd(activeBudget.cruise_price_usd)}</p><label class="budget-rate-field"><span>USD to AUD exchange rate</span><input type="number" min="0" step="0.0001" value="${activeBudget.exchange_rate}" onchange="updateBudgetValue('exchange_rate', this.value)"></label></section>`;
+  return `<section class="planner-card budget-category-card budget-cruise-card"><div class="budget-category-heading"><div class="budget-category-title-block">${renderBudgetCategoryIcon(BUDGET_CATEGORY_ICONS.cruise)}<div class="budget-category-title-copy"><p class="planner-kicker budget-category-kicker">Cruise</p><h2>${formatAud(totals.cruiseAud)}</h2></div></div></div><div class="budget-cruise-details"><p class="planner-muted budget-cruise-booking-price">Booking price ${formatUsd(activeBudget.cruise_price_usd)}</p><label class="budget-rate-field"><span>USD to AUD exchange rate</span><input type="number" min="0" step="0.0001" value="${activeBudget.exchange_rate}" onchange="updateBudgetValue('exchange_rate', this.value)"></label></div></section>`;
 }
 
 function renderBudgetSummaryColumn(totals) {
@@ -3835,7 +3850,7 @@ function renderBudgetSummaryColumn(totals) {
 }
 
 function renderBudgetSimpleCard(title, field, inputLabel) {
-  return `<section class="planner-card budget-simple-card"><div class="budget-category-heading"><div><p class="planner-kicker">${escapeHtml(title)}</p><h2>${formatAud(activeBudget[field])}</h2></div></div><label><span>${escapeHtml(inputLabel)}</span><input type="number" min="0" step="0.01" value="${activeBudget[field] || ""}" placeholder="0.00" onchange="updateBudgetValue('${field}', this.value)"></label></section>`;
+  return `<section class="planner-card budget-simple-card"><div class="budget-category-heading"><div class="budget-category-title-block">${renderBudgetCategoryIcon(BUDGET_CATEGORY_ICONS[field] || "")}<div class="budget-category-title-copy"><p class="planner-kicker budget-category-kicker">${escapeHtml(title)}</p><h2>${formatAud(activeBudget[field])}</h2></div></div></div><label><span>${escapeHtml(inputLabel)}</span><input type="number" min="0" step="0.01" value="${activeBudget[field] || ""}" placeholder="0.00" onchange="updateBudgetValue('${field}', this.value)"></label></section>`;
 }
 
 function renderBudgetCategoriesGrid() {
