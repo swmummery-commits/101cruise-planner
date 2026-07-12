@@ -5292,7 +5292,7 @@
 .dashboard-quick-access button:hover { background: rgba(141, 217, 191, .12); }
 .dashboard-quick-access button:active { transform: scale(.985); }
 .dashboard-quick-access button span { font-size: 1.15rem; }
-.dashboard-quick-access button strong { font-size: .92rem; font-weight: 650; white-space: nowrap; }
+.dashboard-quick-access button strong { font-size: .92rem; font-weight: 400; white-space: nowrap; }
 
 .dashboard-v2-grid {
   display: grid;
@@ -5323,7 +5323,7 @@
   background: transparent;
   color: var(--brand-green-ink);
   font: inherit;
-  font-weight: 650;
+  font-weight: 400;
   cursor: pointer;
   padding: 4px 0;
   white-space: nowrap;
@@ -5387,7 +5387,7 @@
   width: 128px;
   height: 128px;
   border-radius: 50%;
-  background: conic-gradient(var(--brand-green-ink) var(--progress), #edf2f1 0);
+  background: conic-gradient(var(--brand-green) var(--progress), #edf2f1 0);
   display: grid;
   place-items: center;
   margin-bottom: 14px;
@@ -5589,7 +5589,7 @@
   background: #fff !important;
   color: #263b37 !important;
   font-size: .78rem !important;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
   text-decoration: none;
   cursor: pointer;
   transition: background .18s ease, border-color .18s ease, transform .18s ease;
@@ -5782,9 +5782,9 @@
   .dashboard-next-step-wide { grid-column: 2 / 4 !important; grid-row: 2 !important; padding: 16px 20px !important; }
 }
 .dashboard-combined-progress-card { display:flex; flex-direction:column; min-width:0; }
-.dashboard-combined-progress-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; flex:1; align-items:center; }
-.dashboard-combined-progress-item { display:flex; flex-direction:column; align-items:center; text-align:center; padding:10px 20px; min-width:0; }
-.dashboard-combined-progress-item + .dashboard-combined-progress-item { border-left:1px solid #e8edeb; }
+.dashboard-combined-progress-grid { display:grid; grid-template-columns:1fr; gap:0; flex:1; align-items:stretch; align-content:stretch; }
+.dashboard-combined-progress-item { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8px 16px; min-width:0; flex:1; }
+.dashboard-combined-progress-item + .dashboard-combined-progress-item { border-left:0; border-top:1px solid #e8edeb; }
 .dashboard-combined-progress-item h2 { margin:0 0 14px; font-size:1rem; }
 .dashboard-combined-progress-item p { min-height:34px; margin:12px 0 10px; color:#687873; font-size:.78rem; }
 .dashboard-combined-progress-item .dashboard-mini-progress-circle { width:118px; height:118px; margin:0; }
@@ -5803,12 +5803,9 @@
 .dashboard-journey-card { overflow:visible !important; }
 .dashboard-itinerary-extra { position:relative; z-index:1; }
 @media (max-width:1080px) {
-  .dashboard-combined-progress-grid { grid-template-columns:1fr 1fr; }
   .dashboard-combined-progress-card, .dashboard-next-step-wide { grid-column:auto !important; grid-row:auto !important; }
 }
 @media (max-width:620px) {
-  .dashboard-combined-progress-grid { grid-template-columns:1fr; }
-  .dashboard-combined-progress-item + .dashboard-combined-progress-item { border-left:0; border-top:1px solid #e8edeb; }
   .dashboard-hero h1, .dashboard-hero-date, .dashboard-hero-route { white-space:normal; }
 }
 
@@ -6084,46 +6081,101 @@ input[type="radio"] {
   accent-color: var(--brand-green);
 }
 
-/* Budget Planner v0.9.9 */
-.budget-page { max-width: 1500px; margin: 0 auto; padding: 26px 28px 60px; }
-.budget-hero { margin: 22px 0 18px; padding: 34px; border-radius: 28px; background: linear-gradient(135deg, #e8f8f2, #f8fcfa); border: 1px solid rgba(36,92,78,.10); text-align: center; }
-.budget-hero p { margin: 0 0 8px; color: #245c4e; font-weight: 700; font-size: .92rem; letter-spacing: .04em; text-transform: uppercase; }
-.budget-hero h1 { margin: 0; font-size: clamp(2.6rem, 6vw, 5rem); line-height: 1; letter-spacing: -.055em; }
-.budget-hero span { display: block; margin-top: 12px; color: #68736f; }
-.budget-cruise-card, .budget-simple-card, .budget-category-heading { display: flex; align-items: center; justify-content: space-between; gap: 22px; }
-.budget-cruise-card { margin-bottom: 18px; }
-.budget-rate-field, .budget-simple-card label, .budget-entry-form label { display: grid; gap: 7px; color: #4d5854; font-size: .84rem; font-weight: 650; }
-.budget-rate-field input, .budget-simple-card input, .budget-entry-form input { width: 100%; box-sizing: border-box; border: 1px solid #d6dfdb; border-radius: 12px; padding: 11px 12px; font: inherit; background: #fff; }
+/* Budget Planner v0.9.9a */
+.budget-page { max-width: 720px; margin: 0 auto; padding: 18px 24px 40px; }
+.budget-hero { margin: 12px 0 10px; padding: 14px 18px; border-radius: 16px; background: linear-gradient(135deg, #e8f8f2, #f8fcfa); border: 1px solid rgba(36,92,78,.10); text-align: center; }
+.budget-hero p { margin: 0 0 4px; color: #245c4e; font-weight: 600; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
+.budget-hero h1 { margin: 0; font-size: clamp(1.35rem, 2.6vw, 1.85rem); line-height: 1.1; letter-spacing: -.03em; font-weight: 600; }
+.budget-hero span { display: block; margin-top: 5px; color: #68736f; font-size: .8rem; }
+.budget-cruise-card, .budget-simple-card, .budget-category-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.budget-cruise-card { margin-bottom: 10px; }
+.budget-rate-field, .budget-simple-card label, .budget-entry-form label { display: grid; gap: 5px; color: #4d5854; font-size: .84rem; font-weight: 650; }
+.budget-rate-field input, .budget-simple-card input, .budget-entry-form input { width: 100%; box-sizing: border-box; border: 1px solid #d6dfdb; border-radius: 12px; padding: 10px 12px; font: inherit; background: #fff; }
 .budget-rate-field { min-width: 230px; }
-.budget-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
-.budget-grid > .budget-category-card:last-child { grid-column: 1 / -1; }
-.budget-category-card h2, .budget-simple-card h2, .budget-cruise-card h2 { margin: 3px 0 0; }
-.budget-item-list { border-top: 1px solid #edf1ef; margin-top: 18px; }
-.budget-item-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 13px 0; border-bottom: 1px solid #edf1ef; }
+.budget-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.budget-page .planner-card { margin-bottom: 10px; padding: 18px 20px; }
+.budget-category-card h2, .budget-simple-card h2, .budget-cruise-card h2 { margin: 2px 0 0; font-size: 1.35rem; }
+.budget-item-list { border-top: 1px solid #edf1ef; margin-top: 12px; }
+.budget-item-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid #edf1ef; }
 .budget-item-actions { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
 .budget-item-actions span { font-weight: 750; }
 .budget-item-actions button { border: 0; background: transparent; color: #245c4e; font-weight: 700; cursor: pointer; }
-.budget-empty { margin: 18px 0 0; color: #7a8480; }
-.budget-entry-form { margin-top: 18px; padding: 18px; border-radius: 18px; background: #f7faf9; border: 1px solid #e4ebe8; }
-.budget-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
-.budget-entry-form > label { margin-top: 12px; }
-.budget-checkbox { display: flex !important; grid-template-columns: auto 1fr; align-items: center; margin-top: 12px; }
+.budget-empty { margin: 10px 0 0; color: #7a8480; }
+.budget-entry-form { margin-top: 12px; padding: 14px; border-radius: 14px; background: #f7faf9; border: 1px solid #e4ebe8; }
+.budget-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.budget-entry-form > label { margin-top: 10px; }
+.budget-checkbox { display: flex !important; grid-template-columns: auto 1fr; align-items: center; margin-top: 10px; }
 .budget-checkbox input { width: auto; }
-.budget-form-actions { display: flex; gap: 10px; margin-top: 16px; }
-.budget-save-message { text-align: center; margin-top: 18px; }
+.budget-form-actions { display: flex; gap: 10px; margin-top: 12px; }
+.budget-save-message { text-align: center; margin-top: 12px; }
 
-/* Dashboard cards expand to fit all booking information. */
+/* Dashboard v0.9.9a refinements */
+.dashboard-v2-grid { gap: 14px; margin-top: 14px; }
+.dashboard-v2-side { gap: 14px !important; }
+.dashboard-v2-top-row { gap: 14px !important; }
+.dashboard-combined-progress-card .dashboard-card-label { margin-bottom: 2px; }
+.dashboard-combined-progress-item h2 { margin: 0 0 8px; font-size: .92rem; }
+.dashboard-combined-progress-item p { min-height: 0; margin: 8px 0 8px; }
+.dashboard-combined-progress-item .dashboard-mini-progress-circle { width: 100px; height: 100px; }
+.dashboard-combined-progress-item .dashboard-mini-progress-circle > div { width: 76px; height: 76px; }
+.dashboard-combined-progress-item .dashboard-mini-progress-circle strong { font-size: 1.35rem; }
+.dashboard-next-step-wide { padding: 14px 18px !important; gap: 16px; }
+.dashboard-quick-access button { padding: 14px 18px; }
+.dashboard-summary-card { padding: 16px 18px; }
+.dashboard-snapshot-card .dashboard-outline-action { margin-top: 12px; }
+
+.dashboard-page .dashboard-card-button,
+.dashboard-page .dashboard-outline-action,
+.dashboard-page .dashboard-quick-access button,
+.dashboard-page .dashboard-quick-access button strong,
+.dashboard-page .dashboard-mini-progress button,
+.dashboard-page .dashboard-signout,
+.dashboard-page .dashboard-itinerary-toggle,
+.dashboard-page .dashboard-itinerary-dialog-head button {
+  font-weight: 400 !important;
+}
+
+/* Expanding snapshot, matched card heights, no internal scrollbar */
 @media (min-width:1081px) {
   .dashboard-v2-side { grid-template-rows: auto auto !important; }
-  .dashboard-v2-top-row { height: auto !important; min-height: 0 !important; align-items: stretch !important; }
+  .dashboard-v2-top-row {
+    height: auto !important;
+    min-height: 0 !important;
+    align-items: stretch !important;
+  }
   .dashboard-v2-top-row > .dashboard-combined-progress-card,
-  .dashboard-v2-top-row > .dashboard-snapshot-card { height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; }
-  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list { flex: 0 0 auto !important; min-height: auto !important; overflow: visible !important; padding-right: 0 !important; }
+  .dashboard-v2-top-row > .dashboard-snapshot-card {
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .dashboard-v2-top-row > .dashboard-snapshot-card {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list {
+    flex: 0 0 auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    overflow-y: visible !important;
+    padding-right: 0 !important;
+  }
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-outline-action {
+    flex: 0 0 auto !important;
+    margin-top: auto;
+  }
+  .dashboard-combined-progress-card {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
 }
+
 @media (max-width:800px) {
-  .budget-page { padding: 18px 14px 42px; }
-  .budget-grid { grid-template-columns: 1fr; }
-  .budget-grid > .budget-category-card:last-child { grid-column: auto; }
+  .budget-page { padding: 14px 14px 32px; }
   .budget-cruise-card, .budget-simple-card, .budget-category-heading, .budget-item-row { align-items: stretch; flex-direction: column; }
   .budget-rate-field { min-width: 0; width: 100%; }
   .budget-item-actions { justify-content: space-between; }
