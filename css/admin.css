@@ -1,3 +1,14 @@
+
+:root {
+  --brand-green: #8DD9BF;
+  --brand-green-hover: #79CDB1;
+  --brand-green-soft: #EFFAF6;
+  --brand-green-soft-strong: var(--brand-green-soft);
+  --brand-green-border: #BDEBDD;
+  --brand-green-ink: #245C4E;
+  --brand-green-focus: rgba(141, 217, 191, 0.32);
+}
+
 #cruise-admin-app {
   max-width: 1180px;
   margin: 0 auto;
@@ -93,7 +104,7 @@
   font-size: 12px;
 }
 
-.admin-success { color: #087a4b; }
+.admin-success { color: var(--brand-green-ink); }
 .admin-error { color: #b00020; }
 
 .admin-tabs {
@@ -163,8 +174,8 @@
   margin-top: 6px;
   padding: 5px 9px;
   border-radius: 999px;
-  background: #e8f8f1;
-  color: #087a4b;
+  background: var(--brand-green-soft);
+  color: var(--brand-green-ink);
   font-size: 11px;
   font-weight: 800;
 }
@@ -292,7 +303,7 @@
   --admin-panel: #ffffff;
   --admin-page: #f8f9fa;
   --admin-soft: #f5f6f7;
-  --admin-accent: #2f6f5e;
+  --admin-accent: var(--brand-green);
   color: var(--admin-text);
   font-size: 13px;
   line-height: 1.45;
@@ -358,7 +369,7 @@
 .admin-field textarea:focus {
   outline: none;
   border-color: #b9c7c1;
-  box-shadow: 0 0 0 3px rgba(47, 111, 94, 0.08);
+  box-shadow: 0 0 0 3px var(--brand-green-focus);
 }
 
 .admin-button,
@@ -417,7 +428,7 @@
   font-size: 10.5px !important;
   font-weight: 450 !important;
   background: #f3f6f5;
-  color: #2f6f5e;
+  color: var(--brand-green-ink);
 }
 
 .admin-message {
@@ -480,8 +491,8 @@
 }
 
 .admin-check-chip.is-selected {
-  border-color: #b7e8d8;
-  background: #f0fbf7;
+  border-color: var(--brand-green-border);
+  background: var(--brand-green-soft);
 }
 
 .admin-check-chip input:disabled {
@@ -940,7 +951,7 @@
 }
 
 .essential-pill {
-  background: rgba(142, 223, 200, 0.24);
+  background: rgba(141, 217, 191, 0.24);
   border-color: rgba(91, 138, 114, 0.28);
   color: #1f4d3f;
 }
@@ -972,8 +983,8 @@
 }
 
 .admin-subtab.active {
-  background: var(--admin-mint, #8edfc8);
-  border-color: var(--admin-mint, #8edfc8);
+  background: var(--admin-mint, var(--brand-green));
+  border-color: var(--admin-mint, var(--brand-green));
   color: #111111;
 }
 
@@ -1126,20 +1137,20 @@
   animation: packingItemSavedPulse 2.2s ease-out;
 }
 @keyframes packingItemSavedPulse {
-  0%, 35% { background: #e7f7ef; box-shadow: 0 0 0 3px rgba(24, 134, 111, .16); }
+  0%, 35% { background: var(--brand-green-soft); box-shadow: 0 0 0 3px rgba(141, 217, 191, .28); }
   100% { background: #fff; box-shadow: none; }
 }
 
 
 /* Packing item preview audit details */
 .packing-card-main { position:relative; padding-left:48px; min-width:0; }
-.packing-order-badge { position:absolute; left:0; top:0; min-width:34px; height:28px; padding:0 8px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:#edf4f1; color:#285a50; border:1px solid #d7e5df; font-size:.76rem; font-weight:800; font-variant-numeric:tabular-nums; }
+.packing-order-badge { position:absolute; left:0; top:0; min-width:34px; height:28px; padding:0 8px; border-radius:9px; display:inline-flex; align-items:center; justify-content:center; background:#edf4f1; color:#285a50; border:1px solid var(--brand-green-border); font-size:.76rem; font-weight:800; font-variant-numeric:tabular-nums; }
 .packing-restriction-badge { margin-top:8px; }
 .packing-restriction-badge.carry-on { background:#fff3df; border-color:#f0d39d; color:#8a5a0a; }
 .packing-restriction-badge.checked-only { background:#eaf1fb; border-color:#c8d8ee; color:#315e91; }
-.packing-restriction-badge.any-location { background:#eef6f2; border-color:#d4e6dc; color:#356455; }
+.packing-restriction-badge.any-location { background:#eef6f2; border-color:var(--brand-green-border); color:var(--brand-green-ink); }
 .packing-item-row.is-just-saved { animation:packingSavedPulse 2.2s ease; }
-@keyframes packingSavedPulse { 0%,100%{box-shadow:inherit} 20%{box-shadow:0 0 0 3px rgba(60,150,110,.25); background:#f0faf5} }
+@keyframes packingSavedPulse { 0%,100%{box-shadow:inherit} 20%{box-shadow:0 0 0 3px rgba(141,217,191,.34); background:var(--brand-green-soft)} }
 
 
 /* 2026-07-12 packing card preview corrections */
@@ -1208,6 +1219,23 @@
 }
 
 @keyframes packingOrderSaved {
-  0%, 55% { background: rgba(225, 247, 238, .62); box-shadow: 0 0 0 3px rgba(24, 134, 111, .13); }
+  0%, 55% { background: rgba(225, 247, 238, .62); box-shadow: 0 0 0 3px rgba(141, 217, 191, .24); }
   100% { background: transparent; box-shadow: none; }
+}
+
+/* 101cruise brand colour system: final component overrides */
+.admin-button:not(.black):not(.secondary):not(.danger):hover {
+  background: var(--brand-green-hover);
+}
+
+.admin-field input:focus,
+.admin-field select:focus,
+.admin-field textarea:focus {
+  border-color: var(--brand-green);
+  box-shadow: 0 0 0 3px var(--brand-green-focus);
+}
+
+#cruise-admin-app input[type="checkbox"],
+#cruise-admin-app input[type="radio"] {
+  accent-color: var(--brand-green);
 }

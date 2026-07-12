@@ -1,3 +1,14 @@
+
+:root {
+  --brand-green: #8DD9BF;
+  --brand-green-hover: #79CDB1;
+  --brand-green-soft: #EFFAF6;
+  --brand-green-soft-strong: var(--brand-green-soft);
+  --brand-green-border: #BDEBDD;
+  --brand-green-ink: #245C4E;
+  --brand-green-focus: rgba(141, 217, 191, 0.32);
+}
+
 #cruise-planner-app {
     max-width: 1040px;
     margin: 0 auto;
@@ -70,7 +81,7 @@
   .feature-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 22px rgba(0,0,0,0.06);
-    border-color: #d8f3ea;
+    border-color: var(--brand-green-border);
   }
 
   .feature-card strong {
@@ -898,7 +909,7 @@
 :root {
   --planner-bg: #fff;
   --planner-red: #ff0019;
-  --planner-green: #8DD9BF;
+  --planner-green: var(--brand-green);
   --planner-text: #111;
   --planner-muted: #666;
 }
@@ -1468,7 +1479,7 @@
   display: grid;
   place-items: center;
   background: rgba(141,217,191,0.35);
-  color: #087765;
+  color: var(--brand-green-ink);
   font-weight: 900;
 }
 
@@ -1485,11 +1496,11 @@
 }
 
 .dashboard-welcome-strip strong {
-  color: #087765;
+  color: var(--brand-green-ink);
 }
 
 .dashboard-welcome-days {
-  color: #087765;
+  color: var(--brand-green-ink);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -1742,8 +1753,8 @@
 /* v0.5.6 final dashboard implementation */
 :root {
   --cruise-red: #ff0019;
-  --cruise-green: #82d8bf;
-  --cruise-dark-green: #006b54;
+  --cruise-green: var(--brand-green);
+  --cruise-dark-green: var(--brand-green-ink);
   --cruise-ink: #111111;
   --cruise-muted: #666666;
   --cruise-line: #ededed;
@@ -1954,7 +1965,7 @@
   height: 54px;
   flex: 0 0 54px;
   border-radius: 50%;
-  background: #dff4ee;
+  background: var(--brand-green-soft);
   display: grid;
   place-items: center;
   color: var(--cruise-dark-green);
@@ -2009,7 +2020,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #dff4ee;
+  background: var(--brand-green-soft);
   color: var(--cruise-dark-green);
   display: grid;
   place-items: center;
@@ -2490,7 +2501,7 @@
   font-size: clamp(34px, 3vw, 52px) !important;
   line-height: 1 !important;
   font-weight: 800 !important;
-  color: var(--cruise-green, #82d8bf) !important;
+  color: var(--cruise-green, var(--brand-green)) !important;
 }
 
 .dashboard-countdown-logo {
@@ -2631,7 +2642,7 @@
 }
 
 .cruise-switcher-button {
-  border: 1px solid #d9e7e1;
+  border: 1px solid var(--brand-green-border);
   background: #fff;
   color: #111;
   border-radius: 999px;
@@ -2686,7 +2697,7 @@
 }
 
 .cruise-switcher-item:hover {
-  background: #f6fbf9;
+  background: var(--brand-green-soft);
 }
 
 .cruise-switcher-item.active {
@@ -3006,7 +3017,7 @@
   --planner-border: #e5e7eb;
   --planner-panel: #ffffff;
   --planner-page: #f8f9fa;
-  --planner-accent: #2f6f5e;
+  --planner-accent: var(--brand-green);
   color: var(--planner-text);
   font-size: 13px;
   line-height: 1.45;
@@ -3066,7 +3077,7 @@
 .planner-field select:focus {
   outline: none;
   border-color: #b9c7c1;
-  box-shadow: 0 0 0 3px rgba(47, 111, 94, 0.08);
+  box-shadow: 0 0 0 3px var(--brand-green-focus);
 }
 
 .planner-button,
@@ -3189,8 +3200,8 @@
 .checklist-toolbar .planner-button[onclick*="PDF"],
 .checklist-toolbar .planner-button[onclick*="Pdf"],
 .checklist-toolbar .planner-button[onclick*="pdf"] {
-  background: var(--planner-accent, #8ad9c2) !important;
-  border-color: var(--planner-accent, #8ad9c2) !important;
+  background: var(--planner-accent, var(--brand-green)) !important;
+  border-color: var(--planner-accent, var(--brand-green)) !important;
   color: #0f2f28 !important;
 }
 
@@ -3226,8 +3237,8 @@
 }
 
 .planner-message.planner-success {
-  color: #2f684f;
-  background: rgba(142, 223, 200, 0.18);
+  color: var(--brand-green-ink);
+  background: rgba(141, 217, 191, 0.18);
   border: 1px solid rgba(91, 138, 114, 0.25);
   border-radius: 10px;
   padding: 10px 12px;
@@ -3409,7 +3420,7 @@
   grid-column: 1 / -1;
   min-height: auto !important;
   padding: 30px !important;
-  background: linear-gradient(135deg, #ffffff 0%, #f3fbf8 100%) !important;
+  background: linear-gradient(135deg, #ffffff 0%, var(--brand-green-soft) 100%) !important;
   border: 1px solid rgba(0, 107, 84, 0.16) !important;
 }
 
@@ -3469,7 +3480,7 @@
   border-radius: 14px;
   display: grid;
   place-items: center;
-  background: #dff4ee;
+  background: var(--brand-green-soft);
   font-size: 23px;
 }
 
@@ -3695,7 +3706,7 @@
 }
 
 .dashboard-feature-row:hover {
-  background: #f6fbf9;
+  background: var(--brand-green-soft);
   border-color: rgba(0,107,84,.28);
   transform: translateY(-1px);
 }
@@ -3706,7 +3717,7 @@
   border-radius: 10px;
   display: grid;
   place-items: center;
-  background: #e6f5f0;
+  background: var(--brand-green-soft);
   font-size: 17px;
 }
 
@@ -3729,7 +3740,7 @@
 }
 
 .dashboard-feature-row b {
-  color: #087765;
+  color: var(--brand-green-ink);
   font-size: 18px;
   font-weight: 500;
 }
@@ -3878,7 +3889,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #16856c;
+  background: var(--brand-green-ink);
 }
 
 .packing-settings-card {
@@ -3942,7 +3953,7 @@
 }
 
 .packing-summary-card > div:first-child > strong {
-  color: #116f5a;
+  color: var(--brand-green-ink);
   font-size: 34px;
   line-height: 1;
   font-weight: 600;
@@ -3981,7 +3992,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #56c7a8 0%, #16856c 100%);
+  background: linear-gradient(90deg, var(--brand-green) 0%, var(--brand-green-ink) 100%);
 }
 
 .packing-weight-gauge p {
@@ -4050,7 +4061,7 @@
   padding: 7px 10px;
   border-radius: 999px;
   background: #eef8f4;
-  color: #166f5a;
+  color: var(--brand-green-ink);
   font-size: 11px;
   font-weight: 600;
 }
@@ -4088,7 +4099,7 @@
 }
 
 .packing-row.is-packed {
-  background: #f6fbf9;
+  background: var(--brand-green-soft);
   opacity: 0.72;
 }
 
@@ -4108,7 +4119,7 @@
   width: 19px;
   height: 19px;
   margin: 2px 0 0;
-  accent-color: #16856c;
+  accent-color: var(--brand-green-ink);
 }
 
 .packing-item-title {
@@ -4164,8 +4175,8 @@
 }
 
 .priority-essential {
-  background: #dff6ee;
-  color: #116f5a;
+  background: var(--brand-green-soft);
+  color: var(--brand-green-ink);
 }
 
 .priority-tip {
@@ -4185,7 +4196,7 @@
   border: 1px dashed #cbd2da;
   border-radius: 10px;
   background: #fff;
-  color: #116f5a;
+  color: var(--brand-green-ink);
   font: inherit;
   font-size: 12px;
   cursor: pointer;
@@ -4336,8 +4347,8 @@
 }
 
 .packing-quantity-input:focus {
-  outline: 2px solid rgba(22, 133, 108, 0.16);
-  border-color: #16856c;
+  outline: 2px solid var(--brand-green-focus);
+  border-color: var(--brand-green-ink);
 }
 
 @media (max-width: 640px) {
@@ -4372,7 +4383,7 @@
   width: 19px;
   height: 19px;
   margin: 2px 0 0;
-  accent-color: #16856c;
+  accent-color: var(--brand-green-ink);
 }
 
 .packing-main-cell {
@@ -4441,7 +4452,7 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: conic-gradient(#16856c 0 var(--packing-weight-percent), #edf0f2 var(--packing-weight-percent) 360deg);
+  background: conic-gradient(var(--brand-green-ink) 0 var(--packing-weight-percent), #edf0f2 var(--packing-weight-percent) 360deg);
   transition: background 0.25s ease;
 }
 
@@ -4573,7 +4584,7 @@
 }
 
 .packing-progress-summary > strong {
-  color: #116f5a;
+  color: var(--brand-green-ink);
   font-size: 34px;
   line-height: 1;
   font-weight: 600;
@@ -4686,7 +4697,7 @@
 }
 
 .packing-profile-tab:hover {
-  color: #145f50;
+  color: var(--brand-green-ink);
 }
 
 .packing-profile-tab.is-active {
@@ -4739,7 +4750,7 @@
 }
 
 .packing-location-option.is-active {
-  color: #0f6654;
+  color: var(--brand-green-ink);
   background: #fff;
   box-shadow: 0 1px 5px rgba(23, 69, 57, .1);
 }
@@ -4823,7 +4834,7 @@
 
 .packing-allowance-input:focus-within {
   border-color: #7eb7a8;
-  box-shadow: 0 0 0 3px rgba(22, 133, 108, .1);
+  box-shadow: 0 0 0 3px rgba(141, 217, 191, .22);
 }
 
 .packing-settings-grid .packing-allowance-input input {
@@ -4851,7 +4862,7 @@
 
 .packing-row.is-selected:not(.is-packed) {
   background: #f1faf6;
-  box-shadow: inset 3px 0 0 #73bda8;
+  box-shadow: inset 3px 0 0 var(--brand-green);
 }
 
 .packing-row.is-selected:not(.is-packed):hover {
@@ -4859,13 +4870,13 @@
 }
 
 .packing-row.is-packed {
-  background: #e5f5ee;
-  box-shadow: inset 3px 0 0 #16856c;
+  background: var(--brand-green-soft);
+  box-shadow: inset 3px 0 0 var(--brand-green-ink);
   opacity: .82;
 }
 
 .packing-row.is-packed .packing-item-title {
-  color: #315c51;
+  color: var(--brand-green-ink);
 }
 
 .packing-row.is-filtered-out,
@@ -4880,7 +4891,7 @@
 #selectedOnlyButton.is-active {
   border-color: #95cbbb;
   background: #eaf7f2;
-  color: #126b57;
+  color: var(--brand-green-ink);
 }
 
 .packing-search-card {
@@ -5056,7 +5067,7 @@
   pointer-events: none;
   border-color: rgba(28, 120, 91, 0.25);
   background: rgba(28, 120, 91, 0.10);
-  color: #176b52;
+  color: var(--brand-green-ink);
 }
 .packing-safety-note {
   margin-top: 7px;
@@ -5278,7 +5289,7 @@
   transition: background .18s ease, transform .18s ease;
 }
 .dashboard-quick-access button:last-child { border-right: 0; }
-.dashboard-quick-access button:hover { background: rgba(25, 132, 111, .06); }
+.dashboard-quick-access button:hover { background: rgba(141, 217, 191, .12); }
 .dashboard-quick-access button:active { transform: scale(.985); }
 .dashboard-quick-access button span { font-size: 1.15rem; }
 .dashboard-quick-access button strong { font-size: .92rem; font-weight: 650; white-space: nowrap; }
@@ -5310,7 +5321,7 @@
 .dashboard-mini-progress button {
   border: 0;
   background: transparent;
-  color: #147b69;
+  color: var(--brand-green-ink);
   font: inherit;
   font-weight: 650;
   cursor: pointer;
@@ -5321,7 +5332,7 @@
   position: relative;
   border-radius: 18px;
   overflow: hidden;
-  border: 1px solid rgba(20, 123, 105, .12);
+  border: 1px solid rgba(141, 217, 191, .22);
   min-height: 300px;
   background: #e8f3f5;
 }
@@ -5376,7 +5387,7 @@
   width: 128px;
   height: 128px;
   border-radius: 50%;
-  background: conic-gradient(#19866f var(--progress), #edf2f1 0);
+  background: conic-gradient(var(--brand-green-ink) var(--progress), #edf2f1 0);
   display: grid;
   place-items: center;
   margin-bottom: 14px;
@@ -5390,7 +5401,7 @@
   place-content: center;
   gap: 2px;
 }
-.dashboard-mini-progress-circle strong { font-size: 1.65rem; line-height: 1; color: #147b69; }
+.dashboard-mini-progress-circle strong { font-size: 1.65rem; line-height: 1; color: var(--brand-green-ink); }
 .dashboard-mini-progress-circle span { font-size: .72rem; color: #6d7d79; text-transform: uppercase; letter-spacing: .08em; }
 .dashboard-mini-progress p { margin: 0 0 8px; color: #687873; font-size: .78rem; line-height: 1.45; }
 
@@ -5432,7 +5443,7 @@
 .dashboard-itinerary-timeline { padding: 12px 24px 26px; }
 .dashboard-itinerary-day { display: grid; grid-template-columns: 42px 1fr; gap: 14px; padding: 16px 0; border-bottom: 1px solid #edf0ef; }
 .dashboard-itinerary-day:last-child { border-bottom: 0; }
-.dashboard-itinerary-day-number { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #e5f4ef; color: #147b69; font-weight: 700; }
+.dashboard-itinerary-day-number { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #e5f4ef; color: var(--brand-green-ink); font-weight: 700; }
 .dashboard-itinerary-day.is-sea-day .dashboard-itinerary-day-number { background: #e8eff6; color: #3f6788; }
 .dashboard-itinerary-day span { color: #76837f; font-size: .74rem; }
 .dashboard-itinerary-day h3 { margin: 3px 0 4px; font-size: 1rem; }
@@ -5505,9 +5516,9 @@
   display: grid;
   place-items: center;
   background: #fff;
-  border: 2px solid #147b69;
+  border: 2px solid var(--brand-green-ink);
   box-shadow: 0 2px 8px rgba(8, 55, 47, .18);
-  color: #147b69;
+  color: var(--brand-green-ink);
   font-size: 10px;
   font-weight: 750;
   line-height: 1;
@@ -5700,7 +5711,7 @@
   min-height: 350px !important;
   height: 350px;
   background: #dceff5 !important;
-  border: 1px solid rgba(20, 123, 105, .14);
+  border: 1px solid rgba(141, 217, 191, .24);
 }
 .dashboard-editorial-map svg {
   width: 100%;
@@ -5709,7 +5720,7 @@
 }
 .dashboard-map-port-number {
   font: 700 9px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  fill: #167d6a;
+  fill: var(--brand-green-ink);
 }
 .dashboard-map-port-label {
   font: 650 10px/1.1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -5782,8 +5793,8 @@
 .dashboard-final-map svg { width:100%; height:350px; display:block; }
 .dashboard-map-land path { fill:#e8f0d8; stroke:#b6c9a9; stroke-width:1.1; vector-effect:non-scaling-stroke; }
 .dashboard-map-water-label { font: italic 600 12px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#47728a; text-anchor:middle; }
-.dashboard-map-port circle { fill:#fff; stroke:#0c7664; stroke-width:2; }
-.dashboard-map-port-number { font:700 8.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#0c7664; }
+.dashboard-map-port circle { fill:#fff; stroke:var(--brand-green-ink); stroke-width:2; }
+.dashboard-map-port-number { font:700 8.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:var(--brand-green-ink); }
 .dashboard-map-port-label { font:650 10px/1.1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#173c37; paint-order:stroke; stroke:#fff; stroke-width:4px; stroke-linejoin:round; }
 .dashboard-map-ship { transform-box:fill-box; transform-origin:center; }
 .dashboard-next-step-wide h2 { margin:3px 0; font-size:1rem !important; }
@@ -6040,4 +6051,35 @@
     transform: none !important;
     clear: both !important;
   }
+}
+
+/* 101cruise brand colour system: final component overrides */
+.planner-button:not(.black):not(.secondary):not(.danger),
+.checklist-toolbar .planner-button.primary,
+.checklist-toolbar .planner-button.save-pdf,
+.dashboard-progress-ring,
+.dashboard-ready-ring,
+.packing-progress-ring {
+  --component-accent: var(--brand-green);
+}
+
+.checklist-toolbar .planner-button.primary:hover,
+.checklist-toolbar .planner-button.save-pdf:hover,
+.checklist-toolbar .planner-button[onclick*="PDF"]:hover,
+.checklist-toolbar .planner-button[onclick*="Pdf"]:hover,
+.checklist-toolbar .planner-button[onclick*="pdf"]:hover {
+  background: var(--brand-green-hover) !important;
+  border-color: var(--brand-green-hover) !important;
+}
+
+.planner-field input:focus,
+.planner-field select:focus,
+.planner-field textarea:focus {
+  border-color: var(--brand-green) !important;
+  box-shadow: 0 0 0 3px var(--brand-green-focus) !important;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--brand-green);
 }
