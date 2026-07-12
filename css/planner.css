@@ -815,7 +815,7 @@
   height: 156px;
   margin: 6px auto 14px;
   border-radius: 50%;
-  background: conic-gradient(#8DD9BF calc(var(--progress) * 1%), #eeeeee 0);
+ background: conic-gradient(var(--brand-green) calc(var(--progress) * 1%), #eeeeee 0);
   display: grid;
   place-items: center;
 }
@@ -4452,7 +4452,10 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: conic-gradient(var(--brand-green-ink) 0 var(--packing-weight-percent), #edf0f2 var(--packing-weight-percent) 360deg);
+  background: conic-gradient(
+    var(--brand-green) 0 var(--packing-weight-percent),
+    #edf0f2 var(--packing-weight-percent) 360deg
+  );
   transition: background 0.25s ease;
 }
 
@@ -5383,11 +5386,11 @@
   justify-content: center;
   text-align: center;
 }
-.dashboard-mini-progress-circle {
+..dashboard-mini-progress-circle {
   width: 128px;
   height: 128px;
   border-radius: 50%;
-  background: conic-gradient(var(--brand-green-ink) var(--progress), #edf2f1 0);
+  background: conic-gradient(var(--brand-green) var(--progress), #edf2f1 0);
   display: grid;
   place-items: center;
   margin-bottom: 14px;
