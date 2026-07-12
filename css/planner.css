@@ -6008,3 +6008,36 @@
     grid-row: auto !important;
   }
 }
+
+/* 2026-07-12 final Next Essential Step row correction.
+   Fixed-height dashboard cards must include their padding and borders inside
+   the declared height. Otherwise the following grid row begins too early and
+   visually overlaps the cards above. */
+@media (min-width: 1081px) {
+  .dashboard-v2-side {
+    grid-template-rows: auto auto !important;
+    align-content: start !important;
+  }
+
+  .dashboard-v2-top-row {
+    height: auto !important;
+    min-height: 540px !important;
+    align-items: stretch !important;
+  }
+
+  .dashboard-v2-top-row > .dashboard-combined-progress-card,
+  .dashboard-v2-top-row > .dashboard-snapshot-card {
+    box-sizing: border-box !important;
+    height: 540px !important;
+    min-height: 540px !important;
+    max-height: 540px !important;
+  }
+
+  .dashboard-v2-side > .dashboard-next-step-wide {
+    position: static !important;
+    grid-row: 2 !important;
+    margin: 0 !important;
+    transform: none !important;
+    clear: both !important;
+  }
+}
