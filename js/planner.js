@@ -3782,7 +3782,56 @@ function renderBudgetItems(category) {
 
 function renderBudgetCategory(category, title, buttonLabel) {
   const totals = getBudgetTotals();
-  return `<section class="planner-card budget-category-card"><div class="budget-category-heading"><div><p class="planner-kicker">${escapeHtml(title)}</p><h2>${formatAud(totals[category])}</h2></div><button class="planner-button secondary" onclick="openBudgetItemForm('${category}')">+ ${escapeHtml(buttonLabel)}</button></div>${renderBudgetItems(category)}<div id="budget-form-${category}"></div></section>`;
+  return `<section class="planner-card budget-category-card"><div class="budget-category-heading"><div><p class="planner-kicker">${escapeHtml(title)}</p><h2>${formatAud(totals[category])}</h2></div><button class="planner-button secondary budget-add-button" onclick="openBudgetItemForm('${category}')">+ ${escapeHtml(buttonLabel)}</button></div>${renderBudgetItems(category)}<div id="budget-form-${category}"></div></section>`;
+}
+
+function budgetHasStoredValue(value) {
+  return value !== undefined && value !== null && value !== "" && Number.isFinite(Number(value));
+}
+
+function getBudgetPaymentDisplay(cruise) {
+  const booking = getDashboardBookingSource(cruise);
+  const pick = (sources) => {
+    for (const [value, formatter] of sources) {
+      if (budgetHasStoredValue(value)) return formatter(value);
+    }
+    return null;
+  };
+  return {
+    paid: pick([
+      [activeBudget?.paid, formatAud],
+      [activeBudget?.amount_paid, formatAud],
+      [activeBudget?.paid_amount, formatAud],
+      [booking.amount_paid, formatCurrencyValue],
+      [booking.paid_amount, formatCurrencyValue],
+      [booking.total_paid, formatCurrencyValue]
+    ]),
+    remaining: pick([
+      [activeBudget?.remaining, formatAud],
+      [activeBudget?.remaining_amount, formatAud],
+      [activeBudget?.balance_owing, formatAud],
+      [booking.balance_owing, formatCurrencyValue],
+      [booking.remaining_balance, formatCurrencyValue]
+    ])
+  };
+}
+
+function renderBudgetPaymentStats(cruise) {
+  const { paid, remaining } = getBudgetPaymentDisplay(cruise);
+  if (!paid && !remaining) return "";
+  return `<div class="budget-summary-stats">${paid ? `<div class="budget-summary-stat"><span>Paid</span><strong>${escapeHtml(paid)}</strong></div>` : ""}${remaining ? `<div class="budget-summary-stat"><span>Remaining</span><strong>${escapeHtml(remaining)}</strong></div>` : ""}</div>`;
+}
+
+function renderBudgetSimpleCard(title, field, inputLabel) {
+  return `<section class="planner-card budget-simple-card"><div class="budget-category-heading"><div><p class="planner-kicker">${escapeHtml(title)}</p><h2>${formatAud(activeBudget[field])}</h2></div></div><label><span>${escapeHtml(inputLabel)}</span><input type="number" min="0" step="0.01" value="${activeBudget[field] || ""}" placeholder="0.00" onchange="updateBudgetValue('${field}', this.value)"></label></section>`;
+}
+
+function renderBudgetSummaryColumn(cruise, totals) {
+  return `<aside class="budget-summary-column"><section class="planner-card budget-summary-card"><p class="budget-summary-label">Estimated Holiday Total</p><h1 class="budget-summary-total">${formatAud(totals.total)}</h1><p class="budget-summary-note">Based on your current budget.</p>${renderBudgetPaymentStats(cruise)}<div class="budget-summary-cruise"><p class="planner-kicker">Cruise</p><h2>${formatAud(totals.cruiseAud)}</h2><p class="planner-muted">Booking price ${formatUsd(activeBudget.cruise_price_usd)}</p></div><label class="budget-rate-field"><span>USD to AUD exchange rate</span><input type="number" min="0" step="0.0001" value="${activeBudget.exchange_rate}" onchange="updateBudgetValue('exchange_rate', this.value)"></label></section></aside>`;
+}
+
+function renderBudgetCategoriesGrid() {
+  return `<div class="budget-categories-column"><div class="budget-grid">${renderBudgetCategory("flights", "Flights", "Add Flight")}${renderBudgetCategory("accommodation", "Accommodation", "Add Stay")}${renderBudgetCategory("cars", "Car Hire", "Add Car Hire")}${renderBudgetSimpleCard("Food & Beverage", "food_beverage", "Total holiday allowance")}${renderBudgetSimpleCard("Travel Insurance", "travel_insurance", "Total insurance cost")}${renderBudgetSimpleCard("Shore Excursions", "excursions", "Total excursion allowance")}${renderBudgetCategory("other", "Other Expenses", "Add Expense")}</div></div>`;
 }
 
 async function renderBudgetPlanner() {
@@ -3792,7 +3841,7 @@ async function renderBudgetPlanner() {
   activeBudget = await loadBudget(cruise);
   activeBudget.cruise_price_usd = getCruisePriceUsd(cruise);
   const totals = getBudgetTotals();
-  app.innerHTML = `<div class="budget-page">${renderPlannerNav("budget")}<section class="budget-hero"><p>Estimated Holiday Total</p><h1>${formatAud(totals.total)}</h1><span>Based on your current budget.</span></section><section class="planner-card budget-cruise-card"><div><p class="planner-kicker">Cruise</p><h2>${formatAud(totals.cruiseAud)}</h2><p class="planner-muted">Booking price ${formatUsd(activeBudget.cruise_price_usd)}</p></div><label class="budget-rate-field"><span>USD to AUD exchange rate</span><input type="number" min="0" step="0.0001" value="${activeBudget.exchange_rate}" onchange="updateBudgetValue('exchange_rate', this.value)"></label></section><div class="budget-grid">${renderBudgetCategory("flights", "Flights", "Add Flight")}${renderBudgetCategory("accommodation", "Accommodation", "Add Stay")}${renderBudgetCategory("cars", "Car Hire", "Add Car Hire")}<section class="planner-card budget-simple-card"><div><p class="planner-kicker">Food & Beverage Allowance</p><h2>${formatAud(activeBudget.food_beverage)}</h2></div><label><span>Total holiday allowance</span><input type="number" min="0" step="0.01" value="${activeBudget.food_beverage || ""}" placeholder="0.00" onchange="updateBudgetValue('food_beverage', this.value)"></label></section><section class="planner-card budget-simple-card"><div><p class="planner-kicker">Travel Insurance</p><h2>${formatAud(activeBudget.travel_insurance)}</h2></div><label><span>Total insurance cost</span><input type="number" min="0" step="0.01" value="${activeBudget.travel_insurance || ""}" placeholder="0.00" onchange="updateBudgetValue('travel_insurance', this.value)"></label></section><section class="planner-card budget-simple-card"><div><p class="planner-kicker">Shore Excursions</p><h2>${formatAud(activeBudget.excursions)}</h2></div><label><span>Total excursion allowance</span><input type="number" min="0" step="0.01" value="${activeBudget.excursions || ""}" placeholder="0.00" onchange="updateBudgetValue('excursions', this.value)"></label></section>${renderBudgetCategory("other", "Other Expenses", "Add Expense")}</div><p id="budget-save-message" class="planner-message budget-save-message">${adminPreviewMode ? "Preview only. Budget changes are not saved." : activeBudget.updated_at ? `Updated ${escapeHtml(formatDateShort(activeBudget.updated_at))}` : "Changes save automatically."}</p></div>`;
+  app.innerHTML = `<div class="budget-page">${renderPlannerNav("budget")}<div class="budget-layout">${renderBudgetSummaryColumn(cruise, totals)}${renderBudgetCategoriesGrid()}</div><p id="budget-save-message" class="planner-message budget-save-message">${adminPreviewMode ? "Preview only. Budget changes are not saved." : activeBudget.updated_at ? `Updated ${escapeHtml(formatDateShort(activeBudget.updated_at))}` : "Changes save automatically."}</p></div>`;
 }
 
 async function updateBudgetValue(field, value) {

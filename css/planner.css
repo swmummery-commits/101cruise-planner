@@ -6081,33 +6081,47 @@ input[type="radio"] {
   accent-color: var(--brand-green);
 }
 
-/* Budget Planner v0.9.9a */
-.budget-page { max-width: 720px; margin: 0 auto; padding: 18px 24px 40px; }
-.budget-hero { margin: 12px 0 10px; padding: 14px 18px; border-radius: 16px; background: linear-gradient(135deg, #e8f8f2, #f8fcfa); border: 1px solid rgba(36,92,78,.10); text-align: center; }
-.budget-hero p { margin: 0 0 4px; color: #245c4e; font-weight: 600; font-size: .76rem; letter-spacing: .04em; text-transform: uppercase; }
-.budget-hero h1 { margin: 0; font-size: clamp(1.35rem, 2.6vw, 1.85rem); line-height: 1.1; letter-spacing: -.03em; font-weight: 600; }
-.budget-hero span { display: block; margin-top: 5px; color: #68736f; font-size: .8rem; }
-.budget-cruise-card, .budget-simple-card, .budget-category-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.budget-cruise-card { margin-bottom: 10px; }
-.budget-rate-field, .budget-simple-card label, .budget-entry-form label { display: grid; gap: 5px; color: #4d5854; font-size: .84rem; font-weight: 650; }
-.budget-rate-field input, .budget-simple-card input, .budget-entry-form input { width: 100%; box-sizing: border-box; border: 1px solid #d6dfdb; border-radius: 12px; padding: 10px 12px; font: inherit; background: #fff; }
-.budget-rate-field { min-width: 230px; }
-.budget-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-.budget-page .planner-card { margin-bottom: 10px; padding: 18px 20px; }
-.budget-category-card h2, .budget-simple-card h2, .budget-cruise-card h2 { margin: 2px 0 0; font-size: 1.35rem; }
-.budget-item-list { border-top: 1px solid #edf1ef; margin-top: 12px; }
-.budget-item-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid #edf1ef; }
-.budget-item-actions { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
-.budget-item-actions span { font-weight: 750; }
-.budget-item-actions button { border: 0; background: transparent; color: #245c4e; font-weight: 700; cursor: pointer; }
-.budget-empty { margin: 10px 0 0; color: #7a8480; }
-.budget-entry-form { margin-top: 12px; padding: 14px; border-radius: 14px; background: #f7faf9; border: 1px solid #e4ebe8; }
-.budget-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
-.budget-entry-form > label { margin-top: 10px; }
-.budget-checkbox { display: flex !important; grid-template-columns: auto 1fr; align-items: center; margin-top: 10px; }
+/* Budget Planner v0.9.9b */
+#cruise-planner-app:has(.budget-page) { max-width: 1240px; }
+.budget-page { max-width: 1240px; margin: 0 auto; padding: 16px 22px 36px; }
+.budget-layout { display: grid; grid-template-columns: minmax(250px, 290px) minmax(0, 1fr); gap: 16px; align-items: start; }
+.budget-summary-column { position: sticky; top: 16px; }
+.budget-summary-card { margin-bottom: 0; padding: 18px 18px 16px; border-color: rgba(141, 217, 191, .35); background: linear-gradient(180deg, #f3fbf7 0%, #fff 72%); }
+.budget-summary-label { margin: 0 0 6px; color: #245c4e; font-size: .72rem; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+.budget-summary-total { margin: 0; font-size: clamp(1.55rem, 2.2vw, 2rem); line-height: 1.08; letter-spacing: -.03em; font-weight: 600; color: #173b34; }
+.budget-summary-note { margin: 6px 0 0; color: #68736f; font-size: .78rem; }
+.budget-summary-stats { display: grid; gap: 8px; margin: 14px 0 12px; padding: 10px 0 0; border-top: 1px solid rgba(36, 92, 78, .12); }
+.budget-summary-stat { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.budget-summary-stat span { color: #5f6b67; font-size: .76rem; }
+.budget-summary-stat strong { color: #173b34; font-size: .92rem; font-weight: 600; }
+.budget-summary-cruise { margin: 12px 0 14px; padding-top: 12px; border-top: 1px solid rgba(36, 92, 78, .12); }
+.budget-summary-cruise h2 { margin: 2px 0 4px; font-size: 1.15rem; }
+.budget-summary-cruise .planner-muted { margin: 0; font-size: .78rem; }
+.budget-categories-column { min-width: 0; }
+.budget-cruise-card, .budget-simple-card, .budget-category-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.budget-rate-field, .budget-simple-card label, .budget-entry-form label { display: grid; gap: 4px; color: #4d5854; font-size: .78rem; font-weight: 600; }
+.budget-rate-field input, .budget-simple-card input, .budget-entry-form input { width: 100%; box-sizing: border-box; border: 1px solid #d6dfdb; border-radius: 10px; padding: 8px 10px; font: inherit; font-size: .86rem; background: #fff; }
+.budget-rate-field { min-width: 0; width: 100%; }
+.budget-rate-field input:focus, .budget-simple-card input:focus, .budget-entry-form input:focus { border-color: var(--brand-green); box-shadow: 0 0 0 3px var(--brand-green-focus); outline: none; }
+.budget-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.budget-page .planner-card { margin-bottom: 0; padding: 12px 14px; }
+.budget-category-card h2, .budget-simple-card h2, .budget-cruise-card h2 { margin: 1px 0 0; font-size: 1.05rem; }
+.budget-page .planner-kicker { margin: 0; font-size: .68rem; letter-spacing: .04em; }
+.budget-add-button { padding: 6px 10px !important; font-size: .72rem !important; white-space: nowrap; }
+.budget-item-list { border-top: 1px solid #edf1ef; margin-top: 8px; }
+.budget-item-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid #edf1ef; font-size: .8rem; }
+.budget-item-actions { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.budget-item-actions span { font-weight: 650; font-size: .78rem; }
+.budget-item-actions button { border: 0; background: transparent; color: #245c4e; font-weight: 600; font-size: .74rem; cursor: pointer; }
+.budget-empty { margin: 8px 0 0; color: #7a8480; font-size: .78rem; }
+.budget-entry-form { margin-top: 10px; padding: 12px; border-radius: 12px; background: #f7faf9; border: 1px solid #e4ebe8; }
+.budget-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.budget-entry-form > label { margin-top: 8px; }
+.budget-checkbox { display: flex !important; grid-template-columns: auto 1fr; align-items: center; margin-top: 8px; }
 .budget-checkbox input { width: auto; }
-.budget-form-actions { display: flex; gap: 10px; margin-top: 12px; }
+.budget-form-actions { display: flex; gap: 8px; margin-top: 10px; }
 .budget-save-message { text-align: center; margin-top: 12px; }
+.budget-simple-card label { margin-top: 8px; }
 
 /* Dashboard v0.9.9a refinements */
 .dashboard-v2-grid { gap: 14px; margin-top: 14px; }
@@ -6175,9 +6189,15 @@ input[type="radio"] {
 }
 
 @media (max-width:800px) {
-  .budget-page { padding: 14px 14px 32px; }
+  .budget-page { padding: 14px 14px 28px; }
+  .budget-layout { grid-template-columns: 1fr; gap: 12px; }
+  .budget-summary-column { position: static; }
+  .budget-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .budget-cruise-card, .budget-simple-card, .budget-category-heading, .budget-item-row { align-items: stretch; flex-direction: column; }
   .budget-rate-field { min-width: 0; width: 100%; }
   .budget-item-actions { justify-content: space-between; }
   .budget-form-grid { grid-template-columns: 1fr; }
+}
+@media (max-width:560px) {
+  .budget-grid { grid-template-columns: 1fr; }
 }
