@@ -6074,22 +6074,22 @@ input[type="radio"] {
   accent-color: var(--brand-green);
 }
 
-/* Budget Planner v0.9.9f */
+/* Budget Planner v0.9.9g */
 .budget-page { padding: 16px 0 36px; }
-.budget-getting-started { margin-bottom: 24px; padding: 20px 22px; background: #f6f7f8; border-color: #e7eaee; }
+.budget-page .budget-getting-started { margin-bottom: 14px; padding: 20px 22px; background: #f6f7f8; border-color: #e7eaee; }
 .budget-getting-started h3 { margin: 0 0 8px; font-size: 1rem; font-weight: 600; color: #1f2b28; }
 .budget-getting-started .planner-muted { margin: 0; font-size: .86rem; line-height: 1.55; color: #5f6b67; }
 .budget-layout { display: grid; grid-template-columns: minmax(280px, 320px) minmax(0, 1fr); gap: 20px; align-items: start; }
 .budget-summary-column { position: sticky; top: 16px; display: grid; gap: 14px; align-content: start; }
-.budget-hero-card { margin-bottom: 0; padding: 20px 18px 18px; background: #8DD9BF; border-color: rgba(36, 92, 78, .1); box-shadow: none; }
-.budget-hero-icon { width: 2rem; height: 2rem; border-radius: 50%; background: #245C4E; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: .95rem; font-weight: 600; line-height: 1; margin-bottom: 12px; }
+.budget-hero-card { margin-bottom: 0; padding: 20px 18px 18px; background: linear-gradient(165deg, #8DD9BF 0%, #7bcdb3 48%, #8DD9BF 100%); border-color: rgba(36, 92, 78, .16); box-shadow: 0 10px 28px rgba(36, 92, 78, .08); }
 .budget-hero-label { margin: 0 0 10px; color: #245C4E; font-size: .68rem; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; }
 .budget-hero-total { margin: 0; font-size: clamp(2rem, 2.8vw, 2.75rem); line-height: 1.02; letter-spacing: -.04em; font-weight: 700; color: #122824; }
-.budget-hero-note { margin: 12px 0 0; color: #2d4a42; font-size: .76rem; line-height: 1.4; }
+.budget-hero-note { margin: 12px 0 0; color: #23443b; font-size: .76rem; line-height: 1.4; }
 .budget-category-title-block { display: flex; align-items: flex-start; gap: 10px; min-width: 0; flex: 1; }
 .budget-category-title-copy { min-width: 0; }
 .budget-category-kicker { margin: 0; text-transform: uppercase; letter-spacing: .06em; }
-.budget-category-icon { flex: 0 0 2rem; width: 2rem; height: 2rem; border-radius: 8px; background: rgba(141, 217, 191, .34); display: inline-flex; align-items: center; justify-content: center; font-size: .92rem; line-height: 1; filter: grayscale(1); opacity: .88; }
+.budget-category-icon { flex: 0 0 1.35rem; width: 1.35rem; height: 1.35rem; color: #1a2b28; display: inline-flex; align-items: center; justify-content: center; margin-top: 1px; }
+.budget-category-icon svg { width: 1.2rem; height: 1.2rem; stroke: currentColor; }
 .budget-cruise-card { display: block; }
 .budget-cruise-card .budget-category-heading { margin-bottom: 0; }
 .budget-cruise-details { margin-top: 14px; padding-top: 14px; border-top: 1px solid #edf1ef; }
@@ -6103,7 +6103,7 @@ input[type="radio"] {
 .budget-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .budget-grid > .budget-category-card:last-child { grid-column: 1 / -1; }
 .budget-page .planner-card { margin-bottom: 0; padding: 16px 18px; border-color: #e7eaee; box-shadow: none; }
-.budget-hero-card { box-shadow: none; }
+.budget-page .budget-hero-card { box-shadow: 0 10px 28px rgba(36, 92, 78, .08); }
 .budget-category-card h2, .budget-simple-card h2, .budget-cruise-card h2 { margin: 4px 0 0; font-size: 1.2rem; font-weight: 700; letter-spacing: -.02em; color: #122824; }
 .budget-page .planner-kicker { margin: 0; font-size: .66rem; letter-spacing: .06em; color: #6d7874; }
 .budget-add-button { padding: 7px 12px !important; font-size: .74rem !important; font-weight: 500 !important; white-space: nowrap; border-radius: 999px !important; }

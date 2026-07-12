@@ -3805,24 +3805,24 @@ function getBudgetItemParts(item) {
   return { primary: item.name || "Other expense", meta: "" };
 }
 
-const BUDGET_CATEGORY_ICONS = {
-  flights: "✈",
-  accommodation: "🏨",
-  cars: "🚗",
-  food_beverage: "🍽",
-  travel_insurance: "🛡",
-  excursions: "🚢",
-  other: "💳",
-  cruise: "🚢"
+const BUDGET_ICON_SVGS = {
+  cruise: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21c.6.5 1.2 1 2.5 1 2.5 0 3-2 6-2s3.5 2 6 2 2.5 0 3.5-1"/><path d="M19.38 17A11.6 11.6 0 0 0 21 14l-7-4-7 4c0 1.5.5 3 1.5 4"/><path d="M12 6v4"/><path d="M9 6h6"/></svg>`,
+  flights: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 20 3s-3 .5-4.5 1.5L12 8 3.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg>`,
+  accommodation: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/></svg>`,
+  cars: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 8 1-4h8l1 4"/><path d="M5 8h14v8a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8z"/><path d="M7 12h.01"/><path d="M17 12h.01"/></svg>`,
+  food_beverage: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
+  travel_insurance: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>`,
+  excursions: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 10V22"/><path d="M12 10c-1.5-3.5-5-4-5-4s1.5 3.5 5 4"/><path d="M12 10c1.5-3.5 5-4 5-4s-1.5 3.5-5 4"/><path d="M3 22c2.5-1.5 6-1.5 9-1.5s6.5 0 9 1.5"/></svg>`,
+  other: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h14a1 1 0 0 0 1-1v-4"/></svg>`
 };
 
-function renderBudgetCategoryIcon(icon) {
-  return `<span class="budget-category-icon" aria-hidden="true">${icon}</span>`;
+function renderBudgetCategoryIcon(key) {
+  return `<span class="budget-category-icon" aria-hidden="true">${BUDGET_ICON_SVGS[key] || ""}</span>`;
 }
 
 function renderBudgetCategory(category, title, buttonLabel) {
   const totals = getBudgetTotals();
-  return `<section class="planner-card budget-category-card"><div class="budget-category-heading"><div class="budget-category-title-block">${renderBudgetCategoryIcon(BUDGET_CATEGORY_ICONS[category] || "")}<div class="budget-category-title-copy"><p class="planner-kicker budget-category-kicker">${escapeHtml(title)}</p><h2>${formatAud(totals[category])}</h2></div></div><button class="planner-button secondary budget-add-button" onclick="openBudgetItemForm('${category}')">+ ${escapeHtml(buttonLabel)}</button></div>${renderBudgetItems(category)}<div id="budget-form-${category}"></div></section>`;
+  return `<section class="planner-card budget-category-card"><div class="budget-category-heading"><div class="budget-category-title-block">${renderBudgetCategoryIcon(category)}<div class="budget-category-title-copy"><p class="planner-kicker budget-category-kicker">${escapeHtml(title)}</p><h2>${formatAud(totals[category])}</h2></div></div><button class="planner-button secondary budget-add-button" onclick="openBudgetItemForm('${category}')">+ ${escapeHtml(buttonLabel)}</button></div>${renderBudgetItems(category)}<div id="budget-form-${category}"></div></section>`;
 }
 
 function renderBudgetGettingStarted() {
@@ -3838,11 +3838,11 @@ function renderBudgetSaveMessage() {
 }
 
 function renderBudgetHeroCard(totals) {
-  return `<section class="planner-card budget-hero-card"><span class="budget-hero-icon" aria-hidden="true">$</span><p class="budget-hero-label">Estimated Holiday Total</p><h1 class="budget-hero-total">${formatAud(totals.total)}</h1><p class="budget-hero-note">Based on your current budget.</p></section>`;
+  return `<section class="planner-card budget-hero-card"><p class="budget-hero-label">Estimated Holiday Total</p><h1 class="budget-hero-total">${formatAud(totals.total)}</h1><p class="budget-hero-note">Based on your current budget.</p></section>`;
 }
 
 function renderBudgetCruiseCard(totals) {
-  return `<section class="planner-card budget-category-card budget-cruise-card"><div class="budget-category-heading"><div class="budget-category-title-block">${renderBudgetCategoryIcon(BUDGET_CATEGORY_ICONS.cruise)}<div class="budget-category-title-copy"><p class="planner-kicker budget-category-kicker">Cruise</p><h2>${formatAud(totals.cruiseAud)}</h2></div></div></div><div class="budget-cruise-details"><p class="planner-muted budget-cruise-booking-price">Booking price ${formatUsd(activeBudget.cruise_price_usd)}</p><label class="budget-rate-field"><span>USD to AUD exchange rate</span><input type="number" min="0" step="0.0001" value="${activeBudget.exchange_rate}" onchange="updateBudgetValue('exchange_rate', this.value)"></label></div></section>`;
+  return `<section class="planner-card budget-category-card budget-cruise-card"><div class="budget-category-heading"><div class="budget-category-title-block">${renderBudgetCategoryIcon("cruise")}<div class="budget-category-title-copy"><p class="planner-kicker budget-category-kicker">Cruise</p><h2>${formatAud(totals.cruiseAud)}</h2></div></div></div><div class="budget-cruise-details"><p class="planner-muted budget-cruise-booking-price">Booking price ${formatUsd(activeBudget.cruise_price_usd)}</p><label class="budget-rate-field"><span>USD to AUD exchange rate</span><input type="number" min="0" step="0.0001" value="${activeBudget.exchange_rate}" onchange="updateBudgetValue('exchange_rate', this.value)"></label></div></section>`;
 }
 
 function renderBudgetSummaryColumn(totals) {
@@ -3850,7 +3850,7 @@ function renderBudgetSummaryColumn(totals) {
 }
 
 function renderBudgetSimpleCard(title, field, inputLabel) {
-  return `<section class="planner-card budget-simple-card"><div class="budget-category-heading"><div class="budget-category-title-block">${renderBudgetCategoryIcon(BUDGET_CATEGORY_ICONS[field] || "")}<div class="budget-category-title-copy"><p class="planner-kicker budget-category-kicker">${escapeHtml(title)}</p><h2>${formatAud(activeBudget[field])}</h2></div></div></div><label><span>${escapeHtml(inputLabel)}</span><input type="number" min="0" step="0.01" value="${activeBudget[field] || ""}" placeholder="0.00" onchange="updateBudgetValue('${field}', this.value)"></label></section>`;
+  return `<section class="planner-card budget-simple-card"><div class="budget-category-heading"><div class="budget-category-title-block">${renderBudgetCategoryIcon(field)}<div class="budget-category-title-copy"><p class="planner-kicker budget-category-kicker">${escapeHtml(title)}</p><h2>${formatAud(activeBudget[field])}</h2></div></div></div><label><span>${escapeHtml(inputLabel)}</span><input type="number" min="0" step="0.01" value="${activeBudget[field] || ""}" placeholder="0.00" onchange="updateBudgetValue('${field}', this.value)"></label></section>`;
 }
 
 function renderBudgetCategoriesGrid() {
