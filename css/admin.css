@@ -1168,3 +1168,46 @@
   border-radius: 8px !important;
   font-size: .72rem !important;
 }
+
+/* Packing Admin category-order reordering mode */
+.admin-packing-item-grid.is-reordering {
+  border-radius: 14px;
+  outline: 1px dashed rgba(31, 126, 106, .28);
+  outline-offset: 7px;
+  transition: background .18s ease, box-shadow .18s ease;
+}
+
+.admin-packing-item-grid.is-reordering.is-order-saved {
+  animation: packingOrderSaved 1.4s ease;
+}
+
+.packing-item-reorder-card {
+  cursor: grab;
+  user-select: none;
+  transition: transform .16s ease, box-shadow .16s ease, opacity .16s ease;
+}
+
+.packing-item-reorder-card:hover {
+  box-shadow: 0 12px 28px rgba(18, 70, 60, .10);
+}
+
+.packing-item-reorder-card.is-dragging {
+  cursor: grabbing;
+  opacity: .58;
+  transform: scale(.985);
+  box-shadow: 0 18px 38px rgba(18, 70, 60, .17);
+}
+
+.packing-drag-handle {
+  display: inline-block;
+  margin-right: 9px;
+  color: #6f827d;
+  font-size: 1rem;
+  line-height: 1;
+  vertical-align: -1px;
+}
+
+@keyframes packingOrderSaved {
+  0%, 55% { background: rgba(225, 247, 238, .62); box-shadow: 0 0 0 3px rgba(24, 134, 111, .13); }
+  100% { background: transparent; box-shadow: none; }
+}

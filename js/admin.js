@@ -24,7 +24,9 @@ let editingChecklistSectionId = null;
 let selectedChecklistSectionId = "all";
 let editingPackingCategoryId = null;
 let editingPackingItemId = null;
-let selectedPackingCategoryId = "all";
+let selectedPackingCategoryId = "by-category";
+let packingReorderMode = false;
+let draggedPackingItemId = null;
 let activePackingAdminView = "items";
 let showPackingCategoryForm = false;
 let showPackingItemForm = false;
@@ -2533,9 +2535,12 @@ function renderPackingItemCard(item) {
   const ruleText = isEssentialPackingItem(item)
     ? "Essential item included on every cruise"
     : (assignedProfileCount ? `Smart Profile item (${assignedProfileCount} profile${assignedProfileCount === 1 ? "" : "s"})` : formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags, "Profile-specific item"));
+  const reorderAttributes = packingReorderMode
+    ? `draggable="true" data-category-id="${esc(item.category_id)}" ondragstart="startPackingItemDrag(event, ${item.id})" ondragend="endPackingItemDrag(event)" onclick="event.preventDefault()"`
+    : `onclick="editPackingItem(${item.id})"`;
   return `
-    <div class="admin-list-item admin-clickable-row packing-item-row ${isEditing ? "is-editing" : ""}" data-packing-item-id="${item.id}" onclick="editPackingItem(${item.id})">
-      ${isEditing ? `
+    <div class="admin-list-item ${packingReorderMode ? "packing-item-reorder-card" : "admin-clickable-row"} packing-item-row ${isEditing ? "is-editing" : ""}" data-packing-item-id="${item.id}" ${reorderAttributes}>
+      ${isEditing && !packingReorderMode ? `
         <div onclick="event.stopPropagation()">
           ${renderPackingItemForm(item)}
         </div>
@@ -2543,7 +2548,7 @@ function renderPackingItemCard(item) {
         <div class="admin-list-top">
           <div class="packing-card-main">
             <div class="packing-card-heading">
-              <strong class="checklist-admin-title">${esc(item.name)}</strong>
+              <strong class="checklist-admin-title">${packingReorderMode ? `<span class="packing-drag-handle" aria-hidden="true">☰</span>` : ""}${esc(item.name)}</strong>
               <span class="packing-order-badge" title="Order within this category">${esc(categoryLocalOrder)}</span>
             </div>
             <div class="admin-small"><strong>Category:</strong> ${esc(getPackingCategoryName(item.category_id))}</div>
@@ -2590,15 +2595,97 @@ function renderPackingItemsByCategory() {
         </div>
         <span class="admin-pill">${items.length} item${items.length === 1 ? "" : "s"}</span>
       </div>
-      ${items.length ? `<div class="admin-packing-item-grid">${items.map(renderPackingItemCard).join("")}</div>` : `<p class="admin-muted">No items in this category.</p>`}
+      ${items.length ? `<div class="admin-packing-item-grid ${packingReorderMode ? "is-reordering" : ""}" data-packing-category-id="${esc(category.id)}" ondragover="allowPackingItemDrop(event)" ondrop="dropPackingItem(event, ${esc(category.id)})">${items.map(renderPackingItemCard).join("")}</div>` : `<p class="admin-muted">No items in this category.</p>`}
     </div>
   `).join("");
 
   return html || `<p class="admin-muted">No packing categories found.</p>`;
 }
 
+
+function togglePackingReorderMode() {
+  packingReorderMode = !packingReorderMode;
+  editingPackingItemId = null;
+  showPackingItemForm = false;
+  selectedPackingCategoryId = "by-category";
+  renderAdmin();
+}
+
+function startPackingItemDrag(event, itemId) {
+  if (!packingReorderMode) return;
+  draggedPackingItemId = String(itemId);
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", draggedPackingItemId);
+  event.currentTarget.classList.add("is-dragging");
+}
+
+function endPackingItemDrag(event) {
+  event.currentTarget?.classList.remove("is-dragging");
+  document.querySelectorAll(".packing-item-row.is-drop-target").forEach(card => card.classList.remove("is-drop-target"));
+  draggedPackingItemId = null;
+}
+
+function allowPackingItemDrop(event) {
+  if (!packingReorderMode) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+
+  const grid = event.currentTarget;
+  const dragged = document.querySelector(`.packing-item-row[data-packing-item-id="${CSS.escape(String(draggedPackingItemId || ""))}"]`);
+  if (!dragged || dragged.parentElement !== grid) return;
+
+  const cards = Array.from(grid.querySelectorAll(".packing-item-row:not(.is-dragging)"));
+  const afterElement = cards.find(card => {
+    const rect = card.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    return event.clientY < midpoint;
+  });
+
+  if (afterElement) grid.insertBefore(dragged, afterElement);
+  else grid.appendChild(dragged);
+}
+
+async function dropPackingItem(event, categoryId) {
+  if (!packingReorderMode) return;
+  event.preventDefault();
+
+  const grid = event.currentTarget;
+  const dragged = grid.querySelector(`.packing-item-row[data-packing-item-id="${CSS.escape(String(draggedPackingItemId || ""))}"]`);
+  if (!dragged || String(dragged.dataset.categoryId || categoryId) !== String(categoryId)) {
+    endPackingItemDrag({ currentTarget: dragged });
+    return;
+  }
+
+  const orderedCards = Array.from(grid.querySelectorAll(".packing-item-row"));
+  const updates = orderedCards.map((card, index) => {
+    const itemId = Number(card.dataset.packingItemId);
+    const nextOrder = index + 1;
+    const localItem = packingItems.find(item => String(item.id) === String(itemId));
+    if (localItem) localItem.display_order = nextOrder;
+    return supabaseClient.from("packing_items").update({ display_order: nextOrder }).eq("id", itemId);
+  });
+
+  const results = await Promise.all(updates);
+  const failed = results.find(result => result.error);
+  if (failed) {
+    console.error("Packing reorder save error", failed.error);
+    alert(`Could not save the new order: ${failed.error.message}`);
+    await loadAdminData();
+    renderAdmin();
+    return;
+  }
+
+  draggedPackingItemId = null;
+  renderAdmin();
+  requestAnimationFrame(() => {
+    const categoryGrid = document.querySelector(`[data-packing-category-id="${CSS.escape(String(categoryId))}"]`);
+    categoryGrid?.classList.add("is-order-saved");
+    window.setTimeout(() => categoryGrid?.classList.remove("is-order-saved"), 1400);
+  });
+}
+
 function setPackingCategoryFilter(value) {
-  selectedPackingCategoryId = value || "all";
+  selectedPackingCategoryId = value || "by-category";
   editingPackingItemId = null;
   renderAdmin();
 }
@@ -2839,6 +2926,7 @@ function renderPackingPanel() {
           <button class="admin-button secondary" onclick="showNewPackingCategoryForm()">Add Packing Category</button>
           <button class="admin-button secondary" onclick="printPackingItemLibrary()">Print Full Item List</button>
           <button class="admin-button secondary" onclick="printPackingItemAuditList()">Print Audit List</button>
+          <button class="admin-button ${packingReorderMode ? "" : "secondary"}" onclick="togglePackingReorderMode()">${packingReorderMode ? "Done Reordering" : "Reorder Items"}</button>
           <button class="admin-button secondary" onclick="refreshAdminData()">Refresh</button>
         </div>
       </div>
@@ -2873,7 +2961,7 @@ function renderPackingPanel() {
         <div class="admin-list-top">
           <div>
             <h3>Packing Items</h3>
-            <p class="admin-muted">Items are displayed by category order. Essential items are included on every cruise; other items appear when the visibility rules in “Show this item for” match.</p>
+            <p class="admin-muted">${packingReorderMode ? "Drag items within a category to change their order. Changes save automatically." : "Items are displayed by category order. Essential items are included on every cruise; other items appear when the visibility rules in “Show this item for” match."}</p>
           </div>
           <div class="admin-field admin-filter-field">
             <label>Display</label>

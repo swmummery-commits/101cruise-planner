@@ -1822,18 +1822,21 @@ async function renderDashboard() {
         <section class="dashboard-v2-grid">
           ${renderJourneyMap(dashboardJourney)}
 
-          ${renderDashboardCombinedProgress(packingData, checklistData)}
-
-          ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
-
-          <article class="dashboard-summary-card dashboard-next-step-wide">
-            <div>
-              <p class="dashboard-card-label">Next Essential Step</p>
-              <h2>${escapeHtml(nextStepTitle)}</h2>
-              <p class="dashboard-card-copy">${escapeHtml(nextStepDescription)}</p>
+          <div class="dashboard-v2-side">
+            <div class="dashboard-v2-top-row">
+              ${renderDashboardCombinedProgress(packingData, checklistData)}
+              ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
             </div>
-            <button class="dashboard-outline-action dashboard-card-button" onclick="renderChecklist()">Start Task →</button>
-          </article>
+
+            <article class="dashboard-summary-card dashboard-next-step-wide">
+              <div>
+                <p class="dashboard-card-label">Next Essential Step</p>
+                <h2>${escapeHtml(nextStepTitle)}</h2>
+                <p class="dashboard-card-copy">${escapeHtml(nextStepDescription)}</p>
+              </div>
+              <button class="dashboard-outline-action dashboard-card-button" onclick="renderChecklist()">Start Task →</button>
+            </article>
+          </div>
         </section>
 
         ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
