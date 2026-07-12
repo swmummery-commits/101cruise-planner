@@ -2505,6 +2505,19 @@ function printPackingItemAuditList() {
   window.setTimeout(() => printFrame.remove(), 60000);
 }
 
+
+function getPackingCategoryLocalOrder(item) {
+  const categoryItems = (packingItems || [])
+    .filter(candidate => String(candidate.category_id) === String(item.category_id))
+    .sort((a, b) => {
+      const orderCompare = Number(a.display_order || 0) - Number(b.display_order || 0);
+      if (orderCompare !== 0) return orderCompare;
+      return String(a.name || "").localeCompare(String(b.name || ""));
+    });
+  const index = categoryItems.findIndex(candidate => String(candidate.id) === String(item.id));
+  return index >= 0 ? index + 1 : "–";
+}
+
 function renderPackingItemCard(item) {
   const isEditing = String(editingPackingItemId || "") === String(item.id);
   const assignedProfileIds = getPackingProfileIdsForItem(item.id);
@@ -2516,6 +2529,7 @@ function renderPackingItemCard(item) {
   const restrictionLabel = restriction === "carry-on-only" ? "Carry-on only" : restriction === "checked-only" ? "Checked luggage only" : "Any location";
   const restrictionClass = restriction === "carry-on-only" ? "carry-on" : restriction === "checked-only" ? "checked-only" : "any-location";
   const assignedProfileCount = assignedProfileIds.length;
+  const categoryLocalOrder = getPackingCategoryLocalOrder(item);
   const ruleText = isEssentialPackingItem(item)
     ? "Essential item included on every cruise"
     : (assignedProfileCount ? `Smart Profile item (${assignedProfileCount} profile${assignedProfileCount === 1 ? "" : "s"})` : formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags, "Profile-specific item"));
@@ -2528,8 +2542,10 @@ function renderPackingItemCard(item) {
       ` : `
         <div class="admin-list-top">
           <div class="packing-card-main">
-            <div class="packing-order-badge" title="Display order">${esc(item.display_order ?? 0)}</div>
-            <strong class="checklist-admin-title">${esc(item.name)}</strong>
+            <div class="packing-card-heading">
+              <strong class="checklist-admin-title">${esc(item.name)}</strong>
+              <span class="packing-order-badge" title="Order within this category">${esc(categoryLocalOrder)}</span>
+            </div>
             <div class="admin-small"><strong>Category:</strong> ${esc(getPackingCategoryName(item.category_id))}</div>
             <div class="admin-small"><strong>Smart Profiles:</strong> ${esc(profilePreview)}</div>
             <div class="admin-small"><strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
@@ -3237,6 +3253,7 @@ function buildPackingImportData(csvText) {
   const categories = [];
   const categoryOrder = new Map();
   const items = [];
+  const itemOrderByCategory = new Map();
 
   records.forEach((record, index) => {
     const category = getImportValue(record, ["Category"]);
@@ -3269,7 +3286,7 @@ function buildPackingImportData(csvText) {
       dress_codes: normalizeImportList(getImportValue(record, ["Dress Code", "Dress Codes"])),
       cruise_line_tags: normalizeImportList(getImportValue(record, ["Cruise Line", "Cruise Lines"])),
       help_text: why || null,
-      display_order: index + 1,
+      display_order: (itemOrderByCategory.set(category, (itemOrderByCategory.get(category) || 0) + 1), itemOrderByCategory.get(category)),
       active: parseImportActive(getImportValue(record, ["Active", "Status", "Published"])),
       couple_multiplier: 1,
       family_multiplier: 1.5,

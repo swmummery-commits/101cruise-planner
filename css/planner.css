@@ -5826,3 +5826,83 @@
   .dashboard-next-step-wide { align-self: start !important; min-height: 0 !important; margin-top: 0 !important; }
 }
 .dashboard-map-ship { pointer-events:none; }
+
+
+/* 2026-07-12 verified dashboard corrections */
+@media (min-width:1081px) {
+  .dashboard-brand-logo {
+    top: 28px !important;
+    left: clamp(34px, 3vw, 64px) !important;
+  }
+  .dashboard-hero-content {
+    left: clamp(34px, 3vw, 64px) !important;
+    top: 178px !important;
+    transform: none !important;
+    width: min(760px, 52vw) !important;
+    max-width: 760px !important;
+  }
+  .dashboard-hero-kicker {
+    font-size: clamp(1.25rem, 1.7vw, 1.65rem) !important;
+    line-height: 1.15 !important;
+    margin: 0 0 10px !important;
+  }
+  .dashboard-hero h1 {
+    font-size: clamp(2rem, 2.8vw, 3rem) !important;
+    line-height: 1.08 !important;
+    white-space: nowrap !important;
+    margin-bottom: 12px !important;
+  }
+  .dashboard-hero-date,
+  .dashboard-hero-route {
+    white-space: nowrap !important;
+    font-size: clamp(1rem, 1.25vw, 1.25rem) !important;
+  }
+  .dashboard-countdown-panel {
+    right: clamp(34px, 3vw, 64px) !important;
+  }
+
+  .dashboard-v2-grid {
+    grid-template-columns: minmax(0, 1.18fr) minmax(390px, .92fr) minmax(350px, .9fr) !important;
+    grid-template-rows: 540px auto !important;
+    align-items: stretch !important;
+  }
+  .dashboard-journey-card {
+    grid-column: 1 !important;
+    grid-row: 1 / span 2 !important;
+  }
+  .dashboard-combined-progress-card {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    height: 540px !important;
+    min-height: 540px !important;
+    max-height: 540px !important;
+    overflow: hidden !important;
+  }
+  .dashboard-v2-grid > .dashboard-snapshot-card {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    height: 540px !important;
+    min-height: 540px !important;
+    max-height: 540px !important;
+    overflow: hidden !important;
+  }
+  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
+  .dashboard-next-step-wide {
+    grid-column: 2 / 4 !important;
+    grid-row: 2 !important;
+    position: relative !important;
+    z-index: 1 !important;
+    margin: 0 !important;
+    padding: 14px 20px !important;
+    min-height: 82px !important;
+    align-self: start !important;
+  }
+}
+.dashboard-map-ship {
+  transform-box: fill-box;
+  transform-origin: center;
+}

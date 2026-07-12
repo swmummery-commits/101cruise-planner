@@ -1140,3 +1140,31 @@
 .packing-restriction-badge.any-location { background:#eef6f2; border-color:#d4e6dc; color:#356455; }
 .packing-item-row.is-just-saved { animation:packingSavedPulse 2.2s ease; }
 @keyframes packingSavedPulse { 0%,100%{box-shadow:inherit} 20%{box-shadow:0 0 0 3px rgba(60,150,110,.25); background:#f0faf5} }
+
+
+/* 2026-07-12 packing card preview corrections */
+.packing-card-main {
+  position: static !important;
+  padding-left: 0 !important;
+  min-width: 0;
+}
+.packing-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.packing-card-heading .checklist-admin-title {
+  min-width: 0;
+  line-height: 1.25;
+}
+.packing-order-badge {
+  position: static !important;
+  flex: 0 0 auto;
+  min-width: 30px !important;
+  height: 25px !important;
+  padding: 0 7px !important;
+  border-radius: 8px !important;
+  font-size: .72rem !important;
+}
