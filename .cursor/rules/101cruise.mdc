@@ -1,0 +1,98 @@
+# 101CRUISE Development Rules
+
+## Project Vision
+
+101CRUISE is a premium cruise planning application with an Apple-inspired design.
+
+The application should always feel:
+
+- Clean
+- Spacious
+- Professional
+- Calm
+- Consistent
+
+Never introduce clutter.
+
+---
+
+## Technology
+
+Frontend:
+- HTML
+- CSS
+- JavaScript
+
+Hosting:
+- Netlify
+
+Planner Data:
+- Supabase
+
+CRM:
+- Base44
+
+---
+
+## Brand Colours
+
+Primary Green
+
+#8DD9BF
+
+Dark Green (text/icons only)
+
+#245C4E
+
+Never use any other greens unless explicitly instructed.
+
+Progress indicators always use:
+
+#8DD9BF
+
+---
+
+## Design Standards
+
+Cards must have:
+
+- generous spacing
+- rounded corners
+- consistent padding
+
+Typography should be restrained.
+
+Avoid oversized headings.
+
+Avoid bold buttons unless specifically requested.
+
+---
+
+## Coding Standards
+
+Do not rewrite unrelated code.
+
+Modify only files required.
+
+Reuse existing components.
+
+Preserve current functionality.
+
+Do not introduce duplicate CSS.
+
+Always explain which files were changed.
+
+---
+
+## Development Workflow
+
+Before making changes:
+
+1. Read the relevant files.
+2. Understand the existing implementation.
+3. Make the smallest safe change.
+4. Preserve existing behaviour unless instructed otherwise.
+
+Never redesign completed modules unless requested.
+
+The uploaded project is the source of truth.
