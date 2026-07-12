@@ -1423,6 +1423,23 @@ function renderStatusValue(value) {
   return `<strong class="${isMissing ? "is-alert" : ""}">${escapeHtml(safeValue)}</strong>`;
 }
 
+function renderTravellerNames(value) {
+  const safeValue = String(value || "Not added").trim() || "Not added";
+  const isMissing = safeValue.toLowerCase() === "not added";
+  if (isMissing) return renderStatusValue(safeValue);
+
+  const names = safeValue
+    .split(/\s*,\s*/)
+    .map(name => name.trim())
+    .filter(Boolean);
+
+  if (names.length < 2) return renderStatusValue(safeValue);
+
+  return `<strong class="dashboard-traveller-names">${names
+    .map(name => `<span>${escapeHtml(name)}</span>`)
+    .join("")}</strong>`;
+}
+
 
 function getDashboardBookingSource(cruise) {
   return cruise?._preview_booking || cruise || {};
@@ -1507,7 +1524,7 @@ function renderDashboardSnapshot(cruise) {
     <article class="dashboard-summary-card dashboard-snapshot-card">
       <p class="dashboard-card-label">Cruise Snapshot</p>
       <div class="dashboard-snapshot-list">
-        <div class="dashboard-snapshot-row"><span>Travellers</span>${renderStatusValue(travellers)}</div>
+        <div class="dashboard-snapshot-row"><span>Travellers</span>${renderTravellerNames(travellers)}</div>
         <div class="dashboard-snapshot-row"><span>Traveller count</span>${renderStatusValue(travellerCount)}</div>
         <div class="dashboard-snapshot-row"><span>Cabin</span>${renderStatusValue(cabin)}</div>
         <div class="dashboard-snapshot-row"><span>Room type</span>${renderStatusValue(roomType)}</div>
