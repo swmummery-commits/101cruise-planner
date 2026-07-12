@@ -24,3 +24,15 @@
 ## Current limitation
 
 The packing library does not yet identify whether each item belongs in cabin or checked baggage. Cabin allowance is captured now, but the packing estimate is compared with checked baggage until item allocation is added.
+
+## v0.9.9 Budget Planner and Dashboard Layout Fix
+
+- Added the Budget module to My Cruise navigation and Dashboard Quick Access.
+- Added Estimated Holiday Total hero with automatic recalculation.
+- Cruise booking price is read in USD and converted to AUD using an editable exchange rate.
+- Added itemised Flights, Accommodation, Car Hire and Other Expenses.
+- Added single-value Food & Beverage Allowance, Travel Insurance and Shore Excursions.
+- Added customer budget persistence through a new Netlify function and Supabase migration, with device storage fallback.
+- Removed the Cruise Snapshot internal scrollbar and fixed-height restriction.
+- Progress and Cruise Snapshot now share the height of the taller card.
+- Next Essential Step remains in a separate row beneath both cards.

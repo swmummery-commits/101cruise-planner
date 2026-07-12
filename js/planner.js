@@ -1423,23 +1423,6 @@ function renderStatusValue(value) {
   return `<strong class="${isMissing ? "is-alert" : ""}">${escapeHtml(safeValue)}</strong>`;
 }
 
-function renderTravellerNames(value) {
-  const safeValue = String(value || "Not added").trim() || "Not added";
-  const isMissing = safeValue.toLowerCase() === "not added";
-  if (isMissing) return renderStatusValue(safeValue);
-
-  const names = safeValue
-    .split(/\s*,\s*/)
-    .map(name => name.trim())
-    .filter(Boolean);
-
-  if (names.length < 2) return renderStatusValue(safeValue);
-
-  return `<strong class="dashboard-traveller-names">${names
-    .map(name => `<span>${escapeHtml(name)}</span>`)
-    .join("")}</strong>`;
-}
-
 
 function getDashboardBookingSource(cruise) {
   return cruise?._preview_booking || cruise || {};
@@ -1524,7 +1507,7 @@ function renderDashboardSnapshot(cruise) {
     <article class="dashboard-summary-card dashboard-snapshot-card">
       <p class="dashboard-card-label">Cruise Snapshot</p>
       <div class="dashboard-snapshot-list">
-        <div class="dashboard-snapshot-row"><span>Travellers</span>${renderTravellerNames(travellers)}</div>
+        <div class="dashboard-snapshot-row"><span>Travellers</span>${renderStatusValue(travellers)}</div>
         <div class="dashboard-snapshot-row"><span>Traveller count</span>${renderStatusValue(travellerCount)}</div>
         <div class="dashboard-snapshot-row"><span>Cabin</span>${renderStatusValue(cabin)}</div>
         <div class="dashboard-snapshot-row"><span>Room type</span>${renderStatusValue(roomType)}</div>
@@ -1618,7 +1601,7 @@ function renderDashboardQuickAccess() {
       <button onclick="renderPackingPlanner()"><span aria-hidden="true">🧳</span><strong>Packing List</strong></button>
       <button onclick="renderChecklist()"><span aria-hidden="true">✓</span><strong>Checklist</strong></button>
       <button onclick="renderDocuments()"><span aria-hidden="true">📄</span><strong>Documents</strong></button>
-      <button onclick="alert('Budget Planner coming soon')"><span aria-hidden="true">💳</span><strong>Budget</strong></button>
+      <button onclick="renderBudgetPlanner()"><span aria-hidden="true">💳</span><strong>Budget</strong></button>
     </nav>
   `;
 }
@@ -1929,7 +1912,7 @@ function renderPlannerNav(active = "preparation") {
     { key: "dashboard", label: "Dashboard", action: "renderDashboard()" },
     { key: "preparation", label: "Preparation", action: "renderChecklist()" },
     { key: "packing", label: "Packing", action: "renderPackingPlanner()" },
-    { key: "budget", label: "Budget", action: "alert('Budget Planner coming soon')" },
+    { key: "budget", label: "Budget", action: "renderBudgetPlanner()" },
     { key: "documents", label: "Documents", action: "renderDocuments()" }
   ];
 
@@ -3682,6 +3665,177 @@ async function initPlanner() {
   } else {
     renderCustomerAccess();
   }
+}
+
+
+const BUDGET_STORAGE_PREFIX = "101cruise_budget_v1";
+let activeBudget = null;
+
+function getBudgetBookingKey(cruise) {
+  return String(cruise?.base44_booking_id || cruise?.booking_reference || cruise?.id || "default");
+}
+
+function getBudgetStorageKey(cruise) {
+  return `${BUDGET_STORAGE_PREFIX}:${getBudgetBookingKey(cruise)}`;
+}
+
+function parseMoney(value) {
+  const number = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(number) && number >= 0 ? number : 0;
+}
+
+function formatAud(value) {
+  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD", minimumFractionDigits: 2 }).format(parseMoney(value));
+}
+
+function formatUsd(value) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(parseMoney(value));
+}
+
+function getCruisePriceUsd(cruise) {
+  const booking = getDashboardBookingSource(cruise);
+  return parseMoney(booking.cruise_price_usd ?? booking.total_price ?? cruise?.cruise_price_usd ?? 0);
+}
+
+function createEmptyBudget(cruise) {
+  return {
+    exchange_rate: 1.55,
+    food_beverage: 0,
+    travel_insurance: 0,
+    excursions: 0,
+    items: [],
+    cruise_price_usd: getCruisePriceUsd(cruise),
+    updated_at: null
+  };
+}
+
+async function loadBudget(cruise) {
+  if (customerMode) {
+    try {
+      const response = await fetch("/.netlify/functions/customer-budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${customerSessionToken}` },
+        body: JSON.stringify({ action: "load" })
+      });
+      const data = await response.json().catch(() => null);
+      if (response.status === 401) throw new Error("Customer session expired");
+      if (response.ok && data?.success && data.budget) return { ...createEmptyBudget(cruise), ...data.budget, items: data.budget.items || [] };
+    } catch (error) {
+      console.warn("Budget server load unavailable; using device storage", error);
+    }
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem(getBudgetStorageKey(cruise)) || "null");
+    return saved ? { ...createEmptyBudget(cruise), ...saved, items: saved.items || [] } : createEmptyBudget(cruise);
+  } catch {
+    return createEmptyBudget(cruise);
+  }
+}
+
+async function persistBudget() {
+  const cruise = await loadCurrentCruise();
+  if (!cruise || !activeBudget || adminPreviewMode) return;
+  activeBudget.cruise_price_usd = getCruisePriceUsd(cruise);
+  activeBudget.updated_at = new Date().toISOString();
+  localStorage.setItem(getBudgetStorageKey(cruise), JSON.stringify(activeBudget));
+  if (customerMode) {
+    try {
+      const response = await fetch("/.netlify/functions/customer-budget", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${customerSessionToken}` },
+        body: JSON.stringify({ action: "save", budget: activeBudget })
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.success) throw new Error(data?.error || "Budget could not be saved");
+    } catch (error) {
+      console.warn("Budget saved on this device only", error);
+    }
+  }
+}
+
+function budgetCategoryTotal(category) {
+  return (activeBudget?.items || []).filter(item => item.category === category).reduce((sum, item) => sum + parseMoney(item.amount), 0);
+}
+
+function getBudgetTotals() {
+  const cruiseAud = parseMoney(activeBudget?.cruise_price_usd) * parseMoney(activeBudget?.exchange_rate);
+  const flights = budgetCategoryTotal("flights");
+  const accommodation = budgetCategoryTotal("accommodation");
+  const cars = budgetCategoryTotal("cars");
+  const other = budgetCategoryTotal("other");
+  const total = cruiseAud + flights + accommodation + cars + parseMoney(activeBudget?.food_beverage) + parseMoney(activeBudget?.travel_insurance) + parseMoney(activeBudget?.excursions) + other;
+  return { cruiseAud, flights, accommodation, cars, other, total };
+}
+
+function budgetItemSummary(item) {
+  if (item.category === "flights") return [item.airline, item.date ? formatDateShort(item.date) : "", [item.from, item.to].filter(Boolean).join(" to "), item.return_flight ? "Return" : ""].filter(Boolean).join(" · ") || "Flight";
+  if (item.category === "accommodation") return [item.name, item.location, item.date ? formatDateShort(item.date) : ""].filter(Boolean).join(" · ") || "Accommodation";
+  if (item.category === "cars") return [item.name, item.location, item.date ? formatDateShort(item.date) : ""].filter(Boolean).join(" · ") || "Car hire";
+  return item.name || "Other expense";
+}
+
+function renderBudgetItems(category) {
+  const items = (activeBudget?.items || []).filter(item => item.category === category);
+  if (!items.length) return `<p class="budget-empty">Nothing added yet.</p>`;
+  return `<div class="budget-item-list">${items.map(item => `<div class="budget-item-row"><div><strong>${escapeHtml(budgetItemSummary(item))}</strong></div><div class="budget-item-actions"><span>${formatAud(item.amount)}</span><button onclick="editBudgetItem('${item.id}')">Edit</button><button onclick="deleteBudgetItem('${item.id}')">Delete</button></div></div>`).join("")}</div>`;
+}
+
+function renderBudgetCategory(category, title, buttonLabel) {
+  const totals = getBudgetTotals();
+  return `<section class="planner-card budget-category-card"><div class="budget-category-heading"><div><p class="planner-kicker">${escapeHtml(title)}</p><h2>${formatAud(totals[category])}</h2></div><button class="planner-button secondary" onclick="openBudgetItemForm('${category}')">+ ${escapeHtml(buttonLabel)}</button></div>${renderBudgetItems(category)}<div id="budget-form-${category}"></div></section>`;
+}
+
+async function renderBudgetPlanner() {
+  clearCountdownTimer();
+  const cruise = await loadCurrentCruise();
+  if (!cruise) { app.innerHTML = `<div class="planner-card"><button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button><h2>Budget</h2><p>Add a cruise before creating your holiday budget.</p></div>`; return; }
+  activeBudget = await loadBudget(cruise);
+  activeBudget.cruise_price_usd = getCruisePriceUsd(cruise);
+  const totals = getBudgetTotals();
+  app.innerHTML = `<div class="budget-page">${renderPlannerNav("budget")}<section class="budget-hero"><p>Estimated Holiday Total</p><h1>${formatAud(totals.total)}</h1><span>Based on your current budget.</span></section><section class="planner-card budget-cruise-card"><div><p class="planner-kicker">Cruise</p><h2>${formatAud(totals.cruiseAud)}</h2><p class="planner-muted">Booking price ${formatUsd(activeBudget.cruise_price_usd)}</p></div><label class="budget-rate-field"><span>USD to AUD exchange rate</span><input type="number" min="0" step="0.0001" value="${activeBudget.exchange_rate}" onchange="updateBudgetValue('exchange_rate', this.value)"></label></section><div class="budget-grid">${renderBudgetCategory("flights", "Flights", "Add Flight")}${renderBudgetCategory("accommodation", "Accommodation", "Add Stay")}${renderBudgetCategory("cars", "Car Hire", "Add Car Hire")}<section class="planner-card budget-simple-card"><div><p class="planner-kicker">Food & Beverage Allowance</p><h2>${formatAud(activeBudget.food_beverage)}</h2></div><label><span>Total holiday allowance</span><input type="number" min="0" step="0.01" value="${activeBudget.food_beverage || ""}" placeholder="0.00" onchange="updateBudgetValue('food_beverage', this.value)"></label></section><section class="planner-card budget-simple-card"><div><p class="planner-kicker">Travel Insurance</p><h2>${formatAud(activeBudget.travel_insurance)}</h2></div><label><span>Total insurance cost</span><input type="number" min="0" step="0.01" value="${activeBudget.travel_insurance || ""}" placeholder="0.00" onchange="updateBudgetValue('travel_insurance', this.value)"></label></section><section class="planner-card budget-simple-card"><div><p class="planner-kicker">Shore Excursions</p><h2>${formatAud(activeBudget.excursions)}</h2></div><label><span>Total excursion allowance</span><input type="number" min="0" step="0.01" value="${activeBudget.excursions || ""}" placeholder="0.00" onchange="updateBudgetValue('excursions', this.value)"></label></section>${renderBudgetCategory("other", "Other Expenses", "Add Expense")}</div><p id="budget-save-message" class="planner-message budget-save-message">${adminPreviewMode ? "Preview only. Budget changes are not saved." : activeBudget.updated_at ? `Updated ${escapeHtml(formatDateShort(activeBudget.updated_at))}` : "Changes save automatically."}</p></div>`;
+}
+
+async function updateBudgetValue(field, value) {
+  if (!activeBudget) return;
+  activeBudget[field] = parseMoney(value);
+  await persistBudget();
+  await renderBudgetPlanner();
+}
+
+function openBudgetItemForm(category, itemId = "") {
+  const host = document.getElementById(`budget-form-${category}`);
+  if (!host) return;
+  const item = (activeBudget.items || []).find(row => row.id === itemId) || { id: "", category, amount: "" };
+  const optional = category === "flights" ? `<div class="budget-form-grid"><label>Airline<input id="budgetItemName" value="${escapeHtml(item.airline || "")}"></label><label>Date<input id="budgetItemDate" type="date" value="${escapeHtml(item.date || "")}"></label><label>From<input id="budgetItemFrom" value="${escapeHtml(item.from || "")}"></label><label>To<input id="budgetItemTo" value="${escapeHtml(item.to || "")}"></label></div><label class="budget-checkbox"><input id="budgetItemReturn" type="checkbox" ${item.return_flight ? "checked" : ""}> Return flight</label>` : category === "accommodation" ? `<div class="budget-form-grid"><label>Date<input id="budgetItemDate" type="date" value="${escapeHtml(item.date || "")}"></label><label>Name of place<input id="budgetItemName" value="${escapeHtml(item.name || "")}"></label><label>Location<input id="budgetItemLocation" value="${escapeHtml(item.location || "")}"></label></div>` : category === "cars" ? `<div class="budget-form-grid"><label>Date<input id="budgetItemDate" type="date" value="${escapeHtml(item.date || "")}"></label><label>Hire company<input id="budgetItemName" value="${escapeHtml(item.name || "")}"></label><label>Pick-up location<input id="budgetItemLocation" value="${escapeHtml(item.location || "")}"></label></div>` : `<label>Item<input id="budgetItemName" value="${escapeHtml(item.name || "")}"></label>`;
+  host.innerHTML = `<div class="budget-entry-form">${optional}<label>Amount (AUD)<input id="budgetItemAmount" type="number" min="0" step="0.01" value="${escapeHtml(item.amount || "")}" required autofocus></label><div class="budget-form-actions"><button class="planner-button" onclick="saveBudgetItem('${category}','${item.id || ""}')">${item.id ? "Save Changes" : "Add"}</button><button class="planner-button secondary" onclick="document.getElementById('budget-form-${category}').innerHTML=''">Cancel</button></div><div id="budget-item-error" class="planner-message planner-error"></div></div>`;
+}
+
+function editBudgetItem(id) { const item = activeBudget?.items?.find(row => row.id === id); if (item) openBudgetItemForm(item.category, id); }
+
+async function saveBudgetItem(category, id) {
+  const amount = parseMoney(document.getElementById("budgetItemAmount")?.value);
+  const error = document.getElementById("budget-item-error");
+  if (!(amount > 0)) { if (error) error.textContent = "Enter an amount greater than zero."; return; }
+  const existing = activeBudget.items.find(row => row.id === id);
+  const item = existing || { id: `budget-${Date.now()}-${Math.random().toString(36).slice(2,7)}`, category };
+  item.amount = amount;
+  item.name = String(document.getElementById("budgetItemName")?.value || "").trim();
+  item.airline = category === "flights" ? item.name : undefined;
+  item.date = String(document.getElementById("budgetItemDate")?.value || "");
+  item.from = String(document.getElementById("budgetItemFrom")?.value || "").trim();
+  item.to = String(document.getElementById("budgetItemTo")?.value || "").trim();
+  item.location = String(document.getElementById("budgetItemLocation")?.value || "").trim();
+  item.return_flight = document.getElementById("budgetItemReturn")?.checked === true;
+  if (!existing) activeBudget.items.push(item);
+  await persistBudget();
+  await renderBudgetPlanner();
+}
+
+async function deleteBudgetItem(id) {
+  if (!confirm("Delete this budget item?")) return;
+  activeBudget.items = activeBudget.items.filter(item => item.id !== id);
+  await persistBudget();
+  await renderBudgetPlanner();
 }
 
 initPlanner();

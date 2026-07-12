@@ -815,7 +815,7 @@
   height: 156px;
   margin: 6px auto 14px;
   border-radius: 50%;
-  background: conic-gradient(var(--brand-green) calc(var(--progress) * 1%), #eeeeee 0);
+  background: conic-gradient(#8DD9BF calc(var(--progress) * 1%), #eeeeee 0);
   display: grid;
   place-items: center;
 }
@@ -1533,20 +1533,6 @@
   color: #666;
 }
 
-
-.dashboard-traveller-names {
-  display: grid;
-  gap: 2px;
-  justify-items: end;
-  line-height: 1.35;
-  text-align: right;
-}
-
-.dashboard-traveller-names span {
-  display: block;
-  white-space: nowrap;
-}
-
 .dashboard-snapshot-row strong {
   text-align: right;
   font-weight: 800;
@@ -2102,7 +2088,7 @@
   height: 134px;
   border-radius: 50%;
   margin: 22px auto 18px;
-  background: conic-gradient(var(--brand-green) calc(var(--progress) * 1%), #ececec 0);
+  background: conic-gradient(var(--cruise-green) calc(var(--progress) * 1%), #ececec 0);
   display: grid;
   place-items: center;
 }
@@ -4466,7 +4452,7 @@
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: conic-gradient(var(--brand-green) 0 var(--packing-weight-percent), #edf0f2 var(--packing-weight-percent) 360deg);
+  background: conic-gradient(var(--brand-green-ink) 0 var(--packing-weight-percent), #edf0f2 var(--packing-weight-percent) 360deg);
   transition: background 0.25s ease;
 }
 
@@ -5401,7 +5387,7 @@
   width: 128px;
   height: 128px;
   border-radius: 50%;
-  background: conic-gradient(var(--brand-green) var(--progress), #edf2f1 0);
+  background: conic-gradient(var(--brand-green-ink) var(--progress), #edf2f1 0);
   display: grid;
   place-items: center;
   margin-bottom: 14px;
@@ -6096,4 +6082,50 @@
 input[type="checkbox"],
 input[type="radio"] {
   accent-color: var(--brand-green);
+}
+
+/* Budget Planner v0.9.9 */
+.budget-page { max-width: 1500px; margin: 0 auto; padding: 26px 28px 60px; }
+.budget-hero { margin: 22px 0 18px; padding: 34px; border-radius: 28px; background: linear-gradient(135deg, #e8f8f2, #f8fcfa); border: 1px solid rgba(36,92,78,.10); text-align: center; }
+.budget-hero p { margin: 0 0 8px; color: #245c4e; font-weight: 700; font-size: .92rem; letter-spacing: .04em; text-transform: uppercase; }
+.budget-hero h1 { margin: 0; font-size: clamp(2.6rem, 6vw, 5rem); line-height: 1; letter-spacing: -.055em; }
+.budget-hero span { display: block; margin-top: 12px; color: #68736f; }
+.budget-cruise-card, .budget-simple-card, .budget-category-heading { display: flex; align-items: center; justify-content: space-between; gap: 22px; }
+.budget-cruise-card { margin-bottom: 18px; }
+.budget-rate-field, .budget-simple-card label, .budget-entry-form label { display: grid; gap: 7px; color: #4d5854; font-size: .84rem; font-weight: 650; }
+.budget-rate-field input, .budget-simple-card input, .budget-entry-form input { width: 100%; box-sizing: border-box; border: 1px solid #d6dfdb; border-radius: 12px; padding: 11px 12px; font: inherit; background: #fff; }
+.budget-rate-field { min-width: 230px; }
+.budget-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+.budget-grid > .budget-category-card:last-child { grid-column: 1 / -1; }
+.budget-category-card h2, .budget-simple-card h2, .budget-cruise-card h2 { margin: 3px 0 0; }
+.budget-item-list { border-top: 1px solid #edf1ef; margin-top: 18px; }
+.budget-item-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 13px 0; border-bottom: 1px solid #edf1ef; }
+.budget-item-actions { display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+.budget-item-actions span { font-weight: 750; }
+.budget-item-actions button { border: 0; background: transparent; color: #245c4e; font-weight: 700; cursor: pointer; }
+.budget-empty { margin: 18px 0 0; color: #7a8480; }
+.budget-entry-form { margin-top: 18px; padding: 18px; border-radius: 18px; background: #f7faf9; border: 1px solid #e4ebe8; }
+.budget-form-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.budget-entry-form > label { margin-top: 12px; }
+.budget-checkbox { display: flex !important; grid-template-columns: auto 1fr; align-items: center; margin-top: 12px; }
+.budget-checkbox input { width: auto; }
+.budget-form-actions { display: flex; gap: 10px; margin-top: 16px; }
+.budget-save-message { text-align: center; margin-top: 18px; }
+
+/* Dashboard cards expand to fit all booking information. */
+@media (min-width:1081px) {
+  .dashboard-v2-side { grid-template-rows: auto auto !important; }
+  .dashboard-v2-top-row { height: auto !important; min-height: 0 !important; align-items: stretch !important; }
+  .dashboard-v2-top-row > .dashboard-combined-progress-card,
+  .dashboard-v2-top-row > .dashboard-snapshot-card { height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; }
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list { flex: 0 0 auto !important; min-height: auto !important; overflow: visible !important; padding-right: 0 !important; }
+}
+@media (max-width:800px) {
+  .budget-page { padding: 18px 14px 42px; }
+  .budget-grid { grid-template-columns: 1fr; }
+  .budget-grid > .budget-category-card:last-child { grid-column: auto; }
+  .budget-cruise-card, .budget-simple-card, .budget-category-heading, .budget-item-row { align-items: stretch; flex-direction: column; }
+  .budget-rate-field { min-width: 0; width: 100%; }
+  .budget-item-actions { justify-content: space-between; }
+  .budget-form-grid { grid-template-columns: 1fr; }
 }
