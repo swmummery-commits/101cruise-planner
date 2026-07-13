@@ -1637,10 +1637,47 @@ function getInclusionsSummary(cruise) {
   return inclusions.length ? inclusions.join(", ") : "None recorded";
 }
 
+function isSnapshotValuePresent(value) {
+  if (value === null || value === undefined) return false;
+  const text = String(value).trim();
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  return lower !== "not added" && lower !== "none recorded";
+}
+
+function getBookingTravellerDisplayNames(booking = {}) {
+  return [1, 2].map(index => [booking[`passenger${index}_first_name`], booking[`passenger${index}_last_name`]].filter(Boolean).join(" ").trim()).filter(Boolean);
+}
+
+function getSnapshotTravellerNames(cruise, booking = null) {
+  const fromBooking = getBookingTravellerDisplayNames(booking || {});
+  if (fromBooking.length) return fromBooking;
+
+  const raw = String(getDashboardValue(cruise, ["traveller_names", "travellers", "guest_names", "passenger_names"], "") || "").trim();
+  if (raw) {
+    return raw.split(/,|\s+&\s+|\s+and\s+/i).map(name => name.trim()).filter(Boolean);
+  }
+
+  return [];
+}
+
+function renderSnapshotTravellerNames(cruise, booking = null) {
+  const names = getSnapshotTravellerNames(cruise, booking);
+  if (!names.length) return "";
+  return `<div class="dashboard-snapshot-travellers">${names.map(name => `<span class="dashboard-snapshot-traveller-name">${escapeHtml(name)}</span>`).join("")}</div>`;
+}
+
+function renderSnapshotRowIfPresent(label, value, formatter = item => item) {
+  if (!isSnapshotValuePresent(value)) return "";
+  const formatted = formatter(value);
+  if (!isSnapshotValuePresent(formatted)) return "";
+  return `<div class="dashboard-snapshot-row"><span>${escapeHtml(label)}</span>${renderStatusValue(formatted)}</div>`;
+}
+
 function renderDashboardTravellerNames(cruise) {
-  const names = getPackingTravellerNames(cruise);
-  if (!names.length) return renderStatusValue("Not added");
-  return `<div class="dashboard-snapshot-travellers">${names.map(name => `<span class="dashboard-snapshot-traveller-name">${escapeHtml(formatPackingDisplayName(name))}</span>`).join("")}</div>`;
+  const namesHtml = renderSnapshotTravellerNames(cruise, getDashboardBookingSource(cruise));
+  if (!namesHtml) return renderStatusValue("Not added");
+  return namesHtml;
 }
 
 function renderDashboardInclusionTags(cruise) {
@@ -1656,39 +1693,43 @@ function renderDashboardSnapshot(cruise) {
   const disembarkationPort = getDashboardValue(cruise, ["disembarkation_port", "arrival_port", "to_port", "destination"], "");
   const embarkation = formatPortDateTime(embarkationPort, cruise?.departure_date, cruise?.departure_time);
   const disembarkation = formatPortDateTime(disembarkationPort, cruise?.return_date || cruise?.arrival_date, cruise?.arrival_time);
-  const cabin = getDashboardValue(cruise, ["cabin_number", "cabin", "stateroom", "suite"], "Not added");
-  const roomType = booking.room_type || getDashboardValue(cruise, ["cabin_type", "room_type"], "Not added");
-  const category = booking.category_class || getDashboardValue(cruise, ["category_class"], "Not added");
-  const travellerCount = booking.total_passengers || cruise?.traveller_count || "Not added";
-  const duration = booking.cruise_duration || cruise?.nights || "Not added";
-  const status = getDashboardValue(cruise, ["booking_status"], "Not added");
+  const cabin = getBookingPayloadValue(booking, cruise, ["room_number", "cabin_number", "cabin", "stateroom", "suite"]);
+  const roomType = getBookingPayloadValue(booking, cruise, ["room_type", "cabin_type", "stateroom_type", "suite_type"]);
+  const category = getBookingPayloadValue(booking, cruise, ["category_class"]);
+  const travellerCount = booking.total_passengers || cruise?.traveller_count;
+  const duration = booking.cruise_duration || cruise?.nights;
+  const status = booking.booking_status || getDashboardValue(cruise, ["booking_status"], "");
   const payment = getPaymentSummary(cruise);
   const totalPrice = booking.total_price ?? booking.cruise_price_usd;
-  const finalDue = booking.final_payment_due_date || booking.reminder_final_payment_due;
   const passportStatus = getPassportStatusSummary(cruise);
+  const travellerNamesHtml = renderSnapshotTravellerNames(cruise, booking);
+  const inclusions = Array.isArray(booking.inclusions) ? booking.inclusions.filter(Boolean) : [];
+  const snapshotRows = [
+    travellerNamesHtml ? `<div class="dashboard-snapshot-row dashboard-snapshot-row-travellers"><span>Travellers</span>${travellerNamesHtml}</div>` : "",
+    renderSnapshotRowIfPresent("Traveller count", travellerCount),
+    renderSnapshotRowIfPresent("Cabin", cabin),
+    renderSnapshotRowIfPresent("Room type", roomType),
+    renderSnapshotRowIfPresent("Category", category),
+    renderSnapshotRowIfPresent("Duration", duration, value => `${value} nights`),
+    renderSnapshotRowIfPresent("Embarkation", embarkation),
+    renderSnapshotRowIfPresent("Disembarkation", disembarkation),
+    renderSnapshotRowIfPresent("Passport check", passportStatus === "Not added" ? null : passportStatus),
+    renderSnapshotRowIfPresent("Booking status", status),
+    renderSnapshotRowIfPresent("Payment status", payment === "Not added" ? null : payment),
+    totalPrice !== undefined && totalPrice !== null ? renderSnapshotRowIfPresent("Cruise price", formatCurrencyValue(totalPrice)) : ""
+  ].filter(Boolean).join("");
 
   return `
     <article class="dashboard-summary-card dashboard-snapshot-card">
       <p class="dashboard-card-label">Cruise Snapshot</p>
       <div class="dashboard-snapshot-list">
-        <div class="dashboard-snapshot-row dashboard-snapshot-row-travellers"><span>Travellers</span>${renderDashboardTravellerNames(cruise)}</div>
-        <div class="dashboard-snapshot-row"><span>Traveller count</span>${renderStatusValue(travellerCount)}</div>
-        <div class="dashboard-snapshot-row"><span>Cabin</span>${renderStatusValue(cabin)}</div>
-        <div class="dashboard-snapshot-row"><span>Room type</span>${renderStatusValue(roomType)}</div>
-        <div class="dashboard-snapshot-row"><span>Category</span>${renderStatusValue(category)}</div>
-        <div class="dashboard-snapshot-row"><span>Duration</span>${renderStatusValue(duration === "Not added" ? duration : `${duration} nights`)}</div>
-        <div class="dashboard-snapshot-row"><span>Embarkation</span>${renderStatusValue(embarkation)}</div>
-        <div class="dashboard-snapshot-row"><span>Disembarkation</span>${renderStatusValue(disembarkation)}</div>
-        <div class="dashboard-snapshot-row"><span>Passport check</span>${renderStatusValue(passportStatus)}</div>
-        <div class="dashboard-snapshot-row"><span>Booking status</span>${renderStatusValue(status)}</div>
-        <div class="dashboard-snapshot-row"><span>Payment status</span>${renderStatusValue(payment)}</div>
-        ${totalPrice !== undefined && totalPrice !== null ? `<div class="dashboard-snapshot-row"><span>Cruise price</span>${renderStatusValue(formatCurrencyValue(totalPrice))}</div>` : ""}
-        ${finalDue ? `<div class="dashboard-snapshot-row"><span>Final payment due</span>${renderStatusValue(formatDateShort(finalDue))}</div>` : ""}
+        ${snapshotRows || `<p class="dashboard-snapshot-extras-empty">Booking details will appear here once your cruise is linked.</p>`}
       </div>
+      ${inclusions.length ? `
       <section class="dashboard-snapshot-extras">
         <h3 class="dashboard-snapshot-extras-title">Included extras</h3>
         ${renderDashboardInclusionTags(cruise)}
-      </section>
+      </section>` : ""}
       <footer class="dashboard-snapshot-footer">
         <button class="dashboard-outline-action" onclick="renderBookingDetails()">Open Booking →</button>
       </footer>
@@ -2561,12 +2602,9 @@ const OPTIONAL_BOOKING_FIELDS = [
 ];
 
 function renderBookingTravellerNames(cruise, booking) {
-  const fromBooking = getPassengerNamesFromBase44Booking(booking || {});
-  if (fromBooking) {
-    const names = fromBooking.split(/,|\s+&\s+|\s+and\s+/i).map(name => name.trim()).filter(Boolean);
-    return `<div class="dashboard-snapshot-travellers">${names.map(name => `<span class="dashboard-snapshot-traveller-name">${escapeHtml(formatPackingDisplayName(name))}</span>`).join("")}</div>`;
-  }
-  return renderDashboardTravellerNames(cruise);
+  const namesHtml = renderSnapshotTravellerNames(cruise, booking);
+  if (!namesHtml) return renderStatusValue("Not added");
+  return namesHtml;
 }
 
 function renderBookingCruiseSection(cruise, booking) {
@@ -2752,7 +2790,7 @@ async function renderBookingDetails() {
   const insurance = parseInsuranceDetails(bookingDetails?.insurance_details);
 
   app.innerHTML = `
-    <div class="booking-details-page">
+    <div class="planner-shell">
       ${renderPlannerNav("dashboard")}
 
       <div class="planner-card slim-card">

@@ -6670,11 +6670,18 @@ input[type="radio"] {
   align-items: flex-start;
 }
 
+.dashboard-snapshot-row-travellers > span {
+  padding-top: 2px;
+}
+
 .dashboard-snapshot-travellers {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 4px;
   min-width: 0;
+  width: 100%;
+  text-align: right;
 }
 
 .dashboard-snapshot-traveller-name {
@@ -6684,8 +6691,7 @@ input[type="radio"] {
   font-weight: 600;
   line-height: 1.35;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  text-align: right;
 }
 
 .dashboard-snapshot-extras {
@@ -7019,4 +7025,13 @@ input[type="radio"] {
     align-items: stretch;
     flex-direction: column;
   }
+}
+
+/* Dashboard countdown glass panel */
+.dashboard-countdown-panel {
+  background: rgba(10, 10, 10, 0.56) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.24) !important;
 }
