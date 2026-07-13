@@ -1324,8 +1324,13 @@ function renderDashboardActionCard(card) {
   const button = card.buttonText
     ? `<button class="dashboard-outline-action dashboard-card-button" onclick="${card.buttonAction}">${escapeHtml(card.buttonText)}</button>`
     : "";
+  const cardClass = [
+    "dashboard-summary-card",
+    "dashboard-next-step-wide",
+    card.isPrimary ? "dashboard-next-step-primary dashboard-next-step-leave-home-day" : ""
+  ].filter(Boolean).join(" ");
   return `
-    <article class="dashboard-summary-card dashboard-next-step-wide ${card.isPrimary ? "dashboard-next-step-primary" : ""}">
+    <article class="${cardClass}">
       <div>
         <p class="dashboard-card-label">${escapeHtml(card.label)}</p>
         <h2>${escapeHtml(card.title)}</h2>
@@ -1632,6 +1637,19 @@ function getInclusionsSummary(cruise) {
   return inclusions.length ? inclusions.join(", ") : "None recorded";
 }
 
+function renderDashboardTravellerNames(cruise) {
+  const names = getPackingTravellerNames(cruise);
+  if (!names.length) return renderStatusValue("Not added");
+  return `<div class="dashboard-snapshot-travellers">${names.map(name => `<span class="dashboard-snapshot-traveller-name">${escapeHtml(formatPackingDisplayName(name))}</span>`).join("")}</div>`;
+}
+
+function renderDashboardInclusionTags(cruise) {
+  const booking = getDashboardBookingSource(cruise);
+  const inclusions = Array.isArray(booking.inclusions) ? booking.inclusions.filter(Boolean) : [];
+  if (!inclusions.length) return `<p class="dashboard-snapshot-extras-empty">None recorded</p>`;
+  return `<div class="dashboard-snapshot-extras-tags">${inclusions.map(item => `<span class="dashboard-snapshot-extras-tag">${escapeHtml(String(item))}</span>`).join("")}</div>`;
+}
+
 function renderDashboardSnapshot(cruise) {
   const booking = getDashboardBookingSource(cruise);
   const embarkationPort = getDashboardValue(cruise, ["embarkation_port", "departure_port", "from_port", "departure_city"], "");
@@ -1641,7 +1659,6 @@ function renderDashboardSnapshot(cruise) {
   const cabin = getDashboardValue(cruise, ["cabin_number", "cabin", "stateroom", "suite"], "Not added");
   const roomType = booking.room_type || getDashboardValue(cruise, ["cabin_type", "room_type"], "Not added");
   const category = booking.category_class || getDashboardValue(cruise, ["category_class"], "Not added");
-  const travellers = getTravellerSummary(cruise);
   const travellerCount = booking.total_passengers || cruise?.traveller_count || "Not added";
   const duration = booking.cruise_duration || cruise?.nights || "Not added";
   const status = getDashboardValue(cruise, ["booking_status"], "Not added");
@@ -1649,13 +1666,12 @@ function renderDashboardSnapshot(cruise) {
   const totalPrice = booking.total_price ?? booking.cruise_price_usd;
   const finalDue = booking.final_payment_due_date || booking.reminder_final_payment_due;
   const passportStatus = getPassportStatusSummary(cruise);
-  const inclusions = getInclusionsSummary(cruise);
 
   return `
     <article class="dashboard-summary-card dashboard-snapshot-card">
       <p class="dashboard-card-label">Cruise Snapshot</p>
       <div class="dashboard-snapshot-list">
-        <div class="dashboard-snapshot-row"><span>Travellers</span>${renderStatusValue(travellers)}</div>
+        <div class="dashboard-snapshot-row dashboard-snapshot-row-travellers"><span>Travellers</span>${renderDashboardTravellerNames(cruise)}</div>
         <div class="dashboard-snapshot-row"><span>Traveller count</span>${renderStatusValue(travellerCount)}</div>
         <div class="dashboard-snapshot-row"><span>Cabin</span>${renderStatusValue(cabin)}</div>
         <div class="dashboard-snapshot-row"><span>Room type</span>${renderStatusValue(roomType)}</div>
@@ -1668,9 +1684,14 @@ function renderDashboardSnapshot(cruise) {
         <div class="dashboard-snapshot-row"><span>Payment status</span>${renderStatusValue(payment)}</div>
         ${totalPrice !== undefined && totalPrice !== null ? `<div class="dashboard-snapshot-row"><span>Cruise price</span>${renderStatusValue(formatCurrencyValue(totalPrice))}</div>` : ""}
         ${finalDue ? `<div class="dashboard-snapshot-row"><span>Final payment due</span>${renderStatusValue(formatDateShort(finalDue))}</div>` : ""}
-        <div class="dashboard-snapshot-row"><span>Included extras</span>${renderStatusValue(inclusions)}</div>
       </div>
-      <button class="dashboard-outline-action" onclick="renderBookingDetails()">Open Booking →</button>
+      <section class="dashboard-snapshot-extras">
+        <h3 class="dashboard-snapshot-extras-title">Included extras</h3>
+        ${renderDashboardInclusionTags(cruise)}
+      </section>
+      <footer class="dashboard-snapshot-footer">
+        <button class="dashboard-outline-action" onclick="renderBookingDetails()">Open Booking →</button>
+      </footer>
     </article>
   `;
 }
@@ -1931,9 +1952,8 @@ async function renderDashboard() {
     <div class="dashboard-page">
       ${renderAdminPreviewBanner(mainCruise)}
       ${mainCruise ? `
-        <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
+        <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}${mainLogo ? " has-cruise-logo" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
           <div class="dashboard-hero-overlay"></div>
-          <img class="dashboard-brand-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
           ${adminPreviewMode ? `<button class="dashboard-signout" onclick="exitAdminPreview()">Exit Preview</button>` : customerMode ? `<button class="dashboard-signout" onclick="changeCustomerBooking()">Change Booking</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
 
           <div class="dashboard-hero-content">
@@ -1951,7 +1971,11 @@ async function renderDashboard() {
               <div><span id="countdownMinutes">${padNumber(countdownParts.minutes)}</span><small>Minutes</small></div>
               <div><span id="countdownSeconds">${padNumber(countdownParts.seconds)}</span><small>Seconds</small></div>
             </div>
-            ${mainLogo ? `<div class="dashboard-countdown-logo"><img src="${escapeHtml(mainLogo)}" alt="${escapeHtml(mainCruise.cruise_line || "Cruise line")} logo"></div>` : ""}
+          </div>
+
+          <div class="dashboard-hero-logo-bar">
+            <img class="dashboard-brand-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
+            ${mainLogo ? `<img class="dashboard-cruise-line-logo" src="${escapeHtml(mainLogo)}" alt="${escapeHtml(mainCruise.cruise_line || "Cruise line")} logo">` : ""}
           </div>
         </section>
       ` : `

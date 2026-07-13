@@ -6589,3 +6589,348 @@ input[type="radio"] {
     border-bottom: 0;
   }
 }
+
+/* Dashboard responsive and visual refinement pass */
+.dashboard-countdown-logo {
+  display: none !important;
+}
+
+.dashboard-hero-logo-bar {
+  position: absolute;
+  z-index: 4;
+  left: clamp(28px, 3vw, 64px);
+  bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  pointer-events: none;
+}
+
+.dashboard-hero-logo-bar .dashboard-brand-logo {
+  position: static;
+  top: auto;
+  left: auto;
+  width: 94px;
+  max-height: 42px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .28));
+}
+
+.dashboard-cruise-line-logo {
+  width: auto;
+  max-width: min(150px, 34vw);
+  height: 42px;
+  object-fit: contain;
+  object-position: left center;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, .28));
+}
+
+.dashboard-countdown-panel {
+  padding: 18px 24px 20px !important;
+}
+
+.dashboard-countdown-panel p {
+  margin-bottom: 12px !important;
+}
+
+.dashboard-countdown-grid span {
+  font-size: clamp(1.65rem, 4vw, 2.35rem) !important;
+}
+
+.dashboard-next-step-leave-home-day {
+  background: #8DD9BF !important;
+  border-color: #8DD9BF !important;
+  color: #245C4E !important;
+}
+
+.dashboard-next-step-leave-home-day .dashboard-card-label,
+.dashboard-next-step-leave-home-day h2,
+.dashboard-next-step-leave-home-day .dashboard-card-copy {
+  color: #245C4E !important;
+}
+
+.dashboard-next-step-leave-home-day .dashboard-card-button {
+  background: #fff !important;
+  border-color: rgba(36, 92, 78, 0.28) !important;
+  color: #245C4E !important;
+}
+
+.dashboard-next-step-leave-home-day .dashboard-card-button:hover {
+  background: rgba(255, 255, 255, 0.92) !important;
+}
+
+.dashboard-snapshot-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.dashboard-snapshot-list {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.dashboard-snapshot-row-travellers {
+  align-items: flex-start;
+}
+
+.dashboard-snapshot-travellers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.dashboard-snapshot-traveller-name {
+  display: block;
+  color: #173c37;
+  font-size: .82rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-snapshot-extras {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e8edeb;
+}
+
+.dashboard-snapshot-extras-title {
+  margin: 0 0 10px;
+  color: #687873;
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.dashboard-snapshot-extras-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dashboard-snapshot-extras-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f4f8f6;
+  border: 1px solid rgba(36, 92, 78, 0.12);
+  color: #245C4E;
+  font-size: .74rem;
+  line-height: 1.3;
+}
+
+.dashboard-snapshot-extras-empty {
+  margin: 0;
+  color: #687873;
+  font-size: .8rem;
+}
+
+.dashboard-snapshot-footer {
+  flex: 0 0 auto;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e8edeb;
+}
+
+.dashboard-snapshot-footer .dashboard-outline-action {
+  width: 100%;
+  margin-top: 0;
+}
+
+@media (min-width: 1081px) {
+  .dashboard-hero-logo-bar {
+    left: clamp(34px, 3vw, 64px) !important;
+    bottom: 24px;
+  }
+
+  .dashboard-hero-logo-bar .dashboard-brand-logo {
+    width: 94px;
+    max-height: 44px;
+  }
+
+  .dashboard-cruise-line-logo {
+    height: 44px;
+    max-width: 160px;
+  }
+
+  .dashboard-countdown-panel {
+    padding: 16px 22px 18px !important;
+  }
+
+  .dashboard-v2-top-row > .dashboard-snapshot-card,
+  .dashboard-v2-grid > .dashboard-snapshot-card {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list,
+  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+  }
+
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-extras,
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-footer,
+  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-extras,
+  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-footer {
+    flex: 0 0 auto !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .dashboard-hero.has-cruise-logo .dashboard-countdown-panel {
+    bottom: 78px !important;
+  }
+
+  .dashboard-hero-logo-bar {
+    left: 24px;
+    right: 24px;
+    bottom: 14px;
+    gap: 12px;
+  }
+
+  .dashboard-hero-logo-bar .dashboard-brand-logo {
+    width: 78px;
+    max-height: 34px;
+  }
+
+  .dashboard-cruise-line-logo {
+    height: 34px;
+    max-width: 120px;
+  }
+
+  .dashboard-countdown-panel {
+    padding: 14px 16px 16px !important;
+  }
+
+  .dashboard-countdown-panel p {
+    margin-bottom: 8px !important;
+    font-size: .78rem !important;
+  }
+
+  .dashboard-countdown-grid span {
+    font-size: clamp(1.35rem, 6vw, 1.85rem) !important;
+  }
+
+  .dashboard-countdown-grid small {
+    font-size: .62rem !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-quick-access button {
+    min-height: 52px;
+    padding: 16px 14px !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .dashboard-hero {
+    height: auto !important;
+    min-height: 0 !important;
+    padding-bottom: 148px;
+  }
+
+  .dashboard-hero.has-cruise-logo {
+    padding-bottom: 168px;
+  }
+
+  .dashboard-hero-content {
+    position: relative !important;
+    top: auto !important;
+    left: 20px !important;
+    right: 20px !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    padding: 88px 0 16px !important;
+  }
+
+  .dashboard-countdown-panel {
+    left: 20px !important;
+    right: 20px !important;
+    bottom: 62px !important;
+    padding: 12px 14px 14px !important;
+  }
+
+  .dashboard-hero.has-cruise-logo .dashboard-countdown-panel {
+    bottom: 74px !important;
+  }
+
+  .dashboard-countdown-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+
+  .dashboard-countdown-grid span {
+    font-size: 1.25rem !important;
+  }
+
+  .dashboard-hero-logo-bar {
+    left: 20px;
+    right: 20px;
+    bottom: 12px;
+  }
+
+  .dashboard-hero-logo-bar .dashboard-brand-logo {
+    width: 68px;
+    max-height: 28px;
+  }
+
+  .dashboard-cruise-line-logo {
+    height: 28px;
+    max-width: 96px;
+  }
+}
+
+@media (max-width: 390px) {
+  .dashboard-countdown-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    row-gap: 8px;
+  }
+
+  .dashboard-countdown-grid div {
+    border-right: 0 !important;
+  }
+
+  .dashboard-countdown-grid span {
+    font-size: 1.15rem !important;
+  }
+
+  .dashboard-hero-kicker {
+    font-size: clamp(1.65rem, 8vw, 2.2rem) !important;
+  }
+
+  .dashboard-hero h1 {
+    font-size: clamp(1.35rem, 6.5vw, 1.75rem) !important;
+  }
+
+  .dashboard-hero-date,
+  .dashboard-hero-route {
+    font-size: .92rem !important;
+  }
+}
+
+@media (max-width: 320px) {
+  .dashboard-cruise-line-logo {
+    display: none;
+  }
+
+  .dashboard-hero.has-cruise-logo {
+    padding-bottom: 148px;
+  }
+
+  .dashboard-hero.has-cruise-logo .dashboard-countdown-panel {
+    bottom: 62px !important;
+  }
+}
