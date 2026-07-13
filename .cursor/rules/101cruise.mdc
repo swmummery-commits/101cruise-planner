@@ -78,7 +78,7 @@ All customer-facing pages and major content sections must use the shared centred
 
 Do not change the global shared page width rule. Only full-bleed hero sections may span edge-to-edge.
 
-Inside that shared shell, dense information or form pages may use a narrower centred reading column (approximately 900–980px) so labels and values remain readable. Do not replace the outer shell with a page-specific maximum width.
+Inside that shared shell, dense information or form pages may use a narrower centred reading column so labels and values remain readable. The Booking page reading column uses `max-width: 760px`. Do not replace the outer shell with a page-specific maximum width.
 
 ---
 

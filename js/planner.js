@@ -1578,7 +1578,7 @@ function renderStatusValue(value) {
 
 
 function getDashboardBookingSource(cruise) {
-  return cruise?._preview_booking || cruise || {};
+  return cruise?._preview_booking || customerBooking || cruise || {};
 }
 
 function formatCurrencyValue(value) {
@@ -1689,21 +1689,25 @@ function renderDashboardInclusionTags(cruise) {
 
 function renderDashboardSnapshot(cruise) {
   const booking = getDashboardBookingSource(cruise);
-  const embarkationPort = getDashboardValue(cruise, ["embarkation_port", "departure_port", "from_port", "departure_city"], "");
-  const disembarkationPort = getDashboardValue(cruise, ["disembarkation_port", "arrival_port", "to_port", "destination"], "");
-  const embarkation = formatPortDateTime(embarkationPort, cruise?.departure_date, cruise?.departure_time);
-  const disembarkation = formatPortDateTime(disembarkationPort, cruise?.return_date || cruise?.arrival_date, cruise?.arrival_time);
+  const embarkationPort = getBookingPayloadValue(booking, cruise, ["departing_port", "embarkation_port", "departure_port", "from_port", "departure_city"]) || "";
+  const disembarkationPort = getBookingPayloadValue(booking, cruise, ["arriving_port", "disembarkation_port", "arrival_port", "to_port", "destination"]) || "";
+  const departureDate = booking.departing_date || cruise?.departure_date;
+  const returnDate = booking.arriving_date || cruise?.return_date || cruise?.arrival_date;
+  const embarkation = formatPortDateTime(embarkationPort, departureDate, cruise?.departure_time);
+  const disembarkation = formatPortDateTime(disembarkationPort, returnDate, cruise?.arrival_time);
   const cabin = getBookingPayloadValue(booking, cruise, ["room_number", "cabin_number", "cabin", "stateroom", "suite"]);
   const roomType = getBookingPayloadValue(booking, cruise, ["room_type", "cabin_type", "stateroom_type", "suite_type"]);
   const category = getBookingPayloadValue(booking, cruise, ["category_class"]);
   const travellerCount = booking.total_passengers || cruise?.traveller_count;
   const duration = booking.cruise_duration || cruise?.nights;
-  const status = booking.booking_status || getDashboardValue(cruise, ["booking_status"], "");
-  const payment = getPaymentSummary(cruise);
+  const status = booking.booking_status || cruise?.booking_status;
+  const paymentStatus = booking.payment_status
+    ? String(booking.payment_status).replaceAll("_", " ").replace(/^\w/, char => char.toUpperCase())
+    : null;
   const totalPrice = booking.total_price ?? booking.cruise_price_usd;
+  const balanceOwing = booking.balance_owing;
   const passportStatus = getPassportStatusSummary(cruise);
   const travellerNamesHtml = renderSnapshotTravellerNames(cruise, booking);
-  const inclusions = Array.isArray(booking.inclusions) ? booking.inclusions.filter(Boolean) : [];
   const snapshotRows = [
     travellerNamesHtml ? `<div class="dashboard-snapshot-row dashboard-snapshot-row-travellers"><span>Travellers</span>${travellerNamesHtml}</div>` : "",
     renderSnapshotRowIfPresent("Traveller count", travellerCount),
@@ -1715,8 +1719,11 @@ function renderDashboardSnapshot(cruise) {
     renderSnapshotRowIfPresent("Disembarkation", disembarkation),
     renderSnapshotRowIfPresent("Passport check", passportStatus === "Not added" ? null : passportStatus),
     renderSnapshotRowIfPresent("Booking status", status),
-    renderSnapshotRowIfPresent("Payment status", payment === "Not added" ? null : payment),
-    totalPrice !== undefined && totalPrice !== null ? renderSnapshotRowIfPresent("Cruise price", formatCurrencyValue(totalPrice)) : ""
+    renderSnapshotRowIfPresent("Payment status", paymentStatus),
+    totalPrice !== undefined && totalPrice !== null ? renderSnapshotRowIfPresent("Cruise price", formatCurrencyValue(totalPrice)) : "",
+    balanceOwing !== undefined && balanceOwing !== null && String(balanceOwing).trim() !== ""
+      ? renderSnapshotRowIfPresent("Balance owing", formatCurrencyValue(balanceOwing))
+      : ""
   ].filter(Boolean).join("");
 
   return `
@@ -1725,11 +1732,10 @@ function renderDashboardSnapshot(cruise) {
       <div class="dashboard-snapshot-list">
         ${snapshotRows || `<p class="dashboard-snapshot-extras-empty">Booking details will appear here once your cruise is linked.</p>`}
       </div>
-      ${inclusions.length ? `
       <section class="dashboard-snapshot-extras">
         <h3 class="dashboard-snapshot-extras-title">Included extras</h3>
         ${renderDashboardInclusionTags(cruise)}
-      </section>` : ""}
+      </section>
       <footer class="dashboard-snapshot-footer">
         <button class="dashboard-outline-action" onclick="renderBookingDetails()">Open Booking →</button>
       </footer>
@@ -1988,6 +1994,10 @@ async function renderDashboard() {
   const heroDateRange = mainCruise ? getCruiseDateRangeText(mainCruise) : "";
   const cabinSummary = mainCruise ? getCabinSummary(mainCruise) : "";
   const dashboardMobilePriorityActive = dashboardActionCard.mode === "last_minute" || dashboardActionCard.mode === "last_minute_complete";
+
+  if (mainCruise) {
+    await resolveFullBookingPayload(mainCruise);
+  }
 
   app.innerHTML = `
     <div class="dashboard-page">

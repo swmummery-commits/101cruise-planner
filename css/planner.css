@@ -1869,10 +1869,10 @@
   border-radius: 18px;
   padding: 28px 34px 30px;
   color: #fff;
-  background: rgba(12, 12, 12, .68);
+  background: rgba(8, 16, 20, 0.38);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 24px 70px rgba(0,0,0,.25);
+  box-shadow: 0 12px 28px rgba(0,0,0,.16);
 }
 
 .dashboard-countdown-panel p {
@@ -2476,11 +2476,11 @@
   min-width: 410px !important;
   padding: 26px 32px 28px !important;
   border-radius: 18px !important;
-  background: rgba(12, 12, 12, .70) !important;
+  background: rgba(8, 16, 20, 0.38) !important;
   color: #fff !important;
   backdrop-filter: blur(14px) !important;
   -webkit-backdrop-filter: blur(14px) !important;
-  box-shadow: 0 24px 70px rgba(0,0,0,.26) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16) !important;
 }
 
 .dashboard-countdown-panel p {
@@ -6241,14 +6241,17 @@
   .dashboard-v2-top-row > .dashboard-snapshot-card {
     display: flex !important;
     flex-direction: column !important;
+    height: auto !important;
+    min-height: 540px !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list {
-    flex: 1 1 auto !important;
+    flex: 0 1 auto !important;
     min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding-right: 6px !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
   }
 
   .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-outline-action {
@@ -6320,6 +6323,18 @@
     height: 540px !important;
     min-height: 540px !important;
     max-height: 540px !important;
+  }
+
+  .dashboard-v2-top-row > .dashboard-snapshot-card {
+    height: auto !important;
+    min-height: 540px !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list {
+    flex: 0 1 auto !important;
+    overflow: visible !important;
   }
 
   .dashboard-v2-side > .dashboard-next-step-wide {
@@ -6767,14 +6782,15 @@ input[type="radio"] {
   .dashboard-v2-grid > .dashboard-snapshot-card {
     display: flex !important;
     flex-direction: column !important;
-    overflow: hidden !important;
+    overflow: visible !important;
+    max-height: none !important;
   }
 
   .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list,
   .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
-    flex: 1 1 auto !important;
+    flex: 0 1 auto !important;
     min-height: 0 !important;
-    overflow-y: auto !important;
+    overflow: visible !important;
   }
 
   .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-extras,
@@ -6931,7 +6947,7 @@ input[type="radio"] {
 /* Booking summary page — narrower centred reading column inside shared shell */
 .booking-reading-column {
   width: 100%;
-  max-width: 960px;
+  max-width: 760px;
   margin-left: auto;
   margin-right: auto;
   min-width: 0;
@@ -7091,11 +7107,19 @@ input[type="radio"] {
   }
 }
 
-/* Dashboard countdown glass panel */
+/* Dashboard countdown glass panel — translucent so hero image remains readable */
 .dashboard-countdown-panel {
-  background: rgba(10, 10, 10, 0.56) !important;
-  backdrop-filter: blur(15px) !important;
-  -webkit-backdrop-filter: blur(15px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  box-shadow: 0 22px 56px rgba(0, 0, 0, 0.24) !important;
+  background: rgba(8, 16, 20, 0.38) !important;
+  background-image: none !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16) !important;
+}
+
+.dashboard-countdown-panel::before,
+.dashboard-countdown-panel::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
 }
