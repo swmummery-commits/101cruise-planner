@@ -4762,27 +4762,207 @@
   background: #f7faf9;
 }
 
-.cabin-checklist-progress {
+.cabin-summary-column {
+  position: sticky;
+  top: 18px;
   display: grid;
-  justify-items: center;
-  gap: 8px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #e8ecef;
+  gap: 12px;
+  align-content: start;
+}
+
+.cabin-summary-card {
+  padding: 16px 18px;
+  border: 1px solid #e7eaee;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(19, 48, 43, 0.04);
+}
+
+.cabin-summary-card-title {
+  margin: 0 0 12px;
+  color: #1f2b28;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.cabin-checklist-progress-card {
   text-align: center;
 }
 
-.cabin-progress-label,
-.cabin-traveller-summaries-title,
-.cabin-combined-summary-title {
-  margin: 0;
-  color: #6b7280;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.cabin-checklist-detail {
+  margin: 0 0 12px;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
-.cabin-checklist-detail,
+.cabin-checklist-progress-card .packing-weight-donut {
+  width: 128px;
+  margin: 0 auto;
+}
+
+.cabin-checklist-progress-card .packing-weight-donut-centre strong {
+  font-size: 24px;
+}
+
+.cabin-summary-metrics {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.cabin-summary-metrics > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: baseline;
+}
+
+.cabin-summary-metrics dt {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.cabin-summary-metrics dd {
+  margin: 0;
+  color: #1f2b28;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.cabin-auto-distributed-row dd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cabin-auto-distributed-value {
+  color: var(--brand-green-ink);
+  font-weight: 600;
+}
+
+.cabin-info-icon {
+  color: #7a828c;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.cabin-traveller-list {
+  display: grid;
+  gap: 14px;
+}
+
+.cabin-traveller-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cabin-traveller-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cabin-traveller-avatar {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #edf7f3;
+  color: var(--brand-green-ink);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.cabin-traveller-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.cabin-traveller-copy strong {
+  color: #1f2b28;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cabin-traveller-copy span {
+  color: #7a828c;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.cabin-traveller-weight-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.cabin-traveller-ratio {
+  color: #1f2b28;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.packing-weight-donut-mini {
+  width: 52px;
+}
+
+.packing-weight-donut-mini::before {
+  inset: 7px;
+}
+
+.packing-weight-donut-mini .packing-weight-donut-centre strong {
+  font-size: 11px;
+}
+
+.packing-weight-donut-mini .packing-weight-donut-centre span {
+  display: none;
+}
+
+.cabin-combined-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 108px;
+  gap: 14px;
+  align-items: center;
+}
+
+.cabin-combined-layout .packing-weight-donut {
+  width: 108px;
+}
+
+.cabin-combined-layout .packing-weight-donut-centre strong {
+  font-size: 20px;
+}
+
+.cabin-combined-layout .packing-weight-donut-centre span {
+  max-width: 72px;
+  font-size: 9px;
+}
+
+.cabin-summary-metrics dd.is-positive {
+  color: var(--brand-green-ink);
+}
+
+.cabin-summary-metrics dd.is-over,
+.cabin-traveller-ratio.is-over {
+  color: #a94444;
+}
+
 .cabin-traveller-empty {
   margin: 0;
   color: #667085;
@@ -4790,86 +4970,71 @@
   line-height: 1.45;
 }
 
-.packing-summary-sticky.is-cabin-summary {
-  gap: 16px;
-}
-
-.packing-summary-sticky.is-cabin-summary .packing-weight-donut {
-  width: 118px;
-}
-
-.packing-summary-sticky.is-cabin-summary .packing-weight-donut-centre strong {
-  font-size: 22px;
-}
-
-.cabin-traveller-summaries {
-  display: grid;
-  gap: 12px;
-}
-
-.cabin-traveller-weight-card {
-  padding-top: 12px;
-  border-top: 1px solid #e8ecef;
-}
-
-.cabin-traveller-weight-title {
-  margin: 0 0 10px;
-  color: #234d43;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.cabin-traveller-weight-gauge,
-.cabin-combined-weight-gauge {
-  display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 12px;
-  align-items: center;
-}
-
-.cabin-traveller-weight-gauge .packing-weight-donut,
-.cabin-combined-weight-gauge .packing-weight-donut {
-  width: 92px;
-}
-
-.cabin-traveller-weight-metrics,
-.cabin-combined-weight-metrics {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  min-width: 0;
-}
-
-.cabin-traveller-weight-metrics > div,
-.cabin-combined-weight-metrics > div {
+.cabin-info-banner {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  align-items: baseline;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(141, 217, 191, 0.45);
+  border-radius: 12px;
+  background: rgba(141, 217, 191, 0.14);
+}
+
+.cabin-info-banner-icon {
+  flex: 0 0 auto;
+  color: #3b6f62;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.cabin-info-banner p {
+  margin: 0;
+  color: #2f4d45;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.cabin-category-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cabin-category-progress > span {
+  color: #667085;
   font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
 }
 
-.cabin-traveller-weight-metrics span,
-.cabin-combined-weight-metrics span {
-  color: #7a828c;
+.cabin-category-progress .packing-weight-donut-mini {
+  width: 44px;
 }
 
-.cabin-traveller-weight-metrics strong,
-.cabin-combined-weight-metrics strong {
-  color: #20252b;
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
+.packing-page.is-cabin-page .packing-workspace {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 360px);
 }
 
-.cabin-combined-summary {
-  padding-top: 12px;
-  border-top: 1px solid #e8ecef;
-}
+@media (max-width: 900px) {
+  .cabin-summary-column {
+    position: static;
+  }
 
-.cabin-summary-note + .cabin-traveller-summaries {
-  margin-top: 0;
+  .cabin-combined-layout {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+
+  .cabin-traveller-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cabin-traveller-weight-display {
+    justify-content: space-between;
+  }
 }
 
 .cabin-summary-note strong {
