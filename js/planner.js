@@ -902,15 +902,13 @@ function getDepartureDateTime(cruise) {
   return new Date(year, monthIndex, day, hours, minutes, 0, 0);
 }
 
-function getCountdownParts(cruise) {
-  const target = getDepartureDateTime(cruise);
+function getCountdownPartsForTarget(target) {
   if (!target) {
     return { days: "—", hours: "—", minutes: "—", seconds: "—", totalDays: null };
   }
 
   const now = new Date();
   let diff = target.getTime() - now.getTime();
-
   if (diff < 0) diff = 0;
 
   const totalSeconds = Math.floor(diff / 1000);
@@ -922,118 +920,88 @@ function getCountdownParts(cruise) {
   return { days, hours, minutes, seconds, totalDays: days };
 }
 
+function getCountdownParts(cruise) {
+  return getCountdownPartsForTarget(getDepartureDateTime(cruise));
+}
+
 function padNumber(value) {
   if (value === "—") return "—";
   return String(value).padStart(2, "0");
 }
 
-function getNextStep(days) {
-  if (days === null) {
+let dashboardCountdownConfig = null;
+
+function parseCalendarDate(dateString) {
+  if (!dateString) return null;
+  const dateParts = String(dateString).split("-").map(Number);
+  if (dateParts.length !== 3 || dateParts.some(isNaN)) return null;
+  return new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 0, 0, 0, 0);
+}
+
+function getLeaveHomeDateTime(dateString) {
+  const date = parseCalendarDate(dateString);
+  if (!date) return null;
+  date.setHours(6, 0, 0, 0);
+  return date;
+}
+
+function getDaysUntilCalendarDate(dateString) {
+  const target = parseCalendarDate(dateString);
+  if (!target) return null;
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  return Math.floor((target.getTime() - today.getTime()) / 86400000);
+}
+
+function calculateLeaveHomeDate(cruise, budget) {
+  const flightDates = (budget?.items || [])
+    .filter(item => item.category === "flights" && !item.return_flight && item.date)
+    .map(item => String(item.date))
+    .sort();
+  if (flightDates.length) return { date: flightDates[0], source: "flight" };
+
+  const accommodationDates = (budget?.items || [])
+    .filter(item => item.category === "accommodation" && item.date)
+    .map(item => String(item.date))
+    .sort();
+  if (accommodationDates.length) return { date: accommodationDates[0], source: "accommodation" };
+
+  if (cruise?.departure_date) return { date: String(cruise.departure_date), source: "embarkation" };
+  return { date: null, source: null };
+}
+
+function buildDashboardCountdownConfig(cruise, leaveHomeInfo) {
+  const embarkationTarget = getDepartureDateTime(cruise);
+  const leaveHomeTarget = leaveHomeInfo?.date ? getLeaveHomeDateTime(leaveHomeInfo.date) : null;
+  const daysUntilLeaveHome = leaveHomeInfo?.date ? getDaysUntilCalendarDate(leaveHomeInfo.date) : null;
+  const now = new Date();
+  const embarkationIsAfterLeaveHome = !leaveHomeTarget || !embarkationTarget || leaveHomeTarget.getTime() <= embarkationTarget.getTime();
+
+  if (leaveHomeTarget && embarkationIsAfterLeaveHome && daysUntilLeaveHome !== null && daysUntilLeaveHome >= 0 && now.getTime() < leaveHomeTarget.getTime()) {
+    const dayLabel = daysUntilLeaveHome === 1 ? "1 day until you leave home" : `${daysUntilLeaveHome} days until you leave home`;
     return {
-      icon: "🚢",
-      title: "Add your departure date to activate your cruise countdown.",
-      copy: "Once your departure date is added, this planner will guide you through the right next steps before you sail.",
-      buttonText: "",
-      buttonUrl: ""
+      panelLabel: "Leaving home in",
+      dayLabel,
+      getParts: () => getCountdownPartsForTarget(leaveHomeTarget)
     };
   }
 
-  if (days <= 0) {
+  if (embarkationTarget && leaveHomeTarget && now.getTime() >= leaveHomeTarget.getTime()) {
+    const embarkDays = getCountdownParts(cruise).totalDays;
+    const dayLabel = embarkDays === 1 ? "1 day until embarkation" : embarkDays === null ? "Add your sail date" : `${embarkDays} days until embarkation`;
     return {
-      icon: "🚢",
-      title: "Bon Voyage!",
-      copy: "Have an amazing cruise from everyone at 101cruise.com.au.",
-      buttonText: "",
-      buttonUrl: ""
+      panelLabel: "Embarkation in",
+      dayLabel,
+      getParts: () => getCountdownParts(cruise)
     };
   }
 
-  if (days <= 2) {
-    return {
-      icon: "🛂",
-      title: "Get your passport, tickets and travel money sorted.",
-      copy: "Print your cruise and airline tickets, check your passport is packed, and make sure your money or cards are ready for travel.",
-      buttonText: "",
-      buttonUrl: ""
-    };
-  }
-
-  if (days <= 7) {
-    return {
-      icon: "🎒",
-      title: "You'd better start packing!",
-      copy: "This is the time to lay everything out, check the essentials, and make sure nothing important is missing.",
-      buttonText: "Open Packing List",
-      buttonUrl: "#"
-    };
-  }
-
-  if (days <= 14) {
-    return {
-      icon: "📋",
-      title: "Have you completed your online check-in and reviewed your cruise documents?",
-      copy: "Check your cruise documents carefully and make sure any online check-in requirements are complete.",
-      buttonText: "Open Cruise Checklist",
-      buttonUrl: "#"
-    };
-  }
-
-  if (days <= 30) {
-    return {
-      icon: "🧳",
-      title: "It's time to start thinking about what to pack.",
-      copy: "Start planning clothing, medication, travel documents, chargers and cruise essentials before the final week arrives.",
-      buttonText: "Open Packing List",
-      buttonUrl: "#"
-    };
-  }
-
-  if (days <= 45) {
-    return {
-      icon: "🍹",
-      title: "Have you organised your drinks package?",
-      copy: "Compare the cost of buying drinks as you go against the daily package price before you sail.",
-      buttonText: "Compare Drinks Packages",
-      buttonUrl: "/drinks-package-calculator"
-    };
-  }
-
-  if (days <= 60) {
-    return {
-      icon: "🏨",
-      title: "Have you booked your pre-cruise hotel?",
-      copy: "If you're travelling to the port the day before, now is a good time to organise accommodation close to the terminal.",
-      buttonText: "",
-      buttonUrl: ""
-    };
-  }
-
-  if (days <= 100) {
-    return {
-      icon: "🛂",
-      title: "Check your passport has enough validity after your cruise.",
-      copy: "Many cruise itineraries require your passport to remain valid well beyond your return date.",
-      buttonText: "",
-      buttonUrl: ""
-    };
-  }
-
-  if (days <= 180) {
-    return {
-      icon: "✈️",
-      title: "It's a good time to think about flights and travel arrangements.",
-      copy: "If you need flights, transfers, parking or hotel stays, now is a sensible time to start planning.",
-      buttonText: "",
-      buttonUrl: ""
-    };
-  }
-
+  const cruiseDays = getCountdownParts(cruise).totalDays;
+  const dayLabel = cruiseDays === null ? "Add your sail date" : cruiseDays <= 0 ? "Bon Voyage" : cruiseDays === 1 ? "1 day until your cruise" : `${cruiseDays} days until your cruise`;
   return {
-    icon: "🎉",
-    title: "Your cruise is booked. Enjoy the anticipation.",
-    copy: "Your next adventure is on the horizon. We'll help you stay organised as your sailing gets closer.",
-    buttonText: "",
-    buttonUrl: ""
+    panelLabel: "Sailing in",
+    dayLabel,
+    getParts: () => getCountdownParts(cruise)
   };
 }
 
@@ -1045,54 +1013,32 @@ function clearCountdownTimer() {
 }
 
 function updateLiveCountdown(cruise) {
-  const parts = getCountdownParts(cruise);
-  const nextStep = getNextStep(parts.totalDays);
+  const parts = dashboardCountdownConfig?.getParts?.() || getCountdownParts(cruise);
+  const panelLabel = document.getElementById("dashboardCountdownLabel");
+  if (panelLabel && dashboardCountdownConfig?.panelLabel) panelLabel.textContent = dashboardCountdownConfig.panelLabel;
 
   const daysEl = document.getElementById("countdownDays");
   const hoursEl = document.getElementById("countdownHours");
   const minutesEl = document.getElementById("countdownMinutes");
   const secondsEl = document.getElementById("countdownSeconds");
-  const simpleDaysEl = document.getElementById("simpleDays");
-  const nextStepIconEl = document.getElementById("nextStepIcon");
-  const nextStepTitleEl = document.getElementById("nextStepTitle");
-  const nextStepCopyEl = document.getElementById("nextStepCopy");
-  const nextStepButtonEl = document.getElementById("nextStepButton");
-  const heroCountdownTextEl = document.getElementById("heroCountdownText");
-
-  if (heroCountdownTextEl) heroCountdownTextEl.innerText = getDashboardCountdownText(cruise);
   if (daysEl) daysEl.innerText = parts.days;
   if (hoursEl) hoursEl.innerText = padNumber(parts.hours);
   if (minutesEl) minutesEl.innerText = padNumber(parts.minutes);
   if (secondsEl) secondsEl.innerText = padNumber(parts.seconds);
-  if (simpleDaysEl) simpleDaysEl.innerText = parts.days;
-  if (nextStepIconEl) nextStepIconEl.innerText = nextStep.icon;
-  if (nextStepTitleEl) nextStepTitleEl.innerText = nextStep.title;
-  if (nextStepCopyEl) nextStepCopyEl.innerText = nextStep.copy;
-  if (nextStepButtonEl) {
-    if (nextStep.buttonText && nextStep.buttonUrl) {
-      nextStepButtonEl.style.display = "inline-block";
-      nextStepButtonEl.innerText = nextStep.buttonText;
-      nextStepButtonEl.setAttribute("href", nextStep.buttonUrl);
-    } else {
-      nextStepButtonEl.style.display = "none";
-      nextStepButtonEl.innerText = "";
-      nextStepButtonEl.setAttribute("href", "#");
-    }
-  }
 }
 
-function startLiveCountdown(cruise) {
+function startLiveCountdown(cruise, config = null) {
+  dashboardCountdownConfig = config || buildDashboardCountdownConfig(cruise, calculateLeaveHomeDate(cruise, null));
   clearCountdownTimer();
   updateLiveCountdown(cruise);
   countdownTimer = setInterval(() => updateLiveCountdown(cruise), 1000);
 }
 
 async function loadDashboardChecklistData(cruise) {
-  const { data: items, error: itemError } = await supabaseClient
-    .from("checklist_items")
-    .select("*")
-    .eq("active", true)
-    .order("display_order", { ascending: true });
+  const [{ data: items, error: itemError }, { data: sections }] = await Promise.all([
+    supabaseClient.from("checklist_items").select("*").eq("active", true).order("display_order", { ascending: true }),
+    supabaseClient.from("checklist_sections").select("*").eq("active", true).order("display_order", { ascending: true })
+  ]);
 
   let progressRows = [];
   if (cruise && customerMode) {
@@ -1108,7 +1054,6 @@ async function loadDashboardChecklistData(cruise) {
       .select("*")
       .eq("user_id", currentUser.id)
       .eq("cruise_id", cruise.id);
-
     progressRows = progressData || [];
   }
 
@@ -1117,75 +1062,226 @@ async function loadDashboardChecklistData(cruise) {
   }
 
   const checklistItems = items || [];
+  const sectionNameById = new Map((sections || []).map(section => [String(section.id), section.name]));
   const completedCount = checklistItems.filter(item => isItemCompleted(progressRows, item.id)).length;
   const totalCount = checklistItems.length;
   const daysUntil = cruise ? getCountdownParts(cruise).totalDays : null;
-
-  const incompleteItems = checklistItems.filter(item => !isItemCompleted(progressRows, item.id));
-
-  const timedItems = incompleteItems.filter(item =>
-    isChecklistItemRelevantToday(item, daysUntil)
-  );
-
-  const candidateItems = timedItems.length ? timedItems : incompleteItems;
-
-  const essentialItems = candidateItems.filter(item =>
-    getPriorityLabel(item.priority) === "Essential"
-  );
-
-  const nextItem = sortChecklistItemsForToday(
-    essentialItems.length ? essentialItems : candidateItems,
-    daysUntil
-  )[0] || null;
+  const nextEssentialStep = resolveNextEssentialStep(checklistItems, progressRows, daysUntil, sectionNameById);
+  const lastMinute = resolveLastMinuteChecklistState(checklistItems, progressRows, sections || []);
 
   return {
     checklistItems,
     completedCount,
     totalCount,
     percent: getProgressPercent(completedCount, totalCount),
-    nextItem
+    nextEssentialStep,
+    lastMinute,
+    sectionNameById
   };
 }
 
-function isChecklistItemRelevantToday(item, daysUntil) {
+function isLastMinuteSectionName(name) {
+  return String(name || "").trim().toLowerCase().includes("last minute");
+}
+
+function isLastMinuteChecklistItem(item, sectionNameById) {
+  return isLastMinuteSectionName(sectionNameById.get(String(item.section_id)) || "");
+}
+
+function isChecklistItemInActiveWindow(item, daysUntil) {
   if (daysUntil === null || daysUntil === undefined) return true;
 
   const showFrom = item.show_from_days;
   const showUntil = item.show_until_days;
 
-  if (showFrom !== null && showFrom !== undefined && daysUntil > Number(showFrom)) {
-    return false;
-  }
-
-  if (showUntil !== null && showUntil !== undefined && daysUntil < Number(showUntil)) {
-    return false;
-  }
-
+  if (showFrom !== null && showFrom !== undefined && daysUntil > Number(showFrom)) return false;
+  if (showUntil !== null && showUntil !== undefined && daysUntil < Number(showUntil)) return false;
   return true;
 }
 
-function sortChecklistItemsForToday(items, daysUntil) {
+function isDepartureDayOrImmediateTask(item, daysUntil) {
+  if (daysUntil === null || daysUntil === undefined) return false;
+  if (!isChecklistItemInActiveWindow(item, daysUntil)) return false;
+  const showUntil = Number(item.show_until_days);
+  if (Number.isFinite(showUntil) && showUntil <= 1) return true;
+  return daysUntil <= 1;
+}
+
+function isOverdueChecklistItem(item, daysUntil) {
+  if (daysUntil === null || daysUntil === undefined) return false;
+  if (item.show_until_days === null || item.show_until_days === undefined) return false;
+  return daysUntil < Number(item.show_until_days);
+}
+
+function sortChecklistItemsByUrgency(items, daysUntil) {
   return [...items].sort((a, b) => {
+    const aUntil = Number.isFinite(Number(a.show_until_days)) ? Number(a.show_until_days) : 9999;
+    const bUntil = Number.isFinite(Number(b.show_until_days)) ? Number(b.show_until_days) : 9999;
+    if (aUntil !== bUntil) return aUntil - bUntil;
     const aFrom = Number.isFinite(Number(a.show_from_days)) ? Number(a.show_from_days) : 9999;
     const bFrom = Number.isFinite(Number(b.show_from_days)) ? Number(b.show_from_days) : 9999;
-
     if (daysUntil !== null && daysUntil !== undefined) {
       const aDistance = Math.abs(daysUntil - aFrom);
       const bDistance = Math.abs(daysUntil - bFrom);
-
       if (aDistance !== bDistance) return aDistance - bDistance;
     }
-
     return Number(a.display_order || 999) - Number(b.display_order || 999);
   });
 }
 
-function getDashboardCountdownText(cruise) {
-  const parts = getCountdownParts(cruise);
-  if (parts.totalDays === null) return "Add your sail date";
-  if (parts.totalDays <= 0) return "Bon Voyage";
-  if (parts.totalDays === 1) return "1 Day Until You Sail";
-  return `${parts.totalDays} Days Until You Sail`;
+function resolveNextEssentialStep(checklistItems, progressRows, daysUntil, sectionNameById) {
+  if (!checklistItems.length) {
+    return { state: "on_track", title: "You're on track", description: "Your next preparation step will appear here when it becomes relevant.", buttonText: "View Preparation Checklist", buttonAction: "openPreparationChecklist()" };
+  }
+
+  const incompleteItems = checklistItems.filter(item => !isItemCompleted(progressRows, item.id));
+  if (!incompleteItems.length) {
+    return { state: "all_complete", title: "You're Ready", description: "There are no essential preparation tasks remaining.", buttonText: "Review Checklist", buttonAction: "openPreparationChecklist()" };
+  }
+
+  const preparationItems = incompleteItems.filter(item => !isLastMinuteChecklistItem(item, sectionNameById));
+  const currentlyDueItems = preparationItems.filter(item => isChecklistItemInActiveWindow(item, daysUntil));
+
+  const priorityPools = [
+    preparationItems.filter(item => isDepartureDayOrImmediateTask(item, daysUntil)),
+    preparationItems.filter(item => isOverdueChecklistItem(item, daysUntil)),
+    currentlyDueItems.filter(item => item.show_until_days !== null && item.show_until_days !== undefined),
+    currentlyDueItems.filter(item => getPriorityLabel(item.priority) === "Essential"),
+    currentlyDueItems.filter(item => getPriorityLabel(item.priority) === "Optional")
+  ];
+
+  for (const pool of priorityPools) {
+    const nextItem = sortChecklistItemsByUrgency(pool, daysUntil)[0];
+    if (nextItem) {
+      return {
+        state: "task",
+        item: nextItem,
+        title: nextItem.title,
+        description: nextItem.description || nextItem.why_it_matters || "Protect your investment and travel with peace of mind.",
+        buttonText: "View Task →",
+        buttonAction: `openChecklistTask(${nextItem.id})`
+      };
+    }
+  }
+
+  return { state: "on_track", title: "You're on track", description: "Your next preparation step will appear here when it becomes relevant.", buttonText: "View Preparation Checklist", buttonAction: "openPreparationChecklist()" };
+}
+
+function resolveLastMinuteChecklistState(checklistItems, progressRows, sections) {
+  const lastMinuteSection = (sections || []).find(section => isLastMinuteSectionName(section.name));
+  const sectionItems = lastMinuteSection
+    ? checklistItems.filter(item => String(item.section_id) === String(lastMinuteSection.id))
+    : [];
+  const completedCount = sectionItems.filter(item => isItemCompleted(progressRows, item.id)).length;
+  const totalCount = sectionItems.length;
+  return {
+    sectionId: lastMinuteSection?.id || null,
+    completedCount,
+    totalCount,
+    allComplete: totalCount > 0 && completedCount === totalCount
+  };
+}
+
+const CHECKLIST_FOCUS_KEY = "101cruise_checklist_focus";
+
+function openPreparationChecklist() {
+  sessionStorage.removeItem(CHECKLIST_FOCUS_KEY);
+  renderChecklist();
+}
+
+function openChecklistTask(itemId) {
+  sessionStorage.setItem(CHECKLIST_FOCUS_KEY, JSON.stringify({ type: "item", id: Number(itemId) }));
+  renderChecklist();
+}
+
+function openLastMinuteChecklist(sectionId) {
+  sessionStorage.setItem(CHECKLIST_FOCUS_KEY, JSON.stringify({ type: "section", id: Number(sectionId) }));
+  renderChecklist();
+}
+
+function focusChecklistTargetFromDashboard() {
+  const raw = sessionStorage.getItem(CHECKLIST_FOCUS_KEY);
+  if (!raw) return;
+  sessionStorage.removeItem(CHECKLIST_FOCUS_KEY);
+  let focus = null;
+  try {
+    focus = JSON.parse(raw);
+  } catch {
+    return;
+  }
+
+  if (focus?.type === "item") {
+    const row = document.querySelector(`[data-checklist-row="${focus.id}"]`);
+    if (!row) return;
+    row.classList.add("is-dashboard-focus");
+    const details = document.getElementById(`checklist-details-${focus.id}`);
+    if (details) details.classList.add("open");
+    row.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => row.classList.remove("is-dashboard-focus"), 2600);
+    return;
+  }
+
+  if (focus?.type === "section") {
+    const section = document.querySelector(`[data-checklist-section="${focus.id}"]`);
+    if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+function resolveDashboardActionCard(checklistData, leaveHomeInfo) {
+  const daysUntilLeaveHome = leaveHomeInfo?.date ? getDaysUntilCalendarDate(leaveHomeInfo.date) : null;
+  const inLastMinuteWindow = daysUntilLeaveHome !== null && daysUntilLeaveHome <= 2;
+  const isLeaveHomeDay = daysUntilLeaveHome === 0;
+  const lastMinute = checklistData.lastMinute || { allComplete: false, sectionId: null };
+
+  if (inLastMinuteWindow) {
+    if (lastMinute.allComplete) {
+      return {
+        label: "Last Minute Checklist",
+        title: "Ready to Go",
+        description: "Your Last Minute Checklist is complete. Have a fantastic holiday!",
+        buttonText: "",
+        buttonAction: "",
+        isPrimary: isLeaveHomeDay,
+        mode: "last_minute_complete"
+      };
+    }
+    return {
+      label: isLeaveHomeDay ? "Before You Leave Home" : "Next Essential Step",
+      title: "Before You Leave Home",
+      description: "Review the items that can't be packed until the last minute before you leave home.",
+      buttonText: "Open Last Minute Checklist →",
+      buttonAction: lastMinute.sectionId ? `openLastMinuteChecklist(${lastMinute.sectionId})` : "openPreparationChecklist()",
+      isPrimary: isLeaveHomeDay,
+      mode: "last_minute"
+    };
+  }
+
+  const step = checklistData.nextEssentialStep;
+  return {
+    label: "Next Essential Step",
+    title: step.title,
+    description: step.description,
+    buttonText: step.buttonText || "",
+    buttonAction: step.buttonAction || "openPreparationChecklist()",
+    isPrimary: false,
+    mode: step.state
+  };
+}
+
+function renderDashboardActionCard(card) {
+  const button = card.buttonText
+    ? `<button class="dashboard-outline-action dashboard-card-button" onclick="${card.buttonAction}">${escapeHtml(card.buttonText)}</button>`
+    : "";
+  return `
+    <article class="dashboard-summary-card dashboard-next-step-wide ${card.isPrimary ? "dashboard-next-step-primary" : ""}">
+      <div>
+        <p class="dashboard-card-label">${escapeHtml(card.label)}</p>
+        <h2>${escapeHtml(card.title)}</h2>
+        <p class="dashboard-card-copy">${escapeHtml(card.description)}</p>
+      </div>
+      ${button}
+    </article>
+  `;
 }
 
 function getCruiseRouteText(cruise) {
@@ -1756,16 +1852,16 @@ async function renderDashboard() {
   const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
   const checklistData = await loadDashboardChecklistData(mainCruise);
   const packingData = await loadDashboardPackingData(mainCruise);
+  const dashboardBudget = mainCruise ? await loadBudget(mainCruise) : null;
+  const leaveHomeInfo = calculateLeaveHomeDate(mainCruise, dashboardBudget);
+  const countdownConfig = buildDashboardCountdownConfig(mainCruise, leaveHomeInfo);
+  const dashboardActionCard = resolveDashboardActionCard(checklistData, leaveHomeInfo);
   const dashboardJourney = getDashboardJourney(mainCruise);
-  const nextItem = checklistData.nextItem;
-  const nextStepTitle = nextItem?.title || "Open your preparation checklist";
-  const nextStepDescription = nextItem?.description || nextItem?.why_it_matters || "Protect your investment and travel with peace of mind.";
-  const nextStepType = nextItem ? getPriorityLabel(nextItem.priority) : "Essential";
   const routeText = getCruiseRouteText(mainCruise);
   const nightsText = mainCruise?.nights ? `${mainCruise.nights} Nights` : "";
   const cruiseLineText = mainCruise?.cruise_line || "";
   const routeLine = [cruiseLineText, nightsText].filter(Boolean).join(" • ");
-  const countdownParts = getCountdownParts(mainCruise);
+  const countdownParts = countdownConfig.getParts();
   const mainLogo = mainCruise ? await loadCruiseLineLogo(mainCruise.cruise_line) : "";
   const heroTitle = (() => {
     if (!mainCruise) return "My Cruise";
@@ -1795,7 +1891,7 @@ async function renderDashboard() {
           </div>
 
           <div class="dashboard-countdown-panel">
-            <p>Sailing in</p>
+            <p id="dashboardCountdownLabel">${escapeHtml(countdownConfig.panelLabel)}</p>
             <div class="dashboard-countdown-grid">
               <div><span id="countdownDays">${countdownParts.days}</span><small>Days</small></div>
               <div><span id="countdownHours">${padNumber(countdownParts.hours)}</span><small>Hours</small></div>
@@ -1822,20 +1918,13 @@ async function renderDashboard() {
         <section class="dashboard-v2-grid">
           ${renderJourneyMap(dashboardJourney)}
 
-          <div class="dashboard-v2-side">
+          <div class="dashboard-v2-side ${dashboardActionCard.isPrimary ? "dashboard-v2-side-primary-first" : ""}">
+            ${dashboardActionCard.isPrimary ? renderDashboardActionCard(dashboardActionCard) : ""}
             <div class="dashboard-v2-top-row">
               ${renderDashboardCombinedProgress(packingData, checklistData)}
               ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
             </div>
-
-            <article class="dashboard-summary-card dashboard-next-step-wide">
-              <div>
-                <p class="dashboard-card-label">Next Essential Step</p>
-                <h2>${escapeHtml(nextStepTitle)}</h2>
-                <p class="dashboard-card-copy">${escapeHtml(nextStepDescription)}</p>
-              </div>
-              <button class="dashboard-outline-action dashboard-card-button" onclick="renderChecklist()">Start Task →</button>
-            </article>
+            ${dashboardActionCard.isPrimary ? "" : renderDashboardActionCard(dashboardActionCard)}
           </div>
         </section>
 
@@ -1845,7 +1934,7 @@ async function renderDashboard() {
   `;
 
   if (mainCruise) {
-    startLiveCountdown(mainCruise);
+    startLiveCountdown(mainCruise, countdownConfig);
     initialiseDashboardRouteMap(dashboardJourney);
   }
 }
@@ -2258,7 +2347,7 @@ async function renderChecklist() {
             const sectionPercent = getProgressPercent(sectionCompleted, sectionTotal);
 
             return `
-              <section class="checklist-section-block">
+              <section class="checklist-section-block" data-checklist-section="${section.id}">
                 <div class="checklist-section-header">
                   <div>
                     <h3>${escapeHtml(section.name)}</h3>
@@ -2285,6 +2374,7 @@ async function renderChecklist() {
       </div>
     </div>
   `;
+  focusChecklistTargetFromDashboard();
 }
 
 
