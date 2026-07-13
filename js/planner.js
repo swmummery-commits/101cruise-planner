@@ -1296,8 +1296,8 @@ function resolveDashboardActionCard(checklistData, leaveHomeInfo) {
       };
     }
     return {
-      label: isLeaveHomeDay ? "Leave Home Today" : "Next Essential Step",
-      title: isLeaveHomeDay ? "Leave Home Today" : "Before You Leave Home",
+      label: isLeaveHomeDay ? "LEAVE HOME TODAY" : "Next Essential Step",
+      title: isLeaveHomeDay ? "Final check before you leave" : "Before You Leave Home",
       description: isLeaveHomeDay
         ? "Today is your Leave Home Day. Review the last-minute items before you head off."
         : "Review the items that can't be packed until the last minute before you leave home.",
@@ -1954,6 +1954,7 @@ async function renderDashboard() {
       ${mainCruise ? `
         <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}${mainLogo ? " has-cruise-logo" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
           <div class="dashboard-hero-overlay"></div>
+          <img class="dashboard-brand-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
           ${adminPreviewMode ? `<button class="dashboard-signout" onclick="exitAdminPreview()">Exit Preview</button>` : customerMode ? `<button class="dashboard-signout" onclick="changeCustomerBooking()">Change Booking</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
 
           <div class="dashboard-hero-content">
@@ -1973,10 +1974,7 @@ async function renderDashboard() {
             </div>
           </div>
 
-          <div class="dashboard-hero-logo-bar">
-            <img class="dashboard-brand-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
-            ${mainLogo ? `<img class="dashboard-cruise-line-logo" src="${escapeHtml(mainLogo)}" alt="${escapeHtml(mainCruise.cruise_line || "Cruise line")} logo">` : ""}
-          </div>
+          ${mainLogo ? `<img class="dashboard-cruise-line-logo" src="${escapeHtml(mainLogo)}" alt="${escapeHtml(mainCruise.cruise_line || "Cruise line")} logo">` : ""}
         </section>
       ` : `
         <section class="dashboard-empty-hero">
