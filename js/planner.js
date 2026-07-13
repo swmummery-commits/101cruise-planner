@@ -1818,6 +1818,7 @@ function renderDashboardQuickAccess() {
       <button onclick="renderChecklist()"><span aria-hidden="true">✓</span><strong>Checklist</strong></button>
       <button onclick="renderDocuments()"><span aria-hidden="true">📄</span><strong>Documents</strong></button>
       <button onclick="renderBudgetPlanner()"><span aria-hidden="true">💳</span><strong>Budget</strong></button>
+      <button onclick="renderTheShip()"><span aria-hidden="true">🚢</span><strong>The Ship</strong></button>
     </nav>
   `;
 }
@@ -4849,8 +4850,8 @@ function renderShipAccommodationChart(rooms) {
   `;
 }
 
-function easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
+function easeOutQuint(t) {
+  return 1 - Math.pow(1 - t, 5);
 }
 
 function animateShipSummaryStats() {
@@ -4867,19 +4868,23 @@ function animateShipSummaryStats() {
     return;
   }
 
-  const duration = 2500;
+  const duration = 5200;
   const start = performance.now();
 
   nodes.forEach((node, index) => {
     const target = Number(node.getAttribute("data-ship-target") || 0);
     const key = node.getAttribute("data-ship-stat");
-    const finishBias = (index / Math.max(nodes.length - 1, 1)) * 180;
+    const finishBias = (index / Math.max(nodes.length - 1, 1)) * 220;
+    let lastShown = -1;
 
     const tick = now => {
       const elapsed = Math.max(0, now - start);
       const progress = Math.min(1, elapsed / (duration + finishBias));
-      const value = Math.round(target * easeOutCubic(progress));
-      node.textContent = formatShipStatValue(value, key);
+      const value = Math.round(target * easeOutQuint(progress));
+      if (value !== lastShown) {
+        lastShown = value;
+        node.textContent = formatShipStatValue(value, key);
+      }
       if (progress < 1) requestAnimationFrame(tick);
       else node.textContent = formatShipStatValue(target, key);
     };
