@@ -2125,9 +2125,11 @@ function renderProgressCircle(percent) {
 function renderPlannerNav(active = "preparation") {
   const items = [
     { key: "dashboard", label: "Dashboard", action: "renderDashboard()" },
-    { key: "preparation", label: "Preparation", action: "renderChecklist()" },
-    { key: "packing", label: "Packing", action: "renderPackingPlanner()" },
+    { key: "booking", label: "Booking", action: "renderBookingDetails()" },
     { key: "budget", label: "Budget", action: "renderBudgetPlanner()" },
+    { key: "ship", label: "The Ship", action: "renderTheShip()" },
+    { key: "packing", label: "Packing", action: "renderPackingPlanner()" },
+    { key: "preparation", label: "Checklist", action: "renderChecklist()" },
     { key: "documents", label: "Documents", action: "renderDocuments()" }
   ];
 
@@ -2806,7 +2808,7 @@ async function renderBookingDetails() {
 
   app.innerHTML = `
     <div class="planner-shell">
-      ${renderPlannerNav("dashboard")}
+      ${renderPlannerNav("booking")}
 
       <div class="booking-reading-column">
         <div class="planner-card slim-card">
@@ -4669,6 +4671,322 @@ async function deleteBudgetItem(id) {
   activeBudget.items = activeBudget.items.filter(item => item.id !== id);
   await persistBudget();
   await renderBudgetPlanner();
+}
+
+/* =========================================================
+   The Ship — customer experience prototype (sample data)
+   ========================================================= */
+
+const SAMPLE_SHIP_PROFILE = {
+  name: "Adventure of the Seas",
+  cruiseLine: "Royal Caribbean International",
+  status: "Active",
+  summary: {
+    passengers: 3114,
+    staterooms: 1557,
+    crew: 1185,
+    built: 2001,
+    refurbished: 2016
+  },
+  onboardGlance: [
+    { title: "Dining", detail: "Main dining rooms, specialty restaurants and casual cafés." },
+    { title: "Entertainment", detail: "Broadway-style shows, live music and evening venues." },
+    { title: "Pools & Wellness", detail: "Pool decks, spa treatments and a full fitness centre." },
+    { title: "Youth Clubs", detail: "Age-appropriate programmes for children and teens." }
+  ],
+  specifications: [
+    { label: "Gross tonnage", value: "138,000 GT" },
+    { label: "Length", value: "311 metres" },
+    { label: "Beam", value: "38.6 metres" },
+    { label: "Decks", value: "15 passenger decks" },
+    { label: "Cruising speed", value: "22 knots" },
+    { label: "Registry", value: "Bahamas" }
+  ],
+  accommodation: [
+    { label: "Interior", value: 562, color: "#8DD9BF" },
+    { label: "Ocean View", value: 328, color: "#5BBFA3" },
+    { label: "Balcony", value: 512, color: "#245C4E" },
+    { label: "Suite", value: 155, color: "#9AA7A3" }
+  ],
+  exclusiveAreas: [
+    { title: "Royal Suite Class", detail: "Private lounge access and elevated suite services." },
+    { title: "Adults-only Solarium", detail: "A quieter pool retreat reserved for guests 16+." },
+    { title: "Vitality Spa", detail: "Treatments, thermal experiences and wellness rituals." }
+  ],
+  specialtyFeatures: [
+    { title: "Rock Climbing Wall", detail: "An outdoor climbing experience with harbour views." },
+    { title: "FlowRider", detail: "Surf simulator for beginners through advanced riders." },
+    { title: "Ice Skating Rink", detail: "Onboard rink with open skate sessions and shows." },
+    { title: "Mini Golf", detail: "A nine-hole course for relaxed family competition." }
+  ]
+};
+
+const SHIP_SUMMARY_ICONS = {
+  passengers: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  staterooms: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/><path d="M12 4v6"/><path d="M2 18h20"/></svg>`,
+  crew: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z"/><path d="M4 21a8 8 0 0 1 16 0"/><path d="M12 12v3"/><path d="M9.5 16.5h5"/></svg>`,
+  built: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>`,
+  refurbished: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>`
+};
+
+function getSampleShipProfile(cruise = null) {
+  return {
+    ...SAMPLE_SHIP_PROFILE,
+    name: cruise?.ship_name || SAMPLE_SHIP_PROFILE.name,
+    cruiseLine: cruise?.cruise_line || SAMPLE_SHIP_PROFILE.cruiseLine
+  };
+}
+
+function formatShipStatValue(value, key) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return String(value ?? "");
+  if (key === "built" || key === "refurbished") return String(Math.round(number));
+  return new Intl.NumberFormat("en-AU").format(Math.round(number));
+}
+
+function renderShipSummaryCard(ship) {
+  const stats = [
+    { key: "passengers", label: "Passengers", value: ship.summary.passengers },
+    { key: "staterooms", label: "Staterooms", value: ship.summary.staterooms },
+    { key: "crew", label: "Crew", value: ship.summary.crew },
+    { key: "built", label: "Built", value: ship.summary.built },
+    { key: "refurbished", label: "Refurbished", value: ship.summary.refurbished }
+  ];
+
+  return `
+    <section class="ship-summary-card ship-animate-summary" aria-label="Ship summary">
+      <div class="ship-summary-glow" aria-hidden="true"></div>
+      <div class="ship-summary-grid">
+        ${stats.map(stat => `
+          <div class="ship-summary-stat">
+            <span class="ship-summary-icon" aria-hidden="true">${SHIP_SUMMARY_ICONS[stat.key]}</span>
+            <strong class="ship-summary-value" data-ship-stat="${stat.key}" data-ship-target="${stat.value}">0</strong>
+            <span class="ship-summary-label">${escapeHtml(stat.label)}</span>
+          </div>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderShipFeatureGrid(items, className = "") {
+  return `
+    <div class="ship-feature-grid ${className}">
+      ${items.map(item => `
+        <article class="ship-feature-card">
+          <h4>${escapeHtml(item.title)}</h4>
+          <p>${escapeHtml(item.detail)}</p>
+        </article>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderShipSpecifications(specs) {
+  return `
+    <div class="ship-spec-list">
+      ${specs.map(item => `
+        <div class="ship-spec-row">
+          <span>${escapeHtml(item.label)}</span>
+          <strong>${escapeHtml(item.value)}</strong>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderShipAccommodationChart(rooms) {
+  const total = rooms.reduce((sum, room) => sum + Number(room.value || 0), 0) || 1;
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  const segments = rooms.map(room => {
+    const portion = Number(room.value || 0) / total;
+    const length = circumference * portion;
+    const segment = {
+      ...room,
+      dasharray: `${length} ${circumference - length}`,
+      dashoffset: -offset
+    };
+    offset += length;
+    return segment;
+  });
+
+  return `
+    <div class="ship-accommodation-layout">
+      <div class="ship-donut-wrap" aria-hidden="true">
+        <svg class="ship-donut-chart" viewBox="0 0 140 140" role="presentation">
+          <circle class="ship-donut-track" cx="70" cy="70" r="${radius}"></circle>
+          ${segments.map((segment, index) => `
+            <circle
+              class="ship-donut-segment"
+              cx="70"
+              cy="70"
+              r="${radius}"
+              stroke="${escapeHtml(segment.color)}"
+              stroke-dasharray="${segment.dasharray}"
+              stroke-dashoffset="${segment.dashoffset}"
+              style="--ship-donut-delay:${0.18 + index * 0.08}s"
+            ></circle>
+          `).join("")}
+        </svg>
+        <div class="ship-donut-centre">
+          <strong>${formatShipStatValue(total)}</strong>
+          <span>Staterooms</span>
+        </div>
+      </div>
+      <ul class="ship-room-legend">
+        ${rooms.map(room => `
+          <li>
+            <span class="ship-room-swatch" style="background:${escapeHtml(room.color)}"></span>
+            <span class="ship-room-label">${escapeHtml(room.label)}</span>
+            <strong>${formatShipStatValue(room.value)}</strong>
+          </li>
+        `).join("")}
+      </ul>
+    </div>
+  `;
+}
+
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+function animateShipSummaryStats() {
+  const nodes = Array.from(document.querySelectorAll("[data-ship-stat]"));
+  if (!nodes.length) return;
+
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) {
+    nodes.forEach(node => {
+      const target = Number(node.getAttribute("data-ship-target") || 0);
+      const key = node.getAttribute("data-ship-stat");
+      node.textContent = formatShipStatValue(target, key);
+    });
+    return;
+  }
+
+  const duration = 2500;
+  const start = performance.now();
+
+  nodes.forEach((node, index) => {
+    const target = Number(node.getAttribute("data-ship-target") || 0);
+    const key = node.getAttribute("data-ship-stat");
+    const finishBias = (index / Math.max(nodes.length - 1, 1)) * 180;
+
+    const tick = now => {
+      const elapsed = Math.max(0, now - start);
+      const progress = Math.min(1, elapsed / (duration + finishBias));
+      const value = Math.round(target * easeOutCubic(progress));
+      node.textContent = formatShipStatValue(value, key);
+      if (progress < 1) requestAnimationFrame(tick);
+      else node.textContent = formatShipStatValue(target, key);
+    };
+
+    requestAnimationFrame(tick);
+  });
+}
+
+function animateShipDonutChart() {
+  const segments = Array.from(document.querySelectorAll(".ship-donut-segment"));
+  if (!segments.length) return;
+
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  segments.forEach(segment => {
+    const finalDasharray = segment.getAttribute("stroke-dasharray") || "";
+    const [lengthText, gapText] = finalDasharray.split(/\s+/);
+    const length = Number(lengthText || 0);
+    const gap = Number(gapText || 0);
+
+    if (reducedMotion) {
+      segment.style.opacity = "1";
+      return;
+    }
+
+    segment.style.strokeDasharray = `0 ${length + gap}`;
+    segment.style.opacity = "0";
+
+    requestAnimationFrame(() => {
+      const delay = getComputedStyle(segment).getPropertyValue("--ship-donut-delay") || "0.2s";
+      segment.style.transition = `stroke-dasharray 1.35s cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}, opacity 0.45s ease ${delay}`;
+      segment.style.strokeDasharray = finalDasharray;
+      segment.style.opacity = "1";
+    });
+  });
+}
+
+function initialiseShipPageMotion() {
+  requestAnimationFrame(() => {
+    const page = document.querySelector(".ship-page");
+    if (page) page.classList.add("is-ready");
+    animateShipSummaryStats();
+    animateShipDonutChart();
+  });
+}
+
+async function renderTheShip() {
+  clearCountdownTimer();
+
+  const cruise = await loadCurrentCruise();
+  const ship = getSampleShipProfile(cruise);
+
+  app.innerHTML = `
+    <div class="ship-page">
+      ${renderPlannerNav("ship")}
+
+      <header class="ship-hero ship-animate-block" style="--ship-delay:0ms">
+        <div class="ship-hero-copy">
+          <p class="planner-kicker">The Ship</p>
+          <h1>${escapeHtml(ship.name)}</h1>
+          <p class="ship-hero-line">${escapeHtml(ship.cruiseLine)}</p>
+        </div>
+        <span class="ship-status-badge">${escapeHtml(ship.status)}</span>
+      </header>
+
+      ${renderShipSummaryCard(ship)}
+
+      <section class="planner-card ship-section-card ship-animate-block" style="--ship-delay:80ms">
+        <h3>Onboard at a Glance</h3>
+        <p class="planner-muted ship-section-intro">A calm overview of life on board before you sail.</p>
+        ${renderShipFeatureGrid(ship.onboardGlance)}
+      </section>
+
+      <section class="planner-card ship-section-card ship-animate-block" style="--ship-delay:150ms">
+        <h3>Ship Specifications</h3>
+        <p class="planner-muted ship-section-intro">Key details that define your ship.</p>
+        ${renderShipSpecifications(ship.specifications)}
+      </section>
+
+      <section class="planner-card ship-section-card ship-animate-block" style="--ship-delay:220ms">
+        <h3>Accommodation</h3>
+        <p class="planner-muted ship-section-intro">A clear picture of the stateroom mix on board.</p>
+        ${renderShipAccommodationChart(ship.accommodation)}
+      </section>
+
+      <section class="planner-card ship-section-card ship-animate-block" style="--ship-delay:290ms">
+        <h3>Exclusive Areas</h3>
+        <p class="planner-muted ship-section-intro">Spaces designed for quieter moments and elevated stays.</p>
+        ${renderShipFeatureGrid(ship.exclusiveAreas)}
+      </section>
+
+      <section class="planner-card ship-section-card ship-animate-block" style="--ship-delay:360ms">
+        <h3>Specialty Features</h3>
+        <p class="planner-muted ship-section-intro">Signature experiences that make this ship distinctive.</p>
+        ${renderShipFeatureGrid(ship.specialtyFeatures, "ship-feature-grid-compact")}
+      </section>
+
+      <section class="planner-card ship-section-card ship-deck-card ship-animate-block" style="--ship-delay:430ms">
+        <div class="ship-deck-copy">
+          <h3>Deck Plans</h3>
+          <p class="planner-muted">Explore the official deck plans to get familiar with every level of the ship.</p>
+        </div>
+        <button class="planner-button secondary ship-deck-button" type="button">View Official Deck Plans</button>
+      </section>
+    </div>
+  `;
+
+  initialiseShipPageMotion();
 }
 
 initPlanner();
