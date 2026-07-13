@@ -5747,17 +5747,18 @@
 .dashboard-v2-grid > .dashboard-snapshot-card {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  max-height: 100%;
-  overflow: hidden;
+  height: auto;
+  max-height: none;
+  overflow: visible;
 }
 .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
+  flex: 0 0 auto;
   min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
+  overflow: visible;
+  padding-right: 0;
 }
 .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-outline-action {
-  margin-top: auto;
+  margin-top: 0;
 }
 .dashboard-route-map {
   min-height: 330px;
@@ -6051,7 +6052,7 @@
   }
   .dashboard-journey-card { grid-column: 1 !important; grid-row: 1 / span 2 !important; }
   .dashboard-combined-progress-card { grid-column: 2 !important; grid-row: 1 !important; }
-  .dashboard-v2-grid > .dashboard-snapshot-card { grid-column: 3 !important; grid-row: 1 !important; height: 520px !important; max-height: 520px !important; }
+  .dashboard-v2-grid > .dashboard-snapshot-card { grid-column: 3 !important; grid-row: 1 !important; height: auto !important; max-height: none !important; overflow: visible !important; }
   .dashboard-next-step-wide { grid-column: 2 / 4 !important; grid-row: 2 !important; padding: 16px 20px !important; }
 }
 .dashboard-combined-progress-card { display:flex; flex-direction:column; min-width:0; }
@@ -6089,21 +6090,21 @@
   .dashboard-hero h1 { font-size: clamp(2rem, 2.65vw, 3rem) !important; white-space: nowrap !important; }
   .dashboard-hero-date, .dashboard-hero-route { white-space: nowrap !important; }
   .dashboard-v2-grid > .dashboard-snapshot-card {
-    height: 520px !important;
-    max-height: 520px !important;
-    overflow: hidden !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     display: flex !important;
     flex-direction: column !important;
     min-height: 0 !important;
   }
   .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding-right: 6px;
+    overflow: visible !important;
+    overflow-y: visible !important;
+    padding-right: 0;
   }
-  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-outline-action { flex: 0 0 auto; }
+  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-outline-action { flex: 0 0 auto; margin-top: 0; }
   .dashboard-next-step-wide { align-self: start !important; min-height: 0 !important; margin-top: 0 !important; }
 }
 .dashboard-map-ship { pointer-events:none; }
@@ -6162,15 +6163,15 @@
   .dashboard-v2-grid > .dashboard-snapshot-card {
     grid-column: 3 !important;
     grid-row: 1 !important;
-    height: 540px !important;
-    min-height: 540px !important;
-    max-height: 540px !important;
-    overflow: hidden !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
   .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
-    flex: 1 1 auto !important;
+    flex: 0 0 auto !important;
     min-height: 0 !important;
-    overflow-y: auto !important;
+    overflow: visible !important;
   }
   .dashboard-next-step-wide {
     grid-column: 2 / 4 !important;
@@ -6213,9 +6214,9 @@
     grid-row: 1 !important;
     min-width: 0 !important;
     display: grid !important;
-    grid-template-rows: 540px auto !important;
+    grid-template-rows: auto auto !important;
     gap: 18px !important;
-    align-items: stretch !important;
+    align-items: start !important;
   }
 
   .dashboard-v2-top-row {
@@ -6223,32 +6224,39 @@
     grid-template-columns: minmax(390px, 1.05fr) minmax(350px, .95fr) !important;
     gap: 18px !important;
     min-width: 0 !important;
-    height: 540px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    align-items: start !important;
   }
 
-  .dashboard-v2-top-row > .dashboard-combined-progress-card,
-  .dashboard-v2-top-row > .dashboard-snapshot-card {
+  .dashboard-v2-top-row > .dashboard-combined-progress-card {
     grid-column: auto !important;
     grid-row: auto !important;
     width: auto !important;
-    height: 540px !important;
-    min-height: 540px !important;
-    max-height: 540px !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     margin: 0 !important;
-    overflow: hidden !important;
+    align-self: start !important;
   }
 
   .dashboard-v2-top-row > .dashboard-snapshot-card {
     display: flex !important;
     flex-direction: column !important;
+    grid-column: auto !important;
+    grid-row: auto !important;
+    width: auto !important;
     height: auto !important;
-    min-height: 540px !important;
+    min-height: 0 !important;
     max-height: none !important;
+    margin: 0 !important;
     overflow: visible !important;
+    align-self: start !important;
+    position: static !important;
   }
 
   .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list {
-    flex: 0 1 auto !important;
+    flex: 0 0 auto !important;
     min-height: 0 !important;
     overflow: visible !important;
     padding-right: 0 !important;
@@ -6256,6 +6264,7 @@
 
   .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-outline-action {
     flex: 0 0 auto !important;
+    margin-top: 0 !important;
   }
 
   .dashboard-v2-side > .dashboard-next-step-wide {
@@ -6302,38 +6311,41 @@
 }
 
 /* 2026-07-12 final Next Essential Step row correction.
-   Fixed-height dashboard cards must include their padding and borders inside
-   the declared height. Otherwise the following grid row begins too early and
-   visually overlaps the cards above. */
+   Progress and Snapshot sit side by side with natural heights.
+   Snapshot must grow with content and must not match Progress height. */
 @media (min-width: 1081px) {
   .dashboard-v2-side {
     grid-template-rows: auto auto !important;
     align-content: start !important;
+    align-items: start !important;
   }
 
   .dashboard-v2-top-row {
     height: auto !important;
-    min-height: 540px !important;
-    align-items: stretch !important;
+    min-height: 0 !important;
+    align-items: start !important;
   }
 
-  .dashboard-v2-top-row > .dashboard-combined-progress-card,
+  .dashboard-v2-top-row > .dashboard-combined-progress-card {
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    align-self: start !important;
+  }
+
   .dashboard-v2-top-row > .dashboard-snapshot-card {
     box-sizing: border-box !important;
-    height: 540px !important;
-    min-height: 540px !important;
-    max-height: 540px !important;
-  }
-
-  .dashboard-v2-top-row > .dashboard-snapshot-card {
     height: auto !important;
-    min-height: 540px !important;
+    min-height: 0 !important;
     max-height: none !important;
     overflow: visible !important;
+    align-self: start !important;
+    position: static !important;
   }
 
   .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list {
-    flex: 0 1 auto !important;
+    flex: 0 0 auto !important;
     overflow: visible !important;
   }
 
@@ -6458,28 +6470,35 @@ input[type="radio"] {
   font-weight: 400 !important;
 }
 
-/* Expanding snapshot, matched card heights, no internal scrollbar */
+/* Cruise Snapshot grows with content; Progress keeps its own natural height */
 @media (min-width:1081px) {
   .dashboard-v2-side { grid-template-rows: auto auto !important; }
-  .dashboard-v2-side-primary-first { grid-template-rows: auto 540px !important; }
+  .dashboard-v2-side-primary-first { grid-template-rows: auto auto !important; }
   .dashboard-v2-side-primary-first > .dashboard-next-step-wide.dashboard-next-step-primary { grid-row: 1 !important; }
   .dashboard-v2-side-primary-first > .dashboard-v2-top-row { grid-row: 2 !important; }
   .dashboard-v2-top-row {
     height: auto !important;
     min-height: 0 !important;
-    align-items: stretch !important;
+    align-items: start !important;
   }
-  .dashboard-v2-top-row > .dashboard-combined-progress-card,
-  .dashboard-v2-top-row > .dashboard-snapshot-card {
+  .dashboard-v2-top-row > .dashboard-combined-progress-card {
     box-sizing: border-box !important;
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
     overflow: visible !important;
+    align-self: start !important;
   }
   .dashboard-v2-top-row > .dashboard-snapshot-card {
+    box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    align-self: start !important;
+    position: static !important;
   }
   .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list {
     flex: 0 0 auto !important;
@@ -6488,15 +6507,10 @@ input[type="radio"] {
     overflow-y: visible !important;
     padding-right: 0 !important;
   }
-  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-outline-action {
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-outline-action,
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-footer .dashboard-outline-action {
     flex: 0 0 auto !important;
-    margin-top: auto;
-  }
-  .dashboard-combined-progress-card {
-    height: auto !important;
-    min-height: 0 !important;
-    max-height: none !important;
-    overflow: visible !important;
+    margin-top: 0 !important;
   }
 }
 
@@ -6673,12 +6687,17 @@ input[type="radio"] {
 .dashboard-snapshot-card {
   display: flex;
   flex-direction: column;
+  height: auto;
   min-height: 0;
+  max-height: none;
+  overflow: visible;
+  position: static;
 }
 
 .dashboard-snapshot-list {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 0;
+  overflow: visible;
 }
 
 .dashboard-snapshot-row-travellers {
@@ -6710,9 +6729,11 @@ input[type="radio"] {
 }
 
 .dashboard-snapshot-extras {
-  margin-top: 14px;
-  padding-top: 14px;
+  flex: 0 0 auto;
+  margin-top: 22px;
+  padding-top: 18px;
   border-top: 1px solid #e8edeb;
+  position: static;
 }
 
 .dashboard-snapshot-extras-title {
@@ -6728,6 +6749,7 @@ input[type="radio"] {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  position: static;
 }
 
 .dashboard-snapshot-extras-tag {
@@ -6750,14 +6772,16 @@ input[type="radio"] {
 
 .dashboard-snapshot-footer {
   flex: 0 0 auto;
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: 18px;
+  padding: 16px 0 4px;
   border-top: 1px solid #e8edeb;
+  position: static;
 }
 
 .dashboard-snapshot-footer .dashboard-outline-action {
   width: 100%;
-  margin-top: 0;
+  margin-top: 0 !important;
+  position: static;
 }
 
 @media (min-width: 1081px) {
@@ -6782,13 +6806,16 @@ input[type="radio"] {
   .dashboard-v2-grid > .dashboard-snapshot-card {
     display: flex !important;
     flex-direction: column !important;
-    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
     max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
   }
 
   .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list,
   .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
-    flex: 0 1 auto !important;
+    flex: 0 0 auto !important;
     min-height: 0 !important;
     overflow: visible !important;
   }
@@ -6798,6 +6825,7 @@ input[type="radio"] {
   .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-extras,
   .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-footer {
     flex: 0 0 auto !important;
+    position: static !important;
   }
 }
 
@@ -7122,4 +7150,71 @@ input[type="radio"] {
   content: none !important;
   display: none !important;
   background: none !important;
+}
+
+/* Cruise Snapshot: natural content height — do not match Progress card */
+.dashboard-v2-top-row {
+  align-items: start !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+.dashboard-v2-top-row > .dashboard-snapshot-card,
+.dashboard-v2-grid > .dashboard-snapshot-card,
+.dashboard-snapshot-card {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow: visible !important;
+  position: static !important;
+  align-self: start !important;
+}
+
+.dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list,
+.dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list,
+.dashboard-snapshot-card .dashboard-snapshot-list {
+  flex: 0 0 auto !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+.dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-extras,
+.dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-extras,
+.dashboard-snapshot-card .dashboard-snapshot-extras {
+  flex: 0 0 auto !important;
+  margin-top: 22px !important;
+  padding-top: 18px !important;
+  position: static !important;
+}
+
+.dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-footer,
+.dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-footer,
+.dashboard-snapshot-card .dashboard-snapshot-footer {
+  flex: 0 0 auto !important;
+  margin-top: 18px !important;
+  padding: 16px 0 4px !important;
+  border-top: 1px solid #e8edeb !important;
+  position: static !important;
+}
+
+.dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-outline-action,
+.dashboard-v2-grid > .dashboard-snapshot-card .dashboard-outline-action,
+.dashboard-snapshot-card .dashboard-snapshot-footer .dashboard-outline-action {
+  margin-top: 0 !important;
+  position: static !important;
+}
+
+@media (min-width: 1081px) {
+  .dashboard-v2-top-row {
+    display: grid !important;
+    grid-template-columns: minmax(390px, 1.05fr) minmax(350px, .95fr) !important;
+    align-items: start !important;
+  }
+}
+
+@media (max-width: 1080px) {
+  .dashboard-v2-top-row {
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+  }
 }
