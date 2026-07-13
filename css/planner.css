@@ -6567,3 +6567,8 @@ input[type="radio"] {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   word-break: break-word;
 }
+
+.dashboard-leave-home-debug-row.is-wide {
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
