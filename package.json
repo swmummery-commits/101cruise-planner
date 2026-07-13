@@ -1,0 +1,15 @@
+{
+  "name": "101cruise-planner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "101CRUISE planner — Netlify site with Base44 CRM integration",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@base44/sdk": "^0.8.38"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

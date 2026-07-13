@@ -1,1 +1,14 @@
 .DS_Store
+
+# Dependencies
+node_modules/
+
+# Local env / secrets — never commit credentials
+.env
+.env.*
+!.env.example
+.netlify/
+
+# Logs / OS
+*.log
+npm-debug.log*
