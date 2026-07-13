@@ -944,13 +944,9 @@ function parseCalendarDate(dateString) {
   return new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 0, 0, 0, 0);
 }
 
-function isOutboundBudgetFlight(item) {
-  return item?.category === "flights" && item.return_flight !== true;
-}
-
 function getEarliestNormalizedBudgetDates(budget, category) {
   return (budget?.items || [])
-    .filter(item => item.category === category && (category !== "flights" || isOutboundBudgetFlight(item)))
+    .filter(item => item.category === category)
     .map(item => normalizeCalendarDateString(item.date))
     .filter(Boolean)
     .sort();
@@ -973,26 +969,14 @@ function getDaysUntilCalendarDate(dateString) {
 
 function calculateLeaveHomeDate(cruise, budget) {
   const flightDates = getEarliestNormalizedBudgetDates(budget, "flights");
+  if (flightDates.length) return { date: flightDates[0], source: "flight" };
+
   const accommodationDates = getEarliestNormalizedBudgetDates(budget, "accommodation");
+  if (accommodationDates.length) return { date: accommodationDates[0], source: "accommodation" };
+
   const embarkationDate = normalizeCalendarDateString(cruise?.departure_date);
-
-  let result;
-  if (flightDates.length) result = { date: flightDates[0], source: "flight" };
-  else if (accommodationDates.length) result = { date: accommodationDates[0], source: "accommodation" };
-  else if (embarkationDate) result = { date: embarkationDate, source: "embarkation" };
-  else result = { date: null, source: null };
-
-  console.log("[calculateLeaveHomeDate]", {
-    budgetItemCount: (budget?.items || []).length,
-    rawFlightItems: getBudgetFlightItemsForDebug(budget),
-    flightDates,
-    accommodationDates,
-    embarkationDate,
-    selectedLeaveHomeDate: result.date,
-    selectedSource: result.source
-  });
-
-  return result;
+  if (embarkationDate) return { date: embarkationDate, source: "embarkation" };
+  return { date: null, source: null };
 }
 
 function getLeaveHomeDashboardState(daysUntilLeaveHome) {
@@ -1336,84 +1320,7 @@ function resolveDashboardActionCard(checklistData, leaveHomeInfo) {
   };
 }
 
-function formatLeaveHomeSourceLabel(source) {
-  if (source === "flight") return "Flight";
-  if (source === "accommodation") return "Accommodation";
-  if (source === "embarkation") return "Embarkation";
-  return "Unknown";
-}
-
-function formatLeaveHomeDashboardCardType(actionCard) {
-  if (actionCard?.mode === "last_minute" || actionCard?.mode === "last_minute_complete") return "Last Minute card";
-  return "Normal Next Essential Step card";
-}
-
-function getBudgetFlightItemsForDebug(budget) {
-  return (budget?.items || []).filter(item => item?.category === "flights");
-}
-
-function buildLeaveHomeDebugInfo(cruise, budget, leaveHomeInfo, dashboardActionCard, options = {}) {
-  const flightDates = getEarliestNormalizedBudgetDates(budget, "flights");
-  const accommodationDates = getEarliestNormalizedBudgetDates(budget, "accommodation");
-  const embarkationDate = normalizeCalendarDateString(cruise?.departure_date) || null;
-  const calculatedLeaveHomeDate = leaveHomeInfo?.date ? normalizeCalendarDateString(leaveHomeInfo.date) : null;
-  const daysUntilLeaveHome = calculatedLeaveHomeDate ? getDaysUntilCalendarDate(calculatedLeaveHomeDate) : null;
-  const lastMinuteDashboardState = getLeaveHomeDashboardState(daysUntilLeaveHome);
-  const rawFlightItems = getBudgetFlightItemsForDebug(budget);
-
-  return {
-    calculatedLeaveHomeDate: calculatedLeaveHomeDate || "None",
-    leaveHomeSource: formatLeaveHomeSourceLabel(leaveHomeInfo?.source),
-    daysUntilLeaveHome: daysUntilLeaveHome === null ? "None" : String(daysUntilLeaveHome),
-    lastMinuteDashboardState,
-    flightDatesFound: flightDates.length ? flightDates.join(", ") : "None",
-    accommodationDatesFound: accommodationDates.length ? accommodationDates.join(", ") : "None",
-    cruiseEmbarkationDate: embarkationDate || "None",
-    renderedCardType: formatLeaveHomeDashboardCardType(dashboardActionCard),
-    actionCardMode: dashboardActionCard?.mode || "unknown",
-    actionCardIsPrimary: Boolean(dashboardActionCard?.isPrimary),
-    budgetStorageKey: options.budgetStorageKey || "None",
-    budgetItemCount: String((budget?.items || []).length),
-    rawFlightItemCount: String(rawFlightItems.length),
-    rawFlightItemsJson: rawFlightItems.length ? JSON.stringify(rawFlightItems, null, 0) : "None",
-    usedActiveBudget: options.usedActiveBudget ? "Yes" : "No"
-  };
-}
-
-function renderDashboardLeaveHomeDebugPanel(debug) {
-  if (!debug) return "";
-  const rows = [
-    ["Calculated Leave Home Date", debug.calculatedLeaveHomeDate],
-    ["Leave Home source", debug.leaveHomeSource],
-    ["Days Until Leave Home", debug.daysUntilLeaveHome],
-    ["Current Last Minute dashboard state", debug.lastMinuteDashboardState],
-    ["Flight dates found in Budget", debug.flightDatesFound],
-    ["Accommodation dates found in Budget", debug.accommodationDatesFound],
-    ["Cruise embarkation date", debug.cruiseEmbarkationDate],
-    ["Card being rendered", debug.renderedCardType],
-    ["Budget storage key", debug.budgetStorageKey],
-    ["Budget items count", debug.budgetItemCount],
-    ["Raw flight items count", debug.rawFlightItemCount],
-    ["Used in-memory activeBudget", debug.usedActiveBudget],
-    ["Raw flight items JSON", debug.rawFlightItemsJson]
-  ];
-
-  return `
-    <div class="dashboard-leave-home-debug" aria-label="Leave Home debug panel (temporary)">
-      <p class="dashboard-leave-home-debug-title">Leave Home debug (temporary)</p>
-      <dl class="dashboard-leave-home-debug-list">
-        ${rows.map(([label, value]) => `
-          <div class="dashboard-leave-home-debug-row ${label === "Raw flight items JSON" ? "is-wide" : ""}">
-            <dt>${escapeHtml(label)}</dt>
-            <dd>${escapeHtml(value)}</dd>
-          </div>
-        `).join("")}
-      </dl>
-    </div>
-  `;
-}
-
-function renderDashboardActionCard(card, debugHtml = "") {
+function renderDashboardActionCard(card) {
   const button = card.buttonText
     ? `<button class="dashboard-outline-action dashboard-card-button" onclick="${card.buttonAction}">${escapeHtml(card.buttonText)}</button>`
     : "";
@@ -1425,7 +1332,6 @@ function renderDashboardActionCard(card, debugHtml = "") {
         <p class="dashboard-card-copy">${escapeHtml(card.description)}</p>
       </div>
       ${button}
-      ${debugHtml}
     </article>
   `;
 }
@@ -2002,34 +1908,6 @@ async function renderDashboard() {
   const leaveHomeInfo = calculateLeaveHomeDate(mainCruise, dashboardBudget);
   const countdownConfig = buildDashboardCountdownConfig(mainCruise, leaveHomeInfo);
   const dashboardActionCard = resolveDashboardActionCard(checklistData, leaveHomeInfo);
-  const currentCruiseForBudget = await loadCurrentCruise();
-  const usedActiveBudget = Boolean(
-    activeBudget && mainCruise && currentCruiseForBudget
-    && getBudgetBookingKey(mainCruise) === getBudgetBookingKey(currentCruiseForBudget)
-  );
-  const leaveHomeDebug = buildLeaveHomeDebugInfo(mainCruise, dashboardBudget, leaveHomeInfo, dashboardActionCard, {
-    budgetStorageKey: mainCruise ? getBudgetStorageKey(mainCruise) : null,
-    usedActiveBudget
-  });
-  const leaveHomeDebugPanel = renderDashboardLeaveHomeDebugPanel(leaveHomeDebug);
-
-  console.log("[renderDashboard] leave-home diagnostics", {
-    cruiseId: mainCruise?.id ?? null,
-    budgetBookingKey: mainCruise ? getBudgetBookingKey(mainCruise) : null,
-    budgetStorageKey: mainCruise ? getBudgetStorageKey(mainCruise) : null,
-    usedActiveBudget,
-    dashboardBudgetItems: dashboardBudget?.items || [],
-    rawFlightItems: getBudgetFlightItemsForDebug(dashboardBudget),
-    leaveHomeInfo,
-    leaveHomeDebug,
-    dashboardActionCard: {
-      mode: dashboardActionCard.mode,
-      isPrimary: dashboardActionCard.isPrimary,
-      label: dashboardActionCard.label,
-      title: dashboardActionCard.title
-    }
-  });
-
   const dashboardJourney = getDashboardJourney(mainCruise);
   const routeText = getCruiseRouteText(mainCruise);
   const nightsText = mainCruise?.nights ? `${mainCruise.nights} Nights` : "";
@@ -2093,12 +1971,12 @@ async function renderDashboard() {
           ${renderJourneyMap(dashboardJourney)}
 
           <div class="dashboard-v2-side ${dashboardActionCard.isPrimary ? "dashboard-v2-side-primary-first" : ""}">
-            ${dashboardActionCard.isPrimary ? renderDashboardActionCard(dashboardActionCard, leaveHomeDebugPanel) : ""}
+            ${dashboardActionCard.isPrimary ? renderDashboardActionCard(dashboardActionCard) : ""}
             <div class="dashboard-v2-top-row">
               ${renderDashboardCombinedProgress(packingData, checklistData)}
               ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
             </div>
-            ${dashboardActionCard.isPrimary ? "" : renderDashboardActionCard(dashboardActionCard, leaveHomeDebugPanel)}
+            ${dashboardActionCard.isPrimary ? "" : renderDashboardActionCard(dashboardActionCard)}
           </div>
         </section>
 
@@ -4491,7 +4369,6 @@ async function saveBudgetItem(category, id) {
   item.location = String(document.getElementById("budgetItemLocation")?.value || "").trim();
   item.return_flight = document.getElementById("budgetItemReturn")?.checked === true;
   if (!existing) activeBudget.items.push(item);
-  console.log("[saveBudgetItem] saved budget item", JSON.parse(JSON.stringify(item)));
   await persistBudget();
   await renderBudgetPlanner();
 }
