@@ -18,6 +18,7 @@ let smartProfileMembers = [];
 let packingItemProfiles = [];
 let activeTab = "cruise-lines";
 let editingShipId = null;
+let shipSearchQuery = "";
 let editingCruiseLineId = null;
 let editingChecklistItemId = null;
 let editingChecklistSectionId = null;
@@ -906,12 +907,110 @@ function cancelCruiseLineLogoEdit() {
   renderAdmin();
 }
 
+function getFilteredShips() {
+  const query = String(shipSearchQuery || "").trim().toLowerCase();
+  const filtered = ships.filter(ship => {
+    if (!query) return true;
+    const name = String(ship.name || "").toLowerCase();
+    const cruiseLine = String(ship.cruise_lines?.name || "").toLowerCase();
+    return name.includes(query) || cruiseLine.includes(query);
+  });
+
+  return [...filtered].sort((a, b) =>
+    String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" })
+  );
+}
+
+function getShipsCountLabel(filteredCount) {
+  const total = ships.length;
+  if (!total) return "";
+
+  const queryActive = String(shipSearchQuery || "").trim().length > 0;
+  if (!queryActive) {
+    return filteredCount === 1 ? "1 ship" : `${filteredCount} ships`;
+  }
+
+  if (filteredCount === 1 && total === 1) return "1 of 1 ship";
+  return `${filteredCount} of ${total} ships`;
+}
+
+function renderShipThumb(ship) {
+  if (!ship.hero_image_url) {
+    return `<div class="admin-ships-thumb-placeholder" aria-hidden="true"></div>`;
+  }
+
+  return `<img class="admin-ships-thumb" src="${esc(ship.hero_image_url)}" alt="" onerror="this.outerHTML='<div class=&quot;admin-ships-thumb-placeholder&quot; aria-hidden=&quot;true&quot;></div>'">`;
+}
+
+function renderShipRow(ship) {
+  return `
+    <div class="admin-ships-row">
+      ${renderShipThumb(ship)}
+      <div class="admin-ships-meta">
+        <strong>${esc(ship.name)}</strong>
+        <span class="admin-ships-line">${esc(ship.cruise_lines?.name || "Cruise line not found")}</span>
+      </div>
+      <div class="admin-ships-actions">
+        ${ship.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill inactive">Inactive</span>`}
+        <button class="admin-button secondary small" onclick="editShip(${ship.id})">Edit</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderShipsResultsHtml() {
+  if (!ships.length) return `<p class="admin-muted">No ships found.</p>`;
+
+  const filtered = getFilteredShips();
+  if (!filtered.length) return `<p class="admin-muted">No ships match your search.</p>`;
+
+  return filtered.map(renderShipRow).join("");
+}
+
+function updateShipsResults() {
+  const countEl = document.getElementById("shipsCount");
+  const resultsEl = document.getElementById("shipsResults");
+  if (!countEl || !resultsEl) return;
+
+  const filtered = getFilteredShips();
+  countEl.textContent = getShipsCountLabel(filtered.length);
+  resultsEl.innerHTML = renderShipsResultsHtml();
+}
+
+function setShipSearchQuery(value) {
+  shipSearchQuery = value || "";
+  updateShipsResults();
+}
+
 function renderShipsPanel() {
   const editing = ships.find(ship => ship.id === editingShipId);
+  const filtered = getFilteredShips();
 
   return `
-    <div class="admin-grid">
-      <div class="admin-card">
+    <div class="admin-ships-layout">
+      <div class="admin-card admin-ships-list-card">
+        <div class="admin-ships-list-header">
+          <h3>Ships</h3>
+          <p id="shipsCount" class="admin-ships-count">${esc(getShipsCountLabel(filtered.length))}</p>
+          <div class="admin-field admin-ships-search">
+            <label class="admin-visually-hidden" for="shipSearch">Search ships</label>
+            <input
+              id="shipSearch"
+              type="search"
+              value="${esc(shipSearchQuery)}"
+              placeholder="Search ships…"
+              aria-label="Search ships"
+              autocomplete="off"
+              oninput="setShipSearchQuery(this.value)"
+            >
+          </div>
+        </div>
+        <div id="shipsResults" class="admin-ships-results">
+          ${renderShipsResultsHtml()}
+        </div>
+      </div>
+
+      <div class="admin-card admin-ships-form-card">
         <h3>${editing ? "Edit Ship" : "Add Ship"}</h3>
 
         <input type="hidden" id="shipId" value="${editing ? editing.id : ""}">
@@ -945,31 +1044,6 @@ function renderShipsPanel() {
           ? `<img class="admin-hero-preview" src="${esc(editing.hero_image_url)}" alt="${esc(editing.name)} image" onerror="this.style.display='none'">`
           : ""
         }
-      </div>
-
-      <div class="admin-card">
-        <h3>Ships</h3>
-        <div class="admin-list">
-          ${ships.length ? ships.map(ship => `
-            <div class="admin-list-item">
-              <div class="admin-inline-grid">
-                <div>
-                  <strong>${esc(ship.name)}</strong>
-                  <div class="admin-small">${esc(ship.cruise_lines?.name || "Cruise line not found")}</div>
-                  <div class="admin-small">${ship.hero_image_url ? esc(ship.hero_image_url) : "No hero image URL saved"}</div>
-                  ${ship.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill inactive">Inactive</span>`}<br>
-                  <button class="admin-button secondary" onclick="editShip(${ship.id})">Edit</button>
-                </div>
-                <div>
-                  ${ship.hero_image_url
-                    ? `<img class="admin-hero-preview" src="${esc(ship.hero_image_url)}" alt="${esc(ship.name)} image" onerror="this.outerHTML='<div class=&quot;admin-empty-preview&quot;>Image could not load</div>'">`
-                    : `<div class="admin-empty-preview">No hero image saved yet</div>`
-                  }
-                </div>
-              </div>
-            </div>
-          `).join("") : `<p>No ships found.</p>`}
-        </div>
       </div>
     </div>
   `;
