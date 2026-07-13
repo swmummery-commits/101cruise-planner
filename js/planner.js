@@ -931,11 +931,29 @@ function padNumber(value) {
 
 let dashboardCountdownConfig = null;
 
+function normalizeCalendarDateString(dateString) {
+  const match = String(dateString || "").trim().match(/^(\d{4}-\d{2}-\d{2})/);
+  return match ? match[1] : "";
+}
+
 function parseCalendarDate(dateString) {
-  if (!dateString) return null;
-  const dateParts = String(dateString).split("-").map(Number);
+  const normalized = normalizeCalendarDateString(dateString);
+  if (!normalized) return null;
+  const dateParts = normalized.split("-").map(Number);
   if (dateParts.length !== 3 || dateParts.some(isNaN)) return null;
   return new Date(dateParts[0], dateParts[1] - 1, dateParts[2], 0, 0, 0, 0);
+}
+
+function isOutboundBudgetFlight(item) {
+  return item?.category === "flights" && item.return_flight !== true;
+}
+
+function getEarliestNormalizedBudgetDates(budget, category) {
+  return (budget?.items || [])
+    .filter(item => item.category === category && (category !== "flights" || isOutboundBudgetFlight(item)))
+    .map(item => normalizeCalendarDateString(item.date))
+    .filter(Boolean)
+    .sort();
 }
 
 function getLeaveHomeDateTime(dateString) {
@@ -954,20 +972,33 @@ function getDaysUntilCalendarDate(dateString) {
 }
 
 function calculateLeaveHomeDate(cruise, budget) {
-  const flightDates = (budget?.items || [])
-    .filter(item => item.category === "flights" && !item.return_flight && item.date)
-    .map(item => String(item.date))
-    .sort();
-  if (flightDates.length) return { date: flightDates[0], source: "flight" };
+  const flightDates = getEarliestNormalizedBudgetDates(budget, "flights");
+  const accommodationDates = getEarliestNormalizedBudgetDates(budget, "accommodation");
+  const embarkationDate = normalizeCalendarDateString(cruise?.departure_date);
 
-  const accommodationDates = (budget?.items || [])
-    .filter(item => item.category === "accommodation" && item.date)
-    .map(item => String(item.date))
-    .sort();
-  if (accommodationDates.length) return { date: accommodationDates[0], source: "accommodation" };
+  let result;
+  if (flightDates.length) result = { date: flightDates[0], source: "flight" };
+  else if (accommodationDates.length) result = { date: accommodationDates[0], source: "accommodation" };
+  else if (embarkationDate) result = { date: embarkationDate, source: "embarkation" };
+  else result = { date: null, source: null };
 
-  if (cruise?.departure_date) return { date: String(cruise.departure_date), source: "embarkation" };
-  return { date: null, source: null };
+  console.log("[calculateLeaveHomeDate]", {
+    flightDates,
+    accommodationDates,
+    embarkationDate,
+    selectedLeaveHomeDate: result.date,
+    selectedSource: result.source
+  });
+
+  return result;
+}
+
+function getLeaveHomeDashboardState(daysUntilLeaveHome) {
+  if (daysUntilLeaveHome === null || daysUntilLeaveHome === undefined) return "normal";
+  if (daysUntilLeaveHome > 2) return "normal";
+  if (daysUntilLeaveHome === 2 || daysUntilLeaveHome === 1) return "before_leave_home";
+  if (daysUntilLeaveHome === 0) return "leave_home_day";
+  return "after_leave_home";
 }
 
 function buildDashboardCountdownConfig(cruise, leaveHomeInfo) {
@@ -1203,20 +1234,24 @@ function openLastMinuteChecklist(sectionId) {
   renderChecklist();
 }
 
-function focusChecklistTargetFromDashboard() {
+function focusChecklistTargetFromDashboard(attempt = 0) {
   const raw = sessionStorage.getItem(CHECKLIST_FOCUS_KEY);
   if (!raw) return;
-  sessionStorage.removeItem(CHECKLIST_FOCUS_KEY);
   let focus = null;
   try {
     focus = JSON.parse(raw);
   } catch {
+    sessionStorage.removeItem(CHECKLIST_FOCUS_KEY);
     return;
   }
 
   if (focus?.type === "item") {
     const row = document.querySelector(`[data-checklist-row="${focus.id}"]`);
-    if (!row) return;
+    if (!row) {
+      if (attempt < 4) window.setTimeout(() => focusChecklistTargetFromDashboard(attempt + 1), 50);
+      return;
+    }
+    sessionStorage.removeItem(CHECKLIST_FOCUS_KEY);
     row.classList.add("is-dashboard-focus");
     const details = document.getElementById(`checklist-details-${focus.id}`);
     if (details) details.classList.add("open");
@@ -1235,17 +1270,34 @@ function focusChecklistTargetFromDashboard() {
         return isLastMinuteSectionName(heading?.textContent);
       }) || null;
     }
-    if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (!section) {
+      if (attempt < 4) window.setTimeout(() => focusChecklistTargetFromDashboard(attempt + 1), 50);
+      return;
+    }
+    sessionStorage.removeItem(CHECKLIST_FOCUS_KEY);
+    section.classList.add("is-dashboard-focus");
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => section.classList.remove("is-dashboard-focus"), 2600);
   }
 }
 
-function resolveDashboardActionCard(checklistData, leaveHomeInfo) {
-  const daysUntilLeaveHome = leaveHomeInfo?.date ? getDaysUntilCalendarDate(leaveHomeInfo.date) : null;
-  const inLastMinuteWindow = daysUntilLeaveHome !== null && daysUntilLeaveHome <= 2;
-  const isLeaveHomeDay = daysUntilLeaveHome === 0;
-  const lastMinute = checklistData.lastMinute || { allComplete: false, sectionId: null };
+function scheduleChecklistFocusFromDashboard() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => focusChecklistTargetFromDashboard());
+  });
+}
 
-  if (inLastMinuteWindow) {
+function resolveDashboardActionCard(checklistData, leaveHomeInfo) {
+  const leaveHomeDate = leaveHomeInfo?.date ? normalizeCalendarDateString(leaveHomeInfo.date) : null;
+  const daysUntilLeaveHome = leaveHomeDate ? getDaysUntilCalendarDate(leaveHomeDate) : null;
+  const leaveHomeState = getLeaveHomeDashboardState(daysUntilLeaveHome);
+  const isLeaveHomeDay = leaveHomeState === "leave_home_day";
+  const lastMinute = checklistData.lastMinute || { allComplete: false, sectionId: null };
+  const lastMinuteAction = lastMinute.sectionId != null
+    ? `openLastMinuteChecklist(${JSON.stringify(String(lastMinute.sectionId))})`
+    : "openLastMinuteChecklist()";
+
+  if (leaveHomeState === "before_leave_home" || leaveHomeState === "leave_home_day") {
     if (lastMinute.allComplete) {
       return {
         label: "Last Minute Checklist",
@@ -1259,12 +1311,12 @@ function resolveDashboardActionCard(checklistData, leaveHomeInfo) {
     }
     return {
       label: isLeaveHomeDay ? "Leave Home Today" : "Next Essential Step",
-      title: "Before You Leave Home",
+      title: isLeaveHomeDay ? "Leave Home Today" : "Before You Leave Home",
       description: isLeaveHomeDay
         ? "Today is your Leave Home Day. Review the last-minute items before you head off."
         : "Review the items that can't be packed until the last minute before you leave home.",
       buttonText: "Open Last Minute Checklist →",
-      buttonAction: lastMinute.sectionId != null ? `openLastMinuteChecklist('${lastMinute.sectionId}')` : "openLastMinuteChecklist()",
+      buttonAction: lastMinuteAction,
       isPrimary: isLeaveHomeDay,
       mode: "last_minute"
     };
@@ -1282,7 +1334,69 @@ function resolveDashboardActionCard(checklistData, leaveHomeInfo) {
   };
 }
 
-function renderDashboardActionCard(card) {
+function formatLeaveHomeSourceLabel(source) {
+  if (source === "flight") return "Flight";
+  if (source === "accommodation") return "Accommodation";
+  if (source === "embarkation") return "Embarkation";
+  return "Unknown";
+}
+
+function formatLeaveHomeDashboardCardType(actionCard) {
+  if (actionCard?.mode === "last_minute" || actionCard?.mode === "last_minute_complete") return "Last Minute card";
+  return "Normal Next Essential Step card";
+}
+
+function buildLeaveHomeDebugInfo(cruise, budget, leaveHomeInfo, dashboardActionCard) {
+  const flightDates = getEarliestNormalizedBudgetDates(budget, "flights");
+  const accommodationDates = getEarliestNormalizedBudgetDates(budget, "accommodation");
+  const embarkationDate = normalizeCalendarDateString(cruise?.departure_date) || null;
+  const calculatedLeaveHomeDate = leaveHomeInfo?.date ? normalizeCalendarDateString(leaveHomeInfo.date) : null;
+  const daysUntilLeaveHome = calculatedLeaveHomeDate ? getDaysUntilCalendarDate(calculatedLeaveHomeDate) : null;
+  const lastMinuteDashboardState = getLeaveHomeDashboardState(daysUntilLeaveHome);
+
+  return {
+    calculatedLeaveHomeDate: calculatedLeaveHomeDate || "None",
+    leaveHomeSource: formatLeaveHomeSourceLabel(leaveHomeInfo?.source),
+    daysUntilLeaveHome: daysUntilLeaveHome === null ? "None" : String(daysUntilLeaveHome),
+    lastMinuteDashboardState,
+    flightDatesFound: flightDates.length ? flightDates.join(", ") : "None",
+    accommodationDatesFound: accommodationDates.length ? accommodationDates.join(", ") : "None",
+    cruiseEmbarkationDate: embarkationDate || "None",
+    renderedCardType: formatLeaveHomeDashboardCardType(dashboardActionCard),
+    actionCardMode: dashboardActionCard?.mode || "unknown",
+    actionCardIsPrimary: Boolean(dashboardActionCard?.isPrimary)
+  };
+}
+
+function renderDashboardLeaveHomeDebugPanel(debug) {
+  if (!debug) return "";
+  const rows = [
+    ["Calculated Leave Home Date", debug.calculatedLeaveHomeDate],
+    ["Leave Home source", debug.leaveHomeSource],
+    ["Days Until Leave Home", debug.daysUntilLeaveHome],
+    ["Current Last Minute dashboard state", debug.lastMinuteDashboardState],
+    ["Flight dates found in Budget", debug.flightDatesFound],
+    ["Accommodation dates found in Budget", debug.accommodationDatesFound],
+    ["Cruise embarkation date", debug.cruiseEmbarkationDate],
+    ["Card being rendered", debug.renderedCardType]
+  ];
+
+  return `
+    <div class="dashboard-leave-home-debug" aria-label="Leave Home debug panel (temporary)">
+      <p class="dashboard-leave-home-debug-title">Leave Home debug (temporary)</p>
+      <dl class="dashboard-leave-home-debug-list">
+        ${rows.map(([label, value]) => `
+          <div class="dashboard-leave-home-debug-row">
+            <dt>${escapeHtml(label)}</dt>
+            <dd>${escapeHtml(value)}</dd>
+          </div>
+        `).join("")}
+      </dl>
+    </div>
+  `;
+}
+
+function renderDashboardActionCard(card, debugHtml = "") {
   const button = card.buttonText
     ? `<button class="dashboard-outline-action dashboard-card-button" onclick="${card.buttonAction}">${escapeHtml(card.buttonText)}</button>`
     : "";
@@ -1294,6 +1408,7 @@ function renderDashboardActionCard(card) {
         <p class="dashboard-card-copy">${escapeHtml(card.description)}</p>
       </div>
       ${button}
+      ${debugHtml}
     </article>
   `;
 }
@@ -1866,10 +1981,32 @@ async function renderDashboard() {
   const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
   const checklistData = await loadDashboardChecklistData(mainCruise);
   const packingData = await loadDashboardPackingData(mainCruise);
-  const dashboardBudget = mainCruise ? await loadBudget(mainCruise) : null;
+  const dashboardBudget = mainCruise ? await resolveDashboardBudget(mainCruise) : null;
   const leaveHomeInfo = calculateLeaveHomeDate(mainCruise, dashboardBudget);
   const countdownConfig = buildDashboardCountdownConfig(mainCruise, leaveHomeInfo);
   const dashboardActionCard = resolveDashboardActionCard(checklistData, leaveHomeInfo);
+  const leaveHomeDebug = buildLeaveHomeDebugInfo(mainCruise, dashboardBudget, leaveHomeInfo, dashboardActionCard);
+  const leaveHomeDebugPanel = renderDashboardLeaveHomeDebugPanel(leaveHomeDebug);
+  const currentCruiseForBudget = await loadCurrentCruise();
+  const usedActiveBudget = Boolean(
+    activeBudget && mainCruise && currentCruiseForBudget
+    && getBudgetBookingKey(mainCruise) === getBudgetBookingKey(currentCruiseForBudget)
+  );
+
+  console.log("[renderDashboard] leave-home diagnostics", {
+    cruiseId: mainCruise?.id ?? null,
+    budgetBookingKey: mainCruise ? getBudgetBookingKey(mainCruise) : null,
+    usedActiveBudget,
+    leaveHomeInfo,
+    leaveHomeDebug,
+    dashboardActionCard: {
+      mode: dashboardActionCard.mode,
+      isPrimary: dashboardActionCard.isPrimary,
+      label: dashboardActionCard.label,
+      title: dashboardActionCard.title
+    }
+  });
+
   const dashboardJourney = getDashboardJourney(mainCruise);
   const routeText = getCruiseRouteText(mainCruise);
   const nightsText = mainCruise?.nights ? `${mainCruise.nights} Nights` : "";
@@ -1933,12 +2070,12 @@ async function renderDashboard() {
           ${renderJourneyMap(dashboardJourney)}
 
           <div class="dashboard-v2-side ${dashboardActionCard.isPrimary ? "dashboard-v2-side-primary-first" : ""}">
-            ${dashboardActionCard.isPrimary ? renderDashboardActionCard(dashboardActionCard) : ""}
+            ${dashboardActionCard.isPrimary ? renderDashboardActionCard(dashboardActionCard, leaveHomeDebugPanel) : ""}
             <div class="dashboard-v2-top-row">
               ${renderDashboardCombinedProgress(packingData, checklistData)}
               ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
             </div>
-            ${dashboardActionCard.isPrimary ? "" : renderDashboardActionCard(dashboardActionCard)}
+            ${dashboardActionCard.isPrimary ? "" : renderDashboardActionCard(dashboardActionCard, leaveHomeDebugPanel)}
           </div>
         </section>
 
@@ -2388,7 +2525,7 @@ async function renderChecklist() {
       </div>
     </div>
   `;
-  focusChecklistTargetFromDashboard();
+  scheduleChecklistFocusFromDashboard();
 }
 
 
@@ -4129,6 +4266,16 @@ function createEmptyBudget(cruise) {
     cruise_price_usd: getCruisePriceUsd(cruise),
     updated_at: null
   };
+}
+
+async function resolveDashboardBudget(cruise) {
+  const loaded = await loadBudget(cruise);
+  if (!activeBudget) return loaded;
+
+  const currentCruise = await loadCurrentCruise();
+  if (!currentCruise || getBudgetBookingKey(cruise) !== getBudgetBookingKey(currentCruise)) return loaded;
+
+  return { ...loaded, ...activeBudget, items: activeBudget.items ?? loaded.items ?? [] };
 }
 
 async function loadBudget(cruise) {
