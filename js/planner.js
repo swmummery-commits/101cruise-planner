@@ -2476,12 +2476,255 @@ function renderBookingDetailRow(label, value) {
   return `<div class="dashboard-snapshot-row"><span>${escapeHtml(label)}</span>${renderStatusValue(safeValue)}</div>`;
 }
 
-function renderBookingTextarea(id, label, value, placeholder) {
+function renderBookingFieldIfPresent(label, value, formatter = item => item) {
+  if (value === null || value === undefined || String(value).trim() === "") return "";
+  const formatted = formatter(value);
+  if (formatted === null || formatted === undefined || String(formatted).trim() === "") return "";
+  return renderBookingDetailRow(label, formatted);
+}
+
+function getBookingPayloadValue(booking, cruise, keys) {
+  for (const key of keys) {
+    const bookingValue = booking?.[key];
+    if (bookingValue !== null && bookingValue !== undefined && String(bookingValue).trim() !== "") return bookingValue;
+    const cruiseValue = cruise?.[key];
+    if (cruiseValue !== null && cruiseValue !== undefined && String(cruiseValue).trim() !== "") return cruiseValue;
+  }
+  return null;
+}
+
+async function resolveFullBookingPayload(cruise) {
+  if (cruise?._preview_booking) return cruise._preview_booking;
+
+  const bookingId = cruise?.base44_booking_id;
+  const bookingReference = cruise?.booking_reference || getCruiseBookingReference(cruise);
+  if (!bookingId && !bookingReference) return getDashboardBookingSource(cruise);
+
+  try {
+    const response = await fetch("/.netlify/functions/get-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(bookingId ? { booking_id: bookingId } : { booking_reference: bookingReference })
+    });
+    const data = await response.json().catch(() => ({ success: false }));
+    if (response.ok && data.success !== false && data.booking) {
+      cruise._preview_booking = data.booking;
+      return data.booking;
+    }
+  } catch (error) {
+    console.warn("Full booking payload load failed", error);
+  }
+
+  return getDashboardBookingSource(cruise);
+}
+
+function getBookingPassportMessage(cruise) {
+  const booking = getDashboardBookingSource(cruise);
+  const returnDate = booking.arriving_date || cruise?.return_date || cruise?.arrival_date;
+  const threshold = returnDate ? new Date(returnDate) : null;
+  if (threshold && !Number.isNaN(threshold.getTime())) threshold.setMonth(threshold.getMonth() + 6);
+
+  const passengers = [1, 2].map(index => ({
+    name: toDisplayName([booking[`passenger${index}_first_name`], booking[`passenger${index}_last_name`]].filter(Boolean).join(" ")),
+    expiry: booking[`passenger${index}_passport_exp_date`]
+  })).filter(passenger => passenger.expiry);
+
+  if (!passengers.length || !threshold) {
+    return { tone: "neutral", message: "Passport expiry dates have not yet been recorded." };
+  }
+
+  const warnings = passengers.filter(passenger => {
+    const expiryDate = new Date(passenger.expiry);
+    return Number.isNaN(expiryDate.getTime()) || expiryDate < threshold;
+  });
+
+  if (warnings.length) {
+    const names = warnings.map(item => item.name || "Traveller").join(", ");
+    return { tone: "warning", message: `${names} may need passport review before travel.` };
+  }
+
+  return { tone: "positive", message: "Your passports will remain valid for at least six months after your cruise." };
+}
+
+function renderBookingPassportStatus(cruise) {
+  const status = getBookingPassportMessage(cruise);
+  return `<p class="booking-passport-status booking-passport-status-${status.tone}">${escapeHtml(status.message)}</p>`;
+}
+
+const OPTIONAL_BOOKING_FIELDS = [
+  ["Dining package", ["dining_package", "dining_plan", "dining_time", "dining", "dining_preference"]],
+  ["Beverage package", ["beverage_package", "drinks_package", "beverage"]],
+  ["WiFi", ["wifi", "wifi_package", "internet_package"]],
+  ["Gratuities", ["gratuities", "gratuities_included", "gratuities_package"]],
+  ["Shore excursions", ["shore_excursions", "included_shore_excursions", "shore_excursion_package"]],
+  ["Deck", ["deck", "deck_number", "deck_name"]]
+];
+
+function renderBookingTravellerNames(cruise, booking) {
+  const fromBooking = getPassengerNamesFromBase44Booking(booking || {});
+  if (fromBooking) {
+    const names = fromBooking.split(/,|\s+&\s+|\s+and\s+/i).map(name => name.trim()).filter(Boolean);
+    return `<div class="dashboard-snapshot-travellers">${names.map(name => `<span class="dashboard-snapshot-traveller-name">${escapeHtml(formatPackingDisplayName(name))}</span>`).join("")}</div>`;
+  }
+  return renderDashboardTravellerNames(cruise);
+}
+
+function renderBookingCruiseSection(cruise, booking) {
+  const embarkationPort = getBookingPayloadValue(booking, cruise, ["departing_port", "embarkation_port", "departure_port", "from_port", "departure_city"]) || "";
+  const disembarkationPort = getBookingPayloadValue(booking, cruise, ["arriving_port", "disembarkation_port", "arrival_port", "to_port", "destination"]) || "";
+  const departureDate = booking.departing_date || cruise?.departure_date;
+  const returnDate = booking.arriving_date || cruise?.return_date || cruise?.arrival_date;
+  const embarkation = formatPortDateTime(embarkationPort, departureDate, cruise?.departure_time);
+  const disembarkation = formatPortDateTime(disembarkationPort, returnDate, cruise?.arrival_time);
+  const cabin = getBookingPayloadValue(booking, cruise, ["room_number", "cabin_number", "cabin", "stateroom", "suite"]);
+  const roomType = getBookingPayloadValue(booking, cruise, ["room_type", "cabin_type", "stateroom_type", "suite_type"]);
+  const category = getBookingPayloadValue(booking, cruise, ["category_class"]);
+  const travellerCount = booking.total_passengers || cruise?.traveller_count;
+  const duration = booking.cruise_duration || cruise?.nights;
+  const bookingReference = booking.booking_reference || getCruiseBookingReference(cruise);
+  const bookingStatus = booking.booking_status || cruise?.booking_status;
+  const paymentStatus = getPaymentSummary(cruise);
+  const totalPrice = booking.total_price ?? booking.cruise_price_usd;
+  const finalDue = booking.final_payment_due_date || booking.reminder_final_payment_due;
+  const balanceOwing = booking.balance_owing;
+  const optionalRows = OPTIONAL_BOOKING_FIELDS.map(([label, keys]) => renderBookingFieldIfPresent(label, getBookingPayloadValue(booking, cruise, keys))).join("");
+
+  return `
+    <section class="planner-card section-spaced">
+      <h3>Cruise Booking</h3>
+      <div class="dashboard-snapshot-list">
+        ${renderBookingDetailRow("Cruise line", booking.cruise_line || cruise?.cruise_line)}
+        ${renderBookingDetailRow("Ship", booking.cruise_ship || cruise?.ship_name)}
+        ${renderBookingDetailRow("Booking reference", bookingReference)}
+        <div class="dashboard-snapshot-row dashboard-snapshot-row-travellers"><span>Travellers</span>${renderBookingTravellerNames(cruise, booking)}</div>
+        ${renderBookingDetailRow("Traveller count", travellerCount || getPassengerCountFromBase44Booking(booking))}
+        ${renderBookingDetailRow("Cabin number", cabin)}
+        ${renderBookingDetailRow("Room type", roomType)}
+        ${renderBookingDetailRow("Category", category)}
+        ${renderBookingDetailRow("Duration", duration ? `${duration} nights` : null)}
+        ${renderBookingDetailRow("Departure date", departureDate ? formatDate(departureDate) : null)}
+        ${renderBookingDetailRow("Return date", returnDate ? formatDate(returnDate) : null)}
+        ${renderBookingDetailRow("Embarkation port", embarkation)}
+        ${renderBookingDetailRow("Disembarkation port", disembarkation)}
+        ${renderBookingDetailRow("Booking status", bookingStatus)}
+        ${renderBookingDetailRow("Payment status", paymentStatus)}
+        ${totalPrice !== undefined && totalPrice !== null ? renderBookingDetailRow("Cruise price", formatCurrencyValue(totalPrice)) : ""}
+        ${renderBookingFieldIfPresent("Balance owing", balanceOwing, formatCurrencyValue)}
+        ${finalDue ? renderBookingDetailRow("Final payment due", formatDateShort(finalDue)) : ""}
+        ${optionalRows}
+      </div>
+      ${renderBookingPassportStatus(cruise)}
+      <section class="dashboard-snapshot-extras booking-snapshot-extras">
+        <h4 class="dashboard-snapshot-extras-title">Included extras</h4>
+        ${renderDashboardInclusionTags(cruise)}
+      </section>
+    </section>
+  `;
+}
+
+function renderBookingTravelPlanCategory(category, title, emptyMessage, budget) {
+  const items = (budget?.items || []).filter(item => item.category === category);
+  const editAction = `<button class="dashboard-outline-action booking-inline-action" onclick="renderBudgetPlanner()">Edit in Budget →</button>`;
+
+  if (!items.length) {
+    return `
+      <div class="booking-travel-plan-block">
+        <h4>${escapeHtml(title)}</h4>
+        <p class="planner-muted">${escapeHtml(emptyMessage)}</p>
+        ${editAction}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="booking-travel-plan-block">
+      <h4>${escapeHtml(title)}</h4>
+      <div class="booking-travel-plan-list">
+        ${items.map(item => {
+          const parts = getBudgetItemParts(item);
+          return `<div class="booking-travel-plan-item"><strong>${escapeHtml(parts.primary)}</strong>${parts.meta ? `<span>${escapeHtml(parts.meta)}</span>` : ""}</div>`;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderBookingTravelPlansSection(budget) {
+  return `
+    <section class="planner-card section-spaced">
+      <div class="booking-travel-plans-header">
+        <div>
+          <h3>Travel Plans</h3>
+          <p class="planner-muted">Your travel plans below are automatically summarised from the information you've entered in Budget. Any changes made in Budget will automatically appear here.</p>
+        </div>
+        <button class="dashboard-outline-action" onclick="renderBudgetPlanner()">Edit in Budget →</button>
+      </div>
+      <div class="booking-travel-plans-grid">
+        ${renderBookingTravelPlanCategory("flights", "Flights", "No flights have been added yet.", budget)}
+        ${renderBookingTravelPlanCategory("accommodation", "Accommodation", "No accommodation has been added yet.", budget)}
+        ${renderBookingTravelPlanCategory("cars", "Car Hire", "No car hire has been added yet.", budget)}
+      </div>
+    </section>
+  `;
+}
+
+function parseInsuranceDetails(raw) {
+  const defaults = { provider: "", policy_number: "", emergency_phone: "", emergency_contact: "" };
+  if (!raw) return defaults;
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return {
+        provider: parsed.provider || "",
+        policy_number: parsed.policy_number || "",
+        emergency_phone: parsed.emergency_phone || "",
+        emergency_contact: parsed.emergency_contact || ""
+      };
+    }
+  } catch {
+    // Legacy free-text insurance notes.
+  }
+
+  return { ...defaults, provider: String(raw) };
+}
+
+function serializeInsuranceDetails(details) {
+  return JSON.stringify({
+    provider: String(details.provider || "").trim(),
+    policy_number: String(details.policy_number || "").trim(),
+    emergency_phone: String(details.emergency_phone || "").trim(),
+    emergency_contact: String(details.emergency_contact || "").trim()
+  });
+}
+
+function renderBookingInsuranceField(id, label, value, placeholder = "") {
   return `
     <div class="planner-field">
-      <label>${escapeHtml(label)}</label>
-      <textarea id="${escapeHtml(id)}" placeholder="${escapeHtml(placeholder || "")}">${escapeHtml(value || "")}</textarea>
+      <label for="${escapeHtml(id)}">${escapeHtml(label)}</label>
+      <input id="${escapeHtml(id)}" type="text" value="${escapeHtml(value || "")}" placeholder="${escapeHtml(placeholder)}">
     </div>
+  `;
+}
+
+function renderBookingInsuranceSection(insurance) {
+  return `
+    <section class="planner-card section-spaced">
+      <h3>Travel Insurance</h3>
+      <div class="planner-grid booking-insurance-grid">
+        ${renderBookingInsuranceField("bookingInsuranceProvider", "Insurance Provider", insurance.provider, "Example: Cover-More")}
+        ${renderBookingInsuranceField("bookingInsurancePolicyNumber", "Policy Number", insurance.policy_number, "Example: POL-123456")}
+        ${renderBookingInsuranceField("bookingInsuranceEmergencyPhone", "Emergency Assistance Phone", insurance.emergency_phone, "Example: +61 1300 000 000")}
+        ${renderBookingInsuranceField("bookingInsuranceEmergencyContact", "Emergency Contact", insurance.emergency_contact, "Example: Partner name and number")}
+      </div>
+      <p class="planner-muted booking-insurance-reminder">Store your travel insurance policy in your Documents Library so it's easy to access while travelling.</p>
+      <div class="booking-insurance-actions">
+        <button class="planner-button secondary" onclick="openDocumentUpload('Travel Insurance')">Upload Insurance Policy</button>
+        <button class="planner-button secondary" onclick="renderDocuments()">View Documents</button>
+        <button class="planner-button" onclick="saveUserBookingDetails()">Save Insurance Details</button>
+      </div>
+      <div id="booking-details-message" class="planner-message"></div>
+    </section>
   `;
 }
 
@@ -2494,22 +2737,19 @@ async function renderBookingDetails() {
     app.innerHTML = `
       <div class="planner-card">
         <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
-        <h2>Booking Details</h2>
-        <p>Add a cruise before viewing booking details.</p>
+        <h2>Booking</h2>
+        <p>Add a cruise before viewing your booking summary.</p>
       </div>
     `;
     return;
   }
 
-  const bookingDetails = await loadUserBookingDetails(cruise);
-  const bookingReference = getCruiseBookingReference(cruise) || "Not added";
-  const embarkation = getDashboardValue(cruise, ["embarkation_port", "departure_port", "from_port", "departure_city"], "Not added");
-  const disembarkation = getDashboardValue(cruise, ["disembarkation_port", "arrival_port", "to_port", "destination"], "Not added");
-  const cabin = getDashboardValue(cruise, ["cabin_number", "cabin", "stateroom", "suite"], "Not added");
-  const cabinType = getDashboardValue(cruise, ["cabin_type", "stateroom_type", "suite_type"], "Not added");
-  const deck = getDashboardValue(cruise, ["deck", "deck_number"], "Not added");
-  const dining = getDashboardValue(cruise, ["dining_time", "dining", "dining_preference"], "Not added");
-  const travellers = getTravellerSummary(cruise);
+  await resolveFullBookingPayload(cruise);
+  const [bookingDetails, budget] = await Promise.all([
+    loadUserBookingDetails(cruise),
+    loadBudget(cruise)
+  ]);
+  const insurance = parseInsuranceDetails(bookingDetails?.insurance_details);
 
   app.innerHTML = `
     <div class="booking-details-page">
@@ -2517,64 +2757,22 @@ async function renderBookingDetails() {
 
       <div class="planner-card slim-card">
         <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
-        <h2>Booking Details</h2>
-        <p class="planner-muted">Your cruise booking information and personal travel notes in one place.</p>
+        <h2>Booking</h2>
+        <p class="planner-muted">Your cruise booking, travel plans, insurance and documents in one place.</p>
       </div>
 
-      <div class="planner-grid booking-details-grid">
-        <section class="planner-card">
-          <h3>Cruise</h3>
-          <div class="dashboard-snapshot-list">
-            ${renderBookingDetailRow("Cruise line", cruise.cruise_line)}
-            ${renderBookingDetailRow("Ship", cruise.ship_name)}
-            ${renderBookingDetailRow("Booking reference", bookingReference)}
-            ${renderBookingDetailRow("Departure", formatDate(cruise.departure_date))}
-            ${renderBookingDetailRow("Return", formatDate(cruise.return_date))}
-            ${renderBookingDetailRow("Nights", cruise.nights ? `${cruise.nights} Nights` : "Not added")}
-            ${renderBookingDetailRow("Embarkation", embarkation)}
-            ${renderBookingDetailRow("Disembarkation", disembarkation)}
-          </div>
-        </section>
-
-        <section class="planner-card">
-          <h3>Travellers & Cabin</h3>
-          <div class="dashboard-snapshot-list">
-            ${renderBookingDetailRow("Travellers", travellers)}
-            ${renderBookingDetailRow("Cabin", cabin)}
-            ${renderBookingDetailRow("Cabin type", cabinType)}
-            ${renderBookingDetailRow("Deck", deck)}
-            ${renderBookingDetailRow("Dining", dining)}
-          </div>
-        </section>
-      </div>
-
-      <section class="planner-card section-spaced">
-        <h3>Your Travel Arrangements</h3>
-        <p class="planner-muted">Add your own flights, hotels and transfers here. 101CRUISE manages your cruise booking; these fields are for your personal planning notes.</p>
-
-        <div class="planner-grid">
-          <div>
-            ${renderBookingTextarea("bookingFlightDetails", "Flights", bookingDetails?.flight_details, "Example: QF123 Sydney to Auckland, 24 July, 9:30am")}
-            ${renderBookingTextarea("bookingHotelDetails", "Hotels", bookingDetails?.hotel_details, "Example: 2 nights at the Hilton Auckland before sailing")}
-          </div>
-          <div>
-            ${renderBookingTextarea("bookingTransferDetails", "Transfers", bookingDetails?.transfer_details, "Example: Taxi from airport to hotel, private transfer to cruise terminal")}
-            ${renderBookingTextarea("bookingInsuranceDetails", "Insurance", bookingDetails?.insurance_details, "Example: Policy number, insurer and emergency contact number")}
-          </div>
-        </div>
-
-        ${renderBookingTextarea("bookingExtraNotes", "Other notes", bookingDetails?.notes, "Anything else you want to remember for this cruise")}
-
-        <button class="planner-button" onclick="saveUserBookingDetails()">Save Travel Details</button>
-        <div id="booking-details-message" class="planner-message"></div>
-      </section>
+      ${renderBookingCruiseSection(cruise, getDashboardBookingSource(cruise))}
+      ${renderBookingTravelPlansSection(budget)}
+      ${renderBookingInsuranceSection(insurance)}
 
       <section class="planner-card section-spaced booking-documents-prompt">
         <div>
           <h3>Documents</h3>
-          <p class="planner-muted">Open your booking confirmation, tickets and uploaded travel documents in one place.</p>
+          <p class="planner-muted">Keep your booking confirmation, travel insurance, tickets and other important travel documents together in your secure Documents Library.</p>
         </div>
-        <button class="planner-button secondary" onclick="renderDocuments()">View Documents</button>
+        <div class="booking-insurance-actions">
+          <button class="planner-button secondary" onclick="renderDocuments()">View Documents</button>
+        </div>
       </section>
     </div>
   `;
@@ -2582,6 +2780,7 @@ async function renderBookingDetails() {
 
 
 const CUSTOMER_DOCUMENT_TYPES = [
+  "Travel Insurance",
   "Insurance Policy",
   "Passport Copy",
   "Visa",
@@ -2731,14 +2930,15 @@ async function renderDocuments() {
   }
 }
 
-function openDocumentUpload() {
+function openDocumentUpload(presetType = "") {
+  const selectedType = CUSTOMER_DOCUMENT_TYPES.includes(presetType) ? presetType : CUSTOMER_DOCUMENT_TYPES[0];
   const modal = document.createElement("div");
   modal.className = "document-upload-overlay";
   modal.id = "documentUploadOverlay";
   modal.innerHTML = `
     <section class="document-upload-modal planner-card" role="dialog" aria-modal="true" aria-labelledby="documentUploadTitle">
       <div class="document-upload-heading"><div><p class="planner-kicker">My Documents</p><h2 id="documentUploadTitle">Upload a document</h2></div><button class="document-modal-close" onclick="closeDocumentUpload()" aria-label="Close">×</button></div>
-      <div class="planner-field"><label for="customerDocumentType">Document type</label><select id="customerDocumentType">${CUSTOMER_DOCUMENT_TYPES.map(type => `<option>${escapeHtml(type)}</option>`).join("")}</select></div>
+      <div class="planner-field"><label for="customerDocumentType">Document type</label><select id="customerDocumentType">${CUSTOMER_DOCUMENT_TYPES.map(type => `<option${type === selectedType ? " selected" : ""}>${escapeHtml(type)}</option>`).join("")}</select></div>
       <div class="planner-field"><label for="customerDocumentFile">Choose file</label><input id="customerDocumentFile" type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"></div>
       <div class="planner-field"><label for="customerDocumentNotes">Notes <span class="planner-muted">(optional)</span></label><textarea id="customerDocumentNotes" rows="3" placeholder="Add a short reminder about this document"></textarea></div>
       <p class="planner-muted document-upload-help">PDF, JPG, PNG, DOC or DOCX. Maximum 10 MB.</p>
@@ -2812,18 +3012,31 @@ async function saveUserBookingDetails() {
   const message = document.getElementById("booking-details-message");
 
   if (!cruise) {
-    if (message) message.innerText = "Please add a cruise before saving travel details.";
+    if (message) message.innerText = "Please add a cruise before saving insurance details.";
     return;
   }
+
+  if (!currentUser?.id) {
+    if (message) message.innerText = "Sign in to save insurance details.";
+    return;
+  }
+
+  const existing = await loadUserBookingDetails(cruise);
+  const insuranceDetails = serializeInsuranceDetails({
+    provider: document.getElementById("bookingInsuranceProvider")?.value || "",
+    policy_number: document.getElementById("bookingInsurancePolicyNumber")?.value || "",
+    emergency_phone: document.getElementById("bookingInsuranceEmergencyPhone")?.value || "",
+    emergency_contact: document.getElementById("bookingInsuranceEmergencyContact")?.value || ""
+  });
 
   const payload = {
     user_id: currentUser.id,
     cruise_id: cruise.id,
-    flight_details: document.getElementById("bookingFlightDetails")?.value.trim() || null,
-    hotel_details: document.getElementById("bookingHotelDetails")?.value.trim() || null,
-    transfer_details: document.getElementById("bookingTransferDetails")?.value.trim() || null,
-    insurance_details: document.getElementById("bookingInsuranceDetails")?.value.trim() || null,
-    notes: document.getElementById("bookingExtraNotes")?.value.trim() || null,
+    flight_details: existing?.flight_details || null,
+    hotel_details: existing?.hotel_details || null,
+    transfer_details: existing?.transfer_details || null,
+    insurance_details: insuranceDetails,
+    notes: existing?.notes || null,
     updated_at: new Date().toISOString()
   };
 
@@ -2835,11 +3048,11 @@ async function saveUserBookingDetails() {
 
   if (error) {
     console.error("Booking details save error", error);
-    if (message) message.innerText = "Could not save travel details. Please try again.";
+    if (message) message.innerText = "Could not save insurance details. Please try again.";
     return;
   }
 
-  if (message) message.innerText = "Travel details saved.";
+  if (message) message.innerText = "Insurance details saved.";
 }
 
 

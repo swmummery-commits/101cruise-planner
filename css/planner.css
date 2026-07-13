@@ -6921,3 +6921,102 @@ input[type="radio"] {
     bottom: 88px !important;
   }
 }
+
+/* Booking summary page */
+.booking-passport-status {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.booking-passport-status-positive {
+  background: rgba(141, 217, 191, 0.22);
+  color: #245C4E;
+}
+
+.booking-passport-status-neutral {
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--planner-muted, #6b7280);
+}
+
+.booking-passport-status-warning {
+  background: rgba(198, 40, 40, 0.08);
+  color: #a33a2b;
+}
+
+.booking-snapshot-extras {
+  margin-top: 20px;
+}
+
+.booking-travel-plans-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.booking-travel-plans-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.booking-travel-plan-block {
+  padding: 18px;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.02);
+}
+
+.booking-travel-plan-block h4 {
+  margin: 0 0 10px;
+  font-size: 0.98rem;
+  font-weight: 650;
+}
+
+.booking-travel-plan-list {
+  display: grid;
+  gap: 10px;
+}
+
+.booking-travel-plan-item {
+  display: grid;
+  gap: 4px;
+}
+
+.booking-travel-plan-item strong {
+  font-size: 0.94rem;
+}
+
+.booking-travel-plan-item span {
+  color: var(--planner-muted, #6b7280);
+  font-size: 0.86rem;
+}
+
+.booking-inline-action {
+  margin-top: 12px;
+}
+
+.booking-insurance-grid {
+  margin-bottom: 14px;
+}
+
+.booking-insurance-reminder {
+  margin: 0 0 16px;
+}
+
+.booking-insurance-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .booking-travel-plans-header,
+  .booking-documents-prompt {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
