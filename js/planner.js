@@ -2825,6 +2825,7 @@ let packingShowSelectedOnly = false;
 let packingV2State = [];
 let packingV2CurrentCruiseKey = null;
 let packingCabinSharePerTraveller = 0;
+let packingPlannerItemData = null;
 
 const PACKING_CABIN_CATEGORIES = new Set([
   "cabin essentials",
@@ -3028,6 +3029,223 @@ function calculateTotalCabinEssentialsWeight(items, context, cabinProfile) {
   return total;
 }
 
+function getTravellerCheckedAllowance(profile) {
+  const value = profile?.checked_baggage_allowance_kg;
+  if (value === null || value === undefined || value === "") return null;
+  const limit = Number(value);
+  return Number.isFinite(limit) && limit >= 0 ? limit : null;
+}
+
+function getPackingAllowancePercent(used, limit) {
+  if (limit === null || limit <= 0) return 0;
+  return Math.max(0, Math.round((Number(used || 0) / limit) * 100));
+}
+
+function buildTravellerPackingItems(travellerProfile) {
+  const data = packingPlannerItemData;
+  if (!data || !travellerProfile) return [];
+  return [...(data.systemItems || []), ...(data.personalItems || [])].filter(item => {
+    const categoryName = item.packing_categories?.name || data.categoryNameById?.get(String(item.category_id)) || "";
+    return packingItemBelongsToProfile(item, categoryName, travellerProfile);
+  });
+}
+
+function calculateTravellerPackingWeightBreakdown(travellerProfile) {
+  const summary = { checked: 0, carryOn: 0, wearing: 0 };
+  buildTravellerPackingItems(travellerProfile).forEach(item => {
+    const categoryName = item.packing_categories?.name || packingPlannerItemData?.categoryNameById?.get(String(item.category_id)) || "";
+    const state = getPackingState(getPackingItemKey(item), travellerProfile.profile_key);
+    if (!packingCategoryUsesQuantityAndWeight(categoryName, travellerProfile)) return;
+    const quantity = Math.max(0, Number(state?.quantity ?? 0));
+    if (quantity <= 0) return;
+    const weight = Number(item.weight_kg || 0) * quantity;
+    const location = state?.packing_location || "checked";
+    if (location === "carry-on") summary.carryOn += weight;
+    else if (location === "wearing") summary.wearing += weight;
+    else summary.checked += weight;
+  });
+  return summary;
+}
+
+function buildCabinBaggageSummaries(cabinEssentialsWeight, travellerProfiles) {
+  const travellerCount = travellerProfiles.length;
+  const cabinShare = travellerCount ? cabinEssentialsWeight / travellerCount : 0;
+  const travellers = travellerProfiles.map(profile => {
+    const breakdown = calculateTravellerPackingWeightBreakdown(profile);
+    const allowance = getTravellerCheckedAllowance(profile);
+    const packingChecked = breakdown.checked;
+    const totalChecked = packingChecked + cabinShare;
+    const percent = getPackingAllowancePercent(totalChecked, allowance);
+    const remaining = allowance === null ? null : allowance - totalChecked;
+    const isOver = allowance !== null && totalChecked > allowance;
+    return { profile, packingChecked, cabinShare, totalChecked, allowance, percent, remaining, isOver };
+  });
+  const combinedPacking = travellers.reduce((sum, traveller) => sum + traveller.packingChecked, 0);
+  const combinedTotal = combinedPacking + cabinEssentialsWeight;
+  const allowances = travellers.map(traveller => traveller.allowance).filter(value => value !== null);
+  const combinedAllowance = allowances.length ? allowances.reduce((sum, value) => sum + value, 0) : null;
+  const combinedPercent = getPackingAllowancePercent(combinedTotal, combinedAllowance);
+  const combinedRemaining = combinedAllowance === null ? null : combinedAllowance - combinedTotal;
+  const combinedIsOver = combinedAllowance !== null && combinedTotal > combinedAllowance;
+  return {
+    cabinShare,
+    travellers,
+    combined: {
+      packingChecked: combinedPacking,
+      cabinEssentialsWeight,
+      total: combinedTotal,
+      allowance: combinedAllowance,
+      percent: combinedPercent,
+      remaining: combinedRemaining,
+      isOver: combinedIsOver
+    }
+  };
+}
+
+function renderPackingAllowanceDonut(id, percent, sublabel, { isOver = false, hasNoAllowance = false } = {}) {
+  const rawPercent = Math.max(0, Math.round(Number(percent) || 0));
+  const ringPercent = Math.min(100, rawPercent);
+  return `<div id="${id}" class="packing-weight-donut ${isOver ? "is-over" : ""} ${hasNoAllowance ? "has-no-allowance" : ""}" style="--packing-weight-percent:${ringPercent * 3.6}deg">
+    <div class="packing-weight-donut-centre">
+      <strong data-donut-percent>${hasNoAllowance ? "—" : `${rawPercent}%`}</strong>
+      <span data-donut-label>${escapeHtml(hasNoAllowance ? "Enter allowance" : sublabel)}</span>
+    </div>
+  </div>`;
+}
+
+function updatePackingAllowanceDonut(id, percent, sublabel, { isOver = false, hasNoAllowance = false } = {}) {
+  const donut = document.getElementById(id);
+  if (!donut) return;
+  const rawPercent = Math.max(0, Math.round(Number(percent) || 0));
+  const ringPercent = Math.min(100, rawPercent);
+  donut.style.setProperty("--packing-weight-percent", `${ringPercent * 3.6}deg`);
+  donut.classList.toggle("is-over", isOver);
+  donut.classList.toggle("has-no-allowance", hasNoAllowance);
+  const percentNode = donut.querySelector("[data-donut-percent]");
+  const labelNode = donut.querySelector("[data-donut-label]");
+  if (percentNode) percentNode.textContent = hasNoAllowance ? "—" : `${rawPercent}%`;
+  if (labelNode) labelNode.textContent = hasNoAllowance ? "Enter allowance" : sublabel;
+}
+
+function renderCabinChecklistProgress(percent, packed, total) {
+  const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+  return `<div class="cabin-checklist-progress">
+    <p class="cabin-progress-label">Cabin checklist</p>
+    ${renderPackingAllowanceDonut("cabinChecklistDonut", safePercent, "Complete")}
+    <p id="cabinChecklistDetail" class="cabin-checklist-detail">${packed} of ${total} items complete</p>
+  </div>`;
+}
+
+function updateCabinChecklistProgress(percent, packed, total) {
+  const safePercent = Math.max(0, Math.min(100, Number(percent) || 0));
+  updatePackingAllowanceDonut("cabinChecklistDonut", safePercent, "Complete");
+  const detail = document.getElementById("cabinChecklistDetail");
+  if (detail) detail.textContent = `${packed} of ${total} items complete`;
+}
+
+function renderCabinTravellerWeightCard(travellerSummary) {
+  const { profile, packingChecked, cabinShare, totalChecked, allowance, percent, remaining, isOver } = travellerSummary;
+  const hasNoAllowance = allowance === null;
+  const donutId = `cabinTravellerDonut-${profile.profile_key}`;
+  return `<section class="cabin-traveller-weight-card" data-traveller-summary="${escapeHtml(profile.profile_key)}">
+    <h4 class="cabin-traveller-weight-title">${escapeHtml(profile.profile_name)}</h4>
+    <div class="cabin-traveller-weight-gauge">
+      ${renderPackingAllowanceDonut(donutId, percent, isOver ? "Over allowance" : "Checked used", { isOver, hasNoAllowance })}
+      <div class="cabin-traveller-weight-metrics">
+        <div><span>Packing</span><strong data-traveller-packing="${escapeHtml(profile.profile_key)}">${formatPackingWeight(packingChecked)}</strong></div>
+        <div><span>Cabin share</span><strong data-traveller-cabin-share="${escapeHtml(profile.profile_key)}">${formatPackingWeight(cabinShare)}</strong></div>
+        <div><span>Total checked</span><strong data-traveller-total="${escapeHtml(profile.profile_key)}">${formatPackingWeight(totalChecked)}</strong></div>
+        <div><span>Allowance</span><strong data-traveller-allowance="${escapeHtml(profile.profile_key)}">${hasNoAllowance ? "Not entered" : `${allowance.toFixed(1)} kg`}</strong></div>
+        <div><span>Remaining</span><strong data-traveller-remaining="${escapeHtml(profile.profile_key)}" class="${isOver ? "is-over" : ""}">${hasNoAllowance ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`)}</strong></div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function renderCabinCombinedWeightSummary(combinedSummary) {
+  const { packingChecked, cabinEssentialsWeight, total, allowance, percent, remaining, isOver } = combinedSummary;
+  const hasNoAllowance = allowance === null;
+  return `<section class="cabin-combined-summary">
+    <h4 class="cabin-combined-summary-title">Combined baggage</h4>
+    <div class="cabin-combined-weight-gauge">
+      ${renderPackingAllowanceDonut("cabinCombinedDonut", percent, isOver ? "Over allowance" : "Combined used", { isOver, hasNoAllowance })}
+      <div class="cabin-combined-weight-metrics">
+        <div><span>Traveller packing</span><strong id="cabinCombinedPackingWeight">${formatPackingWeight(packingChecked)}</strong></div>
+        <div><span>Cabin Essentials</span><strong id="cabinCombinedCabinWeight">${formatPackingWeight(cabinEssentialsWeight)}</strong></div>
+        <div><span>Combined total</span><strong id="cabinCombinedTotalWeight">${formatPackingWeight(total)}</strong></div>
+        <div><span>Combined allowance</span><strong id="cabinCombinedAllowance">${hasNoAllowance ? "Not entered" : `${allowance.toFixed(1)} kg`}</strong></div>
+        <div><span>Remaining</span><strong id="cabinCombinedRemaining" class="${isOver ? "is-over" : ""}">${hasNoAllowance ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`)}</strong></div>
+      </div>
+    </div>
+  </section>`;
+}
+
+function renderCabinPackingSummary(cabinEssentialsWeight, travellerProfiles, checklistPercent, checklistPacked, checklistTotal) {
+  const baggageSummaries = buildCabinBaggageSummaries(cabinEssentialsWeight, travellerProfiles);
+  return `
+    ${renderCabinChecklistProgress(checklistPercent, checklistPacked, checklistTotal)}
+    <div class="cabin-summary-note">
+      <strong>Cabin Essentials weight</strong>
+      <p>Total selected weight: <b id="cabinEssentialsWeightTotal">${formatPackingWeight(cabinEssentialsWeight)}</b></p>
+      <p>Travellers: <b id="cabinEssentialsTravellerCount">${travellerProfiles.length}</b></p>
+      <p>Automatically distributed:</p>
+      <div class="cabin-weight-distribution">${travellerProfiles.length ? travellerProfiles.map(item => `<span>${escapeHtml(item.profile_name)} <b data-cabin-share="${escapeHtml(item.profile_key)}">${formatPackingWeight(baggageSummaries.cabinShare)}</b></span>`).join("") : `<span>No travellers added</span>`}</div>
+    </div>
+    <div class="cabin-traveller-summaries">
+      <h4 class="cabin-traveller-summaries-title">Traveller baggage</h4>
+      ${baggageSummaries.travellers.length ? baggageSummaries.travellers.map(renderCabinTravellerWeightCard).join("") : `<p class="cabin-traveller-empty">Add travellers to see individual baggage summaries.</p>`}
+    </div>
+    ${renderCabinCombinedWeightSummary(baggageSummaries.combined)}
+  `;
+}
+
+function updateCabinPackingSummaries(cabinEssentialsWeight, checklistPacked, checklistTotal) {
+  const travellerProfiles = packingV2Profiles.filter(item => item.profile_type === "traveller");
+  const checklistPercent = getProgressPercent(checklistPacked, checklistTotal);
+  const baggageSummaries = buildCabinBaggageSummaries(cabinEssentialsWeight, travellerProfiles);
+  packingCabinSharePerTraveller = baggageSummaries.cabinShare;
+  updateCabinChecklistProgress(checklistPercent, checklistPacked, checklistTotal);
+  const totalNode = document.getElementById("cabinEssentialsWeightTotal");
+  if (totalNode) totalNode.textContent = formatPackingWeight(cabinEssentialsWeight);
+  const travellerCountNode = document.getElementById("cabinEssentialsTravellerCount");
+  if (travellerCountNode) travellerCountNode.textContent = String(travellerProfiles.length);
+  travellerProfiles.forEach(profile => {
+    const shareNode = document.querySelector(`[data-cabin-share="${CSS.escape(profile.profile_key)}"]`);
+    if (shareNode) shareNode.textContent = formatPackingWeight(baggageSummaries.cabinShare);
+  });
+  baggageSummaries.travellers.forEach(traveller => {
+    const { profile, packingChecked, cabinShare, totalChecked, allowance, percent, remaining, isOver } = traveller;
+    const hasNoAllowance = allowance === null;
+    updatePackingAllowanceDonut(`cabinTravellerDonut-${profile.profile_key}`, percent, isOver ? "Over allowance" : "Checked used", { isOver, hasNoAllowance });
+    const setText = (selector, text) => {
+      const node = document.querySelector(`[${selector}="${CSS.escape(profile.profile_key)}"]`);
+      if (node) node.textContent = text;
+    };
+    setText("data-traveller-packing", formatPackingWeight(packingChecked));
+    setText("data-traveller-cabin-share", formatPackingWeight(cabinShare));
+    setText("data-traveller-total", formatPackingWeight(totalChecked));
+    setText("data-traveller-allowance", hasNoAllowance ? "Not entered" : `${allowance.toFixed(1)} kg`);
+    const remainingNode = document.querySelector(`[data-traveller-remaining="${CSS.escape(profile.profile_key)}"]`);
+    if (remainingNode) {
+      remainingNode.textContent = hasNoAllowance ? "—" : (remaining >= 0 ? `${remaining.toFixed(1)} kg` : `Over by ${Math.abs(remaining).toFixed(1)} kg`);
+      remainingNode.classList.toggle("is-over", isOver);
+    }
+  });
+  const { combined } = baggageSummaries;
+  const combinedHasNoAllowance = combined.allowance === null;
+  updatePackingAllowanceDonut("cabinCombinedDonut", combined.percent, combined.isOver ? "Over allowance" : "Combined used", { isOver: combined.isOver, hasNoAllowance: combinedHasNoAllowance });
+  const setCombinedText = (id, text) => { const node = document.getElementById(id); if (node) node.textContent = text; };
+  setCombinedText("cabinCombinedPackingWeight", formatPackingWeight(combined.packingChecked));
+  setCombinedText("cabinCombinedCabinWeight", formatPackingWeight(combined.cabinEssentialsWeight));
+  setCombinedText("cabinCombinedTotalWeight", formatPackingWeight(combined.total));
+  setCombinedText("cabinCombinedAllowance", combinedHasNoAllowance ? "Not entered" : `${combined.allowance.toFixed(1)} kg`);
+  const combinedRemainingNode = document.getElementById("cabinCombinedRemaining");
+  if (combinedRemainingNode) {
+    combinedRemainingNode.textContent = combinedHasNoAllowance ? "—" : (combined.remaining >= 0 ? `${combined.remaining.toFixed(1)} kg` : `Over by ${Math.abs(combined.remaining).toFixed(1)} kg`);
+    combinedRemainingNode.classList.toggle("is-over", combined.isOver);
+  }
+}
+
 function packingItemBelongsToProfile(item, categoryName, profile) {
   const isCabinCategory = PACKING_CABIN_CATEGORIES.has(String(categoryName || "").trim().toLowerCase());
   return profile?.profile_type === "cabin" ? isCabinCategory : !isCabinCategory;
@@ -3212,24 +3430,7 @@ function recalculatePackingSummary() {
   const profile = getActivePackingProfile();
   const summary = collectPackingSummaryFromDom();
   if (profile?.profile_type === "cabin") {
-    const percent = getProgressPercent(summary.checklistPacked, summary.checklistTotal);
-    const value = document.getElementById("packingProgressPercent");
-    const detail = document.getElementById("packingProgressDetail");
-    if (value) value.textContent = `${percent}%`;
-    if (detail) detail.textContent = `${summary.checklistPacked} of ${summary.checklistTotal} complete`;
-    const totalNode = document.getElementById("cabinEssentialsWeightTotal");
-    if (totalNode) totalNode.textContent = formatPackingWeight(summary.cabinWeight);
-    const travellers = packingV2Profiles.filter(item => item.profile_type === "traveller");
-    const share = travellers.length ? summary.cabinWeight / travellers.length : 0;
-    packingCabinSharePerTraveller = share;
-    const travellerCountNode = document.getElementById("cabinEssentialsTravellerCount");
-    if (travellerCountNode) travellerCountNode.textContent = String(travellers.length);
-    const sharePerTravellerNode = document.getElementById("cabinEssentialsSharePerTraveller");
-    if (sharePerTravellerNode) sharePerTravellerNode.textContent = formatPackingWeight(share);
-    travellers.forEach(item => {
-      const node = document.querySelector(`[data-cabin-share="${CSS.escape(item.profile_key)}"]`);
-      if (node) node.textContent = formatPackingWeight(share);
-    });
+    updateCabinPackingSummaries(summary.cabinWeight, summary.checklistPacked, summary.checklistTotal);
     return;
   }
   summary.checked += packingCabinSharePerTraveller;
@@ -3553,7 +3754,13 @@ async function renderPackingPlanner() {
     (adminPreviewMode || customerMode) ? Promise.resolve({ data: [] }) : supabaseClient.from("user_packing_items").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id).order("created_at", { ascending: true })
   ]);
   const categoryNameById = new Map((categories || []).map(category => [String(category.id), category.name]));
-  const systemItems = (items || []).filter(item => packingItemApplies(item, context)).map(item => ({
+  packingPlannerItemData = {
+    context,
+    categoryNameById,
+    systemItems: (items || []).filter(item => packingItemApplies(item, context)),
+    personalItems: personalResult?.data || []
+  };
+  const systemItems = packingPlannerItemData.systemItems.map(item => ({
     ...item,
     source: "system",
     calculated_quantity: getPackingState(`system:${item.id}`, profile.profile_key)?.quantity ?? 0
@@ -3629,10 +3836,11 @@ async function renderPackingPlanner() {
             }).join("")}
           </main>
         </div>
-        <aside class="planner-card packing-summary-card packing-summary-sticky" aria-label="Packing progress and baggage summary">
+        <aside class="planner-card packing-summary-card packing-summary-sticky ${profile.profile_type === "cabin" ? "is-cabin-summary" : ""}" aria-label="Packing progress and baggage summary">
           <div class="packing-profile-summary-name">${escapeHtml(profile.profile_name)}</div>
-          <div class="packing-progress-summary"><span>${profile.profile_type === "cabin" ? "Cabin checklist" : "Ready to Cruise"}</span><strong id="packingProgressPercent">${percent}%</strong><small id="packingProgressDetail">${profile.profile_type === "cabin" ? `${summary.checklistPacked} of ${summary.checklistTotal} complete` : `${summary.packed} of ${summary.selected} selected items packed`}</small></div>
-          ${profile.profile_type === "cabin" ? `<div class="cabin-summary-note"><strong>Cabin Essentials weight</strong><p>Total selected weight: <b id="cabinEssentialsWeightTotal">${formatPackingWeight(summary.cabinWeight)}</b></p><p>Travellers: <b id="cabinEssentialsTravellerCount">${travellerProfiles.length}</b></p><p>Allocated per traveller: <b id="cabinEssentialsSharePerTraveller">${formatPackingWeight(cabinSharePerTraveller)}</b></p><p>Automatically distributed:</p><div class="cabin-weight-distribution">${travellerProfiles.length ? travellerProfiles.map(item => `<span>${escapeHtml(item.profile_name)} <b data-cabin-share="${escapeHtml(item.profile_key)}">${formatPackingWeight(cabinSharePerTraveller)}</b></span>`).join("") : `<span>No travellers added</span>`}</div></div>` : renderPackingWeightGauge(summary, profile)}
+          ${profile.profile_type === "cabin"
+            ? renderCabinPackingSummary(summary.cabinWeight, travellerProfiles, percent, summary.checklistPacked, summary.checklistTotal)
+            : `<div class="packing-progress-summary"><span>Ready to Cruise</span><strong id="packingProgressPercent">${percent}%</strong><small id="packingProgressDetail">${summary.packed} of ${summary.selected} selected items packed</small></div>${renderPackingWeightGauge(summary, profile)}`}
         </aside>
       </div>
     </div>`;

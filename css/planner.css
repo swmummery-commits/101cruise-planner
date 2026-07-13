@@ -4762,6 +4762,116 @@
   background: #f7faf9;
 }
 
+.cabin-checklist-progress {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e8ecef;
+  text-align: center;
+}
+
+.cabin-progress-label,
+.cabin-traveller-summaries-title,
+.cabin-combined-summary-title {
+  margin: 0;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cabin-checklist-detail,
+.cabin-traveller-empty {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.packing-summary-sticky.is-cabin-summary {
+  gap: 16px;
+}
+
+.packing-summary-sticky.is-cabin-summary .packing-weight-donut {
+  width: 118px;
+}
+
+.packing-summary-sticky.is-cabin-summary .packing-weight-donut-centre strong {
+  font-size: 22px;
+}
+
+.cabin-traveller-summaries {
+  display: grid;
+  gap: 12px;
+}
+
+.cabin-traveller-weight-card {
+  padding-top: 12px;
+  border-top: 1px solid #e8ecef;
+}
+
+.cabin-traveller-weight-title {
+  margin: 0 0 10px;
+  color: #234d43;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cabin-traveller-weight-gauge,
+.cabin-combined-weight-gauge {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.cabin-traveller-weight-gauge .packing-weight-donut,
+.cabin-combined-weight-gauge .packing-weight-donut {
+  width: 92px;
+}
+
+.cabin-traveller-weight-metrics,
+.cabin-combined-weight-metrics {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  min-width: 0;
+}
+
+.cabin-traveller-weight-metrics > div,
+.cabin-combined-weight-metrics > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.cabin-traveller-weight-metrics span,
+.cabin-combined-weight-metrics span {
+  color: #7a828c;
+}
+
+.cabin-traveller-weight-metrics strong,
+.cabin-combined-weight-metrics strong {
+  color: #20252b;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.cabin-combined-summary {
+  padding-top: 12px;
+  border-top: 1px solid #e8ecef;
+}
+
+.cabin-summary-note + .cabin-traveller-summaries {
+  margin-top: 0;
+}
+
 .cabin-summary-note strong {
   display: block;
   margin-bottom: 6px;
