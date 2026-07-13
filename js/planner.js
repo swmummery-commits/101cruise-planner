@@ -2662,11 +2662,14 @@ function renderBookingCruiseSection(cruise, booking) {
 
 function renderBookingTravelPlanCategory(category, title, emptyMessage, budget) {
   const items = (budget?.items || []).filter(item => item.category === category);
-  const editAction = `<button class="dashboard-outline-action booking-inline-action" onclick="renderBudgetPlanner()">Edit in Budget →</button>`;
+  const editAction = `<button class="dashboard-outline-action booking-compact-action booking-inline-action" onclick="renderBudgetPlanner()">Edit in Budget →</button>`;
+  const blockClass = category === "flights"
+    ? "booking-travel-plan-block booking-travel-plan-block-flights"
+    : "booking-travel-plan-block";
 
   if (!items.length) {
     return `
-      <div class="booking-travel-plan-block">
+      <div class="${blockClass}">
         <h4>${escapeHtml(title)}</h4>
         <p class="planner-muted">${escapeHtml(emptyMessage)}</p>
         ${editAction}
@@ -2675,7 +2678,7 @@ function renderBookingTravelPlanCategory(category, title, emptyMessage, budget) 
   }
 
   return `
-    <div class="booking-travel-plan-block">
+    <div class="${blockClass}">
       <h4>${escapeHtml(title)}</h4>
       <div class="booking-travel-plan-list">
         ${items.map(item => {
@@ -2691,11 +2694,13 @@ function renderBookingTravelPlansSection(budget) {
   return `
     <section class="planner-card section-spaced">
       <div class="booking-travel-plans-header">
-        <div>
-          <h3>Travel Plans</h3>
+        <div class="booking-travel-plans-heading">
+          <div class="booking-travel-plans-title-row">
+            <h3>Travel Plans</h3>
+            <button class="dashboard-outline-action booking-compact-action" onclick="renderBudgetPlanner()">Edit in Budget →</button>
+          </div>
           <p class="planner-muted">Your travel plans below are automatically summarised from the information you've entered in Budget. Any changes made in Budget will automatically appear here.</p>
         </div>
-        <button class="dashboard-outline-action" onclick="renderBudgetPlanner()">Edit in Budget →</button>
       </div>
       <div class="booking-travel-plans-grid">
         ${renderBookingTravelPlanCategory("flights", "Flights", "No flights have been added yet.", budget)}
@@ -2793,25 +2798,27 @@ async function renderBookingDetails() {
     <div class="planner-shell">
       ${renderPlannerNav("dashboard")}
 
-      <div class="planner-card slim-card">
-        <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
-        <h2>Booking</h2>
-        <p class="planner-muted">Your cruise booking, travel plans, insurance and documents in one place.</p>
+      <div class="booking-reading-column">
+        <div class="planner-card slim-card">
+          <button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button>
+          <h2>Booking</h2>
+          <p class="planner-muted">Your cruise booking, travel plans, insurance and documents in one place.</p>
+        </div>
+
+        ${renderBookingCruiseSection(cruise, getDashboardBookingSource(cruise))}
+        ${renderBookingTravelPlansSection(budget)}
+        ${renderBookingInsuranceSection(insurance)}
+
+        <section class="planner-card section-spaced booking-documents-prompt">
+          <div>
+            <h3>Documents</h3>
+            <p class="planner-muted">Keep your booking confirmation, travel insurance, tickets and other important travel documents together in your secure Documents Library.</p>
+          </div>
+          <div class="booking-insurance-actions">
+            <button class="planner-button secondary" onclick="renderDocuments()">View Documents</button>
+          </div>
+        </section>
       </div>
-
-      ${renderBookingCruiseSection(cruise, getDashboardBookingSource(cruise))}
-      ${renderBookingTravelPlansSection(budget)}
-      ${renderBookingInsuranceSection(insurance)}
-
-      <section class="planner-card section-spaced booking-documents-prompt">
-        <div>
-          <h3>Documents</h3>
-          <p class="planner-muted">Keep your booking confirmation, travel insurance, tickets and other important travel documents together in your secure Documents Library.</p>
-        </div>
-        <div class="booking-insurance-actions">
-          <button class="planner-button secondary" onclick="renderDocuments()">View Documents</button>
-        </div>
-      </section>
     </div>
   `;
 }

@@ -6928,7 +6928,20 @@ input[type="radio"] {
   }
 }
 
-/* Booking summary page */
+/* Booking summary page — narrower centred reading column inside shared shell */
+.booking-reading-column {
+  width: 100%;
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.booking-reading-column .dashboard-snapshot-row {
+  grid-template-columns: minmax(120px, 0.85fr) minmax(0, 1.15fr) !important;
+  gap: 12px 20px;
+}
+
 .booking-passport-status {
   margin-top: 18px;
   padding: 14px 16px;
@@ -6957,16 +6970,46 @@ input[type="radio"] {
 }
 
 .booking-travel-plans-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 20px;
   margin-bottom: 18px;
+}
+
+.booking-travel-plans-heading {
+  min-width: 0;
+}
+
+.booking-travel-plans-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.booking-travel-plans-title-row h3 {
+  margin: 0;
+}
+
+.booking-compact-action {
+  width: auto !important;
+  flex: 0 0 auto;
+  margin-top: 0 !important;
+  white-space: nowrap;
 }
 
 .booking-travel-plans-grid {
   display: grid;
-  gap: 18px;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 761px) {
+  .booking-travel-plans-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .booking-travel-plan-block-flights {
+    grid-column: 1 / -1;
+  }
 }
 
 .booking-travel-plan-block {
@@ -6974,6 +7017,7 @@ input[type="radio"] {
   border: 1px solid rgba(17, 24, 39, 0.08);
   border-radius: 16px;
   background: rgba(15, 23, 42, 0.02);
+  min-width: 0;
 }
 
 .booking-travel-plan-block h4 {
@@ -6994,11 +7038,13 @@ input[type="radio"] {
 
 .booking-travel-plan-item strong {
   font-size: 0.94rem;
+  overflow-wrap: anywhere;
 }
 
 .booking-travel-plan-item span {
   color: var(--planner-muted, #6b7280);
   font-size: 0.86rem;
+  overflow-wrap: anywhere;
 }
 
 .booking-inline-action {
@@ -7017,13 +7063,31 @@ input[type="radio"] {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  align-items: center;
+}
+
+.booking-insurance-actions .planner-button {
+  width: auto;
+  margin-right: 0;
 }
 
 @media (max-width: 760px) {
-  .booking-travel-plans-header,
+  .booking-travel-plans-title-row,
   .booking-documents-prompt {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .booking-travel-plans-title-row .booking-compact-action {
+    align-self: flex-start;
+  }
+
+  .booking-insurance-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-reading-column .dashboard-snapshot-row {
+    grid-template-columns: minmax(100px, 0.9fr) minmax(0, 1.1fr) !important;
   }
 }
 

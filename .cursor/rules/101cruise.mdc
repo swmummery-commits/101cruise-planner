@@ -70,13 +70,15 @@ Avoid bold buttons unless specifically requested.
 
 ## Customer Page Width
 
-All customer-facing pages and major content sections must use the shared centred container:
+All customer-facing pages and major content sections must use the shared centred outer container:
 
 - `--planner-content-width` (1180px)
 - `--planner-content-gutter` (48px)
 - Reuse `.planner-shell`, `.dashboard-content-wrap`, or the shared page classes already used by Dashboard, Preparation, Packing, Budget and Documents
 
-Do not create page-specific maximum widths. Only full-bleed hero sections may span edge-to-edge.
+Do not change the global shared page width rule. Only full-bleed hero sections may span edge-to-edge.
+
+Inside that shared shell, dense information or form pages may use a narrower centred reading column (approximately 900–980px) so labels and values remain readable. Do not replace the outer shell with a page-specific maximum width.
 
 ---
 
