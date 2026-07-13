@@ -1925,6 +1925,7 @@ async function renderDashboard() {
   })();
   const heroDateRange = mainCruise ? getCruiseDateRangeText(mainCruise) : "";
   const cabinSummary = mainCruise ? getCabinSummary(mainCruise) : "";
+  const dashboardMobilePriorityActive = dashboardActionCard.mode === "last_minute" || dashboardActionCard.mode === "last_minute_complete";
 
   app.innerHTML = `
     <div class="dashboard-page">
@@ -1961,7 +1962,7 @@ async function renderDashboard() {
         </section>
       `}
 
-      <div class="dashboard-content-wrap">
+      <div class="dashboard-content-wrap${dashboardMobilePriorityActive ? " dashboard-mobile-priority-active" : ""}">
         <section class="dashboard-welcome-strip dashboard-quick-access-strip">
           ${renderDashboardQuickAccess()}
           ${adminPreviewMode || customerMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
