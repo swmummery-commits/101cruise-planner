@@ -1036,7 +1036,7 @@ function startLiveCountdown(cruise, config = null) {
 
 async function loadDashboardChecklistData(cruise) {
   const [{ data: items, error: itemError }, { data: sections }] = await Promise.all([
-    supabaseClient.from("checklist_items").select("*").eq("active", true).order("display_order", { ascending: true }),
+    supabaseClient.from("checklist_items").select("*, checklist_sections(id, name)").eq("active", true).order("display_order", { ascending: true }),
     supabaseClient.from("checklist_sections").select("*").eq("active", true).order("display_order", { ascending: true })
   ]);
 
@@ -1169,13 +1169,15 @@ function resolveNextEssentialStep(checklistItems, progressRows, daysUntil, secti
 
 function resolveLastMinuteChecklistState(checklistItems, progressRows, sections) {
   const lastMinuteSection = (sections || []).find(section => isLastMinuteSectionName(section.name));
-  const sectionItems = lastMinuteSection
-    ? checklistItems.filter(item => String(item.section_id) === String(lastMinuteSection.id))
-    : [];
+  const sectionItems = (checklistItems || []).filter(item => {
+    const sectionName = item.checklist_sections?.name || lastMinuteSection?.name || (sections || []).find(section => String(section.id) === String(item.section_id))?.name;
+    return isLastMinuteSectionName(sectionName);
+  });
+  const sectionId = lastMinuteSection?.id ?? sectionItems[0]?.section_id ?? sectionItems[0]?.checklist_sections?.id ?? null;
   const completedCount = sectionItems.filter(item => isItemCompleted(progressRows, item.id)).length;
   const totalCount = sectionItems.length;
   return {
-    sectionId: lastMinuteSection?.id || null,
+    sectionId,
     completedCount,
     totalCount,
     allComplete: totalCount > 0 && completedCount === totalCount
@@ -1195,7 +1197,9 @@ function openChecklistTask(itemId) {
 }
 
 function openLastMinuteChecklist(sectionId) {
-  sessionStorage.setItem(CHECKLIST_FOCUS_KEY, JSON.stringify({ type: "section", id: Number(sectionId) }));
+  const payload = { type: "section", name: "last minute" };
+  if (sectionId !== undefined && sectionId !== null && String(sectionId).trim() !== "") payload.id = String(sectionId);
+  sessionStorage.setItem(CHECKLIST_FOCUS_KEY, JSON.stringify(payload));
   renderChecklist();
 }
 
@@ -1222,7 +1226,15 @@ function focusChecklistTargetFromDashboard() {
   }
 
   if (focus?.type === "section") {
-    const section = document.querySelector(`[data-checklist-section="${focus.id}"]`);
+    let section = focus.id !== undefined && focus.id !== null
+      ? document.querySelector(`[data-checklist-section="${CSS.escape(String(focus.id))}"]`)
+      : null;
+    if (!section) {
+      section = [...document.querySelectorAll("[data-checklist-section]")].find(block => {
+        const heading = block.querySelector(".checklist-section-header h3");
+        return isLastMinuteSectionName(heading?.textContent);
+      }) || null;
+    }
     if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 }
@@ -1246,11 +1258,13 @@ function resolveDashboardActionCard(checklistData, leaveHomeInfo) {
       };
     }
     return {
-      label: isLeaveHomeDay ? "Before You Leave Home" : "Next Essential Step",
+      label: isLeaveHomeDay ? "Leave Home Today" : "Next Essential Step",
       title: "Before You Leave Home",
-      description: "Review the items that can't be packed until the last minute before you leave home.",
+      description: isLeaveHomeDay
+        ? "Today is your Leave Home Day. Review the last-minute items before you head off."
+        : "Review the items that can't be packed until the last minute before you leave home.",
       buttonText: "Open Last Minute Checklist →",
-      buttonAction: lastMinute.sectionId ? `openLastMinuteChecklist(${lastMinute.sectionId})` : "openPreparationChecklist()",
+      buttonAction: lastMinute.sectionId != null ? `openLastMinuteChecklist('${lastMinute.sectionId}')` : "openLastMinuteChecklist()",
       isPrimary: isLeaveHomeDay,
       mode: "last_minute"
     };
