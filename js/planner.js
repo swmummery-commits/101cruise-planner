@@ -840,6 +840,44 @@ async function loadShipHeroImage(shipName) {
   return data?.hero_image_url || fallbackImage;
 }
 
+async function loadShipPageImage(shipName) {
+  // Ship page only: real image or empty (text-only hero). No generic fallback photo.
+  if (!shipName) return "";
+  const mapped = getShipImage(shipName);
+  const safeShipName = String(shipName).trim();
+  if (!safeShipName) return mapped || "";
+
+  const { data, error } = await supabaseClient
+    .from("ships")
+    .select("name, hero_image_url")
+    .ilike("name", safeShipName)
+    .eq("active", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("Ship page image lookup failed", error);
+    return mapped || "";
+  }
+
+  if (data?.hero_image_url) return data.hero_image_url;
+
+  // Partial match for CRM short names vs full Supabase ship names.
+  if (safeShipName.length >= 4) {
+    const partial = safeShipName.replace(/[%_]/g, "").trim();
+    const partialResult = await supabaseClient
+      .from("ships")
+      .select("name, hero_image_url")
+      .ilike("name", `%${partial}%`)
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle();
+    if (partialResult.data?.hero_image_url) return partialResult.data.hero_image_url;
+  }
+
+  return mapped || "";
+}
+
 function renderLogoMarkup(cruiseLine) {
   const logo = getCruiseLineLogo(cruiseLine);
   if (!logo) return "";
@@ -2037,6 +2075,9 @@ async function renderDashboard() {
       `}
 
       <div class="dashboard-content-wrap${dashboardMobilePriorityActive ? " dashboard-mobile-priority-active" : ""}">
+        <div class="planner-page-brand dashboard-content-brand">
+          <img class="planner-page-brand-logo" src="assets/101cruise-logo.png" alt="101cruise">
+        </div>
         <section class="dashboard-welcome-strip dashboard-quick-access-strip">
           ${renderDashboardQuickAccess()}
           ${adminPreviewMode || customerMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
@@ -2135,6 +2176,9 @@ function renderPlannerNav(active = "preparation") {
   ];
 
   return `
+    <div class="planner-page-brand">
+      <img class="planner-page-brand-logo" src="assets/101cruise-logo.png" alt="101cruise">
+    </div>
     <div class="planner-module-nav">
       ${items.map(item => `
         <button class="planner-module-nav-button ${active === item.key ? "active" : ""}" onclick="${item.action}">${item.label}</button>
@@ -4980,13 +5024,25 @@ function renderShipOnboardGlance(items) {
     <div class="ship-glance-grid">
       ${items.map(item => {
         const display = item.display || SHIP_NOT_LISTED;
+        const isCount = item.kind === "count";
+        if (isCount) {
+          return `
+            <div class="ship-glance-item is-metric">
+              <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.shopping}</span>
+              <div class="ship-glance-copy">
+                <strong class="ship-glance-metric">${escapeHtml(display)}</strong>
+                <span class="ship-glance-label">${escapeHtml(item.label)}</span>
+              </div>
+            </div>
+          `;
+        }
+
         const valueClass = display === "Yes"
           ? "ship-glance-value ship-glance-yes"
           : display === "No"
             ? "ship-glance-value is-no"
-            : display === SHIP_NOT_LISTED
-              ? "ship-glance-value is-muted"
-              : "ship-glance-value is-count";
+            : "ship-glance-value is-muted";
+
         return `
           <div class="ship-glance-item">
             <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.shopping}</span>
@@ -4996,6 +5052,24 @@ function renderShipOnboardGlance(items) {
         `;
       }).join("")}
     </div>
+  `;
+}
+
+function renderShipHero(ship, { cruiseLineLogo = "", shipImage = "" } = {}) {
+  const hasImage = Boolean(shipImage);
+  return `
+    <header class="ship-hero ${hasImage ? "has-image" : ""}">
+      <div class="ship-hero-copy">
+        ${cruiseLineLogo ? `<img class="ship-hero-line-logo" src="${escapeHtml(cruiseLineLogo)}" alt="${escapeHtml(ship.cruiseLine || "Cruise line")} logo">` : ""}
+        <h1 class="ship-identity-name">${escapeHtml(ship.name)}</h1>
+        ${ship.cruiseLine ? `<p class="ship-hero-line ship-identity-line">${escapeHtml(ship.cruiseLine)}</p>` : ""}
+      </div>
+      ${hasImage ? `
+        <div class="ship-hero-media" aria-hidden="true">
+          <img class="ship-hero-image" src="${escapeHtml(shipImage)}" alt="">
+        </div>
+      ` : ""}
+    </header>
   `;
 }
 
@@ -5254,19 +5328,17 @@ async function renderTheShip() {
   }
 
   const ship = buildShipProfileFromBase44(result.ship, { shipName, cruiseLine });
+  const cruiseLineLogo = await loadCruiseLineLogo(ship.cruiseLine || cruiseLine);
+  let shipImage = await loadShipPageImage(ship.name);
+  if (!shipImage && shipName && shipName !== ship.name) {
+    shipImage = await loadShipPageImage(shipName);
+  }
 
   app.innerHTML = `
     <div class="ship-page">
       ${renderPlannerNav("ship")}
 
-      <header class="ship-hero">
-        <div class="ship-hero-copy">
-          <p class="planner-kicker ship-identity-kicker">Your ship</p>
-          <h1 class="ship-identity-name">${escapeHtml(ship.name)}</h1>
-          ${ship.cruiseLine ? `<p class="ship-hero-line ship-identity-line">${escapeHtml(ship.cruiseLine)}</p>` : ""}
-        </div>
-        <span class="ship-status-badge ship-identity-badge">${escapeHtml(ship.status || "Active")}</span>
-      </header>
+      ${renderShipHero(ship, { cruiseLineLogo, shipImage })}
 
       ${renderShipSummaryCard(ship)}
 
@@ -5277,18 +5349,18 @@ async function renderTheShip() {
           ${renderShipOnboardGlance(ship.onboardGlance)}
         </section>
 
-        <div class="ship-info-grid">
-          <section class="planner-card ship-section-card ship-info-card ship-reveal-block" style="--ship-delay:70ms">
+        <div class="ship-info-grid ship-reveal-block" style="--ship-delay:70ms">
+          <section class="planner-card ship-section-card ship-info-card">
             <h3>Ship Specifications</h3>
             ${renderShipSpecifications(ship.specifications)}
           </section>
 
-          <section class="planner-card ship-section-card ship-info-card ship-reveal-block" style="--ship-delay:140ms">
+          <section class="planner-card ship-section-card ship-info-card">
             <h3>Room Types</h3>
             ${renderShipAccommodationChart(ship.accommodation)}
           </section>
 
-          <section class="planner-card ship-section-card ship-info-card ship-reveal-block" style="--ship-delay:210ms">
+          <section class="planner-card ship-section-card ship-info-card">
             <h3>Ship Scale</h3>
             ${renderShipScaleFacts(ship.scaleFacts)}
           </section>
@@ -5315,7 +5387,7 @@ async function renderTheShip() {
             <h3>Deck Plans</h3>
             <p class="planner-muted">Explore the official deck plans and get to know every level before you sail.</p>
           </div>
-          <button class="planner-button secondary ship-deck-button" type="button">View Official Deck Plans</button>
+          <button class="planner-button secondary ship-deck-button is-coming-soon" type="button" disabled aria-disabled="true">Coming Soon</button>
         </section>
       </div>
     </div>

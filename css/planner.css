@@ -6544,6 +6544,24 @@ input[type="radio"] {
   margin-right: auto;
 }
 
+.planner-page-brand {
+  display: flex;
+  align-items: center;
+  margin: 4px 0 14px;
+}
+
+.planner-page-brand-logo {
+  display: block;
+  width: 94px;
+  height: auto;
+  object-fit: contain;
+}
+
+.dashboard-content-brand {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
 .dashboard-content-wrap {
   width: min(var(--planner-content-width), calc(100% - var(--planner-content-gutter))) !important;
   max-width: var(--planner-content-width) !important;
@@ -7221,7 +7239,7 @@ input[type="radio"] {
 }
 
 /* =========================================================
-   The Ship — premium customer experience prototype
+   The Ship — premium customer experience
    ========================================================= */
 
 .ship-page {
@@ -7268,12 +7286,6 @@ input[type="radio"] {
   letter-spacing: 0.04em;
 }
 
-.ship-glance-value.is-count {
-  text-transform: none;
-  letter-spacing: 0.01em;
-  font-size: 0.74rem;
-}
-
 .ship-glance-value.is-no,
 .ship-glance-value.is-muted {
   background: rgba(17, 24, 39, 0.06);
@@ -7288,55 +7300,76 @@ input[type="radio"] {
 }
 
 .ship-hero {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
   gap: 24px;
-  margin: 10px 0 28px;
+  min-height: 0;
+  margin: 8px 0 28px;
+  overflow: hidden;
+}
+
+.ship-hero.has-image {
+  grid-template-columns: minmax(280px, 0.92fr) minmax(320px, 1.08fr);
+  min-height: 280px;
 }
 
 .ship-hero-copy {
+  position: relative;
+  z-index: 2;
   min-width: 0;
+  padding: 18px 8px 18px 0;
 }
 
-.ship-identity-kicker {
-  margin: 0 0 10px;
+.ship-hero-line-logo {
+  display: block;
+  width: auto;
+  height: 42px;
+  max-width: 180px;
+  object-fit: contain;
+  margin: 0 0 18px;
   opacity: 0;
 }
 
 .ship-identity-name {
   margin: 0 0 10px;
-  font-size: clamp(2rem, 4vw, 2.85rem);
+  font-size: clamp(2.1rem, 4.4vw, 3.1rem);
   font-weight: 450;
   letter-spacing: -0.045em;
   color: var(--planner-text, #2c2c2c);
-  line-height: 1.05;
+  line-height: 1.04;
   opacity: 0;
 }
 
 .ship-identity-line {
   margin: 0;
   color: var(--planner-muted, #6b7280);
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 400;
   opacity: 0;
 }
 
-.ship-status-badge,
-.ship-identity-badge {
-  display: inline-flex;
-  align-items: center;
-  margin-top: 14px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: rgba(141, 217, 191, 0.2);
-  color: #245C4E;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.045em;
-  text-transform: uppercase;
-  white-space: nowrap;
+.ship-hero-media {
+  position: relative;
+  z-index: 1;
+  min-height: 260px;
+  height: 100%;
+  overflow: hidden;
   opacity: 0;
+  transform: translateX(-28px);
+}
+
+.ship-hero-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
+  max-height: 340px;
+  object-fit: cover;
+  object-position: center right;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.35) 18%, #000 42%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.35) 18%, #000 42%, #000 100%);
 }
 
 .ship-summary-card {
@@ -7346,25 +7379,14 @@ input[type="radio"] {
   padding: 30px 26px;
   margin-bottom: 28px;
   color: #173c37;
-  background: linear-gradient(145deg, #a6e5cd 0%, #8DD9BF 46%, #7dcfb4 100%);
-  box-shadow: 0 14px 34px rgba(36, 92, 78, 0.1);
+  background: #8DD9BF;
+  box-shadow: none;
   opacity: 0;
   transform: translateY(18px);
 }
 
 .ship-summary-glow {
-  position: absolute;
-  inset: -42% -18% auto auto;
-  width: 72%;
-  height: 150%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
-  pointer-events: none;
-  opacity: 0.4;
-}
-
-.ship-page.is-ready .ship-summary-glow {
-  animation: ship-soft-light 8s ease-in-out 1;
+  display: none;
 }
 
 .ship-summary-grid {
@@ -7417,7 +7439,7 @@ input[type="radio"] {
 }
 
 .ship-section-card {
-  margin-bottom: 18px;
+  margin-bottom: 0;
 }
 
 .ship-section-card h3 {
@@ -7440,12 +7462,17 @@ input[type="radio"] {
   grid-template-columns: 28px minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
-  min-height: 52px;
-  padding: 12px 14px;
+  min-height: 64px;
+  padding: 14px 16px;
   border: 1px solid rgba(17, 24, 39, 0.07);
   border-radius: 14px;
   background: #fbfcfc;
   transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
+}
+
+.ship-glance-item.is-metric {
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: start;
 }
 
 .ship-glance-item:hover {
@@ -7471,12 +7498,33 @@ input[type="radio"] {
   display: block;
 }
 
+.ship-glance-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ship-glance-metric {
+  font-size: clamp(1.55rem, 2.4vw, 2rem);
+  font-weight: 550;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #173c37;
+  font-variant-numeric: tabular-nums;
+}
+
 .ship-glance-label {
   min-width: 0;
   color: var(--planner-text, #2c2c2c);
   font-size: 0.88rem;
   font-weight: 500;
   line-height: 1.3;
+}
+
+.ship-glance-item.is-metric .ship-glance-label {
+  color: var(--planner-muted, #6b7280);
+  font-size: 0.8rem;
+  font-weight: 450;
 }
 
 .ship-glance-yes {
@@ -7488,12 +7536,14 @@ input[type="radio"] {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
-  margin-bottom: 18px;
+  margin: 0;
+  align-items: start;
 }
 
 .ship-info-card {
   margin-bottom: 0;
-  height: 100%;
+  height: auto;
+  min-height: 0;
   transition: transform 0.28s ease, box-shadow 0.28s ease;
 }
 
@@ -7672,35 +7722,42 @@ input[type="radio"] {
 .ship-deck-button {
   flex: 0 0 auto;
   margin: 0;
-  transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 }
 
-.ship-deck-button:hover {
-  transform: translateY(-1px);
+.ship-deck-button.is-coming-soon,
+.ship-deck-button.is-coming-soon:hover {
+  cursor: default;
+  opacity: 0.72;
+  transform: none !important;
+  pointer-events: none;
 }
 
 .ship-content-stage {
+  display: grid;
+  gap: 22px;
   opacity: 0;
+  position: relative;
+  z-index: 1;
 }
 
-.ship-page.is-ready .ship-identity-kicker {
+.ship-page.is-ready .ship-hero-line-logo {
   animation: ship-fade-in 0.7s ease 0ms 1 forwards;
 }
 
 .ship-page.is-ready .ship-identity-name {
-  animation: ship-fade-in 0.85s ease 120ms 1 forwards;
+  animation: ship-fade-in 0.85s ease 80ms 1 forwards;
 }
 
 .ship-page.is-ready .ship-identity-line {
-  animation: ship-fade-in 0.85s ease 240ms 1 forwards;
+  animation: ship-fade-in 0.85s ease 160ms 1 forwards;
 }
 
-.ship-page.is-ready .ship-identity-badge {
-  animation: ship-fade-in 0.8s ease 300ms 1 forwards;
+.ship-page.is-ready .ship-hero-media {
+  animation: ship-hero-image-in 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) 40ms 1 forwards;
 }
 
 .ship-page.is-ready .ship-summary-card {
-  animation: ship-rise-in 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) 320ms 1 forwards;
+  animation: ship-rise-in 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) 280ms 1 forwards;
 }
 
 .ship-page.is-content-ready .ship-content-stage {
@@ -7708,6 +7765,8 @@ input[type="radio"] {
 }
 
 .ship-reveal-block {
+  position: relative;
+  z-index: 1;
   opacity: 0;
   transform: translateY(12px);
 }
@@ -7721,6 +7780,17 @@ input[type="radio"] {
   to { opacity: 1; }
 }
 
+@keyframes ship-hero-image-in {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 @keyframes ship-rise-in {
   from {
     opacity: 0;
@@ -7732,22 +7802,24 @@ input[type="radio"] {
   }
 }
 
-@keyframes ship-soft-light {
-  0% {
-    transform: translate3d(6%, -3%, 0) scale(1);
-    opacity: 0.28;
-  }
-  55% {
-    transform: translate3d(-5%, 5%, 0) scale(1.04);
-    opacity: 0.5;
-  }
-  100% {
-    transform: translate3d(1%, 0, 0) scale(1);
-    opacity: 0.38;
-  }
-}
-
 @media (max-width: 980px) {
+  .ship-hero.has-image {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .ship-hero-media {
+    order: -1;
+    min-height: 220px;
+  }
+
+  .ship-hero-image {
+    min-height: 220px;
+    max-height: 260px;
+    -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  }
+
   .ship-info-grid {
     grid-template-columns: 1fr;
   }
@@ -7771,14 +7843,8 @@ input[type="radio"] {
 
 @media (max-width: 760px) {
   .ship-hero {
-    flex-direction: column;
     gap: 14px;
     margin-bottom: 22px;
-  }
-
-  .ship-identity-badge {
-    margin-top: 0;
-    align-self: flex-start;
   }
 
   .ship-summary-card {
@@ -7799,30 +7865,27 @@ input[type="radio"] {
     gap: 10px;
   }
 
-  .ship-accommodation-layout {
-    grid-template-columns: 1fr;
-    justify-items: center;
-  }
-
   .ship-deck-card {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
   }
 
   .ship-deck-button {
     width: 100%;
   }
+
+  .ship-accommodation-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ship-identity-kicker,
-  .ship-identity-name,
-  .ship-identity-line,
-  .ship-identity-badge,
-  .ship-summary-card,
-  .ship-reveal-block,
-  .ship-content-stage,
-  .ship-page.is-ready .ship-summary-glow {
+  .ship-page.is-ready .ship-hero-line-logo,
+  .ship-page.is-ready .ship-identity-name,
+  .ship-page.is-ready .ship-identity-line,
+  .ship-page.is-ready .ship-hero-media,
+  .ship-page.is-ready .ship-summary-card,
+  .ship-page.is-content-ready .ship-reveal-block {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
