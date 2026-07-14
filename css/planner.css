@@ -7239,11 +7239,43 @@ input[type="radio"] {
 }
 
 /* =========================================================
-   The Ship — premium customer experience
+   The Ship — premium brochure layout
    ========================================================= */
 
 .ship-page {
-  padding: 16px 0 56px;
+  padding: 10px 0 64px;
+}
+
+.ship-page .planner-module-nav {
+  justify-content: center;
+  gap: 4px !important;
+  margin: 0 0 28px !important;
+  padding: 0;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+}
+
+.ship-page .planner-module-nav-button {
+  min-height: 40px !important;
+  padding: 10px 14px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #5b6470 !important;
+  font-size: 0.92rem !important;
+  font-weight: 450 !important;
+  box-shadow: none !important;
+}
+
+.ship-page .planner-module-nav-button:hover {
+  background: transparent !important;
+  color: #1f2937 !important;
+}
+
+.ship-page .planner-module-nav-button.active {
+  background: transparent !important;
+  color: #173c37 !important;
+  font-weight: 550 !important;
+  border-bottom: 2px solid #8DD9BF !important;
 }
 
 .ship-page-status {
@@ -7254,6 +7286,7 @@ input[type="radio"] {
 .ship-page-status .ship-status-title {
   opacity: 1;
   margin-bottom: 12px;
+  text-transform: none;
 }
 
 .ship-page-status .ship-identity-line {
@@ -7268,8 +7301,243 @@ input[type="radio"] {
 }
 
 .ship-summary-value.is-static {
-  font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+  font-size: clamp(1rem, 1.8vw, 1.2rem);
   letter-spacing: -0.02em;
+}
+
+.ship-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  min-height: 0;
+  margin: 4px 0 22px;
+  overflow: hidden;
+}
+
+.ship-hero.has-image {
+  grid-template-columns: minmax(260px, 0.78fr) minmax(360px, 1.22fr);
+  min-height: 300px;
+}
+
+.ship-hero-copy {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  padding: 28px 12px 28px 0;
+}
+
+.ship-hero-line-logo {
+  display: block;
+  width: auto;
+  height: 48px;
+  max-width: 200px;
+  object-fit: contain;
+  margin: 0 0 22px;
+  opacity: 0;
+}
+
+.ship-identity-name {
+  margin: 0 0 12px;
+  font-size: clamp(2.25rem, 4.8vw, 3.35rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: #16324f;
+  line-height: 1.02;
+  opacity: 0;
+}
+
+.ship-identity-line {
+  margin: 0;
+  color: #8a93a0;
+  font-size: 1.05rem;
+  font-weight: 400;
+  opacity: 0;
+}
+
+.ship-hero-media {
+  position: relative;
+  z-index: 1;
+  min-height: 280px;
+  height: 100%;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-32px);
+}
+
+.ship-hero-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  max-height: 360px;
+  object-fit: cover;
+  object-position: center right;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.28) 16%, #000 40%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.28) 16%, #000 40%, #000 100%);
+}
+
+.ship-summary-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 22px 20px;
+  margin-bottom: 34px;
+  color: #173c37;
+  background: #f3f5f6;
+  border: 1px solid rgba(17, 24, 39, 0.04);
+  box-shadow: none;
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.ship-summary-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px 18px;
+}
+
+.ship-summary-stat {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  padding: 4px 2px;
+}
+
+.ship-summary-icon {
+  width: 26px;
+  height: 26px;
+  color: #2f7d6a;
+  opacity: 0.95;
+}
+
+.ship-summary-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ship-summary-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ship-summary-value {
+  font-size: clamp(1.35rem, 2.3vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: #16324f;
+  font-variant-numeric: tabular-nums;
+}
+
+.ship-summary-label {
+  color: #7b8491;
+  font-size: 0.78rem;
+  font-weight: 450;
+}
+
+.ship-section-card {
+  margin-bottom: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.ship-section-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #16324f;
+  letter-spacing: -0.02em;
+}
+
+.ship-section-intro {
+  margin: 0 0 22px;
+}
+
+.ship-glance-section {
+  padding-bottom: 8px;
+}
+
+.ship-glance-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 18px 16px;
+}
+
+.ship-glance-item {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 8px;
+  min-height: 0;
+  padding: 8px 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  transition: transform 0.25s ease;
+}
+
+.ship-glance-item.is-metric,
+.ship-glance-item.is-status {
+  grid-template-columns: 1fr;
+  align-items: center;
+}
+
+.ship-glance-item:hover {
+  transform: translateY(-2px);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.ship-glance-icon {
+  width: 28px;
+  height: 28px;
+  color: #2f7d6a;
+}
+
+.ship-glance-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ship-glance-metric {
+  order: 0;
+  font-size: clamp(1.7rem, 2.6vw, 2.15rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  color: #16324f;
+  font-variant-numeric: tabular-nums;
+}
+
+.ship-glance-item.is-metric .ship-glance-icon {
+  order: -1;
+}
+
+.ship-glance-item.is-metric .ship-glance-label {
+  order: 1;
+  color: #7b8491;
+  font-size: 0.78rem;
+  font-weight: 450;
+}
+
+.ship-glance-label {
+  min-width: 0;
+  color: #4b5563;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.25;
 }
 
 .ship-glance-value {
@@ -7277,7 +7545,7 @@ input[type="radio"] {
   align-items: center;
   justify-content: center;
   min-width: 42px;
-  padding: 4px 9px;
+  padding: 4px 10px;
   border-radius: 999px;
   background: rgba(141, 217, 191, 0.22);
   color: #245C4E;
@@ -7295,272 +7563,42 @@ input[type="radio"] {
   font-weight: 600;
 }
 
-.ship-empty-note {
-  margin: 8px 0 0;
-}
-
-.ship-hero {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  gap: 24px;
-  min-height: 0;
-  margin: 8px 0 28px;
-  overflow: hidden;
-}
-
-.ship-hero.has-image {
-  grid-template-columns: minmax(280px, 0.92fr) minmax(320px, 1.08fr);
-  min-height: 280px;
-}
-
-.ship-hero-copy {
-  position: relative;
-  z-index: 2;
-  min-width: 0;
-  padding: 18px 8px 18px 0;
-}
-
-.ship-hero-line-logo {
-  display: block;
-  width: auto;
-  height: 42px;
-  max-width: 180px;
-  object-fit: contain;
-  margin: 0 0 18px;
-  opacity: 0;
-}
-
-.ship-identity-name {
-  margin: 0 0 10px;
-  font-size: clamp(2.1rem, 4.4vw, 3.1rem);
-  font-weight: 450;
-  letter-spacing: -0.045em;
-  color: var(--planner-text, #2c2c2c);
-  line-height: 1.04;
-  opacity: 0;
-}
-
-.ship-identity-line {
-  margin: 0;
-  color: var(--planner-muted, #6b7280);
-  font-size: 1.05rem;
-  font-weight: 400;
-  opacity: 0;
-}
-
-.ship-hero-media {
-  position: relative;
-  z-index: 1;
-  min-height: 260px;
-  height: 100%;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateX(-28px);
-}
-
-.ship-hero-image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-height: 260px;
-  max-height: 340px;
-  object-fit: cover;
-  object-position: center right;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.35) 18%, #000 42%, #000 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.35) 18%, #000 42%, #000 100%);
-}
-
-.ship-summary-card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 24px;
-  padding: 30px 26px;
-  margin-bottom: 28px;
-  color: #173c37;
-  background: #8DD9BF;
-  box-shadow: none;
-  opacity: 0;
-  transform: translateY(18px);
-}
-
-.ship-summary-glow {
-  display: none;
-}
-
-.ship-summary-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 12px 16px;
-}
-
-.ship-summary-stat {
-  display: grid;
-  gap: 8px;
-  justify-items: start;
-  min-width: 0;
-  padding: 6px 2px;
-}
-
-.ship-summary-icon {
-  width: 26px;
-  height: 26px;
-  color: #245C4E;
-  opacity: 0.86;
-  transition: transform 0.3s ease;
-}
-
-.ship-summary-icon svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.ship-summary-stat:hover .ship-summary-icon {
-  transform: scale(1.06);
-}
-
-.ship-summary-value {
-  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
-  font-weight: 500;
-  letter-spacing: -0.035em;
-  line-height: 1.05;
-  color: #14352f;
-  font-variant-numeric: tabular-nums;
-}
-
-.ship-summary-label {
-  color: rgba(20, 53, 47, 0.7);
-  font-size: 0.76rem;
-  font-weight: 500;
-}
-
-.ship-section-card {
-  margin-bottom: 0;
-}
-
-.ship-section-card h3 {
-  margin: 0 0 6px;
-  font-weight: 550;
-}
-
-.ship-section-intro {
-  margin: 0 0 20px;
-}
-
-.ship-glance-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px 18px;
-}
-
-.ship-glance-item {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr) auto;
-  gap: 12px;
-  align-items: center;
-  min-height: 64px;
-  padding: 14px 16px;
-  border: 1px solid rgba(17, 24, 39, 0.07);
-  border-radius: 14px;
-  background: #fbfcfc;
-  transition: transform 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease;
-}
-
-.ship-glance-item.is-metric {
-  grid-template-columns: 28px minmax(0, 1fr);
-  align-items: start;
-}
-
-.ship-glance-item:hover {
-  transform: translateY(-2px);
-  border-color: rgba(141, 217, 191, 0.5);
-  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.04);
-}
-
-.ship-glance-icon {
-  width: 22px;
-  height: 22px;
-  color: #245C4E;
-  transition: transform 0.28s ease;
-}
-
-.ship-glance-item:hover .ship-glance-icon {
-  transform: scale(1.06);
-}
-
-.ship-glance-icon svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.ship-glance-copy {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.ship-glance-metric {
-  font-size: clamp(1.55rem, 2.4vw, 2rem);
-  font-weight: 550;
-  letter-spacing: -0.04em;
-  line-height: 1;
-  color: #173c37;
-  font-variant-numeric: tabular-nums;
-}
-
-.ship-glance-label {
-  min-width: 0;
-  color: var(--planner-text, #2c2c2c);
-  font-size: 0.88rem;
-  font-weight: 500;
-  line-height: 1.3;
-}
-
-.ship-glance-item.is-metric .ship-glance-label {
-  color: var(--planner-muted, #6b7280);
-  font-size: 0.8rem;
-  font-weight: 450;
-}
-
 .ship-glance-yes {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 
+.ship-empty-note {
+  margin: 8px 0 0;
+}
+
 .ship-info-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  gap: 28px;
   margin: 0;
   align-items: start;
+  padding-top: 8px;
+  border-top: 1px solid rgba(17, 24, 39, 0.06);
 }
 
 .ship-info-card {
   margin-bottom: 0;
   height: auto;
   min-height: 0;
-  transition: transform 0.28s ease, box-shadow 0.28s ease;
+  padding-top: 8px;
 }
 
 .ship-info-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(17, 24, 39, 0.05);
-}
-
-.ship-info-card .ship-section-intro {
-  display: none;
+  transform: none;
+  box-shadow: none;
 }
 
 .ship-spec-list,
 .ship-scale-list {
   display: grid;
   gap: 0;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 
 .ship-spec-row,
@@ -7568,32 +7606,53 @@ input[type="radio"] {
   display: flex;
   justify-content: space-between;
   gap: 16px;
-  padding: 13px 0;
-  border-bottom: 1px solid rgba(17, 24, 39, 0.07);
-  font-size: 0.9rem;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  font-size: 0.92rem;
 }
 
 .ship-spec-row:first-child,
 .ship-scale-row:first-child {
-  padding-top: 4px;
+  padding-top: 2px;
 }
 
 .ship-spec-row:last-child,
 .ship-scale-row:last-child {
   border-bottom: 0;
-  padding-bottom: 2px;
 }
 
 .ship-spec-row span,
 .ship-scale-row span {
-  color: var(--planner-muted, #6b7280);
+  color: #7b8491;
 }
 
 .ship-spec-row strong,
 .ship-scale-row strong {
-  color: var(--planner-text, #2c2c2c);
+  color: #16324f;
   font-weight: 600;
   text-align: right;
+}
+
+.ship-scale-highlight {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 16px 16px;
+  border-radius: 14px;
+  background: rgba(141, 217, 191, 0.28);
+}
+
+.ship-scale-highlight span {
+  color: #245C4E;
+  font-size: 0.78rem;
+  font-weight: 550;
+}
+
+.ship-scale-highlight strong {
+  color: #16324f;
+  font-size: 1.35rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
 }
 
 .ship-accommodation-layout {
@@ -7643,12 +7702,12 @@ input[type="radio"] {
   font-size: 1.2rem;
   font-weight: 600;
   letter-spacing: -0.03em;
-  color: #173c37;
+  color: #16324f;
 }
 
 .ship-donut-centre span {
   margin-top: 2px;
-  color: var(--planner-muted, #6b7280);
+  color: #7b8491;
   font-size: 0.7rem;
 }
 
@@ -7675,14 +7734,14 @@ input[type="radio"] {
 }
 
 .ship-room-label {
-  color: var(--planner-muted, #6b7280);
+  color: #7b8491;
   font-size: 0.84rem;
 }
 
 .ship-room-legend strong {
   font-size: 0.84rem;
   font-weight: 600;
-  color: var(--planner-text, #2c2c2c);
+  color: #16324f;
 }
 
 .ship-chip-group {
@@ -7692,12 +7751,8 @@ input[type="radio"] {
 .ship-chip-group .dashboard-snapshot-extras-tag {
   padding: 8px 12px;
   font-size: 0.78rem;
-  transition: transform 0.25s ease, border-color 0.25s ease;
-}
-
-.ship-chip-group .dashboard-snapshot-extras-tag:hover {
-  transform: translateY(-1px);
-  border-color: rgba(36, 92, 78, 0.22);
+  background: #f5f7f8;
+  border: 1px solid rgba(17, 24, 39, 0.06);
 }
 
 .ship-deck-card {
@@ -7705,6 +7760,8 @@ input[type="radio"] {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
+  padding: 22px 0 0;
+  border-top: 1px solid rgba(17, 24, 39, 0.06);
 }
 
 .ship-deck-copy {
@@ -7720,44 +7777,58 @@ input[type="radio"] {
 }
 
 .ship-deck-button {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
   flex: 0 0 auto;
   margin: 0;
+}
+
+.ship-deck-button-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+}
+
+.ship-deck-button-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .ship-deck-button.is-coming-soon,
 .ship-deck-button.is-coming-soon:hover {
   cursor: default;
-  opacity: 0.72;
+  opacity: 0.78;
   transform: none !important;
   pointer-events: none;
 }
 
 .ship-content-stage {
   display: grid;
-  gap: 22px;
+  gap: 34px;
   opacity: 0;
   position: relative;
   z-index: 1;
 }
 
 .ship-page.is-ready .ship-hero-line-logo {
-  animation: ship-fade-in 0.7s ease 0ms 1 forwards;
+  animation: ship-fade-in 0.7s ease-out 0ms 1 forwards;
 }
 
 .ship-page.is-ready .ship-identity-name {
-  animation: ship-fade-in 0.85s ease 80ms 1 forwards;
+  animation: ship-fade-in 0.8s ease-out 70ms 1 forwards;
 }
 
 .ship-page.is-ready .ship-identity-line {
-  animation: ship-fade-in 0.85s ease 160ms 1 forwards;
+  animation: ship-fade-in 0.8s ease-out 140ms 1 forwards;
 }
 
 .ship-page.is-ready .ship-hero-media {
-  animation: ship-hero-image-in 0.8s cubic-bezier(0.22, 0.61, 0.36, 1) 40ms 1 forwards;
+  animation: ship-hero-image-in 0.8s ease-out 0ms 1 forwards;
 }
 
 .ship-page.is-ready .ship-summary-card {
-  animation: ship-rise-in 0.9s cubic-bezier(0.22, 0.61, 0.36, 1) 280ms 1 forwards;
+  animation: ship-rise-in 0.85s ease-out 220ms 1 forwards;
 }
 
 .ship-page.is-content-ready .ship-content-stage {
@@ -7772,7 +7843,7 @@ input[type="radio"] {
 }
 
 .ship-page.is-content-ready .ship-reveal-block {
-  animation: ship-rise-in 0.65s cubic-bezier(0.22, 0.61, 0.36, 1) var(--ship-delay, 0ms) 1 forwards;
+  animation: ship-rise-in 0.65s ease-out var(--ship-delay, 0ms) 1 forwards;
 }
 
 @keyframes ship-fade-in {
@@ -7783,7 +7854,7 @@ input[type="radio"] {
 @keyframes ship-hero-image-in {
   from {
     opacity: 0;
-    transform: translateX(-28px);
+    transform: translateX(-32px);
   }
   to {
     opacity: 1;
@@ -7799,6 +7870,12 @@ input[type="radio"] {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 1100px) {
+  .ship-glance-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -7822,6 +7899,7 @@ input[type="radio"] {
 
   .ship-info-grid {
     grid-template-columns: 1fr;
+    gap: 28px;
   }
 
   .ship-accommodation-layout {
@@ -7837,23 +7915,32 @@ input[type="radio"] {
   }
 
   .ship-glance-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ship-page .planner-module-nav {
+    justify-content: flex-start;
+    overflow-x: auto;
   }
 }
 
 @media (max-width: 760px) {
   .ship-hero {
     gap: 14px;
-    margin-bottom: 22px;
+    margin-bottom: 18px;
+  }
+
+  .ship-identity-name {
+    font-size: clamp(1.85rem, 8vw, 2.4rem);
   }
 
   .ship-summary-card {
-    padding: 22px 18px;
+    padding: 18px 14px;
   }
 
   .ship-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px 12px;
+    gap: 14px 10px;
   }
 
   .ship-summary-stat:last-child {
@@ -7861,8 +7948,8 @@ input[type="radio"] {
   }
 
   .ship-glance-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 10px;
   }
 
   .ship-deck-card {
@@ -7872,6 +7959,7 @@ input[type="radio"] {
 
   .ship-deck-button {
     width: 100%;
+    justify-content: center;
   }
 
   .ship-accommodation-layout {
@@ -7891,12 +7979,7 @@ input[type="radio"] {
     transform: none !important;
   }
 
-  .ship-glance-item,
-  .ship-info-card,
-  .ship-deck-button,
-  .ship-summary-icon,
-  .ship-glance-icon,
-  .ship-chip-group .dashboard-snapshot-extras-tag {
+  .ship-glance-item {
     transition: none !important;
   }
 
