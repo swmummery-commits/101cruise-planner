@@ -42,6 +42,16 @@ let plannerPreviewMessage = "";
 let itineraryReview = null;
 let itineraryMessage = "";
 let itineraryLoading = false;
+let calculatorRates = [];
+let calculatorRateSearchQuery = "";
+let calculatorRateActiveFilter = "active";
+let editingCalculatorRateId = null;
+let showCalculatorRateForm = false;
+let calculatorRateMessage = "";
+let calculatorRateMessageTone = "";
+let showCalculatorVerifyForm = false;
+let calculatorVerifyDate = "";
+let calculatorVerifyLoading = false;
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -284,6 +294,11 @@ async function loadAdminData() {
     .from("packing_item_profiles")
     .select("*");
 
+  const { data: calculatorRateRows, error: calculatorRatesError } = await supabaseClient
+    .from("cruise_line_calculator_rates")
+    .select("*, cruise_lines(id, name)")
+    .order("created_at", { ascending: true });
+
   if (linesError) {
     console.error("Cruise line load error", linesError);
     cruiseLines = [];
@@ -353,6 +368,17 @@ async function loadAdminData() {
   } else {
     packingItemProfiles = packingItemProfileRows || [];
   }
+
+  if (calculatorRatesError) {
+    console.warn("Calculator rates load skipped", calculatorRatesError);
+    calculatorRates = [];
+    if (!calculatorRateMessage) {
+      calculatorRateMessage = calculatorRatesError.message || "Calculator rates could not be loaded. Confirm the Supabase migration has been applied.";
+      calculatorRateMessageTone = "error";
+    }
+  } else {
+    calculatorRates = calculatorRateRows || [];
+  }
 }
 
 function setTab(tab) {
@@ -367,6 +393,13 @@ function setTab(tab) {
   showPackingItemForm = false;
   editingSmartProfileId = null;
   showSmartProfileForm = false;
+  editingCalculatorRateId = null;
+  showCalculatorRateForm = false;
+  calculatorRateMessage = "";
+  calculatorRateMessageTone = "";
+  showCalculatorVerifyForm = false;
+  calculatorVerifyDate = "";
+  calculatorVerifyLoading = false;
   crmSyncMessage = "";
   crmSyncLoading = false;
   plannerPreviewMessage = "";
@@ -398,6 +431,7 @@ function renderAdmin() {
       <button class="admin-tab ${activeTab === "smart-profiles" ? "active" : ""}" onclick="setTab('smart-profiles')">Smart Profiles</button>
       <button class="admin-tab ${activeTab === "crm-sync" ? "active" : ""}" onclick="setTab('crm-sync')">CRM Sync</button>
       <button class="admin-tab ${activeTab === "planner-preview" ? "active" : ""}" onclick="setTab('planner-preview')">Planner Preview</button>
+      <button class="admin-tab ${activeTab === "calculator-data" ? "active" : ""}" onclick="setTab('calculator-data')">Calculator Data</button>
     </div>
 
     ${activeTab === "cruise-lines" ? renderCruiseLinesPanel() : ""}
@@ -407,6 +441,7 @@ function renderAdmin() {
     ${activeTab === "smart-profiles" ? renderSmartProfilesPanel() : ""}
     ${activeTab === "crm-sync" ? renderCrmSyncPanel() : ""}
     ${activeTab === "planner-preview" ? renderPlannerPreviewPanel() : ""}
+    ${activeTab === "calculator-data" ? renderCalculatorDataPanel() : ""}
   `;
 }
 
@@ -3582,6 +3617,477 @@ async function importPackingLibraryCsv() {
   }
 }
 
+
+function formatCalculatorVerifiedDate(value) {
+  if (!value) return "Not listed";
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
+
+function formatCalculatorNumber(value) {
+  if (value === null || value === undefined || value === "") return "";
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "";
+  return String(number);
+}
+
+function formatCalculatorGridNumber(value) {
+  if (value === null || value === undefined || value === "") {
+    return `<span class="calc-rate-null" aria-label="Not listed">—</span>`;
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return `<span class="calc-rate-null" aria-label="Not listed">—</span>`;
+  }
+  return esc(String(number));
+}
+
+function getTodayIsoDate() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatCalculatorWifiPrice(rate) {
+  if (rate?.wifi_price_label) return esc(rate.wifi_price_label);
+  if (rate?.wifi_package_price === null || rate?.wifi_package_price === undefined || rate?.wifi_package_price === "") {
+    return `<span class="calc-rate-null" aria-label="Not listed">—</span>`;
+  }
+  return formatCalculatorGridNumber(rate.wifi_package_price);
+}
+
+function getCalculatorCruiseLineName(rate) {
+  return rate?.cruise_lines?.name || cruiseLines.find(line => Number(line.id) === Number(rate?.cruise_line_id))?.name || "Unknown cruise line";
+}
+
+function getFilteredCalculatorRates() {
+  const query = String(calculatorRateSearchQuery || "").trim().toLowerCase();
+  return [...calculatorRates]
+    .filter(rate => {
+      if (calculatorRateActiveFilter === "active" && !rate.active) return false;
+      if (calculatorRateActiveFilter === "inactive" && rate.active) return false;
+      if (!query) return true;
+      return getCalculatorCruiseLineName(rate).toLowerCase().includes(query);
+    })
+    .sort((a, b) => getCalculatorCruiseLineName(a).localeCompare(getCalculatorCruiseLineName(b), undefined, { sensitivity: "base" }));
+}
+
+function getCalculatorLinesWithoutRates() {
+  const usedIds = new Set(calculatorRates.map(rate => Number(rate.cruise_line_id)));
+  return [...cruiseLines]
+    .filter(line => !usedIds.has(Number(line.id)))
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" }));
+}
+
+function setCalculatorRateSearchQuery(value) {
+  calculatorRateSearchQuery = value || "";
+  renderAdmin();
+}
+
+function setCalculatorRateActiveFilter(value) {
+  calculatorRateActiveFilter = value || "all";
+  renderAdmin();
+}
+
+function startAddCalculatorRate() {
+  editingCalculatorRateId = null;
+  showCalculatorRateForm = true;
+  showCalculatorVerifyForm = false;
+  calculatorRateMessage = "";
+  calculatorRateMessageTone = "";
+  renderAdmin();
+}
+
+function editCalculatorRate(rateId) {
+  editingCalculatorRateId = rateId;
+  showCalculatorRateForm = true;
+  showCalculatorVerifyForm = false;
+  calculatorRateMessage = "";
+  calculatorRateMessageTone = "";
+  renderAdmin();
+}
+
+function cancelCalculatorRateEdit() {
+  editingCalculatorRateId = null;
+  showCalculatorRateForm = false;
+  calculatorRateMessage = "";
+  calculatorRateMessageTone = "";
+  renderAdmin();
+}
+
+function readCalculatorOptionalNumber(id) {
+  const raw = String(document.getElementById(id)?.value ?? "").trim();
+  if (!raw) return null;
+  const number = Number(raw);
+  return Number.isFinite(number) ? number : null;
+}
+
+function collectCalculatorRatePayload() {
+  const editing = calculatorRates.find(rate => String(rate.id) === String(editingCalculatorRateId));
+  const selectedCruiseLineId = Number(document.getElementById("calcCruiseLineId")?.value);
+  const cruiseLineId = selectedCruiseLineId || Number(editing?.cruise_line_id) || null;
+  const currency = String(document.getElementById("calcCurrency")?.value || "USD").trim().toUpperCase() || "USD";
+  const wifiPriceLabel = String(document.getElementById("calcWifiPriceLabel")?.value || "").trim();
+  const lastVerified = String(document.getElementById("calcLastVerified")?.value || "").trim();
+
+  return {
+    cruise_line_id: cruiseLineId,
+    currency,
+    beer_price: readCalculatorOptionalNumber("calcBeerPrice"),
+    wine_price: readCalculatorOptionalNumber("calcWinePrice"),
+    cocktail_price: readCalculatorOptionalNumber("calcCocktailPrice"),
+    spirits_mixer_price: readCalculatorOptionalNumber("calcSpiritsMixerPrice"),
+    premium_coffee_price: readCalculatorOptionalNumber("calcPremiumCoffeePrice"),
+    soft_drink_price: readCalculatorOptionalNumber("calcSoftDrinkPrice"),
+    juice_price: readCalculatorOptionalNumber("calcJuicePrice"),
+    bottled_water_price: readCalculatorOptionalNumber("calcBottledWaterPrice"),
+    gratuity_percent: readCalculatorOptionalNumber("calcGratuityPercent"),
+    drinks_included_in_fare: Boolean(document.getElementById("calcDrinksIncluded")?.checked),
+    wifi_included: Boolean(document.getElementById("calcWifiIncluded")?.checked),
+    wifi_package_price: readCalculatorOptionalNumber("calcWifiPackagePrice"),
+    wifi_price_label: wifiPriceLabel || null,
+    wifi_notes: String(document.getElementById("calcWifiNotes")?.value || "").trim() || null,
+    specialty_dining_notes: String(document.getElementById("calcSpecialtyDiningNotes")?.value || "").trim() || null,
+    general_notes: String(document.getElementById("calcGeneralNotes")?.value || "").trim() || null,
+    last_verified_at: lastVerified || null,
+    active: Boolean(document.getElementById("calcActive")?.checked)
+  };
+}
+
+async function saveCalculatorRate() {
+  const payload = collectCalculatorRatePayload();
+  const message = document.getElementById("calculator-rate-message");
+
+  if (!payload.cruise_line_id) {
+    calculatorRateMessage = "Please select a cruise line.";
+    if (message) {
+      message.className = "admin-message admin-error";
+      message.innerText = calculatorRateMessage;
+    }
+    return;
+  }
+
+  const duplicate = calculatorRates.find(rate =>
+    Number(rate.cruise_line_id) === Number(payload.cruise_line_id)
+    && String(rate.id) !== String(editingCalculatorRateId || "")
+  );
+  if (duplicate) {
+    calculatorRateMessage = "A rate record already exists for that cruise line.";
+    if (message) {
+      message.className = "admin-message admin-error";
+      message.innerText = calculatorRateMessage;
+    }
+    return;
+  }
+
+  if (message) {
+    message.className = "admin-message";
+    message.innerText = "Saving...";
+  }
+
+  let result;
+  if (editingCalculatorRateId) {
+    result = await supabaseClient
+      .from("cruise_line_calculator_rates")
+      .update(payload)
+      .eq("id", editingCalculatorRateId)
+      .select("*, cruise_lines(id, name)");
+  } else {
+    result = await supabaseClient
+      .from("cruise_line_calculator_rates")
+      .insert(payload)
+      .select("*, cruise_lines(id, name)");
+  }
+
+  if (result.error) {
+    console.error("Save calculator rate error", result.error);
+    calculatorRateMessage = result.error.message;
+    if (message) {
+      message.className = "admin-message admin-error";
+      message.innerText = calculatorRateMessage;
+    }
+    return;
+  }
+
+  if (!result.data || !result.data.length) {
+    calculatorRateMessage = "Nothing was saved. Check that your admin SQL policies were added correctly.";
+    if (message) {
+      message.className = "admin-message admin-error";
+      message.innerText = calculatorRateMessage;
+    }
+    return;
+  }
+
+  calculatorRateMessage = "Saved successfully.";
+  calculatorRateMessageTone = "success";
+  editingCalculatorRateId = null;
+  showCalculatorRateForm = false;
+  await loadAdminData();
+  renderAdmin();
+}
+
+function renderCalculatorRateForm() {
+  if (!showCalculatorRateForm) return "";
+
+  const editing = calculatorRates.find(rate => String(rate.id) === String(editingCalculatorRateId));
+  const availableLines = editing
+    ? cruiseLines
+    : getCalculatorLinesWithoutRates();
+  const selectedLineId = editing ? editing.cruise_line_id : "";
+
+  return `
+    <div class="admin-card calc-rate-form-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>${editing ? "Edit Drinks & Wi-Fi Rates" : "Add Drinks & Wi-Fi Rates"}</h3>
+          <p class="admin-muted">Long-form notes stay here so the spreadsheet grid remains compact.</p>
+        </div>
+        <button class="admin-button secondary small" onclick="cancelCalculatorRateEdit()">Cancel</button>
+      </div>
+
+      <input type="hidden" id="calcRateId" value="${editing ? esc(editing.id) : ""}">
+
+      <div class="admin-grid">
+        <div class="admin-field">
+          <label>Cruise line</label>
+          <select id="calcCruiseLineId" ${editing ? "disabled" : ""}>
+            <option value="">Select cruise line</option>
+            ${availableLines.map(line => `
+              <option value="${line.id}" ${Number(selectedLineId) === Number(line.id) ? "selected" : ""}>${esc(line.name)}</option>
+            `).join("")}
+          </select>
+          ${editing ? `<p class="admin-small">Cruise line cannot be changed after creation. Delete and recreate to rematch.</p>` : ""}
+          ${!editing && !availableLines.length ? `<p class="admin-small">Every cruise line already has a rate record.</p>` : ""}
+        </div>
+        <div class="admin-field">
+          <label>Currency</label>
+          <input type="text" id="calcCurrency" value="${esc(editing?.currency || "USD")}" maxlength="8">
+        </div>
+      </div>
+
+      <div class="calc-rate-price-grid">
+        <div class="admin-field"><label>Beer</label><input type="number" step="0.01" min="0" id="calcBeerPrice" value="${esc(formatCalculatorNumber(editing?.beer_price))}"></div>
+        <div class="admin-field"><label>Wine</label><input type="number" step="0.01" min="0" id="calcWinePrice" value="${esc(formatCalculatorNumber(editing?.wine_price))}"></div>
+        <div class="admin-field"><label>Cocktails</label><input type="number" step="0.01" min="0" id="calcCocktailPrice" value="${esc(formatCalculatorNumber(editing?.cocktail_price))}"></div>
+        <div class="admin-field"><label>Spirits + Mixer</label><input type="number" step="0.01" min="0" id="calcSpiritsMixerPrice" value="${esc(formatCalculatorNumber(editing?.spirits_mixer_price))}"></div>
+        <div class="admin-field"><label>Premium Coffee</label><input type="number" step="0.01" min="0" id="calcPremiumCoffeePrice" value="${esc(formatCalculatorNumber(editing?.premium_coffee_price))}"></div>
+        <div class="admin-field"><label>Soft Drinks</label><input type="number" step="0.01" min="0" id="calcSoftDrinkPrice" value="${esc(formatCalculatorNumber(editing?.soft_drink_price))}"></div>
+        <div class="admin-field"><label>Juices</label><input type="number" step="0.01" min="0" id="calcJuicePrice" value="${esc(formatCalculatorNumber(editing?.juice_price))}"></div>
+        <div class="admin-field"><label>Bottled Water</label><input type="number" step="0.01" min="0" id="calcBottledWaterPrice" value="${esc(formatCalculatorNumber(editing?.bottled_water_price))}"></div>
+        <div class="admin-field"><label>Gratuity %</label><input type="number" step="0.01" min="0" id="calcGratuityPercent" value="${esc(formatCalculatorNumber(editing?.gratuity_percent))}"></div>
+        <div class="admin-field"><label>Wi-Fi package price</label><input type="number" step="0.01" min="0" id="calcWifiPackagePrice" value="${esc(formatCalculatorNumber(editing?.wifi_package_price))}"></div>
+        <div class="admin-field"><label>Wi-Fi display label</label><input type="text" id="calcWifiPriceLabel" value="${esc(editing?.wifi_price_label || "")}" placeholder="Example: Free"></div>
+        <div class="admin-field"><label>Last verified</label><input type="date" id="calcLastVerified" value="${esc(editing?.last_verified_at || "")}"></div>
+      </div>
+
+      <div class="calc-rate-check-row">
+        <label class="admin-check-inline"><input type="checkbox" id="calcDrinksIncluded" ${editing?.drinks_included_in_fare ? "checked" : ""}> Drinks included in fare</label>
+        <label class="admin-check-inline"><input type="checkbox" id="calcWifiIncluded" ${editing?.wifi_included ? "checked" : ""}> Wi-Fi included</label>
+        <label class="admin-check-inline"><input type="checkbox" id="calcActive" ${!editing || editing.active ? "checked" : ""}> Active</label>
+      </div>
+
+      <div class="admin-field">
+        <label>Wi-Fi notes</label>
+        <textarea id="calcWifiNotes" rows="3">${esc(editing?.wifi_notes || "")}</textarea>
+      </div>
+      <div class="admin-field">
+        <label>Specialty dining notes</label>
+        <textarea id="calcSpecialtyDiningNotes" rows="3">${esc(editing?.specialty_dining_notes || "")}</textarea>
+      </div>
+      <div class="admin-field">
+        <label>General notes</label>
+        <textarea id="calcGeneralNotes" rows="3">${esc(editing?.general_notes || "")}</textarea>
+      </div>
+
+      <button class="admin-button" onclick="saveCalculatorRate()">${editing ? "Save Changes" : "Add Rate Record"}</button>
+      <button class="admin-button secondary" onclick="cancelCalculatorRateEdit()">Cancel</button>
+      <div id="calculator-rate-message" class="admin-message">${esc(calculatorRateMessage)}</div>
+    </div>
+  `;
+}
+
+function renderCalculatorRateRow(rate) {
+  const includedClass = rate.drinks_included_in_fare ? " is-included" : "";
+  return `
+    <tr class="calc-rate-row${includedClass}">
+      <th scope="row" class="calc-rate-sticky-col">${esc(getCalculatorCruiseLineName(rate))}</th>
+      <td>${esc(rate.currency || "USD")}</td>
+      <td>${formatCalculatorGridNumber(rate.beer_price)}</td>
+      <td>${formatCalculatorGridNumber(rate.wine_price)}</td>
+      <td>${formatCalculatorGridNumber(rate.cocktail_price)}</td>
+      <td>${formatCalculatorGridNumber(rate.spirits_mixer_price)}</td>
+      <td>${formatCalculatorGridNumber(rate.premium_coffee_price)}</td>
+      <td>${formatCalculatorGridNumber(rate.soft_drink_price)}</td>
+      <td>${formatCalculatorGridNumber(rate.juice_price)}</td>
+      <td>${formatCalculatorGridNumber(rate.bottled_water_price)}</td>
+      <td>${formatCalculatorGridNumber(rate.gratuity_percent)}</td>
+      <td>${rate.drinks_included_in_fare ? "Yes" : "No"}</td>
+      <td>${rate.wifi_included ? "Yes" : "No"}</td>
+      <td>${formatCalculatorWifiPrice(rate)}</td>
+      <td>${esc(formatCalculatorVerifiedDate(rate.last_verified_at))}</td>
+      <td>${rate.active ? "Active" : "Inactive"}</td>
+      <td><button class="admin-button secondary small" onclick="editCalculatorRate('${esc(rate.id)}')">Edit</button></td>
+    </tr>
+  `;
+}
+
+function openCalculatorVerifyForm() {
+  showCalculatorVerifyForm = true;
+  calculatorVerifyDate = getTodayIsoDate();
+  calculatorRateMessage = "";
+  calculatorRateMessageTone = "";
+  renderAdmin();
+}
+
+function cancelCalculatorVerifyForm() {
+  showCalculatorVerifyForm = false;
+  calculatorVerifyDate = "";
+  calculatorVerifyLoading = false;
+  renderAdmin();
+}
+
+function renderCalculatorVerifyForm() {
+  if (!showCalculatorVerifyForm) return "";
+
+  return `
+    <div class="admin-card calc-verify-card">
+      <h4>Update verification date for all</h4>
+      <p class="admin-muted">This will set <strong>Last Verified</strong> on every calculator-rate record. Drink prices, Wi-Fi details, notes and Active status will not change.</p>
+      <div class="admin-field calc-verify-date-field">
+        <label for="calcBulkVerifiedDate">Verification date</label>
+        <input type="date" id="calcBulkVerifiedDate" value="${esc(calculatorVerifyDate || getTodayIsoDate())}">
+      </div>
+      <button class="admin-button" onclick="confirmCalculatorVerifyAll()" ${calculatorVerifyLoading ? "disabled" : ""}>${calculatorVerifyLoading ? "Updating…" : "Update all"}</button>
+      <button class="admin-button secondary" onclick="cancelCalculatorVerifyForm()" ${calculatorVerifyLoading ? "disabled" : ""}>Cancel</button>
+    </div>
+  `;
+}
+
+async function confirmCalculatorVerifyAll() {
+  const dateInput = document.getElementById("calcBulkVerifiedDate");
+  const verifiedDate = String(dateInput?.value || "").trim();
+
+  if (!verifiedDate) {
+    calculatorRateMessage = "Please choose a verification date.";
+    calculatorRateMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+
+  calculatorVerifyLoading = true;
+  calculatorRateMessage = "Updating Last Verified for all records…";
+  calculatorRateMessageTone = "";
+  renderAdmin();
+
+  const { data, error } = await supabaseClient
+    .from("cruise_line_calculator_rates")
+    .update({ last_verified_at: verifiedDate })
+    .not("id", "is", null)
+    .select("id");
+
+  calculatorVerifyLoading = false;
+
+  if (error) {
+    console.error("Bulk verification update error", error);
+    calculatorRateMessage = error.message || "Could not update verification dates.";
+    calculatorRateMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+
+  const count = Array.isArray(data) ? data.length : 0;
+  showCalculatorVerifyForm = false;
+  calculatorVerifyDate = "";
+  calculatorRateMessage = `Updated Last Verified to ${formatCalculatorVerifiedDate(verifiedDate)} for ${count} record${count === 1 ? "" : "s"}.`;
+  calculatorRateMessageTone = "success";
+  await loadAdminData();
+  renderAdmin();
+}
+
+function renderCalculatorDataPanel() {
+  const filtered = getFilteredCalculatorRates();
+  const panelMessageClass = calculatorRateMessageTone === "success"
+    ? "admin-success"
+    : calculatorRateMessageTone === "error"
+      ? "admin-error"
+      : "";
+
+  return `
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Drinks &amp; Wi-Fi Rates</h3>
+          <p class="admin-muted">Reference pricing for the public Drinks Package Calculator. One record per cruise line.</p>
+        </div>
+        <div class="calc-rate-actions">
+          <button class="admin-button secondary small" onclick="openCalculatorVerifyForm()">Update verification date for all</button>
+          <button class="admin-button small" onclick="startAddCalculatorRate()">Add Rate Record</button>
+        </div>
+      </div>
+
+      ${renderCalculatorVerifyForm()}
+
+      <div class="calc-rate-toolbar">
+        <div class="admin-field calc-rate-search">
+          <label class="admin-visually-hidden" for="calcRateSearch">Search cruise lines</label>
+          <input
+            id="calcRateSearch"
+            type="search"
+            value="${esc(calculatorRateSearchQuery)}"
+            placeholder="Search cruise lines…"
+            autocomplete="off"
+            oninput="setCalculatorRateSearchQuery(this.value)"
+          >
+        </div>
+        <div class="admin-field calc-rate-filter">
+          <label for="calcRateActiveFilter">Status</label>
+          <select id="calcRateActiveFilter" onchange="setCalculatorRateActiveFilter(this.value)">
+            <option value="active" ${calculatorRateActiveFilter === "active" ? "selected" : ""}>Active</option>
+            <option value="inactive" ${calculatorRateActiveFilter === "inactive" ? "selected" : ""}>Inactive</option>
+            <option value="all" ${calculatorRateActiveFilter === "all" ? "selected" : ""}>All</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="calculator-data-message" class="admin-message ${showCalculatorRateForm ? "" : panelMessageClass}">${showCalculatorRateForm ? "" : esc(calculatorRateMessage)}</div>
+
+      <div class="calc-rate-grid-wrap">
+        <table class="calc-rate-grid">
+          <thead>
+            <tr>
+              <th scope="col" class="calc-rate-sticky-col">Cruise Line</th>
+              <th scope="col">Currency</th>
+              <th scope="col">Beer</th>
+              <th scope="col">Wine</th>
+              <th scope="col">Cocktails</th>
+              <th scope="col">Spirits + Mixer</th>
+              <th scope="col">Premium Coffee</th>
+              <th scope="col">Soft Drinks</th>
+              <th scope="col">Juices</th>
+              <th scope="col">Bottled Water</th>
+              <th scope="col">Gratuity %</th>
+              <th scope="col">Drinks Included</th>
+              <th scope="col">Wi-Fi Included</th>
+              <th scope="col">Wi-Fi Price</th>
+              <th scope="col">Last Verified</th>
+              <th scope="col">Active</th>
+              <th scope="col">Edit</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map(renderCalculatorRateRow).join("") : `<tr><td colspan="17" class="calc-rate-empty">No calculator rate records match this view.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <p class="admin-small">Scroll horizontally to review all columns. Included-in-fare rows use a quiet tint. A dash means not listed; 0 is a real zero price. Drinks Included remains the source of truth for included fares.</p>
+    </div>
+
+    ${renderCalculatorRateForm()}
+  `;
+}
 
 async function initAdmin() {
   const { data } = await supabaseClient.auth.getSession();
