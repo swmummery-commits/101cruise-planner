@@ -20,3 +20,13 @@
   from = "/drinks-calculator/"
   to = "/public-tools/drinks-calculator/calculator.html"
   status = 200
+
+[[redirects]]
+  from = "/drinks-calculator-v2"
+  to = "/public-tools/drinks-calculator/calculator-v2.html"
+  status = 200
+
+[[redirects]]
+  from = "/drinks-calculator-v2/"
+  to = "/public-tools/drinks-calculator/calculator-v2.html"
+  status = 200

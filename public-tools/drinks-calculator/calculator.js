@@ -542,29 +542,47 @@
   }
 
   async function loadLine(lineParam) {
-    const response = await fetch(`${LINE_API_URL}?line=${encodeURIComponent(lineParam)}`, {
-      method: "GET",
-      headers: { Accept: "application/json" }
-    });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || !payload || !payload.success || !payload.line) {
-      throw new Error((payload && payload.message) || "Calculator rates are not available right now.");
+    const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = setTimeout(() => {
+      if (controller) controller.abort();
+    }, 12000);
+    try {
+      const response = await fetch(`${LINE_API_URL}?line=${encodeURIComponent(lineParam)}`, {
+        method: "GET",
+        headers: { Accept: "application/json" },
+        signal: controller ? controller.signal : undefined
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload || !payload.success || !payload.line) {
+        throw new Error((payload && payload.message) || "Calculator rates are not available right now.");
+      }
+      return payload.line;
+    } finally {
+      clearTimeout(timer);
     }
-    return payload.line;
   }
 
   async function loadLines() {
     try {
-      const response = await fetch(LINES_API_URL, {
-        method: "GET",
-        headers: { Accept: "application/json" }
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok || !payload || !payload.success || !Array.isArray(payload.lines)) return [];
-      return payload.lines.map(line => ({
-        ...line,
-        cruise_line_slug: slugify(line.cruise_line_name)
-      }));
+      const controller = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = setTimeout(() => {
+        if (controller) controller.abort();
+      }, 12000);
+      try {
+        const response = await fetch(LINES_API_URL, {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          signal: controller ? controller.signal : undefined
+        });
+        const payload = await response.json().catch(() => null);
+        if (!response.ok || !payload || !payload.success || !Array.isArray(payload.lines)) return [];
+        return payload.lines.map(line => ({
+          ...line,
+          cruise_line_slug: slugify(line.cruise_line_name)
+        }));
+      } finally {
+        clearTimeout(timer);
+      }
     } catch (_error) {
       return [];
     }
@@ -603,10 +621,13 @@
       console.error("[drinks-calculator] Failed to load line", error);
       mount.innerHTML = `
         <section class="dc-calc">
-          <p class="dc-calc-status is-error">${escapeHtml(error.message || "Unable to load this calculator.")}</p>
+          <p class="dc-calc-status is-error">We couldn’t load the calculator information. Please try again shortly.</p>
+          <p><button type="button" class="dc-calc-button" id="dc-calc-retry">Retry</button></p>
           <p><a class="dc-calc-back" href="${escapeHtml(INTRO_PAGE_URL)}">← Back to intro</a></p>
         </section>
       `;
+      const retry = mount.querySelector("#dc-calc-retry");
+      if (retry) retry.addEventListener("click", () => init());
     }
   }
 

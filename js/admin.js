@@ -57,6 +57,18 @@ let calculatorVerifyLoading = false;
 let calculatorInlineSaving = false;
 let calculatorInlineSnapshot = null;
 let calculatorInlineStatus = "";
+let beveragePackages = [];
+let beveragePackageSearchQuery = "";
+let beveragePackageLineFilter = "all";
+let beveragePackageActiveFilter = "active";
+let activeBeveragePackageId = null;
+let showBeveragePackageForm = false;
+let showBeveragePackageNotesPanel = false;
+let beveragePackageMessage = "";
+let beveragePackageMessageTone = "";
+let beveragePackageInlineSaving = false;
+let beveragePackageInlineSnapshot = null;
+let beveragePackageInlineStatus = "";
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -305,6 +317,12 @@ async function loadAdminData() {
     .select("*, cruise_lines(id, name)")
     .order("created_at", { ascending: true });
 
+  const { data: beveragePackageRows, error: beveragePackagesError } = await supabaseClient
+    .from("cruise_line_beverage_packages")
+    .select("*, cruise_lines(id, name)")
+    .order("display_order", { ascending: true })
+    .order("package_name", { ascending: true });
+
   if (linesError) {
     console.error("Cruise line load error", linesError);
     cruiseLines = [];
@@ -385,6 +403,17 @@ async function loadAdminData() {
   } else {
     calculatorRates = calculatorRateRows || [];
   }
+
+  if (beveragePackagesError) {
+    console.warn("Beverage packages load skipped", beveragePackagesError);
+    beveragePackages = [];
+    if (!beveragePackageMessage) {
+      beveragePackageMessage = beveragePackagesError.message || "Beverage packages could not be loaded. Confirm the packages migration has been applied.";
+      beveragePackageMessageTone = "error";
+    }
+  } else {
+    beveragePackages = beveragePackageRows || [];
+  }
 }
 
 function setTab(tab) {
@@ -411,6 +440,14 @@ function setTab(tab) {
   calculatorInlineSaving = false;
   calculatorInlineSnapshot = null;
   calculatorInlineStatus = "";
+  activeBeveragePackageId = null;
+  showBeveragePackageForm = false;
+  showBeveragePackageNotesPanel = false;
+  beveragePackageMessage = "";
+  beveragePackageMessageTone = "";
+  beveragePackageInlineSaving = false;
+  beveragePackageInlineSnapshot = null;
+  beveragePackageInlineStatus = "";
   crmSyncMessage = "";
   crmSyncLoading = false;
   plannerPreviewMessage = "";
@@ -4459,6 +4496,440 @@ function renderCalculatorDataPanel() {
     </div>
 
     ${renderCalculatorRateForm()}
+
+    ${renderBeveragePackagesPanel()}
+  `;
+}
+
+function getFilteredBeveragePackages() {
+  const query = String(beveragePackageSearchQuery || "").trim().toLowerCase();
+  return beveragePackages
+    .filter(pkg => {
+      if (beveragePackageActiveFilter === "active" && pkg.active !== true) return false;
+      if (beveragePackageActiveFilter === "inactive" && pkg.active === true) return false;
+      if (beveragePackageLineFilter !== "all" && String(pkg.cruise_line_id) !== String(beveragePackageLineFilter)) return false;
+      if (!query) return true;
+      const name = String(pkg.package_name || "").toLowerCase();
+      const lineName = String(pkg.cruise_lines?.name || "").toLowerCase();
+      return name.includes(query) || lineName.includes(query);
+    })
+    .slice()
+    .sort((a, b) => {
+      const lineA = String(a.cruise_lines?.name || "");
+      const lineB = String(b.cruise_lines?.name || "");
+      const lineCmp = lineA.localeCompare(lineB, undefined, { sensitivity: "base" });
+      if (lineCmp) return lineCmp;
+      const orderA = Number(a.display_order) || 0;
+      const orderB = Number(b.display_order) || 0;
+      if (orderA !== orderB) return orderA - orderB;
+      return String(a.package_name || "").localeCompare(String(b.package_name || ""), undefined, { sensitivity: "base" });
+    });
+}
+
+function updateBeveragePackageSearchFilter(value) {
+  beveragePackageSearchQuery = value;
+  renderAdmin();
+}
+
+function setBeveragePackageActiveFilter(value) {
+  beveragePackageActiveFilter = value;
+  renderAdmin();
+}
+
+function setBeveragePackageLineFilter(value) {
+  beveragePackageLineFilter = value;
+  renderAdmin();
+}
+
+function startAddBeveragePackage() {
+  showBeveragePackageForm = true;
+  showBeveragePackageNotesPanel = false;
+  activeBeveragePackageId = null;
+  beveragePackageMessage = "";
+  beveragePackageMessageTone = "";
+  renderAdmin();
+}
+
+function cancelBeveragePackageForm() {
+  showBeveragePackageForm = false;
+  beveragePackageMessage = "";
+  beveragePackageMessageTone = "";
+  renderAdmin();
+}
+
+async function saveBeveragePackage() {
+  const cruiseLineId = document.getElementById("beveragePackageCruiseLine")?.value;
+  const packageName = String(document.getElementById("beveragePackageName")?.value || "").trim();
+  const priceRaw = document.getElementById("beveragePackagePrice")?.value;
+  const currency = String(document.getElementById("beveragePackageCurrency")?.value || "USD").trim().toUpperCase();
+  const wifiIncluded = document.getElementById("beveragePackageWifi")?.checked === true;
+  const gratuitiesIncluded = document.getElementById("beveragePackageGrat")?.checked === true;
+  const displayOrder = Number(document.getElementById("beveragePackageOrder")?.value || 0);
+  const notes = String(document.getElementById("beveragePackageNotes")?.value || "").trim() || null;
+  const lastVerified = String(document.getElementById("beveragePackageVerified")?.value || "").trim() || null;
+  const active = document.getElementById("beveragePackageActive")?.checked !== false;
+
+  if (!cruiseLineId) {
+    beveragePackageMessage = "Choose a cruise line.";
+    beveragePackageMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+  if (!packageName) {
+    beveragePackageMessage = "Package name is required.";
+    beveragePackageMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+  if (!currency) {
+    beveragePackageMessage = "Currency is required.";
+    beveragePackageMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+
+  const parsedPrice = parseCalculatorNonNegativeInput(priceRaw, "Typical daily price");
+  if (!parsedPrice.ok) {
+    beveragePackageMessage = parsedPrice.error;
+    beveragePackageMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+
+  const { data, error } = await supabaseClient
+    .from("cruise_line_beverage_packages")
+    .insert({
+      cruise_line_id: Number(cruiseLineId),
+      package_name: packageName,
+      typical_daily_price: parsedPrice.value,
+      currency,
+      wifi_included: wifiIncluded,
+      gratuities_included: gratuitiesIncluded,
+      display_order: Number.isFinite(displayOrder) ? displayOrder : 0,
+      notes,
+      last_verified_at: lastVerified,
+      active
+    })
+    .select("*, cruise_lines(id, name)");
+
+  if (error) {
+    beveragePackageMessage = error.message || "Unable to add package.";
+    beveragePackageMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+
+  showBeveragePackageForm = false;
+  beveragePackageMessage = `Added ${packageName}.`;
+  beveragePackageMessageTone = "success";
+  if (data && data[0]) beveragePackages = [...beveragePackages, data[0]];
+  else await loadAdminData();
+  renderAdmin();
+}
+
+function collectActiveBeveragePackagePayload() {
+  const name = String(document.getElementById("bpName")?.value || "").trim();
+  const priceRaw = document.getElementById("bpPrice")?.value;
+  const currency = String(document.getElementById("bpCurrency")?.value || "USD").trim().toUpperCase();
+  const wifiIncluded = document.getElementById("bpWifi")?.checked === true;
+  const gratuitiesIncluded = document.getElementById("bpGrat")?.checked === true;
+  const displayOrder = Number(document.getElementById("bpOrder")?.value || 0);
+  const lastVerified = String(document.getElementById("bpVerified")?.value || "").trim() || null;
+  const active = document.getElementById("bpActive")?.checked === true;
+  const notes = showBeveragePackageNotesPanel
+    ? (String(document.getElementById("bpNotesEditor")?.value || "").trim() || null)
+    : undefined;
+
+  if (!name) return { ok: false, error: "Package name is required." };
+  if (!currency) return { ok: false, error: "Currency is required." };
+  const parsedPrice = parseCalculatorNonNegativeInput(priceRaw, "Typical daily price");
+  if (!parsedPrice.ok) return parsedPrice;
+
+  const payload = {
+    package_name: name,
+    typical_daily_price: parsedPrice.value,
+    currency,
+    wifi_included: wifiIncluded,
+    gratuities_included: gratuitiesIncluded,
+    display_order: Number.isFinite(displayOrder) ? displayOrder : 0,
+    last_verified_at: lastVerified,
+    active
+  };
+  if (notes !== undefined) payload.notes = notes;
+  return { ok: true, payload };
+}
+
+async function saveActiveBeveragePackageRow({ deactivate = false } = {}) {
+  if (!activeBeveragePackageId || beveragePackageInlineSaving) return true;
+  const collected = collectActiveBeveragePackagePayload();
+  if (!collected.ok) {
+    beveragePackageInlineStatus = collected.error;
+    beveragePackageMessageTone = "error";
+    const status = document.getElementById("beverage-package-inline-status");
+    if (status) {
+      status.textContent = collected.error;
+      status.className = "calc-inline-status is-error";
+    }
+    return false;
+  }
+
+  beveragePackageInlineSaving = true;
+  beveragePackageInlineStatus = "Saving…";
+  const statusEl = document.getElementById("beverage-package-inline-status");
+  if (statusEl) {
+    statusEl.textContent = "Saving…";
+    statusEl.className = "calc-inline-status";
+  }
+
+  const { data, error } = await supabaseClient
+    .from("cruise_line_beverage_packages")
+    .update(collected.payload)
+    .eq("id", activeBeveragePackageId)
+    .select("*, cruise_lines(id, name)");
+
+  beveragePackageInlineSaving = false;
+
+  if (error) {
+    beveragePackageInlineStatus = error.message || "Save failed.";
+    beveragePackageMessageTone = "error";
+    if (statusEl) {
+      statusEl.textContent = beveragePackageInlineStatus;
+      statusEl.className = "calc-inline-status is-error";
+    }
+    return false;
+  }
+
+  const saved = data && data[0];
+  if (saved) {
+    beveragePackages = beveragePackages.map(pkg => (pkg.id === saved.id ? saved : pkg));
+  }
+  beveragePackageInlineStatus = "Saved";
+  beveragePackageMessageTone = "success";
+  if (statusEl) {
+    statusEl.textContent = "Saved";
+    statusEl.className = "calc-inline-status is-success";
+  }
+  if (deactivate) {
+    activeBeveragePackageId = null;
+    beveragePackageInlineSnapshot = null;
+    showBeveragePackageNotesPanel = false;
+    renderAdmin();
+  }
+  return true;
+}
+
+async function activateBeveragePackageRow(packageId) {
+  if (activeBeveragePackageId && String(activeBeveragePackageId) !== String(packageId)) {
+    const saved = await saveActiveBeveragePackageRow({ deactivate: false });
+    if (!saved) return;
+  }
+  activeBeveragePackageId = packageId;
+  showBeveragePackageForm = false;
+  const pkg = beveragePackages.find(row => String(row.id) === String(packageId));
+  beveragePackageInlineSnapshot = pkg ? JSON.stringify(pkg) : null;
+  renderAdmin();
+}
+
+function openBeveragePackageNotes(packageId) {
+  activateBeveragePackageRow(packageId).then(() => {
+    showBeveragePackageNotesPanel = true;
+    renderAdmin();
+  });
+}
+
+function renderBeveragePackageNotesPanel() {
+  if (!showBeveragePackageNotesPanel || !activeBeveragePackageId) return "";
+  const pkg = beveragePackages.find(row => String(row.id) === String(activeBeveragePackageId));
+  if (!pkg) return "";
+  return `
+    <div class="calc-notes-panel">
+      <h4>Package notes — ${esc(pkg.package_name)}</h4>
+      <div class="admin-field">
+        <label for="bpNotesEditor">Notes</label>
+        <textarea id="bpNotesEditor" rows="4">${esc(pkg.notes || "")}</textarea>
+      </div>
+      <div class="admin-actions">
+        <button class="admin-button small" onclick="saveActiveBeveragePackageRow({ deactivate: true })">Save notes</button>
+        <button class="admin-button secondary small" onclick="showBeveragePackageNotesPanel=false; renderAdmin()">Close</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderBeveragePackageForm() {
+  if (!showBeveragePackageForm) return "";
+  const options = cruiseLines
+    .slice()
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }))
+    .map(line => `<option value="${esc(line.id)}">${esc(line.name)}</option>`)
+    .join("");
+  const messageClass = beveragePackageMessageTone === "success" ? "admin-success" : beveragePackageMessageTone === "error" ? "admin-error" : "";
+  return `
+    <div class="admin-card" style="margin-top:18px">
+      <h3>Add Package</h3>
+      <div class="admin-grid-2">
+        <div class="admin-field"><label for="beveragePackageCruiseLine">Cruise Line</label><select id="beveragePackageCruiseLine"><option value="">Select…</option>${options}</select></div>
+        <div class="admin-field"><label for="beveragePackageName">Package Name</label><input id="beveragePackageName" type="text"></div>
+        <div class="admin-field"><label for="beveragePackagePrice">Typical Daily Price</label><input id="beveragePackagePrice" type="number" min="0" step="0.01"></div>
+        <div class="admin-field"><label for="beveragePackageCurrency">Currency</label><input id="beveragePackageCurrency" type="text" value="USD"></div>
+        <div class="admin-field"><label for="beveragePackageOrder">Display Order</label><input id="beveragePackageOrder" type="number" step="1" value="0"></div>
+        <div class="admin-field"><label for="beveragePackageVerified">Last Verified</label><input id="beveragePackageVerified" type="date"></div>
+      </div>
+      <div class="admin-field"><label><input id="beveragePackageWifi" type="checkbox"> Wi-Fi Included</label></div>
+      <div class="admin-field"><label><input id="beveragePackageGrat" type="checkbox"> Gratuities Included</label></div>
+      <div class="admin-field"><label><input id="beveragePackageActive" type="checkbox" checked> Active</label></div>
+      <div class="admin-field"><label for="beveragePackageNotes">Notes</label><textarea id="beveragePackageNotes" rows="3"></textarea></div>
+      <div id="beverage-package-form-message" class="admin-message ${messageClass}">${esc(beveragePackageMessage)}</div>
+      <div class="admin-actions">
+        <button class="admin-button" onclick="saveBeveragePackage()">Save Package</button>
+        <button class="admin-button secondary" onclick="cancelBeveragePackageForm()">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderBeveragePackageRow(pkg) {
+  const isActive = String(activeBeveragePackageId) === String(pkg.id);
+  const lineName = pkg.cruise_lines?.name || "—";
+  if (!isActive) {
+    return `
+      <tr class="calc-rate-row" onclick="activateBeveragePackageRow('${esc(pkg.id)}')">
+        <td class="calc-rate-sticky-col calc-rate-left">${esc(lineName)}</td>
+        <td class="calc-rate-left">${esc(pkg.package_name)}</td>
+        <td class="calc-rate-center">${pkg.typical_daily_price == null ? '<span class="calc-rate-null">—</span>' : esc(pkg.typical_daily_price)}</td>
+        <td class="calc-rate-center">${esc(pkg.currency || "USD")}</td>
+        <td class="calc-rate-center">${pkg.wifi_included ? "Yes" : "No"}</td>
+        <td class="calc-rate-center">${pkg.gratuities_included ? "Yes" : "No"}</td>
+        <td class="calc-rate-center">${pkg.last_verified_at ? esc(pkg.last_verified_at) : '<span class="calc-rate-null">—</span>'}</td>
+        <td class="calc-rate-center">${pkg.active ? "Yes" : "No"}</td>
+        <td class="calc-rate-center">${esc(pkg.display_order ?? 0)}</td>
+        <td class="calc-rate-center"><button type="button" class="admin-button secondary small" onclick="event.stopPropagation(); openBeveragePackageNotes('${esc(pkg.id)}')">Notes</button></td>
+      </tr>
+    `;
+  }
+
+  return `
+    <tr class="calc-rate-row is-editing" data-beverage-package-editing="true">
+      <td class="calc-rate-sticky-col calc-rate-left">${esc(lineName)}</td>
+      <td class="calc-rate-left"><input id="bpName" type="text" value="${esc(pkg.package_name || "")}"></td>
+      <td class="calc-rate-center"><input id="bpPrice" type="number" min="0" step="0.01" value="${pkg.typical_daily_price == null ? "" : esc(pkg.typical_daily_price)}"></td>
+      <td class="calc-rate-center"><input id="bpCurrency" type="text" value="${esc(pkg.currency || "USD")}"></td>
+      <td class="calc-rate-center"><input id="bpWifi" type="checkbox" ${pkg.wifi_included ? "checked" : ""}></td>
+      <td class="calc-rate-center"><input id="bpGrat" type="checkbox" ${pkg.gratuities_included ? "checked" : ""}></td>
+      <td class="calc-rate-center"><input id="bpVerified" type="date" value="${esc(pkg.last_verified_at || "")}"></td>
+      <td class="calc-rate-center"><input id="bpActive" type="checkbox" ${pkg.active ? "checked" : ""}></td>
+      <td class="calc-rate-center"><input id="bpOrder" type="number" step="1" value="${esc(pkg.display_order ?? 0)}"></td>
+      <td class="calc-rate-center"><button type="button" class="admin-button secondary small" onclick="openBeveragePackageNotes('${esc(pkg.id)}')">Notes</button></td>
+    </tr>
+  `;
+}
+
+function bindBeveragePackageGridInteractions() {
+  if (window.__dcBeveragePackageGridBound) return;
+  window.__dcBeveragePackageGridBound = true;
+
+  document.addEventListener("pointerdown", event => {
+    if (activeTab !== "calculator-data" || !activeBeveragePackageId) return;
+    if (event.target.closest("[data-beverage-package-editing='true']")) return;
+    if (event.target.closest(".calc-notes-panel")) return;
+    if (event.target.closest("#beveragePackageSearch, #beveragePackageLineFilter, #beveragePackageActiveFilter")) return;
+    saveActiveBeveragePackageRow({ deactivate: true });
+  });
+
+  document.addEventListener("keydown", event => {
+    if (activeTab !== "calculator-data" || !activeBeveragePackageId) return;
+    if (event.key === "Enter" && event.target.closest("[data-beverage-package-editing='true']")) {
+      event.preventDefault();
+      saveActiveBeveragePackageRow({ deactivate: true });
+    }
+    if (event.key === "Escape" && event.target.closest("[data-beverage-package-editing='true']")) {
+      activeBeveragePackageId = null;
+      showBeveragePackageNotesPanel = false;
+      renderAdmin();
+    }
+  });
+}
+
+function renderBeveragePackagesPanel() {
+  const filtered = getFilteredBeveragePackages();
+  const panelMessageClass = beveragePackageMessageTone === "success"
+    ? "admin-success"
+    : beveragePackageMessageTone === "error"
+      ? "admin-error"
+      : "";
+  const lineOptions = cruiseLines
+    .slice()
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), undefined, { sensitivity: "base" }))
+    .map(line => `<option value="${esc(line.id)}" ${String(beveragePackageLineFilter) === String(line.id) ? "selected" : ""}>${esc(line.name)}</option>`)
+    .join("");
+  const statusText = beveragePackageInlineStatus || (!showBeveragePackageForm ? beveragePackageMessage : "");
+
+  queueMicrotask(() => bindBeveragePackageGridInteractions());
+
+  return `
+    <div class="admin-card calc-data-shell" style="margin-top:22px">
+      <div class="admin-list-top">
+        <div>
+          <h3>Beverage Packages</h3>
+          <p class="admin-muted">One row per package. Click a row to edit. Changes save when you leave the row or press Enter.</p>
+        </div>
+        <div class="calc-rate-actions">
+          <button class="admin-button small" onclick="startAddBeveragePackage()">Add Package</button>
+        </div>
+      </div>
+
+      ${renderBeveragePackageNotesPanel()}
+
+      <div class="calc-rate-toolbar">
+        <div class="admin-field calc-rate-search">
+          <label class="admin-visually-hidden" for="beveragePackageSearch">Search packages</label>
+          <input id="beveragePackageSearch" type="search" value="${esc(beveragePackageSearchQuery)}" placeholder="Search packages…" autocomplete="off" oninput="updateBeveragePackageSearchFilter(this.value)">
+        </div>
+        <div class="admin-field calc-rate-filter">
+          <label for="beveragePackageLineFilter">Cruise line</label>
+          <select id="beveragePackageLineFilter" onchange="setBeveragePackageLineFilter(this.value)">
+            <option value="all" ${beveragePackageLineFilter === "all" ? "selected" : ""}>All</option>
+            ${lineOptions}
+          </select>
+        </div>
+        <div class="admin-field calc-rate-filter">
+          <label for="beveragePackageActiveFilter">Status</label>
+          <select id="beveragePackageActiveFilter" onchange="setBeveragePackageActiveFilter(this.value)">
+            <option value="active" ${beveragePackageActiveFilter === "active" ? "selected" : ""}>Active</option>
+            <option value="inactive" ${beveragePackageActiveFilter === "inactive" ? "selected" : ""}>Inactive</option>
+            <option value="all" ${beveragePackageActiveFilter === "all" ? "selected" : ""}>All</option>
+          </select>
+        </div>
+        <div id="beverage-package-inline-status" class="calc-inline-status ${beveragePackageMessageTone === "success" ? "is-success" : beveragePackageMessageTone === "error" ? "is-error" : ""}" aria-live="polite">${esc(statusText)}</div>
+      </div>
+
+      <div class="admin-message ${showBeveragePackageForm ? "" : panelMessageClass}">${showBeveragePackageForm ? "" : esc(beveragePackageMessage)}</div>
+
+      <div class="calc-rate-grid-wrap" data-beverage-package-grid>
+        <table class="calc-rate-grid" aria-label="Cruise line beverage packages">
+          <thead>
+            <tr>
+              <th scope="col" class="calc-rate-sticky-col calc-rate-left">Cruise Line</th>
+              <th scope="col" class="calc-rate-left">Package Name</th>
+              <th scope="col" class="calc-rate-center">Typical Daily Price</th>
+              <th scope="col" class="calc-rate-center">Currency</th>
+              <th scope="col" class="calc-rate-center">Wi-Fi Included</th>
+              <th scope="col" class="calc-rate-center">Gratuities Included</th>
+              <th scope="col" class="calc-rate-center">Last Verified</th>
+              <th scope="col" class="calc-rate-center">Active</th>
+              <th scope="col" class="calc-rate-center">Display Order</th>
+              <th scope="col" class="calc-rate-center">Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filtered.length ? filtered.map(renderBeveragePackageRow).join("") : `<tr><td colspan="10" class="calc-rate-empty">No beverage packages match this view.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <p class="admin-small">Package prices are labelled as typical in the public calculator. Deactivate a package instead of deleting it when retiring an offer.</p>
+    </div>
+
+    ${renderBeveragePackageForm()}
   `;
 }
 

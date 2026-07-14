@@ -1543,6 +1543,14 @@
   text-align: left;
 }
 
+.calc-rate-grid .calc-rate-left {
+  text-align: left;
+}
+
+.calc-rate-grid .calc-rate-center {
+  text-align: center;
+}
+
 .calc-rate-grid thead .calc-rate-sticky-col {
   z-index: 3;
   background: #f7f7f7;
