@@ -3,42 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Drinks Calculator V2 Preview | 101cruise</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 28px 16px 64px;
-      background: #fff;
-      color: #1f2a28;
-      font-family: "Halyard Display", "Avenir Next", "Segoe UI", sans-serif;
-    }
-  </style>
-</head>
-<body>
-  <div id="101cruise-drinks-calculator-v2" data-dc-calculator-v2>
-    <p style="max-width:960px;margin:0 auto;color:#5f6d69;">Loading calculator…</p>
-  </div>
+  <title>Drinks Calculator | 101cruise</title>
+  <meta http-equiv="refresh" content="0; url=/drinks-calculator">
   <script>
     (function () {
-      var path = location.pathname || "/";
-      var base = /\/drinks-calculator-v2\/?$/.test(path)
-        ? "/public-tools/drinks-calculator/"
-        : (path.replace(/[^/]*$/, "") || "./");
-      var css = document.createElement("link");
-      css.rel = "stylesheet";
-      css.href = base + "calculator-v2.css";
-      document.head.appendChild(css);
-      var s = document.createElement("script");
-      s.src = base + "calculator-v2.js";
-      s.onerror = function () {
-        var mount = document.getElementById("101cruise-drinks-calculator-v2");
-        if (mount) {
-          mount.innerHTML =
-            '<p style="max-width:960px;margin:0 auto;color:#8a2f2f;">We couldn’t load the calculator information. Please try again shortly.</p>';
-        }
-      };
-      document.body.appendChild(s);
+      var search = window.location.search || "";
+      window.location.replace("/drinks-calculator" + search);
     })();
   </script>
+</head>
+<body>
+  <p style="font-family:sans-serif;padding:24px;">Redirecting to the drinks calculator… <a href="/drinks-calculator">Continue</a></p>
 </body>
 </html>
