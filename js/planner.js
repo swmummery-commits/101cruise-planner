@@ -422,6 +422,7 @@ async function accessMyCruise() {
     const session = { token: data.token, booking: data.booking };
     storeCustomerSession(session, remember);
     activateCustomerSession(session);
+    trackMyCruiseEvent("dashboard", "login");
     await renderDashboard();
   } catch (error) {
     if (message) message.textContent = error.message || "We couldn't find a booking matching those details. Please check the booking number and lead traveller surname.";
@@ -430,11 +431,58 @@ async function accessMyCruise() {
 }
 
 function changeCustomerBooking() {
+  trackMyCruiseEvent("dashboard", "logout");
   clearCustomerSession();
   activePackingProfileKey = null;
   packingV2Profiles = [];
   packingV2State = [];
   renderCustomerAccess();
+}
+
+function getCruiseUsageContext() {
+  const cruise = customerCruise || adminPreviewCruise || null;
+  const booking = customerBooking || cruise?._preview_booking || null;
+  const first = String(booking?.passenger1_first_name || currentProfile?.first_name || "").trim();
+  const last = String(booking?.passenger1_last_name || currentProfile?.last_name || "").trim();
+  const customerLabel = [first, last].filter(Boolean).join(" ") || null;
+  const bookingReference =
+    booking?.booking_reference ||
+    cruise?.booking_reference ||
+    null;
+  const metadata = {};
+  if (customerLabel) metadata.customer_label = customerLabel;
+  if (cruise?.cruise_line) metadata.cruise_line = cruise.cruise_line;
+  if (cruise?.cruise_name || cruise?.name) metadata.cruise_name = cruise.cruise_name || cruise.name;
+  return {
+    surface: "my_cruise",
+    booking_reference: bookingReference ? String(bookingReference).trim().toUpperCase() : null,
+    user_id: currentUser?.id && !String(currentUser.id).startsWith("customer:") ? currentUser.id : null,
+    metadata
+  };
+}
+
+if (typeof window !== "undefined") {
+  window.getCruiseUsageContext = getCruiseUsageContext;
+}
+
+function trackMyCruisePage(moduleName) {
+  try {
+    if (window.CruiseUsage && typeof window.CruiseUsage.trackPageOpen === "function") {
+      window.CruiseUsage.trackPageOpen(moduleName);
+    }
+  } catch (_error) {
+    /* never block the planner on analytics */
+  }
+}
+
+function trackMyCruiseEvent(moduleName, eventType, metadata) {
+  try {
+    if (window.CruiseUsage && typeof window.CruiseUsage.trackEvent === "function") {
+      window.CruiseUsage.trackEvent(moduleName, eventType, metadata);
+    }
+  } catch (_error) {
+    /* ignore */
+  }
 }
 
 async function customerProgressRequest(action, payload = {}) {
@@ -1983,6 +2031,7 @@ function initialiseDashboardRouteMap() {
 
 async function renderDashboard() {
   clearCountdownTimer();
+  trackMyCruisePage("dashboard");
 
   let safeCruises = [];
   let mainCruise = null;
@@ -2422,6 +2471,7 @@ function saveChecklistPdf() {
 
 async function renderChecklist() {
   clearCountdownTimer();
+  trackMyCruisePage("preparation");
 
   const cruise = await loadCurrentCruise();
 
@@ -2827,6 +2877,7 @@ function renderBookingInsuranceSection(insurance) {
 
 async function renderBookingDetails() {
   clearCountdownTimer();
+  trackMyCruisePage("booking");
 
   const cruise = await loadCurrentCruise();
 
@@ -2985,6 +3036,7 @@ function renderDocumentCard(document) {
 
 async function renderDocuments() {
   clearCountdownTimer();
+  trackMyCruisePage("documents");
   const cruise = await loadCurrentCruise();
   app.innerHTML = `
     ${renderAdminPreviewBanner(cruise)}
@@ -3087,6 +3139,7 @@ async function uploadCustomerDocument() {
       notes
     });
     closeDocumentUpload();
+    trackMyCruiseEvent("documents", "document_upload");
     await renderDocuments();
   } catch (error) {
     console.error("Document upload error", error);
@@ -4263,6 +4316,7 @@ function renderPackingProfileTabs(profiles) {
 
 async function renderPackingPlanner() {
   clearCountdownTimer();
+  trackMyCruisePage("packing");
   const cruise = await loadCurrentCruise();
   if (!cruise) {
     app.innerHTML = `<div class="planner-card"><button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button><h2>Packing Assistant</h2><p>Add a cruise before generating your packing list.</p></div>`;
@@ -4664,6 +4718,7 @@ function renderBudgetCategoriesGrid() {
 
 async function renderBudgetPlanner() {
   clearCountdownTimer();
+  trackMyCruisePage("budget");
   const cruise = await loadCurrentCruise();
   if (!cruise) { app.innerHTML = `<div class="planner-card"><button class="planner-button secondary" onclick="renderDashboard()">← Back to Dashboard</button><h2>Budget</h2><p>Add a cruise before creating your holiday budget.</p></div>`; return; }
   activeBudget = await loadBudget(cruise);
@@ -5297,6 +5352,7 @@ async function initialiseShipPageMotion() {
 
 async function renderTheShip() {
   clearCountdownTimer();
+  trackMyCruisePage("the_ship");
 
   const cruise = await loadCurrentCruise();
   const shipName = getBookingShipName(cruise);

@@ -69,6 +69,15 @@ let beveragePackageMessageTone = "";
 let beveragePackageInlineSaving = false;
 let beveragePackageInlineSnapshot = null;
 let beveragePackageInlineStatus = "";
+let usageInsightsRange = "7d";
+let usageInsightsCustomFrom = "";
+let usageInsightsCustomTo = "";
+let usageInsightsSearch = "";
+let usageInsightsData = null;
+let usageInsightsLoading = false;
+let usageInsightsMessage = "";
+let usageInsightsSelectedCustomerKey = "";
+let usageInsightsPanelCustomer = null;
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -496,6 +505,9 @@ function setTab(tab) {
   if (tab === "calculator-data") {
     refreshBeveragePackagesGrid();
   }
+  if (tab === "usage-insights") {
+    loadUsageInsights();
+  }
 }
 
 function renderAdmin() {
@@ -525,6 +537,7 @@ function renderAdmin() {
       <button class="admin-tab ${activeTab === "crm-sync" ? "active" : ""}" onclick="setTab('crm-sync')">CRM Sync</button>
       <button class="admin-tab ${activeTab === "planner-preview" ? "active" : ""}" onclick="setTab('planner-preview')">Planner Preview</button>
       <button class="admin-tab ${activeTab === "calculator-data" ? "active" : ""}" onclick="setTab('calculator-data')">Drinks Calculator</button>
+      <button class="admin-tab ${activeTab === "usage-insights" ? "active" : ""}" onclick="setTab('usage-insights')">Usage & Insights</button>
     </div>
 
     ${activeTab === "cruise-lines" ? renderCruiseLinesPanel() : ""}
@@ -535,6 +548,7 @@ function renderAdmin() {
     ${activeTab === "crm-sync" ? renderCrmSyncPanel() : ""}
     ${activeTab === "planner-preview" ? renderPlannerPreviewPanel() : ""}
     ${activeTab === "calculator-data" ? renderCalculatorDataPanel() : ""}
+    ${activeTab === "usage-insights" ? renderUsageInsightsPanel() : ""}
   `;
 }
 
@@ -4996,6 +5010,417 @@ function renderBeveragePackagesPanel() {
     </div>
 
     ${renderBeveragePackageForm()}
+  `;
+}
+
+function getCruiseUsageContext() {
+  return {
+    surface: "admin",
+    user_id: currentUser?.id || null,
+    booking_reference: null,
+    metadata: { source: "admin" }
+  };
+}
+
+if (typeof window !== "undefined") {
+  window.getCruiseUsageContext = getCruiseUsageContext;
+}
+
+function formatUsageDateTime(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  const now = new Date();
+  const sameDay =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  if (sameDay) {
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const isYesterday =
+    date.getFullYear() === yesterday.getFullYear() &&
+    date.getMonth() === yesterday.getMonth() &&
+    date.getDate() === yesterday.getDate();
+  if (isYesterday) return "Yesterday";
+  const daysAgo = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+  if (daysAgo >= 0 && daysAgo < 7) {
+    return date.toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+  }
+  return date.toLocaleDateString([], {
+    day: "numeric",
+    month: "short",
+    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined
+  });
+}
+
+function formatUsageTrend(trend) {
+  if (trend === "up") return `<span class="usage-trend is-up">↑ Up</span>`;
+  if (trend === "down") return `<span class="usage-trend is-down">↓ Down</span>`;
+  return `<span class="usage-trend is-flat">→ Flat</span>`;
+}
+
+function usageInsightsQuery() {
+  const params = new URLSearchParams({ range: usageInsightsRange || "7d" });
+  if (usageInsightsRange === "custom") {
+    if (usageInsightsCustomFrom) params.set("from", usageInsightsCustomFrom);
+    if (usageInsightsCustomTo) params.set("to", usageInsightsCustomTo);
+  }
+  return params.toString();
+}
+
+async function loadUsageInsights() {
+  usageInsightsLoading = true;
+  usageInsightsMessage = "";
+  renderAdmin();
+
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    const token = data.session?.access_token || "";
+    const response = await fetch(`/.netlify/functions/usage-insights?${usageInsightsQuery()}`, {
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`
+      }
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || !payload?.success) {
+      throw new Error(payload?.message || "Unable to load usage insights.");
+    }
+    usageInsightsData = payload;
+    if (usageInsightsSelectedCustomerKey) {
+      const match = (payload.customers || []).find(
+        row => row.key === usageInsightsSelectedCustomerKey || row.booking_reference === usageInsightsSelectedCustomerKey
+      );
+      usageInsightsPanelCustomer = match || null;
+    }
+  } catch (error) {
+    usageInsightsData = null;
+    usageInsightsMessage = error.message || "Unable to load usage insights.";
+  } finally {
+    usageInsightsLoading = false;
+    renderAdmin();
+  }
+}
+
+function setUsageInsightsRange(range) {
+  usageInsightsRange = range;
+  if (range !== "custom") {
+    loadUsageInsights();
+  } else {
+    renderAdmin();
+  }
+}
+
+function applyUsageInsightsCustomRange() {
+  usageInsightsCustomFrom = document.getElementById("usageInsightsFrom")?.value || "";
+  usageInsightsCustomTo = document.getElementById("usageInsightsTo")?.value || "";
+  if (!usageInsightsCustomFrom || !usageInsightsCustomTo) {
+    usageInsightsMessage = "Choose both a start and end date.";
+    renderAdmin();
+    return;
+  }
+  usageInsightsRange = "custom";
+  loadUsageInsights();
+}
+
+function setUsageInsightsSearch(value) {
+  usageInsightsSearch = value;
+  renderAdmin();
+}
+
+function openUsageCustomerPanel(key) {
+  usageInsightsSelectedCustomerKey = key;
+  usageInsightsPanelCustomer =
+    (usageInsightsData?.customers || []).find(row => row.key === key || row.booking_reference === key) || null;
+  renderAdmin();
+}
+
+function closeUsageCustomerPanel() {
+  usageInsightsSelectedCustomerKey = "";
+  usageInsightsPanelCustomer = null;
+  renderAdmin();
+}
+
+function renderUsageInsightsPanel() {
+  const data = usageInsightsData;
+  const summary = data?.summary || {};
+  const toolUsage = data?.tool_usage || [];
+  const publicTools = data?.public_tools || [];
+  const recent = data?.recent_activity || [];
+  const search = String(usageInsightsSearch || "").trim().toLowerCase();
+  const customers = (data?.customers || []).filter(row => {
+    if (!search) return true;
+    const haystack = [
+      row.customer,
+      row.booking_reference,
+      row.cruise,
+      row.cruise_line,
+      ...(row.tools_used || [])
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(search);
+  });
+
+  const rangeButtons = [
+    ["today", "Today"],
+    ["7d", "Last 7 Days"],
+    ["30d", "Last 30 Days"],
+    ["90d", "Last 90 Days"],
+    ["custom", "Custom"]
+  ]
+    .map(
+      ([value, label]) =>
+        `<button type="button" class="usage-range-btn ${usageInsightsRange === value ? "active" : ""}" onclick="setUsageInsightsRange('${value}')">${label}</button>`
+    )
+    .join("");
+
+  return `
+    <div class="usage-insights-page ${usageInsightsPanelCustomer ? "has-panel" : ""}">
+      <div class="admin-card usage-insights-header">
+        <div class="admin-list-top">
+          <div>
+            <h3>Usage & Insights</h3>
+            <p class="admin-muted">Customer engagement across My Cruise and public tools. Engagement only — never tool contents.</p>
+          </div>
+          <button class="admin-button secondary small" onclick="loadUsageInsights()" ${usageInsightsLoading ? "disabled" : ""}>${usageInsightsLoading ? "Refreshing…" : "Refresh"}</button>
+        </div>
+        <div class="usage-range-row" role="group" aria-label="Date range">
+          ${rangeButtons}
+        </div>
+        ${
+          usageInsightsRange === "custom"
+            ? `<div class="usage-custom-range">
+                <label>From <input type="date" id="usageInsightsFrom" value="${esc(usageInsightsCustomFrom)}"></label>
+                <label>To <input type="date" id="usageInsightsTo" value="${esc(usageInsightsCustomTo)}"></label>
+                <button type="button" class="admin-button black small" onclick="applyUsageInsightsCustomRange()">Apply</button>
+              </div>`
+            : ""
+        }
+        ${usageInsightsMessage ? `<div class="admin-message admin-error">${esc(usageInsightsMessage)}</div>` : ""}
+        ${
+          data?.reporting?.incomplete
+            ? `<div class="usage-incomplete-warning" role="status">This report may be incomplete because the selected date range contains more activity than the current reporting limit. Choose a shorter date range.</div>`
+            : ""
+        }
+      </div>
+
+      <div class="usage-summary-grid">
+        ${renderUsageSummaryCard("Active Customers", summary.active_customers ?? "—")}
+        ${renderUsageSummaryCard("Total Sessions", summary.total_sessions ?? "—")}
+        ${renderUsageSummaryCard("Most Used Tool", summary.most_used_tool || "—")}
+        ${renderUsageSummaryCard("Customers Inactive 30+ Days", summary.inactive_30_days ?? "—")}
+        ${renderUsageSummaryCard("Public Calculator Uses", summary.public_calculator_uses ?? "—")}
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-list-top">
+          <div>
+            <h3>Tool Usage</h3>
+            <p class="admin-muted">Which tools customers are actually using.</p>
+          </div>
+        </div>
+        <div class="usage-table-wrap">
+          <table class="usage-table">
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Unique Customers</th>
+                <th>Sessions</th>
+                <th>Avg Sessions / Customer</th>
+                <th>Last Used</th>
+                <th>Trend</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                usageInsightsLoading
+                  ? `<tr><td colspan="6" class="usage-empty">Loading…</td></tr>`
+                  : toolUsage.length
+                    ? toolUsage
+                        .map(
+                          row => `<tr>
+                            <td>${esc(row.tool)}</td>
+                            <td>${esc(row.unique_customers)}</td>
+                            <td>${esc(row.sessions)}</td>
+                            <td>${esc(row.avg_sessions_per_customer)}</td>
+                            <td>${esc(formatUsageDateTime(row.last_used))}</td>
+                            <td>${formatUsageTrend(row.trend)}</td>
+                          </tr>`
+                        )
+                        .join("")
+                    : `<tr><td colspan="6" class="usage-empty">No tool usage in this range yet.</td></tr>`
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-list-top">
+          <div>
+            <h3>Customer Engagement</h3>
+            <p class="admin-muted">Search customers and open recent activity. Private tool content is never shown.</p>
+          </div>
+        </div>
+        <div class="admin-field usage-search-field">
+          <label for="usageCustomerSearch">Search</label>
+          <input id="usageCustomerSearch" type="search" placeholder="Name, booking or cruise" value="${esc(usageInsightsSearch)}" oninput="setUsageInsightsSearch(this.value)">
+        </div>
+        <div class="usage-table-wrap">
+          <table class="usage-table usage-customers-table">
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>Booking</th>
+                <th>Cruise</th>
+                <th>Last Active</th>
+                <th>Tools Used</th>
+                <th>Visits</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                usageInsightsLoading
+                  ? `<tr><td colspan="6" class="usage-empty">Loading…</td></tr>`
+                  : customers.length
+                    ? customers
+                        .map(row => {
+                          const keyArg = JSON.stringify(String(row.key || ""));
+                          return `<tr class="usage-customer-row ${usageInsightsSelectedCustomerKey === row.key ? "is-selected" : ""}" onclick='openUsageCustomerPanel(${keyArg})'>
+                            <td>${esc(row.customer)}</td>
+                            <td>${esc(row.booking_reference || "—")}</td>
+                            <td>${esc(row.cruise || row.cruise_line || "—")}</td>
+                            <td>${esc(formatUsageDateTime(row.last_active))}</td>
+                            <td><span class="usage-tools">${esc((row.tools_used || []).join(", ") || "—")}</span></td>
+                            <td>${esc(row.visits)}</td>
+                          </tr>`;
+                        })
+                        .join("")
+                    : `<tr><td colspan="6" class="usage-empty">No customer engagement in this range yet.</td></tr>`
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-list-top">
+          <div>
+            <h3>Public Tools</h3>
+            <p class="admin-muted">Anonymous engagement with calculators and public tools.</p>
+          </div>
+        </div>
+        <div class="usage-table-wrap">
+          <table class="usage-table">
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>Page Views</th>
+                <th>Starts</th>
+                <th>Completed Uses</th>
+                <th>Completion Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${
+                publicTools.length
+                  ? publicTools
+                      .map(
+                        row => `<tr>
+                          <td>${esc(row.tool)}</td>
+                          <td>${esc(row.page_views)}</td>
+                          <td>${esc(row.starts)}</td>
+                          <td>${esc(row.completed)}</td>
+                          <td>${esc(row.completion_rate)}%</td>
+                        </tr>`
+                      )
+                      .join("")
+                  : `<tr><td colspan="5" class="usage-empty">No public tool usage yet.</td></tr>`
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <div class="admin-list-top">
+          <div>
+            <h3>Recent Activity</h3>
+            <p class="admin-muted">Newest first. Engagement labels only.</p>
+          </div>
+        </div>
+        <ul class="usage-activity-list">
+          ${
+            recent.length
+              ? recent
+                  .map(
+                    item => `<li>
+                      <div>
+                        <strong>${esc(item.customer)}</strong>
+                        <span>${esc(item.label)}</span>
+                      </div>
+                      <time>${esc(formatUsageDateTime(item.occurred_at))}</time>
+                    </li>`
+                  )
+                  .join("")
+              : `<li class="usage-empty-item">No recent activity in this range.</li>`
+          }
+        </ul>
+      </div>
+
+      ${usageInsightsPanelCustomer ? renderUsageCustomerSidePanel(usageInsightsPanelCustomer) : ""}
+    </div>
+  `;
+}
+
+function renderUsageSummaryCard(label, value) {
+  return `
+    <div class="admin-card usage-summary-card">
+      <p class="usage-summary-label">${esc(label)}</p>
+      <p class="usage-summary-value">${esc(value)}</p>
+    </div>
+  `;
+}
+
+function renderUsageCustomerSidePanel(customer) {
+  const activity = customer.recent_activity || [];
+  return `
+    <aside class="usage-side-panel" role="dialog" aria-label="Customer activity">
+      <div class="usage-side-panel-header">
+        <div>
+          <p class="admin-small" style="margin:0 0 4px;text-transform:uppercase;letter-spacing:0.03em;font-weight:700;color:#888;">Customer</p>
+          <h3>${esc(customer.customer)}</h3>
+        </div>
+        <button type="button" class="document-modal-close usage-panel-close" onclick="closeUsageCustomerPanel()" aria-label="Close">×</button>
+      </div>
+      <dl class="usage-side-meta">
+        <div><dt>Booking</dt><dd>${esc(customer.booking_reference || "—")}</dd></div>
+        <div><dt>Cruise</dt><dd>${esc(customer.cruise || customer.cruise_line || "—")}</dd></div>
+        <div><dt>Last Active</dt><dd>${esc(formatUsageDateTime(customer.last_active))}</dd></div>
+      </dl>
+      <h4>Recent Activity</h4>
+      <ul class="usage-activity-list usage-side-activity">
+        ${
+          activity.length
+            ? activity
+                .map(
+                  item => `<li>
+                    <div><span>${esc(item.label)}</span></div>
+                    <time>${esc(formatUsageDateTime(item.occurred_at))}</time>
+                  </li>`
+                )
+                .join("")
+            : `<li class="usage-empty-item">No recent activity.</li>`
+        }
+      </ul>
+      <p class="admin-small">Only engagement events are shown. Packing lists, budgets, notes and document contents are never recorded.</p>
+    </aside>
+    <div class="usage-side-backdrop" onclick="closeUsageCustomerPanel()"></div>
   `;
 }
 

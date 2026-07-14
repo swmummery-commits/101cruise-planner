@@ -64,6 +64,40 @@
   let packages = [];
   let debounceTimer = null;
   let detailsOpen = false;
+  let trackedPageOpen = false;
+  let trackedToolStarted = false;
+  let trackedToolCompleted = false;
+
+  function usageMeta() {
+    const slug = line?.slug || getLineParam() || "";
+    return slug ? { line_slug: String(slug).slice(0, 120), source: "public_drinks_calculator" } : { source: "public_drinks_calculator" };
+  }
+
+  function trackPublic(eventType) {
+    try {
+      if (!window.CruiseUsage) return;
+      if (typeof window.getCruiseUsageContext !== "function") {
+        window.getCruiseUsageContext = function () {
+          return { surface: "public_tools", metadata: usageMeta() };
+        };
+      }
+      if (eventType === "page_open" && typeof window.CruiseUsage.trackPageOpen === "function") {
+        window.CruiseUsage.trackPageOpen("public_drinks_calculator", usageMeta());
+        return;
+      }
+      if (typeof window.CruiseUsage.trackEvent === "function") {
+        window.CruiseUsage.trackEvent("public_drinks_calculator", eventType, usageMeta());
+      }
+    } catch (_error) {
+      /* never block the calculator on analytics */
+    }
+  }
+
+  function maybeTrackCompletion() {
+    if (trackedToolCompleted || !canCalculate()) return;
+    trackedToolCompleted = true;
+    trackPublic("tool_completed");
+  }
 
   const state = {
     packageId: "",
@@ -540,6 +574,8 @@
       `;
     }
 
+    maybeTrackCompletion();
+
     const result = calculateComparison();
     if (!result) {
       return `<div class="dc-calc-results" id="dc-calc-results"><p class="dc-calc-status is-error">Unable to calculate right now.</p></div>`;
@@ -955,7 +991,16 @@
       state.wifiInFare = line.wifi_included_in_fare === true;
       state.wouldBuyWifi = false;
       autoSelectDefaultPackage();
+      if (!trackedPageOpen) {
+        trackedPageOpen = true;
+        trackPublic("page_open");
+      }
+      if (!trackedToolStarted) {
+        trackedToolStarted = true;
+        trackPublic("tool_started");
+      }
       renderApp();
+      maybeTrackCompletion();
     } catch (_error) {
       showFatalError();
     }
