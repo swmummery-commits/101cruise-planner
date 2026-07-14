@@ -20,13 +20,26 @@
   </div>
   <script>
     (function () {
-      var base = (location.pathname || "/").replace(/[^/]*$/, "") || "./";
+      // Pretty URL /drinks-calculator is a Netlify rewrite; pathname is not the real folder.
+      var path = location.pathname || "/";
+      var base = /\/drinks-calculator\/?$/.test(path)
+        ? "/public-tools/drinks-calculator/"
+        : (path.replace(/[^/]*$/, "") || "./");
       var css = document.createElement("link");
       css.rel = "stylesheet";
       css.href = base + "calculator.css";
       document.head.appendChild(css);
       var s = document.createElement("script");
       s.src = base + "calculator.js";
+      s.onerror = function () {
+        var mount = document.getElementById("101cruise-drinks-calculator");
+        if (mount) {
+          mount.innerHTML =
+            '<p style="max-width:960px;margin:0 auto;color:#8a2f2f;">Could not load calculator.js from ' +
+            s.src +
+            ". Hard-refresh or check the deploy includes public-tools/drinks-calculator/.</p>";
+        }
+      };
       document.body.appendChild(s);
     })();
   </script>
