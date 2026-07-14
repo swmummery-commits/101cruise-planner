@@ -2075,9 +2075,6 @@ async function renderDashboard() {
       `}
 
       <div class="dashboard-content-wrap${dashboardMobilePriorityActive ? " dashboard-mobile-priority-active" : ""}">
-        <div class="planner-page-brand dashboard-content-brand">
-          <img class="planner-page-brand-logo" src="assets/101cruise-logo.png" alt="101cruise">
-        </div>
         <section class="dashboard-welcome-strip dashboard-quick-access-strip">
           ${renderDashboardQuickAccess()}
           ${adminPreviewMode || customerMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
