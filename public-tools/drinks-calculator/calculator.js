@@ -282,21 +282,17 @@
     const totalBuyAsYouGo = buyAsYouGoDailyTotal * nights;
 
     let recommendationKind = "borderline";
-    let recommendationBadge = "Borderline";
-    let recommendationTitle = "This comparison is close to break-even";
-    let recommendationBody =
-      "Based on your selections the difference is small. Convenience and budgeting certainty may still matter.";
+    let recommendationTitle = "You’re very close to break-even.";
+    let recommendationLead = "Estimated difference";
 
     if (dailyDifference > 5) {
       recommendationKind = "excellent";
-      recommendationBadge = "Excellent Value";
-      recommendationTitle = `The ${packageDisplayName()} appears worthwhile`;
-      recommendationBody = `Based on your selections you’ll save approximately ${money(cruiseDifference, currency)} over your ${nights} night cruise.`;
+      recommendationTitle = "The package appears to offer better value.";
+      recommendationLead = "Estimated saving";
     } else if (dailyDifference < -5) {
       recommendationKind = "not-recommended";
-      recommendationBadge = "Not Recommended";
-      recommendationTitle = "Buying drinks individually may cost less";
-      recommendationBody = `Based on your selections, paying as you go could cost around ${money(Math.abs(cruiseDifference), currency)} less over your ${nights} night cruise.`;
+      recommendationTitle = "Buying drinks individually appears to cost less.";
+      recommendationLead = "Estimated extra cost";
     }
 
     const reasons = [];
@@ -305,8 +301,8 @@
     } else if (dailyDrinks + dailyDrinkGratuities < packagePrice) {
       reasons.push("Package price exceeds typical drink spend");
     }
-    if (flags.wifiIncluded && wifiDifferential > 0) reasons.push("Wi-Fi included in package");
-    if (flags.gratuitiesIncluded) reasons.push("Gratuities included in package");
+    if (flags.wifiIncluded && wifiDifferential > 0) reasons.push("Wi-Fi adds value");
+    if (flags.gratuitiesIncluded) reasons.push("Gratuities included");
     else if (packageGratuities > 0) reasons.push("Package gratuities added to package cost");
 
     return {
@@ -328,9 +324,8 @@
       totalPackage,
       totalBuyAsYouGo,
       recommendationKind,
-      recommendationBadge,
       recommendationTitle,
-      recommendationBody,
+      recommendationLead,
       reasons,
       flags,
       wifiInFare
@@ -401,7 +396,8 @@
         ${logo}
         <div>
           <h1 class="dc-calc-heading">Is the Drinks Package Worth It?</h1>
-          <p class="dc-calc-sub">Using typical onboard pricing for ${escapeHtml(line.cruise_line_name)}. Prices last verified ${escapeHtml(formatDisplayDate(line.last_verified_at))}.</p>
+          <p class="dc-calc-intro">Compare your onboard spending with your cruise line’s drinks packages in less than 30 seconds.</p>
+          <p class="dc-calc-sub">Using typical onboard pricing for ${escapeHtml(line.cruise_line_name)}.</p>
         </div>
         <aside class="dc-calc-meta" aria-label="Cruise line pricing summary">
           <div class="dc-calc-meta-row">
@@ -500,14 +496,16 @@
       (pkg && !pkg.isOwn && pkg.notes) ||
       line.specialty_dining_notes ||
       "No package notes listed for this cruise line.";
-    const general =
-      line.general_notes ||
-      "Prices are typical onboard rates and may vary by ship, sailing and promotion.";
+    const lastVerified = formatDisplayDate(
+      (pkg && !pkg.isOwn && pkg.last_verified_at) || line.last_verified_at
+    );
+    const purchaseAdvice =
+      "Cruise lines often offer better drinks-package pricing before departure. Check the package terms for your sailing, contact 101cruise, or confirm directly with the cruise line.";
 
     return `
       <section class="dc-calc-info" aria-labelledby="dc-info-title">
         <h2 id="dc-info-title">Important package information</h2>
-        <div class="dc-calc-info-grid">
+        <div class="dc-calc-info-grid dc-calc-info-grid-5">
           <article class="dc-calc-info-block">
             <h3>Wi-Fi</h3>
             <p>${escapeHtml(wifi)}</p>
@@ -521,8 +519,12 @@
             <p>${escapeHtml(packageNotes)}</p>
           </article>
           <article class="dc-calc-info-block">
-            <h3>Important to know</h3>
-            <p>${escapeHtml(general)}</p>
+            <h3>Last verified</h3>
+            <p>${escapeHtml(lastVerified)}</p>
+          </article>
+          <article class="dc-calc-info-block">
+            <h3>Purchase advice</h3>
+            <p>${escapeHtml(purchaseAdvice)}</p>
           </article>
         </div>
       </section>
@@ -553,18 +555,10 @@
         ? `Drink gratuities (${result.gratuityPercent}%)`
         : "Drink gratuities";
 
+    const savingLine = `${money(Math.abs(result.cruiseDifference), result.currency)} over your ${result.nights}-night cruise`;
+
     return `
       <div class="dc-calc-results" id="dc-calc-results" aria-live="polite">
-        <aside class="dc-calc-hero-rec is-${escapeHtml(result.recommendationKind)}">
-          <p class="dc-calc-hero-badge">${escapeHtml(result.recommendationBadge)}</p>
-          <p class="dc-calc-hero-saving">Estimated ${result.cruiseDifference >= 0 ? "saving" : "extra cost"}:
-            <strong>${escapeHtml(money(Math.abs(result.cruiseDifference), result.currency))}</strong> over your cruise
-          </p>
-          <h2 class="dc-calc-hero-title">${escapeHtml(result.recommendationTitle)}</h2>
-          <p class="dc-calc-hero-body">${escapeHtml(result.recommendationBody)}</p>
-          ${reasons ? `<div class="dc-calc-hero-reason"><p class="dc-calc-hero-reason-label">Reason</p>${reasons}</div>` : ""}
-        </aside>
-
         <div class="dc-calc-figures">
           <article class="dc-calc-figure is-package">
             <p class="dc-calc-figure-label">Package cost / day</p>
@@ -617,19 +611,31 @@
               </tr>
             </tbody>
           </table>
+
+          <aside class="dc-calc-recommendation is-${escapeHtml(result.recommendationKind)}">
+            <strong>${escapeHtml(result.recommendationTitle)}</strong>
+            <p class="dc-calc-rec-lead">${escapeHtml(result.recommendationLead)}</p>
+            <p class="dc-calc-rec-saving">${escapeHtml(savingLine)}</p>
+            ${
+              reasons
+                ? `<div class="dc-calc-hero-reason"><p class="dc-calc-hero-reason-label">Why?</p>${reasons}</div>`
+                : ""
+            }
+            <p class="dc-calc-rec-estimate">This is still an estimate. Actual onboard prices may vary.</p>
+          </aside>
         </div>
 
         <details class="dc-calc-details" ${detailsOpen ? "open" : ""}>
-          <summary>Show calculation details</summary>
+          <summary>Show calculation breakdown</summary>
           <ul class="dc-calc-details-list">
-            <li><span>Drink spend / day</span><strong>${escapeHtml(money(result.dailyDrinks, result.currency))}</strong></li>
-            <li><span>Drink gratuities / day</span><strong>${escapeHtml(money(result.dailyDrinkGratuities, result.currency))}</strong></li>
-            <li><span>Wi-Fi in comparison / day</span><strong>${escapeHtml(money(result.wifiDifferential, result.currency))}</strong></li>
-            <li><span>Package price / day</span><strong>${escapeHtml(money(result.packagePrice, result.currency))}</strong></li>
-            <li><span>Package gratuities / day</span><strong>${escapeHtml(money(result.packageGratuities, result.currency))}</strong></li>
-            <li><span>Package total / day</span><strong>${escapeHtml(money(result.packageDailyTotal, result.currency))}</strong></li>
-            <li><span>Buy as you go / day</span><strong>${escapeHtml(money(result.buyAsYouGoDailyTotal, result.currency))}</strong></li>
-            <li><span>Difference over cruise</span><strong>${escapeHtml(money(result.cruiseDifference, result.currency))}</strong></li>
+            <li><span>Package price</span><strong>${escapeHtml(money(result.packagePrice, result.currency))}</strong></li>
+            <li><span>Drink spend</span><strong>${escapeHtml(money(result.dailyDrinks, result.currency))}</strong></li>
+            <li><span>Drink gratuities</span><strong>${escapeHtml(money(result.dailyDrinkGratuities, result.currency))}</strong></li>
+            <li><span>Wi-Fi</span><strong>${escapeHtml(money(result.wifiDifferential, result.currency))}</strong></li>
+            <li><span>Package gratuities</span><strong>${escapeHtml(money(result.packageGratuities, result.currency))}</strong></li>
+            <li><span>Daily total (package)</span><strong>${escapeHtml(money(result.packageDailyTotal, result.currency))}</strong></li>
+            <li><span>Daily total (buy as you go)</span><strong>${escapeHtml(money(result.buyAsYouGoDailyTotal, result.currency))}</strong></li>
+            <li><span>Cruise total difference</span><strong>${escapeHtml(money(result.cruiseDifference, result.currency))}</strong></li>
           </ul>
           <p class="dc-calc-details-note">${escapeHtml(result.wifiExplanation)}</p>
         </details>
@@ -722,7 +728,7 @@
                     ? `<p class="dc-calc-caveat">Because Wi-Fi is included in the fare, it cancels out of the comparison.</p>`
                     : `<label class="dc-calc-check">
                         <input type="checkbox" id="dc-wifi-buy" ${state.wouldBuyWifi ? "checked" : ""}>
-                        <span>If Wi-Fi wasn’t included, I would normally purchase it separately</span>
+                        <span>If Wi-Fi wasn’t included, I would normally purchase Wi-Fi separately</span>
                       </label>`
                 }
               </div>
