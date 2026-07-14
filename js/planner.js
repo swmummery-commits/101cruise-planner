@@ -2176,13 +2176,15 @@ function renderPlannerNav(active = "preparation") {
   ];
 
   return `
-    <div class="planner-page-brand">
-      <img class="planner-page-brand-logo" src="assets/101cruise-logo.png" alt="101cruise">
-    </div>
-    <div class="planner-module-nav">
-      ${items.map(item => `
-        <button class="planner-module-nav-button ${active === item.key ? "active" : ""}" onclick="${item.action}">${item.label}</button>
-      `).join("")}
+    <div class="planner-page-header">
+      <div class="planner-page-brand">
+        <img class="planner-page-brand-logo" src="assets/101cruise-logo.png" alt="101cruise">
+      </div>
+      <div class="planner-module-nav">
+        ${items.map(item => `
+          <button class="planner-module-nav-button ${active === item.key ? "active" : ""}" onclick="${item.action}">${item.label}</button>
+        `).join("")}
+      </div>
     </div>
   `;
 }
@@ -5023,35 +5025,51 @@ function renderShipSummaryCard(ship) {
 }
 
 function renderShipOnboardGlance(items) {
+  const metrics = (items || []).filter(item => item.kind === "count");
+  const statuses = (items || []).filter(item => item.kind !== "count");
+  const focusIcons = new Set(["restaurants", "bars", "pools"]);
+
+  const renderMetric = (item) => {
+    const display = item.display || SHIP_NOT_LISTED;
+    const isEmpty = display === SHIP_NOT_LISTED;
+    const isFocus = focusIcons.has(item.icon) && !isEmpty;
+    return `
+      <div class="ship-glance-item is-metric ${isFocus ? "is-focus" : ""} ${isEmpty ? "is-empty" : ""}">
+        <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.shopping}</span>
+        ${isEmpty
+          ? `<span class="ship-glance-empty">${escapeHtml(SHIP_NOT_LISTED)}</span>`
+          : `<strong class="ship-glance-metric">${escapeHtml(display)}</strong>`}
+        <span class="ship-glance-label">${escapeHtml(item.label)}</span>
+      </div>
+    `;
+  };
+
+  const renderStatus = (item) => {
+    const display = item.display || SHIP_NOT_LISTED;
+    const isEmpty = display === SHIP_NOT_LISTED;
+    const valueClass = display === "Yes"
+      ? "ship-glance-value ship-glance-yes"
+      : display === "No"
+        ? "ship-glance-value is-no"
+        : "ship-glance-empty";
+
+    return `
+      <div class="ship-glance-item is-status ${isEmpty ? "is-empty" : ""}">
+        <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.shopping}</span>
+        <span class="ship-glance-label">${escapeHtml(item.label)}</span>
+        <span class="${valueClass}">${escapeHtml(display)}</span>
+      </div>
+    `;
+  };
+
   return `
-    <div class="ship-glance-grid">
-      ${items.map(item => {
-        const display = item.display || SHIP_NOT_LISTED;
-        const isCount = item.kind === "count";
-        if (isCount) {
-          return `
-            <div class="ship-glance-item is-metric">
-              <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.shopping}</span>
-              <strong class="ship-glance-metric">${escapeHtml(display)}</strong>
-              <span class="ship-glance-label">${escapeHtml(item.label)}</span>
-            </div>
-          `;
-        }
-
-        const valueClass = display === "Yes"
-          ? "ship-glance-value ship-glance-yes"
-          : display === "No"
-            ? "ship-glance-value is-no"
-            : "ship-glance-value is-muted";
-
-        return `
-          <div class="ship-glance-item is-status">
-            <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.shopping}</span>
-            <span class="ship-glance-label">${escapeHtml(item.label)}</span>
-            <span class="${valueClass}">${escapeHtml(display)}</span>
-          </div>
-        `;
-      }).join("")}
+    <div class="ship-glance">
+      <div class="ship-glance-grid ship-glance-metrics">
+        ${metrics.map(renderMetric).join("")}
+      </div>
+      <div class="ship-glance-grid ship-glance-status">
+        ${statuses.map(renderStatus).join("")}
+      </div>
     </div>
   `;
 }
