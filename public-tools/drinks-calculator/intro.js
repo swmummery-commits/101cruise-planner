@@ -12,6 +12,7 @@
 
   const MOUNT_ID = "101cruise-drinks-intro";
   const CALCULATOR_PAGE_URL = "/drinks-calculator";
+  const SCRIPT_EL = document.currentScript;
 
   const ICON_SHIP = `
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -45,10 +46,9 @@
   `;
 
   function getScriptOrigin() {
-    const current = document.currentScript;
-    if (current && current.src) {
+    if (SCRIPT_EL && SCRIPT_EL.src) {
       try {
-        return new URL(current.src).origin;
+        return new URL(SCRIPT_EL.src).origin;
       } catch (_error) {
         /* ignore */
       }
@@ -67,17 +67,22 @@
     return window.location.origin;
   }
 
+  function replaceAllLiteral(value, search, replacement) {
+    return String(value).split(search).join(replacement);
+  }
+
   const TOOLS_ORIGIN = getScriptOrigin();
   const LINES_API_URL = `${TOOLS_ORIGIN}/.netlify/functions/public-calculator-lines`;
   const HERO_IMAGE_URL = `${TOOLS_ORIGIN}/assets/default-cruise-hero.jpg`;
 
   function escapeHtml(value) {
-    return String(value ?? "")
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+    let text = value == null ? "" : String(value);
+    text = replaceAllLiteral(text, "&", "&amp;");
+    text = replaceAllLiteral(text, "<", "&lt;");
+    text = replaceAllLiteral(text, ">", "&gt;");
+    text = replaceAllLiteral(text, '"', "&quot;");
+    text = replaceAllLiteral(text, "'", "&#039;");
+    return text;
   }
 
   function getMount() {
@@ -248,9 +253,18 @@
 
   function init() {
     const mount = getMount();
-    if (!mount) return;
-    renderShell(mount);
-    loadLines();
+    if (!mount) {
+      console.error("[drinks-intro] Mount element #" + MOUNT_ID + " was not found.");
+      return;
+    }
+
+    try {
+      renderShell(mount);
+      loadLines();
+    } catch (error) {
+      console.error("[drinks-intro] Failed to render intro", error);
+      mount.innerHTML = '<p class="dc-intro-status is-error">We couldn’t load the Drinks Calculator intro. Please refresh and try again.</p>';
+    }
   }
 
   if (document.readyState === "loading") {

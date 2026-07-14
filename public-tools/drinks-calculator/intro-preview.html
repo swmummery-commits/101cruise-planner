@@ -4,17 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Drinks Calculator Intro Preview</title>
-  <link rel="stylesheet" href="./intro.css">
+  <link rel="stylesheet" href="/public-tools/drinks-calculator/intro.css">
   <style>
     body {
       margin: 0;
       padding: 28px 16px 64px;
       background: #fff;
+      font-family: "Halyard Display", "Avenir Next", "Segoe UI", sans-serif;
+      color: #1f2a28;
+    }
+    .dc-preview-fallback {
+      max-width: 920px;
+      margin: 0 auto;
+      color: #5f6d69;
+      font-size: 0.95rem;
     }
   </style>
 </head>
 <body>
-  <div id="101cruise-drinks-intro"></div>
-  <script src="./intro.js" defer></script>
+  <div id="101cruise-drinks-intro">
+    <p class="dc-preview-fallback">Loading Drinks Calculator intro…</p>
+  </div>
+  <script src="/public-tools/drinks-calculator/intro.js" defer></script>
 </body>
 </html>
