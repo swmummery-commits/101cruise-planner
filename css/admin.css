@@ -1516,7 +1516,7 @@
   border-right: 1px solid #f2f2f2;
   white-space: nowrap;
   vertical-align: middle;
-  text-align: left;
+  text-align: center;
   background: #fff;
 }
 
@@ -1540,6 +1540,7 @@
   background: #fff;
   box-shadow: 1px 0 0 #ececec;
   font-weight: 700;
+  text-align: left;
 }
 
 .calc-rate-grid thead .calc-rate-sticky-col {
@@ -1586,6 +1587,10 @@
   font: inherit;
   font-size: 12px;
   background: #fff;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  display: inline-block;
 }
 
 .calc-inline-input:focus {
@@ -1605,7 +1610,9 @@
 .calc-inline-check {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
+  width: 100%;
   font-size: 12px;
   font-weight: 600;
   color: #333;

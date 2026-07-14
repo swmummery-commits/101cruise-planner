@@ -443,7 +443,7 @@ function renderAdmin() {
       <button class="admin-tab ${activeTab === "smart-profiles" ? "active" : ""}" onclick="setTab('smart-profiles')">Smart Profiles</button>
       <button class="admin-tab ${activeTab === "crm-sync" ? "active" : ""}" onclick="setTab('crm-sync')">CRM Sync</button>
       <button class="admin-tab ${activeTab === "planner-preview" ? "active" : ""}" onclick="setTab('planner-preview')">Planner Preview</button>
-      <button class="admin-tab ${activeTab === "calculator-data" ? "active" : ""}" onclick="setTab('calculator-data')">Calculator Data</button>
+      <button class="admin-tab ${activeTab === "calculator-data" ? "active" : ""}" onclick="setTab('calculator-data')">Drinks Calculator</button>
     </div>
 
     ${activeTab === "cruise-lines" ? renderCruiseLinesPanel() : ""}
