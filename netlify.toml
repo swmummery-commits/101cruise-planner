@@ -10,3 +10,13 @@
   from = "/welcome"
   to = "/index.html"
   status = 200
+
+[[redirects]]
+  from = "/drinks-calculator"
+  to = "/public-tools/drinks-calculator/calculator.html"
+  status = 200
+
+[[redirects]]
+  from = "/drinks-calculator/"
+  to = "/public-tools/drinks-calculator/calculator.html"
+  status = 200

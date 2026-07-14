@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Drinks Calculator Intro Preview</title>
-  <link rel="stylesheet" href="/public-tools/drinks-calculator/intro.css">
   <style>
     body {
       margin: 0;
@@ -13,18 +12,101 @@
       font-family: "Halyard Display", "Avenir Next", "Segoe UI", sans-serif;
       color: #1f2a28;
     }
-    .dc-preview-fallback {
+    .dc-preview-banner {
       max-width: 920px;
-      margin: 0 auto;
+      margin: 0 auto 18px;
+      padding: 12px 14px;
+      border: 1px solid #e6ebe9;
+      border-radius: 12px;
+      background: #f6f8f7;
       color: #5f6d69;
-      font-size: 0.95rem;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+    .dc-preview-banner strong {
+      color: #1f2a28;
+      font-weight: 650;
+    }
+    .dc-preview-banner.is-error {
+      border-color: #f0c7c7;
+      background: #fff5f5;
+      color: #8a2f2f;
+    }
+    .dc-preview-banner code {
+      font-size: 0.85em;
+      word-break: break-all;
     }
   </style>
 </head>
 <body>
-  <div id="101cruise-drinks-intro">
-    <p class="dc-preview-fallback">Loading Drinks Calculator intro…</p>
+  <div id="dc-preview-banner" class="dc-preview-banner">
+    <strong>Drinks Calculator intro preview</strong>
+    — loading component assets…
   </div>
-  <script src="/public-tools/drinks-calculator/intro.js" defer></script>
+
+  <div id="101cruise-drinks-intro" data-dc-intro>
+    <p style="max-width:920px;margin:0 auto;color:#5f6d69;">Waiting for intro.js…</p>
+  </div>
+
+  <script>
+    (function () {
+      var banner = document.getElementById("dc-preview-banner");
+      var path = window.location.pathname || "/";
+      var base = path.replace(/[^/]*$/, "");
+      if (!base) base = "./";
+
+      function assetUrl(file) {
+        return base + file;
+      }
+
+      function fail(message) {
+        if (!banner) return;
+        banner.className = "dc-preview-banner is-error";
+        banner.textContent = message;
+      }
+
+      var cssHref = assetUrl("intro.css");
+      var jsHref = assetUrl("intro.js");
+
+      var css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = cssHref;
+      css.onerror = function () {
+        fail("Could not load intro.css from " + cssHref + ". Confirm public-tools/drinks-calculator/ is deployed on this host.");
+      };
+      document.head.appendChild(css);
+
+      var script = document.createElement("script");
+      script.src = jsHref;
+      script.onload = function () {
+        if (banner && banner.className.indexOf("is-error") === -1) {
+          banner.innerHTML =
+            "<strong>Drinks Calculator intro preview</strong> — assets: <code>" +
+            jsHref +
+            "</code>";
+        }
+      };
+      script.onerror = function () {
+        fail(
+          "Could not load intro.js from " +
+            jsHref +
+            ". Use your real Netlify hostname (replace the <netlify-site> placeholder), then hard-refresh."
+        );
+      };
+      document.body.appendChild(script);
+
+      window.setTimeout(function () {
+        var mount = document.getElementById("101cruise-drinks-intro");
+        var hasIntro = mount && mount.querySelector(".dc-intro");
+        if (!hasIntro && banner && banner.className.indexOf("is-error") === -1) {
+          fail(
+            "intro.js did not render into #101cruise-drinks-intro. Script URL was " +
+              jsHref +
+              ". Check the browser console for errors."
+          );
+        }
+      }, 2500);
+    })();
+  </script>
 </body>
 </html>

@@ -14,6 +14,16 @@
   const CALCULATOR_PAGE_URL = "/drinks-calculator";
   const SCRIPT_EL = document.currentScript;
 
+  function slugify(value) {
+    return String(value || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
   const ICON_SHIP = `
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M3 17h18"></path>
@@ -86,7 +96,11 @@
   }
 
   function getMount() {
-    return document.getElementById(MOUNT_ID);
+    return (
+      document.getElementById(MOUNT_ID) ||
+      document.querySelector("[data-dc-intro]") ||
+      document.getElementById("cruise-drinks-intro")
+    );
   }
 
   function renderShell(mount) {
@@ -198,9 +212,10 @@
 
     select.innerHTML = [
       `<option value="">Select a cruise line</option>`,
-      ...lines.map(line =>
-        `<option value="${escapeHtml(line.cruise_line_id)}">${escapeHtml(line.cruise_line_name)}</option>`
-      )
+      ...lines.map(line => {
+        const slug = slugify(line.cruise_line_name);
+        return `<option value="${escapeHtml(slug)}">${escapeHtml(line.cruise_line_name)}</option>`;
+      })
     ].join("");
 
     select.disabled = false;
@@ -212,10 +227,10 @@
     });
 
     button.addEventListener("click", () => {
-      const lineId = String(select.value || "").trim();
-      if (!lineId || button.disabled) return;
+      const lineSlug = String(select.value || "").trim();
+      if (!lineSlug || button.disabled) return;
       const url = new URL(CALCULATOR_PAGE_URL, window.location.origin);
-      url.searchParams.set("line", lineId);
+      url.searchParams.set("line", lineSlug);
       window.location.assign(url.toString());
     });
   }

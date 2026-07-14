@@ -59,6 +59,16 @@ async function fetchActiveCalculatorLines() {
   return Array.isArray(data) ? data : [];
 }
 
+function slugify(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function mapLines(rows) {
   return rows
     .map(row => {
@@ -68,6 +78,7 @@ function mapLines(rows) {
       return {
         cruise_line_id: cruiseLineId,
         cruise_line_name: cruiseLineName,
+        cruise_line_slug: slugify(cruiseLineName),
         currency: String(row?.currency || "USD").trim() || "USD",
         drinks_included_in_fare: row?.drinks_included_in_fare === true,
         last_verified_at: row?.last_verified_at || null,

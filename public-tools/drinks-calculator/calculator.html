@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Drinks Calculator Intro — Test</title>
+  <title>Drinks Calculator | 101cruise</title>
   <style>
     body {
       margin: 0;
@@ -15,18 +15,18 @@
   </style>
 </head>
 <body>
-  <div id="101cruise-drinks-intro" data-dc-intro>
-    <p>Loading Drinks Calculator intro…</p>
+  <div id="101cruise-drinks-calculator" data-dc-calculator>
+    <p style="max-width:960px;margin:0 auto;color:#5f6d69;">Loading calculator…</p>
   </div>
   <script>
     (function () {
       var base = (location.pathname || "/").replace(/[^/]*$/, "") || "./";
       var css = document.createElement("link");
       css.rel = "stylesheet";
-      css.href = base + "intro.css";
+      css.href = base + "calculator.css";
       document.head.appendChild(css);
       var s = document.createElement("script");
-      s.src = base + "intro.js";
+      s.src = base + "calculator.js";
       document.body.appendChild(s);
     })();
   </script>
