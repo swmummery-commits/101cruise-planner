@@ -254,6 +254,51 @@ async function loadProfile() {
   currentProfile = error ? null : data;
 }
 
+/**
+ * Load every beverage package row from Supabase.
+ * Pages through results so the Admin grid is never silently capped by the
+ * PostgREST default max-rows setting (commonly 1000).
+ */
+async function fetchAllBeveragePackages() {
+  const pageSize = 1000;
+  const rows = [];
+  let from = 0;
+
+  while (true) {
+    const to = from + pageSize - 1;
+    const { data, error } = await supabaseClient
+      .from("cruise_line_beverage_packages")
+      .select("*, cruise_lines(id, name)")
+      .order("display_order", { ascending: true })
+      .order("package_name", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to);
+
+    if (error) {
+      return { rows: [], error };
+    }
+
+    const batch = data || [];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+    from += pageSize;
+  }
+
+  return { rows, error: null };
+}
+
+async function reloadBeveragePackages() {
+  const result = await fetchAllBeveragePackages();
+  if (result.error) {
+    beveragePackages = [];
+    beveragePackageMessage = result.error.message || "Beverage packages could not be loaded.";
+    beveragePackageMessageTone = "error";
+    return false;
+  }
+  beveragePackages = result.rows;
+  return true;
+}
+
 async function loadAdminData() {
   const { data: lines, error: linesError } = await supabaseClient
     .from("cruise_lines")
@@ -317,11 +362,7 @@ async function loadAdminData() {
     .select("*, cruise_lines(id, name)")
     .order("created_at", { ascending: true });
 
-  const { data: beveragePackageRows, error: beveragePackagesError } = await supabaseClient
-    .from("cruise_line_beverage_packages")
-    .select("*, cruise_lines(id, name)")
-    .order("display_order", { ascending: true })
-    .order("package_name", { ascending: true });
+  const beveragePackagesResult = await fetchAllBeveragePackages();
 
   if (linesError) {
     console.error("Cruise line load error", linesError);
@@ -404,15 +445,15 @@ async function loadAdminData() {
     calculatorRates = calculatorRateRows || [];
   }
 
-  if (beveragePackagesError) {
-    console.warn("Beverage packages load skipped", beveragePackagesError);
+  if (beveragePackagesResult.error) {
+    console.warn("Beverage packages load skipped", beveragePackagesResult.error);
     beveragePackages = [];
     if (!beveragePackageMessage) {
-      beveragePackageMessage = beveragePackagesError.message || "Beverage packages could not be loaded. Confirm the packages migration has been applied.";
+      beveragePackageMessage = beveragePackagesResult.error.message || "Beverage packages could not be loaded. Confirm the packages migration has been applied.";
       beveragePackageMessageTone = "error";
     }
   } else {
-    beveragePackages = beveragePackageRows || [];
+    beveragePackages = beveragePackagesResult.rows;
   }
 }
 
@@ -452,6 +493,9 @@ function setTab(tab) {
   crmSyncLoading = false;
   plannerPreviewMessage = "";
   renderAdmin();
+  if (tab === "calculator-data") {
+    refreshBeveragePackagesGrid();
+  }
 }
 
 function renderAdmin() {
@@ -4541,6 +4585,18 @@ function setBeveragePackageLineFilter(value) {
   renderAdmin();
 }
 
+async function refreshBeveragePackagesGrid() {
+  beveragePackageInlineStatus = "Refreshing…";
+  beveragePackageMessageTone = "";
+  renderAdmin();
+  const refreshed = await reloadBeveragePackages();
+  if (refreshed) {
+    beveragePackageInlineStatus = `Loaded ${beveragePackages.length} package${beveragePackages.length === 1 ? "" : "s"}.`;
+    beveragePackageMessageTone = "success";
+  }
+  renderAdmin();
+}
+
 function startAddBeveragePackage() {
   showBeveragePackageForm = true;
   showBeveragePackageNotesPanel = false;
@@ -4622,8 +4678,13 @@ async function saveBeveragePackage() {
   showBeveragePackageForm = false;
   beveragePackageMessage = `Added ${packageName}.`;
   beveragePackageMessageTone = "success";
-  if (data && data[0]) beveragePackages = [...beveragePackages, data[0]];
-  else await loadAdminData();
+  // Always re-fetch from Supabase so the grid matches the database
+  // (never rely on a local append that can go stale or miss nested fields).
+  const refreshed = await reloadBeveragePackages();
+  if (!refreshed) {
+    beveragePackageMessage = `Added ${packageName}, but the package list could not be refreshed. Reload Admin to see all rows.`;
+    beveragePackageMessageTone = "error";
+  }
   renderAdmin();
 }
 
@@ -4852,6 +4913,7 @@ function bindBeveragePackageGridInteractions() {
 
 function renderBeveragePackagesPanel() {
   const filtered = getFilteredBeveragePackages();
+  const totalLoaded = beveragePackages.length;
   const panelMessageClass = beveragePackageMessageTone === "success"
     ? "admin-success"
     : beveragePackageMessageTone === "error"
@@ -4863,6 +4925,9 @@ function renderBeveragePackagesPanel() {
     .map(line => `<option value="${esc(line.id)}" ${String(beveragePackageLineFilter) === String(line.id) ? "selected" : ""}>${esc(line.name)}</option>`)
     .join("");
   const statusText = beveragePackageInlineStatus || (!showBeveragePackageForm ? beveragePackageMessage : "");
+  const countLabel = filtered.length === totalLoaded
+    ? `${filtered.length} package${filtered.length === 1 ? "" : "s"}`
+    : `Showing ${filtered.length} of ${totalLoaded} packages`;
 
   queueMicrotask(() => bindBeveragePackageGridInteractions());
 
@@ -4871,9 +4936,10 @@ function renderBeveragePackagesPanel() {
       <div class="admin-list-top">
         <div>
           <h3>Beverage Packages</h3>
-          <p class="admin-muted">One row per package. Click a row to edit. Changes save when you leave the row or press Enter.</p>
+          <p class="admin-muted">One row per package. Click a row to edit. Changes save when you leave the row or press Enter. <span id="beverage-package-count">${esc(countLabel)}</span></p>
         </div>
         <div class="calc-rate-actions">
+          <button class="admin-button secondary small" type="button" onclick="refreshBeveragePackagesGrid()">Refresh</button>
           <button class="admin-button small" onclick="startAddBeveragePackage()">Add Package</button>
         </div>
       </div>
@@ -4905,7 +4971,7 @@ function renderBeveragePackagesPanel() {
 
       <div class="admin-message ${showBeveragePackageForm ? "" : panelMessageClass}">${showBeveragePackageForm ? "" : esc(beveragePackageMessage)}</div>
 
-      <div class="calc-rate-grid-wrap" data-beverage-package-grid>
+      <div class="calc-rate-grid-wrap calc-package-grid-wrap" data-beverage-package-grid>
         <table class="calc-rate-grid" aria-label="Cruise line beverage packages">
           <thead>
             <tr>
@@ -4922,11 +4988,11 @@ function renderBeveragePackagesPanel() {
             </tr>
           </thead>
           <tbody>
-            ${filtered.length ? filtered.map(renderBeveragePackageRow).join("") : `<tr><td colspan="10" class="calc-rate-empty">No beverage packages match this view.</td></tr>`}
+            ${filtered.length ? filtered.map(renderBeveragePackageRow).join("") : `<tr><td colspan="10" class="calc-rate-empty">No beverage packages match this view.${totalLoaded > 0 ? " Try Status: All, or clear the cruise-line / search filters." : ""}</td></tr>`}
           </tbody>
         </table>
       </div>
-      <p class="admin-small">Package prices are labelled as typical in the public calculator. Deactivate a package instead of deleting it when retiring an offer.</p>
+      <p class="admin-small">Package prices are labelled as typical in the public calculator. Deactivate a package instead of deleting it when retiring an offer. The grid lists every loaded package that matches the filters — there is no hidden page size.</p>
     </div>
 
     ${renderBeveragePackageForm()}

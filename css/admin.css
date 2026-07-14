@@ -1500,6 +1500,11 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.calc-package-grid-wrap {
+  max-height: min(70vh, 720px);
+  overflow: auto;
+}
+
 .calc-rate-grid {
   width: 100%;
   min-width: 1180px;
