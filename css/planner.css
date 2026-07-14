@@ -7228,6 +7228,65 @@ input[type="radio"] {
   padding: 16px 0 56px;
 }
 
+.ship-page-status {
+  padding: 36px 8px 72px;
+  max-width: 520px;
+}
+
+.ship-page-status .ship-status-title {
+  opacity: 1;
+  margin-bottom: 12px;
+}
+
+.ship-page-status .ship-identity-line {
+  opacity: 1;
+  margin: 0 0 14px;
+}
+
+.ship-page-status .planner-muted {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.ship-summary-value.is-static {
+  font-size: clamp(0.95rem, 1.8vw, 1.15rem);
+  letter-spacing: -0.02em;
+}
+
+.ship-glance-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(141, 217, 191, 0.22);
+  color: #245C4E;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.ship-glance-value.is-count {
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-size: 0.74rem;
+}
+
+.ship-glance-value.is-no,
+.ship-glance-value.is-muted {
+  background: rgba(17, 24, 39, 0.06);
+  color: #6b7280;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+.ship-empty-note {
+  margin: 8px 0 0;
+}
+
 .ship-hero {
   display: flex;
   align-items: flex-start;
@@ -7421,18 +7480,8 @@ input[type="radio"] {
 }
 
 .ship-glance-yes {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 42px;
-  padding: 4px 9px;
-  border-radius: 999px;
-  background: rgba(141, 217, 191, 0.22);
-  color: #245C4E;
-  font-size: 0.68rem;
-  font-weight: 650;
-  letter-spacing: 0.04em;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .ship-info-grid {

@@ -4675,67 +4675,11 @@ async function deleteBudgetItem(id) {
 }
 
 /* =========================================================
-   The Ship — customer experience prototype (sample data)
+   The Ship — live Base44 Finder data
    ========================================================= */
 
-const SAMPLE_SHIP_PROFILE = {
-  name: "Adventure of the Seas",
-  cruiseLine: "Royal Caribbean International",
-  status: "Active",
-  summary: {
-    passengers: 3114,
-    staterooms: 1557,
-    crew: 1185,
-    built: 2001,
-    refurbished: 2016
-  },
-  onboardGlance: [
-    { label: "Specialty Dining", icon: "dining" },
-    { label: "Entertainment", icon: "entertainment" },
-    { label: "Spa & Wellness", icon: "spa" },
-    { label: "Fitness Centre", icon: "fitness" },
-    { label: "Pools & Solarium", icon: "pool" },
-    { label: "Youth Programmes", icon: "youth" },
-    { label: "Casino", icon: "casino" },
-    { label: "Wi‑Fi", icon: "wifi" }
-  ],
-  specifications: [
-    { label: "Gross tonnage", value: "138,000 GT" },
-    { label: "Length", value: "311 metres" },
-    { label: "Beam", value: "38.6 metres" },
-    { label: "Decks", value: "15 passenger decks" },
-    { label: "Cruising speed", value: "22 knots" },
-    { label: "Registry", value: "Bahamas" }
-  ],
-  accommodation: [
-    { label: "Interior", value: 562, color: "#8DD9BF" },
-    { label: "Ocean View", value: 328, color: "#5BBFA3" },
-    { label: "Balcony", value: 512, color: "#245C4E" },
-    { label: "Suite", value: 155, color: "#9AA7A3" }
-  ],
-  scaleFacts: [
-    { label: "Class", value: "Voyager" },
-    { label: "Passenger decks", value: "15" },
-    { label: "Max guests", value: "3,807" },
-    { label: "Crew ratio", value: "1 : 2.6" }
-  ],
-  exclusiveAreas: [
-    "Suite Deck",
-    "Premium Lounge",
-    "Diamond Club",
-    "Concierge Club",
-    "Adults-only Solarium",
-    "Vitality Spa"
-  ],
-  specialtyFeatures: [
-    "Rock Climbing Wall",
-    "FlowRider",
-    "Ice Skating Rink",
-    "Mini Golf",
-    "Outdoor Movie Screen",
-    "Royal Promenade"
-  ]
-};
+const SHIP_ROOM_COLORS = ["#8DD9BF", "#5BBFA3", "#245C4E", "#9AA7A3", "#6FA894", "#3D7A6A"];
+const SHIP_NOT_LISTED = "Not listed";
 
 const SHIP_SUMMARY_ICONS = {
   passengers: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
@@ -4746,29 +4690,242 @@ const SHIP_SUMMARY_ICONS = {
 };
 
 const SHIP_GLANCE_ICONS = {
-  dining: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
-  entertainment: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>`,
+  restaurants: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
+  bars: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M12 11v11"/><path d="m19 3-7 8-7-8z"/></svg>`,
+  pools: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20c.6.5 1.2 1 2.5 1 2.5 0 3-2 6-2s3.5 2 6 2 2.5 0 3.5-1"/><path d="M2 16c.6.5 1.2 1 2.5 1 2.5 0 3-2 6-2s3.5 2 6 2 2.5 0 3.5-1"/><path d="M12 4v8"/><path d="M8 8h8"/></svg>`,
+  hot_tubs: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h20"/><path d="M7 12v4a3 3 0 0 0 3 3h4a3 3 0 0 0 3-3v-4"/><path d="M9 7c.5-1 1.5-2 3-2s2.5 1 3 2"/><path d="M8 4c.5-1 1.5-2 4-2s3.5 1 4 2"/></svg>`,
+  specialty_dining: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg>`,
   spa: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
-  fitness: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m17.5 6.5 1 1"/><path d="m6.5 6.5-1 1"/><path d="M12 12v9"/><path d="M8 9h8"/><path d="M9 22h6"/><circle cx="12" cy="5" r="2"/></svg>`,
-  pool: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20c.6.5 1.2 1 2.5 1 2.5 0 3-2 6-2s3.5 2 6 2 2.5 0 3.5-1"/><path d="M2 16c.6.5 1.2 1 2.5 1 2.5 0 3-2 6-2s3.5 2 6 2 2.5 0 3.5-1"/><path d="M12 4v8"/><path d="M8 8h8"/></svg>`,
-  youth: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>`,
+  gym: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m17.5 6.5 1 1"/><path d="m6.5 6.5-1 1"/><path d="M12 12v9"/><path d="M8 9h8"/><path d="M9 22h6"/><circle cx="12" cy="5" r="2"/></svg>`,
+  theatre: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>`,
   casino: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8" cy="12" r="1.5"/><circle cx="16" cy="12" r="1.5"/><path d="M12 9v6"/></svg>`,
-  wifi: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></svg>`
+  kids_club: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3"/><path d="M4 20a8 8 0 0 1 16 0"/></svg>`,
+  shopping: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`
 };
 
-function getSampleShipProfile(cruise = null) {
-  return {
-    ...SAMPLE_SHIP_PROFILE,
-    name: cruise?.ship_name || SAMPLE_SHIP_PROFILE.name,
-    cruiseLine: cruise?.cruise_line || SAMPLE_SHIP_PROFILE.cruiseLine
-  };
+function getBookingShipName(cruise = null) {
+  const booking = cruise?._preview_booking || customerBooking || {};
+  return String(booking.cruise_ship || cruise?.ship_name || "").trim();
+}
+
+function getBookingCruiseLine(cruise = null) {
+  const booking = cruise?._preview_booking || customerBooking || {};
+  return String(booking.cruise_line || cruise?.cruise_line || "").trim();
+}
+
+function readFacilityValue(facilities, keys) {
+  if (!facilities || typeof facilities !== "object" || Array.isArray(facilities)) return null;
+  for (const key of keys) {
+    if (Object.prototype.hasOwnProperty.call(facilities, key) && facilities[key] !== undefined) {
+      return facilities[key];
+    }
+  }
+  return null;
+}
+
+function formatShipNumber(value) {
+  if (value === null || value === undefined || value === "") return SHIP_NOT_LISTED;
+  const number = Number(String(value).replace(/,/g, "").trim());
+  if (!Number.isFinite(number)) return SHIP_NOT_LISTED;
+  return new Intl.NumberFormat("en-AU").format(Math.round(number));
+}
+
+function formatShipYear(value) {
+  if (value === null || value === undefined || value === "") return SHIP_NOT_LISTED;
+  const number = Number(value);
+  if (!Number.isFinite(number)) return SHIP_NOT_LISTED;
+  return String(Math.round(number));
 }
 
 function formatShipStatValue(value, key) {
+  if (value === null || value === undefined || value === "" || value === SHIP_NOT_LISTED) {
+    return SHIP_NOT_LISTED;
+  }
+  if (key === "built" || key === "refurbished") return formatShipYear(value);
+  return formatShipNumber(value);
+}
+
+function formatShipCountDisplay(value) {
+  if (value === null || value === undefined || value === "") return SHIP_NOT_LISTED;
   const number = Number(value);
-  if (!Number.isFinite(number)) return String(value ?? "");
-  if (key === "built" || key === "refurbished") return String(Math.round(number));
+  if (!Number.isFinite(number)) return SHIP_NOT_LISTED;
   return new Intl.NumberFormat("en-AU").format(Math.round(number));
+}
+
+function formatShipYesNoDisplay(value) {
+  if (value === null || value === undefined || value === "") return SHIP_NOT_LISTED;
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "number") {
+    if (value === 1) return "Yes";
+    if (value === 0) return "No";
+  }
+  const text = String(value).trim().toLowerCase();
+  if (["yes", "true", "y"].includes(text)) return "Yes";
+  if (["no", "false", "n"].includes(text)) return "No";
+  return SHIP_NOT_LISTED;
+}
+
+function humaniseShipRoomLabel(key) {
+  return String(key || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
+function buildShipAccommodation(ship) {
+  const colors = SHIP_ROOM_COLORS;
+  const breakdown = ship?.stateroom_breakdown;
+  const rooms = [];
+
+  if (Array.isArray(breakdown)) {
+    breakdown.forEach((entry, index) => {
+      if (!entry || typeof entry !== "object") return;
+      const label = entry.label || entry.name || entry.type || entry.stateroom_type;
+      const value = entry.value ?? entry.count ?? entry.quantity;
+      const number = Number(value);
+      if (!label || !Number.isFinite(number)) return;
+      rooms.push({ label: String(label), value: number, color: colors[index % colors.length] });
+    });
+  } else if (breakdown && typeof breakdown === "object") {
+    Object.entries(breakdown).forEach(([key, value], index) => {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return;
+      rooms.push({ label: humaniseShipRoomLabel(key), value: number, color: colors[index % colors.length] });
+    });
+  }
+
+  if (!rooms.length && Array.isArray(ship?.stateroom_types)) {
+    ship.stateroom_types.forEach((entry, index) => {
+      if (typeof entry === "string") {
+        rooms.push({ label: entry, value: 0, color: colors[index % colors.length] });
+        return;
+      }
+      if (!entry || typeof entry !== "object") return;
+      const label = entry.label || entry.name || entry.type;
+      const value = entry.value ?? entry.count ?? entry.quantity;
+      const number = Number(value);
+      if (!label || !Number.isFinite(number)) return;
+      rooms.push({ label: String(label), value: number, color: colors[index % colors.length] });
+    });
+  }
+
+  return rooms.filter((room) => Number.isFinite(room.value));
+}
+
+function buildShipOnboardGlance(facilities) {
+  const numericRows = [
+    { label: "Restaurants", icon: "restaurants", keys: ["restaurants", "restaurant_count", "restaurant"] },
+    { label: "Bars", icon: "bars", keys: ["bars", "bar_count", "bar"] },
+    { label: "Pools", icon: "pools", keys: ["pools", "pool_count", "pool"] },
+    { label: "Hot tubs", icon: "hot_tubs", keys: ["hot_tubs", "hotTubs", "hot_tub_count", "jacuzzis"] },
+    { label: "Specialty dining", icon: "specialty_dining", keys: ["specialty_dining", "specialtyDining", "specialty_restaurants"] }
+  ];
+
+  const yesNoRows = [
+    { label: "Spa", icon: "spa", keys: ["spa", "spa_wellness", "has_spa"] },
+    { label: "Gym", icon: "gym", keys: ["gym", "fitness", "fitness_centre", "fitness_center", "has_gym"] },
+    { label: "Theatre", icon: "theatre", keys: ["theatre", "theater", "has_theatre", "has_theater"] },
+    { label: "Casino", icon: "casino", keys: ["casino", "has_casino"] },
+    { label: "Kids club", icon: "kids_club", keys: ["kids_club", "kidsClub", "youth_programmes", "youth_programs", "has_kids_club"] },
+    { label: "Shopping", icon: "shopping", keys: ["shopping", "shops", "has_shopping"] }
+  ];
+
+  return [
+    ...numericRows.map((row) => ({
+      label: row.label,
+      icon: row.icon,
+      display: formatShipCountDisplay(readFacilityValue(facilities, row.keys)),
+      kind: "count"
+    })),
+    ...yesNoRows.map((row) => ({
+      label: row.label,
+      icon: row.icon,
+      display: formatShipYesNoDisplay(readFacilityValue(facilities, row.keys)),
+      kind: "yesno"
+    }))
+  ];
+}
+
+function buildShipChipList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  if (typeof value === "string" && value.trim()) {
+    return value.split(/[,;|]/).map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
+function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
+  const facilities = ship?.facilities && typeof ship.facilities === "object" ? ship.facilities : {};
+  const passengers = ship?.passenger_capacity;
+  const crew = ship?.crew_count;
+  const decks = ship?.deck_count;
+  const staterooms = ship?.stateroom_count;
+  const accommodation = buildShipAccommodation(ship);
+
+  let crewRatio = SHIP_NOT_LISTED;
+  const passengerNumber = Number(passengers);
+  const crewNumber = Number(crew);
+  if (Number.isFinite(passengerNumber) && Number.isFinite(crewNumber) && crewNumber > 0) {
+    crewRatio = `1 : ${(passengerNumber / crewNumber).toFixed(1)}`;
+  }
+
+  const exclusiveAreas = buildShipChipList(
+    readFacilityValue(facilities, ["exclusive_areas", "exclusiveAreas", "exclusive"])
+  );
+  const specialtyFeatures = buildShipChipList(
+    readFacilityValue(facilities, ["specialty_features", "specialtyFeatures", "signature_features"])
+  );
+
+  return {
+    name: ship?.name || shipName || "Your ship",
+    cruiseLine: cruiseLine || "",
+    status: ship?.current_status || "Active",
+    summary: {
+      passengers,
+      staterooms,
+      crew,
+      built: ship?.year_built,
+      refurbished: ship?.year_refurbished
+    },
+    onboardGlance: buildShipOnboardGlance(facilities),
+    specifications: [
+      { label: "Gross tonnage", value: ship?.gross_tonnage == null || ship?.gross_tonnage === "" ? SHIP_NOT_LISTED : `${formatShipNumber(ship.gross_tonnage)} GT` },
+      { label: "Length", value: ship?.length_meters == null || ship?.length_meters === "" ? SHIP_NOT_LISTED : `${formatShipNumber(ship.length_meters)} metres` },
+      { label: "Decks", value: decks == null || decks === "" ? SHIP_NOT_LISTED : `${formatShipNumber(decks)} passenger decks` },
+      { label: "Staterooms", value: formatShipNumber(staterooms) },
+      { label: "Passengers", value: formatShipNumber(passengers) },
+      { label: "Crew", value: formatShipNumber(crew) }
+    ],
+    accommodation,
+    scaleFacts: [
+      { label: "Passenger decks", value: formatShipNumber(decks) },
+      { label: "Max guests", value: formatShipNumber(passengers) },
+      { label: "Crew", value: formatShipNumber(crew) },
+      { label: "Crew ratio", value: crewRatio }
+    ],
+    exclusiveAreas,
+    specialtyFeatures
+  };
+}
+
+async function fetchShipFromBase44(shipName) {
+  const response = await fetch(`/.netlify/functions/get-ship?name=${encodeURIComponent(shipName)}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  });
+  const data = await response.json().catch(() => ({ success: false, error: "Invalid response" }));
+
+  if (response.status === 404 || data.error === "SHIP_NOT_FOUND") {
+    return { ok: false, notFound: true };
+  }
+
+  if (!response.ok || data.success === false || !data.ship) {
+    return { ok: false, notFound: false };
+  }
+
+  return { ok: true, ship: data.ship };
 }
 
 function renderShipSummaryCard(ship) {
@@ -4784,13 +4941,26 @@ function renderShipSummaryCard(ship) {
     <section class="ship-summary-card" aria-label="Ship summary">
       <div class="ship-summary-glow" aria-hidden="true"></div>
       <div class="ship-summary-grid">
-        ${stats.map(stat => `
-          <div class="ship-summary-stat">
-            <span class="ship-summary-icon" aria-hidden="true">${SHIP_SUMMARY_ICONS[stat.key]}</span>
-            <strong class="ship-summary-value" data-ship-stat="${stat.key}" data-ship-target="${stat.value}">0</strong>
-            <span class="ship-summary-label">${escapeHtml(stat.label)}</span>
-          </div>
-        `).join("")}
+        ${stats.map(stat => {
+          const numeric = Number(stat.value);
+          const isNumeric = stat.value !== null && stat.value !== undefined && stat.value !== "" && Number.isFinite(numeric);
+          if (!isNumeric) {
+            return `
+              <div class="ship-summary-stat">
+                <span class="ship-summary-icon" aria-hidden="true">${SHIP_SUMMARY_ICONS[stat.key]}</span>
+                <strong class="ship-summary-value is-static">${escapeHtml(SHIP_NOT_LISTED)}</strong>
+                <span class="ship-summary-label">${escapeHtml(stat.label)}</span>
+              </div>
+            `;
+          }
+          return `
+            <div class="ship-summary-stat">
+              <span class="ship-summary-icon" aria-hidden="true">${SHIP_SUMMARY_ICONS[stat.key]}</span>
+              <strong class="ship-summary-value" data-ship-stat="${stat.key}" data-ship-target="${numeric}">0</strong>
+              <span class="ship-summary-label">${escapeHtml(stat.label)}</span>
+            </div>
+          `;
+        }).join("")}
       </div>
     </section>
   `;
@@ -4799,13 +4969,23 @@ function renderShipSummaryCard(ship) {
 function renderShipOnboardGlance(items) {
   return `
     <div class="ship-glance-grid">
-      ${items.map(item => `
-        <div class="ship-glance-item">
-          <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.wifi}</span>
-          <span class="ship-glance-label">${escapeHtml(item.label)}</span>
-          <span class="ship-glance-yes">Yes</span>
-        </div>
-      `).join("")}
+      ${items.map(item => {
+        const display = item.display || SHIP_NOT_LISTED;
+        const valueClass = display === "Yes"
+          ? "ship-glance-value ship-glance-yes"
+          : display === "No"
+            ? "ship-glance-value is-no"
+            : display === SHIP_NOT_LISTED
+              ? "ship-glance-value is-muted"
+              : "ship-glance-value is-count";
+        return `
+          <div class="ship-glance-item">
+            <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.shopping}</span>
+            <span class="ship-glance-label">${escapeHtml(item.label)}</span>
+            <span class="${valueClass}">${escapeHtml(display)}</span>
+          </div>
+        `;
+      }).join("")}
     </div>
   `;
 }
@@ -4845,6 +5025,10 @@ function renderShipChipGroup(items) {
 }
 
 function renderShipAccommodationChart(rooms) {
+  if (!rooms.length) {
+    return `<p class="planner-muted ship-empty-note">Room type details are not listed for this ship yet.</p>`;
+  }
+
   const total = rooms.reduce((sum, room) => sum + Number(room.value || 0), 0) || 1;
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
@@ -5009,7 +5193,58 @@ async function renderTheShip() {
   clearCountdownTimer();
 
   const cruise = await loadCurrentCruise();
-  const ship = getSampleShipProfile(cruise);
+  const shipName = getBookingShipName(cruise);
+  const cruiseLine = getBookingCruiseLine(cruise);
+
+  app.innerHTML = `
+    <div class="ship-page">
+      ${renderPlannerNav("ship")}
+      <div class="ship-page-status" role="status" aria-live="polite">
+        <p class="planner-kicker">Your ship</p>
+        <h1 class="ship-identity-name ship-status-title">${escapeHtml(shipName || "The Ship")}</h1>
+        <p class="planner-muted">Loading ship information…</p>
+      </div>
+    </div>
+  `;
+
+  if (!shipName) {
+    app.innerHTML = `
+      <div class="ship-page">
+        ${renderPlannerNav("ship")}
+        <div class="ship-page-status">
+          <p class="planner-kicker">Your ship</p>
+          <h1 class="ship-identity-name ship-status-title">The Ship</h1>
+          <p class="planner-muted">Ship information is not available yet.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  let result;
+  try {
+    result = await fetchShipFromBase44(shipName);
+  } catch (error) {
+    console.error("Ship lookup failed", error);
+    result = { ok: false, notFound: false };
+  }
+
+  if (!result.ok) {
+    app.innerHTML = `
+      <div class="ship-page">
+        ${renderPlannerNav("ship")}
+        <div class="ship-page-status">
+          <p class="planner-kicker">Your ship</p>
+          <h1 class="ship-identity-name ship-status-title">${escapeHtml(shipName)}</h1>
+          ${cruiseLine ? `<p class="ship-identity-line">${escapeHtml(cruiseLine)}</p>` : ""}
+          <p class="planner-muted">Ship information is not available yet.</p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const ship = buildShipProfileFromBase44(result.ship, { shipName, cruiseLine });
 
   app.innerHTML = `
     <div class="ship-page">
@@ -5019,9 +5254,9 @@ async function renderTheShip() {
         <div class="ship-hero-copy">
           <p class="planner-kicker ship-identity-kicker">Your ship</p>
           <h1 class="ship-identity-name">${escapeHtml(ship.name)}</h1>
-          <p class="ship-hero-line ship-identity-line">${escapeHtml(ship.cruiseLine)}</p>
+          ${ship.cruiseLine ? `<p class="ship-hero-line ship-identity-line">${escapeHtml(ship.cruiseLine)}</p>` : ""}
         </div>
-        <span class="ship-status-badge ship-identity-badge">${escapeHtml(ship.status)}</span>
+        <span class="ship-status-badge ship-identity-badge">${escapeHtml(ship.status || "Active")}</span>
       </header>
 
       ${renderShipSummaryCard(ship)}
@@ -5050,17 +5285,21 @@ async function renderTheShip() {
           </section>
         </div>
 
-        <section class="planner-card ship-section-card ship-reveal-block" style="--ship-delay:280ms">
-          <h3>Exclusive Areas</h3>
-          <p class="planner-muted ship-section-intro">Quiet corners and elevated spaces made for your voyage.</p>
-          ${renderShipChipGroup(ship.exclusiveAreas)}
-        </section>
+        ${ship.exclusiveAreas.length ? `
+          <section class="planner-card ship-section-card ship-reveal-block" style="--ship-delay:280ms">
+            <h3>Exclusive Areas</h3>
+            <p class="planner-muted ship-section-intro">Quiet corners and elevated spaces made for your voyage.</p>
+            ${renderShipChipGroup(ship.exclusiveAreas)}
+          </section>
+        ` : ""}
 
-        <section class="planner-card ship-section-card ship-reveal-block" style="--ship-delay:350ms">
-          <h3>Specialty Features</h3>
-          <p class="planner-muted ship-section-intro">Signature experiences unique to this ship.</p>
-          ${renderShipChipGroup(ship.specialtyFeatures)}
-        </section>
+        ${ship.specialtyFeatures.length ? `
+          <section class="planner-card ship-section-card ship-reveal-block" style="--ship-delay:350ms">
+            <h3>Specialty Features</h3>
+            <p class="planner-muted ship-section-intro">Signature experiences unique to this ship.</p>
+            ${renderShipChipGroup(ship.specialtyFeatures)}
+          </section>
+        ` : ""}
 
         <section class="planner-card ship-section-card ship-deck-card ship-reveal-block" style="--ship-delay:420ms">
           <div class="ship-deck-copy">

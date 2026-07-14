@@ -1,72 +1,36 @@
-# Base44 Phase 1 — Finder connection test
+# Base44 Phase 2 — The Ship page
 
-Read-only proof that the Netlify-hosted planner can retrieve one `CruiseShip` from the **101Cruise Finder** Base44 app.
+The customer Ship page loads live `CruiseShip` data from the **101Cruise Finder** Base44 app.
 
 ## Endpoint
 
 ```
-GET /.netlify/functions/base44-test
+GET /.netlify/functions/get-ship?name=<ship name>
 ```
 
-Deployed example:
+Example:
 
 ```
-https://<your-netlify-site>/.netlify/functions/base44-test
+curl -s "https://<your-netlify-site>/.netlify/functions/get-ship?name=Adventure%20of%20the%20Seas"
 ```
 
 ## Required Netlify environment variables
-
-Set these in the Netlify UI (Site settings → Environment variables), or locally without committing them:
 
 | Variable | Scope |
 |---|---|
 | `BASE44_FINDER_APP_ID` | Server / Functions only |
 | `BASE44_FINDER_API_KEY` | Server / Functions only |
 
-Never put these in frontend JS, HTML, or committed files.
+CRM booking variables are separate and must not be used here.
 
-Do **not** use CRM variables (`BASE44_API_KEY`, `BASE44_CRM_*`, `BASE44_BOOKING_FUNCTION_URL`) for this test.
+## Lookup behaviour
 
-## Local testing (Netlify Dev)
+1. The Ship page reads the booking ship name (`cruise_ship` / `ship_name`).
+2. It calls `get-ship` with that name.
+3. The function matches a `CruiseShip` with case-insensitive, whitespace-normalised exact equality.
+4. If no exact match exists, it returns `SHIP_NOT_FOUND` — never another ship.
 
-1. From the repo root, ensure dependencies are installed:
+## Notes
 
-   ```bash
-   npm install
-   ```
-
-2. Create a local `.env` file (gitignored):
-
-   ```bash
-   BASE44_FINDER_APP_ID=your_finder_app_id
-   BASE44_FINDER_API_KEY=your_finder_api_key
-   ```
-
-3. Start Netlify Dev (loads `.env` into function `process.env`):
-
-   ```bash
-   npx netlify dev
-   ```
-
-4. Call the function:
-
-   ```bash
-   curl -s http://localhost:8888/.netlify/functions/base44-test | jq .
-   ```
-
-Expected success shape:
-
-```json
-{
-  "success": true,
-  "ship_count_returned": 1,
-  "ship": { "...genuine CruiseShip fields..." },
-  "field_count": 12
-}
-```
-
-## Security notes
-
-- Credentials exist only in Netlify env / local `.env` (gitignored).
-- Function is GET + read-only (`CruiseShip.list`); no Supabase writes.
-- No permanent customer UI entry point in this phase.
+- Read-only: no Base44 writes, no Supabase writes.
+- `/.netlify/functions/base44-test` is disabled (HTTP 410). Use `get-ship` instead.
