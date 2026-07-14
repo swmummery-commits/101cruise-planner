@@ -3,12 +3,14 @@
  *
  * GET /.netlify/functions/base44-test
  *
- * Requires Netlify env vars (server-side only):
- *   BASE44_APP_ID
- *   BASE44_API_KEY
+ * Requires Netlify env vars (server-side only — Finder app):
+ *   BASE44_FINDER_APP_ID
+ *   BASE44_FINDER_API_KEY
+ *
+ * Do not use CRM vars (BASE44_API_KEY, BASE44_CRM_*, BASE44_BOOKING_FUNCTION_URL).
  *
  * Local testing (do not commit .env):
- *   1. Create a local .env with the two vars above
+ *   1. Create a local .env with the two Finder vars above
  *   2. netlify env:import .env   OR pass via Netlify Dev UI / netlify.toml [dev]
  *   3. netlify dev
  *   4. curl -s http://localhost:8888/.netlify/functions/base44-test
@@ -63,13 +65,13 @@ exports.handler = async function (event) {
     });
   }
 
-  console.log('Base44 connection test started');
+  console.log('Base44 Finder connection test started');
 
-  const appId = process.env.BASE44_APP_ID;
-  const apiKey = process.env.BASE44_API_KEY;
+  const appId = process.env.BASE44_FINDER_APP_ID;
+  const apiKey = process.env.BASE44_FINDER_API_KEY;
 
   if (!appId || !apiKey) {
-    console.error('Base44 configuration missing (BASE44_APP_ID and/or BASE44_API_KEY)');
+    console.error('Base44 Finder configuration missing (BASE44_FINDER_APP_ID and/or BASE44_FINDER_API_KEY)');
     return jsonResponse(500, {
       success: false,
       error: 'BASE44_CONFIGURATION_MISSING'

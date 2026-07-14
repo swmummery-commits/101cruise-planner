@@ -1,6 +1,6 @@
-# Base44 Phase 1 — connection test
+# Base44 Phase 1 — Finder connection test
 
-Read-only proof that the Netlify-hosted planner can retrieve one `CruiseShip` from Base44.
+Read-only proof that the Netlify-hosted planner can retrieve one `CruiseShip` from the **101Cruise Finder** Base44 app.
 
 ## Endpoint
 
@@ -20,10 +20,12 @@ Set these in the Netlify UI (Site settings → Environment variables), or locall
 
 | Variable | Scope |
 |---|---|
-| `BASE44_APP_ID` | Server / Functions only |
-| `BASE44_API_KEY` | Server / Functions only |
+| `BASE44_FINDER_APP_ID` | Server / Functions only |
+| `BASE44_FINDER_API_KEY` | Server / Functions only |
 
 Never put these in frontend JS, HTML, or committed files.
+
+Do **not** use CRM variables (`BASE44_API_KEY`, `BASE44_CRM_*`, `BASE44_BOOKING_FUNCTION_URL`) for this test.
 
 ## Local testing (Netlify Dev)
 
@@ -36,8 +38,8 @@ Never put these in frontend JS, HTML, or committed files.
 2. Create a local `.env` file (gitignored):
 
    ```bash
-   BASE44_APP_ID=your_app_id
-   BASE44_API_KEY=your_api_key
+   BASE44_FINDER_APP_ID=your_finder_app_id
+   BASE44_FINDER_API_KEY=your_finder_api_key
    ```
 
 3. Start Netlify Dev (loads `.env` into function `process.env`):
