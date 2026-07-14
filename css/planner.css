@@ -6842,6 +6842,8 @@ input[type="radio"] {
 
 .dashboard-snapshot-footer {
   flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
   margin-top: 18px;
   padding: 16px 0 4px;
   border-top: 1px solid #e8edeb;
@@ -6849,9 +6851,21 @@ input[type="radio"] {
 }
 
 .dashboard-snapshot-footer .dashboard-outline-action {
-  width: 100%;
+  width: 180px;
+  max-width: 100%;
   margin-top: 0 !important;
+  margin-left: auto;
+  margin-right: auto;
   position: static;
+}
+
+/* Compact secondary nav actions in Progress + Snapshot cards */
+.dashboard-combined-progress-item .dashboard-card-button {
+  width: 180px;
+  max-width: 100%;
+  align-self: center;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @media (min-width: 1081px) {
