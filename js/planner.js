@@ -4983,7 +4983,7 @@ async function fetchShipFromBase44(shipName, cruiseLine = "") {
 
 function renderShipSummaryCard(ship) {
   const stats = [
-    { key: "passengers", label: "Passengers", value: ship.summary.passengers },
+    { key: "passengers", label: "Guests", value: ship.summary.passengers },
     { key: "staterooms", label: "Staterooms", value: ship.summary.staterooms },
     { key: "crew", label: "Crew", value: ship.summary.crew },
     { key: "built", label: "Built", value: ship.summary.built },
@@ -4992,7 +4992,6 @@ function renderShipSummaryCard(ship) {
 
   return `
     <section class="ship-summary-card" aria-label="Ship summary">
-      <div class="ship-summary-glow" aria-hidden="true"></div>
       <div class="ship-summary-grid">
         ${stats.map(stat => {
           const numeric = Number(stat.value);
@@ -5001,16 +5000,20 @@ function renderShipSummaryCard(ship) {
             return `
               <div class="ship-summary-stat">
                 <span class="ship-summary-icon" aria-hidden="true">${SHIP_SUMMARY_ICONS[stat.key]}</span>
-                <strong class="ship-summary-value is-static">${escapeHtml(SHIP_NOT_LISTED)}</strong>
-                <span class="ship-summary-label">${escapeHtml(stat.label)}</span>
+                <div class="ship-summary-copy">
+                  <strong class="ship-summary-value is-static">${escapeHtml(SHIP_NOT_LISTED)}</strong>
+                  <span class="ship-summary-label">${escapeHtml(stat.label)}</span>
+                </div>
               </div>
             `;
           }
           return `
             <div class="ship-summary-stat">
               <span class="ship-summary-icon" aria-hidden="true">${SHIP_SUMMARY_ICONS[stat.key]}</span>
-              <strong class="ship-summary-value" data-ship-stat="${stat.key}" data-ship-target="${numeric}">0</strong>
-              <span class="ship-summary-label">${escapeHtml(stat.label)}</span>
+              <div class="ship-summary-copy">
+                <strong class="ship-summary-value" data-ship-stat="${stat.key}" data-ship-target="${numeric}">0</strong>
+                <span class="ship-summary-label">${escapeHtml(stat.label)}</span>
+              </div>
             </div>
           `;
         }).join("")}
@@ -5029,10 +5032,8 @@ function renderShipOnboardGlance(items) {
           return `
             <div class="ship-glance-item is-metric">
               <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.shopping}</span>
-              <div class="ship-glance-copy">
-                <strong class="ship-glance-metric">${escapeHtml(display)}</strong>
-                <span class="ship-glance-label">${escapeHtml(item.label)}</span>
-              </div>
+              <strong class="ship-glance-metric">${escapeHtml(display)}</strong>
+              <span class="ship-glance-label">${escapeHtml(item.label)}</span>
             </div>
           `;
         }
@@ -5044,7 +5045,7 @@ function renderShipOnboardGlance(items) {
             : "ship-glance-value is-muted";
 
         return `
-          <div class="ship-glance-item">
+          <div class="ship-glance-item is-status">
             <span class="ship-glance-icon" aria-hidden="true">${SHIP_GLANCE_ICONS[item.icon] || SHIP_GLANCE_ICONS.shopping}</span>
             <span class="ship-glance-label">${escapeHtml(item.label)}</span>
             <span class="${valueClass}">${escapeHtml(display)}</span>
@@ -5087,14 +5088,23 @@ function renderShipSpecifications(specs) {
 }
 
 function renderShipScaleFacts(facts) {
+  const ratioFact = (facts || []).find(item => /crew ratio|guest to crew/i.test(String(item.label || "")));
+  const otherFacts = (facts || []).filter(item => item !== ratioFact);
+
   return `
     <div class="ship-scale-list">
-      ${facts.map(item => `
+      ${otherFacts.map(item => `
         <div class="ship-scale-row">
           <span>${escapeHtml(item.label)}</span>
           <strong>${escapeHtml(item.value)}</strong>
         </div>
       `).join("")}
+      ${ratioFact ? `
+        <div class="ship-scale-highlight">
+          <span>${escapeHtml(ratioFact.label === "Crew ratio" ? "Guest to Crew Ratio" : ratioFact.label)}</span>
+          <strong>${escapeHtml(ratioFact.value)}</strong>
+        </div>
+      ` : ""}
     </div>
   `;
 }
@@ -5343,31 +5353,31 @@ async function renderTheShip() {
       ${renderShipSummaryCard(ship)}
 
       <div class="ship-content-stage">
-        <section class="planner-card ship-section-card ship-reveal-block" style="--ship-delay:0ms">
+        <section class="ship-section-card ship-glance-section ship-reveal-block" style="--ship-delay:0ms">
           <h3>Onboard at a Glance</h3>
           <p class="planner-muted ship-section-intro">Everything that makes life on board feel effortless.</p>
           ${renderShipOnboardGlance(ship.onboardGlance)}
         </section>
 
         <div class="ship-info-grid ship-reveal-block" style="--ship-delay:70ms">
-          <section class="planner-card ship-section-card ship-info-card">
+          <section class="ship-section-card ship-info-card">
             <h3>Ship Specifications</h3>
             ${renderShipSpecifications(ship.specifications)}
           </section>
 
-          <section class="planner-card ship-section-card ship-info-card">
+          <section class="ship-section-card ship-info-card">
             <h3>Room Types</h3>
             ${renderShipAccommodationChart(ship.accommodation)}
           </section>
 
-          <section class="planner-card ship-section-card ship-info-card">
+          <section class="ship-section-card ship-info-card">
             <h3>Ship Scale</h3>
             ${renderShipScaleFacts(ship.scaleFacts)}
           </section>
         </div>
 
         ${ship.exclusiveAreas.length ? `
-          <section class="planner-card ship-section-card ship-reveal-block" style="--ship-delay:280ms">
+          <section class="ship-section-card ship-reveal-block" style="--ship-delay:280ms">
             <h3>Exclusive Areas</h3>
             <p class="planner-muted ship-section-intro">Quiet corners and elevated spaces made for your voyage.</p>
             ${renderShipChipGroup(ship.exclusiveAreas)}
@@ -5375,19 +5385,24 @@ async function renderTheShip() {
         ` : ""}
 
         ${ship.specialtyFeatures.length ? `
-          <section class="planner-card ship-section-card ship-reveal-block" style="--ship-delay:350ms">
+          <section class="ship-section-card ship-reveal-block" style="--ship-delay:350ms">
             <h3>Specialty Features</h3>
             <p class="planner-muted ship-section-intro">Signature experiences unique to this ship.</p>
             ${renderShipChipGroup(ship.specialtyFeatures)}
           </section>
         ` : ""}
 
-        <section class="planner-card ship-section-card ship-deck-card ship-reveal-block" style="--ship-delay:420ms">
+        <section class="ship-section-card ship-deck-card ship-reveal-block" style="--ship-delay:420ms">
           <div class="ship-deck-copy">
             <h3>Deck Plans</h3>
             <p class="planner-muted">Explore the official deck plans and get to know every level before you sail.</p>
           </div>
-          <button class="planner-button secondary ship-deck-button is-coming-soon" type="button" disabled aria-disabled="true">Coming Soon</button>
+          <button class="planner-button secondary ship-deck-button is-coming-soon" type="button" disabled aria-disabled="true">
+            <span class="ship-deck-button-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/></svg>
+            </span>
+            Coming Soon
+          </button>
         </section>
       </div>
     </div>
