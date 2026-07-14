@@ -382,14 +382,14 @@ function renderCustomerAccess(message = "", isError = false) {
         <img class="customer-access-logo" src="assets/101cruise-logo-black.png" alt="101cruise">
         <p class="planner-kicker">My Cruise</p>
         <h1>Welcome to My Cruise</h1>
-        <p class="planner-muted">Access your personalised cruise planner using your booking number and surname.</p>
+        <p class="planner-muted">Access your personalised cruise planner using your booking number and lead traveller’s surname.</p>
         <div class="planner-field">
           <label for="customerBookingNumber">Booking number</label>
-          <input id="customerBookingNumber" type="text" autocomplete="off" autocapitalize="characters" placeholder="SWM123456">
+          <input id="customerBookingNumber" type="text" autocomplete="off" autocapitalize="characters" placeholder="CRUISE1012345">
         </div>
         <div class="planner-field">
           <label for="customerSurname">Lead traveller surname</label>
-          <input id="customerSurname" type="text" autocomplete="family-name" autocapitalize="characters" placeholder="MUMMERY" onkeydown="if(event.key === 'Enter') accessMyCruise()">
+          <input id="customerSurname" type="text" autocomplete="family-name" autocapitalize="characters" placeholder="SMITH" onkeydown="if(event.key === 'Enter') accessMyCruise()">
         </div>
         <label class="customer-remember-row"><input id="rememberCustomerBooking" type="checkbox" checked><span>Remember me on this device</span></label>
         <button id="customerAccessButton" class="planner-button black customer-access-button" onclick="accessMyCruise()">Open My Cruise</button>
@@ -4910,14 +4910,23 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
   };
 }
 
-async function fetchShipFromBase44(shipName) {
-  const response = await fetch(`/.netlify/functions/get-ship?name=${encodeURIComponent(shipName)}`, {
+async function fetchShipFromBase44(shipName, cruiseLine = "") {
+  const params = new URLSearchParams();
+  params.set("name", shipName);
+  if (cruiseLine) params.set("cruise_line", cruiseLine);
+
+  const response = await fetch(`/.netlify/functions/get-ship?${params.toString()}`, {
     method: "GET",
     headers: { "Content-Type": "application/json" }
   });
   const data = await response.json().catch(() => ({ success: false, error: "Invalid response" }));
 
-  if (response.status === 404 || data.error === "SHIP_NOT_FOUND") {
+  if (
+    response.status === 404 ||
+    response.status === 409 ||
+    data.error === "SHIP_NOT_FOUND" ||
+    data.error === "SHIP_AMBIGUOUS"
+  ) {
     return { ok: false, notFound: true };
   }
 
@@ -5223,7 +5232,7 @@ async function renderTheShip() {
 
   let result;
   try {
-    result = await fetchShipFromBase44(shipName);
+    result = await fetchShipFromBase44(shipName, cruiseLine);
   } catch (error) {
     console.error("Ship lookup failed", error);
     result = { ok: false, notFound: false };

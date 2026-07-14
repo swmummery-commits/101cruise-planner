@@ -1,14 +1,19 @@
 /**
  * Production read-only ship lookup for The Ship page.
  *
- * GET /.netlify/functions/get-ship?name=<ship name>
+ * GET /.netlify/functions/get-ship?name=<ship name>&cruise_line=<cruise line>
  *
  * Uses Finder credentials only:
  *   BASE44_FINDER_APP_ID
  *   BASE44_FINDER_API_KEY
  *
- * Matching: case-insensitive, whitespace-normalised, exact after normalisation.
- * Never returns a different ship as a fallback.
+ * Strict ordered matching (case-insensitive, whitespace-normalised):
+ *   1. Exact ship-name match
+ *   2. Exact composed match: cruise_line + " " + ship name
+ *   3. Unique line-aware suffix match
+ *
+ * Multiple candidates at any step → SHIP_AMBIGUOUS (never pick one).
+ * No fuzzy / contains / edit-distance / first-result fallback.
  */
 
 const SHIP_FIELDS = [
@@ -45,7 +50,7 @@ function jsonResponse(statusCode, body) {
   };
 }
 
-function normaliseShipName(value) {
+function normaliseText(value) {
   return String(value || '')
     .trim()
     .replace(/\s+/g, ' ')
@@ -81,39 +86,94 @@ function pickShipFields(record) {
   return ship;
 }
 
-async function findCruiseShipByName(base44, shipName) {
-  const target = normaliseShipName(shipName);
-  if (!target) return null;
+function dedupeShips(rows) {
+  const seen = new Set();
+  const result = [];
+  rows.forEach((row) => {
+    const key = row?.id || `name:${normaliseText(row?.name)}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    result.push(row);
+  });
+  return result;
+}
 
-  // Prefer an exact filter first (when Base44 stores the same casing).
-  try {
-    const filtered = await base44.entities.CruiseShip.filter({ name: shipName }, 'name', 25, 0);
-    const filteredList = Array.isArray(filtered) ? filtered : [];
-    const filteredMatch = filteredList.find(
-      (row) => normaliseShipName(row?.name) === target
-    );
-    if (filteredMatch) return filteredMatch;
-  } catch (error) {
-    // Fall through to paginated list matching — filter may be unavailable or strict.
-    console.warn('CruiseShip filter lookup unavailable; falling back to list match');
-  }
+function resolveUniqueCandidates(candidates) {
+  const unique = dedupeShips(candidates);
+  if (unique.length === 0) return null;
+  if (unique.length === 1) return { status: 'matched', ship: unique[0] };
+  return { status: 'ambiguous' };
+}
 
+/**
+ * Prefix of a Base44 ship name is compatible with the booking cruise line when:
+ * - they are equal after normalisation, or
+ * - one is a whole-token extension of the other
+ *   (e.g. "celebrity" ↔ "celebrity cruises")
+ */
+function linePrefixCompatible(shipPrefix, cruiseLine) {
+  const prefix = normaliseText(shipPrefix);
+  const line = normaliseText(cruiseLine);
+  if (!prefix || !line) return false;
+  if (prefix === line) return true;
+  if (line.startsWith(`${prefix} `)) return true;
+  if (prefix.startsWith(`${line} `)) return true;
+  return false;
+}
+
+async function listCruiseShips(base44) {
   const pageSize = 100;
   let skip = 0;
+  const all = [];
 
   while (skip < 2000) {
     const page = await base44.entities.CruiseShip.list('name', pageSize, skip);
     const list = Array.isArray(page) ? page : [];
     if (list.length === 0) break;
-
-    const match = list.find((row) => normaliseShipName(row?.name) === target);
-    if (match) return match;
-
+    all.push(...list);
     if (list.length < pageSize) break;
     skip += pageSize;
   }
 
-  return null;
+  return all;
+}
+
+function resolveCruiseShip(ships, shipName, cruiseLine) {
+  const target = normaliseText(shipName);
+  const line = normaliseText(cruiseLine);
+
+  if (!target) return { status: 'not_found' };
+
+  // Step 1 — exact normalised ship-name match
+  const exact = ships.filter((row) => normaliseText(row?.name) === target);
+  const step1 = resolveUniqueCandidates(exact);
+  if (step1) return step1;
+
+  // Step 2 — exact composed match: cruise_line + " " + ship name
+  if (line) {
+    const composed = `${line} ${target}`;
+    const composedMatches = ships.filter(
+      (row) => normaliseText(row?.name) === composed
+    );
+    const step2 = resolveUniqueCandidates(composedMatches);
+    if (step2) return step2;
+  }
+
+  // Step 3 — unique line-aware suffix match
+  if (line) {
+    const suffix = ` ${target}`;
+    const suffixMatches = ships.filter((row) => {
+      const name = normaliseText(row?.name);
+      if (!name.endsWith(suffix)) return false;
+      if (name === target) return false;
+      const prefix = name.slice(0, name.length - suffix.length);
+      return linePrefixCompatible(prefix, line);
+    });
+    const step3 = resolveUniqueCandidates(suffixMatches);
+    if (step3) return step3;
+  }
+
+  return { status: 'not_found' };
 }
 
 exports.handler = async function (event) {
@@ -131,6 +191,12 @@ exports.handler = async function (event) {
   const shipName = String(
     event.queryStringParameters?.name ||
       event.queryStringParameters?.ship_name ||
+      ''
+  ).trim();
+
+  const cruiseLine = String(
+    event.queryStringParameters?.cruise_line ||
+      event.queryStringParameters?.cruiseLine ||
       ''
   ).trim();
 
@@ -164,9 +230,18 @@ exports.handler = async function (event) {
       }
     });
 
-    const record = await findCruiseShipByName(base44, shipName);
+    const ships = await listCruiseShips(base44);
+    const resolution = resolveCruiseShip(ships, shipName, cruiseLine);
 
-    if (!record) {
+    if (resolution.status === 'ambiguous') {
+      console.warn('CruiseShip lookup ambiguous');
+      return jsonResponse(409, {
+        success: false,
+        error: 'SHIP_AMBIGUOUS'
+      });
+    }
+
+    if (resolution.status !== 'matched' || !resolution.ship) {
       console.warn('CruiseShip not found for requested name');
       return jsonResponse(404, {
         success: false,
@@ -174,7 +249,7 @@ exports.handler = async function (event) {
       });
     }
 
-    const ship = pickShipFields(record);
+    const ship = pickShipFields(resolution.ship);
     console.log('CruiseShip retrieved successfully');
 
     return jsonResponse(200, {
