@@ -6634,7 +6634,7 @@ input[type="radio"] {
   }
 
   .dashboard-mobile-priority-active .dashboard-v2-grid,
-  .dashboard-mobile-priority-active .dashboard-v2-side {
+  .dashboard-mobile-priority-active .dashboard-v2-middle {
     display: contents;
   }
 
@@ -6654,11 +6654,12 @@ input[type="radio"] {
     order: 3;
   }
 
-  .dashboard-mobile-priority-active .dashboard-v2-top-row {
+  .dashboard-mobile-priority-active .dashboard-combined-progress-card {
     order: 4;
-    display: grid !important;
-    grid-template-columns: 1fr !important;
-    gap: 14px !important;
+  }
+
+  .dashboard-mobile-priority-active .dashboard-snapshot-card {
+    order: 5;
   }
 
   .dashboard-quick-access-strip {
@@ -7285,6 +7286,118 @@ input[type="radio"] {
   .dashboard-v2-top-row {
     grid-template-columns: 1fr !important;
     align-items: stretch !important;
+  }
+}
+
+/* Dashboard layout balance: Journey | Progress + Next Step | Snapshot */
+.dashboard-v2-middle {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  align-items: stretch;
+}
+
+.dashboard-v2-middle > .dashboard-combined-progress-card,
+.dashboard-v2-middle > .dashboard-next-step-wide {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+@media (min-width: 1081px) {
+  .dashboard-v2-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.92fr) minmax(0, 0.9fr) !important;
+    grid-template-rows: auto !important;
+    gap: 14px !important;
+    align-items: start !important;
+  }
+
+  .dashboard-journey-card {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  .dashboard-v2-middle {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+  }
+
+  .dashboard-v2-grid > .dashboard-snapshot-card {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    align-self: start !important;
+  }
+
+  .dashboard-v2-middle > .dashboard-combined-progress-card {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-v2-middle > .dashboard-next-step-wide {
+    position: static !important;
+    z-index: auto !important;
+    align-self: stretch !important;
+    min-height: 0 !important;
+  }
+}
+
+@media (max-width: 1080px) and (min-width: 761px) {
+  .dashboard-v2-grid {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.85fr) !important;
+    grid-template-rows: auto !important;
+    gap: 14px !important;
+    align-items: start !important;
+  }
+
+  .dashboard-journey-card {
+    grid-column: 1 !important;
+    grid-row: 1 / span 2 !important;
+  }
+
+  .dashboard-v2-middle {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+
+  .dashboard-v2-grid > .dashboard-snapshot-card {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-v2-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto !important;
+    gap: 14px !important;
+  }
+
+  .dashboard-journey-card,
+  .dashboard-v2-middle,
+  .dashboard-v2-grid > .dashboard-snapshot-card {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+
+  .dashboard-v2-middle {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
   }
 }
 

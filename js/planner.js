@@ -2083,14 +2083,12 @@ async function renderDashboard() {
         <section class="dashboard-v2-grid">
           ${renderJourneyMap(dashboardJourney)}
 
-          <div class="dashboard-v2-side ${dashboardActionCard.isPrimary ? "dashboard-v2-side-primary-first" : ""}">
-            ${dashboardActionCard.isPrimary ? renderDashboardActionCard(dashboardActionCard) : ""}
-            <div class="dashboard-v2-top-row">
-              ${renderDashboardCombinedProgress(packingData, checklistData)}
-              ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
-            </div>
-            ${dashboardActionCard.isPrimary ? "" : renderDashboardActionCard(dashboardActionCard)}
+          <div class="dashboard-v2-middle">
+            ${renderDashboardCombinedProgress(packingData, checklistData)}
+            ${renderDashboardActionCard(dashboardActionCard)}
           </div>
+
+          ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
         </section>
 
         ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
