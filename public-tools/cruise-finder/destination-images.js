@@ -71,9 +71,9 @@
     },
     "greek-islands": {
       default: {
-        url: thumb("6/62", "Oia_Santorini_06_2017_3496.jpg"),
+        url: "images/greek-islands-hero.png",
         objectPosition: "center 40%",
-        credit: "Wikimedia Commons"
+        credit: "101cruise"
       },
       seasonal: {}
     },
