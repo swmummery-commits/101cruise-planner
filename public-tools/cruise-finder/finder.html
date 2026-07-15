@@ -24,46 +24,39 @@
       var base = /\/cruise-finder\/?$/.test(path)
         ? "/public-tools/cruise-finder/"
         : (path.replace(/[^/]*$/, "") || "./");
+
+      function fail(msg) {
+        var mount = document.getElementById("101cruise-cruise-finder");
+        if (mount) {
+          mount.innerHTML =
+            '<p style="max-width:760px;margin:0 auto;color:#8a2f2f;">' + msg + "</p>";
+        }
+      }
+
+      function loadScript(src, next) {
+        var el = document.createElement("script");
+        el.src = src;
+        el.onload = next;
+        el.onerror = function () {
+          fail("Could not load " + src);
+        };
+        document.body.appendChild(el);
+      }
+
       var css = document.createElement("link");
       css.rel = "stylesheet";
       css.href = base + "finder.css";
       document.head.appendChild(css);
-      var destinations = document.createElement("script");
-      destinations.src = base + "destinations.js";
-      destinations.onload = function () {
-        var heroes = document.createElement("script");
-        heroes.src = base + "hero-images.js";
-        heroes.onload = function () {
-          var app = document.createElement("script");
-          app.src = base + "finder.js";
-          app.onerror = function () {
-            var mount = document.getElementById("101cruise-cruise-finder");
-            if (mount) {
-              mount.innerHTML =
-                '<p style="max-width:760px;margin:0 auto;color:#8a2f2f;">Could not load finder.js from ' +
-                app.src +
-                ".</p>";
-            }
-          };
-          document.body.appendChild(app);
-        };
-        heroes.onerror = function () {
-          var mount = document.getElementById("101cruise-cruise-finder");
-          if (mount) {
-            mount.innerHTML =
-              '<p style="max-width:760px;margin:0 auto;color:#8a2f2f;">Could not load hero-images.js.</p>';
-          }
-        };
-        document.body.appendChild(heroes);
-      };
-      destinations.onerror = function () {
-        var mount = document.getElementById("101cruise-cruise-finder");
-        if (mount) {
-          mount.innerHTML =
-            '<p style="max-width:760px;margin:0 auto;color:#8a2f2f;">Could not load destinations.js.</p>';
-        }
-      };
-      document.body.appendChild(destinations);
+
+      loadScript(base + "destinations.js", function () {
+        loadScript(base + "approved-cruise-lines.js", function () {
+          loadScript(base + "destination-images.js", function () {
+            loadScript(base + "hero-images.js", function () {
+              loadScript(base + "finder.js", function () {});
+            });
+          });
+        });
+      });
     })();
   </script>
 </body>

@@ -483,14 +483,21 @@
   function resultCard(row) {
     const d = row.dest;
     const heroApi = window.CruiseFinderHeroImages;
-    const phrases = heroApi
-      ? heroApi.buildSearchPhrases(d, {
-          travelMonth: primaryTravelMonth(),
-          aiImageSearchPhrase: d.ai_image_search_phrase || null
-        })
-      : [d.image_search_phrase || `${d.name} landscape`].filter(Boolean);
-    const requireCsv = heroApi && heroApi.requireParam ? heroApi.requireParam(d) : "";
-    const lines = (d.typical_cruise_lines || []).slice(0, 4).join(" · ");
+    const month = primaryTravelMonth();
+    const image =
+      heroApi && typeof heroApi.pick === "function" ? heroApi.pick(d, month) : null;
+    const imageUrl = image && image.url ? image.url : "";
+    const objectPosition =
+      image && image.objectPosition ? image.objectPosition : "center center";
+    const filterLines =
+      typeof window.CruiseFinderFilterCruiseLines === "function"
+        ? window.CruiseFinderFilterCruiseLines
+        : function (names) {
+            return Array.isArray(names) ? names : [];
+          };
+    const lines = filterLines(d.typical_cruise_lines || [])
+      .slice(0, 4)
+      .join(" · ");
     const explored = state.exploredId === d.id;
     const tagline = heroTagline(d);
 
@@ -498,17 +505,17 @@
       <article class="cf-mag-card" data-destination-id="${escapeHtml(d.id)}" style="--cf-accent:${escapeHtml(d.accent || "#8DD9BF")}">
         <div
           class="cf-mag-hero"
-          data-image-phrases="${escapeHtml(JSON.stringify(phrases))}"
-          data-image-require="${escapeHtml(requireCsv)}"
-          data-image-search="${escapeHtml(phrases[0] || "")}"
+          data-image-url="${escapeHtml(imageUrl)}"
+          data-object-position="${escapeHtml(objectPosition)}"
         >
           <img
             class="cf-mag-image"
             alt=""
             loading="lazy"
             decoding="async"
-            width="1200"
-            height="360"
+            width="1280"
+            height="720"
+            style="object-position:${escapeHtml(objectPosition)}"
           />
           <div class="cf-mag-hero-fade" aria-hidden="true"></div>
           <span class="cf-mag-level cf-mag-level--${escapeHtml(row.level.key)}">${escapeHtml(row.level.label)}</span>
@@ -540,7 +547,7 @@
             </div>
             <div class="cf-mag-fact cf-mag-fact--wide">
               <span class="cf-mag-fact-label">Typical cruise lines</span>
-              <span class="cf-mag-fact-value">${escapeHtml(lines || "A range of premium and expedition lines")}</span>
+              <span class="cf-mag-fact-value">${escapeHtml(lines || "Ask Paul for suitable cruise lines")}</span>
             </div>
           </div>
 
@@ -625,7 +632,7 @@
 
     bind();
     if (window.CruiseFinderHeroImages) {
-      window.CruiseFinderHeroImages.hydrate(mount, TOOLS_ORIGIN);
+      window.CruiseFinderHeroImages.hydrate(mount);
     }
   }
 

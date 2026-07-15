@@ -235,6 +235,7 @@
   max-height: 380px;
   background: linear-gradient(145deg, var(--cf-accent, #2f5d4a) 0%, #1a2e28 100%);
   overflow: hidden;
+  border-radius: 22px 22px 0 0;
 }
 
 .cf-mag-image {

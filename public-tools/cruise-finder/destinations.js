@@ -1,11 +1,7 @@
 /**
  * 101cruise Cruise Finder — lightweight demo destinations only.
- * Temporary seed data. Future versions will generate descriptions,
- * seasonal fit, weather, cruise lines and hero imagery with AI.
- *
- * image_search_phrase drives automatic hero photography today.
- * Later: AI supplies a seasonal phrase (or ai_image_search_phrase)
- * and the same lookup endpoint resolves the image.
+ * Temporary seed data. Hero images live in destination-images.js.
+ * Cruise line display is filtered via approved-cruise-lines.js.
  */
 (function (root) {
   "use strict";
@@ -23,11 +19,8 @@
       typical_nights_min: 7,
       typical_nights_max: 14,
       typical_cruise_lines: ["Holland America", "Princess", "Celebrity", "Royal Caribbean"],
-      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
       suitable_styles: ["scenic_cruising", "adventure", "wildlife", "cold_weather", "bucket_list", "relaxation"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: null,
-      image_search_phrase: "Alaska glacier landscape",
       accent: "#3d5a6c",
       display_order: 1,
       active: true
@@ -44,11 +37,8 @@
       typical_nights_min: 8,
       typical_nights_max: 14,
       typical_cruise_lines: ["Princess", "Celebrity", "MSC", "Holland America"],
-      suitable_travellers: ["couple", "solo", "friends", "multi_generational"],
       suitable_styles: ["culture", "food_wine", "scenic_cruising", "bucket_list", "luxury", "adventure"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: null,
-      image_search_phrase: "Japan landscape",
       accent: "#8b3a3a",
       display_order: 2,
       active: true
@@ -56,7 +46,7 @@
     {
       id: "mediterranean",
       name: "Mediterranean",
-      hero_tagline: "Sunlit coasts and island life",
+      hero_tagline: "Sunlit coasts and layered history",
       inspirational_description:
         "Sunlit harbours, long lunches and layers of history — the Mediterranean remains the classic European cruise for good reason.",
       best_months: [5, 6, 7, 8, 9],
@@ -65,139 +55,10 @@
       typical_nights_min: 7,
       typical_nights_max: 14,
       typical_cruise_lines: ["Celebrity", "Princess", "MSC", "Norwegian", "Explora"],
-      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
       suitable_styles: ["culture", "food_wine", "beaches", "warm_weather", "relaxation", "luxury", "scenic_cruising"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: null,
-      image_search_phrase: "Mediterranean coast landscape",
       accent: "#2f6f8f",
       display_order: 3,
-      active: true
-    },
-    {
-      id: "norwegian-fjords",
-      name: "Norwegian Fjords",
-      hero_tagline: "Dramatic landscapes and quiet waters",
-      inspirational_description:
-        "Sheer cliffs, mirror-still water and villages tucked into the folds of the mountains — scenic cruising at its most dramatic.",
-      best_months: [5, 6, 7, 8],
-      acceptable_months: [4, 9],
-      typical_weather: "Cool summers with bright evenings; changeable coastal conditions.",
-      typical_nights_min: 7,
-      typical_nights_max: 14,
-      typical_cruise_lines: ["Holland America", "Princess", "Celebrity", "Viking"],
-      suitable_travellers: ["couple", "solo", "friends", "family", "multi_generational"],
-      suitable_styles: ["scenic_cruising", "cold_weather", "adventure", "relaxation", "luxury", "bucket_list"],
-      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: null,
-      image_search_phrase: "Norwegian Fjords landscape",
-      accent: "#355e5a",
-      display_order: 4,
-      active: true
-    },
-    {
-      id: "caribbean",
-      name: "Caribbean",
-      hero_tagline: "Turquoise water and island ease",
-      inspirational_description:
-        "Warm water, easy island days and a holiday rhythm that asks very little of you — ideal when you simply want to unwind.",
-      best_months: [12, 1, 2, 3, 4],
-      acceptable_months: [5, 11],
-      typical_weather: "Warm to hot tropical days; drier months favoured in winter and early spring.",
-      typical_nights_min: 7,
-      typical_nights_max: 14,
-      typical_cruise_lines: ["Royal Caribbean", "Celebrity", "Princess", "MSC", "Norwegian"],
-      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
-      suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "adventure", "luxury"],
-      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: null,
-      image_search_phrase: "Caribbean tropical beach",
-      accent: "#1a7a6d",
-      display_order: 5,
-      active: true
-    },
-    {
-      id: "south-pacific",
-      name: "South Pacific",
-      hero_tagline: "Lagoons, islands and easy living",
-      inspirational_description:
-        "Lagoon blues and island ease within closer reach of Australia and New Zealand — a holiday that feels far away without the longest flight.",
-      best_months: [5, 6, 7, 8, 9, 10],
-      acceptable_months: [4, 11],
-      typical_weather: "Warm tropical conditions; dry season usually more settled.",
-      typical_nights_min: 7,
-      typical_nights_max: 14,
-      typical_cruise_lines: ["P&O Australia", "Princess", "Carnival", "Royal Caribbean"],
-      suitable_travellers: ["couple", "family", "friends", "multi_generational"],
-      suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "luxury"],
-      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
-      image_url: null,
-      image_search_phrase: "South Pacific tropical lagoon",
-      accent: "#0d6e6e",
-      display_order: 6,
-      active: true
-    },
-    {
-      id: "australia-new-zealand",
-      name: "Australia & New Zealand",
-      hero_tagline: "Cities, coastlines and grand scenery",
-      inspirational_description:
-        "Home waters with surprising variety — coastal cities, island stops and New Zealand scenery without a long-haul journey first.",
-      best_months: [11, 12, 1, 2, 3],
-      acceptable_months: [4, 10],
-      typical_weather: "Warm summers; milder spring and autumn coastal conditions.",
-      typical_nights_min: 3,
-      typical_nights_max: 14,
-      typical_cruise_lines: ["P&O Australia", "Princess", "Celebrity", "Royal Caribbean"],
-      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
-      suitable_styles: ["scenic_cruising", "relaxation", "family", "food_wine", "culture", "warm_weather", "beaches"],
-      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
-      image_url: null,
-      image_search_phrase: "Sydney Harbour landscape",
-      accent: "#2f5d4a",
-      display_order: 7,
-      active: true
-    },
-    {
-      id: "antarctica",
-      name: "Antarctica",
-      hero_tagline: "Ice, wildlife and true wilderness",
-      inspirational_description:
-        "A true expedition — ice, silence and wildlife that belongs on a once-in-a-lifetime list.",
-      best_months: [11, 12, 1, 2, 3],
-      acceptable_months: [],
-      typical_weather: "Cold expedition conditions during the Southern summer season only.",
-      typical_nights_min: 10,
-      typical_nights_max: 21,
-      typical_cruise_lines: ["Hurtigruten", "Silversea", "Seabourn", "Ponant"],
-      suitable_travellers: ["couple", "solo", "friends"],
-      suitable_styles: ["expedition", "adventure", "wildlife", "bucket_list", "cold_weather", "luxury", "scenic_cruising"],
-      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: null,
-      image_search_phrase: "Antarctica ice landscape",
-      accent: "#4a6a8a",
-      display_order: 8,
-      active: true
-    },
-    {
-      id: "hawaii",
-      name: "Hawaii",
-      hero_tagline: "Volcanoes, beaches and island life",
-      inspirational_description:
-        "Volcanic islands, ocean swimming and an easy inter-island cruise that still feels like an escape.",
-      best_months: [1, 2, 3, 4, 5, 9, 10, 11, 12],
-      acceptable_months: [6, 7, 8],
-      typical_weather: "Warm year-round; trade winds and occasional tropical showers.",
-      typical_nights_min: 7,
-      typical_nights_max: 10,
-      typical_cruise_lines: ["Princess", "Norwegian", "Celebrity", "Holland America"],
-      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
-      suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "adventure", "luxury"],
-      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: null,
-      image_search_phrase: "Hawaii tropical coastline",
-      accent: "#c45c26",
-      display_order: 9,
       active: true
     },
     {
@@ -212,13 +73,154 @@
       typical_nights_min: 7,
       typical_nights_max: 10,
       typical_cruise_lines: ["Celebrity", "MSC", "Norwegian", "Explora"],
-      suitable_travellers: ["couple", "friends", "family", "multi_generational"],
       suitable_styles: ["beaches", "warm_weather", "relaxation", "culture", "food_wine", "scenic_cruising", "bucket_list"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: null,
-      image_search_phrase: "Greek Islands Santorini landscape",
       accent: "#1f6b8a",
+      display_order: 4,
+      active: true
+    },
+    {
+      id: "norwegian-fjords",
+      name: "Norwegian Fjords",
+      hero_tagline: "Dramatic landscapes and quiet waters",
+      inspirational_description:
+        "Sheer cliffs, mirror-still water and villages tucked into the folds of the mountains — scenic cruising at its most dramatic.",
+      best_months: [5, 6, 7, 8],
+      acceptable_months: [4, 9],
+      typical_weather: "Cool summers with bright evenings; changeable coastal conditions.",
+      typical_nights_min: 7,
+      typical_nights_max: 14,
+      typical_cruise_lines: ["Holland America", "Princess", "Celebrity", "Viking"],
+      suitable_styles: ["scenic_cruising", "cold_weather", "adventure", "relaxation", "luxury", "bucket_list"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      accent: "#355e5a",
+      display_order: 5,
+      active: true
+    },
+    {
+      id: "british-isles",
+      name: "British Isles",
+      hero_tagline: "Coastal drama and storied harbours",
+      inspirational_description:
+        "Rugged coastlines, historic ports and green countryside — a cruise that feels close to home for many, yet endlessly photogenic.",
+      best_months: [5, 6, 7, 8, 9],
+      acceptable_months: [4, 10],
+      typical_weather: "Mild summers with changeable coastal conditions and long daylight.",
+      typical_nights_min: 7,
+      typical_nights_max: 14,
+      typical_cruise_lines: ["Celebrity", "Princess", "Holland America", "Norwegian"],
+      suitable_styles: ["culture", "scenic_cruising", "food_wine", "relaxation", "bucket_list"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      accent: "#4a5d6a",
+      display_order: 6,
+      active: true
+    },
+    {
+      id: "caribbean",
+      name: "Caribbean",
+      hero_tagline: "Turquoise water and island ease",
+      inspirational_description:
+        "Warm water, easy island days and a holiday rhythm that asks very little of you — ideal when you simply want to unwind.",
+      best_months: [12, 1, 2, 3, 4],
+      acceptable_months: [5, 11],
+      typical_weather: "Warm to hot tropical days; drier months favoured in winter and early spring.",
+      typical_nights_min: 7,
+      typical_nights_max: 14,
+      typical_cruise_lines: ["Royal Caribbean", "Celebrity", "Princess", "MSC", "Norwegian"],
+      suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "adventure", "luxury"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      accent: "#1a7a6d",
+      display_order: 7,
+      active: true
+    },
+    {
+      id: "south-pacific",
+      name: "South Pacific",
+      hero_tagline: "Lagoons, islands and easy living",
+      inspirational_description:
+        "Lagoon blues and island ease within closer reach of Australia and New Zealand — a holiday that feels far away without the longest flight.",
+      best_months: [5, 6, 7, 8, 9, 10],
+      acceptable_months: [4, 11],
+      typical_weather: "Warm tropical conditions; dry season usually more settled.",
+      typical_nights_min: 7,
+      typical_nights_max: 14,
+      typical_cruise_lines: ["Princess", "Carnival", "Royal Caribbean", "Celebrity"],
+      suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "luxury"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
+      accent: "#0d6e6e",
+      display_order: 8,
+      active: true
+    },
+    {
+      id: "australia-new-zealand",
+      name: "Australia & New Zealand",
+      hero_tagline: "Cities, coastlines and grand scenery",
+      inspirational_description:
+        "Home waters with surprising variety — coastal cities, island stops and New Zealand scenery without a long-haul journey first.",
+      best_months: [11, 12, 1, 2, 3],
+      acceptable_months: [4, 10],
+      typical_weather: "Warm summers; milder spring and autumn coastal conditions.",
+      typical_nights_min: 3,
+      typical_nights_max: 14,
+      typical_cruise_lines: ["Princess", "Celebrity", "Royal Caribbean", "Carnival"],
+      suitable_styles: ["scenic_cruising", "relaxation", "family", "food_wine", "culture", "warm_weather", "beaches"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
+      accent: "#2f5d4a",
+      display_order: 9,
+      active: true
+    },
+    {
+      id: "antarctica",
+      name: "Antarctica",
+      hero_tagline: "Ice, wildlife and true wilderness",
+      inspirational_description:
+        "A true expedition — ice, silence and wildlife that belongs on a once-in-a-lifetime list.",
+      best_months: [11, 12, 1, 2, 3],
+      acceptable_months: [],
+      typical_weather: "Cold expedition conditions during the Southern summer season only.",
+      typical_nights_min: 10,
+      typical_nights_max: 21,
+      typical_cruise_lines: ["Hurtigruten", "Silversea", "Seabourn", "Ponant"],
+      suitable_styles: ["expedition", "adventure", "wildlife", "bucket_list", "cold_weather", "luxury", "scenic_cruising"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      accent: "#4a6a8a",
       display_order: 10,
+      active: true
+    },
+    {
+      id: "canada-new-england",
+      name: "Canada & New England",
+      hero_tagline: "Coastlines, harbours and autumn colour",
+      inspirational_description:
+        "Lighthouses, harbour towns and maples turning gold — especially magical when autumn colour arrives.",
+      best_months: [5, 6, 7, 8, 9, 10],
+      acceptable_months: [4],
+      typical_weather: "Mild summers; crisp, colourful autumns along the Atlantic coast.",
+      typical_nights_min: 7,
+      typical_nights_max: 14,
+      typical_cruise_lines: ["Holland America", "Princess", "Celebrity", "Norwegian"],
+      suitable_styles: ["scenic_cruising", "culture", "food_wine", "relaxation", "bucket_list"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      accent: "#6b4a3a",
+      display_order: 11,
+      active: true
+    },
+    {
+      id: "hawaii",
+      name: "Hawaii",
+      hero_tagline: "Volcanoes, beaches and island life",
+      inspirational_description:
+        "Volcanic islands, ocean swimming and an easy inter-island cruise that still feels like an escape.",
+      best_months: [1, 2, 3, 4, 5, 9, 10, 11, 12],
+      acceptable_months: [6, 7, 8],
+      typical_weather: "Warm year-round; trade winds and occasional tropical showers.",
+      typical_nights_min: 7,
+      typical_nights_max: 10,
+      typical_cruise_lines: ["Princess", "Norwegian", "Celebrity", "Holland America"],
+      suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "adventure", "luxury"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      accent: "#c45c26",
+      display_order: 12,
       active: true
     }
   ];
