@@ -63,9 +63,9 @@
     },
     mediterranean: {
       default: {
-        url: thumb("e/ec", "Positano_-_7268.jpg"),
-        objectPosition: "center 35%",
-        credit: "Wikimedia Commons"
+        url: "images/mediterranean-hero.png",
+        objectPosition: "center 40%",
+        credit: "101cruise"
       },
       seasonal: {}
     },
