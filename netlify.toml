@@ -30,3 +30,13 @@
   from = "/drinks-calculator-v2/"
   to = "/public-tools/drinks-calculator/calculator-v2.html"
   status = 200
+
+[[redirects]]
+  from = "/cruise-finder"
+  to = "/public-tools/cruise-finder/finder.html"
+  status = 200
+
+[[redirects]]
+  from = "/cruise-finder/"
+  to = "/public-tools/cruise-finder/finder.html"
+  status = 200

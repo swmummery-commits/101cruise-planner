@@ -1,0 +1,415 @@
+/* 101cruise Cruise Finder — public embed
+ * Matches My Cruise / Drinks Calculator tokens:
+ * primary #111, body #666, brand green #8DD9BF
+ */
+
+.cf-finder {
+  --cf-green: #8DD9BF;
+  --cf-green-hover: #79CDB1;
+  --cf-green-ink: #245C4E;
+  --cf-green-soft: #EFFAF6;
+  --cf-text: #111;
+  --cf-muted: #666;
+  --cf-border: #e8e8e8;
+  --cf-card: #fff;
+  --cf-soft: #f7f8f7;
+  --cf-max: 760px;
+  --cf-radius: 18px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--cf-max);
+  margin: 0 auto;
+  padding: 12px 0 64px;
+  color: var(--cf-text);
+  font-family: "Halyard Display", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.cf-finder *,
+.cf-finder *::before,
+.cf-finder *::after {
+  box-sizing: border-box;
+}
+
+.cf-finder p,
+.cf-finder li {
+  color: #666 !important;
+}
+
+.cf-finder h1,
+.cf-finder h2,
+.cf-finder h3,
+.cf-finder strong {
+  color: #111 !important;
+}
+
+.cf-finder-header {
+  text-align: center;
+  margin: 0 0 36px;
+}
+
+.cf-finder-kicker {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cf-green-ink) !important;
+}
+
+.cf-finder-title {
+  margin: 0 0 12px;
+  font-size: clamp(1.7rem, 4vw, 2.15rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.cf-finder-tagline {
+  margin: 0 auto;
+  max-width: 42ch;
+  font-size: 1.02rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #666 !important;
+}
+
+.cf-step {
+  margin: 0 0 18px;
+  padding: 22px 22px 20px;
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius);
+  background: var(--cf-card);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.cf-step.is-dimmed {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.cf-step-label {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cf-green-ink) !important;
+}
+
+.cf-step-title {
+  margin: 0 0 16px;
+  font-size: 1.12rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.cf-choice-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cf-choice {
+  appearance: none;
+  border: 1px solid var(--cf-border);
+  background: #fff;
+  color: #111 !important;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.cf-choice:hover {
+  border-color: var(--cf-green);
+  background: var(--cf-green-soft);
+}
+
+.cf-choice.is-selected {
+  border-color: var(--cf-green);
+  background: var(--cf-green-soft);
+  color: var(--cf-green-ink) !important;
+  font-weight: 650;
+}
+
+.cf-fields {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.cf-fields.is-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.cf-field label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: #111 !important;
+}
+
+.cf-field input,
+.cf-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.cf-field input:focus,
+.cf-field select:focus {
+  outline: 3px solid rgba(141, 217, 191, 0.45);
+  border-color: var(--cf-green);
+}
+
+.cf-hint {
+  margin: 10px 0 0;
+  font-size: 0.84rem;
+  color: #666 !important;
+}
+
+.cf-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cf-chip {
+  appearance: none;
+  border: 1px solid var(--cf-border);
+  background: #fff;
+  color: #111 !important;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cf-chip.is-selected {
+  border-color: var(--cf-green);
+  background: var(--cf-green-soft);
+  color: var(--cf-green-ink) !important;
+  font-weight: 650;
+}
+
+.cf-depart-suggest {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.cf-budget-note {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: #666 !important;
+}
+
+.cf-actions {
+  display: flex;
+  justify-content: center;
+  margin: 28px 0 8px;
+}
+
+.cf-primary {
+  appearance: none;
+  border: none;
+  background: #111;
+  color: #fff !important;
+  border-radius: 999px;
+  padding: 14px 28px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.cf-primary:hover:not(:disabled) {
+  background: #222;
+}
+
+.cf-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.cf-results {
+  margin-top: 40px;
+  padding-top: 8px;
+}
+
+.cf-results-header {
+  text-align: center;
+  margin: 0 0 24px;
+}
+
+.cf-results-header h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  font-weight: 650;
+}
+
+.cf-results-header p {
+  margin: 0 auto;
+  max-width: 40ch;
+  font-size: 0.95rem;
+}
+
+.cf-result-list {
+  display: grid;
+  gap: 16px;
+}
+
+.cf-card {
+  border: 1px solid var(--cf-border);
+  border-radius: var(--cf-radius);
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.045);
+}
+
+.cf-card-visual {
+  min-height: 110px;
+  padding: 22px 22px 16px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--cf-accent, #2f5d4a), #1a2e28);
+}
+
+.cf-card-visual h3 {
+  margin: 0 0 6px;
+  font-size: 1.25rem;
+  font-weight: 650;
+  color: #fff !important;
+}
+
+.cf-badge {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff !important;
+}
+
+.cf-badge.is-best {
+  background: rgba(141, 217, 191, 0.95);
+  color: var(--cf-green-ink) !important;
+}
+
+.cf-card-body {
+  padding: 18px 22px 22px;
+}
+
+.cf-card-body p {
+  margin: 0 0 12px;
+  font-size: 0.94rem;
+}
+
+.cf-meta {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 16px;
+  font-size: 0.86rem;
+}
+
+.cf-meta div {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 8px;
+}
+
+.cf-meta dt {
+  margin: 0;
+  font-weight: 650;
+  color: #111 !important;
+}
+
+.cf-meta dd {
+  margin: 0;
+  color: #666 !important;
+}
+
+.cf-season-note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff8e8;
+  border: 1px solid #f0dfb0;
+  font-size: 0.86rem;
+  color: #6b5a20 !important;
+}
+
+.cf-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cf-secondary {
+  appearance: none;
+  border: 1px solid var(--cf-border);
+  background: #fff;
+  color: #111 !important;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cf-secondary:hover {
+  border-color: var(--cf-green);
+  background: var(--cf-green-soft);
+}
+
+.cf-explore-note {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--cf-green-soft);
+  border: 1px solid rgba(141, 217, 191, 0.55);
+  font-size: 0.9rem;
+  color: #245c4e !important;
+}
+
+.cf-empty {
+  text-align: center;
+  padding: 28px 16px;
+  color: #666 !important;
+}
+
+@media (max-width: 640px) {
+  .cf-fields.is-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .cf-step {
+    padding: 18px 16px;
+  }
+
+  .cf-meta div {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
