@@ -288,28 +288,35 @@
     const packageGratuities = flags.gratuitiesIncluded ? 0 : packagePrice * gratuityRate;
 
     let wifiOnBuyAsYouGo = 0;
+    let wifiOnPackage = 0;
     let wifiDifferential = 0;
     let wifiExplanation = "Wi-Fi is not affecting this comparison.";
 
     if (wifiInFare) {
       wifiExplanation = "Wi-Fi is included in the cruise fare, so it cancels out of the comparison.";
-    } else if (state.wouldBuyWifi) {
+    } else if (standaloneWifi != null && state.wouldBuyWifi) {
+      // Always use the Admin Wi-Fi price on the buy-as-you-go side when the guest would buy Wi-Fi.
+      wifiOnBuyAsYouGo = standaloneWifi;
       if (flags.wifiIncluded) {
-        wifiOnBuyAsYouGo = standaloneWifi == null ? 0 : standaloneWifi;
-        wifiDifferential = wifiOnBuyAsYouGo;
+        wifiOnPackage = 0;
+        wifiDifferential = standaloneWifi;
         wifiExplanation =
-          standaloneWifi == null
-            ? "Your package includes Wi-Fi, but a standalone Wi-Fi price is not listed for this cruise line."
-            : "Standalone Wi-Fi is added to the buy-as-you-go side only because the selected package includes Wi-Fi.";
+          "Standalone Wi-Fi is added to the buy-as-you-go side only because the selected package includes Wi-Fi.";
       } else {
+        // Package does not include Wi-Fi — same typical cost applies on both sides.
+        wifiOnPackage = standaloneWifi;
+        wifiDifferential = 0;
         wifiExplanation =
-          "Wi-Fi would be purchased separately with either option, so it does not change the difference.";
+          "Wi-Fi would be purchased separately with either option. The typical Wi-Fi price from Admin is included on both sides.";
       }
-    } else {
+    } else if (standaloneWifi != null) {
       wifiExplanation = "You indicated you would not normally buy Wi-Fi separately.";
+    } else if (state.wouldBuyWifi) {
+      wifiExplanation =
+        "You would normally buy Wi-Fi, but a standalone Wi-Fi price is not listed for this cruise line.";
     }
 
-    const packageDailyTotal = packagePrice + packageGratuities;
+    const packageDailyTotal = packagePrice + packageGratuities + wifiOnPackage;
     const buyAsYouGoDailyTotal = dailyDrinks + dailyDrinkGratuities + wifiOnBuyAsYouGo;
     const dailyDifference = buyAsYouGoDailyTotal - packageDailyTotal;
     const cruiseDifference = dailyDifference * nights;
@@ -350,6 +357,7 @@
       dailyDrinks,
       dailyDrinkGratuities,
       wifiOnBuyAsYouGo,
+      wifiOnPackage,
       wifiDifferential,
       wifiExplanation,
       packageDailyTotal,
@@ -633,7 +641,13 @@
               </tr>
               <tr>
                 <td>Wi-Fi</td>
-                <td>${result.flags.wifiIncluded ? "Included" : "Not in package"}</td>
+                <td>${
+                  result.flags.wifiIncluded
+                    ? "Included"
+                    : result.wifiOnPackage > 0
+                      ? escapeHtml(money(result.wifiOnPackage, result.currency))
+                      : "Not in package"
+                }</td>
                 <td>${escapeHtml(money(result.wifiOnBuyAsYouGo, result.currency))}</td>
               </tr>
               <tr class="is-total">
@@ -668,7 +682,12 @@
             <li><span>Package price</span><strong>${escapeHtml(money(result.packagePrice, result.currency))}</strong></li>
             <li><span>Drink spend</span><strong>${escapeHtml(money(result.dailyDrinks, result.currency))}</strong></li>
             <li><span>Drink gratuities</span><strong>${escapeHtml(money(result.dailyDrinkGratuities, result.currency))}</strong></li>
-            <li><span>Wi-Fi</span><strong>${escapeHtml(money(result.wifiDifferential, result.currency))}</strong></li>
+            <li><span>Wi-Fi (buy as you go)</span><strong>${escapeHtml(money(result.wifiOnBuyAsYouGo, result.currency))}</strong></li>
+            <li><span>Wi-Fi (package side)</span><strong>${
+              result.flags.wifiIncluded
+                ? "Included"
+                : escapeHtml(money(result.wifiOnPackage, result.currency))
+            }</strong></li>
             <li><span>Package gratuities</span><strong>${escapeHtml(money(result.packageGratuities, result.currency))}</strong></li>
             <li><span>Daily total (package)</span><strong>${escapeHtml(money(result.packageDailyTotal, result.currency))}</strong></li>
             <li><span>Daily total (buy as you go)</span><strong>${escapeHtml(money(result.buyAsYouGoDailyTotal, result.currency))}</strong></li>
@@ -1000,7 +1019,9 @@
       line = detailPayload.line;
       packages = Array.isArray(detailPayload.packages) ? detailPayload.packages : [];
       state.wifiInFare = line.wifi_included_in_fare === true;
-      state.wouldBuyWifi = false;
+      // If Admin has a standalone Wi-Fi price and it is not in the fare, assume the guest would buy Wi-Fi.
+      state.wouldBuyWifi =
+        !state.wifiInFare && priceOrNull(line, "wifi_package_price") != null;
       autoSelectDefaultPackage();
       if (!trackedPageOpen) {
         trackedPageOpen = true;
