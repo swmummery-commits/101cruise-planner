@@ -5,9 +5,9 @@
   --dc-green-hover: #79CDB1;
   --dc-green-ink: #245C4E;
   --dc-green-soft: #EFFAF6;
-  --dc-text: #1f2a28;
-  --dc-muted: #5f6d69;
-  --dc-border: #e6ebe9;
+  --dc-text: #111;
+  --dc-muted: #666;
+  --dc-border: #e8e8e8;
   --dc-card: #ffffff;
   --dc-soft: #f6f8f7;
   --dc-max: 920px;
@@ -18,7 +18,7 @@
   margin: 0 auto;
   padding: 0 0 48px;
   color: var(--dc-text);
-  font-family: "Halyard Display", "Avenir Next", "Segoe UI", sans-serif;
+  font-family: "Halyard Display", Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;

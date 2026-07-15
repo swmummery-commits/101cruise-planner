@@ -1,13 +1,16 @@
-/* 101cruise public Drinks Calculator — page 2 (matches approved mock) */
+/* 101cruise public Drinks Calculator — page 2
+ * Typography colours match My Cruise / planner.css:
+ *   primary text #111, muted body #666
+ */
 
 .dc-calc {
   --dc-green: #8DD9BF;
   --dc-green-hover: #79CDB1;
   --dc-green-ink: #245C4E;
   --dc-green-soft: #EFFAF6;
-  --dc-text: #222222;
-  --dc-muted: #5f6d69;
-  --dc-border: #e6ebe9;
+  --dc-text: #111;
+  --dc-muted: #666;
+  --dc-border: #e8e8e8;
   --dc-card: #ffffff;
   --dc-soft: #f6f8f7;
   --dc-max: 960px;
@@ -18,20 +21,30 @@
   margin: 0 auto;
   padding: 8px 0 56px;
   color: var(--dc-text);
-  font-family: "Halyard Display", "Avenir Next", "Segoe UI", sans-serif;
+  font-family: "Halyard Display", Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
 /*
- * Squarespace theme CSS can override embed paragraph/table colours after load.
- * Lock normal body copy to near-black; keep helper/label styles muted below.
+ * Squarespace can override embed colours. Lock the My Cruise hierarchy:
+ * body/explanatory copy = #666, values/primary = #111.
  */
 .dc-calc p,
-.dc-calc li,
-.dc-calc td {
-  color: #222222 !important;
+.dc-calc li {
+  color: #666 !important;
+}
+
+.dc-calc td,
+.dc-calc th {
+  color: #111 !important;
+}
+
+.dc-calc h1,
+.dc-calc h3,
+.dc-calc strong {
+  color: #111 !important;
 }
 
 .dc-calc *,
@@ -42,7 +55,7 @@
 
 .dc-calc-status {
   margin: 0 0 18px;
-  color: var(--dc-muted) !important;
+  color: #666 !important;
   font-size: 0.95rem;
 }
 
@@ -149,7 +162,7 @@
 .dc-calc-intro {
   margin: 0 0 8px;
   max-width: 42ch;
-  color: var(--dc-text);
+  color: #666 !important;
   font-size: 0.95rem;
   font-weight: 500;
   line-height: 1.4;
@@ -158,7 +171,7 @@
 .dc-calc-sub {
   margin: 0;
   max-width: 34ch;
-  color: var(--dc-text);
+  color: #666 !important;
   font-size: 0.88rem;
 }
 
@@ -222,7 +235,7 @@
   margin: 0 0 8px;
   font-size: 1.15rem;
   font-weight: 650;
-  color: var(--dc-green-ink);
+  color: var(--dc-green-ink) !important;
 }
 
 .dc-calc-included p {
@@ -250,6 +263,7 @@
   font-size: 1.05rem;
   font-weight: 650;
   letter-spacing: -0.01em;
+  color: #111 !important;
 }
 
 .dc-calc-field {
@@ -493,6 +507,7 @@
 
 .dc-calc-figure-value {
   margin: 0;
+  color: #111 !important;
   font-size: 1.35rem;
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -536,6 +551,7 @@
 .dc-calc-breakdown .is-total td {
   font-weight: 700;
   background: #fbfcfc;
+  color: #111 !important;
 }
 
 .dc-calc-recommendation {
@@ -589,7 +605,7 @@
 
 .dc-calc-recommendation p {
   margin: 0;
-  color: #222222 !important;
+  color: #666 !important;
   font-size: 0.88rem;
 }
 
@@ -604,7 +620,7 @@
 
 .dc-calc-rec-saving {
   margin: 0 0 10px !important;
-  color: var(--dc-text) !important;
+  color: #111 !important;
   font-size: 1.05rem !important;
   font-weight: 700;
 }
@@ -628,7 +644,7 @@
 
 .dc-calc-disclaimer {
   margin: 0 0 28px;
-  color: #222222 !important;
+  color: #666 !important;
   font-size: 0.8rem;
 }
 
@@ -644,6 +660,7 @@
   margin: 0 0 16px;
   font-size: 1.02rem;
   font-weight: 650;
+  color: #111 !important;
 }
 
 .dc-calc-info-grid {
@@ -660,7 +677,7 @@
 
 .dc-calc-info-block p {
   margin: 0;
-  color: #222222 !important;
+  color: #666 !important;
   font-size: 0.84rem;
   white-space: pre-wrap;
 }
@@ -827,7 +844,7 @@
 
 .dc-calc-caveat {
   margin: 8px 0 0;
-  color: var(--dc-text);
+  color: #666 !important;
   font-size: 0.8rem;
 }
 
@@ -954,7 +971,7 @@
 
 .dc-calc-hero-body {
   margin: 0;
-  color: var(--dc-text);
+  color: #666 !important;
   font-size: 0.92rem;
 }
 
@@ -974,7 +991,7 @@
 .dc-calc-rec-reasons {
   margin: 0;
   padding-left: 18px;
-  color: var(--dc-text);
+  color: #666 !important;
   font-size: 0.9rem;
 }
 
@@ -1017,7 +1034,7 @@
 
 .dc-calc-details-note {
   margin: 10px 0 0;
-  color: var(--dc-text);
+  color: #666 !important;
   font-size: 0.82rem;
 }
 
