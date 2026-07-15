@@ -1,6 +1,7 @@
 /**
- * 101cruise Cruise Finder — local destination seed (Phase 7A).
- * Rule-based recommendations only. No paid APIs.
+ * 101cruise Cruise Finder — lightweight demo destinations only.
+ * Temporary seed data. Future versions will generate descriptions,
+ * seasonal fit, weather, cruise lines and hero imagery with AI.
  */
 (function (root) {
   "use strict";
@@ -9,19 +10,19 @@
     {
       id: "alaska",
       name: "Alaska",
-      short_description:
-        "Glaciers, wildlife and dramatic wilderness on one of the world’s great scenic cruises.",
+      inspirational_description:
+        "Ice-blue glaciers, quiet wilderness and wildlife that makes you stop mid-sentence. Alaska is the cruise for travellers who want nature on a grand scale.",
       best_months: [5, 6, 7, 8],
       acceptable_months: [4, 9],
-      preferred_climate: "cool",
+      typical_weather: "Cool, crisp days with long summer light and occasional showers.",
       typical_nights_min: 7,
       typical_nights_max: 14,
-      suitable_travellers: ["couple", "family", "friends", "group", "solo"],
-      suitable_styles: ["scenic", "adventure", "cool_climate", "family", "relaxing"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "Alaska shines in the Northern Hemisphere summer, when days are long and wildlife is active.",
-      image_url: null,
+      typical_cruise_lines: ["Holland America", "Princess", "Celebrity", "Royal Caribbean"],
+      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
+      suitable_styles: ["scenic_cruising", "adventure", "wildlife", "cold_weather", "bucket_list", "relaxation"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      image_url: "https://placehold.co/1200x640/3d5a6c/ffffff?text=Alaska",
+      image_search_phrase: "Alaska glacier cruise July",
       accent: "#3d5a6c",
       display_order: 1,
       active: true
@@ -29,19 +30,19 @@
     {
       id: "japan",
       name: "Japan",
-      short_description:
-        "Temples, cities and coastal scenery with a uniquely rich culture at every port.",
+      inspirational_description:
+        "A journey of contrast — quiet temples, neon cities, coastal villages and some of the world’s most thoughtful food culture.",
       best_months: [3, 4, 5, 9, 10, 11],
       acceptable_months: [2, 6, 12],
-      preferred_climate: "mild",
+      typical_weather: "Mild springs and autumns; humid summers and cooler winters.",
       typical_nights_min: 8,
       typical_nights_max: 14,
-      suitable_travellers: ["couple", "solo", "friends", "group"],
-      suitable_styles: ["culture", "food_wine", "scenic", "adventure", "luxury"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "Spring and autumn are ideal for comfortable weather and seasonal highlights.",
-      image_url: null,
+      typical_cruise_lines: ["Princess", "Celebrity", "MSC", "Holland America"],
+      suitable_travellers: ["couple", "solo", "friends", "multi_generational"],
+      suitable_styles: ["culture", "food_wine", "scenic_cruising", "bucket_list", "luxury", "adventure"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      image_url: "https://placehold.co/1200x640/8b3a3a/ffffff?text=Japan",
+      image_search_phrase: "Japan cruise autumn cherry blossom",
       accent: "#8b3a3a",
       display_order: 2,
       active: true
@@ -49,201 +50,161 @@
     {
       id: "mediterranean",
       name: "Mediterranean",
-      short_description:
-        "Classic European cruising — coastal cities, history and relaxed seaside living.",
+      inspirational_description:
+        "Sunlit harbours, long lunches and layers of history — the Mediterranean remains the classic European cruise for good reason.",
       best_months: [5, 6, 7, 8, 9],
       acceptable_months: [4, 10],
-      preferred_climate: "warm",
+      typical_weather: "Warm to hot summers with long sunny days; milder spring and autumn.",
       typical_nights_min: 7,
       typical_nights_max: 14,
-      suitable_travellers: ["couple", "family", "friends", "group", "solo"],
-      suitable_styles: ["culture", "food_wine", "warm_weather", "relaxing", "luxury", "family"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "Late spring through early autumn offers the most reliable Mediterranean weather.",
-      image_url: null,
+      typical_cruise_lines: ["Celebrity", "Princess", "MSC", "Norwegian", "Explora"],
+      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
+      suitable_styles: ["culture", "food_wine", "beaches", "warm_weather", "relaxation", "luxury", "scenic_cruising"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      image_url: "https://placehold.co/1200x640/2f6f8f/ffffff?text=Mediterranean",
+      image_search_phrase: "Mediterranean cruise coastal village summer",
       accent: "#2f6f8f",
       display_order: 3,
       active: true
     },
     {
-      id: "greek-islands",
-      name: "Greek Islands",
-      short_description:
-        "Whitewashed villages, island hopping and clear Aegean waters.",
-      best_months: [5, 6, 7, 8, 9],
-      acceptable_months: [4, 10],
-      preferred_climate: "warm",
-      typical_nights_min: 7,
-      typical_nights_max: 10,
-      suitable_travellers: ["couple", "friends", "family", "group"],
-      suitable_styles: ["warm_weather", "relaxing", "culture", "food_wine", "scenic"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "Summer is peak season for swimming, island cafés and long daylight evenings.",
-      image_url: null,
-      accent: "#1f6b8a",
-      display_order: 4,
-      active: true
-    },
-    {
       id: "norwegian-fjords",
       name: "Norwegian Fjords",
-      short_description:
-        "Steep fjords, waterfalls and Nordic coastal towns in extraordinary scenery.",
+      inspirational_description:
+        "Sheer cliffs, mirror-still water and villages tucked into the folds of the mountains — scenic cruising at its most dramatic.",
       best_months: [5, 6, 7, 8],
       acceptable_months: [4, 9],
-      preferred_climate: "cool",
+      typical_weather: "Cool summers with bright evenings; changeable coastal conditions.",
       typical_nights_min: 7,
       typical_nights_max: 14,
-      suitable_travellers: ["couple", "solo", "friends", "group", "family"],
-      suitable_styles: ["scenic", "cool_climate", "adventure", "relaxing", "luxury"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "May to August brings the best fjord visibility and the mildest coastal conditions.",
-      image_url: null,
+      typical_cruise_lines: ["Holland America", "Princess", "Celebrity", "Viking"],
+      suitable_travellers: ["couple", "solo", "friends", "family", "multi_generational"],
+      suitable_styles: ["scenic_cruising", "cold_weather", "adventure", "relaxation", "luxury", "bucket_list"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      image_url: "https://placehold.co/1200x640/355e5a/ffffff?text=Norwegian+Fjords",
+      image_search_phrase: "Norwegian fjords cruise summer",
       accent: "#355e5a",
-      display_order: 5,
-      active: true
-    },
-    {
-      id: "british-isles",
-      name: "British Isles",
-      short_description:
-        "Ireland, Scotland and England’s coasts — heritage, countryside and maritime charm.",
-      best_months: [5, 6, 7, 8, 9],
-      acceptable_months: [4, 10],
-      preferred_climate: "cool",
-      typical_nights_min: 7,
-      typical_nights_max: 14,
-      suitable_travellers: ["couple", "solo", "friends", "group"],
-      suitable_styles: ["culture", "scenic", "cool_climate", "food_wine", "relaxing"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "Late spring to early autumn is the most comfortable window for touring the isles.",
-      image_url: null,
-      accent: "#4a5d4e",
-      display_order: 6,
+      display_order: 4,
       active: true
     },
     {
       id: "caribbean",
       name: "Caribbean",
-      short_description:
-        "Warm seas, island beaches and an easy-going tropical cruise rhythm.",
+      inspirational_description:
+        "Warm water, easy island days and a holiday rhythm that asks very little of you — ideal when you simply want to unwind.",
       best_months: [12, 1, 2, 3, 4],
       acceptable_months: [5, 11],
-      preferred_climate: "warm",
+      typical_weather: "Warm to hot tropical days; drier months favoured in winter and early spring.",
       typical_nights_min: 7,
       typical_nights_max: 14,
-      suitable_travellers: ["couple", "family", "friends", "group", "solo"],
-      suitable_styles: ["warm_weather", "relaxing", "family", "adventure", "luxury"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "Winter and early spring are favoured for warmer, drier island weather.",
-      image_url: null,
+      typical_cruise_lines: ["Royal Caribbean", "Celebrity", "Princess", "MSC", "Norwegian"],
+      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
+      suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "adventure", "luxury"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      image_url: "https://placehold.co/1200x640/1a7a6d/ffffff?text=Caribbean",
+      image_search_phrase: "Caribbean cruise beach tropical",
       accent: "#1a7a6d",
-      display_order: 7,
+      display_order: 5,
       active: true
     },
     {
       id: "south-pacific",
       name: "South Pacific",
-      short_description:
-        "Island lagoons and relaxed island cultures within easier reach of Australia and New Zealand.",
+      inspirational_description:
+        "Lagoon blues and island ease within closer reach of Australia and New Zealand — a holiday that feels far away without the longest flight.",
       best_months: [5, 6, 7, 8, 9, 10],
       acceptable_months: [4, 11],
-      preferred_climate: "warm",
+      typical_weather: "Warm tropical conditions; dry season usually more settled.",
       typical_nights_min: 7,
       typical_nights_max: 14,
-      suitable_travellers: ["couple", "family", "friends", "group"],
-      suitable_styles: ["warm_weather", "relaxing", "family", "scenic", "luxury"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide"],
-      recommendation_explanation:
-        "The dry season generally brings the most settled island weather from Australia and NZ.",
-      image_url: null,
+      typical_cruise_lines: ["P&O Australia", "Princess", "Carnival", "Royal Caribbean"],
+      suitable_travellers: ["couple", "family", "friends", "multi_generational"],
+      suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "luxury"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
+      image_url: "https://placehold.co/1200x640/0d6e6e/ffffff?text=South+Pacific",
+      image_search_phrase: "South Pacific island cruise lagoon",
       accent: "#0d6e6e",
-      display_order: 8,
+      display_order: 6,
       active: true
     },
     {
       id: "australia-new-zealand",
-      name: "Australia and New Zealand",
-      short_description:
-        "Home waters — coastal cities, islands and scenic NZ fjords without a long-haul flight.",
+      name: "Australia & New Zealand",
+      inspirational_description:
+        "Home waters with surprising variety — coastal cities, island stops and New Zealand scenery without a long-haul journey first.",
       best_months: [11, 12, 1, 2, 3],
       acceptable_months: [4, 10],
-      preferred_climate: "mild",
+      typical_weather: "Warm summers; milder spring and autumn coastal conditions.",
       typical_nights_min: 3,
       typical_nights_max: 14,
-      suitable_travellers: ["couple", "family", "friends", "group", "solo"],
-      suitable_styles: ["scenic", "relaxing", "family", "food_wine", "culture", "warm_weather"],
-      departure_markets: ["perth", "sydney", "melbourne", "brisbane", "adelaide", "auckland"],
-      recommendation_explanation:
-        "Summer is peak season for Australian coastal and New Zealand scenic itineraries.",
-      image_url: null,
+      typical_cruise_lines: ["P&O Australia", "Princess", "Celebrity", "Royal Caribbean"],
+      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
+      suitable_styles: ["scenic_cruising", "relaxation", "family", "food_wine", "culture", "warm_weather", "beaches"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
+      image_url: "https://placehold.co/1200x640/2f5d4a/ffffff?text=Australia+%26+New+Zealand",
+      image_search_phrase: "New Zealand fjord cruise summer",
       accent: "#2f5d4a",
-      display_order: 9,
+      display_order: 7,
       active: true
     },
     {
       id: "antarctica",
       name: "Antarctica",
-      short_description:
-        "An expedition to the White Continent — ice, wildlife and a once-in-a-lifetime voyage.",
+      inspirational_description:
+        "A true expedition — ice, silence and wildlife that belongs on a once-in-a-lifetime list.",
       best_months: [11, 12, 1, 2, 3],
       acceptable_months: [],
-      preferred_climate: "cool",
+      typical_weather: "Cold expedition conditions during the Southern summer season only.",
       typical_nights_min: 10,
       typical_nights_max: 21,
-      suitable_travellers: ["couple", "solo", "friends", "group"],
-      suitable_styles: ["expedition", "adventure", "scenic", "luxury", "cool_climate"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "The Antarctic season runs through the Southern Hemisphere summer only.",
-      image_url: null,
+      typical_cruise_lines: ["Hurtigruten", "Silversea", "Seabourn", "Ponant"],
+      suitable_travellers: ["couple", "solo", "friends"],
+      suitable_styles: ["expedition", "adventure", "wildlife", "bucket_list", "cold_weather", "luxury", "scenic_cruising"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      image_url: "https://placehold.co/1200x640/4a6a8a/ffffff?text=Antarctica",
+      image_search_phrase: "Antarctica expedition cruise ice",
       accent: "#4a6a8a",
-      display_order: 10,
-      active: true
-    },
-    {
-      id: "canada-new-england",
-      name: "Canada and New England",
-      short_description:
-        "Fall colours, historic ports and a refined North Atlantic coastal cruise.",
-      best_months: [9, 10],
-      acceptable_months: [8, 11],
-      preferred_climate: "cool",
-      typical_nights_min: 7,
-      typical_nights_max: 14,
-      suitable_travellers: ["couple", "solo", "friends", "group"],
-      suitable_styles: ["scenic", "culture", "cool_climate", "food_wine", "relaxing", "luxury"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "September and October are prized for autumn colour along the Canada–New England coast.",
-      image_url: null,
-      accent: "#6b4a3a",
-      display_order: 11,
+      display_order: 8,
       active: true
     },
     {
       id: "hawaii",
       name: "Hawaii",
-      short_description:
-        "Volcanic islands, beaches and an easy inter-island cruise in warm Pacific weather.",
+      inspirational_description:
+        "Volcanic islands, ocean swimming and an easy inter-island cruise that still feels like an escape.",
       best_months: [1, 2, 3, 4, 5, 9, 10, 11, 12],
       acceptable_months: [6, 7, 8],
-      preferred_climate: "warm",
+      typical_weather: "Warm year-round; trade winds and occasional tropical showers.",
       typical_nights_min: 7,
       typical_nights_max: 10,
-      suitable_travellers: ["couple", "family", "friends", "group", "solo"],
-      suitable_styles: ["warm_weather", "relaxing", "family", "scenic", "adventure", "luxury"],
-      departure_markets: ["sydney", "melbourne", "brisbane", "auckland", "perth", "adelaide", "other"],
-      recommendation_explanation:
-        "Hawaii is enjoyable most of the year; shoulder seasons often feel more comfortable.",
-      image_url: null,
+      typical_cruise_lines: ["Princess", "Norwegian", "Celebrity", "Holland America"],
+      suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
+      suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "adventure", "luxury"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      image_url: "https://placehold.co/1200x640/c45c26/ffffff?text=Hawaii",
+      image_search_phrase: "Hawaii cruise coastline tropical",
       accent: "#c45c26",
-      display_order: 12,
+      display_order: 9,
+      active: true
+    },
+    {
+      id: "greek-islands",
+      name: "Greek Islands",
+      inspirational_description:
+        "Whitewashed villages, Aegean blue and long evenings that stretch into dinner by the water.",
+      best_months: [5, 6, 7, 8, 9],
+      acceptable_months: [4, 10],
+      typical_weather: "Hot, dry summers with excellent swimming weather.",
+      typical_nights_min: 7,
+      typical_nights_max: 10,
+      typical_cruise_lines: ["Celebrity", "MSC", "Norwegian", "Explora"],
+      suitable_travellers: ["couple", "friends", "family", "multi_generational"],
+      suitable_styles: ["beaches", "warm_weather", "relaxation", "culture", "food_wine", "scenic_cruising", "bucket_list"],
+      departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
+      image_url: "https://placehold.co/1200x640/1f6b8a/ffffff?text=Greek+Islands",
+      image_search_phrase: "Greek islands cruise Santorini summer",
+      accent: "#1f6b8a",
+      display_order: 10,
       active: true
     }
   ];

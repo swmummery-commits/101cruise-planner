@@ -1,6 +1,7 @@
-/* 101cruise Cruise Finder — public embed
+/* 101cruise Cruise Finder — AI Holiday Planner
  * Matches My Cruise / Drinks Calculator tokens:
  * primary #111, body #666, brand green #8DD9BF
+ * No page hero — Squarespace provides that above the embed.
  */
 
 .cf-finder {
@@ -107,22 +108,30 @@
   font-weight: 650;
 }
 
-.cf-fields {
+.cf-detail {
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 14px;
   margin-top: 16px;
 }
 
-.cf-fields.is-2 {
-  grid-template-columns: 1fr 1fr;
+.cf-field {
+  display: block;
+  margin: 0;
 }
 
-.cf-field label {
+.cf-field span {
   display: block;
   margin: 0 0 6px;
   font-size: 0.82rem;
   font-weight: 650;
   color: #111 !important;
+}
+
+.cf-field span em {
+  font-style: normal;
+  font-weight: 500;
+  color: #666 !important;
 }
 
 .cf-field input,
@@ -145,211 +154,199 @@
 }
 
 .cf-hint {
-  margin: 10px 0 0;
-  font-size: 0.84rem;
+  margin: 0 0 14px;
+  font-size: 0.9rem;
   color: #666 !important;
 }
 
-.cf-chip-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.cf-detail + .cf-hint,
+.cf-choice-grid + .cf-hint {
+  margin-top: 14px;
 }
 
-.cf-chip {
-  appearance: none;
-  border: 1px solid var(--cf-border);
-  background: #fff;
-  color: #111 !important;
-  border-radius: 999px;
-  padding: 8px 14px;
-  font: inherit;
-  font-size: 0.88rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.cf-chip.is-selected {
-  border-color: var(--cf-green);
-  background: var(--cf-green-soft);
-  color: var(--cf-green-ink) !important;
-  font-weight: 650;
-}
-
-.cf-depart-suggest {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.cf-budget-note {
-  margin: 8px 0 0;
-  font-size: 0.82rem;
-  color: #666 !important;
-}
-
-.cf-actions {
-  display: flex;
-  justify-content: center;
-  margin: 28px 0 8px;
-}
-
-.cf-primary {
-  appearance: none;
-  border: none;
-  background: #111;
-  color: #fff !important;
-  border-radius: 999px;
-  padding: 14px 28px;
-  font: inherit;
-  font-size: 1rem;
-  font-weight: 650;
-  cursor: pointer;
-  transition: background 0.15s ease, transform 0.15s ease;
-}
-
-.cf-primary:hover:not(:disabled) {
-  background: #222;
-}
-
-.cf-primary:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+/* —— Results —— */
 
 .cf-results {
-  margin-top: 40px;
-  padding-top: 8px;
+  margin-top: 36px;
+  padding-top: 4px;
 }
 
-.cf-results-header {
-  text-align: center;
-  margin: 0 0 24px;
+.cf-results-intro {
+  margin: 0 0 22px;
 }
 
-.cf-results-header h2 {
+.cf-results-title {
   margin: 0 0 8px;
-  font-size: 1.35rem;
+  font-size: 1.28rem;
   font-weight: 650;
+  letter-spacing: -0.02em;
 }
 
-.cf-results-header p {
-  margin: 0 auto;
-  max-width: 40ch;
+.cf-results-lead {
+  margin: 0;
+  max-width: 46ch;
   font-size: 0.95rem;
 }
 
-.cf-result-list {
+.cf-mag-list {
   display: grid;
-  gap: 16px;
+  gap: 28px;
 }
 
-.cf-card {
+/* Magazine-style destination cards */
+
+.cf-mag-card {
   border: 1px solid var(--cf-border);
-  border-radius: var(--cf-radius);
+  border-radius: 22px;
   background: #fff;
   overflow: hidden;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.045);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.05);
 }
 
-.cf-card-visual {
-  min-height: 110px;
-  padding: 22px 22px 16px;
-  color: #fff;
-  background: linear-gradient(135deg, var(--cf-accent, #2f5d4a), #1a2e28);
+.cf-mag-hero {
+  position: relative;
+  aspect-ratio: 1200 / 640;
+  min-height: 200px;
+  background: var(--cf-accent, #2f5d4a);
+  overflow: hidden;
 }
 
-.cf-card-visual h3 {
-  margin: 0 0 6px;
-  font-size: 1.25rem;
-  font-weight: 650;
-  color: #fff !important;
+.cf-mag-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
 }
 
-.cf-badge {
+.cf-mag-hero-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.62) 0%,
+    rgba(0, 0, 0, 0.18) 45%,
+    rgba(0, 0, 0, 0.05) 100%
+  );
+  pointer-events: none;
+}
+
+.cf-mag-hero-meta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 22px 24px 20px;
+  z-index: 1;
+}
+
+.cf-mag-level {
   display: inline-block;
-  margin: 0 0 10px;
-  padding: 4px 10px;
+  margin: 0 0 8px;
+  padding: 5px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.18);
-  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #fff !important;
 }
 
-.cf-badge.is-best {
+.cf-mag-level--strong {
   background: rgba(141, 217, 191, 0.95);
   color: var(--cf-green-ink) !important;
 }
 
-.cf-card-body {
-  padding: 18px 22px 22px;
-}
-
-.cf-card-body p {
-  margin: 0 0 12px;
-  font-size: 0.94rem;
-}
-
-.cf-meta {
-  display: grid;
-  gap: 6px;
-  margin: 0 0 16px;
-  font-size: 0.86rem;
-}
-
-.cf-meta div {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 8px;
-}
-
-.cf-meta dt {
-  margin: 0;
-  font-weight: 650;
+.cf-mag-level--great {
+  background: rgba(255, 255, 255, 0.88);
   color: #111 !important;
 }
 
-.cf-meta dd {
+.cf-mag-title {
   margin: 0;
+  font-size: 1.65rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: #fff !important;
+}
+
+.cf-mag-body {
+  padding: 22px 24px 24px;
+}
+
+.cf-mag-ai {
+  margin: 0 0 14px;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: #111 !important;
+}
+
+.cf-mag-inspire {
+  margin: 0 0 20px;
+  font-size: 0.95rem;
+  line-height: 1.55;
   color: #666 !important;
 }
 
-.cf-season-note {
-  margin: 0 0 14px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #fff8e8;
-  border: 1px solid #f0dfb0;
-  font-size: 0.86rem;
-  color: #6b5a20 !important;
+.cf-mag-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  margin: 0 0 22px;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--cf-border);
 }
 
-.cf-card-actions {
+.cf-mag-fact {
+  display: grid;
+  gap: 4px;
+}
+
+.cf-mag-fact--wide {
+  grid-column: 1 / -1;
+}
+
+.cf-mag-fact-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cf-green-ink) !important;
+}
+
+.cf-mag-fact-value {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #666 !important;
+}
+
+.cf-mag-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
 }
 
-.cf-secondary {
+.cf-btn {
   appearance: none;
-  border: 1px solid var(--cf-border);
-  background: #fff;
-  color: #111 !important;
+  border: none;
   border-radius: 999px;
-  padding: 10px 16px;
+  padding: 12px 22px;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 650;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.cf-secondary:hover {
-  border-color: var(--cf-green);
-  background: var(--cf-green-soft);
+.cf-btn-primary {
+  background: #111;
+  color: #fff !important;
+}
+
+.cf-btn-primary:hover {
+  background: #222;
 }
 
 .cf-explore-note {
@@ -358,18 +355,37 @@
   border-radius: 14px;
   background: var(--cf-green-soft);
   border: 1px solid rgba(141, 217, 191, 0.55);
+}
+
+.cf-explore-note p {
+  margin: 0 0 8px;
   font-size: 0.9rem;
   color: #245c4e !important;
 }
 
-.cf-empty {
+.cf-explore-note p:last-child {
+  margin-bottom: 0;
+}
+
+.cf-explore-ask em {
+  font-style: italic;
+  color: #111 !important;
+}
+
+.cf-explore-muted {
+  opacity: 0.85;
+  font-size: 0.84rem !important;
+}
+
+.cf-footnote {
+  margin: 22px 0 0;
+  font-size: 0.8rem;
   text-align: center;
-  padding: 28px 16px;
-  color: #666 !important;
+  color: #888 !important;
 }
 
 @media (max-width: 640px) {
-  .cf-fields.is-2 {
+  .cf-detail {
     grid-template-columns: 1fr;
   }
 
@@ -377,8 +393,19 @@
     padding: 18px 16px;
   }
 
-  .cf-meta div {
+  .cf-mag-hero-meta {
+    padding: 18px 16px 16px;
+  }
+
+  .cf-mag-title {
+    font-size: 1.35rem;
+  }
+
+  .cf-mag-body {
+    padding: 18px 16px 20px;
+  }
+
+  .cf-mag-facts {
     grid-template-columns: 1fr;
-    gap: 2px;
   }
 }
