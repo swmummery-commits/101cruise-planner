@@ -90,9 +90,9 @@
     },
     "british-isles": {
       default: {
-        url: thumb("d/d5", "Giant%27s_Causeway_%2814%29.JPG"),
-        objectPosition: "center 55%",
-        credit: "Wikimedia Commons"
+        url: "images/british-isles-hero.png",
+        objectPosition: "center 40%",
+        credit: "101cruise"
       },
       seasonal: {}
     },
