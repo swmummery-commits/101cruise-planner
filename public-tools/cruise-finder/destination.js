@@ -1,5 +1,5 @@
 /**
- * 101cruise Cruise Finder — Destination Detail page.
+ * 101cruise Cruise Finder — Destination Detail + live cruise search results.
  *
  * Mounts into: <div id="101cruise-cruise-destination"></div>
  * URL: /cruise-destination?destination=<slug>
@@ -12,6 +12,7 @@
   const MOUNT_ID = "101cruise-cruise-destination";
   const NETLIFY_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
   const PREFS_KEY = "101cruise-cf-prefs";
+  const PAUL_ENQUIRY_EMAIL = "paul@101cruise.com.au";
   const SCRIPT_EL = document.currentScript;
 
   const MONTH_NAMES = [
@@ -64,6 +65,14 @@
     flexible: "I'm flexible"
   };
 
+  const BUDGET_LABELS = {
+    "under-3k": "Under $3,000 pp",
+    "3-5k": "$3,000 – $5,000 pp",
+    "5-8k": "$5,000 – $8,000 pp",
+    "8k-plus": "$8,000+ pp",
+    no_budget: "No budget yet"
+  };
+
   const MATCH_LABELS = {
     top: "My Top Recommendation",
     excellent: "Excellent Match",
@@ -71,7 +80,19 @@
     worth: "Worth Considering"
   };
 
+  const LOADING_MESSAGES = [
+    "Searching current cruise listings…",
+    "Checking cruise-line listings…",
+    "Reviewing matching sailings…",
+    "Removing duplicate results…"
+  ];
+
   let mount = null;
+  let currentDest = null;
+  let currentPrefs = null;
+  let searchAbort = null;
+  let searchInFlight = false;
+  let loadingTimer = null;
 
   function getScriptOrigin() {
     if (SCRIPT_EL && SCRIPT_EL.src) {
@@ -210,6 +231,16 @@
     return 0;
   }
 
+  function approvedLinesFor(dest) {
+    const filterLines =
+      typeof window.CruiseFinderFilterCruiseLines === "function"
+        ? window.CruiseFinderFilterCruiseLines
+        : function (names) {
+            return Array.isArray(names) ? names : [];
+          };
+    return filterLines(dest.typical_cruise_lines || []);
+  }
+
   function personalisedWhy(dest, content, prefs) {
     const windowLabel = travelWindowLabel(prefs);
     const month = primaryMonth(prefs);
@@ -253,7 +284,9 @@
     if (prefs.durationId === "flexible") {
       bits.push(`Your flexible cruise length typically opens a wider range of ${dest.name} itineraries.`);
     } else if (duration) {
-      bits.push(`Sailings here commonly fall around ${cruiseLengthLabel(dest)}, close to a ${duration.toLowerCase()} holiday.`);
+      bits.push(
+        `Sailings here commonly fall around ${cruiseLengthLabel(dest)}, close to a ${duration.toLowerCase()} holiday.`
+      );
     }
 
     if (prefs.departure === "anywhere") {
@@ -282,6 +315,115 @@
     return `${TOOLS_ORIGIN}/cruise-finder`;
   }
 
+  function searchEndpoint() {
+    return `${TOOLS_ORIGIN}/.netlify/functions/search-current-cruises`;
+  }
+
+  function stopLoadingMessages() {
+    if (loadingTimer) {
+      clearInterval(loadingTimer);
+      loadingTimer = null;
+    }
+  }
+
+  function displayValue(value) {
+    if (value == null || value === "") return "Not confirmed";
+    return String(value);
+  }
+
+  function buildPaulMailto(result, dest, prefs) {
+    const shipBit =
+      result.ship && result.ship !== "Not confirmed" ? result.ship : result.cruiseLine || "Cruise";
+    const dateBit =
+      result.departureDate && result.departureDate !== "Not confirmed"
+        ? result.departureDate
+        : travelWindowLabel(prefs) || "dates TBC";
+    const subject = `Cruise Finder enquiry – ${shipBit} – ${dest.name} – ${dateBit}`;
+
+    const styles = (prefs.styles || [])
+      .map((id) => STYLE_LABELS[id] || id)
+      .filter(Boolean)
+      .join(", ");
+
+    const body = [
+      "Hi Paul,",
+      "",
+      "I found this cruise using the 101cruise Cruise Finder.",
+      "",
+      "Could you please check the current availability and your best price?",
+      "",
+      `Destination: ${dest.name}`,
+      `Cruise line: ${displayValue(result.cruiseLine)}`,
+      `Ship: ${displayValue(result.ship)}`,
+      `Departure date: ${displayValue(result.departureDate)}`,
+      `Duration: ${displayValue(result.durationLabel || (result.durationNights ? result.durationNights + " nights" : null))}`,
+      `Departure port: ${displayValue(result.departurePort)}`,
+      `Itinerary: ${displayValue(result.itineraryTitle)}`,
+      `Source URL: ${displayValue(result.sourceUrl)}`,
+      "",
+      "My Cruise Finder preferences:",
+      `Travel dates/month: ${travelWindowLabel(prefs) || "Not specified"}`,
+      `Preferred duration: ${DURATION_LABELS[prefs.durationId] || "Not specified"}`,
+      `Departure city: ${DEPARTURE_LABELS[prefs.departure] || "Not specified"}`,
+      `Holiday styles: ${styles || "Not specified"}`,
+      `Budget selection: ${BUDGET_LABELS[prefs.budgetId] || "Not specified"}`,
+      "",
+      "Thank you."
+    ].join("\n");
+
+    return `mailto:${PAUL_ENQUIRY_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  function generalPaulMailto(dest, prefs) {
+    const subject = `Cruise Finder enquiry – ${dest.name} – ${travelWindowLabel(prefs) || "dates TBC"}`;
+    const styles = (prefs.styles || [])
+      .map((id) => STYLE_LABELS[id] || id)
+      .filter(Boolean)
+      .join(", ");
+    const body = [
+      "Hi Paul,",
+      "",
+      "I used the 101cruise Cruise Finder and would like help finding a suitable sailing.",
+      "",
+      `Destination: ${dest.name}`,
+      `Travel dates/month: ${travelWindowLabel(prefs) || "Not specified"}`,
+      `Preferred duration: ${DURATION_LABELS[prefs.durationId] || "Not specified"}`,
+      `Departure city: ${DEPARTURE_LABELS[prefs.departure] || "Not specified"}`,
+      `Holiday styles: ${styles || "Not specified"}`,
+      `Budget selection: ${BUDGET_LABELS[prefs.budgetId] || "Not specified"}`,
+      "",
+      "Thank you."
+    ].join("\n");
+    return `mailto:${PAUL_ENQUIRY_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  function resultCardHtml(result, dest, prefs) {
+    const ports =
+      Array.isArray(result.portsOfCall) && result.portsOfCall.length
+        ? `<div class="cf-sail-row"><span class="cf-sail-label">Ports</span><span class="cf-sail-value">${escapeHtml(result.portsOfCall.join(" · "))}</span></div>`
+        : "";
+
+    return `
+      <article class="cf-sail-card">
+        <div class="cf-sail-top">
+          <p class="cf-sail-line">${escapeHtml(displayValue(result.cruiseLine))}</p>
+          <span class="cf-sail-status">${escapeHtml(result.statusLabel || "Currently listed online")}</span>
+        </div>
+        <h3 class="cf-sail-ship">${escapeHtml(displayValue(result.ship))}</h3>
+        <p class="cf-sail-summary">${escapeHtml(displayValue(result.itineraryTitle))}</p>
+        <div class="cf-sail-grid">
+          <div class="cf-sail-row"><span class="cf-sail-label">Departure</span><span class="cf-sail-value">${escapeHtml(displayValue(result.departureDate))}</span></div>
+          <div class="cf-sail-row"><span class="cf-sail-label">Duration</span><span class="cf-sail-value">${escapeHtml(displayValue(result.durationLabel))}</span></div>
+          <div class="cf-sail-row"><span class="cf-sail-label">From</span><span class="cf-sail-value">${escapeHtml(displayValue(result.departurePort))}</span></div>
+          <div class="cf-sail-row"><span class="cf-sail-label">Region</span><span class="cf-sail-value">${escapeHtml(displayValue(result.destination || dest.name))}</span></div>
+          ${ports}
+          <div class="cf-sail-row"><span class="cf-sail-label">Source</span><span class="cf-sail-value"><a class="cf-sail-source" href="${escapeHtml(result.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(displayValue(result.sourceName))}</a></span></div>
+          <div class="cf-sail-row"><span class="cf-sail-label">Date searched</span><span class="cf-sail-value">${escapeHtml(displayValue(result.dateSearched))}</span></div>
+        </div>
+        <a class="cf-sail-ask" href="${escapeHtml(buildPaulMailto(result, dest, prefs))}">Ask Paul for current availability and best price</a>
+      </article>`;
+  }
+
   function renderError(message) {
     mount.innerHTML = `
       <div class="cf-dest">
@@ -290,7 +432,34 @@
       </div>`;
   }
 
-  function render(dest, prefs) {
+  function bindMedia(imageUrl) {
+    const media = mount.querySelector(".cf-dest-media");
+    const img = media && media.querySelector("img");
+    if (media && img && imageUrl) {
+      img.addEventListener(
+        "load",
+        () => {
+          media.classList.add("is-loaded");
+        },
+        { once: true }
+      );
+      img.addEventListener(
+        "error",
+        () => {
+          media.classList.add("is-fallback");
+        },
+        { once: true }
+      );
+      img.src = imageUrl;
+      if (img.complete && img.naturalWidth > 0) media.classList.add("is-loaded");
+    } else if (media) {
+      media.classList.add("is-fallback");
+    }
+  }
+
+  function renderDestination(dest, prefs) {
+    currentDest = dest;
+    currentPrefs = prefs;
     const content = contentFor(dest);
     const month = primaryMonth(prefs);
     const heroApi = window.CruiseFinderHeroImages;
@@ -298,13 +467,7 @@
       heroApi && typeof heroApi.pick === "function" ? heroApi.pick(dest, month) : null;
     const imageUrl = image && image.url ? image.url : "";
     const objectPosition = (image && image.objectPosition) || "center center";
-    const filterLines =
-      typeof window.CruiseFinderFilterCruiseLines === "function"
-        ? window.CruiseFinderFilterCruiseLines
-        : function (names) {
-            return Array.isArray(names) ? names : [];
-          };
-    const lines = filterLines(dest.typical_cruise_lines || []);
+    const lines = approvedLinesFor(dest);
     const why = personalisedWhy(dest, content, prefs);
     const advice = content.seasonal_advice || {};
     const ports = content.popular_ports || [];
@@ -416,42 +579,214 @@
         <section class="cf-dest-cta">
           <button type="button" class="cf-dest-cta-btn" data-find-cruises>Find Current Cruises</button>
           <p class="cf-dest-cta-note">We’ll search for current sailings that match your dates and preferences.</p>
-          <p class="cf-dest-placeholder" hidden data-search-placeholder>
-            Live cruise search is the next phase. For today’s availability and best price, ask Paul — no prices are shown in this preview.
-          </p>
         </section>
       </div>`;
 
-    const media = mount.querySelector(".cf-dest-media");
-    const img = media && media.querySelector("img");
-    if (media && img && imageUrl) {
-      img.addEventListener(
-        "load",
-        () => {
-          media.classList.add("is-loaded");
-        },
-        { once: true }
-      );
-      img.addEventListener(
-        "error",
-        () => {
-          media.classList.add("is-fallback");
-        },
-        { once: true }
-      );
-      img.src = imageUrl;
-      if (img.complete && img.naturalWidth > 0) media.classList.add("is-loaded");
-    } else if (media) {
-      media.classList.add("is-fallback");
-    }
+    bindMedia(imageUrl);
 
     const findBtn = mount.querySelector("[data-find-cruises]");
-    const placeholder = mount.querySelector("[data-search-placeholder]");
-    if (findBtn && placeholder) {
+    if (findBtn) {
       findBtn.addEventListener("click", () => {
-        placeholder.hidden = false;
-        findBtn.setAttribute("aria-expanded", "true");
+        runSearch({ forceRefresh: false });
       });
+    }
+  }
+
+  function renderLoading() {
+    mount.innerHTML = `
+      <div class="cf-dest cf-search">
+        <div class="cf-search-nav">
+          <button type="button" class="cf-dest-back cf-search-linkbtn" data-back-destination>← Back to destination</button>
+        </div>
+        <section class="cf-search-loading" aria-live="polite">
+          <p class="cf-search-loading-title" data-loading-title>${escapeHtml(LOADING_MESSAGES[0])}</p>
+          <p class="cf-search-loading-note">This usually takes a few seconds.</p>
+        </section>
+      </div>`;
+
+    const back = mount.querySelector("[data-back-destination]");
+    if (back) {
+      back.addEventListener("click", () => {
+        if (searchAbort) searchAbort.abort();
+        stopLoadingMessages();
+        searchInFlight = false;
+        renderDestination(currentDest, currentPrefs);
+      });
+    }
+
+    let idx = 0;
+    stopLoadingMessages();
+    loadingTimer = setInterval(() => {
+      idx = (idx + 1) % LOADING_MESSAGES.length;
+      const el = mount.querySelector("[data-loading-title]");
+      if (el) el.textContent = LOADING_MESSAGES[idx];
+    }, 1800);
+  }
+
+  function renderSearchError(message) {
+    stopLoadingMessages();
+    mount.innerHTML = `
+      <div class="cf-dest cf-search">
+        <div class="cf-search-nav">
+          <button type="button" class="cf-dest-back cf-search-linkbtn" data-back-destination>← Back to destination</button>
+          <a class="cf-search-link" href="${escapeHtml(finderBackUrl())}">Refine my search</a>
+        </div>
+        <section class="cf-search-state">
+          <h2 class="cf-dest-section-title">We couldn’t complete the live search just now.</h2>
+          <p class="cf-dest-lead">${escapeHtml(message || "Please try again in a moment.")}</p>
+          <div class="cf-search-actions">
+            <button type="button" class="cf-dest-cta-btn" data-search-again>Try again</button>
+            <a class="cf-search-secondary" href="${escapeHtml(generalPaulMailto(currentDest, currentPrefs))}">Ask Paul directly</a>
+          </div>
+        </section>
+      </div>`;
+    bindSearchControls({ forceRefresh: true });
+  }
+
+  function renderEmpty() {
+    stopLoadingMessages();
+    mount.innerHTML = `
+      <div class="cf-dest cf-search">
+        <div class="cf-search-nav">
+          <button type="button" class="cf-dest-back cf-search-linkbtn" data-back-destination>← Back to destination</button>
+          <a class="cf-search-link" href="${escapeHtml(finderBackUrl())}">Refine my search</a>
+        </div>
+        <section class="cf-search-state">
+          <h2 class="cf-dest-section-title">We couldn’t confidently find matching sailings online for these exact preferences.</h2>
+          <p class="cf-dest-lead">You could broaden travel dates, choose a flexible duration, change departure point, or ask Paul directly.</p>
+          <ul class="cf-search-hints">
+            <li>Broaden your travel dates</li>
+            <li>Choose a flexible cruise length</li>
+            <li>Change your departure point</li>
+            <li>Ask Paul for a tailored shortlist</li>
+          </ul>
+          <div class="cf-search-actions">
+            <button type="button" class="cf-dest-cta-btn" data-search-again>Search again</button>
+            <a class="cf-search-secondary" href="${escapeHtml(generalPaulMailto(currentDest, currentPrefs))}">Ask Paul directly</a>
+          </div>
+        </section>
+      </div>`;
+    bindSearchControls({ forceRefresh: true });
+  }
+
+  function renderResults(payload) {
+    stopLoadingMessages();
+    const results = Array.isArray(payload.results) ? payload.results : [];
+    const other = Array.isArray(payload.otherResults) ? payload.otherResults : [];
+
+    if (!results.length && !other.length) {
+      renderEmpty();
+      return;
+    }
+
+    const primaryHtml = results.map((r) => resultCardHtml(r, currentDest, currentPrefs)).join("");
+    const otherHtml = other.length
+      ? `
+        <section class="cf-dest-section">
+          <h2 class="cf-dest-section-title">Other possible sailings</h2>
+          <p class="cf-dest-lead">These listings look promising but are incomplete or less certain.</p>
+          <div class="cf-sail-list">${other.map((r) => resultCardHtml(r, currentDest, currentPrefs)).join("")}</div>
+        </section>`
+      : "";
+
+    mount.innerHTML = `
+      <div class="cf-dest cf-search">
+        <div class="cf-search-nav">
+          <button type="button" class="cf-dest-back cf-search-linkbtn" data-back-destination>← Back to destination</button>
+          <a class="cf-search-link" href="${escapeHtml(finderBackUrl())}">Refine my search</a>
+        </div>
+
+        <section class="cf-dest-section cf-search-intro">
+          <h2 class="cf-dest-section-title">Current Cruises We Found</h2>
+          <p class="cf-dest-lead">These sailings were found from current publicly available cruise listings. Itineraries and availability can change.</p>
+        </section>
+
+        ${results.length ? `<div class="cf-sail-list">${primaryHtml}</div>` : ""}
+        ${otherHtml}
+
+        <div class="cf-search-actions cf-search-actions-bottom">
+          <button type="button" class="cf-dest-cta-btn" data-search-again>Search again</button>
+        </div>
+      </div>`;
+
+    bindSearchControls({ forceRefresh: true });
+  }
+
+  function bindSearchControls(options) {
+    const back = mount.querySelector("[data-back-destination]");
+    if (back) {
+      back.addEventListener("click", () => {
+        if (searchAbort) searchAbort.abort();
+        stopLoadingMessages();
+        searchInFlight = false;
+        renderDestination(currentDest, currentPrefs);
+      });
+    }
+    const again = mount.querySelector("[data-search-again]");
+    if (again) {
+      again.addEventListener("click", () => {
+        runSearch({ forceRefresh: !!(options && options.forceRefresh) });
+      });
+    }
+  }
+
+  async function runSearch(options) {
+    if (!currentDest || !currentPrefs) return;
+    if (searchInFlight) return;
+
+    searchInFlight = true;
+    renderLoading();
+
+    if (searchAbort) searchAbort.abort();
+    searchAbort = typeof AbortController !== "undefined" ? new AbortController() : null;
+
+    const payload = {
+      destination: currentDest.id,
+      destinationName: currentDest.name,
+      timingMode: currentPrefs.timingMode || "",
+      month: currentPrefs.month ? Number(currentPrefs.month) : null,
+      year: currentPrefs.year ? Number(currentPrefs.year) : null,
+      startDate: currentPrefs.startDate || null,
+      endDate: currentPrefs.endDate || null,
+      durationId: currentPrefs.durationId || null,
+      departure: currentPrefs.departure || null,
+      styles: currentPrefs.styles || [],
+      cruiseLines: approvedLinesFor(currentDest),
+      forceRefresh: !!(options && options.forceRefresh)
+    };
+
+    try {
+      const response = await fetch(searchEndpoint(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload),
+        signal: searchAbort ? searchAbort.signal : undefined
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_error) {
+        data = null;
+      }
+
+      searchInFlight = false;
+
+      if (!response.ok || !data || data.ok === false) {
+        const message =
+          (data && data.message) ||
+          (data && data.error === "configuration"
+            ? "Live cruise search is not configured yet."
+            : "We couldn’t complete the live search just now.");
+        renderSearchError(message);
+        return;
+      }
+
+      renderResults(data);
+    } catch (error) {
+      searchInFlight = false;
+      if (error && error.name === "AbortError") return;
+      renderSearchError("We couldn’t complete the live search just now.");
     }
   }
 
@@ -475,7 +810,7 @@
     }
 
     const prefs = mergePrefs(prefsFromUrl(params), readSessionPrefs());
-    render(dest, prefs);
+    renderDestination(dest, prefs);
   }
 
   if (document.readyState === "loading") {

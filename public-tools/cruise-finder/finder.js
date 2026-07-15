@@ -1,7 +1,8 @@
 /**
  * 101cruise Cruise Finder — AI Holiday Planner (Phase 7A redesign).
  * Guided consultant-style journey → inspirational destination recommendations.
- * No live cruise search, prices, or booking in this phase.
+ * Live sailing search runs from the destination detail page (server-side Brave Search).
+ * No prices or booking in this phase.
  *
  * Mounts into: <div id="101cruise-cruise-finder"></div>
  */
