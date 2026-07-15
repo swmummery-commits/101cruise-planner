@@ -7,19 +7,52 @@
  *   3. Branded gradient fallback if the image fails to load
  *
  * No live/random image search during normal page use.
+ * Relative paths (e.g. images/hawaii-hero.png) resolve against this script folder.
  */
 (function (root) {
   "use strict";
 
+  const SCRIPT_EL = document.currentScript;
+
+  function imagesBaseUrl() {
+    const candidates = [];
+    if (SCRIPT_EL && SCRIPT_EL.src) candidates.push(SCRIPT_EL.src);
+    document.querySelectorAll('script[src*="cruise-finder/"]').forEach((el) => {
+      if (el.src) candidates.push(el.src);
+    });
+
+    for (let i = 0; i < candidates.length; i += 1) {
+      try {
+        const url = new URL(candidates[i]);
+        return url.href.replace(/[^/]+$/, "");
+      } catch (_error) {
+        /* continue */
+      }
+    }
+    return "/public-tools/cruise-finder/";
+  }
+
+  function resolveImageUrl(url) {
+    if (!url) return "";
+    if (/^https?:\/\//i.test(url) || url.startsWith("data:")) return url;
+    const base = imagesBaseUrl();
+    return base + String(url).replace(/^\.\//, "").replace(/^\//, "");
+  }
+
   function pick(dest, travelMonth) {
     const id = dest && dest.id ? dest.id : "";
+    let image = null;
     if (typeof root.CruiseFinderPickDestinationImage === "function") {
-      return root.CruiseFinderPickDestinationImage(id, travelMonth);
+      image = root.CruiseFinderPickDestinationImage(id, travelMonth);
+    } else if (dest && dest.image_url) {
+      image = { url: dest.image_url, objectPosition: "center center" };
     }
-    if (dest && dest.image_url) {
-      return { url: dest.image_url, objectPosition: "center center" };
-    }
-    return null;
+    if (!image || !image.url) return null;
+    return {
+      url: resolveImageUrl(image.url),
+      objectPosition: image.objectPosition || "center center",
+      credit: image.credit || null
+    };
   }
 
   function markFallback(hero) {
@@ -40,7 +73,7 @@
       if (hero.dataset.cfHeroBound === "1") return;
       hero.dataset.cfHeroBound = "1";
 
-      const url = hero.getAttribute("data-image-url") || "";
+      const url = resolveImageUrl(hero.getAttribute("data-image-url") || "");
       const position = hero.getAttribute("data-object-position") || "center center";
       const img = hero.querySelector(".cf-mag-image");
 
@@ -71,7 +104,7 @@
   root.CruiseFinderHeroImages = {
     pick,
     hydrate,
-    /* Compatibility stubs — live search removed */
+    resolveImageUrl,
     buildSearchPhrase: function () {
       return "";
     },
