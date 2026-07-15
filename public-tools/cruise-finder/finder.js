@@ -498,12 +498,7 @@
     const unlocked6 = unlocked5;
 
     mount.innerHTML = `
-      <section class="cf-finder" aria-labelledby="cf-finder-title">
-        <header class="cf-finder-header">
-          <p class="cf-finder-kicker">101cruise</p>
-          <h1 class="cf-finder-title" id="cf-finder-title">Cruise Finder</h1>
-          <p class="cf-finder-tagline">Tell us when you can travel and we’ll help you discover the best places to cruise at that time.</p>
-        </header>
+      <section class="cf-finder" aria-label="Cruise Finder">
 
         <section class="cf-step" data-step="1">
           <p class="cf-step-label">Step 1</p>
