@@ -24,6 +24,16 @@
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * Squarespace theme CSS can override embed paragraph/table colours after load.
+ * Lock normal body copy to near-black; keep helper/label styles muted below.
+ */
+.dc-calc p,
+.dc-calc li,
+.dc-calc td {
+  color: #222222 !important;
+}
+
 .dc-calc *,
 .dc-calc *::before,
 .dc-calc *::after {
@@ -32,7 +42,7 @@
 
 .dc-calc-status {
   margin: 0 0 18px;
-  color: var(--dc-muted);
+  color: var(--dc-muted) !important;
   font-size: 0.95rem;
 }
 
@@ -50,7 +60,7 @@
 }
 
 .dc-calc-back {
-  color: var(--dc-muted);
+  color: var(--dc-muted) !important;
   font-size: 0.92rem;
   font-weight: 600;
   text-decoration: none;
@@ -174,7 +184,7 @@
 }
 
 .dc-calc-meta-row span:nth-child(2) {
-  color: var(--dc-muted);
+  color: var(--dc-muted) !important;
 }
 
 .dc-calc-meta-row strong {
@@ -476,7 +486,7 @@
 
 .dc-calc-figure-label {
   margin: 0 0 6px;
-  color: var(--dc-muted);
+  color: var(--dc-muted) !important;
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -579,7 +589,7 @@
 
 .dc-calc-recommendation p {
   margin: 0;
-  color: var(--dc-text);
+  color: #222222 !important;
   font-size: 0.88rem;
 }
 
@@ -618,7 +628,7 @@
 
 .dc-calc-disclaimer {
   margin: 0 0 28px;
-  color: var(--dc-text);
+  color: #222222 !important;
   font-size: 0.8rem;
 }
 
@@ -650,7 +660,7 @@
 
 .dc-calc-info-block p {
   margin: 0;
-  color: var(--dc-text);
+  color: #222222 !important;
   font-size: 0.84rem;
   white-space: pre-wrap;
 }
@@ -794,7 +804,7 @@
 }
 
 .dc-calc-pkg-price {
-  color: var(--dc-muted);
+  color: var(--dc-muted) !important;
   font-size: 0.86rem;
   font-weight: 600;
 }
@@ -876,19 +886,19 @@
 .dc-calc-qty-avg {
   display: block;
   margin-top: 2px;
-  color: var(--dc-muted);
+  color: var(--dc-muted) !important;
   font-size: 0.75rem;
   font-weight: 500;
 }
 
 .dc-calc-qty-na {
-  color: var(--dc-muted);
+  color: var(--dc-muted) !important;
   font-size: 0.9rem;
 }
 
 .dc-calc-live {
   margin: 12px 0 0;
-  color: var(--dc-muted);
+  color: var(--dc-muted) !important;
   font-size: 0.82rem;
 }
 
@@ -958,7 +968,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--dc-muted);
+  color: var(--dc-muted) !important;
 }
 
 .dc-calc-rec-reasons {
