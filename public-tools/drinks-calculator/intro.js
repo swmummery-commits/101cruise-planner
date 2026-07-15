@@ -84,7 +84,6 @@
 
   const TOOLS_ORIGIN = getScriptOrigin();
   const LINES_API_URL = `${TOOLS_ORIGIN}/.netlify/functions/public-calculator-lines`;
-  const HERO_IMAGE_URL = `${TOOLS_ORIGIN}/assets/default-cruise-hero.jpg`;
 
   function escapeHtml(value) {
     let text = value == null ? "" : String(value);
@@ -106,14 +105,7 @@
 
   function renderShell(mount) {
     mount.innerHTML = `
-      <section class="dc-intro" aria-labelledby="dc-intro-heading">
-        <header class="dc-intro-hero" style="--dc-hero-image: url('${escapeHtml(HERO_IMAGE_URL)}')">
-          <div>
-            <p class="dc-intro-hero-kicker" id="dc-intro-heading">Cruise Drinks Package Calculator</p>
-            <p class="dc-intro-hero-sub">Is the Drinks Package Worth It?</p>
-          </div>
-        </header>
-
+      <section class="dc-intro" aria-label="Drinks package calculator">
         <section class="dc-intro-section" aria-labelledby="dc-how-title">
           <h2 class="dc-intro-section-title" id="dc-how-title">How to use this calculator</h2>
           <div class="dc-intro-steps">

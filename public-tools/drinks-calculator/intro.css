@@ -30,37 +30,6 @@
   box-sizing: border-box;
 }
 
-.dc-intro-hero {
-  position: relative;
-  display: grid;
-  place-items: center;
-  min-height: clamp(220px, 34vw, 320px);
-  margin: 0 0 36px;
-  padding: 48px 24px;
-  border-radius: 22px;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(12, 28, 34, 0.42), rgba(12, 28, 34, 0.58)),
-    var(--dc-hero-image, #173c37) center / cover no-repeat;
-  color: #fff;
-  text-align: center;
-}
-
-.dc-intro-hero-kicker {
-  margin: 0 0 10px;
-  font-size: clamp(1.55rem, 3.2vw, 2.15rem);
-  font-weight: 650;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
-
-.dc-intro-hero-sub {
-  margin: 0;
-  font-size: clamp(1.05rem, 2vw, 1.35rem);
-  font-weight: 400;
-  opacity: 0.95;
-}
-
 .dc-intro-section {
   margin: 0 0 34px;
 }
@@ -318,12 +287,6 @@
 }
 
 @media (max-width: 520px) {
-  .dc-intro-hero {
-    min-height: 200px;
-    border-radius: 16px;
-    padding: 36px 18px;
-  }
-
   .dc-intro-supported {
     padding: 22px 14px 16px;
   }
