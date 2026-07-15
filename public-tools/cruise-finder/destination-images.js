@@ -155,9 +155,9 @@
     },
     hawaii: {
       default: {
-        url: thumb("f/f2", "Napali_Coast_1_%28Unsplash%29.jpg"),
-        objectPosition: "center 35%",
-        credit: "Unsplash via Wikimedia Commons"
+        url: "images/hawaii-hero.png",
+        objectPosition: "center 42%",
+        credit: "101cruise"
       },
       seasonal: {}
     }
