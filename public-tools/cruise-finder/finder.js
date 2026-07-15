@@ -127,163 +127,6 @@
   }
 
   const TOOLS_ORIGIN = getScriptOrigin();
-  const heroImageCache = Object.create(null);
-
-  /**
-   * Single place to decide the image search phrase.
-   * Today: curated destination phrase (+ light seasonal hint when month known).
-   * Later: pass context.aiImageSearchPhrase from AI and this becomes a one-line swap.
-   */
-  function buildImageSearchPhrase(dest, context) {
-    const ctx = context || {};
-    if (ctx.aiImageSearchPhrase) {
-      return String(ctx.aiImageSearchPhrase).trim();
-    }
-
-    const base =
-      (dest && dest.image_search_phrase) ||
-      (dest && dest.name ? `${dest.name} cruise` : "cruise destination landscape");
-
-    const month = Number(ctx.travelMonth) || 0;
-    if (!month || !dest || !dest.id) return base;
-
-    /* Lightweight seasonal awareness — replace with AI phrases later */
-    const seasonal = {
-      japan: {
-        3: "Japan cruise cherry blossoms spring",
-        4: "Japan cruise Mount Fuji cherry blossom",
-        5: "Japan cruise spring coastline",
-        7: "Japan cruise summer scenery",
-        9: "Japan cruise autumn colours",
-        10: "Japan cruise autumn foliage",
-        11: "Japan cruise autumn landscape"
-      },
-      alaska: {
-        5: "Alaska glacier cruise May",
-        6: "Alaska glacier cruise wildlife",
-        7: "Alaska glacier cruise July",
-        8: "Alaska glacier cruise wilderness"
-      },
-      caribbean: {
-        12: "Caribbean cruise tropical beach winter",
-        1: "Caribbean cruise tropical beach",
-        2: "Caribbean cruise turquoise water"
-      },
-      mediterranean: {
-        5: "Mediterranean cruise Santorini spring",
-        6: "Mediterranean cruise Santorini summer",
-        7: "Mediterranean cruise coastal summer",
-        9: "Mediterranean cruise autumn"
-      },
-      "norwegian-fjords": {
-        6: "Norwegian Fjords cruise summer",
-        7: "Norwegian Fjords cruise midnight sun",
-        8: "Norwegian Fjords cruise scenic"
-      }
-    };
-
-    const byMonth = seasonal[dest.id];
-    if (byMonth && byMonth[month]) return byMonth[month];
-    return base;
-  }
-
-  function primaryTravelMonth() {
-    const months = monthsFromTiming();
-    if (!months || !months.length) return 0;
-    return months[0];
-  }
-
-  function heroLookupUrl(phrase) {
-    return `${TOOLS_ORIGIN}/.netlify/functions/destination-hero?q=${encodeURIComponent(phrase)}`;
-  }
-
-  function resolveHeroImage(phrase) {
-    const key = String(phrase || "").trim().toLowerCase();
-    if (!key) return Promise.resolve(null);
-    if (Object.prototype.hasOwnProperty.call(heroImageCache, key)) {
-      return Promise.resolve(heroImageCache[key]);
-    }
-
-    try {
-      const cached = sessionStorage.getItem(`cf-hero:${key}`);
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed && typeof parsed.url === "string") {
-          heroImageCache[key] = parsed.url || null;
-          return Promise.resolve(heroImageCache[key]);
-        }
-      }
-    } catch (_error) {
-      /* ignore storage errors */
-    }
-
-    return fetch(heroLookupUrl(phrase), { method: "GET", credentials: "omit" })
-      .then((response) => {
-        if (!response.ok) return null;
-        return response.json();
-      })
-      .then((data) => {
-        const url = data && typeof data.url === "string" && data.url ? data.url : null;
-        heroImageCache[key] = url;
-        try {
-          sessionStorage.setItem(`cf-hero:${key}`, JSON.stringify({ url: url || "" }));
-        } catch (_error) {
-          /* ignore */
-        }
-        return url;
-      })
-      .catch(() => {
-        heroImageCache[key] = null;
-        return null;
-      });
-  }
-
-  function markHeroFallback(hero) {
-    if (!hero) return;
-    hero.classList.add("is-fallback");
-    hero.classList.remove("is-loaded");
-    const img = hero.querySelector(".cf-mag-image");
-    if (img) {
-      img.removeAttribute("src");
-      img.removeAttribute("srcset");
-      img.alt = "";
-    }
-  }
-
-  function hydrateHeroImages() {
-    if (!mount) return;
-    const heroes = mount.querySelectorAll(".cf-mag-hero[data-image-search]");
-    heroes.forEach((hero) => {
-      if (hero.dataset.cfHeroBound === "1") return;
-      hero.dataset.cfHeroBound = "1";
-
-      const phrase = hero.getAttribute("data-image-search") || "";
-      const img = hero.querySelector(".cf-mag-image");
-      if (!img || !phrase) {
-        markHeroFallback(hero);
-        return;
-      }
-
-      resolveHeroImage(phrase).then((url) => {
-        if (!url) {
-          markHeroFallback(hero);
-          return;
-        }
-        const onLoad = () => {
-          hero.classList.add("is-loaded");
-          hero.classList.remove("is-fallback");
-        };
-        const onError = () => markHeroFallback(hero);
-        img.addEventListener("load", onLoad, { once: true });
-        img.addEventListener("error", onError, { once: true });
-        img.decoding = "async";
-        img.loading = "lazy";
-        img.sizes = "(max-width: 760px) 100vw, 760px";
-        img.src = url;
-        if (img.complete && img.naturalWidth > 0) onLoad();
-      });
-    });
-  }
 
   function escapeHtml(value) {
     return String(value == null ? "" : value)
@@ -629,13 +472,21 @@
     return `${min}–${max} nights`;
   }
 
+  function primaryTravelMonth() {
+    const months = monthsFromTiming();
+    if (!months || !months.length) return 0;
+    return months[0];
+  }
+
   function resultCard(row) {
     const d = row.dest;
-    const searchPhrase = buildImageSearchPhrase(d, {
-      travelMonth: primaryTravelMonth(),
-      /* Future: aiImageSearchPhrase: row.aiImageSearchPhrase */
-      aiImageSearchPhrase: d.ai_image_search_phrase || null
-    });
+    const heroApi = window.CruiseFinderHeroImages;
+    const searchPhrase = heroApi
+      ? heroApi.buildSearchPhrase(d, {
+          travelMonth: primaryTravelMonth(),
+          aiImageSearchPhrase: d.ai_image_search_phrase || null
+        })
+      : d.image_search_phrase || `${d.name} landscape`;
     const lines = (d.typical_cruise_lines || []).slice(0, 4).join(" · ");
     const explored = state.exploredId === d.id;
 
@@ -770,7 +621,9 @@
       </div>`;
 
     bind();
-    hydrateHeroImages();
+    if (window.CruiseFinderHeroImages) {
+      window.CruiseFinderHeroImages.hydrate(mount, TOOLS_ORIGIN);
+    }
   }
 
   function invalidateResults() {

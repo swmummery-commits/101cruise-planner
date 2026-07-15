@@ -26,7 +26,7 @@
       suitable_styles: ["scenic_cruising", "adventure", "wildlife", "cold_weather", "bucket_list", "relaxation"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Alaska glacier cruise",
+      image_search_phrase: "Alaska glaciers and mountains",
       accent: "#3d5a6c",
       display_order: 1,
       active: true
@@ -46,7 +46,7 @@
       suitable_styles: ["culture", "food_wine", "scenic_cruising", "bucket_list", "luxury", "adventure"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Japan cruise Mount Fuji",
+      image_search_phrase: "Japan landscape",
       accent: "#8b3a3a",
       display_order: 2,
       active: true
@@ -66,7 +66,7 @@
       suitable_styles: ["culture", "food_wine", "beaches", "warm_weather", "relaxation", "luxury", "scenic_cruising"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Mediterranean cruise Santorini",
+      image_search_phrase: "Mediterranean coast",
       accent: "#2f6f8f",
       display_order: 3,
       active: true
@@ -86,7 +86,7 @@
       suitable_styles: ["scenic_cruising", "cold_weather", "adventure", "relaxation", "luxury", "bucket_list"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Norwegian Fjords cruise",
+      image_search_phrase: "Norwegian Fjords",
       accent: "#355e5a",
       display_order: 4,
       active: true
@@ -106,7 +106,7 @@
       suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "adventure", "luxury"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Caribbean cruise tropical beach",
+      image_search_phrase: "Caribbean tropical beach",
       accent: "#1a7a6d",
       display_order: 5,
       active: true
@@ -126,7 +126,7 @@
       suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "luxury"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
       image_url: null,
-      image_search_phrase: "South Pacific Bora Bora cruise",
+      image_search_phrase: "South Pacific tropical lagoon",
       accent: "#0d6e6e",
       display_order: 6,
       active: true
@@ -146,7 +146,7 @@
       suitable_styles: ["scenic_cruising", "relaxation", "family", "food_wine", "culture", "warm_weather", "beaches"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
       image_url: null,
-      image_search_phrase: "Australia New Zealand cruise Sydney Harbour",
+      image_search_phrase: "Australia and New Zealand scenery",
       accent: "#2f5d4a",
       display_order: 7,
       active: true
@@ -166,7 +166,7 @@
       suitable_styles: ["expedition", "adventure", "wildlife", "bucket_list", "cold_weather", "luxury", "scenic_cruising"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Antarctica expedition cruise",
+      image_search_phrase: "Antarctica landscape",
       accent: "#4a6a8a",
       display_order: 8,
       active: true
@@ -186,7 +186,7 @@
       suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "adventure", "luxury"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Hawaii cruise Waikiki",
+      image_search_phrase: "Hawaii tropical coast",
       accent: "#c45c26",
       display_order: 9,
       active: true
@@ -206,7 +206,7 @@
       suitable_styles: ["beaches", "warm_weather", "relaxation", "culture", "food_wine", "scenic_cruising", "bucket_list"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Greek Islands cruise Santorini",
+      image_search_phrase: "Greek Islands Santorini",
       accent: "#1f6b8a",
       display_order: 10,
       active: true

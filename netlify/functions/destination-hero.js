@@ -1,17 +1,14 @@
 /**
  * Destination hero image lookup for Cruise Finder.
  *
- * GET /.netlify/functions/destination-hero?q=Alaska%20glacier%20cruise
+ * GET /.netlify/functions/destination-hero?q=Alaska%20glaciers%20and%20mountains
  *
- * Temporary architecture:
- *   search phrase → royalty-free provider → image URL
+ * Search phrases should describe destination scenery only
+ * (no ships, no cruise-line branding).
  *
- * Later:
- *   AI generates seasonal search phrase → same endpoint → card displays image
- *
- * Providers:
- *   1. Unsplash (if UNSPLASH_ACCESS_KEY is set) — preferred quality
- *   2. Openverse (Creative Commons / commercial) — no key required
+ * Providers (no paid plan required):
+ *   1. Unsplash — if UNSPLASH_ACCESS_KEY is set (optional, free demo/production tiers)
+ *   2. Openverse — default, no API key (commercial Creative Commons filter)
  */
 
 function jsonResponse(statusCode, body, cacheSeconds) {

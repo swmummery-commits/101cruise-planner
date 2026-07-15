@@ -46,6 +46,25 @@
   color: #111 !important;
 }
 
+/* Hero overlay must beat the global h3 rule above */
+.cf-finder .cf-mag-hero .cf-mag-title {
+  color: #fff !important;
+  font-weight: 400 !important;
+}
+
+.cf-finder .cf-mag-hero .cf-mag-level {
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+
+.cf-finder .cf-mag-hero .cf-mag-level--strong {
+  color: var(--cf-green-ink) !important;
+}
+
+.cf-finder .cf-mag-hero .cf-mag-level--great {
+  color: #111 !important;
+}
+
 .cf-step {
   margin: 0 0 18px;
   padding: 22px 22px 20px;
@@ -260,9 +279,9 @@
   margin: 0 0 8px;
   padding: 5px 11px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.22);
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 500;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: #fff !important;
@@ -281,10 +300,11 @@
 .cf-mag-title {
   margin: 0;
   font-size: 1.65rem;
-  font-weight: 650;
+  font-weight: 400;
   letter-spacing: -0.02em;
   line-height: 1.15;
   color: #fff !important;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
 }
 
 .cf-mag-body {

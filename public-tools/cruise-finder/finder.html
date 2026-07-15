@@ -31,18 +31,30 @@
       var destinations = document.createElement("script");
       destinations.src = base + "destinations.js";
       destinations.onload = function () {
-        var app = document.createElement("script");
-        app.src = base + "finder.js";
-        app.onerror = function () {
+        var heroes = document.createElement("script");
+        heroes.src = base + "hero-images.js";
+        heroes.onload = function () {
+          var app = document.createElement("script");
+          app.src = base + "finder.js";
+          app.onerror = function () {
+            var mount = document.getElementById("101cruise-cruise-finder");
+            if (mount) {
+              mount.innerHTML =
+                '<p style="max-width:760px;margin:0 auto;color:#8a2f2f;">Could not load finder.js from ' +
+                app.src +
+                ".</p>";
+            }
+          };
+          document.body.appendChild(app);
+        };
+        heroes.onerror = function () {
           var mount = document.getElementById("101cruise-cruise-finder");
           if (mount) {
             mount.innerHTML =
-              '<p style="max-width:760px;margin:0 auto;color:#8a2f2f;">Could not load finder.js from ' +
-              app.src +
-              ".</p>";
+              '<p style="max-width:760px;margin:0 auto;color:#8a2f2f;">Could not load hero-images.js.</p>';
           }
         };
-        document.body.appendChild(app);
+        document.body.appendChild(heroes);
       };
       destinations.onerror = function () {
         var mount = document.getElementById("101cruise-cruise-finder");
