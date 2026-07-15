@@ -114,9 +114,9 @@
     },
     "australia-new-zealand": {
       default: {
-        url: thumb("d/dd", "Milford_Sound_in_Fiordland_National_Park_08.jpg"),
-        objectPosition: "center 40%",
-        credit: "Wikimedia Commons"
+        url: "images/australia-new-zealand-hero.png",
+        objectPosition: "center 45%",
+        credit: "101cruise"
       },
       seasonal: {}
     },
