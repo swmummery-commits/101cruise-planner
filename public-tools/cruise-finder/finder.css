@@ -205,18 +205,32 @@
 
 .cf-mag-hero {
   position: relative;
-  aspect-ratio: 1200 / 640;
+  /* ~35–40% of a typical recommendation card; reserved space prevents layout jump */
+  aspect-ratio: 5 / 2;
   min-height: 200px;
-  background: var(--cf-accent, #2f5d4a);
+  max-height: 320px;
+  background: linear-gradient(145deg, var(--cf-accent, #2f5d4a) 0%, #1a2e28 100%);
   overflow: hidden;
 }
 
 .cf-mag-image {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.cf-mag-hero.is-loaded .cf-mag-image {
+  opacity: 1;
+}
+
+.cf-mag-hero.is-fallback .cf-mag-image {
+  display: none;
 }
 
 .cf-mag-hero-fade {
@@ -224,11 +238,12 @@
   inset: 0;
   background: linear-gradient(
     to top,
-    rgba(0, 0, 0, 0.62) 0%,
-    rgba(0, 0, 0, 0.18) 45%,
-    rgba(0, 0, 0, 0.05) 100%
+    rgba(0, 0, 0, 0.68) 0%,
+    rgba(0, 0, 0, 0.28) 42%,
+    rgba(0, 0, 0, 0.08) 100%
   );
   pointer-events: none;
+  z-index: 1;
 }
 
 .cf-mag-hero-meta {
@@ -237,7 +252,7 @@
   right: 0;
   bottom: 0;
   padding: 22px 24px 20px;
-  z-index: 1;
+  z-index: 2;
 }
 
 .cf-mag-level {

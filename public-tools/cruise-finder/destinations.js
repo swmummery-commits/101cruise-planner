@@ -2,6 +2,10 @@
  * 101cruise Cruise Finder — lightweight demo destinations only.
  * Temporary seed data. Future versions will generate descriptions,
  * seasonal fit, weather, cruise lines and hero imagery with AI.
+ *
+ * image_search_phrase drives automatic hero photography today.
+ * Later: AI supplies a seasonal phrase (or ai_image_search_phrase)
+ * and the same lookup endpoint resolves the image.
  */
 (function (root) {
   "use strict";
@@ -21,8 +25,8 @@
       suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
       suitable_styles: ["scenic_cruising", "adventure", "wildlife", "cold_weather", "bucket_list", "relaxation"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: "https://placehold.co/1200x640/3d5a6c/ffffff?text=Alaska",
-      image_search_phrase: "Alaska glacier cruise July",
+      image_url: null,
+      image_search_phrase: "Alaska glacier cruise",
       accent: "#3d5a6c",
       display_order: 1,
       active: true
@@ -41,8 +45,8 @@
       suitable_travellers: ["couple", "solo", "friends", "multi_generational"],
       suitable_styles: ["culture", "food_wine", "scenic_cruising", "bucket_list", "luxury", "adventure"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: "https://placehold.co/1200x640/8b3a3a/ffffff?text=Japan",
-      image_search_phrase: "Japan cruise autumn cherry blossom",
+      image_url: null,
+      image_search_phrase: "Japan cruise Mount Fuji",
       accent: "#8b3a3a",
       display_order: 2,
       active: true
@@ -61,8 +65,8 @@
       suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
       suitable_styles: ["culture", "food_wine", "beaches", "warm_weather", "relaxation", "luxury", "scenic_cruising"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: "https://placehold.co/1200x640/2f6f8f/ffffff?text=Mediterranean",
-      image_search_phrase: "Mediterranean cruise coastal village summer",
+      image_url: null,
+      image_search_phrase: "Mediterranean cruise Santorini",
       accent: "#2f6f8f",
       display_order: 3,
       active: true
@@ -81,8 +85,8 @@
       suitable_travellers: ["couple", "solo", "friends", "family", "multi_generational"],
       suitable_styles: ["scenic_cruising", "cold_weather", "adventure", "relaxation", "luxury", "bucket_list"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: "https://placehold.co/1200x640/355e5a/ffffff?text=Norwegian+Fjords",
-      image_search_phrase: "Norwegian fjords cruise summer",
+      image_url: null,
+      image_search_phrase: "Norwegian Fjords cruise",
       accent: "#355e5a",
       display_order: 4,
       active: true
@@ -101,8 +105,8 @@
       suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
       suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "adventure", "luxury"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: "https://placehold.co/1200x640/1a7a6d/ffffff?text=Caribbean",
-      image_search_phrase: "Caribbean cruise beach tropical",
+      image_url: null,
+      image_search_phrase: "Caribbean cruise tropical beach",
       accent: "#1a7a6d",
       display_order: 5,
       active: true
@@ -121,8 +125,8 @@
       suitable_travellers: ["couple", "family", "friends", "multi_generational"],
       suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "luxury"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
-      image_url: "https://placehold.co/1200x640/0d6e6e/ffffff?text=South+Pacific",
-      image_search_phrase: "South Pacific island cruise lagoon",
+      image_url: null,
+      image_search_phrase: "South Pacific Bora Bora cruise",
       accent: "#0d6e6e",
       display_order: 6,
       active: true
@@ -141,8 +145,8 @@
       suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
       suitable_styles: ["scenic_cruising", "relaxation", "family", "food_wine", "culture", "warm_weather", "beaches"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
-      image_url: "https://placehold.co/1200x640/2f5d4a/ffffff?text=Australia+%26+New+Zealand",
-      image_search_phrase: "New Zealand fjord cruise summer",
+      image_url: null,
+      image_search_phrase: "Australia New Zealand cruise Sydney Harbour",
       accent: "#2f5d4a",
       display_order: 7,
       active: true
@@ -161,8 +165,8 @@
       suitable_travellers: ["couple", "solo", "friends"],
       suitable_styles: ["expedition", "adventure", "wildlife", "bucket_list", "cold_weather", "luxury", "scenic_cruising"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: "https://placehold.co/1200x640/4a6a8a/ffffff?text=Antarctica",
-      image_search_phrase: "Antarctica expedition cruise ice",
+      image_url: null,
+      image_search_phrase: "Antarctica expedition cruise",
       accent: "#4a6a8a",
       display_order: 8,
       active: true
@@ -181,8 +185,8 @@
       suitable_travellers: ["couple", "family", "friends", "solo", "multi_generational"],
       suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "adventure", "luxury"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: "https://placehold.co/1200x640/c45c26/ffffff?text=Hawaii",
-      image_search_phrase: "Hawaii cruise coastline tropical",
+      image_url: null,
+      image_search_phrase: "Hawaii cruise Waikiki",
       accent: "#c45c26",
       display_order: 9,
       active: true
@@ -201,8 +205,8 @@
       suitable_travellers: ["couple", "friends", "family", "multi_generational"],
       suitable_styles: ["beaches", "warm_weather", "relaxation", "culture", "food_wine", "scenic_cruising", "bucket_list"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
-      image_url: "https://placehold.co/1200x640/1f6b8a/ffffff?text=Greek+Islands",
-      image_search_phrase: "Greek islands cruise Santorini summer",
+      image_url: null,
+      image_search_phrase: "Greek Islands cruise Santorini",
       accent: "#1f6b8a",
       display_order: 10,
       active: true
