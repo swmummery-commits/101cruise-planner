@@ -34,8 +34,8 @@
     },
     japan: {
       default: {
-        url: thumb("0/0f", "Mount_Fuji_%28from_Shin-Fuji_Interchange%29.JPG"),
-        objectPosition: "center center",
+        url: thumb("3/33", "Mount_Fuji_from_Lake_Kawaguchi_%282015-10-26%29.jpg"),
+        objectPosition: "center 40%",
         credit: "Wikimedia Commons"
       },
       seasonal: {
@@ -63,15 +63,15 @@
     },
     mediterranean: {
       default: {
-        url: thumb("2/2d", "Amalfi_Coast%2C_Italy_Panoramic.jpg"),
-        objectPosition: "center 45%",
+        url: thumb("e/ec", "Positano_-_7268.jpg"),
+        objectPosition: "center 35%",
         credit: "Wikimedia Commons"
       },
       seasonal: {}
     },
     "greek-islands": {
       default: {
-        url: thumb("b/ba", "Thira_%28Santorini%29_-_Fira-01.jpg"),
+        url: thumb("6/62", "Oia_Santorini_06_2017_3496.jpg"),
         objectPosition: "center 40%",
         credit: "Wikimedia Commons"
       },
@@ -98,8 +98,8 @@
     },
     caribbean: {
       default: {
-        url: thumb("e/e2", "St_John_Trunk_Bay_5.jpg"),
-        objectPosition: "center 40%",
+        url: thumb("8/82", "Eagle_Beach%2C_Aruba_1.jpg"),
+        objectPosition: "center 45%",
         credit: "Wikimedia Commons"
       },
       seasonal: {}
@@ -114,7 +114,7 @@
     },
     "australia-new-zealand": {
       default: {
-        url: thumb("3/33", "Sydney_Opera_House_steps_and_Harbour_Bridge_pano.jpg"),
+        url: thumb("d/dd", "Milford_Sound_in_Fiordland_National_Park_08.jpg"),
         objectPosition: "center 40%",
         credit: "Wikimedia Commons"
       },
@@ -122,9 +122,12 @@
     },
     antarctica: {
       default: {
-        url: thumb("f/f3", "Fish8011_-_Flickr_-_NOAA_Photo_Library.jpg"),
+        url: thumb(
+          "0/03",
+          "Chinstrap_penguins_on_a_striated_iceberg%2C_South_Shetland_Islands%2C_Antarctica.jpg"
+        ),
         objectPosition: "center center",
-        credit: "NOAA / Wikimedia Commons"
+        credit: "Wikimedia Commons"
       },
       seasonal: {}
     },
