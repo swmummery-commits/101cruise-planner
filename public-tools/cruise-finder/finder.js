@@ -26,7 +26,8 @@
     { id: "6-8", label: "6–8 nights", min: 6, max: 8 },
     { id: "9-12", label: "9–12 nights", min: 9, max: 12 },
     { id: "13-16", label: "13–16 nights", min: 13, max: 16 },
-    { id: "17-plus", label: "17+ nights", min: 17, max: 40 }
+    { id: "17-plus", label: "17+ nights", min: 17, max: 40 },
+    { id: "flexible", label: "I'm flexible", min: null, max: null }
   ];
 
   const DEPARTURE_OPTIONS = [
@@ -68,7 +69,7 @@
     { id: "3-5k", label: "$3,000 – $5,000 pp", min: 3000, max: 5000 },
     { id: "5-8k", label: "$5,000 – $8,000 pp", min: 5000, max: 8000 },
     { id: "8k-plus", label: "$8,000+ pp", min: 8000, max: null },
-    { id: "prefer_not", label: "I'd rather not say", min: null, max: null }
+    { id: "no_budget", label: "No budget yet", min: null, max: null }
   ];
 
   /* Approximate AU school holiday windows (demo only) */
@@ -233,7 +234,7 @@
       }
     }
 
-    /* Duration */
+    /* Duration — skipped when traveller chooses "I'm flexible" (min/max null) */
     if (duration && duration.min != null) {
       const dMin = dest.typical_nights_min || 7;
       const dMax = dest.typical_nights_max || 14;
@@ -283,8 +284,8 @@
       reasons.push(`It works well for travellers departing from ${city}.`);
     }
 
-    /* Soft budget nudge (demo only — no prices shown) */
-    if (state.budgetId && state.budgetId !== "prefer_not") {
+    /* Soft budget nudge — skipped when "No budget yet" */
+    if (state.budgetId && state.budgetId !== "no_budget") {
       if (dest.id === "antarctica" && (state.budgetId === "under-3k" || state.budgetId === "3-5k")) {
         score -= 10;
       } else if (dest.id === "south-pacific" || dest.id === "australia-new-zealand") {
@@ -295,11 +296,11 @@
     return { score, reasons };
   }
 
-  function recommendationLevel(rank, score) {
-    if (rank === 0 && score >= 40) return { key: "strong", label: "Strong match" };
-    if (rank <= 1 && score >= 28) return { key: "great", label: "Great match" };
-    if (score >= 18) return { key: "good", label: "Good match" };
-    return { key: "worth", label: "Worth considering" };
+  function recommendationLevel(rank) {
+    if (rank === 0) return { key: "top", label: "My Top Recommendation" };
+    if (rank === 1) return { key: "excellent", label: "Excellent Match" };
+    if (rank === 2) return { key: "option", label: "Another Great Option" };
+    return { key: "worth", label: "Worth Considering" };
   }
 
   function aiExplanation(dest, level, reasons) {
@@ -314,9 +315,9 @@
       : "";
 
     const opener =
-      level.key === "strong"
+      level.key === "top"
         ? `If I were planning this for you, ${dest.name} would be near the top of my list.`
-        : level.key === "great"
+        : level.key === "excellent"
           ? `${dest.name} feels like a natural fit for the holiday you’ve described.`
           : `I’d keep ${dest.name} in the conversation for a ${traveller.toLowerCase()} trip${stylePhrase}.`;
 
@@ -353,7 +354,7 @@
       .sort((a, b) => b.score - a.score || (a.dest.display_order || 0) - (b.dest.display_order || 0));
 
     state.results = scored.slice(0, 5).map((row, index) => {
-      const level = recommendationLevel(index, row.score);
+      const level = recommendationLevel(index);
       return {
         ...row,
         level,
@@ -478,6 +479,33 @@
     return months[0];
   }
 
+  /** Short hero tagline — base copy with light seasonal variants where relevant. */
+  function heroTagline(dest) {
+    const month = primaryTravelMonth();
+    const seasonal = {
+      japan: {
+        3: "Cherry blossoms and timeless temples",
+        4: "Cherry blossoms and timeless temples",
+        10: "Ancient culture in autumn colour",
+        11: "Ancient culture in autumn colour"
+      },
+      alaska: {
+        5: "Glaciers, wildlife and unforgettable scenery",
+        6: "Glaciers, wildlife and unforgettable scenery",
+        7: "Glaciers, wildlife and unforgettable scenery",
+        8: "Glaciers, wildlife and unforgettable scenery"
+      },
+      mediterranean: {
+        6: "Sunlit coasts and island living",
+        7: "Sunlit coasts and island living",
+        8: "Sunlit coasts and island living"
+      }
+    };
+    const byMonth = seasonal[dest.id];
+    if (month && byMonth && byMonth[month]) return byMonth[month];
+    return dest.hero_tagline || dest.inspirational_description || "";
+  }
+
   function resultCard(row) {
     const d = row.dest;
     const heroApi = window.CruiseFinderHeroImages;
@@ -489,6 +517,7 @@
       : d.image_search_phrase || `${d.name} landscape`;
     const lines = (d.typical_cruise_lines || []).slice(0, 4).join(" · ");
     const explored = state.exploredId === d.id;
+    const tagline = heroTagline(d);
 
     return `
       <article class="cf-mag-card" data-destination-id="${escapeHtml(d.id)}" style="--cf-accent:${escapeHtml(d.accent || "#8DD9BF")}">
@@ -499,12 +528,13 @@
             loading="lazy"
             decoding="async"
             width="1200"
-            height="500"
+            height="360"
           />
           <div class="cf-mag-hero-fade" aria-hidden="true"></div>
-          <div class="cf-mag-hero-meta">
-            <span class="cf-mag-level cf-mag-level--${escapeHtml(row.level.key)}">${escapeHtml(row.level.label)}</span>
+          <span class="cf-mag-level cf-mag-level--${escapeHtml(row.level.key)}">${escapeHtml(row.level.label)}</span>
+          <div class="cf-mag-hero-centre">
             <h3 class="cf-mag-title">${escapeHtml(d.name)}</h3>
+            ${tagline ? `<p class="cf-mag-tagline">${escapeHtml(tagline)}</p>` : ""}
           </div>
         </div>
         <div class="cf-mag-body">
@@ -612,8 +642,8 @@
 
         <section class="cf-step${step6 ? "" : " is-dimmed"}" data-step="6">
           <p class="cf-step-label">Step 6</p>
-          <h2 class="cf-step-title">Approximate holiday budget</h2>
-          <p class="cf-hint">Per person, roughly — or skip if you’d rather not say.</p>
+          <h2 class="cf-step-title">Do you have a holiday budget in mind?</h2>
+          <p class="cf-hint">Per person, roughly — or choose no budget yet.</p>
           <div class="cf-choice-grid">${choiceButtons(BUDGET_OPTIONS, state.budgetId, "budget")}</div>
         </section>
 

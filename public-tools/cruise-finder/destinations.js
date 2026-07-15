@@ -14,6 +14,7 @@
     {
       id: "alaska",
       name: "Alaska",
+      hero_tagline: "Glaciers, wildlife and unforgettable scenery",
       inspirational_description:
         "Ice-blue glaciers, quiet wilderness and wildlife that makes you stop mid-sentence. Alaska is the cruise for travellers who want nature on a grand scale.",
       best_months: [5, 6, 7, 8],
@@ -34,6 +35,7 @@
     {
       id: "japan",
       name: "Japan",
+      hero_tagline: "Ancient culture meets modern cities",
       inspirational_description:
         "A journey of contrast — quiet temples, neon cities, coastal villages and some of the world’s most thoughtful food culture.",
       best_months: [3, 4, 5, 9, 10, 11],
@@ -54,6 +56,7 @@
     {
       id: "mediterranean",
       name: "Mediterranean",
+      hero_tagline: "Sunlit harbours and layered history",
       inspirational_description:
         "Sunlit harbours, long lunches and layers of history — the Mediterranean remains the classic European cruise for good reason.",
       best_months: [5, 6, 7, 8, 9],
@@ -74,6 +77,7 @@
     {
       id: "norwegian-fjords",
       name: "Norwegian Fjords",
+      hero_tagline: "Spectacular scenery carved by glaciers",
       inspirational_description:
         "Sheer cliffs, mirror-still water and villages tucked into the folds of the mountains — scenic cruising at its most dramatic.",
       best_months: [5, 6, 7, 8],
@@ -94,6 +98,7 @@
     {
       id: "caribbean",
       name: "Caribbean",
+      hero_tagline: "Warm turquoise waters and effortless island life",
       inspirational_description:
         "Warm water, easy island days and a holiday rhythm that asks very little of you — ideal when you simply want to unwind.",
       best_months: [12, 1, 2, 3, 4],
@@ -114,6 +119,7 @@
     {
       id: "south-pacific",
       name: "South Pacific",
+      hero_tagline: "Lagoon blues and island ease",
       inspirational_description:
         "Lagoon blues and island ease within closer reach of Australia and New Zealand — a holiday that feels far away without the longest flight.",
       best_months: [5, 6, 7, 8, 9, 10],
@@ -134,6 +140,7 @@
     {
       id: "australia-new-zealand",
       name: "Australia & New Zealand",
+      hero_tagline: "Home-grown cruising with world-class scenery",
       inspirational_description:
         "Home waters with surprising variety — coastal cities, island stops and New Zealand scenery without a long-haul journey first.",
       best_months: [11, 12, 1, 2, 3],
@@ -154,6 +161,7 @@
     {
       id: "antarctica",
       name: "Antarctica",
+      hero_tagline: "Ice, silence and once-in-a-lifetime wilderness",
       inspirational_description:
         "A true expedition — ice, silence and wildlife that belongs on a once-in-a-lifetime list.",
       best_months: [11, 12, 1, 2, 3],
@@ -174,6 +182,7 @@
     {
       id: "hawaii",
       name: "Hawaii",
+      hero_tagline: "Volcanic islands and easy ocean living",
       inspirational_description:
         "Volcanic islands, ocean swimming and an easy inter-island cruise that still feels like an escape.",
       best_months: [1, 2, 3, 4, 5, 9, 10, 11, 12],
@@ -194,6 +203,7 @@
     {
       id: "greek-islands",
       name: "Greek Islands",
+      hero_tagline: "White villages, blue seas and endless sunshine",
       inspirational_description:
         "Whitewashed villages, Aegean blue and long evenings that stretch into dinner by the water.",
       best_months: [5, 6, 7, 8, 9],
