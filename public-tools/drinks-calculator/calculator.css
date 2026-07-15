@@ -5,7 +5,7 @@
   --dc-green-hover: #79CDB1;
   --dc-green-ink: #245C4E;
   --dc-green-soft: #EFFAF6;
-  --dc-text: #1f2a28;
+  --dc-text: #222222;
   --dc-muted: #5f6d69;
   --dc-border: #e6ebe9;
   --dc-card: #ffffff;
@@ -148,7 +148,7 @@
 .dc-calc-sub {
   margin: 0;
   max-width: 34ch;
-  color: var(--dc-muted);
+  color: var(--dc-text);
   font-size: 0.88rem;
 }
 
@@ -579,12 +579,13 @@
 
 .dc-calc-recommendation p {
   margin: 0;
-  color: var(--dc-muted);
+  color: var(--dc-text);
   font-size: 0.88rem;
 }
 
 .dc-calc-rec-lead {
   margin: 0 0 2px !important;
+  color: var(--dc-muted) !important;
   font-size: 0.78rem !important;
   font-weight: 650;
   text-transform: uppercase;
@@ -617,7 +618,7 @@
 
 .dc-calc-disclaimer {
   margin: 0 0 28px;
-  color: var(--dc-muted);
+  color: var(--dc-text);
   font-size: 0.8rem;
 }
 
@@ -649,7 +650,7 @@
 
 .dc-calc-info-block p {
   margin: 0;
-  color: var(--dc-muted);
+  color: var(--dc-text);
   font-size: 0.84rem;
   white-space: pre-wrap;
 }
@@ -816,7 +817,7 @@
 
 .dc-calc-caveat {
   margin: 8px 0 0;
-  color: var(--dc-muted);
+  color: var(--dc-text);
   font-size: 0.8rem;
 }
 
@@ -943,7 +944,7 @@
 
 .dc-calc-hero-body {
   margin: 0;
-  color: var(--dc-muted);
+  color: var(--dc-text);
   font-size: 0.92rem;
 }
 
@@ -1006,7 +1007,7 @@
 
 .dc-calc-details-note {
   margin: 10px 0 0;
-  color: var(--dc-muted);
+  color: var(--dc-text);
   font-size: 0.82rem;
 }
 
