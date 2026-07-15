@@ -5260,6 +5260,10 @@ function renderUsageInsightsPanel() {
         </div>
       </div>
 
+      ${renderUsageFeatureAdoptionSection(data, usageInsightsLoading)}
+      ${renderUsageEngagementFunnelSection(data, usageInsightsLoading)}
+      ${renderUsageCustomerInsightsSection(data, usageInsightsLoading)}
+
       <div class="admin-card">
         <div class="admin-list-top">
           <div>
@@ -5383,6 +5387,277 @@ function renderUsageSummaryCard(label, value) {
     <div class="admin-card usage-summary-card">
       <p class="usage-summary-label">${esc(label)}</p>
       <p class="usage-summary-value">${esc(value)}</p>
+    </div>
+  `;
+}
+
+function isPublicUsageTool(row) {
+  const moduleName = String(row?.module || "").toLowerCase();
+  const toolName = String(row?.tool || "").toLowerCase();
+  return moduleName.startsWith("public_") || toolName.startsWith("public ");
+}
+
+function getUsageLoggedInCustomerCount(data) {
+  const summaryCount = Number(data?.summary?.active_customers);
+  if (Number.isFinite(summaryCount) && summaryCount >= 0) return summaryCount;
+  return Array.isArray(data?.customers) ? data.customers.length : 0;
+}
+
+function buildUsageFeatureAdoption(data) {
+  const totalCustomers = getUsageLoggedInCustomerCount(data);
+  const rows = (data?.tool_usage || [])
+    .filter(row => row && !isPublicUsageTool(row))
+    .map(row => {
+      const customers = Math.max(0, Number(row.unique_customers) || 0);
+      const percent =
+        totalCustomers > 0 ? Math.min(100, Number(((customers / totalCustomers) * 100).toFixed(1))) : 0;
+      return {
+        module: row.module || "",
+        feature: row.tool || row.module || "Feature",
+        customers,
+        total_customers: totalCustomers,
+        percent
+      };
+    })
+    .sort((a, b) => b.percent - a.percent || b.customers - a.customers || a.feature.localeCompare(b.feature));
+  return { totalCustomers, rows };
+}
+
+function buildUsageEngagementFunnel(data) {
+  const adoption = buildUsageFeatureAdoption(data);
+  const totalCustomers = adoption.totalCustomers;
+  const stages = [];
+
+  if (totalCustomers > 0) {
+    stages.push({
+      key: "logged_in",
+      label: "Logged into My Cruise",
+      customers: totalCustomers,
+      percent: 100
+    });
+  }
+
+  adoption.rows
+    .slice()
+    .sort((a, b) => b.customers - a.customers || a.feature.localeCompare(b.feature))
+    .forEach(row => {
+      stages.push({
+        key: row.module || row.feature,
+        label: row.feature,
+        customers: row.customers,
+        percent: row.percent
+      });
+    });
+
+  return { totalCustomers, stages };
+}
+
+function buildUsageCustomerInsights(data) {
+  const adoption = buildUsageFeatureAdoption(data);
+  const insights = [];
+  const rows = adoption.rows;
+  const total = adoption.totalCustomers;
+
+  if (!rows.length || total <= 0) return insights;
+
+  const top = rows[0];
+  insights.push(`${top.feature} is currently the most adopted feature (${top.percent}%).`);
+
+  if (rows.length > 1) {
+    const bottom = rows[rows.length - 1];
+    if (bottom.feature !== top.feature) {
+      insights.push(`${bottom.feature} has the lowest adoption (${bottom.percent}%).`);
+    }
+  }
+
+  const drinks = rows.find(
+    row =>
+      String(row.module) === "drinks_calculator" ||
+      String(row.feature).toLowerCase() === "drinks calculator"
+  );
+  if (drinks) {
+    insights.push(`${drinks.percent}% of customers have used the Drinks Calculator (${drinks.customers} of ${total}).`);
+  } else if (rows.length > 2) {
+    const mid = rows[Math.floor(rows.length / 2)];
+    insights.push(`${mid.percent}% of customers have opened ${mid.feature} (${mid.customers} of ${total}).`);
+  }
+
+  const sequenceInsight = buildUsageSequenceInsight(data?.customers || []);
+  if (sequenceInsight) insights.push(sequenceInsight);
+
+  return insights.slice(0, 4);
+}
+
+function buildUsageSequenceInsight(customers) {
+  const pairs = new Map();
+
+  customers.forEach(customer => {
+    const activity = Array.isArray(customer.recent_activity) ? customer.recent_activity : [];
+    if (activity.length < 2) return;
+
+    const firstByModule = new Map();
+    activity.forEach(item => {
+      const moduleName = String(item.module || "").trim();
+      if (!moduleName || moduleName.startsWith("public_")) return;
+      const occurred = Date.parse(item.occurred_at);
+      if (!Number.isFinite(occurred)) return;
+      const existing = firstByModule.get(moduleName);
+      if (existing == null || occurred < existing) firstByModule.set(moduleName, occurred);
+    });
+
+    const modules = Array.from(firstByModule.keys());
+    for (let i = 0; i < modules.length; i += 1) {
+      for (let j = i + 1; j < modules.length; j += 1) {
+        const left = modules[i];
+        const right = modules[j];
+        const leftTime = firstByModule.get(left);
+        const rightTime = firstByModule.get(right);
+        const key = left < right ? `${left}::${right}` : `${right}::${left}`;
+        const earlier = leftTime <= rightTime ? left : right;
+        const later = earlier === left ? right : left;
+        let row = pairs.get(key);
+        if (!row) {
+          row = { left, right, earlierCounts: {}, comparable: 0 };
+          pairs.set(key, row);
+        }
+        row.comparable += 1;
+        row.earlierCounts[earlier] = (row.earlierCounts[earlier] || 0) + 1;
+      }
+    }
+  });
+
+  let best = null;
+  pairs.forEach(row => {
+    if (row.comparable < 5) return;
+    const entries = Object.entries(row.earlierCounts).sort((a, b) => b[1] - a[1]);
+    if (!entries.length) return;
+    const [earlierModule, earlierCount] = entries[0];
+    const share = earlierCount / row.comparable;
+    if (share < 0.6) return;
+    const laterModule = earlierModule === row.left ? row.right : row.left;
+    if (!best || earlierCount > best.earlierCount || row.comparable > best.comparable) {
+      best = { earlierModule, laterModule, earlierCount, comparable: row.comparable, share };
+    }
+  });
+
+  if (!best) return null;
+
+  const labelFor = moduleName => {
+    const match = (usageInsightsData?.tool_usage || []).find(row => row.module === moduleName);
+    if (match?.tool) return match.tool;
+    return moduleName
+      .split("_")
+      .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  };
+
+  const earlierLabel = labelFor(best.earlierModule);
+  const laterLabel = labelFor(best.laterModule);
+  const pct = Math.round(best.share * 100);
+  return `${earlierLabel} activity typically occurs before ${laterLabel} for customers who used both (${pct}% of ${best.comparable} comparable customers).`;
+}
+
+function renderUsageFeatureAdoptionSection(data, isLoading) {
+  const adoption = buildUsageFeatureAdoption(data);
+  const body = isLoading
+    ? `<p class="admin-muted">Loading…</p>`
+    : adoption.totalCustomers <= 0 || !adoption.rows.length
+      ? `<p class="admin-muted">No feature adoption data in this range yet.</p>`
+      : `<div class="usage-adoption-list">
+          ${adoption.rows
+            .map(
+              row => `<div class="usage-adoption-row">
+                <div class="usage-adoption-copy">
+                  <p class="usage-adoption-name">${esc(row.feature)}</p>
+                  <div class="usage-adoption-bar" aria-hidden="true">
+                    <span class="usage-adoption-bar-fill" style="width:${esc(String(row.percent))}%;"></span>
+                  </div>
+                </div>
+                <div class="usage-adoption-meta">
+                  <p class="usage-adoption-percent">${esc(String(row.percent))}%</p>
+                  <p class="usage-adoption-count">${esc(row.customers)} of ${esc(row.total_customers)} customers</p>
+                </div>
+              </div>`
+            )
+            .join("")}
+        </div>`;
+
+  return `
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Feature Adoption</h3>
+          <p class="admin-muted">Share of My Cruise customers who have opened each feature.</p>
+        </div>
+      </div>
+      ${body}
+    </div>
+  `;
+}
+
+function renderUsageEngagementFunnelSection(data, isLoading) {
+  const funnel = buildUsageEngagementFunnel(data);
+  const body = isLoading
+    ? `<p class="admin-muted">Loading…</p>`
+    : funnel.stages.length < 2
+      ? `<p class="admin-muted">Not enough engagement data to build a funnel for this range.</p>`
+      : `<ol class="usage-funnel-list">
+          ${funnel.stages
+            .map((stage, index) => {
+              const previous = index > 0 ? funnel.stages[index - 1] : null;
+              const drop =
+                previous && previous.customers > 0
+                  ? Math.max(0, previous.customers - stage.customers)
+                  : 0;
+              return `<li class="usage-funnel-stage">
+                ${index > 0 ? `<div class="usage-funnel-arrow" aria-hidden="true">▼</div>` : ""}
+                <div class="usage-funnel-card">
+                  <p class="usage-funnel-label">${esc(stage.label)}</p>
+                  <p class="usage-funnel-percent">${esc(String(stage.percent))}%</p>
+                  <p class="usage-funnel-count">${esc(stage.customers)} customers</p>
+                  ${
+                    previous
+                      ? `<p class="usage-funnel-drop">${esc(drop)} fewer than previous stage</p>`
+                      : ""
+                  }
+                </div>
+              </li>`;
+            })
+            .join("")}
+        </ol>`;
+
+  return `
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Customer Engagement Funnel</h3>
+          <p class="admin-muted">Where customers stop engaging, starting from My Cruise login.</p>
+        </div>
+      </div>
+      ${body}
+    </div>
+  `;
+}
+
+function renderUsageCustomerInsightsSection(data, isLoading) {
+  const insights = isLoading ? [] : buildUsageCustomerInsights(data);
+  const body = isLoading
+    ? `<p class="admin-muted">Loading…</p>`
+    : insights.length
+      ? `<ul class="usage-insights-list">
+          ${insights.map(item => `<li>${esc(item)}</li>`).join("")}
+        </ul>`
+      : `<p class="admin-muted">No proven customer insights for this range yet.</p>`;
+
+  return `
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Customer Insights</h3>
+          <p class="admin-muted">Factual observations derived only from tracked engagement.</p>
+        </div>
+      </div>
+      ${body}
     </div>
   `;
 }
