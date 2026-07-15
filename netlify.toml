@@ -40,3 +40,13 @@
   from = "/cruise-finder/"
   to = "/public-tools/cruise-finder/finder.html"
   status = 200
+
+[[redirects]]
+  from = "/cruise-destination"
+  to = "/public-tools/cruise-finder/destination.html"
+  status = 200
+
+[[redirects]]
+  from = "/cruise-destination/"
+  to = "/public-tools/cruise-finder/destination.html"
+  status = 200

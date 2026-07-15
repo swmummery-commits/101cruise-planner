@@ -1,0 +1,361 @@
+/* 101cruise Cruise Finder — Destination Detail
+ * Embedded below Squarespace hero. No duplicate page title/hero.
+ */
+
+.cf-dest {
+  --cf-green: #8DD9BF;
+  --cf-green-ink: #245C4E;
+  --cf-green-soft: #EFFAF6;
+  --cf-text: #111;
+  --cf-muted: #666;
+  --cf-border: #e8e8e8;
+  --cf-card: #fff;
+  --cf-max: 760px;
+  --cf-radius: 18px;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--cf-max);
+  margin: 0 auto;
+  padding: 4px 0 64px;
+  color: var(--cf-text);
+  font-family: "Halyard Display", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.cf-dest *,
+.cf-dest *::before,
+.cf-dest *::after {
+  box-sizing: border-box;
+}
+
+.cf-dest p,
+.cf-dest li {
+  color: #666 !important;
+}
+
+.cf-dest h1,
+.cf-dest h2,
+.cf-dest h3,
+.cf-dest strong {
+  color: #111 !important;
+}
+
+.cf-dest .cf-dest-title,
+.cf-dest .cf-dest-tagline {
+  color: #fff !important;
+  font-weight: 400 !important;
+}
+
+.cf-dest-back {
+  display: inline-block;
+  margin: 0 0 18px;
+  font-size: 0.9rem;
+  color: var(--cf-green-ink) !important;
+  text-decoration: none;
+}
+
+.cf-dest-back:hover {
+  text-decoration: underline;
+}
+
+/* Intro */
+.cf-dest-intro {
+  border: 1px solid var(--cf-border);
+  border-radius: 22px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.05);
+  margin: 0 0 28px;
+}
+
+.cf-dest-media {
+  position: relative;
+  height: 280px;
+  min-height: 220px;
+  background: linear-gradient(145deg, var(--cf-accent, #2f5d4a), #1a2e28);
+  overflow: hidden;
+}
+
+.cf-dest-media img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.cf-dest-media.is-loaded img {
+  opacity: 1;
+}
+
+.cf-dest-media.is-fallback img {
+  display: none;
+}
+
+.cf-dest-media-fade {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 48%, rgba(0, 0, 0, 0.32) 0%, transparent 70%),
+    linear-gradient(to top, rgba(0, 0, 0, 0.28) 0%, transparent 50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.cf-dest-media-centre {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  pointer-events: none;
+}
+
+.cf-dest-badge {
+  display: inline-block;
+  margin: 0 0 10px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(141, 217, 191, 0.96);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cf-green-ink) !important;
+}
+
+.cf-dest-title {
+  margin: 0;
+  font-size: clamp(1.85rem, 5vw, 2.4rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  color: #fff !important;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.45);
+}
+
+.cf-dest-tagline {
+  margin: 10px 0 0;
+  font-size: 1rem;
+  font-weight: 400;
+  color: #fff !important;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.cf-dest-intro-body {
+  padding: 22px 24px 24px;
+}
+
+.cf-dest-why-label {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cf-green-ink) !important;
+}
+
+.cf-dest-why {
+  margin: 0;
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: #111 !important;
+}
+
+/* Sections */
+.cf-dest-section {
+  margin: 0 0 28px;
+}
+
+.cf-dest-section-title {
+  margin: 0 0 14px;
+  font-size: 1.12rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.cf-dest-lead {
+  margin: 0 0 14px;
+  font-size: 0.95rem;
+}
+
+/* At a glance */
+.cf-dest-glance {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cf-dest-fact {
+  padding: 14px 16px;
+  border: 1px solid var(--cf-border);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.03);
+}
+
+.cf-dest-fact-label {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cf-green-ink) !important;
+}
+
+.cf-dest-fact-value {
+  display: block;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: #666 !important;
+}
+
+/* Reasons */
+.cf-dest-reasons {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.cf-dest-reasons li {
+  position: relative;
+  padding: 12px 14px 12px 36px;
+  border: 1px solid var(--cf-border);
+  border-radius: 14px;
+  background: #fff;
+  color: #666 !important;
+}
+
+.cf-dest-reasons li::before {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: var(--cf-green);
+}
+
+/* Ports & lines */
+.cf-dest-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cf-dest-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--cf-border);
+  background: #fff;
+  font-size: 0.88rem;
+  color: #111 !important;
+}
+
+/* Seasonal */
+.cf-dest-season {
+  display: grid;
+  gap: 12px;
+}
+
+.cf-dest-season-item {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--cf-border);
+  background: #fff;
+}
+
+.cf-dest-season-item strong {
+  display: block;
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.cf-dest-season-item p {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+/* CTA */
+.cf-dest-cta {
+  margin: 8px 0 0;
+  padding: 24px 22px;
+  border-radius: 18px;
+  border: 1px solid rgba(141, 217, 191, 0.55);
+  background: var(--cf-green-soft);
+  text-align: center;
+}
+
+.cf-dest-cta-btn {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 26px;
+  background: #111;
+  color: #fff !important;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cf-dest-cta-btn:hover {
+  background: #222;
+}
+
+.cf-dest-cta-note {
+  margin: 12px 0 0;
+  font-size: 0.88rem;
+  color: #245c4e !important;
+}
+
+.cf-dest-placeholder {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid var(--cf-border);
+  font-size: 0.9rem;
+  color: #666 !important;
+}
+
+.cf-dest-error {
+  padding: 28px 20px;
+  text-align: center;
+  color: #8a2f2f !important;
+}
+
+@media (max-width: 640px) {
+  .cf-dest-media {
+    height: 220px;
+  }
+
+  .cf-dest-tagline {
+    white-space: normal;
+    max-width: 24ch;
+  }
+
+  .cf-dest-glance {
+    grid-template-columns: 1fr;
+  }
+
+  .cf-dest-intro-body,
+  .cf-dest-cta {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

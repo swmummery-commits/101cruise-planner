@@ -11,6 +11,7 @@
 
   const MOUNT_ID = "101cruise-cruise-finder";
   const NETLIFY_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
+  const PREFS_KEY = "101cruise-cf-prefs";
   const SCRIPT_EL = document.currentScript;
 
   const TIMING_OPTIONS = [
@@ -92,8 +93,7 @@
     departure: "",
     styles: [],
     budgetId: "",
-    results: [],
-    exploredId: ""
+    results: []
   };
 
   let mount = null;
@@ -498,7 +498,6 @@
     const lines = filterLines(d.typical_cruise_lines || [])
       .slice(0, 4)
       .join(" · ");
-    const explored = state.exploredId === d.id;
     const tagline = heroTagline(d);
 
     return `
@@ -552,17 +551,14 @@
           </div>
 
           <div class="cf-mag-actions">
-            <button type="button" class="cf-btn cf-btn-primary" data-explore="${escapeHtml(d.id)}">Explore Destination</button>
+            <button
+              type="button"
+              class="cf-btn cf-btn-primary"
+              data-explore="${escapeHtml(d.id)}"
+              data-match="${escapeHtml(row.level.key)}"
+              data-match-label="${escapeHtml(row.level.label)}"
+            >Explore Destination</button>
           </div>
-          ${
-            explored
-              ? `<div class="cf-explore-note">
-                  <p>Next we’ll expand this destination with richer seasonal detail, then search live for currently available sailings.</p>
-                  <p class="cf-explore-ask">Every cruise will include: <em>“Ask Paul for today’s availability and best price.”</em></p>
-                  <p class="cf-explore-muted">Cruise search isn’t available in this preview yet — no prices are shown.</p>
-                </div>`
-              : ""
-          }
         </div>
       </article>`;
   }
@@ -638,7 +634,52 @@
 
   function invalidateResults() {
     state.results = [];
-    state.exploredId = "";
+  }
+
+  function destinationPageBase() {
+    if (location.hostname.indexOf("101cruise.com.au") !== -1) {
+      return "https://101cruise.com.au/cruise-destination";
+    }
+    return `${TOOLS_ORIGIN}/cruise-destination`;
+  }
+
+  function saveFinderPrefs(matchKey, matchLabel) {
+    const prefs = {
+      timingMode: state.timingMode,
+      startDate: state.startDate,
+      endDate: state.endDate,
+      month: state.month,
+      year: state.year,
+      durationId: state.durationId,
+      departure: state.departure,
+      styles: state.styles.slice(),
+      budgetId: state.budgetId,
+      matchKey: matchKey || "",
+      matchLabel: matchLabel || "",
+      savedAt: Date.now()
+    };
+    try {
+      sessionStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+    } catch (_error) {
+      /* ignore */
+    }
+    return prefs;
+  }
+
+  function buildDestinationUrl(destId, matchKey) {
+    const params = new URLSearchParams();
+    params.set("destination", destId);
+    if (state.timingMode) params.set("tm", state.timingMode);
+    if (state.startDate) params.set("sd", state.startDate);
+    if (state.endDate) params.set("ed", state.endDate);
+    if (state.month) params.set("m", state.month);
+    if (state.year) params.set("y", state.year);
+    if (state.durationId) params.set("dur", state.durationId);
+    if (state.departure) params.set("dep", state.departure);
+    if (state.styles.length) params.set("st", state.styles.join(","));
+    if (state.budgetId) params.set("bud", state.budgetId);
+    if (matchKey) params.set("mk", matchKey);
+    return `${destinationPageBase()}?${params.toString()}`;
   }
 
   function bind() {
@@ -710,10 +751,12 @@
 
     mount.querySelectorAll("[data-explore]").forEach((btn) => {
       btn.addEventListener("click", () => {
-        state.exploredId = btn.getAttribute("data-explore") || "";
-        render();
-        const card = mount.querySelector(`[data-destination-id="${state.exploredId}"]`);
-        if (card) card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        const destId = btn.getAttribute("data-explore") || "";
+        const matchKey = btn.getAttribute("data-match") || "";
+        const matchLabel = btn.getAttribute("data-match-label") || "";
+        if (!destId) return;
+        saveFinderPrefs(matchKey, matchLabel);
+        window.location.href = buildDestinationUrl(destId, matchKey);
       });
     });
   }

@@ -1,7 +1,9 @@
 /**
  * 101cruise Cruise Finder — lightweight demo destinations only.
  * Temporary seed data. Hero images live in destination-images.js.
+ * Detail-page content lives in destination-content.js.
  * Cruise line display is filtered via approved-cruise-lines.js.
+ * Destination slug = id (e.g. japan, alaska, caribbean).
  */
 (function (root) {
   "use strict";
