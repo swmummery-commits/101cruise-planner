@@ -98,9 +98,9 @@
     },
     caribbean: {
       default: {
-        url: thumb("8/82", "Eagle_Beach%2C_Aruba_1.jpg"),
+        url: "images/caribbean-hero.png",
         objectPosition: "center 45%",
-        credit: "Wikimedia Commons"
+        credit: "101cruise"
       },
       seasonal: {}
     },
