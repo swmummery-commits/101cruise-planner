@@ -34,9 +34,9 @@
     },
     japan: {
       default: {
-        url: thumb("3/33", "Mount_Fuji_from_Lake_Kawaguchi_%282015-10-26%29.jpg"),
-        objectPosition: "center 40%",
-        credit: "Wikimedia Commons"
+        url: "images/japan-hero.png",
+        objectPosition: "center center",
+        credit: "101cruise"
       },
       seasonal: {
         3: {
