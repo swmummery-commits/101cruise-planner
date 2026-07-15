@@ -23,12 +23,9 @@
   const DESTINATION_IMAGES = {
     alaska: {
       default: {
-        url: thumb(
-          "5/53",
-          "Glaciar_Mendenhall%2C_Juneau%2C_Alaska%2C_Estados_Unidos%2C_2017-08-17%2C_DD_01.jpg"
-        ),
-        objectPosition: "center center",
-        credit: "Diego Delso / Wikimedia Commons"
+        url: "images/alaska-hero.png",
+        objectPosition: "center 40%",
+        credit: "101cruise"
       },
       seasonal: {}
     },
