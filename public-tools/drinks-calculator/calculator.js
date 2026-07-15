@@ -12,8 +12,9 @@
   "use strict";
 
   const MOUNT_ID = "101cruise-drinks-calculator";
-  const INTRO_PAGE_URL = "/public-tools/drinks-calculator/intro-preview.html";
-  const CALCULATOR_PAGE_URL = "/drinks-calculator";
+  const NETLIFY_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
+  const INTRO_PAGE_URL = "https://101cruise.com.au/cruise-drinks-calculator";
+  const CALCULATOR_PAGE_URL = "https://101cruise.com.au/drinks-calculator";
   const SCRIPT_EL = document.currentScript;
   const REQUEST_TIMEOUT_MS = 12000;
   const INPUT_DEBOUNCE_MS = 250;
@@ -51,7 +52,7 @@
         /* ignore */
       }
     }
-    return window.location.origin;
+    return NETLIFY_ORIGIN;
   }
 
   const TOOLS_ORIGIN = getScriptOrigin();
@@ -834,7 +835,7 @@
       lineSelect.addEventListener("change", () => {
         const slug = String(lineSelect.value || "").trim();
         if (!slug) return;
-        const url = new URL(CALCULATOR_PAGE_URL, window.location.origin);
+        const url = new URL(CALCULATOR_PAGE_URL);
         url.searchParams.set("line", slug);
         window.location.assign(url.toString());
       });
@@ -941,7 +942,12 @@
       </section>
     `;
     const retry = mount.querySelector("#dc-calc-retry");
-    if (retry) retry.addEventListener("click", () => init());
+    if (retry) {
+      retry.addEventListener("click", () => {
+        mount.removeAttribute("data-dc-calculator-ready");
+        init();
+      });
+    }
   }
 
   async function init() {
@@ -954,6 +960,11 @@
       console.error("[drinks-calculator] Mount element was not found.");
       return;
     }
+
+    if (mount.getAttribute("data-dc-calculator-ready") === "1") {
+      return;
+    }
+    mount.setAttribute("data-dc-calculator-ready", "1");
 
     const lineParam = getLineParam();
     if (!lineParam) {
@@ -1002,12 +1013,13 @@
       renderApp();
       maybeTrackCompletion();
     } catch (_error) {
+      mount.removeAttribute("data-dc-calculator-ready");
       showFatalError();
     }
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
     init();
   }

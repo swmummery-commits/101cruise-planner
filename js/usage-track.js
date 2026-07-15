@@ -6,13 +6,44 @@
  *   CruiseUsage.trackEvent("public_drinks_calculator", "tool_completed", { line_slug: "princess-cruises" });
  *
  * Never pass packing lists, budget values, notes, document contents, or other tool inputs.
+ *
+ * When this script is loaded from Netlify while embedded on another host (e.g. Squarespace),
+ * events are posted to the Netlify function origin — not the page origin.
  */
 (function (root) {
   "use strict";
 
   const SESSION_KEY = "101cruise_usage_session_id";
   const PAGE_OPEN_KEY = "101cruise_usage_page_opens";
-  const ENDPOINT = "/.netlify/functions/track-usage";
+  const NETLIFY_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
+  const SCRIPT_EL = typeof document !== "undefined" ? document.currentScript : null;
+
+  function getToolsOrigin() {
+    if (SCRIPT_EL && SCRIPT_EL.src) {
+      try {
+        return new URL(SCRIPT_EL.src).origin;
+      } catch (_error) {
+        /* ignore */
+      }
+    }
+    if (typeof document !== "undefined") {
+      const scripts = document.querySelectorAll('script[src*="usage-track.js"]');
+      const last = scripts[scripts.length - 1];
+      if (last && last.src) {
+        try {
+          return new URL(last.src).origin;
+        } catch (_error) {
+          /* ignore */
+        }
+      }
+    }
+    if (root.location && /netlify\.app$/i.test(root.location.hostname || "")) {
+      return root.location.origin;
+    }
+    return NETLIFY_ORIGIN;
+  }
+
+  const ENDPOINT = `${getToolsOrigin()}/.netlify/functions/track-usage`;
 
   function uuid() {
     if (root.crypto && typeof root.crypto.randomUUID === "function") {

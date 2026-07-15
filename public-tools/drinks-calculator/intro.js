@@ -3,15 +3,16 @@
  *
  * Mounts into: <div id="101cruise-drinks-intro"></div>
  *
- * Destination calculator page (built in a later phase):
- *   CALCULATOR_PAGE_URL?line=<cruise_line_id>
+ * Opens the live calculator page:
+ *   CALCULATOR_PAGE_URL?line=<cruise_line_slug>
  */
 
 (function () {
   "use strict";
 
   const MOUNT_ID = "101cruise-drinks-intro";
-  const CALCULATOR_PAGE_URL = "/drinks-calculator";
+  const NETLIFY_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
+  const CALCULATOR_PAGE_URL = "https://101cruise.com.au/drinks-calculator";
   const SCRIPT_EL = document.currentScript;
 
   function slugify(value) {
@@ -74,7 +75,7 @@
       }
     }
 
-    return window.location.origin;
+    return NETLIFY_ORIGIN;
   }
 
   function replaceAllLiteral(value, search, replacement) {
@@ -229,7 +230,7 @@
     button.addEventListener("click", () => {
       const lineSlug = String(select.value || "").trim();
       if (!lineSlug || button.disabled) return;
-      const url = new URL(CALCULATOR_PAGE_URL, window.location.origin);
+      const url = new URL(CALCULATOR_PAGE_URL);
       url.searchParams.set("line", lineSlug);
       window.location.assign(url.toString());
     });
@@ -273,17 +274,23 @@
       return;
     }
 
+    if (mount.getAttribute("data-dc-intro-ready") === "1") {
+      return;
+    }
+    mount.setAttribute("data-dc-intro-ready", "1");
+
     try {
       renderShell(mount);
       loadLines();
     } catch (error) {
       console.error("[drinks-intro] Failed to render intro", error);
+      mount.removeAttribute("data-dc-intro-ready");
       mount.innerHTML = '<p class="dc-intro-status is-error">We couldn’t load the Drinks Calculator intro. Please refresh and try again.</p>';
     }
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
+    document.addEventListener("DOMContentLoaded", init, { once: true });
   } else {
     init();
   }

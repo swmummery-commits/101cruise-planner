@@ -12,7 +12,7 @@
   "use strict";
 
   const MOUNT_ID = "101cruise-drinks-calculator-v2";
-  const INTRO_PAGE_URL = "/public-tools/drinks-calculator/intro-preview.html";
+  const INTRO_PAGE_URL = "https://101cruise.com.au/cruise-drinks-calculator";
   const SCRIPT_EL = document.currentScript;
   const REQUEST_TIMEOUT_MS = 12000;
   const INPUT_DEBOUNCE_MS = 250;
