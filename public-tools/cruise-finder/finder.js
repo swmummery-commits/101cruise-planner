@@ -40,14 +40,6 @@
     { id: "anywhere", label: "I'll fly anywhere" }
   ];
 
-  const TRAVELLER_OPTIONS = [
-    { id: "couple", label: "Couple" },
-    { id: "family", label: "Family" },
-    { id: "solo", label: "Solo" },
-    { id: "friends", label: "Friends" },
-    { id: "multi_generational", label: "Multi-generational" }
-  ];
-
   const STYLE_OPTIONS = [
     { id: "beaches", label: "Beaches" },
     { id: "relaxation", label: "Relaxation" },
@@ -98,7 +90,6 @@
     year: "",
     durationId: "",
     departure: "",
-    traveller: "",
     styles: [],
     budgetId: "",
     results: [],
@@ -234,7 +225,7 @@
       }
     }
 
-    /* Duration — skipped when traveller chooses "I'm flexible" (min/max null) */
+    /* Duration — skipped when "I'm flexible" (min/max null); no duration reasons added */
     if (duration && duration.min != null) {
       const dMin = dest.typical_nights_min || 7;
       const dMax = dest.typical_nights_max || 14;
@@ -252,15 +243,6 @@
       } else {
         score -= 4;
       }
-    }
-
-    /* Traveller type */
-    if (state.traveller && (dest.suitable_travellers || []).includes(state.traveller)) {
-      score += 12;
-      const label = (TRAVELLER_OPTIONS.find((t) => t.id === state.traveller) || {}).label || state.traveller;
-      reasons.push(`It suits ${label.toLowerCase()} travellers particularly well.`);
-    } else if (state.traveller) {
-      score -= 6;
     }
 
     /* Holiday styles (multi) */
@@ -281,10 +263,10 @@
     } else if (state.departure && (dest.departure_markets || []).includes(state.departure)) {
       score += 8;
       const city = (DEPARTURE_OPTIONS.find((d) => d.id === state.departure) || {}).label || state.departure;
-      reasons.push(`It works well for travellers departing from ${city}.`);
+      reasons.push(`It works well when departing from ${city}.`);
     }
 
-    /* Soft budget nudge — skipped when "No budget yet" */
+    /* Soft budget nudge — skipped when "No budget yet"; never mentioned in explanations */
     if (state.budgetId && state.budgetId !== "no_budget") {
       if (dest.id === "antarctica" && (state.budgetId === "under-3k" || state.budgetId === "3-5k")) {
         score -= 10;
@@ -304,8 +286,6 @@
   }
 
   function aiExplanation(dest, level, reasons) {
-    const traveller =
-      (TRAVELLER_OPTIONS.find((t) => t.id === state.traveller) || {}).label || "you";
     const styleBits = state.styles
       .slice(0, 2)
       .map((id) => (STYLE_OPTIONS.find((s) => s.id === id) || {}).label)
@@ -319,7 +299,7 @@
         ? `If I were planning this for you, ${dest.name} would be near the top of my list.`
         : level.key === "excellent"
           ? `${dest.name} feels like a natural fit for the holiday you’ve described.`
-          : `I’d keep ${dest.name} in the conversation for a ${traveller.toLowerCase()} trip${stylePhrase}.`;
+          : `I’d keep ${dest.name} in the conversation${stylePhrase}.`;
 
     const why = reasons.slice(0, 2).join(" ");
     return `${opener} ${why}`.trim();
@@ -369,8 +349,7 @@
     if (n === 2) return timingComplete();
     if (n === 3) return timingComplete() && !!state.durationId;
     if (n === 4) return canShowStep(3) && !!state.departure;
-    if (n === 5) return canShowStep(4) && !!state.traveller;
-    if (n === 6) return canShowStep(5) && state.styles.length > 0;
+    if (n === 5) return canShowStep(4) && state.styles.length > 0;
     return false;
   }
 
@@ -385,7 +364,13 @@
   }
 
   function readyForResults() {
-    return timingComplete() && state.durationId && state.departure && state.traveller && state.styles.length > 0 && state.budgetId;
+    return (
+      timingComplete() &&
+      !!state.durationId &&
+      !!state.departure &&
+      state.styles.length > 0 &&
+      !!state.budgetId
+    );
   }
 
   function choiceButtons(options, selectedId, dataAttr) {
@@ -479,49 +464,44 @@
     return months[0];
   }
 
-  /** Short hero tagline — base copy with light seasonal variants where relevant. */
+  /** Short hero tagline — 3–7 words; light seasonal variants where relevant. */
   function heroTagline(dest) {
     const month = primaryTravelMonth();
     const seasonal = {
       japan: {
-        3: "Cherry blossoms and timeless temples",
-        4: "Cherry blossoms and timeless temples",
-        10: "Ancient culture in autumn colour",
-        11: "Ancient culture in autumn colour"
-      },
-      alaska: {
-        5: "Glaciers, wildlife and unforgettable scenery",
-        6: "Glaciers, wildlife and unforgettable scenery",
-        7: "Glaciers, wildlife and unforgettable scenery",
-        8: "Glaciers, wildlife and unforgettable scenery"
-      },
-      mediterranean: {
-        6: "Sunlit coasts and island living",
-        7: "Sunlit coasts and island living",
-        8: "Sunlit coasts and island living"
+        3: "Cherry blossoms and timeless beauty",
+        4: "Cherry blossoms and timeless beauty",
+        10: "Autumn colour and timeless beauty",
+        11: "Autumn colour and timeless beauty"
       }
     };
     const byMonth = seasonal[dest.id];
     if (month && byMonth && byMonth[month]) return byMonth[month];
-    return dest.hero_tagline || dest.inspirational_description || "";
+    return dest.hero_tagline || "";
   }
 
   function resultCard(row) {
     const d = row.dest;
     const heroApi = window.CruiseFinderHeroImages;
-    const searchPhrase = heroApi
-      ? heroApi.buildSearchPhrase(d, {
+    const phrases = heroApi
+      ? heroApi.buildSearchPhrases(d, {
           travelMonth: primaryTravelMonth(),
           aiImageSearchPhrase: d.ai_image_search_phrase || null
         })
-      : d.image_search_phrase || `${d.name} landscape`;
+      : [d.image_search_phrase || `${d.name} landscape`].filter(Boolean);
+    const requireCsv = heroApi && heroApi.requireParam ? heroApi.requireParam(d) : "";
     const lines = (d.typical_cruise_lines || []).slice(0, 4).join(" · ");
     const explored = state.exploredId === d.id;
     const tagline = heroTagline(d);
 
     return `
       <article class="cf-mag-card" data-destination-id="${escapeHtml(d.id)}" style="--cf-accent:${escapeHtml(d.accent || "#8DD9BF")}">
-        <div class="cf-mag-hero" data-image-search="${escapeHtml(searchPhrase)}">
+        <div
+          class="cf-mag-hero"
+          data-image-phrases="${escapeHtml(JSON.stringify(phrases))}"
+          data-image-require="${escapeHtml(requireCsv)}"
+          data-image-search="${escapeHtml(phrases[0] || "")}"
+        >
           <img
             class="cf-mag-image"
             alt=""
@@ -604,7 +584,6 @@
     const step3 = canShowStep(3);
     const step4 = canShowStep(4);
     const step5 = canShowStep(5);
-    const step6 = canShowStep(6);
 
     mount.innerHTML = `
       <div class="cf-finder" data-tools-origin="${escapeHtml(TOOLS_ORIGIN)}">
@@ -629,19 +608,13 @@
 
         <section class="cf-step${step4 ? "" : " is-dimmed"}" data-step="4">
           <p class="cf-step-label">Step 4</p>
-          <h2 class="cf-step-title">Who is travelling?</h2>
-          <div class="cf-choice-grid">${choiceButtons(TRAVELLER_OPTIONS, state.traveller, "traveller")}</div>
-        </section>
-
-        <section class="cf-step${step5 ? "" : " is-dimmed"}" data-step="5">
-          <p class="cf-step-label">Step 5</p>
-          <h2 class="cf-step-title">What sort of holiday are you dreaming of?</h2>
+          <h2 class="cf-step-title">What sort of holiday are you looking for?</h2>
           <p class="cf-hint">Choose as many as you like.</p>
           <div class="cf-choice-grid">${styleButtons()}</div>
         </section>
 
-        <section class="cf-step${step6 ? "" : " is-dimmed"}" data-step="6">
-          <p class="cf-step-label">Step 6</p>
+        <section class="cf-step${step5 ? "" : " is-dimmed"}" data-step="5">
+          <p class="cf-step-label">Step 5</p>
           <h2 class="cf-step-title">Do you have a holiday budget in mind?</h2>
           <p class="cf-hint">Per person, roughly — or choose no budget yet.</p>
           <div class="cf-choice-grid">${choiceButtons(BUDGET_OPTIONS, state.budgetId, "budget")}</div>
@@ -685,14 +658,6 @@
     mount.querySelectorAll("[data-departure]").forEach((btn) => {
       btn.addEventListener("click", () => {
         state.departure = btn.getAttribute("data-departure") || "";
-        invalidateResults();
-        render();
-      });
-    });
-
-    mount.querySelectorAll("[data-traveller]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.traveller = btn.getAttribute("data-traveller") || "";
         invalidateResults();
         render();
       });

@@ -14,7 +14,7 @@
     {
       id: "alaska",
       name: "Alaska",
-      hero_tagline: "Glaciers, wildlife and unforgettable scenery",
+      hero_tagline: "Glaciers, wildlife and wild scenery",
       inspirational_description:
         "Ice-blue glaciers, quiet wilderness and wildlife that makes you stop mid-sentence. Alaska is the cruise for travellers who want nature on a grand scale.",
       best_months: [5, 6, 7, 8],
@@ -27,7 +27,7 @@
       suitable_styles: ["scenic_cruising", "adventure", "wildlife", "cold_weather", "bucket_list", "relaxation"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Alaska glaciers and mountains",
+      image_search_phrase: "Alaska glacier landscape",
       accent: "#3d5a6c",
       display_order: 1,
       active: true
@@ -35,7 +35,7 @@
     {
       id: "japan",
       name: "Japan",
-      hero_tagline: "Ancient culture meets modern cities",
+      hero_tagline: "Culture, colour and timeless beauty",
       inspirational_description:
         "A journey of contrast — quiet temples, neon cities, coastal villages and some of the world’s most thoughtful food culture.",
       best_months: [3, 4, 5, 9, 10, 11],
@@ -56,7 +56,7 @@
     {
       id: "mediterranean",
       name: "Mediterranean",
-      hero_tagline: "Sunlit harbours and layered history",
+      hero_tagline: "Sunlit coasts and island life",
       inspirational_description:
         "Sunlit harbours, long lunches and layers of history — the Mediterranean remains the classic European cruise for good reason.",
       best_months: [5, 6, 7, 8, 9],
@@ -69,7 +69,7 @@
       suitable_styles: ["culture", "food_wine", "beaches", "warm_weather", "relaxation", "luxury", "scenic_cruising"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Mediterranean coast",
+      image_search_phrase: "Mediterranean coast landscape",
       accent: "#2f6f8f",
       display_order: 3,
       active: true
@@ -77,7 +77,7 @@
     {
       id: "norwegian-fjords",
       name: "Norwegian Fjords",
-      hero_tagline: "Spectacular scenery carved by glaciers",
+      hero_tagline: "Dramatic landscapes and quiet waters",
       inspirational_description:
         "Sheer cliffs, mirror-still water and villages tucked into the folds of the mountains — scenic cruising at its most dramatic.",
       best_months: [5, 6, 7, 8],
@@ -90,7 +90,7 @@
       suitable_styles: ["scenic_cruising", "cold_weather", "adventure", "relaxation", "luxury", "bucket_list"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Norwegian Fjords",
+      image_search_phrase: "Norwegian Fjords landscape",
       accent: "#355e5a",
       display_order: 4,
       active: true
@@ -98,7 +98,7 @@
     {
       id: "caribbean",
       name: "Caribbean",
-      hero_tagline: "Warm turquoise waters and effortless island life",
+      hero_tagline: "Turquoise water and island ease",
       inspirational_description:
         "Warm water, easy island days and a holiday rhythm that asks very little of you — ideal when you simply want to unwind.",
       best_months: [12, 1, 2, 3, 4],
@@ -119,7 +119,7 @@
     {
       id: "south-pacific",
       name: "South Pacific",
-      hero_tagline: "Lagoon blues and island ease",
+      hero_tagline: "Lagoons, islands and easy living",
       inspirational_description:
         "Lagoon blues and island ease within closer reach of Australia and New Zealand — a holiday that feels far away without the longest flight.",
       best_months: [5, 6, 7, 8, 9, 10],
@@ -140,7 +140,7 @@
     {
       id: "australia-new-zealand",
       name: "Australia & New Zealand",
-      hero_tagline: "Home-grown cruising with world-class scenery",
+      hero_tagline: "Cities, coastlines and grand scenery",
       inspirational_description:
         "Home waters with surprising variety — coastal cities, island stops and New Zealand scenery without a long-haul journey first.",
       best_months: [11, 12, 1, 2, 3],
@@ -153,7 +153,7 @@
       suitable_styles: ["scenic_cruising", "relaxation", "family", "food_wine", "culture", "warm_weather", "beaches"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland"],
       image_url: null,
-      image_search_phrase: "Australia and New Zealand scenery",
+      image_search_phrase: "Sydney Harbour landscape",
       accent: "#2f5d4a",
       display_order: 7,
       active: true
@@ -161,7 +161,7 @@
     {
       id: "antarctica",
       name: "Antarctica",
-      hero_tagline: "Ice, silence and once-in-a-lifetime wilderness",
+      hero_tagline: "Ice, wildlife and true wilderness",
       inspirational_description:
         "A true expedition — ice, silence and wildlife that belongs on a once-in-a-lifetime list.",
       best_months: [11, 12, 1, 2, 3],
@@ -174,7 +174,7 @@
       suitable_styles: ["expedition", "adventure", "wildlife", "bucket_list", "cold_weather", "luxury", "scenic_cruising"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Antarctica landscape",
+      image_search_phrase: "Antarctica ice landscape",
       accent: "#4a6a8a",
       display_order: 8,
       active: true
@@ -182,7 +182,7 @@
     {
       id: "hawaii",
       name: "Hawaii",
-      hero_tagline: "Volcanic islands and easy ocean living",
+      hero_tagline: "Volcanoes, beaches and island life",
       inspirational_description:
         "Volcanic islands, ocean swimming and an easy inter-island cruise that still feels like an escape.",
       best_months: [1, 2, 3, 4, 5, 9, 10, 11, 12],
@@ -195,7 +195,7 @@
       suitable_styles: ["beaches", "warm_weather", "relaxation", "family", "scenic_cruising", "adventure", "luxury"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Hawaii tropical coast",
+      image_search_phrase: "Hawaii tropical coastline",
       accent: "#c45c26",
       display_order: 9,
       active: true
@@ -203,7 +203,7 @@
     {
       id: "greek-islands",
       name: "Greek Islands",
-      hero_tagline: "White villages, blue seas and endless sunshine",
+      hero_tagline: "White villages and blue seas",
       inspirational_description:
         "Whitewashed villages, Aegean blue and long evenings that stretch into dinner by the water.",
       best_months: [5, 6, 7, 8, 9],
@@ -216,7 +216,7 @@
       suitable_styles: ["beaches", "warm_weather", "relaxation", "culture", "food_wine", "scenic_cruising", "bucket_list"],
       departure_markets: ["sydney", "brisbane", "melbourne", "perth", "adelaide", "auckland", "anywhere"],
       image_url: null,
-      image_search_phrase: "Greek Islands Santorini",
+      image_search_phrase: "Greek Islands Santorini landscape",
       accent: "#1f6b8a",
       display_order: 10,
       active: true
