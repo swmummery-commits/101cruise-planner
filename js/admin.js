@@ -81,15 +81,15 @@ let usageInsightsPanelCustomer = null;
 let ciCruiseLines = [];
 let ciCruiseShips = [];
 let ciLineSearchQuery = "";
-let ciLineFilter = "all";
+let ciLineFilter = "sold";
 let ciShipSearchQuery = "";
 let ciShipLineFilter = "all";
 let ciShipStatusFilter = "all";
 let ciSubView = "lines";
 let editingCiLineId = null;
 let editingCiShipId = null;
-let showCiLineForm = false;
-let showCiShipForm = false;
+let ciLineCreating = false;
+let ciShipCreating = false;
 let ciMessage = "";
 let ciMessageTone = "";
 let ciLoading = false;
@@ -546,8 +546,8 @@ function setTab(tab) {
   plannerPreviewMessage = "";
   editingCiLineId = null;
   editingCiShipId = null;
-  showCiLineForm = false;
-  showCiShipForm = false;
+  ciLineCreating = false;
+  ciShipCreating = false;
   if (tab !== "cruise-intelligence") {
     ciMessage = "";
     ciMessageTone = "";
@@ -5917,16 +5917,87 @@ function renderCiLineRow(line) {
   `;
 }
 
+function formatCiDate(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function getCiLineShipStats(lineId) {
+  const ships = (ciCruiseShips || []).filter((ship) => ship.cruise_line_id === lineId);
+  const publicShips = ships.filter((ship) => ship.active !== false).length;
+  const hiddenShips = ships.filter((ship) => ship.active === false).length;
+  return {
+    total: ships.length,
+    publicShips,
+    hiddenShips
+  };
+}
+
+function renderCiLineStatsPanel(line) {
+  if (!line || !line.id) {
+    return `
+      <div class="ci-stats-panel">
+        <h4>Statistics</h4>
+        <p class="admin-small" style="margin:0;">Ship statistics appear after this cruise line is created.</p>
+      </div>
+    `;
+  }
+
+  const stats = getCiLineShipStats(line.id);
+  const active = line.active !== false;
+  const sold = Boolean(line.sold_by_101cruise);
+
+  return `
+    <div class="ci-stats-panel">
+      <h4>Statistics</h4>
+      <div class="ci-stats-row">
+        <div class="ci-stat">
+          <span class="ci-stat-label">Ships</span>
+          <span class="ci-stat-value">${esc(stats.total)}</span>
+        </div>
+        <div class="ci-stat">
+          <span class="ci-stat-label">Public ships</span>
+          <span class="ci-stat-value">${esc(stats.publicShips)}</span>
+        </div>
+        <div class="ci-stat">
+          <span class="ci-stat-label">Hidden ships</span>
+          <span class="ci-stat-value">${esc(stats.hiddenShips)}</span>
+        </div>
+        <div class="ci-stat">
+          <span class="ci-stat-label">Last updated</span>
+          <span class="ci-stat-value">${esc(formatCiDate(line.updated_at || line.created_at))}</span>
+        </div>
+        <div class="ci-stat">
+          <span class="ci-stat-label">Status</span>
+          <div class="ci-stat-status">
+            <span class="ci-stat-flag ${active ? "" : "is-off"}">${active ? "✓" : "–"} Active</span>
+            <span class="ci-stat-flag ${sold ? "" : "is-off"}">${sold ? "✓" : "–"} Sold by 101cruise</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderCiLineForm(line) {
   const editing = Boolean(line);
+  const slugReadonly = editing ? `readonly class="ci-id-readonly" aria-readonly="true"` : `placeholder="auto from name if blank"`;
+  const codeReadonly = editing ? `readonly class="ci-id-readonly" aria-readonly="true"` : "";
   return `
     <div class="admin-list-item" style="margin-top:12px;">
       <h3>${editing ? "Edit cruise line" : "Add cruise line"}</h3>
+      ${renderCiLineStatsPanel(line)}
       <input type="hidden" id="ciLineId" value="${esc(line?.id || "")}">
       <div class="ci-form-grid">
         <div class="admin-field"><label>Name</label><input id="ciLineName" value="${esc(line?.name || "")}"></div>
-        <div class="admin-field"><label>Slug</label><input id="ciLineSlug" value="${esc(line?.slug || "")}" placeholder="auto from name if blank"></div>
-        <div class="admin-field"><label>Code</label><input id="ciLineCode" value="${esc(line?.code || "")}"></div>
+        <div class="admin-field"><label>Slug</label><input id="ciLineSlug" value="${esc(line?.slug || "")}" ${slugReadonly}></div>
+        <div class="admin-field"><label>Code</label><input id="ciLineCode" value="${esc(line?.code || "")}" ${codeReadonly}></div>
         <div class="admin-field"><label>Country</label><input id="ciLineCountry" value="${esc(line?.country || "")}"></div>
         <div class="admin-field"><label>Line type</label>
           <select id="ciLineType">
@@ -5936,15 +6007,17 @@ function renderCiLineForm(line) {
         </div>
         <div class="admin-field"><label>Website URL</label><input id="ciLineWebsite" value="${esc(line?.website_url || "")}"></div>
         <div class="admin-field"><label>Logo URL</label><input id="ciLineLogo" value="${esc(line?.logo_url || "")}"></div>
-        <div class="admin-field"><label>Active</label>
-          <select id="ciLineActive"><option value="true" ${line?.active !== false ? "selected" : ""}>Yes</option><option value="false" ${line?.active === false ? "selected" : ""}>No</option></select>
+        <div class="admin-field ci-check-field">
+          <label>Active</label>
+          <label class="ci-check-control"><input type="checkbox" id="ciLineActive" ${line?.active !== false ? "checked" : ""}> Yes</label>
         </div>
-        <div class="admin-field"><label>Sold by 101cruise</label>
-          <select id="ciLineSold"><option value="true" ${line?.sold_by_101cruise ? "selected" : ""}>Yes</option><option value="false" ${!line?.sold_by_101cruise ? "selected" : ""}>No</option></select>
+        <div class="admin-field ci-check-field">
+          <label>Sold by 101cruise</label>
+          <label class="ci-check-control"><input type="checkbox" id="ciLineSold" ${line?.sold_by_101cruise ? "checked" : ""}> Yes</label>
         </div>
       </div>
-      <p class="admin-small ci-form-note">Sold lines are automatically public when active. Lines list alphabetically by name.</p>
-      <div class="admin-field ci-form-description"><label>Description</label><textarea id="ciLineDescription">${esc(line?.description || "")}</textarea></div>
+      <p class="admin-small ci-form-note">Sold lines are automatically public when active. Lines list alphabetically by name.${editing ? " Slug and code stay fixed after creation." : ""}</p>
+      <div class="admin-field ci-form-description"><label>Description</label><textarea id="ciLineDescription" rows="4">${esc(line?.description || "")}</textarea></div>
       <div class="admin-actions-row">
         <button class="admin-button" onclick="saveCiLine()">${editing ? "Save line" : "Create line"}</button>
         <button class="admin-button secondary" onclick="cancelCiLineForm()">Cancel</button>
@@ -5982,21 +6055,26 @@ async function saveCiLine() {
     return;
   }
   if (!slug) slug = slugifyCi(name);
+  const existingLine = id ? ciCruiseLines.find((l) => l.id === id) : null;
   const payload = {
     name,
-    slug,
-    code: String(document.getElementById("ciLineCode")?.value || "").trim() || null,
     country: String(document.getElementById("ciLineCountry")?.value || "").trim() || null,
     website_url: normalizeUrl(document.getElementById("ciLineWebsite")?.value) || null,
     logo_url: normalizeUrl(document.getElementById("ciLineLogo")?.value) || null,
     line_type: String(document.getElementById("ciLineType")?.value || "").trim() || null,
-    active: document.getElementById("ciLineActive")?.value === "true",
-    sold_by_101cruise: document.getElementById("ciLineSold")?.value === "true",
+    active: Boolean(document.getElementById("ciLineActive")?.checked),
+    sold_by_101cruise: Boolean(document.getElementById("ciLineSold")?.checked),
     description: String(document.getElementById("ciLineDescription")?.value || "").trim() || null,
-    needs_review: document.getElementById("ciLineSold")?.value !== "true",
+    needs_review: !document.getElementById("ciLineSold")?.checked,
     review_notes: null
   };
-  if (!id) payload.source_name = "Admin";
+  if (existingLine) {
+    /* Slug and code are identifiers — never change after creation */
+  } else {
+    payload.slug = slug;
+    payload.code = String(document.getElementById("ciLineCode")?.value || "").trim() || null;
+    payload.source_name = "Admin";
+  }
 
   ciMessage = "Saving…";
   ciMessageTone = "";
@@ -6085,6 +6163,7 @@ function renderCiShipForm(ship) {
     .map((line) => `<option value="${esc(line.id)}" ${ship?.cruise_line_id === line.id ? "selected" : ""}>${esc(line.name)}</option>`)
     .join("");
   const facilities = ship?.facilities && typeof ship.facilities === "object" ? ship.facilities : {};
+  const slugReadonly = editing ? `readonly class="ci-id-readonly" aria-readonly="true"` : `placeholder="auto from name if blank"`;
 
   return `
     <div class="admin-list-item" style="margin-top:12px;">
@@ -6093,7 +6172,7 @@ function renderCiShipForm(ship) {
       <div class="ci-form-grid">
         <div class="admin-field"><label>Cruise line</label><select id="ciShipLineId"><option value="">Select…</option>${lineOptions}</select></div>
         <div class="admin-field"><label>Name</label><input id="ciShipName" value="${esc(ship?.name || "")}"></div>
-        <div class="admin-field"><label>Slug</label><input id="ciShipSlug" value="${esc(ship?.slug || "")}" placeholder="auto from name if blank"></div>
+        <div class="admin-field"><label>Slug</label><input id="ciShipSlug" value="${esc(ship?.slug || "")}" ${slugReadonly}></div>
         <div class="admin-field"><label>Status</label>
           <select id="ciShipStatus">
             <option value="active" ${ship?.status === "active" || !ship?.status ? "selected" : ""}>active</option>
@@ -6101,8 +6180,9 @@ function renderCiShipForm(ship) {
             <option value="retired" ${ship?.status === "retired" ? "selected" : ""}>retired</option>
           </select>
         </div>
-        <div class="admin-field"><label>Active</label>
-          <select id="ciShipActive"><option value="true" ${ship?.active !== false ? "selected" : ""}>Yes</option><option value="false" ${ship?.active === false ? "selected" : ""}>No</option></select>
+        <div class="admin-field ci-check-field">
+          <label>Active</label>
+          <label class="ci-check-control"><input type="checkbox" id="ciShipActive" ${ship?.active !== false ? "checked" : ""}> Yes</label>
         </div>
         <div class="admin-field"><label>Year built</label><input id="ciShipBuilt" type="number" value="${esc(ship?.year_built ?? "")}"></div>
         <div class="admin-field"><label>Year refurbished</label><input id="ciShipRefurb" type="number" value="${esc(ship?.year_refurbished ?? "")}"></div>
@@ -6113,27 +6193,32 @@ function renderCiShipForm(ship) {
         <div class="admin-field"><label>Gross tonnage</label><input id="ciShipTonnage" type="number" value="${esc(ship?.gross_tonnage ?? "")}"></div>
         <div class="admin-field"><label>Length (metres)</label><input id="ciShipLength" type="number" value="${esc(ship?.length_metres ?? "")}"></div>
       </div>
-      <p class="admin-small ci-form-note">Active ships on a sold cruise line are public automatically.</p>
+      <p class="admin-small ci-form-note">Active ships on a sold cruise line are public automatically.${editing ? " Slug stays fixed after creation." : ""}</p>
       <h4 style="margin-top:10px;">Facilities</h4>
       <div class="ci-form-grid">
         <div class="admin-field"><label>Restaurants</label><input id="ciFacRestaurants" type="number" value="${esc(facilities.restaurants ?? "")}"></div>
         <div class="admin-field"><label>Bars</label><input id="ciFacBars" type="number" value="${esc(facilities.bars ?? "")}"></div>
         <div class="admin-field"><label>Pools</label><input id="ciFacPools" type="number" value="${esc(facilities.pools ?? "")}"></div>
         <div class="admin-field"><label>Hot tubs</label><input id="ciFacHotTubs" type="number" value="${esc(facilities.hot_tubs ?? "")}"></div>
-        <div class="admin-field"><label>Spa</label>
-          <select id="ciFacSpa"><option value="" ${facilities.spa == null ? "selected" : ""}>Not set</option><option value="true" ${facilities.spa === true ? "selected" : ""}>Yes</option><option value="false" ${facilities.spa === false ? "selected" : ""}>No</option></select>
+        <div class="admin-field ci-check-field">
+          <label>Spa</label>
+          <label class="ci-check-control"><input type="checkbox" id="ciFacSpa" ${facilities.spa === true ? "checked" : ""}> Yes</label>
         </div>
-        <div class="admin-field"><label>Gym</label>
-          <select id="ciFacGym"><option value="" ${facilities.gym == null && facilities.fitness == null ? "selected" : ""}>Not set</option><option value="true" ${facilities.gym === true || facilities.fitness === true ? "selected" : ""}>Yes</option><option value="false" ${facilities.gym === false || facilities.fitness === false ? "selected" : ""}>No</option></select>
+        <div class="admin-field ci-check-field">
+          <label>Gym</label>
+          <label class="ci-check-control"><input type="checkbox" id="ciFacGym" ${facilities.gym === true || facilities.fitness === true ? "checked" : ""}> Yes</label>
         </div>
-        <div class="admin-field"><label>Theatre</label>
-          <select id="ciFacTheatre"><option value="" ${facilities.theatre == null && facilities.theater == null ? "selected" : ""}>Not set</option><option value="true" ${facilities.theatre === true || facilities.theater === true ? "selected" : ""}>Yes</option><option value="false" ${facilities.theatre === false || facilities.theater === false ? "selected" : ""}>No</option></select>
+        <div class="admin-field ci-check-field">
+          <label>Theatre</label>
+          <label class="ci-check-control"><input type="checkbox" id="ciFacTheatre" ${facilities.theatre === true || facilities.theater === true ? "checked" : ""}> Yes</label>
         </div>
-        <div class="admin-field"><label>Casino</label>
-          <select id="ciFacCasino"><option value="" ${facilities.casino == null ? "selected" : ""}>Not set</option><option value="true" ${facilities.casino === true ? "selected" : ""}>Yes</option><option value="false" ${facilities.casino === false ? "selected" : ""}>No</option></select>
+        <div class="admin-field ci-check-field">
+          <label>Casino</label>
+          <label class="ci-check-control"><input type="checkbox" id="ciFacCasino" ${facilities.casino === true ? "checked" : ""}> Yes</label>
         </div>
-        <div class="admin-field"><label>Kids club</label>
-          <select id="ciFacKids"><option value="" ${facilities.kids_club == null ? "selected" : ""}>Not set</option><option value="true" ${facilities.kids_club === true ? "selected" : ""}>Yes</option><option value="false" ${facilities.kids_club === false ? "selected" : ""}>No</option></select>
+        <div class="admin-field ci-check-field">
+          <label>Kids club</label>
+          <label class="ci-check-control"><input type="checkbox" id="ciFacKids" ${facilities.kids_club === true ? "checked" : ""}> Yes</label>
         </div>
       </div>
       <div class="ci-form-grid" style="margin-top:8px;">
@@ -6173,11 +6258,8 @@ function ciOptionalNumber(id) {
   return Number.isFinite(n) ? n : null;
 }
 
-function ciOptionalBool(id) {
-  const raw = document.getElementById(id)?.value;
-  if (raw === "true") return true;
-  if (raw === "false") return false;
-  return null;
+function ciCheckboxBool(id) {
+  return Boolean(document.getElementById(id)?.checked);
 }
 
 function ciChipList(id) {
@@ -6213,16 +6295,16 @@ async function saveCiShip() {
   if (bars != null) facilities.bars = bars;
   if (pools != null) facilities.pools = pools;
   if (hotTubs != null) facilities.hot_tubs = hotTubs;
-  const spa = ciOptionalBool("ciFacSpa");
-  const gym = ciOptionalBool("ciFacGym");
-  const theatre = ciOptionalBool("ciFacTheatre");
-  const casino = ciOptionalBool("ciFacCasino");
-  const kids = ciOptionalBool("ciFacKids");
-  if (spa != null) facilities.spa = spa;
-  if (gym != null) facilities.gym = gym;
-  if (theatre != null) facilities.theatre = theatre;
-  if (casino != null) facilities.casino = casino;
-  if (kids != null) facilities.kids_club = kids;
+  const spa = ciCheckboxBool("ciFacSpa");
+  const gym = ciCheckboxBool("ciFacGym");
+  const theatre = ciCheckboxBool("ciFacTheatre");
+  const casino = ciCheckboxBool("ciFacCasino");
+  const kids = ciCheckboxBool("ciFacKids");
+  facilities.spa = spa;
+  facilities.gym = gym;
+  facilities.theatre = theatre;
+  facilities.casino = casino;
+  facilities.kids_club = kids;
   const specialty = ciChipList("ciFacSpecialty");
   const exclusive = ciChipList("ciFacExclusive");
   if (specialty.length) facilities.specialty_features = specialty;
@@ -6231,7 +6313,6 @@ async function saveCiShip() {
   const payload = {
     cruise_line_id: cruiseLineId,
     name,
-    slug,
     status: String(document.getElementById("ciShipStatus")?.value || "active"),
     year_built: ciOptionalNumber("ciShipBuilt"),
     year_refurbished: ciOptionalNumber("ciShipRefurb"),
@@ -6242,9 +6323,14 @@ async function saveCiShip() {
     gross_tonnage: ciOptionalNumber("ciShipTonnage"),
     length_metres: ciOptionalNumber("ciShipLength"),
     facilities,
-    active: document.getElementById("ciShipActive")?.value === "true"
+    active: ciCheckboxBool("ciShipActive")
   };
-  if (!id) payload.source_name = "Admin";
+  if (existing) {
+    /* Slug is an identifier — never change after creation */
+  } else {
+    payload.slug = slug;
+    payload.source_name = "Admin";
+  }
 
   ciMessage = "Saving…";
   ciMessageTone = "";
