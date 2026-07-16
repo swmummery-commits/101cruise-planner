@@ -4981,7 +4981,7 @@ function buildShipAccommodation(ship) {
 
 function buildShipOnboardGlance(facilities) {
   const numericRows = [
-    { label: "Restaurants", icon: "restaurants", keys: ["restaurants", "restaurant_count", "restaurant"] },
+    { label: "Dining Options", icon: "restaurants", keys: ["restaurants", "restaurant_count", "restaurant"] },
     { label: "Bars", icon: "bars", keys: ["bars", "bar_count", "bar"] },
     { label: "Pools", icon: "pools", keys: ["pools", "pool_count", "pool"] },
     { label: "Hot tubs", icon: "hot_tubs", keys: ["hot_tubs", "hotTubs", "hot_tub_count", "jacuzzis"] },

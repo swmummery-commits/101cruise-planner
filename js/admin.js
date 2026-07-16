@@ -6780,7 +6780,7 @@ function renderCiShipForm(ship) {
       <p class="admin-small ci-form-note">Active ships on a sold cruise line are public automatically.${editing ? " Slug stays fixed after creation." : ""}</p>
       <h4 style="margin-top:10px;">Facilities</h4>
       <div class="ci-form-grid">
-        <div class="admin-field"><label>Restaurants</label><input id="ciFacRestaurants" type="number" value="${esc(facilities.restaurants ?? "")}"></div>
+        <div class="admin-field"><label>Dining Options</label><input id="ciFacRestaurants" type="number" value="${esc(facilities.restaurants ?? "")}"></div>
         <div class="admin-field"><label>Specialty Dining</label><input id="ciFacSpecialtyDining" type="number" value="${esc(facilities.specialty_dining ?? "")}"></div>
         <div class="admin-field"><label>Bars</label><input id="ciFacBars" type="number" value="${esc(facilities.bars ?? "")}"></div>
         <div class="admin-field"><label>Pools</label><input id="ciFacPools" type="number" value="${esc(facilities.pools ?? "")}"></div>
