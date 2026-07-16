@@ -7476,10 +7476,10 @@ input[type="radio"] {
 .ship-hero-line-logo {
   display: block;
   width: auto;
-  height: 48px;
-  max-width: 200px;
+  height: 88px;
+  max-width: 320px;
   object-fit: contain;
-  margin: 0 0 22px;
+  margin: 0 0 20px;
   opacity: 0;
 }
 
@@ -8139,6 +8139,11 @@ input[type="radio"] {
   .ship-hero {
     gap: 14px;
     margin-bottom: 18px;
+  }
+
+  .ship-hero-line-logo {
+    height: 72px;
+    max-width: 240px;
   }
 
   .ship-identity-name {
