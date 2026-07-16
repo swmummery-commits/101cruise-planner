@@ -5296,7 +5296,7 @@ function renderShipAccommodationChart(rooms) {
               stroke="${escapeHtml(segment.color)}"
               stroke-dasharray="${segment.dasharray}"
               stroke-dashoffset="${segment.dashoffset}"
-              style="--ship-donut-delay:${0.12 + index * 0.1}s"
+              style="--ship-donut-delay:${0.3 + index * 0.55}s"
             ></circle>
           `).join("")}
         </svg>
@@ -5393,19 +5393,41 @@ function animateShipDonutChart() {
     segment.style.opacity = "0";
 
     requestAnimationFrame(() => {
-      const delay = getComputedStyle(segment).getPropertyValue("--ship-donut-delay") || "0.12s";
-      segment.style.transition = `stroke-dasharray 1.45s cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}, opacity 0.55s ease ${delay}`;
+      const delay = getComputedStyle(segment).getPropertyValue("--ship-donut-delay") || "0.3s";
+      segment.style.transition = `stroke-dasharray 15s cubic-bezier(0.22, 0.61, 0.36, 1) ${delay}, opacity 1.4s ease ${delay}`;
       segment.style.strokeDasharray = finalDasharray;
       segment.style.opacity = "1";
     });
   });
 }
 
+function setupShipDonutAnimation() {
+  const wrap = document.querySelector(".ship-donut-wrap");
+  if (!wrap) return;
+
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion) {
+    animateShipDonutChart();
+    return;
+  }
+
+  // Start only when the chart is on-screen, so late scrollers still catch it.
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      observer.disconnect();
+      animateShipDonutChart();
+    },
+    { threshold: 0.35, rootMargin: "0px 0px -8% 0px" }
+  );
+  observer.observe(wrap);
+}
+
 function revealShipContentSections() {
   const page = document.querySelector(".ship-page");
   if (!page) return;
   page.classList.add("is-content-ready");
-  requestAnimationFrame(() => animateShipDonutChart());
+  requestAnimationFrame(() => setupShipDonutAnimation());
 }
 
 async function initialiseShipPageMotion() {
