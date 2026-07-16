@@ -330,11 +330,53 @@
   width: 100%;
 }
 
-.ci-check-field {
+.ci-checkbox-row {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  min-height: 58px;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  align-items: center;
+  margin: 4px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.ci-checkbox-row .ci-check-control {
+  padding: 0;
+  white-space: nowrap;
+}
+
+.ci-autosave-status {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.8rem;
+  font-weight: 550;
+  color: #888;
+}
+
+.ci-autosave-status.is-saving {
+  color: #888;
+}
+
+.ci-autosave-status.is-saved {
+  color: #245c4e;
+}
+
+.ci-autosave-status.is-error {
+  color: #b42318;
+}
+
+.ci-detail-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.ci-detail-title-row .ci-detail-title {
+  margin: 0;
 }
 
 .ci-check-control {
