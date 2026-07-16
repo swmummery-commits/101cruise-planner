@@ -825,17 +825,43 @@ async function loadCruiseLineLogo(cruiseLine) {
   const safeCruiseLine = String(cruiseLine).trim();
   if (!safeCruiseLine) return fallbackLogo;
 
-  // First try a normal case-insensitive exact match.
+  // Prefer Cruise Lines/Ships (CI) catalogue.
   let { data, error } = await supabaseClient
+    .from("ci_cruise_lines")
+    .select("name, logo_url")
+    .ilike("name", safeCruiseLine)
+    .eq("active", true)
+    .eq("sold_by_101cruise", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (!error && !data?.logo_url) {
+    const partial = safeCruiseLine.replace(/[%_]/g, "").trim();
+    if (partial.length >= 3) {
+      const partialResult = await supabaseClient
+        .from("ci_cruise_lines")
+        .select("name, logo_url")
+        .ilike("name", `%${partial}%`)
+        .eq("active", true)
+        .eq("sold_by_101cruise", true)
+        .limit(1)
+        .maybeSingle();
+      data = partialResult.data || data;
+      error = partialResult.error || error;
+    }
+  }
+
+  if (!error && data?.logo_url) return data.logo_url;
+
+  // Legacy drinks-calculator / planner logos table.
+  ({ data, error } = await supabaseClient
     .from("cruise_lines")
     .select("name, logo_url")
     .ilike("name", safeCruiseLine)
     .eq("active", true)
     .limit(1)
-    .maybeSingle();
+    .maybeSingle());
 
-  // If the stored cruise value is shortened, for example "Explora" instead of
-  // "Explora Journeys", try a partial match as a fallback.
   if (!error && !data?.logo_url) {
     const partial = safeCruiseLine.replace(/[%_]/g, "").trim();
     if (partial.length >= 3) {
@@ -872,13 +898,23 @@ async function loadShipHeroImage(shipName) {
   const safeShipName = String(shipName).trim();
   if (!safeShipName) return fallbackImage;
 
-  const { data, error } = await supabaseClient
-    .from("ships")
+  let { data, error } = await supabaseClient
+    .from("ci_cruise_ships")
     .select("name, hero_image_url")
     .ilike("name", safeShipName)
     .eq("active", true)
     .limit(1)
     .maybeSingle();
+
+  if (!error && data?.hero_image_url) return data.hero_image_url;
+
+  ({ data, error } = await supabaseClient
+    .from("ships")
+    .select("name, hero_image_url")
+    .ilike("name", safeShipName)
+    .eq("active", true)
+    .limit(1)
+    .maybeSingle());
 
   if (error) {
     console.warn("Ship hero image lookup failed", error);
@@ -895,13 +931,35 @@ async function loadShipPageImage(shipName) {
   const safeShipName = String(shipName).trim();
   if (!safeShipName) return mapped || "";
 
-  const { data, error } = await supabaseClient
-    .from("ships")
+  let { data, error } = await supabaseClient
+    .from("ci_cruise_ships")
     .select("name, hero_image_url")
     .ilike("name", safeShipName)
     .eq("active", true)
     .limit(1)
     .maybeSingle();
+
+  if (!error && data?.hero_image_url) return data.hero_image_url;
+
+  if (!error && safeShipName.length >= 4) {
+    const partial = safeShipName.replace(/[%_]/g, "").trim();
+    const partialCi = await supabaseClient
+      .from("ci_cruise_ships")
+      .select("name, hero_image_url")
+      .ilike("name", `%${partial}%`)
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle();
+    if (partialCi.data?.hero_image_url) return partialCi.data.hero_image_url;
+  }
+
+  ({ data, error } = await supabaseClient
+    .from("ships")
+    .select("name, hero_image_url")
+    .ilike("name", safeShipName)
+    .eq("active", true)
+    .limit(1)
+    .maybeSingle());
 
   if (error) {
     console.warn("Ship page image lookup failed", error);
@@ -910,7 +968,6 @@ async function loadShipPageImage(shipName) {
 
   if (data?.hero_image_url) return data.hero_image_url;
 
-  // Partial match for CRM short names vs full Supabase ship names.
   if (safeShipName.length >= 4) {
     const partial = safeShipName.replace(/[%_]/g, "").trim();
     const partialResult = await supabaseClient
@@ -4870,42 +4927,56 @@ function humaniseShipRoomLabel(key) {
 
 function buildShipAccommodation(ship) {
   const colors = SHIP_ROOM_COLORS;
-  const breakdown = ship?.stateroom_breakdown;
   const rooms = [];
 
+  const pushRoom = (label, value, index) => {
+    const text = String(label || "").trim();
+    if (!text) return;
+    if (value === null || value === undefined || value === "") return;
+    const number = Number(value);
+    if (!Number.isFinite(number)) return;
+    if (number <= 0) return;
+    rooms.push({ label: text, value: number, color: colors[rooms.length % colors.length] });
+  };
+
+  const breakdown = ship?.stateroom_breakdown;
   if (Array.isArray(breakdown)) {
     breakdown.forEach((entry, index) => {
       if (!entry || typeof entry !== "object") return;
       const label = entry.label || entry.name || entry.type || entry.stateroom_type;
       const value = entry.value ?? entry.count ?? entry.quantity;
-      const number = Number(value);
-      if (!label || !Number.isFinite(number)) return;
-      rooms.push({ label: String(label), value: number, color: colors[index % colors.length] });
+      pushRoom(label, value, index);
     });
   } else if (breakdown && typeof breakdown === "object") {
     Object.entries(breakdown).forEach(([key, value], index) => {
-      const number = Number(value);
-      if (!Number.isFinite(number)) return;
-      rooms.push({ label: humaniseShipRoomLabel(key), value: number, color: colors[index % colors.length] });
+      pushRoom(humaniseShipRoomLabel(key), value, index);
     });
   }
 
-  if (!rooms.length && Array.isArray(ship?.stateroom_types)) {
-    ship.stateroom_types.forEach((entry, index) => {
-      if (typeof entry === "string") {
-        rooms.push({ label: entry, value: 0, color: colors[index % colors.length] });
-        return;
-      }
+  const typeSource = ship?.stateroom_types || ship?.cabin_type_summary;
+  if (!rooms.length && Array.isArray(typeSource)) {
+    typeSource.forEach((entry, index) => {
+      if (typeof entry === "string") return;
       if (!entry || typeof entry !== "object") return;
       const label = entry.label || entry.name || entry.type;
       const value = entry.value ?? entry.count ?? entry.quantity;
-      const number = Number(value);
-      if (!label || !Number.isFinite(number)) return;
-      rooms.push({ label: String(label), value: number, color: colors[index % colors.length] });
+      pushRoom(label, value, index);
+    });
+  } else if (!rooms.length && typeSource && typeof typeSource === "object") {
+    // Support Base44 object shape and custom[] entries.
+    Object.entries(typeSource).forEach(([key, value], index) => {
+      if (key === "custom" && Array.isArray(value)) {
+        value.forEach((entry, customIndex) => {
+          if (!entry || typeof entry !== "object") return;
+          pushRoom(entry.name || entry.label, entry.count ?? entry.value, customIndex);
+        });
+        return;
+      }
+      pushRoom(humaniseShipRoomLabel(key), value, index);
     });
   }
 
-  return rooms.filter((room) => Number.isFinite(room.value));
+  return rooms;
 }
 
 function buildShipOnboardGlance(facilities) {

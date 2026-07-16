@@ -167,6 +167,7 @@ function mapSupabaseShip(row) {
     year_built: row.year_built,
     year_refurbished: row.year_refurbished,
     facilities: row.facilities,
+    hero_image_url: row.hero_image_url,
     current_status: row.status,
     last_updated: row.updated_at || null,
     updated_date: row.updated_at || null,
@@ -185,7 +186,7 @@ async function listSupabaseShips() {
 
   while (offset < 5000) {
     const path =
-      `ci_cruise_ships?select=id,name,slug,status,cruise_line_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,year_built,year_refurbished,facilities,updated_at,ci_cruise_lines(id,name,slug)&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`;
+      `ci_cruise_ships?select=id,name,slug,status,cruise_line_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,year_built,year_refurbished,facilities,hero_image_url,updated_at,ci_cruise_lines(id,name,slug)&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`;
     const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/${path}`, {
       method: 'GET',
       headers: {
