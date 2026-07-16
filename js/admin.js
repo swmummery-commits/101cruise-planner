@@ -6107,7 +6107,7 @@ function normalizeCiStateroomBreakdown(raw) {
       if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return;
       rows.push({ label, count });
     });
-    return rows;
+    return sortStateroomCategoryRows(rows);
   }
   if (typeof raw === "object") {
     Object.entries(raw).forEach(([key, value]) => {
@@ -6135,7 +6135,31 @@ function normalizeCiStateroomBreakdown(raw) {
       rows.push({ label, count });
     });
   }
-  return rows;
+  return sortStateroomCategoryRows(rows);
+}
+
+function stateroomCategoryRank(label) {
+  const n = String(label || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+  if (n === "inside" || n === "interior") return 1;
+  if (n === "oceanview" || n === "ocean view") return 2;
+  if (n === "balcony" || n === "veranda") return 3;
+  if (n === "suite" || n === "suites") return 4;
+  return 100;
+}
+
+function sortStateroomCategoryRows(rows) {
+  return (rows || [])
+    .map((row, index) => ({ row, index }))
+    .sort((a, b) => {
+      const rankDiff = stateroomCategoryRank(a.row.label) - stateroomCategoryRank(b.row.label);
+      if (rankDiff !== 0) return rankDiff;
+      return a.index - b.index;
+    })
+    .map(({ row }) => row);
 }
 
 function humaniseCiCabinLabel(key) {
@@ -6778,7 +6802,11 @@ function renderCiShipForm(ship) {
       </div>
       ${renderCiStateroomEditor(ship)}
       <p class="admin-small ci-form-note">Active ships on a sold cruise line are public automatically.${editing ? " Slug stays fixed after creation." : ""}</p>
-      <h4 style="margin-top:10px;">Facilities</h4>
+      <div class="ci-section-heading">
+        <h4>Facilities</h4>
+        ${editing ? `<button type="button" class="admin-button secondary small" onclick="toggleCiFacilitiesCopyPanel()">Copy</button>` : ""}
+      </div>
+      <div id="ciFacilitiesCopyPanel" class="ci-facilities-copy-panel" hidden></div>
       <div class="ci-form-grid">
         <div class="admin-field"><label>Dining Options</label><input id="ciFacRestaurants" type="number" value="${esc(facilities.restaurants ?? "")}"></div>
         <div class="admin-field"><label>Specialty Dining</label><input id="ciFacSpecialtyDining" type="number" value="${esc(facilities.specialty_dining ?? "")}"></div>
@@ -6859,6 +6887,163 @@ function ciChipList(id) {
     .filter(Boolean);
 }
 
+function readCiFacilitiesFromDom(existingFacilities) {
+  const facilities = {
+    ...(existingFacilities && typeof existingFacilities === "object" ? existingFacilities : {})
+  };
+  const restaurants = ciOptionalNumber("ciFacRestaurants");
+  const specialtyDining = ciOptionalNumber("ciFacSpecialtyDining");
+  const bars = ciOptionalNumber("ciFacBars");
+  const pools = ciOptionalNumber("ciFacPools");
+  const hotTubs = ciOptionalNumber("ciFacHotTubs");
+  if (restaurants != null) facilities.restaurants = restaurants;
+  else delete facilities.restaurants;
+  if (specialtyDining != null) facilities.specialty_dining = specialtyDining;
+  else delete facilities.specialty_dining;
+  if (bars != null) facilities.bars = bars;
+  else delete facilities.bars;
+  if (pools != null) facilities.pools = pools;
+  else delete facilities.pools;
+  if (hotTubs != null) facilities.hot_tubs = hotTubs;
+  else delete facilities.hot_tubs;
+  facilities.spa = ciCheckboxBool("ciFacSpa");
+  facilities.gym = ciCheckboxBool("ciFacGym");
+  facilities.theatre = ciCheckboxBool("ciFacTheatre");
+  facilities.casino = ciCheckboxBool("ciFacCasino");
+  facilities.kids_club = ciCheckboxBool("ciFacKids");
+  delete facilities.fitness;
+  delete facilities.theater;
+  const specialty = ciChipList("ciFacSpecialty");
+  const exclusive = ciChipList("ciFacExclusive");
+  if (specialty.length) facilities.specialty_features = specialty;
+  else delete facilities.specialty_features;
+  if (exclusive.length) facilities.exclusive_areas = exclusive;
+  else delete facilities.exclusive_areas;
+  return facilities;
+}
+
+function getCiFacilitiesCopyTargets() {
+  const currentId = document.getElementById("ciShipId")?.value || editingCiShipId;
+  const lineId = document.getElementById("ciShipLineId")?.value
+    || ciCruiseShips.find((s) => s.id === currentId)?.cruise_line_id;
+  if (!lineId) return [];
+  return (ciCruiseShips || [])
+    .filter((ship) => ship.cruise_line_id === lineId && ship.id !== currentId)
+    .slice()
+    .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" }));
+}
+
+function toggleCiFacilitiesCopyPanel() {
+  const panel = document.getElementById("ciFacilitiesCopyPanel");
+  if (!panel) return;
+  if (!panel.hidden) {
+    panel.hidden = true;
+    panel.innerHTML = "";
+    return;
+  }
+  const targets = getCiFacilitiesCopyTargets();
+  if (!targets.length) {
+    panel.hidden = false;
+    panel.innerHTML = `
+      <p class="admin-small">No other ships on this cruise line to copy to.</p>
+      <div class="admin-actions-row">
+        <button type="button" class="admin-button secondary small" onclick="toggleCiFacilitiesCopyPanel()">Close</button>
+      </div>
+    `;
+    return;
+  }
+  panel.hidden = false;
+  panel.innerHTML = `
+    <p class="admin-small">Copy this ship's facilities to selected ships on the same cruise line. Current form values are used (including unsaved edits).</p>
+    <div class="ci-facilities-copy-toolbar">
+      <label class="ci-check-control"><input type="checkbox" id="ciFacCopySelectAll" onchange="toggleCiFacilitiesCopySelectAll(this.checked)"> Select all</label>
+      <span class="admin-small" id="ciFacCopyStatus"></span>
+    </div>
+    <div class="ci-facilities-copy-list">
+      ${targets.map((ship) => `
+        <label class="ci-check-control ci-facilities-copy-item">
+          <input type="checkbox" class="ci-fac-copy-target" value="${esc(ship.id)}">
+          <span>${esc(ship.name || "Untitled")}${ship.active === false ? " <span class=\"admin-small\">(inactive)</span>" : ""}</span>
+        </label>
+      `).join("")}
+    </div>
+    <div class="admin-actions-row">
+      <button type="button" class="admin-button small" id="ciFacCopyApplyBtn" onclick="copyCiFacilitiesToSelectedShips()">Copy facilities</button>
+      <button type="button" class="admin-button secondary small" onclick="toggleCiFacilitiesCopyPanel()">Cancel</button>
+    </div>
+  `;
+}
+
+function toggleCiFacilitiesCopySelectAll(checked) {
+  document.querySelectorAll(".ci-fac-copy-target").forEach((el) => {
+    el.checked = Boolean(checked);
+  });
+}
+
+async function copyCiFacilitiesToSelectedShips() {
+  const selected = [...document.querySelectorAll(".ci-fac-copy-target:checked")]
+    .map((el) => el.value)
+    .filter(Boolean);
+  const statusEl = document.getElementById("ciFacCopyStatus");
+  const applyBtn = document.getElementById("ciFacCopyApplyBtn");
+  if (!selected.length) {
+    if (statusEl) statusEl.textContent = "Select at least one ship.";
+    return;
+  }
+
+  const currentId = document.getElementById("ciShipId")?.value || editingCiShipId;
+  const existing = currentId ? ciCruiseShips.find((s) => s.id === currentId) : null;
+  const facilities = readCiFacilitiesFromDom(existing?.facilities);
+
+  if (applyBtn) applyBtn.disabled = true;
+  if (statusEl) statusEl.textContent = `Copying to ${selected.length} ship${selected.length === 1 ? "" : "s"}…`;
+
+  // Persist current ship first so source matches what we copy.
+  if (currentId && !ciShipCreating) {
+    const saved = await persistCiShip({ quiet: true });
+    if (!saved) {
+      if (statusEl) statusEl.textContent = "Could not save current ship first.";
+      if (applyBtn) applyBtn.disabled = false;
+      return;
+    }
+  }
+
+  const results = await Promise.all(selected.map(async (id) => {
+    const result = await supabaseClient
+      .from("ci_cruise_ships")
+      .update({ facilities })
+      .eq("id", id)
+      .select("id, facilities, name, cruise_line_id, active, slug, status")
+      .single();
+    return { id, result };
+  }));
+
+  const failed = results.filter((r) => r.result.error);
+  results.forEach(({ result }) => {
+    if (result.data) mergeCiShipRecord(result.data);
+  });
+
+  if (failed.length) {
+    if (statusEl) {
+      statusEl.textContent = `Copied with ${failed.length} error${failed.length === 1 ? "" : "s"}.`;
+    }
+    setCiAutosaveStatus("Facilities copy partial", "error");
+    if (applyBtn) applyBtn.disabled = false;
+    return;
+  }
+
+  if (statusEl) statusEl.textContent = `Copied to ${selected.length} ship${selected.length === 1 ? "" : "s"}.`;
+  setCiAutosaveStatus("Facilities copied", "saved");
+  refreshCiShipMasterList();
+  if (applyBtn) applyBtn.disabled = false;
+  const panel = document.getElementById("ciFacilitiesCopyPanel");
+  if (panel) {
+    window.setTimeout(() => {
+      if (panel && !panel.hidden) toggleCiFacilitiesCopyPanel();
+    }, 900);
+  }
+}
+
 function mergeCiShipRecord(saved) {
   if (!saved?.id) return;
   const idx = ciCruiseShips.findIndex((s) => s.id === saved.id);
@@ -6891,31 +7076,7 @@ async function persistCiShip({ quiet = false } = {}) {
   if (!slug) slug = slugifyCi(name);
 
   const existing = id ? ciCruiseShips.find((s) => s.id === id) : null;
-  const facilities = {
-    ...(existing?.facilities && typeof existing.facilities === "object" ? existing.facilities : {})
-  };
-  const restaurants = ciOptionalNumber("ciFacRestaurants");
-  const specialtyDining = ciOptionalNumber("ciFacSpecialtyDining");
-  const bars = ciOptionalNumber("ciFacBars");
-  const pools = ciOptionalNumber("ciFacPools");
-  const hotTubs = ciOptionalNumber("ciFacHotTubs");
-  if (restaurants != null) facilities.restaurants = restaurants;
-  if (specialtyDining != null) facilities.specialty_dining = specialtyDining;
-  else delete facilities.specialty_dining;
-  if (bars != null) facilities.bars = bars;
-  if (pools != null) facilities.pools = pools;
-  if (hotTubs != null) facilities.hot_tubs = hotTubs;
-  facilities.spa = ciCheckboxBool("ciFacSpa");
-  facilities.gym = ciCheckboxBool("ciFacGym");
-  facilities.theatre = ciCheckboxBool("ciFacTheatre");
-  facilities.casino = ciCheckboxBool("ciFacCasino");
-  facilities.kids_club = ciCheckboxBool("ciFacKids");
-  const specialty = ciChipList("ciFacSpecialty");
-  const exclusive = ciChipList("ciFacExclusive");
-  if (specialty.length) facilities.specialty_features = specialty;
-  else delete facilities.specialty_features;
-  if (exclusive.length) facilities.exclusive_areas = exclusive;
-  else delete facilities.exclusive_areas;
+  const facilities = readCiFacilitiesFromDom(existing?.facilities);
 
   const payload = {
     cruise_line_id: cruiseLineId,
@@ -6934,9 +7095,11 @@ async function persistCiShip({ quiet = false } = {}) {
   };
   const breakdown = readCiStateroomBreakdownFromDom();
   if (breakdown) {
-    payload.stateroom_breakdown = breakdown
-      .filter((row) => row.label && row.count != null)
-      .map((row) => ({ label: row.label, count: row.count }));
+    payload.stateroom_breakdown = sortStateroomCategoryRows(
+      breakdown
+        .filter((row) => row.label && row.count != null)
+        .map((row) => ({ label: row.label, count: row.count }))
+    );
   }
   if (!existing) {
     payload.slug = slug;

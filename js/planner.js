@@ -4929,54 +4929,81 @@ function buildShipAccommodation(ship) {
   const colors = SHIP_ROOM_COLORS;
   const rooms = [];
 
-  const pushRoom = (label, value, index) => {
+  const pushRoom = (label, value) => {
     const text = String(label || "").trim();
     if (!text) return;
     if (value === null || value === undefined || value === "") return;
     const number = Number(value);
     if (!Number.isFinite(number)) return;
     if (number <= 0) return;
-    rooms.push({ label: text, value: number, color: colors[rooms.length % colors.length] });
+    rooms.push({ label: text, value: number });
   };
 
   const breakdown = ship?.stateroom_breakdown;
   if (Array.isArray(breakdown)) {
-    breakdown.forEach((entry, index) => {
+    breakdown.forEach((entry) => {
       if (!entry || typeof entry !== "object") return;
       const label = entry.label || entry.name || entry.type || entry.stateroom_type;
       const value = entry.value ?? entry.count ?? entry.quantity;
-      pushRoom(label, value, index);
+      pushRoom(label, value);
     });
   } else if (breakdown && typeof breakdown === "object") {
-    Object.entries(breakdown).forEach(([key, value], index) => {
-      pushRoom(humaniseShipRoomLabel(key), value, index);
+    Object.entries(breakdown).forEach(([key, value]) => {
+      pushRoom(humaniseShipRoomLabel(key), value);
     });
   }
 
   const typeSource = ship?.stateroom_types || ship?.cabin_type_summary;
   if (!rooms.length && Array.isArray(typeSource)) {
-    typeSource.forEach((entry, index) => {
+    typeSource.forEach((entry) => {
       if (typeof entry === "string") return;
       if (!entry || typeof entry !== "object") return;
       const label = entry.label || entry.name || entry.type;
       const value = entry.value ?? entry.count ?? entry.quantity;
-      pushRoom(label, value, index);
+      pushRoom(label, value);
     });
   } else if (!rooms.length && typeSource && typeof typeSource === "object") {
     // Support Base44 object shape and custom[] entries.
-    Object.entries(typeSource).forEach(([key, value], index) => {
+    Object.entries(typeSource).forEach(([key, value]) => {
       if (key === "custom" && Array.isArray(value)) {
-        value.forEach((entry, customIndex) => {
+        value.forEach((entry) => {
           if (!entry || typeof entry !== "object") return;
-          pushRoom(entry.name || entry.label, entry.count ?? entry.value, customIndex);
+          pushRoom(entry.name || entry.label, entry.count ?? entry.value);
         });
         return;
       }
-      pushRoom(humaniseShipRoomLabel(key), value, index);
+      pushRoom(humaniseShipRoomLabel(key), value);
     });
   }
 
-  return rooms;
+  return sortShipRoomCategories(rooms).map((room, index) => ({
+    ...room,
+    color: colors[index % colors.length]
+  }));
+}
+
+function shipRoomCategoryRank(label) {
+  const n = String(label || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ");
+  if (n === "inside" || n === "interior") return 1;
+  if (n === "oceanview" || n === "ocean view") return 2;
+  if (n === "balcony" || n === "veranda") return 3;
+  if (n === "suite" || n === "suites") return 4;
+  return 100;
+}
+
+function sortShipRoomCategories(rooms) {
+  return (rooms || [])
+    .map((room, index) => ({ room, index }))
+    .sort((a, b) => {
+      const rankDiff = shipRoomCategoryRank(a.room.label) - shipRoomCategoryRank(b.room.label);
+      if (rankDiff !== 0) return rankDiff;
+      return a.index - b.index;
+    })
+    .map(({ room }) => room);
 }
 
 function buildShipOnboardGlance(facilities) {
