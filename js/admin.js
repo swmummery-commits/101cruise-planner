@@ -5995,9 +5995,12 @@ function renderCiLinesSection() {
 
 function renderCiLineMasterRow(line) {
   const selected = !ciLineCreating && editingCiLineId === line.id;
+  const shipCount = getCiLineShipStats(line.id).total;
+  const shipLabel = shipCount === 1 ? "1 ship" : `${shipCount} ships`;
   const meta = [
-    line.code || null,
-    line.sold_by_101cruise ? "Sold" : "Reference",
+    shipLabel,
+    line.line_type || null,
+    line.country || null,
     line.active ? null : "Inactive"
   ].filter(Boolean).join(" · ");
 
