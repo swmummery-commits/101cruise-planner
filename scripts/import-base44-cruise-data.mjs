@@ -205,11 +205,9 @@ function classifyLine(name) {
     if (rule.test(name)) {
       return {
         sold_by_101cruise: false,
-        public_visible: false,
         active: false,
-        excluded_reason: rule.reason,
         needs_review: false,
-        review_notes: null
+        review_notes: rule.reason
       };
     }
   }
@@ -217,9 +215,7 @@ function classifyLine(name) {
     if (rule.test(name)) {
       return {
         sold_by_101cruise: true,
-        public_visible: true,
         active: true,
-        excluded_reason: null,
         needs_review: false,
         review_notes: `Matched approved list as ${rule.label}`
       };
@@ -227,9 +223,7 @@ function classifyLine(name) {
   }
   return {
     sold_by_101cruise: false,
-    public_visible: false,
     active: true,
-    excluded_reason: null,
     needs_review: true,
     review_notes: "Not in approved 101cruise sold list — review before public use"
   };
@@ -307,7 +301,9 @@ function prepareLines(rawLines, report) {
     }
 
     const flags = classifyLine(name);
-    if (flags.excluded_reason) report.excludedLines.push({ name, reason: flags.excluded_reason });
+    if (!flags.sold_by_101cruise && flags.review_notes && /P&O|not sold/i.test(flags.review_notes) && !flags.active) {
+      report.excludedLines.push({ name, reason: flags.review_notes });
+    }
     if (flags.needs_review) report.linesRequiringReview.push({ name, reason: flags.review_notes });
 
     const code = cleanText(row.code, 40);
@@ -346,11 +342,8 @@ function prepareLines(rawLines, report) {
       market_segment: null,
       active: flags.active,
       sold_by_101cruise: flags.sold_by_101cruise,
-      public_visible: flags.public_visible,
-      excluded_reason: flags.excluded_reason,
       needs_review: flags.needs_review,
       review_notes: flags.review_notes,
-      display_order: flags.sold_by_101cruise ? 10 : 200,
       source_name: "Base44 CruiseLine export",
       source_url: null,
       last_verified_at: null
@@ -422,7 +415,32 @@ function prepareShips(rawShips, lineByLegacyId, lineByCode, report) {
     const slugBase = slugify(name);
     const slug = uniqueSlug(slugBase, usedSlugs);
 
-    const lineSold = Boolean(line.sold_by_101cruise) && !line.excluded_reason;
+    const lineSold = Boolean(line.sold_by_101cruise);
+    const yearBuiltValue = yearBuilt && !yearBuilt.invalid ? yearBuilt.value : null;
+    const yearRefurbValue = yearRefurb && !yearRefurb.invalid ? yearRefurb.value : null;
+    const passengersValue = passengers && !passengers.invalid ? passengers.value : null;
+    const crewValue = crew && !crew.invalid ? crew.value : null;
+    const decksValue = decks && !decks.invalid ? decks.value : null;
+    const stateroomsValue = staterooms && !staterooms.invalid ? staterooms.value : null;
+    const tonnageValue = tonnage && !tonnage.invalid ? tonnage.value : null;
+    const lengthValue = length && !length.invalid ? length.value : null;
+
+    const importantGaps = [];
+    if (!facilities) importantGaps.push("facilities");
+    if (tonnageValue == null) importantGaps.push("gross_tonnage");
+    if (lengthValue == null) importantGaps.push("length_metres");
+    if (!breakdown) importantGaps.push("stateroom_breakdown");
+    if (!cabinTypes) importantGaps.push("stateroom_types");
+
+    const incompleteProfile = importantGaps.length > 0;
+    const reviewBits = [];
+    if (!lineSold) reviewBits.push("Parent cruise line is not marked sold_by_101cruise");
+    if (incompleteProfile) {
+      reviewBits.push(
+        `Incomplete ship profile fields: ${importantGaps.join(", ")}. Verify against an official cruise-line source.`
+      );
+    }
+
     const record = {
       legacy_base44_id: legacyId,
       _line_legacy_id: line.legacy_base44_id,
@@ -430,14 +448,14 @@ function prepareShips(rawShips, lineByLegacyId, lineByCode, report) {
       slug,
       status,
       ship_class: null,
-      year_built: yearBuilt && !yearBuilt.invalid ? yearBuilt.value : null,
-      year_refurbished: yearRefurb && !yearRefurb.invalid ? yearRefurb.value : null,
-      passenger_capacity: passengers && !passengers.invalid ? passengers.value : null,
-      crew_count: crew && !crew.invalid ? crew.value : null,
-      deck_count: decks && !decks.invalid ? decks.value : null,
-      stateroom_count: staterooms && !staterooms.invalid ? staterooms.value : null,
-      gross_tonnage: tonnage && !tonnage.invalid ? tonnage.value : null,
-      length_metres: length && !length.invalid ? length.value : null,
+      year_built: yearBuiltValue,
+      year_refurbished: yearRefurbValue,
+      passenger_capacity: passengersValue,
+      crew_count: crewValue,
+      deck_count: decksValue,
+      stateroom_count: stateroomsValue,
+      gross_tonnage: tonnageValue,
+      length_metres: lengthValue,
       stateroom_breakdown: breakdown,
       cabin_type_summary: cabinTypes,
       facilities,
@@ -446,16 +464,19 @@ function prepareShips(rawShips, lineByLegacyId, lineByCode, report) {
       deck_plan_url: null,
       official_ship_url: null,
       active: status !== "retired",
-      public_visible: lineSold,
-      needs_review: !lineSold,
-      review_notes: lineSold ? null : "Parent cruise line is not marked sold_by_101cruise",
+      needs_review: !lineSold || incompleteProfile,
+      review_notes: reviewBits.length ? reviewBits.join(" ") : null,
       source_name: "Base44 CruiseShip export",
       source_url: null,
       last_verified_at: null
     };
 
-    if (!facilities) {
-      report.missingImportantFields.push({ ship: name, field: "facilities" });
+    for (const field of importantGaps) {
+      report.missingImportantFields.push({
+        ship: name,
+        cruise_line: line.name,
+        field
+      });
     }
 
     prepared.push(record);
@@ -492,6 +513,17 @@ function printReport(report, { dryRun }) {
     report.invalidJson.slice(0, 20).forEach((item) =>
       console.log(`  - ${item.ship}.${item.field}: ${item.message}`)
     );
+  }
+  if (report.missingImportantFields.length) {
+    console.log("\nMissing important ship-profile fields:");
+    report.missingImportantFields.slice(0, 40).forEach((item) =>
+      console.log(
+        `  - ${item.cruise_line ? item.cruise_line + " / " : ""}${item.ship}: ${item.field}`
+      )
+    );
+    if (report.missingImportantFields.length > 40) {
+      console.log(`  … and ${report.missingImportantFields.length - 40} more`);
+    }
   }
   const reviewLines = report.linesRequiringReview.filter((r) =>
     String(r.reason || "").includes("approved")

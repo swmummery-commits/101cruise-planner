@@ -14,9 +14,12 @@ Because `public.cruise_lines` (bigint) and `public.ships` already exist for the 
 - `public.ci_cruise_lines`
 - `public.ci_cruise_ships`
 
-Migration file:
+Migration files:
 
-`supabase/migrations/20260716_cruise_intelligence_lines_ships.sql`
+1. `supabase/migrations/20260716_cruise_intelligence_lines_ships.sql`
+2. `supabase/migrations/20260716_ci_simplify_visibility_ordering.sql` (alphabetical order; remove `display_order`, `public_visible`, `excluded_reason`)
+
+Apply both in order in the Supabase SQL editor (or CLI) before relying on Admin / public APIs.
 
 ## Required SQL step
 
@@ -53,18 +56,20 @@ Safe to re-run: upserts on `legacy_base44_id`.
 
 ## Sold-by / public rules
 
-- Approved 101cruise lines from Cruise Finder config are imported as `sold_by_101cruise = true` and `public_visible = true`
+- Approved 101cruise lines from Cruise Finder config are imported as `sold_by_101cruise = true`
+- `sold_by_101cruise = true` and `active = true` makes a line publicly visible (no separate `public_visible` column)
 - Other lines are imported as reference rows with `needs_review = true`
-- P&O Cruises Australia matching rules force exclusion (none present in the current export)
-- Public APIs and RLS only expose active + public + sold lines (and their visible ships)
+- P&O Cruises Australia matching rules set `sold_by_101cruise = false` and `active = false`
+- Cruise lines always list alphabetically by name (no `display_order`)
+- Public APIs and RLS only expose active sold lines (and their active ships)
+- Active ships on a sold active line are public automatically
 
 ## Adding a new approved cruise line later
 
 1. Admin → Cruise Intelligence → Cruise Lines → Add (or edit an imported review row)
-2. Set **Sold by 101cruise = Yes** and **Public visible = Yes**
-3. Clear excluded reason
-4. Add / import ships for that line
-5. Do not store itineraries
+2. Set **Sold by 101cruise = Yes** (and keep **Active = Yes**)
+3. Add / import ships for that line
+4. Do not store itineraries
 
 ## Ship page lookup
 

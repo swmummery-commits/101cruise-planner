@@ -100,7 +100,7 @@ exports.handler = async function handler(event) {
 
     if (slug) {
       const rows = await supabaseGet(
-        `ci_cruise_ships?select=id,name,slug,status,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,gross_tonnage,length_metres,stateroom_breakdown,cabin_type_summary,facilities,hero_image_url,ci_cruise_lines!inner(id,name,slug,code,active,public_visible,sold_by_101cruise,excluded_reason)&slug=eq.${encodeURIComponent(slug)}&active=eq.true&public_visible=eq.true&ci_cruise_lines.active=eq.true&ci_cruise_lines.public_visible=eq.true&ci_cruise_lines.sold_by_101cruise=eq.true&ci_cruise_lines.excluded_reason=is.null&limit=1`
+        `ci_cruise_ships?select=id,name,slug,status,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,gross_tonnage,length_metres,stateroom_breakdown,cabin_type_summary,facilities,hero_image_url,ci_cruise_lines!inner(id,name,slug,code,active,sold_by_101cruise)&slug=eq.${encodeURIComponent(slug)}&active=eq.true&ci_cruise_lines.active=eq.true&ci_cruise_lines.sold_by_101cruise=eq.true&limit=1`
       );
       if (!rows.length) {
         return jsonResponse(404, {
@@ -113,7 +113,7 @@ exports.handler = async function handler(event) {
     }
 
     let path =
-      "ci_cruise_ships?select=id,name,slug,status,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,gross_tonnage,length_metres,stateroom_breakdown,cabin_type_summary,facilities,hero_image_url,ci_cruise_lines!inner(id,name,slug,code,active,public_visible,sold_by_101cruise,excluded_reason)&active=eq.true&public_visible=eq.true&ci_cruise_lines.active=eq.true&ci_cruise_lines.public_visible=eq.true&ci_cruise_lines.sold_by_101cruise=eq.true&ci_cruise_lines.excluded_reason=is.null&order=name.asc&limit=100";
+      "ci_cruise_ships?select=id,name,slug,status,year_built,year_refurbished,passenger_capacity,crew_count,deck_count,stateroom_count,gross_tonnage,length_metres,stateroom_breakdown,cabin_type_summary,facilities,hero_image_url,ci_cruise_lines!inner(id,name,slug,code,active,sold_by_101cruise)&active=eq.true&ci_cruise_lines.active=eq.true&ci_cruise_lines.sold_by_101cruise=eq.true&order=name.asc&limit=100";
 
     if (line) {
       path += `&ci_cruise_lines.slug=eq.${encodeURIComponent(line)}`;

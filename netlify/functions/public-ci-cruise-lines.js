@@ -4,7 +4,7 @@
  * GET /.netlify/functions/public-ci-cruise-lines
  * GET /.netlify/functions/public-ci-cruise-lines?q=princess
  *
- * Returns only active + public_visible + sold_by_101cruise lines.
+ * Returns only active + sold_by_101cruise lines, alphabetically by name.
  * Uses SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY server-side.
  */
 
@@ -65,7 +65,7 @@ exports.handler = async function handler(event) {
   try {
     const q = cleanQuery(event.queryStringParameters?.q || event.queryStringParameters?.search);
     let path =
-      "ci_cruise_lines?select=id,name,slug,code,country,website_url,description,logo_url,line_type,market_segment,display_order&active=eq.true&public_visible=eq.true&sold_by_101cruise=eq.true&excluded_reason=is.null&order=display_order.asc,name.asc";
+      "ci_cruise_lines?select=id,name,slug,code,country,website_url,description,logo_url,line_type,market_segment&active=eq.true&sold_by_101cruise=eq.true&order=name.asc";
     if (q) {
       path += `&or=(name.ilike.*${encodeURIComponent(q)}*,slug.ilike.*${encodeURIComponent(q)}*,code.ilike.*${encodeURIComponent(q)}*)`;
     }

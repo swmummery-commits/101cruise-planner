@@ -157,6 +157,55 @@
   align-items: start;
 }
 
+/* Cruise Intelligence forms: dense multi-column layout */
+.ci-form-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-items: start;
+  margin-bottom: 8px;
+}
+
+.ci-form-grid .admin-field {
+  margin-bottom: 0;
+  min-width: 0;
+}
+
+.ci-form-grid .admin-field input,
+.ci-form-grid .admin-field select {
+  width: 100%;
+}
+
+.ci-form-note {
+  margin: 4px 0 12px;
+}
+
+.ci-form-description {
+  margin-top: 8px;
+}
+
+.ci-form-description textarea {
+  min-height: 110px;
+}
+
+@media (max-width: 1100px) {
+  .ci-form-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .ci-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .ci-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-logo-preview {
   max-width: 130px;
   max-height: 72px;
