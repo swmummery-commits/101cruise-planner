@@ -5789,36 +5789,64 @@ function slugifyCi(value) {
 
 function setCiSubView(view) {
   ciSubView = view === "ships" ? "ships" : "lines";
-  showCiLineForm = false;
-  showCiShipForm = false;
+  ciLineCreating = false;
+  ciShipCreating = false;
   editingCiLineId = null;
   editingCiShipId = null;
   renderAdmin();
 }
 
+function refreshCiLineMasterList() {
+  const list = document.getElementById("ciLineMasterList");
+  const count = document.getElementById("ciLineListCount");
+  if (!list) {
+    renderAdmin();
+    return;
+  }
+  const filtered = getFilteredCiLines();
+  list.innerHTML = filtered.length
+    ? filtered.map(renderCiLineMasterRow).join("")
+    : `<p class="admin-small ci-master-empty">No cruise lines match these filters.</p>`;
+  if (count) count.textContent = `${filtered.length} of ${ciCruiseLines.length}`;
+}
+
+function refreshCiShipMasterList() {
+  const list = document.getElementById("ciShipMasterList");
+  const count = document.getElementById("ciShipListCount");
+  if (!list) {
+    renderAdmin();
+    return;
+  }
+  const filtered = getFilteredCiShips();
+  list.innerHTML = filtered.length
+    ? filtered.map(renderCiShipMasterRow).join("")
+    : `<p class="admin-small ci-master-empty">No ships match these filters.</p>`;
+  if (count) count.textContent = `${filtered.length} of ${ciCruiseShips.length}`;
+}
+
 function updateCiLineSearch(value) {
   ciLineSearchQuery = value;
-  renderAdmin();
+  refreshCiLineMasterList();
 }
 
 function updateCiLineFilter(value) {
   ciLineFilter = value;
-  renderAdmin();
+  refreshCiLineMasterList();
 }
 
 function updateCiShipSearch(value) {
   ciShipSearchQuery = value;
-  renderAdmin();
+  refreshCiShipMasterList();
 }
 
 function updateCiShipLineFilter(value) {
   ciShipLineFilter = value;
-  renderAdmin();
+  refreshCiShipMasterList();
 }
 
 function updateCiShipStatusFilter(value) {
   ciShipStatusFilter = value;
-  renderAdmin();
+  refreshCiShipMasterList();
 }
 
 function getFilteredCiLines() {
@@ -5874,10 +5902,15 @@ function renderCruiseIntelligencePanel() {
 
 function renderCiLinesSection() {
   const filtered = getFilteredCiLines();
+  const selectedLine = ciLineCreating
+    ? null
+    : (editingCiLineId ? ciCruiseLines.find((l) => l.id === editingCiLineId) : null);
+  const showDetail = ciLineCreating || Boolean(selectedLine);
+
   return `
-    <div class="admin-list-top" style="margin-top:12px;">
-      <div class="admin-actions-row" style="flex-wrap:wrap;gap:8px;">
-        <input type="search" value="${esc(ciLineSearchQuery)}" placeholder="Search lines" oninput="updateCiLineSearch(this.value)" style="min-width:180px;">
+    <div class="ci-toolbar">
+      <div class="ci-toolbar-controls">
+        <input type="search" value="${esc(ciLineSearchQuery)}" placeholder="Search lines…" oninput="updateCiLineSearch(this.value)">
         <select onchange="updateCiLineFilter(this.value)">
           <option value="all" ${ciLineFilter === "all" ? "selected" : ""}>All</option>
           <option value="sold" ${ciLineFilter === "sold" ? "selected" : ""}>Sold by 101cruise</option>
@@ -5887,33 +5920,41 @@ function renderCiLinesSection() {
         </select>
         <button class="admin-button black small" onclick="startCiLineCreate()">Add cruise line</button>
       </div>
-      <div class="admin-small">${filtered.length} of ${ciCruiseLines.length} lines</div>
+      <div class="admin-small"><span id="ciLineListCount">${filtered.length} of ${ciCruiseLines.length}</span> lines</div>
     </div>
-    ${showCiLineForm ? renderCiLineForm(editingCiLineId ? ciCruiseLines.find((l) => l.id === editingCiLineId) : null) : ""}
-    <div class="admin-compact-list" style="margin-top:16px;">
-      ${filtered.length ? filtered.map(renderCiLineRow).join("") : `<p class="admin-small">No cruise lines match these filters.</p>`}
+    <div class="ci-master-detail">
+      <aside class="ci-master" aria-label="Cruise lines">
+        <div class="ci-master-header">
+          <span>Cruise Lines</span>
+        </div>
+        <div class="ci-master-list" id="ciLineMasterList">
+          ${filtered.length
+            ? filtered.map(renderCiLineMasterRow).join("")
+            : `<p class="admin-small ci-master-empty">No cruise lines match these filters.</p>`}
+        </div>
+      </aside>
+      <section class="ci-detail" aria-label="Cruise line details">
+        ${showDetail
+          ? renderCiLineForm(selectedLine)
+          : `<div class="ci-detail-empty"><p class="admin-muted" style="margin:0;">Select a cruise line to view and edit details.</p></div>`}
+      </section>
     </div>
   `;
 }
 
-function renderCiLineRow(line) {
+function renderCiLineMasterRow(line) {
+  const selected = !ciLineCreating && editingCiLineId === line.id;
+  const meta = [
+    line.code || null,
+    line.sold_by_101cruise ? "Sold" : "Reference",
+    line.active ? null : "Inactive"
+  ].filter(Boolean).join(" · ");
+
   return `
-    <div class="admin-list-item">
-      <div class="admin-list-top">
-        <div>
-          <strong>${esc(line.name)}</strong>
-          ${line.sold_by_101cruise ? `<span class="admin-pill">Sold</span>` : `<span class="admin-pill inactive">Reference</span>`}
-          ${line.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill inactive">Inactive</span>`}
-          ${line.needs_review ? `<span class="admin-pill inactive">Review</span>` : ""}
-          <div class="admin-small">${esc(line.slug)} · ${esc(line.code || "no code")} · ${esc(line.line_type || "type unset")}</div>
-          ${line.website_url ? `<div class="admin-small"><a href="${esc(line.website_url)}" target="_blank" rel="noopener noreferrer">${esc(line.website_url)}</a></div>` : ""}
-          ${line.review_notes ? `<div class="admin-small">${esc(line.review_notes)}</div>` : ""}
-        </div>
-        <div>
-          <button class="admin-button secondary small" onclick="startCiLineEdit('${esc(line.id)}')">Edit</button>
-        </div>
-      </div>
-    </div>
+    <button type="button" class="ci-master-row ${selected ? "is-selected" : ""}" onclick="selectCiLine('${esc(line.id)}')">
+      <span class="ci-master-row-title">${esc(line.name)}</span>
+      <span class="ci-master-row-meta">${esc(meta)}</span>
+    </button>
   `;
 }
 
@@ -5990,8 +6031,9 @@ function renderCiLineForm(line) {
   const slugReadonly = editing ? `readonly class="ci-id-readonly" aria-readonly="true"` : `placeholder="auto from name if blank"`;
   const codeReadonly = editing ? `readonly class="ci-id-readonly" aria-readonly="true"` : "";
   return `
-    <div class="admin-list-item" style="margin-top:12px;">
-      <h3>${editing ? "Edit cruise line" : "Add cruise line"}</h3>
+    <div>
+      <h3 class="ci-detail-title">${editing ? esc(line.name) : "New cruise line"}</h3>
+      <p class="admin-small ci-detail-subtitle">${editing ? "Edit details and save." : "Fill in the details, then create."}</p>
       ${renderCiLineStatsPanel(line)}
       <input type="hidden" id="ciLineId" value="${esc(line?.id || "")}">
       <div class="ci-form-grid">
@@ -6020,7 +6062,7 @@ function renderCiLineForm(line) {
       <div class="admin-field ci-form-description"><label>Description</label><textarea id="ciLineDescription" rows="4">${esc(line?.description || "")}</textarea></div>
       <div class="admin-actions-row">
         <button class="admin-button" onclick="saveCiLine()">${editing ? "Save line" : "Create line"}</button>
-        <button class="admin-button secondary" onclick="cancelCiLineForm()">Cancel</button>
+        ${ciLineCreating ? `<button class="admin-button secondary" onclick="cancelCiLineForm()">Cancel</button>` : ""}
       </div>
     </div>
   `;
@@ -6028,19 +6070,19 @@ function renderCiLineForm(line) {
 
 function startCiLineCreate() {
   editingCiLineId = null;
-  showCiLineForm = true;
+  ciLineCreating = true;
   renderAdmin();
 }
 
-function startCiLineEdit(id) {
+function selectCiLine(id) {
   editingCiLineId = id;
-  showCiLineForm = true;
+  ciLineCreating = false;
   renderAdmin();
 }
 
 function cancelCiLineForm() {
   editingCiLineId = null;
-  showCiLineForm = false;
+  ciLineCreating = false;
   renderAdmin();
 }
 
@@ -6094,10 +6136,11 @@ async function saveCiLine() {
     return;
   }
 
+  const savedId = result.data?.[0]?.id || id;
   ciMessage = "Cruise line saved.";
   ciMessageTone = "success";
-  showCiLineForm = false;
-  editingCiLineId = null;
+  ciLineCreating = false;
+  editingCiLineId = savedId || null;
   await loadAdminData();
   renderAdmin();
 }
@@ -6109,11 +6152,15 @@ function renderCiShipsSection() {
     .sort((a, b) => String(a.name).localeCompare(String(b.name)))
     .map((line) => `<option value="${esc(line.id)}" ${ciShipLineFilter === line.id ? "selected" : ""}>${esc(line.name)}</option>`)
     .join("");
+  const selectedShip = ciShipCreating
+    ? null
+    : (editingCiShipId ? ciCruiseShips.find((s) => s.id === editingCiShipId) : null);
+  const showDetail = ciShipCreating || Boolean(selectedShip);
 
   return `
-    <div class="admin-list-top" style="margin-top:12px;">
-      <div class="admin-actions-row" style="flex-wrap:wrap;gap:8px;">
-        <input type="search" value="${esc(ciShipSearchQuery)}" placeholder="Search ships" oninput="updateCiShipSearch(this.value)" style="min-width:180px;">
+    <div class="ci-toolbar">
+      <div class="ci-toolbar-controls">
+        <input type="search" value="${esc(ciShipSearchQuery)}" placeholder="Search ships…" oninput="updateCiShipSearch(this.value)">
         <select onchange="updateCiShipLineFilter(this.value)">
           <option value="all">All cruise lines</option>
           ${lineOptions}
@@ -6125,30 +6172,41 @@ function renderCiShipsSection() {
         </select>
         <button class="admin-button black small" onclick="startCiShipCreate()">Add ship</button>
       </div>
-      <div class="admin-small">${filtered.length} of ${ciCruiseShips.length} ships</div>
+      <div class="admin-small"><span id="ciShipListCount">${filtered.length} of ${ciCruiseShips.length}</span> ships</div>
     </div>
-    ${showCiShipForm ? renderCiShipForm(editingCiShipId ? ciCruiseShips.find((s) => s.id === editingCiShipId) : null) : ""}
-    <div class="admin-compact-list" style="margin-top:16px;">
-      ${filtered.length ? filtered.map(renderCiShipRow).join("") : `<p class="admin-small">No ships match these filters.</p>`}
+    <div class="ci-master-detail">
+      <aside class="ci-master" aria-label="Ships">
+        <div class="ci-master-header">
+          <span>Ships</span>
+        </div>
+        <div class="ci-master-list" id="ciShipMasterList">
+          ${filtered.length
+            ? filtered.map(renderCiShipMasterRow).join("")
+            : `<p class="admin-small ci-master-empty">No ships match these filters.</p>`}
+        </div>
+      </aside>
+      <section class="ci-detail" aria-label="Ship details">
+        ${showDetail
+          ? renderCiShipForm(selectedShip)
+          : `<div class="ci-detail-empty"><p class="admin-muted" style="margin:0;">Select a ship to view and edit details.</p></div>`}
+      </section>
     </div>
   `;
 }
 
-function renderCiShipRow(ship) {
+function renderCiShipMasterRow(ship) {
+  const selected = !ciShipCreating && editingCiShipId === ship.id;
+  const meta = [
+    ship.ci_cruise_lines?.name || "Unknown line",
+    ship.active ? null : "Inactive",
+    ship.status && ship.status !== "active" ? ship.status : null
+  ].filter(Boolean).join(" · ");
+
   return `
-    <div class="admin-list-item">
-      <div class="admin-list-top">
-        <div>
-          <strong>${esc(ship.name)}</strong>
-          ${ship.active ? `<span class="admin-pill">Active</span>` : `<span class="admin-pill inactive">Inactive</span>`}
-          <div class="admin-small">${esc(ship.ci_cruise_lines?.name || "Unknown line")} · ${esc(ship.status || "status unset")} · ${esc(ship.slug)}</div>
-          <div class="admin-small">Built ${esc(ship.year_built || "—")} · Guests ${esc(ship.passenger_capacity || "—")} · Crew ${esc(ship.crew_count || "—")}</div>
-        </div>
-        <div>
-          <button class="admin-button secondary small" onclick="startCiShipEdit('${esc(ship.id)}')">Edit</button>
-        </div>
-      </div>
-    </div>
+    <button type="button" class="ci-master-row ${selected ? "is-selected" : ""}" onclick="selectCiShip('${esc(ship.id)}')">
+      <span class="ci-master-row-title">${esc(ship.name)}</span>
+      <span class="ci-master-row-meta">${esc(meta)}</span>
+    </button>
   `;
 }
 
@@ -6166,8 +6224,9 @@ function renderCiShipForm(ship) {
   const slugReadonly = editing ? `readonly class="ci-id-readonly" aria-readonly="true"` : `placeholder="auto from name if blank"`;
 
   return `
-    <div class="admin-list-item" style="margin-top:12px;">
-      <h3>${editing ? "Edit ship" : "Add ship"}</h3>
+    <div>
+      <h3 class="ci-detail-title">${editing ? esc(ship.name) : "New ship"}</h3>
+      <p class="admin-small ci-detail-subtitle">${editing ? "Edit details and save." : "Fill in the details, then create."}</p>
       <input type="hidden" id="ciShipId" value="${esc(ship?.id || "")}">
       <div class="ci-form-grid">
         <div class="admin-field"><label>Cruise line</label><select id="ciShipLineId"><option value="">Select…</option>${lineOptions}</select></div>
@@ -6227,7 +6286,7 @@ function renderCiShipForm(ship) {
       </div>
       <div class="admin-actions-row">
         <button class="admin-button" onclick="saveCiShip()">${editing ? "Save ship" : "Create ship"}</button>
-        <button class="admin-button secondary" onclick="cancelCiShipForm()">Cancel</button>
+        ${ciShipCreating ? `<button class="admin-button secondary" onclick="cancelCiShipForm()">Cancel</button>` : ""}
       </div>
     </div>
   `;
@@ -6235,19 +6294,19 @@ function renderCiShipForm(ship) {
 
 function startCiShipCreate() {
   editingCiShipId = null;
-  showCiShipForm = true;
+  ciShipCreating = true;
   renderAdmin();
 }
 
-function startCiShipEdit(id) {
+function selectCiShip(id) {
   editingCiShipId = id;
-  showCiShipForm = true;
+  ciShipCreating = false;
   renderAdmin();
 }
 
 function cancelCiShipForm() {
   editingCiShipId = null;
-  showCiShipForm = false;
+  ciShipCreating = false;
   renderAdmin();
 }
 
@@ -6350,10 +6409,11 @@ async function saveCiShip() {
     return;
   }
 
+  const savedId = result.data?.[0]?.id || id;
   ciMessage = "Ship saved.";
   ciMessageTone = "success";
-  showCiShipForm = false;
-  editingCiShipId = null;
+  ciShipCreating = false;
+  editingCiShipId = savedId || null;
   await loadAdminData();
   renderAdmin();
 }
