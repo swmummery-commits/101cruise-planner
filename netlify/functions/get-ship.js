@@ -3,9 +3,9 @@
  *
  * GET /.netlify/functions/get-ship?name=<ship name>&cruise_line=<cruise line>
  *
- * Uses Finder credentials only:
- *   BASE44_FINDER_APP_ID
- *   BASE44_FINDER_API_KEY
+ * Lookup order:
+ *   1. Supabase Cruise Intelligence (ci_cruise_ships)
+ *   2. Base44 Finder fallback (temporary)
  *
  * Strict ordered matching (case-insensitive, whitespace-normalised):
  *   1. Exact ship-name match
@@ -13,7 +13,6 @@
  *   3. Unique line-aware suffix match
  *
  * Multiple candidates at any step → SHIP_AMBIGUOUS (never pick one).
- * No fuzzy / contains / edit-distance / first-result fallback.
  */
 
 const SHIP_FIELDS = [
@@ -105,12 +104,6 @@ function resolveUniqueCandidates(candidates) {
   return { status: 'ambiguous' };
 }
 
-/**
- * Prefix of a Base44 ship name is compatible with the booking cruise line when:
- * - they are equal after normalisation, or
- * - one is a whole-token extension of the other
- *   (e.g. "celebrity" ↔ "celebrity cruises")
- */
 function linePrefixCompatible(shipPrefix, cruiseLine) {
   const prefix = normaliseText(shipPrefix);
   const line = normaliseText(cruiseLine);
@@ -119,6 +112,121 @@ function linePrefixCompatible(shipPrefix, cruiseLine) {
   if (line.startsWith(`${prefix} `)) return true;
   if (prefix.startsWith(`${line} `)) return true;
   return false;
+}
+
+function resolveCruiseShip(ships, shipName, cruiseLine) {
+  const target = normaliseText(shipName);
+  const line = normaliseText(cruiseLine);
+
+  if (!target) return { status: 'not_found' };
+
+  const exact = ships.filter((row) => normaliseText(row?.name) === target);
+  const step1 = resolveUniqueCandidates(exact);
+  if (step1) return step1;
+
+  if (line) {
+    const composed = `${line} ${target}`;
+    const composedMatches = ships.filter(
+      (row) => normaliseText(row?.name) === composed
+    );
+    const step2 = resolveUniqueCandidates(composedMatches);
+    if (step2) return step2;
+  }
+
+  if (line) {
+    const suffix = ` ${target}`;
+    const suffixMatches = ships.filter((row) => {
+      const name = normaliseText(row?.name);
+      if (!name.endsWith(suffix)) return false;
+      if (name === target) return false;
+      const prefix = name.slice(0, name.length - suffix.length);
+      return linePrefixCompatible(prefix, line);
+    });
+    const step3 = resolveUniqueCandidates(suffixMatches);
+    if (step3) return step3;
+  }
+
+  return { status: 'not_found' };
+}
+
+function mapSupabaseShip(row) {
+  const line = row.ci_cruise_lines || {};
+  return {
+    id: row.id,
+    name: row.name,
+    cruise_line_id: row.cruise_line_id,
+    cruise_line_name: line.name || null,
+    passenger_capacity: row.passenger_capacity,
+    crew_count: row.crew_count,
+    deck_count: row.deck_count,
+    stateroom_count: row.stateroom_count,
+    stateroom_types: row.cabin_type_summary,
+    stateroom_breakdown: row.stateroom_breakdown,
+    length_meters: row.length_metres,
+    gross_tonnage: row.gross_tonnage,
+    year_built: row.year_built,
+    year_refurbished: row.year_refurbished,
+    facilities: row.facilities,
+    current_status: row.status,
+    last_updated: row.updated_at || null,
+    updated_date: row.updated_at || null,
+    slug: row.slug
+  };
+}
+
+async function listSupabaseShips() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+
+  const pageSize = 200;
+  let offset = 0;
+  const all = [];
+
+  while (offset < 5000) {
+    const path =
+      `ci_cruise_ships?select=id,name,slug,status,cruise_line_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,year_built,year_refurbished,facilities,updated_at,ci_cruise_lines(id,name,slug)&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`;
+    const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/${path}`, {
+      method: 'GET',
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Accept: 'application/json'
+      }
+    });
+    const text = await response.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (_error) {
+      data = null;
+    }
+    if (!response.ok) {
+      throw new Error((data && data.message) || `Supabase HTTP ${response.status}`);
+    }
+    const list = Array.isArray(data) ? data : [];
+    if (!list.length) break;
+    all.push(...list.map(mapSupabaseShip));
+    if (list.length < pageSize) break;
+    offset += pageSize;
+  }
+
+  return all;
+}
+
+function filterSupabaseByLine(ships, cruiseLine) {
+  const line = normaliseText(cruiseLine);
+  if (!line) return ships;
+  return ships.filter((row) => {
+    const name = normaliseText(row.cruise_line_name);
+    if (!name) return true;
+    return (
+      name === line ||
+      name.includes(line) ||
+      line.includes(name) ||
+      linePrefixCompatible(name, line)
+    );
+  });
 }
 
 async function listCruiseShips(base44) {
@@ -138,42 +246,24 @@ async function listCruiseShips(base44) {
   return all;
 }
 
-function resolveCruiseShip(ships, shipName, cruiseLine) {
-  const target = normaliseText(shipName);
-  const line = normaliseText(cruiseLine);
+async function lookupBase44(shipName, cruiseLine) {
+  const appId = process.env.BASE44_FINDER_APP_ID;
+  const apiKey = process.env.BASE44_FINDER_API_KEY;
 
-  if (!target) return { status: 'not_found' };
-
-  // Step 1 — exact normalised ship-name match
-  const exact = ships.filter((row) => normaliseText(row?.name) === target);
-  const step1 = resolveUniqueCandidates(exact);
-  if (step1) return step1;
-
-  // Step 2 — exact composed match: cruise_line + " " + ship name
-  if (line) {
-    const composed = `${line} ${target}`;
-    const composedMatches = ships.filter(
-      (row) => normaliseText(row?.name) === composed
-    );
-    const step2 = resolveUniqueCandidates(composedMatches);
-    if (step2) return step2;
+  if (!appId || !apiKey) {
+    return { status: 'config_missing' };
   }
 
-  // Step 3 — unique line-aware suffix match
-  if (line) {
-    const suffix = ` ${target}`;
-    const suffixMatches = ships.filter((row) => {
-      const name = normaliseText(row?.name);
-      if (!name.endsWith(suffix)) return false;
-      if (name === target) return false;
-      const prefix = name.slice(0, name.length - suffix.length);
-      return linePrefixCompatible(prefix, line);
-    });
-    const step3 = resolveUniqueCandidates(suffixMatches);
-    if (step3) return step3;
-  }
+  const { createClient } = await import('@base44/sdk');
+  const base44 = createClient({
+    appId,
+    headers: {
+      api_key: apiKey
+    }
+  });
 
-  return { status: 'not_found' };
+  const ships = await listCruiseShips(base44);
+  return resolveCruiseShip(ships, shipName, cruiseLine);
 }
 
 exports.handler = async function (event) {
@@ -207,42 +297,95 @@ exports.handler = async function (event) {
     });
   }
 
-  const appId = process.env.BASE44_FINDER_APP_ID;
-  const apiKey = process.env.BASE44_FINDER_API_KEY;
-
-  if (!appId || !apiKey) {
-    console.error('Base44 Finder configuration missing');
-    return jsonResponse(500, {
-      success: false,
-      error: 'BASE44_CONFIGURATION_MISSING'
-    });
-  }
-
-  console.log('Base44 ship lookup started');
+  console.log(
+    JSON.stringify({
+      event: 'ship_lookup_started',
+      has_line: Boolean(cruiseLine)
+    })
+  );
 
   try {
-    const { createClient } = await import('@base44/sdk');
+    const supabaseShips = await listSupabaseShips();
+    if (Array.isArray(supabaseShips) && supabaseShips.length) {
+      const scoped = filterSupabaseByLine(supabaseShips, cruiseLine);
+      const resolution = resolveCruiseShip(scoped.length ? scoped : supabaseShips, shipName, cruiseLine);
 
-    const base44 = createClient({
-      appId,
-      headers: {
-        api_key: apiKey
+      if (resolution.status === 'ambiguous') {
+        console.warn(
+          JSON.stringify({ event: 'ship_lookup_ambiguous', source: 'supabase' })
+        );
+        return jsonResponse(409, {
+          success: false,
+          error: 'SHIP_AMBIGUOUS',
+          source: 'supabase'
+        });
       }
-    });
 
-    const ships = await listCruiseShips(base44);
-    const resolution = resolveCruiseShip(ships, shipName, cruiseLine);
+      if (resolution.status === 'matched' && resolution.ship) {
+        const ship = pickShipFields(resolution.ship);
+        if (resolution.ship.cruise_line_name) {
+          ship.cruise_line_name = resolution.ship.cruise_line_name;
+        }
+        console.log(
+          JSON.stringify({ event: 'ship_lookup_matched', source: 'supabase' })
+        );
+        return jsonResponse(200, {
+          success: true,
+          source: 'supabase',
+          ship
+        });
+      }
+
+      console.log(
+        JSON.stringify({
+          event: 'ship_lookup_supabase_miss',
+          falling_back: 'base44'
+        })
+      );
+    } else if (supabaseShips === null) {
+      console.log(
+        JSON.stringify({
+          event: 'ship_lookup_supabase_unconfigured',
+          falling_back: 'base44'
+        })
+      );
+    }
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: 'ship_lookup_supabase_error',
+        message: safeErrorMessage(error),
+        falling_back: 'base44'
+      })
+    );
+  }
+
+  try {
+    const resolution = await lookupBase44(shipName, cruiseLine);
+
+    if (resolution.status === 'config_missing') {
+      console.error('Base44 Finder configuration missing');
+      return jsonResponse(500, {
+        success: false,
+        error: 'BASE44_CONFIGURATION_MISSING'
+      });
+    }
 
     if (resolution.status === 'ambiguous') {
-      console.warn('CruiseShip lookup ambiguous');
+      console.warn(
+        JSON.stringify({ event: 'ship_lookup_ambiguous', source: 'base44' })
+      );
       return jsonResponse(409, {
         success: false,
-        error: 'SHIP_AMBIGUOUS'
+        error: 'SHIP_AMBIGUOUS',
+        source: 'base44'
       });
     }
 
     if (resolution.status !== 'matched' || !resolution.ship) {
-      console.warn('CruiseShip not found for requested name');
+      console.warn(
+        JSON.stringify({ event: 'ship_lookup_not_found', source: 'base44' })
+      );
       return jsonResponse(404, {
         success: false,
         error: 'SHIP_NOT_FOUND'
@@ -250,10 +393,13 @@ exports.handler = async function (event) {
     }
 
     const ship = pickShipFields(resolution.ship);
-    console.log('CruiseShip retrieved successfully');
+    console.log(
+      JSON.stringify({ event: 'ship_lookup_matched', source: 'base44_fallback' })
+    );
 
     return jsonResponse(200, {
       success: true,
+      source: 'base44',
       ship
     });
   } catch (error) {

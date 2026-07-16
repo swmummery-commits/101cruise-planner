@@ -5023,14 +5023,18 @@ async function fetchShipFromBase44(shipName, cruiseLine = "") {
     data.error === "SHIP_NOT_FOUND" ||
     data.error === "SHIP_AMBIGUOUS"
   ) {
-    return { ok: false, notFound: true };
+    return { ok: false, notFound: true, source: data.source || null };
   }
 
   if (!response.ok || data.success === false || !data.ship) {
-    return { ok: false, notFound: false };
+    return { ok: false, notFound: false, source: data.source || null };
   }
 
-  return { ok: true, ship: data.ship };
+  if (data.source === "base44") {
+    console.info("Ship lookup used Base44 fallback — missing Supabase Cruise Intelligence record");
+  }
+
+  return { ok: true, ship: data.ship, source: data.source || null };
 }
 
 function renderShipSummaryCard(ship) {
@@ -5406,7 +5410,10 @@ async function renderTheShip() {
     return;
   }
 
-  const ship = buildShipProfileFromBase44(result.ship, { shipName, cruiseLine });
+  const ship = buildShipProfileFromBase44(result.ship, {
+    shipName,
+    cruiseLine: result.ship?.cruise_line_name || cruiseLine
+  });
   const cruiseLineLogo = await loadCruiseLineLogo(ship.cruiseLine || cruiseLine);
   let shipImage = await loadShipPageImage(ship.name);
   if (!shipImage && shipName && shipName !== ship.name) {

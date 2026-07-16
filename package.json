@@ -4,7 +4,9 @@
   "private": true,
   "description": "101CRUISE planner — Netlify site with Base44 CRM integration",
   "scripts": {
-    "dev": "netlify dev"
+    "dev": "netlify dev",
+    "import:cruise-data:dry": "node scripts/import-base44-cruise-data.mjs --dry-run",
+    "import:cruise-data": "node scripts/import-base44-cruise-data.mjs --apply"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.38"
