@@ -6781,6 +6781,7 @@ function renderCiShipForm(ship) {
       <h4 style="margin-top:10px;">Facilities</h4>
       <div class="ci-form-grid">
         <div class="admin-field"><label>Restaurants</label><input id="ciFacRestaurants" type="number" value="${esc(facilities.restaurants ?? "")}"></div>
+        <div class="admin-field"><label>Specialty Dining</label><input id="ciFacSpecialtyDining" type="number" value="${esc(facilities.specialty_dining ?? "")}"></div>
         <div class="admin-field"><label>Bars</label><input id="ciFacBars" type="number" value="${esc(facilities.bars ?? "")}"></div>
         <div class="admin-field"><label>Pools</label><input id="ciFacPools" type="number" value="${esc(facilities.pools ?? "")}"></div>
         <div class="admin-field"><label>Hot tubs</label><input id="ciFacHotTubs" type="number" value="${esc(facilities.hot_tubs ?? "")}"></div>
@@ -6894,10 +6895,13 @@ async function persistCiShip({ quiet = false } = {}) {
     ...(existing?.facilities && typeof existing.facilities === "object" ? existing.facilities : {})
   };
   const restaurants = ciOptionalNumber("ciFacRestaurants");
+  const specialtyDining = ciOptionalNumber("ciFacSpecialtyDining");
   const bars = ciOptionalNumber("ciFacBars");
   const pools = ciOptionalNumber("ciFacPools");
   const hotTubs = ciOptionalNumber("ciFacHotTubs");
   if (restaurants != null) facilities.restaurants = restaurants;
+  if (specialtyDining != null) facilities.specialty_dining = specialtyDining;
+  else delete facilities.specialty_dining;
   if (bars != null) facilities.bars = bars;
   if (pools != null) facilities.pools = pools;
   if (hotTubs != null) facilities.hot_tubs = hotTubs;
