@@ -1957,11 +1957,11 @@ async function loadDashboardPackingData(cruise) {
 function renderDashboardQuickAccess() {
   return `
     <nav class="dashboard-quick-access" aria-label="My Cruise tools">
-      <button onclick="renderPackingPlanner()"><span aria-hidden="true">🧳</span><strong>Packing List</strong></button>
       <button onclick="renderChecklist()"><span aria-hidden="true">✓</span><strong>Checklist</strong></button>
-      <button onclick="renderDocuments()"><span aria-hidden="true">📄</span><strong>Documents</strong></button>
+      <button onclick="renderPackingPlanner()"><span aria-hidden="true">🧳</span><strong>Pack List</strong></button>
       <button onclick="renderBudgetPlanner()"><span aria-hidden="true">💳</span><strong>Budget</strong></button>
-      <button onclick="renderTheShip()"><span aria-hidden="true">🚢</span><strong>The Ship</strong></button>
+      <button onclick="renderTheShip()"><span aria-hidden="true">🚢</span><strong>Your Ship</strong></button>
+      <button onclick="renderDocuments()"><span aria-hidden="true">📄</span><strong>Documents</strong></button>
     </nav>
   `;
 }
@@ -2269,10 +2269,10 @@ function renderPlannerNav(active = "preparation") {
   const items = [
     { key: "dashboard", label: "Dashboard", action: "renderDashboard()" },
     { key: "booking", label: "Booking", action: "renderBookingDetails()" },
-    { key: "budget", label: "Budget", action: "renderBudgetPlanner()" },
-    { key: "ship", label: "The Ship", action: "renderTheShip()" },
-    { key: "packing", label: "Packing", action: "renderPackingPlanner()" },
     { key: "preparation", label: "Checklist", action: "renderChecklist()" },
+    { key: "packing", label: "Pack List", action: "renderPackingPlanner()" },
+    { key: "budget", label: "Budget", action: "renderBudgetPlanner()" },
+    { key: "ship", label: "Your Ship", action: "renderTheShip()" },
     { key: "documents", label: "Documents", action: "renderDocuments()" }
   ];
 

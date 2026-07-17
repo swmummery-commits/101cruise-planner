@@ -98,11 +98,11 @@ async function rest(path) {
 const MODULE_LABELS = {
   dashboard: "Dashboard",
   booking: "Booking",
-  packing: "Packing",
-  preparation: "Preparation",
+  packing: "Pack List",
+  preparation: "Checklist",
   documents: "Documents",
   budget: "Budget",
-  the_ship: "The Ship",
+  the_ship: "Your Ship",
   drinks_calculator: "Drinks Calculator",
   public_drinks_calculator: "Public Drinks Calculator"
 };
