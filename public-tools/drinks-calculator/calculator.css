@@ -268,7 +268,7 @@
 
 .dc-calc-package-layout {
   display: grid;
-  grid-template-columns: minmax(240px, 0.95fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1.15fr) minmax(240px, 0.95fr);
   gap: 20px 28px;
   align-items: start;
 }
@@ -786,13 +786,6 @@
     grid-template-columns: 1fr;
   }
 
-  .dc-calc-package-notes-col {
-    order: 2;
-  }
-
-  .dc-calc-package-choices {
-    order: 1;
-  }
 }
 
 @media (max-width: 560px) {

@@ -863,14 +863,6 @@
         <section class="dc-calc-card dc-calc-package-section" aria-labelledby="dc-package-title">
           <h2 id="dc-package-title">Your Package</h2>
           <div class="dc-calc-package-layout">
-            <aside class="dc-calc-package-notes-col" aria-label="Selected package notes">
-              ${
-                packageNotes ||
-                `<div class="dc-calc-package-notes-empty">
-                  <p>Select a package to see what’s included and any important notes.</p>
-                </div>`
-              }
-            </aside>
             <div class="dc-calc-package-choices">
               <span class="dc-calc-label">Package to compare</span>
               ${renderPackageCards()}
@@ -889,6 +881,14 @@
               }
               ${ownFlags}
             </div>
+            <aside class="dc-calc-package-notes-col" aria-label="Selected package notes">
+              ${
+                packageNotes ||
+                `<div class="dc-calc-package-notes-empty">
+                  <p>Select a package to see what’s included and any important notes.</p>
+                </div>`
+              }
+            </aside>
           </div>
         </section>
 
