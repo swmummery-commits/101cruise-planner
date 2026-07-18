@@ -121,6 +121,69 @@
 
   const TOOLS_ORIGIN = getScriptOrigin();
 
+  function toolBaseUrl() {
+    if (SCRIPT_EL && SCRIPT_EL.src) {
+      try {
+        return new URL(SCRIPT_EL.src).href.replace(/[^/]+$/, "");
+      } catch (_error) {
+        /* ignore */
+      }
+    }
+    const scripts = document.querySelectorAll('script[src*="cruise-finder/finder.js"]');
+    const last = scripts[scripts.length - 1];
+    if (last && last.src) {
+      try {
+        return new URL(last.src).href.replace(/[^/]+$/, "");
+      } catch (_error) {
+        /* ignore */
+      }
+    }
+    return `${NETLIFY_ORIGIN}/public-tools/cruise-finder/`;
+  }
+
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`);
+      if (existing) {
+        if (existing.dataset.cfLoaded === "1") {
+          resolve();
+          return;
+        }
+        existing.addEventListener("load", () => resolve(), { once: true });
+        existing.addEventListener("error", () => reject(new Error(`Failed to load ${src}`)), {
+          once: true
+        });
+        return;
+      }
+      const el = document.createElement("script");
+      el.src = src;
+      el.async = false;
+      el.onload = () => {
+        el.dataset.cfLoaded = "1";
+        resolve();
+      };
+      el.onerror = () => reject(new Error(`Failed to load ${src}`));
+      document.head.appendChild(el);
+    });
+  }
+
+  /**
+   * Squarespace embed historically loaded only destinations.js + finder.js.
+   * Image cards require destination-images.js + hero-images.js — load them if missing.
+   */
+  async function ensureImagePipeline() {
+    const base = toolBaseUrl();
+    if (typeof window.CruiseFinderFilterCruiseLines !== "function") {
+      await loadScriptOnce(`${base}approved-cruise-lines.js`);
+    }
+    if (typeof window.CruiseFinderPickDestinationImage !== "function") {
+      await loadScriptOnce(`${base}destination-images.js`);
+    }
+    if (!window.CruiseFinderHeroImages) {
+      await loadScriptOnce(`${base}hero-images.js`);
+    }
+  }
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replaceAll("&", "&amp;")
@@ -762,11 +825,16 @@
     });
   }
 
-  function init() {
+  async function init() {
     mount = document.getElementById(MOUNT_ID);
     if (!mount) return;
     if (mount.dataset.cfInit === "1") return;
     mount.dataset.cfInit = "1";
+    try {
+      await ensureImagePipeline();
+    } catch (error) {
+      console.warn("Cruise Finder image pipeline could not load", error);
+    }
     render();
   }
 

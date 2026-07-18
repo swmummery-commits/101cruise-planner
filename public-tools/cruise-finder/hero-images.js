@@ -12,6 +12,8 @@
 (function (root) {
   "use strict";
 
+  const NETLIFY_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
+  const IMAGE_LOAD_TIMEOUT_MS = 3000;
   const SCRIPT_EL = document.currentScript;
 
   function imagesBaseUrl() {
@@ -24,12 +26,14 @@
     for (let i = 0; i < candidates.length; i += 1) {
       try {
         const url = new URL(candidates[i]);
+        // Prefer absolute Netlify/tool origin — never resolve against Squarespace.
+        if (url.hostname.indexOf("101cruise.com.au") !== -1) continue;
         return url.href.replace(/[^/]+$/, "");
       } catch (_error) {
         /* continue */
       }
     }
-    return "/public-tools/cruise-finder/";
+    return `${NETLIFY_ORIGIN}/public-tools/cruise-finder/`;
   }
 
   function resolveImageUrl(url) {
@@ -55,49 +59,68 @@
     };
   }
 
+  function heroImageEl(hero) {
+    return hero.querySelector(".cf-mag-image, img");
+  }
+
   function markFallback(hero) {
     if (!hero) return;
     hero.classList.add("is-fallback");
     hero.classList.remove("is-loaded");
-    const img = hero.querySelector(".cf-mag-image");
+    const img = heroImageEl(hero);
     if (img) {
       img.removeAttribute("src");
       img.removeAttribute("srcset");
       img.alt = "";
+      img.style.display = "none";
     }
+  }
+
+  function bindHero(hero) {
+    if (!hero || hero.dataset.cfHeroBound === "1") return;
+    hero.dataset.cfHeroBound = "1";
+
+    const url = resolveImageUrl(hero.getAttribute("data-image-url") || "");
+    const position = hero.getAttribute("data-object-position") || "center center";
+    const img = heroImageEl(hero);
+
+    if (!img || !url) {
+      markFallback(hero);
+      return;
+    }
+
+    let settled = false;
+    const settle = (ok) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      if (ok) {
+        hero.classList.add("is-loaded");
+        hero.classList.remove("is-fallback");
+        img.style.display = "";
+      } else {
+        markFallback(hero);
+      }
+    };
+
+    img.style.objectPosition = position;
+    img.style.display = "";
+    img.addEventListener("load", () => settle(true), { once: true });
+    img.addEventListener("error", () => settle(false), { once: true });
+    img.decoding = "async";
+    img.loading = "eager";
+    img.sizes = "(max-width: 760px) 100vw, 760px";
+    img.src = url;
+
+    const timer = window.setTimeout(() => settle(false), IMAGE_LOAD_TIMEOUT_MS);
+
+    if (img.complete && img.naturalWidth > 0) settle(true);
   }
 
   function hydrate(rootEl) {
     if (!rootEl) return;
-    rootEl.querySelectorAll(".cf-mag-hero[data-image-url]").forEach((hero) => {
-      if (hero.dataset.cfHeroBound === "1") return;
-      hero.dataset.cfHeroBound = "1";
-
-      const url = resolveImageUrl(hero.getAttribute("data-image-url") || "");
-      const position = hero.getAttribute("data-object-position") || "center center";
-      const img = hero.querySelector(".cf-mag-image");
-
-      if (!img || !url) {
-        markFallback(hero);
-        return;
-      }
-
-      img.style.objectPosition = position;
-
-      const onLoad = () => {
-        hero.classList.add("is-loaded");
-        hero.classList.remove("is-fallback");
-      };
-      const onError = () => markFallback(hero);
-
-      img.addEventListener("load", onLoad, { once: true });
-      img.addEventListener("error", onError, { once: true });
-      img.decoding = "async";
-      img.loading = "lazy";
-      img.sizes = "(max-width: 760px) 100vw, 760px";
-      img.src = url;
-
-      if (img.complete && img.naturalWidth > 0) onLoad();
+    rootEl.querySelectorAll(".cf-mag-hero[data-image-url], .cf-dest-media[data-image-url]").forEach((hero) => {
+      bindHero(hero);
     });
   }
 

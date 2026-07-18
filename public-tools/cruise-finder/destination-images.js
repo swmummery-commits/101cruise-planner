@@ -9,21 +9,51 @@
 (function (root) {
   "use strict";
 
+  const ASSET_BASE = "https://admirable-tiramisu-d4da8a.netlify.app/public-tools/cruise-finder/";
   const W = "https://upload.wikimedia.org/wikipedia/commons/thumb";
+
+  function localHero(file) {
+    return `${ASSET_BASE}images/${file}`;
+  }
 
   function thumb(path, file, width) {
     const w = width || 1280;
     return `${W}/${path}/${file}/${w}px-${file}`;
   }
 
+  /** Alias → canonical destination slug */
+  const DESTINATION_ALIASES = {
+    japan: "japan",
+    "australia-new-zealand": "australia-new-zealand",
+    "australia-nz": "australia-new-zealand",
+    anz: "australia-new-zealand",
+    mediterranean: "mediterranean",
+    med: "mediterranean",
+    caribbean: "caribbean",
+    alaska: "alaska",
+    "greek-islands": "greek-islands",
+    greece: "greek-islands",
+    "norwegian-fjords": "norwegian-fjords",
+    norway: "norwegian-fjords",
+    fjords: "norwegian-fjords",
+    "british-isles": "british-isles",
+    uk: "british-isles",
+    "south-pacific": "south-pacific",
+    antarctica: "antarctica",
+    "canada-new-england": "canada-new-england",
+    hawaii: "hawaii"
+  };
+
   /**
    * Verified images for all supported destinations.
    * seasonal: month number (1–12) → image override
+   * Local approved PNGs use absolute Netlify URLs so Squarespace embeds never
+   * resolve against www.101cruise.com.au.
    */
   const DESTINATION_IMAGES = {
     alaska: {
       default: {
-        url: "images/alaska-hero.png",
+        url: localHero("alaska-hero.png"),
         objectPosition: "center 40%",
         credit: "101cruise"
       },
@@ -31,7 +61,7 @@
     },
     japan: {
       default: {
-        url: "images/japan-hero.png",
+        url: localHero("japan-hero.png"),
         objectPosition: "center center",
         credit: "101cruise"
       },
@@ -60,7 +90,7 @@
     },
     mediterranean: {
       default: {
-        url: "images/mediterranean-hero.png",
+        url: localHero("mediterranean-hero.png"),
         objectPosition: "center 40%",
         credit: "101cruise"
       },
@@ -68,7 +98,7 @@
     },
     "greek-islands": {
       default: {
-        url: "images/greek-islands-hero.png",
+        url: localHero("greek-islands-hero.png"),
         objectPosition: "center 40%",
         credit: "101cruise"
       },
@@ -87,7 +117,7 @@
     },
     "british-isles": {
       default: {
-        url: "images/british-isles-hero.png",
+        url: localHero("british-isles-hero.png"),
         objectPosition: "center 40%",
         credit: "101cruise"
       },
@@ -95,7 +125,7 @@
     },
     caribbean: {
       default: {
-        url: "images/caribbean-hero.png",
+        url: localHero("caribbean-hero.png"),
         objectPosition: "center 45%",
         credit: "101cruise"
       },
@@ -111,7 +141,7 @@
     },
     "australia-new-zealand": {
       default: {
-        url: "images/australia-new-zealand-hero.png",
+        url: localHero("australia-new-zealand-hero.png"),
         objectPosition: "center 45%",
         credit: "101cruise"
       },
@@ -152,7 +182,7 @@
     },
     hawaii: {
       default: {
-        url: "images/hawaii-hero.png",
+        url: localHero("hawaii-hero.png"),
         objectPosition: "center 42%",
         credit: "101cruise"
       },
@@ -160,8 +190,16 @@
     }
   };
 
+  function canonicalDestinationId(destinationId) {
+    const raw = String(destinationId || "")
+      .trim()
+      .toLowerCase();
+    return DESTINATION_ALIASES[raw] || raw;
+  }
+
   function pickImage(destinationId, travelMonth) {
-    const entry = DESTINATION_IMAGES[destinationId];
+    const id = canonicalDestinationId(destinationId);
+    const entry = DESTINATION_IMAGES[id];
     if (!entry) return null;
     const month = Number(travelMonth) || 0;
     if (month && entry.seasonal && entry.seasonal[month]) {
