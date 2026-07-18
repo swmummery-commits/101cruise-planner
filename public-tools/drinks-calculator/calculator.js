@@ -463,6 +463,89 @@
     `;
   }
 
+  function packageDetailSections(pkg) {
+    if (!pkg) return [];
+    const sections = [];
+
+    if (pkg.isOwn) {
+      sections.push({
+        title: "Custom package",
+        body:
+          "Enter the daily package price you have been quoted. Tick whether Wi-Fi and drink gratuities are included in that price so the comparison stays accurate."
+      });
+      if (line.general_notes) {
+        sections.push({ title: "Important purchasing rules", body: line.general_notes });
+      }
+      if (line.specialty_dining_notes) {
+        sections.push({ title: "Cruise line notes", body: line.specialty_dining_notes });
+      }
+      return sections;
+    }
+
+    if (pkg.notes) {
+      sections.push({ title: "Package description & notes", body: pkg.notes });
+    }
+
+    const included = ["Drinks covered by this package (confirm exact inclusions for your sailing)"];
+    if (pkg.wifi_included) included.push("Wi-Fi");
+    if (pkg.gratuities_included) included.push("Drink gratuities");
+    sections.push({ title: "What's included", body: `${included.join(". ")}.` });
+
+    if (pkg.gratuities_included) {
+      sections.push({
+        title: "Gratuities",
+        body: "Drink gratuities are included in this package price for the comparison."
+      });
+    } else if (line.gratuity_percent != null) {
+      sections.push({
+        title: "Gratuities",
+        body: `Typical drink gratuity around ${Number(line.gratuity_percent)}% is applied when gratuities are not already included in the package price.`
+      });
+    } else {
+      sections.push({
+        title: "Gratuities",
+        body: "Confirm whether drink gratuities are included in the package price for your sailing."
+      });
+    }
+
+    if (line.general_notes) {
+      sections.push({ title: "Important purchasing rules", body: line.general_notes });
+    }
+    if (line.specialty_dining_notes) {
+      sections.push({ title: "Cruise line notes", body: line.specialty_dining_notes });
+    }
+    if (line.wifi_notes && pkg.wifi_included) {
+      sections.push({ title: "Wi-Fi notes", body: line.wifi_notes });
+    }
+
+    return sections;
+  }
+
+  function renderPackageDetailPanel(pkg) {
+    if (!pkg) return "";
+    const sections = packageDetailSections(pkg);
+    if (!sections.length) return "";
+    const body = sections
+      .map(
+        section => `
+          <div class="dc-calc-pkg-detail-section">
+            <h4>${escapeHtml(section.title)}</h4>
+            <p>${escapeHtml(section.body)}</p>
+          </div>
+        `
+      )
+      .join("");
+
+    return `
+      <div class="dc-calc-pkg-detail" data-pkg-detail aria-live="polite">
+        <div class="dc-calc-pkg-detail-inner">
+          <p class="dc-calc-pkg-detail-kicker">About this package</p>
+          ${body}
+        </div>
+      </div>
+    `;
+  }
+
   function renderPackageCards() {
     const cards = packages
       .map(pkg => {
@@ -476,29 +559,36 @@
         if (pkg.wifi_included) tags.push("Wi-Fi");
         if (pkg.gratuities_included) tags.push("Gratuities");
         return `
-          <button type="button" class="dc-calc-pkg ${selected ? "is-selected" : ""}" data-package-id="${escapeHtml(pkg.id)}" aria-pressed="${selected ? "true" : "false"}">
-            <span class="dc-calc-pkg-radio" aria-hidden="true"></span>
-            <span class="dc-calc-pkg-copy">
-              <strong>${escapeHtml(pkg.package_name)}</strong>
-              <span class="dc-calc-pkg-price">${escapeHtml(priceLabel)}</span>
-              ${tags.length ? `<span class="dc-calc-pkg-tags">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}</span>` : ""}
-            </span>
-          </button>
+          <div class="dc-calc-pkg-group">
+            <button type="button" class="dc-calc-pkg ${selected ? "is-selected" : ""}" data-package-id="${escapeHtml(pkg.id)}" aria-pressed="${selected ? "true" : "false"}">
+              <span class="dc-calc-pkg-radio" aria-hidden="true"></span>
+              <span class="dc-calc-pkg-copy">
+                <strong>${escapeHtml(pkg.package_name)}</strong>
+                <span class="dc-calc-pkg-price">${escapeHtml(priceLabel)}</span>
+                ${tags.length ? `<span class="dc-calc-pkg-tags">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}</span>` : ""}
+              </span>
+            </button>
+            ${selected ? renderPackageDetailPanel(pkg) : ""}
+          </div>
         `;
       })
       .join("");
 
     const ownSelected = state.packageId === OWN_PACKAGE_ID;
+    const ownPkg = ownSelected ? selectedPackage() : null;
     return `
       <div class="dc-calc-pkg-list" role="listbox" aria-label="Package to compare">
         ${cards}
-        <button type="button" class="dc-calc-pkg ${ownSelected ? "is-selected" : ""}" data-package-id="${OWN_PACKAGE_ID}" aria-pressed="${ownSelected ? "true" : "false"}">
-          <span class="dc-calc-pkg-radio" aria-hidden="true"></span>
-          <span class="dc-calc-pkg-copy">
-            <strong>Enter my own package</strong>
-            <span class="dc-calc-pkg-price">Custom price</span>
-          </span>
-        </button>
+        <div class="dc-calc-pkg-group">
+          <button type="button" class="dc-calc-pkg ${ownSelected ? "is-selected" : ""}" data-package-id="${OWN_PACKAGE_ID}" aria-pressed="${ownSelected ? "true" : "false"}">
+            <span class="dc-calc-pkg-radio" aria-hidden="true"></span>
+            <span class="dc-calc-pkg-copy">
+              <strong>Enter my own package</strong>
+              <span class="dc-calc-pkg-price">Custom price</span>
+            </span>
+          </button>
+          ${ownSelected ? renderPackageDetailPanel(ownPkg) : ""}
+        </div>
       </div>
     `;
   }
@@ -535,39 +625,46 @@
       line.gratuity_percent != null
         ? `Typical drink gratuity around ${Number(line.gratuity_percent)}% is used where gratuities are not already included.`
         : "Gratuity information is not listed for this cruise line.";
-    const packageNotes =
-      (pkg && !pkg.isOwn && pkg.notes) ||
-      line.specialty_dining_notes ||
-      "No package notes listed for this cruise line.";
     const lastVerified = formatDisplayDate(
       (pkg && !pkg.isOwn && pkg.last_verified_at) || line.last_verified_at
     );
     const purchaseAdvice =
-      "Cruise lines often offer better drinks-package pricing before departure. Check the package terms for your sailing, contact 101cruise, or confirm directly with the cruise line.";
+      "Cruise lines often offer better package pricing before departure. Check prices before you sail.";
+
+    let packageNotesCard = "";
+    if (pkg) {
+      const packageNotes =
+        (!pkg.isOwn && pkg.notes) ||
+        line.specialty_dining_notes ||
+        "No package notes listed for this selection.";
+      packageNotesCard = `
+        <article class="dc-calc-info-card">
+          <h3>Package Notes</h3>
+          <p>${escapeHtml(packageNotes)}</p>
+        </article>
+      `;
+    }
 
     return `
       <section class="dc-calc-info" aria-labelledby="dc-info-title">
-        <h2 id="dc-info-title">Important package information</h2>
-        <div class="dc-calc-info-grid dc-calc-info-grid-5">
-          <article class="dc-calc-info-block">
+        <h2 id="dc-info-title">Important Package Information</h2>
+        <div class="dc-calc-info-stack">
+          <article class="dc-calc-info-card">
             <h3>Wi-Fi</h3>
             <p>${escapeHtml(wifi)}</p>
           </article>
-          <article class="dc-calc-info-block">
+          <article class="dc-calc-info-card">
             <h3>Gratuities</h3>
             <p>${escapeHtml(gratuity)}</p>
           </article>
-          <article class="dc-calc-info-block">
-            <h3>Package notes</h3>
-            <p>${escapeHtml(packageNotes)}</p>
-          </article>
-          <article class="dc-calc-info-block">
-            <h3>Last verified</h3>
-            <p>${escapeHtml(lastVerified)}</p>
-          </article>
-          <article class="dc-calc-info-block">
-            <h3>Purchase advice</h3>
+          ${packageNotesCard}
+          <article class="dc-calc-info-card">
+            <h3>Purchase Advice</h3>
             <p>${escapeHtml(purchaseAdvice)}</p>
+          </article>
+          <article class="dc-calc-info-card">
+            <h3>Last Verified</h3>
+            <p>${escapeHtml(lastVerified)}</p>
           </article>
         </div>
       </section>
@@ -697,7 +794,7 @@
         </details>
 
         <p class="dc-calc-disclaimer">
-          Average onboard prices are estimates and may vary by ship, sailing, itinerary and currency. This comparison is a guide only.
+          Average onboard prices are estimates and may vary by ship, sailing, itinerary and currency. This comparison is a guide only. Remember, drinks packages are almost always cheaper when purchased before you sail than once you're onboard.
         </p>
       </div>
     `;
@@ -793,6 +890,13 @@
 
           <section class="dc-calc-card" aria-labelledby="dc-day-title">
             <h2 id="dc-day-title">Your Typical Day</h2>
+            <p class="dc-calc-day-guide">
+              ${
+                state.packageId
+                  ? "Now estimate what you'd typically drink each day and we'll compare the cost of buying drinks individually with the package you've selected."
+                  : "Choose a package first, then estimate what you'd typically drink each day."
+              }
+            </p>
             <div class="dc-calc-qty-list" id="dc-qty-list">
               ${renderQtyRows()}
             </div>
@@ -806,6 +910,17 @@
     `;
   }
 
+  function revealSelectedPackageDetail() {
+    if (!mount) return;
+    const panel = mount.querySelector("[data-pkg-detail]");
+    if (!panel) return;
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        panel.classList.add("is-open");
+      });
+    });
+  }
+
   function renderApp() {
     if (!mount || !line) return;
     if (line.drinks_included_in_fare && (!packages || packages.length === 0)) {
@@ -815,6 +930,7 @@
     }
     mount.innerHTML = renderCalculator();
     bindEvents();
+    revealSelectedPackageDetail();
   }
 
   function updateResultsOnly() {
