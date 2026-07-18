@@ -830,7 +830,9 @@
         ${renderTopBar()}
         ${renderHeader()}
 
-        <section class="dc-calc-card dc-calc-cruise-setup" aria-label="Cruise setup" id="dc-calc-form">
+        <section class="dc-calc-card dc-calc-cruise-setup" aria-labelledby="dc-setup-title" id="dc-calc-form">
+          <p class="dc-calc-step-label">Step 1</p>
+          <h2 id="dc-setup-title">Your cruise</h2>
           <div class="dc-calc-cruise-setup-grid">
             <div class="dc-calc-field">
               <label class="dc-calc-label" for="dc-cruise-nights">How many nights is your cruise?</label>
@@ -861,6 +863,7 @@
         </section>
 
         <section class="dc-calc-card dc-calc-package-section" aria-labelledby="dc-package-title">
+          <p class="dc-calc-step-label">Step 2</p>
           <h2 id="dc-package-title">Your Package</h2>
           <div class="dc-calc-package-layout">
             <div class="dc-calc-package-choices">
@@ -894,6 +897,7 @@
 
         <div class="dc-calc-workspace">
           <section class="dc-calc-card" aria-labelledby="dc-day-title">
+            <p class="dc-calc-step-label">Step 3</p>
             <h2 id="dc-day-title">Your Typical Day</h2>
             <p class="dc-calc-day-guide">
               ${

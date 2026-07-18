@@ -251,6 +251,15 @@
   margin: 0 0 20px;
 }
 
+.dc-calc-step-label {
+  margin: 0 0 6px !important;
+  font-size: 0.72rem !important;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dc-green-ink) !important;
+}
+
 .dc-calc-cruise-setup {
   margin: 0 0 18px;
 }
