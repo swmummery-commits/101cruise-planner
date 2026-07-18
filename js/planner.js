@@ -4554,16 +4554,12 @@ function setupEmbedHeightSync() {
   let frame = 0;
 
   function measureHeight() {
-    const root = document.getElementById("cruise-planner-app") || document.body;
-    const height = Math.ceil(
-      Math.max(
-        root.scrollHeight || 0,
-        root.offsetHeight || 0,
-        document.documentElement.scrollHeight || 0,
-        document.body.scrollHeight || 0
-      )
-    );
-    return Math.max(height + 24, 320);
+    const root = document.getElementById("cruise-planner-app");
+    if (!root) return 400;
+    // Measure the app content only. document/body scrollHeight tracks the
+    // iframe viewport and creates a resize feedback loop with the parent.
+    const height = Math.max(root.scrollHeight || 0, root.offsetHeight || 0);
+    return Math.max(Math.ceil(height + 12), 360);
   }
 
   function postHeight() {

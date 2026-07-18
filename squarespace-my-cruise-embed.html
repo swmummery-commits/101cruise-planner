@@ -1,13 +1,16 @@
 <!--
   101cruise My Cruise — Squarespace Code Block
 
-  Replace the existing fixed-height iframe with this block.
-  The planner posts its content height; this script resizes the iframe
-  so Squarespace white space does not show below the dashboard.
+  Paste this into the /my-cruise page Code Block.
+
+  If the iframe stays short/tall and does not resize, Squarespace may be
+  blocking scripts in Code Blocks. In that case, also paste the <script>
+  below into Settings → Advanced → Code Injection → Footer.
 -->
 <style>
   #101cruise-my-cruise-wrap {
     width: 100%;
+    max-width: 100%;
     margin: 0;
     padding: 0;
     line-height: 0;
@@ -16,8 +19,8 @@
     width: 100%;
     border: 0;
     display: block;
-    min-height: 480px;
-    background: transparent;
+    height: 720px; /* initial; replaced by content height */
+    background: #fafafa;
   }
 </style>
 <div id="101cruise-my-cruise-wrap">
@@ -34,17 +37,19 @@
   (function () {
     var iframe = document.getElementById("101cruise-my-cruise");
     if (!iframe) return;
+    var originNeedle = "admirable-tiramisu-d4da8a.netlify.app";
 
     function applyHeight(height) {
-      var next = Math.max(Number(height) || 0, 320);
+      var next = Math.max(Number(height) || 0, 360);
+      // Ignore wild values from a bad measure / feedback loop.
+      if (next > 12000) return;
       iframe.style.height = next + "px";
     }
 
     window.addEventListener("message", function (event) {
       var data = event && event.data;
       if (!data || data.type !== "101cruise-my-cruise-height") return;
-      // Only accept messages from the Netlify planner origin.
-      if (event.origin && event.origin.indexOf("admirable-tiramisu-d4da8a.netlify.app") === -1) return;
+      if (event.origin && String(event.origin).indexOf(originNeedle) === -1) return;
       applyHeight(data.height);
     });
   })();
