@@ -1,56 +1,53 @@
 <!--
-  101cruise My Cruise — Squarespace Code Block
+  ============================================================
+  MY CRUISE — SQUARESPACE EMBED (SAFE VERSION)
+  ============================================================
 
-  Paste this into the /my-cruise page Code Block.
+  STEP 1 — Page Code Block on /my-cruise
+  Paste ONLY the iframe line below into a Code Block.
+  Do not paste <style> tags into Squarespace Code Blocks
+  (Squarespace often prints them as visible text).
 
-  If the iframe stays short/tall and does not resize, Squarespace may be
-  blocking scripts in Code Blocks. In that case, also paste the <script>
-  below into Settings → Advanced → Code Injection → Footer.
+  STEP 2 — Site-wide Footer Code Injection (optional but recommended)
+  Settings → Advanced → Code Injection → Footer
+  Paste the script at the bottom of this file so the iframe
+  can auto-resize to the planner content height.
+  ============================================================
 -->
-<style>
-  #101cruise-my-cruise-wrap {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
-    line-height: 0;
-  }
-  #101cruise-my-cruise {
-    width: 100%;
-    border: 0;
-    display: block;
-    height: 720px; /* initial; replaced by content height */
-    background: #fafafa;
-  }
-</style>
-<div id="101cruise-my-cruise-wrap">
-  <iframe
-    id="101cruise-my-cruise"
-    title="My Cruise"
-    src="https://admirable-tiramisu-d4da8a.netlify.app/index.html"
-    loading="eager"
-    referrerpolicy="no-referrer-when-downgrade"
-    allow="clipboard-write"
-  ></iframe>
-</div>
+
+<!-- ===== PASTE THIS INTO THE PAGE CODE BLOCK (iframe only) ===== -->
+<iframe
+  id="101cruise-my-cruise"
+  title="My Cruise"
+  src="https://admirable-tiramisu-d4da8a.netlify.app/index.html"
+  width="100%"
+  height="1400"
+  loading="eager"
+  referrerpolicy="no-referrer-when-downgrade"
+  allow="clipboard-write"
+  style="width:100%; max-width:100%; height:1400px; border:0; display:block; background:#fafafa;"
+></iframe>
+
+<!--
+  ===== PASTE THIS INTO SETTINGS → ADVANCED → CODE INJECTION → FOOTER =====
+
 <script>
-  (function () {
-    var iframe = document.getElementById("101cruise-my-cruise");
+(function () {
+  function findFrame() {
+    return document.getElementById("101cruise-my-cruise");
+  }
+  window.addEventListener("message", function (event) {
+    var data = event && event.data;
+    if (!data || data.type !== "101cruise-my-cruise-height") return;
+    if (!event.origin || event.origin.indexOf("admirable-tiramisu-d4da8a.netlify.app") === -1) return;
+    var iframe = findFrame();
     if (!iframe) return;
-    var originNeedle = "admirable-tiramisu-d4da8a.netlify.app";
-
-    function applyHeight(height) {
-      var next = Math.max(Number(height) || 0, 360);
-      // Ignore wild values from a bad measure / feedback loop.
-      if (next > 12000) return;
-      iframe.style.height = next + "px";
-    }
-
-    window.addEventListener("message", function (event) {
-      var data = event && event.data;
-      if (!data || data.type !== "101cruise-my-cruise-height") return;
-      if (event.origin && String(event.origin).indexOf(originNeedle) === -1) return;
-      applyHeight(data.height);
-    });
-  })();
+    var next = Math.max(Number(data.height) || 0, 360);
+    if (next > 12000) return;
+    iframe.style.height = next + "px";
+    iframe.setAttribute("height", String(next));
+  });
+})();
 </script>
+
+-->
