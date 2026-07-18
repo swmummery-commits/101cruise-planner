@@ -248,16 +248,12 @@
   }
 
   function autoSelectDefaultPackage() {
-    if (!packages.length) {
-      state.packageId = OWN_PACKAGE_ID;
-      return;
-    }
-    if (packages.length === 1) {
-      applyPackageSelection(packages[0].id);
-      return;
-    }
-    if (!state.packageId || (state.packageId !== OWN_PACKAGE_ID && !packages.some(pkg => String(pkg.id) === String(state.packageId)))) {
-      applyPackageSelection(packages[0].id);
+    // Start with no package selected. Keep a selection only if it is still valid.
+    if (!state.packageId) return;
+    if (state.packageId === OWN_PACKAGE_ID) return;
+    if (!packages.some(pkg => String(pkg.id) === String(state.packageId))) {
+      state.packageId = "";
+      state.packagePrice = "";
     }
   }
 
