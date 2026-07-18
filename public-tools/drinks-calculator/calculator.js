@@ -555,36 +555,29 @@
         if (pkg.wifi_included) tags.push("Wi-Fi");
         if (pkg.gratuities_included) tags.push("Gratuities");
         return `
-          <div class="dc-calc-pkg-group">
-            <button type="button" class="dc-calc-pkg ${selected ? "is-selected" : ""}" data-package-id="${escapeHtml(pkg.id)}" aria-pressed="${selected ? "true" : "false"}">
-              <span class="dc-calc-pkg-radio" aria-hidden="true"></span>
-              <span class="dc-calc-pkg-copy">
-                <strong>${escapeHtml(pkg.package_name)}</strong>
-                <span class="dc-calc-pkg-price">${escapeHtml(priceLabel)}</span>
-                ${tags.length ? `<span class="dc-calc-pkg-tags">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}</span>` : ""}
-              </span>
-            </button>
-            ${selected ? renderPackageDetailPanel(pkg) : ""}
-          </div>
+          <button type="button" class="dc-calc-pkg ${selected ? "is-selected" : ""}" data-package-id="${escapeHtml(pkg.id)}" aria-pressed="${selected ? "true" : "false"}">
+            <span class="dc-calc-pkg-radio" aria-hidden="true"></span>
+            <span class="dc-calc-pkg-copy">
+              <strong>${escapeHtml(pkg.package_name)}</strong>
+              <span class="dc-calc-pkg-price">${escapeHtml(priceLabel)}</span>
+              ${tags.length ? `<span class="dc-calc-pkg-tags">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join("")}</span>` : ""}
+            </span>
+          </button>
         `;
       })
       .join("");
 
     const ownSelected = state.packageId === OWN_PACKAGE_ID;
-    const ownPkg = ownSelected ? selectedPackage() : null;
     return `
       <div class="dc-calc-pkg-list" role="listbox" aria-label="Package to compare">
         ${cards}
-        <div class="dc-calc-pkg-group">
-          <button type="button" class="dc-calc-pkg ${ownSelected ? "is-selected" : ""}" data-package-id="${OWN_PACKAGE_ID}" aria-pressed="${ownSelected ? "true" : "false"}">
-            <span class="dc-calc-pkg-radio" aria-hidden="true"></span>
-            <span class="dc-calc-pkg-copy">
-              <strong>Enter my own package</strong>
-              <span class="dc-calc-pkg-price">Custom price</span>
-            </span>
-          </button>
-          ${ownSelected ? renderPackageDetailPanel(ownPkg) : ""}
-        </div>
+        <button type="button" class="dc-calc-pkg ${ownSelected ? "is-selected" : ""}" data-package-id="${OWN_PACKAGE_ID}" aria-pressed="${ownSelected ? "true" : "false"}">
+          <span class="dc-calc-pkg-radio" aria-hidden="true"></span>
+          <span class="dc-calc-pkg-copy">
+            <strong>Enter my own package</strong>
+            <span class="dc-calc-pkg-price">Custom price</span>
+          </span>
+        </button>
       </div>
     `;
   }
@@ -815,6 +808,7 @@
     const pkg = selectedPackage();
     const showPriceField = own || (pkg && pkg.typical_daily_price == null) || Boolean(state.packageId);
     const wifiInFare = state.wifiInFare === true;
+    const packageNotes = pkg ? renderPackageDetailPanel(pkg) : "";
 
     const ownFlags = own
       ? `
@@ -836,53 +830,64 @@
         ${renderTopBar()}
         ${renderHeader()}
 
-        <section class="dc-calc-card dc-calc-package-section" aria-labelledby="dc-package-title" id="dc-calc-form">
+        <section class="dc-calc-card dc-calc-cruise-setup" aria-label="Cruise setup" id="dc-calc-form">
+          <div class="dc-calc-cruise-setup-grid">
+            <div class="dc-calc-field">
+              <label class="dc-calc-label" for="dc-cruise-nights">How many nights is your cruise?</label>
+              <div class="dc-calc-nights-row">
+                <button type="button" class="dc-calc-nights-btn" data-nights-delta="-1" aria-label="Decrease nights">−</button>
+                <input class="dc-calc-input" id="dc-cruise-nights" type="number" inputmode="numeric" min="1" step="1" value="${escapeHtml(state.nights)}">
+                <button type="button" class="dc-calc-nights-btn" data-nights-delta="1" aria-label="Increase nights">+</button>
+              </div>
+            </div>
+            <div class="dc-calc-field">
+              <span class="dc-calc-label">Wi-Fi</span>
+              <div class="dc-calc-checks">
+                <label class="dc-calc-check">
+                  <input type="checkbox" id="dc-wifi-fare" ${wifiInFare ? "checked" : ""}>
+                  <span>Wi-Fi is already included in my cruise fare</span>
+                </label>
+                ${
+                  wifiInFare
+                    ? `<p class="dc-calc-caveat">Because Wi-Fi is included in the fare, it cancels out of the comparison.</p>`
+                    : `<label class="dc-calc-check">
+                        <input type="checkbox" id="dc-wifi-buy" ${state.wouldBuyWifi ? "checked" : ""}>
+                        <span>If Wi-Fi wasn’t included, I would normally purchase Wi-Fi separately</span>
+                      </label>`
+                }
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dc-calc-card dc-calc-package-section" aria-labelledby="dc-package-title">
           <h2 id="dc-package-title">Your Package</h2>
           <div class="dc-calc-package-layout">
-            <div class="dc-calc-field dc-calc-package-choices">
+            <aside class="dc-calc-package-notes-col" aria-label="Selected package notes">
+              ${
+                packageNotes ||
+                `<div class="dc-calc-package-notes-empty">
+                  <p>Select a package to see what’s included and any important notes.</p>
+                </div>`
+              }
+            </aside>
+            <div class="dc-calc-package-choices">
               <span class="dc-calc-label">Package to compare</span>
               ${renderPackageCards()}
               ${
-                !own && pkg && pkg.typical_daily_price != null
-                  ? `<p class="dc-calc-caveat">Typical price — your sailing offer may differ.</p>`
-                  : ""
-              }
-            </div>
-            <div class="dc-calc-package-settings">
-              ${
                 showPriceField
-                  ? `<div class="dc-calc-field">
+                  ? `<div class="dc-calc-field dc-calc-package-price-field">
                       <label class="dc-calc-label" for="dc-package-price">${own ? "Your package price per day" : "Typical price (editable)"} (${escapeHtml(line.currency || "USD")})</label>
                       <input class="dc-calc-input" id="dc-package-price" type="number" inputmode="decimal" min="0" step="0.01" value="${escapeHtml(state.packagePrice)}" placeholder="0.00">
+                      ${
+                        !own && pkg && pkg.typical_daily_price != null
+                          ? `<p class="dc-calc-caveat">Typical price — your sailing offer may differ.</p>`
+                          : ""
+                      }
                     </div>`
                   : ""
               }
               ${ownFlags}
-              <div class="dc-calc-field">
-                <label class="dc-calc-label" for="dc-cruise-nights">How many nights is your cruise?</label>
-                <div class="dc-calc-nights-row">
-                  <button type="button" class="dc-calc-nights-btn" data-nights-delta="-1" aria-label="Decrease nights">−</button>
-                  <input class="dc-calc-input" id="dc-cruise-nights" type="number" inputmode="numeric" min="1" step="1" value="${escapeHtml(state.nights)}">
-                  <button type="button" class="dc-calc-nights-btn" data-nights-delta="1" aria-label="Increase nights">+</button>
-                </div>
-              </div>
-              <div class="dc-calc-field">
-                <span class="dc-calc-label">Wi-Fi</span>
-                <div class="dc-calc-checks">
-                  <label class="dc-calc-check">
-                    <input type="checkbox" id="dc-wifi-fare" ${wifiInFare ? "checked" : ""}>
-                    <span>Wi-Fi is already included in my cruise fare</span>
-                  </label>
-                  ${
-                    wifiInFare
-                      ? `<p class="dc-calc-caveat">Because Wi-Fi is included in the fare, it cancels out of the comparison.</p>`
-                      : `<label class="dc-calc-check">
-                          <input type="checkbox" id="dc-wifi-buy" ${state.wouldBuyWifi ? "checked" : ""}>
-                          <span>If Wi-Fi wasn’t included, I would normally purchase Wi-Fi separately</span>
-                        </label>`
-                  }
-                </div>
-              </div>
             </div>
           </div>
         </section>

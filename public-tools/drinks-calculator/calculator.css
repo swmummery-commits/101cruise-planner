@@ -251,15 +251,51 @@
   margin: 0 0 20px;
 }
 
+.dc-calc-cruise-setup {
+  margin: 0 0 18px;
+}
+
+.dc-calc-cruise-setup-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr);
+  gap: 18px 28px;
+  align-items: start;
+}
+
 .dc-calc-package-section {
   margin: 0 0 18px;
 }
 
 .dc-calc-package-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.9fr);
+  grid-template-columns: minmax(240px, 0.95fr) minmax(0, 1.2fr);
   gap: 20px 28px;
   align-items: start;
+}
+
+.dc-calc-package-notes-col {
+  min-width: 0;
+}
+
+.dc-calc-package-notes-col .dc-calc-pkg-detail {
+  margin-top: 0;
+}
+
+.dc-calc-package-notes-empty {
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: var(--dc-green-soft);
+  border: 1px dashed rgba(141, 217, 191, 0.7);
+}
+
+.dc-calc-package-notes-empty p {
+  margin: 0 !important;
+  color: var(--dc-green-ink) !important;
+  font-size: 0.9rem !important;
+}
+
+.dc-calc-package-price-field {
+  margin-top: 14px;
 }
 
 .dc-calc-workspace {
@@ -743,10 +779,19 @@
 
 @media (max-width: 820px) {
   .dc-calc-grid,
+  .dc-calc-cruise-setup-grid,
   .dc-calc-package-layout,
   .dc-calc-workspace,
   .dc-calc-figures {
     grid-template-columns: 1fr;
+  }
+
+  .dc-calc-package-notes-col {
+    order: 2;
+  }
+
+  .dc-calc-package-choices {
+    order: 1;
   }
 }
 
