@@ -9,6 +9,22 @@
   --brand-green-focus: rgba(141, 217, 191, 0.32);
 }
 
+/* Embedded in Squarespace iframe: avoid 100vh forcing a tall empty band. */
+html.is-embedded,
+html.is-embedded body {
+  height: auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: visible;
+  background: transparent;
+}
+
+html.is-embedded .dashboard-page,
+html.is-embedded .customer-access-page,
+html.is-embedded .planner-preview-loading {
+  min-height: 0;
+}
+
 #cruise-planner-app {
     max-width: 1040px;
     margin: 0 auto;
