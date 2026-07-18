@@ -20,6 +20,19 @@
   const INPUT_DEBOUNCE_MS = 250;
   const OWN_PACKAGE_ID = "__own__";
 
+  /**
+   * Premium packages typically cover higher-tier wine, cocktails and spirits than the
+   * catalogue “average onboard” prices. When a Premium package is selected, the
+   * buy-as-you-go comparison multiplies those three categories by this fixed factor.
+   * Displayed averages, package prices and Classic / Zero Proof maths are unchanged.
+   */
+  const PREMIUM_COMPARISON_UPLIFT = 1.5;
+  const PREMIUM_UPLIFT_DRINK_KEYS = {
+    wine: true,
+    cocktail: true,
+    spirit: true
+  };
+
   const ICON_CURRENCY = `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v10"></path><path d="M15 9.5c0-1.4-1.3-2-3-2s-3 .7-3 2 1.3 1.7 3 2.1 3 .8 3 2.1-1.3 2-3 2-3-.7-3-2"></path></svg>`;
   const ICON_WIFI = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5a9 9 0 0 1 14 0"></path><path d="M8.5 15.5a5 5 0 0 1 7 0"></path><circle cx="12" cy="19" r="1.2" fill="currentColor" stroke="none"></circle></svg>`;
   const ICON_DATE = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"></rect><path d="M8 3v4"></path><path d="M16 3v4"></path><path d="M4 10h16"></path></svg>`;
@@ -247,6 +260,19 @@
     state.packageGratuitiesIncluded = pkg.gratuities_included === true;
   }
 
+  function isPremiumPackage(pkg) {
+    if (!pkg || pkg.isOwn) return false;
+    return /\bpremium\b/i.test(String(pkg.package_name || ""));
+  }
+
+  function comparisonUnitPrice(field, averagePrice, pkg) {
+    if (averagePrice == null) return null;
+    if (isPremiumPackage(pkg) && PREMIUM_UPLIFT_DRINK_KEYS[field.key]) {
+      return averagePrice * PREMIUM_COMPARISON_UPLIFT;
+    }
+    return averagePrice;
+  }
+
   function autoSelectDefaultPackage() {
     // Start with no package selected. Keep a selection only if it is still valid.
     if (!state.packageId) return;
@@ -272,10 +298,12 @@
     const wifiInFare = state.wifiInFare === true || line.wifi_included_in_fare === true;
     const standaloneWifi = priceOrNull(line, "wifi_package_price");
 
+    const selectedPkg = selectedPackage();
     let dailyDrinks = 0;
     DRINK_FIELDS.forEach(field => {
-      const unit = priceOrNull(line, field.priceKey);
+      const averageUnit = priceOrNull(line, field.priceKey);
       const qty = Math.max(0, Math.floor(sanitizeNonNegative(state.qty[field.key])));
+      const unit = comparisonUnitPrice(field, averageUnit, selectedPkg);
       if (unit == null) return;
       dailyDrinks += qty * unit;
     });
