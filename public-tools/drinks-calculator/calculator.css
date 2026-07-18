@@ -252,10 +252,10 @@
 }
 
 .dc-calc-step-label {
-  margin: 0 0 6px !important;
-  font-size: 0.72rem !important;
+  margin: 0 0 8px !important;
+  font-size: 1.15rem !important;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--dc-green-ink) !important;
 }
