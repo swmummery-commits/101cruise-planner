@@ -836,10 +836,10 @@
         ${renderTopBar()}
         ${renderHeader()}
 
-        <div class="dc-calc-grid" id="dc-calc-form">
-          <section class="dc-calc-card" aria-labelledby="dc-package-title">
-            <h2 id="dc-package-title">Your Package</h2>
-            <div class="dc-calc-field">
+        <section class="dc-calc-card dc-calc-package-section" aria-labelledby="dc-package-title" id="dc-calc-form">
+          <h2 id="dc-package-title">Your Package</h2>
+          <div class="dc-calc-package-layout">
+            <div class="dc-calc-field dc-calc-package-choices">
               <span class="dc-calc-label">Package to compare</span>
               ${renderPackageCards()}
               ${
@@ -848,42 +848,46 @@
                   : ""
               }
             </div>
-            ${
-              showPriceField
-                ? `<div class="dc-calc-field">
-                    <label class="dc-calc-label" for="dc-package-price">${own ? "Your package price per day" : "Typical price (editable)"} (${escapeHtml(line.currency || "USD")})</label>
-                    <input class="dc-calc-input" id="dc-package-price" type="number" inputmode="decimal" min="0" step="0.01" value="${escapeHtml(state.packagePrice)}" placeholder="0.00">
-                  </div>`
-                : ""
-            }
-            ${ownFlags}
-            <div class="dc-calc-field">
-              <label class="dc-calc-label" for="dc-cruise-nights">How many nights is your cruise?</label>
-              <div class="dc-calc-nights-row">
-                <button type="button" class="dc-calc-nights-btn" data-nights-delta="-1" aria-label="Decrease nights">−</button>
-                <input class="dc-calc-input" id="dc-cruise-nights" type="number" inputmode="numeric" min="1" step="1" value="${escapeHtml(state.nights)}">
-                <button type="button" class="dc-calc-nights-btn" data-nights-delta="1" aria-label="Increase nights">+</button>
+            <div class="dc-calc-package-settings">
+              ${
+                showPriceField
+                  ? `<div class="dc-calc-field">
+                      <label class="dc-calc-label" for="dc-package-price">${own ? "Your package price per day" : "Typical price (editable)"} (${escapeHtml(line.currency || "USD")})</label>
+                      <input class="dc-calc-input" id="dc-package-price" type="number" inputmode="decimal" min="0" step="0.01" value="${escapeHtml(state.packagePrice)}" placeholder="0.00">
+                    </div>`
+                  : ""
+              }
+              ${ownFlags}
+              <div class="dc-calc-field">
+                <label class="dc-calc-label" for="dc-cruise-nights">How many nights is your cruise?</label>
+                <div class="dc-calc-nights-row">
+                  <button type="button" class="dc-calc-nights-btn" data-nights-delta="-1" aria-label="Decrease nights">−</button>
+                  <input class="dc-calc-input" id="dc-cruise-nights" type="number" inputmode="numeric" min="1" step="1" value="${escapeHtml(state.nights)}">
+                  <button type="button" class="dc-calc-nights-btn" data-nights-delta="1" aria-label="Increase nights">+</button>
+                </div>
+              </div>
+              <div class="dc-calc-field">
+                <span class="dc-calc-label">Wi-Fi</span>
+                <div class="dc-calc-checks">
+                  <label class="dc-calc-check">
+                    <input type="checkbox" id="dc-wifi-fare" ${wifiInFare ? "checked" : ""}>
+                    <span>Wi-Fi is already included in my cruise fare</span>
+                  </label>
+                  ${
+                    wifiInFare
+                      ? `<p class="dc-calc-caveat">Because Wi-Fi is included in the fare, it cancels out of the comparison.</p>`
+                      : `<label class="dc-calc-check">
+                          <input type="checkbox" id="dc-wifi-buy" ${state.wouldBuyWifi ? "checked" : ""}>
+                          <span>If Wi-Fi wasn’t included, I would normally purchase Wi-Fi separately</span>
+                        </label>`
+                  }
+                </div>
               </div>
             </div>
-            <div class="dc-calc-field">
-              <span class="dc-calc-label">Wi-Fi</span>
-              <div class="dc-calc-checks">
-                <label class="dc-calc-check">
-                  <input type="checkbox" id="dc-wifi-fare" ${wifiInFare ? "checked" : ""}>
-                  <span>Wi-Fi is already included in my cruise fare</span>
-                </label>
-                ${
-                  wifiInFare
-                    ? `<p class="dc-calc-caveat">Because Wi-Fi is included in the fare, it cancels out of the comparison.</p>`
-                    : `<label class="dc-calc-check">
-                        <input type="checkbox" id="dc-wifi-buy" ${state.wouldBuyWifi ? "checked" : ""}>
-                        <span>If Wi-Fi wasn’t included, I would normally purchase Wi-Fi separately</span>
-                      </label>`
-                }
-              </div>
-            </div>
-          </section>
+          </div>
+        </section>
 
+        <div class="dc-calc-workspace">
           <section class="dc-calc-card" aria-labelledby="dc-day-title">
             <h2 id="dc-day-title">Your Typical Day</h2>
             <p class="dc-calc-day-guide">
@@ -898,18 +902,32 @@
             </div>
             <p class="dc-calc-live">Results update automatically as you change your selections.</p>
           </section>
+
+          <section class="dc-calc-results-panel" aria-label="Comparison results">
+            ${renderResults()}
+          </section>
         </div>
 
-        ${renderResults()}
         ${renderInfoPanel()}
       </section>
     `;
   }
 
+  let revealedPackageDetailId = null;
+
   function revealSelectedPackageDetail() {
     if (!mount) return;
     const panel = mount.querySelector("[data-pkg-detail]");
-    if (!panel) return;
+    if (!panel) {
+      revealedPackageDetailId = null;
+      return;
+    }
+    const currentId = String(state.packageId || "");
+    if (currentId && currentId === revealedPackageDetailId) {
+      panel.classList.add("is-open");
+      return;
+    }
+    revealedPackageDetailId = currentId || null;
     window.requestAnimationFrame(() => {
       window.requestAnimationFrame(() => {
         panel.classList.add("is-open");
@@ -1007,7 +1025,9 @@
       button.addEventListener("click", () => {
         const delta = Number(button.getAttribute("data-nights-delta")) || 0;
         state.nights = Math.max(1, Math.floor(sanitizeNonNegative(state.nights)) + delta);
-        scheduleLiveUpdate(true);
+        const nightsInput = mount.querySelector("#dc-cruise-nights");
+        if (nightsInput) nightsInput.value = String(state.nights);
+        scheduleLiveUpdate(false);
       });
     });
 
@@ -1050,7 +1070,7 @@
           const step = Number(button.getAttribute("data-step")) || 0;
           state.qty[key] = Math.max(0, Math.floor(sanitizeNonNegative(state.qty[key])) + step);
           if (output) output.textContent = String(state.qty[key]);
-          scheduleLiveUpdate(true);
+          scheduleLiveUpdate(false);
         });
       });
     });
