@@ -38,7 +38,9 @@ let showSmartProfileForm = false;
 let crmSyncResult = null;
 let crmSyncMessage = "";
 let crmSyncLoading = false;
+let crmBookingReferenceInput = "";
 let plannerPreviewMessage = "";
+let plannerPreviewLookupInput = "";
 let itineraryReview = null;
 let itineraryMessage = "";
 let itineraryLoading = false;
@@ -723,7 +725,7 @@ function renderCrmSyncPanel() {
       <div class="crm-sync-form">
         <div class="admin-field crm-sync-input">
           <label>Booking reference</label>
-          <input type="text" id="crmBookingReference" placeholder="Example: 4118719" onkeydown="handleCrmSyncKeydown(event)">
+          <input type="text" id="crmBookingReference" value="${esc(crmBookingReferenceInput)}" placeholder="Example: SWM123456" oninput="crmBookingReferenceInput=this.value" onkeydown="handleCrmSyncKeydown(event)">
         </div>
         <button class="admin-button black" onclick="syncCrmBooking()" ${crmSyncLoading ? "disabled" : ""}>${crmSyncLoading ? "Syncing..." : "Sync Booking"}</button>
       </div>
@@ -1127,8 +1129,8 @@ function renderPlannerPreviewPanel() {
       <div class="crm-sync-form">
         <div class="admin-field crm-sync-input">
           <label>Booking reference or Base44 booking ID</label>
-          <input type="text" id="plannerPreviewLookup" placeholder="Example: 4118719 or 6a080226fdbea57912141f3e" onkeydown="handlePlannerPreviewKeydown(event)">
-          <div class="admin-helper">Use a booking already in Base44. The preview opens in a new tab and does not require a customer login.</div>
+          <input type="text" id="plannerPreviewLookup" value="${esc(plannerPreviewLookupInput)}" placeholder="Example: SWM123456" oninput="plannerPreviewLookupInput=this.value" onkeydown="handlePlannerPreviewKeydown(event)">
+          <div class="admin-helper">Stay signed in to Admin. Preview opens in a new tab using your Admin session (customer login is not required).</div>
         </div>
         <button class="admin-button black" onclick="openPlannerPreviewFromInput()">Preview Planner</button>
       </div>
@@ -1150,21 +1152,30 @@ function handlePlannerPreviewKeydown(event) {
 
 function openPlannerPreviewFromInput() {
   const input = document.getElementById("plannerPreviewLookup");
-  const lookup = input ? input.value.trim() : "";
+  const lookup = input ? input.value.trim() : plannerPreviewLookupInput;
+  plannerPreviewLookupInput = lookup;
   openPlannerPreview(lookup);
 }
 
-function openPlannerPreview(lookup) {
+async function openPlannerPreview(lookup) {
   const safeLookup = String(lookup || "").trim();
+  plannerPreviewLookupInput = safeLookup;
   if (!safeLookup) {
     plannerPreviewMessage = "Enter a booking reference or Base44 booking ID first.";
     renderAdmin();
     return;
   }
 
+  const { data } = await supabaseClient.auth.getSession();
+  if (!data.session?.access_token) {
+    plannerPreviewMessage = "Admin session missing. Sign out and sign in again, then retry Preview.";
+    renderAdmin();
+    return;
+  }
+
   const previewUrl = `${window.location.origin}/?preview=${encodeURIComponent(safeLookup)}`;
   window.open(previewUrl, "_blank", "noopener");
-  plannerPreviewMessage = "Planner preview opened in a new tab.";
+  plannerPreviewMessage = "Planner preview opened in a new tab. Keep this Admin tab signed in.";
   renderAdmin();
 }
 
@@ -1177,7 +1188,8 @@ function formatAdminDate(value) {
 
 async function syncCrmBooking() {
   const input = document.getElementById("crmBookingReference");
-  const bookingReference = input ? input.value.trim() : "";
+  const bookingReference = (input ? input.value.trim() : crmBookingReferenceInput).trim();
+  crmBookingReferenceInput = bookingReference;
 
   if (!bookingReference) {
     crmSyncMessage = "Enter a booking reference first.";
@@ -1196,6 +1208,10 @@ async function syncCrmBooking() {
 
   try {
     const headers = await adminAuthHeaders();
+    if (!headers.Authorization || headers.Authorization === "Bearer ") {
+      throw new Error("Admin session missing. Sign out and sign in again, then retry CRM Sync.");
+    }
+
     const response = await fetch("/.netlify/functions/get-booking", {
       method: "POST",
       headers,
@@ -1223,7 +1239,11 @@ async function syncCrmBooking() {
         "."
       : "";
     crmSyncMessage = `Booking retrieved from Base44 and saved to 101CRUISE.${syncNote}`;
-    await loadCrmDocuments();
+    try {
+      await loadCrmDocuments();
+    } catch (docError) {
+      crmDocumentsMessage = `Error: ${docError.message || docError}`;
+    }
   } catch (error) {
     console.error("CRM sync failed", error);
     crmSyncResult = null;

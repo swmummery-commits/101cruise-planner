@@ -162,6 +162,15 @@ function renderAdminPreviewError(message) {
   `;
 }
 
+async function getAdminAccessToken() {
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    return data.session?.access_token || "";
+  } catch (_error) {
+    return "";
+  }
+}
+
 async function loadAdminPreview(lookup) {
   adminPreviewMode = true;
   adminPreviewLookup = lookup;
@@ -178,9 +187,17 @@ async function loadAdminPreview(lookup) {
       ? { booking_id: lookup }
       : { booking_reference: lookup };
 
+    const accessToken = await getAdminAccessToken();
+    if (!accessToken) {
+      throw new Error("Admin sign-in is required for Planner Preview. Open Admin, sign in, then try Preview again.");
+    }
+
     const response = await fetch("/.netlify/functions/get-booking", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      },
       body: JSON.stringify(payload)
     });
 
@@ -261,9 +278,16 @@ async function syncInvitationBookingForCurrentUser() {
   invitationSyncMessage = "Retrieving your cruise booking...";
 
   try {
-    const response = await fetch("/.netlify/functions/get-booking", {
+    const { data: sessionData } = await supabaseClient.auth.getSession();
+    const accessToken = sessionData.session?.access_token || "";
+    if (!accessToken) throw new Error("Sign in is required to retrieve your cruise booking.");
+
+    const response = await fetch("/.netlify/functions/claim-invitation-booking", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      },
       body: JSON.stringify({ booking_id: bookingId })
     });
 
@@ -2703,9 +2727,15 @@ async function resolveFullBookingPayload(cruise) {
   if (!bookingId && !bookingReference) return getDashboardBookingSource(cruise);
 
   try {
+    const accessToken = await getAdminAccessToken();
+    if (!accessToken) return getDashboardBookingSource(cruise);
+
     const response = await fetch("/.netlify/functions/get-booking", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${accessToken}`
+      },
       body: JSON.stringify(bookingId ? { booking_id: bookingId } : { booking_reference: bookingReference })
     });
     const data = await response.json().catch(() => ({ success: false }));
