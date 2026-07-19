@@ -5419,11 +5419,18 @@ html.is-embedded .customer-access-card {
   place-items: center;
   border-radius: 15px;
   background: #f4f5f7;
-  font-size: 1.55rem;
+  color: #1f2937;
+}
+
+.document-card-icon svg {
+  width: 26px;
+  height: 26px;
+  display: block;
 }
 
 .document-card-primary .document-card-icon {
   background: #fff1f1;
+  color: #8f151b;
 }
 
 .document-card-content { min-width: 0; }
@@ -5433,7 +5440,7 @@ html.is-embedded .customer-access-card {
   align-items: flex-start;
   gap: 12px;
 }
-.document-card-heading h3 { margin: 3px 0 4px; }
+.document-card-heading h3 { margin: 3px 0 4px; color: #111827; }
 .document-primary-badge {
   display: inline-flex;
   color: #a5141a;
@@ -5465,12 +5472,21 @@ html.is-embedded .customer-access-card {
   font-size: 0.8rem;
 }
 .document-notes {
-  margin: 12px 0 0;
-  padding: 11px 13px;
-  border-radius: 12px;
-  background: #f7f8f9;
-  color: #4b5563;
-  font-size: 0.88rem;
+  margin: 6px 0 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #1a1a1a;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+.document-unavailable {
+  margin: 10px 0 0;
+  color: #6b7280;
+  font-size: 0.86rem;
+}
+.document-row {
+  width: 100%;
 }
 .document-actions {
   display: flex;
@@ -5491,7 +5507,15 @@ html.is-embedded .customer-access-card {
   padding: 8px;
 }
 .documents-empty { text-align: center; padding: 42px 24px; }
-.documents-empty-icon { font-size: 2.2rem; margin-bottom: 8px; }
+.documents-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 10px;
+  color: #4b5563;
+  display: grid;
+  place-items: center;
+}
+.documents-empty-icon svg { width: 40px; height: 40px; }
 
 .document-upload-overlay {
   position: fixed;

@@ -1,4 +1,5 @@
 const { fetchBase44Booking } = require('./booking-service');
+const { requireAdmin } = require('./admin-auth');
 
 function jsonResponse(statusCode, body) {
   return {
@@ -20,37 +21,6 @@ function config() {
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!supabaseUrl || !serviceKey) throw new Error('Supabase server configuration is missing');
   return { supabaseUrl, serviceKey, openaiKey };
-}
-
-async function requireAdmin(event) {
-  const { supabaseUrl, serviceKey } = config();
-  const token = String(event.headers.authorization || event.headers.Authorization || '').replace(/^Bearer\s+/i, '').trim();
-  if (!token) {
-    const error = new Error('Admin authentication is required');
-    error.statusCode = 401;
-    throw error;
-  }
-
-  const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-    headers: { apikey: serviceKey, Authorization: `Bearer ${token}` }
-  });
-  const user = await userResponse.json().catch(() => null);
-  if (!userResponse.ok || !user?.id) {
-    const error = new Error('Admin session is invalid or has expired');
-    error.statusCode = 401;
-    throw error;
-  }
-
-  const profileResponse = await fetch(`${supabaseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(user.id)}&select=is_admin&limit=1`, {
-    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }
-  });
-  const profiles = await profileResponse.json().catch(() => []);
-  if (!profileResponse.ok || profiles?.[0]?.is_admin !== true) {
-    const error = new Error('This account does not have admin access');
-    error.statusCode = 403;
-    throw error;
-  }
-  return user;
 }
 
 async function rest(path, options = {}) {

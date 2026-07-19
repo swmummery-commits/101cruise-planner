@@ -1,3 +1,5 @@
+const { syncBookingDocuments } = require('./document-sync');
+
 function normalise(value) {
   return String(value || '').trim();
 }
@@ -9,6 +11,40 @@ function getConfig() {
     throw new Error('Base44 booking service is not configured');
   }
   return { base44Url, base44ApiKey };
+}
+
+function getSupabaseConfig() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) return null;
+  return { supabaseUrl: supabaseUrl.replace(/\/$/, ''), serviceKey };
+}
+
+async function supabaseRest(path, options = {}) {
+  const config = getSupabaseConfig();
+  if (!config) throw new Error('Supabase server configuration is missing');
+  const headers = {
+    apikey: config.serviceKey,
+    Authorization: `Bearer ${config.serviceKey}`,
+    ...(options.headers || {})
+  };
+  if (options.body !== undefined && options.body !== null) headers['Content-Type'] = 'application/json';
+  const response = await fetch(`${config.supabaseUrl}/rest/v1/${path}`, {
+    ...options,
+    headers
+  });
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+  if (!response.ok) {
+    const message = data?.message || data?.error || text || `Supabase HTTP ${response.status}`;
+    throw new Error(message);
+  }
+  return data;
 }
 
 async function fetchBase44Booking({ booking_reference, booking_id }) {
@@ -45,9 +81,7 @@ async function fetchBase44Booking({ booking_reference, booking_id }) {
 }
 
 async function cacheBookingInSupabase(booking) {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!supabaseUrl || !serviceKey) return null;
+  if (!getSupabaseConfig()) return null;
 
   const payload = {
     base44_booking_id: booking.base44_booking_id || null,
@@ -73,24 +107,38 @@ async function cacheBookingInSupabase(booking) {
     raw_payload: booking
   };
 
-  const response = await fetch(`${supabaseUrl}/rest/v1/base44_booking_cache?on_conflict=base44_booking_id`, {
+  const rows = await supabaseRest('base44_booking_cache?on_conflict=base44_booking_id', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      Prefer: 'resolution=merge-duplicates,return=representation'
-    },
+    headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
     body: JSON.stringify(payload)
   });
 
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    throw new Error(`Could not cache booking (HTTP ${response.status})${text ? `: ${text}` : ''}`);
-  }
-
-  const rows = await response.json().catch(() => []);
   return Array.isArray(rows) ? rows[0] || null : rows;
 }
 
-module.exports = { fetchBase44Booking, cacheBookingInSupabase };
+async function syncDocumentsForBooking(booking, source = null) {
+  if (!getSupabaseConfig()) {
+    return { found: 0, upserted: 0, skipped_conflict: 0, skipped_other_source: 0, errors: ['Supabase not configured'], rows: [] };
+  }
+  try {
+    return await syncBookingDocuments(supabaseRest, booking, source);
+  } catch (error) {
+    // Table may not exist until migration is applied.
+    console.warn('Document sync skipped or failed', error.message || error);
+    return {
+      found: 0,
+      upserted: 0,
+      skipped_conflict: 0,
+      skipped_other_source: 0,
+      errors: [error.message || String(error)],
+      rows: []
+    };
+  }
+}
+
+module.exports = {
+  fetchBase44Booking,
+  cacheBookingInSupabase,
+  syncDocumentsForBooking,
+  supabaseRest
+};

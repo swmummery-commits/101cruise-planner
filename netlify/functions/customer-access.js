@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { fetchBase44Booking, cacheBookingInSupabase } = require('./booking-service');
+const { fetchBase44Booking, cacheBookingInSupabase, syncDocumentsForBooking } = require('./booking-service');
 
 function jsonResponse(statusCode, body) {
   return {
@@ -44,8 +44,9 @@ exports.handler = async function (event) {
     if (!sessionSecret) return jsonResponse(500, { success: false, error: 'Customer access is not fully configured.' });
 
     let booking;
+    let source;
     try {
-      ({ booking } = await fetchBase44Booking({ booking_reference: bookingReference }));
+      ({ booking, source } = await fetchBase44Booking({ booking_reference: bookingReference }));
     } catch (lookupError) {
       console.warn('Customer booking lookup failed', lookupError);
       return jsonResponse(401, { success: false, error: 'We could not match those booking details.' });
@@ -55,6 +56,11 @@ exports.handler = async function (event) {
     }
 
     const cached = await cacheBookingInSupabase(booking);
+    try {
+      await syncDocumentsForBooking(booking, source);
+    } catch (syncError) {
+      console.warn('Customer access document sync failed', syncError);
+    }
     const bookingId = String(booking.base44_booking_id || cached?.base44_booking_id || booking.booking_reference);
     const token = createSessionToken({ booking_id: bookingId, booking_reference: booking.booking_reference, exp: Date.now() + 12 * 60 * 60 * 1000 }, sessionSecret);
 

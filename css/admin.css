@@ -1607,6 +1607,34 @@
 }
 .itinerary-empty { margin: 14px 0 0; }
 
+.crm-documents-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+.crm-document-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid var(--admin-border, #e3e8e5);
+  border-radius: 12px;
+  background: #fff;
+}
+.crm-document-row .admin-pill { margin-left: 8px; }
+.crm-document-note {
+  margin: 8px 0 0;
+  color: #1a1a1a;
+  font-size: 13px;
+  line-height: 1.45;
+}
+@media (max-width: 720px) {
+  .crm-document-row {
+    flex-direction: column;
+  }
+}
+
 /* Packing item restrictions and save-position feedback */
 .admin-restriction-help {
   display: none;

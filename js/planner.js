@@ -2999,22 +2999,53 @@ const CUSTOMER_DOCUMENT_TYPES = [
   "Other"
 ];
 
+const DOCUMENT_TYPE_ORDER = [
+  "booking confirmation",
+  "invoice",
+  "final invoice",
+  "travel insurance",
+  "insurance policy",
+  "flight itinerary",
+  "flight confirmation",
+  "accommodation",
+  "hotel confirmation",
+  "transfers",
+  "luggage tags",
+  "boarding pass",
+  "electronic ticket / boarding pass",
+  "shore excursions",
+  "shore excursion ticket",
+  "visa",
+  "visa / entry information",
+  "entry information"
+];
+
 function normaliseDocumentType(value) {
   return String(value || "Other").trim() || "Other";
 }
 
+function documentOutlineIcon(kind) {
+  const icons = {
+    file: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14 3v5h5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    shield: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l8 3v6c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V6l8-3z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    plane: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 13l7-1 3-7 2 1-2 6 6 2-1 2-7-1-3 5H6l2-5-5-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+    home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 20v-6h4v6" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    ticket: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v3a2 2 0 0 0 0 4v3H4v-3a2 2 0 0 0 0-4z" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    map: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l6 2 5-2v16l-5 2-6-2-5 2V6l5-2z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M9 4v16M15 6v16" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
+    id: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="9" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M14 10h4M14 14h4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>'
+  };
+  return icons[kind] || icons.file;
+}
+
 function getDocumentIcon(document) {
   const type = normaliseDocumentType(document.document_type).toLowerCase();
-  const filename = String(document.filename || "").toLowerCase();
-  if (type.includes("booking confirmation")) return "📘";
-  if (type.includes("ticket") || type.includes("boarding")) return "🎫";
-  if (type.includes("insurance")) return "🛡️";
-  if (type.includes("passport") || type.includes("visa")) return "🛂";
-  if (type.includes("flight")) return "✈️";
-  if (type.includes("hotel")) return "🏨";
-  if (type.includes("shore excursion")) return "🗺️";
-  if (filename.endsWith(".png") || filename.endsWith(".jpg") || filename.endsWith(".jpeg")) return "🖼️";
-  return "📄";
+  if (type.includes("insurance")) return documentOutlineIcon("shield");
+  if (type.includes("flight")) return documentOutlineIcon("plane");
+  if (type.includes("hotel") || type.includes("accommodation")) return documentOutlineIcon("home");
+  if (type.includes("boarding") || type.includes("ticket") || type.includes("luggage")) return documentOutlineIcon("ticket");
+  if (type.includes("shore") || type.includes("transfer")) return documentOutlineIcon("map");
+  if (type.includes("visa") || type.includes("passport") || type.includes("entry")) return documentOutlineIcon("id");
+  return documentOutlineIcon("file");
 }
 
 function formatDocumentDate(value) {
@@ -3026,9 +3057,12 @@ function formatDocumentDate(value) {
 
 function getDocumentPriority(document) {
   const type = normaliseDocumentType(document.document_type).toLowerCase();
-  if (type === "booking confirmation") return 0;
-  if (type.includes("ticket") || type.includes("boarding pass")) return 1;
-  return 2;
+  const exact = DOCUMENT_TYPE_ORDER.indexOf(type);
+  if (exact >= 0) return exact;
+  for (let i = 0; i < DOCUMENT_TYPE_ORDER.length; i += 1) {
+    if (type.includes(DOCUMENT_TYPE_ORDER[i]) || DOCUMENT_TYPE_ORDER[i].includes(type)) return i;
+  }
+  return DOCUMENT_TYPE_ORDER.length + 1;
 }
 
 function sortDocuments(documents) {
@@ -3039,13 +3073,30 @@ function sortDocuments(documents) {
   });
 }
 
+function isDocumentVisibleToCustomer(document) {
+  if (document.document_visible_to_customer === false) return false;
+  if (document.visible_to_customer === false || document.visible_to_client === false) return false;
+  return true;
+}
+
+function customerFacingNote(document) {
+  if (document.note_visible_to_customer === false || document.notes_visible_to_customer === false) return "";
+  return String(document.note || document.notes || "").trim();
+}
+
 function openDocument(url) {
-  if (!url) return;
+  if (!url) {
+    alert("This document file is temporarily unavailable. Please try again later or contact 101cruise.");
+    return;
+  }
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
 function downloadDocument(url, filename) {
-  if (!url) return;
+  if (!url) {
+    alert("This document file is temporarily unavailable. Please try again later or contact 101cruise.");
+    return;
+  }
   const link = document.createElement("a");
   link.href = url;
   link.download = filename || "travel-document";
@@ -3057,7 +3108,10 @@ function downloadDocument(url, filename) {
 }
 
 function printDocument(url) {
-  if (!url) return;
+  if (!url) {
+    alert("This document file is temporarily unavailable. Please try again later or contact 101cruise.");
+    return;
+  }
   const printWindow = window.open(url, "_blank", "noopener,noreferrer");
   if (!printWindow) alert("Your browser blocked the document window. Please use Open and print from the new tab.");
 }
@@ -3065,22 +3119,25 @@ function printDocument(url) {
 function renderDocumentCard(document) {
   const source = document.source === "customer" ? "You" : "101cruise";
   const primary = normaliseDocumentType(document.document_type).toLowerCase() === "booking confirmation";
-  const encodedUrl = encodeURIComponent(document.file_url || "");
+  const note = customerFacingNote(document);
+  const fileUrl = document.file_unavailable ? "" : (document.file_url || "");
+  const encodedUrl = encodeURIComponent(fileUrl);
   const encodedFilename = encodeURIComponent(document.filename || "travel-document");
   return `
-    <article class="document-card ${primary ? "document-card-primary" : ""}">
+    <article class="document-card document-row ${primary ? "document-card-primary" : ""}">
       <div class="document-card-icon" aria-hidden="true">${getDocumentIcon(document)}</div>
       <div class="document-card-content">
         <div class="document-card-heading">
           <div>
             ${primary ? '<span class="document-primary-badge">Primary travel document</span>' : ""}
             <h3>${escapeHtml(normaliseDocumentType(document.document_type))}</h3>
+            ${note ? `<p class="document-notes">${escapeHtml(note)}</p>` : ""}
           </div>
           <span class="document-source-badge">${escapeHtml(source)}</span>
         </div>
         <p class="document-filename">${escapeHtml(document.filename || "Travel document")}</p>
         <p class="document-meta">Added ${escapeHtml(formatDocumentDate(document.uploaded_date || document.uploaded_at))}</p>
-        ${document.notes ? `<p class="document-notes">${escapeHtml(document.notes)}</p>` : ""}
+        ${document.file_unavailable || !fileUrl ? `<p class="document-unavailable">This file is temporarily unavailable. Please try again later.</p>` : ""}
         <div class="document-actions">
           <button class="planner-button secondary" onclick="openDocument(decodeURIComponent('${encodedUrl}'))">Open</button>
           <button class="planner-button secondary" onclick="downloadDocument(decodeURIComponent('${encodedUrl}'), decodeURIComponent('${encodedFilename}'))">Download</button>
@@ -3089,6 +3146,44 @@ function renderDocumentCard(document) {
         </div>
       </div>
     </article>`;
+}
+
+async function listBookingLibraryDocuments() {
+  if (!customerMode || !customerSessionToken) return [];
+  try {
+    const response = await fetch("/.netlify/functions/booking-documents", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${customerSessionToken}`
+      },
+      body: JSON.stringify({ action: "list" })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) return [];
+    return (data.documents || []).map((document) => ({
+      ...document,
+      source: document.source_system === "customer" ? "customer" : "booking",
+      notes: document.note || document.notes || ""
+    }));
+  } catch (_error) {
+    return [];
+  }
+}
+
+function fallbackBookingDocumentsFromPayload() {
+  const raw = customerBooking?._preview_booking?.documents
+    || customerBooking?.documents
+    || [];
+  return raw
+    .filter(isDocumentVisibleToCustomer)
+    .map((document, index) => ({
+      ...document,
+      id: document.id || `payload-${index}`,
+      source: "booking",
+      note: customerFacingNote(document),
+      notes: customerFacingNote(document)
+    }));
 }
 
 async function renderDocuments() {
@@ -3114,20 +3209,22 @@ async function renderDocuments() {
     </div>`;
 
   try {
-    const base44Documents = (customerBooking?._preview_booking?.documents || customerBooking?.documents || cruise?._preview_booking?.documents || []).map((document, index) => ({
-      ...document,
-      id: `base44-${index}`,
-      source: "base44"
-    }));
+    let libraryDocuments = await listBookingLibraryDocuments();
+    if (!libraryDocuments.length) {
+      libraryDocuments = fallbackBookingDocumentsFromPayload();
+    } else {
+      libraryDocuments = libraryDocuments.filter(isDocumentVisibleToCustomer);
+    }
+
     let customerDocuments = [];
     if (customerMode) {
       const data = await customerDocumentsRequest("list");
       customerDocuments = (data.documents || []).map(document => ({ ...document, source: "customer" }));
     }
-    const documents = sortDocuments([...base44Documents, ...customerDocuments]);
+    const documents = sortDocuments([...libraryDocuments, ...customerDocuments]);
     const list = document.getElementById("documents-list");
     if (!documents.length) {
-      list.innerHTML = `<div class="planner-card documents-empty"><div class="documents-empty-icon">📄</div><h3>No travel documents have been uploaded yet.</h3><p class="planner-muted">Your 101cruise consultant will add booking documents here as they become available. You can also upload your own insurance, passport, visa, flight, hotel or excursion documents.</p></div>`;
+      list.innerHTML = `<div class="planner-card documents-empty"><div class="documents-empty-icon" aria-hidden="true">${documentOutlineIcon("file")}</div><h3>No documents are available yet</h3><p class="planner-muted">When your 101cruise consultant shares booking documents with you, they will appear here. You can also upload your own insurance, flight or travel documents.</p></div>`;
       return;
     }
     list.innerHTML = `<div class="documents-count">${documents.length} ${documents.length === 1 ? "document" : "documents"}</div>${documents.map(renderDocumentCard).join("")}`;

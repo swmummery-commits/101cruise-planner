@@ -215,28 +215,102 @@ function updateAdminMultiSelect(id) {
 }
 
 
+let adminLoginMode = "signin";
+let crmDocuments = [];
+let crmDocumentsLoading = false;
+let crmDocumentsMessage = "";
+
 function renderLogin(message = "") {
   app.classList.remove("is-calculator-data");
+  const resetMode = adminLoginMode === "reset";
   app.innerHTML = `
     <div class="admin-card">
       <h2>101cruise Admin</h2>
-      <p class="admin-muted">Sign in with your admin account to manage planner content.</p>
+      <p class="admin-muted">${resetMode
+        ? "Enter your admin email and we will send a secure password reset link."
+        : "Sign in with your individual admin account to manage planner content."}</p>
 
       <div class="admin-field">
         <label>Email address</label>
-        <input type="email" id="adminEmail" placeholder="you@example.com">
+        <input type="email" id="adminEmail" placeholder="you@example.com" autocomplete="username">
       </div>
 
+      ${resetMode ? "" : `
       <div class="admin-field">
         <label>Password</label>
-        <input type="password" id="adminPassword">
+        <input type="password" id="adminPassword" autocomplete="current-password">
       </div>
+      `}
 
-      <button class="admin-button black" onclick="adminSignIn()">Sign In</button>
+      <button class="admin-button black" onclick="${resetMode ? "adminRequestPasswordReset()" : "adminSignIn()"}">
+        ${resetMode ? "Send reset link" : "Sign In"}
+      </button>
+      <button class="admin-button secondary" style="margin-top:10px" onclick="toggleAdminLoginMode()">
+        ${resetMode ? "Back to sign in" : "Forgot password?"}
+      </button>
 
       <div id="admin-login-message" class="admin-message ${message ? "admin-error" : ""}">${esc(message)}</div>
     </div>
   `;
+}
+
+function toggleAdminLoginMode() {
+  adminLoginMode = adminLoginMode === "reset" ? "signin" : "reset";
+  renderLogin();
+}
+
+async function adminRequestPasswordReset() {
+  const email = document.getElementById("adminEmail")?.value.trim();
+  const messageEl = document.getElementById("admin-login-message");
+  if (!email) {
+    if (messageEl) {
+      messageEl.className = "admin-message admin-error";
+      messageEl.innerText = "Enter your admin email address.";
+    }
+    return;
+  }
+  const redirectTo = `${window.location.origin}${window.location.pathname}`;
+  const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) {
+    if (messageEl) {
+      messageEl.className = "admin-message admin-error";
+      messageEl.innerText = error.message;
+    }
+    return;
+  }
+  adminLoginMode = "signin";
+  renderLogin();
+  const success = document.getElementById("admin-login-message");
+  if (success) {
+    success.className = "admin-message";
+    success.innerText = "If that email belongs to an admin account, a reset link has been sent.";
+  }
+}
+
+async function assertAdminAccess() {
+  if (!currentProfile || currentProfile.is_admin !== true) {
+    return { ok: false, message: "This account does not have admin access." };
+  }
+
+  // Optional allow-list: if admin_users rows exist for this user/email and all are inactive, deny.
+  try {
+    const email = String(currentUser?.email || "").trim().toLowerCase();
+    let query = supabaseClient.from("admin_users").select("id,active,role,email").limit(5);
+    if (email) {
+      query = query.or(`auth_user_id.eq.${currentUser.id},email.eq.${email}`);
+    } else {
+      query = query.eq("auth_user_id", currentUser.id);
+    }
+    const { data, error } = await query;
+    if (!error && Array.isArray(data) && data.length) {
+      const active = data.some((row) => row.active === true);
+      if (!active) return { ok: false, message: "This admin account has been deactivated." };
+    }
+  } catch (_error) {
+    // Table may not exist until migration is applied — fall back to profiles.is_admin.
+  }
+
+  return { ok: true };
 }
 
 async function adminSignIn() {
@@ -253,11 +327,12 @@ async function adminSignIn() {
   currentUser = data.user;
   await loadProfile();
 
-  if (!currentProfile || currentProfile.is_admin !== true) {
+  const access = await assertAdminAccess();
+  if (!access.ok) {
     await supabaseClient.auth.signOut();
     currentUser = null;
     currentProfile = null;
-    renderLogin("This account does not have admin access.");
+    renderLogin(access.message);
     return;
   }
 
@@ -269,6 +344,8 @@ async function adminSignOut() {
   await supabaseClient.auth.signOut();
   currentUser = null;
   currentProfile = null;
+  crmSyncResult = null;
+  crmDocuments = [];
   renderLogin();
 }
 
@@ -280,6 +357,15 @@ async function loadProfile() {
     .single();
 
   currentProfile = error ? null : data;
+}
+
+async function adminAuthHeaders(extra = {}) {
+  const { data } = await supabaseClient.auth.getSession();
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${data.session?.access_token || ""}`,
+    ...extra
+  };
 }
 
 /**
@@ -718,8 +804,194 @@ function renderCrmBookingPreview(booking) {
         <button class="admin-button secondary" onclick="extractBookingItinerary()" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading ? "Extracting…" : "Extract Booking Confirmation"}</button>
       </div>
       ${renderItineraryReview(booking)}
+      ${renderCrmDocumentsPanel(booking)}
     </div>
   `;
+}
+
+function sourceLabel(source) {
+  if (source === "base44") return "Base44";
+  if (source === "admin") return "101cruise Admin";
+  if (source === "customer") return "Customer";
+  return source || "Unknown";
+}
+
+function renderCrmDocumentsPanel(booking) {
+  const messageClass = crmDocumentsMessage.toLowerCase().includes("error") ? "admin-error" : "";
+  const docs = crmDocuments || [];
+  return `
+    <section class="itinerary-review-panel crm-documents-panel">
+      <div class="admin-list-top">
+        <div>
+          <h4>Document Library</h4>
+          <p class="admin-muted">Base44 documents are synced as read-only. Upload Admin documents here when they should live in 101cruise.</p>
+        </div>
+        <button class="admin-button secondary small" onclick="loadCrmDocuments()" ${crmDocumentsLoading ? "disabled" : ""}>
+          ${crmDocumentsLoading ? "Loading…" : "Refresh documents"}
+        </button>
+      </div>
+      <div class="admin-message ${messageClass}">${esc(crmDocumentsMessage)}</div>
+      ${docs.length ? `
+        <div class="crm-documents-list">
+          ${docs.map((doc) => `
+            <article class="crm-document-row">
+              <div>
+                <strong>${esc(doc.document_type || "Other")}</strong>
+                <span class="admin-pill">${esc(sourceLabel(doc.source_system))}</span>
+                ${doc.document_visible_to_customer === false ? '<span class="admin-pill">Hidden from customer</span>' : ""}
+                <p class="admin-muted">${esc(doc.filename || "Untitled file")}</p>
+                ${doc.note ? `<p class="crm-document-note">${esc(doc.note)}</p>` : ""}
+                <p class="admin-small">Uploaded ${esc(formatAdminDate(String(doc.uploaded_at || "").slice(0, 10)))}</p>
+              </div>
+              <div class="admin-actions-row">
+                ${doc.file_url ? `<a class="admin-button secondary small" href="${esc(doc.file_url)}" target="_blank" rel="noopener noreferrer">Open</a>` : `<span class="admin-muted">File unavailable</span>`}
+                ${doc.editable ? `<button class="admin-button secondary small" onclick="deleteAdminBookingDocument('${esc(doc.id)}')">Delete</button>` : `<span class="admin-small">Managed in Base44</span>`}
+              </div>
+            </article>
+          `).join("")}
+        </div>
+      ` : `<p class="admin-muted">No synced documents yet for this booking.</p>`}
+
+      <div class="admin-card" style="margin-top:16px">
+        <h4>Upload Admin document</h4>
+        <p class="admin-muted">Stored in 101cruise. Does not write back to Base44.</p>
+        <div class="admin-field">
+          <label>Document type</label>
+          <input type="text" id="adminDocType" placeholder="e.g. Travel Insurance" value="Other">
+        </div>
+        <div class="admin-field">
+          <label>File</label>
+          <input type="file" id="adminDocFile" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,application/pdf,image/jpeg,image/png">
+        </div>
+        <div class="admin-field">
+          <label>Note (shown to customer when document is visible)</label>
+          <textarea id="adminDocNote" rows="2" placeholder="Optional customer-facing note"></textarea>
+        </div>
+        <label class="admin-check-chip" style="display:inline-flex;margin:8px 0 14px">
+          <input type="checkbox" id="adminDocVisible" checked>
+          <span>Visible to client on 101cruise website</span>
+        </label>
+        <div>
+          <button class="admin-button black" onclick="uploadAdminBookingDocument()">Upload document</button>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+async function loadCrmDocuments() {
+  const booking = crmSyncResult?.booking;
+  if (!booking) return;
+  crmDocumentsLoading = true;
+  crmDocumentsMessage = "Loading documents…";
+  renderAdmin();
+  try {
+    const headers = await adminAuthHeaders();
+    const response = await fetch("/.netlify/functions/booking-documents", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: "list",
+        booking_reference: booking.booking_reference,
+        base44_booking_id: booking.base44_booking_id
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
+    crmDocuments = data.documents || [];
+    crmDocumentsMessage = `${crmDocuments.length} document${crmDocuments.length === 1 ? "" : "s"} loaded.`;
+  } catch (error) {
+    crmDocuments = [];
+    crmDocumentsMessage = `Error: ${error.message || error}`;
+  } finally {
+    crmDocumentsLoading = false;
+    renderAdmin();
+  }
+}
+
+async function uploadAdminBookingDocument() {
+  const booking = crmSyncResult?.booking;
+  if (!booking) return;
+  const file = document.getElementById("adminDocFile")?.files?.[0];
+  const documentType = document.getElementById("adminDocType")?.value.trim() || "Other";
+  const note = document.getElementById("adminDocNote")?.value.trim() || "";
+  const visible = document.getElementById("adminDocVisible")?.checked !== false;
+  if (!file) {
+    crmDocumentsMessage = "Error: Choose a file to upload.";
+    renderAdmin();
+    return;
+  }
+  try {
+    crmDocumentsMessage = "Uploading…";
+    renderAdmin();
+    const headers = await adminAuthHeaders();
+    const preparedResponse = await fetch("/.netlify/functions/booking-documents", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: "create_upload",
+        booking_reference: booking.booking_reference,
+        base44_booking_id: booking.base44_booking_id,
+        filename: file.name,
+        document_type: documentType,
+        mime_type: file.type,
+        size_bytes: file.size
+      })
+    });
+    const prepared = await preparedResponse.json().catch(() => ({}));
+    if (!preparedResponse.ok || !prepared.success) throw new Error(prepared.error || "Could not prepare upload.");
+    const upload = prepared.upload;
+    if (!upload.token) throw new Error("Secure upload token was not returned.");
+    const { error: storageError } = await supabaseClient.storage
+      .from("booking-documents")
+      .uploadToSignedUrl(upload.storage_path, upload.token, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false
+      });
+    if (storageError) throw storageError;
+    const completeResponse = await fetch("/.netlify/functions/booking-documents", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: "complete_upload",
+        id: upload.id,
+        storage_path: upload.storage_path,
+        booking_reference: booking.booking_reference,
+        base44_booking_id: booking.base44_booking_id,
+        document_type: documentType,
+        filename: file.name,
+        note,
+        document_visible_to_customer: visible,
+        note_visible_to_customer: visible
+      })
+    });
+    const complete = await completeResponse.json().catch(() => ({}));
+    if (!completeResponse.ok || !complete.success) throw new Error(complete.error || "Could not save document.");
+    crmDocumentsMessage = "Admin document uploaded.";
+    await loadCrmDocuments();
+  } catch (error) {
+    crmDocumentsMessage = `Error: ${error.message || error}`;
+    renderAdmin();
+  }
+}
+
+async function deleteAdminBookingDocument(id) {
+  if (!window.confirm("Delete this Admin document from 101cruise?")) return;
+  try {
+    const headers = await adminAuthHeaders();
+    const response = await fetch("/.netlify/functions/booking-documents", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action: "delete", id })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
+    crmDocumentsMessage = "Document deleted.";
+    await loadCrmDocuments();
+  } catch (error) {
+    crmDocumentsMessage = `Error: ${error.message || error}`;
+    renderAdmin();
+  }
 }
 
 
@@ -917,13 +1189,16 @@ async function syncCrmBooking() {
   crmSyncLoading = true;
   itineraryReview = null;
   itineraryMessage = "";
+  crmDocuments = [];
+  crmDocumentsMessage = "";
   crmSyncMessage = "Syncing booking from Base44...";
   renderAdmin();
 
   try {
+    const headers = await adminAuthHeaders();
     const response = await fetch("/.netlify/functions/get-booking", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({ booking_reference: bookingReference })
     });
 
@@ -933,16 +1208,22 @@ async function syncCrmBooking() {
       throw new Error(data.error || `HTTP ${response.status}`);
     }
 
-   crmSyncResult = data;
+    crmSyncResult = data;
 
-const saveResult = await saveBase44BookingToSupabase(data.booking);
+    const saveResult = await saveBase44BookingToSupabase(data.booking);
 
-if (!saveResult.success) {
-  throw new Error(saveResult.error || "Booking retrieved but could not be saved.");
-}
+    if (!saveResult.success) {
+      throw new Error(saveResult.error || "Booking retrieved but could not be saved.");
+    }
 
-crmSyncMessage = "Booking retrieved from Base44 and saved to 101CRUISE.";
-
+    const sync = data.document_sync;
+    const syncNote = sync
+      ? ` Documents: ${sync.upserted || 0} synced` +
+        (sync.error_count ? `, ${sync.error_count} sync error(s)` : "") +
+        "."
+      : "";
+    crmSyncMessage = `Booking retrieved from Base44 and saved to 101CRUISE.${syncNote}`;
+    await loadCrmDocuments();
   } catch (error) {
     console.error("CRM sync failed", error);
     crmSyncResult = null;
@@ -5764,6 +6045,13 @@ function renderUsageCustomerSidePanel(customer) {
 }
 
 async function initAdmin() {
+  // Password-recovery links land with a recovery session; show a set-password form.
+  const hash = window.location.hash || "";
+  if (hash.includes("type=recovery")) {
+    renderAdminPasswordUpdate();
+    return;
+  }
+
   const { data } = await supabaseClient.auth.getSession();
 
   if (!data.session) {
@@ -5774,11 +6062,64 @@ async function initAdmin() {
   currentUser = data.session.user;
   await loadProfile();
 
-  if (!currentProfile || currentProfile.is_admin !== true) {
-    renderLogin("This account does not have admin access.");
+  const access = await assertAdminAccess();
+  if (!access.ok) {
+    await supabaseClient.auth.signOut();
+    currentUser = null;
+    currentProfile = null;
+    renderLogin(access.message);
     return;
   }
 
+  await loadAdminData();
+  renderAdmin();
+}
+
+function renderAdminPasswordUpdate(message = "") {
+  app.classList.remove("is-calculator-data");
+  app.innerHTML = `
+    <div class="admin-card">
+      <h2>Set a new password</h2>
+      <p class="admin-muted">Choose a new password for your 101cruise Admin account.</p>
+      <div class="admin-field">
+        <label>New password</label>
+        <input type="password" id="adminNewPassword" autocomplete="new-password">
+      </div>
+      <div class="admin-field">
+        <label>Confirm password</label>
+        <input type="password" id="adminNewPasswordConfirm" autocomplete="new-password">
+      </div>
+      <button class="admin-button black" onclick="adminUpdatePassword()">Update password</button>
+      <div id="admin-login-message" class="admin-message ${message ? "admin-error" : ""}">${esc(message)}</div>
+    </div>
+  `;
+}
+
+async function adminUpdatePassword() {
+  const password = document.getElementById("adminNewPassword")?.value || "";
+  const confirm = document.getElementById("adminNewPasswordConfirm")?.value || "";
+  if (password.length < 8) {
+    renderAdminPasswordUpdate("Password must be at least 8 characters.");
+    return;
+  }
+  if (password !== confirm) {
+    renderAdminPasswordUpdate("Passwords do not match.");
+    return;
+  }
+  const { error } = await supabaseClient.auth.updateUser({ password });
+  if (error) {
+    renderAdminPasswordUpdate(error.message);
+    return;
+  }
+  window.history.replaceState({}, document.title, window.location.pathname);
+  currentUser = (await supabaseClient.auth.getUser()).data.user;
+  await loadProfile();
+  const access = await assertAdminAccess();
+  if (!access.ok) {
+    await supabaseClient.auth.signOut();
+    renderLogin(access.message);
+    return;
+  }
   await loadAdminData();
   renderAdmin();
 }
