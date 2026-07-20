@@ -155,9 +155,14 @@ body {
 }
 
 .public-cruise-article .nl-hero,
-.public-cruise-article .nl-route-map,
-.public-cruise-article .nl-pricing {
+.public-cruise-article .nl-route-map {
   max-width: 600px;
+}
+
+.public-cruise-article .nl-pricing,
+.public-cruise-article .nl-includes-bar,
+.public-cruise-article .nl-other-info-bar {
+  max-width: 100%;
 }
 
 .public-cruise-article .nl-headline {
