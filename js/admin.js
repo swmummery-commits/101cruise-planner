@@ -119,6 +119,8 @@ let featuredFormDraft = null; // parent field snapshot for new/edit
 let featuredNewsletterDefaultsBaseline = { newsletter_number: null, newsletter_publication_date: null };
 let featuredItineraryFallback = "";
 let featuredRoomTypePromptIndex = null;
+let draggedFeaturedPricingLocalId = null;
+let featuredPricingDragFromHandle = false;
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -7786,7 +7788,7 @@ async function loadFeaturedNewsletterDefaults() {
   };
 }
 
-function blankFeaturedPricing() {
+function blankFeaturedPricing(displayOrder = 1) {
   return {
     id: null,
     local_id: `price-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -7794,7 +7796,9 @@ function blankFeaturedPricing() {
     category: "",
     brochure_price: "",
     cruise_101_price: "",
-    airline_price: ""
+    airline_price: "",
+    // Pricing display_order controls the order used by newsletters, landing pages and future customer-facing outputs.
+    display_order: displayOrder
   };
 }
 
@@ -7808,8 +7812,22 @@ function mapPricingRowFromDb(row, index) {
     category: row.category || "",
     brochure_price: row.brochure_price == null ? "" : String(row.brochure_price),
     cruise_101_price: row.cruise_101_price == null ? "" : String(row.cruise_101_price),
-    airline_price: row.airline_price == null ? "" : String(row.airline_price)
+    airline_price: row.airline_price == null ? "" : String(row.airline_price),
+    // Pricing display_order controls the order used by newsletters, landing pages and future customer-facing outputs.
+    display_order: Number(row.display_order) || 0
   };
+}
+
+/** Normalise NULL/0/duplicate orders into 1..n without changing visual sequence. */
+function normalizeFeaturedPricingOrder(rows) {
+  return (rows || []).map((row, index) => ({
+    ...row,
+    display_order: index + 1
+  }));
+}
+
+function renumberFeaturedPricingOrders() {
+  featuredFormPricing = normalizeFeaturedPricingOrder(featuredFormPricing);
 }
 
 function blankFeaturedOfferInclusions() {
@@ -7872,9 +7890,11 @@ async function startNewFeaturedCruise() {
   editingFeaturedCruiseId = null;
   showFeaturedCruiseForm = true;
   featuredSlugManuallyEdited = false;
-  featuredFormPricing = [blankFeaturedPricing()];
+  featuredFormPricing = [blankFeaturedPricing(1)];
   featuredItineraryFallback = "";
   featuredRoomTypePromptIndex = null;
+  draggedFeaturedPricingLocalId = null;
+  featuredPricingDragFromHandle = false;
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   try {
@@ -7932,8 +7952,8 @@ async function editFeaturedCruise(id) {
     if (pricingError) throw new Error(pricingError.message);
 
     featuredCruisePricing = pricing || [];
-    featuredFormPricing = (pricing || []).map(mapPricingRowFromDb);
-    if (!featuredFormPricing.length) featuredFormPricing = [blankFeaturedPricing()];
+    featuredFormPricing = normalizeFeaturedPricingOrder((pricing || []).map(mapPricingRowFromDb));
+    if (!featuredFormPricing.length) featuredFormPricing = [blankFeaturedPricing(1)];
 
     // The manually entered itinerary_summary is the approved source for newsletter output.
     // featured_cruise_ports is reserved for future automatically sourced day-by-day itinerary data,
@@ -8003,19 +8023,43 @@ function cancelFeaturedCruiseForm() {
   featuredFormDraft = null;
   featuredSlugManuallyEdited = false;
   featuredRoomTypePromptIndex = null;
+  draggedFeaturedPricingLocalId = null;
+  featuredPricingDragFromHandle = false;
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   renderAdmin();
 }
 
 function captureFeaturedPricingFromDom() {
+  const list = document.getElementById("fcPricingList");
+  if (list) {
+    const blocks = Array.from(list.querySelectorAll(".featured-pricing-block"));
+    if (blocks.length) {
+      const byLocal = new Map(featuredFormPricing.map((row) => [row.local_id, row]));
+      featuredFormPricing = blocks.map((block, index) => {
+        const prev = byLocal.get(block.dataset.localId) || {};
+        return {
+          ...prev,
+          local_id: block.dataset.localId || prev.local_id || `price-${index}`,
+          room_label: block.querySelector('[data-fc-price="room"]')?.value || "",
+          category: block.querySelector('[data-fc-price="category"]')?.value || "",
+          brochure_price: block.querySelector('[data-fc-price="brochure"]')?.value || "",
+          airline_price: block.querySelector('[data-fc-price="airline"]')?.value || "",
+          cruise_101_price: block.querySelector('[data-fc-price="cruise101"]')?.value || "",
+          display_order: index + 1
+        };
+      });
+      return;
+    }
+  }
   featuredFormPricing = featuredFormPricing.map((row, index) => ({
     ...row,
     room_label: document.getElementById(`fcPriceRoom-${index}`)?.value || "",
     category: document.getElementById(`fcPriceCategory-${index}`)?.value || "",
     brochure_price: document.getElementById(`fcPriceBrochure-${index}`)?.value || "",
     cruise_101_price: document.getElementById(`fcPrice101-${index}`)?.value || "",
-    airline_price: document.getElementById(`fcPriceAirline-${index}`)?.value || ""
+    airline_price: document.getElementById(`fcPriceAirline-${index}`)?.value || "",
+    display_order: index + 1
   }));
 }
 
@@ -8060,15 +8104,90 @@ function captureFeaturedDraftFromDom() {
 
 function addFeaturedPricingRow() {
   captureFeaturedDraftFromDom();
-  featuredFormPricing.push(blankFeaturedPricing());
+  const highest = featuredFormPricing.reduce((max, row) => Math.max(max, Number(row.display_order) || 0), 0);
+  featuredFormPricing.push(blankFeaturedPricing(highest + 1));
+  renumberFeaturedPricingOrders();
   renderAdmin();
 }
 
 function removeFeaturedPricingRow(index) {
   captureFeaturedDraftFromDom();
   featuredFormPricing.splice(index, 1);
-  if (!featuredFormPricing.length) featuredFormPricing = [blankFeaturedPricing()];
+  if (!featuredFormPricing.length) featuredFormPricing = [blankFeaturedPricing(1)];
+  renumberFeaturedPricingOrders();
   renderAdmin();
+}
+
+function onFeaturedPriceHandlePointerDown(event) {
+  featuredPricingDragFromHandle = true;
+  event.stopPropagation();
+}
+
+function onFeaturedPriceDragStart(event, localId) {
+  if (!featuredPricingDragFromHandle) {
+    event.preventDefault();
+    return;
+  }
+  featuredPricingDragFromHandle = false;
+  draggedFeaturedPricingLocalId = String(localId || "");
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", draggedFeaturedPricingLocalId);
+  const block = event.currentTarget;
+  block.classList.add("is-dragging");
+  requestAnimationFrame(() => {
+    block.classList.add("is-dragging-active");
+  });
+}
+
+function onFeaturedPriceDragEnd(event) {
+  featuredPricingDragFromHandle = false;
+  event.currentTarget?.classList.remove("is-dragging", "is-dragging-active");
+  document.querySelectorAll(".featured-pricing-block.is-drop-placeholder").forEach((el) => {
+    el.classList.remove("is-drop-placeholder");
+  });
+  const wasDragging = Boolean(draggedFeaturedPricingLocalId);
+  draggedFeaturedPricingLocalId = null;
+  if (wasDragging) {
+    captureFeaturedPricingFromDom();
+    renumberFeaturedPricingOrders();
+    renderAdmin();
+  }
+}
+
+function allowFeaturedPriceDrop(event) {
+  if (!draggedFeaturedPricingLocalId) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+
+  const list = event.currentTarget;
+  const dragged = list.querySelector(
+    `.featured-pricing-block[data-local-id="${CSS.escape(String(draggedFeaturedPricingLocalId))}"]`
+  );
+  if (!dragged || dragged.parentElement !== list) return;
+
+  const cards = Array.from(list.querySelectorAll(".featured-pricing-block:not(.is-dragging)"));
+  const afterElement = cards.find((card) => {
+    const rect = card.getBoundingClientRect();
+    return event.clientY < rect.top + rect.height / 2;
+  });
+
+  list.querySelectorAll(".featured-pricing-block.is-drop-placeholder").forEach((el) => {
+    el.classList.remove("is-drop-placeholder");
+  });
+  if (afterElement) {
+    afterElement.classList.add("is-drop-placeholder");
+    if (dragged.nextSibling !== afterElement) list.insertBefore(dragged, afterElement);
+  } else if (list.lastElementChild !== dragged) {
+    list.appendChild(dragged);
+  }
+
+  // Keep in-memory display_order in sync immediately (1..n).
+  captureFeaturedPricingFromDom();
+}
+
+function dropFeaturedPriceRow(event) {
+  if (!draggedFeaturedPricingLocalId) return;
+  event.preventDefault();
 }
 
 function onFeaturedLineChange() {
@@ -8294,12 +8413,27 @@ function renderFeaturedCruiseListItem(row) {
 function renderFeaturedPricingBlock(row, index, nights) {
   const calcs = buildFeaturedPriceCalcs(row, nights);
   const showSaveRoom = featuredRoomTypePromptIndex === index;
+  const localId = row.local_id || `price-${index}`;
   return `
-    <div class="featured-pricing-block">
+    <div
+      class="featured-pricing-block"
+      data-local-id="${esc(localId)}"
+      draggable="true"
+      ondragstart="onFeaturedPriceDragStart(event, '${esc(localId)}')"
+      ondragend="onFeaturedPriceDragEnd(event)"
+    >
       <div class="featured-pricing-main-row">
+        <span
+          class="featured-price-drag-handle"
+          role="button"
+          tabindex="0"
+          aria-label="Drag to reorder pricing row"
+          title="Drag to reorder"
+          onpointerdown="onFeaturedPriceHandlePointerDown(event)"
+        >☰</span>
         <div class="admin-field featured-room-type-field">
           <label>Room Type</label>
-          <input id="fcPriceRoom-${index}" list="fcRoomTypeList-${index}" type="text" value="${esc(row.room_label)}" autocomplete="off" oninput="onFeaturedRoomTypeInput(${index}); refreshFeaturedPricingCalcs()">
+          <input id="fcPriceRoom-${index}" data-fc-price="room" list="fcRoomTypeList-${index}" type="text" value="${esc(row.room_label)}" autocomplete="off" oninput="onFeaturedRoomTypeInput(${index}); refreshFeaturedPricingCalcs()">
           <datalist id="fcRoomTypeList-${index}">${roomTypeOptionsHtml(row.room_label)}</datalist>
           <div id="fcRoomTypeSave-${index}" class="featured-room-type-save" ${showSaveRoom ? "" : "hidden"}>
             <button type="button" class="admin-button secondary small" onclick="saveFeaturedRoomTypeFromRow(${index})"><span data-label>Save “${esc(row.room_label)}” for future use</span></button>
@@ -8307,20 +8441,20 @@ function renderFeaturedPricingBlock(row, index, nights) {
         </div>
         <div class="admin-field featured-category-field">
           <label>Category</label>
-          <input id="fcPriceCategory-${index}" type="text" value="${esc(row.category)}" placeholder="e.g. V1" maxlength="20">
+          <input id="fcPriceCategory-${index}" data-fc-price="category" type="text" value="${esc(row.category)}" placeholder="e.g. V1" maxlength="20">
         </div>
         <div class="admin-field">
           <label>Brochure Price</label>
-          <input id="fcPriceBrochure-${index}" type="number" min="0" step="1" value="${esc(row.brochure_price)}" oninput="refreshFeaturedPricingCalcs()">
+          <input id="fcPriceBrochure-${index}" data-fc-price="brochure" type="number" min="0" step="1" value="${esc(row.brochure_price)}" oninput="refreshFeaturedPricingCalcs()">
         </div>
         <div class="admin-field featured-price-with-calc">
           <label>Airline Price</label>
-          <input id="fcPriceAirline-${index}" type="number" min="0" step="1" value="${esc(row.airline_price)}" oninput="refreshFeaturedPricingCalcs()">
+          <input id="fcPriceAirline-${index}" data-fc-price="airline" type="number" min="0" step="1" value="${esc(row.airline_price)}" oninput="refreshFeaturedPricingCalcs()">
           <div id="fcCalcAirline-${index}" class="featured-price-calc">${esc(calcs.airline)}</div>
         </div>
         <div class="admin-field featured-price-with-calc">
           <label>101cruise Price</label>
-          <input id="fcPrice101-${index}" type="number" min="0" step="1" value="${esc(row.cruise_101_price)}" oninput="refreshFeaturedPricingCalcs()">
+          <input id="fcPrice101-${index}" data-fc-price="cruise101" type="number" min="0" step="1" value="${esc(row.cruise_101_price)}" oninput="refreshFeaturedPricingCalcs()">
           <div id="fcCalc101-${index}" class="featured-price-calc">${esc(calcs.cruise101)}</div>
         </div>
         <button type="button" class="admin-button secondary small featured-price-remove" onclick="removeFeaturedPricingRow(${index})">Remove</button>
@@ -8489,7 +8623,12 @@ function renderFeaturedCruiseForm() {
         <h4>Pricing</h4>
         <p class="admin-muted">All prices are USD. Airline prices are confidential and must never appear on a public page.</p>
         <div class="featured-warning">Confirm every figure before saving. Category is for internal reference only.</div>
-        <div class="featured-row-editor">
+        <div
+          id="fcPricingList"
+          class="featured-row-editor featured-pricing-list"
+          ondragover="allowFeaturedPriceDrop(event)"
+          ondrop="dropFeaturedPriceRow(event)"
+        >
           ${featuredFormPricing.map((row, index) => renderFeaturedPricingBlock(row, index, draft.nights)).join("")}
         </div>
         <div class="featured-add-pricing">
@@ -8584,6 +8723,7 @@ async function saveFeaturedCruise() {
     return;
   }
 
+  renumberFeaturedPricingOrders();
   const pricingPayload = [];
   let onboardCredit = null;
   try {
@@ -8605,6 +8745,7 @@ async function saveFeaturedCruise() {
         return;
       }
       // Do not read/write inclusion columns on featured_cruise_pricing.
+      // Pricing display_order controls the order used by newsletters, landing pages and future customer-facing outputs.
       pricingPayload.push({
         id: row.id || undefined,
         room_label: roomLabel,
@@ -8613,7 +8754,7 @@ async function saveFeaturedCruise() {
         cruise_101_price: price101,
         airline_price: airline,
         currency_code: "USD",
-        display_order: pricingPayload.length
+        display_order: Number(row.display_order) || pricingPayload.length + 1
       });
     }
   } catch (error) {
