@@ -121,6 +121,7 @@ let featuredItineraryFallback = "";
 let featuredRoomTypePromptIndex = null;
 let draggedFeaturedPricingLocalId = null;
 let featuredPricingDragFromHandle = false;
+let showFeaturedNewsletterPreview = false;
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -679,6 +680,7 @@ async function setTab(tab) {
     featuredFormPricing = [];
     featuredFormDraft = null;
     featuredRoomTypePromptIndex = null;
+    showFeaturedNewsletterPreview = false;
   }
   renderAdmin();
   if (tab === "calculator-data") {
@@ -8025,9 +8027,80 @@ function cancelFeaturedCruiseForm() {
   featuredRoomTypePromptIndex = null;
   draggedFeaturedPricingLocalId = null;
   featuredPricingDragFromHandle = false;
+  showFeaturedNewsletterPreview = false;
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   renderAdmin();
+}
+
+function resolveFeaturedHeroPreviewUrl(draft) {
+  const useShipHero = draft?.use_ship_hero_image !== false;
+  if (useShipHero) {
+    const ship = ciCruiseShips.find((row) => row.id === draft?.cruise_ship_id);
+    return ship?.hero_image_url || "";
+  }
+  return normalizeUrl(draft?.hero_image_url) || "";
+}
+
+function buildFeaturedNewsletterPreviewModel() {
+  const draft = featuredFormDraft || {};
+  const departure = draft.departure_date || "";
+  const nightsNum = draft.nights === "" || draft.nights == null ? null : Number(draft.nights);
+  const returnDate = addCalendarDays(departure, nightsNum) || draft.return_date || "";
+  const destinationStrip =
+    buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port) || draft.destination_strip || "";
+  const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id);
+  return window.NewsletterPreview.buildModel({
+    destinationStrip,
+    headline: draft.headline || "",
+    heroImageUrl: resolveFeaturedHeroPreviewUrl(draft),
+    heroImageAlt: draft.hero_image_alt || draft.headline || "Cruise image",
+    departureDate: departure,
+    returnDate,
+    nights: nightsNum,
+    shipName: ship?.name || "",
+    itinerarySummary: draft.itinerary_summary || "",
+    description: draft.short_editorial || draft.full_description || ""
+  });
+}
+
+function openFeaturedNewsletterPreview() {
+  if (!window.NewsletterPreview || !window.NewsletterValidation) {
+    featuredCruiseMessage = "Newsletter preview modules failed to load.";
+    featuredCruiseMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+  captureFeaturedDraftFromDom();
+  showFeaturedNewsletterPreview = true;
+  renderAdmin();
+}
+
+function closeFeaturedNewsletterPreview() {
+  showFeaturedNewsletterPreview = false;
+  renderAdmin();
+}
+
+function renderFeaturedNewsletterPreviewModal() {
+  if (!showFeaturedNewsletterPreview || !window.NewsletterPreview) return "";
+  const model = buildFeaturedNewsletterPreviewModel();
+  const warnings = window.NewsletterValidation.validateNewsletterPreview(model);
+  const warningsHtml = window.NewsletterPreview.renderWarnings(warnings, esc);
+  const articleHtml = window.NewsletterPreview.renderTopHalf(model, { escapeHtml: esc });
+  return `
+    <div class="newsletter-preview-overlay" onclick="if (event.target === this) closeFeaturedNewsletterPreview()">
+      <div class="newsletter-preview-modal" role="dialog" aria-modal="true" aria-labelledby="featuredNewsletterPreviewTitle">
+        <div class="newsletter-preview-modal-header">
+          <h3 id="featuredNewsletterPreviewTitle">Newsletter Preview</h3>
+          <button type="button" class="admin-button secondary small" onclick="closeFeaturedNewsletterPreview()">Close</button>
+        </div>
+        <div class="newsletter-preview-modal-body">
+          ${warningsHtml}
+          ${articleHtml}
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function captureFeaturedPricingFromDom() {
@@ -8488,6 +8561,7 @@ function renderFeaturedCruiseForm() {
         </div>
         <div class="admin-actions-row">
           <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
+          <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
           <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save Featured Cruise"}</button>
         </div>
       </div>
@@ -8663,9 +8737,11 @@ function renderFeaturedCruiseForm() {
       <div class="admin-actions-row featured-form-actions">
         <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
         ${existing ? `<button class="admin-button secondary" onclick="deleteFeaturedCruise('${esc(existing.id)}')" ${featuredCruiseSaving ? "disabled" : ""}>Delete</button>` : ""}
+        <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
         <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save Featured Cruise"}</button>
       </div>
     </div>
+    ${renderFeaturedNewsletterPreviewModal()}
   `;
 }
 
