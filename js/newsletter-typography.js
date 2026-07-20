@@ -29,7 +29,7 @@
       textAlign: "center",
       maxPreferredChars: 55,
       maxPreferredWords: 9,
-      marginBottomPx: 52
+      marginBottomPx: 38
     },
     headline: {
       fontFamily: "Georgia, 'Times New Roman', serif",
@@ -127,7 +127,7 @@
       sectionGapPx: 32,
       blockPaddingYPx: 48,
       blockPaddingXPx: 40,
-      destinationToHeadlinePx: 52,
+      destinationToHeadlinePx: 38,
       heroToDatesPx: 36,
       nightsToPortsExtraPx: 22,
       portsToDividerPx: 34,

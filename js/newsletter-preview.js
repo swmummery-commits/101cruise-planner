@@ -306,16 +306,16 @@
     if (!display || display.saveAmount == null) return "";
     const percent =
       emphasizePercent && display.showPercentOff && display.percentOff != null
-        ? ` <span class="nl-price-percent">| ${esc(display.percentOff)}% OFF</span>`
+        ? `<div class="nl-price-percent">${esc(display.percentOff)}% OFF</div>`
         : "";
-    return `<div class="nl-price-you-save">YOU SAVE $${money(sharedApi, display.saveAmount)}${percent}</div>`;
+    return `<div class="nl-price-you-save">YOU SAVE $${money(sharedApi, display.saveAmount)}</div>${percent}`;
   }
 
   function renderPricingModule(mod, sharedApi, esc) {
     const brochure =
       mod.brochurePrice != null
         ? `<div class="nl-price-tier">
-            <div class="nl-price-tier-label">Brochure Price</div>
+            <div class="nl-price-tier-label">BROCHURE PRICE</div>
             <div class="nl-price-tier-value nl-price-brochure-value">$${money(sharedApi, mod.brochurePrice)}</div>
           </div>`
         : "";
@@ -332,7 +332,7 @@
     const airline =
       mod.airlinePrice != null
         ? `<div class="nl-price-tier nl-price-tier-airline">
-            <div class="nl-price-tier-label">Airline Staff Price</div>
+            <div class="nl-price-tier-label">AIRLINE STAFF PRICE</div>
             <div class="nl-price-tier-value nl-price-airline-value">$${money(sharedApi, mod.airlinePrice)}</div>
             ${renderYouSave(mod.airlineDisplay, sharedApi, esc, { emphasizePercent: true })}
           </div>`
@@ -387,7 +387,7 @@
         const token = {
           ...(typo.destinationStrip || {}),
           marginBottomPx:
-            typo.destinationStrip?.marginBottomPx || spacing.destinationToHeadlinePx || 52
+            typo.destinationStrip?.marginBottomPx || spacing.destinationToHeadlinePx || 38
         };
         return `<p class="nl-destination" style="${styleFromToken(token)}">${esc(model.destinationStrip)}</p>`;
       }

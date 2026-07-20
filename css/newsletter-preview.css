@@ -286,23 +286,23 @@
   letter-spacing: 0.7px;
   text-transform: uppercase;
   color: #1f7a66;
-  margin: 0 0 22px;
+  margin: 0 0 10px;
   line-height: 1.3;
   min-height: 2.6em;
 }
 
 .nl-price-tier {
-  padding: 6px 0 14px;
+  padding: 4px 0 12px;
 }
 
 .nl-price-tier-label {
   font-family: Helvetica, Arial, sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.35px;
-  text-transform: none;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
   color: #111;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .nl-price-tier-101 .nl-price-tier-label {
@@ -310,7 +310,7 @@
   font-weight: 700;
   letter-spacing: 0.9px;
   text-transform: uppercase;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .nl-price-tier-value {
@@ -324,13 +324,16 @@
   color: #111;
 }
 
-.nl-price-101-value {
+.nl-price-101-value,
+.nl-price-airline-value {
   font-size: 40px;
+}
+
+.nl-price-101-value {
   color: #1f7a66;
 }
 
 .nl-price-airline-value {
-  font-size: 32px;
   color: #1a2b5c;
 }
 
@@ -343,8 +346,12 @@
 }
 
 .nl-price-percent {
-  color: #1a2b5c;
+  margin-top: 4px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
   font-weight: 700;
+  letter-spacing: 0.4px;
+  color: #c62828;
 }
 
 .nl-price-divider {
@@ -473,7 +480,8 @@
     font-size: 24px;
   }
 
-  .nl-price-101-value {
+  .nl-price-101-value,
+  .nl-price-airline-value {
     font-size: 34px;
   }
 
