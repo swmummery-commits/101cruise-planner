@@ -225,11 +225,8 @@
 
   function researchOptionLabel(entity) {
     const name = entity.name || entity.entity_name || "Untitled";
-    if (!entity.research_updated_at && !entity.research_status) {
-      return `${name} · Never researched`;
-    }
-    const status = STATUS_LABELS[entity.research_status] || entity.research_status || "Draft";
-    return `${name} · ${status} · ${formatDate(entity.research_updated_at)}`;
+    if (!entity.research_updated_at) return name;
+    return `${name} · ${formatDate(entity.research_updated_at)}`;
   }
 
   function selectedEntityResearchNote() {
@@ -238,14 +235,11 @@
       ? entityOptions.find((e) => e.id === researchForm.entity_id)
       : entityOptions.find((e) => e.entity_key === researchForm.entity_key);
 
-    if (!researchForm.entity_id && !researchForm.entity_key) return "";
-    if (!found || (!found.research_status && !found.research_updated_at)) {
-      return `<p class="admin-muted research-last-updated">Last researched: never</p>`;
-    }
+    if (!found?.research_updated_at) return "";
     const openBtn = found.research_id
       ? ` <button type="button" class="admin-button secondary small" onclick="ResearchContentAdmin.openEditor('${esc(found.research_id)}')">Open existing</button>`
       : "";
-    return `<p class="research-last-updated">Last researched: <strong>${esc(formatDate(found.research_updated_at))}</strong> · ${esc(STATUS_LABELS[found.research_status] || found.research_status || "Draft")}${found.research_version ? ` · v${esc(String(found.research_version))}` : ""}${openBtn}</p>`;
+    return `<p class="research-last-updated">Last updated: <strong>${esc(formatDate(found.research_updated_at))}</strong>${openBtn}</p>`;
   }
 
   function openList() {
