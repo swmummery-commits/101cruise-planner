@@ -129,6 +129,9 @@
   let researching = false;
   let showRawJson = false;
   let providerInfo = null;
+  let batchRunning = false;
+  let batchCancelRequested = false;
+  let batchProgress = null; // { total, done, currentName, results: [] }
 
   let researchForm = {
     entity_type: "ship",
@@ -138,7 +141,9 @@
     confirm_duplicate: false,
     refresh_of: "",
     estimate: null,
-    duplicates: []
+    duplicates: [],
+    batch_line_id: "",
+    batch_skip_existing: true
   };
 
   let entityOptions = [];
@@ -284,6 +289,8 @@
 
   async function openResearch() {
     view = "research";
+    batchProgress = null;
+    batchCancelRequested = false;
     researchForm = {
       entity_type: "ship",
       entity_id: "",
@@ -292,7 +299,9 @@
       confirm_duplicate: false,
       refresh_of: "",
       estimate: null,
-      duplicates: []
+      duplicates: [],
+      batch_line_id: "",
+      batch_skip_existing: true
     };
     await loadEntityOptions("ship");
     try {
@@ -302,6 +311,30 @@
       researchForm.estimate = null;
     }
     if (typeof global.renderAdmin === "function") global.renderAdmin();
+  }
+
+  function cruiseLinesFromShips() {
+    const map = new Map();
+    for (const ship of entityOptions) {
+      if (!ship.cruise_line_id) continue;
+      const name = ship.ci_cruise_lines?.name || "Cruise line";
+      if (!map.has(ship.cruise_line_id)) map.set(ship.cruise_line_id, name);
+    }
+    return [...map.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "en"));
+  }
+
+  function shipsForBatchLine(lineId) {
+    return entityOptions.filter((ship) => ship.cruise_line_id === lineId);
+  }
+
+  function batchQueueForLine(lineId) {
+    const ships = shipsForBatchLine(lineId);
+    if (researchForm.batch_skip_existing) {
+      return ships.filter((ship) => !ship.research_updated_at);
+    }
+    return ships;
   }
 
   async function loadEntityOptions(entityType) {
@@ -449,18 +482,70 @@
         </div>`
       : "";
 
+    const lineOptions = cruiseLinesFromShips()
+      .map(
+        (line) =>
+          `<option value="${esc(line.id)}" ${researchForm.batch_line_id === line.id ? "selected" : ""}>${esc(line.name)}</option>`
+      )
+      .join("");
+    const batchQueue = researchForm.batch_line_id ? batchQueueForLine(researchForm.batch_line_id) : [];
+    const batchTotalOnLine = researchForm.batch_line_id ? shipsForBatchLine(researchForm.batch_line_id).length : 0;
+    const batchHtml =
+      researchForm.entity_type === "ship"
+        ? `<div class="research-batch">
+            <h3>Batch research by cruise line</h3>
+            <p class="admin-muted">Runs one ship at a time (about 30–60 seconds each). Keep this tab open until it finishes.</p>
+            <label>Cruise line
+              <select onchange="ResearchContentAdmin.setBatchLine(this.value)" ${batchRunning ? "disabled" : ""}>
+                <option value="">Choose cruise line…</option>
+                ${lineOptions}
+              </select>
+            </label>
+            <label class="research-batch-skip">
+              <input type="checkbox" ${researchForm.batch_skip_existing ? "checked" : ""} ${batchRunning ? "disabled" : ""}
+                onchange="ResearchContentAdmin.setBatchSkipExisting(this.checked)">
+              Skip ships that already have research
+            </label>
+            ${
+              researchForm.batch_line_id
+                ? `<p class="admin-muted">${esc(String(batchQueue.length))} ship${batchQueue.length === 1 ? "" : "s"} will run${researchForm.batch_skip_existing ? ` (${esc(String(batchTotalOnLine - batchQueue.length))} skipped)` : ""}. Rough time: ${esc(String(batchQueue.length))}–${esc(String(Math.max(batchQueue.length, batchQueue.length * 2)))} min.</p>`
+                : ""
+            }
+            <div class="research-form-actions">
+              ${
+                batchRunning
+                  ? `<button type="button" class="admin-button danger" onclick="ResearchContentAdmin.cancelBatch()">Stop after current ship</button>`
+                  : `<button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginBatchResearch()" ${!researchForm.batch_line_id || !batchQueue.length ? "disabled" : ""}>Research line ships</button>`
+              }
+            </div>
+            ${
+              batchProgress
+                ? `<div class="research-batch-progress">
+                    <p><strong>${esc(String(batchProgress.done))}/${esc(String(batchProgress.total))}</strong>${batchProgress.currentName ? ` · Working on ${esc(batchProgress.currentName)}` : ""}</p>
+                    <ul>${(batchProgress.results || [])
+                      .map(
+                        (r) =>
+                          `<li class="research-batch-${esc(r.ok ? "ok" : "fail")}">${esc(r.name)} — ${esc(r.ok ? "draft saved" : r.error || "failed")}</li>`
+                      )
+                      .join("")}</ul>
+                  </div>`
+                : ""
+            }
+          </div>`
+        : "";
+
     return `
       <section class="admin-panel research-panel">
         <div class="admin-panel-header">
           <div>
-            <button type="button" class="admin-button secondary small" onclick="ResearchContentAdmin.openList()">← Back</button>
+            <button type="button" class="admin-button secondary small" onclick="ResearchContentAdmin.openList()" ${batchRunning ? "disabled" : ""}>← Back</button>
             <h2>Research New Content</h2>
           </div>
         </div>
         ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : ""}">${esc(message)}</p>` : ""}
         <div class="research-form">
           <label>Entity type
-            <select onchange="ResearchContentAdmin.setResearchType(this.value)">
+            <select onchange="ResearchContentAdmin.setResearchType(this.value)" ${batchRunning ? "disabled" : ""}>
               <option value="ship" ${researchForm.entity_type === "ship" ? "selected" : ""}>Ship</option>
               <option value="destination" ${researchForm.entity_type === "destination" ? "selected" : ""}>Destination</option>
               <option value="port" ${researchForm.entity_type === "port" ? "selected" : ""}>Port</option>
@@ -470,7 +555,7 @@
           ${
             isCanonical
               ? `<label>Select ${ENTITY_LABELS[researchForm.entity_type]}
-                  <select onchange="ResearchContentAdmin.setResearchEntityId(this.value)">
+                  <select onchange="ResearchContentAdmin.setResearchEntityId(this.value)" ${batchRunning ? "disabled" : ""}>
                     <option value="">Choose…</option>
                     ${optionsHtml}
                   </select>
@@ -478,14 +563,14 @@
                 ${selectedEntityResearchNote()}`
               : `<label>Name
                   <input type="text" value="${esc(researchForm.entity_name)}" placeholder="e.g. Greek Isles or Santorini"
-                    onchange="ResearchContentAdmin.setResearchName(this.value)">
+                    onchange="ResearchContentAdmin.setResearchName(this.value)" ${batchRunning ? "disabled" : ""}>
                 </label>
                 <p class="admin-muted">Entity key will normalise to: <code>${esc(researchForm.entity_key || "—")}</code></p>
                 ${selectedEntityResearchNote()}
                 ${
                   entityOptions.length
                     ? `<label>Or choose existing
-                        <select onchange="ResearchContentAdmin.setResearchExistingKey(this.value)">
+                        <select onchange="ResearchContentAdmin.setResearchExistingKey(this.value)" ${batchRunning ? "disabled" : ""}>
                           <option value="">—</option>
                           ${optionsHtml}
                         </select>
@@ -496,12 +581,13 @@
           ${dupHtml}
           ${estimateHtml}
           <div class="research-form-actions">
-            <button type="button" class="admin-button" onclick="ResearchContentAdmin.openList()" ${researching ? "disabled" : ""}>Cancel</button>
-            <button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginResearch()" ${researching ? "disabled" : ""}>
+            <button type="button" class="admin-button" onclick="ResearchContentAdmin.openList()" ${researching || batchRunning ? "disabled" : ""}>Cancel</button>
+            <button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginResearch()" ${researching || batchRunning ? "disabled" : ""}>
               ${researching ? "Researching…" : "Begin Research"}
             </button>
           </div>
           ${researching ? `<p class="admin-muted">Searching trusted sources and generating a structured draft. This can take up to a minute.</p>` : ""}
+          ${batchHtml}
         </div>
       </section>
     `;
@@ -619,6 +705,9 @@
             <h2>${esc(item.entity_name)}</h2>
             <p class="admin-muted">${esc(ENTITY_LABELS[item.entity_type])} · ${esc(STATUS_LABELS[item.content_status])} · ${esc(FRESHNESS_LABELS[item.freshness] || item.freshness)} · v${esc(String(item.content_version))}</p>
           </div>
+          <div class="research-editor-header-actions">
+            <button type="button" class="admin-button black" onclick="ResearchContentAdmin.publish()" ${saving || item.content_status === "failed" ? "disabled" : ""}>Publish</button>
+          </div>
         </div>
         ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : ""}">${esc(message)}</p>` : ""}
         <div class="research-editor-meta">
@@ -708,6 +797,8 @@
       researchForm.entity_key = "";
       researchForm.duplicates = [];
       researchForm.confirm_duplicate = false;
+      researchForm.batch_line_id = "";
+      batchProgress = null;
       await loadEntityOptions(value);
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
@@ -735,6 +826,92 @@
     },
     setConfirmDuplicate(checked) {
       researchForm.confirm_duplicate = Boolean(checked);
+    },
+    setBatchLine(value) {
+      researchForm.batch_line_id = value;
+      batchProgress = null;
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    setBatchSkipExisting(checked) {
+      researchForm.batch_skip_existing = Boolean(checked);
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    cancelBatch() {
+      batchCancelRequested = true;
+      message = "Stopping after the current ship finishes…";
+      messageTone = "info";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    async beginBatchResearch() {
+      const queue = batchQueueForLine(researchForm.batch_line_id);
+      if (!queue.length) {
+        message = "No ships to research for this line with the current skip setting.";
+        messageTone = "warning";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+        return;
+      }
+      const lineName =
+        cruiseLinesFromShips().find((l) => l.id === researchForm.batch_line_id)?.name || "this cruise line";
+      if (
+        !window.confirm(
+          `Research ${queue.length} ship${queue.length === 1 ? "" : "s"} for ${lineName}?\n\nThis runs one at a time and may take ${queue.length}–${queue.length * 2} minutes. Keep this tab open. Drafts are saved for review — nothing is published automatically.`
+        )
+      ) {
+        return;
+      }
+
+      batchRunning = true;
+      batchCancelRequested = false;
+      batchProgress = { total: queue.length, done: 0, currentName: "", results: [] };
+      message = `Batch research started for ${lineName}.`;
+      messageTone = "info";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+
+      for (const ship of queue) {
+        if (batchCancelRequested) break;
+        batchProgress.currentName = ship.name || "Ship";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+        try {
+          await api(
+            "start_research",
+            {
+              entity_type: "ship",
+              entity_id: ship.id,
+              entity_name: ship.name,
+              confirm_duplicate: true
+            },
+            "research-content-generate"
+          );
+          batchProgress.results.push({ name: ship.name, ok: true });
+        } catch (error) {
+          const errText = error.message || "failed";
+          batchProgress.results.push({ name: ship.name, ok: false, error: errText });
+          if (/quota|billing|OPENAI_API_KEY|503/i.test(errText)) {
+            message = `Batch stopped: ${errText}`;
+            messageTone = "error";
+            batchProgress.done += 1;
+            break;
+          }
+        }
+        batchProgress.done += 1;
+        batchProgress.currentName = "";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+
+      batchRunning = false;
+      batchProgress.currentName = "";
+      await loadEntityOptions("ship");
+      const okCount = (batchProgress.results || []).filter((r) => r.ok).length;
+      const failCount = (batchProgress.results || []).length - okCount;
+      if (batchCancelRequested) {
+        message = `Batch stopped early. ${okCount} draft${okCount === 1 ? "" : "s"} saved${failCount ? `, ${failCount} failed` : ""}.`;
+        messageTone = "warning";
+      } else if (!messageTone || messageTone === "info") {
+        message = `Batch complete. ${okCount} draft${okCount === 1 ? "" : "s"} saved${failCount ? `, ${failCount} failed` : ""}. Review and publish from the Research Content list.`;
+        messageTone = failCount ? "warning" : "success";
+      }
+      batchCancelRequested = false;
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     async beginResearch() {
       message = "";

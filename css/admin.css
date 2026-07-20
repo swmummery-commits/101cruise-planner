@@ -3663,3 +3663,52 @@
   margin-left: 8px;
   vertical-align: middle;
 }
+
+.research-batch {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e3e8e5;
+  display: grid;
+  gap: 12px;
+}
+
+.research-batch h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.research-batch-skip {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500 !important;
+}
+
+.research-batch-progress {
+  border: 1px solid #e3e8e5;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: #f8faf9;
+}
+
+.research-batch-progress ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.research-batch-ok { color: #245c4e; }
+.research-batch-fail { color: #9b1c1c; }
+
+.research-editor .admin-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.research-editor-header-actions {
+  flex: 0 0 auto;
+  padding-top: 28px;
+}
