@@ -362,63 +362,116 @@
   text-align: center;
 }
 
-.nl-included {
-  margin: 44px auto 0;
-  max-width: 620px;
-  text-align: center;
+.nl-includes-bar,
+.nl-other-info-bar {
+  margin: 18px auto 0;
+  max-width: 720px;
+  display: flex;
+  align-items: center;
+  gap: 14px 18px;
+  padding: 14px 18px;
+  border: 1px solid #b7d8cc;
+  border-radius: 12px;
+  background: #fff;
+  box-sizing: border-box;
 }
 
-.nl-included-heading {
-  margin: 0 0 16px;
+.nl-includes-label,
+.nl-other-info-label {
+  flex: 0 0 auto;
   font-family: Helvetica, Arial, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: #111;
+  color: #1f7a66;
+  white-space: nowrap;
 }
 
-.nl-included-list {
+.nl-includes-items {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 12px 22px;
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 14px;
-  color: #111;
+  align-items: center;
+  gap: 0;
+  min-width: 0;
 }
 
-.nl-included-item {
+.nl-includes-item {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  padding: 4px 16px;
+  border-right: 1px solid #d5e3de;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #111;
 }
 
-.nl-included-icon {
+.nl-includes-item:first-child {
+  padding-left: 0;
+}
+
+.nl-includes-item:last-child {
+  border-right: none;
+  padding-right: 0;
+}
+
+.nl-includes-icon {
   display: inline-flex;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   color: #1f7a66;
   flex: 0 0 auto;
 }
 
-.nl-included-icon svg {
-  width: 20px;
-  height: 20px;
+.nl-includes-icon svg {
+  width: 18px;
+  height: 18px;
   display: block;
 }
 
-.nl-included-label {
+.nl-includes-text {
   line-height: 1.2;
+  white-space: nowrap;
+}
+
+.nl-other-info-bar {
+  background: #e8f5f0;
+  border-color: #b7d8cc;
+}
+
+.nl-other-info-text {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.45px;
+  text-transform: uppercase;
+  color: #111;
+  line-height: 1.35;
+  min-width: 0;
 }
 
 @media (max-width: 720px) {
   .nl-pricing[data-columns="3"],
   .nl-pricing[data-columns="4"] {
     --nl-price-cols: 2;
+  }
+
+  .nl-includes-bar,
+  .nl-other-info-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nl-includes-item {
+    padding: 6px 12px 6px 0;
+    border-right: none;
   }
 }
 
@@ -437,17 +490,6 @@
   .nl-price-module:last-child {
     border-bottom: none;
   }
-}
-
-.nl-other-information {
-  margin: 36px auto 0;
-  max-width: 560px;
-  padding: 12px 16px;
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 14px;
-  color: #245c4e;
-  background: rgba(141, 217, 191, 0.22);
-  text-align: center;
 }
 
 .nl-disclaimer {

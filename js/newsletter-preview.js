@@ -352,22 +352,25 @@
   }
 
   function inclusionIconSvg(key) {
-    const common = 'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+    const common =
+      'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
     switch (key) {
       case "alcohol_package":
-        return `<svg ${common}><path d="M8 2h8l-1 7a5 5 0 1 1-6 0L8 2z"/><path d="M12 14v8"/><path d="M9 22h6"/></svg>`;
+        return `<svg ${common}><path d="M8 3h8l-1.2 7.2a4.8 4.8 0 1 1-5.6 0L8 3z"/><path d="M12 15v6"/><path d="M9.5 21h5"/></svg>`;
       case "wifi":
-        return `<svg ${common}><path d="M5 12.5a9 9 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg>`;
+        return `<svg ${common}><path d="M4.5 10.5a10 10 0 0 1 15 0"/><path d="M7.5 14a6 6 0 0 1 9 0"/><path d="M10.2 17.2a2.4 2.4 0 0 1 3.6 0"/><circle cx="12" cy="20" r="1.1" fill="currentColor" stroke="none"/></svg>`;
       case "gratuities":
-        return `<svg ${common}><path d="M12 3v3"/><path d="M8 8h8a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/><path d="M12 21v-3"/></svg>`;
+        // Cloche / serving cover
+        return `<svg ${common}><path d="M4 14h16"/><path d="M5 14a7 7 0 0 1 14 0"/><path d="M12 7V5"/><path d="M8 18h8"/></svg>`;
       case "all_tours":
-        return `<svg ${common}><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>`;
+        return `<svg ${common}><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>`;
       case "all_dining":
-        return `<svg ${common}><path d="M4 3v8a2 2 0 0 0 2 2h1v8"/><path d="M7 3v7"/><path d="M10 3v7"/><path d="M17 3v18"/><path d="M17 8h3a2 2 0 0 0 0-4h-3"/></svg>`;
+        // Fork + spoon
+        return `<svg ${common}><path d="M5 3v7a2 2 0 0 0 2 2v9"/><path d="M5 3v4"/><path d="M8 3v4"/><path d="M11 3v4"/><path d="M17 3c2 0 3 1.5 3 3.5S19 10 17 10v11"/><path d="M17 3v7"/></svg>`;
       case "laundry":
-        return `<svg ${common}><path d="M8 4h8l2 4H6l2-4z"/><path d="M7 8v11a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8"/><path d="M10 14h4"/></svg>`;
+        return `<svg ${common}><path d="M8 4h8l2 3.5H6L8 4z"/><path d="M7 7.5v10.5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7.5"/><circle cx="12" cy="14" r="2.5"/></svg>`;
       case "onboard_credit":
-        return `<svg ${common}><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h2"/></svg>`;
+        return `<svg ${common}><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></svg>`;
       default:
         return `<svg ${common}><circle cx="12" cy="12" r="8"/><path d="M9 12l2 2 4-4"/></svg>`;
     }
@@ -524,16 +527,19 @@
       case SECTION_IDS.INCLUDED: {
         if (!model.inclusionItems?.length) return "";
         return `
-          <div class="nl-included">
-            <p class="nl-included-heading">INCLUDED WITH THIS CRUISE</p>
-            <ul class="nl-included-list">
+          <div class="nl-includes-bar">
+            <div class="nl-includes-label">INCLUDES:</div>
+            <ul class="nl-includes-items">
               ${model.inclusionItems
                 .map((item) => {
-                  const label = typeof item === "string" ? item : item.label;
-                  const key = typeof item === "string" ? "" : item.key;
-                  return `<li class="nl-included-item">
-                    <span class="nl-included-icon">${inclusionIconSvg(key)}</span>
-                    <span class="nl-included-label">${esc(label)}</span>
+                  const key = typeof item === "string" ? "" : item.key || "";
+                  const label =
+                    typeof item === "string"
+                      ? String(item).toUpperCase()
+                      : item.shortLabel || String(item.label || "").toUpperCase();
+                  return `<li class="nl-includes-item">
+                    <span class="nl-includes-icon">${inclusionIconSvg(key)}</span>
+                    <span class="nl-includes-text">${esc(label)}</span>
                   </li>`;
                 })
                 .join("")}
@@ -543,7 +549,12 @@
       }
       case SECTION_IDS.OTHER_INFORMATION: {
         if (!model.otherInformation) return "";
-        return `<p class="nl-other-information">${esc(model.otherInformation)}</p>`;
+        return `
+          <div class="nl-other-info-bar">
+            <div class="nl-other-info-label">OTHER INFO:</div>
+            <div class="nl-other-info-text">${esc(String(model.otherInformation).toUpperCase())}</div>
+          </div>
+        `;
       }
       case SECTION_IDS.DISCLAIMER: {
         return `<p class="nl-disclaimer">${esc(model.disclaimerText || DISCLAIMER_TEXT)}</p>`;

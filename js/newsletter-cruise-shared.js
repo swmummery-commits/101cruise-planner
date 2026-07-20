@@ -12,12 +12,12 @@
   };
 
   const INCLUSION_LABELS = [
-    { key: "alcohol_package", label: "Alcohol Package" },
-    { key: "wifi", label: "Wi-Fi" },
-    { key: "gratuities", label: "Gratuities" },
-    { key: "all_tours", label: "All Tours" },
-    { key: "all_dining", label: "All Dining" },
-    { key: "laundry", label: "Laundry" }
+    { key: "alcohol_package", label: "Alcohol Package", shortLabel: "ALCOHOL PACKAGE" },
+    { key: "wifi", label: "Wi-Fi", shortLabel: "ALL WIFI" },
+    { key: "gratuities", label: "Gratuities", shortLabel: "GRATUITIES" },
+    { key: "all_tours", label: "All Tours", shortLabel: "ALL TOURS" },
+    { key: "all_dining", label: "All Dining", shortLabel: "ALL DINING" },
+    { key: "laundry", label: "Laundry", shortLabel: "LAUNDRY" }
   ];
 
   function formatMoney(value) {
@@ -116,14 +116,19 @@
     const items = [];
     for (const entry of INCLUSION_LABELS) {
       if (source[entry.key]) {
-        items.push({ key: entry.key, label: entry.label });
+        items.push({
+          key: entry.key,
+          label: entry.label,
+          shortLabel: entry.shortLabel || String(entry.label || "").toUpperCase()
+        });
       }
     }
     const obc = parsePrice(source.onboard_credit);
     if (obc != null && obc > 0) {
       items.push({
         key: "onboard_credit",
-        label: `On Board Credit $${formatMoney(obc)}`
+        label: `On Board Credit $${formatMoney(obc)}`,
+        shortLabel: `ON BOARD CREDIT $${formatMoney(obc)}`
       });
     }
     return items;
