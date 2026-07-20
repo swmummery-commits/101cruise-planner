@@ -131,7 +131,101 @@
   let providerInfo = null;
   let batchRunning = false;
   let batchCancelRequested = false;
-  let batchProgress = null; // { total, done, currentName, results: [] }
+  let batchProgress = null; // { total, done, currentName, results, startedAt, lineName }
+  let singleResearchStartedAt = null;
+
+  const BATCH_STORAGE_KEY = "101cruise_research_batch_progress";
+
+  function saveBatchProgress() {
+    try {
+      if (!batchRunning || !batchProgress) {
+        sessionStorage.removeItem(BATCH_STORAGE_KEY);
+        return;
+      }
+      sessionStorage.setItem(
+        BATCH_STORAGE_KEY,
+        JSON.stringify({
+          ...batchProgress,
+          batch_line_id: researchForm.batch_line_id,
+          running: true
+        })
+      );
+    } catch {
+      // ignore
+    }
+  }
+
+  function clearBatchProgressStorage() {
+    try {
+      sessionStorage.removeItem(BATCH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  function formatDuration(ms) {
+    if (!Number.isFinite(ms) || ms < 0) return "—";
+    const totalSec = Math.round(ms / 1000);
+    const mins = Math.floor(totalSec / 60);
+    const secs = totalSec % 60;
+    if (mins <= 0) return `${secs}s`;
+    return `${mins}m ${secs}s`;
+  }
+
+  function batchEtaText() {
+    if (!batchProgress || !batchProgress.startedAt) return "";
+    const done = Number(batchProgress.done) || 0;
+    const total = Number(batchProgress.total) || 0;
+    const remaining = Math.max(0, total - done);
+    if (done < 1) {
+      return `About ${formatDuration(remaining * 45 * 1000)} remaining (rough estimate)`;
+    }
+    const elapsed = Date.now() - batchProgress.startedAt;
+    const avg = elapsed / done;
+    return `About ${formatDuration(remaining * avg)} remaining`;
+  }
+
+  function renderWorkingBanner() {
+    if (batchRunning && batchProgress) {
+      const done = Number(batchProgress.done) || 0;
+      const total = Math.max(1, Number(batchProgress.total) || 1);
+      const pct = Math.min(100, Math.round((done / total) * 100));
+      const eta = batchEtaText();
+      return `
+        <div class="research-working-banner" role="status" aria-live="polite">
+          <div class="research-working-top">
+            <span class="research-spinner" aria-hidden="true"></span>
+            <div>
+              <p class="research-working-title">Research in progress${batchProgress.lineName ? ` — ${esc(batchProgress.lineName)}` : ""}</p>
+              <p class="research-working-sub">
+                ${esc(String(done))} of ${esc(String(total))} ships complete
+                ${batchProgress.currentName ? ` · Currently: <strong>${esc(batchProgress.currentName)}</strong>` : ""}
+              </p>
+              <p class="research-working-eta">${esc(eta)} · Keep this tab open</p>
+            </div>
+            <button type="button" class="admin-button danger" onclick="ResearchContentAdmin.cancelBatch()">Stop after current</button>
+          </div>
+          <div class="research-progress-track" aria-hidden="true">
+            <div class="research-progress-fill" style="width:${pct}%"></div>
+          </div>
+        </div>
+      `;
+    }
+    if (researching) {
+      return `
+        <div class="research-working-banner" role="status" aria-live="polite">
+          <div class="research-working-top">
+            <span class="research-spinner" aria-hidden="true"></span>
+            <div>
+              <p class="research-working-title">Researching…</p>
+              <p class="research-working-sub">Searching sources and writing the draft. This usually takes under a minute.</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    return "";
+  }
 
   let researchForm = {
     entity_type: "ship",
@@ -292,21 +386,36 @@
 
   async function openResearch() {
     view = "research";
-    batchProgress = null;
-    batchCancelRequested = false;
-    researchForm = {
-      entity_type: "ship",
-      entity_id: "",
-      entity_name: "",
-      entity_key: "",
-      confirm_duplicate: false,
-      refresh_of: "",
-      estimate: null,
-      duplicates: [],
-      batch_line_id: "",
-      batch_skip_existing: true,
-      batch_auto_publish: true
-    };
+    if (!batchRunning) {
+      batchProgress = null;
+      batchCancelRequested = false;
+      try {
+        const raw = sessionStorage.getItem(BATCH_STORAGE_KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved?.running) {
+            message = `A previous batch may have been interrupted at ${saved.done || 0}/${saved.total || "?"} (${saved.lineName || "cruise line"}). Check the list for what was saved, then re-run with “Skip ships that already have research”.`;
+            messageTone = "warning";
+            clearBatchProgressStorage();
+          }
+        }
+      } catch {
+        // ignore
+      }
+      researchForm = {
+        entity_type: "ship",
+        entity_id: "",
+        entity_name: "",
+        entity_key: "",
+        confirm_duplicate: false,
+        refresh_of: "",
+        estimate: null,
+        duplicates: [],
+        batch_line_id: "",
+        batch_skip_existing: true,
+        batch_auto_publish: true
+      };
+    }
     await loadEntityOptions("ship");
     try {
       const est = await api("estimate", {}, "research-content-generate");
@@ -351,38 +460,47 @@
   }
 
   function renderList() {
-    const cards = items
+    const rows = items
       .map((item) => {
         const fresh = item.freshness || "unknown";
-        const warn =
+        const canPublish =
+          item.content_status === "draft" || item.content_status === "reviewed";
+        const warnClass =
           item.content_status === "failed"
-            ? " research-card--failed"
+            ? " research-row--failed"
             : fresh === "overdue"
-              ? " research-card--overdue"
+              ? " research-row--overdue"
               : fresh === "review_soon"
-                ? " research-card--soon"
+                ? " research-row--soon"
                 : "";
         return `
-          <article class="research-card admin-object-card${warn}" role="button" tabindex="0"
+          <tr class="research-row admin-object-card${warnClass}" role="button" tabindex="0"
             aria-label="Open research for ${esc(item.entity_name)}"
             onclick="ResearchContentAdmin.openEditor('${esc(item.id)}')"
             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();ResearchContentAdmin.openEditor('${esc(item.id)}')}">
-            <div class="research-card-top">
-              <h3 class="research-card-title">${esc(item.entity_name)}</h3>
-              <span class="research-pill">${esc(ENTITY_LABELS[item.entity_type] || item.entity_type)}</span>
-            </div>
-            <div class="research-card-meta">
-              <span class="research-status research-status--${esc(item.content_status)}">${esc(STATUS_LABELS[item.content_status] || item.content_status)}</span>
-              <span class="research-freshness research-freshness--${esc(fresh)}">${esc(FRESHNESS_LABELS[fresh] || fresh)}</span>
-            </div>
-            <dl class="research-card-stats">
-              <div><dt>Generated</dt><dd>${esc(formatDate(item.generated_at))}</dd></div>
-              <div><dt>Reviewed</dt><dd>${esc(formatDate(item.last_reviewed_at))}</dd></div>
-              <div><dt>Refresh due</dt><dd>${esc(formatDate(item.refresh_after))}</dd></div>
-              <div><dt>Sources</dt><dd>${esc(String(item.source_count ?? 0))}</dd></div>
-            </dl>
-            ${item.failure_detail ? `<p class="research-card-warning">${esc(item.failure_detail)}</p>` : ""}
-          </article>
+            <td class="research-row-name">
+              <strong>${esc(item.entity_name)}</strong>
+              ${item.failure_detail ? `<span class="research-row-warning">${esc(item.failure_detail)}</span>` : ""}
+            </td>
+            <td><span class="research-pill">${esc(ENTITY_LABELS[item.entity_type] || item.entity_type)}</span></td>
+            <td><span class="research-status research-status--${esc(item.content_status)}">${esc(STATUS_LABELS[item.content_status] || item.content_status)}</span></td>
+            <td><span class="research-freshness research-freshness--${esc(fresh)}">${esc(FRESHNESS_LABELS[fresh] || fresh)}</span></td>
+            <td>${esc(formatDate(item.generated_at))}</td>
+            <td>${esc(formatDate(item.last_reviewed_at))}</td>
+            <td>${esc(formatDate(item.refresh_after))}</td>
+            <td>${esc(String(item.source_count ?? 0))}</td>
+            <td class="research-row-actions" onclick="event.stopPropagation()">
+              ${
+                canPublish
+                  ? `<button type="button" class="admin-button black small" onclick="event.stopPropagation();ResearchContentAdmin.publishFromList('${esc(item.id)}')">Publish</button>`
+                  : item.content_status === "published"
+                    ? `<span class="admin-muted">Published</span>`
+                    : item.content_status === "failed"
+                      ? `<button type="button" class="admin-button secondary small" onclick="event.stopPropagation();ResearchContentAdmin.openEditor('${esc(item.id)}')">Fix</button>`
+                      : ""
+              }
+            </td>
+          </tr>
         `;
       })
       .join("");
@@ -402,6 +520,7 @@
           <button type="button" class="admin-button black" onclick="ResearchContentAdmin.openResearch()">Research New Content</button>
         </div>
         ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : ""}">${esc(message)}</p>` : ""}
+        ${batchRunning ? renderWorkingBanner() : ""}
         <div class="research-filters">
           <label>Entity
             <select onchange="ResearchContentAdmin.setFilter('entity', this.value)">
@@ -442,7 +561,24 @@
           loading
             ? `<p class="admin-muted">Loading…</p>`
             : items.length
-              ? `<div class="research-grid">${cards}</div>`
+              ? `<div class="research-table-wrap">
+                  <table class="research-table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Freshness</th>
+                        <th>Generated</th>
+                        <th>Reviewed</th>
+                        <th>Refresh due</th>
+                        <th>Sources</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                  </table>
+                </div>`
               : `<div class="research-empty"><p>No research content yet.</p><p class="admin-muted">Start with Research New Content to create a reviewed draft.</p></div>`
         }
       </section>
@@ -531,8 +667,12 @@
             </div>
             ${
               batchProgress
-                ? `<div class="research-batch-progress">
-                    <p><strong>${esc(String(batchProgress.done))}/${esc(String(batchProgress.total))}</strong>${batchProgress.currentName ? ` · Working on ${esc(batchProgress.currentName)}` : ""}</p>
+                ? `<div class="research-batch-progress ${batchRunning ? "is-running" : ""}">
+                    ${
+                      batchRunning
+                        ? `<p class="research-batch-live"><span class="research-spinner research-spinner--inline" aria-hidden="true"></span> Working… ${esc(String(batchProgress.done))}/${esc(String(batchProgress.total))} · ${esc(batchEtaText())}</p>`
+                        : `<p><strong>${esc(String(batchProgress.done))}/${esc(String(batchProgress.total))}</strong> complete</p>`
+                    }
                     <ul>${(batchProgress.results || [])
                       .map((r) => {
                         const statusText = r.ok
@@ -547,6 +687,11 @@
                         return `<li class="research-batch-${esc(r.ok ? "ok" : "fail")}">${esc(r.name)} — ${esc(statusText)}${open}</li>`;
                       })
                       .join("")}</ul>
+                    ${
+                      batchRunning && batchProgress.currentName
+                        ? `<p class="research-batch-current">Now researching: <strong>${esc(batchProgress.currentName)}</strong></p>`
+                        : ""
+                    }
                   </div>`
                 : ""
             }
@@ -562,9 +707,10 @@
           </div>
         </div>
         ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : ""}">${esc(message)}</p>` : ""}
+        ${renderWorkingBanner()}
         <div class="research-form">
           <label>Entity type
-            <select onchange="ResearchContentAdmin.setResearchType(this.value)" ${batchRunning ? "disabled" : ""}>
+            <select onchange="ResearchContentAdmin.setResearchType(this.value)" ${batchRunning || researching ? "disabled" : ""}>
               <option value="ship" ${researchForm.entity_type === "ship" ? "selected" : ""}>Ship</option>
               <option value="destination" ${researchForm.entity_type === "destination" ? "selected" : ""}>Destination</option>
               <option value="port" ${researchForm.entity_type === "port" ? "selected" : ""}>Port</option>
@@ -929,14 +1075,25 @@
 
       batchRunning = true;
       batchCancelRequested = false;
-      batchProgress = { total: queue.length, done: 0, currentName: "", results: [] };
+      batchProgress = {
+        total: queue.length,
+        done: 0,
+        currentName: "",
+        results: [],
+        startedAt: Date.now(),
+        lineName
+      };
       message = `Batch research started for ${lineName}.`;
       messageTone = "info";
+      document.title = `(0/${queue.length}) Researching… · 101cruise Admin`;
+      saveBatchProgress();
       if (typeof global.renderAdmin === "function") global.renderAdmin();
 
       for (const ship of queue) {
         if (batchCancelRequested) break;
         batchProgress.currentName = ship.name || "Ship";
+        document.title = `(${batchProgress.done}/${batchProgress.total}) ${batchProgress.currentName} · 101cruise Admin`;
+        saveBatchProgress();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
         try {
           const result = await api(
@@ -964,6 +1121,7 @@
               });
               batchProgress.done += 1;
               batchProgress.currentName = "";
+              saveBatchProgress();
               if (typeof global.renderAdmin === "function") global.renderAdmin();
               continue;
             }
@@ -987,11 +1145,15 @@
         }
         batchProgress.done += 1;
         batchProgress.currentName = "";
+        document.title = `(${batchProgress.done}/${batchProgress.total}) Researching… · 101cruise Admin`;
+        saveBatchProgress();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
 
       batchRunning = false;
       batchProgress.currentName = "";
+      clearBatchProgressStorage();
+      document.title = "101cruise Admin";
       await loadEntityOptions("ship");
       const okCount = (batchProgress.results || []).filter((r) => r.ok).length;
       const publishedCount = (batchProgress.results || []).filter((r) => r.published).length;
@@ -1009,6 +1171,8 @@
     async beginResearch() {
       message = "";
       researching = true;
+      singleResearchStartedAt = Date.now();
+      document.title = "Researching… · 101cruise Admin";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
       try {
         if (researchForm.entity_type === "destination" || researchForm.entity_type === "port") {
@@ -1022,6 +1186,7 @@
             message = "Possible duplicate found — open existing or confirm to continue.";
             messageTone = "warning";
             researching = false;
+            document.title = "101cruise Admin";
             if (typeof global.renderAdmin === "function") global.renderAdmin();
             return;
           }
@@ -1055,6 +1220,8 @@
         }
       } finally {
         researching = false;
+        singleResearchStartedAt = null;
+        document.title = "101cruise Admin";
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
@@ -1153,6 +1320,19 @@
         messageTone = "error";
       } finally {
         saving = false;
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+    },
+    async publishFromList(id) {
+      if (!id) return;
+      try {
+        await api("publish", { id });
+        message = "Published.";
+        messageTone = "success";
+        await ensureLoaded({ quiet: true });
+      } catch (error) {
+        message = error.message || "Publish failed";
+        messageTone = "error";
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
