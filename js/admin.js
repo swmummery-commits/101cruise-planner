@@ -685,6 +685,47 @@ async function setTab(tab) {
   }
 }
 
+/**
+ * Single production Admin navigation source of truth.
+ * Featured Cruises must remain immediately after Cruise Lines/Ships.
+ * setTab(id) sets activeTab; renderAdmin() paints buttons + matching panel.
+ */
+const ADMIN_MAIN_TABS = [
+  { id: "cruise-intelligence", label: "Cruise Lines/Ships", render: () => renderCruiseIntelligencePanel() },
+  { id: "featured-cruises", label: "Featured Cruises", render: () => renderFeaturedCruisesPanel() },
+  { id: "checklist", label: "Checklist", render: () => renderChecklistPanel() },
+  { id: "packing", label: "Packing", render: () => renderPackingPanel() },
+  { id: "smart-profiles", label: "Smart Profiles", render: () => renderSmartProfilesPanel() },
+  { id: "crm-sync", label: "CRM Sync", render: () => renderCrmSyncPanel() },
+  { id: "planner-preview", label: "Planner Preview", render: () => renderPlannerPreviewPanel() },
+  { id: "calculator-data", label: "Drinks Calculator", render: () => renderCalculatorDataPanel() },
+  { id: "usage-insights", label: "Usage & Insights", render: () => renderUsageInsightsPanel() }
+];
+
+function renderAdminTabNavigation() {
+  return ADMIN_MAIN_TABS.map(
+    (tab) =>
+      `<button type="button" class="admin-tab ${activeTab === tab.id ? "active" : ""}" onclick="setTab('${tab.id}')">${esc(tab.label)}</button>`
+  ).join("");
+}
+
+function renderAdminActivePanel() {
+  const tab = ADMIN_MAIN_TABS.find((entry) => entry.id === activeTab);
+  if (tab) return tab.render();
+
+  // Legacy redirects (older bookmarks / stale state)
+  if (activeTab === "ships" || activeTab === "cruise-lines") {
+    return `
+      <div class="admin-card">
+        <h3>Moved to Cruise Lines/Ships</h3>
+        <p class="admin-muted">Logos, ship images, and catalogue data are now managed in the Cruise Lines/Ships tab.</p>
+        <button class="admin-button" onclick="setTab('cruise-intelligence')">Open Cruise Lines/Ships</button>
+      </div>
+    `;
+  }
+  return "";
+}
+
 function renderAdmin() {
   app.classList.toggle("is-calculator-data", activeTab === "calculator-data");
   app.innerHTML = `
@@ -703,34 +744,11 @@ function renderAdmin() {
 
     ${showImportDataPanel ? renderImportDataPanel() : ""}
 
-    <div class="admin-tabs">
-      <button class="admin-tab ${activeTab === "cruise-intelligence" ? "active" : ""}" onclick="setTab('cruise-intelligence')">Cruise Lines/Ships</button>
-      <button class="admin-tab ${activeTab === "featured-cruises" ? "active" : ""}" onclick="setTab('featured-cruises')">Featured Cruises</button>
-      <button class="admin-tab ${activeTab === "checklist" ? "active" : ""}" onclick="setTab('checklist')">Checklist</button>
-      <button class="admin-tab ${activeTab === "packing" ? "active" : ""}" onclick="setTab('packing')">Packing</button>
-      <button class="admin-tab ${activeTab === "smart-profiles" ? "active" : ""}" onclick="setTab('smart-profiles')">Smart Profiles</button>
-      <button class="admin-tab ${activeTab === "crm-sync" ? "active" : ""}" onclick="setTab('crm-sync')">CRM Sync</button>
-      <button class="admin-tab ${activeTab === "planner-preview" ? "active" : ""}" onclick="setTab('planner-preview')">Planner Preview</button>
-      <button class="admin-tab ${activeTab === "calculator-data" ? "active" : ""}" onclick="setTab('calculator-data')">Drinks Calculator</button>
-      <button class="admin-tab ${activeTab === "usage-insights" ? "active" : ""}" onclick="setTab('usage-insights')">Usage & Insights</button>
+    <div class="admin-tabs" role="tablist" aria-label="101cruise Admin sections">
+      ${renderAdminTabNavigation()}
     </div>
 
-    ${activeTab === "cruise-intelligence" ? renderCruiseIntelligencePanel() : ""}
-    ${activeTab === "featured-cruises" ? renderFeaturedCruisesPanel() : ""}
-    ${activeTab === "checklist" ? renderChecklistPanel() : ""}
-    ${activeTab === "ships" || activeTab === "cruise-lines" ? `
-      <div class="admin-card">
-        <h3>Moved to Cruise Lines/Ships</h3>
-        <p class="admin-muted">Logos, ship images, and catalogue data are now managed in the Cruise Lines/Ships tab.</p>
-        <button class="admin-button" onclick="setTab('cruise-intelligence')">Open Cruise Lines/Ships</button>
-      </div>
-    ` : ""}
-    ${activeTab === "packing" ? renderPackingPanel() : ""}
-    ${activeTab === "smart-profiles" ? renderSmartProfilesPanel() : ""}
-    ${activeTab === "crm-sync" ? renderCrmSyncPanel() : ""}
-    ${activeTab === "planner-preview" ? renderPlannerPreviewPanel() : ""}
-    ${activeTab === "calculator-data" ? renderCalculatorDataPanel() : ""}
-    ${activeTab === "usage-insights" ? renderUsageInsightsPanel() : ""}
+    ${renderAdminActivePanel()}
   `;
 }
 
