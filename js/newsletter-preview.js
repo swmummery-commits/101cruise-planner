@@ -20,6 +20,7 @@
     NIGHTS_SHIP: "nights_ship",
     PORTS: "ports",
     DESCRIPTION: "description",
+    EXPLORE_MORE: "explore_more",
     // Reserved for later sprints — do not render in TOP_HALF.
     ROUTE_MAP: "route_map",
     PRICING: "pricing",
@@ -37,7 +38,8 @@
     SECTION_IDS.DATES,
     SECTION_IDS.NIGHTS_SHIP,
     SECTION_IDS.PORTS,
-    SECTION_IDS.DESCRIPTION
+    SECTION_IDS.DESCRIPTION,
+    SECTION_IDS.EXPLORE_MORE
   ];
 
   const DAY_NAMES = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -85,14 +87,17 @@
     return `${start.label}, ${start.year} TO ${end.label}, ${end.year}`;
   }
 
-  function formatNightsShip(nights, shipName) {
+  /** Example: 10 NIGHTS | OCEANIA SIRENA */
+  function formatNightsShip(nights, cruiseLineName, shipName) {
     const nightsNum = Number(nights);
     const nightsLabel =
       Number.isFinite(nightsNum) && nightsNum >= 1 ? `${Math.round(nightsNum)} NIGHTS` : "";
+    const line = String(cruiseLineName || "").trim().toUpperCase();
     const ship = String(shipName || "").trim().toUpperCase();
-    if (nightsLabel && ship) return `${nightsLabel} | ${ship}`;
+    const vessel = [line, ship].filter(Boolean).join(" ");
+    if (nightsLabel && vessel) return `${nightsLabel} | ${vessel}`;
     if (nightsLabel) return nightsLabel;
-    if (ship) return ship;
+    if (vessel) return vessel;
     return "";
   }
 
@@ -103,12 +108,8 @@
       .filter(Boolean);
   }
 
-  function formatPortsLines(ports, longLineChars = 90) {
-    if (!ports.length) return [];
-    const single = ports.join(" | ");
-    if (single.length <= longLineChars || ports.length < 4) return [single];
-    const mid = Math.ceil(ports.length / 2);
-    return [ports.slice(0, mid).join(" | "), ports.slice(mid).join(" | ")];
+  function formatPortsJoined(ports) {
+    return ports.join(" | ");
   }
 
   function splitParagraphs(text) {
@@ -117,6 +118,13 @@
       .split(/\n{2,}/)
       .map((p) => p.trim())
       .filter(Boolean);
+  }
+
+  function buildLandingPageUrl(input = {}) {
+    if (input.landingPageUrl) return String(input.landingPageUrl).trim();
+    const slug = String(input.publicSlug || input.public_slug || "").trim();
+    if (!slug) return "";
+    return `/cruise/${slug}`;
   }
 
   /**
@@ -131,15 +139,15 @@
     const departureDate = input.departureDate || input.departure_date || "";
     const returnDate = input.returnDate || input.return_date || "";
     const nights = input.nights;
+    const cruiseLineName = input.cruiseLineName || input.cruise_line_name || "";
     const shipName = input.shipName || input.ship_name || "";
     const itinerarySummary = String(input.itinerarySummary || input.itinerary_summary || "").trim();
     const description = String(
       input.description || input.short_editorial || input.full_description || ""
     ).trim();
+    const landingPageUrl = buildLandingPageUrl(input);
 
     const ports = splitPorts(itinerarySummary);
-    const typo = global.NewsletterTypography || {};
-    const portsBody = typo.portsBody || {};
 
     return {
       destinationStrip: destinationStrip || "",
@@ -147,13 +155,14 @@
       heroImageUrl,
       heroImageAlt,
       datesLine: formatNewsletterDateRange(departureDate, returnDate),
-      nightsShipLine: formatNightsShip(nights, shipName),
+      nightsShipLine: formatNightsShip(nights, cruiseLineName, shipName),
       portsHeading: "PORTS OF CALL:",
-      portsLines: formatPortsLines(ports, portsBody.longLineChars || 90),
-      portsJoined: ports.join(" | "),
+      portsJoined: formatPortsJoined(ports),
       description,
       descriptionParagraphs: splitParagraphs(description),
-      // Future-facing placeholders (unused in TOP_HALF)
+      exploreMoreLabel: "EXPLORE MORE",
+      landingPageUrl,
+      // Future-facing placeholders (unused in TOP_HALF extras)
       routeMapUrl: input.routeMapUrl || null,
       pricingRows: input.pricingRows || [],
       inclusions: input.inclusions || null,
@@ -171,6 +180,9 @@
     if (token.textTransform) parts.push(`text-transform:${token.textTransform}`);
     if (token.color) parts.push(`color:${token.color}`);
     if (token.textAlign) parts.push(`text-align:${token.textAlign}`);
+    if (token.maxWidthPx != null) parts.push(`max-width:${token.maxWidthPx}px`);
+    if (token.marginBottomPx != null) parts.push(`margin-bottom:${token.marginBottomPx}px`);
+    if (token.marginTopPx != null) parts.push(`margin-top:${token.marginTopPx}px`);
     if (token.paragraphSpacingPx != null) parts.push(`margin:0 0 ${token.paragraphSpacingPx}px`);
     return parts.join(";");
   }
@@ -178,11 +190,17 @@
   function renderSection(sectionId, model, escapeHtml) {
     const esc = typeof escapeHtml === "function" ? escapeHtml : defaultEscape;
     const typo = global.NewsletterTypography || {};
+    const spacing = typo.spacing || {};
 
     switch (sectionId) {
       case SECTION_IDS.DESTINATION_STRIP: {
         if (!model.destinationStrip) return "";
-        return `<p class="nl-destination" style="${styleFromToken(typo.destinationStrip)}">${esc(model.destinationStrip)}</p>`;
+        const token = {
+          ...(typo.destinationStrip || {}),
+          marginBottomPx:
+            typo.destinationStrip?.marginBottomPx || spacing.destinationToHeadlinePx || 52
+        };
+        return `<p class="nl-destination" style="${styleFromToken(token)}">${esc(model.destinationStrip)}</p>`;
       }
       case SECTION_IDS.HEADLINE: {
         if (!model.headline) return "";
@@ -190,11 +208,12 @@
       }
       case SECTION_IDS.HERO: {
         const hero = typo.heroImage || {};
+        const marginBottom = hero.marginBottomPx || spacing.heroToDatesPx || 36;
         if (!model.heroImageUrl) {
-          return `<div class="nl-hero nl-hero-empty" style="max-width:${hero.maxWidthPx || 600}px">No hero image selected</div>`;
+          return `<div class="nl-hero nl-hero-empty" style="max-width:${hero.maxWidthPx || 600}px;margin-bottom:${marginBottom}px">No hero image selected</div>`;
         }
         return `
-          <div class="nl-hero" style="max-width:${hero.maxWidthPx || 600}px">
+          <div class="nl-hero" style="max-width:${hero.maxWidthPx || 600}px;margin-bottom:${marginBottom}px">
             <div class="nl-hero-frame" style="aspect-ratio:${hero.aspectRatio || "16 / 9"}">
               <img src="${esc(model.heroImageUrl)}" alt="${esc(model.heroImageAlt)}" style="object-fit:${hero.objectFit || "cover"}">
             </div>
@@ -210,25 +229,53 @@
         return `<p class="nl-nights-ship" style="${styleFromToken(typo.nightsShip)}">${esc(model.nightsShipLine)}</p>`;
       }
       case SECTION_IDS.PORTS: {
-        if (!model.portsLines.length) return "";
-        const lines = model.portsLines
-          .map((line) => `<p class="nl-ports-line" style="${styleFromToken(typo.portsBody)}">${esc(line)}</p>`)
-          .join("");
+        if (!model.portsJoined) return "";
+        const headingStyle = styleFromToken({
+          ...(typo.portsHeading || {}),
+          textAlign: undefined
+        });
+        const bodyStyle = styleFromToken({
+          ...(typo.portsBody || {}),
+          textAlign: undefined
+        });
         return `
-          <div class="nl-ports">
-            <p class="nl-ports-heading" style="${styleFromToken(typo.portsHeading)}">${esc(model.portsHeading)}</p>
-            ${lines}
-          </div>
+          <p class="nl-ports">
+            <span class="nl-ports-heading" style="${headingStyle}">${esc(model.portsHeading)}</span>
+            <span class="nl-ports-body" style="${bodyStyle}"> ${esc(model.portsJoined)}</span>
+          </p>
         `;
       }
       case SECTION_IDS.DESCRIPTION: {
         if (!model.descriptionParagraphs.length) return "";
-        const descStyle = styleFromToken(typo.description);
+        const descToken = typo.description || {};
+        const blockMarginTop = descToken.marginTopPx || spacing.portsToDescriptionPx || 72;
+        const descStyle = styleFromToken(descToken);
         return `
-          <div class="nl-description">
+          <div class="nl-description" style="margin-top:${blockMarginTop}px">
             ${model.descriptionParagraphs
               .map((p) => `<p class="nl-description-p" style="${descStyle}">${esc(p)}</p>`)
               .join("")}
+          </div>
+        `;
+      }
+      case SECTION_IDS.EXPLORE_MORE: {
+        const cta = typo.exploreMore || {};
+        const href = model.landingPageUrl || "#";
+        const disabled = !model.landingPageUrl;
+        const marginTop = cta.marginTopPx || spacing.descriptionToCtaPx || 48;
+        const label = model.exploreMoreLabel || "EXPLORE MORE";
+        return `
+          <div class="nl-explore-more" style="margin-top:${marginTop}px">
+            <a
+              class="nl-explore-more-btn${disabled ? " is-disabled" : ""}"
+              href="${esc(href)}"
+              ${disabled ? 'aria-disabled="true" tabindex="-1" onclick="return false;"' : 'target="_blank" rel="noopener noreferrer"'}
+              style="font-family:${cta.fontFamily || "Helvetica, Arial, sans-serif"};font-size:${cta.fontSizePx || 13}px;font-weight:${cta.fontWeight || 700};letter-spacing:${cta.letterSpacingPx || 1.5}px;text-transform:${cta.textTransform || "uppercase"};background:${cta.background || "#8DD9BF"};color:${cta.color || "#111111"};padding:${cta.paddingYPx || 14}px ${cta.paddingXPx || 28}px"
+              title="${disabled ? "Set a Public Slug to enable the landing page link" : "Open cruise landing page"}"
+            >
+              <span>${esc(label)}</span>
+              <span class="nl-explore-more-arrow" aria-hidden="true">→</span>
+            </a>
           </div>
         `;
       }

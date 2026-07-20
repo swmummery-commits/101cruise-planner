@@ -8049,7 +8049,9 @@ function buildFeaturedNewsletterPreviewModel() {
   const returnDate = addCalendarDays(departure, nightsNum) || draft.return_date || "";
   const destinationStrip =
     buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port) || draft.destination_strip || "";
+  const line = ciCruiseLines.find((row) => row.id === draft.cruise_line_id);
   const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id);
+  const publicSlug = String(draft.public_slug || "").trim();
   return window.NewsletterPreview.buildModel({
     destinationStrip,
     headline: draft.headline || "",
@@ -8058,9 +8060,11 @@ function buildFeaturedNewsletterPreviewModel() {
     departureDate: departure,
     returnDate,
     nights: nightsNum,
+    cruiseLineName: line?.name || "",
     shipName: ship?.name || "",
     itinerarySummary: draft.itinerary_summary || "",
-    description: draft.short_editorial || draft.full_description || ""
+    description: draft.short_editorial || draft.full_description || "",
+    publicSlug
   });
 }
 

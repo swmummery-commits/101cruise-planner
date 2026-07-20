@@ -15,6 +15,24 @@
     return String(value || "").trim().length;
   }
 
+  /** Estimate wrapped lines for a centred headline at its max width. */
+  function estimateWrappedLines(text, maxCharsPerLine = 42) {
+    const words = String(text || "").trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return 0;
+    let lines = 1;
+    let current = 0;
+    for (const word of words) {
+      const next = current === 0 ? word.length : current + 1 + word.length;
+      if (next > maxCharsPerLine && current > 0) {
+        lines += 1;
+        current = word.length;
+      } else {
+        current = next;
+      }
+    }
+    return lines;
+  }
+
   /**
    * @param {object} model Newsletter content model from NewsletterPreview.buildModel
    * @returns {{ level: 'warning', field: string, message: string }[]}
@@ -45,11 +63,14 @@
     const headlineRules = typo.headline || {};
     if (headline) {
       const words = wordCount(headline);
-      if (words > (headlineRules.maxWords || 14)) {
+      const lines = estimateWrappedLines(headline, headlineRules.approxCharsPerLine || 42);
+      const maxWords = headlineRules.maxWords || 12;
+      const maxLines = headlineRules.maxLines || 3;
+      if (words > maxWords || lines > maxLines) {
         warnings.push({
           level: "warning",
           field: "headline",
-          message: "Headline may become too tall for the newsletter."
+          message: "Headline should be no more than 12 words or 3 lines."
         });
       }
     }
@@ -72,6 +93,7 @@
   global.NewsletterValidation = {
     wordCount,
     charCount,
+    estimateWrappedLines,
     validateNewsletterPreview
   };
 })(typeof window !== "undefined" ? window : globalThis);
