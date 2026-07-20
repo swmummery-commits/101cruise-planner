@@ -133,6 +133,11 @@
   margin: 0;
 }
 
+/* Extra air before Ports — padding avoids margin collapse with section rhythm. */
+.nl-nights-ship {
+  padding-bottom: 22px;
+}
+
 .nl-ports {
   margin: 0 auto;
   max-width: 600px;
@@ -149,15 +154,33 @@
   font-weight: 400;
 }
 
-/* Major editorial break before teaser paragraph. */
+/* Subtle divider: Editorial Overview → Editorial Story */
+.nl-story-break {
+  width: 100%;
+  max-width: none;
+}
+
+.nl-editorial-divider {
+  display: block;
+  width: 100%;
+  border: none;
+  border-top: 1px solid #e8e8e8;
+  margin: 0;
+  padding: 0;
+  height: 0;
+  background: none;
+  box-shadow: none;
+}
+
 .nl-description {
   margin-left: auto;
   margin-right: auto;
   max-width: 560px;
 }
 
-.nl-ports + .nl-description {
-  /* margin-top set inline from typography token (~72px) */
+/* Spacing below divider is owned by .nl-story-break margin-bottom. */
+.nl-story-break + .nl-description {
+  margin-top: 0;
 }
 
 .nl-description-p {

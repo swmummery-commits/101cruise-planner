@@ -248,10 +248,18 @@
       case SECTION_IDS.DESCRIPTION: {
         if (!model.descriptionParagraphs.length) return "";
         const descToken = typo.description || {};
-        const blockMarginTop = descToken.marginTopPx || spacing.portsToDescriptionPx || 72;
-        const descStyle = styleFromToken(descToken);
+        const divider = typo.editorialDivider || {};
+        const portsToDivider = divider.marginTopPx || spacing.portsToDividerPx || 38;
+        const dividerToTeaser = divider.marginBottomPx || spacing.dividerToDescriptionPx || 38;
+        const descStyle = styleFromToken({
+          ...descToken,
+          marginTopPx: undefined
+        });
         return `
-          <div class="nl-description" style="margin-top:${blockMarginTop}px">
+          <div class="nl-story-break" style="margin-top:${portsToDivider}px;margin-bottom:${dividerToTeaser}px" aria-hidden="true">
+            <hr class="nl-editorial-divider" style="border:none;border-top:1px solid ${divider.color || "#E8E8E8"};height:0;margin:0;width:100%">
+          </div>
+          <div class="nl-description">
             ${model.descriptionParagraphs
               .map((p) => `<p class="nl-description-p" style="${descStyle}">${esc(p)}</p>`)
               .join("")}

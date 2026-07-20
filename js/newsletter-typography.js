@@ -103,7 +103,13 @@
       preferredMinWords: 60,
       preferredMaxWords: 90,
       maxRecommendedWords: 100,
-      marginTopPx: 72
+      marginTopPx: 38
+    },
+    editorialDivider: {
+      color: "#E8E8E8",
+      heightPx: 1,
+      marginTopPx: 38,
+      marginBottomPx: 38
     },
     exploreMore: {
       fontFamily: "Helvetica, Arial, sans-serif",
@@ -123,7 +129,9 @@
       blockPaddingXPx: 40,
       destinationToHeadlinePx: 52,
       heroToDatesPx: 36,
-      portsToDescriptionPx: 72,
+      nightsToPortsExtraPx: 22,
+      portsToDividerPx: 38,
+      dividerToDescriptionPx: 38,
       descriptionToCtaPx: 48
     }
   };
