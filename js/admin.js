@@ -8234,10 +8234,18 @@ function setFeaturedNewsletterPreviewMode(value) {
 
 function renderFeaturedNewsletterPreviewModal() {
   if (!showFeaturedNewsletterPreview || !window.NewsletterPreview) return "";
+  const draft = featuredFormDraft || {};
   const model = buildFeaturedNewsletterPreviewModel();
   const warnings = window.NewsletterValidation.validateNewsletterPreview(model);
   const warningsHtml = window.NewsletterPreview.renderWarnings(warnings, esc);
   const articleHtml = window.NewsletterPreview.renderNewsletterCruise(model, { escapeHtml: esc });
+  const isPublished = (draft.publication_status || "draft") === "published";
+  const slug = String(draft.public_slug || "").trim();
+  const publishHint = !isPublished
+    ? `<div class="admin-message admin-error" style="margin:0 0 14px">Explore More will show “not currently available” until this cruise is <strong>Published</strong> and Saved. Current status: ${esc(featuredStatusLabel(draft.publication_status))}.</div>`
+    : !slug
+      ? `<div class="admin-message admin-error" style="margin:0 0 14px">Set a Public Slug and Save before Explore More can open the public page.</div>`
+      : `<div class="admin-message admin-success" style="margin:0 0 14px">Public page: <code>/cruise/${esc(featuredSlugify(slug))}</code> — only works after Save while status is Published.</div>`;
   return `
     <div class="newsletter-preview-overlay" onclick="if (event.target === this) closeFeaturedNewsletterPreview()">
       <div class="newsletter-preview-modal" role="dialog" aria-modal="true" aria-labelledby="featuredNewsletterPreviewTitle">
@@ -8255,6 +8263,7 @@ function renderFeaturedNewsletterPreviewModal() {
           </div>
         </div>
         <div class="newsletter-preview-modal-body">
+          ${publishHint}
           ${warningsHtml}
           ${articleHtml}
         </div>
@@ -9203,10 +9212,17 @@ async function saveFeaturedCruise() {
     full_description: String(draft.full_description || "").trim() || null,
     use_ship_hero_image: draft.hero_media_id ? false : draft.use_ship_hero_image !== false,
     hero_media_id: draft.hero_media_id || null,
-    hero_image_url: normalizeUrl(draft.hero_image_url) || null,
+    // Denormalise library public URL so the public page still renders if media joins fail.
+    hero_image_url:
+      (draft.hero_media_id && (draft.hero_media?.public_url || draft.hero_media?.url)) ||
+      normalizeUrl(draft.hero_image_url) ||
+      null,
     hero_image_alt: String(draft.hero_image_alt || "").trim() || null,
     route_map_media_id: draft.route_map_media_id || null,
-    route_map_image_url: normalizeUrl(draft.route_map_image_url) || null,
+    route_map_image_url:
+      (draft.route_map_media_id && (draft.route_map_media?.public_url || draft.route_map_media?.url)) ||
+      normalizeUrl(draft.route_map_image_url) ||
+      null,
     itinerary_summary: itinerarySummary,
     alcohol_package: Boolean(draft.alcohol_package),
     wifi: Boolean(draft.wifi),

@@ -143,15 +143,8 @@
         return;
       }
 
-      // Defence in depth: never render airline fields even if accidentally present.
-      if (Array.isArray(cruise.pricing)) {
-        cruise.pricing = cruise.pricing.map((row) => ({
-          room_label: row.room_label,
-          brochure_price: row.brochure_price,
-          cruise_101_price: row.cruise_101_price,
-          display_order: row.display_order
-        }));
-      }
+      // Public page must never show room pricing (newsletter keeps pricing).
+      delete cruise.pricing;
 
       setMetadata(cruise);
       const model = window.NewsletterPreview.buildModel({
@@ -159,7 +152,7 @@
         outputMode: "general",
         description: cruise.short_editorial || "",
         full_description: cruise.full_description || cruise.short_editorial || "",
-        pricingRows: cruise.pricing || []
+        pricingRows: []
       });
       root.innerHTML = window.NewsletterPreview.renderPublicCruisePage(model, { escapeHtml: esc });
     } catch (error) {

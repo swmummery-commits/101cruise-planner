@@ -23,6 +23,7 @@
     EXPLORE_MORE: "explore_more",
     ROUTE_MAP: "route_map",
     PRICING: "pricing",
+    PRICING_NOTE: "pricing_note",
     INCLUDED: "included",
     OTHER_INFORMATION: "other_information",
     DISCLAIMER: "disclaimer",
@@ -48,7 +49,7 @@
     SECTION_IDS.DISCLAIMER
   ];
 
-  /** Public dynamic cruise page (standalone brochure). */
+  /** Public dynamic cruise page (standalone brochure). No room pricing. */
   const PUBLIC_PAGE_SECTIONS = [
     SECTION_IDS.DESTINATION_STRIP,
     SECTION_IDS.HEADLINE,
@@ -58,7 +59,7 @@
     SECTION_IDS.PORTS,
     SECTION_IDS.FULL_DESCRIPTION,
     SECTION_IDS.ROUTE_MAP,
-    SECTION_IDS.PRICING,
+    SECTION_IDS.PRICING_NOTE,
     SECTION_IDS.INCLUDED,
     SECTION_IDS.OTHER_INFORMATION,
     SECTION_IDS.DISCLAIMER,
@@ -302,42 +303,39 @@
     return sharedApi ? sharedApi.formatMoney(value) : String(Math.round(Number(value) || 0));
   }
 
-  function renderPriceMetrics(display, sharedApi, esc) {
-    if (!display) return "";
-    const bits = [];
-    if (display.showPerDay && display.perDay != null) {
-      bits.push(`$${money(sharedApi, display.perDay)}/day`);
-    }
-    if (display.saveAmount != null) {
-      bits.push(`Save $${money(sharedApi, display.saveAmount)}`);
-    }
-    if (display.showPercentOff && display.percentOff != null) {
-      bits.push(`${display.percentOff}% off`);
-    }
-    if (display.greatDeal) bits.push("GREAT DEAL");
-    if (!bits.length) return "";
-    return `<div class="nl-price-metrics">${esc(bits.join(" · "))}</div>`;
+  function renderYouSave(display, sharedApi, esc, { emphasizePercent = false } = {}) {
+    if (!display || display.saveAmount == null) return "";
+    const percent =
+      emphasizePercent && display.showPercentOff && display.percentOff != null
+        ? ` <span class="nl-price-percent">| ${esc(display.percentOff)}% OFF</span>`
+        : "";
+    return `<div class="nl-price-you-save">YOU SAVE $${money(sharedApi, display.saveAmount)}${percent}</div>`;
   }
 
   function renderPricingModule(mod, sharedApi, esc) {
     const brochure =
       mod.brochurePrice != null
-        ? `<div class="nl-price-brochure">$${money(sharedApi, mod.brochurePrice)}</div>`
-        : "";
-    const airline =
-      mod.airlinePrice != null
-        ? `<div class="nl-price-offer">
-            <div class="nl-price-offer-label">Airline</div>
-            <div class="nl-price-offer-value">$${money(sharedApi, mod.airlinePrice)}</div>
-            ${renderPriceMetrics(mod.airlineDisplay, sharedApi, esc)}
+        ? `<div class="nl-price-tier">
+            <div class="nl-price-tier-label">Brochure Price</div>
+            <div class="nl-price-tier-value nl-price-brochure-value">$${money(sharedApi, mod.brochurePrice)}</div>
           </div>`
         : "";
+
     const cruise101 =
       mod.cruise101Price != null
-        ? `<div class="nl-price-offer">
-            <div class="nl-price-offer-label">101cruise</div>
-            <div class="nl-price-offer-value">$${money(sharedApi, mod.cruise101Price)}</div>
-            ${renderPriceMetrics(mod.cruise101Display, sharedApi, esc)}
+        ? `<div class="nl-price-tier nl-price-tier-101">
+            <div class="nl-price-tier-label">101CRUISE PRICE</div>
+            <div class="nl-price-tier-value nl-price-101-value">$${money(sharedApi, mod.cruise101Price)}</div>
+            ${renderYouSave(mod.cruise101Display, sharedApi, esc)}
+          </div>`
+        : "";
+
+    const airline =
+      mod.airlinePrice != null
+        ? `<div class="nl-price-tier nl-price-tier-airline">
+            <div class="nl-price-tier-label">Airline Staff Price</div>
+            <div class="nl-price-tier-value nl-price-airline-value">$${money(sharedApi, mod.airlinePrice)}</div>
+            ${renderYouSave(mod.airlineDisplay, sharedApi, esc, { emphasizePercent: true })}
           </div>`
         : "";
 
@@ -345,10 +343,34 @@
       <div class="nl-price-module">
         <div class="nl-price-room">${esc(mod.roomLabel)}</div>
         ${brochure}
-        ${airline}
+        ${cruise101 ? `<hr class="nl-price-divider" aria-hidden="true">` : ""}
         ${cruise101}
+        ${airline ? `<hr class="nl-price-divider" aria-hidden="true">` : ""}
+        ${airline}
       </div>
     `;
+  }
+
+  function inclusionIconSvg(key) {
+    const common = 'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+    switch (key) {
+      case "alcohol_package":
+        return `<svg ${common}><path d="M8 2h8l-1 7a5 5 0 1 1-6 0L8 2z"/><path d="M12 14v8"/><path d="M9 22h6"/></svg>`;
+      case "wifi":
+        return `<svg ${common}><path d="M5 12.5a9 9 0 0 1 14 0"/><path d="M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1" fill="currentColor" stroke="none"/></svg>`;
+      case "gratuities":
+        return `<svg ${common}><path d="M12 3v3"/><path d="M8 8h8a3 3 0 0 1 0 6H9a3 3 0 0 0 0 6h8"/><path d="M12 21v-3"/></svg>`;
+      case "all_tours":
+        return `<svg ${common}><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>`;
+      case "all_dining":
+        return `<svg ${common}><path d="M4 3v8a2 2 0 0 0 2 2h1v8"/><path d="M7 3v7"/><path d="M10 3v7"/><path d="M17 3v18"/><path d="M17 8h3a2 2 0 0 0 0-4h-3"/></svg>`;
+      case "laundry":
+        return `<svg ${common}><path d="M8 4h8l2 4H6l2-4z"/><path d="M7 8v11a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V8"/><path d="M10 14h4"/></svg>`;
+      case "onboard_credit":
+        return `<svg ${common}><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h2"/></svg>`;
+      default:
+        return `<svg ${common}><circle cx="12" cy="12" r="8"/><path d="M9 12l2 2 4-4"/></svg>`;
+    }
   }
 
   function renderSection(sectionId, model, escapeHtml) {
@@ -484,12 +506,20 @@
       }
       case SECTION_IDS.PRICING: {
         if (!model.pricingModules?.length) return "";
+        const count = Math.min(model.pricingModules.length, 4);
         return `
-          <div class="nl-pricing">
-            ${model.pricingModules.map((mod) => renderPricingModule(mod, sharedApi, esc)).join("")}
-            <p class="nl-pricing-note">All prices are per person in USD</p>
+          <div class="nl-pricing" data-columns="${count}">
+            <div class="nl-pricing-grid">
+              ${model.pricingModules
+                .slice(0, 4)
+                .map((mod) => renderPricingModule(mod, sharedApi, esc))
+                .join("")}
+            </div>
           </div>
         `;
+      }
+      case SECTION_IDS.PRICING_NOTE: {
+        return `<p class="nl-public-pricing-note">Check the 101cruise.com.au newsletter for pricing.</p>`;
       }
       case SECTION_IDS.INCLUDED: {
         if (!model.inclusionItems?.length) return "";
@@ -497,7 +527,16 @@
           <div class="nl-included">
             <p class="nl-included-heading">INCLUDED WITH THIS CRUISE</p>
             <ul class="nl-included-list">
-              ${model.inclusionItems.map((item) => `<li>${esc(item)}</li>`).join("")}
+              ${model.inclusionItems
+                .map((item) => {
+                  const label = typeof item === "string" ? item : item.label;
+                  const key = typeof item === "string" ? "" : item.key;
+                  return `<li class="nl-included-item">
+                    <span class="nl-included-icon">${inclusionIconSvg(key)}</span>
+                    <span class="nl-included-label">${esc(label)}</span>
+                  </li>`;
+                })
+                .join("")}
             </ul>
           </div>
         `;

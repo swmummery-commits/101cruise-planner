@@ -114,20 +114,16 @@
     if (cruise.hero_media_id) {
       const selected =
         heroMedia || mediaLibrary.find((m) => m.id === cruise.hero_media_id) || null;
-      if (selected && selected.is_active !== false) {
+      if (selected) {
         const resolved = asMediaObject(selected, "Featured Cruise Media Library selection");
         if (resolved) {
           resolved.altText = resolveAltText(cruise, selected, resolved.title);
           return resolved;
         }
       }
-      // ID is set but row not loaded yet — do not silently fall through to a different image.
-      if (!selected) {
-        return null;
-      }
     }
 
-    // 2. Existing Featured Cruise hero_image_url (legacy / pinned Squarespace etc.)
+    // 2. Existing Featured Cruise hero_image_url (includes denormalised library URL)
     const legacyUrl = String(cruise.hero_image_url || "").trim();
     if (legacyUrl) {
       const resolved = asMediaObject(
@@ -136,7 +132,9 @@
           alt_text: resolveAltText(cruise, null, cruise.headline),
           title: cruise.headline || "Cruise image"
         },
-        "Legacy Featured Cruise image URL"
+        cruise.hero_media_id
+          ? "Featured Cruise Media Library selection"
+          : "Legacy Featured Cruise image URL"
       );
       if (resolved) return resolved;
     }

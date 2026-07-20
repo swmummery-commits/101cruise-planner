@@ -88,7 +88,8 @@ function resolveHeroImage(cruise = {}, context = {}) {
   if (cruise.hero_media_id) {
     const selected =
       heroMedia || mediaLibrary.find((m) => m.id === cruise.hero_media_id) || null;
-    if (selected && selected.is_active !== false) {
+    // Prefer explicit Featured Cruise selection even if marked inactive.
+    if (selected) {
       const resolved = asMediaObject(selected, "Featured Cruise Media Library selection");
       if (resolved) {
         resolved.altText = resolveAltText(cruise, selected, resolved.title);
@@ -105,7 +106,9 @@ function resolveHeroImage(cruise = {}, context = {}) {
         alt_text: resolveAltText(cruise, null, cruise.headline),
         title: cruise.headline || "Cruise image"
       },
-      "Legacy Featured Cruise image URL"
+      cruise.hero_media_id
+        ? "Featured Cruise Media Library selection"
+        : "Legacy Featured Cruise image URL"
     );
   }
 

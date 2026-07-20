@@ -115,11 +115,16 @@
   function buildInclusionItems(source = {}) {
     const items = [];
     for (const entry of INCLUSION_LABELS) {
-      if (source[entry.key]) items.push(entry.label);
+      if (source[entry.key]) {
+        items.push({ key: entry.key, label: entry.label });
+      }
     }
     const obc = parsePrice(source.onboard_credit);
     if (obc != null && obc > 0) {
-      items.push(`On Board Credit $${formatMoney(obc)}`);
+      items.push({
+        key: "onboard_credit",
+        label: `On Board Credit $${formatMoney(obc)}`
+      });
     }
     return items;
   }
@@ -164,8 +169,8 @@
       laundry: Boolean(cruise.laundry),
       onboard_credit: cruise.onboard_credit == null ? null : Number(cruise.onboard_credit),
       other_information: cruise.other_information || "",
-      public_slug: cruise.public_slug || "",
-      pricing: sanitizePricingForPublic(pricingRows || [])
+      public_slug: cruise.public_slug || ""
+      // Room pricing omitted from public cruise pages.
     };
   }
 

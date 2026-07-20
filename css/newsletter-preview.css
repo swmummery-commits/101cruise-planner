@@ -251,82 +251,125 @@
 
 .nl-pricing {
   margin: 44px auto 0;
-  max-width: 600px;
-  display: grid;
-  gap: 18px;
+  max-width: 720px;
 }
+
+.nl-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--nl-price-cols, 1), minmax(0, 1fr));
+  border: 1px solid #d9e0dd;
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.nl-pricing[data-columns="1"] { --nl-price-cols: 1; }
+.nl-pricing[data-columns="2"] { --nl-price-cols: 2; }
+.nl-pricing[data-columns="3"] { --nl-price-cols: 3; }
+.nl-pricing[data-columns="4"] { --nl-price-cols: 4; }
 
 .nl-price-module {
   text-align: center;
-  padding: 0 0 16px;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 22px 14px 20px;
+  border-right: 1px solid #e5ebe8;
 }
 
-.nl-price-module:last-of-type {
-  border-bottom: none;
+.nl-price-module:last-child {
+  border-right: none;
 }
 
 .nl-price-room {
   font-family: Helvetica, Arial, sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: #111;
-  margin-bottom: 8px;
+  color: #1f7a66;
+  margin: 0 0 16px;
+  line-height: 1.3;
+  min-height: 2.6em;
 }
 
-.nl-price-brochure {
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-  color: #111;
-  margin-bottom: 8px;
+.nl-price-tier {
+  padding: 4px 0 10px;
 }
 
-.nl-price-offer {
-  margin-top: 8px;
-}
-
-.nl-price-offer-label {
+.nl-price-tier-label {
   font-family: Helvetica, Arial, sans-serif;
   font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: none;
+  color: #111;
+  margin-bottom: 6px;
+}
+
+.nl-price-tier-101 .nl-price-tier-label {
+  color: #1f7a66;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
-  color: #245c4e;
+  font-size: 11px;
 }
 
-.nl-price-offer-value {
+.nl-price-tier-value {
   font-family: Helvetica, Arial, sans-serif;
-  font-size: 20px;
   font-weight: 700;
-  color: #2f8f74;
+  line-height: 1.1;
 }
 
-.nl-price-metrics {
-  margin-top: 4px;
+.nl-price-brochure-value {
+  font-size: 22px;
+  color: #111;
+}
+
+.nl-price-101-value {
+  font-size: 28px;
+  color: #1f7a66;
+}
+
+.nl-price-airline-value {
+  font-size: 24px;
+  color: #1a2b5c;
+}
+
+.nl-price-you-save {
+  margin-top: 6px;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 12px;
-  color: #374151;
+  font-weight: 600;
+  color: #111;
 }
 
-.nl-pricing-note {
-  margin: 8px 0 0;
+.nl-price-percent {
+  color: #1a2b5c;
+  font-weight: 700;
+}
+
+.nl-price-divider {
+  border: none;
+  border-top: 1px solid #e5ebe8;
+  margin: 4px 10px 8px;
+}
+
+.nl-public-pricing-note {
+  margin: 36px auto 0;
+  max-width: 560px;
   font-family: Helvetica, Arial, sans-serif;
-  font-size: 11px;
-  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #4b5563;
   text-align: center;
 }
 
 .nl-included {
   margin: 44px auto 0;
-  max-width: 560px;
+  max-width: 620px;
   text-align: center;
 }
 
 .nl-included-heading {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 14px;
   font-weight: 700;
@@ -342,10 +385,58 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px 18px;
+  gap: 12px 22px;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 14px;
   color: #111;
+}
+
+.nl-included-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nl-included-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  color: #1f7a66;
+  flex: 0 0 auto;
+}
+
+.nl-included-icon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.nl-included-label {
+  line-height: 1.2;
+}
+
+@media (max-width: 720px) {
+  .nl-pricing[data-columns="3"],
+  .nl-pricing[data-columns="4"] {
+    --nl-price-cols: 2;
+  }
+}
+
+@media (max-width: 520px) {
+  .nl-pricing[data-columns="2"],
+  .nl-pricing[data-columns="3"],
+  .nl-pricing[data-columns="4"] {
+    --nl-price-cols: 1;
+  }
+
+  .nl-price-module {
+    border-right: none;
+    border-bottom: 1px solid #e5ebe8;
+  }
+
+  .nl-price-module:last-child {
+    border-bottom: none;
+  }
 }
 
 .nl-other-information {
