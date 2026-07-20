@@ -7794,14 +7794,7 @@ function blankFeaturedPricing() {
     category: "",
     brochure_price: "",
     cruise_101_price: "",
-    airline_price: "",
-    alcohol_package: false,
-    wifi: false,
-    gratuities: false,
-    all_tours: false,
-    all_dining: false,
-    laundry: false,
-    onboard_credit: ""
+    airline_price: ""
   };
 }
 
@@ -7815,14 +7808,63 @@ function mapPricingRowFromDb(row, index) {
     category: row.category || "",
     brochure_price: row.brochure_price == null ? "" : String(row.brochure_price),
     cruise_101_price: row.cruise_101_price == null ? "" : String(row.cruise_101_price),
-    airline_price: row.airline_price == null ? "" : String(row.airline_price),
-    alcohol_package: Boolean(row.alcohol_package),
-    wifi: Boolean(row.wifi),
-    gratuities: Boolean(row.gratuities),
-    all_tours: Boolean(row.all_tours),
-    all_dining: Boolean(row.all_dining),
-    laundry: Boolean(row.laundry),
-    onboard_credit: row.onboard_credit == null ? "" : String(row.onboard_credit)
+    airline_price: row.airline_price == null ? "" : String(row.airline_price)
+  };
+}
+
+function blankFeaturedOfferInclusions() {
+  return {
+    alcohol_package: false,
+    wifi: false,
+    gratuities: false,
+    all_tours: false,
+    all_dining: false,
+    laundry: false,
+    onboard_credit: ""
+  };
+}
+
+/** Offer inclusions belong on the Featured Cruise parent, not pricing rows. */
+function offerInclusionsFromCruise(existing, pricingRows = []) {
+  const parent = {
+    alcohol_package: Boolean(existing?.alcohol_package),
+    wifi: Boolean(existing?.wifi),
+    gratuities: Boolean(existing?.gratuities),
+    all_tours: Boolean(existing?.all_tours),
+    all_dining: Boolean(existing?.all_dining),
+    laundry: Boolean(existing?.laundry),
+    onboard_credit: existing?.onboard_credit == null ? "" : String(existing.onboard_credit)
+  };
+  const parentHas =
+    parent.alcohol_package ||
+    parent.wifi ||
+    parent.gratuities ||
+    parent.all_tours ||
+    parent.all_dining ||
+    parent.laundry ||
+    parent.onboard_credit !== "";
+  if (parentHas) return parent;
+
+  // One-time display fallback for records saved before offer-level inclusions existed.
+  const legacy = (pricingRows || []).find(
+    (row) =>
+      row.alcohol_package ||
+      row.wifi ||
+      row.gratuities ||
+      row.all_tours ||
+      row.all_dining ||
+      row.laundry ||
+      row.onboard_credit != null
+  );
+  if (!legacy) return parent;
+  return {
+    alcohol_package: Boolean(legacy.alcohol_package),
+    wifi: Boolean(legacy.wifi),
+    gratuities: Boolean(legacy.gratuities),
+    all_tours: Boolean(legacy.all_tours),
+    all_dining: Boolean(legacy.all_dining),
+    laundry: Boolean(legacy.laundry),
+    onboard_credit: legacy.onboard_credit == null ? "" : String(legacy.onboard_credit)
   };
 }
 
@@ -7863,7 +7905,8 @@ async function startNewFeaturedCruise() {
     hero_image_alt: "",
     itinerary_summary: "",
     other_information: "",
-    display_order: 0
+    display_order: 0,
+    ...blankFeaturedOfferInclusions()
   };
   featuredNewsletterDefaultsBaseline = {
     newsletter_number: featuredFormDraft.newsletter_number,
@@ -7936,7 +7979,8 @@ async function editFeaturedCruise(id) {
       hero_image_alt: existing.hero_image_alt || "",
       itinerary_summary: itinerarySummary,
       other_information: existing.other_information || "",
-      display_order: existing.display_order ?? 0
+      display_order: existing.display_order ?? 0,
+      ...offerInclusionsFromCruise(existing, pricing || [])
     };
     featuredNewsletterDefaultsBaseline = {
       newsletter_number: featuredFormDraft.newsletter_number,
@@ -7971,14 +8015,7 @@ function captureFeaturedPricingFromDom() {
     category: document.getElementById(`fcPriceCategory-${index}`)?.value || "",
     brochure_price: document.getElementById(`fcPriceBrochure-${index}`)?.value || "",
     cruise_101_price: document.getElementById(`fcPrice101-${index}`)?.value || "",
-    airline_price: document.getElementById(`fcPriceAirline-${index}`)?.value || "",
-    alcohol_package: Boolean(document.getElementById(`fcIncAlcohol-${index}`)?.checked),
-    wifi: Boolean(document.getElementById(`fcIncWifi-${index}`)?.checked),
-    gratuities: Boolean(document.getElementById(`fcIncGrat-${index}`)?.checked),
-    all_tours: Boolean(document.getElementById(`fcIncTours-${index}`)?.checked),
-    all_dining: Boolean(document.getElementById(`fcIncDining-${index}`)?.checked),
-    laundry: Boolean(document.getElementById(`fcIncLaundry-${index}`)?.checked),
-    onboard_credit: document.getElementById(`fcOnboardCredit-${index}`)?.value || ""
+    airline_price: document.getElementById(`fcPriceAirline-${index}`)?.value || ""
   }));
 }
 
@@ -8009,7 +8046,14 @@ function captureFeaturedDraftFromDom() {
     hero_image_alt: document.getElementById("fcHeroImageAlt")?.value || "",
     itinerary_summary: document.getElementById("fcItinerarySummary")?.value || "",
     other_information: document.getElementById("fcOtherInformation")?.value || "",
-    display_order: document.getElementById("fcDisplayOrder")?.value || 0
+    display_order: document.getElementById("fcDisplayOrder")?.value || 0,
+    alcohol_package: Boolean(document.getElementById("fcIncAlcohol")?.checked),
+    wifi: Boolean(document.getElementById("fcIncWifi")?.checked),
+    gratuities: Boolean(document.getElementById("fcIncGrat")?.checked),
+    all_tours: Boolean(document.getElementById("fcIncTours")?.checked),
+    all_dining: Boolean(document.getElementById("fcIncDining")?.checked),
+    laundry: Boolean(document.getElementById("fcIncLaundry")?.checked),
+    onboard_credit: document.getElementById("fcOnboardCredit")?.value || ""
   };
   captureFeaturedPricingFromDom();
 }
@@ -8088,48 +8132,45 @@ function updateFeaturedHeroPreview() {
   }
 }
 
-function buildFeaturedPriceCalcLines(row, nights) {
+function buildFeaturedPriceCalcText(price, brochure, nights) {
+  if (price == null || !Number.isFinite(price) || price < 0) return "";
+  const parts = [];
+  const nightsNum = nights === "" || nights == null ? null : Number(nights);
+  if (nightsNum != null && Number.isFinite(nightsNum) && nightsNum >= 1) {
+    parts.push(`$${formatFeaturedMoney(price / nightsNum)}/day`);
+  }
+  if (brochure != null && Number.isFinite(brochure) && brochure > price) {
+    const save = brochure - price;
+    const pct = Math.round((save / brochure) * 100);
+    parts.push(`Save $${formatFeaturedMoney(save)}`);
+    parts.push(`${pct}% off`);
+  }
+  return parts.join(" · ");
+}
+
+function buildFeaturedPriceCalcs(row, nights) {
   const brochure = row.brochure_price === "" || row.brochure_price == null ? null : Number(row.brochure_price);
   const airline = row.airline_price === "" || row.airline_price == null ? null : Number(row.airline_price);
   const price101 = row.cruise_101_price === "" || row.cruise_101_price == null ? null : Number(row.cruise_101_price);
-  const nightsNum = nights === "" || nights == null ? null : Number(nights);
-  const lines = [];
-
-  function lineFor(label, price) {
-    if (price == null || !Number.isFinite(price) || price < 0) return null;
-    const parts = [];
-    if (nightsNum != null && Number.isFinite(nightsNum) && nightsNum >= 1) {
-      parts.push(`$${formatFeaturedMoney(price / nightsNum)}/day`);
-    }
-    if (brochure != null && Number.isFinite(brochure) && brochure > price) {
-      const save = brochure - price;
-      const pct = Math.round((save / brochure) * 100);
-      parts.push(`Save $${formatFeaturedMoney(save)}`);
-      parts.push(`${pct}% off`);
-    }
-    if (!parts.length) return null;
-    return `${label}: ${parts.join(" · ")}`;
-  }
-
-  const a = lineFor("Airline", airline);
-  const b = lineFor("101cruise", price101);
-  if (a) lines.push(a);
-  if (b) lines.push(b);
-  return lines;
+  return {
+    airline: buildFeaturedPriceCalcText(airline, brochure, nights),
+    cruise101: buildFeaturedPriceCalcText(price101, brochure, nights)
+  };
 }
 
 function refreshFeaturedPricingCalcs() {
   const nights = document.getElementById("fcNights")?.value || "";
   featuredFormPricing.forEach((row, index) => {
-    const el = document.getElementById(`fcPriceCalcs-${index}`);
-    if (!el) return;
     const live = {
       brochure_price: document.getElementById(`fcPriceBrochure-${index}`)?.value ?? row.brochure_price,
       airline_price: document.getElementById(`fcPriceAirline-${index}`)?.value ?? row.airline_price,
       cruise_101_price: document.getElementById(`fcPrice101-${index}`)?.value ?? row.cruise_101_price
     };
-    const lines = buildFeaturedPriceCalcLines(live, nights);
-    el.innerHTML = lines.length ? lines.map((line) => `<div>${esc(line)}</div>`).join("") : "";
+    const calcs = buildFeaturedPriceCalcs(live, nights);
+    const airlineEl = document.getElementById(`fcCalcAirline-${index}`);
+    const cruiseEl = document.getElementById(`fcCalc101-${index}`);
+    if (airlineEl) airlineEl.textContent = calcs.airline;
+    if (cruiseEl) cruiseEl.textContent = calcs.cruise101;
   });
 }
 
@@ -8251,7 +8292,7 @@ function renderFeaturedCruiseListItem(row) {
 }
 
 function renderFeaturedPricingBlock(row, index, nights) {
-  const calcs = buildFeaturedPriceCalcLines(row, nights);
+  const calcs = buildFeaturedPriceCalcs(row, nights);
   const showSaveRoom = featuredRoomTypePromptIndex === index;
   return `
     <div class="featured-pricing-block">
@@ -8272,28 +8313,17 @@ function renderFeaturedPricingBlock(row, index, nights) {
           <label>Brochure Price</label>
           <input id="fcPriceBrochure-${index}" type="number" min="0" step="1" value="${esc(row.brochure_price)}" oninput="refreshFeaturedPricingCalcs()">
         </div>
-        <div class="admin-field">
+        <div class="admin-field featured-price-with-calc">
           <label>Airline Price</label>
           <input id="fcPriceAirline-${index}" type="number" min="0" step="1" value="${esc(row.airline_price)}" oninput="refreshFeaturedPricingCalcs()">
+          <div id="fcCalcAirline-${index}" class="featured-price-calc">${esc(calcs.airline)}</div>
         </div>
-        <div class="admin-field">
+        <div class="admin-field featured-price-with-calc">
           <label>101cruise Price</label>
           <input id="fcPrice101-${index}" type="number" min="0" step="1" value="${esc(row.cruise_101_price)}" oninput="refreshFeaturedPricingCalcs()">
+          <div id="fcCalc101-${index}" class="featured-price-calc">${esc(calcs.cruise101)}</div>
         </div>
         <button type="button" class="admin-button secondary small featured-price-remove" onclick="removeFeaturedPricingRow(${index})">Remove</button>
-      </div>
-      <div id="fcPriceCalcs-${index}" class="featured-price-calcs">${calcs.map((line) => `<div>${esc(line)}</div>`).join("")}</div>
-      <div class="featured-inclusions-row">
-        <label class="featured-inc"><input id="fcIncAlcohol-${index}" type="checkbox" ${row.alcohol_package ? "checked" : ""}> Alcohol Package</label>
-        <label class="featured-inc"><input id="fcIncWifi-${index}" type="checkbox" ${row.wifi ? "checked" : ""}> Wi-Fi</label>
-        <label class="featured-inc"><input id="fcIncGrat-${index}" type="checkbox" ${row.gratuities ? "checked" : ""}> Gratuities</label>
-        <label class="featured-inc"><input id="fcIncTours-${index}" type="checkbox" ${row.all_tours ? "checked" : ""}> All Tours</label>
-        <label class="featured-inc"><input id="fcIncDining-${index}" type="checkbox" ${row.all_dining ? "checked" : ""}> All Dining</label>
-        <label class="featured-inc"><input id="fcIncLaundry-${index}" type="checkbox" ${row.laundry ? "checked" : ""}> Laundry</label>
-        <div class="admin-field featured-obc-field">
-          <label for="fcOnboardCredit-${index}">On Board Credit ($)</label>
-          <input id="fcOnboardCredit-${index}" type="number" min="0" step="1" value="${esc(row.onboard_credit)}">
-        </div>
       </div>
     </div>
   `;
@@ -8456,24 +8486,38 @@ function renderFeaturedCruiseForm() {
       </section>
 
       <section class="featured-form-section">
-        <div class="admin-list-top">
-          <div>
-            <h4>Pricing</h4>
-            <p class="admin-muted">All prices are USD. Airline prices are confidential and must never appear on a public page.</p>
-          </div>
-          <button type="button" class="admin-button secondary small" onclick="addFeaturedPricingRow()">+ Add Room Price</button>
-        </div>
+        <h4>Pricing</h4>
+        <p class="admin-muted">All prices are USD. Airline prices are confidential and must never appear on a public page.</p>
         <div class="featured-warning">Confirm every figure before saving. Category is for internal reference only.</div>
         <div class="featured-row-editor">
           ${featuredFormPricing.map((row, index) => renderFeaturedPricingBlock(row, index, draft.nights)).join("")}
         </div>
-      </section>
+        <div class="featured-add-pricing">
+          <button type="button" class="admin-button secondary small" onclick="addFeaturedPricingRow()">+ Add Room Price</button>
+        </div>
 
-      <section class="featured-form-section">
-        <h4>Other Information</h4>
-        <div class="admin-field">
-          <label for="fcOtherInformation">Other information</label>
-          <textarea id="fcOtherInformation" rows="3">${esc(draft.other_information || "")}</textarea>
+        <div class="featured-offer-inclusions">
+          <h4>Offer Inclusions</h4>
+          <div class="featured-inclusions-row">
+            <label class="featured-inc"><input id="fcIncAlcohol" type="checkbox" ${draft.alcohol_package ? "checked" : ""}> Alcohol Package</label>
+            <label class="featured-inc"><input id="fcIncWifi" type="checkbox" ${draft.wifi ? "checked" : ""}> Wi-Fi</label>
+            <label class="featured-inc"><input id="fcIncGrat" type="checkbox" ${draft.gratuities ? "checked" : ""}> Gratuities</label>
+            <label class="featured-inc"><input id="fcIncTours" type="checkbox" ${draft.all_tours ? "checked" : ""}> All Tours</label>
+            <label class="featured-inc"><input id="fcIncDining" type="checkbox" ${draft.all_dining ? "checked" : ""}> All Dining</label>
+            <label class="featured-inc"><input id="fcIncLaundry" type="checkbox" ${draft.laundry ? "checked" : ""}> Laundry</label>
+            <div class="admin-field featured-obc-field">
+              <label for="fcOnboardCredit">On Board Credit ($)</label>
+              <input id="fcOnboardCredit" type="number" min="0" step="1" value="${esc(draft.onboard_credit ?? "")}">
+            </div>
+          </div>
+        </div>
+
+        <div class="featured-other-information">
+          <h4>Other Information</h4>
+          <div class="admin-field">
+            <label for="fcOtherInformation">Other information</label>
+            <input id="fcOtherInformation" type="text" value="${esc(draft.other_information || "")}" placeholder="e.g. Reduced Deposit, Book by 31 July, Fly Free">
+          </div>
         </div>
       </section>
 
@@ -8541,7 +8585,9 @@ async function saveFeaturedCruise() {
   }
 
   const pricingPayload = [];
+  let onboardCredit = null;
   try {
+    onboardCredit = parseOptionalPrice(draft.onboard_credit);
     for (let index = 0; index < featuredFormPricing.length; index += 1) {
       const row = featuredFormPricing[index];
       const roomLabel = String(row.room_label || "").trim();
@@ -8549,10 +8595,7 @@ async function saveFeaturedCruise() {
       const brochure = parseOptionalPrice(row.brochure_price);
       const price101 = parseOptionalPrice(row.cruise_101_price);
       const airline = parseOptionalPrice(row.airline_price);
-      const obc = parseOptionalPrice(row.onboard_credit);
-      const hasInc =
-        row.alcohol_package || row.wifi || row.gratuities || row.all_tours || row.all_dining || row.laundry;
-      if (!roomLabel && brochure == null && price101 == null && airline == null && !hasInc && obc == null && !category) {
+      if (!roomLabel && brochure == null && price101 == null && airline == null && !category) {
         continue;
       }
       if (!roomLabel) {
@@ -8561,6 +8604,7 @@ async function saveFeaturedCruise() {
         renderAdmin();
         return;
       }
+      // Do not read/write inclusion columns on featured_cruise_pricing.
       pricingPayload.push({
         id: row.id || undefined,
         room_label: roomLabel,
@@ -8569,13 +8613,6 @@ async function saveFeaturedCruise() {
         cruise_101_price: price101,
         airline_price: airline,
         currency_code: "USD",
-        alcohol_package: Boolean(row.alcohol_package),
-        wifi: Boolean(row.wifi),
-        gratuities: Boolean(row.gratuities),
-        all_tours: Boolean(row.all_tours),
-        all_dining: Boolean(row.all_dining),
-        laundry: Boolean(row.laundry),
-        onboard_credit: obc,
         display_order: pricingPayload.length
       });
     }
@@ -8603,6 +8640,13 @@ async function saveFeaturedCruise() {
     hero_image_url: useShipHero ? null : normalizeUrl(draft.hero_image_url) || null,
     hero_image_alt: String(draft.hero_image_alt || "").trim() || null,
     itinerary_summary: itinerarySummary,
+    alcohol_package: Boolean(draft.alcohol_package),
+    wifi: Boolean(draft.wifi),
+    gratuities: Boolean(draft.gratuities),
+    all_tours: Boolean(draft.all_tours),
+    all_dining: Boolean(draft.all_dining),
+    laundry: Boolean(draft.laundry),
+    onboard_credit: onboardCredit,
     other_information: String(draft.other_information || "").trim() || null,
     newsletter_number: newsletterNumber,
     newsletter_publication_date: draft.newsletter_publication_date || null,

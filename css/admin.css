@@ -2819,7 +2819,7 @@
 }
 
 .featured-pricing-block {
-  padding: 12px;
+  padding: 10px 12px;
   border: 1px solid var(--admin-border, #e3e8e5);
   border-radius: 10px;
   background: #fbfcfb;
@@ -2830,7 +2830,7 @@
   display: grid;
   grid-template-columns: minmax(140px, 1.5fr) minmax(72px, 0.7fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(100px, 1fr) auto;
   gap: 8px 10px;
-  align-items: end;
+  align-items: start;
 }
 
 .featured-pricing-main-row .admin-field label,
@@ -2855,19 +2855,45 @@
 }
 
 .featured-price-remove {
-  margin-bottom: 2px;
+  margin-top: 22px;
   white-space: nowrap;
 }
 
-.featured-price-calcs {
-  margin-top: 8px;
-  font-size: 12px;
-  line-height: 1.4;
-  color: #374151;
+.featured-price-with-calc {
+  min-width: 0;
 }
 
-.featured-price-calcs:empty {
-  display: none;
+.featured-price-calc {
+  margin-top: 5px;
+  min-height: 1.2em;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #6b7280;
+  text-align: left;
+}
+
+.featured-price-calc:empty {
+  display: block;
+  min-height: 0;
+}
+
+.featured-add-pricing {
+  margin-top: 12px;
+}
+
+.featured-offer-inclusions,
+.featured-other-information {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--admin-border, #e3e8e5);
+}
+
+.featured-offer-inclusions h4,
+.featured-other-information h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 650;
+  color: #111;
 }
 
 .featured-inclusions-row {
@@ -2875,7 +2901,6 @@
   flex-wrap: wrap;
   gap: 8px 14px;
   align-items: end;
-  margin-top: 10px;
 }
 
 .featured-inc {
