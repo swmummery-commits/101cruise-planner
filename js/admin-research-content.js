@@ -1154,9 +1154,6 @@
       }
     },
     async publish() {
-      if (!window.confirm("Publish this research content? It will become available on matching public cruise pages.")) {
-        return;
-      }
       saving = true;
       try {
         await api("save_draft", {
