@@ -372,14 +372,14 @@
 
 .nl-includes-bar,
 .nl-other-info-bar {
-  margin: 20px auto 0;
+  margin: 10px auto 0;
   max-width: 100%;
   width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px 18px;
-  padding: 16px 22px;
+  gap: 10px 12px;
+  padding: 12px 16px;
   border: 1px solid #b7d8cc;
   border-radius: 12px;
   background: #fff;
@@ -387,13 +387,25 @@
   text-align: center;
 }
 
+/* Keep pricing / includes / other-info stacked tightly */
+.newsletter-preview-article .nl-pricing + .nl-includes-bar,
+.newsletter-preview-article .nl-pricing + .nl-other-info-bar,
+.newsletter-preview-article .nl-includes-bar + .nl-other-info-bar,
+.public-cruise-article .nl-pricing + .nl-includes-bar,
+.public-cruise-article .nl-pricing + .nl-other-info-bar,
+.public-cruise-article .nl-includes-bar + .nl-other-info-bar,
+.public-cruise-article .nl-pricing-note + .nl-includes-bar,
+.public-cruise-article .nl-pricing-note + .nl-other-info-bar {
+  margin-top: 10px;
+}
+
 .nl-includes-label,
 .nl-other-info-label {
   flex: 0 0 auto;
   font-family: Helvetica, Arial, sans-serif;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
   color: #1f7a66;
   white-space: nowrap;
@@ -404,7 +416,7 @@
   margin: 0;
   padding: 0;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: center;
   gap: 0;
@@ -414,13 +426,13 @@
 .nl-includes-item {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 16px;
+  gap: 5px;
+  padding: 2px 10px;
   border-right: 1px solid #d5e3de;
   font-family: Helvetica, Arial, sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
   color: #111;
 }
@@ -436,15 +448,15 @@
 
 .nl-includes-icon {
   display: inline-flex;
-  width: 18px;
-  height: 18px;
+  width: 13px;
+  height: 13px;
   color: #1f7a66;
   flex: 0 0 auto;
 }
 
 .nl-includes-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 13px;
+  height: 13px;
   display: block;
 }
 
@@ -461,7 +473,7 @@
 .nl-other-info-text {
   font-family: Helvetica, Arial, sans-serif;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 400;
   letter-spacing: 0.45px;
   text-transform: uppercase;
   color: #111;
@@ -490,11 +502,15 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 8px;
+  }
+
+  .nl-includes-items {
+    flex-wrap: nowrap;
   }
 
   .nl-includes-item {
-    padding: 6px 12px;
-    border-right: 1px solid #d5e3de;
+    padding: 2px 8px;
   }
 
   .nl-includes-item:last-child {
@@ -588,5 +604,131 @@
 
   .nl-headline {
     max-width: min(500px, 92%);
+  }
+}
+
+/* Sprint 10D — public research teasers */
+.nl-research-teaser {
+  margin: 40px auto 0;
+  max-width: 640px;
+  text-align: center;
+}
+
+.nl-research-heading {
+  margin: 0 0 8px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #1f7a66;
+}
+
+.nl-research-name {
+  margin: 0 0 14px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+}
+
+.nl-research-image {
+  margin: 0 auto 16px;
+  max-width: 420px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #f3f4f6;
+}
+
+.nl-research-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.nl-research-overview,
+.nl-research-personality {
+  margin: 0 auto 12px;
+  max-width: 560px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #374151;
+}
+
+.nl-research-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+  text-align: center;
+}
+
+.nl-research-facts dt {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.nl-research-facts dd {
+  margin: 4px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111;
+}
+
+.nl-research-highlights {
+  list-style: none;
+  margin: 16px auto 0;
+  padding: 0;
+  max-width: 520px;
+  text-align: left;
+}
+
+.nl-research-highlights li {
+  position: relative;
+  padding: 6px 0 6px 18px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #111;
+}
+
+.nl-research-highlights li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #8dd9bf;
+}
+
+.nl-research-ideal,
+.nl-research-tip,
+.nl-research-future-link {
+  margin: 14px auto 0;
+  max-width: 520px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
+.nl-research-ideal span {
+  font-weight: 700;
+  color: #1f7a66;
+}
+
+.nl-research-future-link {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+@media (max-width: 640px) {
+  .nl-research-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

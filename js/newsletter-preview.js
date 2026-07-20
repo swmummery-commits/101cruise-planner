@@ -28,6 +28,8 @@
     OTHER_INFORMATION: "other_information",
     DISCLAIMER: "disclaimer",
     ENQUIRE: "enquire",
+    ABOUT_SHIP: "about_ship",
+    ABOUT_DESTINATION: "about_destination",
     FOOTER: "footer",
     BRAND_LOGO: "brand_logo"
   };
@@ -62,6 +64,8 @@
     SECTION_IDS.PRICING_NOTE,
     SECTION_IDS.INCLUDED,
     SECTION_IDS.OTHER_INFORMATION,
+    SECTION_IDS.ABOUT_SHIP,
+    SECTION_IDS.ABOUT_DESTINATION,
     SECTION_IDS.ENQUIRE
   ];
 
@@ -278,7 +282,10 @@
       nights,
       cruiseLineName,
       shipName,
-      publicSlug: String(input.publicSlug || input.public_slug || "").trim()
+      publicSlug: String(input.publicSlug || input.public_slug || "").trim(),
+      researchShip: input.researchShip || input.research?.ship || null,
+      researchDestination: input.researchDestination || input.research?.destination || null,
+      shipFacts: input.shipFacts || input.research?.ship_facts || null
     };
   }
 
@@ -553,6 +560,87 @@
             <div class="nl-other-info-label">OTHER INFO:</div>
             <div class="nl-other-info-text">${esc(String(model.otherInformation).toUpperCase())}</div>
           </div>
+        `;
+      }
+      case SECTION_IDS.ABOUT_SHIP: {
+        const ship = model.researchShip;
+        const facts = model.shipFacts;
+        if (!ship && !facts) return "";
+        const name = esc(ship?.entity_name || model.shipName || "the ship");
+        const overview = ship?.overview || ship?.summary_text || "";
+        const personality = ship?.personality || "";
+        const highlights = Array.isArray(ship?.key_highlights) ? ship.key_highlights.slice(0, 4) : [];
+        const factPairs = [
+          ["Built", facts?.built],
+          ["Refurbished", facts?.refurbished],
+          ["Guests", facts?.guests],
+          ["Crew", facts?.crew],
+          ["Decks", facts?.decks],
+          ["Restaurants", facts?.restaurants],
+          ["Pools", facts?.pools],
+          ["Spa", facts?.spa]
+        ].filter(([, v]) => v != null && String(v).trim() !== "");
+        const image = ship?.image?.url
+          ? `<div class="nl-research-image"><img src="${esc(ship.image.url)}" alt="${esc(ship.image.alt_text || name)}" loading="lazy"></div>`
+          : "";
+        return `
+          <section class="nl-research-teaser nl-research-ship">
+            <h2 class="nl-research-heading">About the ship</h2>
+            <p class="nl-research-name">${name}</p>
+            ${image}
+            ${overview ? `<p class="nl-research-overview">${esc(overview)}</p>` : ""}
+            ${personality ? `<p class="nl-research-personality">${esc(personality)}</p>` : ""}
+            ${
+              factPairs.length
+                ? `<dl class="nl-research-facts">${factPairs
+                    .map(
+                      ([label, value]) =>
+                        `<div><dt>${esc(label)}</dt><dd>${esc(String(value))}</dd></div>`
+                    )
+                    .join("")}</dl>`
+                : ""
+            }
+            ${
+              highlights.length
+                ? `<ul class="nl-research-highlights">${highlights
+                    .map((h) => `<li>${esc(h)}</li>`)
+                    .join("")}</ul>`
+                : ""
+            }
+            ${ship?.pauls_tip ? `<p class="nl-research-tip"><strong>Paul's tip:</strong> ${esc(ship.pauls_tip)}</p>` : ""}
+            <p class="nl-research-future-link admin-muted">Ship guide coming soon</p>
+          </section>
+        `;
+      }
+      case SECTION_IDS.ABOUT_DESTINATION: {
+        const dest = model.researchDestination;
+        if (!dest) return "";
+        const highlights = Array.isArray(dest.key_highlights) ? dest.key_highlights.slice(0, 3) : [];
+        const ideal = Array.isArray(dest.ideal_for) ? dest.ideal_for.slice(0, 4) : [];
+        const image = dest.image?.url
+          ? `<div class="nl-research-image"><img src="${esc(dest.image.url)}" alt="${esc(dest.image.alt_text || dest.entity_name)}" loading="lazy"></div>`
+          : "";
+        return `
+          <section class="nl-research-teaser nl-research-destination">
+            <h2 class="nl-research-heading">About the destination</h2>
+            <p class="nl-research-name">${esc(dest.entity_name)}</p>
+            ${image}
+            ${dest.overview ? `<p class="nl-research-overview">${esc(dest.overview)}</p>` : ""}
+            ${
+              highlights.length
+                ? `<ul class="nl-research-highlights">${highlights
+                    .map((h) => `<li>${esc(h)}</li>`)
+                    .join("")}</ul>`
+                : ""
+            }
+            ${
+              ideal.length
+                ? `<p class="nl-research-ideal"><span>Ideal for:</span> ${esc(ideal.join(" · "))}</p>`
+                : ""
+            }
+            ${dest.pauls_tip ? `<p class="nl-research-tip"><strong>Paul's tip:</strong> ${esc(dest.pauls_tip)}</p>` : ""}
+            <p class="nl-research-future-link">Destination guide coming soon</p>
+          </section>
         `;
       }
       case SECTION_IDS.DISCLAIMER: {

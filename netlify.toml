@@ -1,6 +1,10 @@
 [functions]
   directory = "netlify/functions"
 
+[functions."research-content-generate"]
+  # Research runs Brave + source fetches + OpenAI; allow longer than default.
+  timeout = 60
+
 [[redirects]]
   from = "/planner"
   to = "/index.html"

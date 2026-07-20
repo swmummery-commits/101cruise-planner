@@ -11,6 +11,7 @@
  */
 
 const MediaResolver = require("./lib/media-resolver.js");
+const { enrichPublicCruise } = require("./lib/research-public.js");
 
 function jsonResponse(statusCode, body) {
   const empty = body === "" || body == null;
@@ -218,6 +219,7 @@ function cruiseSelect(includeMediaIds) {
     "use_ship_hero_image",
     "route_map_image_url",
     "cruise_ship_id",
+    "cruise_line_id",
     ...(includeMediaIds ? ["hero_media_id", "route_map_media_id"] : []),
     "alcohol_package",
     "wifi",
@@ -344,7 +346,9 @@ exports.handler = async (event) => {
       }
     }
 
-    return jsonResponse(200, { cruise: toPublicCruise(cruise, resolved) });
+    return jsonResponse(200, {
+      cruise: await enrichPublicCruise(supabaseGet, cruise, toPublicCruise(cruise, resolved))
+    });
   } catch (error) {
     const message = String(error.message || error);
     console.error("public-featured-cruise error", message);

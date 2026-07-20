@@ -1,0 +1,31 @@
+---
+description: Newsletter/public cruise INCLUDES bar must stay on one line
+globs: css/newsletter-preview.css,css/public-cruise.css,js/newsletter-preview.js,js/newsletter-cruise-shared.js,js/public-cruise.js
+alwaysApply: false
+---
+
+# Newsletter Includes — Single Line
+
+The **INCLUDES** bar (icons + labels under pricing) must render as a **single horizontal line**. Items must not wrap onto a second row.
+
+## Rules
+
+- Keep includes compact: small type (~10px), small icons (~13px), tight horizontal padding
+- Use `flex-wrap: nowrap` on `.nl-includes-items`
+- Prefer shrinking size/padding over wrapping when more inclusions are added
+- Do not enlarge includes type or icons without an explicit request
+- Label (`INCLUDES:`) stays on the same bar; on narrow widths it may sit above the items row, but the items themselves stay one line
+
+## Bad
+
+```css
+.nl-includes-items { flex-wrap: wrap; }
+.nl-includes-item { font-size: 12px; padding: 4px 16px; }
+```
+
+## Good
+
+```css
+.nl-includes-items { flex-wrap: nowrap; }
+.nl-includes-item { font-size: 10px; padding: 2px 10px; }
+```

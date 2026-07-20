@@ -697,6 +697,9 @@ async function setTab(tab) {
   if (tab === "media-library") {
     if (window.MediaLibraryAdmin) window.MediaLibraryAdmin.ensureLoaded();
   }
+  if (tab === "research-content") {
+    if (window.ResearchContentAdmin) window.ResearchContentAdmin.ensureLoaded();
+  }
 }
 
 function getAdminCiCruiseLines() {
@@ -727,6 +730,14 @@ const ADMIN_MAIN_TABS = [
       window.MediaLibraryAdmin
         ? window.MediaLibraryAdmin.renderPanel()
         : `<div class="admin-card"><p class="admin-muted">Media Library failed to load.</p></div>`
+  },
+  {
+    id: "research-content",
+    label: "Research Content",
+    render: () =>
+      window.ResearchContentAdmin
+        ? window.ResearchContentAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Research Content failed to load.</p></div>`
   },
   { id: "checklist", label: "Checklist", render: () => renderChecklistPanel() },
   { id: "packing", label: "Packing", render: () => renderPackingPanel() },

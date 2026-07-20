@@ -152,7 +152,11 @@
         outputMode: "general",
         description: cruise.short_editorial || "",
         full_description: cruise.full_description || cruise.short_editorial || "",
-        pricingRows: []
+        pricingRows: [],
+        research: cruise.research || null,
+        researchShip: cruise.research?.ship || null,
+        researchDestination: cruise.research?.destination || null,
+        shipFacts: cruise.research?.ship_facts || null
       });
       root.innerHTML = window.NewsletterPreview.renderPublicCruisePage(model, { escapeHtml: esc });
     } catch (error) {
