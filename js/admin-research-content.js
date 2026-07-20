@@ -1165,9 +1165,10 @@
           canonical_slug: editorDraft.canonical_slug
         });
         await api("publish", { id: editingId });
-        await openEditor(editingId);
         message = "Published.";
         messageTone = "success";
+        openList();
+        await ensureLoaded({ quiet: true });
       } catch (error) {
         message = error.message || "Publish failed";
         messageTone = "error";
