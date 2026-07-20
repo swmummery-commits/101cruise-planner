@@ -143,7 +143,8 @@
     estimate: null,
     duplicates: [],
     batch_line_id: "",
-    batch_skip_existing: true
+    batch_skip_existing: true,
+    batch_auto_publish: true
   };
 
   let entityOptions = [];
@@ -301,7 +302,8 @@
       estimate: null,
       duplicates: [],
       batch_line_id: "",
-      batch_skip_existing: true
+      batch_skip_existing: true,
+      batch_auto_publish: true
     };
     await loadEntityOptions("ship");
     try {
@@ -506,6 +508,11 @@
                 onchange="ResearchContentAdmin.setBatchSkipExisting(this.checked)">
               Skip ships that already have research
             </label>
+            <label class="research-batch-skip">
+              <input type="checkbox" ${researchForm.batch_auto_publish ? "checked" : ""} ${batchRunning ? "disabled" : ""}
+                onchange="ResearchContentAdmin.setBatchAutoPublish(this.checked)">
+              Publish automatically after each successful research
+            </label>
             ${
               researchForm.batch_line_id
                 ? `<p class="admin-muted">${esc(String(batchQueue.length))} ship${batchQueue.length === 1 ? "" : "s"} will run${researchForm.batch_skip_existing ? ` (${esc(String(batchTotalOnLine - batchQueue.length))} skipped)` : ""}. Rough time: ${esc(String(batchQueue.length))}–${esc(String(Math.max(batchQueue.length, batchQueue.length * 2)))} min.</p>`
@@ -515,7 +522,8 @@
               ${
                 batchRunning
                   ? `<button type="button" class="admin-button danger" onclick="ResearchContentAdmin.cancelBatch()">Stop after current ship</button>`
-                  : `<button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginBatchResearch()" ${!researchForm.batch_line_id || !batchQueue.length ? "disabled" : ""}>Research line ships</button>`
+                  : `<button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginBatchResearch()" ${!researchForm.batch_line_id || !batchQueue.length ? "disabled" : ""}>Research line ships</button>
+                     <button type="button" class="admin-button secondary" onclick="ResearchContentAdmin.publishLineDrafts()" ${!researchForm.batch_line_id ? "disabled" : ""}>Publish all drafts for this line</button>`
               }
             </div>
             ${
@@ -523,10 +531,18 @@
                 ? `<div class="research-batch-progress">
                     <p><strong>${esc(String(batchProgress.done))}/${esc(String(batchProgress.total))}</strong>${batchProgress.currentName ? ` · Working on ${esc(batchProgress.currentName)}` : ""}</p>
                     <ul>${(batchProgress.results || [])
-                      .map(
-                        (r) =>
-                          `<li class="research-batch-${esc(r.ok ? "ok" : "fail")}">${esc(r.name)} — ${esc(r.ok ? "draft saved" : r.error || "failed")}</li>`
-                      )
+                      .map((r) => {
+                        const statusText = r.ok
+                          ? r.published
+                            ? "published"
+                            : "draft saved"
+                          : r.error || "failed";
+                        const open =
+                          r.id
+                            ? ` <button type="button" class="admin-button secondary small" onclick="ResearchContentAdmin.openEditor('${esc(r.id)}')">Open</button>`
+                            : "";
+                        return `<li class="research-batch-${esc(r.ok ? "ok" : "fail")}">${esc(r.name)} — ${esc(statusText)}${open}</li>`;
+                      })
                       .join("")}</ul>
                   </div>`
                 : ""
@@ -836,10 +852,57 @@
       researchForm.batch_skip_existing = Boolean(checked);
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
+    setBatchAutoPublish(checked) {
+      researchForm.batch_auto_publish = Boolean(checked);
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
     cancelBatch() {
       batchCancelRequested = true;
       message = "Stopping after the current ship finishes…";
       messageTone = "info";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    async publishLineDrafts() {
+      if (!researchForm.batch_line_id) return;
+      await loadEntityOptions("ship");
+      const ships = shipsForBatchLine(researchForm.batch_line_id).filter(
+        (ship) =>
+          ship.research_id &&
+          (ship.research_status === "draft" || ship.research_status === "reviewed")
+      );
+      if (!ships.length) {
+        message = "No draft/reviewed research found for this cruise line to publish.";
+        messageTone = "warning";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+        return;
+      }
+      const lineName =
+        cruiseLinesFromShips().find((l) => l.id === researchForm.batch_line_id)?.name || "this cruise line";
+      if (
+        !window.confirm(
+          `Publish ${ships.length} research draft${ships.length === 1 ? "" : "s"} for ${lineName} now?\n\nThey will become available on matching public cruise pages.`
+        )
+      ) {
+        return;
+      }
+
+      let ok = 0;
+      let fail = 0;
+      message = `Publishing ${ships.length} draft${ships.length === 1 ? "" : "s"}…`;
+      messageTone = "info";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+
+      for (const ship of ships) {
+        try {
+          await api("publish", { id: ship.research_id });
+          ok += 1;
+        } catch {
+          fail += 1;
+        }
+      }
+      await loadEntityOptions("ship");
+      message = `Published ${ok} for ${lineName}${fail ? `, ${fail} failed` : ""}.`;
+      messageTone = fail ? "warning" : "success";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     async beginBatchResearch() {
@@ -852,9 +915,10 @@
       }
       const lineName =
         cruiseLinesFromShips().find((l) => l.id === researchForm.batch_line_id)?.name || "this cruise line";
+      const autoPublish = researchForm.batch_auto_publish !== false;
       if (
         !window.confirm(
-          `Research ${queue.length} ship${queue.length === 1 ? "" : "s"} for ${lineName}?\n\nThis runs one at a time and may take ${queue.length}–${queue.length * 2} minutes. Keep this tab open. Drafts are saved for review — nothing is published automatically.`
+          `Research ${queue.length} ship${queue.length === 1 ? "" : "s"} for ${lineName}?\n\nThis runs one at a time and may take ${queue.length}–${queue.length * 2} minutes. Keep this tab open.${autoPublish ? "\n\nEach successful ship will be published automatically." : "\n\nDrafts will be saved for review — nothing is published automatically."}`
         )
       ) {
         return;
@@ -872,7 +936,7 @@
         batchProgress.currentName = ship.name || "Ship";
         if (typeof global.renderAdmin === "function") global.renderAdmin();
         try {
-          await api(
+          const result = await api(
             "start_research",
             {
               entity_type: "ship",
@@ -882,10 +946,35 @@
             },
             "research-content-generate"
           );
-          batchProgress.results.push({ name: ship.name, ok: true });
+          let published = false;
+          if (autoPublish && result?.item?.id) {
+            try {
+              await api("publish", { id: result.item.id });
+              published = true;
+            } catch (publishError) {
+              batchProgress.results.push({
+                name: ship.name,
+                ok: true,
+                published: false,
+                id: result.item.id,
+                error: `saved but publish failed: ${publishError.message || "error"}`
+              });
+              batchProgress.done += 1;
+              batchProgress.currentName = "";
+              if (typeof global.renderAdmin === "function") global.renderAdmin();
+              continue;
+            }
+          }
+          batchProgress.results.push({
+            name: ship.name,
+            ok: true,
+            published,
+            id: result?.item?.id || null
+          });
         } catch (error) {
           const errText = error.message || "failed";
-          batchProgress.results.push({ name: ship.name, ok: false, error: errText });
+          const failedId = error.payload?.item?.id || null;
+          batchProgress.results.push({ name: ship.name, ok: false, error: errText, id: failedId });
           if (/quota|billing|OPENAI_API_KEY|503/i.test(errText)) {
             message = `Batch stopped: ${errText}`;
             messageTone = "error";
@@ -902,12 +991,13 @@
       batchProgress.currentName = "";
       await loadEntityOptions("ship");
       const okCount = (batchProgress.results || []).filter((r) => r.ok).length;
+      const publishedCount = (batchProgress.results || []).filter((r) => r.published).length;
       const failCount = (batchProgress.results || []).length - okCount;
       if (batchCancelRequested) {
-        message = `Batch stopped early. ${okCount} draft${okCount === 1 ? "" : "s"} saved${failCount ? `, ${failCount} failed` : ""}.`;
+        message = `Batch stopped early. ${okCount} saved${publishedCount ? ` (${publishedCount} published)` : ""}${failCount ? `, ${failCount} failed` : ""}.`;
         messageTone = "warning";
       } else if (!messageTone || messageTone === "info") {
-        message = `Batch complete. ${okCount} draft${okCount === 1 ? "" : "s"} saved${failCount ? `, ${failCount} failed` : ""}. Review and publish from the Research Content list.`;
+        message = `Batch complete. ${okCount} saved${autoPublish ? `, ${publishedCount} published` : ""}${failCount ? `, ${failCount} failed` : ""}.${failCount ? " Use Research Content list or Open on failed rows to retry." : ""}`;
         messageTone = failCount ? "warning" : "success";
       }
       batchCancelRequested = false;
