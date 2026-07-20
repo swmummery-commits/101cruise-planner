@@ -57,8 +57,9 @@
     setMeta('meta[property="og:title"]', "content", title);
     setMeta('meta[property="og:description"]', "content", description || title);
     setMeta('meta[property="og:url"]', "content", canonical);
-    if (cruise.hero_image_url) {
-      setMeta('meta[property="og:image"]', "content", cruise.hero_image_url);
+    const heroUrl = cruise.hero?.url || cruise.hero_image_url;
+    if (heroUrl) {
+      setMeta('meta[property="og:image"]', "content", heroUrl);
     }
 
     let link = document.querySelector('link[rel="canonical"]');

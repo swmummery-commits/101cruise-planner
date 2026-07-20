@@ -692,7 +692,23 @@ async function setTab(tab) {
   }
   if (tab === "featured-cruises") {
     ensureFeaturedCruisesLoaded();
+    if (window.MediaLibraryAdmin) window.MediaLibraryAdmin.ensureLoaded({ quiet: true });
   }
+  if (tab === "media-library") {
+    if (window.MediaLibraryAdmin) window.MediaLibraryAdmin.ensureLoaded();
+  }
+}
+
+function getAdminCiCruiseLines() {
+  return ciCruiseLines;
+}
+
+function getAdminCiCruiseShips() {
+  return ciCruiseShips;
+}
+
+function getAdminSupabaseClient() {
+  return supabaseClient;
 }
 
 /**
@@ -704,6 +720,14 @@ async function setTab(tab) {
 const ADMIN_MAIN_TABS = [
   { id: "cruise-intelligence", label: "Cruise Lines/Ships", render: () => renderCruiseIntelligencePanel() },
   { id: "featured-cruises", label: "Newsletter", render: () => renderFeaturedCruisesPanel() },
+  {
+    id: "media-library",
+    label: "Media Library",
+    render: () =>
+      window.MediaLibraryAdmin
+        ? window.MediaLibraryAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Media Library failed to load.</p></div>`
+  },
   { id: "checklist", label: "Checklist", render: () => renderChecklistPanel() },
   { id: "packing", label: "Packing", render: () => renderPackingPanel() },
   { id: "smart-profiles", label: "Smart Profiles", render: () => renderSmartProfilesPanel() },
@@ -7927,7 +7951,9 @@ async function startNewFeaturedCruise() {
     use_ship_hero_image: true,
     hero_image_url: "",
     hero_image_alt: "",
+    hero_media_id: null,
     route_map_image_url: "",
+    route_map_media_id: null,
     itinerary_summary: "",
     other_information: "",
     display_order: 0,
@@ -8002,7 +8028,9 @@ async function editFeaturedCruise(id) {
       use_ship_hero_image: existing.use_ship_hero_image !== false,
       hero_image_url: existing.hero_image_url || "",
       hero_image_alt: existing.hero_image_alt || "",
+      hero_media_id: existing.hero_media_id || null,
       route_map_image_url: existing.route_map_image_url || "",
+      route_map_media_id: existing.route_map_media_id || null,
       itinerary_summary: itinerarySummary,
       other_information: existing.other_information || "",
       display_order: existing.display_order ?? 0,
@@ -8037,13 +8065,49 @@ function cancelFeaturedCruiseForm() {
   renderAdmin();
 }
 
-function resolveFeaturedHeroPreviewUrl(draft) {
-  const useShipHero = draft?.use_ship_hero_image !== false;
-  if (useShipHero) {
-    const ship = ciCruiseShips.find((row) => row.id === draft?.cruise_ship_id);
-    return ship?.hero_image_url || "";
+function featuredMediaLibraryItems() {
+  return window.MediaLibraryAdmin?.getMediaItems?.() || [];
+}
+
+function resolveFeaturedCruiseImages(draft = featuredFormDraft || {}) {
+  const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id) || null;
+  const mediaLibrary = featuredMediaLibraryItems();
+  const heroMedia = draft.hero_media_id
+    ? window.MediaLibraryAdmin?.findById?.(draft.hero_media_id) || null
+    : null;
+  const routeMapMedia = draft.route_map_media_id
+    ? window.MediaLibraryAdmin?.findById?.(draft.route_map_media_id) || null
+    : null;
+  if (!window.MediaResolver) {
+    return {
+      hero: draft.hero_image_url
+        ? { url: draft.hero_image_url, altText: draft.hero_image_alt || "", source: "Legacy Featured Cruise image URL" }
+        : ship?.hero_image_url
+          ? { url: ship.hero_image_url, altText: draft.hero_image_alt || "", source: "Legacy Cruise Intelligence image" }
+          : null,
+      routeMap: draft.route_map_image_url
+        ? { url: draft.route_map_image_url, altText: "Route map", source: "Legacy route map URL" }
+        : null
+    };
   }
-  return normalizeUrl(draft?.hero_image_url) || "";
+  return window.MediaResolver.resolveCruiseImages(draft, {
+    mediaLibrary,
+    ship,
+    heroMedia,
+    routeMapMedia
+  });
+}
+
+function resolveFeaturedHeroPreviewUrl(draft) {
+  return resolveFeaturedCruiseImages(draft).hero?.url || "";
+}
+
+function featuredDestinationHints(draft = featuredFormDraft || {}) {
+  const ports = String(draft.itinerary_summary || "")
+    .split("|")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return [draft.departure_port, draft.arrival_port, ...ports].filter(Boolean);
 }
 
 function buildFeaturedNewsletterPreviewModel() {
@@ -8057,11 +8121,13 @@ function buildFeaturedNewsletterPreviewModel() {
   const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id);
   const publicSlug = String(draft.public_slug || "").trim();
   captureFeaturedPricingFromDom();
+  const resolved = resolveFeaturedCruiseImages(draft);
   return window.NewsletterPreview.buildModel({
     destinationStrip,
     headline: draft.headline || "",
-    heroImageUrl: resolveFeaturedHeroPreviewUrl(draft),
-    heroImageAlt: draft.hero_image_alt || draft.headline || "Cruise image",
+    hero: resolved.hero,
+    heroImageUrl: resolved.hero?.url || "",
+    heroImageAlt: resolved.hero?.altText || draft.hero_image_alt || draft.headline || "Cruise image",
     departureDate: departure,
     returnDate,
     nights: nightsNum,
@@ -8072,7 +8138,8 @@ function buildFeaturedNewsletterPreviewModel() {
     full_description: draft.full_description || "",
     description: draft.short_editorial || "",
     publicSlug,
-    routeMapUrl: draft.route_map_image_url || "",
+    routeMap: resolved.routeMap,
+    routeMapUrl: resolved.routeMap?.url || "",
     pricingRows: featuredFormPricing,
     alcohol_package: draft.alcohol_package,
     wifi: draft.wifi,
@@ -8196,10 +8263,12 @@ function captureFeaturedDraftFromDom() {
     return_date: addCalendarDays(departure, nightsNum),
     short_editorial: document.getElementById("fcShortEditorial")?.value || "",
     full_description: document.getElementById("fcFullDescription")?.value || "",
-    use_ship_hero_image: Boolean(document.getElementById("fcUseShipHero")?.checked),
-    hero_image_url: document.getElementById("fcHeroImageUrl")?.value || "",
-    hero_image_alt: document.getElementById("fcHeroImageAlt")?.value || "",
-    route_map_image_url: document.getElementById("fcRouteMapUrl")?.value || "",
+    use_ship_hero_image: featuredFormDraft.use_ship_hero_image !== false,
+    hero_image_url: featuredFormDraft.hero_image_url || "",
+    hero_image_alt: document.getElementById("fcHeroImageAlt")?.value || featuredFormDraft.hero_image_alt || "",
+    hero_media_id: featuredFormDraft.hero_media_id || null,
+    route_map_image_url: featuredFormDraft.route_map_image_url || "",
+    route_map_media_id: featuredFormDraft.route_map_media_id || null,
     itinerary_summary: document.getElementById("fcItinerarySummary")?.value || "",
     other_information: document.getElementById("fcOtherInformation")?.value || "",
     display_order: document.getElementById("fcDisplayOrder")?.value || 0,
@@ -8347,20 +8416,206 @@ function maybeRefreshFeaturedSlug() {
 }
 
 function updateFeaturedHeroPreview() {
-  const useShip = Boolean(document.getElementById("fcUseShipHero")?.checked);
-  const customUrl = normalizeUrl(document.getElementById("fcHeroImageUrl")?.value);
-  const shipId = document.getElementById("fcCruiseShipId")?.value || "";
-  const ship = ciCruiseShips.find((row) => row.id === shipId);
-  const url = useShip ? ship?.hero_image_url || "" : customUrl;
-  const wrap = document.getElementById("fcHeroPreview");
-  const customField = document.getElementById("fcHeroCustomFields");
-  if (customField) customField.hidden = useShip;
-  if (!wrap) return;
-  if (url) {
-    wrap.innerHTML = `<img class="featured-image-preview" src="${esc(url)}" alt="Hero preview" onerror="this.outerHTML='<div class=&quot;admin-empty-preview&quot;>Image could not load</div>'">`;
-  } else {
-    wrap.innerHTML = `<div class="admin-empty-preview">${useShip ? "No Cruise Intelligence ship image available" : "No custom hero image yet"}</div>`;
+  captureFeaturedDraftFromDom();
+  renderAdmin();
+}
+
+function setFeaturedHeroDefaultShip() {
+  captureFeaturedDraftFromDom();
+  featuredFormDraft.hero_media_id = null;
+  featuredFormDraft.hero_image_url = "";
+  featuredFormDraft.use_ship_hero_image = true;
+  renderAdmin();
+}
+
+function setFeaturedHeroLegacyCi() {
+  captureFeaturedDraftFromDom();
+  const ship = ciCruiseShips.find((row) => row.id === featuredFormDraft.cruise_ship_id);
+  const ciUrl = ship?.hero_image_url || "";
+  if (!ciUrl) {
+    featuredCruiseMessage = "No Cruise Intelligence ship image is available for the selected ship.";
+    featuredCruiseMessageTone = "error";
+    renderAdmin();
+    return;
   }
+  featuredFormDraft.hero_media_id = null;
+  featuredFormDraft.hero_image_url = ciUrl;
+  featuredFormDraft.use_ship_hero_image = false;
+  renderAdmin();
+}
+
+function removeFeaturedHeroOverride() {
+  captureFeaturedDraftFromDom();
+  featuredFormDraft.hero_media_id = null;
+  featuredFormDraft.hero_image_url = "";
+  featuredFormDraft.use_ship_hero_image = true;
+  renderAdmin();
+}
+
+function openFeaturedHeroMediaPicker() {
+  captureFeaturedDraftFromDom();
+  if (!window.MediaLibraryAdmin) return;
+  window.MediaLibraryAdmin.openMediaPicker({
+    title: "Choose Hero Image",
+    selectedId: featuredFormDraft.hero_media_id || null,
+    shipId: featuredFormDraft.cruise_ship_id || "",
+    cruiseLineId: featuredFormDraft.cruise_line_id || "",
+    destinationHints: featuredDestinationHints(featuredFormDraft),
+    featuredCruiseId: editingFeaturedCruiseId || null,
+    publicSlug: featuredFormDraft.public_slug || "",
+    mediaType: null,
+    defaultFilter: "recommended",
+    onSelect(media) {
+      captureFeaturedDraftFromDom();
+      featuredFormDraft.hero_media_id = media.id;
+      featuredFormDraft.use_ship_hero_image = false;
+      if (!featuredFormDraft.hero_image_alt && media.alt_text) {
+        featuredFormDraft.hero_image_alt = media.alt_text;
+      }
+      renderAdmin();
+    }
+  });
+}
+
+function openFeaturedHeroUpload() {
+  captureFeaturedDraftFromDom();
+  if (!window.MediaLibraryAdmin) return;
+  window.MediaLibraryAdmin.openMediaPicker({
+    title: "Upload Hero Image",
+    selectedId: null,
+    shipId: featuredFormDraft.cruise_ship_id || "",
+    cruiseLineId: featuredFormDraft.cruise_line_id || "",
+    destinationHints: featuredDestinationHints(featuredFormDraft),
+    featuredCruiseId: editingFeaturedCruiseId || null,
+    publicSlug: featuredFormDraft.public_slug || "",
+    mediaType: featuredFormDraft.cruise_ship_id ? "ship" : "general",
+    defaultFilter: "recommended",
+    onSelect(media) {
+      captureFeaturedDraftFromDom();
+      featuredFormDraft.hero_media_id = media.id;
+      featuredFormDraft.use_ship_hero_image = false;
+      if (!featuredFormDraft.hero_image_alt && media.alt_text) {
+        featuredFormDraft.hero_image_alt = media.alt_text;
+      }
+      renderAdmin();
+    }
+  });
+  window.MediaLibraryAdmin.openPickerUpload();
+}
+
+function openFeaturedRouteMapPicker() {
+  captureFeaturedDraftFromDom();
+  if (!window.MediaLibraryAdmin) return;
+  window.MediaLibraryAdmin.openMediaPicker({
+    title: "Choose Route Map",
+    selectedId: featuredFormDraft.route_map_media_id || null,
+    shipId: featuredFormDraft.cruise_ship_id || "",
+    cruiseLineId: featuredFormDraft.cruise_line_id || "",
+    destinationHints: featuredDestinationHints(featuredFormDraft),
+    featuredCruiseId: editingFeaturedCruiseId || null,
+    publicSlug: featuredFormDraft.public_slug || "",
+    mediaType: "route_map",
+    defaultFilter: "recommended",
+    onSelect(media) {
+      captureFeaturedDraftFromDom();
+      featuredFormDraft.route_map_media_id = media.id;
+      renderAdmin();
+    }
+  });
+}
+
+function openFeaturedRouteMapUpload() {
+  openFeaturedRouteMapPicker();
+  window.MediaLibraryAdmin?.openPickerUpload();
+}
+
+function removeFeaturedRouteMapSelection() {
+  captureFeaturedDraftFromDom();
+  featuredFormDraft.route_map_media_id = null;
+  featuredFormDraft.route_map_image_url = "";
+  renderAdmin();
+}
+
+function renderFeaturedHeroImageSection(draft) {
+  const resolved = resolveFeaturedCruiseImages(draft);
+  const hero = resolved.hero;
+  const media = draft.hero_media_id ? window.MediaLibraryAdmin?.findById?.(draft.hero_media_id) : null;
+  const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id);
+  const hasCi = Boolean(ship?.hero_image_url);
+  const altWarn = !(draft.hero_image_alt || media?.alt_text || hero?.altText);
+  return `
+    <section class="featured-form-section">
+      <h4>Hero Image</h4>
+      <div class="featured-media-source-actions">
+        <button type="button" class="admin-button secondary small" onclick="setFeaturedHeroDefaultShip()">Use Default Ship Image</button>
+        <button type="button" class="admin-button secondary small" onclick="openFeaturedHeroMediaPicker()">Choose from Media Library</button>
+        <button type="button" class="admin-button secondary small" onclick="openFeaturedHeroUpload()">Upload New Image</button>
+        ${hasCi ? `<button type="button" class="admin-button secondary small" onclick="setFeaturedHeroLegacyCi()">Use Legacy Cruise Intelligence Image</button>` : ""}
+      </div>
+      <div class="featured-media-preview-block">
+        <div id="fcHeroPreview" class="featured-image-preview-wrap">
+          ${
+            hero?.url
+              ? `<img class="featured-image-preview" src="${esc(hero.url)}" alt="${esc(hero.altText || "Hero preview")}" ${hero.width ? `width="${esc(hero.width)}"` : ""} ${hero.height ? `height="${esc(hero.height)}"` : ""} onerror="this.outerHTML='<div class=&quot;admin-empty-preview&quot;>Image could not load</div>'">`
+              : `<div class="admin-empty-preview">No image selected</div>`
+          }
+        </div>
+        <div class="featured-media-meta">
+          <p class="featured-media-source">Source: ${esc(hero?.source || "No image selected")}</p>
+          ${media ? `<p class="admin-small">${esc(media.title)}</p>` : ""}
+          ${
+            draft.hero_media_id
+              ? `<div class="admin-actions-row">
+                  <button type="button" class="admin-button secondary small" onclick="openFeaturedHeroMediaPicker()">Replace Image</button>
+                  <button type="button" class="admin-button secondary small" onclick="removeFeaturedHeroOverride()">Remove Override</button>
+                </div>`
+              : ""
+          }
+        </div>
+      </div>
+      <div class="admin-field" style="margin-top:12px">
+        <label for="fcHeroImageAlt">Image alt text override</label>
+        <input id="fcHeroImageAlt" type="text" value="${esc(draft.hero_image_alt || "")}" placeholder="${esc(media?.alt_text || hero?.altText || "Uses media library alt text when empty")}">
+        ${altWarn ? `<div class="admin-helper featured-alt-warn">Alt text is empty — add one for accessibility.</div>` : `<div class="admin-helper">Optional override. Defaults to the media library alt text.</div>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderFeaturedRouteMapSection(draft) {
+  const resolved = resolveFeaturedCruiseImages(draft).routeMap;
+  const media = draft.route_map_media_id
+    ? window.MediaLibraryAdmin?.findById?.(draft.route_map_media_id)
+    : null;
+  const legacyUrl = String(draft.route_map_image_url || "").trim();
+  return `
+    <section class="featured-form-section">
+      <h4>Route Map</h4>
+      <div class="featured-media-source-actions">
+        <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapPicker()">Choose from Media Library</button>
+        <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapUpload()">Upload New Route Map</button>
+        ${legacyUrl && !draft.route_map_media_id ? `<span class="admin-small">Legacy Image URL in use</span>` : ""}
+        ${
+          draft.route_map_media_id || legacyUrl
+            ? `<button type="button" class="admin-button secondary small" onclick="removeFeaturedRouteMapSelection()">Remove Selection</button>`
+            : ""
+        }
+      </div>
+      <div class="featured-media-preview-block">
+        <div class="featured-image-preview-wrap">
+          ${
+            resolved?.url
+              ? `<img class="featured-image-preview" src="${esc(resolved.url)}" alt="${esc(resolved.altText || "Route map")}" loading="lazy">`
+              : `<div class="admin-empty-preview">No route map selected</div>`
+          }
+        </div>
+        <div class="featured-media-meta">
+          <p class="featured-media-source">Source: ${esc(resolved?.source || "No image selected")}</p>
+          ${media ? `<p class="admin-small">${esc(media.title)}</p>` : ""}
+        </div>
+      </div>
+    </section>
+  `;
 }
 
 function buildFeaturedPriceCalcText(price, brochure, nights) {
@@ -8595,13 +8850,9 @@ function renderFeaturedCruiseForm() {
   const ships = shipsForFeaturedLine(selectedLineId);
   const messageClass =
     featuredCruiseMessageTone === "error" ? "admin-error" : featuredCruiseMessageTone === "success" ? "admin-success" : "";
-  const useShipHero = draft.use_ship_hero_image !== false;
-  const shipHeroUrl = ships.find((s) => s.id === draft.cruise_ship_id)?.hero_image_url
-    || existing?.ci_cruise_ships?.hero_image_url
-    || "";
-  const previewUrl = useShipHero ? shipHeroUrl : draft.hero_image_url || "";
   const strip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port) || "";
   const returnDate = addCalendarDays(draft.departure_date, draft.nights === "" ? null : Number(draft.nights));
+  const pickerModal = window.MediaLibraryAdmin?.renderPickerModal?.() || "";
 
   return `
     <div class="admin-card featured-cruise-form">
@@ -8713,37 +8964,9 @@ function renderFeaturedCruiseForm() {
         </div>
       </section>
 
-      <section class="featured-form-section">
-        <h4>Hero Image</h4>
-        <label class="admin-check-chip featured-check">
-          <input type="checkbox" id="fcUseShipHero" ${useShipHero ? "checked" : ""} onchange="updateFeaturedHeroPreview()">
-          <span>Use Cruise Intelligence ship image</span>
-        </label>
-        <div id="fcHeroCustomFields" ${useShipHero ? "hidden" : ""}>
-          <div class="admin-field">
-            <label for="fcHeroImageUrl">Custom hero image URL</label>
-            <input id="fcHeroImageUrl" type="url" value="${esc(draft.hero_image_url || "")}" oninput="updateFeaturedHeroPreview()">
-          </div>
-        </div>
-        <div class="admin-field">
-          <label for="fcHeroImageAlt">Image alt text</label>
-          <input id="fcHeroImageAlt" type="text" value="${esc(draft.hero_image_alt || "")}">
-        </div>
-        <div id="fcHeroPreview" class="featured-image-preview-wrap">
-          ${previewUrl
-            ? `<img class="featured-image-preview" src="${esc(previewUrl)}" alt="Hero preview" onerror="this.outerHTML='<div class=&quot;admin-empty-preview&quot;>Image could not load</div>'">`
-            : `<div class="admin-empty-preview">${useShipHero ? "No Cruise Intelligence ship image available" : "No custom hero image yet"}</div>`}
-        </div>
-      </section>
+      ${renderFeaturedHeroImageSection(draft)}
 
-      <section class="featured-form-section">
-        <h4>Route Map</h4>
-        <div class="admin-field">
-          <label for="fcRouteMapUrl">Route map image URL</label>
-          <input id="fcRouteMapUrl" type="url" value="${esc(draft.route_map_image_url || "")}" placeholder="https://…">
-          <div class="admin-helper">Optional. Used in the newsletter and public cruise page. No automatic map generation in this phase.</div>
-        </div>
-      </section>
+      ${renderFeaturedRouteMapSection(draft)}
 
       <section class="featured-form-section">
         <h4>Itinerary</h4>
@@ -8801,6 +9024,7 @@ function renderFeaturedCruiseForm() {
         <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save"}</button>
       </div>
     </div>
+    ${pickerModal}
     ${renderFeaturedNewsletterPreviewModal()}
   `;
 }
@@ -8900,7 +9124,6 @@ async function saveFeaturedCruise() {
     return;
   }
 
-  const useShipHero = draft.use_ship_hero_image !== false;
   const payload = {
     headline,
     destination_strip: destinationStrip,
@@ -8913,9 +9136,11 @@ async function saveFeaturedCruise() {
     arrival_port: String(draft.arrival_port || "").trim() || null,
     short_editorial: String(draft.short_editorial || "").trim() || null,
     full_description: String(draft.full_description || "").trim() || null,
-    use_ship_hero_image: useShipHero,
-    hero_image_url: useShipHero ? null : normalizeUrl(draft.hero_image_url) || null,
+    use_ship_hero_image: draft.hero_media_id ? false : draft.use_ship_hero_image !== false,
+    hero_media_id: draft.hero_media_id || null,
+    hero_image_url: normalizeUrl(draft.hero_image_url) || null,
     hero_image_alt: String(draft.hero_image_alt || "").trim() || null,
+    route_map_media_id: draft.route_map_media_id || null,
     route_map_image_url: normalizeUrl(draft.route_map_image_url) || null,
     itinerary_summary: itinerarySummary,
     alcohol_package: Boolean(draft.alcohol_package),

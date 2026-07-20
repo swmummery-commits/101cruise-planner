@@ -160,8 +160,26 @@
       .trim()
       .toUpperCase();
     const headline = String(input.headline || "").trim();
-    const heroImageUrl = String(input.heroImageUrl || input.hero_image_url || "").trim();
-    const heroImageAlt = String(input.heroImageAlt || input.hero_image_alt || headline || "Cruise image").trim();
+    const heroResolved = input.hero || null;
+    const routeResolved = input.routeMap || input.route_map || null;
+    const heroImageUrl = String(
+      heroResolved?.url || input.heroImageUrl || input.hero_image_url || ""
+    ).trim();
+    const heroImageAlt = String(
+      input.heroImageAlt ||
+        input.hero_image_alt ||
+        heroResolved?.altText ||
+        heroResolved?.alt_text ||
+        headline ||
+        "Cruise image"
+    ).trim();
+    const heroImageWidth =
+      heroResolved?.width ?? input.heroImageWidth ?? input.hero_image_width ?? null;
+    const heroImageHeight =
+      heroResolved?.height ?? input.heroImageHeight ?? input.hero_image_height ?? null;
+    const heroImageSource = String(
+      heroResolved?.source || input.heroImageSource || input.hero_image_source || ""
+    ).trim();
     const departureDate = input.departureDate || input.departure_date || "";
     const returnDate = input.returnDate || input.return_date || "";
     const nights = input.nights;
@@ -173,7 +191,14 @@
       input.fullDescription || input.full_description || teaser || ""
     ).trim();
     const otherInformation = String(input.otherInformation || input.other_information || "").trim();
-    const routeMapUrl = String(input.routeMapUrl || input.route_map_image_url || "").trim();
+    const routeMapUrl = String(
+      routeResolved?.url || input.routeMapUrl || input.route_map_image_url || ""
+    ).trim();
+    const routeMapWidth = routeResolved?.width ?? input.routeMapWidth ?? null;
+    const routeMapHeight = routeResolved?.height ?? input.routeMapHeight ?? null;
+    const routeMapAlt = String(
+      routeResolved?.altText || routeResolved?.alt_text || "Route map"
+    ).trim();
     const landingPageUrl = buildLandingPageUrl(input);
     const outputMode =
       input.outputMode ||
@@ -213,6 +238,9 @@
       headline,
       heroImageUrl,
       heroImageAlt,
+      heroImageWidth,
+      heroImageHeight,
+      heroImageSource,
       datesLine: formatNewsletterDateRange(departureDate, returnDate),
       nightsShipLine: formatNightsShip(nights, cruiseLineName, shipName),
       portsHeading: "PORTS OF CALL:",
@@ -224,6 +252,9 @@
       exploreMoreLabel: "EXPLORE MORE",
       landingPageUrl,
       routeMapUrl,
+      routeMapWidth,
+      routeMapHeight,
+      routeMapAlt,
       pricingModules,
       inclusionItems,
       otherInformation,
@@ -334,10 +365,16 @@
         if (!model.heroImageUrl) {
           return `<div class="nl-hero nl-hero-empty" style="max-width:${hero.maxWidthPx || 600}px;margin-bottom:${marginBottom}px">No hero image selected</div>`;
         }
+        const dimAttrs = [
+          model.heroImageWidth != null ? `width="${esc(model.heroImageWidth)}"` : "",
+          model.heroImageHeight != null ? `height="${esc(model.heroImageHeight)}"` : ""
+        ]
+          .filter(Boolean)
+          .join(" ");
         return `
           <div class="nl-hero" style="max-width:${hero.maxWidthPx || 600}px;margin-bottom:${marginBottom}px">
             <div class="nl-hero-frame" style="aspect-ratio:${hero.aspectRatio || "16 / 9"}">
-              <img src="${esc(model.heroImageUrl)}" alt="${esc(model.heroImageAlt)}" style="object-fit:${hero.objectFit || "cover"}">
+              <img src="${esc(model.heroImageUrl)}" alt="${esc(model.heroImageAlt)}" ${dimAttrs} style="object-fit:${hero.objectFit || "cover"}">
             </div>
           </div>
         `;
@@ -419,9 +456,15 @@
       }
       case SECTION_IDS.ROUTE_MAP: {
         if (model.routeMapUrl) {
+          const dimAttrs = [
+            model.routeMapWidth != null ? `width="${esc(model.routeMapWidth)}"` : "",
+            model.routeMapHeight != null ? `height="${esc(model.routeMapHeight)}"` : ""
+          ]
+            .filter(Boolean)
+            .join(" ");
           return `
             <div class="nl-route-map">
-              <img src="${esc(model.routeMapUrl)}" alt="Route map" class="nl-route-map-img">
+              <img src="${esc(model.routeMapUrl)}" alt="${esc(model.routeMapAlt || "Route map")}" class="nl-route-map-img" loading="lazy" ${dimAttrs}>
             </div>
           `;
         }

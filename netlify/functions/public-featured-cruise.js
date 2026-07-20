@@ -7,7 +7,10 @@
  * - Only publication_status = published
  * - Airline prices and category codes are never returned
  * - Uses service role server-side only
+ * - Returns resolved public-safe media only
  */
+
+const MediaResolver = require("../../js/media-resolver.js");
 
 function jsonResponse(statusCode, body) {
   const empty = body === "" || body == null;
@@ -78,13 +81,60 @@ function sanitizePricing(rows) {
     }));
 }
 
-function toPublicCruise(row, pricingRows) {
+function toPublicMedia(resolved) {
+  if (!resolved || !resolved.url) return null;
+  return {
+    url: resolved.url,
+    alt_text: resolved.altText || "",
+    title: resolved.title || "",
+    width: resolved.width == null ? null : resolved.width,
+    height: resolved.height == null ? null : resolved.height,
+    source: resolved.source || ""
+  };
+}
+
+async function loadMediaById(id) {
+  if (!id) return null;
+  const rows = await supabaseGet(
+    `media_library?id=eq.${encodeURIComponent(id)}&is_active=eq.true&select=id,title,alt_text,public_url,width,height,media_type,ship_id,destination_name,is_default,is_active&limit=1`
+  );
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+async function loadFallbackMediaLibrary(cruise) {
+  const rows = [];
+  if (cruise.cruise_ship_id) {
+    const shipRows = await supabaseGet(
+      `media_library?ship_id=eq.${encodeURIComponent(cruise.cruise_ship_id)}&media_type=eq.ship&is_active=eq.true&select=id,title,alt_text,public_url,width,height,media_type,ship_id,destination_name,is_default,is_active,ci_cruise_ships(name)`
+    );
+    rows.push(...(shipRows || []));
+  }
+
+  const candidates = MediaResolver.destinationCandidatesFromCruise({
+    departure_port: cruise.departure_port,
+    arrival_port: cruise.arrival_port,
+    itinerary_summary: cruise.itinerary_summary,
+    destination_name: cruise.destination_strip
+  });
+  if (candidates.length) {
+    const destRows = await supabaseGet(
+      `media_library?media_type=eq.destination&is_active=eq.true&select=id,title,alt_text,public_url,width,height,media_type,ship_id,destination_name,is_default,is_active&limit=200`
+    );
+    const wanted = new Set(candidates.map((c) => String(c).trim().toLowerCase()).filter(Boolean));
+    for (const row of destRows || []) {
+      if (wanted.has(String(row.destination_name || "").trim().toLowerCase())) {
+        rows.push(row);
+      }
+    }
+  }
+  return rows;
+}
+
+function toPublicCruise(row, pricingRows, resolved) {
   const lineName = row.ci_cruise_lines?.name || "";
   const ship = row.ci_cruise_ships || {};
-  const heroUrl =
-    row.use_ship_hero_image !== false
-      ? ship.hero_image_url || row.hero_image_url || ""
-      : row.hero_image_url || "";
+  const hero = toPublicMedia(resolved.hero);
+  const routeMap = toPublicMedia(resolved.routeMap);
 
   return {
     headline: row.headline || "",
@@ -96,12 +146,14 @@ function toPublicCruise(row, pricingRows) {
     nights: row.nights == null ? null : Number(row.nights),
     cruise_line_name: lineName,
     ship_name: ship.name || "",
-    hero_image_url: heroUrl || "",
-    hero_image_alt: row.hero_image_alt || row.headline || "Cruise image",
+    hero,
+    hero_image_url: hero?.url || "",
+    hero_image_alt: hero?.alt_text || row.hero_image_alt || row.headline || "Cruise image",
     short_editorial: row.short_editorial || "",
     full_description: row.full_description || "",
     itinerary_summary: row.itinerary_summary || "",
-    route_map_image_url: row.route_map_image_url || "",
+    route_map: routeMap,
+    route_map_image_url: routeMap?.url || "",
     alcohol_package: Boolean(row.alcohol_package),
     wifi: Boolean(row.wifi),
     gratuities: Boolean(row.gratuities),
@@ -137,8 +189,11 @@ exports.handler = async (event) => {
       "itinerary_summary",
       "hero_image_url",
       "hero_image_alt",
+      "hero_media_id",
       "use_ship_hero_image",
       "route_map_image_url",
+      "route_map_media_id",
+      "cruise_ship_id",
       "alcohol_package",
       "wifi",
       "gratuities",
@@ -150,7 +205,7 @@ exports.handler = async (event) => {
       "public_slug",
       "publication_status",
       "ci_cruise_lines(name)",
-      "ci_cruise_ships(name,hero_image_url)"
+      "ci_cruise_ships(id,name,hero_image_url)"
     ].join(",");
 
     const cruises = await supabaseGet(
@@ -159,11 +214,23 @@ exports.handler = async (event) => {
     const cruise = Array.isArray(cruises) ? cruises[0] : null;
     if (!cruise) return jsonResponse(404, { error: "not_found" });
 
-    const pricing = await supabaseGet(
-      `featured_cruise_pricing?select=room_label,brochure_price,cruise_101_price,display_order&featured_cruise_id=eq.${encodeURIComponent(cruise.id)}&order=display_order.asc`
-    );
+    const [pricing, heroMedia, routeMapMedia, mediaLibrary] = await Promise.all([
+      supabaseGet(
+        `featured_cruise_pricing?select=room_label,brochure_price,cruise_101_price,display_order&featured_cruise_id=eq.${encodeURIComponent(cruise.id)}&order=display_order.asc`
+      ),
+      loadMediaById(cruise.hero_media_id),
+      loadMediaById(cruise.route_map_media_id),
+      loadFallbackMediaLibrary(cruise)
+    ]);
 
-    return jsonResponse(200, { cruise: toPublicCruise(cruise, pricing) });
+    const resolved = MediaResolver.resolveCruiseImages(cruise, {
+      mediaLibrary,
+      ship: cruise.ci_cruise_ships || null,
+      heroMedia,
+      routeMapMedia
+    });
+
+    return jsonResponse(200, { cruise: toPublicCruise(cruise, pricing, resolved) });
   } catch (error) {
     console.error("public-featured-cruise error", error.message || error);
     return jsonResponse(500, { error: "unavailable" });
