@@ -86,24 +86,39 @@
     link.setAttribute("href", canonical);
   }
 
-  function renderNotFound(root) {
-    root.innerHTML = `
-      <div class="public-cruise-not-found">
-        <p>This cruise is not currently available.</p>
-        <p><a href="${esc(HOME_URL)}">Return to 101cruise</a></p>
-      </div>
-    `;
-  }
-
   async function loadCruise(slug) {
     const response = await fetch(
       `/.netlify/functions/public-featured-cruise?slug=${encodeURIComponent(slug)}`,
       { headers: { Accept: "application/json" } }
     );
-    if (response.status === 404) return null;
-    if (!response.ok) throw new Error("unavailable");
-    const payload = await response.json();
-    return payload?.cruise || null;
+    const payload = await response.json().catch(() => ({}));
+    if (response.status === 404) {
+      return { cruise: null, reason: "not_found", detail: payload?.detail || "" };
+    }
+    if (!response.ok) {
+      console.error("public-featured-cruise failed", response.status, payload);
+      return {
+        cruise: null,
+        reason: "unavailable",
+        detail: payload?.detail || payload?.error || `HTTP ${response.status}`
+      };
+    }
+    return { cruise: payload?.cruise || null, reason: payload?.cruise ? "ok" : "not_found", detail: "" };
+  }
+
+  function renderUnavailable(root, { slug, reason, detail }) {
+    const hint =
+      reason === "not_found"
+        ? "No published Featured Cruise matches this page slug. In Admin → Newsletter, set Publication Status to Published, confirm the Public Slug, then Save."
+        : "The public cruise API could not load this page.";
+    root.innerHTML = `
+      <div class="public-cruise-not-found">
+        <p>This cruise is not currently available.</p>
+        <p class="public-cruise-not-found-hint">${esc(hint)}</p>
+        <p class="public-cruise-not-found-meta">Slug: <code>${esc(slug || "—")}</code>${detail ? ` · ${esc(detail)}` : ""}</p>
+        <p><a href="${esc(HOME_URL)}">Return to 101cruise</a></p>
+      </div>
+    `;
   }
 
   async function init() {
@@ -112,14 +127,19 @@
 
     const slug = slugFromPath();
     if (!slug) {
-      renderNotFound(root);
+      renderUnavailable(root, { slug: "", reason: "not_found", detail: "No slug in URL path" });
       return;
     }
 
     try {
-      const cruise = await loadCruise(slug);
+      const result = await loadCruise(slug);
+      const cruise = result.cruise;
       if (!cruise || !window.NewsletterPreview) {
-        renderNotFound(root);
+        renderUnavailable(root, {
+          slug,
+          reason: result.reason || "not_found",
+          detail: !window.NewsletterPreview ? "Newsletter renderer failed to load" : result.detail || ""
+        });
         return;
       }
 
@@ -142,8 +162,13 @@
         pricingRows: cruise.pricing || []
       });
       root.innerHTML = window.NewsletterPreview.renderPublicCruisePage(model, { escapeHtml: esc });
-    } catch (_error) {
-      renderNotFound(root);
+    } catch (error) {
+      console.error("public cruise page error", error);
+      renderUnavailable(root, {
+        slug,
+        reason: "unavailable",
+        detail: String(error?.message || error || "Unexpected error")
+      });
     }
   }
 

@@ -136,6 +136,24 @@ body {
   font-weight: 600;
 }
 
+.public-cruise-not-found-hint {
+  max-width: 36rem;
+  margin: 12px auto 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.public-cruise-not-found-meta {
+  margin-top: 14px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.public-cruise-not-found-meta code {
+  font-size: 12px;
+  color: #374151;
+}
+
 .public-cruise-article .nl-hero,
 .public-cruise-article .nl-route-map,
 .public-cruise-article .nl-pricing {

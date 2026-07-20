@@ -10,7 +10,7 @@
  * - Returns resolved public-safe media only
  */
 
-const MediaResolver = require("./lib/media-resolver");
+const MediaResolver = require("./lib/media-resolver.js");
 
 function jsonResponse(statusCode, body) {
   const empty = body === "" || body == null;
@@ -27,7 +27,7 @@ function jsonResponse(statusCode, body) {
   };
 }
 
-/** Match Admin featuredSlugify — convert separators to hyphens, do not strip them. */
+/** Match Admin featuredSlugify. */
 function cleanSlug(raw) {
   return String(raw || "")
     .normalize("NFKD")
@@ -61,7 +61,14 @@ async function supabaseGet(path) {
     data = null;
   }
   if (!response.ok) {
-    throw new Error((data && data.message) || `Supabase HTTP ${response.status}`);
+    const detail =
+      (data && (data.message || data.error || data.hint || data.details)) ||
+      text ||
+      `Supabase HTTP ${response.status}`;
+    const err = new Error(typeof detail === "string" ? detail : JSON.stringify(detail));
+    err.statusCode = response.status;
+    err.body = data;
+    throw err;
   }
   return data || [];
 }
@@ -82,7 +89,6 @@ function sanitizePricing(rows) {
       brochure_price: row.brochure_price == null ? null : Number(row.brochure_price),
       cruise_101_price: row.cruise_101_price == null ? null : Number(row.cruise_101_price),
       display_order: Number(row.display_order) || 0
-      // airline_price and category intentionally omitted
     }));
 }
 
@@ -98,59 +104,39 @@ function toPublicMedia(resolved) {
   };
 }
 
-async function loadMediaById(id) {
-  if (!id) return null;
-  try {
-    const rows = await supabaseGet(
-      `media_library?id=eq.${encodeURIComponent(id)}&is_active=eq.true&select=id,title,alt_text,public_url,width,height,media_type,ship_id,destination_name,is_default,is_active&limit=1`
-    );
-    return Array.isArray(rows) ? rows[0] || null : null;
-  } catch (error) {
-    console.warn("public-featured-cruise media by id skipped", error.message || error);
-    return null;
+function legacyHeroUrl(row) {
+  const ship = row.ci_cruise_ships || {};
+  if (row.use_ship_hero_image !== false) {
+    return String(ship.hero_image_url || row.hero_image_url || "").trim();
   }
-}
-
-async function loadFallbackMediaLibrary(cruise) {
-  const rows = [];
-  try {
-    if (cruise.cruise_ship_id) {
-      const shipRows = await supabaseGet(
-        `media_library?ship_id=eq.${encodeURIComponent(cruise.cruise_ship_id)}&media_type=eq.ship&is_active=eq.true&select=id,title,alt_text,public_url,width,height,media_type,ship_id,destination_name,is_default,is_active`
-      );
-      rows.push(...(shipRows || []));
-    }
-
-    const candidates = MediaResolver.destinationCandidatesFromCruise({
-      departure_port: cruise.departure_port,
-      arrival_port: cruise.arrival_port,
-      itinerary_summary: cruise.itinerary_summary,
-      destination_name: cruise.destination_strip
-    });
-    if (candidates.length) {
-      const destRows = await supabaseGet(
-        `media_library?media_type=eq.destination&is_active=eq.true&select=id,title,alt_text,public_url,width,height,media_type,ship_id,destination_name,is_default,is_active&limit=200`
-      );
-      const wanted = new Set(
-        candidates.map((c) => String(c).trim().toLowerCase()).filter(Boolean)
-      );
-      for (const row of destRows || []) {
-        if (wanted.has(String(row.destination_name || "").trim().toLowerCase())) {
-          rows.push(row);
-        }
-      }
-    }
-  } catch (error) {
-    console.warn("public-featured-cruise media library fallback skipped", error.message || error);
-  }
-  return rows;
+  return String(row.hero_image_url || "").trim();
 }
 
 function toPublicCruise(row, pricingRows, resolved) {
   const lineName = row.ci_cruise_lines?.name || "";
   const ship = row.ci_cruise_ships || {};
-  const hero = toPublicMedia(resolved.hero);
-  const routeMap = toPublicMedia(resolved.routeMap);
+  const hero = toPublicMedia(resolved?.hero) || (legacyHeroUrl(row)
+    ? {
+        url: legacyHeroUrl(row),
+        alt_text: row.hero_image_alt || row.headline || "Cruise image",
+        title: row.headline || "",
+        width: null,
+        height: null,
+        source: "Legacy image"
+      }
+    : null);
+  const routeMap =
+    toPublicMedia(resolved?.routeMap) ||
+    (String(row.route_map_image_url || "").trim()
+      ? {
+          url: String(row.route_map_image_url).trim(),
+          alt_text: "Route map",
+          title: "Route map",
+          width: null,
+          height: null,
+          source: "Legacy route map URL"
+        }
+      : null);
 
   return {
     headline: row.headline || "",
@@ -183,8 +169,37 @@ function toPublicCruise(row, pricingRows, resolved) {
   };
 }
 
-function buildCruiseQuery(slug, { includeMediaIds }) {
-  const select = [
+async function loadMediaById(id) {
+  if (!id) return null;
+  try {
+    const rows = await supabaseGet(
+      `media_library?id=eq.${encodeURIComponent(id)}&is_active=eq.true&select=id,title,alt_text,public_url,width,height,media_type,ship_id,destination_name,is_default,is_active&limit=1`
+    );
+    return Array.isArray(rows) ? rows[0] || null : null;
+  } catch (error) {
+    console.warn("public-featured-cruise media by id skipped", error.message || error);
+    return null;
+  }
+}
+
+async function loadFallbackMediaLibrary(cruise) {
+  const rows = [];
+  try {
+    if (cruise.cruise_ship_id) {
+      const shipRows = await supabaseGet(
+        `media_library?ship_id=eq.${encodeURIComponent(cruise.cruise_ship_id)}&media_type=eq.ship&is_active=eq.true&select=id,title,alt_text,public_url,width,height,media_type,ship_id,destination_name,is_default,is_active`
+      );
+      rows.push(...(shipRows || []));
+    }
+  } catch (error) {
+    console.warn("public-featured-cruise ship media skipped", error.message || error);
+  }
+  return rows;
+}
+
+/** Proven query shape from Sprint 10B, plus optional media columns. */
+function cruiseSelect(includeMediaIds) {
+  return [
     "id",
     "headline",
     "destination_strip",
@@ -198,10 +213,10 @@ function buildCruiseQuery(slug, { includeMediaIds }) {
     "itinerary_summary",
     "hero_image_url",
     "hero_image_alt",
-    ...(includeMediaIds ? ["hero_media_id", "route_map_media_id"] : []),
     "use_ship_hero_image",
     "route_map_image_url",
     "cruise_ship_id",
+    ...(includeMediaIds ? ["hero_media_id", "route_map_media_id"] : []),
     "alcohol_package",
     "wifi",
     "gratuities",
@@ -213,31 +228,75 @@ function buildCruiseQuery(slug, { includeMediaIds }) {
     "public_slug",
     "publication_status",
     "ci_cruise_lines(name)",
-    "ci_cruise_ships(id,name,hero_image_url)"
+    "ci_cruise_ships(name,hero_image_url)"
   ].join(",");
-
-  const params = new URLSearchParams();
-  params.set("select", select);
-  params.set("public_slug", `eq.${slug}`);
-  params.set("publication_status", "eq.published");
-  params.set("limit", "1");
-  return `featured_cruises?${params.toString()}`;
 }
 
 async function loadPublishedCruise(slug) {
-  try {
-    const rows = await supabaseGet(buildCruiseQuery(slug, { includeMediaIds: true }));
-    return Array.isArray(rows) ? rows[0] || null : null;
-  } catch (error) {
-    const message = String(error.message || error);
-    // Migration not applied yet — retry without media FK columns.
-    if (/hero_media_id|route_map_media_id|column/i.test(message)) {
-      console.warn("public-featured-cruise retrying without media id columns", message);
-      const rows = await supabaseGet(buildCruiseQuery(slug, { includeMediaIds: false }));
+  const attempts = [
+    cruiseSelect(true),
+    cruiseSelect(false),
+    // Foundation columns with embeds (Sprint 10B shape)
+    [
+      "id",
+      "headline",
+      "destination_strip",
+      "departure_port",
+      "arrival_port",
+      "departure_date",
+      "return_date",
+      "nights",
+      "short_editorial",
+      "full_description",
+      "hero_image_url",
+      "hero_image_alt",
+      "use_ship_hero_image",
+      "public_slug",
+      "publication_status",
+      "ci_cruise_lines(name)",
+      "ci_cruise_ships(name,hero_image_url)"
+    ].join(","),
+    // No embeds — survives broken FK relationship cache
+    [
+      "id",
+      "headline",
+      "destination_strip",
+      "departure_port",
+      "arrival_port",
+      "departure_date",
+      "return_date",
+      "nights",
+      "short_editorial",
+      "full_description",
+      "hero_image_url",
+      "hero_image_alt",
+      "use_ship_hero_image",
+      "route_map_image_url",
+      "public_slug",
+      "publication_status",
+      "cruise_line_id",
+      "cruise_ship_id"
+    ].join(","),
+    // Minimal — proves table + slug filter work
+    "id,headline,public_slug,publication_status,hero_image_url,hero_image_alt"
+  ];
+
+  let lastError = null;
+  for (const select of attempts) {
+    try {
+      const path =
+        `featured_cruises?select=${encodeURIComponent(select)}` +
+        `&public_slug=eq.${encodeURIComponent(slug)}` +
+        `&publication_status=eq.published` +
+        `&limit=1`;
+      const rows = await supabaseGet(path);
       return Array.isArray(rows) ? rows[0] || null : null;
+    } catch (error) {
+      lastError = error;
+      console.warn("public-featured-cruise select attempt failed", error.message || error);
     }
-    throw error;
   }
+  throw lastError || new Error("Could not load featured cruise");
 }
 
 exports.handler = async (event) => {
@@ -260,14 +319,13 @@ exports.handler = async (event) => {
       console.warn("public-featured-cruise pricing skipped", error.message || error);
     }
 
-    const [heroMedia, routeMapMedia, mediaLibrary] = await Promise.all([
-      loadMediaById(cruise.hero_media_id),
-      loadMediaById(cruise.route_map_media_id),
-      loadFallbackMediaLibrary(cruise)
-    ]);
-
     let resolved = { hero: null, routeMap: null };
     try {
+      const [heroMedia, routeMapMedia, mediaLibrary] = await Promise.all([
+        loadMediaById(cruise.hero_media_id),
+        loadMediaById(cruise.route_map_media_id),
+        loadFallbackMediaLibrary(cruise)
+      ]);
       resolved = MediaResolver.resolveCruiseImages(cruise, {
         mediaLibrary,
         ship: cruise.ci_cruise_ships || null,
@@ -275,29 +333,17 @@ exports.handler = async (event) => {
         routeMapMedia
       });
     } catch (error) {
-      console.warn("public-featured-cruise resolve skipped", error.message || error);
-      const legacyHero = String(
-        cruise.hero_image_url || cruise.ci_cruise_ships?.hero_image_url || ""
-      ).trim();
-      const legacyMap = String(cruise.route_map_image_url || "").trim();
-      resolved = {
-        hero: legacyHero
-          ? {
-              url: legacyHero,
-              altText: cruise.hero_image_alt || cruise.headline || "Cruise image",
-              title: cruise.headline || "",
-              source: "Legacy image"
-            }
-          : null,
-        routeMap: legacyMap
-          ? { url: legacyMap, altText: "Route map", title: "Route map", source: "Legacy route map URL" }
-          : null
-      };
+      console.warn("public-featured-cruise media resolve skipped", error.message || error);
     }
 
     return jsonResponse(200, { cruise: toPublicCruise(cruise, pricing, resolved) });
   } catch (error) {
-    console.error("public-featured-cruise error", error.message || error);
-    return jsonResponse(500, { error: "unavailable" });
+    const message = String(error.message || error);
+    console.error("public-featured-cruise error", message);
+    // Temporary diagnostic field so Admin can see the real failure without Netlify logs.
+    return jsonResponse(500, {
+      error: "unavailable",
+      detail: message.slice(0, 240)
+    });
   }
 };
