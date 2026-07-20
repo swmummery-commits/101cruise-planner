@@ -82,6 +82,9 @@ async function listContent(body) {
   }
   if (body.content_status) {
     path += `&content_status=eq.${encodeURIComponent(body.content_status)}`;
+  } else {
+    // Default list: hide archived so only the current version shows
+    path += `&content_status=neq.archived`;
   }
   if (body.q) {
     const q = String(body.q).trim();
@@ -93,6 +96,27 @@ async function listContent(body) {
     list = list.filter((row) => row.freshness === body.freshness);
   }
   return { success: true, items: list };
+}
+
+/** Delete every other research_content row for the same entity (sources cascade). */
+async function deleteOtherVersions(row, keepId) {
+  let filter =
+    `entity_type=eq.${encodeURIComponent(row.entity_type)}` +
+    `&id=neq.${encodeURIComponent(keepId)}`;
+  if (row.entity_id) {
+    filter += `&entity_id=eq.${encodeURIComponent(row.entity_id)}`;
+  } else if (row.entity_key) {
+    filter += `&entity_key=eq.${encodeURIComponent(row.entity_key)}`;
+  } else {
+    return;
+  }
+  await supabase(`research_content?${filter}`, { method: "DELETE" });
+}
+
+/** Remove archived leftovers (from older publish behaviour). */
+async function purgeArchived() {
+  await supabase("research_content?content_status=eq.archived", { method: "DELETE" });
+  return { success: true };
 }
 
 async function getContent(body) {
@@ -230,18 +254,8 @@ async function publishContent(body, user) {
     throw Object.assign(new Error(validation.error || "Content is incomplete"), { statusCode: 400 });
   }
 
-  // Archive current published sibling(s) first to satisfy unique index.
-  let pubFilter = `entity_type=eq.${encodeURIComponent(row.entity_type)}&content_status=eq.published&id=neq.${encodeURIComponent(id)}`;
-  if (row.entity_id) pubFilter += `&entity_id=eq.${encodeURIComponent(row.entity_id)}`;
-  else if (row.entity_key) pubFilter += `&entity_key=eq.${encodeURIComponent(row.entity_key)}`;
-
-  await supabase(`research_content?${pubFilter}`, {
-    method: "PATCH",
-    body: JSON.stringify({
-      content_status: "archived",
-      updated_by: user.id
-    })
-  });
+  // Delete previous versions for this entity — only the published row should remain.
+  await deleteOtherVersions(row, id);
 
   const now = new Date().toISOString();
   const updated = await supabase(`research_content?id=eq.${encodeURIComponent(id)}`, {
@@ -255,7 +269,8 @@ async function publishContent(body, user) {
       last_reviewed_at: now,
       refresh_after: row.refresh_after || refreshAfterDate(row.entity_type),
       updated_by: user.id,
-      failure_detail: null
+      failure_detail: null,
+      replaces_id: null
     })
   });
 
@@ -292,13 +307,9 @@ async function publishContent(body, user) {
 async function archiveContent(body, user) {
   const id = String(body.id || "").trim();
   if (!id) throw Object.assign(new Error("id is required"), { statusCode: 400 });
-  const updated = await supabase(`research_content?id=eq.${encodeURIComponent(id)}`, {
-    method: "PATCH",
-    headers: { Prefer: "return=representation" },
-    body: JSON.stringify({ content_status: "archived", updated_by: user.id })
-  });
-  if (!updated?.length) throw Object.assign(new Error("Research content not found"), { statusCode: 404 });
-  return { success: true, item: withFreshness(updated[0]) };
+  // Hard-delete — previous versions are not kept in the Admin list.
+  await supabase(`research_content?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+  return { success: true, deleted: true, id, updated_by: user.id };
 }
 
 async function updateSource(body, user) {
@@ -471,6 +482,8 @@ exports.handler = async (event) => {
     switch (action) {
       case "list":
         return jsonResponse(200, await listContent(body));
+      case "purge_archived":
+        return jsonResponse(200, await purgeArchived());
       case "get":
         return jsonResponse(200, await getContent(body));
       case "find_existing":

@@ -194,6 +194,8 @@
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     }
     try {
+      // One-time cleanup of archived leftovers from older publish behaviour
+      await api("purge_archived").catch(() => null);
       const [listResult, status] = await Promise.all([
         api("list", {
           entity_type: filterEntity === "all" ? undefined : filterEntity,
@@ -412,8 +414,9 @@
           </label>
           <label>Status
             <select onchange="ResearchContentAdmin.setFilter('status', this.value)">
-              <option value="all" ${filterStatus === "all" ? "selected" : ""}>All</option>
+              <option value="all" ${filterStatus === "all" ? "selected" : ""}>All (hide archived)</option>
               ${Object.keys(STATUS_LABELS)
+                .filter((k) => k !== "archived")
                 .map(
                   (k) =>
                     `<option value="${k}" ${filterStatus === k ? "selected" : ""}>${STATUS_LABELS[k]}</option>`
