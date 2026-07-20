@@ -225,6 +225,194 @@
   line-height: 1;
 }
 
+.nl-route-map {
+  margin: 40px auto 0;
+  max-width: 600px;
+  width: 100%;
+}
+
+.nl-route-map-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 0;
+}
+
+.nl-route-map-empty {
+  margin: 40px auto 0;
+  max-width: 600px;
+  padding: 28px 16px;
+  color: #6b7280;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  text-align: center;
+  background: #f7f8f8;
+}
+
+.nl-pricing {
+  margin: 44px auto 0;
+  max-width: 600px;
+  display: grid;
+  gap: 18px;
+}
+
+.nl-price-module {
+  text-align: center;
+  padding: 0 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.nl-price-module:last-of-type {
+  border-bottom: none;
+}
+
+.nl-price-room {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #111;
+  margin-bottom: 8px;
+}
+
+.nl-price-brochure {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #111;
+  margin-bottom: 8px;
+}
+
+.nl-price-offer {
+  margin-top: 8px;
+}
+
+.nl-price-offer-label {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #245c4e;
+}
+
+.nl-price-offer-value {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #2f8f74;
+}
+
+.nl-price-metrics {
+  margin-top: 4px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  color: #374151;
+}
+
+.nl-pricing-note {
+  margin: 8px 0 0;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.nl-included {
+  margin: 44px auto 0;
+  max-width: 560px;
+  text-align: center;
+}
+
+.nl-included-heading {
+  margin: 0 0 12px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #111;
+}
+
+.nl-included-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px 18px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: #111;
+}
+
+.nl-other-information {
+  margin: 36px auto 0;
+  max-width: 560px;
+  padding: 12px 16px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  color: #245c4e;
+  background: rgba(141, 217, 191, 0.22);
+  text-align: center;
+}
+
+.nl-disclaimer {
+  margin: 48px auto 0;
+  max-width: 560px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #6b7280;
+  text-align: center;
+}
+
+.nl-enquire {
+  margin: 48px auto 0;
+  text-align: center;
+}
+
+.nl-enquire-heading {
+  margin: 0 0 18px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #111;
+}
+
+.nl-enquire-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 28px;
+  border-radius: 999px;
+  background: #8DD9BF;
+  color: #111;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.newsletter-preview-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #4b5563;
+}
+
+.newsletter-preview-mode select {
+  font-size: 12px;
+  padding: 4px 8px;
+}
+
 @media (max-width: 640px) {
   .newsletter-preview-overlay {
     padding: 12px;

@@ -122,6 +122,7 @@ let featuredRoomTypePromptIndex = null;
 let draggedFeaturedPricingLocalId = null;
 let featuredPricingDragFromHandle = false;
 let showFeaturedNewsletterPreview = false;
+let featuredNewsletterPreviewMode = "general"; // general | airline_staff
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -696,12 +697,13 @@ async function setTab(tab) {
 
 /**
  * Single production Admin navigation source of truth.
- * Featured Cruises must remain immediately after Cruise Lines/Ships.
+ * Newsletter (featured cruises) must remain immediately after Cruise Lines/Ships.
+ * Tab id stays "featured-cruises" — UI label only is "Newsletter".
  * setTab(id) sets activeTab; renderAdmin() paints buttons + matching panel.
  */
 const ADMIN_MAIN_TABS = [
   { id: "cruise-intelligence", label: "Cruise Lines/Ships", render: () => renderCruiseIntelligencePanel() },
-  { id: "featured-cruises", label: "Featured Cruises", render: () => renderFeaturedCruisesPanel() },
+  { id: "featured-cruises", label: "Newsletter", render: () => renderFeaturedCruisesPanel() },
   { id: "checklist", label: "Checklist", render: () => renderChecklistPanel() },
   { id: "packing", label: "Packing", render: () => renderPackingPanel() },
   { id: "smart-profiles", label: "Smart Profiles", render: () => renderSmartProfilesPanel() },
@@ -7720,7 +7722,7 @@ async function ensureFeaturedCruisesLoaded() {
       // Defaults are only required when creating a new cruise; list view can still open.
     }
   } catch (error) {
-    featuredCruiseMessage = error.message || "Could not load featured cruises.";
+    featuredCruiseMessage = error.message || "Could not load newsletter cruises.";
     featuredCruiseMessageTone = "error";
   } finally {
     featuredCruiseLoading = false;
@@ -7925,6 +7927,7 @@ async function startNewFeaturedCruise() {
     use_ship_hero_image: true,
     hero_image_url: "",
     hero_image_alt: "",
+    route_map_image_url: "",
     itinerary_summary: "",
     other_information: "",
     display_order: 0,
@@ -7999,6 +8002,7 @@ async function editFeaturedCruise(id) {
       use_ship_hero_image: existing.use_ship_hero_image !== false,
       hero_image_url: existing.hero_image_url || "",
       hero_image_alt: existing.hero_image_alt || "",
+      route_map_image_url: existing.route_map_image_url || "",
       itinerary_summary: itinerarySummary,
       other_information: existing.other_information || "",
       display_order: existing.display_order ?? 0,
@@ -8009,7 +8013,7 @@ async function editFeaturedCruise(id) {
       newsletter_publication_date: featuredFormDraft.newsletter_publication_date
     };
   } catch (error) {
-    featuredCruiseMessage = error.message || "Could not open this featured cruise.";
+    featuredCruiseMessage = error.message || "Could not open this cruise.";
     featuredCruiseMessageTone = "error";
     showFeaturedCruiseForm = false;
   } finally {
@@ -8052,6 +8056,7 @@ function buildFeaturedNewsletterPreviewModel() {
   const line = ciCruiseLines.find((row) => row.id === draft.cruise_line_id);
   const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id);
   const publicSlug = String(draft.public_slug || "").trim();
+  captureFeaturedPricingFromDom();
   return window.NewsletterPreview.buildModel({
     destinationStrip,
     headline: draft.headline || "",
@@ -8063,8 +8068,21 @@ function buildFeaturedNewsletterPreviewModel() {
     cruiseLineName: line?.name || "",
     shipName: ship?.name || "",
     itinerarySummary: draft.itinerary_summary || "",
-    description: draft.short_editorial || draft.full_description || "",
-    publicSlug
+    short_editorial: draft.short_editorial || "",
+    full_description: draft.full_description || "",
+    description: draft.short_editorial || "",
+    publicSlug,
+    routeMapUrl: draft.route_map_image_url || "",
+    pricingRows: featuredFormPricing,
+    alcohol_package: draft.alcohol_package,
+    wifi: draft.wifi,
+    gratuities: draft.gratuities,
+    all_tours: draft.all_tours,
+    all_dining: draft.all_dining,
+    laundry: draft.laundry,
+    onboard_credit: draft.onboard_credit,
+    other_information: draft.other_information || "",
+    outputMode: featuredNewsletterPreviewMode || "general"
   });
 }
 
@@ -8085,18 +8103,34 @@ function closeFeaturedNewsletterPreview() {
   renderAdmin();
 }
 
+function setFeaturedNewsletterPreviewMode(value) {
+  captureFeaturedDraftFromDom();
+  featuredNewsletterPreviewMode = value === "airline_staff" ? "airline_staff" : "general";
+  showFeaturedNewsletterPreview = true;
+  renderAdmin();
+}
+
 function renderFeaturedNewsletterPreviewModal() {
   if (!showFeaturedNewsletterPreview || !window.NewsletterPreview) return "";
   const model = buildFeaturedNewsletterPreviewModel();
   const warnings = window.NewsletterValidation.validateNewsletterPreview(model);
   const warningsHtml = window.NewsletterPreview.renderWarnings(warnings, esc);
-  const articleHtml = window.NewsletterPreview.renderTopHalf(model, { escapeHtml: esc });
+  const articleHtml = window.NewsletterPreview.renderNewsletterCruise(model, { escapeHtml: esc });
   return `
     <div class="newsletter-preview-overlay" onclick="if (event.target === this) closeFeaturedNewsletterPreview()">
       <div class="newsletter-preview-modal" role="dialog" aria-modal="true" aria-labelledby="featuredNewsletterPreviewTitle">
         <div class="newsletter-preview-modal-header">
           <h3 id="featuredNewsletterPreviewTitle">Newsletter Preview</h3>
-          <button type="button" class="admin-button secondary small" onclick="closeFeaturedNewsletterPreview()">Close</button>
+          <div class="admin-actions-row">
+            <label class="newsletter-preview-mode">
+              <span>Output</span>
+              <select aria-label="Newsletter pricing output mode" onchange="setFeaturedNewsletterPreviewMode(this.value)">
+                <option value="general" ${featuredNewsletterPreviewMode === "general" ? "selected" : ""}>General</option>
+                <option value="airline_staff" ${featuredNewsletterPreviewMode === "airline_staff" ? "selected" : ""}>Airline Staff</option>
+              </select>
+            </label>
+            <button type="button" class="admin-button secondary small" onclick="closeFeaturedNewsletterPreview()">Close</button>
+          </div>
         </div>
         <div class="newsletter-preview-modal-body">
           ${warningsHtml}
@@ -8165,6 +8199,7 @@ function captureFeaturedDraftFromDom() {
     use_ship_hero_image: Boolean(document.getElementById("fcUseShipHero")?.checked),
     hero_image_url: document.getElementById("fcHeroImageUrl")?.value || "",
     hero_image_alt: document.getElementById("fcHeroImageAlt")?.value || "",
+    route_map_image_url: document.getElementById("fcRouteMapUrl")?.value || "",
     itinerary_summary: document.getElementById("fcItinerarySummary")?.value || "",
     other_information: document.getElementById("fcOtherInformation")?.value || "",
     display_order: document.getElementById("fcDisplayOrder")?.value || 0,
@@ -8426,10 +8461,10 @@ function renderFeaturedCruisesPanel() {
     <div class="admin-card">
       <div class="admin-list-top">
         <div>
-          <h3>Featured Cruises</h3>
-          <p class="admin-muted">Create each promoted cruise once, then use it later for newsletter, website and marketing outputs.</p>
+          <h3>Newsletter</h3>
+          <p class="admin-muted">Create and manage promoted cruises for newsletters and public cruise pages.</p>
         </div>
-        <button class="admin-button black" onclick="startNewFeaturedCruise()">+ New Featured Cruise</button>
+        <button class="admin-button black" onclick="startNewFeaturedCruise()">+ New</button>
       </div>
 
       <div class="featured-cruises-toolbar">
@@ -8449,13 +8484,20 @@ function renderFeaturedCruisesPanel() {
       </div>
 
       <div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>
-      ${featuredCruiseLoading ? `<p class="admin-muted">Loading featured cruises…</p>` : ""}
+      ${featuredCruiseLoading ? `<p class="admin-muted">Loading newsletter cruises…</p>` : ""}
 
       ${!featuredCruiseLoading && !rows.length
-        ? `<div class="admin-card featured-cruise-empty"><p class="admin-muted">No featured cruises have been created yet.</p></div>`
+        ? `<div class="admin-card featured-cruise-empty"><p class="admin-muted">No newsletter cruises have been created yet.</p></div>`
         : `<div class="featured-cruise-list">${rows.map(renderFeaturedCruiseListItem).join("")}</div>`}
     </div>
   `;
+}
+
+function onFeaturedCruiseCardKeydown(event, id) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    editFeaturedCruise(id);
+  }
 }
 
 function renderFeaturedCruiseListItem(row) {
@@ -8465,8 +8507,16 @@ function renderFeaturedCruiseListItem(row) {
   const newsletterBits = [];
   if (row.newsletter_number != null && row.newsletter_number !== "") newsletterBits.push(`Newsletter ${row.newsletter_number}`);
   if (row.newsletter_publication_date) newsletterBits.push(formatAdminDate(row.newsletter_publication_date));
+  const id = esc(row.id);
   return `
-    <article class="featured-cruise-card">
+    <article
+      class="featured-cruise-card admin-object-card"
+      role="button"
+      tabindex="0"
+      aria-label="Open ${esc(row.headline || "newsletter cruise")}"
+      onclick="editFeaturedCruise('${id}')"
+      onkeydown="onFeaturedCruiseCardKeydown(event, '${id}')"
+    >
       <div class="featured-cruise-card-main">
         <div class="featured-cruise-card-heading">
           <h4>${esc(row.headline)}</h4>
@@ -8479,9 +8529,6 @@ function renderFeaturedCruiseListItem(row) {
           ${newsletterBits.length ? ` · ${esc(newsletterBits.join(" · "))}` : ""}
           ${row.create_public_page ? " · Public page prepared" : ""}
         </p>
-      </div>
-      <div class="admin-actions-row">
-        <button class="admin-button secondary small" onclick="editFeaturedCruise('${esc(row.id)}')">Edit</button>
       </div>
     </article>
   `;
@@ -8560,13 +8607,13 @@ function renderFeaturedCruiseForm() {
     <div class="admin-card featured-cruise-form">
       <div class="admin-list-top">
         <div>
-          <h3>${existing ? "Edit Featured Cruise" : "New Featured Cruise"}</h3>
-          <p class="admin-muted">Admin-only. Nothing here is public in this phase.</p>
+          <h3>${existing ? "Edit Cruise" : "New Cruise"}</h3>
+          <p class="admin-muted">Newsletter workspace. Nothing here is public in this phase.</p>
         </div>
         <div class="admin-actions-row">
           <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
           <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
-          <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save Featured Cruise"}</button>
+          <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save"}</button>
         </div>
       </div>
       <div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>
@@ -8599,7 +8646,7 @@ function renderFeaturedCruiseForm() {
             <span>Create public page</span>
           </label>
         </div>
-        <p class="admin-helper">Prepares a future public landing page. No page is published in this phase. Prices must never be exposed via slug or public output.</p>
+        <p class="admin-helper">Public page URL: /cruise/{public-slug}. Only Published cruises are publicly visible. Airline prices are never exposed on the public page.</p>
       </section>
 
       <section class="featured-form-section">
@@ -8690,6 +8737,15 @@ function renderFeaturedCruiseForm() {
       </section>
 
       <section class="featured-form-section">
+        <h4>Route Map</h4>
+        <div class="admin-field">
+          <label for="fcRouteMapUrl">Route map image URL</label>
+          <input id="fcRouteMapUrl" type="url" value="${esc(draft.route_map_image_url || "")}" placeholder="https://…">
+          <div class="admin-helper">Optional. Used in the newsletter and public cruise page. No automatic map generation in this phase.</div>
+        </div>
+      </section>
+
+      <section class="featured-form-section">
         <h4>Itinerary</h4>
         <p class="admin-muted">Enter the ports in sailing order, separated by a vertical bar.</p>
         <div class="admin-field">
@@ -8742,7 +8798,7 @@ function renderFeaturedCruiseForm() {
         <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
         ${existing ? `<button class="admin-button secondary" onclick="deleteFeaturedCruise('${esc(existing.id)}')" ${featuredCruiseSaving ? "disabled" : ""}>Delete</button>` : ""}
         <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
-        <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save Featured Cruise"}</button>
+        <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save"}</button>
       </div>
     </div>
     ${renderFeaturedNewsletterPreviewModal()}
@@ -8860,6 +8916,7 @@ async function saveFeaturedCruise() {
     use_ship_hero_image: useShipHero,
     hero_image_url: useShipHero ? null : normalizeUrl(draft.hero_image_url) || null,
     hero_image_alt: String(draft.hero_image_alt || "").trim() || null,
+    route_map_image_url: normalizeUrl(draft.route_map_image_url) || null,
     itinerary_summary: itinerarySummary,
     alcohol_package: Boolean(draft.alcohol_package),
     wifi: Boolean(draft.wifi),
@@ -8935,10 +8992,10 @@ async function saveFeaturedCruise() {
     featuredFormPricing = [];
     featuredFormDraft = null;
     featuredSlugManuallyEdited = false;
-    featuredCruiseMessage = "Featured cruise saved.";
+    featuredCruiseMessage = "Cruise saved.";
     featuredCruiseMessageTone = "success";
   } catch (error) {
-    featuredCruiseMessage = error.message || "Could not save featured cruise.";
+    featuredCruiseMessage = error.message || "Could not save cruise.";
     featuredCruiseMessageTone = "error";
   } finally {
     featuredCruiseSaving = false;
@@ -8947,7 +9004,7 @@ async function saveFeaturedCruise() {
 }
 
 async function deleteFeaturedCruise(id) {
-  if (!window.confirm("Delete this featured cruise? Its pricing rows will also be deleted.")) return;
+  if (!window.confirm("Delete this cruise? Its pricing rows will also be deleted.")) return;
   featuredCruiseSaving = true;
   featuredCruiseMessage = "Deleting…";
   featuredCruiseMessageTone = "";
@@ -8960,10 +9017,10 @@ async function deleteFeaturedCruise(id) {
     editingFeaturedCruiseId = null;
     featuredFormPricing = [];
     featuredFormDraft = null;
-    featuredCruiseMessage = "Featured cruise deleted.";
+    featuredCruiseMessage = "Cruise deleted.";
     featuredCruiseMessageTone = "success";
   } catch (error) {
-    featuredCruiseMessage = error.message || "Could not delete featured cruise.";
+    featuredCruiseMessage = error.message || "Could not delete cruise.";
     featuredCruiseMessageTone = "error";
   } finally {
     featuredCruiseSaving = false;

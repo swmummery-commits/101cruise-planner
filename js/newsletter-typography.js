@@ -108,8 +108,8 @@
     editorialDivider: {
       color: "#E8E8E8",
       heightPx: 1,
-      marginTopPx: 38,
-      marginBottomPx: 38
+      marginTopPx: 34,
+      marginBottomPx: 34
     },
     exploreMore: {
       fontFamily: "Helvetica, Arial, sans-serif",
@@ -130,8 +130,8 @@
       destinationToHeadlinePx: 52,
       heroToDatesPx: 36,
       nightsToPortsExtraPx: 22,
-      portsToDividerPx: 38,
-      dividerToDescriptionPx: 38,
+      portsToDividerPx: 34,
+      dividerToDescriptionPx: 34,
       descriptionToCtaPx: 48
     }
   };
