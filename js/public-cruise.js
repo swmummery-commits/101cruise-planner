@@ -21,14 +21,29 @@
       .replaceAll("'", "&#39;");
   }
 
+  function slugifyPublicSlug(value) {
+    return String(value || "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  }
+
   function slugFromPath() {
     const parts = window.location.pathname.split("/").filter(Boolean);
     const cruiseIndex = parts.indexOf("cruise");
     if (cruiseIndex >= 0 && parts[cruiseIndex + 1]) {
-      return decodeURIComponent(parts[cruiseIndex + 1]).trim().toLowerCase();
+      const raw = decodeURIComponent(parts[cruiseIndex + 1]);
+      // Ignore static file leftovers if rewrite ever surfaces them.
+      if (/^index\.html?$/i.test(raw)) return "";
+      return slugifyPublicSlug(raw);
     }
     const params = new URLSearchParams(window.location.search);
-    return String(params.get("slug") || "").trim().toLowerCase();
+    return slugifyPublicSlug(params.get("slug") || "");
   }
 
   function setMetadata(cruise) {

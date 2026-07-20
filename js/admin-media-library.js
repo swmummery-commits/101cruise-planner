@@ -634,6 +634,10 @@
           </div>
           <div class="admin-message ${msgClass}">${esc(mediaMessage)}</div>
           ${renderUploadForm()}
+          <div class="admin-actions-row" style="justify-content:flex-end;margin-top:18px">
+            <button class="admin-button secondary" onclick="MediaLibraryAdmin.cancelUpload()" ${mediaSaving ? "disabled" : ""}>Cancel</button>
+            <button class="admin-button black" onclick="MediaLibraryAdmin.submitMediaUpload()" ${mediaSaving ? "disabled" : ""}>${mediaSaving ? "Uploading…" : "Upload"}</button>
+          </div>
         </div>
       `;
     }

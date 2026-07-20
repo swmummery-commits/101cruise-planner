@@ -141,9 +141,21 @@
       .filter(Boolean);
   }
 
+  function slugifyPublicSlug(value) {
+    return String(value || "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  }
+
   function buildLandingPageUrl(input = {}) {
     if (input.landingPageUrl) return String(input.landingPageUrl).trim();
-    const slug = String(input.publicSlug || input.public_slug || "").trim();
+    const slug = slugifyPublicSlug(input.publicSlug || input.public_slug || "");
     if (!slug) return "";
     return `/cruise/${slug}`;
   }
