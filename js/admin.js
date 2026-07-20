@@ -7952,8 +7952,10 @@ async function startNewFeaturedCruise() {
     hero_image_url: "",
     hero_image_alt: "",
     hero_media_id: null,
+    hero_media: null,
     route_map_image_url: "",
     route_map_media_id: null,
+    route_map_media: null,
     itinerary_summary: "",
     other_information: "",
     display_order: 0,
@@ -7966,14 +7968,40 @@ async function startNewFeaturedCruise() {
   renderAdmin();
 }
 
+async function fetchMediaLibraryRow(id) {
+  if (!id) return null;
+  const cached = window.MediaLibraryAdmin?.findById?.(id);
+  if (cached) return cached;
+  const { data, error } = await supabaseClient
+    .from("media_library")
+    .select("id,title,alt_text,public_url,width,height,media_type,ship_id,destination_name,is_default,is_active,tags,file_name,mime_type")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) {
+    console.warn("media_library fetch skipped", error.message);
+    return null;
+  }
+  return data || null;
+}
+
 async function editFeaturedCruise(id) {
   featuredCruiseLoading = true;
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   renderAdmin();
   try {
-    const existing = findFeaturedCruise(id);
+    // Always re-read the cruise row so hero_media_id / route_map_media_id are current.
+    const { data: existing, error: cruiseError } = await supabaseClient
+      .from("featured_cruises")
+      .select("*, ci_cruise_lines(id,name), ci_cruise_ships(id,name,hero_image_url)")
+      .eq("id", id)
+      .maybeSingle();
+    if (cruiseError) throw new Error(cruiseError.message);
     if (!existing) throw new Error("Featured cruise not found.");
+
+    if (window.MediaLibraryAdmin?.ensureLoaded) {
+      await window.MediaLibraryAdmin.ensureLoaded({ quiet: true });
+    }
 
     const { data: pricing, error: pricingError } = await supabaseClient
       .from("featured_cruise_pricing")
@@ -8003,6 +8031,11 @@ async function editFeaturedCruise(id) {
       }
     }
 
+    const [heroMedia, routeMapMedia] = await Promise.all([
+      fetchMediaLibraryRow(existing.hero_media_id),
+      fetchMediaLibraryRow(existing.route_map_media_id)
+    ]);
+
     const nights = existing.nights != null ? Number(existing.nights) : null;
     const departure = existing.departure_date || "";
     editingFeaturedCruiseId = id;
@@ -8029,8 +8062,10 @@ async function editFeaturedCruise(id) {
       hero_image_url: existing.hero_image_url || "",
       hero_image_alt: existing.hero_image_alt || "",
       hero_media_id: existing.hero_media_id || null,
+      hero_media: heroMedia,
       route_map_image_url: existing.route_map_image_url || "",
       route_map_media_id: existing.route_map_media_id || null,
+      route_map_media: routeMapMedia,
       itinerary_summary: itinerarySummary,
       other_information: existing.other_information || "",
       display_order: existing.display_order ?? 0,
@@ -8040,6 +8075,11 @@ async function editFeaturedCruise(id) {
       newsletter_number: featuredFormDraft.newsletter_number,
       newsletter_publication_date: featuredFormDraft.newsletter_publication_date
     };
+
+    // Keep list cache in sync for subsequent opens.
+    const listIndex = featuredCruises.findIndex((row) => row.id === id);
+    if (listIndex >= 0) featuredCruises[listIndex] = { ...featuredCruises[listIndex], ...existing };
+    else featuredCruises.unshift(existing);
   } catch (error) {
     featuredCruiseMessage = error.message || "Could not open this cruise.";
     featuredCruiseMessageTone = "error";
@@ -8072,21 +8112,36 @@ function featuredMediaLibraryItems() {
 function resolveFeaturedCruiseImages(draft = featuredFormDraft || {}) {
   const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id) || null;
   const mediaLibrary = featuredMediaLibraryItems();
-  const heroMedia = draft.hero_media_id
-    ? window.MediaLibraryAdmin?.findById?.(draft.hero_media_id) || null
-    : null;
-  const routeMapMedia = draft.route_map_media_id
-    ? window.MediaLibraryAdmin?.findById?.(draft.route_map_media_id) || null
-    : null;
+  const heroMedia =
+    draft.hero_media ||
+    (draft.hero_media_id ? window.MediaLibraryAdmin?.findById?.(draft.hero_media_id) || null : null);
+  const routeMapMedia =
+    draft.route_map_media ||
+    (draft.route_map_media_id
+      ? window.MediaLibraryAdmin?.findById?.(draft.route_map_media_id) || null
+      : null);
   if (!window.MediaResolver) {
+    const heroUrl = heroMedia?.public_url || draft.hero_image_url || ship?.hero_image_url || "";
     return {
-      hero: draft.hero_image_url
-        ? { url: draft.hero_image_url, altText: draft.hero_image_alt || "", source: "Legacy Featured Cruise image URL" }
-        : ship?.hero_image_url
-          ? { url: ship.hero_image_url, altText: draft.hero_image_alt || "", source: "Legacy Cruise Intelligence image" }
-          : null,
-      routeMap: draft.route_map_image_url
-        ? { url: draft.route_map_image_url, altText: "Route map", source: "Legacy route map URL" }
+      hero: heroUrl
+        ? {
+            url: heroUrl,
+            altText: draft.hero_image_alt || heroMedia?.alt_text || "",
+            source: heroMedia
+              ? "Featured Cruise Media Library selection"
+              : draft.hero_image_url
+                ? "Legacy Featured Cruise image URL"
+                : "Legacy Cruise Intelligence image"
+          }
+        : null,
+      routeMap: (routeMapMedia?.public_url || draft.route_map_image_url)
+        ? {
+            url: routeMapMedia?.public_url || draft.route_map_image_url,
+            altText: routeMapMedia?.alt_text || "Route map",
+            source: routeMapMedia
+              ? "Featured Cruise Media Library selection"
+              : "Legacy route map URL"
+          }
         : null
     };
   }
@@ -8267,8 +8322,10 @@ function captureFeaturedDraftFromDom() {
     hero_image_url: featuredFormDraft.hero_image_url || "",
     hero_image_alt: document.getElementById("fcHeroImageAlt")?.value || featuredFormDraft.hero_image_alt || "",
     hero_media_id: featuredFormDraft.hero_media_id || null,
+    hero_media: featuredFormDraft.hero_media || null,
     route_map_image_url: featuredFormDraft.route_map_image_url || "",
     route_map_media_id: featuredFormDraft.route_map_media_id || null,
+    route_map_media: featuredFormDraft.route_map_media || null,
     itinerary_summary: document.getElementById("fcItinerarySummary")?.value || "",
     other_information: document.getElementById("fcOtherInformation")?.value || "",
     display_order: document.getElementById("fcDisplayOrder")?.value || 0,
@@ -8423,6 +8480,7 @@ function updateFeaturedHeroPreview() {
 function setFeaturedHeroDefaultShip() {
   captureFeaturedDraftFromDom();
   featuredFormDraft.hero_media_id = null;
+  featuredFormDraft.hero_media = null;
   featuredFormDraft.hero_image_url = "";
   featuredFormDraft.use_ship_hero_image = true;
   renderAdmin();
@@ -8439,6 +8497,7 @@ function setFeaturedHeroLegacyCi() {
     return;
   }
   featuredFormDraft.hero_media_id = null;
+  featuredFormDraft.hero_media = null;
   featuredFormDraft.hero_image_url = ciUrl;
   featuredFormDraft.use_ship_hero_image = false;
   renderAdmin();
@@ -8447,8 +8506,29 @@ function setFeaturedHeroLegacyCi() {
 function removeFeaturedHeroOverride() {
   captureFeaturedDraftFromDom();
   featuredFormDraft.hero_media_id = null;
+  featuredFormDraft.hero_media = null;
   featuredFormDraft.hero_image_url = "";
   featuredFormDraft.use_ship_hero_image = true;
+  renderAdmin();
+}
+
+function applyFeaturedHeroMediaSelection(media) {
+  if (!media?.id) return;
+  captureFeaturedDraftFromDom();
+  featuredFormDraft.hero_media_id = media.id;
+  featuredFormDraft.hero_media = media;
+  featuredFormDraft.use_ship_hero_image = false;
+  if (!featuredFormDraft.hero_image_alt && media.alt_text) {
+    featuredFormDraft.hero_image_alt = media.alt_text;
+  }
+  renderAdmin();
+}
+
+function applyFeaturedRouteMapMediaSelection(media) {
+  if (!media?.id) return;
+  captureFeaturedDraftFromDom();
+  featuredFormDraft.route_map_media_id = media.id;
+  featuredFormDraft.route_map_media = media;
   renderAdmin();
 }
 
@@ -8465,15 +8545,7 @@ function openFeaturedHeroMediaPicker() {
     publicSlug: featuredFormDraft.public_slug || "",
     mediaType: null,
     defaultFilter: "recommended",
-    onSelect(media) {
-      captureFeaturedDraftFromDom();
-      featuredFormDraft.hero_media_id = media.id;
-      featuredFormDraft.use_ship_hero_image = false;
-      if (!featuredFormDraft.hero_image_alt && media.alt_text) {
-        featuredFormDraft.hero_image_alt = media.alt_text;
-      }
-      renderAdmin();
-    }
+    onSelect: applyFeaturedHeroMediaSelection
   });
 }
 
@@ -8490,15 +8562,7 @@ function openFeaturedHeroUpload() {
     publicSlug: featuredFormDraft.public_slug || "",
     mediaType: featuredFormDraft.cruise_ship_id ? "ship" : "general",
     defaultFilter: "recommended",
-    onSelect(media) {
-      captureFeaturedDraftFromDom();
-      featuredFormDraft.hero_media_id = media.id;
-      featuredFormDraft.use_ship_hero_image = false;
-      if (!featuredFormDraft.hero_image_alt && media.alt_text) {
-        featuredFormDraft.hero_image_alt = media.alt_text;
-      }
-      renderAdmin();
-    }
+    onSelect: applyFeaturedHeroMediaSelection
   });
   window.MediaLibraryAdmin.openPickerUpload();
 }
@@ -8516,11 +8580,7 @@ function openFeaturedRouteMapPicker() {
     publicSlug: featuredFormDraft.public_slug || "",
     mediaType: "route_map",
     defaultFilter: "recommended",
-    onSelect(media) {
-      captureFeaturedDraftFromDom();
-      featuredFormDraft.route_map_media_id = media.id;
-      renderAdmin();
-    }
+    onSelect: applyFeaturedRouteMapMediaSelection
   });
 }
 
@@ -8532,6 +8592,7 @@ function openFeaturedRouteMapUpload() {
 function removeFeaturedRouteMapSelection() {
   captureFeaturedDraftFromDom();
   featuredFormDraft.route_map_media_id = null;
+  featuredFormDraft.route_map_media = null;
   featuredFormDraft.route_map_image_url = "";
   renderAdmin();
 }
@@ -8539,7 +8600,9 @@ function removeFeaturedRouteMapSelection() {
 function renderFeaturedHeroImageSection(draft) {
   const resolved = resolveFeaturedCruiseImages(draft);
   const hero = resolved.hero;
-  const media = draft.hero_media_id ? window.MediaLibraryAdmin?.findById?.(draft.hero_media_id) : null;
+  const media =
+    draft.hero_media ||
+    (draft.hero_media_id ? window.MediaLibraryAdmin?.findById?.(draft.hero_media_id) : null);
   const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id);
   const hasCi = Boolean(ship?.hero_image_url);
   const altWarn = !(draft.hero_image_alt || media?.alt_text || hero?.altText);
@@ -8584,9 +8647,11 @@ function renderFeaturedHeroImageSection(draft) {
 
 function renderFeaturedRouteMapSection(draft) {
   const resolved = resolveFeaturedCruiseImages(draft).routeMap;
-  const media = draft.route_map_media_id
-    ? window.MediaLibraryAdmin?.findById?.(draft.route_map_media_id)
-    : null;
+  const media =
+    draft.route_map_media ||
+    (draft.route_map_media_id
+      ? window.MediaLibraryAdmin?.findById?.(draft.route_map_media_id)
+      : null);
   const legacyUrl = String(draft.route_map_image_url || "").trim();
   return `
     <section class="featured-form-section">
@@ -9171,15 +9236,75 @@ async function saveFeaturedCruise() {
   renderAdmin();
 
   try {
-    let cruiseId = editingFeaturedCruiseId;
-    if (cruiseId) {
-      const { error } = await supabaseClient.from("featured_cruises").update(payload).eq("id", cruiseId);
-      if (error) throw new Error(error.message);
-    } else {
-      const insertPayload = { ...payload, created_by: currentUser?.id || null };
-      const { data, error } = await supabaseClient.from("featured_cruises").insert(insertPayload).select("id").single();
-      if (error) throw new Error(error.message);
-      cruiseId = data.id;
+    const missingColumnMatch = (message) => {
+      const match = String(message || "").match(
+        /Could not find the '([^']+)' column of 'featured_cruises'/i
+      );
+      return match?.[1] || null;
+    };
+
+    const saveCruiseRow = async (basePayload) => {
+      let working = { ...basePayload };
+      const stripped = [];
+      for (let attempt = 0; attempt < 8; attempt += 1) {
+        const selectCols = ["id"];
+        if (working.hero_media_id !== undefined) selectCols.push("hero_media_id");
+        if (working.route_map_media_id !== undefined) selectCols.push("route_map_media_id");
+
+        if (editingFeaturedCruiseId) {
+          const { data, error } = await supabaseClient
+            .from("featured_cruises")
+            .update(working)
+            .eq("id", editingFeaturedCruiseId)
+            .select(selectCols.join(","))
+            .single();
+          if (!error) return { cruiseId: editingFeaturedCruiseId, savedRow: data, stripped };
+          const missing = missingColumnMatch(error.message);
+          if (missing && Object.prototype.hasOwnProperty.call(working, missing)) {
+            delete working[missing];
+            stripped.push(missing);
+            continue;
+          }
+          throw new Error(error.message);
+        }
+
+        const insertPayload = { ...working, created_by: currentUser?.id || null };
+        const { data, error } = await supabaseClient
+          .from("featured_cruises")
+          .insert(insertPayload)
+          .select(selectCols.join(","))
+          .single();
+        if (!error) return { cruiseId: data.id, savedRow: data, stripped };
+        const missing = missingColumnMatch(error.message);
+        if (missing && Object.prototype.hasOwnProperty.call(working, missing)) {
+          delete working[missing];
+          stripped.push(missing);
+          continue;
+        }
+        throw new Error(error.message);
+      }
+      throw new Error("Could not save cruise because required database columns are missing.");
+    };
+
+    const { cruiseId, savedRow, stripped } = await saveCruiseRow(payload);
+
+    if (payload.hero_media_id && savedRow && "hero_media_id" in savedRow && savedRow.hero_media_id !== payload.hero_media_id) {
+      throw new Error(
+        "Hero image did not save. Confirm the Media Library migration has been applied (hero_media_id column)."
+      );
+    }
+    if (
+      payload.route_map_media_id &&
+      savedRow &&
+      "route_map_media_id" in savedRow &&
+      savedRow.route_map_media_id !== payload.route_map_media_id
+    ) {
+      throw new Error(
+        "Route map did not save. Confirm the Media Library migration has been applied (route_map_media_id column)."
+      );
+    }
+    if (stripped.length) {
+      console.warn("featured_cruises save omitted missing columns", stripped);
     }
 
     // Do not modify featured_cruise_ports in this workflow.

@@ -121,6 +121,10 @@
           return resolved;
         }
       }
+      // ID is set but row not loaded yet — do not silently fall through to a different image.
+      if (!selected) {
+        return null;
+      }
     }
 
     // 2. Existing Featured Cruise hero_image_url (legacy / pinned Squarespace etc.)
