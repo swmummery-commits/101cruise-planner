@@ -100,21 +100,25 @@ let ciMessage = "";
 let ciMessageTone = "";
 let ciLoading = false;
 
-/* ========== Featured Cruises (Sprint 9A Phase 1) ========== */
+/* ========== Featured Cruises (Sprint 9 workflow refinement) ========== */
 let featuredCruises = [];
-let featuredCruisePorts = [];
 let featuredCruisePricing = [];
+let featuredCruiseRoomTypes = [];
+let featuredNewsletterDefaults = { newsletter_number: null, newsletter_publication_date: null };
 let editingFeaturedCruiseId = null;
 let showFeaturedCruiseForm = false;
 let featuredCruiseLoading = false;
 let featuredCruiseMessage = "";
 let featuredCruiseMessageTone = "";
 let featuredCruiseSearchQuery = "";
-let featuredCruiseStatusFilter = "all";
+let featuredCruiseStatusFilter = "all"; // all = Draft + Published (Archived only when selected)
 let featuredCruiseSaving = false;
 let featuredSlugManuallyEdited = false;
-let featuredFormPorts = [];
 let featuredFormPricing = [];
+let featuredFormDraft = null; // parent field snapshot for new/edit
+let featuredNewsletterDefaultsBaseline = { newsletter_number: null, newsletter_publication_date: null };
+let featuredItineraryFallback = "";
+let featuredRoomTypePromptIndex = null;
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -670,8 +674,9 @@ async function setTab(tab) {
     featuredCruiseMessage = "";
     featuredCruiseMessageTone = "";
     featuredSlugManuallyEdited = false;
-    featuredFormPorts = [];
     featuredFormPricing = [];
+    featuredFormDraft = null;
+    featuredRoomTypePromptIndex = null;
   }
   renderAdmin();
   if (tab === "calculator-data") {
@@ -7564,9 +7569,13 @@ async function saveCiShip() {
 }
 
 /* =========================================================
-   Featured Cruises — Sprint 9A Phase 1 (Admin foundation)
-   No public exposure, route maps, or newsletter generation.
+   Featured Cruises — Sprint 9 workflow refinement
+   No public exposure, newsletters, route maps, or Mailchimp.
    ========================================================= */
+
+/* Publication Status is the single lifecycle control:
+   Draft = work in progress; Published = approved for campaign/public outputs;
+   Archived = retained historically but removed from the default working list. */
 
 function featuredStatusLabel(status) {
   const value = String(status || "draft");
@@ -7585,24 +7594,38 @@ function featuredSlugify(value) {
 }
 
 function suggestFeaturedSlug({ headline, shipName, departureDate }) {
-  const parts = [headline, shipName, departureDate].filter(Boolean).join(" ");
-  return featuredSlugify(parts);
+  return featuredSlugify([headline, shipName, departureDate].filter(Boolean).join(" "));
 }
 
-function calculateFeaturedNights(departureDate, returnDate) {
-  if (!departureDate || !returnDate) return null;
-  const start = new Date(`${departureDate}T00:00:00`);
-  const end = new Date(`${returnDate}T00:00:00`);
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
-  const nights = Math.round((end - start) / 86400000);
-  return nights >= 0 ? nights : null;
+/** Calendar-date arithmetic without UTC shift. */
+function addCalendarDays(dateStr, nights) {
+  if (!dateStr || nights == null || !Number.isFinite(Number(nights))) return "";
+  const n = Number(nights);
+  if (n < 1) return "";
+  const parts = String(dateStr).split("-").map(Number);
+  if (parts.length !== 3 || parts.some((p) => !Number.isFinite(p))) return "";
+  const [y, m, d] = parts;
+  const dt = new Date(y, m - 1, d);
+  dt.setDate(dt.getDate() + n);
+  const yy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${yy}-${mm}-${dd}`;
 }
 
-function formatFeaturedNewsletterNotice(newsletterDate) {
-  const formatted = newsletterDate
-    ? formatAdminDate(newsletterDate)
-    : "[newsletter date]";
-  return `This cruise was featured in the 101cruise.com.au newsletter dated ${formatted}. Prices and availability were correct at the time of publication. As the departure date approaches, cruise prices may increase or decrease depending on demand and availability. For the latest pricing and availability, please contact Paul McAllister.`;
+function buildFeaturedDestinationStrip(departurePort, arrivalPort) {
+  const dep = String(departurePort || "").trim().toUpperCase();
+  const arr = String(arrivalPort || "").trim().toUpperCase();
+  if (dep && arr) return `${dep} TO ${arr}`;
+  if (dep) return dep;
+  if (arr) return arr;
+  return null;
+}
+
+function formatFeaturedMoney(value) {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return "";
+  return new Intl.NumberFormat("en-AU", { maximumFractionDigits: 0 }).format(Math.round(num));
 }
 
 function parseOptionalPrice(value) {
@@ -7648,24 +7671,33 @@ function sortFeaturedCruises(rows) {
 function filteredFeaturedCruises() {
   const query = featuredCruiseSearchQuery.trim().toLowerCase();
   return sortFeaturedCruises(featuredCruises).filter((row) => {
-    if (featuredCruiseStatusFilter !== "all" && row.publication_status !== featuredCruiseStatusFilter) {
+    const status = row.publication_status || "draft";
+    if (featuredCruiseStatusFilter === "all") {
+      if (status === "archived") return false;
+    } else if (status !== featuredCruiseStatusFilter) {
       return false;
     }
     if (!query) return true;
     const haystack = [
       row.headline,
       row.destination_strip,
+      row.departure_port,
+      row.arrival_port,
       row.ci_cruise_lines?.name,
       row.ci_cruise_ships?.name,
       row.public_slug,
-      row.departure_port,
-      row.arrival_port
+      row.newsletter_number != null ? `newsletter ${row.newsletter_number}` : ""
     ]
       .filter(Boolean)
       .join(" ")
       .toLowerCase();
     return haystack.includes(query);
   });
+}
+
+function displayDestinationStrip(row) {
+  if (row.destination_strip) return row.destination_strip;
+  return buildFeaturedDestinationStrip(row.departure_port, row.arrival_port) || "";
 }
 
 async function ensureFeaturedCruisesLoaded() {
@@ -7676,6 +7708,13 @@ async function ensureFeaturedCruisesLoaded() {
       await loadCruiseIntelligenceData({ quiet: true });
     }
     await loadFeaturedCruises();
+    await loadFeaturedRoomTypes();
+    try {
+      await loadFeaturedNewsletterDefaults();
+    } catch (_defaultsError) {
+      featuredNewsletterDefaults = { newsletter_number: null, newsletter_publication_date: null };
+      // Defaults are only required when creating a new cruise; list view can still open.
+    }
   } catch (error) {
     featuredCruiseMessage = error.message || "Could not load featured cruises.";
     featuredCruiseMessageTone = "error";
@@ -7708,111 +7747,128 @@ async function loadFeaturedCruises() {
   featuredCruises = data || [];
 }
 
-function renderFeaturedCruisesPanel() {
-  if (showFeaturedCruiseForm) return renderFeaturedCruiseForm();
-
-  const rows = filteredFeaturedCruises();
-  const messageClass = featuredCruiseMessageTone === "error" ? "admin-error" : featuredCruiseMessageTone === "success" ? "admin-success" : "";
-
-  return `
-    <div class="admin-card">
-      <div class="admin-list-top">
-        <div>
-          <h3>Featured Cruises</h3>
-          <p class="admin-muted">Create each promoted cruise once, then use it later for newsletter, website and marketing outputs.</p>
-        </div>
-        <button class="admin-button black" onclick="startNewFeaturedCruise()">+ New Featured Cruise</button>
-      </div>
-
-      <div class="featured-cruises-toolbar">
-        <div class="admin-field">
-          <label for="featuredCruiseSearch">Search</label>
-          <input id="featuredCruiseSearch" type="search" value="${esc(featuredCruiseSearchQuery)}" placeholder="Headline, ship, destination…" oninput="featuredCruiseSearchQuery=this.value; renderAdmin()">
-        </div>
-        <div class="admin-field">
-          <label for="featuredCruiseStatusFilter">Status</label>
-          <select id="featuredCruiseStatusFilter" onchange="featuredCruiseStatusFilter=this.value; renderAdmin()">
-            <option value="all" ${featuredCruiseStatusFilter === "all" ? "selected" : ""}>All</option>
-            <option value="draft" ${featuredCruiseStatusFilter === "draft" ? "selected" : ""}>Draft</option>
-            <option value="published" ${featuredCruiseStatusFilter === "published" ? "selected" : ""}>Published</option>
-            <option value="archived" ${featuredCruiseStatusFilter === "archived" ? "selected" : ""}>Archived</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>
-      ${featuredCruiseLoading ? `<p class="admin-muted">Loading featured cruises…</p>` : ""}
-
-      ${!featuredCruiseLoading && !rows.length ? `
-        <div class="admin-card featured-cruise-empty">
-          <p class="admin-muted">No featured cruises have been created yet.</p>
-        </div>
-      ` : `
-        <div class="featured-cruise-list">
-          ${rows.map(renderFeaturedCruiseListItem).join("")}
-        </div>
-      `}
-    </div>
-  `;
+async function loadFeaturedRoomTypes() {
+  const { data, error } = await supabaseClient
+    .from("featured_cruise_room_types")
+    .select("id,name,sort_order")
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true });
+  if (error) {
+    console.warn("Featured room types load skipped", error.message);
+    featuredCruiseRoomTypes = [
+      { name: "Inside" },
+      { name: "Oceanview" },
+      { name: "Balcony" },
+      { name: "Concierge Class" },
+      { name: "Aqua Class" },
+      { name: "Suite" }
+    ];
+    return;
+  }
+  featuredCruiseRoomTypes = data || [];
 }
 
-function renderFeaturedCruiseListItem(row) {
-  const lineName = row.ci_cruise_lines?.name || "Cruise line not set";
-  const shipName = row.ci_cruise_ships?.name || "Ship not set";
-  return `
-    <article class="featured-cruise-card">
-      <div class="featured-cruise-card-main">
-        <div class="featured-cruise-card-heading">
-          <h4>${esc(row.headline)}</h4>
-          <span class="featured-status-pill status-${esc(row.publication_status || "draft")}">${esc(featuredStatusLabel(row.publication_status))}</span>
-        </div>
-        ${row.destination_strip ? `<p class="featured-destination-strip">${esc(row.destination_strip)}</p>` : ""}
-        <p class="admin-muted">${esc(lineName)} · ${esc(shipName)}</p>
-        <p class="admin-small">
-          Departure ${esc(formatAdminDate(row.departure_date))}
-          · Newsletter ${esc(formatAdminDate(row.newsletter_publication_date))}
-          ${row.create_public_page ? " · Public page prepared" : ""}
-        </p>
-      </div>
-      <div class="admin-actions-row">
-        <button class="admin-button secondary small" onclick="editFeaturedCruise('${esc(row.id)}')">Edit</button>
-      </div>
-    </article>
-  `;
-}
-
-function blankFeaturedPort() {
-  return {
-    local_id: `port-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    port_name: "",
-    country_or_region: "",
-    port_date: "",
-    arrival_time: "",
-    departure_time: "",
-    is_sea_day: false
+async function loadFeaturedNewsletterDefaults() {
+  const { data, error } = await supabaseClient
+    .from("featured_cruise_newsletter_defaults")
+    .select("newsletter_number,newsletter_publication_date")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error) {
+    featuredNewsletterDefaults = { newsletter_number: null, newsletter_publication_date: null };
+    const err = new Error(error.message || "Could not load newsletter defaults.");
+    err.code = "NEWSLETTER_DEFAULTS";
+    throw err;
+  }
+  featuredNewsletterDefaults = {
+    newsletter_number: data?.newsletter_number ?? null,
+    newsletter_publication_date: data?.newsletter_publication_date || null
   };
 }
 
 function blankFeaturedPricing() {
   return {
+    id: null,
     local_id: `price-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
     room_label: "",
+    category: "",
     brochure_price: "",
     cruise_101_price: "",
     airline_price: "",
-    currency_code: "USD",
-    active: true
+    alcohol_package: false,
+    wifi: false,
+    gratuities: false,
+    all_tours: false,
+    all_dining: false,
+    laundry: false,
+    onboard_credit: ""
   };
 }
 
-function startNewFeaturedCruise() {
+function mapPricingRowFromDb(row, index) {
+  return {
+    id: row.id || null,
+    local_id: row.id || `price-${index}`,
+    room_label: row.room_label || "",
+    // Category is internal operational information and must never appear in
+    // newsletters, public pages, social media graphics or other customer-facing output.
+    category: row.category || "",
+    brochure_price: row.brochure_price == null ? "" : String(row.brochure_price),
+    cruise_101_price: row.cruise_101_price == null ? "" : String(row.cruise_101_price),
+    airline_price: row.airline_price == null ? "" : String(row.airline_price),
+    alcohol_package: Boolean(row.alcohol_package),
+    wifi: Boolean(row.wifi),
+    gratuities: Boolean(row.gratuities),
+    all_tours: Boolean(row.all_tours),
+    all_dining: Boolean(row.all_dining),
+    laundry: Boolean(row.laundry),
+    onboard_credit: row.onboard_credit == null ? "" : String(row.onboard_credit)
+  };
+}
+
+async function startNewFeaturedCruise() {
   editingFeaturedCruiseId = null;
   showFeaturedCruiseForm = true;
   featuredSlugManuallyEdited = false;
-  featuredFormPorts = [blankFeaturedPort()];
   featuredFormPricing = [blankFeaturedPricing()];
+  featuredItineraryFallback = "";
+  featuredRoomTypePromptIndex = null;
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
+  try {
+    await loadFeaturedNewsletterDefaults();
+  } catch (_error) {
+    featuredNewsletterDefaults = { newsletter_number: null, newsletter_publication_date: null };
+    featuredCruiseMessage = "Newsletter defaults could not be loaded. Enter Newsletter Number and Publication Date manually.";
+    featuredCruiseMessageTone = "error";
+  }
+  featuredFormDraft = {
+    newsletter_number: featuredNewsletterDefaults.newsletter_number,
+    newsletter_publication_date: featuredNewsletterDefaults.newsletter_publication_date,
+    publication_status: "draft",
+    public_slug: "",
+    create_public_page: false,
+    headline: "",
+    departure_port: "",
+    arrival_port: "",
+    cruise_line_id: "",
+    cruise_ship_id: "",
+    departure_date: "",
+    nights: "",
+    return_date: "",
+    short_editorial: "",
+    full_description: "",
+    use_ship_hero_image: true,
+    hero_image_url: "",
+    hero_image_alt: "",
+    itinerary_summary: "",
+    other_information: "",
+    display_order: 0
+  };
+  featuredNewsletterDefaultsBaseline = {
+    newsletter_number: featuredFormDraft.newsletter_number,
+    newsletter_publication_date: featuredFormDraft.newsletter_publication_date
+  };
   renderAdmin();
 }
 
@@ -7822,12 +7878,8 @@ async function editFeaturedCruise(id) {
   featuredCruiseMessageTone = "";
   renderAdmin();
   try {
-    const { data: ports, error: portsError } = await supabaseClient
-      .from("featured_cruise_ports")
-      .select("*")
-      .eq("featured_cruise_id", id)
-      .order("display_order", { ascending: true });
-    if (portsError) throw new Error(portsError.message);
+    const existing = findFeaturedCruise(id);
+    if (!existing) throw new Error("Featured cruise not found.");
 
     const { data: pricing, error: pricingError } = await supabaseClient
       .from("featured_cruise_pricing")
@@ -7836,33 +7888,60 @@ async function editFeaturedCruise(id) {
       .order("display_order", { ascending: true });
     if (pricingError) throw new Error(pricingError.message);
 
-    featuredCruisePorts = ports || [];
     featuredCruisePricing = pricing || [];
-    featuredFormPorts = (ports || []).map((port, index) => ({
-      local_id: port.id || `port-${index}`,
-      port_name: port.port_name || "",
-      country_or_region: port.country_or_region || "",
-      port_date: port.port_date || "",
-      arrival_time: port.arrival_time ? String(port.arrival_time).slice(0, 5) : "",
-      departure_time: port.departure_time ? String(port.departure_time).slice(0, 5) : "",
-      is_sea_day: Boolean(port.is_sea_day)
-    }));
-    if (!featuredFormPorts.length) featuredFormPorts = [blankFeaturedPort()];
-
-    featuredFormPricing = (pricing || []).map((row, index) => ({
-      local_id: row.id || `price-${index}`,
-      room_label: row.room_label || "",
-      brochure_price: row.brochure_price == null ? "" : String(row.brochure_price),
-      cruise_101_price: row.cruise_101_price == null ? "" : String(row.cruise_101_price),
-      airline_price: row.airline_price == null ? "" : String(row.airline_price),
-      currency_code: row.currency_code || "USD",
-      active: row.active !== false
-    }));
+    featuredFormPricing = (pricing || []).map(mapPricingRowFromDb);
     if (!featuredFormPricing.length) featuredFormPricing = [blankFeaturedPricing()];
 
+    // The manually entered itinerary_summary is the approved source for newsletter output.
+    // featured_cruise_ports is reserved for future automatically sourced day-by-day itinerary data,
+    // including dates and arrival/departure times.
+    featuredItineraryFallback = "";
+    let itinerarySummary = existing.itinerary_summary || "";
+    if (!itinerarySummary) {
+      const { data: ports } = await supabaseClient
+        .from("featured_cruise_ports")
+        .select("port_name,display_order")
+        .eq("featured_cruise_id", id)
+        .order("display_order", { ascending: true });
+      if (ports?.length) {
+        featuredItineraryFallback = ports.map((p) => p.port_name).filter(Boolean).join(" | ");
+        itinerarySummary = featuredItineraryFallback;
+      }
+    }
+
+    const nights = existing.nights != null ? Number(existing.nights) : null;
+    const departure = existing.departure_date || "";
     editingFeaturedCruiseId = id;
     showFeaturedCruiseForm = true;
-    featuredSlugManuallyEdited = Boolean(findFeaturedCruise(id)?.public_slug);
+    featuredSlugManuallyEdited = Boolean(existing.public_slug);
+    featuredRoomTypePromptIndex = null;
+    featuredFormDraft = {
+      newsletter_number: existing.newsletter_number,
+      newsletter_publication_date: existing.newsletter_publication_date || "",
+      publication_status: existing.publication_status || "draft",
+      public_slug: existing.public_slug || "",
+      create_public_page: Boolean(existing.create_public_page),
+      headline: existing.headline || "",
+      departure_port: existing.departure_port || "",
+      arrival_port: existing.arrival_port || "",
+      cruise_line_id: existing.cruise_line_id || "",
+      cruise_ship_id: existing.cruise_ship_id || "",
+      departure_date: departure,
+      nights: nights != null && Number.isFinite(nights) ? String(nights) : "",
+      return_date: departure && nights ? addCalendarDays(departure, nights) : existing.return_date || "",
+      short_editorial: existing.short_editorial || "",
+      full_description: existing.full_description || "",
+      use_ship_hero_image: existing.use_ship_hero_image !== false,
+      hero_image_url: existing.hero_image_url || "",
+      hero_image_alt: existing.hero_image_alt || "",
+      itinerary_summary: itinerarySummary,
+      other_information: existing.other_information || "",
+      display_order: existing.display_order ?? 0
+    };
+    featuredNewsletterDefaultsBaseline = {
+      newsletter_number: featuredFormDraft.newsletter_number,
+      newsletter_publication_date: featuredFormDraft.newsletter_publication_date
+    };
   } catch (error) {
     featuredCruiseMessage = error.message || "Could not open this featured cruise.";
     featuredCruiseMessageTone = "error";
@@ -7876,115 +7955,105 @@ async function editFeaturedCruise(id) {
 function cancelFeaturedCruiseForm() {
   showFeaturedCruiseForm = false;
   editingFeaturedCruiseId = null;
-  featuredFormPorts = [];
   featuredFormPricing = [];
+  featuredFormDraft = null;
   featuredSlugManuallyEdited = false;
+  featuredRoomTypePromptIndex = null;
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   renderAdmin();
-}
-
-function captureFeaturedPortsFromDom() {
-  featuredFormPorts = featuredFormPorts.map((port, index) => ({
-    ...port,
-    port_name: document.getElementById(`fcPortName-${index}`)?.value || "",
-    country_or_region: document.getElementById(`fcPortCountry-${index}`)?.value || "",
-    port_date: document.getElementById(`fcPortDate-${index}`)?.value || "",
-    arrival_time: document.getElementById(`fcPortArrival-${index}`)?.value || "",
-    departure_time: document.getElementById(`fcPortDeparture-${index}`)?.value || "",
-    is_sea_day: Boolean(document.getElementById(`fcPortSeaDay-${index}`)?.checked)
-  }));
 }
 
 function captureFeaturedPricingFromDom() {
   featuredFormPricing = featuredFormPricing.map((row, index) => ({
     ...row,
     room_label: document.getElementById(`fcPriceRoom-${index}`)?.value || "",
+    category: document.getElementById(`fcPriceCategory-${index}`)?.value || "",
     brochure_price: document.getElementById(`fcPriceBrochure-${index}`)?.value || "",
     cruise_101_price: document.getElementById(`fcPrice101-${index}`)?.value || "",
     airline_price: document.getElementById(`fcPriceAirline-${index}`)?.value || "",
-    currency_code: (document.getElementById(`fcPriceCurrency-${index}`)?.value || "USD").toUpperCase(),
-    active: Boolean(document.getElementById(`fcPriceActive-${index}`)?.checked)
+    alcohol_package: Boolean(document.getElementById(`fcIncAlcohol-${index}`)?.checked),
+    wifi: Boolean(document.getElementById(`fcIncWifi-${index}`)?.checked),
+    gratuities: Boolean(document.getElementById(`fcIncGrat-${index}`)?.checked),
+    all_tours: Boolean(document.getElementById(`fcIncTours-${index}`)?.checked),
+    all_dining: Boolean(document.getElementById(`fcIncDining-${index}`)?.checked),
+    laundry: Boolean(document.getElementById(`fcIncLaundry-${index}`)?.checked),
+    onboard_credit: document.getElementById(`fcOnboardCredit-${index}`)?.value || ""
   }));
 }
 
-function captureFeaturedChildRowsFromDom() {
-  captureFeaturedPortsFromDom();
+function captureFeaturedDraftFromDom() {
+  if (!featuredFormDraft) featuredFormDraft = {};
+  const departure = document.getElementById("fcDepartureDate")?.value || "";
+  const nightsRaw = document.getElementById("fcNights")?.value || "";
+  const nightsNum = nightsRaw === "" ? null : Number(nightsRaw);
+  featuredFormDraft = {
+    ...featuredFormDraft,
+    newsletter_number: document.getElementById("fcNewsletterNumber")?.value || "",
+    newsletter_publication_date: document.getElementById("fcNewsletterDate")?.value || "",
+    publication_status: document.getElementById("fcPublicationStatus")?.value || "draft",
+    public_slug: document.getElementById("fcPublicSlug")?.value || "",
+    create_public_page: Boolean(document.getElementById("fcCreatePublicPage")?.checked),
+    headline: document.getElementById("fcHeadline")?.value || "",
+    departure_port: document.getElementById("fcDeparturePort")?.value || "",
+    arrival_port: document.getElementById("fcArrivalPort")?.value || "",
+    cruise_line_id: document.getElementById("fcCruiseLineId")?.value || "",
+    cruise_ship_id: document.getElementById("fcCruiseShipId")?.value || "",
+    departure_date: departure,
+    nights: nightsRaw,
+    return_date: addCalendarDays(departure, nightsNum),
+    short_editorial: document.getElementById("fcShortEditorial")?.value || "",
+    full_description: document.getElementById("fcFullDescription")?.value || "",
+    use_ship_hero_image: Boolean(document.getElementById("fcUseShipHero")?.checked),
+    hero_image_url: document.getElementById("fcHeroImageUrl")?.value || "",
+    hero_image_alt: document.getElementById("fcHeroImageAlt")?.value || "",
+    itinerary_summary: document.getElementById("fcItinerarySummary")?.value || "",
+    other_information: document.getElementById("fcOtherInformation")?.value || "",
+    display_order: document.getElementById("fcDisplayOrder")?.value || 0
+  };
   captureFeaturedPricingFromDom();
 }
 
-function addFeaturedPortRow() {
-  captureFeaturedChildRowsFromDom();
-  featuredFormPorts.push(blankFeaturedPort());
-  renderAdmin();
-}
-
-function removeFeaturedPortRow(index) {
-  captureFeaturedChildRowsFromDom();
-  featuredFormPorts.splice(index, 1);
-  if (!featuredFormPorts.length) featuredFormPorts = [blankFeaturedPort()];
-  renderAdmin();
-}
-
-function moveFeaturedPortRow(index, direction) {
-  captureFeaturedChildRowsFromDom();
-  const target = index + direction;
-  if (target < 0 || target >= featuredFormPorts.length) return;
-  const copy = [...featuredFormPorts];
-  const [row] = copy.splice(index, 1);
-  copy.splice(target, 0, row);
-  featuredFormPorts = copy;
-  renderAdmin();
-}
-
 function addFeaturedPricingRow() {
-  captureFeaturedChildRowsFromDom();
+  captureFeaturedDraftFromDom();
   featuredFormPricing.push(blankFeaturedPricing());
   renderAdmin();
 }
 
 function removeFeaturedPricingRow(index) {
-  captureFeaturedChildRowsFromDom();
+  captureFeaturedDraftFromDom();
   featuredFormPricing.splice(index, 1);
   if (!featuredFormPricing.length) featuredFormPricing = [blankFeaturedPricing()];
   renderAdmin();
 }
 
-function moveFeaturedPricingRow(index, direction) {
-  captureFeaturedChildRowsFromDom();
-  const target = index + direction;
-  if (target < 0 || target >= featuredFormPricing.length) return;
-  const copy = [...featuredFormPricing];
-  const [row] = copy.splice(index, 1);
-  copy.splice(target, 0, row);
-  featuredFormPricing = copy;
-  renderAdmin();
-}
-
 function onFeaturedLineChange() {
-  const lineId = document.getElementById("fcCruiseLineId")?.value || "";
-  const shipSelect = document.getElementById("fcCruiseShipId");
-  if (!shipSelect) return;
-  const ships = shipsForFeaturedLine(lineId);
-  const current = shipSelect.value;
-  shipSelect.innerHTML = `<option value="">Select ship</option>${ships
-    .map((ship) => `<option value="${esc(ship.id)}" ${ship.id === current ? "selected" : ""}>${esc(ship.name)}</option>`)
-    .join("")}`;
-  if (current && !ships.some((ship) => ship.id === current)) {
-    shipSelect.value = "";
+  captureFeaturedDraftFromDom();
+  const ships = shipsForFeaturedLine(featuredFormDraft.cruise_line_id);
+  if (featuredFormDraft.cruise_ship_id && !ships.some((s) => s.id === featuredFormDraft.cruise_ship_id)) {
+    featuredFormDraft.cruise_ship_id = "";
   }
+  renderAdmin();
   updateFeaturedHeroPreview();
   maybeRefreshFeaturedSlug();
 }
 
-function onFeaturedDatesChange() {
+function onFeaturedDepartureOrNightsChange() {
   const departure = document.getElementById("fcDepartureDate")?.value || "";
-  const ret = document.getElementById("fcReturnDate")?.value || "";
-  const nightsInput = document.getElementById("fcNights");
-  const nights = calculateFeaturedNights(departure, ret);
-  if (nightsInput && nights != null) nightsInput.value = String(nights);
+  const nightsRaw = document.getElementById("fcNights")?.value || "";
+  const nightsNum = nightsRaw === "" ? null : Number(nightsRaw);
+  const ret = document.getElementById("fcReturnDate");
+  if (ret) ret.value = addCalendarDays(departure, nightsNum);
+  refreshFeaturedPricingCalcs();
   maybeRefreshFeaturedSlug();
-  updateFeaturedPublicNotice();
+}
+
+function onFeaturedPortsChange() {
+  const dep = document.getElementById("fcDeparturePort")?.value || "";
+  const arr = document.getElementById("fcArrivalPort")?.value || "";
+  const strip = buildFeaturedDestinationStrip(dep, arr) || "";
+  const preview = document.getElementById("fcDestinationStripPreview");
+  if (preview) preview.textContent = strip ? `Destination strip preview: ${strip}` : "Destination strip preview: —";
 }
 
 function onFeaturedSlugInput() {
@@ -8007,7 +8076,7 @@ function updateFeaturedHeroPreview() {
   const customUrl = normalizeUrl(document.getElementById("fcHeroImageUrl")?.value);
   const shipId = document.getElementById("fcCruiseShipId")?.value || "";
   const ship = ciCruiseShips.find((row) => row.id === shipId);
-  const url = useShip ? (ship?.hero_image_url || "") : customUrl;
+  const url = useShip ? ship?.hero_image_url || "" : customUrl;
   const wrap = document.getElementById("fcHeroPreview");
   const customField = document.getElementById("fcHeroCustomFields");
   if (customField) customField.hidden = useShip;
@@ -8019,30 +8088,239 @@ function updateFeaturedHeroPreview() {
   }
 }
 
-function updateFeaturedPublicNotice() {
-  const el = document.getElementById("fcPublicNoticePreview");
-  if (!el) return;
-  const date = document.getElementById("fcNewsletterDate")?.value || "";
-  el.textContent = formatFeaturedNewsletterNotice(date || null);
+function buildFeaturedPriceCalcLines(row, nights) {
+  const brochure = row.brochure_price === "" || row.brochure_price == null ? null : Number(row.brochure_price);
+  const airline = row.airline_price === "" || row.airline_price == null ? null : Number(row.airline_price);
+  const price101 = row.cruise_101_price === "" || row.cruise_101_price == null ? null : Number(row.cruise_101_price);
+  const nightsNum = nights === "" || nights == null ? null : Number(nights);
+  const lines = [];
+
+  function lineFor(label, price) {
+    if (price == null || !Number.isFinite(price) || price < 0) return null;
+    const parts = [];
+    if (nightsNum != null && Number.isFinite(nightsNum) && nightsNum >= 1) {
+      parts.push(`$${formatFeaturedMoney(price / nightsNum)}/day`);
+    }
+    if (brochure != null && Number.isFinite(brochure) && brochure > price) {
+      const save = brochure - price;
+      const pct = Math.round((save / brochure) * 100);
+      parts.push(`Save $${formatFeaturedMoney(save)}`);
+      parts.push(`${pct}% off`);
+    }
+    if (!parts.length) return null;
+    return `${label}: ${parts.join(" · ")}`;
+  }
+
+  const a = lineFor("Airline", airline);
+  const b = lineFor("101cruise", price101);
+  if (a) lines.push(a);
+  if (b) lines.push(b);
+  return lines;
+}
+
+function refreshFeaturedPricingCalcs() {
+  const nights = document.getElementById("fcNights")?.value || "";
+  featuredFormPricing.forEach((row, index) => {
+    const el = document.getElementById(`fcPriceCalcs-${index}`);
+    if (!el) return;
+    const live = {
+      brochure_price: document.getElementById(`fcPriceBrochure-${index}`)?.value ?? row.brochure_price,
+      airline_price: document.getElementById(`fcPriceAirline-${index}`)?.value ?? row.airline_price,
+      cruise_101_price: document.getElementById(`fcPrice101-${index}`)?.value ?? row.cruise_101_price
+    };
+    const lines = buildFeaturedPriceCalcLines(live, nights);
+    el.innerHTML = lines.length ? lines.map((line) => `<div>${esc(line)}</div>`).join("") : "";
+  });
+}
+
+function roomTypeOptionsHtml(selected) {
+  const names = [...featuredCruiseRoomTypes.map((r) => r.name)];
+  if (selected && !names.some((n) => n.toLowerCase() === selected.toLowerCase())) names.push(selected);
+  return names
+    .filter(Boolean)
+    .map((name) => `<option value="${esc(name)}"></option>`)
+    .join("");
+}
+
+function onFeaturedRoomTypeInput(index) {
+  const value = String(document.getElementById(`fcPriceRoom-${index}`)?.value || "").trim();
+  const known = featuredCruiseRoomTypes.some((r) => r.name.toLowerCase() === value.toLowerCase());
+  featuredRoomTypePromptIndex = value && !known ? index : null;
+  const prompt = document.getElementById(`fcRoomTypeSave-${index}`);
+  if (prompt) {
+    prompt.hidden = !(value && !known);
+    prompt.querySelector("[data-label]") && (prompt.querySelector("[data-label]").textContent = `Save “${value}” for future use`);
+  }
+}
+
+async function saveFeaturedRoomTypeFromRow(index) {
+  const value = String(document.getElementById(`fcPriceRoom-${index}`)?.value || "").trim();
+  if (!value) return;
+  const { error } = await supabaseClient.from("featured_cruise_room_types").insert({
+    name: value,
+    sort_order: (featuredCruiseRoomTypes.length + 1) * 10
+  });
+  if (error) {
+    if (/duplicate|unique/i.test(error.message || "")) {
+      await loadFeaturedRoomTypes();
+      featuredRoomTypePromptIndex = null;
+      renderAdmin();
+      return;
+    }
+    featuredCruiseMessage = error.message || "Could not save room type.";
+    featuredCruiseMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+  await loadFeaturedRoomTypes();
+  featuredRoomTypePromptIndex = null;
+  captureFeaturedDraftFromDom();
+  renderAdmin();
+}
+
+function renderFeaturedCruisesPanel() {
+  if (showFeaturedCruiseForm) return renderFeaturedCruiseForm();
+
+  const rows = filteredFeaturedCruises();
+  const messageClass =
+    featuredCruiseMessageTone === "error" ? "admin-error" : featuredCruiseMessageTone === "success" ? "admin-success" : "";
+
+  return `
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Featured Cruises</h3>
+          <p class="admin-muted">Create each promoted cruise once, then use it later for newsletter, website and marketing outputs.</p>
+        </div>
+        <button class="admin-button black" onclick="startNewFeaturedCruise()">+ New Featured Cruise</button>
+      </div>
+
+      <div class="featured-cruises-toolbar">
+        <div class="admin-field">
+          <label for="featuredCruiseSearch">Search</label>
+          <input id="featuredCruiseSearch" type="search" value="${esc(featuredCruiseSearchQuery)}" placeholder="Headline, ship, destination…" oninput="featuredCruiseSearchQuery=this.value; renderAdmin()">
+        </div>
+        <div class="admin-field">
+          <label for="featuredCruiseStatusFilter">Status</label>
+          <select id="featuredCruiseStatusFilter" onchange="featuredCruiseStatusFilter=this.value; renderAdmin()">
+            <option value="all" ${featuredCruiseStatusFilter === "all" ? "selected" : ""}>Draft &amp; Published</option>
+            <option value="draft" ${featuredCruiseStatusFilter === "draft" ? "selected" : ""}>Draft</option>
+            <option value="published" ${featuredCruiseStatusFilter === "published" ? "selected" : ""}>Published</option>
+            <option value="archived" ${featuredCruiseStatusFilter === "archived" ? "selected" : ""}>Archived</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>
+      ${featuredCruiseLoading ? `<p class="admin-muted">Loading featured cruises…</p>` : ""}
+
+      ${!featuredCruiseLoading && !rows.length
+        ? `<div class="admin-card featured-cruise-empty"><p class="admin-muted">No featured cruises have been created yet.</p></div>`
+        : `<div class="featured-cruise-list">${rows.map(renderFeaturedCruiseListItem).join("")}</div>`}
+    </div>
+  `;
+}
+
+function renderFeaturedCruiseListItem(row) {
+  const lineName = row.ci_cruise_lines?.name || "Cruise line not set";
+  const shipName = row.ci_cruise_ships?.name || "Ship not set";
+  const strip = displayDestinationStrip(row);
+  const newsletterBits = [];
+  if (row.newsletter_number != null && row.newsletter_number !== "") newsletterBits.push(`Newsletter ${row.newsletter_number}`);
+  if (row.newsletter_publication_date) newsletterBits.push(formatAdminDate(row.newsletter_publication_date));
+  return `
+    <article class="featured-cruise-card">
+      <div class="featured-cruise-card-main">
+        <div class="featured-cruise-card-heading">
+          <h4>${esc(row.headline)}</h4>
+          <span class="featured-status-pill status-${esc(row.publication_status || "draft")}">${esc(featuredStatusLabel(row.publication_status))}</span>
+        </div>
+        ${strip ? `<p class="featured-destination-strip">${esc(strip)}</p>` : ""}
+        <p class="admin-muted">${esc(lineName)} · ${esc(shipName)}</p>
+        <p class="admin-small">
+          Departure ${esc(formatAdminDate(row.departure_date))}
+          ${newsletterBits.length ? ` · ${esc(newsletterBits.join(" · "))}` : ""}
+          ${row.create_public_page ? " · Public page prepared" : ""}
+        </p>
+      </div>
+      <div class="admin-actions-row">
+        <button class="admin-button secondary small" onclick="editFeaturedCruise('${esc(row.id)}')">Edit</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderFeaturedPricingBlock(row, index, nights) {
+  const calcs = buildFeaturedPriceCalcLines(row, nights);
+  const showSaveRoom = featuredRoomTypePromptIndex === index;
+  return `
+    <div class="featured-pricing-block">
+      <div class="featured-pricing-main-row">
+        <div class="admin-field featured-room-type-field">
+          <label>Room Type</label>
+          <input id="fcPriceRoom-${index}" list="fcRoomTypeList-${index}" type="text" value="${esc(row.room_label)}" autocomplete="off" oninput="onFeaturedRoomTypeInput(${index}); refreshFeaturedPricingCalcs()">
+          <datalist id="fcRoomTypeList-${index}">${roomTypeOptionsHtml(row.room_label)}</datalist>
+          <div id="fcRoomTypeSave-${index}" class="featured-room-type-save" ${showSaveRoom ? "" : "hidden"}>
+            <button type="button" class="admin-button secondary small" onclick="saveFeaturedRoomTypeFromRow(${index})"><span data-label>Save “${esc(row.room_label)}” for future use</span></button>
+          </div>
+        </div>
+        <div class="admin-field featured-category-field">
+          <label>Category</label>
+          <input id="fcPriceCategory-${index}" type="text" value="${esc(row.category)}" placeholder="e.g. V1" maxlength="20">
+        </div>
+        <div class="admin-field">
+          <label>Brochure Price</label>
+          <input id="fcPriceBrochure-${index}" type="number" min="0" step="1" value="${esc(row.brochure_price)}" oninput="refreshFeaturedPricingCalcs()">
+        </div>
+        <div class="admin-field">
+          <label>Airline Price</label>
+          <input id="fcPriceAirline-${index}" type="number" min="0" step="1" value="${esc(row.airline_price)}" oninput="refreshFeaturedPricingCalcs()">
+        </div>
+        <div class="admin-field">
+          <label>101cruise Price</label>
+          <input id="fcPrice101-${index}" type="number" min="0" step="1" value="${esc(row.cruise_101_price)}" oninput="refreshFeaturedPricingCalcs()">
+        </div>
+        <button type="button" class="admin-button secondary small featured-price-remove" onclick="removeFeaturedPricingRow(${index})">Remove</button>
+      </div>
+      <div id="fcPriceCalcs-${index}" class="featured-price-calcs">${calcs.map((line) => `<div>${esc(line)}</div>`).join("")}</div>
+      <div class="featured-inclusions-row">
+        <label class="featured-inc"><input id="fcIncAlcohol-${index}" type="checkbox" ${row.alcohol_package ? "checked" : ""}> Alcohol Package</label>
+        <label class="featured-inc"><input id="fcIncWifi-${index}" type="checkbox" ${row.wifi ? "checked" : ""}> Wi-Fi</label>
+        <label class="featured-inc"><input id="fcIncGrat-${index}" type="checkbox" ${row.gratuities ? "checked" : ""}> Gratuities</label>
+        <label class="featured-inc"><input id="fcIncTours-${index}" type="checkbox" ${row.all_tours ? "checked" : ""}> All Tours</label>
+        <label class="featured-inc"><input id="fcIncDining-${index}" type="checkbox" ${row.all_dining ? "checked" : ""}> All Dining</label>
+        <label class="featured-inc"><input id="fcIncLaundry-${index}" type="checkbox" ${row.laundry ? "checked" : ""}> Laundry</label>
+        <div class="admin-field featured-obc-field">
+          <label for="fcOnboardCredit-${index}">On Board Credit ($)</label>
+          <input id="fcOnboardCredit-${index}" type="number" min="0" step="1" value="${esc(row.onboard_credit)}">
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderFeaturedCruiseForm() {
+  const draft = featuredFormDraft || {};
   const existing = editingFeaturedCruiseId ? findFeaturedCruise(editingFeaturedCruiseId) : null;
   const lines = activeCiLinesForFeatured();
-  const selectedLineId = existing?.cruise_line_id || "";
+  const selectedLineId = draft.cruise_line_id || "";
   const ships = shipsForFeaturedLine(selectedLineId);
-  const messageClass = featuredCruiseMessageTone === "error" ? "admin-error" : featuredCruiseMessageTone === "success" ? "admin-success" : "";
-  const useShipHero = existing ? existing.use_ship_hero_image !== false : true;
-  const shipHeroUrl = existing?.ci_cruise_ships?.hero_image_url || "";
-  const previewUrl = useShipHero ? shipHeroUrl : (existing?.hero_image_url || "");
-  const newsletterDate = existing?.newsletter_publication_date || "";
+  const messageClass =
+    featuredCruiseMessageTone === "error" ? "admin-error" : featuredCruiseMessageTone === "success" ? "admin-success" : "";
+  const useShipHero = draft.use_ship_hero_image !== false;
+  const shipHeroUrl = ships.find((s) => s.id === draft.cruise_ship_id)?.hero_image_url
+    || existing?.ci_cruise_ships?.hero_image_url
+    || "";
+  const previewUrl = useShipHero ? shipHeroUrl : draft.hero_image_url || "";
+  const strip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port) || "";
+  const returnDate = addCalendarDays(draft.departure_date, draft.nights === "" ? null : Number(draft.nights));
 
   return `
     <div class="admin-card featured-cruise-form">
       <div class="admin-list-top">
         <div>
           <h3>${existing ? "Edit Featured Cruise" : "New Featured Cruise"}</h3>
-          <p class="admin-muted">Admin-only foundation. Nothing here is public in this phase.</p>
+          <p class="admin-muted">Admin-only. Nothing here is public in this phase.</p>
         </div>
         <div class="admin-actions-row">
           <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
@@ -8051,19 +8329,57 @@ function renderFeaturedCruiseForm() {
       </div>
       <div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>
 
+      <section class="featured-form-section featured-newsletter-section">
+        <h4>Newsletter and Publication</h4>
+        <div class="featured-newsletter-row">
+          <div class="admin-field">
+            <label for="fcNewsletterNumber">Newsletter Number</label>
+            <input id="fcNewsletterNumber" type="number" min="1" step="1" placeholder="76" value="${esc(draft.newsletter_number ?? "")}">
+          </div>
+          <div class="admin-field">
+            <label for="fcNewsletterDate">Newsletter Publication Date</label>
+            <input id="fcNewsletterDate" type="date" value="${esc(draft.newsletter_publication_date || "")}">
+          </div>
+          <div class="admin-field">
+            <label for="fcPublicationStatus">Publication Status</label>
+            <select id="fcPublicationStatus">
+              <option value="draft" ${(draft.publication_status || "draft") === "draft" ? "selected" : ""}>Draft</option>
+              <option value="published" ${draft.publication_status === "published" ? "selected" : ""}>Published</option>
+              <option value="archived" ${draft.publication_status === "archived" ? "selected" : ""}>Archived</option>
+            </select>
+          </div>
+          <div class="admin-field">
+            <label for="fcPublicSlug">Public Slug</label>
+            <input id="fcPublicSlug" type="text" value="${esc(draft.public_slug || "")}" oninput="onFeaturedSlugInput()" placeholder="auto-suggested">
+          </div>
+          <label class="admin-check-chip featured-check featured-create-public">
+            <input id="fcCreatePublicPage" type="checkbox" ${draft.create_public_page ? "checked" : ""}>
+            <span>Create public page</span>
+          </label>
+        </div>
+        <p class="admin-helper">Prepares a future public landing page. No page is published in this phase. Prices must never be exposed via slug or public output.</p>
+      </section>
+
       <section class="featured-form-section">
         <h4>Cruise Details</h4>
-        <div class="featured-form-grid">
+        <div class="admin-field featured-span-2" style="margin-bottom:12px">
+          <label for="fcHeadline">Headline <span class="admin-required">*</span></label>
+          <input id="fcHeadline" type="text" value="${esc(draft.headline || "")}" required oninput="maybeRefreshFeaturedSlug()">
+        </div>
+        <div class="featured-ports-row">
           <div class="admin-field">
-            <label for="fcDestinationStrip">Destination strip</label>
-            <input id="fcDestinationStrip" type="text" value="${esc(existing?.destination_strip || "")}" placeholder="e.g. Japan &amp; South Korea">
-          </div>
-          <div class="admin-field featured-span-2">
-            <label for="fcHeadline">Headline <span class="admin-required">*</span></label>
-            <input id="fcHeadline" type="text" value="${esc(existing?.headline || "")}" required oninput="maybeRefreshFeaturedSlug()">
+            <label for="fcDeparturePort">Departure Port</label>
+            <input id="fcDeparturePort" type="text" value="${esc(draft.departure_port || "")}" oninput="onFeaturedPortsChange()">
           </div>
           <div class="admin-field">
-            <label for="fcCruiseLineId">Cruise line</label>
+            <label for="fcArrivalPort">Arrival Port</label>
+            <input id="fcArrivalPort" type="text" value="${esc(draft.arrival_port || "")}" oninput="onFeaturedPortsChange()">
+          </div>
+        </div>
+        <p class="featured-destination-preview" id="fcDestinationStripPreview">${esc(strip ? `Destination strip preview: ${strip}` : "Destination strip preview: —")}</p>
+        <div class="featured-details-row">
+          <div class="admin-field">
+            <label for="fcCruiseLineId">Cruise Line</label>
             <select id="fcCruiseLineId" onchange="onFeaturedLineChange()">
               <option value="">Select cruise line</option>
               ${lines.map((line) => `<option value="${esc(line.id)}" ${line.id === selectedLineId ? "selected" : ""}>${esc(line.name)}</option>`).join("")}
@@ -8073,30 +8389,25 @@ function renderFeaturedCruiseForm() {
             <label for="fcCruiseShipId">Ship</label>
             <select id="fcCruiseShipId" onchange="updateFeaturedHeroPreview(); maybeRefreshFeaturedSlug()">
               <option value="">Select ship</option>
-              ${ships.map((ship) => `<option value="${esc(ship.id)}" ${ship.id === existing?.cruise_ship_id ? "selected" : ""}>${esc(ship.name)}</option>`).join("")}
+              ${ships.map((ship) => `<option value="${esc(ship.id)}" ${ship.id === draft.cruise_ship_id ? "selected" : ""}>${esc(ship.name)}</option>`).join("")}
             </select>
           </div>
           <div class="admin-field">
-            <label for="fcDepartureDate">Departure date</label>
-            <input id="fcDepartureDate" type="date" value="${esc(existing?.departure_date || "")}" onchange="onFeaturedDatesChange()">
-          </div>
-          <div class="admin-field">
-            <label for="fcReturnDate">Return date</label>
-            <input id="fcReturnDate" type="date" value="${esc(existing?.return_date || "")}" onchange="onFeaturedDatesChange()">
+            <label for="fcDepartureDate">Departure Date</label>
+            <input id="fcDepartureDate" type="date" value="${esc(draft.departure_date || "")}" onchange="onFeaturedDepartureOrNightsChange()">
           </div>
           <div class="admin-field">
             <label for="fcNights">Nights</label>
-            <input id="fcNights" type="number" min="0" step="1" value="${esc(existing?.nights ?? "")}">
-            <div class="admin-helper">Calculated from dates; you can correct manually.</div>
+            <input id="fcNights" type="number" min="1" step="1" value="${esc(draft.nights ?? "")}" oninput="onFeaturedDepartureOrNightsChange()">
           </div>
           <div class="admin-field">
-            <label for="fcDeparturePort">Departure port</label>
-            <input id="fcDeparturePort" type="text" value="${esc(existing?.departure_port || "")}">
+            <label for="fcReturnDate">Return Date</label>
+            <input id="fcReturnDate" class="featured-readonly-date" type="date" value="${esc(returnDate)}" readonly tabindex="-1">
           </div>
-          <div class="admin-field">
-            <label for="fcArrivalPort">Arrival port</label>
-            <input id="fcArrivalPort" type="text" value="${esc(existing?.arrival_port || "")}">
-          </div>
+        </div>
+        <div class="admin-field" style="margin-top:10px;max-width:160px">
+          <label for="fcDisplayOrder">Display order</label>
+          <input id="fcDisplayOrder" type="number" step="1" value="${esc(draft.display_order ?? 0)}">
         </div>
       </section>
 
@@ -8104,13 +8415,12 @@ function renderFeaturedCruiseForm() {
         <h4>Editorial</h4>
         <div class="admin-field">
           <label for="fcShortEditorial">Short editorial</label>
-          <textarea id="fcShortEditorial" rows="3">${esc(existing?.short_editorial || "")}</textarea>
-          <div class="admin-helper">Short editorial is intended for the newsletter.</div>
+          <textarea id="fcShortEditorial" rows="3">${esc(draft.short_editorial || "")}</textarea>
+          <div class="admin-helper">Intended for the newsletter.</div>
         </div>
         <div class="admin-field">
           <label for="fcFullDescription">Full description</label>
-          <textarea id="fcFullDescription" rows="6">${esc(existing?.full_description || "")}</textarea>
-          <div class="admin-helper">Full description will later be used on the public cruise page.</div>
+          <textarea id="fcFullDescription" rows="5">${esc(draft.full_description || "")}</textarea>
         </div>
       </section>
 
@@ -8123,12 +8433,12 @@ function renderFeaturedCruiseForm() {
         <div id="fcHeroCustomFields" ${useShipHero ? "hidden" : ""}>
           <div class="admin-field">
             <label for="fcHeroImageUrl">Custom hero image URL</label>
-            <input id="fcHeroImageUrl" type="url" value="${esc(existing?.hero_image_url || "")}" oninput="updateFeaturedHeroPreview()">
+            <input id="fcHeroImageUrl" type="url" value="${esc(draft.hero_image_url || "")}" oninput="updateFeaturedHeroPreview()">
           </div>
         </div>
         <div class="admin-field">
           <label for="fcHeroImageAlt">Image alt text</label>
-          <input id="fcHeroImageAlt" type="text" value="${esc(existing?.hero_image_alt || "")}">
+          <input id="fcHeroImageAlt" type="text" value="${esc(draft.hero_image_alt || "")}">
         </div>
         <div id="fcHeroPreview" class="featured-image-preview-wrap">
           ${previewUrl
@@ -8138,49 +8448,10 @@ function renderFeaturedCruiseForm() {
       </section>
 
       <section class="featured-form-section">
-        <div class="admin-list-top">
-          <div>
-            <h4>Itinerary</h4>
-            <p class="admin-muted">Ordered ports and sea days for this featured cruise.</p>
-          </div>
-          <button type="button" class="admin-button secondary small" onclick="addFeaturedPortRow()">+ Add Port or Sea Day</button>
-        </div>
-        <div class="featured-row-editor">
-          ${featuredFormPorts.map((port, index) => `
-            <div class="featured-port-row">
-              <div class="featured-row-controls">
-                <button type="button" class="admin-button secondary small" onclick="moveFeaturedPortRow(${index}, -1)" ${index === 0 ? "disabled" : ""}>Up</button>
-                <button type="button" class="admin-button secondary small" onclick="moveFeaturedPortRow(${index}, 1)" ${index === featuredFormPorts.length - 1 ? "disabled" : ""}>Down</button>
-              </div>
-              <div class="featured-row-fields">
-                <div class="admin-field">
-                  <label>Port name</label>
-                  <input id="fcPortName-${index}" type="text" value="${esc(port.port_name)}" placeholder="Port or leave blank for sea day">
-                </div>
-                <div class="admin-field">
-                  <label>Country or region</label>
-                  <input id="fcPortCountry-${index}" type="text" value="${esc(port.country_or_region)}">
-                </div>
-                <div class="admin-field">
-                  <label>Date</label>
-                  <input id="fcPortDate-${index}" type="date" value="${esc(port.port_date)}">
-                </div>
-                <div class="admin-field">
-                  <label>Arrival</label>
-                  <input id="fcPortArrival-${index}" type="time" value="${esc(port.arrival_time)}">
-                </div>
-                <div class="admin-field">
-                  <label>Departure</label>
-                  <input id="fcPortDeparture-${index}" type="time" value="${esc(port.departure_time)}">
-                </div>
-                <label class="admin-check-chip featured-check">
-                  <input id="fcPortSeaDay-${index}" type="checkbox" ${port.is_sea_day ? "checked" : ""}>
-                  <span>Sea day</span>
-                </label>
-              </div>
-              <button type="button" class="admin-button secondary small" onclick="removeFeaturedPortRow(${index})">Remove</button>
-            </div>
-          `).join("")}
+        <h4>Itinerary</h4>
+        <p class="admin-muted">Enter the ports in sailing order, separated by a vertical bar.</p>
+        <div class="admin-field">
+          <textarea id="fcItinerarySummary" class="featured-itinerary-textarea" rows="4" placeholder="Barcelona, Spain | Palermo, Sicily, Italy | Syracuse, Sicily | Argostoli, Kephalonia | Gythion, Greece | Paros, Greece | Piraeus (Athens), Greece | Kusadasi (Ephesus), Turkey | Bozcaada, Turkey | Istanbul, Turkey">${esc(draft.itinerary_summary || "")}</textarea>
         </div>
       </section>
 
@@ -8188,98 +8459,22 @@ function renderFeaturedCruiseForm() {
         <div class="admin-list-top">
           <div>
             <h4>Pricing</h4>
+            <p class="admin-muted">All prices are USD. Airline prices are confidential and must never appear on a public page.</p>
           </div>
           <button type="button" class="admin-button secondary small" onclick="addFeaturedPricingRow()">+ Add Room Price</button>
         </div>
-        <div class="featured-warning">
-          Pricing is unique to this cruise. Confirm every figure before saving. Airline prices are confidential and must never be exposed on a public page.
-        </div>
+        <div class="featured-warning">Confirm every figure before saving. Category is for internal reference only.</div>
         <div class="featured-row-editor">
-          ${featuredFormPricing.map((row, index) => `
-            <div class="featured-pricing-row">
-              <div class="featured-row-controls">
-                <button type="button" class="admin-button secondary small" onclick="moveFeaturedPricingRow(${index}, -1)" ${index === 0 ? "disabled" : ""}>Up</button>
-                <button type="button" class="admin-button secondary small" onclick="moveFeaturedPricingRow(${index}, 1)" ${index === featuredFormPricing.length - 1 ? "disabled" : ""}>Down</button>
-              </div>
-              <div class="featured-row-fields featured-pricing-fields">
-                <div class="admin-field">
-                  <label>Room label</label>
-                  <input id="fcPriceRoom-${index}" type="text" value="${esc(row.room_label)}" placeholder="Exactly as shown to customers later">
-                </div>
-                <div class="admin-field">
-                  <label>Brochure price</label>
-                  <input id="fcPriceBrochure-${index}" type="number" min="0" step="0.01" value="${esc(row.brochure_price)}">
-                </div>
-                <div class="admin-field">
-                  <label>101cruise price</label>
-                  <input id="fcPrice101-${index}" type="number" min="0" step="0.01" value="${esc(row.cruise_101_price)}">
-                </div>
-                <div class="admin-field">
-                  <label>Airline price</label>
-                  <input id="fcPriceAirline-${index}" type="number" min="0" step="0.01" value="${esc(row.airline_price)}">
-                </div>
-                <div class="admin-field">
-                  <label>Currency</label>
-                  <input id="fcPriceCurrency-${index}" type="text" maxlength="3" value="${esc(row.currency_code || "USD")}">
-                </div>
-                <label class="admin-check-chip featured-check">
-                  <input id="fcPriceActive-${index}" type="checkbox" ${row.active !== false ? "checked" : ""}>
-                  <span>Active</span>
-                </label>
-              </div>
-              <button type="button" class="admin-button secondary small" onclick="removeFeaturedPricingRow(${index})">Remove</button>
-            </div>
-          `).join("")}
+          ${featuredFormPricing.map((row, index) => renderFeaturedPricingBlock(row, index, draft.nights)).join("")}
         </div>
       </section>
 
       <section class="featured-form-section">
-        <h4>Inclusions and Other Information</h4>
-        <div class="admin-field">
-          <label for="fcInclusions">Inclusions</label>
-          <textarea id="fcInclusions" rows="4">${esc(existing?.inclusions || "")}</textarea>
-        </div>
+        <h4>Other Information</h4>
         <div class="admin-field">
           <label for="fcOtherInformation">Other information</label>
-          <textarea id="fcOtherInformation" rows="4">${esc(existing?.other_information || "")}</textarea>
+          <textarea id="fcOtherInformation" rows="3">${esc(draft.other_information || "")}</textarea>
         </div>
-      </section>
-
-      <section class="featured-form-section">
-        <h4>Newsletter and Publication</h4>
-        <div class="featured-form-grid">
-          <div class="admin-field">
-            <label for="fcNewsletterDate">Newsletter publication date</label>
-            <input id="fcNewsletterDate" type="date" value="${esc(newsletterDate)}" onchange="updateFeaturedPublicNotice()">
-          </div>
-          <div class="admin-field">
-            <label for="fcPublicationStatus">Publication status</label>
-            <select id="fcPublicationStatus">
-              <option value="draft" ${(existing?.publication_status || "draft") === "draft" ? "selected" : ""}>Draft</option>
-              <option value="published" ${existing?.publication_status === "published" ? "selected" : ""}>Published</option>
-              <option value="archived" ${existing?.publication_status === "archived" ? "selected" : ""}>Archived</option>
-            </select>
-          </div>
-          <div class="admin-field">
-            <label for="fcDisplayOrder">Display order</label>
-            <input id="fcDisplayOrder" type="number" step="1" value="${esc(existing?.display_order ?? 0)}">
-          </div>
-          <label class="admin-check-chip featured-check">
-            <input id="fcActive" type="checkbox" ${(existing ? existing.active !== false : true) ? "checked" : ""}>
-            <span>Active</span>
-          </label>
-          <label class="admin-check-chip featured-check featured-span-2">
-            <input id="fcCreatePublicPage" type="checkbox" ${existing?.create_public_page ? "checked" : ""}>
-            <span>Create public cruise page</span>
-          </label>
-          <div class="admin-helper featured-span-2">This prepares the cruise for a future public landing page. No page is published during this phase.</div>
-          <div class="admin-field featured-span-2">
-            <label for="fcPublicSlug">Public slug</label>
-            <input id="fcPublicSlug" type="text" value="${esc(existing?.public_slug || "")}" oninput="onFeaturedSlugInput()" placeholder="auto-suggested-from-headline">
-            <div class="admin-helper">Lowercase letters, numbers and hyphens only.</div>
-          </div>
-        </div>
-        <div class="featured-public-notice" id="fcPublicNoticePreview">${esc(formatFeaturedNewsletterNotice(newsletterDate || null))}</div>
       </section>
 
       <div class="admin-actions-row featured-form-actions">
@@ -8292,9 +8487,10 @@ function renderFeaturedCruiseForm() {
 }
 
 async function saveFeaturedCruise() {
-  captureFeaturedChildRowsFromDom();
+  captureFeaturedDraftFromDom();
+  const draft = featuredFormDraft || {};
 
-  const headline = String(document.getElementById("fcHeadline")?.value || "").trim();
+  const headline = String(draft.headline || "").trim();
   if (!headline) {
     featuredCruiseMessage = "Headline is required.";
     featuredCruiseMessageTone = "error";
@@ -8302,17 +8498,40 @@ async function saveFeaturedCruise() {
     return;
   }
 
-  let nightsValue = document.getElementById("fcNights")?.value;
-  nightsValue = String(nightsValue || "").trim();
-  let nights = nightsValue === "" ? null : Number(nightsValue);
-  if (nights != null && (!Number.isFinite(nights) || nights < 0)) {
-    featuredCruiseMessage = "Nights must be blank or zero or greater.";
+  const newsletterRaw = String(draft.newsletter_number ?? "").trim();
+  let newsletterNumber = null;
+  if (newsletterRaw !== "") {
+    newsletterNumber = Number(newsletterRaw);
+    if (!Number.isInteger(newsletterNumber) || newsletterNumber < 1) {
+      featuredCruiseMessage = "Newsletter Number must be a whole number of at least 1.";
+      featuredCruiseMessageTone = "error";
+      renderAdmin();
+      return;
+    }
+  }
+
+  const nightsRaw = String(draft.nights ?? "").trim();
+  const nights = nightsRaw === "" ? null : Number(nightsRaw);
+  if (nights == null || !Number.isInteger(nights) || nights < 1) {
+    featuredCruiseMessage = "Nights must be a whole number of at least 1.";
     featuredCruiseMessageTone = "error";
     renderAdmin();
     return;
   }
 
-  const slugRaw = String(document.getElementById("fcPublicSlug")?.value || "").trim();
+  const departureDate = draft.departure_date || null;
+  if (!departureDate) {
+    featuredCruiseMessage = "Departure Date is required.";
+    featuredCruiseMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+
+  const returnDate = addCalendarDays(departureDate, nights);
+  const destinationStrip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port);
+  const itinerarySummary = String(draft.itinerary_summary || "").trim() || null;
+
+  const slugRaw = String(draft.public_slug || "").trim();
   const publicSlug = slugRaw ? featuredSlugify(slugRaw) : null;
   if (slugRaw && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(publicSlug || "")) {
     featuredCruiseMessage = "Public slug must use lowercase letters, numbers and hyphens only.";
@@ -8321,66 +8540,42 @@ async function saveFeaturedCruise() {
     return;
   }
 
-  const portsPayload = [];
-  for (let index = 0; index < featuredFormPorts.length; index += 1) {
-    const port = featuredFormPorts[index];
-    const isSeaDay = Boolean(port.is_sea_day);
-    let portName = String(port.port_name || "").trim();
-    if (!portName && !isSeaDay) {
-      featuredCruiseMessage = `Port name is required on itinerary row ${index + 1}, or mark it as a sea day.`;
-      featuredCruiseMessageTone = "error";
-      renderAdmin();
-      return;
-    }
-    if (!portName && isSeaDay) portName = "At Sea";
-    const hasAny =
-      portName ||
-      port.country_or_region ||
-      port.port_date ||
-      port.arrival_time ||
-      port.departure_time ||
-      isSeaDay;
-    if (!hasAny) continue;
-    portsPayload.push({
-      port_name: portName,
-      country_or_region: String(port.country_or_region || "").trim() || null,
-      port_date: port.port_date || null,
-      arrival_time: port.arrival_time || null,
-      departure_time: port.departure_time || null,
-      is_sea_day: isSeaDay,
-      display_order: portsPayload.length
-    });
-  }
-
   const pricingPayload = [];
   try {
     for (let index = 0; index < featuredFormPricing.length; index += 1) {
       const row = featuredFormPricing[index];
       const roomLabel = String(row.room_label || "").trim();
+      const category = String(row.category || "").trim() || null;
       const brochure = parseOptionalPrice(row.brochure_price);
       const price101 = parseOptionalPrice(row.cruise_101_price);
       const airline = parseOptionalPrice(row.airline_price);
-      const currency = String(row.currency_code || "USD").trim().toUpperCase() || "USD";
-      if (!roomLabel && brochure == null && price101 == null && airline == null) continue;
-      if (!roomLabel) {
-        featuredCruiseMessage = `Room label is required on pricing row ${index + 1}.`;
-        featuredCruiseMessageTone = "error";
-        renderAdmin();
-        return;
+      const obc = parseOptionalPrice(row.onboard_credit);
+      const hasInc =
+        row.alcohol_package || row.wifi || row.gratuities || row.all_tours || row.all_dining || row.laundry;
+      if (!roomLabel && brochure == null && price101 == null && airline == null && !hasInc && obc == null && !category) {
+        continue;
       }
-      if (!/^[A-Z]{3}$/.test(currency)) {
-        featuredCruiseMessage = `Currency on pricing row ${index + 1} must be a 3-letter code such as USD.`;
+      if (!roomLabel) {
+        featuredCruiseMessage = `Room Type is required on pricing row ${index + 1}.`;
         featuredCruiseMessageTone = "error";
         renderAdmin();
         return;
       }
       pricingPayload.push({
+        id: row.id || undefined,
         room_label: roomLabel,
+        category,
         brochure_price: brochure,
         cruise_101_price: price101,
         airline_price: airline,
-        currency_code: currency,
-        active: row.active !== false,
+        currency_code: "USD",
+        alcohol_package: Boolean(row.alcohol_package),
+        wifi: Boolean(row.wifi),
+        gratuities: Boolean(row.gratuities),
+        all_tours: Boolean(row.all_tours),
+        all_dining: Boolean(row.all_dining),
+        laundry: Boolean(row.laundry),
+        onboard_credit: obc,
         display_order: pricingPayload.length
       });
     }
@@ -8391,32 +8586,37 @@ async function saveFeaturedCruise() {
     return;
   }
 
-  const useShipHero = Boolean(document.getElementById("fcUseShipHero")?.checked);
+  const useShipHero = draft.use_ship_hero_image !== false;
   const payload = {
     headline,
-    destination_strip: String(document.getElementById("fcDestinationStrip")?.value || "").trim() || null,
-    cruise_line_id: document.getElementById("fcCruiseLineId")?.value || null,
-    cruise_ship_id: document.getElementById("fcCruiseShipId")?.value || null,
-    departure_date: document.getElementById("fcDepartureDate")?.value || null,
-    return_date: document.getElementById("fcReturnDate")?.value || null,
+    destination_strip: destinationStrip,
+    cruise_line_id: draft.cruise_line_id || null,
+    cruise_ship_id: draft.cruise_ship_id || null,
+    departure_date: departureDate,
+    return_date: returnDate || null,
     nights,
-    departure_port: String(document.getElementById("fcDeparturePort")?.value || "").trim() || null,
-    arrival_port: String(document.getElementById("fcArrivalPort")?.value || "").trim() || null,
-    short_editorial: String(document.getElementById("fcShortEditorial")?.value || "").trim() || null,
-    full_description: String(document.getElementById("fcFullDescription")?.value || "").trim() || null,
+    departure_port: String(draft.departure_port || "").trim() || null,
+    arrival_port: String(draft.arrival_port || "").trim() || null,
+    short_editorial: String(draft.short_editorial || "").trim() || null,
+    full_description: String(draft.full_description || "").trim() || null,
     use_ship_hero_image: useShipHero,
-    hero_image_url: useShipHero ? null : (normalizeUrl(document.getElementById("fcHeroImageUrl")?.value) || null),
-    hero_image_alt: String(document.getElementById("fcHeroImageAlt")?.value || "").trim() || null,
-    inclusions: String(document.getElementById("fcInclusions")?.value || "").trim() || null,
-    other_information: String(document.getElementById("fcOtherInformation")?.value || "").trim() || null,
-    newsletter_publication_date: document.getElementById("fcNewsletterDate")?.value || null,
-    publication_status: document.getElementById("fcPublicationStatus")?.value || "draft",
-    display_order: Number(document.getElementById("fcDisplayOrder")?.value || 0) || 0,
-    active: Boolean(document.getElementById("fcActive")?.checked),
-    create_public_page: Boolean(document.getElementById("fcCreatePublicPage")?.checked),
+    hero_image_url: useShipHero ? null : normalizeUrl(draft.hero_image_url) || null,
+    hero_image_alt: String(draft.hero_image_alt || "").trim() || null,
+    itinerary_summary: itinerarySummary,
+    other_information: String(draft.other_information || "").trim() || null,
+    newsletter_number: newsletterNumber,
+    newsletter_publication_date: draft.newsletter_publication_date || null,
+    publication_status: draft.publication_status || "draft",
+    display_order: Number(draft.display_order || 0) || 0,
+    create_public_page: Boolean(draft.create_public_page),
     public_slug: publicSlug,
     updated_by: currentUser?.id || null
   };
+
+  const newsletterChanged =
+    String(featuredNewsletterDefaultsBaseline.newsletter_number ?? "") !== String(newsletterNumber ?? "") ||
+    String(featuredNewsletterDefaultsBaseline.newsletter_publication_date || "") !==
+      String(draft.newsletter_publication_date || "");
 
   featuredCruiseSaving = true;
   featuredCruiseMessage = "Saving…";
@@ -8435,18 +8635,7 @@ async function saveFeaturedCruise() {
       cruiseId = data.id;
     }
 
-    const { error: deletePortsError } = await supabaseClient
-      .from("featured_cruise_ports")
-      .delete()
-      .eq("featured_cruise_id", cruiseId);
-    if (deletePortsError) throw new Error(`Cruise saved, but itinerary could not be updated: ${deletePortsError.message}`);
-
-    if (portsPayload.length) {
-      const { error: insertPortsError } = await supabaseClient.from("featured_cruise_ports").insert(
-        portsPayload.map((port) => ({ ...port, featured_cruise_id: cruiseId }))
-      );
-      if (insertPortsError) throw new Error(`Cruise saved, but itinerary could not be saved: ${insertPortsError.message}`);
-    }
+    // Do not modify featured_cruise_ports in this workflow.
 
     const { error: deletePricingError } = await supabaseClient
       .from("featured_cruise_pricing")
@@ -8455,17 +8644,31 @@ async function saveFeaturedCruise() {
     if (deletePricingError) throw new Error(`Cruise saved, but pricing could not be updated: ${deletePricingError.message}`);
 
     if (pricingPayload.length) {
-      const { error: insertPricingError } = await supabaseClient.from("featured_cruise_pricing").insert(
-        pricingPayload.map((row) => ({ ...row, featured_cruise_id: cruiseId }))
-      );
+      const rows = pricingPayload.map(({ id, ...rest }) => ({ ...rest, featured_cruise_id: cruiseId }));
+      const { error: insertPricingError } = await supabaseClient.from("featured_cruise_pricing").insert(rows);
       if (insertPricingError) throw new Error(`Cruise saved, but pricing could not be saved: ${insertPricingError.message}`);
+    }
+
+    if (newsletterChanged) {
+      const { error: defaultsError } = await supabaseClient.from("featured_cruise_newsletter_defaults").upsert({
+        id: 1,
+        newsletter_number: newsletterNumber,
+        newsletter_publication_date: draft.newsletter_publication_date || null
+      });
+      if (defaultsError) console.warn("Newsletter defaults update skipped", defaultsError.message);
+      else {
+        featuredNewsletterDefaults = {
+          newsletter_number: newsletterNumber,
+          newsletter_publication_date: draft.newsletter_publication_date || null
+        };
+      }
     }
 
     await loadFeaturedCruises();
     showFeaturedCruiseForm = false;
     editingFeaturedCruiseId = null;
-    featuredFormPorts = [];
     featuredFormPricing = [];
+    featuredFormDraft = null;
     featuredSlugManuallyEdited = false;
     featuredCruiseMessage = "Featured cruise saved.";
     featuredCruiseMessageTone = "success";
@@ -8479,7 +8682,7 @@ async function saveFeaturedCruise() {
 }
 
 async function deleteFeaturedCruise(id) {
-  if (!window.confirm("Delete this featured cruise? Its itinerary and pricing rows will also be deleted.")) return;
+  if (!window.confirm("Delete this featured cruise? Its pricing rows will also be deleted.")) return;
   featuredCruiseSaving = true;
   featuredCruiseMessage = "Deleting…";
   featuredCruiseMessageTone = "";
@@ -8490,8 +8693,8 @@ async function deleteFeaturedCruise(id) {
     await loadFeaturedCruises();
     showFeaturedCruiseForm = false;
     editingFeaturedCruiseId = null;
-    featuredFormPorts = [];
     featuredFormPricing = [];
+    featuredFormDraft = null;
     featuredCruiseMessage = "Featured cruise deleted.";
     featuredCruiseMessageTone = "success";
   } catch (error) {
@@ -8502,5 +8705,6 @@ async function deleteFeaturedCruise(id) {
     renderAdmin();
   }
 }
+
 
 initAdmin();

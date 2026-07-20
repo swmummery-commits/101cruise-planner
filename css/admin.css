@@ -2651,7 +2651,7 @@
 }
 
 /* =========================================================
-   Featured Cruises — Sprint 9A Phase 1
+   Featured Cruises — Sprint 9 workflow refinement
    ========================================================= */
 
 .featured-cruises-toolbar {
@@ -2674,7 +2674,7 @@
   align-items: flex-start;
   padding: 14px 16px;
   border: 1px solid var(--admin-border, #e3e8e5);
-  border-radius: 12px;
+  border-radius: 10px;
   background: #fff;
 }
 
@@ -2691,9 +2691,9 @@
 
 .featured-cruise-card-heading h4 {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 650;
-  color: #1f2a28;
+  color: #111;
 }
 
 .featured-destination-strip {
@@ -2708,7 +2708,7 @@
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 4px 9px;
+  padding: 3px 8px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -2722,7 +2722,7 @@
 }
 
 .featured-status-pill.status-published {
-  background: rgba(141, 217, 191, 0.28);
+  background: rgba(141, 217, 191, 0.32);
   color: #245c4e;
 }
 
@@ -2738,22 +2738,67 @@
 }
 
 .featured-cruise-form .featured-form-section {
-  margin-top: 22px;
-  padding-top: 18px;
+  margin-top: 18px;
+  padding-top: 14px;
   border-top: 1px solid var(--admin-border, #e3e8e5);
 }
 
-.featured-form-section h4 {
-  margin: 0 0 12px;
-  font-size: 15px;
-  font-weight: 650;
-  color: #1f2a28;
+.featured-cruise-form .featured-newsletter-section {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: none;
 }
 
-.featured-form-grid {
+.featured-form-section h4 {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 650;
+  color: #111;
+}
+
+.featured-newsletter-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.9fr) minmax(150px, 1.1fr) minmax(130px, 1fr) minmax(140px, 1.2fr) auto;
+  gap: 10px 12px;
+  align-items: end;
+}
+
+.featured-newsletter-row .featured-create-public {
+  margin: 0 0 2px;
+  white-space: nowrap;
+}
+
+.featured-ports-row {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px 16px;
+  gap: 10px 12px;
+}
+
+.featured-details-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.4fr) minmax(140px, 1.4fr) minmax(120px, 1fr) minmax(72px, 0.55fr) minmax(120px, 1fr);
+  gap: 10px 12px;
+  margin-top: 12px;
+}
+
+.featured-readonly-date {
+  background: #f4f7f6;
+  color: #111;
+  border-color: #d7e0dc;
+  cursor: default;
+}
+
+.featured-destination-preview {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #245c4e;
+  font-weight: 600;
+}
+
+.featured-itinerary-textarea {
+  min-height: 5.5em;
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .featured-span-2 {
@@ -2773,41 +2818,93 @@
   margin-top: 12px;
 }
 
-.featured-port-row,
-.featured-pricing-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: start;
+.featured-pricing-block {
   padding: 12px;
   border: 1px solid var(--admin-border, #e3e8e5);
-  border-radius: 12px;
+  border-radius: 10px;
   background: #fbfcfb;
+  min-width: 0;
 }
 
-.featured-row-controls {
+.featured-pricing-main-row {
   display: grid;
+  grid-template-columns: minmax(140px, 1.5fr) minmax(72px, 0.7fr) minmax(100px, 1fr) minmax(100px, 1fr) minmax(100px, 1fr) auto;
+  gap: 8px 10px;
+  align-items: end;
+}
+
+.featured-pricing-main-row .admin-field label,
+.featured-newsletter-row .admin-field label,
+.featured-ports-row .admin-field label,
+.featured-details-row .admin-field label,
+.featured-inclusions-row .admin-field label {
+  font-size: 12px;
+}
+
+.featured-room-type-field {
+  position: relative;
+  min-width: 0;
+}
+
+.featured-room-type-save {
+  margin-top: 6px;
+}
+
+.featured-room-type-save[hidden] {
+  display: none !important;
+}
+
+.featured-price-remove {
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.featured-price-calcs {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #374151;
+}
+
+.featured-price-calcs:empty {
+  display: none;
+}
+
+.featured-inclusions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: end;
+  margin-top: 10px;
+}
+
+.featured-inc {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
+  font-size: 12px;
+  color: #111;
+  white-space: nowrap;
 }
 
-.featured-row-fields {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px 12px;
+.featured-inc input[type="checkbox"]:checked {
+  accent-color: #8DD9BF;
 }
 
-.featured-pricing-fields {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+.featured-obc-field {
+  min-width: 120px;
+  max-width: 160px;
+  flex: 0 1 160px;
 }
 
 .featured-warning {
   margin-top: 10px;
-  padding: 11px 13px;
-  border-radius: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
   border: 1px solid rgba(141, 217, 191, 0.55);
   background: rgba(141, 217, 191, 0.14);
   color: #245c4e;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.45;
 }
 
@@ -2820,24 +2917,13 @@
   width: min(100%, 420px);
   max-height: 220px;
   object-fit: cover;
-  border-radius: 12px;
+  border-radius: 10px;
   border: 1px solid var(--admin-border, #e3e8e5);
   background: #f6f8f7;
-}
-
-.featured-public-notice {
-  margin-top: 14px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: #f6f8f7;
-  border: 1px solid var(--admin-border, #e3e8e5);
-  color: #374151;
-  font-size: 13px;
-  line-height: 1.5;
 }
 
 .featured-form-actions {
-  margin-top: 22px;
+  margin-top: 20px;
   justify-content: flex-end;
   flex-wrap: wrap;
 }
@@ -2846,27 +2932,38 @@
   color: #a5141a;
 }
 
-@media (max-width: 820px) {
-  .featured-cruises-toolbar,
-  .featured-form-grid,
-  .featured-row-fields,
-  .featured-pricing-fields {
-    grid-template-columns: 1fr;
+@media (max-width: 1100px) {
+  .featured-newsletter-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .featured-cruise-card,
-  .featured-port-row,
-  .featured-pricing-row {
+  .featured-details-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .featured-pricing-main-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .featured-price-remove {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 820px) {
+  .featured-cruises-toolbar,
+  .featured-newsletter-row,
+  .featured-ports-row,
+  .featured-details-row,
+  .featured-pricing-main-row {
     grid-template-columns: 1fr;
-    display: grid;
   }
 
   .featured-cruise-card {
     display: grid;
   }
 
-  .featured-row-controls {
-    grid-auto-flow: column;
-    grid-auto-columns: max-content;
+  .featured-newsletter-row .featured-create-public {
+    white-space: normal;
   }
 }
