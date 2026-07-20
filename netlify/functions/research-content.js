@@ -343,32 +343,100 @@ async function addAlias(body) {
   return { success: true, alias: created?.[0] };
 }
 
+async function loadResearchSummaries(entityType) {
+  const rows = await supabase(
+    `research_content?entity_type=eq.${encodeURIComponent(entityType)}` +
+      `&select=id,entity_id,entity_key,entity_name,content_status,generated_at,updated_at,published_at,last_reviewed_at,content_version` +
+      `&order=updated_at.desc&limit=1000`
+  );
+  const byId = new Map();
+  const byKey = new Map();
+  for (const row of rows || []) {
+    const summary = {
+      research_id: row.id,
+      content_status: row.content_status,
+      generated_at: row.generated_at,
+      updated_at: row.updated_at,
+      published_at: row.published_at,
+      last_reviewed_at: row.last_reviewed_at,
+      content_version: row.content_version
+    };
+    // Keep the most recently updated row per entity (rows are ordered desc)
+    if (row.entity_id && !byId.has(row.entity_id)) byId.set(row.entity_id, summary);
+    if (row.entity_key && !byKey.has(row.entity_key)) byKey.set(row.entity_key, summary);
+  }
+  return { byId, byKey };
+}
+
+function attachResearchSummary(entity, summary) {
+  if (!summary) {
+    return {
+      ...entity,
+      research_status: null,
+      research_updated_at: null,
+      research_generated_at: null,
+      research_id: null
+    };
+  }
+  return {
+    ...entity,
+    research_id: summary.research_id,
+    research_status: summary.content_status,
+    research_updated_at: summary.updated_at || summary.generated_at || summary.published_at || null,
+    research_generated_at: summary.generated_at || null,
+    research_published_at: summary.published_at || null,
+    research_version: summary.content_version || null
+  };
+}
+
 async function listEntities(body) {
   const entityType = body.entity_type;
+  const summaries = await loadResearchSummaries(entityType);
+
   if (entityType === "ship") {
     const rows = await supabase(
       "ci_cruise_ships?select=id,name,slug,cruise_line_id,active,ci_cruise_lines(name,website_url)&order=name.asc&limit=500"
     );
-    return { success: true, entities: rows || [] };
+    return {
+      success: true,
+      entities: (rows || []).map((row) => attachResearchSummary(row, summaries.byId.get(row.id)))
+    };
   }
   if (entityType === "cruise_line") {
     const rows = await supabase(
       "ci_cruise_lines?select=id,name,slug,website_url,active,sold_by_101cruise&order=name.asc&limit=500"
     );
-    return { success: true, entities: rows || [] };
+    return {
+      success: true,
+      entities: (rows || []).map((row) => attachResearchSummary(row, summaries.byId.get(row.id)))
+    };
   }
   // Destinations/ports: distinct from existing research + media tags
   if (entityType === "destination" || entityType === "port") {
     const existing = await supabase(
-      `research_content?entity_type=eq.${encodeURIComponent(entityType)}&select=entity_key,entity_name&order=entity_name.asc&limit=500`
+      `research_content?entity_type=eq.${encodeURIComponent(entityType)}&select=entity_key,entity_name,content_status,generated_at,updated_at,published_at,content_version,id&order=updated_at.desc&limit=500`
     );
     const map = new Map();
     for (const row of existing || []) {
-      if (row.entity_key) map.set(row.entity_key, row.entity_name);
+      if (!row.entity_key || map.has(row.entity_key)) continue;
+      map.set(
+        row.entity_key,
+        attachResearchSummary(
+          { entity_key: row.entity_key, entity_name: row.entity_name },
+          {
+            research_id: row.id,
+            content_status: row.content_status,
+            generated_at: row.generated_at,
+            updated_at: row.updated_at,
+            published_at: row.published_at,
+            content_version: row.content_version
+          }
+        )
+      );
     }
     return {
       success: true,
-      entities: [...map.entries()].map(([entity_key, entity_name]) => ({ entity_key, entity_name }))
+      entities: [...map.values()]
     };
   }
   throw Object.assign(new Error("Unsupported entity type"), {

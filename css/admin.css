@@ -3652,3 +3652,14 @@
     grid-template-columns: 1fr;
   }
 }
+
+.research-last-updated {
+  margin: -4px 0 8px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.research-last-updated .admin-button {
+  margin-left: 8px;
+  vertical-align: middle;
+}

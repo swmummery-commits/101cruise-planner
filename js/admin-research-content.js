@@ -223,6 +223,31 @@
     }
   }
 
+  function researchOptionLabel(entity) {
+    const name = entity.name || entity.entity_name || "Untitled";
+    if (!entity.research_updated_at && !entity.research_status) {
+      return `${name} · Never researched`;
+    }
+    const status = STATUS_LABELS[entity.research_status] || entity.research_status || "Draft";
+    return `${name} · ${status} · ${formatDate(entity.research_updated_at)}`;
+  }
+
+  function selectedEntityResearchNote() {
+    const isCanonical = researchForm.entity_type === "ship" || researchForm.entity_type === "cruise_line";
+    const found = isCanonical
+      ? entityOptions.find((e) => e.id === researchForm.entity_id)
+      : entityOptions.find((e) => e.entity_key === researchForm.entity_key);
+
+    if (!researchForm.entity_id && !researchForm.entity_key) return "";
+    if (!found || (!found.research_status && !found.research_updated_at)) {
+      return `<p class="admin-muted research-last-updated">Last researched: never</p>`;
+    }
+    const openBtn = found.research_id
+      ? ` <button type="button" class="admin-button secondary small" onclick="ResearchContentAdmin.openEditor('${esc(found.research_id)}')">Open existing</button>`
+      : "";
+    return `<p class="research-last-updated">Last researched: <strong>${esc(formatDate(found.research_updated_at))}</strong> · ${esc(STATUS_LABELS[found.research_status] || found.research_status || "Draft")}${found.research_version ? ` · v${esc(String(found.research_version))}` : ""}${openBtn}</p>`;
+  }
+
   function openList() {
     view = "list";
     editingId = null;
@@ -397,7 +422,7 @@
     const optionsHtml = entityOptions
       .map((e) => {
         const id = e.id || e.entity_key;
-        const label = e.name || e.entity_name;
+        const label = researchOptionLabel(e);
         const selected = researchForm.entity_id === id || researchForm.entity_key === id;
         return `<option value="${esc(id)}" ${selected ? "selected" : ""}>${esc(label)}</option>`;
       })
@@ -455,12 +480,14 @@
                     <option value="">Choose…</option>
                     ${optionsHtml}
                   </select>
-                </label>`
+                </label>
+                ${selectedEntityResearchNote()}`
               : `<label>Name
                   <input type="text" value="${esc(researchForm.entity_name)}" placeholder="e.g. Greek Isles or Santorini"
                     onchange="ResearchContentAdmin.setResearchName(this.value)">
                 </label>
                 <p class="admin-muted">Entity key will normalise to: <code>${esc(researchForm.entity_key || "—")}</code></p>
+                ${selectedEntityResearchNote()}
                 ${
                   entityOptions.length
                     ? `<label>Or choose existing
