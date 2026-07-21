@@ -727,6 +727,16 @@
   color: #9ca3af;
 }
 
+.nl-research-future-link a {
+  color: #245c4e;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.nl-research-future-link a:hover {
+  text-decoration: underline;
+}
+
 @media (max-width: 640px) {
   .nl-research-facts {
     grid-template-columns: repeat(2, minmax(0, 1fr));

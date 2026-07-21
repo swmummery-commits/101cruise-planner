@@ -64,3 +64,13 @@
   from = "/cruise"
   to = "/cruise/index.html"
   status = 200
+
+[[redirects]]
+  from = "/destination/*"
+  to = "/destination/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/destination"
+  to = "/destination/index.html"
+  status = 200

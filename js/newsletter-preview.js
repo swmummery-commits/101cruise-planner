@@ -639,7 +639,11 @@
                 : ""
             }
             ${dest.pauls_tip ? `<p class="nl-research-tip"><strong>Paul's tip:</strong> ${esc(dest.pauls_tip)}</p>` : ""}
-            <p class="nl-research-future-link">Destination guide coming soon</p>
+            ${
+              dest.canonical_slug
+                ? `<p class="nl-research-future-link"><a href="/destination/${esc(dest.canonical_slug)}">Explore the ${esc(dest.entity_name)} destination guide</a></p>`
+                : `<p class="nl-research-future-link">Destination guide coming soon</p>`
+            }
           </section>
         `;
       }
