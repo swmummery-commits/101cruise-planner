@@ -232,6 +232,11 @@ function emptyAggregate() {
     cruise_lines_scanned: 0,
     cruise_lines_failed: 0,
     search_hits: 0,
+    brave_results_received: 0,
+    results_excluded_before_fetch: 0,
+    sailing_urls_fetched: 0,
+    generic_pages_skipped: 0,
+    ignored_non_sailing_source: 0,
     pages_fetched: 0,
     candidates: 0,
     candidates_validated: 0,
@@ -308,7 +313,7 @@ async function discoverOneLine({
     ]);
 
     const startedMs = Date.now();
-    const { candidates, reviewItems, stats } = await discoverForCruiseLine({
+    const { candidates, reviewItems, stats, urlDiagnostics } = await discoverForCruiseLine({
       cruiseLine,
       ships: ships || [],
       destinations: destinations || [],
@@ -324,8 +329,13 @@ async function discoverOneLine({
     for (const key of Object.keys(stats || {})) {
       if (typeof stats[key] === "number") {
         aggregate[key] = (aggregate[key] || 0) + stats[key];
+      } else if (key === "source_method_counts" && stats[key]) {
+        aggregate.source_method_counts = stats[key];
+      } else if (key === "adapter_id") {
+        aggregate.adapter_id = stats[key];
       }
     }
+    aggregate.url_diagnostics_sample = (urlDiagnostics || []).slice(0, 40);
 
     for (const candidate of candidates) {
       const result = await upsertCandidateRecord(candidate, aggregate);

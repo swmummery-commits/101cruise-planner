@@ -8,6 +8,12 @@
 const crypto = require("crypto");
 const { braveSearch, getBraveApiKey } = require("./brave-search");
 const { fetchSourceExcerpt } = require("./source-fetch");
+const { scoreSailingUrl, buildBraveSailingQueries } = require("./cruise-discovery-url-score");
+const {
+  extractStructuredSailingSources,
+  structuredExcerptHint
+} = require("./cruise-discovery-structured");
+const { resolveAdapter } = require("./cruise-discovery-adapters");
 
 const MONTHS = {
   jan: 0,
@@ -1018,7 +1024,7 @@ function extractCandidateFromText(args) {
   };
 }
 
-async function searchOfficialCruises({ cruiseLine, destination, count = 8 }) {
+async function searchOfficialCruises({ cruiseLine, destination, count = 8, adapter = null }) {
   const apiKey = getBraveApiKey();
   const host = hostnameOf(cruiseLine.website_url);
   if (!host) {
@@ -1028,14 +1034,12 @@ async function searchOfficialCruises({ cruiseLine, destination, count = 8 }) {
   }
 
   const destName = destination?.name || "cruise";
-  const queries = [
-    `site:${host} ${destName} cruise`,
-    `site:${host} ${destName} itinerary nights`,
-    `site:${host} ${destName} depart`,
-    cruiseLine.cruise_search_url
-      ? `${destName} cruise site:${hostnameOf(cruiseLine.cruise_search_url) || host}`
-      : null
-  ].filter(Boolean);
+  const queries = buildBraveSailingQueries({ host, destName, adapter });
+  if (cruiseLine.cruise_search_url) {
+    queries.push(
+      `${destName} (itinerary OR sailing OR "nights") site:${hostnameOf(cruiseLine.cruise_search_url) || host}`
+    );
+  }
 
   const seen = new Set();
   const results = [];
@@ -1048,11 +1052,83 @@ async function searchOfficialCruises({ cruiseLine, destination, count = 8 }) {
         continue;
       }
       seen.add(canonicalUrl(url));
-      results.push(hit);
+      results.push({ ...hit, source_method: "brave_fallback" });
     }
-    if (results.length >= count) break;
+    if (results.length >= count * 2) break; // gather extras for scoring/filter
   }
-  return results.slice(0, count);
+  return results;
+}
+
+/**
+ * Primary path: parse cruise_search_url for sailing links / structured data.
+ */
+async function collectFromOfficialSearchPage(cruiseLine, destination, adapter) {
+  const searchUrl = String(cruiseLine.cruise_search_url || "").trim();
+  if (!searchUrl) return { hits: [], sourceMethod: null, diagnostics: [] };
+
+  const destName = destination?.name || "";
+  const fetched = await fetchSourceExcerpt(searchUrl, {
+    timeoutMs: 6_000,
+    maxExcerptChars: 2_000,
+    includeHtml: true
+  });
+  if (!fetched.ok || !fetched.html) {
+    return {
+      hits: [],
+      sourceMethod: null,
+      diagnostics: [
+        {
+          url: searchUrl,
+          decision: "skip",
+          reason: fetched.error || "official_search_fetch_failed",
+          source_method: "official_search_page"
+        }
+      ]
+    };
+  }
+
+  const structured = extractStructuredSailingSources(fetched.html, searchUrl);
+  let sourceMethod = "official_search_page";
+  if (structured.methods.includes("next_data") || structured.methods.includes("embedded_json")) {
+    sourceMethod = "official_embedded_json";
+  } else if (structured.methods.includes("api_hint")) {
+    sourceMethod = "official_api";
+  }
+
+  const host = hostnameOf(cruiseLine.website_url);
+  const hits = [];
+  const diagnostics = [];
+  for (const url of structured.sailingUrls) {
+    if (!isSameSite(url, host) && !isSameSite(url, hostnameOf(searchUrl))) continue;
+    if (destName) {
+      const hay = url.toLowerCase();
+      const destToken = normaliseName(destName).split(" ")[0];
+      // soft prefer destination mention in URL; still allow if sailing path strong
+      const scored = scoreSailingUrl({ url, title: "", description: destName }, adapter);
+      if (scored.decision === "skip" && !hay.includes(destToken)) {
+        diagnostics.push({
+          url,
+          canonical_url: canonicalUrl(url),
+          decision: "skip",
+          reason: scored.reason,
+          sailing_score: scored.score,
+          positive_signals: scored.positive,
+          negative_signals: scored.negative,
+          source_method: sourceMethod,
+          adapter: adapter?.id
+        });
+        continue;
+      }
+    }
+    hits.push({
+      url,
+      title: `${cruiseLine.name} sailing`,
+      description: destName ? `${destName} itinerary` : "Official sailing",
+      source_method: sourceMethod
+    });
+  }
+
+  return { hits, sourceMethod, diagnostics, pagesFetched: 1 };
 }
 
 function primaryReviewType(reasons, candidate) {
@@ -1078,6 +1154,7 @@ function dedupeReviewItems(items) {
 
 /**
  * Discover cruises for one cruise line (optionally scoped to one destination).
+ * Sprint 11D.2: cruise_search_url first, score before fetch, Brave fallback.
  */
 async function discoverForCruiseLine({
   cruiseLine,
@@ -1089,9 +1166,16 @@ async function discoverForCruiseLine({
   shipAliases = [],
   destinationAliases = []
 }) {
+  const adapter = resolveAdapter(cruiseLine);
+  const fetchCap = Math.min(maxResults, adapter.maxFetches || 8);
   const destList = destination ? [destination] : destinations || [];
   const stats = {
     search_hits: 0,
+    brave_results_received: 0,
+    results_excluded_before_fetch: 0,
+    sailing_urls_fetched: 0,
+    generic_pages_skipped: 0,
+    ignored_non_sailing_source: 0,
     candidates: 0,
     skipped_non_cruise: 0,
     duplicate_candidates_suppressed: 0,
@@ -1103,8 +1187,11 @@ async function discoverForCruiseLine({
     review_items: 0,
     destinations_scanned: destList.length,
     pages_fetched: 0,
-    candidates_validated: 0
+    candidates_validated: 0,
+    source_method_counts: {},
+    adapter_id: adapter.id
   };
+  const urlDiagnostics = [];
   const candidates = [];
   const reviewItems = [];
   const seenUrls = new Set();
@@ -1119,47 +1206,160 @@ async function discoverForCruiseLine({
       payload: { cruise_line_id: cruiseLine.id }
     });
     stats.review_items = reviewItems.length;
-    return { candidates, reviewItems: dedupeReviewItems(reviewItems), stats };
+    return { candidates, reviewItems: dedupeReviewItems(reviewItems), stats, urlDiagnostics };
   }
 
   const targets = destList.length ? destList : [null];
   for (const dest of targets) {
     let hits = [];
-    try {
-      hits = await searchOfficialCruises({
-        cruiseLine,
-        destination: dest,
-        count: maxResults
-      });
-    } catch (error) {
-      reviewItems.push({
-        item_type: "other",
-        title: `Search failed for ${cruiseLine.name}${dest ? ` / ${dest.name}` : ""}`,
-        detail: error.message || "Brave search failed",
-        cruise_line_id: cruiseLine.id,
-        destination_id: dest?.id || null,
-        payload: { error: error.message, code: error.code || null }
-      });
-      continue;
-    }
-    stats.search_hits += hits.length;
+    let usedMethod = null;
 
+    try {
+      const official = await collectFromOfficialSearchPage(cruiseLine, dest, adapter);
+      stats.pages_fetched += official.pagesFetched || 0;
+      if (official.diagnostics?.length) urlDiagnostics.push(...official.diagnostics);
+      if (official.hits?.length) {
+        hits = official.hits;
+        usedMethod = official.sourceMethod || "official_search_page";
+      }
+    } catch (error) {
+      console.warn("official search page failed", cruiseLine.name, error.message);
+    }
+
+    if (!hits.length) {
+      try {
+        const braveHits = await searchOfficialCruises({
+          cruiseLine,
+          destination: dest,
+          count: fetchCap,
+          adapter
+        });
+        stats.brave_results_received += braveHits.length;
+        hits = braveHits;
+        usedMethod = "brave_fallback";
+      } catch (error) {
+        reviewItems.push({
+          item_type: "other",
+          title: `Search failed for ${cruiseLine.name}${dest ? ` / ${dest.name}` : ""}`,
+          detail: error.message || "Brave search failed",
+          cruise_line_id: cruiseLine.id,
+          destination_id: dest?.id || null,
+          payload: { error: error.message, code: error.code || null }
+        });
+        continue;
+      }
+    }
+
+    stats.search_hits += hits.length;
+    stats.source_method_counts[usedMethod || "unknown"] =
+      (stats.source_method_counts[usedMethod || "unknown"] || 0) + 1;
+
+    const ranked = [];
     for (const hit of hits) {
+      const scored = scoreSailingUrl(hit, adapter);
+      const diag = {
+        url: hit.url,
+        canonical_url: canonicalUrl(hit.url),
+        title: hit.title || null,
+        snippet: hit.description || null,
+        sailing_score: scored.score,
+        positive_signals: scored.positive,
+        negative_signals: scored.negative,
+        decision: scored.decision,
+        reason: scored.reason,
+        adapter_used: adapter.id,
+        source_method: hit.source_method || usedMethod
+      };
+      if (scored.decision === "skip") {
+        stats.results_excluded_before_fetch += 1;
+        if (scored.reason === "ignored_non_sailing_source") stats.ignored_non_sailing_source += 1;
+        else stats.generic_pages_skipped += 1;
+        urlDiagnostics.push(diag);
+        continue;
+      }
+      ranked.push({ hit, scored, diag });
+    }
+
+    ranked.sort((a, b) => b.scored.score - a.scored.score);
+    let toFetch = ranked.slice(0, fetchCap);
+
+    // If official search produced only non-sailing URLs, fall back to Brave once.
+    if (!toFetch.length && usedMethod && usedMethod !== "brave_fallback") {
+      try {
+        const braveHits = await searchOfficialCruises({
+          cruiseLine,
+          destination: dest,
+          count: fetchCap,
+          adapter
+        });
+        stats.brave_results_received += braveHits.length;
+        usedMethod = "brave_fallback";
+        stats.source_method_counts.brave_fallback =
+          (stats.source_method_counts.brave_fallback || 0) + 1;
+        for (const hit of braveHits) {
+          const scored = scoreSailingUrl(hit, adapter);
+          const diag = {
+            url: hit.url,
+            canonical_url: canonicalUrl(hit.url),
+            title: hit.title || null,
+            snippet: hit.description || null,
+            sailing_score: scored.score,
+            positive_signals: scored.positive,
+            negative_signals: scored.negative,
+            decision: scored.decision,
+            reason: scored.reason,
+            adapter_used: adapter.id,
+            source_method: "brave_fallback"
+          };
+          if (scored.decision === "skip") {
+            stats.results_excluded_before_fetch += 1;
+            if (scored.reason === "ignored_non_sailing_source") stats.ignored_non_sailing_source += 1;
+            else stats.generic_pages_skipped += 1;
+            urlDiagnostics.push(diag);
+            continue;
+          }
+          ranked.push({ hit, scored, diag });
+        }
+        ranked.sort((a, b) => b.scored.score - a.scored.score);
+        toFetch = ranked.slice(0, fetchCap);
+      } catch (error) {
+        console.warn("brave fallback after empty official sailing set failed", error.message);
+      }
+    }
+
+    for (const { hit, scored, diag } of toFetch) {
       const urlKey = canonicalUrl(hit.url);
-      if (seenUrls.has(urlKey)) continue;
+      if (seenUrls.has(urlKey)) {
+        stats.duplicate_candidates_suppressed += 1;
+        continue;
+      }
       seenUrls.add(urlKey);
 
       let excerpt = "";
       if (fetchPages) {
         const fetched = await fetchSourceExcerpt(hit.url, {
           timeoutMs: 5_000,
-          maxExcerptChars: 4_000
+          maxExcerptChars: 4_000,
+          includeHtml: true
         });
         if (fetched.ok) {
           excerpt = fetched.excerpt || "";
+          if (fetched.html) {
+            const structuredHint = structuredExcerptHint(fetched.html);
+            if (structuredHint) excerpt = `${structuredHint}\n${excerpt}`.slice(0, 5000);
+          }
           stats.pages_fetched += 1;
+          stats.sailing_urls_fetched += 1;
+          diag.decision = "fetched";
+          diag.reason = "sailing_candidate_fetched";
+        } else {
+          diag.decision = "fetch_failed";
+          diag.reason = fetched.error || "fetch_failed";
+          urlDiagnostics.push({ ...diag, sailing_score: scored.score });
+          continue;
         }
       }
+      urlDiagnostics.push({ ...diag, sailing_score: scored.score });
 
       const built = buildCandidateFromSource({
         title: hit.title,
@@ -1181,13 +1381,23 @@ async function discoverForCruiseLine({
       }
 
       const extracted = built.candidate;
+      extracted.raw_extract = {
+        ...(extracted.raw_extract || {}),
+        discovery_11d2: {
+          adapter: adapter.id,
+          source_method: hit.source_method || usedMethod,
+          sailing_score: scored.score,
+          positive_signals: scored.positive,
+          negative_signals: scored.negative
+        }
+      };
 
       if (extracted.matched_ship && !extracted.matched_ship.official_ship_url) {
         const pageLooksLikeShip =
           normaliseShipName(`${hit.title} ${excerpt}`).includes(
             normaliseShipName(extracted.matched_ship.name)
           ) && /ship|vessel|deck/i.test(`${hit.title} ${hit.description || ""}`);
-        if (pageLooksLikeShip) {
+        if (pageLooksLikeShip && scored.negative.some((n) => /\/ships?\//i.test(String(n)))) {
           extracted.suggested_official_ship_url = hit.url;
         }
       }
@@ -1288,8 +1498,9 @@ async function discoverForCruiseLine({
 
   const uniqueReview = dedupeReviewItems(reviewItems);
   stats.review_items = uniqueReview.length;
-  return { candidates, reviewItems: uniqueReview, stats };
+  return { candidates, reviewItems: uniqueReview, stats, urlDiagnostics: urlDiagnostics.slice(0, 200) };
 }
+
 
 function formatPublicSailing(row, lineName, shipName) {
   const nights = row.nights ? `${row.nights} nights` : "—";
@@ -1351,6 +1562,9 @@ module.exports = {
   normaliseCandidate,
   matchEntities,
   searchOfficialCruises,
+  collectFromOfficialSearchPage,
   discoverForCruiseLine,
-  formatPublicSailing
+  formatPublicSailing,
+  scoreSailingUrl: require("./cruise-discovery-url-score").scoreSailingUrl,
+  resolveAdapter: require("./cruise-discovery-adapters").resolveAdapter
 };

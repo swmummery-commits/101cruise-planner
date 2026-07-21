@@ -906,7 +906,7 @@
       try {
         const result = await api("verify_selected_line", { cruise_line_id: selectedLineId });
         const s = result.stats || {};
-        message = `Verification for ${result.cruise_line_name || "line"}: ${s.pages_fetched || 0} pages, ${s.candidates || 0} candidates, ${s.skipped_non_cruise || 0} low-signal skipped, ${s.candidates_validated || s.upserted_active || 0} validated, ${s.review_items || 0} review. Full discovery is NOT marked safe yet.`;
+        message = `Verification for ${result.cruise_line_name || "line"} [${s.adapter_id || "adapter"}]: Brave ${s.brave_results_received || 0}, excluded before fetch ${s.results_excluded_before_fetch || 0}, sailing fetched ${s.sailing_urls_fetched || 0}, candidates ${s.candidates || 0}, validated ${s.candidates_validated || s.upserted_active || 0}, review ${s.review_items || 0}, method ${JSON.stringify(s.source_method_counts || {})}. Full discovery is NOT marked safe yet.`;
         messageTone = "success";
         await ensureLoaded({ quiet: true });
       } catch (error) {

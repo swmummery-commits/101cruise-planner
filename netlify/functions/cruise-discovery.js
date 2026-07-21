@@ -776,7 +776,7 @@ exports.handler = async (event) => {
         success: true,
         verification: true,
         full_discovery_safe: false,
-        note: "Selected-line verification only. Do not run Full Discovery until Virgin Voyages, Windstar, one mainstream, and one non-US-date line are verified.",
+        note: "Selected-line verification only (11D.2 sailing URL prioritisation). Do not run Full Discovery until Virgin Voyages, Windstar, Celebrity, and Princess pass.",
         ...result
       });
     }

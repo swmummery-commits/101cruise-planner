@@ -29,7 +29,7 @@ function stripHtml(html) {
 
 /**
  * @param {string} url
- * @param {{ timeoutMs?: number, maxExcerptChars?: number }} [options]
+ * @param {{ timeoutMs?: number, maxExcerptChars?: number, includeHtml?: boolean }} [options]
  */
 async function fetchSourceExcerpt(url, options = {}) {
   const timeoutMs = Math.max(1500, Number(options.timeoutMs) || FETCH_TIMEOUT_MS);
@@ -37,6 +37,7 @@ async function fetchSourceExcerpt(url, options = {}) {
     8_000,
     Math.max(500, Number(options.maxExcerptChars) || MAX_EXCERPT_CHARS)
   );
+  const includeHtml = options.includeHtml === true;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -50,11 +51,18 @@ async function fetchSourceExcerpt(url, options = {}) {
       }
     });
     if (!response.ok) {
-      return { ok: false, url, error: `HTTP ${response.status}`, excerpt: "", chars: 0 };
+      return { ok: false, url, error: `HTTP ${response.status}`, excerpt: "", chars: 0, html: "" };
     }
     const contentType = String(response.headers.get("content-type") || "");
     if (!/text\/html|application\/xhtml|text\/plain/i.test(contentType) && contentType) {
-      return { ok: false, url, error: `Unsupported content-type ${contentType}`, excerpt: "", chars: 0 };
+      return {
+        ok: false,
+        url,
+        error: `Unsupported content-type ${contentType}`,
+        excerpt: "",
+        chars: 0,
+        html: ""
+      };
     }
 
     const reader = response.body && response.body.getReader ? response.body.getReader() : null;
@@ -78,11 +86,12 @@ async function fetchSourceExcerpt(url, options = {}) {
 
     const excerpt = stripHtml(html).slice(0, maxExcerptChars);
     return {
-      ok: Boolean(excerpt),
+      ok: Boolean(excerpt) || Boolean(html),
       url,
       excerpt,
       chars: excerpt.length,
-      error: excerpt ? null : "No readable text extracted"
+      html: includeHtml ? html : undefined,
+      error: excerpt || html ? null : "No readable text extracted"
     };
   } catch (error) {
     return {
@@ -90,6 +99,7 @@ async function fetchSourceExcerpt(url, options = {}) {
       url,
       excerpt: "",
       chars: 0,
+      html: "",
       error: error.name === "AbortError" ? "Fetch timeout" : error.message || "Fetch failed"
     };
   } finally {
