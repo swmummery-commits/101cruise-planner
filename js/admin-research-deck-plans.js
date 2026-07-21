@@ -1656,10 +1656,6 @@
       if (isBusy()) return;
       const ship = currentRapidShip();
       if (!ship) return;
-      const ok = window.confirm(
-        `Remove “${ship.name}” (${ship.cruise_line_name || "Unknown line"}) from the active fleet?\n\nUse this when the name is not a real ship.\n\nThis archives the ship (active = off). It will disappear from active lists. Related history is kept — this is not a hard database wipe.`
-      );
-      if (!ok) return;
 
       viewMode = "rapid";
       beginBusy("remove", `Removing ${ship.name}…`, { shipId: ship.id });
