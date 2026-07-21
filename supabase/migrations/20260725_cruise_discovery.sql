@@ -1,8 +1,60 @@
 -- Sprint 11D: Cruise Discovery Engine
 -- Official-source cruise catalogue + discovery runs + review queue.
--- Safe to re-run. Never permanently deletes cruises.
+-- Safe to re-run. Never permanently deletes discovered cruises.
+--
+-- IMPORTANT: public.cruises is already used by the customer Planner
+-- (user sailings). Discovery uses public.discovered_cruises instead.
+--
+-- Prerequisite: public.destinations (Sprint 11C). If missing, this migration
+-- creates a minimal destinations shell so Discovery can install.
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE OR REPLACE FUNCTION public.set_updated_at_timestamp()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.updated_at = timezone('utc', now());
+  RETURN NEW;
+END;
+$$;
+
+-- =========================================================
+-- 0. Destinations shell (Sprint 11C) — only if not already present
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS public.destinations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text NOT NULL,
+  status text NOT NULL DEFAULT 'draft',
+  hero_media_id uuid NULL,
+  research_content_id uuid NULL,
+  primary_region text NULL,
+  display_order integer NOT NULL DEFAULT 100,
+  seo_title text NULL,
+  meta_description text NULL,
+  created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  updated_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
+  CONSTRAINT destinations_name_not_blank CHECK (length(trim(name)) > 0),
+  CONSTRAINT destinations_slug_not_blank CHECK (length(trim(slug)) > 0),
+  CONSTRAINT destinations_status_check CHECK (status IN ('draft', 'published', 'hidden'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS destinations_slug_uidx
+  ON public.destinations (lower(slug));
+
+CREATE INDEX IF NOT EXISTS destinations_status_order_idx
+  ON public.destinations (status, display_order, name);
+
+DROP TRIGGER IF EXISTS destinations_set_updated_at ON public.destinations;
+CREATE TRIGGER destinations_set_updated_at
+  BEFORE UPDATE ON public.destinations
+  FOR EACH ROW
+  EXECUTE PROCEDURE public.set_updated_at_timestamp();
+
+ALTER TABLE public.destinations ENABLE ROW LEVEL SECURITY;
 
 -- =========================================================
 -- 1. Cruise line / ship field enhancements
@@ -24,10 +76,10 @@ COMMENT ON COLUMN public.ci_cruise_ships.official_ship_url IS
   'Canonical official ship page URL. Strategic reference for deck plans, media, and research.';
 
 -- =========================================================
--- 2. Cruises catalogue (Discovery Engine source of truth)
+-- 2. Discovered cruises catalogue (Discovery Engine source of truth)
 -- =========================================================
 
-CREATE TABLE IF NOT EXISTS public.cruises (
+CREATE TABLE IF NOT EXISTS public.discovered_cruises (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   cruise_line_id uuid NOT NULL REFERENCES public.ci_cruise_lines(id) ON DELETE RESTRICT,
   ship_id uuid NULL REFERENCES public.ci_cruise_ships(id) ON DELETE SET NULL,
@@ -55,37 +107,37 @@ CREATE TABLE IF NOT EXISTS public.cruises (
   created_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
   updated_at timestamptz NOT NULL DEFAULT timezone('utc', now()),
 
-  CONSTRAINT cruises_status_check CHECK (
+  CONSTRAINT discovered_cruises_status_check CHECK (
     status IN ('active', 'expired', 'hidden', 'review_required')
   ),
-  CONSTRAINT cruises_confidence_check CHECK (
+  CONSTRAINT discovered_cruises_confidence_check CHECK (
     match_confidence IS NULL
     OR match_confidence IN ('high', 'medium', 'low')
   ),
-  CONSTRAINT cruises_official_url_not_blank CHECK (length(trim(official_url)) > 0),
-  CONSTRAINT cruises_external_key_not_blank CHECK (length(trim(external_key)) > 0),
-  CONSTRAINT cruises_nights_positive CHECK (nights IS NULL OR nights > 0)
+  CONSTRAINT discovered_cruises_official_url_not_blank CHECK (length(trim(official_url)) > 0),
+  CONSTRAINT discovered_cruises_external_key_not_blank CHECK (length(trim(external_key)) > 0),
+  CONSTRAINT discovered_cruises_nights_positive CHECK (nights IS NULL OR nights > 0)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS cruises_external_key_uidx
-  ON public.cruises (external_key);
+CREATE UNIQUE INDEX IF NOT EXISTS discovered_cruises_external_key_uidx
+  ON public.discovered_cruises (external_key);
 
-CREATE INDEX IF NOT EXISTS cruises_destination_active_idx
-  ON public.cruises (destination_id, status, departure_date)
+CREATE INDEX IF NOT EXISTS discovered_cruises_destination_active_idx
+  ON public.discovered_cruises (destination_id, status, departure_date)
   WHERE status = 'active';
 
-CREATE INDEX IF NOT EXISTS cruises_line_status_idx
-  ON public.cruises (cruise_line_id, status, departure_date);
+CREATE INDEX IF NOT EXISTS discovered_cruises_line_status_idx
+  ON public.discovered_cruises (cruise_line_id, status, departure_date);
 
-CREATE INDEX IF NOT EXISTS cruises_ship_idx
-  ON public.cruises (ship_id)
+CREATE INDEX IF NOT EXISTS discovered_cruises_ship_idx
+  ON public.discovered_cruises (ship_id)
   WHERE ship_id IS NOT NULL;
 
-CREATE INDEX IF NOT EXISTS cruises_departure_month_idx
-  ON public.cruises (date_trunc('month', departure_date::timestamp))
+CREATE INDEX IF NOT EXISTS discovered_cruises_departure_month_idx
+  ON public.discovered_cruises (date_trunc('month', departure_date::timestamp))
   WHERE departure_date IS NOT NULL;
 
-CREATE OR REPLACE FUNCTION public.set_cruises_updated_at()
+CREATE OR REPLACE FUNCTION public.set_discovered_cruises_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$
@@ -95,27 +147,27 @@ BEGIN
 END;
 $$;
 
-DROP TRIGGER IF EXISTS cruises_set_updated_at ON public.cruises;
-CREATE TRIGGER cruises_set_updated_at
-  BEFORE UPDATE ON public.cruises
+DROP TRIGGER IF EXISTS discovered_cruises_set_updated_at ON public.discovered_cruises;
+CREATE TRIGGER discovered_cruises_set_updated_at
+  BEFORE UPDATE ON public.discovered_cruises
   FOR EACH ROW
-  EXECUTE PROCEDURE public.set_cruises_updated_at();
+  EXECUTE PROCEDURE public.set_discovered_cruises_updated_at();
 
-COMMENT ON TABLE public.cruises IS
-  'Cruise Discovery Engine catalogue. Official-source sailings only; never invent prices or itineraries.';
+COMMENT ON TABLE public.discovered_cruises IS
+  'Cruise Discovery Engine catalogue. Official-source sailings only; never invent prices or itineraries. Separate from planner public.cruises.';
 
-ALTER TABLE public.cruises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.discovered_cruises ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Public can read active cruises" ON public.cruises;
-CREATE POLICY "Public can read active cruises"
-  ON public.cruises
+DROP POLICY IF EXISTS "Public can read active discovered cruises" ON public.discovered_cruises;
+CREATE POLICY "Public can read active discovered cruises"
+  ON public.discovered_cruises
   FOR SELECT
   TO anon, authenticated
   USING (status = 'active');
 
-DROP POLICY IF EXISTS "Admins can read all cruises" ON public.cruises;
-CREATE POLICY "Admins can read all cruises"
-  ON public.cruises
+DROP POLICY IF EXISTS "Admins can read all discovered cruises" ON public.discovered_cruises;
+CREATE POLICY "Admins can read all discovered cruises"
+  ON public.discovered_cruises
   FOR SELECT
   TO authenticated
   USING (
@@ -196,7 +248,7 @@ CREATE POLICY "Admins can read discovery runs"
 CREATE TABLE IF NOT EXISTS public.cruise_discovery_review_items (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   run_id uuid NULL REFERENCES public.cruise_discovery_runs(id) ON DELETE SET NULL,
-  cruise_id uuid NULL REFERENCES public.cruises(id) ON DELETE SET NULL,
+  cruise_id uuid NULL REFERENCES public.discovered_cruises(id) ON DELETE SET NULL,
   cruise_line_id uuid NULL REFERENCES public.ci_cruise_lines(id) ON DELETE SET NULL,
   destination_id uuid NULL REFERENCES public.destinations(id) ON DELETE SET NULL,
   item_type text NOT NULL,

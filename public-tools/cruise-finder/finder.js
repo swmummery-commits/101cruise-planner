@@ -700,11 +700,13 @@
     state.results = [];
   }
 
+  // Published Living Destination slugs (Sprint 11C). Expand as more pages go live.
+  const LIVING_DESTINATION_SLUGS = new Set(["alaska"]);
+
   /**
    * Always open destination pages on the tools origin (Netlify).
    * Squarespace (101cruise.com.au) does not host /cruise-destination or /destination/*.
-   * Prefer Living Destination pages (/destination/{slug}); fall back to the
-   * cruise-finder detail tool when needed.
+   * Prefer Living Destination pages when published; otherwise cruise-finder detail.
    */
   function destinationPageUrl(destId, matchKey) {
     const slug = String(destId || "")
@@ -726,10 +728,14 @@
     if (state.budgetId) params.set("bud", state.budgetId);
     if (matchKey) params.set("mk", matchKey);
 
-    // Living Destination Experience (Sprint 11C)
-    const living = `${TOOLS_ORIGIN}/destination/${encodeURIComponent(slug)}`;
-    const qs = params.toString();
-    return qs ? `${living}?${qs}` : living;
+    if (LIVING_DESTINATION_SLUGS.has(slug)) {
+      const living = `${TOOLS_ORIGIN}/destination/${encodeURIComponent(slug)}`;
+      const qs = params.toString();
+      return qs ? `${living}?${qs}` : living;
+    }
+
+    params.set("destination", slug);
+    return `${TOOLS_ORIGIN}/cruise-destination?${params.toString()}`;
   }
 
   function saveFinderPrefs(matchKey, matchLabel) {

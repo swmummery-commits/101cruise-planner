@@ -213,7 +213,7 @@ exports.handler = async (event) => {
     let cruiseRows = [];
     try {
       cruiseRows = await supabaseGet(
-        `cruises?destination_id=eq.${encodeURIComponent(destination.id)}` +
+        `discovered_cruises?destination_id=eq.${encodeURIComponent(destination.id)}` +
           `&status=eq.active` +
           `&or=(departure_date.is.null,departure_date.gte.${today})` +
           `&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare,currency,brochure_fare_display,official_url` +

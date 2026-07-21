@@ -66,7 +66,7 @@ async function dashboard() {
   const today = new Date().toISOString().slice(0, 10);
   const [active, lines, runs, review, recentNew] = await Promise.all([
     supabase(
-      `cruises?status=eq.active&or=(departure_date.is.null,departure_date.gte.${today})&select=id&limit=1000`
+      `discovered_cruises?status=eq.active&or=(departure_date.is.null,departure_date.gte.${today})&select=id&limit=1000`
     ).catch(() => []),
     supabase("ci_cruise_lines?active=eq.true&select=id"),
     supabase(
@@ -74,7 +74,7 @@ async function dashboard() {
     ),
     supabase("cruise_discovery_review_items?status=eq.pending&select=id&limit=1000"),
     supabase(
-      `cruises?discovered_at=gte.${new Date(Date.now() - 7 * 864e5).toISOString()}&select=id,status&limit=1000`
+      `discovered_cruises?discovered_at=gte.${new Date(Date.now() - 7 * 864e5).toISOString()}&select=id,status&limit=1000`
     )
   ]);
 
@@ -150,7 +150,7 @@ async function listCruises(body) {
   const parts = [`select=id,cruise_line_id,ship_id,destination_id,departure_date,nights,itinerary,brochure_fare_display,currency,official_url,status,match_confidence,review_reason,discovered_at,last_seen_at,last_changed_at&order=departure_date.asc.nullslast&limit=${limit}`];
   if (status) parts.unshift(`status=eq.${encodeURIComponent(status)}`);
   if (destinationId) parts.unshift(`destination_id=eq.${encodeURIComponent(destinationId)}`);
-  const rows = await supabase(`cruises?${parts.join("&")}`);
+  const rows = await supabase(`discovered_cruises?${parts.join("&")}`);
   return { success: true, cruises: rows || [] };
 }
 
@@ -181,7 +181,7 @@ function cruiseUpsertPayload(candidate) {
 
 async function upsertCandidate(candidate, stats) {
   const existing = await supabase(
-    `cruises?external_key=eq.${encodeURIComponent(candidate.external_key)}&select=id,brochure_fare,brochure_fare_display,itinerary,status,departure_date,nights&limit=1`
+    `discovered_cruises?external_key=eq.${encodeURIComponent(candidate.external_key)}&select=id,brochure_fare,brochure_fare_display,itinerary,status,departure_date,nights&limit=1`
   );
   const prev = existing?.[0];
   const payload = cruiseUpsertPayload(candidate);
@@ -189,7 +189,7 @@ async function upsertCandidate(candidate, stats) {
   if (!prev) {
     payload.discovered_at = new Date().toISOString();
     payload.last_changed_at = new Date().toISOString();
-    const created = await supabase("cruises", {
+    const created = await supabase("discovered_cruises", {
       method: "POST",
       headers: { Prefer: "return=representation" },
       body: JSON.stringify(payload)
@@ -208,7 +208,7 @@ async function upsertCandidate(candidate, stats) {
     prev.status !== payload.status;
 
   if (!changed) {
-    await supabase(`cruises?id=eq.${encodeURIComponent(prev.id)}`, {
+    await supabase(`discovered_cruises?id=eq.${encodeURIComponent(prev.id)}`, {
       method: "PATCH",
       headers: { Prefer: "return=minimal" },
       body: JSON.stringify({
@@ -221,7 +221,7 @@ async function upsertCandidate(candidate, stats) {
   }
 
   payload.last_changed_at = new Date().toISOString();
-  await supabase(`cruises?id=eq.${encodeURIComponent(prev.id)}`, {
+  await supabase(`discovered_cruises?id=eq.${encodeURIComponent(prev.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify(payload)
