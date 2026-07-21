@@ -3905,3 +3905,38 @@
   font-size: 13px;
   color: #111;
 }
+
+.research-batch-actions {
+  align-items: center;
+}
+
+.research-action-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.research-action-status.is-busy {
+  color: #245c4e;
+}
+
+.research-action-status.is-done {
+  color: #245c4e;
+  background: rgba(141, 217, 191, 0.35);
+  border-radius: 999px;
+  padding: 8px 12px;
+}
+
+.admin-button.is-busy {
+  opacity: 1;
+  cursor: wait;
+  background: #e8f5f0 !important;
+  color: #245c4e !important;
+  border-color: #8dd9bf !important;
+}
+
+.research-working-banner--compact {
+  margin-top: 12px;
+}

@@ -133,6 +133,8 @@
   let batchCancelRequested = false;
   let batchProgress = null; // { total, done, currentName, results, startedAt, lineName }
   let singleResearchStartedAt = null;
+  // idle | publishing | done | empty | error
+  let linePublishState = null; // { status, total, done, ok, fail, lineName }
 
   const BATCH_STORAGE_KEY = "101cruise_research_batch_progress";
 
@@ -657,14 +659,38 @@
                 ? `<p class="admin-muted">${esc(String(batchQueue.length))} ship${batchQueue.length === 1 ? "" : "s"} will run${researchForm.batch_skip_existing ? ` (${esc(String(batchTotalOnLine - batchQueue.length))} skipped)` : ""}. Rough time: ${esc(String(batchQueue.length))}–${esc(String(Math.max(batchQueue.length, batchQueue.length * 2)))} min.</p>`
                 : ""
             }
-            <div class="research-form-actions">
+            <div class="research-form-actions research-batch-actions">
               ${
                 batchRunning
-                  ? `<button type="button" class="admin-button danger" onclick="ResearchContentAdmin.cancelBatch()">Stop after current ship</button>`
-                  : `<button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginBatchResearch()" ${!researchForm.batch_line_id || !batchQueue.length ? "disabled" : ""}>Research line ships</button>
-                     <button type="button" class="admin-button secondary" onclick="ResearchContentAdmin.publishLineDrafts()" ${!researchForm.batch_line_id ? "disabled" : ""}>Publish all drafts for this line</button>`
+                  ? `<button type="button" class="admin-button danger" onclick="ResearchContentAdmin.cancelBatch()">Stop after current ship</button>
+                     <span class="research-action-status is-busy"><span class="research-spinner research-spinner--inline" aria-hidden="true"></span> Researching, please wait…</span>`
+                  : `<button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginBatchResearch()" ${!researchForm.batch_line_id || !batchQueue.length || (linePublishState && linePublishState.status === "publishing") ? "disabled" : ""}>Research line ships</button>
+                     ${
+                       linePublishState && linePublishState.status === "publishing"
+                         ? `<button type="button" class="admin-button secondary is-busy" disabled>
+                              <span class="research-spinner research-spinner--inline" aria-hidden="true"></span>
+                              Publishing, please wait… ${esc(String(linePublishState.done || 0))}/${esc(String(linePublishState.total || 0))}
+                            </button>`
+                         : linePublishState && linePublishState.status === "done"
+                           ? `<button type="button" class="admin-button secondary" onclick="ResearchContentAdmin.publishLineDrafts()" ${!researchForm.batch_line_id ? "disabled" : ""}>Publish all drafts for this line</button>
+                              <span class="research-action-status is-done" role="status">Published${linePublishState.ok != null ? ` (${esc(String(linePublishState.ok))}${linePublishState.fail ? `, ${esc(String(linePublishState.fail))} failed` : ""})` : ""}</span>`
+                           : `<button type="button" class="admin-button secondary" onclick="ResearchContentAdmin.publishLineDrafts()" ${!researchForm.batch_line_id || researching ? "disabled" : ""}>Publish all drafts for this line</button>`
+                     }`
               }
             </div>
+            ${
+              linePublishState && linePublishState.status === "publishing"
+                ? `<div class="research-working-banner research-working-banner--compact" role="status" aria-live="polite">
+                    <div class="research-working-top">
+                      <span class="research-spinner" aria-hidden="true"></span>
+                      <div>
+                        <p class="research-working-title">Publishing drafts${linePublishState.lineName ? ` — ${esc(linePublishState.lineName)}` : ""}</p>
+                        <p class="research-working-sub">${esc(String(linePublishState.done || 0))} of ${esc(String(linePublishState.total || 0))} published…</p>
+                      </div>
+                    </div>
+                  </div>`
+                : ""
+            }
             ${
               batchProgress
                 ? `<div class="research-batch-progress ${batchRunning ? "is-running" : ""}">
@@ -747,8 +773,12 @@
           ${estimateHtml}
           <div class="research-form-actions">
             <button type="button" class="admin-button" onclick="ResearchContentAdmin.openList()" ${researching || batchRunning ? "disabled" : ""}>Cancel</button>
-            <button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginResearch()" ${researching || batchRunning ? "disabled" : ""}>
-              ${researching ? "Researching…" : "Begin Research"}
+            <button type="button" class="admin-button black ${researching ? "is-busy" : ""}" onclick="ResearchContentAdmin.beginResearch()" ${researching || batchRunning ? "disabled" : ""}>
+              ${
+                researching
+                  ? `<span class="research-spinner research-spinner--inline" aria-hidden="true"></span> Researching, please wait…`
+                  : "Begin Research"
+              }
             </button>
           </div>
           ${researching ? `<p class="admin-muted">Searching trusted sources and generating a structured draft. This can take up to a minute.</p>` : ""}
@@ -995,6 +1025,7 @@
     setBatchLine(value) {
       researchForm.batch_line_id = value;
       batchProgress = null;
+      linePublishState = null;
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     setBatchSkipExisting(checked) {
@@ -1013,38 +1044,70 @@
     },
     async publishLineDrafts() {
       if (!researchForm.batch_line_id) return;
+      if (linePublishState && linePublishState.status === "publishing") return;
+
       await loadEntityOptions("ship");
       const ships = shipsForBatchLine(researchForm.batch_line_id).filter(
         (ship) =>
           ship.research_id &&
           (ship.research_status === "draft" || ship.research_status === "reviewed")
       );
+      const lineName =
+        cruiseLinesFromShips().find((l) => l.id === researchForm.batch_line_id)?.name || "this cruise line";
+
       if (!ships.length) {
+        linePublishState = { status: "empty", lineName };
         message = "No draft/reviewed research found for this cruise line to publish.";
         messageTone = "warning";
         if (typeof global.renderAdmin === "function") global.renderAdmin();
         return;
       }
-      const lineName =
-        cruiseLinesFromShips().find((l) => l.id === researchForm.batch_line_id)?.name || "this cruise line";
+
+      linePublishState = {
+        status: "publishing",
+        total: ships.length,
+        done: 0,
+        ok: 0,
+        fail: 0,
+        lineName
+      };
+      message = `Publishing ${ships.length} draft${ships.length === 1 ? "" : "s"}…`;
+      messageTone = "info";
+      document.title = `Publishing… · 101cruise Admin`;
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
 
       let ok = 0;
       let fail = 0;
-      message = `Publishing ${ships.length} draft${ships.length === 1 ? "" : "s"}…`;
-      messageTone = "info";
-      if (typeof global.renderAdmin === "function") global.renderAdmin();
-
-      for (const ship of ships) {
+      for (let i = 0; i < ships.length; i += 1) {
+        const ship = ships[i];
         try {
           await api("publish", { id: ship.research_id });
           ok += 1;
         } catch {
           fail += 1;
         }
+        linePublishState = {
+          ...linePublishState,
+          status: "publishing",
+          done: i + 1,
+          ok,
+          fail
+        };
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
+
       await loadEntityOptions("ship");
+      linePublishState = {
+        status: "done",
+        total: ships.length,
+        done: ships.length,
+        ok,
+        fail,
+        lineName
+      };
       message = `Published ${ok} for ${lineName}${fail ? `, ${fail} failed` : ""}.`;
       messageTone = fail ? "warning" : "success";
+      document.title = "101cruise Admin";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     async beginBatchResearch() {
