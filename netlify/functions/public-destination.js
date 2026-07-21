@@ -19,6 +19,7 @@ const {
   buildCruiseCatalog,
   mediaDto
 } = require("./lib/destination-page.js");
+const { applyDestinationImageFallbacks } = require("./lib/destination-image-fallbacks.js");
 
 function jsonResponse(statusCode, body, cacheControl = "public, max-age=300, stale-while-revalidate=86400") {
   const empty = body === "" || body == null;
@@ -256,6 +257,9 @@ exports.handler = async (event) => {
     page.heroResolved = Boolean(mediaDto(heroMedia));
     page.sections.cruiseLines = Array.isArray(page.cruiseLines) && page.cruiseLines.length > 0;
     page.sections.cruises = cruiseCatalog.totalCount > 0;
+
+    applyDestinationImageFallbacks(page);
+    page.heroResolved = Boolean(page.hero?.url);
 
     return jsonResponse(200, {
       success: true,
