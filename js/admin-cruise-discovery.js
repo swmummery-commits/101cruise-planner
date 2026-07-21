@@ -399,7 +399,7 @@
 
       <div class="admin-card" style="margin-top:16px">
         <h3>Run discovery</h3>
-        <p class="admin-helper">Each run searches official domains (website_url / cruise_search_url) via Brave, extracts only what appears in source text, matches Ships + Destinations, and upserts the Cruises table.</p>
+        <p class="admin-helper">Each run searches official domains (website_url / cruise_search_url) via Brave, extracts only what appears in source text, matches Ships + Destinations, and upserts the Discovery catalogue. A weekly scheduled job (Monday 06:00 UTC) expires past sailings and runs full discovery for all active lines — set <code>DISCOVERY_CRON_SECRET</code> in Netlify for that wave to run.</p>
         <div class="featured-cruises-toolbar">
           <div class="admin-field">
             <label for="discoveryLineSelect">Cruise line</label>

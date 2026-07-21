@@ -708,8 +708,8 @@
           <a class="cf-search-link" href="${escapeHtml(finderBackUrl())}">Refine my search</a>
         </div>
         <section class="cf-search-state">
-          <h2 class="cf-dest-section-title">We couldn’t confidently find matching sailings online for these exact preferences.</h2>
-          <p class="cf-dest-lead">You could broaden travel dates, choose a flexible duration, change departure point, or ask Paul directly.</p>
+          <h2 class="cf-dest-section-title">We couldn’t find matching verified sailings for these exact preferences.</h2>
+          <p class="cf-dest-lead">Once Discovery has catalogue rows for this destination, complete sailings will appear here. You can also broaden dates/duration or ask Paul directly.</p>
           <ul class="cf-search-hints">
             <li>Broaden your travel dates</li>
             <li>Choose a flexible cruise length</li>
@@ -725,25 +725,32 @@
     bindSearchControls({ forceRefresh: true });
   }
 
+  function isCompleteSailing(result) {
+    const missing = (value) => {
+      const s = String(value || "").trim();
+      return !s || /^not confirmed$/i.test(s);
+    };
+    return (
+      !missing(result?.cruiseLine) &&
+      !missing(result?.ship) &&
+      !missing(result?.itineraryTitle) &&
+      !missing(result?.departureDate) &&
+      (Number(result?.durationNights) > 0 || !missing(result?.durationLabel)) &&
+      !missing(result?.departurePort) &&
+      !missing(result?.sourceUrl)
+    );
+  }
+
   function renderResults(payload) {
     stopLoadingMessages();
-    const results = Array.isArray(payload.results) ? payload.results : [];
-    const other = Array.isArray(payload.otherResults) ? payload.otherResults : [];
+    const results = (Array.isArray(payload.results) ? payload.results : []).filter(isCompleteSailing);
 
-    if (!results.length && !other.length) {
+    if (!results.length) {
       renderEmpty();
       return;
     }
 
     const primaryHtml = results.map((r) => resultCardHtml(r, currentDest, currentPrefs)).join("");
-    const otherHtml = other.length
-      ? `
-        <section class="cf-dest-section">
-          <h2 class="cf-dest-section-title">Other possible sailings</h2>
-          <p class="cf-dest-lead">These listings look promising but are incomplete or less certain.</p>
-          <div class="cf-sail-list">${other.map((r) => resultCardHtml(r, currentDest, currentPrefs)).join("")}</div>
-        </section>`
-      : "";
 
     mount.innerHTML = `
       <div class="cf-dest cf-search">
@@ -754,11 +761,10 @@
 
         <section class="cf-dest-section cf-search-intro">
           <h2 class="cf-dest-section-title">Current Cruises We Found</h2>
-          <p class="cf-dest-lead">These sailings were found from current publicly available cruise listings. Itineraries and availability can change.</p>
+          <p class="cf-dest-lead">These sailings come from the 101cruise Discovery catalogue (verified from official cruise line sources). Itineraries and availability can change.</p>
         </section>
 
-        ${results.length ? `<div class="cf-sail-list">${primaryHtml}</div>` : ""}
-        ${otherHtml}
+        <div class="cf-sail-list">${primaryHtml}</div>
 
         <div class="cf-search-actions cf-search-actions-bottom">
           <button type="button" class="cf-dest-cta-btn" data-search-again>Search again</button>

@@ -1,17 +1,17 @@
 /**
- * Live cruise search via Brave Search API (server-side only).
+ * Cruise Finder sailings — Discovery DB is the source of truth.
  *
  * POST /.netlify/functions/search-current-cruises
  *
- * Does not store itineraries. Short in-memory cache + rate limits only.
- * Never exposes BRAVE_SEARCH_API_KEY to the browser.
+ * Reads public.discovered_cruises (Sprint 11D). Live Brave search is no longer
+ * used for customer-facing Finder results.
  */
 
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const MAX_BRAVE_QUERIES = 4;
-const CACHE_TTL_MS = 20 * 60 * 1000;
+const CACHE_TTL_MS = 5 * 60 * 1000;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
-const RATE_LIMIT_MAX = 8;
+const RATE_LIMIT_MAX = 30;
 const RESULTS_PER_QUERY = 10;
 
 const APPROVED_CRUISE_LINES = [
@@ -727,27 +727,25 @@ function structureResult(raw, input, dateSearched) {
   const portsOfCall = extractPortsOfCall(blob);
   const official = isOfficialHost(host);
 
-  let confidence = "LOW";
-  const keyFields = [ship, departureDate, durationNights].filter(Boolean).length;
-  if (official && ship && departureDate && durationNights) confidence = "HIGH";
-  else if ((official || domainAllowed(host)) && cruiseLine && keyFields >= 2) confidence = "MEDIUM";
-  else if (cruiseLine && (departureDate || durationNights || ship)) confidence = "LOW";
-  else confidence = "LOW";
-
-  if (!departureDate && !durationNights && !ship) {
-    /* Too vague — keep only as LOW if destination + line clearly present */
-    if (!destOk) return null;
+  // Incomplete sailings are never shown — departure date is mandatory.
+  if (!departureDate || !durationNights || !ship || !departurePort || !title || !url) {
+    return null;
   }
+
+  let confidence = "LOW";
+  if (official && ship && departureDate && durationNights && departurePort) confidence = "HIGH";
+  else if ((official || domainAllowed(host)) && cruiseLine) confidence = "MEDIUM";
+  else confidence = "LOW";
 
   return {
     cruiseLine,
-    ship: ship || "Not confirmed",
-    itineraryTitle: title || "Not confirmed",
-    departureDate: departureDate || "Not confirmed",
+    ship,
+    itineraryTitle: title,
+    departureDate,
     returnDate: null,
-    durationNights: durationNights || null,
-    durationLabel: durationNights ? `${durationNights} nights` : "Not confirmed",
-    departurePort: departurePort || "Not confirmed",
+    durationNights,
+    durationLabel: `${durationNights} nights`,
+    departurePort,
     destination: input.destinationName || input.destination,
     portsOfCall: portsOfCall,
     sourceName: sourceNameFor(host),
@@ -755,8 +753,238 @@ function structureResult(raw, input, dateSearched) {
     dateSearched,
     confidence,
     official,
-    completeness: keyFields + (departurePort ? 1 : 0) + (official ? 2 : 0)
+    completeness: 5 + (official ? 2 : 0) + (portsOfCall?.length ? 1 : 0)
   };
+}
+
+const DURATION_RANGES = {
+  "3-5": [3, 5],
+  "6-8": [6, 8],
+  "9-12": [9, 12],
+  "13-16": [13, 16],
+  "17-plus": [17, 40]
+};
+
+function supabaseConfig() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Supabase server access is not configured");
+  return { url: url.replace(/\/$/, ""), key };
+}
+
+async function supabaseGet(path) {
+  const { url, key } = supabaseConfig();
+  const response = await fetch(`${url}/rest/v1/${path}`, {
+    method: "GET",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      Accept: "application/json"
+    }
+  });
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+  if (!response.ok) {
+    const msg =
+      (data && (data.message || data.error || data.hint)) || text || `HTTP ${response.status}`;
+    const err = new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    err.status = response.status;
+    throw err;
+  }
+  return data || [];
+}
+
+function formatIsoDateAu(iso) {
+  if (!iso) return null;
+  try {
+    return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC"
+    });
+  } catch {
+    return String(iso);
+  }
+}
+
+function parsePorts(itinerary, itineraryPorts) {
+  if (Array.isArray(itineraryPorts) && itineraryPorts.length) {
+    return itineraryPorts.map((p) => String(p).trim()).filter(Boolean).slice(0, 12);
+  }
+  const text = String(itinerary || "");
+  if (!text) return [];
+  return text
+    .split(/\s*(?:→|->|–|-|to)\s*/i)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 1 && p.length < 60)
+    .slice(0, 12);
+}
+
+function matchesDuration(nights, durationId) {
+  if (!durationId || durationId === "flexible") return true;
+  const range = DURATION_RANGES[durationId];
+  if (!range) return true;
+  const n = Number(nights);
+  if (!Number.isFinite(n)) return false;
+  return n >= range[0] && n <= range[1];
+}
+
+function matchesTiming(departureDate, input) {
+  if (!departureDate) return false;
+  const d = new Date(`${departureDate}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return false;
+
+  if (input.startDate && input.endDate) {
+    const start = new Date(`${input.startDate}T00:00:00Z`);
+    const end = new Date(`${input.endDate}T00:00:00Z`);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime())) {
+      return d >= start && d <= end;
+    }
+  }
+
+  if (input.month) {
+    if (d.getUTCMonth() + 1 !== Number(input.month)) return false;
+  }
+  if (input.year) {
+    if (d.getUTCFullYear() !== Number(input.year)) return false;
+  }
+  return true;
+}
+
+function isCompleteDiscoveryRow(row) {
+  return Boolean(
+    row &&
+      row.cruise_line_name &&
+      row.ship_name &&
+      row.departure_date &&
+      Number(row.nights) > 0 &&
+      String(row.departure_port || "").trim() &&
+      String(row.official_url || "").trim()
+  );
+}
+
+/**
+ * Load complete active sailings for a destination from Discovery DB.
+ */
+async function runDiscoveryCatalogue(input) {
+  const today = new Date().toISOString().slice(0, 10);
+  const slug = String(input.destination || "")
+    .trim()
+    .toLowerCase();
+
+  const destinations = await supabaseGet(
+    `destinations?slug=ilike.${encodeURIComponent(slug)}&status=eq.published&select=id,name,slug&limit=1`
+  );
+  const destination = Array.isArray(destinations) ? destinations[0] : null;
+  if (!destination?.id) {
+    return {
+      ok: true,
+      source: "discovery",
+      dateSearched: today,
+      timingLabel: timingLabel(input),
+      results: [],
+      otherResults: [],
+      message: "No published Living Destination matches this Cruise Finder destination yet."
+    };
+  }
+
+  const rows = await supabaseGet(
+    `discovered_cruises?destination_id=eq.${encodeURIComponent(destination.id)}` +
+      `&status=eq.active` +
+      `&departure_date=gte.${today}` +
+      `&select=id,cruise_line_id,ship_id,departure_date,return_date,nights,departure_port,itinerary,itinerary_ports,brochure_fare_display,currency,official_url,source_url,last_verified_at,last_seen_at` +
+      `&order=departure_date.asc&limit=100`
+  );
+
+  const lineIds = [...new Set((rows || []).map((r) => r.cruise_line_id).filter(Boolean))];
+  const shipIds = [...new Set((rows || []).map((r) => r.ship_id).filter(Boolean))];
+  const lineNames = new Map();
+  const shipNames = new Map();
+
+  if (lineIds.length) {
+    const lines = await supabaseGet(`ci_cruise_lines?id=in.(${lineIds.join(",")})&select=id,name`);
+    for (const row of lines || []) lineNames.set(row.id, row.name);
+  }
+  if (shipIds.length) {
+    const ships = await supabaseGet(`ci_cruise_ships?id=in.(${shipIds.join(",")})&select=id,name`);
+    for (const row of ships || []) shipNames.set(row.id, row.name);
+  }
+
+  const preferredLines = new Set(
+    (input.cruiseLines || []).map((n) => String(n).toLowerCase()).filter(Boolean)
+  );
+
+  const results = [];
+  for (const row of rows || []) {
+    const cruiseLine = lineNames.get(row.cruise_line_id) || null;
+    const ship = shipNames.get(row.ship_id) || null;
+    const enriched = {
+      ...row,
+      cruise_line_name: cruiseLine,
+      ship_name: ship
+    };
+    if (!isCompleteDiscoveryRow(enriched)) continue;
+    if (!matchesDuration(row.nights, input.durationId)) continue;
+    if (!matchesTiming(row.departure_date, input)) continue;
+    if (preferredLines.size && !preferredLines.has(String(cruiseLine).toLowerCase())) {
+      // Soft filter: if Finder passed approved lines for the destination, prefer those
+      // but still allow other Discovery rows for that destination.
+    }
+
+    results.push({
+      cruiseLine,
+      ship,
+      itineraryTitle: row.itinerary || `${ship} — ${destination.name}`,
+      departureDate: formatIsoDateAu(row.departure_date),
+      returnDate: row.return_date ? formatIsoDateAu(row.return_date) : null,
+      durationNights: row.nights,
+      durationLabel: `${row.nights} nights`,
+      departurePort: row.departure_port,
+      destination: destination.name,
+      portsOfCall: parsePorts(row.itinerary, row.itinerary_ports),
+      sourceName: cruiseLine,
+      sourceUrl: row.official_url || row.source_url,
+      dateSearched: String(row.last_verified_at || row.last_seen_at || today).slice(0, 10),
+      confidence: "HIGH",
+      statusLabel: "Verified sailing",
+      brochureFare: row.brochure_fare_display || null
+    });
+  }
+
+  return {
+    ok: true,
+    source: "discovery",
+    dateSearched: today,
+    timingLabel: timingLabel(input),
+    results,
+    otherResults: [],
+    totalInCatalogue: (rows || []).length,
+    matchedCount: results.length
+  };
+}
+
+function isDisplayableSailing(result) {
+  if (!result) return false;
+  const missing = (value) => {
+    const s = String(value || "").trim();
+    return !s || /^not confirmed$/i.test(s);
+  };
+  return (
+    !missing(result.cruiseLine) &&
+    !missing(result.ship) &&
+    !missing(result.itineraryTitle) &&
+    !missing(result.departureDate) &&
+    Number(result.durationNights) > 0 &&
+    !missing(result.departurePort) &&
+    !missing(result.sourceUrl) &&
+    !missing(result.sourceName)
+  );
 }
 
 function dedupeKey(result) {
@@ -810,9 +1038,9 @@ async function runSearch(apiKey, input) {
     if (row) structured.push(row);
   }
 
-  const unique = deduplicate(structured);
+  const unique = deduplicate(structured).filter(isDisplayableSailing);
+  // Only complete sailings are returned — no incomplete "other" list.
   const primary = unique.filter((r) => r.confidence === "HIGH" || r.confidence === "MEDIUM");
-  const other = unique.filter((r) => r.confidence === "LOW");
 
   console.log(
     JSON.stringify({
@@ -822,7 +1050,7 @@ async function runSearch(apiKey, input) {
       rawCount: rawResults.length,
       resultCount: unique.length,
       primaryCount: primary.length,
-      otherCount: other.length
+      otherCount: 0
     })
   );
 
@@ -833,7 +1061,7 @@ async function runSearch(apiKey, input) {
     braveCalls,
     timingLabel: timingLabel(input),
     results: primary.map(publicResult),
-    otherResults: other.map(publicResult)
+    otherResults: []
   };
 }
 
@@ -866,13 +1094,11 @@ exports.handler = async function handler(event) {
     return jsonResponse(405, { ok: false, error: "Method not allowed. Use POST." });
   }
 
-  const apiKey = process.env.BRAVE_SEARCH_API_KEY;
-  if (!apiKey) {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return jsonResponse(503, {
       ok: false,
       error: "configuration",
-      message:
-        "Live cruise search is not configured. Set the BRAVE_SEARCH_API_KEY Netlify environment variable."
+      message: "Cruise Discovery database access is not configured."
     });
   }
 
@@ -893,7 +1119,7 @@ exports.handler = async function handler(event) {
     return jsonResponse(429, {
       ok: false,
       error: "rate_limit",
-      message: "Too many live searches from this connection. Please try again shortly."
+      message: "Too many cruise lookups from this connection. Please try again shortly."
     });
   }
 
@@ -916,12 +1142,12 @@ exports.handler = async function handler(event) {
       return jsonResponse(502, {
         ok: false,
         error: "search_failed",
-        message: "We couldn’t complete the live search just now."
+        message: "We couldn’t load verified sailings just now."
       });
     }
   }
 
-  const job = runSearch(apiKey, input)
+  const job = runDiscoveryCatalogue(input)
     .then((payload) => {
       searchCache.set(key, { expires: Date.now() + CACHE_TTL_MS, payload });
       return payload;
@@ -938,7 +1164,7 @@ exports.handler = async function handler(event) {
   } catch (error) {
     console.log(
       JSON.stringify({
-        event: "cruise_search_error",
+        event: "cruise_discovery_lookup_error",
         destination: input.destination,
         status: error && error.status,
         message: error && error.message ? String(error.message).slice(0, 120) : "unknown"
@@ -947,7 +1173,7 @@ exports.handler = async function handler(event) {
     return jsonResponse(502, {
       ok: false,
       error: "search_failed",
-      message: "We couldn’t complete the live search just now."
+      message: "We couldn’t load verified sailings just now."
     });
   }
 };

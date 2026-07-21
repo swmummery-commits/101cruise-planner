@@ -13,6 +13,15 @@
   # Discovery: Brave + official page fetch per cruise line.
   timeout = 60
 
+[functions."cruise-discovery-cron"]
+  # Weekly: expire sailed cruises, then kick full discovery wave.
+  schedule = "0 6 * * 1"
+  timeout = 60
+
+[functions."cruise-discovery-wave-background"]
+  # Background wave: loops all cruise lines (Netlify background ~15 min).
+
+
 [[redirects]]
   from = "/planner"
   to = "/index.html"
