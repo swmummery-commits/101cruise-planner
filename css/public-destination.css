@@ -643,12 +643,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 72px;
-  min-width: 148px;
-  padding: 16px 22px;
+  min-height: 88px;
+  min-width: 160px;
+  height: 88px;
+  width: 168px;
+  padding: 0;
   background: #fff;
   border: 1px solid var(--dest-line);
   border-radius: 14px;
+  overflow: hidden;
 }
 
 .dest-line-item.has-logo {
@@ -656,12 +659,19 @@
 }
 
 .dest-line-item img {
-  max-height: 40px;
-  max-width: 150px;
-  width: auto;
-  height: auto;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
   object-fit: contain;
+  object-position: center;
   display: block;
+  padding: 0;
+  margin: 0;
+}
+
+.dest-line-item:not(.has-logo) {
+  padding: 12px 14px;
 }
 
 .dest-line-wordmark {
