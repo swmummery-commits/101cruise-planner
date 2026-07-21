@@ -3960,3 +3960,114 @@
 .research-working-banner--compact {
   margin-top: 12px;
 }
+
+/* Sprint 11B — Cruise Line Audit */
+.research-section-tabs {
+  margin: 0 0 18px;
+  padding-top: 0;
+  border-top: none;
+}
+
+.research-audit-panel h2 {
+  margin: 0 0 6px;
+}
+
+.research-audit-cards {
+  margin: 18px 0 20px;
+}
+
+.research-audit-health {
+  margin-bottom: 20px;
+  padding: 18px 20px;
+}
+
+.research-audit-health h3,
+.research-audit-controls h3,
+.research-audit-history h3,
+.research-audit-results h3 {
+  margin: 0 0 12px;
+  font-size: 15px;
+}
+
+.research-audit-stars {
+  margin: 0 0 10px;
+  font-size: 18px;
+  letter-spacing: 0.06em;
+  color: #245c4e;
+}
+
+.research-audit-health-list {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+
+.research-audit-controls {
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+
+.research-audit-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.research-audit-selected label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  min-width: min(100%, 280px);
+}
+
+.research-audit-selected select {
+  min-width: 260px;
+  padding: 10px 12px;
+  border: 1px solid #d7deda;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.research-audit-line-block {
+  margin-bottom: 22px;
+}
+
+.research-audit-line-block h4 {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
+
+.research-audit-ok {
+  margin: 0;
+  color: #245c4e;
+  font-weight: 600;
+}
+
+.research-audit-status {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.research-audit-status--new_ship { color: #245c4e; }
+.research-audit-status--possible_retired,
+.research-audit-status--possible_transfer,
+.research-audit-status--possible_rename { color: #9a5b00; }
+.research-audit-status--unable_to_verify { color: #6b7280; }
+.research-audit-status--no_changes { color: #245c4e; }
+
+.research-audit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.research-audit-table td {
+  vertical-align: top;
+}
+
+.research-audit-history {
+  margin-top: 28px;
+}

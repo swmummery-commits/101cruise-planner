@@ -120,6 +120,7 @@
   let filterFreshness = "all";
   let searchQuery = "";
   let view = "list"; // list | research | editor
+  let researchSection = "content"; // content | audit
   let editingId = null;
   let editorItem = null;
   let editorSources = [];
@@ -976,9 +977,23 @@
   }
 
   function renderPanel() {
-    if (view === "research") return renderResearch();
-    if (view === "editor") return renderEditor();
-    return renderList();
+    const subtabs = `
+      <div class="admin-subtabs packing-subtabs research-section-tabs" role="tablist" aria-label="Research Content sections">
+        <button type="button" class="admin-subtab ${researchSection === "content" ? "active" : ""}" onclick="ResearchContentAdmin.setSection('content')">Content</button>
+        <button type="button" class="admin-subtab ${researchSection === "audit" ? "active" : ""}" onclick="ResearchContentAdmin.setSection('audit')">Cruise Line Audit</button>
+      </div>
+    `;
+    if (researchSection === "audit") {
+      const auditHtml =
+        typeof global.CruiseLineAuditAdmin?.renderPanel === "function"
+          ? global.CruiseLineAuditAdmin.renderPanel()
+          : `<div class="admin-card"><p class="admin-muted">Cruise Line Audit failed to load.</p></div>`;
+      return `${subtabs}${auditHtml}`;
+    }
+    let body = renderList();
+    if (view === "research") body = renderResearch();
+    if (view === "editor") body = renderEditor();
+    return `${subtabs}${body}`;
   }
 
   const apiPublic = {
@@ -987,6 +1002,13 @@
     openList,
     openEditor,
     openResearch,
+    setSection(section) {
+      researchSection = section === "audit" ? "audit" : "content";
+      if (researchSection === "audit" && global.CruiseLineAuditAdmin?.ensureLoaded) {
+        global.CruiseLineAuditAdmin.ensureLoaded();
+      }
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
     setFilter(kind, value) {
       if (kind === "entity") filterEntity = value;
       if (kind === "status") filterStatus = value;

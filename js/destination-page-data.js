@@ -334,7 +334,7 @@
         { label: "Currency", value: "USD" },
         { label: "Voltage", value: "120V" },
         { label: "Language", value: "English" },
-        { label: "Tipping", value: "Customary onboard" },
+        { label: "Tipping", value: "15–20% ashore" },
         { label: "Climate", value: "Cool summer" },
         { label: "Walking Level", value: "Moderate" }
       ],

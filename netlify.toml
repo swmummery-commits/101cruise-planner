@@ -5,6 +5,10 @@
   # Research runs Brave + source fetches + OpenAI; allow longer than default.
   timeout = 60
 
+[functions."cruise-line-audit"]
+  # Fleet audit: Brave + page fetch + optional LLM name extract.
+  timeout = 60
+
 [[redirects]]
   from = "/planner"
   to = "/index.html"

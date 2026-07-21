@@ -699,6 +699,7 @@ async function setTab(tab) {
   }
   if (tab === "research-content") {
     if (window.ResearchContentAdmin) window.ResearchContentAdmin.ensureLoaded();
+    if (window.CruiseLineAuditAdmin) window.CruiseLineAuditAdmin.ensureLoaded({ quiet: true });
   }
 }
 
