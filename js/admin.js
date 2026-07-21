@@ -6240,14 +6240,14 @@ async function adminSettingsApi(action, payload = {}) {
   return data;
 }
 
-async function loadAdminSettingsUsers() {
+async function loadAdminSettingsUsers({ keepMessage = false } = {}) {
   adminSettingsLoading = true;
-  adminSettingsMessage = "";
+  if (!keepMessage) adminSettingsMessage = "";
   renderAdmin();
   try {
     const data = await adminSettingsApi("list", { search: adminSettingsSearch, page: 1, per_page: 100 });
     adminSettingsUsers = Array.isArray(data.users) ? data.users : [];
-    if (data.warning) {
+    if (data.warning && !keepMessage) {
       adminSettingsMessage = data.warning;
       adminSettingsMessageTone = "error";
     }
@@ -6273,13 +6273,14 @@ async function searchAdminSettingsUsers() {
 async function grantAdminAccess(userId, email) {
   const key = userId || email;
   adminSettingsBusyKey = key;
-  adminSettingsMessage = "";
+  adminSettingsMessage = "Granting admin access…";
+  adminSettingsMessageTone = "running";
   renderAdmin();
   try {
     const result = await adminSettingsApi("grant", { user_id: userId || undefined, email: email || undefined });
     adminSettingsMessage = result.message || "Admin access granted.";
     adminSettingsMessageTone = "success";
-    await loadAdminSettingsUsers();
+    await loadAdminSettingsUsers({ keepMessage: true });
   } catch (error) {
     adminSettingsMessage = error.message || "Could not grant admin access.";
     adminSettingsMessageTone = "error";
@@ -6294,13 +6295,14 @@ async function revokeAdminAccess(userId, email) {
   if (!confirm(`Remove admin access for ${email || userId}?`)) return;
   const key = userId || email;
   adminSettingsBusyKey = key;
-  adminSettingsMessage = "";
+  adminSettingsMessage = "Revoking admin access…";
+  adminSettingsMessageTone = "running";
   renderAdmin();
   try {
     const result = await adminSettingsApi("revoke", { user_id: userId || undefined, email: email || undefined });
     adminSettingsMessage = result.message || "Admin access revoked.";
     adminSettingsMessageTone = "success";
-    await loadAdminSettingsUsers();
+    await loadAdminSettingsUsers({ keepMessage: true });
   } catch (error) {
     adminSettingsMessage = error.message || "Could not revoke admin access.";
     adminSettingsMessageTone = "error";
@@ -6345,11 +6347,12 @@ function renderSettingsPanel() {
           ? "Admin"
           : "User";
       const isSelf = user.id && currentUser?.id && user.id === currentUser.id;
+      // Use single-quoted onclick attrs — JSON.stringify emits double quotes.
       const actions = user.is_admin
         ? isSelf
           ? `<span class="admin-muted">You</span>`
-          : `<button type="button" class="admin-button secondary small" onclick="revokeAdminAccess(${JSON.stringify(user.id || "")}, ${JSON.stringify(user.email || "")})" ${busy ? "disabled" : ""}>${busy ? "Working…" : "Revoke"}</button>`
-        : `<button type="button" class="admin-button black small" onclick="grantAdminAccess(${JSON.stringify(user.id || "")}, ${JSON.stringify(user.email || "")})" ${busy ? "disabled" : ""}>${busy ? "Working…" : "Grant admin"}</button>`;
+          : `<button type="button" class="admin-button secondary small" onclick='revokeAdminAccess(${JSON.stringify(user.id || "")}, ${JSON.stringify(user.email || "")})' ${busy ? "disabled" : ""}>${busy ? "Working…" : "Revoke"}</button>`
+        : `<button type="button" class="admin-button black small" onclick='grantAdminAccess(${JSON.stringify(user.id || "")}, ${JSON.stringify(user.email || "")})' ${busy ? "disabled" : ""}>${busy ? "Working…" : "Grant admin"}</button>`;
 
       return `<tr>
         <td>
