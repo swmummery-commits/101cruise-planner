@@ -16,6 +16,7 @@ const { normaliseEntityKey, normaliseAlias } = require("./lib/research-normalize
 const { estimateActivity } = require("./lib/research-engine");
 const { getLlmConfig } = require("./lib/llm-provider");
 const { getBraveApiKey } = require("./lib/brave-search");
+const { cleanSlug } = require("./lib/destination-page");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -301,7 +302,67 @@ async function publishContent(body, user) {
     }
   }
 
-  return { success: true, item: withFreshness(updated?.[0]) };
+  const published = updated?.[0] || { ...row, content_status: "published" };
+  if (row.entity_type === "destination") {
+    try {
+      await ensureDestinationShellFromResearch(published);
+    } catch (error) {
+      console.warn("destination shell sync skipped", error.message || error);
+    }
+  }
+
+  return { success: true, item: withFreshness(published) };
+}
+
+/**
+ * Sprint 11C — keep Living Destination page shell in sync with published research.
+ * Does not create ports (those are curated separately) and never overwrites hero media.
+ */
+async function ensureDestinationShellFromResearch(research) {
+  const slug = cleanSlug(research.canonical_slug || research.entity_key || research.entity_name);
+  if (!slug) return null;
+
+  const existing = await supabase(
+    `destinations?slug=ilike.${encodeURIComponent(slug)}&select=id,slug,status,hero_media_id,research_content_id&limit=1`
+  );
+  const row = existing?.[0] || null;
+  const payload = {
+    name: research.entity_name,
+    slug,
+    status: "published",
+    research_content_id: research.id,
+    seo_title: research.seo_title || `${research.entity_name} Cruises | 101cruise`,
+    meta_description:
+      research.meta_description ||
+      String(research.summary_text || "").trim().slice(0, 160) ||
+      null
+  };
+
+  // Prefer research media when shell has no hero yet
+  if (!row?.hero_media_id && research.media_id) {
+    payload.hero_media_id = research.media_id;
+  }
+
+  if (row?.id) {
+    await supabase(`destinations?id=eq.${encodeURIComponent(row.id)}`, {
+      method: "PATCH",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify(payload)
+    });
+    return row.id;
+  }
+
+  const created = await supabase("destinations", {
+    method: "POST",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify({
+      ...payload,
+      primary_region: null,
+      display_order: 100,
+      hero_media_id: research.media_id || null
+    })
+  });
+  return created?.[0]?.id || null;
 }
 
 async function archiveContent(body, user) {

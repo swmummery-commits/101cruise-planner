@@ -49,10 +49,12 @@
   ];
 
   const DESTINATION_FIELDS = [
-    ["overview", "Overview", "textarea"],
-    ["why_visit", "Why visit", "textarea"],
-    ["best_time_to_visit", "Best time to visit", "textarea"],
-    ["climate_summary", "Climate", "textarea"],
+    ["overview", "Overview / editorial summary", "textarea"],
+    ["why_visit", "Why cruise here", "textarea"],
+    ["best_time_to_visit", "Best time to visit", "text"],
+    ["cruise_length", "Typical cruise length", "text"],
+    ["climate_summary", "Climate", "text"],
+    ["departure_ports", "Best departure ports", "text"],
     ["ideal_for", "Ideal for", "list"],
     ["key_highlights", "Key highlights", "list"],
     ["signature_experiences", "Signature experiences", "list"],
@@ -60,10 +62,22 @@
     ["culture_and_etiquette", "Culture and etiquette", "textarea"],
     ["currency", "Currency", "text"],
     ["languages", "Languages", "text"],
+    ["voltage", "Voltage", "text"],
+    ["tipping_ashore", "Tipping ashore", "text"],
+    ["walking_level", "Walking level", "text"],
     ["transport_summary", "Transport", "textarea"],
     ["accessibility_summary", "Accessibility", "textarea"],
     ["family_summary", "Families", "textarea"],
     ["packing_summary", "Packing", "textarea"],
+    ["suitability_couples", "Suitability — Couples", "suitability"],
+    ["suitability_families", "Suitability — Families", "suitability"],
+    ["suitability_luxury", "Suitability — Luxury", "suitability"],
+    ["suitability_adventure", "Suitability — Adventure", "suitability"],
+    ["suitability_food_wine", "Suitability — Food & Wine", "suitability"],
+    ["suitability_first_cruise", "Suitability — First Cruise", "suitability"],
+    ["suitability_summary", "Suitability summary", "textarea"],
+    ["cruise_lines_visiting", "Cruise lines visiting", "list"],
+    ["good_to_know", "Good to know", "gtk"],
     ["frequently_asked_questions", "FAQs", "faq"],
     ["research_notes", "Research notes (internal)", "textarea"]
   ];
@@ -887,6 +901,43 @@
         </div>
       </div>`;
     }
+    if (kind === "suitability") {
+      const level = String(value || "good");
+      const options = [
+        ["excellent", "Excellent"],
+        ["very_good", "Very Good"],
+        ["good", "Good"],
+        ["fair", "Fair"],
+        ["limited", "Limited"]
+      ]
+        .map(
+          ([id, text]) =>
+            `<option value="${id}" ${level === id ? "selected" : ""}>${text}</option>`
+        )
+        .join("");
+      return `<label class="research-field">${esc(label)} ${badge}
+        <select onchange="ResearchContentAdmin.setField('${esc(key)}', this.value)">${options}</select>
+      </label>`;
+    }
+    if (kind === "gtk") {
+      const rows = Array.isArray(value) ? value : [];
+      const html = rows
+        .map(
+          (row, i) => `
+          <div class="research-faq-row">
+            <input type="text" value="${esc(row.label || "")}" placeholder="Label"
+              onchange="ResearchContentAdmin.setGtk(${i}, 'label', this.value)">
+            <input type="text" value="${esc(row.value || "")}" placeholder="Value"
+              onchange="ResearchContentAdmin.setGtk(${i}, 'value', this.value)">
+            <button type="button" class="admin-button secondary small" onclick="ResearchContentAdmin.removeGtk(${i})">Remove</button>
+          </div>`
+        )
+        .join("");
+      return `<div class="research-field"><div class="research-field-label">${esc(label)} ${badge}
+        <button type="button" class="admin-button secondary small" onclick="ResearchContentAdmin.addGtk()">Add row</button></div>
+        ${html || `<p class="admin-muted">Optional — leave blank to derive from currency, voltage, language, tipping, climate and walking level.</p>`}
+      </div>`;
+    }
     return "";
   }
 
@@ -1381,6 +1432,29 @@
     },
     removeFaq(index) {
       editorDraft.content_json.frequently_asked_questions.splice(index, 1);
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    setGtk(index, field, value) {
+      if (!editorDraft?.content_json) return;
+      if (!Array.isArray(editorDraft.content_json.good_to_know)) {
+        editorDraft.content_json.good_to_know = [];
+      }
+      if (!editorDraft.content_json.good_to_know[index]) {
+        editorDraft.content_json.good_to_know[index] = { label: "", value: "" };
+      }
+      editorDraft.content_json.good_to_know[index][field] = value;
+    },
+    addGtk() {
+      if (!editorDraft?.content_json) return;
+      if (!Array.isArray(editorDraft.content_json.good_to_know)) {
+        editorDraft.content_json.good_to_know = [];
+      }
+      editorDraft.content_json.good_to_know.push({ label: "", value: "" });
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    removeGtk(index) {
+      if (!Array.isArray(editorDraft?.content_json?.good_to_know)) return;
+      editorDraft.content_json.good_to_know.splice(index, 1);
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     setTender(field, value) {

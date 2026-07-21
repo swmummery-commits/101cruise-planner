@@ -1,11 +1,11 @@
 /**
  * Public Destination Experience page: /destination/{slug}
- * Sprint 11A polish — template + placeholders (no live Discovery Engine).
+ * Sprint 11C — Living Destination Pages (research + media driven).
  *
- * FUTURE (architecture only):
- * - Port images: Media Library via mediaId / mediaKey only
- * - Cruise count + cards: Cruise Discovery Engine
- * - Port cards: link to Port Guide pages (/port/{slug})
+ * Presentation only. Content from:
+ *   GET /.netlify/functions/public-destination?slug=
+ *
+ * Cruises remain placeholder until Cruise Discovery Engine.
  */
 (function () {
   "use strict";
@@ -50,8 +50,8 @@
   }
 
   function setMetadata(dest) {
-    const title = `${dest.name} Cruises | 101cruise`;
-    const description = String(dest.summary || "").trim().slice(0, 160);
+    const title = dest.seoTitle || `${dest.name} Cruises | 101cruise`;
+    const description = String(dest.metaDescription || dest.summary || "").trim().slice(0, 160);
     const canonical = `${window.location.origin}/destination/${dest.slug}`;
 
     document.title = title;
@@ -91,7 +91,6 @@
     const section = document.getElementById("cruises");
     if (!section) return;
     section.scrollIntoView({ behavior: "smooth", block: "start" });
-    // Keep the URL clean so refresh does not jump mid-page via #cruises
     if (window.history.replaceState) {
       window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
@@ -132,16 +131,20 @@
 
   function renderHero(dest, contactUrl) {
     const pos = dest.hero?.objectPosition || "center center";
+    const hasImage = Boolean(dest.hero?.url);
+    const mediaHtml = hasImage
+      ? `<img src="${esc(dest.hero.url)}" alt="${esc(dest.hero.alt || dest.name)}" fetchpriority="high">`
+      : `<div class="dest-hero-placeholder" aria-hidden="true"></div>`;
     return `
-      <section class="dest-hero dest-reveal" aria-label="${esc(dest.name)} hero">
+      <section class="dest-hero dest-reveal${hasImage ? "" : " is-placeholder"}" aria-label="${esc(dest.name)} hero">
         <div class="dest-hero-media" style="--dest-hero-pos: ${esc(pos)}">
-          <img src="${esc(dest.hero.url)}" alt="${esc(dest.hero.alt || dest.name)}" fetchpriority="high">
+          ${mediaHtml}
         </div>
         <div class="dest-hero-veil" aria-hidden="true"></div>
         <div class="dest-hero-inner">
           <p class="dest-kicker">Destination</p>
           <h1 class="dest-hero-title">${esc(dest.name)}</h1>
-          <p class="dest-hero-summary">${esc(dest.summary)}</p>
+          ${dest.summary ? `<p class="dest-hero-summary">${esc(dest.summary)}</p>` : ""}
           <div class="dest-hero-ctas">
             <a class="dest-btn dest-btn-primary" href="#cruises" onclick="DestinationExperience.scrollToCruises(event)">View Current Cruises</a>
             <a class="dest-btn dest-btn-secondary" href="${esc(contactUrl)}">Contact Paul for a better price</a>
@@ -152,6 +155,7 @@
   }
 
   function renderWhy(dest) {
+    if (!dest.whyCruiseHere) return "";
     return `
       <section class="dest-section dest-reveal" style="--dest-delay: 60ms">
         <div class="dest-wrap">
@@ -163,7 +167,8 @@
   }
 
   function renderSnapshot(dest) {
-    const cards = (dest.snapshot || [])
+    if (!Array.isArray(dest.snapshot) || !dest.snapshot.length) return "";
+    const cards = dest.snapshot
       .map(
         (item) => `
         <article class="dest-snap-card">
@@ -183,7 +188,8 @@
   }
 
   function renderSuitability(dest) {
-    const s = dest.suitability || {};
+    const s = dest.suitability;
+    if (!s) return "";
     const keys = ["couples", "families", "luxury", "adventure", "food_wine", "first_cruise"];
     const rows = keys.map((k) => suitabilityRow(k, s[k] || "good")).join("");
     return `
@@ -198,8 +204,20 @@
   }
 
   function renderPorts(dest) {
-    const cards = (dest.ports || [])
-      .slice(0, 5)
+    const ports = Array.isArray(dest.ports) ? dest.ports.slice(0, 5) : [];
+    if (!ports.length) {
+      return `
+        <section class="dest-section dest-section-soft dest-reveal" id="ports" style="--dest-delay: 180ms">
+          <div class="dest-wrap">
+            <h2 class="dest-section-title">Featured Ports</h2>
+            <p class="dest-section-lead">Signature stops for ${esc(dest.name)} itineraries.</p>
+            <p class="dest-empty-note">Coming soon.</p>
+          </div>
+        </section>
+      `;
+    }
+
+    const cards = ports
       .map((port) => {
         const image = Data.resolvePortImage(port);
         const href = port.guideHref || `#ports`;
@@ -221,6 +239,7 @@
         </a>`;
       })
       .join("");
+
     return `
       <section class="dest-section dest-section-soft dest-reveal" id="ports" style="--dest-delay: 180ms">
         <div class="dest-wrap">
@@ -319,84 +338,23 @@
     if (loadWrap) loadWrap.hidden = cruisesVisible >= total;
   }
 
-  function normaliseLineName(name) {
-    return String(name || "")
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/&/g, " and ")
-      .replace(/[^a-z0-9]+/g, " ")
-      .replace(/\b(cruises?|line|international|group|ltd|limited)\b/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  async function fetchCruiseLinesFromDb() {
-    const response = await fetch("/.netlify/functions/public-ci-cruise-lines", {
-      method: "GET",
-      headers: { Accept: "application/json" }
-    });
-    if (!response.ok) throw new Error(`Cruise lines HTTP ${response.status}`);
-    const data = await response.json().catch(() => ({}));
-    return Array.isArray(data.cruise_lines) ? data.cruise_lines : [];
-  }
-
-  function matchDbLine(name, dbLines) {
-    const target = normaliseLineName(name);
-    if (!target) return null;
-    const exact = dbLines.find((row) => normaliseLineName(row.name) === target);
-    if (exact) return exact;
-    const contains = dbLines.filter((row) => {
-      const n = normaliseLineName(row.name);
-      return n && target && (n.includes(target) || target.includes(n));
-    });
-    return contains.length === 1 ? contains[0] : null;
-  }
-
-  /**
-   * Attach logo_url from ci_cruise_lines (via public API).
-   * Keeps destination line order; falls back to wordmark when no logo.
-   */
-  function enrichCruiseLinesWithLogos(destLines, dbLines) {
-    const listed = Array.isArray(destLines) && destLines.length ? destLines : [];
-    if (!listed.length && dbLines.length) {
-      // No curated list — show sold-by-101cruise lines that have logos
-      return dbLines
-        .filter((row) => row.logo_url)
-        .map((row) => ({
-          name: row.name,
-          logo: row.logo_url,
-          id: row.id,
-          slug: row.slug || null,
-          source: "ci_cruise_lines"
-        }));
-    }
-    return listed.map((line) => {
-      const name = typeof line === "string" ? line : line.name;
-      const match = matchDbLine(name, dbLines);
-      return {
-        name: match?.name || name,
-        logo: match?.logo_url || line.logo || null,
-        id: match?.id || line.id || null,
-        slug: match?.slug || line.slug || null,
-        source: match ? "ci_cruise_lines" : "placeholder"
-      };
-    });
-  }
-
   function renderLines(dest) {
-    const items = (dest.cruiseLines || [])
-      .map(
-        (line) => `
-        <li class="dest-line-item${line.logo ? " has-logo" : ""}" title="${esc(line.name)}">
-          ${
-            line.logo
-              ? `<img src="${esc(line.logo)}" alt="${esc(line.name)}" loading="lazy" onerror="this.outerHTML='<span class=\\'dest-line-wordmark\\'>${esc(line.name)}</span>'">`
-              : `<span class="dest-line-wordmark">${esc(line.name)}</span>`
-          }
-        </li>`
-      )
+    const lines = Array.isArray(dest.cruiseLines) ? dest.cruiseLines : [];
+    if (!lines.length) return "";
+
+    const items = lines
+      .map((line) => {
+        const inner = line.logo
+          ? `<img src="${esc(line.logo)}" alt="${esc(line.name)}" loading="lazy" onerror="this.outerHTML='<span class=\\'dest-line-wordmark\\'>${esc(line.name)}</span>'">`
+          : `<span class="dest-line-wordmark">${esc(line.name)}</span>`;
+        // Future-ready: data-line-slug / data-line-id for Cruise Line pages (no dead links yet).
+        return `
+        <li class="dest-line-item${line.logo ? " has-logo" : ""}" title="${esc(line.name)}" data-line-slug="${esc(line.slug || "")}" data-line-id="${esc(line.id || "")}" data-line-href="${esc(line.href || "")}">
+          <span class="dest-line-link" role="img" aria-label="${esc(line.name)}">${inner}</span>
+        </li>`;
+      })
       .join("");
+
     return `
       <section class="dest-section dest-section-soft dest-reveal" style="--dest-delay: 260ms">
         <div class="dest-wrap">
@@ -408,7 +366,8 @@
   }
 
   function renderGoodToKnow(dest) {
-    const cells = (dest.goodToKnow || [])
+    if (!Array.isArray(dest.goodToKnow) || !dest.goodToKnow.length) return "";
+    const cells = dest.goodToKnow
       .map(
         (item) => `
         <div class="dest-gtk-cell">
@@ -428,8 +387,9 @@
   }
 
   function renderFaqs(dest) {
-    const items = (dest.faqs || [])
-      .slice(0, 4)
+    if (!Array.isArray(dest.faqs) || !dest.faqs.length) return "";
+    const items = dest.faqs
+      .slice(0, 8)
       .map(
         (faq, i) => `
         <details class="dest-faq" ${i === 0 ? "open" : ""}>
@@ -480,7 +440,7 @@
   function renderPage(dest) {
     const contactUrl = Data.contactMailto(dest.name);
     return `
-      <article class="dest-page" data-destination="${esc(dest.slug)}">
+      <article class="dest-page" data-destination="${esc(dest.slug)}" data-source="${esc(dest.source || "living_destination")}">
         ${renderHero(dest, contactUrl)}
         ${renderWhy(dest)}
         ${renderSnapshot(dest)}
@@ -496,15 +456,22 @@
     `;
   }
 
-  function renderNotFound(slug) {
-    const available = Data.listSlugs()
-      .map((s) => `<a href="/destination/${esc(s)}">${esc(s)}</a>`)
-      .join(" · ");
+  function renderNotFound(slug, message) {
     return `
       <div class="dest-not-found">
         <h1>Destination not found</h1>
-        <p>We don’t have a guide for <code>${esc(slug || "this destination")}</code> yet.</p>
-        <p class="dest-not-found-hint">Available templates: ${available || "—"}</p>
+        <p>${esc(message || `We don’t have a published guide for ${slug || "this destination"} yet.`)}</p>
+        <p><a href="${HOME_URL}">Back to 101cruise</a></p>
+      </div>
+    `;
+  }
+
+  function renderLoadError(slug, error) {
+    return `
+      <div class="dest-not-found">
+        <h1>Unable to load destination</h1>
+        <p>We couldn’t load <code>${esc(slug || "this destination")}</code> right now.</p>
+        <p class="dest-not-found-hint">${esc(error || "Please try again shortly.")}</p>
         <p><a href="${HOME_URL}">Back to 101cruise</a></p>
       </div>
     `;
@@ -516,43 +483,49 @@
     });
   }
 
+  async function fetchDestination(slug) {
+    const response = await fetch(
+      `/.netlify/functions/public-destination?slug=${encodeURIComponent(slug)}`,
+      { method: "GET", headers: { Accept: "application/json" } }
+    );
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success || !data.destination) {
+      const error = new Error(data.error || `HTTP ${response.status}`);
+      error.status = response.status;
+      throw error;
+    }
+    return data.destination;
+  }
+
   async function mount() {
     const root = document.getElementById("public-destination-app");
     if (!root || !Data) return;
 
     const slug = slugFromPath() || "alaska";
-    const dest = Data.getDestination(slug);
-
-    if (!dest) {
-      activeDestination = null;
-      root.innerHTML = renderNotFound(slug);
-      return;
-    }
-
-    // Clone so we can attach DB logos without mutating the static catalog
-    const pageDest = {
-      ...dest,
-      cruiseLines: (dest.cruiseLines || []).map((line) =>
-        typeof line === "string" ? { name: line } : { ...line }
-      )
-    };
+    root.innerHTML = `<p class="public-cruise-loading">Loading destination…</p>`;
 
     try {
-      const dbLines = await fetchCruiseLinesFromDb();
-      pageDest.cruiseLines = enrichCruiseLinesWithLogos(pageDest.cruiseLines, dbLines);
-    } catch (error) {
-      console.warn("Destination cruise line logos unavailable", error);
-    }
-
-    activeDestination = pageDest;
-    setMetadata(pageDest);
-    root.innerHTML = renderPage(pageDest);
-    ensurePageStartsAtTop();
-    revealPage(root.querySelector(".dest-page"));
-    requestAnimationFrame(() => {
+      const pageDest = await fetchDestination(slug);
+      // Attach placeholder cruises until Discovery Engine
+      pageDest.cruiseCatalog = Data.getCruiseCatalog(pageDest);
+      activeDestination = pageDest;
+      setMetadata(pageDest);
+      root.innerHTML = renderPage(pageDest);
       ensurePageStartsAtTop();
-      setTimeout(ensurePageStartsAtTop, 50);
-    });
+      revealPage(root.querySelector(".dest-page"));
+      requestAnimationFrame(() => {
+        ensurePageStartsAtTop();
+        setTimeout(ensurePageStartsAtTop, 50);
+      });
+    } catch (error) {
+      console.warn("Destination load failed", error);
+      activeDestination = null;
+      if (error.status === 404) {
+        root.innerHTML = renderNotFound(slug, error.message);
+      } else {
+        root.innerHTML = renderLoadError(slug, error.message);
+      }
+    }
   }
 
   window.DestinationExperience = {
@@ -561,7 +534,6 @@
     remount: mount
   };
 
-  // Prevent #cruises (or browser restore) from landing mid-page on refresh
   if ("scrollRestoration" in window.history) {
     window.history.scrollRestoration = "manual";
   }

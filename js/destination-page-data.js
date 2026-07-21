@@ -1,22 +1,11 @@
 /**
- * Destination Experience — template content.
+ * Destination Experience — shared helpers + cruise placeholders.
  *
- * Sprint 11A polish: static placeholders only.
+ * Sprint 11C: editorial content and imagery come from the Living Destination
+ * API (destinations → research_content → media_library → destination_ports).
+ * This module no longer owns destination editorial content.
  *
- * FUTURE DATA ARCHITECTURE (not implemented yet)
- * ---------------------------------------------
- * Featured Ports:
- *   Research Engine → featured port list → Media Library lookup
- *   (media_id / media_key) → approved image only.
- *   Never search the web or run AI image search at page load.
- *   If no approved Media Library asset exists → placeholder.
- *
- * Cruises:
- *   Cruise Discovery Engine will supply totalCount + sailing cards.
- *   Until then, cruiseCatalog is local placeholder data.
- *
- * Port cards:
- *   href will become /port/{slug} Port Guide pages later.
+ * Cruises remain placeholder/manual until Cruise Discovery Engine.
  */
 (function (root) {
   "use strict";
@@ -45,30 +34,22 @@
   const SUITABILITY = {
     excellent: { label: "Excellent", fill: 94 },
     very_good: { label: "Very Good", fill: 78 },
-    good: { label: "Good", fill: 60 }
+    good: { label: "Good", fill: 60 },
+    fair: { label: "Fair", fill: 42 },
+    limited: { label: "Limited", fill: 24 }
   };
 
   /**
    * Resolve a Featured Port image.
    * Contract: Media Library approved assets only — never open-web / AI search.
-   * Placeholder allowed when no approved media exists.
    */
   function resolvePortImage(port) {
-    // FUTURE: lookup Media Library by port.mediaId or port.mediaKey
     if (port?.media?.url) {
       return {
         url: port.media.url,
         alt: port.media.alt || port.name,
         objectPosition: port.media.objectPosition || "center center",
         source: "media_library"
-      };
-    }
-    if (port?.placeholderImage?.url) {
-      return {
-        url: port.placeholderImage.url,
-        alt: port.placeholderImage.alt || port.name,
-        objectPosition: port.placeholderImage.objectPosition || "center center",
-        source: "placeholder"
       };
     }
     return {
@@ -79,7 +60,7 @@
     };
   }
 
-  const ALASKA_CRUISE_SEEDS = [
+  const PLACEHOLDER_CRUISE_SEEDS = [
     {
       cruiseLine: "Holland America Line",
       shipName: "Koningsdam",
@@ -192,13 +173,17 @@
     "25 Jun 2027"
   ];
 
-  /** Build placeholder catalog — Discovery Engine will replace this later. */
-  function buildPlaceholderCruiseCatalog(totalCount) {
+  /** Placeholder catalog — Discovery Engine will replace this later. */
+  function buildPlaceholderCruiseCatalog(slug, totalCount = 37) {
+    const key = String(slug || "destination")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-");
     const sailings = [];
     for (let i = 0; i < totalCount; i += 1) {
-      const seed = ALASKA_CRUISE_SEEDS[i % ALASKA_CRUISE_SEEDS.length];
+      const seed = PLACEHOLDER_CRUISE_SEEDS[i % PLACEHOLDER_CRUISE_SEEDS.length];
       sailings.push({
-        id: `alaska-placeholder-${i + 1}`,
+        id: `${key}-placeholder-${i + 1}`,
         cruiseLine: seed.cruiseLine,
         shipName: seed.shipName,
         duration: seed.duration,
@@ -208,179 +193,16 @@
       });
     }
     return {
-      // FUTURE: totalCount from Cruise Discovery Engine
       totalCount: sailings.length,
       pageSize: CRUISE_PAGE_SIZE,
       source: "placeholder",
       sailings
     };
-  }
-
-  const DESTINATIONS = {
-    alaska: {
-      slug: "alaska",
-      name: "Alaska",
-      summary:
-        "Glaciers, wildlife and cool-climate scenic cruising through the Inside Passage — a classic bucket-list voyage for Australian travellers.",
-      hero: {
-        // FUTURE: Media Library approved destination hero
-        url: "/public-tools/cruise-finder/images/alaska-hero.png",
-        objectPosition: "center 40%",
-        alt: "Alaska cruise destination — mountain and glacier coastline"
-      },
-      whyCruiseHere:
-        "Alaska is for travellers who want scenery that stops conversation. Glaciers, wildlife and cool summer light turn every sea day into the main event — not filler between ports. Classic stops like Juneau, Skagway and Ketchikan add gold-rush colour and easy shore days, while long daylight from May through August makes the season feel generous and alive. From Australia it is a longer journey, but a completely different kind of cruise: crisp air, dramatic horizons, and a genuine sense of wilderness you feel from the deck the moment you arrive.",
-      snapshot: [
-        { label: "Best Time", value: "May – August" },
-        { label: "Cruise Length", value: "7 – 14 nights" },
-        { label: "Climate", value: "Cool & changeable" },
-        { label: "Currency", value: "US Dollar (USD)" },
-        { label: "Language", value: "English" },
-        { label: "Best Departure Ports", value: "Vancouver · Seattle · Seward" }
-      ],
-      suitability: {
-        couples: "excellent",
-        families: "very_good",
-        luxury: "very_good",
-        adventure: "excellent",
-        food_wine: "good",
-        first_cruise: "very_good",
-        summary:
-          "Ideal if you want scenery and wildlife over beach days — especially couples and travellers happy to pack layers."
-      },
-      /**
-       * Featured Ports — Research Engine list later.
-       * mediaId / mediaKey → Media Library only (no web search).
-       * guideHref reserved for future Port Guide pages.
-       */
-      ports: [
-        {
-          name: "Juneau",
-          slug: "juneau",
-          description: "Alaska’s capital — glaciers nearby, whale watching and a walkable waterfront.",
-          mediaId: null,
-          mediaKey: "port:juneau",
-          guideHref: null,
-          placeholderImage: {
-            url: "/public-tools/cruise-finder/images/alaska-hero.png",
-            objectPosition: "center 30%",
-            alt: "Juneau, Alaska — mountain coastline"
-          }
-        },
-        {
-          name: "Skagway",
-          slug: "skagway",
-          description: "Gold-rush town with the White Pass railway and a charming main street.",
-          mediaId: null,
-          mediaKey: "port:skagway",
-          guideHref: null,
-          placeholderImage: {
-            url: "/public-tools/cruise-finder/images/alaska-hero.png",
-            objectPosition: "left center",
-            alt: "Skagway, Alaska — scenic approach"
-          }
-        },
-        {
-          name: "Ketchikan",
-          slug: "ketchikan",
-          description: "Totem poles, creek walks and rainforest scenery at the start of many itineraries.",
-          mediaId: null,
-          mediaKey: "port:ketchikan",
-          guideHref: null,
-          placeholderImage: {
-            url: "/public-tools/cruise-finder/images/alaska-hero.png",
-            objectPosition: "right 40%",
-            alt: "Ketchikan, Alaska — forested shoreline"
-          }
-        },
-        {
-          name: "Sitka",
-          slug: "sitka",
-          description: "Russian and Tlingit heritage with quieter harbour energy and coastal trails.",
-          mediaId: null,
-          mediaKey: "port:sitka",
-          guideHref: null,
-          placeholderImage: {
-            url: "/public-tools/cruise-finder/images/alaska-hero.png",
-            objectPosition: "center 55%",
-            alt: "Sitka, Alaska — harbour and peaks"
-          }
-        },
-        {
-          name: "Icy Strait Point",
-          slug: "icy-strait-point",
-          description: "Wildlife, zip lines and a soft adventure stop near Hoonah.",
-          mediaId: null,
-          mediaKey: "port:icy-strait-point",
-          guideHref: null,
-          placeholderImage: {
-            url: "/public-tools/cruise-finder/images/alaska-hero.png",
-            objectPosition: "center 20%",
-            alt: "Icy Strait Point, Alaska"
-          }
-        }
-      ],
-      // FUTURE: cruiseCatalog from Cruise Discovery Engine
-      cruiseCatalog: buildPlaceholderCruiseCatalog(37),
-      cruiseLines: [
-        { name: "Holland America Line" },
-        { name: "Princess Cruises" },
-        { name: "Celebrity Cruises" },
-        { name: "Norwegian Cruise Line" },
-        { name: "Royal Caribbean" },
-        { name: "Carnival Cruise Line" }
-      ],
-      goodToKnow: [
-        { label: "Currency", value: "USD" },
-        { label: "Voltage", value: "120V" },
-        { label: "Language", value: "English" },
-        { label: "Tipping", value: "15–20% ashore" },
-        { label: "Climate", value: "Cool summer" },
-        { label: "Walking Level", value: "Moderate" }
-      ],
-      faqs: [
-        {
-          q: "When is the best time to cruise Alaska?",
-          a: "Most sailings run from May to August. June and July usually offer the longest daylight and strongest wildlife viewing, while May and September can feel quieter with more changeable weather."
-        },
-        {
-          q: "Is Alaska a good first cruise?",
-          a: "Yes — especially if you prefer scenery over nightlife. Choose a well-reviewed ship with a classic Inside Passage itinerary, pack layers, and keep shore days flexible for weather."
-        },
-        {
-          q: "Do I need a visa or ESTA from Australia?",
-          a: "Most Australia and New Zealand travellers need an ESTA for the United States when itineraries include US ports or fly/cruise combinations. Always confirm your own documents before booking."
-        },
-        {
-          q: "Can Paul find a better price than the brochure fare?",
-          a: "Often, yes. Brochure fares are a starting point. Share your dates, cabin preference and travel party and Paul can check current offers, amenity packages and the best available rate."
-        }
-      ]
-    }
-  };
-
-  function getDestination(slug) {
-    const key = String(slug || "")
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9-]+/g, "-");
-    return DESTINATIONS[key] || null;
-  }
-
-  function listSlugs() {
-    return Object.keys(DESTINATIONS);
   }
 
   function getCruiseCatalog(dest) {
-    if (dest?.cruiseCatalog) return dest.cruiseCatalog;
-    // Legacy fallback
-    const sailings = Array.isArray(dest?.cruises) ? dest.cruises : [];
-    return {
-      totalCount: sailings.length,
-      pageSize: CRUISE_PAGE_SIZE,
-      source: "placeholder",
-      sailings
-    };
+    if (dest?.cruiseCatalog?.sailings?.length) return dest.cruiseCatalog;
+    return buildPlaceholderCruiseCatalog(dest?.slug || "destination", 37);
   }
 
   root.DestinationPageData = {
@@ -388,11 +210,9 @@
     QUOTE_URL,
     CRUISE_PAGE_SIZE,
     SUITABILITY,
-    DESTINATIONS,
-    getDestination,
-    listSlugs,
     contactMailto,
     resolvePortImage,
+    buildPlaceholderCruiseCatalog,
     getCruiseCatalog
   };
 })(typeof window !== "undefined" ? window : globalThis);

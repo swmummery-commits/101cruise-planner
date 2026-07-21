@@ -2,7 +2,7 @@
  * Research content schemas, freshness defaults, and public-safe projections.
  */
 
-const SCHEMA_VERSION = "1.0";
+const SCHEMA_VERSION = "1.1";
 
 const ENTITY_TYPES = ["ship", "destination", "port", "cruise_line"];
 
@@ -12,6 +12,17 @@ const REFRESH_MONTHS = {
   port: 12,
   cruise_line: 9
 };
+
+const SUITABILITY_LEVELS = new Set(["excellent", "very_good", "good", "fair", "limited"]);
+const SUITABILITY_KEYS = [
+  "suitability_couples",
+  "suitability_families",
+  "suitability_luxury",
+  "suitability_adventure",
+  "suitability_food_wine",
+  "suitability_first_cruise"
+];
+const GOOD_TO_KNOW_FIELD = "good_to_know";
 
 const SHIP_FIELDS = [
   "overview",
@@ -39,6 +50,8 @@ const DESTINATION_FIELDS = [
   "why_visit",
   "best_time_to_visit",
   "climate_summary",
+  "cruise_length",
+  "departure_ports",
   "ideal_for",
   "key_highlights",
   "signature_experiences",
@@ -46,10 +59,22 @@ const DESTINATION_FIELDS = [
   "culture_and_etiquette",
   "currency",
   "languages",
+  "voltage",
+  "tipping_ashore",
+  "walking_level",
   "transport_summary",
   "accessibility_summary",
   "family_summary",
   "packing_summary",
+  "suitability_couples",
+  "suitability_families",
+  "suitability_luxury",
+  "suitability_adventure",
+  "suitability_food_wine",
+  "suitability_first_cruise",
+  "suitability_summary",
+  "cruise_lines_visiting",
+  "good_to_know",
   "frequently_asked_questions",
   "research_notes"
 ];
@@ -107,7 +132,8 @@ const LIST_FIELDS = new Set([
   "shore_excursion_ideas",
   "practical_tips",
   "included_summary",
-  "extra_cost_summary"
+  "extra_cost_summary",
+  "cruise_lines_visiting"
 ]);
 
 const FAQ_FIELD = "frequently_asked_questions";
@@ -131,8 +157,10 @@ function emptyContent(entityType) {
   const out = { schema_version: SCHEMA_VERSION, entity_type: entityType };
   for (const key of fieldsForEntityType(entityType)) {
     if (key === FAQ_FIELD) out[key] = [];
+    else if (key === GOOD_TO_KNOW_FIELD) out[key] = [];
     else if (LIST_FIELDS.has(key)) out[key] = [];
     else if (key === "tender_port") out[key] = { status: "varies", note: "" };
+    else if (SUITABILITY_KEYS.includes(key)) out[key] = "good";
     else out[key] = "";
   }
   return out;
@@ -163,14 +191,49 @@ function asFaqArray(value) {
     .slice(0, 10);
 }
 
+function asGoodToKnowArray(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      if (typeof row === "string") {
+        const parts = row.split(":");
+        if (parts.length >= 2) {
+          return {
+            label: String(parts[0] || "").trim().slice(0, 80),
+            value: String(parts.slice(1).join(":") || "").trim().slice(0, 200)
+          };
+        }
+        return null;
+      }
+      return {
+        label: String(row?.label || "").trim().slice(0, 80),
+        value: String(row?.value || "").trim().slice(0, 200)
+      };
+    })
+    .filter((row) => row && row.label && row.value)
+    .slice(0, 12);
+}
+
+function asSuitabilityLevel(value, fallback = "good") {
+  const level = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "_");
+  return SUITABILITY_LEVELS.has(level) ? level : fallback;
+}
+
 function normaliseContentJson(entityType, raw) {
   const base = emptyContent(entityType);
   const input = raw && typeof raw === "object" ? raw : {};
   for (const key of fieldsForEntityType(entityType)) {
     if (key === FAQ_FIELD) {
       base[key] = asFaqArray(input[key]);
+    } else if (key === GOOD_TO_KNOW_FIELD) {
+      base[key] = asGoodToKnowArray(input[key]);
     } else if (LIST_FIELDS.has(key)) {
       base[key] = asStringArray(input[key]);
+    } else if (SUITABILITY_KEYS.includes(key)) {
+      base[key] = asSuitabilityLevel(input[key], "good");
     } else if (key === "tender_port") {
       const t = input.tender_port && typeof input.tender_port === "object" ? input.tender_port : {};
       base.tender_port = {
@@ -279,6 +342,9 @@ function buildSystemPrompt(entityType) {
     `Required keys: ${fieldsForEntityType(entityType).join(", ")}.`,
     "List fields must be JSON arrays of short plain phrases (not full essays).",
     "frequently_asked_questions must be an array of {question, answer}.",
+    "For destinations: good_to_know must be an array of {label, value}.",
+    "For destinations: suitability_* fields must be one of excellent, very_good, good, fair, limited.",
+    "For destinations: cruise_lines_visiting must be an array of cruise line brand names.",
     "research_notes may summarise conflicts or uncertainty for internal editors."
   ].join(" ");
 }
@@ -320,6 +386,9 @@ module.exports = {
   CRUISE_LINE_FIELDS,
   LIST_FIELDS,
   FAQ_FIELD,
+  GOOD_TO_KNOW_FIELD,
+  SUITABILITY_KEYS,
+  SUITABILITY_LEVELS,
   fieldsForEntityType,
   emptyContent,
   normaliseContentJson,
@@ -328,5 +397,7 @@ module.exports = {
   freshnessLabel,
   toPublicResearchTeaser,
   buildSystemPrompt,
-  buildUserPrompt
+  buildUserPrompt,
+  asGoodToKnowArray,
+  asSuitabilityLevel
 };
