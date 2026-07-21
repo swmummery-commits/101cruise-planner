@@ -4100,3 +4100,22 @@
 .research-audit-history {
   margin-top: 28px;
 }
+
+/* Settings — admin users */
+.admin-settings-grant {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-top: 8px;
+}
+
+.admin-settings-grant .admin-field {
+  flex: 1 1 280px;
+  margin-bottom: 0;
+}
+
+.admin-settings-table td.admin-settings-actions {
+  text-align: right;
+  white-space: nowrap;
+}

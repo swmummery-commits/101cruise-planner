@@ -78,6 +78,13 @@ let usageInsightsLoading = false;
 let usageInsightsMessage = "";
 let usageInsightsSelectedCustomerKey = "";
 let usageInsightsPanelCustomer = null;
+let adminSettingsUsers = [];
+let adminSettingsLoading = false;
+let adminSettingsMessage = "";
+let adminSettingsMessageTone = "";
+let adminSettingsSearch = "";
+let adminSettingsGrantEmail = "";
+let adminSettingsBusyKey = "";
 let ciCruiseLines = [];
 let ciCruiseShips = [];
 let ciLineSearchQuery = "";
@@ -350,6 +357,22 @@ async function adminSignIn() {
 
   currentUser = data.user;
   await loadProfile();
+
+  // If this email was allow-listed in Settings before first admin login, activate access now.
+  if (!currentProfile?.is_admin) {
+    try {
+      const headers = await adminAuthHeaders();
+      const claimResponse = await fetch("/.netlify/functions/admin-users", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "claim_invite" })
+      });
+      const claimData = await claimResponse.json().catch(() => ({}));
+      if (claimData?.claimed) await loadProfile();
+    } catch (_error) {
+      /* ignore — assertAdminAccess will report the real outcome */
+    }
+  }
 
   const access = await assertAdminAccess();
   if (!access.ok) {
@@ -698,6 +721,9 @@ async function setTab(tab) {
     if (window.ResearchContentAdmin) window.ResearchContentAdmin.ensureLoaded();
     if (window.CruiseLineAuditAdmin) window.CruiseLineAuditAdmin.ensureLoaded({ quiet: true });
   }
+  if (tab === "settings") {
+    loadAdminSettingsUsers();
+  }
 }
 
 function getAdminCiCruiseLines() {
@@ -741,7 +767,8 @@ const ADMIN_MAIN_TABS = [
   { id: "packing", label: "Packing", render: () => renderPackingPanel() },
   { id: "smart-profiles", label: "Smart Profiles", render: () => renderSmartProfilesPanel() },
   { id: "calculator-data", label: "Drinks Calculator", render: () => renderCalculatorDataPanel() },
-  { id: "usage-insights", label: "Usage & Insights", render: () => renderUsageInsightsPanel() }
+  { id: "usage-insights", label: "Usage & Insights", render: () => renderUsageInsightsPanel() },
+  { id: "settings", label: "Settings", render: () => renderSettingsPanel() }
 ];
 
 function renderAdminTabNavigation() {
@@ -6164,6 +6191,201 @@ function renderUsageCustomerSidePanel(customer) {
   `;
 }
 
+/* ========== Settings — Admin users ========== */
+
+async function adminSettingsApi(action, payload = {}) {
+  const headers = await adminAuthHeaders();
+  const response = await fetch("/.netlify/functions/admin-users", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ action, ...payload })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data.success === false) {
+    throw new Error(data.error || `HTTP ${response.status}`);
+  }
+  return data;
+}
+
+async function loadAdminSettingsUsers() {
+  adminSettingsLoading = true;
+  adminSettingsMessage = "";
+  renderAdmin();
+  try {
+    const data = await adminSettingsApi("list", { search: adminSettingsSearch, page: 1, per_page: 100 });
+    adminSettingsUsers = Array.isArray(data.users) ? data.users : [];
+  } catch (error) {
+    adminSettingsUsers = [];
+    adminSettingsMessage = error.message || "Could not load users.";
+    adminSettingsMessageTone = "error";
+  } finally {
+    adminSettingsLoading = false;
+    renderAdmin();
+  }
+}
+
+function setAdminSettingsSearch(value) {
+  adminSettingsSearch = value;
+}
+
+async function searchAdminSettingsUsers() {
+  adminSettingsSearch = document.getElementById("adminSettingsSearch")?.value || adminSettingsSearch;
+  await loadAdminSettingsUsers();
+}
+
+async function grantAdminAccess(userId, email) {
+  const key = userId || email;
+  adminSettingsBusyKey = key;
+  adminSettingsMessage = "";
+  renderAdmin();
+  try {
+    const result = await adminSettingsApi("grant", { user_id: userId || undefined, email: email || undefined });
+    adminSettingsMessage = result.message || "Admin access granted.";
+    adminSettingsMessageTone = "success";
+    await loadAdminSettingsUsers();
+  } catch (error) {
+    adminSettingsMessage = error.message || "Could not grant admin access.";
+    adminSettingsMessageTone = "error";
+    renderAdmin();
+  } finally {
+    adminSettingsBusyKey = "";
+    renderAdmin();
+  }
+}
+
+async function revokeAdminAccess(userId, email) {
+  if (!confirm(`Remove admin access for ${email || userId}?`)) return;
+  const key = userId || email;
+  adminSettingsBusyKey = key;
+  adminSettingsMessage = "";
+  renderAdmin();
+  try {
+    const result = await adminSettingsApi("revoke", { user_id: userId || undefined, email: email || undefined });
+    adminSettingsMessage = result.message || "Admin access revoked.";
+    adminSettingsMessageTone = "success";
+    await loadAdminSettingsUsers();
+  } catch (error) {
+    adminSettingsMessage = error.message || "Could not revoke admin access.";
+    adminSettingsMessageTone = "error";
+    renderAdmin();
+  } finally {
+    adminSettingsBusyKey = "";
+    renderAdmin();
+  }
+}
+
+async function grantAdminAccessByEmail() {
+  const email = (document.getElementById("adminSettingsGrantEmail")?.value || adminSettingsGrantEmail || "").trim();
+  adminSettingsGrantEmail = email;
+  if (!email) {
+    adminSettingsMessage = "Enter an email address first.";
+    adminSettingsMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+  await grantAdminAccess("", email);
+  adminSettingsGrantEmail = "";
+}
+
+function renderSettingsPanel() {
+  const messageClass =
+    adminSettingsMessageTone === "error"
+      ? "admin-error"
+      : adminSettingsMessageTone === "success"
+        ? "admin-success"
+        : adminSettingsMessageTone === "running"
+          ? "admin-running"
+          : "";
+
+  const rows = adminSettingsUsers
+    .map((user) => {
+      const key = user.id || user.email;
+      const busy = adminSettingsBusyKey === key;
+      const role = user.admin_user?.role || (user.is_admin ? "admin" : "—");
+      const status = user.pending_invite
+        ? "Invited (not signed in yet)"
+        : user.is_admin
+          ? "Admin"
+          : "User";
+      const isSelf = user.id && currentUser?.id && user.id === currentUser.id;
+      const actions = user.is_admin
+        ? isSelf
+          ? `<span class="admin-muted">You</span>`
+          : `<button type="button" class="admin-button secondary small" onclick="revokeAdminAccess(${JSON.stringify(user.id || "")}, ${JSON.stringify(user.email || "")})" ${busy ? "disabled" : ""}>${busy ? "Working…" : "Revoke"}</button>`
+        : `<button type="button" class="admin-button black small" onclick="grantAdminAccess(${JSON.stringify(user.id || "")}, ${JSON.stringify(user.email || "")})" ${busy ? "disabled" : ""}>${busy ? "Working…" : "Grant admin"}</button>`;
+
+      return `<tr>
+        <td>
+          <strong>${esc(user.display_name || user.email || "—")}</strong>
+          <div class="admin-small">${esc(user.email || "—")}</div>
+        </td>
+        <td>${esc(status)}</td>
+        <td>${esc(role)}</td>
+        <td>${esc(user.last_sign_in_at ? formatAdminDate(String(user.last_sign_in_at).slice(0, 10)) : "—")}</td>
+        <td class="admin-settings-actions">${actions}</td>
+      </tr>`;
+    })
+    .join("");
+
+  return `
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Settings</h3>
+          <p class="admin-muted">Manage who can sign in to 101cruise Admin. Granting access updates both the profile flag and the admin allow-list.</p>
+        </div>
+        <button type="button" class="admin-button secondary small" onclick="loadAdminSettingsUsers()" ${adminSettingsLoading ? "disabled" : ""}>
+          ${adminSettingsLoading ? "Loading…" : "Refresh"}
+        </button>
+      </div>
+
+      ${adminSettingsMessage ? `<div class="admin-message ${messageClass}">${esc(adminSettingsMessage)}</div>` : ""}
+
+      <div class="admin-settings-grant">
+        <div class="admin-field">
+          <label for="adminSettingsGrantEmail">Grant admin by email</label>
+          <input id="adminSettingsGrantEmail" type="email" value="${esc(adminSettingsGrantEmail)}" placeholder="name@example.com" oninput="adminSettingsGrantEmail=this.value" onkeydown="if(event.key==='Enter')grantAdminAccessByEmail()">
+          <p class="admin-helper">The person needs a Supabase Auth account first (they can sign in once on this Admin page). Then grant access here.</p>
+        </div>
+        <button type="button" class="admin-button black" onclick="grantAdminAccessByEmail()" ${adminSettingsBusyKey ? "disabled" : ""}>Grant admin</button>
+      </div>
+    </div>
+
+    <div class="admin-card" style="margin-top:16px">
+      <div class="featured-cruises-toolbar">
+        <div class="admin-field">
+          <label for="adminSettingsSearch">Search users</label>
+          <input id="adminSettingsSearch" type="search" value="${esc(adminSettingsSearch)}" placeholder="Email or name…" oninput="setAdminSettingsSearch(this.value)" onkeydown="if(event.key==='Enter')searchAdminSettingsUsers()">
+        </div>
+        <button type="button" class="admin-button secondary" onclick="searchAdminSettingsUsers()" ${adminSettingsLoading ? "disabled" : ""}>Search</button>
+      </div>
+
+      <div class="usage-table-wrap">
+        <table class="usage-table admin-settings-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Status</th>
+              <th>Role</th>
+              <th>Last sign-in</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${
+              adminSettingsLoading
+                ? `<tr><td colspan="5" class="usage-empty">Loading users…</td></tr>`
+                : rows
+                  ? rows
+                  : `<tr><td colspan="5" class="usage-empty">No users found.</td></tr>`
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
 async function initAdmin() {
   // Password-recovery links land with a recovery session; show a set-password form.
   const hash = window.location.hash || "";
@@ -6181,6 +6403,21 @@ async function initAdmin() {
 
   currentUser = data.session.user;
   await loadProfile();
+
+  if (!currentProfile?.is_admin) {
+    try {
+      const headers = await adminAuthHeaders();
+      const claimResponse = await fetch("/.netlify/functions/admin-users", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "claim_invite" })
+      });
+      const claimData = await claimResponse.json().catch(() => ({}));
+      if (claimData?.claimed) await loadProfile();
+    } catch (_error) {
+      /* ignore */
+    }
+  }
 
   const access = await assertAdminAccess();
   if (!access.ok) {
