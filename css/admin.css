@@ -3379,15 +3379,15 @@
 }
 
 .research-filters select,
-.research-filters input,
+.research-filters input:not([type="checkbox"]):not([type="radio"]),
 .research-form select,
-.research-form input,
-.research-field input,
+.research-form input:not([type="checkbox"]):not([type="radio"]),
+.research-field input:not([type="checkbox"]):not([type="radio"]),
 .research-field textarea,
 .research-source-note,
 .research-tender select,
-.research-tender input,
-.research-faq-row input,
+.research-tender input:not([type="checkbox"]):not([type="radio"]),
+.research-faq-row input:not([type="checkbox"]):not([type="radio"]),
 .research-faq-row textarea {
   width: 100%;
   box-sizing: border-box;
@@ -3680,9 +3680,22 @@
 
 .research-batch-skip {
   display: flex !important;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
   font-weight: 500 !important;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.research-batch-skip input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 2px 0 0;
+  flex: 0 0 auto;
+  accent-color: #245c4e;
+  cursor: pointer;
 }
 
 .research-batch-progress {
