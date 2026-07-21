@@ -4,6 +4,11 @@
  */
 
 const { discoverForCruiseLine } = require("./cruise-discovery");
+const {
+  upsertCandidateRecord,
+  loadShipAliases,
+  loadDestinationAliases
+} = require("./cruise-discovery-ops");
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -57,7 +62,7 @@ async function expireSailedCruises() {
   // PostgREST caps rows per request; loop until none left.
   for (let pass = 0; pass < 50; pass += 1) {
     const rows = await supabase(
-      `discovered_cruises?status=in.(active,review_required)&departure_date=lt.${today}&select=id`,
+      `discovered_cruises?status=in.(active,review_required,match_required,validation_failed,ready,discovered)&departure_date=lt.${today}&select=id`,
       {
         method: "PATCH",
         headers: { Prefer: "return=representation" },
@@ -165,19 +170,52 @@ async function upsertCandidate(candidate, stats) {
 }
 
 async function insertReviewItems(runId, items) {
-  if (!items?.length) return;
-  const rows = items.map((item) => ({
-    run_id: runId,
-    cruise_line_id: item.cruise_line_id || null,
-    destination_id: item.destination_id || null,
-    cruise_id: item.cruise_id || null,
-    item_type: item.item_type,
-    status: "pending",
-    title: item.title || null,
-    detail: item.detail || null,
-    source_url: item.source_url || null,
-    payload: item.payload || {}
-  }));
+  if (!items?.length) return { inserted: 0, skipped_duplicates: 0 };
+
+  // Skip creating pending duplicates already in the queue (same fingerprint / url+type).
+  const pending = await supabase(
+    "cruise_discovery_review_items?status=eq.pending&select=id,item_type,source_url,payload,cruise_line_id&limit=2000"
+  ).catch(() => []);
+  const existing = new Set();
+  for (const row of pending || []) {
+    const fp =
+      row.payload?.fingerprint ||
+      [row.item_type || "", String(row.source_url || "").toLowerCase().replace(/\/$/, ""), row.payload?.external_key || row.payload?.ship_id || "", row.cruise_line_id || ""].join("|");
+    existing.add(fp);
+    existing.add(`${row.item_type}|${String(row.source_url || "").toLowerCase().replace(/\/$/, "")}`);
+  }
+
+  const rows = [];
+  let skipped = 0;
+  for (const item of items) {
+    const fp =
+      item.payload?.fingerprint ||
+      [item.item_type || "", String(item.source_url || "").toLowerCase().replace(/\/$/, ""), item.payload?.external_key || item.payload?.ship_id || "", item.cruise_line_id || ""].join("|");
+    const loose = `${item.item_type}|${String(item.source_url || "").toLowerCase().replace(/\/$/, "")}`;
+    if (existing.has(fp) || existing.has(loose)) {
+      skipped += 1;
+      continue;
+    }
+    existing.add(fp);
+    existing.add(loose);
+    rows.push({
+      run_id: runId,
+      cruise_line_id: item.cruise_line_id || null,
+      destination_id: item.destination_id || null,
+      cruise_id: item.cruise_id || null,
+      item_type: item.item_type,
+      status: "pending",
+      title: item.title || null,
+      detail: item.detail || null,
+      source_url: item.source_url || null,
+      payload: item.payload || {},
+      entity_group_key: item.payload?.entity_group_key || null,
+      affected_external_keys: item.payload?.external_key ? [item.payload.external_key] : [],
+      first_seen_at: new Date().toISOString(),
+      last_seen_at: new Date().toISOString()
+    });
+  }
+
   for (let i = 0; i < rows.length; i += 50) {
     await supabase("cruise_discovery_review_items", {
       method: "POST",
@@ -185,19 +223,28 @@ async function insertReviewItems(runId, items) {
       body: JSON.stringify(rows.slice(i, i + 50))
     });
   }
+  return { inserted: rows.length, skipped_duplicates: skipped };
 }
 
 function emptyAggregate() {
   return {
     lines_scanned: 0,
     cruise_lines_scanned: 0,
+    cruise_lines_failed: 0,
     search_hits: 0,
+    pages_fetched: 0,
     candidates: 0,
+    candidates_validated: 0,
+    skipped_non_cruise: 0,
+    duplicate_candidates_suppressed: 0,
     new: 0,
     changed: 0,
     unchanged: 0,
     upserted_active: 0,
     upserted_review: 0,
+    cruises_inserted: 0,
+    cruises_updated: 0,
+    cruises_promoted: 0,
     review_items: 0
   };
 }
@@ -255,13 +302,21 @@ async function discoverOneLine({
       `ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&active=eq.true&select=id,name,slug,official_ship_url,official_line_ship_id,ship_class,year_built,year_refurbished&order=name.asc`
     );
 
+    const [shipAliases, destinationAliases] = await Promise.all([
+      loadShipAliases(cruiseLineId),
+      loadDestinationAliases()
+    ]);
+
+    const startedMs = Date.now();
     const { candidates, reviewItems, stats } = await discoverForCruiseLine({
       cruiseLine,
       ships: ships || [],
       destinations: destinations || [],
       destination: destScope,
       fetchPages: true,
-      maxResults: destScope ? 8 : 6
+      maxResults: destScope ? 8 : 6,
+      shipAliases,
+      destinationAliases
     });
 
     aggregate.lines_scanned = 1;
@@ -273,24 +328,30 @@ async function discoverOneLine({
     }
 
     for (const candidate of candidates) {
-      const result = await upsertCandidate(candidate, aggregate);
-      if (result?.price_changed) {
+      const result = await upsertCandidateRecord(candidate, aggregate);
+      if (result?.row && candidate.brochure_fare_display && result.changedFields?.includes("brochure_fare_display")) {
         reviewItems.push({
-          item_type: "changed_price",
+          item_type: "validation_failure",
           title: `Price changed: ${candidate.ship_name || "cruise"} ${candidate.departure_date || ""}`,
           detail: `Brochure fare updated to ${candidate.brochure_fare_display}`,
           cruise_line_id: cruiseLine.id,
           destination_id: candidate.destination_id,
-          cruise_id: result.id,
+          cruise_id: result.row.id,
           source_url: candidate.official_url,
           payload: { external_key: candidate.external_key }
         });
       }
     }
 
-    await insertReviewItems(run.id, reviewItems);
-    aggregate.review_items = (aggregate.review_items || 0) + (reviewItems?.length || 0);
+    const reviewInsert = await insertReviewItems(run.id, reviewItems);
+    aggregate.review_items =
+      (aggregate.review_items || 0) + (reviewInsert?.inserted ?? reviewItems?.length ?? 0);
+    aggregate.review_duplicates_skipped = reviewInsert?.skipped_duplicates || 0;
     aggregate.triggered_by = triggeredBy;
+    aggregate.duration_ms = Date.now() - startedMs;
+    // Rough Brave cost proxy: ~1 request per search query batch counted in search_hits
+    aggregate.request_count = (aggregate.search_hits || 0) + (aggregate.pages_fetched || 0);
+    aggregate.estimated_api_cost_note = "Brave Search + page fetches; cost varies by plan";
 
     await supabase(`cruise_discovery_runs?id=eq.${encodeURIComponent(run.id)}`, {
       method: "PATCH",

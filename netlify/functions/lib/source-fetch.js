@@ -29,10 +29,14 @@ function stripHtml(html) {
 
 /**
  * @param {string} url
- * @param {{ timeoutMs?: number }} [options]
+ * @param {{ timeoutMs?: number, maxExcerptChars?: number }} [options]
  */
 async function fetchSourceExcerpt(url, options = {}) {
   const timeoutMs = Math.max(1500, Number(options.timeoutMs) || FETCH_TIMEOUT_MS);
+  const maxExcerptChars = Math.min(
+    8_000,
+    Math.max(500, Number(options.maxExcerptChars) || MAX_EXCERPT_CHARS)
+  );
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -72,7 +76,7 @@ async function fetchSourceExcerpt(url, options = {}) {
       if (html.length > MAX_BYTES) html = html.slice(0, MAX_BYTES);
     }
 
-    const excerpt = stripHtml(html).slice(0, MAX_EXCERPT_CHARS);
+    const excerpt = stripHtml(html).slice(0, maxExcerptChars);
     return {
       ok: Boolean(excerpt),
       url,
