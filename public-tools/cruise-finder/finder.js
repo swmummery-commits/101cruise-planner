@@ -700,11 +700,36 @@
     state.results = [];
   }
 
-  function destinationPageBase() {
-    if (location.hostname.indexOf("101cruise.com.au") !== -1) {
-      return "https://101cruise.com.au/cruise-destination";
-    }
-    return `${TOOLS_ORIGIN}/cruise-destination`;
+  /**
+   * Always open destination pages on the tools origin (Netlify).
+   * Squarespace (101cruise.com.au) does not host /cruise-destination or /destination/*.
+   * Prefer Living Destination pages (/destination/{slug}); fall back to the
+   * cruise-finder detail tool when needed.
+   */
+  function destinationPageUrl(destId, matchKey) {
+    const slug = String(destId || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    if (!slug) return "";
+
+    const params = new URLSearchParams();
+    if (state.timingMode) params.set("tm", state.timingMode);
+    if (state.startDate) params.set("sd", state.startDate);
+    if (state.endDate) params.set("ed", state.endDate);
+    if (state.month) params.set("m", state.month);
+    if (state.year) params.set("y", state.year);
+    if (state.durationId) params.set("dur", state.durationId);
+    if (state.departure) params.set("dep", state.departure);
+    if (state.styles.length) params.set("st", state.styles.join(","));
+    if (state.budgetId) params.set("bud", state.budgetId);
+    if (matchKey) params.set("mk", matchKey);
+
+    // Living Destination Experience (Sprint 11C)
+    const living = `${TOOLS_ORIGIN}/destination/${encodeURIComponent(slug)}`;
+    const qs = params.toString();
+    return qs ? `${living}?${qs}` : living;
   }
 
   function saveFinderPrefs(matchKey, matchLabel) {
@@ -731,19 +756,7 @@
   }
 
   function buildDestinationUrl(destId, matchKey) {
-    const params = new URLSearchParams();
-    params.set("destination", destId);
-    if (state.timingMode) params.set("tm", state.timingMode);
-    if (state.startDate) params.set("sd", state.startDate);
-    if (state.endDate) params.set("ed", state.endDate);
-    if (state.month) params.set("m", state.month);
-    if (state.year) params.set("y", state.year);
-    if (state.durationId) params.set("dur", state.durationId);
-    if (state.departure) params.set("dep", state.departure);
-    if (state.styles.length) params.set("st", state.styles.join(","));
-    if (state.budgetId) params.set("bud", state.budgetId);
-    if (matchKey) params.set("mk", matchKey);
-    return `${destinationPageBase()}?${params.toString()}`;
+    return destinationPageUrl(destId, matchKey);
   }
 
   function bind() {
@@ -819,8 +832,13 @@
         const matchKey = btn.getAttribute("data-match") || "";
         const matchLabel = btn.getAttribute("data-match-label") || "";
         if (!destId) return;
+        const url = buildDestinationUrl(destId, matchKey);
+        if (!url) {
+          console.warn("Cruise Finder: could not build destination URL for", destId);
+          return;
+        }
         saveFinderPrefs(matchKey, matchLabel);
-        window.location.href = buildDestinationUrl(destId, matchKey);
+        window.location.href = url;
       });
     });
   }

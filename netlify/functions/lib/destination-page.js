@@ -4,6 +4,7 @@
  */
 
 const { normaliseContentJson, asGoodToKnowArray, asSuitabilityLevel } = require("./research-schemas");
+const { formatPublicSailing } = require("./cruise-discovery");
 
 const SUITABILITY_PAGE_KEYS = [
   ["couples", "suitability_couples"],
@@ -161,7 +162,8 @@ function buildDestinationPageDto({
   research,
   heroMedia,
   ports,
-  portMediaById
+  portMediaById,
+  cruiseCatalog = null
 }) {
   const rawContent = research?.content_json && typeof research.content_json === "object"
     ? research.content_json
@@ -180,6 +182,10 @@ function buildDestinationPageDto({
   const faqs = buildFaqs(content);
   const cruiseLines = buildCruiseLines(content);
   const featuredPorts = buildPorts(ports, portMediaById || new Map());
+  const catalog =
+    cruiseCatalog && typeof cruiseCatalog === "object"
+      ? cruiseCatalog
+      : { totalCount: 0, pageSize: 6, source: "discovery", sailings: [] };
 
   return {
     id: destination.id,
@@ -209,8 +215,7 @@ function buildDestinationPageDto({
     cruiseLines,
     goodToKnow,
     faqs,
-    // Cruises remain placeholder client-side until Discovery Engine
-    cruiseCatalog: null,
+    cruiseCatalog: catalog,
     source: "living_destination",
     publishedAt: research?.published_at || null,
     sections: {
@@ -218,6 +223,7 @@ function buildDestinationPageDto({
       snapshot: snapshot.length > 0,
       suitability: Boolean(suitability),
       ports: featuredPorts.length > 0,
+      cruises: Array.isArray(catalog.sailings) && catalog.sailings.length > 0,
       cruiseLines: cruiseLines.length > 0,
       goodToKnow: goodToKnow.length > 0,
       faqs: faqs.length > 0
@@ -225,8 +231,25 @@ function buildDestinationPageDto({
   };
 }
 
+function buildCruiseCatalog(rows, { lineNames = new Map(), shipNames = new Map() } = {}) {
+  const sailings = (rows || []).map((row) =>
+    formatPublicSailing(
+      row,
+      lineNames.get(row.cruise_line_id) || null,
+      shipNames.get(row.ship_id) || null
+    )
+  );
+  return {
+    totalCount: sailings.length,
+    pageSize: 6,
+    source: "discovery",
+    sailings
+  };
+}
+
 module.exports = {
   cleanSlug,
+  buildCruiseCatalog,
   mediaDto,
   buildDestinationPageDto,
   buildSnapshot,

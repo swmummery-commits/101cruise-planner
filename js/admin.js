@@ -7281,6 +7281,7 @@ function renderCiLineForm(line) {
           </select>
         </div>
         <div class="admin-field"><label>Website URL</label><input id="ciLineWebsite" value="${esc(line?.website_url || "")}"></div>
+        <div class="admin-field"><label>Cruise search URL</label><input id="ciLineCruiseSearch" value="${esc(line?.cruise_search_url || "")}" placeholder="Official find-a-cruise page (optional)"></div>
       </div>
       <div class="ci-checkbox-row">
         <label class="ci-check-control"><input type="checkbox" id="ciLineActive" ${line?.active !== false ? "checked" : ""}> Active</label>
@@ -7367,6 +7368,7 @@ async function persistCiLine({ quiet = false } = {}) {
     name,
     country: String(document.getElementById("ciLineCountry")?.value || "").trim() || null,
     website_url: normalizeUrl(document.getElementById("ciLineWebsite")?.value) || null,
+    cruise_search_url: normalizeUrl(document.getElementById("ciLineCruiseSearch")?.value) || null,
     logo_url: normalizeUrl(document.getElementById("ciLineLogo")?.value) || null,
     line_type: String(document.getElementById("ciLineType")?.value || "").trim() || null,
     active: Boolean(document.getElementById("ciLineActive")?.checked),

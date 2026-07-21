@@ -13,7 +13,12 @@
  * - Service role server-side only
  */
 
-const { cleanSlug, buildDestinationPageDto, mediaDto } = require("./lib/destination-page.js");
+const {
+  cleanSlug,
+  buildDestinationPageDto,
+  buildCruiseCatalog,
+  mediaDto
+} = require("./lib/destination-page.js");
 
 function jsonResponse(statusCode, body, cacheControl = "public, max-age=300, stale-while-revalidate=86400") {
   const empty = body === "" || body == null;
@@ -204,17 +209,53 @@ exports.handler = async (event) => {
     const heroMedia =
       mediaMap.get(destination.hero_media_id) || mediaMap.get(research.media_id) || null;
 
+    const today = new Date().toISOString().slice(0, 10);
+    let cruiseRows = [];
+    try {
+      cruiseRows = await supabaseGet(
+        `cruises?destination_id=eq.${encodeURIComponent(destination.id)}` +
+          `&status=eq.active` +
+          `&or=(departure_date.is.null,departure_date.gte.${today})` +
+          `&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare,currency,brochure_fare_display,official_url` +
+          `&order=departure_date.asc.nullslast&limit=200`
+      );
+    } catch (cruiseError) {
+      console.warn("destination cruises load skipped", cruiseError.message || cruiseError);
+      cruiseRows = [];
+    }
+
+    const lineIds = [...new Set((cruiseRows || []).map((r) => r.cruise_line_id).filter(Boolean))];
+    const shipIds = [...new Set((cruiseRows || []).map((r) => r.ship_id).filter(Boolean))];
+    const lineNames = new Map();
+    const shipNames = new Map();
+    if (lineIds.length) {
+      const lines = await supabaseGet(
+        `ci_cruise_lines?id=in.(${lineIds.join(",")})&select=id,name`
+      );
+      for (const row of lines || []) lineNames.set(row.id, row.name);
+    }
+    if (shipIds.length) {
+      const ships = await supabaseGet(
+        `ci_cruise_ships?id=in.(${shipIds.join(",")})&select=id,name`
+      );
+      for (const row of ships || []) shipNames.set(row.id, row.name);
+    }
+
+    const cruiseCatalog = buildCruiseCatalog(cruiseRows || [], { lineNames, shipNames });
+
     const page = buildDestinationPageDto({
       destination,
       research,
       heroMedia,
       ports: Array.isArray(ports) ? ports : [],
-      portMediaById: mediaMap
+      portMediaById: mediaMap,
+      cruiseCatalog
     });
 
     page.cruiseLines = await enrichCruiseLineLogos(page.cruiseLines);
     page.heroResolved = Boolean(mediaDto(heroMedia));
     page.sections.cruiseLines = Array.isArray(page.cruiseLines) && page.cruiseLines.length > 0;
+    page.sections.cruises = cruiseCatalog.totalCount > 0;
 
     return jsonResponse(200, {
       success: true,

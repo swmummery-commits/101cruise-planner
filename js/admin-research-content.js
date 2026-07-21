@@ -134,7 +134,7 @@
   let filterFreshness = "all";
   let searchQuery = "";
   let view = "list"; // list | research | editor
-  let researchSection = "content"; // content | audit
+  let researchSection = "content"; // content | audit | discovery
   let editingId = null;
   let editorItem = null;
   let editorSources = [];
@@ -1063,6 +1063,7 @@
       <div class="admin-subtabs packing-subtabs research-section-tabs" role="tablist" aria-label="Research Content sections">
         <button type="button" class="admin-subtab ${researchSection === "content" ? "active" : ""}" onclick="ResearchContentAdmin.setSection('content')">Content</button>
         <button type="button" class="admin-subtab ${researchSection === "audit" ? "active" : ""}" onclick="ResearchContentAdmin.setSection('audit')">Cruise Line Audit</button>
+        <button type="button" class="admin-subtab ${researchSection === "discovery" ? "active" : ""}" onclick="ResearchContentAdmin.setSection('discovery')">Cruise Discovery</button>
       </div>
     `;
     if (researchSection === "audit") {
@@ -1071,6 +1072,13 @@
           ? global.CruiseLineAuditAdmin.renderPanel()
           : `<div class="admin-card"><p class="admin-muted">Cruise Line Audit failed to load.</p></div>`;
       return `${subtabs}${auditHtml}`;
+    }
+    if (researchSection === "discovery") {
+      const discoveryHtml =
+        typeof global.CruiseDiscoveryAdmin?.renderPanel === "function"
+          ? global.CruiseDiscoveryAdmin.renderPanel()
+          : `<div class="admin-card"><p class="admin-muted">Cruise Discovery failed to load.</p></div>`;
+      return `${subtabs}${discoveryHtml}`;
     }
     let body = renderList();
     if (view === "research") body = renderResearch();
@@ -1085,9 +1093,14 @@
     openEditor,
     openResearch,
     setSection(section) {
-      researchSection = section === "audit" ? "audit" : "content";
+      if (section === "audit") researchSection = "audit";
+      else if (section === "discovery") researchSection = "discovery";
+      else researchSection = "content";
       if (researchSection === "audit" && global.CruiseLineAuditAdmin?.ensureLoaded) {
         global.CruiseLineAuditAdmin.ensureLoaded();
+      }
+      if (researchSection === "discovery" && global.CruiseDiscoveryAdmin?.ensureLoaded) {
+        global.CruiseDiscoveryAdmin.ensureLoaded();
       }
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },

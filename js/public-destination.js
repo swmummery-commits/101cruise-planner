@@ -291,12 +291,24 @@
     const visibleSailings = catalog.sailings.slice(0, cruisesVisible);
     const cards = visibleSailings.map((c) => renderCruiseCard(dest, c)).join("");
     const hasMore = cruisesVisible < total;
+    const empty =
+      !total
+        ? `<p class="dest-section-lead">Live sailings for ${esc(
+            dest.name
+          )} will appear here as soon as they are verified from official cruise line sources. Contact Paul for current availability.</p>`
+        : "";
 
     return `
       <section class="dest-section dest-reveal" id="cruises" style="--dest-delay: 220ms">
         <div class="dest-wrap">
           <h2 class="dest-section-title" id="dest-cruise-heading">${esc(String(total))} Cruises Available for ${esc(dest.name)}</h2>
-          <p class="dest-section-lead dest-cruise-showing" id="dest-cruise-showing">${esc(cruiseShowingText(cruisesVisible, total))}</p>
+          ${
+            total
+              ? `<p class="dest-section-lead dest-cruise-showing" id="dest-cruise-showing">${esc(
+                  cruiseShowingText(cruisesVisible, total)
+                )}</p>`
+              : empty
+          }
           <div class="dest-cruise-list" id="dest-cruise-list">${cards}</div>
           <div class="dest-cruise-load-wrap" id="dest-cruise-load-wrap" ${hasMore ? "" : "hidden"}>
             <button type="button" class="dest-btn dest-btn-secondary-ink" id="dest-cruise-load-more" onclick="DestinationExperience.loadMoreCruises()">
@@ -506,7 +518,6 @@
 
     try {
       const pageDest = await fetchDestination(slug);
-      // Attach placeholder cruises until Discovery Engine
       pageDest.cruiseCatalog = Data.getCruiseCatalog(pageDest);
       activeDestination = pageDest;
       setMetadata(pageDest);

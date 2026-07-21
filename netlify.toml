@@ -9,6 +9,10 @@
   # Fleet audit: Brave + page fetch + optional LLM name extract.
   timeout = 60
 
+[functions."cruise-discovery"]
+  # Discovery: Brave + official page fetch per cruise line.
+  timeout = 60
+
 [[redirects]]
   from = "/planner"
   to = "/index.html"
