@@ -6225,7 +6225,17 @@ async function adminSettingsApi(action, payload = {}) {
     ({ response, data } = await run());
   }
   if (!response.ok || data.success === false) {
-    throw new Error(data.error || `HTTP ${response.status}`);
+    const message = data.error || `HTTP ${response.status}`;
+    const revoked =
+      response.status === 401 &&
+      /revoked|session_id claim|sign out and sign in/i.test(String(message));
+    if (revoked) {
+      await supabaseClient.auth.signOut().catch(() => null);
+      currentUser = null;
+      currentProfile = null;
+      renderLogin("Your admin session was revoked. Please sign in again.");
+    }
+    throw new Error(message);
   }
   return data;
 }
