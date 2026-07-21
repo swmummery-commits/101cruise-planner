@@ -214,7 +214,7 @@
           <tr>
             <td><span class="research-audit-status research-audit-status--${esc(f.finding_type)}">${esc(statusIcon(f.finding_type))} ${esc(f.status_label || f.finding_type)}</span></td>
             <td>${esc(f.ship_name || "—")}</td>
-            <td>${esc(f.reason || "—")}</td>
+            <td class="research-audit-reason">${esc(f.reason || "—")}</td>
             <td>${esc(f.confidence || "—")}</td>
             <td>${f.source_url ? `<a href="${esc(f.source_url)}" target="_blank" rel="noopener noreferrer">Source</a>` : "—"}</td>
             <td class="research-audit-actions">${findingActions(f)}</td>
