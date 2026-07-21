@@ -734,6 +734,7 @@ async function setTab(tab) {
   if (tab === "research-content") {
     if (window.ResearchContentAdmin) window.ResearchContentAdmin.ensureLoaded();
     if (window.CruiseLineAuditAdmin) window.CruiseLineAuditAdmin.ensureLoaded({ quiet: true });
+    if (window.DeckPlansAdmin) window.DeckPlansAdmin.ensureLoaded({ quiet: true });
   }
   if (tab === "settings") {
     loadAdminSettingsUsers();
@@ -9157,10 +9158,12 @@ function renderFeaturedCruiseListItem(row) {
     >
       <div class="featured-cruise-card-main">
         <div class="featured-cruise-card-heading">
-          <h4>${esc(row.headline)}</h4>
+          ${strip
+            ? `<p class="featured-destination-strip">${esc(strip)}</p>`
+            : `<h4>${esc(row.headline)}</h4>`}
           <span class="featured-status-pill status-${esc(row.publication_status || "draft")}">${esc(featuredStatusLabel(row.publication_status))}</span>
         </div>
-        ${strip ? `<p class="featured-destination-strip">${esc(strip)}</p>` : ""}
+        ${strip ? `<h4>${esc(row.headline)}</h4>` : ""}
         <p class="admin-muted">${esc(lineName)} · ${esc(shipName)}</p>
         <p class="admin-small">
           Departure ${esc(formatAdminDate(row.departure_date))}

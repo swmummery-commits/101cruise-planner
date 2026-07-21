@@ -2724,18 +2724,28 @@
   gap: 12px;
 }
 
+.featured-cruise-card-heading .featured-destination-strip {
+  margin: 0;
+  color: #245c4e;
+  font-size: 15px;
+  font-weight: 650;
+  min-width: 0;
+}
+
+.featured-cruise-card-heading h4,
+.featured-cruise-card-main > h4 {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.4;
+}
+
 .featured-cruise-card-heading h4 {
   margin: 0;
   font-size: 15px;
   font-weight: 650;
   color: #111;
-}
-
-.featured-destination-strip {
-  margin: 6px 0 0;
-  color: #245c4e;
-  font-size: 13px;
-  font-weight: 600;
 }
 
 .featured-status-pill {
@@ -4172,4 +4182,190 @@
 .admin-settings-table td.admin-settings-actions {
   text-align: right;
   white-space: nowrap;
+}
+
+/* Sprint 12A — Deck Plan Links */
+.deck-plans-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 16px 0 20px;
+}
+
+.deck-plans-list-heading {
+  margin: 20px 0 10px;
+  font-size: 16px;
+}
+
+.deck-plans-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.deck-plans-table th,
+.deck-plans-table td {
+  white-space: normal;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.deck-plans-table th:nth-child(1),
+.deck-plans-table td:nth-child(1) {
+  width: 14%;
+}
+
+.deck-plans-table th:nth-child(2),
+.deck-plans-table td:nth-child(2) {
+  width: 14%;
+}
+
+.deck-plans-table th:nth-child(3),
+.deck-plans-table td:nth-child(3) {
+  width: 12%;
+}
+
+.deck-plans-table th:nth-child(4),
+.deck-plans-table td:nth-child(4) {
+  width: 12%;
+}
+
+.deck-plans-table th:nth-child(5),
+.deck-plans-table td:nth-child(5) {
+  width: 12%;
+}
+
+.deck-plans-table th:nth-child(6),
+.deck-plans-table td:nth-child(6) {
+  width: 10%;
+}
+
+.deck-plans-table th:nth-child(7),
+.deck-plans-table td:nth-child(7) {
+  width: 26%;
+}
+
+.deck-plans-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.deck-plan-status {
+  font-weight: 650;
+  font-size: 12px;
+}
+
+.deck-plan-status--approved { color: #245c4e; }
+.deck-plan-status--needs_review,
+.deck-plan-status--found { color: #9a5b00; }
+.deck-plan-status--outdated { color: #9a5b00; }
+.deck-plan-status--unavailable,
+.deck-plan-status--missing { color: #6b7280; }
+
+.deck-plans-review {
+  margin: 8px 0 20px;
+}
+
+.deck-plans-review-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.deck-plans-review-header h3 {
+  margin: 0 0 4px;
+}
+
+.deck-plans-candidate-list {
+  display: grid;
+  gap: 12px;
+}
+
+.deck-plans-candidate {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid #eef2f0;
+}
+
+.deck-plans-candidate:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.deck-plans-candidate-main {
+  min-width: 0;
+  flex: 1 1 280px;
+}
+
+.deck-plans-candidate-main h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.deck-plans-candidate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.deck-plans-review-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #eef2f0;
+}
+
+.deck-plans-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin: 4px 0 14px;
+}
+
+.deck-plans-toolbar .admin-small {
+  flex: 1 1 220px;
+  margin: 0;
+}
+
+.deck-plans-bulk-progress,
+.deck-plans-coverage {
+  margin-bottom: 16px;
+}
+
+.deck-plans-coverage-list {
+  margin: 10px 0;
+  padding-left: 18px;
+}
+
+.deck-plans-history-heading {
+  margin: 18px 0 8px;
+  font-size: 14px;
+}
+
+.deck-plans-history-wrap {
+  margin-top: 4px;
+}
+
+.deck-plans-history-table td,
+.deck-plans-history-table th {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  vertical-align: top;
+  font-size: 12px;
+}
+
+.deck-plans-url-cell {
+  max-width: 180px;
 }

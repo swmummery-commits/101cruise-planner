@@ -151,6 +151,11 @@ function resolveCruiseShip(ships, shipName, cruiseLine) {
 
 function mapSupabaseShip(row) {
   const line = row.ci_cruise_lines || {};
+  const deckStatus = row.deck_plan_status || null;
+  const deckUrl =
+    deckStatus === 'approved'
+      ? String(row.deck_plan_url || row.deck_plan_pdf_url || row.deck_plan_page_url || '').trim() || null
+      : null;
   return {
     id: row.id,
     name: row.name,
@@ -171,7 +176,9 @@ function mapSupabaseShip(row) {
     current_status: row.status,
     last_updated: row.updated_at || null,
     updated_date: row.updated_at || null,
-    slug: row.slug
+    slug: row.slug,
+    // Public safety: only expose approved URL — never status/candidates/notes
+    deck_plan_url: deckUrl
   };
 }
 
@@ -186,7 +193,7 @@ async function listSupabaseShips() {
 
   while (offset < 5000) {
     const path =
-      `ci_cruise_ships?select=id,name,slug,status,cruise_line_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,year_built,year_refurbished,facilities,hero_image_url,updated_at,ci_cruise_lines(id,name,slug)&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`;
+      `ci_cruise_ships?select=id,name,slug,status,cruise_line_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,year_built,year_refurbished,facilities,hero_image_url,deck_plan_url,deck_plan_page_url,deck_plan_pdf_url,deck_plan_status,updated_at,ci_cruise_lines(id,name,slug)&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`;
     const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/${path}`, {
       method: 'GET',
       headers: {

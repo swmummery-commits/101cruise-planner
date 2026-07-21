@@ -7984,6 +7984,23 @@ input[type="radio"] {
   gap: 8px;
   flex: 0 0 auto;
   margin: 0;
+  text-decoration: none;
+}
+
+.ship-deck-button--external {
+  padding-right: 12px;
+}
+
+.ship-deck-external-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  opacity: 0.85;
+}
+
+.ship-deck-external-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .ship-deck-button-icon {
