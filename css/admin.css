@@ -4369,3 +4369,37 @@
 .deck-plans-url-cell {
   max-width: 180px;
 }
+
+.deck-plans-busy-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.deck-plans-busy-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(36, 92, 78, 0.25);
+  border-top-color: #245c4e;
+  border-radius: 50%;
+  animation: deck-plans-spin 0.7s linear infinite;
+  flex: 0 0 auto;
+}
+
+@keyframes deck-plans-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.deck-plans-review--busy {
+  opacity: 0.92;
+}
+
+.deck-plans-candidate-actions .admin-button:disabled,
+.deck-plans-review-footer .admin-button:disabled,
+.deck-plans-row-actions .admin-button:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}

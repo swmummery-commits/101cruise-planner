@@ -28,6 +28,31 @@
   let bulkCancel = false;
   let bulkProgress = null;
 
+  /** @type {{ type: string, shipId?: string, candidateId?: string, label: string } | null} */
+  let busy = null;
+
+  function isBusy() {
+    return Boolean(busy) || Boolean(findingShipId) || bulkRunning;
+  }
+
+  function beginBusy(type, label, { shipId = "", candidateId = "" } = {}) {
+    busy = { type, shipId, candidateId, label };
+    message = label;
+    messageTone = "info";
+    if (typeof global.renderAdmin === "function") global.renderAdmin();
+  }
+
+  function endBusy() {
+    busy = null;
+  }
+
+  function busyLabelForButton(type, shipId, candidateId, idleLabel, activeLabel) {
+    if (!busy || busy.type !== type) return idleLabel;
+    if (shipId && busy.shipId && busy.shipId !== shipId) return idleLabel;
+    if (candidateId && busy.candidateId && busy.candidateId !== candidateId) return idleLabel;
+    return activeLabel;
+  }
+
   function esc(value) {
     return typeof global.esc === "function"
       ? global.esc(value)
@@ -145,8 +170,16 @@
       historyRows = [];
       return;
     }
-    const data = await api("list_history", { ship_id: shipId, limit: 20 });
-    historyRows = data.history || [];
+    try {
+      const data = await api("list_history", { ship_id: shipId, limit: 20 });
+      historyRows = data.history || [];
+    } catch (error) {
+      historyRows = [];
+      // Don't overwrite an in-progress action message with a hard failure
+      if (!busy) {
+        console.warn("[DeckPlans] history load failed:", error.message || error);
+      }
+    }
   }
 
   async function ensureLoaded({ quiet = false } = {}) {
@@ -353,8 +386,9 @@
     if (!ship) return "";
     const candidates = Array.isArray(ship.candidates) ? ship.candidates : [];
     const diag = lastDiagnostics;
+    const actionsLocked = isBusy();
     return `
-      <section class="admin-card deck-plans-review">
+      <section class="admin-card deck-plans-review ${actionsLocked ? "deck-plans-review--busy" : ""}">
         <div class="deck-plans-review-header">
           <div>
             <h3>Review — ${esc(ship.name)}</h3>
@@ -368,13 +402,17 @@
                 ? `<p class="admin-small">Current approved: <a href="${esc(
                     ship.deck_plan_url
                   )}" target="_blank" rel="noopener noreferrer">${esc(ship.deck_plan_url)}</a>
-                  · <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.reverify('${esc(
-                    ship.id
-                  )}')">Reverify</button></p>`
+                  · <button type="button" class="admin-button secondary small" ${
+                    actionsLocked ? "disabled" : ""
+                  } onclick="DeckPlansAdmin.reverify('${esc(ship.id)}')">${esc(
+                    busyLabelForButton("reverify", ship.id, "", "Reverify", "Reverifying…")
+                  )}</button></p>`
                 : ""
             }
           </div>
-          <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.closeReview()">Close</button>
+          <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.closeReview()" ${
+            actionsLocked ? "disabled" : ""
+          }>Close</button>
         </div>
         ${
           !candidates.length
@@ -382,7 +420,16 @@
             : `<div class="deck-plans-candidate-list">
                 ${candidates
                   .map((c) => {
-                    const candKey = encodeURIComponent(c.id || c.url || "");
+                    const candId = c.id || c.url || "";
+                    const candKey = encodeURIComponent(candId);
+                    const approvingThis =
+                      busy?.type === "approve" &&
+                      busy.shipId === ship.id &&
+                      busy.candidateId === candId;
+                    const rejectingThis =
+                      busy?.type === "reject" &&
+                      busy.shipId === ship.id &&
+                      busy.candidateId === candId;
                     return `
                       <article class="deck-plans-candidate">
                         <div class="deck-plans-candidate-main">
@@ -397,12 +444,16 @@
                         </div>
                         <div class="deck-plans-candidate-actions">
                           <a class="admin-button secondary small" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">Open Source</a>
-                          <button type="button" class="admin-button small" onclick="DeckPlansAdmin.approve('${esc(
-                            ship.id
-                          )}', decodeURIComponent('${candKey}'))">Approve</button>
-                          <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.reject('${esc(
-                            ship.id
-                          )}', decodeURIComponent('${candKey}'))">Reject</button>
+                          <button type="button" class="admin-button small" ${
+                            actionsLocked ? "disabled" : ""
+                          } onclick="DeckPlansAdmin.approve('${esc(ship.id)}', decodeURIComponent('${candKey}'))">${
+                            approvingThis ? "Approving…" : "Approve"
+                          }</button>
+                          <button type="button" class="admin-button secondary small" ${
+                            actionsLocked ? "disabled" : ""
+                          } onclick="DeckPlansAdmin.reject('${esc(ship.id)}', decodeURIComponent('${candKey}'))">${
+                            rejectingThis ? "Rejecting…" : "Reject"
+                          }</button>
                         </div>
                       </article>`;
                   })
@@ -410,18 +461,26 @@
               </div>`
         }
         <div class="deck-plans-review-footer">
-          <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.find('${esc(
-            ship.id
-          )}', true)">Find again (force)</button>
-          <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.markStatus('${esc(
-            ship.id
-          )}', 'unavailable')">Mark Unavailable</button>
-          <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.markStatus('${esc(
-            ship.id
-          )}', 'outdated')">Mark Outdated</button>
-          <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.clearCandidates('${esc(
-            ship.id
-          )}')">Clear Candidates</button>
+          <button type="button" class="admin-button secondary small" ${
+            actionsLocked ? "disabled" : ""
+          } onclick="DeckPlansAdmin.find('${esc(ship.id)}', true)">${
+            findingShipId === ship.id ? "Finding…" : "Find again (force)"
+          }</button>
+          <button type="button" class="admin-button secondary small" ${
+            actionsLocked ? "disabled" : ""
+          } onclick="DeckPlansAdmin.markStatus('${esc(ship.id)}', 'unavailable')">${esc(
+            busyLabelForButton("mark", ship.id, "unavailable", "Mark Unavailable", "Updating…")
+          )}</button>
+          <button type="button" class="admin-button secondary small" ${
+            actionsLocked ? "disabled" : ""
+          } onclick="DeckPlansAdmin.markStatus('${esc(ship.id)}', 'outdated')">${esc(
+            busyLabelForButton("mark", ship.id, "outdated", "Mark Outdated", "Updating…")
+          )}</button>
+          <button type="button" class="admin-button secondary small" ${
+            actionsLocked ? "disabled" : ""
+          } onclick="DeckPlansAdmin.clearCandidates('${esc(ship.id)}')">${esc(
+            busyLabelForButton("clear", ship.id, "", "Clear Candidates", "Clearing…")
+          )}</button>
         </div>
         ${
           diag
@@ -451,6 +510,7 @@
         const id = esc(ship.id);
         const sourceUrl = ship.deck_plan_url || "";
         const finding = findingShipId === ship.id;
+        const rowLocked = isBusy();
         return `
           <tr>
             <td>${esc(ship.cruise_line_name || "—")}</td>
@@ -466,19 +526,25 @@
                 : "—"
             }</td>
             <td class="deck-plans-row-actions">
-              <button type="button" class="admin-button secondary small" ${finding ? "disabled" : ""} onclick="DeckPlansAdmin.find('${id}')">${
-                finding ? "Finding…" : "Find Deck Plans"
-              }</button>
-              <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.openReview('${id}')">Review${
+              <button type="button" class="admin-button secondary small" ${
+                rowLocked ? "disabled" : ""
+              } onclick="DeckPlansAdmin.find('${id}')">${finding ? "Finding…" : "Find Deck Plans"}</button>
+              <button type="button" class="admin-button secondary small" ${
+                rowLocked ? "disabled" : ""
+              } onclick="DeckPlansAdmin.openReview('${id}')">Review${
                 ship.candidate_count ? ` (${ship.candidate_count})` : ""
               }</button>
               ${
                 ship.deck_plan_status === "approved"
                   ? `<button type="button" class="admin-button secondary small" disabled>Approved</button>`
                   : ship.candidates?.[0]
-                    ? `<button type="button" class="admin-button small" onclick="DeckPlansAdmin.approve('${id}', decodeURIComponent('${encodeURIComponent(
+                    ? `<button type="button" class="admin-button small" ${
+                        rowLocked ? "disabled" : ""
+                      } onclick="DeckPlansAdmin.approve('${id}', decodeURIComponent('${encodeURIComponent(
                         ship.candidates[0].id || ship.candidates[0].url || ""
-                      )}'))">Approve top</button>`
+                      )}'))">${
+                        busy?.type === "approve" && busy.shipId === ship.id ? "Approving…" : "Approve top"
+                      }</button>`
                     : `<button type="button" class="admin-button secondary small" disabled title="Find and review a candidate first">Approve</button>`
               }
             </td>
@@ -506,6 +572,20 @@
     `;
   }
 
+  function renderBusyBanner() {
+    if (!busy && !findingShipId && !bulkRunning) return "";
+    const label =
+      busy?.label ||
+      (findingShipId ? "Finding official deck-plan sources…" : "") ||
+      (bulkRunning ? "Bulk find in progress…" : "Working…");
+    return `
+      <div class="admin-message info deck-plans-busy-banner" role="status" aria-live="polite">
+        <span class="deck-plans-busy-spinner" aria-hidden="true"></span>
+        ${esc(label)}
+      </div>
+    `;
+  }
+
   function renderPanel() {
     const reviewShip = reviewShipId ? ships.find((s) => s.id === reviewShipId) : null;
     return `
@@ -516,7 +596,8 @@
             <p class="admin-muted">Find likely official deck-plan sources, review them, then approve a link for My Cruise. Nothing is published automatically.</p>
           </div>
         </div>
-        ${message ? `<div class="admin-message ${esc(messageTone)}">${esc(message)}</div>` : ""}
+        ${renderBusyBanner()}
+        ${!busy && message ? `<div class="admin-message ${esc(messageTone)}" role="status">${esc(message)}</div>` : ""}
         ${renderCards()}
         ${renderToolbar()}
         ${renderCoverage()}
@@ -537,6 +618,8 @@
       confirm_replace: confirmReplace === true
     });
     if (data.requires_confirmation) {
+      endBusy();
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
       const ok = window.confirm(
         `Replace approved deck plan?\n\nCurrent:\n${data.current_url}\n\nNew:\n${data.new_url}\n\nThe previous source will be kept in history.`
       );
@@ -545,14 +628,22 @@
         messageTone = "info";
         return;
       }
+      beginBusy("approve", "Replacing approved deck plan… saving…", {
+        shipId,
+        candidateId
+      });
       return approveFlow(shipId, candidateId, true);
     }
     upsertShip(data.ship);
     message = `Approved deck plan for ${data.ship.name}.`;
     messageTone = "success";
     if (reviewShipId === shipId) await loadHistory(shipId);
-    const dash = await api("dashboard");
-    cards = dash.cards || cards;
+    try {
+      const dash = await api("dashboard");
+      cards = dash.cards || cards;
+    } catch {
+      // Non-fatal — approval already saved
+    }
   }
 
   global.DeckPlansAdmin = {
@@ -593,6 +684,7 @@
       }
     },
     async openReview(shipId) {
+      if (isBusy()) return;
       reviewShipId = shipId;
       lastDiagnostics = null;
       try {
@@ -603,15 +695,18 @@
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     closeReview() {
+      if (isBusy()) return;
       reviewShipId = "";
       lastDiagnostics = null;
       historyRows = [];
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     async find(shipId, force) {
+      if (busy || bulkRunning) return;
       findingShipId = shipId;
-      message = "";
-      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      beginBusy("find", force ? "Searching again (forced)…" : "Finding official deck-plan sources…", {
+        shipId
+      });
       try {
         const data = await api("find", { ship_id: shipId, force: force === true });
         upsertShip(data.ship);
@@ -627,44 +722,60 @@
             : "No strong official deck-plan sources found. Check the official ship URL or try again later.";
           messageTone = data.candidates?.length ? "success" : "info";
         }
-        const dash = await api("dashboard");
-        cards = dash.cards || cards;
+        try {
+          const dash = await api("dashboard");
+          cards = dash.cards || cards;
+        } catch {
+          /* ignore */
+        }
       } catch (error) {
         message = error.message || "Find failed";
         messageTone = "error";
       } finally {
         findingShipId = "";
+        endBusy();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
     async approve(shipId, candidateId) {
+      if (isBusy()) return;
+      beginBusy("approve", "Approving deck plan… saving to ship…", {
+        shipId,
+        candidateId
+      });
       try {
         await approveFlow(shipId, candidateId, false);
       } catch (error) {
         message = error.message || "Approve failed";
         messageTone = "error";
       } finally {
+        endBusy();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
     async reject(shipId, candidateId) {
+      if (isBusy()) return;
+      beginBusy("reject", "Rejecting candidate…", { shipId, candidateId });
       try {
         const data = await api("reject_candidate", {
           ship_id: shipId,
           candidate_id: candidateId
         });
         upsertShip(data.ship);
-        message = "Candidate rejected (recorded in history).";
+        message = "Candidate rejected.";
         messageTone = "info";
         if (reviewShipId === shipId) await loadHistory(shipId);
       } catch (error) {
         message = error.message || "Reject failed";
         messageTone = "error";
       } finally {
+        endBusy();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
     async reverify(shipId) {
+      if (isBusy()) return;
+      beginBusy("reverify", "Reverifying approved source…", { shipId });
       try {
         const data = await api("reverify", { ship_id: shipId });
         upsertShip(data.ship);
@@ -675,26 +786,39 @@
         message = error.message || "Reverify failed";
         messageTone = "error";
       } finally {
+        endBusy();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
     async markStatus(shipId, status) {
+      if (isBusy()) return;
+      beginBusy("mark", `Updating status to ${statusLabel(status)}…`, {
+        shipId,
+        candidateId: status
+      });
       try {
         const data = await api("mark_status", { ship_id: shipId, status });
         upsertShip(data.ship);
         message = `Marked as ${statusLabel(status)}.`;
         messageTone = "info";
         if (reviewShipId === shipId) await loadHistory(shipId);
-        const dash = await api("dashboard");
-        cards = dash.cards || cards;
+        try {
+          const dash = await api("dashboard");
+          cards = dash.cards || cards;
+        } catch {
+          /* ignore */
+        }
       } catch (error) {
         message = error.message || "Status update failed";
         messageTone = "error";
       } finally {
+        endBusy();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
     async clearCandidates(shipId) {
+      if (isBusy()) return;
+      beginBusy("clear", "Clearing candidates…", { shipId });
       try {
         const data = await api("clear_candidates", { ship_id: shipId });
         upsertShip(data.ship);
@@ -704,10 +828,13 @@
         message = error.message || "Clear failed";
         messageTone = "error";
       } finally {
+        endBusy();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
     async runCoverageAudit() {
+      if (isBusy()) return;
+      beginBusy("audit", "Running coverage audit…");
       try {
         const data = await api("coverage_audit");
         coverageReport = data.report || null;
@@ -718,6 +845,7 @@
         message = error.message || "Coverage audit failed";
         messageTone = "error";
       } finally {
+        endBusy();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
@@ -733,7 +861,7 @@
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     async startBulkFind() {
-      if (bulkRunning) return;
+      if (bulkRunning || busy) return;
       const confirmed = window.confirm(
         "Find deck plans for missing ships one at a time?\n\nThis only creates candidates for review — it never approves.\nYou can cancel at any time."
       );
@@ -749,6 +877,8 @@
         error: "",
         stopped: false
       };
+      message = "Starting bulk find for missing ships…";
+      messageTone = "info";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
 
       try {
@@ -767,6 +897,8 @@
             break;
           }
           bulkProgress.current = `${ship.cruise_line_name || ""} ${ship.name}`.trim();
+          message = `Bulk find: ${bulkProgress.done + 1}/${bulkProgress.total} — ${bulkProgress.current}`;
+          messageTone = "info";
           if (typeof global.renderAdmin === "function") global.renderAdmin();
           try {
             const data = await api("find", { ship_id: ship.id, force: false });
@@ -774,7 +906,6 @@
             bulkProgress.candidatesFound += data.candidates?.length || 0;
           } catch (error) {
             bulkProgress.error = error.message || "Find failed";
-            // Stop safely on errors
             bulkProgress.stopped = true;
             message = `Bulk find stopped on error for ${ship.name}: ${bulkProgress.error}`;
             messageTone = "error";
@@ -790,8 +921,12 @@
             : `Bulk find finished. ${bulkProgress.done} ships processed; ${bulkProgress.candidatesFound} candidates created for review.`;
           messageTone = bulkCancel ? "info" : "success";
         }
-        const dash = await api("dashboard");
-        cards = dash.cards || cards;
+        try {
+          const dash = await api("dashboard");
+          cards = dash.cards || cards;
+        } catch {
+          /* ignore */
+        }
         await refreshList();
       } catch (error) {
         message = error.message || "Bulk find failed";

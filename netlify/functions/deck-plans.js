@@ -139,18 +139,23 @@ function mapShipRow(row) {
 
 async function recordHistory({ shipId, action, previousUrl, newUrl, administrator, notes }) {
   if (!HISTORY_ACTIONS.has(action)) return;
-  await supabase("deck_plan_history", {
-    method: "POST",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({
-      ship_id: shipId,
-      action,
-      previous_url: previousUrl || null,
-      new_url: newUrl || null,
-      administrator: administrator || null,
-      notes: notes || null
-    })
-  });
+  try {
+    await supabase("deck_plan_history", {
+      method: "POST",
+      headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({
+        ship_id: shipId,
+        action,
+        previous_url: previousUrl || null,
+        new_url: newUrl || null,
+        administrator: administrator || null,
+        notes: notes || null
+      })
+    });
+  } catch (error) {
+    // History must not block approval if the history table is missing or RLS blocks writes.
+    console.warn("[deck-plans] history write failed:", error.message || error);
+  }
 }
 
 async function loadShip(shipId) {
@@ -726,8 +731,14 @@ exports.handler = async (event) => {
 
     if (action === "list_history") {
       const shipId = String(body.ship_id || "").trim();
-      const history = await listHistory(shipId || null, body.limit);
-      return jsonResponse(200, { success: true, history });
+      try {
+        const history = await listHistory(shipId || null, body.limit);
+        return jsonResponse(200, { success: true, history });
+      } catch (error) {
+        // Soft-fail so a missing history table does not break the Deck Plans UI
+        console.warn("[deck-plans] list_history failed:", error.message || error);
+        return jsonResponse(200, { success: true, history: [], history_unavailable: true });
+      }
     }
 
     if (action === "find") {
