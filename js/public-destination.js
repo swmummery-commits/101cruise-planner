@@ -86,7 +86,26 @@
     link.setAttribute("href", canonical);
   }
 
-  function suitabilityRow(key, levelKey) {
+  function scrollToCruises(event) {
+    if (event) event.preventDefault();
+    const section = document.getElementById("cruises");
+    if (!section) return;
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Keep the URL clean so refresh does not jump mid-page via #cruises
+    if (window.history.replaceState) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }
+
+  function ensurePageStartsAtTop() {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
+    }
+    if (window.location.hash) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+    window.scrollTo(0, 0);
+  }
     const labels = {
       couples: "Couples",
       families: "Families",
@@ -122,7 +141,7 @@
           <h1 class="dest-hero-title">${esc(dest.name)}</h1>
           <p class="dest-hero-summary">${esc(dest.summary)}</p>
           <div class="dest-hero-ctas">
-            <a class="dest-btn dest-btn-primary" href="#cruises">View Current Cruises</a>
+            <a class="dest-btn dest-btn-primary" href="#cruises" onclick="DestinationExperience.scrollToCruises(event)">View Current Cruises</a>
             <a class="dest-btn dest-btn-secondary" href="${esc(contactUrl)}">Contact Paul for a better price</a>
           </div>
         </div>
@@ -446,13 +465,32 @@
     activeDestination = dest;
     setMetadata(dest);
     root.innerHTML = renderPage(dest);
+    ensurePageStartsAtTop();
     revealPage(root.querySelector(".dest-page"));
+    // Re-assert after layout/images so Safari does not restore mid-page scroll
+    requestAnimationFrame(() => {
+      ensurePageStartsAtTop();
+      setTimeout(ensurePageStartsAtTop, 50);
+    });
   }
 
   window.DestinationExperience = {
     loadMoreCruises,
+    scrollToCruises,
     remount: mount
   };
+
+  // Prevent #cruises (or browser restore) from landing mid-page on refresh
+  if ("scrollRestoration" in window.history) {
+    window.history.scrollRestoration = "manual";
+  }
+  if (window.location.hash) {
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) ensurePageStartsAtTop();
+  });
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", mount);
