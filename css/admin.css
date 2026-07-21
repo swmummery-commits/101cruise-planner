@@ -1240,7 +1240,7 @@
   grid-template-columns: repeat(auto-fit, minmax(140px, max-content));
 }
 
-/* CRM Sync */
+/* CRM Sync — emergency recovery under Import Data */
 .crm-sync-card .admin-list-top {
   margin-bottom: 14px;
 }
@@ -1503,14 +1503,10 @@
   border-color: var(--admin-text, #2c2c2c);
 }
 
-/* Planner Preview */
+/* CRM recovery actions (Import Data maintenance) */
 .crm-preview-actions {
   margin-top: 18px;
   justify-content: flex-end;
-}
-
-.planner-preview-card .crm-sync-form {
-  align-items: flex-end;
 }
 
 /* Simplified packing item visibility guidance */

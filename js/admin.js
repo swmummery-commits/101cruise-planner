@@ -39,8 +39,6 @@ let crmSyncResult = null;
 let crmSyncMessage = "";
 let crmSyncLoading = false;
 let crmBookingReferenceInput = "";
-let plannerPreviewMessage = "";
-let plannerPreviewLookupInput = "";
 let itineraryReview = null;
 let itineraryMessage = "";
 let itineraryLoading = false;
@@ -663,7 +661,6 @@ async function setTab(tab) {
   beveragePackageInlineStatus = "";
   crmSyncMessage = "";
   crmSyncLoading = false;
-  plannerPreviewMessage = "";
   editingCiLineId = null;
   editingCiShipId = null;
   ciLineCreating = false;
@@ -743,8 +740,6 @@ const ADMIN_MAIN_TABS = [
   { id: "checklist", label: "Checklist", render: () => renderChecklistPanel() },
   { id: "packing", label: "Packing", render: () => renderPackingPanel() },
   { id: "smart-profiles", label: "Smart Profiles", render: () => renderSmartProfilesPanel() },
-  { id: "crm-sync", label: "CRM Sync", render: () => renderCrmSyncPanel() },
-  { id: "planner-preview", label: "Planner Preview", render: () => renderPlannerPreviewPanel() },
   { id: "calculator-data", label: "Drinks Calculator", render: () => renderCalculatorDataPanel() },
   { id: "usage-insights", label: "Usage & Insights", render: () => renderUsageInsightsPanel() }
 ];
@@ -770,6 +765,19 @@ function renderAdminActivePanel() {
       </div>
     `;
   }
+  if (activeTab === "crm-sync" || activeTab === "planner-preview") {
+    return `
+      <div class="admin-card">
+        <h3>${activeTab === "planner-preview" ? "Planner Preview removed" : "CRM Sync moved"}</h3>
+        <p class="admin-muted">${
+          activeTab === "planner-preview"
+            ? "Use the live My Cruise planner for the customer experience. Admin planner preview has been removed."
+            : "Emergency Base44 sync is available under Import Data → CRM recovery."
+        }</p>
+        <button class="admin-button" onclick="openImportDataMaintenance()">Open Import Data</button>
+      </div>
+    `;
+  }
   return "";
 }
 
@@ -783,7 +791,7 @@ function renderAdmin() {
           <p class="admin-muted">Manage the content used throughout My Cruise Planner.</p>
         </div>
         <div class="admin-actions-row">
-          <button class="admin-button secondary small" onclick="toggleImportDataPanel()">${showImportDataPanel ? "Close Import" : "Import Data"}</button>
+          <button class="admin-button secondary small" onclick="toggleImportDataPanel()">${showImportDataPanel ? "Close Tools" : "Import Data"}</button>
           <button class="admin-button black small" onclick="adminSignOut()">Sign Out</button>
         </div>
       </div>
@@ -804,6 +812,14 @@ function toggleImportDataPanel() {
   renderAdmin();
 }
 
+function openImportDataMaintenance() {
+  showImportDataPanel = true;
+  if (activeTab === "crm-sync" || activeTab === "planner-preview") {
+    activeTab = "cruise-intelligence";
+  }
+  renderAdmin();
+}
+
 function renderCrmSyncPanel() {
   const booking = crmSyncResult && crmSyncResult.booking ? crmSyncResult.booking : null;
   const isRunning = crmSyncLoading || /syncing/i.test(String(crmSyncMessage || ""));
@@ -817,8 +833,8 @@ function renderCrmSyncPanel() {
     <div class="admin-card crm-sync-card">
       <div class="admin-list-top">
         <div>
-          <h3>CRM Sync</h3>
-          <p class="admin-muted">Test the secure connection between Base44 and 101CRUISE using a booking reference.</p>
+          <h3>Emergency CRM recovery</h3>
+          <p class="admin-muted">Manual Base44 sync for ops recovery only. Live My Cruise login uses customer-access automatically — this tool is not part of normal booking flow.</p>
         </div>
       </div>
 
@@ -836,7 +852,7 @@ function renderCrmSyncPanel() {
 
     ${booking ? renderCrmBookingPreview(booking) : `
       <div class="admin-card crm-empty-card">
-        <p class="admin-muted">Enter a booking reference above to confirm the Base44 connection and preview the booking data returned to 101CRUISE.</p>
+        <p class="admin-muted">Enter a booking reference above to pull Base44 data into 101CRUISE for recovery checks, itinerary review, or document library work.</p>
       </div>
     `}
   `;
@@ -902,7 +918,6 @@ function renderCrmBookingPreview(booking) {
         </div>
       </div>
       <div class="admin-actions-row crm-preview-actions">
-        <button class="admin-button black" onclick="openPlannerPreview('${esc(booking.base44_booking_id || booking.booking_reference || '')}')">Preview Planner</button>
         <button class="admin-button secondary" onclick="loadItineraryReview('${esc(booking.base44_booking_id || '')}')">Review Itinerary</button>
         <button class="admin-button secondary" onclick="extractBookingItinerary()" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading ? "Extracting…" : "Extract Booking Confirmation"}</button>
         ${itineraryLoading || /extracting/i.test(String(itineraryMessage || "")) ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(itineraryMessage || "Extracting…")}</span>` : ""}
@@ -1237,71 +1252,6 @@ async function saveItineraryReview(approve) {
   renderAdmin();
 }
 
-function renderPlannerPreviewPanel() {
-  const messageClass = plannerPreviewMessage && plannerPreviewMessage.toLowerCase().includes("enter") ? "admin-error" : "";
-
-  return `
-    <div class="admin-card planner-preview-card">
-      <div class="admin-list-top">
-        <div>
-          <h3>Planner Preview</h3>
-          <p class="admin-muted">Preview a customer planner without signing in as the customer or sending account emails.</p>
-        </div>
-      </div>
-
-      <div class="crm-sync-form">
-        <div class="admin-field crm-sync-input">
-          <label>Booking reference or Base44 booking ID</label>
-          <input type="text" id="plannerPreviewLookup" value="${esc(plannerPreviewLookupInput)}" placeholder="Example: SWM123456" oninput="plannerPreviewLookupInput=this.value" onkeydown="handlePlannerPreviewKeydown(event)">
-          <div class="admin-helper">Stay signed in to Admin. Preview opens in a new tab using your Admin session (customer login is not required).</div>
-        </div>
-        <button class="admin-button black" onclick="openPlannerPreviewFromInput()">Preview Planner</button>
-      </div>
-
-      <div class="admin-message ${messageClass}">${esc(plannerPreviewMessage)}</div>
-    </div>
-
-    <div class="admin-card crm-empty-card">
-      <p class="admin-muted">Use this for testing and demonstrations. Customers will still access their planner through the normal invitation and login flow.</p>
-    </div>
-  `;
-}
-
-function handlePlannerPreviewKeydown(event) {
-  if (event.key === "Enter") {
-    openPlannerPreviewFromInput();
-  }
-}
-
-function openPlannerPreviewFromInput() {
-  const input = document.getElementById("plannerPreviewLookup");
-  const lookup = input ? input.value.trim() : plannerPreviewLookupInput;
-  plannerPreviewLookupInput = lookup;
-  openPlannerPreview(lookup);
-}
-
-async function openPlannerPreview(lookup) {
-  const safeLookup = String(lookup || "").trim();
-  plannerPreviewLookupInput = safeLookup;
-  if (!safeLookup) {
-    plannerPreviewMessage = "Enter a booking reference or Base44 booking ID first.";
-    renderAdmin();
-    return;
-  }
-
-  const { data } = await supabaseClient.auth.getSession();
-  if (!data.session?.access_token) {
-    plannerPreviewMessage = "Admin session missing. Sign out and sign in again, then retry Preview.";
-    renderAdmin();
-    return;
-  }
-
-  const previewUrl = `${window.location.origin}/?preview=${encodeURIComponent(safeLookup)}`;
-  window.open(previewUrl, "_blank", "noopener");
-  plannerPreviewMessage = "Planner preview opened in a new tab. Keep this Admin tab signed in.";
-  renderAdmin();
-}
-
 function formatAdminDate(value) {
   if (!value) return "Not supplied";
   const date = new Date(`${value}T00:00:00`);
@@ -1431,8 +1381,8 @@ function renderImportDataPanel() {
     <div class="admin-card admin-import-panel">
       <div class="admin-list-top">
         <div>
-          <h3>Import Data</h3>
-          <p class="admin-muted">Use this global import tool for reusable 101CRUISE data. Today it supports the Smart Packing Planner library; later we can add ships, ports, cruise line links and checklist templates.</p>
+          <h3>Import Data &amp; Maintenance</h3>
+          <p class="admin-muted">Bulk import tools and emergency recovery utilities. Day-to-day CRM booking retrieval happens automatically through My Cruise login.</p>
         </div>
       </div>
 
@@ -1445,6 +1395,8 @@ function renderImportDataPanel() {
 
       ${renderPackingImportPanel()}
     </div>
+
+    ${renderCrmSyncPanel()}
   `;
 }
 

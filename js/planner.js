@@ -10,11 +10,6 @@ let countdownTimer = null;
 let pendingInvitationBid = null;
 let invitationSyncMessage = "";
 let invitationSyncLoading = false;
-let adminPreviewMode = false;
-let adminPreviewLookup = "";
-let adminPreviewCruise = null;
-let adminPreviewError = "";
-let adminPreviewPackedKeys = new Set();
 let customerMode = false;
 let customerSessionToken = "";
 let customerBooking = null;
@@ -96,14 +91,7 @@ function captureInvitationBookingId() {
   pendingInvitationBid = getStoredInvitationBookingId();
 }
 
-function getAdminPreviewLookupFromUrl() {
-  const params = new URLSearchParams(window.location.search || "");
-  return String(params.get("preview") || params.get("admin_preview") || "").trim();
-}
 
-function isLikelyBase44BookingId(value) {
-  return /^[a-f0-9]{24}$/i.test(String(value || "").trim());
-}
 
 function createPreviewCruiseFromBase44Booking(booking) {
   const nights = calculateCruiseNights(booking.departing_date, booking.arriving_date);
@@ -133,106 +121,6 @@ function createPreviewCruiseFromBase44Booking(booking) {
     booking_status: booking.booking_status || null,
     _preview_booking: booking
   };
-}
-
-function renderAdminPreviewLoading(lookup) {
-  clearCountdownTimer();
-  app.innerHTML = `
-    <div class="planner-preview-loading">
-      <div class="planner-card">
-        <p class="planner-kicker">Admin preview mode</p>
-        <h2>Loading planner preview</h2>
-        <p class="planner-muted">Retrieving booking ${escapeHtml(lookup)} from Base44.</p>
-      </div>
-    </div>
-  `;
-}
-
-function renderAdminPreviewError(message) {
-  clearCountdownTimer();
-  app.innerHTML = `
-    <div class="planner-preview-loading">
-      <div class="planner-card">
-        <p class="planner-kicker">Admin preview mode</p>
-        <h2>Preview could not be loaded</h2>
-        <p class="planner-muted">${escapeHtml(message || "Unable to retrieve this booking.")}</p>
-        <button class="planner-button secondary" onclick="window.close()">Close Preview</button>
-      </div>
-    </div>
-  `;
-}
-
-async function getAdminAccessToken() {
-  try {
-    const { data } = await supabaseClient.auth.getSession();
-    return data.session?.access_token || "";
-  } catch (_error) {
-    return "";
-  }
-}
-
-async function loadAdminPreview(lookup) {
-  adminPreviewMode = true;
-  adminPreviewLookup = lookup;
-  adminPreviewCruise = null;
-  adminPreviewError = "";
-  adminPreviewPackedKeys = new Set();
-  currentUser = { id: "admin-preview", email: "admin-preview@101cruise.com.au", user_metadata: { first_name: "Admin" } };
-  currentProfile = { first_name: "Admin" };
-
-  renderAdminPreviewLoading(lookup);
-
-  try {
-    const payload = isLikelyBase44BookingId(lookup)
-      ? { booking_id: lookup }
-      : { booking_reference: lookup };
-
-    const accessToken = await getAdminAccessToken();
-    if (!accessToken) {
-      throw new Error("Admin sign-in is required for Planner Preview. Open Admin, sign in, then try Preview again.");
-    }
-
-    const response = await fetch("/.netlify/functions/get-booking", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await response.json().catch(() => ({ success: false, error: "Invalid response from booking service" }));
-
-    if (!response.ok || data.success === false || !data.booking) {
-      throw new Error(data.error || `HTTP ${response.status}`);
-    }
-
-    adminPreviewCruise = createPreviewCruiseFromBase44Booking(data.booking);
-    currentProfile = { first_name: data.booking.passenger1_first_name || "Admin" };
-    await renderDashboard();
-  } catch (error) {
-    console.error("Admin preview failed", error);
-    adminPreviewError = error.message || "Unable to load preview";
-    renderAdminPreviewError(adminPreviewError);
-  }
-}
-
-function exitAdminPreview() {
-  window.location.href = window.location.origin;
-}
-
-function renderAdminPreviewBanner(cruise) {
-  if (!adminPreviewMode) return "";
-  const reference = getCruiseBookingReference(cruise) || adminPreviewLookup;
-  return `
-    <div class="admin-preview-banner">
-      <div>
-        <strong>Admin Preview Mode</strong>
-        <span>Viewing booking ${escapeHtml(reference || "preview")}. Customer login is not required.</span>
-      </div>
-      <button onclick="exitAdminPreview()">Exit Preview</button>
-    </div>
-  `;
 }
 
 function renderInvitationIntro() {
@@ -464,7 +352,7 @@ function changeCustomerBooking() {
 }
 
 function getCruiseUsageContext() {
-  const cruise = customerCruise || adminPreviewCruise || null;
+  const cruise = customerCruise || null;
   const booking = customerBooking || cruise?._preview_booking || null;
   const first = String(booking?.passenger1_first_name || currentProfile?.first_name || "").trim();
   const last = String(booking?.passenger1_last_name || currentProfile?.last_name || "").trim();
@@ -1232,7 +1120,7 @@ async function loadDashboardChecklistData(cruise) {
     } catch (error) {
       console.warn("Customer dashboard checklist load failed", error);
     }
-  } else if (cruise && currentUser?.id && !adminPreviewMode) {
+  } else if (cruise && currentUser?.id) {
     const { data: progressData } = await supabaseClient
       .from("checklist_progress")
       .select("*")
@@ -1933,7 +1821,7 @@ const DASHBOARD_JOURNEY_PROTOTYPES = {
 };
 
 function getDashboardJourney(cruise) {
-  const reference = String(cruise?.booking_reference || customerBooking?.booking_reference || adminPreviewCruise?.booking_reference || "").trim().toUpperCase();
+  const reference = String(cruise?.booking_reference || customerBooking?.booking_reference || "").trim().toUpperCase();
   return DASHBOARD_JOURNEY_PROTOTYPES[reference] || null;
 }
 
@@ -1955,7 +1843,7 @@ async function loadDashboardPackingData(cruise) {
       });
       return { selected, packed, percent: selected ? Math.round((packed / selected) * 100) : 0 };
     }
-    if (!currentUser?.id || adminPreviewMode) return { selected: 0, packed: 0, percent: 0 };
+    if (!currentUser?.id) return { selected: 0, packed: 0, percent: 0 };
     const cruiseKey = String(cruise?.id || "");
     const { data, error } = await supabaseClient
       .from("user_packing_v2_state")
@@ -2121,9 +2009,6 @@ async function renderDashboard() {
   if (customerMode && customerCruise) {
     safeCruises = [customerCruise];
     mainCruise = customerCruise;
-  } else if (adminPreviewMode && adminPreviewCruise) {
-    safeCruises = [adminPreviewCruise];
-    mainCruise = adminPreviewCruise;
   } else {
     const result = await supabaseClient
       .from("cruises")
@@ -2170,12 +2055,11 @@ async function renderDashboard() {
 
   app.innerHTML = `
     <div class="dashboard-page">
-      ${renderAdminPreviewBanner(mainCruise)}
       ${mainCruise ? `
         <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}${mainLogo ? " has-cruise-logo" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
           <div class="dashboard-hero-overlay"></div>
           <img class="dashboard-brand-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
-          ${adminPreviewMode ? `<button class="dashboard-signout" onclick="exitAdminPreview()">Exit Preview</button>` : customerMode ? `<button class="dashboard-signout" onclick="changeCustomerBooking()">Change Booking</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
+          ${customerMode ? `<button class="dashboard-signout" onclick="changeCustomerBooking()">Change Booking</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
 
           <div class="dashboard-hero-content">
             <p class="dashboard-hero-kicker">${escapeHtml(greetingText)}</p>
@@ -2207,7 +2091,7 @@ async function renderDashboard() {
       <div class="dashboard-content-wrap${dashboardMobilePriorityActive ? " dashboard-mobile-priority-active" : ""}">
         <section class="dashboard-welcome-strip dashboard-quick-access-strip">
           ${renderDashboardQuickAccess()}
-          ${adminPreviewMode || customerMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
+          ${customerMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
         </section>
 
         <section class="dashboard-v2-grid">
@@ -2262,7 +2146,6 @@ function getCurrentCruiseFromList(cruises, preference = null) {
 
 async function loadCurrentCruise() {
   if (customerMode && customerCruise) return customerCruise;
-  if (adminPreviewMode && adminPreviewCruise) return adminPreviewCruise;
   const { data } = await supabaseClient
     .from("cruises")
     .select("*")
@@ -2721,32 +2604,6 @@ function getBookingPayloadValue(booking, cruise, keys) {
 
 async function resolveFullBookingPayload(cruise) {
   if (cruise?._preview_booking) return cruise._preview_booking;
-
-  const bookingId = cruise?.base44_booking_id;
-  const bookingReference = cruise?.booking_reference || getCruiseBookingReference(cruise);
-  if (!bookingId && !bookingReference) return getDashboardBookingSource(cruise);
-
-  try {
-    const accessToken = await getAdminAccessToken();
-    if (!accessToken) return getDashboardBookingSource(cruise);
-
-    const response = await fetch("/.netlify/functions/get-booking", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`
-      },
-      body: JSON.stringify(bookingId ? { booking_id: bookingId } : { booking_reference: bookingReference })
-    });
-    const data = await response.json().catch(() => ({ success: false }));
-    if (response.ok && data.success !== false && data.booking) {
-      cruise._preview_booking = data.booking;
-      return data.booking;
-    }
-  } catch (error) {
-    console.warn("Full booking payload load failed", error);
-  }
-
   return getDashboardBookingSource(cruise);
 }
 
@@ -3221,7 +3078,6 @@ async function renderDocuments() {
   trackMyCruisePage("documents");
   const cruise = await loadCurrentCruise();
   app.innerHTML = `
-    ${renderAdminPreviewBanner(cruise)}
     <div class="planner-shell">
       ${renderPlannerNav("documents")}
       <section class="documents-header planner-card">
@@ -3450,7 +3306,6 @@ function getDefaultTravellerType(cruise) {
 }
 
 async function loadPackingPreferences(cruise) {
-  if (adminPreviewMode) return null;
   if (!currentUser?.id || !cruise?.id) return null;
   const { data, error } = await supabaseClient
     .from("user_packing_preferences")
@@ -3468,11 +3323,6 @@ async function loadPackingPreferences(cruise) {
 async function savePackingPreferencesFromForm() {
   const cruise = await loadCurrentCruise();
   if (!cruise) return;
-  if (adminPreviewMode) {
-    alert("Preview mode does not save packing settings. Customer accounts will save their own settings.");
-    return;
-  }
-
   const payload = {
     user_id: currentUser.id,
     cruise_id: cruise.id,
@@ -3608,7 +3458,7 @@ function buildPackingProfiles(cruise, savedProfiles = []) {
 async function loadPackingV2Data(cruise) {
   const cruiseKey = String(cruise.id);
   packingV2CurrentCruiseKey = cruiseKey;
-  if (adminPreviewMode || !currentUser?.id) {
+  if (!currentUser?.id) {
     packingV2Profiles = buildPackingProfiles(cruise, []);
     packingV2State = [];
     return;
@@ -3665,7 +3515,6 @@ function getPackingState(itemKey, profileKey = activePackingProfileKey) {
 }
 
 function isPackingItemPacked(_progressRows, item) {
-  if (adminPreviewMode) return adminPreviewPackedKeys.has(`${activePackingProfileKey}:${getPackingItemKey(item)}`);
   return getPackingState(getPackingItemKey(item))?.packed === true;
 }
 
@@ -4116,7 +3965,6 @@ function updatePackingQuantity(key, rawValue) {
   applyPackingFilters();
   recalculatePackingSummary();
 
-  if (adminPreviewMode) return;
   clearTimeout(packingQuantitySaveTimers.get(`${activePackingProfileKey}:${key}`));
   const forcedLocation = row.querySelector(".packing-location-option.is-locked") ? "carry-on" : undefined;
   packingQuantitySaveTimers.set(`${activePackingProfileKey}:${key}`, setTimeout(() => savePackingV2State(key, { quantity, ...(forcedLocation ? { packing_location: forcedLocation } : {}) }), 450));
@@ -4129,7 +3977,7 @@ async function updatePackingLocation(key, location) {
     row.querySelectorAll(".packing-location-option").forEach(button => button.classList.toggle("is-active", button.textContent.trim().toLowerCase() === location || (location === "carry-on" && button.textContent.trim() === "Carry-on")));
   }
   recalculatePackingSummary();
-  if (!adminPreviewMode) await savePackingV2State(key, { packing_location: location });
+  await savePackingV2State(key, { packing_location: location });
 }
 
 async function savePackingV2State(itemKey, changes = {}) {
@@ -4219,11 +4067,6 @@ async function savePackingPreferencesFromForm() {
   const cruise = await loadCurrentCruise();
   const profile = getActivePackingProfile();
   if (!cruise || !profile) return;
-  if (adminPreviewMode) {
-    alert("Preview mode does not save packing settings. Customer accounts will save their own settings.");
-    return;
-  }
-
   const globalPayload = {
     user_id: currentUser.id,
     cruise_id: cruise.id,
@@ -4278,7 +4121,6 @@ async function savePackingPreferencesFromForm() {
 
 let packingPreferencesAutoSaveTimer = null;
 function schedulePackingPreferencesSave(immediate = false) {
-  if (adminPreviewMode) return;
   clearTimeout(packingPreferencesAutoSaveTimer);
   packingPreferencesAutoSaveTimer = setTimeout(() => savePackingPreferencesFromForm(), immediate ? 0 : 650);
 }
@@ -4443,11 +4285,6 @@ function savePackingPdf() { window.print(); }
 async function resetPackingProgress() {
   const profile = getActivePackingProfile();
   if (!profile || !confirm(`Reset ${profile.profile_name}'s packing progress and quantities?`)) return;
-  if (adminPreviewMode) {
-    adminPreviewPackedKeys = new Set();
-    renderPackingPlanner();
-    return;
-  }
   if (customerMode) {
     await customerPackingRequest("reset_profile", { profile_key: profile.profile_key });
     renderPackingPlanner();
@@ -4458,7 +4295,6 @@ async function resetPackingProgress() {
 }
 
 async function addPersonalPackingItem(categoryId) {
-  if (adminPreviewMode) { alert("Preview mode does not save personal packing items."); return; }
   if (customerMode) { alert("Adding personal items will be enabled in the next customer-access update."); return; }
   const cruise = await loadCurrentCruise();
   if (!cruise) return;
@@ -4471,12 +4307,6 @@ async function addPersonalPackingItem(categoryId) {
 }
 
 async function togglePackingItem(key, packed) {
-  if (adminPreviewMode) {
-    const previewKey = `${activePackingProfileKey}:${key}`;
-    if (packed) adminPreviewPackedKeys.add(previewKey); else adminPreviewPackedKeys.delete(previewKey);
-    recalculatePackingSummary();
-    return;
-  }
   await savePackingV2State(key, { packed });
   const row = document.querySelector(`[data-packing-row="${CSS.escape(key)}"]`);
   row?.classList.toggle("is-packed", packed);
@@ -4524,7 +4354,7 @@ async function renderPackingPlanner() {
   const [{ data: categories }, { data: items }, personalResult] = await Promise.all([
     supabaseClient.from("packing_categories").select("*").eq("active", true).order("display_order", { ascending: true }),
     supabaseClient.from("packing_items").select("*, packing_categories(name)").eq("active", true).order("display_order", { ascending: true }),
-    (adminPreviewMode || customerMode) ? Promise.resolve({ data: [] }) : supabaseClient.from("user_packing_items").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id).order("created_at", { ascending: true })
+    customerMode ? Promise.resolve({ data: [] }) : supabaseClient.from("user_packing_items").select("*").eq("user_id", currentUser.id).eq("cruise_id", cruise.id).order("created_at", { ascending: true })
   ]);
   const categoryNameById = new Map((categories || []).map(category => [String(category.id), category.name]));
   packingPlannerItemData = {
@@ -4726,12 +4556,6 @@ function setupEmbedHeightSync() {
 async function initPlanner() {
   setupEmbedHeightSync();
 
-  const previewLookup = getAdminPreviewLookupFromUrl();
-  if (previewLookup) {
-    await loadAdminPreview(previewLookup);
-    return;
-  }
-
   const storedCustomerSession = getStoredCustomerSession();
   if (storedCustomerSession && activateCustomerSession(storedCustomerSession)) {
     try {
@@ -4836,7 +4660,7 @@ async function loadBudget(cruise) {
 
 async function persistBudget() {
   const cruise = await loadCurrentCruise();
-  if (!cruise || !activeBudget || adminPreviewMode) return;
+  if (!cruise || !activeBudget) return;
   activeBudget.cruise_price_usd = getCruisePriceUsd(cruise);
   activeBudget.updated_at = new Date().toISOString();
   localStorage.setItem(getBudgetStorageKey(cruise), JSON.stringify(activeBudget));
@@ -4932,7 +4756,6 @@ function renderBudgetGettingStarted() {
 }
 
 function renderBudgetSaveMessage() {
-  if (adminPreviewMode) return "Preview only. Budget changes are not saved.";
   if (!activeBudget?.updated_at) return "";
   const date = new Date(activeBudget.updated_at);
   if (Number.isNaN(date.getTime())) return "";
