@@ -927,7 +927,7 @@
           <button type="button" class="admin-button black" onclick="ResearchContentAdmin.publish()" ${saving ? "disabled" : ""}>Publish</button>
           <button type="button" class="admin-button" onclick="ResearchContentAdmin.refreshResearch()" ${saving || researching ? "disabled" : ""}>Refresh Research</button>
           ${item.content_status === "failed" ? `<button type="button" class="admin-button" onclick="ResearchContentAdmin.retryGeneration()" ${saving || researching ? "disabled" : ""}>Retry Generation</button>` : ""}
-          <button type="button" class="admin-button danger" onclick="ResearchContentAdmin.archive()" ${saving ? "disabled" : ""}>Archive</button>
+          <button type="button" class="admin-button danger" onclick="ResearchContentAdmin.archive()" ${saving ? "disabled" : ""}>Delete</button>
         </div>
       </section>
     `;
@@ -1027,13 +1027,6 @@
       }
       const lineName =
         cruiseLinesFromShips().find((l) => l.id === researchForm.batch_line_id)?.name || "this cruise line";
-      if (
-        !window.confirm(
-          `Publish ${ships.length} research draft${ships.length === 1 ? "" : "s"} for ${lineName} now?\n\nThey will become available on matching public cruise pages.`
-        )
-      ) {
-        return;
-      }
 
       let ok = 0;
       let fail = 0;
@@ -1065,13 +1058,6 @@
       const lineName =
         cruiseLinesFromShips().find((l) => l.id === researchForm.batch_line_id)?.name || "this cruise line";
       const autoPublish = researchForm.batch_auto_publish !== false;
-      if (
-        !window.confirm(
-          `Research ${queue.length} ship${queue.length === 1 ? "" : "s"} for ${lineName}?\n\nThis runs one at a time and may take ${queue.length}–${queue.length * 2} minutes. Keep this tab open.${autoPublish ? "\n\nEach successful ship will be published automatically." : "\n\nDrafts will be saved for review — nothing is published automatically."}`
-        )
-      ) {
-        return;
-      }
 
       batchRunning = true;
       batchCancelRequested = false;
@@ -1361,16 +1347,15 @@
       }
     },
     async archive() {
-      if (!window.confirm("Archive this research content?")) return;
       saving = true;
       try {
         await api("archive", { id: editingId });
-        message = "Archived.";
+        message = "Deleted.";
         messageTone = "success";
         openList();
         await ensureLoaded({ quiet: true });
       } catch (error) {
-        message = error.message || "Archive failed";
+        message = error.message || "Delete failed";
         messageTone = "error";
       } finally {
         saving = false;
@@ -1378,12 +1363,10 @@
       }
     },
     async refreshResearch() {
-      if (!window.confirm("Create a new draft from fresh research? The current published version will stay live until you publish the new draft.")) {
-        return;
-      }
       researching = true;
       message = "Refreshing research…";
       messageTone = "info";
+      document.title = "Refreshing research… · 101cruise Admin";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
       try {
         const result = await api(
@@ -1407,6 +1390,7 @@
         if (error.payload?.item?.id) await openEditor(error.payload.item.id);
       } finally {
         researching = false;
+        document.title = "101cruise Admin";
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },

@@ -257,6 +257,12 @@ function toPublicResearchTeaser(row, { maxHighlights = 4 } = {}) {
 function buildSystemPrompt(entityType) {
   return [
     "You are an experienced travel consultant writing for 101cruise (Australian English).",
+    "Readers are primarily in Australia. Never assume northern-hemisphere seasons are understood without clarification.",
+    "SEASONS RULE (critical): Prefer calendar months over bare season names.",
+    "Good: \"April to June\", \"July (European summer)\", \"December to February (Australian summer / northern winter)\".",
+    "Acceptable if a season is used: always pair it with months and/or hemisphere, e.g. \"April to May (northern spring)\".",
+    "Bad: \"Spring and early autumn are ideal\" with no months or hemisphere.",
+    "Apply this especially in best_time_to_visit, climate_summary, packing_summary, and any weather/season guidance.",
     "Write warmly and helpfully — like advice to a client — not like a Wikipedia or encyclopedia entry.",
     "Prefer natural sentences that name the ship/destination and explain who it suits.",
     "Good example tone: \"Adventure of the Seas offers Broadway-style theatre productions, live music venues, bars and family entertainment throughout the day. The ship is particularly well suited to travellers who enjoy lively evenings without the atmosphere feeling overwhelming.\"",
@@ -294,6 +300,7 @@ function buildUserPrompt({ entityType, entityName, contextFacts, sources }) {
     `Create structured ${entityType} research content for: ${entityName}`,
     contextFacts ? `Canonical database facts (do not invent extras):\n${contextFacts}` : "",
     "Voice: travel consultant speaking to a guest — clear, human, useful. Not encyclopedia. Not sales brochure.",
+    "Audience: Australian travellers. Use months for timing (e.g. April–June). If you mention a season, qualify with months and hemisphere.",
     "Source excerpts follow. Synthesise; do not copy large passages.",
     sourceBlock ||
       "(No source excerpts available — return cautious, clearly uncertain content and note gaps in research_notes.)",

@@ -1,0 +1,23 @@
+---
+description: Research content timing must use months for Australian readers
+globs: netlify/functions/lib/research-schemas.js,netlify/functions/lib/research-engine.js,js/admin-research-content.js
+alwaysApply: false
+---
+
+# Research Content — Seasons vs Months
+
+101cruise customers are in **Australia**. Bare season names are ambiguous.
+
+## Rules
+
+- Prefer **calendar months** for timing advice (best time to visit, climate, packing, weather)
+- Good: `April to June`, `July (European summer)`, `December to February`
+- If a season is mentioned, always qualify with **months and/or hemisphere**
+- Bad: `Spring and early autumn are ideal` (no months, no hemisphere)
+
+## Examples
+
+```text
+❌ Spring and early autumn are ideal times to visit the Mediterranean.
+✅ April to June and September to October are ideal; July–August is peak European summer heat.
+```
