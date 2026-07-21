@@ -1112,7 +1112,8 @@
         global.CruiseDiscoveryAdmin.ensureLoaded();
       }
       if (researchSection === "deck-plans" && global.DeckPlansAdmin?.ensureLoaded) {
-        global.DeckPlansAdmin.ensureLoaded();
+        // Quiet refresh — do not interrupt Rapid Review with a full list reload
+        global.DeckPlansAdmin.ensureLoaded({ quiet: true });
       }
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },

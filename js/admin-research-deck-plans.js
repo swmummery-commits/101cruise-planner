@@ -33,7 +33,10 @@
   let rapidQueue = [];
   let rapidIndex = 0;
   let rapidSkippedIds = new Set();
-  let rapidSessionStats = { approved: 0, rejected: 0, skipped: 0 };
+  let rapidSessionStats = { approved: 0, rejected: 0, skipped: 0, removed: 0 };
+  /** When Full Review was opened from Rapid Review, return there after approve/save. */
+  let fullReviewFromRapid = false;
+  let fullReviewShipId = "";
 
   // Cruise line multi-select picker (research + rapid review)
   const LINE_PICKER_STORAGE_KEY = "101cruise.deckPlans.selectedLineIds";
@@ -53,7 +56,11 @@
     busy = { type, shipId, candidateId, label };
     message = label;
     messageTone = "info";
-    if (typeof global.renderAdmin === "function") global.renderAdmin();
+    // Defer re-render so the originating click finishes before the DOM is replaced
+    // (avoids Safari treating mouseup as a click on Exit / Deck Plans underneath).
+    setTimeout(() => {
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    }, 0);
   }
 
   function endBusy() {
@@ -318,6 +325,18 @@
   }
 
   async function ensureLoaded({ quiet = false } = {}) {
+    // Never kick the operator out of Rapid Review for a background refresh
+    if (viewMode === "rapid") {
+      try {
+        const dash = await api("dashboard");
+        cards = dash.cards || cards;
+      } catch {
+        /* ignore */
+      }
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      return;
+    }
+
     loading = true;
     if (!quiet && typeof global.renderAdmin === "function") global.renderAdmin();
     try {
@@ -483,8 +502,11 @@
             <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.exitRapidReview()">Back to list</button>
           </div>
           <p class="admin-muted">No ships left in the review queue${
-            rapidSessionStats.approved || rapidSessionStats.rejected || rapidSessionStats.skipped
-              ? ` — session: ${rapidSessionStats.approved} approved, ${rapidSessionStats.rejected} rejected, ${rapidSessionStats.skipped} skipped.`
+            rapidSessionStats.approved ||
+            rapidSessionStats.rejected ||
+            rapidSessionStats.skipped ||
+            rapidSessionStats.removed
+              ? ` — session: ${rapidSessionStats.approved} approved, ${rapidSessionStats.rejected} rejected, ${rapidSessionStats.skipped} skipped, ${rapidSessionStats.removed} removed.`
               : "."
           }</p>
           <p>
@@ -512,7 +534,9 @@
             }</p>
             <p class="admin-small">Session: ${esc(String(rapidSessionStats.approved))} approved · ${esc(
               String(rapidSessionStats.rejected)
-            )} rejected · ${esc(String(rapidSessionStats.skipped))} skipped</p>
+            )} rejected · ${esc(String(rapidSessionStats.skipped))} skipped · ${esc(
+              String(rapidSessionStats.removed || 0)
+            )} removed</p>
           </div>
           <button type="button" class="admin-button secondary small" ${
             actionsLocked ? "disabled" : ""
@@ -560,8 +584,13 @@
           <button type="button" class="admin-button secondary small" ${
             actionsLocked ? "disabled" : ""
           } onclick="DeckPlansAdmin.rapidOpenFull()">Full review</button>
+          <button type="button" class="admin-button danger small deck-plans-rapid-remove" ${
+            actionsLocked ? "disabled" : ""
+          } onclick="DeckPlansAdmin.rapidRemoveShip()">${
+            busy?.type === "remove" ? "Removing…" : "Remove ship (D)"
+          }</button>
         </div>
-        <p class="admin-small admin-muted">Keyboard: A approve · R reject · S skip. Approval is always manual.</p>
+        <p class="admin-small admin-muted">Keyboard: A approve · R reject · S skip · D remove ship. Approval is always manual. Remove archives the ship from the active fleet (not a hard delete).</p>
       </section>
     `;
   }
@@ -665,8 +694,18 @@
           </div>
           <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.closeReview()" ${
             actionsLocked ? "disabled" : ""
-          }>Close</button>
+          }>${fullReviewFromRapid ? "Back to Rapid Review" : "Close"}</button>
         </div>
+        ${
+          fullReviewFromRapid
+            ? `<div class="admin-message info deck-plans-rapid-return-banner">
+                Opened from Rapid Review. After you <strong>Approve</strong> or <strong>Save &amp; Approve</strong>, you’ll return to the queue automatically.
+                <button type="button" class="admin-button secondary small" ${
+                  actionsLocked ? "disabled" : ""
+                } onclick="DeckPlansAdmin.returnToRapidReview()">Return without saving</button>
+              </div>`
+            : ""
+        }
         <div class="deck-plans-edit-form admin-card">
           <h4>Edit / set deck plan source</h4>
           <p class="admin-muted admin-small">Correct the URL if a candidate is close but not right. Must be an official cruise line domain. Saving approves this source for My Cruise.</p>
@@ -1020,6 +1059,10 @@
     },
     async openReview(shipId) {
       if (isBusy()) return;
+      if (fullReviewFromRapid && fullReviewShipId && fullReviewShipId !== shipId) {
+        fullReviewFromRapid = false;
+        fullReviewShipId = "";
+      }
       reviewShipId = shipId;
       lastDiagnostics = null;
       const ship = ships.find((s) => s.id === shipId);
@@ -1038,6 +1081,10 @@
     },
     closeReview() {
       if (isBusy()) return;
+      if (fullReviewFromRapid) {
+        global.DeckPlansAdmin.returnToRapidReview();
+        return;
+      }
       reviewShipId = "";
       lastDiagnostics = null;
       historyRows = [];
@@ -1096,7 +1143,12 @@
         candidateId
       });
       try {
-        await approveFlow(shipId, candidateId, false);
+        const result = await approveFlow(shipId, candidateId, false);
+        if (result?.cancelled) return;
+        const shipName = result?.ship?.name || ships.find((s) => s.id === shipId)?.name || "";
+        if (fullReviewFromRapid && fullReviewShipId === shipId) {
+          resumeRapidAfterFullReview(shipId, { outcome: "approved", shipName });
+        }
       } catch (error) {
         message = error.message || "Approve failed";
         messageTone = "error";
@@ -1162,9 +1214,16 @@
           sourceType: data.ship.deck_plan_source_type || sourceType,
           notes: data.ship.deck_plan_notes || notes
         };
-        message = `Saved and approved deck plan for ${data.ship.name}.`;
-        messageTone = "success";
-        if (reviewShipId === shipId) await loadHistory(shipId);
+        if (fullReviewFromRapid && fullReviewShipId === shipId) {
+          resumeRapidAfterFullReview(shipId, {
+            outcome: "approved",
+            shipName: data.ship.name || ""
+          });
+        } else {
+          message = `Saved and approved deck plan for ${data.ship.name}.`;
+          messageTone = "success";
+          if (reviewShipId === shipId) await loadHistory(shipId);
+        }
         try {
           const dash = await api("dashboard");
           cards = dash.cards || cards;
@@ -1190,7 +1249,14 @@
         upsertShip(data.ship);
         message = "Candidate rejected.";
         messageTone = "info";
-        if (reviewShipId === shipId) await loadHistory(shipId);
+        if (fullReviewFromRapid && fullReviewShipId === shipId && !(data.ship.candidates || []).length) {
+          resumeRapidAfterFullReview(shipId, {
+            outcome: "rejected",
+            shipName: data.ship.name || ""
+          });
+        } else if (reviewShipId === shipId) {
+          await loadHistory(shipId);
+        }
       } catch (error) {
         message = error.message || "Reject failed";
         messageTone = "error";
@@ -1415,7 +1481,7 @@
           rapidQueue = data.queue || [];
         }
         rapidIndex = 0;
-        rapidSessionStats = { approved: 0, rejected: 0, skipped: 0 };
+        rapidSessionStats = { approved: 0, rejected: 0, skipped: 0, removed: 0 };
         viewMode = "rapid";
         reviewShipId = "";
         message = rapidQueue.length
@@ -1461,6 +1527,8 @@
     exitRapidReview() {
       if (isBusy()) return;
       viewMode = "list";
+      fullReviewFromRapid = false;
+      fullReviewShipId = "";
       unbindRapidKeys();
       message = "";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
@@ -1470,6 +1538,8 @@
     rapidOpenFull() {
       const ship = currentRapidShip();
       if (!ship) return;
+      fullReviewFromRapid = true;
+      fullReviewShipId = ship.id;
       viewMode = "list";
       unbindRapidKeys();
       reviewShipId = ship.id;
@@ -1480,9 +1550,23 @@
         notes: ship.deck_plan_notes || ""
       };
       upsertShip(ship);
+      message = "Full review — edit or approve, then you’ll return to Rapid Review.";
+      messageTone = "info";
       loadHistory(ship.id).finally(() => {
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       });
+    },
+
+    returnToRapidReview() {
+      if (isBusy()) return;
+      if (!fullReviewFromRapid) return;
+      const shipId = fullReviewShipId || reviewShipId;
+      const ship = ships.find((s) => s.id === shipId);
+      resumeRapidAfterFullReview(shipId, {
+        outcome: "back",
+        shipName: ship?.name || ""
+      });
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
 
     async rapidApprove() {
@@ -1490,22 +1574,29 @@
       const ship = currentRapidShip();
       const top = ship?.candidates?.[0];
       if (!ship || !top) return;
+      viewMode = "rapid";
       beginBusy("approve", `Approving ${ship.name}…`, {
         shipId: ship.id,
         candidateId: top.id || top.url
       });
       try {
         const result = await approveFlow(ship.id, top.id || top.url, false);
-        if (result?.cancelled) return;
+        if (result?.cancelled) {
+          viewMode = "rapid";
+          return;
+        }
         rapidSessionStats.approved += 1;
         advanceRapidQueue();
+        viewMode = "rapid";
         message = `Approved ${ship.name}. Next ship loaded.`;
         messageTone = "success";
       } catch (error) {
+        viewMode = "rapid";
         message = error.message || "Approve failed";
         messageTone = "error";
       } finally {
         endBusy();
+        viewMode = "rapid";
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
@@ -1515,6 +1606,7 @@
       const ship = currentRapidShip();
       const top = ship?.candidates?.[0];
       if (!ship || !top) return;
+      viewMode = "rapid";
       beginBusy("reject", `Rejecting candidate for ${ship.name}…`, {
         shipId: ship.id,
         candidateId: top.id || top.url
@@ -1526,7 +1618,7 @@
         });
         rapidSessionStats.rejected += 1;
         upsertShip(data.ship);
-        // If more candidates remain, stay on ship; else advance
+        viewMode = "rapid";
         if (data.ship.candidates?.length) {
           rapidQueue[rapidIndex] = data.ship;
           message = `Rejected candidate — ${data.ship.candidates.length} remaining for ${ship.name}.`;
@@ -1537,10 +1629,12 @@
           messageTone = "info";
         }
       } catch (error) {
+        viewMode = "rapid";
         message = error.message || "Reject failed";
         messageTone = "error";
       } finally {
         endBusy();
+        viewMode = "rapid";
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
@@ -1549,18 +1643,108 @@
       if (isBusy()) return;
       const ship = currentRapidShip();
       if (!ship) return;
+      viewMode = "rapid";
       rapidSessionStats.skipped += 1;
       rapidSkippedIds.add(ship.id);
       advanceRapidQueue();
       message = `Skipped ${ship.name}. Next ship loaded.`;
       messageTone = "info";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+
+    async rapidRemoveShip() {
+      if (isBusy()) return;
+      const ship = currentRapidShip();
+      if (!ship) return;
+      const ok = window.confirm(
+        `Remove “${ship.name}” (${ship.cruise_line_name || "Unknown line"}) from the active fleet?\n\nUse this when the name is not a real ship.\n\nThis archives the ship (active = off). It will disappear from active lists. Related history is kept — this is not a hard database wipe.`
+      );
+      if (!ok) return;
+
+      viewMode = "rapid";
+      beginBusy("remove", `Removing ${ship.name}…`, { shipId: ship.id });
+      try {
+        await api("remove_ship", {
+          ship_id: ship.id,
+          notes: "Removed from Deck Plans Rapid Review — not a real / usable ship"
+        });
+        rapidSessionStats.removed += 1;
+        // Track so a mid-session queue refresh won't resurrect it
+        rapidSkippedIds.add(ship.id);
+        ships = ships.filter((s) => s.id !== ship.id);
+        advanceRapidQueue();
+        viewMode = "rapid";
+        message = `Archived ${ship.name} (not a real ship). Next ship loaded.`;
+        messageTone = "success";
+        try {
+          const dash = await api("dashboard");
+          cards = dash.cards || cards;
+        } catch {
+          /* ignore */
+        }
+      } catch (error) {
+        viewMode = "rapid";
+        message = error.message || "Remove failed";
+        messageTone = "error";
+      } finally {
+        endBusy();
+        viewMode = "rapid";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
     }
   };
 
   function advanceRapidQueue() {
     rapidQueue.splice(rapidIndex, 1);
     if (rapidIndex >= rapidQueue.length) rapidIndex = Math.max(0, rapidQueue.length - 1);
+  }
+
+  function removeShipFromRapidQueue(shipId) {
+    const idx = rapidQueue.findIndex((s) => s.id === shipId);
+    if (idx < 0) return;
+    rapidQueue.splice(idx, 1);
+    if (rapidIndex > idx) rapidIndex -= 1;
+    if (rapidIndex >= rapidQueue.length) rapidIndex = Math.max(0, rapidQueue.length - 1);
+  }
+
+  /**
+   * After Full Review approve/save (opened from Rapid Review), go back to the queue.
+   * @returns {boolean} true if returned to rapid mode
+   */
+  function resumeRapidAfterFullReview(shipId, { outcome = "approved", shipName = "" } = {}) {
+    if (!fullReviewFromRapid) return false;
+    if (outcome === "approved") {
+      removeShipFromRapidQueue(shipId);
+      rapidSessionStats.approved += 1;
+    } else if (outcome === "rejected") {
+      const updated = ships.find((s) => s.id === shipId);
+      const idx = rapidQueue.findIndex((s) => s.id === shipId);
+      if (updated?.candidates?.length && idx >= 0) {
+        rapidQueue[idx] = updated;
+      } else {
+        removeShipFromRapidQueue(shipId);
+        rapidSessionStats.rejected += 1;
+      }
+    }
+    // outcome === "back": keep ship in queue at current position
+    fullReviewFromRapid = false;
+    fullReviewShipId = "";
+    reviewShipId = "";
+    editDraft = { shipId: "", url: "", sourceType: "", notes: "" };
+    viewMode = "rapid";
+    bindRapidKeys();
+    const label = shipName || "Ship";
+    if (outcome === "approved") {
+      message = `Approved ${label}. Back in Rapid Review — next ship loaded.`;
+      messageTone = "success";
+    } else if (outcome === "rejected") {
+      message = `Updated ${label}. Back in Rapid Review.`;
+      messageTone = "info";
+    } else {
+      message = `Returned to Rapid Review — ${label} still in the queue.`;
+      messageTone = "info";
+    }
+    return true;
   }
 
   function onRapidKeydown(event) {
@@ -1577,6 +1761,9 @@
     } else if (key === "s") {
       event.preventDefault();
       global.DeckPlansAdmin.rapidSkip();
+    } else if (key === "d") {
+      event.preventDefault();
+      global.DeckPlansAdmin.rapidRemoveShip();
     }
   }
 

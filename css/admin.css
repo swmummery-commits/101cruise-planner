@@ -4523,6 +4523,18 @@
   font-weight: 700;
 }
 
+.deck-plans-rapid-remove {
+  margin-left: auto;
+}
+
+.deck-plans-rapid-return-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+}
+
 .deck-plans-line-picker-overlay {
   position: fixed;
   inset: 0;

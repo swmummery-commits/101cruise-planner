@@ -5,7 +5,7 @@
  * Actions:
  *   dashboard | list_lines | list_ships | find | approve | reject_candidate |
  *   mark_status | clear_candidates | coverage_audit | list_history |
- *   list_missing_for_bulk | list_review_queue | reverify | save_manual
+ *   list_missing_for_bulk | list_review_queue | reverify | save_manual | remove_ship
  *
  * Assisted discovery only. No automatic publishing. No scheduled runs.
  */
@@ -800,6 +800,66 @@ async function clearCandidates(shipId) {
   return { ship: mapShipRow(refreshed) };
 }
 
+/**
+ * Soft-remove a ship that should not be in the active catalogue
+ * (e.g. phantom names from bad discovery). Matches Cruise Line Audit archive pattern.
+ * Never hard-deletes — preserves history and avoids FK breakage.
+ */
+async function removeShip(shipId, user, notes) {
+  const ship = await loadShip(shipId);
+  if (!ship) {
+    const err = new Error("Ship not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const now = new Date().toISOString();
+  const admin = adminLabel(user);
+  const noteText =
+    notes != null && String(notes).trim()
+      ? String(notes).trim()
+      : `Removed via Deck Plans Rapid Review by ${admin} (ship does not exist / not a real vessel)`;
+
+  await supabase(`ci_cruise_ships?id=eq.${encodeURIComponent(shipId)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      active: false,
+      status: "retired",
+      needs_review: false,
+      review_notes: noteText,
+      deck_plan_status: "unavailable",
+      deck_plan_candidates: [],
+      deck_plan_url: null,
+      deck_plan_page_url: null,
+      deck_plan_pdf_url: null,
+      deck_plan_source_type: null,
+      deck_plan_source_domain: null,
+      deck_plan_last_verified_at: now,
+      deck_plan_verified_by: admin,
+      deck_plan_notes: noteText,
+      last_verified_at: now,
+      updated_at: now
+    })
+  });
+
+  await recordHistory({
+    shipId,
+    action: "source_rejected",
+    previousUrl: publicDeckUrl(ship) || null,
+    newUrl: null,
+    administrator: admin,
+    notes: `Ship removed from active fleet: ${noteText}`
+  });
+
+  return {
+    removed: true,
+    ship_id: shipId,
+    ship_name: ship.name,
+    message: "Ship archived (active=false). It will no longer appear in active lists."
+  };
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return jsonResponse(204, {});
   if (event.httpMethod !== "POST") {
@@ -914,6 +974,13 @@ exports.handler = async (event) => {
       const shipId = String(body.ship_id || "").trim();
       if (!shipId) return jsonResponse(400, { success: false, error: "ship_id is required" });
       const data = await clearCandidates(shipId);
+      return jsonResponse(200, { success: true, ...data });
+    }
+
+    if (action === "remove_ship") {
+      const shipId = String(body.ship_id || "").trim();
+      if (!shipId) return jsonResponse(400, { success: false, error: "ship_id is required" });
+      const data = await removeShip(shipId, user, body.notes);
       return jsonResponse(200, { success: true, ...data });
     }
 
