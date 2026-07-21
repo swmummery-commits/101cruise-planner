@@ -666,43 +666,89 @@
   text-align: center;
 }
 
-/* ---- Good to know (single strip) ---- */
+/* ---- Good to know — same premium green treatment as Snapshot ---- */
 
 .dest-gtk-strip {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 0;
+  gap: 16px;
   margin-top: 22px;
-  border: 1px solid var(--dest-snap-border);
-  border-radius: 18px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: 0 1px 0 rgba(36, 92, 78, 0.04);
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
 }
 
 .dest-gtk-cell {
-  padding: 20px 12px;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 24px 14px;
   text-align: center;
-  border-right: 1px solid var(--dest-snap-border);
+  border: 1px solid rgba(36, 92, 78, 0.12);
+  border-radius: 22px;
+  background:
+    linear-gradient(
+      145deg,
+      #b8ead6 0%,
+      #8dd9bf 48%,
+      #6fc4a8 100%
+    );
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 10px 28px rgba(36, 92, 78, 0.14),
+    0 2px 6px rgba(17, 17, 17, 0.04);
+  transition:
+    transform 0.28s ease,
+    box-shadow 0.28s ease;
+}
+
+.dest-gtk-cell::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 42%;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.38) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.dest-gtk-cell:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 16px 34px rgba(36, 92, 78, 0.18),
+    0 4px 10px rgba(17, 17, 17, 0.05);
 }
 
 .dest-gtk-cell:last-child {
-  border-right: none;
+  border-right: 1px solid rgba(36, 92, 78, 0.12);
+}
+
+.dest-gtk-label,
+.dest-gtk-value {
+  position: relative;
+  z-index: 1;
 }
 
 .dest-gtk-label {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--brand-green-ink);
 }
 
 .dest-gtk-value {
   margin: 0;
-  font-size: 0.98rem;
-  font-weight: 600;
+  font-size: clamp(1.05rem, 1.6vw, 1.2rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--dest-ink);
   line-height: 1.3;
 }
@@ -908,16 +954,17 @@
   .dest-gtk-strip {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
     overflow: visible;
   }
 
   .dest-gtk-cell {
-    border-right: 1px solid var(--dest-line);
-    border-bottom: 1px solid var(--dest-line);
+    border-right: 1px solid rgba(36, 92, 78, 0.12);
+    border-bottom: none;
   }
 
   .dest-gtk-cell:nth-child(3n) {
-    border-right: none;
+    border-right: 1px solid rgba(36, 92, 78, 0.12);
   }
 
   .dest-gtk-cell:nth-last-child(-n + 3) {
@@ -968,7 +1015,9 @@
   }
 
   .dest-snap-card,
-  .dest-snap-card:hover {
+  .dest-snap-card:hover,
+  .dest-gtk-cell,
+  .dest-gtk-cell:hover {
     transition: none !important;
     transform: none !important;
   }
