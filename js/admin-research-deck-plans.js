@@ -35,6 +35,11 @@
   let rapidSkippedIds = new Set();
   let rapidSessionStats = { approved: 0, rejected: 0, skipped: 0 };
 
+  // Cruise line multi-select picker (research + rapid review)
+  const LINE_PICKER_STORAGE_KEY = "101cruise.deckPlans.selectedLineIds";
+  let linePicker = null; // { purpose, title, selectedIds: Set, resolve }
+  let pendingLineIds = [];
+
   /** @type {{ type: string, shipId?: string, candidateId?: string, label: string } | null} */
   let busy = null;
   /** Draft values for the edit form (survive re-renders while reviewing a ship). */
@@ -77,6 +82,103 @@
         : ship.deck_plan_source_type || "official_page",
       notes: useDraft ? editDraft.notes : ship.deck_plan_notes || ""
     };
+  }
+
+  function loadStoredLineIds() {
+    try {
+      const raw = localStorage.getItem(LINE_PICKER_STORAGE_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed.map(String).filter(Boolean) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveStoredLineIds(ids) {
+    try {
+      localStorage.setItem(LINE_PICKER_STORAGE_KEY, JSON.stringify(ids || []));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function promptLinePicker({ purpose, title, body }) {
+    return new Promise((resolve) => {
+      const stored = loadStoredLineIds();
+      const validStored = stored.filter((id) => lines.some((line) => line.id === id));
+      const initial =
+        validStored.length > 0
+          ? validStored
+          : filterLineId
+            ? [filterLineId]
+            : lines.map((line) => line.id);
+      linePicker = {
+        purpose,
+        title: title || "Select cruise lines",
+        body:
+          body ||
+          "Choose only the lines your clients use. This limits search and review work.",
+        selectedIds: new Set(initial),
+        resolve
+      };
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    });
+  }
+
+  function closeLinePicker(result) {
+    const resolve = linePicker?.resolve;
+    linePicker = null;
+    if (typeof global.renderAdmin === "function") global.renderAdmin();
+    if (typeof resolve === "function") resolve(result);
+  }
+
+  function renderLinePicker() {
+    if (!linePicker) return "";
+    const selected = linePicker.selectedIds || new Set();
+    const count = selected.size;
+    return `
+      <div class="deck-plans-line-picker-overlay" role="dialog" aria-modal="true" aria-labelledby="deck-plans-line-picker-title">
+        <div class="deck-plans-line-picker">
+          <div class="deck-plans-line-picker-header">
+            <h3 id="deck-plans-line-picker-title">${esc(linePicker.title)}</h3>
+            <p class="admin-muted">${esc(linePicker.body)}</p>
+          </div>
+          <div class="deck-plans-line-picker-toolbar">
+            <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.linePickerSelectAll()">Select all</button>
+            <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.linePickerClear()">Clear</button>
+            <span class="admin-small admin-muted">${esc(String(count))} selected</span>
+          </div>
+          <div class="deck-plans-line-picker-list">
+            ${
+              lines.length
+                ? lines
+                    .map((line) => {
+                      const checked = selected.has(line.id) ? "checked" : "";
+                      return `
+                        <label class="deck-plans-line-picker-item">
+                          <input
+                            type="checkbox"
+                            ${checked}
+                            onchange="DeckPlansAdmin.linePickerToggle('${esc(line.id)}', this.checked)"
+                          />
+                          <span>${esc(line.name)}</span>
+                        </label>`;
+                    })
+                    .join("")
+                : `<p class="admin-muted">No active cruise lines loaded.</p>`
+            }
+          </div>
+          <div class="deck-plans-line-picker-actions">
+            <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.linePickerCancel()">Cancel</button>
+            <button type="button" class="admin-button small" ${
+              count ? "" : "disabled"
+            } onclick="DeckPlansAdmin.linePickerConfirm()">${
+              linePicker.purpose === "research" ? "Research selected lines" : "Start Rapid Review"
+            }</button>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   function busyLabelForButton(type, shipId, candidateId, idleLabel, activeLabel) {
@@ -340,9 +442,7 @@
             ? `<button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.exitRapidReview()">Exit Rapid Review</button>`
             : ""
         }
-        <p class="admin-small admin-muted">Research stores candidates only. Rapid Review is still manual approve — nothing publishes automatically.${
-          filterLineId ? " Bulk research uses the selected cruise line filter." : ""
-        }</p>
+        <p class="admin-small admin-muted">Pick cruise lines before research or rapid review — only those lines are processed. Approval stays manual.</p>
       </div>
       ${
         bulkProgress
@@ -815,6 +915,7 @@
           ${renderBusyBanner()}
           ${!busy && message ? `<div class="admin-message ${esc(messageTone)}" role="status">${esc(message)}</div>` : ""}
           ${renderRapidReview()}
+          ${renderLinePicker()}
         </div>
       `;
     }
@@ -837,6 +938,7 @@
         ${reviewShip ? renderReviewPanel(reviewShip) : ""}
         <h3 class="deck-plans-list-heading">Ships</h3>
         ${renderTable()}
+        ${renderLinePicker()}
       </div>
     `;
   }
@@ -1186,13 +1288,22 @@
     },
     async startBulkFind() {
       if (bulkRunning || busy) return;
-      const scope = filterLineId
-        ? `missing ships for the selected cruise line`
-        : `all missing ships`;
-      const confirmed = window.confirm(
-        `Research Missing Deck Plans (${scope})?\n\nProcesses one ship at a time.\nStores candidates only — never approves.\nYou can cancel at any time.`
-      );
-      if (!confirmed) return;
+      if (!lines.length) {
+        message = "Cruise lines not loaded yet — wait a moment and try again.";
+        messageTone = "error";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+        return;
+      }
+
+      const picked = await promptLinePicker({
+        purpose: "research",
+        title: "Research Missing Deck Plans",
+        body: "Select the cruise lines to research. Unchecked lines are skipped to save search resources."
+      });
+      if (!picked || !picked.length) return;
+
+      pendingLineIds = picked;
+      saveStoredLineIds(picked);
 
       bulkRunning = true;
       bulkCancel = false;
@@ -1206,18 +1317,18 @@
         error: "",
         stopped: false
       };
-      message = "Starting research for missing ships…";
+      message = `Starting research for ${picked.length} cruise line${picked.length === 1 ? "" : "s"}…`;
       messageTone = "info";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
 
       try {
         const list = await api("list_missing_for_bulk", {
-          cruise_line_id: filterLineId || undefined
+          cruise_line_ids: picked
         });
         const queue = list.ships || [];
         bulkProgress.total = queue.length;
         if (!queue.length) {
-          message = "No missing ships to research" + (filterLineId ? " for this cruise line." : ".");
+          message = "No missing ships to research for the selected cruise lines.";
           messageTone = "info";
           return;
         }
@@ -1240,7 +1351,6 @@
           } catch (error) {
             bulkProgress.failed += 1;
             bulkProgress.error = error.message || "Find failed";
-            // Continue researching other ships; stop only if cancelled
             if (/unauthor|forbidden|not configured|401|403/i.test(bulkProgress.error)) {
               bulkProgress.stopped = true;
               message = `Research stopped: ${bulkProgress.error}`;
@@ -1277,13 +1387,29 @@
 
     async startRapidReview() {
       if (bulkRunning) return;
+      if (!lines.length) {
+        message = "Cruise lines not loaded yet — wait a moment and try again.";
+        messageTone = "error";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+        return;
+      }
+
+      const picked = await promptLinePicker({
+        purpose: "rapid",
+        title: "Rapid Review — select cruise lines",
+        body: "Choose which lines to review. Your last selection is remembered."
+      });
+      if (!picked || !picked.length) return;
+
+      pendingLineIds = picked;
+      saveStoredLineIds(picked);
+
       beginBusy("queue", "Loading review queue…");
       try {
         const data = await api("list_review_queue", {
-          cruise_line_id: filterLineId || undefined
+          cruise_line_ids: picked
         });
         rapidQueue = (data.queue || []).filter((s) => !rapidSkippedIds.has(s.id));
-        // If all were skipped in this session, allow refresh to re-include
         if (!rapidQueue.length && (data.queue || []).length) {
           rapidSkippedIds = new Set();
           rapidQueue = data.queue || [];
@@ -1293,8 +1419,8 @@
         viewMode = "rapid";
         reviewShipId = "";
         message = rapidQueue.length
-          ? `Rapid Review ready — ${rapidQueue.length} ship${rapidQueue.length === 1 ? "" : "s"} with candidates.`
-          : "No ships with candidates in the review queue. Run Research Missing Deck Plans first.";
+          ? `Rapid Review ready — ${rapidQueue.length} ship${rapidQueue.length === 1 ? "" : "s"} across ${picked.length} line${picked.length === 1 ? "" : "s"}.`
+          : "No ships with candidates for the selected lines. Run Research Missing Deck Plans first.";
         messageTone = rapidQueue.length ? "success" : "info";
         bindRapidKeys();
       } catch (error) {
@@ -1304,6 +1430,32 @@
         endBusy();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
+    },
+
+    linePickerToggle(lineId, checked) {
+      if (!linePicker) return;
+      if (checked) linePicker.selectedIds.add(lineId);
+      else linePicker.selectedIds.delete(lineId);
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    linePickerSelectAll() {
+      if (!linePicker) return;
+      linePicker.selectedIds = new Set(lines.map((line) => line.id));
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    linePickerClear() {
+      if (!linePicker) return;
+      linePicker.selectedIds = new Set();
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    linePickerCancel() {
+      closeLinePicker(null);
+    },
+    linePickerConfirm() {
+      if (!linePicker) return;
+      const ids = [...linePicker.selectedIds];
+      if (!ids.length) return;
+      closeLinePicker(ids);
     },
 
     exitRapidReview() {

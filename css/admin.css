@@ -4492,3 +4492,78 @@
 .deck-plans-rapid-approve {
   font-weight: 700;
 }
+
+.deck-plans-line-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(17, 24, 39, 0.45);
+}
+
+.deck-plans-line-picker {
+  width: min(520px, 100%);
+  max-height: min(80vh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e3e8e5;
+  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.18);
+  overflow: hidden;
+}
+
+.deck-plans-line-picker-header {
+  padding: 16px 18px 8px;
+}
+
+.deck-plans-line-picker-header h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.deck-plans-line-picker-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 0 18px 10px;
+}
+
+.deck-plans-line-picker-list {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding: 4px 10px 10px;
+  border-top: 1px solid #eef2f0;
+  border-bottom: 1px solid #eef2f0;
+}
+
+.deck-plans-line-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.deck-plans-line-picker-item:hover {
+  background: #f8faf9;
+}
+
+.deck-plans-line-picker-item input {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.deck-plans-line-picker-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px 16px;
+}
