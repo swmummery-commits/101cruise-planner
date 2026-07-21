@@ -319,14 +319,79 @@
     if (loadWrap) loadWrap.hidden = cruisesVisible >= total;
   }
 
+  function normaliseLineName(name) {
+    return String(name || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\b(cruises?|line|international|group|ltd|limited)\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  async function fetchCruiseLinesFromDb() {
+    const response = await fetch("/.netlify/functions/public-ci-cruise-lines", {
+      method: "GET",
+      headers: { Accept: "application/json" }
+    });
+    if (!response.ok) throw new Error(`Cruise lines HTTP ${response.status}`);
+    const data = await response.json().catch(() => ({}));
+    return Array.isArray(data.cruise_lines) ? data.cruise_lines : [];
+  }
+
+  function matchDbLine(name, dbLines) {
+    const target = normaliseLineName(name);
+    if (!target) return null;
+    const exact = dbLines.find((row) => normaliseLineName(row.name) === target);
+    if (exact) return exact;
+    const contains = dbLines.filter((row) => {
+      const n = normaliseLineName(row.name);
+      return n && target && (n.includes(target) || target.includes(n));
+    });
+    return contains.length === 1 ? contains[0] : null;
+  }
+
+  /**
+   * Attach logo_url from ci_cruise_lines (via public API).
+   * Keeps destination line order; falls back to wordmark when no logo.
+   */
+  function enrichCruiseLinesWithLogos(destLines, dbLines) {
+    const listed = Array.isArray(destLines) && destLines.length ? destLines : [];
+    if (!listed.length && dbLines.length) {
+      // No curated list — show sold-by-101cruise lines that have logos
+      return dbLines
+        .filter((row) => row.logo_url)
+        .map((row) => ({
+          name: row.name,
+          logo: row.logo_url,
+          id: row.id,
+          slug: row.slug || null,
+          source: "ci_cruise_lines"
+        }));
+    }
+    return listed.map((line) => {
+      const name = typeof line === "string" ? line : line.name;
+      const match = matchDbLine(name, dbLines);
+      return {
+        name: match?.name || name,
+        logo: match?.logo_url || line.logo || null,
+        id: match?.id || line.id || null,
+        slug: match?.slug || line.slug || null,
+        source: match ? "ci_cruise_lines" : "placeholder"
+      };
+    });
+  }
+
   function renderLines(dest) {
     const items = (dest.cruiseLines || [])
       .map(
         (line) => `
-        <li class="dest-line-item">
+        <li class="dest-line-item${line.logo ? " has-logo" : ""}" title="${esc(line.name)}">
           ${
             line.logo
-              ? `<img src="${esc(line.logo)}" alt="${esc(line.name)}" loading="lazy">`
+              ? `<img src="${esc(line.logo)}" alt="${esc(line.name)}" loading="lazy" onerror="this.outerHTML='<span class=\\'dest-line-wordmark\\'>${esc(line.name)}</span>'">`
               : `<span class="dest-line-wordmark">${esc(line.name)}</span>`
           }
         </li>`
@@ -451,7 +516,7 @@
     });
   }
 
-  function mount() {
+  async function mount() {
     const root = document.getElementById("public-destination-app");
     if (!root || !Data) return;
 
@@ -464,12 +529,26 @@
       return;
     }
 
-    activeDestination = dest;
-    setMetadata(dest);
-    root.innerHTML = renderPage(dest);
+    // Clone so we can attach DB logos without mutating the static catalog
+    const pageDest = {
+      ...dest,
+      cruiseLines: (dest.cruiseLines || []).map((line) =>
+        typeof line === "string" ? { name: line } : { ...line }
+      )
+    };
+
+    try {
+      const dbLines = await fetchCruiseLinesFromDb();
+      pageDest.cruiseLines = enrichCruiseLinesWithLogos(pageDest.cruiseLines, dbLines);
+    } catch (error) {
+      console.warn("Destination cruise line logos unavailable", error);
+    }
+
+    activeDestination = pageDest;
+    setMetadata(pageDest);
+    root.innerHTML = renderPage(pageDest);
     ensurePageStartsAtTop();
     revealPage(root.querySelector(".dest-page"));
-    // Re-assert after layout/images so Safari does not restore mid-page scroll
     requestAnimationFrame(() => {
       ensurePageStartsAtTop();
       setTimeout(ensurePageStartsAtTop, 50);

@@ -643,19 +643,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 64px;
-  min-width: 140px;
-  padding: 14px 20px;
+  min-height: 72px;
+  min-width: 148px;
+  padding: 16px 22px;
   background: #fff;
   border: 1px solid var(--dest-line);
   border-radius: 14px;
 }
 
+.dest-line-item.has-logo {
+  background: #fff;
+}
+
 .dest-line-item img {
-  max-height: 36px;
-  max-width: 140px;
+  max-height: 40px;
+  max-width: 150px;
   width: auto;
+  height: auto;
   object-fit: contain;
+  display: block;
 }
 
 .dest-line-wordmark {
