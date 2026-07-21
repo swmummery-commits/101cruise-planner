@@ -1,12 +1,19 @@
 /**
  * Public Destination Experience page: /destination/{slug}
- * Sprint 11A — template + placeholder content (no live cruise discovery).
+ * Sprint 11A polish — template + placeholders (no live Discovery Engine).
+ *
+ * FUTURE (architecture only):
+ * - Port images: Media Library via mediaId / mediaKey only
+ * - Cruise count + cards: Cruise Discovery Engine
+ * - Port cards: link to Port Guide pages (/port/{slug})
  */
 (function () {
   "use strict";
 
   const HOME_URL = "https://www.101cruise.com.au";
   const Data = window.DestinationPageData;
+  let activeDestination = null;
+  let cruisesVisible = 0;
 
   function esc(value) {
     if (value === null || value === undefined) return "";
@@ -172,18 +179,26 @@
   function renderPorts(dest) {
     const cards = (dest.ports || [])
       .slice(0, 5)
-      .map(
-        (port) => `
-        <a class="dest-port-card" href="#ports" data-port-slug="${esc(port.slug || "")}" aria-label="${esc(port.name)} — port guide coming soon">
-          <div class="dest-port-media" style="--dest-port-pos: ${esc(port.image?.objectPosition || "center center")}">
-            <img src="${esc(port.image?.url || "")}" alt="${esc(port.image?.alt || port.name)}" loading="lazy">
+      .map((port) => {
+        const image = Data.resolvePortImage(port);
+        const href = port.guideHref || `#ports`;
+        const mediaAttr = port.mediaKey ? ` data-media-key="${esc(port.mediaKey)}"` : "";
+        const mediaIdAttr = port.mediaId ? ` data-media-id="${esc(port.mediaId)}"` : "";
+        const placeholderClass = image.source === "placeholder" ? " is-placeholder" : "";
+        const imgHtml = image.url
+          ? `<img src="${esc(image.url)}" alt="${esc(image.alt)}" loading="lazy">`
+          : `<div class="dest-port-placeholder" aria-hidden="true"></div>`;
+        return `
+        <a class="dest-port-card${placeholderClass}" href="${esc(href)}" data-port-slug="${esc(port.slug || "")}"${mediaAttr}${mediaIdAttr} aria-label="${esc(port.name)}${port.guideHref ? "" : " — port guide coming soon"}">
+          <div class="dest-port-media" style="--dest-port-pos: ${esc(image.objectPosition || "center center")}">
+            ${imgHtml}
           </div>
           <div class="dest-port-body">
             <h3 class="dest-port-name">${esc(port.name)}</h3>
             <p class="dest-port-desc">${esc(port.description)}</p>
           </div>
-        </a>`
-      )
+        </a>`;
+      })
       .join("");
     return `
       <section class="dest-section dest-section-soft dest-reveal" id="ports" style="--dest-delay: 180ms">
@@ -196,47 +211,91 @@
     `;
   }
 
+  function renderCruiseCard(dest, c) {
+    return `
+      <article class="dest-cruise-card">
+        <div class="dest-cruise-top">
+          <p class="dest-cruise-line">${esc(c.cruiseLine)}</p>
+          <h3 class="dest-cruise-ship">${esc(c.shipName)}</h3>
+        </div>
+        <div class="dest-cruise-meta">
+          <span>${esc(c.duration)}</span>
+          <span>${esc(c.departureDate)}</span>
+        </div>
+        <div class="dest-cruise-itinerary">
+          <p class="dest-cruise-itin-label">Itinerary</p>
+          <p class="dest-cruise-itin-value">${esc(c.itinerary)}</p>
+        </div>
+        <div class="dest-cruise-foot">
+          <p class="dest-cruise-fare">
+            <span class="dest-cruise-fare-label">Official Brochure Fare</span>
+            <span class="dest-cruise-fare-value">${esc(c.brochureFare)}</span>
+          </p>
+          <a class="dest-btn dest-btn-primary dest-btn-block dest-btn-cruise-cta" href="${esc(
+            Data.contactMailto(dest.name, `${c.shipName} · ${c.departureDate}`)
+          )}">Contact Paul for a better price</a>
+        </div>
+      </article>`;
+  }
+
+  function cruiseShowingText(visible, total) {
+    if (!total) return "Showing 0";
+    return `Showing 1–${visible} of ${total}`;
+  }
+
   function renderCruises(dest, contactUrl) {
-    const cards = (dest.cruises || [])
-      .map(
-        (c) => `
-        <article class="dest-cruise-card">
-          <div class="dest-cruise-top">
-            <p class="dest-cruise-line">${esc(c.cruiseLine)}</p>
-            <h3 class="dest-cruise-ship">${esc(c.shipName)}</h3>
-          </div>
-          <div class="dest-cruise-meta">
-            <span>${esc(c.duration)}</span>
-            <span>${esc(c.departureDate)}</span>
-          </div>
-          <div class="dest-cruise-itinerary">
-            <p class="dest-cruise-itin-label">Itinerary</p>
-            <p class="dest-cruise-itin-value">${esc(c.itinerary)}</p>
-          </div>
-          <div class="dest-cruise-foot">
-            <p class="dest-cruise-fare">
-              <span class="dest-cruise-fare-label">Official Brochure Fare</span>
-              <span class="dest-cruise-fare-value">${esc(c.brochureFare)}</span>
-            </p>
-            <a class="dest-btn dest-btn-primary dest-btn-block" href="${esc(
-              Data.contactMailto(dest.name, `${c.shipName} · ${c.departureDate}`)
-            )}">Contact Paul for a better price</a>
-          </div>
-        </article>`
-      )
-      .join("");
+    const catalog = Data.getCruiseCatalog(dest);
+    const total = catalog.totalCount || catalog.sailings.length;
+    const pageSize = catalog.pageSize || Data.CRUISE_PAGE_SIZE || 6;
+    cruisesVisible = Math.min(pageSize, total);
+    const visibleSailings = catalog.sailings.slice(0, cruisesVisible);
+    const cards = visibleSailings.map((c) => renderCruiseCard(dest, c)).join("");
+    const hasMore = cruisesVisible < total;
+
     return `
       <section class="dest-section dest-reveal" id="cruises" style="--dest-delay: 220ms">
         <div class="dest-wrap">
-          <h2 class="dest-section-title">Cruises Matching Your Travel Plans</h2>
-          <p class="dest-section-lead">Sample sailings for inspiration. Live availability and pricing coming soon — ask Paul for the current best rate.</p>
-          <div class="dest-cruise-list">${cards}</div>
+          <h2 class="dest-section-title" id="dest-cruise-heading">${esc(String(total))} Cruises Available for ${esc(dest.name)}</h2>
+          <p class="dest-section-lead dest-cruise-showing" id="dest-cruise-showing">${esc(cruiseShowingText(cruisesVisible, total))}</p>
+          <div class="dest-cruise-list" id="dest-cruise-list">${cards}</div>
+          <div class="dest-cruise-load-wrap" id="dest-cruise-load-wrap" ${hasMore ? "" : "hidden"}>
+            <button type="button" class="dest-btn dest-btn-secondary-ink" id="dest-cruise-load-more" onclick="DestinationExperience.loadMoreCruises()">
+              Load More Cruises
+            </button>
+          </div>
           <div class="dest-cruise-section-cta">
             <a class="dest-btn dest-btn-primary" href="${esc(contactUrl)}">Contact Paul for a better price</a>
           </div>
         </div>
       </section>
     `;
+  }
+
+  function loadMoreCruises() {
+    if (!activeDestination) return;
+    const catalog = Data.getCruiseCatalog(activeDestination);
+    const total = catalog.totalCount || catalog.sailings.length;
+    const pageSize = catalog.pageSize || Data.CRUISE_PAGE_SIZE || 6;
+    if (cruisesVisible >= total) return;
+
+    const nextVisible = Math.min(cruisesVisible + pageSize, total);
+    const list = document.getElementById("dest-cruise-list");
+    const showing = document.getElementById("dest-cruise-showing");
+    const loadWrap = document.getElementById("dest-cruise-load-wrap");
+    if (!list) return;
+
+    const fragment = document.createDocumentFragment();
+    const temp = document.createElement("div");
+    temp.innerHTML = catalog.sailings
+      .slice(cruisesVisible, nextVisible)
+      .map((c) => renderCruiseCard(activeDestination, c))
+      .join("");
+    while (temp.firstChild) fragment.appendChild(temp.firstChild);
+    list.appendChild(fragment);
+
+    cruisesVisible = nextVisible;
+    if (showing) showing.textContent = cruiseShowingText(cruisesVisible, total);
+    if (loadWrap) loadWrap.hidden = cruisesVisible >= total;
   }
 
   function renderLines(dest) {
@@ -379,14 +438,21 @@
     const dest = Data.getDestination(slug);
 
     if (!dest) {
+      activeDestination = null;
       root.innerHTML = renderNotFound(slug);
       return;
     }
 
+    activeDestination = dest;
     setMetadata(dest);
     root.innerHTML = renderPage(dest);
     revealPage(root.querySelector(".dest-page"));
   }
+
+  window.DestinationExperience = {
+    loadMoreCruises,
+    remount: mount
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", mount);

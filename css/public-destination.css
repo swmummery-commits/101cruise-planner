@@ -11,6 +11,9 @@
   --brand-green-hover: #79cdb1;
   --brand-green-ink: #245c4e;
   --brand-green-soft: #effaf6;
+  /* Very pale brand wash for snapshot cards — not saturated */
+  --dest-snap-bg: #f3faf7;
+  --dest-snap-border: #d9efe6;
 }
 
 .dest-shell {
@@ -99,7 +102,7 @@
 }
 
 .dest-section {
-  padding: 72px 0;
+  padding: 62px 0;
 }
 
 .dest-section-soft {
@@ -107,7 +110,7 @@
 }
 
 .dest-section-title {
-  margin: 0 0 18px;
+  margin: 0 0 14px;
   font-size: clamp(1.55rem, 2.4vw, 2rem);
   font-weight: 600;
   letter-spacing: -0.02em;
@@ -117,7 +120,7 @@
 }
 
 .dest-section-lead {
-  margin: 0 auto 36px;
+  margin: 0 auto 28px;
   max-width: 36rem;
   font-size: 1.05rem;
   line-height: 1.55;
@@ -173,6 +176,17 @@
 
 .dest-btn-secondary:hover {
   background: #fff;
+}
+
+.dest-btn-secondary-ink {
+  background: #fff;
+  color: #111;
+  border: 1px solid var(--dest-line);
+}
+
+.dest-btn-secondary-ink:hover {
+  border-color: var(--brand-green);
+  background: var(--brand-green-soft);
 }
 
 .dest-btn-dark {
@@ -267,14 +281,14 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  margin-top: 28px;
+  margin-top: 22px;
 }
 
 .dest-snap-card {
-  background: #fff;
-  border: 1px solid var(--dest-line);
+  background: var(--dest-snap-bg);
+  border: 1px solid var(--dest-snap-border);
   border-radius: 16px;
-  padding: 22px 18px;
+  padding: 20px 16px;
   text-align: center;
 }
 
@@ -284,7 +298,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--dest-muted);
+  color: var(--brand-green-ink);
 }
 
 .dest-snap-value {
@@ -300,8 +314,8 @@
 
 .dest-suit-list {
   display: grid;
-  gap: 18px;
-  margin-top: 28px;
+  gap: 16px;
+  margin-top: 22px;
 }
 
 .dest-suit-meta {
@@ -355,11 +369,18 @@
 }
 
 .dest-suit-summary {
-  margin: 28px 0 0;
+  margin: 24px 0 0;
   text-align: center;
   font-size: 1.05rem;
   line-height: 1.55;
   color: var(--dest-muted);
+}
+
+.dest-port-placeholder {
+  width: 100%;
+  height: 100%;
+  min-height: 140px;
+  background: linear-gradient(145deg, #e8f5f0, #f4f7f5);
 }
 
 /* ---- Featured ports ---- */
@@ -430,8 +451,12 @@
 
 .dest-cruise-list {
   display: grid;
-  gap: 22px;
-  margin-top: 8px;
+  gap: 18px;
+  margin-top: 4px;
+}
+
+.dest-cruise-showing {
+  margin-bottom: 22px;
 }
 
 .dest-cruise-card {
@@ -510,10 +535,19 @@
 
 .dest-cruise-foot {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
   gap: 20px;
   align-items: end;
-  margin-top: 24px;
+  margin-top: 22px;
+}
+
+.dest-btn-cruise-cta {
+  white-space: nowrap;
+  min-width: 300px;
+  padding-left: 18px;
+  padding-right: 18px;
+  letter-spacing: 0.04em;
+  font-size: 12px;
 }
 
 .dest-cruise-fare-label {
@@ -533,17 +567,27 @@
   color: var(--dest-ink);
 }
 
+.dest-cruise-load-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.dest-cruise-load-wrap[hidden] {
+  display: none;
+}
+
 .dest-cruise-section-cta {
   display: flex;
   justify-content: center;
-  margin-top: 36px;
+  margin-top: 28px;
 }
 
 /* ---- Cruise lines strip ---- */
 
 .dest-line-strip {
   list-style: none;
-  margin: 28px 0 0;
+  margin: 22px 0 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
@@ -584,17 +628,18 @@
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 0;
-  margin-top: 28px;
-  border: 1px solid var(--dest-line);
+  margin-top: 22px;
+  border: 1px solid var(--dest-snap-border);
   border-radius: 18px;
   overflow: hidden;
   background: #fff;
+  box-shadow: 0 1px 0 rgba(36, 92, 78, 0.04);
 }
 
 .dest-gtk-cell {
-  padding: 22px 14px;
+  padding: 20px 12px;
   text-align: center;
-  border-right: 1px solid var(--dest-line);
+  border-right: 1px solid var(--dest-snap-border);
 }
 
 .dest-gtk-cell:last-child {
@@ -607,7 +652,7 @@
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--dest-muted);
+  color: var(--brand-green-ink);
 }
 
 .dest-gtk-value {
@@ -621,7 +666,7 @@
 /* ---- FAQs ---- */
 
 .dest-faq-list {
-  margin-top: 24px;
+  margin-top: 20px;
   display: grid;
   gap: 10px;
 }
@@ -667,7 +712,7 @@
 /* ---- Final CTA ---- */
 
 .dest-final {
-  padding: 40px 0 72px;
+  padding: 32px 0 60px;
 }
 
 .dest-final-panel {
@@ -774,11 +819,16 @@
   .dest-cruise-foot {
     grid-template-columns: 1fr;
   }
+
+  .dest-btn-cruise-cta {
+    min-width: 0;
+    width: 100%;
+  }
 }
 
 @media (max-width: 760px) {
   .dest-section {
-    padding: 56px 0;
+    padding: 48px 0;
   }
 
   .dest-wrap,
@@ -851,6 +901,14 @@
 
   .dest-cruise-card {
     padding: 22px 18px;
+  }
+
+  .dest-btn-cruise-cta {
+    white-space: nowrap;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 }
 
