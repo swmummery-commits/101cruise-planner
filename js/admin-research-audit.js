@@ -18,6 +18,7 @@
   let findings = [];
   let view = "dashboard"; // dashboard | run
   let fullAuditCancel = false;
+  let auditMode = null; // "full" | "selected"
 
   function esc(value) {
     return typeof global.esc === "function"
@@ -288,6 +289,22 @@
     `;
   }
 
+  function isRunningTone() {
+    return messageTone === "running";
+  }
+
+  function messageClassName() {
+    if (messageTone === "error") return "admin-error";
+    if (messageTone === "success") return "admin-success";
+    if (messageTone === "running") return "admin-running";
+    return "";
+  }
+
+  function renderRunningStatus() {
+    if (!message || !isRunningTone()) return "";
+    return `<span class="admin-running-status" role="status" aria-live="polite">${esc(message)}</span>`;
+  }
+
   function renderDashboard() {
     const lineOptions = lines
       .map(
@@ -304,7 +321,7 @@
             <p class="admin-muted">Audit official cruise line fleets to identify new ships, retired ships and research updates.</p>
           </div>
         </div>
-        ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : ""}">${esc(message)}</p>` : ""}
+        ${message && !isRunningTone() ? `<p class="admin-message ${messageClassName()}">${esc(message)}</p>` : ""}
         ${loading ? `<p class="admin-muted">Loading…</p>` : ""}
         ${renderCards()}
         ${renderHealth()}
@@ -312,10 +329,11 @@
         <div class="research-audit-controls admin-card">
           <h3>Audit Controls</h3>
           <div class="research-audit-control-row">
-            <button type="button" class="admin-button black" onclick="CruiseLineAuditAdmin.runFullAudit()" ${auditing ? "disabled" : ""}>
-              ${auditing ? "Auditing…" : "Run Full Fleet Audit"}
+            <button type="button" class="admin-button black ${auditing && auditMode === "full" ? "is-busy" : ""}" onclick="CruiseLineAuditAdmin.runFullAudit()" ${auditing ? "disabled" : ""}>
+              ${auditing && auditMode === "full" ? "Auditing…" : "Run Full Fleet Audit"}
             </button>
-            ${auditing ? `<button type="button" class="admin-button danger" onclick="CruiseLineAuditAdmin.cancelFullAudit()">Stop after current line</button>` : ""}
+            ${auditing && auditMode === "full" ? `<button type="button" class="admin-button danger" onclick="CruiseLineAuditAdmin.cancelFullAudit()">Stop after current line</button>` : ""}
+            ${auditing && auditMode === "full" ? renderRunningStatus() : ""}
           </div>
           <div class="research-audit-control-row research-audit-selected">
             <label>Audit Selected Cruise Line
@@ -324,7 +342,10 @@
                 ${lineOptions}
               </select>
             </label>
-            <button type="button" class="admin-button" onclick="CruiseLineAuditAdmin.runSelected()" ${auditing || !selectedLineId ? "disabled" : ""}>Run Audit</button>
+            <button type="button" class="admin-button ${auditing && auditMode === "selected" ? "is-busy" : ""}" onclick="CruiseLineAuditAdmin.runSelected()" ${auditing || !selectedLineId ? "disabled" : ""}>
+              ${auditing && auditMode === "selected" ? "Auditing…" : "Run Audit"}
+            </button>
+            ${auditing && auditMode === "selected" ? renderRunningStatus() : ""}
           </div>
           <p class="admin-muted">Official cruise line websites are preferred. No ships are added, archived, or changed until you approve an action.</p>
         </div>
@@ -359,7 +380,7 @@
             <p class="admin-muted">${esc(formatDate(activeRun?.finished_at || activeRun?.created_at))} · ${esc(activeRun?.scope || "")} · ${esc(activeRun?.status || "")}</p>
           </div>
         </div>
-        ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : ""}">${esc(message)}</p>` : ""}
+        ${message && !isRunningTone() ? `<p class="admin-message ${messageClassName()}">${esc(message)}</p>` : ""}
         ${renderFindingsGrouped()}
       </section>
     `;
@@ -388,8 +409,9 @@
     async runSelected() {
       if (!selectedLineId || auditing) return;
       auditing = true;
+      auditMode = "selected";
       message = "Running fleet audit…";
-      messageTone = "info";
+      messageTone = "running";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
       try {
         const result = await runAuditForLine(selectedLineId, "selected");
@@ -401,13 +423,14 @@
         messageTone = "error";
       } finally {
         auditing = false;
+        auditMode = null;
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },
     cancelFullAudit() {
       fullAuditCancel = true;
       message = "Stopping after the current cruise line…";
-      messageTone = "info";
+      messageTone = "running";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     async runFullAudit() {
@@ -419,18 +442,20 @@
         return;
       }
       auditing = true;
+      auditMode = "full";
       fullAuditCancel = false;
       const allFindings = [];
       let lastRun = null;
-      message = `Full fleet audit: 0/${lines.length}…`;
-      messageTone = "info";
+      message = `Running full fleet audit: 0/${lines.length}…`;
+      messageTone = "running";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
 
       try {
         for (let i = 0; i < lines.length; i += 1) {
           if (fullAuditCancel) break;
           const line = lines[i];
-          message = `Full fleet audit: ${i + 1}/${lines.length} — ${line.name}`;
+          message = `Running full fleet audit: ${i + 1}/${lines.length} — ${line.name}`;
+          messageTone = "running";
           if (typeof global.renderAdmin === "function") global.renderAdmin();
           try {
             const result = await runAuditForLine(line.id, "full");
@@ -461,6 +486,7 @@
         messageTone = "error";
       } finally {
         auditing = false;
+        auditMode = null;
         fullAuditCancel = false;
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }

@@ -188,6 +188,31 @@
     return `About ${formatDuration(remaining * avg)} remaining`;
   }
 
+  function isRunningTone() {
+    return (
+      messageTone === "running" ||
+      (messageTone === "info" &&
+        /running|researching|publishing|working|stopping|please wait/i.test(String(message || "")))
+    );
+  }
+
+  function messageClassName() {
+    if (messageTone === "error") return "admin-error";
+    if (messageTone === "success") return "admin-success";
+    if (isRunningTone()) return "admin-running";
+    return "";
+  }
+
+  function renderTopMessage() {
+    if (!message || isRunningTone()) return "";
+    return `<p class="admin-message ${messageClassName()}">${esc(message)}</p>`;
+  }
+
+  function renderInlineRunning() {
+    if (!message || !isRunningTone()) return "";
+    return `<span class="admin-running-status" role="status" aria-live="polite">${esc(message)}</span>`;
+  }
+
   function renderWorkingBanner() {
     if (batchRunning && batchProgress) {
       const done = Number(batchProgress.done) || 0;
@@ -195,7 +220,7 @@
       const pct = Math.min(100, Math.round((done / total) * 100));
       const eta = batchEtaText();
       return `
-        <div class="research-working-banner" role="status" aria-live="polite">
+        <div class="research-working-banner is-running" role="status" aria-live="polite">
           <div class="research-working-top">
             <span class="research-spinner" aria-hidden="true"></span>
             <div>
@@ -216,7 +241,7 @@
     }
     if (researching) {
       return `
-        <div class="research-working-banner" role="status" aria-live="polite">
+        <div class="research-working-banner is-running" role="status" aria-live="polite">
           <div class="research-working-top">
             <span class="research-spinner" aria-hidden="true"></span>
             <div>
@@ -527,8 +552,7 @@
           </div>
           <button type="button" class="admin-button black" onclick="ResearchContentAdmin.openResearch()">Research New Content</button>
         </div>
-        ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : ""}">${esc(message)}</p>` : ""}
-        ${batchRunning ? renderWorkingBanner() : ""}
+        ${renderTopMessage()}
         <div class="research-filters">
           <label>Entity
             <select onchange="ResearchContentAdmin.setFilter('entity', this.value)">
@@ -669,14 +693,16 @@
               ${
                 batchRunning
                   ? `<button type="button" class="admin-button danger" onclick="ResearchContentAdmin.cancelBatch()">Stop after current ship</button>
-                     <span class="research-action-status is-busy"><span class="research-spinner research-spinner--inline" aria-hidden="true"></span> Researching, please wait…</span>`
+                     <span class="research-action-status is-busy"><span class="research-spinner research-spinner--inline" aria-hidden="true"></span> Researching, please wait…</span>
+                     ${renderInlineRunning()}`
                   : `<button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginBatchResearch()" ${!researchForm.batch_line_id || !batchQueue.length || (linePublishState && linePublishState.status === "publishing") ? "disabled" : ""}>Research line ships</button>
                      ${
                        linePublishState && linePublishState.status === "publishing"
                          ? `<button type="button" class="admin-button secondary is-busy" disabled>
                               <span class="research-spinner research-spinner--inline" aria-hidden="true"></span>
                               Publishing, please wait… ${esc(String(linePublishState.done || 0))}/${esc(String(linePublishState.total || 0))}
-                            </button>`
+                            </button>
+                            ${renderInlineRunning()}`
                          : linePublishState && linePublishState.status === "done"
                            ? `<button type="button" class="admin-button secondary" onclick="ResearchContentAdmin.publishLineDrafts()" ${!researchForm.batch_line_id ? "disabled" : ""}>Publish all drafts for this line</button>
                               <span class="research-action-status is-done" role="status">Published${linePublishState.ok != null ? ` (${esc(String(linePublishState.ok))}${linePublishState.fail ? `, ${esc(String(linePublishState.fail))} failed` : ""})` : ""}</span>`
@@ -685,17 +711,19 @@
               }
             </div>
             ${
-              linePublishState && linePublishState.status === "publishing"
-                ? `<div class="research-working-banner research-working-banner--compact" role="status" aria-live="polite">
-                    <div class="research-working-top">
-                      <span class="research-spinner" aria-hidden="true"></span>
-                      <div>
-                        <p class="research-working-title">Publishing drafts${linePublishState.lineName ? ` — ${esc(linePublishState.lineName)}` : ""}</p>
-                        <p class="research-working-sub">${esc(String(linePublishState.done || 0))} of ${esc(String(linePublishState.total || 0))} published…</p>
+              batchRunning
+                ? renderWorkingBanner()
+                : linePublishState && linePublishState.status === "publishing"
+                  ? `<div class="research-working-banner research-working-banner--compact is-running" role="status" aria-live="polite">
+                      <div class="research-working-top">
+                        <span class="research-spinner" aria-hidden="true"></span>
+                        <div>
+                          <p class="research-working-title">Publishing drafts${linePublishState.lineName ? ` — ${esc(linePublishState.lineName)}` : ""}</p>
+                          <p class="research-working-sub">${esc(String(linePublishState.done || 0))} of ${esc(String(linePublishState.total || 0))} published…</p>
+                        </div>
                       </div>
-                    </div>
-                  </div>`
-                : ""
+                    </div>`
+                  : ""
             }
             ${
               batchProgress
@@ -738,8 +766,7 @@
             <h2>Research New Content</h2>
           </div>
         </div>
-        ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : ""}">${esc(message)}</p>` : ""}
-        ${renderWorkingBanner()}
+        ${renderTopMessage()}
         <div class="research-form">
           <label>Entity type
             <select onchange="ResearchContentAdmin.setResearchType(this.value)" ${batchRunning || researching ? "disabled" : ""}>
@@ -786,8 +813,9 @@
                   : "Begin Research"
               }
             </button>
+            ${renderInlineRunning()}
           </div>
-          ${researching ? `<p class="admin-muted">Searching sources and generating a draft (usually under ~30 seconds). If it times out, open the Failed row and use Retry Generation.</p>` : ""}
+          ${researching ? renderWorkingBanner() : `<p class="admin-muted">Searching sources and generating a draft (usually under ~30 seconds). If it times out, open the Failed row and use Retry Generation.</p>`}
           ${batchHtml}
         </div>
       </section>
@@ -921,9 +949,11 @@
           </div>
           <div class="research-editor-header-actions research-editor-actions">
             ${actionButtons}
+            ${renderInlineRunning()}
           </div>
         </div>
-        ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : ""}">${esc(message)}</p>` : ""}
+        ${renderTopMessage()}
+        ${researching ? renderWorkingBanner() : ""}
         <div class="research-editor-meta">
           <span>Generated ${esc(formatDate(item.generated_at))}</span>
           <span>${esc(item.generation_provider || "—")} / ${esc(item.generation_model || "—")}</span>
@@ -971,6 +1001,7 @@
         </div>
         <div class="research-editor-actions">
           ${actionButtons}
+          ${renderInlineRunning()}
         </div>
       </section>
     `;
@@ -1073,7 +1104,7 @@
     cancelBatch() {
       batchCancelRequested = true;
       message = "Stopping after the current ship finishes…";
-      messageTone = "info";
+      messageTone = "running";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     async publishLineDrafts() {
@@ -1106,7 +1137,7 @@
         lineName
       };
       message = `Publishing ${ships.length} draft${ships.length === 1 ? "" : "s"}…`;
-      messageTone = "info";
+      messageTone = "running";
       document.title = `Publishing… · 101cruise Admin`;
       if (typeof global.renderAdmin === "function") global.renderAdmin();
 
@@ -1167,7 +1198,7 @@
         lineName
       };
       message = `Batch research started for ${lineName}.`;
-      messageTone = "info";
+      messageTone = "running";
       document.title = `(0/${queue.length}) Researching… · 101cruise Admin`;
       saveBatchProgress();
       if (typeof global.renderAdmin === "function") global.renderAdmin();
@@ -1467,7 +1498,7 @@
     async refreshResearch() {
       researching = true;
       message = "Refreshing research…";
-      messageTone = "info";
+      messageTone = "running";
       document.title = "Refreshing research… · 101cruise Admin";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
       try {
@@ -1499,7 +1530,7 @@
     async retryGeneration() {
       researching = true;
       message = "Retrying generation from saved sources…";
-      messageTone = "info";
+      messageTone = "running";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
       try {
         const result = await api("retry_generation", { id: editingId }, "research-content-generate");

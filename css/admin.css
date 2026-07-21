@@ -116,6 +116,26 @@
 .admin-success { color: var(--brand-green-ink); }
 .admin-error { color: #b00020; }
 
+/* In-progress / running status — always red, placed near action buttons */
+#cruise-admin-app .admin-running,
+#cruise-admin-app .admin-message.admin-running,
+#cruise-admin-app .admin-running-status,
+.admin-running,
+.admin-message.admin-running,
+.admin-running-status {
+  color: #b00020 !important;
+  font-weight: 700 !important;
+}
+
+.admin-running-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
 .admin-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -356,7 +376,8 @@
 }
 
 .ci-autosave-status.is-saving {
-  color: #888;
+  color: #b00020;
+  font-weight: 700;
 }
 
 .ci-autosave-status.is-saved {
@@ -1999,6 +2020,7 @@
 
 .calc-inline-status.is-success { color: var(--brand-green-ink); }
 .calc-inline-status.is-error { color: #b00020; }
+.calc-inline-status.is-running { color: #b00020; }
 
 .calc-rate-grid-wrap {
   width: 100%;
@@ -3839,6 +3861,11 @@
   background: #f2fbf7;
 }
 
+.research-working-banner.is-running {
+  border-color: #f0b4b4;
+  background: #fff5f5;
+}
+
 .research-working-top {
   display: flex;
   align-items: flex-start;
@@ -3910,14 +3937,14 @@
 }
 
 .research-batch-progress.is-running {
-  border-color: #8dd9bf;
-  background: #f2fbf7;
+  border-color: #f0b4b4;
+  background: #fff5f5;
 }
 
 .research-batch-live {
   margin: 0 0 8px;
-  font-weight: 600;
-  color: #245c4e;
+  font-weight: 700;
+  color: #b00020;
 }
 
 .research-batch-current {
@@ -3939,7 +3966,7 @@
 }
 
 .research-action-status.is-busy {
-  color: #245c4e;
+  color: #b00020;
 }
 
 .research-action-status.is-done {
@@ -3952,9 +3979,15 @@
 .admin-button.is-busy {
   opacity: 1;
   cursor: wait;
-  background: #e8f5f0 !important;
-  color: #245c4e !important;
-  border-color: #8dd9bf !important;
+  background: #fde8e8 !important;
+  color: #b00020 !important;
+  border-color: #f0b4b4 !important;
+}
+
+.research-working-banner.is-running .research-working-title,
+.research-working-banner.is-running .research-working-sub,
+.research-working-banner.is-running .research-working-eta {
+  color: #b00020;
 }
 
 .research-working-banner--compact {
@@ -4010,7 +4043,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  align-items: end;
+  align-items: center;
   margin-bottom: 14px;
 }
 

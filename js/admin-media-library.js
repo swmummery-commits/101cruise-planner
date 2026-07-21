@@ -534,7 +534,13 @@
     const row = mediaItems.find((m) => m.id === editingMediaId);
     if (!row) return `<p class="admin-muted">Media not found.</p>`;
     const msgClass =
-      mediaMessageTone === "error" ? "admin-error" : mediaMessageTone === "success" ? "admin-success" : "";
+      mediaMessageTone === "error"
+        ? "admin-error"
+        : mediaMessageTone === "success"
+          ? "admin-success"
+          : mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || ""))
+            ? "admin-running"
+            : "";
     return `
       <div class="admin-card">
         <div class="admin-list-top">
@@ -551,9 +557,18 @@
             </label>
             <button class="admin-button secondary" onclick="MediaLibraryAdmin.deleteMediaEditor()" ${mediaSaving ? "disabled" : ""}>Delete</button>
             <button class="admin-button black" onclick="MediaLibraryAdmin.saveMediaEditor()" ${mediaSaving ? "disabled" : ""}>${mediaSaving ? "Saving…" : "Save"}</button>
+            ${
+              mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || ""))
+                ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(mediaMessage)}</span>`
+                : ""
+            }
           </div>
         </div>
-        <div class="admin-message ${msgClass}">${esc(mediaMessage)}</div>
+        ${
+          mediaMessage && !(mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || "")))
+            ? `<div class="admin-message ${msgClass}">${esc(mediaMessage)}</div>`
+            : ""
+        }
         <div class="media-editor-layout">
           <div class="media-editor-preview"><img src="${esc(row.public_url)}" alt="${esc(row.alt_text || row.title)}"></div>
           <div>
@@ -618,8 +633,19 @@
     if (editingMediaId) return renderMediaEditor();
 
     if (showMediaUpload) {
+      const isRunning = mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || ""));
       const msgClass =
-        mediaMessageTone === "error" ? "admin-error" : mediaMessageTone === "success" ? "admin-success" : "";
+        mediaMessageTone === "error"
+          ? "admin-error"
+          : mediaMessageTone === "success"
+            ? "admin-success"
+            : isRunning
+              ? "admin-running"
+              : "";
+      const inlineRunning =
+        isRunning && mediaMessage
+          ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(mediaMessage)}</span>`
+          : "";
       return `
         <div class="admin-card">
           <div class="admin-list-top">
@@ -630,13 +656,15 @@
             <div class="admin-actions-row">
               <button class="admin-button secondary" onclick="MediaLibraryAdmin.cancelUpload()" ${mediaSaving ? "disabled" : ""}>Cancel</button>
               <button class="admin-button black" onclick="MediaLibraryAdmin.submitMediaUpload()" ${mediaSaving ? "disabled" : ""}>${mediaSaving ? "Uploading…" : "Upload"}</button>
+              ${inlineRunning}
             </div>
           </div>
-          <div class="admin-message ${msgClass}">${esc(mediaMessage)}</div>
+          ${!isRunning && mediaMessage ? `<div class="admin-message ${msgClass}">${esc(mediaMessage)}</div>` : ""}
           ${renderUploadForm()}
           <div class="admin-actions-row" style="justify-content:flex-end;margin-top:18px">
             <button class="admin-button secondary" onclick="MediaLibraryAdmin.cancelUpload()" ${mediaSaving ? "disabled" : ""}>Cancel</button>
             <button class="admin-button black" onclick="MediaLibraryAdmin.submitMediaUpload()" ${mediaSaving ? "disabled" : ""}>${mediaSaving ? "Uploading…" : "Upload"}</button>
+            ${inlineRunning}
           </div>
         </div>
       `;
@@ -644,7 +672,13 @@
 
     const rows = filteredMediaItems();
     const msgClass =
-      mediaMessageTone === "error" ? "admin-error" : mediaMessageTone === "success" ? "admin-success" : "";
+      mediaMessageTone === "error"
+        ? "admin-error"
+        : mediaMessageTone === "success"
+          ? "admin-success"
+          : mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || ""))
+            ? "admin-running"
+            : "";
     return `
       <div class="admin-card">
         <div class="admin-list-top">
@@ -765,10 +799,19 @@
               <button type="button" class="admin-button secondary small" onclick="MediaLibraryAdmin.closePickerUpload()">Back</button>
             </div>
             <div class="media-picker-body">
-              <div class="admin-message ${mediaMessageTone === "error" ? "admin-error" : ""}">${esc(mediaMessage)}</div>
+              ${
+                mediaMessage && !(mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || "")))
+                  ? `<div class="admin-message ${mediaMessageTone === "error" ? "admin-error" : mediaMessageTone === "success" ? "admin-success" : ""}">${esc(mediaMessage)}</div>`
+                  : ""
+              }
               ${renderUploadForm({ compact: true })}
-              <div class="admin-actions-row" style="justify-content:flex-end;margin-top:16px">
+              <div class="admin-actions-row" style="justify-content:flex-end;margin-top:16px;align-items:center">
                 <button class="admin-button black" onclick="MediaLibraryAdmin.submitPickerUpload()" ${mediaSaving ? "disabled" : ""}>${mediaSaving ? "Uploading…" : "Upload & Use"}</button>
+                ${
+                  mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || ""))
+                    ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(mediaMessage)}</span>`
+                    : ""
+                }
               </div>
             </div>
           </div>

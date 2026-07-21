@@ -806,7 +806,12 @@ function toggleImportDataPanel() {
 
 function renderCrmSyncPanel() {
   const booking = crmSyncResult && crmSyncResult.booking ? crmSyncResult.booking : null;
-  const messageClass = crmSyncMessage && crmSyncMessage.toLowerCase().includes("error") ? "admin-error" : "";
+  const isRunning = crmSyncLoading || /syncing/i.test(String(crmSyncMessage || ""));
+  const messageClass = crmSyncMessage && crmSyncMessage.toLowerCase().includes("error")
+    ? "admin-error"
+    : isRunning
+      ? "admin-running"
+      : "";
 
   return `
     <div class="admin-card crm-sync-card">
@@ -823,9 +828,10 @@ function renderCrmSyncPanel() {
           <input type="text" id="crmBookingReference" value="${esc(crmBookingReferenceInput)}" placeholder="Example: SWM123456" oninput="crmBookingReferenceInput=this.value" onkeydown="handleCrmSyncKeydown(event)">
         </div>
         <button class="admin-button black" onclick="syncCrmBooking()" ${crmSyncLoading ? "disabled" : ""}>${crmSyncLoading ? "Syncing..." : "Sync Booking"}</button>
+        ${isRunning && crmSyncMessage ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(crmSyncMessage)}</span>` : ""}
       </div>
 
-      <div id="crm-sync-message" class="admin-message ${messageClass}">${esc(crmSyncMessage)}</div>
+      ${!isRunning ? `<div id="crm-sync-message" class="admin-message ${messageClass}">${esc(crmSyncMessage)}</div>` : `<div id="crm-sync-message" class="admin-message" hidden></div>`}
     </div>
 
     ${booking ? renderCrmBookingPreview(booking) : `
@@ -899,6 +905,7 @@ function renderCrmBookingPreview(booking) {
         <button class="admin-button black" onclick="openPlannerPreview('${esc(booking.base44_booking_id || booking.booking_reference || '')}')">Preview Planner</button>
         <button class="admin-button secondary" onclick="loadItineraryReview('${esc(booking.base44_booking_id || '')}')">Review Itinerary</button>
         <button class="admin-button secondary" onclick="extractBookingItinerary()" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading ? "Extracting…" : "Extract Booking Confirmation"}</button>
+        ${itineraryLoading || /extracting/i.test(String(itineraryMessage || "")) ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(itineraryMessage || "Extracting…")}</span>` : ""}
       </div>
       ${renderItineraryReview(booking)}
       ${renderCrmDocumentsPanel(booking)}
@@ -914,7 +921,12 @@ function sourceLabel(source) {
 }
 
 function renderCrmDocumentsPanel(booking) {
-  const messageClass = crmDocumentsMessage.toLowerCase().includes("error") ? "admin-error" : "";
+  const isRunning = crmDocumentsLoading || /^(Uploading|Loading|Deleting)/i.test(String(crmDocumentsMessage || ""));
+  const messageClass = crmDocumentsMessage.toLowerCase().includes("error")
+    ? "admin-error"
+    : isRunning
+      ? "admin-running"
+      : "";
   const docs = crmDocuments || [];
   return `
     <section class="itinerary-review-panel crm-documents-panel">
@@ -923,11 +935,14 @@ function renderCrmDocumentsPanel(booking) {
           <h4>Document Library</h4>
           <p class="admin-muted">Base44 documents are synced as read-only. Upload Admin documents here when they should live in 101cruise.</p>
         </div>
-        <button class="admin-button secondary small" onclick="loadCrmDocuments()" ${crmDocumentsLoading ? "disabled" : ""}>
-          ${crmDocumentsLoading ? "Loading…" : "Refresh documents"}
-        </button>
+        <div class="admin-actions-row" style="align-items:center">
+          <button class="admin-button secondary small" onclick="loadCrmDocuments()" ${crmDocumentsLoading ? "disabled" : ""}>
+            ${crmDocumentsLoading ? "Loading…" : "Refresh documents"}
+          </button>
+          ${isRunning && /^(Loading)/i.test(String(crmDocumentsMessage || "")) ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(crmDocumentsMessage)}</span>` : ""}
+        </div>
       </div>
-      <div class="admin-message ${messageClass}">${esc(crmDocumentsMessage)}</div>
+      ${!(isRunning && /^(Loading|Uploading)/i.test(String(crmDocumentsMessage || ""))) ? `<div class="admin-message ${messageClass}">${esc(crmDocumentsMessage)}</div>` : ""}
       ${docs.length ? `
         <div class="crm-documents-list">
           ${docs.map((doc) => `
@@ -968,8 +983,9 @@ function renderCrmDocumentsPanel(booking) {
           <input type="checkbox" id="adminDocVisible" checked>
           <span>Visible to client on 101cruise website</span>
         </label>
-        <div>
-          <button class="admin-button black" onclick="uploadAdminBookingDocument()">Upload document</button>
+        <div class="admin-actions-row" style="align-items:center">
+          <button class="admin-button black" onclick="uploadAdminBookingDocument()" ${/Uploading/i.test(String(crmDocumentsMessage || "")) ? "disabled" : ""}>Upload document</button>
+          ${/Uploading/i.test(String(crmDocumentsMessage || "")) ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(crmDocumentsMessage)}</span>` : ""}
         </div>
       </div>
     </section>
@@ -1100,8 +1116,19 @@ function itineraryAuthHeaders() {
 }
 
 function renderItineraryReview(booking) {
-  const messageClass = itineraryMessage.toLowerCase().includes("error") ? "admin-error" : "";
+  const isRunning =
+    itineraryLoading ||
+    /extracting|approving|saving draft/i.test(String(itineraryMessage || ""));
+  const messageClass = itineraryMessage.toLowerCase().includes("error")
+    ? "admin-error"
+    : isRunning
+      ? "admin-running"
+      : "";
   const data = itineraryReview?.itinerary_data || null;
+  const inlineRunning =
+    isRunning && itineraryMessage
+      ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(itineraryMessage)}</span>`
+      : "";
   return `
     <section class="itinerary-review-panel">
       <div class="admin-list-top">
@@ -1111,7 +1138,7 @@ function renderItineraryReview(booking) {
         </div>
         ${itineraryReview?.status ? `<span class="admin-pill">${esc(itineraryReview.status.replaceAll("_", " "))}</span>` : ""}
       </div>
-      <div class="admin-message ${messageClass}">${esc(itineraryMessage)}</div>
+      ${!isRunning ? `<div class="admin-message ${messageClass}">${esc(itineraryMessage)}</div>` : ""}
       ${data ? `
         <div class="itinerary-source-note">
           <strong>Source:</strong> ${esc(itineraryReview.source_filename || "Booking Confirmation")}
@@ -1123,8 +1150,9 @@ function renderItineraryReview(booking) {
           <div class="admin-helper">Dates must use YYYY-MM-DD and times must use 24-hour HH:MM. Keep the official Booking Confirmation as the source of truth.</div>
         </div>
         <div class="admin-actions-row">
-          <button class="admin-button secondary" onclick="saveItineraryReview(false)">Save Draft</button>
-          <button class="admin-button black" onclick="saveItineraryReview(true)">Approve Itinerary</button>
+          <button class="admin-button secondary" onclick="saveItineraryReview(false)" ${isRunning ? "disabled" : ""}>Save Draft</button>
+          <button class="admin-button black" onclick="saveItineraryReview(true)" ${isRunning ? "disabled" : ""}>Approve Itinerary</button>
+          ${/approving|saving draft/i.test(String(itineraryMessage || "")) ? inlineRunning : ""}
         </div>
       ` : `<p class="admin-muted itinerary-empty">No extracted itinerary has been loaded for this booking yet.</p>`}
     </section>
@@ -1896,7 +1924,7 @@ async function saveLineLogo(lineId) {
   const logoUrl = normalizeUrl(document.getElementById(`logo-url-${lineId}`).value);
   const message = document.getElementById(`line-message-${lineId}`);
 
-  message.className = "admin-message";
+  message.className = "admin-message admin-running";
   message.innerText = "Saving...";
 
   const { data, error } = await supabaseClient
@@ -1939,7 +1967,7 @@ async function addNewCruiseLine() {
     return;
   }
 
-  message.className = "admin-message";
+  message.className = "admin-message admin-running";
   message.innerText = "Saving...";
 
   const { data, error } = await supabaseClient
@@ -1997,7 +2025,7 @@ async function saveShip() {
     active: true
   };
 
-  message.className = "admin-message";
+  message.className = "admin-message admin-running";
   message.innerText = "Saving...";
 
   let result;
@@ -2067,7 +2095,7 @@ async function saveChecklistSection() {
     active
   };
 
-  message.className = "admin-message";
+  message.className = "admin-message admin-running";
   message.innerText = "Saving...";
 
   let result;
@@ -2160,7 +2188,7 @@ async function saveChecklistItem() {
     active
   };
 
-  message.className = "admin-message";
+  message.className = "admin-message admin-running";
   message.innerText = "Saving...";
 
   let result;
@@ -4324,7 +4352,10 @@ function setCalculatorInlineStatus(text, tone = "") {
   const messageEl = document.getElementById("calculator-data-message");
   if (statusEl) {
     statusEl.textContent = text || "";
-    statusEl.className = `calc-inline-status ${tone === "success" ? "is-success" : tone === "error" ? "is-error" : ""}`;
+    const running = tone === "running" || /^(Saving|Refreshing)/i.test(String(text || ""));
+    statusEl.className = `calc-inline-status ${
+      tone === "success" ? "is-success" : tone === "error" ? "is-error" : running ? "is-running" : ""
+    }`;
   }
   if (messageEl && !showCalculatorRateForm) {
     messageEl.textContent = text || "";
@@ -4417,7 +4448,7 @@ async function saveActiveCalculatorRow({ deactivate = false } = {}) {
   }
 
   calculatorInlineSaving = true;
-  setCalculatorInlineStatus("Saving…", "");
+  setCalculatorInlineStatus("Saving…", "running");
 
   const { data, error } = await supabaseClient
     .from("cruise_line_calculator_rates")
@@ -4712,7 +4743,7 @@ async function saveCalculatorRate() {
   }
 
   if (message) {
-    message.className = "admin-message";
+    message.className = "admin-message admin-running";
     message.innerText = "Saving...";
   }
 
@@ -4938,6 +4969,15 @@ function renderCalculatorDataPanel() {
       ? "admin-error"
       : "";
   const statusText = calculatorInlineStatus || (!showCalculatorRateForm ? calculatorRateMessage : "");
+  const statusRunning = /^(Saving|Refreshing)/i.test(String(statusText || "")) || calculatorRateMessageTone === "running";
+  const statusClass =
+    calculatorRateMessageTone === "success"
+      ? "is-success"
+      : calculatorRateMessageTone === "error"
+        ? "is-error"
+        : statusRunning
+          ? "is-running"
+          : "";
 
   queueMicrotask(() => bindCalculatorGridInteractions());
 
@@ -4977,7 +5017,7 @@ function renderCalculatorDataPanel() {
             <option value="all" ${calculatorRateActiveFilter === "all" ? "selected" : ""}>All</option>
           </select>
         </div>
-        <div id="calculator-inline-status" class="calc-inline-status ${calculatorRateMessageTone === "success" ? "is-success" : calculatorRateMessageTone === "error" ? "is-error" : ""}" aria-live="polite">${esc(statusText)}</div>
+        <div id="calculator-inline-status" class="calc-inline-status ${statusClass}" aria-live="polite">${esc(statusText)}</div>
       </div>
 
       <div id="calculator-data-message" class="admin-message ${showCalculatorRateForm ? "" : panelMessageClass}">${showCalculatorRateForm ? "" : esc(calculatorRateMessage)}</div>
@@ -5061,7 +5101,7 @@ function setBeveragePackageLineFilter(value) {
 
 async function refreshBeveragePackagesGrid() {
   beveragePackageInlineStatus = "Refreshing…";
-  beveragePackageMessageTone = "";
+  beveragePackageMessageTone = "running";
   renderAdmin();
   const refreshed = await reloadBeveragePackages();
   if (refreshed) {
@@ -5210,10 +5250,11 @@ async function saveActiveBeveragePackageRow({ deactivate = false } = {}) {
 
   beveragePackageInlineSaving = true;
   beveragePackageInlineStatus = "Saving…";
+  beveragePackageMessageTone = "running";
   const statusEl = document.getElementById("beverage-package-inline-status");
   if (statusEl) {
     statusEl.textContent = "Saving…";
-    statusEl.className = "calc-inline-status";
+    statusEl.className = "calc-inline-status is-running";
   }
 
   const { data, error } = await supabaseClient
@@ -5399,6 +5440,15 @@ function renderBeveragePackagesPanel() {
     .map(line => `<option value="${esc(line.id)}" ${String(beveragePackageLineFilter) === String(line.id) ? "selected" : ""}>${esc(line.name)}</option>`)
     .join("");
   const statusText = beveragePackageInlineStatus || (!showBeveragePackageForm ? beveragePackageMessage : "");
+  const statusRunning = /^(Saving|Refreshing)/i.test(String(statusText || "")) || beveragePackageMessageTone === "running";
+  const statusClass =
+    beveragePackageMessageTone === "success"
+      ? "is-success"
+      : beveragePackageMessageTone === "error"
+        ? "is-error"
+        : statusRunning
+          ? "is-running"
+          : "";
   const countLabel = filtered.length === totalLoaded
     ? `${filtered.length} package${filtered.length === 1 ? "" : "s"}`
     : `Showing ${filtered.length} of ${totalLoaded} packages`;
@@ -5440,7 +5490,7 @@ function renderBeveragePackagesPanel() {
             <option value="all" ${beveragePackageActiveFilter === "all" ? "selected" : ""}>All</option>
           </select>
         </div>
-        <div id="beverage-package-inline-status" class="calc-inline-status ${beveragePackageMessageTone === "success" ? "is-success" : beveragePackageMessageTone === "error" ? "is-error" : ""}" aria-live="polite">${esc(statusText)}</div>
+        <div id="beverage-package-inline-status" class="calc-inline-status ${statusClass}" aria-live="polite">${esc(statusText)}</div>
       </div>
 
       <div class="admin-message ${showBeveragePackageForm ? "" : panelMessageClass}">${showBeveragePackageForm ? "" : esc(beveragePackageMessage)}</div>
@@ -5647,7 +5697,10 @@ function renderUsageInsightsPanel() {
             <h3>Usage & Insights</h3>
             <p class="admin-muted">Customer engagement across My Cruise and public tools. Engagement only — never tool contents.</p>
           </div>
-          <button class="admin-button secondary small" onclick="loadUsageInsights()" ${usageInsightsLoading ? "disabled" : ""}>${usageInsightsLoading ? "Refreshing…" : "Refresh"}</button>
+          <div class="admin-actions-row" style="align-items:center">
+            <button class="admin-button secondary small" onclick="loadUsageInsights()" ${usageInsightsLoading ? "disabled" : ""}>${usageInsightsLoading ? "Refreshing…" : "Refresh"}</button>
+            ${usageInsightsLoading ? `<span class="admin-running-status" role="status" aria-live="polite">Refreshing…</span>` : ""}
+          </div>
         </div>
         <div class="usage-range-row" role="group" aria-label="Date range">
           ${rangeButtons}
@@ -6400,7 +6453,13 @@ function renderCruiseIntelligencePanel() {
           <p class="admin-muted">Permanent cruise-line and ship catalogue (Supabase). Separate from Drinks Calculator logos. Edits save when you select another item.</p>
         </div>
       </div>
-      ${ciMessage ? `<div class="admin-message ${ciMessageTone === "error" ? "admin-error" : "admin-success"}">${esc(ciMessage)}</div>` : ""}
+      ${
+        ciMessage && ciMessage !== "Saving…"
+          ? `<div class="admin-message ${
+              ciMessageTone === "error" ? "admin-error" : ciMessageTone === "running" || ciMessage === "Saving…" ? "admin-running" : "admin-success"
+            }">${esc(ciMessage)}</div>`
+          : ""
+      }
       <div class="admin-subtabs packing-subtabs" role="tablist" aria-label="Cruise Lines and Ships sections">
         <button class="admin-subtab ${ciSubView === "lines" ? "active" : ""}" onclick="setCiSubView('lines')">Cruise Lines</button>
         <button class="admin-subtab ${ciSubView === "ships" ? "active" : ""}" onclick="setCiSubView('ships')">Ships</button>
@@ -7097,7 +7156,7 @@ async function persistCiLine({ quiet = false } = {}) {
   if (quiet) setCiAutosaveStatus("Saving…", "saving");
   else {
     ciMessage = "Saving…";
-    ciMessageTone = "";
+    ciMessageTone = "running";
   }
 
   let result;
@@ -7566,7 +7625,7 @@ async function persistCiShip({ quiet = false } = {}) {
   if (quiet) setCiAutosaveStatus("Saving…", "saving");
   else {
     ciMessage = "Saving…";
-    ciMessageTone = "";
+    ciMessageTone = "running";
   }
 
   const selectCols = "*, ci_cruise_lines(id, name, slug)";
@@ -8795,8 +8854,15 @@ function renderFeaturedCruisesPanel() {
   if (showFeaturedCruiseForm) return renderFeaturedCruiseForm();
 
   const rows = filteredFeaturedCruises();
+  const isRunning = /^(Saving)/i.test(String(featuredCruiseMessage || "")) || featuredCruiseMessageTone === "running";
   const messageClass =
-    featuredCruiseMessageTone === "error" ? "admin-error" : featuredCruiseMessageTone === "success" ? "admin-success" : "";
+    featuredCruiseMessageTone === "error"
+      ? "admin-error"
+      : featuredCruiseMessageTone === "success"
+        ? "admin-success"
+        : isRunning
+          ? "admin-running"
+          : "";
 
   return `
     <div class="admin-card">
@@ -8934,8 +9000,19 @@ function renderFeaturedCruiseForm() {
   const lines = activeCiLinesForFeatured();
   const selectedLineId = draft.cruise_line_id || "";
   const ships = shipsForFeaturedLine(selectedLineId);
+  const isRunning = featuredCruiseSaving || /^(Saving)/i.test(String(featuredCruiseMessage || ""));
   const messageClass =
-    featuredCruiseMessageTone === "error" ? "admin-error" : featuredCruiseMessageTone === "success" ? "admin-success" : "";
+    featuredCruiseMessageTone === "error"
+      ? "admin-error"
+      : featuredCruiseMessageTone === "success"
+        ? "admin-success"
+        : isRunning
+          ? "admin-running"
+          : "";
+  const inlineRunning =
+    isRunning && featuredCruiseMessage
+      ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(featuredCruiseMessage)}</span>`
+      : "";
   const strip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port) || "";
   const returnDate = addCalendarDays(draft.departure_date, draft.nights === "" ? null : Number(draft.nights));
   const pickerModal = window.MediaLibraryAdmin?.renderPickerModal?.() || "";
@@ -8951,9 +9028,10 @@ function renderFeaturedCruiseForm() {
           <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
           <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
           <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save"}</button>
+          ${inlineRunning}
         </div>
       </div>
-      <div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>
+      ${!isRunning ? `<div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>` : ""}
 
       <section class="featured-form-section featured-newsletter-section">
         <h4>Newsletter and Publication</h4>
@@ -9108,6 +9186,7 @@ function renderFeaturedCruiseForm() {
         ${existing ? `<button class="admin-button secondary" onclick="deleteFeaturedCruise('${esc(existing.id)}')" ${featuredCruiseSaving ? "disabled" : ""}>Delete</button>` : ""}
         <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
         <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save"}</button>
+        ${inlineRunning}
       </div>
     </div>
     ${pickerModal}
@@ -9260,7 +9339,7 @@ async function saveFeaturedCruise() {
 
   featuredCruiseSaving = true;
   featuredCruiseMessage = "Saving…";
-  featuredCruiseMessageTone = "";
+  featuredCruiseMessageTone = "running";
   renderAdmin();
 
   try {
