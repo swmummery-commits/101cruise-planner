@@ -4438,3 +4438,57 @@
     grid-template-columns: 1fr;
   }
 }
+
+.deck-plans-rapid {
+  margin-top: 8px;
+}
+
+.deck-plans-rapid-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.deck-plans-rapid-header h3 {
+  margin: 4px 0;
+  font-size: 22px;
+}
+
+.deck-plans-rapid-progress {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.deck-plans-rapid-candidate {
+  padding: 14px 0;
+  border-top: 1px solid #eef2f0;
+  border-bottom: 1px solid #eef2f0;
+}
+
+.deck-plans-rapid-candidate h4 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.deck-plans-rapid-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  align-items: center;
+}
+
+.deck-plans-rapid-actions .admin-button {
+  min-width: 120px;
+  justify-content: center;
+}
+
+.deck-plans-rapid-approve {
+  font-weight: 700;
+}

@@ -5,7 +5,7 @@
  * Actions:
  *   dashboard | list_lines | list_ships | find | approve | reject_candidate |
  *   mark_status | clear_candidates | coverage_audit | list_history |
- *   list_missing_for_bulk | reverify | save_manual
+ *   list_missing_for_bulk | list_review_queue | reverify | save_manual
  *
  * Assisted discovery only. No automatic publishing. No scheduled runs.
  */
@@ -335,18 +335,41 @@ async function listShips(filters = {}) {
   return rows.map(mapShipRow);
 }
 
-async function listMissingForBulk() {
-  const rows =
-    (await supabase(
-      "ci_cruise_ships?select=id,name,cruise_line_id,deck_plan_status,deck_plan_last_searched_at,ci_cruise_lines(name)&active=eq.true&deck_plan_status=in.(missing,unavailable)&order=name.asc"
-    )) || [];
+async function listMissingForBulk(filters = {}) {
+  const lineId = String(filters.cruise_line_id || "").trim();
+  let path =
+    "ci_cruise_ships?select=id,name,cruise_line_id,deck_plan_status,deck_plan_last_searched_at,official_ship_url,ci_cruise_lines(name)&active=eq.true&deck_plan_status=in.(missing,unavailable)&order=name.asc";
+  if (lineId) path += `&cruise_line_id=eq.${encodeURIComponent(lineId)}`;
+
+  const rows = (await supabase(path)) || [];
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
+    cruise_line_id: row.cruise_line_id,
     cruise_line_name: row.ci_cruise_lines?.name || "",
     deck_plan_status: row.deck_plan_status,
-    deck_plan_last_searched_at: row.deck_plan_last_searched_at || null
+    deck_plan_last_searched_at: row.deck_plan_last_searched_at || null,
+    official_ship_url: row.official_ship_url || ""
   }));
+}
+
+/**
+ * Ships waiting for human review after assisted find (candidates stored, not approved).
+ */
+async function listReviewQueue(filters = {}) {
+  const lineId = String(filters.cruise_line_id || "").trim();
+  let path =
+    "ci_cruise_ships?select=id,name,active,cruise_line_id,official_ship_url,deck_plan_url,deck_plan_status,deck_plan_page_url,deck_plan_pdf_url,deck_plan_source_type,deck_plan_source_domain,deck_plan_version,deck_plan_effective_date,deck_plan_last_verified_at,deck_plan_verified_by,deck_plan_notes,deck_plan_candidates,deck_plan_last_searched_at,deck_plan_search_count,deck_plan_brave_request_count,ci_cruise_lines(id,name,website_url)&active=eq.true&deck_plan_status=in.(needs_review,found)&order=name.asc";
+  if (lineId) path += `&cruise_line_id=eq.${encodeURIComponent(lineId)}`;
+
+  const rows = ((await supabase(path)) || [])
+    .map(mapShipRow)
+    .filter((ship) => Array.isArray(ship.candidates) && ship.candidates.length > 0);
+
+  return {
+    queue: rows,
+    total: rows.length
+  };
 }
 
 async function listHistory(shipId, limit = 25) {
@@ -787,8 +810,13 @@ exports.handler = async (event) => {
     }
 
     if (action === "list_missing_for_bulk") {
-      const ships = await listMissingForBulk();
+      const ships = await listMissingForBulk(body);
       return jsonResponse(200, { success: true, ships });
+    }
+
+    if (action === "list_review_queue") {
+      const data = await listReviewQueue(body);
+      return jsonResponse(200, { success: true, ...data });
     }
 
     if (action === "list_history") {

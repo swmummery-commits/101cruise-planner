@@ -23,10 +23,17 @@
   let coverageReport = null;
   let showCoverage = false;
 
-  // Optional bulk find (one ship at a time; never auto-approves)
+  // Optional bulk research (one ship at a time; never auto-approves)
   let bulkRunning = false;
   let bulkCancel = false;
   let bulkProgress = null;
+
+  // Sprint 12A.1 — Rapid Review queue
+  let viewMode = "list"; // list | rapid
+  let rapidQueue = [];
+  let rapidIndex = 0;
+  let rapidSkippedIds = new Set();
+  let rapidSessionStats = { approved: 0, rejected: 0, skipped: 0 };
 
   /** @type {{ type: string, shipId?: string, candidateId?: string, label: string } | null} */
   let busy = null;
@@ -312,31 +319,150 @@
   }
 
   function renderToolbar() {
+    const queueCount = cards?.needs_review ?? "—";
     return `
       <div class="deck-plans-toolbar">
         <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.runCoverageAudit()">
-          Deck Plan Coverage Audit
+          Coverage Audit
         </button>
         ${
           bulkRunning
-            ? `<button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.cancelBulkFind()">Cancel bulk find</button>`
-            : `<button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.startBulkFind()">Find Deck Plans for Missing Ships</button>`
+            ? `<button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.cancelBulkFind()">Cancel research</button>`
+            : `<button type="button" class="admin-button small" onclick="DeckPlansAdmin.startBulkFind()">Research Missing Deck Plans</button>`
         }
-        <p class="admin-small admin-muted">Primary workflow remains ship-by-ship review. Bulk find only creates candidates — never approves.</p>
+        <button type="button" class="admin-button small" ${
+          bulkRunning || busy ? "disabled" : ""
+        } onclick="DeckPlansAdmin.startRapidReview()">
+          Rapid Review${typeof queueCount === "number" ? ` (${queueCount})` : ""}
+        </button>
+        ${
+          viewMode === "rapid"
+            ? `<button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.exitRapidReview()">Exit Rapid Review</button>`
+            : ""
+        }
+        <p class="admin-small admin-muted">Research stores candidates only. Rapid Review is still manual approve — nothing publishes automatically.${
+          filterLineId ? " Bulk research uses the selected cruise line filter." : ""
+        }</p>
       </div>
       ${
         bulkProgress
           ? `<div class="admin-card deck-plans-bulk-progress">
-              <p><strong>Bulk find:</strong> ${esc(String(bulkProgress.done))}/${esc(
+              <p><strong>Research Missing:</strong> ${esc(String(bulkProgress.done))}/${esc(
                 String(bulkProgress.total)
-              )} · current: ${esc(bulkProgress.current || "—")} · candidates found: ${esc(
-                String(bulkProgress.candidatesFound || 0)
-              )}${bulkProgress.error ? ` · last error: ${esc(bulkProgress.error)}` : ""}${
+              )} · current: ${esc(bulkProgress.current || "—")} · ships with candidates: ${esc(
+                String(bulkProgress.shipsWithCandidates || 0)
+              )} · candidates: ${esc(String(bulkProgress.candidatesFound || 0))}${
+                bulkProgress.failed ? ` · failed: ${esc(String(bulkProgress.failed))}` : ""
+              }${bulkProgress.error ? ` · last error: ${esc(bulkProgress.error)}` : ""}${
                 bulkProgress.stopped ? " · stopped" : ""
               }</p>
+              ${
+                !bulkRunning && (bulkProgress.shipsWithCandidates || 0) > 0
+                  ? `<p><button type="button" class="admin-button small" onclick="DeckPlansAdmin.startRapidReview()">Start Rapid Review</button></p>`
+                  : ""
+              }
             </div>`
           : ""
       }
+    `;
+  }
+
+  function currentRapidShip() {
+    return rapidQueue[rapidIndex] || null;
+  }
+
+  function renderRapidReview() {
+    const ship = currentRapidShip();
+    const total = rapidQueue.length;
+    const position = total ? rapidIndex + 1 : 0;
+    if (!ship) {
+      return `
+        <section class="admin-card deck-plans-rapid">
+          <div class="deck-plans-rapid-header">
+            <h3>Rapid Review</h3>
+            <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.exitRapidReview()">Back to list</button>
+          </div>
+          <p class="admin-muted">No ships left in the review queue${
+            rapidSessionStats.approved || rapidSessionStats.rejected || rapidSessionStats.skipped
+              ? ` — session: ${rapidSessionStats.approved} approved, ${rapidSessionStats.rejected} rejected, ${rapidSessionStats.skipped} skipped.`
+              : "."
+          }</p>
+          <p>
+            <button type="button" class="admin-button small" onclick="DeckPlansAdmin.startRapidReview()">Refresh queue</button>
+            <button type="button" class="admin-button secondary small" onclick="DeckPlansAdmin.exitRapidReview()">Exit</button>
+          </p>
+        </section>
+      `;
+    }
+
+    const candidates = Array.isArray(ship.candidates) ? ship.candidates : [];
+    const top = candidates[0];
+    const actionsLocked = isBusy();
+
+    return `
+      <section class="admin-card deck-plans-rapid ${actionsLocked ? "deck-plans-review--busy" : ""}">
+        <div class="deck-plans-rapid-header">
+          <div>
+            <p class="deck-plans-rapid-progress">Ship ${esc(String(position))} of ${esc(String(total))} in queue</p>
+            <h3>${esc(ship.name)}</h3>
+            <p class="admin-muted">${esc(ship.cruise_line_name || "")}${
+              ship.official_ship_url
+                ? ` · <a href="${esc(ship.official_ship_url)}" target="_blank" rel="noopener noreferrer">Official ship page</a>`
+                : ""
+            }</p>
+            <p class="admin-small">Session: ${esc(String(rapidSessionStats.approved))} approved · ${esc(
+              String(rapidSessionStats.rejected)
+            )} rejected · ${esc(String(rapidSessionStats.skipped))} skipped</p>
+          </div>
+          <button type="button" class="admin-button secondary small" ${
+            actionsLocked ? "disabled" : ""
+          } onclick="DeckPlansAdmin.exitRapidReview()">Exit Rapid Review</button>
+        </div>
+
+        ${
+          !top
+            ? `<p class="admin-muted">No candidates on this ship — skipping.</p>`
+            : `<article class="deck-plans-rapid-candidate">
+                <h4>${esc(top.title || "Deck plan source")}</h4>
+                <p class="admin-small"><a href="${esc(top.url)}" target="_blank" rel="noopener noreferrer">${esc(
+                  top.url
+                )}</a></p>
+                <p class="admin-muted">
+                  ${esc(top.source_type_label || sourceTypeLabel(top.source_type))}
+                  · ${esc(top.source_domain || "—")}
+                  · Confidence: ${esc(String(top.confidence || "—"))}
+                </p>
+                <p>${esc(top.reason || "")}</p>
+                ${
+                  candidates.length > 1
+                    ? `<p class="admin-small admin-muted">+ ${esc(String(candidates.length - 1))} more candidate${
+                        candidates.length === 2 ? "" : "s"
+                      } (approve top, or open full review)</p>`
+                    : ""
+                }
+              </article>`
+        }
+
+        <div class="deck-plans-rapid-actions">
+          <button type="button" class="admin-button small deck-plans-rapid-approve" ${
+            actionsLocked || !top ? "disabled" : ""
+          } onclick="DeckPlansAdmin.rapidApprove()">${
+            busy?.type === "approve" ? "Approving…" : "Approve (A)"
+          }</button>
+          <button type="button" class="admin-button secondary small" ${
+            actionsLocked || !top ? "disabled" : ""
+          } onclick="DeckPlansAdmin.rapidReject()">${
+            busy?.type === "reject" ? "Rejecting…" : "Reject (R)"
+          }</button>
+          <button type="button" class="admin-button secondary small" ${
+            actionsLocked ? "disabled" : ""
+          } onclick="DeckPlansAdmin.rapidSkip()">Skip (S)</button>
+          <button type="button" class="admin-button secondary small" ${
+            actionsLocked ? "disabled" : ""
+          } onclick="DeckPlansAdmin.rapidOpenFull()">Full review</button>
+        </div>
+        <p class="admin-small admin-muted">Keyboard: A approve · R reject · S skip. Approval is always manual.</p>
+      </section>
     `;
   }
 
@@ -677,13 +803,29 @@
   }
 
   function renderPanel() {
+    if (viewMode === "rapid") {
+      return `
+        <div class="research-audit-panel deck-plans-panel">
+          <div class="admin-section-header">
+            <div>
+              <h2>Deck Plans — Rapid Review</h2>
+              <p class="admin-muted">Approve, reject, or skip one ship at a time. Nothing is published automatically.</p>
+            </div>
+          </div>
+          ${renderBusyBanner()}
+          ${!busy && message ? `<div class="admin-message ${esc(messageTone)}" role="status">${esc(message)}</div>` : ""}
+          ${renderRapidReview()}
+        </div>
+      `;
+    }
+
     const reviewShip = reviewShipId ? ships.find((s) => s.id === reviewShipId) : null;
     return `
       <div class="research-audit-panel deck-plans-panel">
         <div class="admin-section-header">
           <div>
             <h2>Deck Plans</h2>
-            <p class="admin-muted">Find likely official deck-plan sources, review them, then approve a link for My Cruise. Nothing is published automatically.</p>
+            <p class="admin-muted">Research missing ships in bulk, then use Rapid Review — or continue ship-by-ship. Nothing is published automatically.</p>
           </div>
         </div>
         ${renderBusyBanner()}
@@ -716,7 +858,7 @@
       if (!ok) {
         message = "Approval cancelled — existing approved source unchanged.";
         messageTone = "info";
-        return;
+        return { cancelled: true };
       }
       beginBusy("approve", "Replacing approved deck plan… saving…", {
         shipId,
@@ -727,13 +869,14 @@
     upsertShip(data.ship);
     message = `Approved deck plan for ${data.ship.name}.`;
     messageTone = "success";
-    if (reviewShipId === shipId) await loadHistory(shipId);
+    if (reviewShipId === shipId && viewMode !== "rapid") await loadHistory(shipId);
     try {
       const dash = await api("dashboard");
       cards = dash.cards || cards;
     } catch {
       // Non-fatal — approval already saved
     }
+    return data;
   }
 
   global.DeckPlansAdmin = {
@@ -1037,14 +1180,17 @@
     cancelBulkFind() {
       bulkCancel = true;
       if (bulkProgress) bulkProgress.stopped = true;
-      message = "Bulk find cancellation requested…";
+      message = "Research cancellation requested…";
       messageTone = "info";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     async startBulkFind() {
       if (bulkRunning || busy) return;
+      const scope = filterLineId
+        ? `missing ships for the selected cruise line`
+        : `all missing ships`;
       const confirmed = window.confirm(
-        "Find deck plans for missing ships one at a time?\n\nThis only creates candidates for review — it never approves.\nYou can cancel at any time."
+        `Research Missing Deck Plans (${scope})?\n\nProcesses one ship at a time.\nStores candidates only — never approves.\nYou can cancel at any time.`
       );
       if (!confirmed) return;
 
@@ -1055,19 +1201,23 @@
         total: 0,
         current: "",
         candidatesFound: 0,
+        shipsWithCandidates: 0,
+        failed: 0,
         error: "",
         stopped: false
       };
-      message = "Starting bulk find for missing ships…";
+      message = "Starting research for missing ships…";
       messageTone = "info";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
 
       try {
-        const list = await api("list_missing_for_bulk");
+        const list = await api("list_missing_for_bulk", {
+          cruise_line_id: filterLineId || undefined
+        });
         const queue = list.ships || [];
         bulkProgress.total = queue.length;
         if (!queue.length) {
-          message = "No missing ships to search.";
+          message = "No missing ships to research" + (filterLineId ? " for this cruise line." : ".");
           messageTone = "info";
           return;
         }
@@ -1078,19 +1228,25 @@
             break;
           }
           bulkProgress.current = `${ship.cruise_line_name || ""} ${ship.name}`.trim();
-          message = `Bulk find: ${bulkProgress.done + 1}/${bulkProgress.total} — ${bulkProgress.current}`;
+          message = `Researching ${bulkProgress.done + 1}/${bulkProgress.total} — ${bulkProgress.current}`;
           messageTone = "info";
           if (typeof global.renderAdmin === "function") global.renderAdmin();
           try {
             const data = await api("find", { ship_id: ship.id, force: false });
             upsertShip(data.ship);
-            bulkProgress.candidatesFound += data.candidates?.length || 0;
+            const n = data.candidates?.length || 0;
+            bulkProgress.candidatesFound += n;
+            if (n > 0) bulkProgress.shipsWithCandidates += 1;
           } catch (error) {
+            bulkProgress.failed += 1;
             bulkProgress.error = error.message || "Find failed";
-            bulkProgress.stopped = true;
-            message = `Bulk find stopped on error for ${ship.name}: ${bulkProgress.error}`;
-            messageTone = "error";
-            break;
+            // Continue researching other ships; stop only if cancelled
+            if (/unauthor|forbidden|not configured|401|403/i.test(bulkProgress.error)) {
+              bulkProgress.stopped = true;
+              message = `Research stopped: ${bulkProgress.error}`;
+              messageTone = "error";
+              break;
+            }
           }
           bulkProgress.done += 1;
           if (typeof global.renderAdmin === "function") global.renderAdmin();
@@ -1098,8 +1254,8 @@
 
         if (!bulkProgress.stopped || bulkCancel) {
           message = bulkCancel
-            ? `Bulk find cancelled after ${bulkProgress.done}/${bulkProgress.total} ships.`
-            : `Bulk find finished. ${bulkProgress.done} ships processed; ${bulkProgress.candidatesFound} candidates created for review.`;
+            ? `Research cancelled after ${bulkProgress.done}/${bulkProgress.total} ships (${bulkProgress.shipsWithCandidates} ready for review).`
+            : `Research finished. ${bulkProgress.done} ships processed; ${bulkProgress.shipsWithCandidates} with candidates ready for Rapid Review.`;
           messageTone = bulkCancel ? "info" : "success";
         }
         try {
@@ -1110,13 +1266,174 @@
         }
         await refreshList();
       } catch (error) {
-        message = error.message || "Bulk find failed";
+        message = error.message || "Research failed";
         messageTone = "error";
       } finally {
         bulkRunning = false;
         bulkCancel = false;
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
+    },
+
+    async startRapidReview() {
+      if (bulkRunning) return;
+      beginBusy("queue", "Loading review queue…");
+      try {
+        const data = await api("list_review_queue", {
+          cruise_line_id: filterLineId || undefined
+        });
+        rapidQueue = (data.queue || []).filter((s) => !rapidSkippedIds.has(s.id));
+        // If all were skipped in this session, allow refresh to re-include
+        if (!rapidQueue.length && (data.queue || []).length) {
+          rapidSkippedIds = new Set();
+          rapidQueue = data.queue || [];
+        }
+        rapidIndex = 0;
+        rapidSessionStats = { approved: 0, rejected: 0, skipped: 0 };
+        viewMode = "rapid";
+        reviewShipId = "";
+        message = rapidQueue.length
+          ? `Rapid Review ready — ${rapidQueue.length} ship${rapidQueue.length === 1 ? "" : "s"} with candidates.`
+          : "No ships with candidates in the review queue. Run Research Missing Deck Plans first.";
+        messageTone = rapidQueue.length ? "success" : "info";
+        bindRapidKeys();
+      } catch (error) {
+        message = error.message || "Failed to load review queue";
+        messageTone = "error";
+      } finally {
+        endBusy();
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+    },
+
+    exitRapidReview() {
+      if (isBusy()) return;
+      viewMode = "list";
+      unbindRapidKeys();
+      message = "";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      ensureLoaded({ quiet: true });
+    },
+
+    rapidOpenFull() {
+      const ship = currentRapidShip();
+      if (!ship) return;
+      viewMode = "list";
+      unbindRapidKeys();
+      reviewShipId = ship.id;
+      editDraft = {
+        shipId: ship.id,
+        url: ship.deck_plan_url || ship.candidates?.[0]?.url || "",
+        sourceType: ship.deck_plan_source_type || ship.candidates?.[0]?.source_type || "official_page",
+        notes: ship.deck_plan_notes || ""
+      };
+      upsertShip(ship);
+      loadHistory(ship.id).finally(() => {
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      });
+    },
+
+    async rapidApprove() {
+      if (isBusy()) return;
+      const ship = currentRapidShip();
+      const top = ship?.candidates?.[0];
+      if (!ship || !top) return;
+      beginBusy("approve", `Approving ${ship.name}…`, {
+        shipId: ship.id,
+        candidateId: top.id || top.url
+      });
+      try {
+        const result = await approveFlow(ship.id, top.id || top.url, false);
+        if (result?.cancelled) return;
+        rapidSessionStats.approved += 1;
+        advanceRapidQueue();
+        message = `Approved ${ship.name}. Next ship loaded.`;
+        messageTone = "success";
+      } catch (error) {
+        message = error.message || "Approve failed";
+        messageTone = "error";
+      } finally {
+        endBusy();
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+    },
+
+    async rapidReject() {
+      if (isBusy()) return;
+      const ship = currentRapidShip();
+      const top = ship?.candidates?.[0];
+      if (!ship || !top) return;
+      beginBusy("reject", `Rejecting candidate for ${ship.name}…`, {
+        shipId: ship.id,
+        candidateId: top.id || top.url
+      });
+      try {
+        const data = await api("reject_candidate", {
+          ship_id: ship.id,
+          candidate_id: top.id || top.url
+        });
+        rapidSessionStats.rejected += 1;
+        upsertShip(data.ship);
+        // If more candidates remain, stay on ship; else advance
+        if (data.ship.candidates?.length) {
+          rapidQueue[rapidIndex] = data.ship;
+          message = `Rejected candidate — ${data.ship.candidates.length} remaining for ${ship.name}.`;
+          messageTone = "info";
+        } else {
+          advanceRapidQueue();
+          message = `Rejected last candidate for ${ship.name}. Next ship loaded.`;
+          messageTone = "info";
+        }
+      } catch (error) {
+        message = error.message || "Reject failed";
+        messageTone = "error";
+      } finally {
+        endBusy();
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+    },
+
+    rapidSkip() {
+      if (isBusy()) return;
+      const ship = currentRapidShip();
+      if (!ship) return;
+      rapidSessionStats.skipped += 1;
+      rapidSkippedIds.add(ship.id);
+      advanceRapidQueue();
+      message = `Skipped ${ship.name}. Next ship loaded.`;
+      messageTone = "info";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
     }
   };
+
+  function advanceRapidQueue() {
+    rapidQueue.splice(rapidIndex, 1);
+    if (rapidIndex >= rapidQueue.length) rapidIndex = Math.max(0, rapidQueue.length - 1);
+  }
+
+  function onRapidKeydown(event) {
+    if (viewMode !== "rapid" || isBusy()) return;
+    const tag = String(event.target?.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "textarea" || tag === "select") return;
+    const key = String(event.key || "").toLowerCase();
+    if (key === "a") {
+      event.preventDefault();
+      global.DeckPlansAdmin.rapidApprove();
+    } else if (key === "r") {
+      event.preventDefault();
+      global.DeckPlansAdmin.rapidReject();
+    } else if (key === "s") {
+      event.preventDefault();
+      global.DeckPlansAdmin.rapidSkip();
+    }
+  }
+
+  function bindRapidKeys() {
+    document.removeEventListener("keydown", onRapidKeydown);
+    document.addEventListener("keydown", onRapidKeydown);
+  }
+
+  function unbindRapidKeys() {
+    document.removeEventListener("keydown", onRapidKeydown);
+  }
 })(typeof window !== "undefined" ? window : globalThis);
