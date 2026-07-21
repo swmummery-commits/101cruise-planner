@@ -5,7 +5,7 @@
  * Actions:
  *   dashboard | list_lines | list_ships | find | approve | reject_candidate |
  *   mark_status | clear_candidates | coverage_audit | list_history |
- *   list_missing_for_bulk | reverify
+ *   list_missing_for_bulk | reverify | save_manual
  *
  * Assisted discovery only. No automatic publishing. No scheduled runs.
  */
@@ -15,7 +15,8 @@ const {
   findDeckPlanCandidates,
   domainFromUrl,
   isBlockedDomain,
-  sameSiteOrSubdomain
+  sameSiteOrSubdomain,
+  classifySourceType
 } = require("./lib/deck-plan-find");
 
 const STATUSES = new Set([
@@ -451,23 +452,84 @@ async function approveCandidate(shipId, candidateId, user, notes, confirmReplace
     throw err;
   }
 
+  return applyApprovedSource(ship, {
+    url: candidate.url,
+    sourceType: candidate.source_type,
+    notes,
+    user,
+    confirmReplace,
+    reason: candidate.reason || "Approved from candidate list",
+    requireOfficialDomain: false
+  });
+}
+
+/**
+ * Manually set/correct an approved deck-plan source (human edit).
+ */
+async function saveManualSource(shipId, payload, user) {
+  const ship = await loadShip(shipId);
+  if (!ship) {
+    const err = new Error("Ship not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const url = String(payload.url || "").trim();
+  if (!url) {
+    const err = new Error("Deck plan URL is required");
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return applyApprovedSource(ship, {
+    url,
+    sourceType: String(payload.source_type || "").trim(),
+    notes: payload.notes,
+    user,
+    confirmReplace: payload.confirm_replace === true,
+    reason: "Manual admin edit",
+    requireOfficialDomain: true
+  });
+}
+
+async function applyApprovedSource(
+  ship,
+  { url, sourceType, notes, user, confirmReplace, reason, requireOfficialDomain }
+) {
   const line = ship.ci_cruise_lines || {};
   const officialDomain = domainFromUrl(line.website_url) || domainFromUrl(ship.official_ship_url);
-  assertOfficialCandidate(candidate, officialDomain, ship.official_ship_url);
+  const cleanUrl = String(url || "").trim();
 
-  const sourceType = SOURCE_TYPES.has(candidate.source_type)
-    ? candidate.source_type
-    : "other_official_asset";
-  const url = String(candidate.url).trim();
+  assertOfficialCandidate(
+    { url: cleanUrl, reason: reason || "Manual admin edit" },
+    officialDomain,
+    ship.official_ship_url
+  );
+
+  const host = domainFromUrl(cleanUrl);
+  if (
+    requireOfficialDomain &&
+    officialDomain &&
+    !sameSiteOrSubdomain(host, officialDomain)
+  ) {
+    const err = new Error(
+      `URL domain (${host || "unknown"}) does not match the official cruise line domain (${officialDomain}).`
+    );
+    err.statusCode = 400;
+    throw err;
+  }
+
+  const resolvedType = SOURCE_TYPES.has(sourceType)
+    ? sourceType
+    : classifySourceType(cleanUrl, "", reason || "");
   const previousUrl = publicDeckUrl(ship);
   const now = new Date().toISOString();
   const admin = adminLabel(user);
 
-  // Never silently overwrite an approved source
   if (
     ship.deck_plan_status === "approved" &&
     previousUrl &&
-    previousUrl !== url &&
+    previousUrl !== cleanUrl &&
     confirmReplace !== true
   ) {
     return {
@@ -476,22 +538,22 @@ async function approveCandidate(shipId, candidateId, user, notes, confirmReplace
         "This ship already has an approved deck-plan source. Confirm replacement to continue. The previous URL will be kept in history.",
       current_url: previousUrl,
       current_source_type: ship.deck_plan_source_type || null,
-      new_url: url,
-      new_source_type: sourceType,
+      new_url: cleanUrl,
+      new_source_type: resolvedType,
       ship: mapShipRow(ship)
     };
   }
 
   let historyAction = "source_added";
   if (ship.deck_plan_status === "approved" && previousUrl) {
-    historyAction = previousUrl === url ? "source_reverified" : "source_replaced";
+    historyAction = previousUrl === cleanUrl ? "source_reverified" : "source_replaced";
   }
 
   const patch = {
     deck_plan_status: "approved",
-    deck_plan_url: url,
-    deck_plan_source_type: sourceType,
-    deck_plan_source_domain: domainFromUrl(url) || officialDomain || null,
+    deck_plan_url: cleanUrl,
+    deck_plan_source_type: resolvedType,
+    deck_plan_source_domain: host || officialDomain || null,
     deck_plan_last_verified_at: now,
     deck_plan_verified_by: admin,
     deck_plan_notes: notes != null ? String(notes) : ship.deck_plan_notes || null,
@@ -499,30 +561,30 @@ async function approveCandidate(shipId, candidateId, user, notes, confirmReplace
     updated_at: now
   };
 
-  if (sourceType === "official_pdf") {
-    patch.deck_plan_pdf_url = url;
+  if (resolvedType === "official_pdf") {
+    patch.deck_plan_pdf_url = cleanUrl;
     patch.deck_plan_page_url = null;
   } else {
-    patch.deck_plan_page_url = url;
+    patch.deck_plan_page_url = cleanUrl;
     patch.deck_plan_pdf_url = null;
   }
 
-  await supabase(`ci_cruise_ships?id=eq.${encodeURIComponent(shipId)}`, {
+  await supabase(`ci_cruise_ships?id=eq.${encodeURIComponent(ship.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify(patch)
   });
 
   await recordHistory({
-    shipId,
+    shipId: ship.id,
     action: historyAction,
     previousUrl: previousUrl || null,
-    newUrl: url,
+    newUrl: cleanUrl,
     administrator: admin,
-    notes: notes != null ? String(notes) : null
+    notes: notes != null ? String(notes) : reason || null
   });
 
-  const refreshed = await loadShip(shipId);
+  const refreshed = await loadShip(ship.id);
   return { ship: mapShipRow(refreshed), history_action: historyAction };
 }
 
@@ -761,6 +823,13 @@ exports.handler = async (event) => {
         body.notes,
         body.confirm_replace === true
       );
+      return jsonResponse(200, { success: true, ...data });
+    }
+
+    if (action === "save_manual") {
+      const shipId = String(body.ship_id || "").trim();
+      if (!shipId) return jsonResponse(400, { success: false, error: "ship_id is required" });
+      const data = await saveManualSource(shipId, body, user);
       return jsonResponse(200, { success: true, ...data });
     }
 

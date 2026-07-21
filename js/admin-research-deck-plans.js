@@ -30,6 +30,8 @@
 
   /** @type {{ type: string, shipId?: string, candidateId?: string, label: string } | null} */
   let busy = null;
+  /** Draft values for the edit form (survive re-renders while reviewing a ship). */
+  let editDraft = { shipId: "", url: "", sourceType: "", notes: "" };
 
   function isBusy() {
     return Boolean(busy) || Boolean(findingShipId) || bulkRunning;
@@ -44,6 +46,30 @@
 
   function endBusy() {
     busy = null;
+  }
+
+  function readEditFormIntoDraft(shipId) {
+    const urlInput = document.getElementById("deck-plan-edit-url");
+    const typeInput = document.getElementById("deck-plan-edit-type");
+    const notesInput = document.getElementById("deck-plan-edit-notes");
+    if (!urlInput && !typeInput && !notesInput) return;
+    editDraft = {
+      shipId: shipId || editDraft.shipId,
+      url: urlInput ? urlInput.value : editDraft.url,
+      sourceType: typeInput ? typeInput.value : editDraft.sourceType,
+      notes: notesInput ? notesInput.value : editDraft.notes
+    };
+  }
+
+  function editFormValues(ship) {
+    const useDraft = editDraft.shipId && editDraft.shipId === ship.id;
+    return {
+      url: useDraft ? editDraft.url : ship.deck_plan_url || "",
+      sourceType: useDraft
+        ? editDraft.sourceType || ship.deck_plan_source_type || "official_page"
+        : ship.deck_plan_source_type || "official_page",
+      notes: useDraft ? editDraft.notes : ship.deck_plan_notes || ""
+    };
   }
 
   function busyLabelForButton(type, shipId, candidateId, idleLabel, activeLabel) {
@@ -387,6 +413,7 @@
     const candidates = Array.isArray(ship.candidates) ? ship.candidates : [];
     const diag = lastDiagnostics;
     const actionsLocked = isBusy();
+    const form = editFormValues(ship);
     return `
       <section class="admin-card deck-plans-review ${actionsLocked ? "deck-plans-review--busy" : ""}">
         <div class="deck-plans-review-header">
@@ -414,14 +441,74 @@
             actionsLocked ? "disabled" : ""
           }>Close</button>
         </div>
+        <div class="deck-plans-edit-form admin-card">
+          <h4>Edit / set deck plan source</h4>
+          <p class="admin-muted admin-small">Correct the URL if a candidate is close but not right. Must be an official cruise line domain. Saving approves this source for My Cruise.</p>
+          <div class="deck-plans-edit-grid">
+            <div class="admin-field">
+              <label for="deck-plan-edit-url">Source URL</label>
+              <input
+                id="deck-plan-edit-url"
+                type="url"
+                ${actionsLocked ? "disabled" : ""}
+                placeholder="https://…"
+                value="${esc(form.url)}"
+                oninput="DeckPlansAdmin.captureEditDraft('${esc(ship.id)}')"
+              />
+            </div>
+            <div class="admin-field">
+              <label for="deck-plan-edit-type">Source type</label>
+              <select id="deck-plan-edit-type" ${actionsLocked ? "disabled" : ""} onchange="DeckPlansAdmin.captureEditDraft('${esc(ship.id)}')">
+                ${[
+                  ["official_page", "Official page"],
+                  ["official_pdf", "Official PDF"],
+                  ["official_interactive_viewer", "Interactive viewer"],
+                  ["other_official_asset", "Other official asset"]
+                ]
+                  .map(([value, label]) => {
+                    const selected = form.sourceType === value ? "selected" : "";
+                    return `<option value="${value}" ${selected}>${label}</option>`;
+                  })
+                  .join("")}
+              </select>
+            </div>
+            <div class="admin-field deck-plans-edit-notes">
+              <label for="deck-plan-edit-notes">Notes (optional)</label>
+              <input
+                id="deck-plan-edit-notes"
+                type="text"
+                ${actionsLocked ? "disabled" : ""}
+                placeholder="Why this source / what you changed"
+                value="${esc(form.notes)}"
+                oninput="DeckPlansAdmin.captureEditDraft('${esc(ship.id)}')"
+              />
+            </div>
+          </div>
+          <div class="deck-plans-edit-actions">
+            <button type="button" class="admin-button small" ${
+              actionsLocked ? "disabled" : ""
+            } onclick="DeckPlansAdmin.saveManual('${esc(ship.id)}')">${esc(
+              busyLabelForButton("save", ship.id, "", "Save & Approve Source", "Saving…")
+            )}</button>
+            ${
+              ship.deck_plan_url
+                ? `<a class="admin-button secondary small" href="${esc(
+                    ship.deck_plan_url
+                  )}" target="_blank" rel="noopener noreferrer">Open current</a>`
+                : ""
+            }
+          </div>
+        </div>
         ${
           !candidates.length
-            ? `<p class="admin-muted">No candidates yet. Use Find Deck Plans to search official sources only (max 3 strong results).</p>`
+            ? `<p class="admin-muted">No candidates yet. Use Find Deck Plans, or paste an official URL above.</p>`
             : `<div class="deck-plans-candidate-list">
                 ${candidates
                   .map((c) => {
                     const candId = c.id || c.url || "";
                     const candKey = encodeURIComponent(candId);
+                    const urlKey = encodeURIComponent(c.url || "");
+                    const typeKey = encodeURIComponent(c.source_type || "official_page");
                     const approvingThis =
                       busy?.type === "approve" &&
                       busy.shipId === ship.id &&
@@ -444,6 +531,9 @@
                         </div>
                         <div class="deck-plans-candidate-actions">
                           <a class="admin-button secondary small" href="${esc(c.url)}" target="_blank" rel="noopener noreferrer">Open Source</a>
+                          <button type="button" class="admin-button secondary small" ${
+                            actionsLocked ? "disabled" : ""
+                          } onclick="DeckPlansAdmin.useCandidate(decodeURIComponent('${urlKey}'), decodeURIComponent('${typeKey}'))">Edit this</button>
                           <button type="button" class="admin-button small" ${
                             actionsLocked ? "disabled" : ""
                           } onclick="DeckPlansAdmin.approve('${esc(ship.id)}', decodeURIComponent('${candKey}'))">${
@@ -687,6 +777,13 @@
       if (isBusy()) return;
       reviewShipId = shipId;
       lastDiagnostics = null;
+      const ship = ships.find((s) => s.id === shipId);
+      editDraft = {
+        shipId,
+        url: ship?.deck_plan_url || "",
+        sourceType: ship?.deck_plan_source_type || "official_page",
+        notes: ship?.deck_plan_notes || ""
+      };
       try {
         await loadHistory(shipId);
       } catch {
@@ -699,7 +796,11 @@
       reviewShipId = "";
       lastDiagnostics = null;
       historyRows = [];
+      editDraft = { shipId: "", url: "", sourceType: "", notes: "" };
       if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
+    captureEditDraft(shipId) {
+      readEditFormIntoDraft(shipId);
     },
     async find(shipId, force) {
       if (busy || bulkRunning) return;
@@ -712,6 +813,12 @@
         upsertShip(data.ship);
         lastDiagnostics = data.diagnostics || null;
         reviewShipId = shipId;
+        editDraft = {
+          shipId,
+          url: data.ship.deck_plan_url || editDraft.url || "",
+          sourceType: data.ship.deck_plan_source_type || "official_page",
+          notes: data.ship.deck_plan_notes || ""
+        };
         await loadHistory(shipId);
         if (data.cache_hit) {
           message = `Using cached candidates from a recent search (${data.candidates?.length || 0}). Use Find again (force) to re-query.`;
@@ -747,6 +854,80 @@
         await approveFlow(shipId, candidateId, false);
       } catch (error) {
         message = error.message || "Approve failed";
+        messageTone = "error";
+      } finally {
+        endBusy();
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+    },
+    useCandidate(url, sourceType) {
+      editDraft = {
+        shipId: reviewShipId || editDraft.shipId,
+        url: url || "",
+        sourceType: sourceType || "official_page",
+        notes: editDraft.notes || ""
+      };
+      message = "Candidate loaded into the edit form — adjust if needed, then Save & Approve Source.";
+      messageTone = "info";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      requestAnimationFrame(() => {
+        document.getElementById("deck-plan-edit-url")?.focus();
+      });
+    },
+    async saveManual(shipId, confirmReplace) {
+      if (isBusy() && confirmReplace !== true) return;
+      readEditFormIntoDraft(shipId);
+      const url = String(editDraft.url || "").trim();
+      const sourceType = String(editDraft.sourceType || "").trim();
+      const notes = String(editDraft.notes || "").trim();
+      if (!url) {
+        message = "Enter a deck plan source URL before saving.";
+        messageTone = "error";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+        return;
+      }
+
+      beginBusy("save", "Saving deck plan source…", { shipId });
+      try {
+        const data = await api("save_manual", {
+          ship_id: shipId,
+          url,
+          source_type: sourceType,
+          notes: notes || undefined,
+          confirm_replace: confirmReplace === true
+        });
+        if (data.requires_confirmation) {
+          endBusy();
+          if (typeof global.renderAdmin === "function") global.renderAdmin();
+          const ok = window.confirm(
+            `Replace approved deck plan?\n\nCurrent:\n${data.current_url}\n\nNew:\n${data.new_url}\n\nThe previous source will be kept in history.`
+          );
+          if (!ok) {
+            message = "Save cancelled — existing approved source unchanged.";
+            messageTone = "info";
+            if (typeof global.renderAdmin === "function") global.renderAdmin();
+            return;
+          }
+          return global.DeckPlansAdmin.saveManual(shipId, true);
+        }
+        upsertShip(data.ship);
+        editDraft = {
+          shipId,
+          url: data.ship.deck_plan_url || url,
+          sourceType: data.ship.deck_plan_source_type || sourceType,
+          notes: data.ship.deck_plan_notes || notes
+        };
+        message = `Saved and approved deck plan for ${data.ship.name}.`;
+        messageTone = "success";
+        if (reviewShipId === shipId) await loadHistory(shipId);
+        try {
+          const dash = await api("dashboard");
+          cards = dash.cards || cards;
+        } catch {
+          /* ignore */
+        }
+      } catch (error) {
+        message = error.message || "Save failed";
         messageTone = "error";
       } finally {
         endBusy();
