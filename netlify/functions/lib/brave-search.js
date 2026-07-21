@@ -29,20 +29,37 @@ async function braveSearch(apiKey, query, options = {}) {
 
   const url = new URL(BRAVE_ENDPOINT);
   url.searchParams.set("q", q);
-  url.searchParams.set("count", String(options.count || 8));
+  url.searchParams.set("count", String(options.count || 6));
   url.searchParams.set("country", options.country || "AU");
   url.searchParams.set("search_lang", "en");
   url.searchParams.set("safesearch", "moderate");
   url.searchParams.set("result_filter", "web");
 
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-      "Accept-Encoding": "gzip",
-      "X-Subscription-Token": key
-    }
-  });
+  const timeoutMs = Math.max(2000, Number(options.timeoutMs) || 8_000);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "GET",
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": key
+      }
+    });
+  } catch (error) {
+    const err = new Error(
+      error.name === "AbortError" ? "Brave search timed out" : error.message || "Brave search failed"
+    );
+    err.code = "search_provider_unavailable";
+    err.statusCode = 503;
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 
   const text = await response.text();
   let data = null;

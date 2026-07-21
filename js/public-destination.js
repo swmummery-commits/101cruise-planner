@@ -106,6 +106,8 @@
     }
     window.scrollTo(0, 0);
   }
+
+  function suitabilityRow(key, levelKey) {
     const labels = {
       couples: "Couples",
       families: "Families",

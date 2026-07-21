@@ -10,7 +10,7 @@
 const { requireAdmin } = require("./admin-auth");
 const { ENTITY_TYPES, emptyContent, refreshAfterDate } = require("./lib/research-schemas");
 const { normaliseEntityKey, normaliseAlias } = require("./lib/research-normalize");
-const { runResearchPipeline, retryGenerationFromSources, estimateActivity } = require("./lib/research-engine");
+const { retryGenerationFromSources, estimateActivity, gatherResearchMaterials, generateFromMaterials } = require("./lib/research-engine");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -359,12 +359,44 @@ async function startResearch(body, user) {
   const draft = await createDraftShell(entity, user, { replacesId, paulsTip, mediaId });
   await ensureAlias(entity.entityType, entity.entity_name, entity.entity_key, draft.id);
 
+  let gathered = null;
   try {
-    const result = await runResearchPipeline({
+    // Phase 1 — search + fetch (checkpoint sources so Retry Generation works if LLM times out)
+    gathered = await gatherResearchMaterials({
       entityType: entity.entityType,
       entityName: entity.entity_name,
-      officialDomain: entity.officialDomain,
-      contextFacts: entity.contextFacts
+      officialDomain: entity.officialDomain
+    });
+    gathered.contextFacts = entity.contextFacts;
+
+    try {
+      await supabase(`research_content_sources?research_content_id=eq.${encodeURIComponent(draft.id)}`, {
+        method: "DELETE"
+      });
+      await insertSources(draft.id, gathered.sourcesForStorage || []);
+      await supabase(`research_content?id=eq.${encodeURIComponent(draft.id)}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          content_status: "failed",
+          failure_detail: "Sources gathered — generating draft…",
+          source_count: (gathered.sourcesForStorage || []).length,
+          diagnostics_json: { ...(gathered.diagnostics || {}), phase: "sources_checkpointed" },
+          updated_by: user.id
+        })
+      });
+    } catch {
+      // continue — generation may still succeed
+    }
+
+    // Phase 2 — LLM generation
+    const result = await generateFromMaterials({
+      entityType: entity.entityType,
+      entityName: entity.entity_name,
+      contextFacts: entity.contextFacts,
+      withExcerpts: gathered.withExcerpts,
+      usable: gathered.usable,
+      diagnostics: gathered.diagnostics,
+      allowRepair: (gathered.diagnostics?.remaining_ms_after_gather || 0) > 12_000
     });
     // Preserve Paul's tip — never overwrite from AI
     const saved = await applySuccess(draft.id, result, user);
@@ -382,27 +414,38 @@ async function startResearch(body, user) {
       message: "Research draft created"
     };
   } catch (error) {
-    const rawSources = error.sources || [];
-    const mappedSources = rawSources.map((s, index) => ({
-      source_url: s.source_url || s.url,
-      source_domain: s.source_domain || s.domain || null,
-      source_title: s.source_title || s.title || null,
-      source_type: s.source_type || null,
-      publisher_name: s.publisher_name || s.domain || null,
-      published_date: s.published_date || s.age || null,
-      is_primary_source: index < 2,
-      is_trusted: s.is_trusted !== false,
-      source_order: index,
-      excerpt_chars: s.excerpt_chars || 0,
-      notes: s.notes || (s.fetch_ok === false ? "Snippet used; full page fetch failed" : null)
-    })).filter((s) => s.source_url);
+    const rawSources = error.sources || gathered?.withExcerpts || [];
+    const mappedSources = (rawSources.length ? rawSources : gathered?.sourcesForStorage || []).map((s, index) => {
+      if (s.source_url || s.url) {
+        return {
+          source_url: s.source_url || s.url,
+          source_domain: s.source_domain || s.domain || null,
+          source_title: s.source_title || s.title || null,
+          source_type: s.source_type || null,
+          publisher_name: s.publisher_name || s.domain || null,
+          published_date: s.published_date || s.age || null,
+          is_primary_source: index < 2,
+          is_trusted: s.is_trusted !== false,
+          source_order: index,
+          excerpt_chars: s.excerpt_chars || 0,
+          notes: s.notes || (s.fetch_ok === false ? "Snippet used; full page fetch failed or skipped for time" : null)
+        };
+      }
+      return s;
+    }).filter((s) => s.source_url);
+
+    const detail =
+      error.message ||
+      (gathered?.sourcesForStorage?.length
+        ? "Research interrupted after sources were saved — use Retry Generation"
+        : "Research failed");
 
     const failed = await markFailed(
       draft.id,
-      error.message,
-      error.diagnostics || { error: error.message },
+      detail,
+      error.diagnostics || gathered?.diagnostics || { error: error.message },
       user,
-      mappedSources.length ? mappedSources : null
+      mappedSources.length ? mappedSources : gathered?.sourcesForStorage || null
     );
     return jsonErrorFromResearch(error, failed);
   }

@@ -1,10 +1,11 @@
 /**
  * Fetch readable text excerpts from selected source pages (bounded, not a crawler).
+ * Timeouts are intentionally short so research stays within Netlify function limits.
  */
 
-const MAX_BYTES = 350_000;
-const MAX_EXCERPT_CHARS = 3500;
-const FETCH_TIMEOUT_MS = 12_000;
+const MAX_BYTES = 180_000;
+const MAX_EXCERPT_CHARS = 2200;
+const FETCH_TIMEOUT_MS = 5_000;
 
 function stripHtml(html) {
   let text = String(html || "");
@@ -26,9 +27,14 @@ function stripHtml(html) {
   return text;
 }
 
-async function fetchSourceExcerpt(url) {
+/**
+ * @param {string} url
+ * @param {{ timeoutMs?: number }} [options]
+ */
+async function fetchSourceExcerpt(url, options = {}) {
+  const timeoutMs = Math.max(1500, Number(options.timeoutMs) || FETCH_TIMEOUT_MS);
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const response = await fetch(url, {
       method: "GET",
@@ -90,5 +96,6 @@ async function fetchSourceExcerpt(url) {
 module.exports = {
   stripHtml,
   fetchSourceExcerpt,
-  MAX_EXCERPT_CHARS
+  MAX_EXCERPT_CHARS,
+  FETCH_TIMEOUT_MS
 };

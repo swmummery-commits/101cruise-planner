@@ -114,25 +114,23 @@ function buildSearchQueries({ entityType, entityName, officialDomain }) {
     queries.push(`"${name}" official ship information`);
     queries.push(`"${name}" dining entertainment accessibility`);
     if (site) queries.push(`${site} "${name}"`);
-    queries.push(`"${name}" cruise ship overview`);
+    else queries.push(`"${name}" cruise ship overview`);
   } else if (entityType === "cruise_line") {
     queries.push(`"${name}" official what is included`);
     queries.push(`"${name}" dress code wifi gratuities drinks`);
     if (site) queries.push(`${site} inclusions`);
-    queries.push(`"${name}" cruise line brand overview`);
+    else queries.push(`"${name}" cruise line brand overview`);
   } else if (entityType === "destination") {
-    queries.push(`"${name}" official tourism`);
-    queries.push(`"${name}" best time weather currency transport`);
-    queries.push(`"${name}" tourism board`);
-    queries.push(`visit "${name}" travel guide`);
+    queries.push(`"${name}" cruise destination tourism`);
+    queries.push(`"${name}" best time weather currency`);
+    queries.push(`visit "${name}" cruise ports guide`);
   } else if (entityType === "port") {
     queries.push(`"${name}" cruise port authority`);
-    queries.push(`"${name}" cruise terminal transport accessibility`);
-    queries.push(`"${name}" official tourism`);
-    queries.push(`"${name}" cruise port tender`);
+    queries.push(`"${name}" cruise terminal transport`);
+    queries.push(`"${name}" cruise port tender tourism`);
   }
 
-  return [...new Set(queries.map((q) => q.trim()).filter(Boolean))].slice(0, 4);
+  return [...new Set(queries.map((q) => q.trim()).filter(Boolean))].slice(0, 3);
 }
 
 module.exports = {

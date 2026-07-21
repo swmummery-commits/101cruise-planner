@@ -274,8 +274,13 @@
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || data.success === false) {
-      const err = new Error(data.error || `Request failed (${response.status})`);
-      err.code = data.code;
+      let msg = data.error || `Request failed (${response.status})`;
+      if (response.status === 504 || response.status === 502) {
+        msg =
+          "Research timed out before finishing. Check the Research Content list for a Failed draft — open it and use Retry Generation (sources are often already saved). Or try again.";
+      }
+      const err = new Error(msg);
+      err.code = data.code || (response.status === 504 ? "timeout" : undefined);
       err.payload = data;
       err.status = response.status;
       throw err;
@@ -781,7 +786,7 @@
               }
             </button>
           </div>
-          ${researching ? `<p class="admin-muted">Searching trusted sources and generating a structured draft. This can take up to a minute.</p>` : ""}
+          ${researching ? `<p class="admin-muted">Searching sources and generating a draft (usually under ~30 seconds). If it times out, open the Failed row and use Retry Generation.</p>` : ""}
           ${batchHtml}
         </div>
       </section>
@@ -1270,6 +1275,11 @@
           message = error.message || "Research failed — draft saved as Failed.";
           messageTone = "error";
           await openEditor(error.payload.item.id);
+        } else if (error.status === 504 || error.status === 502 || error.code === "timeout") {
+          message = error.message;
+          messageTone = "error";
+          await ensureLoaded({ quiet: true }).catch(() => null);
+          openList();
         } else {
           message = error.message || "Research failed";
           messageTone = "error";
