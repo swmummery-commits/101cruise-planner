@@ -3709,8 +3709,15 @@
 }
 
 .research-editor-header-actions {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
   padding-top: 28px;
+  margin-top: 0;
+  max-width: min(720px, 100%);
 }
 
 .research-table-wrap {

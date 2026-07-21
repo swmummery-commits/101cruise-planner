@@ -856,9 +856,22 @@
     return "";
   }
 
+  function renderEditorActions(item) {
+    return `
+      <button type="button" class="admin-button" onclick="ResearchContentAdmin.openList()" ${saving ? "disabled" : ""}>Cancel</button>
+      <button type="button" class="admin-button" onclick="ResearchContentAdmin.saveDraft()" ${saving ? "disabled" : ""}>Save Draft</button>
+      <button type="button" class="admin-button" onclick="ResearchContentAdmin.markReviewed()" ${saving ? "disabled" : ""}>Mark Reviewed</button>
+      <button type="button" class="admin-button black" onclick="ResearchContentAdmin.publish()" ${saving || item.content_status === "failed" ? "disabled" : ""}>Publish</button>
+      <button type="button" class="admin-button" onclick="ResearchContentAdmin.refreshResearch()" ${saving || researching ? "disabled" : ""}>Refresh Research</button>
+      ${item.content_status === "failed" ? `<button type="button" class="admin-button" onclick="ResearchContentAdmin.retryGeneration()" ${saving || researching ? "disabled" : ""}>Retry Generation</button>` : ""}
+      <button type="button" class="admin-button danger" onclick="ResearchContentAdmin.archive()" ${saving ? "disabled" : ""}>Delete</button>
+    `;
+  }
+
   function renderEditor() {
     if (!editorItem || !editorDraft) return `<p class="admin-muted">Nothing selected.</p>`;
     const item = editorItem;
+    const actionButtons = renderEditorActions(item);
     const fields = fieldsFor(item.entity_type)
       .map(([key, label, kind]) => renderFieldControl(key, label, kind, editorDraft.content_json[key]))
       .join("");
@@ -900,8 +913,8 @@
             <h2>${esc(item.entity_name)}</h2>
             <p class="admin-muted">${esc(ENTITY_LABELS[item.entity_type])} · ${esc(STATUS_LABELS[item.content_status])} · ${esc(FRESHNESS_LABELS[item.freshness] || item.freshness)} · v${esc(String(item.content_version))}</p>
           </div>
-          <div class="research-editor-header-actions">
-            <button type="button" class="admin-button black" onclick="ResearchContentAdmin.publish()" ${saving || item.content_status === "failed" ? "disabled" : ""}>Publish</button>
+          <div class="research-editor-header-actions research-editor-actions">
+            ${actionButtons}
           </div>
         </div>
         ${message ? `<p class="admin-message ${messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : ""}">${esc(message)}</p>` : ""}
@@ -951,13 +964,7 @@
           </aside>
         </div>
         <div class="research-editor-actions">
-          <button type="button" class="admin-button" onclick="ResearchContentAdmin.openList()" ${saving ? "disabled" : ""}>Cancel</button>
-          <button type="button" class="admin-button" onclick="ResearchContentAdmin.saveDraft()" ${saving ? "disabled" : ""}>Save Draft</button>
-          <button type="button" class="admin-button" onclick="ResearchContentAdmin.markReviewed()" ${saving ? "disabled" : ""}>Mark Reviewed</button>
-          <button type="button" class="admin-button black" onclick="ResearchContentAdmin.publish()" ${saving ? "disabled" : ""}>Publish</button>
-          <button type="button" class="admin-button" onclick="ResearchContentAdmin.refreshResearch()" ${saving || researching ? "disabled" : ""}>Refresh Research</button>
-          ${item.content_status === "failed" ? `<button type="button" class="admin-button" onclick="ResearchContentAdmin.retryGeneration()" ${saving || researching ? "disabled" : ""}>Retry Generation</button>` : ""}
-          <button type="button" class="admin-button danger" onclick="ResearchContentAdmin.archive()" ${saving ? "disabled" : ""}>Delete</button>
+          ${actionButtons}
         </div>
       </section>
     `;
