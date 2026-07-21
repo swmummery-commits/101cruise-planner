@@ -407,10 +407,24 @@ async function loadProfile() {
 }
 
 async function adminAuthHeaders(extra = {}) {
-  const { data } = await supabaseClient.auth.getSession();
+  let { data } = await supabaseClient.auth.getSession();
+  const expiresAt = Number(data.session?.expires_at || 0);
+  const stale =
+    !data.session?.access_token || (expiresAt > 0 && expiresAt * 1000 <= Date.now() + 60_000);
+  if (stale) {
+    const refreshed = await supabaseClient.auth.refreshSession();
+    if (refreshed.error) {
+      throw new Error("Admin session expired. Sign out and sign in again.");
+    }
+    data = refreshed.data;
+  }
+  const token = data.session?.access_token || "";
+  if (!token) {
+    throw new Error("Admin session missing. Sign out and sign in again.");
+  }
   return {
     "Content-Type": "application/json",
-    Authorization: `Bearer ${data.session?.access_token || ""}`,
+    Authorization: `Bearer ${token}`,
     ...extra
   };
 }
@@ -6194,13 +6208,22 @@ function renderUsageCustomerSidePanel(customer) {
 /* ========== Settings — Admin users ========== */
 
 async function adminSettingsApi(action, payload = {}) {
-  const headers = await adminAuthHeaders();
-  const response = await fetch("/.netlify/functions/admin-users", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ action, ...payload })
-  });
-  const data = await response.json().catch(() => ({}));
+  const run = async () => {
+    const headers = await adminAuthHeaders();
+    const response = await fetch("/.netlify/functions/admin-users", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action, ...payload })
+    });
+    const data = await response.json().catch(() => ({}));
+    return { response, data };
+  };
+
+  let { response, data } = await run();
+  if (response.status === 401) {
+    await supabaseClient.auth.refreshSession().catch(() => null);
+    ({ response, data } = await run());
+  }
   if (!response.ok || data.success === false) {
     throw new Error(data.error || `HTTP ${response.status}`);
   }
@@ -6214,6 +6237,10 @@ async function loadAdminSettingsUsers() {
   try {
     const data = await adminSettingsApi("list", { search: adminSettingsSearch, page: 1, per_page: 100 });
     adminSettingsUsers = Array.isArray(data.users) ? data.users : [];
+    if (data.warning) {
+      adminSettingsMessage = data.warning;
+      adminSettingsMessageTone = "error";
+    }
   } catch (error) {
     adminSettingsUsers = [];
     adminSettingsMessage = error.message || "Could not load users.";

@@ -7,7 +7,7 @@
  * Updates both profiles.is_admin and admin_users (allow-list).
  */
 
-const { requireAdmin, getConfig } = require("./admin-auth");
+const { requireAdmin, getConfig, serviceHeaders, fetchAuthUser, getBearerToken } = require("./admin-auth");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -24,13 +24,8 @@ function jsonResponse(statusCode, body) {
 }
 
 async function rest(path, options = {}) {
-  const { supabaseUrl, serviceKey } = getConfig();
-  const headers = {
-    apikey: serviceKey,
-    Authorization: `Bearer ${serviceKey}`,
-    Accept: "application/json",
-    ...(options.headers || {})
-  };
+  const { supabaseUrl } = getConfig();
+  const headers = serviceHeaders(options.headers || {});
   if (options.body !== undefined && options.body !== null) {
     headers["Content-Type"] = headers["Content-Type"] || "application/json";
   }
@@ -53,13 +48,8 @@ async function rest(path, options = {}) {
 }
 
 async function authAdmin(path, options = {}) {
-  const { supabaseUrl, serviceKey } = getConfig();
-  const headers = {
-    apikey: serviceKey,
-    Authorization: `Bearer ${serviceKey}`,
-    Accept: "application/json",
-    ...(options.headers || {})
-  };
+  const { supabaseUrl } = getConfig();
+  const headers = serviceHeaders(options.headers || {});
   if (options.body !== undefined && options.body !== null) {
     headers["Content-Type"] = headers["Content-Type"] || "application/json";
   }
@@ -117,19 +107,53 @@ async function findAuthUserByEmail(email) {
   return null;
 }
 
+function mapAuthUser(u, profilesById, adminByUserId, adminByEmail) {
+  const email = String(u.email || "").toLowerCase();
+  const profile = profilesById.get(u.id) || null;
+  const allow = adminByUserId.get(u.id) || adminByEmail.get(email) || null;
+  const isAdmin = profile?.is_admin === true && (!allow || allow.active === true);
+  return {
+    id: u.id,
+    email: u.email || "",
+    display_name:
+      allow?.display_name ||
+      profile?.first_name ||
+      u.user_metadata?.full_name ||
+      u.user_metadata?.first_name ||
+      "",
+    is_admin: Boolean(isAdmin),
+    profile_is_admin: profile?.is_admin === true,
+    admin_user: allow
+      ? {
+          id: allow.id,
+          role: allow.role,
+          active: allow.active === true
+        }
+      : null,
+    created_at: u.created_at || null,
+    last_sign_in_at: u.last_sign_in_at || null
+  };
+}
+
 async function listUsers(body) {
   const page = Math.max(1, Number(body.page) || 1);
   const perPage = Math.min(100, Math.max(10, Number(body.per_page) || 50));
   const search = String(body.search || "").trim().toLowerCase();
 
-  const authPayload = await authAdmin(`users?page=${page}&per_page=${perPage}`, { method: "GET" });
-  let users = Array.isArray(authPayload?.users)
-    ? authPayload.users
-    : Array.isArray(authPayload)
-      ? authPayload
-      : [];
+  let users = [];
+  let authListError = null;
+  try {
+    const authPayload = await authAdmin(`users?page=${page}&per_page=${perPage}`, { method: "GET" });
+    users = Array.isArray(authPayload?.users)
+      ? authPayload.users
+      : Array.isArray(authPayload)
+        ? authPayload
+        : [];
+  } catch (error) {
+    authListError = error;
+  }
 
-  if (search) {
+  if (search && users.length) {
     users = users.filter((u) => {
       const email = String(u.email || "").toLowerCase();
       const name = String(u.user_metadata?.full_name || u.user_metadata?.first_name || "").toLowerCase();
@@ -137,58 +161,114 @@ async function listUsers(body) {
     });
   }
 
-  const ids = users.map((u) => u.id).filter(Boolean);
   const profilesById = new Map();
   const adminByUserId = new Map();
   const adminByEmail = new Map();
 
-  if (ids.length) {
-    const filter = ids.join(",");
-    const profiles = await rest(`profiles?id=in.(${filter})&select=id,is_admin,first_name`);
-    for (const row of profiles || []) profilesById.set(row.id, row);
-  }
-
   const adminRows = await rest(
     `admin_users?select=id,auth_user_id,email,display_name,role,active,created_at&order=email.asc&limit=500`
-  );
+  ).catch(() => []);
   for (const row of adminRows || []) {
     if (row.auth_user_id) adminByUserId.set(row.auth_user_id, row);
     if (row.email) adminByEmail.set(String(row.email).toLowerCase(), row);
   }
 
-  const mapped = users.map((u) => {
-    const email = String(u.email || "").toLowerCase();
-    const profile = profilesById.get(u.id) || null;
-    const allow = adminByUserId.get(u.id) || adminByEmail.get(email) || null;
-    const isAdmin = profile?.is_admin === true && (!allow || allow.active === true);
+  // Always pull known admins from profiles so Steve/Paul still appear if Auth paging
+  // or the Auth Admin API is flaky.
+  const adminProfiles = await rest(
+    `profiles?is_admin=eq.true&select=id,is_admin,first_name&limit=200`
+  ).catch(() => []);
+  for (const row of adminProfiles || []) {
+    if (row?.id) profilesById.set(row.id, row);
+  }
+
+  const ids = new Set(users.map((u) => u.id).filter(Boolean));
+  for (const row of adminProfiles || []) {
+    if (row?.id) ids.add(row.id);
+  }
+  for (const row of adminRows || []) {
+    if (row?.auth_user_id) ids.add(row.auth_user_id);
+  }
+
+  // Hydrate any admin ids missing from the Auth page result.
+  for (const id of ids) {
+    if (users.some((u) => u.id === id)) continue;
+    try {
+      const authUser = await authAdmin(`users/${encodeURIComponent(id)}`, { method: "GET" });
+      if (authUser?.id) users.push(authUser);
+    } catch (_error) {
+      /* keep going — may still show from allow-list row */
+    }
+  }
+
+  if (!users.length && authListError) {
+    // Last resort: show allow-list + profile admins without Auth enrichment.
+    const fallback = [];
+    for (const row of adminRows || []) {
+      if (search) {
+        const hay = `${row.email || ""} ${row.display_name || ""}`.toLowerCase();
+        if (!hay.includes(search)) continue;
+      }
+      const profile = row.auth_user_id ? profilesById.get(row.auth_user_id) : null;
+      fallback.push({
+        id: row.auth_user_id || null,
+        email: row.email || "",
+        display_name: row.display_name || profile?.first_name || "",
+        is_admin: row.active === true,
+        profile_is_admin: profile?.is_admin === true,
+        pending_invite: !row.auth_user_id,
+        admin_user: { id: row.id, role: row.role, active: row.active === true },
+        created_at: row.created_at || null,
+        last_sign_in_at: null
+      });
+    }
+    for (const profile of adminProfiles || []) {
+      if (fallback.some((u) => u.id === profile.id)) continue;
+      fallback.push({
+        id: profile.id,
+        email: "",
+        display_name: profile.first_name || "",
+        is_admin: true,
+        profile_is_admin: true,
+        admin_user: null,
+        created_at: null,
+        last_sign_in_at: null
+      });
+    }
+    if (!fallback.length) throw authListError;
     return {
-      id: u.id,
-      email: u.email || "",
-      display_name:
-        allow?.display_name ||
-        profile?.first_name ||
-        u.user_metadata?.full_name ||
-        u.user_metadata?.first_name ||
-        "",
-      is_admin: Boolean(isAdmin),
-      profile_is_admin: profile?.is_admin === true,
-      admin_user: allow
-        ? {
-            id: allow.id,
-            role: allow.role,
-            active: allow.active === true
-          }
-        : null,
-      created_at: u.created_at || null,
-      last_sign_in_at: u.last_sign_in_at || null
+      success: true,
+      page,
+      per_page: perPage,
+      warning: authListError.message || "Auth user directory unavailable; showing known admins only.",
+      users: fallback
     };
-  });
+  }
+
+  const missingProfileIds = users.map((u) => u.id).filter((id) => id && !profilesById.has(id));
+  if (missingProfileIds.length) {
+    const profiles = await rest(
+      `profiles?id=in.(${missingProfileIds.join(",")})&select=id,is_admin,first_name`
+    ).catch(() => []);
+    for (const row of profiles || []) profilesById.set(row.id, row);
+  }
+
+  const mapped = users.map((u) => mapAuthUser(u, profilesById, adminByUserId, adminByEmail));
 
   // Also surface allow-list-only emails (invited before first sign-in)
   const listedEmails = new Set(mapped.map((u) => String(u.email || "").toLowerCase()).filter(Boolean));
+  const listedIds = new Set(mapped.map((u) => u.id).filter(Boolean));
   const pending = (adminRows || [])
     .filter((row) => row.active === true && row.email && !listedEmails.has(String(row.email).toLowerCase()))
-    .filter((row) => !search || String(row.email).toLowerCase().includes(search) || String(row.display_name || "").toLowerCase().includes(search))
+    .filter((row) => !row.auth_user_id || !listedIds.has(row.auth_user_id))
+    .filter(
+      (row) =>
+        !search ||
+        String(row.email).toLowerCase().includes(search) ||
+        String(row.display_name || "")
+          .toLowerCase()
+          .includes(search)
+    )
     .map((row) => ({
       id: row.auth_user_id || null,
       email: row.email,
@@ -379,19 +459,15 @@ async function revokeAccess(body, actor, actorContext) {
  * Does not require is_admin yet (unlike other actions).
  */
 async function claimInvite(event) {
-  const { supabaseUrl, serviceKey } = getConfig();
-  const token = String(event.headers.authorization || event.headers.Authorization || "")
-    .replace(/^Bearer\s+/i, "")
-    .trim();
+  const token = getBearerToken(event);
   if (!token) {
     throw Object.assign(new Error("Authentication is required"), { statusCode: 401 });
   }
 
-  const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
-    headers: { apikey: serviceKey, Authorization: `Bearer ${token}` }
-  });
-  const user = await userResponse.json().catch(() => null);
-  if (!userResponse.ok || !user?.id) {
+  let user;
+  try {
+    user = await fetchAuthUser(token);
+  } catch (_error) {
     throw Object.assign(new Error("Session is invalid or has expired"), { statusCode: 401 });
   }
 
