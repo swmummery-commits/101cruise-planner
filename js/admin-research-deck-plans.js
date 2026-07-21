@@ -347,7 +347,7 @@
       { label: "Last Verification Run", value: formatDate(c.last_verification_run) }
     ];
     return `
-      <div class="usage-summary-grid research-audit-cards">
+      <div class="usage-summary-grid research-audit-cards deck-plans-summary-grid">
         ${items
           .map(
             (item) => `

@@ -4185,6 +4185,36 @@
 }
 
 /* Sprint 12A — Deck Plan Links */
+.deck-plans-summary-grid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.deck-plans-summary-grid .usage-summary-card {
+  padding: 14px 12px;
+}
+
+.deck-plans-summary-grid .usage-summary-value {
+  font-size: 18px;
+}
+
+.deck-plans-summary-grid .usage-summary-label {
+  font-size: 10px;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 1100px) {
+  .deck-plans-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .deck-plans-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .deck-plans-filters {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
