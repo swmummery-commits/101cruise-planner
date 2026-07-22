@@ -388,7 +388,18 @@
     `;
   }
 
-  /* ─── Green Price Cards (Sprint 13B) ──────────────────────────────────── */
+  /* ─── Green Price Cards (Sprint 13B / 13C refinements) ─────────────────── */
+
+  const GPC_RADIUS_PX = 8;
+  const GPC_ROOM_FONT_PX = 12;
+  /** Compact single-line header (1–3 rooms). */
+  const GPC_HEADER_COMPACT_PX = 36;
+  /** Fixed two-line-capable header (4+ rooms) for equal card alignment. */
+  const GPC_HEADER_TWOLINE_PX = 52;
+
+  function greenHeaderMode(roomCount) {
+    return roomCount >= 4 ? "two-line" : "compact";
+  }
 
   function renderGreenFareBox({ label, price, saveAmount, percentOff }) {
     const saveLine =
@@ -400,9 +411,9 @@
         ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:0.5px;color:#FFFFFF;margin-top:6px;line-height:1.2;">${escapeHtml(percentOff)}% OFF</div>`
         : "";
     return `
-      <table role="presentation" class="cr101-gpc-fare" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:8px;background-color:${BRAND_GREEN};">
+      <table role="presentation" class="cr101-gpc-fare" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:${BRAND_GREEN};">
         <tr>
-          <td align="center" bgcolor="${BRAND_GREEN}" style="background-color:${BRAND_GREEN};border-radius:8px;padding:10px 8px;text-align:center;">
+          <td align="center" bgcolor="${BRAND_GREEN}" style="background-color:${BRAND_GREEN};border-radius:${GPC_RADIUS_PX}px;padding:10px 8px;text-align:center;">
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;color:#FFFFFF;line-height:1.2;">${escapeHtml(label)}</div>
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#FFFFFF;line-height:1.15;margin-top:4px;">$${escapeHtml(money(price))}</div>
             ${saveLine}
@@ -413,7 +424,9 @@
     `;
   }
 
-  function renderGreenPricingCard(mod, includeAirline) {
+  function renderGreenPricingCard(mod, includeAirline, headerMode) {
+    const twoLine = headerMode === "two-line";
+    const headerHeight = twoLine ? GPC_HEADER_TWOLINE_PX : GPC_HEADER_COMPACT_PX;
     const brochure =
       mod.brochurePrice != null
         ? `<div style="padding:2px 0 8px;text-align:center;">
@@ -458,8 +471,17 @@
     return `
       <table role="presentation" class="cr101-gpc-card" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border:1px solid #e5e7eb;border-radius:10px;background-color:#FFFFFF;">
         <tr>
-          <td class="cr101-gpc-room-header" align="center" valign="middle" bgcolor="${BRAND_GREEN}" style="background-color:${BRAND_GREEN};border-radius:9px 9px 0 0;padding:11px 8px;text-align:center;vertical-align:middle;">
-            <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:#FFFFFF;text-align:center;line-height:1.25;">${escapeHtml(mod.roomLabel)}</div>
+          <td
+            class="cr101-gpc-room-header"
+            align="center"
+            valign="middle"
+            height="${headerHeight}"
+            bgcolor="${BRAND_GREEN}"
+            data-cr101-gpc-header-mode="${twoLine ? "two-line" : "compact"}"
+            data-cr101-gpc-header-height="${headerHeight}"
+            style="background-color:${BRAND_GREEN};border-radius:9px 9px 0 0;height:${headerHeight}px;padding:0 8px;text-align:center;vertical-align:middle;mso-line-height-rule:exactly;"
+          >
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:${GPC_ROOM_FONT_PX}px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:#FFFFFF;text-align:center;line-height:1.25;">${escapeHtml(mod.roomLabel)}</div>
           </td>
         </tr>
         <tr>
@@ -493,20 +515,21 @@
   function renderGreenPricingTable(modules, includeAirline) {
     const list = (modules || []).slice(0, MAX_ROOMS);
     if (!list.length) return "";
+    const headerMode = greenHeaderMode(list.length);
     const widthPct = Math.floor(100 / list.length);
     const gapPad = list.length > 1 ? 4 : 0;
     const cols = list
       .map(
         (mod) => `
       <td class="cr101-gpc-column cr101-mobile-stack" width="${widthPct}%" valign="top" align="center" style="width:${widthPct}%;padding:0 ${gapPad}px;vertical-align:top;">
-        ${renderGreenPricingCard(mod, includeAirline)}
+        ${renderGreenPricingCard(mod, includeAirline, headerMode)}
       </td>`
       )
       .join("");
 
     return `
       <tr>
-        <td align="center" style="padding:32px 0 0;">
+        <td align="center" style="padding:32px 0 0;" data-cr101-gpc-room-count="${list.length}" data-cr101-gpc-header-mode="${headerMode}">
           <table role="presentation" class="cr101-gpc-pricing-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;">
             <tr>
               ${cols}
@@ -536,14 +559,29 @@
     `;
   }
 
-  /* ─── Shared sections ─────────────────────────────────────────────────── */
+  /* ─── Shared / template-specific info bars ─────────────────────────────── */
 
-  function renderInclusions(items) {
+  function renderInclusions(items, { green = false } = {}) {
     if (!items?.length) return "";
     const labels = items.map((item) => {
       if (typeof item === "string") return String(item).toUpperCase();
       return item.shortLabel || String(item.label || "").toUpperCase();
     });
+    if (green) {
+      return `
+      <tr>
+        <td align="center" style="padding:12px 0 0;">
+          <table role="presentation" class="cr101-gpc-includes" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:#f4faf7;">
+            <tr>
+              <td align="center" style="padding:12px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#111111;border-radius:${GPC_RADIUS_PX}px;background-color:#f4faf7;">
+                INCLUDES: <span style="font-weight:400;letter-spacing:0.4px;">${escapeHtml(labels.join(" · "))}</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+    }
     return `
       <tr>
         <td align="center" style="padding:28px 0 0;">
@@ -557,6 +595,39 @@
         </td>
       </tr>
     `;
+  }
+
+  function renderOtherInfo(text, { green = false, bodyColor = "#111111" } = {}) {
+    if (!text) return "";
+    const content = escapeHtml(String(text).toUpperCase());
+    if (green) {
+      return `
+        <tr>
+          <td align="center" style="padding:8px 0 0;">
+            <table role="presentation" class="cr101-gpc-other-info" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:#f7f8f8;">
+              <tr>
+                <td align="center" style="padding:12px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${bodyColor};border-radius:${GPC_RADIUS_PX}px;background-color:#f7f8f8;">
+                  <strong>OTHER INFO:</strong> ${content}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      `;
+    }
+    return `
+        <tr>
+          <td align="center" style="padding:16px 0 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#f7f8f8;">
+              <tr>
+                <td align="center" style="padding:14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${bodyColor};">
+                  <strong>OTHER INFO:</strong> ${content}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      `;
   }
 
   function classicStyleBlock() {
@@ -717,26 +788,13 @@
       ? renderGreenPricingTable(model.pricingModules, includeAirline)
       : renderClassicPricingTable(model.pricingModules, includeAirline);
 
-    const inclusions = renderInclusions(model.inclusionItems);
-    const otherInfo = model.otherInformation
-      ? `
-        <tr>
-          <td align="center" style="padding:16px 0 0;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#f7f8f8;">
-              <tr>
-                <td align="center" style="padding:14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${body};">
-                  <strong>OTHER INFO:</strong> ${escapeHtml(String(model.otherInformation).toUpperCase())}
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      `
-      : "";
+    const inclusions = renderInclusions(model.inclusionItems, { green: isGreen });
+    const otherInfo = renderOtherInfo(model.otherInformation, { green: isGreen, bodyColor: body });
 
+    const disclaimerPadTop = isGreen ? 15 : 24;
     const disclaimer = textRow(
       escapeHtml(model.disclaimerText || "All prices are per person in USD and subject to availability"),
-      `font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${muted};text-align:center;padding:24px 12px 0;line-height:1.5;`
+      `font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${muted};text-align:center;padding:${disclaimerPadTop}px 12px 0;line-height:1.5;`
     );
 
     const inner = `
@@ -968,6 +1026,7 @@ ${styleBlock}
     assertFragmentSafe,
     renderFragment,
     generateFromModel,
+    greenHeaderMode,
     composeIssueHtml
   };
 

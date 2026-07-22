@@ -248,10 +248,123 @@ assert(!/% OFF/i.test(greenGeneral.html), "green general no % OFF");
 assert(/101CRUISE PRICE/i.test(greenGeneral.html), "green general has 101cruise box");
 assert(/BROCHURE PRICE/i.test(greenGeneral.html), "brochure outside green boxes");
 
+/* Sprint 13C visual refinements — adaptive headers + compact info boxes */
+assert(Export.greenHeaderMode(1) === "compact", "1 room → compact");
+assert(Export.greenHeaderMode(3) === "compact", "3 rooms → compact");
+assert(Export.greenHeaderMode(4) === "two-line", "4 rooms → two-line");
+
+const threeRoomRows = [
+  {
+    room_label: "Inside",
+    brochure_price: 2000,
+    cruise_101_price: 1200,
+    airline_price: 900,
+    display_order: 1
+  },
+  {
+    room_label: "Oceanview",
+    brochure_price: 2500,
+    cruise_101_price: 1500,
+    airline_price: 1100,
+    display_order: 2
+  },
+  {
+    room_label: "Balcony",
+    brochure_price: 3000,
+    cruise_101_price: 1800,
+    airline_price: 1400,
+    display_order: 3
+  },
+  {
+    room_label: "Suite Unpriced",
+    brochure_price: null,
+    cruise_101_price: null,
+    airline_price: null,
+    display_order: 4
+  }
+];
+const threeRoomGreen = Export.generateFromModel(
+  baseModel("general", {
+    pricingModules: Shared.buildPricingModules(threeRoomRows, 7, { outputMode: "general" })
+  }),
+  genOpts("general", "green-price-cards", threeRoomRows)
+);
+assert(threeRoomGreen.ok, `3-room green should succeed: ${(threeRoomGreen.errors || []).join("; ")}`);
+assert(/data-cr101-gpc-header-mode="compact"/i.test(threeRoomGreen.html), "3-room uses compact header mode");
+assert(/data-cr101-gpc-room-count="3"/i.test(threeRoomGreen.html), "3 valid rooms after unpriced filtered");
+assert(!/Suite Unpriced/i.test(threeRoomGreen.html), "unpriced room excluded before header mode");
+const threeHeaders = threeRoomGreen.html.match(/data-cr101-gpc-header-height="(\d+)"/g) || [];
+assert(threeHeaders.length === 3, "three equal compact headers");
+assert(threeHeaders.every((h) => h.includes('"36"')), "compact header height 36 on all cards");
+assert(!/data-cr101-gpc-header-mode="two-line"/i.test(threeRoomGreen.html), "3-room has no two-line mode");
+const threeFonts = threeRoomGreen.html.match(/cr101-gpc-room-header[\s\S]*?font-size:(\d+)px/g) || [];
+assert(threeFonts.length === 3, "three room-name font declarations");
+assert(threeFonts.every((f) => /font-size:12px/.test(f)), "room-name font size consistent at 12px");
+
+const fourRoomRows = [
+  ...threeRoomRows.slice(0, 3),
+  {
+    room_label: "Concierge Class Suite",
+    brochure_price: 5000,
+    cruise_101_price: 3200,
+    airline_price: 2800,
+    display_order: 4
+  }
+];
+const fourRoomGreen = Export.generateFromModel(
+  baseModel("general", {
+    pricingModules: Shared.buildPricingModules(fourRoomRows, 10, { outputMode: "general" })
+  }),
+  genOpts("general", "green-price-cards", fourRoomRows)
+);
+assert(fourRoomGreen.ok, `4-room green should succeed: ${(fourRoomGreen.errors || []).join("; ")}`);
+assert(/data-cr101-gpc-header-mode="two-line"/i.test(fourRoomGreen.html), "4-room uses two-line header mode");
+assert(/data-cr101-gpc-room-count="4"/i.test(fourRoomGreen.html), "4 valid rooms");
+const fourHeaders = fourRoomGreen.html.match(/data-cr101-gpc-header-height="(\d+)"/g) || [];
+assert(fourHeaders.length === 4, "four equal two-line headers");
+assert(fourHeaders.every((h) => h.includes('"52"')), "two-line header height 52 on all cards");
+assert(!/data-cr101-gpc-header-mode="compact"/i.test(fourRoomGreen.html), "4-room has no compact mode");
+const fourFonts = fourRoomGreen.html.match(/cr101-gpc-room-header[\s\S]*?font-size:(\d+)px/g) || [];
+assert(fourFonts.length === 4, "four room-name font declarations");
+assert(fourFonts.every((f) => /font-size:12px/.test(f)), "4-room font size still 12px (not shrunk)");
+
+assert(/cr101-gpc-includes/i.test(threeRoomGreen.html), "green Includes class");
+assert(/cr101-gpc-other-info/i.test(threeRoomGreen.html), "green Other Info class");
+assert(
+  /cr101-gpc-includes[\s\S]*?border-radius:8px/i.test(threeRoomGreen.html),
+  "Includes uses approved 8px radius"
+);
+assert(
+  /cr101-gpc-other-info[\s\S]*?border-radius:8px/i.test(threeRoomGreen.html),
+  "Other Info uses approved 8px radius"
+);
+assert(
+  /cr101-gpc-fare[\s\S]*?border-radius:8px/i.test(threeRoomGreen.html),
+  "fare boxes still 8px radius"
+);
+assert(
+  /style="padding:12px 0 0;"[\s\S]*?cr101-gpc-includes/i.test(threeRoomGreen.html) ||
+    /padding:12px 0 0;[\s\S]{0,200}cr101-gpc-includes/i.test(threeRoomGreen.html),
+  "pricing→Includes spacing ~12px (no 28px gap)"
+);
+assert(!/padding:28px 0 0;[\s\S]{0,120}cr101-gpc-includes/i.test(threeRoomGreen.html), "no classic 28px gap under green pricing");
+assert(
+  /style="padding:8px 0 0;"[\s\S]{0,200}cr101-gpc-other-info/i.test(threeRoomGreen.html) ||
+    /padding:8px 0 0;[\s\S]{0,200}cr101-gpc-other-info/i.test(threeRoomGreen.html),
+  "Includes→Other Info spacing ~8px"
+);
+assert(/padding:15px 12px 0/i.test(threeRoomGreen.html), "Other Info→Disclaimer ~14–16px");
+assert(/background-color:#f4faf7/i.test(threeRoomGreen.html), "Includes keeps pale neutral bg");
+assert(/background-color:#f7f8f8/i.test(threeRoomGreen.html), "Other Info keeps pale neutral bg");
+
 /* Templates do not mutate each other */
 assert(/cr101-pricing-table/i.test(classicAirline.html), "classic still classic after green");
 assert(!/cr101-gpc-card/i.test(classicAirline.html), "classic has no green cards");
 assert(!/cr101-pricing-table/i.test(greenAirline.html), "green has no classic pricing table");
+assert(!/cr101-gpc-includes/i.test(classicAirline.html), "classic Includes unchanged (no gpc class)");
+assert(!/cr101-gpc-other-info/i.test(classicAirline.html), "classic Other Info unchanged");
+assert(/padding:28px 0 0;/i.test(classicAirline.html), "classic Includes spacing unchanged");
+assert(!/data-cr101-gpc-header-mode=/i.test(classicAirline.html), "classic has no gpc header mode");
 
 /* CTA validation */
 const draftAllowed = Export.generateFromModel(baseModel("general"), {
@@ -328,6 +441,7 @@ const fewerRooms = Export.generateFromModel(
 );
 assert(fewerRooms.ok, "single room still valid");
 assert((fewerRooms.html.match(/class="cr101-gpc-column/g) || []).length === 1, "one green pricing column");
+assert(/data-cr101-gpc-header-mode="compact"/i.test(fewerRooms.html), "1-room uses compact header");
 
 /* % OFF suppressed below threshold */
 const lowDiscount = Export.generateFromModel(
