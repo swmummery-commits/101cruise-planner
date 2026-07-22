@@ -3,11 +3,20 @@
  *
  * Assembles Featured Cruises for one newsletter number into a multi-cruise
  * Mailchimp fragment. Reuses NewsletterPreview + NewsletterMailchimpExport.
+ *
+ * TEMPORARY — design template persistence:
+ * The selected Design Template is stored in browser localStorage keyed by
+ * newsletter number. The current schema has no per-issue record
+ * (featured_cruise_newsletter_defaults is a singleton for new-cruise defaults
+ * only; featured_cruises has no template column). Do not invent a denormalised
+ * template field on every cruise. Replace this with a newsletter_issues (or
+ * equivalent) persistence field when that table is introduced.
  */
 (function (global) {
   "use strict";
 
-  const TEMPLATE_STORAGE_KEY = "101cruise.newsletterIssue.templateByNumber";
+  /** @temporary Replace when newsletter issue rows support a template column. */
+  const TEMPLATE_STORAGE_KEY = "101cruise.newsletterIssue.templateByNumber.temporary";
 
   let issueNumber = null;
   let issueDate = "";
@@ -72,14 +81,26 @@
   }
 
   function loadTemplateMap() {
+    // TEMPORARY: browser-only until a newsletter_issues table (or similar) exists.
     try {
-      return JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY) || "{}") || {};
+      const primary = JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY) || "{}") || {};
+      // Migrate once from the pre-marked temporary key if present.
+      const legacyKey = "101cruise.newsletterIssue.templateByNumber";
+      if (!Object.keys(primary).length) {
+        const legacy = JSON.parse(localStorage.getItem(legacyKey) || "{}") || {};
+        if (Object.keys(legacy).length) {
+          localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(legacy));
+          return legacy;
+        }
+      }
+      return primary;
     } catch {
       return {};
     }
   }
 
   function saveTemplateForNumber(number, template) {
+    // TEMPORARY: browser-only until issue-level DB persistence exists.
     const map = loadTemplateMap();
     map[String(number)] = template;
     localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(map));
@@ -738,6 +759,7 @@
               <option value="classic-editorial" ${issueTemplate === "classic-editorial" ? "selected" : ""}>Classic Editorial</option>
               <option value="green-price-cards" ${issueTemplate === "green-price-cards" ? "selected" : ""}>Green Price Cards</option>
             </select>
+            <p class="admin-helper">Temporary: remembered in this browser only until newsletter issues get a database field.</p>
           </div>
           <div class="admin-field">
             <label>Status</label>
