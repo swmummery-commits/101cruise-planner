@@ -8247,6 +8247,7 @@ async function startNewFeaturedCruise() {
   draggedFeaturedPricingLocalId = null;
   featuredPricingDragFromHandle = false;
   clearMailchimpPoc();
+  window.FeaturedItineraryEditor?.initNewCruise?.();
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   try {
@@ -8285,6 +8286,8 @@ async function startNewFeaturedCruise() {
     route_map_image_url: "",
     route_map_media_id: null,
     route_map_media: null,
+    route_map_status: "missing",
+    route_map_itinerary_signature: "",
     itinerary_summary: "",
     other_information: "",
     display_order: 0,
@@ -8343,9 +8346,9 @@ async function editFeaturedCruise(id) {
     featuredFormPricing = normalizeFeaturedPricingOrder((pricing || []).map(mapPricingRowFromDb));
     if (!featuredFormPricing.length) featuredFormPricing = [blankFeaturedPricing(1)];
 
-    // The manually entered itinerary_summary is the approved source for newsletter output.
-    // featured_cruise_ports is reserved for future automatically sourced day-by-day itinerary data,
-    // including dates and arrival/departure times.
+    // Structured itinerary stops are canonical (Sprint 13D). itinerary_summary remains
+    // the compact PORTS OF CALL string for newsletter/public compatibility.
+    // featured_cruise_ports stays untouched (legacy dormant table).
     featuredItineraryFallback = "";
     let itinerarySummary = existing.itinerary_summary || "";
     if (!itinerarySummary) {
@@ -8364,6 +8367,11 @@ async function editFeaturedCruise(id) {
       fetchMediaLibraryRow(existing.hero_media_id),
       fetchMediaLibraryRow(existing.route_map_media_id)
     ]);
+
+    await window.FeaturedItineraryEditor?.loadForCruise?.({
+      ...existing,
+      itinerary_summary: itinerarySummary
+    });
 
     const nights = existing.nights != null ? Number(existing.nights) : null;
     const departure = existing.departure_date || "";
@@ -8396,11 +8404,14 @@ async function editFeaturedCruise(id) {
       route_map_image_url: existing.route_map_image_url || "",
       route_map_media_id: existing.route_map_media_id || null,
       route_map_media: routeMapMedia,
+      route_map_status: existing.route_map_status || "missing",
+      route_map_itinerary_signature: existing.route_map_itinerary_signature || "",
       itinerary_summary: itinerarySummary,
       other_information: existing.other_information || "",
       display_order: existing.display_order ?? 0,
       ...offerInclusionsFromCruise(existing, pricing || [])
     };
+    window.FeaturedItineraryEditor?.syncSummaryIntoDraft?.(featuredFormDraft);
     featuredNewsletterDefaultsBaseline = {
       newsletter_number: featuredFormDraft.newsletter_number,
       newsletter_publication_date: featuredFormDraft.newsletter_publication_date
@@ -8431,6 +8442,7 @@ function cancelFeaturedCruiseForm() {
   featuredPricingDragFromHandle = false;
   showFeaturedNewsletterPreview = false;
   clearMailchimpPoc();
+  window.FeaturedItineraryEditor?.reset?.();
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   renderAdmin();
@@ -8489,7 +8501,10 @@ function resolveFeaturedHeroPreviewUrl(draft) {
 }
 
 function featuredDestinationHints(draft = featuredFormDraft || {}) {
-  const ports = String(draft.itinerary_summary || "")
+  const fromStops = window.FeaturedCruiseItinerary?.buildPortsJoinedFromStops?.(
+    window.FeaturedItineraryEditor?.getStops?.() || []
+  );
+  const ports = String(fromStops || draft.itinerary_summary || "")
     .split("|")
     .map((p) => p.trim())
     .filter(Boolean);
@@ -8507,6 +8522,8 @@ function buildFeaturedNewsletterPreviewModel(modeOverride) {
   const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id);
   const publicSlug = String(draft.public_slug || "").trim();
   captureFeaturedPricingFromDom();
+  window.FeaturedItineraryEditor?.captureFromDom?.();
+  window.FeaturedItineraryEditor?.syncSummaryIntoDraft?.(draft);
   const resolved = resolveFeaturedCruiseImages(draft);
   const outputMode =
     modeOverride || featuredNewsletterPreviewMode || "general";
@@ -8522,6 +8539,7 @@ function buildFeaturedNewsletterPreviewModel(modeOverride) {
     cruiseLineName: line?.name || "",
     shipName: ship?.name || "",
     itinerarySummary: draft.itinerary_summary || "",
+    itineraryStops: window.FeaturedItineraryEditor?.getStops?.() || [],
     short_editorial: draft.short_editorial || "",
     full_description: draft.full_description || "",
     description: draft.short_editorial || "",
@@ -8848,7 +8866,12 @@ function captureFeaturedDraftFromDom() {
     route_map_image_url: featuredFormDraft.route_map_image_url || "",
     route_map_media_id: featuredFormDraft.route_map_media_id || null,
     route_map_media: featuredFormDraft.route_map_media || null,
-    itinerary_summary: document.getElementById("fcItinerarySummary")?.value || "",
+    route_map_status: featuredFormDraft.route_map_status || window.FeaturedItineraryEditor?.getRouteMapStatus?.() || "missing",
+    route_map_itinerary_signature:
+      featuredFormDraft.route_map_itinerary_signature ||
+      window.FeaturedItineraryEditor?.getRouteMapSignature?.() ||
+      "",
+    itinerary_summary: featuredFormDraft.itinerary_summary || "",
     other_information: document.getElementById("fcOtherInformation")?.value || "",
     display_order: document.getElementById("fcDisplayOrder")?.value || 0,
     alcohol_package: Boolean(document.getElementById("fcIncAlcohol")?.checked),
@@ -8860,6 +8883,8 @@ function captureFeaturedDraftFromDom() {
     onboard_credit: document.getElementById("fcOnboardCredit")?.value || ""
   };
   captureFeaturedPricingFromDom();
+  window.FeaturedItineraryEditor?.captureFromDom?.();
+  window.FeaturedItineraryEditor?.syncSummaryIntoDraft?.(featuredFormDraft);
 }
 
 function addFeaturedPricingRow() {
@@ -9051,6 +9076,8 @@ function applyFeaturedRouteMapMediaSelection(media) {
   captureFeaturedDraftFromDom();
   featuredFormDraft.route_map_media_id = media.id;
   featuredFormDraft.route_map_media = media;
+  window.FeaturedItineraryEditor?.applyManualMapSelection?.();
+  featuredFormDraft.route_map_status = "manual";
   renderAdmin();
 }
 
@@ -9116,6 +9143,8 @@ function removeFeaturedRouteMapSelection() {
   featuredFormDraft.route_map_media_id = null;
   featuredFormDraft.route_map_media = null;
   featuredFormDraft.route_map_image_url = "";
+  window.FeaturedItineraryEditor?.clearMapSelectionStatus?.();
+  featuredFormDraft.route_map_status = "missing";
   renderAdmin();
 }
 
@@ -9175,9 +9204,11 @@ function renderFeaturedRouteMapSection(draft) {
       ? window.MediaLibraryAdmin?.findById?.(draft.route_map_media_id)
       : null);
   const legacyUrl = String(draft.route_map_image_url || "").trim();
+  const readiness = window.FeaturedItineraryEditor?.renderRouteMapReadiness?.(draft) || "";
   return `
     <section class="featured-form-section">
       <h4>Route Map</h4>
+      ${readiness}
       <div class="featured-media-source-actions">
         <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapPicker()">Choose from Media Library</button>
         <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapUpload()">Upload New Route Map</button>
@@ -9566,15 +9597,9 @@ function renderFeaturedCruiseForm() {
 
       ${renderFeaturedHeroImageSection(draft)}
 
-      ${renderFeaturedRouteMapSection(draft)}
+      ${window.FeaturedItineraryEditor?.renderSection?.() || `<section class="featured-form-section"><h4>Itinerary</h4><p class="admin-error">Structured itinerary editor failed to load.</p></section>`}
 
-      <section class="featured-form-section">
-        <h4>Itinerary</h4>
-        <p class="admin-muted">Enter the ports in sailing order, separated by a vertical bar.</p>
-        <div class="admin-field">
-          <textarea id="fcItinerarySummary" class="featured-itinerary-textarea" rows="4" placeholder="Barcelona, Spain | Palermo, Sicily, Italy | Syracuse, Sicily | Argostoli, Kephalonia | Gythion, Greece | Paros, Greece | Piraeus (Athens), Greece | Kusadasi (Ephesus), Turkey | Bozcaada, Turkey | Istanbul, Turkey">${esc(draft.itinerary_summary || "")}</textarea>
-        </div>
-      </section>
+      ${renderFeaturedRouteMapSection(draft)}
 
       <section class="featured-form-section">
         <h4>Pricing</h4>
@@ -9673,7 +9698,6 @@ async function saveFeaturedCruise() {
 
   const returnDate = addCalendarDays(departureDate, nights);
   const destinationStrip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port);
-  const itinerarySummary = String(draft.itinerary_summary || "").trim() || null;
 
   const slugRaw = String(draft.public_slug || "").trim();
   const publicSlug = slugRaw ? featuredSlugify(slugRaw) : null;
@@ -9725,60 +9749,83 @@ async function saveFeaturedCruise() {
     return;
   }
 
-  const payload = {
-    headline,
-    destination_strip: destinationStrip,
-    cruise_line_id: draft.cruise_line_id || null,
-    cruise_ship_id: draft.cruise_ship_id || null,
-    departure_date: departureDate,
-    return_date: returnDate || null,
-    nights,
-    departure_port: String(draft.departure_port || "").trim() || null,
-    arrival_port: String(draft.arrival_port || "").trim() || null,
-    short_editorial: String(draft.short_editorial || "").trim() || null,
-    full_description: String(draft.full_description || "").trim() || null,
-    use_ship_hero_image: draft.hero_media_id ? false : draft.use_ship_hero_image !== false,
-    hero_media_id: draft.hero_media_id || null,
-    // Denormalise library public URL so the public page still renders if media joins fail.
-    hero_image_url:
-      (draft.hero_media_id && (draft.hero_media?.public_url || draft.hero_media?.url)) ||
-      normalizeUrl(draft.hero_image_url) ||
-      null,
-    hero_image_alt: String(draft.hero_image_alt || "").trim() || null,
-    route_map_media_id: draft.route_map_media_id || null,
-    route_map_image_url:
-      (draft.route_map_media_id && (draft.route_map_media?.public_url || draft.route_map_media?.url)) ||
-      normalizeUrl(draft.route_map_image_url) ||
-      null,
-    itinerary_summary: itinerarySummary,
-    alcohol_package: Boolean(draft.alcohol_package),
-    wifi: Boolean(draft.wifi),
-    gratuities: Boolean(draft.gratuities),
-    all_tours: Boolean(draft.all_tours),
-    all_dining: Boolean(draft.all_dining),
-    laundry: Boolean(draft.laundry),
-    onboard_credit: onboardCredit,
-    other_information: String(draft.other_information || "").trim() || null,
-    newsletter_number: newsletterNumber,
-    newsletter_publication_date: draft.newsletter_publication_date || null,
-    publication_status: draft.publication_status || "draft",
-    display_order: Number(draft.display_order || 0) || 0,
-    create_public_page: Boolean(draft.create_public_page),
-    public_slug: publicSlug,
-    updated_by: currentUser?.id || null
-  };
-
-  const newsletterChanged =
-    String(featuredNewsletterDefaultsBaseline.newsletter_number ?? "") !== String(newsletterNumber ?? "") ||
-    String(featuredNewsletterDefaultsBaseline.newsletter_publication_date || "") !==
-      String(draft.newsletter_publication_date || "");
-
   featuredCruiseSaving = true;
   featuredCruiseMessage = "Saving…";
   featuredCruiseMessageTone = "running";
   renderAdmin();
 
   try {
+    // Resolve port matches / create provisional ports before writing the cruise row.
+    const prepared = await window.FeaturedItineraryEditor?.prepareStopsForSave?.({
+      featuredCruiseId: editingFeaturedCruiseId || null,
+      confirmCreateNew: true
+    });
+    if (prepared && !prepared.ok) {
+      featuredCruiseMessage = (prepared.errors || ["Resolve itinerary port matches before saving."]).join(" ");
+      featuredCruiseMessageTone = "error";
+      featuredCruiseSaving = false;
+      renderAdmin();
+      return;
+    }
+
+    const mapFields =
+      window.FeaturedItineraryEditor?.computeMapFields?.(draft) || {
+        itinerary_summary: String(draft.itinerary_summary || "").trim() || null,
+        route_map_status: draft.route_map_status || "missing",
+        route_map_itinerary_signature: draft.route_map_itinerary_signature || null
+      };
+    const itinerarySummary = String(mapFields.itinerary_summary || "").trim() || null;
+
+    const payload = {
+      headline,
+      destination_strip: destinationStrip,
+      cruise_line_id: draft.cruise_line_id || null,
+      cruise_ship_id: draft.cruise_ship_id || null,
+      departure_date: departureDate,
+      return_date: returnDate || null,
+      nights,
+      departure_port: String(draft.departure_port || "").trim() || null,
+      arrival_port: String(draft.arrival_port || "").trim() || null,
+      short_editorial: String(draft.short_editorial || "").trim() || null,
+      full_description: String(draft.full_description || "").trim() || null,
+      use_ship_hero_image: draft.hero_media_id ? false : draft.use_ship_hero_image !== false,
+      hero_media_id: draft.hero_media_id || null,
+      // Denormalise library public URL so the public page still renders if media joins fail.
+      hero_image_url:
+        (draft.hero_media_id && (draft.hero_media?.public_url || draft.hero_media?.url)) ||
+        normalizeUrl(draft.hero_image_url) ||
+        null,
+      hero_image_alt: String(draft.hero_image_alt || "").trim() || null,
+      route_map_media_id: draft.route_map_media_id || null,
+      route_map_image_url:
+        (draft.route_map_media_id && (draft.route_map_media?.public_url || draft.route_map_media?.url)) ||
+        normalizeUrl(draft.route_map_image_url) ||
+        null,
+      itinerary_summary: itinerarySummary,
+      route_map_status: mapFields.route_map_status || "missing",
+      route_map_itinerary_signature: mapFields.route_map_itinerary_signature || null,
+      alcohol_package: Boolean(draft.alcohol_package),
+      wifi: Boolean(draft.wifi),
+      gratuities: Boolean(draft.gratuities),
+      all_tours: Boolean(draft.all_tours),
+      all_dining: Boolean(draft.all_dining),
+      laundry: Boolean(draft.laundry),
+      onboard_credit: onboardCredit,
+      other_information: String(draft.other_information || "").trim() || null,
+      newsletter_number: newsletterNumber,
+      newsletter_publication_date: draft.newsletter_publication_date || null,
+      publication_status: draft.publication_status || "draft",
+      display_order: Number(draft.display_order || 0) || 0,
+      create_public_page: Boolean(draft.create_public_page),
+      public_slug: publicSlug,
+      updated_by: currentUser?.id || null
+    };
+
+    const newsletterChanged =
+      String(featuredNewsletterDefaultsBaseline.newsletter_number ?? "") !== String(newsletterNumber ?? "") ||
+      String(featuredNewsletterDefaultsBaseline.newsletter_publication_date || "") !==
+        String(draft.newsletter_publication_date || "");
+
     const missingColumnMatch = (message) => {
       const match = String(message || "").match(
         /Could not find the '([^']+)' column of 'featured_cruises'/i
@@ -9789,7 +9836,7 @@ async function saveFeaturedCruise() {
     const saveCruiseRow = async (basePayload) => {
       let working = { ...basePayload };
       const stripped = [];
-      for (let attempt = 0; attempt < 8; attempt += 1) {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
         const selectCols = ["id"];
         if (working.hero_media_id !== undefined) selectCols.push("hero_media_id");
         if (working.route_map_media_id !== undefined) selectCols.push("route_map_media_id");
@@ -9851,6 +9898,33 @@ async function saveFeaturedCruise() {
     }
 
     // Do not modify featured_cruise_ports in this workflow.
+    if (window.FeaturedItineraryEditor?.persistStops) {
+      // Re-run prepare with cruise id so provisional ports get source_featured_cruise_id.
+      const preparedWithId = await window.FeaturedItineraryEditor.prepareStopsForSave({
+        featuredCruiseId: cruiseId,
+        confirmCreateNew: true
+      });
+      if (preparedWithId && !preparedWithId.ok) {
+        throw new Error(
+          `Cruise saved, but itinerary ports need confirmation: ${(preparedWithId.errors || []).join(" ")}`
+        );
+      }
+      await window.FeaturedItineraryEditor.persistStops(cruiseId);
+      // Persist derived summary/signature again if map fields changed after port creates.
+      const refreshedMap = window.FeaturedItineraryEditor.computeMapFields({
+        ...draft,
+        route_map_media_id: payload.route_map_media_id,
+        route_map_image_url: payload.route_map_image_url
+      });
+      await supabaseClient
+        .from("featured_cruises")
+        .update({
+          itinerary_summary: refreshedMap.itinerary_summary,
+          route_map_status: refreshedMap.route_map_status,
+          route_map_itinerary_signature: refreshedMap.route_map_itinerary_signature
+        })
+        .eq("id", cruiseId);
+    }
 
     const { error: deletePricingError } = await supabaseClient
       .from("featured_cruise_pricing")
@@ -9885,6 +9959,7 @@ async function saveFeaturedCruise() {
     featuredFormPricing = [];
     featuredFormDraft = null;
     featuredSlugManuallyEdited = false;
+    window.FeaturedItineraryEditor?.reset?.();
     featuredCruiseMessage = "Cruise saved.";
     featuredCruiseMessageTone = "success";
   } catch (error) {

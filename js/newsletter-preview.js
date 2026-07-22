@@ -202,6 +202,11 @@
     const cruiseLineName = input.cruiseLineName || input.cruise_line_name || "";
     const shipName = input.shipName || input.ship_name || "";
     const itinerarySummary = String(input.itinerarySummary || input.itinerary_summary || "").trim();
+    const itineraryStops = Array.isArray(input.itineraryStops)
+      ? input.itineraryStops
+      : Array.isArray(input.itinerary_stops)
+        ? input.itinerary_stops
+        : null;
     const teaser = String(input.description || input.short_editorial || "").trim();
     const fullEditorial = String(
       input.fullDescription || input.full_description || teaser || ""
@@ -220,7 +225,12 @@
       input.outputMode ||
       input.pricingOutputMode ||
       (shared()?.OUTPUT_MODE?.GENERAL || "general");
-    const ports = splitPorts(itinerarySummary);
+    let ports = splitPorts(itinerarySummary);
+    const itineraryHelper = global.FeaturedCruiseItinerary;
+    if (itineraryStops?.length && itineraryHelper?.buildPortsJoinedFromStops) {
+      const fromStops = itineraryHelper.buildPortsJoinedFromStops(itineraryStops);
+      if (fromStops) ports = splitPorts(fromStops);
+    }
 
     const inclusionSource = input.inclusions || {
       alcohol_package: input.alcohol_package,

@@ -7,7 +7,8 @@
     "dev": "netlify dev",
     "import:cruise-data:dry": "node scripts/import-base44-cruise-data.mjs --dry-run",
     "import:cruise-data": "node scripts/import-base44-cruise-data.mjs --apply",
-    "test:mailchimp-export": "node scripts/test-mailchimp-export.mjs"
+    "test:mailchimp-export": "node scripts/test-mailchimp-export.mjs",
+    "test:featured-itinerary": "node scripts/test-featured-cruise-itinerary.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.38"

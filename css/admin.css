@@ -3133,6 +3133,182 @@
   line-height: 1.45;
 }
 
+/* Sprint 13D structured itinerary */
+.fc-itin-section .fc-itin-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.fc-itin-row {
+  display: grid;
+  grid-template-columns: 28px 64px 132px minmax(140px, 1.4fr) minmax(90px, 0.8fr) 72px 72px 42px;
+  gap: 6px 8px;
+  align-items: end;
+  padding: 8px 10px;
+  border: 1px solid var(--admin-border, #e3e8e5);
+  border-radius: 8px;
+  background: #fbfcfb;
+}
+
+.fc-itin-row .fc-itin-flags,
+.fc-itin-row .fc-itin-row-actions,
+.fc-itin-row .fc-itin-notes {
+  grid-column: 1 / -1;
+}
+
+.fc-itin-row label {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.fc-itin-row label span {
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.fc-itin-row input,
+.fc-itin-row select {
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+  padding: 6px 7px;
+}
+
+.fc-itin-handle {
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  font-size: 14px;
+  line-height: 1;
+  padding: 8px 0 6px;
+  color: #6b7280;
+}
+
+.fc-itin-row.is-dragging {
+  opacity: 0.55;
+  border-color: #8DD9BF;
+}
+
+.fc-itin-port-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.fc-itin-port-wrap.is-disabled {
+  opacity: 0.55;
+}
+
+.fc-itin-ac {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  background: #fff;
+  border: 1px solid var(--admin-border, #e3e8e5);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(16, 24, 40, 0.08);
+  max-height: 220px;
+  overflow: auto;
+}
+
+.fc-itin-ac-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.fc-itin-ac-item:hover {
+  background: #f3faf7;
+}
+
+.fc-itin-ac-meta {
+  color: #6b7280;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.fc-itin-ac-empty {
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.fc-itin-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.fc-itin-flag {
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #eef2f0;
+  color: #374151;
+}
+
+.fc-itin-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fc-itin-status-summary,
+.fc-itin-map-readiness,
+.fc-itin-needs-structuring,
+.fc-itin-match-prompt {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f4f7f5;
+  border: 1px solid #e3e8e5;
+}
+
+.fc-itin-status-summary h5 {
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.fc-itin-status-summary ul,
+.fc-itin-map-readiness ul,
+.fc-itin-match-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.fc-itin-map-stale {
+  color: #92400e;
+  margin: 8px 0 0;
+}
+
+.fc-itin-overnight {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: end;
+  gap: 4px !important;
+}
+
+@media (max-width: 1100px) {
+  .fc-itin-row {
+    grid-template-columns: 28px 64px 1fr 1fr;
+  }
+}
+
 .featured-span-2 {
   grid-column: 1 / -1;
 }
