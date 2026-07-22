@@ -2,6 +2,8 @@ const SUPABASE_URL = "https://xikbibxyinttllxamgao.supabase.co";
 const SUPABASE_KEY = "sb_publishable_MEFg6spz5_Uod7sZGU8whw_UvOQDW60";
 
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Expose for Newsletter Issue Composer and other classic-script modules (let/const are not on window).
+window.supabaseClient = supabaseClient;
 const app = document.getElementById("cruise-admin-app");
 
 let currentUser = null;
@@ -8091,6 +8093,7 @@ async function loadFeaturedCruises() {
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   featuredCruises = data || [];
+  window.featuredCruises = featuredCruises;
   if (window.NewsletterIssueComposer?.onCruisesReloaded) {
     window.NewsletterIssueComposer.onCruisesReloaded();
   }
@@ -8133,6 +8136,7 @@ async function loadFeaturedNewsletterDefaults() {
     newsletter_number: data?.newsletter_number ?? null,
     newsletter_publication_date: data?.newsletter_publication_date || null
   };
+  window.featuredNewsletterDefaults = featuredNewsletterDefaults;
 }
 
 function blankFeaturedPricing(displayOrder = 1) {
@@ -9291,8 +9295,30 @@ async function saveFeaturedRoomTypeFromRow(index) {
 function renderFeaturedCruisesPanel() {
   if (showFeaturedCruiseForm) return renderFeaturedCruiseForm();
 
+  // Keep composer modules in sync with admin.js let/const state.
+  window.featuredCruises = featuredCruises;
+  window.featuredNewsletterDefaults = featuredNewsletterDefaults;
+  window.ciCruiseLines = ciCruiseLines;
+  window.ciCruiseShips = ciCruiseShips;
+  window.featuredCruiseLoading = featuredCruiseLoading;
+  window.featuredCruiseMessage = featuredCruiseMessage;
+  window.featuredCruiseMessageTone = featuredCruiseMessageTone;
+  window.supabaseClient = supabaseClient;
+
   if (window.NewsletterIssueComposer?.render) {
-    return window.NewsletterIssueComposer.render();
+    const composerHtml = window.NewsletterIssueComposer.render();
+    const loadNote = featuredCruiseLoading
+      ? `<p class="admin-muted">Loading newsletter cruises…</p>`
+      : featuredCruiseMessage
+        ? `<div class="admin-message ${
+            featuredCruiseMessageTone === "error"
+              ? "admin-error"
+              : featuredCruiseMessageTone === "success"
+                ? "admin-success"
+                : ""
+          }">${esc(featuredCruiseMessage)}</div>`
+        : "";
+    return `${loadNote}${composerHtml}`;
   }
 
   return `

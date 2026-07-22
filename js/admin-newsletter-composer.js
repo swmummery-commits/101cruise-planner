@@ -62,10 +62,20 @@
   }
 
   function getDefaults() {
-    return global.featuredNewsletterDefaults || {
-      newsletter_number: null,
-      newsletter_publication_date: null
-    };
+    return (
+      global.featuredNewsletterDefaults || {
+        newsletter_number: null,
+        newsletter_publication_date: null
+      }
+    );
+  }
+
+  function getCruiseLines() {
+    return Array.isArray(global.ciCruiseLines) ? global.ciCruiseLines : [];
+  }
+
+  function getCruiseShips() {
+    return Array.isArray(global.ciCruiseShips) ? global.ciCruiseShips : [];
   }
 
   function invalidateCache() {
@@ -824,12 +834,21 @@
                         <input type="checkbox" ${checked ? "checked" : ""} onchange="NewsletterIssueComposer.toggleAddPicker('${esc(row.id)}', this.checked)">
                         <span>
                           <strong>${esc(row.headline || "Untitled")}</strong>
-                          <span class="admin-muted">${esc(row.ci_cruise_lines?.name || "—")} · ${esc(formatDate(row.departure_date))}</span>
+                          <span class="admin-muted">${esc(row.ci_cruise_lines?.name || "—")} · ${esc(formatDate(row.departure_date))}${
+                            row.newsletter_number != null && row.newsletter_number !== ""
+                              ? ` · currently Newsletter ${esc(String(row.newsletter_number))}`
+                              : ""
+                          }</span>
                         </span>
                       </label>`;
                     })
                     .join("")
-                : `<p class="admin-muted">No other cruises available to add.</p>`
+                : `<p class="admin-muted">${
+                    getCruises().length
+                      ? "Every existing cruise is already in this newsletter (or archived)."
+                      : "No Featured Cruises were found in the database. Use + New Cruise to create one, or check that cruises were saved under Newsletter."
+                  }</p>
+                  <p class="admin-helper">Loaded cruises: ${esc(String(getCruises().length))} · In this issue: ${esc(String(cruisesForCurrentIssue().length))} · Available to add: 0</p>`
             }
           </div>
           <div class="admin-actions-row">
