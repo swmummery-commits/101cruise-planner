@@ -368,6 +368,20 @@
     `;
   }
 
+  /**
+   * Public ship facts: never render raw booleans as "true"/"false".
+   * Available → "Yes"; unavailable / false → omit (null).
+   */
+  function formatShipFactDisplay(value) {
+    if (value == null) return null;
+    if (typeof value === "boolean") return value ? "Yes" : null;
+    const raw = String(value).trim();
+    if (!raw) return null;
+    if (/^(true|yes)$/i.test(raw)) return "Yes";
+    if (/^(false|no)$/i.test(raw)) return null;
+    return raw;
+  }
+
   function inclusionIconSvg(key) {
     const common =
       'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
@@ -543,8 +557,9 @@
       }
       case SECTION_IDS.INCLUDED: {
         if (!model.inclusionItems?.length) return "";
+        const count = model.inclusionItems.length;
         return `
-          <div class="nl-includes-bar">
+          <div class="nl-includes-bar" data-count="${count}" style="--nl-include-cols: ${count}">
             <div class="nl-includes-label">INCLUDES:</div>
             <ul class="nl-includes-items">
               ${model.inclusionItems
@@ -589,10 +604,25 @@
           ["Decks", facts?.decks],
           ["Restaurants", facts?.restaurants],
           ["Pools", facts?.pools],
-          ["Spa", facts?.spa]
-        ].filter(([, v]) => v != null && String(v).trim() !== "");
+          ["Spa", facts?.spa],
+          ["Casino", facts?.casino],
+          ["Kids Club", facts?.kids_club]
+        ]
+          .map(([label, value]) => [label, formatShipFactDisplay(value)])
+          .filter(([, v]) => v != null);
         const image = ship?.image?.url
           ? `<div class="nl-research-image"><img src="${esc(ship.image.url)}" alt="${esc(ship.image.alt_text || name)}" loading="lazy"></div>`
+          : "";
+        // Public /ship/{slug} pages are not live yet. canonical_slug is research metadata only —
+        // do not invent a guide URL or show "Coming Soon" on the customer page.
+        const guideHref = String(ship?.guide_url || ship?.guideHref || "").trim();
+        const guideLabel = ship?.entity_name
+          ? `Explore ${ship.entity_name}`
+          : model.shipName
+            ? `Explore ${model.shipName}`
+            : "View ship guide";
+        const guideLink = guideHref
+          ? `<p class="nl-research-guide-link"><a class="nl-ship-guide-cta" href="${esc(guideHref)}">${esc(guideLabel.toUpperCase())}</a></p>`
           : "";
         return `
           <section class="nl-research-teaser nl-research-ship">
@@ -619,7 +649,7 @@
                 : ""
             }
             ${ship?.pauls_tip ? `<p class="nl-research-tip"><strong>Paul's tip:</strong> ${esc(ship.pauls_tip)}</p>` : ""}
-            <p class="nl-research-future-link admin-muted">Ship guide coming soon</p>
+            ${guideLink}
           </section>
         `;
       }

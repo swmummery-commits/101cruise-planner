@@ -26,7 +26,9 @@ function shipFactsFromRow(ship) {
     decks: ship.deck_count ?? null,
     restaurants: facilityValue(facilities, ["restaurants", "restaurant_count"]),
     pools: facilityValue(facilities, ["pools", "pool_count"]),
-    spa: facilityValue(facilities, ["spa", "has_spa"])
+    spa: facilityValue(facilities, ["spa", "has_spa"]),
+    casino: facilityValue(facilities, ["casino", "has_casino"]),
+    kids_club: facilityValue(facilities, ["kids_club", "kids", "childrens_club", "has_kids_club"])
   };
   const hasAny = Object.values(facts).some((v) => v != null && v !== "");
   return hasAny ? facts : null;

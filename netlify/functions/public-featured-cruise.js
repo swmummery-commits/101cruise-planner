@@ -203,10 +203,11 @@ async function loadFallbackMediaLibrary(cruise) {
 /**
  * Proven query shape from Sprint 10B, plus optional media columns.
  *
- * route_map_image_url is optional: production may have route_map_media_id
- * (media library) without the older denormalised URL column. Selecting a
- * missing column would fail the whole query and drop into foundation
- * fallbacks that omit route_map_media_id — losing the attached map.
+ * route_map_image_url is optional: some production databases may not yet have
+ * that denormalised column. The canonical route-map source is route_map_media_id
+ * (Media Library). Selecting a missing route_map_image_url fails the whole
+ * query and drops into foundation fallbacks that omit route_map_media_id,
+ * which loses the attached map on the public page.
  */
 function cruiseSelect({ includeMediaIds = false, includeRouteMapImageUrl = false } = {}) {
   return [
