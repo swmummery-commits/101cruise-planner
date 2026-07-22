@@ -231,17 +231,6 @@
       errors.push("Set a Public Slug so Explore More can open the live cruise page.");
     }
 
-    const publicationStatus = String(
-      options.publicationStatus || model.publicationStatus || model.publication_status || ""
-    )
-      .trim()
-      .toLowerCase();
-    if (publicationStatus !== "published") {
-      errors.push(
-        "Publish this cruise (Publication Status = Published) before exporting, so Explore More opens the live cruise page."
-      );
-    }
-
     const cta = buildExploreMoreUrl(model, { ...options, publicSlug: slug || options.publicSlug });
     if (!cta) {
       errors.push(
@@ -860,8 +849,7 @@ ${styleBlock}
         outputMode,
         templateKey,
         pricingRows: payload.pricingRows,
-        // Soft preview may render draft cruises; export still requires published.
-        publicationStatus: soft ? "published" : payload.publicationStatus,
+        publicationStatus: payload.publicationStatus,
         publicSlug: payload.publicSlug || payload.model?.publicSlug
       });
       if (!result.ok) {

@@ -283,9 +283,6 @@
       if (!map) warnings.push(`${name}: missing route map`);
       if (!hasPrice) warnings.push(`${name}: missing pricing`);
       if (!String(cruise.public_slug || "").trim()) warnings.push(`${name}: missing public slug`);
-      if ((cruise.publication_status || "draft") !== "published") {
-        warnings.push(`${name}: not published`);
-      }
     }
     return warnings;
   }
@@ -998,7 +995,7 @@
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('airline_staff','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download Airline HTML</button>
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('general','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download General HTML</button>
           </div>
-          <p class="admin-helper">Export includes every cruise in this issue, in list order, using the selected design template. Cruises must be published with public slugs, hero, map and pricing.</p>
+          <p class="admin-helper">Export includes every cruise in this issue, in list order, using the selected design template. Cruises need a public slug, hero, map and pricing. Publication status is only required if you want the Explore More link to open a live public cruise page.</p>
         </section>
 
         ${

@@ -254,12 +254,15 @@ assert(!/cr101-gpc-card/i.test(classicAirline.html), "classic has no green cards
 assert(!/cr101-pricing-table/i.test(greenAirline.html), "green has no classic pricing table");
 
 /* CTA validation */
-const draftBlocked = Export.generateFromModel(baseModel("general"), {
+const draftAllowed = Export.generateFromModel(baseModel("general"), {
   ...genOpts("general", "classic-editorial"),
   publicationStatus: "draft"
 });
-assert(!draftBlocked.ok, "draft publication blocks export");
-assert(draftBlocked.errors.some((e) => /Publish/i.test(e)), "publish validation message");
+assert(draftAllowed.ok, `draft status should not block export: ${(draftAllowed.errors || []).join("; ")}`);
+assert(
+  draftAllowed.html.includes('href="https://www.101cruise.com.au/cruise/pacific-escape"'),
+  "draft still gets Explore More URL from slug"
+);
 
 const noSlug = Export.generateFromModel(
   { ...baseModel("general"), publicSlug: "", landingPageUrl: "" },
@@ -441,6 +444,22 @@ const issueBlocked = Export.composeIssueHtml(
     cruiseA,
     {
       ...cruiseB,
+      model: { ...baseModel("airline_staff", { publicSlug: "bangkok-singapore" }), heroImageUrl: "" }
+    }
+  ],
+  {
+    outputMode: "airline_staff",
+    templateKey: "green-price-cards",
+    newsletterNumber: 77,
+    softValidation: false
+  }
+);
+assert(!issueBlocked.ok, "hard export blocks cruise missing required assets");
+
+const issueDraftOk = Export.composeIssueHtml(
+  [
+    {
+      ...cruiseA,
       publicationStatus: "draft"
     }
   ],
@@ -451,7 +470,7 @@ const issueBlocked = Export.composeIssueHtml(
     softValidation: false
   }
 );
-assert(!issueBlocked.ok, "hard export blocks unpublished cruise in issue");
+assert(issueDraftOk.ok, "hard export allows draft publication status when assets are valid");
 
 const emptyIssue = Export.composeIssueHtml([], {
   outputMode: "general",
