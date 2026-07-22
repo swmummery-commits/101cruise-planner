@@ -161,7 +161,8 @@
     if (input.landingPageUrl) return String(input.landingPageUrl).trim();
     const slug = slugifyPublicSlug(input.publicSlug || input.public_slug || "");
     if (!slug) return "";
-    return `/cruise/${slug}`;
+    // Production Squarespace host page uses query-string slug (not /cruise/{slug}).
+    return `/cruise?slug=${encodeURIComponent(slug)}`;
   }
 
   function shared() {

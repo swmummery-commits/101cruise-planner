@@ -67,12 +67,12 @@ assert(!Export.isPublicImageUrl("https://www.101cruise.com.au/admin"), "reject a
 
 assert(
   Export.buildExploreMoreUrl({ publicSlug: "pacific-escape" }) ===
-    "https://www.101cruise.com.au/cruise/pacific-escape",
+    "https://www.101cruise.com.au/cruise?slug=pacific-escape",
   "absolute CTA from slug"
 );
 assert(
   Export.buildExploreMoreUrl({ publicSlug: "Pacific Escape!!" }) ===
-    "https://www.101cruise.com.au/cruise/pacific-escape",
+    "https://www.101cruise.com.au/cruise?slug=pacific-escape",
   "slugify CTA"
 );
 
@@ -138,7 +138,7 @@ function baseModel(outputMode, extras = {}) {
     description: "A short editorial with <b>tags</b> & ampersands.",
     descriptionParagraphs: ["A short editorial with <b>tags</b> & ampersands."],
     exploreMoreLabel: "EXPLORE MORE",
-    landingPageUrl: "/cruise/pacific-escape",
+    landingPageUrl: "/cruise?slug=pacific-escape",
     publicSlug: "pacific-escape",
     routeMapUrl: "https://example.supabase.co/storage/v1/object/public/cruise-media/map.jpg",
     routeMapAlt: "Route map",
@@ -183,7 +183,7 @@ assert(/max-width:600px/i.test(classicAirline.html), "max width 600");
 assert(/width="600"/i.test(classicAirline.html), "width attr 600");
 assert(/&lt;script&gt;/i.test(classicAirline.html), "script in headline escaped");
 assert(
-  classicAirline.html.includes('href="https://www.101cruise.com.au/cruise/pacific-escape"'),
+  classicAirline.html.includes('href="https://www.101cruise.com.au/cruise?slug=pacific-escape"'),
   "classic absolute CTA with slug"
 );
 assert(/role="presentation"/i.test(classicAirline.html), "presentation tables");
@@ -224,7 +224,7 @@ assert(!/Exclusive Save/i.test(greenAirline.html), "no Exclusive Save");
 assert(!/background-color:#e5ebe8/i.test(greenAirline.html), "no grey separator between fare boxes");
 assert(/background-color:#000000/i.test(greenAirline.html), "black Explore More");
 assert(
-  greenAirline.html.includes('href="https://www.101cruise.com.au/cruise/pacific-escape"'),
+  greenAirline.html.includes('href="https://www.101cruise.com.au/cruise?slug=pacific-escape"'),
   "green absolute CTA"
 );
 assert(/display:inline-block;padding:14px 32px/i.test(greenAirline.html), "CTA padding on anchor");
@@ -366,22 +366,36 @@ assert(!/cr101-gpc-other-info/i.test(classicAirline.html), "classic Other Info u
 assert(/padding:28px 0 0;/i.test(classicAirline.html), "classic Includes spacing unchanged");
 assert(!/data-cr101-gpc-header-mode=/i.test(classicAirline.html), "classic has no gpc header mode");
 
-/* CTA validation */
-const draftAllowed = Export.generateFromModel(baseModel("general"), {
+/* CTA / public-page validation (Sprint 13E) */
+assert(
+  Export.buildExploreMoreUrl({ publicSlug: "barcelona-istanbul" }) ===
+    "https://www.101cruise.com.au/cruise?slug=barcelona-istanbul",
+  "Explore More uses www.101cruise.com.au/cruise?slug={slug}"
+);
+
+const draftBlocked = Export.generateFromModel(baseModel("general"), {
   ...genOpts("general", "classic-editorial"),
   publicationStatus: "draft"
 });
-assert(draftAllowed.ok, `draft status should not block export: ${(draftAllowed.errors || []).join("; ")}`);
+assert(!draftBlocked.ok, "draft status blocks hard export (no dead Explore More links)");
 assert(
-  draftAllowed.html.includes('href="https://www.101cruise.com.au/cruise/pacific-escape"'),
-  "draft still gets Explore More URL from slug"
+  /Public page unavailable/i.test((draftBlocked.errors || []).join(" ")),
+  "draft export shows public page unavailable message"
 );
+
+const draftSoftPreview = Export.generateFromModel(baseModel("general"), {
+  ...genOpts("general", "classic-editorial"),
+  publicationStatus: "draft",
+  softValidation: true
+});
+assert(draftSoftPreview.ok, `soft preview may render draft: ${(draftSoftPreview.errors || []).join("; ")}`);
 
 const noSlug = Export.generateFromModel(
   { ...baseModel("general"), publicSlug: "", landingPageUrl: "" },
   { ...genOpts("general", "classic-editorial"), publicSlug: "" }
 );
 assert(!noSlug.ok, "missing slug blocks export");
+assert(/Public page unavailable/i.test((noSlug.errors || []).join(" ")), "missing slug uses public page message");
 
 const missingHero = Export.generateFromModel(
   { ...baseModel("general"), heroImageUrl: "" },
@@ -479,7 +493,7 @@ assert(!/% OFF/i.test(lowDiscount.html), "% OFF suppressed under threshold");
 /* ── Sprint 13C multi-cruise issue composition ─────────────────────────── */
 
 const cruiseA = {
-  model: baseModel("airline_staff", { publicSlug: "barcelona-istanbul", landingPageUrl: "/cruise/barcelona-istanbul" }),
+  model: baseModel("airline_staff", { publicSlug: "barcelona-istanbul", landingPageUrl: "/cruise?slug=barcelona-istanbul" }),
   pricingRows,
   publicationStatus: "published",
   publicSlug: "barcelona-istanbul",
@@ -488,7 +502,7 @@ const cruiseA = {
 const cruiseB = {
   model: baseModel("airline_staff", {
     publicSlug: "bangkok-singapore",
-    landingPageUrl: "/cruise/bangkok-singapore",
+    landingPageUrl: "/cruise?slug=bangkok-singapore",
     headline: "Bangkok to Singapore"
   }),
   pricingRows,
@@ -506,11 +520,11 @@ assert(issueAirline.ok, `issue airline should succeed: ${(issueAirline.errors ||
 assert(issueAirline.cruiseCount === 2, "issue has two cruises");
 assert(/cr101-issue-spacer/i.test(issueAirline.html), "issue spacer between cruises");
 assert(
-  issueAirline.html.includes('href="https://www.101cruise.com.au/cruise/barcelona-istanbul"'),
+  issueAirline.html.includes('href="https://www.101cruise.com.au/cruise?slug=barcelona-istanbul"'),
   "first cruise CTA"
 );
 assert(
-  issueAirline.html.includes('href="https://www.101cruise.com.au/cruise/bangkok-singapore"'),
+  issueAirline.html.includes('href="https://www.101cruise.com.au/cruise?slug=bangkok-singapore"'),
   "second cruise CTA"
 );
 assert(
@@ -570,7 +584,7 @@ const issueBlocked = Export.composeIssueHtml(
 );
 assert(!issueBlocked.ok, "hard export blocks cruise missing required assets");
 
-const issueDraftOk = Export.composeIssueHtml(
+const issueDraftBlocked = Export.composeIssueHtml(
   [
     {
       ...cruiseA,
@@ -584,7 +598,27 @@ const issueDraftOk = Export.composeIssueHtml(
     softValidation: false
   }
 );
-assert(issueDraftOk.ok, "hard export allows draft publication status when assets are valid");
+assert(!issueDraftBlocked.ok, "hard issue export blocks draft cruises");
+assert(
+  /Public page unavailable/i.test((issueDraftBlocked.errors || []).join(" ")),
+  "issue export reports public page unavailable for draft"
+);
+
+const issueDraftSoft = Export.composeIssueHtml(
+  [
+    {
+      ...cruiseA,
+      publicationStatus: "draft"
+    }
+  ],
+  {
+    outputMode: "airline_staff",
+    templateKey: "green-price-cards",
+    newsletterNumber: 77,
+    softValidation: true
+  }
+);
+assert(issueDraftSoft.ok, "soft issue preview can still render draft cruises");
 
 const emptyIssue = Export.composeIssueHtml([], {
   outputMode: "general",

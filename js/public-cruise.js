@@ -1,15 +1,22 @@
 /**
- * Public dynamic cruise page: /cruise/{public_slug}
+ * Public dynamic cruise page: /cruise/{public_slug} or /cruise?slug=
  * Loads only published, Airline-price-free payloads from the Netlify function.
+ *
+ * Production Squarespace host URL (newsletter Explore More):
+ *   https://www.101cruise.com.au/cruise?slug={public-slug}
+ * Netlify continues to support path and query slugs for the embedded renderer.
  *
  * Branded header lives in cruise/index.html (page shell only).
  * This file renders cruise content into #public-cruise-app and must not
  * inject the logo/contact header into NewsletterPreview.
+ *
+ * Sprint 13E: when embedded (Squarespace iframe), reports content height via postMessage.
  */
 (function () {
   "use strict";
 
   const HOME_URL = "https://www.101cruise.com.au";
+  const HEIGHT_MESSAGE_TYPE = "101cruise-public-cruise-height";
 
   function esc(value) {
     if (value === null || value === undefined) return "";
@@ -33,23 +40,120 @@
       .slice(0, 80);
   }
 
+  function isEmbedded() {
+    try {
+      return window.self !== window.top;
+    } catch (_err) {
+      return true;
+    }
+  }
+
+  function wantsEmbedChrome() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("embed") === "1" || isEmbedded();
+  }
+
+  function applyEmbedChrome() {
+    if (!wantsEmbedChrome()) return;
+    document.documentElement.classList.add("cr101-embed");
+    document.body.classList.add("cr101-embed");
+  }
+
+  /**
+   * Primary for Netlify: /cruise/{slug}
+   * Also: ?slug= (and Squarespace parent uses ?slug= then iframes Netlify path)
+   */
   function slugFromPath() {
     const parts = window.location.pathname.split("/").filter(Boolean);
     const cruiseIndex = parts.indexOf("cruise");
     if (cruiseIndex >= 0 && parts[cruiseIndex + 1]) {
       const raw = decodeURIComponent(parts[cruiseIndex + 1]);
-      // Ignore static file leftovers if rewrite ever surfaces them.
-      if (/^index\.html?$/i.test(raw)) return "";
-      return slugifyPublicSlug(raw);
+      if (/^index\.html?$/i.test(raw)) {
+        /* fall through to query */
+      } else {
+        const fromPath = slugifyPublicSlug(raw);
+        if (fromPath) return fromPath;
+      }
     }
     const params = new URLSearchParams(window.location.search);
     return slugifyPublicSlug(params.get("slug") || "");
   }
 
+  function measureContentHeight() {
+    const root = document.getElementById("public-cruise-app");
+    const shell = document.querySelector(".public-cruise-shell");
+    const targets = [document.documentElement, document.body, shell, root].filter(Boolean);
+    let max = 0;
+    for (const el of targets) {
+      const h = Math.max(el.scrollHeight || 0, el.offsetHeight || 0);
+      if (h > max) max = h;
+    }
+    return Math.ceil(max);
+  }
+
+  let heightTimer = null;
+  function reportHeightToParent() {
+    if (!isEmbedded()) return;
+    const height = measureContentHeight();
+    if (!height || height < 40) return;
+    try {
+      window.parent.postMessage(
+        {
+          source: "101cruise-public-cruise",
+          type: HEIGHT_MESSAGE_TYPE,
+          height
+        },
+        "*"
+      );
+    } catch (_err) {
+      /* ignore */
+    }
+  }
+
+  function scheduleHeightReport() {
+    if (!isEmbedded()) return;
+    if (heightTimer) window.clearTimeout(heightTimer);
+    heightTimer = window.setTimeout(() => {
+      reportHeightToParent();
+      // Second pass after images/fonts settle
+      window.setTimeout(reportHeightToParent, 250);
+      window.setTimeout(reportHeightToParent, 900);
+    }, 40);
+  }
+
+  function startHeightObserver() {
+    if (!isEmbedded()) return;
+    window.addEventListener("message", (event) => {
+      const data = event.data || {};
+      if (data.type === "101cruise-request-height") scheduleHeightReport();
+    });
+    scheduleHeightReport();
+    window.addEventListener("load", scheduleHeightReport);
+    window.addEventListener("resize", scheduleHeightReport);
+    if (typeof ResizeObserver !== "undefined") {
+      const ro = new ResizeObserver(() => scheduleHeightReport());
+      const shell = document.querySelector(".public-cruise-shell");
+      const root = document.getElementById("public-cruise-app");
+      if (shell) ro.observe(shell);
+      if (root) ro.observe(root);
+    }
+    document.addEventListener(
+      "load",
+      (event) => {
+        if (event.target && event.target.tagName === "IMG") scheduleHeightReport();
+      },
+      true
+    );
+  }
+
   function setMetadata(cruise) {
     const title = cruise.headline ? `${cruise.headline} | 101cruise` : "101cruise";
-    const description = String(cruise.short_editorial || cruise.full_description || "").trim().slice(0, 160);
-    const canonical = `${window.location.origin}/cruise/${cruise.public_slug}`;
+    const description = String(cruise.short_editorial || cruise.full_description || "")
+      .trim()
+      .slice(0, 160);
+    const canonical = cruise.public_slug
+      ? `${HOME_URL}/cruise?slug=${encodeURIComponent(cruise.public_slug)}`
+      : HOME_URL;
 
     document.title = title;
 
@@ -116,12 +220,16 @@
         <p>This cruise is not currently available.</p>
         <p class="public-cruise-not-found-hint">${esc(hint)}</p>
         <p class="public-cruise-not-found-meta">Slug: <code>${esc(slug || "—")}</code>${detail ? ` · ${esc(detail)}` : ""}</p>
-        <p><a href="${esc(HOME_URL)}">Return to 101cruise</a></p>
+        <p><a href="${esc(HOME_URL)}" target="_top">Return to 101cruise</a></p>
       </div>
     `;
+    scheduleHeightReport();
   }
 
   async function init() {
+    applyEmbedChrome();
+    startHeightObserver();
+
     const root = document.getElementById("public-cruise-app");
     if (!root) return;
 
@@ -159,6 +267,7 @@
         shipFacts: cruise.research?.ship_facts || null
       });
       root.innerHTML = window.NewsletterPreview.renderPublicCruisePage(model, { escapeHtml: esc });
+      scheduleHeightReport();
     } catch (error) {
       console.error("public cruise page error", error);
       renderUnavailable(root, {

@@ -8776,7 +8776,7 @@ function renderFeaturedNewsletterPreviewModal() {
     ? `<div class="admin-message admin-error" style="margin:0 0 14px">Explore More will show “not currently available” until this cruise is <strong>Published</strong> and Saved. Current status: ${esc(featuredStatusLabel(draft.publication_status))}.</div>`
     : !slug
       ? `<div class="admin-message admin-error" style="margin:0 0 14px">Set a Public Slug and Save before Explore More can open the public page.</div>`
-      : `<div class="admin-message admin-success" style="margin:0 0 14px">Public page: <code>/cruise/${esc(featuredSlugify(slug))}</code> — only works after Save while status is Published.</div>`;
+      : `<div class="admin-message admin-success" style="margin:0 0 14px">Public page: <code>/cruise?slug=${esc(featuredSlugify(slug))}</code> — only works after Save while status is Published.</div>`;
   return `
     <div class="newsletter-preview-overlay" onclick="if (event.target === this) closeFeaturedNewsletterPreview()">
       <div class="newsletter-preview-modal" role="dialog" aria-modal="true" aria-labelledby="featuredNewsletterPreviewTitle">
@@ -9528,7 +9528,7 @@ function renderFeaturedCruiseForm() {
             <span>Create public page</span>
           </label>
         </div>
-        <p class="admin-helper">Public page URL: /cruise/{public-slug}. Only Published cruises are publicly visible. Airline prices are never exposed on the public page. Assign this cruise to a newsletter number to include it in the Newsletter Issue Composer.</p>
+        <p class="admin-helper">Public page URL: /cruise?slug={public-slug} on www.101cruise.com.au. Only Published cruises are publicly visible. Airline prices are never exposed on the public page. Assign this cruise to a newsletter number to include it in the Newsletter Issue Composer.</p>
       </section>
 
       <section class="featured-form-section">

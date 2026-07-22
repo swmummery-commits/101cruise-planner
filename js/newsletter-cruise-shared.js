@@ -192,7 +192,7 @@
       `Cruise line: ${cruise?.cruise_line_name || "—"}`,
       `Ship: ${cruise?.ship_name || "—"}`,
       `Departure: ${cruise?.departure_date || "—"}`,
-      `Page: /cruise/${cruise?.public_slug || ""}`,
+      `Page: /cruise?slug=${cruise?.public_slug || ""}`,
       "",
       "Thank you."
     ].join("\n");

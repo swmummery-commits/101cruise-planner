@@ -283,6 +283,11 @@
       if (!map) warnings.push(`${name}: missing route map`);
       if (!hasPrice) warnings.push(`${name}: missing pricing`);
       if (!String(cruise.public_slug || "").trim()) warnings.push(`${name}: missing public slug`);
+      if ((cruise.publication_status || "draft") !== "published") {
+        warnings.push(
+          `${name}: Public page unavailable — set Publication Status to Published before export (Explore More must open a live page).`
+        );
+      }
     }
     return warnings;
   }
@@ -995,7 +1000,7 @@
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('airline_staff','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download Airline HTML</button>
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('general','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download General HTML</button>
           </div>
-          <p class="admin-helper">Export includes every cruise in this issue, in list order, using the selected design template. Cruises need a public slug, hero, map and pricing. Publication status is only required if you want the Explore More link to open a live public cruise page.</p>
+          <p class="admin-helper">Export includes every cruise in this issue, in list order, using the selected design template. Each cruise must be <strong>Published</strong> with a Public Slug, hero, map and pricing so Explore More opens <code>https://www.101cruise.com.au/cruise?slug={slug}</code>.</p>
         </section>
 
         ${

@@ -169,6 +169,25 @@ body {
   max-width: 500px;
 }
 
+/* Sprint 13E — tighter chrome when embedded in Squarespace iframe */
+html.cr101-embed,
+html.cr101-embed body {
+  background: #ffffff;
+}
+
+html.cr101-embed .public-cruise-shell {
+  min-height: 0;
+  padding: 8px 12px 20px;
+}
+
+html.cr101-embed .public-cruise-logo-link {
+  margin: 4px 0 20px;
+}
+
+html.cr101-embed .public-cruise-contact-nav {
+  margin-bottom: 28px;
+}
+
 @media (max-width: 640px) {
   .public-cruise-shell {
     padding: 18px 14px 48px;

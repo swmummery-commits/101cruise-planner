@@ -1,0 +1,148 @@
+<!--
+  Sprint 13E — Squarespace /cruise page Code Block
+  =================================================
+  Production public URL format (Squarespace-native):
+
+    https://www.101cruise.com.au/cruise?slug={public-slug}
+
+  No Squarespace URL Mapping is required.
+  Do not use path redirects such as /cruise/{slug} → /cruise?slug=…
+  (Squarespace URL Mappings are redirects, not silent rewrites, and the
+  previously proposed /cruise/* syntax is invalid.)
+
+  SETUP
+  1. Squarespace → Pages → /cruise → add a Code Block (full width).
+  2. Paste EVERYTHING below this comment (from <style> through </script>).
+  3. Publish the page.
+
+  Behaviour
+  - Reads slug from the parent page query string (?slug=)
+  - Also accepts a path slug if present (legacy / defensive only)
+  - Embeds the existing Netlify renderer:
+      https://admirable-tiramisu-d4da8a.netlify.app/cruise/{slug}?embed=1
+  - Auto-resizes iframe height via postMessage (no nested scrollbars)
+-->
+
+<style>
+  #cr101-cruise-embed-wrap {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0;
+  }
+  #cr101-cruise-embed-frame {
+    display: block;
+    width: 100%;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    overflow: hidden;
+    min-height: 320px;
+  }
+  #cr101-cruise-embed-msg {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #111111;
+    text-align: center;
+    padding: 32px 16px;
+  }
+</style>
+
+<div id="cr101-cruise-embed-wrap">
+  <div id="cr101-cruise-embed-msg">Loading cruise…</div>
+  <iframe
+    id="cr101-cruise-embed-frame"
+    title="101cruise cruise details"
+    loading="lazy"
+    scrolling="no"
+    allowfullscreen
+    style="display:none;height:320px;"
+  ></iframe>
+</div>
+
+<script>
+(function () {
+  var NETLIFY_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
+  var HEIGHT_TYPE = "101cruise-public-cruise-height";
+  var wrap = document.getElementById("cr101-cruise-embed-wrap");
+  var frame = document.getElementById("cr101-cruise-embed-frame");
+  var msg = document.getElementById("cr101-cruise-embed-msg");
+  if (!wrap || !frame || !msg) return;
+
+  function slugify(value) {
+    return String(value || "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  }
+
+  function readSlug() {
+    // Production: query string on Squarespace /cruise?slug=
+    var params = new URLSearchParams(window.location.search || "");
+    var fromQuery = slugify(params.get("slug") || "");
+    if (fromQuery) return fromQuery;
+
+    // Defensive only — production newsletters do not use path URLs.
+    var parts = String(window.location.pathname || "")
+      .split("/")
+      .filter(Boolean);
+    var idx = parts.indexOf("cruise");
+    if (idx >= 0 && parts[idx + 1]) {
+      var candidate = slugify(decodeURIComponent(parts[idx + 1]));
+      if (candidate && candidate !== "index.html" && candidate !== "index.htm") {
+        return candidate;
+      }
+    }
+    return "";
+  }
+
+  function showMessage(text) {
+    msg.style.display = "block";
+    msg.textContent = text;
+    frame.style.display = "none";
+  }
+
+  function setFrameHeight(px) {
+    var height = Math.max(280, Math.ceil(Number(px) || 0));
+    frame.style.height = height + "px";
+  }
+
+  window.addEventListener("message", function (event) {
+    if (!event || event.origin !== NETLIFY_ORIGIN) return;
+    var data = event.data || {};
+    if (data.type !== HEIGHT_TYPE && !(data.source === "101cruise-public-cruise" && data.type === HEIGHT_TYPE)) {
+      return;
+    }
+    if (data.height) setFrameHeight(data.height);
+  });
+
+  var slug = readSlug();
+  if (!slug) {
+    showMessage("This cruise is not currently available.");
+    return;
+  }
+
+  var src = NETLIFY_ORIGIN + "/cruise/" + encodeURIComponent(slug) + "?embed=1";
+  frame.src = src;
+  frame.style.display = "block";
+  msg.style.display = "none";
+
+  frame.addEventListener("load", function () {
+    try {
+      frame.contentWindow.postMessage(
+        { source: "101cruise-squarespace-embed", type: "101cruise-request-height" },
+        NETLIFY_ORIGIN
+      );
+    } catch (err) {
+      /* ignore */
+    }
+  });
+})();
+</script>

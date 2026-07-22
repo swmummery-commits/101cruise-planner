@@ -130,19 +130,24 @@
   }
 
   /**
-   * Canonical Explore More URL for the dynamic public cruise page.
-   * Always https://www.101cruise.com.au/cruise/{slug}
+   * Canonical Explore More URL for the live Squarespace /cruise page.
+   * Production format (Squarespace-native): https://www.101cruise.com.au/cruise?slug={slug}
+   * Path form is not used for newsletter CTAs — Squarespace cannot silently rewrite /cruise/{slug}.
    */
   function buildExploreMoreUrl(model, options = {}) {
     const origin = String(options.siteOrigin || SITE_ORIGIN).replace(/\/$/, "");
     let slug = slugifyPublicSlug(model?.publicSlug || options.publicSlug || "");
     if (!slug) {
       const landing = String(model?.landingPageUrl || "").trim();
-      const match = landing.match(/\/cruise\/([a-z0-9-]+)/i);
-      if (match) slug = slugifyPublicSlug(match[1]);
+      const queryMatch = landing.match(/[?&]slug=([^&]+)/i);
+      if (queryMatch) slug = slugifyPublicSlug(decodeURIComponent(queryMatch[1]));
+      if (!slug) {
+        const pathMatch = landing.match(/\/cruise\/([a-z0-9-]+)/i);
+        if (pathMatch) slug = slugifyPublicSlug(pathMatch[1]);
+      }
     }
     if (!slug) return "";
-    return `${origin}/cruise/${slug}`;
+    return `${origin}/cruise?slug=${encodeURIComponent(slug)}`;
   }
 
   function normalizeOutputMode(mode) {
@@ -227,7 +232,21 @@
     }
 
     const slug = slugifyPublicSlug(model.publicSlug || options.publicSlug || "");
-    if (!slug) {
+    const publicationStatus = String(
+      options.publicationStatus || model.publicationStatus || model.publication_status || ""
+    )
+      .trim()
+      .toLowerCase();
+    // Soft admin previews may render drafts; hard export must not emit dead Explore More links.
+    const enforcePublicPage = !options.softValidation;
+
+    if (enforcePublicPage) {
+      if (!slug || publicationStatus !== "published") {
+        errors.push(
+          "Public page unavailable. This cruise has not been published or has no valid public slug."
+        );
+      }
+    } else if (!slug) {
       errors.push("Set a Public Slug so Explore More can open the live cruise page.");
     }
 
@@ -908,7 +927,8 @@ ${styleBlock}
         templateKey,
         pricingRows: payload.pricingRows,
         publicationStatus: payload.publicationStatus,
-        publicSlug: payload.publicSlug || payload.model?.publicSlug
+        publicSlug: payload.publicSlug || payload.model?.publicSlug,
+        softValidation: soft
       });
       if (!result.ok) {
         const detail = (result.errors || ["Could not render"]).join("; ");
