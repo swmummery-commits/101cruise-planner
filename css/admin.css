@@ -3037,9 +3037,32 @@
   gap: 2px;
 }
 
+.newsletter-issue-start {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.8fr) minmax(150px, 1fr) auto;
+  gap: 12px;
+  margin: 0 0 16px;
+  padding: 14px;
+  border: 1px solid #e7c6c3;
+  border-radius: 12px;
+  background: #fff7f6;
+  align-items: end;
+}
+
+.newsletter-issue-unassigned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.newsletter-issue-card--static {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
 @media (max-width: 900px) {
-  .newsletter-issue-composer .newsletter-issue-header {
-    grid-template-columns: 1fr 1fr;
+  .newsletter-issue-start {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -146,7 +146,17 @@
       .filter((row) => {
         if ((row.publication_status || "draft") === "archived") return false;
         if (row.newsletter_number == null || row.newsletter_number === "") return true;
+        if (issueNumber == null || issueNumber === "") return false;
         return Number(row.newsletter_number) !== num;
+      })
+      .sort((a, b) => String(a.headline || "").localeCompare(String(b.headline || ""), "en"));
+  }
+
+  function unnumberedCruises() {
+    return getCruises()
+      .filter((row) => {
+        if ((row.publication_status || "draft") === "archived") return false;
+        return row.newsletter_number == null || row.newsletter_number === "";
       })
       .sort((a, b) => String(a.headline || "").localeCompare(String(b.headline || ""), "en"));
   }
@@ -182,6 +192,54 @@
       issueDate = resolveIssueDate(issueNumber) || defaults.newsletter_publication_date || "";
       issueTemplate = templateForNumber(issueNumber);
     }
+  }
+
+  async function startIssue() {
+    const numberInput = document.getElementById("newsletterStartNumber");
+    const dateInput = document.getElementById("newsletterStartDate");
+    const rawNumber = numberInput?.value ?? "";
+    const nextNumber = Number(rawNumber);
+    if (!Number.isFinite(nextNumber) || nextNumber < 1) {
+      issueMessage = "Enter a newsletter number (for example 77) to start this issue.";
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
+    const nextDate = String(dateInput?.value || "").trim() || getDefaults().newsletter_publication_date || "";
+    issueNumber = nextNumber;
+    issueDate = nextDate;
+    issueTemplate = templateForNumber(issueNumber);
+    saveTemplateForNumber(issueNumber, issueTemplate);
+    invalidateCache();
+    issuePricingLoadedFor = "";
+
+    // Persist as newsletter defaults so New Cruise inherits this issue.
+    try {
+      if (global.supabaseClient) {
+        await global.supabaseClient.from("featured_cruise_newsletter_defaults").upsert({
+          id: 1,
+          newsletter_number: nextNumber,
+          newsletter_publication_date: nextDate || null
+        });
+        global.featuredNewsletterDefaults = {
+          newsletter_number: nextNumber,
+          newsletter_publication_date: nextDate || null
+        };
+      }
+    } catch {
+      /* defaults upsert is best-effort */
+    }
+
+    issueMessage = `Newsletter ${nextNumber} ready. Add your existing cruises below.`;
+    issueMessageTone = "success";
+    try {
+      const cruises = cruisesForCurrentIssue();
+      await ensurePricingLoaded(cruises);
+      issueWarnings = collectWarnings(cruises);
+    } catch {
+      issueWarnings = [];
+    }
+    rerender();
   }
 
   function heroThumbUrl(cruise) {
@@ -635,6 +693,114 @@
     }
   }
 
+  async function addCruiseToIssue(cruiseId) {
+    if (issueNumber == null) {
+      issueMessage = "Start a newsletter number first, then add cruises.";
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
+    try {
+      issueBusy = true;
+      const existing = cruisesForCurrentIssue();
+      const nextOrder =
+        existing.reduce((max, row) => Math.max(max, Number(row.display_order) || 0), 0) + 1;
+      const date = issueDate || getDefaults().newsletter_publication_date || null;
+      const { error } = await global.supabaseClient
+        .from("featured_cruises")
+        .update({
+          newsletter_number: Number(issueNumber),
+          newsletter_publication_date: date,
+          display_order: nextOrder
+        })
+        .eq("id", cruiseId);
+      if (error) throw new Error(error.message);
+      const local = getCruises().find((c) => c.id === cruiseId);
+      if (local) {
+        local.newsletter_number = Number(issueNumber);
+        local.newsletter_publication_date = date;
+        local.display_order = nextOrder;
+      }
+      invalidateCache();
+      issuePricingLoadedFor = "";
+      issueMessage = `Added “${local?.headline || "cruise"}” to Newsletter ${issueNumber}.`;
+      issueMessageTone = "success";
+    } catch (error) {
+      issueMessage = error.message || "Could not add cruise.";
+      issueMessageTone = "error";
+    } finally {
+      issueBusy = false;
+      rerender();
+    }
+  }
+
+  function renderUnassignedSection() {
+    const orphaned = unnumberedCruises();
+    if (!orphaned.length) return "";
+    return `
+      <section class="newsletter-issue-section">
+        <div class="admin-list-top">
+          <h4>Cruises not in a newsletter yet</h4>
+          <span class="admin-pill">${orphaned.length}</span>
+        </div>
+        <p class="admin-muted">These cruises still exist. They just do not have a newsletter number assigned, so they did not appear in an issue.</p>
+        <div class="newsletter-issue-unassigned-list">
+          ${orphaned
+            .map((cruise) => {
+              const id = esc(cruise.id);
+              const line = cruise.ci_cruise_lines?.name || "Cruise line not set";
+              const ship = cruise.ci_cruise_ships?.name || "Ship not set";
+              return `
+              <article class="newsletter-issue-card newsletter-issue-card--static">
+                <button type="button" class="newsletter-issue-card-main" onclick="editFeaturedCruise('${id}')">
+                  <span class="newsletter-issue-thumb" aria-hidden="true">
+                    ${heroThumbUrl(cruise) ? `<img src="${esc(heroThumbUrl(cruise))}" alt="">` : ""}
+                  </span>
+                  <span class="newsletter-issue-card-copy">
+                    <strong>${esc(cruise.headline || "Untitled cruise")}</strong>
+                    <span class="admin-muted">${esc(line)} · ${esc(ship)}</span>
+                    <span class="admin-small">Departure ${esc(formatDate(cruise.departure_date))}</span>
+                  </span>
+                </button>
+                <div class="admin-actions-row">
+                  <button type="button" class="admin-button secondary small" onclick="editFeaturedCruise('${id}')">Open</button>
+                  <button type="button" class="admin-button black small" onclick="NewsletterIssueComposer.addCruiseToIssue('${id}')" ${issueBusy || issueNumber == null ? "disabled" : ""}>${issueNumber == null ? "Start issue first" : "Add to this issue"}</button>
+                </div>
+              </article>`;
+            })
+            .join("")}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderStartIssuePanel() {
+    if (issueNumber != null) return "";
+    const defaults = getDefaults();
+    const suggestedNumber = defaults.newsletter_number || "";
+    const suggestedDate = defaults.newsletter_publication_date || "";
+    const orphanCount = unnumberedCruises().length;
+    return `
+      <div class="admin-message admin-error" style="margin:0 0 14px">
+        No newsletter issue is selected yet${orphanCount ? ` — but ${orphanCount} existing cruise${orphanCount === 1 ? "" : "s"} ${orphanCount === 1 ? "was" : "were"} found without a newsletter number` : ""}.
+        Enter a newsletter number below to start, then add those cruises to the issue.
+      </div>
+      <div class="newsletter-issue-start">
+        <div class="admin-field">
+          <label for="newsletterStartNumber">Start Newsletter Number</label>
+          <input id="newsletterStartNumber" type="number" min="1" step="1" value="${esc(String(suggestedNumber || ""))}" placeholder="77">
+        </div>
+        <div class="admin-field">
+          <label for="newsletterStartDate">Issue Date</label>
+          <input id="newsletterStartDate" type="date" value="${esc(suggestedDate || "")}">
+        </div>
+        <div class="admin-field" style="align-self:end">
+          <button type="button" class="admin-button black" onclick="NewsletterIssueComposer.startIssue()" ${issueBusy ? "disabled" : ""}>Start newsletter issue</button>
+        </div>
+      </div>
+    `;
+  }
+
   function renderAddPicker() {
     if (!addPickerOpen) return "";
     const rows = unassignedCruises();
@@ -736,7 +902,7 @@
         <div class="newsletter-issue-header">
           <div class="admin-field">
             <label for="newsletterIssueNumber">Newsletter Number</label>
-            <select id="newsletterIssueNumber" onchange="NewsletterIssueComposer.selectIssueNumber(this.value)" ${issueBusy ? "disabled" : ""}>
+            <select id="newsletterIssueNumber" onchange="NewsletterIssueComposer.selectIssueNumber(this.value)" ${issueBusy || !numbers.length ? "disabled" : ""}>
               ${
                 numbers.length
                   ? numbers
@@ -767,6 +933,8 @@
           </div>
         </div>
 
+        ${renderStartIssuePanel()}
+
         ${issueMessage ? `<div class="admin-message ${msgClass}">${esc(issueMessage)}</div>` : ""}
         ${
           issueWarnings.length
@@ -775,6 +943,8 @@
                 .join("")}</ul>`
             : ""
         }
+
+        ${renderUnassignedSection()}
 
         <section class="newsletter-issue-section">
           <div class="admin-list-top">
@@ -846,11 +1016,13 @@
       return { number: issueNumber, date: issueDate, template: issueTemplate };
     },
     selectIssueNumber,
+    startIssue,
     setTemplate,
     openAddPicker,
     closeAddPicker,
     toggleAddPicker,
     confirmAddPicker,
+    addCruiseToIssue,
     removeCruise,
     onDragStart,
     onDragEnd,
