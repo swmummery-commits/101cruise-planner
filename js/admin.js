@@ -128,13 +128,15 @@ let draggedFeaturedPricingLocalId = null;
 let featuredPricingDragFromHandle = false;
 let showFeaturedNewsletterPreview = false;
 let featuredNewsletterPreviewMode = "general"; // general | airline_staff
-/** Sprint 13A — Mailchimp HTML POC export panel state */
+/** Sprint 13A/13B — Mailchimp HTML POC export panel state */
+let mailchimpPocTemplate = "classic-editorial"; // classic-editorial | green-price-cards
 let mailchimpPoc = {
   html: "",
   previewHtml: "",
   label: "",
   filename: "",
   outputMode: "",
+  templateKey: "",
   errors: [],
   message: "",
   messageTone: ""
@@ -8534,10 +8536,18 @@ function clearMailchimpPoc() {
     label: "",
     filename: "",
     outputMode: "",
+    templateKey: "",
     errors: [],
     message: "",
     messageTone: ""
   };
+}
+
+function setMailchimpPocTemplate(value) {
+  captureFeaturedDraftFromDom();
+  mailchimpPocTemplate = value === "green-price-cards" ? "green-price-cards" : "classic-editorial";
+  clearMailchimpPoc();
+  if (typeof renderAdmin === "function") renderAdmin();
 }
 
 function generateMailchimpHtml(mode) {
@@ -8562,13 +8572,19 @@ function generateMailchimpHtml(mode) {
   }
 
   const outputMode = mode === "airline_staff" ? "airline_staff" : "general";
+  const templateKey =
+    mailchimpPocTemplate === "green-price-cards" ? "green-price-cards" : "classic-editorial";
   const model = buildFeaturedNewsletterPreviewModel(outputMode);
   const result = window.NewsletterMailchimpExport.generateFromModel(model, {
     outputMode,
-    pricingRows: featuredFormPricing
+    templateKey,
+    pricingRows: featuredFormPricing,
+    publicationStatus: featuredFormDraft.publication_status || "draft",
+    publicSlug: featuredFormDraft.public_slug || model.publicSlug || ""
   });
 
   mailchimpPoc.outputMode = outputMode;
+  mailchimpPoc.templateKey = templateKey;
   mailchimpPoc.label = result.label || "";
   mailchimpPoc.filename = result.filename || "";
   mailchimpPoc.errors = result.errors || [];
@@ -8623,9 +8639,14 @@ function downloadMailchimpHtml() {
   }
   const filename =
     mailchimpPoc.filename ||
-    (mailchimpPoc.outputMode === "airline_staff"
-      ? "101cruise-mailchimp-airline-poc.html"
-      : "101cruise-mailchimp-general-poc.html");
+    (window.NewsletterMailchimpExport?.filenameFor
+      ? window.NewsletterMailchimpExport.filenameFor(
+          mailchimpPoc.outputMode || "general",
+          mailchimpPoc.templateKey || mailchimpPocTemplate
+        )
+      : mailchimpPoc.outputMode === "airline_staff"
+        ? "101cruise-mailchimp-airline-classic-editorial-poc.html"
+        : "101cruise-mailchimp-general-classic-editorial-poc.html");
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -8653,10 +8674,21 @@ function renderMailchimpPocPanel() {
         .join("")}</ul>`
     : "";
   const hasHtml = Boolean(mailchimpPoc.html);
+  const templateKey =
+    mailchimpPocTemplate === "green-price-cards" ? "green-price-cards" : "classic-editorial";
   return `
     <section class="featured-form-section mailchimp-poc-section">
       <h4>Mailchimp HTML Proof of Concept</h4>
-      <p class="admin-muted">Generates only the cruise-special block for pasting into a Mailchimp <strong>Code</strong> content block. Does not create campaigns, audiences, or full newsletters. HOLD DEPLOY — local proof of concept.</p>
+      <p class="admin-muted">Generates only the cruise-special block for pasting into a Mailchimp <strong>Code</strong> content block. Does not create campaigns, audiences, or full newsletters. HOLD DEPLOY — local until approved.</p>
+      <div class="mailchimp-poc-template-row">
+        <label class="admin-field" for="mailchimpPocTemplate">
+          <span>Design Template</span>
+          <select id="mailchimpPocTemplate" aria-label="Mailchimp design template" onchange="setMailchimpPocTemplate(this.value)" ${featuredCruiseSaving ? "disabled" : ""}>
+            <option value="classic-editorial" ${templateKey === "classic-editorial" ? "selected" : ""}>Classic Editorial</option>
+            <option value="green-price-cards" ${templateKey === "green-price-cards" ? "selected" : ""}>Green Price Cards</option>
+          </select>
+        </label>
+      </div>
       <div class="admin-actions-row mailchimp-poc-actions">
         <button type="button" class="admin-button secondary" onclick="generateMailchimpHtml('airline_staff')" ${featuredCruiseSaving ? "disabled" : ""}>Generate Airline HTML</button>
         <button type="button" class="admin-button secondary" onclick="generateMailchimpHtml('general')" ${featuredCruiseSaving ? "disabled" : ""}>Generate General HTML</button>
@@ -8671,7 +8703,7 @@ function renderMailchimpPocPanel() {
              <div class="mailchimp-poc-preview" aria-label="Mailchimp HTML preview">${mailchimpPoc.previewHtml}</div>
              <label class="admin-field mailchimp-poc-code-label" for="mailchimpPocHtml">HTML fragment (read-only)</label>
              <textarea id="mailchimpPocHtml" class="mailchimp-poc-code" readonly rows="12" aria-label="Mailchimp HTML fragment">${esc(mailchimpPoc.html)}</textarea>`
-          : `<p class="admin-helper">Select the cruise special in this form, then generate Airline Staff or General HTML.</p>`
+          : `<p class="admin-helper">Choose a design template, then generate Airline Staff or General HTML from this cruise special. Cruise must be <strong>Published</strong> with a Public Slug for Explore More.</p>`
       }
     </section>
   `;

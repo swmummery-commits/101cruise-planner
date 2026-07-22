@@ -2811,6 +2811,19 @@
   margin: 10px 0 12px;
 }
 
+.mailchimp-poc-template-row {
+  margin: 10px 0 4px;
+  max-width: 320px;
+}
+
+.mailchimp-poc-template-row .admin-field {
+  margin: 0;
+}
+
+.mailchimp-poc-template-row select {
+  width: 100%;
+}
+
 .mailchimp-poc-errors {
   margin: 0 0 12px;
   padding-left: 1.2em;

@@ -1,10 +1,13 @@
 /**
- * Sprint 13A — Mailchimp Code-block HTML proof of concept.
+ * Sprint 13A/13B — Mailchimp Code-block HTML proof of concept.
  *
  * Generates an email-safe HTML *fragment* for one cruise special
- * (Airline Staff or General). Not a full newsletter document.
+ * (Airline Staff or General) using a selectable design template:
+ *   - classic-editorial  (Sprint 13A proven output — preserve)
+ *   - green-price-cards  (Sprint 13B)
  *
  * Consumes the canonical NewsletterPreview model + shared pricing rules.
+ * Not a full newsletter document. No Mailchimp API.
  */
 (function (global) {
   "use strict";
@@ -12,15 +15,27 @@
   const SITE_ORIGIN = "https://www.101cruise.com.au";
   const MAX_WIDTH = 600;
   const MAX_ROOMS = 4;
+  const BRAND_GREEN = "#8DD9BF";
 
-  const FILENAMES = {
-    airline_staff: "101cruise-mailchimp-airline-poc.html",
-    general: "101cruise-mailchimp-general-poc.html"
+  const TEMPLATES = {
+    CLASSIC_EDITORIAL: "classic-editorial",
+    GREEN_PRICE_CARDS: "green-price-cards"
+  };
+
+  const TEMPLATE_LABELS = {
+    "classic-editorial": "Classic Editorial",
+    "green-price-cards": "Green Price Cards"
   };
 
   const LABELS = {
     airline_staff: "Airline Staff — Mailchimp HTML",
     general: "General — Mailchimp HTML"
+  };
+
+  /** @deprecated Sprint 13A filenames — prefer filenameFor() */
+  const FILENAMES = {
+    airline_staff: "101cruise-mailchimp-airline-classic-editorial-poc.html",
+    general: "101cruise-mailchimp-general-classic-editorial-poc.html"
   };
 
   function shared() {
@@ -49,8 +64,24 @@
     return String(Math.round(num));
   }
 
+  function slugifyPublicSlug(value) {
+    return String(value || "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  }
+
   function isAbsoluteHttpUrl(url) {
     return /^https?:\/\//i.test(String(url || "").trim());
+  }
+
+  function isAbsoluteHttpsUrl(url) {
+    return /^https:\/\//i.test(String(url || "").trim());
   }
 
   function isLocalOrDevUrl(url) {
@@ -85,10 +116,6 @@
     return true;
   }
 
-  /**
-   * Resolve CTA / landing URLs to a stable absolute public URL.
-   * Relative /cruise/{slug} paths are prefixed with the live site origin.
-   */
   function toAbsolutePublicUrl(url, siteOrigin = SITE_ORIGIN) {
     const raw = String(url || "").trim();
     if (!raw || raw === "#") return "";
@@ -102,24 +129,55 @@
     return "";
   }
 
+  /**
+   * Canonical Explore More URL for the dynamic public cruise page.
+   * Always https://www.101cruise.com.au/cruise/{slug}
+   */
+  function buildExploreMoreUrl(model, options = {}) {
+    const origin = String(options.siteOrigin || SITE_ORIGIN).replace(/\/$/, "");
+    let slug = slugifyPublicSlug(model?.publicSlug || options.publicSlug || "");
+    if (!slug) {
+      const landing = String(model?.landingPageUrl || "").trim();
+      const match = landing.match(/\/cruise\/([a-z0-9-]+)/i);
+      if (match) slug = slugifyPublicSlug(match[1]);
+    }
+    if (!slug) return "";
+    return `${origin}/cruise/${slug}`;
+  }
+
   function normalizeOutputMode(mode) {
     const api = shared();
     const airline = api?.OUTPUT_MODE?.AIRLINE_STAFF || "airline_staff";
     return mode === airline ? airline : api?.OUTPUT_MODE?.GENERAL || "general";
   }
 
-  /**
-   * Validate a canonical newsletter model before export.
-   * Returns user-facing messages (not technical stack traces).
-   */
+  function normalizeTemplate(templateKey) {
+    const key = String(templateKey || TEMPLATES.CLASSIC_EDITORIAL).trim();
+    if (key === TEMPLATES.GREEN_PRICE_CARDS) return TEMPLATES.GREEN_PRICE_CARDS;
+    return TEMPLATES.CLASSIC_EDITORIAL;
+  }
+
+  function filenameFor(outputMode, templateKey) {
+    const audience = outputMode === "airline_staff" ? "airline" : "general";
+    const template = normalizeTemplate(templateKey);
+    return `101cruise-mailchimp-${audience}-${template}-poc.html`;
+  }
+
+  function labelFor(outputMode, templateKey) {
+    const audience = LABELS[outputMode] || LABELS.general;
+    const template = TEMPLATE_LABELS[normalizeTemplate(templateKey)] || TEMPLATE_LABELS["classic-editorial"];
+    return `${audience} · ${template}`;
+  }
+
   function validate(model, options = {}) {
     const errors = [];
     const outputMode = normalizeOutputMode(options.outputMode || model?.outputMode);
+    const templateKey = normalizeTemplate(options.templateKey || options.template);
     const includeAirline = outputMode === "airline_staff";
 
     if (!model) {
       errors.push("Select a cruise special before generating Mailchimp HTML.");
-      return { ok: false, errors, outputMode };
+      return { ok: false, errors, outputMode, templateKey };
     }
 
     if (!String(model.headline || "").trim()) {
@@ -168,16 +226,32 @@
       }
     }
 
-    const cta = toAbsolutePublicUrl(model.landingPageUrl, options.siteOrigin);
+    const slug = slugifyPublicSlug(model.publicSlug || options.publicSlug || "");
+    if (!slug) {
+      errors.push("Set a Public Slug so Explore More can open the live cruise page.");
+    }
+
+    const publicationStatus = String(
+      options.publicationStatus || model.publicationStatus || model.publication_status || ""
+    )
+      .trim()
+      .toLowerCase();
+    if (publicationStatus !== "published") {
+      errors.push(
+        "Publish this cruise (Publication Status = Published) before exporting, so Explore More opens the live cruise page."
+      );
+    }
+
+    const cta = buildExploreMoreUrl(model, { ...options, publicSlug: slug || options.publicSlug });
     if (!cta) {
       errors.push(
         "The Explore More link is missing or invalid. Set a Public Slug so the cruise page address can be built."
       );
-    } else if (!isAbsoluteHttpUrl(cta) || isLocalOrDevUrl(cta) || isAdminOrProtectedUrl(cta)) {
-      errors.push("The Explore More link must be a full public web address.");
+    } else if (!isAbsoluteHttpsUrl(cta) || isLocalOrDevUrl(cta) || isAdminOrProtectedUrl(cta)) {
+      errors.push("The Explore More link must be a full public https address.");
     }
 
-    return { ok: errors.length === 0, errors, outputMode, ctaUrl: cta };
+    return { ok: errors.length === 0, errors, outputMode, templateKey, ctaUrl: cta, publicSlug: slug };
   }
 
   function assertFragmentSafe(html, outputMode) {
@@ -191,6 +265,9 @@
     if (/\son[a-z]+\s*=/i.test(html)) errors.push("Output must not include JavaScript event attributes.");
     if (/src\s*=\s*["'](?!https?:\/\/)/i.test(html)) {
       errors.push("Every image must use an absolute http(s) address.");
+    }
+    if (/exclusive save/i.test(html)) {
+      errors.push("Output must not include Exclusive Save labels.");
     }
     if (outputMode === "general") {
       if (/airline staff price/i.test(html)) {
@@ -209,7 +286,14 @@
     return `<tr><td align="center" style="${style}">${innerHtml}</td></tr>`;
   }
 
-  function renderYouSave(display, { emphasizePercent = false } = {}) {
+  function renderImage(url, alt, widthAttr) {
+    const w = widthAttr || MAX_WIDTH;
+    return `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt || "")}" width="${w}" border="0" style="display:block;width:100%;max-width:${MAX_WIDTH}px;height:auto;border:0;">`;
+  }
+
+  /* ─── Classic Editorial (Sprint 13A — preserve) ───────────────────────── */
+
+  function renderClassicYouSave(display, { emphasizePercent = false } = {}) {
     if (!display || display.saveAmount == null) return "";
     const percent =
       emphasizePercent && display.showPercentOff && display.percentOff != null
@@ -218,7 +302,7 @@
     return `<div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;color:#111111;margin-top:6px;">YOU SAVE $${escapeHtml(money(display.saveAmount))}</div>${percent}`;
   }
 
-  function renderPricingColumn(mod, includeAirline, widthPct) {
+  function renderClassicPricingColumn(mod, includeAirline, widthPct) {
     const brochure =
       mod.brochurePrice != null
         ? `<div style="padding:4px 0 10px;">
@@ -232,7 +316,7 @@
         ? `<div style="padding:4px 0 10px;">
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.6px;color:#545454;">101CRUISE PRICE</div>
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#111111;">$${escapeHtml(money(mod.cruise101Price))}</div>
-            ${renderYouSave(mod.cruise101Display)}
+            ${renderClassicYouSave(mod.cruise101Display)}
           </div>`
         : "";
 
@@ -241,7 +325,7 @@
         ? `<div style="padding:4px 0 10px;">
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.6px;color:#545454;">AIRLINE STAFF PRICE</div>
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#111111;">$${escapeHtml(money(mod.airlinePrice))}</div>
-            ${renderYouSave(mod.airlineDisplay, { emphasizePercent: true })}
+            ${renderClassicYouSave(mod.airlineDisplay, { emphasizePercent: true })}
           </div>`
         : "";
 
@@ -262,12 +346,12 @@
     `;
   }
 
-  function renderPricingTable(modules, includeAirline) {
+  function renderClassicPricingTable(modules, includeAirline) {
     const list = (modules || []).slice(0, MAX_ROOMS);
     if (!list.length) return "";
     const widthPct = Math.floor(100 / list.length);
     const cols = list.map((mod, index) => {
-      let cell = renderPricingColumn(mod, includeAirline, widthPct);
+      let cell = renderClassicPricingColumn(mod, includeAirline, widthPct);
       if (index === list.length - 1) {
         cell = cell.replace("border-right:1px solid #e5ebe8;", "border-right:0;");
       }
@@ -287,30 +371,10 @@
     `;
   }
 
-  function renderInclusions(items) {
-    if (!items?.length) return "";
-    const labels = items.map((item) => {
-      if (typeof item === "string") return String(item).toUpperCase();
-      return item.shortLabel || String(item.label || "").toUpperCase();
-    });
-    return `
-      <tr>
-        <td align="center" style="padding:36px 0 0;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#f4faf7;">
-            <tr>
-              <td align="center" style="padding:18px 16px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#111111;">
-                INCLUDES: <span style="font-weight:400;letter-spacing:0.4px;">${escapeHtml(labels.join(" · "))}</span>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    `;
-  }
-
-  function renderCtaButton(href, label) {
+  /** Classic Editorial CTA — green button (unchanged look); padding on <a> so the full button is clickable. */
+  function renderClassicCtaButton(href, label) {
     const t = typo().exploreMore || {};
-    const bg = t.background || "#8DD9BF";
+    const bg = t.background || BRAND_GREEN;
     const color = t.color || "#111111";
     const font = t.fontFamily || "Helvetica, Arial, sans-serif";
     const size = t.fontSizePx || 13;
@@ -323,8 +387,8 @@
         <td align="center" style="padding:48px 0 0;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse;">
             <tr>
-              <td align="center" bgcolor="${bg}" style="background-color:${bg};padding:${padY}px ${padX}px;">
-                <a href="${escapeHtml(href)}" target="_blank" style="font-family:${font};font-size:${size}px;font-weight:${weight};letter-spacing:${tracking}px;text-transform:uppercase;color:${color};text-decoration:none;display:inline-block;">
+              <td align="center" bgcolor="${bg}" style="background-color:${bg};">
+                <a href="${escapeHtml(href)}" target="_blank" style="font-family:${font};font-size:${size}px;font-weight:${weight};letter-spacing:${tracking}px;text-transform:uppercase;color:${color};text-decoration:none;display:inline-block;padding:${padY}px ${padX}px;">
                   ${escapeHtml(label || "EXPLORE MORE")} →
                 </a>
               </td>
@@ -335,9 +399,219 @@
     `;
   }
 
-  function renderImage(url, alt, widthAttr) {
-    const w = widthAttr || MAX_WIDTH;
-    return `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt || "")}" width="${w}" border="0" style="display:block;width:100%;max-width:${MAX_WIDTH}px;height:auto;border:0;">`;
+  /* ─── Green Price Cards (Sprint 13B) ──────────────────────────────────── */
+
+  function renderGreenFareBox({ label, price, saveAmount, percentOff }) {
+    const saveLine =
+      saveAmount != null
+        ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.4px;color:#FFFFFF;margin-top:4px;line-height:1.25;">YOU SAVE $${escapeHtml(money(saveAmount))}</div>`
+        : "";
+    const percentLine =
+      percentOff != null
+        ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:0.5px;color:#FFFFFF;margin-top:6px;line-height:1.2;">${escapeHtml(percentOff)}% OFF</div>`
+        : "";
+    return `
+      <table role="presentation" class="cr101-gpc-fare" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:8px;background-color:${BRAND_GREEN};">
+        <tr>
+          <td align="center" bgcolor="${BRAND_GREEN}" style="background-color:${BRAND_GREEN};border-radius:8px;padding:10px 8px;text-align:center;">
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;color:#FFFFFF;line-height:1.2;">${escapeHtml(label)}</div>
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#FFFFFF;line-height:1.15;margin-top:4px;">$${escapeHtml(money(price))}</div>
+            ${saveLine}
+            ${percentLine}
+          </td>
+        </tr>
+      </table>
+    `;
+  }
+
+  function renderGreenPricingCard(mod, includeAirline) {
+    const brochure =
+      mod.brochurePrice != null
+        ? `<div style="padding:2px 0 8px;text-align:center;">
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;letter-spacing:0.5px;color:#6b7280;text-transform:uppercase;">BROCHURE PRICE</div>
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:400;color:#9ca3af;text-decoration:line-through;line-height:1.25;">$${escapeHtml(money(mod.brochurePrice))}</div>
+          </div>`
+        : "";
+
+    const cruise101 =
+      mod.cruise101Price != null
+        ? renderGreenFareBox({
+            label: "101CRUISE PRICE",
+            price: mod.cruise101Price,
+            saveAmount: mod.cruise101Display?.saveAmount ?? null,
+            percentOff: null
+          })
+        : "";
+
+    const airlinePercent =
+      includeAirline &&
+      mod.airlineDisplay &&
+      mod.airlineDisplay.showPercentOff &&
+      mod.airlineDisplay.percentOff != null
+        ? mod.airlineDisplay.percentOff
+        : null;
+
+    const airline =
+      includeAirline && mod.airlinePrice != null
+        ? renderGreenFareBox({
+            label: "AIRLINE STAFF PRICE",
+            price: mod.airlinePrice,
+            saveAmount: mod.airlineDisplay?.saveAmount ?? null,
+            percentOff: airlinePercent
+          })
+        : "";
+
+    const fareSpacer =
+      cruise101 && airline
+        ? `<tr><td height="6" style="height:6px;line-height:6px;font-size:0;mso-line-height-rule:exactly;">&nbsp;</td></tr>`
+        : "";
+
+    return `
+      <table role="presentation" class="cr101-gpc-card" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border:1px solid #e5e7eb;border-radius:10px;background-color:#FFFFFF;">
+        <tr>
+          <td class="cr101-gpc-room-header" align="center" valign="middle" bgcolor="${BRAND_GREEN}" style="background-color:${BRAND_GREEN};border-radius:9px 9px 0 0;padding:11px 8px;text-align:center;vertical-align:middle;">
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:#FFFFFF;text-align:center;line-height:1.25;">${escapeHtml(mod.roomLabel)}</div>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:10px 10px 4px;background-color:#FFFFFF;">
+            ${brochure}
+          </td>
+        </tr>
+        ${
+          cruise101
+            ? `<tr>
+          <td align="center" style="padding:0 10px ${airline ? "0" : "10px"};background-color:#FFFFFF;">
+            ${cruise101}
+          </td>
+        </tr>`
+            : ""
+        }
+        ${fareSpacer}
+        ${
+          airline
+            ? `<tr>
+          <td align="center" style="padding:0 10px 10px;background-color:#FFFFFF;">
+            ${airline}
+          </td>
+        </tr>`
+            : ""
+        }
+      </table>
+    `;
+  }
+
+  function renderGreenPricingTable(modules, includeAirline) {
+    const list = (modules || []).slice(0, MAX_ROOMS);
+    if (!list.length) return "";
+    const widthPct = Math.floor(100 / list.length);
+    const gapPad = list.length > 1 ? 4 : 0;
+    const cols = list
+      .map(
+        (mod) => `
+      <td class="cr101-gpc-column cr101-mobile-stack" width="${widthPct}%" valign="top" align="center" style="width:${widthPct}%;padding:0 ${gapPad}px;vertical-align:top;">
+        ${renderGreenPricingCard(mod, includeAirline)}
+      </td>`
+      )
+      .join("");
+
+    return `
+      <tr>
+        <td align="center" style="padding:32px 0 0;">
+          <table role="presentation" class="cr101-gpc-pricing-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;">
+            <tr>
+              ${cols}
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  }
+
+  /** Green Price Cards CTA — solid black, white text, rectangular, obviously clickable. */
+  function renderGreenCtaButton(href, label) {
+    return `
+      <tr>
+        <td align="center" style="padding:40px 0 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse;">
+            <tr>
+              <td align="center" bgcolor="#000000" style="background-color:#000000;border-radius:2px;">
+                <a href="${escapeHtml(href)}" target="_blank" style="font-family:Helvetica,Arial,sans-serif;font-size:13px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;display:inline-block;padding:14px 32px;">
+                  ${escapeHtml(label || "EXPLORE MORE")} →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  }
+
+  /* ─── Shared sections ─────────────────────────────────────────────────── */
+
+  function renderInclusions(items) {
+    if (!items?.length) return "";
+    const labels = items.map((item) => {
+      if (typeof item === "string") return String(item).toUpperCase();
+      return item.shortLabel || String(item.label || "").toUpperCase();
+    });
+    return `
+      <tr>
+        <td align="center" style="padding:28px 0 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#f4faf7;">
+            <tr>
+              <td align="center" style="padding:14px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#111111;">
+                INCLUDES: <span style="font-weight:400;letter-spacing:0.4px;">${escapeHtml(labels.join(" · "))}</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  }
+
+  function classicStyleBlock() {
+    return `
+<style type="text/css">
+  @media only screen and (max-width: 620px) {
+    .cr101-pricing-column,
+    .cr101-mobile-stack {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      border-right: 0 !important;
+      border-bottom: 1px solid #e5ebe8 !important;
+    }
+    .cr101-wrapper {
+      width: 100% !important;
+    }
+  }
+</style>
+`.trim();
+  }
+
+  function greenStyleBlock() {
+    return `
+<style type="text/css">
+  @media only screen and (max-width: 620px) {
+    .cr101-gpc-column,
+    .cr101-mobile-stack {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      padding-bottom: 10px !important;
+    }
+    .cr101-gpc-card {
+      width: 100% !important;
+    }
+    .cr101-wrapper {
+      width: 100% !important;
+    }
+  }
+</style>
+`.trim();
   }
 
   /**
@@ -345,16 +619,19 @@
    */
   function renderFragment(model, options = {}) {
     const validation = validate(model, options);
+    const templateKey = validation.templateKey || normalizeTemplate(options.templateKey);
+    const failMeta = {
+      ok: false,
+      html: "",
+      previewHtml: "",
+      filename: filenameFor(validation.outputMode || "general", templateKey),
+      label: labelFor(validation.outputMode || "general", templateKey),
+      outputMode: validation.outputMode || "general",
+      templateKey
+    };
+
     if (!validation.ok) {
-      return {
-        ok: false,
-        errors: validation.errors,
-        html: "",
-        previewHtml: "",
-        filename: FILENAMES[validation.outputMode] || FILENAMES.general,
-        label: LABELS[validation.outputMode] || LABELS.general,
-        outputMode: validation.outputMode
-      };
+      return { ...failMeta, errors: validation.errors };
     }
 
     const outputMode = validation.outputMode;
@@ -366,6 +643,7 @@
     const muted = colors.muted || "#545454";
     const black = colors.black || "#000000";
     const dividerColor = typo().editorialDivider?.color || "#E8E8E8";
+    const isGreen = templateKey === TEMPLATES.GREEN_PRICE_CARDS;
 
     const destination = model.destinationStrip
       ? textRow(
@@ -434,7 +712,9 @@
       `
       : "";
 
-    const cta = renderCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE");
+    const cta = isGreen
+      ? renderGreenCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE")
+      : renderClassicCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE");
 
     const routeMap = `
       <tr>
@@ -444,15 +724,18 @@
       </tr>
     `;
 
-    const pricing = renderPricingTable(model.pricingModules, includeAirline);
+    const pricing = isGreen
+      ? renderGreenPricingTable(model.pricingModules, includeAirline)
+      : renderClassicPricingTable(model.pricingModules, includeAirline);
+
     const inclusions = renderInclusions(model.inclusionItems);
     const otherInfo = model.otherInformation
       ? `
         <tr>
-          <td align="center" style="padding:20px 0 0;">
+          <td align="center" style="padding:16px 0 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#f7f8f8;">
               <tr>
-                <td align="center" style="padding:16px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${body};">
+                <td align="center" style="padding:14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${body};">
                   <strong>OTHER INFO:</strong> ${escapeHtml(String(model.otherInformation).toUpperCase())}
                 </td>
               </tr>
@@ -464,7 +747,7 @@
 
     const disclaimer = textRow(
       escapeHtml(model.disclaimerText || "All prices are per person in USD and subject to availability"),
-      `font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${muted};text-align:center;padding:28px 12px 0;line-height:1.5;`
+      `font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${muted};text-align:center;padding:24px 12px 0;line-height:1.5;`
     );
 
     const inner = `
@@ -483,30 +766,15 @@
       ${disclaimer}
     `;
 
-    const styleBlock = `
-<style type="text/css">
-  @media only screen and (max-width: 620px) {
-    .cr101-pricing-column,
-    .cr101-mobile-stack {
-      display: block !important;
-      width: 100% !important;
-      max-width: 100% !important;
-      border-right: 0 !important;
-      border-bottom: 1px solid #e5ebe8 !important;
-    }
-    .cr101-wrapper {
-      width: 100% !important;
-    }
-  }
-</style>
-`.trim();
+    const styleBlock = isGreen ? greenStyleBlock() : classicStyleBlock();
+    const wrapperClass = isGreen ? "cr101-wrapper cr101-gpc-wrapper" : "cr101-wrapper";
 
     const html = `
 ${styleBlock}
-<table role="presentation" class="cr101-outer" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:${white};">
+<table role="presentation" class="cr101-outer" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:${white};" data-cr101-template="${escapeHtml(templateKey)}">
   <tr>
     <td align="center" style="padding:0;background-color:${white};">
-      <table role="presentation" class="cr101-wrapper" width="${MAX_WIDTH}" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;background-color:${white};">
+      <table role="presentation" class="${wrapperClass}" width="${MAX_WIDTH}" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;background-color:${white};">
         <tr>
           <td align="center" style="padding:24px 16px;background-color:${white};">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
@@ -522,18 +790,9 @@ ${styleBlock}
 
     const safety = assertFragmentSafe(html, outputMode);
     if (safety.length) {
-      return {
-        ok: false,
-        errors: safety,
-        html: "",
-        previewHtml: "",
-        filename: FILENAMES[outputMode],
-        label: LABELS[outputMode],
-        outputMode
-      };
+      return { ...failMeta, errors: safety, outputMode };
     }
 
-    // Preview wrapper is separate from copy/download fragment.
     const previewHtml = `<div class="cr101-admin-preview" style="background:#f3f4f6;padding:16px;overflow:auto;">${html}</div>`;
 
     return {
@@ -541,16 +800,17 @@ ${styleBlock}
       errors: [],
       html,
       previewHtml,
-      filename: FILENAMES[outputMode],
-      label: LABELS[outputMode],
+      filename: filenameFor(outputMode, templateKey),
+      label: labelFor(outputMode, templateKey),
       outputMode,
+      templateKey,
       ctaUrl
     };
   }
 
   function generateFromModel(model, options = {}) {
     const outputMode = normalizeOutputMode(options.outputMode || model?.outputMode);
-    // Re-filter pricing if caller asks for a different mode than the model was built with.
+    const templateKey = normalizeTemplate(options.templateKey || options.template);
     let working = model;
     if (model && options.pricingRows && shared()) {
       working = {
@@ -563,19 +823,28 @@ ${styleBlock}
     } else if (model) {
       working = { ...model, outputMode };
     }
-    return renderFragment(working, { ...options, outputMode });
+    return renderFragment(working, { ...options, outputMode, templateKey });
   }
 
   const api = {
     SITE_ORIGIN,
     MAX_WIDTH,
+    BRAND_GREEN,
+    TEMPLATES,
+    TEMPLATE_LABELS,
     FILENAMES,
     LABELS,
     escapeHtml,
+    slugifyPublicSlug,
     isPublicImageUrl,
     isAbsoluteHttpUrl,
+    isAbsoluteHttpsUrl,
     toAbsolutePublicUrl,
+    buildExploreMoreUrl,
     normalizeOutputMode,
+    normalizeTemplate,
+    filenameFor,
+    labelFor,
     validate,
     assertFragmentSafe,
     renderFragment,
