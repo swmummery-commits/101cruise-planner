@@ -8,10 +8,15 @@
     "import:cruise-data:dry": "node scripts/import-base44-cruise-data.mjs --dry-run",
     "import:cruise-data": "node scripts/import-base44-cruise-data.mjs --apply",
     "test:mailchimp-export": "node scripts/test-mailchimp-export.mjs",
-    "test:featured-itinerary": "node scripts/test-featured-cruise-itinerary.mjs"
+    "test:featured-itinerary": "node scripts/test-featured-cruise-itinerary.mjs",
+    "test:marine-route": "node scripts/test-marine-route.mjs",
+    "test:marine-route-phase2": "node scripts/test-marine-route-phase2.mjs",
+    "generate:marine-route": "node scripts/generate-marine-route.mjs"
   },
   "dependencies": {
-    "@base44/sdk": "^0.8.38"
+    "@base44/sdk": "^0.8.38",
+    "@ssroute/data-eurostat": "^0.2.1",
+    "@ssroute/typescript": "^0.2.0"
   },
   "engines": {
     "node": ">=18"
