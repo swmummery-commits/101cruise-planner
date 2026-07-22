@@ -826,6 +826,136 @@ ${styleBlock}
     return renderFragment(working, { ...options, outputMode, templateKey });
   }
 
+  /**
+   * Compose a multi-cruise newsletter issue fragment.
+   * cruisePayloads: [{ model, pricingRows?, publicationStatus?, publicSlug?, name? }]
+   */
+  function composeIssueHtml(cruisePayloads, options = {}) {
+    const soft = Boolean(options.softValidation);
+    const outputMode = normalizeOutputMode(options.outputMode);
+    const templateKey = normalizeTemplate(options.templateKey || options.template);
+    const list = Array.isArray(cruisePayloads) ? cruisePayloads : [];
+    const fragments = [];
+    const errors = [];
+    const warnings = [];
+
+    if (!list.length) {
+      return {
+        ok: false,
+        errors: ["Add at least one cruise to this newsletter before exporting."],
+        warnings: [],
+        html: "",
+        previewHtml: "",
+        filename: issueFilename(options.newsletterNumber, outputMode, templateKey),
+        label: labelFor(outputMode, templateKey),
+        outputMode,
+        templateKey
+      };
+    }
+
+    for (const payload of list) {
+      const name = payload.name || payload.model?.headline || "Cruise";
+      const result = generateFromModel(payload.model, {
+        ...options,
+        outputMode,
+        templateKey,
+        pricingRows: payload.pricingRows,
+        // Soft preview may render draft cruises; export still requires published.
+        publicationStatus: soft ? "published" : payload.publicationStatus,
+        publicSlug: payload.publicSlug || payload.model?.publicSlug
+      });
+      if (!result.ok) {
+        const detail = (result.errors || ["Could not render"]).join("; ");
+        const message = `${name}: ${detail}`;
+        if (soft) {
+          warnings.push(message);
+          continue;
+        }
+        errors.push(message);
+      } else {
+        fragments.push(result.html);
+      }
+    }
+
+    if (!soft && errors.length) {
+      return {
+        ok: false,
+        errors,
+        warnings,
+        html: "",
+        previewHtml: "",
+        filename: issueFilename(options.newsletterNumber, outputMode, templateKey),
+        label: labelFor(outputMode, templateKey),
+        outputMode,
+        templateKey
+      };
+    }
+
+    if (!fragments.length) {
+      return {
+        ok: false,
+        errors: soft
+          ? warnings.length
+            ? warnings
+            : ["No cruises could be previewed yet."]
+          : ["No cruises could be exported."],
+        warnings,
+        html: "",
+        previewHtml: "",
+        filename: issueFilename(options.newsletterNumber, outputMode, templateKey),
+        label: labelFor(outputMode, templateKey),
+        outputMode,
+        templateKey
+      };
+    }
+
+    const spacer = `
+<table role="presentation" class="cr101-issue-spacer" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
+  <tr>
+    <td height="48" style="height:48px;line-height:48px;font-size:0;mso-line-height-rule:exactly;">&nbsp;</td>
+  </tr>
+</table>`.trim();
+
+    const html = fragments.join(`\n${spacer}\n`);
+    const safety = assertFragmentSafe(html, outputMode);
+    if (safety.length && !soft) {
+      return {
+        ok: false,
+        errors: safety,
+        warnings,
+        html: "",
+        previewHtml: "",
+        filename: issueFilename(options.newsletterNumber, outputMode, templateKey),
+        label: labelFor(outputMode, templateKey),
+        outputMode,
+        templateKey
+      };
+    }
+
+    return {
+      ok: true,
+      errors: [],
+      warnings,
+      html,
+      previewHtml: `<div class="cr101-admin-preview" style="background:#f3f4f6;padding:16px;overflow:auto;">${html}</div>`,
+      filename: issueFilename(options.newsletterNumber, outputMode, templateKey),
+      label: `${labelFor(outputMode, templateKey)} · ${fragments.length} cruise${fragments.length === 1 ? "" : "s"}`,
+      outputMode,
+      templateKey,
+      cruiseCount: fragments.length
+    };
+  }
+
+  function issueFilename(newsletterNumber, outputMode, templateKey) {
+    const audience = outputMode === "airline_staff" ? "airline" : "general";
+    const template = normalizeTemplate(templateKey);
+    const num =
+      newsletterNumber != null && String(newsletterNumber).trim() !== ""
+        ? `newsletter-${String(newsletterNumber).trim()}`
+        : "newsletter";
+    return `101cruise-${num}-${audience}-${template}.html`;
+  }
+
   const api = {
     SITE_ORIGIN,
     MAX_WIDTH,
@@ -845,10 +975,12 @@ ${styleBlock}
     normalizeTemplate,
     filenameFor,
     labelFor,
+    issueFilename,
     validate,
     assertFragmentSafe,
     renderFragment,
-    generateFromModel
+    generateFromModel,
+    composeIssueHtml
   };
 
   global.NewsletterMailchimpExport = api;

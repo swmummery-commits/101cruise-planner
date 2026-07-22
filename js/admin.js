@@ -8091,6 +8091,9 @@ async function loadFeaturedCruises() {
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   featuredCruises = data || [];
+  if (window.NewsletterIssueComposer?.onCruisesReloaded) {
+    window.NewsletterIssueComposer.onCruisesReloaded();
+  }
 }
 
 async function loadFeaturedRoomTypes() {
@@ -8249,9 +8252,14 @@ async function startNewFeaturedCruise() {
     featuredCruiseMessage = "Newsletter defaults could not be loaded. Enter Newsletter Number and Publication Date manually.";
     featuredCruiseMessageTone = "error";
   }
+  const composerIssue = window.NewsletterIssueComposer?.getSelectedIssue?.();
   featuredFormDraft = {
-    newsletter_number: featuredNewsletterDefaults.newsletter_number,
-    newsletter_publication_date: featuredNewsletterDefaults.newsletter_publication_date,
+    newsletter_number:
+      composerIssue?.number != null
+        ? composerIssue.number
+        : featuredNewsletterDefaults.newsletter_number,
+    newsletter_publication_date:
+      composerIssue?.date || featuredNewsletterDefaults.newsletter_publication_date,
     publication_status: "draft",
     public_slug: "",
     create_public_page: false,
@@ -9283,49 +9291,19 @@ async function saveFeaturedRoomTypeFromRow(index) {
 function renderFeaturedCruisesPanel() {
   if (showFeaturedCruiseForm) return renderFeaturedCruiseForm();
 
-  const rows = filteredFeaturedCruises();
-  const isRunning = /^(Saving)/i.test(String(featuredCruiseMessage || "")) || featuredCruiseMessageTone === "running";
-  const messageClass =
-    featuredCruiseMessageTone === "error"
-      ? "admin-error"
-      : featuredCruiseMessageTone === "success"
-        ? "admin-success"
-        : isRunning
-          ? "admin-running"
-          : "";
+  if (window.NewsletterIssueComposer?.render) {
+    return window.NewsletterIssueComposer.render();
+  }
 
   return `
     <div class="admin-card">
       <div class="admin-list-top">
         <div>
           <h3>Newsletter</h3>
-          <p class="admin-muted">Create and manage promoted cruises for newsletters and public cruise pages.</p>
+          <p class="admin-muted">Newsletter issue composer failed to load.</p>
         </div>
-        <button class="admin-button black" onclick="startNewFeaturedCruise()">+ New</button>
+        <button class="admin-button black" onclick="startNewFeaturedCruise()">+ New Cruise</button>
       </div>
-
-      <div class="featured-cruises-toolbar">
-        <div class="admin-field">
-          <label for="featuredCruiseSearch">Search</label>
-          <input id="featuredCruiseSearch" type="search" value="${esc(featuredCruiseSearchQuery)}" placeholder="Headline, ship, destination…" oninput="featuredCruiseSearchQuery=this.value; renderAdmin()">
-        </div>
-        <div class="admin-field">
-          <label for="featuredCruiseStatusFilter">Status</label>
-          <select id="featuredCruiseStatusFilter" onchange="featuredCruiseStatusFilter=this.value; renderAdmin()">
-            <option value="all" ${featuredCruiseStatusFilter === "all" ? "selected" : ""}>Draft &amp; Published</option>
-            <option value="draft" ${featuredCruiseStatusFilter === "draft" ? "selected" : ""}>Draft</option>
-            <option value="published" ${featuredCruiseStatusFilter === "published" ? "selected" : ""}>Published</option>
-            <option value="archived" ${featuredCruiseStatusFilter === "archived" ? "selected" : ""}>Archived</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>
-      ${featuredCruiseLoading ? `<p class="admin-muted">Loading newsletter cruises…</p>` : ""}
-
-      ${!featuredCruiseLoading && !rows.length
-        ? `<div class="admin-card featured-cruise-empty"><p class="admin-muted">No newsletter cruises have been created yet.</p></div>`
-        : `<div class="featured-cruise-list">${rows.map(renderFeaturedCruiseListItem).join("")}</div>`}
     </div>
   `;
 }
@@ -9493,10 +9471,8 @@ function renderFeaturedCruiseForm() {
             <span>Create public page</span>
           </label>
         </div>
-        <p class="admin-helper">Public page URL: /cruise/{public-slug}. Only Published cruises are publicly visible. Airline prices are never exposed on the public page.</p>
+        <p class="admin-helper">Public page URL: /cruise/{public-slug}. Only Published cruises are publicly visible. Airline prices are never exposed on the public page. Assign this cruise to a newsletter number to include it in the Newsletter Issue Composer.</p>
       </section>
-
-      ${renderMailchimpPocPanel()}
 
       <section class="featured-form-section">
         <h4>Cruise Details</h4>

@@ -359,16 +359,120 @@ const lowDiscount = Export.generateFromModel(
 assert(lowDiscount.ok, "low discount still exports");
 assert(!/% OFF/i.test(lowDiscount.html), "% OFF suppressed under threshold");
 
+/* ── Sprint 13C multi-cruise issue composition ─────────────────────────── */
+
+const cruiseA = {
+  model: baseModel("airline_staff", { publicSlug: "barcelona-istanbul", landingPageUrl: "/cruise/barcelona-istanbul" }),
+  pricingRows,
+  publicationStatus: "published",
+  publicSlug: "barcelona-istanbul",
+  name: "Barcelona to Istanbul"
+};
+const cruiseB = {
+  model: baseModel("airline_staff", {
+    publicSlug: "bangkok-singapore",
+    landingPageUrl: "/cruise/bangkok-singapore",
+    headline: "Bangkok to Singapore"
+  }),
+  pricingRows,
+  publicationStatus: "published",
+  publicSlug: "bangkok-singapore",
+  name: "Bangkok to Singapore"
+};
+
+const issueAirline = Export.composeIssueHtml([cruiseA, cruiseB], {
+  outputMode: "airline_staff",
+  templateKey: "green-price-cards",
+  newsletterNumber: 77
+});
+assert(issueAirline.ok, `issue airline should succeed: ${(issueAirline.errors || []).join("; ")}`);
+assert(issueAirline.cruiseCount === 2, "issue has two cruises");
+assert(/cr101-issue-spacer/i.test(issueAirline.html), "issue spacer between cruises");
+assert(
+  issueAirline.html.includes('href="https://www.101cruise.com.au/cruise/barcelona-istanbul"'),
+  "first cruise CTA"
+);
+assert(
+  issueAirline.html.includes('href="https://www.101cruise.com.au/cruise/bangkok-singapore"'),
+  "second cruise CTA"
+);
+assert(
+  issueAirline.filename === "101cruise-newsletter-77-airline-green-price-cards.html",
+  "issue filename"
+);
+
+const issueGeneral = Export.composeIssueHtml(
+  [
+    { ...cruiseA, model: baseModel("general", { publicSlug: "barcelona-istanbul" }) },
+    { ...cruiseB, model: baseModel("general", { publicSlug: "bangkok-singapore", headline: "Bangkok to Singapore" }) }
+  ],
+  {
+    outputMode: "general",
+    templateKey: "classic-editorial",
+    newsletterNumber: 77
+  }
+);
+assert(issueGeneral.ok, `issue general should succeed: ${(issueGeneral.errors || []).join("; ")}`);
+assert(!/AIRLINE STAFF PRICE/i.test(issueGeneral.html), "issue general has no airline pricing");
+assert(/cr101-pricing-table/i.test(issueGeneral.html), "issue general uses classic pricing");
+
+const issueSoft = Export.composeIssueHtml(
+  [
+    cruiseA,
+    {
+      ...cruiseB,
+      publicationStatus: "draft",
+      model: { ...baseModel("airline_staff", { publicSlug: "bangkok-singapore" }), heroImageUrl: "" }
+    }
+  ],
+  {
+    outputMode: "airline_staff",
+    templateKey: "green-price-cards",
+    newsletterNumber: 77,
+    softValidation: true
+  }
+);
+assert(issueSoft.ok, "soft issue preview can succeed with partial cruises");
+assert(issueSoft.cruiseCount === 1, "soft preview keeps valid cruises only");
+assert(issueSoft.warnings.length >= 1, "soft preview reports skipped cruise warnings");
+
+const issueBlocked = Export.composeIssueHtml(
+  [
+    cruiseA,
+    {
+      ...cruiseB,
+      publicationStatus: "draft"
+    }
+  ],
+  {
+    outputMode: "airline_staff",
+    templateKey: "green-price-cards",
+    newsletterNumber: 77,
+    softValidation: false
+  }
+);
+assert(!issueBlocked.ok, "hard export blocks unpublished cruise in issue");
+
+const emptyIssue = Export.composeIssueHtml([], {
+  outputMode: "general",
+  templateKey: "classic-editorial",
+  newsletterNumber: 77
+});
+assert(!emptyIssue.ok, "empty issue fails");
+
 console.log("mailchimp-export offline checks passed");
 console.log({
   classicAirlineBytes: classicAirline.html.length,
   classicGeneralBytes: classicGeneral.html.length,
   greenAirlineBytes: greenAirline.html.length,
   greenGeneralBytes: greenGeneral.html.length,
+  issueAirlineBytes: issueAirline.html.length,
   filenames: [
     classicAirline.filename,
     classicGeneral.filename,
     greenAirline.filename,
-    greenGeneral.filename
+    greenGeneral.filename,
+    issueAirline.filename,
+    issueGeneral.filename
   ]
 });
