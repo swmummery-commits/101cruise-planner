@@ -128,6 +128,17 @@ let draggedFeaturedPricingLocalId = null;
 let featuredPricingDragFromHandle = false;
 let showFeaturedNewsletterPreview = false;
 let featuredNewsletterPreviewMode = "general"; // general | airline_staff
+/** Sprint 13A — Mailchimp HTML POC export panel state */
+let mailchimpPoc = {
+  html: "",
+  previewHtml: "",
+  label: "",
+  filename: "",
+  outputMode: "",
+  errors: [],
+  message: "",
+  messageTone: ""
+};
 
 function esc(value) {
   if (value === null || value === undefined) return "";
@@ -8226,6 +8237,7 @@ async function startNewFeaturedCruise() {
   featuredRoomTypePromptIndex = null;
   draggedFeaturedPricingLocalId = null;
   featuredPricingDragFromHandle = false;
+  clearMailchimpPoc();
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   try {
@@ -8345,6 +8357,7 @@ async function editFeaturedCruise(id) {
     showFeaturedCruiseForm = true;
     featuredSlugManuallyEdited = Boolean(existing.public_slug);
     featuredRoomTypePromptIndex = null;
+    clearMailchimpPoc();
     featuredFormDraft = {
       newsletter_number: existing.newsletter_number,
       newsletter_publication_date: existing.newsletter_publication_date || "",
@@ -8403,6 +8416,7 @@ function cancelFeaturedCruiseForm() {
   draggedFeaturedPricingLocalId = null;
   featuredPricingDragFromHandle = false;
   showFeaturedNewsletterPreview = false;
+  clearMailchimpPoc();
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   renderAdmin();
@@ -8468,7 +8482,7 @@ function featuredDestinationHints(draft = featuredFormDraft || {}) {
   return [draft.departure_port, draft.arrival_port, ...ports].filter(Boolean);
 }
 
-function buildFeaturedNewsletterPreviewModel() {
+function buildFeaturedNewsletterPreviewModel(modeOverride) {
   const draft = featuredFormDraft || {};
   const departure = draft.departure_date || "";
   const nightsNum = draft.nights === "" || draft.nights == null ? null : Number(draft.nights);
@@ -8480,6 +8494,8 @@ function buildFeaturedNewsletterPreviewModel() {
   const publicSlug = String(draft.public_slug || "").trim();
   captureFeaturedPricingFromDom();
   const resolved = resolveFeaturedCruiseImages(draft);
+  const outputMode =
+    modeOverride || featuredNewsletterPreviewMode || "general";
   return window.NewsletterPreview.buildModel({
     destinationStrip,
     headline: draft.headline || "",
@@ -8507,8 +8523,158 @@ function buildFeaturedNewsletterPreviewModel() {
     laundry: draft.laundry,
     onboard_credit: draft.onboard_credit,
     other_information: draft.other_information || "",
-    outputMode: featuredNewsletterPreviewMode || "general"
+    outputMode
   });
+}
+
+function clearMailchimpPoc() {
+  mailchimpPoc = {
+    html: "",
+    previewHtml: "",
+    label: "",
+    filename: "",
+    outputMode: "",
+    errors: [],
+    message: "",
+    messageTone: ""
+  };
+}
+
+function generateMailchimpHtml(mode) {
+  if (!window.NewsletterMailchimpExport || !window.NewsletterPreview) {
+    mailchimpPoc.errors = ["Mailchimp export module failed to load."];
+    mailchimpPoc.message = "Mailchimp export module failed to load.";
+    mailchimpPoc.messageTone = "error";
+    mailchimpPoc.html = "";
+    mailchimpPoc.previewHtml = "";
+    renderAdmin();
+    return;
+  }
+  captureFeaturedDraftFromDom();
+  if (!featuredFormDraft) {
+    mailchimpPoc.errors = ["Open a cruise special first, then generate Mailchimp HTML."];
+    mailchimpPoc.message = mailchimpPoc.errors[0];
+    mailchimpPoc.messageTone = "error";
+    mailchimpPoc.html = "";
+    mailchimpPoc.previewHtml = "";
+    renderAdmin();
+    return;
+  }
+
+  const outputMode = mode === "airline_staff" ? "airline_staff" : "general";
+  const model = buildFeaturedNewsletterPreviewModel(outputMode);
+  const result = window.NewsletterMailchimpExport.generateFromModel(model, {
+    outputMode,
+    pricingRows: featuredFormPricing
+  });
+
+  mailchimpPoc.outputMode = outputMode;
+  mailchimpPoc.label = result.label || "";
+  mailchimpPoc.filename = result.filename || "";
+  mailchimpPoc.errors = result.errors || [];
+  if (result.ok) {
+    mailchimpPoc.html = result.html || "";
+    mailchimpPoc.previewHtml = result.previewHtml || "";
+    mailchimpPoc.message = `${result.label} ready to copy into a Mailchimp Code block.`;
+    mailchimpPoc.messageTone = "success";
+  } else {
+    mailchimpPoc.html = "";
+    mailchimpPoc.previewHtml = "";
+    mailchimpPoc.message = "Fix the issues below before exporting.";
+    mailchimpPoc.messageTone = "error";
+  }
+  renderAdmin();
+}
+
+async function copyMailchimpHtml() {
+  const html = String(mailchimpPoc.html || "");
+  if (!html) {
+    mailchimpPoc.message = "Generate HTML first, then copy.";
+    mailchimpPoc.messageTone = "error";
+    renderAdmin();
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(html);
+    mailchimpPoc.message = "HTML fragment copied — paste into a Mailchimp Code content block.";
+    mailchimpPoc.messageTone = "success";
+  } catch {
+    const area = document.getElementById("mailchimpPocHtml");
+    if (area) {
+      area.focus();
+      area.select();
+      mailchimpPoc.message = "Clipboard blocked — select the HTML below and copy manually (⌘C / Ctrl+C).";
+      mailchimpPoc.messageTone = "info";
+    } else {
+      mailchimpPoc.message = "Could not copy automatically. Select the HTML and copy manually.";
+      mailchimpPoc.messageTone = "error";
+    }
+  }
+  renderAdmin();
+}
+
+function downloadMailchimpHtml() {
+  const html = String(mailchimpPoc.html || "");
+  if (!html) {
+    mailchimpPoc.message = "Generate HTML first, then download.";
+    mailchimpPoc.messageTone = "error";
+    renderAdmin();
+    return;
+  }
+  const filename =
+    mailchimpPoc.filename ||
+    (mailchimpPoc.outputMode === "airline_staff"
+      ? "101cruise-mailchimp-airline-poc.html"
+      : "101cruise-mailchimp-general-poc.html");
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  mailchimpPoc.message = `Downloaded ${filename} (fragment only — for Mailchimp Code block paste).`;
+  mailchimpPoc.messageTone = "success";
+  renderAdmin();
+}
+
+function renderMailchimpPocPanel() {
+  const msgClass =
+    mailchimpPoc.messageTone === "error"
+      ? "admin-error"
+      : mailchimpPoc.messageTone === "success"
+        ? "admin-success"
+        : "";
+  const errorsHtml = (mailchimpPoc.errors || []).length
+    ? `<ul class="mailchimp-poc-errors">${mailchimpPoc.errors
+        .map((e) => `<li>${esc(e)}</li>`)
+        .join("")}</ul>`
+    : "";
+  const hasHtml = Boolean(mailchimpPoc.html);
+  return `
+    <section class="featured-form-section mailchimp-poc-section">
+      <h4>Mailchimp HTML Proof of Concept</h4>
+      <p class="admin-muted">Generates only the cruise-special block for pasting into a Mailchimp <strong>Code</strong> content block. Does not create campaigns, audiences, or full newsletters. HOLD DEPLOY — local proof of concept.</p>
+      <div class="admin-actions-row mailchimp-poc-actions">
+        <button type="button" class="admin-button secondary" onclick="generateMailchimpHtml('airline_staff')" ${featuredCruiseSaving ? "disabled" : ""}>Generate Airline HTML</button>
+        <button type="button" class="admin-button secondary" onclick="generateMailchimpHtml('general')" ${featuredCruiseSaving ? "disabled" : ""}>Generate General HTML</button>
+        <button type="button" class="admin-button secondary" onclick="copyMailchimpHtml()" ${!hasHtml || featuredCruiseSaving ? "disabled" : ""}>Copy HTML</button>
+        <button type="button" class="admin-button secondary" onclick="downloadMailchimpHtml()" ${!hasHtml || featuredCruiseSaving ? "disabled" : ""}>Download HTML</button>
+      </div>
+      ${mailchimpPoc.message ? `<div class="admin-message ${msgClass}">${esc(mailchimpPoc.message)}</div>` : ""}
+      ${errorsHtml}
+      ${
+        hasHtml
+          ? `<p class="admin-helper"><strong>${esc(mailchimpPoc.label)}</strong> · file: <code>${esc(mailchimpPoc.filename)}</code></p>
+             <div class="mailchimp-poc-preview" aria-label="Mailchimp HTML preview">${mailchimpPoc.previewHtml}</div>
+             <label class="admin-field mailchimp-poc-code-label" for="mailchimpPocHtml">HTML fragment (read-only)</label>
+             <textarea id="mailchimpPocHtml" class="mailchimp-poc-code" readonly rows="12" aria-label="Mailchimp HTML fragment">${esc(mailchimpPoc.html)}</textarea>`
+          : `<p class="admin-helper">Select the cruise special in this form, then generate Airline Staff or General HTML.</p>`
+      }
+    </section>
+  `;
 }
 
 function openFeaturedNewsletterPreview() {
@@ -9297,6 +9463,8 @@ function renderFeaturedCruiseForm() {
         </div>
         <p class="admin-helper">Public page URL: /cruise/{public-slug}. Only Published cruises are publicly visible. Airline prices are never exposed on the public page.</p>
       </section>
+
+      ${renderMailchimpPocPanel()}
 
       <section class="featured-form-section">
         <h4>Cruise Details</h4>

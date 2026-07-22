@@ -2794,6 +2794,60 @@
   border-top: none;
 }
 
+.mailchimp-poc-section {
+  background: #f8faf9;
+  border: 1px solid #e3e8e5;
+  border-radius: 10px;
+  padding: 14px 16px 16px;
+}
+
+.mailchimp-poc-section h4 {
+  margin-top: 0;
+}
+
+.mailchimp-poc-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.mailchimp-poc-errors {
+  margin: 0 0 12px;
+  padding-left: 1.2em;
+  color: #9f3a38;
+  font-size: 13px;
+}
+
+.mailchimp-poc-preview {
+  margin: 10px 0 14px;
+  border: 1px solid #d9e0dd;
+  border-radius: 8px;
+  background: #fff;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.mailchimp-poc-code-label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.mailchimp-poc-code {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.45;
+  padding: 10px 12px;
+  border: 1px solid #d9e0dd;
+  border-radius: 8px;
+  background: #fff;
+  color: #111;
+  resize: vertical;
+}
+
 .featured-form-section h4 {
   margin: 0 0 10px;
   font-size: 14px;

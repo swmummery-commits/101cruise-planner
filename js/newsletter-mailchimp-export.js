@@ -1,0 +1,589 @@
+/**
+ * Sprint 13A — Mailchimp Code-block HTML proof of concept.
+ *
+ * Generates an email-safe HTML *fragment* for one cruise special
+ * (Airline Staff or General). Not a full newsletter document.
+ *
+ * Consumes the canonical NewsletterPreview model + shared pricing rules.
+ */
+(function (global) {
+  "use strict";
+
+  const SITE_ORIGIN = "https://www.101cruise.com.au";
+  const MAX_WIDTH = 600;
+  const MAX_ROOMS = 4;
+
+  const FILENAMES = {
+    airline_staff: "101cruise-mailchimp-airline-poc.html",
+    general: "101cruise-mailchimp-general-poc.html"
+  };
+
+  const LABELS = {
+    airline_staff: "Airline Staff — Mailchimp HTML",
+    general: "General — Mailchimp HTML"
+  };
+
+  function shared() {
+    return global.NewsletterCruiseShared || null;
+  }
+
+  function typo() {
+    return global.NewsletterTypography || {};
+  }
+
+  function escapeHtml(value) {
+    if (value === null || value === undefined) return "";
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+  }
+
+  function money(value) {
+    const api = shared();
+    if (api) return api.formatMoney(value);
+    const num = Number(value);
+    if (!Number.isFinite(num)) return "";
+    return String(Math.round(num));
+  }
+
+  function isAbsoluteHttpUrl(url) {
+    return /^https?:\/\//i.test(String(url || "").trim());
+  }
+
+  function isLocalOrDevUrl(url) {
+    try {
+      const u = new URL(String(url || "").trim());
+      const host = u.hostname.toLowerCase();
+      if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0") return true;
+      if (host.endsWith(".local")) return true;
+      if (host.endsWith(".netlify.app") && /deploy-preview|branch-deploy/i.test(host)) return true;
+      return false;
+    } catch {
+      return true;
+    }
+  }
+
+  function isAdminOrProtectedUrl(url) {
+    const raw = String(url || "").trim().toLowerCase();
+    if (!raw) return false;
+    if (raw.includes("/admin") || raw.includes("admin.html")) return true;
+    if (raw.includes("/.netlify/functions/")) return true;
+    if (raw.startsWith("blob:") || raw.startsWith("data:")) return true;
+    return false;
+  }
+
+  function isPublicImageUrl(url) {
+    const raw = String(url || "").trim();
+    if (!raw) return false;
+    if (!isAbsoluteHttpUrl(raw)) return false;
+    if (isLocalOrDevUrl(raw)) return false;
+    if (isAdminOrProtectedUrl(raw)) return false;
+    if (raw.startsWith("/") || raw.startsWith("./") || raw.startsWith("../")) return false;
+    return true;
+  }
+
+  /**
+   * Resolve CTA / landing URLs to a stable absolute public URL.
+   * Relative /cruise/{slug} paths are prefixed with the live site origin.
+   */
+  function toAbsolutePublicUrl(url, siteOrigin = SITE_ORIGIN) {
+    const raw = String(url || "").trim();
+    if (!raw || raw === "#") return "";
+    if (isAbsoluteHttpUrl(raw)) {
+      if (isLocalOrDevUrl(raw) || isAdminOrProtectedUrl(raw)) return "";
+      return raw;
+    }
+    if (raw.startsWith("/")) {
+      return String(siteOrigin || SITE_ORIGIN).replace(/\/$/, "") + raw;
+    }
+    return "";
+  }
+
+  function normalizeOutputMode(mode) {
+    const api = shared();
+    const airline = api?.OUTPUT_MODE?.AIRLINE_STAFF || "airline_staff";
+    return mode === airline ? airline : api?.OUTPUT_MODE?.GENERAL || "general";
+  }
+
+  /**
+   * Validate a canonical newsletter model before export.
+   * Returns user-facing messages (not technical stack traces).
+   */
+  function validate(model, options = {}) {
+    const errors = [];
+    const outputMode = normalizeOutputMode(options.outputMode || model?.outputMode);
+    const includeAirline = outputMode === "airline_staff";
+
+    if (!model) {
+      errors.push("Select a cruise special before generating Mailchimp HTML.");
+      return { ok: false, errors, outputMode };
+    }
+
+    if (!String(model.headline || "").trim()) {
+      errors.push("This cruise special needs a headline.");
+    }
+    if (!String(model.datesLine || "").trim()) {
+      errors.push("Travel dates are missing. Check departure date and nights.");
+    }
+    if (!String(model.nightsShipLine || "").trim()) {
+      errors.push("Nights, cruise line, or ship details are incomplete.");
+    }
+    if (!String(model.portsJoined || "").trim()) {
+      errors.push("Ports of call are missing. Add an itinerary summary.");
+    }
+    if (!String(model.description || "").trim() && !(model.descriptionParagraphs || []).length) {
+      errors.push("Short editorial / description is missing.");
+    }
+
+    if (!model.heroImageUrl) {
+      errors.push("A hero image is required. Choose one from the Media Library.");
+    } else if (!isPublicImageUrl(model.heroImageUrl)) {
+      errors.push(
+        "The hero image must use a stable public web address (https). Relative, local, or admin-only image links cannot be used in Mailchimp."
+      );
+    }
+
+    if (!model.routeMapUrl) {
+      errors.push("A route map image is required for the Mailchimp export.");
+    } else if (!isPublicImageUrl(model.routeMapUrl)) {
+      errors.push(
+        "The route map must use a stable public web address (https). Relative, local, or admin-only image links cannot be used in Mailchimp."
+      );
+    }
+
+    const modules = Array.isArray(model.pricingModules) ? model.pricingModules : [];
+    if (!modules.length) {
+      errors.push("At least one room category with a valid price is required.");
+    }
+
+    if (includeAirline) {
+      const hasAirline = modules.some((m) => m.airlinePrice != null);
+      if (!hasAirline) {
+        errors.push(
+          "Airline Staff HTML needs at least one airline staff price. Add airline prices or generate the General version instead."
+        );
+      }
+    }
+
+    const cta = toAbsolutePublicUrl(model.landingPageUrl, options.siteOrigin);
+    if (!cta) {
+      errors.push(
+        "The Explore More link is missing or invalid. Set a Public Slug so the cruise page address can be built."
+      );
+    } else if (!isAbsoluteHttpUrl(cta) || isLocalOrDevUrl(cta) || isAdminOrProtectedUrl(cta)) {
+      errors.push("The Explore More link must be a full public web address.");
+    }
+
+    return { ok: errors.length === 0, errors, outputMode, ctaUrl: cta };
+  }
+
+  function assertFragmentSafe(html, outputMode) {
+    const errors = [];
+    const lower = String(html || "").toLowerCase();
+    if (lower.includes("<!doctype")) errors.push("Output must not include a full HTML document (DOCTYPE).");
+    if (/<html[\s>]/i.test(html)) errors.push("Output must not include an <html> tag.");
+    if (/<head[\s>]/i.test(html)) errors.push("Output must not include a <head> tag.");
+    if (/<body[\s>]/i.test(html)) errors.push("Output must not include a <body> tag.");
+    if (/<script[\s>]/i.test(html)) errors.push("Output must not include JavaScript.");
+    if (/\son[a-z]+\s*=/i.test(html)) errors.push("Output must not include JavaScript event attributes.");
+    if (/src\s*=\s*["'](?!https?:\/\/)/i.test(html)) {
+      errors.push("Every image must use an absolute http(s) address.");
+    }
+    if (outputMode === "general") {
+      if (/airline staff price/i.test(html)) {
+        errors.push("General HTML must not include airline staff pricing.");
+      }
+    }
+    return errors;
+  }
+
+  function spacerRow(heightPx) {
+    const h = Math.max(0, Number(heightPx) || 0);
+    return `<tr><td height="${h}" style="height:${h}px;line-height:${h}px;font-size:0;mso-line-height-rule:exactly;">&nbsp;</td></tr>`;
+  }
+
+  function textRow(innerHtml, style) {
+    return `<tr><td align="center" style="${style}">${innerHtml}</td></tr>`;
+  }
+
+  function renderYouSave(display, { emphasizePercent = false } = {}) {
+    if (!display || display.saveAmount == null) return "";
+    const percent =
+      emphasizePercent && display.showPercentOff && display.percentOff != null
+        ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;color:#1f7a66;margin-top:4px;">${escapeHtml(display.percentOff)}% OFF</div>`
+        : "";
+    return `<div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;color:#111111;margin-top:6px;">YOU SAVE $${escapeHtml(money(display.saveAmount))}</div>${percent}`;
+  }
+
+  function renderPricingColumn(mod, includeAirline, widthPct) {
+    const brochure =
+      mod.brochurePrice != null
+        ? `<div style="padding:4px 0 10px;">
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.6px;color:#545454;">BROCHURE PRICE</div>
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:18px;font-weight:400;color:#888888;text-decoration:line-through;">$${escapeHtml(money(mod.brochurePrice))}</div>
+          </div>`
+        : "";
+
+    const cruise101 =
+      mod.cruise101Price != null
+        ? `<div style="padding:4px 0 10px;">
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.6px;color:#545454;">101CRUISE PRICE</div>
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#111111;">$${escapeHtml(money(mod.cruise101Price))}</div>
+            ${renderYouSave(mod.cruise101Display)}
+          </div>`
+        : "";
+
+    const airline =
+      includeAirline && mod.airlinePrice != null
+        ? `<div style="padding:4px 0 10px;">
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.6px;color:#545454;">AIRLINE STAFF PRICE</div>
+            <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#111111;">$${escapeHtml(money(mod.airlinePrice))}</div>
+            ${renderYouSave(mod.airlineDisplay, { emphasizePercent: true })}
+          </div>`
+        : "";
+
+    const divider = (show) =>
+      show
+        ? `<div style="height:1px;line-height:1px;font-size:0;background-color:#e5ebe8;margin:4px 12px;">&nbsp;</div>`
+        : "";
+
+    return `
+      <td class="cr101-pricing-column cr101-mobile-stack" width="${widthPct}%" valign="top" align="center" style="width:${widthPct}%;padding:28px 12px;border-right:1px solid #e5ebe8;vertical-align:top;">
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;color:#1f7a66;margin:0 0 10px;line-height:1.3;">${escapeHtml(mod.roomLabel)}</div>
+        ${brochure}
+        ${cruise101 ? divider(Boolean(brochure)) : ""}
+        ${cruise101}
+        ${airline ? divider(Boolean(cruise101 || brochure)) : ""}
+        ${airline}
+      </td>
+    `;
+  }
+
+  function renderPricingTable(modules, includeAirline) {
+    const list = (modules || []).slice(0, MAX_ROOMS);
+    if (!list.length) return "";
+    const widthPct = Math.floor(100 / list.length);
+    const cols = list.map((mod, index) => {
+      let cell = renderPricingColumn(mod, includeAirline, widthPct);
+      if (index === list.length - 1) {
+        cell = cell.replace("border-right:1px solid #e5ebe8;", "border-right:0;");
+      }
+      return cell;
+    });
+
+    return `
+      <tr>
+        <td align="center" style="padding:44px 0 0;">
+          <table role="presentation" class="cr101-pricing-table" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;border:1px solid #d9e0dd;background-color:#ffffff;">
+            <tr>
+              ${cols.join("")}
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderInclusions(items) {
+    if (!items?.length) return "";
+    const labels = items.map((item) => {
+      if (typeof item === "string") return String(item).toUpperCase();
+      return item.shortLabel || String(item.label || "").toUpperCase();
+    });
+    return `
+      <tr>
+        <td align="center" style="padding:36px 0 0;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#f4faf7;">
+            <tr>
+              <td align="center" style="padding:18px 16px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#111111;">
+                INCLUDES: <span style="font-weight:400;letter-spacing:0.4px;">${escapeHtml(labels.join(" · "))}</span>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderCtaButton(href, label) {
+    const t = typo().exploreMore || {};
+    const bg = t.background || "#8DD9BF";
+    const color = t.color || "#111111";
+    const font = t.fontFamily || "Helvetica, Arial, sans-serif";
+    const size = t.fontSizePx || 13;
+    const weight = t.fontWeight || 700;
+    const tracking = t.letterSpacingPx != null ? t.letterSpacingPx : 1.5;
+    const padY = t.paddingYPx || 14;
+    const padX = t.paddingXPx || 28;
+    return `
+      <tr>
+        <td align="center" style="padding:48px 0 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse;">
+            <tr>
+              <td align="center" bgcolor="${bg}" style="background-color:${bg};padding:${padY}px ${padX}px;">
+                <a href="${escapeHtml(href)}" target="_blank" style="font-family:${font};font-size:${size}px;font-weight:${weight};letter-spacing:${tracking}px;text-transform:uppercase;color:${color};text-decoration:none;display:inline-block;">
+                  ${escapeHtml(label || "EXPLORE MORE")} →
+                </a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderImage(url, alt, widthAttr) {
+    const w = widthAttr || MAX_WIDTH;
+    return `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt || "")}" width="${w}" border="0" style="display:block;width:100%;max-width:${MAX_WIDTH}px;height:auto;border:0;">`;
+  }
+
+  /**
+   * Build Mailchimp Code-block fragment from a canonical newsletter model.
+   */
+  function renderFragment(model, options = {}) {
+    const validation = validate(model, options);
+    if (!validation.ok) {
+      return {
+        ok: false,
+        errors: validation.errors,
+        html: "",
+        previewHtml: "",
+        filename: FILENAMES[validation.outputMode] || FILENAMES.general,
+        label: LABELS[validation.outputMode] || LABELS.general,
+        outputMode: validation.outputMode
+      };
+    }
+
+    const outputMode = validation.outputMode;
+    const includeAirline = outputMode === "airline_staff";
+    const ctaUrl = validation.ctaUrl;
+    const colors = typo().colors || {};
+    const white = colors.white || "#ffffff";
+    const body = colors.body || "#111111";
+    const muted = colors.muted || "#545454";
+    const black = colors.black || "#000000";
+    const dividerColor = typo().editorialDivider?.color || "#E8E8E8";
+
+    const destination = model.destinationStrip
+      ? textRow(
+          escapeHtml(model.destinationStrip),
+          `font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;letter-spacing:3px;text-transform:uppercase;color:${muted};text-align:center;padding:0;`
+        ) + spacerRow(38)
+      : "";
+
+    const headline = model.headline
+      ? textRow(
+          escapeHtml(model.headline),
+          `font-family:Georgia,'Times New Roman',serif;font-size:22px;font-weight:700;color:${black};text-align:center;line-height:1.35;padding:0 12px;`
+        ) + spacerRow(24)
+      : "";
+
+    const hero = `
+      <tr>
+        <td align="center" style="padding:0 0 36px;">
+          ${renderImage(model.heroImageUrl, model.heroImageAlt || model.headline || "Cruise image", MAX_WIDTH)}
+        </td>
+      </tr>
+    `;
+
+    const dates = model.datesLine
+      ? textRow(
+          escapeHtml(model.datesLine),
+          `font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${black};text-align:center;padding:0 0 8px;`
+        )
+      : "";
+
+    const nightsShip = model.nightsShipLine
+      ? textRow(
+          escapeHtml(model.nightsShipLine),
+          `font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:${black};text-align:center;padding:0 0 22px;`
+        )
+      : "";
+
+    const ports = model.portsJoined
+      ? textRow(
+          `<span style="font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;text-transform:uppercase;color:${black};">PORTS OF CALL:</span> <span style="font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;color:${body};">${escapeHtml(model.portsJoined)}</span>`,
+          "text-align:center;padding:0 8px;"
+        )
+      : "";
+
+    const paragraphs = (model.descriptionParagraphs || []).filter(Boolean);
+    const description = paragraphs.length
+      ? `
+        ${spacerRow(34)}
+        <tr>
+          <td align="center" style="padding:0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
+              <tr><td height="1" style="height:1px;line-height:1px;font-size:0;background-color:${dividerColor};border:0;">&nbsp;</td></tr>
+            </table>
+          </td>
+        </tr>
+        ${spacerRow(34)}
+        ${paragraphs
+          .map(
+            (p, index) =>
+              textRow(
+                escapeHtml(p),
+                `font-family:Helvetica,Arial,sans-serif;font-size:14px;font-weight:400;color:${body};text-align:center;line-height:1.65;padding:0 12px ${index === paragraphs.length - 1 ? 0 : 24}px;`
+              )
+          )
+          .join("")}
+      `
+      : "";
+
+    const cta = renderCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE");
+
+    const routeMap = `
+      <tr>
+        <td align="center" style="padding:40px 0 0;">
+          ${renderImage(model.routeMapUrl, model.routeMapAlt || "Route map", MAX_WIDTH)}
+        </td>
+      </tr>
+    `;
+
+    const pricing = renderPricingTable(model.pricingModules, includeAirline);
+    const inclusions = renderInclusions(model.inclusionItems);
+    const otherInfo = model.otherInformation
+      ? `
+        <tr>
+          <td align="center" style="padding:20px 0 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#f7f8f8;">
+              <tr>
+                <td align="center" style="padding:16px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${body};">
+                  <strong>OTHER INFO:</strong> ${escapeHtml(String(model.otherInformation).toUpperCase())}
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      `
+      : "";
+
+    const disclaimer = textRow(
+      escapeHtml(model.disclaimerText || "All prices are per person in USD and subject to availability"),
+      `font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${muted};text-align:center;padding:28px 12px 0;line-height:1.5;`
+    );
+
+    const inner = `
+      ${destination}
+      ${headline}
+      ${hero}
+      ${dates}
+      ${nightsShip}
+      ${ports}
+      ${description}
+      ${cta}
+      ${routeMap}
+      ${pricing}
+      ${inclusions}
+      ${otherInfo}
+      ${disclaimer}
+    `;
+
+    const styleBlock = `
+<style type="text/css">
+  @media only screen and (max-width: 620px) {
+    .cr101-pricing-column,
+    .cr101-mobile-stack {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      border-right: 0 !important;
+      border-bottom: 1px solid #e5ebe8 !important;
+    }
+    .cr101-wrapper {
+      width: 100% !important;
+    }
+  }
+</style>
+`.trim();
+
+    const html = `
+${styleBlock}
+<table role="presentation" class="cr101-outer" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:${white};">
+  <tr>
+    <td align="center" style="padding:0;background-color:${white};">
+      <table role="presentation" class="cr101-wrapper" width="${MAX_WIDTH}" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;background-color:${white};">
+        <tr>
+          <td align="center" style="padding:24px 16px;background-color:${white};">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
+              ${inner}
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+`.trim();
+
+    const safety = assertFragmentSafe(html, outputMode);
+    if (safety.length) {
+      return {
+        ok: false,
+        errors: safety,
+        html: "",
+        previewHtml: "",
+        filename: FILENAMES[outputMode],
+        label: LABELS[outputMode],
+        outputMode
+      };
+    }
+
+    // Preview wrapper is separate from copy/download fragment.
+    const previewHtml = `<div class="cr101-admin-preview" style="background:#f3f4f6;padding:16px;overflow:auto;">${html}</div>`;
+
+    return {
+      ok: true,
+      errors: [],
+      html,
+      previewHtml,
+      filename: FILENAMES[outputMode],
+      label: LABELS[outputMode],
+      outputMode,
+      ctaUrl
+    };
+  }
+
+  function generateFromModel(model, options = {}) {
+    const outputMode = normalizeOutputMode(options.outputMode || model?.outputMode);
+    // Re-filter pricing if caller asks for a different mode than the model was built with.
+    let working = model;
+    if (model && options.pricingRows && shared()) {
+      working = {
+        ...model,
+        outputMode,
+        pricingModules: shared().buildPricingModules(options.pricingRows, model.nights, {
+          outputMode
+        })
+      };
+    } else if (model) {
+      working = { ...model, outputMode };
+    }
+    return renderFragment(working, { ...options, outputMode });
+  }
+
+  const api = {
+    SITE_ORIGIN,
+    MAX_WIDTH,
+    FILENAMES,
+    LABELS,
+    escapeHtml,
+    isPublicImageUrl,
+    isAbsoluteHttpUrl,
+    toAbsolutePublicUrl,
+    normalizeOutputMode,
+    validate,
+    assertFragmentSafe,
+    renderFragment,
+    generateFromModel
+  };
+
+  global.NewsletterMailchimpExport = api;
+  if (typeof module !== "undefined" && module.exports) {
+    module.exports = api;
+  }
+})(typeof window !== "undefined" ? window : globalThis);
