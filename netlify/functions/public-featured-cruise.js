@@ -200,8 +200,15 @@ async function loadFallbackMediaLibrary(cruise) {
   return rows;
 }
 
-/** Proven query shape from Sprint 10B, plus optional media columns. */
-function cruiseSelect(includeMediaIds) {
+/**
+ * Proven query shape from Sprint 10B, plus optional media columns.
+ *
+ * route_map_image_url is optional: production may have route_map_media_id
+ * (media library) without the older denormalised URL column. Selecting a
+ * missing column would fail the whole query and drop into foundation
+ * fallbacks that omit route_map_media_id — losing the attached map.
+ */
+function cruiseSelect({ includeMediaIds = false, includeRouteMapImageUrl = false } = {}) {
   return [
     "id",
     "headline",
@@ -217,7 +224,7 @@ function cruiseSelect(includeMediaIds) {
     "hero_image_url",
     "hero_image_alt",
     "use_ship_hero_image",
-    "route_map_image_url",
+    ...(includeRouteMapImageUrl ? ["route_map_image_url"] : []),
     "cruise_ship_id",
     "cruise_line_id",
     ...(includeMediaIds ? ["hero_media_id", "route_map_media_id"] : []),
@@ -238,9 +245,35 @@ function cruiseSelect(includeMediaIds) {
 
 async function loadPublishedCruise(slug) {
   const attempts = [
-    cruiseSelect(true),
-    cruiseSelect(false),
-    // Foundation columns with embeds (Sprint 10B shape)
+    // Prefer media ids + denormalised URL when both columns exist
+    cruiseSelect({ includeMediaIds: true, includeRouteMapImageUrl: true }),
+    // Production today: route_map_media_id exists, route_map_image_url may not
+    cruiseSelect({ includeMediaIds: true, includeRouteMapImageUrl: false }),
+    cruiseSelect({ includeMediaIds: false, includeRouteMapImageUrl: true }),
+    cruiseSelect({ includeMediaIds: false, includeRouteMapImageUrl: false }),
+    // Foundation columns with embeds (Sprint 10B shape) + media ids if present
+    [
+      "id",
+      "headline",
+      "destination_strip",
+      "departure_port",
+      "arrival_port",
+      "departure_date",
+      "return_date",
+      "nights",
+      "short_editorial",
+      "full_description",
+      "hero_image_url",
+      "hero_image_alt",
+      "use_ship_hero_image",
+      "hero_media_id",
+      "route_map_media_id",
+      "public_slug",
+      "publication_status",
+      "ci_cruise_lines(name)",
+      "ci_cruise_ships(name,hero_image_url)"
+    ].join(","),
+    // Foundation without media ids (Sprint 10B shape)
     [
       "id",
       "headline",
@@ -275,7 +308,7 @@ async function loadPublishedCruise(slug) {
       "hero_image_url",
       "hero_image_alt",
       "use_ship_hero_image",
-      "route_map_image_url",
+      "route_map_media_id",
       "public_slug",
       "publication_status",
       "cruise_line_id",
@@ -339,6 +372,19 @@ exports.handler = async (event) => {
           url: direct.public_url,
           altText: direct.alt_text || cruise.hero_image_alt || cruise.headline || "Cruise image",
           title: direct.title || cruise.headline || "",
+          width: direct.width,
+          height: direct.height,
+          source: "Featured Cruise Media Library selection"
+        };
+      }
+    }
+    if (!resolved.routeMap && cruise.route_map_media_id) {
+      const direct = await loadMediaById(cruise.route_map_media_id);
+      if (direct?.public_url) {
+        resolved.routeMap = {
+          url: direct.public_url,
+          altText: direct.alt_text || "Route map",
+          title: direct.title || "Route map",
           width: direct.width,
           height: direct.height,
           source: "Featured Cruise Media Library selection"
