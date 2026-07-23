@@ -3156,12 +3156,78 @@
   color: #1f4d3a;
 }
 
+.featured-route-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin: 0 0 16px;
+  align-items: start;
+}
+
+.featured-route-map-layout.has-preview {
+  grid-template-columns: minmax(220px, 0.95fr) minmax(0, 1.25fr);
+}
+
+.featured-route-map-sidebar {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.featured-route-map-sidebar .fc-itin-map-readiness {
+  margin: 0;
+}
+
+.featured-route-map-sidebar .featured-media-source-actions {
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.featured-route-map-preview-col {
+  min-width: 0;
+}
+
+.featured-route-map-preview-figure {
+  margin: 0;
+}
+
+.featured-route-map-preview-figure figcaption {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.featured-route-map-preview-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #d7e0dc;
+  border-radius: 6px;
+  background: #fff;
+}
+
 .featured-route-map-generated {
   margin: 14px 0 16px;
   padding: 12px 14px;
   border: 1px solid #d7e0dc;
   border-radius: 8px;
   background: #f8fbfa;
+}
+
+.featured-route-map-gen-meta {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #d7e0dc;
+  border-radius: 8px;
+  background: #f8fbfa;
+}
+
+.featured-route-map-gen-meta h5 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 650;
 }
 
 .featured-route-map-generated h5 {
@@ -3172,7 +3238,12 @@
 
 .featured-route-map-gen-meta p {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.featured-route-map-gen-meta .admin-success-text {
+  margin-bottom: 6px;
 }
 
 .admin-success-text {
@@ -3190,8 +3261,8 @@
 }
 
 .featured-route-map-gen-previews--single {
-  grid-template-columns: minmax(0, 420px);
-  max-width: 420px;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: none;
 }
 
 .featured-route-map-gen-previews figure {
@@ -3221,6 +3292,12 @@
   border: 1px solid #d7e0dc;
   border-radius: 6px;
   background: #fff;
+}
+
+@media (max-width: 900px) {
+  .featured-route-map-layout.has-preview {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {

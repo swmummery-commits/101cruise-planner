@@ -134,8 +134,9 @@ let draggedFeaturedPricingLocalId = null;
 let featuredPricingDragFromHandle = false;
 let showFeaturedNewsletterPreview = false;
 let featuredNewsletterPreviewMode = "general"; // general | airline_staff
+let featuredNewsletterPreviewTemplate = "green-price-cards"; // classic-editorial | green-price-cards
 /** Sprint 13A/13B — Mailchimp HTML POC export panel state */
-let mailchimpPocTemplate = "classic-editorial"; // classic-editorial | green-price-cards
+let mailchimpPocTemplate = "green-price-cards"; // classic-editorial | green-price-cards
 let mailchimpPoc = {
   html: "",
   previewHtml: "",
@@ -8642,9 +8643,19 @@ function clearMailchimpPoc() {
 
 function setMailchimpPocTemplate(value) {
   captureFeaturedDraftFromDom();
-  mailchimpPocTemplate = value === "green-price-cards" ? "green-price-cards" : "classic-editorial";
+  mailchimpPocTemplate = value === "classic-editorial" ? "classic-editorial" : "green-price-cards";
+  featuredNewsletterPreviewTemplate = mailchimpPocTemplate;
   clearMailchimpPoc();
   if (typeof renderAdmin === "function") renderAdmin();
+}
+
+function setFeaturedNewsletterPreviewTemplate(value) {
+  captureFeaturedDraftFromDom();
+  featuredNewsletterPreviewTemplate =
+    value === "classic-editorial" ? "classic-editorial" : "green-price-cards";
+  mailchimpPocTemplate = featuredNewsletterPreviewTemplate;
+  showFeaturedNewsletterPreview = true;
+  renderAdmin();
 }
 
 function generateMailchimpHtml(mode) {
@@ -8781,8 +8792,8 @@ function renderMailchimpPocPanel() {
         <label class="admin-field" for="mailchimpPocTemplate">
           <span>Design Template</span>
           <select id="mailchimpPocTemplate" aria-label="Mailchimp design template" onchange="setMailchimpPocTemplate(this.value)" ${featuredCruiseSaving ? "disabled" : ""}>
-            <option value="classic-editorial" ${templateKey === "classic-editorial" ? "selected" : ""}>Classic Editorial</option>
             <option value="green-price-cards" ${templateKey === "green-price-cards" ? "selected" : ""}>Green Price Cards</option>
+            <option value="classic-editorial" ${templateKey === "classic-editorial" ? "selected" : ""}>Classic Editorial</option>
           </select>
         </label>
       </div>
@@ -8831,12 +8842,13 @@ function setFeaturedNewsletterPreviewMode(value) {
 }
 
 function renderFeaturedNewsletterPreviewModal() {
-  if (!showFeaturedNewsletterPreview || !window.NewsletterPreview) return "";
+  if (!showFeaturedNewsletterPreview) return "";
   const draft = featuredFormDraft || {};
-  const model = buildFeaturedNewsletterPreviewModel();
-  const warnings = window.NewsletterValidation.validateNewsletterPreview(model);
-  const warningsHtml = window.NewsletterPreview.renderWarnings(warnings, esc);
-  const articleHtml = window.NewsletterPreview.renderNewsletterCruise(model, { escapeHtml: esc });
+  const outputMode = featuredNewsletterPreviewMode === "airline_staff" ? "airline_staff" : "general";
+  const templateKey =
+    featuredNewsletterPreviewTemplate === "classic-editorial"
+      ? "classic-editorial"
+      : "green-price-cards";
   const isPublished = (draft.publication_status || "draft") === "published";
   const slug = String(draft.public_slug || "").trim();
   const publishHint = !isPublished
@@ -8844,12 +8856,62 @@ function renderFeaturedNewsletterPreviewModal() {
     : !slug
       ? `<div class="admin-message admin-error" style="margin:0 0 14px">Set a Public Slug and Save before Explore More can open the public page.</div>`
       : `<div class="admin-message admin-success" style="margin:0 0 14px">Public page: <code>/cruise?slug=${esc(featuredSlugify(slug))}</code> — only works after Save while status is Published.</div>`;
+
+  let articleHtml = "";
+  let warningsHtml = "";
+  let templateNote = "";
+
+  if (window.NewsletterMailchimpExport && window.NewsletterPreview) {
+    const model = buildFeaturedNewsletterPreviewModel(outputMode);
+    const result = window.NewsletterMailchimpExport.generateFromModel(model, {
+      outputMode,
+      templateKey,
+      pricingRows: featuredFormPricing,
+      publicationStatus: draft.publication_status || "draft",
+      publicSlug: slug,
+      softValidation: true
+    });
+    const warnings = [
+      ...(window.NewsletterValidation?.validateNewsletterPreview?.(model) || []),
+      ...(result.warnings || []),
+      ...(result.ok ? [] : result.errors || [])
+    ];
+    warningsHtml = window.NewsletterPreview.renderWarnings
+      ? window.NewsletterPreview.renderWarnings(warnings, esc)
+      : warnings.length
+        ? `<ul class="newsletter-preview-warnings">${warnings.map((w) => `<li>${esc(w)}</li>`).join("")}</ul>`
+        : "";
+    articleHtml = result.previewHtml || result.html || "";
+    templateNote = `<p class="admin-helper" style="margin:0 0 12px">Showing <strong>${esc(
+      templateKey === "green-price-cards" ? "Green Price Cards" : "Classic Editorial"
+    )}</strong> · ${esc(result.label || "")} — this is the Mailchimp email layout.</p>`;
+    if (!articleHtml && window.NewsletterPreview.renderNewsletterCruise) {
+      articleHtml = window.NewsletterPreview.renderNewsletterCruise(model, { escapeHtml: esc });
+      templateNote = `<p class="admin-helper" style="margin:0 0 12px">Mailchimp template could not render yet — showing shared cruise preview instead.</p>`;
+    }
+  } else if (window.NewsletterPreview) {
+    const model = buildFeaturedNewsletterPreviewModel(outputMode);
+    const warnings = window.NewsletterValidation?.validateNewsletterPreview?.(model) || [];
+    warningsHtml = window.NewsletterPreview.renderWarnings(warnings, esc);
+    articleHtml = window.NewsletterPreview.renderNewsletterCruise(model, { escapeHtml: esc });
+    templateNote = `<p class="admin-helper" style="margin:0 0 12px">Mailchimp export module unavailable — design templates need that module.</p>`;
+  } else {
+    articleHtml = `<div class="admin-message admin-error">Newsletter preview modules failed to load.</div>`;
+  }
+
   return `
     <div class="newsletter-preview-overlay" onclick="if (event.target === this) closeFeaturedNewsletterPreview()">
       <div class="newsletter-preview-modal" role="dialog" aria-modal="true" aria-labelledby="featuredNewsletterPreviewTitle">
         <div class="newsletter-preview-modal-header">
           <h3 id="featuredNewsletterPreviewTitle">Newsletter Preview</h3>
           <div class="admin-actions-row">
+            <label class="newsletter-preview-mode">
+              <span>Template</span>
+              <select aria-label="Newsletter design template" onchange="setFeaturedNewsletterPreviewTemplate(this.value)">
+                <option value="green-price-cards" ${templateKey === "green-price-cards" ? "selected" : ""}>Green Price Cards</option>
+                <option value="classic-editorial" ${templateKey === "classic-editorial" ? "selected" : ""}>Classic Editorial</option>
+              </select>
+            </label>
             <label class="newsletter-preview-mode">
               <span>Output</span>
               <select aria-label="Newsletter pricing output mode" onchange="setFeaturedNewsletterPreviewMode(this.value)">
@@ -8862,6 +8924,7 @@ function renderFeaturedNewsletterPreviewModal() {
         </div>
         <div class="newsletter-preview-modal-body">
           ${publishHint}
+          ${templateNote}
           ${warningsHtml}
           ${articleHtml}
         </div>
@@ -9288,15 +9351,15 @@ function formatFeaturedRouteMapBytes(n) {
   return `${(v / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function renderFeaturedGeneratedRouteMapPanel(draft) {
+function renderFeaturedGeneratedRouteMapParts(draft) {
   const result = featuredRouteMapGenResult;
   const hasAssets = featuredCruiseHasGeneratedRouteMap(draft) || Boolean(result?.ok);
-  if (!hasAssets && !featuredRouteMapGenerating && !result) return "";
+  if (!hasAssets && !featuredRouteMapGenerating && !result) {
+    return { hasPanel: false, metaHtml: "", previewHtml: "", errHtml: "" };
+  }
 
   const pngPath = result?.png_path || draft.route_map_png_path || "";
   const bust = Date.parse(result?.generated_at || draft.route_map_generated_at || "") || Date.now();
-  // Always build public Storage URLs in the browser — do not trust function response URLs
-  // (env host / cache / Content-Disposition quirks). Paths in draft/result are canonical.
   // Never preview the SVG — Supabase serves it as attachment and browsers download route-map.svg.
   const pngUrl = featuredRouteMapPublicUrl(pngPath, bust);
   const width = result?.width ?? draft.route_map_width;
@@ -9304,15 +9367,15 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
   const generatedAt = result?.generated_at || draft.route_map_generated_at;
   const renderer = result?.renderer_version || draft.route_map_renderer_version || "—";
   const totalMs = result?.timings?.total_ms;
-  const err =
+  const errHtml =
     result && result.ok === false
-      ? `<div class="admin-message error" style="margin-top:10px">${esc(
+      ? `<div class="admin-message error" style="margin-top:8px">${esc(
           result.errors?.[0]?.message || "Route map generation failed."
         )}</div>`
       : "";
 
-  return `
-    <div class="featured-route-map-generated">
+  const metaHtml = `
+    <div class="featured-route-map-gen-meta">
       <h5>Generated route map</h5>
       ${
         result?.ok || featuredCruiseHasGeneratedRouteMap(draft)
@@ -9321,34 +9384,44 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
             }</p>`
           : ""
       }
-      ${err}
-      <div class="featured-route-map-gen-meta">
-        <p><strong>Generated:</strong> ${esc(generatedAt ? new Date(generatedAt).toLocaleString() : "—")}</p>
-        <p><strong>Renderer version:</strong> ${esc(renderer)}</p>
-        <p><strong>Dimensions:</strong> ${
-          width && height ? `${esc(String(width))} × ${esc(String(height))} px` : "—"
-        }</p>
-        ${
-          result?.svg_bytes != null
-            ? `<p><strong>SVG size:</strong> ${esc(formatFeaturedRouteMapBytes(result.svg_bytes))}</p>`
-            : ""
-        }
-        ${
-          result?.png_bytes != null
-            ? `<p><strong>PNG size:</strong> ${esc(formatFeaturedRouteMapBytes(result.png_bytes))}</p>`
-            : ""
-        }
-        ${pngPath ? `<p class="admin-small">PNG: ${esc(pngPath)}</p>` : ""}
-      </div>
+      <p><strong>Generated:</strong> ${esc(generatedAt ? new Date(generatedAt).toLocaleString() : "—")}</p>
+      <p><strong>Renderer:</strong> ${esc(renderer)}</p>
+      <p><strong>Size:</strong> ${
+        width && height ? `${esc(String(width))} × ${esc(String(height))} px` : "—"
+      }</p>
+      ${
+        result?.png_bytes != null
+          ? `<p><strong>PNG:</strong> ${esc(formatFeaturedRouteMapBytes(result.png_bytes))}</p>`
+          : ""
+      }
+      ${pngPath ? `<p class="admin-small">${esc(pngPath)}</p>` : ""}
+    </div>
+  `;
+
+  const previewHtml = `
+    <figure class="featured-route-map-preview-figure">
+      <figcaption>Route map preview</figcaption>
+      ${
+        pngUrl
+          ? `<img src="${esc(pngUrl)}" alt="Generated route map" loading="lazy">`
+          : `<div class="admin-empty-preview">No PNG</div>`
+      }
+    </figure>
+  `;
+
+  return { hasPanel: true, metaHtml, previewHtml, errHtml };
+}
+
+/** @deprecated use renderFeaturedGeneratedRouteMapParts via section layout */
+function renderFeaturedGeneratedRouteMapPanel(draft) {
+  const parts = renderFeaturedGeneratedRouteMapParts(draft);
+  if (!parts.hasPanel) return "";
+  return `
+    <div class="featured-route-map-generated">
+      ${parts.metaHtml}
+      ${parts.errHtml}
       <div class="featured-route-map-gen-previews featured-route-map-gen-previews--single">
-        <figure>
-          <figcaption>Route map preview</figcaption>
-          ${
-            pngUrl
-              ? `<img src="${esc(pngUrl)}" alt="Generated route map" loading="lazy">`
-              : `<div class="admin-empty-preview">No PNG</div>`
-          }
-        </figure>
+        ${parts.previewHtml}
       </div>
     </div>
   `;
@@ -9585,6 +9658,7 @@ function renderFeaturedRouteMapSection(draft) {
   const canGenerate = featuredCruiseCanGenerateRouteMap(draft);
   const hasGenerated = featuredCruiseHasGeneratedRouteMap(draft);
   const genLabel = hasGenerated ? "Regenerate Route Map" : "Generate Route Map";
+  const genParts = renderFeaturedGeneratedRouteMapParts(draft);
   const genButton = editingFeaturedCruiseId
     ? `<button type="button" class="admin-button black small" ${
         !canGenerate || featuredRouteMapGenerating ? "disabled" : ""
@@ -9597,29 +9671,40 @@ function renderFeaturedRouteMapSection(draft) {
         featuredRouteMapGenProgress || "Working…"
       )}</p>`
     : "";
+  const hasPreview = Boolean(genParts.previewHtml);
 
   return `
     <section class="featured-form-section">
       <h4>Route Map</h4>
-      ${readiness}
-      <div class="featured-media-source-actions">
-        ${genButton}
-        <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapPicker()">Choose from Media Library</button>
-        <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapUpload()">Upload New Route Map</button>
-        ${legacyUrl && !draft.route_map_media_id ? `<span class="admin-small">Legacy Image URL in use</span>` : ""}
+      <div class="featured-route-map-layout${hasPreview ? " has-preview" : ""}">
+        <div class="featured-route-map-sidebar">
+          ${readiness}
+          <div class="featured-media-source-actions">
+            ${genButton}
+            <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapPicker()">Choose from Media Library</button>
+            <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapUpload()">Upload New Route Map</button>
+            ${legacyUrl && !draft.route_map_media_id ? `<span class="admin-small">Legacy Image URL in use</span>` : ""}
+            ${
+              draft.route_map_media_id || legacyUrl
+                ? `<button type="button" class="admin-button secondary small" onclick="removeFeaturedRouteMapSelection()">Remove Selection</button>`
+                : ""
+            }
+          </div>
+          ${progress}
+          ${
+            !canGenerate && editingFeaturedCruiseId
+              ? `<p class="admin-muted">Generate Route Map is available when the itinerary has mapped ports with coordinates.</p>`
+              : ""
+          }
+          ${genParts.metaHtml}
+          ${genParts.errHtml}
+        </div>
         ${
-          draft.route_map_media_id || legacyUrl
-            ? `<button type="button" class="admin-button secondary small" onclick="removeFeaturedRouteMapSelection()">Remove Selection</button>`
+          hasPreview
+            ? `<div class="featured-route-map-preview-col">${genParts.previewHtml}</div>`
             : ""
         }
       </div>
-      ${progress}
-      ${
-        !canGenerate && editingFeaturedCruiseId
-          ? `<p class="admin-muted">Generate Route Map is available when the itinerary has mapped ports with coordinates.</p>`
-          : ""
-      }
-      ${renderFeaturedGeneratedRouteMapPanel(draft)}
       <div class="featured-media-preview-block">
         <p class="admin-small" style="margin-bottom:8px">Manual Media Library selection (optional — not overwritten by Generate)</p>
         <div class="featured-image-preview-wrap">

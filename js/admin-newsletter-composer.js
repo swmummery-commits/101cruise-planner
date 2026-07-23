@@ -745,7 +745,13 @@
     issueTemplate = value === "classic-editorial" ? "classic-editorial" : "green-price-cards";
     if (issueNumber != null) saveTemplateForNumber(issueNumber, issueTemplate);
     invalidateCache();
-    issueMessage = `Design template set to ${issueTemplate === "classic-editorial" ? "Classic Editorial" : "Green Price Cards"}.`;
+    issueHtml.previewHtml = "";
+    issueHtml.label = "";
+    issueHtml.filename = "";
+    issueHtml.airline = "";
+    issueHtml.general = "";
+    issueHtml.previewMode = "";
+    issueMessage = `Design template set to ${issueTemplate === "classic-editorial" ? "Classic Editorial" : "Green Price Cards"}. Click Preview to refresh.`;
     issueMessageTone = "info";
     rerender();
   }
@@ -1238,8 +1244,8 @@
           <div class="admin-field">
             <label for="newsletterIssueTemplate">Design Template</label>
             <select id="newsletterIssueTemplate" onchange="NewsletterIssueComposer.setTemplate(this.value)" ${issueBusy || issueNumber == null ? "disabled" : ""}>
-              <option value="classic-editorial" ${issueTemplate === "classic-editorial" ? "selected" : ""}>Classic Editorial</option>
               <option value="green-price-cards" ${issueTemplate === "green-price-cards" ? "selected" : ""}>Green Price Cards</option>
+              <option value="classic-editorial" ${issueTemplate === "classic-editorial" ? "selected" : ""}>Classic Editorial</option>
             </select>
           </div>
           <div class="admin-field">
@@ -1247,7 +1253,7 @@
             <div class="newsletter-issue-static"><span class="newsletter-issue-status status-${esc(status.key)}">${esc(status.label)}</span></div>
           </div>
         </div>
-        <p class="admin-helper newsletter-issue-header-note">Temporary: design template is remembered in this browser only until newsletter issues get a database field.</p>
+          <p class="admin-helper newsletter-issue-header-note">Temporary: design template is remembered in this browser only until newsletter issues get a database field. After changing template, click <strong>Preview</strong> again — Green Price Cards shows green room headers and fare boxes; Classic Editorial shows the bordered price columns.</p>
 
         ${renderStartIssuePanel()}
 
