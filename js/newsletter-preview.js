@@ -552,7 +552,7 @@
         const count = model.inclusionItems.length;
         return `
           <div class="nl-includes-bar" data-count="${count}">
-            <div class="nl-includes-label">INCLUDES</div>
+            <div class="nl-includes-label">INCLUDES:</div>
             <ul class="nl-includes-items">
               ${model.inclusionItems
                 .map((item) => {

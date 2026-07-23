@@ -213,9 +213,9 @@ assert(
 );
 assert(/cr101-gpc-card/i.test(greenAirline.html), "green card structure");
 assert(/cr101-gpc-fare/i.test(greenAirline.html), "green fare boxes");
-assert(/background-color:#245C4E/i.test(greenAirline.html), "solid brand green boxes for white text");
-assert(/cr101-gpc-fare[\s\S]*?background-color:#245C4E/i.test(greenAirline.html), "fare boxes use solid brand green");
-assert(/cr101-gpc-room-header[\s\S]*?background-color:#245C4E/i.test(greenAirline.html), "room headers use solid brand green");
+assert(/background-color:#8DD9BF/i.test(greenAirline.html), "brand green boxes");
+assert(/cr101-gpc-fare[\s\S]*?background-color:#8DD9BF/i.test(greenAirline.html), "fare boxes use brand green");
+assert(/cr101-gpc-room-header[\s\S]*?background-color:#8DD9BF/i.test(greenAirline.html), "room headers use brand green");
 assert(/color:#FFFFFF/i.test(greenAirline.html), "white fare text");
 assert(/cr101-gpc-room-header/i.test(greenAirline.html), "room header present");
 assert(/text-align:center/i.test(greenAirline.html), "centred text present");
@@ -333,12 +333,16 @@ assert(fourFonts.every((f) => /font-size:12px/.test(f)), "4-room font size still
 assert(/cr101-gpc-includes/i.test(threeRoomGreen.html), "green Includes class");
 assert(/cr101-gpc-other-info/i.test(threeRoomGreen.html), "green Other Info class");
 assert(
-  /cr101-gpc-includes[\s\S]*?border-radius:8px/i.test(threeRoomGreen.html),
-  "Includes uses approved 8px radius"
+  /cr101-gpc-includes[\s\S]*?border:1px solid #8DD9BF/i.test(threeRoomGreen.html),
+  "Includes uses brand green border"
 );
 assert(
-  /cr101-gpc-other-info[\s\S]*?border-radius:8px/i.test(threeRoomGreen.html),
-  "Other Info uses approved 8px radius"
+  /cr101-gpc-includes[\s\S]*?border-radius:12px/i.test(threeRoomGreen.html),
+  "Includes uses 12px radius"
+);
+assert(
+  /cr101-gpc-other-info[\s\S]*?border-radius:24px/i.test(threeRoomGreen.html),
+  "Other Info uses rounded mint bar"
 );
 assert(
   /cr101-gpc-fare[\s\S]*?border-radius:8px/i.test(threeRoomGreen.html),
@@ -355,9 +359,11 @@ assert(
     /padding:8px 0 0;[\s\S]{0,200}cr101-gpc-other-info/i.test(threeRoomGreen.html),
   "Includes→Other Info spacing ~8px"
 );
-assert(/padding:15px 12px 0/i.test(threeRoomGreen.html), "Other Info→Disclaimer ~14–16px");
-assert(/background-color:#f4faf7/i.test(threeRoomGreen.html), "Includes keeps pale neutral bg");
-assert(/background-color:#f7f8f8/i.test(threeRoomGreen.html), "Other Info keeps pale neutral bg");
+assert(/padding:8px 12px 0/i.test(threeRoomGreen.html), "Other Info→Disclaimer tight spacing");
+assert(/background-color:#ffffff/i.test(threeRoomGreen.html) && /border:1px solid #8DD9BF/i.test(threeRoomGreen.html), "Includes white box with brand border");
+assert(/background-color:#effaf6/i.test(threeRoomGreen.html), "Other Info soft mint background");
+assert(/INCLUDES:/i.test(threeRoomGreen.html), "Includes title uses colon");
+assert(/color:#245C4E/i.test(threeRoomGreen.html), "Includes/Other Info use dark brand green text");
 
 /* Templates do not mutate each other */
 assert(/cr101-pricing-table/i.test(classicAirline.html), "classic still classic after green");

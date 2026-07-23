@@ -15,10 +15,8 @@
   const SITE_ORIGIN = "https://www.101cruise.com.au";
   const MAX_WIDTH = 600;
   const MAX_ROOMS = 4;
-  /** Soft brand mint — accents / Classic CTA (pair with dark text). */
+  /** Brand green — website primary (#8DD9BF). */
   const BRAND_GREEN = "#8DD9BF";
-  /** Solid brand green — Green Price Card headers & fare boxes (pair with white text). */
-  const BRAND_GREEN_SOLID = "#245C4E";
 
   const TEMPLATES = {
     CLASSIC_EDITORIAL: "classic-editorial",
@@ -433,9 +431,9 @@
         ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:0.5px;color:#FFFFFF;margin-top:6px;line-height:1.2;">${escapeHtml(percentOff)}% OFF</div>`
         : "";
     return `
-      <table role="presentation" class="cr101-gpc-fare" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:${BRAND_GREEN_SOLID};">
+      <table role="presentation" class="cr101-gpc-fare" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:${BRAND_GREEN};">
         <tr>
-          <td align="center" bgcolor="${BRAND_GREEN_SOLID}" style="background-color:${BRAND_GREEN_SOLID};border-radius:${GPC_RADIUS_PX}px;padding:10px 8px;text-align:center;">
+          <td align="center" bgcolor="${BRAND_GREEN}" style="background-color:${BRAND_GREEN};border-radius:${GPC_RADIUS_PX}px;padding:10px 8px;text-align:center;">
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;color:#FFFFFF;line-height:1.2;">${escapeHtml(label)}</div>
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#FFFFFF;line-height:1.15;margin-top:4px;">$${escapeHtml(money(price))}</div>
             ${saveLine}
@@ -498,10 +496,10 @@
             align="center"
             valign="middle"
             height="${headerHeight}"
-            bgcolor="${BRAND_GREEN_SOLID}"
+            bgcolor="${BRAND_GREEN}"
             data-cr101-gpc-header-mode="${twoLine ? "two-line" : "compact"}"
             data-cr101-gpc-header-height="${headerHeight}"
-            style="background-color:${BRAND_GREEN_SOLID};border-radius:9px 9px 0 0;height:${headerHeight}px;padding:0 8px;text-align:center;vertical-align:middle;mso-line-height-rule:exactly;"
+            style="background-color:${BRAND_GREEN};border-radius:9px 9px 0 0;height:${headerHeight}px;padding:0 8px;text-align:center;vertical-align:middle;mso-line-height-rule:exactly;"
           >
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:${GPC_ROOM_FONT_PX}px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:#FFFFFF;text-align:center;line-height:1.25;">${escapeHtml(mod.roomLabel)}</div>
           </td>
@@ -590,19 +588,20 @@
       return item.shortLabel || String(item.label || "").toUpperCase();
     });
     const padTop = green ? 12 : 28;
-    const radius = green ? `border-radius:${GPC_RADIUS_PX}px;` : "";
-    const bg = "background-color:#f4faf7;";
+    const radius = `border-radius:12px;`;
+    const box =
+      "background-color:#ffffff;border:1px solid #8DD9BF;" + radius;
     return `
       <tr>
         <td align="center" style="padding:${padTop}px 0 0;">
-          <table role="presentation" class="${green ? "cr101-gpc-includes" : "cr101-includes"}" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;${radius}${bg}">
+          <table role="presentation" class="${green ? "cr101-gpc-includes" : "cr101-includes"}" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;${box}">
             <tr>
-              <td align="center" style="padding:12px 14px 4px;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#1f7a66;${bg}">
-                INCLUDES
+              <td align="center" style="padding:14px 14px 6px;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#245C4E;background-color:#ffffff;">
+                INCLUDES:
               </td>
             </tr>
             <tr>
-              <td align="center" style="padding:4px 14px 12px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:400;letter-spacing:0.4px;line-height:1.55;color:#111111;${radius}${bg}">
+              <td align="center" style="padding:4px 14px 14px;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.35px;line-height:1.55;color:#245C4E;background-color:#ffffff;${radius}">
                 ${escapeHtml(labels.join(" · "))}
               </td>
             </tr>
@@ -612,31 +611,18 @@
     `;
   }
 
-  function renderOtherInfo(text, { green = false, bodyColor = "#111111" } = {}) {
+  function renderOtherInfo(text, { green = false } = {}) {
     if (!text) return "";
     const content = escapeHtml(String(text).toUpperCase());
-    if (green) {
-      return `
-        <tr>
-          <td align="center" style="padding:8px 0 0;">
-            <table role="presentation" class="cr101-gpc-other-info" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:#f7f8f8;">
-              <tr>
-                <td align="center" style="padding:12px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${bodyColor};border-radius:${GPC_RADIUS_PX}px;background-color:#f7f8f8;">
-                  <strong>OTHER INFO:</strong> ${content}
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      `;
-    }
+    const radius = green ? "24px" : "999px";
+    const padTop = green ? 8 : 16;
     return `
         <tr>
-          <td align="center" style="padding:16px 0 0;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#f7f8f8;">
+          <td align="center" style="padding:${padTop}px 0 0;">
+            <table role="presentation" class="${green ? "cr101-gpc-other-info" : "cr101-other-info"}" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${radius};background-color:#effaf6;">
               <tr>
-                <td align="center" style="padding:14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;color:${bodyColor};">
-                  <strong>OTHER INFO:</strong> ${content}
+                <td align="center" style="padding:14px 22px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.45px;line-height:1.35;color:#245C4E;border-radius:${radius};background-color:#effaf6;">
+                  <strong style="color:#245C4E;">OTHER INFO:</strong> ${content}
                 </td>
               </tr>
             </table>
@@ -806,7 +792,7 @@
       : renderClassicPricingTable(model.pricingModules, includeAirline);
 
     const inclusions = renderInclusions(model.inclusionItems, { green: isGreen });
-    const otherInfo = renderOtherInfo(model.otherInformation, { green: isGreen, bodyColor: body });
+    const otherInfo = renderOtherInfo(model.otherInformation, { green: isGreen });
 
     const disclaimerPadTop = 8;
     const disclaimer = textRow(
@@ -1038,7 +1024,6 @@ ${styleBlock}
     SITE_ORIGIN,
     MAX_WIDTH,
     BRAND_GREEN,
-    BRAND_GREEN_SOLID,
     TEMPLATES,
     TEMPLATE_LABELS,
     FILENAMES,

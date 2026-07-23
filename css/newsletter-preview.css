@@ -369,19 +369,19 @@
   justify-content: center;
   gap: 10px 12px;
   padding: 12px 16px;
-  border: 1px solid #b7d8cc;
-  border-radius: 12px;
-  background: #fff;
   box-sizing: border-box;
   text-align: center;
 }
 
-/* INCLUDES: title centred above the icon row (not inline on the left) */
+/* INCLUDES: white box, brand-green border, title above icon+label columns */
 .nl-includes-bar {
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 14px 14px 12px;
+  gap: 12px;
+  padding: 16px 12px 14px;
+  border: 1px solid #8DD9BF;
+  border-radius: 12px;
+  background: #fff;
 }
 
 /* Keep pricing / includes / other-info stacked tightly */
@@ -402,16 +402,15 @@
   font-family: Helvetica, Arial, sans-serif;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: #1f7a66;
+  color: #245C4E;
   white-space: nowrap;
 }
 
 .nl-includes-label {
   width: 100%;
   text-align: center;
-  letter-spacing: 1.2px;
 }
 
 .nl-includes-items {
@@ -420,63 +419,71 @@
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 8px 4px;
+  gap: 12px 8px;
   width: 100%;
   min-width: 0;
 }
 
 .nl-includes-item {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 5px;
-  flex: 0 0 auto;
-  padding: 2px 10px;
-  border-right: 1px solid #d5e3de;
+  justify-content: flex-start;
+  gap: 6px;
+  flex: 0 1 auto;
+  max-width: 96px;
+  padding: 2px 6px;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.3px;
+  font-weight: 600;
+  letter-spacing: 0.35px;
   text-transform: uppercase;
-  color: #111;
-}
-
-.nl-includes-item:last-child {
-  border-right: none;
+  color: #245C4E;
+  text-align: center;
 }
 
 .nl-includes-icon {
   display: inline-flex;
-  width: 13px;
-  height: 13px;
-  color: #1f7a66;
+  width: 22px;
+  height: 22px;
+  color: #245C4E;
   flex: 0 0 auto;
 }
 
 .nl-includes-icon svg {
-  width: 13px;
-  height: 13px;
+  width: 22px;
+  height: 22px;
   display: block;
 }
 
 .nl-includes-text {
-  line-height: 1.2;
-  white-space: nowrap;
+  line-height: 1.25;
+  white-space: normal;
 }
 
+/* OTHER INFO: soft mint pill bar, label left, message fills the rest */
 .nl-other-info-bar {
-  background: #e8f5f0;
-  border-color: #b7d8cc;
+  gap: 12px 16px;
+  padding: 14px 22px;
+  border: none;
+  border-radius: 999px;
+  background: #effaf6;
+}
+
+.nl-other-info-label {
+  color: #245C4E;
 }
 
 .nl-other-info-text {
+  flex: 1 1 auto;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 12px;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: 0.45px;
   text-transform: uppercase;
-  color: #111;
+  color: #245C4E;
   line-height: 1.35;
   min-width: 0;
   text-align: center;
@@ -501,11 +508,14 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px;
+    border-radius: 16px;
+    padding: 14px 16px;
   }
 
   .nl-includes-item {
-    padding: 2px 8px;
+    max-width: 88px;
+    padding: 2px 4px;
   }
 }
 

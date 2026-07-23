@@ -1,34 +1,41 @@
 ---
-description: Newsletter/public cruise INCLUDES bar — title above items
+description: Newsletter/public cruise INCLUDES + OTHER INFO bars
 globs: css/newsletter-preview.css,css/public-cruise.css,js/newsletter-preview.js,js/newsletter-cruise-shared.js,js/newsletter-mailchimp-export.js
 alwaysApply: false
 ---
 
-# Newsletter Includes — Title Above Items
+# Newsletter Includes & Other Info
 
-The **INCLUDES** bar sits under pricing. **INCLUDES** is a centred title on its own row above the inclusion icons/labels.
+Shared by newsletter preview and public cruise pages (`newsletter-preview.css`).
 
-## Rules
+## INCLUDES
 
-- Stack layout: title on top, items below (`flex-direction: column` on `.nl-includes-bar`)
-- Title text is `INCLUDES` (no trailing colon), centred
-- Items may wrap onto a second row when every inclusion is present — do not truncate labels
-- Keep type compact (~10–11px) and icons ~13px
-- Disclaimer sits immediately under OTHER INFO / INCLUDES (`margin-top: 8px`), not with a large gap
+- White box with **1px `#8DD9BF` border**, 12px radius
+- Title **`INCLUDES:`** centred above items (`flex-direction: column`)
+- Each item is a **column**: icon above label (not side-by-side)
+- No vertical dividers between items
+- Icons + labels use dark green **`#245C4E`**
+- Items may wrap; do not truncate labels
+
+## OTHER INFO
+
+- Soft mint bar **`#effaf6`**, pill radius (`999px`; stack to `16px` on small screens)
+- No grey fill (`#f7f8f8` / `#f4faf7`)
+- Label **`OTHER INFO:`** + uppercase message in **`#245C4E`**
+- Disclaimer sits immediately under (`margin-top: 8px`)
 
 ## Bad
 
 ```css
-.nl-includes-bar { flex-direction: row; } /* title inline left of items */
-.nl-includes-items { flex-wrap: nowrap; } /* forces truncation when many items */
-.nl-disclaimer { margin-top: 48px; }
+.nl-includes-bar { border-color: #b7d8cc; }
+.nl-includes-item { flex-direction: row; border-right: 1px solid #d5e3de; }
+.nl-other-info-bar { background: #f7f8f8; }
 ```
 
 ## Good
 
 ```css
-.nl-includes-bar { flex-direction: column; align-items: center; }
-.nl-includes-label { width: 100%; text-align: center; }
-.nl-includes-items { flex-wrap: wrap; justify-content: center; }
-.nl-disclaimer { margin-top: 8px; }
+.nl-includes-bar { border: 1px solid #8DD9BF; background: #fff; flex-direction: column; }
+.nl-includes-item { flex-direction: column; align-items: center; color: #245C4E; }
+.nl-other-info-bar { background: #effaf6; border-radius: 999px; }
 ```
