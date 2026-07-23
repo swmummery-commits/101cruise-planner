@@ -162,6 +162,118 @@ function normalizePort(port, index) {
 }
 
 /**
+ * Eurostat/MARNET is Europe-dense. Outside coverage it can still return a
+ * "valid" polyline that snaps hundreds of miles away or loops via unrelated
+ * ocean basins (e.g. Bangkok→Ko Samui via the Andaman Sea).
+ */
+const MAX_ENDPOINT_SNAP_NM = 150;
+const MAX_SEA_VS_GC_RATIO = 4;
+
+function straightLineLeg(from, to, legIndex, reason) {
+  const polyline = [
+    [from.longitude, from.latitude],
+    [to.longitude, to.latitude]
+  ];
+  const distanceNm = haversineNm(from.latitude, from.longitude, to.latitude, to.longitude);
+  return {
+    ok: true,
+    leg: {
+      from_port_id: from.id,
+      to_port_id: to.id,
+      from_name: from.name,
+      to_name: to.name,
+      from_index: from.index,
+      to_index: to.index,
+      distance_nm: distanceNm,
+      distance_km: nmToKm(distanceNm),
+      waypoints: 2,
+      polyline,
+      fallback: "straight_line",
+      warning: `Leg ${legIndex + 1}: ${reason}; used straight line (${from.name || from.id} → ${to.name || to.id}).`
+    }
+  };
+}
+
+/**
+ * Reject graph routes whose endpoints miss the ports or that detour absurdly
+ * versus the great-circle distance between the true harbour positions.
+ * @param {Array<[number, number]>} polyline
+ * @param {{ latitude: number, longitude: number }} from
+ * @param {{ latitude: number, longitude: number }} to
+ * @param {number|null} distanceNm
+ * @returns {{ ok: true } | { ok: false, reason: string }}
+ */
+function assessGraphLegPlausibility(polyline, from, to, distanceNm) {
+  if (!Array.isArray(polyline) || polyline.length < 2) {
+    return { ok: false, reason: "marine graph returned a degenerate route" };
+  }
+  const start = polyline[0];
+  const end = polyline[polyline.length - 1];
+  const startSnapNm = haversineNm(from.latitude, from.longitude, start[1], start[0]);
+  const endSnapNm = haversineNm(to.latitude, to.longitude, end[1], end[0]);
+  if (startSnapNm > MAX_ENDPOINT_SNAP_NM || endSnapNm > MAX_ENDPOINT_SNAP_NM) {
+    return {
+      ok: false,
+      reason: `marine graph snapped too far from harbour (start ${startSnapNm.toFixed(0)} nm, end ${endSnapNm.toFixed(0)} nm)`
+    };
+  }
+
+  const gcNm = haversineNm(from.latitude, from.longitude, to.latitude, to.longitude);
+  const seaNm =
+    distanceNm != null && Number.isFinite(distanceNm) && distanceNm > 0
+      ? distanceNm
+      : polylineDistanceNm(polyline);
+  if (gcNm > 1 && seaNm / gcNm > MAX_SEA_VS_GC_RATIO) {
+    return {
+      ok: false,
+      reason: `marine graph detour looks implausible (${(seaNm / gcNm).toFixed(1)}× great-circle)`
+    };
+  }
+  return { ok: true };
+}
+
+function polylineDistanceNm(polyline) {
+  let total = 0;
+  for (let i = 1; i < polyline.length; i += 1) {
+    const a = polyline[i - 1];
+    const b = polyline[i];
+    total += haversineNm(a[1], a[0], b[1], b[0]);
+  }
+  return total;
+}
+
+/**
+ * True when a stored Route Object's leg endpoints still sit near their stops
+ * (used to invalidate cached Eurostat misfires outside Europe).
+ */
+function routeObjectEndpointsPlausible(routeObject) {
+  const stops = routeObject?.stops;
+  const legs = routeObject?.legs;
+  if (!Array.isArray(stops) || !Array.isArray(legs) || stops.length < 2) return false;
+  if (legs.length !== stops.length - 1) return false;
+
+  for (let i = 0; i < legs.length; i += 1) {
+    const from = stops[i];
+    const to = stops[i + 1];
+    const coords =
+      (Array.isArray(legs[i]?.simplified_coordinates) && legs[i].simplified_coordinates) ||
+      (Array.isArray(legs[i]?.full_coordinates) && legs[i].full_coordinates) ||
+      [];
+    if (coords.length < 2) return false;
+    const start = coords[0];
+    const end = coords[coords.length - 1];
+    if (!start || !end) return false;
+    const startSnapNm = haversineNm(from.latitude, from.longitude, start[1], start[0]);
+    const endSnapNm = haversineNm(to.latitude, to.longitude, end[1], end[0]);
+    if (startSnapNm > MAX_ENDPOINT_SNAP_NM || endSnapNm > MAX_ENDPOINT_SNAP_NM) return false;
+    const gcNm = haversineNm(from.latitude, from.longitude, to.latitude, to.longitude);
+    const seaNm = polylineDistanceNm(coords);
+    if (gcNm > 1 && seaNm / gcNm > MAX_SEA_VS_GC_RATIO) return false;
+  }
+  return true;
+}
+
+/**
  * Route a single sea leg between two normalized ports.
  * @returns {{ ok: true, leg: MarineRouteLeg } | { ok: false, error: MarineRouteError }}
  */
@@ -176,28 +288,7 @@ function routeLeg(from, to, legIndex) {
     if (coords.length < 2) {
       // Degenerate/empty graph result (common outside Eurostat coverage) —
       // fall back to a straight sea segment between the two port positions.
-      const polyline = [
-        [from.longitude, from.latitude],
-        [to.longitude, to.latitude]
-      ];
-      const distanceNm = haversineNm(from.latitude, from.longitude, to.latitude, to.longitude);
-      return {
-        ok: true,
-        leg: {
-          from_port_id: from.id,
-          to_port_id: to.id,
-          from_name: from.name,
-          to_name: to.name,
-          from_index: from.index,
-          to_index: to.index,
-          distance_nm: distanceNm,
-          distance_km: nmToKm(distanceNm),
-          waypoints: 2,
-          polyline,
-          fallback: "straight_line",
-          warning: `Leg ${legIndex + 1}: marine graph returned a degenerate route; used straight line (${from.name || from.id} → ${to.name || to.id}).`
-        }
-      };
+      return straightLineLeg(from, to, legIndex, "marine graph returned a degenerate route");
     }
 
     /** @type {Array<[number, number]>} */
@@ -211,6 +302,11 @@ function routeLeg(from, to, legIndex) {
       result.distance != null && Number.isFinite(Number(result.distance))
         ? Number(result.distance)
         : null;
+
+    const plausibility = assessGraphLegPlausibility(polyline, from, to, distanceNm);
+    if (!plausibility.ok) {
+      return straightLineLeg(from, to, legIndex, plausibility.reason);
+    }
 
     return {
       ok: true,
@@ -390,5 +486,8 @@ module.exports = {
   routeLeg,
   normalizePort,
   nmToKm,
-  haversineNm
+  haversineNm,
+  routeObjectEndpointsPlausible,
+  MAX_ENDPOINT_SNAP_NM,
+  MAX_SEA_VS_GC_RATIO
 };

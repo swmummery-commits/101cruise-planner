@@ -17,6 +17,7 @@
 const { requireAdmin } = require("./admin-auth");
 const { loadMarineRouteRow, saveMarineRouteRow } = require("./lib/marine-route-persist");
 const { generateMarineRouteForCruise } = require("./lib/marine-route-itinerary");
+const { routeObjectEndpointsPlausible } = require("./lib/marine-route");
 const { renderRouteMapSvg } = require("./lib/route-map-svg");
 const {
   ROUTE_MAP_RENDERER_VERSION,
@@ -184,7 +185,8 @@ async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
     if (
       existing?.route_data?.legs?.length &&
       existing?.route_data?.stops?.length &&
-      routeObjectIsRenderable(existing.route_data)
+      routeObjectIsRenderable(existing.route_data) &&
+      routeObjectEndpointsPlausible(existing.route_data)
     ) {
       return {
         ok: true,
