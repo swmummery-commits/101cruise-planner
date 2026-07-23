@@ -401,11 +401,14 @@
           <section class="cruise">
             <h2>${esc(String(index + 1))}. ${esc(destinationForCruise(cruise))}</h2>
             <dl>
-              <div><dt>Cruise dates</dt><dd>${esc(cruiseDateRange(cruise))}${
-                nightsLabel ? ` (${esc(nightsLabel)})` : ""
-              }</dd></div>
-              <div><dt>Cruise line</dt><dd>${esc(lineNameForCruise(cruise))}</dd></div>
-              <div><dt>Ship</dt><dd>${esc(shipNameForCruise(cruise))}</dd></div>
+              <div class="pair">
+                <dt>Cruise line</dt><dd>${esc(lineNameForCruise(cruise))}</dd>
+                <dt>Ship</dt><dd>${esc(shipNameForCruise(cruise))}</dd>
+              </div>
+              <div>
+                <dt>Cruise dates</dt>
+                <dd>${esc(cruiseDateRange(cruise))}${nightsLabel ? ` (${esc(nightsLabel)})` : ""}</dd>
+              </div>
             </dl>
             <table>
               <thead>
@@ -429,7 +432,7 @@
   <meta charset="utf-8">
   <title>Newsletter ${esc(String(issueNumber))} — cruise record</title>
   <style>
-    @page { margin: 16mm; }
+    @page { margin: 12mm; }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -437,43 +440,50 @@
       color: #000;
       background: #fff;
       font-family: Helvetica, Arial, sans-serif;
-      font-size: 12px;
-      line-height: 1.4;
+      font-size: 10px;
+      line-height: 1.3;
     }
     h1 {
-      margin: 0 0 4px;
-      font-size: 20px;
+      margin: 0 0 2px;
+      font-size: 15px;
       font-weight: 700;
     }
     .eyebrow {
       margin: 0 0 2px;
-      font-size: 11px;
+      font-size: 9px;
       letter-spacing: 0.06em;
       text-transform: uppercase;
     }
     .meta {
-      margin: 0 0 18px;
-      font-size: 12px;
+      margin: 0 0 10px;
+      font-size: 10px;
     }
     .cruise {
-      margin: 0 0 18px;
-      padding: 0 0 14px;
-      border-bottom: 1px solid #000;
+      margin: 0 0 10px;
+      padding: 0;
       page-break-inside: avoid;
     }
-    .cruise:last-child { border-bottom: none; }
     h2 {
-      margin: 0 0 8px;
-      font-size: 14px;
+      margin: 0 0 4px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
     }
     dl {
-      margin: 0 0 10px;
+      margin: 0 0 6px;
       display: grid;
-      gap: 4px;
+      gap: 2px;
     }
-    dl div { display: grid; grid-template-columns: 100px 1fr; gap: 8px; }
+    dl div {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 6px;
+      align-items: baseline;
+    }
+    dl div.pair {
+      grid-template-columns: 72px 1fr 40px 1fr;
+      gap: 6px 8px;
+    }
     dt { margin: 0; font-weight: 700; }
     dd { margin: 0; }
     table {
@@ -481,42 +491,39 @@
       border-collapse: collapse;
     }
     th, td {
-      border: 1px solid #000;
-      padding: 6px 8px;
+      border: 0.5px solid #bbb;
+      padding: 3px 6px;
       text-align: left;
       vertical-align: top;
+      font-size: 10px;
     }
     th { font-weight: 700; }
     .num { text-align: right; white-space: nowrap; }
-    .footer {
-      margin-top: 16px;
-      font-size: 11px;
-    }
     .screen-toolbar {
       position: sticky;
       top: 0;
       display: flex;
       gap: 8px;
       align-items: center;
-      margin: 0 0 16px;
-      padding: 10px 0;
+      margin: 0 0 12px;
+      padding: 8px 0;
       background: #fff;
-      border-bottom: 1px solid #000;
+      border-bottom: 0.5px solid #bbb;
     }
     .screen-toolbar button {
       font: inherit;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      padding: 8px 12px;
-      border: 1px solid #000;
+      padding: 6px 10px;
+      border: 0.5px solid #bbb;
       background: #fff;
       color: #000;
       cursor: pointer;
     }
     .screen-toolbar .hint {
-      font-size: 11px;
+      font-size: 10px;
     }
-    .doc-body { padding: 8px 4px 24px; }
+    .doc-body { padding: 4px 2px 16px; }
     @media print {
       .screen-toolbar { display: none !important; }
       .doc-body { padding: 0; }
@@ -533,7 +540,6 @@
     <h1>Newsletter ${esc(String(issueNumber))}</h1>
     <p class="meta">Published ${esc(issueDate ? formatDate(issueDate) : "—")} · ${esc(String(cruises.length))} cruise${cruises.length === 1 ? "" : "s"}</p>
     ${cruiseBlocks}
-    <p class="footer">Prices per person in USD as entered for this issue. Internal record only.</p>
   </div>
 </body>
 </html>`;
