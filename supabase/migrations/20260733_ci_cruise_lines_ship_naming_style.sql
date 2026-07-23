@@ -51,3 +51,9 @@ SET
   ship_naming_style = 'honorific_vessel',
   updated_at = timezone('utc', now())
 WHERE lower(trim(name)) = 'holland america line';
+
+UPDATE public.ci_cruise_lines
+SET
+  ship_naming_style = 'honorific_vessel',
+  updated_at = timezone('utc', now())
+WHERE lower(trim(name)) = 'paul gauguin cruises';
