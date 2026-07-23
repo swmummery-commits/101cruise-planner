@@ -154,6 +154,15 @@ assert(legacy.stops.length === 4, "legacy 4 stops");
 assert(legacy.stops[1].stop_type === "at_sea", "At Sea detected");
 assert(legacy.stops[0].entered_port_text.includes("Barcelona"), "display wording preserved");
 
+const pasted = I.buildStopsFromPortList(
+  "Barcelona, Spain | Palma de Mallorca, Spain | Lisbon, Portugal"
+);
+assert(pasted.portCount === 3, "paste list counts 3 ports");
+assert(pasted.stops[0].stop_type === "embarkation", "first paste stop is embarkation");
+assert(pasted.stops[1].stop_type === "port_call", "middle paste stop is port call");
+assert(pasted.stops[2].stop_type === "disembarkation", "last paste stop is disembarkation");
+assert(pasted.stops[0].entered_country_text === "Spain", "country parsed from paste");
+
 const ordered = I.normalizeStopOrder([
   I.blankStop(9, { entered_port_text: "A", stop_type: "port_call" }),
   I.blankStop(2, { entered_port_text: "B", stop_type: "port_call" })

@@ -338,6 +338,8 @@
   /**
    * Parse legacy pipe-separated itinerary_summary into structured draft rows.
    * Does not invent geographic facts beyond comma country suffix.
+   *
+   * Accepts: "Barcelona, Spain | Palma de Mallorca, Spain | Lisbon, Portugal"
    */
   function parseLegacyItinerarySummary(summary) {
     const parts = String(summary || "")
@@ -355,12 +357,49 @@
       return blankStop(index + 1, {
         day_number: index + 1,
         stop_type: stopType,
+        // Keep full pasted label for newsletter PORTS OF CALL wording.
         entered_port_text: stopType === "at_sea" ? "" : part,
         entered_country_text: stopType === "at_sea" ? "" : parsed.countryText || ""
       });
     });
 
     return { stops, reliable: true };
+  }
+
+  /**
+   * Build ordered itinerary stops from a pasted port list.
+   * First stop → embarkation, last → disembarkation (when 2+ geographic ports).
+   */
+  function buildStopsFromPortList(summary) {
+    const parsed = parseLegacyItinerarySummary(summary);
+    const stops = parsed.stops || [];
+    if (!stops.length) return { stops: [], reliable: true, portCount: 0 };
+
+    const geoIndexes = [];
+    stops.forEach((stop, index) => {
+      if (!isAtSeaStopType(stop.stop_type) && isGeographicStopType(stop.stop_type)) {
+        geoIndexes.push(index);
+      } else if (
+        !isAtSeaStopType(stop.stop_type) &&
+        stop.stop_type !== "scenic_cruising" &&
+        String(stop.entered_port_text || "").trim()
+      ) {
+        geoIndexes.push(index);
+      }
+    });
+
+    if (geoIndexes.length === 1) {
+      stops[geoIndexes[0]].stop_type = "embarkation";
+    } else if (geoIndexes.length >= 2) {
+      stops[geoIndexes[0]].stop_type = "embarkation";
+      stops[geoIndexes[geoIndexes.length - 1]].stop_type = "disembarkation";
+    }
+
+    return {
+      stops: normalizeStopOrder(stops),
+      reliable: true,
+      portCount: geoIndexes.length
+    };
   }
 
   function customerFacingPortLabel(stop) {
@@ -641,6 +680,7 @@
     normalizeStopOrder,
     mapStopFromDb,
     parseLegacyItinerarySummary,
+    buildStopsFromPortList,
     customerFacingPortLabel,
     buildPortsJoinedFromStops,
     buildRouteSignature,

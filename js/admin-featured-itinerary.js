@@ -22,6 +22,10 @@
   let sectionOpen = true;
   /** @type {Set<string>|null} null = auto-open stops that need attention */
   let openStopIds = null;
+  let portListPaste = "";
+  let portListBusy = false;
+  let portListMessage = "";
+  let portListMessageTone = "";
 
   function stopNeedsAttention(stop) {
     const flags = I().rowStatusFlags(stop);
@@ -82,6 +86,10 @@
     routeMapSignature = "";
     sectionOpen = true;
     openStopIds = null;
+    portListPaste = "";
+    portListBusy = false;
+    portListMessage = "";
+    portListMessageTone = "";
   }
 
   function getStops() {
@@ -183,6 +191,7 @@
   }
 
   function captureFromDom() {
+    capturePortListPasteFromDom();
     if (!document.getElementById("fcItineraryList")) return stops;
     const next = [];
     document.querySelectorAll("#fcItineraryList .fc-itin-row").forEach((row, index) => {
@@ -344,6 +353,216 @@
     needsStructuring = false;
     matchPrompt = null;
     rerender();
+  }
+
+  function capturePortListPasteFromDom() {
+    const el = document.getElementById("fcPortListPaste");
+    if (el) portListPaste = el.value || "";
+    return portListPaste;
+  }
+
+  async function authHeaders() {
+    if (typeof global.adminAuthHeaders === "function") {
+      return global.adminAuthHeaders({ "Content-Type": "application/json" });
+    }
+    const sb = client();
+    const { data } = await sb.auth.getSession();
+    return {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${data.session?.access_token || ""}`
+    };
+  }
+
+  async function createOrLinkPortForStop(working, featuredCruiseId) {
+    const entered = String(working.entered_port_text || "").trim();
+    if (!entered) return working;
+    if (I().isAtSeaStopType(working.stop_type)) return working;
+
+    const classified = I().classifyPortMatches(
+      entered,
+      working.entered_country_text,
+      portsCache
+    );
+
+    // Frictionless paste: strong or unique likely → use existing.
+    if (classified.primary && (classified.status === "strong" || classified.status === "likely")) {
+      working.port_id = classified.primary.id;
+      working.port = classified.primary;
+      working.matchDecision = "use_existing";
+      return working;
+    }
+
+    // Ambiguous with a clear top score → use top; otherwise create provisional.
+    if (classified.status === "ambiguous" && classified.matches?.length) {
+      const top = classified.matches[0];
+      const second = classified.matches[1];
+      const topScore = Number(top.score) || 0;
+      const secondScore = Number(second?.score) || 0;
+      if (topScore >= 85 && topScore - secondScore >= 8 && top.port) {
+        working.port_id = top.port.id;
+        working.port = top.port;
+        working.matchDecision = "use_existing";
+        return working;
+      }
+    }
+
+    const payload = I().provisionalPortPayload({
+      enteredPortText: entered,
+      enteredCountryText: working.entered_country_text,
+      featuredCruiseId
+    });
+    const existing = portsCache.find((p) => p.match_key && p.match_key === payload.match_key);
+    if (existing) {
+      working.port_id = existing.id;
+      working.port = existing;
+      working.matchDecision = "use_existing";
+      return working;
+    }
+
+    const sb = client();
+    const { data, error } = await sb.from("ports").insert(payload).select("*").single();
+    if (error) {
+      if (/duplicate|unique/i.test(error.message || "")) {
+        await ensurePortsLoaded({ force: true });
+        const again = portsCache.find((p) => p.match_key === payload.match_key);
+        if (again) {
+          working.port_id = again.id;
+          working.port = again;
+          working.matchDecision = "use_existing";
+          return working;
+        }
+      }
+      throw new Error(`Could not create port “${entered}”: ${error.message}`);
+    }
+    portsCache.push(data);
+    working.port_id = data.id;
+    working.port = data;
+    working.matchDecision = "create_new";
+    return working;
+  }
+
+  async function geocodeMissingPorts(portIds) {
+    const ids = [...new Set((portIds || []).filter(Boolean))];
+    if (!ids.length) return { updated: 0, failed: 0, results: [] };
+    const headers = await authHeaders();
+    const response = await fetch("/.netlify/functions/geocode-ports", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ port_ids: ids })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(data.message || data.error || `Geocode failed (HTTP ${response.status})`);
+    }
+    for (const row of data.results || []) {
+      if (!row.ok || row.latitude == null || row.longitude == null) continue;
+      const cached = portsCache.find((p) => p.id === row.id);
+      if (cached) {
+        cached.latitude = row.latitude;
+        cached.longitude = row.longitude;
+      }
+      for (const stop of stops) {
+        if (stop.port_id === row.id && stop.port) {
+          stop.port = { ...stop.port, latitude: row.latitude, longitude: row.longitude };
+        }
+      }
+    }
+    return data;
+  }
+
+  /**
+   * Paste "City, Country | City, Country | …" → structured stops + Ports rows + coordinates.
+   */
+  async function applyPortListPaste() {
+    capturePortListPasteFromDom();
+    const raw = String(portListPaste || "").trim();
+    if (!raw) {
+      portListMessage = "Paste a pipe-separated port list first.";
+      portListMessageTone = "error";
+      rerender();
+      return;
+    }
+
+    const built = I().buildStopsFromPortList(raw);
+    if (!built.stops.length) {
+      portListMessage = "No ports found in that list. Use: City, Country | City, Country";
+      portListMessageTone = "error";
+      rerender();
+      return;
+    }
+
+    const replaceExisting =
+      !stops.length ||
+      window.confirm(
+        `Replace the current ${stops.length} itinerary stop${stops.length === 1 ? "" : "s"} with ${built.stops.length} ports from your list?`
+      );
+    if (!replaceExisting) return;
+
+    try {
+      portListBusy = true;
+      portListMessage = "Splitting ports and matching the Ports database…";
+      portListMessageTone = "running";
+      matchPrompt = null;
+      rerender();
+
+      await ensurePortsLoaded({ force: true });
+      const featuredCruiseId =
+        (typeof global.getEditingFeaturedCruiseId === "function"
+          ? global.getEditingFeaturedCruiseId()
+          : null) || null;
+
+      let next = built.stops.map((s) => ({ ...s }));
+      for (let i = 0; i < next.length; i += 1) {
+        next[i] = await createOrLinkPortForStop(next[i], featuredCruiseId);
+      }
+      stops = I().normalizeStopOrder(next);
+      needsStructuring = false;
+      legacySummary = I().buildPortsJoinedFromStops(stops) || raw;
+
+      const draft =
+        typeof global.getFeaturedFormDraft === "function" ? global.getFeaturedFormDraft() : null;
+      if (draft) syncSummaryIntoDraft(draft);
+
+      const missingCoordIds = stops
+        .filter(
+          (s) =>
+            s.port_id &&
+            s.port &&
+            (s.port.latitude == null || s.port.longitude == null)
+        )
+        .map((s) => s.port_id);
+
+      if (missingCoordIds.length) {
+        portListMessage = `Looking up coordinates for ${missingCoordIds.length} port${missingCoordIds.length === 1 ? "" : "s"}…`;
+        portListMessageTone = "running";
+        rerender();
+        const geo = await geocodeMissingPorts(missingCoordIds);
+        const failed = Number(geo.failed) || 0;
+        const updated = Number(geo.updated) || 0;
+        const summary = I().summarizePortStatus(stops);
+        portListMessage = failed
+          ? `Applied ${stops.length} ports. Coordinates updated for ${updated}; ${failed} still need coordinates (add manually or retry).`
+          : `Applied ${stops.length} ports. ${updated} new coordinate${updated === 1 ? "" : "s"} saved. ${
+              summary.readyForAutoMap ? "Ready for Generate Route Map after you save." : "Review any remaining flags, then save."
+            }`;
+        portListMessageTone = failed ? "error" : "success";
+      } else {
+        const summary = I().summarizePortStatus(stops);
+        portListMessage = `Applied ${stops.length} ports from your list.${
+          summary.readyForAutoMap ? " Ready for Generate Route Map after you save." : ""
+        }`;
+        portListMessageTone = "success";
+      }
+
+      openStopIds = new Set(stops.filter(stopNeedsAttention).map((s) => s.localId));
+      sectionOpen = true;
+    } catch (error) {
+      portListMessage = error.message || "Could not apply the port list.";
+      portListMessageTone = "error";
+    } finally {
+      portListBusy = false;
+      rerender();
+    }
   }
 
   function onDragHandleDown() {
@@ -885,7 +1104,35 @@
           <span class="fc-itin-section-meta">${stopCount} stop${stopCount === 1 ? "" : "s"}</span>
         </button>
         <div class="fc-itin-section-body" ${sectionOpen ? "" : "hidden"}>
-          <p class="admin-muted">Ordered sailing stops. Port calls link to the Ports database. At Sea never creates a port. Expand a stop to edit details.</p>
+          <p class="admin-muted">Paste a full port list below, or edit stops one by one. Port calls link to the Ports database (created when missing) and coordinates are looked up for route maps.</p>
+          <div class="fc-itin-port-list-paste">
+            <label for="fcPortListPaste"><strong>Paste port list</strong></label>
+            <textarea
+              id="fcPortListPaste"
+              rows="3"
+              ${portListBusy ? "disabled" : ""}
+              placeholder="Barcelona, Spain | Palma de Mallorca, Spain | Alicante, Spain | Cartagena, Spain | Malaga, Spain | Seville, Spain | Portimao, Portugal | Lisbon, Portugal"
+            >${esc(portListPaste)}</textarea>
+            <p class="admin-helper">Separate ports with <code>|</code>. Prefer <code>City, Country</code> so new Ports rows get the right country and coordinates.</p>
+            <div class="admin-actions-row">
+              <button type="button" class="admin-button black small" onclick="FeaturedItineraryEditor.applyPortListPaste()" ${portListBusy ? "disabled" : ""}>${
+                portListBusy ? "Applying…" : "Apply port list"
+              }</button>
+            </div>
+            ${
+              portListMessage
+                ? `<div class="admin-message ${
+                    portListMessageTone === "error"
+                      ? "admin-error"
+                      : portListMessageTone === "success"
+                        ? "admin-success"
+                        : portListMessageTone === "running"
+                          ? "admin-running"
+                          : ""
+                  }">${esc(portListMessage)}</div>`
+                : ""
+            }
+          </div>
           ${
             needsStructuring
               ? `<div class="fc-itin-needs-structuring">
@@ -981,6 +1228,7 @@
     allowDrop,
     onDrop,
     importLegacyNow,
+    applyPortListPaste,
     resolveMatchUseExisting,
     resolveMatchCreateNew,
     resolveAmbiguous,

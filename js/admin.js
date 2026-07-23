@@ -8884,6 +8884,14 @@ function captureFeaturedPricingFromDom() {
   }));
 }
 
+function getFeaturedFormDraft() {
+  return featuredFormDraft;
+}
+
+function getEditingFeaturedCruiseId() {
+  return editingFeaturedCruiseId;
+}
+
 function captureFeaturedDraftFromDom() {
   if (!featuredFormDraft) featuredFormDraft = {};
   const departure = document.getElementById("fcDepartureDate")?.value || "";

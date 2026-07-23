@@ -3270,6 +3270,42 @@
 }
 
 /* Sprint 13D structured itinerary — accordion rows, no overlapping fields */
+.fc-itin-port-list-paste {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--admin-border, #e3e8e5);
+  border-radius: 10px;
+  background: #fafcfb;
+}
+
+.fc-itin-port-list-paste label {
+  display: block;
+  margin: 0 0 6px;
+  font-size: 13px;
+}
+
+.fc-itin-port-list-paste textarea {
+  width: 100%;
+  min-height: 72px;
+  margin: 0 0 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-border, #e3e8e5);
+  border-radius: 8px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.fc-itin-port-list-paste .admin-helper {
+  margin: 0 0 10px;
+}
+
+.fc-itin-port-list-paste .admin-message {
+  margin-top: 10px;
+}
+
 .fc-itin-section-toggle {
   display: flex;
   align-items: center;

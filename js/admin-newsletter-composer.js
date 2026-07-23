@@ -492,16 +492,83 @@
       margin-top: 16px;
       font-size: 11px;
     }
+    .screen-toolbar {
+      position: sticky;
+      top: 0;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin: 0 0 16px;
+      padding: 10px 0;
+      background: #fff;
+      border-bottom: 1px solid #000;
+    }
+    .screen-toolbar button {
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 8px 12px;
+      border: 1px solid #000;
+      background: #fff;
+      color: #000;
+      cursor: pointer;
+    }
+    .screen-toolbar .hint {
+      font-size: 11px;
+    }
+    .doc-body { padding: 8px 4px 24px; }
+    @media print {
+      .screen-toolbar { display: none !important; }
+      .doc-body { padding: 0; }
+    }
   </style>
 </head>
 <body>
-  <p class="eyebrow">101cruise · Weekly cruise record</p>
-  <h1>Newsletter ${esc(String(issueNumber))}</h1>
-  <p class="meta">Published ${esc(issueDate ? formatDate(issueDate) : "—")} · ${esc(String(cruises.length))} cruise${cruises.length === 1 ? "" : "s"}</p>
-  ${cruiseBlocks}
-  <p class="footer">Prices per person in USD as entered for this issue. Internal record only.</p>
+  <div class="screen-toolbar">
+    <button type="button" onclick="window.print()">Print / Save as PDF</button>
+    <span class="hint">In the print dialog choose “Save as PDF” to keep a file.</span>
+  </div>
+  <div class="doc-body">
+    <p class="eyebrow">101cruise · Weekly cruise record</p>
+    <h1>Newsletter ${esc(String(issueNumber))}</h1>
+    <p class="meta">Published ${esc(issueDate ? formatDate(issueDate) : "—")} · ${esc(String(cruises.length))} cruise${cruises.length === 1 ? "" : "s"}</p>
+    ${cruiseBlocks}
+    <p class="footer">Prices per person in USD as entered for this issue. Internal record only.</p>
+  </div>
 </body>
 </html>`;
+  }
+
+  function openPrintRecordDocument(html) {
+    // Blob URL keeps a real document in the new tab (about:blank + noopener was blank).
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, "_blank");
+    if (!printWindow) {
+      URL.revokeObjectURL(url);
+      throw new Error("Pop-up blocked. Allow pop-ups for Admin, then try Print again.");
+    }
+
+    const triggerPrint = () => {
+      try {
+        printWindow.focus();
+        printWindow.print();
+      } catch (_error) {
+        /* User can use the on-page Print / Save as PDF button. */
+      }
+    };
+
+    // Some browsers fire load late for blob URLs — try both paths.
+    try {
+      printWindow.addEventListener("load", () => window.setTimeout(triggerPrint, 150), {
+        once: true
+      });
+    } catch (_error) {
+      /* ignore */
+    }
+    window.setTimeout(triggerPrint, 500);
+    window.setTimeout(() => URL.revokeObjectURL(url), 120000);
+    return printWindow;
   }
 
   async function printRecord() {
@@ -525,22 +592,9 @@
       rerender();
       await ensurePricingLoaded(cruises);
       const html = buildPrintRecordHtml(cruises);
-      const printWindow = window.open("", "_blank", "noopener,noreferrer");
-      if (!printWindow) {
-        throw new Error("Pop-up blocked. Allow pop-ups for Admin to print this record.");
-      }
-      printWindow.document.open();
-      printWindow.document.write(html);
-      printWindow.document.close();
-      printWindow.focus();
-      window.setTimeout(() => {
-        try {
-          printWindow.print();
-        } catch (_error) {
-          /* user can print manually from the opened tab */
-        }
-      }, 250);
-      issueMessage = "Print dialog opened for this newsletter’s cruise record.";
+      openPrintRecordDocument(html);
+      issueMessage =
+        "Cruise record opened. Use Print / Save as PDF in the dialog (or the button on that page).";
       issueMessageTone = "success";
     } catch (error) {
       issueMessage = error.message || "Could not prepare the print record.";
@@ -1165,7 +1219,7 @@
             <label>Issue Date</label>
             <div class="newsletter-issue-date-row">
               <div class="newsletter-issue-static">${esc(issueDate ? formatDate(issueDate) : "—")}</div>
-              <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.printRecord()" ${issueBusy || issueNumber == null || !cruises.length ? "disabled" : ""}>Print</button>
+              <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.printRecord()" ${issueBusy || issueNumber == null || !cruises.length ? "disabled" : ""} title="Open cruise record and print or save as PDF">Print / PDF</button>
             </div>
           </div>
           <div class="admin-field">
