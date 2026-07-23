@@ -143,7 +143,16 @@ exports.handler = async function handler(event) {
 
   let body = null;
   try {
-    body = event.body ? JSON.parse(event.body) : null;
+    let raw = event.body || "";
+    // sendBeacon may base64-encode the body on some hosts.
+    if (event.isBase64Encoded && typeof raw === "string") {
+      try {
+        raw = Buffer.from(raw, "base64").toString("utf8");
+      } catch (_error) {
+        /* keep raw */
+      }
+    }
+    body = raw ? JSON.parse(raw) : null;
   } catch (_error) {
     return jsonResponse(400, {
       success: false,

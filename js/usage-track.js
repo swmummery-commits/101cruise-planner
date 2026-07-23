@@ -106,24 +106,36 @@
 
   function postEvent(payload) {
     const body = JSON.stringify(payload);
+    const sameOrigin =
+      root.location && typeof root.location.origin === "string" && ENDPOINT.startsWith(root.location.origin);
+
+    // Cross-origin embeds (e.g. Squarespace → Netlify): sendBeacon with application/json
+    // often fails silently. Prefer fetch+keepalive so Public Tools insights stay accurate.
+    const postWithFetch = () =>
+      fetch(ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body,
+        keepalive: true,
+        mode: "cors",
+        credentials: "omit"
+      })
+        .then((response) => response.json().catch(() => ({ success: false })))
+        .catch(() => ({ success: false }));
+
+    if (!sameOrigin) return postWithFetch();
+
     try {
       if (root.navigator && typeof root.navigator.sendBeacon === "function") {
-        const blob = new Blob([body], { type: "application/json" });
-        root.navigator.sendBeacon(ENDPOINT, blob);
-        return Promise.resolve({ success: true, beacon: true });
+        const blob = new Blob([body], { type: "text/plain;charset=UTF-8" });
+        const queued = root.navigator.sendBeacon(ENDPOINT, blob);
+        if (queued) return Promise.resolve({ success: true, beacon: true });
       }
     } catch (_error) {
-      /* fall through */
+      /* fall through to fetch */
     }
 
-    return fetch(ENDPOINT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body,
-      keepalive: true
-    })
-      .then(response => response.json().catch(() => ({ success: false })))
-      .catch(() => ({ success: false }));
+    return postWithFetch();
   }
 
   function trackEvent(moduleName, eventType, metadata) {

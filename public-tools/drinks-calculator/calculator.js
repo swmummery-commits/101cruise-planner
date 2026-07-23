@@ -90,11 +90,10 @@
   function trackPublic(eventType) {
     try {
       if (!window.CruiseUsage) return;
-      if (typeof window.getCruiseUsageContext !== "function") {
-        window.getCruiseUsageContext = function () {
-          return { surface: "public_tools", metadata: usageMeta() };
-        };
-      }
+      // Always set public_tools context — never inherit My Cruise surface from another page.
+      window.getCruiseUsageContext = function () {
+        return { surface: "public_tools", metadata: usageMeta() };
+      };
       if (eventType === "page_open" && typeof window.CruiseUsage.trackPageOpen === "function") {
         window.CruiseUsage.trackPageOpen("public_drinks_calculator", usageMeta());
         return;
@@ -1156,6 +1155,10 @@
 
     const lineParam = getLineParam();
     if (!lineParam) {
+      if (!trackedPageOpen) {
+        trackedPageOpen = true;
+        trackPublic("page_open");
+      }
       mount.innerHTML = `
         <section class="dc-calc">
           <p class="dc-calc-status is-error">Choose a cruise line to open the calculator.</p>

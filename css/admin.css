@@ -2864,10 +2864,55 @@
 /* Sprint 13C — Newsletter Issue Composer */
 .newsletter-issue-composer .newsletter-issue-header {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px 14px;
-  margin: 12px 0 16px;
-  align-items: end;
+  grid-template-columns: minmax(140px, 1fr) minmax(220px, 1.35fr) minmax(180px, 1.25fr) minmax(110px, 0.85fr);
+  gap: 12px 16px;
+  margin: 12px 0 8px;
+  align-items: start;
+}
+
+.newsletter-issue-composer .newsletter-issue-header .admin-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+}
+
+.newsletter-issue-composer .newsletter-issue-header .admin-field > label {
+  margin: 0;
+  line-height: 1.2;
+  min-height: 1.2em;
+}
+
+.newsletter-issue-composer .newsletter-issue-header select,
+.newsletter-issue-composer .newsletter-issue-header .newsletter-issue-static {
+  width: 100%;
+  min-height: 38px;
+  height: 38px;
+  box-sizing: border-box;
+}
+
+.newsletter-issue-date-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.newsletter-issue-date-row .newsletter-issue-static {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.newsletter-issue-date-row .admin-button {
+  flex: 0 0 auto;
+  height: 38px;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.newsletter-issue-header-note {
+  margin: 0 0 16px;
 }
 
 .newsletter-issue-static {
@@ -2876,6 +2921,11 @@
   align-items: center;
   font-size: 14px;
   color: #111;
+  padding: 0 10px;
+  border: 1px solid var(--admin-border, #e3e8e5);
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
 }
 
 .newsletter-issue-status {
@@ -3066,9 +3116,19 @@
   }
 }
 
+@media (max-width: 900px) {
+  .newsletter-issue-composer .newsletter-issue-header {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 @media (max-width: 640px) {
   .newsletter-issue-composer .newsletter-issue-header {
     grid-template-columns: 1fr;
+  }
+
+  .newsletter-issue-date-row {
+    flex-wrap: wrap;
   }
 
   .newsletter-issue-card {

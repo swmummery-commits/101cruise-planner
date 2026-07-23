@@ -322,6 +322,235 @@
     issuePricingLoadedFor = key;
   }
 
+  function formatMoneyCell(value) {
+    if (value === "" || value == null) return "—";
+    const num = Number(value);
+    if (!Number.isFinite(num)) return "—";
+    const shared = global.NewsletterCruiseShared;
+    if (shared?.formatMoney) return `$${shared.formatMoney(num)}`;
+    return `$${Math.round(num).toLocaleString("en-AU")}`;
+  }
+
+  function cruiseDateRange(cruise) {
+    const departure = cruise.departure_date || "";
+    const nightsNum = cruise.nights == null || cruise.nights === "" ? null : Number(cruise.nights);
+    const returnDate =
+      (typeof global.addCalendarDays === "function"
+        ? global.addCalendarDays(departure, nightsNum)
+        : "") ||
+      cruise.return_date ||
+      "";
+    if (global.NewsletterPreview?.formatNewsletterDateRange) {
+      const range = global.NewsletterPreview.formatNewsletterDateRange(departure, returnDate);
+      if (range) return range;
+    }
+    if (departure && returnDate) return `${formatDate(departure)} – ${formatDate(returnDate)}`;
+    return formatDate(departure || returnDate || "");
+  }
+
+  function destinationForCruise(cruise) {
+    if (typeof global.buildFeaturedDestinationStrip === "function") {
+      const strip = global.buildFeaturedDestinationStrip(cruise.departure_port, cruise.arrival_port);
+      if (strip) return strip;
+    }
+    return String(cruise.destination_strip || "").trim().toUpperCase() || "—";
+  }
+
+  function lineNameForCruise(cruise) {
+    return (
+      cruise.ci_cruise_lines?.name ||
+      getCruiseLines().find((row) => row.id === cruise.cruise_line_id)?.name ||
+      "—"
+    );
+  }
+
+  function shipNameForCruise(cruise) {
+    return (
+      cruise.ci_cruise_ships?.name ||
+      getCruiseShips().find((row) => row.id === cruise.cruise_ship_id)?.name ||
+      "—"
+    );
+  }
+
+  function buildPrintRecordHtml(cruises) {
+    const shared = global.NewsletterCruiseShared;
+    const cruiseBlocks = cruises
+      .map((cruise, index) => {
+        const pricing = shared?.sortPricingRows
+          ? shared.sortPricingRows(issuePricingByCruiseId[cruise.id] || [])
+          : [...(issuePricingByCruiseId[cruise.id] || [])];
+        const nightsLabel =
+          cruise.nights != null && cruise.nights !== ""
+            ? `${Number(cruise.nights)} night${Number(cruise.nights) === 1 ? "" : "s"}`
+            : "";
+        const rowsHtml = pricing.length
+          ? pricing
+              .map((row) => {
+                const cabin = String(row.room_label || "").trim() || "—";
+                return `<tr>
+                  <td>${esc(cabin)}</td>
+                  <td class="num">${esc(formatMoneyCell(row.brochure_price))}</td>
+                  <td class="num">${esc(formatMoneyCell(row.cruise_101_price))}</td>
+                  <td class="num">${esc(formatMoneyCell(row.airline_price))}</td>
+                </tr>`;
+              })
+              .join("")
+          : `<tr><td colspan="4">No cabin pricing entered</td></tr>`;
+
+        return `
+          <section class="cruise">
+            <h2>${esc(String(index + 1))}. ${esc(destinationForCruise(cruise))}</h2>
+            <dl>
+              <div><dt>Cruise dates</dt><dd>${esc(cruiseDateRange(cruise))}${
+                nightsLabel ? ` (${esc(nightsLabel)})` : ""
+              }</dd></div>
+              <div><dt>Cruise line</dt><dd>${esc(lineNameForCruise(cruise))}</dd></div>
+              <div><dt>Ship</dt><dd>${esc(shipNameForCruise(cruise))}</dd></div>
+            </dl>
+            <table>
+              <thead>
+                <tr>
+                  <th>Cabin</th>
+                  <th class="num">Brochure</th>
+                  <th class="num">101cruise</th>
+                  <th class="num">Airline</th>
+                </tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+          </section>
+        `;
+      })
+      .join("");
+
+    return `<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <title>Newsletter ${esc(String(issueNumber))} — cruise record</title>
+  <style>
+    @page { margin: 16mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      color: #000;
+      background: #fff;
+      font-family: Helvetica, Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    h1 {
+      margin: 0 0 4px;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .eyebrow {
+      margin: 0 0 2px;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .meta {
+      margin: 0 0 18px;
+      font-size: 12px;
+    }
+    .cruise {
+      margin: 0 0 18px;
+      padding: 0 0 14px;
+      border-bottom: 1px solid #000;
+      page-break-inside: avoid;
+    }
+    .cruise:last-child { border-bottom: none; }
+    h2 {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    dl {
+      margin: 0 0 10px;
+      display: grid;
+      gap: 4px;
+    }
+    dl div { display: grid; grid-template-columns: 100px 1fr; gap: 8px; }
+    dt { margin: 0; font-weight: 700; }
+    dd { margin: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #000;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { font-weight: 700; }
+    .num { text-align: right; white-space: nowrap; }
+    .footer {
+      margin-top: 16px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <p class="eyebrow">101cruise · Weekly cruise record</p>
+  <h1>Newsletter ${esc(String(issueNumber))}</h1>
+  <p class="meta">Published ${esc(issueDate ? formatDate(issueDate) : "—")} · ${esc(String(cruises.length))} cruise${cruises.length === 1 ? "" : "s"}</p>
+  ${cruiseBlocks}
+  <p class="footer">Prices per person in USD as entered for this issue. Internal record only.</p>
+</body>
+</html>`;
+  }
+
+  async function printRecord() {
+    if (issueNumber == null) {
+      issueMessage = "Select a newsletter number before printing.";
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
+    const cruises = cruisesForCurrentIssue();
+    if (!cruises.length) {
+      issueMessage = "Add at least one cruise to this issue before printing.";
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
+    try {
+      issueBusy = true;
+      issueMessage = "Preparing print record…";
+      issueMessageTone = "running";
+      rerender();
+      await ensurePricingLoaded(cruises);
+      const html = buildPrintRecordHtml(cruises);
+      const printWindow = window.open("", "_blank", "noopener,noreferrer");
+      if (!printWindow) {
+        throw new Error("Pop-up blocked. Allow pop-ups for Admin to print this record.");
+      }
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      window.setTimeout(() => {
+        try {
+          printWindow.print();
+        } catch (_error) {
+          /* user can print manually from the opened tab */
+        }
+      }, 250);
+      issueMessage = "Print dialog opened for this newsletter’s cruise record.";
+      issueMessageTone = "success";
+    } catch (error) {
+      issueMessage = error.message || "Could not prepare the print record.";
+      issueMessageTone = "error";
+    } finally {
+      issueBusy = false;
+      rerender();
+    }
+  }
+
   function buildModelForCruise(cruise, outputMode) {
     const departure = cruise.departure_date || "";
     const nightsNum = cruise.nights == null || cruise.nights === "" ? null : Number(cruise.nights);
@@ -932,9 +1161,12 @@
               }
             </select>
           </div>
-          <div class="admin-field">
+          <div class="admin-field newsletter-issue-date-field">
             <label>Issue Date</label>
-            <div class="newsletter-issue-static">${esc(issueDate ? formatDate(issueDate) : "—")}</div>
+            <div class="newsletter-issue-date-row">
+              <div class="newsletter-issue-static">${esc(issueDate ? formatDate(issueDate) : "—")}</div>
+              <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.printRecord()" ${issueBusy || issueNumber == null || !cruises.length ? "disabled" : ""}>Print</button>
+            </div>
           </div>
           <div class="admin-field">
             <label for="newsletterIssueTemplate">Design Template</label>
@@ -942,13 +1174,13 @@
               <option value="classic-editorial" ${issueTemplate === "classic-editorial" ? "selected" : ""}>Classic Editorial</option>
               <option value="green-price-cards" ${issueTemplate === "green-price-cards" ? "selected" : ""}>Green Price Cards</option>
             </select>
-            <p class="admin-helper">Temporary: remembered in this browser only until newsletter issues get a database field.</p>
           </div>
           <div class="admin-field">
             <label>Status</label>
             <div class="newsletter-issue-static"><span class="newsletter-issue-status status-${esc(status.key)}">${esc(status.label)}</span></div>
           </div>
         </div>
+        <p class="admin-helper newsletter-issue-header-note">Temporary: design template is remembered in this browser only until newsletter issues get a database field.</p>
 
         ${renderStartIssuePanel()}
 
@@ -1047,6 +1279,7 @@
     allowDrop,
     onDrop,
     preview,
-    exportHtml
+    exportHtml,
+    printRecord
   };
 })(typeof window !== "undefined" ? window : globalThis);

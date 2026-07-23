@@ -8320,7 +8320,16 @@ async function startNewFeaturedCruise() {
     route_map_height: null,
     itinerary_summary: "",
     other_information: "",
-    display_order: 0,
+    display_order: (() => {
+      const issueNum =
+        composerIssue?.number != null
+          ? Number(composerIssue.number)
+          : Number(featuredNewsletterDefaults.newsletter_number);
+      const peers = (featuredCruises || []).filter(
+        (row) => Number(row.newsletter_number) === issueNum && Number.isFinite(issueNum)
+      );
+      return peers.reduce((max, row) => Math.max(max, Number(row.display_order) || 0), 0) + 1;
+    })(),
     ...blankFeaturedOfferInclusions()
   };
   featuredNewsletterDefaultsBaseline = {
@@ -8918,7 +8927,8 @@ function captureFeaturedDraftFromDom() {
     route_map_height: featuredFormDraft.route_map_height ?? null,
     itinerary_summary: featuredFormDraft.itinerary_summary || "",
     other_information: document.getElementById("fcOtherInformation")?.value || "",
-    display_order: document.getElementById("fcDisplayOrder")?.value || 0,
+    // Order is controlled by drag-and-drop on the Newsletter issue list — not this form.
+    display_order: featuredFormDraft.display_order ?? 0,
     alcohol_package: Boolean(document.getElementById("fcIncAlcohol")?.checked),
     wifi: Boolean(document.getElementById("fcIncWifi")?.checked),
     gratuities: Boolean(document.getElementById("fcIncGrat")?.checked),
@@ -9951,10 +9961,6 @@ function renderFeaturedCruiseForm() {
             <label for="fcReturnDate">Return Date</label>
             <input id="fcReturnDate" class="featured-readonly-date" type="date" value="${esc(returnDate)}" readonly tabindex="-1">
           </div>
-        </div>
-        <div class="admin-field" style="margin-top:10px;max-width:160px">
-          <label for="fcDisplayOrder">Display order</label>
-          <input id="fcDisplayOrder" type="number" step="1" value="${esc(draft.display_order ?? 0)}">
         </div>
       </section>
 

@@ -209,7 +209,11 @@ async function loadFallbackMediaLibrary(cruise) {
  * query and drops into foundation fallbacks that omit route_map_media_id,
  * which loses the attached map on the public page.
  */
-function cruiseSelect({ includeMediaIds = false, includeRouteMapImageUrl = false } = {}) {
+function cruiseSelect({
+  includeMediaIds = false,
+  includeRouteMapImageUrl = false,
+  includeGeneratedRouteMap = false
+} = {}) {
   return [
     "id",
     "headline",
@@ -226,6 +230,15 @@ function cruiseSelect({ includeMediaIds = false, includeRouteMapImageUrl = false
     "hero_image_alt",
     "use_ship_hero_image",
     ...(includeRouteMapImageUrl ? ["route_map_image_url"] : []),
+    ...(includeGeneratedRouteMap
+      ? [
+          "route_map_svg_path",
+          "route_map_png_path",
+          "route_map_generated_at",
+          "route_map_width",
+          "route_map_height"
+        ]
+      : []),
     "cruise_ship_id",
     "cruise_line_id",
     ...(includeMediaIds ? ["hero_media_id", "route_map_media_id"] : []),
@@ -246,6 +259,18 @@ function cruiseSelect({ includeMediaIds = false, includeRouteMapImageUrl = false
 
 async function loadPublishedCruise(slug) {
   const attempts = [
+    // Prefer media ids + generated Storage paths + denormalised URL
+    cruiseSelect({
+      includeMediaIds: true,
+      includeRouteMapImageUrl: true,
+      includeGeneratedRouteMap: true
+    }),
+    // Generated maps without legacy image URL column
+    cruiseSelect({
+      includeMediaIds: true,
+      includeRouteMapImageUrl: false,
+      includeGeneratedRouteMap: true
+    }),
     // Prefer media ids + denormalised URL when both columns exist
     cruiseSelect({ includeMediaIds: true, includeRouteMapImageUrl: true }),
     // Production today: route_map_media_id exists, route_map_image_url may not
@@ -391,6 +416,12 @@ exports.handler = async (event) => {
           source: "Featured Cruise Media Library selection"
         };
       }
+    }
+
+    // Generated Storage maps (Admin "Generate Route Map") when no Media Library/legacy URL.
+    if (!resolved.routeMap) {
+      const generated = MediaResolver.resolveRouteMapImage(cruise);
+      if (generated?.url) resolved.routeMap = generated;
     }
 
     return jsonResponse(200, {

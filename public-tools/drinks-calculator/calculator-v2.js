@@ -65,6 +65,34 @@
   let completed = { 1: false, 2: false, 3: false, 4: false };
   let debounceTimer = null;
   let liveMessage = "";
+  let trackedPageOpen = false;
+  let trackedToolStarted = false;
+  let trackedToolCompleted = false;
+
+  function usageMeta() {
+    const slug = (line && line.slug) || getLineParam() || "";
+    return slug
+      ? { line_slug: String(slug).slice(0, 120), source: "public_drinks_calculator" }
+      : { source: "public_drinks_calculator" };
+  }
+
+  function trackPublic(eventType) {
+    try {
+      if (!window.CruiseUsage) return;
+      window.getCruiseUsageContext = function () {
+        return { surface: "public_tools", metadata: usageMeta() };
+      };
+      if (eventType === "page_open" && typeof window.CruiseUsage.trackPageOpen === "function") {
+        window.CruiseUsage.trackPageOpen("public_drinks_calculator", usageMeta());
+        return;
+      }
+      if (typeof window.CruiseUsage.trackEvent === "function") {
+        window.CruiseUsage.trackEvent("public_drinks_calculator", eventType, usageMeta());
+      }
+    } catch (_error) {
+      /* never block the calculator on analytics */
+    }
+  }
 
   const state = {
     lineParam: "",
@@ -885,6 +913,10 @@
     try {
       await loadLineDetail(slug);
       setLineUrl(line.cruise_line_slug || slug);
+      if (!trackedToolStarted) {
+        trackedToolStarted = true;
+        trackPublic("tool_started");
+      }
       invalidateFrom(1);
       renderApp();
     } catch (_error) {
@@ -908,7 +940,13 @@
     if (stage === 1 && !stage1Ready()) return;
     completed[stage] = true;
     activeStage = Math.min(4, stage + 1);
-    if (stage === 3) completed[4] = true;
+    if (stage === 3) {
+      completed[4] = true;
+      if (!trackedToolCompleted) {
+        trackedToolCompleted = true;
+        trackPublic("tool_completed");
+      }
+    }
     renderApp();
     const active = mount.querySelector(".dc-v2-stage.is-active");
     if (active) active.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1091,6 +1129,14 @@
 
       activeStage = 1;
       completed = { 1: false, 2: false, 3: false, 4: false };
+      if (!trackedPageOpen) {
+        trackedPageOpen = true;
+        trackPublic("page_open");
+      }
+      if (line && !trackedToolStarted) {
+        trackedToolStarted = true;
+        trackPublic("tool_started");
+      }
       renderApp();
     } catch (_error) {
       showFatalError();

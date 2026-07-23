@@ -12,7 +12,8 @@
  * Route map order:
  * 1. route_map_media_id / routeMapMedia
  * 2. route_map_image_url
- * 3. Placeholder (null)
+ * 3. Generated Storage PNG (route_map_png_path)
+ * 4. Placeholder (null)
  */
 (function (global) {
   "use strict";
@@ -189,6 +190,41 @@
     return null;
   }
 
+  function isLegacyLocalRouteMapPath(value) {
+    const p = String(value || "");
+    return p.startsWith("generated-assets/") || p.startsWith("/generated-assets/");
+  }
+
+  function generatedRouteMapPublicUrl(cruise = {}, context = {}) {
+    if (context.generatedRouteMapUrl) return String(context.generatedRouteMapUrl).trim();
+
+    const pngPath = String(cruise.route_map_png_path || "").trim();
+    const svgPath = String(cruise.route_map_svg_path || "").trim();
+    if (!pngPath || !svgPath) return "";
+    if (isLegacyLocalRouteMapPath(pngPath) || isLegacyLocalRouteMapPath(svgPath)) return "";
+    if (/^https?:\/\//i.test(pngPath)) return pngPath;
+
+    const supabaseUrl = String(
+      context.supabaseUrl ||
+        (typeof SUPABASE_URL !== "undefined" ? SUPABASE_URL : "") ||
+        global.SUPABASE_URL ||
+        ""
+    )
+      .trim()
+      .replace(/\/$/, "");
+    if (!supabaseUrl) return "";
+
+    const encoded = pngPath
+      .replace(/^\//, "")
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/");
+    let url = `${supabaseUrl}/storage/v1/object/public/featured-cruise-route-maps/${encoded}`;
+    const bust = Date.parse(cruise.route_map_generated_at || "") || null;
+    if (bust) url += `?t=${encodeURIComponent(String(bust))}`;
+    return url;
+  }
+
   function resolveRouteMapImage(cruise = {}, context = {}) {
     const mediaLibrary = context.mediaLibrary || [];
     const routeMapMedia = context.routeMapMedia || cruise.route_map_media || null;
@@ -204,6 +240,19 @@
       return asMediaObject(
         { url: legacyUrl, alt_text: "Route map", title: "Route map" },
         "Legacy route map URL"
+      );
+    }
+    const generatedUrl = generatedRouteMapPublicUrl(cruise, context);
+    if (generatedUrl) {
+      return asMediaObject(
+        {
+          url: generatedUrl,
+          alt_text: "Route map",
+          title: "Route map",
+          width: cruise.route_map_width,
+          height: cruise.route_map_height
+        },
+        "Generated route map"
       );
     }
     return null;

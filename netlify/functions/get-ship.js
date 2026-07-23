@@ -330,12 +330,22 @@ exports.handler = async function (event) {
       }
 
       if (resolution.status === 'matched' && resolution.ship) {
+        // mapSupabaseShip already shaped the public ship (incl. approved deck_plan_url).
+        // pickShipFields would strip deck_plan_url / cruise_line_name — keep them.
         const ship = pickShipFields(resolution.ship);
         if (resolution.ship.cruise_line_name) {
           ship.cruise_line_name = resolution.ship.cruise_line_name;
         }
+        ship.deck_plan_url = resolution.ship.deck_plan_url || null;
+        if (resolution.ship.hero_image_url) {
+          ship.hero_image_url = resolution.ship.hero_image_url;
+        }
         console.log(
-          JSON.stringify({ event: 'ship_lookup_matched', source: 'supabase' })
+          JSON.stringify({
+            event: 'ship_lookup_matched',
+            source: 'supabase',
+            has_deck_plan: Boolean(ship.deck_plan_url)
+          })
         );
         return jsonResponse(200, {
           success: true,
