@@ -66,6 +66,21 @@ function nmToKm(nm) {
   return nm * 1.852;
 }
 
+/** Great-circle distance in nautical miles (WGS84 sphere approximation). */
+function haversineNm(lat1, lon1, lat2, lon2) {
+  const toRad = (d) => (Number(d) * Math.PI) / 180;
+  const rLat1 = toRad(lat1);
+  const rLat2 = toRad(lat2);
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rLat1) * Math.cos(rLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  // Earth mean radius in nautical miles
+  return (3440.065 * c);
+}
+
 function portIdOf(port) {
   if (!port) return null;
   const raw = port.id ?? port.port_id ?? null;
@@ -158,18 +173,29 @@ function routeLeg(from, to, legIndex) {
     );
 
     const coords = Array.isArray(result?.route?.coordinates) ? result.route.coordinates : [];
-    if (!coords.length) {
+    if (coords.length < 2) {
+      // Degenerate/empty graph result (common outside Eurostat coverage) —
+      // fall back to a straight sea segment between the two port positions.
+      const polyline = [
+        [from.longitude, from.latitude],
+        [to.longitude, to.latitude]
+      ];
+      const distanceNm = haversineNm(from.latitude, from.longitude, to.latitude, to.longitude);
       return {
-        ok: false,
-        error: {
-          code: ERROR_CODES.ROUTING_FAILED,
-          message: `Leg ${legIndex + 1}: router returned an empty polyline (${from.name || from.id} → ${to.name || to.id}).`,
-          leg_index: legIndex,
+        ok: true,
+        leg: {
           from_port_id: from.id,
           to_port_id: to.id,
-          port_id: null,
-          port_name: null,
-          port_index: null
+          from_name: from.name,
+          to_name: to.name,
+          from_index: from.index,
+          to_index: to.index,
+          distance_nm: distanceNm,
+          distance_km: nmToKm(distanceNm),
+          waypoints: 2,
+          polyline,
+          fallback: "straight_line",
+          warning: `Leg ${legIndex + 1}: marine graph returned a degenerate route; used straight line (${from.name || from.id} → ${to.name || to.id}).`
         }
       };
     }
@@ -329,6 +355,9 @@ function routeMarineItinerary(portsOrdered, options = {}) {
       continue;
     }
     legs.push(legResult.leg);
+    if (legResult.leg.warning) {
+      // Surface as a top-level warning via callers that read leg.warning
+    }
   }
 
   const totalNm = legs.reduce((sum, leg) => {
@@ -360,5 +389,6 @@ module.exports = {
   routeMarineItinerary,
   routeLeg,
   normalizePort,
-  nmToKm
+  nmToKm,
+  haversineNm
 };

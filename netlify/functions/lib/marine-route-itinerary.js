@@ -243,8 +243,22 @@ function buildMarineRouteObject({
   }
 
   const legs = routed.legs.map((leg, index) => {
-    const full = leg.polyline || [];
-    const simplified = simplifyPolyline(full, simplifyPreset);
+    let full = Array.isArray(leg.polyline) ? leg.polyline : [];
+    if (full.length < 2) {
+      const fromStop = routableStops[index];
+      const toStop = routableStops[index + 1];
+      if (fromStop && toStop) {
+        full = [
+          [Number(fromStop.longitude), Number(fromStop.latitude)],
+          [Number(toStop.longitude), Number(toStop.latitude)]
+        ];
+      }
+    }
+    let simplified = simplifyPolyline(full, simplifyPreset);
+    if (!Array.isArray(simplified) || simplified.length < 2) {
+      simplified = full.length >= 2 ? [full[0], full[full.length - 1]] : full;
+    }
+    if (leg.warning) allWarnings.push({ code: "straight_line_fallback", message: leg.warning, leg_index: index });
     return {
       sequence: index + 1,
       from_port_id: leg.from_port_id,
@@ -257,7 +271,8 @@ function buildMarineRouteObject({
       simplified_coordinates: simplified,
       full_point_count: full.length,
       simplified_point_count: simplified.length,
-      simplify_preset: typeof simplifyPreset === "string" ? simplifyPreset : "custom"
+      simplify_preset: typeof simplifyPreset === "string" ? simplifyPreset : "custom",
+      ...(leg.fallback ? { fallback: leg.fallback } : {})
     };
   });
 

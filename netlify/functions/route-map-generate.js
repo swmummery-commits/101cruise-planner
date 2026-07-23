@@ -169,10 +169,23 @@ async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
   const timings = {};
   const t0 = Date.now();
 
+  function routeObjectIsRenderable(routeObject) {
+    const legs = routeObject?.legs;
+    if (!Array.isArray(legs) || !legs.length) return false;
+    return legs.every(
+      (leg) =>
+        Array.isArray(leg?.simplified_coordinates) && leg.simplified_coordinates.length >= 2
+    );
+  }
+
   if (!forceReroute) {
     const existing = await loadMarineRouteRow(supabaseRequest, featuredCruiseId);
     timings.load_route_ms = Date.now() - t0;
-    if (existing?.route_data?.legs?.length && existing?.route_data?.stops?.length) {
+    if (
+      existing?.route_data?.legs?.length &&
+      existing?.route_data?.stops?.length &&
+      routeObjectIsRenderable(existing.route_data)
+    ) {
       return {
         ok: true,
         reused_existing: true,
