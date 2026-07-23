@@ -9279,7 +9279,6 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
   const bust = Date.parse(result?.generated_at || draft.route_map_generated_at || "") || Date.now();
   // Always build public Storage URLs in the browser — do not trust function response URLs
   // (env host / cache / Content-Disposition quirks). Paths in draft/result are canonical.
-  const svgUrl = featuredRouteMapPublicUrl(svgPath, bust);
   const pngUrl = featuredRouteMapPublicUrl(pngPath, bust);
   const width = result?.width ?? draft.route_map_width;
   const height = result?.height ?? draft.route_map_height;
@@ -9323,22 +9322,12 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
         ${svgPath ? `<p class="admin-small">SVG: ${esc(svgPath)}</p>` : ""}
         ${pngPath ? `<p class="admin-small">PNG: ${esc(pngPath)}</p>` : ""}
       </div>
-      <div class="featured-route-map-gen-previews">
+      <div class="featured-route-map-gen-previews featured-route-map-gen-previews--single">
         <figure>
-          <figcaption>SVG preview</figcaption>
-          ${
-            svgUrl
-              ? `<object class="featured-route-map-preview-frame" data="${esc(svgUrl)}" type="image/svg+xml" title="Generated route map SVG">
-                   <img src="${esc(svgUrl)}" alt="Generated route map SVG" loading="lazy">
-                 </object>`
-              : `<div class="admin-empty-preview">No SVG</div>`
-          }
-        </figure>
-        <figure>
-          <figcaption>PNG preview</figcaption>
+          <figcaption>Route map preview</figcaption>
           ${
             pngUrl
-              ? `<img src="${esc(pngUrl)}" alt="Generated route map PNG" loading="lazy">`
+              ? `<img src="${esc(pngUrl)}" alt="Generated route map" loading="lazy">`
               : `<div class="admin-empty-preview">No PNG</div>`
           }
         </figure>

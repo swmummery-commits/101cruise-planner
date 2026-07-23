@@ -154,9 +154,12 @@ body {
   color: #374151;
 }
 
-.public-cruise-article .nl-hero,
-.public-cruise-article .nl-route-map {
+.public-cruise-article .nl-hero {
   max-width: 600px;
+}
+
+.public-cruise-article .nl-route-map {
+  max-width: 380px;
 }
 
 .public-cruise-article .nl-pricing,

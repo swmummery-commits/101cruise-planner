@@ -14,6 +14,8 @@
 
   const SITE_ORIGIN = "https://www.101cruise.com.au";
   const MAX_WIDTH = 600;
+  /** Route maps sit smaller than the hero so they don’t dominate the email. */
+  const ROUTE_MAP_WIDTH = 380;
   const MAX_ROOMS = 4;
   const BRAND_GREEN = "#8DD9BF";
 
@@ -798,8 +800,8 @@
     const routeMap = model.routeMapUrl
       ? `
       <tr>
-        <td align="center" style="padding:40px 0 0;">
-          ${renderImage(model.routeMapUrl, model.routeMapAlt || "Route map", MAX_WIDTH)}
+        <td align="center" style="padding:32px 0 0;">
+          <img src="${escapeHtml(model.routeMapUrl)}" alt="${escapeHtml(model.routeMapAlt || "Route map")}" width="${ROUTE_MAP_WIDTH}" border="0" style="display:block;width:100%;max-width:${ROUTE_MAP_WIDTH}px;height:auto;border:0;margin:0 auto;">
         </td>
       </tr>
     `

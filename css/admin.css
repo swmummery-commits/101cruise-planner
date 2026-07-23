@@ -3189,6 +3189,11 @@
   margin-top: 12px;
 }
 
+.featured-route-map-gen-previews--single {
+  grid-template-columns: minmax(0, 420px);
+  max-width: 420px;
+}
+
 .featured-route-map-gen-previews figure {
   margin: 0;
 }

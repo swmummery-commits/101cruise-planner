@@ -14,7 +14,8 @@
     "test:route-map-svg": "node scripts/test-route-map-svg.mjs",
     "generate:marine-route": "node scripts/generate-marine-route.mjs",
     "render:route-map": "node scripts/render-route-map.mjs",
-    "test:route-map-workflow": "node scripts/test-route-map-workflow.mjs"
+    "test:route-map-workflow": "node scripts/test-route-map-workflow.mjs",
+    "generate:ports-seed": "node scripts/generate-ports-seed-migration.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.38",

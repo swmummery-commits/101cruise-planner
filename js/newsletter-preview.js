@@ -524,15 +524,11 @@
       }
       case SECTION_IDS.ROUTE_MAP: {
         if (!model.routeMapUrl) return "";
-        const dimAttrs = [
-          model.routeMapWidth != null ? `width="${esc(model.routeMapWidth)}"` : "",
-          model.routeMapHeight != null ? `height="${esc(model.routeMapHeight)}"` : ""
-        ]
-          .filter(Boolean)
-          .join(" ");
+        // Display width only — do not use native PNG dimensions (often ~2000px).
+        const displayWidth = 380;
         return `
             <div class="nl-route-map">
-              <img src="${esc(model.routeMapUrl)}" alt="${esc(model.routeMapAlt || "Route map")}" class="nl-route-map-img" loading="lazy" ${dimAttrs}>
+              <img src="${esc(model.routeMapUrl)}" alt="${esc(model.routeMapAlt || "Route map")}" class="nl-route-map-img" loading="lazy" width="${displayWidth}">
             </div>
           `;
       }
