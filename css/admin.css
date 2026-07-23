@@ -3149,6 +3149,15 @@
   background: #fff;
 }
 
+.featured-route-map-preview-frame {
+  display: block;
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid #d7e0dc;
+  border-radius: 6px;
+  background: #fff;
+}
+
 @media (max-width: 900px) {
   .featured-route-map-gen-previews {
     grid-template-columns: 1fr;
