@@ -8890,6 +8890,12 @@ function captureFeaturedDraftFromDom() {
       featuredFormDraft.route_map_itinerary_signature ||
       window.FeaturedItineraryEditor?.getRouteMapSignature?.() ||
       "",
+    route_map_svg_path: featuredFormDraft.route_map_svg_path || "",
+    route_map_png_path: featuredFormDraft.route_map_png_path || "",
+    route_map_generated_at: featuredFormDraft.route_map_generated_at || null,
+    route_map_renderer_version: featuredFormDraft.route_map_renderer_version || "",
+    route_map_width: featuredFormDraft.route_map_width ?? null,
+    route_map_height: featuredFormDraft.route_map_height ?? null,
     itinerary_summary: featuredFormDraft.itinerary_summary || "",
     other_information: document.getElementById("fcOtherInformation")?.value || "",
     display_order: document.getElementById("fcDisplayOrder")?.value || 0,
@@ -9233,8 +9239,10 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
   const svgPath = result?.svg_path || draft.route_map_svg_path || "";
   const pngPath = result?.png_path || draft.route_map_png_path || "";
   const bust = Date.parse(result?.generated_at || draft.route_map_generated_at || "") || Date.now();
-  const svgUrl = result?.svg_url || featuredRouteMapPublicUrl(svgPath, bust);
-  const pngUrl = result?.png_url || featuredRouteMapPublicUrl(pngPath, bust);
+  // Always build public Storage URLs in the browser — do not trust function response URLs
+  // (env host / cache / Content-Disposition quirks). Paths in draft/result are canonical.
+  const svgUrl = featuredRouteMapPublicUrl(svgPath, bust);
+  const pngUrl = featuredRouteMapPublicUrl(pngPath, bust);
   const width = result?.width ?? draft.route_map_width;
   const height = result?.height ?? draft.route_map_height;
   const generatedAt = result?.generated_at || draft.route_map_generated_at;
@@ -9251,7 +9259,7 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
     <div class="featured-route-map-generated">
       <h5>Generated route map</h5>
       ${
-        result?.ok
+        result?.ok || featuredCruiseHasGeneratedRouteMap(draft)
           ? `<p class="admin-success-text">Generated successfully${
               totalMs != null ? ` · ${esc(String(totalMs))} ms` : ""
             }</p>`
@@ -9282,7 +9290,9 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
           <figcaption>SVG preview</figcaption>
           ${
             svgUrl
-              ? `<img src="${esc(svgUrl)}" alt="Generated route map SVG" loading="lazy">`
+              ? `<object class="featured-route-map-preview-frame" data="${esc(svgUrl)}" type="image/svg+xml" title="Generated route map SVG">
+                   <img src="${esc(svgUrl)}" alt="Generated route map SVG" loading="lazy">
+                 </object>`
               : `<div class="admin-empty-preview">No SVG</div>`
           }
         </figure>
@@ -9327,6 +9337,58 @@ async function refreshFeaturedGeneratedRouteMapDraft(cruiseId) {
   return data;
 }
 
+function applyFeaturedGeneratedRouteMapResult(data, { recovered = false } = {}) {
+  const svgPath = data?.svg_path || data?.route_map_svg_path || "";
+  const pngPath = data?.png_path || data?.route_map_png_path || "";
+  const generatedAt = data?.generated_at || data?.route_map_generated_at || null;
+  const bust = Date.parse(generatedAt || "") || Date.now();
+  const width = data?.width ?? data?.route_map_width ?? null;
+  const height = data?.height ?? data?.route_map_height ?? null;
+  const renderer = data?.renderer_version || data?.route_map_renderer_version || "";
+
+  if (featuredFormDraft) {
+    featuredFormDraft.route_map_svg_path = svgPath;
+    featuredFormDraft.route_map_png_path = pngPath;
+    featuredFormDraft.route_map_generated_at = generatedAt;
+    featuredFormDraft.route_map_renderer_version = renderer;
+    featuredFormDraft.route_map_width = width;
+    featuredFormDraft.route_map_height = height;
+  }
+
+  featuredRouteMapGenResult = {
+    ok: true,
+    message: "Generated successfully",
+    svg_path: svgPath,
+    png_path: pngPath,
+    svg_url: featuredRouteMapPublicUrl(svgPath, bust),
+    png_url: featuredRouteMapPublicUrl(pngPath, bust),
+    generated_at: generatedAt,
+    renderer_version: renderer,
+    width,
+    height,
+    svg_bytes: data?.svg_bytes,
+    png_bytes: data?.png_bytes,
+    timings: data?.timings,
+    recovered_from_database: recovered
+  };
+  featuredRouteMapGenProgress = "Complete";
+  featuredCruiseMessage = "Route map generated successfully.";
+  featuredCruiseMessageTone = "success";
+
+  const listIndex = featuredCruises.findIndex((row) => row.id === editingFeaturedCruiseId);
+  if (listIndex >= 0) {
+    featuredCruises[listIndex] = {
+      ...featuredCruises[listIndex],
+      route_map_svg_path: svgPath,
+      route_map_png_path: pngPath,
+      route_map_generated_at: generatedAt,
+      route_map_renderer_version: renderer,
+      route_map_width: width,
+      route_map_height: height
+    };
+  }
+}
+
 async function generateFeaturedRouteMap() {
   if (!editingFeaturedCruiseId || featuredRouteMapGenerating) return;
   if (!featuredCruiseCanGenerateRouteMap(featuredFormDraft)) {
@@ -9369,82 +9431,36 @@ async function generateFeaturedRouteMap() {
       })
     });
     const data = await response.json().catch(() => ({}));
-    featuredRouteMapGenResult = data;
-    if (!response.ok || !data.ok) {
-      // Function may have finished writing Storage/DB even if the HTTP response failed
-      // (timeout / truncated JSON). Re-read durable metadata before showing failure.
-      const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
-      if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
-        const bust = Date.parse(refreshed.route_map_generated_at || "") || Date.now();
-        featuredRouteMapGenResult = {
-          ok: true,
-          message: "Generated successfully",
-          svg_path: refreshed.route_map_svg_path,
-          png_path: refreshed.route_map_png_path,
-          svg_url: featuredRouteMapPublicUrl(refreshed.route_map_svg_path, bust),
-          png_url: featuredRouteMapPublicUrl(refreshed.route_map_png_path, bust),
-          generated_at: refreshed.route_map_generated_at,
-          renderer_version: refreshed.route_map_renderer_version,
-          width: refreshed.route_map_width,
-          height: refreshed.route_map_height,
-          recovered_from_database: true
-        };
-        featuredRouteMapGenProgress = "Complete";
-        featuredCruiseMessage = "Route map generated successfully.";
-        featuredCruiseMessageTone = "success";
-      } else {
-        featuredCruiseMessage = data.errors?.[0]?.message || "Route map generation failed.";
-        featuredCruiseMessageTone = "error";
-      }
+
+    // Always re-read durable metadata so the preview matches what reopen shows,
+    // even when the function response is slow, truncated, or missing URLs.
+    const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
+
+    if (response.ok && data.ok) {
+      applyFeaturedGeneratedRouteMapResult(
+        {
+          ...data,
+          ...(refreshed || {})
+        },
+        { recovered: false }
+      );
+    } else if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
+      applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
     } else {
-      featuredRouteMapGenProgress = "Complete";
-      featuredFormDraft.route_map_svg_path = data.svg_path || "";
-      featuredFormDraft.route_map_png_path = data.png_path || "";
-      featuredFormDraft.route_map_generated_at = data.generated_at || null;
-      featuredFormDraft.route_map_renderer_version = data.renderer_version || "";
-      featuredFormDraft.route_map_width = data.width ?? null;
-      featuredFormDraft.route_map_height = data.height ?? null;
-      // Always derive display URLs client-side so previews work even if the
-      // function omitted svg_url/png_url.
-      if (!featuredRouteMapGenResult.svg_url && data.svg_path) {
-        const bust = Date.parse(data.generated_at || "") || Date.now();
-        featuredRouteMapGenResult.svg_url = featuredRouteMapPublicUrl(data.svg_path, bust);
-        featuredRouteMapGenResult.png_url = featuredRouteMapPublicUrl(data.png_path, bust);
+      featuredRouteMapGenResult = data && typeof data === "object" ? data : { ok: false };
+      if (!featuredRouteMapGenResult.ok) {
+        featuredRouteMapGenResult.ok = false;
+        featuredRouteMapGenResult.errors = data.errors || [
+          { code: "generate_failed", message: "Route map generation failed." }
+        ];
       }
-      featuredCruiseMessage = "Route map generated successfully.";
-      featuredCruiseMessageTone = "success";
-      const listIndex = featuredCruises.findIndex((row) => row.id === editingFeaturedCruiseId);
-      if (listIndex >= 0) {
-        featuredCruises[listIndex] = {
-          ...featuredCruises[listIndex],
-          route_map_svg_path: data.svg_path,
-          route_map_png_path: data.png_path,
-          route_map_generated_at: data.generated_at,
-          route_map_renderer_version: data.renderer_version,
-          route_map_width: data.width,
-          route_map_height: data.height
-        };
-      }
+      featuredCruiseMessage = data.errors?.[0]?.message || "Route map generation failed.";
+      featuredCruiseMessageTone = "error";
     }
   } catch (error) {
     const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
     if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
-      const bust = Date.parse(refreshed.route_map_generated_at || "") || Date.now();
-      featuredRouteMapGenResult = {
-        ok: true,
-        message: "Generated successfully",
-        svg_path: refreshed.route_map_svg_path,
-        png_path: refreshed.route_map_png_path,
-        svg_url: featuredRouteMapPublicUrl(refreshed.route_map_svg_path, bust),
-        png_url: featuredRouteMapPublicUrl(refreshed.route_map_png_path, bust),
-        generated_at: refreshed.route_map_generated_at,
-        renderer_version: refreshed.route_map_renderer_version,
-        width: refreshed.route_map_width,
-        height: refreshed.route_map_height,
-        recovered_from_database: true
-      };
-      featuredCruiseMessage = "Route map generated successfully.";
-      featuredCruiseMessageTone = "success";
+      applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
     } else {
       featuredRouteMapGenResult = {
         ok: false,
