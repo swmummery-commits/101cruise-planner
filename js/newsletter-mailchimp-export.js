@@ -14,8 +14,6 @@
 
   const SITE_ORIGIN = "https://www.101cruise.com.au";
   const MAX_WIDTH = 600;
-  /** Route maps sit smaller than the hero so they don’t dominate the email. */
-  const ROUTE_MAP_WIDTH = 380;
   const MAX_ROOMS = 4;
   const BRAND_GREEN = "#8DD9BF";
 
@@ -793,8 +791,8 @@
     const routeMap = model.routeMapUrl
       ? `
       <tr>
-        <td align="center" style="padding:32px 0 0;">
-          <img src="${escapeHtml(model.routeMapUrl)}" alt="${escapeHtml(model.routeMapAlt || "Route map")}" width="${ROUTE_MAP_WIDTH}" border="0" style="display:block;width:100%;max-width:${ROUTE_MAP_WIDTH}px;height:auto;border:0;margin:0 auto;">
+        <td align="center" style="padding:40px 0 0;">
+          ${renderImage(model.routeMapUrl, model.routeMapAlt || "Route map", MAX_WIDTH)}
         </td>
       </tr>
     `
@@ -813,6 +811,19 @@
       `font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${muted};text-align:center;padding:${disclaimerPadTop}px 12px 0;line-height:1.5;`
     );
 
+    // Grey dotted rule under each cruise so stacked issue previews/exports read as separate specials.
+    const cruiseSeparator = `
+      <tr>
+        <td align="center" style="padding:28px 16px 8px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;">
+            <tr>
+              <td style="border-top:2px dotted #c4c4c4;font-size:0;line-height:0;height:0;mso-line-height-rule:exactly;">&nbsp;</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    `;
+
     const inner = `
       ${destination}
       ${headline}
@@ -827,6 +838,7 @@
       ${inclusions}
       ${otherInfo}
       ${disclaimer}
+      ${cruiseSeparator}
     `;
 
     const styleBlock = isGreen ? greenStyleBlock() : classicStyleBlock();
