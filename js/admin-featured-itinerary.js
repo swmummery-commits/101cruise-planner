@@ -19,6 +19,41 @@
   let dragFromHandle = false;
   let routeMapStatus = "missing";
   let routeMapSignature = "";
+  let sectionOpen = true;
+  /** @type {Set<string>|null} null = auto-open stops that need attention */
+  let openStopIds = null;
+
+  function stopNeedsAttention(stop) {
+    const flags = I().rowStatusFlags(stop);
+    return flags.some((f) =>
+      /Unresolved|Missing|Needs Review|Incomplete|Provisional/i.test(String(f))
+    );
+  }
+
+  function isStopOpen(stop) {
+    if (openStopIds instanceof Set) return openStopIds.has(stop.localId);
+    return stopNeedsAttention(stop);
+  }
+
+  function ensureOpenStopSet() {
+    if (openStopIds instanceof Set) return openStopIds;
+    openStopIds = new Set(stops.filter(stopNeedsAttention).map((s) => s.localId));
+    return openStopIds;
+  }
+
+  function toggleSection() {
+    captureFromDom();
+    sectionOpen = !sectionOpen;
+    rerender();
+  }
+
+  function toggleStop(localId) {
+    captureFromDom();
+    const set = ensureOpenStopSet();
+    if (set.has(localId)) set.delete(localId);
+    else set.add(localId);
+    rerender();
+  }
 
   function esc(value) {
     if (value === null || value === undefined) return "";
@@ -45,6 +80,8 @@
     dragFromHandle = false;
     routeMapStatus = "missing";
     routeMapSignature = "";
+    sectionOpen = true;
+    openStopIds = null;
   }
 
   function getStops() {
@@ -382,6 +419,11 @@
     selectPort(matchPrompt.localId, portId);
   }
 
+  function dismissMatchPrompt() {
+    matchPrompt = null;
+    rerender();
+  }
+
   /**
    * Prepare stops for save: auto-link strong matches, surface likely/ambiguous, create provisional.
    * @returns {{ ok: boolean, errors: string[], stops: object[], createdPorts: object[] }}
@@ -696,6 +738,15 @@
     const atSea = I().isAtSeaStopType(stop.stop_type);
     const geographic = I().isGeographicStopType(stop.stop_type);
     const flags = I().rowStatusFlags(stop);
+    const open = isStopOpen(stop);
+    const typeLabel =
+      I().STOP_TYPES.find((t) => t.value === stop.stop_type)?.label || stop.stop_type || "Stop";
+    const portLabel = atSea
+      ? "At sea"
+      : stop.port?.display_name ||
+        stop.port?.canonical_name ||
+        stop.entered_port_text ||
+        "Port not set";
     const typeOptions = I()
       .STOP_TYPES.map(
         (t) =>
@@ -704,72 +755,97 @@
       .join("");
     return `
       <div
-        class="fc-itin-row ${draggedLocalId === stop.localId ? "is-dragging" : ""}"
+        class="fc-itin-row ${open ? "is-open" : "is-collapsed"} ${draggedLocalId === stop.localId ? "is-dragging" : ""}"
         data-local-id="${localId}"
         draggable="true"
         ondragstart="FeaturedItineraryEditor.onDragStart(event, '${localId}')"
         ondragend="FeaturedItineraryEditor.onDragEnd(event)"
       >
-        <button type="button" class="fc-itin-handle" aria-label="Drag to reorder" title="Drag to reorder" onmousedown="FeaturedItineraryEditor.onDragHandleDown()">☰</button>
-        <label class="fc-itin-day">
-          <span>Day</span>
-          <input data-fc-itin="day_number" type="number" min="1" step="1" value="${esc(stop.day_number ?? "")}" aria-label="Day number">
-        </label>
-        <label class="fc-itin-type">
-          <span>Type</span>
-          <select data-fc-itin="stop_type" aria-label="Stop type" onchange="FeaturedItineraryEditor.onStopTypeChange('${localId}', this.value)">
-            ${typeOptions}
-          </select>
-        </label>
-        <div class="fc-itin-port-wrap ${atSea ? "is-disabled" : ""}">
-          <label>
-            <span>Port</span>
-            <input
-              data-fc-itin="port"
-              type="text"
-              value="${esc(atSea ? "" : stop.entered_port_text || "")}"
-              placeholder="${atSea ? "—" : "Start typing a port…"}"
-              ${atSea ? "disabled" : ""}
-              autocomplete="off"
-              aria-label="Port"
-              oninput="FeaturedItineraryEditor.onPortInput('${localId}', this.value)"
-            >
+        <div class="fc-itin-row-summary">
+          <button type="button" class="fc-itin-handle" aria-label="Drag to reorder" title="Drag to reorder" onmousedown="FeaturedItineraryEditor.onDragHandleDown()">☰</button>
+          <button
+            type="button"
+            class="fc-itin-row-toggle"
+            aria-expanded="${open ? "true" : "false"}"
+            onclick="FeaturedItineraryEditor.toggleStop('${localId}')"
+          >
+            <span class="fc-itin-chevron" aria-hidden="true">${open ? "▾" : "▸"}</span>
+            <span class="fc-itin-summary-day">Day ${esc(stop.day_number || "—")}</span>
+            <span class="fc-itin-summary-type">${esc(typeLabel)}</span>
+            <span class="fc-itin-summary-port">${esc(portLabel)}</span>
+            ${
+              flags.length
+                ? `<span class="fc-itin-summary-flags">${flags
+                    .slice(0, 2)
+                    .map((f) => `<span class="fc-itin-flag">${esc(f)}</span>`)
+                    .join("")}</span>`
+                : ""
+            }
+          </button>
+        </div>
+        <div class="fc-itin-row-details" ${open ? "" : "hidden"}>
+          <div class="fc-itin-fields">
+            <label class="fc-itin-day">
+              <span>Day</span>
+              <input data-fc-itin="day_number" type="number" min="1" step="1" value="${esc(stop.day_number ?? "")}" aria-label="Day number">
+            </label>
+            <label class="fc-itin-type">
+              <span>Type</span>
+              <select data-fc-itin="stop_type" aria-label="Stop type" onchange="FeaturedItineraryEditor.onStopTypeChange('${localId}', this.value)">
+                ${typeOptions}
+              </select>
+            </label>
+            <div class="fc-itin-port-wrap ${atSea ? "is-disabled" : ""}">
+              <label>
+                <span>Port</span>
+                <input
+                  data-fc-itin="port"
+                  type="text"
+                  value="${esc(atSea ? "" : stop.entered_port_text || "")}"
+                  placeholder="${atSea ? "—" : "Start typing a port…"}"
+                  ${atSea ? "disabled" : ""}
+                  autocomplete="off"
+                  aria-label="Port"
+                  oninput="FeaturedItineraryEditor.onPortInput('${localId}', this.value)"
+                >
+              </label>
+              ${geographic && !atSea ? renderAutocomplete(stop) : ""}
+            </div>
+            <label class="fc-itin-country">
+              <span>Country</span>
+              <input data-fc-itin="country" type="text" value="${esc(atSea ? "" : stop.entered_country_text || "")}" ${atSea ? "disabled" : ""} aria-label="Country" placeholder="${atSea ? "—" : "Country"}">
+            </label>
+            <label class="fc-itin-time">
+              <span>Arr</span>
+              <input data-fc-itin="arrival" type="text" value="${esc(stop.arrival_time || "")}" placeholder="—" aria-label="Arrival time">
+            </label>
+            <label class="fc-itin-time">
+              <span>Dep</span>
+              <input data-fc-itin="departure" type="text" value="${esc(stop.departure_time || "")}" placeholder="—" aria-label="Departure time">
+            </label>
+            <label class="fc-itin-overnight" title="Overnight">
+              <span>ON</span>
+              <input data-fc-itin="overnight" type="checkbox" ${stop.is_overnight ? "checked" : ""} ${atSea ? "disabled" : ""}>
+            </label>
+          </div>
+          <div class="fc-itin-flags" title="${esc(flags.join(", "))}">
+            ${flags.map((f) => `<span class="fc-itin-flag">${esc(f)}</span>`).join("")}
+          </div>
+          <div class="fc-itin-row-actions">
+            ${
+              stop.port_id
+                ? `<button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.clearPortMatch('${localId}')">Clear match</button>`
+                : ""
+            }
+            <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.duplicateStop('${localId}')">Duplicate</button>
+            <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.removeStop('${localId}')">Remove</button>
+          </div>
+          <label class="fc-itin-notes">
+            <span>Notes</span>
+            <input data-fc-itin="notes" type="text" value="${esc(stop.notes || "")}" placeholder="Optional notes">
           </label>
-          ${geographic && !atSea ? renderAutocomplete(stop) : ""}
+          <input data-fc-itin="stop_date" type="hidden" value="${esc(stop.stop_date || "")}">
         </div>
-        <label class="fc-itin-country">
-          <span>Country</span>
-          <input data-fc-itin="country" type="text" value="${esc(atSea ? "" : stop.entered_country_text || "")}" ${atSea ? "disabled" : ""} aria-label="Country" placeholder="${atSea ? "—" : "Country"}">
-        </label>
-        <label class="fc-itin-time">
-          <span>Arr</span>
-          <input data-fc-itin="arrival" type="text" value="${esc(stop.arrival_time || "")}" placeholder="—" aria-label="Arrival time">
-        </label>
-        <label class="fc-itin-time">
-          <span>Dep</span>
-          <input data-fc-itin="departure" type="text" value="${esc(stop.departure_time || "")}" placeholder="—" aria-label="Departure time">
-        </label>
-        <label class="fc-itin-overnight" title="Overnight">
-          <input data-fc-itin="overnight" type="checkbox" ${stop.is_overnight ? "checked" : ""} ${atSea ? "disabled" : ""}>
-          <span>ON</span>
-        </label>
-        <div class="fc-itin-flags" title="${esc(flags.join(", "))}">
-          ${flags.map((f) => `<span class="fc-itin-flag">${esc(f)}</span>`).join("")}
-        </div>
-        <div class="fc-itin-row-actions">
-          ${
-            stop.port_id
-              ? `<button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.clearPortMatch('${localId}')">Clear match</button>`
-              : ""
-          }
-          <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.duplicateStop('${localId}')">Duplicate</button>
-          <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.removeStop('${localId}')">Remove</button>
-        </div>
-        <label class="fc-itin-notes">
-          <span>Notes</span>
-          <input data-fc-itin="notes" type="text" value="${esc(stop.notes || "")}" placeholder="Optional notes">
-        </label>
-        <input data-fc-itin="stop_date" type="hidden" value="${esc(stop.stop_date || "")}">
       </div>
     `;
   }
@@ -800,37 +876,46 @@
     if (!helper) {
       return `<section class="featured-form-section"><h4>Itinerary</h4><p class="admin-error">Itinerary module failed to load.</p></section>`;
     }
+    const stopCount = stops.length;
     return `
-      <section class="featured-form-section fc-itin-section">
-        <h4>Itinerary</h4>
-        <p class="admin-muted">Ordered sailing stops. Port calls link to the Ports database. At Sea never creates a port.</p>
-        ${
-          needsStructuring
-            ? `<div class="fc-itin-needs-structuring">
-                <strong>Needs structuring</strong>
-                <p>Legacy pipe-separated itinerary was imported into editable rows. Review matches, then save to store structured stops. Original summary is preserved until you save.</p>
-                <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.importLegacyNow()">Re-import from legacy summary</button>
-              </div>`
-            : ""
-        }
-        ${
-          legacySummary && !structuredLoaded
-            ? `<p class="admin-small">Legacy summary on file: ${esc(legacySummary)}</p>`
-            : ""
-        }
-        ${renderMatchPrompt()}
-        <div
-          id="fcItineraryList"
-          class="fc-itin-list"
-          ondragover="FeaturedItineraryEditor.allowDrop(event)"
-          ondrop="FeaturedItineraryEditor.onDrop(event)"
-        >
-          ${stops.map((stop, index) => renderRow(stop, index)).join("")}
+      <section class="featured-form-section fc-itin-section ${sectionOpen ? "is-open" : "is-collapsed"}">
+        <button type="button" class="fc-itin-section-toggle" aria-expanded="${sectionOpen ? "true" : "false"}" onclick="FeaturedItineraryEditor.toggleSection()">
+          <span class="fc-itin-chevron" aria-hidden="true">${sectionOpen ? "▾" : "▸"}</span>
+          <span class="fc-itin-section-title">Itinerary</span>
+          <span class="fc-itin-section-meta">${stopCount} stop${stopCount === 1 ? "" : "s"}</span>
+        </button>
+        <div class="fc-itin-section-body" ${sectionOpen ? "" : "hidden"}>
+          <p class="admin-muted">Ordered sailing stops. Port calls link to the Ports database. At Sea never creates a port. Expand a stop to edit details.</p>
+          ${
+            needsStructuring
+              ? `<div class="fc-itin-needs-structuring">
+                  <strong>Needs structuring</strong>
+                  <p>Legacy pipe-separated itinerary was imported into editable rows. Review matches, then save to store structured stops. Original summary is preserved until you save.</p>
+                  <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.importLegacyNow()">Re-import from legacy summary</button>
+                </div>`
+              : ""
+          }
+          ${
+            legacySummary && !structuredLoaded
+              ? `<p class="admin-small">Legacy summary on file: ${esc(legacySummary)}</p>`
+              : ""
+          }
+          ${renderMatchPrompt()}
+          <div
+            id="fcItineraryList"
+            class="fc-itin-list"
+            ondragover="FeaturedItineraryEditor.allowDrop(event)"
+            ondrop="FeaturedItineraryEditor.onDrop(event)"
+          >
+            ${stops.map((stop, index) => renderRow(stop, index)).join("")}
+          </div>
+          <div class="admin-actions-row" style="margin-top:10px">
+            <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.addStop()">+ Add Stop</button>
+            <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.expandAllStops()">Expand all</button>
+            <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.collapseAllStops()">Collapse all</button>
+          </div>
+          ${renderStatusSummary()}
         </div>
-        <div class="admin-actions-row" style="margin-top:10px">
-          <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.addStop()">+ Add Stop</button>
-        </div>
-        ${renderStatusSummary()}
       </section>
     `;
   }
@@ -862,6 +947,18 @@
     `;
   }
 
+  function expandAllStops() {
+    captureFromDom();
+    openStopIds = new Set(stops.map((s) => s.localId));
+    rerender();
+  }
+
+  function collapseAllStops() {
+    captureFromDom();
+    openStopIds = new Set();
+    rerender();
+  }
+
   const api = {
     reset,
     initNewCruise,
@@ -872,31 +969,42 @@
     captureFromDom,
     syncSummaryIntoDraft,
     addStop,
-    duplicateStop,
     removeStop,
+    duplicateStop,
     clearPortMatch,
-    selectPort,
     onPortInput,
+    selectPort,
     onStopTypeChange,
-    importLegacyNow,
     onDragHandleDown,
     onDragStart,
     onDragEnd,
     allowDrop,
     onDrop,
+    importLegacyNow,
     resolveMatchUseExisting,
     resolveMatchCreateNew,
     resolveAmbiguous,
+    dismissMatchPrompt,
     prepareStopsForSave,
     persistStops,
     computeMapFields,
     applyManualMapSelection,
     clearMapSelectionStatus,
     markManualMap,
+    toggleSection,
+    toggleStop,
+    expandAllStops,
+    collapseAllStops,
     renderSection,
     renderRouteMapReadiness,
     getRouteMapStatus: () => routeMapStatus,
+    setRouteMapStatus: (v) => {
+      routeMapStatus = v || "missing";
+    },
     getRouteMapSignature: () => routeMapSignature,
+    setRouteMapSignature: (v) => {
+      routeMapSignature = v || "";
+    },
     getLegacySummary: () => legacySummary
   };
 

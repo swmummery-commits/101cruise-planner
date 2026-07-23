@@ -3200,7 +3200,41 @@
   line-height: 1.45;
 }
 
-/* Sprint 13D structured itinerary */
+/* Sprint 13D structured itinerary — accordion rows, no overlapping fields */
+.fc-itin-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0 0 8px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.fc-itin-section-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.fc-itin-section-meta {
+  margin-left: auto;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.fc-itin-chevron {
+  display: inline-flex;
+  width: 1em;
+  color: #6b7280;
+  flex: 0 0 auto;
+}
+
 .fc-itin-section .fc-itin-list {
   display: grid;
   gap: 8px;
@@ -3209,19 +3243,101 @@
 
 .fc-itin-row {
   display: grid;
-  grid-template-columns: 28px 64px 132px minmax(140px, 1.4fr) minmax(90px, 0.8fr) 72px 72px 42px;
-  gap: 6px 8px;
-  align-items: end;
-  padding: 8px 10px;
+  gap: 0;
+  padding: 0;
   border: 1px solid var(--admin-border, #e3e8e5);
   border-radius: 8px;
   background: #fbfcfb;
+  overflow: visible;
 }
 
-.fc-itin-row .fc-itin-flags,
-.fc-itin-row .fc-itin-row-actions,
-.fc-itin-row .fc-itin-notes {
-  grid-column: 1 / -1;
+.fc-itin-row-summary {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 4px;
+  align-items: center;
+  padding: 6px 8px;
+}
+
+.fc-itin-row-toggle {
+  display: grid;
+  grid-template-columns: 16px auto auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 4px 2px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.fc-itin-summary-day,
+.fc-itin-summary-type {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.fc-itin-summary-port {
+  font-size: 13px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fc-itin-summary-flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.fc-itin-row-details {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--admin-border, #e3e8e5);
+  margin: 0 2px 2px;
+}
+
+.fc-itin-row-details[hidden] {
+  display: none !important;
+}
+
+.fc-itin-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px 10px;
+  align-items: end;
+}
+
+.fc-itin-fields .fc-itin-port-wrap {
+  grid-column: span 2;
+  min-width: 0;
+}
+
+@media (max-width: 720px) {
+  .fc-itin-fields .fc-itin-port-wrap {
+    grid-column: 1 / -1;
+  }
+
+  .fc-itin-row-toggle {
+    grid-template-columns: 16px minmax(0, 1fr);
+  }
+
+  .fc-itin-summary-type {
+    display: none;
+  }
+
+  .fc-itin-summary-flags {
+    justify-content: flex-start;
+  }
 }
 
 .fc-itin-row label {
@@ -3241,6 +3357,7 @@
 .fc-itin-row select {
   width: 100%;
   min-width: 0;
+  box-sizing: border-box;
   font-size: 12px;
   padding: 6px 7px;
 }
@@ -3365,15 +3482,14 @@
 .fc-itin-overnight {
   display: flex !important;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: end;
   gap: 4px !important;
 }
 
-@media (max-width: 1100px) {
-  .fc-itin-row {
-    grid-template-columns: 28px 64px 1fr 1fr;
-  }
+.fc-itin-overnight input[type="checkbox"] {
+  width: auto;
+  min-width: 0;
 }
 
 .featured-span-2 {
