@@ -581,28 +581,63 @@
 
   /* ─── Shared / template-specific info bars ─────────────────────────────── */
 
+  function inclusionIconSvg(key) {
+    const common =
+      'xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#245C4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
+    switch (key) {
+      case "alcohol_package":
+        return `<svg ${common}><path d="M8 3h8l-1.2 7.2a4.8 4.8 0 1 1-5.6 0L8 3z"/><path d="M12 15v6"/><path d="M9.5 21h5"/></svg>`;
+      case "wifi":
+        return `<svg ${common}><path d="M4.5 10.5a10 10 0 0 1 15 0"/><path d="M7.5 14a6 6 0 0 1 9 0"/><path d="M10.2 17.2a2.4 2.4 0 0 1 3.6 0"/><circle cx="12" cy="20" r="1.1" fill="#245C4E" stroke="none"/></svg>`;
+      case "gratuities":
+        return `<svg ${common}><path d="M4 14h16"/><path d="M5 14a7 7 0 0 1 14 0"/><path d="M12 7V5"/><path d="M8 18h8"/></svg>`;
+      case "all_tours":
+        return `<svg ${common}><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>`;
+      case "all_dining":
+        return `<svg ${common}><path d="M5 3v7a2 2 0 0 0 2 2v9"/><path d="M5 3v4"/><path d="M8 3v4"/><path d="M11 3v4"/><path d="M17 3c2 0 3 1.5 3 3.5S19 10 17 10v11"/><path d="M17 3v7"/></svg>`;
+      case "laundry":
+        return `<svg ${common}><path d="M8 4h8l2 3.5H6L8 4z"/><path d="M7 7.5v10.5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7.5"/><circle cx="12" cy="14" r="2.5"/></svg>`;
+      case "onboard_credit":
+        return `<svg ${common}><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></svg>`;
+      default:
+        return `<svg ${common}><circle cx="12" cy="12" r="8"/><path d="M9 12l2 2 4-4"/></svg>`;
+    }
+  }
+
+  function renderInclusionIconCell(item) {
+    const key = typeof item === "string" ? "" : item.key || "";
+    const label =
+      typeof item === "string"
+        ? String(item).toUpperCase()
+        : item.shortLabel || String(item.label || "").toUpperCase();
+    return `
+      <td class="cr101-includes-item" valign="top" align="center" style="padding:4px 6px;vertical-align:top;text-align:center;">
+        <div style="line-height:0;margin:0 auto 6px;">${inclusionIconSvg(key)}</div>
+        <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.35px;line-height:1.25;text-transform:uppercase;color:#245C4E;max-width:88px;margin:0 auto;">${escapeHtml(label)}</div>
+      </td>
+    `;
+  }
+
   function renderInclusions(items, { green = false } = {}) {
     if (!items?.length) return "";
-    const labels = items.map((item) => {
-      if (typeof item === "string") return String(item).toUpperCase();
-      return item.shortLabel || String(item.label || "").toUpperCase();
-    });
     const padTop = green ? 12 : 28;
-    const radius = `border-radius:12px;`;
-    const box =
-      "background-color:#ffffff;border:1px solid #8DD9BF;" + radius;
+    const cells = items.map((item) => renderInclusionIconCell(item)).join("");
     return `
       <tr>
         <td align="center" style="padding:${padTop}px 0 0;">
-          <table role="presentation" class="${green ? "cr101-gpc-includes" : "cr101-includes"}" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;${box}">
+          <table role="presentation" class="${green ? "cr101-gpc-includes" : "cr101-includes"}" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:12px;background-color:#ffffff;border:1px solid #8DD9BF;">
             <tr>
-              <td align="center" style="padding:14px 14px 6px;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#245C4E;background-color:#ffffff;">
+              <td align="center" style="padding:14px 12px 8px;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#245C4E;background-color:#ffffff;border-radius:12px 12px 0 0;">
                 INCLUDES:
               </td>
             </tr>
             <tr>
-              <td align="center" style="padding:4px 14px 14px;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.35px;line-height:1.55;color:#245C4E;background-color:#ffffff;${radius}">
-                ${escapeHtml(labels.join(" · "))}
+              <td align="center" style="padding:0 8px 14px;background-color:#ffffff;border-radius:0 0 12px 12px;">
+                <table role="presentation" class="cr101-includes-items" cellpadding="0" cellspacing="0" border="0" align="center" style="border-collapse:collapse;margin:0 auto;">
+                  <tr>
+                    ${cells}
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
@@ -614,15 +649,19 @@
   function renderOtherInfo(text, { green = false } = {}) {
     if (!text) return "";
     const content = escapeHtml(String(text).toUpperCase());
-    const radius = green ? "24px" : "999px";
+    const radius = "999px";
     const padTop = green ? 8 : 16;
+    // Soft mint fill (visible vs white). No border — distinct from the INCLUDES outline box.
     return `
         <tr>
           <td align="center" style="padding:${padTop}px 0 0;">
-            <table role="presentation" class="${green ? "cr101-gpc-other-info" : "cr101-other-info"}" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${radius};background-color:#effaf6;">
+            <table role="presentation" class="${green ? "cr101-gpc-other-info" : "cr101-other-info"}" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${radius};background-color:#D9F2E8;">
               <tr>
-                <td align="center" style="padding:14px 22px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.45px;line-height:1.35;color:#245C4E;border-radius:${radius};background-color:#effaf6;">
-                  <strong style="color:#245C4E;">OTHER INFO:</strong> ${content}
+                <td align="left" valign="middle" style="padding:14px 10px 14px 22px;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#245C4E;white-space:nowrap;border-radius:${radius} 0 0 ${radius};background-color:#D9F2E8;">
+                  OTHER INFO:
+                </td>
+                <td align="center" valign="middle" style="padding:14px 22px 14px 8px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.45px;line-height:1.35;text-transform:uppercase;color:#245C4E;border-radius:0 ${radius} ${radius} 0;background-color:#D9F2E8;">
+                  ${content}
                 </td>
               </tr>
             </table>
@@ -642,6 +681,10 @@
       max-width: 100% !important;
       border-right: 0 !important;
       border-bottom: 1px solid #e5ebe8 !important;
+    }
+    .cr101-includes-item {
+      display: inline-block !important;
+      width: 30% !important;
     }
     .cr101-wrapper {
       width: 100% !important;
@@ -666,6 +709,10 @@
     }
     .cr101-gpc-card {
       width: 100% !important;
+    }
+    .cr101-includes-item {
+      display: inline-block !important;
+      width: 30% !important;
     }
     .cr101-wrapper {
       width: 100% !important;

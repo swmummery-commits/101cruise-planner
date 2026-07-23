@@ -37,5 +37,5 @@ Shared by newsletter preview and public cruise pages (`newsletter-preview.css`).
 ```css
 .nl-includes-bar { border: 1px solid #8DD9BF; background: #fff; flex-direction: column; }
 .nl-includes-item { flex-direction: column; align-items: center; color: #245C4E; }
-.nl-other-info-bar { background: #effaf6; border-radius: 999px; }
+.nl-other-info-bar { background: #d9f2e8; border-radius: 999px; }
 ```

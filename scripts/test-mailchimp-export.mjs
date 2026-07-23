@@ -341,8 +341,8 @@ assert(
   "Includes uses 12px radius"
 );
 assert(
-  /cr101-gpc-other-info[\s\S]*?border-radius:24px/i.test(threeRoomGreen.html),
-  "Other Info uses rounded mint bar"
+  /cr101-gpc-other-info[\s\S]*?border-radius:999px/i.test(threeRoomGreen.html),
+  "Other Info uses pill radius"
 );
 assert(
   /cr101-gpc-fare[\s\S]*?border-radius:8px/i.test(threeRoomGreen.html),
@@ -361,9 +361,12 @@ assert(
 );
 assert(/padding:8px 12px 0/i.test(threeRoomGreen.html), "Other Info→Disclaimer tight spacing");
 assert(/background-color:#ffffff/i.test(threeRoomGreen.html) && /border:1px solid #8DD9BF/i.test(threeRoomGreen.html), "Includes white box with brand border");
-assert(/background-color:#effaf6/i.test(threeRoomGreen.html), "Other Info soft mint background");
+assert(/background-color:#D9F2E8/i.test(threeRoomGreen.html), "Other Info soft mint background");
 assert(/INCLUDES:/i.test(threeRoomGreen.html), "Includes title uses colon");
 assert(/color:#245C4E/i.test(threeRoomGreen.html), "Includes/Other Info use dark brand green text");
+assert(/cr101-includes-items/i.test(threeRoomGreen.html), "Includes uses icon item row");
+assert(/<svg[\s\S]*?stroke="#245C4E"/i.test(threeRoomGreen.html), "Includes icons are inline SVG");
+assert(!/ · /i.test(threeRoomGreen.html.match(/cr101-gpc-includes[\s\S]*?<\/table>/i)?.[0] || ""), "Includes is not a middot text line");
 
 /* Templates do not mutate each other */
 assert(/cr101-pricing-table/i.test(classicAirline.html), "classic still classic after green");
