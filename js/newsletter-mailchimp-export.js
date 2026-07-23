@@ -15,7 +15,10 @@
   const SITE_ORIGIN = "https://www.101cruise.com.au";
   const MAX_WIDTH = 600;
   const MAX_ROOMS = 4;
+  /** Soft brand mint — accents / Classic CTA (pair with dark text). */
   const BRAND_GREEN = "#8DD9BF";
+  /** Solid brand green — Green Price Card headers & fare boxes (pair with white text). */
+  const BRAND_GREEN_SOLID = "#245C4E";
 
   const TEMPLATES = {
     CLASSIC_EDITORIAL: "classic-editorial",
@@ -430,9 +433,9 @@
         ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:0.5px;color:#FFFFFF;margin-top:6px;line-height:1.2;">${escapeHtml(percentOff)}% OFF</div>`
         : "";
     return `
-      <table role="presentation" class="cr101-gpc-fare" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:${BRAND_GREEN};">
+      <table role="presentation" class="cr101-gpc-fare" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:${BRAND_GREEN_SOLID};">
         <tr>
-          <td align="center" bgcolor="${BRAND_GREEN}" style="background-color:${BRAND_GREEN};border-radius:${GPC_RADIUS_PX}px;padding:10px 8px;text-align:center;">
+          <td align="center" bgcolor="${BRAND_GREEN_SOLID}" style="background-color:${BRAND_GREEN_SOLID};border-radius:${GPC_RADIUS_PX}px;padding:10px 8px;text-align:center;">
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;color:#FFFFFF;line-height:1.2;">${escapeHtml(label)}</div>
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#FFFFFF;line-height:1.15;margin-top:4px;">$${escapeHtml(money(price))}</div>
             ${saveLine}
@@ -495,10 +498,10 @@
             align="center"
             valign="middle"
             height="${headerHeight}"
-            bgcolor="${BRAND_GREEN}"
+            bgcolor="${BRAND_GREEN_SOLID}"
             data-cr101-gpc-header-mode="${twoLine ? "two-line" : "compact"}"
             data-cr101-gpc-header-height="${headerHeight}"
-            style="background-color:${BRAND_GREEN};border-radius:9px 9px 0 0;height:${headerHeight}px;padding:0 8px;text-align:center;vertical-align:middle;mso-line-height-rule:exactly;"
+            style="background-color:${BRAND_GREEN_SOLID};border-radius:9px 9px 0 0;height:${headerHeight}px;padding:0 8px;text-align:center;vertical-align:middle;mso-line-height-rule:exactly;"
           >
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:${GPC_ROOM_FONT_PX}px;font-weight:700;letter-spacing:0.6px;text-transform:uppercase;color:#FFFFFF;text-align:center;line-height:1.25;">${escapeHtml(mod.roomLabel)}</div>
           </td>
@@ -1035,6 +1038,7 @@ ${styleBlock}
     SITE_ORIGIN,
     MAX_WIDTH,
     BRAND_GREEN,
+    BRAND_GREEN_SOLID,
     TEMPLATES,
     TEMPLATE_LABELS,
     FILENAMES,

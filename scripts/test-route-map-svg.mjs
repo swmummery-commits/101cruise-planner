@@ -113,8 +113,11 @@ function assertValidSvg(svg) {
   assert(/id="ship"/.test(svg), "missing ship group");
   assert(/id="port-markers"/.test(svg), "missing port markers");
   assert(/id="port-labels"/.test(svg), "missing port labels");
+  assert(/id="country-labels"/.test(svg), "missing country labels");
   assert(/id="ocean"/.test(svg), "missing ocean group");
   assert(/#8DD9BF/.test(svg), "brand green should appear in SVG");
+  assert(/Noto Sans/.test(svg), "labels must use Noto Sans for PNG rasterisation");
+  assert(/\d+\.\s+[A-Za-z]/.test(svg), "port labels should include sequence prefixes");
 }
 
 function routePathPointCount(svg) {

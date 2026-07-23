@@ -96,25 +96,41 @@ const ROUTE_MAP_THEME = Object.freeze({
     innerStrokeWidth: 0.7,
     numberFill: "#1A1F23",
     shadowOpacity: 0.18,
-    fontFamily:
-      "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
+    // Noto Sans first — required for serverless PNG rasterisation (resvg embeds only that family).
+    fontFamily: "Noto Sans, Helvetica, Arial, sans-serif",
     fontSize: 11,
     fontWeight: 700
   },
 
   label: {
-    fill: "#243038",
-    fontFamily:
-      "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif",
-    fontSize: 11.5,
-    fontWeight: 500,
+    fill: "#1A2430",
+    haloFill: "#F3EBDC",
+    haloWidth: 3.2,
+    // Noto Sans first — required for serverless PNG rasterisation.
+    fontFamily: "Noto Sans, Helvetica, Arial, sans-serif",
+    fontSize: 12,
+    fontWeight: 600,
     maxChars: 28,
     offset: 16,
     paddingX: 2,
     paddingY: 2,
     leaderStroke: "#5B6770",
     leaderWidth: 0.7,
-    leaderOpacity: 0.4
+    leaderOpacity: 0.45,
+    /** Include "1. Port Name" so sequence is visible even if marker glyphs fail */
+    includeSequencePrefix: true
+  },
+
+  countryLabel: {
+    fill: "#8A7B68",
+    haloFill: "#F3EBDC",
+    haloWidth: 2.6,
+    fontFamily: "Noto Sans, Helvetica, Arial, sans-serif",
+    fontSize: 10,
+    fontWeight: 600,
+    letterSpacing: 0.6,
+    maxLabels: 8,
+    padPx: 22
   },
 
   ship: {

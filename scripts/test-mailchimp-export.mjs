@@ -213,7 +213,9 @@ assert(
 );
 assert(/cr101-gpc-card/i.test(greenAirline.html), "green card structure");
 assert(/cr101-gpc-fare/i.test(greenAirline.html), "green fare boxes");
-assert(/background-color:#8DD9BF/i.test(greenAirline.html), "brand green boxes");
+assert(/background-color:#245C4E/i.test(greenAirline.html), "solid brand green boxes for white text");
+assert(/cr101-gpc-fare[\s\S]*?background-color:#245C4E/i.test(greenAirline.html), "fare boxes use solid brand green");
+assert(/cr101-gpc-room-header[\s\S]*?background-color:#245C4E/i.test(greenAirline.html), "room headers use solid brand green");
 assert(/color:#FFFFFF/i.test(greenAirline.html), "white fare text");
 assert(/cr101-gpc-room-header/i.test(greenAirline.html), "room header present");
 assert(/text-align:center/i.test(greenAirline.html), "centred text present");

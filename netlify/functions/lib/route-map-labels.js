@@ -109,8 +109,13 @@ function placePortLabels(ports, routePoints, themeLabel, viewport) {
 
   for (const port of ports) {
     const rawName = String(port.name || "Port").trim() || "Port";
-    const name =
+    const truncated =
       rawName.length > maxChars ? `${rawName.slice(0, maxChars - 1)}…` : rawName;
+    const seq =
+      themeLabel.includeSequencePrefix && port.sequence != null
+        ? `${port.sequence}. `
+        : "";
+    const name = `${seq}${truncated}`;
 
     let best = null;
     let bestScore = Infinity;

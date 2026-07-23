@@ -25,6 +25,7 @@ const {
   ringToSvgPath
 } = require("./route-map-coastline");
 const { placePortLabels } = require("./route-map-labels");
+const { placeCountryLabels } = require("./route-map-country-labels");
 const { placeShip, shipSvgMarkup } = require("./route-map-ship");
 const { placeRouteArrows, arrowPathD } = require("./route-map-arrows");
 
@@ -322,6 +323,24 @@ function renderRouteMapSvg(routeObject, options = {}) {
     { width, height }
   );
 
+  const countryObstacles = projectedStops.map((stop) => {
+    const r = theme.marker.radius + 10;
+    return {
+      left: stop.x - r,
+      top: stop.y - r,
+      right: stop.x + r,
+      bottom: stop.y + r
+    };
+  });
+
+  const countryLabels = placeCountryLabels(geo, projector, { width, height }, {
+    maxLabels: theme.countryLabel?.maxLabels ?? 8,
+    padPx: theme.countryLabel?.padPx ?? 22,
+    // Markers only — port name boxes shouldn't push coastal countries off the map.
+    obstacles: countryObstacles,
+    nearPoints: projectedStops.map((s) => ({ x: s.x, y: s.y }))
+  });
+
   const shipObstacles = [
     ...projectedStops.map((s) => ({ x: s.x, y: s.y, r: theme.layout.shipMarkerClearancePx })),
     ...labels.map((l) => ({
@@ -422,6 +441,26 @@ function renderRouteMapSvg(routeObject, options = {}) {
   }
   parts.push("</g>");
 
+  // --- Country names (muted geography under the route) ---
+  parts.push('<g id="country-labels">');
+  const countryTheme = theme.countryLabel || {};
+  for (const c of countryLabels) {
+    const halo =
+      countryTheme.haloFill && countryTheme.haloWidth
+        ? ` stroke="${countryTheme.haloFill}" stroke-width="${countryTheme.haloWidth}" paint-order="stroke fill"`
+        : "";
+    parts.push(
+      `<text x="${c.x}" y="${c.y}" text-anchor="middle" dominant-baseline="middle" font-family="${escapeXml(
+        countryTheme.fontFamily || theme.label.fontFamily
+      )}" font-size="${countryTheme.fontSize || 10}" font-weight="${
+        countryTheme.fontWeight || 600
+      }" letter-spacing="${countryTheme.letterSpacing != null ? countryTheme.letterSpacing : 0.6}" fill="${
+        countryTheme.fill || "#8A7B68"
+      }"${halo}>${escapeXml(String(c.name).toUpperCase())}</text>`
+    );
+  }
+  parts.push("</g>");
+
   // --- Route (hero) ---
   parts.push('<g id="route" fill="none">');
   if (theme.route.glowStroke) {
@@ -471,7 +510,8 @@ function renderRouteMapSvg(routeObject, options = {}) {
         shadow +
         `<circle r="${theme.marker.radius}" fill="${theme.marker.fill}" stroke="${theme.marker.stroke}" stroke-width="${theme.marker.strokeWidth}"/>` +
         `<circle r="${Math.max(1, theme.marker.radius - theme.marker.strokeWidth - 0.8)}" fill="none" stroke="${theme.marker.innerStroke}" stroke-width="${theme.marker.innerStrokeWidth}" stroke-opacity="0.35"/>` +
-        `<text text-anchor="middle" dominant-baseline="central" font-family="${escapeXml(theme.marker.fontFamily)}" font-size="${theme.marker.fontSize}" font-weight="${theme.marker.fontWeight}" fill="${theme.marker.numberFill}">${stop.sequence}</text>` +
+        // dominant-baseline middle — more reliable in resvg PNG than "central"
+        `<text text-anchor="middle" dominant-baseline="middle" dy="0.35" font-family="${escapeXml(theme.marker.fontFamily)}" font-size="${theme.marker.fontSize}" font-weight="${theme.marker.fontWeight}" fill="${theme.marker.numberFill}">${stop.sequence}</text>` +
         `</g>`
     );
   }
@@ -485,8 +525,12 @@ function renderRouteMapSvg(routeObject, options = {}) {
         `<line x1="${label.leader.x1}" y1="${label.leader.y1}" x2="${label.leader.x2}" y2="${label.leader.y2}" stroke="${theme.label.leaderStroke}" stroke-width="${theme.label.leaderWidth}" stroke-opacity="${theme.label.leaderOpacity}"/>`
       );
     }
+    const halo =
+      theme.label.haloFill && theme.label.haloWidth
+        ? ` stroke="${theme.label.haloFill}" stroke-width="${theme.label.haloWidth}" paint-order="stroke fill"`
+        : "";
     parts.push(
-      `<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" dominant-baseline="${label.baseline}" font-family="${escapeXml(theme.label.fontFamily)}" font-size="${theme.label.fontSize}" font-weight="${theme.label.fontWeight}" fill="${theme.label.fill}">${escapeXml(label.name)}</text>`
+      `<text x="${label.x}" y="${label.y}" text-anchor="${label.anchor}" dominant-baseline="${label.baseline}" font-family="${escapeXml(theme.label.fontFamily)}" font-size="${theme.label.fontSize}" font-weight="${theme.label.fontWeight}" fill="${theme.label.fill}"${halo}>${escapeXml(label.name)}</text>`
     );
   }
   parts.push("</g>");
@@ -522,6 +566,7 @@ function renderRouteMapSvg(routeObject, options = {}) {
     ship_progress: ship ? ship.progress : null,
     ship_angle_deg: ship ? ship.angleDeg : null,
     label_count: labels.length,
+    country_label_count: countryLabels.length,
     runtime_ms: Date.now() - started,
     theme_phase: "3c"
   };
