@@ -555,7 +555,10 @@
       throw new Error("Pop-up blocked. Allow pop-ups for Admin, then try Print again.");
     }
 
+    let printed = false;
     const triggerPrint = () => {
+      if (printed) return;
+      printed = true;
       try {
         printWindow.focus();
         printWindow.print();
@@ -564,15 +567,19 @@
       }
     };
 
-    // Some browsers fire load late for blob URLs — try both paths.
+    // Prefer load event; one delayed fallback only if load never fires.
     try {
-      printWindow.addEventListener("load", () => window.setTimeout(triggerPrint, 150), {
-        once: true
-      });
+      printWindow.addEventListener(
+        "load",
+        () => {
+          window.setTimeout(triggerPrint, 150);
+        },
+        { once: true }
+      );
     } catch (_error) {
       /* ignore */
     }
-    window.setTimeout(triggerPrint, 500);
+    window.setTimeout(triggerPrint, 800);
     window.setTimeout(() => URL.revokeObjectURL(url), 120000);
     return printWindow;
   }
