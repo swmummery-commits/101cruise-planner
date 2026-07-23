@@ -294,7 +294,10 @@
       localId: extras.localId || `stop-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       id: extras.id || null,
       display_order: order,
-      day_number: extras.day_number != null ? extras.day_number : order,
+      // Day is optional sailing-day metadata — never invent consecutive days from list order.
+      day_number: Object.prototype.hasOwnProperty.call(extras, "day_number")
+        ? extras.day_number
+        : "",
       stop_date: extras.stop_date || "",
       stop_type: extras.stop_type || "port_call",
       port_id: extras.port_id || null,
@@ -355,7 +358,7 @@
       if (/^at\s*sea$/.test(lower) || lower === "sea day") stopType = "at_sea";
       else if (/scenic/.test(lower)) stopType = "scenic_cruising";
       return blankStop(index + 1, {
-        day_number: index + 1,
+        day_number: "",
         stop_type: stopType,
         // Keep full pasted label for newsletter PORTS OF CALL wording.
         entered_port_text: stopType === "at_sea" ? "" : part,

@@ -243,10 +243,9 @@
 
   function addStop() {
     captureFromDom();
-    const lastDay = stops.reduce((max, s) => Math.max(max, Number(s.day_number) || 0), 0);
     stops.push(
       I().blankStop(stops.length + 1, {
-        day_number: lastDay + 1,
+        day_number: "",
         stop_type: "port_call"
       })
     );
@@ -989,7 +988,7 @@
             onclick="FeaturedItineraryEditor.toggleStop('${localId}')"
           >
             <span class="fc-itin-chevron" aria-hidden="true">${open ? "▾" : "▸"}</span>
-            <span class="fc-itin-summary-day">Day ${esc(stop.day_number || "—")}</span>
+            <span class="fc-itin-summary-day">Stop ${esc(String(stop.display_order || index + 1))}</span>
             <span class="fc-itin-summary-type">${esc(typeLabel)}</span>
             <span class="fc-itin-summary-port">${esc(portLabel)}</span>
             ${
@@ -1006,7 +1005,7 @@
           <div class="fc-itin-fields">
             <label class="fc-itin-day">
               <span>Day</span>
-              <input data-fc-itin="day_number" type="number" min="1" step="1" value="${esc(stop.day_number ?? "")}" aria-label="Day number">
+              <input data-fc-itin="day_number" type="number" min="1" step="1" value="${esc(stop.day_number ?? "")}" placeholder="—" aria-label="Optional sailing day" title="Optional cruise day number (not port order)">
             </label>
             <label class="fc-itin-type">
               <span>Type</span>
@@ -1104,7 +1103,7 @@
           <span class="fc-itin-section-meta">${stopCount} stop${stopCount === 1 ? "" : "s"}</span>
         </button>
         <div class="fc-itin-section-body" ${sectionOpen ? "" : "hidden"}>
-          <p class="admin-muted">Paste a full port list below, or edit stops one by one. Port calls link to the Ports database (created when missing) and coordinates are looked up for route maps.</p>
+          <p class="admin-muted">Paste a full port list below, or edit stops one by one. List order is port sequence (Stop 1, 2, 3…) — not sailing days. Optional Day is only if you know the real cruise day. Ports link to the Ports database and coordinates are looked up for route maps.</p>
           <div class="fc-itin-port-list-paste">
             <label for="fcPortListPaste"><strong>Paste port list</strong></label>
             <textarea
