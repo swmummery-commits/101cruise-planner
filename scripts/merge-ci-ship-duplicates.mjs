@@ -100,7 +100,12 @@ function coreKey(name, lineName, style) {
     return n;
   }
   if (style === "honorific_vessel") return stripHonorific(n);
-  if (style === "branded_vessel") return n.replace(/[\-\']/g, " ").replace(/\s+/g, " ").trim();
+  if (style === "branded_vessel") {
+    // Treat "Le L'Austral" and "L'Austral" as the same vessel.
+    let key = n.replace(/[\-\']/g, " ").replace(/\s+/g, " ").trim();
+    key = key.replace(/^le l /, "l ");
+    return key;
+  }
   return n;
 }
 
