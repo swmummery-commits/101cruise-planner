@@ -18,11 +18,15 @@
   },
   "dependencies": {
     "@base44/sdk": "^0.8.38",
+    "@resvg/resvg-js": "^2.6.2",
+    "@resvg/resvg-wasm": "^2.6.2",
     "@ssroute/data-eurostat": "^0.2.1",
     "@ssroute/typescript": "^0.2.0",
     "topojson-client": "^3.1.0",
-    "world-atlas": "^2.0.2",
-    "@resvg/resvg-js": "^2.6.2"
+    "world-atlas": "^2.0.2"
+  },
+  "optionalDependencies": {
+    "@resvg/resvg-js-linux-x64-gnu": "2.6.2"
   },
   "engines": {
     "node": ">=18"

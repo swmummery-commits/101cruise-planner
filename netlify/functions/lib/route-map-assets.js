@@ -76,36 +76,84 @@ function displayUrls(featuredCruiseId, options = {}) {
   };
 }
 
-/**
- * Rasterise SVG string to PNG buffer via @resvg/resvg-js.
- */
-function svgToPngBuffer(svg, options = {}) {
-  let Resvg;
-  try {
-    ({ Resvg } = require("@resvg/resvg-js"));
-  } catch (error) {
-    const detail = error && error.message ? String(error.message) : String(error || "");
-    const err = new Error(
-      detail
-        ? `PNG conversion is unavailable (@resvg/resvg-js): ${detail}`
-        : "PNG conversion is unavailable. Install @resvg/resvg-js (and the platform binary)."
-    );
-    err.code = "png_engine_unavailable";
-    err.cause = error;
-    throw err;
-  }
-
+function pngFitOptions(options = {}) {
   const width = Math.max(800, Math.min(2400, Number(options.width) || DEFAULT_PNG_WIDTH));
-  const resvg = new Resvg(Buffer.from(String(svg || ""), "utf8"), {
-    fitTo: { mode: "width", value: width },
-    background: "transparent"
-  });
+  return {
+    width,
+    renderOptions: {
+      fitTo: { mode: "width", value: width },
+      background: "transparent"
+    }
+  };
+}
+
+function svgToPngWithNative(svg, options = {}) {
+  const { Resvg } = require("@resvg/resvg-js");
+  const { renderOptions } = pngFitOptions(options);
+  const resvg = new Resvg(Buffer.from(String(svg || ""), "utf8"), renderOptions);
   const rendered = resvg.render();
   return {
     buffer: Buffer.from(rendered.asPng()),
     width: rendered.width,
-    height: rendered.height
+    height: rendered.height,
+    engine: "native"
   };
+}
+
+let wasmInitPromise = null;
+
+async function ensureResvgWasm() {
+  if (wasmInitPromise) return wasmInitPromise;
+  wasmInitPromise = (async () => {
+    const { Resvg, initWasm } = require("@resvg/resvg-wasm");
+    const wasmPath = require.resolve("@resvg/resvg-wasm/index_bg.wasm");
+    await initWasm(fs.readFileSync(wasmPath));
+    return Resvg;
+  })().catch((error) => {
+    wasmInitPromise = null;
+    throw error;
+  });
+  return wasmInitPromise;
+}
+
+async function svgToPngWithWasm(svg, options = {}) {
+  const Resvg = await ensureResvgWasm();
+  const { renderOptions } = pngFitOptions(options);
+  const resvg = new Resvg(String(svg || ""), renderOptions);
+  const rendered = resvg.render();
+  return {
+    buffer: Buffer.from(rendered.asPng()),
+    width: rendered.width,
+    height: rendered.height,
+    engine: "wasm"
+  };
+}
+
+/**
+ * Rasterise SVG → PNG.
+ * Prefers native @resvg/resvg-js; falls back to @resvg/resvg-wasm (needed on Netlify
+ * when the Linux platform binary is missing from the Function bundle).
+ */
+async function svgToPngBuffer(svg, options = {}) {
+  let nativeError = null;
+  try {
+    return svgToPngWithNative(svg, options);
+  } catch (error) {
+    nativeError = error;
+  }
+
+  try {
+    return await svgToPngWithWasm(svg, options);
+  } catch (wasmError) {
+    const nativeDetail = nativeError && nativeError.message ? String(nativeError.message) : "";
+    const wasmDetail = wasmError && wasmError.message ? String(wasmError.message) : String(wasmError || "");
+    const err = new Error(
+      `PNG conversion is unavailable. Native: ${nativeDetail || "failed"}. Wasm: ${wasmDetail || "failed"}.`
+    );
+    err.code = "png_engine_unavailable";
+    err.cause = { nativeError, wasmError };
+    throw err;
+  }
 }
 
 function getSupabaseConfig(overrides = {}) {
@@ -206,7 +254,7 @@ async function saveRouteMapAssetsToStorage(featuredCruiseId, svg, options = {}) 
 
   let png;
   try {
-    png = svgToPngBuffer(svgText, { width: pngWidth });
+    png = await svgToPngBuffer(svgText, { width: pngWidth });
   } catch (error) {
     if (error.code) throw error;
     const err = new Error(error.message || "PNG conversion failed.");
@@ -275,7 +323,7 @@ async function saveRouteMapAssetsToStorage(featuredCruiseId, svg, options = {}) 
 /**
  * Developer-only local disk save. Never used by the Netlify production handler.
  */
-function saveRouteMapAssetsLocal(featuredCruiseId, svg, options = {}) {
+async function saveRouteMapAssetsLocal(featuredCruiseId, svg, options = {}) {
   const root = options.rootDir || projectRoot();
   const id = String(featuredCruiseId || "").trim();
   const dir = path.join(root, "generated-assets", id);
@@ -291,7 +339,7 @@ function saveRouteMapAssetsLocal(featuredCruiseId, svg, options = {}) {
   }
 
   fs.writeFileSync(svgAbs, svgText, "utf8");
-  const { buffer, width, height } = svgToPngBuffer(svgText, {
+  const { buffer, width, height } = await svgToPngBuffer(svgText, {
     width: options.pngWidth || DEFAULT_PNG_WIDTH
   });
   fs.writeFileSync(pngAbs, buffer);

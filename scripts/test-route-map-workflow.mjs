@@ -140,10 +140,10 @@ async function main() {
     assert(rendered.svg.includes('id="marine-route"'), "has route");
   });
 
-  await test("B PNG conversion dimensions ~2000px wide", () => {
+  await test("B PNG conversion dimensions ~2000px wide", async () => {
     const route = buildMedRoute();
     const rendered = renderRouteMapSvg(route);
-    const { buffer, width, height } = svgToPngBuffer(rendered.svg, { width: 2000 });
+    const { buffer, width, height } = await svgToPngBuffer(rendered.svg, { width: 2000 });
     assert(buffer.length > 1000, "png buffer non-trivial");
     assert(width === 2000, `expected width 2000, got ${width}`);
     assert(height === Math.round((2000 * 675) / 1200), `expected 16:9 height, got ${height}`);
@@ -312,10 +312,10 @@ async function main() {
     assert(meta.route_map_renderer_version === ROUTE_MAP_RENDERER_VERSION, "version");
   });
 
-  await test("K local fallback still works for developers", () => {
+  await test("K local fallback still works for developers", async () => {
     const route = buildMedRoute();
     const rendered = renderRouteMapSvg(route);
-    const saved = saveRouteMapAssetsLocal(TEST_ID, rendered.svg, { pngWidth: 1200 });
+    const saved = await saveRouteMapAssetsLocal(TEST_ID, rendered.svg, { pngWidth: 1200 });
     assert(fs.existsSync(saved.svg_abs), "local svg");
     assert(fs.existsSync(saved.png_abs), "local png");
     assert(saved.local_fallback === true, "flag");
@@ -323,6 +323,37 @@ async function main() {
       recursive: true,
       force: true
     });
+  });
+
+  await test("N wasm PNG fallback when native binding is unavailable", async () => {
+    const Module = require("module");
+    const assetsPath = path.join(root, "netlify/functions/lib/route-map-assets.js");
+    const originalLoad = Module._load;
+    Module._load = function patchedLoad(request, parent, isMain) {
+      if (request === "@resvg/resvg-js") {
+        throw new Error("Cannot find module '@resvg/resvg-js-linux-x64-gnu'");
+      }
+      return originalLoad.apply(this, arguments);
+    };
+    try {
+      delete require.cache[assetsPath];
+      try {
+        delete require.cache[require.resolve("@resvg/resvg-js")];
+      } catch {
+        /* not resolved yet */
+      }
+      const fresh = require(assetsPath);
+      const route = buildMedRoute();
+      const rendered = renderRouteMapSvg(route);
+      const result = await fresh.svgToPngBuffer(rendered.svg, { width: 800 });
+      assert(result.engine === "wasm", `expected wasm engine, got ${result.engine}`);
+      assert(result.width === 800, `width ${result.width}`);
+      assert(result.buffer.length > 100, "png buffer");
+    } finally {
+      Module._load = originalLoad;
+      delete require.cache[assetsPath];
+      require(assetsPath);
+    }
   });
 
   await test("L invalid SVG rejected", async () => {
