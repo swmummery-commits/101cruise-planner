@@ -1,31 +1,34 @@
 ---
-description: Newsletter/public cruise INCLUDES bar must stay on one line
-globs: css/newsletter-preview.css,css/public-cruise.css,js/newsletter-preview.js,js/newsletter-cruise-shared.js,js/public-cruise.js
+description: Newsletter/public cruise INCLUDES bar — title above items
+globs: css/newsletter-preview.css,css/public-cruise.css,js/newsletter-preview.js,js/newsletter-cruise-shared.js,js/newsletter-mailchimp-export.js
 alwaysApply: false
 ---
 
-# Newsletter Includes — Single Line
+# Newsletter Includes — Title Above Items
 
-The **INCLUDES** bar (icons + labels under pricing) must render as a **single horizontal line**. Items must not wrap onto a second row.
+The **INCLUDES** bar sits under pricing. **INCLUDES** is a centred title on its own row above the inclusion icons/labels.
 
 ## Rules
 
-- Keep includes compact: small type (~10px), small icons (~13px), tight horizontal padding
-- Use `flex-wrap: nowrap` on `.nl-includes-items`
-- Prefer shrinking size/padding over wrapping when more inclusions are added
-- Do not enlarge includes type or icons without an explicit request
-- Label (`INCLUDES:`) stays on the same bar; on narrow widths it may sit above the items row, but the items themselves stay one line
+- Stack layout: title on top, items below (`flex-direction: column` on `.nl-includes-bar`)
+- Title text is `INCLUDES` (no trailing colon), centred
+- Items may wrap onto a second row when every inclusion is present — do not truncate labels
+- Keep type compact (~10–11px) and icons ~13px
+- Disclaimer sits immediately under OTHER INFO / INCLUDES (`margin-top: 8px`), not with a large gap
 
 ## Bad
 
 ```css
-.nl-includes-items { flex-wrap: wrap; }
-.nl-includes-item { font-size: 12px; padding: 4px 16px; }
+.nl-includes-bar { flex-direction: row; } /* title inline left of items */
+.nl-includes-items { flex-wrap: nowrap; } /* forces truncation when many items */
+.nl-disclaimer { margin-top: 48px; }
 ```
 
 ## Good
 
 ```css
-.nl-includes-items { flex-wrap: nowrap; }
-.nl-includes-item { font-size: 10px; padding: 2px 10px; }
+.nl-includes-bar { flex-direction: column; align-items: center; }
+.nl-includes-label { width: 100%; text-align: center; }
+.nl-includes-items { flex-wrap: wrap; justify-content: center; }
+.nl-disclaimer { margin-top: 8px; }
 ```

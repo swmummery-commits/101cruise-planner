@@ -376,6 +376,14 @@
   text-align: center;
 }
 
+/* INCLUDES: title centred above the icon row (not inline on the left) */
+.nl-includes-bar {
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 12px;
+}
+
 /* Keep pricing / includes / other-info stacked tightly */
 .newsletter-preview-article .nl-pricing + .nl-includes-bar,
 .newsletter-preview-article .nl-pricing + .nl-other-info-bar,
@@ -400,15 +408,22 @@
   white-space: nowrap;
 }
 
+.nl-includes-label {
+  width: 100%;
+  text-align: center;
+  letter-spacing: 1.2px;
+}
+
 .nl-includes-items {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 8px 4px;
+  width: 100%;
   min-width: 0;
 }
 
@@ -416,6 +431,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  flex: 0 0 auto;
   padding: 2px 10px;
   border-right: 1px solid #d5e3de;
   font-family: Helvetica, Arial, sans-serif;
@@ -426,13 +442,8 @@
   color: #111;
 }
 
-.nl-includes-item:first-child {
-  padding-left: 0;
-}
-
 .nl-includes-item:last-child {
   border-right: none;
-  padding-right: 0;
 }
 
 .nl-includes-icon {
@@ -486,7 +497,6 @@
     font-size: 34px;
   }
 
-  .nl-includes-bar,
   .nl-other-info-bar {
     flex-direction: column;
     align-items: center;
@@ -494,16 +504,8 @@
     gap: 8px;
   }
 
-  .nl-includes-items {
-    flex-wrap: nowrap;
-  }
-
   .nl-includes-item {
     padding: 2px 8px;
-  }
-
-  .nl-includes-item:last-child {
-    border-right: none;
   }
 }
 
@@ -525,13 +527,20 @@
 }
 
 .nl-disclaimer {
-  margin: 48px auto 0;
+  margin: 8px auto 0;
   max-width: 560px;
   font-family: Helvetica, Arial, sans-serif;
   font-size: 11px;
   line-height: 1.5;
   color: #6b7280;
   text-align: center;
+}
+
+.newsletter-preview-article .nl-other-info-bar + .nl-disclaimer,
+.newsletter-preview-article .nl-includes-bar + .nl-disclaimer,
+.public-cruise-article .nl-other-info-bar + .nl-disclaimer,
+.public-cruise-article .nl-includes-bar + .nl-disclaimer {
+  margin-top: 8px;
 }
 
 .nl-enquire {

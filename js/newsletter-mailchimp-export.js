@@ -588,28 +588,21 @@
       if (typeof item === "string") return String(item).toUpperCase();
       return item.shortLabel || String(item.label || "").toUpperCase();
     });
-    if (green) {
-      return `
-      <tr>
-        <td align="center" style="padding:12px 0 0;">
-          <table role="presentation" class="cr101-gpc-includes" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:#f4faf7;">
-            <tr>
-              <td align="center" style="padding:12px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#111111;border-radius:${GPC_RADIUS_PX}px;background-color:#f4faf7;">
-                INCLUDES: <span style="font-weight:400;letter-spacing:0.4px;">${escapeHtml(labels.join(" · "))}</span>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    `;
-    }
+    const padTop = green ? 12 : 28;
+    const radius = green ? `border-radius:${GPC_RADIUS_PX}px;` : "";
+    const bg = "background-color:#f4faf7;";
     return `
       <tr>
-        <td align="center" style="padding:28px 0 0;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#f4faf7;">
+        <td align="center" style="padding:${padTop}px 0 0;">
+          <table role="presentation" class="${green ? "cr101-gpc-includes" : "cr101-includes"}" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;${radius}${bg}">
             <tr>
-              <td align="center" style="padding:14px 14px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;color:#111111;">
-                INCLUDES: <span style="font-weight:400;letter-spacing:0.4px;">${escapeHtml(labels.join(" · "))}</span>
+              <td align="center" style="padding:12px 14px 4px;font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#1f7a66;${bg}">
+                INCLUDES
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding:4px 14px 12px;font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:400;letter-spacing:0.4px;line-height:1.55;color:#111111;${radius}${bg}">
+                ${escapeHtml(labels.join(" · "))}
               </td>
             </tr>
           </table>
@@ -814,7 +807,7 @@
     const inclusions = renderInclusions(model.inclusionItems, { green: isGreen });
     const otherInfo = renderOtherInfo(model.otherInformation, { green: isGreen, bodyColor: body });
 
-    const disclaimerPadTop = isGreen ? 15 : 24;
+    const disclaimerPadTop = 8;
     const disclaimer = textRow(
       escapeHtml(model.disclaimerText || "All prices are per person in USD and subject to availability"),
       `font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${muted};text-align:center;padding:${disclaimerPadTop}px 12px 0;line-height:1.5;`
