@@ -6768,6 +6768,9 @@ function renderCiLineMasterRow(line) {
     shipLabel,
     line.line_type || null,
     line.country || null,
+    line.ship_naming_style && line.ship_naming_style !== "undecided"
+      ? line.ship_naming_style.replace(/_/g, " ")
+      : null,
     line.active ? null : "Inactive"
   ].filter(Boolean).join(" · ");
 
@@ -7302,7 +7305,23 @@ function renderCiLineForm(line) {
         </div>
         <div class="admin-field"><label>Website URL</label><input id="ciLineWebsite" value="${esc(line?.website_url || "")}"></div>
         <div class="admin-field"><label>Cruise search URL</label><input id="ciLineCruiseSearch" value="${esc(line?.cruise_search_url || "")}" placeholder="Official find-a-cruise page (optional)"></div>
+        <div class="admin-field"><label>Ship naming style</label>
+          <select id="ciLineShipNamingStyle">
+            ${[
+              ["undecided", "Undecided — review later"],
+              ["short_vessel", "Short vessel — Allura (line shown separately)"],
+              ["branded_vessel", "Branded vessel — Explora I / Carnival Celebration"],
+              ["honorific_vessel", "Honorific — MS / MV house style"]
+            ]
+              .map(
+                ([value, label]) =>
+                  `<option value="${value}" ${(line?.ship_naming_style || "undecided") === value ? "selected" : ""}>${label}</option>`
+              )
+              .join("")}
+          </select>
+        </div>
       </div>
+      <p class="admin-small ci-form-note">Ship naming style is set per cruise line. Short vessel avoids “Oceania Allura” when the line is already Oceania; branded keeps names like Explora I where stripping the brand would look wrong.</p>
       <div class="ci-checkbox-row">
         <label class="ci-check-control"><input type="checkbox" id="ciLineActive" ${line?.active !== false ? "checked" : ""}> Active</label>
         <label class="ci-check-control"><input type="checkbox" id="ciLineSold" ${line?.sold_by_101cruise ? "checked" : ""}> Sold by 101cruise</label>
@@ -7391,6 +7410,7 @@ async function persistCiLine({ quiet = false } = {}) {
     cruise_search_url: normalizeUrl(document.getElementById("ciLineCruiseSearch")?.value) || null,
     logo_url: normalizeUrl(document.getElementById("ciLineLogo")?.value) || null,
     line_type: String(document.getElementById("ciLineType")?.value || "").trim() || null,
+    ship_naming_style: String(document.getElementById("ciLineShipNamingStyle")?.value || "undecided").trim() || "undecided",
     active: Boolean(document.getElementById("ciLineActive")?.checked),
     sold_by_101cruise: Boolean(document.getElementById("ciLineSold")?.checked),
     description: String(document.getElementById("ciLineDescription")?.value || "").trim() || null,
