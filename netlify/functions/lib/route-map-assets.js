@@ -76,20 +76,41 @@ function displayUrls(featuredCruiseId, options = {}) {
   };
 }
 
+function resolveRouteMapFontFiles() {
+  const fontDir = path.join(__dirname, "../fonts");
+  const names = ["NotoSans-Regular.ttf", "NotoSans-Medium.ttf", "NotoSans-Bold.ttf"];
+  const files = names
+    .map((name) => path.join(fontDir, name))
+    .filter((filePath) => fs.existsSync(filePath));
+  return files;
+}
+
 function pngFitOptions(options = {}) {
   const width = Math.max(800, Math.min(2400, Number(options.width) || DEFAULT_PNG_WIDTH));
-  return {
-    width,
-    renderOptions: {
-      fitTo: { mode: "width", value: width },
-      background: "transparent"
+  const fontFiles = options.fontFiles || resolveRouteMapFontFiles();
+  const renderOptions = {
+    fitTo: { mode: "width", value: width },
+    background: "transparent",
+    font: {
+      // Netlify Functions have no useful system fonts; embed Noto Sans for labels/numbers.
+      loadSystemFonts: false,
+      defaultFontFamily: "Noto Sans",
+      fontFiles
     }
   };
+  return { width, renderOptions, fontFiles };
 }
 
 function svgToPngWithNative(svg, options = {}) {
   const { Resvg } = require("@resvg/resvg-js");
-  const { renderOptions } = pngFitOptions(options);
+  const { renderOptions, fontFiles } = pngFitOptions(options);
+  if (!fontFiles.length) {
+    const err = new Error(
+      "PNG font files are missing (netlify/functions/fonts/NotoSans-*.ttf). Port labels cannot be rasterised."
+    );
+    err.code = "png_fonts_missing";
+    throw err;
+  }
   const resvg = new Resvg(Buffer.from(String(svg || ""), "utf8"), renderOptions);
   const rendered = resvg.render();
   return {
@@ -106,8 +127,13 @@ async function ensureResvgWasm() {
   if (wasmInitPromise) return wasmInitPromise;
   wasmInitPromise = (async () => {
     const { Resvg, initWasm } = require("@resvg/resvg-wasm");
-    const wasmPath = require.resolve("@resvg/resvg-wasm/index_bg.wasm");
-    await initWasm(fs.readFileSync(wasmPath));
+    try {
+      const wasmPath = require.resolve("@resvg/resvg-wasm/index_bg.wasm");
+      await initWasm(fs.readFileSync(wasmPath));
+    } catch (error) {
+      // initWasm can only run once per process (tests / warm Netlify isolates).
+      if (!/already initialized/i.test(String(error && error.message))) throw error;
+    }
     return Resvg;
   })().catch((error) => {
     wasmInitPromise = null;
@@ -118,8 +144,24 @@ async function ensureResvgWasm() {
 
 async function svgToPngWithWasm(svg, options = {}) {
   const Resvg = await ensureResvgWasm();
-  const { renderOptions } = pngFitOptions(options);
-  const resvg = new Resvg(String(svg || ""), renderOptions);
+  const { renderOptions, fontFiles } = pngFitOptions(options);
+  if (!fontFiles.length) {
+    const err = new Error(
+      "PNG font files are missing (netlify/functions/fonts/NotoSans-*.ttf). Port labels cannot be rasterised."
+    );
+    err.code = "png_fonts_missing";
+    throw err;
+  }
+  // WASM API accepts fontBuffers (raw bytes) rather than filesystem paths.
+  const wasmOptions = {
+    ...renderOptions,
+    font: {
+      loadSystemFonts: false,
+      defaultFontFamily: "Noto Sans",
+      fontBuffers: fontFiles.map((filePath) => fs.readFileSync(filePath))
+    }
+  };
+  const resvg = new Resvg(String(svg || ""), wasmOptions);
   const rendered = resvg.render();
   return {
     buffer: Buffer.from(rendered.asPng()),

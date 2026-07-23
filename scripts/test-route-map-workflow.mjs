@@ -149,6 +149,29 @@ async function main() {
     assert(height === Math.round((2000 * 675) / 1200), `expected 16:9 height, got ${height}`);
   });
 
+  await test("B2 PNG includes label/number glyphs when fonts are loaded", async () => {
+    const labelSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="80">
+  <rect width="240" height="80" fill="#3E7FA8"/>
+  <text x="24" y="36" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700" fill="#FFFFFF">9 Barcelona</text>
+  <text x="24" y="62" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="500" fill="#FFFFFF">Piraeus</text>
+</svg>`;
+    const withFonts = await svgToPngBuffer(labelSvg, { width: 480 });
+    const withoutFonts = await svgToPngBuffer(labelSvg, {
+      width: 480,
+      fontFiles: []
+    }).catch(() => null);
+    // Empty fontFiles throws png_fonts_missing — compare against explicit no-system-font render via native opts path
+    const { Resvg } = require("@resvg/resvg-js");
+    const bare = new Resvg(labelSvg, {
+      fitTo: { mode: "width", value: 480 },
+      font: { loadSystemFonts: false }
+    })
+      .render()
+      .asPng();
+    assert(withFonts.buffer.length > bare.length + 500, "font-backed PNG should be larger than glyphless PNG");
+    assert(withoutFonts === null, "missing fontFiles should fail closed");
+  });
+
   await test("C storage object paths are stable", () => {
     const paths = storageObjectPaths(TEST_ID);
     assert(paths.svg_path === `${TEST_ID}/route-map.svg`, "svg object path");
