@@ -238,17 +238,6 @@
   border: 0;
 }
 
-.nl-route-map-empty {
-  margin: 40px auto 0;
-  max-width: 600px;
-  padding: 28px 16px;
-  color: #6b7280;
-  font-family: Helvetica, Arial, sans-serif;
-  font-size: 13px;
-  text-align: center;
-  background: #f7f8f8;
-}
-
 .nl-pricing {
   margin: 44px auto 0;
   max-width: 100%;

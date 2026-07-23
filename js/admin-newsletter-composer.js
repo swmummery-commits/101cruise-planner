@@ -276,11 +276,7 @@
           p.airline_price != null
       );
       const hero = heroThumbUrl(cruise);
-      const map = cruise.route_map_image_url || (typeof global.resolveFeaturedCruiseImages === "function"
-        ? global.resolveFeaturedCruiseImages(cruise)?.routeMap?.url
-        : "");
       if (!hero) warnings.push(`${name}: missing hero image`);
-      if (!map) warnings.push(`${name}: missing route map`);
       if (!hasPrice) warnings.push(`${name}: missing pricing`);
       if (!String(cruise.public_slug || "").trim()) warnings.push(`${name}: missing public slug`);
       if ((cruise.publication_status || "draft") !== "published") {

@@ -209,9 +209,9 @@
       );
     }
 
-    if (!model.routeMapUrl) {
-      errors.push("A route map image is required for the Mailchimp export.");
-    } else if (!isPublicImageUrl(model.routeMapUrl)) {
+    // Route map is optional — omit the section when missing. If one is set,
+    // it must still be a stable public https URL for Mailchimp.
+    if (model.routeMapUrl && !isPublicImageUrl(model.routeMapUrl)) {
       errors.push(
         "The route map must use a stable public web address (https). Relative, local, or admin-only image links cannot be used in Mailchimp."
       );
@@ -795,13 +795,15 @@
       ? renderGreenCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE")
       : renderClassicCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE");
 
-    const routeMap = `
+    const routeMap = model.routeMapUrl
+      ? `
       <tr>
         <td align="center" style="padding:40px 0 0;">
           ${renderImage(model.routeMapUrl, model.routeMapAlt || "Route map", MAX_WIDTH)}
         </td>
       </tr>
-    `;
+    `
+      : "";
 
     const pricing = isGreen
       ? renderGreenPricingTable(model.pricingModules, includeAirline)

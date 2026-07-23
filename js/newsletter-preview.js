@@ -523,20 +523,18 @@
         `;
       }
       case SECTION_IDS.ROUTE_MAP: {
-        if (model.routeMapUrl) {
-          const dimAttrs = [
-            model.routeMapWidth != null ? `width="${esc(model.routeMapWidth)}"` : "",
-            model.routeMapHeight != null ? `height="${esc(model.routeMapHeight)}"` : ""
-          ]
-            .filter(Boolean)
-            .join(" ");
-          return `
+        if (!model.routeMapUrl) return "";
+        const dimAttrs = [
+          model.routeMapWidth != null ? `width="${esc(model.routeMapWidth)}"` : "",
+          model.routeMapHeight != null ? `height="${esc(model.routeMapHeight)}"` : ""
+        ]
+          .filter(Boolean)
+          .join(" ");
+        return `
             <div class="nl-route-map">
               <img src="${esc(model.routeMapUrl)}" alt="${esc(model.routeMapAlt || "Route map")}" class="nl-route-map-img" loading="lazy" ${dimAttrs}>
             </div>
           `;
-        }
-        return `<div class="nl-route-map nl-route-map-empty">Route map not yet added.</div>`;
       }
       case SECTION_IDS.PRICING: {
         if (!model.pricingModules?.length) return "";

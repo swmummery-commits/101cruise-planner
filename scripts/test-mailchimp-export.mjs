@@ -403,6 +403,23 @@ const missingHero = Export.generateFromModel(
 );
 assert(!missingHero.ok, "missing hero fails");
 
+const missingRouteMap = Export.generateFromModel(
+  { ...baseModel("general"), routeMapUrl: "", routeMapAlt: "" },
+  genOpts("general", "classic-editorial")
+);
+assert(missingRouteMap.ok, `missing route map is optional: ${(missingRouteMap.errors || []).join("; ")}`);
+assert(
+  !/Route map/i.test(missingRouteMap.html || "") || !/<img[^>]+alt="Route map"/i.test(missingRouteMap.html || ""),
+  "optional missing route map omits map image from HTML"
+);
+assert(!/alt="Route map"/i.test(missingRouteMap.html || ""), "no route map img when URL empty");
+
+const relativeRouteMap = Export.generateFromModel(
+  { ...baseModel("general"), routeMapUrl: "/assets/map.jpg" },
+  genOpts("general", "classic-editorial")
+);
+assert(!relativeRouteMap.ok, "relative route map still fails when provided");
+
 const relativeHero = Export.generateFromModel(
   { ...baseModel("general"), heroImageUrl: "/assets/hero.jpg" },
   genOpts("general", "classic-editorial")
