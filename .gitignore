@@ -12,3 +12,13 @@ node_modules/
 # Logs / OS
 *.log
 npm-debug.log*
+
+# Local route-map SVG previews (Sprint 13E Phase 3A)
+tmp/
+tmp/route-map-previews/
+
+# Generated Featured Cruise route maps (Sprint 13E Phase 4)
+# Contents ignored via generated-assets/.gitignore; keep folder with .gitkeep
+generated-assets/*
+!generated-assets/.gitignore
+!generated-assets/.gitkeep

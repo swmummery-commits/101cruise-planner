@@ -845,8 +845,8 @@
         ? `<p class="fc-itin-map-stale">This route map may no longer match the itinerary. It has been kept, but is marked <strong>Needs regeneration</strong>.</p>`
         : "";
     const readyNote = readiness.readyForAutoMap
-      ? `<p class="admin-muted">Route-map generation will be available when you run Sprint 13E tools. Manual maps remain usable now.</p>`
-      : `<p class="admin-muted">Route-map generation will be available when all required port calls are resolved.</p>`;
+      ? `<p class="admin-muted">Ready for <strong>Generate Route Map</strong>. Manual Media Library maps remain optional.</p>`
+      : `<p class="admin-muted">Resolve all port calls (with coordinates) to enable <strong>Generate Route Map</strong>.</p>`;
     return `
       <div class="fc-itin-map-readiness">
         <ul>

@@ -11,12 +11,18 @@
     "test:featured-itinerary": "node scripts/test-featured-cruise-itinerary.mjs",
     "test:marine-route": "node scripts/test-marine-route.mjs",
     "test:marine-route-phase2": "node scripts/test-marine-route-phase2.mjs",
-    "generate:marine-route": "node scripts/generate-marine-route.mjs"
+    "test:route-map-svg": "node scripts/test-route-map-svg.mjs",
+    "generate:marine-route": "node scripts/generate-marine-route.mjs",
+    "render:route-map": "node scripts/render-route-map.mjs",
+    "test:route-map-workflow": "node scripts/test-route-map-workflow.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.38",
     "@ssroute/data-eurostat": "^0.2.1",
-    "@ssroute/typescript": "^0.2.0"
+    "@ssroute/typescript": "^0.2.0",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2",
+    "@resvg/resvg-js": "^2.6.2"
   },
   "engines": {
     "node": ">=18"

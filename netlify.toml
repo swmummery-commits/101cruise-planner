@@ -21,6 +21,10 @@
 [functions."cruise-discovery-wave-background"]
   # Background wave: loops all cruise lines (Netlify background ~15 min).
 
+[functions."route-map-generate"]
+  # Route Object load/create + SVG + PNG rasterisation.
+  timeout = 60
+
 
 [[redirects]]
   from = "/planner"
