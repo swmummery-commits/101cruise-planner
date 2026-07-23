@@ -18,9 +18,40 @@
 (function (global) {
   "use strict";
 
+  /**
+   * Supabase Storage often serves SVG with Content-Disposition: attachment.
+   * Loading those URLs in <img>/<object> forces a browser download of route-map.svg.
+   * Newsletter / Admin previews must only use raster (PNG) map assets.
+   */
+  function isSvgAssetUrl(url) {
+    const path = String(url || "")
+      .trim()
+      .toLowerCase()
+      .split("?")[0]
+      .split("#")[0];
+    return path.endsWith(".svg");
+  }
+
+  /** Prefer sibling PNG for generated route maps; otherwise drop SVG URLs. */
+  function coerceRouteMapDisplayUrl(url) {
+    const raw = String(url || "").trim();
+    if (!raw) return "";
+    if (!isSvgAssetUrl(raw)) return raw;
+    const coerced = raw.replace(/route-map\.svg(?=(\?|#|$))/i, "route-map.png");
+    if (coerced !== raw && !isSvgAssetUrl(coerced)) return coerced;
+    return "";
+  }
+
   function asMediaObject(partial = {}, source = "unknown") {
-    const url = String(partial.url || partial.public_url || "").trim();
+    let url = String(partial.url || partial.public_url || "").trim();
     if (!url) return null;
+    if (source.toLowerCase().includes("route") || partial.media_type === "route_map") {
+      url = coerceRouteMapDisplayUrl(url);
+      if (!url) return null;
+    } else if (isSvgAssetUrl(url) && /route-map/i.test(url)) {
+      url = coerceRouteMapDisplayUrl(url);
+      if (!url) return null;
+    }
     return {
       id: partial.id || null,
       url,
@@ -229,20 +260,30 @@
     const mediaLibrary = context.mediaLibrary || [];
     const routeMapMedia = context.routeMapMedia || cruise.route_map_media || null;
     if (cruise.route_map_media_id && routeMapMedia) {
-      return asMediaObject(routeMapMedia, "Featured Cruise Media Library selection");
+      const fromMedia = asMediaObject(
+        { ...routeMapMedia, media_type: "route_map" },
+        "Featured Cruise Media Library selection"
+      );
+      if (fromMedia) return fromMedia;
     }
     if (cruise.route_map_media_id) {
       const fromList = mediaLibrary.find((m) => m.id === cruise.route_map_media_id);
-      if (fromList) return asMediaObject(fromList, "Featured Cruise Media Library selection");
+      if (fromList) {
+        const fromMedia = asMediaObject(
+          { ...fromList, media_type: "route_map" },
+          "Featured Cruise Media Library selection"
+        );
+        if (fromMedia) return fromMedia;
+      }
     }
-    const legacyUrl = String(cruise.route_map_image_url || "").trim();
+    const legacyUrl = coerceRouteMapDisplayUrl(cruise.route_map_image_url);
     if (legacyUrl) {
       return asMediaObject(
-        { url: legacyUrl, alt_text: "Route map", title: "Route map" },
+        { url: legacyUrl, alt_text: "Route map", title: "Route map", media_type: "route_map" },
         "Legacy route map URL"
       );
     }
-    const generatedUrl = generatedRouteMapPublicUrl(cruise, context);
+    const generatedUrl = coerceRouteMapDisplayUrl(generatedRouteMapPublicUrl(cruise, context));
     if (generatedUrl) {
       return asMediaObject(
         {
@@ -250,7 +291,8 @@
           alt_text: "Route map",
           title: "Route map",
           width: cruise.route_map_width,
-          height: cruise.route_map_height
+          height: cruise.route_map_height,
+          media_type: "route_map"
         },
         "Generated route map"
       );
@@ -267,6 +309,8 @@
 
   const api = {
     asMediaObject,
+    isSvgAssetUrl,
+    coerceRouteMapDisplayUrl,
     findShipDefault,
     findDestinationDefault,
     resolveAltText,

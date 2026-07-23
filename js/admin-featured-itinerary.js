@@ -167,7 +167,11 @@
 
     if (data?.length) {
       const byId = portsByIdMap();
-      stops = data.map((row) => I().mapStopFromDb(row, byId));
+      stops = I().applyKnownDayNumbers(
+        data.map((row) => I().mapStopFromDb(row, byId)),
+        cruise?.nights,
+        { forceClearMiddle: false }
+      );
       structuredLoaded = true;
       needsStructuring = false;
       return;
@@ -175,7 +179,7 @@
 
     if (legacySummary) {
       const parsed = I().parseLegacyItinerarySummary(legacySummary);
-      stops = parsed.stops;
+      stops = I().applyKnownDayNumbers(parsed.stops, cruise?.nights, { forceClearMiddle: true });
       needsStructuring = true;
       structuredLoaded = false;
       return;
@@ -514,12 +518,14 @@
       for (let i = 0; i < next.length; i += 1) {
         next[i] = await createOrLinkPortForStop(next[i], featuredCruiseId);
       }
+      const draft =
+        typeof global.getFeaturedFormDraft === "function" ? global.getFeaturedFormDraft() : null;
+      const nights = draft?.nights;
+      next = I().applyKnownDayNumbers(next, nights, { forceClearMiddle: true });
       stops = I().normalizeStopOrder(next);
       needsStructuring = false;
       legacySummary = I().buildPortsJoinedFromStops(stops) || raw;
 
-      const draft =
-        typeof global.getFeaturedFormDraft === "function" ? global.getFeaturedFormDraft() : null;
       if (draft) syncSummaryIntoDraft(draft);
 
       const missingCoordIds = stops
@@ -989,6 +995,11 @@
           >
             <span class="fc-itin-chevron" aria-hidden="true">${open ? "▾" : "▸"}</span>
             <span class="fc-itin-summary-day">Stop ${esc(String(stop.display_order || index + 1))}</span>
+            ${
+              stop.day_number !== "" && stop.day_number != null
+                ? `<span class="fc-itin-summary-sailing-day">Day ${esc(String(stop.day_number))}</span>`
+                : ""
+            }
             <span class="fc-itin-summary-type">${esc(typeLabel)}</span>
             <span class="fc-itin-summary-port">${esc(portLabel)}</span>
             ${
@@ -1005,7 +1016,7 @@
           <div class="fc-itin-fields">
             <label class="fc-itin-day">
               <span>Day</span>
-              <input data-fc-itin="day_number" type="number" min="1" step="1" value="${esc(stop.day_number ?? "")}" placeholder="—" aria-label="Optional sailing day" title="Optional cruise day number (not port order)">
+              <input data-fc-itin="day_number" type="number" min="1" step="1" value="${esc(stop.day_number ?? "")}" placeholder="—" aria-label="Sailing day if known" title="Only fill when the real cruise day is known. Stop number is port order, not the sailing day.">
             </label>
             <label class="fc-itin-type">
               <span>Type</span>
@@ -1103,7 +1114,7 @@
           <span class="fc-itin-section-meta">${stopCount} stop${stopCount === 1 ? "" : "s"}</span>
         </button>
         <div class="fc-itin-section-body" ${sectionOpen ? "" : "hidden"}>
-          <p class="admin-muted">Paste a full port list below, or edit stops one by one. List order is port sequence (Stop 1, 2, 3…) — not sailing days. Optional Day is only if you know the real cruise day. Ports link to the Ports database and coordinates are looked up for route maps.</p>
+          <p class="admin-muted">Paste a full port list below, or edit stops one by one. <strong>Stop 1, 2, 3…</strong> is port order only. <strong>Day</strong> is the sailing day — set automatically for embarkation (Day 1) and disembarkation (nights + 1), or for every stop when ports fill every day of the cruise. Middle ports stay blank when sea days make the day unknown.</p>
           <div class="fc-itin-port-list-paste">
             <label for="fcPortListPaste"><strong>Paste port list</strong></label>
             <textarea

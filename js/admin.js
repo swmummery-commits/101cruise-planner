@@ -8443,7 +8443,7 @@ async function editFeaturedCruise(id) {
       hero_image_alt: existing.hero_image_alt || "",
       hero_media_id: existing.hero_media_id || null,
       hero_media: heroMedia,
-      route_map_image_url: existing.route_map_image_url || "",
+      route_map_image_url: sanitizeFeaturedRouteMapImageUrl(existing.route_map_image_url || ""),
       route_map_media_id: existing.route_map_media_id || null,
       route_map_media: routeMapMedia,
       route_map_status: existing.route_map_status || "missing",
@@ -8500,6 +8500,18 @@ function featuredMediaLibraryItems() {
   return window.MediaLibraryAdmin?.getMediaItems?.() || [];
 }
 
+function sanitizeFeaturedRouteMapImageUrl(url) {
+  const coerce = window.MediaResolver?.coerceRouteMapDisplayUrl;
+  if (typeof coerce === "function") return coerce(url) || "";
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+  if (/\.svg(\?|#|$)/i.test(raw)) {
+    const coerced = raw.replace(/route-map\.svg(?=(\?|#|$))/i, "route-map.png");
+    return coerced !== raw ? coerced : "";
+  }
+  return raw;
+}
+
 function resolveFeaturedCruiseImages(draft = featuredFormDraft || {}) {
   const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id) || null;
   const mediaLibrary = featuredMediaLibraryItems();
@@ -8511,8 +8523,15 @@ function resolveFeaturedCruiseImages(draft = featuredFormDraft || {}) {
     (draft.route_map_media_id
       ? window.MediaLibraryAdmin?.findById?.(draft.route_map_media_id) || null
       : null);
+  const safeDraft = {
+    ...draft,
+    route_map_image_url: sanitizeFeaturedRouteMapImageUrl(draft.route_map_image_url)
+  };
   if (!window.MediaResolver) {
     const heroUrl = heroMedia?.public_url || draft.hero_image_url || ship?.hero_image_url || "";
+    const routeUrl = sanitizeFeaturedRouteMapImageUrl(
+      routeMapMedia?.public_url || safeDraft.route_map_image_url
+    );
     return {
       hero: heroUrl
         ? {
@@ -8525,9 +8544,9 @@ function resolveFeaturedCruiseImages(draft = featuredFormDraft || {}) {
                 : "Legacy Cruise Intelligence image"
           }
         : null,
-      routeMap: (routeMapMedia?.public_url || draft.route_map_image_url)
+      routeMap: routeUrl
         ? {
-            url: routeMapMedia?.public_url || draft.route_map_image_url,
+            url: routeUrl,
             altText: routeMapMedia?.alt_text || "Route map",
             source: routeMapMedia
               ? "Featured Cruise Media Library selection"
@@ -8536,7 +8555,7 @@ function resolveFeaturedCruiseImages(draft = featuredFormDraft || {}) {
         : null
     };
   }
-  return window.MediaResolver.resolveCruiseImages(draft, {
+  return window.MediaResolver.resolveCruiseImages(safeDraft, {
     mediaLibrary,
     ship,
     heroMedia,
@@ -9274,11 +9293,11 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
   const hasAssets = featuredCruiseHasGeneratedRouteMap(draft) || Boolean(result?.ok);
   if (!hasAssets && !featuredRouteMapGenerating && !result) return "";
 
-  const svgPath = result?.svg_path || draft.route_map_svg_path || "";
   const pngPath = result?.png_path || draft.route_map_png_path || "";
   const bust = Date.parse(result?.generated_at || draft.route_map_generated_at || "") || Date.now();
   // Always build public Storage URLs in the browser — do not trust function response URLs
   // (env host / cache / Content-Disposition quirks). Paths in draft/result are canonical.
+  // Never preview the SVG — Supabase serves it as attachment and browsers download route-map.svg.
   const pngUrl = featuredRouteMapPublicUrl(pngPath, bust);
   const width = result?.width ?? draft.route_map_width;
   const height = result?.height ?? draft.route_map_height;
@@ -9319,7 +9338,6 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
             ? `<p><strong>PNG size:</strong> ${esc(formatFeaturedRouteMapBytes(result.png_bytes))}</p>`
             : ""
         }
-        ${svgPath ? `<p class="admin-small">SVG: ${esc(svgPath)}</p>` : ""}
         ${pngPath ? `<p class="admin-small">PNG: ${esc(pngPath)}</p>` : ""}
       </div>
       <div class="featured-route-map-gen-previews featured-route-map-gen-previews--single">
@@ -9387,7 +9405,6 @@ function applyFeaturedGeneratedRouteMapResult(data, { recovered = false } = {}) 
     message: "Generated successfully",
     svg_path: svgPath,
     png_path: pngPath,
-    svg_url: featuredRouteMapPublicUrl(svgPath, bust),
     png_url: featuredRouteMapPublicUrl(pngPath, bust),
     generated_at: generatedAt,
     renderer_version: renderer,
@@ -9555,13 +9572,15 @@ function renderFeaturedHeroImageSection(draft) {
 }
 
 function renderFeaturedRouteMapSection(draft) {
-  const resolved = resolveFeaturedCruiseImages(draft).routeMap;
   const media =
     draft.route_map_media ||
     (draft.route_map_media_id
       ? window.MediaLibraryAdmin?.findById?.(draft.route_map_media_id)
       : null);
-  const legacyUrl = String(draft.route_map_image_url || "").trim();
+  const manualUrl = sanitizeFeaturedRouteMapImageUrl(
+    media?.public_url || media?.url || draft.route_map_image_url || ""
+  );
+  const legacyUrl = sanitizeFeaturedRouteMapImageUrl(draft.route_map_image_url || "");
   const readiness = window.FeaturedItineraryEditor?.renderRouteMapReadiness?.(draft) || "";
   const canGenerate = featuredCruiseCanGenerateRouteMap(draft);
   const hasGenerated = featuredCruiseHasGeneratedRouteMap(draft);
@@ -9605,13 +9624,19 @@ function renderFeaturedRouteMapSection(draft) {
         <p class="admin-small" style="margin-bottom:8px">Manual Media Library selection (optional — not overwritten by Generate)</p>
         <div class="featured-image-preview-wrap">
           ${
-            resolved?.url
-              ? `<img class="featured-image-preview" src="${esc(resolved.url)}" alt="${esc(resolved.altText || "Route map")}" loading="lazy">`
+            manualUrl
+              ? `<img class="featured-image-preview" src="${esc(manualUrl)}" alt="${esc(media?.alt_text || "Route map")}" loading="lazy">`
               : `<div class="admin-empty-preview">No manual route map selected</div>`
           }
         </div>
         <div class="featured-media-meta">
-          <p class="featured-media-source">Source: ${esc(resolved?.source || "No image selected")}</p>
+          <p class="featured-media-source">Source: ${esc(
+            media
+              ? "Featured Cruise Media Library selection"
+              : manualUrl
+                ? "Legacy route map URL"
+                : "No image selected"
+          )}</p>
           ${media ? `<p class="admin-small">${esc(media.title)}</p>` : ""}
         </div>
       </div>
@@ -10177,9 +10202,11 @@ async function saveFeaturedCruise() {
       hero_image_alt: String(draft.hero_image_alt || "").trim() || null,
       route_map_media_id: draft.route_map_media_id || null,
       route_map_image_url:
-        (draft.route_map_media_id && (draft.route_map_media?.public_url || draft.route_map_media?.url)) ||
-        normalizeUrl(draft.route_map_image_url) ||
-        null,
+        sanitizeFeaturedRouteMapImageUrl(
+          (draft.route_map_media_id && (draft.route_map_media?.public_url || draft.route_map_media?.url)) ||
+            normalizeUrl(draft.route_map_image_url) ||
+            ""
+        ) || null,
       itinerary_summary: itinerarySummary,
       route_map_status: mapFields.route_map_status || "missing",
       route_map_itinerary_signature: mapFields.route_map_itinerary_signature || null,

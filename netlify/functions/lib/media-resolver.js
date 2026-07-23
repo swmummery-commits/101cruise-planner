@@ -3,9 +3,35 @@
  * Keep in sync with js/media-resolver.js for browser/Admin.
  */
 
+/** Supabase often serves SVG as attachment — never use SVG URLs in previews/emails. */
+function isSvgAssetUrl(url) {
+  const path = String(url || "")
+    .trim()
+    .toLowerCase()
+    .split("?")[0]
+    .split("#")[0];
+  return path.endsWith(".svg");
+}
+
+function coerceRouteMapDisplayUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+  if (!isSvgAssetUrl(raw)) return raw;
+  const coerced = raw.replace(/route-map\.svg(?=(\?|#|$))/i, "route-map.png");
+  if (coerced !== raw && !isSvgAssetUrl(coerced)) return coerced;
+  return "";
+}
+
 function asMediaObject(partial = {}, source = "unknown") {
-  const url = String(partial.url || partial.public_url || "").trim();
+  let url = String(partial.url || partial.public_url || "").trim();
   if (!url) return null;
+  if (source.toLowerCase().includes("route") || partial.media_type === "route_map") {
+    url = coerceRouteMapDisplayUrl(url);
+    if (!url) return null;
+  } else if (isSvgAssetUrl(url) && /route-map/i.test(url)) {
+    url = coerceRouteMapDisplayUrl(url);
+    if (!url) return null;
+  }
   return {
     id: partial.id || null,
     url,
@@ -187,20 +213,30 @@ function resolveRouteMapImage(cruise = {}, context = {}) {
   const mediaLibrary = context.mediaLibrary || [];
   const routeMapMedia = context.routeMapMedia || cruise.route_map_media || null;
   if (cruise.route_map_media_id && routeMapMedia) {
-    return asMediaObject(routeMapMedia, "Featured Cruise Media Library selection");
+    const fromMedia = asMediaObject(
+      { ...routeMapMedia, media_type: "route_map" },
+      "Featured Cruise Media Library selection"
+    );
+    if (fromMedia) return fromMedia;
   }
   if (cruise.route_map_media_id) {
     const fromList = mediaLibrary.find((m) => m.id === cruise.route_map_media_id);
-    if (fromList) return asMediaObject(fromList, "Featured Cruise Media Library selection");
+    if (fromList) {
+      const fromMedia = asMediaObject(
+        { ...fromList, media_type: "route_map" },
+        "Featured Cruise Media Library selection"
+      );
+      if (fromMedia) return fromMedia;
+    }
   }
-  const legacyUrl = String(cruise.route_map_image_url || "").trim();
+  const legacyUrl = coerceRouteMapDisplayUrl(cruise.route_map_image_url);
   if (legacyUrl) {
     return asMediaObject(
-      { url: legacyUrl, alt_text: "Route map", title: "Route map" },
+      { url: legacyUrl, alt_text: "Route map", title: "Route map", media_type: "route_map" },
       "Legacy route map URL"
     );
   }
-  const generatedUrl = generatedRouteMapPublicUrl(cruise, context);
+  const generatedUrl = coerceRouteMapDisplayUrl(generatedRouteMapPublicUrl(cruise, context));
   if (generatedUrl) {
     return asMediaObject(
       {
@@ -208,7 +244,8 @@ function resolveRouteMapImage(cruise = {}, context = {}) {
         alt_text: "Route map",
         title: "Route map",
         width: cruise.route_map_width,
-        height: cruise.route_map_height
+        height: cruise.route_map_height,
+        media_type: "route_map"
       },
       "Generated route map"
     );
@@ -225,6 +262,8 @@ function resolveCruiseImages(cruise = {}, context = {}) {
 
 module.exports = {
   asMediaObject,
+  isSvgAssetUrl,
+  coerceRouteMapDisplayUrl,
   findShipDefault,
   findDestinationDefault,
   resolveAltText,

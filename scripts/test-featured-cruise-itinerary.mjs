@@ -167,6 +167,33 @@ assert(
   "paste does not invent sailing day numbers"
 );
 
+const knownSparse = I.applyKnownDayNumbers(pasted.stops, 7, { forceClearMiddle: true });
+assert(knownSparse[0].day_number === 1, "embark is Day 1");
+assert(knownSparse[1].day_number === "" || knownSparse[1].day_number == null, "middle day blank when sea days possible");
+assert(knownSparse[2].day_number === 8, "disembark is nights+1");
+
+const packedList = I.buildStopsFromPortList(
+  "A, Spain | B, Spain | C, Spain | D, Spain | E, Spain | F, Spain | G, Spain | H, Spain"
+);
+const knownPacked = I.applyKnownDayNumbers(packedList.stops, 7, { forceClearMiddle: true });
+assert(knownPacked.length === 8, "8 ports for 7-night packed cruise");
+assert(
+  knownPacked.every((s, i) => Number(s.day_number) === i + 1),
+  "full-packed itinerary gets sequential days when ports === nights+1"
+);
+
+const invented = I.applyKnownDayNumbers(
+  [
+    I.blankStop(1, { stop_type: "embarkation", day_number: 1, entered_port_text: "A, Spain" }),
+    I.blankStop(2, { stop_type: "port_call", day_number: 2, entered_port_text: "B, Spain" }),
+    I.blankStop(3, { stop_type: "disembarkation", day_number: 3, entered_port_text: "C, Spain" })
+  ],
+  7,
+  { forceClearMiddle: false }
+);
+assert(invented[1].day_number === "" || invented[1].day_number == null, "clears day===stop-order inventions");
+assert(invented[2].day_number === 8, "reconcile sets disembark to nights+1");
+
 const ordered = I.normalizeStopOrder([
   I.blankStop(9, { entered_port_text: "A", stop_type: "port_call" }),
   I.blankStop(2, { entered_port_text: "B", stop_type: "port_call" })

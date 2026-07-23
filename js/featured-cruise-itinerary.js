@@ -405,6 +405,70 @@
     };
   }
 
+  /**
+   * Assign sailing-day numbers only when they are knowable.
+   *
+   * - Embarkation → Day 1
+   * - Disembarkation → Day (nights + 1) when nights is set
+   * - If geographic stops exactly fill every day (count === nights + 1),
+   *   assign sequential Day 1…N (no room for sea days)
+   * - Otherwise leave intermediate port days blank — sea days make them unknown
+   *
+   * Stop order (display_order) is independent and always 1…N.
+   */
+  function applyKnownDayNumbers(stops, nights, options = {}) {
+    const forceClearMiddle = options.forceClearMiddle !== false;
+    const ordered = normalizeStopOrder(stops || []).map((s) => ({ ...s }));
+    const nightsNum = nights === "" || nights == null ? null : Number(nights);
+    const hasNights = Number.isFinite(nightsNum) && nightsNum >= 0;
+    const lastDay = hasNights ? nightsNum + 1 : null;
+
+    const geoIndexes = [];
+    ordered.forEach((stop, index) => {
+      if (isAtSeaStopType(stop.stop_type)) return;
+      if (isGeographicStopType(stop.stop_type) || stop.stop_type === "scenic_cruising") {
+        geoIndexes.push(index);
+      }
+    });
+
+    const fullPacked = Boolean(lastDay && geoIndexes.length === lastDay);
+
+    for (let i = 0; i < ordered.length; i += 1) {
+      const stop = ordered[i];
+      if (isAtSeaStopType(stop.stop_type)) {
+        if (forceClearMiddle) stop.day_number = "";
+        continue;
+      }
+
+      if (stop.stop_type === "embarkation") {
+        stop.day_number = 1;
+        continue;
+      }
+
+      if (stop.stop_type === "disembarkation") {
+        stop.day_number = lastDay != null ? lastDay : "";
+        continue;
+      }
+
+      if (fullPacked) {
+        const geoPos = geoIndexes.indexOf(i);
+        stop.day_number = geoPos >= 0 ? geoPos + 1 : "";
+        continue;
+      }
+
+      // Intermediate ports — day unknown when sea days exist.
+      const dayNum =
+        stop.day_number === "" || stop.day_number == null ? null : Number(stop.day_number);
+      const looksInvented =
+        dayNum != null && Number.isFinite(dayNum) && dayNum === Number(stop.display_order);
+      if (forceClearMiddle || looksInvented) {
+        stop.day_number = "";
+      }
+    }
+
+    return ordered;
+  }
+
   function customerFacingPortLabel(stop) {
     const entered = String(stop.entered_port_text || "").trim();
     if (entered) return entered;
@@ -684,6 +748,7 @@
     mapStopFromDb,
     parseLegacyItinerarySummary,
     buildStopsFromPortList,
+    applyKnownDayNumbers,
     customerFacingPortLabel,
     buildPortsJoinedFromStops,
     buildRouteSignature,

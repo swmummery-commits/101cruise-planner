@@ -3386,11 +3386,17 @@
 }
 
 .fc-itin-summary-day,
+.fc-itin-summary-sailing-day,
 .fc-itin-summary-type {
   font-size: 12px;
   font-weight: 600;
   color: #374151;
   white-space: nowrap;
+}
+
+.fc-itin-summary-sailing-day {
+  font-weight: 500;
+  color: #6b7280;
 }
 
 .fc-itin-summary-port {
