@@ -159,3 +159,9 @@ SET
   ship_naming_style = 'branded_vessel',
   updated_at = timezone('utc', now())
 WHERE lower(trim(name)) = 'seadream yacht club';
+
+UPDATE public.ci_cruise_lines
+SET
+  ship_naming_style = 'branded_vessel',
+  updated_at = timezone('utc', now())
+WHERE lower(trim(name)) = 'ama waterways';
