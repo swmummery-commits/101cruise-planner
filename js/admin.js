@@ -9299,6 +9299,34 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
   `;
 }
 
+async function refreshFeaturedGeneratedRouteMapDraft(cruiseId) {
+  if (!cruiseId || !featuredFormDraft) return null;
+  const { data, error } = await supabaseClient
+    .from("featured_cruises")
+    .select(
+      "route_map_svg_path,route_map_png_path,route_map_generated_at,route_map_renderer_version,route_map_width,route_map_height"
+    )
+    .eq("id", cruiseId)
+    .maybeSingle();
+  if (error || !data) return null;
+
+  featuredFormDraft.route_map_svg_path = data.route_map_svg_path || "";
+  featuredFormDraft.route_map_png_path = data.route_map_png_path || "";
+  featuredFormDraft.route_map_generated_at = data.route_map_generated_at || null;
+  featuredFormDraft.route_map_renderer_version = data.route_map_renderer_version || "";
+  featuredFormDraft.route_map_width = data.route_map_width ?? null;
+  featuredFormDraft.route_map_height = data.route_map_height ?? null;
+
+  const listIndex = featuredCruises.findIndex((row) => row.id === cruiseId);
+  if (listIndex >= 0) {
+    featuredCruises[listIndex] = {
+      ...featuredCruises[listIndex],
+      ...data
+    };
+  }
+  return data;
+}
+
 async function generateFeaturedRouteMap() {
   if (!editingFeaturedCruiseId || featuredRouteMapGenerating) return;
   if (!featuredCruiseCanGenerateRouteMap(featuredFormDraft)) {
@@ -9343,8 +9371,31 @@ async function generateFeaturedRouteMap() {
     const data = await response.json().catch(() => ({}));
     featuredRouteMapGenResult = data;
     if (!response.ok || !data.ok) {
-      featuredCruiseMessage = data.errors?.[0]?.message || "Route map generation failed.";
-      featuredCruiseMessageTone = "error";
+      // Function may have finished writing Storage/DB even if the HTTP response failed
+      // (timeout / truncated JSON). Re-read durable metadata before showing failure.
+      const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
+      if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
+        const bust = Date.parse(refreshed.route_map_generated_at || "") || Date.now();
+        featuredRouteMapGenResult = {
+          ok: true,
+          message: "Generated successfully",
+          svg_path: refreshed.route_map_svg_path,
+          png_path: refreshed.route_map_png_path,
+          svg_url: featuredRouteMapPublicUrl(refreshed.route_map_svg_path, bust),
+          png_url: featuredRouteMapPublicUrl(refreshed.route_map_png_path, bust),
+          generated_at: refreshed.route_map_generated_at,
+          renderer_version: refreshed.route_map_renderer_version,
+          width: refreshed.route_map_width,
+          height: refreshed.route_map_height,
+          recovered_from_database: true
+        };
+        featuredRouteMapGenProgress = "Complete";
+        featuredCruiseMessage = "Route map generated successfully.";
+        featuredCruiseMessageTone = "success";
+      } else {
+        featuredCruiseMessage = data.errors?.[0]?.message || "Route map generation failed.";
+        featuredCruiseMessageTone = "error";
+      }
     } else {
       featuredRouteMapGenProgress = "Complete";
       featuredFormDraft.route_map_svg_path = data.svg_path || "";
@@ -9353,6 +9404,13 @@ async function generateFeaturedRouteMap() {
       featuredFormDraft.route_map_renderer_version = data.renderer_version || "";
       featuredFormDraft.route_map_width = data.width ?? null;
       featuredFormDraft.route_map_height = data.height ?? null;
+      // Always derive display URLs client-side so previews work even if the
+      // function omitted svg_url/png_url.
+      if (!featuredRouteMapGenResult.svg_url && data.svg_path) {
+        const bust = Date.parse(data.generated_at || "") || Date.now();
+        featuredRouteMapGenResult.svg_url = featuredRouteMapPublicUrl(data.svg_path, bust);
+        featuredRouteMapGenResult.png_url = featuredRouteMapPublicUrl(data.png_path, bust);
+      }
       featuredCruiseMessage = "Route map generated successfully.";
       featuredCruiseMessageTone = "success";
       const listIndex = featuredCruises.findIndex((row) => row.id === editingFeaturedCruiseId);
@@ -9369,12 +9427,32 @@ async function generateFeaturedRouteMap() {
       }
     }
   } catch (error) {
-    featuredRouteMapGenResult = {
-      ok: false,
-      errors: [{ code: "network_error", message: error.message || "Network error during generation." }]
-    };
-    featuredCruiseMessage = error.message || "Network error during route map generation.";
-    featuredCruiseMessageTone = "error";
+    const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
+    if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
+      const bust = Date.parse(refreshed.route_map_generated_at || "") || Date.now();
+      featuredRouteMapGenResult = {
+        ok: true,
+        message: "Generated successfully",
+        svg_path: refreshed.route_map_svg_path,
+        png_path: refreshed.route_map_png_path,
+        svg_url: featuredRouteMapPublicUrl(refreshed.route_map_svg_path, bust),
+        png_url: featuredRouteMapPublicUrl(refreshed.route_map_png_path, bust),
+        generated_at: refreshed.route_map_generated_at,
+        renderer_version: refreshed.route_map_renderer_version,
+        width: refreshed.route_map_width,
+        height: refreshed.route_map_height,
+        recovered_from_database: true
+      };
+      featuredCruiseMessage = "Route map generated successfully.";
+      featuredCruiseMessageTone = "success";
+    } else {
+      featuredRouteMapGenResult = {
+        ok: false,
+        errors: [{ code: "network_error", message: error.message || "Network error during generation." }]
+      };
+      featuredCruiseMessage = error.message || "Network error during route map generation.";
+      featuredCruiseMessageTone = "error";
+    }
   } finally {
     clearInterval(progressTimer);
     featuredRouteMapGenerating = false;

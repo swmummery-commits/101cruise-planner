@@ -203,7 +203,9 @@ async function uploadStorageObject({ objectPath, body, contentType, options = {}
       Authorization: `Bearer ${key}`,
       "Content-Type": contentType,
       "x-upsert": "true",
-      "cache-control": ROUTE_MAP_CACHE_CONTROL
+      "cache-control": ROUTE_MAP_CACHE_CONTROL,
+      // Required for Safari <img> previews — Supabase defaults SVG to "attachment".
+      "content-disposition": `inline; filename="${String(objectPath).split("/").pop()}"`
     },
     body
   });

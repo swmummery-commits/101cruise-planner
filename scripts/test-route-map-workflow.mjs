@@ -187,6 +187,8 @@ async function main() {
     assert(recorder[0].headers["x-upsert"] === "true", "svg upsert");
     assert(recorder[1].headers["x-upsert"] === "true", "png upsert");
     assert(recorder[0].headers["cache-control"] === ROUTE_MAP_CACHE_CONTROL, "cache-control");
+    assert(/inline/i.test(recorder[0].headers["content-disposition"] || ""), "svg inline disposition");
+    assert(/inline/i.test(recorder[1].headers["content-disposition"] || ""), "png inline disposition");
     assert(recorder[0].url.includes(`/${ROUTE_MAP_STORAGE_BUCKET}/${TEST_ID}/route-map.svg`), "svg url path");
     assert(recorder[1].url.includes(`/${ROUTE_MAP_STORAGE_BUCKET}/${TEST_ID}/route-map.png`), "png url path");
     assert(saved.svg_path === `${TEST_ID}/route-map.svg`, "db svg path");
