@@ -9167,8 +9167,43 @@ function removeFeaturedRouteMapSelection() {
   renderAdmin();
 }
 
+const FEATURED_ROUTE_MAP_STORAGE_BUCKET = "featured-cruise-route-maps";
+
+function featuredRouteMapIsLegacyLocalPath(value) {
+  const p = String(value || "");
+  return p.startsWith("generated-assets/") || p.startsWith("/generated-assets/");
+}
+
 function featuredCruiseHasGeneratedRouteMap(draft) {
-  return Boolean(draft?.route_map_svg_path && draft?.route_map_png_path);
+  const svg = draft?.route_map_svg_path;
+  const png = draft?.route_map_png_path;
+  if (!svg || !png) return false;
+  // Local filesystem paths are not durable on Netlify — treat as missing.
+  if (featuredRouteMapIsLegacyLocalPath(svg) || featuredRouteMapIsLegacyLocalPath(png)) {
+    return false;
+  }
+  return true;
+}
+
+/** Build a public Supabase Storage URL for a canonical object path. */
+function featuredRouteMapPublicUrl(objectPath, cacheBust) {
+  const raw = String(objectPath || "").trim();
+  if (!raw) return "";
+  if (/^https?:\/\//i.test(raw)) {
+    const bust = cacheBust != null ? String(cacheBust) : "";
+    return bust ? `${raw}${raw.includes("?") ? "&" : "?"}t=${encodeURIComponent(bust)}` : raw;
+  }
+  if (featuredRouteMapIsLegacyLocalPath(raw)) return "";
+  const encoded = raw
+    .replace(/^\//, "")
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
+  let url = `${SUPABASE_URL}/storage/v1/object/public/${FEATURED_ROUTE_MAP_STORAGE_BUCKET}/${encoded}`;
+  if (cacheBust != null && cacheBust !== "") {
+    url += `?t=${encodeURIComponent(String(cacheBust))}`;
+  }
+  return url;
 }
 
 function featuredCruiseCanGenerateRouteMap(draft) {
@@ -9198,8 +9233,8 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
   const svgPath = result?.svg_path || draft.route_map_svg_path || "";
   const pngPath = result?.png_path || draft.route_map_png_path || "";
   const bust = Date.parse(result?.generated_at || draft.route_map_generated_at || "") || Date.now();
-  const svgUrl = result?.svg_url || (svgPath ? `/${svgPath.replace(/^\//, "")}?t=${bust}` : "");
-  const pngUrl = result?.png_url || (pngPath ? `/${pngPath.replace(/^\//, "")}?t=${bust}` : "");
+  const svgUrl = result?.svg_url || featuredRouteMapPublicUrl(svgPath, bust);
+  const pngUrl = result?.png_url || featuredRouteMapPublicUrl(pngPath, bust);
   const width = result?.width ?? draft.route_map_width;
   const height = result?.height ?? draft.route_map_height;
   const generatedAt = result?.generated_at || draft.route_map_generated_at;
@@ -9280,7 +9315,7 @@ async function generateFeaturedRouteMap() {
     "Loading Route Object…",
     "Rendering SVG…",
     "Rendering PNG…",
-    "Saving assets…",
+    "Uploading to Storage…",
     "Complete"
   ];
   let stepIndex = 0;

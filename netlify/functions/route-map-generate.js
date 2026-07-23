@@ -1,18 +1,19 @@
 /**
- * Sprint 13E Phase 4 — Featured Cruise route map generation workflow.
+ * Sprint 13E Phase 4B — Featured Cruise route map generation workflow.
  *
  * POST /.netlify/functions/route-map-generate
  * Actions:
- *   generate — load/create Route Object → SVG → PNG → disk + DB metadata
+ *   generate — load/create Route Object → SVG → PNG → Supabase Storage + DB metadata
  *   status   — report whether generated assets exist for a cruise
  *
+ * Production assets are stored in bucket featured-cruise-route-maps.
+ * Does NOT write to /var/task, generated-assets/, or /tmp.
  * Does NOT modify renderer styling.
  * Does NOT upload to Media Library / WordPress / public pages.
  * Does NOT write route_map_media_id.
  * HOLD DEPLOY.
  */
 
-const path = require("path");
 const { requireAdmin } = require("./admin-auth");
 const { loadMarineRouteRow, saveMarineRouteRow } = require("./lib/marine-route-persist");
 const { generateMarineRouteForCruise } = require("./lib/marine-route-itinerary");
@@ -20,9 +21,10 @@ const { renderRouteMapSvg } = require("./lib/route-map-svg");
 const {
   ROUTE_MAP_RENDERER_VERSION,
   DEFAULT_PNG_WIDTH,
+  ROUTE_MAP_STORAGE_BUCKET,
   saveRouteMapAssets,
-  relativeAssetPaths,
-  assetsExist
+  storageObjectPaths,
+  publicObjectUrl
 } = require("./lib/route-map-assets");
 
 function jsonResponse(statusCode, body) {
@@ -42,7 +44,11 @@ function jsonResponse(statusCode, body) {
 function config() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Supabase server access is not configured");
+  if (!url || !key) {
+    const err = new Error("Supabase credentials are missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.");
+    err.code = "supabase_credentials_missing";
+    throw err;
+  }
   return { url: url.replace(/\/$/, ""), key };
 }
 
@@ -98,6 +104,37 @@ function parseBody(event) {
   } catch {
     return {};
   }
+}
+
+function isLegacyLocalPath(value) {
+  const p = String(value || "");
+  return p.startsWith("generated-assets/") || p.startsWith("/generated-assets/");
+}
+
+function assetUrlsFromCruise(cruise) {
+  const svgPath = cruise?.route_map_svg_path || null;
+  const pngPath = cruise?.route_map_png_path || null;
+  const hasDurable =
+    Boolean(svgPath && pngPath) && !isLegacyLocalPath(svgPath) && !isLegacyLocalPath(pngPath);
+  if (!hasDurable) {
+    return {
+      has_assets: false,
+      svg_path: svgPath,
+      png_path: pngPath,
+      svg_url: null,
+      png_url: null,
+      legacy_local_paths: Boolean(svgPath || pngPath)
+    };
+  }
+  const bust = Date.parse(cruise.route_map_generated_at || "") || Date.now();
+  return {
+    has_assets: true,
+    svg_path: svgPath,
+    png_path: pngPath,
+    svg_url: publicObjectUrl(svgPath, { cacheBust: bust }),
+    png_url: publicObjectUrl(pngPath, { cacheBust: bust }),
+    legacy_local_paths: false
+  };
 }
 
 async function loadCruiseRow(featuredCruiseId) {
@@ -187,6 +224,26 @@ async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
   };
 }
 
+function mapAssetError(error) {
+  const code = error.code || "asset_save_failed";
+  const partial = error.partial || null;
+  const messages = {
+    supabase_credentials_missing:
+      "Supabase credentials are missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the Netlify Function.",
+    bucket_missing: `Storage bucket "${ROUTE_MAP_STORAGE_BUCKET}" was not found. Run migration 20260731_featured_cruise_route_maps_bucket.sql in Supabase.`,
+    storage_upload_failed: `Storage upload failed: ${error.message || error}`,
+    png_engine_unavailable: "PNG conversion failed — @resvg/resvg-js is not installed.",
+    png_render_failed: `PNG conversion failed: ${error.message || error}`,
+    invalid_svg: "SVG output was invalid.",
+    invalid_svg_document: "SVG output was invalid."
+  };
+  let message = messages[code] || `Could not save route map assets: ${error.message || error}`;
+  if (partial && (partial.svg || partial.png) && !partial.png) {
+    message = `Partial failure — SVG uploaded but PNG did not: ${error.message || error}`;
+  }
+  return { code, message, partial };
+}
+
 async function handleStatus(featuredCruiseId) {
   const cruise = await loadCruiseRow(featuredCruiseId);
   if (!cruise) {
@@ -195,18 +252,20 @@ async function handleStatus(featuredCruiseId) {
       errors: [{ code: "cruise_not_found", message: "Featured Cruise not found." }]
     });
   }
-  const rel = relativeAssetPaths(featuredCruiseId);
-  const onDisk = assetsExist(featuredCruiseId);
-  const hasDbPaths = Boolean(cruise.route_map_svg_path && cruise.route_map_png_path);
+  const urls = assetUrlsFromCruise(cruise);
+  const expected = storageObjectPaths(featuredCruiseId);
   return jsonResponse(200, {
     ok: true,
     featured_cruise_id: featuredCruiseId,
-    has_assets: onDisk || hasDbPaths,
-    on_disk: onDisk,
-    svg_path: cruise.route_map_svg_path || (onDisk ? rel.svg_path : null),
-    png_path: cruise.route_map_png_path || (onDisk ? rel.png_path : null),
-    svg_url: hasDbPaths || onDisk ? `${rel.svg_url}?t=${Date.parse(cruise.route_map_generated_at || 0) || Date.now()}` : null,
-    png_url: hasDbPaths || onDisk ? `${rel.png_url}?t=${Date.parse(cruise.route_map_generated_at || 0) || Date.now()}` : null,
+    storage_bucket: ROUTE_MAP_STORAGE_BUCKET,
+    has_assets: urls.has_assets,
+    legacy_local_paths: urls.legacy_local_paths,
+    expected_svg_path: expected.svg_path,
+    expected_png_path: expected.png_path,
+    svg_path: urls.svg_path,
+    png_path: urls.png_path,
+    svg_url: urls.svg_url,
+    png_url: urls.png_url,
     generated_at: cruise.route_map_generated_at || null,
     renderer_version: cruise.route_map_renderer_version || null,
     width: cruise.route_map_width || null,
@@ -220,6 +279,18 @@ async function handleGenerate(featuredCruiseId, body) {
   const mark = (stage) => {
     stages.push({ stage, at_ms: Date.now() - started });
   };
+
+  // Fail fast on missing credentials before spending time on routing/render.
+  try {
+    config();
+  } catch (error) {
+    const mapped = mapAssetError(error);
+    return jsonResponse(500, {
+      ok: false,
+      stages,
+      errors: [{ code: mapped.code, message: mapped.message }]
+    });
+  }
 
   const cruise = await loadCruiseRow(featuredCruiseId);
   if (!cruise) {
@@ -249,45 +320,57 @@ async function handleGenerate(featuredCruiseId, body) {
 
   mark("rendering_svg");
   const tSvg = Date.now();
-  const rendered = renderRouteMapSvg(routeResult.routeObject, {});
+  let rendered;
+  try {
+    rendered = renderRouteMapSvg(routeResult.routeObject, {});
+  } catch (error) {
+    return jsonResponse(500, {
+      ok: false,
+      stages,
+      errors: [
+        {
+          code: "svg_render_failed",
+          message: `SVG render failed: ${error.message || error}`
+        }
+      ]
+    });
+  }
   const svgMs = Date.now() - tSvg;
   if (!rendered.ok || !rendered.svg) {
     return jsonResponse(500, {
       ok: false,
       stages,
       errors: rendered.errors?.length
-        ? rendered.errors
-        : [{ code: "renderer_failure", message: "SVG renderer failed." }],
+        ? rendered.errors.map((e) => ({
+            code: e.code || "svg_render_failed",
+            message: e.message || "SVG renderer failed."
+          }))
+        : [{ code: "svg_render_failed", message: "SVG renderer failed." }],
       warnings: rendered.warnings || []
     });
   }
 
-  mark("rendering_png");
+  mark("uploading_storage");
   let saved;
-  const tPng = Date.now();
+  const tSave = Date.now();
   try {
-    saved = saveRouteMapAssets(featuredCruiseId, rendered.svg, {
+    saved = await saveRouteMapAssets(featuredCruiseId, rendered.svg, {
       pngWidth: Number(body.png_width) || DEFAULT_PNG_WIDTH,
       rendererVersion: ROUTE_MAP_RENDERER_VERSION
+      // Production: Supabase Storage only — no localFallback
     });
   } catch (error) {
-    const code = error.code || "asset_save_failed";
-    const message =
-      code === "png_engine_unavailable"
-        ? "PNG conversion failed — @resvg/resvg-js is not installed."
-        : code === "invalid_svg"
-          ? "SVG output was invalid."
-          : `Could not save route map assets: ${error.message || error}`;
+    const mapped = mapAssetError(error);
     return jsonResponse(500, {
       ok: false,
       stages,
-      errors: [{ code, message }],
+      errors: [{ code: mapped.code, message: mapped.message, partial: mapped.partial }],
       warnings: rendered.warnings || []
     });
   }
-  const pngMs = Date.now() - tPng;
+  const saveMs = Date.now() - tSave;
 
-  mark("saving_assets");
+  mark("updating_database");
   let cruiseRow;
   try {
     cruiseRow = await updateCruiseAssetMetadata(featuredCruiseId, saved);
@@ -298,28 +381,34 @@ async function handleGenerate(featuredCruiseId, body) {
       errors: [
         {
           code: "database_update_failed",
-          message: `Assets were written but the database could not be updated: ${error.message || error}`
+          message: `Both assets uploaded to Storage but the database could not be updated: ${error.message || error}`
         }
       ],
-      assets: saved
+      assets: {
+        storage_bucket: saved.storage_bucket,
+        svg_path: saved.svg_path,
+        png_path: saved.png_path,
+        svg_url: saved.svg_url,
+        png_url: saved.png_url
+      }
     });
   }
 
   mark("complete");
-  const cacheBust = Date.parse(saved.generated_at) || Date.now();
 
   return jsonResponse(200, {
     ok: true,
     message: "Generated successfully",
     featured_cruise_id: featuredCruiseId,
+    storage_bucket: saved.storage_bucket || ROUTE_MAP_STORAGE_BUCKET,
     reused_existing_route: routeResult.reused_existing,
     itinerary_signature: routeResult.itinerary_signature,
     renderer_version: saved.renderer_version,
     generated_at: saved.generated_at,
     svg_path: saved.svg_path,
     png_path: saved.png_path,
-    svg_url: `${saved.svg_url}?t=${cacheBust}`,
-    png_url: `${saved.png_url}?t=${cacheBust}`,
+    svg_url: saved.svg_url,
+    png_url: saved.png_url,
     width: saved.width,
     height: saved.height,
     svg_bytes: saved.svg_bytes,
@@ -327,7 +416,7 @@ async function handleGenerate(featuredCruiseId, body) {
     timings: {
       total_ms: Date.now() - started,
       svg_ms: svgMs,
-      png_and_save_ms: pngMs,
+      png_and_upload_ms: saveMs,
       ...(routeResult.timings || {})
     },
     stages,
@@ -379,13 +468,15 @@ exports.handler = async (event) => {
       errors: [{ code: "unknown_action", message: `Unknown action: ${action}` }]
     });
   } catch (error) {
-    console.error("route-map-generate error", error);
+    console.error("route-map-generate error", error && error.code ? error.code : "unexpected");
+    const mapped =
+      error.code === "supabase_credentials_missing" ? mapAssetError(error) : null;
     return jsonResponse(500, {
       ok: false,
       errors: [
         {
-          code: "unexpected_error",
-          message: error.message || "Unexpected route map generation failure."
+          code: mapped?.code || "unexpected_error",
+          message: mapped?.message || error.message || "Unexpected route map generation failure."
         }
       ]
     });

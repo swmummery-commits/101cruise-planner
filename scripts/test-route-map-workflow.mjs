@@ -1,8 +1,9 @@
 /**
- * Sprint 13E Phase 4 — offline workflow tests (no Netlify, no Admin UI).
+ * Sprint 13E Phase 4B — route-map workflow tests (offline; mocked Storage).
  *
- * Covers: SVG render → PNG conversion → disk save → regenerate overwrite,
- * missing/malformed route handling, PNG dimensions, SVG validity.
+ * Covers: SVG/PNG render, Supabase Storage upload paths & content-types,
+ * overwrite on regeneration, preview URLs, missing bucket, upload failure,
+ * DB metadata shape, no writes to /var/task/generated-assets.
  *
  * Run: npm run test:route-map-workflow
  */
@@ -19,10 +20,14 @@ const require = createRequire(import.meta.url);
 const { renderRouteMapSvg } = require(path.join(root, "netlify/functions/lib/route-map-svg.js"));
 const {
   ROUTE_MAP_RENDERER_VERSION,
+  ROUTE_MAP_STORAGE_BUCKET,
+  ROUTE_MAP_CACHE_CONTROL,
   saveRouteMapAssets,
+  saveRouteMapAssetsLocal,
   svgToPngBuffer,
-  assetsExist,
-  relativeAssetPaths,
+  storageObjectPaths,
+  publicObjectUrl,
+  displayUrls,
   projectRoot
 } = require(path.join(root, "netlify/functions/lib/route-map-assets.js"));
 const {
@@ -33,6 +38,8 @@ const {
 } = require(path.join(root, "netlify/functions/lib/marine-route-itinerary.js"));
 
 const TEST_ID = "00000000-0000-4000-8000-workflowtest0001";
+const FAKE_SUPABASE = "https://example.supabase.co";
+const FAKE_KEY = "test-service-role-key";
 const results = [];
 
 function assert(cond, msg) {
@@ -40,12 +47,14 @@ function assert(cond, msg) {
 }
 
 function test(name, fn) {
-  try {
-    fn();
-    results.push({ name, ok: true });
-  } catch (error) {
-    results.push({ name, ok: false, error: String(error.message || error) });
-  }
+  return Promise.resolve()
+    .then(() => fn())
+    .then(() => {
+      results.push({ name, ok: true });
+    })
+    .catch((error) => {
+      results.push({ name, ok: false, error: String(error.message || error) });
+    });
 }
 
 function buildMedRoute() {
@@ -82,90 +91,281 @@ function buildMedRoute() {
   return built.routeObject;
 }
 
-function cleanup() {
-  const dir = path.join(projectRoot(), "generated-assets", TEST_ID);
-  if (fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
+function createMockFetch(recorder, behavior = {}) {
+  return async (url, options = {}) => {
+    const entry = {
+      url: String(url),
+      method: options.method || "GET",
+      headers: { ...(options.headers || {}) },
+      body: options.body
+    };
+    recorder.push(entry);
+
+    if (behavior.failUrl && String(url).includes(behavior.failUrl)) {
+      return {
+        ok: false,
+        status: behavior.failStatus || 500,
+        text: async () => JSON.stringify({ message: behavior.failMessage || "upload failed" })
+      };
+    }
+    if (behavior.missingBucket) {
+      return {
+        ok: false,
+        status: 404,
+        text: async () => JSON.stringify({ message: "Bucket not found", statusCode: "404" })
+      };
+    }
+    return {
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify({ Key: entry.url })
+    };
+  };
 }
 
-cleanup();
+function assertNoVarTaskWrites() {
+  const varTask = path.join("/var/task/generated-assets", TEST_ID);
+  assert(!fs.existsSync(varTask), "must not write /var/task/generated-assets");
+}
 
-test("A render SVG from Route Object", () => {
-  const route = buildMedRoute();
-  const rendered = renderRouteMapSvg(route);
-  assert(rendered.ok, JSON.stringify(rendered.errors));
-  assert(rendered.svg.startsWith("<svg "), "valid svg start");
-  assert(rendered.svg.includes('id="marine-route"'), "has route");
+async function main() {
+  const localDir = path.join(projectRoot(), "generated-assets", TEST_ID);
+  if (fs.existsSync(localDir)) fs.rmSync(localDir, { recursive: true, force: true });
+
+  await test("A render SVG from Route Object", () => {
+    const route = buildMedRoute();
+    const rendered = renderRouteMapSvg(route);
+    assert(rendered.ok, JSON.stringify(rendered.errors));
+    assert(rendered.svg.startsWith("<svg "), "valid svg start");
+    assert(rendered.svg.includes('id="marine-route"'), "has route");
+  });
+
+  await test("B PNG conversion dimensions ~2000px wide", () => {
+    const route = buildMedRoute();
+    const rendered = renderRouteMapSvg(route);
+    const { buffer, width, height } = svgToPngBuffer(rendered.svg, { width: 2000 });
+    assert(buffer.length > 1000, "png buffer non-trivial");
+    assert(width === 2000, `expected width 2000, got ${width}`);
+    assert(height === Math.round((2000 * 675) / 1200), `expected 16:9 height, got ${height}`);
+  });
+
+  await test("C storage object paths are stable", () => {
+    const paths = storageObjectPaths(TEST_ID);
+    assert(paths.svg_path === `${TEST_ID}/route-map.svg`, "svg object path");
+    assert(paths.png_path === `${TEST_ID}/route-map.png`, "png object path");
+  });
+
+  await test("D preview URL generation from canonical paths", () => {
+    const url = publicObjectUrl(`${TEST_ID}/route-map.svg`, {
+      supabaseUrl: FAKE_SUPABASE,
+      cacheBust: 12345
+    });
+    assert(
+      url ===
+        `${FAKE_SUPABASE}/storage/v1/object/public/${ROUTE_MAP_STORAGE_BUCKET}/${TEST_ID}/route-map.svg?t=12345`,
+      `unexpected url: ${url}`
+    );
+    assert(publicObjectUrl("generated-assets/x/route-map.svg", { supabaseUrl: FAKE_SUPABASE }) === null, "legacy local");
+    const urls = displayUrls(TEST_ID, { supabaseUrl: FAKE_SUPABASE, cacheBust: 99 });
+    assert(urls.svg_url.includes("route-map.svg?t=99"), "display svg");
+    assert(urls.png_url.includes("route-map.png?t=99"), "display png");
+  });
+
+  await test("E SVG + PNG upload with correct content types", async () => {
+    const recorder = [];
+    const route = buildMedRoute();
+    const rendered = renderRouteMapSvg(route);
+    const saved = await saveRouteMapAssets(TEST_ID, rendered.svg, {
+      pngWidth: 2000,
+      supabaseUrl: FAKE_SUPABASE,
+      serviceRoleKey: FAKE_KEY,
+      fetchImpl: createMockFetch(recorder)
+    });
+    assert(recorder.length === 2, `expected 2 uploads, got ${recorder.length}`);
+    assert(recorder[0].headers["Content-Type"] === "image/svg+xml", "svg content-type");
+    assert(recorder[1].headers["Content-Type"] === "image/png", "png content-type");
+    assert(recorder[0].headers["x-upsert"] === "true", "svg upsert");
+    assert(recorder[1].headers["x-upsert"] === "true", "png upsert");
+    assert(recorder[0].headers["cache-control"] === ROUTE_MAP_CACHE_CONTROL, "cache-control");
+    assert(recorder[0].url.includes(`/${ROUTE_MAP_STORAGE_BUCKET}/${TEST_ID}/route-map.svg`), "svg url path");
+    assert(recorder[1].url.includes(`/${ROUTE_MAP_STORAGE_BUCKET}/${TEST_ID}/route-map.png`), "png url path");
+    assert(saved.svg_path === `${TEST_ID}/route-map.svg`, "db svg path");
+    assert(saved.png_path === `${TEST_ID}/route-map.png`, "db png path");
+    assert(saved.storage_bucket === ROUTE_MAP_STORAGE_BUCKET, "bucket");
+    assert(saved.renderer_version === ROUTE_MAP_RENDERER_VERSION, "renderer version");
+    assert(saved.width === 2000, "width");
+    assert(saved.svg_url.includes("object/public/"), "public svg url");
+    assert(saved.png_url.includes("object/public/"), "public png url");
+    assertNoVarTaskWrites();
+    assert(!fs.existsSync(path.join(projectRoot(), "generated-assets", TEST_ID)), "no default local write");
+  });
+
+  await test("F regenerate overwrites same object paths", async () => {
+    const recorder = [];
+    const route = buildMedRoute();
+    const rendered = renderRouteMapSvg(route);
+    const first = await saveRouteMapAssets(TEST_ID, rendered.svg, {
+      pngWidth: 1800,
+      supabaseUrl: FAKE_SUPABASE,
+      serviceRoleKey: FAKE_KEY,
+      fetchImpl: createMockFetch(recorder)
+    });
+    const second = await saveRouteMapAssets(TEST_ID, rendered.svg, {
+      pngWidth: 2000,
+      supabaseUrl: FAKE_SUPABASE,
+      serviceRoleKey: FAKE_KEY,
+      fetchImpl: createMockFetch(recorder)
+    });
+    assert(first.svg_path === second.svg_path, "same svg path");
+    assert(first.png_path === second.png_path, "same png path");
+    assert(second.width === 2000, "second width");
+    const svgUploads = recorder.filter((r) => r.url.includes("route-map.svg"));
+    assert(svgUploads.length === 2, "two svg upserts");
+    assert(svgUploads.every((r) => r.headers["x-upsert"] === "true"), "all upsert");
+  });
+
+  await test("G missing bucket surfaces clear error", async () => {
+    const recorder = [];
+    const route = buildMedRoute();
+    const rendered = renderRouteMapSvg(route);
+    let threw = false;
+    try {
+      await saveRouteMapAssets(TEST_ID, rendered.svg, {
+        pngWidth: 1200,
+        supabaseUrl: FAKE_SUPABASE,
+        serviceRoleKey: FAKE_KEY,
+        fetchImpl: createMockFetch(recorder, { missingBucket: true })
+      });
+    } catch (error) {
+      threw = true;
+      assert(error.code === "bucket_missing", `code=${error.code}`);
+      assert(/featured-cruise-route-maps/i.test(error.message), "mentions bucket");
+    }
+    assert(threw, "should throw");
+  });
+
+  await test("H PNG upload failure reports partial SVG success", async () => {
+    const recorder = [];
+    const route = buildMedRoute();
+    const rendered = renderRouteMapSvg(route);
+    let threw = false;
+    try {
+      await saveRouteMapAssets(TEST_ID, rendered.svg, {
+        pngWidth: 1200,
+        supabaseUrl: FAKE_SUPABASE,
+        serviceRoleKey: FAKE_KEY,
+        fetchImpl: createMockFetch(recorder, {
+          failUrl: "route-map.png",
+          failMessage: "png rejected"
+        })
+      });
+    } catch (error) {
+      threw = true;
+      assert(error.partial?.svg === true, "svg partial true");
+      assert(error.partial?.png === false, "png partial false");
+      assert(/PNG upload failed after SVG/i.test(error.message), error.message);
+    }
+    assert(threw, "should throw");
+  });
+
+  await test("I missing credentials error", async () => {
+    const route = buildMedRoute();
+    const rendered = renderRouteMapSvg(route);
+    let threw = false;
+    try {
+      await saveRouteMapAssets(TEST_ID, rendered.svg, {
+        pngWidth: 800,
+        supabaseUrl: "",
+        serviceRoleKey: "",
+        fetchImpl: createMockFetch([])
+      });
+    } catch (error) {
+      threw = true;
+      assert(error.code === "supabase_credentials_missing", `code=${error.code}`);
+    }
+    assert(threw, "should throw");
+  });
+
+  await test("J database metadata payload shape", async () => {
+    const recorder = [];
+    const route = buildMedRoute();
+    const rendered = renderRouteMapSvg(route);
+    const saved = await saveRouteMapAssets(TEST_ID, rendered.svg, {
+      pngWidth: 1600,
+      supabaseUrl: FAKE_SUPABASE,
+      serviceRoleKey: FAKE_KEY,
+      fetchImpl: createMockFetch(recorder)
+    });
+    // Fields written by route-map-generate updateCruiseAssetMetadata
+    const meta = {
+      route_map_svg_path: saved.svg_path,
+      route_map_png_path: saved.png_path,
+      route_map_generated_at: saved.generated_at,
+      route_map_renderer_version: saved.renderer_version,
+      route_map_width: saved.width,
+      route_map_height: saved.height
+    };
+    assert(!meta.route_map_svg_path.startsWith("http"), "store path not URL");
+    assert(!meta.route_map_png_path.includes("?"), "no signed query in DB path");
+    assert(meta.route_map_svg_path.endsWith("/route-map.svg"), "svg path");
+    assert(Number.isFinite(meta.route_map_width), "width");
+    assert(meta.route_map_renderer_version === ROUTE_MAP_RENDERER_VERSION, "version");
+  });
+
+  await test("K local fallback still works for developers", () => {
+    const route = buildMedRoute();
+    const rendered = renderRouteMapSvg(route);
+    const saved = saveRouteMapAssetsLocal(TEST_ID, rendered.svg, { pngWidth: 1200 });
+    assert(fs.existsSync(saved.svg_abs), "local svg");
+    assert(fs.existsSync(saved.png_abs), "local png");
+    assert(saved.local_fallback === true, "flag");
+    fs.rmSync(path.join(projectRoot(), "generated-assets", TEST_ID), {
+      recursive: true,
+      force: true
+    });
+  });
+
+  await test("L invalid SVG rejected", async () => {
+    let threw = false;
+    try {
+      await saveRouteMapAssets(TEST_ID, "not-an-svg", {
+        supabaseUrl: FAKE_SUPABASE,
+        serviceRoleKey: FAKE_KEY,
+        fetchImpl: createMockFetch([])
+      });
+    } catch (error) {
+      threw = true;
+      assert(error.code === "invalid_svg", "invalid_svg code");
+    }
+    assert(threw, "should throw");
+  });
+
+  await test("M missing / malformed Route Object fails SVG render", () => {
+    const missing = renderRouteMapSvg(null);
+    assert(!missing.ok, "null route fails");
+    const bad = renderRouteMapSvg({ stops: [], legs: [] });
+    assert(!bad.ok, "empty route fails");
+  });
+
+  const failed = results.filter((r) => !r.ok);
+  console.log(
+    JSON.stringify(
+      {
+        ok: failed.length === 0,
+        passed: results.filter((r) => r.ok).length,
+        failed: failed.length,
+        renderer_version: ROUTE_MAP_RENDERER_VERSION,
+        storage_bucket: ROUTE_MAP_STORAGE_BUCKET,
+        results
+      },
+      null,
+      2
+    )
+  );
+  process.exit(failed.length ? 1 : 0);
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
 });
-
-test("B PNG conversion dimensions ~2000px wide", () => {
-  const route = buildMedRoute();
-  const rendered = renderRouteMapSvg(route);
-  const { buffer, width, height } = svgToPngBuffer(rendered.svg, { width: 2000 });
-  assert(buffer.length > 1000, "png buffer non-trivial");
-  assert(width === 2000, `expected width 2000, got ${width}`);
-  assert(height === Math.round((2000 * 675) / 1200), `expected 16:9 height, got ${height}`);
-});
-
-test("C save assets to generated-assets/<id>/", () => {
-  const route = buildMedRoute();
-  const rendered = renderRouteMapSvg(route);
-  const saved = saveRouteMapAssets(TEST_ID, rendered.svg, { pngWidth: 2000 });
-  assert(saved.renderer_version === ROUTE_MAP_RENDERER_VERSION, "renderer version");
-  assert(assetsExist(TEST_ID), "assets exist on disk");
-  const rel = relativeAssetPaths(TEST_ID);
-  assert(saved.svg_path === rel.svg_path, "svg path");
-  assert(saved.png_path === rel.png_path, "png path");
-  const svgText = fs.readFileSync(saved.svg_abs, "utf8");
-  assert(svgText.startsWith("<svg "), "saved svg valid");
-  const png = fs.readFileSync(saved.png_abs);
-  assert(png[0] === 0x89 && png[1] === 0x50, "PNG magic bytes");
-});
-
-test("D regenerate overwrites only map assets", () => {
-  const extra = path.join(projectRoot(), "generated-assets", TEST_ID, "keep-me.txt");
-  fs.writeFileSync(extra, "preserve", "utf8");
-  const route = buildMedRoute();
-  const rendered = renderRouteMapSvg(route);
-  const first = saveRouteMapAssets(TEST_ID, rendered.svg, { pngWidth: 1800 });
-  const second = saveRouteMapAssets(TEST_ID, rendered.svg, { pngWidth: 2000 });
-  assert(fs.existsSync(extra), "unrelated file preserved");
-  assert(first.width === 1800, "first width");
-  assert(second.width === 2000, "second width");
-  assert(second.png_bytes > 0, "second png written");
-});
-
-test("E missing / malformed Route Object fails SVG render", () => {
-  const missing = renderRouteMapSvg(null);
-  assert(!missing.ok, "null route fails");
-  const bad = renderRouteMapSvg({ stops: [], legs: [] });
-  assert(!bad.ok, "empty route fails");
-});
-
-test("F invalid SVG rejected by saveRouteMapAssets", () => {
-  let threw = false;
-  try {
-    saveRouteMapAssets(TEST_ID, "not-an-svg");
-  } catch (error) {
-    threw = true;
-    assert(error.code === "invalid_svg", "invalid_svg code");
-  }
-  assert(threw, "should throw");
-});
-
-cleanup();
-
-const failed = results.filter((r) => !r.ok);
-console.log(
-  JSON.stringify(
-    {
-      ok: failed.length === 0,
-      passed: results.filter((r) => r.ok).length,
-      failed: failed.length,
-      renderer_version: ROUTE_MAP_RENDERER_VERSION,
-      results
-    },
-    null,
-    2
-  )
-);
-process.exit(failed.length ? 1 : 0);
