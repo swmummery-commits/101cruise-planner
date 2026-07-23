@@ -23,7 +23,11 @@
 
 [functions."route-map-generate"]
   # Route Object load/create + SVG + PNG rasterisation.
+  # @resvg/resvg-js ships platform-native .node binaries — keep them out of esbuild
+  # so the Linux binary installed on Netlify is available at runtime.
   timeout = 60
+  external_node_modules = ["@resvg/resvg-js"]
+  included_files = ["node_modules/@resvg/**"]
 
 
 [[redirects]]

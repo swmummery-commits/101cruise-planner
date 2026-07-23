@@ -232,7 +232,7 @@ function mapAssetError(error) {
       "Supabase credentials are missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the Netlify Function.",
     bucket_missing: `Storage bucket "${ROUTE_MAP_STORAGE_BUCKET}" was not found. Run migration 20260731_featured_cruise_route_maps_bucket.sql in Supabase.`,
     storage_upload_failed: `Storage upload failed: ${error.message || error}`,
-    png_engine_unavailable: "PNG conversion failed — @resvg/resvg-js is not installed.",
+    png_engine_unavailable: `PNG conversion failed — ${error.message || "@resvg/resvg-js is not available on this host."}`,
     png_render_failed: `PNG conversion failed: ${error.message || error}`,
     invalid_svg: "SVG output was invalid.",
     invalid_svg_document: "SVG output was invalid."

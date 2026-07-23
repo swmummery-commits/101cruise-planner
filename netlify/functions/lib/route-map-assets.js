@@ -84,8 +84,11 @@ function svgToPngBuffer(svg, options = {}) {
   try {
     ({ Resvg } = require("@resvg/resvg-js"));
   } catch (error) {
+    const detail = error && error.message ? String(error.message) : String(error || "");
     const err = new Error(
-      "PNG conversion is unavailable. Install @resvg/resvg-js (and the platform binary)."
+      detail
+        ? `PNG conversion is unavailable (@resvg/resvg-js): ${detail}`
+        : "PNG conversion is unavailable. Install @resvg/resvg-js (and the platform binary)."
     );
     err.code = "png_engine_unavailable";
     err.cause = error;
