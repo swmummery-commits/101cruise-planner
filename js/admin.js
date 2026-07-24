@@ -768,6 +768,7 @@ async function setTab(tab) {
   }
   if (resolved === "media-library") {
     if (window.MediaLibraryAdmin) window.MediaLibraryAdmin.ensureLoaded();
+    if (window.MediaBulkShipImages) window.MediaBulkShipImages.ensureLoaded();
   }
   if (resolved === "research-content") {
     if (window.ResearchContentAdmin) {

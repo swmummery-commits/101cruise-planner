@@ -21,6 +21,10 @@
 [functions."cruise-discovery-wave-background"]
   # Background wave: loops all cruise lines (Netlify background ~15 min).
 
+[functions."bulk-ship-images"]
+  # ZIP download + hash + storage writes for ship image import.
+  timeout = 60
+
 [functions."route-map-generate"]
   # Route Object load/create + SVG + PNG rasterisation.
   # Prefer native @resvg/resvg-js; fall back to @resvg/resvg-wasm when the Linux

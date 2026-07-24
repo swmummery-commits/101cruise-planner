@@ -118,6 +118,7 @@
       destination: "Destination",
       port: "Port",
       route_map: "Route Map",
+      cruise_line: "Cruise Line",
       general: "General"
     };
     return map[type] || type || "General";
@@ -511,7 +512,7 @@
           <div class="admin-field">
             <label>Media type</label>
             <select id="mediaUploadType">
-              ${["ship", "destination", "port", "route_map", "general"]
+              ${["ship", "destination", "port", "route_map", "cruise_line", "general"]
                 .map(
                   (t) =>
                     `<option value="${t}" ${uploadDraft.media_type === t ? "selected" : ""}>${esc(mediaTypeLabel(t))}</option>`
@@ -578,7 +579,7 @@
               <div class="admin-field">
                 <label>Media type</label>
                 <select id="mediaEditType">
-                  ${["ship", "destination", "port", "route_map", "general"]
+                  ${["ship", "destination", "port", "route_map", "cruise_line", "general"]
                     .map(
                       (t) =>
                         `<option value="${t}" ${row.media_type === t ? "selected" : ""}>${esc(mediaTypeLabel(t))}</option>`
@@ -629,8 +630,25 @@
     `;
   }
 
+  let mediaLibrarySection = "library"; // library | bulk-ship-images
+
   function renderMediaLibraryPanel() {
-    if (editingMediaId) return renderMediaEditor();
+    const sectionTabs = `
+      <div class="admin-subtabs packing-subtabs" role="tablist" aria-label="Media Library sections">
+        <button type="button" class="admin-subtab ${mediaLibrarySection === "library" ? "active" : ""}" onclick="MediaLibraryAdmin.setSection('library')">Library</button>
+        <button type="button" class="admin-subtab ${mediaLibrarySection === "bulk-ship-images" ? "active" : ""}" onclick="MediaLibraryAdmin.setSection('bulk-ship-images')">Bulk Ship Images</button>
+      </div>
+    `;
+
+    if (mediaLibrarySection === "bulk-ship-images") {
+      const bulkHtml =
+        typeof global.MediaBulkShipImages?.renderPanel === "function"
+          ? global.MediaBulkShipImages.renderPanel()
+          : `<div class="admin-card"><p class="admin-muted">Bulk Ship Images failed to load.</p></div>`;
+      return `${sectionTabs}${bulkHtml}`;
+    }
+
+    if (editingMediaId) return `${sectionTabs}${renderMediaEditor()}`;
 
     if (showMediaUpload) {
       const isRunning = mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || ""));
@@ -647,6 +665,7 @@
           ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(mediaMessage)}</span>`
           : "";
       return `
+        ${sectionTabs}
         <div class="admin-card">
           <div class="admin-list-top">
             <div>
@@ -680,9 +699,11 @@
             ? "admin-running"
             : "";
     return `
+      ${sectionTabs}
       <div class="admin-card">
         <div class="admin-list-top">
           <div>
+            <p class="admin-nav-eyebrow">Marketing</p>
             <h3>Media Library</h3>
             <p class="admin-muted">Upload once, reuse across newsletters and public cruise pages.</p>
           </div>
@@ -701,6 +722,7 @@
               <option value="destination" ${mediaTypeFilter === "destination" ? "selected" : ""}>Destinations</option>
               <option value="port" ${mediaTypeFilter === "port" ? "selected" : ""}>Ports</option>
               <option value="route_map" ${mediaTypeFilter === "route_map" ? "selected" : ""}>Route Maps</option>
+              <option value="cruise_line" ${mediaTypeFilter === "cruise_line" ? "selected" : ""}>Cruise Lines</option>
               <option value="general" ${mediaTypeFilter === "general" ? "selected" : ""}>General</option>
             </select>
           </div>
@@ -944,6 +966,14 @@
   global.MediaLibraryAdmin = {
     ensureLoaded: loadMediaLibrary,
     renderPanel: renderMediaLibraryPanel,
+    setSection(section) {
+      mediaLibrarySection = section === "bulk-ship-images" ? "bulk-ship-images" : "library";
+      if (mediaLibrarySection === "bulk-ship-images" && global.MediaBulkShipImages?.ensureLoaded) {
+        global.MediaBulkShipImages.ensureLoaded();
+        return;
+      }
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+    },
     renderPickerModal: renderMediaPickerModal,
     openMediaPicker,
     closePicker,

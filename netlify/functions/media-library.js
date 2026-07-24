@@ -15,7 +15,7 @@ const { requireAdmin } = require('./admin-auth');
 const BUCKET = 'cruise-media';
 const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(['image/png', 'image/webp', 'image/jpeg', 'image/jpg']);
-const MEDIA_TYPES = new Set(['ship', 'destination', 'port', 'route_map', 'general']);
+const MEDIA_TYPES = new Set(['ship', 'destination', 'port', 'route_map', 'general', 'cruise_line']);
 
 function jsonResponse(statusCode, body) {
   return {
@@ -103,6 +103,9 @@ function buildStoragePath(body) {
   const file = safeFilename(body.filename);
   if (mediaType === 'ship' && body.ship_id) {
     return `ships/${String(body.ship_id).slice(0, 64)}/${stamp}-${rand}-${file}`;
+  }
+  if (mediaType === 'cruise_line' && body.cruise_line_id) {
+    return `lines/${String(body.cruise_line_id).slice(0, 64)}/${stamp}-${rand}-${file}`;
   }
   if (mediaType === 'destination' && body.destination_name) {
     return `destinations/${slugify(body.destination_name)}/${stamp}-${rand}-${file}`;
