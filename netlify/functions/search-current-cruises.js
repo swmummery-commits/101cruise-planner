@@ -5,7 +5,12 @@
  *
  * Reads public.discovered_cruises (Sprint 11D). Live Brave search is no longer
  * used for customer-facing Finder results.
+ *
+ * Sprint 14A: CRUISE_FINDER_ENGINE=v1|v2 is prepared server-side. Default remains
+ * v1. Setting v2 does NOT activate Engine V2 in Phase 1 (HOLD DEPLOY).
  */
+
+const { readEngineFlag } = require("./lib/cruise-finder-v2/engine");
 
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const MAX_BRAVE_QUERIES = 4;
@@ -1092,6 +1097,19 @@ exports.handler = async function handler(event) {
 
   if (event.httpMethod !== "POST") {
     return jsonResponse(405, { ok: false, error: "Method not allowed. Use POST." });
+  }
+
+  // Sprint 14A feature flag — prepared, not activated. Always continue on V1.
+  const engineFlag = readEngineFlag(process.env);
+  if (engineFlag === "v2") {
+    console.log(
+      JSON.stringify({
+        event: "cruise_finder_engine_flag",
+        requested: "v2",
+        active: "v1",
+        message: "Engine V2 is not activated in Phase 1; using Discovery catalogue V1."
+      })
+    );
   }
 
   if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {

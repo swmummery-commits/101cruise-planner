@@ -1,0 +1,21 @@
+canonical_name,latitude,longitude,coordinate_status,notes,private_destination
+Cozumel,20.508,-86.948,APPROXIMATE,International Pier / Puerta Maya cruise area — not island centroid,false
+Roatan,16.329,-86.446,APPROXIMATE,Mahogany Bay cruise destination (Princess frequent call). Coxen Hole differs slightly.,false
+Belize City,17.494,-88.182,APPROXIMATE,Fort Street Tourism Village tender/pier complex,false
+Princess Cays,24.577,-76.18,APPROXIMATE,Princess private island Eleuthera — shoreline destination coords,true
+Half Moon Cay,24.577,-75.74,APPROXIMATE,HAL/Carnival private island Little San Salvador,true
+Ocean Cay,25.42,-79.13,APPROXIMATE,MSC Ocean Cay marine reserve — private destination,true
+Grand Turk,21.434,-71.137,APPROXIMATE,Grand Turk Cruise Center pier area,false
+Heraklion,35.343,25.141,APPROXIMATE,Heraklion cruise port / passenger terminal area,false
+Kusadasi,37.862,27.256,APPROXIMATE,Kuşadası cruise port (Ephesus gateway),false
+Mykonos,37.465,25.324,APPROXIMATE,Tourlos new port area commonly used by large ships,false
+Piraeus,37.943,23.646,VERIFIED,Piraeus cruise terminals (Athens),false
+Manta,-0.942,-80.728,APPROXIMATE,Manta cruise pier area,false
+Callao,-12.047,-77.143,APPROXIMATE,Callao / Lima cruise terminal area,false
+Pisco,-13.708,-76.219,APPROXIMATE,General San Martín terminal — REVIEW if tender vs pier for specific sailing,false
+Hanga Roa,-27.15,-109.432,REVIEW_REQUIRED,Easter Island tender / anchorage — no large-ship pier; approximate Hanga Roa roadstead,false
+Key West,24.56,-81.807,APPROXIMATE,Key West cruise terminal / Mallory Square area,false
+Whittier,60.774,-148.684,APPROXIMATE,Whittier cruise dock (Passage Canal),false
+Santorini,36.385,25.429,APPROXIMATE,Athinios tender port — ships anchor offshore,false
+Istanbul,41.023,28.985,APPROXIMATE,Galataport / nearby cruise berth area,false
+Cartagena Colombia,10.406,-75.539,APPROXIMATE,Cartagena de Indias cruise terminal area (Manga / Sociedad Portuaria),false

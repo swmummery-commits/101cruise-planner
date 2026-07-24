@@ -15,7 +15,14 @@
     "generate:marine-route": "node scripts/generate-marine-route.mjs",
     "render:route-map": "node scripts/render-route-map.mjs",
     "test:route-map-workflow": "node scripts/test-route-map-workflow.mjs",
-    "generate:ports-seed": "node scripts/generate-ports-seed-migration.mjs"
+    "generate:ports-seed": "node scripts/generate-ports-seed-migration.mjs",
+    "test:cruise-finder-v2": "node scripts/test-cruise-finder-v2.mjs",
+    "poc:cruise-finder-v2": "node scripts/run-cruise-finder-v2-poc.mjs",
+    "validate:track-cruises": "node scripts/validate-track-cruises-api.mjs",
+    "test:track-cruises": "node scripts/test-track-cruises-validation.mjs",
+    "poc:track-cruises-importer": "node scripts/run-track-cruises-importer-poc.mjs",
+    "test:track-cruises-importer": "node scripts/test-track-cruises-importer.mjs",
+    "test:cruise-inventory-15c": "node scripts/test-cruise-inventory-15c.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.38",

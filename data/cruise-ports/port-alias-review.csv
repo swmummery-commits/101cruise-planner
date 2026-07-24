@@ -1,0 +1,29 @@
+provider_value,proposed_canonical_name,match_type,confidence,source_context,review_status
+"Roatan, Honduras",Roatan,exact_or_alias,HIGH,"Princess G630A Caribbean day 5",PENDING_REVIEW
+"Belize City, Belize",Belize City,exact_or_alias,HIGH,"Princess G630A Caribbean day 6",PENDING_REVIEW
+"Cozumel, Mexico",Cozumel,exact_or_alias,HIGH,"Princess G630A / B624 Caribbean",PENDING_REVIEW
+"Princess Cays, Bahamas",Princess Cays,private_island,HIGH,"Princess private island Eastern Caribbean",PENDING_REVIEW
+"Crete, Greece",Heraklion,region_to_primary_cruise_port,MEDIUM,"Princess U629 — island name mapped to Heraklion cruise port",PENDING_REVIEW
+"Kusadasi (Ephesus), Turkey",Kusadasi,exact_or_alias,HIGH,"Princess U629 Mediterranean",PENDING_REVIEW
+"Mykonos, Greece",Mykonos,exact_or_alias,HIGH,"Princess U629 Mediterranean",PENDING_REVIEW
+"Athens (Piraeus), Greece",Piraeus,alias,HIGH,"Princess U629 disembarkation",PENDING_REVIEW
+"Manta, Ecuador",Manta,exact_or_alias,HIGH,"Princess 3616 World Cruise",PENDING_REVIEW
+"Lima (Callao), Peru",Callao,alias,HIGH,"Princess 3616 World Cruise",PENDING_REVIEW
+"Pisco (general San Martin), Peru",Pisco,exact_or_alias,HIGH,"Princess 3616 World Cruise tender/harbour",PENDING_REVIEW
+"Easter Island, Chile",Hanga Roa,alias_tender_destination,MEDIUM,"Princess 3616 — island name → Hanga Roa tender area",PENDING_REVIEW
+"Sydney, Australia",Sydney,country_disambiguation,HIGH,"Princess 3616 — disambiguate from Sydney Nova Scotia",PENDING_REVIEW
+"Grand Turk, Turks and Caicos",Grand Turk,exact_or_alias,HIGH,"Princess B624A Eastern Caribbean",PENDING_REVIEW
+"Ft. Lauderdale, Florida",Fort Lauderdale,alias,HIGH,"Common US homeport abbreviation",PENDING_REVIEW
+"Victoria, Canada",Victoria BC,alias,HIGH,"Alaska / PNW itineraries",PENDING_REVIEW
+"Rome (Civitavecchia), Italy",Civitavecchia,alias,HIGH,"Existing catalogue alias pattern",PENDING_REVIEW
+"Civitavecchia (Rome), Italy",Civitavecchia,alias,HIGH,"Existing catalogue alias pattern",PENDING_REVIEW
+"Perfect Day at CocoCay, Bahamas",Perfect Day at CocoCay,private_island,HIGH,"Royal Caribbean private destination (future coverage)",PENDING_REVIEW
+"Half Moon Cay, Bahamas",Half Moon Cay,private_island,HIGH,"Holland America / Carnival private island",PENDING_REVIEW
+"Ocean Cay MSC Marine Reserve, Bahamas",Ocean Cay,private_island,HIGH,"MSC private destination",PENDING_REVIEW
+"Relaxaway, Half Moon Cay",Half Moon Cay,private_island_alias,MEDIUM,"Branded private-island wording",PENDING_REVIEW
+"Glacier Bay National Park (scenic Cruising), Alaska",,scenic_cruising_not_port,HIGH,"Keep typed scenic_cruising — do not force pier match",PENDING_REVIEW
+"At Sea",,sea_day_not_port,HIGH,"Non-port itinerary event",PENDING_REVIEW
+"Fun Day At Sea",,sea_day_not_port,HIGH,"Non-port itinerary event",PENDING_REVIEW
+"Panama Canal Full Transit New Locks",,scenic_or_transit_not_port,HIGH,"Transit / scenic classification — not ordinary pier",PENDING_REVIEW
+"Cross International Date Line",,non_port_event,HIGH,"Non-port itinerary event",PENDING_REVIEW
+"Cartagena, Colombia",Cartagena Colombia,country_disambiguation,HIGH,"Princess 3616 — distinct from Cartagena Spain",PENDING_REVIEW

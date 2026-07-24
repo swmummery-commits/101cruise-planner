@@ -1,0 +1,11 @@
+id,name,cruise_line_id,cruise_line_name,aliases
+ship-sirena,Sirena,line-oceania,Oceania Cruises,
+ship-constellation,Celebrity Constellation,line-celebrity,Celebrity Cruises,Constellation
+ship-island-princess,Island Princess,line-princess,Princess Cruises,
+ship-oosterdam,Oosterdam,line-hal,Holland America Line,
+ship-seaview,MSC Seaview,line-msc,MSC Cruises,Seaview
+ship-jupiter,Viking Jupiter,line-viking,Viking,Jupiter
+ship-pursuit,Azamara Pursuit,line-azamara,Azamara,Pursuit
+ship-explorer,Seven Seas Explorer,line-regent,Regent Seven Seas Cruises,Explorer
+ship-symphony,Symphony of the Seas,line-rccl,Royal Caribbean International,
+ship-prima,Norwegian Prima,line-ncl,Norwegian Cruise Line,Prima
