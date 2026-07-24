@@ -17,6 +17,7 @@
   color: #111;
   font-size: 14px;
   line-height: 1.45;
+  overflow: visible;
 }
 
 /* Calculator Data is an approved full-width exception */
@@ -143,60 +144,161 @@
   margin-bottom: 18px;
 }
 
-/* Sprint 16C — grouped admin navigation */
+/* Sprint 16C — compact dropdown admin navigation (visual target: overlay dropdown mock) */
 .admin-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin: 0 0 22px;
-  padding: 16px 18px;
-  border: 1px solid var(--admin-border, #e8e8e8);
-  border-radius: 14px;
-  background: #fff;
+  position: relative;
+  z-index: 40;
+  margin: 0 0 14px;
+  padding: 2px 0 12px;
+  border-bottom: 1px solid #ebebeb;
+  background: transparent;
+  overflow: visible;
 }
 
-.admin-nav-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.admin-nav-group + .admin-nav-group {
-  padding-top: 12px;
-  border-top: 1px solid var(--admin-border, #eee);
-}
-
-.admin-nav-group-label {
-  margin: 0;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--admin-muted, #6b7280);
-}
-
-.admin-nav-group-items {
+.admin-nav-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  align-items: center;
+  gap: 0 2px;
+  overflow: visible;
+}
+
+.admin-nav-item {
+  position: relative;
+  overflow: visible;
+}
+
+.admin-nav-trigger {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #333;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.2;
+  padding: 8px 22px 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+}
+
+.admin-nav-trigger::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-right: 1.5px solid #888;
+  border-bottom: 1.5px solid #888;
+  transform: translateY(-65%) rotate(45deg);
+  transition: transform 0.12s ease;
+}
+
+.admin-nav-item.is-open > .admin-nav-trigger::after {
+  transform: translateY(-20%) rotate(225deg);
+}
+
+.admin-nav-trigger:hover,
+.admin-nav-trigger:focus-visible {
+  background: rgba(0, 0, 0, 0.035);
+  outline: none;
+}
+
+.admin-nav-item.is-active-group > .admin-nav-trigger {
+  color: #111;
+  font-weight: 600;
+}
+
+.admin-nav-item.is-open > .admin-nav-trigger {
+  background: rgba(0, 0, 0, 0.04);
+  color: #111;
+}
+
+.admin-nav-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 200px;
+  padding: 6px;
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  background: #fff;
+  z-index: 50;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+}
+
+.admin-nav-item.is-open > .admin-nav-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-nav-leaf {
+  appearance: none;
+  border: none;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 450;
+  color: #222;
+  cursor: pointer;
+}
+
+.admin-nav-leaf:hover,
+.admin-nav-leaf:focus-visible {
+  background: rgba(0, 0, 0, 0.045);
+  outline: none;
+}
+
+.admin-nav-leaf.is-active {
+  background: #2a2a2a;
+  color: #fff;
+  font-weight: 500;
+}
+
+.admin-nav-leaf.is-placeholder:not(.is-active) {
+  color: #7a7a7a;
 }
 
 .admin-nav-eyebrow {
-  margin: 0 0 4px;
+  margin: 0 0 6px;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--admin-muted, #6b7280);
+  color: #8a8a8a;
 }
 
-.admin-coming-soon .admin-nav-eyebrow {
+.admin-coming-soon-badge {
+  display: inline-block;
+  margin: 0 0 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px dashed #c4b39a;
   color: #8a6d3b;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.admin-tab.is-placeholder:not(.active) {
-  opacity: 0.72;
-  border-style: dashed;
+.ci-inline-switch {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.ci-inline-switch .admin-subtab {
+  padding: 5px 10px;
+  font-size: 12px;
 }
 
 .admin-tab {
@@ -210,6 +312,21 @@
 }
 
 .admin-tab.active { background: #000; color: #fff; }
+
+@media (max-width: 720px) {
+  .admin-nav-row {
+    gap: 0;
+  }
+
+  .admin-nav-trigger {
+    font-size: 12px;
+    padding: 7px 20px 7px 8px;
+  }
+
+  .admin-nav-dropdown {
+    min-width: min(220px, calc(100vw - 32px));
+  }
+}
 
 .admin-list-top {
   display: flex;

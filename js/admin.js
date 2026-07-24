@@ -703,6 +703,7 @@ async function setTab(tab) {
   if (resolved === "cruise-ships") ciSubView = "ships";
 
   activeTab = resolved;
+  openAdminNavGroupId = null;
   editingShipId = null;
   editingCruiseLineId = null;
   editingChecklistItemId = null;
@@ -803,12 +804,15 @@ function getAdminSupabaseClient() {
 }
 
 function renderComingSoonPanel(title, blurb) {
+  const group = getAdminNavGroupForTab(activeTab);
+  const eyebrow = group?.label || "Coming Soon";
   return `
     <div class="admin-card admin-coming-soon">
       <div class="admin-list-top">
         <div>
-          <p class="admin-nav-eyebrow">Coming Soon</p>
+          <p class="admin-nav-eyebrow">${esc(eyebrow)}</p>
           <h3>${esc(title)}</h3>
+          <p class="admin-coming-soon-badge">Coming Soon</p>
           <p class="admin-muted">${esc(blurb)}</p>
         </div>
       </div>
@@ -988,19 +992,91 @@ const ADMIN_MAIN_TABS = [
   { id: "settings", label: "Settings", render: () => renderSettingsPanel() }
 ];
 
+let openAdminNavGroupId = null;
+let adminNavListenersBound = false;
+
+function getAdminNavGroupForTab(tabId) {
+  return ADMIN_NAV_GROUPS.find((group) => group.items.some((item) => item.id === tabId)) || null;
+}
+
+function closeAdminNavMenus() {
+  if (!openAdminNavGroupId) return;
+  openAdminNavGroupId = null;
+  syncAdminNavOpenState();
+}
+
+function syncAdminNavOpenState() {
+  document.querySelectorAll("[data-admin-nav-group]").forEach((el) => {
+    const id = el.getAttribute("data-admin-nav-group");
+    const open = id === openAdminNavGroupId;
+    el.classList.toggle("is-open", open);
+    const trigger = el.querySelector(".admin-nav-trigger");
+    if (trigger) trigger.setAttribute("aria-expanded", open ? "true" : "false");
+  });
+}
+
+function toggleAdminNavGroup(groupId, event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  openAdminNavGroupId = openAdminNavGroupId === groupId ? null : groupId;
+  syncAdminNavOpenState();
+}
+
+function ensureAdminNavListeners() {
+  if (adminNavListenersBound) return;
+  adminNavListenersBound = true;
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    const el = target && target.nodeType === 1 ? target : target?.parentElement;
+    if (!el || !el.closest(".admin-nav")) closeAdminNavMenus();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") closeAdminNavMenus();
+  });
+}
+
 function renderAdminTabNavigation() {
+  const activeGroup = getAdminNavGroupForTab(activeTab);
   return ADMIN_NAV_GROUPS.map((group) => {
+    const menuId = `admin-nav-menu-${group.id}`;
+    const groupActive = activeGroup?.id === group.id;
+    const isOpen = openAdminNavGroupId === group.id;
     const items = group.items
       .map((item) => {
         const active = activeTab === item.id;
         const placeholderClass = item.placeholder ? " is-placeholder" : "";
-        return `<button type="button" class="admin-tab${placeholderClass}${active ? " active" : ""}" onclick="setTab('${item.id}')">${esc(item.label)}</button>`;
+        return `
+          <button
+            type="button"
+            role="menuitem"
+            class="admin-nav-leaf${placeholderClass}${active ? " is-active" : ""}"
+            onclick="event.stopPropagation(); setTab('${item.id}')"
+          >${esc(item.label)}</button>
+        `;
       })
       .join("");
     return `
-      <div class="admin-nav-group" data-nav-group="${esc(group.id)}">
-        <p class="admin-nav-group-label">${esc(group.label)}</p>
-        <div class="admin-nav-group-items" role="tablist" aria-label="${esc(group.label)}">
+      <div
+        class="admin-nav-item${groupActive ? " is-active-group" : ""}${isOpen ? " is-open" : ""}"
+        data-admin-nav-group="${esc(group.id)}"
+      >
+        <button
+          type="button"
+          class="admin-nav-trigger"
+          id="admin-nav-trigger-${esc(group.id)}"
+          aria-haspopup="menu"
+          aria-expanded="${isOpen ? "true" : "false"}"
+          aria-controls="${esc(menuId)}"
+          onclick="toggleAdminNavGroup('${esc(group.id)}', event)"
+        >${esc(group.label)}</button>
+        <div
+          class="admin-nav-dropdown"
+          id="${esc(menuId)}"
+          role="menu"
+          aria-labelledby="admin-nav-trigger-${esc(group.id)}"
+        >
           ${items}
         </div>
       </div>
@@ -1036,6 +1112,7 @@ function renderAdminActivePanel() {
 
 function renderAdmin() {
   app.classList.toggle("is-calculator-data", activeTab === "calculator-data");
+  ensureAdminNavListeners();
   app.innerHTML = `
     <div class="admin-card">
       <div class="admin-list-top">
@@ -1053,7 +1130,9 @@ function renderAdmin() {
     ${showImportDataPanel ? renderImportDataPanel() : ""}
 
     <nav class="admin-nav" aria-label="101cruise Admin">
-      ${renderAdminTabNavigation()}
+      <div class="admin-nav-row">
+        ${renderAdminTabNavigation()}
+      </div>
     </nav>
 
     ${renderAdminActivePanel()}
@@ -6908,7 +6987,7 @@ function renderCruiseIntelligencePanel() {
             }">${esc(ciMessage)}</div>`
           : ""
       }
-      <div class="admin-subtabs packing-subtabs" role="tablist" aria-label="Cruise Lines and Ships sections">
+      <div class="admin-subtabs packing-subtabs ci-inline-switch" role="tablist" aria-label="Cruise Lines and Ships sections">
         <button class="admin-subtab ${ciSubView === "lines" ? "active" : ""}" onclick="setCiSubView('lines')">Cruise Lines</button>
         <button class="admin-subtab ${ciSubView === "ships" ? "active" : ""}" onclick="setCiSubView('ships')">Ships</button>
       </div>
