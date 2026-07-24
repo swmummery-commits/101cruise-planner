@@ -560,7 +560,8 @@
       <section class="admin-panel research-panel">
         <div class="admin-panel-header">
           <div>
-            <h2>Research Content</h2>
+            <p class="admin-nav-eyebrow">Content Studio</p>
+            <h2>Research Library</h2>
             <p class="admin-muted">Research once, review, publish, and reuse across cruise pages.</p>
             ${providerNote}
           </div>
@@ -1059,39 +1060,27 @@
   }
 
   function renderPanel() {
-    const subtabs = `
-      <div class="admin-subtabs packing-subtabs research-section-tabs" role="tablist" aria-label="Research Content sections">
-        <button type="button" class="admin-subtab ${researchSection === "content" ? "active" : ""}" onclick="ResearchContentAdmin.setSection('content')">Content</button>
-        <button type="button" class="admin-subtab ${researchSection === "audit" ? "active" : ""}" onclick="ResearchContentAdmin.setSection('audit')">Cruise Line Audit</button>
-        <button type="button" class="admin-subtab ${researchSection === "discovery" ? "active" : ""}" onclick="ResearchContentAdmin.setSection('discovery')">Cruise Discovery</button>
-        <button type="button" class="admin-subtab ${researchSection === "deck-plans" ? "active" : ""}" onclick="ResearchContentAdmin.setSection('deck-plans')">Deck Plans</button>
-      </div>
-    `;
+    // Sprint 16C: Audit / Discovery / Deck Plans are top-level Content Studio / Data Quality leaves.
+    // Keep section routing for any legacy setSection callers.
     if (researchSection === "audit") {
-      const auditHtml =
-        typeof global.CruiseLineAuditAdmin?.renderPanel === "function"
-          ? global.CruiseLineAuditAdmin.renderPanel()
-          : `<div class="admin-card"><p class="admin-muted">Cruise Line Audit failed to load.</p></div>`;
-      return `${subtabs}${auditHtml}`;
+      return typeof global.CruiseLineAuditAdmin?.renderPanel === "function"
+        ? global.CruiseLineAuditAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Fleet Audit failed to load.</p></div>`;
     }
     if (researchSection === "discovery") {
-      const discoveryHtml =
-        typeof global.CruiseDiscoveryAdmin?.renderPanel === "function"
-          ? global.CruiseDiscoveryAdmin.renderPanel()
-          : `<div class="admin-card"><p class="admin-muted">Cruise Discovery failed to load.</p></div>`;
-      return `${subtabs}${discoveryHtml}`;
+      return typeof global.CruiseDiscoveryAdmin?.renderPanel === "function"
+        ? global.CruiseDiscoveryAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Cruise Discovery failed to load.</p></div>`;
     }
     if (researchSection === "deck-plans") {
-      const deckHtml =
-        typeof global.DeckPlansAdmin?.renderPanel === "function"
-          ? global.DeckPlansAdmin.renderPanel()
-          : `<div class="admin-card"><p class="admin-muted">Deck Plans failed to load.</p></div>`;
-      return `${subtabs}${deckHtml}`;
+      return typeof global.DeckPlansAdmin?.renderPanel === "function"
+        ? global.DeckPlansAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Deck Plans failed to load.</p></div>`;
     }
     let body = renderList();
     if (view === "research") body = renderResearch();
     if (view === "editor") body = renderEditor();
-    return `${subtabs}${body}`;
+    return body;
   }
 
   const apiPublic = {
@@ -1100,11 +1089,32 @@
     openList,
     openEditor,
     openResearch,
+    /** Reset to Research Library without navigating away (used by setTab). */
+    showLibrary() {
+      researchSection = "content";
+    },
     setSection(section) {
-      if (section === "audit") researchSection = "audit";
-      else if (section === "discovery") researchSection = "discovery";
-      else if (section === "deck-plans") researchSection = "deck-plans";
-      else researchSection = "content";
+      if (section === "audit") {
+        if (typeof global.setTab === "function") {
+          global.setTab("fleet-audit");
+          return;
+        }
+        researchSection = "audit";
+      } else if (section === "discovery") {
+        if (typeof global.setTab === "function") {
+          global.setTab("cruise-discovery");
+          return;
+        }
+        researchSection = "discovery";
+      } else if (section === "deck-plans") {
+        if (typeof global.setTab === "function") {
+          global.setTab("deck-plans");
+          return;
+        }
+        researchSection = "deck-plans";
+      } else {
+        researchSection = "content";
+      }
       if (researchSection === "audit" && global.CruiseLineAuditAdmin?.ensureLoaded) {
         global.CruiseLineAuditAdmin.ensureLoaded();
       }
@@ -1112,7 +1122,6 @@
         global.CruiseDiscoveryAdmin.ensureLoaded();
       }
       if (researchSection === "deck-plans" && global.DeckPlansAdmin?.ensureLoaded) {
-        // Quiet refresh — do not interrupt Rapid Review with a full list reload
         global.DeckPlansAdmin.ensureLoaded({ quiet: true });
       }
       if (typeof global.renderAdmin === "function") global.renderAdmin();

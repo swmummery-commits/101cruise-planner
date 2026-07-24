@@ -947,6 +947,7 @@
         <div class="research-audit-panel deck-plans-panel">
           <div class="admin-section-header">
             <div>
+              <p class="admin-nav-eyebrow">Content Studio</p>
               <h2>Deck Plans — Rapid Review</h2>
               <p class="admin-muted">Approve, reject, or skip one ship at a time. Nothing is published automatically.</p>
             </div>
@@ -964,6 +965,7 @@
       <div class="research-audit-panel deck-plans-panel">
         <div class="admin-section-header">
           <div>
+            <p class="admin-nav-eyebrow">Content Studio</p>
             <h2>Deck Plans</h2>
             <p class="admin-muted">Research missing ships in bulk, then use Rapid Review — or continue ship-by-ship. Nothing is published automatically.</p>
           </div>

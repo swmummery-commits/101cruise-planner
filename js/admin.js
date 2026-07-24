@@ -18,7 +18,8 @@ let smartProfileGroups = [];
 let smartProfiles = [];
 let smartProfileMembers = [];
 let packingItemProfiles = [];
-let activeTab = "cruise-intelligence";
+/** Leaf nav id (Sprint 16C IA). Legacy "cruise-intelligence" redirects to cruise-lines. */
+let activeTab = "cruise-lines";
 let editingShipId = null;
 let shipSearchQuery = "";
 let editingCruiseLineId = null;
@@ -680,12 +681,28 @@ async function loadAdminData() {
   }
 }
 
+function normalizeAdminTab(tab) {
+  if (tab === "cruise-intelligence" || tab === "cruise-lines-legacy") return "cruise-lines";
+  if (tab === "ships") return "cruise-ships";
+  return tab;
+}
+
+function isCruiseCatalogueTab(tab) {
+  return tab === "cruise-lines" || tab === "cruise-ships" || tab === "cruise-intelligence";
+}
+
 async function setTab(tab) {
-  if (activeTab === "cruise-intelligence" && tab !== "cruise-intelligence") {
+  const resolved = normalizeAdminTab(tab);
+
+  if (isCruiseCatalogueTab(activeTab) && !isCruiseCatalogueTab(resolved)) {
     const ok = await flushCiCurrentForm();
     if (!ok) return;
   }
-  activeTab = tab;
+
+  if (resolved === "cruise-lines") ciSubView = "lines";
+  if (resolved === "cruise-ships") ciSubView = "ships";
+
+  activeTab = resolved;
   editingShipId = null;
   editingCruiseLineId = null;
   editingChecklistItemId = null;
@@ -722,11 +739,11 @@ async function setTab(tab) {
   editingCiShipId = null;
   ciLineCreating = false;
   ciShipCreating = false;
-  if (tab !== "cruise-intelligence") {
+  if (!isCruiseCatalogueTab(resolved)) {
     ciMessage = "";
     ciMessageTone = "";
   }
-  if (tab !== "featured-cruises") {
+  if (resolved !== "featured-cruises") {
     showFeaturedCruiseForm = false;
     editingFeaturedCruiseId = null;
     featuredCruiseMessage = "";
@@ -738,25 +755,37 @@ async function setTab(tab) {
     showFeaturedNewsletterPreview = false;
   }
   renderAdmin();
-  if (tab === "calculator-data") {
+  if (resolved === "calculator-data") {
     refreshBeveragePackagesGrid();
   }
-  if (tab === "usage-insights") {
+  if (resolved === "usage-insights") {
     loadUsageInsights();
   }
-  if (tab === "featured-cruises") {
+  if (resolved === "featured-cruises") {
     ensureFeaturedCruisesLoaded();
     if (window.MediaLibraryAdmin) window.MediaLibraryAdmin.ensureLoaded({ quiet: true });
   }
-  if (tab === "media-library") {
+  if (resolved === "media-library") {
     if (window.MediaLibraryAdmin) window.MediaLibraryAdmin.ensureLoaded();
   }
-  if (tab === "research-content") {
-    if (window.ResearchContentAdmin) window.ResearchContentAdmin.ensureLoaded();
-    if (window.CruiseLineAuditAdmin) window.CruiseLineAuditAdmin.ensureLoaded({ quiet: true });
-    if (window.DeckPlansAdmin) window.DeckPlansAdmin.ensureLoaded({ quiet: true });
+  if (resolved === "research-content") {
+    if (window.ResearchContentAdmin) {
+      if (typeof window.ResearchContentAdmin.showLibrary === "function") {
+        window.ResearchContentAdmin.showLibrary();
+      }
+      window.ResearchContentAdmin.ensureLoaded();
+    }
   }
-  if (tab === "settings") {
+  if (resolved === "cruise-discovery") {
+    if (window.CruiseDiscoveryAdmin?.ensureLoaded) window.CruiseDiscoveryAdmin.ensureLoaded();
+  }
+  if (resolved === "deck-plans") {
+    if (window.DeckPlansAdmin?.ensureLoaded) window.DeckPlansAdmin.ensureLoaded({ quiet: true });
+  }
+  if (resolved === "fleet-audit") {
+    if (window.CruiseLineAuditAdmin?.ensureLoaded) window.CruiseLineAuditAdmin.ensureLoaded();
+  }
+  if (resolved === "settings") {
     loadAdminSettingsUsers();
   }
 }
@@ -773,15 +802,176 @@ function getAdminSupabaseClient() {
   return supabaseClient;
 }
 
+function renderComingSoonPanel(title, blurb) {
+  return `
+    <div class="admin-card admin-coming-soon">
+      <div class="admin-list-top">
+        <div>
+          <p class="admin-nav-eyebrow">Coming Soon</p>
+          <h3>${esc(title)}</h3>
+          <p class="admin-muted">${esc(blurb)}</p>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 /**
- * Single production Admin navigation source of truth.
- * Newsletter (featured cruises) must remain immediately after Cruise Lines/Ships.
- * Tab id stays "featured-cruises" — UI label only is "Newsletter".
- * setTab(id) sets activeTab; renderAdmin() paints buttons + matching panel.
+ * Sprint 16C — Admin information architecture.
+ * Leaf ids drive setTab / highlight. Renderers reuse existing modules unchanged.
+ * Panel id "research-content" remains the Research Library (same module).
  */
+const ADMIN_NAV_GROUPS = [
+  {
+    id: "cruise-database",
+    label: "Cruise Database",
+    items: [
+      { id: "cruise-lines", label: "Cruise Lines" },
+      { id: "cruise-ships", label: "Ships" },
+      { id: "ports-catalogue", label: "Ports", placeholder: true },
+      { id: "sailings-catalogue", label: "Sailings", placeholder: true }
+    ]
+  },
+  {
+    id: "content-studio",
+    label: "Content Studio",
+    items: [
+      { id: "research-content", label: "Research Library" },
+      { id: "cruise-discovery", label: "Cruise Discovery" },
+      { id: "deck-plans", label: "Deck Plans" }
+    ]
+  },
+  {
+    id: "data-quality",
+    label: "Data Quality",
+    items: [
+      { id: "fleet-audit", label: "Fleet Audit" },
+      { id: "import-runs", label: "Import Runs", placeholder: true },
+      { id: "duplicate-review", label: "Duplicate Review", placeholder: true },
+      { id: "unmatched-records", label: "Unmatched Records", placeholder: true }
+    ]
+  },
+  {
+    id: "customer-experience",
+    label: "Customer Experience",
+    items: [
+      { id: "packing", label: "Packing" },
+      { id: "checklist", label: "Checklist" },
+      { id: "smart-profiles", label: "Smart Profiles" },
+      { id: "calculator-data", label: "Drinks Calculator" }
+    ]
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    items: [
+      { id: "featured-cruises", label: "Newsletter" },
+      { id: "media-library", label: "Media Library" }
+    ]
+  },
+  {
+    id: "administration",
+    label: "Administration",
+    items: [
+      { id: "usage-insights", label: "Usage & Insights" },
+      { id: "settings", label: "Settings" }
+    ]
+  }
+];
+
 const ADMIN_MAIN_TABS = [
-  { id: "cruise-intelligence", label: "Cruise Lines/Ships", render: () => renderCruiseIntelligencePanel() },
-  { id: "featured-cruises", label: "Newsletter", render: () => renderFeaturedCruisesPanel() },
+  {
+    id: "cruise-lines",
+    label: "Cruise Lines",
+    render: () => renderCruiseIntelligencePanel()
+  },
+  {
+    id: "cruise-ships",
+    label: "Ships",
+    render: () => renderCruiseIntelligencePanel()
+  },
+  {
+    id: "ports-catalogue",
+    label: "Ports",
+    render: () =>
+      renderComingSoonPanel(
+        "Ports",
+        "Canonical port catalogue management will live here. Until then, ports continue to be maintained via existing data workflows."
+      )
+  },
+  {
+    id: "sailings-catalogue",
+    label: "Sailings",
+    render: () =>
+      renderComingSoonPanel(
+        "Sailings",
+        "Sailing inventory management will live here once the cruise inventory tables are production-ready."
+      )
+  },
+  {
+    id: "research-content",
+    label: "Research Library",
+    render: () =>
+      window.ResearchContentAdmin
+        ? window.ResearchContentAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Research Library failed to load.</p></div>`
+  },
+  {
+    id: "cruise-discovery",
+    label: "Cruise Discovery",
+    render: () =>
+      window.CruiseDiscoveryAdmin
+        ? window.CruiseDiscoveryAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Cruise Discovery failed to load.</p></div>`
+  },
+  {
+    id: "deck-plans",
+    label: "Deck Plans",
+    render: () =>
+      window.DeckPlansAdmin
+        ? window.DeckPlansAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Deck Plans failed to load.</p></div>`
+  },
+  {
+    id: "fleet-audit",
+    label: "Fleet Audit",
+    render: () =>
+      window.CruiseLineAuditAdmin
+        ? window.CruiseLineAuditAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Fleet Audit failed to load.</p></div>`
+  },
+  {
+    id: "import-runs",
+    label: "Import Runs",
+    render: () =>
+      renderComingSoonPanel(
+        "Import Runs",
+        "Import run history and status will appear here for data-quality review."
+      )
+  },
+  {
+    id: "duplicate-review",
+    label: "Duplicate Review",
+    render: () =>
+      renderComingSoonPanel(
+        "Duplicate Review",
+        "Ship and line duplicate review tooling will appear here."
+      )
+  },
+  {
+    id: "unmatched-records",
+    label: "Unmatched Records",
+    render: () =>
+      renderComingSoonPanel(
+        "Unmatched Records",
+        "Unmatched ports, ships, and provider records will surface here for resolution."
+      )
+  },
+  {
+    id: "featured-cruises",
+    label: "Newsletter",
+    render: () => renderFeaturedCruisesPanel()
+  },
   {
     id: "media-library",
     label: "Media Library",
@@ -789,14 +979,6 @@ const ADMIN_MAIN_TABS = [
       window.MediaLibraryAdmin
         ? window.MediaLibraryAdmin.renderPanel()
         : `<div class="admin-card"><p class="admin-muted">Media Library failed to load.</p></div>`
-  },
-  {
-    id: "research-content",
-    label: "Research Content",
-    render: () =>
-      window.ResearchContentAdmin
-        ? window.ResearchContentAdmin.renderPanel()
-        : `<div class="admin-card"><p class="admin-muted">Research Content failed to load.</p></div>`
   },
   { id: "checklist", label: "Checklist", render: () => renderChecklistPanel() },
   { id: "packing", label: "Packing", render: () => renderPackingPanel() },
@@ -807,10 +989,23 @@ const ADMIN_MAIN_TABS = [
 ];
 
 function renderAdminTabNavigation() {
-  return ADMIN_MAIN_TABS.map(
-    (tab) =>
-      `<button type="button" class="admin-tab ${activeTab === tab.id ? "active" : ""}" onclick="setTab('${tab.id}')">${esc(tab.label)}</button>`
-  ).join("");
+  return ADMIN_NAV_GROUPS.map((group) => {
+    const items = group.items
+      .map((item) => {
+        const active = activeTab === item.id;
+        const placeholderClass = item.placeholder ? " is-placeholder" : "";
+        return `<button type="button" class="admin-tab${placeholderClass}${active ? " active" : ""}" onclick="setTab('${item.id}')">${esc(item.label)}</button>`;
+      })
+      .join("");
+    return `
+      <div class="admin-nav-group" data-nav-group="${esc(group.id)}">
+        <p class="admin-nav-group-label">${esc(group.label)}</p>
+        <div class="admin-nav-group-items" role="tablist" aria-label="${esc(group.label)}">
+          ${items}
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
 function renderAdminActivePanel() {
@@ -818,14 +1013,10 @@ function renderAdminActivePanel() {
   if (tab) return tab.render();
 
   // Legacy redirects (older bookmarks / stale state)
-  if (activeTab === "ships" || activeTab === "cruise-lines") {
-    return `
-      <div class="admin-card">
-        <h3>Moved to Cruise Lines/Ships</h3>
-        <p class="admin-muted">Logos, ship images, and catalogue data are now managed in the Cruise Lines/Ships tab.</p>
-        <button class="admin-button" onclick="setTab('cruise-intelligence')">Open Cruise Lines/Ships</button>
-      </div>
-    `;
+  if (activeTab === "cruise-intelligence" || activeTab === "cruise-lines-legacy") {
+    activeTab = "cruise-lines";
+    ciSubView = "lines";
+    return renderCruiseIntelligencePanel();
   }
   if (activeTab === "crm-sync" || activeTab === "planner-preview") {
     return `
@@ -850,7 +1041,7 @@ function renderAdmin() {
       <div class="admin-list-top">
         <div>
           <h2>101cruise Admin</h2>
-          <p class="admin-muted">Manage the content used throughout My Cruise Planner.</p>
+          <p class="admin-muted">Canonical cruise data, content, quality, and customer tools — organised by job to be done.</p>
         </div>
         <div class="admin-actions-row">
           <button class="admin-button secondary small" onclick="toggleImportDataPanel()">${showImportDataPanel ? "Close Tools" : "Import Data"}</button>
@@ -861,9 +1052,9 @@ function renderAdmin() {
 
     ${showImportDataPanel ? renderImportDataPanel() : ""}
 
-    <div class="admin-tabs" role="tablist" aria-label="101cruise Admin sections">
+    <nav class="admin-nav" aria-label="101cruise Admin">
       ${renderAdminTabNavigation()}
-    </div>
+    </nav>
 
     ${renderAdminActivePanel()}
   `;
@@ -877,7 +1068,8 @@ function toggleImportDataPanel() {
 function openImportDataMaintenance() {
   showImportDataPanel = true;
   if (activeTab === "crm-sync" || activeTab === "planner-preview") {
-    activeTab = "cruise-intelligence";
+    activeTab = "cruise-lines";
+    ciSubView = "lines";
   }
   renderAdmin();
 }
@@ -6591,10 +6783,14 @@ function setCiAutosaveStatus(text, tone) {
 
 async function setCiSubView(view) {
   const next = view === "ships" ? "ships" : "lines";
-  if (next === ciSubView) return;
+  const leaf = next === "ships" ? "cruise-ships" : "cruise-lines";
+  if (next === ciSubView && activeTab === leaf) return;
   const ok = await flushCiCurrentForm();
   if (!ok) return;
   ciSubView = next;
+  if (isCruiseCatalogueTab(activeTab)) {
+    activeTab = leaf;
+  }
   ciLineCreating = false;
   ciShipCreating = false;
   editingCiLineId = null;
@@ -6695,12 +6891,14 @@ function getFilteredCiShips() {
 }
 
 function renderCruiseIntelligencePanel() {
+  const sectionLabel = ciSubView === "ships" ? "Ships" : "Cruise Lines";
   return `
     <div class="admin-card">
       <div class="admin-list-top">
         <div>
-          <h3>Cruise Lines/Ships</h3>
-          <p class="admin-muted">Permanent cruise-line and ship catalogue (Supabase). Separate from Drinks Calculator logos. Edits save when you select another item.</p>
+          <p class="admin-nav-eyebrow">Cruise Database</p>
+          <h3>${esc(sectionLabel)}</h3>
+          <p class="admin-muted">Canonical cruise-line and ship catalogue (ci_cruise_lines / ci_cruise_ships). Edits save when you select another item.</p>
         </div>
       </div>
       ${
@@ -8106,7 +8304,7 @@ async function loadCruiseIntelligenceData({ quiet = false } = {}) {
   if (shipsResult.error) throw new Error(shipsResult.error.message);
   ciCruiseLines = linesResult.data || [];
   ciCruiseShips = shipsResult.data || [];
-  if (!quiet && activeTab === "cruise-intelligence") renderCiAdmin();
+  if (!quiet && isCruiseCatalogueTab(activeTab)) renderCiAdmin();
 }
 
 async function loadFeaturedCruises() {

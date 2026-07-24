@@ -143,6 +143,62 @@
   margin-bottom: 18px;
 }
 
+/* Sprint 16C — grouped admin navigation */
+.admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0 0 22px;
+  padding: 16px 18px;
+  border: 1px solid var(--admin-border, #e8e8e8);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.admin-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-nav-group + .admin-nav-group {
+  padding-top: 12px;
+  border-top: 1px solid var(--admin-border, #eee);
+}
+
+.admin-nav-group-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-muted, #6b7280);
+}
+
+.admin-nav-group-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-nav-eyebrow {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--admin-muted, #6b7280);
+}
+
+.admin-coming-soon .admin-nav-eyebrow {
+  color: #8a6d3b;
+}
+
+.admin-tab.is-placeholder:not(.active) {
+  opacity: 0.72;
+  border-style: dashed;
+}
+
 .admin-tab {
   padding: 10px 14px;
   border-radius: 999px;

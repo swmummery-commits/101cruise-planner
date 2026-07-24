@@ -22,7 +22,10 @@
     "test:track-cruises": "node scripts/test-track-cruises-validation.mjs",
     "poc:track-cruises-importer": "node scripts/run-track-cruises-importer-poc.mjs",
     "test:track-cruises-importer": "node scripts/test-track-cruises-importer.mjs",
-    "test:cruise-inventory-15c": "node scripts/test-cruise-inventory-15c.mjs"
+    "test:cruise-inventory-15c": "node scripts/test-cruise-inventory-15c.mjs",
+    "import:inventory-16a": "node scripts/run-inventory-import-16a.mjs",
+    "test:inventory-writer-16a": "node scripts/test-inventory-writer-16a.mjs",
+    "test:cruise-intelligence": "node scripts/test-cruise-intelligence.mjs"
   },
   "dependencies": {
     "@base44/sdk": "^0.8.38",

@@ -622,6 +622,7 @@
       <div class="admin-card">
         <div class="admin-list-top">
           <div>
+            <p class="admin-nav-eyebrow">Content Studio</p>
             <h3>Cruise Discovery</h3>
             <p class="admin-muted">Discover current sailings from official cruise line websites only. Never invents prices or itineraries. Unknown ships/destinations go to the Review Queue.</p>
           </div>

@@ -136,7 +136,7 @@
           <li>Ships never researched: <strong>${esc(String(researchHealth.ships_never_researched))}</strong></li>
           <li>Ships older than 24 months: <strong>${esc(String(researchHealth.ships_older_than_24_months))}</strong></li>
         </ul>
-        <p class="admin-muted">Health reflects Research Content coverage for active ships — not fleet audit status.</p>
+        <p class="admin-muted">Health reflects Research Library coverage for active ships — not fleet audit status.</p>
       </div>
     `;
   }
@@ -317,7 +317,8 @@
       <section class="admin-panel research-panel research-audit-panel">
         <div class="admin-panel-header">
           <div>
-            <h2>Cruise Line Audit</h2>
+            <p class="admin-nav-eyebrow">Data Quality</p>
+            <h2>Fleet Audit</h2>
             <p class="admin-muted">Audit official cruise line fleets to identify new ships, retired ships and research updates.</p>
           </div>
         </div>
