@@ -7,21 +7,23 @@
  * (that script only copies URL strings). This script owns binary copy +
  * explicit promote of logo_url / hero_image_url.
  *
+ * Required:
+ *   --target=dev | --target=production
+ *
  * Modes:
  *   --dry-run     (default) inspect only — no DB/Storage writes
- *   --copy        upload + media_library insert; CI URLs unchanged
- *   --promote     update CI logo_url / hero_image_url for verified copies
- *   --rollback --manifest <path>
+ *   --copy        DEV freely; Original/production only with gated confirmation
+ *   --promote     DEV freely; Original/production only with gated confirmation
+ *   --rollback --manifest <path>   DEV only (broad Original rollback blocked)
  *
- * Scopes:
- *   --line-id <uuid>   --ship-id <uuid>   --ids <uuid,uuid>
- *   --logos-only       --ships-only       --all-hosts
+ * Gated Original-project copy (Princess only):
+ *   --copy --target=production --line-id c19f40a7-… --confirm-production-copy=PRINCESS
  *
- * Production safety:
- *   --copy / --promote require SUPABASE_DEV_URL + SUPABASE_DEV_SERVICE_ROLE_KEY
- *   unless ALLOW_PRODUCTION_MEDIA_MIGRATION=1 (explicit, dangerous).
+ * Gated Original-project promote (Princess logo + Crown Princess hero only):
+ *   --promote --target=production --line-id c19f40a7-… --confirm-production-promote=PRINCESS
  *
- * HOLD DEPLOY. Do not run --copy/--promote against production without approval.
+ * Production --rollback remains blocked.
+ * Target is never inferred from whichever env vars exist.
  */
 
 import fs from "node:fs";
@@ -41,6 +43,28 @@ import {
   runRollback
 } from "./lib/squarespace-ci-media/migrate-core.js";
 import { MEDIA_BUCKET } from "./lib/squarespace-ci-media/media-utils.js";
+import {
+  parseTargetArg,
+  resolveMigrationTarget,
+  formatTargetBanner,
+  PRODUCTION_REF
+} from "./lib/squarespace-ci-media/target.js";
+import {
+  parseConfirmProductionCopy,
+  assertProductionCopyCliGate,
+  assertProductionCopyPlan,
+  assertCopyDidNotChangeCiUrls,
+  formatProductionCopyBanner
+} from "./lib/squarespace-ci-media/production-copy-gate.js";
+import {
+  parseConfirmProductionPromote,
+  assertProductionPromoteCliGate,
+  buildProductionPromotePlan,
+  assertProductionPromotePublicUrls,
+  buildProductionPromoteManifest,
+  formatProductionPromoteBanner,
+  applyAtomicProductionPromote
+} from "./lib/squarespace-ci-media/production-promote-gate.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -85,40 +109,8 @@ function resolveMode() {
 }
 
 function resolveEnv(mode) {
-  const hasDev = Boolean(
-    process.env.SUPABASE_DEV_URL && process.env.SUPABASE_DEV_SERVICE_ROLE_KEY
-  );
-  const allowProd = process.env.ALLOW_PRODUCTION_MEDIA_MIGRATION === "1";
-
-  if ((mode === "copy" || mode === "promote") && !hasDev && !allowProd) {
-    console.error(
-      [
-        "REFUSED: --copy / --promote require a Supabase DEV project.",
-        "Set SUPABASE_DEV_URL and SUPABASE_DEV_SERVICE_ROLE_KEY.",
-        "No SUPABASE_DEV_* is configured in this environment.",
-        "Fixture tests and --dry-run (read-only) may still run.",
-        "Do not set ALLOW_PRODUCTION_MEDIA_MIGRATION=1 unless explicitly approved."
-      ].join("\n")
-    );
-    process.exit(2);
-  }
-
-  if (hasDev) {
-    return {
-      url: process.env.SUPABASE_DEV_URL.replace(/\/$/, ""),
-      key: process.env.SUPABASE_DEV_SERVICE_ROLE_KEY,
-      label: "DEV",
-      hasDev: true
-    };
-  }
-
-  const url = (process.env.SUPABASE_URL || "").replace(/\/$/, "");
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!url || !key) {
-    console.error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY");
-    process.exit(1);
-  }
-  return { url, key, label: "PRODUCTION_READ", hasDev: false };
+  const target = parseTargetArg(process.argv);
+  return resolveMigrationTarget({ target, mode, env: process.env });
 }
 
 async function supabaseRest(env, method, tablePath, { query = "", body, headers = {} } = {}) {
@@ -220,14 +212,63 @@ function writeJson(filePath, data) {
 
 async function main() {
   const mode = resolveMode();
-  const env = resolveEnv(mode);
+  let env;
+  try {
+    env = resolveEnv(mode);
+  } catch (error) {
+    console.error(error.message);
+    if (error.code === "missing_target" || error.code === "invalid_target") {
+      console.error("Example: node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=production");
+    }
+    process.exit(error.code === "production_write_forbidden" ? 2 : 1);
+  }
+
+  // Print selected target before any asset inspection / remote work.
+  console.log(`\n=== Squarespace CI media migration ===`);
+  console.log(formatTargetBanner(env, mode));
+
   const scope = parseScope();
+  console.log(`Scope:`, JSON.stringify(scope));
+
+  if (env.target === "production" && mode === "copy") {
+    try {
+      assertProductionCopyCliGate({
+        target: env.target,
+        mode,
+        projectRef: env.project_ref,
+        expectedProductionRef: PRODUCTION_REF,
+        scope,
+        confirmToken: parseConfirmProductionCopy(process.argv)
+      });
+    } catch (error) {
+      console.error(error.message);
+      process.exit(2);
+    }
+  }
+
+  if (env.target === "production" && mode === "promote") {
+    try {
+      assertProductionPromoteCliGate({
+        target: env.target,
+        mode,
+        projectRef: env.project_ref,
+        expectedProductionRef: PRODUCTION_REF,
+        scope,
+        confirmToken: parseConfirmProductionPromote(process.argv)
+      });
+    } catch (error) {
+      console.error(error.message);
+      process.exit(2);
+    }
+  }
+
+  if (env.target === "production" && mode === "rollback") {
+    console.error("REFUSED: --rollback is not allowed with --target=production.");
+    process.exit(2);
+  }
+
   const outDir = path.join(ROOT, "tmp", "squarespace-migration");
   fs.mkdirSync(outDir, { recursive: true });
-
-  console.log(`\n=== Squarespace CI media migration (${mode}) ===`);
-  console.log(`Target: ${env.label} (${new URL(env.url).host})`);
-  console.log(`Scope:`, JSON.stringify(scope));
 
   if (mode === "rollback") {
     const manifestPath = argValue("--manifest");
@@ -265,6 +306,72 @@ async function main() {
     })
   ]);
 
+  // Gated Original-project promote: CI URL patches only — no Squarespace fetch, no upload, no ML insert.
+  if (env.target === "production" && mode === "promote") {
+    const line = lines.find((l) => String(l.id) === String(scope.lineId));
+    let plan;
+    try {
+      plan = buildProductionPromotePlan({ line, ships, mediaRows: media });
+      await assertProductionPromotePublicUrls(plan, verifyPublicUrl);
+    } catch (error) {
+      console.error(error.message);
+      process.exit(2);
+    }
+
+    console.log(formatProductionPromoteBanner(plan, env.project_ref));
+
+    const stamp = Date.now();
+    const manifest = buildProductionPromoteManifest(plan, {
+      projectRef: env.project_ref,
+      timestamp: new Date().toISOString()
+    });
+    const manifestPath = path.join(outDir, `rollback-manifest-production-promote-${stamp}.json`);
+    writeJson(manifestPath, manifest);
+    console.log(`Rollback manifest written (before CI updates): ${manifestPath}`);
+    console.log(`Guarded restore (not enabled yet):\n${manifest.guarded_restore_command}`);
+
+    let applyResult;
+    try {
+      applyResult = await applyAtomicProductionPromote(plan, {
+        patchCiField: async ({ table, id, field, value }) => {
+          await supabaseRest(env, "PATCH", table, {
+            query: `?id=eq.${encodeURIComponent(id)}`,
+            body: { [field]: value }
+          });
+        }
+      });
+    } catch (error) {
+      console.error(error.message);
+      const failPath = path.join(outDir, `promote-production-failed-${stamp}.json`);
+      writeJson(failPath, {
+        mode: "promote",
+        target: env.target,
+        project_ref: env.project_ref,
+        ok: false,
+        error: error.message,
+        code: error.code || null,
+        manifest_path: manifestPath
+      });
+      process.exit(2);
+    }
+
+    const promotePath = path.join(outDir, `promote-production-${stamp}.json`);
+    writeJson(promotePath, {
+      mode: "promote",
+      target: env.target,
+      project_ref: env.project_ref,
+      uploads: 0,
+      media_library_inserts: 0,
+      fields_updated: plan.updates.map((u) => `${u.table}.${u.field}`),
+      results: applyResult.applied,
+      manifest_path: manifestPath
+    });
+    console.log(`\nPromote complete (atomic). Report: ${promotePath}`);
+    console.log(`Rollback manifest: ${manifestPath}`);
+    console.log("No uploads. No media_library inserts. No Storage deletes.");
+    return;
+  }
+
   const candidates = collectCandidates(lines, ships, scope);
   const mediaIndex = indexMediaLibrary(media);
 
@@ -285,7 +392,9 @@ async function main() {
   const dryPath = path.join(outDir, `dry-run-${Date.now()}.json`);
   writeJson(dryPath, {
     mode: "dry-run",
-    target: env.label,
+    target: env.target,
+    label: env.label,
+    project_ref: env.project_ref,
     host: new URL(env.url).host,
     scope,
     summary: {
@@ -321,6 +430,47 @@ async function main() {
   }
 
   if (mode === "copy") {
+    const lineMeta = lines.find((l) => String(l.id) === String(scope.lineId));
+    const summary = {
+      assets_inspected: report.assets_inspected,
+      assets_reachable: report.assets_reachable,
+      broken_urls: report.broken_urls,
+      invalid_mime_types: report.invalid_mime_types,
+      too_large: report.too_large,
+      ssrf_blocked: report.ssrf_blocked,
+      duplicate_binaries: report.duplicate_binaries,
+      already_migrated: report.already_migrated,
+      already_promoted: report.already_promoted,
+      proposed_uploads: report.proposed_uploads,
+      proposed_media_library_records: report.proposed_media_library_records,
+      proposed_canonical_url_changes: report.proposed_canonical_url_changes,
+      estimated_download_bytes: report.estimated_download_bytes,
+      estimated_upload_bytes: report.estimated_upload_bytes
+    };
+
+    if (env.target === "production") {
+      let planGate;
+      try {
+        planGate = assertProductionCopyPlan({
+          inspected,
+          summary,
+          lineName: lineMeta?.name
+        });
+      } catch (error) {
+        console.error(error.message);
+        process.exit(2);
+      }
+      console.log(
+        formatProductionCopyBanner({
+          projectRef: env.project_ref,
+          lineId: scope.lineId,
+          lineName: lineMeta?.name,
+          candidateCount: planGate.candidate_count,
+          estimatedBytes: planGate.estimated_bytes
+        })
+      );
+    }
+
     // Re-fetch eligible assets for upload buffers
     const withBuffers = [];
     for (const item of inspected) {
@@ -333,8 +483,14 @@ async function main() {
     }
 
     const copyResults = await runCopy(withBuffers, {
-      uploadObject: (args) => uploadObject(env, args),
+      uploadObject: (args) => {
+        if (args.bucket && args.bucket !== MEDIA_BUCKET) {
+          throw new Error(`Refused upload to bucket ${args.bucket}`);
+        }
+        return uploadObject(env, args);
+      },
       insertMedia: async (row) => {
+        // media_library only — never patch CI tables from copy path
         const inserted = await supabaseRest(env, "POST", "media_library", {
           body: row,
           headers: { Prefer: "return=representation" }
@@ -356,10 +512,20 @@ async function main() {
       verifyPublicUrl
     });
 
+    try {
+      assertCopyDidNotChangeCiUrls(copyResults);
+    } catch (error) {
+      console.error(error.message);
+      process.exit(2);
+    }
+
     const copyPath = path.join(outDir, `copy-${Date.now()}.json`);
     writeJson(copyPath, {
       mode: "copy",
+      target: env.target,
+      project_ref: env.project_ref,
       ci_urls_changed: false,
+      canonical_url_changes: 0,
       results: copyResults.map(({ _buffer, ...rest }) => rest)
     });
     console.log(`\nCopy complete. CI URLs unchanged. Report: ${copyPath}`);

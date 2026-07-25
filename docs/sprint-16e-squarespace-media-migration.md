@@ -18,7 +18,7 @@ optionally promote verified Supabase URLs into `logo_url` / `hero_image_url`.
 
 Do not introduce another independent writer to `logo_url` / `hero_image_url`.
 
-## Additive schema (unapplied)
+## Additive schema
 
 `supabase/migrations/20260738_media_library_squarespace_migration.sql`
 
@@ -28,30 +28,70 @@ Do not introduce another independent writer to `logo_url` / `hero_image_url`.
 
 Requires Sprint 16D migration `20260737_…` (`content_hash`, `import_source`, `original_filename`) first.
 
-## Modes
+## Explicit target (required)
+
+The script **never** infers DEV vs production from whichever env vars exist.
+`--target` is mandatory.
+
+| Target | Env vars used | Project ref |
+|---|---|---|
+| `--target=dev` | `SUPABASE_DEV_URL`, `SUPABASE_DEV_SERVICE_ROLE_KEY` | `vkheexbapykcdfbqcach` |
+| `--target=production` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` only | `xikbibxyinttllxamgao` |
+
+Production `--rollback` remains **blocked** (broad Original restore not enabled).
+
+Production `--copy` is allowed only with a narrow Princess Cruises gate
+(`--line-id` + `--confirm-production-copy=PRINCESS`). It uploads to
+`cruise-media` and writes `media_library` only — never changes `logo_url` /
+`hero_image_url`.
+
+Production `--promote` is allowed only for the same Princess line with
+`--confirm-production-promote=PRINCESS`. It patches **exactly two** CI fields
+(Princess `logo_url` + Crown Princess `hero_image_url`) after validating the
+two Media Library records. No upload, no `media_library` insert, no Storage
+delete. Atomic all-or-nothing with a pre-written rollback manifest.
 
 ```bash
-# Read-only plan (safe against prod if network works)
-node scripts/inventory-ci-image-urls.mjs
-node scripts/migrate-squarespace-ci-media.mjs --dry-run
-node scripts/migrate-squarespace-ci-media.mjs --dry-run --line-id <uuid>
-node scripts/migrate-squarespace-ci-media.mjs --dry-run --logos-only
-node scripts/migrate-squarespace-ci-media.mjs --dry-run --ships-only
+# DEV dry run
+node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=dev
 
-# Writes require SUPABASE_DEV_* (refused otherwise)
-node scripts/migrate-squarespace-ci-media.mjs --copy --line-id <uuid>
-node scripts/migrate-squarespace-ci-media.mjs --promote --from-copy tmp/squarespace-migration/copy-….json
-node scripts/migrate-squarespace-ci-media.mjs --rollback --manifest tmp/squarespace-migration/rollback-manifest-….json
+# Production dry run (read-only inspection; zero DB/Storage writes)
+node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=production
+
+# Scoped production dry run
+node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=production --line-id <uuid>
+node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=production --logos-only
+
+# DEV copy / promote / rollback
+node scripts/migrate-squarespace-ci-media.mjs --copy --target=dev --line-id <uuid>
+node scripts/migrate-squarespace-ci-media.mjs --promote --target=dev --from-copy tmp/squarespace-migration/copy-….json
+node scripts/migrate-squarespace-ci-media.mjs --rollback --target=dev --manifest tmp/squarespace-migration/rollback-manifest-….json
+
+# Gated Original-project COPY (Princess only)
+node scripts/migrate-squarespace-ci-media.mjs \
+  --copy \
+  --target=production \
+  --line-id c19f40a7-c160-4035-a845-14dada550e1f \
+  --confirm-production-copy=PRINCESS
+
+# Gated Original-project PROMOTE (Princess logo + Crown Princess hero only)
+node scripts/migrate-squarespace-ci-media.mjs \
+  --promote \
+  --target=production \
+  --line-id c19f40a7-c160-4035-a845-14dada550e1f \
+  --confirm-production-promote=PRINCESS
 ```
 
 Scopes: `--line-id`, `--ship-id`, `--ids a,b`, `--logos-only`, `--ships-only`, `--all-hosts` (default is Squarespace-only).
 
 ## Two-phase behaviour
 
-1. **COPY** — download → hash → dedupe → upload `cruise-media` → insert/reuse `media_library` → verify public URL. **CI URLs unchanged.**
-2. **PROMOTE** — only after explicit approval; patches `logo_url` / `hero_image_url` to verified Supabase URLs; writes rollback manifest.
+1. **COPY** — download → hash → dedupe → upload `cruise-media` → insert/reuse `media_library` → verify public URL. **CI URLs unchanged.** (DEV freely; Original gated.)
+2. **PROMOTE** — after explicit approval; patches `logo_url` / `hero_image_url` to verified Supabase URLs; writes rollback manifest. (DEV freely; Original gated for Princess only.)
 
 Rollback restores CI URLs only. Never deletes Squarespace or Supabase objects.
+Broad Original-project rollback is **not** enabled; the promote manifest records
+a future guarded restore command for separate approval.
 
 ## Paths
 
@@ -64,9 +104,11 @@ Rollback restores CI URLs only. Never deletes Squarespace or Supabase objects.
 
 ```bash
 node scripts/test-squarespace-ci-media.mjs
+node scripts/test-squarespace-target.mjs
+node scripts/test-squarespace-production-promote.mjs
 ```
 
-Mocked network only. No production writes.
+Mocked / pure offline tests only. No live network calls in the test suite.
 
 ## Image processing
 
@@ -79,9 +121,9 @@ added later (native binary, Netlify function size, cold start).
 
 | Check | Status |
 |---|---|
-| production database changed | **NO** |
-| production Storage changed | **NO** |
-| existing CI image URLs changed | **NO** |
+| production rollback | **blocked** |
+| production copy | **gated** (Princess + confirm token; media_library + cruise-media) |
+| production promote | **gated** (Princess + confirm token; exactly two CI URL fields; atomic) |
+| CI `logo_url` / `hero_image_url` on copy | **unchanged** |
 | Squarespace assets deleted | **NO** |
-| existing heroes/logos replaced | **NO** |
-| SUPABASE_DEV_* configured | **NO** (stop after implementation + fixtures) |
+| target inferred from env presence | **NO** — `--target` required |
