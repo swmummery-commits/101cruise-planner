@@ -17,13 +17,13 @@
  *   --repair-logo Original/production only — Princess logo_url repair gate
  *   --rollback --manifest <path>   DEV only (broad Original rollback blocked)
  *
- * Gated Original-project copy (Princess only):
- *   --copy --target=production --line-id c19f40a7-… --confirm-production-copy=PRINCESS
+ * Gated Original-project single-line copy:
+ *   --copy --target=production --line-id <LINE_UUID> --confirm-production-copy=<LINE_UUID>
  *
- * Gated Original-project promote (Princess logo + Crown Princess hero only):
- *   --promote --target=production --line-id c19f40a7-… --confirm-production-promote=PRINCESS
+ * Gated Original-project single-line promote:
+ *   --promote --target=production --line-id <LINE_UUID> --confirm-production-promote=<LINE_UUID>
  *
- * Gated Original-project logo repair (Princess logo_url only):
+ * Gated Original-project Princess logo repair (audit/history; not general workflow):
  *   --repair-logo --target=production --line-id c19f40a7-… --confirm-production-logo-repair=PRINCESS
  *
  * Production --rollback remains blocked.
@@ -67,7 +67,8 @@ import {
   assertProductionPromotePublicUrls,
   buildProductionPromoteManifest,
   formatProductionPromoteBanner,
-  applyVerifiedSequentialProductionPromote
+  applyVerifiedSequentialProductionPromote,
+  PRODUCTION_PROMOTE_ADMIN_WARNING
 } from "./lib/squarespace-ci-media/production-promote-gate.js";
 import {
   parseConfirmProductionLogoRepair,
@@ -277,38 +278,7 @@ async function main() {
   const scope = parseScope();
   console.log(`Scope:`, JSON.stringify(scope));
 
-  if (env.target === "production" && mode === "copy") {
-    try {
-      assertProductionCopyCliGate({
-        target: env.target,
-        mode,
-        projectRef: env.project_ref,
-        expectedProductionRef: PRODUCTION_REF,
-        scope,
-        confirmToken: parseConfirmProductionCopy(process.argv)
-      });
-    } catch (error) {
-      console.error(error.message);
-      process.exit(2);
-    }
-  }
-
-  if (env.target === "production" && mode === "promote") {
-    try {
-      assertProductionPromoteCliGate({
-        target: env.target,
-        mode,
-        projectRef: env.project_ref,
-        expectedProductionRef: PRODUCTION_REF,
-        scope,
-        confirmToken: parseConfirmProductionPromote(process.argv)
-      });
-    } catch (error) {
-      console.error(error.message);
-      process.exit(2);
-    }
-  }
-
+  // Production copy/promote CLI gates run after catalogue load (need line existence).
   if (env.target === "production" && mode === "repair-logo") {
     try {
       assertProductionLogoRepairCliGate({
@@ -373,6 +343,44 @@ async function main() {
       return [];
     })
   ]);
+
+  const scopedLine = scope.lineId
+    ? lines.find((l) => String(l.id) === String(scope.lineId)) || null
+    : undefined;
+
+  if (env.target === "production" && mode === "copy") {
+    try {
+      assertProductionCopyCliGate({
+        target: env.target,
+        mode,
+        projectRef: env.project_ref,
+        expectedProductionRef: PRODUCTION_REF,
+        scope,
+        confirmToken: parseConfirmProductionCopy(process.argv),
+        line: scopedLine
+      });
+    } catch (error) {
+      console.error(error.message);
+      process.exit(2);
+    }
+  }
+
+  if (env.target === "production" && mode === "promote") {
+    try {
+      assertProductionPromoteCliGate({
+        target: env.target,
+        mode,
+        projectRef: env.project_ref,
+        expectedProductionRef: PRODUCTION_REF,
+        scope,
+        confirmToken: parseConfirmProductionPromote(process.argv),
+        line: scopedLine
+      });
+    } catch (error) {
+      console.error(error.message);
+      process.exit(2);
+    }
+  }
 
   const verifiedWrite = makeVerifiedWrite(env);
 
@@ -449,16 +457,22 @@ async function main() {
 
   // Gated Original-project promote: CI URL patches only — no Squarespace fetch, no upload, no ML insert.
   if (env.target === "production" && mode === "promote") {
-    const line = lines.find((l) => String(l.id) === String(scope.lineId));
+    const line = scopedLine;
     let plan;
     try {
-      plan = buildProductionPromotePlan({ line, ships, mediaRows: media });
+      plan = buildProductionPromotePlan({
+        line,
+        ships,
+        mediaRows: media,
+        lineId: scope.lineId
+      });
       await assertProductionPromotePublicUrls(plan, verifyPublicUrl);
     } catch (error) {
       console.error(error.message);
       process.exit(2);
     }
 
+    console.log(`\n${PRODUCTION_PROMOTE_ADMIN_WARNING}\n`);
     console.log(formatProductionPromoteBanner(plan, env.project_ref));
 
     const stamp = Date.now();
@@ -595,6 +609,7 @@ async function main() {
         planGate = assertProductionCopyPlan({
           inspected,
           summary,
+          lineId: scope.lineId,
           lineName: lineMeta?.name
         });
       } catch (error) {

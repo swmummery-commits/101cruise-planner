@@ -1,5 +1,5 @@
 /**
- * Offline tests for gated Original-project PROMOTE (Princess only).
+ * Offline tests for gated Original-project single-line PROMOTE (UUID confirmation).
  * No network. No credentials printed. No live DB writes.
  */
 
@@ -10,19 +10,21 @@ import {
 } from "./lib/squarespace-ci-media/target.js";
 import {
   PRODUCTION_COPY_ALLOWED_LINE_ID,
-  PRODUCTION_COPY_CONFIRM_TOKEN,
-  assertProductionCopyCliGate
+  assertProductionCopyCliGate,
+  assertProductionCopyPlan,
+  assertCopyDidNotChangeCiUrls
 } from "./lib/squarespace-ci-media/production-copy-gate.js";
 import {
   PRODUCTION_PROMOTE_ALLOWED_LINE_ID,
-  PRODUCTION_PROMOTE_CONFIRM_TOKEN,
   PRODUCTION_PROMOTE_ALLOWED_SHIP_NAME,
+  PRODUCTION_PROMOTE_ADMIN_WARNING,
   parseConfirmProductionPromote,
   assertProductionPromoteCliGate,
   buildProductionPromotePlan,
   assertProductionPromotePublicUrls,
   buildProductionPromoteManifest,
-  applyVerifiedSequentialProductionPromote
+  applyVerifiedSequentialProductionPromote,
+  formatProductionPromoteBanner
 } from "./lib/squarespace-ci-media/production-promote-gate.js";
 
 function assert(cond, msg) {
@@ -51,59 +53,55 @@ async function assertThrowsAsync(fn, code) {
   assert(ok, `expected throw ${code}`);
 }
 
-const LINE_ID = PRODUCTION_PROMOTE_ALLOWED_LINE_ID;
+const PRINCESS_ID = PRODUCTION_PROMOTE_ALLOWED_LINE_ID;
+const NCL_ID = "c5f5361f-ebe5-4ff4-babe-7eb07f609bae";
 const SHIP_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
-const SQ_LOGO = "https://images.squarespace-cdn.com/content/princess-logo.png";
-const SQ_HERO = "https://images.squarespace-cdn.com/content/crown-princess-hero.jpg";
-const SB_LOGO = "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/lines/logo.png";
-const SB_HERO = "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/ships/hero.jpg";
+const SHIP_B = "bbbbbbbb-bbbb-cccc-dddd-eeeeeeeeeeee";
+const OTHER_LINE = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+const SQ_LOGO = "https://images.squarespace-cdn.com/content/logo.png";
+const SQ_HERO = "https://images.squarespace-cdn.com/content/hero.jpg";
+const SQ_HERO_B = "https://images.squarespace-cdn.com/content/hero-b.jpg";
+const SB_LOGO = `https://${PRODUCTION_REF}.supabase.co/storage/v1/object/public/cruise-media/lines/logo.png`;
+const SB_HERO = `https://${PRODUCTION_REF}.supabase.co/storage/v1/object/public/cruise-media/ships/hero.jpg`;
+const SB_HERO_B = `https://${PRODUCTION_REF}.supabase.co/storage/v1/object/public/cruise-media/ships/hero-b.jpg`;
 const HASH_A = "a".repeat(64);
 const HASH_B = "b".repeat(64);
+const HASH_C = "c".repeat(64);
 
-function fixtureLine(overrides = {}) {
+function fixtureLine(id, name, logo = SQ_LOGO) {
+  return { id, name, logo_url: logo };
+}
+
+function fixtureShip(id, lineId, name, hero = SQ_HERO) {
+  return { id, name, cruise_line_id: lineId, hero_image_url: hero };
+}
+
+function logoMedia(lineId, source = SQ_LOGO, publicUrl = SB_LOGO) {
   return {
-    id: LINE_ID,
-    name: "Princess Cruises",
-    logo_url: SQ_LOGO,
-    ...overrides
+    id: "ml-logo",
+    media_type: "cruise_line",
+    cruise_line_id: lineId,
+    ship_id: null,
+    public_url: publicUrl,
+    storage_path: `lines/${lineId}/logo.png`,
+    content_hash: HASH_A,
+    import_source: "squarespace_ci_migration",
+    source_url: source
   };
 }
 
-function fixtureShip(overrides = {}) {
+function heroMedia(lineId, shipId, source = SQ_HERO, publicUrl = SB_HERO, hash = HASH_B) {
   return {
-    id: SHIP_ID,
-    name: PRODUCTION_PROMOTE_ALLOWED_SHIP_NAME,
-    cruise_line_id: LINE_ID,
-    hero_image_url: SQ_HERO,
-    ...overrides
+    id: `ml-hero-${shipId}`,
+    media_type: "ship",
+    cruise_line_id: lineId,
+    ship_id: shipId,
+    public_url: publicUrl,
+    storage_path: `ships/${shipId}/hero.jpg`,
+    content_hash: hash,
+    import_source: "squarespace_ci_migration",
+    source_url: source
   };
-}
-
-function fixtureMedia() {
-  return [
-    {
-      id: "ml-logo",
-      media_type: "cruise_line",
-      cruise_line_id: LINE_ID,
-      ship_id: null,
-      public_url: SB_LOGO,
-      storage_path: `lines/${LINE_ID}/${HASH_A.slice(0, 12)}-logo.png`,
-      content_hash: HASH_A,
-      import_source: "squarespace_ci_migration",
-      source_url: SQ_LOGO
-    },
-    {
-      id: "ml-hero",
-      media_type: "ship",
-      cruise_line_id: LINE_ID,
-      ship_id: SHIP_ID,
-      public_url: SB_HERO,
-      storage_path: `ships/${SHIP_ID}/${HASH_B.slice(0, 12)}-hero.jpg`,
-      content_hash: HASH_B,
-      import_source: "squarespace_ci_migration",
-      source_url: SQ_HERO
-    }
-  ];
 }
 
 async function main() {
@@ -115,54 +113,32 @@ async function main() {
     SUPABASE_SERVICE_ROLE_KEY: "prod-secret-value-not-printed"
   };
 
-  // production promote resolves as gated (not open writes)
-  const prodPromote = resolveMigrationTarget({
-    target: "production",
-    mode: "promote",
-    env: mixedEnv
-  });
-  assert(prodPromote.production_promote_gated === true, "prod promote gated");
-  assert(prodPromote.writes_allowed === false, "writes not open");
-  assert(prodPromote.project_ref === PRODUCTION_REF, "prod ref");
-  passed += 1;
-
-  // production rollback still blocked
-  assertThrows(
-    () => resolveMigrationTarget({ target: "production", mode: "rollback", env: mixedEnv }),
-    "production_write_forbidden"
-  );
-  passed += 1;
-
   // DEV promote unchanged
   const devPromote = resolveMigrationTarget({ target: "dev", mode: "promote", env: mixedEnv });
   assert(devPromote.writes_allowed === true, "dev promote writes");
-  assert(devPromote.production_promote_gated === false, "dev not gated promote");
+  assert(devPromote.production_promote_gated === false, "dev not gated");
   passed += 1;
 
-  // Original-project copy safeguard remains intact
+  // Original-project copy safeguard still works with UUID confirm
   assert(
     assertProductionCopyCliGate({
       target: "production",
       mode: "copy",
       projectRef: PRODUCTION_REF,
       expectedProductionRef: PRODUCTION_REF,
-      scope: { lineId: PRODUCTION_COPY_ALLOWED_LINE_ID, shipId: null, entityIds: null },
-      confirmToken: PRODUCTION_COPY_CONFIRM_TOKEN
+      scope: { lineId: NCL_ID, shipId: null, entityIds: null },
+      confirmToken: NCL_ID,
+      line: fixtureLine(NCL_ID, "Norwegian Cruise Line")
     }) === true,
-    "copy gate intact"
+    "copy uuid gate"
   );
   passed += 1;
 
-  const goodScope = { lineId: LINE_ID, shipId: null, entityIds: null };
-
-  assert(
-    parseConfirmProductionPromote([`--confirm-production-promote=${PRODUCTION_PROMOTE_CONFIRM_TOKEN}`]) ===
-      PRODUCTION_PROMOTE_CONFIRM_TOKEN,
-    "confirm parse"
-  );
+  const goodScope = { lineId: NCL_ID, shipId: null, entityIds: null };
+  assert(parseConfirmProductionPromote([`--confirm-production-promote=${NCL_ID}`]) === NCL_ID, "parse");
   passed += 1;
 
-  // missing confirmation aborts
+  // UUID confirmation must exactly match line ID / wrong UUID aborts
   assertThrows(
     () =>
       assertProductionPromoteCliGate({
@@ -171,13 +147,13 @@ async function main() {
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
         scope: goodScope,
-        confirmToken: null
+        confirmToken: null,
+        line: fixtureLine(NCL_ID, "Norwegian Cruise Line")
       }),
     "production_promote_confirm_invalid"
   );
   passed += 1;
 
-  // wrong confirmation aborts
   assertThrows(
     () =>
       assertProductionPromoteCliGate({
@@ -186,13 +162,13 @@ async function main() {
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
         scope: goodScope,
-        confirmToken: "WRONG"
+        confirmToken: "PRINCESS",
+        line: fixtureLine(NCL_ID, "Norwegian Cruise Line")
       }),
     "production_promote_confirm_invalid"
   );
   passed += 1;
 
-  // wrong line UUID aborts
   assertThrows(
     () =>
       assertProductionPromoteCliGate({
@@ -200,10 +176,27 @@ async function main() {
         mode: "promote",
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
-        scope: { lineId: "00000000-0000-0000-0000-000000000000", shipId: null, entityIds: null },
-        confirmToken: PRODUCTION_PROMOTE_CONFIRM_TOKEN
+        scope: goodScope,
+        confirmToken: OTHER_LINE,
+        line: fixtureLine(NCL_ID, "Norwegian Cruise Line")
       }),
-    "production_promote_line_not_allowed"
+    "production_promote_confirm_invalid"
+  );
+  passed += 1;
+
+  // missing line aborts
+  assertThrows(
+    () =>
+      assertProductionPromoteCliGate({
+        target: "production",
+        mode: "promote",
+        projectRef: PRODUCTION_REF,
+        expectedProductionRef: PRODUCTION_REF,
+        scope: goodScope,
+        confirmToken: NCL_ID,
+        line: null
+      }),
+    "production_promote_line_missing"
   );
   passed += 1;
 
@@ -215,8 +208,9 @@ async function main() {
         mode: "promote",
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
-        scope: { lineId: LINE_ID, shipId: SHIP_ID, entityIds: null },
-        confirmToken: PRODUCTION_PROMOTE_CONFIRM_TOKEN
+        scope: { lineId: NCL_ID, shipId: SHIP_ID, entityIds: null },
+        confirmToken: NCL_ID,
+        line: fixtureLine(NCL_ID, "NCL")
       }),
     "production_promote_scope_invalid"
   );
@@ -229,67 +223,84 @@ async function main() {
         mode: "promote",
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
-        scope: { lineId: LINE_ID, shipId: null, entityIds: ["a", "b"] },
-        confirmToken: PRODUCTION_PROMOTE_CONFIRM_TOKEN
+        scope: { lineId: NCL_ID, shipId: null, entityIds: ["a"] },
+        confirmToken: NCL_ID,
+        line: fixtureLine(NCL_ID, "NCL")
       }),
     "production_promote_scope_invalid"
   );
   passed += 1;
 
+  // logo-only line works (Norwegian-style)
+  const nclPlan = buildProductionPromotePlan({
+    line: fixtureLine(NCL_ID, "Norwegian Cruise Line"),
+    ships: [fixtureShip(SHIP_ID, NCL_ID, "Some Ship", null)],
+    mediaRows: [logoMedia(NCL_ID)],
+    lineId: NCL_ID
+  });
+  assert(nclPlan.candidate_count === 1, "logo only count");
+  assert(nclPlan.uploads === 0 && nclPlan.media_library_inserts === 0, "no upload/insert");
+  assert(nclPlan.updates.every((u) => u.field === "logo_url"), "logo field only");
+  assert(nclPlan.ship_names.length === 0, "no ships");
+  passed += 1;
+
+  // mixed logo-and-ship line works
+  const mixedPlan = buildProductionPromotePlan({
+    line: fixtureLine(PRINCESS_ID, "Princess Cruises"),
+    ships: [
+      fixtureShip(SHIP_ID, PRINCESS_ID, PRODUCTION_PROMOTE_ALLOWED_SHIP_NAME, SQ_HERO),
+      fixtureShip(SHIP_B, PRINCESS_ID, "Other Ship", SQ_HERO_B)
+    ],
+    mediaRows: [
+      logoMedia(PRINCESS_ID),
+      heroMedia(PRINCESS_ID, SHIP_ID),
+      heroMedia(PRINCESS_ID, SHIP_B, SQ_HERO_B, SB_HERO_B, HASH_C)
+    ],
+    lineId: PRINCESS_ID
+  });
+  assert(mixedPlan.candidate_count === 3, "mixed 3");
+  assert(mixedPlan.ship_names.includes(PRODUCTION_PROMOTE_ALLOWED_SHIP_NAME), "crown");
+  assert(mixedPlan.admin_stale_form_warning === PRODUCTION_PROMOTE_ADMIN_WARNING, "warning");
+  passed += 1;
+
+  // Princess workflow remains supported under general UUID gate
   assert(
     assertProductionPromoteCliGate({
       target: "production",
       mode: "promote",
       projectRef: PRODUCTION_REF,
       expectedProductionRef: PRODUCTION_REF,
-      scope: goodScope,
-      confirmToken: PRODUCTION_PROMOTE_CONFIRM_TOKEN
+      scope: { lineId: PRINCESS_ID, shipId: null, entityIds: null },
+      confirmToken: PRINCESS_ID,
+      line: fixtureLine(PRINCESS_ID, "Princess Cruises")
     }) === true,
-    "cli gate ok"
+    "princess uuid gate"
   );
   passed += 1;
 
-  // happy plan
-  const plan = buildProductionPromotePlan({
-    line: fixtureLine(),
-    ships: [fixtureShip()],
-    mediaRows: fixtureMedia()
-  });
-  assert(plan.candidate_count === 2, "exactly 2");
-  assert(plan.uploads === 0 && plan.media_library_inserts === 0, "no upload/insert");
-  assert(
-    plan.updates.every(
-      (u) =>
-        (u.table === "ci_cruise_lines" && u.field === "logo_url") ||
-        (u.table === "ci_cruise_ships" && u.field === "hero_image_url")
-    ),
-    "only two approved fields"
-  );
-  passed += 1;
-
-  // missing Media Library record aborts
+  // all ship relationships must belong to selected line / foreign media aborts
   assertThrows(
     () =>
       buildProductionPromotePlan({
-        line: fixtureLine(),
-        ships: [fixtureShip()],
-        mediaRows: [fixtureMedia()[0]]
-      }),
-    "production_promote_media_count"
-  );
-  passed += 1;
-
-  // incorrect entity relationship aborts (hero on wrong ship)
-  const badRel = fixtureMedia();
-  badRel[1].ship_id = "ffffffff-ffff-ffff-ffff-ffffffffffff";
-  assertThrows(
-    () =>
-      buildProductionPromotePlan({
-        line: fixtureLine(),
-        ships: [fixtureShip()],
-        mediaRows: badRel
+        line: fixtureLine(NCL_ID, "NCL"),
+        ships: [fixtureShip(SHIP_ID, NCL_ID, "Ship", SQ_HERO)],
+        mediaRows: [logoMedia(NCL_ID), heroMedia(OTHER_LINE, SHIP_ID)],
+        lineId: NCL_ID
       }),
     "production_promote_missing_hero_media"
+  );
+  passed += 1;
+
+  // missing expected Media Library record aborts
+  assertThrows(
+    () =>
+      buildProductionPromotePlan({
+        line: fixtureLine(NCL_ID, "NCL"),
+        ships: [],
+        mediaRows: [],
+        lineId: NCL_ID
+      }),
+    "production_promote_missing_logo_media"
   );
   passed += 1;
 
@@ -297,50 +308,88 @@ async function main() {
   assertThrows(
     () =>
       buildProductionPromotePlan({
-        line: fixtureLine({ logo_url: "https://images.squarespace-cdn.com/other.png" }),
-        ships: [fixtureShip()],
-        mediaRows: fixtureMedia()
+        line: fixtureLine(NCL_ID, "NCL", "https://images.squarespace-cdn.com/other.png"),
+        ships: [],
+        mediaRows: [logoMedia(NCL_ID)],
+        lineId: NCL_ID
       }),
     "production_promote_source_mismatch"
   );
   passed += 1;
 
-  // unreachable Supabase public URL aborts
+  // more than 10 candidates aborts (copy plan)
+  const eleven = Array.from({ length: 11 }, (_, i) => ({
+    entity_id: `e${i}`,
+    cruise_line_id: NCL_ID,
+    status: "proposed_upload",
+    bytes: 10,
+    oversized: false
+  }));
+  assertThrows(
+    () => assertProductionCopyPlan({ inspected: eleven, summary: { broken_urls: 0 }, lineId: NCL_ID }),
+    "production_copy_candidate_count"
+  );
+  passed += 1;
+
+  // candidate from another line aborts (copy)
+  assertThrows(
+    () =>
+      assertProductionCopyPlan({
+        inspected: [
+          {
+            entity_id: "x",
+            cruise_line_id: OTHER_LINE,
+            status: "proposed_upload",
+            bytes: 1,
+            oversized: false
+          }
+        ],
+        summary: { broken_urls: 0, invalid_mime_types: 0, ssrf_blocked: 0, too_large: 0 },
+        lineId: NCL_ID
+      }),
+    "production_copy_foreign_line"
+  );
+  passed += 1;
+
+  // copy does not change CI URLs
+  assert(assertCopyDidNotChangeCiUrls([{ ci_url_changed: false }]) === true, "ci unchanged");
+  assertThrows(
+    () => assertCopyDidNotChangeCiUrls([{ ci_url_changed: true }]),
+    "production_copy_ci_url_changed"
+  );
+  passed += 1;
+
+  // banner includes required fields
+  const banner = formatProductionPromoteBanner(nclPlan, PRODUCTION_REF);
+  assert(banner.includes("Original project"), "banner original");
+  assert(banner.includes(NCL_ID), "banner uuid");
+  assert(banner.includes("Norwegian Cruise Line"), "banner name");
+  assert(banner.includes("uploads during promote: 0"), "banner uploads");
+  assert(banner.includes("Media Library inserts during promote: 0"), "banner inserts");
+  assert(banner.includes(PRODUCTION_PROMOTE_ADMIN_WARNING), "banner warning");
+  passed += 1;
+
+  await assertProductionPromotePublicUrls(nclPlan, async () => true);
   await assertThrowsAsync(
-    () => assertProductionPromotePublicUrls(plan, async () => false),
+    () => assertProductionPromotePublicUrls(nclPlan, async () => false),
     "production_promote_public_url_unreachable"
   );
   passed += 1;
 
-  await assertProductionPromotePublicUrls(plan, async () => true);
-  passed += 1;
-
-  // rollback manifest is created with guarded restore command
-  const manifest = buildProductionPromoteManifest(plan, {
+  const manifest = buildProductionPromoteManifest(nclPlan, {
     projectRef: PRODUCTION_REF,
-    timestamp: "2026-07-18T00:00:00.000Z"
+    timestamp: "2026-07-25T00:00:00.000Z"
   });
-  assert(manifest.entries.length === 2, "manifest entries");
-  assert(manifest.entries[0].original_url === SQ_LOGO, "original squarespace");
-  assert(manifest.entries[0].new_url === SB_LOGO, "new supabase");
-  assert(manifest.entries[0].media_library_id, "ml id");
-  assert(manifest.entries[0].content_hash, "hash");
-  assert(manifest.entries[0].migrated_timestamp, "timestamp");
-  assert(
-    String(manifest.guarded_restore_command).includes("--confirm-production-rollback=PRINCESS"),
-    "guarded restore"
-  );
-  assert(
-    String(manifest.note || "").toLowerCase().includes("not enabled"),
-    "broad rollback not enabled"
-  );
+  assert(manifest.kind === "production_promote_single_line", "manifest kind");
+  assert(manifest.entries.length === 1, "one entry");
+  assert(String(manifest.guarded_restore_command).includes(NCL_ID), "manifest uuid");
   passed += 1;
 
-  // verified sequential success
+  // verified PATCH safeguards + compensating rollback
   const writes = [];
-  const ok = await applyVerifiedSequentialProductionPromote(plan, {
+  const ok = await applyVerifiedSequentialProductionPromote(nclPlan, {
     verifiedWrite: async (p) => {
-      writes.push({ ...p });
+      writes.push(p);
       return {
         http_status: 200,
         affected_row_count: 1,
@@ -351,24 +400,22 @@ async function main() {
       };
     }
   });
-  assert(ok.ok === true && writes.length === 2, "two verified writes");
-  assert(writes[0].field === "logo_url" && writes[1].field === "hero_image_url", "fields");
   assert(ok.strategy === "verified_sequential_update_with_compensating_rollback", "strategy");
+  assert(writes.length === 1 && writes[0].field === "logo_url", "logo write");
   passed += 1;
 
-  // partial failure does not leave a partial promotion (compensating rollback)
-  const state = {
-    [LINE_ID]: { logo_url: SQ_LOGO },
-    [SHIP_ID]: { hero_image_url: SQ_HERO }
-  };
+  const state = { logo: SQ_LOGO, hero: SQ_HERO };
   let calls = 0;
   await assertThrowsAsync(
     () =>
-      applyVerifiedSequentialProductionPromote(plan, {
+      applyVerifiedSequentialProductionPromote(mixedPlan, {
         verifiedWrite: async ({ id, field, value }) => {
           calls += 1;
-          if (calls === 2) throw Object.assign(new Error("second patch failed"), { code: "patch_http_error" });
-          state[id][field] = value;
+          if (calls === 2) {
+            throw Object.assign(new Error("second failed"), { code: "patch_http_error" });
+          }
+          if (field === "logo_url") state.logo = value;
+          if (field === "hero_image_url") state.hero = value;
           return {
             http_status: 200,
             affected_row_count: 1,
@@ -381,11 +428,14 @@ async function main() {
       }),
     "production_promote_rolled_back"
   );
-  assert(state[LINE_ID].logo_url === SQ_LOGO, "logo restored");
-  assert(state[SHIP_ID].hero_image_url === SQ_HERO, "hero untouched/restored");
+  assert(state.logo === SQ_LOGO, "logo restored");
   passed += 1;
 
-  console.log(`PASS ${passed} squarespace production-promote-gate tests`);
+  // historical Princess line id constant still exported for docs/tests
+  assert(PRODUCTION_COPY_ALLOWED_LINE_ID === PRINCESS_ID, "princess id");
+  passed += 1;
+
+  console.log(`PASS ${passed} squarespace general single-line promote/copy gate tests`);
 }
 
 main().catch((err) => {

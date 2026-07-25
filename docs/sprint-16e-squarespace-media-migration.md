@@ -38,63 +38,60 @@ The script **never** infers DEV vs production from whichever env vars exist.
 | `--target=dev` | `SUPABASE_DEV_URL`, `SUPABASE_DEV_SERVICE_ROLE_KEY` | `vkheexbapykcdfbqcach` |
 | `--target=production` | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` only | `xikbibxyinttllxamgao` |
 
-Production `--rollback` remains **blocked** (broad Original restore not enabled).
+## Original-project single-line workflow
 
-Production `--copy` is allowed only with a narrow Princess Cruises gate
-(`--line-id` + `--confirm-production-copy=PRINCESS`). It uploads to
-`cruise-media` and writes `media_library` only — never changes `logo_url` /
-`hero_image_url`.
-
-Production `--promote` is allowed only for the same Princess line with
-`--confirm-production-promote=PRINCESS`. It patches **exactly two** CI fields
-(Princess `logo_url` + Crown Princess `hero_image_url`) after validating the
-two Media Library records. No upload, no `media_library` insert, no Storage
-delete. Uses **verified sequential update with compensating rollback** (not a
-DB transaction): every PATCH requires `return=representation` with exactly one
-row, matching UUID + field value, then a re-read confirmation.
-
-Production `--repair-logo` repairs **only** Princess `ci_cruise_lines.logo_url`
-from the existing Media Library logo record (for cases where promote was later
-overwritten). Same verification rules; no ship updates.
-
-**Operational warning:** Close any open Princess Cruises edit form in 101cruise
-Admin before running a production logo repair/promote that touches the logo,
-then reopen or hard-refresh it afterward, so stale form data cannot overwrite
-the repaired logo.
+Production work is **one cruise line at a time**. Confirmation tokens are the
+**exact cruise-line UUID** (never a name).
 
 ```bash
-# DEV dry run
-node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=dev
+# Dry run (read-only)
+node scripts/migrate-squarespace-ci-media.mjs \
+  --dry-run \
+  --target=production \
+  --line-id <LINE_UUID>
 
-# Production dry run (read-only inspection; zero DB/Storage writes)
-node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=production
-
-# Scoped production dry run
-node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=production --line-id <uuid>
-node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=production --logos-only
-
-# DEV copy / promote / rollback
-node scripts/migrate-squarespace-ci-media.mjs --copy --target=dev --line-id <uuid>
-node scripts/migrate-squarespace-ci-media.mjs --promote --target=dev --from-copy tmp/squarespace-migration/copy-….json
-node scripts/migrate-squarespace-ci-media.mjs --rollback --target=dev --manifest tmp/squarespace-migration/rollback-manifest-….json
-
-# Gated Original-project COPY (Princess only)
+# Copy → cruise-media + media_library only (CI URLs unchanged)
 node scripts/migrate-squarespace-ci-media.mjs \
   --copy \
   --target=production \
-  --line-id c19f40a7-c160-4035-a845-14dada550e1f \
-  --confirm-production-copy=PRINCESS
+  --line-id <LINE_UUID> \
+  --confirm-production-copy=<LINE_UUID>
 
-# Gated Original-project PROMOTE (Princess logo + Crown Princess hero only)
+# Promote → verified sequential update with compensating rollback
 node scripts/migrate-squarespace-ci-media.mjs \
   --promote \
   --target=production \
-  --line-id c19f40a7-c160-4035-a845-14dada550e1f \
-  --confirm-production-promote=PRINCESS
+  --line-id <LINE_UUID> \
+  --confirm-production-promote=<LINE_UUID>
+```
 
-# Gated Original-project LOGO REPAIR (Princess logo_url only)
-# WARNING: Close any open Princess Cruises edit form in 101cruise Admin before
-# running the repair, then reopen or hard-refresh it afterward.
+**Blocked on Original:** all-lines copy/promote, `--ship-id`, `--ids` lists,
+broad rollback, deletes, Squarespace deletion.
+
+**Copy gates:** line exists; UUID confirmation matches `--line-id`; 1–10
+candidates; every candidate belongs to that line; reachable; valid MIME; not
+oversized; no SSRF/broken URLs; dry-run plan succeeds first; duplicate
+protection remains active.
+
+**Promote gates:** matching verified Media Library rows for each remaining
+Squarespace field; content hash; `source_url` matches current canonical
+Squarespace URL; Supabase `public_url` reachable; ship/line relationships
+correct; 1–10 candidates; verified PATCH (exactly one row + re-read);
+rollback manifest written before the first CI update.
+
+**Admin warning (printed before promote):** Close any open Cruise Database edit
+form for this cruise line and its affected ships before continuing. Reopen or
+hard-refresh the Admin after promotion.
+
+### Completed: Princess Cruises
+
+Line `c19f40a7-c160-4035-a845-14dada550e1f` — logo + Crown Princess hero copied
+and promoted; live Admin verified.
+
+Princess-only `--repair-logo` remains available for audit/history (not the
+general workflow):
+
+```bash
 node scripts/migrate-squarespace-ci-media.mjs \
   --repair-logo \
   --target=production \
@@ -102,16 +99,78 @@ node scripts/migrate-squarespace-ci-media.mjs \
   --confirm-production-logo-repair=PRINCESS
 ```
 
-Scopes: `--line-id`, `--ship-id`, `--ids a,b`, `--logos-only`, `--ships-only`, `--all-hosts` (default is Squarespace-only).
+### Batch 1 — logo-only lines (COMPLETED)
+
+**Status: completed in Original project.** Copy + promote finished **13/13**.
+DEV writes = 0.
+
+Completed lines (logo `ci_cruise_lines.logo_url` only):
+
+1. Norwegian Cruise Line  
+2. Carnival Cruise Line  
+3. Silversea Cruises  
+4. Seabourn Cruise Line  
+5. MSC Cruises  
+6. Scenic Luxury Cruises & Tours  
+7. Regent Seven Seas Cruises  
+8. Virgin Voyages  
+9. AMA Waterways  
+10. Viking Ocean Cruises  
+11. Emerald Cruises  
+12. Holland America Line  
+13. Cunard Line  
+
+Also completed earlier (outside Batch 1): Princess Cruises logo + Crown Princess
+hero.
+
+Runner: `scripts/migrate-squarespace-batch.mjs` with fixed approved list
+`batch-1-logo-lines`. Norwegian was already in Media Library at copy time
+(`skipped_already_migrated`); remaining lines were copied then all 13 promoted.
+
+```bash
+# Historical Batch 1 commands (already executed successfully)
+node scripts/migrate-squarespace-batch.mjs \
+  --dry-run \
+  --target=production \
+  --batch=batch-1-logo-lines \
+  --confirm-production-batch=BATCH-1-LOGOS
+
+node scripts/migrate-squarespace-batch.mjs \
+  --copy \
+  --target=production \
+  --batch=batch-1-logo-lines \
+  --confirm-production-batch=BATCH-1-LOGOS
+
+node scripts/migrate-squarespace-batch.mjs \
+  --promote \
+  --target=production \
+  --batch=batch-1-logo-lines \
+  --confirm-production-batch=BATCH-1-LOGOS
+```
+
+Reports remain local under `tmp/squarespace-migration/batches/` (gitignored).
+No combined copy+promote mode. On failure the batch stops; earlier lines are
+not auto-undone.
+
+## DEV commands
+
+```bash
+node scripts/migrate-squarespace-ci-media.mjs --dry-run --target=dev
+node scripts/migrate-squarespace-ci-media.mjs --copy --target=dev --line-id <uuid>
+node scripts/migrate-squarespace-ci-media.mjs --promote --target=dev --from-copy tmp/squarespace-migration/copy-….json
+node scripts/migrate-squarespace-ci-media.mjs --rollback --target=dev --manifest tmp/squarespace-migration/rollback-manifest-….json
+```
+
+Scopes on DEV: `--line-id`, `--ship-id`, `--ids a,b`, `--logos-only`,
+`--ships-only`, `--all-hosts` (default Squarespace-only).
 
 ## Two-phase behaviour
 
-1. **COPY** — download → hash → dedupe → upload `cruise-media` → insert/reuse `media_library` → verify public URL. **CI URLs unchanged.** (DEV freely; Original gated.)
-2. **PROMOTE** — after explicit approval; patches `logo_url` / `hero_image_url` to verified Supabase URLs; writes rollback manifest. (DEV freely; Original gated for Princess only.)
+1. **COPY** — download → hash → dedupe → upload `cruise-media` → insert/reuse `media_library` → verify public URL. **CI URLs unchanged.**
+2. **PROMOTE** — patches `logo_url` / `hero_image_url` to verified Supabase URLs using verified sequential update with compensating rollback; writes rollback manifest first.
 
 Rollback restores CI URLs only. Never deletes Squarespace or Supabase objects.
-Broad Original-project rollback is **not** enabled; the promote manifest records
-a future guarded restore command for separate approval.
+Broad Original-project rollback is **not** enabled.
 
 ## Paths
 
@@ -127,6 +186,7 @@ node scripts/test-squarespace-ci-media.mjs
 node scripts/test-squarespace-target.mjs
 node scripts/test-squarespace-production-promote.mjs
 node scripts/test-squarespace-verified-patch.mjs
+node scripts/test-squarespace-batch.mjs
 ```
 
 Mocked / pure offline tests only. No live network calls in the test suite.
@@ -143,9 +203,11 @@ added later (native binary, Netlify function size, cold start).
 | Check | Status |
 |---|---|
 | production rollback | **blocked** |
-| production copy | **gated** (Princess + confirm token; media_library + cruise-media) |
-| production promote | **gated** (Princess + confirm; two CI fields; verified sequential + compensating rollback) |
-| production logo repair | **gated** (Princess logo_url only; verified PATCH + re-read) |
+| production copy | **gated** (single line + UUID confirm; media_library + cruise-media) |
+| production promote | **gated** (single line + UUID confirm; verified sequential + compensating rollback) |
+| production logo repair | **gated** (Princess logo_url only; historical) |
+| Batch 1 logo lines (13) | **completed** (copy + promote; DEV writes = 0) |
+| Princess logo + Crown Princess hero | **completed** |
 | CI `logo_url` / `hero_image_url` on copy | **unchanged** |
 | Squarespace assets deleted | **NO** |
 | target inferred from env presence | **NO** — `--target` required |

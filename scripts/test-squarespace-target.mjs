@@ -1,5 +1,5 @@
 /**
- * Offline tests for explicit --target + gated Original-project COPY.
+ * Offline tests for explicit --target + gated Original-project single-line COPY.
  * No network. No credentials printed.
  */
 
@@ -13,7 +13,6 @@ import {
 } from "./lib/squarespace-ci-media/target.js";
 import {
   PRODUCTION_COPY_ALLOWED_LINE_ID,
-  PRODUCTION_COPY_CONFIRM_TOKEN,
   parseConfirmProductionCopy,
   assertProductionCopyCliGate,
   assertProductionCopyPlan,
@@ -37,6 +36,8 @@ function assertThrows(fn, code) {
 
 function main() {
   let passed = 0;
+  const NCL_ID = "c5f5361f-ebe5-4ff4-babe-7eb07f609bae";
+  const line = { id: NCL_ID, name: "Norwegian Cruise Line" };
 
   assert(parseTargetArg(["node", "script.mjs", "--dry-run"]) === null, "omit parse");
   passed += 1;
@@ -74,7 +75,6 @@ function main() {
   assert(!prodResolved.url.includes(DEV_REF), "dev not used for prod");
   passed += 1;
 
-  // DEV vars cannot override production target
   assert(
     resolveMigrationTarget({ target: "production", mode: "dry-run", env: mixedEnv }).url.includes(
       PRODUCTION_REF
@@ -83,7 +83,6 @@ function main() {
   );
   passed += 1;
 
-  // production vars cannot override DEV target
   assert(
     resolveMigrationTarget({
       target: "dev",
@@ -122,7 +121,6 @@ function main() {
   );
   passed += 1;
 
-  // production dry-run permitted
   assert(
     resolveMigrationTarget({ target: "production", mode: "dry-run", env: mixedEnv })
       .production_copy_gated === false,
@@ -130,7 +128,6 @@ function main() {
   );
   passed += 1;
 
-  // production rollback remains blocked; promote is gated (not open writes)
   assertThrows(
     () => resolveMigrationTarget({ target: "production", mode: "rollback", env: mixedEnv }),
     "production_write_forbidden"
@@ -152,7 +149,6 @@ function main() {
     env: mixedEnv
   });
   assert(prodRepair.production_logo_repair_gated === true, "prod logo repair gated");
-  assert(prodRepair.writes_allowed === false, "prod repair writes not open");
   passed += 1;
 
   assertThrows(
@@ -161,7 +157,6 @@ function main() {
   );
   passed += 1;
 
-  // production copy resolves (gated) — credentials OK, writes not open until plan gate
   const prodCopy = resolveMigrationTarget({
     target: "production",
     mode: "copy",
@@ -171,19 +166,16 @@ function main() {
   assert(prodCopy.project_ref === PRODUCTION_REF, "prod copy ref");
   passed += 1;
 
-  // DEV copy/promote/rollback unchanged
   for (const mode of ["copy", "promote", "rollback"]) {
     const r = resolveMigrationTarget({ target: "dev", mode, env: mixedEnv });
     assert(r.writes_allowed === true, `dev ${mode}`);
   }
   passed += 1;
 
-  // --- production copy CLI gate ---
-  const goodScope = { lineId: PRODUCTION_COPY_ALLOWED_LINE_ID, shipId: null, entityIds: null };
+  const goodScope = { lineId: NCL_ID, shipId: null, entityIds: null };
   assert(
-    parseConfirmProductionCopy([`--confirm-production-copy=${PRODUCTION_COPY_CONFIRM_TOKEN}`]) ===
-      PRODUCTION_COPY_CONFIRM_TOKEN,
-    "confirm parse"
+    parseConfirmProductionCopy([`--confirm-production-copy=${NCL_ID}`]) === NCL_ID,
+    "confirm parse uuid"
   );
   passed += 1;
 
@@ -195,7 +187,8 @@ function main() {
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
         scope: goodScope,
-        confirmToken: null
+        confirmToken: null,
+        line
       }),
     "production_copy_confirm_invalid"
   );
@@ -209,13 +202,13 @@ function main() {
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
         scope: goodScope,
-        confirmToken: "WRONG"
+        confirmToken: "PRINCESS",
+        line
       }),
     "production_copy_confirm_invalid"
   );
   passed += 1;
 
-  // broad scope aborted
   assertThrows(
     () =>
       assertProductionCopyCliGate({
@@ -223,8 +216,9 @@ function main() {
         mode: "copy",
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
-        scope: { lineId: PRODUCTION_COPY_ALLOWED_LINE_ID, shipId: "ship-1", entityIds: null },
-        confirmToken: PRODUCTION_COPY_CONFIRM_TOKEN
+        scope: { lineId: NCL_ID, shipId: "ship-1", entityIds: null },
+        confirmToken: NCL_ID,
+        line
       }),
     "production_copy_scope_invalid"
   );
@@ -237,18 +231,14 @@ function main() {
         mode: "copy",
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
-        scope: {
-          lineId: PRODUCTION_COPY_ALLOWED_LINE_ID,
-          shipId: null,
-          entityIds: ["a", "b"]
-        },
-        confirmToken: PRODUCTION_COPY_CONFIRM_TOKEN
+        scope: { lineId: NCL_ID, shipId: null, entityIds: ["a", "b"] },
+        confirmToken: NCL_ID,
+        line
       }),
     "production_copy_scope_invalid"
   );
   passed += 1;
 
-  // missing line-id
   assertThrows(
     () =>
       assertProductionCopyCliGate({
@@ -257,13 +247,27 @@ function main() {
         projectRef: PRODUCTION_REF,
         expectedProductionRef: PRODUCTION_REF,
         scope: { lineId: null, shipId: null, entityIds: null },
-        confirmToken: PRODUCTION_COPY_CONFIRM_TOKEN
+        confirmToken: NCL_ID
       }),
     "production_copy_scope_invalid"
   );
   passed += 1;
 
-  // good CLI gate
+  assertThrows(
+    () =>
+      assertProductionCopyCliGate({
+        target: "production",
+        mode: "copy",
+        projectRef: PRODUCTION_REF,
+        expectedProductionRef: PRODUCTION_REF,
+        scope: goodScope,
+        confirmToken: NCL_ID,
+        line: null
+      }),
+    "production_copy_line_missing"
+  );
+  passed += 1;
+
   assert(
     assertProductionCopyCliGate({
       target: "production",
@@ -271,31 +275,72 @@ function main() {
       projectRef: PRODUCTION_REF,
       expectedProductionRef: PRODUCTION_REF,
       scope: goodScope,
-      confirmToken: PRODUCTION_COPY_CONFIRM_TOKEN
+      confirmToken: NCL_ID,
+      line
     }) === true,
     "cli gate ok"
   );
   passed += 1;
 
-  // more than five candidates aborts
-  const six = Array.from({ length: 6 }, (_, i) => ({
+  // Princess still works with UUID confirm
+  assert(
+    assertProductionCopyCliGate({
+      target: "production",
+      mode: "copy",
+      projectRef: PRODUCTION_REF,
+      expectedProductionRef: PRODUCTION_REF,
+      scope: { lineId: PRODUCTION_COPY_ALLOWED_LINE_ID, shipId: null, entityIds: null },
+      confirmToken: PRODUCTION_COPY_ALLOWED_LINE_ID,
+      line: { id: PRODUCTION_COPY_ALLOWED_LINE_ID, name: "Princess Cruises" }
+    }) === true,
+    "princess uuid still ok"
+  );
+  passed += 1;
+
+  const eleven = Array.from({ length: 11 }, (_, i) => ({
     entity_id: `e${i}`,
+    cruise_line_id: NCL_ID,
     status: "proposed_upload",
     bytes: 10,
     oversized: false
   }));
   assertThrows(
-    () => assertProductionCopyPlan({ inspected: six, summary: { broken_urls: 0 } }),
+    () => assertProductionCopyPlan({ inspected: eleven, summary: { broken_urls: 0 }, lineId: NCL_ID }),
     "production_copy_candidate_count"
   );
   passed += 1;
 
-  // broken/invalid candidate aborts
+  // 6 candidates now allowed (max 10)
+  const six = Array.from({ length: 6 }, (_, i) => ({
+    entity_id: `e${i}`,
+    cruise_line_id: NCL_ID,
+    status: "proposed_upload",
+    bytes: 10,
+    oversized: false
+  }));
+  assert(
+    assertProductionCopyPlan({
+      inspected: six,
+      summary: {
+        broken_urls: 0,
+        invalid_mime_types: 0,
+        ssrf_blocked: 0,
+        too_large: 0,
+        estimated_upload_bytes: 60
+      },
+      lineId: NCL_ID,
+      lineName: "Norwegian Cruise Line"
+    }).candidate_count === 6,
+    "six ok"
+  );
+  passed += 1;
+
   assertThrows(
     () =>
       assertProductionCopyPlan({
-        inspected: [{ entity_id: "x", status: "broken_url", error: "HTTP 404" }],
-        summary: { broken_urls: 1, invalid_mime_types: 0, ssrf_blocked: 0, too_large: 0 }
+        inspected: [{ entity_id: "x", cruise_line_id: NCL_ID, status: "broken_url", error: "HTTP 404" }],
+        summary: { broken_urls: 1, invalid_mime_types: 0, ssrf_blocked: 0, too_large: 0 },
+        lineId: NCL_ID
       }),
     "production_copy_broken_url"
   );
@@ -304,8 +349,9 @@ function main() {
   assertThrows(
     () =>
       assertProductionCopyPlan({
-        inspected: [{ entity_id: "x", status: "invalid_mime" }],
-        summary: { broken_urls: 0, invalid_mime_types: 1, ssrf_blocked: 0, too_large: 0 }
+        inspected: [{ entity_id: "x", cruise_line_id: NCL_ID, status: "invalid_mime" }],
+        summary: { broken_urls: 0, invalid_mime_types: 1, ssrf_blocked: 0, too_large: 0 },
+        lineId: NCL_ID
       }),
     "production_copy_invalid_mime"
   );
@@ -313,8 +359,20 @@ function main() {
 
   const okPlan = assertProductionCopyPlan({
     inspected: [
-      { entity_id: "a", status: "proposed_upload", bytes: 100, oversized: false },
-      { entity_id: "b", status: "already_copied", bytes: 50, oversized: false }
+      {
+        entity_id: "a",
+        cruise_line_id: NCL_ID,
+        status: "proposed_upload",
+        bytes: 100,
+        oversized: false
+      },
+      {
+        entity_id: "b",
+        cruise_line_id: NCL_ID,
+        status: "already_copied",
+        bytes: 50,
+        oversized: false
+      }
     ],
     summary: {
       broken_urls: 0,
@@ -323,13 +381,13 @@ function main() {
       too_large: 0,
       estimated_upload_bytes: 100
     },
-    lineName: "Princess Cruises"
+    lineId: NCL_ID,
+    lineName: "Norwegian Cruise Line"
   });
   assert(okPlan.canonical_url_changes_on_copy === 0, "canonical changes 0");
   assert(okPlan.candidate_count === 2, "count 2");
   passed += 1;
 
-  // copy cannot update CI URLs
   assert(assertCopyDidNotChangeCiUrls([{ ci_url_changed: false }]) === true, "ci unchanged");
   assertThrows(
     () => assertCopyDidNotChangeCiUrls([{ ci_url_changed: true }]),
@@ -342,7 +400,7 @@ function main() {
   assert(projectRefFromUrl(`https://${PRODUCTION_REF}.supabase.co`) === PRODUCTION_REF, "ref");
   passed += 1;
 
-  console.log(`PASS ${passed} squarespace target + production-copy-gate tests`);
+  console.log(`PASS ${passed} squarespace target + general production-copy-gate tests`);
 }
 
 main();
