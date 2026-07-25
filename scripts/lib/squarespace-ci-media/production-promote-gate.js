@@ -1,9 +1,10 @@
 /**
- * Gated Original-project (production) PROMOTE safety checks + atomic apply helpers.
+ * Gated Original-project (production) PROMOTE safety checks + verified apply helpers.
  * Pure helpers — no network (except injected URL verifier used by CLI).
  */
 
 import { isSquarespaceHost } from "./url-safety.js";
+import { applyVerifiedSequentialUpdates } from "./verified-ci-patch.js";
 
 export const PRODUCTION_PROMOTE_CONFIRM_TOKEN = "PRINCESS";
 export const PRODUCTION_PROMOTE_ALLOWED_LINE_ID = "c19f40a7-c160-4035-a845-14dada550e1f";
@@ -307,52 +308,19 @@ export function formatProductionPromoteBanner(plan, projectRef) {
     "fields: ci_cruise_lines.logo_url, ci_cruise_ships.hero_image_url",
     "uploads: 0",
     "media_library inserts: 0",
-    "atomic: all-or-nothing"
+    "strategy: verified sequential update with compensating rollback"
   ].join("\n");
 }
 
 /**
- * Apply exactly two CI URL patches with restore-on-failure.
- * patchCiField({ table, id, field, value })
+ * Apply promote updates with verified PATCH + re-read and compensating rollback.
+ * Not a database transaction.
+ *
+ * verifiedWrite({ table, id, field, value }) → verification record
  */
-export async function applyAtomicProductionPromote(plan, { patchCiField }) {
-  const applied = [];
-  try {
-    for (const u of plan.updates) {
-      await patchCiField({
-        table: u.table,
-        id: u.entity_uuid,
-        field: u.field,
-        value: u.new_url
-      });
-      applied.push(u);
-    }
-    return { ok: true, applied, restored: [] };
-  } catch (error) {
-    const restored = [];
-    for (const u of [...applied].reverse()) {
-      try {
-        await patchCiField({
-          table: u.table,
-          id: u.entity_uuid,
-          field: u.field,
-          value: u.original_url
-        });
-        restored.push(u);
-      } catch (restoreError) {
-        throw Object.assign(
-          new Error(
-            `PARTIAL PROMOTE FAILURE: ${error.message}. Restore also failed for ${u.field}: ${restoreError.message}`
-          ),
-          { code: "production_promote_partial_restore_failed", cause: error }
-        );
-      }
-    }
-    throw Object.assign(
-      new Error(
-        `PROMOTE FAILED — rolled back ${restored.length} update(s). Original error: ${error.message}`
-      ),
-      { code: "production_promote_rolled_back", restored, cause: error }
-    );
-  }
+export async function applyVerifiedSequentialProductionPromote(plan, { verifiedWrite }) {
+  return applyVerifiedSequentialUpdates(plan.updates, { verifiedWrite });
 }
+
+/** @deprecated use applyVerifiedSequentialProductionPromote */
+export const applyAtomicProductionPromote = applyVerifiedSequentialProductionPromote;

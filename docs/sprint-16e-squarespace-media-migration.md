@@ -49,7 +49,18 @@ Production `--promote` is allowed only for the same Princess line with
 `--confirm-production-promote=PRINCESS`. It patches **exactly two** CI fields
 (Princess `logo_url` + Crown Princess `hero_image_url`) after validating the
 two Media Library records. No upload, no `media_library` insert, no Storage
-delete. Atomic all-or-nothing with a pre-written rollback manifest.
+delete. Uses **verified sequential update with compensating rollback** (not a
+DB transaction): every PATCH requires `return=representation` with exactly one
+row, matching UUID + field value, then a re-read confirmation.
+
+Production `--repair-logo` repairs **only** Princess `ci_cruise_lines.logo_url`
+from the existing Media Library logo record (for cases where promote was later
+overwritten). Same verification rules; no ship updates.
+
+**Operational warning:** Close any open Princess Cruises edit form in 101cruise
+Admin before running a production logo repair/promote that touches the logo,
+then reopen or hard-refresh it afterward, so stale form data cannot overwrite
+the repaired logo.
 
 ```bash
 # DEV dry run
@@ -80,6 +91,15 @@ node scripts/migrate-squarespace-ci-media.mjs \
   --target=production \
   --line-id c19f40a7-c160-4035-a845-14dada550e1f \
   --confirm-production-promote=PRINCESS
+
+# Gated Original-project LOGO REPAIR (Princess logo_url only)
+# WARNING: Close any open Princess Cruises edit form in 101cruise Admin before
+# running the repair, then reopen or hard-refresh it afterward.
+node scripts/migrate-squarespace-ci-media.mjs \
+  --repair-logo \
+  --target=production \
+  --line-id c19f40a7-c160-4035-a845-14dada550e1f \
+  --confirm-production-logo-repair=PRINCESS
 ```
 
 Scopes: `--line-id`, `--ship-id`, `--ids a,b`, `--logos-only`, `--ships-only`, `--all-hosts` (default is Squarespace-only).
@@ -106,6 +126,7 @@ a future guarded restore command for separate approval.
 node scripts/test-squarespace-ci-media.mjs
 node scripts/test-squarespace-target.mjs
 node scripts/test-squarespace-production-promote.mjs
+node scripts/test-squarespace-verified-patch.mjs
 ```
 
 Mocked / pure offline tests only. No live network calls in the test suite.
@@ -123,7 +144,8 @@ added later (native binary, Netlify function size, cold start).
 |---|---|
 | production rollback | **blocked** |
 | production copy | **gated** (Princess + confirm token; media_library + cruise-media) |
-| production promote | **gated** (Princess + confirm token; exactly two CI URL fields; atomic) |
+| production promote | **gated** (Princess + confirm; two CI fields; verified sequential + compensating rollback) |
+| production logo repair | **gated** (Princess logo_url only; verified PATCH + re-read) |
 | CI `logo_url` / `hero_image_url` on copy | **unchanged** |
 | Squarespace assets deleted | **NO** |
 | target inferred from env presence | **NO** — `--target` required |

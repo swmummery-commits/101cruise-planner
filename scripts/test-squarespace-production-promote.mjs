@@ -22,7 +22,7 @@ import {
   buildProductionPromotePlan,
   assertProductionPromotePublicUrls,
   buildProductionPromoteManifest,
-  applyAtomicProductionPromote
+  applyVerifiedSequentialProductionPromote
 } from "./lib/squarespace-ci-media/production-promote-gate.js";
 
 function assert(cond, msg) {
@@ -336,18 +336,27 @@ async function main() {
   );
   passed += 1;
 
-  // atomic success
-  const patches = [];
-  const ok = await applyAtomicProductionPromote(plan, {
-    patchCiField: async (p) => {
-      patches.push({ ...p });
+  // verified sequential success
+  const writes = [];
+  const ok = await applyVerifiedSequentialProductionPromote(plan, {
+    verifiedWrite: async (p) => {
+      writes.push({ ...p });
+      return {
+        http_status: 200,
+        affected_row_count: 1,
+        returned_entity_uuid: p.id,
+        returned_field_value: p.value,
+        post_write_verification: "ok",
+        persisted_value: p.value
+      };
     }
   });
-  assert(ok.ok === true && patches.length === 2, "two patches");
-  assert(patches[0].field === "logo_url" && patches[1].field === "hero_image_url", "fields");
+  assert(ok.ok === true && writes.length === 2, "two verified writes");
+  assert(writes[0].field === "logo_url" && writes[1].field === "hero_image_url", "fields");
+  assert(ok.strategy === "verified_sequential_update_with_compensating_rollback", "strategy");
   passed += 1;
 
-  // partial failure does not leave a partial promotion
+  // partial failure does not leave a partial promotion (compensating rollback)
   const state = {
     [LINE_ID]: { logo_url: SQ_LOGO },
     [SHIP_ID]: { hero_image_url: SQ_HERO }
@@ -355,11 +364,19 @@ async function main() {
   let calls = 0;
   await assertThrowsAsync(
     () =>
-      applyAtomicProductionPromote(plan, {
-        patchCiField: async ({ id, field, value }) => {
+      applyVerifiedSequentialProductionPromote(plan, {
+        verifiedWrite: async ({ id, field, value }) => {
           calls += 1;
-          if (calls === 2) throw new Error("second patch failed");
+          if (calls === 2) throw Object.assign(new Error("second patch failed"), { code: "patch_http_error" });
           state[id][field] = value;
+          return {
+            http_status: 200,
+            affected_row_count: 1,
+            returned_entity_uuid: id,
+            returned_field_value: value,
+            post_write_verification: "ok",
+            persisted_value: value
+          };
         }
       }),
     "production_promote_rolled_back"

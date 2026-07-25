@@ -14,6 +14,7 @@
  *   --dry-run     (default) inspect only — no DB/Storage writes
  *   --copy        DEV freely; Original/production only with gated confirmation
  *   --promote     DEV freely; Original/production only with gated confirmation
+ *   --repair-logo Original/production only — Princess logo_url repair gate
  *   --rollback --manifest <path>   DEV only (broad Original rollback blocked)
  *
  * Gated Original-project copy (Princess only):
@@ -21,6 +22,9 @@
  *
  * Gated Original-project promote (Princess logo + Crown Princess hero only):
  *   --promote --target=production --line-id c19f40a7-… --confirm-production-promote=PRINCESS
+ *
+ * Gated Original-project logo repair (Princess logo_url only):
+ *   --repair-logo --target=production --line-id c19f40a7-… --confirm-production-logo-repair=PRINCESS
  *
  * Production --rollback remains blocked.
  * Target is never inferred from whichever env vars exist.
@@ -63,8 +67,21 @@ import {
   assertProductionPromotePublicUrls,
   buildProductionPromoteManifest,
   formatProductionPromoteBanner,
-  applyAtomicProductionPromote
+  applyVerifiedSequentialProductionPromote
 } from "./lib/squarespace-ci-media/production-promote-gate.js";
+import {
+  parseConfirmProductionLogoRepair,
+  assertProductionLogoRepairCliGate,
+  buildProductionLogoRepairPlan,
+  assertProductionLogoRepairPublicUrl,
+  buildProductionLogoRepairManifest,
+  formatProductionLogoRepairBanner,
+  ADMIN_STALE_FORM_WARNING
+} from "./lib/squarespace-ci-media/production-logo-repair-gate.js";
+import {
+  verifiedCiFieldWrite,
+  applyVerifiedSequentialUpdates
+} from "./lib/squarespace-ci-media/verified-ci-patch.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -103,6 +120,7 @@ function hasFlag(flag) {
 
 function resolveMode() {
   if (hasFlag("--rollback")) return "rollback";
+  if (hasFlag("--repair-logo")) return "repair-logo";
   if (hasFlag("--promote")) return "promote";
   if (hasFlag("--copy")) return "copy";
   return "dry-run";
@@ -113,7 +131,7 @@ function resolveEnv(mode) {
   return resolveMigrationTarget({ target, mode, env: process.env });
 }
 
-async function supabaseRest(env, method, tablePath, { query = "", body, headers = {} } = {}) {
+async function supabaseRestDetailed(env, method, tablePath, { query = "", body, headers = {} } = {}) {
   const response = await fetch(`${env.url}/rest/v1/${tablePath}${query}`, {
     method,
     headers: {
@@ -132,10 +150,39 @@ async function supabaseRest(env, method, tablePath, { query = "", body, headers 
   } catch {
     data = text;
   }
-  if (!response.ok) {
-    throw new Error((data && data.message) || `Supabase HTTP ${response.status}: ${text}`);
+  return { status: response.status, ok: response.ok, body: data, text };
+}
+
+async function supabaseRest(env, method, tablePath, opts = {}) {
+  const { status, ok, body, text } = await supabaseRestDetailed(env, method, tablePath, opts);
+  if (!ok) {
+    throw new Error((body && body.message) || `Supabase HTTP ${status}: ${text}`);
   }
-  return data;
+  return body;
+}
+
+function makeVerifiedWrite(env) {
+  return async ({ table, id, field, value }) =>
+    verifiedCiFieldWrite({
+      table,
+      id,
+      field,
+      value,
+      patchRow: async ({ table: t, id: rowId, field: f, value: v }) => {
+        const { status, body } = await supabaseRestDetailed(env, "PATCH", t, {
+          query: `?id=eq.${encodeURIComponent(rowId)}&select=id,${encodeURIComponent(f)}`,
+          body: { [f]: v },
+          headers: { Prefer: "return=representation" }
+        });
+        return { status, body };
+      },
+      readRow: async ({ table: t, id: rowId, field: f }) => {
+        const rows = await supabaseRest(env, "GET", t, {
+          query: `?id=eq.${encodeURIComponent(rowId)}&select=id,${encodeURIComponent(f)}&limit=1`
+        });
+        return Array.isArray(rows) ? rows[0] || null : null;
+      }
+    });
 }
 
 async function listAll(env, table, select) {
@@ -262,6 +309,27 @@ async function main() {
     }
   }
 
+  if (env.target === "production" && mode === "repair-logo") {
+    try {
+      assertProductionLogoRepairCliGate({
+        target: env.target,
+        mode,
+        projectRef: env.project_ref,
+        expectedProductionRef: PRODUCTION_REF,
+        scope,
+        confirmToken: parseConfirmProductionLogoRepair(process.argv)
+      });
+    } catch (error) {
+      console.error(error.message);
+      process.exit(2);
+    }
+  }
+
+  if (mode === "repair-logo" && env.target !== "production") {
+    console.error("REFUSED: --repair-logo requires --target=production.");
+    process.exit(2);
+  }
+
   if (env.target === "production" && mode === "rollback") {
     console.error("REFUSED: --rollback is not allowed with --target=production.");
     process.exit(2);
@@ -306,6 +374,79 @@ async function main() {
     })
   ]);
 
+  const verifiedWrite = makeVerifiedWrite(env);
+
+  // Gated Original-project logo repair: Princess logo_url only.
+  if (env.target === "production" && mode === "repair-logo") {
+    const line = lines.find((l) => String(l.id) === String(scope.lineId));
+    let plan;
+    try {
+      plan = buildProductionLogoRepairPlan({ line, mediaRows: media });
+      await assertProductionLogoRepairPublicUrl(plan, verifyPublicUrl);
+    } catch (error) {
+      console.error(error.message);
+      process.exit(2);
+    }
+
+    console.log(formatProductionLogoRepairBanner(plan, env.project_ref));
+    console.log(`\n${ADMIN_STALE_FORM_WARNING}\n`);
+
+    const stamp = Date.now();
+    const manifest = buildProductionLogoRepairManifest(plan, {
+      projectRef: env.project_ref,
+      timestamp: new Date().toISOString()
+    });
+    const manifestPath = path.join(outDir, `rollback-manifest-production-logo-repair-${stamp}.json`);
+    writeJson(manifestPath, manifest);
+    console.log(`Rollback manifest written (before CI update): ${manifestPath}`);
+
+    let applyResult;
+    try {
+      applyResult = await applyVerifiedSequentialUpdates(plan.updates, {
+        verifiedWrite,
+        failureLabel: "REPAIR",
+        rolledBackCode: "production_logo_repair_rolled_back"
+      });
+    } catch (error) {
+      console.error(error.message);
+      const failPath = path.join(outDir, `logo-repair-production-failed-${stamp}.json`);
+      writeJson(failPath, {
+        mode: "repair-logo",
+        target: env.target,
+        project_ref: env.project_ref,
+        ok: false,
+        strategy: "verified_sequential_update_with_compensating_rollback",
+        error: error.message,
+        code: error.code || null,
+        cause_code: error.cause?.code || null,
+        applied: error.applied || [],
+        restored: error.restored || [],
+        manifest_path: manifestPath
+      });
+      process.exit(2);
+    }
+
+    const repairPath = path.join(outDir, `logo-repair-production-${stamp}.json`);
+    writeJson(repairPath, {
+      mode: "repair-logo",
+      target: env.target,
+      project_ref: env.project_ref,
+      strategy: applyResult.strategy,
+      uploads: 0,
+      media_library_inserts: 0,
+      ships_updated: 0,
+      fields_updated: ["ci_cruise_lines.logo_url"],
+      results: applyResult.applied,
+      admin_stale_form_warning: ADMIN_STALE_FORM_WARNING,
+      manifest_path: manifestPath
+    });
+    console.log(`\nLogo repair complete (verified sequential update). Report: ${repairPath}`);
+    console.log(`Rollback manifest: ${manifestPath}`);
+    console.log("No uploads. No media_library inserts. No ship updates. No Storage deletes.");
+    console.log(`\n${ADMIN_STALE_FORM_WARNING}`);
+    return;
+  }
+
   // Gated Original-project promote: CI URL patches only — no Squarespace fetch, no upload, no ML insert.
   if (env.target === "production" && mode === "promote") {
     const line = lines.find((l) => String(l.id) === String(scope.lineId));
@@ -332,14 +473,7 @@ async function main() {
 
     let applyResult;
     try {
-      applyResult = await applyAtomicProductionPromote(plan, {
-        patchCiField: async ({ table, id, field, value }) => {
-          await supabaseRest(env, "PATCH", table, {
-            query: `?id=eq.${encodeURIComponent(id)}`,
-            body: { [field]: value }
-          });
-        }
-      });
+      applyResult = await applyVerifiedSequentialProductionPromote(plan, { verifiedWrite });
     } catch (error) {
       console.error(error.message);
       const failPath = path.join(outDir, `promote-production-failed-${stamp}.json`);
@@ -348,8 +482,12 @@ async function main() {
         target: env.target,
         project_ref: env.project_ref,
         ok: false,
+        strategy: "verified_sequential_update_with_compensating_rollback",
         error: error.message,
         code: error.code || null,
+        cause_code: error.cause?.code || null,
+        applied: error.applied || [],
+        restored: error.restored || [],
         manifest_path: manifestPath
       });
       process.exit(2);
@@ -360,13 +498,16 @@ async function main() {
       mode: "promote",
       target: env.target,
       project_ref: env.project_ref,
+      strategy: applyResult.strategy,
       uploads: 0,
       media_library_inserts: 0,
       fields_updated: plan.updates.map((u) => `${u.table}.${u.field}`),
       results: applyResult.applied,
       manifest_path: manifestPath
     });
-    console.log(`\nPromote complete (atomic). Report: ${promotePath}`);
+    console.log(
+      `\nPromote complete (verified sequential update with compensating rollback). Report: ${promotePath}`
+    );
     console.log(`Rollback manifest: ${manifestPath}`);
     console.log("No uploads. No media_library inserts. No Storage deletes.");
     return;

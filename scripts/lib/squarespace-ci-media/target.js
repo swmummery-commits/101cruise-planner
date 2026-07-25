@@ -46,8 +46,8 @@ export function projectRefFromUrl(url) {
  * Resolve which env pair to use. Does not prefer DEV merely because it exists.
  *
  * Production --rollback: always refused here (broad restore not enabled).
- * Production --copy / --promote: credentials resolve, but gated writes require
- * CLI confirmation + plan gates in the CLI.
+ * Production --copy / --promote / --repair-logo: credentials resolve, but gated
+ * writes require CLI confirmation + plan gates in the CLI.
  *
  * @param {{
  *   target: "dev"|"production"|null,
@@ -80,6 +80,13 @@ export function resolveMigrationTarget({ target, mode, env = process.env }) {
     );
   }
 
+  if (target === "dev" && mode === "repair-logo") {
+    throw Object.assign(
+      new Error("REFUSED: --repair-logo is Original-project only. Use --target=production."),
+      { code: "logo_repair_dev_forbidden" }
+    );
+  }
+
   if (target === "dev") {
     const url = String(env.SUPABASE_DEV_URL || "").replace(/\/$/, "");
     const key = String(env.SUPABASE_DEV_SERVICE_ROLE_KEY || "");
@@ -105,6 +112,7 @@ export function resolveMigrationTarget({ target, mode, env = process.env }) {
       writes_allowed: mode === "copy" || mode === "promote" || mode === "rollback",
       production_copy_gated: false,
       production_promote_gated: false,
+      production_logo_repair_gated: false,
       env_keys_used: ["SUPABASE_DEV_URL", "SUPABASE_DEV_SERVICE_ROLE_KEY"]
     };
   }
@@ -130,16 +138,18 @@ export function resolveMigrationTarget({ target, mode, env = process.env }) {
 
   const gatedCopy = mode === "copy";
   const gatedPromote = mode === "promote";
+  const gatedLogoRepair = mode === "repair-logo";
   return {
     target: "production",
-    label: gatedCopy || gatedPromote ? "ORIGINAL_PROJECT" : "PRODUCTION",
+    label: gatedCopy || gatedPromote || gatedLogoRepair ? "ORIGINAL_PROJECT" : "PRODUCTION",
     url,
     key,
     project_ref: ref,
-    // dry-run: no writes; copy/promote: only after CLI + plan gates
+    // dry-run: no writes; copy/promote/repair: only after CLI + plan gates
     writes_allowed: false,
     production_copy_gated: gatedCopy,
     production_promote_gated: gatedPromote,
+    production_logo_repair_gated: gatedLogoRepair,
     env_keys_used: ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
   };
 }
@@ -153,6 +163,8 @@ export function formatTargetBanner(resolved, mode) {
     writeNote = "gated Original-project copy only (after confirmation + plan gates)";
   } else if (resolved.production_promote_gated) {
     writeNote = "gated Original-project promote only (after confirmation + plan gates)";
+  } else if (resolved.production_logo_repair_gated) {
+    writeNote = "gated Original-project logo repair only (after confirmation + plan gates)";
   } else if (resolved.writes_allowed) {
     writeNote = "yes (DEV)";
   }

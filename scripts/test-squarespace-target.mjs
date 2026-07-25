@@ -146,6 +146,21 @@ function main() {
   assert(prodPromoteResolve.writes_allowed === false, "prod promote writes not open");
   passed += 1;
 
+  const prodRepair = resolveMigrationTarget({
+    target: "production",
+    mode: "repair-logo",
+    env: mixedEnv
+  });
+  assert(prodRepair.production_logo_repair_gated === true, "prod logo repair gated");
+  assert(prodRepair.writes_allowed === false, "prod repair writes not open");
+  passed += 1;
+
+  assertThrows(
+    () => resolveMigrationTarget({ target: "dev", mode: "repair-logo", env: mixedEnv }),
+    "logo_repair_dev_forbidden"
+  );
+  passed += 1;
+
   // production copy resolves (gated) — credentials OK, writes not open until plan gate
   const prodCopy = resolveMigrationTarget({
     target: "production",
