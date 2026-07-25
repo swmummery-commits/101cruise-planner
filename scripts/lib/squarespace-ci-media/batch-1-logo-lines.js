@@ -3,6 +3,8 @@
  * Order is fixed. Do not discover lines at runtime.
  */
 
+import { BATCH_2_ID, getBatch2Config } from "./batch-2-mixed-lines.js";
+
 export const BATCH_1_ID = "batch-1-logo-lines";
 export const BATCH_1_CONFIRM_TOKEN = "BATCH-1-LOGOS";
 
@@ -87,11 +89,15 @@ export function getApprovedBatch(batchId) {
     return {
       id: BATCH_1_ID,
       confirm_token: BATCH_1_CONFIRM_TOKEN,
+      kind: "logo-only",
       lines: BATCH_1_LINES,
       expected_logo_count: 1,
       expected_ship_hero_count: 0,
       admin_warning: BATCH_1_ADMIN_WARNING
     };
+  }
+  if (batchId === BATCH_2_ID) {
+    return getBatch2Config();
   }
   return null;
 }

@@ -152,6 +152,58 @@ Reports remain local under `tmp/squarespace-migration/batches/` (gitignored).
 No combined copy+promote mode. On failure the batch stops; earlier lines are
 not auto-undone.
 
+### Batch 2 — mixed logo + ship-hero lines (COMPLETED)
+
+**Status: completed in Original project.** Copy + promote finished **6/6**.
+DEV writes = 0. Disney Cruise Line was not included.
+
+Completed lines (logo `ci_cruise_lines.logo_url` + ship
+`ci_cruise_ships.hero_image_url`):
+
+| # | Cruise line | Fields promoted | Ships |
+|---|---|---|---|
+| 1 | Celebrity Cruises | 3 | Celebrity Edge, Celebrity Millennium |
+| 2 | Atlas Cruises | 4 | World Adventurer, World Navigator, World Traveller |
+| 3 | Azamara | 4 | Journey, Pursuit, Quest |
+| 4 | Explora Journeys | 4 | EXPLORA I, EXPLORA II, EXPLORA III |
+| 5 | Oceania Cruises | 2 | Allura |
+| 6 | Royal Caribbean International | 2 | Icon of the Seas |
+
+Totals: **6** logo_url + **13** hero_image_url = **19** verified promoted
+fields. Canonical names / UUIDs / counts are hardcoded from dry-run
+`tmp/squarespace-migration/dry-run-1784950810217.json` (Atlas is
+**Atlas Cruises**, not “Atlas Ocean Voyages”).
+
+Runner: `scripts/migrate-squarespace-batch.mjs` with fixed approved list
+`batch-2-mixed-lines`. Copy wrote only `cruise-media` + `media_library`.
+Promote used verified sequential updates with compensating rollback.
+
+```bash
+# Historical Batch 2 commands (already executed successfully)
+node scripts/migrate-squarespace-batch.mjs \
+  --dry-run \
+  --target=production \
+  --batch=batch-2-mixed-lines \
+  --confirm-production-batch=BATCH-2-MIXED
+
+node scripts/migrate-squarespace-batch.mjs \
+  --copy \
+  --target=production \
+  --batch=batch-2-mixed-lines \
+  --confirm-production-batch=BATCH-2-MIXED
+
+node scripts/migrate-squarespace-batch.mjs \
+  --promote \
+  --target=production \
+  --batch=batch-2-mixed-lines \
+  --confirm-production-batch=BATCH-2-MIXED
+```
+
+### Batch 3 — Disney Cruise Line (RESERVED)
+
+Disney Cruise Line (`8f7aadcb-7843-4060-b0cb-a60631936b3a`, 8 assets) remains
+out of Batch 2 on purpose and was not migrated. Batch 3 is not configured yet.
+
 ## DEV commands
 
 ```bash
@@ -187,6 +239,7 @@ node scripts/test-squarespace-target.mjs
 node scripts/test-squarespace-production-promote.mjs
 node scripts/test-squarespace-verified-patch.mjs
 node scripts/test-squarespace-batch.mjs
+node scripts/test-squarespace-batch-2.mjs
 ```
 
 Mocked / pure offline tests only. No live network calls in the test suite.
@@ -207,6 +260,8 @@ added later (native binary, Netlify function size, cold start).
 | production promote | **gated** (single line + UUID confirm; verified sequential + compensating rollback) |
 | production logo repair | **gated** (Princess logo_url only; historical) |
 | Batch 1 logo lines (13) | **completed** (copy + promote; DEV writes = 0) |
+| Batch 2 mixed lines (6, non-Disney) | **completed** (copy + promote; 19 fields; DEV writes = 0) |
+| Batch 3 Disney Cruise Line | **reserved** (not configured; untouched by Batch 2) |
 | Princess logo + Crown Princess hero | **completed** |
 | CI `logo_url` / `hero_image_url` on copy | **unchanged** |
 | Squarespace assets deleted | **NO** |

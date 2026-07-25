@@ -7,11 +7,9 @@
  *
  * Modes: --dry-run | --copy | --promote (separate stages; no combined mode)
  *
- * Batch 1 example:
- *   node scripts/migrate-squarespace-batch.mjs \
- *     --dry-run --target=production \
- *     --batch=batch-1-logo-lines \
- *     --confirm-production-batch=BATCH-1-LOGOS
+ * Batch examples:
+ *   --batch=batch-1-logo-lines --confirm-production-batch=BATCH-1-LOGOS
+ *   --batch=batch-2-mixed-lines --confirm-production-batch=BATCH-2-MIXED
  *
  * DO NOT use against DEV. Production only.
  */
@@ -51,12 +49,20 @@ import {
   assertApprovedLineOrder,
   assertCanonicalLineMatch,
   assertBatch1LogoOnlyScope,
-  BATCH_1_ADMIN_WARNING,
   BATCH_1_LINE_IDS
 } from "./lib/squarespace-ci-media/batch-1-logo-lines.js";
+import {
+  assertBatch2MixedScope,
+  assertBatch2PromotePlan,
+  BATCH_2_LINE_IDS,
+  BATCH_2_SHIP_IDS,
+  DISNEY_CRUISE_LINE_ID
+} from "./lib/squarespace-ci-media/batch-2-mixed-lines.js";
 import { runApprovedBatch, summariseCopyResults } from "./lib/squarespace-ci-media/batch-runner.js";
 
 const BATCH_1_LINE_IDS_SET = new Set(BATCH_1_LINE_IDS.map(String));
+const BATCH_2_LINE_IDS_SET = new Set(BATCH_2_LINE_IDS.map(String));
+const BATCH_2_SHIP_IDS_SET = new Set(BATCH_2_SHIP_IDS.map(String));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -279,10 +285,11 @@ async function main() {
   console.log(`\n=== Squarespace CI media BATCH ===`);
   console.log(formatTargetBanner(env, mode));
   console.log(`Batch: ${batch.id}`);
+  console.log(`Kind: ${batch.kind || "unknown"}`);
   console.log(`Lines: ${batch.lines.length}`);
   console.log(`Confirm: ${batch.confirm_token}`);
   if (mode === "promote") {
-    console.log(`\n*** WARNING ***\n${BATCH_1_ADMIN_WARNING}\n`);
+    console.log(`\n*** WARNING ***\n${batch.admin_warning}\n`);
   }
 
   const outDir = path.join(ROOT, "tmp", "squarespace-migration", "batches");
@@ -309,8 +316,14 @@ async function main() {
       ]);
       return { lines, ships, media };
     },
-    processLine: async ({ approved, resolvedLine, catalogue }) => {
+    processLine: async ({ approved, resolvedLine, catalogue, batch: activeBatch }) => {
       assertCanonicalLineMatch(approved, resolvedLine);
+      if (String(approved.id) === DISNEY_CRUISE_LINE_ID) {
+        throw Object.assign(new Error("REFUSED: Disney Cruise Line is not in this batch"), {
+          code: "batch2_disney_forbidden"
+        });
+      }
+
       const lineShips = (catalogue.ships || []).filter(
         (s) => String(s.cruise_line_id) === String(approved.id)
       );
@@ -318,42 +331,73 @@ async function main() {
         resolvedLine,
         lineShips
       );
-      assertBatch1LogoOnlyScope({
-        logoCandidates,
-        shipHeroCandidates,
-        lineName: approved.name
-      });
 
+      const kind = activeBatch.kind || "logo-only";
+      if (kind === "logo-only") {
+        assertBatch1LogoOnlyScope({
+          logoCandidates,
+          shipHeroCandidates,
+          lineName: approved.name
+        });
+      } else if (kind === "mixed") {
+        assertBatch2MixedScope({
+          approved,
+          logoCandidates,
+          shipHeroCandidates
+        });
+      } else {
+        throw Object.assign(new Error(`REFUSED: unknown batch kind ${kind}`), {
+          code: "batch_kind_invalid"
+        });
+      }
+
+      const expectedTotal =
+        kind === "mixed" ? approved.expected_total : 1;
       const scope = {
         lineId: approved.id,
         shipId: null,
         entityIds: null,
-        logosOnly: true,
+        logosOnly: kind === "logo-only",
         shipsOnly: false,
         squarespaceOnly: true
       };
       const candidates = collectCandidates([resolvedLine], lineShips, scope);
-      if (candidates.length !== 1 || candidates[0].entity_type !== "cruise_line") {
+      if (candidates.length !== expectedTotal) {
         throw Object.assign(
           new Error(
-            `REFUSED: expected exactly one cruise-line logo candidate, got ${candidates.length}`
+            `REFUSED: expected ${expectedTotal} candidate(s) for ${approved.name}, got ${candidates.length}`
           ),
-          { code: "batch_logo_candidate_count" }
+          { code: kind === "mixed" ? "batch2_unexpected_total_count" : "batch_logo_candidate_count" }
         );
+      }
+      for (const c of candidates) {
+        if (String(c.cruise_line_id) !== String(approved.id)) {
+          throw Object.assign(new Error("REFUSED: candidate belongs to another cruise line"), {
+            code: "batch_foreign_candidate"
+          });
+        }
       }
 
       const mediaForLine = (catalogue.media || []).filter(
         (m) => String(m.cruise_line_id) === String(approved.id)
       );
       const mediaIndex = indexMediaLibrary(catalogue.media || []);
-
+      const shipNames = (approved.ships || []).map((s) => s.name);
       const lineReportBase = {
         order: approved.order,
         line_id: approved.id,
         line_name: approved.name,
-        candidate_count: 1,
-        ship_hero_count: 0
+        expected_logo_count: kind === "mixed" ? approved.expected_logo_count : 1,
+        expected_ship_hero_count: kind === "mixed" ? approved.expected_ship_hero_count : 0,
+        expected_total: expectedTotal,
+        actual_logo_count: logoCandidates.length,
+        actual_ship_hero_count: shipHeroCandidates.length,
+        candidate_count: candidates.length,
+        ship_hero_count: shipHeroCandidates.length,
+        affected_ships: shipNames
       };
+      const totalLines = activeBatch.lines.length;
+      const reportPrefix = activeBatch.id;
 
       // -------- dry-run --------
       if (mode === "dry-run") {
@@ -379,25 +423,28 @@ async function main() {
         });
         const reportPath = path.join(
           outDir,
-          `batch-1-${mode}-line-${approved.order}-${approved.id}-${stamp}.json`
+          `${reportPrefix}-${mode}-line-${approved.order}-${approved.id}-${stamp}.json`
         );
         const result = {
           ...lineReportBase,
           status: "ok",
           wrote: false,
           uploaded_count: 0,
+          logos_uploaded: 0,
+          ship_heroes_uploaded: 0,
           media_library_inserted_count: 0,
           skipped_already_migrated: report.already_migrated || 0,
           duplicate_count: report.duplicate_binaries || 0,
           bytes_uploaded: 0,
           promoted_fields: [],
-          dry_run_status: inspected[0]?.status || null,
-          public_url: inspected[0]?.proposed_public_url || null,
+          public_urls: inspected.map((i) => i.proposed_public_url).filter(Boolean),
           report_path: reportPath,
           rollback_manifest_path: null
         };
         writeJson(reportPath, { ...result, inspected: inspected.map(({ _buffer, ...r }) => r) });
-        console.log(`[${approved.order}/13] dry-run OK — ${approved.name} (${inspected[0]?.status})`);
+        console.log(
+          `[${approved.order}/${totalLines}] dry-run OK — ${approved.name} (${candidates.length} assets)`
+        );
         return result;
       }
 
@@ -441,6 +488,12 @@ async function main() {
             return Array.isArray(inserted) ? inserted[0] : inserted;
           },
           findMediaByHash: async (item) => {
+            if (item.entity_type === "ship") {
+              const rows = await supabaseRest(env, "GET", "media_library", {
+                query: `?ship_id=eq.${encodeURIComponent(item.ship_id)}&content_hash=eq.${encodeURIComponent(item.content_hash)}&select=id,public_url,storage_path&limit=1`
+              });
+              return rows?.[0] || null;
+            }
             const rows = await supabaseRest(env, "GET", "media_library", {
               query: `?cruise_line_id=eq.${encodeURIComponent(item.cruise_line_id)}&content_hash=eq.${encodeURIComponent(item.content_hash)}&select=id,public_url,storage_path&limit=1`
             });
@@ -450,40 +503,43 @@ async function main() {
         });
         assertCopyDidNotChangeCiUrls(copyResults);
 
-        const stats = summariseCopyResults(
-          copyResults.map((r) => {
-            // Normalise Norwegian / already-copied into skipped_already_migrated
-            if (
-              r.copy_result === "skipped_already_present" ||
-              r.copy_result === "skipped_duplicate_hash" ||
-              r.status === "already_copied" ||
-              r.status === "already_promoted"
-            ) {
-              return {
-                ...r,
-                copy_result: "skipped_already_present",
-                status: "already_copied"
-              };
-            }
-            return r;
-          })
-        );
+        const normalised = copyResults.map((r) => {
+          if (
+            r.copy_result === "skipped_already_present" ||
+            r.copy_result === "skipped_duplicate_hash" ||
+            r.status === "already_copied" ||
+            r.status === "already_promoted"
+          ) {
+            return { ...r, copy_result: "skipped_already_present", status: "already_copied" };
+          }
+          return r;
+        });
+        const stats = summariseCopyResults(normalised);
+        const logosUploaded = normalised.filter(
+          (r) => r.entity_type === "cruise_line" && r.copy_result === "uploaded"
+        ).length;
+        const shipsUploaded = normalised.filter(
+          (r) => r.entity_type === "ship" && r.copy_result === "uploaded"
+        ).length;
 
         const reportPath = path.join(
           outDir,
-          `batch-1-${mode}-line-${approved.order}-${approved.id}-${stamp}.json`
+          `${reportPrefix}-${mode}-line-${approved.order}-${approved.id}-${stamp}.json`
         );
         const result = {
           ...lineReportBase,
           status: "ok",
           wrote: stats.uploaded_count > 0 || stats.media_library_inserted_count > 0,
           ...stats,
+          logos_uploaded: logosUploaded,
+          ship_heroes_uploaded: shipsUploaded,
           promoted_fields: [],
           ci_urls_changed: 0,
           copy_outcome:
             stats.uploaded_count === 0 && stats.skipped_already_migrated > 0
               ? "skipped_already_migrated"
               : "copied",
+          public_urls: stats.public_urls,
           report_path: reportPath,
           rollback_manifest_path: null
         };
@@ -492,7 +548,7 @@ async function main() {
           results: copyResults.map(({ _buffer, ...r }) => r)
         });
         console.log(
-          `[${approved.order}/13] copy ${result.copy_outcome} — ${approved.name} (upload=${stats.uploaded_count}, skip=${stats.skipped_already_migrated})`
+          `[${approved.order}/${totalLines}] copy ${result.copy_outcome} — ${approved.name} (upload=${stats.uploaded_count}, skip=${stats.skipped_already_migrated})`
         );
         return result;
       }
@@ -504,17 +560,35 @@ async function main() {
         mediaRows: mediaForLine,
         lineId: approved.id
       });
-      if (plan.updates.length !== 1 || plan.updates[0].field !== "logo_url") {
-        throw Object.assign(
-          new Error("REFUSED: batch promote may only update one logo_url field per line"),
-          { code: "batch_promote_field_invalid" }
-        );
+
+      if (kind === "logo-only") {
+        if (plan.updates.length !== 1 || plan.updates[0].field !== "logo_url") {
+          throw Object.assign(
+            new Error("REFUSED: Batch 1 promote may only update one logo_url field per line"),
+            { code: "batch_promote_field_invalid" }
+          );
+        }
+        if (!BATCH_1_LINE_IDS_SET.has(String(plan.updates[0].entity_uuid))) {
+          throw Object.assign(new Error("REFUSED: promote target UUID not in Batch 1"), {
+            code: "batch_promote_uuid_not_approved"
+          });
+        }
+      } else {
+        assertBatch2PromotePlan(plan, approved);
+        for (const u of plan.updates) {
+          if (u.field === "logo_url" && !BATCH_2_LINE_IDS_SET.has(String(u.entity_uuid))) {
+            throw Object.assign(new Error("REFUSED: logo UUID not in Batch 2"), {
+              code: "batch2_promote_foreign_line"
+            });
+          }
+          if (u.field === "hero_image_url" && !BATCH_2_SHIP_IDS_SET.has(String(u.entity_uuid))) {
+            throw Object.assign(new Error("REFUSED: ship UUID not in Batch 2"), {
+              code: "batch2_promote_ship_not_approved"
+            });
+          }
+        }
       }
-      if (!BATCH_1_LINE_IDS_SET.has(String(plan.updates[0].entity_uuid))) {
-        throw Object.assign(new Error("REFUSED: promote target UUID not in Batch 1"), {
-          code: "batch_promote_uuid_not_approved"
-        });
-      }
+
       await assertProductionPromotePublicUrls(plan, verifyPublicUrl);
 
       const manifest = buildProductionPromoteManifest(plan, {
@@ -523,7 +597,7 @@ async function main() {
       });
       const manifestPath = path.join(
         outDir,
-        `batch-1-rollback-manifest-line-${approved.order}-${approved.id}-${stamp}.json`
+        `${reportPrefix}-rollback-manifest-line-${approved.order}-${approved.id}-${stamp}.json`
       );
       writeJson(manifestPath, manifest);
 
@@ -533,42 +607,65 @@ async function main() {
 
       const reportPath = path.join(
         outDir,
-        `batch-1-${mode}-line-${approved.order}-${approved.id}-${stamp}.json`
+        `${reportPrefix}-${mode}-line-${approved.order}-${approved.id}-${stamp}.json`
       );
+      const promotedFields = plan.updates.map((u) => `${u.table}.${u.field}`);
       const result = {
         ...lineReportBase,
         status: "ok",
         wrote: true,
         uploaded_count: 0,
+        logos_uploaded: 0,
+        ship_heroes_uploaded: 0,
         media_library_inserted_count: 0,
         skipped_already_migrated: 0,
         duplicate_count: 0,
         bytes_uploaded: 0,
-        promoted_fields: ["ci_cruise_lines.logo_url"],
-        public_url: plan.updates[0].new_url,
-        verification: applyResult.applied[0]?.verification || null,
+        promoted_fields: promotedFields,
+        logos_promoted: plan.updates.filter((u) => u.field === "logo_url").length,
+        ship_heroes_promoted: plan.updates.filter((u) => u.field === "hero_image_url").length,
+        public_urls: plan.updates.map((u) => u.new_url),
+        verifications: applyResult.applied.map((a) => a.verification),
         report_path: reportPath,
         rollback_manifest_path: manifestPath
       };
       writeJson(reportPath, { ...result, plan, applyResult });
-      console.log(`[${approved.order}/13] promote OK — ${approved.name}`);
+      console.log(
+        `[${approved.order}/${totalLines}] promote OK — ${approved.name} (${promotedFields.length} fields)`
+      );
       return result;
     }
   });
 
-  // Fix: BATCH_1_LINE_IDS_SET referenced before import - import it
-  const summaryPath = path.join(outDir, `batch-1-${mode}-summary-${stamp}.json`);
-  writeJson(summaryPath, { ...summary, summary_path: summaryPath });
-  console.log(`\nBatch ${summary.stopped_early ? "STOPPED" : "COMPLETE"} — ${mode}`);
-  console.log(`Completed lines: ${summary.completed_lines}/${summary.total_lines}`);
-  if (summary.failed_line) {
+  const enriched = {
+    ...summary,
+    batch_kind: batch.kind,
+    exact_cruise_lines: batch.lines.map((l) => ({
+      order: l.order,
+      name: l.name,
+      id: l.id,
+      expected_logo_count: l.expected_logo_count ?? 1,
+      expected_ship_hero_count: l.expected_ship_hero_count ?? 0,
+      ships: (l.ships || []).map((s) => ({ id: s.id, name: s.name }))
+    })),
+    logos_copied: summary.lines.reduce((n, r) => n + (r.logos_uploaded || 0), 0),
+    ship_heroes_copied: summary.lines.reduce((n, r) => n + (r.ship_heroes_uploaded || 0), 0),
+    logos_promoted: summary.lines.reduce((n, r) => n + (r.logos_promoted || 0), 0),
+    ship_heroes_promoted: summary.lines.reduce((n, r) => n + (r.ship_heroes_promoted || 0), 0),
+    excludes_disney: batch.excludes_disney || false
+  };
+  const summaryPath = path.join(outDir, `${batch.id}-${mode}-summary-${stamp}.json`);
+  writeJson(summaryPath, { ...enriched, summary_path: summaryPath });
+  console.log(`\nBatch ${enriched.stopped_early ? "STOPPED" : "COMPLETE"} — ${mode}`);
+  console.log(`Completed lines: ${enriched.completed_lines}/${enriched.total_lines}`);
+  if (enriched.failed_line) {
     console.error(
-      `Failed: #${summary.failed_line.order} ${summary.failed_line.line_name}: ${summary.failed_line.reason}`
+      `Failed: #${enriched.failed_line.order} ${enriched.failed_line.line_name}: ${enriched.failed_line.reason}`
     );
   }
   console.log(`Summary: ${summaryPath}`);
-  console.log(`DEV writes: ${summary.dev_writes}`);
-  process.exit(summary.stopped_early ? 2 : 0);
+  console.log(`DEV writes: ${enriched.dev_writes}`);
+  process.exit(enriched.stopped_early ? 2 : 0);
 }
 
 main().catch((err) => {
