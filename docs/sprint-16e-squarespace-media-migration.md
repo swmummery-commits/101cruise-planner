@@ -299,23 +299,77 @@ Script: `scripts/audit-cruise-media-coverage.mjs` (GET/HEAD only). Reports under
 | Duplicate-record warnings | 1 |
 | Database / Storage / DEV writes | 0 / 0 / 0 |
 
-### 12 cruise lines with missing logos
+### Cruise lines with missing logos
 
-These lines have no `logo_url` in the canonical catalogue (not a Squarespace
-migration failure — there was no URL to migrate):
+These lines had no `logo_url` in the canonical catalogue (not a Squarespace
+migration failure — there was no URL to migrate). **Hurtigruten is now
+complete** via approved local logo import (see below). Remaining gaps:
 
 1. Lindblad Expeditions  
-2. Hurtigruten  
-3. American Queen Voyages  
-4. American Cruise Lines  
-5. Australis  
-6. Marella Cruises  
-7. Hapag-Lloyd Cruises  
-8. Ponant  
-9. Ritz-Carlton Yacht Collection  
-10. AIDA Cruises  
-11. Hansa Touristik  
-12. Fred Olsen Cruise Lines  
+2. American Queen Voyages  
+3. American Cruise Lines  
+4. Australis  
+5. Marella Cruises  
+6. Hapag-Lloyd Cruises  
+7. Ponant  
+8. Ritz-Carlton Yacht Collection  
+9. AIDA Cruises  
+10. Hansa Touristik  
+11. Fred Olsen Cruise Lines  
+
+### Approved local logo import (Hurtigruten) — complete
+
+Steve visually reviewed and approved this exact local file as the canonical
+**Hurtigruten** logo. The asset is **Hurtigruten coastal branding, not HX**.
+
+Source (local, not in Git):
+
+`/Users/stevemummery/Documents/101Cruise/MARKETING/LOGOS/Cruise Line Logos (500 x 500 px)/hurtigruten.png`
+
+| Field | Value |
+|---|---|
+| Canonical name | Hurtigruten |
+| Canonical UUID | `297df8d9-6d36-4855-993d-e30bbfaf29e0` |
+| Media Library UUID | `dc9e4c55-2ad8-4dda-83d2-00df8228707b` |
+| Storage path | `lines/297df8d9-6d36-4855-993d-e30bbfaf29e0/8a87e5bc6717-hurtigruten.png` |
+| Content hash (SHA-256) | `8a87e5bc67173dd0ae8ed460891a4d0e8a3765d6c11ae294cf0ebbad49e04041` |
+| Public URL | `https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/lines/297df8d9-6d36-4855-993d-e30bbfaf29e0/8a87e5bc6717-hurtigruten.png` |
+| Import source | `approved_local_logo` |
+| Dimensions | 500 × 500 PNG |
+| Brand | Hurtigruten coastal — **not HX** |
+
+Live Original-project apply result:
+
+- Storage uploads: **1**
+- Media Library inserts: **1**
+- Cruise-line updates (`logo_url` only): **1**
+- Database deletes: **0**
+- Storage deletes: **0**
+- DEV writes: **0**
+
+Importer: `scripts/import-approved-line-logo.mjs`  
+Config: `scripts/lib/approved-line-logo-import/hurtigruten.js`  
+Confirmation token: `IMPORT-HURTIGRUTEN-LOGO`  
+Strategy: verified sequential import with rollback evidence  
+
+Rollback evidence and apply/dry-run reports remain under gitignored
+`tmp/media-coverage-audit/` (not committed).
+
+```bash
+node scripts/import-approved-line-logo.mjs \
+  --dry-run \
+  --target=production \
+  --logo=hurtigruten \
+  --confirm=IMPORT-HURTIGRUTEN-LOGO
+
+node scripts/import-approved-line-logo.mjs \
+  --apply \
+  --target=production \
+  --logo=hurtigruten \
+  --confirm=IMPORT-HURTIGRUTEN-LOGO
+```
+
+Offline tests: `node scripts/test-import-approved-line-logo.mjs`
 
 ### 424 missing ship heroes
 

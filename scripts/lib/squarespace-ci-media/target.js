@@ -87,6 +87,15 @@ export function resolveMigrationTarget({ target, mode, env = process.env }) {
     );
   }
 
+  if (target === "dev" && mode === "import-approved-line-logo") {
+    throw Object.assign(
+      new Error(
+        "REFUSED: approved local logo import is Original-project only. Use --target=production."
+      ),
+      { code: "approved_logo_dev_forbidden" }
+    );
+  }
+
   if (target === "dev") {
     const url = String(env.SUPABASE_DEV_URL || "").replace(/\/$/, "");
     const key = String(env.SUPABASE_DEV_SERVICE_ROLE_KEY || "");
@@ -113,6 +122,8 @@ export function resolveMigrationTarget({ target, mode, env = process.env }) {
       production_copy_gated: false,
       production_promote_gated: false,
       production_logo_repair_gated: false,
+      production_media_library_delete_gated: false,
+      production_approved_logo_import_gated: false,
       env_keys_used: ["SUPABASE_DEV_URL", "SUPABASE_DEV_SERVICE_ROLE_KEY"]
     };
   }
@@ -140,21 +151,27 @@ export function resolveMigrationTarget({ target, mode, env = process.env }) {
   const gatedPromote = mode === "promote";
   const gatedLogoRepair = mode === "repair-logo";
   const gatedMediaLibraryDelete = mode === "delete-media-row";
+  const gatedApprovedLogoImport = mode === "import-approved-line-logo";
   return {
     target: "production",
     label:
-      gatedCopy || gatedPromote || gatedLogoRepair || gatedMediaLibraryDelete
+      gatedCopy ||
+      gatedPromote ||
+      gatedLogoRepair ||
+      gatedMediaLibraryDelete ||
+      gatedApprovedLogoImport
         ? "ORIGINAL_PROJECT"
         : "PRODUCTION",
     url,
     key,
     project_ref: ref,
-    // dry-run: no writes; copy/promote/repair/ml-delete: only after CLI + plan gates
+    // dry-run: no writes; copy/promote/repair/ml-delete/approved-logo: only after CLI + plan gates
     writes_allowed: false,
     production_copy_gated: gatedCopy,
     production_promote_gated: gatedPromote,
     production_logo_repair_gated: gatedLogoRepair,
     production_media_library_delete_gated: gatedMediaLibraryDelete,
+    production_approved_logo_import_gated: gatedApprovedLogoImport,
     env_keys_used: ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
   };
 }
@@ -172,6 +189,8 @@ export function formatTargetBanner(resolved, mode) {
     writeNote = "gated Original-project logo repair only (after confirmation + plan gates)";
   } else if (resolved.production_media_library_delete_gated) {
     writeNote = "gated Original-project Media Library delete only";
+  } else if (resolved.production_approved_logo_import_gated) {
+    writeNote = "gated Original-project approved local logo import only (after confirmation)";
   } else if (resolved.writes_allowed) {
     writeNote = "yes (DEV)";
   }
