@@ -7,15 +7,18 @@
  * (canonical name for Atlas is "Atlas Cruises").
  */
 
+import {
+  DISNEY_CRUISE_LINE_ID,
+  DISNEY_CRUISE_LINE_NAME
+} from "./batch-3-disney.js";
+
+export { DISNEY_CRUISE_LINE_ID, DISNEY_CRUISE_LINE_NAME };
+
 export const BATCH_2_ID = "batch-2-mixed-lines";
 export const BATCH_2_CONFIRM_TOKEN = "BATCH-2-MIXED";
 
 export const BATCH_2_ADMIN_WARNING =
   "Close all open Cruise Database cruise-line and ship edit forms in 101cruise Admin. Reopen or hard-refresh the Admin after the batch completes.";
-
-/** Disney is reserved for Batch 3 — must never appear in Batch 2. */
-export const DISNEY_CRUISE_LINE_ID = "8f7aadcb-7843-4060-b0cb-a60631936b3a";
-export const DISNEY_CRUISE_LINE_NAME = "Disney Cruise Line";
 
 /**
  * Exact approved order. Names/UUIDs/counts/ships from Original dry-run inventory.

@@ -10,6 +10,7 @@
  * Batch examples:
  *   --batch=batch-1-logo-lines --confirm-production-batch=BATCH-1-LOGOS
  *   --batch=batch-2-mixed-lines --confirm-production-batch=BATCH-2-MIXED
+ *   --batch=batch-3-disney --confirm-production-batch=BATCH-3-DISNEY
  *
  * DO NOT use against DEV. Production only.
  */
@@ -54,15 +55,25 @@ import {
 import {
   assertBatch2MixedScope,
   assertBatch2PromotePlan,
+  BATCH_2_ID,
   BATCH_2_LINE_IDS,
   BATCH_2_SHIP_IDS,
   DISNEY_CRUISE_LINE_ID
 } from "./lib/squarespace-ci-media/batch-2-mixed-lines.js";
+import {
+  assertBatch3DisneyScope,
+  assertBatch3PromotePlan,
+  BATCH_3_ID,
+  BATCH_3_LINE_IDS,
+  BATCH_3_SHIP_IDS
+} from "./lib/squarespace-ci-media/batch-3-disney.js";
 import { runApprovedBatch, summariseCopyResults } from "./lib/squarespace-ci-media/batch-runner.js";
 
 const BATCH_1_LINE_IDS_SET = new Set(BATCH_1_LINE_IDS.map(String));
 const BATCH_2_LINE_IDS_SET = new Set(BATCH_2_LINE_IDS.map(String));
 const BATCH_2_SHIP_IDS_SET = new Set(BATCH_2_SHIP_IDS.map(String));
+const BATCH_3_LINE_IDS_SET = new Set(BATCH_3_LINE_IDS.map(String));
+const BATCH_3_SHIP_IDS_SET = new Set(BATCH_3_SHIP_IDS.map(String));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
@@ -318,9 +329,20 @@ async function main() {
     },
     processLine: async ({ approved, resolvedLine, catalogue, batch: activeBatch }) => {
       assertCanonicalLineMatch(approved, resolvedLine);
-      if (String(approved.id) === DISNEY_CRUISE_LINE_ID) {
+      if (
+        activeBatch.excludes_disney &&
+        String(approved.id) === DISNEY_CRUISE_LINE_ID
+      ) {
         throw Object.assign(new Error("REFUSED: Disney Cruise Line is not in this batch"), {
           code: "batch2_disney_forbidden"
+        });
+      }
+      if (
+        activeBatch.disney_only &&
+        String(approved.id) !== DISNEY_CRUISE_LINE_ID
+      ) {
+        throw Object.assign(new Error("REFUSED: Batch 3 may only process Disney Cruise Line"), {
+          code: "batch3_non_disney_line"
         });
       }
 
@@ -333,17 +355,29 @@ async function main() {
       );
 
       const kind = activeBatch.kind || "logo-only";
+      const isBatch3 = activeBatch.id === BATCH_3_ID;
+      const isBatch2 = activeBatch.id === BATCH_2_ID;
       if (kind === "logo-only") {
         assertBatch1LogoOnlyScope({
           logoCandidates,
           shipHeroCandidates,
           lineName: approved.name
         });
-      } else if (kind === "mixed") {
+      } else if (kind === "mixed" && isBatch3) {
+        assertBatch3DisneyScope({
+          approved,
+          logoCandidates,
+          shipHeroCandidates
+        });
+      } else if (kind === "mixed" && isBatch2) {
         assertBatch2MixedScope({
           approved,
           logoCandidates,
           shipHeroCandidates
+        });
+      } else if (kind === "mixed") {
+        throw Object.assign(new Error(`REFUSED: unapproved mixed batch ${activeBatch.id}`), {
+          code: "batch_id_invalid"
         });
       } else {
         throw Object.assign(new Error(`REFUSED: unknown batch kind ${kind}`), {
@@ -363,17 +397,22 @@ async function main() {
       };
       const candidates = collectCandidates([resolvedLine], lineShips, scope);
       if (candidates.length !== expectedTotal) {
+        const countCode = isBatch3
+          ? "batch3_unexpected_total_count"
+          : kind === "mixed"
+            ? "batch2_unexpected_total_count"
+            : "batch_logo_candidate_count";
         throw Object.assign(
           new Error(
             `REFUSED: expected ${expectedTotal} candidate(s) for ${approved.name}, got ${candidates.length}`
           ),
-          { code: kind === "mixed" ? "batch2_unexpected_total_count" : "batch_logo_candidate_count" }
+          { code: countCode }
         );
       }
       for (const c of candidates) {
         if (String(c.cruise_line_id) !== String(approved.id)) {
           throw Object.assign(new Error("REFUSED: candidate belongs to another cruise line"), {
-            code: "batch_foreign_candidate"
+            code: isBatch3 ? "batch3_foreign_candidate" : "batch_foreign_candidate"
           });
         }
       }
@@ -573,7 +612,21 @@ async function main() {
             code: "batch_promote_uuid_not_approved"
           });
         }
-      } else {
+      } else if (isBatch3) {
+        assertBatch3PromotePlan(plan, approved);
+        for (const u of plan.updates) {
+          if (u.field === "logo_url" && !BATCH_3_LINE_IDS_SET.has(String(u.entity_uuid))) {
+            throw Object.assign(new Error("REFUSED: logo UUID not in Batch 3"), {
+              code: "batch3_promote_foreign_line"
+            });
+          }
+          if (u.field === "hero_image_url" && !BATCH_3_SHIP_IDS_SET.has(String(u.entity_uuid))) {
+            throw Object.assign(new Error("REFUSED: ship UUID not in Batch 3"), {
+              code: "batch3_promote_ship_not_approved"
+            });
+          }
+        }
+      } else if (isBatch2) {
         assertBatch2PromotePlan(plan, approved);
         for (const u of plan.updates) {
           if (u.field === "logo_url" && !BATCH_2_LINE_IDS_SET.has(String(u.entity_uuid))) {
@@ -587,6 +640,10 @@ async function main() {
             });
           }
         }
+      } else {
+        throw Object.assign(new Error(`REFUSED: unapproved promote batch ${activeBatch.id}`), {
+          code: "batch_id_invalid"
+        });
       }
 
       await assertProductionPromotePublicUrls(plan, verifyPublicUrl);

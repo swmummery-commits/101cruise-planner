@@ -4,6 +4,7 @@
  */
 
 import { BATCH_2_ID, getBatch2Config } from "./batch-2-mixed-lines.js";
+import { BATCH_3_ID, getBatch3Config } from "./batch-3-disney.js";
 
 export const BATCH_1_ID = "batch-1-logo-lines";
 export const BATCH_1_CONFIRM_TOKEN = "BATCH-1-LOGOS";
@@ -98,6 +99,9 @@ export function getApprovedBatch(batchId) {
   }
   if (batchId === BATCH_2_ID) {
     return getBatch2Config();
+  }
+  if (batchId === BATCH_3_ID) {
+    return getBatch3Config();
   }
   return null;
 }

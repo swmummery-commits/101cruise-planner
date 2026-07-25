@@ -1,6 +1,18 @@
 # Sprint 16E — Existing Squarespace Asset Migration
 
-HOLD DEPLOY. Do not commit/push unless explicitly requested.
+**Status: COMPLETE.** All Squarespace-hosted CI logo and ship-hero candidates
+have been copied into `cruise-media` + `media_library` and promoted into
+canonical `logo_url` / `hero_image_url` fields in the Original project.
+
+Final read-only Original inventory: **Candidates = 0** (`assets_inspected` 0,
+`proposed_uploads` 0, `proposed_media_library_records` 0,
+`proposed_canonical_url_changes` 0). DEV writes throughout = 0.
+
+**Total migrated from Squarespace: 42 assets** (21 cruise-line logos + 21 ship
+hero images). Squarespace originals were **not** deleted. Rollback manifests and
+batch reports remain local under `tmp/` (gitignored) and are never committed.
+
+HOLD DEPLOY unless explicitly requested.
 
 ## Objective
 
@@ -199,10 +211,61 @@ node scripts/migrate-squarespace-batch.mjs \
   --confirm-production-batch=BATCH-2-MIXED
 ```
 
-### Batch 3 — Disney Cruise Line (RESERVED)
+### Batch 3 — Disney Cruise Line (COMPLETED)
 
-Disney Cruise Line (`8f7aadcb-7843-4060-b0cb-a60631936b3a`, 8 assets) remains
-out of Batch 2 on purpose and was not migrated. Batch 3 is not configured yet.
+**Status: completed in Original project.** Copy + promote finished **1/1**.
+DEV writes = 0.
+
+Exactly one cruise line: **Disney Cruise Line**
+(`8f7aadcb-7843-4060-b0cb-a60631936b3a`).
+
+| Asset | Name |
+|---|---|
+| Logo | Disney Cruise Line |
+| Ship heroes (7) | Disney Magic, Disney Adventure, Disney Wish, Disney Treasure, Disney Fantasy, Disney Dream, Disney Wonder |
+
+Totals: **1** logo_url + **7** hero_image_url = **8** verified promoted fields.
+Canonical names / UUIDs / counts hardcoded from dry-run
+`tmp/squarespace-migration/dry-run-1784951494180.json`.
+
+Runner: `scripts/migrate-squarespace-batch.mjs` with fixed approved list
+`batch-3-disney`. Copy wrote only `cruise-media` + `media_library`. Promote used
+verified sequential updates with compensating rollback.
+
+```bash
+# Historical Batch 3 commands (already executed successfully)
+node scripts/migrate-squarespace-batch.mjs \
+  --dry-run \
+  --target=production \
+  --batch=batch-3-disney \
+  --confirm-production-batch=BATCH-3-DISNEY
+
+node scripts/migrate-squarespace-batch.mjs \
+  --copy \
+  --target=production \
+  --batch=batch-3-disney \
+  --confirm-production-batch=BATCH-3-DISNEY
+
+node scripts/migrate-squarespace-batch.mjs \
+  --promote \
+  --target=production \
+  --batch=batch-3-disney \
+  --confirm-production-batch=BATCH-3-DISNEY
+```
+
+### Migration complete summary
+
+| Wave | Scope | Assets |
+|---|---|---|
+| Princess (single-line) | logo + Crown Princess hero | 2 |
+| Batch 1 | 13 cruise-line logos | 13 |
+| Batch 2 | 6 logos + 13 ship heroes | 19 |
+| Batch 3 | Disney logo + 7 ship heroes | 8 |
+| **Total** | **21 logos + 21 ship heroes** | **42** |
+
+Final Original read-only dry-run inventory after Batch 3: **Candidates = 0**.
+Squarespace source URLs were preserved in `media_library.source_url`; Squarespace
+binaries were never deleted.
 
 ## DEV commands
 
@@ -240,6 +303,7 @@ node scripts/test-squarespace-production-promote.mjs
 node scripts/test-squarespace-verified-patch.mjs
 node scripts/test-squarespace-batch.mjs
 node scripts/test-squarespace-batch-2.mjs
+node scripts/test-squarespace-batch-3.mjs
 ```
 
 Mocked / pure offline tests only. No live network calls in the test suite.
@@ -261,8 +325,12 @@ added later (native binary, Netlify function size, cold start).
 | production logo repair | **gated** (Princess logo_url only; historical) |
 | Batch 1 logo lines (13) | **completed** (copy + promote; DEV writes = 0) |
 | Batch 2 mixed lines (6, non-Disney) | **completed** (copy + promote; 19 fields; DEV writes = 0) |
-| Batch 3 Disney Cruise Line | **reserved** (not configured; untouched by Batch 2) |
+| Batch 3 Disney Cruise Line (8 assets) | **completed** (copy + promote; DEV writes = 0) |
 | Princess logo + Crown Princess hero | **completed** |
+| Final Original inventory | **Candidates = 0** |
+| Total Squarespace assets migrated | **42** (21 logos + 21 ship heroes) |
 | CI `logo_url` / `hero_image_url` on copy | **unchanged** |
 | Squarespace assets deleted | **NO** |
+| Rollback manifests / tmp reports in Git | **NO** (gitignored) |
 | target inferred from env presence | **NO** — `--target` required |
+| Sprint 16E Squarespace CI media migration | **COMPLETE** |
