@@ -104,8 +104,13 @@ After Squarespace CI migration completed, a read-only Original coverage audit
 The **424 missing ship heroes are not Sprint 16E failures** — those ships had no
 canonical `hero_image_url` to migrate. Bulk Ship Images (this sprint) remains the
 intended path for filling ship-hero gaps with new source files. See
-`docs/sprint-16e-squarespace-media-migration.md` for the full audit notes,
-including the open Royal Caribbean logo Media Library duplicate warning.
+`docs/sprint-16e-squarespace-media-migration.md` for the full audit notes.
+
+The Royal Caribbean coverage-audit duplicate warning was an old superseded Media
+Library logo row (`ba55f15e-…`); it was deleted by gated cleanup while the
+canonical logo (`28a9063c-…` / `ci_cruise_lines.logo_url`) stayed unchanged. The
+superseded Storage object `general/1784610209293-d1622233-RC.jpg` remains for
+separate later garbage collection.
 
 ## Safety confirms
 

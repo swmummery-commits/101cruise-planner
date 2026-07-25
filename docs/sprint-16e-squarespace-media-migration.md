@@ -324,13 +324,31 @@ canonical catalogue, so Sprint 16E correctly had nothing to copy or promote.
 Filling gaps requires new source imagery (e.g. Sprint 16D bulk ship import), not
 re-running Squarespace migration.
 
-### Open item — Royal Caribbean duplicate Media Library rows
+### Royal Caribbean logo duplicate — resolved
 
-One duplicate-record warning remains for later investigation (unchanged; not
-fixed by this audit):
+Coverage audit warning for **Royal Caribbean International**
+(`1cea3c83-5fd5-41d0-b5f7-4026fee00ab5`) was an **old superseded Media Library
+logo row**, not a broken canonical logo.
 
-- **Royal Caribbean International** — duplicate Media Library records for the
-  cruise-line logo (`1cea3c83-5fd5-41d0-b5f7-4026fee00ab5`)
+| Role | Media Library UUID | Notes |
+|---|---|---|
+| Canonical (kept) | `28a9063c-c508-4b0b-a535-f03c49ae2a24` | Matches `ci_cruise_lines.logo_url`; `squarespace_ci_migration` |
+| Superseded (deleted) | `ba55f15e-eb84-4c4c-a489-d16663ad4917` | Older `general` upload; removed by gated cleanup |
+
+Cleanup (completed):
+`scripts/cleanup-royal-caribbean-logo-duplicate.mjs` — exactly one gated
+`media_library` DELETE. Banner reports
+`Writes: gated Original-project Media Library delete only`.
+
+- Canonical `ci_cruise_lines.logo_url` **unchanged**
+- Icon of the Seas Media Library row **untouched**
+- Superseded Storage object `general/1784610209293-d1622233-RC.jpg` **still
+  exists** (separate later garbage collection; not deleted by cleanup)
+- Coverage duplicate warning is **resolved**
+- DEV writes: 0
+
+Investigation helper (read-only):
+`scripts/investigate-royal-caribbean-logo-duplicate.mjs`
 
 ## DEV commands
 
@@ -370,6 +388,7 @@ node scripts/test-squarespace-batch.mjs
 node scripts/test-squarespace-batch-2.mjs
 node scripts/test-squarespace-batch-3.mjs
 node scripts/test-audit-cruise-media-coverage.mjs
+node scripts/test-cleanup-royal-caribbean-logo-duplicate.mjs
 ```
 
 Mocked / pure offline tests only. No live network calls in the test suite.
@@ -402,4 +421,4 @@ added later (native binary, Netlify function size, cold start).
 | target inferred from env presence | **NO** — `--target` required |
 | Sprint 16E Squarespace CI media migration | **COMPLETE** |
 | Post-migration coverage audit | **verified** (42 lines / 448 ships; 12 missing logos; 424 missing heroes = no prior URL) |
-| Royal Caribbean logo ML duplicate | **open** (investigate later; unchanged) |
+| Royal Caribbean logo ML duplicate | **resolved** (superseded ML row deleted; canonical logo unchanged; Storage GC later) |

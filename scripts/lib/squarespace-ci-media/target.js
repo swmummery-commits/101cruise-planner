@@ -139,17 +139,22 @@ export function resolveMigrationTarget({ target, mode, env = process.env }) {
   const gatedCopy = mode === "copy";
   const gatedPromote = mode === "promote";
   const gatedLogoRepair = mode === "repair-logo";
+  const gatedMediaLibraryDelete = mode === "delete-media-row";
   return {
     target: "production",
-    label: gatedCopy || gatedPromote || gatedLogoRepair ? "ORIGINAL_PROJECT" : "PRODUCTION",
+    label:
+      gatedCopy || gatedPromote || gatedLogoRepair || gatedMediaLibraryDelete
+        ? "ORIGINAL_PROJECT"
+        : "PRODUCTION",
     url,
     key,
     project_ref: ref,
-    // dry-run: no writes; copy/promote/repair: only after CLI + plan gates
+    // dry-run: no writes; copy/promote/repair/ml-delete: only after CLI + plan gates
     writes_allowed: false,
     production_copy_gated: gatedCopy,
     production_promote_gated: gatedPromote,
     production_logo_repair_gated: gatedLogoRepair,
+    production_media_library_delete_gated: gatedMediaLibraryDelete,
     env_keys_used: ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"]
   };
 }
@@ -165,6 +170,8 @@ export function formatTargetBanner(resolved, mode) {
     writeNote = "gated Original-project promote only (after confirmation + plan gates)";
   } else if (resolved.production_logo_repair_gated) {
     writeNote = "gated Original-project logo repair only (after confirmation + plan gates)";
+  } else if (resolved.production_media_library_delete_gated) {
+    writeNote = "gated Original-project Media Library delete only";
   } else if (resolved.writes_allowed) {
     writeNote = "yes (DEV)";
   }
