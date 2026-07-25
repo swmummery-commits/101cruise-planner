@@ -267,6 +267,71 @@ Final Original read-only dry-run inventory after Batch 3: **Candidates = 0**.
 Squarespace source URLs were preserved in `media_library.source_url`; Squarespace
 binaries were never deleted.
 
+## Post-migration coverage audit (read-only)
+
+After Sprint 16E completed, a read-only Original-project audit measured **overall**
+catalogue media completeness (not only Squarespace migration status):
+
+```bash
+node scripts/audit-cruise-media-coverage.mjs --target=production
+```
+
+Script: `scripts/audit-cruise-media-coverage.mjs` (GET/HEAD only). Reports under
+`tmp/media-coverage-audit/` (gitignored). Offline test:
+`node scripts/test-audit-cruise-media-coverage.mjs`.
+
+### Verified coverage totals
+
+| Metric | Count |
+|---|---|
+| Total cruise lines | 42 |
+| Supabase logos | 30 |
+| Other external logos | 0 |
+| Missing logos | 12 |
+| Total ships | 448 |
+| Supabase hero images | 24 |
+| Other external heroes | 0 |
+| Missing hero images | 424 |
+| Remaining Squarespace URLs | 0 |
+| Broken URLs | 0 |
+| Relationship errors | 0 |
+| Orphan warnings | 0 |
+| Duplicate-record warnings | 1 |
+| Database / Storage / DEV writes | 0 / 0 / 0 |
+
+### 12 cruise lines with missing logos
+
+These lines have no `logo_url` in the canonical catalogue (not a Squarespace
+migration failure — there was no URL to migrate):
+
+1. Lindblad Expeditions  
+2. Hurtigruten  
+3. American Queen Voyages  
+4. American Cruise Lines  
+5. Australis  
+6. Marella Cruises  
+7. Hapag-Lloyd Cruises  
+8. Ponant  
+9. Ritz-Carlton Yacht Collection  
+10. AIDA Cruises  
+11. Hansa Touristik  
+12. Fred Olsen Cruise Lines  
+
+### 424 missing ship heroes
+
+**Not migration failures.** Those ships had no existing `hero_image_url` in the
+canonical catalogue, so Sprint 16E correctly had nothing to copy or promote.
+Filling gaps requires new source imagery (e.g. Sprint 16D bulk ship import), not
+re-running Squarespace migration.
+
+### Open item — Royal Caribbean duplicate Media Library rows
+
+One duplicate-record warning remains for later investigation (unchanged; not
+fixed by this audit):
+
+- **Royal Caribbean International** — duplicate Media Library records for the
+  cruise-line logo (`1cea3c83-5fd5-41d0-b5f7-4026fee00ab5`)
+
 ## DEV commands
 
 ```bash
@@ -304,6 +369,7 @@ node scripts/test-squarespace-verified-patch.mjs
 node scripts/test-squarespace-batch.mjs
 node scripts/test-squarespace-batch-2.mjs
 node scripts/test-squarespace-batch-3.mjs
+node scripts/test-audit-cruise-media-coverage.mjs
 ```
 
 Mocked / pure offline tests only. No live network calls in the test suite.
@@ -332,5 +398,8 @@ added later (native binary, Netlify function size, cold start).
 | CI `logo_url` / `hero_image_url` on copy | **unchanged** |
 | Squarespace assets deleted | **NO** |
 | Rollback manifests / tmp reports in Git | **NO** (gitignored) |
+| Coverage audit reports under `tmp/` | **NO** (gitignored) |
 | target inferred from env presence | **NO** — `--target` required |
 | Sprint 16E Squarespace CI media migration | **COMPLETE** |
+| Post-migration coverage audit | **verified** (42 lines / 448 ships; 12 missing logos; 424 missing heroes = no prior URL) |
+| Royal Caribbean logo ML duplicate | **open** (investigate later; unchanged) |

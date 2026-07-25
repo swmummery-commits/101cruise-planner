@@ -86,6 +86,27 @@ Offline fixture covers: multi-ship ZIP, exact + alias match, unmatched folder, u
 
 Marketing → Media Library → **Bulk Ship Images**
 
+## Post–Sprint 16E catalogue coverage (context for bulk import)
+
+After Squarespace CI migration completed, a read-only Original coverage audit
+(`scripts/audit-cruise-media-coverage.mjs`) reported:
+
+| Metric | Count |
+|---|---|
+| Cruise lines | 42 |
+| Supabase logos | 30 |
+| Missing logos | 12 |
+| Ships | 448 |
+| Supabase hero images | 24 |
+| Missing hero images | 424 |
+| Remaining Squarespace URLs | 0 |
+
+The **424 missing ship heroes are not Sprint 16E failures** — those ships had no
+canonical `hero_image_url` to migrate. Bulk Ship Images (this sprint) remains the
+intended path for filling ship-hero gaps with new source files. See
+`docs/sprint-16e-squarespace-media-migration.md` for the full audit notes,
+including the open Royal Caribbean logo Media Library duplicate warning.
+
 ## Safety confirms
 
 - database ownership of CI tables: unchanged (hero apply is explicit optional action only)
