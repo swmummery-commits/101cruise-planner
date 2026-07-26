@@ -813,97 +813,115 @@ function getShipImage(shipName) {
   return SHIP_IMAGES[shipName] || "";
 }
 
-async function loadShipHeroImage(shipName) {
-  const defaultImage = "assets/default-cruise-hero.jpg";
-  const fallbackImage = getShipImage(shipName) || defaultImage;
-  if (!shipName) return fallbackImage;
-
-  const safeShipName = String(shipName).trim();
-  if (!safeShipName) return fallbackImage;
-
-  let { data, error } = await supabaseClient
-    .from("ci_cruise_ships")
-    .select("name, hero_image_url")
-    .ilike("name", safeShipName)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
-
-  if (!error && data?.hero_image_url) return data.hero_image_url;
-
-  ({ data, error } = await supabaseClient
-    .from("ships")
-    .select("name, hero_image_url")
-    .ilike("name", safeShipName)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle());
-
-  if (error) {
-    console.warn("Ship hero image lookup failed", error);
-    return fallbackImage;
-  }
-
-  return data?.hero_image_url || fallbackImage;
+/** Terminal Roman ↔ Arabic variants for ship-image lookup (Explora 1 ↔ EXPLORA I). */
+function expandTerminalShipNameVariants(shipName) {
+  const raw = String(shipName || "").trim();
+  if (!raw) return [];
+  const soft = raw.toLowerCase().replace(/\s+/g, " ");
+  const variants = new Set([raw, soft]);
+  const parts = soft.split(" ");
+  if (parts.length < 2) return [...variants];
+  const last = parts[parts.length - 1];
+  const head = parts.slice(0, -1).join(" ");
+  const romanToArabic = {
+    i: "1", ii: "2", iii: "3", iv: "4", v: "5",
+    vi: "6", vii: "7", viii: "8", ix: "9", x: "10"
+  };
+  const arabicToRoman = {
+    "1": "i", "2": "ii", "3": "iii", "4": "iv", "5": "v",
+    "6": "vi", "7": "vii", "8": "viii", "9": "ix", "10": "x"
+  };
+  if (romanToArabic[last]) variants.add(`${head} ${romanToArabic[last]}`);
+  if (arabicToRoman[last]) variants.add(`${head} ${arabicToRoman[last]}`);
+  return [...variants];
 }
 
-async function loadShipPageImage(shipName) {
-  // Ship page only: real image or empty (text-only hero). No generic fallback photo.
-  if (!shipName) return "";
-  const mapped = getShipImage(shipName);
-  const safeShipName = String(shipName).trim();
-  if (!safeShipName) return mapped || "";
+async function lookupCatalogueShipHeroUrl(shipName) {
+  const variants = expandTerminalShipNameVariants(shipName);
+  if (!variants.length) return "";
 
-  let { data, error } = await supabaseClient
-    .from("ci_cruise_ships")
-    .select("name, hero_image_url")
-    .ilike("name", safeShipName)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle();
+  for (const variant of variants) {
+    const { data, error } = await supabaseClient
+      .from("ci_cruise_ships")
+      .select("name, hero_image_url")
+      .ilike("name", variant)
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle();
+    if (!error && data?.hero_image_url) return data.hero_image_url;
+  }
 
-  if (!error && data?.hero_image_url) return data.hero_image_url;
-
-  if (!error && safeShipName.length >= 4) {
-    const partial = safeShipName.replace(/[%_]/g, "").trim();
-    const partialCi = await supabaseClient
+  for (const variant of variants) {
+    if (String(variant).replace(/[%_]/g, "").trim().length < 4) continue;
+    const partial = String(variant).replace(/[%_]/g, "").trim();
+    const { data } = await supabaseClient
       .from("ci_cruise_ships")
       .select("name, hero_image_url")
       .ilike("name", `%${partial}%`)
       .eq("active", true)
       .limit(1)
       .maybeSingle();
-    if (partialCi.data?.hero_image_url) return partialCi.data.hero_image_url;
+    if (data?.hero_image_url) return data.hero_image_url;
   }
 
-  ({ data, error } = await supabaseClient
-    .from("ships")
-    .select("name, hero_image_url")
-    .ilike("name", safeShipName)
-    .eq("active", true)
-    .limit(1)
-    .maybeSingle());
-
-  if (error) {
-    console.warn("Ship page image lookup failed", error);
-    return mapped || "";
+  for (const variant of variants) {
+    const { data, error } = await supabaseClient
+      .from("ships")
+      .select("name, hero_image_url")
+      .ilike("name", variant)
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      console.warn("Ship hero image lookup failed", error);
+      break;
+    }
+    if (data?.hero_image_url) return data.hero_image_url;
   }
 
-  if (data?.hero_image_url) return data.hero_image_url;
-
-  if (safeShipName.length >= 4) {
-    const partial = safeShipName.replace(/[%_]/g, "").trim();
-    const partialResult = await supabaseClient
+  for (const variant of variants) {
+    if (String(variant).replace(/[%_]/g, "").trim().length < 4) continue;
+    const partial = String(variant).replace(/[%_]/g, "").trim();
+    const { data } = await supabaseClient
       .from("ships")
       .select("name, hero_image_url")
       .ilike("name", `%${partial}%`)
       .eq("active", true)
       .limit(1)
       .maybeSingle();
-    if (partialResult.data?.hero_image_url) return partialResult.data.hero_image_url;
+    if (data?.hero_image_url) return data.hero_image_url;
   }
 
-  return mapped || "";
+  return "";
+}
+
+async function loadShipHeroImage(shipName, cruiseLine = "") {
+  const defaultImage = "assets/default-cruise-hero.jpg";
+  const fallbackImage = getShipImage(shipName) || defaultImage;
+  if (!shipName) return fallbackImage;
+
+  // Prefer the same get-ship resolution as Your Ship (handles Explora 1 → EXPLORA I).
+  try {
+    const resolved = await fetchShipFromBase44(String(shipName).trim(), String(cruiseLine || "").trim());
+    if (resolved.ok) {
+      if (resolved.ship?.hero_image_url) return resolved.ship.hero_image_url;
+      const fromCanonical = await lookupCatalogueShipHeroUrl(resolved.ship?.name || shipName);
+      if (fromCanonical) return fromCanonical;
+    }
+  } catch (_error) {
+    /* fall through to local catalogue lookup */
+  }
+
+  const catalogueUrl = await lookupCatalogueShipHeroUrl(shipName);
+  return catalogueUrl || fallbackImage;
+}
+
+async function loadShipPageImage(shipName) {
+  // Ship page only: real image or empty (text-only hero). No generic fallback photo.
+  if (!shipName) return "";
+  const mapped = getShipImage(shipName);
+  const catalogueUrl = await lookupCatalogueShipHeroUrl(shipName);
+  return catalogueUrl || mapped || "";
 }
 
 function renderLogoMarkup(cruiseLine) {
@@ -2246,7 +2264,9 @@ async function renderDashboard() {
 
   const firstName = getGreetingName();
   const greetingText = getGreetingText(firstName);
-  const mainShipImage = mainCruise ? await loadShipHeroImage(mainCruise.ship_name) : "";
+  const mainShipImage = mainCruise
+    ? await loadShipHeroImage(mainCruise.ship_name, mainCruise.cruise_line)
+    : "";
   const checklistData = await loadDashboardChecklistData(mainCruise);
   const packingData = await loadDashboardPackingData(mainCruise);
   const dashboardBudget = mainCruise ? await resolveDashboardBudget(mainCruise) : null;
