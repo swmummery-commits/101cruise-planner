@@ -57,6 +57,7 @@ exports.handler = async function (event) {
 
     const cached = await cacheBookingInSupabase(booking);
     try {
+      // Document metadata sync only — never extract or auto-approve itineraries on customer login.
       await syncDocumentsForBooking(booking, source);
     } catch (syncError) {
       console.warn('Customer access document sync failed', syncError);

@@ -1,5 +1,14 @@
 const { fetchBase44Booking } = require('./booking-service');
 const { requireAdmin } = require('./admin-auth');
+const { extractItineraryWithOpenAI } = require('./lib/itinerary-extract');
+const {
+  processBookingConfirmation,
+  revalidateStoredItinerary,
+  PROCESSING,
+  SYSTEM_APPROVER
+} = require('./lib/itinerary-auto-process');
+const { fingerprintBookingDocument } = require('./lib/itinerary-document-hash');
+const { resolveItineraryExceptionsForBooking } = require('./lib/itinerary-exceptions');
 
 function jsonResponse(statusCode, body) {
   return {
@@ -76,7 +85,7 @@ async function listStoredBookingDocuments(booking) {
   if (!filters.length) return [];
   try {
     const rows = await rest(
-      `booking_documents?or=(${filters.join(',')})&select=id,base44_document_id,document_type,filename,file_url,uploaded_at,source_system&order=uploaded_at.desc&limit=100`,
+      `booking_documents?or=(${filters.join(',')})&select=id,base44_document_id,document_type,filename,file_url,storage_path,uploaded_at,source_system,sync_key,itinerary_processing_status,content_fingerprint,itinerary_last_processed_hash&order=uploaded_at.desc&limit=100`,
       { method: 'GET' }
     );
     return (Array.isArray(rows) ? rows : []).map((row) => ({
@@ -85,9 +94,14 @@ async function listStoredBookingDocuments(booking) {
       document_type: row.document_type,
       filename: row.filename,
       file_url: row.file_url,
+      storage_path: row.storage_path || null,
       uploaded_date: row.uploaded_at || null,
       uploaded_at: row.uploaded_at || null,
-      source_system: row.source_system || null
+      source_system: row.source_system || null,
+      sync_key: row.sync_key || null,
+      itinerary_processing_status: row.itinerary_processing_status || null,
+      content_fingerprint: row.content_fingerprint || null,
+      itinerary_last_processed_hash: row.itinerary_last_processed_hash || null
     }));
   } catch (error) {
     console.warn('Stored booking document lookup failed', error.message || error);
@@ -103,89 +117,6 @@ async function resolveConfirmationDocument(booking, documentId) {
   return pickConfirmation(combined);
 }
 
-const itinerarySchema = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    cruise_line: { type: ['string', 'null'] },
-    ship: { type: ['string', 'null'] },
-    voyage_name: { type: ['string', 'null'] },
-    embarkation_date: { type: ['string', 'null'], description: 'ISO date YYYY-MM-DD' },
-    disembarkation_date: { type: ['string', 'null'], description: 'ISO date YYYY-MM-DD' },
-    confidence: { type: 'number', minimum: 0, maximum: 1 },
-    review_notes: { type: 'array', items: { type: 'string' } },
-    stops: {
-      type: 'array',
-      items: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          date: { type: 'string', description: 'ISO date YYYY-MM-DD' },
-          name: { type: 'string' },
-          entry_type: { type: 'string', enum: ['embarkation', 'port', 'sea_day', 'scenic_cruising', 'disembarkation'] },
-          arrival_time: { type: ['string', 'null'], description: '24-hour HH:MM or null' },
-          departure_time: { type: ['string', 'null'], description: '24-hour HH:MM or null' },
-          notes: { type: ['string', 'null'] },
-          confidence: { type: 'number', minimum: 0, maximum: 1 }
-        },
-        required: ['date', 'name', 'entry_type', 'arrival_time', 'departure_time', 'notes', 'confidence']
-      }
-    }
-  },
-  required: ['cruise_line', 'ship', 'voyage_name', 'embarkation_date', 'disembarkation_date', 'confidence', 'review_notes', 'stops']
-};
-
-function extractOutputText(response) {
-  if (typeof response?.output_text === 'string') return response.output_text;
-  for (const item of response?.output || []) {
-    for (const content of item?.content || []) {
-      if (content?.type === 'output_text' && typeof content.text === 'string') return content.text;
-    }
-  }
-  return '';
-}
-
-async function extractWithOpenAI(booking, document) {
-  const { openaiKey } = config();
-  if (!openaiKey) {
-    const error = new Error('OPENAI_API_KEY has not been added to Netlify environment variables');
-    error.statusCode = 503;
-    throw error;
-  }
-
-  const lowerUrl = String(document.file_url).toLowerCase();
-  const isImage = /\.(png|jpe?g|webp)(\?|$)/i.test(lowerUrl);
-  const fileContent = isImage
-    ? { type: 'input_image', image_url: document.file_url, detail: 'high' }
-    : { type: 'input_file', file_url: document.file_url, detail: 'high' };
-
-  const prompt = `Extract only the cruise itinerary from this cruise booking confirmation.\n\nKnown Base44 booking facts for validation:\n- Cruise line: ${booking.cruise_line || 'unknown'}\n- Ship: ${booking.cruise_ship || 'unknown'}\n- Embarkation: ${booking.departing_date || 'unknown'} from ${booking.departing_port || 'unknown'}\n- Disembarkation: ${booking.arriving_date || 'unknown'} at ${booking.arriving_port || 'unknown'}\n\nRules:\n- Return every genuine cruise itinerary day in chronological order.\n- Ignore transfer rows such as “No Transfer To Ship” and “No Transfer From Ship”.\n- Keep scenic cruising locations as entry_type scenic_cruising.\n- Use sea_day only for At Sea entries.\n- Infer a missing year from the confirmed embarkation/disembarkation dates.\n- Preserve repeated dates if they represent genuine itinerary entries.\n- Do not invent ports or times. Use null when a time is not supplied.\n- Flag uncertainty in review_notes and per-stop confidence.\n- The official PDF remains the source of truth; this output must be reviewed by an administrator.`;
-
-  const response = await fetch('https://api.openai.com/v1/responses', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${openaiKey}` },
-    body: JSON.stringify({
-      model: process.env.OPENAI_ITINERARY_MODEL || 'gpt-5.5',
-      store: false,
-      input: [{ role: 'user', content: [{ type: 'input_text', text: prompt }, fileContent] }],
-      text: {
-        format: {
-          type: 'json_schema',
-          name: 'cruise_itinerary',
-          strict: true,
-          schema: itinerarySchema
-        }
-      }
-    })
-  });
-
-  const data = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(data?.error?.message || `Itinerary extraction failed (HTTP ${response.status})`);
-  const text = extractOutputText(data);
-  if (!text) throw new Error('The extraction service returned no itinerary data');
-  return JSON.parse(text);
-}
-
 async function getExisting(bookingId) {
   const rows = await rest(`cruise_itineraries?booking_id=eq.${encodeURIComponent(bookingId)}&select=*&limit=1`, { method: 'GET' });
   return rows?.[0] || null;
@@ -198,6 +129,7 @@ exports.handler = async function (event) {
     const body = event.body ? JSON.parse(event.body) : {};
     const bookingReference = String(body.booking_reference || event.queryStringParameters?.booking_reference || '').trim();
     const bookingIdInput = String(body.booking_id || event.queryStringParameters?.booking_id || '').trim();
+    const action = String(body.action || event.queryStringParameters?.action || '').trim();
 
     if (event.httpMethod === 'GET') {
       if (!bookingIdInput) return jsonResponse(400, { success: false, error: 'Booking ID is required' });
@@ -217,46 +149,88 @@ exports.handler = async function (event) {
         });
       }
 
-      const extracted = await extractWithOpenAI(booking, document);
-      const payload = {
-        booking_id: bookingId,
-        booking_reference: booking.booking_reference || bookingReference || null,
-        source_filename: document.filename || null,
-        source_url: document.file_url,
-        source_uploaded_date: document.uploaded_date || null,
-        status: 'review_required',
-        itinerary_data: extracted,
-        extraction_confidence: extracted.confidence,
-        extracted_at: new Date().toISOString(),
-        extracted_by: user.id,
-        approved_at: null,
-        approved_by: null
-      };
-      const rows = await rest('cruise_itineraries?on_conflict=booking_id', {
-        method: 'POST',
-        prefer: 'resolution=merge-duplicates,return=representation',
-        body: JSON.stringify(payload)
+      // Revalidate stored JSON without OpenAI
+      if (action === 'revalidate') {
+        const result = await revalidateStoredItinerary({
+          rest,
+          booking,
+          document,
+          actorId: user.id,
+          supabaseUrl: config().supabaseUrl
+        });
+        return jsonResponse(200, {
+          success: true,
+          itinerary: result.itinerary || null,
+          auto_approved: Boolean(result.auto_approved),
+          validation: result.validation || null,
+          extraction_calls: 0,
+          from_stored_extraction: true,
+          reason: result.reason
+        });
+      }
+
+      // Manual Extract still uses the single shared OpenAI implementation, then validates.
+      // Valid extractions auto-approve; failures stay review_required.
+      const forceReextract = body.force_reextract === true;
+      const result = await processBookingConfirmation({
+        rest,
+        booking,
+        document,
+        actorId: user.id,
+        supabaseUrl: config().supabaseUrl,
+        allowOpenAI: true,
+        forceReextract,
+        extractImpl: async (b, d) => extractItineraryWithOpenAI(b, d, { openaiKey: config().openaiKey })
       });
-      return jsonResponse(200, { success: true, itinerary: rows?.[0] || payload });
+
+      return jsonResponse(200, {
+        success: true,
+        itinerary: result.itinerary || null,
+        auto_approved: Boolean(result.auto_approved),
+        validation: result.validation || null,
+        extraction_calls: result.extraction_calls || 0,
+        extraction_model: result.extraction_model || null,
+        extraction_token_usage: result.extraction_token_usage || null,
+        extraction_estimated_cost_usd: result.extraction_estimated_cost_usd ?? null,
+        from_stored_extraction: Boolean(result.from_stored_extraction),
+        reason: result.reason || null,
+        skipped: Boolean(result.skipped)
+      });
     }
 
     if (event.httpMethod === 'PATCH') {
       if (!bookingIdInput) return jsonResponse(400, { success: false, error: 'Booking ID is required' });
       const itineraryData = body.itinerary_data;
-      if (!itineraryData || !Array.isArray(itineraryData.stops)) return jsonResponse(400, { success: false, error: 'Valid itinerary data is required' });
+      if (!itineraryData || !Array.isArray(itineraryData.stops)) {
+        return jsonResponse(400, { success: false, error: 'Valid itinerary data is required' });
+      }
       const approve = body.status === 'approved';
       const payload = {
         itinerary_data: itineraryData,
         extraction_confidence: Number(itineraryData.confidence || 0),
         status: approve ? 'approved' : 'review_required',
+        processing_status: approve ? PROCESSING.APPROVED_MANUAL : PROCESSING.REVIEW,
+        approval_method: approve ? 'manual' : null,
         updated_at: new Date().toISOString(),
-        ...(approve ? { approved_at: new Date().toISOString(), approved_by: user.id } : { approved_at: null, approved_by: null })
+        ...(approve
+          ? { approved_at: new Date().toISOString(), approved_by: user.id }
+          : { approved_at: null, approved_by: null })
       };
       const rows = await rest(`cruise_itineraries?booking_id=eq.${encodeURIComponent(bookingIdInput)}`, {
         method: 'PATCH',
+        prefer: 'return=representation',
         body: JSON.stringify(payload)
       });
-      return jsonResponse(200, { success: true, itinerary: rows?.[0] || null });
+      if (!Array.isArray(rows) || rows.length !== 1) {
+        return jsonResponse(409, { success: false, error: 'Itinerary update did not return exactly one row' });
+      }
+      const verified = await getExisting(bookingIdInput);
+      if (approve) {
+        await resolveItineraryExceptionsForBooking(rest, bookingIdInput, 'approved_manually', user.id).catch((error) => {
+          console.warn('Resolve itinerary exceptions failed', error.message || error);
+        });
+      }
+      return jsonResponse(200, { success: true, itinerary: verified });
     }
 
     return jsonResponse(405, { success: false, error: 'Method not allowed' });
@@ -269,3 +243,5 @@ exports.handler = async function (event) {
 module.exports.isBookingConfirmation = isBookingConfirmation;
 module.exports.pickConfirmation = pickConfirmation;
 module.exports.pickConfirmationById = pickConfirmationById;
+module.exports.fingerprintBookingDocument = fingerprintBookingDocument;
+module.exports.SYSTEM_APPROVER = SYSTEM_APPROVER;

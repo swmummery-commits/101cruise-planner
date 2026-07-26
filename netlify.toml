@@ -18,6 +18,11 @@
   schedule = "0 6 * * 1"
   timeout = 60
 
+[functions."itinerary-exceptions-digest"]
+  # Daily digest of unresolved itinerary Needs Attention exceptions.
+  schedule = "0 7 * * *"
+  timeout = 30
+
 [functions."cruise-discovery-wave-background"]
   # Background wave: loops all cruise lines (Netlify background ~15 min).
 

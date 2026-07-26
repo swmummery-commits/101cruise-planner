@@ -1,5 +1,7 @@
-const { fetchBase44Booking, cacheBookingInSupabase, syncDocumentsForBooking } = require('./booking-service');
+const { fetchBase44Booking, cacheBookingInSupabase, syncDocumentsForBooking, supabaseRest } = require('./booking-service');
 const { requireAdmin } = require('./admin-auth');
+const { processConfirmationDocuments } = require('./lib/itinerary-auto-process');
+const { extractItineraryWithOpenAI } = require('./lib/itinerary-extract');
 
 function jsonResponse(statusCode, body) {
   return {
@@ -43,6 +45,26 @@ exports.handler = async function (event) {
       documentSync = { errors: [syncError.message || String(syncError)] };
     }
 
+    // Admin-only path: auto-process new/changed Booking Confirmations once.
+    // Never invoked from customer-access. Uses shared extract + validation engine.
+    let itineraryProcessing = null;
+    const candidates = documentSync?.confirmation_candidates || [];
+    if (candidates.length && body.skip_itinerary_auto_process !== true) {
+      try {
+        itineraryProcessing = await processConfirmationDocuments({
+          rest: supabaseRest,
+          booking,
+          documents: candidates,
+          actorId: 'system:document-sync',
+          supabaseUrl: process.env.SUPABASE_URL,
+          extractImpl: (b, d) => extractItineraryWithOpenAI(b, d, {})
+        });
+      } catch (processError) {
+        console.warn('Itinerary auto-process failed', processError);
+        itineraryProcessing = [{ ok: false, reason: 'failed', error: processError.message || String(processError) }];
+      }
+    }
+
     return jsonResponse(200, {
       success: true,
       booking,
@@ -54,9 +76,11 @@ exports.handler = async function (event) {
             upserted: documentSync.upserted,
             skipped_conflict: documentSync.skipped_conflict,
             skipped_other_source: documentSync.skipped_other_source,
+            confirmation_candidates: (documentSync.confirmation_candidates || []).length,
             error_count: (documentSync.errors || []).length
           }
-        : null
+        : null,
+      itinerary_processing: itineraryProcessing
     });
   } catch (error) {
     console.error('Get booking error', error);

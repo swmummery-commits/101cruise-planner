@@ -6,6 +6,10 @@
 
 const crypto = require('crypto');
 const { requireAdmin, getConfig } = require('./admin-auth');
+const { fingerprintBookingDocument, isBookingConfirmationType } = require('./lib/itinerary-document-hash');
+const { processBookingConfirmation } = require('./lib/itinerary-auto-process');
+const { extractItineraryWithOpenAI } = require('./lib/itinerary-extract');
+const { fetchBase44Booking } = require('./booking-service');
 
 const BUCKET = 'booking-documents';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -263,15 +267,56 @@ exports.handler = async function (event) {
         uploaded_by: adminUser.email || adminUser.id,
         source_system: 'admin',
         sync_key: syncKey,
-        last_synced_at: null
+        last_synced_at: null,
+        itinerary_processing_status: isBookingConfirmationType(body.document_type)
+          ? 'awaiting_extraction'
+          : null
       };
       if (!row.storage_path || !row.filename) return jsonResponse(400, { success: false, error: 'Upload details are incomplete.' });
+      row.content_fingerprint = fingerprintBookingDocument(row);
       const data = await rest('booking_documents', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify(row)
       });
-      return jsonResponse(200, { success: true, document: data?.[0] || data });
+      const saved = data?.[0] || data;
+
+      let itineraryProcessing = null;
+      if (saved && isBookingConfirmationType(saved.document_type) && saved.storage_path) {
+        try {
+          // Create a short-lived signed URL so the shared OpenAI extract can read the file.
+          const signed = await storage(
+            `object/sign/${BUCKET}/${encodeURI(saved.storage_path)}`,
+            { method: 'POST', body: JSON.stringify({ expiresIn: 3600 }) }
+          );
+          const { supabaseUrl } = getConfig();
+          const signedPath = signed?.signedURL || signed?.signedUrl || signed?.url;
+          const fileUrl = signedPath
+            ? signedPath.startsWith('http')
+              ? signedPath
+              : `${supabaseUrl}/storage/v1${signedPath}`
+            : null;
+          if (fileUrl && bookingId) {
+            const { booking } = await fetchBase44Booking({
+              booking_reference: bookingReference,
+              booking_id: bookingId
+            });
+            itineraryProcessing = await processBookingConfirmation({
+              rest,
+              booking,
+              document: { ...saved, file_url: fileUrl },
+              actorId: adminUser.id || 'system:admin-upload',
+              supabaseUrl,
+              extractImpl: (b, d) => extractItineraryWithOpenAI(b, d, {})
+            });
+          }
+        } catch (processError) {
+          console.warn('Admin confirmation auto-process failed', processError);
+          itineraryProcessing = { ok: false, reason: 'failed', error: processError.message || String(processError) };
+        }
+      }
+
+      return jsonResponse(200, { success: true, document: saved, itinerary_processing: itineraryProcessing });
     }
 
     if (action === 'update') {

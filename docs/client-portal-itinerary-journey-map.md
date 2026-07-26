@@ -1,7 +1,8 @@
 # Client Portal — Itinerary Extraction & Journey Map
 
-**Status:** Production path live · itinerary approval remains a manual Admin step  
-**Last updated:** 2026-07-26
+**Status:** Production path live · valid Booking Confirmations auto-approve; exceptions go to Needs Attention  
+**Last updated:** 2026-07-26  
+**Migrations applied (Original):** `20260726_itinerary_auto_processing.sql`, `20260726_itinerary_exceptions_notifications.sql`
 
 ---
 
@@ -21,26 +22,31 @@ extraction). Live bookings must not depend on that fixture.
 ## End-to-end flow
 
 ```text
-Booking Confirmation document (Documents library / Base44 sync)
-  → Admin: Customer Experience → Booking Documents
-  → Load booking reference
-  → Extract itinerary (Booking Confirmation only; OpenAI one-shot)
-  → status = review_required
-  → Admin reviews / edits stops
-  → Approve itinerary
-  → status = approved
-  → customer-itinerary.js serves journey + alias-aware port coords
-  → Client Portal dashboard renders generic route map + ship animation
+Booking Confirmation (Base44 sync via Admin get-booking, or Admin upload)
+  → fingerprint document (idempotent)
+  → extract once via shared OpenAI helper (lib/itinerary-extract.js)
+  → validate (lib/itinerary-validation.js)
+  → if all rules pass: status = approved, approval_method = automated
+  → if any rule fails: status = review_required + structured failures
+  → customer-itinerary.js serves approved journeys only
+  → Client Portal dashboard renders geographic route map + ship animation
 ```
+
+Exception path (Admin → Customer Experience → Booking Documents):
+
+- Review required reasons are listed explicitly
+- Manual Extract / Save draft / Approve / Revalidate remain as recovery tools
+- Revalidate re-runs validation on stored JSON — **no OpenAI call**
 
 ### Rules
 
-- Extraction is **one-shot** via `admin-itinerary.js` and is **never auto-approved**.
+- Extraction is **one-shot per unchanged document** (hash fingerprint).
+- Fully validated extractions **auto-approve**; uncertain cases stay `review_required`.
 - Only documents classified as **Booking Confirmation** may be extracted.
-- CRM Sync as a main Admin tab is **not** restored. Emergency Base44 sync under
-  Import Data remains ops-only and points operators to Booking Documents for
-  itinerary work.
-- The customer portal never re-parses the PDF on page load.
+- Customer login syncs document metadata only — **never extracts**.
+- CRM Sync as a main Admin tab is **not** restored.
+- Do not fabricate ports, dates, times, or coordinates.
+- DEV Supabase URLs are refused by the auto-processor.
 
 ---
 
@@ -79,14 +85,15 @@ Seed script (ops reference): `scripts/seed-ports-booking-10175811.mjs`.
 
 ## Booking 10175811 status
 
-- Itinerary extracted and saved as **`review_required`**.
-- Read-only resolution yields **seven** unique plotted ports after Ibiza overnight
-  collapse:
+- Itinerary is **manually approved** in production (do not re-extract / reapprove
+  during automation work).
+- Validation fixture for this voyage yields **seven** unique plotted ports after
+  Ibiza overnight collapse and **passes** auto-approval rules offline:
 
   Barcelona → Ibiza → La Goulette → Valletta → Giardini Naxos → Sorrento → Civitavecchia
 
-- **Pending Steve’s Admin approval** before the customer map uses the live row.
-- Do not approve from automation or deploy scripts.
+- Adding a missing port alias can move a `review_required` row to `approved` via
+  **Revalidate** (stored JSON only — no new OpenAI call).
 
 ---
 
@@ -120,9 +127,16 @@ See also `assets/geo/README.md` and `docs/route-map-coastline.md`.
 
 ## Tests
 
+- `scripts/test-itinerary-auto-process.mjs`
 - `scripts/test-admin-itinerary-ui.mjs`
 - `scripts/test-dashboard-journey.mjs`
 - `scripts/test-dashboard-journey-map-land.mjs`
 - `scripts/test-client-portal-ui-fixes.mjs`
 - `scripts/test-resolve-cruise-ship.mjs`
 - `scripts/test-ports-booking-10175811.mjs`
+
+## Migration
+
+Apply `supabase/migrations/20260726_itinerary_auto_processing.sql` before enabling
+auto-processing in production (adds fingerprint/lock columns, validation audit
+fields, and `cruise_itinerary_versions`).

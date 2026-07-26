@@ -5,6 +5,10 @@
  */
 
 const crypto = require('crypto');
+const {
+  fingerprintBookingDocument,
+  isBookingConfirmationType
+} = require('./lib/itinerary-document-hash');
 
 function normalise(value) {
   return String(value || '').trim();
@@ -98,7 +102,7 @@ function mapBase44Document(doc, booking = {}) {
     documentType
   });
 
-  return {
+  const mapped = {
     booking_reference: bookingReference,
     base44_booking_id: base44BookingId,
     base44_document_id: base44DocumentId,
@@ -115,6 +119,12 @@ function mapBase44Document(doc, booking = {}) {
     sync_key: syncKey,
     last_synced_at: new Date().toISOString()
   };
+  mapped.content_fingerprint = fingerprintBookingDocument({
+    ...mapped,
+    id: base44DocumentId,
+    uploaded_date: mapped.uploaded_at
+  });
+  return mapped;
 }
 
 function extractDocumentsFromBookingPayload(booking, source = null) {
@@ -148,7 +158,8 @@ async function syncBookingDocuments(rest, booking, source = null) {
     skipped_conflict: 0,
     skipped_other_source: 0,
     errors: [],
-    rows: []
+    rows: [],
+    confirmation_candidates: []
   };
 
   for (const row of mapped) {
@@ -181,7 +192,19 @@ async function syncBookingDocuments(rest, booking, source = null) {
         body: JSON.stringify(row)
       });
       const saved = Array.isArray(data) ? data[0] : data;
-      if (saved) result.rows.push(saved);
+      if (saved) {
+        result.rows.push(saved);
+        if (isBookingConfirmationType(saved.document_type) && saved.file_url) {
+          const fingerprint = saved.content_fingerprint || row.content_fingerprint;
+          const already =
+            saved.itinerary_last_processed_hash &&
+            fingerprint &&
+            saved.itinerary_last_processed_hash === fingerprint;
+          if (!already) {
+            result.confirmation_candidates.push(saved);
+          }
+        }
+      }
       result.upserted += 1;
     } catch (error) {
       result.errors.push({
