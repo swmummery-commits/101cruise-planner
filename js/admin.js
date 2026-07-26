@@ -1420,17 +1420,30 @@ function renderItineraryNeedsAttentionQueue() {
                 return `<option value="${esc(a.id)}" ${selected ? "selected" : ""}>${esc(label)}</option>`;
               })
               .join("");
-            const reasons = Array.isArray(row.validation_failures) && row.validation_failures.length
-              ? row.validation_failures.map((f) => f.message || f.code).filter(Boolean).join("; ")
-              : row.concise_reason || "review required";
+            const statusView = {
+              key: row.effective_status || row.exception_kind,
+              label: row.effective_status_label || formatItineraryProcessingStatus(row.effective_status || row.exception_kind),
+              tone: row.effective_status_tone || "warning",
+              action_message:
+                row.action_message ||
+                (Array.isArray(row.validation_failures) && row.validation_failures[0]?.message) ||
+                row.concise_reason ||
+                "",
+              timing_lines: row.timing_lines || [],
+              can_retry: Boolean(row.can_retry),
+              needs_attention: true,
+              details: row.status_details || { source_filename: row.source_filename }
+            };
+            const rowTone = statusView.tone === "danger" ? "is-danger" : statusView.tone === "warning" ? "is-warning" : "";
             return `
-              <article class="itinerary-attention-row">
+              <article class="itinerary-attention-row ${rowTone}">
                 <div>
                   <strong>${esc(row.booking_reference || row.booking_id || "Unknown booking")}</strong>
-                  <span class="admin-pill">${esc(String(row.exception_kind || "").replaceAll("_", " "))}</span>
+                  <span class="${itineraryStatusPillClass(statusView.tone)}">${esc(statusView.label)}</span>
                   <p class="admin-muted">${esc(row.customer_names || "Customer unknown")} · ${esc([row.cruise_line, row.ship_name].filter(Boolean).join(" · ") || "Cruise unknown")}</p>
                   <p class="admin-small">Departs ${esc(row.departure_date || "—")} · Source ${esc(row.source_filename || "—")}</p>
-                  <p class="itinerary-attention-reason">${esc(reasons)}</p>
+                  ${renderItineraryStatusActionNote(statusView)}
+                  ${renderItineraryStatusTiming(statusView)}
                   <p class="admin-small">Flagged ${esc(row.first_flagged_at ? new Date(row.first_flagged_at).toLocaleString("en-AU") : "—")} · Waiting ${esc(row.awaiting_label || "—")}</p>
                 </div>
                 <div class="admin-actions-row itinerary-attention-actions">
@@ -1442,6 +1455,7 @@ function renderItineraryNeedsAttentionQueue() {
                     </select>
                   </label>
                   <button class="admin-button black small" onclick="reviewItineraryException('${esc(row.booking_reference || "")}')">Review itinerary</button>
+                  ${statusView.can_retry ? `<button class="admin-button secondary small" onclick="retryItineraryExtraction('${esc(row.source_document_id || "")}', '${esc(row.booking_reference || "")}')">Retry extraction</button>` : ""}
                   <button class="admin-button secondary small" onclick="dismissItineraryExceptionItem('${esc(row.id)}')">Dismiss…</button>
                 </div>
               </article>
@@ -1567,7 +1581,11 @@ async function loadBookingDocumentsWorkspace() {
     const response = await fetch("/.netlify/functions/get-booking", {
       method: "POST",
       headers,
-      body: JSON.stringify({ booking_reference: bookingReference })
+      body: JSON.stringify({
+        booking_reference: bookingReference,
+        // Viewing/loading must not start or restart itinerary extraction.
+        skip_itinerary_auto_process: true
+      })
     });
     const data = await response.json().catch(() => ({ success: false, error: "Invalid response from server" }));
     if (!response.ok || data.success === false) {
@@ -1641,21 +1659,40 @@ function renderCrmDocumentsPanel(booking) {
           ${docs.map((doc) => {
             const confirmation = isAdminBookingConfirmation(doc);
             const selected = selectedItineraryDocumentId && String(selectedItineraryDocumentId) === String(doc.id);
-            const processLabel = formatItineraryProcessingStatus(doc.itinerary_processing_status);
+            const matchingItinerary =
+              confirmation && itineraryReview &&
+              (String(itineraryReview.source_document_id || "") === String(doc.id) ||
+                (doc.content_fingerprint &&
+                  String(itineraryReview.source_document_hash || "") === String(doc.content_fingerprint)))
+                ? itineraryReview
+                : null;
+            const statusView = confirmation
+              ? buildAdminItineraryStatusView(doc, matchingItinerary, null)
+              : null;
+            const processLabel = statusView ? statusView.label : "";
+            const rowAttention =
+              statusView && (statusView.tone === "danger" || statusView.tone === "warning")
+                ? ` is-status-${statusView.tone}`
+                : "";
             return `
-            <article class="crm-document-row${confirmation ? " is-booking-confirmation" : ""}${selected ? " is-selected-confirmation" : ""}">
+            <article class="crm-document-row${confirmation ? " is-booking-confirmation" : ""}${selected ? " is-selected-confirmation" : ""}${rowAttention}">
               <div>
                 <strong>${esc(doc.document_type || "Other")}</strong>
                 <span class="admin-pill">${esc(sourceLabel(doc.source_system))}</span>
-                ${processLabel ? `<span class="admin-pill itinerary-process-pill">${esc(processLabel)}</span>` : ""}
+                ${processLabel ? `<span class="${itineraryStatusPillClass(statusView.tone)}">${esc(processLabel)}</span>` : ""}
                 ${doc.document_visible_to_customer === false ? '<span class="admin-pill">Hidden from customer</span>' : ""}
                 <p class="admin-muted">${esc(doc.filename || "Untitled file")}</p>
+                ${statusView ? renderItineraryStatusActionNote(statusView) : ""}
+                ${statusView ? renderItineraryStatusTiming(statusView) : ""}
+                ${statusView && statusView.can_retry ? renderItineraryStatusDetails(statusView) : ""}
                 ${doc.note ? `<p class="crm-document-note">${esc(doc.note)}</p>` : ""}
                 <p class="admin-small">Uploaded ${esc(formatAdminDate(String(doc.uploaded_at || "").slice(0, 10)))}</p>
               </div>
               <div class="admin-actions-row">
                 ${doc.file_url ? `<a class="admin-button secondary small" href="${esc(doc.file_url)}" target="_blank" rel="noopener noreferrer">Open</a>` : `<span class="admin-muted">File unavailable</span>`}
-                ${confirmation && doc.file_url ? `<button class="admin-button secondary small" onclick="extractBookingItinerary('${esc(doc.id)}')" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading && selected ? "Extracting…" : "Extract itinerary"}</button>` : ""}
+                ${confirmation && statusView?.can_retry ? `<button class="admin-button black small" onclick="retryItineraryExtraction('${esc(doc.id)}')" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading && selected ? "Retrying…" : "Retry extraction"}</button>` : ""}
+                ${confirmation && doc.file_url && !statusView?.can_retry ? `<button class="admin-button secondary small" onclick="extractBookingItinerary('${esc(doc.id)}')" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading && selected ? "Extracting…" : "Extract itinerary"}</button>` : ""}
+                ${confirmation ? `<button class="admin-button secondary small" onclick="selectItineraryDocumentDetails('${esc(doc.id)}')">View details</button>` : ""}
                 ${doc.editable ? `<button class="admin-button secondary small" onclick="deleteAdminBookingDocument('${esc(doc.id)}')">Delete</button>` : confirmation ? "" : `<span class="admin-small">Managed in Base44</span>`}
               </div>
             </article>
@@ -1815,18 +1852,74 @@ function itineraryAuthHeaders() {
   }));
 }
 
-function formatItineraryProcessingStatus(status) {
-  const key = String(status || "").trim();
-  const labels = {
-    awaiting_extraction: "Awaiting extraction",
-    processing: "Processing",
-    approved_automatically: "Approved automatically",
-    review_required: "Review required",
-    approved_manually: "Approved manually",
-    failed: "Failed",
-    superseded: "Superseded"
-  };
-  return labels[key] || (key ? key.replaceAll("_", " ") : "");
+function getItineraryStatusApi() {
+  return window.ItineraryProcessingStatus || null;
+}
+
+/** Authoritative status view for a confirmation document (+ optional itinerary/exception). */
+function buildAdminItineraryStatusView(document, itinerary = null, exception = null) {
+  const api = getItineraryStatusApi();
+  if (!api) {
+    return {
+      key: String(document?.itinerary_processing_status || "").trim() || "awaiting_extraction",
+      label: "Awaiting extraction",
+      tone: "neutral",
+      action_message: "",
+      timing_lines: [],
+      can_retry: false,
+      details: {}
+    };
+  }
+  return api.buildItineraryStatusView({ document, itinerary, exception });
+}
+
+function formatItineraryProcessingStatus(statusOrView) {
+  const api = getItineraryStatusApi();
+  if (statusOrView && typeof statusOrView === "object" && statusOrView.label) {
+    return statusOrView.label;
+  }
+  const key = String(statusOrView || "").trim();
+  if (api) return api.formatItineraryStatusLabel(key);
+  // Fallback — never show raw snake_case internals.
+  if (key === "awaiting_extraction_stale" || key === "processing_stalled") return "Processing stalled";
+  if (key === "review_required") return "Review required";
+  if (key === "approved_automatically") return "Approved automatically";
+  if (key === "approved_manually") return "Approved manually";
+  if (key === "awaiting_extraction") return "Awaiting extraction";
+  if (key === "processing") return "Processing";
+  if (key === "failed") return "Failed";
+  if (key === "superseded") return "Superseded";
+  return key ? "Needs review" : "";
+}
+
+function itineraryStatusPillClass(tone) {
+  const t = String(tone || "neutral");
+  return `admin-pill itinerary-process-pill itinerary-status-${t}`;
+}
+
+function renderItineraryStatusActionNote(view) {
+  if (!view?.action_message || !view.needs_attention) return "";
+  const tone = view.tone === "danger" ? "danger" : view.tone === "warning" ? "warning" : "neutral";
+  return `<p class="itinerary-status-action itinerary-status-action-${tone}">${esc(view.action_message)}</p>`;
+}
+
+function renderItineraryStatusTiming(view) {
+  const lines = Array.isArray(view?.timing_lines) ? view.timing_lines : [];
+  if (!lines.length) return "";
+  return `<p class="admin-small itinerary-status-timing">${lines.map((l) => esc(l)).join(" · ")}</p>`;
+}
+
+function renderItineraryStatusDetails(view) {
+  if (!view?.can_retry && !view?.details?.stored_error) return "";
+  const d = view.details || {};
+  const bits = [];
+  if (d.source_filename) bits.push(`Source: ${d.source_filename}`);
+  if (d.stored_error) bits.push(`Error: ${d.stored_error}`);
+  if (d.has_itinerary_data) bits.push("Stored itinerary data: yes");
+  else if (view.can_retry) bits.push("Stored itinerary data: no");
+  if (d.duplicate_cost_risk) bits.push(d.duplicate_cost_risk);
+  if (!bits.length) return "";
+  return `<ul class="itinerary-status-details">${bits.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;
 }
 
 function renderItineraryValidationFailures(review) {
@@ -1863,14 +1956,15 @@ function renderItineraryReview(booking) {
       ? "admin-running"
       : "";
   const data = itineraryReview?.itinerary_data || null;
-  const processLabel = formatItineraryProcessingStatus(
-    itineraryReview?.processing_status ||
-      (itineraryReview?.status === "approved"
-        ? itineraryReview?.approval_method === "automated"
-          ? "approved_automatically"
-          : "approved_manually"
-        : itineraryReview?.status)
+  const confirmationDoc = (crmDocuments || []).find((d) => isAdminBookingConfirmation(d)) || null;
+  const reviewStatusView = buildAdminItineraryStatusView(
+    confirmationDoc || {
+      itinerary_processing_status: itineraryReview?.processing_status || null
+    },
+    itineraryReview,
+    null
   );
+  const processLabel = reviewStatusView.label;
   const inlineRunning =
     isRunning && itineraryMessage
       ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(itineraryMessage)}</span>`
@@ -1882,9 +1976,10 @@ function renderItineraryReview(booking) {
           <h4>Itinerary review</h4>
           <p class="admin-muted">Fully validated confirmations approve automatically. This panel is for exceptions — edit, revalidate, or approve manually when needed.</p>
         </div>
-        ${processLabel ? `<span class="admin-pill itinerary-process-pill">${esc(processLabel)}</span>` : ""}
+        ${processLabel ? `<span class="${itineraryStatusPillClass(reviewStatusView.tone)}">${esc(processLabel)}</span>` : ""}
       </div>
       ${!isRunning ? `<div class="admin-message ${messageClass}">${esc(itineraryMessage)}</div>` : ""}
+      ${renderItineraryStatusActionNote(reviewStatusView)}
       ${renderItineraryValidationFailures(itineraryReview)}
       ${renderItineraryCostNote(itineraryReview)}
       ${data ? `
@@ -1927,6 +2022,98 @@ async function loadItineraryReview(bookingId) {
     itineraryMessage = itineraryReview ? "Saved itinerary loaded." : "No itinerary has been extracted yet.";
   } catch (error) {
     itineraryMessage = `Error: ${error.message || error}`;
+  } finally {
+    itineraryLoading = false;
+    renderAdmin();
+  }
+}
+
+function selectItineraryDocumentDetails(documentId = "") {
+  const docId = String(documentId || "").trim();
+  if (!docId) return;
+  selectedItineraryDocumentId = docId;
+  const doc = (crmDocuments || []).find((row) => String(row.id) === docId);
+  if (doc) {
+    const view = buildAdminItineraryStatusView(doc, itineraryReview, null);
+    itineraryMessage = [
+      view.label,
+      view.action_message,
+      ...(view.timing_lines || []),
+      view.details?.duplicate_cost_risk || ""
+    ]
+      .filter(Boolean)
+      .join(" — ");
+  }
+  renderAdmin();
+}
+
+async function retryItineraryExtraction(documentId = "", bookingReference = "") {
+  const booking = getActiveAdminBooking();
+  const ref = String(bookingReference || booking?.booking_reference || "").trim();
+  if (ref && (!booking || String(booking.booking_reference) !== ref)) {
+    // Load the booking first when retrying from the queue card (no auto-extract on load).
+    bookingDocumentsRefInput = ref;
+    crmBookingReferenceInput = ref;
+    await loadBookingDocumentsWorkspace();
+  }
+  const active = getActiveAdminBooking();
+  if (!active?.base44_booking_id) {
+    itineraryMessage = "Error: Load the booking before retrying extraction.";
+    renderAdmin();
+    return;
+  }
+  const docId = String(documentId || selectedItineraryDocumentId || "").trim();
+  if (docId) selectedItineraryDocumentId = docId;
+  const doc = (crmDocuments || []).find((row) => String(row.id) === String(selectedItineraryDocumentId || ""));
+  const statusView = doc ? buildAdminItineraryStatusView(doc, itineraryReview, null) : null;
+  if (statusView && !statusView.can_retry) {
+    itineraryMessage = "Retry is only available when processing is stalled or failed.";
+    renderAdmin();
+    return;
+  }
+  // Show Processing immediately; do not clear Needs Attention until resolved.
+  if (doc) {
+    doc.itinerary_processing_status = "processing";
+    doc.itinerary_process_lock_until = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+  }
+  itineraryLoading = true;
+  itineraryMessage = statusView?.details?.retry_will_call_openai
+    ? "Retrying extraction — OpenAI will be called because no valid stored extraction exists…"
+    : "Retrying extraction — reusing stored data when possible…";
+  renderAdmin();
+  try {
+    const headers = await itineraryAuthHeaders();
+    const response = await fetch("/.netlify/functions/admin-itinerary", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: "retry_extraction",
+        booking_id: active.base44_booking_id,
+        booking_reference: active.booking_reference,
+        document_id: selectedItineraryDocumentId || undefined
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
+    itineraryReview = data.itinerary;
+    if (data.from_stored_extraction) {
+      itineraryMessage = data.auto_approved
+        ? "Retry reused stored extraction and approved automatically (no OpenAI call)."
+        : `Retry reused stored extraction: ${data.validation?.summary || "review required"} (no OpenAI call).`;
+    } else if (data.auto_approved) {
+      itineraryMessage = "Retry extraction validated and approved automatically.";
+    } else if (data.validation?.summary) {
+      itineraryMessage = `Retry extraction saved for review: ${data.validation.summary}.`;
+    } else {
+      itineraryMessage = "Retry extraction complete.";
+    }
+    await loadCrmDocuments();
+    // Refresh queue — item remains until actually resolved.
+    await loadItineraryExceptionsQueue({ silent: true });
+    refreshItineraryExceptionsBadge();
+  } catch (error) {
+    itineraryMessage = `Error: ${error.message || error}`;
+    await loadCrmDocuments().catch(() => null);
   } finally {
     itineraryLoading = false;
     renderAdmin();

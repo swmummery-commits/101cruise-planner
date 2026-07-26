@@ -9,6 +9,11 @@ const {
 } = require('./lib/itinerary-auto-process');
 const { fingerprintBookingDocument } = require('./lib/itinerary-document-hash');
 const { resolveItineraryExceptionsForBooking } = require('./lib/itinerary-exceptions');
+const path = require('path');
+const {
+  buildItineraryStatusView,
+  EFFECTIVE
+} = require(path.join(__dirname, '../../js/itinerary-processing-status.js'));
 
 function jsonResponse(statusCode, body) {
   return {
@@ -85,11 +90,13 @@ async function listStoredBookingDocuments(booking) {
   if (!filters.length) return [];
   try {
     const rows = await rest(
-      `booking_documents?or=(${filters.join(',')})&select=id,base44_document_id,document_type,filename,file_url,storage_path,uploaded_at,source_system,sync_key,itinerary_processing_status,content_fingerprint,itinerary_last_processed_hash&order=uploaded_at.desc&limit=100`,
+      `booking_documents?or=(${filters.join(',')})&select=id,base44_booking_id,booking_reference,base44_document_id,document_type,filename,file_url,storage_path,uploaded_at,source_system,sync_key,itinerary_processing_status,itinerary_process_lock_until,itinerary_last_processed_at,content_fingerprint,itinerary_last_processed_hash,updated_at,created_at&order=uploaded_at.desc&limit=100`,
       { method: 'GET' }
     );
     return (Array.isArray(rows) ? rows : []).map((row) => ({
       id: row.id,
+      base44_booking_id: row.base44_booking_id || null,
+      booking_reference: row.booking_reference || null,
       base44_document_id: row.base44_document_id || null,
       document_type: row.document_type,
       filename: row.filename,
@@ -100,8 +107,12 @@ async function listStoredBookingDocuments(booking) {
       source_system: row.source_system || null,
       sync_key: row.sync_key || null,
       itinerary_processing_status: row.itinerary_processing_status || null,
+      itinerary_process_lock_until: row.itinerary_process_lock_until || null,
+      itinerary_last_processed_at: row.itinerary_last_processed_at || null,
       content_fingerprint: row.content_fingerprint || null,
-      itinerary_last_processed_hash: row.itinerary_last_processed_hash || null
+      itinerary_last_processed_hash: row.itinerary_last_processed_hash || null,
+      updated_at: row.updated_at || null,
+      created_at: row.created_at || null
     }));
   } catch (error) {
     console.warn('Stored booking document lookup failed', error.message || error);
@@ -169,6 +180,87 @@ exports.handler = async function (event) {
         });
       }
 
+      const existing = await getExisting(bookingId);
+      const statusView = buildItineraryStatusView({ document, itinerary: existing });
+
+      // Retry: only for stalled/failed. Clears expired lock via claim; reuses stored extract when possible.
+      if (action === 'retry_extraction') {
+        if (!statusView.can_retry) {
+          return jsonResponse(409, {
+            success: false,
+            error: 'Retry is only available when processing is stalled or failed.',
+            effective_status: statusView.key,
+            effective_status_label: statusView.label
+          });
+        }
+        // Clear only an expired lock; preserve fingerprint.
+        const lockUntil = document.itinerary_process_lock_until
+          ? new Date(document.itinerary_process_lock_until).getTime()
+          : 0;
+        if (document.id && lockUntil && lockUntil <= Date.now()) {
+          await rest(`booking_documents?id=eq.${encodeURIComponent(document.id)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ itinerary_process_lock_until: null })
+          });
+        }
+        const reuseStored =
+          existing?.itinerary_data &&
+          Array.isArray(existing.itinerary_data.stops) &&
+          existing.source_document_hash &&
+          document.content_fingerprint &&
+          String(existing.source_document_hash) === String(document.content_fingerprint);
+
+        if (reuseStored) {
+          const result = await revalidateStoredItinerary({
+            rest,
+            booking,
+            document,
+            actorId: user.id,
+            supabaseUrl: config().supabaseUrl
+          });
+          return jsonResponse(200, {
+            success: true,
+            retried: true,
+            itinerary: result.itinerary || null,
+            auto_approved: Boolean(result.auto_approved),
+            validation: result.validation || null,
+            extraction_calls: 0,
+            from_stored_extraction: true,
+            reason: result.reason || 'reused_stored_extraction',
+            effective_status: result.auto_approved
+              ? EFFECTIVE.APPROVED_AUTO
+              : EFFECTIVE.REVIEW_REQUIRED
+          });
+        }
+
+        const result = await processBookingConfirmation({
+          rest,
+          booking,
+          document,
+          actorId: user.id,
+          supabaseUrl: config().supabaseUrl,
+          allowOpenAI: true,
+          forceReextract: false,
+          extractImpl: async (b, d) => extractItineraryWithOpenAI(b, d, { openaiKey: config().openaiKey })
+        });
+        return jsonResponse(200, {
+          success: true,
+          retried: true,
+          itinerary: result.itinerary || null,
+          auto_approved: Boolean(result.auto_approved),
+          validation: result.validation || null,
+          extraction_calls: result.extraction_calls || 0,
+          extraction_model: result.extraction_model || null,
+          extraction_token_usage: result.extraction_token_usage || null,
+          extraction_estimated_cost_usd: result.extraction_estimated_cost_usd ?? null,
+          from_stored_extraction: Boolean(result.from_stored_extraction),
+          reason: result.reason || null,
+          skipped: Boolean(result.skipped),
+          // Exception remains until approve/resolve — not cleared merely by retry click.
+          exception_cleared: false
+        });
+      }
+
       // Manual Extract still uses the single shared OpenAI implementation, then validates.
       // Valid extractions auto-approve; failures stay review_required.
       const forceReextract = body.force_reextract === true;
@@ -194,7 +286,8 @@ exports.handler = async function (event) {
         extraction_estimated_cost_usd: result.extraction_estimated_cost_usd ?? null,
         from_stored_extraction: Boolean(result.from_stored_extraction),
         reason: result.reason || null,
-        skipped: Boolean(result.skipped)
+        skipped: Boolean(result.skipped),
+        status_view: statusView
       });
     }
 

@@ -1867,6 +1867,74 @@
   color: #5c2e1a;
   font-size: 13px;
 }
+.itinerary-process-pill.itinerary-status-danger {
+  background: #fef3f2;
+  color: #b42318;
+  border: 1px solid #fecdca;
+  font-weight: 700;
+}
+.itinerary-process-pill.itinerary-status-warning {
+  background: #fffaeb;
+  color: #b54708;
+  border: 1px solid #fedf89;
+  font-weight: 650;
+}
+.itinerary-process-pill.itinerary-status-info {
+  background: #eff8ff;
+  color: #175cd3;
+  border: 1px solid #b2ddff;
+}
+.itinerary-process-pill.itinerary-status-success {
+  background: #ecfdf3;
+  color: #027a48;
+  border: 1px solid #abefc6;
+}
+.itinerary-process-pill.itinerary-status-neutral {
+  background: #f5f5f5;
+  color: #414651;
+  border: 1px solid #e9eaeb;
+}
+.itinerary-status-action {
+  margin: 8px 0 6px;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.itinerary-status-action-danger {
+  color: #b42318;
+}
+.itinerary-status-action-warning {
+  color: #b54708;
+}
+.itinerary-status-action-neutral {
+  color: #414651;
+}
+.itinerary-status-timing {
+  margin: 0 0 6px;
+  color: #667085;
+}
+.itinerary-status-details {
+  margin: 6px 0 8px;
+  padding-left: 18px;
+  color: #5c2e1a;
+  font-size: 12px;
+}
+.itinerary-attention-row.is-danger {
+  border-color: #fecdca;
+  background: #fff5f5;
+}
+.itinerary-attention-row.is-warning {
+  border-color: #fedf89;
+  background: #fffaf0;
+}
+.crm-document-row.is-status-danger {
+  border-color: #fecdca;
+  background: #fff8f7;
+}
+.crm-document-row.is-status-warning {
+  border-color: #fedf89;
+  background: #fffaf0;
+}
 .itinerary-attention-actions {
   flex-direction: column;
   align-items: stretch;

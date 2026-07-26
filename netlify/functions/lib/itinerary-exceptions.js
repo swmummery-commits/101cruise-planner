@@ -6,6 +6,13 @@
 "use strict";
 
 const crypto = require("crypto");
+const path = require("path");
+const {
+  buildItineraryStatusView,
+  EFFECTIVE,
+  AWAITING_STALE_MS,
+  LOCK_TTL_MS
+} = require(path.join(__dirname, "../../../js/itinerary-processing-status.js"));
 
 const EXCEPTION_KINDS = Object.freeze({
   REVIEW_REQUIRED: "review_required",
@@ -16,7 +23,7 @@ const EXCEPTION_KINDS = Object.freeze({
 });
 
 const OPEN_STATUSES = Object.freeze(["open"]);
-const STALE_EXTRACTION_MS = 15 * 60 * 1000;
+const STALE_EXTRACTION_MS = AWAITING_STALE_MS;
 
 function nowIso() {
   return new Date().toISOString();
@@ -216,20 +223,42 @@ async function countOpenItineraryExceptions(rest) {
   return rows.length;
 }
 
+function isDocumentProcessingStalled(doc, now = Date.now(), staleMs = STALE_EXTRACTION_MS) {
+  const status = String(doc?.itinerary_processing_status || "").trim();
+  const lockUntil = doc?.itinerary_process_lock_until
+    ? new Date(doc.itinerary_process_lock_until).getTime()
+    : 0;
+  if (status === "processing") {
+    // Active lock = still processing; do not flag from Base44 uploaded_at.
+    if (lockUntil > now) return false;
+    return true;
+  }
+  if (status === "awaiting_extraction") {
+    const started =
+      (doc.updated_at && new Date(doc.updated_at).getTime()) ||
+      (doc.created_at && new Date(doc.created_at).getTime()) ||
+      0;
+    if (!started) return false;
+    return now - started > staleMs;
+  }
+  return false;
+}
+
 /**
- * Scan booking_documents for stale awaiting/processing confirmations.
+ * Scan booking_documents for stalled awaiting/processing confirmations.
+ * Uses lock/updated timing — not Base44 uploaded_at (which can be days old).
  */
 async function scanStaleExtractionExceptions(rest, options = {}) {
-  const staleBefore = new Date(Date.now() - (options.staleMs || STALE_EXTRACTION_MS)).toISOString();
+  const staleMs = options.staleMs || STALE_EXTRACTION_MS;
+  const now = Date.now();
   const rows = await rest(
-    `booking_documents?document_type=ilike.*Booking Confirmation*&itinerary_processing_status=in.(awaiting_extraction,processing)&or=(itinerary_last_processed_at.is.null,uploaded_at.lt.${encodeURIComponent(staleBefore)})&select=id,booking_reference,base44_booking_id,filename,document_type,itinerary_processing_status,uploaded_at,content_fingerprint&limit=100`,
+    `booking_documents?document_type=ilike.*Booking Confirmation*&itinerary_processing_status=in.(awaiting_extraction,processing)&select=id,booking_reference,base44_booking_id,filename,document_type,itinerary_processing_status,itinerary_process_lock_until,itinerary_last_processed_at,uploaded_at,created_at,updated_at,content_fingerprint&limit=100`,
     { method: "GET" }
   ).catch(() => []);
 
   const results = [];
   for (const doc of Array.isArray(rows) ? rows : []) {
-    const uploaded = doc.uploaded_at ? new Date(doc.uploaded_at).getTime() : 0;
-    if (uploaded && Date.now() - uploaded < (options.staleMs || STALE_EXTRACTION_MS)) continue;
+    if (!isDocumentProcessingStalled(doc, now, staleMs)) continue;
     // eslint-disable-next-line no-await-in-loop
     const upserted = await upsertItineraryException(rest, {
       booking_id: doc.base44_booking_id || doc.booking_reference || doc.id,
@@ -238,12 +267,13 @@ async function scanStaleExtractionExceptions(rest, options = {}) {
       source_document_id: doc.id,
       source_document_hash: doc.content_fingerprint,
       exception_kind: EXCEPTION_KINDS.AWAITING_STALE,
-      concise_reason: "awaiting extraction beyond expected processing period",
-      reason_codes: ["awaiting_extraction_stale"],
+      concise_reason: "automatic itinerary extraction stalled",
+      reason_codes: ["processing_stalled"],
       validation_failures: [
         {
-          code: "awaiting_extraction_stale",
-          message: "Booking Confirmation has not completed itinerary extraction within the expected period"
+          code: "processing_stalled",
+          message:
+            "Automatic itinerary extraction did not complete. Review the error or retry extraction."
         }
       ]
     });
@@ -252,9 +282,30 @@ async function scanStaleExtractionExceptions(rest, options = {}) {
   return results;
 }
 
-function publicExceptionView(row) {
+function publicExceptionView(row, enrich = {}) {
   if (!row) return null;
   const waiting = awaitingMs(row.first_flagged_at);
+  const statusView = buildItineraryStatusView({
+    document: enrich.document || {
+      id: row.source_document_id,
+      filename: row.source_filename,
+      content_fingerprint: row.source_document_hash,
+      itinerary_processing_status:
+        row.exception_kind === EXCEPTION_KINDS.AWAITING_STALE
+          ? "processing"
+          : row.exception_kind === EXCEPTION_KINDS.FAILED
+            ? "failed"
+            : row.exception_kind === EXCEPTION_KINDS.REVIEW_REQUIRED
+              ? "review_required"
+              : null,
+      itinerary_process_lock_until: enrich.document?.itinerary_process_lock_until || null,
+      itinerary_last_processed_at: enrich.document?.itinerary_last_processed_at || null,
+      updated_at: row.updated_at,
+      created_at: row.created_at
+    },
+    itinerary: enrich.itinerary || null,
+    exception: row
+  });
   return {
     id: row.id,
     booking_id: row.booking_id,
@@ -264,6 +315,7 @@ function publicExceptionView(row) {
     ship_name: row.ship_name,
     departure_date: row.departure_date,
     source_filename: row.source_filename,
+    source_document_id: row.source_document_id || null,
     exception_kind: row.exception_kind,
     status: row.status,
     concise_reason: row.concise_reason,
@@ -274,7 +326,14 @@ function publicExceptionView(row) {
     awaiting_label: formatAwaiting(waiting),
     assigned_admin_user_id: row.assigned_admin_user_id || null,
     admin_review_path: row.admin_review_path || buildAdminReviewPath(row.booking_reference),
-    last_email_status: row.last_email_status || null
+    last_email_status: row.last_email_status || null,
+    effective_status: statusView.key,
+    effective_status_label: statusView.label,
+    effective_status_tone: statusView.tone,
+    action_message: statusView.action_message,
+    timing_lines: statusView.timing_lines,
+    can_retry: statusView.can_retry,
+    status_details: statusView.details
   };
 }
 
@@ -282,6 +341,8 @@ module.exports = {
   EXCEPTION_KINDS,
   OPEN_STATUSES,
   STALE_EXTRACTION_MS,
+  LOCK_TTL_MS,
+  EFFECTIVE,
   fingerprintReasons,
   customerNamesFromBooking,
   buildAdminReviewPath,
@@ -292,7 +353,9 @@ module.exports = {
   listOpenItineraryExceptions,
   countOpenItineraryExceptions,
   scanStaleExtractionExceptions,
+  isDocumentProcessingStalled,
   publicExceptionView,
   formatAwaiting,
-  awaitingMs
+  awaitingMs,
+  buildItineraryStatusView
 };

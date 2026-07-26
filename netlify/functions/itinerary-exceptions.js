@@ -89,10 +89,37 @@ exports.handler = async function (event) {
       await scanStaleExtractionExceptions(rest).catch(() => []);
       const rows = await listOpenItineraryExceptions(rest);
       const assignees = await listAssignableAdmins();
+      const docIds = [
+        ...new Set(rows.map((r) => r.source_document_id).filter(Boolean).map(String))
+      ];
+      const bookingIds = [...new Set(rows.map((r) => r.booking_id).filter(Boolean).map(String))];
+      const docsById = {};
+      const itinerariesByBooking = {};
+      if (docIds.length) {
+        const docs = await rest(
+          `booking_documents?id=in.(${docIds.map(encodeURIComponent).join(",")})&select=id,filename,content_fingerprint,itinerary_processing_status,itinerary_process_lock_until,itinerary_last_processed_at,itinerary_last_processed_hash,updated_at,created_at`,
+          { method: "GET" }
+        ).catch(() => []);
+        for (const d of Array.isArray(docs) ? docs : []) docsById[String(d.id)] = d;
+      }
+      if (bookingIds.length) {
+        const its = await rest(
+          `cruise_itineraries?booking_id=in.(${bookingIds.map(encodeURIComponent).join(",")})&select=booking_id,status,approval_method,processing_status,source_document_hash,source_filename,itinerary_data,validation_result,extraction_call_count,extracted_at,approved_at`,
+          { method: "GET" }
+        ).catch(() => []);
+        for (const row of Array.isArray(its) ? its : []) {
+          itinerariesByBooking[String(row.booking_id)] = row;
+        }
+      }
       return jsonResponse(200, {
         success: true,
         count: rows.length,
-        exceptions: rows.map(publicExceptionView),
+        exceptions: rows.map((row) =>
+          publicExceptionView(row, {
+            document: row.source_document_id ? docsById[String(row.source_document_id)] || null : null,
+            itinerary: row.booking_id ? itinerariesByBooking[String(row.booking_id)] || null : null
+          })
+        ),
         assignees
       });
     }
