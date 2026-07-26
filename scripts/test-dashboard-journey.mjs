@@ -52,7 +52,7 @@ assert(
 /* Explora booking payload diagnosis: confirmation has itinerary but nothing persisted */
 const exploraDiagnosis = {
   booking_reference: "10175811",
-  booking_cruise_line: "Explora Cruises",
+  booking_cruise_line: "Explora Journeys",
   booking_ship: "Explora 1",
   confirmation_has_day_by_day_itinerary: true,
   cruise_itineraries_row: null,

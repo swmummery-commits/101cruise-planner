@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const {
   expandTerminalNumeralVariants,
   resolveCruiseLineAlias,
+  canonicalCruiseLineDisplayName,
   resolveCruiseShip,
   filterSupabaseByLine,
   normaliseText
@@ -55,6 +56,14 @@ assert(
 assert(
   resolveCruiseLineAlias("Explora Cruises") === "explora journeys",
   "Explora Cruises aliases to Explora Journeys"
+);
+assert(
+  canonicalCruiseLineDisplayName("Explora Cruises") === "Explora Journeys",
+  "display canonicalises Explora Cruises"
+);
+assert(
+  canonicalCruiseLineDisplayName("Explora Journeys") === "Explora Journeys",
+  "canonical Explora Journeys unchanged"
 );
 assert(
   resolveCruiseLineAlias("Celebrity Cruises") === "celebrity cruises",

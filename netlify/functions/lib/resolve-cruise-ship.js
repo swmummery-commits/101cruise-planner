@@ -36,6 +36,11 @@ const CRUISE_LINE_ALIASES = Object.freeze({
   "explora cruises": "explora journeys"
 });
 
+/** Display / storage canonical names for known booking-side aliases. */
+const CRUISE_LINE_DISPLAY_ALIASES = Object.freeze({
+  "explora cruises": "Explora Journeys"
+});
+
 function normaliseText(value) {
   return String(value || "")
     .trim()
@@ -47,6 +52,13 @@ function resolveCruiseLineAlias(cruiseLine) {
   const line = normaliseText(cruiseLine);
   if (!line) return "";
   return CRUISE_LINE_ALIASES[line] || line;
+}
+
+/** Returns the preferred display/storage cruise-line name (preserves unknown values). */
+function canonicalCruiseLineDisplayName(cruiseLine) {
+  const raw = String(cruiseLine || "").trim();
+  if (!raw) return "";
+  return CRUISE_LINE_DISPLAY_ALIASES[normaliseText(raw)] || raw;
 }
 
 /**
@@ -186,12 +198,14 @@ function filterSupabaseByLine(ships, cruiseLine) {
 module.exports = {
   normaliseText,
   resolveCruiseLineAlias,
+  canonicalCruiseLineDisplayName,
   expandTerminalNumeralVariants,
   nameVariants,
   resolveCruiseShip,
   filterSupabaseByLine,
   linePrefixCompatible,
   CRUISE_LINE_ALIASES,
+  CRUISE_LINE_DISPLAY_ALIASES,
   ROMAN_TO_ARABIC,
   ARABIC_TO_ROMAN
 };

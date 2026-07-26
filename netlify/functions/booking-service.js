@@ -1,7 +1,16 @@
 const { syncBookingDocuments } = require('./document-sync');
+const { canonicalCruiseLineDisplayName } = require('./lib/resolve-cruise-ship');
 
 function normalise(value) {
   return String(value || '').trim();
+}
+
+function canonicaliseBookingCruiseLine(booking) {
+  if (!booking || typeof booking !== 'object') return booking;
+  const next = { ...booking };
+  const line = canonicalCruiseLineDisplayName(next.cruise_line);
+  if (line) next.cruise_line = line;
+  return next;
 }
 
 function getConfig() {
@@ -77,11 +86,13 @@ async function fetchBase44Booking({ booking_reference, booking_id }) {
     throw error;
   }
 
-  return { booking: data.booking, source: data };
+  const booking = canonicaliseBookingCruiseLine(data.booking);
+  return { booking, source: { ...data, booking } };
 }
 
 async function cacheBookingInSupabase(booking) {
   if (!getSupabaseConfig()) return null;
+  booking = canonicaliseBookingCruiseLine(booking);
 
   const payload = {
     base44_booking_id: booking.base44_booking_id || null,
@@ -140,5 +151,6 @@ module.exports = {
   fetchBase44Booking,
   cacheBookingInSupabase,
   syncDocumentsForBooking,
-  supabaseRest
+  supabaseRest,
+  canonicaliseBookingCruiseLine
 };

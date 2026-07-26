@@ -93,6 +93,13 @@ function captureInvitationBookingId() {
 
 
 
+function canonicalBookingCruiseLine(cruiseLine) {
+  const raw = String(cruiseLine || "").trim();
+  if (!raw) return "";
+  if (raw.toLowerCase().replace(/\s+/g, " ") === "explora cruises") return "Explora Journeys";
+  return raw;
+}
+
 function createPreviewCruiseFromBase44Booking(booking) {
   const nights = calculateCruiseNights(booking.departing_date, booking.arriving_date);
   const passengerNames = getPassengerNamesFromBase44Booking(booking);
@@ -102,7 +109,7 @@ function createPreviewCruiseFromBase44Booking(booking) {
     id: `preview-${booking.base44_booking_id || booking.booking_reference || "booking"}`,
     base44_booking_id: booking.base44_booking_id || null,
     booking_reference: booking.booking_reference || null,
-    cruise_line: booking.cruise_line || null,
+    cruise_line: canonicalBookingCruiseLine(booking.cruise_line) || null,
     ship_name: booking.cruise_ship || null,
     departure_date: booking.departing_date || null,
     return_date: booking.arriving_date || null,
@@ -209,7 +216,7 @@ async function createOrUpdateCruiseFromBase44Booking(booking, cacheId = null) {
     base44_booking_id: booking.base44_booking_id || null,
     base44_booking_cache_id: cacheId,
     booking_reference: booking.booking_reference || null,
-    cruise_line: booking.cruise_line || null,
+    cruise_line: canonicalBookingCruiseLine(booking.cruise_line) || null,
     ship_name: booking.cruise_ship || null,
     departure_date: booking.departing_date || null,
     return_date: booking.arriving_date || null,
@@ -270,10 +277,14 @@ function clearCustomerSession() {
 
 function activateCustomerSession(session) {
   if (!session?.token || !session?.booking) return false;
+  const booking = {
+    ...session.booking,
+    cruise_line: canonicalBookingCruiseLine(session.booking.cruise_line) || session.booking.cruise_line || null
+  };
   customerMode = true;
   customerSessionToken = session.token;
-  customerBooking = session.booking;
-  customerCruise = createPreviewCruiseFromBase44Booking(session.booking);
+  customerBooking = booking;
+  customerCruise = createPreviewCruiseFromBase44Booking(booking);
   currentUser = {
     id: `customer:${session.booking.base44_booking_id || session.booking.booking_reference}`,
     email: session.booking.passenger1_email || "",
