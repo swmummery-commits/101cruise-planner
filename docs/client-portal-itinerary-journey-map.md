@@ -98,10 +98,31 @@ Seed script (ops reference): `scripts/seed-ports-booking-10175811.mjs`.
 
 ---
 
+## Geographic land layer
+
+The dashboard map is an **SVG** with:
+
+1. Pale blue water fill  
+2. Bundled **Natural Earth** land polygons (TopoJSON → SVG paths)  
+3. Dashed route, port markers/labels, animated ship (`animateMotion` on the same projected path)
+
+| Item | Detail |
+|------|--------|
+| Projection | Aspect-corrected equirectangular (Plate Carrée); bounds from itinerary coords + padding |
+| Dataset | `assets/geo/land-50m.json` (fallback `land-110m.json`) — Natural Earth via `world-atlas` |
+| Licence | Natural Earth **public domain**; `world-atlas` / `topojson-client` **ISC** |
+| Cost | **None** — no Mapbox, Google Maps, tile APIs, API keys, or subscriptions |
+| Fallback | If land fails to load, the route-only map remains; customer sees no technical error |
+
+See also `assets/geo/README.md` and `docs/route-map-coastline.md`.
+
+---
+
 ## Tests
 
 - `scripts/test-admin-itinerary-ui.mjs`
 - `scripts/test-dashboard-journey.mjs`
+- `scripts/test-dashboard-journey-map-land.mjs`
 - `scripts/test-client-portal-ui-fixes.mjs`
 - `scripts/test-resolve-cruise-ship.mjs`
 - `scripts/test-ports-booking-10175811.mjs`

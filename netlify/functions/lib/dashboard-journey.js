@@ -5,6 +5,12 @@
 
 "use strict";
 
+const {
+  projectJourneyMap,
+  shortPortLabel,
+  buildSmoothPath
+} = require("./dashboard-journey-map");
+
 function isSeaDay(stop) {
   const type = String(stop?.type || stop?.entry_type || "").toLowerCase();
   const name = String(stop?.name || "").toLowerCase();
@@ -69,90 +75,6 @@ function buildTitleFromStops(stops) {
   if (named.length === 0) return "Your journey";
   if (named.length === 1) return named[0].name;
   return `${named[0].name} to ${named[named.length - 1].name}`;
-}
-
-/**
- * Project lat/lng stops into an SVG path + port markers.
- */
-function projectJourneyMap(journey, options = {}) {
-  const width = options.width || 620;
-  const height = options.height || 350;
-  const pad = options.pad || 48;
-
-  const points = (journey?.stops || [])
-    .filter((s) => !isSeaDay(s) && hasCoordinates(s))
-    // Collapse consecutive identical coordinates (overnight same port)
-    .filter((s, i, arr) => {
-      if (i === 0) return true;
-      const prev = arr[i - 1];
-      return !(prev.lat === s.lat && prev.lng === s.lng);
-    });
-
-  if (points.length < 2) {
-    return { ok: false, reason: "insufficient_coordinates" };
-  }
-
-  const lats = points.map((p) => p.lat);
-  const lngs = points.map((p) => p.lng);
-  const minLat = Math.min(...lats);
-  const maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs);
-  const maxLng = Math.max(...lngs);
-  const latSpan = Math.max(maxLat - minLat, 0.35);
-  const lngSpan = Math.max(maxLng - minLng, 0.35);
-
-  const project = (lat, lng) => {
-    const x = pad + ((lng - minLng) / lngSpan) * (width - pad * 2);
-    const y = pad + ((maxLat - lat) / latSpan) * (height - pad * 2);
-    return { x: Number(x.toFixed(1)), y: Number(y.toFixed(1)) };
-  };
-
-  const projected = points.map((p, index) => {
-    const { x, y } = project(p.lat, p.lng);
-    return {
-      ...p,
-      x,
-      y,
-      number: index + 1,
-      label: shortPortLabel(p.name)
-    };
-  });
-
-  const pathD = buildSmoothPath(projected);
-  return {
-    ok: true,
-    width,
-    height,
-    pathD,
-    ports: projected,
-    reason: "ok"
-  };
-}
-
-function shortPortLabel(name) {
-  const text = String(name || "").trim();
-  const paren = text.match(/^(.+?)\s*\((.+?)\)\s*$/);
-  if (paren) return paren[1].trim();
-  return text.length > 18 ? `${text.slice(0, 16)}…` : text;
-}
-
-function buildSmoothPath(points) {
-  if (points.length === 2) {
-    return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`;
-  }
-  let d = `M ${points[0].x} ${points[0].y}`;
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const p0 = points[Math.max(0, i - 1)];
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const p3 = points[Math.min(points.length - 1, i + 2)];
-    const cp1x = p1.x + (p2.x - p0.x) / 6;
-    const cp1y = p1.y + (p2.y - p0.y) / 6;
-    const cp2x = p2.x - (p3.x - p1.x) / 6;
-    const cp2y = p2.y - (p3.y - p1.y) / 6;
-    d += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x} ${p2.y}`;
-  }
-  return d;
 }
 
 /** Demo / regression fixture — Celebrity Millennium Tokyo–Seoul (SWM123456). */

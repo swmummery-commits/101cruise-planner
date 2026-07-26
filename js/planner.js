@@ -1891,6 +1891,11 @@ function buildDashboardJourneyFromItinerary(itinerary, source = "itinerary") {
 }
 
 function projectDashboardJourneyMap(journey) {
+  // Prefer shared geo helper (aspect-corrected equirectangular + date-line unwrap).
+  if (typeof DashboardJourneyMapGeo !== "undefined" && DashboardJourneyMapGeo.projectJourneyMap) {
+    return DashboardJourneyMapGeo.projectJourneyMap(journey);
+  }
+  // Offline fallback — simple equirectangular without land (tests / missing script).
   const width = 620;
   const height = 350;
   const pad = 48;
@@ -2184,31 +2189,40 @@ function renderEditorialJourneyMap(journey) {
       </div>`;
   }
 
+  // Stash for async land layer (same projection as route + ship animation).
+  window.__dashboardJourneyProjection = projection;
+
   const portMarks = projection.ports
     .map((port) => {
       const labelAnchor = port.x > projection.width * 0.72 ? "end" : "start";
-      const labelX = labelAnchor === "end" ? port.x - 12 : port.x + 12;
-      return `<g class="dashboard-map-port"><circle cx="${port.x}" cy="${port.y}" r="9"/><text x="${port.x}" y="${(port.y + 3.2).toFixed(1)}" text-anchor="middle" class="dashboard-map-port-number">${port.number}</text><text x="${labelX}" y="${(port.y - 10).toFixed(1)}" text-anchor="${labelAnchor}" class="dashboard-map-port-label">${escapeHtml(port.label)}</text></g>`;
+      let labelX = labelAnchor === "end" ? port.x - 12 : port.x + 12;
+      labelX = Math.min(projection.width - 6, Math.max(6, labelX));
+      const labelY = Math.min(projection.height - 6, Math.max(14, port.y - 10));
+      return `<g class="dashboard-map-port"><circle cx="${port.x}" cy="${port.y}" r="9"/><text x="${port.x}" y="${(port.y + 3.2).toFixed(1)}" text-anchor="middle" class="dashboard-map-port-number">${port.number}</text><text x="${labelX}" y="${labelY.toFixed(1)}" text-anchor="${labelAnchor}" class="dashboard-map-port-label">${escapeHtml(port.label)}</text></g>`;
     })
     .join("");
 
   return `
     <div class="dashboard-route-map dashboard-final-map" aria-label="Illustrative cruise route map">
-      <svg viewBox="0 0 ${projection.width} ${projection.height}" role="img" aria-labelledby="dashboardMapTitle dashboardMapDesc">
+      <svg viewBox="0 0 ${projection.width} ${projection.height}" role="img" aria-labelledby="dashboardMapTitle dashboardMapDesc" overflow="hidden">
         <title id="dashboardMapTitle">${escapeHtml(journey.title)} cruise route</title>
-        <desc id="dashboardMapDesc">An illustrative route showing the cruise port sequence.</desc>
+        <desc id="dashboardMapDesc">An illustrative route showing the cruise port sequence over a geographic map.</desc>
         <defs>
           <linearGradient id="dashboardSea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dff1f7"/><stop offset="1" stop-color="#cbe7ef"/></linearGradient>
+          <clipPath id="dashboardMapClip"><rect width="${projection.width}" height="${projection.height}" rx="18"/></clipPath>
           <filter id="dashboardShipShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity=".25"/></filter>
           <path id="dashboardRoutePath" d="${projection.pathD}"/>
         </defs>
-        <rect width="${projection.width}" height="${projection.height}" rx="18" fill="url(#dashboardSea)"/>
-        <use href="#dashboardRoutePath" fill="none" stroke="#0c7664" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 6"/>
-        ${portMarks}
-        <g class="dashboard-map-ship" filter="url(#dashboardShipShadow)" transform="translate(-8 -13)">
-          <circle r="15" fill="#ffffff" stroke="#0c7664" stroke-width="1.8"/>
-          <path d="M-9,2 L9,2 L6,7 L-6,7 Z M-6,-1 L6,-1 L4,2 L-4,2 Z M-2,-7 L3,-7 L3,-1 L-2,-1 Z" fill="#0c7664"/>
-          <animateMotion dur="26s" repeatCount="indefinite" rotate="0" calcMode="paced"><mpath href="#dashboardRoutePath"/></animateMotion>
+        <g clip-path="url(#dashboardMapClip)">
+          <rect width="${projection.width}" height="${projection.height}" rx="18" fill="url(#dashboardSea)"/>
+          <g id="dashboardMapLand" class="dashboard-map-land" aria-hidden="true"></g>
+          <use href="#dashboardRoutePath" class="dashboard-map-route" fill="none" stroke="#0c7664" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 6"/>
+          ${portMarks}
+          <g class="dashboard-map-ship" filter="url(#dashboardShipShadow)" transform="translate(-8 -13)">
+            <circle r="15" fill="#ffffff" stroke="#0c7664" stroke-width="1.8"/>
+            <path d="M-9,2 L9,2 L6,7 L-6,7 Z M-6,-1 L6,-1 L4,2 L-4,2 Z M-2,-7 L3,-7 L3,-1 L-2,-1 Z" fill="#0c7664"/>
+            <animateMotion dur="26s" repeatCount="indefinite" rotate="0" calcMode="paced"><mpath href="#dashboardRoutePath"/></animateMotion>
+          </g>
         </g>
       </svg>
       <div class="dashboard-map-note">Illustrative route only. The line shows port sequence, not the ship’s exact navigational track.</div>
@@ -2235,8 +2249,18 @@ function toggleDashboardItinerary() {
   button.textContent = willOpen ? "Show Less ↑" : "Open Full Itinerary →";
 }
 
-function initialiseDashboardRouteMap() {
-  // The dashboard map is self-contained SVG, so no external map initialisation is required.
+function initialiseDashboardRouteMap(journey) {
+  // Route SVG is synchronous; land fills in from the locally bundled Natural Earth topology.
+  const root = document.querySelector(".dashboard-final-map");
+  const projection = window.__dashboardJourneyProjection;
+  if (!root || !projection || !journey) return;
+  if (typeof DashboardJourneyMapGeo === "undefined" || !DashboardJourneyMapGeo.attachLandLayer) {
+    if (typeof console !== "undefined" && console.warn) {
+      console.warn("[dashboard-journey-map] geo helper unavailable; route-only map retained");
+    }
+    return;
+  }
+  DashboardJourneyMapGeo.attachLandLayer(root, projection);
 }
 
 async function renderDashboard() {

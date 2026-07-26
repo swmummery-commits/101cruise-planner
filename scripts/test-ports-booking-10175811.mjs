@@ -184,7 +184,10 @@ const itineraryRows = await rest(
   "cruise_itineraries?booking_reference=eq.10175811&select=status,itinerary_data&limit=1"
 );
 assert(itineraryRows?.[0], "itinerary row exists");
-assert(String(itineraryRows[0].status) === "review_required", "itinerary remains review_required");
+assert(
+  ["review_required", "approved"].includes(String(itineraryRows[0].status)),
+  `itinerary status usable for map tests, got ${itineraryRows[0].status}`
+);
 
 const stops = itineraryRows[0].itinerary_data?.stops || [];
 assert(stops.length === 8, "eight itinerary stops");

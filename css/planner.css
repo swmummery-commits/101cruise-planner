@@ -6053,9 +6053,12 @@ html.is-embedded .customer-access-card {
 .dashboard-combined-progress-item p { min-height:34px; margin:12px 0 10px; color:#687873; font-size:.78rem; }
 .dashboard-combined-progress-item .dashboard-mini-progress-circle { width:118px; height:118px; margin:0; }
 .dashboard-combined-progress-item .dashboard-mini-progress-circle > div { width:90px; height:90px; }
-.dashboard-final-map { height:350px !important; min-height:350px !important; background:#dff1f7 !important; }
-.dashboard-final-map svg { width:100%; height:350px; display:block; }
-.dashboard-map-land path { fill:#e8f0d8; stroke:#b6c9a9; stroke-width:1.1; vector-effect:non-scaling-stroke; }
+.dashboard-final-map { height:350px !important; min-height:350px !important; background:#dff1f7 !important; overflow:hidden !important; }
+.dashboard-final-map svg { width:100%; height:350px; display:block; max-width:100%; overflow:hidden; }
+.dashboard-map-land { pointer-events:none; }
+.dashboard-map-land path,
+.dashboard-map-land-shape { fill:#efe8d6; stroke:#c9b89e; stroke-width:0.9; stroke-opacity:0.75; vector-effect:non-scaling-stroke; }
+.dashboard-map-route { pointer-events:none; }
 .dashboard-map-water-label { font: italic 600 12px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:#47728a; text-anchor:middle; }
 .dashboard-map-port circle { fill:#fff; stroke:var(--brand-green-ink); stroke-width:2; }
 .dashboard-map-port-number { font:700 8.5px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; fill:var(--brand-green-ink); }
