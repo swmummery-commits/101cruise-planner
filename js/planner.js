@@ -1703,7 +1703,60 @@ function getPassportStatusSummary(cruise) {
   return "Valid for 6+ months after cruise";
 }
 
+function getBookingFinancials(cruise, bookingOverride = null) {
+  const booking = bookingOverride || getDashboardBookingSource(cruise);
+  const api = typeof BookingFinancials !== "undefined" ? BookingFinancials : null;
+  if (!api?.normaliseBookingFinancials) return null;
+  return api.normaliseBookingFinancials(booking);
+}
+
+function formatBookingFinancialMoney(amount) {
+  const api = typeof BookingFinancials !== "undefined" ? BookingFinancials : null;
+  if (api?.formatFinancialUsd) {
+    const formatted = api.formatFinancialUsd(amount);
+    if (formatted) return formatted;
+  }
+  return formatCurrencyValue(amount);
+}
+
+function formatBookingFinancialDate(dateString) {
+  if (!dateString) return "";
+  const iso = String(dateString).slice(0, 10);
+  const match = iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return String(dateString);
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  const day = Number(match[3]);
+  const month = months[Number(match[2]) - 1];
+  if (!month || !Number.isFinite(day)) return String(dateString);
+  return `${day} ${month} ${match[1]}`;
+}
+
+function getBookingFinancialDisplayRows(cruise, bookingOverride = null) {
+  const financials = getBookingFinancials(cruise, bookingOverride);
+  const api = typeof BookingFinancials !== "undefined" ? BookingFinancials : null;
+  if (!financials || !api?.buildFinancialDisplayRows) return [];
+  return api.buildFinancialDisplayRows(financials, {
+    formatMoney: formatBookingFinancialMoney,
+    formatDate: formatBookingFinancialDate
+  });
+}
+
+function renderSharedFinancialRows(cruise, bookingOverride = null, rowRenderer) {
+  const rows = getBookingFinancialDisplayRows(cruise, bookingOverride);
+  return rows
+    .map(row => rowRenderer(row.label, row.value))
+    .filter(Boolean)
+    .join("");
+}
+
 function getPaymentSummary(cruise) {
+  const financials = getBookingFinancials(cruise);
+  if (financials?.overall_payment_status_label) {
+    return financials.overall_payment_status_label;
+  }
   const booking = getDashboardBookingSource(cruise);
   if (booking.payment_status) {
     const label = String(booking.payment_status).replaceAll("_", " ");
@@ -1785,13 +1838,11 @@ function renderDashboardSnapshot(cruise) {
   const travellerCount = booking.total_passengers || cruise?.traveller_count;
   const duration = booking.cruise_duration || cruise?.nights;
   const status = booking.booking_status || cruise?.booking_status;
-  const paymentStatus = booking.payment_status
-    ? String(booking.payment_status).replaceAll("_", " ").replace(/^\w/, char => char.toUpperCase())
-    : null;
-  const totalPrice = booking.total_price ?? booking.cruise_price_usd;
-  const balanceOwing = booking.balance_owing;
   const passportStatus = getPassportStatusSummary(cruise);
   const travellerNamesHtml = renderSnapshotTravellerNames(cruise, booking);
+  const financialRowsHtml = renderSharedFinancialRows(cruise, booking, (label, value) =>
+    renderSnapshotRowIfPresent(label, value)
+  );
   const snapshotRows = [
     travellerNamesHtml ? `<div class="dashboard-snapshot-row dashboard-snapshot-row-travellers"><span>Travellers</span>${travellerNamesHtml}</div>` : "",
     renderSnapshotRowIfPresent("Traveller count", travellerCount),
@@ -1803,11 +1854,7 @@ function renderDashboardSnapshot(cruise) {
     renderSnapshotRowIfPresent("Disembarkation", disembarkation),
     renderSnapshotRowIfPresent("Passport check", passportStatus === "Not added" ? null : passportStatus),
     renderSnapshotRowIfPresent("Booking status", status),
-    renderSnapshotRowIfPresent("Payment status", paymentStatus),
-    totalPrice !== undefined && totalPrice !== null ? renderSnapshotRowIfPresent("Cruise price", formatCurrencyValue(totalPrice)) : "",
-    balanceOwing !== undefined && balanceOwing !== null && String(balanceOwing).trim() !== ""
-      ? renderSnapshotRowIfPresent("Balance owing", formatCurrencyValue(balanceOwing))
-      : ""
+    financialRowsHtml
   ].filter(Boolean).join("");
 
   return `
@@ -2936,10 +2983,9 @@ function renderBookingCruiseSection(cruise, booking) {
   const duration = booking.cruise_duration || cruise?.nights;
   const bookingReference = booking.booking_reference || getCruiseBookingReference(cruise);
   const bookingStatus = booking.booking_status || cruise?.booking_status;
-  const paymentStatus = getPaymentSummary(cruise);
-  const totalPrice = booking.total_price ?? booking.cruise_price_usd;
-  const finalDue = booking.final_payment_due_date || booking.reminder_final_payment_due;
-  const balanceOwing = booking.balance_owing;
+  const financialRowsHtml = renderSharedFinancialRows(cruise, booking, (label, value) =>
+    renderBookingDetailRow(label, value)
+  );
   const optionalRows = OPTIONAL_BOOKING_FIELDS.map(([label, keys]) => renderBookingFieldIfPresent(label, getBookingPayloadValue(booking, cruise, keys))).join("");
 
   return `
@@ -2960,10 +3006,7 @@ function renderBookingCruiseSection(cruise, booking) {
         ${renderBookingDetailRow("Embarkation port", embarkation)}
         ${renderBookingDetailRow("Disembarkation port", disembarkation)}
         ${renderBookingDetailRow("Booking status", bookingStatus)}
-        ${renderBookingDetailRow("Payment status", paymentStatus)}
-        ${totalPrice !== undefined && totalPrice !== null ? renderBookingDetailRow("Cruise price", formatCurrencyValue(totalPrice)) : ""}
-        ${renderBookingFieldIfPresent("Balance owing", balanceOwing, formatCurrencyValue)}
-        ${finalDue ? renderBookingDetailRow("Final payment due", formatDateShort(finalDue)) : ""}
+        ${financialRowsHtml}
         ${optionalRows}
       </div>
       ${renderBookingPassportStatus(cruise)}
