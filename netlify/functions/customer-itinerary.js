@@ -6,6 +6,10 @@
 
 const crypto = require("crypto");
 const { buildJourneyFromItinerary } = require("./lib/dashboard-journey");
+const {
+  matchPortCoordinates,
+  buildPortIndex
+} = require("./lib/customer-port-match");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -63,56 +67,11 @@ async function rest(path) {
   return data;
 }
 
-function foldPortKey(value) {
-  return String(value || "")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function matchPortCoordinates(stopName, portsByKey) {
-  const key = foldPortKey(stopName);
-  if (!key) return null;
-  if (portsByKey.has(key)) return portsByKey.get(key);
-
-  // Try parenthetical city: "Tokyo (Yokohama)" → yokohama / tokyo
-  const paren = String(stopName || "").match(/\(([^)]+)\)/);
-  if (paren) {
-    const inner = foldPortKey(paren[1]);
-    if (portsByKey.has(inner)) return portsByKey.get(inner);
-  }
-  const head = foldPortKey(String(stopName || "").replace(/\([^)]*\)/g, " "));
-  if (portsByKey.has(head)) return portsByKey.get(head);
-
-  // Unique containment
-  const hits = [];
-  for (const [k, coords] of portsByKey.entries()) {
-    if (!k || k.length < 3) continue;
-    if (k.includes(key) || key.includes(k)) hits.push(coords);
-  }
-  const unique = [...new Map(hits.map((h) => [`${h.lat},${h.lng}`, h])).values()];
-  return unique.length === 1 ? unique[0] : null;
-}
-
 async function loadPortIndex() {
   const rows = await rest(
-    "ports?select=canonical_name,display_name,city,latitude,longitude&latitude=not.is.null&longitude=not.is.null&limit=5000"
+    "ports?select=id,canonical_name,display_name,city,country,aliases,latitude,longitude&latitude=not.is.null&longitude=not.is.null&limit=5000"
   );
-  const map = new Map();
-  for (const row of rows || []) {
-    const lat = Number(row.latitude);
-    const lng = Number(row.longitude);
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
-    const coords = { lat, lng };
-    for (const field of [row.canonical_name, row.display_name, row.city]) {
-      const key = foldPortKey(field);
-      if (key && !map.has(key)) map.set(key, coords);
-    }
-  }
-  return map;
+  return buildPortIndex(rows).portsByKey;
 }
 
 function enrichStopsWithCoordinates(itineraryData, portsByKey) {
