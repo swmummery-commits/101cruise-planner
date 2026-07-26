@@ -38,6 +38,22 @@
     return Number.isNaN(d.getTime()) ? null : m[1];
   }
 
+  function firstMoney(...values) {
+    for (const value of values) {
+      const n = parseMoneyStrict(value);
+      if (n != null) return n;
+    }
+    return null;
+  }
+
+  function firstDate(...values) {
+    for (const value of values) {
+      const d = parseDateOnly(value);
+      if (d) return d;
+    }
+    return null;
+  }
+
   function nearlyEqual(a, b) {
     if (a == null || b == null) return false;
     return Math.abs(a - b) <= MONEY_EPS;
@@ -58,30 +74,49 @@
     }).format(Number(amount));
   }
 
+  function hasCorrectedNormalisedContract(booking) {
+    return Boolean(
+      parseMoneyStrict(booking.deposit_amount) != null ||
+        parseDateOnly(booking.deposit_paid_date) ||
+        parseMoneyStrict(booking.payment_2_amount) != null ||
+        parseDateOnly(booking.payment_2_due_date) ||
+        parseMoneyStrict(booking.payment_3_amount) != null ||
+        parseDateOnly(booking.payment_3_due_date) ||
+        parseDateOnly(booking.final_payment_due_date_normalised) ||
+        parseDateOnly(booking.final_payment_reminder_date) ||
+        parseMoneyStrict(booking.amount_received) != null
+    );
+  }
+
   /**
-   * Legacy Base44 getBookingFor101Cruise falsely does:
-   *   amount_paid = cruise_deposit + cruise_payment_2 + cruise_payment_3
-   * cruise_payment_2/3 are scheduled instalments, not received money.
+   * Prefer corrected Base44 normalised fields; fall back to legacy raw fields.
+   * Keep legacy safeguard for old payloads that sum scheduled instalments into amount_paid.
    */
   function normaliseBookingFinancials(booking = {}, options = {}) {
     const today = todayIso(options.now);
-    const price = parseMoneyStrict(booking.cruise_price_usd ?? booking.total_price ?? booking.cruise_price_amount);
-    const depositAmount = parseMoneyStrict(booking.cruise_deposit ?? booking.deposit_amount);
-    const depositPaidDate = parseDateOnly(
-      booking.cruise_deposit_date ?? booking.deposit_paid_date ?? booking.deposit_payment_date
+    const corrected = hasCorrectedNormalisedContract(booking);
+
+    const price = firstMoney(booking.cruise_price_usd, booking.total_price, booking.cruise_price_amount);
+    const depositAmount = firstMoney(booking.deposit_amount, booking.cruise_deposit);
+    const depositPaidDate = firstDate(
+      booking.deposit_paid_date,
+      booking.cruise_deposit_date,
+      booking.deposit_payment_date
     );
-    const payment2 = parseMoneyStrict(booking.cruise_payment_2 ?? booking.payment_2_amount);
-    const payment3 = parseMoneyStrict(booking.cruise_payment_3 ?? booking.payment_3_amount);
-    const payment2Due = parseDateOnly(booking.cruise_payment_2_date ?? booking.payment_2_due_date);
-    const payment3Due = parseDateOnly(booking.cruise_payment_3_date ?? booking.payment_3_due_date);
+    const payment2 = firstMoney(booking.payment_2_amount, booking.cruise_payment_2);
+    const payment3 = firstMoney(booking.payment_3_amount, booking.cruise_payment_3);
+    const payment2Due = firstDate(booking.payment_2_due_date, booking.cruise_payment_2_date);
+    const payment3Due = firstDate(booking.payment_3_due_date, booking.cruise_payment_3_date);
     const fullyPaidDate = parseDateOnly(booking.fully_paid_date);
-    const reminderDeposit = parseDateOnly(booking.reminder_deposit_due);
-    const reminderFinal = parseDateOnly(
-      booking.reminder_final_payment_due ?? booking.final_payment_reminder_date
+    const reminderDeposit = firstDate(booking.reminder_deposit_due, booking.deposit_reminder_date);
+    const reminderFinal = firstDate(
+      booking.final_payment_reminder_date,
+      booking.reminder_final_payment_due
     );
     const depositDue = parseDateOnly(booking.deposit_due_date);
+    const normalisedFinalDue = parseDateOnly(booking.final_payment_due_date_normalised);
     const legacyFinalDue = parseDateOnly(booking.final_payment_due_date);
-
+    const apiAmountReceived = parseMoneyStrict(booking.amount_received);
     const amountPaidRaw = parseMoneyStrict(booking.amount_paid);
     const balanceRaw = parseMoneyStrict(booking.balance_owing);
     const statusRaw = String(booking.payment_status || "")
@@ -96,6 +131,7 @@
     const hasScheduledOutstanding = scheduledInstalments > MONEY_EPS;
 
     const legacySummedInstalments =
+      !corrected &&
       amountPaidRaw != null &&
       price != null &&
       depositAmount != null &&
@@ -104,20 +140,20 @@
       !fullyPaidDate;
 
     const notes = [];
+    if (corrected) notes.push("using_corrected_normalised_contract");
     if (bookingStatus === "confirmed") notes.push("confirmed_status_ignored_for_payment");
     if (reminderDeposit) notes.push("reminder_date_ignored_as_payment_evidence");
-    if (reminderFinal || (legacyFinalDue && !payment2Due)) {
-      notes.push("legacy_reminder_not_shown_as_final_payment_due");
-    }
     if (legacySummedInstalments) {
       notes.push("ignored_legacy_amount_paid_sum_of_scheduled_instalments");
     }
 
-    // amount_received = deposit only — never include cruise_payment_2/3.
+    // amount_received: never include payment_2 / payment_3.
     let amountReceived = null;
-    if (depositAmount != null && depositAmount > MONEY_EPS) {
+    if (apiAmountReceived != null) {
+      amountReceived = apiAmountReceived;
+      notes.push("amount_received_from_corrected_api");
+    } else if (depositAmount != null && depositAmount > MONEY_EPS) {
       if (depositPaidDate || legacySummedInstalments || hasScheduledOutstanding) {
-        // Legacy: cruise_deposit is the deposit received; payment_2/3 are schedule.
         amountReceived = depositAmount;
         notes.push("amount_received_is_cruise_deposit_only");
       }
@@ -128,32 +164,55 @@
     let depositOwingAmount = null;
     let depositRemainingAmount = null;
 
-    if (depositAmount != null && depositAmount > MONEY_EPS && amountReceived != null) {
-      depositStatus = "paid";
-      depositPaidAmount = depositAmount;
-      if (!depositPaidDate) {
-        notes.push("deposit_paid_without_api_deposit_date");
+    if (depositAmount != null && depositAmount > MONEY_EPS && amountReceived != null && amountReceived > MONEY_EPS) {
+      if (amountReceived + MONEY_EPS < depositAmount) {
+        depositStatus = "partially_paid";
+        depositPaidAmount = amountReceived;
+        depositRemainingAmount = depositAmount - amountReceived;
+      } else {
+        depositStatus = "paid";
+        depositPaidAmount = depositAmount;
       }
+      if (!depositPaidDate) notes.push("deposit_paid_without_api_deposit_date");
+    } else if (statusRaw === "no_payment" && depositAmount != null && depositAmount > MONEY_EPS) {
+      depositStatus = "outstanding";
+      depositOwingAmount = depositAmount;
     } else if (depositAmount != null && depositAmount > MONEY_EPS) {
       depositStatus = "unknown";
       notes.push("deposit_amount_without_payment_evidence");
     }
 
-    // Final due: only authoritative instalment due dates. Never legacy reminder alias.
-    let finalDue = payment2Due || payment3Due || null;
-    let finalDueDisplay = finalDue;
+    // Final due priority: normalised → payment_2 due → genuine final_payment_due_date
+    // (never the old reminder alias).
+    let finalDue = normalisedFinalDue || payment2Due || null;
     let finalDueUnreliable = false;
     if (!finalDue) {
-      // Legacy API maps reminder_final_payment_due → final_payment_due_date.
-      if (legacyFinalDue || reminderFinal) {
+      if (legacyFinalDue && reminderFinal && legacyFinalDue === reminderFinal) {
         finalDueUnreliable = true;
-        finalDueDisplay = null;
+        notes.push("legacy_reminder_not_shown_as_final_payment_due");
+        notes.push("final_payment_due_check_booking_confirmation");
+      } else if (legacyFinalDue && !reminderFinal && !hasScheduledOutstanding) {
+        finalDue = legacyFinalDue;
+      } else if (legacyFinalDue || reminderFinal) {
+        // Legacy payload: final_payment_due_date is commonly the reminder alias.
+        finalDueUnreliable = true;
+        notes.push("legacy_reminder_not_shown_as_final_payment_due");
         notes.push("final_payment_due_check_booking_confirmation");
       }
+    } else if (reminderFinal && finalDue === reminderFinal && !normalisedFinalDue && !payment2Due) {
+      finalDueUnreliable = true;
+      finalDue = null;
+      notes.push("final_payment_due_check_booking_confirmation");
     }
 
+    if (reminderFinal) notes.push("final_payment_reminder_kept_separate");
+
     let balanceOwing = null;
-    if (fullyPaidDate && !hasScheduledOutstanding) {
+    if (corrected && balanceRaw != null && !(statusRaw === "fully_paid" && balanceRaw === 0 && hasScheduledOutstanding && !fullyPaidDate)) {
+      // Trust corrected balance_owing from normalised contract.
+      balanceOwing = balanceRaw;
+      notes.push("balance_from_corrected_api");
+    } else if (fullyPaidDate && !hasScheduledOutstanding) {
       balanceOwing = 0;
       amountReceived = amountReceived != null ? amountReceived : price;
       if (depositAmount != null && depositAmount > MONEY_EPS) {
@@ -171,9 +230,13 @@
     } else if (balanceRaw === 0 && statusRaw === "fully_paid" && !hasScheduledOutstanding) {
       balanceOwing = 0;
     }
-    // Never coerce null/blank to zero when unknown.
 
-    if (hasScheduledOutstanding && (statusRaw === "fully_paid" || balanceRaw === 0 || legacySummedInstalments)) {
+    if (!corrected && hasScheduledOutstanding && (statusRaw === "fully_paid" || balanceRaw === 0 || legacySummedInstalments)) {
+      balanceOwing = scheduledInstalments;
+      notes.push("blocked_false_fully_paid_from_scheduled_instalments");
+    }
+
+    if (corrected && hasScheduledOutstanding && statusRaw === "fully_paid" && !fullyPaidDate) {
       balanceOwing = scheduledInstalments;
       notes.push("blocked_false_fully_paid_from_scheduled_instalments");
     }
@@ -182,9 +245,33 @@
     if (fullyPaidDate && !hasScheduledOutstanding) {
       overallPaymentStatus = "fully_paid";
       balanceOwing = 0;
-    } else if (hasScheduledOutstanding) {
-      overallPaymentStatus =
-        depositStatus === "paid" ? "deposit_paid_balance_outstanding" : "payment_outstanding";
+    } else if (statusRaw === "fully_paid" && !hasScheduledOutstanding && (balanceOwing === 0 || balanceOwing == null)) {
+      if (amountReceived != null && price != null && nearlyEqual(amountReceived, price)) {
+        overallPaymentStatus = "fully_paid";
+        balanceOwing = 0;
+      } else if (balanceRaw === 0 && !hasScheduledOutstanding) {
+        overallPaymentStatus = "fully_paid";
+        balanceOwing = 0;
+      } else {
+        overallPaymentStatus = "unknown";
+        notes.push("fully_paid_date_null_blocks_unsupported_fully_paid");
+      }
+    } else if (
+      (statusRaw === "partially_paid" || hasScheduledOutstanding) &&
+      depositStatus === "paid" &&
+      balanceOwing != null &&
+      balanceOwing > MONEY_EPS
+    ) {
+      overallPaymentStatus = "deposit_paid_balance_outstanding";
+      notes.push("mapped_partially_paid_to_deposit_paid_balance_outstanding");
+    } else if (statusRaw === "no_payment") {
+      overallPaymentStatus = balanceOwing != null && balanceOwing > MONEY_EPS ? "payment_outstanding" : "unknown";
+    } else if (statusRaw === "unknown") {
+      overallPaymentStatus = "unknown";
+    } else if (depositStatus === "paid" && balanceOwing != null && balanceOwing > MONEY_EPS) {
+      overallPaymentStatus = "deposit_paid_balance_outstanding";
+    } else if (balanceOwing != null && balanceOwing > MONEY_EPS) {
+      overallPaymentStatus = "payment_outstanding";
     } else if (
       balanceOwing === 0 &&
       amountReceived != null &&
@@ -192,18 +279,6 @@
       nearlyEqual(amountReceived, price)
     ) {
       overallPaymentStatus = "fully_paid";
-    } else if (depositStatus === "paid" && balanceOwing != null && balanceOwing > MONEY_EPS) {
-      overallPaymentStatus = "deposit_paid_balance_outstanding";
-    } else if (balanceOwing != null && balanceOwing > MONEY_EPS) {
-      overallPaymentStatus = "payment_outstanding";
-    } else if (statusRaw === "fully_paid" && !hasScheduledOutstanding && !fullyPaidDate) {
-      if (amountReceived != null && price != null && nearlyEqual(amountReceived, price)) {
-        overallPaymentStatus = "fully_paid";
-        balanceOwing = 0;
-      } else {
-        overallPaymentStatus = "unknown";
-        notes.push("fully_paid_date_null_blocks_unsupported_fully_paid");
-      }
     }
 
     if (balanceOwing != null && balanceOwing > MONEY_EPS && overallPaymentStatus === "fully_paid") {
@@ -231,17 +306,14 @@
       deposit_owing_amount: depositOwingAmount,
       deposit_remaining_amount: depositRemainingAmount,
       deposit_due_date: depositDue,
-      // Only expose paid date when API actually provides cruise_deposit_date.
       deposit_paid_date: depositPaidDate,
       deposit_reminder_date: reminderDeposit,
       deposit_status: depositStatus,
       final_payment_amount: payment2 != null && payment2 > MONEY_EPS ? payment2 : null,
-      final_payment_due_date: finalDue,
-      final_payment_due_display: finalDueUnreliable
-        ? "Check booking confirmation"
-        : finalDueDisplay,
+      final_payment_due_date: finalDueUnreliable ? null : finalDue,
+      final_payment_due_display: finalDueUnreliable ? "Check booking confirmation" : finalDue,
       final_payment_due_unreliable: finalDueUnreliable,
-      final_payment_reminder_date: reminderFinal || (!payment2Due ? legacyFinalDue : null),
+      final_payment_reminder_date: reminderFinal,
       payment_2_amount: payment2,
       payment_2_due_date: payment2Due,
       payment_3_amount: payment3,
@@ -252,12 +324,19 @@
       balance_owing: balanceOwing,
       overall_payment_status: overallPaymentStatus,
       overall_payment_status_label: labels[overallPaymentStatus] || labels.unknown,
-      confidence: hasScheduledOutstanding || depositPaidDate || fullyPaidDate ? "high" : "medium",
+      confidence: corrected || hasScheduledOutstanding || depositPaidDate || fullyPaidDate ? "high" : "medium",
       notes,
       raw: {
         payment_status: booking.payment_status ?? null,
         balance_owing: booking.balance_owing ?? null,
         amount_paid: booking.amount_paid ?? null,
+        amount_received: booking.amount_received ?? null,
+        deposit_amount: booking.deposit_amount ?? null,
+        deposit_paid_date: booking.deposit_paid_date ?? null,
+        payment_2_amount: booking.payment_2_amount ?? null,
+        payment_2_due_date: booking.payment_2_due_date ?? null,
+        final_payment_due_date_normalised: booking.final_payment_due_date_normalised ?? null,
+        final_payment_reminder_date: booking.final_payment_reminder_date ?? null,
         cruise_deposit: booking.cruise_deposit ?? null,
         cruise_deposit_date: booking.cruise_deposit_date ?? null,
         cruise_payment_2: booking.cruise_payment_2 ?? null,
@@ -289,7 +368,6 @@
         label: "Deposit paid",
         value: formatMoney(financials.deposit_paid_amount)
       });
-      // Only show paid-on when API provides cruise_deposit_date.
       if (financials.deposit_paid_date) {
         rows.push({
           key: "deposit_paid_on",
@@ -303,6 +381,21 @@
         label: "Deposit owing",
         value: formatMoney(financials.deposit_owing_amount)
       });
+    } else if (financials.deposit_status === "partially_paid") {
+      if (financials.deposit_paid_amount != null) {
+        rows.push({
+          key: "deposit_paid",
+          label: "Deposit paid",
+          value: formatMoney(financials.deposit_paid_amount)
+        });
+      }
+      if (financials.deposit_remaining_amount != null) {
+        rows.push({
+          key: "deposit_remaining",
+          label: "Deposit remaining",
+          value: formatMoney(financials.deposit_remaining_amount)
+        });
+      }
     } else if (
       financials.deposit_amount != null &&
       financials.deposit_amount > MONEY_EPS &&
@@ -352,6 +445,7 @@
     normaliseBookingFinancials,
     buildFinancialDisplayRows,
     formatFinancialUsd: formatUsd,
+    hasCorrectedNormalisedContract,
     MONEY_EPS
   };
 });
