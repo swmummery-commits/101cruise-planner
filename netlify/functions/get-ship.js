@@ -7,13 +7,20 @@
  *   1. Supabase Cruise Intelligence (ci_cruise_ships)
  *   2. Base44 Finder fallback (temporary)
  *
- * Strict ordered matching (case-insensitive, whitespace-normalised):
- *   1. Exact ship-name match
- *   2. Exact composed match: cruise_line + " " + ship name
- *   3. Unique line-aware suffix match
+ * Strict ordered matching (case-insensitive, whitespace-normalised), with:
+ *   - deliberate cruise-line aliases (e.g. Explora Cruises → Explora Journeys)
+ *   - terminal Roman ↔ Arabic numeral variants (Explora 1 ↔ EXPLORA I)
+ *   - cruise_ship_aliases rows
  *
  * Multiple candidates at any step → SHIP_AMBIGUOUS (never pick one).
  */
+
+const {
+  normaliseText,
+  resolveCruiseShip,
+  filterSupabaseByLine,
+  resolveCruiseLineAlias
+} = require('./lib/resolve-cruise-ship');
 
 const SHIP_FIELDS = [
   'id',
@@ -47,13 +54,6 @@ function jsonResponse(statusCode, body) {
     },
     body: JSON.stringify(body)
   };
-}
-
-function normaliseText(value) {
-  return String(value || '')
-    .trim()
-    .replace(/\s+/g, ' ')
-    .toLowerCase();
 }
 
 function getHttpStatus(error) {
@@ -102,51 +102,6 @@ function resolveUniqueCandidates(candidates) {
   if (unique.length === 0) return null;
   if (unique.length === 1) return { status: 'matched', ship: unique[0] };
   return { status: 'ambiguous' };
-}
-
-function linePrefixCompatible(shipPrefix, cruiseLine) {
-  const prefix = normaliseText(shipPrefix);
-  const line = normaliseText(cruiseLine);
-  if (!prefix || !line) return false;
-  if (prefix === line) return true;
-  if (line.startsWith(`${prefix} `)) return true;
-  if (prefix.startsWith(`${line} `)) return true;
-  return false;
-}
-
-function resolveCruiseShip(ships, shipName, cruiseLine) {
-  const target = normaliseText(shipName);
-  const line = normaliseText(cruiseLine);
-
-  if (!target) return { status: 'not_found' };
-
-  const exact = ships.filter((row) => normaliseText(row?.name) === target);
-  const step1 = resolveUniqueCandidates(exact);
-  if (step1) return step1;
-
-  if (line) {
-    const composed = `${line} ${target}`;
-    const composedMatches = ships.filter(
-      (row) => normaliseText(row?.name) === composed
-    );
-    const step2 = resolveUniqueCandidates(composedMatches);
-    if (step2) return step2;
-  }
-
-  if (line) {
-    const suffix = ` ${target}`;
-    const suffixMatches = ships.filter((row) => {
-      const name = normaliseText(row?.name);
-      if (!name.endsWith(suffix)) return false;
-      if (name === target) return false;
-      const prefix = name.slice(0, name.length - suffix.length);
-      return linePrefixCompatible(prefix, line);
-    });
-    const step3 = resolveUniqueCandidates(suffixMatches);
-    if (step3) return step3;
-  }
-
-  return { status: 'not_found' };
 }
 
 function mapSupabaseShip(row) {
@@ -222,19 +177,35 @@ async function listSupabaseShips() {
   return all;
 }
 
-function filterSupabaseByLine(ships, cruiseLine) {
-  const line = normaliseText(cruiseLine);
-  if (!line) return ships;
-  return ships.filter((row) => {
-    const name = normaliseText(row.cruise_line_name);
-    if (!name) return true;
-    return (
-      name === line ||
-      name.includes(line) ||
-      line.includes(name) ||
-      linePrefixCompatible(name, line)
+async function listShipAliases() {
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return [];
+
+  try {
+    const response = await fetch(
+      `${url.replace(/\/$/, '')}/rest/v1/cruise_ship_aliases?select=ship_id,cruise_line_id,raw_alias,normalised_alias,active&or=(active.is.null,active.eq.true)&limit=5000`,
+      {
+        method: 'GET',
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          Accept: 'application/json'
+        }
+      }
     );
-  });
+    const text = await response.text();
+    let data = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch (_error) {
+      data = null;
+    }
+    if (!response.ok) return [];
+    return Array.isArray(data) ? data : [];
+  } catch (_error) {
+    return [];
+  }
 }
 
 async function listCruiseShips(base44) {
@@ -271,7 +242,7 @@ async function lookupBase44(shipName, cruiseLine) {
   });
 
   const ships = await listCruiseShips(base44);
-  return resolveCruiseShip(ships, shipName, cruiseLine);
+  return resolveCruiseShip(ships, shipName, cruiseLine, []);
 }
 
 exports.handler = async function (event) {
@@ -292,11 +263,12 @@ exports.handler = async function (event) {
       ''
   ).trim();
 
-  const cruiseLine = String(
+  const cruiseLineRaw = String(
     event.queryStringParameters?.cruise_line ||
       event.queryStringParameters?.cruiseLine ||
       ''
   ).trim();
+  const cruiseLine = resolveCruiseLineAlias(cruiseLineRaw) || cruiseLineRaw;
 
   if (!shipName) {
     return jsonResponse(400, {
@@ -308,15 +280,24 @@ exports.handler = async function (event) {
   console.log(
     JSON.stringify({
       event: 'ship_lookup_started',
-      has_line: Boolean(cruiseLine)
+      has_line: Boolean(cruiseLine),
+      line_alias_applied: Boolean(cruiseLineRaw) && normaliseText(cruiseLineRaw) !== normaliseText(cruiseLine)
     })
   );
 
   try {
-    const supabaseShips = await listSupabaseShips();
+    const [supabaseShips, aliases] = await Promise.all([
+      listSupabaseShips(),
+      listShipAliases()
+    ]);
     if (Array.isArray(supabaseShips) && supabaseShips.length) {
       const scoped = filterSupabaseByLine(supabaseShips, cruiseLine);
-      const resolution = resolveCruiseShip(scoped.length ? scoped : supabaseShips, shipName, cruiseLine);
+      const resolution = resolveCruiseShip(
+        scoped.length ? scoped : supabaseShips,
+        shipName,
+        cruiseLine,
+        aliases
+      );
 
       if (resolution.status === 'ambiguous') {
         console.warn(
