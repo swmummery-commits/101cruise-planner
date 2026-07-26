@@ -229,7 +229,20 @@ async function markDocumentProcessed(rest, document, fingerprint, processingStat
 /**
  * Core processor. Pass extractImpl for tests (no OpenAI).
  */
+const ITINERARY_MAP_RETIRED = true;
+
 async function processBookingConfirmation(options = {}) {
+  if (ITINERARY_MAP_RETIRED) {
+    // Journey-map itinerary extraction retired — refuse all extraction/approval writes.
+    return {
+      ok: false,
+      skipped: true,
+      reason: "itinerary_map_feature_retired",
+      extraction_calls: 0,
+      from_stored_extraction: false
+    };
+  }
+
   const {
     rest,
     booking,

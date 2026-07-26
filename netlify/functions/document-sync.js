@@ -5,10 +5,7 @@
  */
 
 const crypto = require('crypto');
-const {
-  fingerprintBookingDocument,
-  isBookingConfirmationType
-} = require('./lib/itinerary-document-hash');
+const { fingerprintBookingDocument } = require('./lib/itinerary-document-hash');
 
 function normalise(value) {
   return String(value || '').trim();
@@ -194,16 +191,7 @@ async function syncBookingDocuments(rest, booking, source = null) {
       const saved = Array.isArray(data) ? data[0] : data;
       if (saved) {
         result.rows.push(saved);
-        if (isBookingConfirmationType(saved.document_type) && saved.file_url) {
-          const fingerprint = saved.content_fingerprint || row.content_fingerprint;
-          const already =
-            saved.itinerary_last_processed_hash &&
-            fingerprint &&
-            saved.itinerary_last_processed_hash === fingerprint;
-          if (!already) {
-            result.confirmation_candidates.push(saved);
-          }
-        }
+        // Itinerary auto-extraction retired — never enqueue confirmation_candidates.
       }
       result.upserted += 1;
     } catch (error) {

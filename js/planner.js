@@ -2198,33 +2198,56 @@ function renderDashboardCombinedProgress(packingData, checklistData) {
 let dashboardLeafletMap = null;
 let dashboardShipAnimationFrame = null;
 
-function renderJourneyMap(journey) {
-  if (!journey || !Array.isArray(journey.stops) || !journey.stops.length) {
-    return `
-      <article class="dashboard-summary-card dashboard-journey-card">
-        <p class="dashboard-card-label">Your Journey</p>
-        <h2>Journey map coming soon</h2>
-        <p class="dashboard-card-copy">Your itinerary will appear here once it has been added.</p>
-      </article>
-    `;
+/**
+ * Simple booking-summary journey card (map extraction retired).
+ * Uses embark/disembark fields already on the booking — no PDF parsing.
+ */
+function renderJourneySummary(cruise) {
+  const embarkPort =
+    cruise?.embarkation_port || cruise?.departure_port || cruise?.from_port || cruise?.departure_city || "";
+  const disembarkPort =
+    cruise?.disembarkation_port || cruise?.arrival_port || cruise?.destination || cruise?.to_port || "";
+  const embarkDate = cruise?.departure_date || "";
+  const disembarkDate = cruise?.return_date || cruise?.arrival_date || "";
+  const nights =
+    cruise?.nights != null && cruise.nights !== ""
+      ? Number(cruise.nights)
+      : calculateCruiseNights(embarkDate, disembarkDate);
+
+  const routeParts = [embarkPort, disembarkPort].filter(Boolean);
+  const routeHeading =
+    routeParts.length === 2
+      ? `${routeParts[0]} → ${routeParts[1]}`
+      : routeParts[0] || "Your cruise journey";
+
+  const detailRows = [];
+  if (embarkDate) {
+    detailRows.push(`<div class="dashboard-journey-summary-row"><span>Embarkation</span><strong>${escapeHtml(formatDateShort(embarkDate))}</strong></div>`);
   }
-  const previewStops = journey.stops.slice(0, 3);
-  const remainingStops = journey.stops.slice(3);
+  if (disembarkDate) {
+    detailRows.push(`<div class="dashboard-journey-summary-row"><span>Disembarkation</span><strong>${escapeHtml(formatDateShort(disembarkDate))}</strong></div>`);
+  }
+  if (nights != null && Number.isFinite(Number(nights)) && Number(nights) > 0) {
+    const n = Number(nights);
+    detailRows.push(
+      `<div class="dashboard-journey-summary-row"><span>Duration</span><strong>${n} night${n === 1 ? "" : "s"}</strong></div>`
+    );
+  }
+
   return `
-    <article class="dashboard-summary-card dashboard-journey-card">
-      <div class="dashboard-journey-heading">
-        <div><p class="dashboard-card-label">Your Journey</p><h2>${escapeHtml(journey.title)}</h2></div>
-      </div>
-      ${renderEditorialJourneyMap(journey)}
-      <div class="dashboard-itinerary-preview" id="dashboardItineraryPreview">
-        ${previewStops.map((stop, index) => renderDashboardItineraryPreviewDay(stop, index)).join("")}
-        <div id="dashboardItineraryExtra" class="dashboard-itinerary-extra" hidden>
-          ${remainingStops.map((stop, index) => renderDashboardItineraryPreviewDay(stop, index + 3)).join("")}
-        </div>
-      </div>
-      ${remainingStops.length ? `<button id="dashboardItineraryToggle" class="dashboard-outline-action dashboard-card-button dashboard-itinerary-toggle" onclick="toggleDashboardItinerary()">Open Full Itinerary →</button>` : ""}
+    <article class="dashboard-summary-card dashboard-journey-card dashboard-journey-summary-card">
+      <p class="dashboard-card-label">Your Journey</p>
+      <h2>${escapeHtml(routeHeading)}</h2>
+      ${detailRows.length ? `<div class="dashboard-journey-summary-details">${detailRows.join("")}</div>` : ""}
+      <p class="dashboard-card-copy">Your detailed cruise itinerary is available in your Booking Confirmation.</p>
+      <button type="button" class="dashboard-outline-action dashboard-card-button" onclick="renderDocuments()">Open Documents →</button>
     </article>
   `;
+}
+
+/** @deprecated Map extraction retired — kept for offline tests of legacy helpers only. */
+function renderJourneyMap(journey) {
+  return renderJourneySummary(null);
 }
 
 function renderEditorialJourneyMap(journey) {
@@ -2344,7 +2367,7 @@ async function renderDashboard() {
   const leaveHomeInfo = calculateLeaveHomeDate(mainCruise, dashboardBudget);
   const countdownConfig = buildDashboardCountdownConfig(mainCruise, leaveHomeInfo);
   const dashboardActionCard = resolveDashboardActionCard(checklistData, leaveHomeInfo);
-  const dashboardJourney = await resolveDashboardJourney(mainCruise);
+  // Journey map extraction retired — booking summary only.
   const routeText = getCruiseRouteText(mainCruise);
   const nightsText = mainCruise?.nights ? `${mainCruise.nights} Nights` : "";
   const cruiseLineText = mainCruise?.cruise_line || "";
@@ -2409,7 +2432,7 @@ async function renderDashboard() {
         </section>
 
         <section class="dashboard-v2-grid">
-          ${renderJourneyMap(dashboardJourney)}
+          ${renderJourneySummary(mainCruise)}
 
           <div class="dashboard-v2-middle">
             ${renderDashboardCombinedProgress(packingData, checklistData)}
@@ -2426,7 +2449,6 @@ async function renderDashboard() {
 
   if (mainCruise) {
     startLiveCountdown(mainCruise, countdownConfig);
-    initialiseDashboardRouteMap(dashboardJourney);
   }
 }
 

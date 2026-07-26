@@ -43,8 +43,16 @@ assert(
   "renderDocuments calls scroll reset"
 );
 assert(
-  /customer-itinerary/.test(plannerSrc) && /resolveDashboardJourney/.test(plannerSrc),
-  "dashboard loads approved itinerary endpoint"
+  /function renderJourneySummary/.test(plannerSrc) && /renderJourneySummary\(mainCruise\)/.test(plannerSrc),
+  "dashboard uses simple journey summary"
+);
+assert(
+  !/resolveDashboardJourney\(mainCruise\)/.test(plannerSrc),
+  "dashboard no longer loads approved itinerary map endpoint"
+);
+assert(
+  !/Journey map coming soon/.test(plannerSrc.match(/function renderJourneySummary[\s\S]*?^}/m)?.[0] || ""),
+  "summary does not show journey map coming soon"
 );
 assert(
   !/DASHBOARD_JOURNEY_PROTOTYPES/.test(plannerSrc),

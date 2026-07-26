@@ -5573,6 +5573,30 @@ html.is-embedded .customer-access-card {
   flex-direction: column;
   gap: 18px;
 }
+.dashboard-journey-summary-card h2 {
+  margin: 6px 0 0;
+  font-size: 1.35rem;
+  line-height: 1.25;
+}
+.dashboard-journey-summary-details {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 0;
+}
+.dashboard-journey-summary-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+  font-size: 0.92rem;
+}
+.dashboard-journey-summary-row span {
+  color: var(--muted, #667085);
+}
+.dashboard-journey-summary-row strong {
+  font-weight: 650;
+  text-align: right;
+}
 .dashboard-journey-heading {
   display: flex;
   align-items: flex-start;

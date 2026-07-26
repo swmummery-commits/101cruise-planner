@@ -43,19 +43,9 @@ let crmSyncMessage = "";
 let crmSyncLoading = false;
 let crmBookingReferenceInput = "";
 /** Shared loaded booking for Booking Documents workspace (not a CRM Sync restore). */
-let itineraryReview = null;
-let itineraryMessage = "";
-let itineraryLoading = false;
 let bookingDocumentsRefInput = "";
 let bookingDocumentsMessage = "";
 let bookingDocumentsLoading = false;
-let selectedItineraryDocumentId = "";
-let itineraryExceptions = [];
-let itineraryExceptionAssignees = [];
-let itineraryExceptionsCount = 0;
-let itineraryExceptionsLoading = false;
-let itineraryExceptionsMessage = "";
-let itineraryExceptionsHashBound = false;
 let calculatorRates = [];
 let calculatorRateSearchQuery = "";
 let calculatorRateActiveFilter = "active";
@@ -416,13 +406,9 @@ async function adminSignIn() {
   }
 
   await loadAdminData();
+  ensureBookingDocumentsHashListener();
   renderAdmin();
-  ensureItineraryExceptionsHashListener();
   applyBookingDocumentsHashRoute();
-  refreshItineraryExceptionsBadge();
-  if (activeTab === "booking-documents") {
-    loadItineraryExceptionsQueue({ silent: true });
-  }
 }
 
 async function adminSignOut() {
@@ -773,10 +759,6 @@ async function setTab(tab) {
     showFeaturedNewsletterPreview = false;
   }
   renderAdmin();
-  if (resolved === "booking-documents") {
-    loadItineraryExceptionsQueue({ silent: true });
-  }
-  refreshItineraryExceptionsBadge();
   if (resolved === "calculator-data") {
     refreshBeveragePackagesGrid();
   }
@@ -881,7 +863,7 @@ const ADMIN_NAV_GROUPS = [
     id: "customer-experience",
     label: "Customer Experience",
     items: [
-      { id: "booking-documents", label: "Booking Documents", badgeKey: "itineraryExceptions" },
+      { id: "booking-documents", label: "Booking Documents" },
       { id: "packing", label: "Packing" },
       { id: "checklist", label: "Checklist" },
       { id: "smart-profiles", label: "Smart Profiles" },
@@ -1075,17 +1057,13 @@ function renderAdminTabNavigation() {
       .map((item) => {
         const active = activeTab === item.id;
         const placeholderClass = item.placeholder ? " is-placeholder" : "";
-        const badge =
-          item.badgeKey === "itineraryExceptions" && itineraryExceptionsCount > 0
-            ? `<span class="admin-nav-badge" aria-label="${itineraryExceptionsCount} need attention">${itineraryExceptionsCount}</span>`
-            : "";
         return `
           <button
             type="button"
             role="menuitem"
             class="admin-nav-leaf${placeholderClass}${active ? " is-active" : ""}"
             onclick="event.stopPropagation(); setTab('${item.id}')"
-          ><span>${esc(item.label)}</span>${badge}</button>
+          ><span>${esc(item.label)}</span></button>
         `;
       })
       .join("");
@@ -1245,13 +1223,11 @@ function getActiveAdminBooking() {
   return crmSyncResult?.booking || null;
 }
 
-function isAdminBookingConfirmation(document) {
-  return String(document?.document_type || "").toLowerCase().includes("booking confirmation");
-}
+let bookingDocumentsHashBound = false;
 
-function ensureItineraryExceptionsHashListener() {
-  if (itineraryExceptionsHashBound) return;
-  itineraryExceptionsHashBound = true;
+function ensureBookingDocumentsHashListener() {
+  if (bookingDocumentsHashBound) return;
+  bookingDocumentsHashBound = true;
   window.addEventListener("hashchange", () => applyBookingDocumentsHashRoute());
 }
 
@@ -1270,205 +1246,9 @@ function applyBookingDocumentsHashRoute() {
   } else if (ref && !crmSyncResult?.booking) {
     loadBookingDocumentsWorkspace();
   }
-  // Viewing never clears the Needs Attention queue.
-}
-
-async function refreshItineraryExceptionsBadge() {
-  try {
-    const headers = await adminAuthHeaders();
-    if (!headers.Authorization || headers.Authorization === "Bearer ") return;
-    const response = await fetch("/.netlify/functions/itinerary-exceptions?action=count", { headers });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) return;
-    const next = Number(data.count || 0);
-    if (next !== itineraryExceptionsCount) {
-      itineraryExceptionsCount = next;
-      // Soft badge refresh without full panel rebuild when possible
-      document.querySelectorAll(".admin-nav-leaf").forEach((btn) => {
-        if (!/Booking Documents/i.test(btn.textContent || "")) return;
-        const existing = btn.querySelector(".admin-nav-badge");
-        if (itineraryExceptionsCount > 0) {
-          if (existing) existing.textContent = String(itineraryExceptionsCount);
-          else {
-            const badge = document.createElement("span");
-            badge.className = "admin-nav-badge";
-            badge.setAttribute("aria-label", `${itineraryExceptionsCount} need attention`);
-            badge.textContent = String(itineraryExceptionsCount);
-            btn.appendChild(badge);
-          }
-        } else if (existing) {
-          existing.remove();
-        }
-      });
-    }
-  } catch (_error) {
-    /* badge is best-effort */
-  }
-}
-
-async function loadItineraryExceptionsQueue(options = {}) {
-  const silent = options.silent === true;
-  itineraryExceptionsLoading = true;
-  if (!silent) {
-    itineraryExceptionsMessage = "Loading Needs Attention queue…";
-    renderAdmin();
-  }
-  try {
-    const headers = await adminAuthHeaders();
-    const response = await fetch("/.netlify/functions/itinerary-exceptions", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ action: "list" })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
-    itineraryExceptions = data.exceptions || [];
-    itineraryExceptionAssignees = data.assignees || [];
-    itineraryExceptionsCount = Number(data.count || itineraryExceptions.length || 0);
-    itineraryExceptionsMessage = itineraryExceptions.length
-      ? `${itineraryExceptions.length} booking${itineraryExceptions.length === 1 ? "" : "s"} need attention.`
-      : "No itinerary exceptions need attention.";
-  } catch (error) {
-    if (!silent) itineraryExceptionsMessage = `Error: ${error.message || error}`;
-  } finally {
-    itineraryExceptionsLoading = false;
-    if (!silent || activeTab === "booking-documents") renderAdmin();
-    else refreshItineraryExceptionsBadge();
-  }
-}
-
-function reviewItineraryException(bookingReference) {
-  const ref = String(bookingReference || "").trim();
-  if (!ref) return;
-  bookingDocumentsRefInput = ref;
-  crmBookingReferenceInput = ref;
-  window.location.hash = `booking-documents?ref=${encodeURIComponent(ref)}`;
-  // Viewing must not clear the queue item.
-  loadBookingDocumentsWorkspace();
-}
-
-async function dismissItineraryExceptionItem(exceptionId) {
-  const reason = window.prompt("Record a reason for dismissing this exception (required):");
-  if (reason == null) return;
-  if (!String(reason).trim()) {
-    itineraryExceptionsMessage = "Error: A dismiss reason is required.";
-    renderAdmin();
-    return;
-  }
-  try {
-    const headers = await adminAuthHeaders();
-    const response = await fetch("/.netlify/functions/itinerary-exceptions", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        action: "dismiss",
-        exception_id: exceptionId,
-        dismiss_reason: String(reason).trim()
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
-    await loadItineraryExceptionsQueue();
-  } catch (error) {
-    itineraryExceptionsMessage = `Error: ${error.message || error}`;
-    renderAdmin();
-  }
-}
-
-async function assignItineraryExceptionItem(exceptionId, adminUserId) {
-  try {
-    const headers = await adminAuthHeaders();
-    const response = await fetch("/.netlify/functions/itinerary-exceptions", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        action: "assign",
-        exception_id: exceptionId,
-        admin_user_id: adminUserId || null
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
-    await loadItineraryExceptionsQueue({ silent: true });
-  } catch (error) {
-    itineraryExceptionsMessage = `Error: ${error.message || error}`;
-    renderAdmin();
-  }
-}
-
-function renderItineraryNeedsAttentionQueue() {
-  const rows = itineraryExceptions || [];
-  return `
-    <section class="itinerary-attention-queue">
-      <div class="admin-list-top">
-        <div>
-          <h4>Needs Attention ${itineraryExceptionsCount ? `<span class="admin-nav-badge">${itineraryExceptionsCount}</span>` : ""}</h4>
-          <p class="admin-muted">Persistent exception queue. Viewing a booking does not clear an item — resolve by approving, superseding, or dismissing with a reason.</p>
-        </div>
-        <button class="admin-button secondary small" onclick="loadItineraryExceptionsQueue()" ${itineraryExceptionsLoading ? "disabled" : ""}>
-          ${itineraryExceptionsLoading ? "Refreshing…" : "Refresh queue"}
-        </button>
-      </div>
-      ${itineraryExceptionsMessage ? `<div class="admin-message">${esc(itineraryExceptionsMessage)}</div>` : ""}
-      ${rows.length ? `
-        <div class="itinerary-attention-list">
-          ${rows.map((row) => {
-            const assigneeOptions = (itineraryExceptionAssignees || [])
-              .map((a) => {
-                const selected = String(row.assigned_admin_user_id || "") === String(a.id);
-                const label = a.display_name || a.email;
-                return `<option value="${esc(a.id)}" ${selected ? "selected" : ""}>${esc(label)}</option>`;
-              })
-              .join("");
-            const statusView = {
-              key: row.effective_status || row.exception_kind,
-              label: row.effective_status_label || formatItineraryProcessingStatus(row.effective_status || row.exception_kind),
-              tone: row.effective_status_tone || "warning",
-              action_message:
-                row.action_message ||
-                (Array.isArray(row.validation_failures) && row.validation_failures[0]?.message) ||
-                row.concise_reason ||
-                "",
-              timing_lines: row.timing_lines || [],
-              can_retry: Boolean(row.can_retry),
-              needs_attention: true,
-              details: row.status_details || { source_filename: row.source_filename }
-            };
-            const rowTone = statusView.tone === "danger" ? "is-danger" : statusView.tone === "warning" ? "is-warning" : "";
-            return `
-              <article class="itinerary-attention-row ${rowTone}">
-                <div>
-                  <strong>${esc(row.booking_reference || row.booking_id || "Unknown booking")}</strong>
-                  <span class="${itineraryStatusPillClass(statusView.tone)}">${esc(statusView.label)}</span>
-                  <p class="admin-muted">${esc(row.customer_names || "Customer unknown")} · ${esc([row.cruise_line, row.ship_name].filter(Boolean).join(" · ") || "Cruise unknown")}</p>
-                  <p class="admin-small">Departs ${esc(row.departure_date || "—")} · Source ${esc(row.source_filename || "—")}</p>
-                  ${renderItineraryStatusActionNote(statusView)}
-                  ${renderItineraryStatusTiming(statusView)}
-                  <p class="admin-small">Flagged ${esc(row.first_flagged_at ? new Date(row.first_flagged_at).toLocaleString("en-AU") : "—")} · Waiting ${esc(row.awaiting_label || "—")}</p>
-                </div>
-                <div class="admin-actions-row itinerary-attention-actions">
-                  <label class="admin-small">
-                    Assign
-                    <select onchange="assignItineraryExceptionItem('${esc(row.id)}', this.value)">
-                      <option value="">Unassigned</option>
-                      ${assigneeOptions}
-                    </select>
-                  </label>
-                  <button class="admin-button black small" onclick="reviewItineraryException('${esc(row.booking_reference || "")}')">Review itinerary</button>
-                  ${statusView.can_retry ? `<button class="admin-button secondary small" onclick="retryItineraryExtraction('${esc(row.source_document_id || "")}', '${esc(row.booking_reference || "")}')">Retry extraction</button>` : ""}
-                  <button class="admin-button secondary small" onclick="dismissItineraryExceptionItem('${esc(row.id)}')">Dismiss…</button>
-                </div>
-              </article>
-            `;
-          }).join("")}
-        </div>
-      ` : `<p class="admin-muted">Queue empty.</p>`}
-    </section>
-  `;
 }
 
 function renderBookingDocumentsPanel() {
-  ensureItineraryExceptionsHashListener();
   const booking = getActiveAdminBooking();
   const isRunning = bookingDocumentsLoading || /loading booking/i.test(String(bookingDocumentsMessage || ""));
   const messageClass = bookingDocumentsMessage.toLowerCase().includes("error")
@@ -1483,11 +1263,9 @@ function renderBookingDocumentsPanel() {
       <div class="admin-list-top">
         <div>
           <h3>Booking Documents</h3>
-          <p class="admin-muted">Booking Confirmations are processed automatically when synced or uploaded. Only exceptions need review here. Manual Extract / Approve remain available as recovery tools.</p>
+          <p class="admin-muted">Load a booking to view synced Base44 documents, open files, and upload Admin-only documents for the Client Portal. Detailed day-by-day itineraries remain in each Booking Confirmation PDF.</p>
         </div>
       </div>
-
-      ${renderItineraryNeedsAttentionQueue()}
 
       <div class="crm-sync-form">
         <div class="admin-field crm-sync-input">
@@ -1502,7 +1280,7 @@ function renderBookingDocumentsPanel() {
 
       ${booking ? renderBookingDocumentsWorkspace(booking) : `
         <div class="admin-card crm-empty-card">
-          <p class="admin-muted">Enter a booking reference to open its document library and itinerary review tools.</p>
+          <p class="admin-muted">Enter a booking reference to open its document library.</p>
         </div>
       `}
     </div>
@@ -1546,7 +1324,6 @@ function renderBookingDocumentsWorkspace(booking) {
         </div>
       </div>
       ${renderCrmDocumentsPanel(booking)}
-      ${renderItineraryReview(booking)}
     </div>
   `;
 }
@@ -1564,9 +1341,6 @@ async function loadBookingDocumentsWorkspace() {
   }
 
   bookingDocumentsLoading = true;
-  itineraryReview = null;
-  itineraryMessage = "";
-  selectedItineraryDocumentId = "";
   crmDocuments = [];
   crmDocumentsMessage = "";
   bookingDocumentsMessage = "Loading booking and documents…";
@@ -1581,11 +1355,7 @@ async function loadBookingDocumentsWorkspace() {
     const response = await fetch("/.netlify/functions/get-booking", {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        booking_reference: bookingReference,
-        // Viewing/loading must not start or restart itinerary extraction.
-        skip_itinerary_auto_process: true
-      })
+      body: JSON.stringify({ booking_reference: bookingReference })
     });
     const data = await response.json().catch(() => ({ success: false, error: "Invalid response from server" }));
     if (!response.ok || data.success === false) {
@@ -1599,9 +1369,6 @@ async function loadBookingDocumentsWorkspace() {
     }
 
     await loadCrmDocuments();
-    if (data.booking?.base44_booking_id) {
-      await loadItineraryReview(data.booking.base44_booking_id);
-    }
     bookingDocumentsMessage = `Booking ${bookingReference} loaded.`;
   } catch (error) {
     console.error("Booking documents load failed", error);
@@ -1644,7 +1411,7 @@ function renderCrmDocumentsPanel(booking) {
       <div class="admin-list-top">
         <div>
           <h4>Document Library</h4>
-          <p class="admin-muted">Base44 documents are synced as read-only. New Booking Confirmations extract automatically when possible. Use Extract only if processing failed or a document needs a forced re-run.</p>
+          <p class="admin-muted">Base44 documents are synced as read-only. Upload Admin documents when you need a 101cruise-hosted file visible in the Client Portal.</p>
         </div>
         <div class="admin-actions-row" style="align-items:center">
           <button class="admin-button secondary small" onclick="loadCrmDocuments()" ${crmDocumentsLoading ? "disabled" : ""}>
@@ -1657,43 +1424,19 @@ function renderCrmDocumentsPanel(booking) {
       ${docs.length ? `
         <div class="crm-documents-list">
           ${docs.map((doc) => {
-            const confirmation = isAdminBookingConfirmation(doc);
-            const selected = selectedItineraryDocumentId && String(selectedItineraryDocumentId) === String(doc.id);
-            const matchingItinerary =
-              confirmation && itineraryReview &&
-              (String(itineraryReview.source_document_id || "") === String(doc.id) ||
-                (doc.content_fingerprint &&
-                  String(itineraryReview.source_document_hash || "") === String(doc.content_fingerprint)))
-                ? itineraryReview
-                : null;
-            const statusView = confirmation
-              ? buildAdminItineraryStatusView(doc, matchingItinerary, null)
-              : null;
-            const processLabel = statusView ? statusView.label : "";
-            const rowAttention =
-              statusView && (statusView.tone === "danger" || statusView.tone === "warning")
-                ? ` is-status-${statusView.tone}`
-                : "";
             return `
-            <article class="crm-document-row${confirmation ? " is-booking-confirmation" : ""}${selected ? " is-selected-confirmation" : ""}${rowAttention}">
+            <article class="crm-document-row">
               <div>
                 <strong>${esc(doc.document_type || "Other")}</strong>
                 <span class="admin-pill">${esc(sourceLabel(doc.source_system))}</span>
-                ${processLabel ? `<span class="${itineraryStatusPillClass(statusView.tone)}">${esc(processLabel)}</span>` : ""}
                 ${doc.document_visible_to_customer === false ? '<span class="admin-pill">Hidden from customer</span>' : ""}
                 <p class="admin-muted">${esc(doc.filename || "Untitled file")}</p>
-                ${statusView ? renderItineraryStatusActionNote(statusView) : ""}
-                ${statusView ? renderItineraryStatusTiming(statusView) : ""}
-                ${statusView && statusView.can_retry ? renderItineraryStatusDetails(statusView) : ""}
                 ${doc.note ? `<p class="crm-document-note">${esc(doc.note)}</p>` : ""}
                 <p class="admin-small">Uploaded ${esc(formatAdminDate(String(doc.uploaded_at || "").slice(0, 10)))}</p>
               </div>
               <div class="admin-actions-row">
                 ${doc.file_url ? `<a class="admin-button secondary small" href="${esc(doc.file_url)}" target="_blank" rel="noopener noreferrer">Open</a>` : `<span class="admin-muted">File unavailable</span>`}
-                ${confirmation && statusView?.can_retry ? `<button class="admin-button black small" onclick="retryItineraryExtraction('${esc(doc.id)}')" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading && selected ? "Retrying…" : "Retry extraction"}</button>` : ""}
-                ${confirmation && doc.file_url && !statusView?.can_retry ? `<button class="admin-button secondary small" onclick="extractBookingItinerary('${esc(doc.id)}')" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading && selected ? "Extracting…" : "Extract itinerary"}</button>` : ""}
-                ${confirmation ? `<button class="admin-button secondary small" onclick="selectItineraryDocumentDetails('${esc(doc.id)}')">View details</button>` : ""}
-                ${doc.editable ? `<button class="admin-button secondary small" onclick="deleteAdminBookingDocument('${esc(doc.id)}')">Delete</button>` : confirmation ? "" : `<span class="admin-small">Managed in Base44</span>`}
+                ${doc.editable ? `<button class="admin-button secondary small" onclick="deleteAdminBookingDocument('${esc(doc.id)}')">Delete</button>` : `<span class="admin-small">Managed in Base44</span>`}
               </div>
             </article>
           `;
@@ -1852,388 +1595,6 @@ function itineraryAuthHeaders() {
   }));
 }
 
-function getItineraryStatusApi() {
-  return window.ItineraryProcessingStatus || null;
-}
-
-/** Authoritative status view for a confirmation document (+ optional itinerary/exception). */
-function buildAdminItineraryStatusView(document, itinerary = null, exception = null) {
-  const api = getItineraryStatusApi();
-  if (!api) {
-    return {
-      key: String(document?.itinerary_processing_status || "").trim() || "awaiting_extraction",
-      label: "Awaiting extraction",
-      tone: "neutral",
-      action_message: "",
-      timing_lines: [],
-      can_retry: false,
-      details: {}
-    };
-  }
-  return api.buildItineraryStatusView({ document, itinerary, exception });
-}
-
-function formatItineraryProcessingStatus(statusOrView) {
-  const api = getItineraryStatusApi();
-  if (statusOrView && typeof statusOrView === "object" && statusOrView.label) {
-    return statusOrView.label;
-  }
-  const key = String(statusOrView || "").trim();
-  if (api) return api.formatItineraryStatusLabel(key);
-  // Fallback — never show raw snake_case internals.
-  if (key === "awaiting_extraction_stale" || key === "processing_stalled") return "Processing stalled";
-  if (key === "review_required") return "Review required";
-  if (key === "approved_automatically") return "Approved automatically";
-  if (key === "approved_manually") return "Approved manually";
-  if (key === "awaiting_extraction") return "Awaiting extraction";
-  if (key === "processing") return "Processing";
-  if (key === "failed") return "Failed";
-  if (key === "superseded") return "Superseded";
-  return key ? "Needs review" : "";
-}
-
-function itineraryStatusPillClass(tone) {
-  const t = String(tone || "neutral");
-  return `admin-pill itinerary-process-pill itinerary-status-${t}`;
-}
-
-function renderItineraryStatusActionNote(view) {
-  if (!view?.action_message || !view.needs_attention) return "";
-  const tone = view.tone === "danger" ? "danger" : view.tone === "warning" ? "warning" : "neutral";
-  return `<p class="itinerary-status-action itinerary-status-action-${tone}">${esc(view.action_message)}</p>`;
-}
-
-function renderItineraryStatusTiming(view) {
-  const lines = Array.isArray(view?.timing_lines) ? view.timing_lines : [];
-  if (!lines.length) return "";
-  return `<p class="admin-small itinerary-status-timing">${lines.map((l) => esc(l)).join(" · ")}</p>`;
-}
-
-function renderItineraryStatusDetails(view) {
-  if (!view?.can_retry && !view?.details?.stored_error) return "";
-  const d = view.details || {};
-  const bits = [];
-  if (d.source_filename) bits.push(`Source: ${d.source_filename}`);
-  if (d.stored_error) bits.push(`Error: ${d.stored_error}`);
-  if (d.has_itinerary_data) bits.push("Stored itinerary data: yes");
-  else if (view.can_retry) bits.push("Stored itinerary data: no");
-  if (d.duplicate_cost_risk) bits.push(d.duplicate_cost_risk);
-  if (!bits.length) return "";
-  return `<ul class="itinerary-status-details">${bits.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>`;
-}
-
-function renderItineraryValidationFailures(review) {
-  const failures = review?.validation_result?.failures;
-  if (!Array.isArray(failures) || !failures.length) return "";
-  const summary = review.validation_result.summary || "Review required";
-  return `
-    <div class="itinerary-validation-failures">
-      <strong>Review required:</strong> ${esc(summary)}
-      <ul>
-        ${failures.map((f) => `<li><code>${esc(f.code || "issue")}</code> — ${esc(f.message || "")}</li>`).join("")}
-      </ul>
-    </div>`;
-}
-
-function renderItineraryCostNote(review) {
-  if (!review) return "";
-  const parts = [];
-  if (review.extraction_call_count != null) parts.push(`${review.extraction_call_count} extraction call${Number(review.extraction_call_count) === 1 ? "" : "s"}`);
-  if (review.extraction_model) parts.push(`model ${review.extraction_model}`);
-  if (review.extraction_estimated_cost_usd != null) parts.push(`est. US$${Number(review.extraction_estimated_cost_usd).toFixed(4)}`);
-  if (review.approval_method) parts.push(`approval: ${review.approval_method}`);
-  if (!parts.length) return "";
-  return `<p class="admin-small itinerary-cost-note">${esc(parts.join(" · "))}</p>`;
-}
-
-function renderItineraryReview(booking) {
-  const isRunning =
-    itineraryLoading ||
-    /extracting|approving|saving draft|revalidat/i.test(String(itineraryMessage || ""));
-  const messageClass = itineraryMessage.toLowerCase().includes("error")
-    ? "admin-error"
-    : isRunning
-      ? "admin-running"
-      : "";
-  const data = itineraryReview?.itinerary_data || null;
-  const confirmationDoc = (crmDocuments || []).find((d) => isAdminBookingConfirmation(d)) || null;
-  const reviewStatusView = buildAdminItineraryStatusView(
-    confirmationDoc || {
-      itinerary_processing_status: itineraryReview?.processing_status || null
-    },
-    itineraryReview,
-    null
-  );
-  const processLabel = reviewStatusView.label;
-  const inlineRunning =
-    isRunning && itineraryMessage
-      ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(itineraryMessage)}</span>`
-      : "";
-  return `
-    <section class="itinerary-review-panel">
-      <div class="admin-list-top">
-        <div>
-          <h4>Itinerary review</h4>
-          <p class="admin-muted">Fully validated confirmations approve automatically. This panel is for exceptions — edit, revalidate, or approve manually when needed.</p>
-        </div>
-        ${processLabel ? `<span class="${itineraryStatusPillClass(reviewStatusView.tone)}">${esc(processLabel)}</span>` : ""}
-      </div>
-      ${!isRunning ? `<div class="admin-message ${messageClass}">${esc(itineraryMessage)}</div>` : ""}
-      ${renderItineraryStatusActionNote(reviewStatusView)}
-      ${renderItineraryValidationFailures(itineraryReview)}
-      ${renderItineraryCostNote(itineraryReview)}
-      ${data ? `
-        <div class="itinerary-source-note">
-          <strong>Source:</strong> ${esc(itineraryReview.source_filename || "Booking Confirmation")}
-          ${itineraryReview.extraction_confidence != null ? `<span>Overall confidence: ${Math.round(Number(itineraryReview.extraction_confidence) * 100)}%</span>` : ""}
-          ${itineraryReview.validation_version ? `<span>Validation ${esc(itineraryReview.validation_version)}</span>` : ""}
-        </div>
-        <div class="admin-field">
-          <label>Extracted itinerary JSON</label>
-          <textarea id="itineraryJsonEditor" class="itinerary-json-editor" spellcheck="false">${esc(JSON.stringify(data, null, 2))}</textarea>
-          <div class="admin-helper">Dates must use YYYY-MM-DD and times must use 24-hour HH:MM. Keep the official Booking Confirmation as the source of truth. Unchanged documents are never re-extracted.</div>
-        </div>
-        <div class="admin-actions-row">
-          <button class="admin-button secondary" onclick="saveItineraryReview(false)" ${isRunning ? "disabled" : ""}>Save draft</button>
-          <button class="admin-button secondary" onclick="revalidateBookingItinerary()" ${isRunning ? "disabled" : ""}>Revalidate</button>
-          <button class="admin-button black" onclick="saveItineraryReview(true)" ${isRunning ? "disabled" : ""}>Approve itinerary</button>
-          ${/approving|saving draft|revalidat/i.test(String(itineraryMessage || "")) ? inlineRunning : ""}
-        </div>
-      ` : `<p class="admin-muted itinerary-empty">No itinerary yet. New Booking Confirmations process automatically when synced; use Extract itinerary only for recovery.</p>`}
-    </section>
-  `;
-}
-
-async function loadItineraryReview(bookingId) {
-  if (!bookingId) {
-    itineraryMessage = "Error: Base44 booking ID is missing.";
-    renderAdmin();
-    return;
-  }
-  itineraryLoading = true;
-  itineraryMessage = "Loading saved itinerary…";
-  renderAdmin();
-  try {
-    const headers = await itineraryAuthHeaders();
-    const response = await fetch(`/.netlify/functions/admin-itinerary?booking_id=${encodeURIComponent(bookingId)}`, { headers });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
-    itineraryReview = data.itinerary;
-    itineraryMessage = itineraryReview ? "Saved itinerary loaded." : "No itinerary has been extracted yet.";
-  } catch (error) {
-    itineraryMessage = `Error: ${error.message || error}`;
-  } finally {
-    itineraryLoading = false;
-    renderAdmin();
-  }
-}
-
-function selectItineraryDocumentDetails(documentId = "") {
-  const docId = String(documentId || "").trim();
-  if (!docId) return;
-  selectedItineraryDocumentId = docId;
-  const doc = (crmDocuments || []).find((row) => String(row.id) === docId);
-  if (doc) {
-    const view = buildAdminItineraryStatusView(doc, itineraryReview, null);
-    itineraryMessage = [
-      view.label,
-      view.action_message,
-      ...(view.timing_lines || []),
-      view.details?.duplicate_cost_risk || ""
-    ]
-      .filter(Boolean)
-      .join(" — ");
-  }
-  renderAdmin();
-}
-
-async function retryItineraryExtraction(documentId = "", bookingReference = "") {
-  const booking = getActiveAdminBooking();
-  const ref = String(bookingReference || booking?.booking_reference || "").trim();
-  if (ref && (!booking || String(booking.booking_reference) !== ref)) {
-    // Load the booking first when retrying from the queue card (no auto-extract on load).
-    bookingDocumentsRefInput = ref;
-    crmBookingReferenceInput = ref;
-    await loadBookingDocumentsWorkspace();
-  }
-  const active = getActiveAdminBooking();
-  if (!active?.base44_booking_id) {
-    itineraryMessage = "Error: Load the booking before retrying extraction.";
-    renderAdmin();
-    return;
-  }
-  const docId = String(documentId || selectedItineraryDocumentId || "").trim();
-  if (docId) selectedItineraryDocumentId = docId;
-  const doc = (crmDocuments || []).find((row) => String(row.id) === String(selectedItineraryDocumentId || ""));
-  const statusView = doc ? buildAdminItineraryStatusView(doc, itineraryReview, null) : null;
-  if (statusView && !statusView.can_retry) {
-    itineraryMessage = "Retry is only available when processing is stalled or failed.";
-    renderAdmin();
-    return;
-  }
-  // Show Processing immediately; do not clear Needs Attention until resolved.
-  if (doc) {
-    doc.itinerary_processing_status = "processing";
-    doc.itinerary_process_lock_until = new Date(Date.now() + 5 * 60 * 1000).toISOString();
-  }
-  itineraryLoading = true;
-  itineraryMessage = statusView?.details?.retry_will_call_openai
-    ? "Retrying extraction — OpenAI will be called because no valid stored extraction exists…"
-    : "Retrying extraction — reusing stored data when possible…";
-  renderAdmin();
-  try {
-    const headers = await itineraryAuthHeaders();
-    const response = await fetch("/.netlify/functions/admin-itinerary", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        action: "retry_extraction",
-        booking_id: active.base44_booking_id,
-        booking_reference: active.booking_reference,
-        document_id: selectedItineraryDocumentId || undefined
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
-    itineraryReview = data.itinerary;
-    if (data.from_stored_extraction) {
-      itineraryMessage = data.auto_approved
-        ? "Retry reused stored extraction and approved automatically (no OpenAI call)."
-        : `Retry reused stored extraction: ${data.validation?.summary || "review required"} (no OpenAI call).`;
-    } else if (data.auto_approved) {
-      itineraryMessage = "Retry extraction validated and approved automatically.";
-    } else if (data.validation?.summary) {
-      itineraryMessage = `Retry extraction saved for review: ${data.validation.summary}.`;
-    } else {
-      itineraryMessage = "Retry extraction complete.";
-    }
-    await loadCrmDocuments();
-    // Refresh queue — item remains until actually resolved.
-    await loadItineraryExceptionsQueue({ silent: true });
-    refreshItineraryExceptionsBadge();
-  } catch (error) {
-    itineraryMessage = `Error: ${error.message || error}`;
-    await loadCrmDocuments().catch(() => null);
-  } finally {
-    itineraryLoading = false;
-    renderAdmin();
-  }
-}
-
-async function extractBookingItinerary(documentId = "") {
-  const booking = getActiveAdminBooking();
-  if (!booking) return;
-  const docId = String(documentId || selectedItineraryDocumentId || "").trim();
-  if (docId) {
-    const doc = (crmDocuments || []).find((row) => String(row.id) === docId);
-    if (doc && !isAdminBookingConfirmation(doc)) {
-      itineraryMessage = "Error: Itinerary extraction is only available for Booking Confirmation documents.";
-      renderAdmin();
-      return;
-    }
-    selectedItineraryDocumentId = docId;
-  }
-  itineraryLoading = true;
-  itineraryMessage = "Reading the Booking Confirmation and extracting the itinerary. This can take up to a minute…";
-  renderAdmin();
-  try {
-    const headers = await itineraryAuthHeaders();
-    const response = await fetch("/.netlify/functions/admin-itinerary", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        booking_id: booking.base44_booking_id,
-        booking_reference: booking.booking_reference,
-        document_id: selectedItineraryDocumentId || undefined
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
-    itineraryReview = data.itinerary;
-    if (data.skipped) {
-      itineraryMessage = "Unchanged confirmation — stored extraction reused (no OpenAI call).";
-    } else if (data.auto_approved) {
-      itineraryMessage = "Extraction validated and approved automatically for the Client Portal map.";
-    } else if (data.validation?.summary) {
-      itineraryMessage = `Extraction saved for review: ${data.validation.summary}.`;
-    } else {
-      itineraryMessage = "Extraction complete. Review required before the map can publish.";
-    }
-    await loadItineraryExceptionsQueue({ silent: true });
-    refreshItineraryExceptionsBadge();
-  } catch (error) {
-    itineraryMessage = `Error: ${error.message || error}`;
-  } finally {
-    itineraryLoading = false;
-    renderAdmin();
-  }
-}
-
-async function revalidateBookingItinerary() {
-  const booking = getActiveAdminBooking();
-  if (!booking?.base44_booking_id) return;
-  itineraryLoading = true;
-  itineraryMessage = "Revalidating stored itinerary without a new OpenAI call…";
-  renderAdmin();
-  try {
-    const headers = await itineraryAuthHeaders();
-    const response = await fetch("/.netlify/functions/admin-itinerary", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        action: "revalidate",
-        booking_id: booking.base44_booking_id,
-        booking_reference: booking.booking_reference,
-        document_id: selectedItineraryDocumentId || undefined
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
-    itineraryReview = data.itinerary;
-    itineraryMessage = data.auto_approved
-      ? "Revalidation passed — itinerary approved automatically."
-      : `Revalidation complete: ${data.validation?.summary || data.reason || "review required"}.`;
-  } catch (error) {
-    itineraryMessage = `Error: ${error.message || error}`;
-  } finally {
-    itineraryLoading = false;
-    renderAdmin();
-  }
-}
-
-async function saveItineraryReview(approve) {
-  const booking = getActiveAdminBooking();
-  const editor = document.getElementById("itineraryJsonEditor");
-  if (!booking || !editor) return;
-  try {
-    const itineraryData = JSON.parse(editor.value);
-    if (!Array.isArray(itineraryData.stops)) throw new Error("The itinerary must contain a stops array.");
-    itineraryMessage = approve ? "Approving itinerary…" : "Saving draft…";
-    renderAdmin();
-    const headers = await itineraryAuthHeaders();
-    const response = await fetch("/.netlify/functions/admin-itinerary", {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify({
-        booking_id: booking.base44_booking_id,
-        status: approve ? "approved" : "review_required",
-        itinerary_data: itineraryData
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
-    itineraryReview = data.itinerary;
-    itineraryMessage = approve ? "Itinerary approved." : "Draft saved.";
-    if (approve) {
-      await loadItineraryExceptionsQueue({ silent: true });
-      refreshItineraryExceptionsBadge();
-    }
-  } catch (error) {
-    itineraryMessage = `Error: ${error.message || error}`;
-  }
-  renderAdmin();
-}
-
 function formatAdminDate(value) {
   if (!value) return "Not supplied";
   const date = new Date(`${value}T00:00:00`);
@@ -2254,8 +1615,6 @@ async function syncCrmBooking() {
   }
 
   crmSyncLoading = true;
-  itineraryReview = null;
-  itineraryMessage = "";
   crmDocuments = [];
   crmDocumentsMessage = "";
   crmSyncMessage = "Syncing booking from Base44...";
@@ -2293,7 +1652,7 @@ async function syncCrmBooking() {
         (sync.error_count ? `, ${sync.error_count} sync error(s)` : "") +
         "."
       : "";
-    crmSyncMessage = `Booking retrieved from Base44 and saved to 101CRUISE.${syncNote} Use Booking Documents for itinerary extraction.`;
+    crmSyncMessage = `Booking retrieved from Base44 and saved to 101CRUISE.${syncNote} Use Booking Documents to manage the document library.`;
   } catch (error) {
     console.error("CRM sync failed", error);
     crmSyncResult = null;
