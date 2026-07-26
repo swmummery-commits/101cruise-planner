@@ -1812,6 +1812,9 @@
   border-radius: 12px;
   background: #fff;
 }
+.crm-document-row.is-booking-confirmation {
+  background: #fafbfb;
+}
 .crm-document-row .admin-pill { margin-left: 8px; }
 .crm-document-note {
   margin: 8px 0 0;

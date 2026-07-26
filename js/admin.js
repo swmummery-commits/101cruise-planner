@@ -42,9 +42,14 @@ let crmSyncResult = null;
 let crmSyncMessage = "";
 let crmSyncLoading = false;
 let crmBookingReferenceInput = "";
+/** Shared loaded booking for Booking Documents workspace (not a CRM Sync restore). */
 let itineraryReview = null;
 let itineraryMessage = "";
 let itineraryLoading = false;
+let bookingDocumentsRefInput = "";
+let bookingDocumentsMessage = "";
+let bookingDocumentsLoading = false;
+let selectedItineraryDocumentId = "";
 let calculatorRates = [];
 let calculatorRateSearchQuery = "";
 let calculatorRateActiveFilter = "active";
@@ -860,6 +865,7 @@ const ADMIN_NAV_GROUPS = [
     id: "customer-experience",
     label: "Customer Experience",
     items: [
+      { id: "booking-documents", label: "Booking Documents" },
       { id: "packing", label: "Packing" },
       { id: "checklist", label: "Checklist" },
       { id: "smart-profiles", label: "Smart Profiles" },
@@ -985,6 +991,11 @@ const ADMIN_MAIN_TABS = [
         ? window.MediaLibraryAdmin.renderPanel()
         : `<div class="admin-card"><p class="admin-muted">Media Library failed to load.</p></div>`
   },
+  {
+    id: "booking-documents",
+    label: "Booking Documents",
+    render: () => renderBookingDocumentsPanel()
+  },
   { id: "checklist", label: "Checklist", render: () => renderChecklistPanel() },
   { id: "packing", label: "Packing", render: () => renderPackingPanel() },
   { id: "smart-profiles", label: "Smart Profiles", render: () => renderSmartProfilesPanel() },
@@ -1102,9 +1113,12 @@ function renderAdminActivePanel() {
         <p class="admin-muted">${
           activeTab === "planner-preview"
             ? "Use the live My Cruise planner for the customer experience. Admin planner preview has been removed."
-            : "Emergency Base44 sync is available under Import Data → CRM recovery."
+            : "Booking documents and itinerary extraction live under Customer Experience → Booking Documents. Emergency Base44 sync remains under Import Data for ops recovery only."
         }</p>
-        <button class="admin-button" onclick="openImportDataMaintenance()">Open Import Data</button>
+        <div class="admin-actions-row">
+          <button class="admin-button" onclick="setTab('booking-documents')">Open Booking Documents</button>
+          <button class="admin-button secondary" onclick="openImportDataMaintenance()">Open Import Data</button>
+        </div>
       </div>
     `;
   }
@@ -1168,7 +1182,7 @@ function renderCrmSyncPanel() {
       <div class="admin-list-top">
         <div>
           <h3>Emergency CRM recovery</h3>
-          <p class="admin-muted">Manual Base44 sync for ops recovery only. Live My Cruise login uses customer-access automatically — this tool is not part of normal booking flow.</p>
+          <p class="admin-muted">Manual Base44 sync for ops recovery only. Day-to-day document and itinerary work is under Customer Experience → Booking Documents — this tool is not the normal booking workflow.</p>
         </div>
       </div>
 
@@ -1182,60 +1196,99 @@ function renderCrmSyncPanel() {
       </div>
 
       ${!isRunning ? `<div id="crm-sync-message" class="admin-message ${messageClass}">${esc(crmSyncMessage)}</div>` : `<div id="crm-sync-message" class="admin-message" hidden></div>`}
-    </div>
 
-    ${booking ? renderCrmBookingPreview(booking) : `
-      <div class="admin-card crm-empty-card">
-        <p class="admin-muted">Enter a booking reference above to pull Base44 data into 101CRUISE for recovery checks, itinerary review, or document library work.</p>
-      </div>
-    `}
+      ${booking ? `
+        <div class="admin-card crm-empty-card" style="margin-top:16px">
+          <p class="admin-muted">Booking <strong>${esc(booking.booking_reference || "")}</strong> was synced for recovery. Manage documents and itinerary extraction in Booking Documents.</p>
+          <button class="admin-button secondary small" onclick="openBookingDocumentsForReference('${esc(booking.booking_reference || "")}')">Open in Booking Documents</button>
+        </div>
+      ` : `
+        <div class="admin-card crm-empty-card" style="margin-top:16px">
+          <p class="admin-muted">Enter a booking reference above only when you need an emergency Base44 pull into 101CRUISE.</p>
+        </div>
+      `}
+    </div>
   `;
 }
 
-function handleCrmSyncKeydown(event) {
-  if (event.key === "Enter") {
-    syncCrmBooking();
+function openBookingDocumentsForReference(reference) {
+  const ref = String(reference || "").trim();
+  if (ref) {
+    bookingDocumentsRefInput = ref;
+    crmBookingReferenceInput = ref;
   }
+  showImportDataPanel = false;
+  setTab("booking-documents");
 }
 
-function renderCrmBookingPreview(booking) {
+function getActiveAdminBooking() {
+  return crmSyncResult?.booking || null;
+}
+
+function isAdminBookingConfirmation(document) {
+  return String(document?.document_type || "").toLowerCase().includes("booking confirmation");
+}
+
+function renderBookingDocumentsPanel() {
+  const booking = getActiveAdminBooking();
+  const isRunning = bookingDocumentsLoading || /loading booking/i.test(String(bookingDocumentsMessage || ""));
+  const messageClass = bookingDocumentsMessage.toLowerCase().includes("error")
+    ? "admin-error"
+    : isRunning
+      ? "admin-running"
+      : "";
+  const refValue = bookingDocumentsRefInput || crmBookingReferenceInput || booking?.booking_reference || "";
+
+  return `
+    <div class="admin-card">
+      <div class="admin-list-top">
+        <div>
+          <h3>Booking Documents</h3>
+          <p class="admin-muted">Load a booking to review uploaded documents, extract the itinerary from a Booking Confirmation, then approve it for the Client Portal journey map.</p>
+        </div>
+      </div>
+
+      <div class="crm-sync-form">
+        <div class="admin-field crm-sync-input">
+          <label>Booking reference</label>
+          <input type="text" id="bookingDocumentsReference" value="${esc(refValue)}" placeholder="Example: 10175811" oninput="bookingDocumentsRefInput=this.value" onkeydown="handleBookingDocumentsKeydown(event)">
+        </div>
+        <button class="admin-button black" onclick="loadBookingDocumentsWorkspace()" ${bookingDocumentsLoading ? "disabled" : ""}>${bookingDocumentsLoading ? "Loading…" : "Load booking"}</button>
+        ${isRunning && bookingDocumentsMessage ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(bookingDocumentsMessage)}</span>` : ""}
+      </div>
+
+      ${!isRunning ? `<div class="admin-message ${messageClass}">${esc(bookingDocumentsMessage)}</div>` : ""}
+
+      ${booking ? renderBookingDocumentsWorkspace(booking) : `
+        <div class="admin-card crm-empty-card">
+          <p class="admin-muted">Enter a booking reference to open its document library and itinerary review tools.</p>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function handleBookingDocumentsKeydown(event) {
+  if (event.key === "Enter") loadBookingDocumentsWorkspace();
+}
+
+function renderBookingDocumentsWorkspace(booking) {
   const passenger1 = [booking.passenger1_first_name, booking.passenger1_last_name].filter(Boolean).join(" ");
-  const passenger2 = [booking.passenger2_first_name, booking.passenger2_last_name].filter(Boolean).join(" ");
   const sailingDate = formatAdminDate(booking.departing_date);
   const returnDate = formatAdminDate(booking.arriving_date);
-
   return `
     <div class="admin-card crm-booking-preview">
       <div class="admin-list-top">
         <div>
-          <h3>Booking Retrieved</h3>
-          <p class="admin-muted">This is the booking data returned from Base44.</p>
+          <h3>Booking ${esc(booking.booking_reference || "")}</h3>
+          <p class="admin-muted">${esc([booking.cruise_line, booking.cruise_ship].filter(Boolean).join(" · ") || "Cruise details not supplied")} · ${esc(sailingDate)} to ${esc(returnDate)}</p>
         </div>
         <span class="admin-pill">${esc(booking.booking_status || "Status unknown")}</span>
       </div>
-
       <div class="crm-booking-grid">
         <div class="crm-detail-card">
-          <span>Booking Reference</span>
-          <strong>${esc(booking.booking_reference || "Not supplied")}</strong>
-        </div>
-        <div class="crm-detail-card">
-          <span>Primary Passenger</span>
+          <span>Primary passenger</span>
           <strong>${esc(passenger1 || "Not supplied")}</strong>
-          <small>${esc(booking.passenger1_email || "")}</small>
-        </div>
-        <div class="crm-detail-card">
-          <span>Second Passenger</span>
-          <strong>${esc(passenger2 || "Not supplied")}</strong>
-          <small>${esc(booking.passenger2_email || "")}</small>
-        </div>
-        <div class="crm-detail-card">
-          <span>Cruise</span>
-          <strong>${esc([booking.cruise_line, booking.cruise_ship].filter(Boolean).join(" - ") || "Not supplied")}</strong>
-        </div>
-        <div class="crm-detail-card">
-          <span>Dates</span>
-          <strong>${esc(sailingDate)} to ${esc(returnDate)}</strong>
         </div>
         <div class="crm-detail-card">
           <span>Ports</span>
@@ -1247,19 +1300,83 @@ function renderCrmBookingPreview(booking) {
           <small>${esc([booking.room_type, booking.category_class].filter(Boolean).join(" • "))}</small>
         </div>
         <div class="crm-detail-card">
-          <span>Base44 Booking ID</span>
+          <span>Base44 booking ID</span>
           <strong>${esc(booking.base44_booking_id || "Not supplied")}</strong>
         </div>
       </div>
-      <div class="admin-actions-row crm-preview-actions">
-        <button class="admin-button secondary" onclick="loadItineraryReview('${esc(booking.base44_booking_id || '')}')">Review Itinerary</button>
-        <button class="admin-button secondary" onclick="extractBookingItinerary()" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading ? "Extracting…" : "Extract Booking Confirmation"}</button>
-        ${itineraryLoading || /extracting/i.test(String(itineraryMessage || "")) ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(itineraryMessage || "Extracting…")}</span>` : ""}
-      </div>
-      ${renderItineraryReview(booking)}
       ${renderCrmDocumentsPanel(booking)}
+      ${renderItineraryReview(booking)}
     </div>
   `;
+}
+
+async function loadBookingDocumentsWorkspace() {
+  const input = document.getElementById("bookingDocumentsReference");
+  const bookingReference = (input ? input.value.trim() : bookingDocumentsRefInput).trim();
+  bookingDocumentsRefInput = bookingReference;
+  crmBookingReferenceInput = bookingReference;
+
+  if (!bookingReference) {
+    bookingDocumentsMessage = "Enter a booking reference first.";
+    renderAdmin();
+    return;
+  }
+
+  bookingDocumentsLoading = true;
+  itineraryReview = null;
+  itineraryMessage = "";
+  selectedItineraryDocumentId = "";
+  crmDocuments = [];
+  crmDocumentsMessage = "";
+  bookingDocumentsMessage = "Loading booking and documents…";
+  renderAdmin();
+
+  try {
+    const headers = await adminAuthHeaders();
+    if (!headers.Authorization || headers.Authorization === "Bearer ") {
+      throw new Error("Admin session missing. Sign out and sign in again, then retry.");
+    }
+
+    const response = await fetch("/.netlify/functions/get-booking", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ booking_reference: bookingReference })
+    });
+    const data = await response.json().catch(() => ({ success: false, error: "Invalid response from server" }));
+    if (!response.ok || data.success === false) {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    crmSyncResult = data;
+    const saveResult = await saveBase44BookingToSupabase(data.booking);
+    if (!saveResult.success) {
+      throw new Error(saveResult.error || "Booking retrieved but could not be saved.");
+    }
+
+    await loadCrmDocuments();
+    if (data.booking?.base44_booking_id) {
+      await loadItineraryReview(data.booking.base44_booking_id);
+    }
+    bookingDocumentsMessage = `Booking ${bookingReference} loaded.`;
+  } catch (error) {
+    console.error("Booking documents load failed", error);
+    crmSyncResult = null;
+    bookingDocumentsMessage = `Error: ${error.message || "Unable to load booking"}`;
+  } finally {
+    bookingDocumentsLoading = false;
+    renderAdmin();
+  }
+}
+
+function handleCrmSyncKeydown(event) {
+  if (event.key === "Enter") {
+    syncCrmBooking();
+  }
+}
+
+/** @deprecated Legacy CRM preview — itinerary/document workflow lives in Booking Documents. */
+function renderCrmBookingPreview(booking) {
+  return renderBookingDocumentsWorkspace(booking);
 }
 
 function sourceLabel(source) {
@@ -1282,7 +1399,7 @@ function renderCrmDocumentsPanel(booking) {
       <div class="admin-list-top">
         <div>
           <h4>Document Library</h4>
-          <p class="admin-muted">Base44 documents are synced as read-only. Upload Admin documents here when they should live in 101cruise.</p>
+          <p class="admin-muted">Base44 documents are synced as read-only. Extract itinerary only from a Booking Confirmation. Upload Admin documents here when they should live in 101cruise.</p>
         </div>
         <div class="admin-actions-row" style="align-items:center">
           <button class="admin-button secondary small" onclick="loadCrmDocuments()" ${crmDocumentsLoading ? "disabled" : ""}>
@@ -1294,8 +1411,11 @@ function renderCrmDocumentsPanel(booking) {
       ${!(isRunning && /^(Loading|Uploading)/i.test(String(crmDocumentsMessage || ""))) ? `<div class="admin-message ${messageClass}">${esc(crmDocumentsMessage)}</div>` : ""}
       ${docs.length ? `
         <div class="crm-documents-list">
-          ${docs.map((doc) => `
-            <article class="crm-document-row">
+          ${docs.map((doc) => {
+            const confirmation = isAdminBookingConfirmation(doc);
+            const selected = selectedItineraryDocumentId && String(selectedItineraryDocumentId) === String(doc.id);
+            return `
+            <article class="crm-document-row${confirmation ? " is-booking-confirmation" : ""}${selected ? " is-selected-confirmation" : ""}">
               <div>
                 <strong>${esc(doc.document_type || "Other")}</strong>
                 <span class="admin-pill">${esc(sourceLabel(doc.source_system))}</span>
@@ -1306,10 +1426,12 @@ function renderCrmDocumentsPanel(booking) {
               </div>
               <div class="admin-actions-row">
                 ${doc.file_url ? `<a class="admin-button secondary small" href="${esc(doc.file_url)}" target="_blank" rel="noopener noreferrer">Open</a>` : `<span class="admin-muted">File unavailable</span>`}
-                ${doc.editable ? `<button class="admin-button secondary small" onclick="deleteAdminBookingDocument('${esc(doc.id)}')">Delete</button>` : `<span class="admin-small">Managed in Base44</span>`}
+                ${confirmation && doc.file_url ? `<button class="admin-button secondary small" onclick="extractBookingItinerary('${esc(doc.id)}')" ${itineraryLoading ? "disabled" : ""}>${itineraryLoading && selected ? "Extracting…" : "Extract itinerary"}</button>` : ""}
+                ${doc.editable ? `<button class="admin-button secondary small" onclick="deleteAdminBookingDocument('${esc(doc.id)}')">Delete</button>` : confirmation ? "" : `<span class="admin-small">Managed in Base44</span>`}
               </div>
             </article>
-          `).join("")}
+          `;
+          }).join("")}
         </div>
       ` : `<p class="admin-muted">No synced documents yet for this booking.</p>`}
 
@@ -1482,8 +1604,8 @@ function renderItineraryReview(booking) {
     <section class="itinerary-review-panel">
       <div class="admin-list-top">
         <div>
-          <h4>Smart Itinerary Review</h4>
-          <p class="admin-muted">Extract the Booking Confirmation, inspect the structured itinerary, correct anything necessary, then approve it. The customer map is not included in this first release.</p>
+          <h4>Itinerary review</h4>
+          <p class="admin-muted">Extract from a Booking Confirmation above, check every stop, edit if needed, then approve. Approval is required before the Client Portal journey map can use this itinerary.</p>
         </div>
         ${itineraryReview?.status ? `<span class="admin-pill">${esc(itineraryReview.status.replaceAll("_", " "))}</span>` : ""}
       </div>
@@ -1496,14 +1618,14 @@ function renderItineraryReview(booking) {
         <div class="admin-field">
           <label>Extracted itinerary JSON</label>
           <textarea id="itineraryJsonEditor" class="itinerary-json-editor" spellcheck="false">${esc(JSON.stringify(data, null, 2))}</textarea>
-          <div class="admin-helper">Dates must use YYYY-MM-DD and times must use 24-hour HH:MM. Keep the official Booking Confirmation as the source of truth.</div>
+          <div class="admin-helper">Dates must use YYYY-MM-DD and times must use 24-hour HH:MM. Keep the official Booking Confirmation as the source of truth. Extraction never auto-approves.</div>
         </div>
         <div class="admin-actions-row">
-          <button class="admin-button secondary" onclick="saveItineraryReview(false)" ${isRunning ? "disabled" : ""}>Save Draft</button>
-          <button class="admin-button black" onclick="saveItineraryReview(true)" ${isRunning ? "disabled" : ""}>Approve Itinerary</button>
+          <button class="admin-button secondary" onclick="saveItineraryReview(false)" ${isRunning ? "disabled" : ""}>Save draft</button>
+          <button class="admin-button black" onclick="saveItineraryReview(true)" ${isRunning ? "disabled" : ""}>Approve itinerary</button>
           ${/approving|saving draft/i.test(String(itineraryMessage || "")) ? inlineRunning : ""}
         </div>
-      ` : `<p class="admin-muted itinerary-empty">No extracted itinerary has been loaded for this booking yet.</p>`}
+      ` : `<p class="admin-muted itinerary-empty">No extracted itinerary has been loaded for this booking yet. Use Extract itinerary on a Booking Confirmation document.</p>`}
     </section>
   `;
 }
@@ -1532,9 +1654,19 @@ async function loadItineraryReview(bookingId) {
   }
 }
 
-async function extractBookingItinerary() {
-  const booking = crmSyncResult?.booking;
+async function extractBookingItinerary(documentId = "") {
+  const booking = getActiveAdminBooking();
   if (!booking) return;
+  const docId = String(documentId || selectedItineraryDocumentId || "").trim();
+  if (docId) {
+    const doc = (crmDocuments || []).find((row) => String(row.id) === docId);
+    if (doc && !isAdminBookingConfirmation(doc)) {
+      itineraryMessage = "Error: Itinerary extraction is only available for Booking Confirmation documents.";
+      renderAdmin();
+      return;
+    }
+    selectedItineraryDocumentId = docId;
+  }
   itineraryLoading = true;
   itineraryMessage = "Reading the Booking Confirmation and extracting the itinerary. This can take up to a minute…";
   renderAdmin();
@@ -1543,12 +1675,16 @@ async function extractBookingItinerary() {
     const response = await fetch("/.netlify/functions/admin-itinerary", {
       method: "POST",
       headers,
-      body: JSON.stringify({ booking_id: booking.base44_booking_id, booking_reference: booking.booking_reference })
+      body: JSON.stringify({
+        booking_id: booking.base44_booking_id,
+        booking_reference: booking.booking_reference,
+        document_id: selectedItineraryDocumentId || undefined
+      })
     });
     const data = await response.json().catch(() => ({}));
     if (!response.ok || !data.success) throw new Error(data.error || `HTTP ${response.status}`);
     itineraryReview = data.itinerary;
-    itineraryMessage = "Extraction complete. Review every stop before approving.";
+    itineraryMessage = "Extraction complete. Review every stop before approving — nothing is approved automatically.";
   } catch (error) {
     itineraryMessage = `Error: ${error.message || error}`;
   } finally {
@@ -1558,7 +1694,7 @@ async function extractBookingItinerary() {
 }
 
 async function saveItineraryReview(approve) {
-  const booking = crmSyncResult?.booking;
+  const booking = getActiveAdminBooking();
   const editor = document.getElementById("itineraryJsonEditor");
   if (!booking || !editor) return;
   try {
@@ -1645,12 +1781,7 @@ async function syncCrmBooking() {
         (sync.error_count ? `, ${sync.error_count} sync error(s)` : "") +
         "."
       : "";
-    crmSyncMessage = `Booking retrieved from Base44 and saved to 101CRUISE.${syncNote}`;
-    try {
-      await loadCrmDocuments();
-    } catch (docError) {
-      crmDocumentsMessage = `Error: ${docError.message || docError}`;
-    }
+    crmSyncMessage = `Booking retrieved from Base44 and saved to 101CRUISE.${syncNote} Use Booking Documents for itinerary extraction.`;
   } catch (error) {
     console.error("CRM sync failed", error);
     crmSyncResult = null;

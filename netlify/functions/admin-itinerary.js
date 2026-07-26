@@ -43,11 +43,64 @@ function isBookingConfirmation(document) {
   return type.includes('booking confirmation');
 }
 
-function pickConfirmation(booking) {
-  const documents = Array.isArray(booking?.documents) ? booking.documents : [];
-  const matches = documents.filter(document => isBookingConfirmation(document) && document.file_url);
-  matches.sort((a, b) => String(b.uploaded_date || '').localeCompare(String(a.uploaded_date || '')));
+function pickConfirmation(documents) {
+  const list = Array.isArray(documents) ? documents : [];
+  const matches = list.filter((document) => isBookingConfirmation(document) && document.file_url);
+  matches.sort((a, b) =>
+    String(b.uploaded_date || b.uploaded_at || '').localeCompare(String(a.uploaded_date || a.uploaded_at || ''))
+  );
   return matches[0] || null;
+}
+
+function pickConfirmationById(documents, documentId) {
+  const id = String(documentId || '').trim();
+  if (!id) return null;
+  const hit = (Array.isArray(documents) ? documents : []).find(
+    (document) => String(document.id || document.base44_document_id || '') === id
+  );
+  if (!hit || !hit.file_url) return null;
+  if (!isBookingConfirmation(hit)) {
+    const error = new Error('Itinerary extraction is only available for Booking Confirmation documents');
+    error.statusCode = 400;
+    throw error;
+  }
+  return hit;
+}
+
+async function listStoredBookingDocuments(booking) {
+  const bookingId = String(booking?.base44_booking_id || '').trim();
+  const bookingReference = String(booking?.booking_reference || '').trim();
+  const filters = [];
+  if (bookingId) filters.push(`base44_booking_id.eq.${encodeURIComponent(bookingId)}`);
+  if (bookingReference) filters.push(`booking_reference.eq.${encodeURIComponent(bookingReference)}`);
+  if (!filters.length) return [];
+  try {
+    const rows = await rest(
+      `booking_documents?or=(${filters.join(',')})&select=id,base44_document_id,document_type,filename,file_url,uploaded_at,source_system&order=uploaded_at.desc&limit=100`,
+      { method: 'GET' }
+    );
+    return (Array.isArray(rows) ? rows : []).map((row) => ({
+      id: row.id,
+      base44_document_id: row.base44_document_id || null,
+      document_type: row.document_type,
+      filename: row.filename,
+      file_url: row.file_url,
+      uploaded_date: row.uploaded_at || null,
+      uploaded_at: row.uploaded_at || null,
+      source_system: row.source_system || null
+    }));
+  } catch (error) {
+    console.warn('Stored booking document lookup failed', error.message || error);
+    return [];
+  }
+}
+
+async function resolveConfirmationDocument(booking, documentId) {
+  const liveDocs = Array.isArray(booking?.documents) ? booking.documents : [];
+  const storedDocs = await listStoredBookingDocuments(booking);
+  const combined = [...liveDocs, ...storedDocs];
+  if (documentId) return pickConfirmationById(combined, documentId);
+  return pickConfirmation(combined);
 }
 
 const itinerarySchema = {
@@ -152,11 +205,17 @@ exports.handler = async function (event) {
     }
 
     if (event.httpMethod === 'POST') {
+      const documentId = String(body.document_id || '').trim();
       const { booking } = await fetchBase44Booking({ booking_reference: bookingReference, booking_id: bookingIdInput });
       const bookingId = booking.base44_booking_id;
       if (!bookingId) return jsonResponse(400, { success: false, error: 'Base44 booking ID is missing' });
-      const document = pickConfirmation(booking);
-      if (!document) return jsonResponse(404, { success: false, error: 'No Booking Confirmation document was found for this booking' });
+      const document = await resolveConfirmationDocument(booking, documentId);
+      if (!document) {
+        return jsonResponse(404, {
+          success: false,
+          error: 'No Booking Confirmation document was found for this booking'
+        });
+      }
 
       const extracted = await extractWithOpenAI(booking, document);
       const payload = {
@@ -206,3 +265,7 @@ exports.handler = async function (event) {
     return jsonResponse(error.statusCode || 500, { success: false, error: error.message || 'Unable to process itinerary' });
   }
 };
+
+module.exports.isBookingConfirmation = isBookingConfirmation;
+module.exports.pickConfirmation = pickConfirmation;
+module.exports.pickConfirmationById = pickConfirmationById;
