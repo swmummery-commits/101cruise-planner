@@ -134,12 +134,56 @@ function extractDocumentsFromBookingPayload(booking, source = null) {
   return fromSource || fromBooking || [];
 }
 
+async function maybeProcessTextItinerary({
+  rest,
+  booking,
+  document,
+  syncKey,
+  filename,
+  result,
+  processTextItineraryImpl
+}) {
+  if (!document || !isBookingConfirmationType(document.document_type) || !document.file_url) {
+    return;
+  }
+  try {
+    const tiResult = await processTextItineraryImpl({
+      rest,
+      booking,
+      document,
+      supabaseUrl: process.env.SUPABASE_URL,
+      openaiKey: process.env.OPENAI_API_KEY
+    });
+    result.text_itinerary_process.push({
+      sync_key: syncKey,
+      filename,
+      ...tiResult
+    });
+  } catch (tiError) {
+    console.warn('[document-sync] text itinerary process failed', tiError.message || tiError);
+    result.text_itinerary_process.push({
+      sync_key: syncKey,
+      filename,
+      ok: false,
+      reason: 'process_error',
+      error: tiError.message || String(tiError)
+    });
+  }
+}
+
 /**
  * Upsert Base44 documents. Skips keys owned by admin/customer.
  * When an existing Base44 row was updated after last_synced_at (Admin edit),
- * skip overwrite — deliberate conflict rule.
+ * skip overwrite — deliberate conflict rule — but still allow text itinerary
+ * extraction from the preserved Booking Confirmation row when needed.
+ *
+ * @param {Function} rest
+ * @param {object} booking
+ * @param {object|null} source
+ * @param {{ processTextItinerary?: Function }} [options]
  */
-async function syncBookingDocuments(rest, booking, source = null) {
+async function syncBookingDocuments(rest, booking, source = null, options = {}) {
+  const processTextItineraryImpl = options.processTextItinerary || processTextItinerary;
   const rawDocs = extractDocumentsFromBookingPayload(booking, source);
   const mapped = rawDocs.map((doc) => mapBase44Document(doc, booking)).filter((row) => row.sync_key);
   if (!mapped.length) {
@@ -184,8 +228,19 @@ async function syncBookingDocuments(rest, booking, source = null) {
         existing.last_synced_at &&
         new Date(existing.updated_at).getTime() > new Date(existing.last_synced_at).getTime() + 2000
       ) {
-        // Admin (or other) edited this synced row after the last Base44 sync.
+        // Preserve Admin-edited metadata — do not overwrite the document row.
+        // Booking Confirmations may still need text itinerary extraction when
+        // no valid ready itinerary exists for the stored fingerprint.
         result.skipped_conflict += 1;
+        await maybeProcessTextItinerary({
+          rest,
+          booking,
+          document: existing,
+          syncKey: row.sync_key,
+          filename: existing.filename || row.filename,
+          result,
+          processTextItineraryImpl
+        });
         continue;
       }
 
@@ -198,31 +253,15 @@ async function syncBookingDocuments(rest, booking, source = null) {
       if (saved) {
         result.rows.push(saved);
         // Map/approval auto-extraction retired — never enqueue confirmation_candidates.
-        if (isBookingConfirmationType(saved.document_type) && saved.file_url) {
-          try {
-            const tiResult = await processTextItinerary({
-              rest,
-              booking,
-              document: saved,
-              supabaseUrl: process.env.SUPABASE_URL,
-              openaiKey: process.env.OPENAI_API_KEY
-            });
-            result.text_itinerary_process.push({
-              sync_key: row.sync_key,
-              filename: row.filename,
-              ...tiResult
-            });
-          } catch (tiError) {
-            console.warn('[document-sync] text itinerary process failed', tiError.message || tiError);
-            result.text_itinerary_process.push({
-              sync_key: row.sync_key,
-              filename: row.filename,
-              ok: false,
-              reason: 'process_error',
-              error: tiError.message || String(tiError)
-            });
-          }
-        }
+        await maybeProcessTextItinerary({
+          rest,
+          booking,
+          document: saved,
+          syncKey: row.sync_key,
+          filename: row.filename,
+          result,
+          processTextItineraryImpl
+        });
       }
       result.upserted += 1;
     } catch (error) {

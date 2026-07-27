@@ -107,7 +107,29 @@ exports.handler = async function (event) {
       });
     }
 
-    const read = await readTextItinerary(rest, { bookingId, bookingRef });
+    // Load light booking facts for completeness checks (no passenger PII returned).
+    let booking = { base44_booking_id: bookingId, booking_reference: bookingRef };
+    try {
+      const cacheQuery = bookingRef
+        ? `base44_booking_cache?booking_reference=eq.${encodeURIComponent(bookingRef)}&select=booking_reference,base44_booking_id,departing_date,arriving_date,raw_payload&limit=1`
+        : `base44_booking_cache?base44_booking_id=eq.${encodeURIComponent(bookingId)}&select=booking_reference,base44_booking_id,departing_date,arriving_date,raw_payload&limit=1`;
+      const cacheRows = await rest(cacheQuery, { method: "GET" });
+      const cache = Array.isArray(cacheRows) ? cacheRows[0] : null;
+      if (cache) {
+        const payload = cache.raw_payload && typeof cache.raw_payload === "object" ? cache.raw_payload : {};
+        booking = {
+          ...booking,
+          departing_date: cache.departing_date || payload.departing_date || null,
+          arriving_date: cache.arriving_date || payload.arriving_date || null,
+          cruise_duration: payload.cruise_duration || null,
+          nights: payload.nights || null
+        };
+      }
+    } catch (cacheError) {
+      console.warn("customer-text-itinerary cache lookup failed", cacheError.message || cacheError);
+    }
+
+    const read = await readTextItinerary(rest, { bookingId, bookingRef, booking });
     if (!read || !read.itinerary?.stops?.length) {
       return jsonResponse(200, {
         success: true,

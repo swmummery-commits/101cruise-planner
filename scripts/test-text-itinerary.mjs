@@ -185,20 +185,28 @@ assert(extractCalls === 1, "extract attempted once");
 assert(upsertPayload?.extraction_status === "failed", "persisted failed status");
 assert(/quota exceeded/i.test(upsertPayload?.extraction_error || ""), "stored error message");
 
-/* successful extraction path */
+/* successful extraction path (complete day-by-day coverage) */
+let successPayload = null;
 const successRest = async (pathPart, options = {}) => {
   if (pathPart.includes("booking_text_itineraries?booking_id=") && (options.method || "GET") === "GET") {
     return [];
   }
   if (pathPart.includes("on_conflict=booking_id") && options.method === "POST") {
-    return [JSON.parse(options.body)];
+    successPayload = JSON.parse(options.body);
+    return [successPayload];
   }
   return [];
 };
 
 const success = await processTextItinerary({
   rest: successRest,
-  booking: { base44_booking_id: "booking-ok", booking_reference: "OK1" },
+  booking: {
+    base44_booking_id: "booking-ok",
+    booking_reference: "OK1",
+    departing_date: "2026-05-01",
+    arriving_date: "2026-05-04",
+    cruise_duration: 3
+  },
   document: {
     id: "doc-3",
     document_type: "Booking Confirmation",
@@ -218,6 +226,33 @@ const success = await processTextItinerary({
           departure_time: "17:00",
           notes: null,
           confidence: 1
+        },
+        {
+          date: "2026-05-02",
+          name: "At Sea",
+          entry_type: "sea_day",
+          arrival_time: null,
+          departure_time: null,
+          notes: null,
+          confidence: 1
+        },
+        {
+          date: "2026-05-03",
+          name: "Nassau",
+          entry_type: "port",
+          arrival_time: "08:00",
+          departure_time: "17:00",
+          notes: null,
+          confidence: 1
+        },
+        {
+          date: "2026-05-04",
+          name: "Miami",
+          entry_type: "disembarkation",
+          arrival_time: "07:00",
+          departure_time: null,
+          notes: null,
+          confidence: 1
         }
       ]
     },
@@ -228,8 +263,9 @@ const success = await processTextItinerary({
 
 assert(success.ok === true, "success ok");
 assert(success.reason === "extracted", "extracted reason");
-assert(success.stop_count === 1, "one stop stored");
+assert(success.stop_count === 4, "four stops stored");
 assert(success.itinerary.stops[0].port_name === "Miami", "normalised stop in result");
+assert(successPayload?.extraction_status === "ready", "ready status persisted");
 
 /* non-confirmation skipped */
 const notConfirmation = await processTextItinerary({

@@ -6,6 +6,8 @@
 
 "use strict";
 
+const { assessTextItineraryCompleteness } = require("./text-itinerary-completeness");
+
 function normaliseStops(rawStops) {
   const { normaliseTextItineraryStops } = require("./text-itinerary-process");
   return normaliseTextItineraryStops(rawStops);
@@ -58,7 +60,7 @@ async function getLegacyCruiseItineraryRow(rest, bookingId, bookingRef) {
   return null;
 }
 
-function legacyRowToTextResult(row) {
+function legacyRowToTextResult(row, booking = {}) {
   if (!row) return null;
   const data = row.itinerary_data || {};
   const rawStops = Array.isArray(data.stops) ? data.stops : [];
@@ -71,15 +73,10 @@ function legacyRowToTextResult(row) {
 
   if (!stops.length) return null;
 
-  // Prefer dedicated text_ready / text_only payloads; still allow legacy extracted
-  // stops for display when they look like a real day-by-day itinerary (3+ days).
-  const ready =
-    String(row.processing_status || "").toLowerCase() === "text_ready" ||
-    data.mode === "text_only" ||
-    data.text_only === true ||
-    stops.length >= 3;
-
-  if (!ready) return null;
+  // Never treat embarkation/disembarkation-only legacy rows as a usable text itinerary.
+  if (!assessTextItineraryCompleteness(stops, booking).complete) {
+    return null;
+  }
 
   return {
     source: "cruise_itineraries",
@@ -96,7 +93,7 @@ function legacyRowToTextResult(row) {
   };
 }
 
-async function readTextItinerary(rest, { bookingId, bookingRef }) {
+async function readTextItinerary(rest, { bookingId, bookingRef, booking = null }) {
   try {
     const dedicated = await getDedicatedRow(rest, bookingId, bookingRef);
     if (dedicated) {
@@ -104,7 +101,11 @@ async function readTextItinerary(rest, { bookingId, bookingRef }) {
       const stops = Array.isArray(dedicated.itinerary_json?.stops)
         ? dedicated.itinerary_json.stops
         : [];
-      if (status === "ready" && stops.length) {
+      if (
+        status === "ready" &&
+        stops.length &&
+        assessTextItineraryCompleteness(stops, booking || {}).complete
+      ) {
         return {
           source: "booking_text_itineraries",
           status: "ready",
@@ -119,6 +120,15 @@ async function readTextItinerary(rest, { bookingId, bookingRef }) {
           }
         };
       }
+      // Incomplete "ready" rows are treated as unavailable for customer display.
+      if (status === "ready" && stops.length) {
+        return {
+          source: "booking_text_itineraries",
+          status: "failed",
+          document_fingerprint: dedicated.document_fingerprint || null,
+          itinerary: null
+        };
+      }
       return {
         source: "booking_text_itineraries",
         status: status || null,
@@ -131,7 +141,7 @@ async function readTextItinerary(rest, { bookingId, bookingRef }) {
   }
 
   const legacy = await getLegacyCruiseItineraryRow(rest, bookingId, bookingRef);
-  return legacyRowToTextResult(legacy);
+  return legacyRowToTextResult(legacy, booking || {});
 }
 
 async function writeTextItinerary(rest, payload) {

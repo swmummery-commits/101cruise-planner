@@ -10,6 +10,10 @@ const {
   isBookingConfirmationType
 } = require("./itinerary-document-hash");
 const { extractItineraryWithOpenAI } = require("./itinerary-extract");
+const {
+  assessTextItineraryCompleteness,
+  INCOMPLETE_EXTRACTION_ERROR
+} = require("./text-itinerary-completeness");
 
 function assertProductionUrl(supabaseUrl) {
   if (/vkheexbapykcdfbqcach/i.test(String(supabaseUrl || ""))) {
@@ -166,15 +170,15 @@ async function processTextItinerary(options = {}) {
   const store = getStore();
   const existingRead = await store.readTextItinerary(rest, {
     bookingId,
-    bookingRef: bookingReference
+    bookingRef: bookingReference,
+    booking
   });
   const existingStops = existingRead?.itinerary?.stops;
-  if (
+  const existingComplete =
     existingRead?.status === "ready" &&
     existingRead.document_fingerprint === fingerprint &&
-    Array.isArray(existingStops) &&
-    existingStops.length >= 3
-  ) {
+    assessTextItineraryCompleteness(existingStops, booking).complete;
+  if (existingComplete) {
     return {
       ok: true,
       skipped: true,
@@ -215,6 +219,35 @@ async function processTextItinerary(options = {}) {
       disembarkation_date: rawItinerary.disembarkation_date || null,
       stops
     };
+
+    const completeness = assessTextItineraryCompleteness(stops, booking);
+    if (!completeness.complete) {
+      const writtenFailed = await store.writeTextItinerary(rest, {
+        booking_id: bookingId,
+        booking_reference: bookingReference,
+        source_document_id: sourceDocumentId,
+        document_fingerprint: fingerprint,
+        itinerary_json: itineraryJson,
+        extraction_status: "failed",
+        extraction_error: INCOMPLETE_EXTRACTION_ERROR,
+        extracted_at: nowIso(),
+        extraction_model: extracted?.model || null,
+        extraction_token_usage: extracted?.usage || null,
+        updated_at: nowIso()
+      });
+
+      return {
+        ok: false,
+        skipped: false,
+        reason: "incomplete_itinerary",
+        extraction_calls,
+        completeness_reason: completeness.reason,
+        error: INCOMPLETE_EXTRACTION_ERROR,
+        itinerary: itineraryJson,
+        stop_count: stops.length,
+        storage: writtenFailed.source
+      };
+    }
 
     const written = await store.writeTextItinerary(rest, {
       booking_id: bookingId,
