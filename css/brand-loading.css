@@ -1,6 +1,6 @@
 /**
- * Shared 101cruise loading indicator: 4×4 grid of small flashing boxes in brand green.
- * Used by Client Portal overlay, Admin research/deck-plans, and public tools.
+ * Shared 101cruise loading indicator: 4×4 grid of small green boxes.
+ * Random short flash sequences loop continuously (driven by js/brand-loading.js).
  */
 
 :root {
@@ -27,27 +27,13 @@
   height: var(--brand-loading-size);
   border-radius: 1px;
   background: var(--brand-loading-green);
-  opacity: 0.22;
-  animation: brand-loading-box-flash 1.05s ease-in-out infinite;
+  opacity: 0.2;
+  transition: opacity 0.09s ease-out;
 }
 
-/* Diagonal wave across the 4×4 grid (row-major indices 1–16) */
-.brand-loading-boxes > span:nth-child(1) { animation-delay: 0s; }
-.brand-loading-boxes > span:nth-child(2) { animation-delay: 0.05s; }
-.brand-loading-boxes > span:nth-child(3) { animation-delay: 0.1s; }
-.brand-loading-boxes > span:nth-child(4) { animation-delay: 0.15s; }
-.brand-loading-boxes > span:nth-child(5) { animation-delay: 0.05s; }
-.brand-loading-boxes > span:nth-child(6) { animation-delay: 0.1s; }
-.brand-loading-boxes > span:nth-child(7) { animation-delay: 0.15s; }
-.brand-loading-boxes > span:nth-child(8) { animation-delay: 0.2s; }
-.brand-loading-boxes > span:nth-child(9) { animation-delay: 0.1s; }
-.brand-loading-boxes > span:nth-child(10) { animation-delay: 0.15s; }
-.brand-loading-boxes > span:nth-child(11) { animation-delay: 0.2s; }
-.brand-loading-boxes > span:nth-child(12) { animation-delay: 0.25s; }
-.brand-loading-boxes > span:nth-child(13) { animation-delay: 0.15s; }
-.brand-loading-boxes > span:nth-child(14) { animation-delay: 0.2s; }
-.brand-loading-boxes > span:nth-child(15) { animation-delay: 0.25s; }
-.brand-loading-boxes > span:nth-child(16) { animation-delay: 0.3s; }
+.brand-loading-boxes > span.is-on {
+  opacity: 1;
+}
 
 .brand-loading-boxes--inline {
   --brand-loading-size: 4px;
@@ -60,16 +46,19 @@
   --brand-loading-gap: 2.5px;
 }
 
-@keyframes brand-loading-box-flash {
-  0%,
-  100% { opacity: 0.18; }
-  40% { opacity: 1; }
-  65% { opacity: 0.35; }
+.brand-loading-boxes--static > span,
+.portal-loading-reduced-motion .brand-loading-boxes > span {
+  opacity: 0.85;
+  transition: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .brand-loading-boxes > span {
-    animation: none !important;
+    opacity: 0.85;
+    transition: none;
+  }
+
+  .brand-loading-boxes > span.is-on {
     opacity: 0.85;
   }
 }
