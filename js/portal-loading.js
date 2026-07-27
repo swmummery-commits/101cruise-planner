@@ -220,7 +220,7 @@
       (typeof BrandLoading !== "undefined" && BrandLoading.html
         ? BrandLoading.html({ large: true, className: "portal-loading-spinner" })
         : '<div class="portal-loading-spinner brand-loading-boxes brand-loading-boxes--large" aria-hidden="true">' +
-          new Array(17).join("<span></span>") +
+          new Array(10).join("<span></span>") +
           "</div>") +
       `<p class="portal-loading-message" aria-live="polite">${INITIAL_MESSAGE}</p>` +
       "</div>";

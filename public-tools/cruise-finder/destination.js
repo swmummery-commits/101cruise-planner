@@ -659,7 +659,7 @@
             typeof BrandLoading !== "undefined" && BrandLoading.html
               ? BrandLoading.html({ large: true })
               : '<span class="brand-loading-boxes brand-loading-boxes--large" aria-hidden="true">' +
-                new Array(17).join("<span></span>") +
+                new Array(10).join("<span></span>") +
                 "</span>"
           }
           <p class="cf-search-loading-title" data-loading-title>${escapeHtml(LOADING_MESSAGES[0])}</p>

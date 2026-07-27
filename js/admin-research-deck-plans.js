@@ -13,7 +13,7 @@
       '<span class="brand-loading-boxes' +
       (opts && opts.inline ? " brand-loading-boxes--inline" : "") +
       '" aria-hidden="true">' +
-      new Array(17).join("<span></span>") +
+      new Array(10).join("<span></span>") +
       "</span>"
     );
   }

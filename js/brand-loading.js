@@ -1,5 +1,5 @@
 /**
- * Shared brand loading indicator — 4×4 grid of small green boxes.
+ * Shared brand loading indicator — 3×3 grid of nine red logo squares.
  * Random short flash sequences loop continuously (Cursor-style).
  * Dual export: CommonJS (tests) + browser global BrandLoading.
  */
@@ -12,7 +12,7 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  var BOX_COUNT = 16;
+  var BOX_COUNT = 9;
   var LIVE_ATTR = "data-brand-loading-live";
   var STATE_KEY = "_brandLoadingState";
 
