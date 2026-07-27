@@ -53,12 +53,14 @@
       brandCss.href = "/css/brand-loading.css";
       document.head.appendChild(brandCss);
 
-      loadScript(base + "destinations.js", function () {
-        loadScript(base + "destination-content.js", function () {
-          loadScript(base + "approved-cruise-lines.js", function () {
-            loadScript(base + "destination-images.js", function () {
-              loadScript(base + "hero-images.js", function () {
-                loadScript(base + "destination.js", function () {});
+      loadScript("/js/brand-loading.js", function () {
+        loadScript(base + "destinations.js", function () {
+          loadScript(base + "destination-content.js", function () {
+            loadScript(base + "approved-cruise-lines.js", function () {
+              loadScript(base + "destination-images.js", function () {
+                loadScript(base + "hero-images.js", function () {
+                  loadScript(base + "destination.js", function () {});
+                });
               });
             });
           });

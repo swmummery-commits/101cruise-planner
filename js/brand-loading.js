@@ -1,5 +1,5 @@
 /**
- * Shared brand loading indicator — four stacked flashing boxes in brand green.
+ * Shared brand loading indicator — 4×4 grid of small flashing boxes in brand green.
  * Dual export: CommonJS (tests) + browser global BrandLoading.
  */
 (function (root, factory) {
@@ -10,6 +10,9 @@
   }
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
+
+  var BOX_COUNT = 16;
+  var BOX_MARKUP = new Array(BOX_COUNT + 1).join("<span></span>");
 
   /**
    * @param {{ inline?: boolean, large?: boolean, className?: string }=} opts
@@ -22,10 +25,10 @@
     if (options.className) classes.push(String(options.className));
     return (
       `<span class="${classes.join(" ")}" aria-hidden="true">` +
-      "<span></span><span></span><span></span><span></span>" +
+      BOX_MARKUP +
       "</span>"
     );
   }
 
-  return { html: html };
+  return { html: html, BOX_COUNT: BOX_COUNT };
 });

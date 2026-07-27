@@ -5,6 +5,19 @@
 (function (global) {
   "use strict";
 
+  function loadingBoxes(opts) {
+    if (global.BrandLoading && typeof global.BrandLoading.html === "function") {
+      return global.BrandLoading.html(opts);
+    }
+    return (
+      '<span class="brand-loading-boxes' +
+      (opts && opts.inline ? " brand-loading-boxes--inline" : "") +
+      '" aria-hidden="true">' +
+      new Array(17).join("<span></span>") +
+      "</span>"
+    );
+  }
+
   let loading = false;
   let findingShipId = "";
   let message = "";
@@ -935,7 +948,7 @@
       (bulkRunning ? "Bulk find in progress…" : "Working…");
     return `
       <div class="admin-message info deck-plans-busy-banner" role="status" aria-live="polite">
-        <span class="deck-plans-busy-spinner" aria-hidden="true"></span>
+        ${loadingBoxes({ inline: true })}
         ${esc(label)}
       </div>
     `;

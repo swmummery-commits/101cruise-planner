@@ -5,6 +5,19 @@
 (function (global) {
   "use strict";
 
+  function loadingBoxes(opts) {
+    if (global.BrandLoading && typeof global.BrandLoading.html === "function") {
+      return global.BrandLoading.html(opts);
+    }
+    return (
+      '<span class="brand-loading-boxes' +
+      (opts && opts.inline ? " brand-loading-boxes--inline" : "") +
+      '" aria-hidden="true">' +
+      new Array(17).join("<span></span>") +
+      "</span>"
+    );
+  }
+
   const ENTITY_LABELS = {
     ship: "Ship",
     destination: "Destination",
@@ -236,7 +249,7 @@
       return `
         <div class="research-working-banner is-running" role="status" aria-live="polite">
           <div class="research-working-top">
-            <span class="research-spinner" aria-hidden="true"></span>
+            ${loadingBoxes()}
             <div>
               <p class="research-working-title">Research in progress${batchProgress.lineName ? ` — ${esc(batchProgress.lineName)}` : ""}</p>
               <p class="research-working-sub">
@@ -257,7 +270,7 @@
       return `
         <div class="research-working-banner is-running" role="status" aria-live="polite">
           <div class="research-working-top">
-            <span class="research-spinner" aria-hidden="true"></span>
+            ${loadingBoxes()}
             <div>
               <p class="research-working-title">Researching…</p>
               <p class="research-working-sub">Searching sources and writing the draft. This usually takes under a minute.</p>
@@ -708,13 +721,13 @@
               ${
                 batchRunning
                   ? `<button type="button" class="admin-button danger" onclick="ResearchContentAdmin.cancelBatch()">Stop after current ship</button>
-                     <span class="research-action-status is-busy"><span class="research-spinner research-spinner--inline" aria-hidden="true"></span> Researching, please wait…</span>
+                     <span class="research-action-status is-busy">${loadingBoxes({ inline: true })} Researching, please wait…</span>
                      ${renderInlineRunning()}`
                   : `<button type="button" class="admin-button black" onclick="ResearchContentAdmin.beginBatchResearch()" ${!researchForm.batch_line_id || !batchQueue.length || (linePublishState && linePublishState.status === "publishing") ? "disabled" : ""}>Research line ships</button>
                      ${
                        linePublishState && linePublishState.status === "publishing"
                          ? `<button type="button" class="admin-button secondary is-busy" disabled>
-                              <span class="research-spinner research-spinner--inline" aria-hidden="true"></span>
+                              ${loadingBoxes({ inline: true })}
                               Publishing, please wait… ${esc(String(linePublishState.done || 0))}/${esc(String(linePublishState.total || 0))}
                             </button>
                             ${renderInlineRunning()}`
@@ -731,7 +744,7 @@
                 : linePublishState && linePublishState.status === "publishing"
                   ? `<div class="research-working-banner research-working-banner--compact is-running" role="status" aria-live="polite">
                       <div class="research-working-top">
-                        <span class="research-spinner" aria-hidden="true"></span>
+                        ${loadingBoxes()}
                         <div>
                           <p class="research-working-title">Publishing drafts${linePublishState.lineName ? ` — ${esc(linePublishState.lineName)}` : ""}</p>
                           <p class="research-working-sub">${esc(String(linePublishState.done || 0))} of ${esc(String(linePublishState.total || 0))} published…</p>
@@ -745,7 +758,7 @@
                 ? `<div class="research-batch-progress ${batchRunning ? "is-running" : ""}">
                     ${
                       batchRunning
-                        ? `<p class="research-batch-live"><span class="research-spinner research-spinner--inline" aria-hidden="true"></span> Working… ${esc(String(batchProgress.done))}/${esc(String(batchProgress.total))} · ${esc(batchEtaText())}</p>`
+                        ? `<p class="research-batch-live">${loadingBoxes({ inline: true })} Working… ${esc(String(batchProgress.done))}/${esc(String(batchProgress.total))} · ${esc(batchEtaText())}</p>`
                         : `<p><strong>${esc(String(batchProgress.done))}/${esc(String(batchProgress.total))}</strong> complete</p>`
                     }
                     <ul>${(batchProgress.results || [])
@@ -824,7 +837,7 @@
             <button type="button" class="admin-button black ${researching ? "is-busy" : ""}" onclick="ResearchContentAdmin.beginResearch()" ${researching || batchRunning ? "disabled" : ""}>
               ${
                 researching
-                  ? `<span class="research-spinner research-spinner--inline" aria-hidden="true"></span> Researching, please wait…`
+                  ? `${loadingBoxes({ inline: true })} Researching, please wait…`
                   : "Begin Research"
               }
             </button>
