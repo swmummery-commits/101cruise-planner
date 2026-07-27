@@ -9,7 +9,13 @@ import crypto from "node:crypto";
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { isImageExtension, classifyImageRole } from "./classify.js";
-import { resolveLineFolderAlias, foldKey } from "./normalize.js";
+import {
+  resolveLineFolderAlias,
+  foldKey,
+  isHeroImagesFolder,
+  isNonShipLineSubfolder,
+  isRoomTypeFolder
+} from "./normalize.js";
 
 const require = createRequire(import.meta.url);
 const { readImageDimensions } = require("../../../netlify/functions/lib/bulk-ship-images/image-dims.js");
@@ -88,7 +94,17 @@ function colourModeHint(ext, buffer) {
  * Uses in-process header parsing for PNG/JPEG/WebP.
  * Uses read-only `sips -g` only for HEIC/TIFF (or when header dims fail).
  */
-export function inspectLocalImage(filePath, { rootDir, lineFolder, shipFolder, lineFolderKind }) {
+export function inspectLocalImage(
+  filePath,
+  {
+    rootDir,
+    lineFolder,
+    shipFolder,
+    lineFolderKind,
+    assetBucket = null,
+    roomCategory = null
+  } = {}
+) {
   const abs = path.resolve(filePath);
   const filename = path.basename(abs);
   const ext = path.extname(filename).toLowerCase();
@@ -172,6 +188,8 @@ export function inspectLocalImage(filePath, { rootDir, lineFolder, shipFolder, l
     content_hash: contentHash,
     parent_cruise_line_folder: lineFolder || null,
     parent_ship_folder: shipFolder || null,
+    asset_bucket: assetBucket || (shipFolder ? "ship_folder" : "line_loose"),
+    room_category: roomCategory || null,
     relative_path: relativePath,
     apparent_role: classifyImageRole({
       filename,
@@ -201,6 +219,8 @@ export function scanBrandImagingRoot(
   const onProgress = typeof opts.onProgress === "function" ? opts.onProgress : null;
   const lineFolders = [];
   const shipFolders = [];
+  const heroImageFolders = [];
+  const roomTypeFolders = [];
   const images = [];
   const skippedNonImages = [];
 
@@ -280,15 +300,106 @@ export function scanBrandImagingRoot(
           child.name,
           lineMeta.kind,
           pushImage,
-          skippedNonImages
+          skippedNonImages,
+          { assetBucket: "non_ship", roomCategory: null }
         );
         shipFolders.push({
           folder_name: child.name.trim(),
           absolute_path: childPath,
           parent_line_folder: lineRec.folder_name,
           parent_line_kind: "non_line",
+          is_ship_folder: false,
+          folder_kind: "non_line_meta"
+        });
+        continue;
+      }
+
+      // Cruise-line Hero Images library (loose + optional room-type subfolders)
+      if (isHeroImagesFolder(child.name)) {
+        const heroRec = {
+          folder_name: child.name.trim(),
+          absolute_path: childPath,
+          parent_line_folder: lineRec.folder_name,
+          folder_kind: "hero_images"
+        };
+        heroImageFolders.push(heroRec);
+        shipFolders.push({
+          ...heroRec,
+          parent_line_kind: "line",
           is_ship_folder: false
         });
+
+        let heroChildren;
+        try {
+          heroChildren = fs.readdirSync(childPath, { withFileTypes: true });
+        } catch {
+          continue;
+        }
+        for (const hc of heroChildren) {
+          if (hc.name.startsWith(".") || hc.name.startsWith("._")) continue;
+          const hcPath = path.join(childPath, hc.name);
+          if (hc.isFile()) {
+            const ext = path.extname(hc.name).toLowerCase();
+            if (isImageExtension(ext)) {
+              pushImage(hcPath, {
+                rootDir: root,
+                lineFolder: lineRec.folder_name,
+                shipFolder: null,
+                lineFolderKind: "line",
+                assetBucket: "hero_loose",
+                roomCategory: null
+              });
+            } else {
+              skippedNonImages.push(hcPath);
+            }
+            continue;
+          }
+          if (!hc.isDirectory()) continue;
+          const roomRec = {
+            folder_name: hc.name.trim(),
+            absolute_path: hcPath,
+            parent_line_folder: lineRec.folder_name,
+            parent_hero_folder: heroRec.folder_name,
+            folder_kind: isRoomTypeFolder(hc.name) ? "room_type" : "hero_subdir",
+            is_room_type: isRoomTypeFolder(hc.name)
+          };
+          roomTypeFolders.push(roomRec);
+          walkImagesRecursive(
+            hcPath,
+            root,
+            lineRec.folder_name,
+            null,
+            "line",
+            pushImage,
+            skippedNonImages,
+            {
+              assetBucket: "room_type",
+              roomCategory: hc.name.trim()
+            }
+          );
+        }
+        continue;
+      }
+
+      if (isNonShipLineSubfolder(child.name)) {
+        shipFolders.push({
+          folder_name: child.name.trim(),
+          absolute_path: childPath,
+          parent_line_folder: lineRec.folder_name,
+          parent_line_kind: "line",
+          is_ship_folder: false,
+          folder_kind: "non_ship_library"
+        });
+        walkImagesRecursive(
+          childPath,
+          root,
+          lineRec.folder_name,
+          null,
+          "line",
+          pushImage,
+          skippedNonImages,
+          { assetBucket: "non_ship", roomCategory: null }
+        );
         continue;
       }
 
@@ -297,7 +408,8 @@ export function scanBrandImagingRoot(
         absolute_path: childPath,
         parent_line_folder: lineRec.folder_name,
         parent_line_kind: "line",
-        is_ship_folder: true
+        is_ship_folder: true,
+        folder_kind: "ship"
       };
       shipFolders.push(shipRec);
 
@@ -308,7 +420,8 @@ export function scanBrandImagingRoot(
         shipRec.folder_name,
         "line",
         pushImage,
-        skippedNonImages
+        skippedNonImages,
+        { assetBucket: "ship_folder", roomCategory: null }
       );
     }
   }
@@ -317,11 +430,15 @@ export function scanBrandImagingRoot(
     root_dir: root,
     line_folders: lineFolders,
     ship_folders: shipFolders,
+    hero_image_folders: heroImageFolders,
+    room_type_folders: roomTypeFolders,
     images,
     skipped_non_image_files: skippedNonImages.length,
     totals: {
       line_folders: lineFolders.length,
       ship_folders: shipFolders.filter((s) => s.is_ship_folder).length,
+      hero_image_folders: heroImageFolders.length,
+      room_type_folders: roomTypeFolders.length,
       non_ship_subfolders: shipFolders.filter((s) => !s.is_ship_folder).length,
       images: images.length
     }
@@ -335,7 +452,8 @@ function walkImagesRecursive(
   shipFolder,
   lineFolderKind,
   pushImage,
-  skippedNonImages
+  skippedNonImages,
+  bucketOpts = {}
 ) {
   let entries;
   try {
@@ -344,7 +462,7 @@ function walkImagesRecursive(
     return;
   }
   for (const ent of entries) {
-    if (ent.name.startsWith(".")) continue;
+    if (ent.name.startsWith(".") || ent.name.startsWith("._")) continue;
     const p = path.join(dir, ent.name);
     if (ent.isDirectory()) {
       walkImagesRecursive(
@@ -354,7 +472,8 @@ function walkImagesRecursive(
         shipFolder,
         lineFolderKind,
         pushImage,
-        skippedNonImages
+        skippedNonImages,
+        bucketOpts
       );
       continue;
     }
@@ -365,7 +484,9 @@ function walkImagesRecursive(
         rootDir,
         lineFolder,
         shipFolder,
-        lineFolderKind
+        lineFolderKind,
+        assetBucket: bucketOpts.assetBucket || null,
+        roomCategory: bucketOpts.roomCategory || null
       });
     } else {
       skippedNonImages.push(p);

@@ -129,6 +129,40 @@ export function resolveLineFolderAlias(folderName) {
   };
 }
 
+/** Cruise-line "Hero Images" / "Hero Image" folders (not ships). */
+export function isHeroImagesFolder(folderName) {
+  const folded = foldKey(folderName);
+  return (
+    folded === "hero images" ||
+    folded === "hero image" ||
+    folded === "heroes" ||
+    folded === "line heroes"
+  );
+}
+
+/**
+ * Child folders under a cruise line that are not individual ship folders.
+ * e.g. AQUA CLASS IMAGES, Horizon STATEROOMS, room libraries.
+ */
+export function isNonShipLineSubfolder(folderName) {
+  if (isHeroImagesFolder(folderName)) return true;
+  const folded = foldKey(folderName);
+  if (!folded) return true;
+  if (/\b(staterooms?|cabins?|suites?|accommodations?)\b/.test(folded)) return true;
+  if (/\b(class images|brand images|fleet images|lifestyle)\b/.test(folded)) return true;
+  if (/\b(what is included|inclusions)\b/.test(folded)) return true;
+  return false;
+}
+
+/** Room-type folder names inside Hero Images. */
+export function isRoomTypeFolder(folderName) {
+  const folded = foldKey(folderName);
+  if (!folded) return false;
+  return /\b(stateroom|verandah|veranda|concierge|inside|interior|oceanview|ocean view|balcony|suite|mini suite|penthouse|owners)\b/.test(
+    folded
+  );
+}
+
 /** Extract optional year from folder name for disambiguation. */
 export function extractYearHint(name) {
   const m = String(name || "").match(/\(\s*((?:19|20)\d{2})\s*\)/);
