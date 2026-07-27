@@ -19,8 +19,10 @@ const require = createRequire(import.meta.url);
 const { readImageDimensions } = require("../../../netlify/functions/lib/bulk-ship-images/image-dims.js");
 
 export const IMPORT_SOURCE = "external_brand_imaging_hero_batch_1";
+export const IMPORT_SOURCE_BATCH_2 = "external_brand_imaging_hero_batch_2";
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const CONFIRM_TOKEN = "UPLOAD-EXTERNAL-SHIP-HEROES-BATCH-1";
+export const CONFIRM_TOKEN_BATCH_2 = "UPLOAD-EXTERNAL-SHIP-HEROES-BATCH-2";
 
 const IDENTITY_EXCLUDE_RULES = [
   {
@@ -192,6 +194,11 @@ export function inspectLocalShipHero(item, buffer, { supabaseUrl }) {
 
 export function readLocalImageBuffer(absolutePath) {
   return fs.readFileSync(absolutePath);
+}
+
+export function sha256FromPath(absolutePath) {
+  const buffer = fs.readFileSync(absolutePath);
+  return sha256Hex(buffer);
 }
 
 export function toCsv(rows, columns) {

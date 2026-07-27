@@ -13,6 +13,15 @@ node scripts/audit-external-ship-images.mjs \
 
 Writes gitignored manifests under `tmp/ship-image-audit-external/`.
 
+## Steve selection review pack
+
+```bash
+node scripts/build-hero-selection-review.mjs
+```
+
+Open `tmp/ship-image-audit-external/hero-selection-review/index.html`, export
+`steve-hero-selections.json` into `tmp/ship-image-audit-external/`.
+
 ## Strict hero batch 1 upload
 
 Dry run:
@@ -30,6 +39,20 @@ node scripts/upload-external-ship-heroes-batch-1.mjs \
   --apply --target=production \
   --confirm=UPLOAD-EXTERNAL-SHIP-HEROES-BATCH-1
 ```
+
+## Batch 2 — Steve-approved selections
+
+```bash
+node scripts/upload-external-ship-heroes-batch-2.mjs \
+  --dry-run --target=production \
+  --confirm=UPLOAD-EXTERNAL-SHIP-HEROES-BATCH-2
+
+node scripts/upload-external-ship-heroes-batch-2.mjs \
+  --apply --target=production \
+  --confirm=UPLOAD-EXTERNAL-SHIP-HEROES-BATCH-2
+```
+
+Uses `import_source = external_brand_imaging_hero_batch_2`.
 
 ### Hard exclusions
 
