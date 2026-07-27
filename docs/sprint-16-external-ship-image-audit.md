@@ -54,6 +54,27 @@ node scripts/upload-external-ship-heroes-batch-2.mjs \
 
 Uses `import_source = external_brand_imaging_hero_batch_2`.
 
+## Secondary gallery batch 1
+
+Dry run:
+
+```bash
+node scripts/upload-external-ship-gallery-batch-1.mjs \
+  --dry-run --target=production \
+  --confirm=UPLOAD-EXTERNAL-SHIP-GALLERY-BATCH-1
+```
+
+Apply (Original project only — does not change heroes):
+
+```bash
+node scripts/upload-external-ship-gallery-batch-1.mjs \
+  --apply --target=production \
+  --confirm=UPLOAD-EXTERNAL-SHIP-GALLERY-BATCH-1
+```
+
+Uses `import_source = external_brand_imaging_gallery_batch_1`.
+Gallery rows are always `is_default = false`. Max three images per ship.
+
 ### Hard exclusions
 
 - Steve-selection multi-candidate ships
