@@ -13,7 +13,6 @@
   const BODY_LOCK_CLASS = "portal-loading-active";
   const PARENT_GEOMETRY_CLASS = "portal-loading-overlay--parent-viewport";
   const INITIAL_MESSAGE = "Give me a few seconds — I'm loading the information.";
-  const SLOW_MESSAGE = "Still loading — this is taking a little longer than usual.";
   const FAIL_MESSAGE =
     "Something didn't load properly. Please try again in a moment.";
 
@@ -33,7 +32,6 @@
   const refs = new Map();
   let overlayEl = null;
   let messageEl = null;
-  let slowTimer = null;
   let failTimer = null;
   let activeCount = 0;
   let scrollLocked = false;
@@ -238,10 +236,6 @@
   }
 
   function clearTimers() {
-    if (slowTimer) {
-      clearTimeout(slowTimer);
-      slowTimer = null;
-    }
     if (failTimer) {
       clearTimeout(failTimer);
       failTimer = null;
@@ -289,9 +283,6 @@
     if (activeCount === 1) {
       setMessage(INITIAL_MESSAGE);
       clearTimers();
-      slowTimer = setTimeout(function () {
-        setMessage(SLOW_MESSAGE);
-      }, 4000);
     }
 
     syncVisibility();

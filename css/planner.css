@@ -8348,6 +8348,7 @@ body {
   visibility: hidden;
   pointer-events: none;
   transition: opacity 0.24s ease, visibility 0.24s ease;
+  font-family: "Halyard Display", Arial, sans-serif;
 }
 
 /* When parent geometry is applied via inline top/height, drop vh/dvh caps. */
