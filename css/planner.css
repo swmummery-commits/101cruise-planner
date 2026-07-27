@@ -8387,11 +8387,11 @@ html.portal-loading-active body {
 .portal-loading-spinner {
   --portal-loading-green: var(--brand-green, #8dd9bf);
   display: grid;
-  grid-template-columns: repeat(2, 9px);
-  grid-template-rows: repeat(2, 9px);
-  gap: 4px;
-  width: 22px;
-  height: 22px;
+  grid-template-columns: 7px;
+  grid-template-rows: repeat(4, 7px);
+  gap: 3px;
+  width: 7px;
+  height: 37px;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -8400,18 +8400,18 @@ html.portal-loading-active body {
 
 .portal-loading-box {
   display: block;
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
+  width: 7px;
+  height: 7px;
+  border-radius: 1.5px;
   background: var(--portal-loading-green);
   opacity: 0.22;
   animation: portal-loading-box-flash 1.05s ease-in-out infinite;
 }
 
 .portal-loading-box:nth-child(1) { animation-delay: 0s; }
-.portal-loading-box:nth-child(2) { animation-delay: 0.15s; }
-.portal-loading-box:nth-child(3) { animation-delay: 0.3s; }
-.portal-loading-box:nth-child(4) { animation-delay: 0.45s; }
+.portal-loading-box:nth-child(2) { animation-delay: 0.12s; }
+.portal-loading-box:nth-child(3) { animation-delay: 0.24s; }
+.portal-loading-box:nth-child(4) { animation-delay: 0.36s; }
 
 .portal-loading-message {
   margin: 0;
