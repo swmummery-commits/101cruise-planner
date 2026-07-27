@@ -219,7 +219,12 @@
     overlayEl.setAttribute("aria-hidden", "true");
     overlayEl.innerHTML =
       '<div class="portal-loading-panel">' +
-      '<div class="portal-loading-spinner" aria-hidden="true"></div>' +
+      '<div class="portal-loading-spinner" aria-hidden="true">' +
+      '<span class="portal-loading-box"></span>' +
+      '<span class="portal-loading-box"></span>' +
+      '<span class="portal-loading-box"></span>' +
+      '<span class="portal-loading-box"></span>' +
+      "</div>" +
       `<p class="portal-loading-message" aria-live="polite">${INITIAL_MESSAGE}</p>` +
       "</div>";
 
