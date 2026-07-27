@@ -3013,7 +3013,7 @@ function renderPlannerNav(active = "preparation") {
   return `
     <div class="planner-page-header">
       <div class="planner-page-brand">
-        <img class="planner-page-brand-logo" src="assets/101cruise-logo.png" alt="101cruise">
+        <img class="planner-page-brand-logo" src="assets/101cruise-logo-black.png" alt="101cruise">
       </div>
       <div class="planner-module-nav">
         ${items.map(item => `
