@@ -2457,12 +2457,38 @@ async function loadShipGalleryImages(cruise, heroUrl = "") {
   }
 }
 
-function renderShipGallerySection(images) {
-  const list = Array.isArray(images) ? images.filter(img => img?.url) : [];
-  if (list.length < 2) return "";
+function renderShipGallerySection(images, heroUrl = "") {
+  if (typeof ShipGallerySection !== "undefined" && ShipGallerySection.render) {
+    return ShipGallerySection.render(images, { heroUrl });
+  }
+  // Fallback if the shared helper failed to load — still show 1+ images.
+  const list = Array.isArray(images)
+    ? images.filter((img) => {
+        const url = String(img?.url || "").trim();
+        if (!url) return false;
+        if (heroUrl && url === String(heroUrl).trim()) return false;
+        return true;
+      })
+    : [];
+  if (list.length === 0) return "";
+  if (list.length === 1) {
+    const img = list[0];
+    const label = escapeHtml(img.alt || img.title || "Ship photo");
+    return `
+    <section class="dashboard-ship-gallery dashboard-ship-gallery--single" aria-label="Explore your ship">
+      <div class="dashboard-ship-gallery-head"><h3>Explore your ship</h3></div>
+      <button type="button" class="dashboard-ship-gallery-item dashboard-ship-gallery-item--single" data-gallery-index="0" aria-label="${label}">
+        <img src="${escapeHtml(img.url)}" alt="${label}" loading="lazy" width="960" height="540">
+      </button>
+    </section>
+    <div class="dashboard-ship-gallery-lightbox" id="shipGalleryLightbox" hidden>
+      <button type="button" id="shipGalleryLightboxClose" aria-label="Close image">Close</button>
+      <img id="shipGalleryLightboxImage" alt="">
+    </div>`;
+  }
   const items = list.map((img, index) => `
     <button type="button" class="dashboard-ship-gallery-item" data-gallery-index="${index}" aria-label="${escapeHtml(img.alt || img.title || "Ship photo")}">
-      <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.alt || img.title || "Ship photo")}" loading="lazy" width="320" height="200">
+      <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.alt || img.title || "Ship photo")}" loading="lazy" width="960" height="540">
     </button>`).join("");
   return `
     <section class="dashboard-ship-gallery" aria-label="Explore your ship">
@@ -2727,7 +2753,7 @@ async function renderDashboard() {
           ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
         </section>
 
-        ${renderShipGallerySection(shipGalleryImages)}
+        ${renderShipGallerySection(shipGalleryImages, mainShipImage)}
 
         ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
       </div>

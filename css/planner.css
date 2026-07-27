@@ -8438,6 +8438,20 @@ body {
   object-fit: cover;
 }
 
+/* Single secondary image — full width in content column, no carousel track */
+.dashboard-ship-gallery--single {
+  width: 100%;
+  max-width: 100%;
+}
+
+.dashboard-ship-gallery-item--single {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  scroll-snap-align: unset;
+}
+
 .dashboard-ship-gallery-lightbox {
   position: fixed;
   inset: 0;

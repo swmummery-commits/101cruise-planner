@@ -62,6 +62,10 @@ assert(filtered.every(i => i.public_url !== "https://x/hero.jpg"), "hero exclude
 assert(filtered.every(i => !/logo/i.test(i.title || "")), "logo excluded");
 assert(planner.includes("Explore your ship"), "gallery title");
 assert(planner.includes("loading=\"lazy\""), "lazy load");
+assert(planner.includes("ShipGallerySection.render"), "uses shared gallery renderer");
+assert(!/list\.length\s*<\s*2\s*return\s*""/.test(planner), "single-image gallery no longer hidden");
+assert(indexHtml.includes("ship-gallery-section.js"), "gallery helper script loaded");
+assert(css.includes("dashboard-ship-gallery--single"), "single-image gallery css");
 
 // Scrolling
 assert(/overflow-y:\s*visible !important/.test(css), "nested scroll removed");
