@@ -15,15 +15,18 @@ burden outweighed the customer value for 101cruise’s current workflow.
 
 ## What customers see now
 
-**Your Journey** on the My Cruise dashboard is a simple booking summary:
+**Your Journey** on the My Cruise dashboard shows:
 
 - embarkation port → disembarkation port
 - embarkation / disembarkation dates
 - cruise duration
-- note that the detailed itinerary is in the Booking Confirmation
+- a **text-only** day-by-day itinerary when extraction has succeeded
+- calm Booking Confirmation fallback when extraction is unavailable
 - **Open Documents →** (scrolls Documents to the top)
 
-No map, no “Journey map coming soon”, no `customer-itinerary` request on page load.
+No geographic map, no geocoding, no Admin approval queue, and no
+`customer-itinerary` map endpoint on page load. Text itinerary reads use
+`customer-text-itinerary` only. See `docs/client-portal-experience-upgrade.md`.
 
 ## Source of truth
 

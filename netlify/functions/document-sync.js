@@ -5,7 +5,11 @@
  */
 
 const crypto = require('crypto');
-const { fingerprintBookingDocument } = require('./lib/itinerary-document-hash');
+const {
+  fingerprintBookingDocument,
+  isBookingConfirmationType
+} = require('./lib/itinerary-document-hash');
+const { processTextItinerary } = require('./lib/text-itinerary-process');
 
 function normalise(value) {
   return String(value || '').trim();
@@ -145,7 +149,8 @@ async function syncBookingDocuments(rest, booking, source = null) {
       skipped_conflict: 0,
       skipped_other_source: 0,
       errors: [],
-      rows: []
+      rows: [],
+      text_itinerary_process: []
     };
   }
 
@@ -156,7 +161,8 @@ async function syncBookingDocuments(rest, booking, source = null) {
     skipped_other_source: 0,
     errors: [],
     rows: [],
-    confirmation_candidates: []
+    confirmation_candidates: [],
+    text_itinerary_process: []
   };
 
   for (const row of mapped) {
@@ -191,7 +197,32 @@ async function syncBookingDocuments(rest, booking, source = null) {
       const saved = Array.isArray(data) ? data[0] : data;
       if (saved) {
         result.rows.push(saved);
-        // Itinerary auto-extraction retired — never enqueue confirmation_candidates.
+        // Map/approval auto-extraction retired — never enqueue confirmation_candidates.
+        if (isBookingConfirmationType(saved.document_type) && saved.file_url) {
+          try {
+            const tiResult = await processTextItinerary({
+              rest,
+              booking,
+              document: saved,
+              supabaseUrl: process.env.SUPABASE_URL,
+              openaiKey: process.env.OPENAI_API_KEY
+            });
+            result.text_itinerary_process.push({
+              sync_key: row.sync_key,
+              filename: row.filename,
+              ...tiResult
+            });
+          } catch (tiError) {
+            console.warn('[document-sync] text itinerary process failed', tiError.message || tiError);
+            result.text_itinerary_process.push({
+              sync_key: row.sync_key,
+              filename: row.filename,
+              ok: false,
+              reason: 'process_error',
+              error: tiError.message || String(tiError)
+            });
+          }
+        }
       }
       result.upserted += 1;
     } catch (error) {

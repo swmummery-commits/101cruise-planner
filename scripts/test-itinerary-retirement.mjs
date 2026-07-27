@@ -36,13 +36,14 @@ const {
 
 /* Dashboard simple summary */
 assert(planner.includes("function renderJourneySummary"), "journey summary helper");
-assert(planner.includes("renderJourneySummary(mainCruise)"), "dashboard uses summary");
+assert(/renderJourneySummary\(mainCruise/.test(planner), "dashboard uses summary");
 assert(planner.includes("Open Documents →"), "Open Documents CTA");
 assert(planner.includes("Your detailed cruise itinerary is available in your Booking Confirmation"), "confirmation note");
+assert(/customer-text-itinerary/.test(planner), "dashboard may load text-only itinerary");
 assert(!/resolveDashboardJourney\(mainCruise\)/.test(planner), "dashboard does not resolve live journey map");
 assert(!/initialiseDashboardRouteMap\(/.test(planner.match(/async function renderDashboard[\s\S]*?^}/m)?.[0] || ""), "dashboard does not init map");
 assert(!/Journey map coming soon/.test(planner.match(/function renderJourneySummary[\s\S]*?^}/m)?.[0] || ""), "no coming soon in summary");
-assert(!/customer-itinerary/.test(planner.match(/async function renderDashboard[\s\S]*?^}/m)?.[0] || ""), "dashboard path does not call customer-itinerary");
+assert(!/\bcustomer-itinerary\b/.test(planner.match(/async function renderDashboard[\s\S]*?^}/m)?.[0] || ""), "dashboard path does not call map customer-itinerary");
 
 /* Client load path drops map assets */
 assert(!indexHtml.includes("topojson-client"), "no topojson on index");
@@ -75,8 +76,10 @@ assert(Array.isArray(batch) && batch.every((r) => r.reason === "itinerary_map_fe
 
 assert(!/processConfirmationDocuments/.test(getBooking), "get-booking does not auto-process");
 assert(!/processBookingConfirmation/.test(bookingDocs), "uploads do not auto-process");
+assert(/processTextItinerary/.test(docSync), "sync calls text-only processTextItinerary");
+assert(!/processBookingConfirmation|processConfirmationDocuments/.test(docSync), "sync does not call map auto-process");
 assert(!/confirmation_candidates\.push/.test(docSync), "sync does not enqueue candidates");
-assert(!/processBookingConfirmation|extractItineraryWithOpenAI/.test(customerAccess), "customer login never extracts");
+assert(!/processBookingConfirmation|extractItineraryWithOpenAI/.test(customerAccess), "customer login never extracts map");
 assert(/never extract/i.test(customerAccess), "customer-access documents no-extract");
 
 assert(/itinerary_map_feature_retired/.test(adminItinerary), "admin-itinerary retired");

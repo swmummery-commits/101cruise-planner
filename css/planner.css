@@ -39,13 +39,24 @@ html.is-embedded .customer-access-card {
   margin: 0 auto;
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
 #cruise-planner-app {
-    max-width: 1040px;
+    max-width: none;
     margin: 0 auto;
-    padding: 32px 20px;
+    padding: 0;
     font-family: "Halyard Display", Arial, sans-serif;
     color: #111;
   }
+
+#cruise-planner-app > .planner-shell,
+#cruise-planner-app > .customer-access-page {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
 
   .planner-card {
     background: #fff;
@@ -953,10 +964,11 @@ html.is-embedded .customer-access-card {
 
 .dashboard-hero {
   position: relative;
-  width: 100vw;
+  width: 100%;
+  max-width: none;
   min-height: 520px;
-  margin-left: calc(50% - 50vw);
-  margin-right: calc(50% - 50vw);
+  margin-left: 0;
+  margin-right: 0;
   overflow: hidden;
   background: linear-gradient(135deg, #111, #26332f);
   background-size: cover;
@@ -8257,5 +8269,335 @@ input[type="radio"] {
 
   .ship-donut-segment {
     opacity: 1 !important;
+  }
+}
+
+/* =============================================================================
+   Client Portal shared helpers — loading overlay, ship gallery, journey layout
+   ============================================================================= */
+
+html,
+body {
+  overflow-x: hidden;
+}
+
+#cruise-planner-app:has(.dashboard-page) {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.dashboard-page {
+  width: 100%;
+}
+
+.dashboard-hero {
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.dashboard-content-wrap {
+  width: min(1180px, calc(100% - 48px));
+  max-width: 1180px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  box-sizing: border-box;
+}
+
+.dashboard-ship-gallery-wrap {
+  width: 100%;
+  margin-top: 18px;
+}
+
+.dashboard-ship-gallery-wrap.is-edge-to-edge {
+  width: 100vw;
+  max-width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* Loading overlay styles (Apple-like, green accent) */
+.portal-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.24s ease, visibility 0.24s ease;
+}
+
+.portal-loading-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.portal-loading-panel {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  width: min(360px, calc(100vw - 48px));
+  padding: 28px 24px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(141, 217, 191, 0.34);
+  box-shadow:
+    0 18px 48px rgba(17, 44, 38, 0.12),
+    0 2px 8px rgba(17, 44, 38, 0.06);
+}
+
+.portal-loading-spinner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 3px solid rgba(141, 217, 191, 0.28);
+  border-top-color: #8dd9bf;
+  animation: portal-loading-spin 0.85s linear infinite;
+}
+
+.portal-loading-message {
+  margin: 0;
+  color: #245c4e;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.portal-loading-reduced-motion .portal-loading-spinner {
+  animation: none;
+  border-top-color: #8dd9bf;
+  border-right-color: #8dd9bf;
+}
+
+.portal-loading-button-busy {
+  opacity: 0.72;
+  cursor: wait;
+}
+
+@keyframes portal-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Ship gallery styles */
+.dashboard-ship-gallery {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-ship-gallery-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-ship-gallery-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: #245c4e;
+}
+
+.dashboard-ship-gallery-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(180px, 220px);
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dashboard-ship-gallery-item {
+  position: relative;
+  border: 0;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #edf5f2;
+  cursor: zoom-in;
+  scroll-snap-align: start;
+  aspect-ratio: 4 / 3;
+}
+
+.dashboard-ship-gallery-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dashboard-ship-gallery-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 13000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(8, 24, 21, 0.82);
+}
+
+.dashboard-ship-gallery-lightbox img {
+  max-width: min(960px, calc(100vw - 48px));
+  max-height: calc(100vh - 96px);
+  border-radius: 18px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.dashboard-ship-gallery-lightbox button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  border: 0;
+  border-radius: 999px;
+  width: 42px;
+  height: 42px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #183834;
+  cursor: pointer;
+}
+
+@media (min-width: 900px) {
+  .dashboard-ship-gallery-track {
+    grid-auto-columns: minmax(200px, 1fr);
+    grid-auto-flow: column;
+    overflow-x: visible;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    display: grid;
+  }
+}
+
+.dashboard-countdown-message {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  text-align: right;
+}
+
+.dashboard-countdown-message-title {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+  font-weight: 850;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+}
+
+.dashboard-countdown-message-subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: clamp(0.95rem, 1.4vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+/* Journey text itinerary list + summary row grid */
+.dashboard-journey-summary-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) minmax(0, 1.4fr);
+  column-gap: 20px;
+  align-items: baseline;
+}
+
+.dashboard-journey-summary-row span {
+  text-align: left;
+}
+
+.dashboard-journey-summary-row strong {
+  text-align: left;
+}
+
+.dashboard-journey-itinerary-list {
+  display: grid;
+  gap: 0;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dashboard-journey-itinerary-item {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(24, 56, 52, 0.08);
+}
+
+.dashboard-journey-itinerary-item:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-journey-itinerary-date {
+  color: #70807d;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.dashboard-journey-itinerary-port {
+  margin: 0;
+  color: #203c37;
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.dashboard-journey-itinerary-meta {
+  margin: 2px 0 0;
+  color: #76837f;
+  font-size: 0.76rem;
+}
+
+/* Remove nested scrolling for dashboard modules */
+@media (min-width: 1081px) {
+  .dashboard-v2-grid {
+    grid-template-rows: auto auto !important;
+  }
+
+  .dashboard-progress-column {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-v2-grid > .dashboard-snapshot-card {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list {
+    overflow: visible !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+}
+
+.checklist-page .planner-card-body,
+.packing-page .packing-workspace,
+.budget-page .budget-layout,
+.documents-list {
+  max-height: none !important;
+  overflow: visible !important;
+  overflow-y: visible !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-loading-overlay,
+  .portal-loading-spinner,
+  .dashboard-ship-gallery-item {
+    transition: none !important;
+    animation: none !important;
   }
 }

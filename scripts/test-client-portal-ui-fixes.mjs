@@ -43,8 +43,8 @@ assert(
   "renderDocuments calls scroll reset"
 );
 assert(
-  /function renderJourneySummary/.test(plannerSrc) && /renderJourneySummary\(mainCruise\)/.test(plannerSrc),
-  "dashboard uses simple journey summary"
+  /function renderJourneySummary/.test(plannerSrc) && /renderJourneySummary\(mainCruise/.test(plannerSrc),
+  "dashboard uses journey summary"
 );
 assert(
   !/resolveDashboardJourney\(mainCruise\)/.test(plannerSrc),

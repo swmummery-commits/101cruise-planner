@@ -332,24 +332,43 @@ async function accessMyCruise() {
     if (message) message.textContent = "Enter both the booking number and lead traveller surname.";
     return;
   }
-  if (button) { button.disabled = true; button.textContent = "Opening My Cruise…"; }
+  if (button?.disabled) return;
   if (message) message.textContent = "";
+
+  const run = async () => {
+    if (button) { button.disabled = true; button.textContent = "Opening My Cruise…"; }
+    try {
+      const response = await fetch("/.netlify/functions/customer-access", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_reference: bookingReference, surname })
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.success) throw new Error(data?.error || "We couldn't find a booking matching those details. Please check the booking number and lead traveller surname.");
+      const session = { token: data.token, booking: data.booking };
+      storeCustomerSession(session, remember);
+      activateCustomerSession(session);
+      trackMyCruiseEvent("dashboard", "login");
+      await renderDashboard();
+    } catch (error) {
+      if (message) message.textContent = error.message || "We couldn't find a booking matching those details. Please check the booking number and lead traveller surname.";
+      if (button) { button.disabled = false; button.textContent = "Open My Cruise"; }
+      throw error;
+    }
+  };
+
+  if (typeof PortalLoading?.withLoading === "function") {
+    try {
+      await PortalLoading.withLoading(run, { button, key: "customer-login" });
+    } catch {
+      /* message already shown */
+    }
+    return;
+  }
   try {
-    const response = await fetch("/.netlify/functions/customer-access", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ booking_reference: bookingReference, surname })
-    });
-    const data = await response.json().catch(() => null);
-    if (!response.ok || !data?.success) throw new Error(data?.error || "We couldn't find a booking matching those details. Please check the booking number and lead traveller surname.");
-    const session = { token: data.token, booking: data.booking };
-    storeCustomerSession(session, remember);
-    activateCustomerSession(session);
-    trackMyCruiseEvent("dashboard", "login");
-    await renderDashboard();
-  } catch (error) {
-    if (message) message.textContent = error.message || "We couldn't find a booking matching those details. Please check the booking number and lead traveller surname.";
-    if (button) { button.disabled = false; button.textContent = "Open My Cruise"; }
+    await run();
+  } catch {
+    /* message already shown */
   }
 }
 
@@ -1071,38 +1090,67 @@ function getLeaveHomeDashboardState(daysUntilLeaveHome) {
   return "after_leave_home";
 }
 
-function buildDashboardCountdownConfig(cruise, leaveHomeInfo) {
+function buildDashboardCountdownConfig(cruise, leaveHomeInfo, booking = null) {
+  const dateApi = typeof CruiseDateState !== "undefined" ? CruiseDateState : null;
+  const returnInfo = getCruiseReturnDateInfo(cruise, booking);
+  const lifecycle = dateApi?.getCruiseLifecycleState
+    ? dateApi.getCruiseLifecycleState({
+        departing_date: cruise?.departure_date || booking?.departing_date,
+        arriving_date: returnInfo.returnDate,
+        cruise_duration: booking?.cruise_duration || cruise?.cruise_duration || cruise?.nights,
+        nights: cruise?.nights,
+        now: new Date()
+      })
+    : "before_embarkation";
+
   const embarkationTarget = getDepartureDateTime(cruise);
   const leaveHomeTarget = leaveHomeInfo?.date ? getLeaveHomeDateTime(leaveHomeInfo.date) : null;
   const daysUntilLeaveHome = leaveHomeInfo?.date ? getDaysUntilCalendarDate(leaveHomeInfo.date) : null;
   const now = new Date();
   const embarkationIsAfterLeaveHome = !leaveHomeTarget || !embarkationTarget || leaveHomeTarget.getTime() <= embarkationTarget.getTime();
 
+  let legacy = {
+    panelLabel: "Sailing in",
+    dayLabel: "",
+    getParts: () => getCountdownParts(cruise)
+  };
+
   if (leaveHomeTarget && embarkationIsAfterLeaveHome && daysUntilLeaveHome !== null && daysUntilLeaveHome >= 0 && now.getTime() < leaveHomeTarget.getTime()) {
     const dayLabel = daysUntilLeaveHome === 1 ? "1 day until you leave home" : `${daysUntilLeaveHome} days until you leave home`;
-    return {
+    legacy = {
       panelLabel: "Leaving home in",
       dayLabel,
       getParts: () => getCountdownPartsForTarget(leaveHomeTarget)
     };
-  }
-
-  if (embarkationTarget && leaveHomeTarget && now.getTime() >= leaveHomeTarget.getTime()) {
+  } else if (embarkationTarget && leaveHomeTarget && now.getTime() >= leaveHomeTarget.getTime()) {
     const embarkDays = getCountdownParts(cruise).totalDays;
     const dayLabel = embarkDays === 1 ? "1 day until embarkation" : embarkDays === null ? "Add your sail date" : `${embarkDays} days until embarkation`;
-    return {
+    legacy = {
       panelLabel: "Embarkation in",
+      dayLabel,
+      getParts: () => getCountdownParts(cruise)
+    };
+  } else {
+    const cruiseDays = getCountdownParts(cruise).totalDays;
+    const dayLabel = cruiseDays === null ? "Add your sail date" : cruiseDays <= 0 ? "Bon Voyage" : cruiseDays === 1 ? "1 day until your cruise" : `${cruiseDays} days until your cruise`;
+    legacy = {
+      panelLabel: "Sailing in",
       dayLabel,
       getParts: () => getCountdownParts(cruise)
     };
   }
 
-  const cruiseDays = getCountdownParts(cruise).totalDays;
-  const dayLabel = cruiseDays === null ? "Add your sail date" : cruiseDays <= 0 ? "Bon Voyage" : cruiseDays === 1 ? "1 day until your cruise" : `${cruiseDays} days until your cruise`;
+  const presentation = dateApi?.buildCountdownPresentation
+    ? dateApi.buildCountdownPresentation(lifecycle, legacy)
+    : { mode: "countdown", panelLabel: legacy.panelLabel, showCounters: true };
+
   return {
-    panelLabel: "Sailing in",
-    dayLabel,
-    getParts: () => getCountdownParts(cruise)
+    ...legacy,
+    lifecycle,
+    presentation,
+    returnDate: returnInfo.returnDate,
+    returnDateDerived: returnInfo.derived,
+    getParts: legacy.getParts
   };
 }
 
@@ -1114,6 +1162,18 @@ function clearCountdownTimer() {
 }
 
 function updateLiveCountdown(cruise) {
+  const presentation = dashboardCountdownConfig?.presentation;
+  const panel = document.getElementById("dashboardCountdownPanel");
+  if (panel && presentation?.mode === "hidden") {
+    panel.hidden = true;
+    return;
+  }
+  if (panel) panel.hidden = false;
+
+  if (presentation?.mode === "sail_day" || presentation?.mode === "enjoying") {
+    return;
+  }
+
   const parts = dashboardCountdownConfig?.getParts?.() || getCountdownParts(cruise);
   const panelLabel = document.getElementById("dashboardCountdownLabel");
   if (panelLabel && dashboardCountdownConfig?.panelLabel) panelLabel.textContent = dashboardCountdownConfig.panelLabel;
@@ -1126,6 +1186,37 @@ function updateLiveCountdown(cruise) {
   if (hoursEl) hoursEl.innerText = padNumber(parts.hours);
   if (minutesEl) minutesEl.innerText = padNumber(parts.minutes);
   if (secondsEl) secondsEl.innerText = padNumber(parts.seconds);
+}
+
+function renderDashboardCountdownPanel(countdownConfig, countdownParts) {
+  const presentation = countdownConfig?.presentation || { mode: "countdown", showCounters: true };
+  if (presentation.mode === "hidden") return "";
+
+  if (presentation.mode === "sail_day") {
+    return `
+      <div class="dashboard-countdown-panel dashboard-countdown-message" id="dashboardCountdownPanel">
+        <p class="dashboard-countdown-message-title">${escapeHtml(presentation.message?.title || "TODAY IS SAIL DAY")}</p>
+        <p class="dashboard-countdown-message-subtitle">${escapeHtml(presentation.message?.subtitle || "BON VOYAGE!")}</p>
+      </div>`;
+  }
+
+  if (presentation.mode === "enjoying") {
+    return `
+      <div class="dashboard-countdown-panel dashboard-countdown-message" id="dashboardCountdownPanel">
+        <p class="dashboard-countdown-message-title">${escapeHtml(presentation.message || "HOPE YOU ARE ENJOYING YOUR CRUISE")}</p>
+      </div>`;
+  }
+
+  return `
+    <div class="dashboard-countdown-panel" id="dashboardCountdownPanel">
+      <p id="dashboardCountdownLabel">${escapeHtml(countdownConfig.panelLabel || "Sailing in")}</p>
+      <div class="dashboard-countdown-grid">
+        <div><span id="countdownDays">${countdownParts.days}</span><small>Days</small></div>
+        <div><span id="countdownHours">${padNumber(countdownParts.hours)}</span><small>Hours</small></div>
+        <div><span id="countdownMinutes">${padNumber(countdownParts.minutes)}</span><small>Minutes</small></div>
+        <div><span id="countdownSeconds">${padNumber(countdownParts.seconds)}</span><small>Seconds</small></div>
+      </div>
+    </div>`;
 }
 
 function startLiveCountdown(cruise, config = null) {
@@ -1579,11 +1670,27 @@ function getTravellerSummary(cruise) {
   return "Not added";
 }
 
-function getCruiseDateRangeText(cruise) {
+function getCruiseReturnDateInfo(cruise, booking = null) {
+  const api = typeof CruiseDateState !== "undefined" ? CruiseDateState : null;
+  const departing = cruise?.departure_date || booking?.departing_date || null;
+  const arriving = cruise?.return_date || cruise?.arrival_date || booking?.arriving_date || null;
+  const duration = booking?.cruise_duration || cruise?.cruise_duration || cruise?.nights || null;
+  if (!api?.deriveReturnDate) {
+    return { returnDate: arriving || null, derived: false };
+  }
+  return api.deriveReturnDate({
+    departing_date: departing,
+    arriving_date: arriving,
+    cruise_duration: duration,
+    nights: cruise?.nights
+  });
+}
+
+function getCruiseDateRangeText(cruise, booking = null) {
   const depart = cruise?.departure_date ? formatDateShort(cruise.departure_date) : "Departure not added";
-  const ret = cruise?.return_date || cruise?.arrival_date;
-  const arrival = ret ? formatDateShort(ret) : "Return not added";
-  return `${depart} to ${arrival}`;
+  const { returnDate, derived } = getCruiseReturnDateInfo(cruise, booking);
+  if (!returnDate) return `${depart} to Return not added`;
+  return `${depart} to ${formatDateShort(returnDate)}${derived ? "" : ""}`;
 }
 
 function getCabinSummary(cruise) {
@@ -1868,7 +1975,7 @@ function renderDashboardSnapshot(cruise) {
         ${renderDashboardInclusionTags(cruise)}
       </section>
       <footer class="dashboard-snapshot-footer">
-        <button class="dashboard-outline-action" onclick="renderBookingDetails()">Open Booking →</button>
+        <button class="dashboard-outline-action" onclick="navigateWithLoading('booking', () => renderBookingDetails(), event)">Open Booking →</button>
       </footer>
     </article>
   `;
@@ -2149,11 +2256,11 @@ async function loadDashboardPackingData(cruise) {
 function renderDashboardQuickAccess() {
   return `
     <nav class="dashboard-quick-access" aria-label="My Cruise tools">
-      <button onclick="renderChecklist()"><span aria-hidden="true">✓</span><strong>Checklist</strong></button>
-      <button onclick="renderPackingPlanner()"><span aria-hidden="true">🧳</span><strong>Pack List</strong></button>
-      <button onclick="renderBudgetPlanner()"><span aria-hidden="true">💳</span><strong>Budget</strong></button>
-      <button onclick="renderTheShip()"><span aria-hidden="true">🚢</span><strong>Your Ship</strong></button>
-      <button onclick="renderDocuments()"><span aria-hidden="true">📄</span><strong>Documents</strong></button>
+      <button type="button" onclick="navigateWithLoading('checklist', () => renderChecklist(), event)"><span aria-hidden="true">✓</span><strong>Checklist</strong></button>
+      <button type="button" onclick="navigateWithLoading('packing', () => renderPackingPlanner(), event)"><span aria-hidden="true">🧳</span><strong>Pack List</strong></button>
+      <button type="button" onclick="navigateWithLoading('budget', () => renderBudgetPlanner(), event)"><span aria-hidden="true">💳</span><strong>Budget</strong></button>
+      <button type="button" onclick="navigateWithLoading('ship', () => renderTheShip(), event)"><span aria-hidden="true">🚢</span><strong>Your Ship</strong></button>
+      <button type="button" onclick="navigateWithLoading('documents', () => renderDocuments(), event)"><span aria-hidden="true">📄</span><strong>Documents</strong></button>
     </nav>
   `;
 }
@@ -2198,21 +2305,83 @@ function renderDashboardCombinedProgress(packingData, checklistData) {
 let dashboardLeafletMap = null;
 let dashboardShipAnimationFrame = null;
 
+function formatJourneyItineraryTime(timeString) {
+  if (!timeString) return "";
+  return formatTime(timeString);
+}
+
+function formatJourneyItineraryDate(dateString) {
+  if (!dateString) return "";
+  return String(formatDateShort(dateString) || "").toUpperCase();
+}
+
+function titleCasePortName(value) {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  if (/^at\s+sea$/i.test(text)) return "At sea";
+  return text.replace(/\w\S*/g, word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase());
+}
+
+function renderJourneyItineraryRows(stops, expanded = false) {
+  const list = Array.isArray(stops) ? stops : [];
+  if (!list.length) return "";
+  const visible = expanded || list.length <= 5 ? list : list.slice(0, 5);
+  const rows = visible.map(stop => {
+    const dayLabel = `DAY ${stop.day != null ? stop.day : ""}`.trim();
+    const dateLabel = formatJourneyItineraryDate(stop.date);
+    const portLabel = stop.is_sea_day ? "At sea" : titleCasePortName(stop.port_name) || "Port";
+    const arrival = formatJourneyItineraryTime(stop.arrival_time);
+    const departure = formatJourneyItineraryTime(stop.departure_time);
+    let meta = "";
+    if (arrival && departure) meta = `${arrival} – ${departure}`;
+    else if (departure && (stop.is_embarkation || !arrival)) meta = `Departs ${departure}`;
+    else if (arrival) meta = `Arrives ${arrival}`;
+    if (stop.overnight) meta = meta ? `${meta} · Overnight` : "Overnight";
+    if (stop.is_embarkation) meta = meta ? `${meta} · Embarkation` : "Embarkation";
+    if (stop.is_disembarkation) meta = meta ? `${meta} · Disembarkation` : "Disembarkation";
+    return `
+      <li class="dashboard-journey-itinerary-item">
+        <div class="dashboard-journey-itinerary-date">
+          <strong>${escapeHtml(dayLabel)}</strong><br>${escapeHtml(dateLabel)}
+        </div>
+        <div>
+          <p class="dashboard-journey-itinerary-port">${escapeHtml(portLabel)}</p>
+          ${meta ? `<p class="dashboard-journey-itinerary-meta">${escapeHtml(meta)}</p>` : ""}
+        </div>
+      </li>`;
+  }).join("");
+
+  const toggle = list.length > 5
+    ? `<button type="button" class="dashboard-outline-action dashboard-card-button" id="journeyItineraryToggle" data-expanded="${expanded ? "1" : "0"}">${expanded ? "Show less" : "View full itinerary"}</button>`
+    : "";
+
+  return `
+    <div class="dashboard-journey-itinerary" id="journeyItineraryBlock" data-stop-count="${list.length}">
+      <ul class="dashboard-journey-itinerary-list">${rows}</ul>
+      ${toggle}
+    </div>`;
+}
+
 /**
- * Simple booking-summary journey card (map extraction retired).
- * Uses embark/disembark fields already on the booking — no PDF parsing.
+ * Booking-summary journey card with optional text-only itinerary (map extraction retired).
  */
-function renderJourneySummary(cruise) {
+function renderJourneySummary(cruise, options = {}) {
+  const booking = options.booking || customerBooking || cruise?._preview_booking || null;
+  const itineraryStops = Array.isArray(options.itineraryStops) ? options.itineraryStops : [];
+  const itineraryExpanded = options.itineraryExpanded === true;
   const embarkPort =
     cruise?.embarkation_port || cruise?.departure_port || cruise?.from_port || cruise?.departure_city || "";
   const disembarkPort =
     cruise?.disembarkation_port || cruise?.arrival_port || cruise?.destination || cruise?.to_port || "";
   const embarkDate = cruise?.departure_date || "";
-  const disembarkDate = cruise?.return_date || cruise?.arrival_date || "";
+  const returnInfo = getCruiseReturnDateInfo(cruise, booking);
+  const disembarkDate = returnInfo.returnDate || "";
   const nights =
     cruise?.nights != null && cruise.nights !== ""
       ? Number(cruise.nights)
-      : calculateCruiseNights(embarkDate, disembarkDate);
+      : booking?.cruise_duration
+        ? Number(String(booking.cruise_duration).match(/\d+/)?.[0] || NaN)
+        : calculateCruiseNights(embarkDate, disembarkDate);
 
   const routeParts = [embarkPort, disembarkPort].filter(Boolean);
   const routeHeading =
@@ -2234,15 +2403,133 @@ function renderJourneySummary(cruise) {
     );
   }
 
+  const hasStops = itineraryStops.length > 0;
+  const note = hasStops
+    ? ""
+    : `<p class="dashboard-card-copy">Your detailed cruise itinerary is available in your Booking Confirmation.</p>`;
+
   return `
     <article class="dashboard-summary-card dashboard-journey-card dashboard-journey-summary-card">
       <p class="dashboard-card-label">Your Journey</p>
       <h2>${escapeHtml(routeHeading)}</h2>
       ${detailRows.length ? `<div class="dashboard-journey-summary-details">${detailRows.join("")}</div>` : ""}
-      <p class="dashboard-card-copy">Your detailed cruise itinerary is available in your Booking Confirmation.</p>
-      <button type="button" class="dashboard-outline-action dashboard-card-button" onclick="renderDocuments()">Open Documents →</button>
+      ${hasStops ? renderJourneyItineraryRows(itineraryStops, itineraryExpanded) : note}
+      <button type="button" class="dashboard-outline-action dashboard-card-button" onclick="openDocumentsWithLoading()">Open Documents →</button>
     </article>
   `;
+}
+
+async function loadCustomerTextItinerary() {
+  if (!customerMode || !customerSessionToken) return { stops: [], status: null, reason: "no_session" };
+  try {
+    const response = await fetch("/.netlify/functions/customer-text-itinerary", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${customerSessionToken}`, Accept: "application/json" }
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.success) return { stops: [], status: null, reason: data?.reason || "request_failed" };
+    const stops = Array.isArray(data?.itinerary?.stops) ? data.itinerary.stops : [];
+    return { stops, status: data.status || null, reason: data.reason || null };
+  } catch (error) {
+    console.warn("Text itinerary load failed", error);
+    return { stops: [], status: null, reason: "request_failed" };
+  }
+}
+
+async function loadShipGalleryImages(cruise, heroUrl = "") {
+  if (!cruise?.ship_name) return [];
+  try {
+    const params = new URLSearchParams({
+      ship: cruise.ship_name || "",
+      cruise_line: cruise.cruise_line || ""
+    });
+    if (heroUrl) params.set("hero_url", heroUrl);
+    const headers = { Accept: "application/json" };
+    if (customerSessionToken) headers.Authorization = `Bearer ${customerSessionToken}`;
+    const response = await fetch(`/.netlify/functions/ship-gallery?${params.toString()}`, { headers });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.success) return [];
+    const images = Array.isArray(data.images) ? data.images : [];
+    return images.slice(0, 5);
+  } catch (error) {
+    console.warn("Ship gallery load failed", error);
+    return [];
+  }
+}
+
+function renderShipGallerySection(images) {
+  const list = Array.isArray(images) ? images.filter(img => img?.url) : [];
+  if (list.length < 2) return "";
+  const items = list.map((img, index) => `
+    <button type="button" class="dashboard-ship-gallery-item" data-gallery-index="${index}" aria-label="${escapeHtml(img.alt || img.title || "Ship photo")}">
+      <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.alt || img.title || "Ship photo")}" loading="lazy" width="320" height="200">
+    </button>`).join("");
+  return `
+    <section class="dashboard-ship-gallery" aria-label="Explore your ship">
+      <div class="dashboard-ship-gallery-head"><h3>Explore your ship</h3></div>
+      <div class="dashboard-ship-gallery-track">${items}</div>
+    </section>
+    <div class="dashboard-ship-gallery-lightbox" id="shipGalleryLightbox" hidden>
+      <button type="button" id="shipGalleryLightboxClose" aria-label="Close image">Close</button>
+      <img id="shipGalleryLightboxImage" alt="">
+    </div>`;
+}
+
+function bindShipGalleryInteractions(images) {
+  const list = Array.isArray(images) ? images : [];
+  const lightbox = document.getElementById("shipGalleryLightbox");
+  const imageEl = document.getElementById("shipGalleryLightboxImage");
+  const closeBtn = document.getElementById("shipGalleryLightboxClose");
+  if (!lightbox || !imageEl) return;
+
+  document.querySelectorAll("[data-gallery-index]").forEach(button => {
+    button.addEventListener("click", () => {
+      const index = Number(button.getAttribute("data-gallery-index"));
+      const img = list[index];
+      if (!img?.url) return;
+      imageEl.src = img.url;
+      imageEl.alt = img.alt || img.title || "Ship photo";
+      lightbox.hidden = false;
+    });
+  });
+  closeBtn?.addEventListener("click", () => {
+    lightbox.hidden = true;
+    imageEl.src = "";
+  });
+  lightbox.addEventListener("click", event => {
+    if (event.target === lightbox) {
+      lightbox.hidden = true;
+      imageEl.src = "";
+    }
+  });
+}
+
+function bindJourneyItineraryToggle(stops) {
+  const button = document.getElementById("journeyItineraryToggle");
+  const block = document.getElementById("journeyItineraryBlock");
+  if (!button || !block || !Array.isArray(stops) || stops.length <= 5) return;
+  button.addEventListener("click", () => {
+    const expanded = button.getAttribute("data-expanded") === "1";
+    block.outerHTML = renderJourneyItineraryRows(stops, !expanded);
+    bindJourneyItineraryToggle(stops);
+  });
+}
+
+async function openDocumentsWithLoading(event) {
+  const button = event?.currentTarget || null;
+  const run = () => renderDocuments();
+  if (typeof PortalLoading?.withLoading === "function") {
+    return PortalLoading.withLoading(run, { button, key: "documents" });
+  }
+  return run();
+}
+
+async function navigateWithLoading(key, action, event) {
+  const button = event?.currentTarget || null;
+  if (typeof PortalLoading?.withLoading === "function") {
+    return PortalLoading.withLoading(action, { button, key });
+  }
+  return action();
 }
 
 /** @deprecated Map extraction retired — kept for offline tests of legacy helpers only. */
@@ -2358,21 +2645,31 @@ async function renderDashboard() {
 
   const firstName = getGreetingName();
   const greetingText = getGreetingText(firstName);
+  if (mainCruise) {
+    await resolveFullBookingPayload(mainCruise);
+  }
+  const bookingPayload = customerBooking || mainCruise?._preview_booking || null;
   const mainShipImage = mainCruise
     ? await loadShipHeroImage(mainCruise.ship_name, mainCruise.cruise_line)
     : "";
-  const checklistData = await loadDashboardChecklistData(mainCruise);
-  const packingData = await loadDashboardPackingData(mainCruise);
+  const [checklistData, packingData, textItinerary, shipGalleryImages] = await Promise.all([
+    loadDashboardChecklistData(mainCruise),
+    loadDashboardPackingData(mainCruise),
+    loadCustomerTextItinerary(),
+    loadShipGalleryImages(mainCruise, mainShipImage)
+  ]);
   const dashboardBudget = mainCruise ? await resolveDashboardBudget(mainCruise) : null;
   const leaveHomeInfo = calculateLeaveHomeDate(mainCruise, dashboardBudget);
-  const countdownConfig = buildDashboardCountdownConfig(mainCruise, leaveHomeInfo);
+  const countdownConfig = buildDashboardCountdownConfig(mainCruise, leaveHomeInfo, bookingPayload);
   const dashboardActionCard = resolveDashboardActionCard(checklistData, leaveHomeInfo);
-  // Journey map extraction retired — booking summary only.
+  // Journey map extraction retired — booking summary + optional text itinerary only.
   const routeText = getCruiseRouteText(mainCruise);
   const nightsText = mainCruise?.nights ? `${mainCruise.nights} Nights` : "";
   const cruiseLineText = mainCruise?.cruise_line || "";
   const routeLine = [cruiseLineText, nightsText].filter(Boolean).join(" • ");
-  const countdownParts = countdownConfig.getParts();
+  const countdownParts = countdownConfig.presentation?.showCounters === false
+    ? { days: "—", hours: "—", minutes: "—", seconds: "—" }
+    : countdownConfig.getParts();
   const mainLogo = mainCruise ? await loadCruiseLineLogo(mainCruise.cruise_line) : "";
   const heroTitle = (() => {
     if (!mainCruise) return "My Cruise";
@@ -2382,13 +2679,9 @@ async function renderDashboard() {
     if (!ship) return line;
     return ship.toLowerCase().includes(line.toLowerCase()) ? ship : `${line} ${ship}`;
   })();
-  const heroDateRange = mainCruise ? getCruiseDateRangeText(mainCruise) : "";
+  const heroDateRange = mainCruise ? getCruiseDateRangeText(mainCruise, bookingPayload) : "";
   const cabinSummary = mainCruise ? getCabinSummary(mainCruise) : "";
   const dashboardMobilePriorityActive = dashboardActionCard.mode === "last_minute" || dashboardActionCard.mode === "last_minute_complete";
-
-  if (mainCruise) {
-    await resolveFullBookingPayload(mainCruise);
-  }
 
   app.innerHTML = `
     <div class="dashboard-page">
@@ -2405,15 +2698,7 @@ async function renderDashboard() {
             <p class="dashboard-hero-route">${escapeHtml(routeText || routeLine || "Your upcoming cruise")}${cabinSummary ? ` · ${escapeHtml(cabinSummary)}` : ""}</p>
           </div>
 
-          <div class="dashboard-countdown-panel">
-            <p id="dashboardCountdownLabel">${escapeHtml(countdownConfig.panelLabel)}</p>
-            <div class="dashboard-countdown-grid">
-              <div><span id="countdownDays">${countdownParts.days}</span><small>Days</small></div>
-              <div><span id="countdownHours">${padNumber(countdownParts.hours)}</span><small>Hours</small></div>
-              <div><span id="countdownMinutes">${padNumber(countdownParts.minutes)}</span><small>Minutes</small></div>
-              <div><span id="countdownSeconds">${padNumber(countdownParts.seconds)}</span><small>Seconds</small></div>
-            </div>
-          </div>
+          ${renderDashboardCountdownPanel(countdownConfig, countdownParts)}
 
           ${mainLogo ? `<img class="dashboard-cruise-line-logo" src="${escapeHtml(mainLogo)}" alt="${escapeHtml(mainCruise.cruise_line || "Cruise line")} logo">` : ""}
         </section>
@@ -2432,7 +2717,7 @@ async function renderDashboard() {
         </section>
 
         <section class="dashboard-v2-grid">
-          ${renderJourneySummary(mainCruise)}
+          ${renderJourneySummary(mainCruise, { booking: bookingPayload, itineraryStops: textItinerary.stops || [] })}
 
           <div class="dashboard-v2-middle">
             ${renderDashboardCombinedProgress(packingData, checklistData)}
@@ -2442,6 +2727,8 @@ async function renderDashboard() {
           ${mainCruise ? renderDashboardSnapshot(mainCruise) : ""}
         </section>
 
+        ${renderShipGallerySection(shipGalleryImages)}
+
         ${!mainCruise ? renderDashboardAddCruiseForm() : ""}
       </div>
     </div>
@@ -2450,6 +2737,8 @@ async function renderDashboard() {
   if (mainCruise) {
     startLiveCountdown(mainCruise, countdownConfig);
   }
+  bindJourneyItineraryToggle(textItinerary.stops || []);
+  bindShipGalleryInteractions(shipGalleryImages);
 }
 
 function escapeHtml(value) {
@@ -2510,13 +2799,13 @@ function renderProgressCircle(percent) {
 
 function renderPlannerNav(active = "preparation") {
   const items = [
-    { key: "dashboard", label: "Dashboard", action: "renderDashboard()" },
-    { key: "booking", label: "Booking", action: "renderBookingDetails()" },
-    { key: "preparation", label: "Checklist", action: "renderChecklist()" },
-    { key: "packing", label: "Pack List", action: "renderPackingPlanner()" },
-    { key: "budget", label: "Budget", action: "renderBudgetPlanner()" },
-    { key: "ship", label: "Your Ship", action: "renderTheShip()" },
-    { key: "documents", label: "Documents", action: "renderDocuments()" }
+    { key: "dashboard", label: "Dashboard", action: "navigateWithLoading('dashboard', () => renderDashboard(), event)" },
+    { key: "booking", label: "Booking", action: "navigateWithLoading('booking', () => renderBookingDetails(), event)" },
+    { key: "preparation", label: "Checklist", action: "navigateWithLoading('checklist', () => renderChecklist(), event)" },
+    { key: "packing", label: "Pack List", action: "navigateWithLoading('packing', () => renderPackingPlanner(), event)" },
+    { key: "budget", label: "Budget", action: "navigateWithLoading('budget', () => renderBudgetPlanner(), event)" },
+    { key: "ship", label: "Your Ship", action: "navigateWithLoading('ship', () => renderTheShip(), event)" },
+    { key: "documents", label: "Documents", action: "navigateWithLoading('documents', () => renderDocuments(), event)" }
   ];
 
   return `
@@ -5961,6 +6250,13 @@ async function renderTheShip() {
   `;
 
   initialiseShipPageMotion();
+}
+
+if (typeof window !== "undefined") {
+  window.navigateWithLoading = navigateWithLoading;
+  window.openDocumentsWithLoading = openDocumentsWithLoading;
+  window.renderJourneySummary = renderJourneySummary;
+  window.renderDashboardCountdownPanel = renderDashboardCountdownPanel;
 }
 
 initPlanner();
