@@ -2,20 +2,33 @@
  * Shared Client Portal loading overlay with reference counting.
  * Browser global: PortalLoading
  *
- * Positioning uses the iframe/layout viewport (fixed + 100dvh), never
- * document/scrollHeight centering. In tall auto-resized embeds, the overlay
- * band is anchored near the triggering control / last pointer so it stays in
- * the currently viewed slice of the iframe — without parent-window access.
+ * When embedded in Squarespace, positions the overlay using parent-visible
+ * viewport geometry from 101cruise-parent-viewport postMessage (never
+ * screen.availHeight / pointer heuristics / full iframe mid-point).
  */
 (function (root) {
   "use strict";
 
   const OVERLAY_ID = "portal-loading-overlay";
   const BODY_LOCK_CLASS = "portal-loading-active";
+  const PARENT_GEOMETRY_CLASS = "portal-loading-overlay--parent-viewport";
   const INITIAL_MESSAGE = "Give me a few seconds — I'm loading the information.";
   const SLOW_MESSAGE = "Still loading — this is taking a little longer than usual.";
   const FAIL_MESSAGE =
     "Something didn't load properly. Please try again in a moment.";
+
+  const bridge =
+    typeof root.PortalParentViewport !== "undefined" ? root.PortalParentViewport : null;
+  const PARENT_ORIGINS = bridge
+    ? bridge.PARENT_ORIGINS
+    : ["https://www.101cruise.com.au", "https://101cruise.com.au"];
+  const MSG = bridge
+    ? bridge.MSG
+    : {
+        PARENT_VIEWPORT: "101cruise-parent-viewport",
+        REQUEST_PARENT_VIEWPORT: "101cruise-request-parent-viewport",
+        LOADING_STATE: "101cruise-portal-loading-state"
+      };
 
   const refs = new Map();
   let overlayEl = null;
@@ -30,8 +43,9 @@
   let savedBodyOverflow = "";
   let savedHtmlOverscroll = "";
   let savedBodyOverscroll = "";
-  let lastPointerY = null;
-  let pointerBound = false;
+  let latestParentGeometry = null;
+  let parentListenerBound = false;
+  let parentLoadingNotified = false;
 
   function prefersReducedMotion() {
     return (
@@ -41,98 +55,112 @@
     );
   }
 
-  function bindPointerTracking() {
-    if (pointerBound || typeof document === "undefined") return;
-    pointerBound = true;
-    document.addEventListener(
-      "pointerdown",
-      function (event) {
-        if (typeof event.clientY === "number") lastPointerY = event.clientY;
-      },
-      true
-    );
+  function isEmbedded() {
+    return typeof window !== "undefined" && window.parent && window.parent !== window;
   }
 
-  /**
-   * Pure helper: choose a viewport-sized band height (never document height).
-   */
-  function resolveViewportHeight(metrics) {
-    const m = metrics || {};
-    const visual = Number(m.visualViewportHeight) || 0;
-    const inner = Number(m.innerHeight) || 0;
-    const screenH = Number(m.screenAvailHeight) || 0;
-    // Tall auto-resized iframe: innerHeight ≈ document height. Cap to a
-    // device-like viewport so the panel is not centred mid-document.
-    if (screenH > 0 && inner > screenH * 1.25) {
-      return Math.max(240, Math.min(Math.round(screenH * 0.92), 960));
-    }
-    if (visual > 0 && (inner <= 0 || visual <= inner * 1.05)) {
-      return Math.max(240, Math.round(visual));
-    }
-    if (inner > 0) return Math.max(240, Math.round(inner));
-    if (screenH > 0) return Math.max(240, Math.min(Math.round(screenH * 0.92), 960));
-    return 800;
+  function isAllowedParentOrigin(origin) {
+    if (bridge && bridge.isAllowedParentOrigin) return bridge.isAllowedParentOrigin(origin);
+    return PARENT_ORIGINS.indexOf(String(origin || "")) !== -1;
   }
 
-  /**
-   * Pure helper: place a viewport-tall band around an anchor centre Y.
-   */
-  function computeOverlayBand(input) {
-    const viewportHeight = resolveViewportHeight(input);
-    const documentHeight = Math.max(Number(input && input.documentHeight) || 0, viewportHeight);
-    const height = viewportHeight;
-    const maxTop = Math.max(0, documentHeight - height);
-    const hasAnchor = Number.isFinite(Number(input && input.anchorCenterY));
-    const center = hasAnchor ? Number(input.anchorCenterY) : height / 2;
-    const top = Math.max(0, Math.min(Math.round(center - height / 2), maxTop));
-    return { top: top, height: height };
-  }
-
-  function readLiveMetrics(anchorEl) {
-    const vv = typeof window !== "undefined" && window.visualViewport ? window.visualViewport : null;
-    let anchorCenterY = null;
-    if (anchorEl && typeof anchorEl.getBoundingClientRect === "function") {
-      const rect = anchorEl.getBoundingClientRect();
-      if (rect && Number.isFinite(rect.top)) {
-        anchorCenterY = rect.top + (Number(rect.height) || 0) / 2 + (window.scrollY || 0);
+  function postToParents(payload) {
+    if (!isEmbedded()) return;
+    for (let i = 0; i < PARENT_ORIGINS.length; i += 1) {
+      try {
+        window.parent.postMessage(payload, PARENT_ORIGINS[i]);
+      } catch (_err) {
+        /* ignore */
       }
-    } else if (typeof lastPointerY === "number") {
-      anchorCenterY = lastPointerY + (window.scrollY || 0);
     }
-    return {
-      visualViewportHeight: vv && vv.height ? vv.height : 0,
-      innerHeight: typeof window !== "undefined" ? window.innerHeight || 0 : 0,
-      screenAvailHeight:
-        typeof window !== "undefined" && window.screen ? window.screen.availHeight || 0 : 0,
-      documentHeight: Math.max(
-        (typeof document !== "undefined" && document.documentElement
-          ? document.documentElement.scrollHeight
-          : 0) || 0,
-        (typeof document !== "undefined" && document.body ? document.body.scrollHeight : 0) || 0,
-        (typeof window !== "undefined" ? window.innerHeight : 0) || 0
-      ),
-      anchorCenterY: anchorCenterY
-    };
   }
 
-  function applyOverlayGeometry(anchorEl) {
+  function resolveOverlayBox(parentGeometry, fallbackInnerHeight) {
+    if (bridge && bridge.resolveOverlayBox) {
+      return bridge.resolveOverlayBox(parentGeometry, fallbackInnerHeight);
+    }
+    if (
+      parentGeometry &&
+      Number.isFinite(Number(parentGeometry.visibleTop)) &&
+      Number.isFinite(Number(parentGeometry.visibleHeight)) &&
+      Number(parentGeometry.visibleHeight) > 0
+    ) {
+      return {
+        mode: "parent",
+        top: Math.max(0, Math.round(Number(parentGeometry.visibleTop))),
+        height: Math.max(1, Math.round(Number(parentGeometry.visibleHeight)))
+      };
+    }
+    const h = Math.max(1, Math.round(Number(fallbackInnerHeight) || 0) || 800);
+    return { mode: "direct", top: 0, height: h };
+  }
+
+  function requestParentViewport() {
+    postToParents({ type: MSG.REQUEST_PARENT_VIEWPORT });
+  }
+
+  function notifyParentLoading(active) {
+    if (!isEmbedded()) return;
+    if (active && parentLoadingNotified) return;
+    if (!active && !parentLoadingNotified) return;
+    parentLoadingNotified = Boolean(active);
+    postToParents({ type: MSG.LOADING_STATE, active: Boolean(active) });
+  }
+
+  function bindParentViewportListener() {
+    if (parentListenerBound || typeof window === "undefined") return;
+    parentListenerBound = true;
+    window.addEventListener("message", function (event) {
+      if (!isAllowedParentOrigin(event.origin)) return;
+      const data = event.data || {};
+      if (!data || data.type !== MSG.PARENT_VIEWPORT) return;
+      const visibleTop = Number(data.visibleTop);
+      const visibleHeight = Number(data.visibleHeight);
+      if (!Number.isFinite(visibleTop) || !Number.isFinite(visibleHeight)) return;
+
+      if (visibleHeight > 0) {
+        latestParentGeometry = {
+          visibleTop: visibleTop,
+          visibleHeight: visibleHeight,
+          visibleWidth: Number(data.visibleWidth) || 0,
+          iframeHeight: Number(data.iframeHeight) || 0,
+          parentViewportHeight: Number(data.parentViewportHeight) || 0
+        };
+      }
+      // visibleHeight === 0 → keep most recent valid geometry
+
+      if (activeCount > 0) applyOverlayGeometry();
+    });
+  }
+
+  function applyOverlayGeometry() {
     ensureOverlay();
     if (!overlayEl) return;
-    const band = computeOverlayBand(readLiveMetrics(anchorEl));
+
+    const fallback =
+      (typeof window !== "undefined" &&
+        window.visualViewport &&
+        window.visualViewport.height) ||
+      (typeof window !== "undefined" && window.innerHeight) ||
+      800;
+
+    const box = resolveOverlayBox(latestParentGeometry, fallback);
     overlayEl.style.position = "fixed";
     overlayEl.style.left = "0";
     overlayEl.style.right = "0";
     overlayEl.style.width = "100%";
-    overlayEl.style.top = band.top + "px";
+    overlayEl.style.top = box.top + "px";
     overlayEl.style.bottom = "auto";
-    overlayEl.style.height = band.height + "px";
-    overlayEl.style.maxHeight = band.height + "px";
+    overlayEl.style.height = box.height + "px";
+    overlayEl.style.maxHeight = box.height + "px";
     overlayEl.style.margin = "0";
     overlayEl.style.transform = "none";
+    overlayEl.classList.toggle(PARENT_GEOMETRY_CLASS, box.mode === "parent");
   }
 
   function clearOverlayGeometry() {
     if (!overlayEl) return;
+    overlayEl.classList.remove(PARENT_GEOMETRY_CLASS);
     overlayEl.style.top = "";
     overlayEl.style.bottom = "";
     overlayEl.style.height = "";
@@ -160,7 +188,6 @@
     document.body.style.overflow = "hidden";
     document.documentElement.style.overscrollBehavior = "none";
     document.body.style.overscrollBehavior = "none";
-    // Keep the same page position — do not jump to top.
     if (typeof window.scrollTo === "function") {
       window.scrollTo(savedScrollX, savedScrollY);
     }
@@ -183,7 +210,7 @@
   function ensureOverlay() {
     if (overlayEl || typeof document === "undefined") return overlayEl;
 
-    bindPointerTracking();
+    bindParentViewportListener();
 
     overlayEl = document.createElement("div");
     overlayEl.id = OVERLAY_ID;
@@ -222,7 +249,7 @@
     if (messageEl) messageEl.textContent = text;
   }
 
-  function syncVisibility(anchorEl) {
+  function syncVisibility() {
     ensureOverlay();
     if (!overlayEl) return;
 
@@ -231,19 +258,21 @@
     overlayEl.setAttribute("aria-hidden", visible ? "false" : "true");
 
     if (visible) {
-      applyOverlayGeometry(anchorEl || null);
+      requestParentViewport();
+      applyOverlayGeometry();
       lockScroll();
+      notifyParentLoading(true);
     } else {
       clearTimers();
       setMessage(INITIAL_MESSAGE);
       clearOverlayGeometry();
       unlockScroll();
+      notifyParentLoading(false);
     }
   }
 
-  function show(tokenOrKey, options) {
+  function show(tokenOrKey) {
     const key = String(tokenOrKey || "default");
-    const opts = options && typeof options === "object" ? options : {};
     const previous = refs.get(key) || 0;
     refs.set(key, previous + 1);
 
@@ -261,7 +290,7 @@
       }, 4000);
     }
 
-    syncVisibility(opts.anchor || opts.button || null);
+    syncVisibility();
     return key;
   }
 
@@ -278,7 +307,7 @@
       refs.set(key, next);
     }
 
-    syncVisibility(null);
+    syncVisibility();
   }
 
   function fail(message) {
@@ -288,7 +317,7 @@
     failTimer = setTimeout(function () {
       refs.clear();
       activeCount = 0;
-      syncVisibility(null);
+      syncVisibility();
     }, 2500);
   }
 
@@ -308,7 +337,7 @@
       if (uiStarted || settled) return;
       uiStarted = true;
       overlayShown = true;
-      show(token, { button: button, anchor: button });
+      show(token);
       if (button) {
         buttonWasDisabled = Boolean(button.disabled);
         button.disabled = true;
@@ -335,15 +364,28 @@
     }
   }
 
+  // Eagerly listen so geometry is warm before the first overlay show.
+  if (typeof window !== "undefined") {
+    bindParentViewportListener();
+    if (isEmbedded()) requestParentViewport();
+  }
+
   root.PortalLoading = {
     show: show,
     hide: hide,
     withLoading: withLoading,
     fail: fail,
     __test__: {
-      resolveViewportHeight: resolveViewportHeight,
-      computeOverlayBand: computeOverlayBand,
-      BODY_LOCK_CLASS: BODY_LOCK_CLASS
+      resolveOverlayBox: resolveOverlayBox,
+      isAllowedParentOrigin: isAllowedParentOrigin,
+      BODY_LOCK_CLASS: BODY_LOCK_CLASS,
+      PARENT_GEOMETRY_CLASS: PARENT_GEOMETRY_CLASS,
+      getLatestParentGeometry: function () {
+        return latestParentGeometry;
+      },
+      setLatestParentGeometryForTest: function (value) {
+        latestParentGeometry = value;
+      }
     }
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);

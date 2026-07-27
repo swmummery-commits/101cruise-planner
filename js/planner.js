@@ -5148,60 +5148,18 @@ async function addCruise() {
 }
 
 /**
- * When My Cruise is embedded in a Squarespace iframe with a fixed height,
- * empty page background shows below the content. Report the true content
- * height to the parent so the iframe can grow/shrink to fit.
+ * When My Cruise is embedded in a Squarespace iframe, report content height
+ * so the parent can grow/shrink the iframe for natural page scrolling.
+ * Origin-restricted messaging lives in js/portal-height.js.
  */
 function setupEmbedHeightSync() {
+  if (typeof PortalHeight !== "undefined" && PortalHeight.start) {
+    PortalHeight.start();
+    return;
+  }
   if (window.parent === window) return;
-
   document.documentElement.classList.add("is-embedded");
   document.body.classList.add("is-embedded");
-
-  const MESSAGE_TYPE = "101cruise-my-cruise-height";
-  let frame = 0;
-
-  function measureHeight() {
-    const root = document.getElementById("cruise-planner-app");
-    if (!root) return 400;
-    // Measure the app content only. document/body scrollHeight tracks the
-    // iframe viewport and creates a resize feedback loop with the parent.
-    const height = Math.max(root.scrollHeight || 0, root.offsetHeight || 0);
-    return Math.max(Math.ceil(height + 12), 360);
-  }
-
-  function postHeight() {
-    try {
-      window.parent.postMessage({ type: MESSAGE_TYPE, height: measureHeight() }, "*");
-    } catch (_error) {
-      /* ignore cross-window messaging failures */
-    }
-  }
-
-  function schedulePost() {
-    if (frame) window.cancelAnimationFrame(frame);
-    frame = window.requestAnimationFrame(() => {
-      frame = 0;
-      postHeight();
-      window.setTimeout(postHeight, 120);
-      window.setTimeout(postHeight, 450);
-    });
-  }
-
-  const root = document.getElementById("cruise-planner-app");
-  if (root && typeof MutationObserver !== "undefined") {
-    new MutationObserver(schedulePost).observe(root, {
-      childList: true,
-      subtree: true,
-      attributes: true
-    });
-  }
-  if (root && typeof ResizeObserver !== "undefined") {
-    new ResizeObserver(schedulePost).observe(root);
-  }
-  window.addEventListener("load", schedulePost);
-  window.addEventListener("resize", schedulePost);
-  schedulePost();
 }
 
 async function initPlanner() {

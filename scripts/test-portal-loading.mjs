@@ -1,129 +1,212 @@
 /**
- * Tests for portal-loading overlay viewport positioning + scroll lock.
+ * Tests for Squarespace parent-viewport bridge + portal loading overlay.
  * Run: node scripts/test-portal-loading.mjs
  */
 
 import { readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createRequire } from "module";
 import vm from "vm";
 
+const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const src = readFileSync(path.join(root, "js/portal-loading.js"), "utf8");
+
+const {
+  computeParentVisibleGeometry,
+  resolveOverlayBox,
+  isAllowedParentOrigin,
+  isAllowedChildOrigin,
+  CHILD_ORIGIN,
+  PARENT_ORIGINS,
+  MSG
+} = require("../js/portal-parent-viewport.js");
+
+const srcLoading = readFileSync(path.join(root, "js/portal-loading.js"), "utf8");
+const srcEmbed = readFileSync(path.join(root, "js/portal-squarespace-embed.js"), "utf8");
+const srcHeight = readFileSync(path.join(root, "js/portal-height.js"), "utf8");
+const srcPlanner = readFileSync(path.join(root, "js/planner.js"), "utf8");
 const css = readFileSync(path.join(root, "css/planner.css"), "utf8");
+const embedHtml = readFileSync(path.join(root, "squarespace-my-cruise-embed.html"), "utf8");
+const indexHtml = readFileSync(path.join(root, "index.html"), "utf8");
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
 }
 
 function loadPortalLoading() {
-  const sandbox = { globalThis: {} };
+  const sandbox = {
+    globalThis: {},
+    window: {
+      parent: { postMessage() {} },
+      addEventListener() {},
+      innerHeight: 900,
+      visualViewport: { height: 900 },
+      scrollX: 0,
+      scrollY: 120,
+      pageXOffset: 0,
+      pageYOffset: 120,
+      scrollTo() {},
+      matchMedia: () => ({ matches: false })
+    },
+    document: {
+      documentElement: { style: {}, classList: { add() {}, remove() {}, toggle() {} } },
+      body: {
+        style: {},
+        classList: { add() {}, remove() {} },
+        appendChild() {}
+      },
+      createElement: () => ({
+        style: {},
+        classList: { add() {}, remove() {}, toggle() {} },
+        setAttribute() {},
+        querySelector: () => ({ textContent: "" })
+      })
+    }
+  };
+  sandbox.window.parent !== sandbox.window;
+  Object.defineProperty(sandbox.window, "parent", {
+    value: { postMessage() {} }
+  });
+  // Load bridge then loading
+  vm.runInNewContext(
+    readFileSync(path.join(root, "js/portal-parent-viewport.js"), "utf8"),
+    sandbox,
+    { filename: "portal-parent-viewport.js" }
+  );
   sandbox.globalThis = sandbox;
-  vm.runInNewContext(src, sandbox, { filename: "portal-loading.js" });
+  sandbox.PortalParentViewport = sandbox.PortalParentViewport;
+  vm.runInNewContext(srcLoading, sandbox, { filename: "portal-loading.js" });
   return sandbox.PortalLoading;
 }
 
-const PortalLoading = loadPortalLoading();
-const helpers = PortalLoading.__test__;
-assert(helpers && helpers.computeOverlayBand, "test helpers exported");
-
-// CSS: fixed viewport overlay — no inset/bottom stretch
+// --- Parent geometry cases ---
 {
-  const block = css.match(/\.portal-loading-overlay\s*\{[\s\S]*?\n\}/);
-  assert(block, "overlay CSS block exists");
-  assert(/position:\s*fixed/.test(block[0]), "overlay is position fixed");
-  assert(/top:\s*0/.test(block[0]), "overlay top 0");
-  assert(/left:\s*0/.test(block[0]), "overlay left 0");
-  assert(/right:\s*0/.test(block[0]), "overlay right 0");
-  assert(/width:\s*100%/.test(block[0]), "overlay width 100%");
-  assert(/height:\s*100vh/.test(block[0]), "overlay uses 100vh fallback");
-  assert(/height:\s*100dvh/.test(block[0]), "overlay uses 100dvh where supported");
-  assert(/place-items:\s*center/.test(block[0]), "panel centred with grid place-items");
-  assert(!/inset:\s*0/.test(block[0]), "inset 0 removed (avoids document-height stretch)");
-  assert(!/bottom:\s*0/.test(block[0]), "bottom 0 absent (avoids document-height stretch)");
-  assert(/z-index:\s*2147483000/.test(block[0]), "high z-index within iframe");
-  assert(!/scrollHeight|margin-top\s*:[^;]*document|translateY\([^)]*scroll/i.test(block[0]), "no document-height translate hacks");
+  // iframe starts below page header (top positive)
+  const g = computeParentVisibleGeometry({ top: 200, height: 1600, width: 1000 }, 900, 1200);
+  assert(g.visibleTop === 0, "below header: visibleTop 0");
+  assert(g.visibleHeight === 700, "below header: visibleHeight = parentH - top");
+  assert(g.iframeHeight === 1600, "iframeHeight preserved");
+  assert(g.parentViewportHeight === 900, "parentViewportHeight preserved");
 }
 
-assert(/html\.portal-loading-active/.test(css), "scroll-lock CSS class present");
-assert(/overflow:\s*hidden !important/.test(css.match(/html\.portal-loading-active[\s\S]*?overscroll-behavior/)?.[0] || css), "scroll lock hides overflow");
-
-// Viewport height resolver: tall iframe capped; normal viewport preserved
 {
-  const tall = helpers.resolveViewportHeight({
-    visualViewportHeight: 4200,
-    innerHeight: 4200,
-    screenAvailHeight: 900
-  });
-  assert(tall <= 960 && tall >= 240, "tall iframe uses capped viewport height not document height");
-
-  const normal = helpers.resolveViewportHeight({
-    visualViewportHeight: 800,
-    innerHeight: 800,
-    screenAvailHeight: 900
-  });
-  assert(normal === 800, "normal viewport height preserved");
+  // iframe partly above viewport (scrolled)
+  const g = computeParentVisibleGeometry({ top: -400, height: 1600, width: 1000 }, 900, 1200);
+  assert(g.visibleTop === 400, "partly above: visibleTop = -top");
+  assert(g.visibleHeight === 900, "partly above: full parent height visible in iframe");
 }
 
-// Band placement: top / mid / footer of a tall document
 {
-  const viewport = { innerHeight: 5000, screenAvailHeight: 900, documentHeight: 5000 };
-  const topBand = helpers.computeOverlayBand({ ...viewport, anchorCenterY: 80 });
-  assert(topBand.top === 0, "top-of-page load keeps band at top");
-  assert(topBand.height <= 960, "top band uses viewport height");
-
-  const midBand = helpers.computeOverlayBand({ ...viewport, anchorCenterY: 2500 });
-  assert(midBand.top > 1000, "mid-page load places band halfway down");
-  assert(midBand.top + midBand.height / 2 >= 2400 && midBand.top + midBand.height / 2 <= 2600, "mid band centres on anchor");
-  assert(midBand.height === topBand.height, "band height stable across page");
-
-  const footBand = helpers.computeOverlayBand({ ...viewport, anchorCenterY: 4900 });
-  assert(footBand.top + footBand.height === 5000, "footer load pins band to document end");
-  assert(footBand.top > 3500, "footer band is near bottom, not document centre alone");
-
-  const noAnchor = helpers.computeOverlayBand({ ...viewport });
-  assert(noAnchor.top === 0, "without anchor, default to top viewport band");
+  // near iframe footer
+  const g = computeParentVisibleGeometry({ top: -1400, height: 1600, width: 1000 }, 900, 1200);
+  assert(g.visibleTop === 1400, "footer: visibleTop near end");
+  assert(g.visibleHeight === 200, "footer: remaining visible height");
 }
 
-// Tall document must not centre panel at document midpoint by default
 {
-  const band = helpers.computeOverlayBand({
-    innerHeight: 6000,
-    screenAvailHeight: 800,
-    documentHeight: 6000
-  });
-  assert(band.top === 0, "tall embed default is top band, not mid-document");
-  assert(band.height < 2000, "tall embed band is viewport-sized, not document-sized");
+  // fully visible iframe shorter than parent
+  const g = computeParentVisibleGeometry({ top: 50, height: 700, width: 1000 }, 900, 1200);
+  assert(g.visibleTop === 0, "fully visible: top 0");
+  assert(g.visibleHeight === 700, "fully visible: full iframe height");
 }
 
-// Source: scroll lock + restore paths
-assert(/function lockScroll\(/.test(src), "lockScroll exists");
-assert(/function unlockScroll\(/.test(src), "unlockScroll exists");
-assert(/savedScrollX/.test(src) && /savedScrollY/.test(src), "scroll position preserved");
-assert(/window\.scrollTo\(savedScrollX,\s*savedScrollY\)/.test(src), "scroll position restored");
-assert(!/scrollTo\(\s*0\s*,\s*0\s*\)/.test(src), "does not force scrollTop to zero");
-assert(/portal-loading-active/.test(src), "applies scroll-lock class");
-assert(/overflow\s*=\s*"hidden"/.test(src), "locks overflow while active");
+{
+  // fully off-screen below
+  const g = computeParentVisibleGeometry({ top: 1200, height: 1600, width: 1000 }, 900, 1200);
+  assert(g.visibleHeight === 0, "off-screen below: visibleHeight 0");
+  assert(g.visibleTop === 0, "off-screen below: visibleTop 0");
+}
 
-// Concurrent ops + delay + a11y + reduced motion retained
-assert(/const refs = new Map\(\)/.test(src), "reference counting map exists");
-assert(/activeCount/.test(src), "global activeCount reference tracking exists");
-assert(/delayMs\)\s*:\s*250/.test(src), "withLoading default delay is 250ms");
-assert(/setTimeout\(startUi,\s*delayMs\)/.test(src), "delayed appearance retained");
-assert(/aria-live="polite"/.test(src), "aria-live retained");
-assert(/prefers-reduced-motion/.test(src), "reduced-motion retained");
-assert(/portal-loading-reduced-motion/.test(src), "reduced-motion class retained");
-assert(/function fail\(/.test(src), "fail helper retained");
-assert(/2500/.test(src), "fail auto-hide retained");
-assert(/show\(token,\s*\{\s*button:\s*button/.test(src), "withLoading anchors to button");
+{
+  // fully off-screen above
+  const g = computeParentVisibleGeometry({ top: -2000, height: 1600, width: 1000 }, 900, 1200);
+  assert(g.visibleHeight === 0, "off-screen above: visibleHeight 0");
+}
 
-// Geometry must not use document-centred absolute hacks
-assert(!/marginTop\s*=/.test(src), "no margin-top positioning");
-assert(!/scrollHeight\s*\//.test(src), "no scrollHeight division centering");
-assert(/applyOverlayGeometry/.test(src), "geometry applicator present");
+// --- Child uses parent geometry ---
+{
+  const box = resolveOverlayBox(
+    { visibleTop: 420, visibleHeight: 880 },
+    1600
+  );
+  assert(box.mode === "parent", "valid parent geometry mode");
+  assert(box.top === 420, "overlay top = visibleTop");
+  assert(box.height === 880, "overlay height = visibleHeight");
+}
 
-// Unrelated systems untouched by this module
-assert(!/fully_paid|instalment|itinerary|ship-gallery|hero_image|booking_reference/i.test(src), "no finance/itinerary/gallery/booking logic");
+{
+  const box = resolveOverlayBox(null, 900);
+  assert(box.mode === "direct", "direct Netlify fallback");
+  assert(box.top === 0 && box.height === 900, "fallback top 0 / innerHeight");
+}
+
+{
+  // visibleHeight 0 → treat as missing, fallback
+  const box = resolveOverlayBox({ visibleTop: 100, visibleHeight: 0 }, 800);
+  assert(box.mode === "direct", "zero visibleHeight falls back");
+}
+
+// --- Origin validation ---
+assert(isAllowedChildOrigin(CHILD_ORIGIN), "child origin allowed");
+assert(!isAllowedChildOrigin("https://evil.example"), "evil child rejected");
+assert(isAllowedParentOrigin("https://www.101cruise.com.au"), "www parent allowed");
+assert(isAllowedParentOrigin("https://101cruise.com.au"), "apex parent allowed");
+assert(!isAllowedParentOrigin("https://evil.example"), "evil parent rejected");
+assert(PARENT_ORIGINS.length === 2, "exactly two parent origins");
+
+// --- Heuristics removed ---
+assert(!/screen\.availHeight/.test(srcLoading.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "")), "screen.availHeight heuristic removed");
+assert(!/\blastPointerY\b|\bpointerdown\b|\banchorCenterY\b|\bcomputeOverlayBand\b/.test(srcLoading), "pointer/band heuristics removed");
+assert(!/postMessage\([^,]+,\s*"\*"\)/.test(srcLoading), "loading does not postMessage *");
+assert(!/postMessage\([^,]+,\s*"\*"\)/.test(srcHeight), "height does not postMessage *");
+assert(!/postMessage\([^,]+,\s*"\*"\)/.test(srcPlanner), "planner does not postMessage *");
+
+// --- Height listener / embed wiring ---
+assert(srcEmbed.includes(MSG.HEIGHT) || srcEmbed.includes("101cruise-my-cruise-height"), "embed listens for height");
+assert(srcEmbed.includes("applyIframeHeight") || srcEmbed.includes("style.height"), "embed updates iframe height");
+assert(srcEmbed.includes("scheduleViewport") || srcEmbed.includes("postViewport"), "height change triggers viewport");
+assert(srcHeight.includes("101cruise-my-cruise-height"), "child posts height");
+assert(srcHeight.includes("ResizeObserver"), "height uses ResizeObserver");
+assert(srcPlanner.includes("PortalHeight.start"), "planner starts PortalHeight");
+assert(indexHtml.includes("portal-height.js"), "index loads portal-height");
+assert(indexHtml.includes("portal-parent-viewport.js"), "index loads parent viewport helpers");
+assert(embedHtml.includes("portal-squarespace-embed.js"), "Squarespace snippet loads embed bridge");
+assert(embedHtml.includes('id="101cruise-my-cruise"'), "iframe id preserved");
+
+// --- Parent scroll lock ---
+assert(srcEmbed.includes("lockParentScroll") && srcEmbed.includes("unlockParentScroll"), "parent scroll lock present");
+assert(srcEmbed.includes("savedScrollY"), "parent preserves scroll");
+assert(srcEmbed.includes("101cruise-portal-loading-state"), "parent listens for loading state");
+assert(srcLoading.includes("101cruise-portal-loading-state"), "child posts loading state");
+assert(srcLoading.includes("notifyParentLoading(true)") || srcLoading.includes("active: true") || srcLoading.includes("active: Boolean(active)"), "child notifies active");
+
+// --- Reference counting messages ---
+assert(/parentLoadingNotified/.test(srcLoading), "child reference-safe parent notify");
+assert(/if \(active && parentLoadingNotified\) return/.test(srcLoading), "active only on first start");
+assert(/if \(!active && !parentLoadingNotified\) return/.test(srcLoading), "inactive only after final");
+
+// --- CSS ---
+assert(/portal-loading-overlay--parent-viewport/.test(css), "parent geometry CSS class");
+assert(/place-items:\s*center/.test(css), "panel centred");
+assert(/2147483000/.test(css), "high z-index");
+
+// --- Runtime helper via PortalLoading.__test__ ---
+{
+  const PortalLoading = loadPortalLoading();
+  const box = PortalLoading.__test__.resolveOverlayBox(
+    { visibleTop: 300, visibleHeight: 600 },
+    1600
+  );
+  assert(box.top === 300 && box.height === 600, "PortalLoading uses parent box");
+  assert(PortalLoading.__test__.isAllowedParentOrigin("https://www.101cruise.com.au"), "origin helper");
+  assert(!PortalLoading.__test__.isAllowedParentOrigin("https://attacker.test"), "rejects bad origin");
+}
+
+// --- Unrelated systems ---
+assert(!/fully_paid|instalment|itinerary|ship-gallery|hero_image|booking_reference/i.test(srcLoading), "loading unchanged domains");
+assert(!/fully_paid|instalment|itinerary|ship-gallery/i.test(srcHeight), "height unchanged domains");
+assert(!/fully_paid|instalment|itinerary|ship-gallery/i.test(srcEmbed), "embed unchanged domains");
 
 console.log("test-portal-loading: ok");

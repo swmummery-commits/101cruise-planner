@@ -48,9 +48,12 @@ assert(loading.includes("aria-live"), "a11y live");
 assert(loading.includes("delayMs"), "delayed show");
 assert(loading.includes("activeCount"), "refcount");
 assert(loading.includes("lockScroll"), "scroll lock");
-assert(loading.includes("100dvh") || css.includes("100dvh"), "viewport height overlay");
-assert(!/inset:\s*0/.test(css.match(/\.portal-loading-overlay\s*\{[\s\S]*?\n\}/)?.[0] || ""), "loading overlay not inset-stretched");
+assert(loading.includes("101cruise-parent-viewport") || indexHtml.includes("portal-parent-viewport.js"), "parent viewport bridge");
+const loadingCode = loading.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
+assert(!/screen\.availHeight/.test(loadingCode), "no screen.availHeight heuristic");
+assert(!/computeOverlayBand/.test(loadingCode), "no computeOverlayBand heuristic");
 assert(planner.includes("PortalLoading.withLoading"), "wired loading");
+assert(indexHtml.includes("portal-height.js"), "portal height script loaded");
 
 // Gallery
 const filtered = filterShipGalleryMedia(
