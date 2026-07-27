@@ -368,6 +368,12 @@
   text-align: center;
 }
 
+.cf-search-loading {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
 .cf-search-loading-title {
   margin: 0;
   color: #111 !important;

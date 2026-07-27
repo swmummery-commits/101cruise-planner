@@ -1,0 +1,199 @@
+/**
+ * Shared 101cruise loading indicator: four stacked flashing boxes in brand green.
+ * Used by Client Portal overlay, Admin research/deck-plans, and public tools.
+ */
+
+:root {
+  --brand-loading-green: var(--brand-green, #8dd9bf);
+}
+
+.brand-loading-boxes {
+  --brand-loading-size: 6px;
+  --brand-loading-gap: 2.5px;
+  display: inline-grid;
+  grid-template-columns: var(--brand-loading-size);
+  grid-template-rows: repeat(4, var(--brand-loading-size));
+  gap: var(--brand-loading-gap);
+  width: var(--brand-loading-size);
+  height: calc(4 * var(--brand-loading-size) + 3 * var(--brand-loading-gap));
+  vertical-align: middle;
+  flex: 0 0 auto;
+  box-sizing: content-box;
+}
+
+.brand-loading-boxes > span {
+  display: block;
+  width: var(--brand-loading-size);
+  height: var(--brand-loading-size);
+  border-radius: 1px;
+  background: var(--brand-loading-green);
+  opacity: 0.22;
+  animation: brand-loading-box-flash 1.05s ease-in-out infinite;
+}
+
+.brand-loading-boxes > span:nth-child(1) { animation-delay: 0s; }
+.brand-loading-boxes > span:nth-child(2) { animation-delay: 0.12s; }
+.brand-loading-boxes > span:nth-child(3) { animation-delay: 0.24s; }
+.brand-loading-boxes > span:nth-child(4) { animation-delay: 0.36s; }
+
+.brand-loading-boxes--inline {
+  --brand-loading-size: 5px;
+  --brand-loading-gap: 2px;
+  margin-right: 8px;
+}
+
+.brand-loading-boxes--large {
+  --brand-loading-size: 7px;
+  --brand-loading-gap: 3px;
+}
+
+/* Portal overlay spinner uses the shared large stacked boxes */
+.portal-loading-spinner.brand-loading-boxes,
+.portal-loading-spinner {
+  /* portal markup uses brand-loading-boxes classes directly */
+}
+
+/* Legacy empty-span spinners → stacked flash (no markup change required) */
+.research-spinner,
+.deck-plans-busy-spinner,
+.cf-search-loading-boxes {
+  width: 6px;
+  height: 6px;
+  margin: 2px 0 29px;
+  border: 0 !important;
+  border-radius: 1px;
+  background: #8dd9bf;
+  flex: 0 0 auto;
+  box-shadow:
+    0 9px 0 0 rgba(141, 217, 191, 0.22),
+    0 18px 0 0 rgba(141, 217, 191, 0.22),
+    0 27px 0 0 rgba(141, 217, 191, 0.22);
+  animation: brand-loading-stack-flash 1.05s ease-in-out infinite;
+}
+
+.research-spinner--inline {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin: 0 8px 23px 0;
+  vertical-align: -10px;
+  border-width: 0 !important;
+  background: #8dd9bf;
+  box-shadow:
+    0 7px 0 0 rgba(141, 217, 191, 0.22),
+    0 14px 0 0 rgba(141, 217, 191, 0.22),
+    0 21px 0 0 rgba(141, 217, 191, 0.22);
+  animation: brand-loading-stack-flash-inline 1.05s ease-in-out infinite;
+}
+
+.cf-search-loading-boxes {
+  display: block;
+  margin: 0 auto 36px;
+}
+
+@keyframes brand-loading-box-flash {
+  0%,
+  100% { opacity: 0.18; }
+  40% { opacity: 1; }
+  65% { opacity: 0.35; }
+}
+
+@keyframes brand-loading-stack-flash {
+  0%,
+  100% {
+    background: #8dd9bf;
+    box-shadow:
+      0 9px 0 0 rgba(141, 217, 191, 0.22),
+      0 18px 0 0 rgba(141, 217, 191, 0.22),
+      0 27px 0 0 rgba(141, 217, 191, 0.22);
+  }
+  12% {
+    background: #8dd9bf;
+    box-shadow:
+      0 9px 0 0 rgba(141, 217, 191, 0.22),
+      0 18px 0 0 rgba(141, 217, 191, 0.22),
+      0 27px 0 0 rgba(141, 217, 191, 0.22);
+  }
+  25% {
+    background: rgba(141, 217, 191, 0.22);
+    box-shadow:
+      0 9px 0 0 #8dd9bf,
+      0 18px 0 0 rgba(141, 217, 191, 0.22),
+      0 27px 0 0 rgba(141, 217, 191, 0.22);
+  }
+  50% {
+    background: rgba(141, 217, 191, 0.22);
+    box-shadow:
+      0 9px 0 0 rgba(141, 217, 191, 0.22),
+      0 18px 0 0 #8dd9bf,
+      0 27px 0 0 rgba(141, 217, 191, 0.22);
+  }
+  75% {
+    background: rgba(141, 217, 191, 0.22);
+    box-shadow:
+      0 9px 0 0 rgba(141, 217, 191, 0.22),
+      0 18px 0 0 rgba(141, 217, 191, 0.22),
+      0 27px 0 0 #8dd9bf;
+  }
+}
+
+@keyframes brand-loading-stack-flash-inline {
+  0%,
+  100% {
+    background: #8dd9bf;
+    box-shadow:
+      0 7px 0 0 rgba(141, 217, 191, 0.22),
+      0 14px 0 0 rgba(141, 217, 191, 0.22),
+      0 21px 0 0 rgba(141, 217, 191, 0.22);
+  }
+  25% {
+    background: rgba(141, 217, 191, 0.22);
+    box-shadow:
+      0 7px 0 0 #8dd9bf,
+      0 14px 0 0 rgba(141, 217, 191, 0.22),
+      0 21px 0 0 rgba(141, 217, 191, 0.22);
+  }
+  50% {
+    background: rgba(141, 217, 191, 0.22);
+    box-shadow:
+      0 7px 0 0 rgba(141, 217, 191, 0.22),
+      0 14px 0 0 #8dd9bf,
+      0 21px 0 0 rgba(141, 217, 191, 0.22);
+  }
+  75% {
+    background: rgba(141, 217, 191, 0.22);
+    box-shadow:
+      0 7px 0 0 rgba(141, 217, 191, 0.22),
+      0 14px 0 0 rgba(141, 217, 191, 0.22),
+      0 21px 0 0 #8dd9bf;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-loading-boxes > span,
+  .research-spinner,
+  .research-spinner--inline,
+  .deck-plans-busy-spinner,
+  .cf-search-loading-boxes {
+    animation: none !important;
+    opacity: 0.85;
+  }
+
+  .research-spinner,
+  .deck-plans-busy-spinner,
+  .cf-search-loading-boxes {
+    background: #8dd9bf;
+    box-shadow:
+      0 9px 0 0 #8dd9bf,
+      0 18px 0 0 #8dd9bf,
+      0 27px 0 0 #8dd9bf;
+  }
+
+  .research-spinner--inline {
+    background: #8dd9bf;
+    box-shadow:
+      0 7px 0 0 #8dd9bf,
+      0 14px 0 0 #8dd9bf,
+      0 21px 0 0 #8dd9bf;
+  }
+}

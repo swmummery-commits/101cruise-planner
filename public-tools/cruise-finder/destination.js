@@ -655,6 +655,7 @@
           <button type="button" class="cf-dest-back cf-search-linkbtn" data-back-destination>← Back to destination</button>
         </div>
         <section class="cf-search-loading" aria-live="polite">
+          <span class="cf-search-loading-boxes" aria-hidden="true"></span>
           <p class="cf-search-loading-title" data-loading-title>${escapeHtml(LOADING_MESSAGES[0])}</p>
           <p class="cf-search-loading-note">This usually takes a few seconds.</p>
         </section>

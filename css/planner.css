@@ -8384,35 +8384,6 @@ html.portal-loading-active body {
     0 2px 8px rgba(17, 44, 38, 0.06);
 }
 
-.portal-loading-spinner {
-  --portal-loading-green: var(--brand-green, #8dd9bf);
-  display: grid;
-  grid-template-columns: 7px;
-  grid-template-rows: repeat(4, 7px);
-  gap: 3px;
-  width: 7px;
-  height: 37px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  animation: none;
-}
-
-.portal-loading-box {
-  display: block;
-  width: 7px;
-  height: 7px;
-  border-radius: 1.5px;
-  background: var(--portal-loading-green);
-  opacity: 0.22;
-  animation: portal-loading-box-flash 1.05s ease-in-out infinite;
-}
-
-.portal-loading-box:nth-child(1) { animation-delay: 0s; }
-.portal-loading-box:nth-child(2) { animation-delay: 0.12s; }
-.portal-loading-box:nth-child(3) { animation-delay: 0.24s; }
-.portal-loading-box:nth-child(4) { animation-delay: 0.36s; }
-
 .portal-loading-message {
   margin: 0;
   color: #245c4e;
@@ -8421,31 +8392,14 @@ html.portal-loading-active body {
   text-align: center;
 }
 
-.portal-loading-reduced-motion .portal-loading-spinner,
-.portal-loading-reduced-motion .portal-loading-box {
+.portal-loading-reduced-motion .brand-loading-boxes > span {
   animation: none;
-}
-
-.portal-loading-reduced-motion .portal-loading-box {
   opacity: 0.85;
 }
 
 .portal-loading-button-busy {
   opacity: 0.72;
   cursor: wait;
-}
-
-@keyframes portal-loading-box-flash {
-  0%,
-  100% {
-    opacity: 0.18;
-  }
-  40% {
-    opacity: 1;
-  }
-  65% {
-    opacity: 0.35;
-  }
 }
 
 /* Ship gallery styles */
@@ -8669,7 +8623,7 @@ html.portal-loading-active body {
 
 @media (prefers-reduced-motion: reduce) {
   .portal-loading-overlay,
-  .portal-loading-spinner,
+  .brand-loading-boxes > span,
   .dashboard-ship-gallery-item {
     transition: none !important;
     animation: none !important;

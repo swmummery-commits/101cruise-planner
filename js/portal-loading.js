@@ -219,12 +219,10 @@
     overlayEl.setAttribute("aria-hidden", "true");
     overlayEl.innerHTML =
       '<div class="portal-loading-panel">' +
-      '<div class="portal-loading-spinner" aria-hidden="true">' +
-      '<span class="portal-loading-box"></span>' +
-      '<span class="portal-loading-box"></span>' +
-      '<span class="portal-loading-box"></span>' +
-      '<span class="portal-loading-box"></span>' +
-      "</div>" +
+      (typeof BrandLoading !== "undefined" && BrandLoading.html
+        ? BrandLoading.html({ large: true, className: "portal-loading-spinner" })
+        : '<div class="portal-loading-spinner brand-loading-boxes brand-loading-boxes--large" aria-hidden="true">' +
+          "<span></span><span></span><span></span><span></span></div>") +
       `<p class="portal-loading-message" aria-live="polite">${INITIAL_MESSAGE}</p>` +
       "</div>";
 
