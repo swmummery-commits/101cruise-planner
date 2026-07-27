@@ -405,7 +405,10 @@ function assertCd5q25Display(f, { expectDepositDate, expectFinalDue }) {
   const derived = Contract.derivePaymentFields(CD5Q25_CONTRADICTORY_LIVE);
   assert(derived.amount_received === 349.86, "contract ignores full-price received");
   assert(derived.balance_owing === 1467, "contract balance from scheduled instalment");
-  assert(derived.payment_status === "deposit_paid_balance_outstanding", "contract not fully_paid");
+  assert(derived.payment_status === "partially_paid", "contract not fully_paid");
+  assert(derived.fully_paid_date == null, "contract omits contradictory fully_paid_date");
+  assert(derived.final_payment_due_date === "2026-09-13", "contract final due");
+  assert(derived.final_payment_reminder_date === "2026-08-30", "contract reminder separate");
   assert(
     derived._meta.contradictory_fully_paid_with_scheduled_instalment === true,
     "contract meta contradiction flag"

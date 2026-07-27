@@ -110,10 +110,12 @@
     "payment_3_amount",
     "payment_3_due_date",
     "final_payment_due_date",
+    "final_payment_due_date_normalised",
     "final_payment_reminder_date",
     "amount_received",
     "balance_owing",
-    "payment_status"
+    "payment_status",
+    "fully_paid_date"
   ];
 
   /** Push whitelist: keep cache accurate without sensitive private data. */
@@ -448,7 +450,8 @@
       balanceOwing != null &&
       balanceOwing > MONEY_EPS
     ) {
-      paymentStatus = "deposit_paid_balance_outstanding";
+      // Integration/API status token (client maps this to the customer label).
+      paymentStatus = "partially_paid";
     } else if (balanceOwing != null && balanceOwing > MONEY_EPS) {
       paymentStatus = "payment_outstanding";
     }
@@ -462,11 +465,13 @@
       payment_3_amount: payment3Amount,
       payment_3_due_date: payment3DueDate,
       final_payment_due_date: finalPaymentDueDate,
+      final_payment_due_date_normalised: finalPaymentDueDate,
       final_payment_reminder_date: reminderFinal,
       deposit_due_date: depositDueDate,
       reminder_deposit_due: reminderDeposit,
-      // Preserve raw stamp for audit; classification uses payment_status/balance.
-      fully_paid_date: fullyPaidDate,
+      // Integration response: never emit a contradictory fully_paid_date.
+      // Does not mutate the CruiseBooking entity in Base44.
+      fully_paid_date: contradictoryFullyPaid ? null : fullyPaidDate,
       amount_received: amountReceived,
       balance_owing: balanceOwing,
       payment_status: paymentStatus,

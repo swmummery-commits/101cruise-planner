@@ -1,5 +1,6 @@
 const { syncBookingDocuments } = require('./document-sync');
 const { canonicalCruiseLineDisplayName } = require('./lib/resolve-cruise-ship');
+const { applyBookingFinance } = require('../../base44/bookingFinance');
 
 function normalise(value) {
   return String(value || '').trim();
@@ -10,6 +11,22 @@ function canonicaliseBookingCruiseLine(booking) {
   const next = { ...booking };
   const line = canonicalCruiseLineDisplayName(next.cruise_line);
   if (line) next.cruise_line = line;
+  return next;
+}
+
+/**
+ * Apply shared finance helper to a Base44 booking payload before cache/use.
+ * Does not write back to CruiseBooking in Base44.
+ */
+function applySafeBookingFinance(booking) {
+  if (!booking || typeof booking !== 'object') return booking;
+  const next = applyBookingFinance(booking);
+  const meta = next._meta || null;
+  delete next._meta;
+  delete next._finance_meta;
+  if (meta) {
+    next.finance_derivation_notes = Object.keys(meta).filter((key) => meta[key]);
+  }
   return next;
 }
 
@@ -86,13 +103,13 @@ async function fetchBase44Booking({ booking_reference, booking_id }) {
     throw error;
   }
 
-  const booking = canonicaliseBookingCruiseLine(data.booking);
+  const booking = applySafeBookingFinance(canonicaliseBookingCruiseLine(data.booking));
   return { booking, source: { ...data, booking } };
 }
 
 async function cacheBookingInSupabase(booking) {
   if (!getSupabaseConfig()) return null;
-  booking = canonicaliseBookingCruiseLine(booking);
+  booking = applySafeBookingFinance(canonicaliseBookingCruiseLine(booking));
 
   const payload = {
     base44_booking_id: booking.base44_booking_id || null,
@@ -152,5 +169,6 @@ module.exports = {
   cacheBookingInSupabase,
   syncDocumentsForBooking,
   supabaseRest,
-  canonicaliseBookingCruiseLine
+  canonicaliseBookingCruiseLine,
+  applySafeBookingFinance
 };
