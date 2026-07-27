@@ -8629,3 +8629,237 @@ html.portal-loading-active body {
     animation: none !important;
   }
 }
+
+/* —— Switch Booking chooser —— */
+html.switch-booking-open,
+html.switch-booking-open body {
+  overflow: hidden;
+}
+
+.switch-booking-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  display: grid;
+  place-items: end center;
+  padding: 0;
+  background: rgba(16, 18, 22, 0.48);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.switch-booking-panel {
+  width: min(720px, 100%);
+  max-height: min(92vh, 920px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.switch-booking-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 22px 12px;
+  border-bottom: 1px solid rgba(21, 62, 55, 0.08);
+}
+
+.switch-booking-panel-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #16332e;
+  letter-spacing: -0.01em;
+}
+
+.switch-booking-support {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  color: #5b6b67;
+  line-height: 1.4;
+}
+
+.switch-booking-close {
+  border: 0;
+  background: #f0f1f3;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #16332e;
+  flex: 0 0 auto;
+}
+
+.switch-booking-close:focus-visible,
+.switch-booking-card-action:focus-visible,
+.switch-booking-signout:focus-visible,
+.switch-booking-card:focus-visible {
+  outline: 2px solid #8dd9bf;
+  outline-offset: 2px;
+}
+
+.switch-booking-panel-body {
+  padding: 16px 22px 8px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1 1 auto;
+}
+
+.switch-booking-message {
+  margin: 12px 0 18px;
+  color: #3d4f4a;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.switch-booking-list {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+
+.switch-booking-card {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 0;
+  border: 1px solid rgba(21, 62, 55, 0.1);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.switch-booking-card.is-current {
+  border-color: rgba(141, 217, 191, 0.85);
+  box-shadow: inset 0 0 0 1px rgba(141, 217, 191, 0.55);
+}
+
+.switch-booking-card-hero {
+  min-height: 132px;
+  background-size: cover;
+  background-position: center;
+  background-color: #d8ece6;
+}
+
+.switch-booking-card-hero--fallback {
+  background-image:
+    linear-gradient(145deg, rgba(141, 217, 191, 0.55), rgba(21, 62, 55, 0.18)),
+    linear-gradient(180deg, #e7f6f1, #cfe8df);
+}
+
+.switch-booking-card-body {
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.switch-booking-card-badge {
+  margin: 0 0 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #2f6f5f;
+}
+
+.switch-booking-card-body h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #16332e;
+  line-height: 1.25;
+}
+
+.switch-booking-card-line,
+.switch-booking-card-date,
+.switch-booking-card-route {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #3d4f4a;
+  line-height: 1.35;
+}
+
+.switch-booking-card-ref {
+  margin: 4px 0 0;
+  font-size: 0.75rem;
+  color: #7a8a86;
+}
+
+.switch-booking-card-action {
+  margin-top: 10px;
+  align-self: flex-start;
+  border: 0;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #16332e;
+  color: #fff;
+  font-size: 0.86rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch-booking-card-action.is-current {
+  background: #e8f6f1;
+  color: #2f6f5f;
+  cursor: default;
+}
+
+.switch-booking-card-action:not(.is-current):hover {
+  background: #0f2420;
+}
+
+.switch-booking-panel-footer {
+  padding: 10px 22px 18px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid rgba(21, 62, 55, 0.06);
+}
+
+.switch-booking-signout {
+  border: 0;
+  background: transparent;
+  color: #5b6b67;
+  font-size: 0.88rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  padding: 8px 12px;
+}
+
+@media (min-width: 720px) {
+  .switch-booking-overlay {
+    place-items: center;
+    padding: 24px;
+  }
+
+  .switch-booking-panel {
+    border-radius: 18px;
+    max-height: min(84vh, 860px);
+  }
+
+  .switch-booking-card {
+    grid-template-columns: 140px minmax(0, 1fr);
+  }
+
+  .switch-booking-card-hero {
+    min-height: 148px;
+  }
+}
+
+@media (max-width: 520px) {
+  .switch-booking-card {
+    grid-template-columns: 1fr;
+  }
+
+  .switch-booking-card-hero {
+    min-height: 120px;
+  }
+}
+

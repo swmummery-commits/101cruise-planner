@@ -15,6 +15,7 @@ let customerSessionToken = "";
 let customerBooking = null;
 let customerCruise = null;
 let customerPackingPreferences = null;
+let customerLinkedBookingsMeta = { can_switch: false, bookings: [], loaded: false };
 const CUSTOMER_SESSION_STORAGE_KEY = "101cruise_customer_session";
 
 const CRUISE_LINES = [
@@ -273,6 +274,67 @@ function clearCustomerSession() {
   customerBooking = null;
   customerCruise = null;
   customerPackingPreferences = null;
+  customerLinkedBookingsMeta = { can_switch: false, bookings: [], loaded: false };
+}
+
+function clearCustomerBookingLocalState() {
+  activePackingProfileKey = null;
+  packingV2Profiles = [];
+  packingV2State = [];
+  packingV2CurrentCruiseKey = null;
+  customerPackingPreferences = null;
+  activeBudget = null;
+  customerLinkedBookingsMeta = { can_switch: false, bookings: [], loaded: false };
+}
+
+function rememberCustomerPreference() {
+  try {
+    return Boolean(localStorage.getItem(CUSTOMER_SESSION_STORAGE_KEY));
+  } catch {
+    return false;
+  }
+}
+
+async function fetchCustomerLinkedBookings() {
+  if (!customerMode || !customerSessionToken) {
+    customerLinkedBookingsMeta = { can_switch: false, bookings: [], loaded: true };
+    return customerLinkedBookingsMeta;
+  }
+  try {
+    const response = await fetch("/.netlify/functions/customer-linked-bookings", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${customerSessionToken}`,
+        "Content-Type": "application/json"
+      }
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.success) {
+      customerLinkedBookingsMeta = {
+        can_switch: false,
+        bookings: [],
+        loaded: true,
+        error: data?.error || "We couldn’t load your other cruises just now. Please try again."
+      };
+      return customerLinkedBookingsMeta;
+    }
+    customerLinkedBookingsMeta = {
+      can_switch: data.can_switch === true,
+      bookings: Array.isArray(data.bookings) ? data.bookings : [],
+      empty_message: data.empty_message || null,
+      loaded: true,
+      error: null
+    };
+    return customerLinkedBookingsMeta;
+  } catch (error) {
+    customerLinkedBookingsMeta = {
+      can_switch: false,
+      bookings: [],
+      loaded: true,
+      error: "We couldn’t load your other cruises just now. Please try again."
+    };
+    return customerLinkedBookingsMeta;
+  }
 }
 
 function activateCustomerSession(session) {
@@ -375,10 +437,113 @@ async function accessMyCruise() {
 function changeCustomerBooking() {
   trackMyCruiseEvent("dashboard", "logout");
   clearCustomerSession();
-  activePackingProfileKey = null;
-  packingV2Profiles = [];
-  packingV2State = [];
+  clearCustomerBookingLocalState();
+  if (typeof SwitchBooking?.closeChooser === "function") SwitchBooking.closeChooser();
   renderCustomerAccess();
+}
+
+async function openSwitchBookingChooser(options = {}) {
+  if (!customerMode || !customerSessionToken) {
+    changeCustomerBooking();
+    return;
+  }
+  if (typeof SwitchBooking?.openChooser !== "function") {
+    changeCustomerBooking();
+    return;
+  }
+
+  const meta = options.meta || (await fetchCustomerLinkedBookings());
+  if (meta.error && !(meta.bookings || []).length) {
+    SwitchBooking.openChooser({
+      bookings: [],
+      errorMessage: meta.error,
+      onRetry: () => openSwitchBookingChooser({ force: true }),
+      onSignOut: () => changeCustomerBooking(),
+      onClose: () => {}
+    });
+    return;
+  }
+
+  if (!meta.can_switch) {
+    SwitchBooking.openChooser({
+      bookings: meta.bookings || [],
+      emptyMessage: meta.empty_message || "No other linked cruises are available in this account.",
+      onSignOut: () => changeCustomerBooking(),
+      onClose: () => {}
+    });
+    return;
+  }
+
+  SwitchBooking.openChooser({
+    bookings: meta.bookings || [],
+    onSignOut: () => changeCustomerBooking(),
+    onClose: () => {},
+    onSelect: (switchToken) => switchCustomerBooking(switchToken)
+  });
+}
+
+async function switchCustomerBooking(switchToken) {
+  const token = String(switchToken || "").trim();
+  if (!token || !customerSessionToken) return;
+
+  const previousSession = {
+    token: customerSessionToken,
+    booking: customerBooking
+  };
+
+  const run = async () => {
+    if (typeof SwitchBooking?.closeChooser === "function") SwitchBooking.closeChooser();
+    const response = await fetch("/.netlify/functions/customer-switch-booking", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${customerSessionToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ switch_token: token })
+    });
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.success || !data?.token || !data?.booking) {
+      throw new Error(data?.error || "We couldn’t switch cruises just now. Please try again.");
+    }
+
+    clearCustomerBookingLocalState();
+    const session = { token: data.token, booking: data.booking };
+    storeCustomerSession(session, rememberCustomerPreference());
+    activateCustomerSession(session);
+    trackMyCruiseEvent("dashboard", "switch_booking");
+    try {
+      await customerPackingRequest("load");
+    } catch (packingError) {
+      console.warn("Packing reload after switch failed", packingError);
+    }
+    await renderDashboard();
+    if (typeof window.scrollTo === "function") window.scrollTo(0, 0);
+  };
+
+  try {
+    if (typeof PortalLoading?.withLoading === "function") {
+      await PortalLoading.withLoading(run, { key: "switch-booking" });
+    } else {
+      await run();
+    }
+  } catch (error) {
+    // Retain previous authorised booking/session on failure
+    if (previousSession.token && previousSession.booking) {
+      activateCustomerSession(previousSession);
+    }
+    if (typeof SwitchBooking?.openChooser === "function") {
+      SwitchBooking.openChooser({
+        bookings: customerLinkedBookingsMeta.bookings || [],
+        errorMessage: error.message || "We couldn’t switch cruises just now. Please try again.",
+        onRetry: () => openSwitchBookingChooser({ force: true }),
+        onSignOut: () => changeCustomerBooking(),
+        onSelect: (nextToken) => switchCustomerBooking(nextToken),
+        onClose: () => {}
+      });
+    } else {
+      alert(error.message || "We couldn’t switch cruises just now. Please try again.");
+    }
+  }
 }
 
 function getCruiseUsageContext() {
@@ -2678,12 +2843,23 @@ async function renderDashboard() {
   const mainShipImage = mainCruise
     ? await loadShipHeroImage(mainCruise.ship_name, mainCruise.cruise_line)
     : "";
-  const [checklistData, packingData, textItinerary, shipGalleryImages] = await Promise.all([
+  const [checklistData, packingData, textItinerary, shipGalleryImages, linkedMeta] = await Promise.all([
     loadDashboardChecklistData(mainCruise),
     loadDashboardPackingData(mainCruise),
     loadCustomerTextItinerary(),
-    loadShipGalleryImages(mainCruise, mainShipImage)
+    loadShipGalleryImages(mainCruise, mainShipImage),
+    customerMode ? fetchCustomerLinkedBookings() : Promise.resolve({ can_switch: false })
   ]);
+  const showSwitchBooking =
+    customerMode &&
+    (linkedMeta?.can_switch === true ||
+      (typeof SwitchBooking?.shouldShowSwitchControl === "function" &&
+        SwitchBooking.shouldShowSwitchControl(linkedMeta)));
+  const customerHeroAction = customerMode
+    ? showSwitchBooking
+      ? `<button class="dashboard-signout" type="button" onclick="openSwitchBookingChooser()">Switch Booking</button>`
+      : `<button class="dashboard-signout" type="button" onclick="changeCustomerBooking()">Sign Out</button>`
+    : `<button class="dashboard-signout" type="button" onclick="signOut()">Sign Out</button>`;
   const dashboardBudget = mainCruise ? await resolveDashboardBudget(mainCruise) : null;
   const leaveHomeInfo = calculateLeaveHomeDate(mainCruise, dashboardBudget);
   const countdownConfig = buildDashboardCountdownConfig(mainCruise, leaveHomeInfo, bookingPayload);
@@ -2715,7 +2891,7 @@ async function renderDashboard() {
         <section class="dashboard-hero ${mainShipImage ? "has-image" : ""}${mainLogo ? " has-cruise-logo" : ""}" ${mainShipImage ? `style="background-image:url('${escapeHtml(mainShipImage)}')"` : ""}>
           <div class="dashboard-hero-overlay"></div>
           <img class="dashboard-brand-logo" src="assets/101cruise-logo.png" alt="101CRUISE">
-          ${customerMode ? `<button class="dashboard-signout" onclick="changeCustomerBooking()">Change Booking</button>` : `<button class="dashboard-signout" onclick="signOut()">Sign Out</button>`}
+          ${customerHeroAction}
 
           <div class="dashboard-hero-content">
             <p class="dashboard-hero-kicker">${escapeHtml(greetingText)}</p>

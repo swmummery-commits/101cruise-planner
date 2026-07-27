@@ -1,28 +1,8 @@
-const crypto = require('crypto');
 const { fetchBase44Booking, cacheBookingInSupabase, syncDocumentsForBooking } = require('./booking-service');
+const { createSessionToken, jsonResponse: authJsonResponse } = require('./lib/customer-session-auth');
 
 function jsonResponse(statusCode, body) {
-  return {
-    statusCode,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-store'
-    },
-    body: JSON.stringify(body)
-  };
-}
-
-function base64url(value) {
-  return Buffer.from(value).toString('base64url');
-}
-
-function createSessionToken(payload, secret) {
-  const encoded = base64url(JSON.stringify(payload));
-  const signature = crypto.createHmac('sha256', secret).update(encoded).digest('base64url');
-  return `${encoded}.${signature}`;
+  return authJsonResponse(statusCode, body, 'POST, OPTIONS');
 }
 
 function normalise(value) {
