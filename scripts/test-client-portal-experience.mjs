@@ -47,6 +47,9 @@ const loading = readFileSync(path.join(root, "js/portal-loading.js"), "utf8");
 assert(loading.includes("aria-live"), "a11y live");
 assert(loading.includes("delayMs"), "delayed show");
 assert(loading.includes("activeCount"), "refcount");
+assert(loading.includes("lockScroll"), "scroll lock");
+assert(loading.includes("100dvh") || css.includes("100dvh"), "viewport height overlay");
+assert(!/inset:\s*0/.test(css.match(/\.portal-loading-overlay\s*\{[\s\S]*?\n\}/)?.[0] || ""), "loading overlay not inset-stretched");
 assert(planner.includes("PortalLoading.withLoading"), "wired loading");
 
 // Gallery

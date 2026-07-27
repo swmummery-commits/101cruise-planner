@@ -8319,13 +8319,27 @@ body {
   margin-right: calc(50% - 50vw);
 }
 
-/* Loading overlay styles (Apple-like, green accent) */
+/* Loading overlay styles — viewport-fixed; never document-height centred */
 .portal-loading-overlay {
   position: fixed;
-  inset: 0;
-  z-index: 12000;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Do not set bottom/inset — that stretches to full iframe/document height. */
+  width: 100%;
+  height: 100%;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  margin: 0;
+  transform: none;
+  z-index: 2147483000;
   display: grid;
   place-items: center;
+  align-content: center;
+  justify-content: center;
+  box-sizing: border-box;
   padding: 24px;
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(14px) saturate(140%);
@@ -8342,11 +8356,19 @@ body {
   pointer-events: auto;
 }
 
+html.portal-loading-active,
+html.portal-loading-active body {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+}
+
 .portal-loading-panel {
   display: grid;
   justify-items: center;
+  align-content: center;
   gap: 16px;
-  width: min(360px, calc(100vw - 48px));
+  width: min(360px, calc(100% - 48px));
+  max-width: min(360px, calc(100vw - 48px));
   padding: 28px 24px;
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.94);
