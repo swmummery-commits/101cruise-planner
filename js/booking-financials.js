@@ -88,6 +88,51 @@
     );
   }
 
+  function scheduledInstalmentsHaveIndependentReceipt(payment2, payment3, booking = {}) {
+    if (Contract?.scheduledInstalmentsHaveIndependentReceipt) {
+      return Contract.scheduledInstalmentsHaveIndependentReceipt(payment2, payment3, booking);
+    }
+    const need2 = payment2 != null && payment2 > MONEY_EPS;
+    const need3 = payment3 != null && payment3 > MONEY_EPS;
+    if (!need2 && !need3) return true;
+    const p2Recv = parseMoneyStrict(booking.payment_2_received_amount);
+    const p3Recv = parseMoneyStrict(booking.payment_3_received_amount);
+    const finalRecv = parseMoneyStrict(booking.final_payment_received_amount);
+    const scheduledTotal = (need2 ? payment2 : 0) + (need3 ? payment3 : 0);
+    let covered2 = !need2;
+    let covered3 = !need3;
+    if (need2 && p2Recv != null && p2Recv + MONEY_EPS >= payment2) covered2 = true;
+    if (need3 && p3Recv != null && p3Recv + MONEY_EPS >= payment3) covered3 = true;
+    if (finalRecv != null && finalRecv + MONEY_EPS >= scheduledTotal) {
+      covered2 = true;
+      covered3 = true;
+    }
+    return covered2 && covered3;
+  }
+
+  function isContradictoryFullyPaid(input) {
+    if (Contract?.isContradictoryFullyPaid) {
+      return Contract.isContradictoryFullyPaid(input);
+    }
+    const price = input.price;
+    const depositAmount = input.depositAmount;
+    const payment2 = input.payment2Amount;
+    const payment3 = input.payment3Amount;
+    const fullyPaidDate = input.fullyPaidDate;
+    const statusRaw = String(input.statusRaw || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+    const claimsFullyPaid = Boolean(fullyPaidDate) || statusRaw === "fully_paid";
+    const scheduled =
+      (payment2 != null && payment2 > MONEY_EPS ? payment2 : 0) +
+      (payment3 != null && payment3 > MONEY_EPS ? payment3 : 0);
+    const depositLessThanPrice =
+      depositAmount != null && price != null && depositAmount + MONEY_EPS < price;
+    if (!claimsFullyPaid || scheduled <= MONEY_EPS || !depositLessThanPrice) return false;
+    return !scheduledInstalmentsHaveIndependentReceipt(payment2, payment3, input.booking || {});
+  }
+
   /**
    * Prefer corrected Base44 normalised fields; fall back to legacy raw fields.
    * Keep legacy safeguard for old payloads that sum scheduled instalments into amount_paid.
@@ -129,6 +174,22 @@
       (payment2 != null && payment2 > MONEY_EPS ? payment2 : 0) +
       (payment3 != null && payment3 > MONEY_EPS ? payment3 : 0);
     const hasScheduledOutstanding = scheduledInstalments > MONEY_EPS;
+    const independentScheduledReceipt = scheduledInstalmentsHaveIndependentReceipt(
+      payment2,
+      payment3,
+      booking
+    );
+    const contradictoryFullyPaid = isContradictoryFullyPaid({
+      price,
+      depositAmount,
+      payment2Amount: payment2,
+      payment3Amount: payment3,
+      fullyPaidDate,
+      statusRaw,
+      booking
+    });
+    // Ignore contradictory fully_paid_date for classification only.
+    const effectiveFullyPaidDate = contradictoryFullyPaid ? null : fullyPaidDate;
 
     const legacySummedInstalments =
       !corrected &&
@@ -137,7 +198,7 @@
       depositAmount != null &&
       nearlyEqual(amountPaidRaw, (depositAmount || 0) + (payment2 || 0) + (payment3 || 0)) &&
       hasScheduledOutstanding &&
-      !fullyPaidDate;
+      !effectiveFullyPaidDate;
 
     const notes = [];
     if (corrected) notes.push("using_corrected_normalised_contract");
@@ -146,10 +207,20 @@
     if (legacySummedInstalments) {
       notes.push("ignored_legacy_amount_paid_sum_of_scheduled_instalments");
     }
+    if (contradictoryFullyPaid) {
+      notes.push("contradictory_fully_paid_with_scheduled_instalment");
+    }
 
     // amount_received: never include payment_2 / payment_3.
     let amountReceived = null;
-    if (apiAmountReceived != null) {
+    const apiReceivedLooksLikeFullPrice =
+      apiAmountReceived != null &&
+      price != null &&
+      nearlyEqual(apiAmountReceived, price);
+    if (contradictoryFullyPaid && depositAmount != null && depositAmount > MONEY_EPS) {
+      amountReceived = depositAmount;
+      notes.push("amount_received_is_cruise_deposit_only");
+    } else if (apiAmountReceived != null && !(contradictoryFullyPaid && apiReceivedLooksLikeFullPrice)) {
       amountReceived = apiAmountReceived;
       notes.push("amount_received_from_corrected_api");
     } else if (depositAmount != null && depositAmount > MONEY_EPS) {
@@ -208,11 +279,18 @@
     if (reminderFinal) notes.push("final_payment_reminder_kept_separate");
 
     let balanceOwing = null;
-    if (corrected && balanceRaw != null && !(statusRaw === "fully_paid" && balanceRaw === 0 && hasScheduledOutstanding && !fullyPaidDate)) {
+    if (contradictoryFullyPaid && hasScheduledOutstanding) {
+      balanceOwing = scheduledInstalments;
+      notes.push("balance_from_scheduled_instalments");
+    } else if (
+      corrected &&
+      balanceRaw != null &&
+      !(statusRaw === "fully_paid" && balanceRaw === 0 && hasScheduledOutstanding && !effectiveFullyPaidDate)
+    ) {
       // Trust corrected balance_owing from normalised contract.
       balanceOwing = balanceRaw;
       notes.push("balance_from_corrected_api");
-    } else if (fullyPaidDate && !hasScheduledOutstanding) {
+    } else if (effectiveFullyPaidDate && !hasScheduledOutstanding) {
       balanceOwing = 0;
       amountReceived = amountReceived != null ? amountReceived : price;
       if (depositAmount != null && depositAmount > MONEY_EPS) {
@@ -220,6 +298,15 @@
         depositPaidAmount = depositAmount;
       }
       notes.push("fully_paid_date_present");
+    } else if (effectiveFullyPaidDate && independentScheduledReceipt) {
+      balanceOwing = 0;
+      amountReceived = amountReceived != null ? amountReceived : price;
+      if (depositAmount != null && depositAmount > MONEY_EPS) {
+        depositStatus = "paid";
+        depositPaidAmount = depositAmount;
+      }
+      notes.push("fully_paid_date_present");
+      notes.push("independent_instalment_receipt_evidence");
     } else if (hasScheduledOutstanding) {
       balanceOwing = scheduledInstalments;
       notes.push("balance_from_scheduled_instalments");
@@ -236,16 +323,30 @@
       notes.push("blocked_false_fully_paid_from_scheduled_instalments");
     }
 
-    if (corrected && hasScheduledOutstanding && statusRaw === "fully_paid" && !fullyPaidDate) {
+    if (
+      corrected &&
+      hasScheduledOutstanding &&
+      statusRaw === "fully_paid" &&
+      !effectiveFullyPaidDate &&
+      !contradictoryFullyPaid
+    ) {
       balanceOwing = scheduledInstalments;
       notes.push("blocked_false_fully_paid_from_scheduled_instalments");
     }
 
     let overallPaymentStatus = "unknown";
-    if (fullyPaidDate && !hasScheduledOutstanding) {
+    if (effectiveFullyPaidDate && !hasScheduledOutstanding) {
       overallPaymentStatus = "fully_paid";
       balanceOwing = 0;
-    } else if (statusRaw === "fully_paid" && !hasScheduledOutstanding && (balanceOwing === 0 || balanceOwing == null)) {
+    } else if (effectiveFullyPaidDate && independentScheduledReceipt) {
+      overallPaymentStatus = "fully_paid";
+      balanceOwing = 0;
+    } else if (
+      statusRaw === "fully_paid" &&
+      !hasScheduledOutstanding &&
+      !contradictoryFullyPaid &&
+      (balanceOwing === 0 || balanceOwing == null)
+    ) {
       if (amountReceived != null && price != null && nearlyEqual(amountReceived, price)) {
         overallPaymentStatus = "fully_paid";
         balanceOwing = 0;
@@ -257,7 +358,7 @@
         notes.push("fully_paid_date_null_blocks_unsupported_fully_paid");
       }
     } else if (
-      (statusRaw === "partially_paid" || hasScheduledOutstanding) &&
+      (statusRaw === "partially_paid" || hasScheduledOutstanding || contradictoryFullyPaid) &&
       depositStatus === "paid" &&
       balanceOwing != null &&
       balanceOwing > MONEY_EPS
@@ -273,6 +374,7 @@
     } else if (balanceOwing != null && balanceOwing > MONEY_EPS) {
       overallPaymentStatus = "payment_outstanding";
     } else if (
+      !contradictoryFullyPaid &&
       balanceOwing === 0 &&
       amountReceived != null &&
       price != null &&
@@ -318,13 +420,17 @@
       payment_2_due_date: payment2Due,
       payment_3_amount: payment3,
       payment_3_due_date: payment3Due,
-      fully_paid_date: fullyPaidDate,
+      // Classification date ignores contradictory auto-stamped fully_paid_date.
+      fully_paid_date: effectiveFullyPaidDate,
       amount_paid: amountReceived,
       amount_received: amountReceived,
       balance_owing: balanceOwing,
       overall_payment_status: overallPaymentStatus,
       overall_payment_status_label: labels[overallPaymentStatus] || labels.unknown,
-      confidence: corrected || hasScheduledOutstanding || depositPaidDate || fullyPaidDate ? "high" : "medium",
+      confidence:
+        corrected || hasScheduledOutstanding || depositPaidDate || effectiveFullyPaidDate
+          ? "high"
+          : "medium",
       notes,
       raw: {
         payment_status: booking.payment_status ?? null,
@@ -446,6 +552,8 @@
     buildFinancialDisplayRows,
     formatFinancialUsd: formatUsd,
     hasCorrectedNormalisedContract,
+    isContradictoryFullyPaid,
+    scheduledInstalmentsHaveIndependentReceipt,
     MONEY_EPS
   };
 });

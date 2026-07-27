@@ -231,6 +231,71 @@
   }
 
   /**
+   * Explicit independent receipt fields for later instalments.
+   * Scheduled due dates / reminder dates / raw fully_paid helper output are not evidence.
+   */
+  function scheduledInstalmentsHaveIndependentReceipt(payment2Amount, payment3Amount, booking = {}) {
+    const need2 = payment2Amount != null && payment2Amount > MONEY_EPS;
+    const need3 = payment3Amount != null && payment3Amount > MONEY_EPS;
+    if (!need2 && !need3) return true;
+
+    const p2Recv = parseMoney(booking.payment_2_received_amount);
+    const p3Recv = parseMoney(booking.payment_3_received_amount);
+    const finalRecv = parseMoney(booking.final_payment_received_amount);
+    const scheduledTotal =
+      (need2 ? payment2Amount : 0) + (need3 ? payment3Amount : 0);
+
+    let covered2 = !need2;
+    let covered3 = !need3;
+    if (need2 && p2Recv != null && p2Recv + MONEY_EPS >= payment2Amount) covered2 = true;
+    if (need3 && p3Recv != null && p3Recv + MONEY_EPS >= payment3Amount) covered3 = true;
+    if (finalRecv != null && finalRecv + MONEY_EPS >= scheduledTotal) {
+      covered2 = true;
+      covered3 = true;
+    }
+    return covered2 && covered3;
+  }
+
+  /**
+   * Contradictory fully-paid: claims fully paid while unreceived scheduled instalments remain
+   * and confirmed deposit is still less than the cruise price.
+   */
+  function isContradictoryFullyPaid(input = {}) {
+    const price = parseMoney(input.price ?? input.cruise_price_usd);
+    const depositAmount = parseMoney(
+      input.depositAmount ?? input.deposit_amount ?? input.cruise_deposit
+    );
+    const payment2Amount = parseMoney(
+      input.payment2Amount ?? input.payment_2_amount ?? input.cruise_payment_2
+    );
+    const payment3Amount = parseMoney(
+      input.payment3Amount ?? input.payment_3_amount ?? input.cruise_payment_3
+    );
+    const fullyPaidDate = parseDate(input.fullyPaidDate ?? input.fully_paid_date);
+    const statusRaw = String(input.statusRaw ?? input.payment_status ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+    const booking = input.booking || input;
+
+    const claimsFullyPaid = Boolean(fullyPaidDate) || statusRaw === "fully_paid";
+    const scheduledInstalments =
+      (payment2Amount != null && payment2Amount > MONEY_EPS ? payment2Amount : 0) +
+      (payment3Amount != null && payment3Amount > MONEY_EPS ? payment3Amount : 0);
+    const hasScheduledOutstanding = scheduledInstalments > MONEY_EPS;
+    const depositLessThanPrice =
+      depositAmount != null && price != null && depositAmount + MONEY_EPS < price;
+
+    if (!claimsFullyPaid || !hasScheduledOutstanding || !depositLessThanPrice) {
+      return false;
+    }
+    if (scheduledInstalmentsHaveIndependentReceipt(payment2Amount, payment3Amount, booking)) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
    * Derive unambiguous payment fields from a raw CruiseBooking (or API) object.
    * Display-only safe — does not mutate Base44.
    */
@@ -255,6 +320,31 @@
     const reminderFinal = parseDate(
       booking.reminder_final_payment_due ?? booking.final_payment_reminder_date
     );
+    const statusRaw = String(booking.payment_status || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+
+    const scheduledInstalments =
+      (payment2Amount != null && payment2Amount > MONEY_EPS ? payment2Amount : 0) +
+      (payment3Amount != null && payment3Amount > MONEY_EPS ? payment3Amount : 0);
+    const hasScheduledOutstanding = scheduledInstalments > MONEY_EPS;
+    const contradictoryFullyPaid = isContradictoryFullyPaid({
+      price,
+      depositAmount,
+      payment2Amount,
+      payment3Amount,
+      fullyPaidDate,
+      statusRaw,
+      booking
+    });
+    const independentScheduledReceipt = scheduledInstalmentsHaveIndependentReceipt(
+      payment2Amount,
+      payment3Amount,
+      booking
+    );
+    // Ignore contradictory fully_paid_date for classification only (do not mutate Base44).
+    const effectiveFullyPaidDate = contradictoryFullyPaid ? null : fullyPaidDate;
 
     // Authoritative final due = instalment due date, then stored due.
     // Never use reminder as final_payment_due_date.
@@ -293,7 +383,7 @@
       nearlyEqual(legacyAmountPaid, scheduledSum) &&
       payment2Amount != null &&
       payment2Amount > MONEY_EPS &&
-      !fullyPaidDate;
+      !effectiveFullyPaidDate;
 
     if (legacySummedInstalments) {
       // Ignore false amount_paid; keep deposit-only received when dated.
@@ -309,25 +399,46 @@
       amountReceived = depositAmount;
     }
 
+    if (contradictoryFullyPaid && depositAmount != null && depositAmount > MONEY_EPS) {
+      // Ignore helper amount_received that equals the full cruise price.
+      amountReceived = depositAmount;
+    }
+
     let balanceOwing = null;
-    if (fullyPaidDate && price != null) {
+    if (contradictoryFullyPaid && hasScheduledOutstanding) {
+      balanceOwing = scheduledInstalments;
+      if (depositAmount != null && depositAmount > MONEY_EPS) {
+        amountReceived = depositAmount;
+      }
+    } else if (effectiveFullyPaidDate && price != null && !hasScheduledOutstanding) {
       balanceOwing = 0;
       amountReceived = amountReceived != null ? amountReceived : price;
-    } else if (payment2Amount != null && payment2Amount > MONEY_EPS && !fullyPaidDate) {
+    } else if (effectiveFullyPaidDate && independentScheduledReceipt && price != null) {
+      balanceOwing = 0;
+      amountReceived = amountReceived != null ? amountReceived : price;
+    } else if (payment2Amount != null && payment2Amount > MONEY_EPS && !effectiveFullyPaidDate) {
       // Scheduled final instalment is still owing unless fully paid.
-      balanceOwing = payment2Amount + (payment3Amount && payment3Amount > MONEY_EPS ? payment3Amount : 0);
+      balanceOwing = scheduledInstalments;
     } else if (price != null && amountReceived != null) {
       balanceOwing = Math.max(0, price - amountReceived);
     } else {
       const rawBalance = parseMoney(booking.balance_owing);
       // Do not trust zero balance when fully_paid_date is null and instalments exist.
-      if (rawBalance != null && !(rawBalance === 0 && payment2Amount > MONEY_EPS && !fullyPaidDate)) {
+      if (rawBalance != null && !(rawBalance === 0 && payment2Amount > MONEY_EPS && !effectiveFullyPaidDate)) {
         balanceOwing = rawBalance;
       }
     }
 
     let paymentStatus = "unknown";
-    if (fullyPaidDate || (balanceOwing === 0 && amountReceived != null && price != null && nearlyEqual(amountReceived, price))) {
+    if (
+      (effectiveFullyPaidDate && !hasScheduledOutstanding) ||
+      (effectiveFullyPaidDate && independentScheduledReceipt) ||
+      (balanceOwing === 0 &&
+        amountReceived != null &&
+        price != null &&
+        nearlyEqual(amountReceived, price) &&
+        !hasScheduledOutstanding)
+    ) {
       paymentStatus = "fully_paid";
       balanceOwing = 0;
     } else if (
@@ -354,6 +465,7 @@
       final_payment_reminder_date: reminderFinal,
       deposit_due_date: depositDueDate,
       reminder_deposit_due: reminderDeposit,
+      // Preserve raw stamp for audit; classification uses payment_status/balance.
       fully_paid_date: fullyPaidDate,
       amount_received: amountReceived,
       balance_owing: balanceOwing,
@@ -368,7 +480,8 @@
       reminder_final_payment_due: reminderFinal,
       _meta: {
         legacy_summed_instalments_ignored: Boolean(legacySummedInstalments),
-        reminder_not_used_as_due: Boolean(reminderFinal && finalPaymentDueDate !== reminderFinal)
+        reminder_not_used_as_due: Boolean(reminderFinal && finalPaymentDueDate !== reminderFinal),
+        contradictory_fully_paid_with_scheduled_instalment: Boolean(contradictoryFullyPaid)
       }
     };
   }
@@ -426,6 +539,8 @@
     derivePaymentFields,
     buildPullPayload,
     buildPushPayload,
+    scheduledInstalmentsHaveIndependentReceipt,
+    isContradictoryFullyPaid,
     parseMoney,
     parseDate,
     MONEY_EPS

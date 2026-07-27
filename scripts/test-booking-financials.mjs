@@ -78,6 +78,36 @@ const CD5Q25_CORRECTED = {
   final_payment_due_date: "2026-08-30"
 };
 
+/**
+ * Exact current Original-cache contradictory payload for CD5Q25
+ * (faulty Base44 auto-stamped fully_paid_date + full amount_received).
+ */
+const CD5Q25_CONTRADICTORY_LIVE = {
+  booking_reference: "CD5Q25",
+  booking_status: "confirmed",
+  cruise_price_usd: 1816.86,
+  cruise_deposit: 349.86,
+  cruise_deposit_date: "2026-07-25",
+  cruise_payment_2: 1467,
+  cruise_payment_2_date: "2026-09-13",
+  cruise_payment_3: null,
+  cruise_payment_3_date: "",
+  fully_paid_date: "2026-07-27",
+  deposit_amount: 349.86,
+  deposit_paid_date: "2026-07-25",
+  payment_2_amount: 1467,
+  payment_2_due_date: "2026-09-13",
+  payment_3_amount: null,
+  payment_3_due_date: null,
+  final_payment_due_date: null,
+  final_payment_due_date_normalised: "2026-09-13",
+  final_payment_reminder_date: "2026-08-30",
+  reminder_final_payment_due: "2026-08-30",
+  amount_received: 1816.86,
+  balance_owing: 0,
+  payment_status: "fully_paid"
+};
+
 const formatLongDate = iso => {
   const months = [
     "January", "February", "March", "April", "May", "June",
@@ -356,6 +386,121 @@ function assertCd5q25Display(f, { expectDepositDate, expectFinalDue }) {
   assert(pull.amount_received === 349.86, "contract amount_received");
   assert(pull.balance_owing === 1467, "contract balance");
   assert(!("passenger1_passport" in pull), "no passport");
+}
+
+// --- CD5Q25 contradictory live cache: reject false fully paid ---
+{
+  const f = normaliseBookingFinancials(CD5Q25_CONTRADICTORY_LIVE, { now: "2026-07-27T12:00:00.000Z" });
+  assert(
+    f.notes.includes("contradictory_fully_paid_with_scheduled_instalment"),
+    "contradiction note present"
+  );
+  assert(f.amount_received === 349.86, "bad amount_received 1816.86 ignored");
+  assert(f.amount_received !== 1816.86, "full-price received rejected");
+  assert(f.balance_owing === 1467, "bad balance 0 ignored");
+  assert(f.fully_paid_date == null, "bad fully_paid_date overridden for classification");
+  assert(f.overall_payment_status !== "fully_paid", "not Fully paid");
+  assertCd5q25Display(f, { expectDepositDate: true, expectFinalDue: true });
+
+  const derived = Contract.derivePaymentFields(CD5Q25_CONTRADICTORY_LIVE);
+  assert(derived.amount_received === 349.86, "contract ignores full-price received");
+  assert(derived.balance_owing === 1467, "contract balance from scheduled instalment");
+  assert(derived.payment_status === "deposit_paid_balance_outstanding", "contract not fully_paid");
+  assert(
+    derived._meta.contradictory_fully_paid_with_scheduled_instalment === true,
+    "contract meta contradiction flag"
+  );
+}
+
+// --- reminder / scheduled dates are not receipt evidence ---
+{
+  const f = normaliseBookingFinancials(
+    {
+      ...CD5Q25_CONTRADICTORY_LIVE,
+      cruise_payment_2_date: "2026-09-13",
+      payment_2_due_date: "2026-09-13",
+      final_payment_reminder_date: "2026-08-30",
+      reminder_final_payment_due: "2026-08-30"
+    },
+    { now: "2026-07-27T12:00:00.000Z" }
+  );
+  assert(f.balance_owing === 1467, "due/reminder dates do not prove receipt");
+  assert(f.overall_payment_status !== "fully_paid", "dates alone never fully paid");
+}
+
+// --- explicit independent final-payment receipt can prove full payment ---
+{
+  const f = normaliseBookingFinancials(
+    {
+      ...CD5Q25_CONTRADICTORY_LIVE,
+      payment_2_received_amount: 1467,
+      payment_2_received_date: "2026-07-27",
+      amount_received: 1816.86,
+      balance_owing: 0,
+      payment_status: "fully_paid",
+      fully_paid_date: "2026-07-27"
+    },
+    { now: "2026-07-27T12:00:00.000Z" }
+  );
+  assert(f.overall_payment_status === "fully_paid", "independent receipt proves fully paid");
+  assert(f.balance_owing === 0, "zero balance with independent receipt");
+  assert(!f.notes.includes("contradictory_fully_paid_with_scheduled_instalment"), "not contradictory");
+
+  const viaFinal = normaliseBookingFinancials(
+    {
+      cruise_price_usd: 1816.86,
+      deposit_amount: 349.86,
+      deposit_paid_date: "2026-07-25",
+      payment_2_amount: 1467,
+      payment_2_due_date: "2026-09-13",
+      fully_paid_date: "2026-07-27",
+      final_payment_received_amount: 1467,
+      final_payment_received_date: "2026-07-27",
+      amount_received: 1816.86,
+      balance_owing: 0,
+      payment_status: "fully_paid"
+    },
+    { now: "2026-07-27T12:00:00.000Z" }
+  );
+  assert(viaFinal.overall_payment_status === "fully_paid", "final_payment_received proves paid");
+}
+
+// --- genuine fully paid with no scheduled instalments still Fully paid ---
+{
+  const f = normaliseBookingFinancials(
+    {
+      cruise_price_usd: 2000,
+      deposit_amount: 2000,
+      deposit_paid_date: "2026-01-01",
+      cruise_deposit: 2000,
+      cruise_payment_2: null,
+      cruise_payment_3: null,
+      payment_2_amount: null,
+      payment_3_amount: null,
+      amount_received: 2000,
+      balance_owing: 0,
+      payment_status: "fully_paid",
+      fully_paid_date: "2026-01-02"
+    },
+    { now: NOW }
+  );
+  assert(f.overall_payment_status === "fully_paid", "genuine no-instalment fully paid");
+  assert(f.balance_owing === 0, "genuine zero balance");
+}
+
+// --- dashboard/booking shared rows for contradictory payload ---
+{
+  const f = normaliseBookingFinancials(CD5Q25_CONTRADICTORY_LIVE, {
+    now: "2026-07-27T12:00:00.000Z"
+  });
+  const a = buildFinancialDisplayRows(f, { formatMoney: formatFinancialUsd, formatDate: formatLongDate });
+  const b = buildFinancialDisplayRows(f, { formatMoney: formatFinancialUsd, formatDate: formatLongDate });
+  assert(JSON.stringify(a) === JSON.stringify(b), "identical dashboard/booking rows");
+  const byKey = Object.fromEntries(a.map(r => [r.key, r.value]));
+  assert(moneyIncludes(byKey.balance_owing, "1,467.00"), "shared row balance");
+  assert(byKey.payment_status === "Deposit paid — balance outstanding", "shared row status");
+  assert(byKey.final_payment_due === "13 September 2026", "shared row final due");
+  assert(byKey.final_payment_due !== "Check booking confirmation", "genuine due kept");
 }
 
 console.log("test-booking-financials: all assertions passed");
