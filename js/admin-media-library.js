@@ -24,6 +24,11 @@
   let pickerFilter = "recommended";
   let pickerSearch = "";
   let pickerUploadMode = false;
+  let pickerLoading = false;
+  let pickerConfirmBusyId = null;
+  let pickerMessage = "";
+  let pickerMessageTone = "";
+  let pickerSearchDebounce = null;
 
   let uploadDraft = {
     files: [],
@@ -952,12 +957,50 @@
     mount.innerHTML = renderMediaResultsHtml();
   }
 
-  function pickerCandidateRows() {
-    const opts = pickerOptions || {};
-    let rows = mediaItems.filter((m) => m.is_active !== false);
-    if (opts.mediaType) rows = rows.filter((m) => m.media_type === opts.mediaType || pickerFilter === "all");
+  function normalisedHintSet(hints) {
+    return new Set(
+      (hints || [])
+        .map((h) => String(h || "").trim().toLowerCase())
+        .filter(Boolean)
+    );
+  }
 
-    const q = pickerSearch.trim().toLowerCase();
+  function mediaMatchesDestinationHints(row, hintSet) {
+    if (!hintSet || !hintSet.size) return false;
+    const dest = String(row.destination_name || "").trim().toLowerCase();
+    const port = String(row.port_name || "").trim().toLowerCase();
+    if (dest && hintSet.has(dest)) return true;
+    if (port && hintSet.has(port)) return true;
+    return false;
+  }
+
+  function recommendedScore(row, opts, hintSet) {
+    let s = 0;
+    if (opts.selectedId && row.id === opts.selectedId) s += 200;
+    if (opts.shipId && row.ship_id === opts.shipId) {
+      s += 100;
+      if (row.is_default) s += 40;
+    }
+    if (mediaMatchesDestinationHints(row, hintSet)) {
+      s += 50;
+      if (row.is_default) s += 20;
+    }
+    return s;
+  }
+
+  function pickerCandidateRows(items, options, filter, search) {
+    const source = Array.isArray(items) ? items : mediaItems;
+    const opts = options && typeof options === "object" ? options : pickerOptions || {};
+    const activeFilter = filter || pickerFilter;
+    const q = String(search != null ? search : pickerSearch || "")
+      .trim()
+      .toLowerCase();
+
+    let rows = source.filter((m) => m && m.is_active !== false);
+    if (opts.mediaType && activeFilter !== "all") {
+      rows = rows.filter((m) => m.media_type === opts.mediaType || activeFilter === "recommended");
+    }
+
     if (q) {
       rows = rows.filter((row) => {
         const hay = [
@@ -966,7 +1009,8 @@
           row.destination_name,
           row.port_name,
           ...(row.tags || []),
-          row.ci_cruise_ships?.name
+          row.ci_cruise_ships?.name,
+          row.ci_cruise_lines?.name
         ]
           .filter(Boolean)
           .join(" ")
@@ -975,37 +1019,43 @@
       });
     }
 
-    if (pickerFilter === "current_ship" && opts.shipId) {
+    const hintSet = normalisedHintSet(opts.destinationHints);
+
+    if (activeFilter === "current_ship") {
+      if (!opts.shipId) return [];
       rows = rows.filter((m) => m.ship_id === opts.shipId);
-    } else if (pickerFilter === "current_destination" && opts.destinationHints?.length) {
-      const hints = opts.destinationHints.map((h) => String(h).toLowerCase());
-      rows = rows.filter((m) => hints.includes(String(m.destination_name || "").toLowerCase()));
-    } else if (pickerFilter === "ships") {
-      rows = rows.filter((m) => m.media_type === "ship");
-    } else if (pickerFilter === "destinations") {
-      rows = rows.filter((m) => m.media_type === "destination");
-    } else if (pickerFilter === "ports") {
-      rows = rows.filter((m) => m.media_type === "port");
-    } else if (pickerFilter === "general") {
-      rows = rows.filter((m) => m.media_type === "general");
-    } else if (pickerFilter === "recommended") {
-      const shipId = opts.shipId;
-      const hints = (opts.destinationHints || []).map((h) => String(h).toLowerCase());
       rows = [...rows].sort((a, b) => {
-        const score = (m) => {
-          let s = 0;
-          if (shipId && m.ship_id === shipId) s += 100;
-          if (m.is_default) s += 20;
-          if (hints.includes(String(m.destination_name || "").toLowerCase())) s += 50;
-          if (opts.selectedId && m.id === opts.selectedId) s += 200;
-          return s;
-        };
-        return score(b) - score(a);
+        const aDef = a.is_default ? 1 : 0;
+        const bDef = b.is_default ? 1 : 0;
+        if (bDef !== aDef) return bDef - aDef;
+        return String(a.title || "").localeCompare(String(b.title || ""));
       });
+    } else if (activeFilter === "current_destination") {
+      if (!hintSet.size) return [];
+      rows = rows.filter((m) => mediaMatchesDestinationHints(m, hintSet));
+    } else if (activeFilter === "ships") {
+      rows = rows.filter((m) => m.media_type === "ship");
+    } else if (activeFilter === "destinations") {
+      rows = rows.filter((m) => m.media_type === "destination");
+    } else if (activeFilter === "ports") {
+      rows = rows.filter((m) => m.media_type === "port");
+    } else if (activeFilter === "general") {
+      rows = rows.filter((m) => m.media_type === "general");
+    } else if (activeFilter === "recommended") {
+      // Only contextual media — never float unrelated ship defaults (e.g. NCL Star for Sirena).
+      rows = rows.filter((m) => {
+        if (opts.selectedId && m.id === opts.selectedId) return true;
+        if (opts.mediaType && m.media_type === opts.mediaType) return true;
+        if (opts.shipId && m.ship_id === opts.shipId) return true;
+        if (mediaMatchesDestinationHints(m, hintSet)) return true;
+        return false;
+      });
+      rows = [...rows].sort(
+        (a, b) => recommendedScore(b, opts, hintSet) - recommendedScore(a, opts, hintSet)
+      );
     }
 
-    if (opts.mediaType && pickerFilter === "recommended") {
-      // Prefer matching type but still allow related destination/ship images.
+    if (opts.mediaType && activeFilter === "recommended") {
       rows = [...rows].sort((a, b) => {
         const aMatch = a.media_type === opts.mediaType ? 1 : 0;
         const bMatch = b.media_type === opts.mediaType ? 1 : 0;
@@ -1013,6 +1063,89 @@
       });
     }
     return rows;
+  }
+
+  function pickerEmptyMessage() {
+    if (pickerFilter === "current_ship") return "No images were found for this ship.";
+    if (pickerFilter === "current_destination") return "No images were found for this destination.";
+    if (pickerFilter === "recommended") return "No recommended images were found for this cruise.";
+    return "No matching images.";
+  }
+
+  function pickerStatusBits(row) {
+    const bits = [];
+    if (row.is_default) bits.push("Default");
+    if (pickerOptions?.selectedId && row.id === pickerOptions.selectedId) bits.push("Current");
+    if (row.alt_text) bits.push("Alt text ready");
+    else bits.push("Alt text missing");
+    return bits.join(" · ");
+  }
+
+  function renderPickerCard(row) {
+    const busy = pickerConfirmBusyId === row.id;
+    const selected = row.id === pickerSelectedId;
+    const assoc = associationLabel(row);
+    const lineName = row.ci_cruise_lines?.name || "";
+    const metaParts = [mediaTypeLabel(row.media_type)];
+    if (assoc) metaParts.push(assoc);
+    if (lineName && row.media_type === "ship" && assoc !== lineName) metaParts.push(lineName);
+    return `
+      <article class="media-picker-card ${selected ? "is-selected" : ""} ${busy ? "is-busy" : ""}" data-media-id="${esc(row.id)}">
+        <div class="media-picker-card-media">
+          <img src="${esc(row.public_url || "")}" alt="" loading="lazy">
+        </div>
+        <div class="media-picker-card-body">
+          <h4 class="media-picker-card-title">${esc(row.title || "Untitled image")}</h4>
+          <p class="media-picker-card-meta">${esc(metaParts.join(" · "))}</p>
+          <p class="media-picker-card-status">${esc(pickerStatusBits(row))}</p>
+          <div class="media-picker-card-actions">
+            <button type="button" class="admin-button black small" ${busy ? "disabled" : ""} onclick="MediaLibraryAdmin.confirmPickerSelection('${esc(row.id)}')">${busy ? "Selecting…" : "Use This Image"}</button>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function renderPickerResultsHtml() {
+    if (pickerLoading || mediaLoading) {
+      const loader =
+        typeof global.BrandLoading?.html === "function"
+          ? global.BrandLoading.html({ large: true })
+          : "";
+      return `
+        <div class="media-picker-loading" role="status" aria-live="polite">
+          ${loader}
+          <p class="media-picker-loading-message">Loading images…</p>
+        </div>`;
+    }
+    const rows = pickerCandidateRows();
+    if (!rows.length) {
+      return `<p class="admin-muted" id="media-picker-empty">${esc(pickerEmptyMessage())}</p>`;
+    }
+    return `<div class="media-picker-grid" id="media-picker-results-grid">${rows.map(renderPickerCard).join("")}</div>`;
+  }
+
+  function refreshPickerResultsOnly() {
+    const mount =
+      typeof document !== "undefined" ? document.getElementById("media-picker-results") : null;
+    if (!mount) {
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      return;
+    }
+    mount.innerHTML = renderPickerResultsHtml();
+    if (typeof global.BrandLoading?.scan === "function") global.BrandLoading.scan(mount);
+  }
+
+  function focusPickerSearch() {
+    if (typeof document === "undefined") return;
+    const input = document.getElementById("media-picker-search");
+    if (!input) return;
+    try {
+      input.focus();
+      const len = String(input.value || "").length;
+      if (typeof input.setSelectionRange === "function") input.setSelectionRange(len, len);
+    } catch (_error) {
+      /* ignore */
+    }
   }
 
   function renderMediaPickerModal() {
@@ -1046,10 +1179,6 @@
       `;
     }
 
-    const rows = pickerCandidateRows();
-    const selected = mediaItems.find((m) => m.id === pickerSelectedId) || rows[0] || null;
-    if (selected && !pickerSelectedId) pickerSelectedId = selected.id;
-
     return `
       <div class="media-picker-overlay" onclick="if(event.target===this)MediaLibraryAdmin.closePicker()">
         <div class="media-picker-modal" role="dialog" aria-modal="true" aria-labelledby="mediaPickerTitle">
@@ -1061,8 +1190,13 @@
             </div>
           </div>
           <div class="media-picker-body">
+            ${
+              pickerMessage
+                ? `<div class="admin-message ${pickerMessageTone === "error" ? "admin-error" : pickerMessageTone === "success" ? "admin-success" : ""}">${esc(pickerMessage)}</div>`
+                : ""
+            }
             <div class="media-picker-toolbar">
-              <input type="search" value="${esc(pickerSearch)}" placeholder="Search images…" oninput="MediaLibraryAdmin.setPickerSearch(this.value)">
+              <input id="media-picker-search" type="search" value="${esc(pickerSearch)}" placeholder="Search images…" oninput="MediaLibraryAdmin.setPickerSearch(this.value)" autocomplete="off">
               <div class="media-picker-filters">
                 ${["recommended", "current_ship", "current_destination", "ships", "destinations", "ports", "general", "all"]
                   .map((f) => {
@@ -1081,36 +1215,8 @@
                   .join("")}
               </div>
             </div>
-            <div class="media-picker-layout">
-              <div class="media-picker-grid">
-                ${
-                  rows.length
-                    ? rows
-                        .map(
-                          (row) => `
-                  <button type="button" class="media-picker-thumb ${row.id === pickerSelectedId ? "is-selected" : ""}" onclick="MediaLibraryAdmin.selectPickerThumb('${esc(row.id)}')">
-                    <img src="${esc(row.public_url)}" alt="" loading="lazy">
-                    <span>${esc(row.title)}</span>
-                  </button>`
-                        )
-                        .join("")
-                    : `<p class="admin-muted">No matching images.</p>`
-                }
-              </div>
-              <div class="media-picker-detail">
-                ${
-                  selected
-                    ? `
-                  <div class="media-picker-detail-preview"><img src="${esc(selected.public_url)}" alt="${esc(selected.alt_text || selected.title)}"></div>
-                  <h4>${esc(selected.title)}</h4>
-                  <p class="admin-small">${esc(mediaTypeLabel(selected.media_type))}${associationLabel(selected) ? ` · ${esc(associationLabel(selected))}` : ""}</p>
-                  <p class="admin-muted">${esc(selected.alt_text || "No alt text")}</p>
-                  <p class="admin-small">${esc((selected.tags || []).join(", ") || "No tags")}</p>
-                  <button type="button" class="admin-button black" onclick="MediaLibraryAdmin.confirmPickerSelection()">Use This Image</button>
-                `
-                    : `<p class="admin-muted">Select an image to preview.</p>`
-                }
-              </div>
+            <div id="media-picker-results">
+              ${renderPickerResultsHtml()}
             </div>
           </div>
         </div>
@@ -1118,16 +1224,44 @@
     `;
   }
 
-  function openMediaPicker(options = {}) {
+  async function openMediaPicker(options = {}) {
     pickerOpen = true;
     pickerOptions = options;
     pickerSelectedId = options.selectedId || null;
     pickerFilter = options.defaultFilter || "recommended";
     pickerSearch = "";
     pickerUploadMode = false;
+    pickerConfirmBusyId = null;
+    pickerMessage = "";
+    pickerMessageTone = "";
     mediaMessage = "";
-    if (!mediaItems.length) loadMediaLibrary({ quiet: true });
-    else if (typeof global.renderAdmin === "function") global.renderAdmin();
+    const needsLoad = !mediaItems.length;
+    pickerLoading = needsLoad;
+
+    if (typeof global.renderAdmin === "function") global.renderAdmin();
+
+    try {
+      if (needsLoad) {
+        await loadMediaLibrary({ quiet: true });
+      }
+      if (!mediaItems.length && mediaMessageTone === "error") {
+        pickerMessage = "We couldn’t load the Media Library. Please try again.";
+        pickerMessageTone = "error";
+      }
+    } catch (_error) {
+      pickerMessage = "We couldn’t load the Media Library. Please try again.";
+      pickerMessageTone = "error";
+      mediaItems = [];
+    } finally {
+      pickerLoading = false;
+      mediaLoading = false;
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      if (typeof requestAnimationFrame === "function") {
+        requestAnimationFrame(() => focusPickerSearch());
+      } else {
+        focusPickerSearch();
+      }
+    }
   }
 
   function closePicker() {
@@ -1135,15 +1269,37 @@
     pickerOptions = null;
     pickerSelectedId = null;
     pickerUploadMode = false;
+    pickerLoading = false;
+    pickerConfirmBusyId = null;
+    pickerMessage = "";
+    pickerMessageTone = "";
+    if (pickerSearchDebounce) {
+      clearTimeout(pickerSearchDebounce);
+      pickerSearchDebounce = null;
+    }
     if (typeof global.renderAdmin === "function") global.renderAdmin();
   }
 
-  function confirmPickerSelection() {
-    const row = mediaItems.find((m) => m.id === pickerSelectedId);
-    if (!row || !pickerOptions?.onSelect) return;
+  async function confirmPickerSelection(mediaId) {
+    const id = mediaId || pickerSelectedId;
+    const row = mediaItems.find((m) => m.id === id);
+    if (!row || !pickerOptions?.onSelect) {
+      pickerMessage = "This image is no longer available.";
+      pickerMessageTone = "error";
+      refreshPickerResultsOnly();
+      return;
+    }
+    if (pickerConfirmBusyId) return;
+    pickerConfirmBusyId = row.id;
+    pickerSelectedId = row.id;
+    refreshPickerResultsOnly();
     const cb = pickerOptions.onSelect;
-    closePicker();
-    cb(row);
+    try {
+      closePicker();
+      cb(row);
+    } finally {
+      pickerConfirmBusyId = null;
+    }
   }
 
   async function submitPickerUpload() {
@@ -1252,16 +1408,46 @@
     },
     setPickerSearch(value) {
       pickerSearch = value;
-      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      if (pickerSearchDebounce) clearTimeout(pickerSearchDebounce);
+      pickerSearchDebounce = setTimeout(() => {
+        pickerSearchDebounce = null;
+        refreshPickerResultsOnly();
+      }, 120);
     },
     setPickerFilter(value) {
       pickerFilter = value;
-      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      refreshPickerResultsOnly();
     },
     selectPickerThumb(id) {
       pickerSelectedId = id;
-      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      refreshPickerResultsOnly();
     },
-    confirmPickerSelection
+    confirmPickerSelection,
+    __test__: {
+      pickerCandidateRows,
+      getPickerState: () => ({
+        pickerOpen,
+        pickerFilter,
+        pickerSearch,
+        pickerLoading,
+        pickerConfirmBusyId,
+        pickerSelectedId
+      }),
+      setMediaItemsForTest(items) {
+        mediaItems = Array.isArray(items) ? items : [];
+      },
+      setPickerOptionsForTest(opts) {
+        pickerOptions = opts || null;
+      },
+      setPickerFilterForTest(value) {
+        pickerFilter = value;
+      },
+      setPickerSearchForTest(value) {
+        pickerSearch = value;
+      },
+      setPickerLoadingForTest(value) {
+        pickerLoading = Boolean(value);
+      }
+    }
   };
 })(typeof window !== "undefined" ? window : globalThis);
