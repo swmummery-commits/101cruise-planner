@@ -16,6 +16,7 @@ let customerBooking = null;
 let customerCruise = null;
 let customerPackingPreferences = null;
 let customerLinkedBookingsMeta = { can_switch: false, bookings: [], loaded: false };
+let switchBookingLoadInFlight = false;
 const CUSTOMER_SESSION_STORAGE_KEY = "101cruise_customer_session";
 
 const CRUISE_LINES = [
@@ -460,13 +461,58 @@ async function openSwitchBookingChooser(options = {}) {
     changeCustomerBooking();
     return;
   }
+  if (switchBookingLoadInFlight) return;
 
-  const meta = options.meta || (await fetchCustomerLinkedBookings());
+  const opts = options && typeof options === "object" ? options : {};
+  const button =
+    opts.button ||
+    (typeof document !== "undefined"
+      ? document.querySelector(".dashboard-signout")
+      : null);
+
+  switchBookingLoadInFlight = true;
+
+  const FIND_MESSAGE = "Finding your cruises…";
+  const FIND_SUPPORT = "Please wait while we check the cruises linked to your account.";
+
+  const run = async () => {
+    // Always fetch on open (and on force retry). Do not open an empty chooser first.
+    const meta =
+      !opts.force && opts.meta && opts.meta.loaded
+        ? opts.meta
+        : await fetchCustomerLinkedBookings();
+    return meta;
+  };
+
+  let meta = null;
+  try {
+    if (typeof PortalLoading?.withLoading === "function") {
+      meta = await PortalLoading.withLoading(run, {
+        button,
+        key: "find-linked-cruises",
+        message: FIND_MESSAGE,
+        supportMessage: FIND_SUPPORT,
+        delayMs: 0
+      });
+    } else {
+      meta = await run();
+    }
+  } catch (error) {
+    meta = {
+      can_switch: false,
+      bookings: [],
+      loaded: true,
+      error: "We couldn’t load your other cruises just now. Please try again."
+    };
+  } finally {
+    switchBookingLoadInFlight = false;
+  }
+
   if (meta.error && !(meta.bookings || []).length) {
     SwitchBooking.openChooser({
       bookings: [],
       errorMessage: meta.error,
-      onRetry: () => openSwitchBookingChooser({ force: true }),
+      onRetry: () => openSwitchBookingChooser({ force: true, button }),
       onSignOut: () => changeCustomerBooking(),
       onClose: () => {}
     });

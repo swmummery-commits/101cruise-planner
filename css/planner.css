@@ -8344,6 +8344,20 @@ html.portal-loading-active body {
   text-align: center;
 }
 
+.portal-loading-support {
+  margin: 0;
+  color: #5b6b67;
+  font-family: "Halyard Display", Arial, sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-align: center;
+  max-width: 28ch;
+}
+
+.portal-loading-support[hidden] {
+  display: none !important;
+}
+
 .portal-loading-reduced-motion .brand-loading-boxes > span {
   animation: none;
   opacity: 0.85;

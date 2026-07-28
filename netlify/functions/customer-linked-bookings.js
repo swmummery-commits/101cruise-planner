@@ -75,43 +75,29 @@ async function resolveHeroByShipNames(shipNames) {
   const heroByShip = {};
   if (!names.length) return heroByShip;
 
-  const variants = new Set();
-  names.forEach((name) => {
-    expandTerminalNumeralVariants(name).forEach((v) => variants.add(v));
-    variants.add(normaliseText(name));
-  });
-
-  // Pull active ships; match in memory (small catalogue relative to portal traffic).
-  let offset = 0;
-  const pageSize = 200;
-  const matched = new Map();
-  while (offset < 800) {
-    const rows = await supabaseRest(
-      `ci_cruise_ships?select=name,hero_image_url&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`
-    );
-    const page = Array.isArray(rows) ? rows : [];
-    if (!page.length) break;
-    for (const row of page) {
-      const n = normaliseText(row.name);
-      if (!n || !row.hero_image_url) continue;
-      if (variants.has(n) || expandTerminalNumeralVariants(row.name).some((v) => variants.has(v))) {
-        matched.set(n, row.hero_image_url);
+  // Targeted lookups only — never page the full ship catalogue (was multi-second).
+  await Promise.all(
+    names.map(async (name) => {
+      const variants = [...new Set([normaliseText(name), ...expandTerminalNumeralVariants(name)])].filter(Boolean);
+      for (const variant of variants) {
+        try {
+          const rows = await supabaseRest(
+            `ci_cruise_ships?select=name,hero_image_url&active=eq.true&name=ilike.${encodeURIComponent(variant)}&limit=3`
+          );
+          const page = Array.isArray(rows) ? rows : [];
+          const hit = page.find((row) => row?.hero_image_url);
+          if (hit?.hero_image_url) {
+            heroByShip[name] = hit.hero_image_url;
+            heroByShip[name.toLowerCase()] = hit.hero_image_url;
+            return;
+          }
+        } catch {
+          /* ignore per-ship lookup failure */
+        }
       }
-    }
-    if (page.length < pageSize) break;
-    offset += pageSize;
-  }
+    })
+  );
 
-  for (const name of names) {
-    const keys = [normaliseText(name), ...expandTerminalNumeralVariants(name)];
-    for (const key of keys) {
-      if (matched.has(key)) {
-        heroByShip[name] = matched.get(key);
-        heroByShip[name.toLowerCase()] = matched.get(key);
-        break;
-      }
-    }
-  }
   return heroByShip;
 }
 

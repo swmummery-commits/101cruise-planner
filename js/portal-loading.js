@@ -15,6 +15,7 @@
   const INITIAL_MESSAGE = "Give me a few seconds — I'm loading the information.";
   const FAIL_MESSAGE =
     "Something didn't load properly. Please try again in a moment.";
+  let supportEl = null;
 
   const bridge =
     typeof root.PortalParentViewport !== "undefined" ? root.PortalParentViewport : null;
@@ -223,10 +224,12 @@
           new Array(10).join("<span></span>") +
           "</div>") +
       `<p class="portal-loading-message" aria-live="polite">${INITIAL_MESSAGE}</p>` +
+      '<p class="portal-loading-support" hidden></p>' +
       "</div>";
 
     document.body.appendChild(overlayEl);
     messageEl = overlayEl.querySelector(".portal-loading-message");
+    supportEl = overlayEl.querySelector(".portal-loading-support");
 
     if (prefersReducedMotion()) {
       overlayEl.classList.add("portal-loading-reduced-motion");
@@ -247,6 +250,19 @@
     if (messageEl) messageEl.textContent = text;
   }
 
+  function setSupportMessage(text) {
+    ensureOverlay();
+    if (!supportEl) return;
+    const value = String(text || "").trim();
+    if (value) {
+      supportEl.textContent = value;
+      supportEl.hidden = false;
+    } else {
+      supportEl.textContent = "";
+      supportEl.hidden = true;
+    }
+  }
+
   function syncVisibility() {
     ensureOverlay();
     if (!overlayEl) return;
@@ -263,13 +279,14 @@
     } else {
       clearTimers();
       setMessage(INITIAL_MESSAGE);
+      setSupportMessage("");
       clearOverlayGeometry();
       unlockScroll();
       notifyParentLoading(false);
     }
   }
 
-  function show(tokenOrKey) {
+  function show(tokenOrKey, message, supportMessage) {
     const key = String(tokenOrKey || "default");
     const previous = refs.get(key) || 0;
     refs.set(key, previous + 1);
@@ -281,8 +298,12 @@
     ensureOverlay();
 
     if (activeCount === 1) {
-      setMessage(INITIAL_MESSAGE);
+      setMessage(message || INITIAL_MESSAGE);
+      setSupportMessage(supportMessage || "");
       clearTimers();
+    } else if (message) {
+      setMessage(message);
+      if (supportMessage != null) setSupportMessage(supportMessage);
     }
 
     syncVisibility();
@@ -320,6 +341,8 @@
     const opts = options && typeof options === "object" ? options : {};
     const delayMs = Number.isFinite(Number(opts.delayMs)) ? Number(opts.delayMs) : 250;
     const button = opts.button || null;
+    const message = opts.message ? String(opts.message) : null;
+    const supportMessage = opts.supportMessage != null ? String(opts.supportMessage) : null;
     const token = String(opts.key || `op-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
     let uiStarted = false;
@@ -332,7 +355,7 @@
       if (uiStarted || settled) return;
       uiStarted = true;
       overlayShown = true;
-      show(token);
+      show(token, message, supportMessage);
       if (button) {
         buttonWasDisabled = Boolean(button.disabled);
         button.disabled = true;
@@ -340,7 +363,7 @@
       }
     }
 
-    delayTimer = setTimeout(startUi, delayMs);
+    delayTimer = setTimeout(startUi, Math.max(0, delayMs));
 
     try {
       return await asyncFn();
@@ -370,11 +393,14 @@
     hide: hide,
     withLoading: withLoading,
     fail: fail,
+    setMessage: setMessage,
+    setSupportMessage: setSupportMessage,
     __test__: {
       resolveOverlayBox: resolveOverlayBox,
       isAllowedParentOrigin: isAllowedParentOrigin,
       BODY_LOCK_CLASS: BODY_LOCK_CLASS,
       PARENT_GEOMETRY_CLASS: PARENT_GEOMETRY_CLASS,
+      INITIAL_MESSAGE: INITIAL_MESSAGE,
       getLatestParentGeometry: function () {
         return latestParentGeometry;
       },
