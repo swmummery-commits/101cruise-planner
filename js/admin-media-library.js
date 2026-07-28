@@ -336,13 +336,19 @@
 
   async function saveMediaEditor() {
     const row = mediaItems.find((m) => m.id === editingMediaId);
-    if (!row) return;
+    if (!row || mediaSaving) return;
+    // Capture before any re-render — otherwise checkbox/text edits are wiped by
+    // stale mediaItems values (root cause of Default reverting on Save).
+    const payload = captureMediaEditorFromDom(row);
+    if ((payload.media_type || row.media_type) === "ship") {
+      // Ship hero is managed only via set_ship_hero.
+      delete payload.is_default;
+    }
     mediaSaving = true;
     mediaMessage = "Saving…";
     mediaMessageTone = "";
     if (typeof global.renderAdmin === "function") global.renderAdmin();
     try {
-      const payload = captureMediaEditorFromDom(row);
       await mediaApi("update_record", payload);
       await loadMediaLibrary({ quiet: true });
       mediaMessage = "Media saved.";
@@ -436,21 +442,69 @@
 
   async function setMediaAsDefault() {
     const row = mediaItems.find((m) => m.id === editingMediaId);
+    if (!row || mediaSaving) return;
+    // Non-ship: keep existing default checkbox/API behaviour.
+    if (row.media_type !== "ship") {
+      mediaSaving = true;
+      try {
+        await mediaApi("update_record", {
+          id: row.id,
+          is_default: true,
+          media_type: row.media_type,
+          ship_id: row.ship_id,
+          destination_name: row.destination_name
+        });
+        await loadMediaLibrary({ quiet: true });
+        mediaMessage = "Marked as default.";
+        mediaMessageTone = "success";
+      } catch (error) {
+        mediaMessage = error.message || "Could not set default.";
+        mediaMessageTone = "error";
+      } finally {
+        mediaSaving = false;
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+      return;
+    }
+    await setAsShipHero(row.id);
+  }
+
+  async function setAsShipHero(mediaId) {
+    if (mediaSaving) return;
+    const id = mediaId || editingMediaId;
+    const row = mediaItems.find((m) => m.id === id);
     if (!row) return;
+    if (row.media_type !== "ship") {
+      mediaMessage = "Only ship images can be set as the ship hero.";
+      mediaMessageTone = "error";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      return;
+    }
+    if (!row.ship_id) {
+      mediaMessage = "Associate this image with a ship before setting it as hero.";
+      mediaMessageTone = "error";
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      return;
+    }
     mediaSaving = true;
+    mediaMessage = "Updating ship hero…";
+    mediaMessageTone = "";
+    if (typeof global.renderAdmin === "function") global.renderAdmin();
     try {
-      await mediaApi("update_record", {
-        id: row.id,
-        is_default: true,
-        media_type: row.media_type,
-        ship_id: row.ship_id,
-        destination_name: row.destination_name
-      });
+      await mediaApi("set_ship_hero", { id: row.id });
+      const keepId = editingMediaId;
+      const keepSearch = mediaSearchQuery;
+      const keepType = mediaTypeFilter;
+      const keepActive = mediaActiveFilter;
       await loadMediaLibrary({ quiet: true });
-      mediaMessage = "Marked as default.";
+      mediaSearchQuery = keepSearch;
+      mediaTypeFilter = keepType;
+      mediaActiveFilter = keepActive;
+      editingMediaId = keepId;
+      mediaMessage = "Ship hero updated.";
       mediaMessageTone = "success";
     } catch (error) {
-      mediaMessage = error.message || "Could not set default.";
+      mediaMessage = error.message || "Could not update ship hero.";
       mediaMessageTone = "error";
     } finally {
       mediaSaving = false;
@@ -535,14 +589,26 @@
   function renderMediaEditor() {
     const row = mediaItems.find((m) => m.id === editingMediaId);
     if (!row) return `<p class="admin-muted">Media not found.</p>`;
+    const isShip = row.media_type === "ship";
+    const shipName =
+      row.ci_cruise_ships?.name ||
+      ciShips().find((s) => s.id === row.ship_id)?.name ||
+      "";
     const msgClass =
       mediaMessageTone === "error"
         ? "admin-error"
         : mediaMessageTone === "success"
           ? "admin-success"
-          : mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || ""))
+          : mediaSaving || /^(Uploading|Saving|Updating)/i.test(String(mediaMessage || ""))
             ? "admin-running"
             : "";
+    const shipHeroAction = isShip
+      ? row.is_default
+        ? `<span class="admin-running-status" role="status">Current ship hero${shipName ? ` · ${esc(shipName)}` : ""}</span>`
+        : row.ship_id
+          ? `<button class="admin-button black" type="button" onclick="MediaLibraryAdmin.setAsShipHero()" ${mediaSaving ? "disabled" : ""}>${mediaSaving ? "Updating…" : "Set as ship hero"}</button>`
+          : `<span class="admin-muted">Associate a ship to enable “Set as ship hero”.</span>`
+      : `<button class="admin-button secondary" onclick="MediaLibraryAdmin.setMediaAsDefault()" ${mediaSaving ? "disabled" : ""}>Set as Default</button>`;
     return `
       <div class="admin-card">
         <div class="admin-list-top">
@@ -552,7 +618,7 @@
           </div>
           <div class="admin-actions-row">
             <button class="admin-button secondary" onclick="MediaLibraryAdmin.closeEditor()" ${mediaSaving ? "disabled" : ""}>Cancel</button>
-            <button class="admin-button secondary" onclick="MediaLibraryAdmin.setMediaAsDefault()" ${mediaSaving ? "disabled" : ""}>Set as Default</button>
+            ${shipHeroAction}
             <label class="admin-button secondary" style="cursor:pointer;display:inline-flex;align-items:center">
               Replace Image
               <input type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" hidden onchange="MediaLibraryAdmin.replaceMediaImage(event)" ${mediaSaving ? "disabled" : ""}>
@@ -560,14 +626,14 @@
             <button class="admin-button secondary" onclick="MediaLibraryAdmin.deleteMediaEditor()" ${mediaSaving ? "disabled" : ""}>Delete</button>
             <button class="admin-button black" onclick="MediaLibraryAdmin.saveMediaEditor()" ${mediaSaving ? "disabled" : ""}>${mediaSaving ? "Saving…" : "Save"}</button>
             ${
-              mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || ""))
+              mediaSaving || /^(Uploading|Saving|Updating)/i.test(String(mediaMessage || ""))
                 ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(mediaMessage)}</span>`
                 : ""
             }
           </div>
         </div>
         ${
-          mediaMessage && !(mediaSaving || /^(Uploading|Saving)/i.test(String(mediaMessage || "")))
+          mediaMessage && !(mediaSaving || /^(Uploading|Saving|Updating)/i.test(String(mediaMessage || "")))
             ? `<div class="admin-message ${msgClass}">${esc(mediaMessage)}</div>`
             : ""
         }
@@ -595,7 +661,15 @@
               <div class="admin-field"><label>Tags</label><input id="mediaEditTags" type="text" value="${esc((row.tags || []).join(", "))}"></div>
             </div>
             <div class="media-editor-flags">
-              <label class="featured-inc"><input id="mediaEditDefault" type="checkbox" ${row.is_default ? "checked" : ""}> Default image</label>
+              ${
+                isShip
+                  ? `<p class="admin-small">${
+                      row.is_default
+                        ? "Current ship hero — use “Set as ship hero” on another ship image to replace it."
+                        : "Ship hero is set with the button above (not the Default checkbox)."
+                    }</p>`
+                  : `<label class="featured-inc"><input id="mediaEditDefault" type="checkbox" ${row.is_default ? "checked" : ""}> Default image</label>`
+              }
               <label class="featured-inc"><input id="mediaEditActive" type="checkbox" ${row.is_active !== false ? "checked" : ""}> Active</label>
             </div>
             <p class="admin-small">${esc(row.width || "—")}×${esc(row.height || "—")} · ${esc(row.mime_type || "—")} · ${row.file_size_bytes != null ? `${Math.round(row.file_size_bytes / 1024)} KB` : "—"} · ${esc(row.storage_path || "")}</p>
@@ -623,7 +697,11 @@
           <h4>${esc(row.title)}</h4>
           <p class="admin-small">${esc(mediaTypeLabel(row.media_type))}${assoc ? ` · ${esc(assoc)}` : ""}</p>
           <div class="media-library-badges">
-            ${row.is_default ? `<span class="media-badge">Default</span>` : ""}
+            ${
+              row.is_default
+                ? `<span class="media-badge">${row.media_type === "ship" ? "Ship hero" : "Default"}</span>`
+                : ""
+            }
             ${row.is_active === false ? `<span class="media-badge is-inactive">Inactive</span>` : ""}
           </div>
         </div>
@@ -1056,6 +1134,9 @@
     deleteMediaEditor,
     replaceMediaImage,
     setMediaAsDefault,
+    setAsShipHero() {
+      return setAsShipHero();
+    },
     setPickerSearch(value) {
       pickerSearch = value;
       if (typeof global.renderAdmin === "function") global.renderAdmin();

@@ -11,6 +11,7 @@
 
 const crypto = require('crypto');
 const { requireAdmin } = require('./admin-auth');
+const { setShipHero } = require('./lib/set-ship-hero');
 
 const BUCKET = 'cruise-media';
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -234,6 +235,10 @@ async function handleCreateRecord(body, adminUserId) {
   });
   const row = Array.isArray(rows) ? rows[0] : rows;
   if (row?.is_default) {
+    if (row.media_type === 'ship' && row.ship_id) {
+      // Keep media_library + ci_cruise_ships.hero_image_url aligned.
+      return setShipHero({ mediaId: row.id, supabase });
+    }
     await clearOtherDefaults({
       mediaType: row.media_type,
       shipId: row.ship_id,
@@ -242,6 +247,46 @@ async function handleCreateRecord(body, adminUserId) {
     });
   }
   return { success: true, media: row };
+}
+
+async function handleSetShipHero(body) {
+  const mediaId = body.id || body.media_id;
+  // Prefer DB RPC when migration is applied (true transaction).
+  try {
+    const rpc = await supabase('/rest/v1/rpc/set_ship_hero_media', {
+      method: 'POST',
+      body: JSON.stringify({ p_media_id: mediaId })
+    });
+    if (rpc && rpc.success) {
+      const mediaRows = await supabase(
+        `/rest/v1/media_library?id=eq.${encodeURIComponent(mediaId)}&select=*&limit=1`,
+        { method: 'GET' }
+      );
+      const media = Array.isArray(mediaRows) ? mediaRows[0] : null;
+      return {
+        success: true,
+        unchanged: false,
+        via: 'rpc',
+        media,
+        ship: {
+          id: rpc.ship_id,
+          hero_image_url: rpc.hero_image_url
+        },
+        previous_default_ids: rpc.previous_default_ids || [],
+        message: rpc.message || 'Ship hero updated.'
+      };
+    }
+  } catch (error) {
+    const msg = String(error.message || '');
+    const missingFn =
+      error.statusCode === 404 ||
+      /could not find the function|PGRST202|schema cache/i.test(msg);
+    if (!missingFn) {
+      // Validation failures from RPC should surface calmly.
+      throw error;
+    }
+  }
+  return setShipHero({ mediaId, supabase });
 }
 
 async function handleUpdateRecord(body) {
@@ -276,6 +321,41 @@ async function handleUpdateRecord(body) {
     patch.file_size_bytes = body.file_size_bytes == null ? null : Number(body.file_size_bytes);
   }
 
+  // Ship hero/default is managed only via set_ship_hero (transactional).
+  // Ignore checkbox-driven is_default on ship rows so Save cannot clear/revert heroes.
+  const existingRows = await supabase(
+    `/rest/v1/media_library?id=eq.${encodeURIComponent(id)}&select=id,media_type,ship_id,is_default,public_url&limit=1`,
+    { method: 'GET' }
+  );
+  const existing = Array.isArray(existingRows) ? existingRows[0] : null;
+  if (!existing) throw Object.assign(new Error('Media not found'), { statusCode: 404 });
+
+  const nextType = patch.media_type || existing.media_type;
+  const nextShipId = patch.ship_id !== undefined ? patch.ship_id : existing.ship_id;
+  if (nextType === 'ship' && patch.is_default !== undefined) {
+    if (patch.is_default === true) {
+      // Apply other metadata first if present, then promote via controlled path.
+      delete patch.is_default;
+      if (Object.keys(patch).length) {
+        await supabase(`/rest/v1/media_library?id=eq.${encodeURIComponent(id)}`, {
+          method: 'PATCH',
+          headers: { Prefer: 'return=minimal' },
+          body: JSON.stringify(patch)
+        });
+      }
+      return setShipHero({ mediaId: id, supabase });
+    }
+    delete patch.is_default;
+    if (!Object.keys(patch).length) {
+      throw Object.assign(
+        new Error(
+          'Ship heroes cannot be cleared with the Default checkbox. Use “Set as ship hero” on another ship image.'
+        ),
+        { statusCode: 400 }
+      );
+    }
+  }
+
   if (!Object.keys(patch).length) {
     throw Object.assign(new Error('No fields to update'), { statusCode: 400 });
   }
@@ -292,6 +372,12 @@ async function handleUpdateRecord(body) {
   if (!row) throw Object.assign(new Error('Media not found'), { statusCode: 404 });
 
   if (row.is_default) {
+    if (row.media_type === 'ship' && row.ship_id) {
+      // e.g. type/ship association changed while already default — realign hero URL.
+      if (nextType === 'ship' && nextShipId) {
+        return setShipHero({ mediaId: row.id, supabase });
+      }
+    }
     await clearOtherDefaults({
       mediaType: row.media_type,
       shipId: row.ship_id,
@@ -406,6 +492,7 @@ exports.handler = async (event) => {
       return jsonResponse(200, await handleCreateRecord(body, admin?.id || admin?.user?.id));
     }
     if (action === 'update_record') return jsonResponse(200, await handleUpdateRecord(body));
+    if (action === 'set_ship_hero') return jsonResponse(200, await handleSetShipHero(body));
     if (action === 'delete_record') return jsonResponse(200, await handleDeleteRecord(body));
     if (action === 'list') return jsonResponse(200, await handleList(body));
 
