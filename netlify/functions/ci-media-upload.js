@@ -101,6 +101,13 @@ exports.handler = async (event) => {
     }
 
     const kind = body.kind === 'ship' ? 'ship' : 'logo';
+    if (kind === 'ship') {
+      return jsonResponse(410, {
+        success: false,
+        error:
+          'Ship hero uploads via Cruise Database are retired. Use Marketing → Media Library (or Choose from Media Library on the ship form).'
+      });
+    }
     const conf = BUCKETS[kind];
     const filename = String(body.filename || '').trim();
     const mimeType = String(body.mime_type || body.contentType || '').trim().toLowerCase();

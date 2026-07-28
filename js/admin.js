@@ -7334,6 +7334,31 @@ function moveCiStateroomRow(index, delta) {
 function renderCiMediaField({ kind, inputId, url, previewClass, title }) {
   const hasUrl = Boolean(url);
   const isLogo = kind === "logo";
+  const isShip = kind === "ship";
+
+  // Ship heroes are owned by Media Library — no direct ship-images upload.
+  if (isShip) {
+    return `
+    <div class="ci-media-field" data-media-kind="ship">
+      <div class="ci-media-head">
+        <h4>${esc(title)}</h4>
+      </div>
+      <div class="ci-media-preview-wrap">
+        ${hasUrl
+          ? `<img id="${esc(inputId)}Preview" class="${esc(previewClass)}" src="${esc(url)}" alt="${esc(title)} preview" onerror="this.style.display='none'">`
+          : `<div id="${esc(inputId)}PreviewEmpty" class="admin-empty-preview">No ${esc(title.toLowerCase())} yet</div>`}
+      </div>
+      <input type="hidden" id="${esc(inputId)}" value="${esc(url || "")}">
+      <div class="admin-actions-row ci-media-actions">
+        <button type="button" class="admin-button secondary small" onclick="openCiShipHeroMediaPicker()">Choose from Media Library</button>
+        <button type="button" class="admin-button secondary small" onclick="openCiShipHeroMediaUpload()">Upload in Media Library</button>
+      </div>
+      <p class="admin-small">Ship heroes are managed in Media Library. Choosing an image sets it as the ship hero.</p>
+      <p class="admin-small" id="${esc(inputId)}MediaMsg"></p>
+    </div>
+  `;
+  }
+
   return `
     <div class="ci-media-field" data-media-kind="${esc(kind)}">
       <div class="ci-media-head">
@@ -7360,6 +7385,92 @@ function renderCiMediaField({ kind, inputId, url, previewClass, title }) {
       <p class="admin-small" id="${esc(inputId)}MediaMsg"></p>
     </div>
   `;
+}
+
+function openCiShipHeroMediaPicker() {
+  const shipId = document.getElementById("ciShipId")?.value || editingCiShipId || "";
+  const lineId = document.getElementById("ciShipLineId")?.value || "";
+  if (!shipId && !ciShipCreating) {
+    setCiMediaMessage("ciShipHero", "Save/select a ship first.", true);
+    return;
+  }
+  if (!window.MediaLibraryAdmin) {
+    setCiMediaMessage("ciShipHero", "Media Library is not available.", true);
+    return;
+  }
+  if (ciShipCreating || !shipId) {
+    setCiMediaMessage("ciShipHero", "Create the ship first, then choose a hero from Media Library.", true);
+    return;
+  }
+  window.MediaLibraryAdmin.openMediaPicker({
+    title: "Choose ship hero",
+    selectedId: null,
+    shipId,
+    cruiseLineId: lineId,
+    mediaType: "ship",
+    defaultFilter: "current_ship",
+    onSelect: applyCiShipHeroMediaSelection
+  });
+}
+
+function openCiShipHeroMediaUpload() {
+  const shipId = document.getElementById("ciShipId")?.value || editingCiShipId || "";
+  const lineId = document.getElementById("ciShipLineId")?.value || "";
+  if (!shipId || ciShipCreating) {
+    setCiMediaMessage("ciShipHero", "Create the ship first, then upload in Media Library.", true);
+    return;
+  }
+  if (!window.MediaLibraryAdmin) {
+    setCiMediaMessage("ciShipHero", "Media Library is not available.", true);
+    return;
+  }
+  window.MediaLibraryAdmin.openMediaPicker({
+    title: "Upload ship image",
+    selectedId: null,
+    shipId,
+    cruiseLineId: lineId,
+    mediaType: "ship",
+    defaultFilter: "current_ship",
+    onSelect: applyCiShipHeroMediaSelection
+  });
+  window.MediaLibraryAdmin.openPickerUpload();
+}
+
+async function applyCiShipHeroMediaSelection(media) {
+  if (!media?.id) return;
+  const shipId = document.getElementById("ciShipId")?.value || editingCiShipId || "";
+  if (!shipId) {
+    setCiMediaMessage("ciShipHero", "Ship id missing.", true);
+    return;
+  }
+  if (media.media_type && media.media_type !== "ship") {
+    setCiMediaMessage("ciShipHero", "Choose a ship image.", true);
+    return;
+  }
+  setCiMediaMessage("ciShipHero", "Setting ship hero…");
+  try {
+    const headers = await itineraryAuthHeaders();
+    const response = await fetch("/.netlify/functions/media-library", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action: "set_ship_hero", id: media.id })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.success === false) {
+      throw new Error(data.error || "Could not set ship hero");
+    }
+    const url = data.ship?.hero_image_url || media.public_url || "";
+    const hidden = document.getElementById("ciShipHero");
+    if (hidden) hidden.value = url;
+    updateCiMediaPreview("ciShipHero", url, "admin-hero-preview");
+    setCiMediaMessage("ciShipHero", "Ship hero updated.");
+    if (data.ship || url) {
+      mergeCiShipRecord({ id: shipId, hero_image_url: url });
+      refreshCiShipMasterList();
+    }
+  } catch (error) {
+    setCiMediaMessage("ciShipHero", error.message || "Could not set ship hero", true);
+  }
 }
 
 function toggleCiMediaUrlRow(inputId) {
@@ -7481,6 +7592,16 @@ async function uploadCiMediaFile(event, inputId, kind) {
   const input = event?.target;
   const file = input?.files?.[0];
   if (!file) return;
+
+  if (kind === "ship") {
+    setCiMediaMessage(
+      inputId,
+      "Ship hero uploads are managed in Media Library. Use “Choose from Media Library”.",
+      true
+    );
+    input.value = "";
+    return;
+  }
 
   const isLogo = kind === "logo";
   const maxBytes = isLogo ? 2 * 1024 * 1024 : 8 * 1024 * 1024;
