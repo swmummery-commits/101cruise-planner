@@ -26,8 +26,7 @@
   let pickerUploadMode = false;
 
   let uploadDraft = {
-    file: null,
-    localPreview: "",
+    files: [],
     title: "",
     alt_text: "",
     media_type: "general",
@@ -36,10 +35,10 @@
     destination_name: "",
     port_name: "",
     tags: "",
-    is_default: false,
-    width: null,
-    height: null
+    is_default: false
   };
+
+  const MAX_UPLOAD_FILES = 10;
 
   function esc(value) {
     return typeof global.esc === "function"
@@ -133,11 +132,16 @@
     return "";
   }
 
+  function revokeUploadPreviews(files) {
+    (files || []).forEach((entry) => {
+      if (entry?.localPreview) URL.revokeObjectURL(entry.localPreview);
+    });
+  }
+
   function resetUploadDraft(overrides = {}) {
-    if (uploadDraft.localPreview) URL.revokeObjectURL(uploadDraft.localPreview);
+    revokeUploadPreviews(uploadDraft.files);
     uploadDraft = {
-      file: null,
-      localPreview: "",
+      files: [],
       title: "",
       alt_text: "",
       media_type: "general",
@@ -147,10 +151,21 @@
       port_name: "",
       tags: "",
       is_default: false,
-      width: null,
-      height: null,
       ...overrides
     };
+    if (!Array.isArray(uploadDraft.files)) uploadDraft.files = [];
+  }
+
+  function fileTitleStem(fileName) {
+    return String(fileName || "Image").replace(/\.[^.]+$/, "").trim() || "Image";
+  }
+
+  function titleForUploadEntry(entry, index, total) {
+    const shared = String(uploadDraft.title || "").trim();
+    const stem = fileTitleStem(entry.file?.name || entry.name);
+    if (total === 1) return shared || stem;
+    if (shared) return `${shared} ${String(index + 1).padStart(2, "0")}`;
+    return stem;
   }
 
   async function prepareUploadFile(file) {
@@ -182,25 +197,49 @@
   }
 
   async function onMediaFileChosen(event) {
-    const file = event?.target?.files?.[0];
-    if (!file) return;
+    const list = Array.from(event?.target?.files || []);
+    if (!list.length) return;
     try {
-      const prepared = await prepareUploadFile(file);
-      if (uploadDraft.localPreview) URL.revokeObjectURL(uploadDraft.localPreview);
-      uploadDraft.file = prepared.file;
-      uploadDraft.localPreview = URL.createObjectURL(prepared.file);
-      uploadDraft.width = prepared.width;
-      uploadDraft.height = prepared.height;
-      if (!uploadDraft.title) {
-        uploadDraft.title = String(file.name || "Image").replace(/\.[^.]+$/, "");
+      if (list.length > MAX_UPLOAD_FILES) {
+        throw new Error(`You can upload up to ${MAX_UPLOAD_FILES} images at once.`);
       }
-      mediaMessage = "";
-      mediaMessageTone = "";
+      const preparedEntries = [];
+      for (const file of list) {
+        const prepared = await prepareUploadFile(file);
+        preparedEntries.push({
+          file: prepared.file,
+          width: prepared.width,
+          height: prepared.height,
+          localPreview: URL.createObjectURL(prepared.file),
+          name: file.name
+        });
+      }
+      revokeUploadPreviews(uploadDraft.files);
+      uploadDraft.files = preparedEntries;
+      if (preparedEntries.length === 1 && !uploadDraft.title) {
+        uploadDraft.title = fileTitleStem(preparedEntries[0].name);
+      }
+      if (preparedEntries.length > 1 && uploadDraft.is_default) {
+        // Keep checkbox allowed; only the first image will be marked default on upload.
+      }
+      mediaMessage =
+        preparedEntries.length === 1
+          ? ""
+          : `${preparedEntries.length} images selected. Shared details below apply to all.`;
+      mediaMessageTone = preparedEntries.length === 1 ? "" : "success";
     } catch (error) {
       mediaMessage = error.message || "Could not prepare image.";
       mediaMessageTone = "error";
     }
-    event.target.value = "";
+    if (event?.target) event.target.value = "";
+    if (typeof global.renderAdmin === "function") global.renderAdmin();
+  }
+
+  function removeUploadFile(index) {
+    const i = Number(index);
+    if (!Number.isInteger(i) || i < 0 || i >= uploadDraft.files.length) return;
+    const [removed] = uploadDraft.files.splice(i, 1);
+    if (removed?.localPreview) URL.revokeObjectURL(removed.localPreview);
     if (typeof global.renderAdmin === "function") global.renderAdmin();
   }
 
@@ -218,13 +257,14 @@
 
   async function submitMediaUpload({ selectForPicker = false, onSelected = null } = {}) {
     captureUploadDraftFromDom();
-    if (!uploadDraft.file) {
-      mediaMessage = "Choose an image file first.";
+    const entries = Array.isArray(uploadDraft.files) ? uploadDraft.files : [];
+    if (!entries.length) {
+      mediaMessage = "Choose one or more image files first.";
       mediaMessageTone = "error";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
       return null;
     }
-    if (!String(uploadDraft.title || "").trim()) {
+    if (entries.length === 1 && !String(uploadDraft.title || "").trim()) {
       mediaMessage = "Title is required.";
       mediaMessageTone = "error";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
@@ -232,72 +272,95 @@
     }
 
     mediaSaving = true;
-    mediaMessage = "Uploading…";
+    mediaMessage = entries.length === 1 ? "Uploading…" : `Uploading 1 of ${entries.length}…`;
     mediaMessageTone = "";
     if (typeof global.renderAdmin === "function") global.renderAdmin();
 
+    const createdMedia = [];
     try {
-      const prepared = await mediaApi("create_upload", {
-        filename: uploadDraft.file.name,
-        mime_type: uploadDraft.file.type,
-        size_bytes: uploadDraft.file.size,
-        media_type: uploadDraft.media_type,
-        ship_id: uploadDraft.ship_id || null,
-        destination_name: uploadDraft.destination_name || null,
-        port_name: uploadDraft.port_name || null,
-        featured_cruise_id: pickerOptions?.featuredCruiseId || null,
-        public_slug: pickerOptions?.publicSlug || null
-      });
-
       const client =
         typeof global.getAdminSupabaseClient === "function"
           ? global.getAdminSupabaseClient()
           : global.supabaseClient;
       if (!client?.storage) throw new Error("Supabase client is not available.");
-      const { error: uploadError } = await client.storage
-        .from(prepared.bucket)
-        .uploadToSignedUrl(prepared.storage_path, prepared.token, uploadDraft.file, {
-          contentType: uploadDraft.file.type
-        });
-      if (uploadError) throw uploadError;
 
-      const created = await mediaApi("create_record", {
-        title: uploadDraft.title,
-        alt_text: uploadDraft.alt_text,
-        media_type: uploadDraft.media_type,
-        storage_path: prepared.storage_path,
-        public_url: prepared.public_url,
-        file_name: uploadDraft.file.name,
-        mime_type: uploadDraft.file.type,
-        width: uploadDraft.width,
-        height: uploadDraft.height,
-        file_size_bytes: uploadDraft.file.size,
-        cruise_line_id: uploadDraft.cruise_line_id || null,
-        ship_id: uploadDraft.ship_id || null,
-        destination_name: uploadDraft.destination_name || null,
-        port_name: uploadDraft.port_name || null,
-        tags: uploadDraft.tags,
-        is_default: uploadDraft.is_default
-      });
+      for (let i = 0; i < entries.length; i += 1) {
+        const entry = entries[i];
+        mediaMessage =
+          entries.length === 1 ? "Uploading…" : `Uploading ${i + 1} of ${entries.length}…`;
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+
+        const prepared = await mediaApi("create_upload", {
+          filename: entry.file.name,
+          mime_type: entry.file.type,
+          size_bytes: entry.file.size,
+          media_type: uploadDraft.media_type,
+          ship_id: uploadDraft.ship_id || null,
+          destination_name: uploadDraft.destination_name || null,
+          port_name: uploadDraft.port_name || null,
+          featured_cruise_id: pickerOptions?.featuredCruiseId || null,
+          public_slug: pickerOptions?.publicSlug || null
+        });
+
+        const { error: uploadError } = await client.storage
+          .from(prepared.bucket)
+          .uploadToSignedUrl(prepared.storage_path, prepared.token, entry.file, {
+            contentType: entry.file.type
+          });
+        if (uploadError) throw uploadError;
+
+        const created = await mediaApi("create_record", {
+          title: titleForUploadEntry(entry, i, entries.length),
+          alt_text: uploadDraft.alt_text,
+          media_type: uploadDraft.media_type,
+          storage_path: prepared.storage_path,
+          public_url: prepared.public_url,
+          file_name: entry.file.name,
+          mime_type: entry.file.type,
+          width: entry.width,
+          height: entry.height,
+          file_size_bytes: entry.file.size,
+          cruise_line_id: uploadDraft.cruise_line_id || null,
+          ship_id: uploadDraft.ship_id || null,
+          destination_name: uploadDraft.destination_name || null,
+          port_name: uploadDraft.port_name || null,
+          tags: uploadDraft.tags,
+          // Only the first image can be default when uploading a batch.
+          is_default: Boolean(uploadDraft.is_default) && i === 0
+        });
+        if (created.media) createdMedia.push(created.media);
+      }
 
       await loadMediaLibrary({ quiet: true });
       showMediaUpload = false;
       pickerUploadMode = false;
       resetUploadDraft();
-      mediaMessage = "Image uploaded to Media Library.";
+      mediaSaving = false;
+      mediaMessage =
+        createdMedia.length === 1
+          ? "Image uploaded to Media Library."
+          : `${createdMedia.length} images uploaded to Media Library.`;
       mediaMessageTone = "success";
 
-      if (selectForPicker && created.media) {
-        pickerSelectedId = created.media.id;
+      const first = createdMedia[0] || null;
+      if (selectForPicker && first) {
+        pickerSelectedId = first.id;
       }
-      if (typeof onSelected === "function" && created.media) {
-        onSelected(created.media);
+      if (typeof onSelected === "function" && first) {
+        onSelected(first);
       }
       if (typeof global.renderAdmin === "function") global.renderAdmin();
-      return created.media;
+      return first;
     } catch (error) {
-      mediaMessage = error.message || "Upload failed.";
+      mediaSaving = false;
+      mediaMessage =
+        createdMedia.length > 0
+          ? `${createdMedia.length} uploaded, then failed: ${error.message || "Upload failed."}`
+          : error.message || "Upload failed.";
       mediaMessageTone = "error";
+      if (createdMedia.length) {
+        await loadMediaLibrary({ quiet: true });
+      }
       if (typeof global.renderAdmin === "function") global.renderAdmin();
       return null;
     } finally {
@@ -549,20 +612,40 @@
   }
 
   function renderUploadForm({ compact = false } = {}) {
+    const files = Array.isArray(uploadDraft.files) ? uploadDraft.files : [];
+    const multi = files.length > 1;
+    const previewHtml = !files.length
+      ? `<div class="media-upload-preview is-empty">No files selected</div>`
+      : `<div class="media-upload-preview-grid ${multi ? "is-multi" : ""}">
+          ${files
+            .map(
+              (entry, index) => `
+            <div class="media-upload-preview-item">
+              <img src="${esc(entry.localPreview)}" alt="${esc(entry.name || "Upload preview")}">
+              <p class="admin-small">${esc(entry.name || `Image ${index + 1}`)}</p>
+              <button type="button" class="admin-button secondary media-upload-remove" onclick="MediaLibraryAdmin.removeUploadFile(${index})" ${mediaSaving ? "disabled" : ""}>Remove</button>
+            </div>`
+            )
+            .join("")}
+        </div>`;
     return `
       <div class="media-upload-form ${compact ? "is-compact" : ""}">
         <div class="admin-field">
-          <label>Image file</label>
-          <input type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" onchange="MediaLibraryAdmin.onMediaFileChosen(event)">
-          <div class="admin-helper">JPG, PNG or WebP. Max 10 MB. Large images are resized to ~2000px.</div>
+          <label>Image files</label>
+          <input type="file" multiple accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" onchange="MediaLibraryAdmin.onMediaFileChosen(event)">
+          <div class="admin-helper">Select one or more images (up to ${MAX_UPLOAD_FILES}). JPG, PNG or WebP. Max 10 MB each. Large images are resized to ~2000px.</div>
         </div>
-        ${
-          uploadDraft.localPreview
-            ? `<div class="media-upload-preview"><img src="${esc(uploadDraft.localPreview)}" alt="Upload preview"></div>`
-            : `<div class="media-upload-preview is-empty">No file selected</div>`
-        }
+        ${previewHtml}
         <div class="featured-form-grid">
-          <div class="admin-field"><label>Title *</label><input id="mediaUploadTitle" type="text" value="${esc(uploadDraft.title)}"></div>
+          <div class="admin-field">
+            <label>${multi ? "Title prefix (optional)" : "Title *"}</label>
+            <input id="mediaUploadTitle" type="text" value="${esc(uploadDraft.title)}" placeholder="${multi ? "e.g. Silver Shadow gallery" : ""}">
+            ${
+              multi
+                ? `<div class="admin-helper">Leave blank to use each file name. With a prefix, titles become “Prefix 01”, “Prefix 02”, …</div>`
+                : ""
+            }
+          </div>
           <div class="admin-field"><label>Alt text</label><input id="mediaUploadAlt" type="text" value="${esc(uploadDraft.alt_text)}"></div>
           <div class="admin-field">
             <label>Media type</label>
@@ -581,7 +664,11 @@
           <div class="admin-field"><label>Port</label><input id="mediaUploadPort" type="text" value="${esc(uploadDraft.port_name)}"></div>
           <div class="admin-field"><label>Tags</label><input id="mediaUploadTags" type="text" value="${esc(uploadDraft.tags)}" placeholder="sunset, caldera"></div>
         </div>
-        <label class="featured-inc"><input id="mediaUploadDefault" type="checkbox" ${uploadDraft.is_default ? "checked" : ""}> Set as default for this ship/destination</label>
+        <label class="featured-inc"><input id="mediaUploadDefault" type="checkbox" ${uploadDraft.is_default ? "checked" : ""}> ${
+          multi
+            ? "Set first image as default for this ship/destination"
+            : "Set as default for this ship/destination"
+        }</label>
       </div>
     `;
   }
@@ -1086,6 +1173,7 @@
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     onMediaFileChosen,
+    removeUploadFile,
     submitMediaUpload: () => submitMediaUpload(),
     submitPickerUpload,
     openPickerUpload,

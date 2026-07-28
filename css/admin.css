@@ -4385,6 +4385,42 @@
   margin-bottom: 12px;
 }
 
+.media-upload-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.media-upload-preview-grid.is-multi {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+}
+
+.media-upload-preview-item {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f2f5f4;
+  border: 1px solid var(--admin-border, #e3e8e5);
+  padding-bottom: 8px;
+}
+
+.media-upload-preview-item img {
+  width: 100%;
+  display: block;
+  max-height: 180px;
+  object-fit: contain;
+  background: #f8faf9;
+}
+
+.media-upload-preview-item .admin-small {
+  margin: 6px 10px 0;
+  word-break: break-word;
+}
+
+.media-upload-remove {
+  margin: 8px 10px 0;
+}
+
 .media-editor-flags {
   display: flex;
   flex-wrap: wrap;
