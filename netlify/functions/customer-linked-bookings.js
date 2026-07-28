@@ -16,7 +16,7 @@ const {
   bookingIdentityKey,
   rejectSurnameSearchBody
 } = require("./lib/customer-linked-bookings-core");
-const { expandTerminalNumeralVariants, normaliseText } = require("./lib/resolve-cruise-ship");
+const { resolveCruiseShip, filterSupabaseByLine } = require("./lib/resolve-cruise-ship");
 
 async function loadSessionBookingRow(session) {
   const bookingId = String(session.booking_id || "").trim();
@@ -70,33 +70,64 @@ async function loadCandidateRows(sessionBooking) {
   return Array.isArray(rows) ? rows : [];
 }
 
-async function resolveHeroByShipNames(shipNames) {
-  const names = [...new Set((shipNames || []).map((n) => String(n || "").trim()).filter(Boolean))];
-  const heroByShip = {};
-  if (!names.length) return heroByShip;
-
-  // Targeted lookups only — never page the full ship catalogue (was multi-second).
-  await Promise.all(
-    names.map(async (name) => {
-      const variants = [...new Set([normaliseText(name), ...expandTerminalNumeralVariants(name)])].filter(Boolean);
-      for (const variant of variants) {
-        try {
-          const rows = await supabaseRest(
-            `ci_cruise_ships?select=name,hero_image_url&active=eq.true&name=ilike.${encodeURIComponent(variant)}&limit=3`
-          );
-          const page = Array.isArray(rows) ? rows : [];
-          const hit = page.find((row) => row?.hero_image_url);
-          if (hit?.hero_image_url) {
-            heroByShip[name] = hit.hero_image_url;
-            heroByShip[name.toLowerCase()] = hit.hero_image_url;
-            return;
-          }
-        } catch {
-          /* ignore per-ship lookup failure */
-        }
+async function resolveHeroByShipNames(shipEntries) {
+  const entries = (shipEntries || [])
+    .map((entry) => {
+      if (entry && typeof entry === "object") {
+        return {
+          shipName: String(entry.shipName || entry.cruise_ship || "").trim(),
+          cruiseLine: String(entry.cruiseLine || entry.cruise_line || "").trim()
+        };
       }
+      return { shipName: String(entry || "").trim(), cruiseLine: "" };
     })
-  );
+    .filter((e) => e.shipName);
+
+  const heroByShip = {};
+  if (!entries.length) return heroByShip;
+
+  // Load active ships once with line context for shared resolver.
+  let ships = [];
+  try {
+    let offset = 0;
+    const pageSize = 200;
+    while (offset < 1200) {
+      const rows = await supabaseRest(
+        `ci_cruise_ships?select=id,name,hero_image_url,cruise_line_id,ci_cruise_lines(id,name)&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`
+      );
+      const page = Array.isArray(rows) ? rows : [];
+      if (!page.length) break;
+      for (const row of page) {
+        ships.push({
+          id: row.id,
+          name: row.name,
+          hero_image_url: row.hero_image_url || null,
+          cruise_line_name: row.ci_cruise_lines?.name || "",
+          cruise_line: row.ci_cruise_lines?.name || ""
+        });
+      }
+      if (page.length < pageSize) break;
+      offset += pageSize;
+    }
+  } catch (error) {
+    console.warn("linked-bookings ship catalogue load failed", error.message || error);
+    return heroByShip;
+  }
+
+  for (const { shipName, cruiseLine } of entries) {
+    if (heroByShip[shipName]) continue;
+    const scoped = filterSupabaseByLine(ships, cruiseLine);
+    const resolution = resolveCruiseShip(
+      scoped.length ? scoped : ships,
+      shipName,
+      cruiseLine,
+      []
+    );
+    if (resolution.status === "matched" && resolution.ship?.hero_image_url) {
+      heroByShip[shipName] = resolution.ship.hero_image_url;
+      heroByShip[shipName.toLowerCase()] = resolution.ship.hero_image_url;
+    }
+  }
 
   return heroByShip;
 }
@@ -134,7 +165,12 @@ exports.handler = async function (event) {
 
     const sessionBooking = await loadSessionBookingRow(session);
     const candidates = await loadCandidateRows(sessionBooking);
-    const heroByShip = await resolveHeroByShipNames(candidates.map((r) => r.cruise_ship));
+    const heroByShip = await resolveHeroByShipNames(
+      candidates.map((r) => ({
+        shipName: r.cruise_ship,
+        cruiseLine: r.cruise_line
+      }))
+    );
     const bookings = buildLinkedBookingCards(sessionBooking, candidates, { secret, heroByShip });
 
     const linkedCount = bookings.length;

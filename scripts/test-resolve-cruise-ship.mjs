@@ -8,6 +8,7 @@ const require = createRequire(import.meta.url);
 
 const {
   expandTerminalNumeralVariants,
+  expandLineAwareNameVariants,
   resolveCruiseLineAlias,
   canonicalCruiseLineDisplayName,
   resolveCruiseShip,
@@ -23,7 +24,27 @@ const ships = [
   { id: "e1", name: "EXPLORA I", cruise_line_name: "Explora Journeys" },
   { id: "e2", name: "EXPLORA II", cruise_line_name: "Explora Journeys" },
   { id: "e3", name: "EXPLORA III", cruise_line_name: "Explora Journeys" },
-  { id: "m1", name: "Millennium", cruise_line_name: "Celebrity Cruises" },
+  { id: "m1", name: "Millennium", cruise_line_name: "Celebrity Cruises", hero_image_url: "https://cdn.example/millennium.jpg" },
+  { id: "cm1", name: "Celebrity Millennium", cruise_line_name: "Celebrity Cruises", hero_image_url: "https://cdn.example/celebrity-millennium.jpg" },
+  {
+    id: "sp1",
+    name: "Sapphire Princess",
+    cruise_line_name: "Princess Cruises",
+    hero_image_url: "https://cdn.example/sapphire-princess.jpg"
+  },
+  {
+    id: "gp1",
+    name: "Grand Princess",
+    cruise_line_name: "Princess Cruises",
+    hero_image_url: "https://cdn.example/grand-princess.jpg"
+  },
+  {
+    id: "ns1",
+    name: "Norwegian Star",
+    cruise_line_name: "Norwegian Cruise Line",
+    hero_image_url: "https://cdn.example/norwegian-star.jpg"
+  },
+  { id: "rs1", name: "Star Princess", cruise_line_name: "Princess Cruises" },
   { id: "q1", name: "Queen Elizabeth", cruise_line_name: "Cunard" },
   { id: "r1", name: "Symphony of the Seas", cruise_line_name: "Royal Caribbean International" }
 ];
@@ -69,6 +90,10 @@ assert(
   resolveCruiseLineAlias("Celebrity Cruises") === "celebrity cruises",
   "unrelated lines are not aliased"
 );
+assert(
+  expandLineAwareNameVariants("Sapphire", "Princess Cruises").includes("sapphire princess"),
+  "Princess suffix variant"
+);
 
 const explora1 = resolveCruiseShip(ships, "Explora 1", "Explora Cruises");
 assert(explora1.status === "matched" && explora1.ship.name === "EXPLORA I", "Explora 1 → EXPLORA I");
@@ -88,6 +113,45 @@ assert(
 const millennium = resolveCruiseShip(ships, "Millennium", "Celebrity");
 assert(millennium.status === "matched" && millennium.ship.id === "m1", "Celebrity Millennium still resolves");
 
+const celebrityMillennium = resolveCruiseShip(
+  ships.filter((s) => s.id !== "m1"),
+  "Millennium",
+  "Celebrity Cruises"
+);
+assert(
+  celebrityMillennium.status === "matched" && celebrityMillennium.ship.name === "Celebrity Millennium",
+  "Millennium + Celebrity Cruises → Celebrity Millennium"
+);
+assert(
+  celebrityMillennium.ship.hero_image_url.includes("celebrity-millennium"),
+  "Celebrity Millennium default hero returned"
+);
+
+const sapphire = resolveCruiseShip(ships, "Sapphire", "Princess Cruises");
+assert(sapphire.status === "matched" && sapphire.ship.name === "Sapphire Princess", "Sapphire + Princess → Sapphire Princess");
+assert(
+  sapphire.ship.hero_image_url === "https://cdn.example/sapphire-princess.jpg",
+  "Sapphire Princess default hero returned"
+);
+
+const grand = resolveCruiseShip(ships, "Grand", "Princess Cruises");
+assert(grand.status === "matched" && grand.ship.name === "Grand Princess", "Grand + Princess → Grand Princess");
+
+const norwegianStar = resolveCruiseShip(ships, "Star", "Norwegian Cruise Lines");
+assert(
+  norwegianStar.status === "matched" && norwegianStar.ship.name === "Norwegian Star",
+  "Star + Norwegian Cruise Lines → Norwegian Star"
+);
+
+const starNoLine = resolveCruiseShip(ships, "Star", "");
+assert(starNoLine.status === "not_found" || starNoLine.status === "ambiguous", "Star without cruise line is not guessed");
+
+const starPrincess = resolveCruiseShip(ships, "Star", "Princess Cruises");
+assert(
+  starPrincess.status === "matched" && starPrincess.ship.name === "Star Princess",
+  "Star + Princess Cruises → Star Princess (line-scoped)"
+);
+
 const scoped = filterSupabaseByLine(ships, "Explora Cruises");
 assert(
   scoped.every((s) => normaliseText(s.cruise_line_name).includes("explora")),
@@ -103,6 +167,16 @@ const ambiguous = resolveCruiseShip(
   ""
 );
 assert(ambiguous.status === "ambiguous", "ambiguous matches fail safely");
+
+const ambiguousSameLine = resolveCruiseShip(
+  [
+    { id: "a", name: "Sapphire Dream", cruise_line_name: "Princess Cruises" },
+    { id: "b", name: "Sapphire Jewel", cruise_line_name: "Princess Cruises" }
+  ],
+  "Sapphire",
+  "Princess Cruises"
+);
+assert(ambiguousSameLine.status === "ambiguous", "ambiguous same-line candidates return no hero");
 
 const missing = resolveCruiseShip(ships, "Does Not Exist", "Explora Cruises");
 assert(missing.status === "not_found", "unknown ships fail safely");

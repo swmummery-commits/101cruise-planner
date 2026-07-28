@@ -13,6 +13,7 @@
   let mediaSearchQuery = "";
   let mediaTypeFilter = "all";
   let mediaActiveFilter = "active";
+  let mediaSearchDebounce = null;
   let editingMediaId = null;
   let showMediaUpload = false;
   let mediaSaving = false;
@@ -689,7 +690,6 @@
       `;
     }
 
-    const rows = filteredMediaItems();
     const msgClass =
       mediaMessageTone === "error"
         ? "admin-error"
@@ -711,8 +711,8 @@
         </div>
         <div class="featured-cruises-toolbar">
           <div class="admin-field">
-            <label>Search</label>
-            <input type="search" value="${esc(mediaSearchQuery)}" placeholder="Title, ship, destination, tags…" oninput="MediaLibraryAdmin.setSearch(this.value)">
+            <label for="media-library-search">Search</label>
+            <input id="media-library-search" type="search" value="${esc(mediaSearchQuery)}" placeholder="Title, ship, destination, tags…" oninput="MediaLibraryAdmin.setSearch(this.value)" autocomplete="off">
           </div>
           <div class="admin-field">
             <label>Type</label>
@@ -736,15 +736,31 @@
           </div>
         </div>
         <div class="admin-message ${msgClass}">${esc(mediaMessage)}</div>
-        ${mediaLoading ? `<p class="admin-muted">Loading media…</p>` : ""}
-        ${
-          !mediaLoading && !rows.length
-            ? `<div class="admin-card featured-cruise-empty"><p class="admin-muted">No images yet. Upload the first one.</p></div>`
-            : `<div class="media-library-grid">${rows.map(renderMediaCard).join("")}</div>`
-        }
+        <div id="media-library-results">
+          ${renderMediaResultsHtml()}
+        </div>
       </div>
       ${renderMediaPickerModal()}
     `;
+  }
+
+  function renderMediaResultsHtml() {
+    const rows = filteredMediaItems();
+    if (mediaLoading) return `<p class="admin-muted">Loading media…</p>`;
+    if (!rows.length) {
+      return `<div class="admin-card featured-cruise-empty"><p class="admin-muted">No images yet. Upload the first one.</p></div>`;
+    }
+    return `<div class="media-library-grid">${rows.map(renderMediaCard).join("")}</div>`;
+  }
+
+  function refreshMediaResultsOnly() {
+    const mount =
+      typeof document !== "undefined" ? document.getElementById("media-library-results") : null;
+    if (!mount) {
+      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      return;
+    }
+    mount.innerHTML = renderMediaResultsHtml();
   }
 
   function pickerCandidateRows() {
@@ -1005,12 +1021,26 @@
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
     setSearch(value) {
-      mediaSearchQuery = value;
-      if (typeof global.renderAdmin === "function") global.renderAdmin();
+      mediaSearchQuery = String(value == null ? "" : value);
+      // Keep the search input mounted — only refresh the results grid.
+      if (mediaSearchDebounce) clearTimeout(mediaSearchDebounce);
+      mediaSearchDebounce = setTimeout(() => {
+        mediaSearchDebounce = null;
+        refreshMediaResultsOnly();
+      }, 180);
     },
     setTypeFilter(value) {
       mediaTypeFilter = value;
+      // Filters can re-render the panel; search text is preserved via mediaSearchQuery.
       if (typeof global.renderAdmin === "function") global.renderAdmin();
+      // Restore search focus after filter re-render if the field exists.
+      if (typeof document !== "undefined") {
+        const input = document.getElementById("media-library-search");
+        if (input && document.activeElement === input) {
+          const end = input.value.length;
+          input.setSelectionRange(end, end);
+        }
+      }
     },
     setActiveFilter(value) {
       mediaActiveFilter = value;

@@ -1,6 +1,7 @@
 /**
- * Deterministic cruise-ship resolution for Client Portal get-ship.
- * Supports terminal Roman ↔ Arabic numeral variants and deliberate cruise-line aliases.
+ * Deterministic cruise-ship resolution for Client Portal get-ship / linked bookings.
+ * Supports terminal Roman ↔ Arabic numeral variants, deliberate cruise-line aliases,
+ * and safe line-aware prefix/suffix variants (e.g. Sapphire → Sapphire Princess).
  */
 
 "use strict";
@@ -33,13 +34,42 @@ const ARABIC_TO_ROMAN = Object.freeze({
 
 /** Deliberate cruise-line aliases only — do not broaden matching globally. */
 const CRUISE_LINE_ALIASES = Object.freeze({
-  "explora cruises": "explora journeys"
+  "explora cruises": "explora journeys",
+  "norwegian cruise lines": "norwegian cruise line",
+  "ncl": "norwegian cruise line"
 });
 
 /** Display / storage canonical names for known booking-side aliases. */
 const CRUISE_LINE_DISPLAY_ALIASES = Object.freeze({
   "explora cruises": "Explora Journeys"
 });
+
+/**
+ * Safe line-aware ship name affixes. Only applied when cruise line is known.
+ * Never used for cross-line guessing.
+ */
+const LINE_SHIP_AFFIXES = Object.freeze([
+  {
+    lineIncludes: ["princess"],
+    suffixes: ["princess"],
+    prefixes: []
+  },
+  {
+    lineIncludes: ["celebrity"],
+    suffixes: [],
+    prefixes: ["celebrity"]
+  },
+  {
+    lineIncludes: ["norwegian"],
+    suffixes: [],
+    prefixes: ["norwegian"]
+  },
+  {
+    lineIncludes: ["holland america"],
+    suffixes: [],
+    prefixes: ["ms"]
+  }
+]);
 
 function normaliseText(value) {
   return String(value || "")
@@ -92,6 +122,37 @@ function nameVariants(name, aliasRows = []) {
   return [...variants].filter(Boolean);
 }
 
+/**
+ * Build safe line-aware name variants (Sapphire + Princess → sapphire princess).
+ * Requires a cruise line. Does not invent cross-line matches.
+ */
+function expandLineAwareNameVariants(shipName, cruiseLine) {
+  const line = resolveCruiseLineAlias(cruiseLine);
+  const bases = nameVariants(shipName, []);
+  const out = new Set(bases);
+  if (!line || !bases.length) return [...out];
+
+  for (const rule of LINE_SHIP_AFFIXES) {
+    if (!rule.lineIncludes.some((token) => line.includes(token))) continue;
+    for (const base of bases) {
+      for (const suffix of rule.suffixes || []) {
+        if (!base.endsWith(` ${suffix}`) && base !== suffix) {
+          out.add(`${base} ${suffix}`);
+        }
+      }
+      for (const prefix of rule.prefixes || []) {
+        if (!base.startsWith(`${prefix} `) && base !== prefix) {
+          out.add(`${prefix} ${base}`);
+        }
+      }
+    }
+  }
+
+  // Also try "<line brand token> <ship>" using the first significant line word when useful
+  // (already covered by LINE_SHIP_AFFIXES for known brands).
+  return [...out].filter(Boolean);
+}
+
 function dedupeShips(rows) {
   const seen = new Set();
   const result = [];
@@ -126,6 +187,15 @@ function shipMatchesAnyVariant(shipName, targetVariants) {
   return shipVariants.some((v) => targetVariants.includes(v));
 }
 
+function shipRowLineName(row) {
+  return (
+    row?.cruise_line_name ||
+    row?.cruise_line ||
+    row?.ci_cruise_lines?.name ||
+    ""
+  );
+}
+
 /**
  * @param {Array<object>} ships
  * @param {string} shipName
@@ -135,6 +205,8 @@ function shipMatchesAnyVariant(shipName, targetVariants) {
 function resolveCruiseShip(ships, shipName, cruiseLine, aliases = []) {
   const targetVariants = nameVariants(shipName, []);
   const line = resolveCruiseLineAlias(cruiseLine);
+  const lineAwareVariants = expandLineAwareNameVariants(shipName, cruiseLine);
+  const allTargetVariants = [...new Set([...targetVariants, ...lineAwareVariants])];
 
   if (!targetVariants.length) return { status: "not_found" };
 
@@ -145,6 +217,7 @@ function resolveCruiseShip(ships, shipName, cruiseLine, aliases = []) {
   });
   const aliasShipIds = new Set(aliasHits.map((a) => String(a.ship_id)).filter(Boolean));
 
+  // 1. Exact normalised ship name (+ numeral / alias variants)
   const exact = ships.filter(
     (row) =>
       shipMatchesAnyVariant(row?.name, targetVariants) ||
@@ -153,15 +226,37 @@ function resolveCruiseShip(ships, shipName, cruiseLine, aliases = []) {
   const step1 = resolveUniqueCandidates(exact);
   if (step1) return step1;
 
+  // 2. Line-aware affix / composed variants (Sapphire Princess, Norwegian Star, …)
+  if (line && lineAwareVariants.length) {
+    const affixMatches = ships.filter((row) => {
+      const name = normaliseText(row?.name);
+      return lineAwareVariants.includes(name);
+    });
+    // Prefer same-line when available
+    const sameLineAffix = affixMatches.filter((row) => {
+      const rowLine = resolveCruiseLineAlias(shipRowLineName(row));
+      if (!rowLine) return true;
+      return (
+        rowLine === line ||
+        rowLine.includes(line) ||
+        line.includes(rowLine) ||
+        linePrefixCompatible(rowLine, line)
+      );
+    });
+    const step2a = resolveUniqueCandidates(sameLineAffix.length ? sameLineAffix : affixMatches);
+    if (step2a) return step2a;
+  }
+
   if (line) {
     const composedTargets = targetVariants.map((t) => `${line} ${t}`);
     const composedMatches = ships.filter((row) =>
       composedTargets.includes(normaliseText(row?.name))
     );
-    const step2 = resolveUniqueCandidates(composedMatches);
-    if (step2) return step2;
+    const step2b = resolveUniqueCandidates(composedMatches);
+    if (step2b) return step2b;
   }
 
+  // 3. Existing suffix-with-line-prefix rule (Celebrity Millennium style)
   if (line) {
     const suffixMatches = ships.filter((row) => {
       const name = normaliseText(row?.name);
@@ -177,6 +272,29 @@ function resolveCruiseShip(ships, shipName, cruiseLine, aliases = []) {
     if (step3) return step3;
   }
 
+  // 4. Unique normalised candidate within the same cruise line only
+  if (line) {
+    const sameLine = ships.filter((row) => {
+      const rowLine = resolveCruiseLineAlias(shipRowLineName(row));
+      if (!rowLine) return false;
+      return (
+        rowLine === line ||
+        rowLine.includes(line) ||
+        line.includes(rowLine) ||
+        linePrefixCompatible(rowLine, line)
+      );
+    });
+
+    const uniqueLineHits = sameLine.filter((row) => {
+      const name = normaliseText(row?.name);
+      return allTargetVariants.some(
+        (t) => name === t || name.startsWith(`${t} `) || name.endsWith(` ${t}`)
+      );
+    });
+    const step4 = resolveUniqueCandidates(uniqueLineHits);
+    if (step4) return step4;
+  }
+
   return { status: "not_found" };
 }
 
@@ -184,7 +302,7 @@ function filterSupabaseByLine(ships, cruiseLine) {
   const line = resolveCruiseLineAlias(cruiseLine);
   if (!line) return ships;
   return ships.filter((row) => {
-    const name = resolveCruiseLineAlias(row.cruise_line_name || row.cruise_line || "");
+    const name = resolveCruiseLineAlias(shipRowLineName(row));
     if (!name) return true;
     return (
       name === line ||
@@ -200,12 +318,14 @@ module.exports = {
   resolveCruiseLineAlias,
   canonicalCruiseLineDisplayName,
   expandTerminalNumeralVariants,
+  expandLineAwareNameVariants,
   nameVariants,
   resolveCruiseShip,
   filterSupabaseByLine,
   linePrefixCompatible,
   CRUISE_LINE_ALIASES,
   CRUISE_LINE_DISPLAY_ALIASES,
+  LINE_SHIP_AFFIXES,
   ROMAN_TO_ARABIC,
   ARABIC_TO_ROMAN
 };
