@@ -132,17 +132,27 @@ function createPreviewCruiseFromBase44Booking(booking) {
 }
 
 function renderInvitationIntro() {
-  const bid = pendingInvitationBid || getStoredInvitationBookingId();
-  if (!bid) return "";
+  // Legacy invitation/account-creation intro retired — My Cruise is booking-number access only.
+  return "";
+}
 
-  return `
-    <div class="planner-card invitation-card">
-      <p class="planner-kicker">101CRUISE invitation</p>
-      <h2>Welcome to your cruise planner</h2>
-      <p class="planner-muted">Create your password or sign in below. Your cruise booking will be retrieved automatically and added to My Cruise.</p>
-      ${invitationSyncMessage ? `<div class="planner-message ${invitationSyncMessage.toLowerCase().includes("error") ? "planner-error" : "planner-success"}">${escapeHtml(invitationSyncMessage)}</div>` : ""}
-    </div>
-  `;
+/**
+ * Clears obsolete planner-account / invitation state without touching a valid
+ * booking-number HMAC customer session.
+ */
+async function clearLegacyPlannerAccountState() {
+  clearStoredInvitationBookingId();
+  invitationSyncMessage = "";
+  invitationSyncLoading = false;
+  try {
+    await supabaseClient.auth.signOut();
+  } catch {
+    /* ignore */
+  }
+  if (!customerMode) {
+    currentUser = null;
+    currentProfile = null;
+  }
 }
 
 function calculateCruiseNights(departingDate, arrivingDate) {
@@ -379,7 +389,6 @@ function renderCustomerAccess(message = "", isError = false) {
         <label class="customer-remember-row"><input id="rememberCustomerBooking" type="checkbox" checked><span>Remember me on this device</span></label>
         <button id="customerAccessButton" class="planner-button black customer-access-button" onclick="accessMyCruise()">Open My Cruise</button>
         <div id="customer-access-message" class="planner-message ${isError ? "planner-error" : ""}">${escapeHtml(message)}</div>
-        <details class="customer-existing-account"><summary>Use an existing planner account</summary><div class="customer-account-login"><input id="signinEmail" type="email" placeholder="Email address"><input id="signinPassword" type="password" placeholder="Password"><button class="planner-button secondary" onclick="signIn()">Sign In</button><div id="signin-message" class="planner-message"></div></div></details>
       </section>
     </main>`;
 }
@@ -640,122 +649,30 @@ async function customerDocumentsRequest(action, payload = {}) {
   return data;
 }
 
-function renderLogin() {
-  clearCountdownTimer();
-
-  app.innerHTML = `
-    ${renderInvitationIntro()}
-    <div class="planner-grid auth-grid">
-      <div class="planner-card auth-card">
-        <h2>Create Account</h2>
-        <p class="planner-muted">Create your free account to start planning your cruise.</p>
-
-        <div class="planner-field">
-          <label>First name</label>
-          <input type="text" id="signupFirstName" placeholder="Steve">
-        </div>
-
-        <div class="planner-field">
-          <label>Last name</label>
-          <input type="text" id="signupLastName" placeholder="Smith">
-        </div>
-
-        <div class="planner-field">
-          <label>Email address</label>
-          <input type="email" id="signupEmail" placeholder="you@example.com">
-        </div>
-
-        <div class="planner-field">
-          <label>Password</label>
-          <input type="password" id="signupPassword" placeholder="Minimum 6 characters">
-        </div>
-
-        <button class="planner-button" onclick="signUp()">Create Account</button>
-        <div id="signup-message" class="planner-message"></div>
-      </div>
-
-      <div class="planner-card auth-card">
-        <h2>Sign In</h2>
-        <p class="planner-muted">Already have an account? Sign in to continue planning.</p>
-
-        <div class="planner-field">
-          <label>Email address</label>
-          <input type="email" id="signinEmail" placeholder="you@example.com">
-        </div>
-
-        <div class="planner-field">
-          <label>Password</label>
-          <input type="password" id="signinPassword">
-        </div>
-
-        <button class="planner-button black" onclick="signIn()">Sign In</button>
-        <div id="signin-message" class="planner-message"></div>
-      </div>
-    </div>
-  `;
+/**
+ * Legacy Create Account / email-password Sign In screen — retired.
+ * Any stale call clears obsolete planner-account state and shows booking login.
+ */
+async function renderLogin() {
+  await clearLegacyPlannerAccountState();
+  renderCustomerAccess();
 }
 
 async function signUp() {
-  const firstName = document.getElementById("signupFirstName").value.trim();
-  const lastName = document.getElementById("signupLastName").value.trim();
-  const email = document.getElementById("signupEmail").value.trim();
-  const password = document.getElementById("signupPassword").value;
-
-  const { data, error } = await supabaseClient.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        first_name: firstName,
-        last_name: lastName
-      }
-    }
-  });
-
-  if (error) {
-    document.getElementById("signup-message").innerText = error.message;
-    return;
-  }
-
-  if (data.session && data.user) {
-    currentUser = data.user;
-    await ensureProfile();
-    await loadProfile();
-    await syncInvitationBookingForCurrentUser();
-    renderDashboard();
-    return;
-  }
-
-  document.getElementById("signup-message").innerText = "Account created. Please check your email to confirm your account, then sign in here to open My Cruise.";
+  await renderLogin();
 }
 
 async function signIn() {
-  const email = document.getElementById("signinEmail").value.trim();
-  const password = document.getElementById("signinPassword").value;
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({
-    email,
-    password
-  });
-
-  if (error) {
-    document.getElementById("signin-message").innerText = error.message;
-    return;
-  }
-
-  currentUser = data.user;
-  await ensureProfile();
-  await loadProfile();
-  await syncInvitationBookingForCurrentUser();
-  renderDashboard();
+  await renderLogin();
 }
 
 async function signOut() {
-  if (customerMode) { changeCustomerBooking(); return; }
-  await supabaseClient.auth.signOut();
-  currentUser = null;
-  currentProfile = null;
-  renderLogin();
+  if (customerMode) {
+    changeCustomerBooking();
+    return;
+  }
+  await clearLegacyPlannerAccountState();
+  renderCustomerAccess();
 }
 
 async function ensureProfile() {
@@ -2908,14 +2825,14 @@ async function renderDashboard() {
         <section class="dashboard-empty-hero">
           <h1>My Cruise Planner</h1>
           <p>Welcome, ${escapeHtml(firstName)}. Add your cruise to activate your personal dashboard.</p>
-          <button class="planner-button secondary" onclick="signOut()">Sign Out</button>
+          <button class="planner-button secondary" onclick="changeCustomerBooking()">Sign Out</button>
         </section>
       `}
 
       <div class="dashboard-content-wrap${dashboardMobilePriorityActive ? " dashboard-mobile-priority-active" : ""}">
         <section class="dashboard-welcome-strip dashboard-quick-access-strip">
           ${renderDashboardQuickAccess()}
-          ${customerMode ? "" : renderCruiseSwitcher(safeCruises, mainCruise)}
+          ${"" /* Legacy planner-account Switch Cruise retired — customer Switch Booking only */}
         </section>
 
         <section class="dashboard-v2-grid">
@@ -5353,19 +5270,10 @@ async function initPlanner() {
     }
   }
 
-  captureInvitationBookingId();
-
-  const { data } = await supabaseClient.auth.getSession();
-
-  if (data.session) {
-    currentUser = data.session.user;
-    await ensureProfile();
-    await loadProfile();
-    await syncInvitationBookingForCurrentUser();
-    renderDashboard();
-  } else {
-    renderCustomerAccess();
-  }
+  // My Cruise no longer restores planner email/password accounts.
+  // Stale invitation or Supabase auth state returns to booking-number login only.
+  await clearLegacyPlannerAccountState();
+  renderCustomerAccess();
 }
 
 

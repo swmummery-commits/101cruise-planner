@@ -89,21 +89,6 @@ html, body {
     align-items: stretch;
   }
 
-  .auth-grid {
-    align-items: stretch;
-  }
-
-  .auth-card {
-    min-height: 480px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .auth-card .planner-button {
-    align-self: flex-start;
-    margin-top: auto;
-  }
-
   .planner-feature-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -3239,20 +3224,7 @@ html, body {
   color: #b85c5c !important;
 }
 
-/* Sprint 11A: Invitation onboarding */
-.invitation-card {
-  max-width: 920px;
-  margin: 32px auto 18px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-}
-
-.invitation-card h2 {
-  margin: 4px 0 8px;
-  font-size: 18px;
-  font-weight: 450;
-  color: #2c2c2c;
-}
+/* Sprint 11A: Invitation onboarding UI retired — booking-number access only */
 
 .planner-kicker {
   margin: 0;
@@ -3278,12 +3250,7 @@ html, body {
   padding: 10px 12px;
 }
 
-/* Centre the login / create-account cards */
-.auth-grid {
-  max-width: 920px;
-  margin-left: auto;
-  margin-right: auto;
-}
+/* Centre the login / create-account cards — retired with planner-account UI */
 
 /* =========================================================
    Sprint 11B - customer My Cruise landing polish
@@ -5280,25 +5247,6 @@ html, body {
 
 .customer-access-button {
   width: 100%;
-}
-
-.customer-existing-account {
-  margin-top: 24px;
-  border-top: 1px solid rgba(24, 32, 42, 0.1);
-  padding-top: 18px;
-  color: #66717d;
-}
-
-.customer-existing-account summary {
-  cursor: pointer;
-  text-align: center;
-  font-size: 0.88rem;
-}
-
-.customer-account-login {
-  display: grid;
-  gap: 10px;
-  margin-top: 14px;
 }
 
 @media (max-width: 520px) {
