@@ -611,6 +611,26 @@
     ].join("");
   }
 
+  function refreshMediaEditShipOptions() {
+    const lineId = document.getElementById("mediaEditLine")?.value || "";
+    const shipSelect = document.getElementById("mediaEditShip");
+    if (!shipSelect) return;
+    const previousShipId = shipSelect.value || "";
+    const stillValid =
+      previousShipId &&
+      ciShips().some(
+        (s) =>
+          s.id === previousShipId &&
+          s.active !== false &&
+          (!lineId || s.cruise_line_id === lineId)
+      );
+    shipSelect.innerHTML = shipOptionsHtml(lineId, stillValid ? previousShipId : "");
+  }
+
+  function onEditLineChange() {
+    refreshMediaEditShipOptions();
+  }
+
   function renderUploadForm({ compact = false } = {}) {
     const files = Array.isArray(uploadDraft.files) ? uploadDraft.files : [];
     const multi = files.length > 1;
@@ -677,6 +697,10 @@
     const row = mediaItems.find((m) => m.id === editingMediaId);
     if (!row) return `<p class="admin-muted">Media not found.</p>`;
     const isShip = row.media_type === "ship";
+    const derivedLineId =
+      row.cruise_line_id ||
+      ciShips().find((s) => s.id === row.ship_id)?.cruise_line_id ||
+      "";
     const shipName =
       row.ci_cruise_ships?.name ||
       ciShips().find((s) => s.id === row.ship_id)?.name ||
@@ -741,8 +765,8 @@
                     .join("")}
                 </select>
               </div>
-              <div class="admin-field"><label>Cruise line</label><select id="mediaEditLine">${lineOptionsHtml(row.cruise_line_id || "")}</select></div>
-              <div class="admin-field"><label>Ship</label><select id="mediaEditShip">${shipOptionsHtml(row.cruise_line_id || "", row.ship_id || "")}</select></div>
+              <div class="admin-field"><label>Cruise line</label><select id="mediaEditLine" onchange="MediaLibraryAdmin.onEditLineChange()">${lineOptionsHtml(derivedLineId)}</select></div>
+              <div class="admin-field"><label>Ship</label><select id="mediaEditShip">${shipOptionsHtml(derivedLineId, row.ship_id || "")}</select></div>
               <div class="admin-field"><label>Destination</label><input id="mediaEditDestination" type="text" value="${esc(row.destination_name || "")}"></div>
               <div class="admin-field"><label>Port</label><input id="mediaEditPort" type="text" value="${esc(row.port_name || "")}"></div>
               <div class="admin-field"><label>Tags</label><input id="mediaEditTags" type="text" value="${esc((row.tags || []).join(", "))}"></div>
@@ -1186,6 +1210,7 @@
       uploadDraft.ship_id = "";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     },
+    onEditLineChange,
     setSearch(value) {
       mediaSearchQuery = String(value == null ? "" : value);
       // Keep the search input mounted — only refresh the results grid.
