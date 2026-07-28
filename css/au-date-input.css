@@ -1,0 +1,76 @@
+/* AU segmented date inputs (DD / MM / YYYY) — replaces native type=date UX */
+
+.au-date-native {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.au-date-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--admin-border, #d0d7d4);
+  border-radius: 8px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.au-date-input:focus-within {
+  border-color: #1f4f46;
+  box-shadow: 0 0 0 2px rgba(31, 79, 70, 0.15);
+}
+
+.au-date-part {
+  border: 0;
+  background: transparent;
+  text-align: center;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 0;
+  min-width: 0;
+  outline: none;
+  color: inherit;
+}
+
+.au-date-day,
+.au-date-month {
+  width: 2.1ch;
+}
+
+.au-date-year {
+  width: 4.2ch;
+}
+
+.au-date-sep {
+  color: #6b7280;
+  user-select: none;
+  line-height: 1;
+}
+
+/* Stretch nicely inside common admin/planner field layouts */
+.admin-field .au-date-input,
+label .au-date-input,
+.budget-form-grid .au-date-input,
+.calc-inline-date + .au-date-input,
+td .au-date-input {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.calc-inline-input.calc-inline-date.au-date-native + .au-date-input,
+.calc-inline-date.au-date-native + .au-date-input {
+  min-height: 32px;
+  padding: 4px 6px;
+}
