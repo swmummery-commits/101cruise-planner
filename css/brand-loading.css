@@ -1,6 +1,6 @@
 /**
  * Shared 101cruise loading indicator: 3×3 grid of nine red logo squares.
- * Random short flash sequences loop continuously (driven by js/brand-loading.js).
+ * Thin white lines between squares (logo-style). Random flash via js/brand-loading.js.
  */
 
 :root {
@@ -8,14 +8,16 @@
 }
 
 .brand-loading-boxes {
-  --brand-loading-size: 6px;
-  --brand-loading-gap: 2.5px;
+  --brand-loading-size: 7px;
+  --brand-loading-gap: 1px;
   display: inline-grid;
   grid-template-columns: repeat(3, var(--brand-loading-size));
   grid-template-rows: repeat(3, var(--brand-loading-size));
   gap: var(--brand-loading-gap);
   width: calc(3 * var(--brand-loading-size) + 2 * var(--brand-loading-gap));
   height: calc(3 * var(--brand-loading-size) + 2 * var(--brand-loading-gap));
+  padding: var(--brand-loading-gap);
+  background: #fff;
   vertical-align: middle;
   flex: 0 0 auto;
   box-sizing: content-box;
@@ -25,7 +27,7 @@
   display: block;
   width: var(--brand-loading-size);
   height: var(--brand-loading-size);
-  border-radius: 1px;
+  border-radius: 0;
   background: var(--brand-loading-red);
   opacity: 0.2;
   transition: opacity 0.09s ease-out;
@@ -37,13 +39,13 @@
 
 .brand-loading-boxes--inline {
   --brand-loading-size: 5px;
-  --brand-loading-gap: 2px;
+  --brand-loading-gap: 1px;
   margin-right: 8px;
 }
 
 .brand-loading-boxes--large {
-  --brand-loading-size: 7px;
-  --brand-loading-gap: 3px;
+  --brand-loading-size: 8px;
+  --brand-loading-gap: 1px;
 }
 
 .brand-loading-boxes--static > span,
