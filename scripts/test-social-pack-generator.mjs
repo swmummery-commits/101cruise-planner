@@ -505,6 +505,8 @@ async function main() {
     assert(caption.includes("paul@101cruise.com.au"), "caption email");
     assert(caption.includes("101cruise.com.au"), "caption brand");
     assert(!caption.toLowerCase().includes("airline"), "caption no airline");
+    assert(!/US\$|FROM US\$|per person in USD|Ask Paul for his best price/i.test(caption), "caption has no pricing");
+    assert(caption.includes("Includes:") || !model.inclusions?.length, "caption keeps inclusions when present");
     passed += 1;
   }
 
