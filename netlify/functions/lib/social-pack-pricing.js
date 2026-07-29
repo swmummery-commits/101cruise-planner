@@ -1,7 +1,14 @@
 /**
  * Public-safe pricing selection for Social Pack.
- * Never accepts or returns airline_price or category.
+ *
+ * Rules:
+ * - One price card per cabin that has a public 101cruise price
+ * - Uses brochure_price + cruise_101_price only
+ * - Never accepts, selects, or returns airline_price, airfare, or category
+ * - Airline prices must never appear in social media posts or captions
  */
+
+const MAX_PUBLIC_OFFERS = 20;
 
 function parsePrice(value) {
   if (value === "" || value == null) return null;
@@ -90,15 +97,20 @@ function buildDiscountDisplay(brochure, discounted, nights) {
 function offerFromRow(row, nights) {
   const discount = buildDiscountDisplay(row.brochure_price, row.cruise_101_price, nights);
   const displayLabel = normaliseRoomLabel(row.room_label);
+  const showBrochure =
+    row.brochure_price != null &&
+    row.cruise_101_price != null &&
+    row.brochure_price > row.cruise_101_price;
   return {
     roomLabel: row.room_label,
     roomLabelDisplay: displayLabel,
     roomSlug: roomSlug(row.room_label),
-    brochurePrice: row.brochure_price,
+    brochurePrice: showBrochure ? row.brochure_price : null,
     cruise101Price: row.cruise_101_price,
     displayOrder: row.display_order,
     discount,
-    brochureLabel: row.brochure_price != null ? `US$${formatMoney(row.brochure_price)}` : null,
+    showBrochure,
+    brochureLabel: showBrochure ? `US$${formatMoney(row.brochure_price)}` : null,
     priceLabel: `US$${formatMoney(row.cruise_101_price)}`,
     priceLabelFrom: `FROM US$${formatMoney(row.cruise_101_price)} PP`,
     saveLabel:
@@ -122,10 +134,15 @@ function selectPublicOffer(rows, nights) {
 }
 
 /**
- * Up to `limit` public offers by display_order with valid cruise_101_price.
+ * Public offers by display_order — one card per cabin with a valid cruise_101_price.
+ * Optional `limit` caps count (default: all cabins, soft max MAX_PUBLIC_OFFERS).
+ * Airline / airfare / category are never included.
  */
-function selectPublicOffers(rows, nights, limit = 3) {
-  const max = Math.max(0, Math.min(3, Math.trunc(Number(limit) || 3)));
+function selectPublicOffers(rows, nights, limit = MAX_PUBLIC_OFFERS) {
+  const requested = Math.trunc(Number(limit));
+  const max = Number.isFinite(requested) && requested >= 0
+    ? Math.min(MAX_PUBLIC_OFFERS, requested)
+    : MAX_PUBLIC_OFFERS;
   const safe = sanitizePublicPricingRows(rows);
   const out = [];
   for (const row of safe) {
@@ -137,8 +154,28 @@ function selectPublicOffers(rows, nights, limit = 3) {
   return out;
 }
 
+/** Columns allowed for social pack — airline_price and category intentionally omitted. */
 const PUBLIC_PRICING_SELECT =
   "featured_cruise_id,room_label,brochure_price,cruise_101_price,display_order";
+
+/**
+ * Filter public offers to administrator-selected room labels (display_order preserved).
+ * `includedRoomLabels` null/undefined → keep all. Empty array → none.
+ */
+function filterOffersByRoomLabels(offers, includedRoomLabels) {
+  const list = Array.isArray(offers) ? offers : [];
+  if (includedRoomLabels == null) return list;
+  if (!Array.isArray(includedRoomLabels)) return list;
+  const wanted = new Set(
+    includedRoomLabels.map((s) => String(s || "").trim().toLowerCase()).filter(Boolean)
+  );
+  if (!wanted.size) return [];
+  return list.filter((offer) => {
+    const raw = String(offer.roomLabel || "").trim().toLowerCase();
+    const display = String(offer.roomLabelDisplay || "").trim().toLowerCase();
+    return wanted.has(raw) || wanted.has(display);
+  });
+}
 
 module.exports = {
   parsePrice,
@@ -150,5 +187,7 @@ module.exports = {
   buildDiscountDisplay,
   selectPublicOffer,
   selectPublicOffers,
-  PUBLIC_PRICING_SELECT
+  filterOffersByRoomLabels,
+  PUBLIC_PRICING_SELECT,
+  MAX_PUBLIC_OFFERS
 };

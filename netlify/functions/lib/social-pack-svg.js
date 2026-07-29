@@ -127,73 +127,10 @@ function frame(body) {
 </svg>`;
 }
 
-/** Slide 1 — Main cruise */
+/** Slide 1 — Main cruise (approved Concept A master template) */
 function renderMainCruiseSvg(model) {
-  const treatment = model.slideTreatments?.main || model.treatment || "soft";
-  const route = model.routeHeadline || model.destinationStrip || "";
-  const routeLines = String(route)
-    .split(/\n/)
-    .filter(Boolean);
-  // Split "A TO B" onto two lines when long
-  let headlineLines = routeLines;
-  if (headlineLines.length === 1 && / TO /.test(headlineLines[0]) && headlineLines[0].length > 22) {
-    headlineLines = headlineLines[0].split(/ TO /);
-    headlineLines = [headlineLines[0] + " TO", headlineLines.slice(1).join(" TO ")];
-  }
-
-  const portLines = wrapPortsLine(model.ports || [], 52);
-  let hy = 280;
-  const headline = headlineLines
-    .map((line, i) => {
-      const y = hy + i * 64;
-      return `<text x="540" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="54" font-weight="700">${escapeXml(
-        line
-      )}</text>`;
-    })
-    .join("\n");
-  hy += headlineLines.length * 64 + 18;
-
-  const aboard = model.aboardLine
-    ? `<text x="540" y="${hy}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="600">${escapeXml(
-        model.aboardLine
-      )}</text>`
-    : "";
-  hy += model.aboardLine ? 70 : 20;
-
-  const nights = model.nightsLabel
-    ? `<text x="540" y="${hy}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="34" font-weight="700">${escapeXml(
-        model.nightsLabel
-      )}</text>`
-    : "";
-  hy += model.nightsLabel ? 48 : 0;
-
-  const departing = model.departingLabel
-    ? `<text x="540" y="${hy}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="600">${escapeXml(
-        model.departingLabel
-      )}</text>`
-    : "";
-  hy += model.departingLabel ? 70 : 30;
-
-  const portsBlock = portLines
-    .map((line, i) => {
-      return `<text x="540" y="${hy + i * 36}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="22">${escapeXml(
-        line
-      )}</text>`;
-    })
-    .join("\n");
-
-  const body = `
-    ${destinationBackground(model, treatment)}
-    ${cruiseLineLogoBlock(model)}
-    ${headline}
-    ${aboard}
-    ${nights}
-    ${departing}
-    ${portsBlock}
-    ${brandLogoFooter(model, { y: H - FOOTER_H - 130, size: 64 })}
-    ${greenFooter()}
-  `;
-  return frame(body);
+  const { renderMasterConceptA } = require("./social-pack-master-slide");
+  return renderMasterConceptA(model);
 }
 
 /** Slide 2 — Journey with route map panel */
@@ -271,101 +208,14 @@ function softBurst(cx, cy, label, { fill = "#F5E6B8", text = "#111" } = {}) {
     </g>`;
 }
 
-/** Offer slide — one room */
+/** Offer slide — Canva pill pricing layout (clear destination photo) */
 function renderOfferSvg(model, offerIndex = 0) {
-  const treatment = model.slideTreatments?.offer || "strong";
-  const offer = (model.offers || [])[offerIndex] || model.offer;
-  const inclusion = model.primaryInclusion || (model.inclusions || [])[0] || "";
-
-  let panels = "";
-  let seals = "";
-  if (offer) {
-    panels = `
-      <rect x="70" y="250" width="620" height="110" rx="16" fill="${WHITE}" fill-opacity="0.95"/>
-      <text x="96" y="292" fill="#333" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="1">BROCHURE PRICE</text>
-      <text x="96" y="340" fill="#111" font-family="Helvetica, Arial, sans-serif" font-size="42" font-weight="700">${escapeXml(
-        offer.brochureLabel || "—"
-      )}<tspan font-size="18" font-weight="500"> PP</tspan></text>
-
-      <rect x="70" y="390" width="620" height="120" rx="16" fill="${WHITE}" fill-opacity="0.95"/>
-      <text x="96" y="436" fill="#333" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="1">101CRUISE PRICE</text>
-      <text x="96" y="488" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="48" font-weight="700">${escapeXml(
-        offer.priceLabel || ""
-      )}<tspan font-size="18" font-weight="500" fill="#111"> PP</tspan></text>
-    `;
-    if (offer.saveLabel) {
-      seals += softBurst(860, 360, offer.saveLabel.replace(/^SAVE\s+/i, "SAVE\n").slice(0, 18), {
-        text: RED
-      });
-      // Multi-line save handled simply as single line truncated
-      seals = `
-        <g>
-          <circle cx="860" cy="360" r="86" fill="#F5E6B8" fill-opacity="0.96"/>
-          <circle cx="860" cy="360" r="78" fill="none" stroke="#D4B86A" stroke-width="2"/>
-          <text x="860" y="352" text-anchor="middle" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="700">SAVE</text>
-          <text x="860" y="384" text-anchor="middle" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700">${escapeXml(
-            (offer.saveLabel || "").replace(/^SAVE\s+/i, "")
-          )}</text>
-        </g>`;
-    }
-    if (inclusion) {
-      seals += `
-        <g>
-          <circle cx="860" cy="560" r="86" fill="#F5E6B8" fill-opacity="0.96"/>
-          <circle cx="860" cy="560" r="78" fill="none" stroke="#D4B86A" stroke-width="2"/>
-          <text x="860" y="548" text-anchor="middle" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700">INCLUDES</text>
-          <text x="860" y="576" text-anchor="middle" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700">${escapeXml(
-            String(inclusion).slice(0, 22).toUpperCase()
-          )}</text>
-        </g>`;
-    }
-  } else {
-    panels = `
-      <rect x="70" y="320" width="940" height="180" rx="16" fill="${WHITE}" fill-opacity="0.95"/>
-      <text x="540" y="400" text-anchor="middle" fill="#111" font-family="Helvetica, Arial, sans-serif" font-size="36" font-weight="700">ASK PAUL FOR HIS BEST PRICE</text>
-      <text x="540" y="450" text-anchor="middle" fill="#444" font-family="Helvetica, Arial, sans-serif" font-size="22">Public pricing will appear when available</text>
-    `;
-  }
-
-  const roomBadge = offer
-    ? `
-      <rect x="70" y="170" width="420" height="52" rx="26" fill="#1e3a5f" fill-opacity="0.92"/>
-      <text x="280" y="204" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700">${escapeXml(
-        offer.roomLabelDisplay || offer.roomLabel || ""
-      )}</text>
-    `
-    : "";
-
-  const body = `
-    ${destinationBackground(model, treatment)}
-    ${cruiseLineLogoBlock(model)}
-    ${roomBadge}
-    ${panels}
-    ${seals}
-    <rect x="200" y="980" width="680" height="40" rx="20" fill="${WHITE}" fill-opacity="0.92"/>
-    <text x="540" y="1006" text-anchor="middle" fill="#222" font-family="Helvetica, Arial, sans-serif" font-size="15">All prices are per person in USD and subject to availability</text>
-    ${brandLogoFooter(model, { y: H - FOOTER_H - 120, size: 56 })}
-    ${greenFooter()}
-  `;
-  return frame(body);
+  return require("./social-pack-offer-cta").renderOfferSvg(model, offerIndex);
 }
 
-/** Final CTA */
+/** Final CTA — League Spartan + Great Vibes script */
 function renderCtaSvg(model) {
-  const treatment = model.slideTreatments?.cta || "strong";
-  // Typographic compromise for "Get your cruise on" — no bundled script font.
-  const scriptCompromise = true;
-  const body = `
-    ${destinationBackground(model, treatment)}
-    <text x="540" y="340" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="48" font-weight="700">TALK TO PAUL</text>
-    <text x="540" y="410" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="48" font-weight="700">TODAY</text>
-    <text x="540" y="560" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="56" font-style="italic" font-weight="500">Get your cruise on</text>
-    <text x="540" y="680" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="1">SIGN UP FOR WEEKLY CRUISE SPECIALS</text>
-    ${brandLogoFooter(model, { y: 820, size: 110 })}
-    ${greenFooter()}
-    <!-- script_font_compromise=${scriptCompromise} -->
-  `;
-  return frame(body);
+  return require("./social-pack-offer-cta").renderCtaSvg(model);
 }
 
 // Back-compat alias used by older tests

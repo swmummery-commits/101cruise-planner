@@ -1,5 +1,5 @@
 /**
- * Newsletter Issue Composer — Create Social Pack modal (destination-first).
+ * Newsletter Issue Composer — Create Social Pack modal (approved three-card pack).
  */
 (function (global) {
   "use strict";
@@ -16,6 +16,8 @@
   let socialMediaId = null;
   let imagePickerOpen = false;
   let imagePickerTab = "recommended";
+  /** @type {Record<string, string[]>} room_label lists keyed by cruise id */
+  let roomSelections = {};
 
   function esc(value) {
     return typeof global.esc === "function"
@@ -40,13 +42,44 @@
     return cruises.filter((c) => c.selected && c.readiness?.status !== "blocked");
   }
 
-  async function withAdminLoading(fn) {
+  function cruiseRooms(cruise) {
+    return Array.isArray(cruise?.offers) ? cruise.offers : [];
+  }
+
+  function ensureRoomDefaults(cruise) {
+    if (!cruise?.id) return;
+    if (roomSelections[cruise.id] != null) return;
+    roomSelections[cruise.id] = cruiseRooms(cruise).map((o) => o.room_label).filter(Boolean);
+  }
+
+  function includedRoomsFor(cruiseId) {
+    if (roomSelections[cruiseId] != null) return roomSelections[cruiseId];
+    const cruise = cruises.find((c) => c.id === cruiseId);
+    return cruiseRooms(cruise).map((o) => o.room_label).filter(Boolean);
+  }
+
+  function buildCruiseOptions(ids) {
+    const options = {};
+    for (const id of ids) {
+      options[id] = {
+        included_room_labels: includedRoomsFor(id)
+      };
+      if (id === previewId && socialMediaId) {
+        options[id].social_media_id = socialMediaId;
+      }
+    }
+    return options;
+  }
+
+  async function withAdminLoading(fn, { forZip = false } = {}) {
     if (global.AdminLoading?.withLoading) {
       return global.AdminLoading.withLoading(fn, {
         key: "social-pack",
         delayMs: 0,
-        message: "Creating your social graphics…",
-        supportMessage: "Please wait while we prepare the destination campaign."
+        message: forZip ? "Preparing your social pack…" : "Creating your social graphics…",
+        supportMessage: forZip
+          ? "Please wait while we create the newsletter graphics and captions."
+          : "Please wait while we prepare the destination campaign."
       });
     }
     return fn();
@@ -61,6 +94,7 @@
     socialMediaId = null;
     treatment = "soft";
     imagePickerOpen = false;
+    roomSelections = {};
     message = "Checking cruise readiness…";
     messageTone = "";
     cruises = (issueCruises || []).map((row) => ({
@@ -73,6 +107,7 @@
       returnDate: row.return_date || "",
       heroUrl: row.hero?.url || row.hero_image_url || "",
       selected: true,
+      offers: [],
       readiness: { status: "pending", label: "Checking…" }
     }));
     rerender();
@@ -92,7 +127,7 @@
       cruises = cruises.map((c) => {
         const remote = byId.get(c.id);
         if (!remote) return c;
-        return {
+        const next = {
           ...c,
           destination: remote.destination_strip || c.destination,
           line: remote.line_name || c.line,
@@ -101,8 +136,11 @@
           returnDate: remote.return_date || c.returnDate,
           heroUrl: remote.hero_url || c.heroUrl,
           readiness: remote.readiness || c.readiness,
+          offers: remote.offers || [],
           selected: remote.readiness?.status !== "blocked"
         };
+        ensureRoomDefaults(next);
+        return next;
       });
       const firstReady = cruises.find((c) => c.selected && c.readiness?.status !== "blocked");
       message = "";
@@ -129,6 +167,8 @@
     message = "";
     messageTone = "";
     imagePickerOpen = false;
+    const cruise = cruises.find((c) => c.id === id);
+    if (cruise) ensureRoomDefaults(cruise);
     rerender();
     try {
       await withAdminLoading(async () => {
@@ -140,7 +180,8 @@
             action: "preview",
             featured_cruise_id: id,
             treatment,
-            social_media_id: socialMediaId
+            social_media_id: socialMediaId,
+            included_room_labels: includedRoomsFor(id)
           })
         });
         const data = await response.json().catch(() => ({}));
@@ -148,8 +189,18 @@
           throw new Error(data.error || "Preview failed.");
         }
         preview = data;
-        message = "Preview ready.";
-        messageTone = "success";
+        if (cruise && Array.isArray(data.available_offers)) {
+          cruise.offers = data.available_offers;
+          ensureRoomDefaults(cruise);
+        }
+        const warnings = data.warnings || [];
+        if (warnings.includes("no_public_price") || !(data.offers || []).length) {
+          message = "No public room prices are available for this cruise.";
+          messageTone = "error";
+        } else {
+          message = "Preview ready.";
+          messageTone = "success";
+        }
       });
     } catch (error) {
       preview = null;
@@ -206,42 +257,114 @@
     if (next?.id) await useSocialImage(next.id);
   }
 
+  function toggleRoom(cruiseId, roomLabel) {
+    const cruise = cruises.find((c) => c.id === cruiseId);
+    if (!cruise || busy) return;
+    ensureRoomDefaults(cruise);
+    const current = new Set(roomSelections[cruiseId] || []);
+    if (current.has(roomLabel)) current.delete(roomLabel);
+    else current.add(roomLabel);
+    roomSelections[cruiseId] = Array.from(current);
+    // Preserve display_order from available offers
+    const order = cruiseRooms(cruise).map((o) => o.room_label);
+    roomSelections[cruiseId] = order.filter((label) => current.has(label));
+    rerender();
+  }
+
+  async function applyRoomSelectionAndPreview(cruiseId, roomLabel) {
+    toggleRoom(cruiseId, roomLabel);
+    if (previewId === cruiseId) await regeneratePreview();
+  }
+
   async function downloadZip() {
     const ids = selectedIds();
     if (!ids.length || busy) return;
     busy = true;
-    message = "Building Social Pack ZIP…";
+    message = "Preparing your social pack…";
     messageTone = "";
     rerender();
     try {
-      await withAdminLoading(async () => {
-        const headers = await authHeaders();
-        const response = await fetch("/.netlify/functions/social-pack-generate", {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            action: "download_issue",
-            newsletter_number: issueNumber,
-            featured_cruise_ids: ids,
-            treatment
-          })
-        });
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({}));
-          throw new Error(data.error || "Download failed.");
-        }
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `newsletter-${issueNumber}-social-pack.zip`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        message = "Social Pack ZIP downloaded.";
-        messageTone = "success";
-      });
+      await withAdminLoading(
+        async () => {
+          const headers = await authHeaders();
+          const response = await fetch("/.netlify/functions/social-pack-generate", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              action: "download_issue",
+              newsletter_number: issueNumber,
+              featured_cruise_ids: ids,
+              treatment,
+              cruise_options: buildCruiseOptions(ids)
+            })
+          });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || "Download failed.");
+          }
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `newsletter-${issueNumber}-social-pack.zip`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          message = "Social Pack ZIP downloaded.";
+          messageTone = "success";
+        },
+        { forZip: true }
+      );
+    } catch (error) {
+      message = error.message || "Download failed.";
+      messageTone = "error";
+    } finally {
+      busy = false;
+      rerender();
+    }
+  }
+
+  async function downloadThisCruise() {
+    if (!previewId || busy) return;
+    busy = true;
+    message = "Preparing your social pack…";
+    messageTone = "";
+    rerender();
+    try {
+      await withAdminLoading(
+        async () => {
+          const headers = await authHeaders();
+          const response = await fetch("/.netlify/functions/social-pack-generate", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              action: "download_cruise",
+              newsletter_number: issueNumber,
+              featured_cruise_id: previewId,
+              treatment,
+              social_media_id: socialMediaId,
+              included_room_labels: includedRoomsFor(previewId)
+            })
+          });
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || "Download failed.");
+          }
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `newsletter-${issueNumber}-cruise-social-pack.zip`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          message = "Cruise Social Pack downloaded.";
+          messageTone = "success";
+        },
+        { forZip: true }
+      );
     } catch (error) {
       message = error.message || "Download failed.";
       messageTone = "error";
@@ -265,6 +388,7 @@
     cruises = [];
     socialMediaId = null;
     imagePickerOpen = false;
+    roomSelections = {};
     message = "";
     if (typeof global.renderAdmin === "function") global.renderAdmin();
   }
@@ -280,6 +404,51 @@
     const idx = Math.max(0, ready.findIndex((c) => c.id === previewId));
     const next = ready[(idx + delta + ready.length) % ready.length];
     previewCruise(next.id);
+  }
+
+  function copyCaption() {
+    const text = preview?.caption || "";
+    if (!text) return;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(text).then(
+        () => {
+          message = "Caption copied.";
+          messageTone = "success";
+          rerender();
+        },
+        () => {
+          message = "Could not copy caption.";
+          messageTone = "error";
+          rerender();
+        }
+      );
+    }
+  }
+
+  function renderRoomChecks(cruise) {
+    const rooms = cruiseRooms(cruise);
+    if (!rooms.length) {
+      return `<p class="admin-small admin-error">No public room prices are available for this cruise.</p>`;
+    }
+    const selected = new Set(includedRoomsFor(cruise.id));
+    return `
+      <div class="social-pack-rooms" role="group" aria-label="Room prices">
+        <p class="admin-small"><strong>Room prices</strong></p>
+        ${rooms
+          .map((room) => {
+            const label = room.room_label;
+            const display = room.room_label_display || label;
+            const price = room.price_label || "";
+            const checked = selected.has(label) ? "checked" : "";
+            return `
+              <label class="social-pack-room">
+                <input type="checkbox" ${checked} ${busy ? "disabled" : ""}
+                  onchange="SocialPackAdmin.toggleRoom('${esc(cruise.id)}', '${esc(label)}')">
+                <span>${esc(display)}${price ? ` · ${esc(price)}` : ""}</span>
+              </label>`;
+          })
+          .join("")}
+      </div>`;
   }
 
   function renderImagePicker() {
@@ -359,6 +528,7 @@
     const msgClass =
       messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : "";
     const bg = preview?.background;
+    const activeCruise = cruises.find((c) => c.id === previewId);
     return `
       <div class="social-pack-overlay" role="dialog" aria-modal="true" aria-label="Create Social Pack">
         <div class="social-pack-modal admin-card">
@@ -376,25 +546,28 @@
               ${cruises
                 .map(
                   (c) => `
-                <label class="social-pack-cruise ${c.id === previewId ? "is-active" : ""} ${c.readiness?.status === "blocked" ? "is-blocked" : ""}">
-                  <input type="checkbox" ${c.selected ? "checked" : ""} ${
-                    c.readiness?.status === "blocked" || busy ? "disabled" : ""
-                  } onchange="SocialPackAdmin.toggleCruise('${esc(c.id)}')">
-                  <span class="social-pack-thumb">${
-                    c.heroUrl
-                      ? `<img src="${esc(c.heroUrl)}" alt="" loading="lazy">`
-                      : `<span class="admin-empty-preview">No image</span>`
-                  }</span>
-                  <span class="social-pack-cruise-copy">
-                    <strong>${esc(c.destination || c.headline || "Cruise")}</strong>
-                    <span class="admin-small">${esc([c.line, c.ship].filter(Boolean).join(" · "))}</span>
-                    <span class="admin-small">${esc([c.departure, c.returnDate].filter(Boolean).join(" → "))}</span>
-                    <span class="admin-small">${esc(c.readiness?.label || "")}</span>
-                  </span>
-                  <button type="button" class="admin-button secondary small" onclick="event.preventDefault();SocialPackAdmin.previewCruise('${esc(c.id)}')" ${
+                <div class="social-pack-cruise ${c.id === previewId ? "is-active" : ""} ${c.readiness?.status === "blocked" ? "is-blocked" : ""}">
+                  <label class="social-pack-cruise-main">
+                    <input type="checkbox" ${c.selected ? "checked" : ""} ${
+                      c.readiness?.status === "blocked" || busy ? "disabled" : ""
+                    } onchange="SocialPackAdmin.toggleCruise('${esc(c.id)}')">
+                    <span class="social-pack-thumb">${
+                      c.heroUrl
+                        ? `<img src="${esc(c.heroUrl)}" alt="" loading="lazy">`
+                        : `<span class="admin-empty-preview">No image</span>`
+                    }</span>
+                    <span class="social-pack-cruise-copy">
+                      <strong>${esc(c.destination || c.headline || "Cruise")}</strong>
+                      <span class="admin-small">${esc([c.line, c.ship].filter(Boolean).join(" · "))}</span>
+                      <span class="admin-small">${esc([c.departure, c.returnDate].filter(Boolean).join(" → "))}</span>
+                      <span class="admin-small">${esc(c.readiness?.label || "")}</span>
+                    </span>
+                  </label>
+                  <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.previewCruise('${esc(c.id)}')" ${
                     busy || c.readiness?.status === "blocked" ? "disabled" : ""
                   }>Preview</button>
-                </label>`
+                  ${c.id === previewId ? renderRoomChecks(c) : ""}
+                </div>`
                 )
                 .join("")}
             </div>
@@ -430,12 +603,18 @@
                           )}/${esc(String(bg.candidate_count ?? ""))}</p>`
                         : ""
                     }
+                    ${
+                      activeCruise && !(activeCruise.offers || []).length
+                        ? `<div class="admin-message admin-error">No public room prices are available for this cruise.</div>`
+                        : ""
+                    }
                     ${renderImagePicker()}
                     ${renderSlides()}
                     <label class="admin-field"><span>Caption</span>
-                      <textarea class="social-pack-caption" readonly rows="8">${esc(preview.caption || "")}</textarea>
+                      <textarea class="social-pack-caption" readonly rows="10">${esc(preview.caption || "")}</textarea>
                     </label>
                     <div class="admin-actions-row">
+                      <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.copyCaption()" ${busy ? "disabled" : ""}>Copy caption</button>
                       <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(-1)" ${busy ? "disabled" : ""}>Previous cruise</button>
                       <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(1)" ${busy ? "disabled" : ""}>Next cruise</button>
                     </div>`
@@ -444,9 +623,12 @@
             </div>
           </div>
           <div class="admin-actions-row" style="margin-top:16px">
+            <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.downloadThisCruise()" ${
+              busy || !previewId ? "disabled" : ""
+            }>Download This Cruise</button>
             <button type="button" class="admin-button black" onclick="SocialPackAdmin.downloadZip()" ${
               busy || !selectedIds().length ? "disabled" : ""
-            }>${busy ? "Working…" : "Download Social Pack ZIP"}</button>
+            }>${busy ? "Working…" : "Download Newsletter Social Pack"}</button>
             <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.close()" ${busy ? "disabled" : ""}>Close</button>
           </div>
         </div>
@@ -458,8 +640,10 @@
     openForIssue,
     close,
     toggleCruise,
+    toggleRoom: applyRoomSelectionAndPreview,
     previewCruise,
     downloadZip,
+    downloadThisCruise,
     stepPreview,
     setTreatment,
     openImagePicker,
@@ -468,6 +652,7 @@
     useSocialImage,
     stepBackground,
     regeneratePreview,
+    copyCaption,
     renderModal,
     isOpen: () => open
   };

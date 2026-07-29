@@ -5924,14 +5924,21 @@ body.admin-loading-active {
 }
 
 .social-pack-cruise {
-  display: grid;
-  grid-template-columns: auto 64px 1fr auto;
-  gap: 10px;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   padding: 10px;
   border: 1px solid var(--admin-border, #e3e8e5);
   border-radius: 12px;
   background: #fff;
+}
+
+.social-pack-cruise-main {
+  display: grid;
+  grid-template-columns: auto 64px 1fr;
+  gap: 10px;
+  align-items: center;
+  cursor: pointer;
 }
 
 .social-pack-cruise.is-active {
@@ -5941,6 +5948,22 @@ body.admin-loading-active {
 
 .social-pack-cruise.is-blocked {
   opacity: 0.72;
+}
+
+.social-pack-rooms {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0 0 28px;
+}
+
+.social-pack-room {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #374151;
+  cursor: pointer;
 }
 
 .social-pack-thumb {

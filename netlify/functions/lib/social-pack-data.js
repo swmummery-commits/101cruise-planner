@@ -118,28 +118,13 @@ function assessReadiness(model) {
     };
   }
   if (model.backgroundWarning) warnings.push(model.backgroundWarning);
-  if (!model.routeMapUrl) warnings.push("no_route_map");
-  if (!model.offers?.length) warnings.push("no_public_price");
   if (!model.publicSlug) warnings.push("no_public_slug");
 
-  if (!model.routeMapUrl && model.offers?.length) {
-    return {
-      status: "ready_fallback_map",
-      label: "Ready — no route map, itinerary layout will be used",
-      warnings
-    };
-  }
-  if (model.routeMapUrl && !model.offers?.length) {
+  if (!model.offers?.length) {
+    warnings.push("no_public_price");
     return {
       status: "ready_enquiry",
-      label: "Ready — no public price, enquiry version will be used",
-      warnings
-    };
-  }
-  if (!model.routeMapUrl && !model.offers?.length) {
-    return {
-      status: "ready_fallback_both",
-      label: "Ready — no route map, itinerary layout will be used",
+      label: "No public room prices are available for this cruise.",
       warnings
     };
   }
@@ -180,7 +165,8 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
   const cruise = Array.isArray(rows) ? rows[0] : null;
   if (!cruise) throw Object.assign(new Error("Featured cruise not found."), { statusCode: 404 });
 
-  // Public-safe pricing only — never select airline_price or category.
+  // Public-safe pricing only — never select airline_price, airfare, or category.
+  // One social price card per cabin that has a public 101cruise price.
   const pricingRows = await supabase(
     `/rest/v1/featured_cruise_pricing?featured_cruise_id=eq.${encodeURIComponent(id)}&select=${PUBLIC_PRICING_SELECT}&order=display_order.asc`
   );
@@ -204,7 +190,7 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
   const destinationMedia = await loadActiveDestinationMedia();
   const featuredHeroUrl = heroMedia?.public_url || String(cruise.hero_image_url || "").trim() || null;
   const routeMapUrl = resolveRouteMapUrl(cruise, mapMedia);
-  const offers = selectPublicOffers(pricingRows || [], cruise.nights, 3);
+  const offers = selectPublicOffers(pricingRows || [], cruise.nights);
   const offer = offers[0] || selectPublicOffer(pricingRows || [], cruise.nights);
   const portInfo = buildPortList({
     stops,
@@ -351,8 +337,12 @@ async function hydrateMedia(model) {
 
   if (model.cruiseLineLogoUrl) {
     try {
+      const { prepareCruiseLineLogoForBanner } = require("./social-pack-render");
       const logo = await fetchImageAsDataUri(model.cruiseLineLogoUrl);
-      model.cruiseLineLogoDataUri = logo.dataUri;
+      const trimmed = prepareCruiseLineLogoForBanner(logo.dataUri);
+      model.cruiseLineLogoDataUri = (trimmed && trimmed.dataUri) || logo.dataUri;
+      model.cruiseLineLogoWidth = trimmed?.width || null;
+      model.cruiseLineLogoHeight = trimmed?.height || null;
     } catch {
       model.cruiseLineLogoDataUri = null;
     }

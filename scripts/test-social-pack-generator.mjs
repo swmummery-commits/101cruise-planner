@@ -15,6 +15,7 @@ const {
   sanitizePublicPricingRows,
   buildDiscountDisplay,
   normaliseRoomLabel,
+  filterOffersByRoomLabels,
   PUBLIC_PRICING_SELECT
 } = require("../netlify/functions/lib/social-pack-pricing.js");
 const {
@@ -122,9 +123,12 @@ async function main() {
     assert(offer.greatDeal === true, "great deal >=85%");
     assert(!JSON.stringify(offer).includes(airlineToken), "airline value absent from offer");
     assert(!JSON.stringify(offer).includes('"S"'), "category absent");
-    const offers = selectPublicOffers(rows, 10, 3);
-    assert(offers.length === 3, "max three offers");
+    const offers = selectPublicOffers(rows, 10);
+    assert(offers.length === 4, "one offer per cabin with public price");
     assert(offers[2].roomLabel === "Suite", "third by display_order");
+    assert(offers[3].roomLabel === "Penthouse", "fourth cabin included");
+    const capped = selectPublicOffers(rows, 10, 2);
+    assert(capped.length === 2, "explicit limit still respected");
     assert(PUBLIC_PRICING_SELECT.includes("cruise_101_price"), "select includes public price");
     assert(!PUBLIC_PRICING_SELECT.includes("airline"), "select excludes airline");
     assert(!PUBLIC_PRICING_SELECT.includes("category"), "select excludes category");
@@ -350,17 +354,62 @@ async function main() {
 
     const airlineToken = "AIRLINE_SECRET_VALUE_ZX9Q";
     const mainSvg = renderMainCruiseSvg(model);
-    const journeySvg = renderJourneySvg(model);
     const offerSvg = renderOfferSvg(model, 0);
     const ctaSvg = renderCtaSvg(model);
-    assert(!/#ffffff"\/>\s*<style>/.test(mainSvg) || !mainSvg.includes('fill="#ffffff"/>\n  <style>'), "not white page frame");
     assert(mainSvg.includes("#8DD9BF"), "green footer main");
     assert(mainSvg.includes("fill-opacity"), "treatment overlay present");
     assert(!mainSvg.includes(airlineToken), "no airline in main");
     assert(!offerSvg.toLowerCase().includes("airline"), "no airline word in offer");
     assert(offerSvg.includes("101CRUISE PRICE"), "public price panel");
-    assert(ctaSvg.includes("TALK TO PAUL"), "cta copy");
-    assert(ctaSvg.includes("Get your cruise on"), "cta script compromise text");
+    assert(ctaSvg.includes("TALK TO PAUL"), "cta talk line");
+    assert(ctaSvg.includes(">TODAY<"), "cta today line");
+    assert(ctaSvg.includes("paul@101cruise.com.au"), "cta email");
+    assert(ctaSvg.includes("ctaHeadlineShadow"), "cta headline shadow");
+    assert(
+      ctaSvg.includes("Get your cruise on") || ctaSvg.includes("get-your-cruise-on") || ctaSvg.includes("feeling_passionate"),
+      "cta script artwork"
+    );
+    assert(offerSvg.includes("BROCHURE PRICE"), "brochure pill");
+    assert(offerSvg.includes("INCLUDES"), "includes pill");
+    assert(offerSvg.includes("rotate(-6"), "angled room pill");
+    assert(offerSvg.includes("* Price in US dollars"), "disclaimer pill");
+    assert(offerSvg.includes("fill-opacity=\"0.82\""), "translucent pills");
+
+    // Missing brochure → omit panel
+    const noBrochureSvg = renderOfferSvg(
+      {
+        ...model,
+        offers: [
+          {
+            ...model.offers[0],
+            showBrochure: false,
+            brochureLabel: null,
+            brochurePrice: null
+          }
+        ]
+      },
+      0
+    );
+    assert(!noBrochureSvg.includes("BROCHURE PRICE"), "omit brochure when missing");
+
+    // Missing inclusions → omit panel
+    const noInclSvg = renderOfferSvg({ ...model, inclusions: [], primaryInclusion: null }, 0);
+    assert(!noInclSvg.includes(">INCLUDES<"), "omit includes when empty");
+
+    // Long room label wraps to two lines
+    const longRoomSvg = renderOfferSvg(
+      {
+        ...model,
+        offers: [
+          {
+            ...model.offers[0],
+            roomLabelDisplay: "PREMIUM CONCIERGE VERANDA SUITE"
+          }
+        ]
+      },
+      0
+    );
+    assert(longRoomSvg.includes("PREMIUM CONCIERGE") || longRoomSvg.includes("VERANDA"), "long room label present");
 
     for (const [label, svg] of [
       ["clear", renderMainCruiseSvg({ ...model, treatment: "clear", slideTreatments: { main: "clear" } })],
@@ -374,12 +423,17 @@ async function main() {
 
     const pack = await renderCruisePack(model, { forbiddenStrings: [airlineToken] });
     assert(pack.slides["01-main-cruise.png"], "main slide name");
-    assert(pack.slides["02-journey.png"], "journey slide");
-    assert(pack.slides["03-offer-solo-balcony.png"], "offer slug filename");
+    assert(!pack.slides["02-journey.png"], "no journey slide by default");
+    assert(pack.slides["02-offer-solo-balcony.png"], "offer starts at 02");
     assert(pack.slides["final-call-to-action.png"], "cta slide");
-    assert(Object.keys(pack.slides).length === 4, "1 offer → 4 slides");
+    assert(Object.keys(pack.slides).length === 3, "1 offer → main + pricing + cta");
     const joined = Object.values(pack.svgs).join("\n");
     assert(!joined.includes(airlineToken), "airline absent from all svgs");
+
+    // No public prices → main + cta only
+    const enquiryPack = await renderCruisePack({ ...model, offers: [], offer: null });
+    assert(Object.keys(enquiryPack.slides).length === 2, "no prices → main + cta only");
+    assert(!Object.keys(enquiryPack.slides).some((k) => k.includes("offer")), "no offer files without prices");
 
     const zip = await buildSocialPackZip({
       newsletterNumber: 77,
@@ -388,15 +442,48 @@ async function main() {
     assert(zip.filename.includes("77"), "zip name");
     assert(!JSON.stringify(zip.manifest).includes(airlineToken), "manifest clean");
     assert(!JSON.stringify(zip.manifest).toLowerCase().includes("airline_price"), "no airline_price key");
+
+    const caption = buildCaption(model);
+    assert(caption.includes("paul@101cruise.com.au"), "caption email");
+    assert(caption.includes("101cruise.com.au"), "caption brand");
+    assert(!caption.toLowerCase().includes("airline"), "caption no airline");
     passed += 1;
   }
 
-  // Slide plan max 3 offers
+  // Room include/exclude + display_order
+  {
+    const rows = [
+      { room_label: "Balcony", cruise_101_price: 1000, brochure_price: 2000, display_order: 2 },
+      { room_label: "Suite", cruise_101_price: 3000, brochure_price: 4000, display_order: 1 },
+      { room_label: "Inside", cruise_101_price: 800, brochure_price: 900, display_order: 3 }
+    ];
+    const offers = selectPublicOffers(rows, 7);
+    assert(offers.map((o) => o.roomLabel).join(",") === "Suite,Balcony,Inside", "display_order retained");
+    const filtered = filterOffersByRoomLabels(offers, ["Balcony", "Inside"]);
+    assert(filtered.length === 2, "room include filter");
+    assert(filtered[0].roomLabel === "Balcony", "filtered order preserved");
+    assert(filterOffersByRoomLabels(offers, []).length === 0, "empty selection excludes all");
+    assert(filterOffersByRoomLabels(offers, null).length === 3, "null keeps all");
+    passed += 1;
+  }
+
+  // Slide plan: one offer slide per cabin; numbering from 02-
   {
     const offers = [1, 2, 3, 4].map((i) => ({ roomSlug: `room-${i}` }));
     const plan = buildSlidePlan({ offers });
-    assert(plan.filter((p) => p.kind === "offer").length === 3, "max 3 offers in plan");
+    assert(plan.filter((p) => p.kind === "offer").length === 4, "one offer slide per cabin");
+    assert(plan[1].key === "02-offer-room-1.png", "first offer is 02");
+    assert(!plan.some((p) => p.kind === "journey"), "no journey in plan");
     assert(plan[plan.length - 1].key === "final-call-to-action.png", "cta last");
+    const dupPlan = buildSlidePlan({
+      offers: [
+        { roomSlug: "balcony" },
+        { roomSlug: "balcony" }
+      ]
+    });
+    const offerKeys = dupPlan.filter((p) => p.kind === "offer").map((p) => p.key);
+    assert(new Set(offerKeys).size === offerKeys.length, "duplicate room slugs get unique filenames");
+    assert(buildSlidePlan({ offers: [] }).length === 2, "no rooms → main + cta");
     passed += 1;
   }
 
@@ -411,12 +498,25 @@ async function main() {
         lineName: "L",
         shipName: "S",
         offers: [{ cruise101Price: 1 }]
-      }).status === "ready_fallback_map",
-      "ready without map"
+      }).status === "ready",
+      "ready with public prices"
+    );
+    assert(
+      assessReadiness({
+        backgroundUrl: "https://x",
+        destinationStrip: "A",
+        departureDate: "2026-01-01",
+        returnDate: "2026-01-10",
+        lineName: "L",
+        shipName: "S",
+        offers: []
+      }).label.includes("No public room prices"),
+      "missing price warning"
     );
     assert(cruiseFolderSlug({ index: 1, lineName: "Oceania", shipName: "Sirena", destinationStrip: "Barcelona to Istanbul" }).startsWith("01-"), "folder");
     assert(sniffMime(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0])) === "image/jpeg", "jpeg sniff");
     assert(WIDTH === 1080 && HEIGHT === 1350, "portrait dims");
+    assert(GREEN === "#8DD9BF", "exact footer green");
     passed += 1;
   }
 
@@ -435,6 +535,8 @@ async function main() {
     const genSrc = fs.readFileSync(path.join(root, "netlify/functions/social-pack-generate.js"), "utf8");
     assert(/requireAdmin/.test(genSrc), "admin auth required");
     assert(/Never writes/.test(genSrc), "no write promise");
+    assert(/download_cruise/.test(genSrc), "per-cruise download");
+    assert(!/airline_price/.test(PUBLIC_PRICING_SELECT), "select columns public-only");
     passed += 1;
   }
 

@@ -6,7 +6,6 @@ const { Resvg } = require("@resvg/resvg-js");
 const {
   WIDTH,
   HEIGHT,
-  renderMainCruiseSvg,
   renderJourneySvg,
   renderOfferSvg,
   renderCtaSvg
@@ -124,6 +123,165 @@ function coverCropSvg(href, { width, height, imgW, imgH, enlarge = 1 }) {
     <image href="${href}" x="${dx}" y="${dy}" width="${dw}" height="${dh}" preserveAspectRatio="xMidYMid slice"/>
   </g>
 </svg>`;
+}
+
+function pngDimensionsFromDataUri(dataUri) {
+  const m = String(dataUri || "").match(/^data:image\/png;base64,(.+)$/i);
+  if (!m) return null;
+  try {
+    const buf = Buffer.from(m[1], "base64");
+    if (buf.length < 24 || buf[0] !== 0x89) return null;
+    return {
+      width: buf.readUInt32BE(16),
+      height: buf.readUInt32BE(20)
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Trim empty white padding from cruise-line logo artwork so the mark fills
+ * a pointed banner (avoids a tiny logo square nested inside a white shape).
+ * Does not alter Media Library originals — runtime crop of the fetched buffer only.
+ */
+function prepareCruiseLineLogoForBanner(dataUri) {
+  const href = String(dataUri || "").trim();
+  if (!href.startsWith("data:image/")) return null;
+
+  const dims = pngDimensionsFromDataUri(href);
+  const srcW = dims?.width || 512;
+  const srcH = dims?.height || 512;
+  const maxEdge = 640;
+  const scale = Math.min(1, maxEdge / Math.max(srcW, srcH));
+  const pw = Math.max(1, Math.round(srcW * scale));
+  const ph = Math.max(1, Math.round(srcH * scale));
+
+  const probeSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${pw}" height="${ph}">
+  <image href="${href}" width="${pw}" height="${ph}" preserveAspectRatio="none"/>
+</svg>`;
+  const probe = new Resvg(Buffer.from(probeSvg), {
+    fitTo: { mode: "width", value: pw },
+    background: "rgba(255,255,255,0)"
+  }).render();
+  const pixels = probe.pixels;
+  if (!pixels || pixels.length < pw * ph * 4) return { dataUri: href, width: srcW, height: srcH };
+
+  const isEmpty = (i) => {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+    const a = pixels[i + 3];
+    if (a < 12) return true;
+    return r >= 236 && g >= 236 && b >= 228;
+  };
+
+  let minX = pw;
+  let minY = ph;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < ph; y++) {
+    for (let x = 0; x < pw; x++) {
+      const i = (y * pw + x) * 4;
+      if (isEmpty(i)) continue;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < minX || maxY < minY) return { dataUri: href, width: srcW, height: srcH };
+
+  const pad = Math.max(4, Math.round(Math.max(maxX - minX, maxY - minY) * 0.05));
+  minX = Math.max(0, minX - pad);
+  minY = Math.max(0, minY - pad);
+  maxX = Math.min(pw - 1, maxX + pad);
+  maxY = Math.min(ph - 1, maxY + pad);
+  const cw = maxX - minX + 1;
+  const ch = maxY - minY + 1;
+
+  const cropSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${cw}" height="${ch}" viewBox="0 0 ${cw} ${ch}">
+  <rect width="${cw}" height="${ch}" fill="#FFFFFF"/>
+  <image href="${href}" x="${-minX}" y="${-minY}" width="${pw}" height="${ph}" preserveAspectRatio="none"/>
+</svg>`;
+  const cropped = svgToPngBuffer(cropSvg, { width: Math.max(cw, 2), height: Math.max(ch, 2) }).png;
+  return {
+    dataUri: `data:image/png;base64,${cropped.toString("base64")}`,
+    width: cw,
+    height: ch
+  };
+}
+
+/**
+ * Crop the 101cruise mark to the red grid only — drop the baked-in
+ * 101CRUISE.COM.AU wordmark under the square so it is not shown twice.
+ * Runtime crop only; does not alter assets/101cruise-logo.png on disk.
+ */
+function prepareBrandLogoMark(dataUri) {
+  const href = String(dataUri || "").trim();
+  if (!href.startsWith("data:image/png")) return null;
+
+  const dims = pngDimensionsFromDataUri(href);
+  const srcW = dims?.width || 512;
+  const srcH = dims?.height || 512;
+  const maxEdge = 720;
+  const scale = Math.min(1, maxEdge / Math.max(srcW, srcH));
+  const pw = Math.max(1, Math.round(srcW * scale));
+  const ph = Math.max(1, Math.round(srcH * scale));
+
+  const probeSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${pw}" height="${ph}">
+  <image href="${href}" width="${pw}" height="${ph}" preserveAspectRatio="none"/>
+</svg>`;
+  const probe = new Resvg(Buffer.from(probeSvg), {
+    fitTo: { mode: "width", value: pw },
+    background: "rgba(0,0,0,0)"
+  }).render();
+  const pixels = probe.pixels;
+  if (!pixels || pixels.length < pw * ph * 4) return { dataUri: href, width: srcW, height: srcH };
+
+  let minX = pw;
+  let minY = ph;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < ph; y++) {
+    for (let x = 0; x < pw; x++) {
+      const i = (y * pw + x) * 4;
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+      const a = pixels[i + 3];
+      // Red grid cells (brand red)
+      if (a < 40) continue;
+      if (r < 170 || g > 90 || b > 90) continue;
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < minX || maxY < minY) return { dataUri: href, width: srcW, height: srcH };
+
+  const pad = Math.max(6, Math.round(Math.max(maxX - minX, maxY - minY) * 0.03));
+  minX = Math.max(0, minX - pad);
+  minY = Math.max(0, minY - pad);
+  maxX = Math.min(pw - 1, maxX + pad);
+  maxY = Math.min(ph - 1, maxY + pad);
+  const cw = maxX - minX + 1;
+  const ch = maxY - minY + 1;
+
+  const cropSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${cw}" height="${ch}" viewBox="0 0 ${cw} ${ch}">
+  <image href="${href}" x="${-minX}" y="${-minY}" width="${pw}" height="${ph}" preserveAspectRatio="none"/>
+</svg>`;
+  const cropped = svgToPngBuffer(cropSvg, { width: Math.max(cw, 2), height: Math.max(ch, 2) }).png;
+  return {
+    dataUri: `data:image/png;base64,${cropped.toString("base64")}`,
+    width: cw,
+    height: ch
+  };
 }
 
 /**
@@ -259,19 +417,22 @@ function assertPngSize(pngMeta, label) {
 }
 
 function buildSlidePlan(model) {
-  const offers = Array.isArray(model.offers) ? model.offers.slice(0, 3) : model.offer ? [model.offer] : [];
-  const plan = [
-    { key: "01-main-cruise.png", kind: "main" },
-    { key: "02-journey.png", kind: "journey" }
-  ];
+  // Approved weekly carousel: Main → one pricing card per selected room → CTA.
+  // Journey/map slide is not generated by default.
+  const offers = Array.isArray(model.offers)
+    ? model.offers
+    : model.offer
+      ? [model.offer]
+      : [];
+  const plan = [{ key: "01-main-cruise.png", kind: "main" }];
+  const usedSlugs = new Set();
   offers.forEach((offer, i) => {
-    const n = String(i + 3).padStart(2, "0");
-    const slug = offer.roomSlug || `room-${i + 1}`;
+    const n = String(i + 2).padStart(2, "0");
+    let slug = offer.roomSlug || `room-${i + 1}`;
+    if (usedSlugs.has(slug)) slug = `${slug}-${i + 1}`;
+    usedSlugs.add(slug);
     plan.push({ key: `${n}-offer-${slug}.png`, kind: "offer", offerIndex: i });
   });
-  if (!offers.length) {
-    plan.push({ key: "03-offer-enquiry.png", kind: "offer", offerIndex: 0 });
-  }
   plan.push({ key: "final-call-to-action.png", kind: "cta" });
   return plan;
 }
@@ -297,10 +458,22 @@ async function renderCruisePack(model, options = {}) {
     let treatmentName = model.treatment || "soft";
     if (item.kind === "main") treatmentName = model.slideTreatments?.main || treatmentName;
     else if (item.kind === "journey") treatmentName = model.slideTreatments?.journey || treatmentName;
-    else if (item.kind === "offer") treatmentName = model.slideTreatments?.offer || "strong";
+    else if (item.kind === "offer") treatmentName = model.slideTreatments?.offer || "clear";
     else treatmentName = model.slideTreatments?.cta || "strong";
 
-    const treated = treatedFor(treatmentName);
+    // Slide 1: approved master mild treatment.
+    // Offer/pricing: clear (unblurred) destination photo.
+    // CTA: strong blur for atmospheric bokeh.
+    let treated;
+    if (item.kind === "main") {
+      if (!treatedCache.has("__master__")) {
+        treatedCache.set("__master__", prepareMasterBackground(model));
+      }
+      treated = treatedCache.get("__master__");
+    } else {
+      treated = treatedFor(treatmentName);
+    }
+
     const slideModel = {
       ...model,
       backgroundDataUri: treated?.dataUri || model.backgroundDataUri,
@@ -318,10 +491,17 @@ async function renderCruisePack(model, options = {}) {
     };
 
     let svg;
-    if (item.kind === "main") svg = renderMainCruiseSvg(slideModel);
-    else if (item.kind === "journey") svg = renderJourneySvg(slideModel);
-    else if (item.kind === "offer") svg = renderOfferSvg(slideModel, item.offerIndex || 0);
-    else svg = renderCtaSvg(slideModel);
+    if (item.kind === "main") {
+      const { renderMasterConceptA } = require("./social-pack-master-slide");
+      svg = renderMasterConceptA(slideModel);
+    } else if (item.kind === "offer") {
+      svg = renderOfferSvg(slideModel, item.offerIndex || 0);
+    } else if (item.kind === "journey") {
+      // Not part of the approved weekly pack; kept for optional/legacy use only.
+      svg = renderJourneySvg(slideModel);
+    } else {
+      svg = renderCtaSvg(slideModel);
+    }
 
     const rendered = svgToPngBuffer(svg);
     assertPngSize(rendered, item.key);
@@ -338,7 +518,11 @@ async function renderCruisePack(model, options = {}) {
       }
     }
   }
-  if (/\bairline\s+staff\b/i.test(joined) || /\bairline_price\b/i.test(joined)) {
+  if (
+    /\bairline(?:\s+staff|\s+prices?|_price)?\b/i.test(joined) ||
+    /\bairfares?\b/i.test(joined) ||
+    /\bairline_price\b/i.test(joined)
+  ) {
     throw new Error("Airline pricing leaked into social graphics.");
   }
 
@@ -357,6 +541,8 @@ module.exports = {
   svgToPngBuffer,
   prepareTreatedBackground,
   prepareMasterBackground,
+  prepareCruiseLineLogoForBanner,
+  prepareBrandLogoMark,
   renderCruisePack,
   buildSlidePlan,
   sniffMime

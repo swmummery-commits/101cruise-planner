@@ -2,9 +2,10 @@
  * Admin Social Pack Generator.
  *
  * Actions:
- *   preview        → one cruise, PNG data URLs + caption
- *   download_issue → ZIP of selected cruises
- *   readiness      → readiness list for an issue
+ *   preview          → one cruise, PNG data URLs + caption
+ *   download_cruise  → ZIP for one cruise
+ *   download_issue   → ZIP of selected cruises
+ *   readiness        → readiness list for an issue (includes public rooms)
  *
  * Never selects airline_price or category.
  * Never writes to the database or Media Library.
@@ -14,10 +15,13 @@ const { requireAdmin } = require("./admin-auth");
 const {
   loadFeaturedCruisePackModel,
   hydrateMedia,
-  listIssueCruiseIds
+  listIssueCruiseIds,
+  assessReadiness
 } = require("./lib/social-pack-data");
+const { filterOffersByRoomLabels } = require("./lib/social-pack-pricing");
 const { renderCruisePack } = require("./lib/social-pack-render");
 const { buildSocialPackZip } = require("./lib/social-pack-zip");
+const { buildCaption } = require("./lib/social-pack-caption");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -58,18 +62,79 @@ function normaliseTreatment(value) {
   return ["clear", "soft", "strong"].includes(t) ? t : "soft";
 }
 
+function publicOfferSummary(offer) {
+  return {
+    room_label: offer.roomLabel,
+    room_label_display: offer.roomLabelDisplay,
+    room_slug: offer.roomSlug,
+    cruise_101_price: offer.cruise101Price,
+    brochure_price: offer.brochurePrice,
+    price_label: offer.priceLabel,
+    show_brochure: Boolean(offer.showBrochure)
+  };
+}
+
+function applyRoomSelection(model, includedRoomLabels) {
+  if (includedRoomLabels === undefined) return model;
+  const filtered = filterOffersByRoomLabels(model.offers || [], includedRoomLabels);
+  model.offers = filtered;
+  model.offer = filtered[0] || null;
+  model.caption = buildCaption(model);
+  model.readiness = assessReadiness(model);
+  return model;
+}
+
+function cruiseOptionsFromBody(body, cruiseId) {
+  const map = body.cruise_options && typeof body.cruise_options === "object" ? body.cruise_options : {};
+  const entry = map[cruiseId] || map[String(cruiseId)] || {};
+  const included =
+    body.included_room_labels !== undefined
+      ? body.included_room_labels
+      : entry.included_room_labels;
+  const mediaId = body.social_media_id || body.manual_media_id || entry.social_media_id || null;
+  return { includedRoomLabels: included, manualMediaId: mediaId };
+}
+
+async function buildPackForCruise(id, { index = 1, treatment = "soft", includedRoomLabels, manualMediaId } = {}) {
+  let model = await loadFeaturedCruisePackModel(id, {
+    index,
+    treatment,
+    manualMediaId: manualMediaId || null
+  });
+  applyRoomSelection(model, includedRoomLabels);
+  if (model.readiness?.status === "blocked") {
+    return { blocked: true, model };
+  }
+  model = await hydrateMedia(model);
+  const rendered = await renderCruisePack(model, {
+    forbiddenStrings: collectForbidden(model)
+  });
+  return {
+    blocked: false,
+    model: {
+      ...model,
+      slides: rendered.slides,
+      plan: rendered.plan
+    },
+    rendered
+  };
+}
+
 async function handlePreview(body) {
   const id = String(body.featured_cruise_id || "").trim();
   if (!id) {
     return jsonResponse(400, { success: false, error: "featured_cruise_id is required" });
   }
   const treatment = normaliseTreatment(body.treatment);
-  const manualMediaId = body.social_media_id || body.manual_media_id || null;
+  const { includedRoomLabels, manualMediaId } = cruiseOptionsFromBody(body, id);
+
   let model = await loadFeaturedCruisePackModel(id, {
     index: 1,
     treatment,
-    manualMediaId
+    manualMediaId: manualMediaId || null
   });
+  const availableOffers = [...(model.offers || [])];
+  applyRoomSelection(model, includedRoomLabels);
   if (model.readiness?.status === "blocked") {
     return jsonResponse(400, {
       success: false,
@@ -107,20 +172,9 @@ async function handlePreview(body) {
     },
     picker_sections: model.pickerSections,
     background_candidates: model.backgroundCandidates,
-    offers: (model.offers || []).map((o) => ({
-      room_label: o.roomLabel,
-      room_label_display: o.roomLabelDisplay,
-      cruise_101_price: o.cruise101Price,
-      brochure_price: o.brochurePrice,
-      price_label: o.priceLabel
-    })),
-    offer: model.offer
-      ? {
-          room_label: model.offer.roomLabel,
-          cruise_101_price: model.offer.cruise101Price,
-          price_label: model.offer.priceLabel
-        }
-      : null,
+    available_offers: availableOffers.map(publicOfferSummary),
+    offers: (model.offers || []).map(publicOfferSummary),
+    offer: model.offer ? publicOfferSummary(model.offer) : null,
     slides,
     slide_order: rendered.plan.map((p) => p.key),
     dimensions: rendered.dimensions,
@@ -149,20 +203,18 @@ async function handleDownloadIssue(body) {
   const packs = [];
   const skipped = [];
   for (let i = 0; i < ids.length; i += 1) {
-    let model = await loadFeaturedCruisePackModel(ids[i], {
+    const opts = cruiseOptionsFromBody(body, ids[i]);
+    const result = await buildPackForCruise(ids[i], {
       index: i + 1,
-      treatment
+      treatment,
+      includedRoomLabels: opts.includedRoomLabels,
+      manualMediaId: opts.manualMediaId
     });
-    if (model.readiness?.status === "blocked") {
-      skipped.push({ id: model.id, reason: model.readiness.label });
+    if (result.blocked) {
+      skipped.push({ id: result.model.id, reason: result.model.readiness.label });
       continue;
     }
-    model = await hydrateMedia(model);
-    const rendered = await renderCruisePack(model);
-    packs.push({
-      ...model,
-      slides: rendered.slides
-    });
+    packs.push(result.model);
   }
 
   if (!packs.length) {
@@ -178,6 +230,38 @@ async function handleDownloadIssue(body) {
     packs
   });
   return zipResponse(zip.buffer, zip.filename);
+}
+
+async function handleDownloadCruise(body) {
+  const id = String(body.featured_cruise_id || "").trim();
+  if (!id) {
+    return jsonResponse(400, { success: false, error: "featured_cruise_id is required" });
+  }
+  const newsletterNumber = Number(body.newsletter_number) || 0;
+  const treatment = normaliseTreatment(body.treatment);
+  const { includedRoomLabels, manualMediaId } = cruiseOptionsFromBody(body, id);
+  const result = await buildPackForCruise(id, {
+    index: 1,
+    treatment,
+    includedRoomLabels,
+    manualMediaId
+  });
+  if (result.blocked) {
+    return jsonResponse(400, {
+      success: false,
+      error: result.model.readiness.label,
+      readiness: result.model.readiness
+    });
+  }
+  const zip = await buildSocialPackZip({
+    newsletterNumber: newsletterNumber || 0,
+    packs: [result.model]
+  });
+  const filename =
+    newsletterNumber > 0
+      ? `newsletter-${newsletterNumber}-${result.model.folderSlug || "cruise"}-social-pack.zip`
+      : `${result.model.folderSlug || "cruise"}-social-pack.zip`;
+  return zipResponse(zip.buffer, filename);
 }
 
 async function handleReadiness(body) {
@@ -196,6 +280,7 @@ async function handleReadiness(body) {
       return_date: model.returnDate,
       hero_url: model.backgroundUrl || model.heroUrl,
       readiness: model.readiness,
+      offers: (model.offers || []).map(publicOfferSummary),
       background: {
         destination_key: model.backgroundDestinationKey,
         match_role: model.backgroundMatchRole,
@@ -232,6 +317,7 @@ exports.handler = async (event) => {
   try {
     if (action === "preview") return await handlePreview(body);
     if (action === "download_issue") return await handleDownloadIssue(body);
+    if (action === "download_cruise") return await handleDownloadCruise(body);
     if (action === "readiness") return await handleReadiness(body);
     return jsonResponse(400, { success: false, error: "Unknown action" });
   } catch (error) {

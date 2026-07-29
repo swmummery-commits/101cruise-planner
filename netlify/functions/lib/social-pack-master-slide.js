@@ -1,6 +1,6 @@
 /**
- * Master Main Cruise slide — three art-direction concepts.
- * Does not replace Journey / Offer / CTA templates.
+ * Master Main Cruise slide — Concept A is the approved Slide 1 production template.
+ * Concepts B/C remain for review only.
  */
 
 const { escapeXml } = require("./social-pack-copy");
@@ -81,42 +81,61 @@ function greenFooter() {
   return `<rect x="0" y="${H - FOOTER_H}" width="${W}" height="${FOOTER_H}" fill="${GREEN}"/>`;
 }
 
-/** Refined Oceania logo holding panel — ~270px wide, logo fills the panel. */
+/**
+ * Top-edge pointed banner for the cruise-line logo (Princess-style integrated tab).
+ * Hangs from y=0 — not a floating rounded card. Trimmed logo artwork fills the
+ * banner so there is no nested white square inside a second white container.
+ */
 function cruiseLineLogo(model) {
-  const panelW = 270;
-  const panelH = 100;
-  const x = (W - panelW) / 2;
-  const y = 32;
+  const tipH = 20;
+  const padX = 36;
+  const padTop = 18;
+  const padBottom = 14;
+  // Size banner from trimmed logo aspect when available (Oceania is wide).
+  const lw = Number(model.cruiseLineLogoWidth) || 0;
+  const lh = Number(model.cruiseLineLogoHeight) || 0;
+  const aspect = lw > 0 && lh > 0 ? lw / lh : 3.1;
+  const logoH = 72;
+  const logoW = Math.min(420, Math.round(logoH * aspect));
+  const bannerW = logoW + padX * 2;
+  const bodyH = padTop + logoH + padBottom;
+  const bannerH = bodyH + tipH;
+  const x = (W - bannerW) / 2;
+  const path = [
+    `M ${x} 0`,
+    `L ${x + bannerW} 0`,
+    `L ${x + bannerW} ${bodyH}`,
+    `L ${x + bannerW / 2} ${bannerH}`,
+    `L ${x} ${bodyH}`,
+    "Z"
+  ].join(" ");
   if (model.cruiseLineLogoDataUri) {
     return `
       <g>
-        <rect x="${x}" y="${y}" width="${panelW}" height="${panelH}" rx="16" fill="${WHITE}" fill-opacity="0.95"/>
-        <image href="${model.cruiseLineLogoDataUri}" x="${x + 14}" y="${y + 10}" width="${panelW - 28}" height="${panelH - 20}" preserveAspectRatio="xMidYMid meet"/>
+        <path d="${path}" fill="${WHITE}"/>
+        <image href="${model.cruiseLineLogoDataUri}" x="${x + padX}" y="${padTop}" width="${logoW}" height="${logoH}" preserveAspectRatio="xMidYMid meet"/>
       </g>`;
   }
   return `
     <g>
-      <rect x="${x}" y="${y}" width="${panelW}" height="${panelH}" rx="16" fill="${WHITE}" fill-opacity="0.95"/>
-      <text x="540" y="${y + 60}" text-anchor="middle" fill="#111" font-family="${FAMILY}" font-size="24" font-weight="700">${escapeXml(
+      <path d="${path}" fill="${WHITE}"/>
+      <text x="540" y="${Math.round(bodyH * 0.62)}" text-anchor="middle" fill="#111" font-family="${FAMILY}" font-size="24" font-weight="700">${escapeXml(
         String(model.lineName || "").toUpperCase()
       )}</text>
     </g>`;
 }
 
-function brandLockup(model, { y, size = 148 } = {}) {
-  const logoY = y;
-  const urlY = logoY + size + 36;
+function brandLockup(model, { y, size = 200 } = {}) {
+  // Logo only — URL is already in the mark; do not repeat 101CRUISE.COM.AU as text.
   if (model.brandLogoDataUri) {
     return `
       <g>
-        <image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${logoY}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>
-        <text x="540" y="${urlY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="32" font-weight="600" letter-spacing="2.8">101CRUISE.COM.AU</text>
+        <image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>
       </g>`;
   }
   return `
     <g>
-      <rect x="${(W - size) / 2}" y="${logoY}" width="${size}" height="${size}" fill="#F80020"/>
-      <text x="540" y="${urlY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="32" font-weight="600" letter-spacing="2.8">101CRUISE.COM.AU</text>
+      <rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="#F80020"/>
     </g>`;
 }
 
@@ -167,10 +186,11 @@ function curatedPorts(model) {
   return unique.slice(0, 6);
 }
 
-function portsLine(ports, { y, maxWidth = 920, fontSize = 26, anchorX = 540, anchor = "middle" } = {}) {
+function portsLine(ports, { y, maxWidth = 920, fontSize = 34, anchorX = 540, anchor = "middle" } = {}) {
   const text = ports.join(" · ");
+  const lineGap = Math.round(fontSize * 1.28);
   // Soft wrap into two lines if long
-  if (text.length > 48) {
+  if (text.length > 42) {
     const mid = Math.ceil(ports.length / 2);
     const line1 = ports.slice(0, mid).join(" · ");
     const line2 = ports.slice(mid).join(" · ");
@@ -178,7 +198,7 @@ function portsLine(ports, { y, maxWidth = 920, fontSize = 26, anchorX = 540, anc
       <text x="${anchorX}" y="${y}" text-anchor="${anchor}" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
         line1
       )}</text>
-      <text x="${anchorX}" y="${y + 36}" text-anchor="${anchor}" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
+      <text x="${anchorX}" y="${y + lineGap}" text-anchor="${anchor}" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
         line2
       )}</text>`;
   }
@@ -218,6 +238,27 @@ function aboardLine(model, { x = 540, y, anchor = "middle", size = 38 } = {}) {
   )}</text>`;
 }
 
+function shipLabel(model) {
+  const ship = String(model.shipName || "OCEANIA SIRENA").toUpperCase();
+  return /oceania/i.test(ship) ? ship : `OCEANIA ${ship}`.replace(/\s+/g, " ").trim();
+}
+
+/** "10 NIGHTS  |  17–27 AUGUST 2026" — nights and dates share the same type treatment */
+function nightsDatesLine(model, { x = 540, y, anchor = "middle", size = 36 } = {}) {
+  const nights = String(model.nightsLabel || "").toUpperCase() || "10 NIGHTS";
+  const dates = String(model.dateRangeFull || model.dateRange || "").toUpperCase();
+  const text = dates ? `${nights}  |  ${dates}` : nights;
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="700">${escapeXml(
+    text
+  )}</text>`;
+}
+
+function shipLine(model, { x = 540, y, anchor = "middle", size = 36 } = {}) {
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="700">${escapeXml(
+    shipLabel(model)
+  )}</text>`;
+}
+
 function factsBlock(model, { x = 540, y, anchor = "middle", panel = false } = {}) {
   const nights = model.nightsLabel || "";
   const dates = model.dateRangeFull || model.dateRange || "";
@@ -240,17 +281,30 @@ function factsBlock(model, { x = 540, y, anchor = "middle", panel = false } = {}
     )}</text>`;
 }
 
-/** Concept A — centred, bright destination, refined logo panel */
+/**
+ * Concept A — approved Slide 1 (Main Cruise) production template.
+ * banner → route → nights|dates → ship → ports (mid) → brand logo → footer
+ */
 function renderMasterConceptA(model) {
   const ports = curatedPorts(model);
+  const headlineY = 240;
+  const headlineSize = 92;
+  const headlineEnd = headlineY + Math.round(headlineSize * 1.02);
+  const portsY = 700;
+  // Nights/dates + ship sit halfway between route headline and ports
+  const midGap = (headlineEnd + portsY) / 2;
+  const nightsDatesY = Math.round(midGap - 24);
+  const shipY = nightsDatesY + 48;
+  const brandSize = 200;
+  const brandY = H - FOOTER_H - brandSize - 48;
   const body = `
     ${masterBackground(model, { concept: "a" })}
     ${cruiseLineLogo(model)}
-    ${routeHeadline(model, { y: 300, size: 92 })}
-    ${aboardLine(model, { y: 520, size: 40 })}
-    ${factsBlock(model, { y: 620 })}
-    ${portsLine(ports, { y: 760, fontSize: 28 })}
-    ${brandLockup(model, { y: H - FOOTER_H - 230, size: 148 })}
+    ${routeHeadline(model, { y: headlineY, size: headlineSize })}
+    ${nightsDatesLine(model, { y: nightsDatesY, size: 36 })}
+    ${shipLine(model, { y: shipY, size: 36 })}
+    ${portsLine(ports, { y: portsY, fontSize: 40 })}
+    ${brandLockup(model, { y: brandY, size: brandSize })}
     ${greenFooter()}
   `;
   return frame(body);
@@ -260,15 +314,17 @@ function renderMasterConceptA(model) {
 function renderMasterConceptB(model) {
   const ports = curatedPorts(model);
   const left = 88;
+  const brandSize = 200;
+  const brandY = H - FOOTER_H - brandSize - 20;
   const body = `
     ${masterBackground(model, { concept: "b" })}
     ${cruiseLineLogo(model)}
-    <rect x="72" y="250" width="6" height="420" rx="3" fill="${GREEN}" fill-opacity="0.85"/>
+    <rect x="72" y="250" width="6" height="360" rx="3" fill="${GREEN}" fill-opacity="0.85"/>
     ${routeHeadline(model, { x: left + 24, y: 310, anchor: "start", size: 86 })}
-    ${aboardLine(model, { x: left + 24, y: 530, anchor: "start", size: 36 })}
-    ${factsBlock(model, { x: left + 24, y: 630, anchor: "start" })}
-    ${portsLine(ports, { y: 780, fontSize: 26, anchorX: left + 24, anchor: "start" })}
-    ${brandLockup(model, { y: H - FOOTER_H - 230, size: 148 })}
+    ${nightsDatesLine(model, { x: left + 24, y: 520, anchor: "start", size: 34 })}
+    ${shipLine(model, { x: left + 24, y: 568, anchor: "start", size: 34 })}
+    ${portsLine(ports, { y: 700, fontSize: 34, anchorX: left + 24, anchor: "start" })}
+    ${brandLockup(model, { y: brandY, size: brandSize })}
     ${greenFooter()}
   `;
   return frame(body);
@@ -277,15 +333,17 @@ function renderMasterConceptB(model) {
 /** Concept C — lower content panel; image remains dominant above */
 function renderMasterConceptC(model) {
   const ports = curatedPorts(model);
+  const brandSize = 180;
+  const brandY = H - FOOTER_H - brandSize - 20;
   const body = `
     ${masterBackground(model, { concept: "c" })}
     ${cruiseLineLogo(model)}
-    <rect x="64" y="620" width="952" height="430" rx="28" fill="#071018" fill-opacity="0.38"/>
+    <rect x="64" y="620" width="952" height="380" rx="28" fill="#071018" fill-opacity="0.38"/>
     ${routeHeadline(model, { y: 720, size: 80 })}
-    ${aboardLine(model, { y: 890, size: 34 })}
-    ${factsBlock(model, { y: 970 })}
-    ${portsLine(ports, { y: 1050, fontSize: 24 })}
-    ${brandLockup(model, { y: H - FOOTER_H - 185, size: 132 })}
+    ${nightsDatesLine(model, { y: 880, size: 32 })}
+    ${shipLine(model, { y: 924, size: 32 })}
+    ${portsLine(ports, { y: 1000, fontSize: 32 })}
+    ${brandLockup(model, { y: brandY, size: brandSize })}
     ${greenFooter()}
   `;
   return frame(body);
@@ -297,6 +355,7 @@ module.exports = {
   GREEN,
   FOOTER_H,
   curatedPorts,
+  cruiseLineLogo,
   renderMasterConceptA,
   renderMasterConceptB,
   renderMasterConceptC

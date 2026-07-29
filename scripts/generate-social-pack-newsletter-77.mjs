@@ -1,11 +1,9 @@
 #!/usr/bin/env node
 /**
- * Local Newsletter #77 Sirena destination-design Social Pack review.
+ * Generate the complete Newsletter #77 Social Pack (all cruises).
+ * Read-only against production data. HOLD DEPLOY until inspected.
  *
  *   node scripts/generate-social-pack-newsletter-77.mjs
- *
- * Writes into generated-assets/social-pack-newsletter-77/destination-design/
- * (gitignored). Does not push or deploy. Read-only against Supabase.
  */
 
 import { createRequire } from "module";
@@ -24,6 +22,7 @@ const { buildSocialPackZip } = require("../netlify/functions/lib/social-pack-zip
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
+const NEWSLETTER = 77;
 
 function loadEnv() {
   const envPath = path.join(root, ".env");
@@ -41,74 +40,70 @@ function loadEnv() {
 
 async function main() {
   loadEnv();
-  const outDir = path.join(root, "generated-assets/social-pack-newsletter-77/destination-design");
-  fs.mkdirSync(outDir, { recursive: true });
+  const outRoot = path.join(root, "generated-assets/social-pack-newsletter-77/full-pack");
+  fs.mkdirSync(outRoot, { recursive: true });
 
-  const rows = await listIssueCruiseIds(77);
-  if (!rows.length) throw new Error("No Featured Cruises found for newsletter_number=77");
+  const rows = await listIssueCruiseIds(NEWSLETTER);
+  if (!rows.length) throw new Error("No cruises for newsletter 77");
 
-  const sirena =
-    rows.find((r) => /sirena|istanbul|barcelona/i.test(String(r.headline || ""))) || rows[0];
+  const packs = [];
+  const report = { newsletter: NEWSLETTER, cruises: [], generated_at: new Date().toISOString() };
 
-  console.log(
-    JSON.stringify(
-      {
-        source: "live_read_only",
-        newsletter_number: 77,
-        primary_id: sirena.id,
-        primary_headline: sirena.headline,
-        mode: "sirena_destination_design_only"
-      },
-      null,
-      2
-    )
-  );
+  for (let i = 0; i < rows.length; i += 1) {
+    let model = await loadFeaturedCruisePackModel(rows[i].id, {
+      index: i + 1,
+      treatment: "soft"
+    });
+    model = await hydrateMedia(model);
+    const rendered = await renderCruisePack(model);
+    const folder = path.join(outRoot, model.folderSlug);
+    fs.mkdirSync(folder, { recursive: true });
 
-  let model = await loadFeaturedCruisePackModel(sirena.id, {
-    index: Math.max(1, Number(sirena.display_order) || 1),
-    treatment: "soft"
-  });
-  if (model.readiness?.status === "blocked") {
-    throw new Error(model.readiness.label);
+    for (const [name, buf] of Object.entries(rendered.slides)) {
+      fs.writeFileSync(path.join(folder, name), buf);
+    }
+    fs.writeFileSync(path.join(folder, "caption.txt"), model.caption || "");
+
+    const joined = Object.values(rendered.svgs).join("\n");
+    if (/\bairline\b/i.test(joined) || /\bairfare\b/i.test(joined)) {
+      throw new Error(`Airline leak in ${model.folderSlug}`);
+    }
+    if (rendered.plan.some((p) => p.kind === "journey")) {
+      throw new Error(`Journey slide present in ${model.folderSlug}`);
+    }
+
+    packs.push({ ...model, slides: rendered.slides });
+
+    const cruiseReport = {
+      id: model.id,
+      folder: model.folderSlug,
+      destination_match: model.backgroundMatchRole,
+      destination_key: model.backgroundDestinationKey,
+      selected_image: model.backgroundTitle || model.backgroundMediaId,
+      media_id: model.backgroundMediaId,
+      candidate_count: model.backgroundCandidateCount,
+      rotation_index: model.backgroundRotationIndex,
+      rooms_found: (model.offers || []).map((o) => ({
+        room: o.roomLabelDisplay || o.roomLabel,
+        price: o.priceLabel,
+        brochure: o.brochureLabel
+      })),
+      room_slides: rendered.plan.filter((p) => p.kind === "offer").map((p) => p.key),
+      files: Object.keys(rendered.slides),
+      warnings: model.readiness?.warnings || [],
+      readiness: model.readiness?.label || null
+    };
+    report.cruises.push(cruiseReport);
+    console.log(
+      `${model.folderSlug}: ${cruiseReport.room_slides.length} rooms · ${cruiseReport.candidate_count} images · ${cruiseReport.destination_match}`
+    );
   }
-  model = await hydrateMedia(model);
-  const rendered = await renderCruisePack(model);
 
-  const report = {
-    destination_key: model.backgroundDestinationKey,
-    candidate_count: model.backgroundCandidateCount,
-    rotation_index: model.backgroundRotationIndex,
-    media_id: model.backgroundMediaId,
-    media_title: model.backgroundTitle,
-    match_role: model.backgroundMatchRole,
-    source: model.backgroundSource,
-    treatment: model.treatment,
-    brand_logo_path: model.brandLogoPath,
-    cruise_line_logo_url: model.cruiseLineLogoUrl,
-    offers: (model.offers || []).map((o) => ({
-      room: o.roomLabel,
-      display: o.roomLabelDisplay,
-      public: o.cruise101Price,
-      brochure: o.brochurePrice
-    })),
-    slide_order: rendered.plan.map((p) => p.key)
-  };
-  fs.writeFileSync(path.join(outDir, "resolution-report.json"), JSON.stringify(report, null, 2));
-  console.log("resolution", JSON.stringify(report, null, 2));
-
-  for (const [name, buf] of Object.entries(rendered.slides)) {
-    fs.writeFileSync(path.join(outDir, name), buf);
-  }
-  fs.writeFileSync(path.join(outDir, "caption.txt"), model.caption || "");
-
-  const zip = await buildSocialPackZip({
-    newsletterNumber: 77,
-    packs: [{ ...model, slides: rendered.slides }]
-  });
-  const zipPath = path.join(outDir, "newsletter-77-sirena-destination-design.zip");
-  fs.writeFileSync(zipPath, zip.buffer);
-  console.log("review_dir", outDir);
-  console.log("zip", zipPath);
+  const zip = await buildSocialPackZip({ newsletterNumber: NEWSLETTER, packs });
+  fs.writeFileSync(path.join(outRoot, zip.filename), zip.buffer);
+  fs.writeFileSync(path.join(outRoot, "report.json"), JSON.stringify(report, null, 2));
+  console.log("zip", zip.filename, zip.buffer.length);
+  console.log("out", outRoot);
 }
 
 main().catch((err) => {

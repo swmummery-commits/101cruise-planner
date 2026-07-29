@@ -1,23 +1,24 @@
 /**
  * Caption text for social carousel posts.
+ * Public room prices and inclusions only — never airline / category / internal URLs.
  */
 
 const { formatAuDateRange, normaliseWhitespace } = require("./social-pack-copy");
 
 function buildCaption(model) {
   const lines = [];
-  const opening = normaliseWhitespace(model.shortEditorial || model.headlineShort || model.headline || "");
+  const opening = normaliseWhitespace(
+    model.journeyLine || model.destinationStrip || model.headlineShort || ""
+  );
   if (opening) lines.push(opening, "");
 
-  const facts = [
-    [model.lineName, model.shipName].filter(Boolean).join(" · "),
-    model.dateRange || formatAuDateRange(model.departureDate, model.returnDate),
-    model.durationLabel ? `${model.nights} nights` : "",
-    model.journeyLine || ""
-  ].filter(Boolean);
-  if (facts.length) {
-    lines.push(...facts, "");
-  }
+  const shipLine = [model.lineName, model.shipName].filter(Boolean).join(" · ");
+  if (shipLine) lines.push(shipLine);
+
+  const dates = model.dateRange || formatAuDateRange(model.departureDate, model.returnDate);
+  const duration = model.nights != null ? `${model.nights} nights` : model.durationLabel || "";
+  const dateLine = [dates, duration].filter(Boolean).join(" · ");
+  if (dateLine) lines.push(dateLine, "");
 
   if (model.ports?.length) {
     const highlight = model.ports.slice(0, 6).join(" · ");
@@ -26,22 +27,9 @@ function buildCaption(model) {
 
   if (model.offers?.length) {
     for (const offer of model.offers) {
-      lines.push(
-        `${offer.roomLabel}: ${offer.priceLabelFrom || offer.priceLabel}${
-          offer.saveLabel ? ` (${offer.saveLabel})` : ""
-        }`
-      );
+      const label = offer.roomLabelDisplay || offer.roomLabel || "Room";
+      lines.push(`${label}: ${offer.priceLabelFrom || offer.priceLabel}`);
     }
-    if (model.inclusions?.length) {
-      lines.push(`Includes: ${model.inclusions.join(", ")}`);
-    }
-    lines.push("");
-  } else if (model.offer) {
-    lines.push(
-      `${model.offer.roomLabel}: ${model.offer.priceLabel}${
-        model.offer.saveLabel ? ` (${model.offer.saveLabel})` : ""
-      }`
-    );
     if (model.inclusions?.length) {
       lines.push(`Includes: ${model.inclusions.join(", ")}`);
     }
@@ -50,7 +38,9 @@ function buildCaption(model) {
     lines.push("Ask Paul for his best price.", "");
   }
 
-  lines.push("Message Paul for details or visit 101cruise.com.au.", "");
+  lines.push("Email Paul at paul@101cruise.com.au for details.");
+  lines.push("101cruise.com.au");
+  lines.push("");
   lines.push("All prices are per person in USD and subject to availability.");
   return lines.join("\n");
 }

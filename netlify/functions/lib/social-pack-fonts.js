@@ -1,37 +1,62 @@
 /**
  * Bundled Social Pack fonts for deterministic resvg output.
- * Montserrat (SIL OFL 1.1) — not exposed as a public download surface.
+ * Not exposed as a public download surface.
+ *
+ * - Montserrat — SIL OFL 1.1 (headings / body)
+ * - League Spartan — SIL OFL 1.1 (CTA "TALK TO PAUL TODAY")
+ * - Great Vibes — SIL OFL 1.1 (CTA script stand-in for Canva "Feeling Passionate",
+ *   which is personal-use / commercial-licence only and must not be bundled)
  */
 
 const fs = require("fs");
 const path = require("path");
 
-const WEIGHT_FILES = [
+const MONTSERRAT_FILES = [
   "Montserrat-Regular.ttf",
   "Montserrat-Medium.ttf",
   "Montserrat-Bold.ttf",
   "Montserrat-ExtraBold.ttf"
 ];
 
-function fontsDir() {
+function packRoot() {
   const candidates = [
-    path.join(__dirname, "../../../assets/fonts/social-pack/montserrat"),
-    path.join(process.cwd(), "assets/fonts/social-pack/montserrat")
+    path.join(__dirname, "../../../assets/fonts/social-pack"),
+    path.join(process.cwd(), "assets/fonts/social-pack")
   ];
   for (const dir of candidates) {
-    if (fs.existsSync(path.join(dir, "Montserrat-ExtraBold.ttf"))) return dir;
+    if (fs.existsSync(path.join(dir, "montserrat", "Montserrat-ExtraBold.ttf"))) return dir;
   }
   return candidates[0];
 }
 
+function listFilesIn(subdir, names) {
+  const dir = path.join(packRoot(), subdir);
+  return names.map((name) => path.join(dir, name)).filter((file) => fs.existsSync(file));
+}
+
 function listMontserratFontFiles() {
-  const dir = fontsDir();
-  return WEIGHT_FILES.map((name) => path.join(dir, name)).filter((file) => fs.existsSync(file));
+  return listFilesIn("montserrat", MONTSERRAT_FILES);
+}
+
+function listLeagueSpartanFontFiles() {
+  return listFilesIn("league-spartan", ["LeagueSpartan-Bold.ttf", "LeagueSpartan-Regular.ttf"]);
+}
+
+function listGreatVibesFontFiles() {
+  return listFilesIn("great-vibes", ["GreatVibes-Regular.ttf"]);
+}
+
+function listAllSocialPackFontFiles() {
+  return [
+    ...listMontserratFontFiles(),
+    ...listLeagueSpartanFontFiles(),
+    ...listGreatVibesFontFiles()
+  ];
 }
 
 function resvgFontOptions({ defaultFamily = "Montserrat" } = {}) {
-  const fontFiles = listMontserratFontFiles();
-  if (!fontFiles.length) {
+  const fontFiles = listAllSocialPackFontFiles();
+  if (listMontserratFontFiles().length < 4) {
     throw new Error("Social Pack Montserrat font files are missing.");
   }
   return {
@@ -43,8 +68,16 @@ function resvgFontOptions({ defaultFamily = "Montserrat" } = {}) {
 
 module.exports = {
   FAMILY: "Montserrat",
-  WEIGHT_FILES,
-  fontsDir,
+  FAMILY_CTA: "League Spartan",
+  FAMILY_SCRIPT: "Great Vibes",
+  SCRIPT_NOTE:
+    "Great Vibes (SIL OFL 1.1) used as licensed stand-in for Canva Feeling Passionate (not redistributable)",
+  WEIGHT_FILES: MONTSERRAT_FILES,
+  fontsDir: () => path.join(packRoot(), "montserrat"),
+  packRoot,
   listMontserratFontFiles,
+  listLeagueSpartanFontFiles,
+  listGreatVibesFontFiles,
+  listAllSocialPackFontFiles,
   resvgFontOptions
 };
