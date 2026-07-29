@@ -1163,6 +1163,10 @@ function renderAdmin() {
 
     ${renderAdminActivePanel()}
   `;
+  // Floating toast so errors/success stay visible wherever you clicked on the page.
+  if (typeof window.AdminToast?.mirrorFromAdminRoot === "function") {
+    window.AdminToast.mirrorFromAdminRoot(app);
+  }
 }
 
 function toggleImportDataPanel() {
@@ -10769,9 +10773,16 @@ function renderFeaturedCruisesPanel() {
 
   if (window.NewsletterIssueComposer?.render) {
     const composerHtml = window.NewsletterIssueComposer.render();
+    // Avoid duplicating the same lock text above the composer.
+    const showInlineMessage =
+      featuredCruiseMessage &&
+      !(
+        featuredEditLockBlocked &&
+        String(featuredCruiseMessage).trim() === String(featuredEditLockBlocked.message || "").trim()
+      );
     const loadNote = featuredCruiseLoading
       ? `<p class="admin-muted">Loading newsletter cruises…</p>`
-      : featuredCruiseMessage
+      : showInlineMessage
         ? `<div class="admin-message ${
             featuredCruiseMessageTone === "error"
               ? "admin-error"
