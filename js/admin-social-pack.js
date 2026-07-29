@@ -117,6 +117,7 @@
     }));
     rerender();
 
+    const run = async () => {
     try {
       const headers = await authHeaders();
       const response = await fetch("/.netlify/functions/social-pack-generate", {
@@ -162,6 +163,18 @@
       message = error.message || "Could not open Social Pack.";
       messageTone = "error";
       rerender();
+    }
+    };
+
+    if (typeof global.AdminLoading?.withLoading === "function") {
+      await global.AdminLoading.withLoading(run, {
+        key: "social-pack-open",
+        delayMs: 0,
+        message: "Opening Social Pack…",
+        supportMessage: "Please wait while we check cruise readiness."
+      });
+    } else {
+      await run();
     }
   }
 

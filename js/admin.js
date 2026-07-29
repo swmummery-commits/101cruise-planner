@@ -467,6 +467,25 @@ async function adminAuthHeaders(extra = {}) {
 }
 
 /**
+ * Uniform Admin waiting overlay (nine-square BrandLoading).
+ * Use for any open/load/save that can take more than a moment.
+ */
+async function withAdminBusy(fn, options = {}) {
+  if (typeof window.AdminLoading?.withLoading === "function") {
+    return window.AdminLoading.withLoading(fn, {
+      delayMs: Number.isFinite(Number(options.delayMs)) ? Number(options.delayMs) : 0,
+      key: options.key || "admin-busy",
+      message: options.message || "Please wait…",
+      supportMessage:
+        options.supportMessage === undefined
+          ? "Please wait a moment."
+          : options.supportMessage
+    });
+  }
+  return fn();
+}
+
+/**
  * Load every beverage package row from Supabase.
  * Pages through results so the Admin grid is never silently capped by the
  * PostgREST default max-rows setting (commonly 1000).
@@ -1366,6 +1385,8 @@ async function loadBookingDocumentsWorkspace() {
   bookingDocumentsMessage = "Loading booking and documents…";
   renderAdmin();
 
+  return withAdminBusy(
+    async () => {
   try {
     const headers = await adminAuthHeaders();
     if (!headers.Authorization || headers.Authorization === "Bearer ") {
@@ -1398,6 +1419,13 @@ async function loadBookingDocumentsWorkspace() {
     bookingDocumentsLoading = false;
     renderAdmin();
   }
+    },
+    {
+      key: "booking-documents-load",
+      message: "Loading booking documents…",
+      supportMessage: "Please wait while we retrieve this booking."
+    }
+  );
 }
 
 function handleCrmSyncKeydown(event) {
@@ -1640,6 +1668,8 @@ async function syncCrmBooking() {
   crmSyncMessage = "Syncing booking from Base44...";
   renderAdmin();
 
+  return withAdminBusy(
+    async () => {
   try {
     const headers = await adminAuthHeaders();
     if (!headers.Authorization || headers.Authorization === "Bearer ") {
@@ -1681,6 +1711,13 @@ async function syncCrmBooking() {
     crmSyncLoading = false;
     renderAdmin();
   }
+    },
+    {
+      key: "crm-sync-booking",
+      message: "Syncing booking…",
+      supportMessage: "Please wait while we retrieve this booking from Base44."
+    }
+  );
 }
 
 async function saveBase44BookingToSupabase(booking) {
@@ -8498,27 +8535,36 @@ function displayDestinationStrip(row) {
 }
 
 async function ensureFeaturedCruisesLoaded() {
-  featuredCruiseLoading = true;
-  renderAdmin();
-  try {
-    if (!ciCruiseLines.length || !ciCruiseShips.length) {
-      await loadCruiseIntelligenceData({ quiet: true });
+  return withAdminBusy(
+    async () => {
+      featuredCruiseLoading = true;
+      renderAdmin();
+      try {
+        if (!ciCruiseLines.length || !ciCruiseShips.length) {
+          await loadCruiseIntelligenceData({ quiet: true });
+        }
+        await loadFeaturedCruises();
+        await loadFeaturedRoomTypes();
+        try {
+          await loadFeaturedNewsletterDefaults();
+        } catch (_defaultsError) {
+          featuredNewsletterDefaults = { newsletter_number: null, newsletter_publication_date: null };
+          // Defaults are only required when creating a new cruise; list view can still open.
+        }
+      } catch (error) {
+        featuredCruiseMessage = error.message || "Could not load newsletter cruises.";
+        featuredCruiseMessageTone = "error";
+      } finally {
+        featuredCruiseLoading = false;
+        renderAdmin();
+      }
+    },
+    {
+      key: "featured-cruises-load",
+      message: "Loading newsletter cruises…",
+      supportMessage: "Please wait while we refresh the issue list."
     }
-    await loadFeaturedCruises();
-    await loadFeaturedRoomTypes();
-    try {
-      await loadFeaturedNewsletterDefaults();
-    } catch (_defaultsError) {
-      featuredNewsletterDefaults = { newsletter_number: null, newsletter_publication_date: null };
-      // Defaults are only required when creating a new cruise; list view can still open.
-    }
-  } catch (error) {
-    featuredCruiseMessage = error.message || "Could not load newsletter cruises.";
-    featuredCruiseMessageTone = "error";
-  } finally {
-    featuredCruiseLoading = false;
-    renderAdmin();
-  }
+  );
 }
 
 async function loadCruiseIntelligenceData({ quiet = false } = {}) {
@@ -8931,31 +8977,33 @@ async function takeOverFeaturedCruiseEdit(id) {
 }
 
 async function editFeaturedCruise(id, { skipLock = false } = {}) {
-  featuredCruiseLoading = true;
-  featuredCruiseMessage = "";
-  featuredCruiseMessageTone = "";
-  featuredEditLockBlocked = null;
-  renderAdmin();
-  try {
-    if (!skipLock) {
-      await releaseFeaturedEditLock();
-      const lockResult = await acquireFeaturedEditLock(id, { force: false });
-      if (!lockResult.ok) {
-        featuredCruiseMessage = lockResult.data?.error || "Another admin is editing this cruise.";
-        featuredCruiseMessageTone = "error";
-        showFeaturedCruiseForm = false;
-        return;
-      }
-    }
+  return withAdminBusy(
+    async () => {
+      featuredCruiseLoading = true;
+      featuredCruiseMessage = "";
+      featuredCruiseMessageTone = "";
+      featuredEditLockBlocked = null;
+      renderAdmin();
+      try {
+        if (!skipLock) {
+          await releaseFeaturedEditLock();
+          const lockResult = await acquireFeaturedEditLock(id, { force: false });
+          if (!lockResult.ok) {
+            featuredCruiseMessage = lockResult.data?.error || "Another admin is editing this cruise.";
+            featuredCruiseMessageTone = "error";
+            showFeaturedCruiseForm = false;
+            return;
+          }
+        }
 
-    // Always re-read the cruise row so hero_media_id / route_map_media_id are current.
-    const { data: existing, error: cruiseError } = await supabaseClient
-      .from("featured_cruises")
-      .select("*, ci_cruise_lines(id,name), ci_cruise_ships(id,name,hero_image_url)")
-      .eq("id", id)
-      .maybeSingle();
-    if (cruiseError) throw new Error(cruiseError.message);
-    if (!existing) throw new Error("Featured cruise not found.");
+        // Always re-read the cruise row so hero_media_id / route_map_media_id are current.
+        const { data: existing, error: cruiseError } = await supabaseClient
+          .from("featured_cruises")
+          .select("*, ci_cruise_lines(id,name), ci_cruise_ships(id,name,hero_image_url)")
+          .eq("id", id)
+          .maybeSingle();
+        if (cruiseError) throw new Error(cruiseError.message);
+        if (!existing) throw new Error("Featured cruise not found.");
 
     if (window.MediaLibraryAdmin?.ensureLoaded) {
       await window.MediaLibraryAdmin.ensureLoaded({ quiet: true });
@@ -9057,15 +9105,22 @@ async function editFeaturedCruise(id, { skipLock = false } = {}) {
     if (listIndex >= 0) featuredCruises[listIndex] = { ...featuredCruises[listIndex], ...existing };
     else featuredCruises.unshift(existing);
     startFeaturedEditLockHeartbeat();
-  } catch (error) {
-    await releaseFeaturedEditLock();
-    featuredCruiseMessage = error.message || "Could not open this cruise.";
-    featuredCruiseMessageTone = "error";
-    showFeaturedCruiseForm = false;
-  } finally {
-    featuredCruiseLoading = false;
-    renderAdmin();
-  }
+      } catch (error) {
+        await releaseFeaturedEditLock();
+        featuredCruiseMessage = error.message || "Could not open this cruise.";
+        featuredCruiseMessageTone = "error";
+        showFeaturedCruiseForm = false;
+      } finally {
+        featuredCruiseLoading = false;
+        renderAdmin();
+      }
+    },
+    {
+      key: "featured-cruise-edit",
+      message: "Opening this cruise…",
+      supportMessage: "Please wait while we load pricing, itinerary and images."
+    }
+  );
 }
 
 function clearFeaturedLocalDraft() {
@@ -9193,6 +9248,8 @@ async function restoreFeaturedLocalDraft() {
   }
   const cruiseId = stored.editingFeaturedCruiseId || null;
   if (cruiseId) {
+    return withAdminBusy(
+      async () => {
     featuredCruiseLoading = true;
     featuredCruiseMessage = "Restoring draft…";
     featuredCruiseMessageTone = "running";
@@ -9219,6 +9276,13 @@ async function restoreFeaturedLocalDraft() {
       featuredCruiseLoading = false;
       renderAdmin();
     }
+      },
+      {
+        key: "featured-cruise-restore-draft",
+        message: "Restoring your draft…",
+        supportMessage: "Please wait while we reopen this cruise."
+      }
+    );
     return;
   }
   applyFeaturedLocalDraft(stored);
@@ -10459,10 +10523,15 @@ async function generateFeaturedRouteMap() {
   featuredRouteMapGenProgress = progressSteps[0];
   renderAdmin();
 
+  return withAdminBusy(
+    async () => {
   const progressTimer = setInterval(() => {
     if (!featuredRouteMapGenerating) return;
     stepIndex = Math.min(stepIndex + 1, progressSteps.length - 2);
     featuredRouteMapGenProgress = progressSteps[stepIndex];
+    if (window.AdminLoading?.setMessage) {
+      window.AdminLoading.setMessage(featuredRouteMapGenProgress);
+    }
     renderAdmin();
   }, 700);
 
@@ -10522,6 +10591,13 @@ async function generateFeaturedRouteMap() {
     if (featuredRouteMapGenResult?.ok) featuredRouteMapGenProgress = "Complete";
     renderAdmin();
   }
+    },
+    {
+      key: "featured-route-map-generate",
+      message: "Generating the route map…",
+      supportMessage: "Please wait while we render and upload the map."
+    }
+  );
 }
 
 window.generateFeaturedRouteMap = generateFeaturedRouteMap;
@@ -11247,6 +11323,8 @@ async function saveFeaturedCruise() {
   featuredCruiseMessageTone = "running";
   renderAdmin();
 
+  return withAdminBusy(
+    async () => {
   try {
     // Resolve port matches / create provisional ports before writing the cruise row.
     // Port link failures no longer block save — cruise + entered port text are kept.
@@ -11491,10 +11569,19 @@ async function saveFeaturedCruise() {
     featuredCruiseSaving = false;
     renderAdmin();
   }
+    },
+    {
+      key: "featured-cruise-save",
+      message: "Saving this cruise…",
+      supportMessage: "Please wait while we save the cruise, pricing and itinerary."
+    }
+  );
 }
 
 async function deleteFeaturedCruise(id) {
   if (!window.confirm("Delete this cruise? Its pricing rows will also be deleted.")) return;
+  return withAdminBusy(
+    async () => {
   featuredCruiseSaving = true;
   featuredCruiseMessage = "Deleting…";
   featuredCruiseMessageTone = "";
@@ -11517,6 +11604,13 @@ async function deleteFeaturedCruise(id) {
     featuredCruiseSaving = false;
     renderAdmin();
   }
+    },
+    {
+      key: "featured-cruise-delete",
+      message: "Deleting this cruise…",
+      supportMessage: "Please wait a moment."
+    }
+  );
 }
 
 

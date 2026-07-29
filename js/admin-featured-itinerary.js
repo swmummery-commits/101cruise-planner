@@ -546,6 +546,7 @@
       );
     if (!replaceExisting) return;
 
+    const run = async () => {
     try {
       portListBusy = true;
       portListMessage = "Splitting ports and matching the Ports database…";
@@ -626,6 +627,18 @@
     } finally {
       portListBusy = false;
       rerender();
+    }
+    };
+
+    if (typeof global.AdminLoading?.withLoading === "function") {
+      await global.AdminLoading.withLoading(run, {
+        key: "featured-ports-apply",
+        delayMs: 0,
+        message: "Matching ports…",
+        supportMessage: "Please wait while we link ports and look up coordinates."
+      });
+    } else {
+      await run();
     }
   }
 

@@ -958,6 +958,7 @@
   }
 
   async function preview(outputMode) {
+    const run = async () => {
     try {
       issueBusy = true;
       issueMessage = "Building preview…";
@@ -985,9 +986,21 @@
       issueBusy = false;
       rerender();
     }
+    };
+    if (typeof global.AdminLoading?.withLoading === "function") {
+      await global.AdminLoading.withLoading(run, {
+        key: "newsletter-preview",
+        delayMs: 0,
+        message: "Building the newsletter preview…",
+        supportMessage: "Please wait while we assemble this issue."
+      });
+    } else {
+      await run();
+    }
   }
 
   async function exportHtml(outputMode, action) {
+    const run = async () => {
     try {
       issueBusy = true;
       issueMessage = "Preparing HTML…";
@@ -1003,27 +1016,25 @@
       }
       if (outputMode === "airline_staff") issueHtml.airline = result.html;
       else issueHtml.general = result.html;
-      issueHtml.filename = result.filename;
-      issueHtml.label = result.label;
+      issueHtml.label = result.label || "";
+      issueHtml.filename = result.filename || "";
+      issueHtml.previewHtml = result.previewHtml || result.html || "";
       issueHtml.previewMode = outputMode;
-      issueHtml.previewHtml = result.previewHtml;
-      issueWarnings = result.warnings || [];
-
       if (action === "copy") {
-        await navigator.clipboard.writeText(result.html);
-        issueMessage = `${result.label} copied — paste into a Mailchimp Code block.`;
+        await navigator.clipboard.writeText(result.html || "");
+        issueMessage = "HTML copied to clipboard.";
         issueMessageTone = "success";
-      } else if (action === "download") {
-        const blob = new Blob([result.html], { type: "text/html;charset=utf-8" });
+      } else {
+        const blob = new Blob([result.html || ""], { type: "text/html;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = result.filename;
+        a.download = result.filename || "newsletter.html";
         document.body.appendChild(a);
         a.click();
         a.remove();
-        URL.revokeObjectURL(url);
-        issueMessage = `Downloaded ${result.filename}.`;
+        setTimeout(() => URL.revokeObjectURL(url), 30_000);
+        issueMessage = "HTML downloaded.";
         issueMessageTone = "success";
       }
     } catch (error) {
@@ -1032,6 +1043,17 @@
     } finally {
       issueBusy = false;
       rerender();
+    }
+    };
+    if (typeof global.AdminLoading?.withLoading === "function") {
+      await global.AdminLoading.withLoading(run, {
+        key: "newsletter-export",
+        delayMs: 0,
+        message: "Preparing newsletter HTML…",
+        supportMessage: "Please wait while we build the Mailchimp fragment."
+      });
+    } else {
+      await run();
     }
   }
 
