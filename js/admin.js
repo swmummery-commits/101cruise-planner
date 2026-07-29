@@ -1163,6 +1163,9 @@ function renderAdmin() {
 
     ${renderAdminActivePanel()}
   `;
+  // Keep lock state readable by AdminToast action buttons.
+  window.featuredEditLockBlocked = featuredEditLockBlocked;
+  window.takeOverFeaturedCruiseEdit = takeOverFeaturedCruiseEdit;
   // Floating toast so errors/success stay visible wherever you clicked on the page.
   if (typeof window.AdminToast?.mirrorFromAdminRoot === "function") {
     window.AdminToast.mirrorFromAdminRoot(app);
