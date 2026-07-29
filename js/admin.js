@@ -142,6 +142,12 @@ const FEATURED_LOCAL_DRAFT_KEY = "101cruise.featuredCruise.localDraft.v1";
 let featuredLocalDraftNotice = null; // { savedAt, editingId } when a restore is available
 let featuredLocalDraftTimer = null;
 let featuredLocalDraftSavedAt = null;
+/** Exclusive edit lock for the open Featured Cruise */
+let featuredEditLockToken = null;
+let featuredEditLockMeta = null;
+let featuredEditLockTimer = null;
+let featuredEditLockBlocked = null; // { id, message, lock } when open is refused
+
 let featuredNewsletterPreviewMode = "general"; // general | airline_staff
 let featuredNewsletterPreviewTemplate = "green-price-cards"; // classic-editorial | green-price-cards
 /** Sprint 13A/13B — Mailchimp HTML POC export panel state */
@@ -8776,12 +8782,162 @@ async function fetchMediaLibraryRow(id) {
   return data || null;
 }
 
-async function editFeaturedCruise(id) {
+async function featuredCruiseLockApi(action, { featuredCruiseId, lockToken, force } = {}) {
+  const headers = await adminAuthHeaders();
+  const response = await fetch("/.netlify/functions/featured-cruise-lock", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      action,
+      featured_cruise_id: featuredCruiseId,
+      lock_token: lockToken || featuredEditLockToken || null,
+      force: Boolean(force)
+    })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok && response.status !== 409) {
+    const err = new Error(data.error || `Edit lock failed (HTTP ${response.status})`);
+    err.statusCode = response.status;
+    err.data = data;
+    throw err;
+  }
+  return { ok: response.ok, status: response.status, data };
+}
+
+function stopFeaturedEditLockHeartbeat() {
+  if (featuredEditLockTimer) {
+    clearInterval(featuredEditLockTimer);
+    featuredEditLockTimer = null;
+  }
+}
+
+function startFeaturedEditLockHeartbeat() {
+  stopFeaturedEditLockHeartbeat();
+  if (!editingFeaturedCruiseId || !featuredEditLockToken) return;
+  featuredEditLockTimer = setInterval(async () => {
+    if (!editingFeaturedCruiseId || !featuredEditLockToken) return;
+    try {
+      const { data } = await featuredCruiseLockApi("heartbeat", {
+        featuredCruiseId: editingFeaturedCruiseId,
+        lockToken: featuredEditLockToken
+      });
+      if (!data?.success) {
+        stopFeaturedEditLockHeartbeat();
+        featuredEditLockToken = null;
+        featuredEditLockMeta = null;
+        featuredCruiseMessage =
+          data?.error ||
+          "Someone else has taken over editing this cruise. Your browser draft is still kept.";
+        featuredCruiseMessageTone = "error";
+        persistFeaturedLocalDraftNow();
+        showFeaturedCruiseForm = false;
+        editingFeaturedCruiseId = null;
+        renderAdmin();
+      } else if (data.lock) {
+        featuredEditLockMeta = data.lock;
+      }
+    } catch (_error) {
+      /* transient network — next tick retries */
+    }
+  }, 45_000);
+}
+
+async function releaseFeaturedEditLock({ keepalive = false } = {}) {
+  stopFeaturedEditLockHeartbeat();
+  const cruiseId = editingFeaturedCruiseId;
+  const token = featuredEditLockToken;
+  featuredEditLockToken = null;
+  featuredEditLockMeta = null;
+  if (!cruiseId || !token) return;
+  try {
+    const headers = await adminAuthHeaders();
+    await fetch("/.netlify/functions/featured-cruise-lock", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: "release",
+        featured_cruise_id: cruiseId,
+        lock_token: token
+      }),
+      keepalive: Boolean(keepalive)
+    });
+  } catch (_error) {
+    /* best effort */
+  }
+}
+
+async function acquireFeaturedEditLock(cruiseId, { force = false } = {}) {
+  const { data, status } = await featuredCruiseLockApi(force ? "force" : "acquire", {
+    featuredCruiseId: cruiseId,
+    force
+  });
+  if (data?.acquired && data.lock_token) {
+    featuredEditLockToken = data.lock_token;
+    featuredEditLockMeta = data.lock || null;
+    featuredEditLockBlocked = null;
+    return { ok: true, data };
+  }
+  if (data?.code === "locked" || status === 409) {
+    featuredEditLockBlocked = {
+      id: cruiseId,
+      message: data.error || "Another admin is editing this cruise.",
+      lock: data.lock || null
+    };
+    return { ok: false, data };
+  }
+  throw new Error(data?.error || "Could not lock this cruise for editing.");
+}
+
+async function takeOverFeaturedCruiseEdit(id) {
+  const cruiseId = id || featuredEditLockBlocked?.id;
+  if (!cruiseId) return;
+  if (
+    !window.confirm(
+      "Take over editing? The other person will lose the edit lock (their browser draft may still keep unsaved typing)."
+    )
+  ) {
+    return;
+  }
+  featuredCruiseLoading = true;
+  featuredCruiseMessage = "Taking over edit lock…";
+  featuredCruiseMessageTone = "running";
+  renderAdmin();
+  try {
+    const result = await acquireFeaturedEditLock(cruiseId, { force: true });
+    if (!result.ok) {
+      featuredCruiseMessage = result.data?.error || "Could not take over this cruise.";
+      featuredCruiseMessageTone = "error";
+      return;
+    }
+    featuredEditLockBlocked = null;
+    await editFeaturedCruise(cruiseId, { skipLock: true });
+  } catch (error) {
+    featuredCruiseMessage = error.message || "Could not take over this cruise.";
+    featuredCruiseMessageTone = "error";
+  } finally {
+    featuredCruiseLoading = false;
+    renderAdmin();
+  }
+}
+
+async function editFeaturedCruise(id, { skipLock = false } = {}) {
   featuredCruiseLoading = true;
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
+  featuredEditLockBlocked = null;
   renderAdmin();
   try {
+    if (!skipLock) {
+      await releaseFeaturedEditLock();
+      const lockResult = await acquireFeaturedEditLock(id, { force: false });
+      if (!lockResult.ok) {
+        featuredCruiseMessage = lockResult.data?.error || "Another admin is editing this cruise.";
+        featuredCruiseMessageTone = "error";
+        showFeaturedCruiseForm = false;
+        return;
+      }
+    }
+
     // Always re-read the cruise row so hero_media_id / route_map_media_id are current.
     const { data: existing, error: cruiseError } = await supabaseClient
       .from("featured_cruises")
@@ -8890,7 +9046,9 @@ async function editFeaturedCruise(id) {
     const listIndex = featuredCruises.findIndex((row) => row.id === id);
     if (listIndex >= 0) featuredCruises[listIndex] = { ...featuredCruises[listIndex], ...existing };
     else featuredCruises.unshift(existing);
+    startFeaturedEditLockHeartbeat();
   } catch (error) {
+    await releaseFeaturedEditLock();
     featuredCruiseMessage = error.message || "Could not open this cruise.";
     featuredCruiseMessageTone = "error";
     showFeaturedCruiseForm = false;
@@ -9014,13 +9172,43 @@ function applyFeaturedLocalDraft(stored) {
   return true;
 }
 
-function restoreFeaturedLocalDraft() {
+async function restoreFeaturedLocalDraft() {
   const stored = readFeaturedLocalDraft();
   if (!stored) {
     featuredLocalDraftNotice = null;
     featuredCruiseMessage = "No unsaved draft was found in this browser.";
     featuredCruiseMessageTone = "error";
     renderAdmin();
+    return;
+  }
+  const cruiseId = stored.editingFeaturedCruiseId || null;
+  if (cruiseId) {
+    featuredCruiseLoading = true;
+    featuredCruiseMessage = "Restoring draft…";
+    featuredCruiseMessageTone = "running";
+    renderAdmin();
+    try {
+      await releaseFeaturedEditLock();
+      const lockResult = await acquireFeaturedEditLock(cruiseId, { force: false });
+      if (!lockResult.ok) {
+        featuredEditLockBlocked = {
+          id: cruiseId,
+          message: lockResult.data?.error || "Another admin is editing this cruise.",
+          lock: lockResult.data?.lock || null
+        };
+        featuredCruiseMessage = featuredEditLockBlocked.message;
+        featuredCruiseMessageTone = "error";
+        return;
+      }
+      applyFeaturedLocalDraft(stored);
+      startFeaturedEditLockHeartbeat();
+    } catch (error) {
+      featuredCruiseMessage = error.message || "Could not restore draft.";
+      featuredCruiseMessageTone = "error";
+    } finally {
+      featuredCruiseLoading = false;
+      renderAdmin();
+    }
     return;
   }
   applyFeaturedLocalDraft(stored);
@@ -9033,6 +9221,7 @@ function dismissFeaturedLocalDraft() {
 }
 
 function cancelFeaturedCruiseForm() {
+  releaseFeaturedEditLock();
   showFeaturedCruiseForm = false;
   editingFeaturedCruiseId = null;
   featuredFormPricing = [];
@@ -9042,6 +9231,7 @@ function cancelFeaturedCruiseForm() {
   draggedFeaturedPricingLocalId = null;
   featuredPricingDragFromHandle = false;
   showFeaturedNewsletterPreview = false;
+  featuredEditLockBlocked = null;
   clearMailchimpPoc();
   window.FeaturedItineraryEditor?.reset?.();
   // Keep local draft unless the user explicitly discards it — refresh can still restore.
@@ -10568,6 +10758,14 @@ function renderFeaturedCruisesPanel() {
         <button type="button" class="admin-button secondary small" onclick="dismissFeaturedLocalDraft()">Discard</button>
       </div>`
     : "";
+  const lockBanner = featuredEditLockBlocked
+    ? `<div class="admin-message admin-error" style="margin-bottom:12px">
+        ${esc(featuredEditLockBlocked.message)}
+        <button type="button" class="admin-button secondary small" onclick="takeOverFeaturedCruiseEdit('${esc(
+          featuredEditLockBlocked.id
+        )}')">Take over editing</button>
+      </div>`
+    : "";
 
   if (window.NewsletterIssueComposer?.render) {
     const composerHtml = window.NewsletterIssueComposer.render();
@@ -10582,7 +10780,7 @@ function renderFeaturedCruisesPanel() {
                 : ""
           }">${esc(featuredCruiseMessage)}</div>`
         : "";
-    return `${draftBanner}${loadNote}${composerHtml}`;
+    return `${draftBanner}${lockBanner}${loadNote}${composerHtml}`;
   }
 
   return `
@@ -10738,7 +10936,7 @@ function renderFeaturedCruiseForm() {
         </div>
       </div>
       ${!isRunning ? `<div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>` : ""}
-      <p class="admin-helper" style="margin-top:0">While status is <strong>Draft</strong>, Save keeps whatever you have (ports, notes, partial pricing). Headline / nights / departure are only required when you set status to <strong>Published</strong>.</p>
+      <p class="admin-helper" style="margin-top:0">While status is <strong>Draft</strong>, Save keeps whatever you have (ports, notes, partial pricing). Headline / nights / departure are only required when you set status to <strong>Published</strong>. Only one person can edit this cruise at a time.</p>
 
       <section class="featured-form-section featured-newsletter-section">
         <h4>Newsletter and Publication</h4>
@@ -11249,6 +11447,7 @@ async function saveFeaturedCruise() {
     }
 
     await loadFeaturedCruises();
+    await releaseFeaturedEditLock();
     showFeaturedCruiseForm = false;
     editingFeaturedCruiseId = null;
     featuredFormPricing = [];
@@ -11287,6 +11486,7 @@ async function deleteFeaturedCruise(id) {
     const { error } = await supabaseClient.from("featured_cruises").delete().eq("id", id);
     if (error) throw new Error(error.message);
     await loadFeaturedCruises();
+    await releaseFeaturedEditLock();
     showFeaturedCruiseForm = false;
     editingFeaturedCruiseId = null;
     featuredFormPricing = [];
@@ -11302,5 +11502,11 @@ async function deleteFeaturedCruise(id) {
   }
 }
 
+
+if (typeof window !== "undefined") {
+  window.addEventListener("pagehide", () => {
+    releaseFeaturedEditLock({ keepalive: true });
+  });
+}
 
 initAdmin();
