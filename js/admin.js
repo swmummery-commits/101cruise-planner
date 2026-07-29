@@ -10786,13 +10786,62 @@ function refreshFeaturedPricingCalcs() {
   });
 }
 
-function roomTypeOptionsHtml(selected) {
-  const names = [...featuredCruiseRoomTypes.map((r) => r.name)];
-  if (selected && !names.some((n) => n.toLowerCase() === selected.toLowerCase())) names.push(selected);
-  return names
-    .filter(Boolean)
-    .map((name) => `<option value="${esc(name)}"></option>`)
-    .join("");
+function filteredFeaturedRoomTypeNames(query) {
+  const q = String(query || "").trim().toLowerCase();
+  const names = featuredCruiseRoomTypes.map((r) => String(r?.name || "").trim()).filter(Boolean);
+  const filtered = q ? names.filter((n) => n.toLowerCase().includes(q)) : names;
+  return filtered.slice(0, 14);
+}
+
+function renderFeaturedRoomTypeSuggestHtml(index, query) {
+  const names = filteredFeaturedRoomTypeNames(query);
+  if (!names.length) {
+    return `<div class="featured-room-type-ac" role="listbox"><div class="featured-room-type-ac-empty">No saved room types match</div></div>`;
+  }
+  return `
+    <div class="featured-room-type-ac" role="listbox">
+      ${names
+        .map(
+          (name) => `
+        <button type="button" class="featured-room-type-ac-item" role="option" data-name="${esc(name)}" onmousedown="event.preventDefault()" onclick="selectFeaturedRoomType(${index}, this.getAttribute('data-name'))">${esc(name)}</button>`
+        )
+        .join("")}
+    </div>`;
+}
+
+function refreshFeaturedRoomTypeSuggest(index) {
+  const input = document.getElementById(`fcPriceRoom-${index}`);
+  const mount = document.getElementById(`fcRoomTypeSuggest-${index}`);
+  if (!mount || !input) return;
+  if (document.activeElement !== input) {
+    mount.innerHTML = "";
+    return;
+  }
+  mount.innerHTML = renderFeaturedRoomTypeSuggestHtml(index, input.value);
+}
+
+function openFeaturedRoomTypeSuggest(index) {
+  refreshFeaturedRoomTypeSuggest(index);
+}
+
+function closeFeaturedRoomTypeSuggest(index) {
+  const mount = document.getElementById(`fcRoomTypeSuggest-${index}`);
+  if (mount) mount.innerHTML = "";
+}
+
+function closeFeaturedRoomTypeSuggestSoon(index) {
+  window.setTimeout(() => closeFeaturedRoomTypeSuggest(index), 140);
+}
+
+function selectFeaturedRoomType(index, name) {
+  const input = document.getElementById(`fcPriceRoom-${index}`);
+  if (input) {
+    input.value = name;
+    input.focus();
+  }
+  closeFeaturedRoomTypeSuggest(index);
+  onFeaturedRoomTypeInput(index);
+  refreshFeaturedPricingCalcs();
 }
 
 function onFeaturedRoomTypeInput(index) {
@@ -10804,6 +10853,7 @@ function onFeaturedRoomTypeInput(index) {
     prompt.hidden = !(value && !known);
     prompt.querySelector("[data-label]") && (prompt.querySelector("[data-label]").textContent = `Save “${value}” for future use`);
   }
+  refreshFeaturedRoomTypeSuggest(index);
 }
 
 async function saveFeaturedRoomTypeFromRow(index) {
@@ -10964,8 +11014,8 @@ function renderFeaturedPricingBlock(row, index, nights) {
         >☰</span>
         <div class="admin-field featured-room-type-field">
           <label>Room Type</label>
-          <input id="fcPriceRoom-${index}" data-fc-price="room" list="fcRoomTypeList-${index}" type="text" value="${esc(row.room_label)}" autocomplete="off" oninput="onFeaturedRoomTypeInput(${index}); refreshFeaturedPricingCalcs()">
-          <datalist id="fcRoomTypeList-${index}">${roomTypeOptionsHtml(row.room_label)}</datalist>
+          <input id="fcPriceRoom-${index}" data-fc-price="room" type="text" value="${esc(row.room_label)}" autocomplete="off" onfocus="openFeaturedRoomTypeSuggest(${index})" oninput="onFeaturedRoomTypeInput(${index}); refreshFeaturedPricingCalcs()" onblur="closeFeaturedRoomTypeSuggestSoon(${index})">
+          <div id="fcRoomTypeSuggest-${index}" class="featured-room-type-suggest-mount"></div>
           <div id="fcRoomTypeSave-${index}" class="featured-room-type-save" ${showSaveRoom ? "" : "hidden"}>
             <button type="button" class="admin-button secondary small" onclick="saveFeaturedRoomTypeFromRow(${index})"><span data-label>Save “${esc(row.room_label)}” for future use</span></button>
           </div>

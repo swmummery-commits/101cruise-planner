@@ -4159,6 +4159,7 @@ body.admin-loading-active {
   border-radius: 10px;
   background: #fbfcfb;
   min-width: 0;
+  overflow: visible;
   transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, border-color 0.18s ease;
 }
 
@@ -4229,6 +4230,56 @@ body.admin-loading-active {
 .featured-room-type-field {
   position: relative;
   min-width: 0;
+  overflow: visible;
+  z-index: 1;
+}
+
+.featured-room-type-field:focus-within {
+  z-index: 30;
+}
+
+.featured-room-type-suggest-mount {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% - 2px);
+  z-index: 40;
+}
+
+.featured-room-type-ac {
+  background: #fff;
+  border: 1px solid #cfd8d4;
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(16, 24, 40, 0.14);
+  max-height: 220px;
+  overflow: auto;
+}
+
+.featured-room-type-ac-item {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: #fff;
+  color: #111 !important;
+  text-align: left;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.featured-room-type-ac-item:hover,
+.featured-room-type-ac-item:focus {
+  background: #eef8f4;
+  color: #111 !important;
+  outline: none;
+}
+
+.featured-room-type-ac-empty {
+  padding: 9px 12px;
+  font-size: 12px;
+  color: #555;
 }
 
 .featured-room-type-save {
