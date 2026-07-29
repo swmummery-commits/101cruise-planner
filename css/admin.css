@@ -38,6 +38,25 @@ body {
   overflow: visible;
 }
 
+/* Embedded in Squarespace iframe: grow with content; parent page scrolls when
+   admin-squarespace-embed.js is installed. Keep overflow-y:auto as a fallback
+   so the iframe remains scrollable if the Squarespace Code Block is outdated. */
+html.is-embedded,
+html.is-embedded body {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  background: #f8f9fa;
+}
+
+html.is-embedded #cruise-admin-app {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
 /* Calculator Data is an approved full-width exception */
 #cruise-admin-app.is-calculator-data {
   max-width: none;
@@ -3263,8 +3282,9 @@ body.admin-loading-active {
   border: 1px solid #d9e0dd;
   border-radius: 8px;
   background: #fff;
-  max-height: 520px;
-  overflow: auto;
+  /* Full preview height — page/iframe grows; do not trap in a nested 520px scroller. */
+  max-height: none;
+  overflow: visible;
 }
 
 .mailchimp-poc-code-label {
@@ -4552,14 +4572,21 @@ body.admin-loading-active {
   inset: 0;
   z-index: 1200;
   background: rgba(17, 24, 22, 0.42);
-  display: grid;
-  place-items: center;
-  padding: 20px;
-  overflow: auto;
+  /* Match newsletter preview: overlay scrolls so Safari can always reach card actions */
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px 16px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .media-picker-modal {
   width: min(920px, 100%);
+  margin: auto;
+  /* Definite height so the inner body can scroll (max-height alone fails in Safari flex) */
+  height: min(88vh, 860px);
   max-height: min(88vh, 860px);
   overflow: hidden;
   display: flex;
@@ -4569,11 +4596,17 @@ body.admin-loading-active {
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
 }
 
+.media-picker-modal > .newsletter-preview-modal-header {
+  flex: 0 0 auto;
+}
+
 .media-picker-body {
   padding: 14px 18px 18px;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   min-height: 0;
-  flex: 1;
+  flex: 1 1 auto;
 }
 
 .media-picker-toolbar {

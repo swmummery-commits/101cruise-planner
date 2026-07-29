@@ -318,6 +318,9 @@ function renderLogin(message = "") {
       <div id="admin-login-message" class="admin-message ${message ? "admin-error" : ""}">${esc(message)}</div>
     </div>
   `;
+  if (typeof window.AdminHeight?.schedule === "function") {
+    window.AdminHeight.schedule();
+  }
 }
 
 function toggleAdminLoginMode() {
@@ -1188,6 +1191,9 @@ function renderAdmin() {
   // Floating toast so errors/success stay visible wherever you clicked on the page.
   if (typeof window.AdminToast?.mirrorFromAdminRoot === "function") {
     window.AdminToast.mirrorFromAdminRoot(app);
+  }
+  if (typeof window.AdminHeight?.schedule === "function") {
+    window.AdminHeight.schedule();
   }
 }
 
@@ -6781,6 +6787,9 @@ function renderSettingsPanel() {
 async function initAdmin() {
   // Recover from any stuck loading scroll-lock class from earlier sessions.
   document.body?.classList?.remove("admin-loading-active");
+  if (typeof window.AdminHeight?.start === "function") {
+    window.AdminHeight.start();
+  }
 
   // Password-recovery links land with a recovery session; show a set-password form.
   const hash = window.location.hash || "";
@@ -11618,6 +11627,9 @@ if (typeof window !== "undefined") {
   window.addEventListener("pagehide", () => {
     releaseFeaturedEditLock({ keepalive: true });
   });
+  if (typeof window.AdminHeight?.start === "function") {
+    window.AdminHeight.start();
+  }
 }
 
 initAdmin();

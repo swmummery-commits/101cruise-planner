@@ -997,10 +997,10 @@
       .toLowerCase();
 
     let rows = source.filter((m) => m && m.is_active !== false);
-    if (opts.mediaType && activeFilter !== "all") {
-      rows = rows.filter((m) => m.media_type === opts.mediaType || activeFilter === "recommended");
-    }
+    const hintSet = normalisedHintSet(opts.destinationHints);
 
+    // Typed search should find matches across the library (not only the active chip).
+    // Specialized pickers (e.g. route maps) still keep their required media_type.
     if (q) {
       rows = rows.filter((row) => {
         const hay = [
@@ -1017,9 +1017,18 @@
           .toLowerCase();
         return hay.includes(q);
       });
+      if (opts.mediaType) {
+        rows = rows.filter((m) => m.media_type === opts.mediaType);
+      }
+      rows = [...rows].sort(
+        (a, b) => recommendedScore(b, opts, hintSet) - recommendedScore(a, opts, hintSet)
+      );
+      return rows;
     }
 
-    const hintSet = normalisedHintSet(opts.destinationHints);
+    if (opts.mediaType && activeFilter !== "all") {
+      rows = rows.filter((m) => m.media_type === opts.mediaType || activeFilter === "recommended");
+    }
 
     if (activeFilter === "current_ship") {
       if (!opts.shipId) return [];

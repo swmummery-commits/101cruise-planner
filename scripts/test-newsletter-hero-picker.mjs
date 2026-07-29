@@ -235,9 +235,17 @@ function extractFunction(src, name) {
   );
   assert(noShip.every((r) => r.destination_name === "Barcelona"), "destination-only recommended");
 
-  // Search preserves tab + filters results
+  // Search finds across tabs (not trapped in Recommended / Ships chip)
   api.__test__.setMediaItemsForTest(items);
   api.__test__.setPickerOptionsForTest(opts);
+  api.__test__.setPickerFilterForTest("recommended");
+  api.__test__.setPickerSearchForTest("Alaska");
+  const searchedOutsideRecommended = api.__test__.pickerCandidateRows();
+  assert(
+    searchedOutsideRecommended.some((r) => r.id === "m-unrelated-dest"),
+    "search finds destination images even when Recommended chip is active"
+  );
+
   api.__test__.setPickerFilterForTest("ships");
   api.__test__.setPickerSearchForTest("Sirena hero");
   const searched = api.__test__.pickerCandidateRows();
