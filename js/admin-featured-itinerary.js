@@ -28,6 +28,8 @@
   let portListBusy = false;
   let portListMessage = "";
   let portListMessageTone = "";
+  /** Soft warnings from last prepare/save (e.g. unlinked ports) */
+  let lastPrepareWarnings = [];
 
   function stopNeedsAttention(stop) {
     const flags = I().rowStatusFlags(stop);
@@ -478,7 +480,12 @@
       working.matchDecision = "create_new";
       return working;
     } catch (error) {
-      throw new Error(`Could not create port “${entered}”: ${error.message}`);
+      // Keep entered text so the cruise can still be saved; port link can be fixed later.
+      working.port_id = null;
+      working.port = null;
+      working.matchDecision = null;
+      working._portLinkWarning = `Could not link “${entered}”: ${error.message}`;
+      return working;
     }
   }
 
@@ -553,8 +560,13 @@
           : null) || null;
 
       let next = built.stops.map((s) => ({ ...s }));
+      const linkWarnings = [];
       for (let i = 0; i < next.length; i += 1) {
         next[i] = await createOrLinkPortForStop(next[i], featuredCruiseId);
+        if (next[i]._portLinkWarning) {
+          linkWarnings.push(next[i]._portLinkWarning);
+          delete next[i]._portLinkWarning;
+        }
       }
       const draft =
         typeof global.getFeaturedFormDraft === "function" ? global.getFeaturedFormDraft() : null;
@@ -596,9 +608,18 @@
         }`;
         portListMessageTone = "success";
       }
+      if (linkWarnings.length) {
+        portListMessage = `${portListMessage} ${linkWarnings[0]}${
+          linkWarnings.length > 1 ? ` (+${linkWarnings.length - 1} more)` : ""
+        } Cruise fields can still be saved.`;
+        portListMessageTone = "error";
+      }
 
       openStopIds = new Set(stops.filter(stopNeedsAttention).map((s) => s.localId));
       sectionOpen = true;
+      if (typeof global.persistFeaturedLocalDraftSoon === "function") {
+        global.persistFeaturedLocalDraftSoon();
+      }
     } catch (error) {
       portListMessage = error.message || "Could not apply the port list.";
       portListMessageTone = "error";
@@ -692,14 +713,16 @@
    */
   async function prepareStopsForSave({ featuredCruiseId, confirmCreateNew = true } = {}) {
     captureFromDom();
+    lastPrepareWarnings = [];
     await ensurePortsLoaded({ force: true });
     const validation = I().validateStops(stops);
     if (!validation.ok) {
-      return { ok: false, errors: validation.errors, stops, createdPorts: [] };
+      return { ok: false, errors: validation.errors, stops, createdPorts: [], warnings: [] };
     }
 
     const createdPorts = [];
     const nextStops = [];
+    const warnings = [];
 
     for (const stop of stops) {
       const working = { ...stop };
@@ -766,12 +789,11 @@
           nextStops.push(working);
           continue;
         } catch (error) {
-          return {
-            ok: false,
-            errors: [`Could not create port “${entered}”: ${error.message}`],
-            stops,
-            createdPorts
-          };
+          warnings.push(`Could not link “${entered}”: ${error.message}`);
+          working.port_id = null;
+          working.port = null;
+          nextStops.push(working);
+          continue;
         }
       }
 
@@ -789,23 +811,13 @@
         continue;
       }
 
-      if (classified.status === "likely") {
-        matchPrompt = {
-          localId: working.localId,
-          entered,
-          country: working.entered_country_text,
-          candidates: classified.matches.map((m) => m.port),
-          status: "likely"
-        };
-        return {
-          ok: false,
-          errors: [
-            `Confirm port match for “${entered}”. Use the existing Ports record or create a new provisional port.`
-          ],
-          stops,
-          createdPorts,
-          needsMatchDecision: true
-        };
+      // Likely match: auto-link on save (same as paste apply) so port RLS issues don't strand the form.
+      if (classified.status === "likely" && classified.primary) {
+        working.port_id = classified.primary.id;
+        working.port = classified.primary;
+        working.matchDecision = "use_existing";
+        nextStops.push(working);
+        continue;
       }
 
       if (classified.status === "ambiguous") {
@@ -821,6 +833,7 @@
           errors: [`Multiple Ports records could match “${entered}”. Choose one before saving.`],
           stops,
           createdPorts,
+          warnings,
           needsMatchDecision: true
         };
       }
@@ -847,12 +860,11 @@
           nextStops.push(working);
           continue;
         } catch (error) {
-          return {
-            ok: false,
-            errors: [`Could not create port “${entered}”: ${error.message}`],
-            stops,
-            createdPorts
-          };
+          warnings.push(`Could not link “${entered}”: ${error.message}`);
+          working.port_id = null;
+          working.port = null;
+          nextStops.push(working);
+          continue;
         }
       }
 
@@ -861,7 +873,8 @@
 
     stops = I().normalizeStopOrder(nextStops);
     matchPrompt = null;
-    return { ok: true, errors: [], stops, createdPorts };
+    lastPrepareWarnings = warnings;
+    return { ok: true, errors: [], stops, createdPorts, warnings };
   }
 
   async function persistStops(featuredCruiseId) {
@@ -1246,6 +1259,11 @@
     ensurePortsLoaded,
     getStops,
     setStops,
+    getPortListPaste: () => portListPaste,
+    setPortListPaste: (value) => {
+      portListPaste = String(value || "");
+    },
+    getLastPrepareWarnings: () => lastPrepareWarnings.slice(),
     captureFromDom,
     syncSummaryIntoDraft,
     addStop,

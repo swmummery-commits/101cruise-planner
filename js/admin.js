@@ -137,6 +137,10 @@ let featuredRoomTypePromptIndex = null;
 let draggedFeaturedPricingLocalId = null;
 let featuredPricingDragFromHandle = false;
 let showFeaturedNewsletterPreview = false;
+/** Browser draft so refresh does not wipe an unsaved Featured Cruise form */
+const FEATURED_LOCAL_DRAFT_KEY = "101cruise.featuredCruise.localDraft.v1";
+let featuredLocalDraftNotice = null; // { savedAt, editingId } when a restore is available
+let featuredLocalDraftTimer = null;
 let featuredNewsletterPreviewMode = "general"; // general | airline_staff
 let featuredNewsletterPreviewTemplate = "green-price-cards"; // classic-editorial | green-price-cards
 /** Sprint 13A/13B — Mailchimp HTML POC export panel state */
@@ -8666,6 +8670,18 @@ function offerInclusionsFromCruise(existing, pricingRows = []) {
 }
 
 async function startNewFeaturedCruise() {
+  const stored = readFeaturedLocalDraft();
+  if (stored?.draft && !stored.editingFeaturedCruiseId) {
+    const restore = window.confirm(
+      "You have an unsaved new-cruise draft in this browser. Restore it instead of starting blank?"
+    );
+    if (restore) {
+      applyFeaturedLocalDraft(stored);
+      renderAdmin();
+      return;
+    }
+  }
+
   editingFeaturedCruiseId = null;
   showFeaturedCruiseForm = true;
   featuredSlugManuallyEdited = false;
@@ -8883,6 +8899,136 @@ async function editFeaturedCruise(id) {
   }
 }
 
+function clearFeaturedLocalDraft() {
+  try {
+    localStorage.removeItem(FEATURED_LOCAL_DRAFT_KEY);
+  } catch (_error) {
+    /* ignore quota / private mode */
+  }
+  featuredLocalDraftNotice = null;
+  if (featuredLocalDraftTimer) {
+    clearTimeout(featuredLocalDraftTimer);
+    featuredLocalDraftTimer = null;
+  }
+}
+
+function readFeaturedLocalDraft() {
+  try {
+    const raw = localStorage.getItem(FEATURED_LOCAL_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || !parsed.draft) return null;
+    return parsed;
+  } catch (_error) {
+    return null;
+  }
+}
+
+function persistFeaturedLocalDraftSoon() {
+  if (!showFeaturedCruiseForm || featuredCruiseSaving) return;
+  if (featuredLocalDraftTimer) clearTimeout(featuredLocalDraftTimer);
+  featuredLocalDraftTimer = setTimeout(() => {
+    featuredLocalDraftTimer = null;
+    persistFeaturedLocalDraftNow();
+  }, 600);
+}
+
+function persistFeaturedLocalDraftNow() {
+  if (!showFeaturedCruiseForm || !featuredFormDraft) return;
+  try {
+    window.FeaturedItineraryEditor?.captureFromDom?.();
+    captureFeaturedDraftFromDom();
+    const stops = (window.FeaturedItineraryEditor?.getStops?.() || []).map((stop) => ({
+      ...stop,
+      // Keep port id/label only — full port row is reloaded from catalogue
+      port: stop.port
+        ? {
+            id: stop.port.id,
+            canonical_name: stop.port.canonical_name,
+            display_name: stop.port.display_name,
+            country: stop.port.country,
+            latitude: stop.port.latitude,
+            longitude: stop.port.longitude,
+            status: stop.port.status
+          }
+        : null
+    }));
+    const payload = {
+      savedAt: Date.now(),
+      editingFeaturedCruiseId: editingFeaturedCruiseId || null,
+      draft: featuredFormDraft,
+      pricing: featuredFormPricing,
+      stops,
+      portListPaste: window.FeaturedItineraryEditor?.getPortListPaste?.() || "",
+      slugManuallyEdited: Boolean(featuredSlugManuallyEdited)
+    };
+    localStorage.setItem(FEATURED_LOCAL_DRAFT_KEY, JSON.stringify(payload));
+  } catch (_error) {
+    /* ignore quota / private mode */
+  }
+}
+
+function peekFeaturedLocalDraftNotice() {
+  const stored = readFeaturedLocalDraft();
+  if (!stored?.savedAt) {
+    featuredLocalDraftNotice = null;
+    return;
+  }
+  const ageMs = Date.now() - Number(stored.savedAt);
+  if (!Number.isFinite(ageMs) || ageMs > 7 * 24 * 60 * 60 * 1000) {
+    clearFeaturedLocalDraft();
+    return;
+  }
+  featuredLocalDraftNotice = {
+    savedAt: stored.savedAt,
+    editingId: stored.editingFeaturedCruiseId || null
+  };
+}
+
+function applyFeaturedLocalDraft(stored) {
+  if (!stored?.draft) return false;
+  editingFeaturedCruiseId = stored.editingFeaturedCruiseId || null;
+  showFeaturedCruiseForm = true;
+  featuredFormDraft = { ...stored.draft };
+  featuredFormPricing = Array.isArray(stored.pricing) && stored.pricing.length
+    ? stored.pricing.map((row, index) => ({
+        ...blankFeaturedPricing(index + 1),
+        ...row,
+        localId: row.localId || `price-${Date.now()}-${index}`
+      }))
+    : [blankFeaturedPricing(1)];
+  featuredSlugManuallyEdited = Boolean(stored.slugManuallyEdited);
+  featuredLocalDraftNotice = null;
+  window.FeaturedItineraryEditor?.initNewCruise?.();
+  if (Array.isArray(stored.stops) && stored.stops.length) {
+    window.FeaturedItineraryEditor?.setStops?.(stored.stops);
+  }
+  if (stored.portListPaste) {
+    window.FeaturedItineraryEditor?.setPortListPaste?.(stored.portListPaste);
+  }
+  featuredCruiseMessage = "Restored your unsaved cruise draft from this browser.";
+  featuredCruiseMessageTone = "success";
+  return true;
+}
+
+function restoreFeaturedLocalDraft() {
+  const stored = readFeaturedLocalDraft();
+  if (!stored) {
+    featuredLocalDraftNotice = null;
+    featuredCruiseMessage = "No unsaved draft was found in this browser.";
+    featuredCruiseMessageTone = "error";
+    renderAdmin();
+    return;
+  }
+  applyFeaturedLocalDraft(stored);
+  renderAdmin();
+}
+
+function dismissFeaturedLocalDraft() {
+  clearFeaturedLocalDraft();
+  renderAdmin();
+}
+
 function cancelFeaturedCruiseForm() {
   showFeaturedCruiseForm = false;
   editingFeaturedCruiseId = null;
@@ -8895,6 +9041,8 @@ function cancelFeaturedCruiseForm() {
   showFeaturedNewsletterPreview = false;
   clearMailchimpPoc();
   window.FeaturedItineraryEditor?.reset?.();
+  // Keep local draft unless the user explicitly discards it — refresh can still restore.
+  peekFeaturedLocalDraftNotice();
   featuredCruiseMessage = "";
   featuredCruiseMessageTone = "";
   renderAdmin();
@@ -9433,6 +9581,7 @@ function captureFeaturedDraftFromDom() {
   captureFeaturedPricingFromDom();
   window.FeaturedItineraryEditor?.captureFromDom?.();
   window.FeaturedItineraryEditor?.syncSummaryIntoDraft?.(featuredFormDraft);
+  persistFeaturedLocalDraftSoon();
 }
 
 function addFeaturedPricingRow() {
@@ -10397,6 +10546,8 @@ async function saveFeaturedRoomTypeFromRow(index) {
 function renderFeaturedCruisesPanel() {
   if (showFeaturedCruiseForm) return renderFeaturedCruiseForm();
 
+  peekFeaturedLocalDraftNotice();
+
   // Keep composer modules in sync with admin.js let/const state.
   window.featuredCruises = featuredCruises;
   window.featuredNewsletterDefaults = featuredNewsletterDefaults;
@@ -10406,6 +10557,14 @@ function renderFeaturedCruisesPanel() {
   window.featuredCruiseMessage = featuredCruiseMessage;
   window.featuredCruiseMessageTone = featuredCruiseMessageTone;
   window.supabaseClient = supabaseClient;
+
+  const draftBanner = featuredLocalDraftNotice
+    ? `<div class="admin-message" style="margin-bottom:12px">
+        Unsaved cruise draft in this browser (${esc(new Date(featuredLocalDraftNotice.savedAt).toLocaleString())}).
+        <button type="button" class="admin-button secondary small" onclick="restoreFeaturedLocalDraft()">Restore draft</button>
+        <button type="button" class="admin-button secondary small" onclick="dismissFeaturedLocalDraft()">Discard</button>
+      </div>`
+    : "";
 
   if (window.NewsletterIssueComposer?.render) {
     const composerHtml = window.NewsletterIssueComposer.render();
@@ -10420,7 +10579,7 @@ function renderFeaturedCruisesPanel() {
                 : ""
           }">${esc(featuredCruiseMessage)}</div>`
         : "";
-    return `${loadNote}${composerHtml}`;
+    return `${draftBanner}${loadNote}${composerHtml}`;
   }
 
   return `
@@ -10556,11 +10715,11 @@ function renderFeaturedCruiseForm() {
   const pickerModal = window.MediaLibraryAdmin?.renderPickerModal?.() || "";
 
   return `
-    <div class="admin-card featured-cruise-form">
+    <div class="admin-card featured-cruise-form" oninput="persistFeaturedLocalDraftSoon()" onchange="persistFeaturedLocalDraftSoon()">
       <div class="admin-list-top">
         <div>
           <h3>${existing ? "Edit Cruise" : "New Cruise"}</h3>
-          <p class="admin-muted">Newsletter workspace. Nothing here is public in this phase.</p>
+          <p class="admin-muted">Newsletter workspace. Nothing here is public in this phase. Unsaved work is kept in this browser until you save or discard it.</p>
         </div>
         <div class="admin-actions-row">
           <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
@@ -10823,6 +10982,7 @@ async function saveFeaturedCruise() {
 
   try {
     // Resolve port matches / create provisional ports before writing the cruise row.
+    // Port link failures no longer block save — cruise + entered port text are kept.
     const prepared = await window.FeaturedItineraryEditor?.prepareStopsForSave?.({
       featuredCruiseId: editingFeaturedCruiseId || null,
       confirmCreateNew: true
@@ -10831,9 +10991,11 @@ async function saveFeaturedCruise() {
       featuredCruiseMessage = (prepared.errors || ["Resolve itinerary port matches before saving."]).join(" ");
       featuredCruiseMessageTone = "error";
       featuredCruiseSaving = false;
+      persistFeaturedLocalDraftNow();
       renderAdmin();
       return;
     }
+    const portWarnings = Array.isArray(prepared?.warnings) ? prepared.warnings : [];
 
     const mapFields =
       window.FeaturedItineraryEditor?.computeMapFields?.(draft) || {
@@ -10967,18 +11129,26 @@ async function saveFeaturedCruise() {
     }
 
     // Do not modify featured_cruise_ports in this workflow.
+    let itineraryPortWarning = "";
     if (window.FeaturedItineraryEditor?.persistStops) {
       // Re-run prepare with cruise id so provisional ports get source_featured_cruise_id.
       const preparedWithId = await window.FeaturedItineraryEditor.prepareStopsForSave({
         featuredCruiseId: cruiseId,
         confirmCreateNew: true
       });
-      if (preparedWithId && !preparedWithId.ok) {
+      if (preparedWithId && !preparedWithId.ok && preparedWithId.needsMatchDecision) {
         throw new Error(
           `Cruise saved, but itinerary ports need confirmation: ${(preparedWithId.errors || []).join(" ")}`
         );
       }
-      await window.FeaturedItineraryEditor.persistStops(cruiseId);
+      if (preparedWithId?.warnings?.length) {
+        portWarnings.push(...preparedWithId.warnings);
+      }
+      try {
+        await window.FeaturedItineraryEditor.persistStops(cruiseId);
+      } catch (itinError) {
+        itineraryPortWarning = itinError.message || "Itinerary stops could not be saved.";
+      }
       // Persist derived summary/signature again if map fields changed after port creates.
       const refreshedMap = window.FeaturedItineraryEditor.computeMapFields({
         ...draft,
@@ -11029,11 +11199,22 @@ async function saveFeaturedCruise() {
     featuredFormDraft = null;
     featuredSlugManuallyEdited = false;
     window.FeaturedItineraryEditor?.reset?.();
-    featuredCruiseMessage = "Cruise saved.";
-    featuredCruiseMessageTone = "success";
+    clearFeaturedLocalDraft();
+    const warningBits = [...new Set(portWarnings.filter(Boolean))];
+    if (itineraryPortWarning) warningBits.push(itineraryPortWarning);
+    if (warningBits.length) {
+      featuredCruiseMessage = `Cruise saved. Some ports still need linking: ${warningBits[0]}${
+        warningBits.length > 1 ? ` (+${warningBits.length - 1} more)` : ""
+      }`;
+      featuredCruiseMessageTone = "error";
+    } else {
+      featuredCruiseMessage = "Cruise saved.";
+      featuredCruiseMessageTone = "success";
+    }
   } catch (error) {
     featuredCruiseMessage = error.message || "Could not save cruise.";
     featuredCruiseMessageTone = "error";
+    persistFeaturedLocalDraftNow();
   } finally {
     featuredCruiseSaving = false;
     renderAdmin();
