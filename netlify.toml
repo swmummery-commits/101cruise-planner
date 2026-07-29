@@ -45,6 +45,23 @@
     "netlify/functions/fonts/**"
   ]
 
+[functions."social-pack-generate"]
+  # Weekly newsletter social pack: destination images + SVG → PNG + ZIP.
+  timeout = 60
+  external_node_modules = [
+    "@resvg/resvg-js",
+    "@resvg/resvg-js-linux-x64-gnu",
+    "@resvg/resvg-wasm"
+  ]
+  included_files = [
+    "node_modules/@resvg/resvg-js/**",
+    "node_modules/@resvg/resvg-js-linux-x64-gnu/**",
+    "node_modules/@resvg/resvg-wasm/**",
+    "assets/fonts/social-pack/**",
+    "assets/social-pack/**",
+    "assets/101cruise-logo.png"
+  ]
+
 
 [[redirects]]
   from = "/planner"
