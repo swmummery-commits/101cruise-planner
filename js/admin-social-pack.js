@@ -302,6 +302,44 @@
     if (previewId === cruiseId) await regeneratePreview();
   }
 
+  async function saveDownloadFromResponse(response, fallbackName) {
+    const type = String(response.headers.get("content-type") || "").toLowerCase();
+    if (type.includes("application/json")) {
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) {
+        throw new Error(data.error || "We couldn’t prepare the download. Please try again.");
+      }
+      if (!data.download_url) {
+        throw new Error("We couldn’t prepare the download. Please try again.");
+      }
+      const a = document.createElement("a");
+      a.href = data.download_url;
+      a.rel = "noopener";
+      a.download = data.filename || fallbackName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      return data.filename || fallbackName;
+    }
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || "We couldn’t prepare the download. Please try again.");
+    }
+    const blob = await response.blob();
+    if (!blob || blob.size < 100) {
+      throw new Error("We couldn’t prepare the download. Please try again.");
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fallbackName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    return fallbackName;
+  }
+
   async function downloadZip() {
     const ids = selectedIds();
     if (!ids.length || busy) return;
@@ -324,26 +362,14 @@
               cruise_options: buildCruiseOptions(ids)
             })
           });
-          if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
-            throw new Error(data.error || "Download failed.");
-          }
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `newsletter-${issueNumber}-social-pack.zip`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
+          await saveDownloadFromResponse(response, `newsletter-${issueNumber}-social-pack.zip`);
           message = "Social Pack ZIP downloaded.";
           messageTone = "success";
         },
         { forZip: true }
       );
     } catch (error) {
-      message = error.message || "Download failed.";
+      message = error.message || "We couldn’t prepare the download. Please try again.";
       messageTone = "error";
     } finally {
       busy = false;
@@ -373,26 +399,17 @@
               included_room_labels: includedRoomsFor(previewId)
             })
           });
-          if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
-            throw new Error(data.error || "Download failed.");
-          }
-          const blob = await response.blob();
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = `newsletter-${issueNumber}-cruise-social-pack.zip`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(url);
+          await saveDownloadFromResponse(
+            response,
+            `newsletter-${issueNumber}-cruise-social-pack.zip`
+          );
           message = "Cruise Social Pack downloaded.";
           messageTone = "success";
         },
         { forZip: true }
       );
     } catch (error) {
-      message = error.message || "Download failed.";
+      message = error.message || "We couldn’t prepare the download. Please try again.";
       messageTone = "error";
     } finally {
       busy = false;

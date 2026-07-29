@@ -595,7 +595,14 @@ async function main() {
     assert(/requireAdmin/.test(genSrc), "admin auth required");
     assert(/Never writes/.test(genSrc), "no write promise");
     assert(/download_cruise/.test(genSrc), "per-cruise download");
+    assert(/download_url/.test(genSrc) || /uploadZipAndSign/.test(genSrc), "signed download path");
     assert(!/airline_price/.test(PUBLIC_PRICING_SELECT), "select columns public-only");
+    const exportSrc = fs.readFileSync(
+      path.join(root, "netlify/functions/lib/social-pack-export-storage.js"),
+      "utf8"
+    );
+    assert(/social-pack-exports/.test(exportSrc), "export bucket");
+    assert(!/media_library/.test(exportSrc), "no media library writes in export helper");
     passed += 1;
   }
 

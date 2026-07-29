@@ -29,6 +29,7 @@ const {
 } = require("./lib/social-pack-render");
 const { buildSocialPackZip } = require("./lib/social-pack-zip");
 const { buildCaption } = require("./lib/social-pack-caption");
+const { uploadZipAndSign } = require("./lib/social-pack-export-storage");
 
 /** Stay under Netlify sync response practical limit (~6MB). */
 const PREVIEW_SAFE_BYTES = Math.floor(5.5 * 1024 * 1024);
@@ -61,6 +62,30 @@ function zipResponse(buffer, filename) {
     },
     body: Buffer.from(buffer).toString("base64")
   };
+}
+
+/** Prefer signed storage URL — full packs exceed Netlify sync response limits. */
+async function zipDownloadResponse({ buffer, filename, newsletterNumber }) {
+  const uploaded = await uploadZipAndSign({
+    buffer,
+    filename,
+    newsletterNumber
+  });
+  logPreview({
+    action: "download",
+    stage: "signed_url_ready",
+    newsletter_number: newsletterNumber,
+    filename: uploaded.filename,
+    bytes: uploaded.bytes,
+    object_path: uploaded.objectPath
+  });
+  return jsonResponse(200, {
+    success: true,
+    download_url: uploaded.downloadUrl,
+    filename: uploaded.filename,
+    bytes: uploaded.bytes,
+    expires_in: uploaded.expiresIn
+  });
 }
 
 function collectForbidden(model) {
@@ -335,7 +360,11 @@ async function handleDownloadIssue(body) {
     newsletterNumber,
     packs
   });
-  return zipResponse(zip.buffer, zip.filename);
+  return zipDownloadResponse({
+    buffer: zip.buffer,
+    filename: zip.filename,
+    newsletterNumber
+  });
 }
 
 async function handleDownloadCruise(body) {
@@ -367,7 +396,11 @@ async function handleDownloadCruise(body) {
     newsletterNumber > 0
       ? `newsletter-${newsletterNumber}-${result.model.folderSlug || "cruise"}-social-pack.zip`
       : `${result.model.folderSlug || "cruise"}-social-pack.zip`;
-  return zipResponse(zip.buffer, filename);
+  return zipDownloadResponse({
+    buffer: zip.buffer,
+    filename,
+    newsletterNumber: newsletterNumber || 0
+  });
 }
 
 async function handleReadiness(body) {
