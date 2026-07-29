@@ -501,9 +501,14 @@ async function main() {
       assert(pngDims(buf).width === 1080, "zip source full width");
     }
 
-    const caption = buildCaption(model);
-    assert(caption.includes("paul@101cruise.com.au"), "caption email");
-    assert(caption.includes("101cruise.com.au"), "caption brand");
+    const caption = buildCaption({
+      ...model,
+      shortEditorial: "Follow the ancient trade routes of the Mediterranean.",
+      headline: "Mediterranean masterpieces meet timeless Aegean treasures."
+    });
+    assert(caption.includes("Follow the ancient trade routes"), "caption includes cruise description");
+    assert(!caption.includes("paul@101cruise.com.au"), "caption omits email");
+    assert(!caption.includes("101cruise.com.au"), "caption omits website");
     assert(!caption.toLowerCase().includes("airline"), "caption no airline");
     assert(!/US\$|FROM US\$|per person in USD|Ask Paul for his best price/i.test(caption), "caption has no pricing");
     assert(caption.includes("Includes:") || !model.inclusions?.length, "caption keeps inclusions when present");

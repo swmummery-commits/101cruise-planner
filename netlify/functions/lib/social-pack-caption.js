@@ -1,16 +1,18 @@
 /**
  * Caption text for social carousel posts.
- * Cruise details and inclusions only — no room prices, airline, category, or internal URLs.
+ * Cruise description and details only — no prices, contact lines, airline, or category.
  */
 
 const { formatAuDateRange, normaliseWhitespace } = require("./social-pack-copy");
 
 function buildCaption(model) {
   const lines = [];
-  const opening = normaliseWhitespace(
-    model.journeyLine || model.destinationStrip || model.headlineShort || ""
-  );
-  if (opening) lines.push(opening, "");
+
+  const description = normaliseWhitespace(model.shortEditorial || model.headline || "");
+  if (description) lines.push(description, "");
+
+  const route = normaliseWhitespace(model.journeyLine || model.destinationStrip || "");
+  if (route) lines.push(route);
 
   const shipLine = [model.lineName, model.shipName].filter(Boolean).join(" · ");
   if (shipLine) lines.push(shipLine);
@@ -26,12 +28,10 @@ function buildCaption(model) {
   }
 
   if (model.inclusions?.length) {
-    lines.push(`Includes: ${model.inclusions.join(", ")}`, "");
+    lines.push(`Includes: ${model.inclusions.join(", ")}`);
   }
 
-  lines.push("Email Paul at paul@101cruise.com.au for details.");
-  lines.push("101cruise.com.au");
-  return lines.join("\n");
+  return lines.join("\n").trim();
 }
 
 module.exports = { buildCaption };
