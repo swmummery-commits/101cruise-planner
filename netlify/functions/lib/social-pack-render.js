@@ -410,9 +410,11 @@ function prepareTreatedBackground(model, treatmentName) {
   };
 }
 
-function assertPngSize(pngMeta, label) {
-  if (pngMeta.width !== WIDTH || pngMeta.height !== HEIGHT) {
-    throw new Error(`${label} rendered at ${pngMeta.width}×${pngMeta.height}, expected ${WIDTH}×${HEIGHT}`);
+function assertPngSize(pngMeta, label, expectedWidth = WIDTH, expectedHeight = HEIGHT) {
+  if (pngMeta.width !== expectedWidth || pngMeta.height !== expectedHeight) {
+    throw new Error(
+      `${label} rendered at ${pngMeta.width}×${pngMeta.height}, expected ${expectedWidth}×${expectedHeight}`
+    );
   }
 }
 
@@ -437,11 +439,17 @@ function buildSlidePlan(model) {
   return plan;
 }
 
+/**
+ * Render pack PNGs. Templates always use 1080×1350 SVG geometry; outputWidth/Height
+ * scale the raster only (preview vs export).
+ */
 async function renderCruisePack(model, options = {}) {
   const plan = buildSlidePlan(model);
   const slides = {};
   const svgs = {};
   const joinedParts = [];
+  const outputWidth = Number(options.outputWidth) > 0 ? Math.round(Number(options.outputWidth)) : WIDTH;
+  const outputHeight = Number(options.outputHeight) > 0 ? Math.round(Number(options.outputHeight)) : HEIGHT;
 
   // Pre-treat backgrounds per slide strength so Soft/Strong actually show destination character.
   const treatedCache = new Map();
@@ -503,8 +511,8 @@ async function renderCruisePack(model, options = {}) {
       svg = renderCtaSvg(slideModel);
     }
 
-    const rendered = svgToPngBuffer(svg);
-    assertPngSize(rendered, item.key);
+    const rendered = svgToPngBuffer(svg, { width: outputWidth, height: outputHeight });
+    assertPngSize(rendered, item.key, outputWidth, outputHeight);
     slides[item.key] = rendered.png;
     svgs[item.key] = svg;
     joinedParts.push(svg);
@@ -530,13 +538,20 @@ async function renderCruisePack(model, options = {}) {
     slides,
     svgs,
     plan,
-    dimensions: { width: WIDTH, height: HEIGHT }
+    dimensions: { width: outputWidth, height: outputHeight },
+    exportDimensions: { width: WIDTH, height: HEIGHT }
   };
 }
+
+/** Preview raster size — same 1080×1350 aspect (0.4×). */
+const PREVIEW_WIDTH = 432;
+const PREVIEW_HEIGHT = 540;
 
 module.exports = {
   WIDTH,
   HEIGHT,
+  PREVIEW_WIDTH,
+  PREVIEW_HEIGHT,
   fetchImageAsDataUri,
   svgToPngBuffer,
   prepareTreatedBackground,

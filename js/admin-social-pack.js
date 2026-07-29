@@ -186,7 +186,10 @@
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok || data.success === false) {
-          throw new Error(data.error || "Preview failed.");
+          const ref = data.correlation_id ? ` Ref ${data.correlation_id.slice(0, 8)}.` : "";
+          throw new Error(
+            (data.error || "We couldn’t create the preview. Please try again.") + ref
+          );
         }
         preview = data;
         if (cruise && Array.isArray(data.available_offers)) {
@@ -198,13 +201,13 @@
           message = "No public room prices are available for this cruise.";
           messageTone = "error";
         } else {
-          message = "Preview ready.";
+          message = "Preview ready. Downloads use full 1080×1350 resolution.";
           messageTone = "success";
         }
       });
     } catch (error) {
       preview = null;
-      message = error.message || "Preview failed.";
+      message = error.message || "We couldn’t create the preview. Please try again.";
       messageTone = "error";
     } finally {
       busy = false;
@@ -603,6 +606,7 @@
                           )}/${esc(String(bg.candidate_count ?? ""))}</p>`
                         : ""
                     }
+                    <p class="admin-small">Preview is reduced resolution for Admin. Downloads remain full 1080×1350.</p>
                     ${
                       activeCruise && !(activeCruise.offers || []).length
                         ? `<div class="admin-message admin-error">No public room prices are available for this cruise.</div>`

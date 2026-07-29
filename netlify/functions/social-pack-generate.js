@@ -2,15 +2,16 @@
  * Admin Social Pack Generator.
  *
  * Actions:
- *   preview          → one cruise, PNG data URLs + caption
- *   download_cruise  → ZIP for one cruise
- *   download_issue   → ZIP of selected cruises
+ *   preview          → one cruise, preview-sized PNG data URLs + caption
+ *   download_cruise  → ZIP for one cruise (full 1080×1350)
+ *   download_issue   → ZIP of selected cruises (full 1080×1350)
  *   readiness        → readiness list for an issue (includes public rooms)
  *
  * Never selects airline_price or category.
  * Never writes to the database or Media Library.
  */
 
+const crypto = require("crypto");
 const { requireAdmin } = require("./admin-auth");
 const {
   loadFeaturedCruisePackModel,
@@ -19,9 +20,18 @@ const {
   assessReadiness
 } = require("./lib/social-pack-data");
 const { filterOffersByRoomLabels } = require("./lib/social-pack-pricing");
-const { renderCruisePack } = require("./lib/social-pack-render");
+const {
+  renderCruisePack,
+  WIDTH,
+  HEIGHT,
+  PREVIEW_WIDTH,
+  PREVIEW_HEIGHT
+} = require("./lib/social-pack-render");
 const { buildSocialPackZip } = require("./lib/social-pack-zip");
 const { buildCaption } = require("./lib/social-pack-caption");
+
+/** Stay under Netlify sync response practical limit (~6MB). */
+const PREVIEW_SAFE_BYTES = Math.floor(5.5 * 1024 * 1024);
 
 function jsonResponse(statusCode, body) {
   return {
@@ -95,6 +105,27 @@ function cruiseOptionsFromBody(body, cruiseId) {
   return { includedRoomLabels: included, manualMediaId: mediaId };
 }
 
+function safeClientError(message, correlationId) {
+  return {
+    success: false,
+    error: message || "We couldn’t create the preview. Please try again.",
+    correlation_id: correlationId || null
+  };
+}
+
+function logPreview(event) {
+  try {
+    console.log(
+      JSON.stringify({
+        scope: "social-pack-generate",
+        ...event
+      })
+    );
+  } catch {
+    /* ignore logging failures */
+  }
+}
+
 async function buildPackForCruise(id, { index = 1, treatment = "soft", includedRoomLabels, manualMediaId } = {}) {
   let model = await loadFeaturedCruisePackModel(id, {
     index,
@@ -121,66 +152,141 @@ async function buildPackForCruise(id, { index = 1, treatment = "soft", includedR
 }
 
 async function handlePreview(body) {
+  const correlationId = crypto.randomUUID();
   const id = String(body.featured_cruise_id || "").trim();
+  let stage = "validate";
   if (!id) {
-    return jsonResponse(400, { success: false, error: "featured_cruise_id is required" });
+    return jsonResponse(400, safeClientError("featured_cruise_id is required", correlationId));
   }
   const treatment = normaliseTreatment(body.treatment);
   const { includedRoomLabels, manualMediaId } = cruiseOptionsFromBody(body, id);
 
-  let model = await loadFeaturedCruisePackModel(id, {
-    index: 1,
-    treatment,
-    manualMediaId: manualMediaId || null
-  });
-  const availableOffers = [...(model.offers || [])];
-  applyRoomSelection(model, includedRoomLabels);
-  if (model.readiness?.status === "blocked") {
-    return jsonResponse(400, {
-      success: false,
-      error: model.readiness.label,
-      readiness: model.readiness
+  try {
+    stage = "data_loading";
+    logPreview({
+      action: "preview",
+      stage,
+      featured_cruise_id: id,
+      correlation_id: correlationId,
+      preview_dimensions: { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT }
     });
-  }
-  model = await hydrateMedia(model);
-  const rendered = await renderCruisePack(model, {
-    forbiddenStrings: collectForbidden(model)
-  });
 
-  const slides = {};
-  for (const [name, buf] of Object.entries(rendered.slides)) {
-    slides[name] = `data:image/png;base64,${buf.toString("base64")}`;
-  }
+    let model = await loadFeaturedCruisePackModel(id, {
+      index: 1,
+      treatment,
+      manualMediaId: manualMediaId || null
+    });
+    const availableOffers = [...(model.offers || [])];
+    applyRoomSelection(model, includedRoomLabels);
+    if (model.readiness?.status === "blocked") {
+      return jsonResponse(400, {
+        ...safeClientError(model.readiness.label, correlationId),
+        readiness: model.readiness
+      });
+    }
 
-  return jsonResponse(200, {
-    success: true,
-    featured_cruise_id: model.id,
-    folder_slug: model.folderSlug,
-    readiness: model.readiness,
-    caption: model.caption,
-    warnings: model.readiness.warnings || [],
-    treatment: model.treatment,
-    background: {
-      media_id: model.backgroundMediaId,
-      title: model.backgroundTitle,
-      destination_key: model.backgroundDestinationKey,
-      match_role: model.backgroundMatchRole,
-      candidate_count: model.backgroundCandidateCount,
-      rotation_index: model.backgroundRotationIndex,
-      source: model.backgroundSource,
-      warning: model.backgroundWarning
-    },
-    picker_sections: model.pickerSections,
-    background_candidates: model.backgroundCandidates,
-    available_offers: availableOffers.map(publicOfferSummary),
-    offers: (model.offers || []).map(publicOfferSummary),
-    offer: model.offer ? publicOfferSummary(model.offer) : null,
-    slides,
-    slide_order: rendered.plan.map((p) => p.key),
-    dimensions: rendered.dimensions,
-    brand_logo_path: model.brandLogoPath,
-    cruise_line_logo_url: model.cruiseLineLogoUrl
-  });
+    stage = "image_download";
+    model = await hydrateMedia(model);
+
+    stage = "resvg_rendering";
+    const rendered = await renderCruisePack(model, {
+      outputWidth: PREVIEW_WIDTH,
+      outputHeight: PREVIEW_HEIGHT,
+      forbiddenStrings: collectForbidden(model)
+    });
+
+    stage = "json_serialisation";
+    const slides = {};
+    for (const [name, buf] of Object.entries(rendered.slides)) {
+      slides[name] = `data:image/png;base64,${buf.toString("base64")}`;
+    }
+
+    const payload = {
+      success: true,
+      featured_cruise_id: model.id,
+      folder_slug: model.folderSlug,
+      readiness: model.readiness,
+      caption: model.caption,
+      warnings: model.readiness.warnings || [],
+      treatment: model.treatment,
+      preview: true,
+      correlation_id: correlationId,
+      background: {
+        media_id: model.backgroundMediaId,
+        title: model.backgroundTitle,
+        destination_key: model.backgroundDestinationKey,
+        match_role: model.backgroundMatchRole,
+        candidate_count: model.backgroundCandidateCount,
+        rotation_index: model.backgroundRotationIndex,
+        source: model.backgroundSource,
+        warning: model.backgroundWarning
+      },
+      picker_sections: model.pickerSections,
+      background_candidates: model.backgroundCandidates,
+      available_offers: availableOffers.map(publicOfferSummary),
+      offers: (model.offers || []).map(publicOfferSummary),
+      offer: model.offer ? publicOfferSummary(model.offer) : null,
+      slides,
+      slide_order: rendered.plan.map((p) => p.key),
+      export_filenames: rendered.plan.map((p) => p.key),
+      dimensions: rendered.dimensions,
+      export_dimensions: { width: WIDTH, height: HEIGHT },
+      brand_logo_path: model.brandLogoPath,
+      cruise_line_logo_url: model.cruiseLineLogoUrl
+    };
+
+    const bodyText = JSON.stringify(payload);
+    logPreview({
+      action: "preview",
+      stage: "complete",
+      featured_cruise_id: id,
+      correlation_id: correlationId,
+      slide_count: Object.keys(slides).length,
+      preview_dimensions: rendered.dimensions,
+      response_bytes: bodyText.length
+    });
+
+    if (bodyText.length > PREVIEW_SAFE_BYTES) {
+      logPreview({
+        action: "preview",
+        stage: "response_too_large",
+        featured_cruise_id: id,
+        correlation_id: correlationId,
+        response_bytes: bodyText.length
+      });
+      return jsonResponse(
+        413,
+        safeClientError("We couldn’t create the preview. Please try again.", correlationId)
+      );
+    }
+
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store"
+      },
+      body: bodyText
+    };
+  } catch (error) {
+    logPreview({
+      action: "preview",
+      stage: `failed_${stage}`,
+      featured_cruise_id: id,
+      correlation_id: correlationId,
+      error_name: error && error.name ? String(error.name) : "Error",
+      calm: Boolean(error && error.calm)
+    });
+    const status = error.statusCode || 500;
+    const message =
+      error && error.calm && error.message
+        ? error.message
+        : "We couldn’t create the preview. Please try again.";
+    return jsonResponse(status, safeClientError(message, correlationId));
+  }
 }
 
 async function handleDownloadIssue(body) {

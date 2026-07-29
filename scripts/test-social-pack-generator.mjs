@@ -38,6 +38,8 @@ const {
   svgToPngBuffer,
   WIDTH,
   HEIGHT,
+  PREVIEW_WIDTH,
+  PREVIEW_HEIGHT,
   sniffMime,
   buildSlidePlan,
   renderCruisePack
@@ -427,8 +429,49 @@ async function main() {
     assert(pack.slides["02-offer-solo-balcony.png"], "offer starts at 02");
     assert(pack.slides["final-call-to-action.png"], "cta slide");
     assert(Object.keys(pack.slides).length === 3, "1 offer → main + pricing + cta");
+    assert(pack.dimensions.width === WIDTH && pack.dimensions.height === HEIGHT, "export dims full");
+    for (const buf of Object.values(pack.slides)) {
+      const dims = pngDims(buf);
+      assert(dims.width === WIDTH && dims.height === HEIGHT, "export png 1080×1350");
+    }
     const joined = Object.values(pack.svgs).join("\n");
     assert(!joined.includes(airlineToken), "airline absent from all svgs");
+
+    // Preview uses reduced raster; same SVG geometry / templates
+    const previewPack = await renderCruisePack(model, {
+      outputWidth: PREVIEW_WIDTH,
+      outputHeight: PREVIEW_HEIGHT,
+      forbiddenStrings: [airlineToken]
+    });
+    assert(previewPack.dimensions.width === PREVIEW_WIDTH, "preview width");
+    assert(previewPack.dimensions.height === PREVIEW_HEIGHT, "preview height");
+    assert(previewPack.exportDimensions.width === WIDTH, "export dims retained");
+    assert(Object.keys(previewPack.slides).join() === Object.keys(pack.slides).join(), "same slide keys");
+    assert(previewPack.svgs["01-main-cruise.png"] === pack.svgs["01-main-cruise.png"], "same template svg");
+    let previewRaw = 0;
+    for (const buf of Object.values(previewPack.slides)) {
+      const dims = pngDims(buf);
+      assert(dims.width === PREVIEW_WIDTH && dims.height === PREVIEW_HEIGHT, "preview png size");
+      previewRaw += buf.length;
+    }
+    const previewB64 = Math.ceil((previewRaw * 4) / 3);
+    assert(previewB64 < 5.5 * 1024 * 1024, "preview payload under safe threshold");
+
+    // Six-slide Sirena-style preview stays safe
+    const sixOffers = [1, 2, 3, 4].map((i) => ({
+      ...model.offers[0],
+      roomSlug: `room-${i}`,
+      roomLabel: `Room ${i}`,
+      roomLabelDisplay: `ROOM ${i}`
+    }));
+    const sixPreview = await renderCruisePack(
+      { ...model, offers: sixOffers },
+      { outputWidth: PREVIEW_WIDTH, outputHeight: PREVIEW_HEIGHT }
+    );
+    assert(Object.keys(sixPreview.slides).length === 6, "six-slide preview");
+    let sixRaw = 0;
+    for (const buf of Object.values(sixPreview.slides)) sixRaw += buf.length;
+    assert(Math.ceil((sixRaw * 4) / 3) < 5.5 * 1024 * 1024, "six-slide preview under limit");
 
     // No public prices → main + cta only
     const enquiryPack = await renderCruisePack({ ...model, offers: [], offer: null });
@@ -442,6 +485,10 @@ async function main() {
     assert(zip.filename.includes("77"), "zip name");
     assert(!JSON.stringify(zip.manifest).includes(airlineToken), "manifest clean");
     assert(!JSON.stringify(zip.manifest).toLowerCase().includes("airline_price"), "no airline_price key");
+    // ZIP slides remain full resolution
+    for (const buf of Object.values(pack.slides)) {
+      assert(pngDims(buf).width === 1080, "zip source full width");
+    }
 
     const caption = buildCaption(model);
     assert(caption.includes("paul@101cruise.com.au"), "caption email");
@@ -516,6 +563,7 @@ async function main() {
     assert(cruiseFolderSlug({ index: 1, lineName: "Oceania", shipName: "Sirena", destinationStrip: "Barcelona to Istanbul" }).startsWith("01-"), "folder");
     assert(sniffMime(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0])) === "image/jpeg", "jpeg sniff");
     assert(WIDTH === 1080 && HEIGHT === 1350, "portrait dims");
+    assert(PREVIEW_WIDTH === 432 && PREVIEW_HEIGHT === 540, "preview dims");
     assert(GREEN === "#8DD9BF", "exact footer green");
     passed += 1;
   }
