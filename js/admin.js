@@ -825,6 +825,11 @@ async function setTab(tab) {
   if (resolved === "fleet-audit") {
     if (window.CruiseLineAuditAdmin?.ensureLoaded) window.CruiseLineAuditAdmin.ensureLoaded();
   }
+  if (resolved === "ports-catalogue") {
+    if (window.PortsCatalogueAdmin?.ensureLoaded) {
+      window.PortsCatalogueAdmin.ensureLoaded({ quiet: true });
+    }
+  }
   if (resolved === "settings") {
     loadAdminSettingsUsers();
   }
@@ -871,7 +876,7 @@ const ADMIN_NAV_GROUPS = [
     items: [
       { id: "cruise-lines", label: "Cruise Lines" },
       { id: "cruise-ships", label: "Ships" },
-      { id: "ports-catalogue", label: "Ports", placeholder: true },
+      { id: "ports-catalogue", label: "Ports" },
       { id: "sailings-catalogue", label: "Sailings", placeholder: true }
     ]
   },
@@ -938,10 +943,8 @@ const ADMIN_MAIN_TABS = [
     id: "ports-catalogue",
     label: "Ports",
     render: () =>
-      renderComingSoonPanel(
-        "Ports",
-        "Canonical port catalogue management will live here. Until then, ports continue to be maintained via existing data workflows."
-      )
+      window.PortsCatalogueAdmin?.renderPanel?.() ||
+      renderComingSoonPanel("Ports", "Ports catalogue module failed to load.")
   },
   {
     id: "sailings-catalogue",
