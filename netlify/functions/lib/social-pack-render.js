@@ -88,13 +88,11 @@ async function fetchImageAsDataUri(url, { allowHttpLocalhost = false } = {}) {
 }
 
 function svgToPngBuffer(svg, { width = WIDTH, height = HEIGHT } = {}) {
+  const { resvgFontOptions } = require("./social-pack-fonts");
   const resvg = new Resvg(Buffer.from(svg, "utf8"), {
     fitTo: { mode: "width", value: width },
     background: "rgba(0,0,0,0)",
-    font: {
-      loadSystemFonts: true,
-      defaultFontFamily: "Helvetica"
-    }
+    font: resvgFontOptions()
   });
   const rendered = resvg.render();
   const png = Buffer.from(rendered.asPng());
@@ -126,6 +124,63 @@ function coverCropSvg(href, { width, height, imgW, imgH, enlarge = 1 }) {
     <image href="${href}" x="${dx}" y="${dy}" width="${dw}" height="${dh}" preserveAspectRatio="xMidYMid slice"/>
   </g>
 </svg>`;
+}
+
+/**
+ * Mild master-slide background: cover crop + subtle blur only.
+ * Darkening is applied as localised SVG overlays, not a flat veil.
+ */
+function prepareMasterBackground(model) {
+  const href = model.backgroundDataUri || model.heroDataUri;
+  if (!href) return null;
+
+  const srcW = Number(model.backgroundWidth || model.heroWidth) || 1600;
+  const srcH = Number(model.backgroundHeight || model.heroHeight) || 1200;
+
+  const clearSvg = coverCropSvg(href, {
+    width: WIDTH,
+    height: HEIGHT,
+    imgW: srcW,
+    imgH: srcH,
+    enlarge: 1.03
+  });
+  const clearPng = svgToPngBuffer(clearSvg, { width: WIDTH, height: HEIGHT }).png;
+
+  const smallW = 540;
+  const smallH = 675;
+  const smallSvg = coverCropSvg(`data:image/png;base64,${clearPng.toString("base64")}`, {
+    width: smallW,
+    height: smallH,
+    imgW: WIDTH,
+    imgH: HEIGHT,
+    enlarge: 1
+  });
+  const smallPng = svgToPngBuffer(smallSvg, { width: smallW, height: smallH }).png;
+  const smallData = `data:image/png;base64,${smallPng.toString("base64")}`;
+  // Subtle blur: enlarge slightly to hide soft edges; stdDeviation ~2.5
+  const enlarge = 1.06;
+  const dw = WIDTH * enlarge;
+  const dh = HEIGHT * enlarge;
+  const dx = (WIDTH - dw) / 2;
+  const dy = (HEIGHT - dh) / 2;
+  const blurSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
+  <defs>
+    <clipPath id="c"><rect width="${WIDTH}" height="${HEIGHT}"/></clipPath>
+    <filter id="b" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2.5"/>
+    </filter>
+  </defs>
+  <g clip-path="url(#c)" filter="url(#b)">
+    <image href="${smallData}" x="${dx}" y="${dy}" width="${dw}" height="${dh}" preserveAspectRatio="xMidYMid slice"/>
+  </g>
+</svg>`;
+  const mild = svgToPngBuffer(blurSvg, { width: WIDTH, height: HEIGHT }).png;
+  return {
+    dataUri: `data:image/png;base64,${mild.toString("base64")}`,
+    width: WIDTH,
+    height: HEIGHT
+  };
 }
 
 /**
@@ -301,6 +356,7 @@ module.exports = {
   fetchImageAsDataUri,
   svgToPngBuffer,
   prepareTreatedBackground,
+  prepareMasterBackground,
   renderCruisePack,
   buildSlidePlan,
   sniffMime
