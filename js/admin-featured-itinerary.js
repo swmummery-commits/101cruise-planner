@@ -711,13 +711,22 @@
    * Prepare stops for save: auto-link strong matches, surface likely/ambiguous, create provisional.
    * @returns {{ ok: boolean, errors: string[], stops: object[], createdPorts: object[] }}
    */
-  async function prepareStopsForSave({ featuredCruiseId, confirmCreateNew = true } = {}) {
+  async function prepareStopsForSave({
+    featuredCruiseId,
+    confirmCreateNew = true,
+    allowIncomplete = false
+  } = {}) {
     captureFromDom();
     lastPrepareWarnings = [];
     await ensurePortsLoaded({ force: true });
     const validation = I().validateStops(stops);
     if (!validation.ok) {
-      return { ok: false, errors: validation.errors, stops, createdPorts: [], warnings: [] };
+      if (allowIncomplete) {
+        // Keep going — draft saves may have incomplete stop rows.
+        lastPrepareWarnings = validation.errors.slice();
+      } else {
+        return { ok: false, errors: validation.errors, stops, createdPorts: [], warnings: [] };
+      }
     }
 
     const createdPorts = [];
@@ -821,6 +830,13 @@
       }
 
       if (classified.status === "ambiguous") {
+        if (allowIncomplete) {
+          warnings.push(`Ambiguous port “${entered}” left unlinked for now.`);
+          working.port_id = null;
+          working.port = null;
+          nextStops.push(working);
+          continue;
+        }
         matchPrompt = {
           localId: working.localId,
           entered,

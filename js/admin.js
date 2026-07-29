@@ -141,6 +141,7 @@ let showFeaturedNewsletterPreview = false;
 const FEATURED_LOCAL_DRAFT_KEY = "101cruise.featuredCruise.localDraft.v1";
 let featuredLocalDraftNotice = null; // { savedAt, editingId } when a restore is available
 let featuredLocalDraftTimer = null;
+let featuredLocalDraftSavedAt = null;
 let featuredNewsletterPreviewMode = "general"; // general | airline_staff
 let featuredNewsletterPreviewTemplate = "green-price-cards"; // classic-editorial | green-price-cards
 /** Sprint 13A/13B — Mailchimp HTML POC export panel state */
@@ -8910,6 +8911,7 @@ function clearFeaturedLocalDraft() {
     clearTimeout(featuredLocalDraftTimer);
     featuredLocalDraftTimer = null;
   }
+  featuredLocalDraftSavedAt = null;
 }
 
 function readFeaturedLocalDraft() {
@@ -8963,6 +8965,7 @@ function persistFeaturedLocalDraftNow() {
       slugManuallyEdited: Boolean(featuredSlugManuallyEdited)
     };
     localStorage.setItem(FEATURED_LOCAL_DRAFT_KEY, JSON.stringify(payload));
+    featuredLocalDraftSavedAt = payload.savedAt;
   } catch (_error) {
     /* ignore quota / private mode */
   }
@@ -10713,22 +10716,29 @@ function renderFeaturedCruiseForm() {
   const strip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port) || "";
   const returnDate = addCalendarDays(draft.departure_date, draft.nights === "" ? null : Number(draft.nights));
   const pickerModal = window.MediaLibraryAdmin?.renderPickerModal?.() || "";
+  const statusIsDraft = (draft.publication_status || "draft") === "draft";
+  const localBackupNote = featuredLocalDraftSavedAt
+    ? `Browser backup updated ${new Date(featuredLocalDraftSavedAt).toLocaleTimeString()}.`
+    : "Browser backup starts after you type or apply a port list.";
 
   return `
     <div class="admin-card featured-cruise-form" oninput="persistFeaturedLocalDraftSoon()" onchange="persistFeaturedLocalDraftSoon()">
       <div class="admin-list-top">
         <div>
           <h3>${existing ? "Edit Cruise" : "New Cruise"}</h3>
-          <p class="admin-muted">Newsletter workspace. Nothing here is public in this phase. Unsaved work is kept in this browser until you save or discard it.</p>
+          <p class="admin-muted">Newsletter workspace. Drafts can be saved incomplete. ${esc(localBackupNote)}</p>
         </div>
         <div class="admin-actions-row">
           <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
           <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
-          <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save"}</button>
+          <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${
+            featuredCruiseSaving ? "Saving…" : statusIsDraft ? "Save draft" : "Save"
+          }</button>
           ${inlineRunning}
         </div>
       </div>
       ${!isRunning ? `<div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>` : ""}
+      <p class="admin-helper" style="margin-top:0">While status is <strong>Draft</strong>, Save keeps whatever you have (ports, notes, partial pricing). Headline / nights / departure are only required when you set status to <strong>Published</strong>.</p>
 
       <section class="featured-form-section featured-newsletter-section">
         <h4>Newsletter and Publication</h4>
@@ -10872,7 +10882,9 @@ function renderFeaturedCruiseForm() {
         <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
         ${existing ? `<button class="admin-button secondary" onclick="deleteFeaturedCruise('${esc(existing.id)}')" ${featuredCruiseSaving ? "disabled" : ""}>Delete</button>` : ""}
         <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
-        <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${featuredCruiseSaving ? "Saving…" : "Save"}</button>
+        <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${
+          featuredCruiseSaving ? "Saving…" : statusIsDraft ? "Save draft" : "Save"
+        }</button>
         ${inlineRunning}
       </div>
     </div>
@@ -10884,13 +10896,29 @@ function renderFeaturedCruiseForm() {
 async function saveFeaturedCruise() {
   captureFeaturedDraftFromDom();
   const draft = featuredFormDraft || {};
+  const publicationStatus = draft.publication_status || "draft";
+  const isPublishing = publicationStatus === "published";
 
-  const headline = String(draft.headline || "").trim();
+  let headline = String(draft.headline || "").trim();
   if (!headline) {
-    featuredCruiseMessage = "Headline is required.";
-    featuredCruiseMessageTone = "error";
-    renderAdmin();
-    return;
+    if (isPublishing) {
+      featuredCruiseMessage = "Headline is required before publishing.";
+      featuredCruiseMessageTone = "error";
+      persistFeaturedLocalDraftNow();
+      renderAdmin();
+      return;
+    }
+    // Drafts must still satisfy DB NOT NULL headline — use a clear placeholder.
+    const fromPorts =
+      String(draft.departure_port || "").trim() ||
+      String(draft.itinerary_summary || "")
+        .split("|")[0]
+        ?.trim() ||
+      "";
+    headline = fromPorts ? `Draft — ${fromPorts}` : "Untitled draft";
+    draft.headline = headline;
+    const headlineEl = document.getElementById("fcHeadline");
+    if (headlineEl) headlineEl.value = headline;
   }
 
   const newsletterRaw = String(draft.newsletter_number ?? "").trim();
@@ -10900,6 +10928,7 @@ async function saveFeaturedCruise() {
     if (!Number.isInteger(newsletterNumber) || newsletterNumber < 1) {
       featuredCruiseMessage = "Newsletter Number must be a whole number of at least 1.";
       featuredCruiseMessageTone = "error";
+      persistFeaturedLocalDraftNow();
       renderAdmin();
       return;
     }
@@ -10907,22 +10936,32 @@ async function saveFeaturedCruise() {
 
   const nightsRaw = String(draft.nights ?? "").trim();
   const nights = nightsRaw === "" ? null : Number(nightsRaw);
-  if (nights == null || !Number.isInteger(nights) || nights < 1) {
-    featuredCruiseMessage = "Nights must be a whole number of at least 1.";
+  if (nightsRaw !== "" && (!Number.isInteger(nights) || nights < 1)) {
+    featuredCruiseMessage = "Nights must be a whole number of at least 1, or left blank while drafting.";
     featuredCruiseMessageTone = "error";
+    persistFeaturedLocalDraftNow();
+    renderAdmin();
+    return;
+  }
+  if (isPublishing && (nights == null || !Number.isInteger(nights) || nights < 1)) {
+    featuredCruiseMessage = "Nights is required before publishing.";
+    featuredCruiseMessageTone = "error";
+    persistFeaturedLocalDraftNow();
     renderAdmin();
     return;
   }
 
   const departureDate = draft.departure_date || null;
-  if (!departureDate) {
-    featuredCruiseMessage = "Departure Date is required.";
+  if (isPublishing && !departureDate) {
+    featuredCruiseMessage = "Departure Date is required before publishing.";
     featuredCruiseMessageTone = "error";
+    persistFeaturedLocalDraftNow();
     renderAdmin();
     return;
   }
 
-  const returnDate = addCalendarDays(departureDate, nights);
+  const returnDate =
+    departureDate && nights != null ? addCalendarDays(departureDate, nights) : draft.return_date || null;
   const destinationStrip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port);
 
   const slugRaw = String(draft.public_slug || "").trim();
@@ -10930,6 +10969,14 @@ async function saveFeaturedCruise() {
   if (slugRaw && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(publicSlug || "")) {
     featuredCruiseMessage = "Public slug must use lowercase letters, numbers and hyphens only.";
     featuredCruiseMessageTone = "error";
+    persistFeaturedLocalDraftNow();
+    renderAdmin();
+    return;
+  }
+  if (isPublishing && draft.create_public_page && !publicSlug) {
+    featuredCruiseMessage = "Public slug is required when Create public page is on.";
+    featuredCruiseMessageTone = "error";
+    persistFeaturedLocalDraftNow();
     renderAdmin();
     return;
   }
@@ -10950,10 +10997,15 @@ async function saveFeaturedCruise() {
         continue;
       }
       if (!roomLabel) {
-        featuredCruiseMessage = `Room Type is required on pricing row ${index + 1}.`;
-        featuredCruiseMessageTone = "error";
-        renderAdmin();
-        return;
+        if (isPublishing) {
+          featuredCruiseMessage = `Room Type is required on pricing row ${index + 1}.`;
+          featuredCruiseMessageTone = "error";
+          persistFeaturedLocalDraftNow();
+          renderAdmin();
+          return;
+        }
+        // Incomplete pricing rows are skipped while drafting.
+        continue;
       }
       // Do not read/write inclusion columns on featured_cruise_pricing.
       // Pricing display_order controls the order used by newsletters, landing pages and future customer-facing outputs.
@@ -10985,15 +11037,18 @@ async function saveFeaturedCruise() {
     // Port link failures no longer block save — cruise + entered port text are kept.
     const prepared = await window.FeaturedItineraryEditor?.prepareStopsForSave?.({
       featuredCruiseId: editingFeaturedCruiseId || null,
-      confirmCreateNew: true
+      confirmCreateNew: true,
+      allowIncomplete: !isPublishing
     });
     if (prepared && !prepared.ok) {
-      featuredCruiseMessage = (prepared.errors || ["Resolve itinerary port matches before saving."]).join(" ");
-      featuredCruiseMessageTone = "error";
-      featuredCruiseSaving = false;
-      persistFeaturedLocalDraftNow();
-      renderAdmin();
-      return;
+      if (isPublishing || prepared.needsMatchDecision) {
+        featuredCruiseMessage = (prepared.errors || ["Resolve itinerary port matches before saving."]).join(" ");
+        featuredCruiseMessageTone = "error";
+        featuredCruiseSaving = false;
+        persistFeaturedLocalDraftNow();
+        renderAdmin();
+        return;
+      }
     }
     const portWarnings = Array.isArray(prepared?.warnings) ? prepared.warnings : [];
 
@@ -11045,7 +11100,7 @@ async function saveFeaturedCruise() {
       other_information: String(draft.other_information || "").trim() || null,
       newsletter_number: newsletterNumber,
       newsletter_publication_date: draft.newsletter_publication_date || null,
-      publication_status: draft.publication_status || "draft",
+      publication_status: publicationStatus,
       display_order: Number(draft.display_order || 0) || 0,
       create_public_page: Boolean(draft.create_public_page),
       public_slug: publicSlug,
@@ -11134,9 +11189,10 @@ async function saveFeaturedCruise() {
       // Re-run prepare with cruise id so provisional ports get source_featured_cruise_id.
       const preparedWithId = await window.FeaturedItineraryEditor.prepareStopsForSave({
         featuredCruiseId: cruiseId,
-        confirmCreateNew: true
+        confirmCreateNew: true,
+        allowIncomplete: !isPublishing
       });
-      if (preparedWithId && !preparedWithId.ok && preparedWithId.needsMatchDecision) {
+      if (preparedWithId && !preparedWithId.ok && preparedWithId.needsMatchDecision && isPublishing) {
         throw new Error(
           `Cruise saved, but itinerary ports need confirmation: ${(preparedWithId.errors || []).join(" ")}`
         );
@@ -11208,7 +11264,7 @@ async function saveFeaturedCruise() {
       }`;
       featuredCruiseMessageTone = "error";
     } else {
-      featuredCruiseMessage = "Cruise saved.";
+      featuredCruiseMessage = isPublishing ? "Cruise saved." : "Draft saved. You can fill in the rest later.";
       featuredCruiseMessageTone = "success";
     }
   } catch (error) {
