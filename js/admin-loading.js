@@ -88,8 +88,9 @@
     var visible = activeCount > 0;
     overlayEl.classList.toggle("is-visible", visible);
     overlayEl.setAttribute("aria-busy", visible ? "true" : "false");
+    // Never lock document scroll — Admin pages must grow with content.
     if (typeof document !== "undefined" && document.body) {
-      document.body.classList.toggle(BODY_LOCK_CLASS, visible);
+      document.body.classList.remove(BODY_LOCK_CLASS);
     }
     if (!visible) {
       setSupportMessage("");

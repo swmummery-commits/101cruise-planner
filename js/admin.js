@@ -6742,6 +6742,9 @@ function renderSettingsPanel() {
 }
 
 async function initAdmin() {
+  // Recover from any stuck loading scroll-lock class from earlier sessions.
+  document.body?.classList?.remove("admin-loading-active");
+
   // Password-recovery links land with a recovery session; show a set-password form.
   const hash = window.location.hash || "";
   if (hash.includes("type=recovery")) {
