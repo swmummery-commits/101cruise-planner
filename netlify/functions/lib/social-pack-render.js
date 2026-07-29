@@ -469,15 +469,20 @@ async function renderCruisePack(model, options = {}) {
     else if (item.kind === "offer") treatmentName = model.slideTreatments?.offer || "clear";
     else treatmentName = model.slideTreatments?.cta || "strong";
 
-    // Slide 1: approved master mild treatment.
-    // Offer/pricing: clear (unblurred) destination photo.
-    // CTA: strong blur for atmospheric bokeh.
+    // Approved weekly pack:
+    // Main → mild master soften (prepareMasterBackground)
+    // Pricing → clear / sharp destination photo
+    // CTA → strong blur
     let treated;
     if (item.kind === "main") {
       if (!treatedCache.has("__master__")) {
         treatedCache.set("__master__", prepareMasterBackground(model));
       }
       treated = treatedCache.get("__master__");
+    } else if (item.kind === "offer") {
+      treated = treatedFor("clear");
+    } else if (item.kind === "cta") {
+      treated = treatedFor("strong");
     } else {
       treated = treatedFor(treatmentName);
     }

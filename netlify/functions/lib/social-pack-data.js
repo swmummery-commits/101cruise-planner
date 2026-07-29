@@ -293,10 +293,12 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
       ])
     ),
     treatment,
+    // Approved pack treatments (locked):
+    // main → mild master soften; pricing → clear photo; CTA → strong blur
     slideTreatments: {
-      main: treatment,
+      main: treatment === "clear" ? "soft" : treatment,
       journey: treatment === "clear" ? "soft" : treatment,
-      offer: "strong",
+      offer: "clear",
       cta: "strong"
     },
     routeMapUrl,

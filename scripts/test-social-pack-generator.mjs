@@ -377,6 +377,14 @@ async function main() {
     assert(offerSvg.includes("* Price in US dollars"), "disclaimer pill");
     assert(offerSvg.includes("fill-opacity=\"0.82\""), "translucent pills");
 
+    // Approved treatments: pricing clear, CTA strong (main uses master soften)
+    const treatedPack = await renderCruisePack({
+      ...model,
+      slideTreatments: { main: "soft", offer: "clear", cta: "strong" }
+    });
+    assert(treatedPack.slides["02-offer-solo-balcony.png"], "pricing slide present");
+    assert(treatedPack.slides["final-call-to-action.png"], "cta slide present");
+
     // Missing brochure → omit panel
     const noBrochureSvg = renderOfferSvg(
       {
