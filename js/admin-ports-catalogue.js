@@ -195,8 +195,28 @@
     if (searchDebounce) clearTimeout(searchDebounce);
     searchDebounce = setTimeout(() => {
       searchDebounce = null;
+      refreshMasterListOnly();
+    }, 80);
+  }
+
+  function refreshMasterListOnly() {
+    const list = typeof document !== "undefined" ? document.getElementById("portsMasterList") : null;
+    const count = typeof document !== "undefined" ? document.getElementById("portsListCount") : null;
+    const filtered = filteredPorts();
+    if (count) {
+      count.textContent = loading ? "Loading…" : `${filtered.length} of ${ports.length} ports`;
+    }
+    if (!list) {
       rerender();
-    }, 120);
+      return;
+    }
+    if (loading) {
+      list.innerHTML = `<p class="admin-small ci-master-empty">Loading ports…</p>`;
+      return;
+    }
+    list.innerHTML = filtered.length
+      ? filtered.map(renderMasterRow).join("")
+      : `<p class="admin-small ci-master-empty">No ports match these filters.</p>`;
   }
 
   function setStatusFilter(value) {
@@ -458,7 +478,7 @@
         ${message ? `<div class="admin-message ${msgClass}">${esc(message)}</div>` : ""}
         <div class="ci-toolbar">
           <div class="ci-toolbar-controls">
-            <input type="search" value="${esc(searchQuery)}" placeholder="Search ports…" oninput="PortsCatalogueAdmin.setSearch(this.value)" autocomplete="off">
+            <input id="portsSearchInput" type="search" value="${esc(searchQuery)}" placeholder="Search ports…" oninput="PortsCatalogueAdmin.setSearch(this.value)" autocomplete="off">
             <select onchange="PortsCatalogueAdmin.setStatusFilter(this.value)">
               <option value="all" ${statusFilter === "all" ? "selected" : ""}>All statuses</option>
               <option value="verified" ${statusFilter === "verified" ? "selected" : ""}>Verified</option>
@@ -472,12 +492,12 @@
             </select>
             <button type="button" class="admin-button black small" onclick="PortsCatalogueAdmin.startCreate()" ${saving || loading ? "disabled" : ""}>Add port</button>
           </div>
-          <div class="admin-small">${loading ? "Loading…" : `${filtered.length} of ${ports.length} ports`}</div>
+          <div class="admin-small"><span id="portsListCount">${loading ? "Loading…" : `${filtered.length} of ${ports.length} ports`}</span></div>
         </div>
         <div class="ci-master-detail">
           <aside class="ci-master" aria-label="Ports">
             <div class="ci-master-header"><span>Ports</span></div>
-            <div class="ci-master-list">
+            <div class="ci-master-list" id="portsMasterList">
               ${
                 loading
                   ? `<p class="admin-small ci-master-empty">Loading ports…</p>`
