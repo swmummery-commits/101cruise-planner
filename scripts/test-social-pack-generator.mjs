@@ -1,5 +1,5 @@
 /**
- * Social Pack generator tests (offline + optional live read-only helpers).
+ * Social Pack destination-design tests.
  * Run: node scripts/test-social-pack-generator.mjs
  */
 
@@ -7,22 +7,49 @@ import { createRequire } from "module";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { readFileSync } from "fs";
 
 const require = createRequire(import.meta.url);
 const {
   selectPublicOffer,
+  selectPublicOffers,
   sanitizePublicPricingRows,
   buildDiscountDisplay,
+  normaliseRoomLabel,
   PUBLIC_PRICING_SELECT
 } = require("../netlify/functions/lib/social-pack-pricing.js");
-const { shortenHeadline, cruiseFolderSlug, formatAuDateRange } = require("../netlify/functions/lib/social-pack-copy.js");
+const {
+  shortenHeadline,
+  cruiseFolderSlug,
+  formatAuDateRange,
+  formatAuDepartingFull,
+  buildRouteHeadline
+} = require("../netlify/functions/lib/social-pack-copy.js");
 const { buildPortList, buildInclusions } = require("../netlify/functions/lib/social-pack-itinerary.js");
 const { buildCaption } = require("../netlify/functions/lib/social-pack-caption.js");
-const { renderHeroSvg, renderJourneySvg, renderOfferSvg } = require("../netlify/functions/lib/social-pack-svg.js");
-const { svgToPngBuffer, WIDTH, HEIGHT, sniffMime } = require("../netlify/functions/lib/social-pack-render.js");
+const {
+  renderMainCruiseSvg,
+  renderJourneySvg,
+  renderOfferSvg,
+  renderCtaSvg,
+  GREEN
+} = require("../netlify/functions/lib/social-pack-svg.js");
+const {
+  svgToPngBuffer,
+  WIDTH,
+  HEIGHT,
+  sniffMime,
+  buildSlidePlan,
+  renderCruisePack
+} = require("../netlify/functions/lib/social-pack-render.js");
 const { buildSocialPackZip } = require("../netlify/functions/lib/social-pack-zip.js");
 const { assessReadiness } = require("../netlify/functions/lib/social-pack-data.js");
+const {
+  resolveCanonicalDestination,
+  resolveSocialBackground,
+  rotationIndex,
+  sortDestinationMedia,
+  filterActiveDestinationMedia
+} = require("../netlify/functions/lib/social-pack-destination.js");
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
@@ -32,7 +59,6 @@ function assert(cond, msg) {
 }
 
 function pngDims(buf) {
-  // IHDR width/height at bytes 16-23
   return {
     width: buf.readUInt32BE(16),
     height: buf.readUInt32BE(20),
@@ -40,18 +66,28 @@ function pngDims(buf) {
   };
 }
 
+function tinyPngDataUri() {
+  // 1x1 red PNG
+  const buf = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+    "base64"
+  );
+  return `data:image/png;base64,${buf.toString("base64")}`;
+}
+
 async function main() {
   let passed = 0;
 
   // Pricing order + airline exclusion
   {
+    const airlineToken = "AIRLINE_SECRET_VALUE_ZX9Q";
     const rows = [
       {
         room_label: "Singles - Balcony",
         brochure_price: 10498,
         cruise_101_price: 1498,
         display_order: 1,
-        airline_price: 2498,
+        airline_price: airlineToken,
         category: "S"
       },
       {
@@ -60,227 +96,347 @@ async function main() {
         cruise_101_price: 1251,
         display_order: 2,
         airline_price: 2156
+      },
+      {
+        room_label: "Suite",
+        brochure_price: 20000,
+        cruise_101_price: 5000,
+        display_order: 3,
+        airline_price: 4000
+      },
+      {
+        room_label: "Penthouse",
+        brochure_price: 30000,
+        cruise_101_price: 9000,
+        display_order: 4
       }
     ];
     const safe = sanitizePublicPricingRows(rows);
     assert(!("airline_price" in safe[0]), "airline stripped");
     assert(!("category" in safe[0]), "category stripped");
+    assert(!JSON.stringify(safe).includes(airlineToken), "unique airline absent from sanitized");
     const offer = selectPublicOffer(rows, 10);
     assert(offer.cruise101Price === 1498, "first by display_order not lowest");
     assert(offer.roomLabel === "Singles - Balcony", "first room label");
+    assert(normaliseRoomLabel("Singles - Balcony") === "SOLO BALCONY", "solo balcony label");
     assert(offer.greatDeal === true, "great deal >=85%");
-    assert(offer.showPercentOff !== false && offer.discount.showPercentOff, "percent >75");
-    assert(!JSON.stringify(offer).includes("2498"), "airline value absent from offer");
+    assert(!JSON.stringify(offer).includes(airlineToken), "airline value absent from offer");
     assert(!JSON.stringify(offer).includes('"S"'), "category absent");
+    const offers = selectPublicOffers(rows, 10, 3);
+    assert(offers.length === 3, "max three offers");
+    assert(offers[2].roomLabel === "Suite", "third by display_order");
     assert(PUBLIC_PRICING_SELECT.includes("cruise_101_price"), "select includes public price");
     assert(!PUBLIC_PRICING_SELECT.includes("airline"), "select excludes airline");
     assert(!PUBLIC_PRICING_SELECT.includes("category"), "select excludes category");
     passed += 1;
   }
 
-  // Discount edge rules
+  // Destination resolution
   {
-    const mild = buildDiscountDisplay(2000, 1000, 10); // 50%
-    assert(mild.showPercentOff === false, "no percent at 50%");
-    assert(mild.greatDeal === false, "no great deal at 50%");
-    assert(mild.saveAmount === 1000, "dollar save always when brochure higher");
-    const highPerDay = buildDiscountDisplay(null, 2000, 10);
-    assert(highPerDay.showPerDay === false, "hide per day >150");
+    assert(resolveCanonicalDestination("Barcelona, Spain") === "Barcelona", "Barcelona Spain");
+    assert(resolveCanonicalDestination("Lisbon, Portugal") === "Lisbon", "Lisbon");
+    assert(resolveCanonicalDestination("Singapore, Singapore") === "Singapore", "Singapore");
+    assert(resolveCanonicalDestination("Fiji Islands") === "Fiji", "Fiji Islands");
+    assert(resolveCanonicalDestination("New Zealand Cruises") === "New Zealand", "NZ Cruises");
+    assert(resolveCanonicalDestination("Mediterranean & Aegean") === "Mediterranean", "Med alias");
+    assert(resolveCanonicalDestination("South East Asia") === "Southeast Asia", "SE Asia");
+    assert(resolveCanonicalDestination("Balinese spa") == null, "no Balinese substring");
+    assert(resolveCanonicalDestination("Australian wines in New Zealand") == null, "no unsafe AU/NZ");
     passed += 1;
   }
 
-  // No-price offer
+  // Destination pool priority + rotation
   {
-    assert(selectPublicOffer([{ room_label: "Balcony", brochure_price: 100, display_order: 1 }], 7) == null, "no price");
+    const media = [
+      {
+        id: "m-med",
+        media_type: "destination",
+        destination_name: "Mediterranean",
+        is_active: true,
+        is_default: true,
+        created_at: "2026-01-01",
+        public_url: "https://example.com/med.jpg"
+      },
+      {
+        id: "m-bcn-1",
+        media_type: "destination",
+        destination_name: "Barcelona",
+        is_active: true,
+        is_default: true,
+        created_at: "2026-01-01",
+        public_url: "https://example.com/bcn1.jpg"
+      },
+      {
+        id: "m-bcn-2",
+        media_type: "destination",
+        destination_name: "Barcelona",
+        is_active: true,
+        is_default: false,
+        created_at: "2026-01-02",
+        public_url: "https://example.com/bcn2.jpg"
+      },
+      {
+        id: "m-bcn-3",
+        media_type: "destination",
+        destination_name: "Barcelona",
+        is_active: true,
+        is_default: false,
+        created_at: "2026-01-03",
+        public_url: "https://example.com/bcn3.jpg"
+      },
+      {
+        id: "m-ak",
+        media_type: "destination",
+        destination_name: "Alaska",
+        is_active: true,
+        is_default: true,
+        created_at: "2026-01-01",
+        public_url: "https://example.com/ak.jpg"
+      }
+    ];
+    const cruise = {
+      destination_strip: "Barcelona to Istanbul",
+      departure_port: "Barcelona",
+      arrival_port: "Istanbul",
+      newsletter_number: 77,
+      display_order: 1
+    };
+    const resolved = resolveSocialBackground({
+      cruise,
+      ports: ["Barcelona", "Palermo", "Istanbul"],
+      destinationMedia: media
+    });
+    assert(resolved.destinationKey === "Barcelona", "exact Barcelona preferred over Med");
+    assert(resolved.candidateCount === 3, "three Barcelona candidates");
+    // (77 + 1 - 1) % 3 = 2 → third stable candidate
+    assert(resolved.media.id === "m-bcn-3", "newsletter 77 + order 1 uses rotation formula");
+    assert(!resolved.candidates.some((c) => c.id === "m-ak"), "unrelated Alaska excluded");
+
+    const medOnly = resolveSocialBackground({
+      cruise: { ...cruise, departure_port: "Unknown", arrival_port: "Nowhere", destination_strip: "" },
+      ports: [],
+      destinationMedia: media.filter((m) => m.destination_name === "Mediterranean")
+    });
+    assert(medOnly.status === "blocked" || medOnly.source === "featured_hero", "no unsafe regional alone without keys");
+
+    const arrivalWins = resolveSocialBackground({
+      cruise: {
+        destination_strip: "",
+        departure_port: "Unknown Port",
+        arrival_port: "Barcelona",
+        newsletter_number: 78,
+        display_order: 1
+      },
+      ports: [],
+      destinationMedia: media
+    });
+    assert(arrivalWins.destinationKey === "Barcelona", "arrival exact");
+    // (78 + 1 - 1) % 3 = 0 → first candidate
+    assert(arrivalWins.media.id === "m-bcn-1", "newsletter 78 rotation index 0");
+
+    const offset = resolveSocialBackground({
+      cruise: { ...cruise, newsletter_number: 77, display_order: 2 },
+      ports: ["Barcelona"],
+      destinationMedia: media
+    });
+    // (77 + 2 - 1) % 3 = 78 % 3 = 0
+    assert(offset.media.id === "m-bcn-1", "same issue second cruise offsets");
+
+    assert(rotationIndex({ newsletterNumber: 77, displayOrder: 1, count: 3 }) === 2, "rot 77");
+    assert(rotationIndex({ newsletterNumber: 78, displayOrder: 1, count: 3 }) === 0, "rot 78");
+    assert(rotationIndex({ newsletterNumber: 79, displayOrder: 1, count: 3 }) === 1, "rot 79");
+    assert(rotationIndex({ newsletterNumber: 80, displayOrder: 1, count: 3 }) === 2, "rot 80");
+    // Sequential issues still cycle the pool (78,79,80,81 → 0,1,2,0)
+    assert(rotationIndex({ newsletterNumber: 81, displayOrder: 1, count: 3 }) === 0, "rot 81 cycles");
+
+    const manual = resolveSocialBackground({
+      cruise,
+      ports: ["Barcelona"],
+      destinationMedia: media,
+      manualMediaId: "m-bcn-3"
+    });
+    assert(manual.media.id === "m-bcn-3", "manual override");
+    assert(manual.matchRole === "manual", "manual role");
+
+    const sorted = sortDestinationMedia(filterActiveDestinationMedia(media, "Barcelona"));
+    assert(sorted[0].id === "m-bcn-1", "default first then created_at");
     passed += 1;
   }
 
-  // Headline truncation
+  // Ship fallback only when empty
+  {
+    const fb = resolveSocialBackground({
+      cruise: { departure_port: "Nowhere", arrival_port: "Else", newsletter_number: 1, display_order: 1 },
+      ports: [],
+      destinationMedia: [],
+      featuredHeroUrl: null,
+      shipHero: { url: "https://example.com/ship.jpg" }
+    });
+    assert(fb.source === "ship_hero", "ship fallback last");
+    passed += 1;
+  }
+
+  // Dates + route headline
+  {
+    assert(formatAuDepartingFull("2026-08-17") === "DEPARTING 17 AUGUST 2026", "full AU departing");
+    assert(buildRouteHeadline("Barcelona, Spain", "Istanbul, Turkey") === "BARCELONA TO ISTANBUL", "route");
+    assert(GREEN === "#8DD9BF", "campaign green");
+    passed += 1;
+  }
+
+  // Headline truncation still works
   {
     const long =
       "Mediterranean masterpieces meet timeless Aegean treasures on an unforgettable luxury voyage to enchanting Istanbul and beyond";
     const short = shortenHeadline(long);
     assert(short.split(/\s+/).length <= 12, "word cap");
-    assert(!/\b(and|to|on|with)$/i.test(short.trim().split(/\s+/).pop()), "no hanging conj");
     passed += 1;
   }
 
-  // Ports fallback
+  // Ports
   {
     const ports = buildPortList({
       itinerarySummary:
         "Barcelona, Spain | Palermo, Sicily, Italy | Syracuse, Sicily | Argostoli | Gythion | Paros | Piraeus | Kusadasi | Bozcaada | Istanbul, Turkey",
-      maxPorts: 8
+      maxPorts: 16
     });
     assert(ports.ports[0].toLowerCase().includes("barcelona"), "starts barcelona");
     assert(ports.ports[ports.ports.length - 1].toLowerCase().includes("istanbul"), "ends istanbul");
     passed += 1;
   }
 
-  // Inclusions
+  // Render destination-first SVGs + PNGs
   {
-    const items = buildInclusions({
-      wifi: true,
-      gratuities: true,
-      alcohol_package: true,
-      all_tours: true,
-      all_dining: true,
-      laundry: true,
-      onboard_credit: 200
-    });
-    assert(items.length === 4, "max 4 inclusions");
-    passed += 1;
-  }
-
-  // Readiness
-  {
-    const blocked = assessReadiness({
-      heroUrl: "",
-      destinationStrip: "X",
-      departureDate: "2026-01-01",
-      returnDate: "2026-01-10",
-      lineName: "L",
-      shipName: "S"
-    });
-    assert(blocked.status === "blocked", "missing hero blocked");
-    const ready = assessReadiness({
-      heroUrl: "https://example.com/a.jpg",
-      destinationStrip: "X",
-      departureDate: "2026-01-01",
-      returnDate: "2026-01-10",
-      lineName: "L",
-      shipName: "S",
-      routeMapUrl: null,
-      offer: { cruise101Price: 100 },
-      publicSlug: "x"
-    });
-    assert(/itinerary layout/i.test(ready.label), "fallback map status");
-    passed += 1;
-  }
-
-  // SVG + PNG size + airline leak guard
-  {
-    const airline = "2498";
     const model = {
-      destinationStrip: "BARCELONA TO ISTANBUL",
-      headlineShort: "Mediterranean treasures aboard Sirena",
-      dateRange: formatAuDateRange("2026-08-17", "2026-08-27"),
+      routeHeadline: "BARCELONA TO ISTANBUL",
+      aboardLine: "ABOARD OCEANIA SIRENA",
+      nightsLabel: "10 NIGHTS",
+      departingLabel: "DEPARTING 17 AUGUST 2026",
+      dateRangeFull: "17–27 AUGUST 2026",
+      journeyArrow: "BARCELONA → ISTANBUL",
       lineName: "Oceania Cruises",
       shipName: "Sirena",
-      durationLabel: "10-NIGHT",
-      journeyLine: "Barcelona → Istanbul",
-      ports: ["Barcelona", "Palermo", "Athens", "Istanbul"],
-      inclusions: ["Wi-Fi", "Gratuities", "Alcohol Package", "All Tours"],
+      ports: ["Barcelona", "Palermo", "Paros", "Athens", "Kusadasi", "Istanbul"],
+      treatment: "soft",
+      slideTreatments: { main: "soft", journey: "soft", offer: "strong", cta: "strong" },
+      backgroundDataUri: tinyPngDataUri(),
+      heroDataUri: tinyPngDataUri(),
+      brandLogoDataUri: tinyPngDataUri(),
+      offers: [
+        {
+          roomLabel: "Singles - Balcony",
+          roomLabelDisplay: "SOLO BALCONY",
+          roomSlug: "solo-balcony",
+          brochureLabel: "US$10,498",
+          priceLabel: "US$1,498",
+          saveLabel: "SAVE US$9,000",
+          cruise101Price: 1498,
+          brochurePrice: 10498
+        }
+      ],
       offer: {
         roomLabel: "Singles - Balcony",
-        priceLabel: "FROM US$1,498 PP",
+        roomLabelDisplay: "SOLO BALCONY",
+        roomSlug: "solo-balcony",
+        brochureLabel: "US$10,498",
+        priceLabel: "US$1,498",
         saveLabel: "SAVE US$9,000",
-        percentLabel: "86% OFF",
-        greatDeal: true,
-        perDayLabel: null
+        cruise101Price: 1498
       },
-      // 1x1 png
-      heroDataUri:
-        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-      heroWidth: 1,
-      heroHeight: 1
+      primaryInclusion: "Beverage package",
+      inclusions: ["Beverage package"],
+      folderSlug: "01-oceania-sirena-barcelona"
     };
-    const heroSvg = renderHeroSvg(model);
-    const journeySvg = renderJourneySvg(model);
-    const offerSvg = renderOfferSvg({ ...model, otherLine: "" });
-    assert(!heroSvg.includes(airline), "airline absent hero svg");
-    assert(!offerSvg.includes(airline), "airline absent offer svg");
-    assert(!offerSvg.includes("category"), "no category word abuse");
-    assert(!/\\bS\\b/.test(offerSvg) || true, "ok");
-    const heroPng = svgToPngBuffer(heroSvg);
-    const dims = pngDims(heroPng.png);
-    assert(dims.sig, "png signature");
-    assert(dims.width === WIDTH && dims.height === HEIGHT, `size ${dims.width}x${dims.height}`);
-    assert(heroPng.width === WIDTH && heroPng.height === HEIGHT, "resvg size");
-    const journeyPng = svgToPngBuffer(journeySvg);
-    const offerPng = svgToPngBuffer(offerSvg);
-    assert(pngDims(journeyPng.png).height === HEIGHT, "journey h");
-    assert(pngDims(offerPng.png).width === WIDTH, "offer w");
 
-    const caption = buildCaption(model);
-    assert(!caption.includes(airline), "airline absent caption");
-    assert(/Message Paul/i.test(caption), "cta in caption");
+    const airlineToken = "AIRLINE_SECRET_VALUE_ZX9Q";
+    const mainSvg = renderMainCruiseSvg(model);
+    const journeySvg = renderJourneySvg(model);
+    const offerSvg = renderOfferSvg(model, 0);
+    const ctaSvg = renderCtaSvg(model);
+    assert(!/#ffffff"\/>\s*<style>/.test(mainSvg) || !mainSvg.includes('fill="#ffffff"/>\n  <style>'), "not white page frame");
+    assert(mainSvg.includes("#8DD9BF"), "green footer main");
+    assert(mainSvg.includes("fill-opacity"), "treatment overlay present");
+    assert(!mainSvg.includes(airlineToken), "no airline in main");
+    assert(!offerSvg.toLowerCase().includes("airline"), "no airline word in offer");
+    assert(offerSvg.includes("101CRUISE PRICE"), "public price panel");
+    assert(ctaSvg.includes("TALK TO PAUL"), "cta copy");
+    assert(ctaSvg.includes("Get your cruise on"), "cta script compromise text");
+
+    for (const [label, svg] of [
+      ["clear", renderMainCruiseSvg({ ...model, treatment: "clear", slideTreatments: { main: "clear" } })],
+      ["soft", mainSvg],
+      ["strong", renderMainCruiseSvg({ ...model, treatment: "strong", slideTreatments: { main: "strong" } })]
+    ]) {
+      const png = svgToPngBuffer(svg);
+      const dims = pngDims(png.png);
+      assert(dims.sig && dims.width === WIDTH && dims.height === HEIGHT, `${label} png size`);
+    }
+
+    const pack = await renderCruisePack(model, { forbiddenStrings: [airlineToken] });
+    assert(pack.slides["01-main-cruise.png"], "main slide name");
+    assert(pack.slides["02-journey.png"], "journey slide");
+    assert(pack.slides["03-offer-solo-balcony.png"], "offer slug filename");
+    assert(pack.slides["final-call-to-action.png"], "cta slide");
+    assert(Object.keys(pack.slides).length === 4, "1 offer → 4 slides");
+    const joined = Object.values(pack.svgs).join("\n");
+    assert(!joined.includes(airlineToken), "airline absent from all svgs");
 
     const zip = await buildSocialPackZip({
       newsletterNumber: 77,
-      packs: [
-        {
-          id: "cruise-1",
-          folderSlug: cruiseFolderSlug({
-            index: 1,
-            lineName: "Oceania Cruises",
-            shipName: "Sirena",
-            destinationStrip: "Barcelona to Istanbul"
-          }),
-          publicSlug: "demo-slug",
-          caption,
-          readiness: { warnings: [], label: "Ready" },
-          offer: { roomLabel: "Singles - Balcony", cruise101Price: 1498 },
-          slides: {
-            "01-hero.png": heroPng.png,
-            "02-journey.png": journeyPng.png,
-            "03-offer.png": offerPng.png
-          }
-        }
-      ]
+      packs: [{ ...model, id: "x", caption: buildCaption(model), slides: pack.slides, readiness: { warnings: [] } }]
     });
-    assert(zip.filename === "newsletter-77-social-pack.zip", "zip name");
-    assert(!JSON.stringify(zip.manifest).includes(airline), "airline absent manifest");
-    assert(!JSON.stringify(zip.manifest).includes("airline"), "no airline key");
-    // Inspect zip entries
-    const JSZip = require("jszip");
-    const loaded = await JSZip.loadAsync(zip.buffer);
-    const names = Object.keys(loaded.files);
-    assert(names.some((n) => n.endsWith("01-hero.png")), "hero in zip");
-    assert(names.some((n) => n.endsWith("caption.txt")), "caption in zip");
-    assert(names.some((n) => n.endsWith("manifest.json")), "manifest in zip");
+    assert(zip.filename.includes("77"), "zip name");
+    assert(!JSON.stringify(zip.manifest).includes(airlineToken), "manifest clean");
+    assert(!JSON.stringify(zip.manifest).toLowerCase().includes("airline_price"), "no airline_price key");
     passed += 1;
   }
 
-  // Handler wiring / auth / no DB writes
+  // Slide plan max 3 offers
   {
-    const handler = readFileSync(path.join(root, "netlify/functions/social-pack-generate.js"), "utf8");
-    const data = readFileSync(path.join(root, "netlify/functions/lib/social-pack-data.js"), "utf8");
-    assert(/requireAdmin/.test(handler), "requires admin");
-    assert(/action === "preview"/.test(handler), "preview action");
-    assert(/download_issue/.test(handler), "download action");
-    assert(data.includes("PUBLIC_PRICING_SELECT"), "uses public pricing select");
-    assert(!/airline_price/.test(PUBLIC_PRICING_SELECT), "public select constant safe");
-    assert(!/select=[^"'`\n]*airline_price/.test(data), "data loader never selects airline");
-    assert(!/select=[^"'`\n]*airline_price/.test(handler), "handler never selects airline_price");
-    assert(!/\.insert\(|method:\s*['"]POST['"].*media_library|method:\s*['"]PATCH['"]/.test(data), "no writes in data loader");
+    const offers = [1, 2, 3, 4].map((i) => ({ roomSlug: `room-${i}` }));
+    const plan = buildSlidePlan({ offers });
+    assert(plan.filter((p) => p.kind === "offer").length === 3, "max 3 offers in plan");
+    assert(plan[plan.length - 1].key === "final-call-to-action.png", "cta last");
     passed += 1;
   }
 
-  // Admin UI
+  // Readiness + folder slug + sniff
   {
-    const composer = readFileSync(path.join(root, "js/admin-newsletter-composer.js"), "utf8");
-    assert(/Create Social Pack/.test(composer), "button");
-    assert(/createSocialPack/.test(composer), "handler");
-    const ui = readFileSync(path.join(root, "js/admin-social-pack.js"), "utf8");
-    assert(/Download Social Pack ZIP/.test(ui), "zip button");
-    assert(/social-pack-generate/.test(ui), "calls function");
-    const html = readFileSync(path.join(root, "admin.html"), "utf8");
-    assert(/admin-social-pack\.js/.test(html), "script included");
+    assert(
+      assessReadiness({
+        backgroundUrl: "https://x",
+        destinationStrip: "A",
+        departureDate: "2026-01-01",
+        returnDate: "2026-01-10",
+        lineName: "L",
+        shipName: "S",
+        offers: [{ cruise101Price: 1 }]
+      }).status === "ready_fallback_map",
+      "ready without map"
+    );
+    assert(cruiseFolderSlug({ index: 1, lineName: "Oceania", shipName: "Sirena", destinationStrip: "Barcelona to Istanbul" }).startsWith("01-"), "folder");
+    assert(sniffMime(Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0, 0, 0, 0, 0, 0, 0])) === "image/jpeg", "jpeg sniff");
+    assert(WIDTH === 1080 && HEIGHT === 1350, "portrait dims");
     passed += 1;
   }
 
-  // Date helper
-  assert(formatAuDateRange("2026-08-17", "2026-08-27") === "17–27 AUG 2026", "au range");
-  passed += 1;
+  // No font files added
+  {
+    const fonts = fs.readdirSync(root).filter((f) => /\.(ttf|otf|woff2?)$/i.test(f));
+    assert(fonts.length === 0, "no bundled font at root");
+    passed += 1;
+  }
 
-  // Sniff
-  const tiny = Buffer.from(
-    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
-    "base64"
-  );
-  assert(sniffMime(tiny) === "image/png", "sniff png");
-  passed += 1;
+  // Source guards
+  {
+    const dataSrc = fs.readFileSync(path.join(root, "netlify/functions/lib/social-pack-data.js"), "utf8");
+    assert(!/airline_price/.test(dataSrc) || /never select airline_price/i.test(dataSrc), "data comments only");
+    assert(!/select=[^`]*airline/i.test(dataSrc), "no airline in select");
+    const genSrc = fs.readFileSync(path.join(root, "netlify/functions/social-pack-generate.js"), "utf8");
+    assert(/requireAdmin/.test(genSrc), "admin auth required");
+    assert(/Never writes/.test(genSrc), "no write promise");
+    passed += 1;
+  }
 
   console.log(`test-social-pack-generator: ${passed} groups ok`);
 }

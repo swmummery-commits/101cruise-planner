@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 /**
- * Local Newsletter #77 Social Pack demo (no Netlify deploy).
+ * Local Newsletter #77 Sirena destination-design Social Pack review.
  *
  *   node scripts/generate-social-pack-newsletter-77.mjs
  *
- * Writes into generated-assets/social-pack-newsletter-77/ (gitignored).
+ * Writes into generated-assets/social-pack-newsletter-77/destination-design/
+ * (gitignored). Does not push or deploy. Read-only against Supabase.
  */
 
 import { createRequire } from "module";
@@ -40,7 +41,7 @@ function loadEnv() {
 
 async function main() {
   loadEnv();
-  const outDir = path.join(root, "generated-assets/social-pack-newsletter-77");
+  const outDir = path.join(root, "generated-assets/social-pack-newsletter-77/destination-design");
   fs.mkdirSync(outDir, { recursive: true });
 
   const rows = await listIssueCruiseIds(77);
@@ -54,44 +55,60 @@ async function main() {
       {
         source: "live_read_only",
         newsletter_number: 77,
-        cruise_count: rows.length,
         primary_id: sirena.id,
-        primary_headline: sirena.headline
+        primary_headline: sirena.headline,
+        mode: "sirena_destination_design_only"
       },
       null,
       2
     )
   );
 
-  const packs = [];
-  for (let i = 0; i < rows.length; i += 1) {
-    let model = await loadFeaturedCruisePackModel(rows[i].id, { index: i + 1 });
-    if (model.readiness?.status === "blocked") {
-      console.warn("skip", model.id, model.readiness.label);
-      continue;
-    }
-    model = await hydrateMedia(model);
-    const rendered = await renderCruisePack(model);
-    packs.push({ ...model, slides: rendered.slides });
-
-    if (rows[i].id === sirena.id) {
-      const reviewDir = path.join(outDir, "sirena-review");
-      fs.mkdirSync(reviewDir, { recursive: true });
-      fs.writeFileSync(path.join(reviewDir, "01-hero.png"), rendered.slides["01-hero.png"]);
-      fs.writeFileSync(path.join(reviewDir, "02-journey.png"), rendered.slides["02-journey.png"]);
-      fs.writeFileSync(path.join(reviewDir, "03-offer.png"), rendered.slides["03-offer.png"]);
-      fs.writeFileSync(path.join(reviewDir, "caption.txt"), model.caption || "");
-      console.log("sirena_review", reviewDir);
-      console.log("offer", model.offer?.priceLabel, model.offer?.roomLabel);
-      console.log("readiness", model.readiness);
-    }
+  let model = await loadFeaturedCruisePackModel(sirena.id, {
+    index: Math.max(1, Number(sirena.display_order) || 1),
+    treatment: "soft"
+  });
+  if (model.readiness?.status === "blocked") {
+    throw new Error(model.readiness.label);
   }
+  model = await hydrateMedia(model);
+  const rendered = await renderCruisePack(model);
 
-  const zip = await buildSocialPackZip({ newsletterNumber: 77, packs });
-  const zipPath = path.join(outDir, zip.filename);
+  const report = {
+    destination_key: model.backgroundDestinationKey,
+    candidate_count: model.backgroundCandidateCount,
+    rotation_index: model.backgroundRotationIndex,
+    media_id: model.backgroundMediaId,
+    media_title: model.backgroundTitle,
+    match_role: model.backgroundMatchRole,
+    source: model.backgroundSource,
+    treatment: model.treatment,
+    brand_logo_path: model.brandLogoPath,
+    cruise_line_logo_url: model.cruiseLineLogoUrl,
+    offers: (model.offers || []).map((o) => ({
+      room: o.roomLabel,
+      display: o.roomLabelDisplay,
+      public: o.cruise101Price,
+      brochure: o.brochurePrice
+    })),
+    slide_order: rendered.plan.map((p) => p.key)
+  };
+  fs.writeFileSync(path.join(outDir, "resolution-report.json"), JSON.stringify(report, null, 2));
+  console.log("resolution", JSON.stringify(report, null, 2));
+
+  for (const [name, buf] of Object.entries(rendered.slides)) {
+    fs.writeFileSync(path.join(outDir, name), buf);
+  }
+  fs.writeFileSync(path.join(outDir, "caption.txt"), model.caption || "");
+
+  const zip = await buildSocialPackZip({
+    newsletterNumber: 77,
+    packs: [{ ...model, slides: rendered.slides }]
+  });
+  const zipPath = path.join(outDir, "newsletter-77-sirena-destination-design.zip");
   fs.writeFileSync(zipPath, zip.buffer);
+  console.log("review_dir", outDir);
   console.log("zip", zipPath);
-  console.log("manifest_cruises", zip.manifest.cruises.length);
 }
 
 main().catch((err) => {

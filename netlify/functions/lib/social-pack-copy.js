@@ -65,10 +65,94 @@ function formatAuDateRange(departure, returnDate) {
   return `${d1} ${m1} ${y1} – ${d2} ${m2} ${y2}`;
 }
 
+const FULL_MONTHS = [
+  "JANUARY",
+  "FEBRUARY",
+  "MARCH",
+  "APRIL",
+  "MAY",
+  "JUNE",
+  "JULY",
+  "AUGUST",
+  "SEPTEMBER",
+  "OCTOBER",
+  "NOVEMBER",
+  "DECEMBER"
+];
+
+function parseIsoDate(iso) {
+  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return null;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+/** DEPARTING 17 AUGUST 2026 */
+function formatAuDepartingFull(departure) {
+  const d = parseIsoDate(departure);
+  if (!d) return "";
+  return `DEPARTING ${d.getDate()} ${FULL_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/** 17–27 AUGUST 2026 or 17 AUGUST – 2 SEPTEMBER 2026 */
+function formatAuRangeFull(departure, returnDate) {
+  const start = parseIsoDate(departure);
+  const end = parseIsoDate(returnDate);
+  if (!start) return "";
+  const d1 = start.getDate();
+  const m1 = FULL_MONTHS[start.getMonth()];
+  const y1 = start.getFullYear();
+  if (!end) return `${d1} ${m1} ${y1}`;
+  const d2 = end.getDate();
+  const m2 = FULL_MONTHS[end.getMonth()];
+  const y2 = end.getFullYear();
+  if (y1 === y2 && m1 === m2) return `${d1}–${d2} ${m1} ${y1}`;
+  if (y1 === y2) return `${d1} ${m1} – ${d2} ${m2} ${y1}`;
+  return `${d1} ${m1} ${y1} – ${d2} ${m2} ${y2}`;
+}
+
 function formatDuration(nights) {
   const n = Number(nights);
   if (!Number.isFinite(n) || n < 1) return "";
   return `${Math.trunc(n)}-NIGHT`;
+}
+
+/** 10 NIGHTS */
+function formatNightsLabel(nights) {
+  const n = Number(nights);
+  if (!Number.isFinite(n) || n < 1) return "";
+  const v = Math.trunc(n);
+  return `${v} NIGHT${v === 1 ? "" : "S"}`;
+}
+
+/**
+ * Deterministic route headline from departure + arrival ports.
+ * BARCELONA TO ISTANBUL
+ */
+function buildRouteHeadline(departurePort, arrivalPort) {
+  const dep = normaliseWhitespace(departurePort)
+    .replace(/,.*$/, "")
+    .trim()
+    .toUpperCase();
+  const arr = normaliseWhitespace(arrivalPort)
+    .replace(/,.*$/, "")
+    .trim()
+    .toUpperCase();
+  if (dep && arr) return `${dep} TO ${arr}`;
+  return dep || arr || "";
+}
+
+function buildAboardLine(lineName, shipName) {
+  const line = normaliseWhitespace(lineName).toUpperCase();
+  const ship = normaliseWhitespace(shipName).toUpperCase();
+  if (line && ship) {
+    // Avoid "OCEANIA CRUISES OCEANIA SIRENA" duplication when ship already branded
+    if (ship.includes(line.replace(/\s+CRUISES?$/i, "").trim()) || ship.startsWith("OCEANIA ")) {
+      return `ABOARD ${ship}`;
+    }
+    return `ABOARD ${line.replace(/\s+CRUISES?$/i, "").trim()} ${ship}`.replace(/\s+/g, " ");
+  }
+  if (ship) return `ABOARD ${ship}`;
+  return "";
 }
 
 function slugifyPart(value) {
@@ -100,7 +184,12 @@ function escapeXml(value) {
 module.exports = {
   shortenHeadline,
   formatAuDateRange,
+  formatAuDepartingFull,
+  formatAuRangeFull,
   formatDuration,
+  formatNightsLabel,
+  buildRouteHeadline,
+  buildAboardLine,
   slugifyPart,
   cruiseFolderSlug,
   escapeXml,

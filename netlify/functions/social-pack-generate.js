@@ -2,9 +2,9 @@
  * Admin Social Pack Generator.
  *
  * Actions:
- *   preview        → one cruise, three PNG data URLs + caption
+ *   preview        → one cruise, PNG data URLs + caption
  *   download_issue → ZIP of selected cruises
- *   readiness      → readiness list for an issue (optional helper)
+ *   readiness      → readiness list for an issue
  *
  * Never selects airline_price or category.
  * Never writes to the database or Media Library.
@@ -50,8 +50,12 @@ function zipResponse(buffer, filename) {
 }
 
 function collectForbidden(model) {
-  // Intentionally empty for live data — tests inject known airline values.
   return [];
+}
+
+function normaliseTreatment(value) {
+  const t = String(value || "soft").toLowerCase();
+  return ["clear", "soft", "strong"].includes(t) ? t : "soft";
 }
 
 async function handlePreview(body) {
@@ -59,7 +63,13 @@ async function handlePreview(body) {
   if (!id) {
     return jsonResponse(400, { success: false, error: "featured_cruise_id is required" });
   }
-  let model = await loadFeaturedCruisePackModel(id, { index: 1 });
+  const treatment = normaliseTreatment(body.treatment);
+  const manualMediaId = body.social_media_id || body.manual_media_id || null;
+  let model = await loadFeaturedCruisePackModel(id, {
+    index: 1,
+    treatment,
+    manualMediaId
+  });
   if (model.readiness?.status === "blocked") {
     return jsonResponse(400, {
       success: false,
@@ -71,6 +81,12 @@ async function handlePreview(body) {
   const rendered = await renderCruisePack(model, {
     forbiddenStrings: collectForbidden(model)
   });
+
+  const slides = {};
+  for (const [name, buf] of Object.entries(rendered.slides)) {
+    slides[name] = `data:image/png;base64,${buf.toString("base64")}`;
+  }
+
   return jsonResponse(200, {
     success: true,
     featured_cruise_id: model.id,
@@ -78,6 +94,26 @@ async function handlePreview(body) {
     readiness: model.readiness,
     caption: model.caption,
     warnings: model.readiness.warnings || [],
+    treatment: model.treatment,
+    background: {
+      media_id: model.backgroundMediaId,
+      title: model.backgroundTitle,
+      destination_key: model.backgroundDestinationKey,
+      match_role: model.backgroundMatchRole,
+      candidate_count: model.backgroundCandidateCount,
+      rotation_index: model.backgroundRotationIndex,
+      source: model.backgroundSource,
+      warning: model.backgroundWarning
+    },
+    picker_sections: model.pickerSections,
+    background_candidates: model.backgroundCandidates,
+    offers: (model.offers || []).map((o) => ({
+      room_label: o.roomLabel,
+      room_label_display: o.roomLabelDisplay,
+      cruise_101_price: o.cruise101Price,
+      brochure_price: o.brochurePrice,
+      price_label: o.priceLabel
+    })),
     offer: model.offer
       ? {
           room_label: model.offer.roomLabel,
@@ -85,12 +121,11 @@ async function handlePreview(body) {
           price_label: model.offer.priceLabel
         }
       : null,
-    slides: {
-      "01-hero.png": `data:image/png;base64,${rendered.slides["01-hero.png"].toString("base64")}`,
-      "02-journey.png": `data:image/png;base64,${rendered.slides["02-journey.png"].toString("base64")}`,
-      "03-offer.png": `data:image/png;base64,${rendered.slides["03-offer.png"].toString("base64")}`
-    },
-    dimensions: rendered.dimensions
+    slides,
+    slide_order: rendered.plan.map((p) => p.key),
+    dimensions: rendered.dimensions,
+    brand_logo_path: model.brandLogoPath,
+    cruise_line_logo_url: model.cruiseLineLogoUrl
   });
 }
 
@@ -99,6 +134,7 @@ async function handleDownloadIssue(body) {
   if (!Number.isFinite(newsletterNumber)) {
     return jsonResponse(400, { success: false, error: "newsletter_number is required" });
   }
+  const treatment = normaliseTreatment(body.treatment);
   let ids = Array.isArray(body.featured_cruise_ids)
     ? body.featured_cruise_ids.map((id) => String(id || "").trim()).filter(Boolean)
     : [];
@@ -113,7 +149,10 @@ async function handleDownloadIssue(body) {
   const packs = [];
   const skipped = [];
   for (let i = 0; i < ids.length; i += 1) {
-    let model = await loadFeaturedCruisePackModel(ids[i], { index: i + 1 });
+    let model = await loadFeaturedCruisePackModel(ids[i], {
+      index: i + 1,
+      treatment
+    });
     if (model.readiness?.status === "blocked") {
       skipped.push({ id: model.id, reason: model.readiness.label });
       continue;
@@ -155,9 +194,13 @@ async function handleReadiness(body) {
       ship_name: model.shipName,
       departure_date: model.departureDate,
       return_date: model.returnDate,
-      hero_url: model.heroUrl,
+      hero_url: model.backgroundUrl || model.heroUrl,
       readiness: model.readiness,
-      public_slug: model.publicSlug
+      background: {
+        destination_key: model.backgroundDestinationKey,
+        match_role: model.backgroundMatchRole,
+        candidate_count: model.backgroundCandidateCount
+      }
     });
   }
   return jsonResponse(200, { success: true, newsletter_number: newsletterNumber, cruises: items });
@@ -168,22 +211,34 @@ exports.handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return jsonResponse(405, { success: false, error: "Method not allowed" });
   }
+
   try {
     await requireAdmin(event);
-    const body = JSON.parse(event.body || "{}");
-    const action = String(body.action || "").trim();
-    if (action === "preview") return handlePreview(body);
-    if (action === "download_issue") return handleDownloadIssue(body);
-    if (action === "readiness") return handleReadiness(body);
+  } catch (error) {
+    return jsonResponse(error.statusCode || 401, {
+      success: false,
+      error: error.message || "Admin authentication required"
+    });
+  }
+
+  let body = {};
+  try {
+    body = event.body ? JSON.parse(event.body) : {};
+  } catch {
+    return jsonResponse(400, { success: false, error: "Invalid JSON body" });
+  }
+
+  const action = String(body.action || "preview").trim();
+  try {
+    if (action === "preview") return await handlePreview(body);
+    if (action === "download_issue") return await handleDownloadIssue(body);
+    if (action === "readiness") return await handleReadiness(body);
     return jsonResponse(400, { success: false, error: "Unknown action" });
   } catch (error) {
     const status = error.statusCode || 500;
     return jsonResponse(status, {
       success: false,
-      error:
-        error.calm || status < 500
-          ? error.message || "Social pack generation failed."
-          : "Social pack generation failed."
+      error: error.calm ? error.message : "Social Pack generation failed."
     });
   }
 };

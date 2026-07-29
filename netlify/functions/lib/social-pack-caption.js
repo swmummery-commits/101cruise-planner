@@ -24,7 +24,19 @@ function buildCaption(model) {
     lines.push(`Itinerary highlights: ${highlight}${model.portsTruncated ? " …" : ""}`, "");
   }
 
-  if (model.offer) {
+  if (model.offers?.length) {
+    for (const offer of model.offers) {
+      lines.push(
+        `${offer.roomLabel}: ${offer.priceLabelFrom || offer.priceLabel}${
+          offer.saveLabel ? ` (${offer.saveLabel})` : ""
+        }`
+      );
+    }
+    if (model.inclusions?.length) {
+      lines.push(`Includes: ${model.inclusions.join(", ")}`);
+    }
+    lines.push("");
+  } else if (model.offer) {
     lines.push(
       `${model.offer.roomLabel}: ${model.offer.priceLabel}${
         model.offer.saveLabel ? ` (${model.offer.saveLabel})` : ""

@@ -1,5 +1,7 @@
 /**
- * Deterministic SVG templates for Social Pack slides (1080×1350).
+ * Destination-first Social Pack SVG templates (1080×1350 portrait).
+ * Full-bleed destination photography with Clear / Soft / Strong treatment.
+ * Never uses white document-page layouts.
  */
 
 const { escapeXml } = require("./social-pack-copy");
@@ -7,209 +9,380 @@ const { escapeXml } = require("./social-pack-copy");
 const W = 1080;
 const H = 1350;
 const GREEN = "#8DD9BF";
-const INK = "#111111";
-const MUTED = "#4b5563";
+const WHITE = "#FFFFFF";
+const FOOTER_H = 42;
+const RED = "#F80020";
 
-function xmlLines(text, { x, y, lineHeight, className, anchor = "start", maxLines = 6 }) {
-  const lines = String(text || "").split("\n").filter(Boolean).slice(0, maxLines);
-  return lines
-    .map((line, i) => {
-      const yy = y + i * lineHeight;
-      return `<text x="${x}" y="${yy}" text-anchor="${anchor}" class="${className}">${escapeXml(line)}</text>`;
-    })
-    .join("\n");
+const TREATMENTS = {
+  clear: { blur: 0, scale: 1.02, overlay: 0.4, enlarge: 1.02 },
+  soft: { blur: 12, scale: 1.12, overlay: 0.5, enlarge: 1.12 },
+  strong: { blur: 20, scale: 1.18, overlay: 0.6, enlarge: 1.18 }
+};
+
+function treatmentConfig(name) {
+  const key = String(name || "soft").toLowerCase();
+  return TREATMENTS[key] || TREATMENTS.soft;
 }
 
-function brandMark(x, y) {
-  return `<text x="${x}" y="${y}" class="brand">101cruise</text>`;
+function greenFooter() {
+  return `<rect x="0" y="${H - FOOTER_H}" width="${W}" height="${FOOTER_H}" fill="${GREEN}"/>`;
 }
 
-function cue(n, total = 3) {
-  return `<text x="${W - 48}" y="${H - 36}" text-anchor="end" class="cue">${n} / ${total}</text>`;
-}
+/**
+ * Full-bleed cover-cropped background.
+ * Expects a pre-treated (or clear) raster in backgroundDataUri — blur is applied
+ * server-side before SVG assembly because resvg feGaussianBlur fails on large JPEGs.
+ */
+function destinationBackground(model, treatmentName) {
+  const t = treatmentConfig(treatmentName);
+  const href = model.backgroundDataUri || model.heroDataUri;
+  if (!href) {
+    return `<rect width="${W}" height="${H}" fill="#0b1220"/>`;
+  }
 
-function baseStyles() {
+  const imgW = Number(model.backgroundWidth || model.heroWidth) || W;
+  const imgH = Number(model.backgroundHeight || model.heroHeight) || H;
+  // Pre-treated rasters are already canvas-sized; still cover-crop safely.
+  const boxRatio = W / H;
+  const imgRatio = imgW / Math.max(1, imgH);
+  let dw;
+  let dh;
+  if (imgRatio > boxRatio) {
+    dh = H;
+    dw = H * imgRatio;
+  } else {
+    dw = W;
+    dh = W / imgRatio;
+  }
+  const dx = (W - dw) / 2;
+  const dy = (H - dh) / 2;
+
   return `
-    <style>
-      .serif { font-family: Georgia, 'Times New Roman', Times, serif; fill: ${INK}; }
-      .sans { font-family: Helvetica, Arial, sans-serif; fill: ${INK}; }
-      .dest { font-family: Helvetica, Arial, sans-serif; font-size: 22px; letter-spacing: 3px; fill: ${MUTED}; }
-      .headline { font-family: Georgia, 'Times New Roman', Times, serif; font-size: 46px; }
-      .meta { font-family: Helvetica, Arial, sans-serif; font-size: 22px; fill: ${MUTED}; }
-      .brand { font-family: Helvetica, Arial, sans-serif; font-size: 18px; fill: ${MUTED}; }
-      .cue { font-family: Helvetica, Arial, sans-serif; font-size: 18px; fill: ${MUTED}; }
-      .section { font-family: Helvetica, Arial, sans-serif; font-size: 20px; letter-spacing: 4px; fill: ${MUTED}; }
-      .title { font-family: Georgia, 'Times New Roman', Times, serif; font-size: 42px; }
-      .price { font-family: Georgia, 'Times New Roman', Times, serif; font-size: 56px; }
-      .save { font-family: Helvetica, Arial, sans-serif; font-size: 26px; fill: #245C4E; }
-      .cta { font-family: Helvetica, Arial, sans-serif; font-size: 28px; }
-      .small { font-family: Helvetica, Arial, sans-serif; font-size: 18px; fill: ${MUTED}; }
-      .port { font-family: Helvetica, Arial, sans-serif; font-size: 24px; }
-      .accent { fill: ${GREEN}; }
-    </style>`;
+    <defs>
+      <clipPath id="canvasClip"><rect x="0" y="0" width="${W}" height="${H}"/></clipPath>
+    </defs>
+    <g clip-path="url(#canvasClip)">
+      <image href="${href}" x="${dx}" y="${dy}" width="${dw}" height="${dh}" preserveAspectRatio="xMidYMid slice"/>
+      <rect x="0" y="0" width="${W}" height="${H}" fill="#050814" fill-opacity="${t.overlay}"/>
+    </g>
+  `;
+}
+
+function cruiseLineLogoBlock(model) {
+  if (model.cruiseLineLogoDataUri) {
+    return `
+      <g>
+        <path d="M 340 0 L 740 0 L 700 118 L 380 118 Z" fill="${WHITE}" fill-opacity="0.96"/>
+        <image href="${model.cruiseLineLogoDataUri}" x="430" y="18" width="220" height="82" preserveAspectRatio="xMidYMid meet"/>
+      </g>`;
+  }
+  if (model.lineName) {
+    return `
+      <g>
+        <path d="M 340 0 L 740 0 L 700 118 L 380 118 Z" fill="${WHITE}" fill-opacity="0.96"/>
+        <text x="540" y="72" text-anchor="middle" fill="#111" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700">${escapeXml(
+          String(model.lineName).toUpperCase()
+        )}</text>
+      </g>`;
+  }
+  return "";
+}
+
+function brandLogoFooter(model, { y = H - 150, size = 72 } = {}) {
+  if (model.brandLogoDataUri) {
+    return `
+      <image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>
+      <text x="540" y="${y + size + 28}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="2">101CRUISE.COM.AU</text>
+    `;
+  }
+  return `
+    <rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="${RED}"/>
+    <text x="540" y="${y + size + 28}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="2">101CRUISE.COM.AU</text>
+  `;
+}
+
+function wrapPortsLine(ports, maxChars = 54) {
+  const list = (ports || []).filter(Boolean);
+  if (!list.length) return [];
+  const lines = [];
+  let current = "";
+  for (let i = 0; i < list.length; i += 1) {
+    const part = list[i];
+    const next = current ? `${current} | ${part}` : part;
+    if (next.length > maxChars && current) {
+      lines.push(current);
+      current = part;
+    } else {
+      current = next;
+    }
+  }
+  if (current) lines.push(current);
+  return lines.slice(0, 4);
 }
 
 function frame(body) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <rect width="${W}" height="${H}" fill="#ffffff"/>
-  ${baseStyles()}
   ${body}
 </svg>`;
 }
 
-/**
- * Cover-crop image into a rect (centred).
- */
-function coverImage({ href, x, y, width, height, imgW = 1600, imgH = 1200 }) {
-  const boxRatio = width / height;
-  const imgRatio = imgW / Math.max(1, imgH);
-  let dw;
-  let dh;
-  if (imgRatio > boxRatio) {
-    dh = height;
-    dw = height * imgRatio;
-  } else {
-    dw = width;
-    dh = width / imgRatio;
+/** Slide 1 — Main cruise */
+function renderMainCruiseSvg(model) {
+  const treatment = model.slideTreatments?.main || model.treatment || "soft";
+  const route = model.routeHeadline || model.destinationStrip || "";
+  const routeLines = String(route)
+    .split(/\n/)
+    .filter(Boolean);
+  // Split "A TO B" onto two lines when long
+  let headlineLines = routeLines;
+  if (headlineLines.length === 1 && / TO /.test(headlineLines[0]) && headlineLines[0].length > 22) {
+    headlineLines = headlineLines[0].split(/ TO /);
+    headlineLines = [headlineLines[0] + " TO", headlineLines.slice(1).join(" TO ")];
   }
-  const dx = x + (width - dw) / 2;
-  const dy = y + (height - dh) / 2;
-  const clipId = `clip${Math.abs(Math.round(x + y + width))}`;
-  return `
-    <defs>
-      <clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${width}" height="${height}"/></clipPath>
-    </defs>
-    <image href="${href}" x="${dx}" y="${dy}" width="${dw}" height="${dh}" clip-path="url(#${clipId})" preserveAspectRatio="xMidYMid slice"/>
-  `;
-}
 
-function renderHeroSvg(model) {
-  const imageBlock = model.heroDataUri
-    ? coverImage({
-        href: model.heroDataUri,
-        x: 48,
-        y: 280,
-        width: W - 96,
-        height: 820,
-        imgW: model.heroWidth || 1600,
-        imgH: model.heroHeight || 1200
-      })
-    : `<rect x="48" y="280" width="${W - 96}" height="820" fill="#f3f4f6"/>`;
+  const portLines = wrapPortsLine(model.ports || [], 52);
+  let hy = 280;
+  const headline = headlineLines
+    .map((line, i) => {
+      const y = hy + i * 64;
+      return `<text x="540" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="54" font-weight="700">${escapeXml(
+        line
+      )}</text>`;
+    })
+    .join("\n");
+  hy += headlineLines.length * 64 + 18;
+
+  const aboard = model.aboardLine
+    ? `<text x="540" y="${hy}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="30" font-weight="600">${escapeXml(
+        model.aboardLine
+      )}</text>`
+    : "";
+  hy += model.aboardLine ? 70 : 20;
+
+  const nights = model.nightsLabel
+    ? `<text x="540" y="${hy}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="34" font-weight="700">${escapeXml(
+        model.nightsLabel
+      )}</text>`
+    : "";
+  hy += model.nightsLabel ? 48 : 0;
+
+  const departing = model.departingLabel
+    ? `<text x="540" y="${hy}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="600">${escapeXml(
+        model.departingLabel
+      )}</text>`
+    : "";
+  hy += model.departingLabel ? 70 : 30;
+
+  const portsBlock = portLines
+    .map((line, i) => {
+      return `<text x="540" y="${hy + i * 36}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="22">${escapeXml(
+        line
+      )}</text>`;
+    })
+    .join("\n");
 
   const body = `
-    <rect x="0" y="0" width="${W}" height="12" class="accent"/>
-    <text x="54" y="72" class="dest">${escapeXml(model.destinationStrip || "")}</text>
-    ${xmlLines(model.headlineShort || "", { x: 54, y: 140, lineHeight: 54, className: "headline" })}
-    ${imageBlock}
-    <text x="54" y="1160" class="meta">${escapeXml(model.dateRange || "")}</text>
-    <text x="54" y="1200" class="meta">${escapeXml(
-      [model.lineName, model.shipName].filter(Boolean).join(" · ").toUpperCase()
-    )}</text>
-    ${brandMark(54, H - 36)}
-    ${cue(1)}
+    ${destinationBackground(model, treatment)}
+    ${cruiseLineLogoBlock(model)}
+    ${headline}
+    ${aboard}
+    ${nights}
+    ${departing}
+    ${portsBlock}
+    ${brandLogoFooter(model, { y: H - FOOTER_H - 130, size: 64 })}
+    ${greenFooter()}
   `;
   return frame(body);
 }
 
+/** Slide 2 — Journey with route map panel */
 function renderJourneySvg(model) {
+  const treatment = model.slideTreatments?.journey || model.treatment || "soft";
+  const arrow = model.journeyArrow || model.journeyLine || "";
   const ports = model.ports || [];
-  const portLines = ports.map((p, i) => `${i === 0 ? "•" : "•"} ${p}`).join("\n");
-  const more =
-    model.portsTruncated && model.portsOmitted
-      ? `\n+ ${model.portsOmitted} more`
+  const primary = ports.slice(0, 6);
+  const extra = ports.slice(6);
+
+  let mapBlock = "";
+  if (model.routeMapDataUri) {
+    mapBlock = `
+      <rect x="90" y="300" width="900" height="420" rx="18" fill="${WHITE}" fill-opacity="0.12" stroke="${WHITE}" stroke-opacity="0.35" stroke-width="2"/>
+      <image href="${model.routeMapDataUri}" x="110" y="318" width="860" height="384" preserveAspectRatio="xMidYMid meet"/>
+    `;
+  } else {
+    mapBlock = `
+      <rect x="90" y="300" width="900" height="280" rx="18" fill="${WHITE}" fill-opacity="0.12" stroke="${WHITE}" stroke-opacity="0.35" stroke-width="2"/>
+      <text x="540" y="450" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="28">${escapeXml(
+        arrow
+      )}</text>
+    `;
+  }
+
+  const highlightY = model.routeMapDataUri ? 780 : 640;
+  const highlights = primary
+    .map((p, i) => {
+      const col = i % 3;
+      const row = Math.floor(i / 3);
+      const x = 160 + col * 280;
+      const y = highlightY + row * 42;
+      return `<text x="${x}" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="22">${escapeXml(
+        p
+      )}</text>`;
+    })
+    .join("\n");
+
+  const plus =
+    extra.length > 0
+      ? `<text x="540" y="${highlightY + 110}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="20">Plus ${escapeXml(
+          extra.join(", ")
+        )}</text>`
       : "";
 
-  let media = "";
-  if (model.routeMapDataUri) {
-    media = coverImage({
-      href: model.routeMapDataUri,
-      x: 54,
-      y: 220,
-      width: W - 108,
-      height: 620,
-      imgW: model.routeMapWidth || 1600,
-      imgH: model.routeMapHeight || 1000
-    });
-  } else {
-    media = `
-      <rect x="54" y="220" width="${W - 108}" height="420" fill="#f8faf9" stroke="${GREEN}" stroke-width="2"/>
-      ${xmlLines(portLines + more, { x: 90, y: 290, lineHeight: 42, className: "port", maxLines: 9 })}
-    `;
-  }
-
-  const listY = model.routeMapDataUri ? 880 : 680;
-  const listBlock = model.routeMapDataUri
-    ? xmlLines(portLines + more, { x: 54, y: listY, lineHeight: 36, className: "port", maxLines: 7 })
-    : "";
-
   const body = `
-    <rect x="0" y="0" width="${W}" height="12" class="accent"/>
-    <text x="54" y="72" class="section">THE JOURNEY</text>
-    <text x="54" y="130" class="title">${escapeXml(model.durationLabel || "")}</text>
-    <text x="54" y="180" class="meta">${escapeXml(model.journeyLine || "")}</text>
-    ${media}
-    ${listBlock}
-    <text x="54" y="1240" class="meta">${escapeXml(model.dateRange || "")}</text>
-    ${brandMark(54, H - 36)}
-    ${cue(2)}
+    ${destinationBackground(model, treatment)}
+    ${cruiseLineLogoBlock(model)}
+    <text x="540" y="190" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="42" font-weight="700">${escapeXml(
+      arrow
+    )}</text>
+    <text x="540" y="250" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="26" font-weight="600">${escapeXml(
+      [model.nightsLabel, model.dateRangeFull].filter(Boolean).join(" · ")
+    )}</text>
+    ${mapBlock}
+    <text x="540" y="${highlightY - 36}" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="4">HIGHLIGHTS</text>
+    ${highlights}
+    ${plus}
+    ${brandLogoFooter(model, { y: H - FOOTER_H - 120, size: 56 })}
+    ${greenFooter()}
   `;
   return frame(body);
 }
 
-function renderOfferSvg(model) {
-  const offer = model.offer;
-  let priceBlock = "";
+function softBurst(cx, cy, label, { fill = "#F5E6B8", text = "#111" } = {}) {
+  const r = 78;
+  // Softened seal — rounded hex-ish circle, not jagged supermarket sticker
+  return `
+    <g>
+      <circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" fill-opacity="0.95"/>
+      <circle cx="${cx}" cy="${cy}" r="${r - 6}" fill="none" stroke="#D4B86A" stroke-width="2" stroke-opacity="0.7"/>
+      <text x="${cx}" y="${cy + 8}" text-anchor="middle" fill="${text}" font-family="Helvetica, Arial, sans-serif" font-size="18" font-weight="700">${escapeXml(
+        label
+      )}</text>
+    </g>`;
+}
+
+/** Offer slide — one room */
+function renderOfferSvg(model, offerIndex = 0) {
+  const treatment = model.slideTreatments?.offer || "strong";
+  const offer = (model.offers || [])[offerIndex] || model.offer;
+  const inclusion = model.primaryInclusion || (model.inclusions || [])[0] || "";
+
+  let panels = "";
+  let seals = "";
   if (offer) {
-    priceBlock = `
-      <text x="54" y="280" class="meta">${escapeXml(offer.roomLabel || "")}</text>
-      <text x="54" y="360" class="price">${escapeXml(offer.priceLabel || "")}</text>
-      ${
-        offer.greatDeal
-          ? `<text x="54" y="420" class="save">GREAT DEAL${offer.percentLabel ? ` · ${escapeXml(offer.percentLabel)}` : ""}</text>`
-          : offer.saveLabel
-            ? `<text x="54" y="420" class="save">${escapeXml(offer.saveLabel)}${
-                offer.percentLabel ? ` · ${escapeXml(offer.percentLabel)}` : ""
-              }</text>`
-            : ""
-      }
-      ${offer.perDayLabel ? `<text x="54" y="470" class="small">${escapeXml(offer.perDayLabel)}</text>` : ""}
+    panels = `
+      <rect x="70" y="250" width="620" height="110" rx="16" fill="${WHITE}" fill-opacity="0.95"/>
+      <text x="96" y="292" fill="#333" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="1">BROCHURE PRICE</text>
+      <text x="96" y="340" fill="#111" font-family="Helvetica, Arial, sans-serif" font-size="42" font-weight="700">${escapeXml(
+        offer.brochureLabel || "—"
+      )}<tspan font-size="18" font-weight="500"> PP</tspan></text>
+
+      <rect x="70" y="390" width="620" height="120" rx="16" fill="${WHITE}" fill-opacity="0.95"/>
+      <text x="96" y="436" fill="#333" font-family="Helvetica, Arial, sans-serif" font-size="18" letter-spacing="1">101CRUISE PRICE</text>
+      <text x="96" y="488" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="48" font-weight="700">${escapeXml(
+        offer.priceLabel || ""
+      )}<tspan font-size="18" font-weight="500" fill="#111"> PP</tspan></text>
     `;
+    if (offer.saveLabel) {
+      seals += softBurst(860, 360, offer.saveLabel.replace(/^SAVE\s+/i, "SAVE\n").slice(0, 18), {
+        text: RED
+      });
+      // Multi-line save handled simply as single line truncated
+      seals = `
+        <g>
+          <circle cx="860" cy="360" r="86" fill="#F5E6B8" fill-opacity="0.96"/>
+          <circle cx="860" cy="360" r="78" fill="none" stroke="#D4B86A" stroke-width="2"/>
+          <text x="860" y="352" text-anchor="middle" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="16" font-weight="700">SAVE</text>
+          <text x="860" y="384" text-anchor="middle" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700">${escapeXml(
+            (offer.saveLabel || "").replace(/^SAVE\s+/i, "")
+          )}</text>
+        </g>`;
+    }
+    if (inclusion) {
+      seals += `
+        <g>
+          <circle cx="860" cy="560" r="86" fill="#F5E6B8" fill-opacity="0.96"/>
+          <circle cx="860" cy="560" r="78" fill="none" stroke="#D4B86A" stroke-width="2"/>
+          <text x="860" y="548" text-anchor="middle" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700">INCLUDES</text>
+          <text x="860" y="576" text-anchor="middle" fill="${RED}" font-family="Helvetica, Arial, sans-serif" font-size="15" font-weight="700">${escapeXml(
+            String(inclusion).slice(0, 22).toUpperCase()
+          )}</text>
+        </g>`;
+    }
   } else {
-    priceBlock = `
-      <text x="54" y="320" class="price">ASK PAUL FOR</text>
-      <text x="54" y="400" class="price">HIS BEST PRICE</text>
+    panels = `
+      <rect x="70" y="320" width="940" height="180" rx="16" fill="${WHITE}" fill-opacity="0.95"/>
+      <text x="540" y="400" text-anchor="middle" fill="#111" font-family="Helvetica, Arial, sans-serif" font-size="36" font-weight="700">ASK PAUL FOR HIS BEST PRICE</text>
+      <text x="540" y="450" text-anchor="middle" fill="#444" font-family="Helvetica, Arial, sans-serif" font-size="22">Public pricing will appear when available</text>
     `;
   }
 
-  const inclusions = (model.inclusions || []).slice(0, 4);
-  const inclusionText = inclusions.map((i) => `• ${i}`).join("\n");
-  const other = model.otherLine
-    ? `<text x="54" y="780" class="small">${escapeXml(model.otherLine)}</text>`
+  const roomBadge = offer
+    ? `
+      <rect x="70" y="170" width="420" height="52" rx="26" fill="#1e3a5f" fill-opacity="0.92"/>
+      <text x="280" y="204" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="22" font-weight="700">${escapeXml(
+        offer.roomLabelDisplay || offer.roomLabel || ""
+      )}</text>
+    `
     : "";
 
   const body = `
-    <rect x="0" y="0" width="${W}" height="12" class="accent"/>
-    <text x="54" y="72" class="section">THE OFFER</text>
-    <text x="54" y="140" class="title">${escapeXml(model.destinationStrip || "")}</text>
-    ${priceBlock}
-    <text x="54" y="560" class="section">INCLUDES</text>
-    ${xmlLines(inclusionText || "• Ask Paul for inclusions", { x: 54, y: 620, lineHeight: 40, className: "port", maxLines: 4 })}
-    ${other}
-    <rect x="54" y="860" width="${W - 108}" height="2" fill="${GREEN}"/>
-    <text x="54" y="940" class="cta">Message Paul for details</text>
-    <text x="54" y="990" class="meta">101cruise.com.au</text>
-    <text x="54" y="1120" class="small">All prices are per person in USD and subject to availability</text>
-    ${brandMark(54, H - 36)}
-    ${cue(3)}
+    ${destinationBackground(model, treatment)}
+    ${cruiseLineLogoBlock(model)}
+    ${roomBadge}
+    ${panels}
+    ${seals}
+    <rect x="200" y="980" width="680" height="40" rx="20" fill="${WHITE}" fill-opacity="0.92"/>
+    <text x="540" y="1006" text-anchor="middle" fill="#222" font-family="Helvetica, Arial, sans-serif" font-size="15">All prices are per person in USD and subject to availability</text>
+    ${brandLogoFooter(model, { y: H - FOOTER_H - 120, size: 56 })}
+    ${greenFooter()}
   `;
   return frame(body);
+}
+
+/** Final CTA */
+function renderCtaSvg(model) {
+  const treatment = model.slideTreatments?.cta || "strong";
+  // Typographic compromise for "Get your cruise on" — no bundled script font.
+  const scriptCompromise = true;
+  const body = `
+    ${destinationBackground(model, treatment)}
+    <text x="540" y="340" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="48" font-weight="700">TALK TO PAUL</text>
+    <text x="540" y="410" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="48" font-weight="700">TODAY</text>
+    <text x="540" y="560" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="56" font-style="italic" font-weight="500">Get your cruise on</text>
+    <text x="540" y="680" text-anchor="middle" fill="${WHITE}" font-family="Helvetica, Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="1">SIGN UP FOR WEEKLY CRUISE SPECIALS</text>
+    ${brandLogoFooter(model, { y: 820, size: 110 })}
+    ${greenFooter()}
+    <!-- script_font_compromise=${scriptCompromise} -->
+  `;
+  return frame(body);
+}
+
+// Back-compat alias used by older tests
+function renderHeroSvg(model) {
+  return renderMainCruiseSvg(model);
 }
 
 module.exports = {
   WIDTH: W,
   HEIGHT: H,
+  GREEN,
+  TREATMENTS,
+  treatmentConfig,
+  destinationBackground,
+  renderMainCruiseSvg,
   renderHeroSvg,
   renderJourneySvg,
-  renderOfferSvg
+  renderOfferSvg,
+  renderCtaSvg
 };

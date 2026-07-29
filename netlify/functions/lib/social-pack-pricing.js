@@ -36,6 +36,30 @@ function sanitizePublicPricingRows(rows) {
   }));
 }
 
+/**
+ * Customer-facing room label for social slides.
+ * Does not invent new cabin types — only light normalisation.
+ */
+function normaliseRoomLabel(raw) {
+  let label = String(raw || "").trim();
+  if (!label) return "";
+  label = label.replace(/\s+/g, " ");
+  label = label.replace(/\bsingles?\b/gi, "Solo");
+  label = label.replace(/\s*[-–—]\s*/g, " ");
+  label = label.replace(/\s+/g, " ").trim();
+  return label.toUpperCase();
+}
+
+function roomSlug(raw) {
+  return (
+    String(normaliseRoomLabel(raw) || "room")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 48) || "room"
+  );
+}
+
 function buildDiscountDisplay(brochure, discounted, nights) {
   const result = {
     saveAmount: null,
@@ -63,34 +87,54 @@ function buildDiscountDisplay(brochure, discounted, nights) {
   return result;
 }
 
+function offerFromRow(row, nights) {
+  const discount = buildDiscountDisplay(row.brochure_price, row.cruise_101_price, nights);
+  const displayLabel = normaliseRoomLabel(row.room_label);
+  return {
+    roomLabel: row.room_label,
+    roomLabelDisplay: displayLabel,
+    roomSlug: roomSlug(row.room_label),
+    brochurePrice: row.brochure_price,
+    cruise101Price: row.cruise_101_price,
+    displayOrder: row.display_order,
+    discount,
+    brochureLabel: row.brochure_price != null ? `US$${formatMoney(row.brochure_price)}` : null,
+    priceLabel: `US$${formatMoney(row.cruise_101_price)}`,
+    priceLabelFrom: `FROM US$${formatMoney(row.cruise_101_price)} PP`,
+    saveLabel:
+      discount.saveAmount != null ? `SAVE US$${formatMoney(discount.saveAmount)}` : null,
+    percentLabel: discount.showPercentOff ? `${discount.percentOff}% OFF` : null,
+    greatDeal: discount.greatDeal,
+    perDayLabel:
+      discount.showPerDay && discount.perDay != null
+        ? `US$${formatMoney(discount.perDay)} per day`
+        : null
+  };
+}
+
 /**
  * First row (by display_order) with a valid cruise_101_price.
  * Does not choose the numerically lowest price.
  */
 function selectPublicOffer(rows, nights) {
+  const offers = selectPublicOffers(rows, nights, 1);
+  return offers[0] || null;
+}
+
+/**
+ * Up to `limit` public offers by display_order with valid cruise_101_price.
+ */
+function selectPublicOffers(rows, nights, limit = 3) {
+  const max = Math.max(0, Math.min(3, Math.trunc(Number(limit) || 3)));
   const safe = sanitizePublicPricingRows(rows);
+  const out = [];
   for (const row of safe) {
+    if (out.length >= max) break;
     if (!row.room_label) continue;
     if (row.cruise_101_price == null) continue;
-    const discount = buildDiscountDisplay(row.brochure_price, row.cruise_101_price, nights);
-    return {
-      roomLabel: row.room_label,
-      brochurePrice: row.brochure_price,
-      cruise101Price: row.cruise_101_price,
-      displayOrder: row.display_order,
-      discount,
-      priceLabel: `FROM US$${formatMoney(row.cruise_101_price)} PP`,
-      saveLabel:
-        discount.saveAmount != null ? `SAVE US$${formatMoney(discount.saveAmount)}` : null,
-      percentLabel: discount.showPercentOff ? `${discount.percentOff}% OFF` : null,
-      greatDeal: discount.greatDeal,
-      perDayLabel:
-        discount.showPerDay && discount.perDay != null
-          ? `US$${formatMoney(discount.perDay)} per day`
-          : null
-    };
+    out.push(offerFromRow(row, nights));
   }
-  return null;
+  return out;
 }
 
 const PUBLIC_PRICING_SELECT =
@@ -101,7 +145,10 @@ module.exports = {
   formatMoney,
   sortPricingRows,
   sanitizePublicPricingRows,
+  normaliseRoomLabel,
+  roomSlug,
   buildDiscountDisplay,
   selectPublicOffer,
+  selectPublicOffers,
   PUBLIC_PRICING_SELECT
 };

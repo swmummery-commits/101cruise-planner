@@ -16,24 +16,31 @@ async function buildSocialPackZip({ newsletterNumber, packs, generatedAt = new D
 
   for (const pack of packs) {
     const cruiseFolder = folder.folder(pack.folderSlug);
-    cruiseFolder.file("01-hero.png", pack.slides["01-hero.png"]);
-    cruiseFolder.file("02-journey.png", pack.slides["02-journey.png"]);
-    cruiseFolder.file("03-offer.png", pack.slides["03-offer.png"]);
+    const slideNames = Object.keys(pack.slides || {});
+    for (const name of slideNames) {
+      cruiseFolder.file(name, pack.slides[name]);
+    }
     cruiseFolder.file("caption.txt", pack.caption || "");
+    const files = [...slideNames, "caption.txt"];
     manifest.cruises.push({
       featured_cruise_id: pack.id,
       public_slug: pack.publicSlug || null,
       folder: pack.folderSlug,
-      files: ["01-hero.png", "02-journey.png", "03-offer.png", "caption.txt"],
+      files,
       warnings: pack.readiness?.warnings || [],
       readiness: pack.readiness?.label || null,
-      public_price:
-        pack.offer != null
-          ? {
-              room_label: pack.offer.roomLabel,
-              cruise_101_price: pack.offer.cruise101Price
-            }
-          : null
+      background: {
+        media_id: pack.backgroundMediaId || null,
+        title: pack.backgroundTitle || null,
+        destination_key: pack.backgroundDestinationKey || null,
+        match_role: pack.backgroundMatchRole || null,
+        rotation_index: pack.backgroundRotationIndex ?? null,
+        treatment: pack.treatment || null
+      },
+      public_prices: (pack.offers || []).map((o) => ({
+        room_label: o.roomLabel,
+        cruise_101_price: o.cruise101Price
+      }))
     });
   }
 
