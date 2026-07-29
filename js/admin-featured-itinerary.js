@@ -10,6 +10,8 @@
   let stops = [];
   let portsCache = [];
   let portsLoaded = false;
+  /** @type {string} set when catalogue load fails (shown in itinerary UI) */
+  let portsLoadError = "";
   let legacySummary = "";
   let needsStructuring = false;
   let structuredLoaded = false;
@@ -100,25 +102,72 @@
     stops = I().normalizeStopOrder(next || []);
   }
 
+  async function portsCatalogueApi(action, extra = {}) {
+    const headers = await authHeaders();
+    const response = await fetch("/.netlify/functions/ports-catalogue", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action, ...extra })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.success === false) {
+      const err = new Error(data.error || `Ports catalogue failed (HTTP ${response.status})`);
+      err.statusCode = response.status;
+      throw err;
+    }
+    return data;
+  }
+
   async function ensurePortsLoaded({ force = false } = {}) {
     if (portsLoaded && !force) return portsCache;
-    const sb = client();
-    if (!sb) return portsCache;
-    const { data, error } = await sb
-      .from("ports")
-      .select(
-        "id,canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases,status,match_key,source"
-      )
-      .order("canonical_name", { ascending: true })
-      .limit(2000);
-    if (error) {
-      console.warn("ports load skipped", error.message);
+    portsLoadError = "";
+    try {
+      // Service-role path — avoids browser RLS blocking SELECT on public.ports
+      const data = await portsCatalogueApi("list");
+      portsCache = Array.isArray(data.ports) ? data.ports : [];
+      portsLoaded = true;
+      if (!portsCache.length) {
+        portsLoadError =
+          "Ports catalogue is empty. Apply the ports seed in Supabase, or create provisional ports as you go.";
+      }
+      return portsCache;
+    } catch (error) {
+      console.warn("ports catalogue load failed", error.message);
+      // Fallback: direct client read (works when RLS policies are healthy)
+      const sb = client();
+      if (sb) {
+        const { data, error: clientError } = await sb
+          .from("ports")
+          .select(
+            "id,canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases,status,match_key,source"
+          )
+          .order("canonical_name", { ascending: true })
+          .limit(2000);
+        if (!clientError) {
+          portsCache = data || [];
+          portsLoaded = true;
+          portsLoadError = "";
+          return portsCache;
+        }
+        portsLoadError = clientError.message || error.message;
+      } else {
+        portsLoadError = error.message || "Could not load the Ports catalogue.";
+      }
       portsLoaded = true;
       return portsCache;
     }
-    portsCache = data || [];
-    portsLoaded = true;
-    return portsCache;
+  }
+
+  async function createProvisionalPort(payload) {
+    const data = await portsCatalogueApi("create_provisional", { port: payload });
+    const port = data.port;
+    if (!port?.id) {
+      throw new Error("Could not create port.");
+    }
+    const idx = portsCache.findIndex((p) => p.id === port.id);
+    if (idx >= 0) portsCache[idx] = port;
+    else portsCache.push(port);
+    return port;
   }
 
   function portsByIdMap() {
@@ -422,26 +471,15 @@
       return working;
     }
 
-    const sb = client();
-    const { data, error } = await sb.from("ports").insert(payload).select("*").single();
-    if (error) {
-      if (/duplicate|unique/i.test(error.message || "")) {
-        await ensurePortsLoaded({ force: true });
-        const again = portsCache.find((p) => p.match_key === payload.match_key);
-        if (again) {
-          working.port_id = again.id;
-          working.port = again;
-          working.matchDecision = "use_existing";
-          return working;
-        }
-      }
+    try {
+      const data = await createProvisionalPort(payload);
+      working.port_id = data.id;
+      working.port = data;
+      working.matchDecision = "create_new";
+      return working;
+    } catch (error) {
       throw new Error(`Could not create port “${entered}”: ${error.message}`);
     }
-    portsCache.push(data);
-    working.port_id = data.id;
-    working.port = data;
-    working.matchDecision = "create_new";
-    return working;
   }
 
   async function geocodeMissingPorts(portIds) {
@@ -720,19 +758,14 @@
           nextStops.push(working);
           continue;
         }
-        const sb = client();
-        const { data, error } = await sb.from("ports").insert(payload).select("*").single();
-        if (error) {
-          if (/duplicate|unique/i.test(error.message)) {
-            await ensurePortsLoaded({ force: true });
-            const again = portsCache.find((p) => p.match_key === payload.match_key);
-            if (again) {
-              working.port_id = again.id;
-              working.port = again;
-              nextStops.push(working);
-              continue;
-            }
-          }
+        try {
+          const data = await createProvisionalPort(payload);
+          createdPorts.push(data);
+          working.port_id = data.id;
+          working.port = data;
+          nextStops.push(working);
+          continue;
+        } catch (error) {
           return {
             ok: false,
             errors: [`Could not create port “${entered}”: ${error.message}`],
@@ -740,12 +773,6 @@
             createdPorts
           };
         }
-        portsCache.push(data);
-        createdPorts.push(data);
-        working.port_id = data.id;
-        working.port = data;
-        nextStops.push(working);
-        continue;
       }
 
       const classified = I().classifyPortMatches(
@@ -812,19 +839,14 @@
           nextStops.push(working);
           continue;
         }
-        const sb = client();
-        const { data, error } = await sb.from("ports").insert(payload).select("*").single();
-        if (error) {
-          if (/duplicate|unique/i.test(error.message)) {
-            await ensurePortsLoaded({ force: true });
-            const again = portsCache.find((p) => p.match_key === payload.match_key);
-            if (again) {
-              working.port_id = again.id;
-              working.port = again;
-              nextStops.push(working);
-              continue;
-            }
-          }
+        try {
+          const data = await createProvisionalPort(payload);
+          createdPorts.push(data);
+          working.port_id = data.id;
+          working.port = data;
+          nextStops.push(working);
+          continue;
+        } catch (error) {
           return {
             ok: false,
             errors: [`Could not create port “${entered}”: ${error.message}`],
@@ -832,12 +854,6 @@
             createdPorts
           };
         }
-        portsCache.push(data);
-        createdPorts.push(data);
-        working.port_id = data.id;
-        working.port = data;
-        nextStops.push(working);
-        continue;
       }
 
       nextStops.push(working);
@@ -1091,6 +1107,13 @@
           <li><strong>${summary.unresolved}</strong> unresolved</li>
           <li><strong>${summary.missingCoordinates}</strong> missing coordinates</li>
         </ul>
+        ${
+          portsLoadError
+            ? `<p class="admin-error">Ports catalogue: ${esc(portsLoadError)}</p>`
+            : portsLoaded
+              ? `<p class="admin-muted">${portsCache.length} ports available for matching.</p>`
+              : ""
+        }
         ${
           summary.readyForAutoMap
             ? `<p class="admin-success">Port calls are resolved for future automatic route-map generation.</p>`
