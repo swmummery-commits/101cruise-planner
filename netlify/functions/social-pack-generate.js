@@ -376,7 +376,7 @@ async function handleDownloadCruise(body) {
   const treatment = normaliseTreatment(body.treatment);
   const { includedRoomLabels, manualMediaId } = cruiseOptionsFromBody(body, id);
   const result = await buildPackForCruise(id, {
-    index: 1,
+    index: Math.max(1, Math.trunc(Number(body.index) || 1)),
     treatment,
     includedRoomLabels,
     manualMediaId

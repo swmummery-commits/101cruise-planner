@@ -20,6 +20,7 @@
   let roomSelections = {};
   /** @type {Record<string, Array<{id:string}>>} full image pools for Next/Previous */
   let candidateCache = {};
+  let lastDownloadUrl = null;
 
   function esc(value) {
     return typeof global.esc === "function"
@@ -98,6 +99,7 @@
     imagePickerOpen = false;
     roomSelections = {};
     candidateCache = {};
+    lastDownloadUrl = null;
     message = "Checking cruise readiness…";
     messageTone = "";
     cruises = (issueCruises || []).map((row) => ({
@@ -302,6 +304,38 @@
     if (previewId === cruiseId) await regeneratePreview();
   }
 
+  function loadJsZip() {
+    if (global.JSZip) return Promise.resolve(global.JSZip);
+    return new Promise((resolve, reject) => {
+      const existing = document.querySelector("script[data-social-pack-jszip]");
+      if (existing) {
+        existing.addEventListener("load", () => resolve(global.JSZip));
+        existing.addEventListener("error", () => reject(new Error("Could not load ZIP helper.")));
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+      script.async = true;
+      script.dataset.socialPackJszip = "1";
+      script.onload = () => {
+        if (!global.JSZip) reject(new Error("Could not load ZIP helper."));
+        else resolve(global.JSZip);
+      };
+      script.onerror = () => reject(new Error("Could not load ZIP helper."));
+      document.head.appendChild(script);
+    });
+  }
+
+  function triggerBrowserDownload(url, filename) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.rel = "noopener";
+    if (filename) a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
   async function saveDownloadFromResponse(response, fallbackName) {
     const type = String(response.headers.get("content-type") || "").toLowerCase();
     if (type.includes("application/json")) {
@@ -312,14 +346,8 @@
       if (!data.download_url) {
         throw new Error("We couldn’t prepare the download. Please try again.");
       }
-      const a = document.createElement("a");
-      a.href = data.download_url;
-      a.rel = "noopener";
-      a.download = data.filename || fallbackName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      return data.filename || fallbackName;
+      triggerBrowserDownload(data.download_url, data.filename || fallbackName);
+      return data;
     }
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
@@ -330,14 +358,35 @@
       throw new Error("We couldn’t prepare the download. Please try again.");
     }
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fallbackName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-    return fallbackName;
+    triggerBrowserDownload(url, fallbackName);
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    return { filename: fallbackName };
+  }
+
+  async function requestCruiseDownload(cruiseId, index) {
+    const headers = await authHeaders();
+    const response = await fetch("/.netlify/functions/social-pack-generate", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: "download_cruise",
+        newsletter_number: issueNumber,
+        featured_cruise_id: cruiseId,
+        index,
+        treatment,
+        social_media_id: cruiseId === previewId ? socialMediaId : null,
+        included_room_labels: includedRoomsFor(cruiseId),
+        cruise_options: buildCruiseOptions([cruiseId])
+      })
+    });
+    const type = String(response.headers.get("content-type") || "").toLowerCase();
+    const data = type.includes("application/json")
+      ? await response.json().catch(() => ({}))
+      : {};
+    if (!response.ok || data.success === false || !data.download_url) {
+      throw new Error(data.error || "We couldn’t prepare the download. Please try again.");
+    }
+    return data;
   }
 
   async function downloadZip() {
@@ -346,23 +395,93 @@
     busy = true;
     message = "Preparing your social pack…";
     messageTone = "";
+    lastDownloadUrl = null;
     rerender();
     try {
       await withAdminLoading(
         async () => {
-          const headers = await authHeaders();
-          const response = await fetch("/.netlify/functions/social-pack-generate", {
-            method: "POST",
-            headers,
-            body: JSON.stringify({
-              action: "download_issue",
-              newsletter_number: issueNumber,
-              featured_cruise_ids: ids,
-              treatment,
-              cruise_options: buildCruiseOptions(ids)
-            })
-          });
-          await saveDownloadFromResponse(response, `newsletter-${issueNumber}-social-pack.zip`);
+          // One cruise — use the proven single-cruise path
+          if (ids.length === 1) {
+            const headers = await authHeaders();
+            const response = await fetch("/.netlify/functions/social-pack-generate", {
+              method: "POST",
+              headers,
+              body: JSON.stringify({
+                action: "download_cruise",
+                newsletter_number: issueNumber,
+                featured_cruise_id: ids[0],
+                index: 1,
+                treatment,
+                social_media_id: ids[0] === previewId ? socialMediaId : null,
+                included_room_labels: includedRoomsFor(ids[0])
+              })
+            });
+            const data = await saveDownloadFromResponse(
+              response,
+              `newsletter-${issueNumber}-social-pack.zip`
+            );
+            lastDownloadUrl = data.download_url || null;
+            message = "Social Pack ZIP downloaded.";
+            messageTone = "success";
+            return;
+          }
+
+          // Multi-cruise: build each cruise ZIP separately (avoids Netlify 60s limit),
+          // then merge into one newsletter ZIP in the browser.
+          const parts = [];
+          for (let i = 0; i < ids.length; i += 1) {
+            if (global.AdminLoading?.setMessage) {
+              global.AdminLoading.setMessage(`Preparing cruise ${i + 1} of ${ids.length}…`);
+            }
+            if (global.AdminLoading?.setSupportMessage) {
+              global.AdminLoading.setSupportMessage(
+                "Please wait while we create the newsletter graphics and captions."
+              );
+            }
+            parts.push(await requestCruiseDownload(ids[i], i + 1));
+          }
+
+          if (global.AdminLoading?.setMessage) {
+            global.AdminLoading.setMessage("Building newsletter ZIP…");
+          }
+          const JSZip = await loadJsZip();
+          const master = new JSZip();
+          for (const part of parts) {
+            const zipRes = await fetch(part.download_url);
+            if (!zipRes.ok) {
+              throw new Error("We couldn’t prepare the download. Please try again.");
+            }
+            const buf = await zipRes.arrayBuffer();
+            const cruiseZip = await JSZip.loadAsync(buf);
+            const entries = [];
+            cruiseZip.forEach((path, file) => {
+              entries.push({ path, file });
+            });
+            for (const entry of entries) {
+              if (entry.file.dir) continue;
+              // Skip per-cruise root manifests — rebuild one combined manifest below
+              if (/\/manifest\.json$/i.test(entry.path)) continue;
+              master.file(entry.path, await entry.file.async("uint8array"));
+            }
+          }
+
+          const root = `newsletter-${issueNumber}-social-pack`;
+          const manifest = {
+            newsletter_number: Number(issueNumber),
+            generated_at: new Date().toISOString(),
+            cruises: parts.map((part, i) => ({
+              featured_cruise_id: ids[i],
+              filename: part.filename || null,
+              bytes: part.bytes || null
+            }))
+          };
+          master.file(`${root}/manifest.json`, JSON.stringify(manifest, null, 2));
+
+          const blob = await master.generateAsync({ type: "blob", compression: "DEFLATE" });
+          const filename = `newsletter-${issueNumber}-social-pack.zip`;
+          const url = URL.createObjectURL(blob);
+          lastDownloadUrl = url;
+          triggerBrowserDownload(url, filename);
           message = "Social Pack ZIP downloaded.";
           messageTone = "success";
         },
@@ -382,6 +501,7 @@
     busy = true;
     message = "Preparing your social pack…";
     messageTone = "";
+    lastDownloadUrl = null;
     rerender();
     try {
       await withAdminLoading(
@@ -394,15 +514,20 @@
               action: "download_cruise",
               newsletter_number: issueNumber,
               featured_cruise_id: previewId,
+              index: Math.max(
+                1,
+                cruises.findIndex((c) => c.id === previewId) + 1
+              ),
               treatment,
               social_media_id: socialMediaId,
               included_room_labels: includedRoomsFor(previewId)
             })
           });
-          await saveDownloadFromResponse(
+          const data = await saveDownloadFromResponse(
             response,
             `newsletter-${issueNumber}-cruise-social-pack.zip`
           );
+          lastDownloadUrl = data.download_url || null;
           message = "Cruise Social Pack downloaded.";
           messageTone = "success";
         },
@@ -433,6 +558,7 @@
     imagePickerOpen = false;
     roomSelections = {};
     candidateCache = {};
+    lastDownloadUrl = null;
     message = "";
     if (typeof global.renderAdmin === "function") global.renderAdmin();
   }
@@ -676,6 +802,11 @@
             }>${busy ? "Working…" : "Download Newsletter Social Pack"}</button>
             <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.close()" ${busy ? "disabled" : ""}>Close</button>
           </div>
+          ${
+            lastDownloadUrl
+              ? `<p class="admin-muted" style="margin-top:10px"><a href="${esc(lastDownloadUrl)}" target="_blank" rel="noopener">Open last download link</a> (expires soon)</p>`
+              : ""
+          }
         </div>
       </div>
     `;
