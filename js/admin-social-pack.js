@@ -18,6 +18,8 @@
   let imagePickerTab = "recommended";
   /** @type {Record<string, string[]>} room_label lists keyed by cruise id */
   let roomSelections = {};
+  /** @type {Record<string, Array<{id:string}>>} full image pools for Next/Previous */
+  let candidateCache = {};
 
   function esc(value) {
     return typeof global.esc === "function"
@@ -95,6 +97,7 @@
     treatment = "soft";
     imagePickerOpen = false;
     roomSelections = {};
+    candidateCache = {};
     message = "Checking cruise readiness…";
     messageTone = "";
     cruises = (issueCruises || []).map((row) => ({
@@ -162,6 +165,9 @@
 
   async function previewCruise(id) {
     if (busy && previewId === id && preview) return;
+    if (previewId !== id) {
+      socialMediaId = null;
+    }
     previewId = id;
     busy = true;
     message = "";
@@ -195,6 +201,17 @@
         if (cruise && Array.isArray(data.available_offers)) {
           cruise.offers = data.available_offers;
           ensureRoomDefaults(cruise);
+        }
+        // Keep the largest known pool for this cruise so Next/Previous can cycle
+        // even if a later response temporarily returns a shorter list.
+        const incoming = Array.isArray(data.background_candidates) ? data.background_candidates : [];
+        if (incoming.length > (candidateCache[id]?.length || 0)) {
+          candidateCache[id] = incoming;
+        } else if (!candidateCache[id] && incoming.length) {
+          candidateCache[id] = incoming;
+        }
+        if (data.background?.media_id) {
+          socialMediaId = data.background.media_id;
         }
         const warnings = data.warnings || [];
         if (warnings.includes("no_public_price") || !(data.offers || []).length) {
@@ -251,13 +268,19 @@
   }
 
   async function stepBackground(delta) {
-    const list = preview?.background_candidates || [];
+    const list = candidateCache[previewId] || preview?.background_candidates || [];
     if (!list.length || busy) return;
-    const currentId = preview?.background?.media_id || socialMediaId;
+    const currentId = socialMediaId || preview?.background?.media_id;
     let idx = list.findIndex((m) => m.id === currentId);
     if (idx < 0) idx = 0;
     const next = list[(idx + delta + list.length) % list.length];
-    if (next?.id) await useSocialImage(next.id);
+    if (next?.id && next.id !== currentId) {
+      await useSocialImage(next.id);
+    } else if (next?.id && list.length === 1) {
+      message = "Only one destination image is available for this cruise.";
+      messageTone = "";
+      rerender();
+    }
   }
 
   function toggleRoom(cruiseId, roomLabel) {
@@ -392,6 +415,7 @@
     socialMediaId = null;
     imagePickerOpen = false;
     roomSelections = {};
+    candidateCache = {};
     message = "";
     if (typeof global.renderAdmin === "function") global.renderAdmin();
   }

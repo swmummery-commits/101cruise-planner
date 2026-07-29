@@ -292,23 +292,6 @@ function resolveSocialBackground(options = {}) {
   const newsletterNumber = cruise.newsletter_number ?? cruise.newsletterNumber ?? 0;
   const displayOrder = cruise.display_order ?? cruise.displayOrder ?? 1;
 
-  if (options.manualMediaId) {
-    const manual = allDest.find((m) => m.id === options.manualMediaId) || options.manualMedia;
-    if (manual?.public_url) {
-      return {
-        status: "ok",
-        source: "manual",
-        matchRole: "manual",
-        destinationKey: resolveCanonicalDestination(manual.destination_name) || manual.destination_name || null,
-        candidates: [manual],
-        candidateCount: 1,
-        rotationIndex: 0,
-        media: manual,
-        warning: null
-      };
-    }
-  }
-
   const keyPlan = buildDestinationCandidateKeys(cruise, ports);
   const pools = [];
 
@@ -336,16 +319,51 @@ function resolveSocialBackground(options = {}) {
     const ra = roleRank[a.role] ?? 50;
     const rb = roleRank[b.role] ?? 50;
     if (ra !== rb) return ra - rb;
-    // Within same rank, prefer larger exact pools? Keep plan order.
     return 0;
   });
 
-  // Prefer departure/arrival exact over regional: already ranked.
-  // For Barcelona→Istanbul prefer Barcelona or Istanbul or Mediterranean.
-  // Featured arrival/departure from strip may duplicate arrival/departure — first pool wins.
+  // Manual override still returns the full pool so Admin Next/Previous can cycle.
+  if (options.manualMediaId) {
+    const manual = allDest.find((m) => m.id === options.manualMediaId) || options.manualMedia;
+    if (manual?.public_url) {
+      let preferred = pools.find((p) => p.media.some((m) => m.id === manual.id));
+      if (!preferred && pools.length) {
+        preferred = pools.find((p) => p.role !== "regional") || pools[0];
+      }
+      let candidates = preferred ? preferred.media.slice() : [];
+      if (!candidates.some((m) => m.id === manual.id)) {
+        candidates = [manual, ...candidates];
+      }
+      if (!candidates.length) candidates = [manual];
+      const idx = Math.max(
+        0,
+        candidates.findIndex((m) => m.id === manual.id)
+      );
+      return {
+        status: "ok",
+        source: "manual",
+        matchRole: preferred?.role || "manual",
+        destinationKey:
+          preferred?.canonical ||
+          resolveCanonicalDestination(manual.destination_name) ||
+          manual.destination_name ||
+          null,
+        candidates,
+        candidateCount: candidates.length,
+        rotationIndex: idx,
+        media: manual,
+        pools: pools.map((p) => ({
+          canonical: p.canonical,
+          role: p.role,
+          count: p.media.length
+        })),
+        warning: null
+      };
+    }
+  }
 
+  // Prefer departure/arrival exact over regional: already ranked.
   if (pools.length) {
-    // Prefer non-regional if any exist
     const preferred = pools.find((p) => p.role !== "regional") || pools[0];
     const idx = rotationIndex({
       newsletterNumber,

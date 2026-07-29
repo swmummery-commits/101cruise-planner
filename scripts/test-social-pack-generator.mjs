@@ -262,7 +262,10 @@ async function main() {
       manualMediaId: "m-bcn-3"
     });
     assert(manual.media.id === "m-bcn-3", "manual override");
-    assert(manual.matchRole === "manual", "manual role");
+    assert(manual.candidateCount === 3, "manual keeps full pool for Next/Previous");
+    assert(manual.candidates.map((m) => m.id).includes("m-bcn-1"), "pool includes siblings");
+    assert(manual.rotationIndex === manual.candidates.findIndex((m) => m.id === "m-bcn-3"), "manual index in pool");
+    assert(manual.source === "manual", "manual source");
 
     const sorted = sortDestinationMedia(filterActiveDestinationMedia(media, "Barcelona"));
     assert(sorted[0].id === "m-bcn-1", "default first then created_at");
