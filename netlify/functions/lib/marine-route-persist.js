@@ -65,7 +65,20 @@ async function saveMarineRouteRow(supabaseRequest, { featuredCruiseId, routeObje
   return Array.isArray(inserted) ? inserted[0] : inserted;
 }
 
+async function deleteMarineRouteRow(supabaseRequest, featuredCruiseId) {
+  const id = String(featuredCruiseId || "").trim();
+  if (!id) return { deleted: false };
+  const existing = await loadMarineRouteRow(supabaseRequest, id);
+  if (!existing?.id) return { deleted: false };
+  await supabaseRequest(`featured_cruise_marine_routes?id=eq.${encodeURIComponent(existing.id)}`, {
+    method: "DELETE",
+    prefer: "return=minimal"
+  });
+  return { deleted: true, id: existing.id };
+}
+
 module.exports = {
   loadMarineRouteRow,
-  saveMarineRouteRow
+  saveMarineRouteRow,
+  deleteMarineRouteRow
 };

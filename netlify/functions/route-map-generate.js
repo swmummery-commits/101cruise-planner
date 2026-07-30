@@ -5,6 +5,7 @@
  * Actions:
  *   generate — load/create Route Object → SVG → PNG → Supabase Storage + DB metadata
  *   status   — report whether generated assets exist for a cruise
+ *   delete   — remove generated SVG/PNG assets and clear cruise metadata
  *
  * Production assets are stored in bucket featured-cruise-route-maps.
  * Does NOT write to /var/task, generated-assets/, or /tmp.
@@ -15,7 +16,7 @@
  */
 
 const { requireAdmin } = require("./admin-auth");
-const { loadMarineRouteRow, saveMarineRouteRow } = require("./lib/marine-route-persist");
+const { loadMarineRouteRow, saveMarineRouteRow, deleteMarineRouteRow } = require("./lib/marine-route-persist");
 const { generateMarineRouteForCruise } = require("./lib/marine-route-itinerary");
 const { routeObjectEndpointsPlausible, routeObjectAvoidsLand } = require("./lib/marine-route");
 const { renderRouteMapSvg } = require("./lib/route-map-svg");
@@ -25,7 +26,8 @@ const {
   ROUTE_MAP_STORAGE_BUCKET,
   saveRouteMapAssets,
   storageObjectPaths,
-  publicObjectUrl
+  publicObjectUrl,
+  deleteRouteMapAssetsFromStorage
 } = require("./lib/route-map-assets");
 
 function jsonResponse(statusCode, body) {
@@ -164,6 +166,102 @@ async function updateCruiseAssetMetadata(featuredCruiseId, meta) {
     { method: "PATCH", body: payload, prefer: "return=representation" }
   );
   return Array.isArray(updated) ? updated[0] : updated;
+}
+
+async function clearCruiseGeneratedRouteMapMetadata(featuredCruiseId) {
+  const payload = {
+    route_map_svg_path: null,
+    route_map_png_path: null,
+    route_map_generated_at: null,
+    route_map_renderer_version: null,
+    route_map_width: null,
+    route_map_height: null,
+    updated_at: new Date().toISOString()
+  };
+  const updated = await supabase(
+    `featured_cruises?id=eq.${encodeURIComponent(featuredCruiseId)}`,
+    { method: "PATCH", body: payload, prefer: "return=representation" }
+  );
+  return Array.isArray(updated) ? updated[0] : updated;
+}
+
+async function handleDelete(featuredCruiseId) {
+  const cruiseRow = await loadCruiseRow(featuredCruiseId);
+  if (!cruiseRow) {
+    return jsonResponse(404, {
+      ok: false,
+      errors: [{ code: "cruise_not_found", message: "Featured Cruise not found." }]
+    });
+  }
+
+  const assets = assetUrlsFromCruise(cruiseRow);
+  let storageResult = null;
+  if (assets.has_assets || assets.svg_path || assets.png_path) {
+    try {
+      storageResult = await deleteRouteMapAssetsFromStorage(featuredCruiseId);
+    } catch (error) {
+      return jsonResponse(500, {
+        ok: false,
+        errors: [
+          {
+            code: error.code || "storage_delete_failed",
+            message: error.message || "Could not delete route map files from Storage."
+          }
+        ]
+      });
+    }
+  }
+
+  let marineRouteDelete = { deleted: false };
+  try {
+    marineRouteDelete = await deleteMarineRouteRow(supabaseRequest, featuredCruiseId);
+  } catch (error) {
+    return jsonResponse(500, {
+      ok: false,
+      errors: [
+        {
+          code: "marine_route_delete_failed",
+          message: error.message || "Could not clear cached marine route data."
+        }
+      ]
+    });
+  }
+
+  let cruiseRowUpdated;
+  try {
+    cruiseRowUpdated = await clearCruiseGeneratedRouteMapMetadata(featuredCruiseId);
+  } catch (error) {
+    return jsonResponse(500, {
+      ok: false,
+      errors: [
+        {
+          code: "database_update_failed",
+          message: `Storage files were removed but database metadata could not be cleared: ${error.message || error}`
+        }
+      ],
+      storage: storageResult,
+      marine_route: marineRouteDelete
+    });
+  }
+
+  return jsonResponse(200, {
+    ok: true,
+    message: "Generated route map removed.",
+    featured_cruise_id: featuredCruiseId,
+    storage: storageResult,
+    marine_route: marineRouteDelete,
+    cruise: cruiseRowUpdated
+      ? {
+          id: cruiseRowUpdated.id,
+          route_map_svg_path: cruiseRowUpdated.route_map_svg_path,
+          route_map_png_path: cruiseRowUpdated.route_map_png_path,
+          route_map_generated_at: cruiseRowUpdated.route_map_generated_at,
+          route_map_renderer_version: cruiseRowUpdated.route_map_renderer_version,
+          route_map_width: cruiseRowUpdated.route_map_width,
+          route_map_height: cruiseRowUpdated.route_map_height
+        }
+      : null
+  });
 }
 
 async function ensureRouteObject(featuredCruiseId, forceReroute = false) {
@@ -479,6 +577,7 @@ exports.handler = async (event) => {
   try {
     if (action === "status") return await handleStatus(featuredCruiseId);
     if (action === "generate") return await handleGenerate(featuredCruiseId, body);
+    if (action === "delete") return await handleDelete(featuredCruiseId);
     return jsonResponse(400, {
       ok: false,
       errors: [{ code: "unknown_action", message: `Unknown action: ${action}` }]

@@ -282,6 +282,71 @@ async function uploadStorageObject({ objectPath, body, contentType, options = {}
 }
 
 /**
+ * Delete one object from Supabase Storage (service role). Missing objects are ignored.
+ */
+async function deleteStorageObject({ objectPath, options = {} }) {
+  const { url, key } = getSupabaseConfig(options);
+  const bucket = options.bucket || ROUTE_MAP_STORAGE_BUCKET;
+  const fetchImpl = options.fetchImpl || fetch;
+  const encoded = String(objectPath)
+    .replace(/^\//, "")
+    .split("/")
+    .map(encodeURIComponent)
+    .join("/");
+  const endpoint = `${url}/storage/v1/object/${bucket}/${encoded}`;
+
+  const response = await fetchImpl(endpoint, {
+    method: "DELETE",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`
+    }
+  });
+
+  if (response.status === 404) {
+    return { ok: true, objectPath, missing: true };
+  }
+
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  if (!response.ok) {
+    const msg =
+      (data && (data.message || data.error || data.msg || data.statusCode)) ||
+      text ||
+      `HTTP ${response.status}`;
+    const err = new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+    err.statusCode = response.status;
+    err.body = data;
+    err.code = "storage_delete_failed";
+    throw err;
+  }
+
+  return { ok: true, objectPath, missing: false, response: data };
+}
+
+/**
+ * Remove canonical SVG/PNG objects for a Featured Cruise from Storage.
+ */
+async function deleteRouteMapAssetsFromStorage(featuredCruiseId, options = {}) {
+  const paths = storageObjectPaths(featuredCruiseId);
+  const results = { svg: null, png: null };
+  results.svg = await deleteStorageObject({ objectPath: paths.svg_path, options });
+  results.png = await deleteStorageObject({ objectPath: paths.png_path, options });
+  return {
+    storage_bucket: options.bucket || ROUTE_MAP_STORAGE_BUCKET,
+    svg_path: paths.svg_path,
+    png_path: paths.png_path,
+    deleted: results
+  };
+}
+
+/**
  * Render PNG and upload SVG+PNG to Supabase Storage.
  * @returns {Promise<object>}
  */
@@ -429,6 +494,8 @@ module.exports = {
   displayUrls,
   svgToPngBuffer,
   uploadStorageObject,
+  deleteStorageObject,
+  deleteRouteMapAssetsFromStorage,
   saveRouteMapAssetsToStorage,
   saveRouteMapAssetsLocal,
   saveRouteMapAssets,

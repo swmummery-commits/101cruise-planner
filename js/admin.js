@@ -126,8 +126,11 @@ let featuredCruiseSaving = false;
 let featuredHeroDefaultBusy = false;
 /** Sprint 13E Phase 4 — route map generation workflow UI state */
 let featuredRouteMapGenerating = false;
+let featuredRouteMapDeleting = false;
 let featuredRouteMapGenProgress = "";
 let featuredRouteMapGenResult = null;
+let featuredRouteMapSectionMessage = "";
+let featuredRouteMapSectionMessageTone = "";
 let featuredSlugManuallyEdited = false;
 let featuredFormPricing = [];
 let featuredFormDraft = null; // parent field snapshot for new/edit
@@ -9065,6 +9068,9 @@ async function editFeaturedCruise(id, { skipLock = false } = {}) {
     featuredRouteMapGenResult = null;
     featuredRouteMapGenProgress = "";
     featuredRouteMapGenerating = false;
+    featuredRouteMapDeleting = false;
+    featuredRouteMapSectionMessage = "";
+    featuredRouteMapSectionMessageTone = "";
     showFeaturedCruiseForm = true;
     featuredSlugManuallyEdited = Boolean(existing.public_slug);
     featuredRoomTypePromptIndex = null;
@@ -10299,6 +10305,118 @@ function removeFeaturedRouteMapSelection() {
   renderAdmin();
 }
 
+function featuredRouteMapBrandSpinnerHtml() {
+  if (typeof BrandLoading !== "undefined" && typeof BrandLoading.html === "function") {
+    return BrandLoading.html({ className: "featured-route-map-spinner" });
+  }
+  return '<span class="brand-loading-boxes brand-loading-boxes--large featured-route-map-spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>';
+}
+
+function focusFeaturedRouteMapSection() {
+  setTimeout(() => {
+    const status = document.getElementById("featured-route-map-status");
+    const section = document.getElementById("featured-route-map-section");
+    const target = status || section;
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    if (typeof BrandLoading !== "undefined" && BrandLoading.scan && status) {
+      BrandLoading.scan(status);
+    }
+  }, 0);
+}
+
+function renderFeaturedRouteMapStatusPanel() {
+  if (featuredRouteMapGenerating) {
+    return `
+      <div id="featured-route-map-status" class="featured-route-map-status featured-route-map-status--busy" role="status" aria-live="polite">
+        ${featuredRouteMapBrandSpinnerHtml()}
+        <div class="featured-route-map-status-copy">
+          <p class="featured-route-map-status-title">${esc(featuredRouteMapGenProgress || "Working on your route map…")}</p>
+          <p class="featured-route-map-status-detail">Calculating the sea route, rendering the map, and uploading the PNG. This can take 10–30 seconds.</p>
+        </div>
+      </div>
+    `;
+  }
+  if (featuredRouteMapDeleting) {
+    return `
+      <div id="featured-route-map-status" class="featured-route-map-status featured-route-map-status--busy" role="status" aria-live="polite">
+        ${featuredRouteMapBrandSpinnerHtml()}
+        <div class="featured-route-map-status-copy">
+          <p class="featured-route-map-status-title">Removing generated route map…</p>
+          <p class="featured-route-map-status-detail">Deleting stored map files and clearing metadata.</p>
+        </div>
+      </div>
+    `;
+  }
+  if (featuredRouteMapSectionMessage) {
+    const toneClass =
+      featuredRouteMapSectionMessageTone === "error"
+        ? "featured-route-map-status--error"
+        : featuredRouteMapSectionMessageTone === "success"
+          ? "featured-route-map-status--success"
+          : "";
+    return `
+      <div id="featured-route-map-status" class="featured-route-map-status ${toneClass}" role="status" aria-live="polite">
+        <div class="featured-route-map-status-copy">
+          <p class="featured-route-map-status-title">${esc(featuredRouteMapSectionMessage)}</p>
+        </div>
+      </div>
+    `;
+  }
+  const result = featuredRouteMapGenResult;
+  if (result && result.ok === false) {
+    const errors = Array.isArray(result.errors) ? result.errors : [];
+    const messages = errors.map((e) => String(e?.message || "").trim()).filter(Boolean);
+    const body =
+      messages.length > 1
+        ? `<ul class="featured-route-map-status-errors">${messages
+            .map((m) => `<li>${esc(m)}</li>`)
+            .join("")}</ul>`
+        : `<p class="featured-route-map-status-detail">${esc(
+            messages[0] || "Route map generation failed."
+          )}</p>`;
+    return `
+      <div id="featured-route-map-status" class="featured-route-map-status featured-route-map-status--error" role="alert">
+        <div class="featured-route-map-status-copy">
+          <p class="featured-route-map-status-title">Route map generation failed</p>
+          ${body}
+        </div>
+      </div>
+    `;
+  }
+  return "";
+}
+
+function clearFeaturedGeneratedRouteMapDraft() {
+  if (featuredFormDraft) {
+    featuredFormDraft.route_map_svg_path = "";
+    featuredFormDraft.route_map_png_path = "";
+    featuredFormDraft.route_map_generated_at = null;
+    featuredFormDraft.route_map_renderer_version = "";
+    featuredFormDraft.route_map_width = null;
+    featuredFormDraft.route_map_height = null;
+  }
+  featuredRouteMapGenResult = null;
+  featuredRouteMapGenProgress = "";
+  const listIndex = featuredCruises.findIndex((row) => row.id === editingFeaturedCruiseId);
+  if (listIndex >= 0) {
+    featuredCruises[listIndex] = {
+      ...featuredCruises[listIndex],
+      route_map_svg_path: null,
+      route_map_png_path: null,
+      route_map_generated_at: null,
+      route_map_renderer_version: null,
+      route_map_width: null,
+      route_map_height: null
+    };
+  }
+  if (!featuredFormDraft?.route_map_media_id && !String(featuredFormDraft?.route_map_image_url || "").trim()) {
+    window.FeaturedItineraryEditor?.setRouteMapStatus?.("missing");
+    if (featuredFormDraft) featuredFormDraft.route_map_status = "missing";
+  }
+}
+
 const FEATURED_ROUTE_MAP_STORAGE_BUCKET = "featured-cruise-route-maps";
 
 function featuredRouteMapIsLegacyLocalPath(value) {
@@ -10361,7 +10479,7 @@ function renderFeaturedGeneratedRouteMapParts(draft) {
   const result = featuredRouteMapGenResult;
   const hasAssets = featuredCruiseHasGeneratedRouteMap(draft) || Boolean(result?.ok);
   if (!hasAssets && !featuredRouteMapGenerating && !result) {
-    return { hasPanel: false, metaHtml: "", previewHtml: "", errHtml: "" };
+    return { hasPanel: false, metaHtml: "", previewHtml: "" };
   }
 
   const pngPath = result?.png_path || draft.route_map_png_path || "";
@@ -10373,12 +10491,6 @@ function renderFeaturedGeneratedRouteMapParts(draft) {
   const generatedAt = result?.generated_at || draft.route_map_generated_at;
   const renderer = result?.renderer_version || draft.route_map_renderer_version || "—";
   const totalMs = result?.timings?.total_ms;
-  const errHtml =
-    result && result.ok === false
-      ? `<div class="admin-message error" style="margin-top:8px">${esc(
-          result.errors?.[0]?.message || "Route map generation failed."
-        )}</div>`
-      : "";
 
   const metaHtml = `
     <div class="featured-route-map-gen-meta">
@@ -10415,7 +10527,7 @@ function renderFeaturedGeneratedRouteMapParts(draft) {
     </figure>
   `;
 
-  return { hasPanel: true, metaHtml, previewHtml, errHtml };
+  return { hasPanel: true, metaHtml, previewHtml };
 }
 
 /** @deprecated use renderFeaturedGeneratedRouteMapParts via section layout */
@@ -10425,7 +10537,6 @@ function renderFeaturedGeneratedRouteMapPanel(draft) {
   return `
     <div class="featured-route-map-generated">
       ${parts.metaHtml}
-      ${parts.errHtml}
       <div class="featured-route-map-gen-previews featured-route-map-gen-previews--single">
         ${parts.previewHtml}
       </div>
@@ -10495,8 +10606,8 @@ function applyFeaturedGeneratedRouteMapResult(data, { recovered = false } = {}) 
     recovered_from_database: recovered
   };
   featuredRouteMapGenProgress = "Complete";
-  featuredCruiseMessage = "Route map generated successfully.";
-  featuredCruiseMessageTone = "success";
+  featuredRouteMapSectionMessage = "Route map generated successfully.";
+  featuredRouteMapSectionMessageTone = "success";
 
   const listIndex = featuredCruises.findIndex((row) => row.id === editingFeaturedCruiseId);
   if (listIndex >= 0) {
@@ -10513,17 +10624,21 @@ function applyFeaturedGeneratedRouteMapResult(data, { recovered = false } = {}) 
 }
 
 async function generateFeaturedRouteMap() {
-  if (!editingFeaturedCruiseId || featuredRouteMapGenerating) return;
+  if (!editingFeaturedCruiseId || featuredRouteMapGenerating || featuredRouteMapDeleting) return;
   if (!featuredCruiseCanGenerateRouteMap(featuredFormDraft)) {
-    featuredCruiseMessage =
+    featuredRouteMapSectionMessage =
       "Add a valid structured itinerary with mapped port coordinates before generating a route map.";
-    featuredCruiseMessageTone = "error";
+    featuredRouteMapSectionMessageTone = "error";
+    featuredRouteMapGenResult = null;
     renderAdmin();
+    focusFeaturedRouteMapSection();
     return;
   }
 
   featuredRouteMapGenerating = true;
   featuredRouteMapGenResult = null;
+  featuredRouteMapSectionMessage = "";
+  featuredRouteMapSectionMessageTone = "";
   const progressSteps = [
     "Loading Route Object…",
     "Rendering SVG…",
@@ -10534,16 +10649,12 @@ async function generateFeaturedRouteMap() {
   let stepIndex = 0;
   featuredRouteMapGenProgress = progressSteps[0];
   renderAdmin();
+  focusFeaturedRouteMapSection();
 
-  return withAdminBusy(
-    async () => {
   const progressTimer = setInterval(() => {
     if (!featuredRouteMapGenerating) return;
     stepIndex = Math.min(stepIndex + 1, progressSteps.length - 2);
     featuredRouteMapGenProgress = progressSteps[stepIndex];
-    if (window.AdminLoading?.setMessage) {
-      window.AdminLoading.setMessage(featuredRouteMapGenProgress);
-    }
     renderAdmin();
   }, 700);
 
@@ -10560,8 +10671,6 @@ async function generateFeaturedRouteMap() {
     });
     const data = await response.json().catch(() => ({}));
 
-    // Always re-read durable metadata so the preview matches what reopen shows,
-    // even when the function response is slow, truncated, or missing URLs.
     const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
 
     if (response.ok && data.ok) {
@@ -10582,8 +10691,8 @@ async function generateFeaturedRouteMap() {
           { code: "generate_failed", message: "Route map generation failed." }
         ];
       }
-      featuredCruiseMessage = data.errors?.[0]?.message || "Route map generation failed.";
-      featuredCruiseMessageTone = "error";
+      featuredRouteMapSectionMessage = "";
+      featuredRouteMapSectionMessageTone = "";
     }
   } catch (error) {
     const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
@@ -10594,25 +10703,75 @@ async function generateFeaturedRouteMap() {
         ok: false,
         errors: [{ code: "network_error", message: error.message || "Network error during generation." }]
       };
-      featuredCruiseMessage = error.message || "Network error during route map generation.";
-      featuredCruiseMessageTone = "error";
+      featuredRouteMapSectionMessage = "";
+      featuredRouteMapSectionMessageTone = "";
     }
   } finally {
     clearInterval(progressTimer);
     featuredRouteMapGenerating = false;
     if (featuredRouteMapGenResult?.ok) featuredRouteMapGenProgress = "Complete";
     renderAdmin();
+    focusFeaturedRouteMapSection();
   }
-    },
-    {
-      key: "featured-route-map-generate",
-      message: "Generating the route map…",
-      supportMessage: "Please wait while we render and upload the map."
+}
+
+async function deleteFeaturedGeneratedRouteMap() {
+  if (!editingFeaturedCruiseId || featuredRouteMapGenerating || featuredRouteMapDeleting) return;
+  const hasGenerated = featuredCruiseHasGeneratedRouteMap(featuredFormDraft);
+  if (!hasGenerated && !featuredRouteMapGenResult?.ok) return;
+  if (
+    !window.confirm(
+      "Delete the generated route map for this cruise? This removes the stored SVG/PNG files. Manual Media Library selections are not affected."
+    )
+  ) {
+    return;
+  }
+
+  featuredRouteMapDeleting = true;
+  featuredRouteMapSectionMessage = "";
+  featuredRouteMapSectionMessageTone = "";
+  renderAdmin();
+  focusFeaturedRouteMapSection();
+
+  try {
+    const headers = await adminAuthHeaders({ "Content-Type": "application/json" });
+    const response = await fetch("/.netlify/functions/route-map-generate", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        action: "delete",
+        featured_cruise_id: editingFeaturedCruiseId
+      })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || !data.ok) {
+      featuredRouteMapGenResult = {
+        ok: false,
+        errors: data.errors || [{ code: "delete_failed", message: "Could not delete the generated route map." }]
+      };
+      featuredRouteMapSectionMessage = "";
+      featuredRouteMapSectionMessageTone = "";
+    } else {
+      clearFeaturedGeneratedRouteMapDraft();
+      featuredRouteMapSectionMessage = "Generated route map deleted.";
+      featuredRouteMapSectionMessageTone = "success";
     }
-  );
+  } catch (error) {
+    featuredRouteMapGenResult = {
+      ok: false,
+      errors: [{ code: "network_error", message: error.message || "Network error while deleting route map." }]
+    };
+    featuredRouteMapSectionMessage = "";
+    featuredRouteMapSectionMessageTone = "";
+  } finally {
+    featuredRouteMapDeleting = false;
+    renderAdmin();
+    focusFeaturedRouteMapSection();
+  }
 }
 
 window.generateFeaturedRouteMap = generateFeaturedRouteMap;
+window.deleteFeaturedGeneratedRouteMap = deleteFeaturedGeneratedRouteMap;
 
 function renderFeaturedHeroImageSection(draft) {
   const resolved = resolveFeaturedCruiseImages(draft);
@@ -10677,28 +10836,33 @@ function renderFeaturedRouteMapSection(draft) {
   const hasGenerated = featuredCruiseHasGeneratedRouteMap(draft);
   const genLabel = hasGenerated ? "Regenerate Route Map" : "Generate Route Map";
   const genParts = renderFeaturedGeneratedRouteMapParts(draft);
+  const statusPanel = renderFeaturedRouteMapStatusPanel();
   const genButton = editingFeaturedCruiseId
     ? `<button type="button" class="admin-button black small" ${
-        !canGenerate || featuredRouteMapGenerating ? "disabled" : ""
+        !canGenerate || featuredRouteMapGenerating || featuredRouteMapDeleting ? "disabled" : ""
       } onclick="generateFeaturedRouteMap()">${
         featuredRouteMapGenerating ? "Generating…" : esc(genLabel)
       }</button>`
     : `<p class="admin-muted">Save this Featured Cruise first to enable route map generation.</p>`;
-  const progress = featuredRouteMapGenerating
-    ? `<p class="featured-route-map-progress" aria-live="polite">${esc(
-        featuredRouteMapGenProgress || "Working…"
-      )}</p>`
-    : "";
-  const hasPreview = Boolean(genParts.previewHtml);
+  const deleteGeneratedButton =
+    editingFeaturedCruiseId && (hasGenerated || featuredRouteMapGenResult?.ok)
+      ? `<button type="button" class="admin-button secondary small" ${
+          featuredRouteMapGenerating || featuredRouteMapDeleting ? "disabled" : ""
+        } onclick="deleteFeaturedGeneratedRouteMap()">${
+          featuredRouteMapDeleting ? "Deleting…" : "Delete Generated Map"
+        }</button>`
+      : "";
+  const hasPreview = Boolean(genParts.previewHtml) && !featuredRouteMapDeleting;
 
   return `
-    <section class="featured-form-section">
+    <section id="featured-route-map-section" class="featured-form-section">
       <h4>Route Map</h4>
       <div class="featured-route-map-layout${hasPreview ? " has-preview" : ""}">
         <div class="featured-route-map-sidebar">
           ${readiness}
           <div class="featured-media-source-actions">
             ${genButton}
+            ${deleteGeneratedButton}
             <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapPicker()">Choose from Media Library</button>
             <button type="button" class="admin-button secondary small" onclick="openFeaturedRouteMapUpload()">Upload New Route Map</button>
             ${legacyUrl && !draft.route_map_media_id ? `<span class="admin-small">Legacy Image URL in use</span>` : ""}
@@ -10708,14 +10872,13 @@ function renderFeaturedRouteMapSection(draft) {
                 : ""
             }
           </div>
-          ${progress}
+          ${statusPanel}
           ${
             !canGenerate && editingFeaturedCruiseId
               ? `<p class="admin-muted">Generate Route Map is available when the itinerary has mapped ports with coordinates.</p>`
               : ""
           }
           ${genParts.metaHtml}
-          ${genParts.errHtml}
         </div>
         ${
           hasPreview

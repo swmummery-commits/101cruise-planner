@@ -3617,6 +3617,65 @@ body.admin-loading-active {
   color: #1f4d3a;
 }
 
+.featured-route-map-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--brand-green-border);
+  background: var(--brand-green-soft);
+}
+
+.featured-route-map-status--busy {
+  border-color: #b8dfd3;
+  background: #f4fbf8;
+}
+
+.featured-route-map-status--error {
+  border-color: #efb8be;
+  background: #fff5f6;
+}
+
+.featured-route-map-status--success {
+  border-color: #b8dfd3;
+  background: #f4fbf8;
+}
+
+.featured-route-map-status-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.featured-route-map-status-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: #111;
+}
+
+.featured-route-map-status-detail {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #444;
+}
+
+.featured-route-map-status-errors {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #5b1118;
+}
+
+.featured-route-map-status .featured-route-map-spinner {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
 .featured-route-map-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
