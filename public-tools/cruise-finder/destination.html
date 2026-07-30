@@ -15,15 +15,25 @@
   </style>
 </head>
 <body>
-  <div id="101cruise-cruise-destination" data-cf-destination>
+  <div
+    id="101cruise-cruise-destination"
+    data-cf-destination
+    data-destination-experience-version="dx-route-fix-1"
+  >
     <p style="max-width:760px;margin:0 auto;color:#666;">Loading destination…</p>
   </div>
   <script>
     (function () {
+      var DX_VERSION = "dx-route-fix-1";
       var path = location.pathname || "/";
       var base = /\/cruise-destination\/?$/.test(path)
         ? "/public-tools/cruise-finder/"
         : (path.replace(/[^/]*$/, "") || "./");
+
+      function versioned(src) {
+        if (!src || /[?&]v=/.test(src)) return src;
+        return src + (src.indexOf("?") === -1 ? "?" : "&") + "v=" + encodeURIComponent(DX_VERSION);
+      }
 
       function fail(msg) {
         var mount = document.getElementById("101cruise-cruise-destination");
@@ -35,7 +45,7 @@
 
       function loadScript(src, next) {
         var el = document.createElement("script");
-        el.src = src;
+        el.src = versioned(src);
         el.onload = next;
         el.onerror = function () {
           fail("Could not load " + src);
@@ -45,17 +55,17 @@
 
       var css = document.createElement("link");
       css.rel = "stylesheet";
-      css.href = base + "destination.css";
+      css.href = versioned(base + "destination.css");
       document.head.appendChild(css);
 
       var dxCss = document.createElement("link");
       dxCss.rel = "stylesheet";
-      dxCss.href = "/css/destination-experience.css";
+      dxCss.href = versioned("/css/destination-experience.css");
       document.head.appendChild(dxCss);
 
       var brandCss = document.createElement("link");
       brandCss.rel = "stylesheet";
-      brandCss.href = "/css/brand-loading.css";
+      brandCss.href = versioned("/css/brand-loading.css");
       document.head.appendChild(brandCss);
 
       loadScript("/js/brand-loading.js", function () {

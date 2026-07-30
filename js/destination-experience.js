@@ -304,6 +304,7 @@
   }
 
   root.DestinationExperienceApp = {
+    VERSION: "dx-route-fix-1",
     boot: boot,
     getModel: function () {
       return model;

@@ -14,6 +14,8 @@
   const NETLIFY_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
   const PREFS_KEY = "101cruise-cf-prefs";
   const SCRIPT_EL = document.currentScript;
+  const CF_ASSET_VERSION =
+    (typeof window !== "undefined" && window.CruiseFinderAssetVersion) || "dx-route-fix-1";
 
   const TIMING_OPTIONS = [
     { id: "exact", label: "Exact travel dates" },
@@ -141,9 +143,17 @@
     return `${NETLIFY_ORIGIN}/public-tools/cruise-finder/`;
   }
 
+  function versionedAsset(src) {
+    const url = String(src || "");
+    if (!url || /[?&]v=/.test(url)) return url;
+    const sep = url.indexOf("?") === -1 ? "?" : "&";
+    return `${url}${sep}v=${encodeURIComponent(CF_ASSET_VERSION)}`;
+  }
+
   function loadScriptOnce(src) {
+    const versioned = versionedAsset(src);
     return new Promise((resolve, reject) => {
-      const existing = document.querySelector(`script[src="${src}"]`);
+      const existing = document.querySelector(`script[src="${versioned}"], script[src="${src}"]`);
       if (existing) {
         if (existing.dataset.cfLoaded === "1") {
           resolve();
@@ -156,7 +166,7 @@
         return;
       }
       const el = document.createElement("script");
-      el.src = src;
+      el.src = versioned;
       el.async = false;
       el.onload = () => {
         el.dataset.cfLoaded = "1";
@@ -704,6 +714,15 @@
   const LIVING_DESTINATION_SLUGS = new Set(["alaska"]);
 
   /**
+   * Cruise Finder recommendations always use the shared Destination Experience
+   * at /cruise-destination (not the legacy Living Destination SPA at /destination/*).
+   */
+  function cruiseFinderDestinationUrl(slug, params) {
+    params.set("destination", slug);
+    return `${TOOLS_ORIGIN}/cruise-destination?${params.toString()}`;
+  }
+
+  /**
    * Always open destination pages on the tools origin (Netlify).
    * Squarespace (101cruise.com.au) does not host /cruise-destination or /destination/*.
    * Prefer Living Destination pages when published; otherwise cruise-finder detail.
@@ -734,8 +753,7 @@
       return qs ? `${living}?${qs}` : living;
     }
 
-    params.set("destination", slug);
-    return `${TOOLS_ORIGIN}/cruise-destination?${params.toString()}`;
+    return cruiseFinderDestinationUrl(slug, params);
   }
 
   function saveFinderPrefs(matchKey, matchLabel) {
@@ -844,10 +862,16 @@
           return;
         }
         saveFinderPrefs(matchKey, matchLabel);
-        window.location.href = url;
+        window.location.assign(url);
       });
     });
   }
+
+  window.CruiseFinderDestinationRouting = {
+    assetVersion: CF_ASSET_VERSION,
+    destinationPageUrl: destinationPageUrl,
+    cruiseFinderDestinationUrl: cruiseFinderDestinationUrl
+  };
 
   async function init() {
     mount = document.getElementById(MOUNT_ID);
