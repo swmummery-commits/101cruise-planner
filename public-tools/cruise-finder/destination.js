@@ -488,163 +488,32 @@
       </div>`;
   }
 
-  function bindMedia(imageUrl) {
-    const media = mount.querySelector(".cf-dest-media");
-    const img = media && media.querySelector("img");
-    if (media && img && imageUrl) {
-      img.addEventListener(
-        "load",
-        () => {
-          media.classList.add("is-loaded");
-        },
-        { once: true }
-      );
-      img.addEventListener(
-        "error",
-        () => {
-          media.classList.add("is-fallback");
-        },
-        { once: true }
-      );
-      img.src = imageUrl;
-      if (img.complete && img.naturalWidth > 0) media.classList.add("is-loaded");
-    } else if (media) {
-      media.classList.add("is-fallback");
-    }
-  }
-
-  function renderDestination(dest, prefs) {
+  async function renderExperience(dest, prefs) {
     currentDest = dest;
     currentPrefs = prefs;
-    const content = contentFor(dest);
-    const month = primaryMonth(prefs);
-    const heroApi = window.CruiseFinderHeroImages;
-    const image =
-      heroApi && typeof heroApi.pick === "function" ? heroApi.pick(dest, month) : null;
-    const imageUrl = image && image.url ? image.url : "";
-    const objectPosition = (image && image.objectPosition) || "center center";
-    const lines = approvedLinesFor(dest);
-    const why = personalisedWhy(dest, content, prefs);
-    const advice = content.seasonal_advice || {};
-    const ports = content.popular_ports || [];
-    const departures = content.departure_ports || [];
-    const reasons = content.key_reasons || [];
 
-    mount.innerHTML = `
-      <div class="cf-dest" data-destination="${escapeHtml(dest.id)}" style="--cf-accent:${escapeHtml(dest.accent || "#8DD9BF")}">
-        <a class="cf-dest-back" href="${escapeHtml(finderBackUrl())}">← Back to Cruise Finder</a>
+    if (!window.DestinationExperienceApp) {
+      renderError("The destination experience could not be loaded. Please refresh and try again.");
+      return;
+    }
 
-        <section class="cf-dest-intro">
-          <div class="cf-dest-media" data-image-url="${escapeHtml(imageUrl)}" data-object-position="${escapeHtml(objectPosition)}">
-            <img alt="" loading="lazy" decoding="async" width="1280" height="720" style="object-position:${escapeHtml(objectPosition)}" />
-            <div class="cf-dest-media-fade" aria-hidden="true"></div>
-            <div class="cf-dest-media-centre">
-              <span class="cf-dest-badge">${escapeHtml(prefs.matchLabel || "Worth Considering")}</span>
-              <h1 class="cf-dest-title">${escapeHtml(dest.name)}</h1>
-              <p class="cf-dest-tagline">${escapeHtml(dest.hero_tagline || "")}</p>
-            </div>
-          </div>
-          <div class="cf-dest-intro-body">
-            <p class="cf-dest-why-label">Why it suits your holiday</p>
-            <p class="cf-dest-why">${escapeHtml(why)}</p>
-          </div>
-        </section>
+    mount.classList.add("dx-shell");
+    document.body.classList.add("dx-shell");
 
-        <section class="cf-dest-section">
-          <h2 class="cf-dest-section-title">At a glance</h2>
-          <div class="cf-dest-glance">
-            <div class="cf-dest-fact">
-              <span class="cf-dest-fact-label">Best months</span>
-              <span class="cf-dest-fact-value">${escapeHtml(monthNames(dest.best_months) || "Ask Paul")}</span>
-            </div>
-            <div class="cf-dest-fact">
-              <span class="cf-dest-fact-label">Typical cruise length</span>
-              <span class="cf-dest-fact-value">${escapeHtml(cruiseLengthLabel(dest))}</span>
-            </div>
-            <div class="cf-dest-fact">
-              <span class="cf-dest-fact-label">Typical weather</span>
-              <span class="cf-dest-fact-value">${escapeHtml(dest.typical_weather || "Varies by season")}</span>
-            </div>
-            <div class="cf-dest-fact">
-              <span class="cf-dest-fact-label">Common departure ports</span>
-              <span class="cf-dest-fact-value">${escapeHtml(departures.slice(0, 4).join(" · ") || "Varies by itinerary")}</span>
-            </div>
-            <div class="cf-dest-fact">
-              <span class="cf-dest-fact-label">Best suited to</span>
-              <span class="cf-dest-fact-value">${escapeHtml(content.suited_to || "A wide range of travellers")}</span>
-            </div>
-            <div class="cf-dest-fact">
-              <span class="cf-dest-fact-label">Long-haul or closer to home</span>
-              <span class="cf-dest-fact-value">${escapeHtml(content.proximity || "Depends on your home port")}</span>
-            </div>
-          </div>
-        </section>
-
-        <section class="cf-dest-section">
-          <h2 class="cf-dest-section-title">Why cruise here</h2>
-          <ul class="cf-dest-reasons">
-            ${reasons
-              .slice(0, 5)
-              .map((r) => `<li>${escapeHtml(r)}</li>`)
-              .join("")}
-          </ul>
-        </section>
-
-        <section class="cf-dest-section">
-          <h2 class="cf-dest-section-title">Popular ports</h2>
-          <p class="cf-dest-lead">Key stops commonly featured on ${escapeHtml(dest.name)} itineraries.</p>
-          <div class="cf-dest-chips">
-            ${ports.map((p) => `<span class="cf-dest-chip">${escapeHtml(p)}</span>`).join("")}
-          </div>
-        </section>
-
-        <section class="cf-dest-section">
-          <h2 class="cf-dest-section-title">Cruise lines</h2>
-          <p class="cf-dest-lead">Cruise lines sold by 101cruise that commonly sail this region.</p>
-          <div class="cf-dest-chips">
-            ${
-              lines.length
-                ? lines.map((l) => `<span class="cf-dest-chip">${escapeHtml(l)}</span>`).join("")
-                : `<span class="cf-dest-chip">Ask Paul for today’s best options</span>`
-            }
-          </div>
-        </section>
-
-        <section class="cf-dest-section">
-          <h2 class="cf-dest-section-title">Seasonal advice</h2>
-          <div class="cf-dest-season">
-            <div class="cf-dest-season-item">
-              <strong>Best period</strong>
-              <p>${escapeHtml(advice.best || "Ask Paul for the best window for your dates.")}</p>
-            </div>
-            <div class="cf-dest-season-item">
-              <strong>Shoulder season</strong>
-              <p>${escapeHtml(advice.shoulder || "Shoulder months can still work with careful planning.")}</p>
-            </div>
-            <div class="cf-dest-season-item">
-              <strong>Fewer sailings</strong>
-              <p>${escapeHtml(advice.quieter || "Some months have fewer itineraries.")}</p>
-            </div>
-            <div class="cf-dest-season-item">
-              <strong>Weather to note</strong>
-              <p>${escapeHtml(advice.weather || dest.typical_weather || "")}</p>
-            </div>
-          </div>
-        </section>
-
-        <section class="cf-dest-cta">
-          <button type="button" class="cf-dest-cta-btn" data-find-cruises>Find Current Cruises</button>
-          <p class="cf-dest-cta-note">We’ll search for current sailings that match your dates and preferences.</p>
-        </section>
-      </div>`;
-
-    bindMedia(imageUrl);
-
-    const findBtn = mount.querySelector("[data-find-cruises]");
-    if (findBtn) {
-      findBtn.addEventListener("click", () => {
-        runSearch({ forceRefresh: false });
+    try {
+      await window.DestinationExperienceApp.boot({
+        mount: mount,
+        slug: dest.id,
+        cruiseFinder: true,
+        prefs: prefs,
+        finderBackHref: finderBackUrl(),
+        onFindCruises: function () {
+          runSearch({ forceRefresh: false });
+        }
       });
+    } catch (error) {
+      console.error("Cruise Finder destination experience failed", error);
+      renderError("We couldn’t load this destination page just now. Please refresh and try again.");
     }
   }
 
@@ -673,7 +542,7 @@
         if (searchAbort) searchAbort.abort();
         stopLoadingMessages();
         searchInFlight = false;
-        renderDestination(currentDest, currentPrefs);
+        renderExperience(currentDest, currentPrefs);
       });
     }
 
@@ -788,7 +657,7 @@
         if (searchAbort) searchAbort.abort();
         stopLoadingMessages();
         searchInFlight = false;
-        renderDestination(currentDest, currentPrefs);
+        renderExperience(currentDest, currentPrefs);
       });
     }
     const again = mount.querySelector("[data-search-again]");
@@ -885,7 +754,7 @@
     }
 
     const prefs = mergePrefs(prefsFromUrl(params), readSessionPrefs());
-    renderDestination(dest, prefs);
+    await renderExperience(dest, prefs);
   }
 
   if (document.readyState === "loading") {

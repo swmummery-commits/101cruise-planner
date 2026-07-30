@@ -121,10 +121,21 @@
     });
   }
 
-  function bindAll(rootEl) {
+  function bindFindCruises(rootEl, handler) {
+    var btn = $("[data-dx-find-cruises]", rootEl);
+    if (!btn || typeof handler !== "function") return;
+    btn.addEventListener("click", function () {
+      handler();
+    });
+  }
+
+  function bindAll(rootEl, options) {
     bindReveals(rootEl);
     bindStyles(rootEl);
     bindMonths(rootEl);
+    if (options && typeof options.onFindCruises === "function") {
+      bindFindCruises(rootEl, options.onFindCruises);
+    }
   }
 
   async function markMediaReady(rootEl) {
@@ -153,7 +164,8 @@
     return current;
   }
 
-  async function loadLineLogos(current) {
+  async function loadLineLogos(current, options) {
+    options = options || {};
     try {
       var response = await fetch("/.netlify/functions/public-ci-cruise-lines");
       if (!response.ok) throw new Error("lines unavailable");
@@ -165,15 +177,10 @@
           : Array.isArray(data)
             ? data
             : [];
-      if (!lines.length) {
-        response = await fetch("/data/prototype/caribbean-cruise-lines-snapshot.json");
-        if (response.ok) {
-          var snapshot = await response.json();
-          lines = Array.isArray(snapshot.cruise_lines) ? snapshot.cruise_lines : [];
-        }
-      }
+      if (!lines.length) throw new Error("no lines");
       return root.DestinationExperienceData.applyCruiseLineLogos(current, lines);
     } catch (_error) {
+      if (!options.allowSnapshotFallback) return current;
       try {
         var fallback = await fetch("/data/prototype/caribbean-cruise-lines-snapshot.json");
         if (fallback.ok) {
@@ -188,15 +195,38 @@
     }
   }
 
-  async function loadDestinationMedia(current, slug) {
+  async function loadDestinationMedia(current, slug, options) {
+    options = options || {};
     if (!current || !root.DestinationExperienceMedia) return current;
-    var fallbackHero = current.hero;
+    var fallbackHero = current.hero ? Object.assign({}, current.hero) : null;
+    var destinationName = current.name || slug;
+
     try {
-      var rows = await root.DestinationExperienceMedia.loadCaribbeanMedia();
-      var assigned = root.DestinationExperienceMedia.assignDestinationImages(slug, rows, fallbackHero);
-      return root.DestinationExperienceData.applyMediaAssignments(current, assigned);
+      var payload = await root.DestinationExperienceMedia.loadDestinationMedia(slug, destinationName, {
+        source: options.mediaSource === "snapshot" ? "snapshot" : "live",
+        allowSnapshotFallback: !!options.allowSnapshotFallback
+      });
+      var assigned = root.DestinationExperienceMedia.assignDestinationImages(
+        slug,
+        payload.destinationMedia || [],
+        fallbackHero,
+        destinationName
+      );
+      current = root.DestinationExperienceData.applyMediaAssignments(current, assigned);
+      current.ports = root.DestinationExperienceMedia.applyPortMedia(
+        current.ports || [],
+        payload.portMedia || [],
+        destinationName
+      );
+      current.mediaSource = payload.source || "media_library_live";
+      return current;
     } catch (_error) {
-      var assignedFallback = root.DestinationExperienceMedia.assignDestinationImages(slug, [], fallbackHero);
+      var assignedFallback = root.DestinationExperienceMedia.assignDestinationImages(
+        slug,
+        [],
+        fallbackHero,
+        destinationName
+      );
       return root.DestinationExperienceData.applyMediaAssignments(current, assignedFallback);
     }
   }
@@ -217,12 +247,15 @@
       return;
     }
 
+    var isCruiseFinder = !!options.cruiseFinder;
     model = root.DestinationExperienceData.fromCruiseFinder(slug, {
-      catalogue: root.CruiseFinderDestinations,
-      content: root.CruiseFinderDestinationContent,
-      images: root.CruiseFinderDestinationImages,
-      pickImage: root.CruiseFinderPickDestinationImage,
-      filterLines: root.CruiseFinderFilterCruiseLines
+      catalogue: options.catalogue || root.CruiseFinderDestinations,
+      content: options.content || root.CruiseFinderDestinationContent,
+      images: options.images || root.CruiseFinderDestinationImages,
+      pickImage: options.pickImage || root.CruiseFinderPickDestinationImage,
+      filterLines: options.filterLines || root.CruiseFinderFilterCruiseLines,
+      prefs: options.prefs || null,
+      eyebrow: options.eyebrow || null
     });
 
     if (!model) {
@@ -233,21 +266,38 @@
       return;
     }
 
+    if (isCruiseFinder) {
+      model.cta = Object.assign({}, model.cta, {
+        primaryAction: "find-cruises",
+        primaryLabel: "Find Current Cruises",
+        body: "We’ll search for current sailings that match your dates and preferences.",
+        secondaryLabel: "Back to Cruise Finder",
+        secondaryHref: options.finderBackHref || model.cta.secondaryHref
+      });
+    }
+
     var fallbackHero = model.hero ? Object.assign({}, model.hero) : null;
-    model = await loadDestinationMedia(model, slug);
+    model = await loadDestinationMedia(model, slug, {
+      mediaSource: isCruiseFinder ? "live" : options.mediaSource || "snapshot",
+      allowSnapshotFallback: !isCruiseFinder
+    });
     if (root.DestinationExperienceImageLoader) {
       model = await root.DestinationExperienceImageLoader.resolveDestinationImages(model, fallbackHero);
     }
-    model = await loadLineLogos(model);
+    model = await loadLineLogos(model, { allowSnapshotFallback: !isCruiseFinder });
     model = await preloadCruiseLineLogos(model);
-    model = root.DestinationExperienceData.applyTimingContext(
-      model,
-      root.DestinationExperienceData.parseTimingFromSearch(params)
-    );
+
+    var timing = isCruiseFinder
+      ? root.DestinationExperienceData.parseTimingFromCruiseFinder(options.prefs || {})
+      : root.DestinationExperienceData.parseTimingFromSearch(params);
+    model = root.DestinationExperienceData.applyTimingContext(model, timing);
+
     mount.innerHTML = root.DestinationExperienceComponents.renderPage(model);
-    bindAll(mount);
+    bindAll(mount, options);
     await markMediaReady(mount);
-    document.title = (model.name || "Destination") + " Experience | 101cruise";
+    document.title = isCruiseFinder
+      ? (model.name || "Destination") + " | 101cruise Cruise Finder"
+      : (model.name || "Destination") + " Experience | 101cruise";
 
     if (typeof options.onReady === "function") options.onReady(model);
     return model;

@@ -205,7 +205,7 @@ assert(/dx-month-chip/.test(html), "month chips");
 assert(/Find current cruises/i.test(html), "CTA label");
 assert(/cruise-destination\?destination=caribbean/.test(html), "CTA routes to CF destination search");
 assert(/dx-timing-verdict/.test(html), "timing verdict rendered");
-assert.equal((html.match(/dx-port-card/g) || []).length, 6, "all six ports rendered");
+assert.equal((html.match(/<article class="dx-port-card/g) || []).length, 6, "all six ports rendered");
 assert.equal(html.includes("data-dx-ports-prev"), false, "no port carousel prev");
 assert.equal(html.includes("data-dx-ports-dots"), false, "no port pagination");
 assert.match(html, /data-dx-dest-image="advice"/, "seasonal advice image slot");
@@ -256,7 +256,8 @@ assert(/public-destination\.js/.test(destHtml), "production destination page int
 assert(!/destination-experience\.js/.test(destHtml), "prototype not wired into production destination");
 
 const cfDest = read("public-tools/cruise-finder/destination.html");
-assert(!/destination-experience/.test(cfDest), "CF destination page untouched");
+assert(/destination-experience-data\.js/.test(cfDest), "production CF destination uses shared experience modules");
+assert(/destination-experience\.css/.test(cfDest), "production CF destination uses shared experience styles");
 
 const appSrc = read("js/destination-experience.js");
 assert(/prefers-reduced-motion/.test(appSrc), "reduced-motion handled");
@@ -283,8 +284,8 @@ assert.match(css, /\.dx-ports-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3,\
 assert.match(css, /@media \(max-width: 980px\)[\s\S]*\.dx-ports-grid[\s\S]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/, "tablet ports 2 columns");
 assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.dx-ports-grid[\s\S]*grid-template-columns:\s*1fr/, "mobile ports 1 column");
 assert.match(css, /\.dx-ports-section\s*\{[^}]*background:\s*#8dd9bf/i, "Popular Ports background is #8DD9BF");
-assert.match(css, /\.dx-port-card\s*\{[^}]*background:\s*var\(--dx-navy\)/i, "port cards stay dark");
-assert.match(css, /\.dx-port-name\s*\{[^}]*color:\s*#fff/i, "port names stay white on dark cards");
+assert.match(css, /\.dx-port-card--fallback[\s\S]*background:\s*rgba\(255,\s*255,\s*255,\s*0\.92\)/, "port fallback cards stay pale");
+assert.match(css, /\.dx-port-card--photo[\s\S]*background:\s*var\(--dx-navy\)/, "photo port cards stay dark");
 assert.match(css, /\.dx-line-logo-panel/, "cruise-line logo contrast panel");
 assert(!/grid-auto-columns:\s*minmax\(240px/.test(css), "port carousel track removed");
 assert(!/data-dx-section="cta" data-dx-reveal/.test(read("js/destination-experience-components.js")), "CTA not reveal gated");
@@ -296,8 +297,9 @@ assert(/destination-experience-image-loader\.js/.test(page), "image loader wired
 assert(/robots" content="noindex/.test(page), "prototype noindex");
 
 const componentSrc = read("js/destination-experience-components.js");
-assert(!/loading="lazy"/.test(componentSrc), "destination images not lazy gated in markup");
-assert.match(componentSrc, /dx-port-monogram/, "compact port cards");
+assert.match(componentSrc, /data-dx-dest-image/, "destination image slots in markup");
+assert.match(componentSrc, /dx-port-card--fallback/, "pale port fallback cards");
+assert.match(componentSrc, /dx-port-card--photo/, "port photo cards when image exists");
 assert.match(componentSrc, /dx-line-name/, "cruise-line names beneath logos");
 
 const loaderSrc = read("js/destination-experience-image-loader.js");

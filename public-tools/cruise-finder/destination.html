@@ -48,6 +48,11 @@
       css.href = base + "destination.css";
       document.head.appendChild(css);
 
+      var dxCss = document.createElement("link");
+      dxCss.rel = "stylesheet";
+      dxCss.href = "/css/destination-experience.css";
+      document.head.appendChild(dxCss);
+
       var brandCss = document.createElement("link");
       brandCss.rel = "stylesheet";
       brandCss.href = "/css/brand-loading.css";
@@ -59,7 +64,17 @@
             loadScript(base + "approved-cruise-lines.js", function () {
               loadScript(base + "destination-images.js", function () {
                 loadScript(base + "hero-images.js", function () {
-                  loadScript(base + "destination.js", function () {});
+                  loadScript("/js/destination-experience-data.js", function () {
+                    loadScript("/js/destination-experience-media.js", function () {
+                      loadScript("/js/destination-experience-image-loader.js", function () {
+                        loadScript("/js/destination-experience-components.js", function () {
+                          loadScript("/js/destination-experience.js", function () {
+                            loadScript(base + "destination.js", function () {});
+                          });
+                        });
+                      });
+                    });
+                  });
                 });
               });
             });

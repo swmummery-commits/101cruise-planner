@@ -706,14 +706,65 @@
 .dx-port-card {
   border-radius: 14px;
   overflow: hidden;
-  background: var(--dx-navy);
-  border: 1px solid rgba(255, 255, 255, 0.12);
   min-height: 0;
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 14px;
   padding: 14px 18px;
+  position: relative;
+}
+
+.dx-port-card--fallback {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(22, 35, 43, 0.08);
+  box-shadow: 0 1px 3px rgba(22, 35, 43, 0.06);
+}
+
+.dx-port-card--fallback .dx-port-name {
+  color: var(--dx-navy);
+}
+
+.dx-port-card--fallback .dx-port-monogram {
+  background: rgba(22, 35, 43, 0.08);
+  color: var(--dx-navy);
+}
+
+.dx-port-card--photo {
+  background: var(--dx-navy);
+  border: 0;
+  min-height: 88px;
+  padding: 0;
+  align-items: stretch;
+}
+
+.dx-port-photo {
+  position: absolute;
+  inset: 0;
+}
+
+.dx-port-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.dx-port-photo-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(12, 22, 28, 0.72) 0%, rgba(12, 22, 28, 0.28) 68%, rgba(12, 22, 28, 0.12) 100%);
+  pointer-events: none;
+}
+
+.dx-port-card--photo .dx-port-name {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 18px;
+  align-self: center;
+  color: #fff;
+  max-width: 100%;
 }
 
 .dx-port-monogram {
@@ -903,6 +954,12 @@
   font-weight: 650;
   font-size: 14px;
   letter-spacing: 0.02em;
+}
+
+button.dx-btn {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
 }
 
 .dx-btn-primary {

@@ -250,7 +250,7 @@
       name: dest.name,
       bestMonths: bestMonths,
       shoulderMonths: shoulderMonths,
-      eyebrow: "My top recommendation",
+      eyebrow: options.eyebrow || (options.prefs && options.prefs.matchLabel) || "My top recommendation",
       tagline: dest.hero_tagline || "",
       summary: dest.inspirational_description || "",
       accent: dest.accent || "#1a7a6d",
@@ -689,6 +689,85 @@
     };
   }
 
+  function parseTimingFromCruiseFinder(prefs, options) {
+    options = options || {};
+    prefs = prefs || {};
+    var mode = String(prefs.timingMode || "").trim();
+
+    if (!mode) {
+      var general = parseTimingFromSearch("", options);
+      general.source = "cruise_finder";
+      return general;
+    }
+
+    if (mode === "exact" && prefs.startDate) {
+      var startDate = String(prefs.startDate);
+      var endDate = String(prefs.endDate || prefs.startDate);
+      var crossed = monthsCrossedByDates(startDate, endDate);
+      return {
+        mode: "cruise",
+        startDate: startDate,
+        endDate: endDate,
+        departureMonth: crossed[0] || null,
+        highlightedMonths: crossed,
+        activeMonth: crossed[0] || null,
+        dateLabel: formatCruiseDateRange(startDate, endDate),
+        allowManualSelection: false,
+        source: "cruise_finder"
+      };
+    }
+
+    if (mode === "month" && prefs.month) {
+      var monthNum = clampMonth(prefs.month);
+      return {
+        mode: "month",
+        month: monthNum,
+        highlightedMonths: monthNum ? [monthNum] : [],
+        activeMonth: monthNum,
+        allowManualSelection: false,
+        source: "cruise_finder"
+      };
+    }
+
+    if (mode === "this_season") {
+      var seasonMonths = seasonMonthsFromNow(options.referenceDate);
+      return {
+        mode: "season",
+        highlightedMonths: seasonMonths,
+        activeMonth: seasonMonths[0] || null,
+        allowManualSelection: false,
+        source: "cruise_finder"
+      };
+    }
+
+    if (mode === "school_holidays") {
+      var schoolMonths = [1, 4, 7, 9, 10, 12];
+      return {
+        mode: "range",
+        startMonth: 1,
+        endMonth: 12,
+        highlightedMonths: schoolMonths,
+        activeMonth: schoolMonths[0] || null,
+        allowManualSelection: false,
+        source: "cruise_finder"
+      };
+    }
+
+    if (mode === "flexible") {
+      return {
+        mode: "flexible",
+        highlightedMonths: [],
+        activeMonth: null,
+        allowManualSelection: false,
+        source: "cruise_finder"
+      };
+    }
+
+    var fallback = parseTimingFromSearch("", options);
+    fallback.source = "cruise_finder";
+    return fallback;
+  }
+
   function parseTimingFromSearch(searchParams, options) {
     options = options || {};
     var params =
@@ -793,13 +872,19 @@
 
     if (timing.mode === "cruise") {
       kicker = "Season guide";
-      heading = "How your sailing fits the season";
+      heading = "How your timing fits the season";
     } else if (timing.mode === "month" || timing.mode === "range" || timing.mode === "season") {
       kicker = "Your travel timing";
-      heading = panel.title || heading;
+      heading =
+        timing.source === "cruise_finder" && timing.mode === "month"
+          ? "How your timing fits the season"
+          : panel.title || heading;
     } else if (timing.mode === "flexible") {
       kicker = "Flexible timing";
-      heading = "Preferred months for " + (model.name || "this destination");
+      heading =
+        timing.source === "cruise_finder"
+          ? "Your flexibility gives us several strong options"
+          : "Preferred months for " + (model.name || "this destination");
     }
 
     return {
@@ -909,7 +994,7 @@
         mediaId: image.mediaId || null,
         title: image.title || "",
         url: image.url,
-        association: "Caribbean destination (Media Library snapshot)",
+        association: (model.name || "Destination") + " destination (Media Library)",
         note: image.source || ""
       });
     });
@@ -931,6 +1016,7 @@
     normaliseLineName: normaliseLineName,
     applyTimingContext: applyTimingContext,
     parseTimingFromSearch: parseTimingFromSearch,
+    parseTimingFromCruiseFinder: parseTimingFromCruiseFinder,
     buildSeasonTimeline: buildSeasonTimeline,
     buildTimingVerdict: buildTimingVerdict,
     monthsCrossedByDates: monthsCrossedByDates,

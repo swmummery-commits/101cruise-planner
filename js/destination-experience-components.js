@@ -272,8 +272,18 @@
           <div class="dx-ports-grid" role="list">
             ${ports
               .map(function (port) {
+                if (port.image && port.image.url) {
+                  return `
+                <article class="dx-port-card dx-port-card--photo" role="listitem">
+                  <div class="dx-port-photo" aria-hidden="true">
+                    <img src="${esc(port.image.url)}" alt="" loading="lazy" decoding="async">
+                  </div>
+                  <div class="dx-port-photo-veil" aria-hidden="true"></div>
+                  <h3 class="dx-port-name">${esc(port.name)}</h3>
+                </article>`;
+                }
                 return `
-                <article class="dx-port-card" role="listitem">
+                <article class="dx-port-card dx-port-card--fallback" role="listitem">
                   <div class="dx-port-monogram" aria-hidden="true">${esc(portInitial(port.name))}</div>
                   <h3 class="dx-port-name">${esc(port.name)}</h3>
                 </article>`;
@@ -390,11 +400,15 @@
           ${has(cta.body) ? `<p>${esc(cta.body)}</p>` : ""}
           <div class="dx-cta-actions">
             ${
-              has(cta.primaryHref)
-                ? `<a class="dx-btn dx-btn-primary" href="${esc(cta.primaryHref)}">${esc(
+              cta.primaryAction === "find-cruises"
+                ? `<button type="button" class="dx-btn dx-btn-primary" data-dx-find-cruises>${esc(
                     cta.primaryLabel || "Find current cruises"
-                  )}</a>`
-                : ""
+                  )}</button>`
+                : has(cta.primaryHref)
+                  ? `<a class="dx-btn dx-btn-primary" href="${esc(cta.primaryHref)}">${esc(
+                      cta.primaryLabel || "Find current cruises"
+                    )}</a>`
+                  : ""
             }
             ${
               has(cta.secondaryHref)
