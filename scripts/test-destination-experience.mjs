@@ -171,6 +171,8 @@ assert(/prefers-reduced-motion/.test(css), "reduced-motion CSS");
 assert(/max-width: 640px/.test(css), "mobile layout");
 assert(/max-height:\s*80svh/.test(css), "mobile hero max height");
 assert(/clamp\(360px,\s*72svh,\s*620px\)/.test(css), "mobile hero clamp");
+assert(/repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(css), "mobile snapshot minmax grid");
+assert(/grid-auto-columns: minmax\(240px, min\(280px, calc\(100vw - 56px\)\)\)/.test(css), "port carousel contained");
 assert(/#8dd9bf/i.test(css), "brand green");
 assert(!/data-dx-section="cta" data-dx-reveal/.test(read("js/destination-experience-components.js")), "CTA not reveal gated");
 

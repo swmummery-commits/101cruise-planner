@@ -1,20 +1,18 @@
 #!/usr/bin/env node
 /**
- * Capture Destination Experience V2 review screenshots via local Chrome.
+ * Capture Destination Experience V3 full-page review screenshots via Playwright.
  * HOLD DEPLOY — local artifacts only (generated-assets is gitignored).
  */
-import { spawn } from "child_process";
+import { chromium } from "playwright";
+import { createServer } from "http";
 import fs from "fs";
-import http from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outDir = path.join(root, "generated-assets/destination-experience/caribbean-v2");
-const chrome =
-  process.env.CHROME_PATH ||
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
-const port = 8765 + Math.floor(Math.random() * 200);
+const outDir = path.join(root, "generated-assets/destination-experience/caribbean-v3");
+const port = 8788 + Math.floor(Math.random() * 100);
+const cruiseQuery = "slug=caribbean&timing=cruise&start=2026-11-17&end=2026-11-27";
 
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -23,12 +21,10 @@ function contentType(filePath) {
   if (filePath.endsWith(".css")) return "text/css; charset=utf-8";
   if (filePath.endsWith(".js")) return "text/javascript; charset=utf-8";
   if (filePath.endsWith(".png")) return "image/png";
-  if (filePath.endsWith(".jpg") || filePath.endsWith(".jpeg")) return "image/jpeg";
-  if (filePath.endsWith(".svg")) return "image/svg+xml";
   return "application/octet-stream";
 }
 
-const server = http.createServer((req, res) => {
+const server = createServer((req, res) => {
   const urlPath = decodeURIComponent((req.url || "/").split("?")[0]);
   const rel = urlPath === "/" ? "/destination-experience.html" : urlPath;
   const filePath = path.join(root, rel.replace(/^\//, ""));
@@ -41,56 +37,68 @@ const server = http.createServer((req, res) => {
   fs.createReadStream(filePath).pipe(res);
 });
 
-function runChrome(width, height, query, outfile) {
-  return new Promise((resolve, reject) => {
-    const target = `http://127.0.0.1:${port}/destination-experience.html?${query}`;
-    const args = [
-      "--headless=new",
-      "--disable-gpu",
-      "--hide-scrollbars",
-      `--window-size=${width},${height}`,
-      `--screenshot=${outfile}`,
-      "--force-device-scale-factor=1",
-      "--virtual-time-budget=15000",
-      target
-    ];
-    const child = spawn(chrome, args, { stdio: "ignore" });
-    child.on("error", reject);
-    child.on("exit", (code) => {
-      if (code === 0 && fs.existsSync(outfile)) resolve();
-      else reject(new Error(`Chrome exited ${code} for ${outfile}`));
-    });
+async function preparePage(page, query) {
+  await page.goto(`http://127.0.0.1:${port}/destination-experience.html?${query}`, {
+    waitUntil: "networkidle"
   });
+  await page.waitForSelector("#destination-experience-app.is-ready .dx-page", { timeout: 20000 });
+  await page.evaluate(async () => {
+    document.documentElement.classList.add("dx-reduced-motion");
+    document.querySelectorAll("[data-dx-reveal]").forEach((el) => el.classList.add("is-visible"));
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    await Promise.all(
+      Array.from(document.images)
+        .filter((img) => !img.complete)
+        .map(
+          (img) =>
+            new Promise((resolve) => {
+              img.addEventListener("load", resolve, { once: true });
+              img.addEventListener("error", resolve, { once: true });
+            })
+        )
+    );
+  });
+  await page.evaluate(async () => {
+    const height = () => Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+    let last = 0;
+    for (let i = 0; i < 12; i += 1) {
+      window.scrollTo(0, height());
+      await new Promise((r) => setTimeout(r, 120));
+      const next = height();
+      if (next === last) break;
+      last = next;
+    }
+    window.scrollTo(0, 0);
+    await new Promise((r) => setTimeout(r, 200));
+  });
+  await page.waitForTimeout(250);
 }
 
-server.listen(port, "127.0.0.1", async () => {
-  try {
-    const jobs = [
-      [390, 844, "slug=caribbean", "mobile-general.png"],
-      [
-        390,
-        2400,
-        "slug=caribbean&timing=cruise&start=2026-11-17&end=2026-11-27",
-        "mobile-exact-cruise-november.png"
-      ],
-      [
-        1440,
-        2800,
-        "slug=caribbean&timing=cruise&start=2026-11-17&end=2026-11-27",
-        "desktop-exact-cruise-november.png"
-      ]
-    ];
-    for (const [width, height, query, name] of jobs) {
-      const outfile = path.join(outDir, name);
-      await runChrome(width, height, query, outfile);
-      console.log("wrote", outfile, fs.statSync(outfile).size);
-    }
-    console.log("screenshot pack ready:", outDir);
-    server.close();
-    process.exit(0);
-  } catch (error) {
-    console.error(error);
-    server.close();
-    process.exit(1);
-  }
-});
+await new Promise((resolve) => server.listen(port, "127.0.0.1", resolve));
+const browser = await chromium.launch();
+const page = await browser.newPage();
+
+const jobs = [
+  [390, "slug=caribbean", "mobile-general-full-page.png"],
+  [390, cruiseQuery, "mobile-exact-cruise-full-page.png"],
+  [768, cruiseQuery, "tablet-exact-cruise-full-page.png"],
+  [1440, cruiseQuery, "desktop-exact-cruise-full-page.png"]
+];
+
+for (const [width, query, name] of jobs) {
+  await page.setViewportSize({ width, height: 900 });
+  await preparePage(page, query);
+  const outfile = path.join(outDir, name);
+  await page.screenshot({ path: outfile, fullPage: true });
+  const size = fs.statSync(outfile).size;
+  const metrics = await page.evaluate(() => ({
+    clientWidth: document.documentElement.clientWidth,
+    scrollWidth: document.documentElement.scrollWidth,
+    scrollHeight: document.documentElement.scrollHeight
+  }));
+  console.log("wrote", outfile, size, metrics);
+}
+
+await browser.close();
+server.close();
+console.log("screenshot pack ready:", outDir);
