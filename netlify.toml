@@ -132,3 +132,13 @@
   from = "/destination"
   to = "/destination/index.html"
   status = 200
+
+[[redirects]]
+  from = "/destination-experience"
+  to = "/destination-experience.html"
+  status = 200
+
+[[redirects]]
+  from = "/destination-experience/"
+  to = "/destination-experience.html"
+  status = 200

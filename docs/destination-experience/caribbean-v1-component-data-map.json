@@ -1,0 +1,65 @@
+{
+  "slug": "caribbean",
+  "components": {
+    "DestinationExperienceHero": {
+      "fields": ["eyebrow", "name", "tagline", "heroStyles", "hero.url"],
+      "values": {
+        "eyebrow": "My top recommendation",
+        "name": "Caribbean",
+        "tagline": "Turquoise water and island ease",
+        "heroStyles": ["Beaches", "Warm weather", "Relaxation", "Families"],
+        "image": "caribbean-hero.png"
+      }
+    },
+    "DestinationSnapshot": {
+      "fields": ["best_months", "typical_length", "weather", "best_for", "from_au", "departures"],
+      "values": {
+        "best_months": "December–April",
+        "typical_length": "7–14 nights",
+        "weather": "Warm to hot tropical days; drier months favoured in winter and early spring.",
+        "best_for": "Beach lovers, families and warm-weather travellers",
+        "from_au": "Long-haul from Australia & New Zealand",
+        "departures": "Miami · Fort Lauderdale · San Juan · Galveston"
+      }
+    },
+    "DestinationReasons": {
+      "selectedReasons": [
+        "Turquoise water and beach days",
+        "Easy island-hopping itineraries",
+        "Warm-weather relaxation"
+      ],
+      "omittedReasons": [
+        "Wide choice of ship styles",
+        "Strong winter-escape appeal"
+      ],
+      "images": "crops of caribbean-hero.png"
+    },
+    "DestinationStyles": {
+      "styles": ["beaches", "warm_weather", "relaxation", "family", "adventure", "luxury"]
+    },
+    "DestinationSeasonTimeline": {
+      "best": [12, 1, 2, 3, 4],
+      "shoulder": [5, 11],
+      "neutral": [6, 7, 8, 9, 10],
+      "defaultMonth": 12
+    },
+    "DestinationPortCarousel": {
+      "ports": ["St Thomas", "Cozumel", "St Maarten", "Barbados", "Nassau", "Grand Cayman"],
+      "images": "none — text-led cards"
+    },
+    "DestinationCruiseLines": {
+      "lines": ["Royal Caribbean", "Celebrity", "Princess", "MSC", "Norwegian"],
+      "logos": "public-ci-cruise-lines when available"
+    },
+    "DestinationSeasonAdvice": {
+      "bestWindow": "December to April is typically the preferred Caribbean window.",
+      "shoulder": "May and November can still work, with more humidity and shower risk.",
+      "weatherCharacter": "Warm to hot year-round; drier months usually feel most reliable.",
+      "planningNote": "Peak hurricane season months deserve careful itinerary advice."
+    },
+    "DestinationCallToAction": {
+      "primaryHref": "/cruise-destination?destination=caribbean",
+      "secondaryHref": "/cruise-finder"
+    }
+  }
+}
