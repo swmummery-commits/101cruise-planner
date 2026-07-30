@@ -4099,6 +4099,11 @@ body.admin-loading-active {
   color: #374151;
 }
 
+.fc-itin-flag--warn {
+  background: #b00020;
+  color: #ffffff;
+}
+
 .fc-itin-row-actions {
   display: flex;
   flex-wrap: wrap;

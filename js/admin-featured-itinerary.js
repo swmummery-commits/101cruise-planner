@@ -31,6 +31,14 @@
   /** Soft warnings from last prepare/save (e.g. unlinked ports) */
   let lastPrepareWarnings = [];
 
+  const WARN_ITIN_FLAGS = new Set(["Missing Coordinates", "Unresolved", "Missing Country"]);
+
+  function renderItinFlag(flag) {
+    const label = String(flag || "");
+    const warn = WARN_ITIN_FLAGS.has(label);
+    return `<span class="fc-itin-flag${warn ? " fc-itin-flag--warn" : ""}">${esc(label)}</span>`;
+  }
+
   function stopNeedsAttention(stop) {
     const flags = I().rowStatusFlags(stop);
     return flags.some((f) =>
@@ -1064,7 +1072,7 @@
               flags.length
                 ? `<span class="fc-itin-summary-flags">${flags
                     .slice(0, 2)
-                    .map((f) => `<span class="fc-itin-flag">${esc(f)}</span>`)
+                    .map((f) => renderItinFlag(f))
                     .join("")}</span>`
                 : ""
             }
@@ -1116,7 +1124,7 @@
             </label>
           </div>
           <div class="fc-itin-flags" title="${esc(flags.join(", "))}">
-            ${flags.map((f) => `<span class="fc-itin-flag">${esc(f)}</span>`).join("")}
+            ${flags.map((f) => renderItinFlag(f)).join("")}
           </div>
           <div class="fc-itin-row-actions">
             ${
