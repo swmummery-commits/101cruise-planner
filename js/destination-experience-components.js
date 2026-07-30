@@ -139,42 +139,99 @@
       </section>`;
   }
 
+  function renderTimingVerdict(timeline) {
+    if (!timeline || !timeline.verdict) return "";
+    var verdict = timeline.verdict;
+    return `
+      <div class="dx-timing-verdict tone-${esc(verdict.tone || "neutral")}" data-dx-timing-verdict>
+        <p class="dx-timing-verdict-label">${esc(verdict.label || "")}</p>
+        <h3 class="dx-timing-verdict-headline">${esc(verdict.headline || "")}</h3>
+        ${has(verdict.detail) ? `<p class="dx-timing-verdict-detail">${esc(verdict.detail)}</p>` : ""}
+      </div>`;
+  }
+
   function renderSeasonTimeline(model) {
     var months = Array.isArray(model && model.months) ? model.months : [];
     if (!months.length) return "";
-    var selected = Number(model.defaultMonth) || months[0].month;
+    var timeline = model.seasonTimeline || {
+      mode: "general",
+      kicker: "Season guide",
+      heading: "Pick a month",
+      allowManualSelection: true,
+      highlightedMonths: [],
+      activeMonth: Number(model.defaultMonth) || months[0].month,
+      panel: null,
+      showLegend: true
+    };
+    var selected = Number(timeline.activeMonth) || months[0].month;
+    var highlighted = Array.isArray(timeline.highlightedMonths) ? timeline.highlightedMonths : [];
     var active = months.find(function (m) {
       return m.month === selected;
     }) || months[0];
+    var panel = timeline.panel || null;
+    var manualHint = timeline.allowManualSelection
+      ? `<p class="dx-season-hint">Select a month to see how it fits this destination.</p>`
+      : "";
+
     return `
-      <section class="dx-section dx-season-section" data-dx-section="season" data-dx-reveal>
+      <section class="dx-section dx-season-section" data-dx-section="season" data-dx-reveal data-dx-season-mode="${esc(
+        timeline.mode || "general"
+      )}">
         <div class="dx-wrap">
           <header class="dx-section-head">
-            <p class="dx-kicker">Season guide</p>
-            <h2>Pick a month</h2>
+            <p class="dx-kicker">${esc(timeline.kicker || "Season guide")}</p>
+            <h2>${esc(timeline.heading || "Pick a month")}</h2>
           </header>
-          <div class="dx-month-track" role="listbox" aria-label="Travel months" data-dx-month-track>
+          ${renderTimingVerdict(timeline)}
+          <div class="dx-month-track${
+            timeline.allowManualSelection ? "" : " is-readonly"
+          }" role="${timeline.allowManualSelection ? "listbox" : "group"}" aria-label="Travel months" data-dx-month-track${
+            timeline.allowManualSelection ? "" : ' aria-readonly="true"'
+          }>
             ${months
               .map(function (m) {
+                var isActive = m.month === selected;
+                var isHighlighted = highlighted.indexOf(m.month) !== -1;
                 return `<button type="button" class="dx-month-chip state-${esc(m.state)}${
-                  m.month === selected ? " is-active" : ""
-                }" role="option" aria-selected="${m.month === selected ? "true" : "false"}" data-dx-month="${m.month}">
+                  isActive ? " is-active" : ""
+                }${isHighlighted ? " is-highlighted" : ""}" role="${
+                  timeline.allowManualSelection ? "option" : "presentation"
+                }" aria-selected="${isActive ? "true" : "false"}" data-dx-month="${m.month}"${
+                  timeline.allowManualSelection ? "" : " tabindex=\"-1\""
+                }>
                   <span class="dx-month-short">${esc(m.short)}</span>
                   <span class="dx-month-state" aria-hidden="true"></span>
                 </button>`;
               })
               .join("")}
           </div>
-          <div class="dx-month-legend" aria-hidden="true">
+          ${
+            timeline.showLegend
+              ? `<div class="dx-month-legend" aria-hidden="true">
             <span><i class="dx-dot best"></i> Best</span>
             <span><i class="dx-dot shoulder"></i> Shoulder</span>
             <span><i class="dx-dot neutral"></i> Neutral</span>
-          </div>
+          </div>`
+              : ""
+          }
+          ${manualHint}
           <article class="dx-month-panel" data-dx-month-panel>
-            ${renderMonthPanel(active)}
+            ${panel ? renderContextMonthPanel(panel, active) : renderMonthPanel(active)}
           </article>
         </div>
       </section>`;
+  }
+
+  function renderContextMonthPanel(panel, month) {
+    if (!panel && month) return renderMonthPanel(month);
+    panel = panel || {};
+    var bits = [];
+    if (has(panel.kicker)) bits.push(`<p class="dx-month-panel-kicker">${esc(panel.kicker)}</p>`);
+    if (has(panel.title)) bits.push(`<h3 class="dx-month-panel-title">${esc(panel.title)}</h3>`);
+    if (has(panel.datesLine)) bits.push(`<p class="dx-month-panel-dates">${esc(panel.datesLine)}</p>`);
+    if (has(panel.body)) bits.push(`<p class="dx-month-rec">${esc(panel.body)}</p>`);
+    if (!bits.length && month) return renderMonthPanel(month);
+    return bits.join("");
   }
 
   function renderMonthPanel(month) {
@@ -327,7 +384,7 @@
       ? `<div class="dx-cta-media" aria-hidden="true"><img src="${esc(hero.url)}" alt="" style="object-position:center 40%" loading="lazy" decoding="async"></div>`
       : "";
     return `
-      <section class="dx-cta" data-dx-section="cta" data-dx-reveal>
+      <section class="dx-cta" data-dx-section="cta">
         ${media}
         <div class="dx-cta-veil" aria-hidden="true"></div>
         <div class="dx-wrap dx-cta-copy">
@@ -378,6 +435,8 @@
     renderReasons: renderReasons,
     renderStyles: renderStyles,
     renderSeasonTimeline: renderSeasonTimeline,
+    renderTimingVerdict: renderTimingVerdict,
+    renderContextMonthPanel: renderContextMonthPanel,
     renderMonthPanel: renderMonthPanel,
     renderPorts: renderPorts,
     renderCruiseLines: renderCruiseLines,

@@ -248,6 +248,8 @@
     return {
       slug: dest.id,
       name: dest.name,
+      bestMonths: bestMonths,
+      shoulderMonths: shoulderMonths,
       eyebrow: "My top recommendation",
       tagline: dest.hero_tagline || "",
       summary: dest.inspirational_description || "",
@@ -402,6 +404,427 @@
     return "/cruise-destination?destination=" + encodeURIComponent(slug || "");
   }
 
+  function parseYmd(value) {
+    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(String(value))) return null;
+    var parts = String(value).split("-").map(Number);
+    var dt = new Date(parts[0], parts[1] - 1, parts[2]);
+    if (dt.getFullYear() !== parts[0] || dt.getMonth() !== parts[1] - 1 || dt.getDate() !== parts[2]) return null;
+    return dt;
+  }
+
+  function clampMonth(value) {
+    var m = Number(value);
+    return m >= 1 && m <= 12 ? m : null;
+  }
+
+  function monthsInRange(startMonth, endMonth) {
+    var start = clampMonth(startMonth);
+    var end = clampMonth(endMonth);
+    if (!start || !end) return [];
+    var months = [];
+    var cursor = start;
+    for (var guard = 0; guard < 12; guard += 1) {
+      months.push(cursor);
+      if (cursor === end) break;
+      cursor += 1;
+      if (cursor > 12) cursor = 1;
+    }
+    return months;
+  }
+
+  function monthsCrossedByDates(startDate, endDate) {
+    var start = parseYmd(startDate);
+    var end = parseYmd(endDate) || start;
+    if (!start || !end) return [];
+    if (end < start) {
+      var swap = start;
+      start = end;
+      end = swap;
+    }
+    var months = [];
+    var cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+    var last = new Date(end.getFullYear(), end.getMonth(), 1);
+    while (cursor <= last) {
+      months.push(cursor.getMonth() + 1);
+      cursor.setMonth(cursor.getMonth() + 1);
+    }
+    return months;
+  }
+
+  function seasonMonthsFromNow(referenceDate) {
+    var now = referenceDate || new Date();
+    var currentMonth = now.getMonth() + 1;
+    var months = [];
+    for (var i = 0; i < 4; i += 1) {
+      var m = currentMonth + i;
+      if (m > 12) m -= 12;
+      months.push(m);
+    }
+    return months;
+  }
+
+  function formatMonthDay(date) {
+    return date.getDate() + " " + MONTH_LONG[date.getMonth()];
+  }
+
+  function formatCruiseDateRange(startDate, endDate) {
+    var start = parseYmd(startDate);
+    var end = parseYmd(endDate) || start;
+    if (!start) return "";
+    if (!end || end.getTime() === start.getTime()) {
+      return formatMonthDay(start) + " " + start.getFullYear();
+    }
+    if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+      return start.getDate() + "–" + end.getDate() + " " + MONTH_LONG[start.getMonth()] + " " + start.getFullYear();
+    }
+    if (start.getFullYear() === end.getFullYear()) {
+      return formatMonthDay(start) + " – " + formatMonthDay(end) + " " + start.getFullYear();
+    }
+    return formatMonthDay(start) + " " + start.getFullYear() + " – " + formatMonthDay(end) + " " + end.getFullYear();
+  }
+
+  function monthStatesFor(months, bestMonths, shoulderMonths) {
+    return asArray(months).map(function (month) {
+      return monthState(month, bestMonths, shoulderMonths);
+    });
+  }
+
+  function buildTimingVerdict(highlightedMonths, bestMonths, shoulderMonths, mode) {
+    if (mode === "flexible") {
+      return {
+        status: "flexible",
+        label: "FLEXIBLE TIMING",
+        tone: "best",
+        headline: "Flexible dates open several strong windows",
+        detail:
+          "With flexible timing you can lean into the destination’s preferred months rather than working around a fixed departure."
+      };
+    }
+
+    var months = asArray(highlightedMonths)
+      .map(Number)
+      .filter(function (m) {
+        return m >= 1 && m <= 12;
+      });
+    if (!months.length) return null;
+
+    var states = monthStatesFor(months, bestMonths, shoulderMonths);
+    var hasBest = states.indexOf("best") !== -1;
+    var hasShoulder = states.indexOf("shoulder") !== -1;
+    var hasNeutral = states.indexOf("neutral") !== -1;
+    var allBest = states.every(function (state) {
+      return state === "best";
+    });
+    var allShoulder = states.every(function (state) {
+      return state === "shoulder";
+    });
+    var allNeutral = states.every(function (state) {
+      return state === "neutral";
+    });
+
+    var label = "WELL SUITED";
+    var tone = "best";
+    if (allBest) {
+      label = "EXCELLENT TIMING";
+      tone = "best";
+    } else if (allShoulder) {
+      label = "SHOULDER-SEASON OPTION";
+      tone = "shoulder";
+    } else if (allNeutral) {
+      label = "MORE VARIABLE CONDITIONS";
+      tone = "neutral";
+    } else if (hasNeutral) {
+      label = "MORE VARIABLE CONDITIONS";
+      tone = "neutral";
+    } else if (hasShoulder && hasBest) {
+      label = "WELL SUITED";
+      tone = "shoulder";
+    } else if (hasShoulder) {
+      label = "SHOULDER-SEASON OPTION";
+      tone = "shoulder";
+    }
+
+    var headline = "";
+    if (months.length === 1) {
+      headline =
+        MONTH_LONG[months[0] - 1] +
+        " is a " +
+        (states[0] === "best" ? "preferred" : states[0] === "shoulder" ? "shoulder" : "more variable") +
+        " month for this destination";
+    } else if (allBest) {
+      headline = "Your timing sits entirely within the preferred season";
+    } else if (hasBest && (hasShoulder || hasNeutral)) {
+      headline = "Your timing partly overlaps the preferred season";
+    } else if (hasShoulder && !hasNeutral) {
+      headline = "Your timing sits in shoulder-season months";
+    } else {
+      headline = "Your timing sits outside the preferred season";
+    }
+
+    return {
+      status: label.toLowerCase().replace(/\s+/g, "_"),
+      label: label,
+      tone: tone,
+      headline: headline,
+      detail: buildVerdictDetail(months, states, bestMonths, shoulderMonths)
+    };
+  }
+
+  function buildVerdictDetail(months, states, bestMonths, shoulderMonths) {
+    var hasBest = states.indexOf("best") !== -1;
+    var hasShoulder = states.indexOf("shoulder") !== -1;
+    var hasNeutral = states.indexOf("neutral") !== -1;
+    if (months.length === 1) {
+      var month = months[0];
+      var state = states[0];
+      if (state === "best") {
+        return (
+          MONTH_LONG[month - 1] +
+          " sits within the preferred window of " +
+          formatPreferredWindow(bestMonths) +
+          "."
+        );
+      }
+      if (state === "shoulder") {
+        return (
+          MONTH_LONG[month - 1] +
+          " is a shoulder month for this destination — still workable, with more humidity and shower risk than the preferred " +
+          formatPreferredWindow(bestMonths) +
+          " period."
+        );
+      }
+      return (
+        MONTH_LONG[month - 1] +
+        " sits outside the preferred " +
+        formatPreferredWindow(bestMonths) +
+        " window, so conditions can feel more variable."
+      );
+    }
+    if (hasBest && !hasShoulder && !hasNeutral) {
+      return "Every month in your window aligns with the preferred season.";
+    }
+    if (hasBest && (hasShoulder || hasNeutral)) {
+      return "Part of your window matches the preferred season, while other months sit in shoulder or more variable periods.";
+    }
+    if (hasShoulder && !hasNeutral) {
+      return "Your window sits in shoulder-season months — workable, but with more humidity and shower risk than the preferred period.";
+    }
+    return "Your window sits outside the preferred season, so timing deserves closer planning attention.";
+  }
+
+  function formatPreferredWindow(bestMonths) {
+    if (!bestMonths.length) return "peak";
+    if (bestMonths.length >= 2) {
+      return MONTH_LONG[bestMonths[0] - 1] + "–" + MONTH_LONG[bestMonths[bestMonths.length - 1] - 1];
+    }
+    return MONTH_LONG[bestMonths[0] - 1];
+  }
+
+  function buildSeasonPanelCopy(model, timing, monthNum) {
+    var month = (model.months || []).find(function (row) {
+      return row.month === Number(monthNum);
+    });
+    var seasonal = model.seasonSummary || {};
+    var state = month ? month.state : monthState(monthNum, model.bestMonths || [], model.shoulderMonths || []);
+
+    if (timing.mode === "cruise") {
+      var sailingMonth = timing.departureMonth || monthNum;
+      var monthName = MONTH_LONG[sailingMonth - 1];
+      var preferred = seasonal.best || ("the preferred " + formatPreferredWindow(model.bestMonths || []) + " window");
+      var body = "";
+      if (state === "shoulder") {
+        body =
+          monthName +
+          " is a shoulder month for the " +
+          model.name +
+          ". " +
+          (seasonal.shoulder || month.recommendation || month.advantage || "");
+        if (seasonal.best) body += " Preferred window: " + seasonal.best;
+      } else if (state === "best") {
+        body = seasonal.best || month.recommendation || month.advantage || "";
+      } else {
+        body =
+          monthName +
+          " sits outside the preferred season. " +
+          (month.recommendation || seasonal.weatherCharacter || month.conditions || "");
+      }
+      return {
+        kicker: "Your cruise timing",
+        title: "You're sailing in " + monthName,
+        datesLine: timing.dateLabel || "",
+        body: body
+      };
+    }
+
+    if (timing.mode === "flexible") {
+      return {
+        kicker: "Flexible timing",
+        title: "Several strong months are open to you",
+        datesLine: "",
+        body:
+          (seasonal.best ? "Preferred window: " + seasonal.best + " " : "") +
+          "Flexibility lets you choose sailings within the destination’s strongest seasonal fit."
+      };
+    }
+
+    if (timing.mode === "month" || timing.mode === "range" || timing.mode === "season") {
+      return {
+        kicker: "Your travel window",
+        title:
+          timing.mode === "month"
+            ? "You're looking at " + MONTH_LONG[monthNum - 1]
+            : timing.mode === "season"
+              ? "You're planning within the next few months"
+              : "You're looking across " + formatMonthRange(timing.highlightedMonths).replace(/ · /g, "–"),
+        datesLine: "",
+        body: month ? month.recommendation || month.advantage || month.conditions || "" : ""
+      };
+    }
+
+    return {
+      kicker: month ? month.long + " · " + (state === "best" ? "Best period" : state === "shoulder" ? "Shoulder season" : "Open period") : "",
+      title: "",
+      datesLine: "",
+      body: month ? month.recommendation || month.advantage || month.conditions || "" : ""
+    };
+  }
+
+  function parseTimingFromSearch(searchParams, options) {
+    options = options || {};
+    var params =
+      searchParams && typeof searchParams.get === "function"
+        ? searchParams
+        : new URLSearchParams(searchParams || "");
+    var mode = String(params.get("timing") || "").trim().toLowerCase();
+    var start = String(params.get("start") || params.get("startDate") || "").trim();
+    var end = String(params.get("end") || params.get("endDate") || "").trim();
+
+    if (!mode && (start || end)) mode = "cruise";
+    if (!mode) mode = "general";
+
+    if (mode === "cruise") {
+      var startDate = start;
+      var endDate = end || startDate;
+      var crossed = monthsCrossedByDates(startDate, endDate);
+      return {
+        mode: "cruise",
+        startDate: startDate,
+        endDate: endDate,
+        departureMonth: crossed[0] || null,
+        highlightedMonths: crossed,
+        activeMonth: crossed[0] || null,
+        dateLabel: formatCruiseDateRange(startDate, endDate),
+        allowManualSelection: false
+      };
+    }
+
+    if (mode === "month") {
+      var month = clampMonth(params.get("month"));
+      return {
+        mode: "month",
+        month: month,
+        highlightedMonths: month ? [month] : [],
+        activeMonth: month,
+        allowManualSelection: false
+      };
+    }
+
+    if (mode === "range") {
+      var rangeMonths = monthsInRange(params.get("startMonth"), params.get("endMonth"));
+      return {
+        mode: "range",
+        startMonth: clampMonth(params.get("startMonth")),
+        endMonth: clampMonth(params.get("endMonth")),
+        highlightedMonths: rangeMonths,
+        activeMonth: rangeMonths[0] || null,
+        allowManualSelection: false
+      };
+    }
+
+    if (mode === "season") {
+      var seasonMonths = seasonMonthsFromNow(options.referenceDate);
+      return {
+        mode: "season",
+        highlightedMonths: seasonMonths,
+        activeMonth: seasonMonths[0] || null,
+        allowManualSelection: false
+      };
+    }
+
+    if (mode === "flexible") {
+      return {
+        mode: "flexible",
+        highlightedMonths: [],
+        activeMonth: null,
+        allowManualSelection: false
+      };
+    }
+
+    return {
+      mode: "general",
+      highlightedMonths: [],
+      activeMonth: null,
+      allowManualSelection: true
+    };
+  }
+
+  function buildSeasonTimeline(model, timingInput) {
+    var timing = timingInput || { mode: "general", allowManualSelection: true };
+    var bestMonths = asArray(model.bestMonths).map(Number);
+    var shoulderMonths = asArray(model.shoulderMonths).map(Number);
+    var highlightedMonths = asArray(timing.highlightedMonths).map(Number);
+    var activeMonth =
+      Number(timing.activeMonth) ||
+      (timing.mode === "general" ? Number(model.defaultMonth) || bestMonths[0] || 1 : highlightedMonths[0]) ||
+      bestMonths[0] ||
+      1;
+
+    if (timing.mode === "general") {
+      highlightedMonths = bestMonths.slice();
+    } else if (timing.mode === "flexible") {
+      highlightedMonths = bestMonths.slice();
+      activeMonth = bestMonths[0] || 1;
+    }
+
+    var verdict = buildTimingVerdict(highlightedMonths, bestMonths, shoulderMonths, timing.mode);
+    var panel = buildSeasonPanelCopy(model, timing, activeMonth);
+    var heading = "When should you cruise the " + (model.name || "destination") + "?";
+    var kicker = "Season guide";
+
+    if (timing.mode === "cruise") {
+      kicker = "Season guide";
+      heading = "How your sailing fits the season";
+    } else if (timing.mode === "month" || timing.mode === "range" || timing.mode === "season") {
+      kicker = "Your travel timing";
+      heading = panel.title || heading;
+    } else if (timing.mode === "flexible") {
+      kicker = "Flexible timing";
+      heading = "Preferred months for " + (model.name || "this destination");
+    }
+
+    return {
+      mode: timing.mode,
+      kicker: kicker,
+      heading: heading,
+      allowManualSelection: !!timing.allowManualSelection,
+      highlightedMonths: highlightedMonths,
+      activeMonth: activeMonth,
+      verdict: verdict,
+      panel: panel,
+      dateLabel: timing.dateLabel || "",
+      showLegend: true,
+      showMonthTrack: true
+    };
+  }
+
+  function applyTimingContext(model, timingInput) {
+    if (!model) return model;
+    var timing = timingInput || parseTimingFromSearch("");
+    model.seasonTimeline = buildSeasonTimeline(model, timing);
+    model.defaultMonth = model.seasonTimeline.activeMonth;
+    return model;
+  }
+
   /**
    * Attach logos from public CI lines response without inventing notes.
    */
@@ -429,6 +852,11 @@
     MONTH_LONG: MONTH_LONG,
     fromCruiseFinder: fromCruiseFinder,
     applyCruiseLineLogos: applyCruiseLineLogos,
+    applyTimingContext: applyTimingContext,
+    parseTimingFromSearch: parseTimingFromSearch,
+    buildSeasonTimeline: buildSeasonTimeline,
+    buildTimingVerdict: buildTimingVerdict,
+    monthsCrossedByDates: monthsCrossedByDates,
     monthState: monthState,
     esc: esc
   };

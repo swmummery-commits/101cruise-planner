@@ -76,9 +76,11 @@
   }
 
   function bindMonths(rootEl) {
+    var track = $("[data-dx-month-track]", rootEl);
     var chips = $all("[data-dx-month]", rootEl);
     var panel = $("[data-dx-month-panel]", rootEl);
     if (!chips.length || !panel || !model) return;
+    if (track && track.classList.contains("is-readonly")) return;
 
     function selectMonth(monthNum, focusChip) {
       var month = (model.months || []).find(function (m) {
@@ -274,6 +276,10 @@
     }
 
     model = await loadLineLogos(model);
+    model = root.DestinationExperienceData.applyTimingContext(
+      model,
+      root.DestinationExperienceData.parseTimingFromSearch(params)
+    );
     mount.innerHTML = root.DestinationExperienceComponents.renderPage(model);
     bindAll(mount);
     document.title = (model.name || "Destination") + " Experience | 101cruise";

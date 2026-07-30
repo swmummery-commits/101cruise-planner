@@ -378,6 +378,68 @@
   background: #fff;
 }
 
+.dx-timing-verdict {
+  margin: 0 0 22px;
+  padding: 20px 22px;
+  border-radius: 18px;
+  border: 1px solid var(--dx-line);
+  max-width: 760px;
+}
+
+.dx-timing-verdict.tone-best {
+  background: linear-gradient(135deg, #effaf6, #ffffff 72%);
+  border-color: #d9efe6;
+}
+
+.dx-timing-verdict.tone-shoulder {
+  background: linear-gradient(135deg, #f3eee6, #ffffff 72%);
+  border-color: #e8dfd1;
+}
+
+.dx-timing-verdict.tone-neutral {
+  background: linear-gradient(135deg, #eef2f6, #ffffff 72%);
+  border-color: #d8e0e8;
+}
+
+.dx-timing-verdict-label {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--brand-green-ink);
+}
+
+.dx-timing-verdict.tone-shoulder .dx-timing-verdict-label {
+  color: #8a6b3d;
+}
+
+.dx-timing-verdict.tone-neutral .dx-timing-verdict-label {
+  color: #4f5d68;
+}
+
+.dx-timing-verdict-headline {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 28px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+}
+
+.dx-timing-verdict-detail {
+  margin: 10px 0 0;
+  color: var(--dx-muted);
+  font-size: 16px;
+  line-height: 1.45;
+  max-width: 58ch;
+}
+
+.dx-season-hint {
+  margin: 14px 0 0;
+  color: var(--dx-muted);
+  font-size: 14px;
+}
+
 .dx-month-track {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -431,6 +493,32 @@
   background: var(--dx-charcoal);
   color: #fff;
   transform: translateY(-2px);
+}
+
+.dx-month-chip.is-highlighted:not(.is-active) {
+  box-shadow: inset 0 0 0 2px rgba(36, 92, 78, 0.28);
+  background: #fff;
+}
+
+.dx-month-track.is-readonly .dx-month-chip {
+  cursor: default;
+  pointer-events: none;
+}
+
+.dx-month-panel-title {
+  margin: 0 0 8px;
+  font-size: clamp(22px, 3vw, 28px);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+}
+
+.dx-month-panel-dates {
+  margin: 0 0 12px;
+  font-size: clamp(18px, 2.4vw, 22px);
+  line-height: 1.25;
+  font-weight: 500;
+  color: var(--dx-ink);
 }
 
 .dx-month-legend {
@@ -836,7 +924,8 @@
   [data-dx-reveal],
   .dx-reason-card,
   .dx-style-panel,
-  .dx-month-panel {
+  .dx-month-panel,
+  .dx-cta {
     animation: none !important;
     transition: none !important;
     transform: none !important;
@@ -845,7 +934,8 @@
 }
 
 html.dx-reduced-motion .dx-hero-media img,
-html.dx-reduced-motion [data-dx-reveal] {
+html.dx-reduced-motion [data-dx-reveal],
+html.dx-reduced-motion .dx-cta {
   animation: none !important;
   transition: none !important;
   transform: none !important;
@@ -883,24 +973,64 @@ html.dx-reduced-motion [data-dx-reveal] {
   }
 
   .dx-hero {
-    min-height: 78vh;
+    min-height: clamp(360px, 72svh, 620px);
+    max-height: 80svh;
     border-radius: 0 0 20px 20px;
+    align-items: end;
   }
 
-  .dx-hero-copy,
-  .dx-section,
+  .dx-hero-copy {
+    padding: 20px 0 24px;
+  }
+
+  .dx-section {
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+
   .dx-cta-copy {
     padding-top: 48px;
     padding-bottom: 48px;
   }
 
+  .dx-cta {
+    min-height: clamp(320px, 52svh, 440px);
+  }
+
   .dx-snapshot-section {
-    margin-top: -36px;
+    margin-top: -28px;
+    padding-top: 0;
   }
 
   .dx-snapshot,
   .dx-line-grid {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .dx-snapshot-label {
+    font-size: 12px;
+  }
+
+  .dx-reason-body p {
+    font-size: 16px;
+  }
+
+  .dx-timing-verdict-detail,
+  .dx-month-panel p,
+  .dx-month-rec {
+    font-size: 16px;
+  }
+
+  .dx-advice-label {
+    font-size: 12px;
+  }
+
+  .dx-advice-value {
+    font-size: 19px;
+  }
+
+  .dx-line-card p {
+    font-size: 14px;
   }
 
   .dx-month-track {
