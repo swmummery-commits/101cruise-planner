@@ -150,6 +150,7 @@ async function loadCruiseRow(featuredCruiseId) {
 }
 
 async function updateCruiseAssetMetadata(featuredCruiseId, meta) {
+  const existing = await loadCruiseRow(featuredCruiseId);
   const payload = {
     route_map_svg_path: meta.svg_path,
     route_map_png_path: meta.png_path,
@@ -159,8 +160,10 @@ async function updateCruiseAssetMetadata(featuredCruiseId, meta) {
     route_map_height: meta.height,
     updated_at: new Date().toISOString()
   };
-  // Do not force route_map_status away from manual media selection;
-  // generated workflow assets are separate from Media Library picks.
+  // Mark auto-generated maps as current unless the cruise uses a manual Media Library map.
+  if (String(existing?.route_map_status || "").trim() !== "manual") {
+    payload.route_map_status = "current";
+  }
   const updated = await supabase(
     `featured_cruises?id=eq.${encodeURIComponent(featuredCruiseId)}`,
     { method: "PATCH", body: payload, prefer: "return=representation" }

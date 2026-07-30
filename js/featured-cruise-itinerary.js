@@ -514,10 +514,20 @@
     return parts.join(";");
   }
 
+  function hasGeneratedStorageAsset(cruiseOrDraft) {
+    const svg = String(cruiseOrDraft?.route_map_svg_path || "").trim();
+    const png = String(cruiseOrDraft?.route_map_png_path || "").trim();
+    if (!svg || !png) return false;
+    if (svg.startsWith("generated-assets/") || png.startsWith("generated-assets/")) return false;
+    if (svg.startsWith("/generated-assets/") || png.startsWith("/generated-assets/")) return false;
+    return true;
+  }
+
   function hasRouteMapAsset(cruiseOrDraft) {
     return Boolean(
       cruiseOrDraft?.route_map_media_id ||
-        String(cruiseOrDraft?.route_map_image_url || "").trim()
+        String(cruiseOrDraft?.route_map_image_url || "").trim() ||
+        hasGeneratedStorageAsset(cruiseOrDraft)
     );
   }
 
@@ -662,8 +672,18 @@
 
   function summarizeRouteMapReadiness(stops, cruiseOrDraft) {
     const portSummary = summarizePortStatus(stops);
-    const hasMap = hasRouteMapAsset(cruiseOrDraft);
-    const status = cruiseOrDraft?.route_map_status || (hasMap ? ROUTE_MAP_STATUSES.MANUAL : ROUTE_MAP_STATUSES.MISSING);
+    const hasGenerated = hasGeneratedStorageAsset(cruiseOrDraft);
+    const hasManual = Boolean(
+      cruiseOrDraft?.route_map_media_id || String(cruiseOrDraft?.route_map_image_url || "").trim()
+    );
+    const hasMap = hasManual || hasGenerated;
+    const status =
+      cruiseOrDraft?.route_map_status ||
+      (hasGenerated
+        ? ROUTE_MAP_STATUSES.CURRENT
+        : hasManual
+          ? ROUTE_MAP_STATUSES.MANUAL
+          : ROUTE_MAP_STATUSES.MISSING);
     return {
       ...portSummary,
       hasMap,

@@ -10588,6 +10588,9 @@ function applyFeaturedGeneratedRouteMapResult(data, { recovered = false } = {}) 
     featuredFormDraft.route_map_renderer_version = renderer;
     featuredFormDraft.route_map_width = width;
     featuredFormDraft.route_map_height = height;
+    if (String(featuredFormDraft.route_map_status || "").trim() !== "manual") {
+      featuredFormDraft.route_map_status = "current";
+    }
   }
 
   featuredRouteMapGenResult = {
@@ -10666,7 +10669,8 @@ async function generateFeaturedRouteMap() {
       body: JSON.stringify({
         action: "generate",
         featured_cruise_id: editingFeaturedCruiseId,
-        png_width: 2000
+        png_width: 2000,
+        force_reroute: featuredCruiseHasGeneratedRouteMap(featuredFormDraft)
       })
     });
     const data = await response.json().catch(() => ({}));
@@ -10845,7 +10849,11 @@ function renderFeaturedRouteMapSection(draft) {
       }</button>`
     : `<p class="admin-muted">Save this Featured Cruise first to enable route map generation.</p>`;
   const deleteGeneratedButton =
-    editingFeaturedCruiseId && (hasGenerated || featuredRouteMapGenResult?.ok)
+    editingFeaturedCruiseId &&
+    (hasGenerated ||
+      featuredRouteMapGenResult?.ok ||
+      Boolean(draft?.route_map_generated_at) ||
+      Boolean(genParts.previewHtml))
       ? `<button type="button" class="admin-button secondary small" ${
           featuredRouteMapGenerating || featuredRouteMapDeleting ? "disabled" : ""
         } onclick="deleteFeaturedGeneratedRouteMap()">${

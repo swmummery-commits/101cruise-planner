@@ -8,7 +8,7 @@
  */
 
 const { findRoute } = require("@ssroute/typescript");
-const { segmentCrossesLand, polylineCrossesLand } = require("./route-map-land-check");
+const { segmentCrossesLand } = require("./route-map-land-check");
 
 const ERROR_CODES = {
   MISSING_COORDINATES: "missing_coordinates",
@@ -293,7 +293,7 @@ function routeObjectEndpointsPlausible(routeObject) {
  * True when stored simplified (or full) leg geometry would draw a long chord over land.
  */
 function routeObjectAvoidsLand(routeObject, options = {}) {
-  const minSegmentNm = options.minSegmentNm != null ? Number(options.minSegmentNm) : 50;
+  const minSegmentNm = options.minSegmentNm != null ? Number(options.minSegmentNm) : 25;
   const legs = routeObject?.legs;
   if (!Array.isArray(legs) || !legs.length) return false;
 

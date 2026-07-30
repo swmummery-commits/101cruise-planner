@@ -5,7 +5,7 @@
 
 const { segmentCrossesLand, polylineCrossesLand } = require("./route-map-land-check");
 
-const MIN_LAND_FIX_NM = 40;
+const MIN_LAND_FIX_NM = 15;
 
 function haversineNm(lat1, lon1, lat2, lon2) {
   const toRad = (d) => (Number(d) * Math.PI) / 180;
