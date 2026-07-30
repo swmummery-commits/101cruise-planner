@@ -209,8 +209,9 @@ const cfHtml = Components.renderPage(cfCaribbean);
 assert.match(cfHtml, /Why cruise here/, "cruise finder destination unchanged");
 assert.doesNotMatch(cfHtml, /featuredCruise/, "cruise finder not featured cruise mode");
 
-assert.match(read("js/public-cruise.js"), /bootFeaturedCruise/, "public cruise boots featured DX");
-assert.match(read("cruise/index.html"), /destination-experience-featured-cruise-data.js/, "cruise page loads featured DX assets");
+assert.match(read("js/public-cruise.js"), /renderPublicCruisePage/, "public cruise uses stable newsletter renderer");
+assert.doesNotMatch(read("js/public-cruise.js"), /bootFeaturedCruise/, "public cruise does not boot featured DX");
+assert.doesNotMatch(read("cruise/index.html"), /destination-experience-featured-cruise-data.js/, "cruise page does not load featured DX assets");
 assert.match(html, /dx-fc-itinerary-grid/, "itinerary ports use responsive grid not carousel");
 assert.doesNotMatch(html, /swiper|carousel|dx-port-track/i, "no horizontal port carousel");
 

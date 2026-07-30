@@ -231,16 +231,6 @@
     scheduleHeightReport();
   }
 
-  async function renderFeaturedCruiseExperience(root, cruise) {
-    await window.DestinationExperienceApp.bootFeaturedCruise({
-      mount: root,
-      cruise,
-      onHeightChange: scheduleHeightReport,
-      onReady: scheduleHeightReport
-    });
-    scheduleHeightReport();
-  }
-
   async function init() {
     applyEmbedChrome();
     startHeightObserver();
@@ -257,32 +247,19 @@
     try {
       const result = await loadCruise(slug);
       const cruise = result.cruise;
-      if (!cruise) {
+      if (!cruise || !window.NewsletterPreview) {
         renderUnavailable(root, {
           slug,
           reason: result.reason || "not_found",
-          detail: result.detail || ""
+          detail: !window.NewsletterPreview ? "Newsletter renderer failed to load" : result.detail || ""
         });
         return;
       }
 
+      // Public page must never show room pricing (newsletter keeps pricing).
       delete cruise.pricing;
+
       setMetadata(cruise);
-
-      if (window.DestinationExperienceApp && window.DestinationExperienceFeaturedCruiseData) {
-        await renderFeaturedCruiseExperience(root, cruise);
-        return;
-      }
-
-      if (!window.NewsletterPreview) {
-        renderUnavailable(root, {
-          slug,
-          reason: "unavailable",
-          detail: "Cruise renderer failed to load"
-        });
-        return;
-      }
-
       renderLegacyPublicPage(root, cruise);
     } catch (error) {
       console.error("public cruise page error", error);
