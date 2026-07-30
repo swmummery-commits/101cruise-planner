@@ -3,6 +3,23 @@
  * Coordinates are [longitude, latitude] pairs. First and last points always kept.
  */
 
+const { segmentCrossesLand, polylineCrossesLand } = require("./route-map-land-check");
+
+const MIN_LAND_FIX_NM = 40;
+
+function haversineNm(lat1, lon1, lat2, lon2) {
+  const toRad = (d) => (Number(d) * Math.PI) / 180;
+  const rLat1 = toRad(lat1);
+  const rLat2 = toRad(lat2);
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rLat1) * Math.cos(rLat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return 3440.065 * c;
+}
+
 function squareDistancePointToSegment(p, a, b) {
   const x = p[0];
   const y = p[1];
@@ -105,8 +122,94 @@ function simplifyPolyline(coordinates, presetOrOptions = "final-map") {
   return simplified;
 }
 
+function coordKey(p) {
+  return `${Number(p[0]).toFixed(6)},${Number(p[1]).toFixed(6)}`;
+}
+
+function nearestIndex(full, target) {
+  let best = 0;
+  let bestD = Infinity;
+  for (let i = 0; i < full.length; i += 1) {
+    const dx = full[i][0] - target[0];
+    const dy = full[i][1] - target[1];
+    const d = dx * dx + dy * dy;
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  return best;
+}
+
+/**
+ * Ensure simplified map segments do not cut across land when rendered as
+ * equirectangular SVG chords. Re-inserts waypoints from the full marine polyline.
+ */
+function ensureSeaSafePolyline(full, simplified) {
+  const source = (full || []).map((p) => [Number(p[0]), Number(p[1])]);
+  let line = (simplified || []).map((p) => [Number(p[0]), Number(p[1])]);
+  if (line.length < 2) return line.length ? line : source;
+  if (source.length < 2) return line;
+
+  let guard = 0;
+  while (guard < 12) {
+    let changed = false;
+    const out = [[...line[0]]];
+    for (let i = 1; i < line.length; i += 1) {
+      const a = out[out.length - 1];
+      const b = line[i];
+      const segNm = haversineNm(a[1], a[0], b[1], b[0]);
+      if (!segmentCrossesLand(a[0], a[1], b[0], b[1]) || segNm < MIN_LAND_FIX_NM) {
+        if (coordKey(a) !== coordKey(b)) out.push([...b]);
+        continue;
+      }
+      const ia = nearestIndex(source, a);
+      const ib = nearestIndex(source, b);
+      if (ia === ib) {
+        out.push([...b]);
+        changed = true;
+        continue;
+      }
+      const slice = ia < ib ? source.slice(ia, ib + 1) : source.slice(ib, ia + 1).reverse();
+      for (let j = 1; j < slice.length - 1; j += 1) {
+        out.push([...slice[j]]);
+      }
+      out.push([...b]);
+      changed = true;
+    }
+    line = out;
+    if (!changed) break;
+    if (!polylineCrossesLand(line).crosses) break;
+    guard += 1;
+  }
+
+  if (polylineCrossesLand(line).crosses) {
+    const hasLongLandChord = line.slice(1).some((b, i) => {
+      const a = line[i];
+      return (
+        haversineNm(a[1], a[0], b[1], b[0]) >= MIN_LAND_FIX_NM &&
+        segmentCrossesLand(a[0], a[1], b[0], b[1])
+      );
+    });
+    if (hasLongLandChord && !polylineCrossesLand(source).crosses) {
+      return source;
+    }
+  }
+  return line;
+}
+
+/**
+ * Simplify a marine polyline, then restore waypoints where chords would cross land.
+ */
+function simplifyPolylineForSeaRoute(coordinates, presetOrOptions = "final-map") {
+  const simplified = simplifyPolyline(coordinates, presetOrOptions);
+  return ensureSeaSafePolyline(coordinates, simplified);
+}
+
 module.exports = {
   SIMPLIFY_PRESETS,
   douglasPeucker,
-  simplifyPolyline
+  simplifyPolyline,
+  ensureSeaSafePolyline,
+  simplifyPolylineForSeaRoute
 };

@@ -8,6 +8,7 @@
  */
 
 const { findRoute } = require("@ssroute/typescript");
+const { segmentCrossesLand, polylineCrossesLand } = require("./route-map-land-check");
 
 const ERROR_CODES = {
   MISSING_COORDINATES: "missing_coordinates",
@@ -174,6 +175,21 @@ function straightLineLeg(from, to, legIndex, reason) {
     [from.longitude, from.latitude],
     [to.longitude, to.latitude]
   ];
+  if (segmentCrossesLand(from.longitude, from.latitude, to.longitude, to.latitude)) {
+    return {
+      ok: false,
+      error: {
+        code: ERROR_CODES.ROUTING_FAILED,
+        message: `Leg ${legIndex + 1}: ${reason}; straight line would cross land (${from.name || from.id} → ${to.name || to.id}). Check port coordinates or add verified harbour positions.`,
+        leg_index: legIndex,
+        from_port_id: from.id,
+        to_port_id: to.id,
+        port_id: null,
+        port_name: null,
+        port_index: null
+      }
+    };
+  }
   const distanceNm = haversineNm(from.latitude, from.longitude, to.latitude, to.longitude);
   return {
     ok: true,
@@ -269,6 +285,34 @@ function routeObjectEndpointsPlausible(routeObject) {
     const gcNm = haversineNm(from.latitude, from.longitude, to.latitude, to.longitude);
     const seaNm = polylineDistanceNm(coords);
     if (gcNm > 1 && seaNm / gcNm > MAX_SEA_VS_GC_RATIO) return false;
+  }
+  return true;
+}
+
+/**
+ * True when stored simplified (or full) leg geometry would draw a long chord over land.
+ */
+function routeObjectAvoidsLand(routeObject, options = {}) {
+  const minSegmentNm = options.minSegmentNm != null ? Number(options.minSegmentNm) : 50;
+  const legs = routeObject?.legs;
+  if (!Array.isArray(legs) || !legs.length) return false;
+
+  for (const leg of legs) {
+    if (leg.fallback === "straight_line") return false;
+    const coords =
+      (Array.isArray(leg?.simplified_coordinates) && leg.simplified_coordinates) ||
+      (Array.isArray(leg?.full_coordinates) && leg.full_coordinates) ||
+      [];
+    if (coords.length < 2) return false;
+
+    for (let i = 1; i < coords.length; i += 1) {
+      const a = coords[i - 1];
+      const b = coords[i];
+      const nm = haversineNm(a[1], a[0], b[1], b[0]);
+      if (nm >= minSegmentNm && segmentCrossesLand(a[0], a[1], b[0], b[1])) {
+        return false;
+      }
+    }
   }
   return true;
 }
@@ -488,6 +532,7 @@ module.exports = {
   nmToKm,
   haversineNm,
   routeObjectEndpointsPlausible,
+  routeObjectAvoidsLand,
   MAX_ENDPOINT_SNAP_NM,
   MAX_SEA_VS_GC_RATIO
 };

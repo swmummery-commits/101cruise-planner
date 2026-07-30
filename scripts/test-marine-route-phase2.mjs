@@ -23,11 +23,15 @@ const {
   buildMarineRouteObject
 } = require(path.join(root, "netlify/functions/lib/marine-route-itinerary.js"));
 const { simplifyPolyline } = require(path.join(root, "netlify/functions/lib/polyline-simplify.js"));
+const { segmentCrossesLand } = require(path.join(root, "netlify/functions/lib/route-map-land-check.js"));
 const {
   crossesAntimeridian,
   unwrapPolylineForDrawing
 } = require(path.join(root, "netlify/functions/lib/antimeridian.js"));
-const { routeMarineItinerary } = require(path.join(root, "netlify/functions/lib/marine-route.js"));
+const { routeMarineItinerary, routeObjectAvoidsLand } = require(path.join(
+  root,
+  "netlify/functions/lib/marine-route.js"
+));
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -236,6 +240,31 @@ test("Simplification keeps endpoints and reduces points", () => {
   );
   assert(simple.length <= full.length, "does not add points");
   assert(simple.length < full.length || full.length <= 6, "usually reduces");
+});
+
+test("J Atlantic Lisbon → Miami avoids long overland shortcuts", () => {
+  const atlanticStops = [
+    { sequence: 1, port_id: "lisbon", name: "Lisbon", latitude: 38.7223, longitude: -9.1393 },
+    { sequence: 2, port_id: "arrecife", name: "Arrecife", latitude: 28.963, longitude: -13.5477 },
+    { sequence: 3, port_id: "las-palmas", name: "Las Palmas", latitude: 28.1235, longitude: -15.4363 },
+    { sequence: 4, port_id: "tenerife", name: "Tenerife", latitude: 28.4636, longitude: -16.2518 },
+    { sequence: 5, port_id: "road-bay", name: "Road Bay", latitude: 18.171, longitude: -63.0851 },
+    { sequence: 6, port_id: "grand-turk", name: "Grand Turk", latitude: 21.4674, longitude: -71.1359 },
+    { sequence: 7, port_id: "miami", name: "Miami", latitude: 25.7617, longitude: -80.1918 }
+  ];
+  assert(
+    segmentCrossesLand(-9.1393, 38.7223, -13.5477, 28.963),
+    "direct Lisbon→Arrecife chord crosses land on the map"
+  );
+  const built = buildMarineRouteObject({
+    featuredCruiseId: "atlantic",
+    routableStops: atlanticStops,
+    itinerarySignature: buildMarineItinerarySignature(atlanticStops),
+    simplifyPreset: "final-map"
+  });
+  assert(built.ok, `atlantic route failed: ${JSON.stringify(built.errors)}`);
+  assert(routeObjectAvoidsLand(built.routeObject), "stored geometry avoids long overland chords");
+  assert(built.routeObject.legs[0].simplified_point_count > 2, "Lisbon leg keeps sea waypoints");
 });
 
 const failed = results.filter((r) => !r.ok);

@@ -7,7 +7,7 @@
 
 const crypto = require("crypto");
 const { routeMarineItinerary, nmToKm } = require("./marine-route");
-const { simplifyPolyline } = require("./polyline-simplify");
+const { simplifyPolylineForSeaRoute } = require("./polyline-simplify");
 
 const GEOGRAPHIC_STOP_TYPES = new Set([
   "port_call",
@@ -254,7 +254,7 @@ function buildMarineRouteObject({
         ];
       }
     }
-    let simplified = simplifyPolyline(full, simplifyPreset);
+    let simplified = simplifyPolylineForSeaRoute(full, simplifyPreset);
     if (!Array.isArray(simplified) || simplified.length < 2) {
       simplified = full.length >= 2 ? [full[0], full[full.length - 1]] : full;
     }
