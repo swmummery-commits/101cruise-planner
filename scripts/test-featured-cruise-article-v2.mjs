@@ -73,16 +73,21 @@ const sparseCruise = {
   research: { ship_facts: { guests: 670, crew: 400, restaurants: 4 } }
 };
 
-const publicJs = read("js/public-cruise.js");
-assert.match(publicJs, /wantsArticleV2Review/, "V2 gated by article=v2 review helper");
-assert.match(publicJs, /get\("article"\) === "v2"/, "V2 requires article=v2 query param");
-assert.match(publicJs, /renderLegacyPublicPage/, "legacy renderer retained");
-assert.doesNotMatch(publicJs, /bootFeaturedCruise/, "DX boot not used on public page");
-
-assert.doesNotMatch(read("cruise/index.html"), /destination-experience-featured-cruise-components.js/, "DX components not on cruise page");
-assert.match(read("cruise/index.html"), /featured-cruise-article.js/, "article v2 assets available for review");
-
 const heroIntro = Copy.buildHeroIntro(sparseCruise);
+
+const publicJs = read("js/public-cruise.js");
+const cruiseHtml = read("cruise/index.html");
+assert.match(publicJs, /renderArticleV2/, "public cruise attempts Article V2");
+assert.match(publicJs, /wantsLegacyArticleOverride/, "legacy override helper present");
+assert.match(publicJs, /get\("article"\) === "legacy"/, "legacy available via article=legacy");
+assert.match(publicJs, /renderLegacyPublicPage/, "legacy renderer retained as fallback");
+assert.doesNotMatch(publicJs, /bootFeaturedCruise/, "DX boot not used on public page");
+assert.match(cruiseHtml, /featured-cruise-article-v2-1/, "article v2 cache busting present");
+assert.doesNotMatch(cruiseHtml, /destination-experience-featured-cruise-components.js/, "DX components not on cruise page");
+assert.match(cruiseHtml, /featured-cruise-article.js/, "article v2 assets loaded");
+
+assert.match(read("css/featured-cruise-article.css"), /repeat\(4, minmax\(0, 1fr\)\)/, "desktop fact grid uses 4 columns");
+assert.match(read("css/featured-cruise-article.css"), /repeat\(3, minmax\(0, 1fr\)\)/, "tablet fact grid uses 3 columns");
 assert.ok(heroIntro.length <= Copy.HERO_INTRO_MAX + 40, "hero intro capped");
 assert.doesNotMatch(heroIntro, /\.\.\./, "hero intro not ellipsized mid-thought");
 

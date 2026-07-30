@@ -231,8 +231,8 @@
     scheduleHeightReport();
   }
 
-  function wantsArticleV2Review() {
-    return new URLSearchParams(window.location.search).get("article") === "v2";
+  function wantsLegacyArticleOverride() {
+    return new URLSearchParams(window.location.search).get("article") === "legacy";
   }
 
   async function renderArticleV2(root, cruise) {
@@ -280,10 +280,10 @@
       delete cruise.pricing;
 
       setMetadata(cruise);
-      if (wantsArticleV2Review()) {
-        await renderArticleV2(root, cruise);
-      } else {
+      if (wantsLegacyArticleOverride()) {
         renderLegacyPublicPage(root, cruise);
+      } else {
+        await renderArticleV2(root, cruise);
       }
     } catch (error) {
       console.error("public cruise page error", error);
