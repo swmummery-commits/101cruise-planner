@@ -1195,6 +1195,10 @@ html.dx-reduced-motion .dx-cta {
   align-items: start;
 }
 
+.dx-fc-ship-intro--no-image {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .dx-fc-ship-hero {
   border-radius: 12px;
   overflow: hidden;

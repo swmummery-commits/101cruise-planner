@@ -229,10 +229,119 @@
     cache = Object.create(null);
   }
 
+  function asArray(value) {
+    if (!value) return [];
+    return Array.isArray(value) ? value : [value];
+  }
+
+  /**
+   * Ordered ship-hero candidates for Featured Cruise pages.
+   * 1. published ship research hero
+   * 2. Cruise Intelligence canonical ship hero
+   * 3. ship gallery images
+   */
+  function collectShipHeroCandidates(cruise) {
+    if (!cruise) return [];
+    var out = [];
+    var seen = Object.create(null);
+    function push(url, alt) {
+      var key = String(url || "").trim();
+      if (!key || seen[key]) return;
+      seen[key] = true;
+      out.push({ url: key, alt: alt || "" });
+    }
+    var shipFull = cruise.research && cruise.research.ship_full;
+    if (shipFull && shipFull.image && shipFull.image.url) {
+      push(shipFull.image.url, shipFull.image.alt_text || cruise.ship_name || "Ship");
+    }
+    var shipHero = cruise.media && cruise.media.ship_hero;
+    if (shipHero && shipHero.url) {
+      push(shipHero.url, shipHero.alt_text || cruise.ship_name || "Ship");
+    }
+    asArray(cruise.media && cruise.media.ship_gallery).forEach(function (row) {
+      if (row && row.url) push(row.url, row.alt_text || cruise.ship_name || "Ship");
+    });
+    return out;
+  }
+
+  async function firstLoadedCandidate(candidates, preloadFn) {
+    var load = preloadFn || preloadImage;
+    for (var i = 0; i < candidates.length; i += 1) {
+      var row = candidates[i];
+      var loaded = await load(row.url);
+      if (loaded.ok) {
+        return {
+          url: row.url,
+          alt: row.alt,
+          title: row.alt,
+          objectPosition: "center center",
+          loadState: "loaded"
+        };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Preload Featured Cruise route map, ship hero chain, and port photographs.
+   * Drops or downgrades any asset that fails to load/decode before render.
+   * @param {{ preload?: function(string): Promise<{ok:boolean,url:string}> }} [options]
+   */
+  async function resolveFeaturedCruiseMedia(model, cruise, options) {
+    if (!model) return model;
+    options = options || {};
+    var preloadFn = options.preload || preloadImage;
+    var results = Object.create(null);
+
+    if (model.routeMap && model.routeMap.url) {
+      var mapLoaded = await preloadFn(model.routeMap.url);
+      if (mapLoaded.ok) {
+        model.routeMap.loadState = "loaded";
+        results.routeMap = mapLoaded;
+      } else {
+        model.routeMap = null;
+        results.routeMap = mapLoaded;
+      }
+    } else {
+      model.routeMap = null;
+    }
+
+    if (model.ship) {
+      var shipHero = await firstLoadedCandidate(collectShipHeroCandidates(cruise), preloadFn);
+      model.ship.hero = shipHero;
+      results.shipHero = shipHero
+        ? { ok: true, url: shipHero.url }
+        : { ok: false, error: "all_candidates_failed" };
+    }
+
+    if (Array.isArray(model.ports)) {
+      await Promise.all(
+        model.ports.map(async function (port) {
+          if (port.is_sea_day) return;
+          if (!port.image || !port.image.url) {
+            port.image = null;
+            return;
+          }
+          var portLoaded = await preloadFn(port.image.url);
+          if (portLoaded.ok) {
+            port.image.loadState = "loaded";
+            return;
+          }
+          port.image = null;
+        })
+      );
+    }
+
+    model.featuredCruiseMediaResults = results;
+    return model;
+  }
+
   root.DestinationExperienceImageLoader = {
     SLOT_ORDER: SLOT_ORDER,
     preloadImage: preloadImage,
     resolveDestinationImages: resolveDestinationImages,
+    resolveFeaturedCruiseMedia: resolveFeaturedCruiseMedia,
+    collectShipHeroCandidates: collectShipHeroCandidates,
     waitForRenderedImages: waitForRenderedImages,
     clearCache: clearCache
   };

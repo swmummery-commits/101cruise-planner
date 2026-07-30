@@ -37,8 +37,29 @@ const Data = sandbox.DestinationExperienceData;
 const FCData = sandbox.DestinationExperienceFeaturedCruiseData;
 const Components = sandbox.DestinationExperienceComponents;
 const FCComponents = sandbox.DestinationExperienceFeaturedCruiseComponents;
+const Loader = sandbox.DestinationExperienceImageLoader;
 
-assert(Data && FCData && Components && FCComponents, "globals exported");
+assert(Data && FCData && Components && FCComponents && Loader, "globals exported");
+
+async function withPreloadMock(failUrls, fn) {
+  const failSet = new Set(failUrls || []);
+  Loader.clearCache();
+  const mockPreload = async (url) => {
+    const key = String(url || "");
+    if (!key) return { ok: false, url: "", error: "empty_url" };
+    if (failSet.has(key)) return { ok: false, url: key, error: "load_failed" };
+    return { ok: true, url: key, width: 800, height: 600 };
+  };
+  return fn(mockPreload);
+}
+
+async function resolveFeaturedModel(cruise, failUrls) {
+  return withPreloadMock(failUrls, async (mockPreload) => {
+    const model = FCData.fromFeaturedCruise(cruise);
+    await Loader.resolveFeaturedCruiseMedia(model, cruise, { preload: mockPreload });
+    return model;
+  });
+}
 
 const publishedShipRow = {
   content_status: "published",
@@ -159,9 +180,11 @@ assert.equal(model.ports.length, 5, "actual itinerary ports used");
 assert.ok(model.ports.some((port) => port.name === "At sea"), "sea day included");
 assert.ok(!model.ports.some((port) => port.name === "Caribbean"), "generic destination ports excluded");
 
-const html = FCComponents.renderFeaturedCruisePage(model);
+const resolvedModel = await resolveFeaturedModel(baseCruise);
+const html = FCComponents.renderFeaturedCruisePage(resolvedModel);
 assert.match(html, /data-dx-mode="featuredCruise"/, "featured cruise page marker");
-assert.match(html, /Barcelona/, "itinerary port rendered");
+assert.match(html, /Valletta/, "itinerary port rendered");
+assert.match(html, /dx-port-card--photo/, "verified port photo card rendered");
 assert.match(html, /Route map/, "route map section rendered");
 assert.match(html, /About Sirena/, "ship section rendered");
 assert.match(html, /May not suit travellers who/, "not ideal section rendered");
@@ -193,5 +216,73 @@ assert.doesNotMatch(html, /swiper|carousel|dx-port-track/i, "no horizontal port 
 
 const exploreUrl = "https://www.101cruise.com.au/cruise?slug=barcelona-istanbul";
 assert.match(exploreUrl, /slug=barcelona-istanbul/, "explore more URL contract preserved");
+
+const shipCandidates = Loader.collectShipHeroCandidates({
+  ship_name: "Sirena",
+  research: { ship_full: { image: { url: "https://cdn.example.com/published-ship.jpg" } } },
+  media: {
+    ship_hero: { url: "https://cdn.example.com/ci-ship.jpg" },
+    ship_gallery: [{ url: "https://cdn.example.com/gallery-1.jpg" }]
+  }
+});
+assert.equal(shipCandidates.length, 3, "ship hero candidate count");
+assert.equal(shipCandidates[0].url, "https://cdn.example.com/published-ship.jpg", "published ship hero first");
+assert.equal(shipCandidates[1].url, "https://cdn.example.com/ci-ship.jpg", "CI ship hero second");
+assert.equal(shipCandidates[2].url, "https://cdn.example.com/gallery-1.jpg", "gallery image third");
+
+const brokenMapModel = await resolveFeaturedModel(baseCruise, ["https://cdn.example.com/map.png"]);
+assert.equal(brokenMapModel.routeMap, null, "broken route map removed from model");
+const brokenMapHtml = FCComponents.renderFeaturedCruisePage(brokenMapModel);
+assert.doesNotMatch(brokenMapHtml, /dx-fc-route-map-section/, "broken route map hides entire section");
+assert.doesNotMatch(brokenMapHtml, /route-map\.png|cdn\.example\.com\/map\.png/i, "no broken route map URL in markup");
+
+const validMapModel = await resolveFeaturedModel(baseCruise);
+assert.ok(validMapModel.routeMap && validMapModel.routeMap.loadState === "loaded", "valid route map kept");
+assert.match(FCComponents.renderFeaturedCruisePage(validMapModel), /dx-fc-route-map-section/, "valid route map section renders");
+
+const shipFallbackCruise = JSON.parse(JSON.stringify(baseCruise));
+shipFallbackCruise.research.ship_full.image = {
+  url: "https://cdn.example.com/broken-published-ship.jpg",
+  alt_text: "Broken published"
+};
+shipFallbackCruise.media.ship_hero = { url: "https://cdn.example.com/ci-ship-hero.jpg", alt_text: "CI ship" };
+const shipFallbackModel = await resolveFeaturedModel(shipFallbackCruise, [
+  "https://cdn.example.com/broken-published-ship.jpg"
+]);
+assert.equal(
+  shipFallbackModel.ship.hero.url,
+  "https://cdn.example.com/ci-ship-hero.jpg",
+  "broken primary ship falls through to CI hero"
+);
+
+const allShipBrokenModel = await resolveFeaturedModel(shipFallbackCruise, [
+  "https://cdn.example.com/broken-published-ship.jpg",
+  "https://cdn.example.com/ci-ship-hero.jpg"
+]);
+assert.equal(allShipBrokenModel.ship.hero, null, "all failed ship images clear hero");
+const allShipBrokenHtml = FCComponents.renderFeaturedCruisePage(allShipBrokenModel);
+assert.doesNotMatch(allShipBrokenHtml, /dx-fc-ship-hero[^-]/, "failed ship images remove hero frame");
+assert.match(allShipBrokenHtml, /dx-fc-ship-intro--no-image/, "ship copy expands when image removed");
+
+const brokenPortModel = await resolveFeaturedModel(baseCruise, ["https://cdn.example.com/valletta.jpg"]);
+const vallettaPort = brokenPortModel.ports.find((port) => port.name === "Valletta");
+assert.equal(vallettaPort.image, null, "failed port photograph removed from model");
+const brokenPortHtml = FCComponents.renderFeaturedCruisePage(brokenPortModel);
+assert.match(brokenPortHtml, /dx-port-card--fallback/, "failed port uses pale monogram fallback");
+assert.doesNotMatch(
+  brokenPortHtml,
+  /Valletta[\s\S]{0,220}dx-port-card--photo/,
+  "failed port is not rendered as photo card"
+);
+assert.doesNotMatch(brokenPortHtml, /dx-port-photo-veil/, "no dark photo overlay on failed port");
+
+const validPortModel = await resolveFeaturedModel(baseCruise);
+assert.ok(
+  validPortModel.ports.some((port) => port.name === "Valletta" && port.image && port.image.loadState === "loaded"),
+  "valid port photo retained after preload"
+);
+
+assert.match(read("js/destination-experience.js"), /resolveFeaturedCruiseMedia/, "featured boot resolves FC media");
+assert.match(read("js/destination-experience-image-loader.js"), /collectShipHeroCandidates/, "ship hero chain helper present");
 
 console.log("test-featured-cruise-destination-experience.mjs: all checks passed");

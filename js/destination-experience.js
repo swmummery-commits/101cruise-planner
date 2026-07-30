@@ -372,6 +372,7 @@
     var fallbackHero = model.hero ? Object.assign({}, model.hero) : null;
     if (root.DestinationExperienceImageLoader) {
       model = await root.DestinationExperienceImageLoader.resolveDestinationImages(model, fallbackHero);
+      model = await root.DestinationExperienceImageLoader.resolveFeaturedCruiseMedia(model, cruise);
     }
 
     mount.innerHTML = root.DestinationExperienceComponents.renderPage(model);

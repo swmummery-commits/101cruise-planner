@@ -75,7 +75,7 @@
 
   function renderRouteMap(model) {
     var map = model && model.routeMap;
-    if (!map || !map.url) return "";
+    if (!map || !map.url || map.loadState !== "loaded") return "";
     return `
       <section class="dx-section dx-fc-route-map-section" data-dx-section="route-map" data-dx-reveal>
         <div class="dx-wrap">
@@ -113,7 +113,7 @@
                   <h3 class="dx-port-name">${esc(port.name)}</h3>
                 </article>`;
                 }
-                if (port.image && port.image.url) {
+                if (port.image && port.image.url && port.image.loadState === "loaded") {
                   return `
                 <article class="dx-port-card dx-port-card--photo" role="listitem">
                   <div class="dx-port-photo" aria-hidden="true">
@@ -229,11 +229,11 @@
             <h2>About ${esc(ship.name)}</h2>
             ${has(ship.line) ? `<p class="dx-section-sub">${esc(ship.line)}</p>` : ""}
           </header>
-          <div class="dx-fc-ship-intro">
+          <div class="dx-fc-ship-intro${ship.hero ? "" : " dx-fc-ship-intro--no-image"}">
             ${
               ship.hero
                 ? `<div class="dx-fc-ship-hero">${renderImage(ship.hero, "ship-hero")}</div>`
-                : `<div class="dx-fc-ship-hero dx-fc-ship-hero--empty" aria-hidden="true"></div>`
+                : ""
             }
             <div class="dx-fc-ship-copy">
               ${has(ship.overview) ? `<p>${esc(ship.overview)}</p>` : ""}
