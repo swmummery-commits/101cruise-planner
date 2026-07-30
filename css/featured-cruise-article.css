@@ -295,23 +295,39 @@
 .fca-ship-facts-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .fca-ship-fact {
-  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 64px;
+  padding: 8px 10px;
   border-radius: 10px;
   background: var(--fca-soft);
   border: 1px solid var(--fca-border);
-  font-size: 0.88rem;
+  font-size: 0.84rem;
+  text-align: center;
 }
 
 .fca-ship-fact span {
   display: block;
   color: var(--fca-muted);
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  line-height: 1.25;
+}
+
+.fca-ship-fact strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 .fca-tip-quote {
@@ -366,6 +382,18 @@
   outline-offset: 2px;
 }
 
+@media (min-width: 700px) {
+  .fca-ship-facts-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 480px) and (max-width: 699px) {
+  .fca-ship-facts-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 680px) {
   .fca-snapshot-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -376,10 +404,6 @@
   }
 
   .fca-ship-layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .fca-ship-facts-grid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
