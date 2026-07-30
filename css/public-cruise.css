@@ -29,6 +29,28 @@ body {
   margin: 0 auto;
 }
 
+.public-cruise-page:has(.dx-page) {
+  max-width: none;
+}
+
+.public-cruise-body .dx-page {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  width: 100vw;
+  max-width: 100vw;
+}
+
+.public-cruise-body .dx-wrap {
+  max-width: min(1120px, calc(100vw - 32px));
+}
+
+@media (max-width: 768px) {
+  .public-cruise-shell:has(.dx-page) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
 /* =========================================================
    Public page shell header (newsletter-matching)
    Not used inside reusable cruise content cards.

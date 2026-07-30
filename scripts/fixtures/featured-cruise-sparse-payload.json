@@ -1,0 +1,36 @@
+{
+  "public_slug": "sparse-review-cruise",
+  "headline": "Sparse Review Cruise",
+  "destination_strip": "SYDNEY TO AUCKLAND",
+  "departure_port": "Sydney",
+  "arrival_port": "Auckland",
+  "departure_date": "2026-03-01",
+  "return_date": "2026-03-08",
+  "nights": 7,
+  "cruise_line_name": "Example Line",
+  "ship_name": "Example Ship",
+  "newsletter_number": 77,
+  "short_editorial": "A shorter sailing used to review fallback behaviour when research is incomplete.",
+  "hero": {
+    "url": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80",
+    "alt_text": "Ocean"
+  },
+  "route_map": null,
+  "destination_region": null,
+  "itinerary": {
+    "port_count": 3,
+    "sea_day_count": 1,
+    "stops": [
+      { "order": 1, "day_number": 1, "name": "Sydney", "is_sea_day": false, "stop_type": "embarkation", "image": null },
+      { "order": 2, "day_number": 2, "name": "At sea", "is_sea_day": true, "stop_type": "at_sea", "image": null },
+      { "order": 3, "day_number": 3, "name": "Auckland", "is_sea_day": false, "stop_type": "disembarkation", "image": null }
+    ]
+  },
+  "media": { "destination_images": [], "ship_gallery": [], "ship_hero": null },
+  "research": {
+    "destination_full": null,
+    "destination_season": null,
+    "ship_full": null,
+    "ship_facts": null
+  }
+}

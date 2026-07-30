@@ -129,10 +129,39 @@
     });
   }
 
+  function bindShipTabs(rootEl) {
+    var wrap = $("[data-dx-ship-tabs]", rootEl);
+    if (!wrap || !model || !model.ship) return;
+    var tabs = $all("[data-dx-ship-tab]", wrap);
+    var panel = $("[data-dx-ship-panel]", wrap);
+    if (!tabs.length || !panel) return;
+    tabs.forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var id = btn.getAttribute("data-dx-ship-tab");
+        var category = (model.ship.categories || []).find(function (row) {
+          return row.id === id;
+        });
+        tabs.forEach(function (tab) {
+          var on = tab === btn;
+          tab.classList.toggle("is-active", on);
+          tab.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        if (category) {
+          panel.classList.add("is-fading");
+          window.setTimeout(function () {
+            panel.innerHTML = "<p>" + (root.DestinationExperienceData.esc(category.body) || "") + "</p>";
+            panel.classList.remove("is-fading");
+          }, reducedMotion ? 0 : 160);
+        }
+      });
+    });
+  }
+
   function bindAll(rootEl, options) {
     bindReveals(rootEl);
     bindStyles(rootEl);
     bindMonths(rootEl);
+    bindShipTabs(rootEl);
     if (options && typeof options.onFindCruises === "function") {
       bindFindCruises(rootEl, options.onFindCruises);
     }
@@ -303,9 +332,62 @@
     return model;
   }
 
+  function safeNewsletterReturnUrl() {
+    try {
+      var ref = String(document.referrer || "").trim();
+      if (!ref) return null;
+      var url = new URL(ref);
+      if (!/101cruise\.com\.au$/i.test(url.hostname)) return null;
+      if (/admin|login|quote|mailchimp/i.test(url.pathname)) return null;
+      return ref;
+    } catch (_err) {
+      return null;
+    }
+  }
+
+  async function bootFeaturedCruise(options) {
+    options = options || {};
+    mount = options.mount || document.getElementById("public-cruise-app");
+    if (!mount) return;
+
+    reducedMotion = prefersReducedMotion();
+    if (reducedMotion) document.documentElement.classList.add("dx-reduced-motion");
+
+    var cruise = options.cruise;
+    if (!cruise || !root.DestinationExperienceFeaturedCruiseData) {
+      mount.innerHTML =
+        '<div class="dx-wrap dx-error"><p>This cruise experience could not be loaded.</p></div>';
+      return;
+    }
+
+    model = root.DestinationExperienceFeaturedCruiseData.fromFeaturedCruise(cruise, {
+      newsletterReturnUrl: options.newsletterReturnUrl || safeNewsletterReturnUrl()
+    });
+    if (!model) {
+      mount.innerHTML =
+        '<div class="dx-wrap dx-error"><p>This cruise experience is not available.</p></div>';
+      return;
+    }
+
+    var fallbackHero = model.hero ? Object.assign({}, model.hero) : null;
+    if (root.DestinationExperienceImageLoader) {
+      model = await root.DestinationExperienceImageLoader.resolveDestinationImages(model, fallbackHero);
+    }
+
+    mount.innerHTML = root.DestinationExperienceComponents.renderPage(model);
+    bindAll(mount, options);
+    await markMediaReady(mount);
+    document.title = (model.headline || model.name || "Cruise") + " | 101cruise";
+
+    if (typeof options.onReady === "function") options.onReady(model);
+    if (typeof options.onHeightChange === "function") options.onHeightChange();
+    return model;
+  }
+
   root.DestinationExperienceApp = {
-    VERSION: "dx-route-fix-1",
+    VERSION: "fc-dx-v1",
     boot: boot,
+    bootFeaturedCruise: bootFeaturedCruise,
     getModel: function () {
       return model;
     },

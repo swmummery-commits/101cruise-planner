@@ -426,6 +426,13 @@
     if (!model) {
       return `<div class="dx-wrap dx-error"><p>This destination experience is not available.</p></div>`;
     }
+    if (
+      model.mode === "featuredCruise" &&
+      root.DestinationExperienceFeaturedCruiseComponents &&
+      root.DestinationExperienceFeaturedCruiseComponents.renderFeaturedCruisePage
+    ) {
+      return root.DestinationExperienceFeaturedCruiseComponents.renderFeaturedCruisePage(model);
+    }
     return `
       <div class="dx-page" data-dx-page data-dx-slug="${esc(model.slug || "")}"${
         model.mediaReady ? ' data-dx-media-ready="true"' : ""

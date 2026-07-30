@@ -1,0 +1,92 @@
+{
+  "public_slug": "barcelona-istanbul",
+  "headline": "Barcelona to Istanbul",
+  "destination_strip": "BARCELONA TO ISTANBUL",
+  "departure_port": "Barcelona",
+  "arrival_port": "Istanbul",
+  "departure_date": "2026-10-05",
+  "return_date": "2026-10-19",
+  "nights": 14,
+  "cruise_line_name": "Oceania Cruises",
+  "ship_name": "Sirena",
+  "newsletter_number": 77,
+  "short_editorial": "A classic Mediterranean to Aegean crossing with overnight stays and iconic ports.",
+  "hero": {
+    "url": "https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=1600&q=80",
+    "alt_text": "Mediterranean coastline"
+  },
+  "route_map": {
+    "url": "https://images.unsplash.com/photo-1526778548025-fa2faa772cf4?auto=format&fit=crop&w=1400&q=80",
+    "alt_text": "Route map"
+  },
+  "destination_region": "Mediterranean",
+  "itinerary": {
+    "port_count": 10,
+    "sea_day_count": 2,
+    "stops": [
+      { "order": 1, "day_number": 1, "name": "Barcelona", "is_sea_day": false, "stop_type": "embarkation", "image": null },
+      { "order": 2, "day_number": 2, "name": "Palma de Mallorca", "is_sea_day": false, "stop_type": "port_call", "image": null },
+      { "order": 3, "day_number": 3, "name": "At sea", "is_sea_day": true, "stop_type": "at_sea", "image": null },
+      { "order": 4, "day_number": 4, "name": "Valletta", "is_sea_day": false, "stop_type": "port_call", "image": { "url": "https://images.unsplash.com/photo-1555992336-fb0d66098369?auto=format&fit=crop&w=800&q=80", "alt_text": "Valletta" } },
+      { "order": 5, "day_number": 5, "name": "Kotor", "is_sea_day": false, "stop_type": "port_call", "image": null },
+      { "order": 6, "day_number": 6, "name": "Corfu", "is_sea_day": false, "stop_type": "port_call", "image": null },
+      { "order": 7, "day_number": 7, "name": "At sea", "is_sea_day": true, "stop_type": "at_sea", "image": null },
+      { "order": 8, "day_number": 8, "name": "Santorini", "is_sea_day": false, "stop_type": "port_call", "image": { "url": "https://images.unsplash.com/photo-1613395877344-13d9a729bf0?auto=format&fit=crop&w=800&q=80", "alt_text": "Santorini" } },
+      { "order": 9, "day_number": 9, "name": "Mykonos", "is_sea_day": false, "stop_type": "port_call", "image": null },
+      { "order": 10, "day_number": 10, "name": "Istanbul", "is_sea_day": false, "stop_type": "disembarkation", "image": null }
+    ]
+  },
+  "media": {
+    "destination_images": [
+      { "url": "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1200&q=80", "alt_text": "Mediterranean" },
+      { "url": "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?auto=format&fit=crop&w=1200&q=80", "alt_text": "Venice canal" },
+      { "url": "https://images.unsplash.com/photo-1528181304807-259eed036cad?auto=format&fit=crop&w=1200&q=80", "alt_text": "Greek islands" }
+    ],
+    "ship_gallery": [
+      { "url": "https://images.unsplash.com/photo-1544551763-77ef2c0cfb3?auto=format&fit=crop&w=1200&q=80", "alt_text": "Sirena" }
+    ],
+    "ship_hero": {
+      "url": "https://images.unsplash.com/photo-1544551763-77ef2c0cfb3?auto=format&fit=crop&w=1400&q=80",
+      "alt_text": "Sirena"
+    }
+  },
+  "research": {
+    "destination_full": {
+      "overview": "Historic ports, warm autumn light and a satisfying eastbound arc through the Mediterranean and Aegean.",
+      "ideal_for": ["Culture", "Food & wine", "Scenic cruising"],
+      "why_visit": ["Iconic cities", "Coastal scenery", "Regional cuisine"],
+      "best_time_to_visit": "April to June and September to October are ideal for Mediterranean cruising.",
+      "climate_summary": "Shoulder-season warmth with manageable crowds and comfortable sea days."
+    },
+    "destination_season": {
+      "best_months": [4, 5, 6, 9, 10],
+      "best_time_to_visit": "April to June and September to October are ideal for Mediterranean cruising.",
+      "climate_summary": "Shoulder-season warmth with manageable crowds and comfortable sea days."
+    },
+    "ship_full": {
+      "overview": "Sirena offers an intimate luxury experience with destination-rich itineraries and refined onboard service.",
+      "personality": "Elegant, relaxed and destination-focused.",
+      "best_for": ["Couples", "Destination collectors", "Food & wine travellers"],
+      "not_ideal_for": ["Large-scale entertainment seekers", "Families needing extensive kids clubs"],
+      "dining_summary": "Several specialty venues and inclusive fine dining across the ship.",
+      "entertainment_summary": "Live music, enrichment lectures and polished evening entertainment.",
+      "wellness_summary": "Spa, fitness centre and pool decks for sea-day downtime.",
+      "family_summary": "Best suited to older families and multi-generational groups.",
+      "accommodation_summary": "Veranda staterooms and suites with a classic luxury-ship feel.",
+      "key_highlights": ["Intimate scale", "Destination-intensive itineraries"],
+      "pauls_tip": "Choose a mid-ship veranda if you want the steadiest ride on longer sea days."
+    },
+    "ship_facts": {
+      "guests": 684,
+      "crew": 400,
+      "decks": 11,
+      "staterooms": 342,
+      "restaurants": 6,
+      "bars": 8,
+      "pools": 3,
+      "spa": true,
+      "theatre": true,
+      "speciality_features": ["Art auctions", "Cooking classes"]
+    }
+  }
+}

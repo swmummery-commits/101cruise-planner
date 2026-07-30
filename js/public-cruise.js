@@ -5,12 +5,6 @@
  * Production Squarespace host URL (newsletter Explore More):
  *   https://www.101cruise.com.au/cruise?slug={public-slug}
  * Netlify continues to support path and query slugs for the embedded renderer.
- *
- * Branded header lives in cruise/index.html (page shell only).
- * This file renders cruise content into #public-cruise-app and must not
- * inject the logo/contact header into NewsletterPreview.
- *
- * Sprint 13E: when embedded (Squarespace iframe), reports content height via postMessage.
  */
 (function () {
   "use strict";
@@ -59,10 +53,6 @@
     document.body.classList.add("cr101-embed");
   }
 
-  /**
-   * Primary for Netlify: /cruise/{slug}
-   * Also: ?slug= (and Squarespace parent uses ?slug= then iframes Netlify path)
-   */
   function slugFromPath() {
     const parts = window.location.pathname.split("/").filter(Boolean);
     const cruiseIndex = parts.indexOf("cruise");
@@ -115,7 +105,6 @@
     if (heightTimer) window.clearTimeout(heightTimer);
     heightTimer = window.setTimeout(() => {
       reportHeightToParent();
-      // Second pass after images/fonts settle
       window.setTimeout(reportHeightToParent, 250);
       window.setTimeout(reportHeightToParent, 900);
     }, 40);
@@ -226,6 +215,32 @@
     scheduleHeightReport();
   }
 
+  function renderLegacyPublicPage(root, cruise) {
+    const model = window.NewsletterPreview.buildModel({
+      ...cruise,
+      outputMode: "general",
+      description: cruise.short_editorial || "",
+      full_description: cruise.full_description || cruise.short_editorial || "",
+      pricingRows: [],
+      research: cruise.research || null,
+      researchShip: cruise.research?.ship || null,
+      researchDestination: cruise.research?.destination || null,
+      shipFacts: cruise.research?.ship_facts || null
+    });
+    root.innerHTML = window.NewsletterPreview.renderPublicCruisePage(model, { escapeHtml: esc });
+    scheduleHeightReport();
+  }
+
+  async function renderFeaturedCruiseExperience(root, cruise) {
+    await window.DestinationExperienceApp.bootFeaturedCruise({
+      mount: root,
+      cruise,
+      onHeightChange: scheduleHeightReport,
+      onReady: scheduleHeightReport
+    });
+    scheduleHeightReport();
+  }
+
   async function init() {
     applyEmbedChrome();
     startHeightObserver();
@@ -242,32 +257,33 @@
     try {
       const result = await loadCruise(slug);
       const cruise = result.cruise;
-      if (!cruise || !window.NewsletterPreview) {
+      if (!cruise) {
         renderUnavailable(root, {
           slug,
           reason: result.reason || "not_found",
-          detail: !window.NewsletterPreview ? "Newsletter renderer failed to load" : result.detail || ""
+          detail: result.detail || ""
         });
         return;
       }
 
-      // Public page must never show room pricing (newsletter keeps pricing).
       delete cruise.pricing;
-
       setMetadata(cruise);
-      const model = window.NewsletterPreview.buildModel({
-        ...cruise,
-        outputMode: "general",
-        description: cruise.short_editorial || "",
-        full_description: cruise.full_description || cruise.short_editorial || "",
-        pricingRows: [],
-        research: cruise.research || null,
-        researchShip: cruise.research?.ship || null,
-        researchDestination: cruise.research?.destination || null,
-        shipFacts: cruise.research?.ship_facts || null
-      });
-      root.innerHTML = window.NewsletterPreview.renderPublicCruisePage(model, { escapeHtml: esc });
-      scheduleHeightReport();
+
+      if (window.DestinationExperienceApp && window.DestinationExperienceFeaturedCruiseData) {
+        await renderFeaturedCruiseExperience(root, cruise);
+        return;
+      }
+
+      if (!window.NewsletterPreview) {
+        renderUnavailable(root, {
+          slug,
+          reason: "unavailable",
+          detail: "Cruise renderer failed to load"
+        });
+        return;
+      }
+
+      renderLegacyPublicPage(root, cruise);
     } catch (error) {
       console.error("public cruise page error", error);
       renderUnavailable(root, {

@@ -251,6 +251,7 @@ function cruiseSelect({
     "onboard_credit",
     "other_information",
     "public_slug",
+    "newsletter_number",
     "publication_status",
     "ci_cruise_lines(name)",
     "ci_cruise_ships(name,hero_image_url)"
@@ -295,6 +296,7 @@ async function loadPublishedCruise(slug) {
       "hero_media_id",
       "route_map_media_id",
       "public_slug",
+      "newsletter_number",
       "publication_status",
       "ci_cruise_lines(name)",
       "ci_cruise_ships(name,hero_image_url)"
