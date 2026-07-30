@@ -55,6 +55,10 @@ html.is-embedded #cruise-admin-app {
   height: auto !important;
   max-height: none !important;
   overflow: visible !important;
+  /* Parent embed script also clears the absolute Squarespace header via
+     iframe margin-top; keep modest inner padding for non-Squarespace embeds. */
+  padding-top: 28px;
+  padding-bottom: 28px;
 }
 
 /* Calculator Data is an approved full-width exception */

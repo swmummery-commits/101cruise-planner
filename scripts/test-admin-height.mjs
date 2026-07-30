@@ -17,6 +17,8 @@ const adminCss = fs.readFileSync(path.join(root, "css/admin.css"), "utf8");
 assert(/admin-height\.js/.test(adminHtml), "admin.html loads admin-height.js");
 assert(/101cruise-admin-height/.test(heightSrc), "child posts admin height message");
 assert(/101cruise-admin-height/.test(embedSrc), "parent listens for admin height");
+assert(/clearAbsoluteHeader/.test(embedSrc), "parent clears absolute site header");
+assert(/HEADER_GAP_PX/.test(embedSrc), "parent keeps gap below site header");
 assert(/id="101cruise-admin"/.test(pasteSrc), "paste includes iframe id");
 assert(/admin-squarespace-embed\.js/.test(pasteSrc), "paste includes parent script");
 assert(/html\.is-embedded/.test(adminCss), "embedded overflow CSS present");
@@ -77,6 +79,57 @@ assert(/max-height:\s*none/.test(adminCss.match(/\.mailchimp-poc-preview\s*\{[^}
     posts.every((p) => p.origin === "https://www.101cruise.com.au" || p.origin === "https://101cruise.com.au"),
     "never posts to wildcard origin"
   );
+}
+
+{
+  const iframe = {
+    style: { height: "", marginTop: "" },
+    setAttribute() {},
+    parentElement: {
+      classList: { contains: () => false },
+      parentElement: {
+        classList: { contains: (name) => name === "page-section" },
+        parentElement: null,
+        style: {}
+      }
+    },
+    addEventListener() {},
+    contentWindow: { postMessage() {} },
+    getBoundingClientRect: () => ({ height: 73 })
+  };
+  const header = {
+    getBoundingClientRect: () => ({ height: 72.7 })
+  };
+  const section = iframe.parentElement.parentElement;
+  const computed = new Map([
+    [header, { position: "absolute" }],
+    [section, { paddingTop: "0px" }]
+  ]);
+  const sandbox = {
+    window: {
+      addEventListener() {},
+      getComputedStyle(el) {
+        return computed.get(el) || { position: "static", paddingTop: "0px" };
+      }
+    },
+    document: {
+      readyState: "complete",
+      getElementById(id) {
+        if (id === "101cruise-admin") return iframe;
+        if (id === "header") return header;
+        return null;
+      },
+      addEventListener() {}
+    },
+    globalThis: null
+  };
+  sandbox.globalThis = sandbox;
+  vm.runInNewContext(embedSrc, sandbox);
+  assert(sandbox.window.AdminSquarespaceEmbed, "AdminSquarespaceEmbed exported");
+  assert.equal(iframe.style.marginTop, "93px", "clears absolute header height + gap on bind");
+  iframe.style.marginTop = "";
+  sandbox.window.AdminSquarespaceEmbed.clearAbsoluteHeader();
+  assert.equal(iframe.style.marginTop, "93px", "clearAbsoluteHeader reapplies margin");
 }
 
 console.log("test-admin-height: ok");
