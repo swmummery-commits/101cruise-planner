@@ -123,26 +123,6 @@
   to = "/cruise/index.html"
   status = 200
 
-[[redirects]]
-  from = "/destination/*"
-  to = "/destination/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/destination"
-  to = "/destination/index.html"
-  status = 200
-
-[[redirects]]
-  from = "/destination-experience"
-  to = "/destination-experience.html"
-  status = 200
-
-[[redirects]]
-  from = "/destination-experience/"
-  to = "/destination-experience.html"
-  status = 200
-
 # Legacy Living Destination URLs opened by stale Cruise Finder bundles — route to
 # the shared Cruise Finder Destination Experience (preserve query params).
 [[redirects]]
@@ -199,3 +179,23 @@
   from = "/destination/hawaii"
   to = "/cruise-destination?destination=hawaii"
   status = 302
+
+[[redirects]]
+  from = "/destination/*"
+  to = "/destination/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/destination"
+  to = "/destination/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/destination-experience"
+  to = "/destination-experience.html"
+  status = 200
+
+[[redirects]]
+  from = "/destination-experience/"
+  to = "/destination-experience.html"
+  status = 200

@@ -12,6 +12,18 @@
   <link rel="apple-touch-icon" href="/favicon.png">
   <link rel="stylesheet" href="/css/public-cruise.css">
   <link rel="stylesheet" href="/css/public-destination.css">
+  <script>
+    (function () {
+      var parts = (location.pathname || "/").split("/").filter(Boolean);
+      var idx = parts.indexOf("destination");
+      var slug = idx >= 0 ? decodeURIComponent(parts[idx + 1] || "").toLowerCase() : "";
+      var living = { alaska: true };
+      if (!slug || living[slug]) return;
+      var params = new URLSearchParams(location.search);
+      params.set("destination", slug);
+      location.replace("/cruise-destination?" + params.toString());
+    })();
+  </script>
 </head>
 <body>
   <main class="public-cruise-shell dest-shell">
