@@ -1,5 +1,5 @@
 /**
- * Destination Experience V2 — focused tests (HOLD DEPLOY prototype).
+ * Destination Experience V4 — focused tests (HOLD DEPLOY prototype).
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -31,11 +31,16 @@ loadScript("public-tools/cruise-finder/destination-content.js", sandbox);
 loadScript("public-tools/cruise-finder/approved-cruise-lines.js", sandbox);
 loadScript("public-tools/cruise-finder/destination-images.js", sandbox);
 loadScript("js/destination-experience-data.js", sandbox);
+loadScript("js/destination-experience-media.js", sandbox);
 loadScript("js/destination-experience-components.js", sandbox);
 
 const Data = sandbox.DestinationExperienceData;
+const Media = sandbox.DestinationExperienceMedia;
 const Components = sandbox.DestinationExperienceComponents;
-assert(Data && Components, "globals exported");
+assert(Data && Components && Media, "globals exported");
+
+const mediaSnapshot = JSON.parse(read("data/prototype/caribbean-media-snapshot.json"));
+const linesSnapshot = JSON.parse(read("data/prototype/caribbean-cruise-lines-snapshot.json"));
 
 const cfOptions = {
   catalogue: sandbox.CruiseFinderDestinations,
@@ -49,10 +54,65 @@ function buildCaribbean() {
   return Data.fromCruiseFinder("caribbean", cfOptions);
 }
 
+function buildCaribbeanWithMedia() {
+  const base = buildCaribbean();
+  const assigned = Media.assignDestinationImages("caribbean", mediaSnapshot.items, base.hero);
+  return Data.applyMediaAssignments(base, assigned);
+}
+
 function withTiming(query) {
-  const model = buildCaribbean();
+  const model = buildCaribbeanWithMedia();
   return Data.applyTimingContext(model, Data.parseTimingFromSearch(new URLSearchParams(query)));
 }
+
+const caribbeanPool = Media.filterCaribbeanMedia(mediaSnapshot.items);
+assert.equal(caribbeanPool.length, 5, "five explicit Caribbean media rows");
+assert.ok(
+  caribbeanPool.every((row) => row.destination_name === "Caribbean" && row.media_type === "destination"),
+  "only explicit Caribbean destination media eligible"
+);
+assert.ok(
+  !Media.isExplicitCaribbeanAssociation({
+    destination_name: "Caribbean",
+    media_type: "hero",
+    is_active: true
+  }),
+  "non-destination media rejected"
+);
+assert.ok(
+  !Media.isExplicitCaribbeanAssociation({
+    destination_name: "Mediterranean",
+    media_type: "destination",
+    is_active: true
+  }),
+  "non-Caribbean destination rejected"
+);
+
+const assignedA = Media.assignDestinationImages("caribbean", mediaSnapshot.items, buildCaribbean().hero);
+const assignedB = Media.assignDestinationImages("caribbean", mediaSnapshot.items, buildCaribbean().hero);
+assert.deepEqual(
+  Object.keys(assignedA.assignments).map((role) => assignedA.assignments[role].url),
+  Object.keys(assignedB.assignments).map((role) => assignedB.assignments[role].url),
+  "image assignment is deterministic"
+);
+
+const mediaModel = buildCaribbeanWithMedia();
+const imageUrls = [
+  mediaModel.hero?.url,
+  ...mediaModel.reasons.map((r) => r.image?.url),
+  mediaModel.adviceImage?.url,
+  mediaModel.ctaImage?.url
+].filter(Boolean);
+const distinct = new Set(imageUrls);
+assert.equal(distinct.size, 5, "five distinct Caribbean images across page slots");
+assert.ok(
+  imageUrls.every((url) => /destinations\/caribbean\//.test(url)),
+  "assigned images use Caribbean Media Library paths"
+);
+
+const fallbackAssigned = Media.assignDestinationImages("caribbean", [], buildCaribbean().hero);
+const fallbackModel = Data.applyMediaAssignments(buildCaribbean(), fallbackAssigned);
+assert.ok(/caribbean-hero\.png/.test(fallbackModel.hero.url), "fallback uses Cruise Finder hero when media unavailable");
 
 const caribbean = withTiming("");
 assert(caribbean, "caribbean model builds");
@@ -67,7 +127,42 @@ assert.equal(Data.monthState(5, [12, 1, 2, 3, 4], [5, 11]), "shoulder");
 assert.equal(Data.monthState(8, [12, 1, 2, 3, 4], [5, 11]), "neutral");
 assert.ok(caribbean.ports.some((p) => p.name === "St Thomas"));
 assert.ok(caribbean.cruiseLines.every((l) => l.name !== "P&O Australia"));
-assert.ok(caribbean.hero && /caribbean-hero\.png/.test(caribbean.hero.url), "exact CF hero asset");
+assert.ok(caribbean.hero && /destinations\/caribbean\//.test(caribbean.hero.url), "hero uses Caribbean media");
+
+const withLogos = Data.applyCruiseLineLogos(buildCaribbeanWithMedia(), linesSnapshot.cruise_lines);
+assert.equal(withLogos.cruiseLines.find((l) => l.name === "Royal Caribbean")?.logo?.includes("Royal-Caribbean"), true);
+assert.equal(withLogos.cruiseLines.find((l) => l.name === "Celebrity")?.logo?.includes("Celebrity"), true);
+assert.equal(withLogos.cruiseLines.find((l) => l.name === "Princess")?.logo?.includes("Princess"), true);
+assert.equal(withLogos.cruiseLines.find((l) => l.name === "MSC")?.logo?.includes("MSC"), true);
+assert.equal(withLogos.cruiseLines.find((l) => l.name === "Norwegian")?.logo?.includes("NCL"), true);
+
+const logoHtml = Components.renderPage(withLogos);
+withLogos.cruiseLines
+  .filter((line) => line.logo)
+  .forEach((line) => {
+    assert.equal(
+      (logoHtml.match(new RegExp(`<h3>${line.name}</h3>`, "g")) || []).length,
+      0,
+      `${line.name} name not duplicated when logo present`
+    );
+    assert.match(logoHtml, new RegExp(escRegex(line.logo)), `${line.name} logo renders`);
+  });
+
+const fallbackLineModel = Data.applyCruiseLineLogos(
+  { cruiseLines: [{ name: "Unknown Line", logo: null, note: "" }] },
+  linesSnapshot.cruise_lines
+);
+const fallbackLineHtml = Components.renderPage({
+  slug: "x",
+  name: "X",
+  cruiseLines: fallbackLineModel.cruiseLines,
+  cta: { headline: "Go", primaryHref: "/x", primaryLabel: "Go" }
+});
+assert.match(fallbackLineHtml, /dx-line-fallback/, "logo text fallback renders");
+
+function escRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 assert.equal(caribbean.seasonTimeline.mode, "general");
 assert.equal(caribbean.seasonTimeline.allowManualSelection, true);
@@ -162,9 +257,12 @@ assert(/prefers-reduced-motion/.test(appSrc), "reduced-motion handled");
 assert(/ArrowRight/.test(appSrc), "keyboard month selection");
 assert(/is-readonly/.test(appSrc), "manual month selection gated");
 assert(/applyTimingContext/.test(appSrc), "timing context applied at boot");
+assert(/loadDestinationMedia/.test(appSrc), "media loaded at boot");
+assert(/cruise_lines/.test(appSrc), "public cruise lines field handled");
 assert(/data-dx-ports-prev/.test(appSrc) || /ports-prev/.test(appSrc), "port carousel controls");
 assert(!/\.insert\(|supabaseClient\.from\(/.test(appSrc), "no production writes in app");
 assert(!/\.insert\(|supabaseClient\.from\(/.test(read("js/destination-experience-data.js")), "no writes in data");
+assert(!/\.insert\(|supabaseClient\.from\(/.test(read("js/destination-experience-media.js")), "no writes in media");
 
 const css = read("css/destination-experience.css");
 assert(/prefers-reduced-motion/.test(css), "reduced-motion CSS");
@@ -173,11 +271,14 @@ assert(/max-height:\s*80svh/.test(css), "mobile hero max height");
 assert(/clamp\(360px,\s*72svh,\s*620px\)/.test(css), "mobile hero clamp");
 assert(/repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(css), "mobile snapshot minmax grid");
 assert(/grid-auto-columns: minmax\(240px, min\(280px, calc\(100vw - 56px\)\)\)/.test(css), "port carousel contained");
-assert(/#8dd9bf/i.test(css), "brand green");
+assert.match(css, /\.dx-ports-section\s*\{[^}]*background:\s*#8dd9bf/i, "Popular Ports background is #8DD9BF");
+assert.match(css, /\.dx-port-card\s*\{[^}]*background:\s*var\(--dx-navy\)/i, "port cards stay dark");
+assert.match(css, /\.dx-port-body h3\s*\{[^}]*color:\s*#fff/i, "port names stay white on dark cards");
 assert(!/data-dx-section="cta" data-dx-reveal/.test(read("js/destination-experience-components.js")), "CTA not reveal gated");
 
 const page = read("destination-experience.html");
 assert(/\?slug=/.test(page) || /DestinationExperienceApp\.boot/.test(page), "prototype boots");
+assert(/destination-experience-media\.js/.test(page), "media module wired");
 assert(/robots" content="noindex/.test(page), "prototype noindex");
 
 const toml = read("netlify.toml");

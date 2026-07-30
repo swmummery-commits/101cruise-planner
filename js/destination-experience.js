@@ -234,12 +234,48 @@
   async function loadLineLogos(current) {
     try {
       var response = await fetch("/.netlify/functions/public-ci-cruise-lines");
-      if (!response.ok) return current;
+      if (!response.ok) throw new Error("lines unavailable");
       var data = await response.json();
-      var lines = Array.isArray(data.lines) ? data.lines : Array.isArray(data) ? data : [];
+      var lines = Array.isArray(data.cruise_lines)
+        ? data.cruise_lines
+        : Array.isArray(data.lines)
+          ? data.lines
+          : Array.isArray(data)
+            ? data
+            : [];
+      if (!lines.length) {
+        response = await fetch("/data/prototype/caribbean-cruise-lines-snapshot.json");
+        if (response.ok) {
+          var snapshot = await response.json();
+          lines = Array.isArray(snapshot.cruise_lines) ? snapshot.cruise_lines : [];
+        }
+      }
       return root.DestinationExperienceData.applyCruiseLineLogos(current, lines);
     } catch (_error) {
+      try {
+        var fallback = await fetch("/data/prototype/caribbean-cruise-lines-snapshot.json");
+        if (fallback.ok) {
+          var payload = await fallback.json();
+          var snapshotLines = Array.isArray(payload.cruise_lines) ? payload.cruise_lines : [];
+          return root.DestinationExperienceData.applyCruiseLineLogos(current, snapshotLines);
+        }
+      } catch (_inner) {
+        /* ignore */
+      }
       return current;
+    }
+  }
+
+  async function loadDestinationMedia(current, slug) {
+    if (!current || !root.DestinationExperienceMedia) return current;
+    var fallbackHero = current.hero;
+    try {
+      var rows = await root.DestinationExperienceMedia.loadCaribbeanMedia();
+      var assigned = root.DestinationExperienceMedia.assignDestinationImages(slug, rows, fallbackHero);
+      return root.DestinationExperienceData.applyMediaAssignments(current, assigned);
+    } catch (_error) {
+      var assignedFallback = root.DestinationExperienceMedia.assignDestinationImages(slug, [], fallbackHero);
+      return root.DestinationExperienceData.applyMediaAssignments(current, assignedFallback);
     }
   }
 
@@ -275,6 +311,7 @@
       return;
     }
 
+    model = await loadDestinationMedia(model, slug);
     model = await loadLineLogos(model);
     model = root.DestinationExperienceData.applyTimingContext(
       model,

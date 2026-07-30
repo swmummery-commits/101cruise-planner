@@ -644,18 +644,23 @@
 /* ---------- Ports ---------- */
 
 .dx-ports-section {
-  background: var(--dx-navy);
-  color: #fff;
+  background: #8dd9bf;
+  color: var(--dx-ink);
   overflow-x: hidden;
   max-width: 100%;
 }
 
 .dx-ports-section .dx-kicker {
-  color: var(--brand-green);
+  color: var(--brand-green-ink);
 }
 
 .dx-ports-section .dx-section-head h2 {
-  color: #fff;
+  color: var(--dx-navy);
+}
+
+.dx-ports-section .dx-section-sub,
+.dx-ports-section .dx-section-head p {
+  color: #3a4541;
 }
 
 .dx-carousel-nav {
@@ -667,8 +672,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.08);
+  border: 0;
+  background: var(--dx-navy);
   color: #fff;
   font-size: 24px;
   line-height: 1;
@@ -716,7 +721,7 @@
   scroll-snap-align: start;
   border-radius: 20px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--dx-navy);
   border: 1px solid rgba(255, 255, 255, 0.12);
   min-height: 280px;
   display: flex;
@@ -749,6 +754,7 @@
   margin: 0;
   font-size: 22px;
   font-weight: 500;
+  color: #fff;
 }
 
 .dx-port-meta,
@@ -780,13 +786,13 @@
   height: 8px;
   border-radius: 50%;
   border: 0;
-  background: rgba(255, 255, 255, 0.28);
+  background: rgba(22, 35, 43, 0.28);
   padding: 0;
   cursor: pointer;
 }
 
 .dx-dot-btn.is-active {
-  background: var(--brand-green);
+  background: var(--dx-navy);
 }
 
 /* ---------- Cruise lines ---------- */

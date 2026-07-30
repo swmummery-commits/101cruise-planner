@@ -825,18 +825,39 @@
     return model;
   }
 
+  function normaliseLineName(name) {
+    return String(name || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/&/g, " and ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\b(cruises?|line|international|group|ltd|limited)\b/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function matchPublicCruiseLine(seedName, publicLines) {
+    var target = normaliseLineName(seedName);
+    if (!target) return null;
+    var exact = publicLines.find(function (row) {
+      return normaliseLineName(row.name) === target;
+    });
+    if (exact) return exact;
+    var contains = publicLines.filter(function (row) {
+      var candidate = normaliseLineName(row.name);
+      return candidate && (candidate.includes(target) || target.includes(candidate));
+    });
+    return contains.length === 1 ? contains[0] : null;
+  }
+
   /**
    * Attach logos from public CI lines response without inventing notes.
    */
   function applyCruiseLineLogos(model, publicLines) {
     if (!model || !Array.isArray(model.cruiseLines) || !Array.isArray(publicLines)) return model;
-    var byName = Object.create(null);
-    publicLines.forEach(function (line) {
-      if (!line || !line.name) return;
-      byName[String(line.name).toLowerCase()] = line;
-    });
     model.cruiseLines = model.cruiseLines.map(function (row) {
-      var match = byName[String(row.name || "").toLowerCase()];
+      var match = matchPublicCruiseLine(row.name, publicLines);
       return {
         name: row.name,
         logo: match && match.logo_url ? match.logo_url : row.logo || null,
@@ -846,12 +867,68 @@
     return model;
   }
 
+  var MEDIA_ASSIGNMENT_ORDER = ["hero", "reason-1", "reason-2", "reason-3", "advice", "cta"];
+
+  function applyMediaAssignments(model, assignmentResult) {
+    if (!model || !assignmentResult || !assignmentResult.assignments) return model;
+    var assignments = assignmentResult.assignments;
+    var fallbackHero = model.hero;
+
+    if (assignments.hero) {
+      model.hero = assignments.hero;
+    } else if (fallbackHero) {
+      model.hero = fallbackHero;
+    }
+
+    model.reasons = asArray(model.reasons).map(function (reason, index) {
+      var role = "reason-" + (index + 1);
+      var image = assignments[role] || reason.image || model.hero;
+      return Object.assign({}, reason, {
+        image: image
+          ? {
+              url: image.url,
+              alt: image.alt,
+              objectPosition:
+                image.objectPosition ||
+                (reason.image && reason.image.objectPosition) ||
+                "center center"
+            }
+          : null
+      });
+    });
+
+    model.adviceImage = assignments.advice || model.hero;
+    model.ctaImage = assignments.cta || assignments.advice || model.hero;
+
+    var mediaUsed = [];
+    MEDIA_ASSIGNMENT_ORDER.forEach(function (role) {
+      var image = assignments[role];
+      if (!image) return;
+      mediaUsed.push({
+        component: role,
+        mediaId: image.mediaId || null,
+        title: image.title || "",
+        url: image.url,
+        association: "Caribbean destination (Media Library snapshot)",
+        note: image.source || ""
+      });
+    });
+    if (mediaUsed.length) {
+      model.mediaUsed = mediaUsed;
+    }
+    model.mediaSource = assignmentResult.usedFallback ? "cruise_finder_fallback" : "media_library_snapshot";
+    return model;
+  }
+
   root.DestinationExperienceData = {
     STYLE_LABELS: STYLE_LABELS,
     MONTH_SHORT: MONTH_SHORT,
     MONTH_LONG: MONTH_LONG,
     fromCruiseFinder: fromCruiseFinder,
     applyCruiseLineLogos: applyCruiseLineLogos,
+    applyMediaAssignments: applyMediaAssignments,
+    matchPublicCruiseLine: matchPublicCruiseLine,
+    normaliseLineName: normaliseLineName,
     applyTimingContext: applyTimingContext,
     parseTimingFromSearch: parseTimingFromSearch,
     buildSeasonTimeline: buildSeasonTimeline,

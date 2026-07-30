@@ -309,7 +309,6 @@
                   return `
                 <article class="dx-line-card">
                   <div class="dx-line-logo"><img src="${esc(line.logo)}" alt="${esc(line.name)} logo" loading="lazy" decoding="async"></div>
-                  <h3>${esc(line.name)}</h3>
                   ${has(line.note) ? `<p>${esc(line.note)}</p>` : ""}
                 </article>`;
                 }
@@ -330,9 +329,11 @@
     if (!summary || (!summary.bestWindow && !summary.shoulder && !summary.weatherCharacter && !summary.planningNote)) {
       return "";
     }
-    var hero = model.hero;
+    var hero = model.adviceImage || model.hero;
     var media = hero
-      ? `<div class="dx-advice-media"><img src="${esc(hero.url)}" alt="" style="object-position:center 60%" loading="lazy" decoding="async"></div>`
+      ? `<div class="dx-advice-media"><img src="${esc(hero.url)}" alt="" style="object-position:${esc(
+          hero.objectPosition || "center 60%"
+        )}" loading="lazy" decoding="async"></div>`
       : "";
     return `
       <section class="dx-section dx-advice-section" data-dx-section="advice" data-dx-reveal>
@@ -379,9 +380,11 @@
   function renderCta(model) {
     var cta = model && model.cta;
     if (!cta) return "";
-    var hero = model.hero;
+    var hero = model.ctaImage || model.hero;
     var media = hero
-      ? `<div class="dx-cta-media" aria-hidden="true"><img src="${esc(hero.url)}" alt="" style="object-position:center 40%" loading="lazy" decoding="async"></div>`
+      ? `<div class="dx-cta-media" aria-hidden="true"><img src="${esc(hero.url)}" alt="" style="object-position:${esc(
+          hero.objectPosition || "center 40%"
+        )}" loading="lazy" decoding="async"></div>`
       : "";
     return `
       <section class="dx-cta" data-dx-section="cta">

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Capture Destination Experience V3 full-page review screenshots via Playwright.
+ * Capture Destination Experience V4 full-page review screenshots via Playwright.
  * HOLD DEPLOY — local artifacts only (generated-assets is gitignored).
  */
 import { chromium } from "playwright";
@@ -10,13 +10,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const outDir = path.join(root, "generated-assets/destination-experience/caribbean-v3");
+const outDir = path.join(root, "generated-assets/destination-experience/caribbean-v4");
 const port = 8788 + Math.floor(Math.random() * 100);
 const cruiseQuery = "slug=caribbean&timing=cruise&start=2026-11-17&end=2026-11-27";
 
 fs.mkdirSync(outDir, { recursive: true });
 
 function contentType(filePath) {
+  if (filePath.endsWith(".json")) return "application/json; charset=utf-8";
   if (filePath.endsWith(".html")) return "text/html; charset=utf-8";
   if (filePath.endsWith(".css")) return "text/css; charset=utf-8";
   if (filePath.endsWith(".js")) return "text/javascript; charset=utf-8";
@@ -39,39 +40,16 @@ const server = createServer((req, res) => {
 
 async function preparePage(page, query) {
   await page.goto(`http://127.0.0.1:${port}/destination-experience.html?${query}`, {
-    waitUntil: "networkidle"
+    waitUntil: "load",
+    timeout: 60000
   });
-  await page.waitForSelector("#destination-experience-app.is-ready .dx-page", { timeout: 20000 });
-  await page.evaluate(async () => {
+  await page.waitForSelector("#destination-experience-app.is-ready .dx-page", { timeout: 30000 });
+  await page.evaluate(() => {
     document.documentElement.classList.add("dx-reduced-motion");
     document.querySelectorAll("[data-dx-reveal]").forEach((el) => el.classList.add("is-visible"));
-    if (document.fonts && document.fonts.ready) await document.fonts.ready;
-    await Promise.all(
-      Array.from(document.images)
-        .filter((img) => !img.complete)
-        .map(
-          (img) =>
-            new Promise((resolve) => {
-              img.addEventListener("load", resolve, { once: true });
-              img.addEventListener("error", resolve, { once: true });
-            })
-        )
-    );
   });
-  await page.evaluate(async () => {
-    const height = () => Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
-    let last = 0;
-    for (let i = 0; i < 12; i += 1) {
-      window.scrollTo(0, height());
-      await new Promise((r) => setTimeout(r, 120));
-      const next = height();
-      if (next === last) break;
-      last = next;
-    }
-    window.scrollTo(0, 0);
-    await new Promise((r) => setTimeout(r, 200));
-  });
-  await page.waitForTimeout(250);
+  await page.waitForTimeout(500);
+  window.scrollTo(0, 0);
 }
 
 await new Promise((resolve) => server.listen(port, "127.0.0.1", resolve));
