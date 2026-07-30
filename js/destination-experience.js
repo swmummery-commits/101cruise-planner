@@ -121,114 +121,36 @@
     });
   }
 
-  function bindPortsCarousel(rootEl) {
-    var track = $("[data-dx-ports-track]", rootEl);
-    var prev = $("[data-dx-ports-prev]", rootEl);
-    var next = $("[data-dx-ports-next]", rootEl);
-    var dotsHost = $("[data-dx-ports-dots]", rootEl);
-    if (!track) return;
-
-    var cards = $all(".dx-port-card", track);
-    if (!cards.length) return;
-
-    function cardWidth() {
-      var card = cards[0];
-      var styles = window.getComputedStyle(track);
-      var gap = parseFloat(styles.columnGap || styles.gap || "16") || 16;
-      return card.getBoundingClientRect().width + gap;
-    }
-
-    function pageCount() {
-      var visible = Math.max(1, Math.round(track.clientWidth / cardWidth()));
-      return Math.max(1, cards.length - visible + 1);
-    }
-
-    function currentIndex() {
-      return Math.round(track.scrollLeft / cardWidth());
-    }
-
-    function renderDots() {
-      if (!dotsHost) return;
-      var count = pageCount();
-      var active = Math.min(currentIndex(), count - 1);
-      dotsHost.innerHTML = Array.from({ length: count })
-        .map(function (_n, i) {
-          return `<button type="button" class="dx-dot-btn${i === active ? " is-active" : ""}" data-dx-dot="${i}" aria-label="Port set ${
-            i + 1
-          }"></button>`;
-        })
-        .join("");
-      $all("[data-dx-dot]", dotsHost).forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          track.scrollTo({
-            left: Number(btn.getAttribute("data-dx-dot")) * cardWidth(),
-            behavior: reducedMotion ? "auto" : "smooth"
-          });
-        });
-      });
-    }
-
-    function scrollByDir(dir) {
-      track.scrollBy({
-        left: dir * cardWidth(),
-        behavior: reducedMotion ? "auto" : "smooth"
-      });
-    }
-
-    if (prev) prev.addEventListener("click", function () {
-      scrollByDir(-1);
-    });
-    if (next) next.addEventListener("click", function () {
-      scrollByDir(1);
-    });
-
-    track.addEventListener("scroll", function () {
-      window.clearTimeout(track._dxDotTimer);
-      track._dxDotTimer = window.setTimeout(renderDots, 80);
-    });
-
-    // Pointer drag
-    var dragging = false;
-    var startX = 0;
-    var startLeft = 0;
-    track.addEventListener("pointerdown", function (event) {
-      if (event.pointerType === "mouse" && event.button !== 0) return;
-      dragging = true;
-      startX = event.clientX;
-      startLeft = track.scrollLeft;
-      track.setPointerCapture(event.pointerId);
-      track.classList.add("is-dragging");
-    });
-    track.addEventListener("pointermove", function (event) {
-      if (!dragging) return;
-      track.scrollLeft = startLeft - (event.clientX - startX);
-    });
-    function endDrag(event) {
-      if (!dragging) return;
-      dragging = false;
-      track.classList.remove("is-dragging");
-      try {
-        track.releasePointerCapture(event.pointerId);
-      } catch (_err) {
-        /* ignore */
-      }
-    }
-    track.addEventListener("pointerup", endDrag);
-    track.addEventListener("pointercancel", endDrag);
-
-    renderDots();
-    window.addEventListener("resize", function () {
-      window.clearTimeout(track._dxResizeTimer);
-      track._dxResizeTimer = window.setTimeout(renderDots, 120);
-    });
-  }
-
   function bindAll(rootEl) {
     bindReveals(rootEl);
     bindStyles(rootEl);
     bindMonths(rootEl);
-    bindPortsCarousel(rootEl);
+  }
+
+  async function markMediaReady(rootEl) {
+    if (root.DestinationExperienceImageLoader) {
+      await root.DestinationExperienceImageLoader.waitForRenderedImages(rootEl);
+    }
     rootEl.classList.add("is-ready");
+    rootEl.setAttribute("data-dx-media-ready", "true");
+    if (mount) mount.setAttribute("data-dx-media-ready", "true");
+  }
+
+  async function preloadCruiseLineLogos(current) {
+    if (!current || !Array.isArray(current.cruiseLines) || !root.DestinationExperienceImageLoader) {
+      return current;
+    }
+    await Promise.all(
+      current.cruiseLines.map(async function (line) {
+        if (!line || !line.logo) {
+          line.logoLoadState = "text";
+          return;
+        }
+        var result = await root.DestinationExperienceImageLoader.preloadImage(line.logo);
+        line.logoLoadState = result.ok ? "loaded" : "error";
+      })
+    );
+    return current;
   }
 
   async function loadLineLogos(current) {
@@ -311,14 +233,20 @@
       return;
     }
 
+    var fallbackHero = model.hero ? Object.assign({}, model.hero) : null;
     model = await loadDestinationMedia(model, slug);
+    if (root.DestinationExperienceImageLoader) {
+      model = await root.DestinationExperienceImageLoader.resolveDestinationImages(model, fallbackHero);
+    }
     model = await loadLineLogos(model);
+    model = await preloadCruiseLineLogos(model);
     model = root.DestinationExperienceData.applyTimingContext(
       model,
       root.DestinationExperienceData.parseTimingFromSearch(params)
     );
     mount.innerHTML = root.DestinationExperienceComponents.renderPage(model);
     bindAll(mount);
+    await markMediaReady(mount);
     document.title = (model.name || "Destination") + " Experience | 101cruise";
 
     if (typeof options.onReady === "function") options.onReady(model);
@@ -329,6 +257,9 @@
     boot: boot,
     getModel: function () {
       return model;
+    },
+    isMediaReady: function () {
+      return !!(mount && mount.getAttribute("data-dx-media-ready") === "true");
     }
   };
 })(typeof window !== "undefined" ? window : globalThis);

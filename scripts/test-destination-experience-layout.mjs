@@ -14,6 +14,7 @@ const port = 8799;
 const cruiseQuery = "slug=caribbean&timing=cruise&start=2026-11-17&end=2026-11-27";
 
 function contentType(filePath) {
+  if (filePath.endsWith(".json")) return "application/json; charset=utf-8";
   if (filePath.endsWith(".html")) return "text/html; charset=utf-8";
   if (filePath.endsWith(".css")) return "text/css; charset=utf-8";
   if (filePath.endsWith(".js")) return "text/javascript; charset=utf-8";
@@ -41,9 +42,12 @@ function withinViewport(rect, vw) {
 async function assertLayout(page, width, query, label) {
   await page.setViewportSize({ width, height: 900 });
   await page.goto(`http://127.0.0.1:${port}/destination-experience.html?${query}`, {
-    waitUntil: "networkidle"
+    waitUntil: "load",
+    timeout: 60000
   });
-  await page.waitForSelector("#destination-experience-app.is-ready .dx-page", { timeout: 20000 });
+  await page.waitForSelector('#destination-experience-app[data-dx-media-ready="true"] .dx-page', {
+    timeout: 90000
+  });
   await page.evaluate(() => {
     document.documentElement.classList.add("dx-reduced-motion");
     document.querySelectorAll("[data-dx-reveal]").forEach((el) => el.classList.add("is-visible"));
@@ -105,6 +109,13 @@ async function assertLayout(page, width, query, label) {
   assert.ok(boxes.ports, `${label} ${width}px: ports section missing`);
   assert.ok(boxes.lines, `${label} ${width}px: lines section missing`);
   assert.ok(boxes.advice, `${label} ${width}px: advice section missing`);
+
+  const portMeta = await page.evaluate(() => ({
+    portCount: document.querySelectorAll(".dx-port-card").length,
+    hasCarousel: !!document.querySelector("[data-dx-ports-prev], [data-dx-ports-dots], .dx-ports-track")
+  }));
+  assert.equal(portMeta.portCount, 6, `${label} ${width}px: all six ports visible`);
+  assert.equal(portMeta.hasCarousel, false, `${label} ${width}px: port carousel removed`);
 
   return metrics;
 }

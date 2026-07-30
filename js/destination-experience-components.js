@@ -24,14 +24,30 @@
     return String(value).trim() !== "";
   }
 
+  function renderDestinationImage(image, role) {
+    if (!image || !image.url) {
+      return `<div class="dx-dest-image-placeholder" data-dx-dest-image="${esc(role)}" aria-hidden="true"></div>`;
+    }
+    var state = image.loadState || "loaded";
+    var priority = role === "hero" ? ' fetchpriority="high"' : "";
+    return `<img class="dx-dest-image is-${esc(state)}" data-dx-dest-image="${esc(role)}" src="${esc(
+      image.url
+    )}" alt="" style="object-position:${esc(image.objectPosition || "center center")}" decoding="async"${priority}>`;
+  }
+
+  function portInitial(name) {
+    return String(name || "?")
+      .trim()
+      .charAt(0)
+      .toUpperCase();
+  }
+
   function renderHero(model) {
     if (!model) return "";
     var hero = model.hero;
     var styles = Array.isArray(model.heroStyles) ? model.heroStyles.slice(0, 4) : [];
     var media = hero
-      ? `<div class="dx-hero-media" aria-hidden="true">
-          <img src="${esc(hero.url)}" alt="" style="object-position:${esc(hero.objectPosition || "center center")}" decoding="async" fetchpriority="high">
-        </div>`
+      ? `<div class="dx-hero-media" aria-hidden="true">${renderDestinationImage(hero, "hero")}</div>`
       : `<div class="dx-hero-media dx-hero-media--empty" aria-hidden="true"></div>`;
 
     return `
@@ -90,9 +106,7 @@
             ${reasons
               .map(function (reason, index) {
                 var img = reason.image
-                  ? `<div class="dx-reason-media"><img src="${esc(reason.image.url)}" alt="" style="object-position:${esc(
-                      reason.image.objectPosition || "center center"
-                    )}" loading="lazy" decoding="async"></div>`
+                  ? `<div class="dx-reason-media">${renderDestinationImage(reason.image, "reason-" + (index + 1))}</div>`
                   : `<div class="dx-reason-media dx-reason-media--empty" aria-hidden="true"></div>`;
                 return `
                 <article class="dx-reason-card" data-dx-stagger="${index}">
@@ -251,42 +265,21 @@
     return `
       <section class="dx-section dx-ports-section" data-dx-section="ports" data-dx-reveal>
         <div class="dx-wrap">
-          <header class="dx-section-head dx-section-head-row">
-            <div>
-              <p class="dx-kicker">Port discovery</p>
-              <h2>Popular ports</h2>
-            </div>
-            <div class="dx-carousel-nav">
-              <button type="button" class="dx-carousel-btn" data-dx-ports-prev aria-label="Previous ports">‹</button>
-              <button type="button" class="dx-carousel-btn" data-dx-ports-next aria-label="Next ports">›</button>
-            </div>
+          <header class="dx-section-head">
+            <p class="dx-kicker">Port discovery</p>
+            <h2>Popular ports</h2>
           </header>
-          <div class="dx-ports-viewport">
-            <div class="dx-ports-track" data-dx-ports-track tabindex="0" aria-label="Port cards">
-              ${ports
-                .map(function (port) {
-                  var media = port.image
-                    ? `<div class="dx-port-media"><img src="${esc(port.image.url)}" alt="${esc(
-                        port.image.alt || port.name
-                      )}" loading="lazy" decoding="async"></div>`
-                    : `<div class="dx-port-media dx-port-media--text" aria-hidden="true"><span>${esc(
-                        (port.name || "?").slice(0, 1)
-                      )}</span></div>`;
-                  return `
-                  <article class="dx-port-card">
-                    ${media}
-                    <div class="dx-port-body">
-                      <h3>${esc(port.name)}</h3>
-                      ${has(port.country) ? `<p class="dx-port-meta">${esc(port.country)}</p>` : ""}
-                      ${has(port.description) ? `<p>${esc(port.description)}</p>` : ""}
-                      ${has(port.knownFor) ? `<p class="dx-port-known"><span>Known for</span> ${esc(port.knownFor)}</p>` : ""}
-                    </div>
-                  </article>`;
-                })
-                .join("")}
-            </div>
+          <div class="dx-ports-grid" role="list">
+            ${ports
+              .map(function (port) {
+                return `
+                <article class="dx-port-card" role="listitem">
+                  <div class="dx-port-monogram" aria-hidden="true">${esc(portInitial(port.name))}</div>
+                  <h3 class="dx-port-name">${esc(port.name)}</h3>
+                </article>`;
+              })
+              .join("")}
           </div>
-          <div class="dx-ports-dots" data-dx-ports-dots aria-hidden="true"></div>
         </div>
       </section>`;
   }
@@ -308,13 +301,19 @@
                 if (line.logo) {
                   return `
                 <article class="dx-line-card">
-                  <div class="dx-line-logo"><img src="${esc(line.logo)}" alt="${esc(line.name)} logo" loading="lazy" decoding="async"></div>
+                  <div class="dx-line-logo">
+                    <div class="dx-line-logo-panel">
+                      <img src="${esc(line.logo)}" alt="${esc(line.name)} logo" data-dx-line-logo decoding="async">
+                    </div>
+                  </div>
+                  <h3 class="dx-line-name">${esc(line.name)}</h3>
                   ${has(line.note) ? `<p>${esc(line.note)}</p>` : ""}
                 </article>`;
                 }
                 return `
                 <article class="dx-line-card">
                   <div class="dx-line-logo"><span class="dx-line-fallback">${esc(line.name)}</span></div>
+                  <h3 class="dx-line-name">${esc(line.name)}</h3>
                   ${has(line.note) ? `<p>${esc(line.note)}</p>` : ""}
                 </article>`;
               })
@@ -331,10 +330,8 @@
     }
     var hero = model.adviceImage || model.hero;
     var media = hero
-      ? `<div class="dx-advice-media"><img src="${esc(hero.url)}" alt="" style="object-position:${esc(
-          hero.objectPosition || "center 60%"
-        )}" loading="lazy" decoding="async"></div>`
-      : "";
+      ? `<div class="dx-advice-media">${renderDestinationImage(hero, "advice")}</div>`
+      : `<div class="dx-advice-media dx-advice-media--empty" aria-hidden="true"></div>`;
     return `
       <section class="dx-section dx-advice-section" data-dx-section="advice" data-dx-reveal>
         <div class="dx-wrap">
@@ -382,9 +379,7 @@
     if (!cta) return "";
     var hero = model.ctaImage || model.hero;
     var media = hero
-      ? `<div class="dx-cta-media" aria-hidden="true"><img src="${esc(hero.url)}" alt="" style="object-position:${esc(
-          hero.objectPosition || "center 40%"
-        )}" loading="lazy" decoding="async"></div>`
+      ? `<div class="dx-cta-media" aria-hidden="true">${renderDestinationImage(hero, "cta")}</div>`
       : "";
     return `
       <section class="dx-cta" data-dx-section="cta">
@@ -418,7 +413,9 @@
       return `<div class="dx-wrap dx-error"><p>This destination experience is not available.</p></div>`;
     }
     return `
-      <div class="dx-page" data-dx-page data-dx-slug="${esc(model.slug || "")}">
+      <div class="dx-page" data-dx-page data-dx-slug="${esc(model.slug || "")}"${
+        model.mediaReady ? ' data-dx-media-ready="true"' : ""
+      }>
         ${renderHero(model)}
         ${renderSnapshot(model)}
         ${renderReasons(model)}

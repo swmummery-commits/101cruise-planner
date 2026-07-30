@@ -32,12 +32,14 @@ loadScript("public-tools/cruise-finder/approved-cruise-lines.js", sandbox);
 loadScript("public-tools/cruise-finder/destination-images.js", sandbox);
 loadScript("js/destination-experience-data.js", sandbox);
 loadScript("js/destination-experience-media.js", sandbox);
+loadScript("js/destination-experience-image-loader.js", sandbox);
 loadScript("js/destination-experience-components.js", sandbox);
 
 const Data = sandbox.DestinationExperienceData;
 const Media = sandbox.DestinationExperienceMedia;
+const ImageLoader = sandbox.DestinationExperienceImageLoader;
 const Components = sandbox.DestinationExperienceComponents;
-assert(Data && Components && Media, "globals exported");
+assert(Data && Components && Media && ImageLoader, "globals exported");
 
 const mediaSnapshot = JSON.parse(read("data/prototype/caribbean-media-snapshot.json"));
 const linesSnapshot = JSON.parse(read("data/prototype/caribbean-cruise-lines-snapshot.json"));
@@ -137,16 +139,14 @@ assert.equal(withLogos.cruiseLines.find((l) => l.name === "MSC")?.logo?.includes
 assert.equal(withLogos.cruiseLines.find((l) => l.name === "Norwegian")?.logo?.includes("NCL"), true);
 
 const logoHtml = Components.renderPage(withLogos);
-withLogos.cruiseLines
-  .filter((line) => line.logo)
-  .forEach((line) => {
-    assert.equal(
-      (logoHtml.match(new RegExp(`<h3>${line.name}</h3>`, "g")) || []).length,
-      0,
-      `${line.name} name not duplicated when logo present`
-    );
+withLogos.cruiseLines.forEach((line) => {
+  const names = logoHtml.match(new RegExp(`<h3 class="dx-line-name">${line.name}</h3>`, "g")) || [];
+  assert.equal(names.length, 1, `${line.name} appears once beneath logo card`);
+  if (line.logo) {
     assert.match(logoHtml, new RegExp(escRegex(line.logo)), `${line.name} logo renders`);
-  });
+    assert.match(logoHtml, /dx-line-logo-panel/, `${line.name} logo panel present`);
+  }
+});
 
 const fallbackLineModel = Data.applyCruiseLineLogos(
   { cruiseLines: [{ name: "Unknown Line", logo: null, note: "" }] },
@@ -205,6 +205,12 @@ assert(/dx-month-chip/.test(html), "month chips");
 assert(/Find current cruises/i.test(html), "CTA label");
 assert(/cruise-destination\?destination=caribbean/.test(html), "CTA routes to CF destination search");
 assert(/dx-timing-verdict/.test(html), "timing verdict rendered");
+assert.equal((html.match(/dx-port-card/g) || []).length, 6, "all six ports rendered");
+assert.equal(html.includes("data-dx-ports-prev"), false, "no port carousel prev");
+assert.equal(html.includes("data-dx-ports-dots"), false, "no port pagination");
+assert.match(html, /data-dx-dest-image="advice"/, "seasonal advice image slot");
+assert.match(html, /data-dx-dest-image="cta"/, "cta image slot");
+assert.match(html, /data-dx-dest-image="reason-1"/, "reason image slots");
 
 const cruiseHtml = Components.renderPage(cruiseModel);
 assert(/SHOULDER-SEASON OPTION/.test(cruiseHtml));
@@ -258,11 +264,14 @@ assert(/ArrowRight/.test(appSrc), "keyboard month selection");
 assert(/is-readonly/.test(appSrc), "manual month selection gated");
 assert(/applyTimingContext/.test(appSrc), "timing context applied at boot");
 assert(/loadDestinationMedia/.test(appSrc), "media loaded at boot");
+assert(/resolveDestinationImages/.test(appSrc), "destination images preloaded before render");
+assert(/data-dx-media-ready/.test(appSrc), "media ready gate exposed");
 assert(/cruise_lines/.test(appSrc), "public cruise lines field handled");
-assert(/data-dx-ports-prev/.test(appSrc) || /ports-prev/.test(appSrc), "port carousel controls");
+assert(!/bindPortsCarousel|data-dx-ports-prev/.test(appSrc), "port carousel removed from app");
 assert(!/\.insert\(|supabaseClient\.from\(/.test(appSrc), "no production writes in app");
 assert(!/\.insert\(|supabaseClient\.from\(/.test(read("js/destination-experience-data.js")), "no writes in data");
 assert(!/\.insert\(|supabaseClient\.from\(/.test(read("js/destination-experience-media.js")), "no writes in media");
+assert(!/\.insert\(|supabaseClient\.from\(/.test(read("js/destination-experience-image-loader.js")), "no writes in loader");
 
 const css = read("css/destination-experience.css");
 assert(/prefers-reduced-motion/.test(css), "reduced-motion CSS");
@@ -270,16 +279,31 @@ assert(/max-width: 640px/.test(css), "mobile layout");
 assert(/max-height:\s*80svh/.test(css), "mobile hero max height");
 assert(/clamp\(360px,\s*72svh,\s*620px\)/.test(css), "mobile hero clamp");
 assert(/repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(css), "mobile snapshot minmax grid");
-assert(/grid-auto-columns: minmax\(240px, min\(280px, calc\(100vw - 56px\)\)\)/.test(css), "port carousel contained");
+assert.match(css, /\.dx-ports-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/s, "desktop ports 3 columns");
+assert.match(css, /@media \(max-width: 980px\)[\s\S]*\.dx-ports-grid[\s\S]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/, "tablet ports 2 columns");
+assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.dx-ports-grid[\s\S]*grid-template-columns:\s*1fr/, "mobile ports 1 column");
 assert.match(css, /\.dx-ports-section\s*\{[^}]*background:\s*#8dd9bf/i, "Popular Ports background is #8DD9BF");
 assert.match(css, /\.dx-port-card\s*\{[^}]*background:\s*var\(--dx-navy\)/i, "port cards stay dark");
-assert.match(css, /\.dx-port-body h3\s*\{[^}]*color:\s*#fff/i, "port names stay white on dark cards");
+assert.match(css, /\.dx-port-name\s*\{[^}]*color:\s*#fff/i, "port names stay white on dark cards");
+assert.match(css, /\.dx-line-logo-panel/, "cruise-line logo contrast panel");
+assert(!/grid-auto-columns:\s*minmax\(240px/.test(css), "port carousel track removed");
 assert(!/data-dx-section="cta" data-dx-reveal/.test(read("js/destination-experience-components.js")), "CTA not reveal gated");
 
 const page = read("destination-experience.html");
 assert(/\?slug=/.test(page) || /DestinationExperienceApp\.boot/.test(page), "prototype boots");
 assert(/destination-experience-media\.js/.test(page), "media module wired");
+assert(/destination-experience-image-loader\.js/.test(page), "image loader wired");
 assert(/robots" content="noindex/.test(page), "prototype noindex");
+
+const componentSrc = read("js/destination-experience-components.js");
+assert(!/loading="lazy"/.test(componentSrc), "destination images not lazy gated in markup");
+assert.match(componentSrc, /dx-port-monogram/, "compact port cards");
+assert.match(componentSrc, /dx-line-name/, "cruise-line names beneath logos");
+
+const loaderSrc = read("js/destination-experience-image-loader.js");
+assert.match(loaderSrc, /resolveDestinationImages/, "shared destination image loader");
+assert.match(loaderSrc, /preloadImage/, "image preload helper");
+assert.match(loaderSrc, /waitForRenderedImages/, "rendered image readiness wait");
 
 const toml = read("netlify.toml");
 assert(/destination-experience/.test(toml), "prototype rewrite present");
