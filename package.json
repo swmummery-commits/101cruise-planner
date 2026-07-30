@@ -45,7 +45,8 @@
     "test:bulk-ship-images": "node scripts/test-bulk-ship-images.mjs",
     "test:destination-experience": "node scripts/test-destination-experience.mjs",
     "test:destination-experience-layout": "node scripts/test-destination-experience-layout.mjs",
-    "test:featured-cruise-dx": "node scripts/test-featured-cruise-destination-experience.mjs"
+    "test:featured-cruise-dx": "node scripts/test-featured-cruise-destination-experience.mjs",
+    "test:featured-cruise-article-v2": "node scripts/test-featured-cruise-article-v2.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.1"

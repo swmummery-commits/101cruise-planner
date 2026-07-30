@@ -231,6 +231,26 @@
     scheduleHeightReport();
   }
 
+  function wantsArticleV2Review() {
+    return new URLSearchParams(window.location.search).get("article") === "v2";
+  }
+
+  async function renderArticleV2(root, cruise) {
+    try {
+      if (!window.FeaturedCruiseArticle) {
+        throw new Error("FeaturedCruiseArticle unavailable");
+      }
+      await window.FeaturedCruiseArticle.render(root, cruise, {
+        onReady: scheduleHeightReport,
+        onHeightChange: scheduleHeightReport
+      });
+      scheduleHeightReport();
+    } catch (error) {
+      console.warn("Featured Cruise Article V2 failed; falling back to legacy renderer.", error);
+      renderLegacyPublicPage(root, cruise);
+    }
+  }
+
   async function init() {
     applyEmbedChrome();
     startHeightObserver();
@@ -260,7 +280,11 @@
       delete cruise.pricing;
 
       setMetadata(cruise);
-      renderLegacyPublicPage(root, cruise);
+      if (wantsArticleV2Review()) {
+        await renderArticleV2(root, cruise);
+      } else {
+        renderLegacyPublicPage(root, cruise);
+      }
     } catch (error) {
       console.error("public cruise page error", error);
       renderUnavailable(root, {
