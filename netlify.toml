@@ -123,63 +123,6 @@
   to = "/cruise/index.html"
   status = 200
 
-# Legacy Living Destination URLs opened by stale Cruise Finder bundles — route to
-# the shared Cruise Finder Destination Experience (preserve query params).
-[[redirects]]
-  from = "/destination/japan"
-  to = "/cruise-destination?destination=japan"
-  status = 302
-
-[[redirects]]
-  from = "/destination/mediterranean"
-  to = "/cruise-destination?destination=mediterranean"
-  status = 302
-
-[[redirects]]
-  from = "/destination/greek-islands"
-  to = "/cruise-destination?destination=greek-islands"
-  status = 302
-
-[[redirects]]
-  from = "/destination/norwegian-fjords"
-  to = "/cruise-destination?destination=norwegian-fjords"
-  status = 302
-
-[[redirects]]
-  from = "/destination/british-isles"
-  to = "/cruise-destination?destination=british-isles"
-  status = 302
-
-[[redirects]]
-  from = "/destination/caribbean"
-  to = "/cruise-destination?destination=caribbean"
-  status = 302
-
-[[redirects]]
-  from = "/destination/south-pacific"
-  to = "/cruise-destination?destination=south-pacific"
-  status = 302
-
-[[redirects]]
-  from = "/destination/australia-new-zealand"
-  to = "/cruise-destination?destination=australia-new-zealand"
-  status = 302
-
-[[redirects]]
-  from = "/destination/antarctica"
-  to = "/cruise-destination?destination=antarctica"
-  status = 302
-
-[[redirects]]
-  from = "/destination/canada-new-england"
-  to = "/cruise-destination?destination=canada-new-england"
-  status = 302
-
-[[redirects]]
-  from = "/destination/hawaii"
-  to = "/cruise-destination?destination=hawaii"
-  status = 302
-
 [[redirects]]
   from = "/destination/*"
   to = "/destination/index.html"

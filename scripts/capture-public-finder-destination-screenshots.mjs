@@ -72,13 +72,13 @@ const jobs = [
   {
     name: "public-finder-japan-desktop.png",
     width: 1440,
-    timing: { mode: "flexible" },
+    timing: { mode: "month", month: "11", year: "2026" },
     dest: "japan"
   },
   {
     name: "public-finder-japan-mobile.png",
     width: 320,
-    timing: { mode: "flexible" },
+    timing: { mode: "month", month: "11", year: "2026" },
     dest: "japan"
   }
 ];

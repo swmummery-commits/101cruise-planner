@@ -72,7 +72,7 @@ assert.match(embed, /cf-asset-version\.js\?v=/);
 assert.match(embed, /finder\.js\?v=/);
 
 const toml = read("netlify.toml");
-assert.match(toml, /\/destination\/caribbean/);
-assert.match(toml, /\/cruise-destination\?destination=caribbean/);
+assert.match(toml, /destination\/index\.html/);
+assert.match(read("destination/index.html"), /location\.replace\("\/cruise-destination\?"/);
 
 console.log("test-cruise-finder-live-route: ok");
