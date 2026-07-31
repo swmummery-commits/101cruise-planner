@@ -7957,10 +7957,11 @@ input[type="radio"] {
 .ship-chip-group .dashboard-snapshot-extras-tag {
   padding: 8px 14px;
   font-size: 0.78rem;
-  font-weight: 600;
-  background: var(--brand-green-soft);
-  border: 1px solid var(--brand-green-border);
-  color: var(--brand-green-ink);
+  font-weight: 650;
+  background: var(--brand-green);
+  border: 1px solid var(--brand-green);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(36, 92, 78, 0.12);
 }
 
 .ship-exclusive-areas {
