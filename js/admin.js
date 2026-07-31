@@ -7637,6 +7637,53 @@ function getCiShipClassDraft() {
   return api ? api.normalizeShipClass(raw) : raw.trim() || null;
 }
 
+function canOpenBulkShipClassFromShip() {
+  const lineId = String(document.getElementById("ciShipLineId")?.value || "").trim();
+  return Boolean(lineId && getCiShipClassDraft());
+}
+
+function openCiBulkShipClassModalFromLine() {
+  const lineId = document.getElementById("ciLineId")?.value || editingCiLineId;
+  if (!lineId || !window.CiBulkShipClassAdmin) return;
+  window.CiBulkShipClassAdmin.open({ cruiseLineId: lineId });
+}
+
+function openCiBulkShipClassModalFromShip() {
+  if (!canOpenBulkShipClassFromShip() || !window.CiBulkShipClassAdmin) return;
+  const sourceId = document.getElementById("ciShipId")?.value || editingCiShipId;
+  const lineId = String(document.getElementById("ciShipLineId")?.value || "").trim();
+  const shipClass = String(document.getElementById("ciShipClass")?.value || "").trim();
+  window.CiBulkShipClassAdmin.open({
+    cruiseLineId: lineId,
+    prefilledClass: shipClass,
+    sourceShipId: sourceId || null,
+    preselectedShipIds: sourceId ? [sourceId] : []
+  });
+}
+
+function applyCiBulkClassAssignmentResults(results) {
+  if (!Array.isArray(results)) return;
+  results.forEach((row) => {
+    if (!row?.id) return;
+    const idx = ciCruiseShips.findIndex((ship) => ship.id === row.id);
+    if (idx >= 0) {
+      ciCruiseShips[idx] = { ...ciCruiseShips[idx], ship_class: row.new_class ?? null };
+    }
+  });
+  refreshCiShipMasterList();
+  const openId = document.getElementById("ciShipId")?.value || editingCiShipId;
+  if (openId) {
+    const current = ciCruiseShips.find((ship) => ship.id === openId);
+    const classInput = document.getElementById("ciShipClass");
+    if (current && classInput) classInput.value = current.ship_class || "";
+  }
+  renderCiAdmin();
+}
+
+window.applyCiBulkClassAssignmentResults = applyCiBulkClassAssignmentResults;
+window.adminAuthHeaders = adminAuthHeaders;
+window.setCiAutosaveStatus = setCiAutosaveStatus;
+
 function getSameClassCopyTargetsFromDraft() {
   const api = ciFacilitiesApi();
   const sourceId = document.getElementById("ciShipId")?.value || editingCiShipId;
@@ -8201,6 +8248,10 @@ function renderCiLineForm(line) {
       </div>
       <p class="admin-small ci-detail-subtitle">${editing ? "Changes save when you select another cruise line." : "Fill in the details, then create."}</p>
       ${renderCiLineStatsPanel(line)}
+      ${editing ? `
+        <div class="admin-actions-row ci-line-class-actions">
+          <button type="button" class="admin-button secondary small" onclick="openCiBulkShipClassModalFromLine()">Manage ship classes</button>
+        </div>` : ""}
       ${renderCiMediaField({
         kind: "logo",
         inputId: "ciLineLogo",
@@ -8494,7 +8545,13 @@ function renderCiShipForm(ship) {
             <option value="retired" ${ship?.status === "retired" ? "selected" : ""}>retired</option>
           </select>
         </div>
-        <div class="admin-field"><label>Ship class</label><input id="ciShipClass" type="text" value="${esc(ship?.ship_class ?? "")}" placeholder="e.g. Millennium class"></div>
+        <div class="admin-field ci-ship-class-field">
+          <label>Ship class</label>
+          <div class="ci-ship-class-input-row">
+            <input id="ciShipClass" type="text" value="${esc(ship?.ship_class ?? "")}" placeholder="e.g. Millennium class" list="ciShipClassSuggestions">
+            <button type="button" class="admin-button secondary small" onclick="openCiBulkShipClassModalFromShip()" ${editing && ship?.cruise_line_id ? "" : "disabled"}>Assign this class to other ships</button>
+          </div>
+        </div>
         <div class="admin-field"><label>Year built</label><input id="ciShipBuilt" type="number" value="${esc(ship?.year_built ?? "")}"></div>
         <div class="admin-field"><label>Year refurbished</label><input id="ciShipRefurb" type="number" value="${esc(ship?.year_refurbished ?? "")}"></div>
         <div class="admin-field"><label>Passengers</label><input id="ciShipPassengers" type="number" value="${esc(ship?.passenger_capacity ?? "")}"></div>
