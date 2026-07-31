@@ -8360,7 +8360,7 @@ function renderCiLineForm(line) {
         <h3 class="ci-detail-title">${editing ? esc(line.name) : "New cruise line"}</h3>
         ${editing ? `<span id="ciAutosaveStatus" class="ci-autosave-status ${statusClass}">${esc(ciAutosaveStatus)}</span>` : ""}
       </div>
-      <p class="admin-small ci-detail-subtitle">${editing ? "Changes save when you select another cruise line." : "Fill in the details, then create."}</p>
+      <p class="admin-small ci-detail-subtitle">${editing ? "Click Save line or select another cruise line to persist changes." : "Fill in the details, then create."}</p>
       ${editing ? `<p id="ciFormSaveError" class="admin-small admin-error" hidden></p>` : ""}
       ${renderCiLineStatsPanel(line)}
       ${editing ? `
@@ -8416,7 +8416,11 @@ function renderCiLineForm(line) {
           <button class="admin-button" onclick="saveCiLine()">Create line</button>
           <button class="admin-button secondary" onclick="cancelCiLineForm()">Cancel</button>
         </div>
-      ` : ""}
+      ` : `
+        <div class="admin-actions-row">
+          <button type="button" class="admin-button" id="ciLineSaveBtn" onclick="saveCiLine()">Save line</button>
+        </div>
+      `}
     </div>
   `;
 }
@@ -8642,7 +8646,7 @@ function renderCiShipForm(ship) {
         <h3 class="ci-detail-title">${editing ? esc(ship.name) : "New ship"}</h3>
         ${editing ? `<span id="ciAutosaveStatus" class="ci-autosave-status ${statusClass}">${esc(ciAutosaveStatus)}</span>` : ""}
       </div>
-      <p class="admin-small ci-detail-subtitle">${editing ? "Changes save when you select another ship." : "Fill in the details, then create."}</p>
+      <p class="admin-small ci-detail-subtitle">${editing ? "Click Save ship or select another ship to persist changes." : "Fill in the details, then create."}</p>
       ${editing ? `<p id="ciFormSaveError" class="admin-small admin-error" hidden></p>` : ""}
       ${renderCiMediaField({
         kind: "ship",
@@ -8708,7 +8712,11 @@ function renderCiShipForm(ship) {
           <button class="admin-button" onclick="saveCiShip()">Create ship</button>
           <button class="admin-button secondary" onclick="cancelCiShipForm()">Cancel</button>
         </div>
-      ` : ""}
+      ` : `
+        <div class="admin-actions-row">
+          <button type="button" class="admin-button" id="ciShipSaveBtn" onclick="saveCiShip()">Save ship</button>
+        </div>
+      `}
     </div>
   `;
 }
