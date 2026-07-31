@@ -864,25 +864,85 @@ body.admin-loading-active {
 }
 
 .ci-exclusive-area-card {
+  display: block;
+  width: 100%;
+  max-width: 100%;
   padding: 10px 0 12px;
   border-bottom: 1px solid #f0f0f0;
+  box-sizing: border-box;
+}
+
+.ci-exclusive-area-fields {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+}
+
+.ci-exclusive-area-fields .admin-field {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 8px;
+}
+
+.ci-exclusive-area-fields .admin-field label {
+  display: block;
+  text-align: left;
+}
+
+.ci-exclusive-area-name,
+.ci-exclusive-area-description {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.ci-exclusive-area-add-desc {
+  align-self: flex-start;
+  margin: 0 0 8px;
 }
 
 .ci-exclusive-area-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
   margin-bottom: 8px;
 }
 
+.ci-exclusive-area-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
 .ci-exclusive-area-card-title {
+  display: block;
   font-size: 0.88rem;
   font-weight: 600;
+  text-align: left;
+}
+
+.ci-exclusive-area-source-preview {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid #ececec;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.ci-exclusive-area-card--preview {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.ci-exclusive-area-card--preview + .ci-exclusive-area-card--preview {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #ececec;
 }
 
 .ci-exclusive-area-name-field {
-  margin-bottom: 6px;
+  margin-bottom: 0;
 }
 
 .ci-exclusive-area-description-wrap.hidden {

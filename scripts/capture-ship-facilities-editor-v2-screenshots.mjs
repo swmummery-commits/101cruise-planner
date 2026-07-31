@@ -46,25 +46,54 @@ function esc(value) {
     .replaceAll('"', "&quot;");
 }
 
-function renderExclusiveCard(row, index, total) {
+function renderExclusiveFieldStack(row, index, { readonly = true } = {}) {
   const showDescription = Boolean(row.showDescription || row.description);
   const descHidden = showDescription ? "" : " hidden";
   const addDescHidden = showDescription ? " hidden" : "";
-  const cardLabel = total > 1 ? `Exclusive area ${index + 1}` : "Exclusive area";
+  const readAttr = readonly ? " readonly" : "";
   return `
-    <div class="ci-exclusive-area-card ci-facility-row" data-index="${index}">
+      <div class="ci-exclusive-area-fields">
+        <div class="admin-field ci-exclusive-area-name-field">
+          <label>Name</label>
+          <input type="text" class="ci-exclusive-area-name" value="${esc(row.name)}"${readAttr}>
+        </div>
+        <button type="button" class="admin-button secondary small ci-exclusive-area-add-desc${addDescHidden}"${readonly ? " disabled" : ""}>Add description</button>
+        <div class="ci-exclusive-area-description-wrap admin-field${descHidden}">
+          <label>Description <span class="admin-small">(optional)</span></label>
+          <textarea class="ci-exclusive-area-description" rows="2"${readAttr}>${esc(row.description || "")}</textarea>
+        </div>
+      </div>`;
+}
+
+function renderExclusiveCard(row, index, total) {
+  const fieldStack = renderExclusiveFieldStack(row, index);
+  if (total <= 1) {
+    return `<div class="ci-exclusive-area-card" data-index="${index}">${fieldStack}</div>`;
+  }
+  return `
+    <div class="ci-exclusive-area-card" data-index="${index}">
       <div class="ci-exclusive-area-card-head">
-        <strong class="ci-exclusive-area-card-title">${esc(cardLabel)}</strong>
+        <strong class="ci-exclusive-area-card-title">Exclusive area ${index + 1}</strong>
       </div>
-      <div class="admin-field ci-exclusive-area-name-field">
-        <label>Name</label>
-        <input type="text" class="ci-exclusive-area-name" value="${esc(row.name)}" readonly>
+      <div class="ci-exclusive-area-card-actions">
+        <button type="button" class="admin-button secondary small">↑</button>
+        <button type="button" class="admin-button secondary small">↓</button>
+        <button type="button" class="admin-button secondary small">Remove</button>
       </div>
-      <button type="button" class="admin-button secondary small ci-exclusive-area-add-desc${addDescHidden}">Add description</button>
-      <div class="ci-exclusive-area-description-wrap admin-field${descHidden}">
-        <label>Description <span class="admin-small">(optional)</span></label>
-        <textarea class="ci-exclusive-area-description" rows="2" readonly>${esc(row.description || "")}</textarea>
-      </div>
+      ${fieldStack}
+    </div>`;
+}
+
+function renderSourcePreview(rows) {
+  if (!rows.length) return "";
+  return `
+    <div class="ci-exclusive-area-source-preview">
+      <p class="admin-small"><strong>Source exclusive area${rows.length === 1 ? "" : "s"}</strong></p>
+      ${rows.map((row, index) => `
+        <div class="ci-exclusive-area-card ci-exclusive-area-card--preview">
+          ${rows.length > 1 ? `<strong class="ci-exclusive-area-card-title">Exclusive area ${index + 1}</strong>` : ""}
+          ${renderExclusiveFieldStack(row, index)}
+        </div>`).join("")}
     </div>`;
 }
 
@@ -79,6 +108,7 @@ function adminPage({ title, exclusiveAreas, showFragmentWarning, showModal }) {
         </div>
         <p class="admin-small"><strong>Cruise line:</strong> Celebrity Cruises</p>
         <p class="admin-small"><strong>Ship class:</strong> Edge class</p>
+        ${renderSourcePreview([{ name: "The Retreat", description: "Shared Edge-class copy.", showDescription: true }])}
         <p class="ci-facility-warning">Selected facility sections will replace the same sections on each target ship.</p>
         <div class="ci-facilities-copy-list">
           <label class="ci-check-control ci-facilities-copy-item"><input type="checkbox"> Celebrity Ascent</label>
@@ -189,6 +219,31 @@ for (const [file, route] of shots) {
   await page.goto(`${base}${route}`, { waitUntil: "networkidle" });
   await page.screenshot({ path: path.join(outDir, file), fullPage: true });
   await page.close();
+}
+
+const overflowRoutes = ["/apex", "/millennium", "/single", "/modal"];
+for (const width of [900, 768, 390]) {
+  for (const route of overflowRoutes) {
+    const page = await browser.newPage({ viewport: { width, height: 1200 } });
+    await page.goto(`${base}${route}`, { waitUntil: "networkidle" });
+    const overflow = await page.evaluate(() => {
+      const doc = document.documentElement;
+      const hasOverflow = doc.scrollWidth > doc.clientWidth + 1;
+      const cards = [...document.querySelectorAll(".ci-exclusive-area-card:not(.ci-exclusive-area-card--preview)")];
+      const narrowName = cards.some((card) => {
+        const input = card.querySelector(".ci-exclusive-area-name");
+        const fields = card.querySelector(".ci-exclusive-area-fields");
+        if (!input || !fields) return false;
+        return input.getBoundingClientRect().width < fields.getBoundingClientRect().width * 0.85;
+      });
+      const gridCard = cards.some((card) => getComputedStyle(card).display === "grid");
+      return { hasOverflow, narrowName, gridCard };
+    });
+    if (overflow.hasOverflow || overflow.narrowName || overflow.gridCard) {
+      throw new Error(`Layout overflow at ${width}px on ${route}: ${JSON.stringify(overflow)}`);
+    }
+    await page.close();
+  }
 }
 
 await browser.close();

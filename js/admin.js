@@ -7410,32 +7410,68 @@ function ciFacilitiesApi() {
   return window.CiShipFacilities || null;
 }
 
-function renderCiExclusiveAreaCard(row, index, total) {
+function renderCiExclusiveAreaFieldStack(row, index, { readonly = false } = {}) {
   const showDescription = Boolean(row.showDescription || row.description);
   const descHidden = showDescription ? "" : " hidden";
   const addDescHidden = showDescription ? " hidden" : "";
-  const cardLabel = total > 1 ? `Exclusive area ${index + 1}` : "Exclusive area";
+  const readAttr = readonly ? " readonly" : "";
+  const addDescBtn = readonly
+    ? `<button type="button" class="admin-button secondary small ci-exclusive-area-add-desc${addDescHidden}" disabled>Add description</button>`
+    : `<button type="button" class="admin-button secondary small ci-exclusive-area-add-desc${addDescHidden}" onclick="toggleCiExclusiveAreaDescription(${index}, true)">Add description</button>`;
+
   return `
-    <div class="ci-exclusive-area-card ci-facility-row" data-index="${index}">
+      <div class="ci-exclusive-area-fields">
+        <div class="admin-field ci-exclusive-area-name-field">
+          <label>Name</label>
+          <input type="text" class="ci-exclusive-area-name" value="${esc(row.name || "")}" placeholder="e.g. The Retreat"${readAttr}>
+        </div>
+        ${addDescBtn}
+        <div class="ci-exclusive-area-description-wrap admin-field${descHidden}">
+          <label>Description <span class="admin-small">(optional)</span></label>
+          <textarea class="ci-exclusive-area-description" rows="2" placeholder="Short detail shown on My Ship"${readAttr}>${esc(row.description || "")}</textarea>
+        </div>
+      </div>
+  `;
+}
+
+function renderCiExclusiveAreaCard(row, index, total) {
+  const fieldStack = renderCiExclusiveAreaFieldStack(row, index);
+  if (total <= 1) {
+    return `
+    <div class="ci-exclusive-area-card" data-index="${index}">
+      ${fieldStack}
+    </div>
+  `;
+  }
+  return `
+    <div class="ci-exclusive-area-card" data-index="${index}">
       <div class="ci-exclusive-area-card-head">
-        <strong class="ci-exclusive-area-card-title">${esc(cardLabel)}</strong>
-        ${total > 1 ? `
-          <div class="ci-facility-row-actions ci-facility-row-actions--inline">
-            <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, -1)" title="Move up">↑</button>
-            <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, 1)" title="Move down">↓</button>
-            <button type="button" class="admin-button secondary small" onclick="removeCiExclusiveAreaRow(${index})">Remove</button>
-          </div>
-        ` : ""}
+        <strong class="ci-exclusive-area-card-title">Exclusive area ${index + 1}</strong>
       </div>
-      <div class="admin-field ci-exclusive-area-name-field">
-        <label>Name</label>
-        <input type="text" class="ci-exclusive-area-name" value="${esc(row.name || "")}" placeholder="e.g. The Retreat">
+      <div class="ci-exclusive-area-card-actions">
+        <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, -1)" title="Move up">↑</button>
+        <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, 1)" title="Move down">↓</button>
+        <button type="button" class="admin-button secondary small" onclick="removeCiExclusiveAreaRow(${index})">Remove</button>
       </div>
-      <button type="button" class="admin-button secondary small ci-exclusive-area-add-desc${addDescHidden}" onclick="toggleCiExclusiveAreaDescription(${index}, true)">Add description</button>
-      <div class="ci-exclusive-area-description-wrap admin-field${descHidden}">
-        <label>Description <span class="admin-small">(optional)</span></label>
-        <textarea class="ci-exclusive-area-description" rows="2" placeholder="Short detail shown on My Ship">${esc(row.description || "")}</textarea>
-      </div>
+      ${fieldStack}
+    </div>
+  `;
+}
+
+function renderCiExclusiveAreaSourcePreviewHtml() {
+  const rows = readCiExclusiveAreasFromDom();
+  if (!rows.length) {
+    return `<p class="admin-small">No exclusive areas on the current form.</p>`;
+  }
+  return `
+    <div class="ci-exclusive-area-source-preview">
+      <p class="admin-small"><strong>Source exclusive area${rows.length === 1 ? "" : "s"}</strong></p>
+      ${rows.map((row, index) => `
+        <div class="ci-exclusive-area-card ci-exclusive-area-card--preview">
+          ${rows.length > 1 ? `<strong class="ci-exclusive-area-card-title">Exclusive area ${index + 1}</strong>` : ""}
+          ${renderCiExclusiveAreaFieldStack(row, index, { readonly: true })}
+        </div>
+      `).join("")}
     </div>
   `;
 }
@@ -7647,6 +7683,7 @@ function openCiSameClassFacilitiesCopyModal() {
       </div>
       <p class="admin-small"><strong>Cruise line:</strong> ${esc(line?.name || "—")}</p>
       <p class="admin-small"><strong>Ship class:</strong> ${esc(shipClass)}</p>
+      ${renderCiExclusiveAreaSourcePreviewHtml()}
       <p class="ci-facility-warning">Selected facility sections will replace the same sections on each target ship.</p>
       <div class="ci-facilities-copy-toolbar">
         <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopySelectAll" onchange="toggleCiSameClassCopySelectAll(this.checked)"> Select all targets</label>

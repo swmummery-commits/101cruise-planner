@@ -191,6 +191,12 @@ assert.match(adminJs, /Add description/);
 assert.match(adminJs, /Copy to ships in this class/);
 assert.match(adminJs, /ci-ship-facilities-copy/);
 assert.match(adminJs, /Copy cancelled/);
+assert.match(adminJs, /renderCiExclusiveAreaFieldStack/);
+assert.match(adminJs, /ci-exclusive-area-fields/);
+assert.match(adminJs, /renderCiExclusiveAreaSourcePreviewHtml/);
+assert.doesNotMatch(adminJs, /ci-exclusive-area-card ci-facility-row/);
+assert.match(read("css/admin.css"), /\.ci-exclusive-area-fields/);
+assert.match(read("css/admin.css"), /width:\s*100%/);
 
 const { resolveCruiseShip } = require(path.join(root, "netlify/functions/lib/resolve-cruise-ship.js"));
 const resolved = resolveCruiseShip(
