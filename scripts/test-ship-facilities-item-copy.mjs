@@ -286,14 +286,77 @@ const resultRow = ItemCopy.buildResultRow("Celebrity Beyond", exec.outcomes, {
 assert.ok(resultRow.added.includes("Blu"));
 assert.ok(resultRow.added.includes("Magic Carpet"));
 
-// UI / responsive markers
+// Confirmation reconciliation
+const confirmPlans = ItemCopy.buildCopyPlans({
+  sourceFacilities: edge.facilities,
+  targets: [apex, beyond],
+  selectedItems,
+  conflictResolutions: [{ target_ship_id: "apex", source_key: retreatKey, action: "replace_source" }]
+});
+const confirmation = ItemCopy.buildConfirmationSummary({
+  sourceShipName: edge.name,
+  cruiseLineName: fixtures.cruiseLine.name,
+  targetScope: ItemCopy.TARGET_SCOPE_SAME_CLASS,
+  exclusiveItems: edgeExclusive.filter(function (i) { return [bluKey, retreatKey].includes(i.source_key); }),
+  specialtyItems: edgeSpecialty.filter(function (i) { return [magicKey, edenKey].includes(i.source_key); }),
+  plans: confirmPlans
+});
+assert.equal(confirmation.aggregates.addCount, confirmation.perTarget.reduce(function (s, r) { return s + r.addCount; }, 0));
+assert.equal(confirmation.aggregates.replaceCount, confirmation.perTarget.reduce(function (s, r) { return s + r.replaceCount; }, 0));
+assert.equal(confirmation.aggregates.skipIdenticalCount, confirmation.perTarget.reduce(function (s, r) { return s + r.skipIdenticalCount; }, 0));
+assert.equal(confirmation.aggregates.keepExistingCount, confirmation.perTarget.reduce(function (s, r) { return s + r.keepExistingCount; }, 0));
+assert.throws(function () {
+  ItemCopy.assertConfirmationTotalsReconcile({
+    perTarget: [{ addCount: 1, replaceCount: 0, skipIdenticalCount: 0, keepExistingCount: 0 }],
+    aggregates: { addCount: 2, replaceCount: 0, skipIdenticalCount: 0, keepExistingCount: 0 }
+  });
+}, /CONFIRMATION_TOTALS_MISMATCH/);
+
+assert.equal(ItemCopy.canContinueToReview({ selectedSourceCount: 0, selectedTargetCount: 1, plans: confirmPlans }), false);
+assert.equal(ItemCopy.canContinueToReview({ selectedSourceCount: 2, selectedTargetCount: 0, plans: confirmPlans }), false);
+assert.equal(ItemCopy.canContinueToReview({ selectedSourceCount: 2, selectedTargetCount: 2, plans: confirmPlans }), true);
+const noOpPlans = ItemCopy.buildCopyPlans({
+  sourceFacilities: edge.facilities,
+  targets: [xcel],
+  selectedItems: {
+    exclusive_areas: [],
+    specialty_features: [
+      { source_key: magicKey, value: "Magic Carpet" },
+      { source_key: edenKey, value: "Eden" },
+      { source_key: edgeSpecialty.find((i) => i.value === "Rooftop Garden").source_key, value: "Rooftop Garden" },
+      { source_key: edgeSpecialty.find((i) => i.value === "Grand Plaza").source_key, value: "Grand Plaza" }
+    ]
+  },
+  conflictResolutions: []
+});
+assert.equal(ItemCopy.canContinueToReview({ selectedSourceCount: 4, selectedTargetCount: 1, plans: noOpPlans }), false);
+
+assert.equal(ItemCopy.planHasConflicts(confirmPlans), true);
+assert.equal(ItemCopy.conflictsAreResolved(confirmPlans, [{ target_ship_id: "apex", source_key: retreatKey, action: "keep_target" }]), true);
+
+// UI / workflow markers
 assert.match(adminJs, /Copy facilities to other ships/);
 assert.match(adminJs, /CiShipFacilitiesItemCopyAdmin/);
 assert.match(adminCopyJs, /Entire cruise-line fleet/);
 assert.match(adminCopyJs, /Select all items/);
-assert.match(adminCss, /\.ci-item-copy-modal/);
-assert.match(adminCss, /max-width: 390px/);
-assert.match(adminCopyJs, /itemCopySubmitLabel/);
+assert.match(adminCopyJs, /Continue to review/);
+assert.match(adminCopyJs, /Confirm copy/);
+assert.match(adminCopyJs, /data-footer-step="select"/);
+assert.match(adminCopyJs, /data-footer-step="conflicts"/);
+assert.match(adminCopyJs, /data-footer-step="confirm"/);
+assert.match(adminCopyJs, /data-footer-step="result"/);
+assert.match(adminCopyJs, /data-action="close-result"/);
+assert.match(adminCopyJs, /buildConfirmationSummary/);
+assert.match(adminCopyJs, /No changes to copy/);
+assert.match(adminCopyJs, /aria-disabled/);
+assert.match(adminCopyJs, /Unrelated target facilities will be preserved/);
+assert.match(adminCopyJs, /selectedEa: \[\]/);
+assert.match(adminCopyJs, /selectedTargets: \[\]/);
+assert.match(adminCss, /\.ci-item-copy-modal\.ci-bulk-class-modal/);
+assert.match(adminCss, /ci-bulk-class-modal-footer/);
+assert.match(adminCss, /@media \(max-width: 390px\)/);
+assert.doesNotMatch(adminCopyJs, /window\.confirm/);
+
 assert.equal(
   ItemCopy.itemCopySubmitLabel({ selectedTargetCount: 2, totals: { noChanges: true } }),
   "No changes to copy"

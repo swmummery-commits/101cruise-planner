@@ -4,6 +4,11 @@
 (function () {
   "use strict";
 
+  const STEP_SELECT = "select";
+  const STEP_CONFLICTS = "conflicts";
+  const STEP_CONFIRM = "confirm";
+  const STEP_RESULT = "result";
+
   let modalContext = null;
 
   function baseApi() {
@@ -75,10 +80,9 @@
     const itemCopy = itemApi();
     const source = getSourceShip();
     if (!itemCopy || !source) return [];
-    const scope = readTargetScope();
     const lineId = getLineId(source);
     const draftSource = { ...source, cruise_line_id: lineId || source.cruise_line_id };
-    return itemCopy.resolveCopyTargets(getShips(), draftSource, scope, getDraftClass());
+    return itemCopy.resolveCopyTargets(getShips(), draftSource, readTargetScope(), getDraftClass());
   }
 
   function visibleTargets() {
@@ -86,25 +90,27 @@
     const source = getSourceShip();
     if (!itemCopy || !source) return [];
     const all = eligibleTargets();
-    const search = String(document.getElementById("ciItemCopyTargetSearch") && document.getElementById("ciItemCopyTargetSearch").value || "");
-    const classFilter = String(document.getElementById("ciItemCopyClassFilter") && document.getElementById("ciItemCopyClassFilter").value || "all");
-    if (readTargetScope() !== itemCopy.TARGET_SCOPE_FLEET) {
-      if (!search.trim()) return all;
-      const q = itemCopy.normalizeCompareText(search);
-      return all.filter(function (ship) {
-        return itemCopy.normalizeCompareText(ship.name).includes(q);
-      });
-    }
-    return itemCopy.filterFleetTargets(all, getLineId(source), { search: search, classFilter: classFilter });
+    const search = String(document.getElementById("ciItemCopyTargetSearch") && document.getElementById("ciItemCopyTargetSearch").value || modalContext && modalContext.search || "");
+    const classFilter = String(document.getElementById("ciItemCopyClassFilter") && document.getElementById("ciItemCopyClassFilter").value || modalContext && modalContext.classFilter || "all");
+    const filters = { search: search, classFilter: classFilter };
+    if (readTargetScope() !== itemCopy.TARGET_SCOPE_FLEET && !search.trim()) return all;
+    return itemCopy.filterFleetTargets(all, getLineId(source), filters);
   }
 
   function readSelectedSourceKeys() {
-    const exclusive = [...document.querySelectorAll(".ci-item-copy-source-ea:checked")].map(function (el) { return el.value; });
-    const specialty = [...document.querySelectorAll(".ci-item-copy-source-sf:checked")].map(function (el) { return el.value; });
-    return { exclusive: exclusive, specialty: specialty };
+    if (modalContext && modalContext.step !== STEP_SELECT) {
+      return { exclusive: modalContext.selectedEa || [], specialty: modalContext.selectedSf || [] };
+    }
+    return {
+      exclusive: [...document.querySelectorAll(".ci-item-copy-source-ea:checked")].map(function (el) { return el.value; }),
+      specialty: [...document.querySelectorAll(".ci-item-copy-source-sf:checked")].map(function (el) { return el.value; })
+    };
   }
 
   function readSelectedTargetIds() {
+    if (modalContext && modalContext.step !== STEP_SELECT) {
+      return modalContext.selectedTargets || [];
+    }
     return [...document.querySelectorAll(".ci-item-copy-target:checked")].map(function (el) { return el.value; }).filter(Boolean);
   }
 
@@ -123,6 +129,9 @@
   }
 
   function readConflictResolutions() {
+    if (modalContext && modalContext.step !== STEP_CONFLICTS && modalContext.step !== STEP_SELECT) {
+      return modalContext.conflictResolutions || [];
+    }
     const rows = [];
     document.querySelectorAll(".ci-item-copy-conflict-choice:checked").forEach(function (el) {
       rows.push({
@@ -131,7 +140,8 @@
         action: el.value
       });
     });
-    return rows;
+    if (rows.length) return rows;
+    return modalContext && modalContext.conflictResolutions ? modalContext.conflictResolutions : [];
   }
 
   function buildPlans() {
@@ -149,15 +159,74 @@
     });
   }
 
-  function renderSourceExclusiveItem(item) {
+  function persistFormState() {
+    if (!modalContext) return;
+    if (modalContext.step === STEP_SELECT) {
+      modalContext.selectedEa = readSelectedSourceKeys().exclusive;
+      modalContext.selectedSf = readSelectedSourceKeys().specialty;
+      modalContext.selectedTargets = readSelectedTargetIds();
+      modalContext.targetScope = readTargetScope();
+      modalContext.search = String(document.getElementById("ciItemCopyTargetSearch") && document.getElementById("ciItemCopyTargetSearch").value || "");
+      modalContext.classFilter = String(document.getElementById("ciItemCopyClassFilter") && document.getElementById("ciItemCopyClassFilter").value || "all");
+    }
+    if (modalContext.step === STEP_CONFLICTS) {
+      modalContext.conflictResolutions = readConflictResolutions();
+    }
+  }
+
+  function buildViewModel() {
+    const itemCopy = itemApi();
+    const source = getSourceShip();
+    const line = getLines().find(function (row) { return row.id === getLineId(source); });
+    if (!itemCopy || !source) return null;
+
+    const exclusiveItems = sourceExclusiveItems();
+    const specialtyItems = sourceSpecialtyItems();
+    const keys = readSelectedSourceKeys();
+    const selectedExclusive = exclusiveItems.filter(function (item) { return keys.exclusive.includes(item.source_key); });
+    const selectedSpecialty = specialtyItems.filter(function (item) { return keys.specialty.includes(item.source_key); });
+    const plans = buildPlans();
+    const totals = itemCopy.summarizeAllPlans(plans);
+    const conflictResolutions = readConflictResolutions();
+    const confirmation = itemCopy.buildConfirmationSummary({
+      sourceShipName: source.name,
+      cruiseLineName: line && line.name,
+      targetScope: modalContext.targetScope || readTargetScope(),
+      exclusiveItems: selectedExclusive,
+      specialtyItems: selectedSpecialty,
+      plans: plans
+    });
+
+    return {
+      source,
+      line,
+      exclusiveItems,
+      specialtyItems,
+      selectedExclusive,
+      selectedSpecialty,
+      plans,
+      plansById: Object.fromEntries(plans.map(function (plan) { return [plan.targetShipId, plan]; })),
+      totals,
+      confirmation,
+      hasConflicts: itemCopy.planHasConflicts(plans),
+      conflictsResolved: itemCopy.conflictsAreResolved(plans, conflictResolutions),
+      sourceCount: keys.exclusive.length + keys.specialty.length,
+      targetCount: readSelectedTargetIds().length,
+      canContinue: itemCopy.canContinueToReview({
+        selectedSourceCount: keys.exclusive.length + keys.specialty.length,
+        selectedTargetCount: readSelectedTargetIds().length,
+        plans: plans
+      })
+    };
+  }
+
+  function renderSourceExclusiveItem(item, checked) {
     const preview = item.legacy
       ? `<span class="ci-item-copy-legacy-tag">Legacy text</span>`
-      : (item.description
-        ? `<span class="ci-item-copy-desc-preview">${esc(item.description)}</span>`
-        : "");
+      : (item.description ? `<span class="ci-item-copy-desc-preview">${esc(item.description)}</span>` : "");
     return `
       <label class="ci-check-control ci-item-copy-source-item">
-        <input type="checkbox" class="ci-item-copy-source-ea" value="${esc(item.source_key)}">
+        <input type="checkbox" class="ci-item-copy-source-ea" value="${esc(item.source_key)}"${checked ? " checked" : ""}>
         <span class="ci-item-copy-source-item-body">
           <strong>${esc(item.name)}</strong>
           ${preview}
@@ -165,33 +234,165 @@
       </label>`;
   }
 
-  function renderSourceSpecialtyItem(item) {
+  function renderSourceSpecialtyItem(item, checked) {
     return `
       <label class="ci-check-control ci-item-copy-source-item">
-        <input type="checkbox" class="ci-item-copy-source-sf" value="${esc(item.source_key)}">
+        <input type="checkbox" class="ci-item-copy-source-sf" value="${esc(item.source_key)}"${checked ? " checked" : ""}>
         <span class="ci-item-copy-source-item-body"><strong>${esc(item.value)}</strong></span>
       </label>`;
+  }
+
+  function renderTargetTableRows(ships, plansById, selectedIds) {
+    const itemCopy = itemApi();
+    const source = getSourceShip();
+    return ships.map(function (ship) {
+      const checked = selectedIds.has(ship.id) ? " checked" : "";
+      const cls = ship.ship_class ? esc(ship.ship_class) : `<span class="ci-bulk-class-muted">Unassigned</span>`;
+      const plan = plansById[ship.id];
+      const status = plan ? esc(itemCopy.targetComparisonStatusLabel(plan.items)) : "—";
+      const sourceMark = source && ship.id === source.id ? `<span class="ci-bulk-class-source">Current ship</span>` : "";
+      return `
+        <tr class="ci-item-copy-row" data-ship-id="${esc(ship.id)}">
+          <td class="ci-item-copy-check"><label class="ci-check-control"><input type="checkbox" class="ci-item-copy-target" value="${esc(ship.id)}"${checked}></label></td>
+          <td class="ci-item-copy-name">${esc(ship.name)}${sourceMark}</td>
+          <td>${cls}</td>
+          <td>${status}</td>
+        </tr>
+        <tr class="ci-item-copy-card" data-ship-id="${esc(ship.id)}">
+          <td colspan="4">
+            <label class="ci-check-control ci-item-copy-card-head">
+              <input type="checkbox" class="ci-item-copy-target" value="${esc(ship.id)}"${checked}>
+              <strong>${esc(ship.name)}</strong>${sourceMark}
+            </label>
+            <div class="ci-item-copy-card-meta">
+              <span>${ship.ship_class ? esc(ship.ship_class) : "Unassigned"}</span>
+              <span>${status}</span>
+            </div>
+          </td>
+        </tr>`;
+    }).join("");
+  }
+
+  function renderClassFilterOptions(selected) {
+    const itemCopy = itemApi();
+    const source = getSourceShip();
+    if (!itemCopy || !source) return "";
+    const options = itemCopy.listFleetClassFilterOptions(getShips(), getLineId(source));
+    return [`<option value="all"${selected === "all" ? " selected" : ""}>All classes</option>`]
+      .concat(options.map(function (cls) {
+        return `<option value="${esc(cls)}"${selected === cls ? " selected" : ""}>${esc(cls)}</option>`;
+      }))
+      .join("");
+  }
+
+  function renderSelectBody(vm) {
+    const itemCopy = itemApi();
+    const ctx = modalContext;
+    const scope = ctx.targetScope || itemCopy.TARGET_SCOPE_SAME_CLASS;
+    const sameClassDisabled = !getDraftClass();
+    const selectedEa = new Set(ctx.selectedEa || []);
+    const selectedSf = new Set(ctx.selectedSf || []);
+    const visible = visibleTargets();
+    const fleetScope = scope === itemCopy.TARGET_SCOPE_FLEET;
+
+    return `
+      <p class="admin-small"><strong>Source ship:</strong> ${esc(vm.source.name)}</p>
+      <p class="admin-small"><strong>Cruise line:</strong> ${esc(vm.line && vm.line.name || "—")}</p>
+
+      <div class="ci-item-copy-global-toolbar ci-bulk-class-selection-tools">
+        <button type="button" class="admin-button secondary small" data-action="select-all-items">Select all items</button>
+        <button type="button" class="admin-button secondary small" data-action="clear-all-items">Clear all items</button>
+      </div>
+
+      <section class="ci-item-copy-section">
+        <div class="ci-item-copy-section-head">
+          <h5>Exclusive Areas</h5>
+          <div class="ci-bulk-class-selection-tools">
+            <button type="button" class="admin-button secondary small" data-action="select-ea-all">Select all</button>
+            <button type="button" class="admin-button secondary small" data-action="clear-ea-all">Clear all</button>
+          </div>
+        </div>
+        <div class="ci-item-copy-source-list">${vm.exclusiveItems.map(function (item) {
+          return renderSourceExclusiveItem(item, selectedEa.has(item.source_key));
+        }).join("") || `<p class="admin-small">No exclusive areas on this ship.</p>`}</div>
+      </section>
+
+      <section class="ci-item-copy-section">
+        <div class="ci-item-copy-section-head">
+          <h5>Specialty Features</h5>
+          <div class="ci-bulk-class-selection-tools">
+            <button type="button" class="admin-button secondary small" data-action="select-sf-all">Select all</button>
+            <button type="button" class="admin-button secondary small" data-action="clear-sf-all">Clear all</button>
+          </div>
+        </div>
+        <div class="ci-item-copy-source-list">${vm.specialtyItems.map(function (item) {
+          return renderSourceSpecialtyItem(item, selectedSf.has(item.source_key));
+        }).join("") || `<p class="admin-small">No specialty features on this ship.</p>`}</div>
+      </section>
+
+      <section class="ci-item-copy-section">
+        <h5>Target scope</h5>
+        <div class="ci-item-copy-scope-row">
+          <label class="ci-check-control">
+            <input type="radio" name="ciItemCopyScope" value="${itemCopy.TARGET_SCOPE_SAME_CLASS}"${scope === itemCopy.TARGET_SCOPE_SAME_CLASS ? " checked" : ""}${sameClassDisabled ? " disabled" : ""}>
+            Same class
+          </label>
+          <label class="ci-check-control">
+            <input type="radio" name="ciItemCopyScope" value="${itemCopy.TARGET_SCOPE_FLEET}"${scope === itemCopy.TARGET_SCOPE_FLEET ? " checked" : ""}>
+            Entire cruise-line fleet
+          </label>
+        </div>
+        ${sameClassDisabled ? `<p class="ci-facility-warning">This ship has no class assigned. Same-class copying is unavailable — use the fleet option.</p>` : ""}
+      </section>
+
+      <section class="ci-item-copy-section">
+        <div class="ci-item-copy-section-head">
+          <h5>Target ships</h5>
+          <div class="ci-bulk-class-selection-tools">
+            <button type="button" class="admin-button secondary small" data-action="select-targets-visible">Select all visible</button>
+            <button type="button" class="admin-button secondary small" data-action="clear-targets-all">Clear all</button>
+          </div>
+        </div>
+        <div class="ci-bulk-class-toolbar ci-item-copy-target-filters">
+          <input id="ciItemCopyTargetSearch" type="search" placeholder="Search ships…" value="${esc(ctx.search || "")}">
+          ${fleetScope ? `<select id="ciItemCopyClassFilter">${renderClassFilterOptions(ctx.classFilter || "all")}</select>` : ""}
+        </div>
+        <div class="ci-bulk-class-table-wrap">
+          <table class="ci-bulk-class-table ci-item-copy-table" aria-label="Target ships">
+            <thead>
+              <tr>
+                <th scope="col">Select</th>
+                <th scope="col">Ship</th>
+                <th scope="col">Class</th>
+                <th scope="col">Selected items</th>
+              </tr>
+            </thead>
+            <tbody id="ciItemCopyTargetBody">${visible.length
+              ? renderTargetTableRows(visible, vm.plansById, new Set(ctx.selectedTargets || []))
+              : `<tr><td colspan="4"><p class="admin-small">No eligible target ships for the selected scope.</p></td></tr>`}</tbody>
+          </table>
+        </div>
+      </section>`;
   }
 
   function renderConflictBlock(plan, row) {
     const sourceItem = row.sourceItem;
     const targetEntry = row.comparison.targetEntry || {};
-    const targetDescription = targetEntry.description || "";
     const keepChecked = row.plannedAction === "keep_existing" ? " checked" : "";
     const replaceChecked = row.plannedAction === "replace" ? " checked" : "";
     return `
-      <div class="ci-item-copy-conflict-card" data-target-id="${esc(plan.targetShipId)}" data-source-key="${esc(row.source_key)}">
+      <div class="ci-item-copy-conflict-card">
         <p class="admin-small"><strong>${esc(plan.targetShipName)}</strong> · ${esc(sourceItem.name)}</p>
         <div class="ci-item-copy-conflict-grid">
-          <div>
+          <div class="ci-item-copy-conflict-panel">
             <p class="admin-small">Source</p>
             <p>${esc(sourceItem.name)}</p>
             <p class="ci-item-copy-desc-preview">${esc(sourceItem.description || "—")}</p>
           </div>
-          <div>
+          <div class="ci-item-copy-conflict-panel">
             <p class="admin-small">Target</p>
             <p>${esc(sourceItem.name)}</p>
-            <p class="ci-item-copy-desc-preview">${esc(targetDescription || "—")}</p>
+            <p class="ci-item-copy-desc-preview">${esc(targetEntry.description || "—")}</p>
           </div>
         </div>
         <fieldset class="ci-item-copy-conflict-choices">
@@ -208,373 +409,229 @@
       </div>`;
   }
 
-  function renderTargetRow(ship, plan) {
-    const itemCopy = itemApi();
-    const source = getSourceShip();
-    const isCurrent = source && ship.id === source.id;
-    const cls = ship.ship_class ? esc(ship.ship_class) : "Unassigned";
-    const status = plan ? itemCopy.targetComparisonStatusLabel(plan.items) : "—";
-    return `
-      <label class="ci-check-control ci-item-copy-target-row">
-        <input type="checkbox" class="ci-item-copy-target" value="${esc(ship.id)}">
-        <span class="ci-item-copy-target-body">
-          <span class="ci-item-copy-target-name">${esc(ship.name)}${isCurrent ? " <span class=\"ci-item-copy-current-tag\">Current ship</span>" : ""}</span>
-          <span class="ci-item-copy-target-meta">${cls}</span>
-          <span class="ci-item-copy-target-status">${esc(status)}</span>
-        </span>
-      </label>`;
-  }
-
-  function renderTargetTable(ships, plansById) {
-    const rows = ships.map(function (ship) {
-      return renderTargetRow(ship, plansById[ship.id]);
-    }).join("");
-    return `<div class="ci-item-copy-target-list">${rows}</div>`;
-  }
-
-  function renderReview(plans) {
-    const itemCopy = itemApi();
-    if (!plans.length) return `<p class="admin-small">Select source items and target ships to review changes.</p>`;
-    return plans.map(function (plan) {
-      const summary = plan.summary;
-      const lines = [];
-      if (summary.addCount) lines.push(`${summary.addCount} item${summary.addCount === 1 ? "" : "s"} will be added`);
-      if (summary.skipIdenticalCount) lines.push(`${summary.skipIdenticalCount} identical item${summary.skipIdenticalCount === 1 ? "" : "s"} will be skipped`);
-      if (summary.conflictCount) lines.push(`${summary.conflictCount} conflict${summary.conflictCount === 1 ? "" : "s"} need${summary.conflictCount === 1 ? "s" : ""} a decision`);
-      if (summary.noChanges) lines.push("No changes");
-      const itemLabels = (plan.items || []).map(function (row) {
-        const label = row.sourceItem.name || row.sourceItem.value;
-        if (row.plannedAction === "add") return `${esc(label)} — Will add`;
-        if (row.plannedAction === "skip_identical") return `${esc(label)} — Already identical`;
-        if (row.plannedAction === "keep_existing") return `${esc(label)} — Keep existing`;
-        if (row.plannedAction === "replace") return `${esc(label)} — Replace existing`;
-        if (row.comparison.status === "different") return `${esc(label)} — Different description`;
-        return esc(label);
-      }).join("<br>");
-      return `
-        <div class="ci-item-copy-review-card">
-          <p class="admin-small"><strong>${esc(plan.targetShipName)}</strong></p>
-          <p class="admin-small">${esc(lines.join(" · ") || "No changes")}</p>
-          <div class="admin-small ci-item-copy-review-items">${itemLabels}</div>
-        </div>`;
-    }).join("");
-  }
-
-  function renderConflictSection(plans) {
+  function renderConflictsBody(vm) {
     const blocks = [];
-    plans.forEach(function (plan) {
+    vm.plans.forEach(function (plan) {
       (plan.items || []).forEach(function (row) {
         if (row.comparison.status === "different") blocks.push(renderConflictBlock(plan, row));
       });
     });
-    if (!blocks.length) return "";
     return `
-      <section class="ci-item-copy-section">
-        <h5>Exclusive area conflicts</h5>
-        ${blocks.join("")}
-      </section>`;
+      <p class="admin-small">Resolve description conflicts before continuing to the final review.</p>
+      ${blocks.join("") || `<p class="admin-small">No conflicts require a decision.</p>`}`;
   }
 
-  function renderClassFilterOptions() {
-    const itemCopy = itemApi();
-    const source = getSourceShip();
-    if (!itemCopy || !source) return "";
-    const options = itemCopy.listFleetClassFilterOptions(getShips(), getLineId(source));
-    return [`<option value="all">All classes</option>`]
-      .concat(options.map(function (cls) {
-        return `<option value="${esc(cls)}">${esc(cls)}</option>`;
-      }))
-      .join("");
+  function renderConfirmList(title, items) {
+    if (!items.length) return "";
+    return `
+      <p class="admin-small ci-item-copy-confirm-group-title">${esc(title)}</p>
+      <ul class="ci-bulk-class-summary-list">${items.map(function (item) { return `<li>${esc(item)}</li>`; }).join("")}</ul>`;
   }
 
-  function renderModalBody() {
-    const itemCopy = itemApi();
-    const source = getSourceShip();
-    const line = getLines().find(function (row) { return row.id === getLineId(source); });
-    const exclusiveItems = sourceExclusiveItems();
-    const specialtyItems = sourceSpecialtyItems();
-    const scope = modalContext && modalContext.targetScope || itemCopy.TARGET_SCOPE_SAME_CLASS;
-    const sameClassDisabled = !getDraftClass();
-    const targets = eligibleTargets();
-    const visible = visibleTargets();
-    const plans = buildPlans();
-    const plansById = Object.fromEntries(plans.map(function (plan) { return [plan.targetShipId, plan]; }));
-    const totals = itemCopy.summarizeAllPlans(plans);
-    const fleetScope = scope === itemCopy.TARGET_SCOPE_FLEET;
-
+  function renderConfirmTargetCard(row) {
     return `
-      <div class="ci-facilities-copy-modal-head">
-        <h4 id="ciItemCopyTitle">Copy ship facilities</h4>
-        <button type="button" class="admin-button secondary small" id="ciItemCopyClose">Close</button>
-      </div>
-      <div class="ci-facilities-copy-modal-body">
-        <p class="admin-small"><strong>Source ship:</strong> ${esc(source && source.name || "—")}</p>
-        <p class="admin-small"><strong>Cruise line:</strong> ${esc(line && line.name || "—")}</p>
-
-        <section class="ci-item-copy-section">
-          <div class="ci-item-copy-section-head">
-            <h5>Exclusive Areas</h5>
-            <div class="ci-item-copy-mini-toolbar">
-              <button type="button" class="admin-button secondary small" data-select="ea-all">Select all</button>
-              <button type="button" class="admin-button secondary small" data-clear="ea-all">Clear all</button>
-            </div>
-          </div>
-          <div class="ci-item-copy-source-list">${exclusiveItems.map(renderSourceExclusiveItem).join("") || `<p class="admin-small">No exclusive areas on this ship.</p>`}</div>
-        </section>
-
-        <section class="ci-item-copy-section">
-          <div class="ci-item-copy-section-head">
-            <h5>Specialty Features</h5>
-            <div class="ci-item-copy-mini-toolbar">
-              <button type="button" class="admin-button secondary small" data-select="sf-all">Select all</button>
-              <button type="button" class="admin-button secondary small" data-clear="sf-all">Clear all</button>
-            </div>
-          </div>
-          <div class="ci-item-copy-source-list">${specialtyItems.map(renderSourceSpecialtyItem).join("") || `<p class="admin-small">No specialty features on this ship.</p>`}</div>
-        </section>
-
-        <div class="ci-item-copy-global-toolbar">
-          <button type="button" class="admin-button secondary small" data-select="all-items">Select all items</button>
-          <button type="button" class="admin-button secondary small" data-clear="all-items">Clear all items</button>
-        </div>
-
-        <section class="ci-item-copy-section">
-          <h5>Target scope</h5>
-          <div class="ci-item-copy-scope-row">
-            <label class="ci-check-control">
-              <input type="radio" name="ciItemCopyScope" value="${itemCopy.TARGET_SCOPE_SAME_CLASS}"${scope === itemCopy.TARGET_SCOPE_SAME_CLASS ? " checked" : ""}${sameClassDisabled ? " disabled" : ""}>
-              Same class
-            </label>
-            <label class="ci-check-control">
-              <input type="radio" name="ciItemCopyScope" value="${itemCopy.TARGET_SCOPE_FLEET}"${scope === itemCopy.TARGET_SCOPE_FLEET ? " checked" : ""}>
-              Entire cruise-line fleet
-            </label>
-          </div>
-          ${sameClassDisabled ? `<p class="ci-facility-warning">This ship has no class assigned. Same-class copying is unavailable — use the fleet option.</p>` : ""}
-          ${!targets.length ? `<p class="ci-facility-warning">No eligible target ships for the selected scope.</p>` : ""}
-        </section>
-
-        <section class="ci-item-copy-section">
-          <div class="ci-item-copy-section-head">
-            <h5>Target ships</h5>
-            <div class="ci-item-copy-mini-toolbar">
-              <button type="button" class="admin-button secondary small" data-select="targets-visible">Select all visible</button>
-              <button type="button" class="admin-button secondary small" data-clear="targets-all">Clear all</button>
-            </div>
-          </div>
-          <div class="ci-item-copy-target-filters">
-            <label class="admin-field ci-item-copy-search-field">
-              <span>Search ships</span>
-              <input type="search" id="ciItemCopyTargetSearch" placeholder="Search by ship name" value="${esc(modalContext && modalContext.search || "")}">
-            </label>
-            ${fleetScope ? `
-              <label class="admin-field">
-                <span>Class filter</span>
-                <select id="ciItemCopyClassFilter">${renderClassFilterOptions()}</select>
-              </label>` : ""}
-          </div>
-          ${renderTargetTable(visible, plansById)}
-        </section>
-
-        <section class="ci-item-copy-section">
-          <h5>Review</h5>
-          <div id="ciItemCopyReview">${renderReview(plans)}</div>
-        </section>
-
-        <div id="ciItemCopyConflicts">${renderConflictSection(plans)}</div>
-      </div>
-      <div class="ci-facilities-copy-modal-footer">
-        <p class="admin-small" id="ciItemCopySummary">${esc(buildFooterSummary(totals, plans))}</p>
-        <div class="admin-actions-row ci-facilities-copy-modal-actions">
-          <button type="button" class="admin-button secondary small" id="ciItemCopyCancel">Cancel</button>
-          <button type="button" class="admin-button small" id="ciItemCopySubmit">${esc(itemCopy.itemCopySubmitLabel({
-            selectedTargetCount: readSelectedTargetIds().length,
-            totals: totals,
-            awaitingConfirmation: false,
-            showingConfirmation: false
-          }))}</button>
-        </div>
-        <div id="ciItemCopyResultPanel"></div>
+      <div class="ci-item-copy-confirm-card">
+        <p class="admin-small"><strong>${esc(row.targetShipName)}</strong></p>
+        ${renderConfirmList("Will add:", row.willAdd)}
+        ${renderConfirmList("Will replace:", row.willReplace)}
+        ${renderConfirmList("Already identical:", row.alreadyIdentical)}
+        ${renderConfirmList("Keep target version:", row.keepTarget)}
       </div>`;
   }
 
-  function buildFooterSummary(totals, plans) {
-    const sourceKeys = readSelectedSourceKeys();
-    const targetCount = readSelectedTargetIds().length;
-    const sourceCount = sourceKeys.exclusive.length + sourceKeys.specialty.length;
-    if (!sourceCount && !targetCount) return "Select source items and target ships.";
-    if (!sourceCount) return "Select at least one source item.";
-    if (!targetCount) return "Select at least one target ship.";
-    if (totals.noChanges) return "All selected items are already identical or set to keep existing — no changes to copy.";
-    return `${totals.addCount} addition${totals.addCount === 1 ? "" : "s"}, ${totals.replaceCount} replacement${totals.replaceCount === 1 ? "" : "s"}, ${totals.skipIdenticalCount} identical skipped, ${totals.keepExistingCount} retained across ${plans.length} ship${plans.length === 1 ? "" : "s"}.`;
+  function renderConfirmBody(vm) {
+    const c = vm.confirmation;
+    return `
+      <div class="ci-item-copy-confirm-meta">
+        <p class="admin-small"><strong>Source ship:</strong> ${esc(c.sourceShipName)}</p>
+        <p class="admin-small"><strong>Cruise line:</strong> ${esc(c.cruiseLineName)}</p>
+        <p class="admin-small"><strong>Scope:</strong> ${esc(c.targetScopeLabel)}</p>
+      </div>
+      ${renderConfirmList("Target ships", c.targetShipNames)}
+      ${renderConfirmList("Exclusive Areas", c.exclusiveAreas)}
+      ${renderConfirmList("Specialty Features", c.specialtyFeatures)}
+      <div class="ci-item-copy-confirm-targets">${c.perTarget.map(renderConfirmTargetCard).join("")}</div>
+      <div class="ci-item-copy-confirm-aggregates">
+        <p class="admin-small"><strong>Aggregate totals</strong></p>
+        <ul class="ci-bulk-class-summary-list">
+          <li>${c.aggregates.addCount} addition${c.aggregates.addCount === 1 ? "" : "s"}</li>
+          <li>${c.aggregates.replaceCount} replacement${c.aggregates.replaceCount === 1 ? "" : "s"}</li>
+          <li>${c.aggregates.skipIdenticalCount} identical item${c.aggregates.skipIdenticalCount === 1 ? "" : "s"} skipped</li>
+          <li>${c.aggregates.keepExistingCount} target version${c.aggregates.keepExistingCount === 1 ? "" : "s"} retained</li>
+        </ul>
+      </div>
+      <p class="admin-small ci-item-copy-preserve-note">Unrelated target facilities will be preserved.</p>`;
   }
 
-  function rerenderModal() {
-    const overlay = document.getElementById("ciItemFacilitiesCopyOverlay");
-    if (!overlay || !modalContext) return;
-    const modal = overlay.querySelector(".ci-facilities-copy-modal");
-    if (!modal) return;
-    const selectedEa = new Set(readSelectedSourceKeys().exclusive);
-    const selectedSf = new Set(readSelectedSourceKeys().specialty);
-    const selectedTargets = new Set(readSelectedTargetIds());
-    const conflictRes = readConflictResolutions();
-    modalContext.selectedEa = [...selectedEa];
-    modalContext.selectedSf = [...selectedSf];
-    modalContext.selectedTargets = [...selectedTargets];
-    modalContext.conflictResolutions = conflictRes;
-    modalContext.search = String(document.getElementById("ciItemCopyTargetSearch") && document.getElementById("ciItemCopyTargetSearch").value || "");
-    modalContext.classFilter = String(document.getElementById("ciItemCopyClassFilter") && document.getElementById("ciItemCopyClassFilter").value || "all");
-    modal.innerHTML = renderModalBody();
-    restoreSelections();
-    bindModalEvents();
-    updateSubmitState();
-  }
-
-  function restoreSelections() {
-    const ctx = modalContext || {};
-    (ctx.selectedEa || []).forEach(function (key) {
-      const el = document.querySelector(`.ci-item-copy-source-ea[value="${CSS.escape(key)}"]`);
-      if (el) el.checked = true;
-    });
-    (ctx.selectedSf || []).forEach(function (key) {
-      const el = document.querySelector(`.ci-item-copy-source-sf[value="${CSS.escape(key)}"]`);
-      if (el) el.checked = true;
-    });
-    (ctx.selectedTargets || []).forEach(function (id) {
-      const el = document.querySelector(`.ci-item-copy-target[value="${CSS.escape(id)}"]`);
-      if (el) el.checked = true;
-    });
-    (ctx.conflictResolutions || []).forEach(function (row) {
-      const el = document.querySelector(
-        `.ci-item-copy-conflict-choice[data-target-id="${CSS.escape(row.target_ship_id)}"][data-source-key="${CSS.escape(row.source_key)}"][value="${CSS.escape(row.action)}"]`
-      );
-      if (el) el.checked = true;
-    });
-    const search = document.getElementById("ciItemCopyTargetSearch");
-    if (search && ctx.search) search.value = ctx.search;
-    const classFilter = document.getElementById("ciItemCopyClassFilter");
-    if (classFilter && ctx.classFilter) classFilter.value = ctx.classFilter;
-  }
-
-  function updateSubmitState() {
+  function renderResultBody(vm) {
+    const data = modalContext.lastResult || {};
     const itemCopy = itemApi();
-    const submit = document.getElementById("ciItemCopySubmit");
-    if (!itemCopy || !submit) return;
-    const plans = buildPlans();
-    const totals = itemCopy.summarizeAllPlans(plans);
-    const sourceCount = readSelectedSourceKeys().exclusive.length + readSelectedSourceKeys().specialty.length;
-    const targetCount = readSelectedTargetIds().length;
-    const awaiting = modalContext && modalContext.awaitingConfirmation;
-    const canSubmit = itemCopy.itemCopyCanSubmit({
-      selectedSourceCount: sourceCount,
-      selectedTargetCount: targetCount,
-      plans: plans,
-      awaitingConfirmation: awaiting
+    const cards = (data.results || []).map(function (row) {
+      if (!row.ok) {
+        return `<div class="ci-item-copy-result-card is-failed"><p class="admin-small"><strong>Failed — ${esc(row.name)}</strong></p><p class="ci-item-copy-result-fail">${esc(row.error || "Copy failed")}</p></div>`;
+      }
+      const result = row.result || itemCopy.buildResultRow(row.name, row.items, {});
+      return `
+        <div class="ci-item-copy-result-card">
+          <p class="admin-small"><strong>${esc(row.name)}</strong></p>
+          ${renderConfirmList("Added", result.added || [])}
+          ${renderConfirmList("Replaced", result.replaced || [])}
+          ${renderConfirmList("Already present", result.skipped_identical || [])}
+          ${renderConfirmList("Kept existing", result.kept_existing || [])}
+        </div>`;
+    }).join("");
+    return `<div class="ci-item-copy-result-wrap"><p class="admin-small"><strong>Copy complete</strong></p>${cards}</div>`;
+  }
+
+  function renderFooter(vm) {
+    const step = modalContext.step;
+    if (step === STEP_RESULT) {
+      return `
+        <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="result">
+          <button type="button" class="admin-button small" data-action="close-result">Close</button>
+        </div>`;
+    }
+    if (step === STEP_CONFIRM) {
+      const noChanges = vm.confirmation.aggregates.noChanges;
+      return `
+        <p class="admin-small" id="ciItemCopySummary">${noChanges
+          ? "All selected items are already identical or set to keep existing — no changes to copy."
+          : `Ready to copy ${vm.confirmation.aggregates.addCount} addition${vm.confirmation.aggregates.addCount === 1 ? "" : "s"} and ${vm.confirmation.aggregates.replaceCount} replacement${vm.confirmation.aggregates.replaceCount === 1 ? "" : "s"}.`}</p>
+        <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="confirm">
+          <button type="button" class="admin-button secondary small" data-action="back">Back</button>
+          <button type="button" class="admin-button secondary small" data-action="cancel">Cancel</button>
+          <button type="button" class="admin-button small" data-action="confirm-copy"${noChanges ? " disabled aria-disabled=\"true\"" : ""}>${noChanges ? "No changes to copy" : "Confirm copy"}</button>
+        </div>`;
+    }
+    if (step === STEP_CONFLICTS) {
+      const continueDisabled = !vm.conflictsResolved;
+      return `
+        <p class="admin-small" id="ciItemCopySummary">${vm.hasConflicts ? "Choose keep or replace for each conflicting exclusive area." : "Review conflict decisions."}</p>
+        <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="conflicts">
+          <button type="button" class="admin-button secondary small" data-action="back">Back</button>
+          <button type="button" class="admin-button secondary small" data-action="cancel">Cancel</button>
+          <button type="button" class="admin-button small" data-action="continue-conflicts"${continueDisabled ? " disabled aria-disabled=\"true\"" : ""}>Continue to review</button>
+        </div>`;
+    }
+    const continueDisabled = !vm.canContinue;
+    return `
+      <p class="admin-small" id="ciItemCopySummary">${vm.sourceCount && vm.targetCount
+        ? (vm.canContinue
+          ? `${vm.totals.addCount} to add · ${vm.totals.replaceCount} to replace across ${vm.targetCount} ship${vm.targetCount === 1 ? "" : "s"}`
+          : "All selected items are already identical or set to keep existing — no changes to copy.")
+        : (vm.sourceCount ? "Select at least one target ship." : "Select source items and target ships.")}</p>
+      <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="select">
+        <button type="button" class="admin-button secondary small" data-action="cancel">Cancel</button>
+        <button type="button" class="admin-button small" data-action="continue-select"${continueDisabled ? " disabled aria-disabled=\"true\"" : ""}>Continue to review</button>
+      </div>`;
+  }
+
+  function stepTitle(step) {
+    if (step === STEP_CONFLICTS) return "Resolve exclusive area conflicts";
+    if (step === STEP_CONFIRM) return "Review and confirm copy";
+    if (step === STEP_RESULT) return "Copy complete";
+    return "Copy ship facilities";
+  }
+
+  function renderModal() {
+    const vm = buildViewModel();
+    if (!vm || !modalContext) return;
+    const overlay = document.getElementById("ciItemFacilitiesCopyOverlay");
+    if (!overlay) return;
+    const step = modalContext.step;
+    let body = "";
+    if (step === STEP_SELECT) body = renderSelectBody(vm);
+    else if (step === STEP_CONFLICTS) body = renderConflictsBody(vm);
+    else if (step === STEP_CONFIRM) body = renderConfirmBody(vm);
+    else if (step === STEP_RESULT) body = renderResultBody(vm);
+
+    overlay.innerHTML = `
+      <div class="ci-bulk-class-modal ci-item-copy-modal" role="dialog" aria-modal="true" aria-labelledby="ciItemCopyTitle">
+        <div class="ci-bulk-class-modal-head">
+          <h4 id="ciItemCopyTitle">${esc(stepTitle(step))}</h4>
+          <button type="button" class="admin-button secondary small" data-action="header-close">Close</button>
+        </div>
+        <div class="ci-bulk-class-modal-body">${body}</div>
+        <div class="ci-bulk-class-modal-footer">${renderFooter(vm)}</div>
+      </div>`;
+    bindModalEvents();
+  }
+
+  function refreshModalContent() {
+    persistFormState();
+    renderModal();
+  }
+
+  function goToStep(step) {
+    if (!modalContext) return;
+    persistFormState();
+    modalContext.step = step;
+    renderModal();
+  }
+
+  function bindCheckboxGroup(root, selector) {
+    root.querySelectorAll(selector).forEach(function (el) {
+      el.addEventListener("change", refreshModalContent);
     });
-    submit.disabled = !canSubmit;
-    submit.setAttribute("aria-disabled", canSubmit ? "false" : "true");
-    submit.textContent = itemCopy.itemCopySubmitLabel({
-      selectedTargetCount: targetCount,
-      totals: totals,
-      awaitingConfirmation: awaiting,
-      showingConfirmation: awaiting
-    });
-    const summary = document.getElementById("ciItemCopySummary");
-    if (summary) summary.textContent = buildFooterSummary(totals, plans);
   }
 
   function bindModalEvents() {
     const overlay = document.getElementById("ciItemFacilitiesCopyOverlay");
     if (!overlay) return;
 
-    overlay.querySelector("#ciItemCopyClose") && overlay.querySelector("#ciItemCopyClose").addEventListener("click", closeModal);
-    overlay.querySelector("#ciItemCopyCancel") && overlay.querySelector("#ciItemCopyCancel").addEventListener("click", closeModal);
+    overlay.querySelector("[data-action='header-close']")?.addEventListener("click", closeModal);
+    overlay.querySelector("[data-action='cancel']")?.addEventListener("click", closeModal);
+    overlay.querySelector("[data-action='close-result']")?.addEventListener("click", closeModal);
+    overlay.querySelector("[data-action='back']")?.addEventListener("click", function () {
+      if (!modalContext) return;
+      if (modalContext.step === STEP_CONFIRM) {
+        const vm = buildViewModel();
+        goToStep(vm && vm.hasConflicts ? STEP_CONFLICTS : STEP_SELECT);
+      } else if (modalContext.step === STEP_CONFLICTS) {
+        goToStep(STEP_SELECT);
+      }
+    });
+    overlay.querySelector("[data-action='continue-select']")?.addEventListener("click", function () {
+      const vm = buildViewModel();
+      if (!vm || !vm.canContinue) return;
+      modalContext.hasConflictsOnPath = vm.hasConflicts;
+      goToStep(vm.hasConflicts ? STEP_CONFLICTS : STEP_CONFIRM);
+    });
+    overlay.querySelector("[data-action='continue-conflicts']")?.addEventListener("click", function () {
+      const vm = buildViewModel();
+      if (!vm || !vm.conflictsResolved) return;
+      goToStep(STEP_CONFIRM);
+    });
+    overlay.querySelector("[data-action='confirm-copy']")?.addEventListener("click", onConfirmCopy);
 
-    overlay.querySelectorAll(".ci-item-copy-source-ea, .ci-item-copy-source-sf, .ci-item-copy-target, .ci-item-copy-conflict-choice")
-      .forEach(function (el) {
-        el.addEventListener("change", function () {
-          if (modalContext) modalContext.awaitingConfirmation = false;
-          rerenderModal();
-        });
-      });
-
+    bindCheckboxGroup(overlay, ".ci-item-copy-source-ea, .ci-item-copy-source-sf, .ci-item-copy-target, .ci-item-copy-conflict-choice");
     overlay.querySelectorAll('input[name="ciItemCopyScope"]').forEach(function (el) {
       el.addEventListener("change", function () {
-        if (!modalContext) return;
         modalContext.targetScope = readTargetScope();
         modalContext.selectedTargets = [];
         modalContext.conflictResolutions = [];
-        modalContext.awaitingConfirmation = false;
-        rerenderModal();
+        refreshModalContent();
       });
     });
+    overlay.querySelector("#ciItemCopyTargetSearch")?.addEventListener("input", refreshModalContent);
+    overlay.querySelector("#ciItemCopyClassFilter")?.addEventListener("change", refreshModalContent);
 
-    const search = overlay.querySelector("#ciItemCopyTargetSearch");
-    if (search) {
-      search.addEventListener("input", function () {
-        if (modalContext) modalContext.search = search.value;
-        rerenderModal();
+    const actions = {
+      "select-ea-all": function () { overlay.querySelectorAll(".ci-item-copy-source-ea").forEach(function (el) { el.checked = true; }); },
+      "clear-ea-all": function () { overlay.querySelectorAll(".ci-item-copy-source-ea").forEach(function (el) { el.checked = false; }); },
+      "select-sf-all": function () { overlay.querySelectorAll(".ci-item-copy-source-sf").forEach(function (el) { el.checked = true; }); },
+      "clear-sf-all": function () { overlay.querySelectorAll(".ci-item-copy-source-sf").forEach(function (el) { el.checked = false; }); },
+      "select-all-items": function () { overlay.querySelectorAll(".ci-item-copy-source-ea, .ci-item-copy-source-sf").forEach(function (el) { el.checked = true; }); },
+      "clear-all-items": function () { overlay.querySelectorAll(".ci-item-copy-source-ea, .ci-item-copy-source-sf").forEach(function (el) { el.checked = false; }); },
+      "select-targets-visible": function () { overlay.querySelectorAll(".ci-item-copy-target").forEach(function (el) { el.checked = true; }); },
+      "clear-targets-all": function () { overlay.querySelectorAll(".ci-item-copy-target").forEach(function (el) { el.checked = false; }); }
+    };
+    Object.keys(actions).forEach(function (key) {
+      overlay.querySelector(`[data-action='${key}']`)?.addEventListener("click", function () {
+        actions[key]();
+        refreshModalContent();
       });
-    }
-    const classFilter = overlay.querySelector("#ciItemCopyClassFilter");
-    if (classFilter) {
-      classFilter.addEventListener("change", function () {
-        if (modalContext) modalContext.classFilter = classFilter.value;
-        rerenderModal();
-      });
-    }
-
-    overlay.querySelector("[data-select='ea-all']") && overlay.querySelector("[data-select='ea-all']").addEventListener("click", function () {
-      overlay.querySelectorAll(".ci-item-copy-source-ea").forEach(function (el) { el.checked = true; });
-      rerenderModal();
     });
-    overlay.querySelector("[data-clear='ea-all']") && overlay.querySelector("[data-clear='ea-all']").addEventListener("click", function () {
-      overlay.querySelectorAll(".ci-item-copy-source-ea").forEach(function (el) { el.checked = false; });
-      rerenderModal();
-    });
-    overlay.querySelector("[data-select='sf-all']") && overlay.querySelector("[data-select='sf-all']").addEventListener("click", function () {
-      overlay.querySelectorAll(".ci-item-copy-source-sf").forEach(function (el) { el.checked = true; });
-      rerenderModal();
-    });
-    overlay.querySelector("[data-clear='sf-all']") && overlay.querySelector("[data-clear='sf-all']").addEventListener("click", function () {
-      overlay.querySelectorAll(".ci-item-copy-source-sf").forEach(function (el) { el.checked = false; });
-      rerenderModal();
-    });
-    overlay.querySelector("[data-select='all-items']") && overlay.querySelector("[data-select='all-items']").addEventListener("click", function () {
-      overlay.querySelectorAll(".ci-item-copy-source-ea, .ci-item-copy-source-sf").forEach(function (el) { el.checked = true; });
-      rerenderModal();
-    });
-    overlay.querySelector("[data-clear='all-items']") && overlay.querySelector("[data-clear='all-items']").addEventListener("click", function () {
-      overlay.querySelectorAll(".ci-item-copy-source-ea, .ci-item-copy-source-sf").forEach(function (el) { el.checked = false; });
-      rerenderModal();
-    });
-    overlay.querySelector("[data-select='targets-visible']") && overlay.querySelector("[data-select='targets-visible']").addEventListener("click", function () {
-      overlay.querySelectorAll(".ci-item-copy-target").forEach(function (el) { el.checked = true; });
-      rerenderModal();
-    });
-    overlay.querySelector("[data-clear='targets-all']") && overlay.querySelector("[data-clear='targets-all']").addEventListener("click", function () {
-      overlay.querySelectorAll(".ci-item-copy-target").forEach(function (el) { el.checked = false; });
-      rerenderModal();
-    });
-
-    overlay.querySelector("#ciItemCopySubmit") && overlay.querySelector("#ciItemCopySubmit").addEventListener("click", onSubmitClick);
-  }
-
-  function renderResultPanel(data) {
-    const itemCopy = itemApi();
-    const panel = document.getElementById("ciItemCopyResultPanel");
-    if (!panel) return;
-    const rows = (data.results || []).map(function (row) {
-      if (!row.ok) return `<p class="ci-item-copy-result-fail"><strong>${esc(row.name)}</strong> — ${esc(row.error || "Failed")}</p>`;
-      const result = row.result || itemCopy.buildResultRow(row.name, row.items, {});
-      const lines = [];
-      if (result.added && result.added.length) lines.push(`Added: ${esc(result.added.join(", "))}`);
-      if (result.replaced && result.replaced.length) lines.push(`Replaced: ${esc(result.replaced.join(", "))}`);
-      if (result.skipped_identical && result.skipped_identical.length) lines.push(`Already present: ${esc(result.skipped_identical.join(", "))}`);
-      if (result.kept_existing && result.kept_existing.length) lines.push(`Kept existing: ${esc(result.kept_existing.join(", "))}`);
-      return `<div class="ci-item-copy-result-card"><strong>${esc(row.name)}</strong><br>${lines.join("<br>") || "Updated"}</div>`;
-    }).join("");
-    panel.innerHTML = `<div class="ci-item-copy-result-wrap"><p><strong>Copy complete</strong></p>${rows}</div>`;
   }
 
   function applySuccessToLocalShips(data) {
@@ -583,68 +640,30 @@
     results.forEach(function (row) {
       if (!row.ok || !row.id || !row.facilities) return;
       const idx = ships.findIndex(function (ship) { return ship.id === row.id; });
-      if (idx >= 0) {
-        ships[idx] = { ...ships[idx], facilities: row.facilities };
-      }
+      if (idx >= 0) ships[idx] = { ...ships[idx], facilities: row.facilities };
     });
     if (window.syncCiCatalogueWindowState) window.syncCiCatalogueWindowState();
     if (window.refreshCiShipMasterList) window.refreshCiShipMasterList();
   }
 
-  async function onSubmitClick() {
+  async function onConfirmCopy() {
     const itemCopy = itemApi();
     const source = getSourceShip();
-    if (!itemCopy || !source || !window.adminAuthHeaders) return;
-
-    const plans = buildPlans();
-    const totals = itemCopy.summarizeAllPlans(plans);
-    const selectedItems = buildSelectedItemsPayload();
-    const targetIds = readSelectedTargetIds();
-    const conflictResolutions = readConflictResolutions();
-    const line = getLines().find(function (row) { return row.id === getLineId(source); });
-
-    if (totals.noChanges) {
-      updateSubmitState();
-      return;
-    }
-
-    if (!modalContext.awaitingConfirmation) {
-      modalContext.awaitingConfirmation = true;
-      const exclusiveNames = selectedItems.exclusive_areas.map(function (row) { return row.name; });
-      const specialtyValues = selectedItems.specialty_features.map(function (row) { return row.value; });
-      const targetNames = targetIds.map(function (id) {
-        return getShips().find(function (ship) { return ship.id === id; });
-      }).filter(Boolean).map(function (ship) { return ship.name; });
-      const confirmed = window.confirm(itemCopy.itemCopyConfirmMessage({
-        sourceShipName: source.name,
-        cruiseLineName: line && line.name,
-        targetScope: readTargetScope(),
-        targetNames: targetNames,
-        exclusiveNames: exclusiveNames,
-        specialtyValues: specialtyValues,
-        totals: totals
-      }));
-      if (!confirmed) {
-        modalContext.awaitingConfirmation = false;
-        updateSubmitState();
-        return;
-      }
-    }
-
-    const submit = document.getElementById("ciItemCopySubmit");
-    if (submit) {
-      submit.disabled = true;
-      submit.textContent = "Copying…";
-    }
+    const vm = buildViewModel();
+    if (!itemCopy || !source || !vm || vm.confirmation.aggregates.noChanges || !window.adminAuthHeaders) return;
 
     const payload = {
       source_ship_id: source.id,
-      target_scope: readTargetScope(),
-      target_ship_ids: targetIds,
-      selected_items: selectedItems,
-      conflict_resolutions: conflictResolutions
+      target_scope: modalContext.targetScope,
+      target_ship_ids: readSelectedTargetIds(),
+      selected_items: buildSelectedItemsPayload(),
+      conflict_resolutions: readConflictResolutions()
     };
-
+    const confirmBtn = document.querySelector("[data-action='confirm-copy']");
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = "Copying…";
+    }
     try {
       const headers = await window.adminAuthHeaders();
       const response = await fetch("/.netlify/functions/ci-ship-facilities-copy", {
@@ -654,24 +673,19 @@
       });
       const data = await response.json().catch(function () { return {}; });
       if (!response.ok || data.success === false) {
-        const panel = document.getElementById("ciItemCopyResultPanel");
-        if (panel) panel.innerHTML = `<p class="ci-item-copy-result-fail">${esc(data.detail || data.error || "Copy failed.")}</p>`;
         if (window.setCiAutosaveStatus) window.setCiAutosaveStatus("Facilities copy failed", "error");
-        modalContext.awaitingConfirmation = false;
-        updateSubmitState();
+        modalContext.resultError = data.detail || data.error || "Copy failed.";
+        goToStep(STEP_RESULT);
         return;
       }
       applySuccessToLocalShips(data);
-      renderResultPanel(data);
-      modalContext.awaitingConfirmation = false;
-      modalContext.copyComplete = true;
+      modalContext.lastResult = data;
+      modalContext.resultError = null;
       if (window.setCiAutosaveStatus) window.setCiAutosaveStatus("Facilities copy complete", "saved");
-      rerenderModal();
+      goToStep(STEP_RESULT);
     } catch (error) {
-      const panel = document.getElementById("ciItemCopyResultPanel");
-      if (panel) panel.innerHTML = `<p class="ci-item-copy-result-fail">${esc(String(error.message || error))}</p>`;
-      modalContext.awaitingConfirmation = false;
-      updateSubmitState();
+      modalContext.lastResult = { results: [{ ok: false, name: "Copy request", error: String(error.message || error) }] };
+      goToStep(STEP_RESULT);
     }
   }
 
@@ -687,8 +701,7 @@
     const hasItems = itemCopy.listSourceExclusiveAreas(ship.facilities && ship.facilities.exclusive_areas).length
       || itemCopy.listSourceSpecialtyFeatures(ship.facilities && ship.facilities.specialty_features).length;
     if (!hasItems) return false;
-    const fleetTargets = itemCopy.listFleetCopyTargets(getShips(), ship);
-    return fleetTargets.length > 0;
+    return itemCopy.listFleetCopyTargets(getShips(), ship).length > 0;
   }
 
   function openModal(options) {
@@ -706,32 +719,36 @@
       sourceShip: sourceShip,
       shipClass: getDraftClass(),
       targetScope: getDraftClass() ? itemCopy.TARGET_SCOPE_SAME_CLASS : itemCopy.TARGET_SCOPE_FLEET,
+      step: STEP_SELECT,
       selectedEa: [],
       selectedSf: [],
       selectedTargets: [],
       conflictResolutions: [],
       search: "",
       classFilter: "all",
-      awaitingConfirmation: false,
-      copyComplete: false
+      hasConflictsOnPath: false,
+      lastResult: null,
+      resultError: null
     };
 
     const overlay = document.createElement("div");
     overlay.id = "ciItemFacilitiesCopyOverlay";
-    overlay.className = "ci-facilities-copy-overlay ci-item-copy-overlay";
-    overlay.innerHTML = `<div class="ci-facilities-copy-modal ci-item-copy-modal" role="dialog" aria-modal="true" aria-labelledby="ciItemCopyTitle">${renderModalBody()}</div>`;
+    overlay.className = "ci-bulk-class-overlay ci-item-copy-overlay";
     overlay.addEventListener("click", function (event) {
       if (event.target === overlay) closeModal();
     });
     document.body.appendChild(overlay);
-    bindModalEvents();
-    updateSubmitState();
+    renderModal();
   }
 
   window.CiShipFacilitiesItemCopyAdmin = {
     open: openModal,
     close: closeModal,
-    canOpenCopy: canOpenCopy
+    canOpenCopy: canOpenCopy,
+    STEP_SELECT: STEP_SELECT,
+    STEP_CONFLICTS: STEP_CONFLICTS,
+    STEP_CONFIRM: STEP_CONFIRM,
+    STEP_RESULT: STEP_RESULT
   };
 
   window.openCiSameClassFacilitiesCopyModal = function () {

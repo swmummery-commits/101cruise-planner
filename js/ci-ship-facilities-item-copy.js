@@ -688,6 +688,124 @@
     return Boolean(body && body.selected_items && typeof body.selected_items === "object");
   }
 
+  function planItemLabel(row) {
+    return row && row.sourceItem ? (row.sourceItem.name || row.sourceItem.value || row.source_key) : "";
+  }
+
+  function buildPlanTargetBreakdown(plan) {
+    const breakdown = {
+      willAdd: [],
+      willReplace: [],
+      alreadyIdentical: [],
+      keepTarget: []
+    };
+    (plan && plan.items ? plan.items : []).forEach(function (row) {
+      const label = planItemLabel(row);
+      if (!label) return;
+      if (row.plannedAction === "add") breakdown.willAdd.push(label);
+      else if (row.plannedAction === "replace") breakdown.willReplace.push(label);
+      else if (row.plannedAction === "skip_identical") breakdown.alreadyIdentical.push(label);
+      else if (row.plannedAction === "keep_existing") breakdown.keepTarget.push(label);
+    });
+    return breakdown;
+  }
+
+  function planHasConflicts(plans) {
+    return (Array.isArray(plans) ? plans : []).some(function (plan) {
+      return (plan.items || []).some(function (row) {
+        return row.comparison && row.comparison.status === "different";
+      });
+    });
+  }
+
+  function buildConfirmationSummary({
+    sourceShipName,
+    cruiseLineName,
+    targetScope,
+    exclusiveItems,
+    specialtyItems,
+    plans
+  }) {
+    const perTarget = (Array.isArray(plans) ? plans : []).map(function (plan) {
+      const breakdown = buildPlanTargetBreakdown(plan);
+      return {
+        targetShipId: plan.targetShipId,
+        targetShipName: plan.targetShipName,
+        willAdd: breakdown.willAdd.slice(),
+        willReplace: breakdown.willReplace.slice(),
+        alreadyIdentical: breakdown.alreadyIdentical.slice(),
+        keepTarget: breakdown.keepTarget.slice(),
+        addCount: breakdown.willAdd.length,
+        replaceCount: breakdown.willReplace.length,
+        skipIdenticalCount: breakdown.alreadyIdentical.length,
+        keepExistingCount: breakdown.keepTarget.length
+      };
+    });
+    const aggregates = {
+      addCount: perTarget.reduce(function (sum, row) { return sum + row.addCount; }, 0),
+      replaceCount: perTarget.reduce(function (sum, row) { return sum + row.replaceCount; }, 0),
+      skipIdenticalCount: perTarget.reduce(function (sum, row) { return sum + row.skipIdenticalCount; }, 0),
+      keepExistingCount: perTarget.reduce(function (sum, row) { return sum + row.keepExistingCount; }, 0)
+    };
+    aggregates.noChanges = aggregates.addCount === 0 && aggregates.replaceCount === 0;
+    const summary = {
+      sourceShipName: sourceShipName || "—",
+      cruiseLineName: cruiseLineName || "—",
+      targetScope: targetScope,
+      targetScopeLabel: targetScope === TARGET_SCOPE_FLEET ? "Entire cruise-line fleet" : "Same class",
+      exclusiveAreas: (Array.isArray(exclusiveItems) ? exclusiveItems : []).map(function (item) { return item.name; }),
+      specialtyFeatures: (Array.isArray(specialtyItems) ? specialtyItems : []).map(function (item) { return item.value; }),
+      targetShipNames: perTarget.map(function (row) { return row.targetShipName; }),
+      perTarget: perTarget,
+      aggregates: aggregates
+    };
+    assertConfirmationTotalsReconcile(summary);
+    return summary;
+  }
+
+  function assertConfirmationTotalsReconcile(summary) {
+    const perTarget = summary && summary.perTarget ? summary.perTarget : [];
+    const aggregates = summary && summary.aggregates ? summary.aggregates : {};
+    const addSum = perTarget.reduce(function (sum, row) { return sum + (row.addCount || 0); }, 0);
+    const replaceSum = perTarget.reduce(function (sum, row) { return sum + (row.replaceCount || 0); }, 0);
+    const skipSum = perTarget.reduce(function (sum, row) { return sum + (row.skipIdenticalCount || 0); }, 0);
+    const keepSum = perTarget.reduce(function (sum, row) { return sum + (row.keepExistingCount || 0); }, 0);
+    if (
+      addSum !== aggregates.addCount ||
+      replaceSum !== aggregates.replaceCount ||
+      skipSum !== aggregates.skipIdenticalCount ||
+      keepSum !== aggregates.keepExistingCount
+    ) {
+      throw new Error("CONFIRMATION_TOTALS_MISMATCH");
+    }
+    return true;
+  }
+
+  function canContinueToReview({ selectedSourceCount, selectedTargetCount, plans }) {
+    if ((Number(selectedSourceCount) || 0) <= 0) return false;
+    if ((Number(selectedTargetCount) || 0) <= 0) return false;
+    const totals = summarizeAllPlans(plans);
+    if (totals.noChanges) return false;
+    return true;
+  }
+
+  function conflictsAreResolved(plans, conflictResolutions) {
+    if (!planHasConflicts(plans)) return true;
+    const rows = [];
+    (plans || []).forEach(function (plan) {
+      (plan.items || []).forEach(function (item) {
+        if (item.comparison && item.comparison.status === "different") {
+          rows.push({ target_ship_id: plan.targetShipId, source_key: item.source_key });
+        }
+      });
+    });
+    return rows.every(function (row) {
+      return (Array.isArray(conflictResolutions) ? conflictResolutions : []).some(function (resolution) {
+        return resolution.target_ship_id === row.target_ship_id && resolution.source_key === row.source_key;
+      });
+    });
+  }
+
   return {
     TARGET_SCOPE_SAME_CLASS,
     TARGET_SCOPE_FLEET,
@@ -717,6 +835,13 @@
     buildResultRow,
     filterFleetTargets,
     listFleetClassFilterOptions,
-    isItemLevelCopyPayload
+    isItemLevelCopyPayload,
+    planItemLabel,
+    buildPlanTargetBreakdown,
+    planHasConflicts,
+    buildConfirmationSummary,
+    assertConfirmationTotalsReconcile,
+    canContinueToReview,
+    conflictsAreResolved
   };
 });
