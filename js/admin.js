@@ -105,6 +105,7 @@ let ciLineMasterScrollTop = 0;
 let ciShipMasterScrollTop = 0;
 let ciAutosaveStatus = "";
 let ciSaving = false;
+let ciPersistInFlight = null;
 let ciMessage = "";
 let ciMessageTone = "";
 let ciLoading = false;
@@ -6945,6 +6946,74 @@ function setCiAutosaveStatus(text, tone) {
   el.className = `ci-autosave-status${tone ? ` is-${tone}` : ""}`;
 }
 
+function clearCiSaveError() {
+  const detail = document.getElementById("ciFormSaveError");
+  if (detail) {
+    detail.textContent = "";
+    detail.hidden = true;
+  }
+  const banner = document.getElementById("ciCatalogueStatusMessage");
+  if (banner) banner.hidden = true;
+}
+
+function revealCiSaveError(message) {
+  const text = String(message || "Your changes could not be saved.").trim();
+  ciMessage = text;
+  ciMessageTone = "error";
+  setCiAutosaveStatus("Save failed", "error");
+  const detail = document.getElementById("ciFormSaveError");
+  if (detail) {
+    detail.textContent = text;
+    detail.hidden = !text;
+  }
+  const banner = document.getElementById("ciCatalogueStatusMessage");
+  if (banner) {
+    banner.textContent = text;
+    banner.className = "admin-message admin-error";
+    banner.hidden = !text;
+  }
+}
+
+function confirmDiscardCiChangesOnFlushFailure() {
+  const detail = String(ciMessage || "").trim();
+  const prompt = detail
+    ? `Save failed:\n\n${detail}\n\nLeave without saving? Unsaved changes will be lost.`
+    : "Your changes could not be saved.\n\nLeave without saving? Unsaved changes will be lost.";
+  if (!window.confirm(prompt)) {
+    revealCiSaveError(detail || "Your changes could not be saved.");
+    return false;
+  }
+  ciMessage = "";
+  ciMessageTone = "";
+  ciAutosaveStatus = "";
+  clearCiSaveError();
+  return true;
+}
+
+function humanizeCiSaveError(rawMessage, { entity = "record", name = "" } = {}) {
+  const message = String(rawMessage || "").trim();
+  if (/duplicate key|unique constraint|ci_cruise_ships_line_norm_name|ci_cruise_lines.*name/i.test(message)) {
+    if (entity === "ship" && name) {
+      return `Another ship on this cruise line is already named “${name}”. Each ship name must be unique within its line.`;
+    }
+    if (name) {
+      return `A ${entity} named “${name}” already exists.`;
+    }
+    return `That ${entity} name is already in use.`;
+  }
+  return message || "Your changes could not be saved.";
+}
+
+async function runCiPersist(task) {
+  if (ciPersistInFlight) return ciPersistInFlight;
+  ciPersistInFlight = Promise.resolve()
+    .then(task)
+    .finally(() => {
+      ciPersistInFlight = null;
+    });
+  return ciPersistInFlight;
+}
+
 async function setCiSubView(view) {
   const next = view === "ships" ? "ships" : "lines";
   const leaf = next === "ships" ? "cruise-ships" : "cruise-lines";
@@ -7067,10 +7136,10 @@ function renderCruiseIntelligencePanel() {
       </div>
       ${
         ciMessage && ciMessage !== "Saving…"
-          ? `<div class="admin-message ${
+          ? `<div id="ciCatalogueStatusMessage" class="admin-message ${
               ciMessageTone === "error" ? "admin-error" : ciMessageTone === "running" || ciMessage === "Saving…" ? "admin-running" : "admin-success"
             }">${esc(ciMessage)}</div>`
-          : ""
+          : `<div id="ciCatalogueStatusMessage" class="admin-message admin-error" hidden></div>`
       }
       <div class="admin-subtabs packing-subtabs ci-inline-switch" role="tablist" aria-label="Cruise Lines and Ships sections">
         <button class="admin-subtab ${ciSubView === "lines" ? "active" : ""}" onclick="setCiSubView('lines')">Cruise Lines</button>
@@ -8292,6 +8361,7 @@ function renderCiLineForm(line) {
         ${editing ? `<span id="ciAutosaveStatus" class="ci-autosave-status ${statusClass}">${esc(ciAutosaveStatus)}</span>` : ""}
       </div>
       <p class="admin-small ci-detail-subtitle">${editing ? "Changes save when you select another cruise line." : "Fill in the details, then create."}</p>
+      ${editing ? `<p id="ciFormSaveError" class="admin-small admin-error" hidden></p>` : ""}
       ${renderCiLineStatsPanel(line)}
       ${editing ? `
         <div class="admin-actions-row ci-line-class-actions">
@@ -8352,14 +8422,18 @@ function renderCiLineForm(line) {
 }
 
 async function flushCiCurrentForm() {
+  let ok = true;
   if (ciSubView === "ships") {
     if (ciShipCreating) return true;
     if (!editingCiShipId || !document.getElementById("ciShipId")) return true;
-    return persistCiShip({ quiet: true });
+    ok = await runCiPersist(() => persistCiShip({ quiet: true }));
+  } else {
+    if (ciLineCreating) return true;
+    if (!editingCiLineId || !document.getElementById("ciLineId")) return true;
+    ok = await runCiPersist(() => persistCiLine({ quiet: true }));
   }
-  if (ciLineCreating) return true;
-  if (!editingCiLineId || !document.getElementById("ciLineId")) return true;
-  return persistCiLine({ quiet: true });
+  if (ok) return true;
+  return confirmDiscardCiChangesOnFlushFailure();
 }
 
 async function startCiLineCreate() {
@@ -8408,9 +8482,7 @@ async function persistCiLine({ quiet = false } = {}) {
   const name = String(document.getElementById("ciLineName")?.value || "").trim();
   let slug = String(document.getElementById("ciLineSlug")?.value || "").trim();
   if (!name) {
-    ciMessage = "Cruise line name is required.";
-    ciMessageTone = "error";
-    setCiAutosaveStatus("Name required", "error");
+    revealCiSaveError("Cruise line name is required.");
     if (!quiet) renderCiAdmin();
     return false;
   }
@@ -8455,9 +8527,8 @@ async function persistCiLine({ quiet = false } = {}) {
   }
 
   if (result.error) {
-    ciMessage = result.error.message;
-    ciMessageTone = "error";
-    setCiAutosaveStatus("Save failed", "error");
+    const message = humanizeCiSaveError(result.error.message, { entity: "line", name });
+    revealCiSaveError(message);
     if (!quiet) renderCiAdmin();
     return false;
   }
@@ -8466,6 +8537,7 @@ async function persistCiLine({ quiet = false } = {}) {
   const savedId = result.data?.id || id;
   if (quiet) {
     setCiAutosaveStatus("Saved", "saved");
+    clearCiSaveError();
     refreshCiLineMasterList();
   } else {
     ciMessage = "Cruise line saved.";
@@ -8571,6 +8643,7 @@ function renderCiShipForm(ship) {
         ${editing ? `<span id="ciAutosaveStatus" class="ci-autosave-status ${statusClass}">${esc(ciAutosaveStatus)}</span>` : ""}
       </div>
       <p class="admin-small ci-detail-subtitle">${editing ? "Changes save when you select another ship." : "Fill in the details, then create."}</p>
+      ${editing ? `<p id="ciFormSaveError" class="admin-small admin-error" hidden></p>` : ""}
       ${renderCiMediaField({
         kind: "ship",
         inputId: "ciShipHero",
@@ -8871,9 +8944,7 @@ async function persistCiShip({ quiet = false } = {}) {
   let slug = String(document.getElementById("ciShipSlug")?.value || "").trim();
 
   if (!cruiseLineId || !name) {
-    ciMessage = "Cruise line and ship name are required.";
-    ciMessageTone = "error";
-    setCiAutosaveStatus("Line and name required", "error");
+    revealCiSaveError("Cruise line and ship name are required.");
     if (!quiet) renderCiAdmin();
     return false;
   }
@@ -8931,17 +9002,18 @@ async function persistCiShip({ quiet = false } = {}) {
   }
 
   if (result.error) {
-    ciMessage = result.error.message;
-    ciMessageTone = "error";
-    setCiAutosaveStatus("Save failed", "error");
+    const message = humanizeCiSaveError(result.error.message, { entity: "ship", name });
+    revealCiSaveError(message);
     if (!quiet) renderCiAdmin();
     return false;
   }
 
   mergeCiShipRecord(result.data);
+  syncCiCatalogueWindowState();
   const savedId = result.data?.id || id;
   if (quiet) {
     setCiAutosaveStatus("Saved", "saved");
+    clearCiSaveError();
     refreshCiShipMasterList();
   } else {
     ciMessage = "Ship saved.";

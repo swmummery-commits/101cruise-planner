@@ -348,7 +348,9 @@ assert.doesNotMatch(adminBulkJs, /addEventListener\("input", \(\) => renderModal
 assert.match(adminBulkJs, /applyBtn\?\.disabled/);
 assert.match(adminJs, /outcome !== "updated"/);
 assert.match(adminJs, /ciBulkShipClassOverlay/);
-assert.match(adminJs, /syncCiCatalogueWindowState/);
+assert.match(adminJs, /confirmDiscardCiChangesOnFlushFailure/);
+assert.match(adminJs, /humanizeCiSaveError/);
+assert.match(adminJs, /ciPersistInFlight/);
 assert.match(adminJs, /window\.ciCruiseLines = ciCruiseLines/);
 assert.match(read("css/admin.css"), /ci-bulk-class-result-panel/);
 assert.match(read("css/admin.css"), /ci-bulk-class-modal-actions \.admin-button:disabled/);
