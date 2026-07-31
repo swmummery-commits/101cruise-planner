@@ -987,13 +987,44 @@ body.admin-loading-active {
 }
 
 .ci-facilities-copy-modal {
+  display: flex;
+  flex-direction: column;
   width: min(560px, 100%);
   max-height: min(86vh, 760px);
-  overflow: auto;
+  overflow: hidden;
   background: #fff;
   border-radius: 14px;
-  padding: 18px 18px 16px;
+  padding: 18px 18px 0;
   box-shadow: 0 18px 48px rgba(17, 24, 39, 0.18);
+}
+
+.ci-facilities-copy-modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 12px;
+}
+
+.ci-facilities-copy-modal-footer {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  margin: 0 -18px;
+  padding: 12px 18px 16px;
+  border-top: 1px solid #ececec;
+  background: #fff;
+  border-radius: 0 0 14px 14px;
+}
+
+.ci-facilities-copy-modal-actions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.ci-facilities-copy-modal-actions .admin-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .ci-facilities-copy-modal-head {

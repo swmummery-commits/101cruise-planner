@@ -277,6 +277,26 @@
     return { ok: true, shipClass: shipClass };
   }
 
+  function sameClassCopyButtonLabel(selectedCount) {
+    const count = Number(selectedCount) || 0;
+    if (count <= 0) return "Copy to selected ships";
+    return `Copy to ${count} selected ship${count === 1 ? "" : "s"}`;
+  }
+
+  function sameClassCopyCanSubmit({ selectedCount, copyExclusive, copySpecialty }) {
+    const count = Number(selectedCount) || 0;
+    if (count <= 0) return false;
+    return Boolean(copyExclusive || copySpecialty);
+  }
+
+  function sameClassCopyConfirmMessage({ selectedCount, targetNames, sections }) {
+    const count = Number(selectedCount) || 0;
+    const sectionText = (Array.isArray(sections) ? sections : []).filter(Boolean).join(" and ") || "nothing";
+    const names = (Array.isArray(targetNames) ? targetNames : []).filter(Boolean);
+    const shipList = names.join("\n");
+    return `Copy ${sectionText} to ${count} ship${count === 1 ? "" : "s"}?\n\n${shipList}\n\nTarget values for the selected sections will be replaced.`;
+  }
+
   return {
     normalizeShipClass,
     shipClassesMatch,
@@ -292,6 +312,9 @@
     mergeFacilitiesFromEditors,
     listSameClassCopyTargets,
     mergeFacilitiesCopy,
-    validateSameClassCopyRequest
+    validateSameClassCopyRequest,
+    sameClassCopyButtonLabel,
+    sameClassCopyCanSubmit,
+    sameClassCopyConfirmMessage
   };
 });

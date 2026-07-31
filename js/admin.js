@@ -7681,32 +7681,36 @@ function openCiSameClassFacilitiesCopyModal() {
         <h4 id="ciSameClassCopyTitle">Copy to ships in this class</h4>
         <button type="button" class="admin-button secondary small" onclick="closeCiSameClassFacilitiesCopyModal()">Close</button>
       </div>
-      <p class="admin-small"><strong>Cruise line:</strong> ${esc(line?.name || "—")}</p>
-      <p class="admin-small"><strong>Ship class:</strong> ${esc(shipClass)}</p>
-      ${renderCiExclusiveAreaSourcePreviewHtml()}
-      <p class="ci-facility-warning">Selected facility sections will replace the same sections on each target ship.</p>
-      <div class="ci-facilities-copy-toolbar">
-        <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopySelectAll" onchange="toggleCiSameClassCopySelectAll(this.checked)"> Select all targets</label>
-        <button type="button" class="admin-button secondary small" onclick="toggleCiSameClassCopySelectAll(false)">Clear all</button>
+      <div class="ci-facilities-copy-modal-body">
+        <p class="admin-small"><strong>Cruise line:</strong> ${esc(line?.name || "—")}</p>
+        <p class="admin-small"><strong>Ship class:</strong> ${esc(shipClass)}</p>
+        ${renderCiExclusiveAreaSourcePreviewHtml()}
+        <p class="ci-facility-warning">Selected facility sections will replace the same sections on each target ship.</p>
+        <div class="ci-facilities-copy-toolbar">
+          <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopySelectAll" onchange="toggleCiSameClassCopySelectAll(this.checked)"> Select all targets</label>
+          <button type="button" class="admin-button secondary small" onclick="toggleCiSameClassCopySelectAll(false)">Clear all</button>
+        </div>
+        <div class="ci-facilities-copy-list">
+          ${targets.map((ship) => `
+            <label class="ci-check-control ci-facilities-copy-item">
+              <input type="checkbox" class="ci-same-class-copy-target" value="${esc(ship.id)}">
+              <span>${esc(ship.name || "Untitled")}</span>
+            </label>
+          `).join("")}
+        </div>
+        <div class="ci-facilities-copy-sections">
+          <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopyExclusive" checked> Copy Exclusive Areas</label>
+          <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopySpecialty"> Copy Specialty Features</label>
+        </div>
       </div>
-      <div class="ci-facilities-copy-list">
-        ${targets.map((ship) => `
-          <label class="ci-check-control ci-facilities-copy-item">
-            <input type="checkbox" class="ci-same-class-copy-target" value="${esc(ship.id)}">
-            <span>${esc(ship.name || "Untitled")}</span>
-          </label>
-        `).join("")}
+      <div class="ci-facilities-copy-modal-footer">
+        <p class="admin-small" id="ciSameClassCopySummary">No target ships selected.</p>
+        <div class="admin-actions-row ci-facilities-copy-modal-actions">
+          <button type="button" class="admin-button secondary small" onclick="closeCiSameClassFacilitiesCopyModal()">Cancel</button>
+          <button type="button" class="admin-button small" id="ciSameClassCopySubmit" onclick="confirmCiSameClassFacilitiesCopy()" disabled>Copy to selected ships</button>
+        </div>
+        <p class="admin-small" id="ciSameClassCopyResult"></p>
       </div>
-      <div class="ci-facilities-copy-sections">
-        <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopyExclusive" checked> Copy Exclusive Areas</label>
-        <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopySpecialty"> Copy Specialty Features</label>
-      </div>
-      <p class="admin-small" id="ciSameClassCopySummary">No target ships selected.</p>
-      <div class="admin-actions-row">
-        <button type="button" class="admin-button small" onclick="confirmCiSameClassFacilitiesCopy()">Copy to selected ships</button>
-        <button type="button" class="admin-button secondary small" onclick="closeCiSameClassFacilitiesCopyModal()">Cancel</button>
-      </div>
-      <p class="admin-small" id="ciSameClassCopyResult"></p>
     </div>
   `;
   overlay.addEventListener("click", (event) => {
@@ -7727,20 +7731,39 @@ function toggleCiSameClassCopySelectAll(checked) {
 
 function updateCiSameClassCopySummary() {
   const summary = document.getElementById("ciSameClassCopySummary");
-  if (!summary) return;
+  const submitBtn = document.getElementById("ciSameClassCopySubmit");
+  const api = ciFacilitiesApi();
   const selected = [...document.querySelectorAll(".ci-same-class-copy-target:checked")];
   const names = selected.map((el) => {
     const ship = (ciCruiseShips || []).find((row) => row.id === el.value);
     return ship?.name || "Untitled";
   });
+  const copyExclusive = Boolean(document.getElementById("ciSameClassCopyExclusive")?.checked);
+  const copySpecialty = Boolean(document.getElementById("ciSameClassCopySpecialty")?.checked);
   const sections = [];
-  if (document.getElementById("ciSameClassCopyExclusive")?.checked) sections.push("Exclusive Areas");
-  if (document.getElementById("ciSameClassCopySpecialty")?.checked) sections.push("Specialty Features");
-  if (!selected.length) {
-    summary.textContent = "No target ships selected.";
-    return;
+  if (copyExclusive) sections.push("Exclusive Areas");
+  if (copySpecialty) sections.push("Specialty Features");
+  if (summary) {
+    if (!selected.length) {
+      summary.textContent = "No target ships selected.";
+    } else {
+      summary.textContent = `Copy ${sections.join(" and ") || "nothing"} to ${selected.length} ship${selected.length === 1 ? "" : "s"}: ${names.join(", ")}.`;
+    }
   }
-  summary.textContent = `Copy ${sections.join(" and ") || "nothing"} to ${selected.length} ship${selected.length === 1 ? "" : "s"}: ${names.join(", ")}.`;
+  if (submitBtn && api) {
+    submitBtn.textContent = api.sameClassCopyButtonLabel(selected.length);
+    submitBtn.disabled = !api.sameClassCopyCanSubmit({
+      selectedCount: selected.length,
+      copyExclusive,
+      copySpecialty
+    });
+  }
+  const selectAll = document.getElementById("ciSameClassCopySelectAll");
+  const allTargets = [...document.querySelectorAll(".ci-same-class-copy-target")];
+  if (selectAll && allTargets.length) {
+    selectAll.checked = selected.length === allTargets.length;
+    selectAll.indeterminate = selected.length > 0 && selected.length < allTargets.length;
+  }
 }
 
 async function confirmCiSameClassFacilitiesCopy() {
@@ -7753,19 +7776,25 @@ async function confirmCiSameClassFacilitiesCopy() {
   const copyExclusive = Boolean(document.getElementById("ciSameClassCopyExclusive")?.checked);
   const copySpecialty = Boolean(document.getElementById("ciSameClassCopySpecialty")?.checked);
 
-  if (!selected.length) {
-    if (resultEl) resultEl.textContent = "Select at least one target ship.";
-    return;
-  }
-  if (!copyExclusive && !copySpecialty) {
-    if (resultEl) resultEl.textContent = "Select at least one section to copy.";
+  if (!api?.sameClassCopyCanSubmit({
+    selectedCount: selected.length,
+    copyExclusive,
+    copySpecialty
+  })) {
+    if (!selected.length && resultEl) resultEl.textContent = "Select at least one target ship.";
+    else if (resultEl) resultEl.textContent = "Select at least one section to copy.";
+    updateCiSameClassCopySummary();
     return;
   }
 
   const names = selected.map((id) => (ciCruiseShips || []).find((ship) => ship.id === id)?.name || "Untitled");
   const sections = [copyExclusive ? "Exclusive Areas" : null, copySpecialty ? "Specialty Features" : null].filter(Boolean);
   const confirmed = window.confirm(
-    `Copy ${sections.join(" and ")} to ${selected.length} ship${selected.length === 1 ? "" : "s"}?\n\n${names.join("\n")}\n\nTarget values for the selected sections will be replaced.`
+    api.sameClassCopyConfirmMessage({
+      selectedCount: selected.length,
+      targetNames: names,
+      sections
+    })
   );
   if (!confirmed) {
     if (resultEl) resultEl.textContent = "Copy cancelled.";

@@ -38,6 +38,21 @@ const millenniumExclusive = [
   "and the exclusive restaurant Luminae."
 ];
 
+const edgeClassFixtureShips = [
+  { id: "apex", name: "Celebrity Apex", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "edge", name: "Celebrity Edge", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "beyond", name: "Celebrity Beyond", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "ascent", name: "Celebrity Ascent", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "xcel", name: "Celebrity Xcel", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "eclipse", name: "Celebrity Eclipse", cruise_line_id: "line-celeb", ship_class: "Solstice class", active: true }
+];
+
+const edgeCopySource = edgeClassFixtureShips.find((ship) => ship.id === "apex");
+const edgeCopyTargets = CiFac.listSameClassCopyTargets(edgeClassFixtureShips, edgeCopySource, "Edge class");
+if (edgeCopyTargets.some((ship) => ship.id === "eclipse")) {
+  throw new Error("Celebrity Eclipse must not appear in Edge class copy targets");
+}
+
 function esc(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -97,30 +112,61 @@ function renderSourcePreview(rows) {
     </div>`;
 }
 
-function adminPage({ title, exclusiveAreas, showFragmentWarning, showModal }) {
-  let rows = CiFac.loadExclusiveAreasForAdmin(exclusiveAreas);
-  if (!rows.length) rows = [{ name: "", description: "", showDescription: false }];
-  const modal = showModal ? `
+function renderCopyModalFixture() {
+  const previewRows = [{ name: "The Retreat", description: "Shared Edge-class copy.", showDescription: true }];
+  const selectedIds = new Set(["ascent", "beyond", "xcel"]);
+  const selectedCount = edgeCopyTargets.filter((ship) => selectedIds.has(ship.id)).length;
+  const buttonLabel = CiFac.sameClassCopyButtonLabel(selectedCount);
+  const buttonDisabled = !CiFac.sameClassCopyCanSubmit({
+    selectedCount,
+    copyExclusive: true,
+    copySpecialty: false
+  });
+  const selectedNames = edgeCopyTargets
+    .filter((ship) => selectedIds.has(ship.id))
+    .map((ship) => ship.name);
+  return `
     <div class="ci-facilities-copy-overlay" style="position:relative; inset:auto; background:transparent; padding:0; margin-top:18px;">
-      <div class="ci-facilities-copy-modal" style="box-shadow:none; border:1px solid #e8e8e8;">
+      <div class="ci-facilities-copy-modal" style="box-shadow:none; border:1px solid #e8e8e8; max-height:none;">
         <div class="ci-facilities-copy-modal-head">
           <h4>Copy to ships in this class</h4>
         </div>
-        <p class="admin-small"><strong>Cruise line:</strong> Celebrity Cruises</p>
-        <p class="admin-small"><strong>Ship class:</strong> Edge class</p>
-        ${renderSourcePreview([{ name: "The Retreat", description: "Shared Edge-class copy.", showDescription: true }])}
-        <p class="ci-facility-warning">Selected facility sections will replace the same sections on each target ship.</p>
-        <div class="ci-facilities-copy-list">
-          <label class="ci-check-control ci-facilities-copy-item"><input type="checkbox"> Celebrity Ascent</label>
-          <label class="ci-check-control ci-facilities-copy-item"><input type="checkbox"> Celebrity Beyond</label>
-          <label class="ci-check-control ci-facilities-copy-item"><input type="checkbox"> Celebrity Eclipse</label>
+        <div class="ci-facilities-copy-modal-body">
+          <p class="admin-small"><strong>Cruise line:</strong> Celebrity Cruises</p>
+          <p class="admin-small"><strong>Ship class:</strong> Edge class</p>
+          ${renderSourcePreview(previewRows)}
+          <p class="ci-facility-warning">Selected facility sections will replace the same sections on each target ship.</p>
+          <div class="ci-facilities-copy-toolbar">
+            <label class="ci-check-control"><input type="checkbox"> Select all targets</label>
+            <button type="button" class="admin-button secondary small">Clear all</button>
+          </div>
+          <div class="ci-facilities-copy-list">
+            ${edgeCopyTargets.map((ship) => `
+              <label class="ci-check-control ci-facilities-copy-item">
+                <input type="checkbox"${selectedIds.has(ship.id) ? " checked" : ""}>
+                <span>${esc(ship.name)}</span>
+              </label>`).join("")}
+          </div>
+          <div class="ci-facilities-copy-sections">
+            <label class="ci-check-control"><input type="checkbox" checked> Copy Exclusive Areas</label>
+            <label class="ci-check-control"><input type="checkbox"> Copy Specialty Features</label>
+          </div>
         </div>
-        <div class="ci-facilities-copy-sections">
-          <label class="ci-check-control"><input type="checkbox" checked> Copy Exclusive Areas</label>
-          <label class="ci-check-control"><input type="checkbox"> Copy Specialty Features</label>
+        <div class="ci-facilities-copy-modal-footer">
+          <p class="admin-small">Copy Exclusive Areas to ${selectedCount} ships: ${esc(selectedNames.join(", "))}.</p>
+          <div class="admin-actions-row ci-facilities-copy-modal-actions">
+            <button type="button" class="admin-button secondary small">Cancel</button>
+            <button type="button" class="admin-button small"${buttonDisabled ? " disabled" : ""}>${esc(buttonLabel)}</button>
+          </div>
         </div>
       </div>
-    </div>` : "";
+    </div>`;
+}
+
+function adminPage({ title, exclusiveAreas, showFragmentWarning, showModal }) {
+  let rows = CiFac.loadExclusiveAreasForAdmin(exclusiveAreas);
+  if (!rows.length) rows = [{ name: "", description: "", showDescription: false }];
+  const modal = showModal ? renderCopyModalFixture() : "";
   return `<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><title>${esc(title)}</title>
 <link rel="stylesheet" href="/css/admin.css"></head>
 <body style="padding:24px;background:#fff;font-family:Helvetica,Arial,sans-serif;max-width:760px;">
@@ -237,9 +283,26 @@ for (const width of [900, 768, 390]) {
         return input.getBoundingClientRect().width < fields.getBoundingClientRect().width * 0.85;
       });
       const gridCard = cards.some((card) => getComputedStyle(card).display === "grid");
-      return { hasOverflow, narrowName, gridCard };
+      const modal = document.querySelector(".ci-facilities-copy-modal");
+      let modalFooterVisible = true;
+      if (modal) {
+        const footer = modal.querySelector(".ci-facilities-copy-modal-footer");
+        const cancelBtn = footer?.querySelector(".admin-button.secondary");
+        const copyBtn = footer?.querySelector(".admin-button.small");
+        const modalRect = modal.getBoundingClientRect();
+        const footerRect = footer?.getBoundingClientRect();
+        modalFooterVisible = Boolean(
+          footer &&
+          cancelBtn &&
+          copyBtn &&
+          footerRect &&
+          footerRect.bottom <= modalRect.bottom + 1 &&
+          footerRect.top >= modalRect.top
+        );
+      }
+      return { hasOverflow, narrowName, gridCard, modalFooterVisible };
     });
-    if (overflow.hasOverflow || overflow.narrowName || overflow.gridCard) {
+    if (overflow.hasOverflow || overflow.narrowName || overflow.gridCard || overflow.modalFooterVisible === false) {
       throw new Error(`Layout overflow at ${width}px on ${route}: ${JSON.stringify(overflow)}`);
     }
     await page.close();

@@ -43,11 +43,17 @@ const millenniumExclusive = [
 
 const celebrityShips = [
   { id: "apex", name: "Celebrity Apex", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
-  { id: "ascent", name: "Celebrity Ascent", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "edge", name: "Celebrity Edge", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
   { id: "beyond", name: "Celebrity Beyond", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "ascent", name: "Celebrity Ascent", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "xcel", name: "Celebrity Xcel", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "eclipse", name: "Celebrity Eclipse", cruise_line_id: "line-celeb", ship_class: "Solstice class", active: true },
   { id: "mill", name: "Celebrity Millennium", cruise_line_id: "line-celeb", ship_class: "Millennium class", active: true },
   { id: "solstice", name: "Celebrity Solstice", cruise_line_id: "line-celeb", ship_class: "Solstice class", active: true }
 ];
+
+const sourceApex = celebrityShips.find((ship) => ship.id === "apex");
+const celebrityEclipse = celebrityShips.find((ship) => ship.id === "eclipse");
 
 // Legacy Apex presentation suggestion
 const apexSuggested = CiFac.suggestLegacyExclusiveString(apexSentence);
@@ -102,21 +108,32 @@ assert.match(adminJs, /id="ciShipClass"/);
 assert.match(adminJs, /ship_class: getCiShipClassDraft\(\)/);
 
 // Same-class targets
-const edgeTargets = CiFac.listSameClassCopyTargets(celebrityShips, celebrityShips[0], "Edge class");
-assert.equal(edgeTargets.length, 2);
+const edgeTargets = CiFac.listSameClassCopyTargets(celebrityShips, sourceApex, "Edge class");
+assert.equal(edgeTargets.length, 4);
 assert.ok(edgeTargets.every((ship) => ship.id !== "apex"));
 assert.ok(edgeTargets.some((ship) => ship.name === "Celebrity Ascent"));
+assert.ok(edgeTargets.some((ship) => ship.name === "Celebrity Edge"));
+assert.ok(edgeTargets.some((ship) => ship.name === "Celebrity Xcel"));
+assert.ok(!edgeTargets.some((ship) => ship.id === "eclipse"));
+assert.ok(!edgeTargets.some((ship) => ship.name === "Celebrity Eclipse"));
 
-const edgeFromApex = CiFac.listSameClassCopyTargets(celebrityShips, celebrityShips[0], "Edge class");
+const edgeFromApex = CiFac.listSameClassCopyTargets(celebrityShips, sourceApex, "Edge class");
 assert.ok(!edgeFromApex.some((ship) => ship.id === "solstice"));
-assert.equal(edgeFromApex.length, 2);
+assert.ok(!edgeFromApex.some((ship) => ship.id === "eclipse"));
+assert.equal(edgeFromApex.length, 4);
 
 const otherLine = CiFac.listSameClassCopyTargets(
   [{ id: "x", name: "Other", cruise_line_id: "other", ship_class: "Edge class", active: true }],
-  celebrityShips[0],
+  sourceApex,
   "Edge class"
 );
 assert.equal(otherLine.length, 0);
+
+assert.ok(edgeTargets.some((ship) => ship.cruise_line_id === sourceApex.cruise_line_id));
+assert.equal(
+  CiFac.listSameClassCopyTargets(celebrityShips, celebrityEclipse, "Solstice class").some((ship) => ship.id === "solstice"),
+  true
+);
 
 // Copy merge preserves unrelated keys
 const merged = CiFac.mergeFacilitiesCopy(
@@ -143,25 +160,45 @@ assert.equal(Object.prototype.hasOwnProperty.call(specsUntouched, "passenger_cap
 
 // Validation
 const validation = CiFac.validateSameClassCopyRequest({
-  sourceShip: celebrityShips[0],
-  targetShips: [celebrityShips[1], celebrityShips[2]],
+  sourceShip: sourceApex,
+  targetShips: [celebrityShips.find((ship) => ship.id === "ascent"), celebrityShips.find((ship) => ship.id === "beyond")],
   draftClass: "Edge class"
 });
 assert.equal(validation.ok, true);
 
 const badClass = CiFac.validateSameClassCopyRequest({
-  sourceShip: celebrityShips[0],
-  targetShips: [celebrityShips[4]],
+  sourceShip: sourceApex,
+  targetShips: [celebrityEclipse],
   draftClass: "Edge class"
 });
 assert.equal(badClass.ok, false);
+assert.equal(badClass.error, "TARGET_CLASS_MISMATCH");
 
 const sourceInTargets = CiFac.validateSameClassCopyRequest({
-  sourceShip: celebrityShips[0],
-  targetShips: [celebrityShips[0]],
+  sourceShip: sourceApex,
+  targetShips: [sourceApex],
   draftClass: "Edge class"
 });
 assert.equal(sourceInTargets.ok, false);
+
+// Copy modal helpers
+assert.equal(CiFac.sameClassCopyButtonLabel(0), "Copy to selected ships");
+assert.equal(CiFac.sameClassCopyButtonLabel(1), "Copy to 1 selected ship");
+assert.equal(CiFac.sameClassCopyButtonLabel(3), "Copy to 3 selected ships");
+assert.equal(CiFac.sameClassCopyCanSubmit({ selectedCount: 0, copyExclusive: true, copySpecialty: false }), false);
+assert.equal(CiFac.sameClassCopyCanSubmit({ selectedCount: 2, copyExclusive: false, copySpecialty: false }), false);
+assert.equal(CiFac.sameClassCopyCanSubmit({ selectedCount: 2, copyExclusive: true, copySpecialty: false }), true);
+assert.equal(CiFac.sameClassCopyCanSubmit({ selectedCount: 2, copyExclusive: false, copySpecialty: true }), true);
+
+const confirmMsg = CiFac.sameClassCopyConfirmMessage({
+  selectedCount: 2,
+  targetNames: ["Celebrity Ascent", "Celebrity Beyond"],
+  sections: ["Exclusive Areas"]
+});
+assert.match(confirmMsg, /Celebrity Ascent/);
+assert.match(confirmMsg, /Celebrity Beyond/);
+assert.match(confirmMsg, /Exclusive Areas/);
+assert.match(confirmMsg, /2 ships/);
 
 // buildFacilitiesPatch defaults
 const patch = CopyLib.buildFacilitiesPatch({
@@ -197,6 +234,16 @@ assert.match(adminJs, /renderCiExclusiveAreaSourcePreviewHtml/);
 assert.doesNotMatch(adminJs, /ci-exclusive-area-card ci-facility-row/);
 assert.match(read("css/admin.css"), /\.ci-exclusive-area-fields/);
 assert.match(read("css/admin.css"), /width:\s*100%/);
+assert.match(adminJs, /id="ciSameClassCopySubmit"/);
+assert.match(adminJs, /sameClassCopyButtonLabel/);
+assert.match(adminJs, /sameClassCopyCanSubmit/);
+assert.match(adminJs, /sameClassCopyConfirmMessage/);
+assert.match(adminJs, /Select all targets/);
+assert.match(adminJs, /Clear all/);
+assert.match(adminJs, /ci-facilities-copy-modal-footer/);
+assert.match(adminJs, /closeCiSameClassFacilitiesCopyModal\(\)/);
+assert.match(adminJs, /window\.confirm/);
+assert.doesNotMatch(adminJs, /function closeCiSameClassFacilitiesCopyModal[\s\S]{0,120}fetch\(/);
 
 const { resolveCruiseShip } = require(path.join(root, "netlify/functions/lib/resolve-cruise-ship.js"));
 const resolved = resolveCruiseShip(
