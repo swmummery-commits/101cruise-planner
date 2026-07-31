@@ -5793,7 +5793,7 @@ function buildShipChipList(value) {
     return value.map((item) => String(item || "").trim()).filter(Boolean);
   }
   if (typeof value === "string" && value.trim()) {
-    return value.split(/[,;|]/).map((item) => item.trim()).filter(Boolean);
+    return [value.trim()];
   }
   return [];
 }
@@ -5805,6 +5805,7 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
   const decks = ship?.deck_count;
   const staterooms = ship?.stateroom_count;
   const accommodation = buildShipAccommodation(ship);
+  const ciFac = typeof CiShipFacilities !== "undefined" ? CiShipFacilities : null;
 
   let crewRatio = SHIP_NOT_LISTED;
   const passengerNumber = Number(passengers);
@@ -5813,12 +5814,14 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
     crewRatio = `1 : ${(passengerNumber / crewNumber).toFixed(1)}`;
   }
 
-  const exclusiveAreas = buildShipChipList(
-    readFacilityValue(facilities, ["exclusive_areas", "exclusiveAreas", "exclusive"])
-  );
-  const specialtyFeatures = buildShipChipList(
-    readFacilityValue(facilities, ["specialty_features", "specialtyFeatures", "signature_features"])
-  );
+  const exclusiveRaw = readFacilityValue(facilities, ["exclusive_areas", "exclusiveAreas", "exclusive"]);
+  const specialtyRaw = readFacilityValue(facilities, ["specialty_features", "specialtyFeatures", "signature_features"]);
+  const exclusiveAreas = ciFac
+    ? ciFac.normalizeExclusiveAreasForDisplay(exclusiveRaw)
+    : buildShipChipList(exclusiveRaw).map((name) => ({ name, description: "", legacyString: true }));
+  const specialtyFeatures = ciFac
+    ? ciFac.normalizeSpecialtyFeaturesForDisplay(specialtyRaw)
+    : buildShipChipList(specialtyRaw);
 
   return {
     name: ship?.name || shipName || "Your ship",
@@ -5835,14 +5838,14 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
     specifications: [
       { label: "Gross tonnage", value: ship?.gross_tonnage == null || ship?.gross_tonnage === "" ? SHIP_NOT_LISTED : `${formatShipNumber(ship.gross_tonnage)} GT` },
       { label: "Length", value: ship?.length_meters == null || ship?.length_meters === "" ? SHIP_NOT_LISTED : `${formatShipNumber(ship.length_meters)} metres` },
-      { label: "Decks", value: decks == null || decks === "" ? SHIP_NOT_LISTED : `${formatShipNumber(decks)} passenger decks` },
+      { label: "Decks", value: formatShipNumber(decks) },
       { label: "Staterooms", value: formatShipNumber(staterooms) },
       { label: "Passengers", value: formatShipNumber(passengers) },
       { label: "Crew", value: formatShipNumber(crew) }
     ],
     accommodation,
     scaleFacts: [
-      { label: "Passenger decks", value: formatShipNumber(decks) },
+      { label: "Total decks", value: formatShipNumber(decks) },
       { label: "Max guests", value: formatShipNumber(passengers) },
       { label: "Crew", value: formatShipNumber(crew) },
       { label: "Crew ratio", value: crewRatio }
@@ -6032,6 +6035,22 @@ function renderShipChipGroup(items) {
   return `
     <div class="dashboard-snapshot-extras-tags ship-chip-group">
       ${items.map(item => `<span class="dashboard-snapshot-extras-tag">${escapeHtml(item)}</span>`).join("")}
+    </div>
+  `;
+}
+
+function renderShipExclusiveAreas(areas) {
+  if (!areas.length) return "";
+  return `
+    <div class="ship-exclusive-areas">
+      ${areas.map((item) => `
+        <div class="ship-exclusive-area-item">
+          <div class="dashboard-snapshot-extras-tags ship-chip-group">
+            <span class="dashboard-snapshot-extras-tag">${escapeHtml(item.name)}</span>
+          </div>
+          ${item.description ? `<p class="ship-exclusive-area-detail planner-muted">${escapeHtml(item.description)}</p>` : ""}
+        </div>
+      `).join("")}
     </div>
   `;
 }
@@ -6325,7 +6344,7 @@ async function renderTheShip() {
           <section class="ship-section-card ship-reveal-block" style="--ship-delay:280ms">
             <h3>Exclusive Areas</h3>
             <p class="planner-muted ship-section-intro">Quiet corners and elevated spaces made for your voyage.</p>
-            ${renderShipChipGroup(ship.exclusiveAreas)}
+            ${renderShipExclusiveAreas(ship.exclusiveAreas)}
           </section>
         ` : ""}
 

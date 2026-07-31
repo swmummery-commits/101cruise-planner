@@ -7961,6 +7961,22 @@ input[type="radio"] {
   border: 1px solid rgba(17, 24, 39, 0.06);
 }
 
+.ship-exclusive-areas {
+  display: grid;
+  gap: 12px;
+}
+
+.ship-exclusive-area-item .ship-chip-group {
+  margin-top: 0;
+}
+
+.ship-exclusive-area-detail {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  max-width: 42rem;
+}
+
 .ship-deck-card {
   display: block;
   padding: 22px 0 0;

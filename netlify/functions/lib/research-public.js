@@ -60,6 +60,8 @@ function boolFacility(facilities, keys) {
   return value;
 }
 
+const { exclusiveAreasAsLabels } = require("../../../js/ci-ship-facilities.js");
+
 function shipFactsFromRow(ship) {
   if (!ship) return null;
   const facilities = ship.facilities && typeof ship.facilities === "object" ? ship.facilities : {};
@@ -87,7 +89,7 @@ function shipFactsFromRow(ship) {
         ? facilities.specialty_features.filter(Boolean)
         : null,
     exclusive_areas: Array.isArray(facilities.exclusive_areas)
-      ? facilities.exclusive_areas.filter(Boolean)
+      ? exclusiveAreasAsLabels(facilities.exclusive_areas)
       : null
   };
   const hasAny = Object.entries(facts).some(([key, value]) => {

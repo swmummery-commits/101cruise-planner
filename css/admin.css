@@ -820,6 +820,49 @@ body.admin-loading-active {
   align-items: flex-start;
 }
 
+.ci-facility-section {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #ececec;
+}
+
+.ci-facility-section h5 {
+  margin: 0 0 6px;
+  font-size: 0.92rem;
+}
+
+.ci-facility-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: start;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ci-facility-row-fields {
+  display: grid;
+  gap: 8px;
+}
+
+.ci-facility-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 22px;
+}
+
+.ci-exclusive-area-description {
+  width: 100%;
+  min-height: 56px;
+  resize: vertical;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
 .ci-stateroom-row {
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(90px, 0.5fr) auto;

@@ -7406,6 +7406,169 @@ function moveCiStateroomRow(index, delta) {
   rebuildCiStateroomDom(copy.map((r) => ({ label: r.label, count: r.count == null ? "" : r.count })));
 }
 
+function ciFacilitiesApi() {
+  return window.CiShipFacilities || null;
+}
+
+function renderCiExclusiveAreaRow(row, index) {
+  return `
+    <div class="ci-facility-row ci-exclusive-area-row" data-index="${index}">
+      <div class="ci-facility-row-fields">
+        <div class="admin-field">
+          <label>Name</label>
+          <input type="text" class="ci-exclusive-area-name" value="${esc(row.name || "")}" placeholder="Area name">
+        </div>
+        <div class="admin-field">
+          <label>Description <span class="admin-small">(optional)</span></label>
+          <textarea class="ci-exclusive-area-description" rows="2" placeholder="Short detail shown on My Ship">${esc(row.description || "")}</textarea>
+        </div>
+      </div>
+      <div class="ci-facility-row-actions">
+        <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, -1)" title="Move up">↑</button>
+        <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, 1)" title="Move down">↓</button>
+        <button type="button" class="admin-button secondary small" onclick="removeCiExclusiveAreaRow(${index})">Remove</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderCiExclusiveAreasEditor(ship) {
+  const api = ciFacilitiesApi();
+  const rows = api
+    ? api.loadExclusiveAreasForAdmin(ship?.facilities?.exclusive_areas)
+    : [];
+  return `
+    <div class="ci-facility-section">
+      <h5>Exclusive Areas</h5>
+      <p class="admin-small">One area per row. Commas inside names or descriptions are preserved.</p>
+      <div id="ciExclusiveAreasList">
+        ${rows.length ? rows.map(renderCiExclusiveAreaRow).join("") : ""}
+      </div>
+      <div class="admin-actions-row" style="margin-top:8px;">
+        <button type="button" class="admin-button secondary small" onclick="addCiExclusiveAreaRow()">Add item</button>
+      </div>
+    </div>
+  `;
+}
+
+function readCiExclusiveAreasFromDom() {
+  const root = document.getElementById("ciExclusiveAreasList");
+  if (!root) return [];
+  const rows = [];
+  root.querySelectorAll(".ci-exclusive-area-row").forEach((row) => {
+    const name = String(row.querySelector(".ci-exclusive-area-name")?.value || "").trim();
+    const description = String(row.querySelector(".ci-exclusive-area-description")?.value || "").trim();
+    if (!name && !description) return;
+    rows.push({ name, description });
+  });
+  return rows;
+}
+
+function rebuildCiExclusiveAreasDom(rows) {
+  const root = document.getElementById("ciExclusiveAreasList");
+  if (!root) return;
+  root.innerHTML = rows.map(renderCiExclusiveAreaRow).join("");
+}
+
+function addCiExclusiveAreaRow() {
+  const rows = readCiExclusiveAreasFromDom();
+  rows.push({ name: "", description: "" });
+  rebuildCiExclusiveAreasDom(rows);
+}
+
+function removeCiExclusiveAreaRow(index) {
+  const rows = readCiExclusiveAreasFromDom();
+  rows.splice(index, 1);
+  rebuildCiExclusiveAreasDom(rows);
+}
+
+function moveCiExclusiveAreaRow(index, delta) {
+  const rows = readCiExclusiveAreasFromDom();
+  const next = index + delta;
+  if (next < 0 || next >= rows.length) return;
+  const copy = rows.slice();
+  const [item] = copy.splice(index, 1);
+  copy.splice(next, 0, item);
+  rebuildCiExclusiveAreasDom(copy);
+}
+
+function renderCiSpecialtyFeatureRow(row, index) {
+  return `
+    <div class="ci-facility-row ci-specialty-feature-row" data-index="${index}">
+      <div class="ci-facility-row-fields">
+        <div class="admin-field">
+          <label>Feature</label>
+          <input type="text" class="ci-specialty-feature-label" value="${esc(row.label || "")}" placeholder="Specialty feature">
+        </div>
+      </div>
+      <div class="ci-facility-row-actions">
+        <button type="button" class="admin-button secondary small" onclick="moveCiSpecialtyFeatureRow(${index}, -1)" title="Move up">↑</button>
+        <button type="button" class="admin-button secondary small" onclick="moveCiSpecialtyFeatureRow(${index}, 1)" title="Move down">↓</button>
+        <button type="button" class="admin-button secondary small" onclick="removeCiSpecialtyFeatureRow(${index})">Remove</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderCiSpecialtyFeaturesEditor(ship) {
+  const api = ciFacilitiesApi();
+  const rows = api
+    ? api.loadSpecialtyFeaturesForAdmin(ship?.facilities?.specialty_features)
+    : [];
+  return `
+    <div class="ci-facility-section">
+      <h5>Specialty Features</h5>
+      <p class="admin-small">One feature per row. Commas inside a feature name are preserved.</p>
+      <div id="ciSpecialtyFeaturesList">
+        ${rows.length ? rows.map(renderCiSpecialtyFeatureRow).join("") : ""}
+      </div>
+      <div class="admin-actions-row" style="margin-top:8px;">
+        <button type="button" class="admin-button secondary small" onclick="addCiSpecialtyFeatureRow()">Add item</button>
+      </div>
+    </div>
+  `;
+}
+
+function readCiSpecialtyFeaturesFromDom() {
+  const root = document.getElementById("ciSpecialtyFeaturesList");
+  if (!root) return [];
+  const rows = [];
+  root.querySelectorAll(".ci-specialty-feature-row").forEach((row) => {
+    const label = String(row.querySelector(".ci-specialty-feature-label")?.value || "").trim();
+    if (!label) return;
+    rows.push({ label });
+  });
+  return rows;
+}
+
+function rebuildCiSpecialtyFeaturesDom(rows) {
+  const root = document.getElementById("ciSpecialtyFeaturesList");
+  if (!root) return;
+  root.innerHTML = rows.map(renderCiSpecialtyFeatureRow).join("");
+}
+
+function addCiSpecialtyFeatureRow() {
+  const rows = readCiSpecialtyFeaturesFromDom();
+  rows.push({ label: "" });
+  rebuildCiSpecialtyFeaturesDom(rows);
+}
+
+function removeCiSpecialtyFeatureRow(index) {
+  const rows = readCiSpecialtyFeaturesFromDom();
+  rows.splice(index, 1);
+  rebuildCiSpecialtyFeaturesDom(rows);
+}
+
+function moveCiSpecialtyFeatureRow(index, delta) {
+  const rows = readCiSpecialtyFeaturesFromDom();
+  const next = index + delta;
+  if (next < 0 || next >= rows.length) return;
+  const copy = rows.slice();
+  const [item] = copy.splice(index, 1);
+  copy.splice(next, 0, item);
+  rebuildCiSpecialtyFeaturesDom(copy);
+}
+
 function renderCiMediaField({ kind, inputId, url, previewClass, title }) {
   const hasUrl = Boolean(url);
   const isLogo = kind === "logo";
@@ -8085,10 +8248,8 @@ function renderCiShipForm(ship) {
         <label class="ci-check-control"><input type="checkbox" id="ciFacCasino" ${facilities.casino === true ? "checked" : ""}> Casino</label>
         <label class="ci-check-control"><input type="checkbox" id="ciFacKids" ${facilities.kids_club === true ? "checked" : ""}> Kids club</label>
       </div>
-      <div class="ci-form-grid" style="margin-top:8px;">
-        <div class="admin-field" style="grid-column: span 2;"><label>Specialty features (comma separated)</label><input id="ciFacSpecialty" value="${esc(Array.isArray(facilities.specialty_features) ? facilities.specialty_features.join(", ") : "")}"></div>
-        <div class="admin-field" style="grid-column: span 2;"><label>Exclusive areas (comma separated)</label><input id="ciFacExclusive" value="${esc(Array.isArray(facilities.exclusive_areas) ? facilities.exclusive_areas.join(", ") : "")}"></div>
-      </div>
+      ${renderCiExclusiveAreasEditor(ship)}
+      ${renderCiSpecialtyFeaturesEditor(ship)}
       ${ciShipCreating ? `
         <div class="admin-actions-row">
           <button class="admin-button" onclick="saveCiShip()">Create ship</button>
@@ -8143,13 +8304,6 @@ function ciCheckboxBool(id) {
   return Boolean(document.getElementById(id)?.checked);
 }
 
-function ciChipList(id) {
-  return String(document.getElementById(id)?.value || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-}
-
 function readCiFacilitiesFromDom(existingFacilities) {
   const facilities = {
     ...(existingFacilities && typeof existingFacilities === "object" ? existingFacilities : {})
@@ -8176,12 +8330,19 @@ function readCiFacilitiesFromDom(existingFacilities) {
   facilities.kids_club = ciCheckboxBool("ciFacKids");
   delete facilities.fitness;
   delete facilities.theater;
-  const specialty = ciChipList("ciFacSpecialty");
-  const exclusive = ciChipList("ciFacExclusive");
-  if (specialty.length) facilities.specialty_features = specialty;
-  else delete facilities.specialty_features;
-  if (exclusive.length) facilities.exclusive_areas = exclusive;
-  else delete facilities.exclusive_areas;
+
+  const api = ciFacilitiesApi();
+  const exclusiveRows = readCiExclusiveAreasFromDom();
+  const specialtyRows = readCiSpecialtyFeaturesFromDom();
+  if (api) {
+    const exclusive = api.serializeExclusiveAreasFromAdmin(exclusiveRows);
+    const specialty = api.serializeSpecialtyFeaturesFromAdmin(specialtyRows);
+    if (exclusive.length) facilities.exclusive_areas = exclusive;
+    else delete facilities.exclusive_areas;
+    if (specialty.length) facilities.specialty_features = specialty;
+    else delete facilities.specialty_features;
+  }
+
   return facilities;
 }
 
