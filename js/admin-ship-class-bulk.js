@@ -233,7 +233,8 @@
               <input type="checkbox" id="ciBulkClassReplaceConfirm"${replacementConfirmed ? " checked" : ""}>
               I understand that existing class assignments will be replaced.
             </label>` : ""}
-          <p class="admin-small" id="ciBulkClassResult"></p>
+          ${ctx.lastAssignmentResult ? bulk.formatAssignResultPanelHtml(ctx.lastAssignmentResult) : ""}
+          ${ctx.statusMessage ? `<p class="admin-small" id="ciBulkClassResult">${esc(ctx.statusMessage)}</p>` : ""}
         </div>
         <div class="ci-bulk-class-modal-footer">
           <div class="admin-actions-row ci-bulk-class-modal-actions">
@@ -273,7 +274,9 @@
       search: "",
       statusFilter: "active",
       classFilter: "all",
-      selectedIds: Array.isArray(opts.preselectedShipIds) ? opts.preselectedShipIds.slice() : []
+      selectedIds: Array.isArray(opts.preselectedShipIds) ? opts.preselectedShipIds.slice() : [],
+      lastAssignmentResult: null,
+      statusMessage: ""
     };
 
     const overlay = document.createElement("div");
@@ -341,13 +344,12 @@
       replacementConfirmed
     });
     if (!validation.ok) {
-      const resultEl = document.getElementById("ciBulkClassResult");
       if (validation.error === "NO_CHANGES_TO_APPLY") {
-        if (resultEl) resultEl.textContent = "No changes to apply for the current selection.";
+        ctx.statusMessage = "No changes to apply for the current selection.";
       } else if (validation.error === "REPLACEMENT_NOT_CONFIRMED") {
-        if (resultEl) resultEl.textContent = "Confirm replacement before applying.";
-      } else if (resultEl) {
-        resultEl.textContent = "Selection is not ready to apply.";
+        ctx.statusMessage = "Confirm replacement before applying.";
+      } else {
+        ctx.statusMessage = "Selection is not ready to apply.";
       }
       renderModal();
       return;
@@ -360,13 +362,13 @@
       })
     );
     if (!confirmed) {
-      const resultEl = document.getElementById("ciBulkClassResult");
-      if (resultEl) resultEl.textContent = "Assignment cancelled.";
+      ctx.statusMessage = "Assignment cancelled.";
+      renderModal();
       return;
     }
 
-    const resultEl = document.getElementById("ciBulkClassResult");
-    if (resultEl) resultEl.textContent = "Applying class…";
+    ctx.statusMessage = "Applying class…";
+    renderModal();
     try {
       const headers = await window.adminAuthHeaders();
       const submittedIds = selected.map((ship) => ship.id);
@@ -383,24 +385,27 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.success === false) {
-        if (resultEl) resultEl.textContent = data.detail || data.error || "Bulk class assignment failed.";
+        ctx.statusMessage = data.detail || data.error || "Bulk class assignment failed.";
+        renderModal();
         return;
       }
       const reconciled = bulk.reconcileBulkAssignResults(submittedIds, data.results || []);
       if (!reconciled.ok) {
-        if (resultEl) {
-          resultEl.textContent = `Result mismatch: expected ${reconciled.submitted_count} ships, received ${(data.results || []).length}.`;
-        }
+        ctx.statusMessage = `Result mismatch: expected ${reconciled.submitted_count} ships, received ${(data.results || []).length}.`;
+        renderModal();
         return;
       }
       window.applyCiBulkClassAssignmentResults(reconciled.results || []);
-      if (resultEl) resultEl.textContent = bulk.formatAssignResultMessage(reconciled);
+      ctx.lastAssignmentResult = reconciled;
+      ctx.statusMessage = "";
+      ctx.replacementConfirmed = false;
       if (typeof window.setCiAutosaveStatus === "function") {
         window.setCiAutosaveStatus("Ship classes updated", "saved");
       }
       renderModal();
     } catch (error) {
-      if (resultEl) resultEl.textContent = String(error.message || error);
+      ctx.statusMessage = String(error.message || error);
+      renderModal();
     }
   }
 
@@ -420,12 +425,12 @@
       bulk.buildClearConfirmMessage({ cruiseLineName: ctx.cruiseLineName, summary })
     );
     if (!confirmed) {
-      const resultEl = document.getElementById("ciBulkClassResult");
-      if (resultEl) resultEl.textContent = "Clear class cancelled.";
+      ctx.statusMessage = "Clear class cancelled.";
+      renderModal();
       return;
     }
-    const resultEl = document.getElementById("ciBulkClassResult");
-    if (resultEl) resultEl.textContent = "Clearing class…";
+    ctx.statusMessage = "Clearing class…";
+    renderModal();
     try {
       const headers = await window.adminAuthHeaders();
       const response = await fetch("/.netlify/functions/ci-ship-class-bulk-assign", {
@@ -439,22 +444,26 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.success === false) {
-        if (resultEl) resultEl.textContent = data.detail || data.error || "Clear class failed.";
+        ctx.statusMessage = data.detail || data.error || "Clear class failed.";
+        renderModal();
         return;
       }
-      window.applyCiBulkClassAssignmentResults(data.results || []);
       const reconciled = bulk.reconcileBulkAssignResults(selected.map((ship) => ship.id), data.results || []);
-      if (resultEl) {
-        resultEl.textContent = reconciled.ok
-          ? `Cleared ${reconciled.updated_count}, unchanged ${reconciled.unchanged_count}${reconciled.failed_count ? `, failed ${reconciled.failed_count}` : ""}.`
-          : `Clear result mismatch for ${reconciled.submitted_count} selected ships.`;
+      window.applyCiBulkClassAssignmentResults(data.results || []);
+      if (reconciled.ok) {
+        ctx.lastAssignmentResult = reconciled;
+        ctx.statusMessage = "";
+      } else {
+        ctx.statusMessage = `Clear result mismatch for ${reconciled.submitted_count} selected ships.`;
       }
+      ctx.replacementConfirmed = false;
       if (typeof window.setCiAutosaveStatus === "function") {
         window.setCiAutosaveStatus("Ship classes cleared", "saved");
       }
       renderModal();
     } catch (error) {
-      if (resultEl) resultEl.textContent = String(error.message || error);
+      ctx.statusMessage = String(error.message || error);
+      renderModal();
     }
   }
 

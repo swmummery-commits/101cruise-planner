@@ -191,6 +191,69 @@ assert.ok(reconciled.unchanged.some((row) => row.name === "Celebrity Constellati
 assert.ok(reconciled.unchanged.some((row) => row.name === "Celebrity Summit"));
 assert.match(Bulk.formatAssignResultMessage(reconciled), /Updated: Celebrity Solstice/);
 assert.match(Bulk.formatAssignResultMessage(reconciled), /Unchanged: Celebrity Infinity, Celebrity Constellation, Celebrity Summit/);
+assert.match(Bulk.formatAssignResultPanelHtml(reconciled), /Assignment complete/);
+assert.match(Bulk.formatAssignResultPanelHtml(reconciled), /Updated 1 — Celebrity Solstice/);
+assert.match(Bulk.formatAssignResultPanelHtml(reconciled), /Unchanged 3 — Celebrity Infinity, Celebrity Constellation, Celebrity Summit/);
+
+// Server results merge into local fleet by ship ID (updated only)
+const mergedFleet = Bulk.applyBulkClassResultsToFleet(celebrityFleet, reconciled.results);
+assert.equal(mergedFleet.find((ship) => ship.id === "sol").ship_class, "Millennium class");
+assert.equal(mergedFleet.find((ship) => ship.id === "inf").ship_class, "Millennium class");
+assert.equal(mergedFleet.find((ship) => ship.id === "con").ship_class, "Millennium class");
+assert.equal(mergedFleet.find((ship) => ship.id === "sum").ship_class, "Millennium class");
+
+const failedMerge = Bulk.applyBulkClassResultsToFleet(celebrityFleet, [
+  { id: "sol", outcome: "failed", new_class: "Millennium class", name: "Celebrity Solstice" }
+]);
+assert.equal(failedMerge.find((ship) => ship.id === "sol").ship_class, "Solstice class");
+
+const unchangedOnlyMerge = Bulk.applyBulkClassResultsToFleet(celebrityFleet, [
+  { id: "inf", outcome: "unchanged", new_class: "Millennium class", name: "Celebrity Infinity" }
+]);
+assert.equal(unchangedOnlyMerge.find((ship) => ship.id === "inf").ship_class, "Millennium class");
+
+// Post-success modal classification recalculates from refreshed fleet
+const postSuccessSelection = mergedFleet.filter((ship) => ["inf", "con", "sum", "sol"].includes(ship.id));
+const postSuccessSummary = Bulk.buildAssignmentSummary(postSuccessSelection, "Millennium class");
+assert.equal(postSuccessSummary.selectedCount, 4);
+assert.equal(postSuccessSummary.newCount, 0);
+assert.equal(postSuccessSummary.replaceCount, 0);
+assert.equal(postSuccessSummary.unchangedCount, 4);
+assert.equal(postSuccessSummary.changeCount, 0);
+assert.equal(
+  Bulk.canApplyClassAssignment({
+    selectedCount: postSuccessSummary.selectedCount,
+    shipClass: "Millennium class",
+    changeCount: postSuccessSummary.changeCount,
+    replaceCount: postSuccessSummary.replaceCount,
+    replacementConfirmed: false
+  }),
+  false
+);
+assert.equal(
+  Bulk.applyClassButtonLabel({
+    selectedCount: postSuccessSummary.selectedCount,
+    changeCount: postSuccessSummary.changeCount
+  }),
+  "No changes to apply"
+);
+assert.equal(
+  Bulk.validateBulkAssignRequest({
+    cruiseLineId: LINE_CELEB,
+    shipIds: ["inf", "con", "sum", "sol"],
+    shipClass: "Millennium class",
+    ships: mergedFleet,
+    replacementConfirmed: false
+  }).error,
+  "NO_CHANGES_TO_APPLY"
+);
+
+// Same-class copy targets recalculate after class assignment
+const solsticeSource = mergedFleet.find((ship) => ship.id === "sol");
+const millenniumTargets = CiFac.listSameClassCopyTargets(mergedFleet, solsticeSource, "Millennium class");
+assert.ok(millenniumTargets.some((ship) => ship.id === "inf"));
+assert.ok(millenniumTargets.some((ship) => ship.id === "con"));
+assert.ok(!millenniumTargets.some((ship) => ship.id === "sol"));
 
 const allUnchanged = Bulk.validateBulkAssignRequest({
   cruiseLineId: LINE_CELEB,
@@ -276,9 +339,14 @@ assert.match(adminBulkJs, /Assignment cancelled/);
 assert.match(adminBulkJs, /Clear class cancelled/);
 assert.match(adminBulkJs, /NO_CHANGES_TO_APPLY/);
 assert.match(adminBulkJs, /reconcileBulkAssignResults/);
-assert.match(adminBulkJs, /formatAssignResultMessage/);
+assert.match(adminBulkJs, /formatAssignResultPanelHtml/);
+assert.match(adminBulkJs, /lastAssignmentResult/);
 assert.match(adminBulkJs, /No changes to apply/);
 assert.match(adminBulkJs, /applyBtn\?\.disabled/);
+assert.match(adminJs, /outcome !== "updated"/);
+assert.match(adminJs, /ciBulkShipClassOverlay/);
+assert.match(adminJs, /refreshCiOpenShipAfterBulkClassUpdate/);
+assert.match(read("css/admin.css"), /ci-bulk-class-result-panel/);
 assert.match(read("css/admin.css"), /ci-bulk-class-modal-actions \.admin-button:disabled/);
 assert.match(read("netlify/functions/ci-ship-class-bulk-assign.js"), /NO_CHANGES_TO_APPLY/);
 assert.match(read("netlify/functions/ci-ship-class-bulk-assign.js"), /failed_count/);

@@ -79,6 +79,8 @@ function renderModal({
   sourceShipId = null,
   showConfirmSummary = false,
   showResultSummary = false,
+  showPostSuccessResult = false,
+  lastAssignmentResult = null,
   showIndividualEntry = false
 }) {
   const selected = ships.filter((ship) => selectedIds.includes(ship.id));
@@ -100,14 +102,18 @@ function renderModal({
     shipsWithClassCount: selected.filter((ship) => !Bulk.isUnassignedClass(ship.ship_class)).length
   });
   const suggestions = Bulk.listDistinctClassesForLine(celebrityFleet, LINE_CELEB);
-  const plannedResults = showResultSummary ? Bulk.planBulkAssignResults(selected, shipClass) : [];
-  const reconciled = showResultSummary
-    ? Bulk.reconcileBulkAssignResults(
-        selectedIds,
-        plannedResults.map((row) => ({ ...row, ok: true }))
-      )
-    : null;
-  const resultText = reconciled ? Bulk.formatAssignResultMessage(reconciled) : "";
+  const resultPanel = showPostSuccessResult && lastAssignmentResult
+    ? Bulk.formatAssignResultPanelHtml(lastAssignmentResult)
+    : showResultSummary
+      ? (() => {
+          const plannedResults = Bulk.planBulkAssignResults(selected, shipClass);
+          const reconciled = Bulk.reconcileBulkAssignResults(
+            selectedIds,
+            plannedResults.map((row) => ({ ...row, ok: true }))
+          );
+          return Bulk.formatAssignResultPanelHtml(reconciled);
+        })()
+      : "";
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${adminCss}</style></head>
 <body style="padding:24px;background:#fff;font-family:Helvetica,Arial,sans-serif;max-width:980px;">
 ${showIndividualEntry ? `
@@ -138,7 +144,7 @@ ${showIndividualEntry ? `
       <div class="ci-bulk-class-summary"><p class="admin-small"><strong>Assignment summary</strong></p><ul class="ci-bulk-class-summary-list"><li>${summary.selectedCount} selected</li><li>${summary.newCount} receiving a new class</li><li>${summary.replaceCount} changing from another class</li><li>${summary.unchangedCount} already unchanged</li></ul></div>
       ${replacementRequired ? `<label class="ci-check-control ci-bulk-class-warning"><input type="checkbox"${summary.replaceCount ? " checked" : ""}> I understand that existing class assignments will be replaced.</label>` : ""}
       ${showConfirmSummary ? `<div class="ci-bulk-class-summary"><p class="admin-small"><strong>Final confirmation</strong></p><p class="admin-small">Assign <strong>${esc(shipClass)}</strong> on Celebrity Cruises to:<br>${selected.map((ship) => esc(ship.name)).join("<br>")}<br><br>New: ${summary.newCount} · Replace: ${summary.replaceCount} · Unchanged: ${summary.unchangedCount}</p></div>` : ""}
-      ${showResultSummary ? `<p class="admin-small"><strong>Result:</strong> ${esc(resultText)}</p>` : ""}
+      ${resultPanel}
     </div>
     <div class="ci-bulk-class-modal-footer"><div class="admin-actions-row ci-bulk-class-modal-actions"><button type="button" class="admin-button secondary small">Cancel</button><button type="button" class="admin-button secondary small"${clearDisabled ? " disabled" : ""}>Clear class from selected ships</button><button type="button" class="admin-button small"${applyDisabled ? " disabled" : ""}>${esc(applyLabel)}</button></div></div>
   </div>
@@ -188,13 +194,26 @@ const pages = {
     selectedIds: ["inf", "con", "sum", "sol"],
     showConfirmSummary: true
   }),
-  "/result": renderModal({
-    title: "Result summary",
-    shipClass: "Millennium class",
-    ships: replaceShips,
-    selectedIds: ["inf", "con", "sum", "sol"],
-    showResultSummary: true
-  }),
+  "/result": (() => {
+    const selectedIds = ["inf", "con", "sum", "sol"];
+    const preAssignSelection = replaceShips.filter((ship) => selectedIds.includes(ship.id));
+    const plannedResults = Bulk.planBulkAssignResults(preAssignSelection, "Millennium class");
+    const lastAssignmentResult = Bulk.reconcileBulkAssignResults(
+      selectedIds,
+      plannedResults.map((row) => ({ ...row, ok: true }))
+    );
+    const postSuccessShips = replaceShips.map((ship) =>
+      ship.id === "sol" ? { ...ship, ship_class: "Millennium class" } : ship
+    );
+    return renderModal({
+      title: "Result summary",
+      shipClass: "Millennium class",
+      ships: postSuccessShips,
+      selectedIds,
+      showPostSuccessResult: true,
+      lastAssignmentResult
+    });
+  })(),
   "/no-changes": renderModal({
     title: "No changes to apply",
     shipClass: "Millennium class",
@@ -244,7 +263,7 @@ for (const [file, route, width] of shots) {
 }
 
 for (const width of [900, 768, 390]) {
-  for (const route of ["/mixed", "/replacement", "/mobile", "/no-changes"]) {
+  for (const route of ["/mixed", "/replacement", "/mobile", "/no-changes", "/result"]) {
     const page = await browser.newPage({ viewport: { width, height: 1200 } });
     await page.goto(`${base}${route}`, { waitUntil: "networkidle" });
     const overflow = await page.evaluate(() => ({

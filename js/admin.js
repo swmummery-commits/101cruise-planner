@@ -7661,23 +7661,56 @@ function openCiBulkShipClassModalFromShip() {
   });
 }
 
-function applyCiBulkClassAssignmentResults(results) {
-  if (!Array.isArray(results)) return;
-  results.forEach((row) => {
-    if (!row?.id) return;
-    const idx = ciCruiseShips.findIndex((ship) => ship.id === row.id);
-    if (idx >= 0) {
-      ciCruiseShips[idx] = { ...ciCruiseShips[idx], ship_class: row.new_class ?? null };
-    }
-  });
-  refreshCiShipMasterList();
+function refreshCiOpenShipAfterBulkClassUpdate(updatedShipIds) {
   const openId = document.getElementById("ciShipId")?.value || editingCiShipId;
-  if (openId) {
-    const current = ciCruiseShips.find((ship) => ship.id === openId);
-    const classInput = document.getElementById("ciShipClass");
-    if (current && classInput) classInput.value = current.ship_class || "";
+  if (!openId) return;
+  const current = ciCruiseShips.find((ship) => ship.id === openId);
+  if (!current) return;
+
+  const updatedSet = new Set(Array.isArray(updatedShipIds) ? updatedShipIds : []);
+  const classInput = document.getElementById("ciShipClass");
+  if (classInput && updatedSet.has(openId)) {
+    classInput.value = current.ship_class || "";
   }
-  renderCiAdmin();
+
+  const api = ciFacilitiesApi();
+  const exclusiveRoot = document.getElementById("ciExclusiveAreasList");
+  if (!api || !exclusiveRoot) return;
+  const draftClass = getCiShipClassDraft();
+  const targets = api.listSameClassCopyTargets(ciCruiseShips, current, draftClass);
+  const canClassCopy = Boolean(current.id && current.cruise_line_id && targets.length);
+  const heading = exclusiveRoot.closest(".ci-facility-section")?.querySelector(".ci-section-heading");
+  if (!heading) return;
+  let copyBtn = heading.querySelector("[onclick='openCiSameClassFacilitiesCopyModal()']");
+  if (canClassCopy && !copyBtn) {
+    heading.insertAdjacentHTML(
+      "beforeend",
+      `<button type="button" class="admin-button secondary small" onclick="openCiSameClassFacilitiesCopyModal()">Copy to ships in this class</button>`
+    );
+  } else if (!canClassCopy && copyBtn) {
+    copyBtn.remove();
+  }
+}
+
+function applyCiBulkClassAssignmentResults(results) {
+  if (!Array.isArray(results)) return [];
+  const bulk = window.CiShipClassBulk;
+  const updatedIds = [];
+  results.forEach((row) => {
+    if (!row?.id || row.outcome !== "updated") return;
+    const idx = ciCruiseShips.findIndex((ship) => ship.id === row.id);
+    if (idx < 0) return;
+    ciCruiseShips[idx] = { ...ciCruiseShips[idx], ship_class: row.new_class ?? null };
+    updatedIds.push(row.id);
+  });
+  window.ciCruiseShips = ciCruiseShips;
+  refreshCiShipMasterList();
+  refreshCiOpenShipAfterBulkClassUpdate(updatedIds);
+  const modalOpen = Boolean(document.getElementById("ciBulkShipClassOverlay"));
+  if (!modalOpen) {
+    renderCiAdmin();
+  }
+  return updatedIds;
 }
 
 window.applyCiBulkClassAssignmentResults = applyCiBulkClassAssignmentResults;

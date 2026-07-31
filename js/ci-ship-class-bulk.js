@@ -374,6 +374,67 @@
     return message;
   }
 
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  }
+
+  function formatResultNameSuffix(rows) {
+    const names = (Array.isArray(rows) ? rows : [])
+      .map(function (row) {
+        return row && row.name;
+      })
+      .filter(Boolean);
+    return names.length ? ` — ${names.map(escapeHtml).join(", ")}` : "";
+  }
+
+  function formatAssignResultPanelHtml(reconciled) {
+    const data = reconciled || {};
+    if (!data.submitted_count && !data.updated_count && !data.unchanged_count && !data.failed_count) {
+      return "";
+    }
+    const lines = [];
+    if (data.updated_count) {
+      lines.push(`<li>Updated ${data.updated_count}${formatResultNameSuffix(data.updated)}</li>`);
+    }
+    if (data.unchanged_count) {
+      lines.push(`<li>Unchanged ${data.unchanged_count}${formatResultNameSuffix(data.unchanged)}</li>`);
+    }
+    if (data.failed_count) {
+      const failedSuffix = (data.failed || [])
+        .map(function (row) {
+          const name = escapeHtml(row.name || "Untitled");
+          return row.error ? `${name} (${escapeHtml(row.error)})` : name;
+        })
+        .join(", ");
+      lines.push(`<li>Failed ${data.failed_count}${failedSuffix ? ` — ${failedSuffix}` : ""}</li>`);
+    }
+    if (!lines.length) return "";
+    return `
+      <div class="ci-bulk-class-result-panel">
+        <p class="admin-small"><strong>Assignment complete</strong></p>
+        <ul class="ci-bulk-class-summary-list">${lines.join("")}</ul>
+      </div>`;
+  }
+
+  function applyBulkClassResultsToFleet(fleet, results) {
+    const ships = Array.isArray(fleet) ? fleet.map(function (ship) {
+      return { ...ship };
+    }) : [];
+    (Array.isArray(results) ? results : []).forEach(function (row) {
+      if (!row || !row.id || row.outcome !== "updated") return;
+      const idx = ships.findIndex(function (ship) {
+        return ship.id === row.id;
+      });
+      if (idx < 0) return;
+      ships[idx] = { ...ships[idx], ship_class: row.new_class ?? null };
+    });
+    return ships;
+  }
+
   function planBulkClearResults(selectedShips) {
     return selectedShips.map(function (ship) {
       const hadClass = !isUnassignedClass(ship.ship_class);
@@ -421,6 +482,8 @@
     planBulkClearResults,
     reconcileBulkAssignResults,
     formatAssignResultMessage,
+    formatAssignResultPanelHtml,
+    applyBulkClassResultsToFleet,
     formatStatusLabel
   };
 });
