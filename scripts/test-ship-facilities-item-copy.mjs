@@ -351,8 +351,48 @@ assert.equal(confirmation.aggregates.skipIdenticalCount, 3);
 const footerText = ItemCopy.formatAggregateOperationSummary(confirmation.aggregates, 2, { sourceCount: 5 }).text;
 assert.match(footerText, /6 additions/);
 assert.match(footerText, /1 replacement/);
-assert.match(footerText, /3 identical skips/);
+assert.match(footerText, /3 identical items skipped/);
 assert.match(footerText, /2 ships/);
+
+// Shared pluralisation — zero, one and multiple for every operation type
+assert.equal(ItemCopy.formatAdditionLabel(0), "0 additions");
+assert.equal(ItemCopy.formatAdditionLabel(1), "1 addition");
+assert.equal(ItemCopy.formatAdditionLabel(2), "2 additions");
+assert.equal(ItemCopy.formatAdditionLabel("1"), "1 addition");
+
+assert.equal(ItemCopy.formatReplacementLabel(0), "0 replacements");
+assert.equal(ItemCopy.formatReplacementLabel(1), "1 replacement");
+assert.equal(ItemCopy.formatReplacementLabel(2), "2 replacements");
+assert.equal(ItemCopy.formatReplacementLabel("1"), "1 replacement");
+
+assert.equal(ItemCopy.formatIdenticalSkipLabel(0), "0 identical items skipped");
+assert.equal(ItemCopy.formatIdenticalSkipLabel(1), "1 identical item skipped");
+assert.equal(ItemCopy.formatIdenticalSkipLabel(3), "3 identical items skipped");
+assert.equal(ItemCopy.formatIdenticalSkipLabel("1"), "1 identical item skipped");
+
+assert.equal(ItemCopy.formatRetainedVersionLabel(0), "0 target versions retained");
+assert.equal(ItemCopy.formatRetainedVersionLabel(1), "1 target version retained");
+assert.equal(ItemCopy.formatRetainedVersionLabel(2), "2 target versions retained");
+assert.equal(ItemCopy.formatRetainedVersionLabel("1"), "1 target version retained");
+
+assert.equal(ItemCopy.formatAcrossShipsLabel(1), "across 1 ship");
+assert.equal(ItemCopy.formatAcrossShipsLabel(2), "across 2 ships");
+assert.equal(ItemCopy.formatAcrossShipsLabel("1"), "across 1 ship");
+
+assert.equal(
+  ItemCopy.formatReadyToCopySummary({ addCount: 6, replaceCount: 1 }),
+  "Ready to copy 6 additions and 1 replacement."
+);
+assert.equal(
+  ItemCopy.formatReadyToCopySummary({ addCount: "6", replaceCount: "1" }),
+  "Ready to copy 6 additions and 1 replacement."
+);
+assert.equal(ItemCopy.formatReadyToCopySummary({ addCount: 1, replaceCount: 0 }), "Ready to copy 1 addition.");
+assert.equal(ItemCopy.formatAggregateTotalsLines({ addCount: 1, replaceCount: 1, skipIdenticalCount: 1, keepExistingCount: 1 }).join("|"),
+  "1 addition|1 replacement|1 identical item skipped|1 target version retained");
+
+assert.match(adminCopyJs, /formatAggregateTotalsLines/);
+assert.match(adminCopyJs, /formatReadyToCopySummary/);
 
 const execApex = CopyLib.executeItemLevelCopy({
   sourceFacilities: edge.facilities,

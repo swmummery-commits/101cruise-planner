@@ -935,10 +935,80 @@
     });
   }
 
+  function normalizeOperationCount(count) {
+    return Math.max(0, Number(count) || 0);
+  }
+
+  function pluralWord(count, singular, plural) {
+    const n = normalizeOperationCount(count);
+    return n === 1 ? singular : (plural || singular + "s");
+  }
+
+  function formatAdditionLabel(count) {
+    const n = normalizeOperationCount(count);
+    return `${n} ${pluralWord(n, "addition", "additions")}`;
+  }
+
+  function formatReplacementLabel(count) {
+    const n = normalizeOperationCount(count);
+    return `${n} ${pluralWord(n, "replacement", "replacements")}`;
+  }
+
+  function formatIdenticalSkipLabel(count) {
+    const n = normalizeOperationCount(count);
+    return `${n} identical ${pluralWord(n, "item", "items")} skipped`;
+  }
+
+  function formatRetainedVersionLabel(count) {
+    const n = normalizeOperationCount(count);
+    return `${n} target ${pluralWord(n, "version", "versions")} retained`;
+  }
+
+  function formatAcrossShipsLabel(count) {
+    const n = normalizeOperationCount(count);
+    return `across ${n} ${pluralWord(n, "ship", "ships")}`;
+  }
+
+  function formatOperationCountParts(totals) {
+    const t = totals && typeof totals === "object" ? totals : {};
+    const parts = [];
+    const addCount = normalizeOperationCount(t.addCount);
+    const replaceCount = normalizeOperationCount(t.replaceCount);
+    const skipCount = normalizeOperationCount(t.skipIdenticalCount);
+    const keepCount = normalizeOperationCount(t.keepExistingCount);
+    if (addCount) parts.push(formatAdditionLabel(addCount));
+    if (replaceCount) parts.push(formatReplacementLabel(replaceCount));
+    if (skipCount) parts.push(formatIdenticalSkipLabel(skipCount));
+    if (keepCount) parts.push(formatRetainedVersionLabel(keepCount));
+    return parts;
+  }
+
+  function formatAggregateTotalsLines(totals) {
+    const t = totals && typeof totals === "object" ? totals : {};
+    return [
+      formatAdditionLabel(t.addCount),
+      formatReplacementLabel(t.replaceCount),
+      formatIdenticalSkipLabel(t.skipIdenticalCount),
+      formatRetainedVersionLabel(t.keepExistingCount)
+    ];
+  }
+
+  function formatReadyToCopySummary(totals) {
+    const t = totals && typeof totals === "object" ? totals : {};
+    const segments = [];
+    const addCount = normalizeOperationCount(t.addCount);
+    const replaceCount = normalizeOperationCount(t.replaceCount);
+    if (addCount) segments.push(formatAdditionLabel(addCount));
+    if (replaceCount) segments.push(formatReplacementLabel(replaceCount));
+    if (!segments.length) return "";
+    if (segments.length === 1) return `Ready to copy ${segments[0]}.`;
+    return `Ready to copy ${segments[0]} and ${segments[1]}.`;
+  }
+
   function formatAggregateOperationSummary(totals, targetCount, options) {
     const opts = options || {};
-    const sourceCount = Number(opts.sourceCount) || 0;
-    const ships = Number(targetCount) || 0;
+    const sourceCount = normalizeOperationCount(opts.sourceCount);
+    const ships = normalizeOperationCount(targetCount);
     if (!sourceCount) {
       return { text: "Select source items and target ships.", noChanges: true, canContinue: false };
     }
@@ -952,17 +1022,9 @@
         canContinue: false
       };
     }
-    const parts = [];
-    if (totals.addCount) parts.push(`${totals.addCount} addition${totals.addCount === 1 ? "" : "s"}`);
-    if (totals.replaceCount) parts.push(`${totals.replaceCount} replacement${totals.replaceCount === 1 ? "" : "s"}`);
-    if (totals.skipIdenticalCount) {
-      parts.push(`${totals.skipIdenticalCount} identical skip${totals.skipIdenticalCount === 1 ? "" : "s"}`);
-    }
-    if (totals.keepExistingCount) {
-      parts.push(`${totals.keepExistingCount} retained`);
-    }
+    const parts = formatOperationCountParts(totals);
     return {
-      text: `${parts.join(" · ")} across ${ships} ship${ships === 1 ? "" : "s"}`,
+      text: `${parts.join(" · ")} ${formatAcrossShipsLabel(ships)}`,
       noChanges: false,
       canContinue: true
     };
@@ -1011,6 +1073,15 @@
     normalizeResultOutcomes,
     assertResultOutcomesReconcile,
     reconcileResultRows,
+    normalizeOperationCount,
+    formatAdditionLabel,
+    formatReplacementLabel,
+    formatIdenticalSkipLabel,
+    formatRetainedVersionLabel,
+    formatAcrossShipsLabel,
+    formatOperationCountParts,
+    formatAggregateTotalsLines,
+    formatReadyToCopySummary,
     formatAggregateOperationSummary
   };
 });

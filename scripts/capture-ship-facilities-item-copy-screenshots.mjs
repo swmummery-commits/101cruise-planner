@@ -189,10 +189,7 @@ const confirmBody = `
   <div class="ci-item-copy-confirm-targets">${confirmation.perTarget.map(renderConfirmTargetCard).join("")}</div>
   <div class="ci-item-copy-confirm-aggregates"><p class="admin-small"><strong>Aggregate totals</strong></p>
     <ul class="ci-bulk-class-summary-list">
-      <li>${confirmation.aggregates.addCount} additions</li>
-      <li>${confirmation.aggregates.replaceCount} replacements</li>
-      <li>${confirmation.aggregates.skipIdenticalCount} identical items skipped</li>
-      <li>${confirmation.aggregates.keepExistingCount} target versions retained</li>
+      ${ItemCopy.formatAggregateTotalsLines(confirmation.aggregates).map((line) => `<li>${line}</li>`).join("")}
     </ul></div>
   <p class="admin-small ci-item-copy-preserve-note">Unrelated target facilities will be preserved.</p>`;
 
@@ -207,7 +204,7 @@ const conflictFooter = `<p class="admin-small">Choose keep or replace for each c
         <button type="button" class="admin-button secondary small">Back</button>
         <button type="button" class="admin-button secondary small">Cancel</button>
         <button type="button" class="admin-button small">Continue to review</button></div>`;
-const confirmFooter = `<p class="admin-small">Ready to copy ${confirmation.aggregates.addCount} additions and ${confirmation.aggregates.replaceCount} replacements.</p>
+const confirmFooter = `<p class="admin-small">${ItemCopy.formatReadyToCopySummary(confirmation.aggregates)}</p>
       <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="confirm">
         <button type="button" class="admin-button secondary small">Back</button>
         <button type="button" class="admin-button secondary small">Cancel</button>

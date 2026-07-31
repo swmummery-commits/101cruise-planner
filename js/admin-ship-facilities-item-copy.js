@@ -440,7 +440,9 @@
   }
 
   function renderConfirmBody(vm) {
+    const itemCopy = itemApi();
     const c = vm.confirmation;
+    const aggregateLines = itemCopy ? itemCopy.formatAggregateTotalsLines(c.aggregates) : [];
     return `
       <div class="ci-item-copy-confirm-meta">
         <p class="admin-small"><strong>Source ship:</strong> ${esc(c.sourceShipName)}</p>
@@ -454,10 +456,7 @@
       <div class="ci-item-copy-confirm-aggregates">
         <p class="admin-small"><strong>Aggregate totals</strong></p>
         <ul class="ci-bulk-class-summary-list">
-          <li>${c.aggregates.addCount} addition${c.aggregates.addCount === 1 ? "" : "s"}</li>
-          <li>${c.aggregates.replaceCount} replacement${c.aggregates.replaceCount === 1 ? "" : "s"}</li>
-          <li>${c.aggregates.skipIdenticalCount} identical item${c.aggregates.skipIdenticalCount === 1 ? "" : "s"} skipped</li>
-          <li>${c.aggregates.keepExistingCount} target version${c.aggregates.keepExistingCount === 1 ? "" : "s"} retained</li>
+          ${aggregateLines.map(function (line) { return `<li>${line}</li>`; }).join("")}
         </ul>
       </div>
       <p class="admin-small ci-item-copy-preserve-note">Unrelated target facilities will be preserved.</p>`;
@@ -499,7 +498,7 @@
         return "All selected items are already identical or set to keep existing — no changes to copy.";
       }
       const totals = vm.confirmation.aggregates;
-      return `Ready to copy ${totals.addCount} addition${totals.addCount === 1 ? "" : "s"} and ${totals.replaceCount} replacement${totals.replaceCount === 1 ? "" : "s"}.`;
+      return itemCopy.formatReadyToCopySummary(totals);
     }
     if (modalContext.step === STEP_CONFLICTS) {
       const summary = itemCopy.formatAggregateOperationSummary(vm.totals, vm.targetCount, { sourceCount: vm.sourceCount });
@@ -529,11 +528,13 @@
         </div>`;
     }
     if (step === STEP_CONFIRM) {
+      const itemCopy = itemApi();
       const noChanges = vm.confirmation.aggregates.noChanges;
+      const readyText = itemCopy ? itemCopy.formatReadyToCopySummary(vm.confirmation.aggregates) : "";
       return `
         <p class="admin-small" id="ciItemCopySummary">${noChanges
           ? "All selected items are already identical or set to keep existing — no changes to copy."
-          : `Ready to copy ${vm.confirmation.aggregates.addCount} addition${vm.confirmation.aggregates.addCount === 1 ? "" : "s"} and ${vm.confirmation.aggregates.replaceCount} replacement${vm.confirmation.aggregates.replaceCount === 1 ? "" : "s"}.`}</p>
+          : esc(readyText)}</p>
         <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="confirm">
           <button type="button" class="admin-button secondary small" data-action="back">Back</button>
           <button type="button" class="admin-button secondary small" data-action="cancel">Cancel</button>
