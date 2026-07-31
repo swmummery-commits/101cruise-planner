@@ -7410,23 +7410,31 @@ function ciFacilitiesApi() {
   return window.CiShipFacilities || null;
 }
 
-function renderCiExclusiveAreaRow(row, index) {
+function renderCiExclusiveAreaCard(row, index, total) {
+  const showDescription = Boolean(row.showDescription || row.description);
+  const descHidden = showDescription ? "" : " hidden";
+  const addDescHidden = showDescription ? " hidden" : "";
+  const cardLabel = total > 1 ? `Exclusive area ${index + 1}` : "Exclusive area";
   return `
-    <div class="ci-facility-row ci-exclusive-area-row" data-index="${index}">
-      <div class="ci-facility-row-fields">
-        <div class="admin-field">
-          <label>Name</label>
-          <input type="text" class="ci-exclusive-area-name" value="${esc(row.name || "")}" placeholder="Area name">
-        </div>
-        <div class="admin-field">
-          <label>Description <span class="admin-small">(optional)</span></label>
-          <textarea class="ci-exclusive-area-description" rows="2" placeholder="Short detail shown on My Ship">${esc(row.description || "")}</textarea>
-        </div>
+    <div class="ci-exclusive-area-card ci-facility-row" data-index="${index}">
+      <div class="ci-exclusive-area-card-head">
+        <strong class="ci-exclusive-area-card-title">${esc(cardLabel)}</strong>
+        ${total > 1 ? `
+          <div class="ci-facility-row-actions ci-facility-row-actions--inline">
+            <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, -1)" title="Move up">↑</button>
+            <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, 1)" title="Move down">↓</button>
+            <button type="button" class="admin-button secondary small" onclick="removeCiExclusiveAreaRow(${index})">Remove</button>
+          </div>
+        ` : ""}
       </div>
-      <div class="ci-facility-row-actions">
-        <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, -1)" title="Move up">↑</button>
-        <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, 1)" title="Move down">↓</button>
-        <button type="button" class="admin-button secondary small" onclick="removeCiExclusiveAreaRow(${index})">Remove</button>
+      <div class="admin-field ci-exclusive-area-name-field">
+        <label>Name</label>
+        <input type="text" class="ci-exclusive-area-name" value="${esc(row.name || "")}" placeholder="e.g. The Retreat">
+      </div>
+      <button type="button" class="admin-button secondary small ci-exclusive-area-add-desc${addDescHidden}" onclick="toggleCiExclusiveAreaDescription(${index}, true)">Add description</button>
+      <div class="ci-exclusive-area-description-wrap admin-field${descHidden}">
+        <label>Description <span class="admin-small">(optional)</span></label>
+        <textarea class="ci-exclusive-area-description" rows="2" placeholder="Short detail shown on My Ship">${esc(row.description || "")}</textarea>
       </div>
     </div>
   `;
@@ -7434,18 +7442,28 @@ function renderCiExclusiveAreaRow(row, index) {
 
 function renderCiExclusiveAreasEditor(ship) {
   const api = ciFacilitiesApi();
-  const rows = api
-    ? api.loadExclusiveAreasForAdmin(ship?.facilities?.exclusive_areas)
+  let rows = api ? api.loadExclusiveAreasForAdmin(ship?.facilities?.exclusive_areas) : [];
+  if (!rows.length) {
+    rows = [{ name: "", description: "", showDescription: false }];
+  }
+  const fragmented = api ? api.detectFragmentedLegacyExclusiveAreas(ship?.facilities?.exclusive_areas) : false;
+  const targets = api
+    ? api.listSameClassCopyTargets(ciCruiseShips, ship, ship?.ship_class)
     : [];
+  const canClassCopy = Boolean(ship?.id && ship?.cruise_line_id && targets.length);
   return `
     <div class="ci-facility-section">
-      <h5>Exclusive Areas</h5>
-      <p class="admin-small">One area per row. Commas inside names or descriptions are preserved.</p>
+      <div class="ci-section-heading">
+        <h5>Exclusive area</h5>
+        ${canClassCopy ? `<button type="button" class="admin-button secondary small" onclick="openCiSameClassFacilitiesCopyModal()">Copy to ships in this class</button>` : ""}
+      </div>
+      ${fragmented ? `<p class="ci-facility-warning">Legacy entries may need combining before this ship is saved.</p>` : ""}
+      <p class="admin-small">Most ships have one exclusive area. Commas inside names or descriptions are preserved.</p>
       <div id="ciExclusiveAreasList">
-        ${rows.length ? rows.map(renderCiExclusiveAreaRow).join("") : ""}
+        ${rows.map((row, index) => renderCiExclusiveAreaCard(row, index, rows.length)).join("")}
       </div>
       <div class="admin-actions-row" style="margin-top:8px;">
-        <button type="button" class="admin-button secondary small" onclick="addCiExclusiveAreaRow()">Add item</button>
+        <button type="button" class="admin-button secondary small" onclick="addCiExclusiveAreaRow()">Add another exclusive area</button>
       </div>
     </div>
   `;
@@ -7455,11 +7473,13 @@ function readCiExclusiveAreasFromDom() {
   const root = document.getElementById("ciExclusiveAreasList");
   if (!root) return [];
   const rows = [];
-  root.querySelectorAll(".ci-exclusive-area-row").forEach((row) => {
+  root.querySelectorAll(".ci-exclusive-area-card").forEach((row) => {
     const name = String(row.querySelector(".ci-exclusive-area-name")?.value || "").trim();
     const description = String(row.querySelector(".ci-exclusive-area-description")?.value || "").trim();
+    const descWrap = row.querySelector(".ci-exclusive-area-description-wrap");
+    const showDescription = Boolean(descWrap && !descWrap.classList.contains("hidden"));
     if (!name && !description) return;
-    rows.push({ name, description });
+    rows.push({ name, description, showDescription: showDescription || Boolean(description) });
   });
   return rows;
 }
@@ -7467,12 +7487,13 @@ function readCiExclusiveAreasFromDom() {
 function rebuildCiExclusiveAreasDom(rows) {
   const root = document.getElementById("ciExclusiveAreasList");
   if (!root) return;
-  root.innerHTML = rows.map(renderCiExclusiveAreaRow).join("");
+  const list = rows.length ? rows : [{ name: "", description: "", showDescription: false }];
+  root.innerHTML = list.map((row, index) => renderCiExclusiveAreaCard(row, index, list.length)).join("");
 }
 
 function addCiExclusiveAreaRow() {
   const rows = readCiExclusiveAreasFromDom();
-  rows.push({ name: "", description: "" });
+  rows.push({ name: "", description: "", showDescription: false });
   rebuildCiExclusiveAreasDom(rows);
 }
 
@@ -7492,16 +7513,23 @@ function moveCiExclusiveAreaRow(index, delta) {
   rebuildCiExclusiveAreasDom(copy);
 }
 
+function toggleCiExclusiveAreaDescription(index, open) {
+  const rows = readCiExclusiveAreasFromDom();
+  if (!rows[index]) return;
+  rows[index].showDescription = open !== false;
+  rebuildCiExclusiveAreasDom(rows);
+  if (open !== false) {
+    const root = document.getElementById("ciExclusiveAreasList");
+    const card = root?.querySelector(`.ci-exclusive-area-card[data-index="${index}"]`);
+    card?.querySelector(".ci-exclusive-area-description")?.focus();
+  }
+}
+
 function renderCiSpecialtyFeatureRow(row, index) {
   return `
-    <div class="ci-facility-row ci-specialty-feature-row" data-index="${index}">
-      <div class="ci-facility-row-fields">
-        <div class="admin-field">
-          <label>Feature</label>
-          <input type="text" class="ci-specialty-feature-label" value="${esc(row.label || "")}" placeholder="Specialty feature">
-        </div>
-      </div>
-      <div class="ci-facility-row-actions">
+    <div class="ci-specialty-feature-row ci-facility-compact-row" data-index="${index}">
+      <input type="text" class="ci-specialty-feature-label" value="${esc(row.label || "")}" placeholder="Specialty feature">
+      <div class="ci-facility-row-actions ci-facility-row-actions--inline">
         <button type="button" class="admin-button secondary small" onclick="moveCiSpecialtyFeatureRow(${index}, -1)" title="Move up">↑</button>
         <button type="button" class="admin-button secondary small" onclick="moveCiSpecialtyFeatureRow(${index}, 1)" title="Move down">↓</button>
         <button type="button" class="admin-button secondary small" onclick="removeCiSpecialtyFeatureRow(${index})">Remove</button>
@@ -7512,9 +7540,7 @@ function renderCiSpecialtyFeatureRow(row, index) {
 
 function renderCiSpecialtyFeaturesEditor(ship) {
   const api = ciFacilitiesApi();
-  const rows = api
-    ? api.loadSpecialtyFeaturesForAdmin(ship?.facilities?.specialty_features)
-    : [];
+  const rows = api ? api.loadSpecialtyFeaturesForAdmin(ship?.facilities?.specialty_features) : [];
   return `
     <div class="ci-facility-section">
       <h5>Specialty Features</h5>
@@ -7523,7 +7549,7 @@ function renderCiSpecialtyFeaturesEditor(ship) {
         ${rows.length ? rows.map(renderCiSpecialtyFeatureRow).join("") : ""}
       </div>
       <div class="admin-actions-row" style="margin-top:8px;">
-        <button type="button" class="admin-button secondary small" onclick="addCiSpecialtyFeatureRow()">Add item</button>
+        <button type="button" class="admin-button secondary small" onclick="addCiSpecialtyFeatureRow()">Add feature</button>
       </div>
     </div>
   `;
@@ -7567,6 +7593,191 @@ function moveCiSpecialtyFeatureRow(index, delta) {
   const [item] = copy.splice(index, 1);
   copy.splice(next, 0, item);
   rebuildCiSpecialtyFeaturesDom(copy);
+}
+
+function getCiShipClassDraft() {
+  const api = ciFacilitiesApi();
+  const raw = String(document.getElementById("ciShipClass")?.value || "");
+  return api ? api.normalizeShipClass(raw) : raw.trim() || null;
+}
+
+function getSameClassCopyTargetsFromDraft() {
+  const api = ciFacilitiesApi();
+  const sourceId = document.getElementById("ciShipId")?.value || editingCiShipId;
+  const sourceShip = (ciCruiseShips || []).find((ship) => ship.id === sourceId) || null;
+  if (!api || !sourceShip) return [];
+  const draftLineId = String(document.getElementById("ciShipLineId")?.value || sourceShip.cruise_line_id || "").trim();
+  const draftClass = getCiShipClassDraft();
+  return api.listSameClassCopyTargets(
+    ciCruiseShips,
+    { ...sourceShip, cruise_line_id: draftLineId || sourceShip.cruise_line_id },
+    draftClass
+  );
+}
+
+function closeCiSameClassFacilitiesCopyModal() {
+  const overlay = document.getElementById("ciSameClassFacilitiesCopyOverlay");
+  if (overlay) overlay.remove();
+}
+
+function openCiSameClassFacilitiesCopyModal() {
+  closeCiSameClassFacilitiesCopyModal();
+  const api = ciFacilitiesApi();
+  const sourceId = document.getElementById("ciShipId")?.value || editingCiShipId;
+  const sourceShip = (ciCruiseShips || []).find((ship) => ship.id === sourceId);
+  if (!sourceShip || !api) return;
+
+  const lineId = String(document.getElementById("ciShipLineId")?.value || sourceShip.cruise_line_id || "").trim();
+  const line = (ciCruiseLines || []).find((row) => row.id === lineId);
+  const shipClass = getCiShipClassDraft();
+  const targets = getSameClassCopyTargetsFromDraft();
+  if (!lineId || !shipClass || !targets.length) {
+    setCiAutosaveStatus("Same-class copy unavailable", "error");
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.id = "ciSameClassFacilitiesCopyOverlay";
+  overlay.className = "ci-facilities-copy-overlay";
+  overlay.innerHTML = `
+    <div class="ci-facilities-copy-modal" role="dialog" aria-modal="true" aria-labelledby="ciSameClassCopyTitle">
+      <div class="ci-facilities-copy-modal-head">
+        <h4 id="ciSameClassCopyTitle">Copy to ships in this class</h4>
+        <button type="button" class="admin-button secondary small" onclick="closeCiSameClassFacilitiesCopyModal()">Close</button>
+      </div>
+      <p class="admin-small"><strong>Cruise line:</strong> ${esc(line?.name || "—")}</p>
+      <p class="admin-small"><strong>Ship class:</strong> ${esc(shipClass)}</p>
+      <p class="ci-facility-warning">Selected facility sections will replace the same sections on each target ship.</p>
+      <div class="ci-facilities-copy-toolbar">
+        <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopySelectAll" onchange="toggleCiSameClassCopySelectAll(this.checked)"> Select all targets</label>
+        <button type="button" class="admin-button secondary small" onclick="toggleCiSameClassCopySelectAll(false)">Clear all</button>
+      </div>
+      <div class="ci-facilities-copy-list">
+        ${targets.map((ship) => `
+          <label class="ci-check-control ci-facilities-copy-item">
+            <input type="checkbox" class="ci-same-class-copy-target" value="${esc(ship.id)}">
+            <span>${esc(ship.name || "Untitled")}</span>
+          </label>
+        `).join("")}
+      </div>
+      <div class="ci-facilities-copy-sections">
+        <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopyExclusive" checked> Copy Exclusive Areas</label>
+        <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopySpecialty"> Copy Specialty Features</label>
+      </div>
+      <p class="admin-small" id="ciSameClassCopySummary">No target ships selected.</p>
+      <div class="admin-actions-row">
+        <button type="button" class="admin-button small" onclick="confirmCiSameClassFacilitiesCopy()">Copy to selected ships</button>
+        <button type="button" class="admin-button secondary small" onclick="closeCiSameClassFacilitiesCopyModal()">Cancel</button>
+      </div>
+      <p class="admin-small" id="ciSameClassCopyResult"></p>
+    </div>
+  `;
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeCiSameClassFacilitiesCopyModal();
+  });
+  document.body.appendChild(overlay);
+  overlay.querySelectorAll(".ci-same-class-copy-target, #ciSameClassCopyExclusive, #ciSameClassCopySpecialty")
+    .forEach((el) => el.addEventListener("change", updateCiSameClassCopySummary));
+  updateCiSameClassCopySummary();
+}
+
+function toggleCiSameClassCopySelectAll(checked) {
+  document.querySelectorAll(".ci-same-class-copy-target").forEach((el) => {
+    el.checked = Boolean(checked);
+  });
+  updateCiSameClassCopySummary();
+}
+
+function updateCiSameClassCopySummary() {
+  const summary = document.getElementById("ciSameClassCopySummary");
+  if (!summary) return;
+  const selected = [...document.querySelectorAll(".ci-same-class-copy-target:checked")];
+  const names = selected.map((el) => {
+    const ship = (ciCruiseShips || []).find((row) => row.id === el.value);
+    return ship?.name || "Untitled";
+  });
+  const sections = [];
+  if (document.getElementById("ciSameClassCopyExclusive")?.checked) sections.push("Exclusive Areas");
+  if (document.getElementById("ciSameClassCopySpecialty")?.checked) sections.push("Specialty Features");
+  if (!selected.length) {
+    summary.textContent = "No target ships selected.";
+    return;
+  }
+  summary.textContent = `Copy ${sections.join(" and ") || "nothing"} to ${selected.length} ship${selected.length === 1 ? "" : "s"}: ${names.join(", ")}.`;
+}
+
+async function confirmCiSameClassFacilitiesCopy() {
+  const api = ciFacilitiesApi();
+  const sourceId = document.getElementById("ciShipId")?.value || editingCiShipId;
+  const resultEl = document.getElementById("ciSameClassCopyResult");
+  const selected = [...document.querySelectorAll(".ci-same-class-copy-target:checked")]
+    .map((el) => el.value)
+    .filter(Boolean);
+  const copyExclusive = Boolean(document.getElementById("ciSameClassCopyExclusive")?.checked);
+  const copySpecialty = Boolean(document.getElementById("ciSameClassCopySpecialty")?.checked);
+
+  if (!selected.length) {
+    if (resultEl) resultEl.textContent = "Select at least one target ship.";
+    return;
+  }
+  if (!copyExclusive && !copySpecialty) {
+    if (resultEl) resultEl.textContent = "Select at least one section to copy.";
+    return;
+  }
+
+  const names = selected.map((id) => (ciCruiseShips || []).find((ship) => ship.id === id)?.name || "Untitled");
+  const sections = [copyExclusive ? "Exclusive Areas" : null, copySpecialty ? "Specialty Features" : null].filter(Boolean);
+  const confirmed = window.confirm(
+    `Copy ${sections.join(" and ")} to ${selected.length} ship${selected.length === 1 ? "" : "s"}?\n\n${names.join("\n")}\n\nTarget values for the selected sections will be replaced.`
+  );
+  if (!confirmed) {
+    if (resultEl) resultEl.textContent = "Copy cancelled.";
+    return;
+  }
+
+  const existing = sourceId ? ciCruiseShips.find((ship) => ship.id === sourceId) : null;
+  const exclusiveRows = readCiExclusiveAreasFromDom();
+  const specialtyRows = readCiSpecialtyFeaturesFromDom();
+  const payload = {
+    source_ship_id: sourceId,
+    source_ship_class: getCiShipClassDraft(),
+    target_ship_ids: selected,
+    copy_exclusive_areas: copyExclusive,
+    copy_specialty_features: copySpecialty,
+    exclusive_areas: copyExclusive ? api.serializeExclusiveAreasFromAdmin(exclusiveRows) : [],
+    specialty_features: copySpecialty ? api.serializeSpecialtyFeaturesFromAdmin(specialtyRows) : []
+  };
+
+  if (resultEl) resultEl.textContent = "Copying…";
+  try {
+    const headers = await adminAuthHeaders();
+    const response = await fetch("/.netlify/functions/ci-ship-facilities-copy", {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.success === false) {
+      const failed = Array.isArray(data.failures) ? data.failures : [];
+      if (resultEl) {
+        resultEl.textContent = failed.length
+          ? `Copy failed for ${failed.length} ship${failed.length === 1 ? "" : "s"}: ${failed.map((row) => row.name).join(", ")}`
+          : (data.detail || data.error || "Copy failed.");
+      }
+      setCiAutosaveStatus("Same-class copy failed", "error");
+      return;
+    }
+    const updatedNames = Array.isArray(data.updated) ? data.updated : [];
+    if (resultEl) {
+      resultEl.textContent = `Updated ${data.updated_count || updatedNames.length} ship${(data.updated_count || updatedNames.length) === 1 ? "" : "s"}: ${updatedNames.join(", ")}${data.failed_count ? ` · ${data.failed_count} failed` : ""}.`;
+    }
+    setCiAutosaveStatus("Same-class copy complete", "saved");
+    await loadAdminData();
+    refreshCiShipMasterList();
+  } catch (error) {
+    if (resultEl) resultEl.textContent = String(error.message || error);
+    setCiAutosaveStatus("Same-class copy failed", "error");
+  }
 }
 
 function renderCiMediaField({ kind, inputId, url, previewClass, title }) {
@@ -8217,6 +8428,7 @@ function renderCiShipForm(ship) {
             <option value="retired" ${ship?.status === "retired" ? "selected" : ""}>retired</option>
           </select>
         </div>
+        <div class="admin-field"><label>Ship class</label><input id="ciShipClass" type="text" value="${esc(ship?.ship_class ?? "")}" placeholder="e.g. Millennium class"></div>
         <div class="admin-field"><label>Year built</label><input id="ciShipBuilt" type="number" value="${esc(ship?.year_built ?? "")}"></div>
         <div class="admin-field"><label>Year refurbished</label><input id="ciShipRefurb" type="number" value="${esc(ship?.year_refurbished ?? "")}"></div>
         <div class="admin-field"><label>Passengers</label><input id="ciShipPassengers" type="number" value="${esc(ship?.passenger_capacity ?? "")}"></div>
@@ -8506,6 +8718,7 @@ async function persistCiShip({ quiet = false } = {}) {
     cruise_line_id: cruiseLineId,
     name,
     status: String(document.getElementById("ciShipStatus")?.value || "active"),
+    ship_class: getCiShipClassDraft(),
     year_built: ciOptionalNumber("ciShipBuilt"),
     year_refurbished: ciOptionalNumber("ciShipRefurb"),
     passenger_capacity: ciOptionalNumber("ciShipPassengers"),

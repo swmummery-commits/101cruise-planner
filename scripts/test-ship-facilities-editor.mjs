@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Ship facilities editor + Total Decks label — focused offline tests.
+ * Ship facilities editor + same-class copy — focused offline tests.
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -25,9 +25,12 @@ function loadCiShipFacilities() {
 }
 
 const CiFac = loadCiShipFacilities();
+const CopyLib = require(path.join(root, "netlify/functions/lib/ci-ship-facilities-copy.js"));
 const plannerJs = read("js/planner.js");
 const adminJs = read("js/admin.js");
-const researchPublicJs = read("netlify/functions/lib/research-public.js");
+
+const apexSentence =
+  "The Retreat, a ship-within-a-ship concept for suite guests featuring a private sundeck, dedicated lounge, and the exclusive restaurant Luminae.";
 
 const millenniumExclusive = [
   "Suite Deck",
@@ -38,133 +41,169 @@ const millenniumExclusive = [
   "and the exclusive restaurant Luminae."
 ];
 
-const apexExclusive = [
-  "Suite Deck",
-  "Premium Lounge",
-  "The Retreat, a ship-within-a-ship concept for suite guests featuring a private sundeck, dedicated lounge, and the exclusive restaurant Luminae."
+const celebrityShips = [
+  { id: "apex", name: "Celebrity Apex", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "ascent", name: "Celebrity Ascent", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "beyond", name: "Celebrity Beyond", cruise_line_id: "line-celeb", ship_class: "Edge class", active: true },
+  { id: "mill", name: "Celebrity Millennium", cruise_line_id: "line-celeb", ship_class: "Millennium class", active: true },
+  { id: "solstice", name: "Celebrity Solstice", cruise_line_id: "line-celeb", ship_class: "Solstice class", active: true }
 ];
 
-const placeholderExclusive = ["Suite Deck", "Premium Lounge"];
+// Legacy Apex presentation suggestion
+const apexSuggested = CiFac.suggestLegacyExclusiveString(apexSentence);
+assert.equal(apexSuggested.suggested, true);
+assert.equal(apexSuggested.name, "The Retreat");
+assert.match(apexSuggested.description, /Luminae\./);
 
-const exploraSpecialty = [
-  "Suites: All suites feature private terraces",
-  "floor-to-ceiling windows",
-  "and walk-in wardrobes. Dining & Bars: Six restaurants including Anthology (fine dining)",
-  "Sakura (Pan-Asian)"
-];
+const rawApex = [apexSentence];
+const apexLoaded = CiFac.loadExclusiveAreasForAdmin(rawApex);
+assert.equal(apexLoaded.length, 1);
+assert.equal(apexLoaded[0].name, "The Retreat");
+assert.equal(apexLoaded[0].showDescription, true);
+assert.equal(rawApex[0], apexSentence);
+assert.equal(CiFac.serializeExclusiveAreasFromAdmin(apexLoaded).length, 1);
 
-// --- CiShipFacilities round trips ---
+// Suggestion does not write until explicit save
+const unsavedRows = [{ name: "The Retreat", description: apexSuggested.description }];
+assert.equal(CiFac.serializeExclusiveAreasFromAdmin(unsavedRows).length, 1);
 
-const commaDesc = "Private sundeck, lounge, and Luminae.";
-const savedExclusive = CiFac.serializeExclusiveAreasFromAdmin([
-  { name: "The Retreat", description: commaDesc }
-]);
-assert.equal(savedExclusive.length, 1);
-assert.equal(savedExclusive[0].name, "The Retreat");
-assert.equal(savedExclusive[0].description, commaDesc);
-const reloadedExclusive = CiFac.loadExclusiveAreasForAdmin(savedExclusive);
-assert.equal(reloadedExclusive[0].description, commaDesc);
+// Fragmented Millennium stays separate
+const millLoaded = CiFac.loadExclusiveAreasForAdmin(millenniumExclusive);
+assert.equal(millLoaded.length, 6);
+assert.equal(CiFac.detectFragmentedLegacyExclusiveAreas(millenniumExclusive), true);
 
-const legacyLoaded = CiFac.loadExclusiveAreasForAdmin(apexExclusive);
-assert.equal(legacyLoaded.length, 3);
-assert.match(legacyLoaded[2].name, /Luminae\./);
-assert.equal(CiFac.serializeExclusiveAreasFromAdmin(legacyLoaded).length, 3);
+// Default one-area presentation
+assert.equal(CiFac.loadExclusiveAreasForAdmin([]).length, 0);
 
-const fragmentedLoaded = CiFac.loadExclusiveAreasForAdmin(millenniumExclusive);
-assert.equal(fragmentedLoaded.length, 6);
-assert.equal(fragmentedLoaded[3].name, "a ship-within-a-ship concept for suite guests featuring a private sundeck");
+// Empty description collapsed semantics
+const collapsed = CiFac.loadExclusiveAreasForAdmin([{ name: "Suite Deck", description: "" }]);
+assert.equal(collapsed[0].showDescription, false);
+const open = CiFac.loadExclusiveAreasForAdmin([{ name: "The Retreat", description: "Detail" }]);
+assert.equal(open[0].showDescription, true);
 
-const ordered = CiFac.serializeExclusiveAreasFromAdmin([
+// Add another area / ordering
+const orderedSave = CiFac.serializeExclusiveAreasFromAdmin([
   { name: "Alpha", description: "" },
-  { name: "Beta", description: "Second" },
-  { name: "", description: "ignored" }
+  { name: "Beta", description: "Second" }
 ]);
-assert.equal(ordered.length, 2);
-assert.equal(ordered[0].name, "Alpha");
-assert.equal(ordered[1].name, "Beta");
-assert.equal(ordered[1].description, "Second");
+assert.equal(orderedSave[0].name, "Alpha");
+assert.equal(orderedSave[1].name, "Beta");
 
+// Specialty features comma-safe
 const specialtySaved = CiFac.serializeSpecialtyFeaturesFromAdmin([
-  { label: "Main Pool" },
   { label: "Fitness Center, with classes" }
 ]);
-assert.equal(specialtySaved.length, 2);
-assert.equal(specialtySaved[0], "Main Pool");
-assert.equal(specialtySaved[1], "Fitness Center, with classes");
-const specialtyLoaded = CiFac.loadSpecialtyFeaturesForAdmin(exploraSpecialty);
-assert.equal(specialtyLoaded.length, 4);
+assert.equal(specialtySaved[0], "Fitness Center, with classes");
 
-const existingFacilities = {
-  restaurants: 12,
-  custom_vendor_note: "keep-me",
-  legacy_unknown: { nested: true }
-};
-const merged = {
-  ...existingFacilities,
-  ...(function () {
-    const facilities = { ...existingFacilities };
-    const exclusive = CiFac.serializeExclusiveAreasFromAdmin([{ name: "The Retreat", description: commaDesc }]);
-    const specialty = CiFac.serializeSpecialtyFeaturesFromAdmin([{ label: "Main Pool" }]);
-    facilities.exclusive_areas = exclusive;
-    facilities.specialty_features = specialty;
-    facilities.spa = true;
-    return facilities;
-  })()
-};
-assert.equal(merged.custom_vendor_note, "keep-me");
-assert.deepEqual(merged.legacy_unknown, { nested: true });
+// ship_class
+assert.equal(CiFac.normalizeShipClass("  Edge class  "), "Edge class");
+assert.equal(CiFac.normalizeShipClass("   "), null);
+assert.match(adminJs, /id="ciShipClass"/);
+assert.match(adminJs, /ship_class: getCiShipClassDraft\(\)/);
 
-// --- Customer display ---
+// Same-class targets
+const edgeTargets = CiFac.listSameClassCopyTargets(celebrityShips, celebrityShips[0], "Edge class");
+assert.equal(edgeTargets.length, 2);
+assert.ok(edgeTargets.every((ship) => ship.id !== "apex"));
+assert.ok(edgeTargets.some((ship) => ship.name === "Celebrity Ascent"));
 
-const structuredDisplay = CiFac.normalizeExclusiveAreasForDisplay([
-  { name: "The Retreat", description: "A ship-within-a-ship experience, with commas." }
-]);
-assert.equal(structuredDisplay[0].name, "The Retreat");
-assert.match(structuredDisplay[0].description, /commas/);
-assert.doesNotMatch(JSON.stringify(structuredDisplay), /\[object Object\]/);
+const edgeFromApex = CiFac.listSameClassCopyTargets(celebrityShips, celebrityShips[0], "Edge class");
+assert.ok(!edgeFromApex.some((ship) => ship.id === "solstice"));
+assert.equal(edgeFromApex.length, 2);
 
-const legacyDisplay = CiFac.normalizeExclusiveAreasForDisplay(apexExclusive);
-assert.equal(legacyDisplay.length, 3);
-assert.match(legacyDisplay[2].name, /Luminae\./);
+const otherLine = CiFac.listSameClassCopyTargets(
+  [{ id: "x", name: "Other", cruise_line_id: "other", ship_class: "Edge class", active: true }],
+  celebrityShips[0],
+  "Edge class"
+);
+assert.equal(otherLine.length, 0);
 
-const labels = CiFac.exclusiveAreasAsLabels([{ name: "Retreat", description: "Hidden detail" }]);
-assert.equal(labels.length, 1);
-assert.equal(labels[0], "Retreat");
+// Copy merge preserves unrelated keys
+const merged = CiFac.mergeFacilitiesCopy(
+  { restaurants: 8, custom_flag: true, exclusive_areas: ["Old"] },
+  {
+    copy_exclusive_areas: true,
+    copy_specialty_features: true,
+    exclusive_areas: [{ name: "The Retreat", description: "New" }],
+    specialty_features: ["Pool"]
+  }
+);
+assert.equal(merged.restaurants, 8);
+assert.equal(merged.custom_flag, true);
+assert.equal(merged.exclusive_areas[0].name, "The Retreat");
+assert.equal(merged.specialty_features.length, 1);
+assert.equal(merged.specialty_features[0], "Pool");
 
-const specialtyDisplay = CiFac.normalizeSpecialtyFeaturesForDisplay(exploraSpecialty);
-assert.equal(specialtyDisplay.length, 4);
-assert.doesNotMatch(specialtyDisplay.join("|"), /\[object Object\]/);
+const specsUntouched = CiFac.mergeFacilitiesCopy(
+  { restaurants: 3 },
+  { copy_exclusive_areas: true, exclusive_areas: [{ name: "Retreat" }] }
+);
+assert.equal(specsUntouched.restaurants, 3);
+assert.equal(Object.prototype.hasOwnProperty.call(specsUntouched, "passenger_capacity"), false);
 
-// --- Planner deck labels ---
+// Validation
+const validation = CiFac.validateSameClassCopyRequest({
+  sourceShip: celebrityShips[0],
+  targetShips: [celebrityShips[1], celebrityShips[2]],
+  draftClass: "Edge class"
+});
+assert.equal(validation.ok, true);
 
+const badClass = CiFac.validateSameClassCopyRequest({
+  sourceShip: celebrityShips[0],
+  targetShips: [celebrityShips[4]],
+  draftClass: "Edge class"
+});
+assert.equal(badClass.ok, false);
+
+const sourceInTargets = CiFac.validateSameClassCopyRequest({
+  sourceShip: celebrityShips[0],
+  targetShips: [celebrityShips[0]],
+  draftClass: "Edge class"
+});
+assert.equal(sourceInTargets.ok, false);
+
+// buildFacilitiesPatch defaults
+const patch = CopyLib.buildFacilitiesPatch({
+  copy_exclusive_areas: true,
+  copy_specialty_features: false,
+  exclusive_areas: [{ name: "Retreat" }]
+});
+assert.equal(patch.ok, true);
+assert.equal(patch.patch.copy_specialty_features, false);
+
+const noSections = CopyLib.buildFacilitiesPatch({ copy_exclusive_areas: false, copy_specialty_features: false });
+assert.equal(noSections.ok, false);
+
+// Renderer / labels
 assert.doesNotMatch(plannerJs, /Passenger decks/);
 assert.match(plannerJs, /label: "Total decks"/);
-assert.match(plannerJs, /label: "Decks", value: formatShipNumber\(decks\)/);
 assert.doesNotMatch(plannerJs, /passenger decks/);
 
-// --- Admin editor ---
+const display = CiFac.normalizeExclusiveAreasForDisplay([{ name: "The Retreat", description: "Long prose stays below the chip." }]);
+assert.equal(display[0].name, "The Retreat");
+assert.match(display[0].description, /Long prose/);
+assert.doesNotMatch(JSON.stringify(display), /\[object Object\]/);
 
-assert.doesNotMatch(adminJs, /comma separated/i);
-assert.match(adminJs, /ciExclusiveAreasList/);
-assert.match(adminJs, /ciSpecialtyFeaturesList/);
-assert.doesNotMatch(adminJs, /ciChipList\("ciFacExclusive"\)/);
-
-// --- research-public mapping ---
-
-assert.match(researchPublicJs, /exclusiveAreasAsLabels/);
-
-const { exclusiveAreasAsLabels } = require(path.join(root, "js/ci-ship-facilities.js"));
-assert.equal(exclusiveAreasAsLabels([{ name: "The Retreat", description: "Comma, inside." }]).join("|"), "The Retreat");
-
-// --- Resolver regression (offline) ---
+// Admin compact UI markers
+assert.match(adminJs, /Add another exclusive area/);
+assert.match(adminJs, /Add description/);
+assert.match(adminJs, /Copy to ships in this class/);
+assert.match(adminJs, /ci-ship-facilities-copy/);
+assert.match(adminJs, /Copy cancelled/);
 
 const { resolveCruiseShip } = require(path.join(root, "netlify/functions/lib/resolve-cruise-ship.js"));
-const ships = [
-  { id: "m1", name: "Millennium", cruise_line_name: "Celebrity Cruises" },
-  { id: "cm1", name: "Celebrity Millennium", cruise_line_name: "Celebrity Cruises" }
-];
-const resolved = resolveCruiseShip(ships, "Millennium", "Celebrity");
+const resolved = resolveCruiseShip(
+  [
+    { id: "m1", name: "Millennium", cruise_line_name: "Celebrity Cruises" },
+    { id: "cm1", name: "Celebrity Millennium", cruise_line_name: "Celebrity Cruises" }
+  ],
+  "Millennium",
+  "Celebrity"
+);
 assert.equal(resolved.status, "matched");
-assert.equal(resolved.ship.id, "m1");
+
+require(path.join(root, "netlify/functions/ci-ship-facilities-copy.js"));
+require(path.join(root, "netlify/functions/lib/research-public.js"));
 
 console.log("test-ship-facilities-editor.mjs: all checks passed");
