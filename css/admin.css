@@ -1116,6 +1116,13 @@ body.admin-loading-active {
   gap: 8px;
 }
 
+.ci-bulk-class-modal-actions .admin-button:disabled,
+.ci-bulk-class-modal-actions .admin-button.small:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .ci-bulk-class-toolbar,
 .ci-bulk-class-selection-tools {
   display: flex;

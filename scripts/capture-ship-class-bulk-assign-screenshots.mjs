@@ -77,16 +77,37 @@ function renderModal({
   ships,
   selectedIds = [],
   sourceShipId = null,
-  showReplacementWarning = false,
-  replacementChecked = false,
   showConfirmSummary = false,
   showResultSummary = false,
   showIndividualEntry = false
 }) {
   const selected = ships.filter((ship) => selectedIds.includes(ship.id));
   const summary = Bulk.buildAssignmentSummary(selected, shipClass);
-  const applyLabel = Bulk.applyClassButtonLabel(summary.selectedCount);
+  const replacementRequired = summary.replaceCount > 0;
+  const applyDisabled = !Bulk.canApplyClassAssignment({
+    selectedCount: summary.selectedCount,
+    shipClass,
+    changeCount: summary.changeCount,
+    replaceCount: summary.replaceCount,
+    replacementConfirmed: replacementRequired
+  });
+  const applyLabel = Bulk.applyClassButtonLabel({
+    selectedCount: summary.selectedCount,
+    changeCount: summary.changeCount
+  });
+  const clearDisabled = !Bulk.canClearClassAssignment({
+    selectedCount: summary.selectedCount,
+    shipsWithClassCount: selected.filter((ship) => !Bulk.isUnassignedClass(ship.ship_class)).length
+  });
   const suggestions = Bulk.listDistinctClassesForLine(celebrityFleet, LINE_CELEB);
+  const plannedResults = showResultSummary ? Bulk.planBulkAssignResults(selected, shipClass) : [];
+  const reconciled = showResultSummary
+    ? Bulk.reconcileBulkAssignResults(
+        selectedIds,
+        plannedResults.map((row) => ({ ...row, ok: true }))
+      )
+    : null;
+  const resultText = reconciled ? Bulk.formatAssignResultMessage(reconciled) : "";
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(title)}</title><style>${adminCss}</style></head>
 <body style="padding:24px;background:#fff;font-family:Helvetica,Arial,sans-serif;max-width:980px;">
 ${showIndividualEntry ? `
@@ -115,11 +136,11 @@ ${showIndividualEntry ? `
       </div>
       <div class="ci-bulk-class-table-wrap"><table class="ci-bulk-class-table"><thead><tr><th>Select</th><th>Ship</th><th>Status</th><th>Current class</th><th>Proposed class</th></tr></thead><tbody>${ships.map((ship) => renderRow(ship, shipClass, selectedIds.includes(ship.id), sourceShipId)).join("")}</tbody></table></div>
       <div class="ci-bulk-class-summary"><p class="admin-small"><strong>Assignment summary</strong></p><ul class="ci-bulk-class-summary-list"><li>${summary.selectedCount} selected</li><li>${summary.newCount} receiving a new class</li><li>${summary.replaceCount} changing from another class</li><li>${summary.unchangedCount} already unchanged</li></ul></div>
-      ${showReplacementWarning ? `<label class="ci-check-control ci-bulk-class-warning"><input type="checkbox"${replacementChecked ? " checked" : ""}> I understand that existing class assignments will be replaced.</label>` : ""}
+      ${replacementRequired ? `<label class="ci-check-control ci-bulk-class-warning"><input type="checkbox"${summary.replaceCount ? " checked" : ""}> I understand that existing class assignments will be replaced.</label>` : ""}
       ${showConfirmSummary ? `<div class="ci-bulk-class-summary"><p class="admin-small"><strong>Final confirmation</strong></p><p class="admin-small">Assign <strong>${esc(shipClass)}</strong> on Celebrity Cruises to:<br>${selected.map((ship) => esc(ship.name)).join("<br>")}<br><br>New: ${summary.newCount} · Replace: ${summary.replaceCount} · Unchanged: ${summary.unchangedCount}</p></div>` : ""}
-      ${showResultSummary ? `<p class="admin-small"><strong>Result:</strong> Updated 3, unchanged 1. Celebrity Infinity, Celebrity Constellation, Celebrity Summit.</p>` : ""}
+      ${showResultSummary ? `<p class="admin-small"><strong>Result:</strong> ${esc(resultText)}</p>` : ""}
     </div>
-    <div class="ci-bulk-class-modal-footer"><div class="admin-actions-row ci-bulk-class-modal-actions"><button type="button" class="admin-button secondary small">Cancel</button><button type="button" class="admin-button secondary small">Clear class from selected ships</button><button type="button" class="admin-button small">${esc(applyLabel)}</button></div></div>
+    <div class="ci-bulk-class-modal-footer"><div class="admin-actions-row ci-bulk-class-modal-actions"><button type="button" class="admin-button secondary small">Cancel</button><button type="button" class="admin-button secondary small"${clearDisabled ? " disabled" : ""}>Clear class from selected ships</button><button type="button" class="admin-button small"${applyDisabled ? " disabled" : ""}>${esc(applyLabel)}</button></div></div>
   </div>
 </div>
 </body></html>`;
@@ -150,8 +171,7 @@ const pages = {
     title: "Replacement warning",
     shipClass: "Millennium class",
     ships: replaceShips,
-    selectedIds: ["mill", "inf", "con", "sum", "sol"],
-    showReplacementWarning: true
+    selectedIds: ["inf", "con", "sum", "sol"]
   }),
   "/individual": renderModal({
     title: "Individual ship entry",
@@ -166,9 +186,7 @@ const pages = {
     shipClass: "Millennium class",
     ships: replaceShips,
     selectedIds: ["inf", "con", "sum", "sol"],
-    showConfirmSummary: true,
-    showReplacementWarning: true,
-    replacementChecked: true
+    showConfirmSummary: true
   }),
   "/result": renderModal({
     title: "Result summary",
@@ -177,13 +195,17 @@ const pages = {
     selectedIds: ["inf", "con", "sum", "sol"],
     showResultSummary: true
   }),
+  "/no-changes": renderModal({
+    title: "No changes to apply",
+    shipClass: "Millennium class",
+    ships: replaceShips.filter((ship) => ["inf", "con", "sum", "mill"].includes(ship.id)),
+    selectedIds: ["inf", "con", "sum", "mill"]
+  }),
   "/mobile": renderModal({
     title: "Mobile modal",
     shipClass: "Millennium class",
-    ships: replaceShips.slice(0, 4),
-    selectedIds: ["inf", "con", "sum"],
-    showReplacementWarning: true,
-    replacementChecked: true
+    ships: replaceShips.filter((ship) => ["inf", "con", "sum", "sol"].includes(ship.id)),
+    selectedIds: ["inf", "con", "sum"]
   })
 };
 
@@ -205,12 +227,12 @@ const base = `http://127.0.0.1:${server.address().port}`;
 fs.mkdirSync(outDir, { recursive: true });
 const browser = await chromium.launch({ headless: true });
 const shots = [
-  ["fleet-modal-unassigned-ships.png", "/unassigned", 900],
   ["fleet-modal-mixed-existing-classes.png", "/mixed", 900],
   ["fleet-modal-replacement-warning.png", "/replacement", 900],
   ["individual-ship-assign-to-fleet.png", "/individual", 900],
   ["assignment-confirmation-summary.png", "/confirm", 900],
   ["assignment-result-summary.png", "/result", 900],
+  ["fleet-modal-no-changes.png", "/no-changes", 900],
   ["mobile-fleet-modal-390.png", "/mobile", 390]
 ];
 
@@ -222,7 +244,7 @@ for (const [file, route, width] of shots) {
 }
 
 for (const width of [900, 768, 390]) {
-  for (const route of ["/mixed", "/replacement", "/mobile"]) {
+  for (const route of ["/mixed", "/replacement", "/mobile", "/no-changes"]) {
     const page = await browser.newPage({ viewport: { width, height: 1200 } });
     await page.goto(`${base}${route}`, { waitUntil: "networkidle" });
     const overflow = await page.evaluate(() => ({

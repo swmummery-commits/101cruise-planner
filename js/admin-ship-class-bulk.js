@@ -148,18 +148,28 @@
     const selectedRows = getShips().filter((ship) => selectedIds.has(ship.id));
     const summary = bulk.buildAssignmentSummary(selectedRows, proposedClass);
     const suggestions = bulk.listDistinctClassesForLine(getShips(), ctx.cruiseLineId);
-    const shipsWithClass = selectedShipRows().filter((ship) => !bulk.isUnassignedClass(ship.ship_class)).length;
+    const shipsWithClass = selectedRows.filter((ship) => !bulk.isUnassignedClass(ship.ship_class)).length;
     const replacementRequired = summary.replaceCount > 0;
-    const replacementConfirmed = Boolean(document.getElementById("ciBulkClassReplaceConfirm")?.checked);
+    if (replacementRequired) {
+      ctx.replacementConfirmed = Boolean(document.getElementById("ciBulkClassReplaceConfirm")?.checked);
+    } else {
+      ctx.replacementConfirmed = false;
+    }
+    const replacementConfirmed = Boolean(ctx.replacementConfirmed);
     const applyDisabled = !bulk.canApplyClassAssignment({
       selectedCount: summary.selectedCount,
       shipClass: proposedClass,
+      changeCount: summary.changeCount,
       replaceCount: summary.replaceCount,
       replacementConfirmed
     });
     const clearDisabled = !bulk.canClearClassAssignment({
       selectedCount: summary.selectedCount,
       shipsWithClassCount: shipsWithClass
+    });
+    const applyLabel = bulk.applyClassButtonLabel({
+      selectedCount: summary.selectedCount,
+      changeCount: summary.changeCount
     });
 
     overlay.innerHTML = `
@@ -229,7 +239,7 @@
           <div class="admin-actions-row ci-bulk-class-modal-actions">
             <button type="button" class="admin-button secondary small" onclick="CiBulkShipClassAdmin.close()">Cancel</button>
             <button type="button" class="admin-button secondary small" onclick="CiBulkShipClassAdmin.clearSelected()"${clearDisabled ? " disabled" : ""}>Clear class from selected ships</button>
-            <button type="button" class="admin-button small" id="ciBulkClassApplyBtn" onclick="CiBulkShipClassAdmin.apply()"${applyDisabled ? " disabled" : ""}>${esc(bulk.applyClassButtonLabel(summary.selectedCount))}</button>
+            <button type="button" class="admin-button small" id="ciBulkClassApplyBtn" onclick="CiBulkShipClassAdmin.apply()"${applyDisabled ? " disabled" : ""} aria-disabled="${applyDisabled ? "true" : "false"}">${esc(applyLabel)}</button>
           </div>
         </div>
       </div>`;
@@ -316,10 +326,13 @@
     const bulk = api();
     const ctx = modalContext;
     if (!bulk || !ctx) return;
+    const applyBtn = document.getElementById("ciBulkClassApplyBtn");
+    if (applyBtn?.disabled) return;
+
     const shipClass = readClassInput();
     const selected = selectedShipRows();
     const summary = bulk.buildAssignmentSummary(selected, shipClass);
-    const replacementConfirmed = Boolean(document.getElementById("ciBulkClassReplaceConfirm")?.checked);
+    const replacementConfirmed = Boolean(ctx.replacementConfirmed);
     const validation = bulk.validateBulkAssignRequest({
       cruiseLineId: ctx.cruiseLineId,
       shipIds: selected.map((ship) => ship.id),
@@ -329,7 +342,13 @@
     });
     if (!validation.ok) {
       const resultEl = document.getElementById("ciBulkClassResult");
-      if (resultEl) resultEl.textContent = validation.error === "REPLACEMENT_NOT_CONFIRMED" ? "Confirm replacement before applying." : "Selection is not ready to apply.";
+      if (validation.error === "NO_CHANGES_TO_APPLY") {
+        if (resultEl) resultEl.textContent = "No changes to apply for the current selection.";
+      } else if (validation.error === "REPLACEMENT_NOT_CONFIRMED") {
+        if (resultEl) resultEl.textContent = "Confirm replacement before applying.";
+      } else if (resultEl) {
+        resultEl.textContent = "Selection is not ready to apply.";
+      }
       renderModal();
       return;
     }
@@ -350,6 +369,7 @@
     if (resultEl) resultEl.textContent = "Applying class…";
     try {
       const headers = await window.adminAuthHeaders();
+      const submittedIds = selected.map((ship) => ship.id);
       const response = await fetch("/.netlify/functions/ci-ship-class-bulk-assign", {
         method: "POST",
         headers,
@@ -357,7 +377,7 @@
           action: "assign",
           cruise_line_id: ctx.cruiseLineId,
           ship_class: bulk.normalizeShipClassInput(shipClass),
-          ship_ids: selected.map((ship) => ship.id),
+          ship_ids: submittedIds,
           replacement_confirmed: replacementConfirmed
         })
       });
@@ -366,20 +386,19 @@
         if (resultEl) resultEl.textContent = data.detail || data.error || "Bulk class assignment failed.";
         return;
       }
-      window.applyCiBulkClassAssignmentResults(data.results || []);
-      const updated = Number(data.updated_count) || 0;
-      const unchanged = Number(data.unchanged_count) || 0;
-      const failed = Number(data.failed_count) || 0;
-      const names = (data.results || [])
-        .filter((row) => row.outcome === "updated")
-        .map((row) => row.name)
-        .join(", ");
-      if (resultEl) {
-        resultEl.textContent = `Updated ${updated}, unchanged ${unchanged}${failed ? `, failed ${failed}` : ""}${names ? `: ${names}` : ""}.`;
+      const reconciled = bulk.reconcileBulkAssignResults(submittedIds, data.results || []);
+      if (!reconciled.ok) {
+        if (resultEl) {
+          resultEl.textContent = `Result mismatch: expected ${reconciled.submitted_count} ships, received ${(data.results || []).length}.`;
+        }
+        return;
       }
+      window.applyCiBulkClassAssignmentResults(reconciled.results || []);
+      if (resultEl) resultEl.textContent = bulk.formatAssignResultMessage(reconciled);
       if (typeof window.setCiAutosaveStatus === "function") {
         window.setCiAutosaveStatus("Ship classes updated", "saved");
       }
+      renderModal();
     } catch (error) {
       if (resultEl) resultEl.textContent = String(error.message || error);
     }
@@ -424,11 +443,11 @@
         return;
       }
       window.applyCiBulkClassAssignmentResults(data.results || []);
-      const updated = Number(data.updated_count) || 0;
-      const unchanged = Number(data.unchanged_count) || 0;
-      const failed = Number(data.failed_count) || 0;
+      const reconciled = bulk.reconcileBulkAssignResults(selected.map((ship) => ship.id), data.results || []);
       if (resultEl) {
-        resultEl.textContent = `Cleared ${updated}, unchanged ${unchanged}${failed ? `, failed ${failed}` : ""}.`;
+        resultEl.textContent = reconciled.ok
+          ? `Cleared ${reconciled.updated_count}, unchanged ${reconciled.unchanged_count}${reconciled.failed_count ? `, failed ${reconciled.failed_count}` : ""}.`
+          : `Clear result mismatch for ${reconciled.submitted_count} selected ships.`;
       }
       if (typeof window.setCiAutosaveStatus === "function") {
         window.setCiAutosaveStatus("Ship classes cleared", "saved");

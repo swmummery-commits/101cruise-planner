@@ -152,19 +152,24 @@
         summary.newShips.push(ship.name || "Untitled");
       }
     });
+    summary.changeCount = summary.newCount + summary.replaceCount;
     return summary;
   }
 
-  function applyClassButtonLabel(selectedCount) {
+  function applyClassButtonLabel({ selectedCount, changeCount } = {}) {
     const count = Number(selectedCount) || 0;
+    const changes = Number(changeCount) || 0;
     if (count <= 0) return "Apply class";
+    if (changes <= 0) return "No changes to apply";
     return `Apply class to ${count} ship${count === 1 ? "" : "s"}`;
   }
 
-  function canApplyClassAssignment({ selectedCount, shipClass, replaceCount, replacementConfirmed }) {
+  function canApplyClassAssignment({ selectedCount, shipClass, changeCount, replaceCount, replacementConfirmed }) {
     const count = Number(selectedCount) || 0;
+    const changes = Number(changeCount) || 0;
     if (count <= 0) return false;
     if (!normalizeShipClassInput(shipClass)) return false;
+    if (changes <= 0) return false;
     if ((Number(replaceCount) || 0) > 0 && !replacementConfirmed) return false;
     return true;
   }
@@ -226,6 +231,7 @@
     const fleet = Array.isArray(ships) ? ships : [];
     const selected = [];
     let replaceCount = 0;
+    let changeCount = 0;
     for (const shipId of unique) {
       const ship = fleet.find(function (row) {
         return row && row.id === shipId;
@@ -235,11 +241,23 @@
       selected.push(ship);
       const row = classifyAssignment(ship, nextClass);
       if (row.kind === "replace") replaceCount += 1;
+      if (row.kind === "replace" || row.kind === "new") changeCount += 1;
+    }
+    if (changeCount === 0) {
+      return { ok: false, error: "NO_CHANGES_TO_APPLY", changeCount: 0 };
     }
     if (replaceCount > 0 && !replacementConfirmed) {
       return { ok: false, error: "REPLACEMENT_NOT_CONFIRMED", replaceCount: replaceCount };
     }
-    return { ok: true, cruiseLineId: lineId, shipClass: nextClass, shipIds: unique, selected: selected, replaceCount: replaceCount };
+    return {
+      ok: true,
+      cruiseLineId: lineId,
+      shipClass: nextClass,
+      shipIds: unique,
+      selected: selected,
+      replaceCount: replaceCount,
+      changeCount: changeCount
+    };
   }
 
   function validateBulkClearRequest({ cruiseLineId, shipIds, ships }) {
@@ -283,6 +301,77 @@
       });
     });
     return results;
+  }
+
+  function reconcileBulkAssignResults(submittedShipIds, results) {
+    const submitted = [];
+    const seen = new Set();
+    (Array.isArray(submittedShipIds) ? submittedShipIds : []).forEach(function (id) {
+      const shipId = trim(id);
+      if (!shipId || seen.has(shipId)) return;
+      seen.add(shipId);
+      submitted.push(shipId);
+    });
+
+    const byId = new Map();
+    const duplicateResultIds = [];
+    (Array.isArray(results) ? results : []).forEach(function (row) {
+      if (!row || !row.id) return;
+      if (byId.has(row.id)) duplicateResultIds.push(row.id);
+      else byId.set(row.id, row);
+    });
+
+    const reconciled = submitted.map(function (shipId) {
+      const row = byId.get(shipId);
+      if (!row) {
+        return { id: shipId, outcome: "missing", ok: false, error: "RESULT_MISSING" };
+      }
+      return row;
+    });
+
+    const extraResultIds = [];
+    byId.forEach(function (_row, shipId) {
+      if (!submitted.includes(shipId)) extraResultIds.push(shipId);
+    });
+
+    const updated = reconciled.filter(function (row) {
+      return row.outcome === "updated";
+    });
+    const unchanged = reconciled.filter(function (row) {
+      return row.outcome === "unchanged";
+    });
+    const failed = reconciled.filter(function (row) {
+      return row.outcome === "failed" || row.outcome === "missing";
+    });
+
+    return {
+      ok: duplicateResultIds.length === 0 && extraResultIds.length === 0 && failed.length === 0,
+      submitted_count: submitted.length,
+      updated_count: updated.length,
+      unchanged_count: unchanged.length,
+      failed_count: failed.length,
+      updated: updated,
+      unchanged: unchanged,
+      failed: failed,
+      duplicate_result_ids: duplicateResultIds,
+      extra_result_ids: extraResultIds,
+      results: reconciled
+    };
+  }
+
+  function formatAssignResultMessage(reconciled) {
+    const data = reconciled || {};
+    const updatedNames = (data.updated || []).map(function (row) {
+      return row.name;
+    }).filter(Boolean);
+    const unchangedNames = (data.unchanged || []).map(function (row) {
+      return row.name;
+    }).filter(Boolean);
+    let message = `Updated ${data.updated_count || 0}, unchanged ${data.unchanged_count || 0}`;
+    if (data.failed_count) message += `, failed ${data.failed_count}`;
+    if (updatedNames.length) message += `. Updated: ${updatedNames.join(", ")}`;
+    if (unchangedNames.length) message += `. Unchanged: ${unchangedNames.join(", ")}`;
+    return message;
   }
 
   function planBulkClearResults(selectedShips) {
@@ -330,6 +419,8 @@
     validateBulkClearRequest,
     planBulkAssignResults,
     planBulkClearResults,
+    reconcileBulkAssignResults,
+    formatAssignResultMessage,
     formatStatusLabel
   };
 });

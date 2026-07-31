@@ -157,12 +157,75 @@ assert.equal(
 );
 
 // Button labels + disabled states
-assert.equal(Bulk.applyClassButtonLabel(0), "Apply class");
-assert.equal(Bulk.applyClassButtonLabel(4), "Apply class to 4 ships");
-assert.equal(Bulk.canApplyClassAssignment({ selectedCount: 0, shipClass: "Edge class", replaceCount: 0, replacementConfirmed: false }), false);
-assert.equal(Bulk.canApplyClassAssignment({ selectedCount: 2, shipClass: "Edge class", replaceCount: 0, replacementConfirmed: false }), true);
-assert.equal(Bulk.canApplyClassAssignment({ selectedCount: 2, shipClass: "Edge class", replaceCount: 1, replacementConfirmed: false }), false);
-assert.equal(Bulk.canApplyClassAssignment({ selectedCount: 2, shipClass: "", replaceCount: 0, replacementConfirmed: false }), false);
+assert.equal(Bulk.applyClassButtonLabel({ selectedCount: 0, changeCount: 0 }), "Apply class");
+assert.equal(Bulk.applyClassButtonLabel({ selectedCount: 4, changeCount: 2 }), "Apply class to 4 ships");
+assert.equal(Bulk.applyClassButtonLabel({ selectedCount: 4, changeCount: 0 }), "No changes to apply");
+assert.equal(Bulk.canApplyClassAssignment({ selectedCount: 0, shipClass: "Edge class", changeCount: 0, replaceCount: 0, replacementConfirmed: false }), false);
+assert.equal(Bulk.canApplyClassAssignment({ selectedCount: 2, shipClass: "Edge class", changeCount: 1, replaceCount: 0, replacementConfirmed: false }), true);
+assert.equal(Bulk.canApplyClassAssignment({ selectedCount: 2, shipClass: "Edge class", changeCount: 0, replaceCount: 0, replacementConfirmed: false }), false);
+assert.equal(Bulk.canApplyClassAssignment({ selectedCount: 2, shipClass: "Edge class", changeCount: 1, replaceCount: 1, replacementConfirmed: false }), false);
+assert.equal(Bulk.canApplyClassAssignment({ selectedCount: 2, shipClass: "", changeCount: 1, replaceCount: 0, replacementConfirmed: false }), false);
+
+const mixedSelection = celebrityFleet.filter((ship) => ["inf", "con", "sum", "sol"].includes(ship.id));
+const mixedSummary = Bulk.buildAssignmentSummary(mixedSelection, "Millennium class");
+assert.equal(mixedSummary.unchangedCount, 3);
+assert.equal(mixedSummary.replaceCount, 1);
+assert.equal(mixedSummary.changeCount, 1);
+assert.ok(mixedSummary.unchangedShips.includes("Celebrity Infinity"));
+assert.ok(mixedSummary.unchangedShips.includes("Celebrity Constellation"));
+assert.ok(mixedSummary.unchangedShips.includes("Celebrity Summit"));
+assert.equal(mixedSummary.replaceShips.length, 1);
+assert.equal(mixedSummary.replaceShips[0].name, "Celebrity Solstice");
+
+const planned = Bulk.planBulkAssignResults(mixedSelection, "Millennium class");
+const reconciled = Bulk.reconcileBulkAssignResults(
+  ["inf", "con", "sum", "sol"],
+  planned.map((row) => ({ ...row, ok: true }))
+);
+assert.equal(reconciled.updated_count, 1);
+assert.equal(reconciled.unchanged_count, 3);
+assert.equal(reconciled.submitted_count, 4);
+assert.equal(reconciled.updated[0].name, "Celebrity Solstice");
+assert.ok(reconciled.unchanged.some((row) => row.name === "Celebrity Infinity"));
+assert.ok(reconciled.unchanged.some((row) => row.name === "Celebrity Constellation"));
+assert.ok(reconciled.unchanged.some((row) => row.name === "Celebrity Summit"));
+assert.match(Bulk.formatAssignResultMessage(reconciled), /Updated: Celebrity Solstice/);
+assert.match(Bulk.formatAssignResultMessage(reconciled), /Unchanged: Celebrity Infinity, Celebrity Constellation, Celebrity Summit/);
+
+const allUnchanged = Bulk.validateBulkAssignRequest({
+  cruiseLineId: LINE_CELEB,
+  shipIds: ["inf", "con", "sum"],
+  shipClass: "Millennium class",
+  ships: celebrityFleet,
+  replacementConfirmed: false
+});
+assert.equal(allUnchanged.error, "NO_CHANGES_TO_APPLY");
+
+const soloCurrentShip = Bulk.validateBulkAssignRequest({
+  cruiseLineId: LINE_CELEB,
+  shipIds: ["mill"],
+  shipClass: "Millennium class",
+  ships: celebrityFleet,
+  replacementConfirmed: false
+});
+assert.equal(soloCurrentShip.error, "NO_CHANGES_TO_APPLY");
+
+const unassignedOnly = Bulk.buildAssignmentSummary(
+  celebrityFleet.filter((ship) => ship.id === "unassigned"),
+  "Millennium class"
+);
+assert.equal(unassignedOnly.replaceCount, 0);
+assert.equal(unassignedOnly.changeCount, 1);
+assert.equal(
+  Bulk.canApplyClassAssignment({
+    selectedCount: 1,
+    shipClass: "Millennium class",
+    changeCount: unassignedOnly.changeCount,
+    replaceCount: unassignedOnly.replaceCount,
+    replacementConfirmed: false
+  }),
+  true
+);
 
 // Clear class
 assert.equal(Bulk.canClearClassAssignment({ selectedCount: 1, shipsWithClassCount: 0 }), false);
@@ -211,6 +274,13 @@ require(path.join(root, "netlify/functions/lib/ci-ship-class-bulk-assign.js"));
 
 assert.match(adminBulkJs, /Assignment cancelled/);
 assert.match(adminBulkJs, /Clear class cancelled/);
+assert.match(adminBulkJs, /NO_CHANGES_TO_APPLY/);
+assert.match(adminBulkJs, /reconcileBulkAssignResults/);
+assert.match(adminBulkJs, /formatAssignResultMessage/);
+assert.match(adminBulkJs, /No changes to apply/);
+assert.match(adminBulkJs, /applyBtn\?\.disabled/);
+assert.match(read("css/admin.css"), /ci-bulk-class-modal-actions \.admin-button:disabled/);
+assert.match(read("netlify/functions/ci-ship-class-bulk-assign.js"), /NO_CHANGES_TO_APPLY/);
 assert.match(read("netlify/functions/ci-ship-class-bulk-assign.js"), /failed_count/);
 assert.match(read("netlify/functions/ci-ship-class-bulk-assign.js"), /ship_class: shipClass/);
 assert.doesNotMatch(read("netlify/functions/ci-ship-class-bulk-assign.js"), /facilities/);

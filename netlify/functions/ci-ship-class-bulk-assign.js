@@ -192,12 +192,18 @@ exports.handler = async function (event) {
       replacementConfirmed: Boolean(body.replacement_confirmed)
     });
     if (!validation.ok) {
-      const status = validation.error === "REPLACEMENT_NOT_CONFIRMED" ? 409 : 400;
+      const status =
+        validation.error === "REPLACEMENT_NOT_CONFIRMED"
+          ? 409
+          : validation.error === "NO_CHANGES_TO_APPLY"
+            ? 409
+            : 400;
       return jsonResponse(status, {
         success: false,
         error: validation.error,
         detail: validation.detail || null,
-        replace_count: validation.replaceCount || 0
+        replace_count: validation.replaceCount || 0,
+        change_count: validation.changeCount || 0
       });
     }
 
