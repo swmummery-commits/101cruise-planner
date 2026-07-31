@@ -493,9 +493,8 @@ body.admin-loading-active {
   grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
   border: 1px solid #e8e8e8;
   border-radius: 14px;
-  overflow: hidden;
+  overflow: visible;
   margin-top: 12px;
-  min-height: 560px;
   background: #fff;
 }
 
@@ -522,8 +521,7 @@ body.admin-loading-active {
 }
 
 .ci-master-list {
-  overflow-y: auto;
-  max-height: min(70vh, 760px);
+  overflow: visible;
   flex: 1;
 }
 
@@ -573,8 +571,7 @@ body.admin-loading-active {
 
 .ci-detail {
   padding: 16px 18px 20px;
-  overflow-y: auto;
-  max-height: min(70vh, 760px);
+  overflow: visible;
   background: #fff;
   min-width: 0;
 }
@@ -611,12 +608,9 @@ body.admin-loading-active {
     border-bottom: 1px solid #e8e8e8;
   }
 
-  .ci-master-list {
-    max-height: 240px;
-  }
-
+  .ci-master-list,
   .ci-detail {
-    max-height: none;
+    overflow: visible;
   }
 }
 
@@ -2709,10 +2703,8 @@ body.admin-loading-active {
 }
 
 .admin-ships-results {
-  max-height: calc(100vh - 380px);
   min-height: 280px;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: visible;
   padding-right: 2px;
   display: grid;
   gap: 8px;
@@ -2917,8 +2909,8 @@ body.admin-loading-active {
 }
 
 .calc-package-grid-wrap {
-  max-height: min(70vh, 720px);
-  overflow: auto;
+  overflow-x: auto;
+  overflow-y: visible;
 }
 
 .calc-rate-grid {
@@ -6530,8 +6522,7 @@ body.admin-loading-active {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: 70vh;
-  overflow: auto;
+  overflow: visible;
 }
 
 .social-pack-cruise {
