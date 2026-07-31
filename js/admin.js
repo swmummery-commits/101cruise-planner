@@ -720,6 +720,7 @@ async function loadAdminData() {
   } else {
     ciCruiseShips = ciShipRows || [];
   }
+  syncCiCatalogueWindowState();
 }
 
 function normalizeAdminTab(tab) {
@@ -6925,9 +6926,15 @@ function restoreCiMasterScroll() {
 }
 
 function renderCiAdmin() {
+  syncCiCatalogueWindowState();
   captureCiMasterScroll();
   renderAdmin();
   restoreCiMasterScroll();
+}
+
+function syncCiCatalogueWindowState() {
+  window.ciCruiseLines = ciCruiseLines;
+  window.ciCruiseShips = ciCruiseShips;
 }
 
 function setCiAutosaveStatus(text, tone) {
@@ -7643,12 +7650,18 @@ function canOpenBulkShipClassFromShip() {
 }
 
 function openCiBulkShipClassModalFromLine() {
+  syncCiCatalogueWindowState();
   const lineId = document.getElementById("ciLineId")?.value || editingCiLineId;
-  if (!lineId || !window.CiBulkShipClassAdmin) return;
+  if (!lineId) return;
+  if (!window.CiBulkShipClassAdmin) {
+    setCiAutosaveStatus("Ship class assignment is unavailable — reload the page.", "error");
+    return;
+  }
   window.CiBulkShipClassAdmin.open({ cruiseLineId: lineId });
 }
 
 function openCiBulkShipClassModalFromShip() {
+  syncCiCatalogueWindowState();
   if (!canOpenBulkShipClassFromShip() || !window.CiBulkShipClassAdmin) return;
   const sourceId = document.getElementById("ciShipId")?.value || editingCiShipId;
   const lineId = String(document.getElementById("ciShipLineId")?.value || "").trim();
@@ -7694,7 +7707,6 @@ function refreshCiOpenShipAfterBulkClassUpdate(updatedShipIds) {
 
 function applyCiBulkClassAssignmentResults(results) {
   if (!Array.isArray(results)) return [];
-  const bulk = window.CiShipClassBulk;
   const updatedIds = [];
   results.forEach((row) => {
     if (!row?.id || row.outcome !== "updated") return;
@@ -7703,7 +7715,7 @@ function applyCiBulkClassAssignmentResults(results) {
     ciCruiseShips[idx] = { ...ciCruiseShips[idx], ship_class: row.new_class ?? null };
     updatedIds.push(row.id);
   });
-  window.ciCruiseShips = ciCruiseShips;
+  syncCiCatalogueWindowState();
   refreshCiShipMasterList();
   refreshCiOpenShipAfterBulkClassUpdate(updatedIds);
   const modalOpen = Boolean(document.getElementById("ciBulkShipClassOverlay"));
@@ -9121,6 +9133,7 @@ async function loadCruiseIntelligenceData({ quiet = false } = {}) {
   if (shipsResult.error) throw new Error(shipsResult.error.message);
   ciCruiseLines = linesResult.data || [];
   ciCruiseShips = shipsResult.data || [];
+  syncCiCatalogueWindowState();
   if (!quiet && isCruiseCatalogueTab(activeTab)) renderCiAdmin();
 }
 
