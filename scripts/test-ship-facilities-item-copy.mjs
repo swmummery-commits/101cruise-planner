@@ -45,6 +45,7 @@ const bluKey = edgeExclusive.find((i) => i.name === "Blu").source_key;
 const retreatKey = edgeExclusive.find((i) => i.name === "The Retreat").source_key;
 const magicKey = edgeSpecialty.find((i) => i.value === "Magic Carpet").source_key;
 const edenKey = edgeSpecialty.find((i) => i.value === "Eden").source_key;
+const rooftopKey = edgeSpecialty.find((i) => i.value === "Rooftop Garden").source_key;
 
 // SOURCE SELECTION helpers
 assert.equal(edgeExclusive.length, 2);
@@ -287,10 +288,18 @@ assert.ok(resultRow.added.includes("Blu"));
 assert.ok(resultRow.added.includes("Magic Carpet"));
 
 // Confirmation reconciliation
+const approvedSelectedItems = {
+  exclusive_areas: [{ source_key: bluKey, name: "Blu" }, { source_key: retreatKey, name: "The Retreat" }],
+  specialty_features: [
+    { source_key: magicKey, value: "Magic Carpet" },
+    { source_key: edenKey, value: "Eden" },
+    { source_key: rooftopKey, value: "Rooftop Garden" }
+  ]
+};
 const confirmPlans = ItemCopy.buildCopyPlans({
   sourceFacilities: edge.facilities,
   targets: [apex, beyond],
-  selectedItems,
+  selectedItems: approvedSelectedItems,
   conflictResolutions: [{ target_ship_id: "apex", source_key: retreatKey, action: "replace_source" }]
 });
 const confirmation = ItemCopy.buildConfirmationSummary({
@@ -298,7 +307,7 @@ const confirmation = ItemCopy.buildConfirmationSummary({
   cruiseLineName: fixtures.cruiseLine.name,
   targetScope: ItemCopy.TARGET_SCOPE_SAME_CLASS,
   exclusiveItems: edgeExclusive.filter(function (i) { return [bluKey, retreatKey].includes(i.source_key); }),
-  specialtyItems: edgeSpecialty.filter(function (i) { return [magicKey, edenKey].includes(i.source_key); }),
+  specialtyItems: edgeSpecialty.filter(function (i) { return [magicKey, edenKey, rooftopKey].includes(i.source_key); }),
   plans: confirmPlans
 });
 assert.equal(confirmation.aggregates.addCount, confirmation.perTarget.reduce(function (s, r) { return s + r.addCount; }, 0));
@@ -334,6 +343,95 @@ assert.equal(ItemCopy.canContinueToReview({ selectedSourceCount: 4, selectedTarg
 assert.equal(ItemCopy.planHasConflicts(confirmPlans), true);
 assert.equal(ItemCopy.conflictsAreResolved(confirmPlans, [{ target_ship_id: "apex", source_key: retreatKey, action: "keep_target" }]), true);
 
+// Approved fixture aggregate totals
+assert.equal(confirmation.aggregates.addCount, 6);
+assert.equal(confirmation.aggregates.replaceCount, 1);
+assert.equal(confirmation.aggregates.skipIdenticalCount, 3);
+
+const footerText = ItemCopy.formatAggregateOperationSummary(confirmation.aggregates, 2, { sourceCount: 5 }).text;
+assert.match(footerText, /6 additions/);
+assert.match(footerText, /1 replacement/);
+assert.match(footerText, /3 identical skips/);
+assert.match(footerText, /2 ships/);
+
+const execApex = CopyLib.executeItemLevelCopy({
+  sourceFacilities: edge.facilities,
+  target: apex,
+  resolvedItems: approvedSelectedItems,
+  conflictResolutions: [{ target_ship_id: "apex", source_key: retreatKey, action: "replace_source" }]
+});
+const execBeyond = CopyLib.executeItemLevelCopy({
+  sourceFacilities: edge.facilities,
+  target: beyond,
+  resolvedItems: approvedSelectedItems,
+  conflictResolutions: [{ target_ship_id: "apex", source_key: retreatKey, action: "replace_source" }]
+});
+assert.ok(execBeyond.resultRow.added.includes("Blu"));
+assert.ok(execBeyond.resultRow.added.includes("The Retreat"));
+assert.ok(execBeyond.resultRow.added.includes("Magic Carpet"));
+assert.ok(execBeyond.resultRow.added.includes("Rooftop Garden"));
+assert.ok(execBeyond.resultRow.skipped_identical.includes("Eden"));
+
+const simulatedResults = [
+  { id: apex.id, name: apex.name, ok: true, outcomes: execApex.outcomes },
+  { id: beyond.id, name: beyond.name, ok: true, outcomes: execBeyond.outcomes }
+];
+ItemCopy.assertResultOutcomesReconcile({
+  plans: confirmPlans,
+  results: simulatedResults,
+  sourceFacilities: edge.facilities
+});
+
+assert.throws(function () {
+  ItemCopy.assertResultOutcomesReconcile({
+    plans: confirmPlans,
+    results: [
+      { id: apex.id, name: apex.name, ok: true, outcomes: execApex.outcomes },
+      { id: beyond.id, name: beyond.name, ok: true, outcomes: execBeyond.outcomes.slice(0, 2) }
+    ],
+    sourceFacilities: edge.facilities
+  });
+}, /RESULT_OUTCOME_MISSING/);
+
+assert.throws(function () {
+  ItemCopy.assertResultOutcomesReconcile({
+    plans: confirmPlans,
+    results: [{
+      id: apex.id,
+      name: apex.name,
+      ok: true,
+      outcomes: [
+        ...execApex.outcomes,
+        { source_key: bluKey, outcome: "added" }
+      ]
+    }],
+    sourceFacilities: edge.facilities
+  });
+}, /RESULT_OUTCOME_DUPLICATE/);
+
+const zeroTargetFooter = ItemCopy.formatAggregateOperationSummary(
+  ItemCopy.summarizeAllPlans([]),
+  0,
+  { sourceCount: 1 }
+);
+assert.equal(zeroTargetFooter.canContinue, false);
+
+// Post-success: merged facilities make a second identical copy a no-op
+const mergedBeyond = CopyLib.executeItemLevelCopy({
+  sourceFacilities: edge.facilities,
+  target: beyond,
+  resolvedItems: approvedSelectedItems,
+  conflictResolutions: [{ target_ship_id: "apex", source_key: retreatKey, action: "replace_source" }]
+});
+const beyondAfterCopy = { ...beyond, facilities: mergedBeyond.facilities };
+const secondBeyondPlans = ItemCopy.buildCopyPlans({
+  sourceFacilities: edge.facilities,
+  targets: [beyondAfterCopy],
+  selectedItems: approvedSelectedItems,
+  conflictResolutions: [{ target_ship_id: "apex", source_key: retreatKey, action: "replace_source" }]
+});
+assert.equal(ItemCopy.summarizeAllPlans(secondBeyondPlans).noChanges, true);
+
 // UI / workflow markers
 assert.match(adminJs, /Copy facilities to other ships/);
 assert.match(adminJs, /CiShipFacilitiesItemCopyAdmin/);
@@ -355,6 +453,9 @@ assert.match(adminCopyJs, /selectedTargets: \[\]/);
 assert.match(adminCss, /\.ci-item-copy-modal\.ci-bulk-class-modal/);
 assert.match(adminCss, /ci-bulk-class-modal-footer/);
 assert.match(adminCss, /@media \(max-width: 390px\)/);
+assert.match(adminCopyJs, /formatAggregateOperationSummary/);
+assert.match(adminCopyJs, /assertResultOutcomesReconcile/);
+assert.match(adminCopyJs, /lastPlans/);
 assert.doesNotMatch(adminCopyJs, /window\.confirm/);
 
 assert.equal(

@@ -33,12 +33,17 @@ function executeItemLevelCopy({ sourceFacilities, target, resolvedItems, conflic
     return { ok: false, error: "NO_CHANGES", plan };
   }
   const applied = ItemCopy.applyItemLevelCopyToFacilities(target.facilities, plan.items);
-  const sourceItemsByKey = {};
-  ItemCopy.listSourceExclusiveAreas(sourceFacilities.exclusive_areas).forEach(function (item) {
-    sourceItemsByKey[item.source_key] = item;
-  });
-  ItemCopy.listSourceSpecialtyFeatures(sourceFacilities.specialty_features).forEach(function (item) {
-    sourceItemsByKey[item.source_key] = item;
+  const sourceItemsByKey = ItemCopy.buildSourceItemsByKey(sourceFacilities);
+  const resultPayload = {
+    id: target.id,
+    name: target.name,
+    ok: true,
+    outcomes: applied.outcomes
+  };
+  ItemCopy.assertResultOutcomesReconcile({
+    plans: [plan],
+    results: [resultPayload],
+    sourceFacilities: sourceFacilities
   });
   const resultRow = ItemCopy.buildResultRow(target.name, applied.outcomes, sourceItemsByKey);
   return {

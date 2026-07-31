@@ -466,11 +466,18 @@
   function renderResultBody(vm) {
     const data = modalContext.lastResult || {};
     const itemCopy = itemApi();
-    const cards = (data.results || []).map(function (row) {
+    const source = getSourceShip();
+    const plans = modalContext.lastPlans || vm.plans || [];
+    const reconciled = itemCopy.reconcileResultRows({
+      plans: plans,
+      results: data.results || [],
+      sourceFacilities: source && source.facilities
+    });
+    const cards = reconciled.map(function (row) {
       if (!row.ok) {
         return `<div class="ci-item-copy-result-card is-failed"><p class="admin-small"><strong>Failed — ${esc(row.name)}</strong></p><p class="ci-item-copy-result-fail">${esc(row.error || "Copy failed")}</p></div>`;
       }
-      const result = row.result || itemCopy.buildResultRow(row.name, row.items, {});
+      const result = row.result || { added: [], replaced: [], skipped_identical: [], kept_existing: [] };
       return `
         <div class="ci-item-copy-result-card">
           <p class="admin-small"><strong>${esc(row.name)}</strong></p>
@@ -478,9 +485,39 @@
           ${renderConfirmList("Replaced", result.replaced || [])}
           ${renderConfirmList("Already present", result.skipped_identical || [])}
           ${renderConfirmList("Kept existing", result.kept_existing || [])}
+          ${renderConfirmList("Failed", result.failed || [])}
         </div>`;
     }).join("");
     return `<div class="ci-item-copy-result-wrap"><p class="admin-small"><strong>Copy complete</strong></p>${cards}</div>`;
+  }
+
+  function footerSummaryText(vm) {
+    const itemCopy = itemApi();
+    if (!itemCopy) return "";
+    if (modalContext.step === STEP_CONFIRM) {
+      if (vm.confirmation.aggregates.noChanges) {
+        return "All selected items are already identical or set to keep existing — no changes to copy.";
+      }
+      const totals = vm.confirmation.aggregates;
+      return `Ready to copy ${totals.addCount} addition${totals.addCount === 1 ? "" : "s"} and ${totals.replaceCount} replacement${totals.replaceCount === 1 ? "" : "s"}.`;
+    }
+    if (modalContext.step === STEP_CONFLICTS) {
+      const summary = itemCopy.formatAggregateOperationSummary(vm.totals, vm.targetCount, { sourceCount: vm.sourceCount });
+      return vm.hasConflicts
+        ? `${summary.text}. Choose keep or replace for each conflicting exclusive area.`
+        : summary.text;
+    }
+    return itemCopy.formatAggregateOperationSummary(vm.totals, vm.targetCount, { sourceCount: vm.sourceCount }).text;
+  }
+
+  function continueDisabledForStep(vm) {
+    if (modalContext.step === STEP_SELECT) {
+      return !vm.canContinue || vm.sourceCount <= 0 || vm.targetCount <= 0 || vm.totals.noChanges;
+    }
+    if (modalContext.step === STEP_CONFLICTS) {
+      return !vm.conflictsResolved || vm.totals.noChanges;
+    }
+    return false;
   }
 
   function renderFooter(vm) {
@@ -504,25 +541,21 @@
         </div>`;
     }
     if (step === STEP_CONFLICTS) {
-      const continueDisabled = !vm.conflictsResolved;
+      const disabled = continueDisabledForStep(vm);
       return `
-        <p class="admin-small" id="ciItemCopySummary">${vm.hasConflicts ? "Choose keep or replace for each conflicting exclusive area." : "Review conflict decisions."}</p>
+        <p class="admin-small" id="ciItemCopySummary">${esc(footerSummaryText(vm))}</p>
         <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="conflicts">
           <button type="button" class="admin-button secondary small" data-action="back">Back</button>
           <button type="button" class="admin-button secondary small" data-action="cancel">Cancel</button>
-          <button type="button" class="admin-button small" data-action="continue-conflicts"${continueDisabled ? " disabled aria-disabled=\"true\"" : ""}>Continue to review</button>
+          <button type="button" class="admin-button small" data-action="continue-conflicts"${disabled ? " disabled aria-disabled=\"true\"" : ""}>Continue to review</button>
         </div>`;
     }
-    const continueDisabled = !vm.canContinue;
+    const disabled = continueDisabledForStep(vm);
     return `
-      <p class="admin-small" id="ciItemCopySummary">${vm.sourceCount && vm.targetCount
-        ? (vm.canContinue
-          ? `${vm.totals.addCount} to add · ${vm.totals.replaceCount} to replace across ${vm.targetCount} ship${vm.targetCount === 1 ? "" : "s"}`
-          : "All selected items are already identical or set to keep existing — no changes to copy.")
-        : (vm.sourceCount ? "Select at least one target ship." : "Select source items and target ships.")}</p>
+      <p class="admin-small" id="ciItemCopySummary">${esc(footerSummaryText(vm))}</p>
       <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="select">
         <button type="button" class="admin-button secondary small" data-action="cancel">Cancel</button>
-        <button type="button" class="admin-button small" data-action="continue-select"${continueDisabled ? " disabled aria-disabled=\"true\"" : ""}>Continue to review</button>
+        <button type="button" class="admin-button small" data-action="continue-select"${disabled ? " disabled aria-disabled=\"true\"" : ""}>Continue to review</button>
       </div>`;
   }
 
@@ -591,15 +624,23 @@
         goToStep(STEP_SELECT);
       }
     });
-    overlay.querySelector("[data-action='continue-select']")?.addEventListener("click", function () {
+    overlay.querySelector("[data-action='continue-select']")?.addEventListener("click", function (event) {
+      if (event.currentTarget.disabled) {
+        event.preventDefault();
+        return;
+      }
       const vm = buildViewModel();
-      if (!vm || !vm.canContinue) return;
+      if (!vm || !vm.canContinue || vm.sourceCount <= 0 || vm.targetCount <= 0 || vm.totals.noChanges) return;
       modalContext.hasConflictsOnPath = vm.hasConflicts;
       goToStep(vm.hasConflicts ? STEP_CONFLICTS : STEP_CONFIRM);
     });
-    overlay.querySelector("[data-action='continue-conflicts']")?.addEventListener("click", function () {
+    overlay.querySelector("[data-action='continue-conflicts']")?.addEventListener("click", function (event) {
+      if (event.currentTarget.disabled) {
+        event.preventDefault();
+        return;
+      }
       const vm = buildViewModel();
-      if (!vm || !vm.conflictsResolved) return;
+      if (!vm || !vm.conflictsResolved || vm.totals.noChanges) return;
       goToStep(STEP_CONFIRM);
     });
     overlay.querySelector("[data-action='confirm-copy']")?.addEventListener("click", onConfirmCopy);
@@ -659,6 +700,7 @@
       selected_items: buildSelectedItemsPayload(),
       conflict_resolutions: readConflictResolutions()
     };
+    modalContext.lastPlans = vm.plans.slice();
     const confirmBtn = document.querySelector("[data-action='confirm-copy']");
     if (confirmBtn) {
       confirmBtn.disabled = true;
@@ -679,7 +721,17 @@
         return;
       }
       applySuccessToLocalShips(data);
-      modalContext.lastResult = data;
+      const reconciled = itemCopy.reconcileResultRows({
+        plans: modalContext.lastPlans,
+        results: data.results || [],
+        sourceFacilities: source.facilities
+      });
+      itemCopy.assertResultOutcomesReconcile({
+        plans: modalContext.lastPlans,
+        results: reconciled,
+        sourceFacilities: source.facilities
+      });
+      modalContext.lastResult = { ...data, results: reconciled };
       modalContext.resultError = null;
       if (window.setCiAutosaveStatus) window.setCiAutosaveStatus("Facilities copy complete", "saved");
       goToStep(STEP_RESULT);
@@ -728,6 +780,7 @@
       classFilter: "all",
       hasConflictsOnPath: false,
       lastResult: null,
+      lastPlans: [],
       resultError: null
     };
 

@@ -741,13 +741,7 @@
         keepExistingCount: breakdown.keepTarget.length
       };
     });
-    const aggregates = {
-      addCount: perTarget.reduce(function (sum, row) { return sum + row.addCount; }, 0),
-      replaceCount: perTarget.reduce(function (sum, row) { return sum + row.replaceCount; }, 0),
-      skipIdenticalCount: perTarget.reduce(function (sum, row) { return sum + row.skipIdenticalCount; }, 0),
-      keepExistingCount: perTarget.reduce(function (sum, row) { return sum + row.keepExistingCount; }, 0)
-    };
-    aggregates.noChanges = aggregates.addCount === 0 && aggregates.replaceCount === 0;
+    const aggregates = summarizeAllPlans(plans);
     const summary = {
       sourceShipName: sourceShipName || "—",
       cruiseLineName: cruiseLineName || "—",
@@ -806,6 +800,174 @@
     });
   }
 
+  function buildSourceItemsByKey(sourceFacilities) {
+    const map = {};
+    listSourceExclusiveAreas(sourceFacilities && sourceFacilities.exclusive_areas).forEach(function (item) {
+      map[item.source_key] = item;
+    });
+    listSourceSpecialtyFeatures(sourceFacilities && sourceFacilities.specialty_features).forEach(function (item) {
+      map[item.source_key] = item;
+    });
+    return map;
+  }
+
+  function plannedActionToTerminalOutcome(action) {
+    if (action === "add") return "added";
+    if (action === "replace") return "replaced";
+    if (action === "skip_identical") return "skipped_identical";
+    if (action === "keep_existing") return "kept_existing";
+    return null;
+  }
+
+  function expectedOutcomesFromPlans(plans) {
+    const rows = [];
+    (Array.isArray(plans) ? plans : []).forEach(function (plan) {
+      (plan.items || []).forEach(function (item) {
+        const outcome = plannedActionToTerminalOutcome(item.plannedAction);
+        if (!outcome) return;
+        rows.push({
+          target_ship_id: plan.targetShipId,
+          target_ship_name: plan.targetShipName,
+          source_key: item.source_key,
+          expected_outcome: outcome
+        });
+      });
+    });
+    return rows;
+  }
+
+  function normalizeResultOutcomes(resultRow) {
+    return Array.isArray(resultRow && resultRow.outcomes)
+      ? resultRow.outcomes
+      : (Array.isArray(resultRow && resultRow.items) ? resultRow.items : []);
+  }
+
+  function assertResultOutcomesReconcile({ plans, results, sourceFacilities }) {
+    const expected = expectedOutcomesFromPlans(plans);
+    const resultByTarget = Object.fromEntries((Array.isArray(results) ? results : []).map(function (row) {
+      return [row.id, row];
+    }));
+    const seen = new Set();
+
+    expected.forEach(function (exp) {
+      const result = resultByTarget[exp.target_ship_id];
+      if (!result) {
+        throw new Error("RESULT_TARGET_MISSING:" + exp.target_ship_id);
+      }
+      const outcomes = normalizeResultOutcomes(result);
+      const matches = outcomes.filter(function (row) {
+        return row.source_key === exp.source_key;
+      });
+      if (!matches.length) {
+        throw new Error("RESULT_OUTCOME_MISSING:" + exp.target_ship_id + ":" + exp.source_key);
+      }
+      if (matches.length > 1) {
+        throw new Error("RESULT_OUTCOME_DUPLICATE:" + exp.target_ship_id + ":" + exp.source_key);
+      }
+      const pairKey = exp.target_ship_id + ":" + exp.source_key;
+      if (seen.has(pairKey)) {
+        throw new Error("RESULT_OUTCOME_DUPLICATE:" + pairKey);
+      }
+      seen.add(pairKey);
+      const actual = matches[0].outcome;
+      if (actual === "failed") return;
+      if (actual !== exp.expected_outcome) {
+        throw new Error("RESULT_OUTCOME_MISMATCH:" + pairKey + ":" + actual + "!==" + exp.expected_outcome);
+      }
+    });
+
+    const expectedByTarget = {};
+    expected.forEach(function (exp) {
+      if (!expectedByTarget[exp.target_ship_id]) expectedByTarget[exp.target_ship_id] = new Set();
+      expectedByTarget[exp.target_ship_id].add(exp.source_key);
+    });
+
+    (Array.isArray(results) ? results : []).forEach(function (result) {
+      if (!result || !result.id) {
+        throw new Error("RESULT_TARGET_UNKNOWN");
+      }
+      if (!expectedByTarget[result.id]) {
+        throw new Error("RESULT_TARGET_UNKNOWN:" + result.id);
+      }
+      normalizeResultOutcomes(result).forEach(function (outcome) {
+        if (!expectedByTarget[result.id].has(outcome.source_key)) {
+          throw new Error("RESULT_UNKNOWN_SOURCE_KEY:" + result.id + ":" + outcome.source_key);
+        }
+      });
+    });
+
+    const aggregates = summarizeAllPlans(plans);
+    const resultTotals = { added: 0, replaced: 0, skipped_identical: 0, kept_existing: 0, failed: 0 };
+    expected.forEach(function (exp) {
+      const result = resultByTarget[exp.target_ship_id];
+      const outcome = normalizeResultOutcomes(result).find(function (row) {
+        return row.source_key === exp.source_key;
+      });
+      const terminal = outcome ? outcome.outcome : exp.expected_outcome;
+      if (terminal === "added") resultTotals.added += 1;
+      else if (terminal === "replaced") resultTotals.replaced += 1;
+      else if (terminal === "skipped_identical") resultTotals.skipped_identical += 1;
+      else if (terminal === "kept_existing") resultTotals.kept_existing += 1;
+      else if (terminal === "failed") resultTotals.failed += 1;
+    });
+
+    if (
+      resultTotals.added !== aggregates.addCount ||
+      resultTotals.replaced !== aggregates.replaceCount ||
+      resultTotals.skipped_identical !== aggregates.skipIdenticalCount ||
+      resultTotals.kept_existing !== aggregates.keepExistingCount
+    ) {
+      throw new Error("RESULT_TOTALS_MISMATCH");
+    }
+
+    return true;
+  }
+
+  function reconcileResultRows({ plans, results, sourceFacilities }) {
+    const sourceItemsByKey = buildSourceItemsByKey(sourceFacilities);
+    const planByTarget = Object.fromEntries((Array.isArray(plans) ? plans : []).map(function (plan) {
+      return [plan.targetShipId, plan];
+    }));
+    return (Array.isArray(results) ? results : []).map(function (row) {
+      const outcomes = normalizeResultOutcomes(row);
+      const result = buildResultRow(row.name, outcomes, sourceItemsByKey);
+      return { ...row, outcomes: outcomes, items: outcomes, result: result, plan: planByTarget[row.id] || null };
+    });
+  }
+
+  function formatAggregateOperationSummary(totals, targetCount, options) {
+    const opts = options || {};
+    const sourceCount = Number(opts.sourceCount) || 0;
+    const ships = Number(targetCount) || 0;
+    if (!sourceCount) {
+      return { text: "Select source items and target ships.", noChanges: true, canContinue: false };
+    }
+    if (!ships) {
+      return { text: "Select at least one target ship.", noChanges: true, canContinue: false };
+    }
+    if (totals.noChanges) {
+      return {
+        text: "All selected items are already identical or set to keep existing — no changes to copy.",
+        noChanges: true,
+        canContinue: false
+      };
+    }
+    const parts = [];
+    if (totals.addCount) parts.push(`${totals.addCount} addition${totals.addCount === 1 ? "" : "s"}`);
+    if (totals.replaceCount) parts.push(`${totals.replaceCount} replacement${totals.replaceCount === 1 ? "" : "s"}`);
+    if (totals.skipIdenticalCount) {
+      parts.push(`${totals.skipIdenticalCount} identical skip${totals.skipIdenticalCount === 1 ? "" : "s"}`);
+    }
+    if (totals.keepExistingCount) {
+      parts.push(`${totals.keepExistingCount} retained`);
+    }
+    return {
+      text: `${parts.join(" · ")} across ${ships} ship${ships === 1 ? "" : "s"}`,
+      noChanges: false,
+      canContinue: true
+    };
+  }
+
   return {
     TARGET_SCOPE_SAME_CLASS,
     TARGET_SCOPE_FLEET,
@@ -842,6 +1004,13 @@
     buildConfirmationSummary,
     assertConfirmationTotalsReconcile,
     canContinueToReview,
-    conflictsAreResolved
+    conflictsAreResolved,
+    buildSourceItemsByKey,
+    plannedActionToTerminalOutcome,
+    expectedOutcomesFromPlans,
+    normalizeResultOutcomes,
+    assertResultOutcomesReconcile,
+    reconcileResultRows,
+    formatAggregateOperationSummary
   };
 });

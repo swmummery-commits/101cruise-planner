@@ -213,6 +213,93 @@ const confirmFooter = `<p class="admin-small">Ready to copy ${confirmation.aggre
         <button type="button" class="admin-button secondary small">Cancel</button>
         <button type="button" class="admin-button small">Confirm copy</button></div>`;
 
+const CopyLib = require(path.join(root, "netlify/functions/lib/ci-ship-facilities-copy.js"));
+
+const approvedSelectedItems = {
+  exclusive_areas: [{ source_key: bluKey, name: "Blu" }, { source_key: retreatKey, name: "The Retreat" }],
+  specialty_features: [
+    { source_key: magicKey, value: "Magic Carpet" },
+    { source_key: edenKey, value: "Eden" },
+    { source_key: rooftopKey, value: "Rooftop Garden" }
+  ]
+};
+
+const approvedPlans = ItemCopy.buildCopyPlans({
+  sourceFacilities: edge.facilities,
+  targets: [apex, beyond],
+  selectedItems: approvedSelectedItems,
+  conflictResolutions
+});
+
+const approvedTotals = ItemCopy.summarizeAllPlans(approvedPlans);
+const approvedFooterText = ItemCopy.formatAggregateOperationSummary(approvedTotals, 2, { sourceCount: 5 }).text;
+
+const partialKeys = { exclusive: [bluKey], specialty: [magicKey, edenKey] };
+const partialPlans = ItemCopy.buildCopyPlans({
+  sourceFacilities: edge.facilities,
+  targets: [apex, beyond, fixtures.ships.find((s) => s.id === "ascent")],
+  selectedItems: {
+    exclusive_areas: [{ source_key: bluKey, name: "Blu" }],
+    specialty_features: [{ source_key: magicKey, value: "Magic Carpet" }, { source_key: edenKey, value: "Eden" }]
+  },
+  conflictResolutions: []
+});
+const partialFooterText = ItemCopy.formatAggregateOperationSummary(
+  ItemCopy.summarizeAllPlans(partialPlans),
+  3,
+  { sourceCount: 3 }
+).text;
+
+const fleetFooterText = ItemCopy.formatAggregateOperationSummary(
+  ItemCopy.summarizeAllPlans([]),
+  0,
+  { sourceCount: 1 }
+).text;
+
+function buildSimulatedResults() {
+  const results = [apex, beyond].map(function (target) {
+    const exec = CopyLib.executeItemLevelCopy({
+      sourceFacilities: edge.facilities,
+      target: target,
+      resolvedItems: approvedSelectedItems,
+      conflictResolutions: conflictResolutions
+    });
+    if (!exec.ok) throw new Error(`Simulated copy failed for ${target.name}`);
+    return {
+      id: target.id,
+      name: target.name,
+      ok: true,
+      outcomes: exec.outcomes,
+      result: exec.resultRow
+    };
+  });
+  ItemCopy.assertResultOutcomesReconcile({
+    plans: approvedPlans,
+    results: results,
+    sourceFacilities: edge.facilities
+  });
+  return ItemCopy.reconcileResultRows({
+    plans: approvedPlans,
+    results: results,
+    sourceFacilities: edge.facilities
+  });
+}
+
+function renderResultPageBody(rows) {
+  const cards = rows.map(function (row) {
+    const result = row.result;
+    return `<div class="ci-item-copy-result-card"><p class="admin-small"><strong>${esc(row.name)}</strong></p>
+      ${renderConfirmList("Added", result.added || [])}
+      ${renderConfirmList("Replaced", result.replaced || [])}
+      ${renderConfirmList("Already present", result.skipped_identical || [])}
+      ${renderConfirmList("Kept existing", result.kept_existing || [])}</div>`;
+  }).join("");
+  return `<div class="ci-item-copy-result-wrap"><p class="admin-small"><strong>Copy complete</strong></p>${cards}</div>`;
+}
+
+const simulatedResults = buildSimulatedResults();
+const resultBody = renderResultPageBody(simulatedResults);
+
 const routes = {
   "/initial": modalPage({
     title: "Copy ship facilities",
@@ -222,20 +309,24 @@ const routes = {
   }),
   "/source": modalPage({
     title: "Copy ship facilities",
-    body: selectBody(selectedKeys, sameClassTargets, new Set(["apex", "beyond", "ascent"]), false),
-    footer: selectFooter(false, "3 to add · 1 to replace across 3 ships"),
+    body: selectBody(selectedKeys, sameClassTargets, new Set(["apex", "beyond"]), false),
+    footer: selectFooter(false, approvedFooterText),
     step: "select"
   }),
   "/same-class": modalPage({
     title: "Copy ship facilities",
-    body: selectBody({ exclusive: [bluKey], specialty: [magicKey, edenKey] }, sameClassTargets, new Set(["apex", "beyond", "ascent"]), false),
-    footer: selectFooter(false, "2 to add · 0 to replace across 3 ships"),
+    body: selectBody(partialKeys, sameClassTargets, new Set(["apex", "beyond", "ascent"]), false),
+    footer: selectFooter(!ItemCopy.canContinueToReview({
+      selectedSourceCount: 3,
+      selectedTargetCount: 3,
+      plans: partialPlans
+    }), partialFooterText),
     step: "select"
   }),
   "/fleet": modalPage({
     title: "Copy ship facilities",
     body: selectBody({ exclusive: [bluKey], specialty: [] }, fleetTargets.slice(0, 6), new Set(), true),
-    footer: selectFooter(false, "Select at least one target ship."),
+    footer: selectFooter(true, fleetFooterText),
     step: "select"
   }),
   "/conflict": modalPage({
@@ -250,9 +341,7 @@ const routes = {
   }),
   "/result": modalPage({
     title: "Copy complete",
-    body: `<div class="ci-item-copy-result-wrap"><p class="admin-small"><strong>Copy complete</strong></p>
-      <div class="ci-item-copy-result-card"><p class="admin-small"><strong>Celebrity Beyond</strong></p>${renderConfirmList("Added", ["Blu", "Magic Carpet"])}${renderConfirmList("Already present", ["Eden"])}</div>
-      <div class="ci-item-copy-result-card"><p class="admin-small"><strong>Celebrity Apex</strong></p>${renderConfirmList("Added", ["Magic Carpet", "Rooftop Garden"])}${renderConfirmList("Replaced", ["The Retreat"])}${renderConfirmList("Already present", ["Eden", "Blu"])}</div></div>`,
+    body: resultBody,
     footer: `<div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="result"><button type="button" class="admin-button small">Close</button></div>`
   }),
   "/no-change": modalPage({
@@ -267,7 +356,7 @@ const routes = {
   "/mobile": modalPage({
     title: "Copy ship facilities",
     body: selectBody(selectedKeys, sameClassTargets.slice(0, 3), new Set(["apex", "beyond"]), false),
-    footer: selectFooter(false, "3 to add · 1 to replace across 2 ships")
+    footer: selectFooter(false, approvedFooterText)
   }),
   "/mobile-conflict": modalPage({
     title: "Resolve exclusive area conflicts",
@@ -331,10 +420,25 @@ for (const [file, route, viewport] of shots) {
     modal: document.querySelector(".ci-item-copy-modal")?.scrollWidth > document.querySelector(".ci-item-copy-modal")?.clientWidth
   }));
   if (overflow.doc || overflow.modal) {
-    console.warn(`Overflow detected in ${file}`);
+    throw new Error(`Overflow detected in ${file}: ${JSON.stringify(overflow)}`);
   }
   await page.screenshot({ path: path.join(outDir, file), fullPage: true });
   await page.close();
+}
+
+for (const width of [900, 768, 390]) {
+  for (const route of ["/same-class", "/mobile"]) {
+    const page = await browser.newPage({ viewport: { width, height: 1200 } });
+    await page.goto(`${base}${route}`, { waitUntil: "networkidle" });
+    const overflow = await page.evaluate(() => ({
+      doc: document.documentElement.scrollWidth > document.documentElement.clientWidth,
+      modal: document.querySelector(".ci-item-copy-modal")?.scrollWidth > document.querySelector(".ci-item-copy-modal")?.clientWidth
+    }));
+    if (overflow.doc || overflow.modal) {
+      throw new Error(`Overflow at ${width}px on ${route}: ${JSON.stringify(overflow)}`);
+    }
+    await page.close();
+  }
 }
 
 await browser.close();
