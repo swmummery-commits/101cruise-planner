@@ -7559,15 +7559,12 @@ function renderCiExclusiveAreasEditor(ship) {
     rows = [{ name: "", description: "", showDescription: false }];
   }
   const fragmented = api ? api.detectFragmentedLegacyExclusiveAreas(ship?.facilities?.exclusive_areas) : false;
-  const targets = api
-    ? api.listSameClassCopyTargets(ciCruiseShips, ship, ship?.ship_class)
-    : [];
-  const canClassCopy = Boolean(ship?.id && ship?.cruise_line_id && targets.length);
+  const canFacilitiesCopy = window.CiShipFacilitiesItemCopyAdmin?.canOpenCopy?.(ship);
   return `
     <div class="ci-facility-section">
       <div class="ci-section-heading">
         <h5>Exclusive area</h5>
-        ${canClassCopy ? `<button type="button" class="admin-button secondary small" onclick="openCiSameClassFacilitiesCopyModal()">Copy to ships in this class</button>` : ""}
+        ${canFacilitiesCopy ? `<button type="button" class="admin-button secondary small" onclick="openCiSameClassFacilitiesCopyModal()">Copy facilities to other ships</button>` : ""}
       </div>
       ${fragmented ? `<p class="ci-facility-warning">Legacy entries may need combining before this ship is saved.</p>` : ""}
       <p class="admin-small">Most ships have one exclusive area. Commas inside names or descriptions are preserved.</p>
@@ -7758,18 +7755,16 @@ function refreshCiOpenShipAfterBulkClassUpdate(updatedShipIds) {
   const api = ciFacilitiesApi();
   const exclusiveRoot = document.getElementById("ciExclusiveAreasList");
   if (!api || !exclusiveRoot) return;
-  const draftClass = getCiShipClassDraft();
-  const targets = api.listSameClassCopyTargets(ciCruiseShips, current, draftClass);
-  const canClassCopy = Boolean(current.id && current.cruise_line_id && targets.length);
+  const canFacilitiesCopy = window.CiShipFacilitiesItemCopyAdmin?.canOpenCopy?.(current);
   const heading = exclusiveRoot.closest(".ci-facility-section")?.querySelector(".ci-section-heading");
   if (!heading) return;
   let copyBtn = heading.querySelector("[onclick='openCiSameClassFacilitiesCopyModal()']");
-  if (canClassCopy && !copyBtn) {
+  if (canFacilitiesCopy && !copyBtn) {
     heading.insertAdjacentHTML(
       "beforeend",
-      `<button type="button" class="admin-button secondary small" onclick="openCiSameClassFacilitiesCopyModal()">Copy to ships in this class</button>`
+      `<button type="button" class="admin-button secondary small" onclick="openCiSameClassFacilitiesCopyModal()">Copy facilities to other ships</button>`
     );
-  } else if (!canClassCopy && copyBtn) {
+  } else if (!canFacilitiesCopy && copyBtn) {
     copyBtn.remove();
   }
 }
@@ -7798,213 +7793,12 @@ window.applyCiBulkClassAssignmentResults = applyCiBulkClassAssignmentResults;
 window.adminAuthHeaders = adminAuthHeaders;
 window.setCiAutosaveStatus = setCiAutosaveStatus;
 
-function getSameClassCopyTargetsFromDraft() {
-  const api = ciFacilitiesApi();
-  const sourceId = document.getElementById("ciShipId")?.value || editingCiShipId;
-  const sourceShip = (ciCruiseShips || []).find((ship) => ship.id === sourceId) || null;
-  if (!api || !sourceShip) return [];
-  const draftLineId = String(document.getElementById("ciShipLineId")?.value || sourceShip.cruise_line_id || "").trim();
-  const draftClass = getCiShipClassDraft();
-  return api.listSameClassCopyTargets(
-    ciCruiseShips,
-    { ...sourceShip, cruise_line_id: draftLineId || sourceShip.cruise_line_id },
-    draftClass
-  );
-}
-
-function closeCiSameClassFacilitiesCopyModal() {
-  const overlay = document.getElementById("ciSameClassFacilitiesCopyOverlay");
-  if (overlay) overlay.remove();
-}
-
 function openCiSameClassFacilitiesCopyModal() {
-  closeCiSameClassFacilitiesCopyModal();
-  const api = ciFacilitiesApi();
-  const sourceId = document.getElementById("ciShipId")?.value || editingCiShipId;
-  const sourceShip = (ciCruiseShips || []).find((ship) => ship.id === sourceId);
-  if (!sourceShip || !api) return;
-
-  const lineId = String(document.getElementById("ciShipLineId")?.value || sourceShip.cruise_line_id || "").trim();
-  const line = (ciCruiseLines || []).find((row) => row.id === lineId);
-  const shipClass = getCiShipClassDraft();
-  const targets = getSameClassCopyTargetsFromDraft();
-  if (!lineId || !shipClass || !targets.length) {
-    setCiAutosaveStatus("Same-class copy unavailable", "error");
+  if (!window.CiShipFacilitiesItemCopyAdmin?.open) {
+    setCiAutosaveStatus("Facilities copy is unavailable — reload the page.", "error");
     return;
   }
-
-  const overlay = document.createElement("div");
-  overlay.id = "ciSameClassFacilitiesCopyOverlay";
-  overlay.className = "ci-facilities-copy-overlay";
-  overlay.innerHTML = `
-    <div class="ci-facilities-copy-modal" role="dialog" aria-modal="true" aria-labelledby="ciSameClassCopyTitle">
-      <div class="ci-facilities-copy-modal-head">
-        <h4 id="ciSameClassCopyTitle">Copy to ships in this class</h4>
-        <button type="button" class="admin-button secondary small" onclick="closeCiSameClassFacilitiesCopyModal()">Close</button>
-      </div>
-      <div class="ci-facilities-copy-modal-body">
-        <p class="admin-small"><strong>Cruise line:</strong> ${esc(line?.name || "—")}</p>
-        <p class="admin-small"><strong>Ship class:</strong> ${esc(shipClass)}</p>
-        ${renderCiExclusiveAreaSourcePreviewHtml()}
-        <p class="ci-facility-warning">Selected facility sections will replace the same sections on each target ship.</p>
-        <div class="ci-facilities-copy-toolbar">
-          <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopySelectAll" onchange="toggleCiSameClassCopySelectAll(this.checked)"> Select all targets</label>
-          <button type="button" class="admin-button secondary small" onclick="toggleCiSameClassCopySelectAll(false)">Clear all</button>
-        </div>
-        <div class="ci-facilities-copy-list">
-          ${targets.map((ship) => `
-            <label class="ci-check-control ci-facilities-copy-item">
-              <input type="checkbox" class="ci-same-class-copy-target" value="${esc(ship.id)}">
-              <span>${esc(ship.name || "Untitled")}</span>
-            </label>
-          `).join("")}
-        </div>
-        <div class="ci-facilities-copy-sections">
-          <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopyExclusive" checked> Copy Exclusive Areas</label>
-          <label class="ci-check-control"><input type="checkbox" id="ciSameClassCopySpecialty"> Copy Specialty Features</label>
-        </div>
-      </div>
-      <div class="ci-facilities-copy-modal-footer">
-        <p class="admin-small" id="ciSameClassCopySummary">No target ships selected.</p>
-        <div class="admin-actions-row ci-facilities-copy-modal-actions">
-          <button type="button" class="admin-button secondary small" onclick="closeCiSameClassFacilitiesCopyModal()">Cancel</button>
-          <button type="button" class="admin-button small" id="ciSameClassCopySubmit" onclick="confirmCiSameClassFacilitiesCopy()" disabled>Copy to selected ships</button>
-        </div>
-        <p class="admin-small" id="ciSameClassCopyResult"></p>
-      </div>
-    </div>
-  `;
-  overlay.addEventListener("click", (event) => {
-    if (event.target === overlay) closeCiSameClassFacilitiesCopyModal();
-  });
-  document.body.appendChild(overlay);
-  overlay.querySelectorAll(".ci-same-class-copy-target, #ciSameClassCopyExclusive, #ciSameClassCopySpecialty")
-    .forEach((el) => el.addEventListener("change", updateCiSameClassCopySummary));
-  updateCiSameClassCopySummary();
-}
-
-function toggleCiSameClassCopySelectAll(checked) {
-  document.querySelectorAll(".ci-same-class-copy-target").forEach((el) => {
-    el.checked = Boolean(checked);
-  });
-  updateCiSameClassCopySummary();
-}
-
-function updateCiSameClassCopySummary() {
-  const summary = document.getElementById("ciSameClassCopySummary");
-  const submitBtn = document.getElementById("ciSameClassCopySubmit");
-  const api = ciFacilitiesApi();
-  const selected = [...document.querySelectorAll(".ci-same-class-copy-target:checked")];
-  const names = selected.map((el) => {
-    const ship = (ciCruiseShips || []).find((row) => row.id === el.value);
-    return ship?.name || "Untitled";
-  });
-  const copyExclusive = Boolean(document.getElementById("ciSameClassCopyExclusive")?.checked);
-  const copySpecialty = Boolean(document.getElementById("ciSameClassCopySpecialty")?.checked);
-  const sections = [];
-  if (copyExclusive) sections.push("Exclusive Areas");
-  if (copySpecialty) sections.push("Specialty Features");
-  if (summary) {
-    if (!selected.length) {
-      summary.textContent = "No target ships selected.";
-    } else {
-      summary.textContent = `Copy ${sections.join(" and ") || "nothing"} to ${selected.length} ship${selected.length === 1 ? "" : "s"}: ${names.join(", ")}.`;
-    }
-  }
-  if (submitBtn && api) {
-    submitBtn.textContent = api.sameClassCopyButtonLabel(selected.length);
-    submitBtn.disabled = !api.sameClassCopyCanSubmit({
-      selectedCount: selected.length,
-      copyExclusive,
-      copySpecialty
-    });
-  }
-  const selectAll = document.getElementById("ciSameClassCopySelectAll");
-  const allTargets = [...document.querySelectorAll(".ci-same-class-copy-target")];
-  if (selectAll && allTargets.length) {
-    selectAll.checked = selected.length === allTargets.length;
-    selectAll.indeterminate = selected.length > 0 && selected.length < allTargets.length;
-  }
-}
-
-async function confirmCiSameClassFacilitiesCopy() {
-  const api = ciFacilitiesApi();
-  const sourceId = document.getElementById("ciShipId")?.value || editingCiShipId;
-  const resultEl = document.getElementById("ciSameClassCopyResult");
-  const selected = [...document.querySelectorAll(".ci-same-class-copy-target:checked")]
-    .map((el) => el.value)
-    .filter(Boolean);
-  const copyExclusive = Boolean(document.getElementById("ciSameClassCopyExclusive")?.checked);
-  const copySpecialty = Boolean(document.getElementById("ciSameClassCopySpecialty")?.checked);
-
-  if (!api?.sameClassCopyCanSubmit({
-    selectedCount: selected.length,
-    copyExclusive,
-    copySpecialty
-  })) {
-    if (!selected.length && resultEl) resultEl.textContent = "Select at least one target ship.";
-    else if (resultEl) resultEl.textContent = "Select at least one section to copy.";
-    updateCiSameClassCopySummary();
-    return;
-  }
-
-  const names = selected.map((id) => (ciCruiseShips || []).find((ship) => ship.id === id)?.name || "Untitled");
-  const sections = [copyExclusive ? "Exclusive Areas" : null, copySpecialty ? "Specialty Features" : null].filter(Boolean);
-  const confirmed = window.confirm(
-    api.sameClassCopyConfirmMessage({
-      selectedCount: selected.length,
-      targetNames: names,
-      sections
-    })
-  );
-  if (!confirmed) {
-    if (resultEl) resultEl.textContent = "Copy cancelled.";
-    return;
-  }
-
-  const existing = sourceId ? ciCruiseShips.find((ship) => ship.id === sourceId) : null;
-  const exclusiveRows = readCiExclusiveAreasFromDom();
-  const specialtyRows = readCiSpecialtyFeaturesFromDom();
-  const payload = {
-    source_ship_id: sourceId,
-    source_ship_class: getCiShipClassDraft(),
-    target_ship_ids: selected,
-    copy_exclusive_areas: copyExclusive,
-    copy_specialty_features: copySpecialty,
-    exclusive_areas: copyExclusive ? api.serializeExclusiveAreasFromAdmin(exclusiveRows) : [],
-    specialty_features: copySpecialty ? api.serializeSpecialtyFeaturesFromAdmin(specialtyRows) : []
-  };
-
-  if (resultEl) resultEl.textContent = "Copying…";
-  try {
-    const headers = await adminAuthHeaders();
-    const response = await fetch("/.netlify/functions/ci-ship-facilities-copy", {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok || data.success === false) {
-      const failed = Array.isArray(data.failures) ? data.failures : [];
-      if (resultEl) {
-        resultEl.textContent = failed.length
-          ? `Copy failed for ${failed.length} ship${failed.length === 1 ? "" : "s"}: ${failed.map((row) => row.name).join(", ")}`
-          : (data.detail || data.error || "Copy failed.");
-      }
-      setCiAutosaveStatus("Same-class copy failed", "error");
-      return;
-    }
-    const updatedNames = Array.isArray(data.updated) ? data.updated : [];
-    if (resultEl) {
-      resultEl.textContent = `Updated ${data.updated_count || updatedNames.length} ship${(data.updated_count || updatedNames.length) === 1 ? "" : "s"}: ${updatedNames.join(", ")}${data.failed_count ? ` · ${data.failed_count} failed` : ""}.`;
-    }
-    setCiAutosaveStatus("Same-class copy complete", "saved");
-    await loadAdminData();
-    refreshCiShipMasterList();
-  } catch (error) {
-    if (resultEl) resultEl.textContent = String(error.message || error);
-    setCiAutosaveStatus("Same-class copy failed", "error");
-  }
+  window.CiShipFacilitiesItemCopyAdmin.open();
 }
 
 function renderCiMediaField({ kind, inputId, url, previewClass, title }) {

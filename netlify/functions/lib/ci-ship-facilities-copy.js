@@ -1,12 +1,8 @@
 /**
- * Same-class ship facilities copy — pure helpers for tests and Netlify handler.
+ * Ship facilities copy — category-level (legacy) and item-level merge helpers.
  */
-const {
-  mergeFacilitiesCopy,
-  validateSameClassCopyRequest,
-  serializeExclusiveAreasFromAdmin,
-  serializeSpecialtyFeaturesFromAdmin
-} = require("../../../js/ci-ship-facilities.js");
+const CiFac = require("../../../js/ci-ship-facilities.js");
+const ItemCopy = require("../../../js/ci-ship-facilities-item-copy.js");
 
 function buildFacilitiesPatch(body) {
   const copyExclusive = Boolean(body.copy_exclusive_areas);
@@ -25,10 +21,41 @@ function buildFacilitiesPatch(body) {
   };
 }
 
+function executeItemLevelCopy({ sourceFacilities, target, resolvedItems, conflictResolutions }) {
+  const plans = ItemCopy.buildCopyPlans({
+    sourceFacilities,
+    targets: [{ id: target.id, name: target.name, facilities: target.facilities }],
+    selectedItems: resolvedItems,
+    conflictResolutions
+  });
+  const plan = plans[0];
+  if (!plan || plan.summary.noChanges) {
+    return { ok: false, error: "NO_CHANGES", plan };
+  }
+  const applied = ItemCopy.applyItemLevelCopyToFacilities(target.facilities, plan.items);
+  const sourceItemsByKey = {};
+  ItemCopy.listSourceExclusiveAreas(sourceFacilities.exclusive_areas).forEach(function (item) {
+    sourceItemsByKey[item.source_key] = item;
+  });
+  ItemCopy.listSourceSpecialtyFeatures(sourceFacilities.specialty_features).forEach(function (item) {
+    sourceItemsByKey[item.source_key] = item;
+  });
+  const resultRow = ItemCopy.buildResultRow(target.name, applied.outcomes, sourceItemsByKey);
+  return {
+    ok: true,
+    facilities: applied.facilities,
+    outcomes: applied.outcomes,
+    summary: plan.summary,
+    resultRow
+  };
+}
+
 module.exports = {
-  mergeFacilitiesCopy,
-  validateSameClassCopyRequest,
-  serializeExclusiveAreasFromAdmin,
-  serializeSpecialtyFeaturesFromAdmin,
-  buildFacilitiesPatch
+  mergeFacilitiesCopy: CiFac.mergeFacilitiesCopy,
+  validateSameClassCopyRequest: CiFac.validateSameClassCopyRequest,
+  serializeExclusiveAreasFromAdmin: CiFac.serializeExclusiveAreasFromAdmin,
+  serializeSpecialtyFeaturesFromAdmin: CiFac.serializeSpecialtyFeaturesFromAdmin,
+  buildFacilitiesPatch,
+  ItemCopy,
+  executeItemLevelCopy
 };

@@ -225,25 +225,14 @@ assert.doesNotMatch(JSON.stringify(display), /\[object Object\]/);
 // Admin compact UI markers
 assert.match(adminJs, /Add another exclusive area/);
 assert.match(adminJs, /Add description/);
-assert.match(adminJs, /Copy to ships in this class/);
-assert.match(adminJs, /ci-ship-facilities-copy/);
-assert.match(adminJs, /Copy cancelled/);
+assert.match(adminJs, /Copy facilities to other ships/);
+assert.match(adminJs, /CiShipFacilitiesItemCopyAdmin/);
 assert.match(adminJs, /renderCiExclusiveAreaFieldStack/);
 assert.match(adminJs, /ci-exclusive-area-fields/);
-assert.match(adminJs, /renderCiExclusiveAreaSourcePreviewHtml/);
-assert.doesNotMatch(adminJs, /ci-exclusive-area-card ci-facility-row/);
 assert.match(read("css/admin.css"), /\.ci-exclusive-area-fields/);
 assert.match(read("css/admin.css"), /width:\s*100%/);
-assert.match(adminJs, /id="ciSameClassCopySubmit"/);
-assert.match(adminJs, /sameClassCopyButtonLabel/);
-assert.match(adminJs, /sameClassCopyCanSubmit/);
-assert.match(adminJs, /sameClassCopyConfirmMessage/);
-assert.match(adminJs, /Select all targets/);
-assert.match(adminJs, /Clear all/);
-assert.match(adminJs, /ci-facilities-copy-modal-footer/);
-assert.match(adminJs, /closeCiSameClassFacilitiesCopyModal\(\)/);
-assert.match(adminJs, /window\.confirm/);
-assert.doesNotMatch(adminJs, /function closeCiSameClassFacilitiesCopyModal[\s\S]{0,120}fetch\(/);
+assert.match(read("css/admin.css"), /\.ci-facilities-copy-modal-footer/);
+assert.match(adminJs, /openCiSameClassFacilitiesCopyModal/);
 
 const { resolveCruiseShip } = require(path.join(root, "netlify/functions/lib/resolve-cruise-ship.js"));
 const resolved = resolveCruiseShip(
