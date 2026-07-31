@@ -70,7 +70,7 @@ const MODULE_LABELS = {
   preparation: "Checklist",
   documents: "Documents",
   budget: "Budget",
-  the_ship: "Your Ship",
+  the_ship: "My Ship",
   drinks_calculator: "Drinks Calculator",
   public_drinks_calculator: "Public Drinks Calculator"
 };

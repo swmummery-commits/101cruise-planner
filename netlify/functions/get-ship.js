@@ -1,5 +1,5 @@
 /**
- * Production read-only ship lookup for The Ship page.
+ * Production read-only ship lookup for the My Ship page.
  *
  * GET /.netlify/functions/get-ship?name=<ship name>&cruise_line=<cruise line>
  *

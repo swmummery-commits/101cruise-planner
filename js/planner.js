@@ -1047,7 +1047,7 @@ async function loadShipHeroImage(shipName, cruiseLine = "") {
   const fallbackImage = getShipImage(shipName) || defaultImage;
   if (!shipName) return fallbackImage;
 
-  // Prefer the same get-ship resolution as Your Ship (handles Explora 1 → EXPLORA I).
+  // Prefer the same get-ship resolution as My Ship (handles Explora 1 → EXPLORA I).
   try {
     const resolved = await fetchShipFromBase44(String(shipName).trim(), String(cruiseLine || "").trim());
     if (resolved.ok) {
@@ -2387,7 +2387,7 @@ function renderDashboardQuickAccess() {
       <button type="button" onclick="navigateWithLoading('checklist', () => renderChecklist(), event)"><span aria-hidden="true">✓</span><strong>Checklist</strong></button>
       <button type="button" onclick="navigateWithLoading('packing', () => renderPackingPlanner(), event)"><span aria-hidden="true">🧳</span><strong>Pack List</strong></button>
       <button type="button" onclick="navigateWithLoading('budget', () => renderBudgetPlanner(), event)"><span aria-hidden="true">💳</span><strong>Budget</strong></button>
-      <button type="button" onclick="navigateWithLoading('ship', () => renderTheShip(), event)"><span aria-hidden="true">🚢</span><strong>Your Ship</strong></button>
+      <button type="button" onclick="navigateWithLoading('ship', () => renderTheShip(), event)"><span aria-hidden="true">🚢</span><strong>My Ship</strong></button>
       <button type="button" onclick="navigateWithLoading('documents', () => renderDocuments(), event)"><span aria-hidden="true">📄</span><strong>Documents</strong></button>
     </nav>
   `;
@@ -2969,7 +2969,7 @@ function renderPlannerNav(active = "preparation") {
     { key: "preparation", label: "Checklist", action: "navigateWithLoading('checklist', () => renderChecklist(), event)" },
     { key: "packing", label: "Pack List", action: "navigateWithLoading('packing', () => renderPackingPlanner(), event)" },
     { key: "budget", label: "Budget", action: "navigateWithLoading('budget', () => renderBudgetPlanner(), event)" },
-    { key: "ship", label: "Your Ship", action: "navigateWithLoading('ship', () => renderTheShip(), event)" },
+    { key: "ship", label: "My Ship", action: "navigateWithLoading('ship', () => renderTheShip(), event)" },
     { key: "documents", label: "Documents", action: "navigateWithLoading('documents', () => renderDocuments(), event)" }
   ];
 
@@ -5576,7 +5576,7 @@ async function deleteBudgetItem(id) {
 }
 
 /* =========================================================
-   The Ship — live Base44 Finder data
+   My Ship — live Base44 Finder data
    ========================================================= */
 
 const SHIP_ROOM_COLORS = ["#8DD9BF", "#5BBFA3", "#245C4E", "#9AA7A3", "#6FA894", "#3D7A6A"];
@@ -5824,7 +5824,7 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
     : buildShipChipList(specialtyRaw);
 
   return {
-    name: ship?.name || shipName || "Your ship",
+    name: ship?.name || shipName || "My ship",
     cruiseLine: cruiseLine || "",
     status: ship?.current_status || "Active",
     summary: {
@@ -6254,8 +6254,8 @@ async function renderTheShip() {
     <div class="ship-page">
       ${renderPlannerNav("ship")}
       <div class="ship-page-status" role="status" aria-live="polite">
-        <p class="planner-kicker">Your ship</p>
-        <h1 class="ship-identity-name ship-status-title">${escapeHtml(shipName || "The Ship")}</h1>
+        <p class="planner-kicker">My ship</p>
+        <h1 class="ship-identity-name ship-status-title">${escapeHtml(shipName || "My Ship")}</h1>
         <p class="planner-muted">Loading ship information…</p>
       </div>
     </div>
@@ -6266,8 +6266,8 @@ async function renderTheShip() {
       <div class="ship-page">
         ${renderPlannerNav("ship")}
         <div class="ship-page-status">
-          <p class="planner-kicker">Your ship</p>
-          <h1 class="ship-identity-name ship-status-title">The Ship</h1>
+          <p class="planner-kicker">My ship</p>
+          <h1 class="ship-identity-name ship-status-title">My Ship</h1>
           <p class="planner-muted">Ship information is not available yet.</p>
         </div>
       </div>
@@ -6288,7 +6288,7 @@ async function renderTheShip() {
       <div class="ship-page">
         ${renderPlannerNav("ship")}
         <div class="ship-page-status">
-          <p class="planner-kicker">Your ship</p>
+          <p class="planner-kicker">My ship</p>
           <h1 class="ship-identity-name ship-status-title">${escapeHtml(shipName)}</h1>
           ${cruiseLine ? `<p class="ship-identity-line">${escapeHtml(cruiseLine)}</p>` : ""}
           <p class="planner-muted">Ship information is not available yet.</p>

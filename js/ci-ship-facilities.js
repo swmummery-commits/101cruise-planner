@@ -1,6 +1,6 @@
 /**
  * Cruise Intelligence ship facilities — Exclusive Areas and Specialty Features.
- * Shared by Admin editor, My Cruise Your Ship renderer, and Admin copy API.
+ * Shared by Admin editor, My Cruise My Ship renderer, and Admin copy API.
  */
 (function (root, factory) {
   const api = factory();
