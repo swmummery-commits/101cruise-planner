@@ -123,21 +123,27 @@
     return new Set(ids);
   }
 
-  function renderModal() {
+  function persistModalFormState() {
+    if (!modalContext) return;
+    persistSelection();
+    modalContext.shipClass = readClassInput();
+    modalContext.search = String(document.getElementById("ciBulkClassSearch")?.value || "");
+    modalContext.statusFilter = String(
+      document.getElementById("ciBulkClassStatusFilter")?.value || modalContext.statusFilter || "active"
+    );
+    modalContext.classFilter = String(
+      document.getElementById("ciBulkClassClassFilter")?.value || modalContext.classFilter || "all"
+    );
+    const replacementEl = document.getElementById("ciBulkClassReplaceConfirm");
+    if (replacementEl) modalContext.replacementConfirmed = replacementEl.checked;
+  }
+
+  function buildModalViewModel() {
     const bulk = api();
     const ctx = modalContext;
-    if (!bulk || !ctx) return;
-    const overlay = document.getElementById("ciBulkShipClassOverlay");
-    if (!overlay) return;
+    if (!bulk || !ctx) return null;
 
-    persistSelection();
-    const inputEl = document.getElementById("ciBulkShipClassInput");
-    const proposedClass = inputEl ? inputEl.value : (ctx.shipClass || "");
-    ctx.shipClass = proposedClass;
-    ctx.search = String(document.getElementById("ciBulkClassSearch")?.value || ctx.search || "");
-    ctx.statusFilter = String(document.getElementById("ciBulkClassStatusFilter")?.value || ctx.statusFilter || "active");
-    ctx.classFilter = String(document.getElementById("ciBulkClassClassFilter")?.value || ctx.classFilter || "all");
-
+    const proposedClass = ctx.shipClass || "";
     const ships = bulk.filterFleetShips(getShips(), ctx.cruiseLineId, {
       search: ctx.search,
       statusFilter: ctx.statusFilter,
@@ -147,14 +153,9 @@
     const selectedIds = selectedIdSet();
     const selectedRows = getShips().filter((ship) => selectedIds.has(ship.id));
     const summary = bulk.buildAssignmentSummary(selectedRows, proposedClass);
-    const suggestions = bulk.listDistinctClassesForLine(getShips(), ctx.cruiseLineId);
     const shipsWithClass = selectedRows.filter((ship) => !bulk.isUnassignedClass(ship.ship_class)).length;
     const replacementRequired = summary.replaceCount > 0;
-    if (replacementRequired) {
-      ctx.replacementConfirmed = Boolean(document.getElementById("ciBulkClassReplaceConfirm")?.checked);
-    } else {
-      ctx.replacementConfirmed = false;
-    }
+    if (!replacementRequired) ctx.replacementConfirmed = false;
     const replacementConfirmed = Boolean(ctx.replacementConfirmed);
     const applyDisabled = !bulk.canApplyClassAssignment({
       selectedCount: summary.selectedCount,
@@ -172,6 +173,115 @@
       changeCount: summary.changeCount
     });
 
+    return {
+      ships,
+      selectedIds,
+      summary,
+      proposedClass,
+      replacementRequired,
+      replacementConfirmed,
+      applyDisabled,
+      clearDisabled,
+      applyLabel
+    };
+  }
+
+  function renderDynamicTailHtml(bulk, ctx, vm) {
+    return `
+      ${vm.replacementRequired ? `
+        <label class="ci-check-control ci-bulk-class-warning">
+          <input type="checkbox" id="ciBulkClassReplaceConfirm"${vm.replacementConfirmed ? " checked" : ""}>
+          I understand that existing class assignments will be replaced.
+        </label>` : ""}
+      ${ctx.lastAssignmentResult ? bulk.formatAssignResultPanelHtml(ctx.lastAssignmentResult) : ""}
+      ${ctx.statusMessage ? `<p class="admin-small" id="ciBulkClassResult">${esc(ctx.statusMessage)}</p>` : ""}`;
+  }
+
+  function bindModalControls(root) {
+    root.querySelectorAll("#ciBulkShipClassInput, #ciBulkClassSearch").forEach((el) => {
+      el.addEventListener("input", () => refreshModalContent());
+    });
+    root.querySelectorAll("#ciBulkClassStatusFilter, #ciBulkClassClassFilter").forEach((el) => {
+      el.addEventListener("change", () => refreshModalContent());
+    });
+    bindShipCheckboxes(root);
+  }
+
+  function bindShipCheckboxes(root) {
+    root.querySelectorAll(".ci-bulk-class-target").forEach((el) => {
+      el.addEventListener("change", () => refreshModalContent());
+    });
+  }
+
+  function bindReplacementConfirm(root) {
+    const replacementEl = root.querySelector("#ciBulkClassReplaceConfirm");
+    if (replacementEl) {
+      replacementEl.addEventListener("change", () => refreshModalContent());
+    }
+  }
+
+  function updateModalFooter(vm) {
+    const clearBtn = document.querySelector("#ciBulkClassClearBtn");
+    const applyBtn = document.getElementById("ciBulkClassApplyBtn");
+    if (clearBtn) {
+      clearBtn.disabled = vm.clearDisabled;
+    }
+    if (applyBtn) {
+      applyBtn.disabled = vm.applyDisabled;
+      applyBtn.setAttribute("aria-disabled", vm.applyDisabled ? "true" : "false");
+      applyBtn.textContent = vm.applyLabel;
+    }
+  }
+
+  function refreshModalContent() {
+    const bulk = api();
+    const ctx = modalContext;
+    if (!bulk || !ctx) return;
+    const overlay = document.getElementById("ciBulkShipClassOverlay");
+    if (!overlay) return;
+
+    persistModalFormState();
+    const vm = buildModalViewModel();
+    if (!vm) return;
+
+    const tbody = overlay.querySelector("#ciBulkClassTableBody");
+    if (tbody) {
+      tbody.innerHTML = vm.ships.length
+        ? renderTableRows(vm.ships, vm.proposedClass, vm.selectedIds)
+        : `<tr><td colspan="5"><p class="admin-small">No ships match these filters.</p></td></tr>`;
+      bindShipCheckboxes(tbody);
+    }
+
+    const summaryList = overlay.querySelector("#ciBulkClassSummaryList");
+    if (summaryList) {
+      summaryList.innerHTML = `
+        <li>${vm.summary.selectedCount} selected</li>
+        <li>${vm.summary.newCount} receiving a new class</li>
+        <li>${vm.summary.replaceCount} changing from another class</li>
+        <li>${vm.summary.unchangedCount} already unchanged</li>`;
+    }
+
+    const dynamicTail = overlay.querySelector("#ciBulkClassDynamicTail");
+    if (dynamicTail) {
+      dynamicTail.innerHTML = renderDynamicTailHtml(bulk, ctx, vm);
+      bindReplacementConfirm(dynamicTail);
+    }
+
+    updateModalFooter(vm);
+  }
+
+  function renderModal() {
+    const bulk = api();
+    const ctx = modalContext;
+    if (!bulk || !ctx) return;
+    const overlay = document.getElementById("ciBulkShipClassOverlay");
+    if (!overlay) return;
+
+    persistModalFormState();
+    const vm = buildModalViewModel();
+    if (!vm) return;
+    const suggestions = bulk.listDistinctClassesForLine(getShips(), ctx.cruiseLineId);
+
     overlay.innerHTML = `
       <div class="ci-bulk-class-modal" role="dialog" aria-modal="true" aria-labelledby="ciBulkClassTitle">
         <div class="ci-bulk-class-modal-head">
@@ -182,22 +292,22 @@
           <p class="admin-small"><strong>Cruise line:</strong> ${esc(ctx.cruiseLineName)}</p>
           <div class="admin-field">
             <label for="ciBulkShipClassInput">Ship class</label>
-            <input id="ciBulkShipClassInput" type="text" list="ciBulkClassSuggestions" value="${esc(proposedClass)}" placeholder="e.g. Millennium class">
+            <input id="ciBulkShipClassInput" type="text" list="ciBulkClassSuggestions" value="${esc(vm.proposedClass)}" placeholder="e.g. Millennium class">
             <datalist id="ciBulkClassSuggestions">${suggestions.map((item) => `<option value="${esc(item)}"></option>`).join("")}</datalist>
           </div>
           <div class="ci-bulk-class-toolbar">
-            <input id="ciBulkClassSearch" type="search" placeholder="Search ships…" value="${esc(document.getElementById("ciBulkClassSearch")?.value || ctx.search || "")}">
+            <input id="ciBulkClassSearch" type="search" placeholder="Search ships…" value="${esc(ctx.search || "")}">
             <select id="ciBulkClassStatusFilter">
-              <option value="active" ${(document.getElementById("ciBulkClassStatusFilter")?.value || ctx.statusFilter) === "active" ? "selected" : ""}>Active</option>
-              <option value="dry_dock" ${(document.getElementById("ciBulkClassStatusFilter")?.value || ctx.statusFilter) === "dry_dock" ? "selected" : ""}>Dry dock</option>
-              <option value="retired" ${(document.getElementById("ciBulkClassStatusFilter")?.value || ctx.statusFilter) === "retired" ? "selected" : ""}>Retired</option>
-              <option value="all" ${(document.getElementById("ciBulkClassStatusFilter")?.value || ctx.statusFilter) === "all" ? "selected" : ""}>All</option>
+              <option value="active" ${ctx.statusFilter === "active" ? "selected" : ""}>Active</option>
+              <option value="dry_dock" ${ctx.statusFilter === "dry_dock" ? "selected" : ""}>Dry dock</option>
+              <option value="retired" ${ctx.statusFilter === "retired" ? "selected" : ""}>Retired</option>
+              <option value="all" ${ctx.statusFilter === "all" ? "selected" : ""}>All</option>
             </select>
             <select id="ciBulkClassClassFilter">
-              <option value="all" ${(document.getElementById("ciBulkClassClassFilter")?.value || ctx.classFilter) === "all" ? "selected" : ""}>All classes</option>
-              <option value="unassigned" ${(document.getElementById("ciBulkClassClassFilter")?.value || ctx.classFilter) === "unassigned" ? "selected" : ""}>Unassigned</option>
-              <option value="already_this" ${(document.getElementById("ciBulkClassClassFilter")?.value || ctx.classFilter) === "already_this" ? "selected" : ""}>Already this class</option>
-              <option value="different_class" ${(document.getElementById("ciBulkClassClassFilter")?.value || ctx.classFilter) === "different_class" ? "selected" : ""}>Different class</option>
+              <option value="all" ${ctx.classFilter === "all" ? "selected" : ""}>All classes</option>
+              <option value="unassigned" ${ctx.classFilter === "unassigned" ? "selected" : ""}>Unassigned</option>
+              <option value="already_this" ${ctx.classFilter === "already_this" ? "selected" : ""}>Already this class</option>
+              <option value="different_class" ${ctx.classFilter === "different_class" ? "selected" : ""}>Different class</option>
             </select>
           </div>
           <div class="ci-bulk-class-selection-tools">
@@ -216,46 +326,31 @@
                   <th scope="col">Proposed class</th>
                 </tr>
               </thead>
-              <tbody>${ships.length ? renderTableRows(ships, proposedClass, selectedIds) : `<tr><td colspan="5"><p class="admin-small">No ships match these filters.</p></td></tr>`}</tbody>
+              <tbody id="ciBulkClassTableBody">${vm.ships.length ? renderTableRows(vm.ships, vm.proposedClass, vm.selectedIds) : `<tr><td colspan="5"><p class="admin-small">No ships match these filters.</p></td></tr>`}</tbody>
             </table>
           </div>
           <div class="ci-bulk-class-summary">
             <p class="admin-small"><strong>Assignment summary</strong></p>
-            <ul class="ci-bulk-class-summary-list">
-              <li>${summary.selectedCount} selected</li>
-              <li>${summary.newCount} receiving a new class</li>
-              <li>${summary.replaceCount} changing from another class</li>
-              <li>${summary.unchangedCount} already unchanged</li>
+            <ul class="ci-bulk-class-summary-list" id="ciBulkClassSummaryList">
+              <li>${vm.summary.selectedCount} selected</li>
+              <li>${vm.summary.newCount} receiving a new class</li>
+              <li>${vm.summary.replaceCount} changing from another class</li>
+              <li>${vm.summary.unchangedCount} already unchanged</li>
             </ul>
           </div>
-          ${replacementRequired ? `
-            <label class="ci-check-control ci-bulk-class-warning">
-              <input type="checkbox" id="ciBulkClassReplaceConfirm"${replacementConfirmed ? " checked" : ""}>
-              I understand that existing class assignments will be replaced.
-            </label>` : ""}
-          ${ctx.lastAssignmentResult ? bulk.formatAssignResultPanelHtml(ctx.lastAssignmentResult) : ""}
-          ${ctx.statusMessage ? `<p class="admin-small" id="ciBulkClassResult">${esc(ctx.statusMessage)}</p>` : ""}
+          <div id="ciBulkClassDynamicTail">${renderDynamicTailHtml(bulk, ctx, vm)}</div>
         </div>
         <div class="ci-bulk-class-modal-footer">
           <div class="admin-actions-row ci-bulk-class-modal-actions">
             <button type="button" class="admin-button secondary small" onclick="CiBulkShipClassAdmin.close()">Cancel</button>
-            <button type="button" class="admin-button secondary small" onclick="CiBulkShipClassAdmin.clearSelected()"${clearDisabled ? " disabled" : ""}>Clear class from selected ships</button>
-            <button type="button" class="admin-button small" id="ciBulkClassApplyBtn" onclick="CiBulkShipClassAdmin.apply()"${applyDisabled ? " disabled" : ""} aria-disabled="${applyDisabled ? "true" : "false"}">${esc(applyLabel)}</button>
+            <button type="button" class="admin-button secondary small" id="ciBulkClassClearBtn" onclick="CiBulkShipClassAdmin.clearSelected()"${vm.clearDisabled ? " disabled" : ""}>Clear class from selected ships</button>
+            <button type="button" class="admin-button small" id="ciBulkClassApplyBtn" onclick="CiBulkShipClassAdmin.apply()"${vm.applyDisabled ? " disabled" : ""} aria-disabled="${vm.applyDisabled ? "true" : "false"}">${esc(vm.applyLabel)}</button>
           </div>
         </div>
       </div>`;
 
-    overlay.querySelectorAll(
-      "#ciBulkShipClassInput, #ciBulkClassSearch, #ciBulkClassStatusFilter, #ciBulkClassClassFilter, #ciBulkClassReplaceConfirm"
-    ).forEach((el) => {
-      el.addEventListener("change", () => renderModal());
-      if (el.matches("input[type='search'], input[type='text']")) {
-        el.addEventListener("input", () => renderModal());
-      }
-    });
-    overlay.querySelectorAll(".ci-bulk-class-target").forEach((el) => {
-      el.addEventListener("change", () => renderModal());
-    });
+    bindModalControls(overlay);
+    bindReplacementConfirm(overlay);
   }
 
   function openModal(options) {
@@ -292,6 +387,7 @@
   function selectAllVisible() {
     const bulk = api();
     if (!bulk || !modalContext) return;
+    persistModalFormState();
     const visible = bulk.filterFleetShips(getShips(), modalContext.cruiseLineId, {
       search: modalContext.search,
       statusFilter: modalContext.statusFilter,
@@ -301,18 +397,20 @@
     const ids = new Set(modalContext.selectedIds || []);
     visible.forEach((ship) => ids.add(ship.id));
     modalContext.selectedIds = [...ids];
-    renderModal();
+    refreshModalContent();
   }
 
   function clearAll() {
     if (!modalContext) return;
+    persistModalFormState();
     modalContext.selectedIds = [];
-    renderModal();
+    refreshModalContent();
   }
 
   function selectUnassigned() {
     const bulk = api();
     if (!bulk || !modalContext) return;
+    persistModalFormState();
     modalContext.selectedIds = bulk
       .filterFleetShips(getShips(), modalContext.cruiseLineId, {
         search: modalContext.search,
@@ -322,13 +420,14 @@
       })
       .filter((ship) => bulk.isUnassignedClass(ship.ship_class))
       .map((ship) => ship.id);
-    renderModal();
+    refreshModalContent();
   }
 
   async function apply() {
     const bulk = api();
     const ctx = modalContext;
     if (!bulk || !ctx) return;
+    persistModalFormState();
     const applyBtn = document.getElementById("ciBulkClassApplyBtn");
     if (applyBtn?.disabled) return;
 
