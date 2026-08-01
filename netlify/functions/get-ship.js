@@ -118,6 +118,7 @@ function mapSupabaseShip(row) {
     name: row.name,
     cruise_line_id: row.cruise_line_id,
     cruise_line_name: line.name || null,
+    legacy_base44_id: row.legacy_base44_id || null,
     passenger_capacity: row.passenger_capacity,
     crew_count: row.crew_count,
     deck_count: row.deck_count,
@@ -126,8 +127,8 @@ function mapSupabaseShip(row) {
     stateroom_breakdown: row.stateroom_breakdown,
     length_meters: row.length_metres,
     gross_tonnage: row.gross_tonnage,
-    beam_metres: row.beam_metres,
-    cruising_speed_knots: row.cruising_speed_knots,
+    beam_metres: row.beam_metres ?? null,
+    cruising_speed_knots: row.cruising_speed_knots ?? null,
     year_built: row.year_built,
     year_refurbished: row.year_refurbished,
     facilities: row.facilities,
@@ -141,6 +142,30 @@ function mapSupabaseShip(row) {
   };
 }
 
+/** Columns safe before optional beam/speed migration is applied on production. */
+const SUPABASE_SHIP_SELECT =
+  'id,name,slug,status,cruise_line_id,legacy_base44_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,year_built,year_refurbished,facilities,hero_image_url,deck_plan_url,deck_plan_page_url,deck_plan_pdf_url,deck_plan_status,updated_at,ci_cruise_lines(id,name,slug)';
+
+function formatSupabaseShipResponse(mappedShip) {
+  const ship = pickShipFields(mappedShip);
+  if (mappedShip.cruise_line_name) {
+    ship.cruise_line_name = mappedShip.cruise_line_name;
+  }
+  ship.deck_plan_url = mappedShip.deck_plan_url || null;
+  if (mappedShip.hero_image_url) {
+    ship.hero_image_url = mappedShip.hero_image_url;
+  }
+  return ship;
+}
+
+function findCiShipByLegacyBase44Id(supabaseShips, base44ShipId) {
+  if (!base44ShipId || !Array.isArray(supabaseShips)) return null;
+  const needle = String(base44ShipId);
+  return supabaseShips.find(function (row) {
+    return String(row.legacy_base44_id || '') === needle;
+  }) || null;
+}
+
 async function listSupabaseShips() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -152,7 +177,7 @@ async function listSupabaseShips() {
 
   while (offset < 5000) {
     const path =
-      `ci_cruise_ships?select=id,name,slug,status,cruise_line_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,beam_metres,cruising_speed_knots,year_built,year_refurbished,facilities,hero_image_url,deck_plan_url,deck_plan_page_url,deck_plan_pdf_url,deck_plan_status,updated_at,ci_cruise_lines(id,name,slug)&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`;
+      `ci_cruise_ships?select=${SUPABASE_SHIP_SELECT}&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`;
     const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/${path}`, {
       method: 'GET',
       headers: {
@@ -289,11 +314,28 @@ exports.handler = async function (event) {
     })
   );
 
+  let loadedSupabaseShips = null;
+
   try {
-    const [supabaseShips, aliases] = await Promise.all([
-      listSupabaseShips(),
-      listShipAliases()
-    ]);
+    let supabaseShips = null;
+    let aliases = [];
+    try {
+      [supabaseShips, aliases] = await Promise.all([
+        listSupabaseShips(),
+        listShipAliases()
+      ]);
+      loadedSupabaseShips = supabaseShips;
+    } catch (supabaseLoadError) {
+      console.error(
+        JSON.stringify({
+          event: 'ship_lookup_supabase_load_failed',
+          message: safeErrorMessage(supabaseLoadError)
+        })
+      );
+      supabaseShips = null;
+      aliases = [];
+    }
+
     if (Array.isArray(supabaseShips) && supabaseShips.length) {
       const scoped = filterSupabaseByLine(supabaseShips, cruiseLine);
       const resolution = resolveCruiseShip(
@@ -315,16 +357,7 @@ exports.handler = async function (event) {
       }
 
       if (resolution.status === 'matched' && resolution.ship) {
-        // mapSupabaseShip already shaped the public ship (incl. approved deck_plan_url).
-        // pickShipFields would strip deck_plan_url / cruise_line_name — keep them.
-        const ship = pickShipFields(resolution.ship);
-        if (resolution.ship.cruise_line_name) {
-          ship.cruise_line_name = resolution.ship.cruise_line_name;
-        }
-        ship.deck_plan_url = resolution.ship.deck_plan_url || null;
-        if (resolution.ship.hero_image_url) {
-          ship.hero_image_url = resolution.ship.hero_image_url;
-        }
+        const ship = formatSupabaseShipResponse(resolution.ship);
         console.log(
           JSON.stringify({
             event: 'ship_lookup_matched',
@@ -395,6 +428,27 @@ exports.handler = async function (event) {
       });
     }
 
+    const ciPreferred = findCiShipByLegacyBase44Id(
+      loadedSupabaseShips,
+      resolution.ship.id
+    );
+    if (ciPreferred) {
+      const ship = formatSupabaseShipResponse(ciPreferred);
+      console.log(
+        JSON.stringify({
+          event: 'ship_lookup_matched',
+          source: 'supabase',
+          matched_via: 'legacy_base44_id',
+          has_deck_plan: Boolean(ship.deck_plan_url)
+        })
+      );
+      return jsonResponse(200, {
+        success: true,
+        source: 'supabase',
+        ship
+      });
+    }
+
     const ship = pickShipFields(resolution.ship);
     console.log(
       JSON.stringify({ event: 'ship_lookup_matched', source: 'base44_fallback' })
@@ -422,4 +476,10 @@ exports.handler = async function (event) {
       error: 'BASE44_REQUEST_FAILED'
     });
   }
+};
+
+module.exports.__test = {
+  findCiShipByLegacyBase44Id,
+  formatSupabaseShipResponse,
+  SUPABASE_SHIP_SELECT
 };

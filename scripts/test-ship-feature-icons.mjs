@@ -119,6 +119,13 @@ const commaName = CiFac.normalizeExclusiveAreasForDisplay(["Fitness Center, with
 assert.equal(commaName.name, "Fitness Center, with classes");
 assert.equal(commaName.description, "");
 
+// Legacy hyphen strings split on Admin load
+const hyphenAdmin = CiFac.loadSpecialtyFeaturesForAdmin([
+  "The Solarium - Features a pool, hot tubs, and padded loungers."
+]);
+assert.equal(hyphenAdmin[0].name, "The Solarium");
+assert.match(hyphenAdmin[0].description, /hot tubs/);
+
 // Structured multi-comma description unchanged
 const multiComma = CiFac.normalizeSpecialtyFeaturesForDisplay([
   {

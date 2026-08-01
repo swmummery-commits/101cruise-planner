@@ -7941,11 +7941,13 @@ function renderCiSpecialtyFeaturesEditor(ship) {
   const api = ciFacilitiesApi();
   const rows = api ? api.loadSpecialtyFeaturesForAdmin(ship?.facilities?.specialty_features) : [];
   setTimeout(function () {
-    bindCiShipFeatureList(document.getElementById("ciSpecialtyFeaturesList"), rebuildCiSpecialtyFeaturesDom);
+    rebuildCiSpecialtyFeaturesDom(rows);
   }, 0);
   return `
     <div class="ci-facility-section">
-      <h5>Specialty Features</h5>
+      <div class="ci-section-heading">
+        <h5>Specialty Features</h5>
+      </div>
       <p class="admin-small">Each row supports an icon, name and description. Commas inside descriptions are preserved.</p>
       <div id="ciSpecialtyFeaturesList">
         ${rows.length ? rows.map((row, index) => renderCiSpecialtyFeatureRow(row, index, rows.length)).join("") : ""}

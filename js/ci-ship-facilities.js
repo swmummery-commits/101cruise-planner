@@ -165,6 +165,24 @@
     });
   }
 
+  /**
+   * Admin/load helper — splits legacy "Name - Description" strings at space-hyphen-space.
+   */
+  function inferLegacyHyphenDescription(text) {
+    const full = trim(text);
+    const delim = " - ";
+    const idx = full.indexOf(delim);
+    if (idx < 0) {
+      return null;
+    }
+    const namePart = trim(full.slice(0, idx));
+    const descPart = trim(full.slice(idx + delim.length));
+    if (!namePart || !descPart) {
+      return null;
+    }
+    return { name: namePart, description: descPart };
+  }
+
   function normalizeShipFeatureEntry(entry) {
     if (isPlainObject(entry)) {
       const name = trim(entry.name || entry.label || "");
@@ -185,6 +203,15 @@
     if (typeof entry === "string" || typeof entry === "number") {
       const text = trim(entry);
       if (!text) return null;
+      const hyphen = inferLegacyHyphenDescription(text);
+      if (hyphen) {
+        return {
+          name: hyphen.name,
+          description: hyphen.description,
+          icon_key: resolveIconKey(hyphen.name),
+          legacyString: true
+        };
+      }
       return {
         name: text,
         description: "",
@@ -405,6 +432,7 @@
 
   return {
     inferLegacyDisplayFromString: inferLegacyDisplayFromString,
+    inferLegacyHyphenDescription: inferLegacyHyphenDescription,
     normalizeShipClass: normalizeShipClass,
     shipClassesMatch: shipClassesMatch,
     suggestLegacyExclusiveString: suggestLegacyExclusiveString,
