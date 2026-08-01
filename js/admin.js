@@ -8734,7 +8734,9 @@ function renderCiShipForm(ship) {
         <div class="admin-field"><label>Decks</label><input id="ciShipDecks" type="number" value="${esc(ship?.deck_count ?? "")}"></div>
         <div class="admin-field"><label>Total Staterooms</label><input id="ciShipStaterooms" type="number" value="${esc(ship?.stateroom_count ?? "")}" oninput="updateCiStateroomTotals()"></div>
         <div class="admin-field"><label>Gross tonnage</label><input id="ciShipTonnage" type="number" value="${esc(ship?.gross_tonnage ?? "")}"></div>
-        <div class="admin-field"><label>Length (metres)</label><input id="ciShipLength" type="number" value="${esc(ship?.length_metres ?? "")}"></div>
+        <div class="admin-field"><label>Length (metres)</label><input id="ciShipLength" type="number" step="any" value="${esc(ship?.length_metres ?? "")}"></div>
+        <div class="admin-field"><label>Beam / width (metres)</label><input id="ciShipBeam" type="number" step="any" value="${esc(ship?.beam_metres ?? "")}"></div>
+        <div class="admin-field"><label>Cruising speed (knots)</label><input id="ciShipCruisingSpeed" type="number" step="any" value="${esc(ship?.cruising_speed_knots ?? "")}"></div>
       </div>
       ${renderCiStateroomEditor(ship)}
       <p class="admin-small ci-form-note">Active ships on a sold cruise line are public automatically.${editing ? " Slug stays fixed after creation." : ""}</p>
@@ -8813,6 +8815,19 @@ function ciOptionalNumber(id) {
   if (!raw) return null;
   const n = Number(raw);
   return Number.isFinite(n) ? n : null;
+}
+
+function ciOptionalPositiveNumber(id, label) {
+  const raw = String(document.getElementById(id)?.value || "").trim();
+  if (!raw) return { value: null, error: null };
+  const n = Number(raw);
+  if (!Number.isFinite(n)) {
+    return { value: null, error: `${label} must be a valid number.` };
+  }
+  if (n <= 0) {
+    return { value: null, error: `${label} must be greater than zero.` };
+  }
+  return { value: n, error: null };
 }
 
 function ciCheckboxBool(id) {
@@ -9014,6 +9029,14 @@ async function persistCiShip({ quiet = false } = {}) {
 
   const existing = id ? ciCruiseShips.find((s) => s.id === id) : null;
   const facilities = readCiFacilitiesFromDom(existing?.facilities);
+  const beamField = ciOptionalPositiveNumber("ciShipBeam", "Beam / width (metres)");
+  const speedField = ciOptionalPositiveNumber("ciShipCruisingSpeed", "Cruising speed (knots)");
+  const numericFieldErrors = [beamField.error, speedField.error].filter(Boolean);
+  if (numericFieldErrors.length) {
+    revealCiSaveError(numericFieldErrors[0]);
+    if (!quiet) renderCiAdmin();
+    return false;
+  }
 
   const payload = {
     cruise_line_id: cruiseLineId,
@@ -9028,6 +9051,8 @@ async function persistCiShip({ quiet = false } = {}) {
     stateroom_count: ciOptionalNumber("ciShipStaterooms"),
     gross_tonnage: ciOptionalNumber("ciShipTonnage"),
     length_metres: ciOptionalNumber("ciShipLength"),
+    beam_metres: beamField.value,
+    cruising_speed_knots: speedField.value,
     facilities,
     active: ciCheckboxBool("ciShipActive")
   };

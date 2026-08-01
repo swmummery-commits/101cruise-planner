@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ship Specifications &amp; Scale — Visual Review v1</title>
+  <link rel="stylesheet" href="../../css/planner.css">
+  <style>
+    body.vr-body { margin: 0; background: #eef1f5; color: #111827; font-family: "Helvetica Neue", Arial, sans-serif; }
+    .vr-page { padding: 24px; max-width: 1180px; margin: 0 auto; }
+    .vr-scenario { margin-bottom: 28px; }
+    .vr-label { margin: 0 0 10px; font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase; color: #667085; }
+    .vr-capture { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08); }
+    .vr-capture.mobile { max-width: 390px; padding: 14px; }
+    .ship-page.is-content-ready .ship-reveal-block { opacity: 1; transform: none; }
+    .vr-admin { max-width: 760px; }
+    .admin-field { display: grid; gap: 4px; margin-bottom: 10px; }
+    .admin-field label { font-size: 0.82rem; color: #667085; }
+    .admin-field input { border: 1px solid #d9e0dd; border-radius: 8px; padding: 8px 10px; font: inherit; }
+    .ci-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  </style>
+</head>
+<body class="vr-body">
+  <div id="all-data-desktop-three-column-final" class="vr-page vr-scenario">
+    <p class="vr-label">All data — desktop three column final</p>
+    <div class="vr-capture" id="capture-all-data"></div>
+  </div>
+
+  <div id="desktop-space-ratio-open-final" class="vr-page vr-scenario">
+    <p class="vr-label">Desktop space ratio open final</p>
+    <div class="vr-capture" id="capture-explainer"></div>
+  </div>
+
+  <div id="real-my-ship-space-ratio-open-final" class="vr-page vr-scenario">
+    <p class="vr-label">Real My Ship space ratio open final</p>
+    <div class="vr-capture" id="capture-real"></div>
+  </div>
+
+  <div id="mobile-space-ratio-inline-closed-390" class="vr-page vr-scenario">
+    <p class="vr-label">Mobile space ratio inline closed 390</p>
+    <div class="vr-capture mobile" id="capture-mobile-closed"></div>
+  </div>
+
+  <div id="mobile-space-ratio-inline-open-390" class="vr-page vr-scenario">
+    <p class="vr-label">Mobile space ratio inline open 390</p>
+    <div class="vr-capture mobile" id="capture-mobile-open"></div>
+  </div>
+
+  <script src="../../js/ci-ship-stateroom-reconciliation.js"></script>
+  <script src="../../js/ci-ship-spec-scale.js"></script>
+  <script>
+    const SHIP_ROOM_COLORS = ["#8DD9BF", "#5BBFA3", "#245C4E", "#9AA7A3", "#6FA894", "#3D7A6A"];
+    const SPACE_RATIO_EXPLAINER = {
+      intro: "Space ratio is a general guide to how much ship space is available per guest. Higher numbers usually indicate more room in public areas.",
+      bands: ["Under 30 — Compact and lively", "30–40 — Standard spaciousness", "41–50 — Comfortably spacious", "51–75 — Very spacious", "Over 75 — Exceptionally spacious"],
+      outro: "This is a general comparison guide. Ship layout and the number of guests sailing can also affect how spacious a ship feels."
+    };
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function formatShipStatValue(value) {
+      if (value == null || value === "") return "";
+      return new Intl.NumberFormat("en-AU").format(Math.round(Number(value)));
+    }
+
+    function renderExplainerContent() {
+      return `
+        <p>${escapeHtml(SPACE_RATIO_EXPLAINER.intro)}</p>
+        <ul>${SPACE_RATIO_EXPLAINER.bands.map((band) => `<li>${escapeHtml(band)}</li>`).join("")}</ul>
+        <p>${escapeHtml(SPACE_RATIO_EXPLAINER.outro)}</p>`;
+    }
+
+    function renderShipStatRow(row) {
+      if (row.kind === "space_ratio") {
+        const content = renderExplainerContent();
+        return `
+          <div class="ship-stat-space-ratio-group">
+            <div class="ship-stat-row ship-stat-row--space-ratio">
+              <span class="ship-stat-label">
+                ${escapeHtml(row.label)}
+                <span class="ship-space-ratio-control">
+                  <button type="button" class="ship-space-ratio-trigger" data-ship-space-ratio-trigger aria-label="About space ratio" aria-expanded="false">
+                    <span aria-hidden="true">i</span>
+                  </button>
+                  <div class="ship-space-ratio-popover" data-ship-space-ratio-popover role="dialog" aria-label="About space ratio" hidden>${content}</div>
+                </span>
+              </span>
+              <span class="ship-stat-value-stack">
+                <strong>${escapeHtml(row.value)}</strong>
+                ${row.interpretation ? `<span class="ship-space-ratio-interpretation">${escapeHtml(row.interpretation)}</span>` : ""}
+              </span>
+            </div>
+            <div class="ship-space-ratio-inline-panel" data-ship-space-ratio-inline role="region" aria-label="About space ratio" hidden>${content}</div>
+          </div>`;
+      }
+      return `
+        <div class="ship-stat-row">
+          <span class="ship-stat-label">${escapeHtml(row.label)}</span>
+          <strong class="ship-stat-value">${escapeHtml(row.value)}</strong>
+        </div>`;
+    }
+
+    function renderShipStatRows(rows) {
+      return `<div class="ship-stat-list">${rows.map((row) => renderShipStatRow(row)).join("")}</div>`;
+    }
+
+    function renderDonut(reconciliation) {
+      const rooms = (reconciliation.renderedCategories || []).map((room, index) => ({
+        ...room,
+        value: room.count,
+        color: SHIP_ROOM_COLORS[index % SHIP_ROOM_COLORS.length]
+      }));
+      const categorySum = rooms.reduce((sum, room) => sum + Number(room.value || 0), 0) || 1;
+      const radius = 54;
+      const circumference = 2 * Math.PI * radius;
+      let offset = 0;
+      const segments = rooms.map((room) => {
+        const portion = Number(room.value || 0) / categorySum;
+        const length = circumference * portion;
+        const segment = { ...room, dasharray: `${length} ${circumference - length}`, dashoffset: -offset };
+        offset += length;
+        return segment;
+      });
+      return `
+        <div class="ship-accommodation-layout">
+          <div class="ship-donut-wrap" aria-hidden="true">
+            <svg class="ship-donut-chart" viewBox="0 0 140 140" role="presentation">
+              <circle class="ship-donut-track" cx="70" cy="70" r="${radius}"></circle>
+              ${segments.map((segment, index) => `
+                <circle class="ship-donut-segment" cx="70" cy="70" r="${radius}" stroke="${escapeHtml(segment.color)}"
+                  stroke-dasharray="${segment.dasharray}" stroke-dashoffset="${segment.dashoffset}"
+                  style="--ship-donut-delay:${0.3 + index * 0.55}s"></circle>`).join("")}
+            </svg>
+            <div class="ship-donut-centre is-blank"></div>
+          </div>
+          <ul class="ship-room-legend">
+            ${rooms.map((room) => `
+              <li>
+                <span class="ship-room-swatch" style="background:${escapeHtml(room.color)}"></span>
+                <span class="ship-room-label">${escapeHtml(room.label)}</span>
+                <strong>${formatShipStatValue(room.value)}</strong>
+              </li>`).join("")}
+          </ul>
+        </div>`;
+    }
+
+    function renderSummary(staterooms) {
+      return `
+        <section class="ship-summary-card" aria-label="Ship summary">
+          <div class="ship-summary-grid">
+            <div class="ship-summary-stat">
+              <div class="ship-summary-copy">
+                <strong class="ship-summary-value is-static">${escapeHtml(formatShipStatValue(staterooms))}</strong>
+                <span class="ship-summary-label">Staterooms</span>
+              </div>
+            </div>
+          </div>
+        </section>`;
+    }
+
+    function renderMyShipPage(ship, { stateroomCount = 1079 } = {}) {
+      const specs = CiShipSpecScale.buildShipSpecificationRows(ship);
+      const scale = CiShipSpecScale.buildShipScaleRows(ship);
+      const reconciliation = CiStateroomReconciliation.reconcileStateroomDisplay({
+        stateroomCount,
+        stateroomBreakdown: [
+          { label: "Inside", count: 212 },
+          { label: "Oceanview", count: 244 },
+          { label: "Balcony", count: 573 },
+          { label: "Suites", count: 50 },
+          { label: "Owners Suites", count: 25 }
+        ]
+      });
+      return `
+        <div class="ship-page is-content-ready">
+          ${renderSummary(stateroomCount)}
+          <div class="ship-content-stage">
+            <div class="ship-info-grid ship-reveal-block">
+              <section class="ship-section-card ship-info-card">
+                <h3>Ship Specifications</h3>
+                ${renderShipStatRows(specs)}
+              </section>
+              <section class="ship-section-card ship-info-card">
+                <h3>Room Types</h3>
+                ${renderDonut(reconciliation)}
+              </section>
+              <section class="ship-section-card ship-info-card">
+                <h3>Ship Scale</h3>
+                ${renderShipStatRows(scale)}
+              </section>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function isMobileSpaceRatioView() {
+      return window.matchMedia(`(max-width: ${CiShipSpecScale.MOBILE_SPACE_RATIO_MAX_WIDTH}px)`).matches;
+    }
+
+    function portalSpaceRatioPopover(popover) {
+      if (!popover || popover.parentElement === document.body) return;
+      popover.__spaceRatioHome = { parent: popover.parentElement, next: popover.nextSibling };
+      document.body.appendChild(popover);
+      popover.classList.add("ship-space-ratio-popover--portaled");
+    }
+
+    function restoreSpaceRatioPopover(popover) {
+      if (!popover?.__spaceRatioHome) return;
+      const { parent, next } = popover.__spaceRatioHome;
+      popover.classList.remove("ship-space-ratio-popover--portaled");
+      if (next && next.parentElement === parent) parent.insertBefore(popover, next);
+      else parent.appendChild(popover);
+      delete popover.__spaceRatioHome;
+    }
+
+    function positionSpaceRatioPopover(trigger, popover) {
+      const margin = 12;
+      const gap = 8;
+      portalSpaceRatioPopover(popover);
+      popover.hidden = false;
+      popover.style.position = "fixed";
+      popover.style.width = `${Math.min(320, window.innerWidth - margin * 2)}px`;
+      popover.style.top = "0px";
+      popover.style.left = "0px";
+      const group = trigger.closest(".ship-stat-space-ratio-group");
+      const column = trigger.closest(".ship-info-card");
+      const grid = trigger.closest(".ship-info-grid");
+      const roomTypesCard = grid?.querySelector(".ship-info-card:nth-child(2)");
+      const triggerRect = trigger.getBoundingClientRect();
+      const anchorRect = (group || trigger).getBoundingClientRect();
+      const columnRect = column?.getBoundingClientRect() || anchorRect;
+      const avoidRects = roomTypesCard ? [roomTypesCard.getBoundingClientRect()] : [];
+      const popoverRect = popover.getBoundingClientRect();
+      const coords = CiShipSpecScale.computeSpaceRatioPopoverPosition({
+        triggerRect,
+        anchorRect,
+        columnRect,
+        avoidRects,
+        popoverWidth: popoverRect.width,
+        popoverHeight: popoverRect.height,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        margin,
+        gap
+      });
+      popover.style.top = `${coords.top}px`;
+      popover.style.left = `${coords.left}px`;
+    }
+
+    function bindShipSpaceRatioExplainer(root = document) {
+      const triggers = Array.from(root.querySelectorAll("[data-ship-space-ratio-trigger]"));
+      let openTrigger = null;
+      let openPopover = null;
+      let openInline = null;
+      const closePopover = () => {
+        if (openPopover) {
+          openPopover.hidden = true;
+          openPopover.style.top = "";
+          openPopover.style.left = "";
+          openPopover.style.width = "";
+          restoreSpaceRatioPopover(openPopover);
+        }
+        if (openInline) openInline.hidden = true;
+        if (openTrigger) openTrigger.setAttribute("aria-expanded", "false");
+        openTrigger = null; openPopover = null; openInline = null;
+      };
+      triggers.forEach((trigger) => {
+        const group = trigger.closest(".ship-stat-space-ratio-group");
+        const popover = group?.querySelector("[data-ship-space-ratio-popover]");
+        const inlinePanel = group?.querySelector("[data-ship-space-ratio-inline]");
+        trigger.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const isOpen = openTrigger === trigger && ((openPopover && !openPopover.hidden) || (openInline && !openInline.hidden));
+          if (isOpen) { closePopover(); return; }
+          closePopover();
+          openTrigger = trigger;
+          trigger.setAttribute("aria-expanded", "true");
+          if (isMobileSpaceRatioView()) { inlinePanel.hidden = false; openInline = inlinePanel; return; }
+          openPopover = popover;
+          requestAnimationFrame(() => requestAnimationFrame(() => positionSpaceRatioPopover(trigger, popover)));
+        });
+      });
+      return { closePopover };
+    }
+
+    const allDataShip = {
+      deck_count: 12,
+      passenger_capacity: 1432,
+      crew_count: 650,
+      gross_tonnage: 60906,
+      length_meters: 238,
+      beam_metres: 32,
+      cruising_speed_knots: 21
+    };
+
+    const realShip = {
+      deck_count: 12,
+      passenger_capacity: 2170,
+      crew_count: 999,
+      gross_tonnage: 91627,
+      length_meters: 294
+    };
+
+    document.getElementById("capture-all-data").innerHTML = renderMyShipPage(allDataShip);
+    document.getElementById("capture-explainer").innerHTML = renderMyShipPage(allDataShip);
+    document.getElementById("capture-real").innerHTML = renderMyShipPage(realShip, { stateroomCount: 1079 });
+    document.getElementById("capture-mobile-closed").innerHTML = renderMyShipPage(allDataShip);
+    document.getElementById("capture-mobile-open").innerHTML = renderMyShipPage(allDataShip);
+    bindShipSpaceRatioExplainer();
+  </script>
+</body>
+</html>

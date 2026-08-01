@@ -5811,13 +5811,9 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
   const staterooms = stateroomReconciliation.authoritativeTotal;
   const accommodation = buildShipAccommodationFromReconciliation(stateroomReconciliation);
   const ciFac = typeof CiShipFacilities !== "undefined" ? CiShipFacilities : null;
-
-  let crewRatio = SHIP_NOT_LISTED;
-  const passengerNumber = Number(passengers);
-  const crewNumber = Number(crew);
-  if (Number.isFinite(passengerNumber) && Number.isFinite(crewNumber) && crewNumber > 0) {
-    crewRatio = `1 : ${(passengerNumber / crewNumber).toFixed(1)}`;
-  }
+  const specScale = typeof CiShipSpecScale !== "undefined" ? CiShipSpecScale : null;
+  const specifications = specScale ? specScale.buildShipSpecificationRows(ship) : [];
+  const scaleFacts = specScale ? specScale.buildShipScaleRows(ship) : [];
 
   const exclusiveRaw = readFacilityValue(facilities, ["exclusive_areas", "exclusiveAreas", "exclusive"]);
   const specialtyRaw = readFacilityValue(facilities, ["specialty_features", "specialtyFeatures", "signature_features"]);
@@ -5840,22 +5836,10 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
       refurbished: ship?.year_refurbished
     },
     onboardGlance: buildShipOnboardGlance(facilities),
-    specifications: [
-      { label: "Gross tonnage", value: ship?.gross_tonnage == null || ship?.gross_tonnage === "" ? SHIP_NOT_LISTED : `${formatShipNumber(ship.gross_tonnage)} GT` },
-      { label: "Length", value: ship?.length_meters == null || ship?.length_meters === "" ? SHIP_NOT_LISTED : `${formatShipNumber(ship.length_meters)} metres` },
-      { label: "Decks", value: formatShipNumber(decks) },
-      { label: "Staterooms", value: formatShipNumber(staterooms) },
-      { label: "Passengers", value: formatShipNumber(passengers) },
-      { label: "Crew", value: formatShipNumber(crew) }
-    ],
+    specifications,
     accommodation,
     stateroomReconciliation,
-    scaleFacts: [
-      { label: "Total decks", value: formatShipNumber(decks) },
-      { label: "Max guests", value: formatShipNumber(passengers) },
-      { label: "Crew", value: formatShipNumber(crew) },
-      { label: "Crew ratio", value: crewRatio }
-    ],
+    scaleFacts,
     exclusiveAreas,
     specialtyFeatures,
     deckPlanUrl: ship?.deck_plan_url || null
@@ -6004,39 +5988,256 @@ function renderShipHero(ship, { cruiseLineLogo = "", shipImage = "" } = {}) {
   `;
 }
 
-function renderShipSpecifications(specs) {
+const SPACE_RATIO_EXPLAINER = {
+  intro: "Space ratio is a general guide to how much ship space is available per guest. Higher numbers usually indicate more room in public areas.",
+  bands: [
+    "Under 30 — Compact and lively",
+    "30–40 — Standard spaciousness",
+    "41–50 — Comfortably spacious",
+    "51–75 — Very spacious",
+    "Over 75 — Exceptionally spacious"
+  ],
+  outro: "This is a general comparison guide. Ship layout and the number of guests sailing can also affect how spacious a ship feels."
+};
+
+function renderSpaceRatioExplainerContent() {
   return `
-    <div class="ship-spec-list">
-      ${specs.map(item => `
-        <div class="ship-spec-row">
-          <span>${escapeHtml(item.label)}</span>
-          <strong>${escapeHtml(item.value)}</strong>
+    <p>${escapeHtml(SPACE_RATIO_EXPLAINER.intro)}</p>
+    <ul>
+      ${SPACE_RATIO_EXPLAINER.bands.map((band) => `<li>${escapeHtml(band)}</li>`).join("")}
+    </ul>
+    <p>${escapeHtml(SPACE_RATIO_EXPLAINER.outro)}</p>
+  `;
+}
+
+function isMobileSpaceRatioView() {
+  const maxWidth = typeof CiShipSpecScale !== "undefined" ? CiShipSpecScale.MOBILE_SPACE_RATIO_MAX_WIDTH : 760;
+  return window.matchMedia(`(max-width: ${maxWidth}px)`).matches;
+}
+
+function portalSpaceRatioPopover(popover) {
+  if (!popover || popover.parentElement === document.body) return;
+  popover.__spaceRatioHome = {
+    parent: popover.parentElement,
+    next: popover.nextSibling
+  };
+  document.body.appendChild(popover);
+  popover.classList.add("ship-space-ratio-popover--portaled");
+}
+
+function restoreSpaceRatioPopover(popover) {
+  if (!popover?.__spaceRatioHome) return;
+  const { parent, next } = popover.__spaceRatioHome;
+  popover.classList.remove("ship-space-ratio-popover--portaled");
+  if (next && next.parentElement === parent) {
+    parent.insertBefore(popover, next);
+  } else {
+    parent.appendChild(popover);
+  }
+  delete popover.__spaceRatioHome;
+}
+
+function positionSpaceRatioPopover(trigger, popover) {
+  const margin = 12;
+  const gap = 8;
+  const maxWidth = 320;
+  portalSpaceRatioPopover(popover);
+  popover.hidden = false;
+  popover.style.position = "fixed";
+  popover.style.width = `${Math.min(maxWidth, window.innerWidth - margin * 2)}px`;
+  popover.style.top = "0px";
+  popover.style.left = "0px";
+
+  const group = trigger.closest(".ship-stat-space-ratio-group");
+  const column = trigger.closest(".ship-info-card");
+  const grid = trigger.closest(".ship-info-grid");
+  const roomTypesCard = grid?.querySelector(".ship-info-card:nth-child(2)");
+  const triggerRect = trigger.getBoundingClientRect();
+  const anchorRect = (group || trigger).getBoundingClientRect();
+  const columnRect = column?.getBoundingClientRect() || anchorRect;
+  const avoidRects = roomTypesCard ? [roomTypesCard.getBoundingClientRect()] : [];
+  const popoverRect = popover.getBoundingClientRect();
+  const compute = typeof CiShipSpecScale !== "undefined" ? CiShipSpecScale.computeSpaceRatioPopoverPosition : null;
+  const coords = compute
+    ? compute({
+        triggerRect,
+        anchorRect,
+        columnRect,
+        avoidRects,
+        popoverWidth: popoverRect.width,
+        popoverHeight: popoverRect.height,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        margin,
+        gap
+      })
+    : { top: anchorRect.bottom + gap, left: columnRect.right - popoverRect.width, placement: "below" };
+
+  popover.style.top = `${coords.top}px`;
+  popover.style.left = `${coords.left}px`;
+  popover.dataset.placement = coords.placement;
+}
+
+function renderShipStatRow(row) {
+  if (row.kind === "space_ratio") {
+    const explainerContent = renderSpaceRatioExplainerContent();
+    return `
+      <div class="ship-stat-space-ratio-group">
+        <div class="ship-stat-row ship-stat-row--space-ratio">
+          <span class="ship-stat-label">
+            ${escapeHtml(row.label)}
+            <span class="ship-space-ratio-control">
+              <button
+                type="button"
+                class="ship-space-ratio-trigger"
+                data-ship-space-ratio-trigger
+                aria-label="About space ratio"
+                aria-expanded="false"
+              >
+                <span aria-hidden="true">i</span>
+              </button>
+              <div
+                class="ship-space-ratio-popover"
+                data-ship-space-ratio-popover
+                role="dialog"
+                aria-label="About space ratio"
+                hidden
+              >
+                ${explainerContent}
+              </div>
+            </span>
+          </span>
+          <span class="ship-stat-value-stack">
+            <strong>${escapeHtml(row.value)}</strong>
+            ${row.interpretation ? `<span class="ship-space-ratio-interpretation">${escapeHtml(row.interpretation)}</span>` : ""}
+          </span>
         </div>
-      `).join("")}
+        <div
+          class="ship-space-ratio-inline-panel"
+          data-ship-space-ratio-inline
+          role="region"
+          aria-label="About space ratio"
+          hidden
+        >
+          ${explainerContent}
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="ship-stat-row">
+      <span class="ship-stat-label">${escapeHtml(row.label)}</span>
+      <strong class="ship-stat-value">${escapeHtml(row.value)}</strong>
     </div>
   `;
 }
 
-function renderShipScaleFacts(facts) {
-  const ratioFact = (facts || []).find(item => /crew ratio|guest to crew/i.test(String(item.label || "")));
-  const otherFacts = (facts || []).filter(item => item !== ratioFact);
-
+function renderShipStatRows(rows) {
+  if (!rows?.length) return "";
   return `
-    <div class="ship-scale-list">
-      ${otherFacts.map(item => `
-        <div class="ship-scale-row">
-          <span>${escapeHtml(item.label)}</span>
-          <strong>${escapeHtml(item.value)}</strong>
-        </div>
-      `).join("")}
-      ${ratioFact ? `
-        <div class="ship-scale-highlight">
-          <span>${escapeHtml(ratioFact.label === "Crew ratio" ? "Guest to Crew Ratio" : ratioFact.label)}</span>
-          <strong>${escapeHtml(ratioFact.value)}</strong>
-        </div>
-      ` : ""}
+    <div class="ship-stat-list">
+      ${rows.map((row) => renderShipStatRow(row)).join("")}
     </div>
   `;
+}
+
+function renderShipSpecifications(specs) {
+  return renderShipStatRows(specs);
+}
+
+function renderShipScaleFacts(facts) {
+  return renderShipStatRows(facts);
+}
+
+function bindShipSpaceRatioExplainer() {
+  const triggers = Array.from(document.querySelectorAll("[data-ship-space-ratio-trigger]"));
+  if (!triggers.length) return;
+
+  let openTrigger = null;
+  let openPopover = null;
+  let openInline = null;
+
+  const closePopover = () => {
+    if (openPopover) {
+      openPopover.hidden = true;
+      openPopover.style.top = "";
+      openPopover.style.left = "";
+      openPopover.style.width = "";
+      restoreSpaceRatioPopover(openPopover);
+    }
+    if (openInline) openInline.hidden = true;
+    if (openTrigger) openTrigger.setAttribute("aria-expanded", "false");
+    openTrigger = null;
+    openPopover = null;
+    openInline = null;
+  };
+
+  const openExplainer = (trigger, popover, inlinePanel) => {
+    closePopover();
+    openTrigger = trigger;
+    trigger.setAttribute("aria-expanded", "true");
+    if (isMobileSpaceRatioView()) {
+      inlinePanel.hidden = false;
+      openInline = inlinePanel;
+      return;
+    }
+    openPopover = popover;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => positionSpaceRatioPopover(trigger, popover));
+    });
+  };
+
+  const repositionOpenPopover = () => {
+    if (!openTrigger || !openPopover || openPopover.hidden || isMobileSpaceRatioView()) return;
+    positionSpaceRatioPopover(openTrigger, openPopover);
+  };
+
+  if (!window.__shipSpaceRatioExplainerBound) {
+    window.__shipSpaceRatioExplainerBound = true;
+    document.addEventListener("click", (event) => {
+      if (!openTrigger) return;
+      const target = event.target;
+      if (
+        openPopover?.contains(target) ||
+        openInline?.contains(target) ||
+        openTrigger.contains(target)
+      ) {
+        return;
+      }
+      closePopover();
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closePopover();
+    });
+    window.addEventListener("resize", repositionOpenPopover);
+    window.addEventListener("scroll", repositionOpenPopover, true);
+  }
+
+  triggers.forEach((trigger) => {
+    const group = trigger.closest(".ship-stat-space-ratio-group");
+    const control = trigger.closest(".ship-space-ratio-control");
+    const popover = control?.querySelector("[data-ship-space-ratio-popover]");
+    const inlinePanel = group?.querySelector("[data-ship-space-ratio-inline]");
+    if (!popover || !inlinePanel) return;
+
+    trigger.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const isOpen = openTrigger === trigger && (
+        (openPopover && !openPopover.hidden) ||
+        (openInline && !openInline.hidden)
+      );
+      if (isOpen) {
+        closePopover();
+        return;
+      }
+      openExplainer(trigger, popover, inlinePanel);
+    });
+
+    popover.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+  });
 }
 
 function renderShipChipGroup(items) {
@@ -6410,6 +6611,7 @@ async function renderTheShip() {
   `;
 
   initialiseShipPageMotion();
+  bindShipSpaceRatioExplainer();
 }
 
 if (typeof window !== "undefined") {

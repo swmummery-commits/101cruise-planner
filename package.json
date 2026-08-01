@@ -51,7 +51,8 @@
     "test:ship-facilities-item-copy": "node scripts/test-ship-facilities-item-copy.mjs",
     "test:ship-class-assignment": "node scripts/test-ship-class-assignment.mjs",
     "test:ship-class-facilities-template": "node scripts/test-ship-class-facilities-template.mjs",
-    "test:ship-stateroom-reconciliation": "node scripts/test-ship-stateroom-reconciliation.mjs"
+    "test:ship-stateroom-reconciliation": "node scripts/test-ship-stateroom-reconciliation.mjs",
+    "test:ship-spec-scale": "node scripts/test-ship-spec-scale.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.1"

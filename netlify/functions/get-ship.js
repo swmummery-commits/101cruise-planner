@@ -34,6 +34,8 @@ const SHIP_FIELDS = [
   'stateroom_breakdown',
   'length_meters',
   'gross_tonnage',
+  'beam_metres',
+  'cruising_speed_knots',
   'year_built',
   'year_refurbished',
   'facilities',
@@ -124,6 +126,8 @@ function mapSupabaseShip(row) {
     stateroom_breakdown: row.stateroom_breakdown,
     length_meters: row.length_metres,
     gross_tonnage: row.gross_tonnage,
+    beam_metres: row.beam_metres,
+    cruising_speed_knots: row.cruising_speed_knots,
     year_built: row.year_built,
     year_refurbished: row.year_refurbished,
     facilities: row.facilities,
@@ -148,7 +152,7 @@ async function listSupabaseShips() {
 
   while (offset < 5000) {
     const path =
-      `ci_cruise_ships?select=id,name,slug,status,cruise_line_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,year_built,year_refurbished,facilities,hero_image_url,deck_plan_url,deck_plan_page_url,deck_plan_pdf_url,deck_plan_status,updated_at,ci_cruise_lines(id,name,slug)&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`;
+      `ci_cruise_ships?select=id,name,slug,status,cruise_line_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,beam_metres,cruising_speed_knots,year_built,year_refurbished,facilities,hero_image_url,deck_plan_url,deck_plan_page_url,deck_plan_pdf_url,deck_plan_status,updated_at,ci_cruise_lines(id,name,slug)&active=eq.true&order=name.asc&limit=${pageSize}&offset=${offset}`;
     const response = await fetch(`${url.replace(/\/$/, '')}/rest/v1/${path}`, {
       method: 'GET',
       headers: {
