@@ -12,7 +12,7 @@
   const OVERLAY_ID = "portal-loading-overlay";
   const BODY_LOCK_CLASS = "portal-loading-active";
   const PARENT_GEOMETRY_CLASS = "portal-loading-overlay--parent-viewport";
-  const INITIAL_MESSAGE = "Give me a few seconds — I'm loading the information.";
+  const INITIAL_MESSAGE = "Just getting the info for you - hang tight!";
   const FAIL_MESSAGE =
     "Something didn't load properly. Please try again in a moment.";
   let supportEl = null;
