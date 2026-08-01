@@ -15,6 +15,11 @@ const outDir = path.join(root, "generated-assets/ship-intelligence/ship-class-fa
 
 const DESKTOP_SCREENS = [
   "cruise-line-ship-classes-section",
+  "apply-result",
+];
+
+const ALL_DESKTOP_SCREENS = [
+  "cruise-line-ship-classes-section",
   "class-template-editor-existing",
   "class-template-editor-empty-sections",
   "import-from-ship",
@@ -25,6 +30,8 @@ const DESKTOP_SCREENS = [
   "apply-result",
   "individual-ship-template-note"
 ];
+
+const screensToCapture = process.env.VR_CAPTURE_ALL === "1" ? ALL_DESKTOP_SCREENS : DESKTOP_SCREENS;
 
 const MOBILE_SCREENS = [
   { id: "class-template-editor-existing", file: "mobile-class-template-editor-390.png", viewport: { width: 390, height: 900 } },
@@ -86,14 +93,16 @@ async function main() {
     return document.getElementById("ea-existing")?.children.length > 0;
   });
 
-  for (const screenId of DESKTOP_SCREENS) {
+  for (const screenId of screensToCapture) {
     await captureDesktop(page, screenId);
     console.log("Captured", screenId);
   }
 
-  for (const spec of MOBILE_SCREENS) {
-    await captureMobile(page, spec);
-    console.log("Captured", spec.file);
+  if (process.env.VR_CAPTURE_ALL === "1") {
+    for (const spec of MOBILE_SCREENS) {
+      await captureMobile(page, spec);
+      console.log("Captured", spec.file);
+    }
   }
 
   const overflowResults = [];

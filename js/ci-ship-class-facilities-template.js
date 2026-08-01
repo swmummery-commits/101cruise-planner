@@ -190,6 +190,69 @@
     });
   }
 
+  function listLineShips(ships, cruiseLineId) {
+    return (Array.isArray(ships) ? ships : []).filter(function (ship) {
+      return ship && ship.cruise_line_id === cruiseLineId;
+    });
+  }
+
+  function listActiveLineShips(ships, cruiseLineId) {
+    return listLineShips(ships, cruiseLineId).filter(function (ship) {
+      return ship.active !== false;
+    });
+  }
+
+  function buildLineFleetSummary({ ships, cruiseLineId, templates }) {
+    const lineShips = listLineShips(ships, cruiseLineId);
+    const activeShips = listActiveLineShips(ships, cruiseLineId);
+    const classRows = buildClassShipRows({ ships: ships, cruiseLineId: cruiseLineId, templates: templates });
+    const unassignedActiveCount = countUnassignedActiveShips(ships, cruiseLineId);
+    const assignmentCounts = Object.create(null);
+    classRows.forEach(function (row) {
+      listShipsInClass(ships, cruiseLineId, row.className, { activeOnly: true }).forEach(function (ship) {
+        if (!ship || !ship.id) return;
+        assignmentCounts[ship.id] = (assignmentCounts[ship.id] || 0) + 1;
+      });
+    });
+    const classifiedActiveCount = Object.keys(assignmentCounts).length;
+    const duplicateAssignmentCount = Object.values(assignmentCounts).filter(function (count) {
+      return count > 1;
+    }).length;
+    return {
+      totalShipCount: lineShips.length,
+      activeShipCount: activeShips.length,
+      inactiveShipCount: lineShips.length - activeShips.length,
+      publicShipCount: activeShips.length,
+      unassignedActiveCount: unassignedActiveCount,
+      classifiedActiveCount: classifiedActiveCount,
+      classRows: classRows,
+      activeFleetReconciles: classifiedActiveCount + unassignedActiveCount === activeShips.length,
+      hasDuplicateClassMembership: duplicateAssignmentCount > 0
+    };
+  }
+
+  function assertLineFleetInvariants(summary) {
+    const errors = [];
+    if (!summary || typeof summary !== "object") {
+      return { ok: false, errors: ["MISSING_SUMMARY"] };
+    }
+    if (!summary.activeFleetReconciles) {
+      errors.push("ACTIVE_FLEET_MISMATCH");
+    }
+    if (summary.hasDuplicateClassMembership) {
+      errors.push("DUPLICATE_CLASS_MEMBERSHIP");
+    }
+    (summary.classRows || []).forEach(function (row) {
+      if ((row.activeMemberShipNames || []).length !== row.activeShipCount) {
+        errors.push("MEMBER_COUNT_MISMATCH:" + row.className);
+      }
+      if (row.hasTemplate && row.matchingCount + row.customisedCount !== row.activeShipCount) {
+        errors.push("SYNC_COUNT_MISMATCH:" + row.className);
+      }
+    });
+    return { ok: errors.length === 0, errors: errors };
+  }
+
   function buildUpsertRecord({ cruiseLineId, className, exclusiveAreas, specialtyFeatures }) {
     const class_name = trim(className);
     const class_key = normalizeClassKey(class_name);
@@ -249,6 +312,10 @@
     validateTemplatePayload,
     buildClassSyncSummary,
     buildClassShipRows,
+    buildLineFleetSummary,
+    assertLineFleetInvariants,
+    listLineShips,
+    listActiveLineShips,
     buildUpsertRecord,
     buildApplyPreview,
     extractTemplateFromShip,

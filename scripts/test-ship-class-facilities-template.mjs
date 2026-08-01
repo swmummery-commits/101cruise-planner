@@ -20,6 +20,7 @@ const Replace = require(path.join(root, "js/ci-ship-class-facilities-replace.js"
 const ClassTpl = require(path.join(root, "js/ci-ship-class-facilities-template.js"));
 const ApplyLib = require(path.join(root, "netlify/functions/lib/ci-ship-class-facilities-apply.js"));
 const fixtures = require(path.join(root, "scripts/fixtures/ship-facilities-item-copy-fixtures.js"));
+const fleetFixtures = require(path.join(root, "scripts/fixtures/ship-class-facilities-fleet-fixtures.js"));
 
 const adminJs = read("js/admin.js");
 const adminTplJs = read("js/admin-ship-class-facilities-template.js");
@@ -163,6 +164,53 @@ const edgeTemplate = ClassTpl.extractTemplateFromShip(edge);
   assert.ok(!targets.some((s) => s.id === "inactive-edge"));
 }
 
+// FLEET COUNT INVARIANTS — item-copy Celebrity fleet (8 active, fully classified)
+{
+  const summary = ClassTpl.buildLineFleetSummary({
+    ships: fixtures.ships,
+    cruiseLineId: lineId,
+    templates: []
+  });
+  assert.equal(summary.activeShipCount, 8);
+  assert.equal(summary.totalShipCount, 8);
+  assert.equal(summary.unassignedActiveCount, 0);
+  assert.equal(summary.classifiedActiveCount, 8);
+  assert.equal(summary.activeFleetReconciles, true);
+  const check = ClassTpl.assertLineFleetInvariants(summary);
+  assert.equal(check.ok, true, check.errors.join(", "));
+}
+
+// FLEET COUNT INVARIANTS — reconciled visual-review fleet (14 active + 2 unassigned)
+{
+  const vrLineId = fleetFixtures.cruiseLine.id;
+  const summary = ClassTpl.buildLineFleetSummary({
+    ships: fleetFixtures.ships,
+    cruiseLineId: vrLineId,
+    templates: fleetFixtures.templates
+  });
+  assert.equal(summary.totalShipCount, fleetFixtures.expected.totalShipCount);
+  assert.equal(summary.activeShipCount, fleetFixtures.expected.activeShipCount);
+  assert.equal(summary.inactiveShipCount, fleetFixtures.expected.inactiveShipCount);
+  assert.equal(summary.unassignedActiveCount, fleetFixtures.expected.unassignedActiveCount);
+  assert.equal(summary.classifiedActiveCount, fleetFixtures.expected.classifiedActiveCount);
+  assert.equal(summary.activeFleetReconciles, true);
+  assert.equal(summary.hasDuplicateClassMembership, false);
+  const check = ClassTpl.assertLineFleetInvariants(summary);
+  assert.equal(check.ok, true, check.errors.join(", "));
+  summary.classRows.forEach((row) => {
+    assert.equal(row.activeMemberShipNames.length, row.activeShipCount);
+    if (row.hasTemplate) {
+      assert.equal(row.matchingCount + row.customisedCount, row.activeShipCount);
+    }
+  });
+  const edgeRow = summary.classRows.find((row) => row.className === "Edge class");
+  assert.equal(edgeRow.activeShipCount, 5);
+  assert.equal(edgeRow.matchingCount + edgeRow.customisedCount, 5);
+  const inactiveInEdge = ClassTpl.listShipsInClass(fleetFixtures.ships, vrLineId, "Edge class", { activeOnly: true });
+  assert.equal(inactiveInEdge.length, 5);
+  assert.ok(!inactiveInEdge.some((ship) => ship.id === "inactive-a"));
+}
+
 // NETLIFY APPLY LIB
 {
   const execution = ApplyLib.executeApplyToShip(beyond, edgeTemplate);
@@ -203,6 +251,9 @@ assert.ok(migration.includes("class_key"));
 assert.ok(adminJs.includes("renderCiLineShipClassesSection"));
 assert.ok(adminJs.includes("loadCiShipClassFacilityTemplatesForLine"));
 assert.ok(adminJs.includes("Individual changes are allowed, but they will be replaced"));
+assert.ok(adminJs.includes("Total ships"));
+assert.ok(adminJs.includes("activeMemberShipNames"));
+assert.ok(adminTplJs.includes("failedRows.length"));
 assert.ok(adminTplJs.includes("ciClassTplApplyAck"));
 assert.ok(adminTplJs.includes("will be replaced"));
 assert.ok(adminHtml.includes("ci-ship-class-facilities-replace.js"));

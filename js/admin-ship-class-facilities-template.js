@@ -277,7 +277,8 @@
     const unchanged = (result.unchanged || []).map(function (row) {
       return `<li><strong>${esc(row.name)}</strong> — already matching</li>`;
     }).join("");
-    const failed = (result.failed || []).map(function (row) {
+    const failedRows = Array.isArray(result.failed) ? result.failed : [];
+    const failed = failedRows.map(function (row) {
       return `<li class="ci-item-copy-result-fail"><strong>${esc(row.name)}</strong> — ${esc(row.error || "Failed")}</li>`;
     }).join("");
     return `
@@ -285,7 +286,7 @@
         <p class="admin-small"><strong>Apply complete</strong></p>
         ${updated ? `<p class="admin-small">Updated ships</p><ul class="ci-bulk-class-summary-list">${updated}</ul>` : ""}
         ${unchanged ? `<p class="admin-small">Already matching</p><ul class="ci-bulk-class-summary-list">${unchanged}</ul>` : ""}
-        ${failed ? `<p class="admin-small">Failed ships</p><ul class="ci-bulk-class-summary-list">${failed}</ul>` : ""}
+        ${failedRows.length ? `<p class="admin-small">Failed ships</p><ul class="ci-bulk-class-summary-list">${failed}</ul>` : ""}
       </div>`;
   }
 

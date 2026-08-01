@@ -7230,11 +7230,12 @@ function formatCiDate(value) {
 
 function getCiLineShipStats(lineId) {
   const ships = (ciCruiseShips || []).filter((ship) => ship.cruise_line_id === lineId);
-  const publicShips = ships.filter((ship) => ship.active !== false).length;
+  const activeShips = ships.filter((ship) => ship.active !== false).length;
   const hiddenShips = ships.filter((ship) => ship.active === false).length;
   return {
     total: ships.length,
-    publicShips,
+    activeShips,
+    publicShips: activeShips,
     hiddenShips
   };
 }
@@ -7258,12 +7259,12 @@ function renderCiLineStatsPanel(line) {
       <h4>Statistics</h4>
       <div class="ci-stats-row">
         <div class="ci-stat">
-          <span class="ci-stat-label">Ships</span>
+          <span class="ci-stat-label">Total ships</span>
           <span class="ci-stat-value">${esc(stats.total)}</span>
         </div>
         <div class="ci-stat">
-          <span class="ci-stat-label">Public ships</span>
-          <span class="ci-stat-value">${esc(stats.publicShips)}</span>
+          <span class="ci-stat-label">Active ships</span>
+          <span class="ci-stat-value">${esc(stats.activeShips)}</span>
         </div>
         <div class="ci-stat">
           <span class="ci-stat-label">Hidden ships</span>
@@ -7294,7 +7295,12 @@ function renderCiLineShipClassesSection(line) {
     cruiseLineId: line.id,
     templates: ciShipClassFacilityTemplates
   });
-  const unassigned = api.countUnassignedActiveShips(ciCruiseShips, line.id);
+  const fleet = api.buildLineFleetSummary({
+    ships: ciCruiseShips,
+    cruiseLineId: line.id,
+    templates: ciShipClassFacilityTemplates
+  });
+  const unassigned = fleet.unassignedActiveCount;
   if (!rows.length && !unassigned) {
     return `
       <div class="ci-class-facilities-panel" id="ciLineShipClassesPanel">
@@ -7303,8 +7309,8 @@ function renderCiLineShipClassesSection(line) {
       </div>`;
   }
   const tableRows = rows.map(function (row) {
-    const members = row.memberShipNames.length
-      ? row.memberShipNames.map(function (name) { return esc(name); }).join(", ")
+    const members = row.activeMemberShipNames.length
+      ? row.activeMemberShipNames.map(function (name) { return esc(name); }).join(", ")
       : "—";
     const templateEa = row.hasTemplate ? row.templateEaCount : "—";
     const templateSf = row.hasTemplate ? row.templateSfCount : "—";
