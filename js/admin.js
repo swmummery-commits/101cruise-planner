@@ -91,6 +91,7 @@ let adminSettingsGrantEmail = "";
 let adminSettingsBusyKey = "";
 let ciCruiseLines = [];
 let ciCruiseShips = [];
+let ciShipClassFacilityTemplates = [];
 let ciLineSearchQuery = "";
 let ciLineFilter = "sold";
 let ciShipSearchQuery = "";
@@ -6936,6 +6937,8 @@ function renderCiAdmin() {
 function syncCiCatalogueWindowState() {
   window.ciCruiseLines = ciCruiseLines;
   window.ciCruiseShips = ciCruiseShips;
+  window.ciShipClassFacilityTemplates = ciShipClassFacilityTemplates;
+  window.editingCiLineId = editingCiLineId;
 }
 
 function setCiAutosaveStatus(text, tone) {
@@ -7281,6 +7284,155 @@ function renderCiLineStatsPanel(line) {
     </div>
   `;
 }
+
+function renderCiLineShipClassesSection(line) {
+  if (!line || !line.id) return "";
+  const api = window.CiShipClassFacilitiesTemplate;
+  if (!api) return "";
+  const rows = api.buildClassShipRows({
+    ships: ciCruiseShips,
+    cruiseLineId: line.id,
+    templates: ciShipClassFacilityTemplates
+  });
+  const unassigned = api.countUnassignedActiveShips(ciCruiseShips, line.id);
+  if (!rows.length && !unassigned) {
+    return `
+      <div class="ci-class-facilities-panel" id="ciLineShipClassesPanel">
+        <h4>Ship classes</h4>
+        <p class="admin-small">Assign ship classes first, then create class facilities templates for Exclusive Areas and Specialty Features.</p>
+      </div>`;
+  }
+  const tableRows = rows.map(function (row) {
+    const members = row.memberShipNames.length
+      ? row.memberShipNames.map(function (name) { return esc(name); }).join(", ")
+      : "—";
+    const templateEa = row.hasTemplate ? row.templateEaCount : "—";
+    const templateSf = row.hasTemplate ? row.templateSfCount : "—";
+    const templateStatus = row.hasTemplate ? "Saved" : "Template not set";
+    return `
+      <tr class="ci-class-row" data-class-name="${esc(row.className)}" tabindex="0" role="button" onclick="openCiClassFacilitiesTemplateModalFromRow(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCiClassFacilitiesTemplateModalFromRow(this);}">
+        <td>${esc(row.className)}</td>
+        <td>${row.activeShipCount}</td>
+        <td class="ci-class-members">${members}</td>
+        <td>${templateEa}</td>
+        <td>${templateSf}</td>
+        <td>${templateStatus}</td>
+        <td>${esc(row.syncStatusLabel)}</td>
+        <td><button type="button" class="admin-button secondary small" data-class-name="${esc(row.className)}" onclick="event.stopPropagation();openCiClassFacilitiesTemplateModalFromBtn(this)">Edit class facilities</button></td>
+      </tr>`;
+  }).join("");
+  return `
+    <div class="ci-class-facilities-panel" id="ciLineShipClassesPanel">
+      <h4>Ship classes</h4>
+      <p class="admin-small">Class templates replace the complete Exclusive Areas and Specialty Features sections when applied. Individual ships can still be edited afterward, but those sections will be replaced on the next class apply.</p>
+      ${rows.length ? `
+        <div class="ci-bulk-class-table-wrap">
+          <table class="ci-bulk-class-table ci-class-facilities-table" aria-label="Ship class facilities templates">
+            <thead>
+              <tr>
+                <th scope="col">Class</th>
+                <th scope="col">Active ships</th>
+                <th scope="col">Member ships</th>
+                <th scope="col">Template EA</th>
+                <th scope="col">Template SF</th>
+                <th scope="col">Template status</th>
+                <th scope="col">Ship sync</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>` : `<p class="admin-small">No ship classes assigned yet on this line.</p>`}
+      ${unassigned ? `<p class="admin-small ci-class-facilities-note">${unassigned} active ship${unassigned === 1 ? "" : "s"} unassigned — use Manage ship classes to assign them.</p>` : ""}
+    </div>`;
+}
+
+function refreshCiLineShipClassesSection() {
+  if (ciSubView !== "lines" || !editingCiLineId) return;
+  const line = ciCruiseLines.find(function (row) { return row.id === editingCiLineId; });
+  const panel = document.getElementById("ciLineShipClassesPanel");
+  if (!line || !panel) return;
+  panel.outerHTML = renderCiLineShipClassesSection(line);
+}
+
+async function loadCiShipClassFacilityTemplatesForLine(lineId) {
+  if (!lineId || typeof adminAuthHeaders !== "function") return;
+  try {
+    const headers = await adminAuthHeaders();
+    const response = await fetch(
+      "/.netlify/functions/ci-ship-class-facilities-templates?cruise_line_id="
+        + encodeURIComponent(lineId),
+      { headers: headers }
+    );
+    const data = await response.json().catch(function () { return {}; });
+    if (!response.ok || data.success === false) {
+      console.warn("Class facility templates load skipped", data.detail || data.error);
+      return;
+    }
+    ciShipClassFacilityTemplates = ciShipClassFacilityTemplates
+      .filter(function (row) { return row.cruise_line_id !== lineId; })
+      .concat(Array.isArray(data.templates) ? data.templates : []);
+    syncCiCatalogueWindowState();
+    refreshCiLineShipClassesSection();
+  } catch (error) {
+    console.warn("Class facility templates load skipped", error);
+  }
+}
+
+function openCiClassFacilitiesTemplateModalFromRow(row) {
+  const className = row?.getAttribute("data-class-name");
+  if (!className) return;
+  openCiClassFacilitiesTemplateModalFromBtn({ getAttribute: function () { return className; } });
+}
+
+function openCiClassFacilitiesTemplateModalFromBtn(button) {
+  const className = button?.getAttribute("data-class-name");
+  if (!className || !window.CiShipClassFacilitiesTemplateAdmin?.open) {
+    setCiAutosaveStatus("Class facilities templates are unavailable — reload the page.", "error");
+    return;
+  }
+  syncCiCatalogueWindowState();
+  window.CiShipClassFacilitiesTemplateAdmin.open({
+    cruiseLineId: document.getElementById("ciLineId")?.value || editingCiLineId,
+    className: className
+  });
+}
+
+function renderCiShipClassTemplateNote(ship) {
+  if (!ship || !ship.cruise_line_id || !String(ship.ship_class || "").trim()) return "";
+  const api = window.CiShipClassFacilitiesTemplate;
+  if (!api) return "";
+  const key = api.normalizeClassKey(ship.ship_class);
+  const template = ciShipClassFacilityTemplates.find(function (row) {
+    return row.cruise_line_id === ship.cruise_line_id && api.templateClassKey(row) === key;
+  });
+  if (!template) {
+    return `<p class="admin-small ci-class-template-note">Class: ${esc(ship.ship_class)} — no class template saved yet (<button type="button" class="admin-button secondary small ci-inline-link-btn" onclick="jumpToCiLineClassTemplate('${esc(ship.cruise_line_id)}')">edit on cruise line</button>).</p>`;
+  }
+  return `<p class="admin-small ci-class-template-note">This ship has a ${esc(ship.ship_class)} facilities template. Individual changes are allowed, but they will be replaced if the class template is applied again. <button type="button" class="admin-button secondary small ci-inline-link-btn" onclick="jumpToCiLineClassTemplate('${esc(ship.cruise_line_id)}')">Edit class template on cruise line</button></p>`;
+}
+
+function jumpToCiLineClassTemplate(lineId) {
+  if (!lineId) return;
+  selectCiLine(lineId);
+}
+
+function mergeCiShipClassFacilityTemplate(row) {
+  if (!row || !row.id) return;
+  const api = window.CiShipClassFacilitiesTemplate;
+  const key = api ? api.templateClassKey(row) : (row.class_key || row.class_name_key || "");
+  ciShipClassFacilityTemplates = ciShipClassFacilityTemplates.filter(function (item) {
+    return !(item.cruise_line_id === row.cruise_line_id && (api ? api.templateClassKey(item) : item.class_key) === key);
+  });
+  ciShipClassFacilityTemplates.push(row);
+  syncCiCatalogueWindowState();
+}
+
+window.syncCiCatalogueWindowState = syncCiCatalogueWindowState;
+window.refreshCiLineShipClassesSection = refreshCiLineShipClassesSection;
+window.refreshCiLineClassFacilitiesSection = refreshCiLineShipClassesSection;
+window.mergeCiShipClassFacilityTemplate = mergeCiShipClassFacilityTemplate;
+window.loadCiShipClassFacilityTemplatesForLine = loadCiShipClassFacilityTemplatesForLine;
 
 function normalizeCiStateroomBreakdown(raw) {
   if (!raw) return [];
@@ -8170,7 +8322,8 @@ function renderCiLineForm(line) {
       ${editing ? `
         <div class="admin-actions-row ci-line-class-actions">
           <button type="button" class="admin-button secondary small" onclick="openCiBulkShipClassModalFromLine()">Manage ship classes</button>
-        </div>` : ""}
+        </div>
+        ${renderCiLineShipClassesSection(line)}` : ""}
       ${renderCiMediaField({
         kind: "logo",
         inputId: "ciLineLogo",
@@ -8268,6 +8421,7 @@ async function selectCiLine(id) {
   ciAutosaveStatus = "";
   ciMessage = "";
   renderCiAdmin();
+  loadCiShipClassFacilityTemplatesForLine(id);
 }
 
 function cancelCiLineForm() {
@@ -8493,6 +8647,7 @@ function renderCiShipForm(ship) {
         <h4>Facilities</h4>
         ${editing ? `<button type="button" class="admin-button secondary small" onclick="toggleCiFacilitiesCopyPanel()">Copy</button>` : ""}
       </div>
+      ${editing ? renderCiShipClassTemplateNote(ship) : ""}
       <div id="ciFacilitiesCopyPanel" class="ci-facilities-copy-panel" hidden></div>
       <div class="ci-form-grid">
         <div class="admin-field"><label>Dining Options</label><input id="ciFacRestaurants" type="number" value="${esc(facilities.restaurants ?? "")}"></div>

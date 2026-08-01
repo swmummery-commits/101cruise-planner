@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <title>Class Facilities Template UI Fixture</title>
+  <link rel="stylesheet" href="../../css/admin.css">
+  <style>
+    body { padding: 24px; background: #fff; max-width: 1180px; margin: 0 auto; }
+    .fixture-label { color: #667085; font-size: 0.85rem; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <p class="fixture-label">Fixture — Ship classes section (Celebrity Cruises)</p>
+  <div class="ci-class-facilities-panel" id="ciLineShipClassesPanel">
+    <h4>Ship classes</h4>
+    <p class="admin-small">Class templates replace the complete Exclusive Areas and Specialty Features sections when applied. Individual ships can still be edited afterward, but those sections will be replaced on the next class apply.</p>
+    <div class="ci-bulk-class-table-wrap">
+      <table class="ci-bulk-class-table ci-class-facilities-table" aria-label="Ship class facilities templates">
+        <thead>
+          <tr>
+            <th scope="col">Class</th>
+            <th scope="col">Active ships</th>
+            <th scope="col">Member ships</th>
+            <th scope="col">Template EA</th>
+            <th scope="col">Template SF</th>
+            <th scope="col">Template status</th>
+            <th scope="col">Ship sync</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="ci-class-row">
+            <td>Edge class</td>
+            <td>5</td>
+            <td class="ci-class-members">Celebrity Edge, Celebrity Apex, Celebrity Ascent, Celebrity Beyond, Celebrity Xcel</td>
+            <td>2</td>
+            <td>4</td>
+            <td>Saved</td>
+            <td>1 ship match · 4 individually customised</td>
+            <td><button type="button" class="admin-button secondary small">Edit class facilities</button></td>
+          </tr>
+          <tr class="ci-class-row">
+            <td>Millennium class</td>
+            <td>2</td>
+            <td class="ci-class-members">Celebrity Millennium, Celebrity Summit</td>
+            <td>—</td>
+            <td>—</td>
+            <td>Template not set</td>
+            <td>Template not set</td>
+            <td><button type="button" class="admin-button secondary small">Edit class facilities</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="admin-small ci-class-facilities-note">0 active ships unassigned — use Manage ship classes to assign them.</p>
+  </div>
+
+  <p class="fixture-label" style="margin-top:32px;">Fixture — Apply confirmation step</p>
+  <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal" style="position:static;max-width:720px;margin:0 auto;box-shadow:0 8px 24px rgba(0,0,0,.12);">
+    <div class="ci-bulk-class-modal-head">
+      <h4>Apply class template — Edge class</h4>
+      <button type="button" class="admin-button secondary small">Close</button>
+    </div>
+    <div class="ci-bulk-class-modal-body">
+      <p class="admin-small">Apply the saved class template to <strong>Edge class</strong> on <strong>Celebrity Cruises</strong>.</p>
+      <ul class="ci-bulk-class-summary-list">
+        <li><strong>Template Exclusive Areas:</strong> The Retreat — Ship-within-a-ship…, Blu — Exclusive restaurant…</li>
+        <li><strong>Template Specialty Features:</strong> Magic Carpet, Eden, Rooftop Garden, Grand Plaza</li>
+        <li>5 active ships</li>
+        <li>4 will change</li>
+        <li>1 already matching</li>
+      </ul>
+      <p class="admin-small ci-class-tpl-warning">Individual ship customisations in these sections will be replaced.</p>
+      <label class="ci-class-tpl-ack">
+        <input type="checkbox" checked>
+        I understand this will replace the current Exclusive Areas and Specialty Features on the affected ships.
+      </label>
+    </div>
+    <div class="ci-bulk-class-modal-footer">
+      <p class="admin-small">Confirm to replace EA and SF on active ships in this class.</p>
+      <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+        <button type="button" class="admin-button secondary small">Back</button>
+        <button type="button" class="admin-button secondary small">Cancel</button>
+        <button type="button" class="admin-button small">Apply to class ships</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

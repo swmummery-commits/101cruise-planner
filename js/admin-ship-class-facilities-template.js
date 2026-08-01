@@ -1,0 +1,609 @@
+/**
+ * Admin class facilities template modal — cruise line scope.
+ * All template load/save/apply goes through authenticated Netlify functions.
+ */
+(function () {
+  "use strict";
+
+  const STEP_EDIT = "edit";
+  const STEP_CONFIRM = "confirm";
+  const STEP_RESULT = "result";
+
+  let modalContext = null;
+
+  function tplApi() {
+    return window.CiShipClassFacilitiesTemplate || null;
+  }
+
+  function facApi() {
+    return window.CiShipFacilities || null;
+  }
+
+  function esc(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  }
+
+  function trim(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
+  function getShips() {
+    return window.ciCruiseShips || [];
+  }
+
+  function getLines() {
+    return window.ciCruiseLines || [];
+  }
+
+  function getTemplates() {
+    return window.ciShipClassFacilityTemplates || [];
+  }
+
+  function readExclusiveRows() {
+    const root = document.getElementById("ciClassTplExclusiveList");
+    if (!root) return [];
+    const rows = [];
+    root.querySelectorAll(".ci-class-tpl-ea-card").forEach(function (card) {
+      const name = trim(card.querySelector(".ci-class-tpl-ea-name")?.value);
+      const description = trim(card.querySelector(".ci-class-tpl-ea-description")?.value);
+      const descWrap = card.querySelector(".ci-class-tpl-ea-description-wrap");
+      const showDescription = Boolean(descWrap && !descWrap.classList.contains("hidden"));
+      if (!name && !description) return;
+      rows.push({ name: name, description: description, showDescription: showDescription || Boolean(description) });
+    });
+    return rows;
+  }
+
+  function readSpecialtyRows() {
+    const root = document.getElementById("ciClassTplSpecialtyList");
+    if (!root) return [];
+    const rows = [];
+    root.querySelectorAll(".ci-class-tpl-sf-row").forEach(function (row) {
+      const label = trim(row.querySelector(".ci-class-tpl-sf-label")?.value);
+      if (!label) return;
+      rows.push({ label: label });
+    });
+    return rows;
+  }
+
+  function serializeTemplatePayload() {
+    const fac = facApi();
+    if (!fac) return { exclusive_areas: [], specialty_features: [] };
+    return {
+      exclusive_areas: fac.serializeExclusiveAreasFromAdmin(readExclusiveRows()),
+      specialty_features: fac.serializeSpecialtyFeaturesFromAdmin(readSpecialtyRows())
+    };
+  }
+
+  function renderExclusiveCard(row, index) {
+    const showDescription = Boolean(row.showDescription || row.description);
+    return `
+      <div class="ci-exclusive-area-card ci-class-tpl-ea-card" data-index="${index}">
+        <div class="ci-facility-compact-row">
+          <input type="text" class="ci-class-tpl-ea-name" value="${esc(row.name || "")}" placeholder="Exclusive area name">
+          <div class="ci-facility-row-actions ci-facility-row-actions--inline">
+            <button type="button" class="admin-button secondary small" data-action="ea-move-up" data-index="${index}" title="Move up">↑</button>
+            <button type="button" class="admin-button secondary small" data-action="ea-move-down" data-index="${index}" title="Move down">↓</button>
+            <button type="button" class="admin-button secondary small" data-action="ea-remove" data-index="${index}">Remove</button>
+          </div>
+        </div>
+        ${showDescription
+          ? `<div class="ci-exclusive-area-description-wrap ci-class-tpl-ea-description-wrap">
+              <textarea class="ci-class-tpl-ea-description" rows="2" placeholder="Description">${esc(row.description || "")}</textarea>
+              <button type="button" class="admin-button secondary small" data-action="ea-hide-desc" data-index="${index}">Hide description</button>
+            </div>`
+          : `<button type="button" class="admin-button secondary small" data-action="ea-show-desc" data-index="${index}">Add description</button>`}
+      </div>`;
+  }
+
+  function renderSpecialtyRow(row, index) {
+    return `
+      <div class="ci-specialty-feature-row ci-class-tpl-sf-row" data-index="${index}">
+        <input type="text" class="ci-class-tpl-sf-label" value="${esc(row.label || "")}" placeholder="Specialty feature">
+        <div class="ci-facility-row-actions ci-facility-row-actions--inline">
+          <button type="button" class="admin-button secondary small" data-action="sf-move-up" data-index="${index}">↑</button>
+          <button type="button" class="admin-button secondary small" data-action="sf-move-down" data-index="${index}">↓</button>
+          <button type="button" class="admin-button secondary small" data-action="sf-remove" data-index="${index}">Remove</button>
+        </div>
+      </div>`;
+  }
+
+  function rebuildExclusiveDom(rows) {
+    const root = document.getElementById("ciClassTplExclusiveList");
+    if (!root) return;
+    const list = rows.length ? rows : [{ name: "", description: "", showDescription: false }];
+    root.innerHTML = list.map(function (row, index) {
+      return renderExclusiveCard(row, index);
+    }).join("");
+  }
+
+  function rebuildSpecialtyDom(rows) {
+    const root = document.getElementById("ciClassTplSpecialtyList");
+    if (!root) return;
+    const list = rows.length ? rows : [{ label: "" }];
+    root.innerHTML = list.map(renderSpecialtyRow).join("");
+  }
+
+  function loadEditorFromPayload(payload) {
+    const fac = facApi();
+    if (!fac) return;
+    rebuildExclusiveDom(fac.loadExclusiveAreasForAdmin(payload && payload.exclusive_areas));
+    rebuildSpecialtyDom(fac.loadSpecialtyFeaturesForAdmin(payload && payload.specialty_features));
+  }
+
+  function currentTemplateRecord() {
+    const api = tplApi();
+    if (!api || !modalContext) return null;
+    const key = api.normalizeClassKey(modalContext.className);
+    return getTemplates().find(function (row) {
+      return row.cruise_line_id === modalContext.cruiseLineId && api.templateClassKey(row) === key;
+    }) || null;
+  }
+
+  function savedTemplatePayload() {
+    const api = tplApi();
+    return api ? api.templatePayloadFromRecord(currentTemplateRecord()) : { exclusive_areas: [], specialty_features: [] };
+  }
+
+  function buildViewModel() {
+    const api = tplApi();
+    if (!api || !modalContext) return null;
+    const payload = serializeTemplatePayload();
+    const saved = currentTemplateRecord();
+    const savedPayload = api.templatePayloadFromRecord(saved);
+    const applyPreview = api.buildApplyPreview({
+      ships: getShips(),
+      cruiseLineId: modalContext.cruiseLineId,
+      className: modalContext.className,
+      template: savedPayload
+    });
+    const classShips = api.listShipsInClass(getShips(), modalContext.cruiseLineId, modalContext.className, { activeOnly: false });
+    const hasUnsavedDraft = api.draftDiffersFromSaved(payload, saved);
+    return {
+      line: getLines().find(function (row) { return row.id === modalContext.cruiseLineId; }),
+      className: modalContext.className,
+      classShips: classShips,
+      payload: payload,
+      savedPayload: savedPayload,
+      hasSavedTemplate: Boolean(saved),
+      hasUnsavedDraft: hasUnsavedDraft,
+      applyPreview: applyPreview,
+      savedTemplate: saved
+    };
+  }
+
+  function formatTemplateList(items, emptyLabel) {
+    if (!Array.isArray(items) || !items.length) return emptyLabel;
+    return items.map(function (item) {
+      if (item && typeof item === "object") {
+        const name = trim(item.name || item.label || "");
+        const description = trim(item.description || "");
+        return description ? `${name} — ${description}` : name;
+      }
+      return trim(item);
+    }).join(", ");
+  }
+
+  function renderEditBody(vm) {
+    const importOptions = vm.classShips.map(function (ship) {
+      return `<option value="${esc(ship.id)}">${esc(ship.name)}</option>`;
+    }).join("");
+    return `
+      <div class="ci-class-tpl-meta">
+        <p class="admin-small"><strong>Cruise line:</strong> ${esc(vm.line && vm.line.name || "—")}</p>
+        <p class="admin-small"><strong>Class:</strong> ${esc(vm.className)}</p>
+        <p class="admin-small"><strong>Ships in class:</strong> ${vm.classShips.length} (${vm.applyPreview.targets.length} active for apply)</p>
+        ${vm.hasUnsavedDraft ? `<p class="admin-small ci-class-tpl-warning">You have unsaved editor changes. Save the template before applying.</p>` : ""}
+      </div>
+      <div class="ci-class-tpl-import admin-actions-row">
+        <label class="admin-small">Import from ship
+          <select id="ciClassTplImportShip">
+            <option value="">Choose a ship…</option>
+            ${importOptions}
+          </select>
+        </label>
+        <button type="button" class="admin-button secondary small" data-action="import-ship">Import EA + SF</button>
+      </div>
+      <section class="ci-item-copy-section">
+        <div class="ci-item-copy-section-head">
+          <h5>Exclusive Areas</h5>
+          <button type="button" class="admin-button secondary small" data-action="ea-add">Add area</button>
+        </div>
+        <div id="ciClassTplExclusiveList"></div>
+      </section>
+      <section class="ci-item-copy-section">
+        <div class="ci-item-copy-section-head">
+          <h5>Specialty Features</h5>
+          <button type="button" class="admin-button secondary small" data-action="sf-add">Add feature</button>
+        </div>
+        <div id="ciClassTplSpecialtyList"></div>
+      </section>
+      <p class="admin-small ci-item-copy-preserve-note">Applying replaces the complete Exclusive Areas and Specialty Features sections on each active ship in this class. Scalar facilities (pools, spa, etc.) are never changed. Import only prefills the editor — it does not save or apply.</p>`;
+  }
+
+  function renderConfirmBody(vm) {
+    const agg = vm.applyPreview.preview.aggregate;
+    const savedPayload = vm.savedPayload;
+    const eaLabel = formatTemplateList(savedPayload.exclusive_areas, "None — will clear existing Exclusive Areas on affected ships");
+    const sfLabel = formatTemplateList(savedPayload.specialty_features, "None — will clear existing Specialty Features on affected ships");
+    const shipLines = vm.applyPreview.preview.rows.map(function (row) {
+      const status = row.status === "matching" ? "Already matching" : "Will change";
+      const extras = [];
+      if (row.willClearEa) extras.push("clears EA");
+      if (row.willClearSf) extras.push("clears SF");
+      const detail = extras.length ? `${status} (${extras.join(", ")})` : status;
+      return `<li><strong>${esc(row.shipName)}</strong> — ${esc(detail)}</li>`;
+    }).join("");
+    const clearWarnings = [];
+    if (!savedPayload.exclusive_areas.length && vm.applyPreview.preview.rows.some(function (row) { return row.willClearEa; })) {
+      clearWarnings.push("The saved template has no Exclusive Areas. Applying will clear existing Exclusive Areas on ships that currently have them.");
+    }
+    if (!savedPayload.specialty_features.length && vm.applyPreview.preview.rows.some(function (row) { return row.willClearSf; })) {
+      clearWarnings.push("The saved template has no Specialty Features. Applying will clear existing Specialty Features on ships that currently have them.");
+    }
+    return `
+      <p class="admin-small">Apply the saved class template to <strong>${esc(vm.className)}</strong> on <strong>${esc(vm.line && vm.line.name || "—")}</strong>.</p>
+      <ul class="ci-bulk-class-summary-list">
+        <li><strong>Template Exclusive Areas:</strong> ${esc(eaLabel)}</li>
+        <li><strong>Template Specialty Features:</strong> ${esc(sfLabel)}</li>
+        <li>${agg.ships} active ship${agg.ships === 1 ? "" : "s"}</li>
+        <li>${agg.willChangeCount} will change</li>
+        <li>${agg.matchingCount} already matching</li>
+      </ul>
+      ${clearWarnings.map(function (text) {
+        return `<p class="admin-small ci-class-tpl-warning">${esc(text)}</p>`;
+      }).join("")}
+      <p class="admin-small"><strong>Target ships</strong></p>
+      <ul class="ci-bulk-class-summary-list">${shipLines || "<li>No active ships in this class.</li>"}</ul>
+      <p class="admin-small ci-class-tpl-warning">Individual ship customisations in these sections will be replaced.</p>
+      <label class="ci-class-tpl-ack">
+        <input type="checkbox" id="ciClassTplApplyAck">
+        I understand this will replace the current Exclusive Areas and Specialty Features on the affected ships.
+      </label>`;
+  }
+
+  function renderResultBody() {
+    const result = modalContext.lastResult || {};
+    if (result.error) {
+      return `<p class="admin-small ci-item-copy-result-fail">${esc(result.error)}</p>`;
+    }
+    const updated = (result.updated || []).map(function (row) {
+      return `<li><strong>${esc(row.name)}</strong> — updated</li>`;
+    }).join("");
+    const unchanged = (result.unchanged || []).map(function (row) {
+      return `<li><strong>${esc(row.name)}</strong> — already matching</li>`;
+    }).join("");
+    const failed = (result.failed || []).map(function (row) {
+      return `<li class="ci-item-copy-result-fail"><strong>${esc(row.name)}</strong> — ${esc(row.error || "Failed")}</li>`;
+    }).join("");
+    return `
+      <div class="ci-item-copy-result-wrap">
+        <p class="admin-small"><strong>Apply complete</strong></p>
+        ${updated ? `<p class="admin-small">Updated ships</p><ul class="ci-bulk-class-summary-list">${updated}</ul>` : ""}
+        ${unchanged ? `<p class="admin-small">Already matching</p><ul class="ci-bulk-class-summary-list">${unchanged}</ul>` : ""}
+        ${failed ? `<p class="admin-small">Failed ships</p><ul class="ci-bulk-class-summary-list">${failed}</ul>` : ""}
+      </div>`;
+  }
+
+  function renderFooter(vm) {
+    const step = modalContext.step;
+    if (step === STEP_RESULT) {
+      return `<div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer"><button type="button" class="admin-button small" data-action="close-result">Close</button></div>`;
+    }
+    if (step === STEP_CONFIRM) {
+      const noTargets = !vm.applyPreview.targets.length;
+      const noChanges = !vm.applyPreview.preview.aggregate.hasChanges;
+      const needsSave = !vm.hasSavedTemplate || vm.hasUnsavedDraft;
+      return `
+        <p class="admin-small">${noTargets ? "No active ships in this class." : noChanges ? "All active ships already match the saved template." : needsSave ? "Save the template before applying." : "Confirm to replace EA and SF on active ships in this class."}</p>
+        <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+          <button type="button" class="admin-button secondary small" data-action="back">Back</button>
+          <button type="button" class="admin-button secondary small" data-action="cancel">Cancel</button>
+          <button type="button" class="admin-button small" data-action="confirm-apply"${noTargets || noChanges || needsSave ? " disabled aria-disabled=\"true\"" : " disabled aria-disabled=\"true\""}>Apply to class ships</button>
+        </div>`;
+    }
+    return `
+      <p class="admin-small">Save the template without changing ships, or apply the saved template as a separate action.</p>
+      <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+        <button type="button" class="admin-button secondary small" data-action="cancel">Cancel</button>
+        <button type="button" class="admin-button secondary small" data-action="save-template">Save template</button>
+        <button type="button" class="admin-button small" data-action="continue-apply"${vm.hasSavedTemplate && !vm.hasUnsavedDraft && vm.applyPreview.targets.length ? "" : " disabled aria-disabled=\"true\""}>Apply saved template…</button>
+      </div>`;
+  }
+
+  function stepTitle(step) {
+    if (step === STEP_CONFIRM) return "Apply class template";
+    if (step === STEP_RESULT) return "Apply complete";
+    return "Class facilities template";
+  }
+
+  function renderModal() {
+    if (!modalContext) return;
+    const overlay = document.getElementById("ciClassFacilitiesTemplateOverlay");
+    if (!overlay) return;
+    try {
+      const vm = buildViewModel();
+      if (!vm) return;
+      modalContext.draftPayload = vm.payload;
+      const step = modalContext.step;
+      let body = "";
+      if (step === STEP_EDIT) body = renderEditBody(vm);
+      else if (step === STEP_CONFIRM) body = renderConfirmBody(vm);
+      else if (step === STEP_RESULT) body = renderResultBody();
+
+      overlay.innerHTML = `
+        <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal" role="dialog" aria-modal="true">
+          <div class="ci-bulk-class-modal-head">
+            <h4>${esc(stepTitle(step))} — ${esc(modalContext.className)}</h4>
+            <button type="button" class="admin-button secondary small" data-action="header-close">Close</button>
+          </div>
+          <div class="ci-bulk-class-modal-body">${body}</div>
+          <div class="ci-bulk-class-modal-footer">${renderFooter(vm)}</div>
+        </div>`;
+
+      if (step === STEP_EDIT) {
+        if (modalContext.editorLoaded) {
+          loadEditorFromPayload(modalContext.draftPayload);
+        } else {
+          loadEditorFromPayload(savedTemplatePayload());
+          modalContext.editorLoaded = true;
+        }
+      }
+      bindModalEvents();
+    } catch (error) {
+      console.error("CiShipClassFacilitiesTemplateAdmin render failed", error);
+      overlay.innerHTML = `
+        <div class="ci-bulk-class-modal ci-item-copy-modal"><div class="ci-bulk-class-modal-body"><p class="ci-item-copy-result-fail">${esc(error.message || error)}</p></div>
+        <div class="ci-bulk-class-modal-footer"><button type="button" class="admin-button small" data-action="header-close">Close</button></div></div>`;
+      bindModalEvents();
+    }
+  }
+
+  function persistEditorDraft() {
+    modalContext.draftPayload = serializeTemplatePayload();
+  }
+
+  function goToStep(step) {
+    if (!modalContext) return;
+    if (step !== STEP_EDIT) persistEditorDraft();
+    modalContext.step = step;
+    renderModal();
+  }
+
+  function closeModal() {
+    const overlay = document.getElementById("ciClassFacilitiesTemplateOverlay");
+    if (overlay) overlay.remove();
+    modalContext = null;
+    if (window.refreshCiLineShipClassesSection) window.refreshCiLineShipClassesSection();
+  }
+
+  async function saveTemplate() {
+    const api = tplApi();
+    if (!api || !modalContext || !window.adminAuthHeaders) return;
+    persistEditorDraft();
+    try {
+      const headers = await window.adminAuthHeaders({ "Content-Type": "application/json" });
+      const response = await fetch("/.netlify/functions/ci-ship-class-facilities-save", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          cruise_line_id: modalContext.cruiseLineId,
+          class_name: modalContext.className,
+          exclusive_areas: modalContext.draftPayload.exclusive_areas,
+          specialty_features: modalContext.draftPayload.specialty_features
+        })
+      });
+      const data = await response.json().catch(function () { return {}; });
+      if (!response.ok || data.success === false) {
+        if (window.setCiAutosaveStatus) window.setCiAutosaveStatus(data.detail || data.error || "Template save failed", "error");
+        return;
+      }
+      upsertTemplateLocal(data.template);
+      if (window.setCiAutosaveStatus) window.setCiAutosaveStatus("Class template saved", "saved");
+      renderModal();
+    } catch (error) {
+      if (window.setCiAutosaveStatus) window.setCiAutosaveStatus(String(error.message || error), "error");
+    }
+  }
+
+  function upsertTemplateLocal(row) {
+    if (!row || !row.id) return;
+    if (window.mergeCiShipClassFacilityTemplate) {
+      window.mergeCiShipClassFacilityTemplate(row);
+      return;
+    }
+    const api = tplApi();
+    const key = api ? api.templateClassKey(row) : row.class_key;
+    const list = getTemplates().filter(function (item) {
+      return !(item.cruise_line_id === row.cruise_line_id && api.templateClassKey(item) === key);
+    });
+    list.push(row);
+    window.ciShipClassFacilityTemplates = list;
+  }
+
+  async function applyTemplate() {
+    if (!modalContext || !window.adminAuthHeaders) return;
+    const ack = document.getElementById("ciClassTplApplyAck");
+    if (!ack || !ack.checked) return;
+    const btn = document.querySelector("[data-action='confirm-apply']");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Applying…";
+    }
+    try {
+      const headers = await window.adminAuthHeaders({ "Content-Type": "application/json" });
+      const response = await fetch("/.netlify/functions/ci-ship-class-facilities-apply", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          cruise_line_id: modalContext.cruiseLineId,
+          class_name: modalContext.className
+        })
+      });
+      const data = await response.json().catch(function () { return {}; });
+      if (!response.ok || data.success === false) {
+        modalContext.lastResult = { error: data.detail || data.error || "Apply failed." };
+        goToStep(STEP_RESULT);
+        return;
+      }
+      applyShipUpdatesLocal(data.updated || []);
+      modalContext.lastResult = data;
+      if (window.setCiAutosaveStatus) window.setCiAutosaveStatus("Class template applied", "saved");
+      goToStep(STEP_RESULT);
+    } catch (error) {
+      modalContext.lastResult = { error: String(error.message || error) };
+      goToStep(STEP_RESULT);
+    }
+  }
+
+  function applyShipUpdatesLocal(updatedRows) {
+    updatedRows.forEach(function (row) {
+      if (!row.id || !row.facilities) return;
+      const idx = getShips().findIndex(function (ship) { return ship.id === row.id; });
+      if (idx >= 0) {
+        window.ciCruiseShips[idx] = { ...window.ciCruiseShips[idx], facilities: row.facilities };
+      }
+    });
+    if (window.syncCiCatalogueWindowState) window.syncCiCatalogueWindowState();
+    if (window.refreshCiShipMasterList) window.refreshCiShipMasterList();
+  }
+
+  function bindModalEvents() {
+    const overlay = document.getElementById("ciClassFacilitiesTemplateOverlay");
+    if (!overlay) return;
+    overlay.querySelector("[data-action='header-close']")?.addEventListener("click", closeModal);
+    overlay.querySelector("[data-action='cancel']")?.addEventListener("click", closeModal);
+    overlay.querySelector("[data-action='close-result']")?.addEventListener("click", closeModal);
+    overlay.querySelector("[data-action='back']")?.addEventListener("click", function () {
+      goToStep(STEP_EDIT);
+    });
+    overlay.querySelector("[data-action='save-template']")?.addEventListener("click", function (event) {
+      if (event.currentTarget.disabled) return;
+      saveTemplate();
+    });
+    overlay.querySelector("[data-action='continue-apply']")?.addEventListener("click", function (event) {
+      if (event.currentTarget.disabled) return;
+      goToStep(STEP_CONFIRM);
+    });
+    overlay.querySelector("#ciClassTplApplyAck")?.addEventListener("change", function () {
+      const btn = overlay.querySelector("[data-action='confirm-apply']");
+      if (!btn || btn.hasAttribute("aria-disabled")) return;
+      btn.disabled = !this.checked;
+    });
+    overlay.querySelector("[data-action='confirm-apply']")?.addEventListener("click", function (event) {
+      if (event.currentTarget.disabled) return;
+      applyTemplate();
+    });
+    overlay.querySelector("[data-action='import-ship']")?.addEventListener("click", function () {
+      const api = tplApi();
+      const shipId = String(document.getElementById("ciClassTplImportShip")?.value || "");
+      if (!api || !shipId) return;
+      const ship = getShips().find(function (row) { return row.id === shipId; });
+      if (!ship) return;
+      loadEditorFromPayload(api.extractTemplateFromShip(ship));
+      modalContext.editorLoaded = true;
+      persistEditorDraft();
+    });
+    overlay.querySelector("[data-action='ea-add']")?.addEventListener("click", function () {
+      const rows = readExclusiveRows();
+      rows.push({ name: "", description: "", showDescription: false });
+      rebuildExclusiveDom(rows);
+    });
+    overlay.addEventListener("click", function (event) {
+      const btn = event.target.closest("[data-action]");
+      if (!btn) return;
+      const action = btn.getAttribute("data-action");
+      const index = Number(btn.getAttribute("data-index"));
+      if (action === "ea-remove") {
+        rebuildExclusiveDom(readExclusiveRows().filter(function (_row, i) { return i !== index; }));
+      } else if (action === "ea-move-up") {
+        const rows = readExclusiveRows();
+        if (index > 0) {
+          const copy = rows.slice();
+          const item = copy.splice(index, 1)[0];
+          copy.splice(index - 1, 0, item);
+          rebuildExclusiveDom(copy);
+        }
+      } else if (action === "ea-move-down") {
+        const rows = readExclusiveRows();
+        if (index < rows.length - 1) {
+          const copy = rows.slice();
+          const item = copy.splice(index, 1)[0];
+          copy.splice(index + 1, 0, item);
+          rebuildExclusiveDom(copy);
+        }
+      } else if (action === "ea-show-desc") {
+        const rows = readExclusiveRows();
+        if (rows[index]) {
+          rows[index].showDescription = true;
+          rebuildExclusiveDom(rows);
+        }
+      } else if (action === "ea-hide-desc") {
+        const rows = readExclusiveRows();
+        if (rows[index]) {
+          rows[index].showDescription = false;
+          rebuildExclusiveDom(rows);
+        }
+      } else if (action === "sf-add") {
+        const rows = readSpecialtyRows();
+        rows.push({ label: "" });
+        rebuildSpecialtyDom(rows);
+      } else if (action === "sf-remove") {
+        rebuildSpecialtyDom(readSpecialtyRows().filter(function (_row, i) { return i !== index; }));
+      } else if (action === "sf-move-up") {
+        const rows = readSpecialtyRows();
+        if (index > 0) {
+          const copy = rows.slice();
+          const item = copy.splice(index, 1)[0];
+          copy.splice(index - 1, 0, item);
+          rebuildSpecialtyDom(copy);
+        }
+      } else if (action === "sf-move-down") {
+        const rows = readSpecialtyRows();
+        if (index < rows.length - 1) {
+          const copy = rows.slice();
+          const item = copy.splice(index, 1)[0];
+          copy.splice(index + 1, 0, item);
+          rebuildSpecialtyDom(copy);
+        }
+      }
+    });
+  }
+
+  function openModal(options) {
+    const api = tplApi();
+    if (!api || !options || !options.cruiseLineId || !options.className) return;
+    closeModal();
+    modalContext = {
+      cruiseLineId: options.cruiseLineId,
+      className: options.className,
+      step: STEP_EDIT,
+      editorLoaded: false,
+      draftPayload: { exclusive_areas: [], specialty_features: [] },
+      lastResult: null
+    };
+    const overlay = document.createElement("div");
+    overlay.id = "ciClassFacilitiesTemplateOverlay";
+    overlay.className = "ci-bulk-class-overlay ci-item-copy-overlay";
+    overlay.addEventListener("click", function (event) {
+      if (event.target === overlay) closeModal();
+    });
+    document.body.appendChild(overlay);
+    renderModal();
+  }
+
+  window.CiShipClassFacilitiesTemplateAdmin = {
+    open: openModal,
+    close: closeModal
+  };
+
+  window.openCiClassFacilitiesTemplateModal = function (className) {
+    const lineId = document.getElementById("ciLineId")?.value || window.editingCiLineId;
+    if (!lineId || !className) return;
+    window.CiShipClassFacilitiesTemplateAdmin.open({ cruiseLineId: lineId, className: className });
+  };
+})();
