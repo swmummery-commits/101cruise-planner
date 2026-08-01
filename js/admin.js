@@ -7559,27 +7559,81 @@ function renderCiStateroomRow(row, index) {
   `;
 }
 
+function getCiStateroomReconciliationFromDom() {
+  const reconcile = typeof CiStateroomReconciliation !== "undefined" ? CiStateroomReconciliation : null;
+  const totalRaw = document.getElementById("ciShipStaterooms")?.value;
+  const breakdown = readCiStateroomBreakdownFromDom();
+  if (!reconcile) return null;
+  return reconcile.reconcileStateroomDisplay({
+    stateroomCount: totalRaw === "" ? null : totalRaw,
+    stateroomBreakdown: breakdown || []
+  });
+}
+
+function renderCiStateroomReconcilePanel(reconciliation) {
+  if (!reconciliation) return "";
+  const diff = reconciliation.difference;
+  const diffLabel = diff == null
+    ? "—"
+    : diff === 0
+      ? "0"
+      : diff > 0
+        ? `+${diff}`
+        : String(diff);
+  const explanation = reconciliation.adminExplanation || {};
+  return `
+    <div class="ci-stateroom-reconcile-panel" id="ciStateroomReconcilePanel">
+      <h5>Public display reconciliation</h5>
+      <dl class="ci-stateroom-reconcile-grid">
+        <div><dt>Published stateroom total</dt><dd>${esc(reconciliation.authoritativeTotal == null ? "—" : String(reconciliation.authoritativeTotal))}</dd></div>
+        <div><dt>Raw category sum</dt><dd>${esc(String(reconciliation.rawBreakdownSum))}</dd></div>
+        <div><dt>Difference</dt><dd id="ciStateroomDelta">${esc(diffLabel)}</dd></div>
+        <div><dt>Public display status</dt><dd id="ciStateroomPublicStatus">${esc(reconciliation.publicDisplayStatus || "—")}</dd></div>
+      </dl>
+      <p class="ci-stateroom-reconcile-status" id="ciStateroomPublicNote">${esc(explanation.publicNote || "")}</p>
+      ${explanation.cleanupNote ? `<p class="ci-stateroom-reconcile-note" id="ciStateroomCleanupNote">${esc(explanation.cleanupNote)}</p>` : `<p class="ci-stateroom-reconcile-note" id="ciStateroomCleanupNote" hidden></p>`}
+    </div>
+  `;
+}
+
 function renderCiStateroomEditor(ship) {
   const rows = normalizeCiStateroomBreakdown(ship?.stateroom_breakdown);
   if (!rows.length && ship?.cabin_type_summary) {
     rows.push(...normalizeCiStateroomBreakdown(ship.cabin_type_summary));
   }
-  const totalRooms = Number(ship?.stateroom_count);
-  const sum = rows.reduce((acc, row) => acc + (Number.isFinite(Number(row.count)) ? Number(row.count) : 0), 0);
-  const showWarning = Number.isFinite(totalRooms) && totalRooms > 0 && sum > 0 && Math.abs(sum - totalRooms) > Math.max(5, totalRooms * 0.05);
+  const reconcile = typeof CiStateroomReconciliation !== "undefined" ? CiStateroomReconciliation : null;
+  const reconciliation = reconcile
+    ? reconcile.reconcileStateroomDisplay({
+        stateroomCount: ship?.stateroom_count,
+        stateroomBreakdown: ship?.stateroom_breakdown || [],
+        legacyBreakdown: !ship?.stateroom_breakdown && ship?.cabin_type_summary ? ship.cabin_type_summary : null
+      })
+    : null;
+  const validation = reconcile
+    ? reconcile.validateStateroomSave({
+        stateroomCount: ship?.stateroom_count,
+        stateroomBreakdown: rows.filter((row) => row.label && row.count !== "" && row.count != null).map((row) => ({
+          label: row.label,
+          count: row.count
+        }))
+      })
+    : { warnings: [] };
+  const showWarning = validation.warnings.length > 0;
 
   return `
     <div class="ci-stateroom-section">
       <h4>Stateroom Breakdown</h4>
-      <p class="admin-small">Add any cabin categories used by this ship. Totals are checked against Total Staterooms but never block saving.</p>
+      <p class="admin-small">Add broad cabin categories used by this ship. The published total remains authoritative for My Ship.</p>
       <div id="ciStateroomBreakdown">
         ${rows.length ? rows.map(renderCiStateroomRow).join("") : ""}
       </div>
       <div class="admin-actions-row" style="margin-top:8px;">
         <button type="button" class="admin-button secondary small" onclick="addCiStateroomRow()">Add row</button>
-        <span class="admin-small">Category total: <strong id="ciStateroomSum">${esc(sum)}</strong></span>
+        <span class="admin-small">Category total: <strong id="ciStateroomSum">${esc(reconciliation ? reconciliation.rawBreakdownSum : 0)}</strong></span>
       </div>
-      <p id="ciStateroomWarning" class="ci-stateroom-warning"${showWarning ? "" : " hidden"}>Room category totals do not currently match the ship’s stated total. Please verify when convenient.</p>
+      ${renderCiStateroomReconcilePanel(reconciliation)}
+      <p id="ciStateroomWarning" class="ci-stateroom-warning"${showWarning ? "" : " hidden"}>${esc(validation.warnings.join(" "))}</p>
+      <p id="ciStateroomSaveError" class="ci-stateroom-save-error" hidden></p>
     </div>
   `;
 }
@@ -7606,15 +7660,48 @@ function readCiStateroomBreakdownFromDom() {
 }
 
 function updateCiStateroomTotals() {
-  const rows = readCiStateroomBreakdownFromDom() || [];
-  const sum = rows.reduce((acc, row) => acc + (Number.isFinite(Number(row.count)) ? Number(row.count) : 0), 0);
+  const reconciliation = getCiStateroomReconciliationFromDom();
   const sumEl = document.getElementById("ciStateroomSum");
-  if (sumEl) sumEl.textContent = String(sum);
-  const totalRooms = Number(document.getElementById("ciShipStaterooms")?.value);
+  if (sumEl) sumEl.textContent = String(reconciliation?.rawBreakdownSum ?? 0);
+
+  const deltaEl = document.getElementById("ciStateroomDelta");
+  if (deltaEl && reconciliation) {
+    const diff = reconciliation.difference;
+    deltaEl.textContent = diff == null ? "—" : diff === 0 ? "0" : diff > 0 ? `+${diff}` : String(diff);
+  }
+
+  const statusEl = document.getElementById("ciStateroomPublicStatus");
+  if (statusEl && reconciliation) statusEl.textContent = reconciliation.publicDisplayStatus || "—";
+
+  const noteEl = document.getElementById("ciStateroomPublicNote");
+  const cleanupEl = document.getElementById("ciStateroomCleanupNote");
+  if (reconciliation) {
+    const explanation = reconciliation.adminExplanation || {};
+    if (noteEl) noteEl.textContent = explanation.publicNote || "";
+    if (cleanupEl) {
+      if (explanation.cleanupNote) {
+        cleanupEl.textContent = explanation.cleanupNote;
+        cleanupEl.hidden = false;
+      } else {
+        cleanupEl.textContent = "";
+        cleanupEl.hidden = true;
+      }
+    }
+  }
+
+  const reconcile = typeof CiStateroomReconciliation !== "undefined" ? CiStateroomReconciliation : null;
+  const validation = reconcile
+    ? reconcile.validateStateroomSave({
+        stateroomCount: document.getElementById("ciShipStaterooms")?.value,
+        stateroomBreakdown: readCiStateroomBreakdownFromDom() || []
+      })
+    : { warnings: [] };
+
   const warning = document.getElementById("ciStateroomWarning");
-  if (!warning) return;
-  const showWarning = Number.isFinite(totalRooms) && totalRooms > 0 && sum > 0 && Math.abs(sum - totalRooms) > Math.max(5, totalRooms * 0.05);
-  warning.hidden = !showWarning;
+  if (warning) {
+    warning.textContent = validation.warnings.join(" ");
+    warning.hidden = !validation.warnings.length;
+  }
 }
 
 function rebuildCiStateroomDom(rows) {
@@ -8952,6 +9039,26 @@ async function persistCiShip({ quiet = false } = {}) {
         .map((row) => ({ label: row.label, count: row.count }))
     );
   }
+
+  const stateroomValidation = typeof CiStateroomReconciliation !== "undefined"
+    ? CiStateroomReconciliation.validateStateroomSave({
+        stateroomCount: payload.stateroom_count,
+        stateroomBreakdown: payload.stateroom_breakdown || []
+      })
+    : { errors: [] };
+  if (stateroomValidation.errors.length) {
+    const saveError = document.getElementById("ciStateroomSaveError");
+    if (saveError) {
+      saveError.textContent = stateroomValidation.errors.join(" ");
+      saveError.hidden = false;
+    }
+    revealCiSaveError(stateroomValidation.errors[0]);
+    if (!quiet) renderCiAdmin();
+    return false;
+  }
+  const saveError = document.getElementById("ciStateroomSaveError");
+  if (saveError) saveError.hidden = true;
+
   if (!existing) {
     payload.slug = slug;
     payload.source_name = "Admin";

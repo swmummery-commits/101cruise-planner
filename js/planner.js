@@ -5673,58 +5673,32 @@ function humaniseShipRoomLabel(key) {
     .trim();
 }
 
-function buildShipAccommodation(ship) {
+function buildShipStateroomReconciliation(ship) {
+  const reconcile = typeof CiStateroomReconciliation !== "undefined" ? CiStateroomReconciliation : null;
+  if (!reconcile) {
+    return {
+      status: "invalid",
+      authoritativeTotal: ship?.stateroom_count ?? null,
+      rawBreakdownSum: 0,
+      renderedBreakdownSum: 0,
+      difference: null,
+      renderedCategories: [],
+      omittedOverlappingCategories: [],
+      addedOtherCount: 0,
+      canRenderDonut: false,
+      publicMessage: "Detailed room-type mix unavailable"
+    };
+  }
+  return reconcile.reconcileStateroomDisplay({
+    stateroomCount: ship?.stateroom_count,
+    stateroomBreakdown: ship?.stateroom_breakdown,
+    legacyBreakdown: ship?.stateroom_types || ship?.cabin_type_summary || null
+  });
+}
+
+function buildShipAccommodationFromReconciliation(reconciliation) {
   const colors = SHIP_ROOM_COLORS;
-  const rooms = [];
-
-  const pushRoom = (label, value) => {
-    const text = String(label || "").trim();
-    if (!text) return;
-    if (value === null || value === undefined || value === "") return;
-    const number = Number(value);
-    if (!Number.isFinite(number)) return;
-    if (number <= 0) return;
-    rooms.push({ label: text, value: number });
-  };
-
-  const breakdown = ship?.stateroom_breakdown;
-  if (Array.isArray(breakdown)) {
-    breakdown.forEach((entry) => {
-      if (!entry || typeof entry !== "object") return;
-      const label = entry.label || entry.name || entry.type || entry.stateroom_type;
-      const value = entry.value ?? entry.count ?? entry.quantity;
-      pushRoom(label, value);
-    });
-  } else if (breakdown && typeof breakdown === "object") {
-    Object.entries(breakdown).forEach(([key, value]) => {
-      pushRoom(humaniseShipRoomLabel(key), value);
-    });
-  }
-
-  const typeSource = ship?.stateroom_types || ship?.cabin_type_summary;
-  if (!rooms.length && Array.isArray(typeSource)) {
-    typeSource.forEach((entry) => {
-      if (typeof entry === "string") return;
-      if (!entry || typeof entry !== "object") return;
-      const label = entry.label || entry.name || entry.type;
-      const value = entry.value ?? entry.count ?? entry.quantity;
-      pushRoom(label, value);
-    });
-  } else if (!rooms.length && typeSource && typeof typeSource === "object") {
-    // Support Base44 object shape and custom[] entries.
-    Object.entries(typeSource).forEach(([key, value]) => {
-      if (key === "custom" && Array.isArray(value)) {
-        value.forEach((entry) => {
-          if (!entry || typeof entry !== "object") return;
-          pushRoom(entry.name || entry.label, entry.count ?? entry.value);
-        });
-        return;
-      }
-      pushRoom(humaniseShipRoomLabel(key), value);
-    });
-  }
-
-  return sortShipRoomCategories(rooms).map((room, index) => ({
+  return (reconciliation?.renderedCategories || []).map((room, index) => ({
     ...room,
     color: colors[index % colors.length]
   }));
@@ -5803,8 +5777,9 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
   const passengers = ship?.passenger_capacity;
   const crew = ship?.crew_count;
   const decks = ship?.deck_count;
-  const staterooms = ship?.stateroom_count;
-  const accommodation = buildShipAccommodation(ship);
+  const stateroomReconciliation = buildShipStateroomReconciliation(ship);
+  const staterooms = stateroomReconciliation.authoritativeTotal;
+  const accommodation = buildShipAccommodationFromReconciliation(stateroomReconciliation);
   const ciFac = typeof CiShipFacilities !== "undefined" ? CiShipFacilities : null;
 
   let crewRatio = SHIP_NOT_LISTED;
@@ -5844,6 +5819,7 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
       { label: "Crew", value: formatShipNumber(crew) }
     ],
     accommodation,
+    stateroomReconciliation,
     scaleFacts: [
       { label: "Total decks", value: formatShipNumber(decks) },
       { label: "Max guests", value: formatShipNumber(passengers) },
@@ -5890,7 +5866,9 @@ async function fetchShipFromBase44(shipName, cruiseLine = "") {
 function renderShipSummaryCard(ship) {
   const stats = [
     { key: "passengers", label: "Guests", value: ship.summary.passengers },
-    { key: "staterooms", label: "Staterooms", value: ship.summary.staterooms },
+    ...(ship.summary.staterooms != null && ship.summary.staterooms !== ""
+      ? [{ key: "staterooms", label: "Staterooms", value: ship.summary.staterooms }]
+      : []),
     { key: "crew", label: "Crew", value: ship.summary.crew },
     { key: "built", label: "Built", value: ship.summary.built },
     { key: "refurbished", label: "Refurbished", value: ship.summary.refurbished }
@@ -6055,18 +6033,36 @@ function renderShipExclusiveAreas(areas) {
   `;
 }
 
-function renderShipAccommodationChart(rooms) {
-  if (!rooms.length) {
-    return `<p class="planner-muted ship-empty-note">Room type details are not listed for this ship yet.</p>`;
+function renderShipRoomTypesUnavailable(message, detail) {
+  return `
+    <div class="ship-room-types-unavailable">
+      <p class="ship-room-types-unavailable-title">${escapeHtml(message || "Detailed room-type mix unavailable")}</p>
+      <p class="ship-room-types-unavailable-detail">${escapeHtml(
+        detail || "The available room categories do not currently reconcile with the ship\u2019s published stateroom total."
+      )}</p>
+    </div>
+  `;
+}
+
+function renderShipAccommodationChart(reconciliation, rooms) {
+  if (!reconciliation?.canRenderDonut || !rooms.length) {
+    return renderShipRoomTypesUnavailable(
+      reconciliation?.publicMessage || "Detailed room-type mix unavailable",
+      reconciliation?.status === "no_breakdown"
+        ? "Room-type categories have not been listed for this ship yet."
+        : undefined
+    );
   }
 
-  const total = rooms.reduce((sum, room) => sum + Number(room.value || 0), 0) || 1;
+  const showCentreTotal = reconciliation.centreMode === "total";
+  const categorySum = rooms.reduce((sum, room) => sum + Number(room.value || 0), 0) || 1;
+  const denominator = showCentreTotal ? Number(reconciliation.authoritativeTotal) : categorySum;
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   let offset = 0;
 
   const segments = rooms.map(room => {
-    const portion = Number(room.value || 0) / total;
+    const portion = Number(room.value || 0) / denominator;
     const length = circumference * portion;
     const segment = {
       ...room,
@@ -6076,6 +6072,10 @@ function renderShipAccommodationChart(rooms) {
     offset += length;
     return segment;
   });
+
+  const centreHtml = showCentreTotal
+    ? `<strong>${formatShipStatValue(reconciliation.authoritativeTotal)}</strong><span>Staterooms</span>`
+    : "";
 
   return `
     <div class="ship-accommodation-layout">
@@ -6095,10 +6095,7 @@ function renderShipAccommodationChart(rooms) {
             ></circle>
           `).join("")}
         </svg>
-        <div class="ship-donut-centre">
-          <strong>${formatShipStatValue(total)}</strong>
-          <span>Staterooms</span>
-        </div>
+        <div class="ship-donut-centre${showCentreTotal ? "" : " is-blank"}">${centreHtml}</div>
       </div>
       <ul class="ship-room-legend">
         ${rooms.map(room => `
@@ -6331,7 +6328,7 @@ async function renderTheShip() {
 
           <section class="ship-section-card ship-info-card">
             <h3>Room Types</h3>
-            ${renderShipAccommodationChart(ship.accommodation)}
+            ${renderShipAccommodationChart(ship.stateroomReconciliation, ship.accommodation)}
           </section>
 
           <section class="ship-section-card ship-info-card">

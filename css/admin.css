@@ -1726,6 +1726,65 @@ body.admin-loading-active {
   display: none;
 }
 
+.ci-stateroom-reconcile-panel {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.ci-stateroom-reconcile-panel h5 {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+}
+
+.ci-stateroom-reconcile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px 14px;
+  margin-bottom: 8px;
+}
+
+.ci-stateroom-reconcile-grid dt {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #667085;
+}
+
+.ci-stateroom-reconcile-grid dd {
+  margin: 2px 0 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.ci-stateroom-reconcile-status {
+  margin: 0 0 6px;
+  font-size: 0.88rem;
+  color: #344054;
+}
+
+.ci-stateroom-reconcile-note {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #667085;
+  line-height: 1.45;
+}
+
+.ci-stateroom-save-error {
+  margin: 8px 0 0;
+  color: #b42318;
+  background: #fef3f2;
+  border: 1px solid #fecdca;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+}
+
+.ci-stateroom-save-error[hidden] {
+  display: none;
+}
+
 @media (max-width: 720px) {
   .ci-stateroom-row {
     grid-template-columns: 1fr;

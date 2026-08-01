@@ -7778,6 +7778,23 @@ input[type="radio"] {
   margin: 8px 0 0;
 }
 
+.ship-room-types-unavailable {
+  margin: 10px 0 0;
+}
+
+.ship-room-types-unavailable-title {
+  margin: 0 0 6px;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.ship-room-types-unavailable-detail {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .ship-info-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -7915,6 +7932,11 @@ input[type="radio"] {
   margin-top: 2px;
   color: #7b8491;
   font-size: 0.7rem;
+}
+
+.ship-donut-centre.is-blank {
+  display: grid;
+  place-content: center;
 }
 
 .ship-room-legend {

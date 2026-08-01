@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stateroom Reconciliation — Visual Review v1</title>
+  <link rel="stylesheet" href="../../css/planner.css">
+  <style>
+    body.vr-body { margin: 0; background: #eef1f5; color: #111827; font-family: "Helvetica Neue", Arial, sans-serif; }
+    .vr-page { padding: 24px; max-width: 1180px; margin: 0 auto; }
+    .vr-scenario { margin-bottom: 28px; }
+    .vr-label { margin: 0 0 10px; font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase; color: #667085; }
+    .vr-capture { background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08); }
+    .vr-capture.mobile { max-width: 390px; padding: 14px; }
+    .ship-info-grid { margin-top: 0; border-top: 0; padding-top: 0; }
+    .ship-summary-card { margin-bottom: 16px; }
+    .vr-admin-wrap { max-width: 760px; }
+    .ci-stateroom-section { margin: 0; }
+    .ci-stateroom-reconcile-panel, .ci-stateroom-warning { margin-top: 12px; }
+    .ci-stateroom-warning { color: #8a5a00; background: #fff7e8; border: 1px solid #f0d9a8; border-radius: 8px; padding: 8px 10px; font-size: 0.88rem; }
+    .ci-stateroom-reconcile-panel { padding: 10px 12px; border: 1px solid #e8edf3; border-radius: 10px; background: #f8fafc; }
+    .ci-stateroom-reconcile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; }
+    .ci-stateroom-reconcile-grid dt { margin: 0; font-size: 0.78rem; color: #667085; }
+    .ci-stateroom-reconcile-grid dd { margin: 2px 0 0; font-weight: 600; }
+    .ci-stateroom-reconcile-status, .ci-stateroom-reconcile-note { font-size: 0.84rem; color: #667085; line-height: 1.45; }
+    .admin-small { font-size: 0.84rem; color: #667085; }
+  </style>
+</head>
+<body class="vr-body">
+  <div id="millennium-all-categories-blank-centre" class="vr-page vr-scenario">
+    <p class="vr-label">Millennium — all categories, blank centre</p>
+    <div class="vr-capture" id="capture-millennium"></div>
+  </div>
+
+  <div id="exact-match-total-centre" class="vr-page vr-scenario">
+    <p class="vr-label">Exact match — total centre</p>
+    <div class="vr-capture" id="capture-exact"></div>
+  </div>
+
+  <div id="below-total-blank-centre" class="vr-page vr-scenario">
+    <p class="vr-label">Below total — blank centre</p>
+    <div class="vr-capture" id="capture-below"></div>
+  </div>
+
+  <div id="admin-mismatch-public-behaviour" class="vr-page vr-scenario">
+    <p class="vr-label">Admin mismatch public behaviour</p>
+    <div class="vr-capture vr-admin-wrap" id="capture-admin"></div>
+  </div>
+
+  <div id="mobile-millennium-390" class="vr-page vr-scenario">
+    <p class="vr-label">Mobile millennium 390</p>
+    <div class="vr-capture mobile" id="capture-mobile"></div>
+  </div>
+
+  <script src="../../js/ci-ship-stateroom-reconciliation.js"></script>
+  <script>
+    const SHIP_ROOM_COLORS = ["#0f766e", "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#ca8a04", "#64748b"];
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    function formatShipStatValue(value) {
+      if (value == null || value === "") return "Not listed";
+      return new Intl.NumberFormat("en-AU").format(Math.round(Number(value)));
+    }
+
+    function renderShipAccommodationChart(reconciliation, rooms) {
+      const showCentreTotal = reconciliation.centreMode === "total";
+      const categorySum = rooms.reduce((sum, room) => sum + Number(room.value || 0), 0) || 1;
+      const denominator = showCentreTotal ? Number(reconciliation.authoritativeTotal) : categorySum;
+      const radius = 54;
+      const circumference = 2 * Math.PI * radius;
+      let offset = 0;
+      const segments = rooms.map((room) => {
+        const portion = Number(room.value || 0) / denominator;
+        const length = circumference * portion;
+        const segment = { ...room, dasharray: `${length} ${circumference - length}`, dashoffset: -offset };
+        offset += length;
+        return segment;
+      });
+      const centreHtml = showCentreTotal
+        ? `<strong>${formatShipStatValue(reconciliation.authoritativeTotal)}</strong><span>Staterooms</span>`
+        : "";
+      return `
+        <div class="ship-accommodation-layout">
+          <div class="ship-donut-wrap" aria-hidden="true">
+            <svg class="ship-donut-chart" viewBox="0 0 140 140" role="presentation">
+              <circle class="ship-donut-track" cx="70" cy="70" r="${radius}"></circle>
+              ${segments.map((segment, index) => `
+                <circle class="ship-donut-segment" cx="70" cy="70" r="${radius}" stroke="${escapeHtml(segment.color)}"
+                  stroke-dasharray="${segment.dasharray}" stroke-dashoffset="${segment.dashoffset}"
+                  style="--ship-donut-delay:${0.3 + index * 0.55}s"></circle>`).join("")}
+            </svg>
+            <div class="ship-donut-centre${showCentreTotal ? "" : " is-blank"}">${centreHtml}</div>
+          </div>
+          <ul class="ship-room-legend">
+            ${rooms.map((room) => `
+              <li>
+                <span class="ship-room-swatch" style="background:${escapeHtml(room.color)}"></span>
+                <span class="ship-room-label">${escapeHtml(room.label)}</span>
+                <strong>${formatShipStatValue(room.value)}</strong>
+              </li>`).join("")}
+          </ul>
+        </div>`;
+    }
+
+    function buildRooms(reconciliation) {
+      return (reconciliation.renderedCategories || []).map((room, index) => ({
+        ...room,
+        color: SHIP_ROOM_COLORS[index % SHIP_ROOM_COLORS.length]
+      }));
+    }
+
+    function renderSummary(total) {
+      return `
+        <section class="ship-summary-card" aria-label="Ship summary">
+          <div class="ship-summary-grid">
+            <div class="ship-summary-stat">
+              <div class="ship-summary-copy">
+                <strong class="ship-summary-value is-static">${escapeHtml(formatShipStatValue(total))}</strong>
+                <span class="ship-summary-label">Staterooms</span>
+              </div>
+            </div>
+          </div>
+        </section>`;
+    }
+
+    function renderRoomTypesCard(reconciliation) {
+      return `
+        <div class="ship-info-grid">
+          <section class="ship-section-card ship-info-card">
+            <h3>Room Types</h3>
+            ${renderShipAccommodationChart(reconciliation, buildRooms(reconciliation))}
+          </section>
+        </div>`;
+    }
+
+    function renderAdminPanel(reconciliation) {
+      const diff = reconciliation.difference > 0 ? `+${reconciliation.difference}` : String(reconciliation.difference);
+      return `
+        <div class="ci-stateroom-section">
+          <h4>Stateroom Breakdown</h4>
+          <p class="admin-small">Celebrity Millennium — public display reconciliation preview.</p>
+          <div class="ci-stateroom-reconcile-panel">
+            <h5>Public display reconciliation</h5>
+            <dl class="ci-stateroom-reconcile-grid">
+              <div><dt>Published stateroom total</dt><dd>${reconciliation.authoritativeTotal}</dd></div>
+              <div><dt>Raw category sum</dt><dd>${reconciliation.rawBreakdownSum}</dd></div>
+              <div><dt>Difference</dt><dd>${diff}</dd></div>
+              <div><dt>Public display status</dt><dd>${escapeHtml(reconciliation.publicDisplayStatus)}</dd></div>
+            </dl>
+            <p class="ci-stateroom-reconcile-status">${escapeHtml(reconciliation.adminExplanation.publicNote)}</p>
+            <p class="ci-stateroom-reconcile-note">${escapeHtml(reconciliation.adminExplanation.cleanupNote)}</p>
+          </div>
+          <p class="ci-stateroom-warning">Category sum exceeds the published stateroom total. Suites and Owners Suites are stored together — review for overlap. Published total and category sum differ by +25.</p>
+        </div>`;
+    }
+
+    const millennium = CiStateroomReconciliation.reconcileStateroomDisplay({
+      stateroomCount: 1079,
+      stateroomBreakdown: [
+        { label: "Inside", count: 212 },
+        { label: "Oceanview", count: 244 },
+        { label: "Balcony", count: 573 },
+        { label: "Suites", count: 50 },
+        { label: "Owners Suites", count: 25 }
+      ]
+    });
+
+    const exact = CiStateroomReconciliation.reconcileStateroomDisplay({
+      stateroomCount: 1691,
+      stateroomBreakdown: [
+        { label: "Inside", count: 400 },
+        { label: "Balcony", count: 1291 }
+      ]
+    });
+
+    const below = CiStateroomReconciliation.reconcileStateroomDisplay({
+      stateroomCount: 1000,
+      stateroomBreakdown: [{ label: "Balcony", count: 940 }]
+    });
+
+    document.getElementById("capture-millennium").innerHTML = renderSummary(1079) + renderRoomTypesCard(millennium);
+    document.getElementById("capture-exact").innerHTML = renderSummary(1691) + renderRoomTypesCard(exact);
+    document.getElementById("capture-below").innerHTML = renderSummary(1000) + renderRoomTypesCard(below);
+    document.getElementById("capture-admin").innerHTML = renderAdminPanel(millennium);
+    document.getElementById("capture-mobile").innerHTML = renderSummary(1079) + renderRoomTypesCard(millennium);
+  </script>
+</body>
+</html>
