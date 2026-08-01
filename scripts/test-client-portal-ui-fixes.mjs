@@ -35,6 +35,18 @@ const buttonIdx = plannerSrc.indexOf("ship-deck-button", deckIdx);
 const mutedAfter = plannerSrc.indexOf("planner-muted", buttonIdx);
 assert(deckIdx > -1 && buttonIdx > deckIdx, "Deck Plans button follows heading");
 assert(mutedAfter > buttonIdx, "explanatory copy follows the Deck Plans button");
+assert(
+  /function renderShipDeckPlansSubsection/.test(plannerSrc),
+  "deck plans rendered via shared subsection helper"
+);
+assert(
+  !/ship-section-card ship-deck-card/.test(plannerSrc),
+  "deck plans no longer uses standalone full-width card section"
+);
+assert(
+  /grid-template-areas:[\s\S]*"exclusive"[\s\S]*"specialty"[\s\S]*"deckplans"/.test(cssSrc),
+  "mobile stacks Exclusive Areas, Specialty Features, then Deck Plans"
+);
 
 assert(/scheduleScrollPlannerToTop\(\)/.test(plannerSrc), "Documents path schedules scroll-to-top");
 assert(

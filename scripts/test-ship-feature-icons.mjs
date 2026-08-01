@@ -180,7 +180,23 @@ assert.equal(applied.facilities.specialty_features.length, 0);
 
 // Customer + admin wiring
 assert.match(plannerJs, /renderShipFeatureExperiences/);
+assert.match(plannerJs, /renderShipDeckPlansSubsection/);
 assert.match(plannerJs, /ship-feature-list/);
+assert.match(plannerJs, /ship-feature-column--exclusive/);
+assert.match(plannerJs, /ship-deck-subsection/);
+assert.equal(
+  (plannerJs.match(/function renderShipDeckPlansSubsection/g) || []).length,
+  1,
+  "single deck plans renderer"
+);
+assert.doesNotMatch(
+  plannerJs,
+  /renderShipFeatureExperiences[\s\S]*?<section class="ship-section-card ship-deck-card/,
+  "no separate full-width deck plans section"
+);
+assert.match(plannerCss, /grid-template-areas:[\s\S]*"exclusive divider specialty"/);
+assert.match(plannerCss, /"deckplans divider specialty"/);
+assert.match(plannerCss, /\.ship-deck-subsection[\s\S]*border-top/);
 assert.match(adminJs, /CiShipFeatureAdmin/);
 assert.match(adminJs, /Add specialty feature/);
 

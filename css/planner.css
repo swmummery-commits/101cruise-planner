@@ -8105,8 +8105,19 @@ input[type="radio"] {
 .ship-feature-experiences-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  grid-template-areas:
+    "exclusive divider specialty"
+    "deckplans divider specialty";
   gap: 28px 32px;
   align-items: start;
+}
+
+.ship-feature-column--exclusive {
+  grid-area: exclusive;
+}
+
+.ship-feature-column--specialty {
+  grid-area: specialty;
 }
 
 .ship-feature-column h3 {
@@ -8114,9 +8125,29 @@ input[type="radio"] {
 }
 
 .ship-feature-column-divider {
+  grid-area: divider;
   width: 1px;
   align-self: stretch;
   background: rgba(17, 24, 39, 0.08);
+}
+
+.ship-deck-subsection {
+  grid-area: deckplans;
+  min-width: 0;
+  margin-top: 6px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.ship-feature-experiences-grid--deck-only {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "deckplans";
+}
+
+.ship-feature-experiences-grid--deck-only .ship-deck-subsection {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
 }
 
 .ship-feature-list {
@@ -8180,19 +8211,29 @@ input[type="radio"] {
 @media (max-width: 760px) {
   .ship-feature-experiences-grid {
     grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "exclusive"
+      "divider"
+      "specialty"
+      "deckplans";
     gap: 24px;
+  }
+
+  .ship-feature-experiences-grid--deck-only {
+    grid-template-areas: "deckplans";
   }
 
   .ship-feature-column-divider {
     width: 100%;
     height: 1px;
   }
-}
 
-.ship-deck-card {
-  display: block;
-  padding: 22px 0 0;
-  border-top: 1px solid rgba(17, 24, 39, 0.06);
+  .ship-deck-subsection {
+    margin-top: 0;
+    padding-top: 24px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
 }
 
 .ship-deck-copy {
@@ -8200,6 +8241,7 @@ input[type="radio"] {
   display: grid;
   gap: 12px;
   justify-items: start;
+  max-width: 100%;
 }
 
 .ship-deck-copy h3 {
@@ -8217,6 +8259,8 @@ input[type="radio"] {
   flex: 0 0 auto;
   margin: 0;
   text-decoration: none;
+  max-width: 100%;
+  white-space: normal;
 }
 
 .ship-deck-button--external {
@@ -8426,14 +8470,8 @@ input[type="radio"] {
     gap: 14px 10px;
   }
 
-  .ship-deck-card {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .ship-deck-button {
-    width: 100%;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .ship-accommodation-layout {

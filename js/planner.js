@@ -6266,10 +6266,11 @@ function renderShipFeatureListItem(item) {
     </li>`;
 }
 
-function renderShipFeatureColumn(title, intro, items) {
+function renderShipFeatureColumn(title, intro, items, modifierClass) {
   const list = Array.isArray(items) ? items.filter((item) => item && (item.name || item.label || typeof item === "string")) : [];
+  const columnClass = modifierClass ? `ship-feature-column ${modifierClass}` : "ship-feature-column";
   return `
-    <div class="ship-feature-column">
+    <div class="${columnClass}">
       <h3>${escapeHtml(title)}</h3>
       <p class="planner-muted ship-section-intro">${escapeHtml(intro)}</p>
       ${list.length
@@ -6278,24 +6279,63 @@ function renderShipFeatureColumn(title, intro, items) {
     </div>`;
 }
 
-function renderShipFeatureExperiences(exclusiveAreas, specialtyFeatures) {
+function renderShipDeckPlansSubsection(ship) {
+  return `
+    <div class="ship-deck-subsection ship-reveal-block" style="--ship-delay:420ms">
+      <div class="ship-deck-copy">
+        <h3>Deck Plans</h3>
+        ${
+          ship?.deckPlanUrl
+            ? `<a class="planner-button secondary ship-deck-button ship-deck-button--external" href="${escapeHtml(
+                ship.deckPlanUrl
+              )}" target="_blank" rel="noopener noreferrer">
+          <span class="ship-deck-button-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/></svg>
+          </span>
+          <span>Explore ${escapeHtml(String(ship.name || "Ship").trim())} Deck Plans</span>
+          <span class="ship-deck-external-icon" aria-hidden="true" title="Opens in a new tab">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h6"/></svg>
+          </span>
+          <span class="sr-only"> (opens in a new tab)</span>
+        </a>
+        <p class="planner-muted">Explore the official deck plans and get to know every level before you sail.</p>`
+            : `<p class="planner-muted">Deck plans are not yet available for this ship.</p>`
+        }
+      </div>
+    </div>`;
+}
+
+function renderShipFeatureExperiences(exclusiveAreas, specialtyFeatures, ship) {
   const hasExclusive = Array.isArray(exclusiveAreas) && exclusiveAreas.length > 0;
   const hasSpecialty = Array.isArray(specialtyFeatures) && specialtyFeatures.length > 0;
-  if (!hasExclusive && !hasSpecialty) return "";
+  const deckPlansHtml = renderShipDeckPlansSubsection(ship || {});
+
+  if (!hasExclusive && !hasSpecialty) {
+    return `
+      <section class="ship-section-card ship-feature-experiences ship-reveal-block" style="--ship-delay:280ms">
+        <div class="ship-feature-experiences-grid ship-feature-experiences-grid--deck-only">
+          ${deckPlansHtml}
+        </div>
+      </section>`;
+  }
+
   return `
     <section class="ship-section-card ship-feature-experiences ship-reveal-block" style="--ship-delay:280ms">
       <div class="ship-feature-experiences-grid">
         ${renderShipFeatureColumn(
           "Exclusive Areas",
           "Quiet corners and elevated spaces made for your voyage.",
-          exclusiveAreas
+          exclusiveAreas,
+          "ship-feature-column--exclusive"
         )}
         <div class="ship-feature-column-divider" aria-hidden="true"></div>
         ${renderShipFeatureColumn(
           "Specialty Features",
           "Signature experiences unique to this ship.",
-          specialtyFeatures
+          specialtyFeatures,
+          "ship-feature-column--specialty"
         )}
+        ${deckPlansHtml}
       </div>
     </section>`;
 }
@@ -6604,30 +6644,7 @@ async function renderTheShip() {
           </section>
         </div>
 
-        ${renderShipFeatureExperiences(ship.exclusiveAreas, ship.specialtyFeatures)}
-
-        <section class="ship-section-card ship-deck-card ship-reveal-block" style="--ship-delay:420ms">
-          <div class="ship-deck-copy">
-            <h3>Deck Plans</h3>
-            ${
-              ship.deckPlanUrl
-                ? `<a class="planner-button secondary ship-deck-button ship-deck-button--external" href="${escapeHtml(
-                    ship.deckPlanUrl
-                  )}" target="_blank" rel="noopener noreferrer">
-              <span class="ship-deck-button-icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4"/><path d="M8 3v4"/><path d="M3 11h18"/></svg>
-              </span>
-              <span>Explore ${escapeHtml(String(ship.name || "Ship").trim())} Deck Plans</span>
-              <span class="ship-deck-external-icon" aria-hidden="true" title="Opens in a new tab">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h6"/></svg>
-              </span>
-              <span class="sr-only"> (opens in a new tab)</span>
-            </a>
-            <p class="planner-muted">Explore the official deck plans and get to know every level before you sail.</p>`
-                : `<p class="planner-muted">Deck plans are not yet available for this ship.</p>`
-            }
-          </div>
-        </section>
+        ${renderShipFeatureExperiences(ship.exclusiveAreas, ship.specialtyFeatures, ship)}
       </div>
     </div>
   `;
