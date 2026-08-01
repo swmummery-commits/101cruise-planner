@@ -259,6 +259,26 @@ assert.match(
   adminTplJs,
   /data-action="confirm-apply"\$\{noTargets \|\| noChanges \|\| needsSave \? " disabled aria-disabled=\\"true\\"" : " disabled"\}/
 );
+assert.ok(adminTplJs.includes("ciClassTplImportClass"));
+assert.ok(adminTplJs.includes("import-class-selected"));
+assert.ok(adminTplJs.includes("mergeExclusiveAreaRows"));
+
+// CLASS IMPORT MERGE
+{
+  const mergedEa = ClassTpl.mergeExclusiveAreaRows(
+    [{ name: "The Retreat", description: "Suite", showDescription: true }],
+    [{ name: "Blu", description: "AquaClass", showDescription: true }, { name: "The Retreat", description: "Dup", showDescription: false }]
+  );
+  assert.equal(mergedEa.length, 2);
+  assert.equal(mergedEa[1].name, "Blu");
+  const mergedSf = ClassTpl.mergeSpecialtyRows(
+    [{ label: "Magic Carpet" }],
+    [{ label: "Eden" }, { label: "magic carpet" }]
+  );
+  assert.equal(mergedSf.length, 2);
+  assert.equal(mergedSf[1].label, "Eden");
+}
+
 assert.ok(adminTplJs.includes("will be replaced"));
 assert.ok(adminHtml.includes("ci-ship-class-facilities-replace.js"));
 assert.ok(!adminHtml.includes("ci-ship-class-facilities-merge.js"));

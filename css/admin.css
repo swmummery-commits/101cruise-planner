@@ -1471,6 +1471,19 @@ body.admin-loading-active {
   min-width: 0;
 }
 
+.ci-class-tpl-modal .ci-class-tpl-import-class-panel {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.ci-class-tpl-modal .ci-class-tpl-import-class-panel .ci-item-copy-source-list {
+  margin-bottom: 8px;
+}
+
+.ci-class-tpl-modal .ci-class-tpl-import-class {
+  margin-bottom: 14px;
+}
+
 .ci-class-tpl-modal .ci-class-tpl-ea-card {
   width: 100%;
 }

@@ -188,10 +188,74 @@
     }).join(", ");
   }
 
+  function renderClassImportPanel(sourceClassName) {
+    const api = tplApi();
+    const fac = facApi();
+    if (!api || !fac || !modalContext || !trim(sourceClassName)) {
+      return `<p class="admin-small">Choose another class to preview items you can copy into this template.</p>`;
+    }
+    const resolved = api.resolveClassTemplatePayload({
+      templates: getTemplates(),
+      ships: getShips(),
+      cruiseLineId: modalContext.cruiseLineId,
+      className: sourceClassName
+    });
+    const eaRows = fac.loadExclusiveAreasForAdmin(resolved.payload.exclusive_areas);
+    const sfRows = fac.loadSpecialtyFeaturesForAdmin(resolved.payload.specialty_features);
+    if (!eaRows.length && !sfRows.length) {
+      return `<p class="admin-small">No Exclusive Areas or Specialty Features found for <strong>${esc(sourceClassName)}</strong>.</p>`;
+    }
+    const sourceNote = resolved.source === "saved"
+      ? `Using saved template for ${esc(sourceClassName)}.`
+      : resolved.source === "ship"
+        ? `Using live facilities from ${esc(resolved.shipName)} (no saved template for ${esc(sourceClassName)} yet).`
+        : "";
+    const eaItems = eaRows.map(function (row, index) {
+      return `
+        <label class="ci-check-control ci-item-copy-source-item">
+          <input type="checkbox" class="ci-class-tpl-import-ea" value="${index}" checked>
+          <span class="ci-item-copy-source-item-body"><strong>${esc(row.name)}</strong>${row.description ? `<span class="ci-item-copy-desc-preview">${esc(row.description)}</span>` : ""}</span>
+        </label>`;
+    }).join("");
+    const sfItems = sfRows.map(function (row, index) {
+      return `
+        <label class="ci-check-control ci-item-copy-source-item">
+          <input type="checkbox" class="ci-class-tpl-import-sf" value="${index}" checked>
+          <span class="ci-item-copy-source-item-body"><strong>${esc(row.label)}</strong></span>
+        </label>`;
+    }).join("");
+    modalContext.classImportSource = {
+      className: sourceClassName,
+      eaRows: eaRows,
+      sfRows: sfRows
+    };
+    return `
+      ${sourceNote ? `<p class="admin-small">${sourceNote}</p>` : ""}
+      ${eaRows.length ? `
+        <p class="admin-small"><strong>Exclusive Areas</strong></p>
+        <div class="ci-item-copy-source-list">${eaItems}</div>` : ""}
+      ${sfRows.length ? `
+        <p class="admin-small"><strong>Specialty Features</strong></p>
+        <div class="ci-item-copy-source-list">${sfItems}</div>` : ""}
+      <div class="admin-actions-row">
+        <button type="button" class="admin-button secondary small" data-action="import-class-selected">Import selected</button>
+      </div>`;
+  }
+
   function renderEditBody(vm) {
+    const api = tplApi();
     const importOptions = vm.classShips.map(function (ship) {
       return `<option value="${esc(ship.id)}">${esc(ship.name)}</option>`;
     }).join("");
+    const otherClasses = api
+      ? api.listDistinctClassesForLine(getShips(), modalContext.cruiseLineId).filter(function (name) {
+        return !api.shipClassesMatch(name, vm.className);
+      })
+      : [];
+    const classImportOptions = otherClasses.map(function (className) {
+      return `<option value="${esc(className)}">${esc(className)}</option>`;
+    }).join("");
+    const selectedImportClass = modalContext.classImportClass || "";
     return `
       <div class="ci-class-tpl-meta">
         <p class="admin-small"><strong>Cruise line:</strong> ${esc(vm.line && vm.line.name || "—")}</p>
@@ -208,6 +272,15 @@
         </label>
         <button type="button" class="admin-button secondary small" data-action="import-ship">Import EA + SF</button>
       </div>
+      <div class="ci-class-tpl-import-class ci-class-tpl-import-row">
+        <label class="admin-small">Import from class
+          <select id="ciClassTplImportClass">
+            <option value="">Choose a class…</option>
+            ${classImportOptions}
+          </select>
+        </label>
+        <div id="ciClassTplImportClassPanel" class="ci-class-tpl-import-class-panel">${selectedImportClass ? renderClassImportPanel(selectedImportClass) : `<p class="admin-small">Copy selected items from another class template into this editor.</p>`}</div>
+      </div>
       <section class="ci-item-copy-section">
         <div class="ci-item-copy-section-head">
           <h5>Exclusive Areas</h5>
@@ -222,7 +295,7 @@
         </div>
         <div id="ciClassTplSpecialtyList"></div>
       </section>
-      <p class="admin-small ci-item-copy-preserve-note">Applying replaces the complete Exclusive Areas and Specialty Features sections on each active ship in this class. Scalar facilities (pools, spa, etc.) are never changed. Import only prefills the editor — it does not save or apply.</p>`;
+      <p class="admin-small ci-item-copy-preserve-note">Applying replaces the complete Exclusive Areas and Specialty Features sections on each active ship in this class. Scalar facilities (pools, spa, etc.) are never changed. Import only prefills the editor — it does not save or apply. Import from class adds selected items without removing what is already in the editor.</p>`;
   }
 
   function renderConfirmBody(vm) {
@@ -352,6 +425,10 @@
         } else {
           loadEditorFromPayload(savedTemplatePayload());
           modalContext.editorLoaded = true;
+        }
+        const classSelect = document.getElementById("ciClassTplImportClass");
+        if (classSelect && modalContext.classImportClass) {
+          classSelect.value = modalContext.classImportClass;
         }
       }
       bindModalEvents();
@@ -509,6 +586,14 @@
       modalContext.editorLoaded = true;
       persistEditorDraft();
     });
+    overlay.querySelector("#ciClassTplImportClass")?.addEventListener("change", function () {
+      modalContext.classImportClass = trim(this.value);
+      const panel = document.getElementById("ciClassTplImportClassPanel");
+      if (!panel) return;
+      panel.innerHTML = modalContext.classImportClass
+        ? renderClassImportPanel(modalContext.classImportClass)
+        : `<p class="admin-small">Copy selected items from another class template into this editor.</p>`;
+    });
     overlay.querySelector("[data-action='ea-add']")?.addEventListener("click", function () {
       const rows = readExclusiveRows();
       rows.push({ name: "", description: "", showDescription: false });
@@ -518,6 +603,29 @@
       const btn = event.target.closest("[data-action]");
       if (!btn) return;
       const action = btn.getAttribute("data-action");
+      if (action === "import-class-selected") {
+        const api = tplApi();
+        const source = modalContext.classImportSource;
+        if (!api || !source) return;
+        const eaIndexes = [...overlay.querySelectorAll(".ci-class-tpl-import-ea:checked")].map(function (el) {
+          return Number(el.value);
+        });
+        const sfIndexes = [...overlay.querySelectorAll(".ci-class-tpl-import-sf:checked")].map(function (el) {
+          return Number(el.value);
+        });
+        const selectedEa = eaIndexes.map(function (index) { return source.eaRows[index]; }).filter(Boolean);
+        const selectedSf = sfIndexes.map(function (index) { return source.sfRows[index]; }).filter(Boolean);
+        const mergedEa = api.mergeExclusiveAreaRows(readExclusiveRows().filter(function (row) { return trim(row.name); }), selectedEa);
+        const mergedSf = api.mergeSpecialtyRows(readSpecialtyRows().filter(function (row) { return trim(row.label); }), selectedSf);
+        rebuildExclusiveDom(mergedEa.length ? mergedEa : [{ name: "", description: "", showDescription: false }]);
+        rebuildSpecialtyDom(mergedSf.length ? mergedSf : [{ label: "" }]);
+        modalContext.editorLoaded = true;
+        persistEditorDraft();
+        if (window.setCiAutosaveStatus) {
+          window.setCiAutosaveStatus(`Imported ${selectedEa.length} area(s) and ${selectedSf.length} feature(s) from ${source.className || "class"}`, "saved");
+        }
+        return;
+      }
       const index = Number(btn.getAttribute("data-index"));
       if (action === "ea-remove") {
         rebuildExclusiveDom(readExclusiveRows().filter(function (_row, i) { return i !== index; }));
@@ -585,7 +693,9 @@
       step: STEP_EDIT,
       editorLoaded: false,
       draftPayload: { exclusive_areas: [], specialty_features: [] },
-      lastResult: null
+      lastResult: null,
+      classImportClass: "",
+      classImportSource: null
     };
     const overlay = document.createElement("div");
     overlay.id = "ciClassFacilitiesTemplateOverlay";

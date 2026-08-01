@@ -299,6 +299,87 @@
     return !replace.templatesPayloadEqual(draft, templatePayloadFromRecord(savedRecord));
   }
 
+  function templateRecordForClass(templates, cruiseLineId, className) {
+    const key = normalizeClassKey(className);
+    return (Array.isArray(templates) ? templates : []).find(function (row) {
+      return row.cruise_line_id === cruiseLineId && templateClassKey(row) === key;
+    }) || null;
+  }
+
+  function resolveClassTemplatePayload({ templates, ships, cruiseLineId, className }) {
+    const saved = templateRecordForClass(templates, cruiseLineId, className);
+    if (saved) {
+      return {
+        payload: templatePayloadFromRecord(saved),
+        source: "saved",
+        className: className
+      };
+    }
+    const classShips = listShipsInClass(ships, cruiseLineId, className, { activeOnly: false });
+    const ship = classShips[0];
+    if (ship) {
+      return {
+        payload: extractTemplateFromShip(ship),
+        source: "ship",
+        className: className,
+        shipName: ship.name || "Ship"
+      };
+    }
+    return {
+      payload: { exclusive_areas: [], specialty_features: [] },
+      source: "none",
+      className: className
+    };
+  }
+
+  function normalizeExclusiveName(name) {
+    return trim(name).toLowerCase();
+  }
+
+  function normalizeSpecialtyLabel(label) {
+    return trim(label).toLowerCase();
+  }
+
+  function mergeExclusiveAreaRows(currentRows, incomingRows) {
+    const current = Array.isArray(currentRows) ? currentRows : [];
+    const incoming = Array.isArray(incomingRows) ? incomingRows : [];
+    const seen = new Set(
+      current
+        .map(function (row) { return normalizeExclusiveName(row && row.name); })
+        .filter(Boolean)
+    );
+    const merged = current.slice();
+    incoming.forEach(function (row) {
+      const key = normalizeExclusiveName(row && row.name);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      merged.push({
+        name: trim(row.name),
+        description: trim(row.description),
+        showDescription: Boolean(row.showDescription || row.description)
+      });
+    });
+    return merged;
+  }
+
+  function mergeSpecialtyRows(currentRows, incomingRows) {
+    const current = Array.isArray(currentRows) ? currentRows : [];
+    const incoming = Array.isArray(incomingRows) ? incomingRows : [];
+    const seen = new Set(
+      current
+        .map(function (row) { return normalizeSpecialtyLabel(row && row.label); })
+        .filter(Boolean)
+    );
+    const merged = current.slice();
+    incoming.forEach(function (row) {
+      const key = normalizeSpecialtyLabel(row && row.label);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      merged.push({ label: trim(row.label) });
+    });
+    return merged;
+  }
+
   return {
     normalizeClassKey,
     shipClassesMatch,
@@ -319,6 +400,10 @@
     buildUpsertRecord,
     buildApplyPreview,
     extractTemplateFromShip,
-    draftDiffersFromSaved
+    draftDiffersFromSaved,
+    templateRecordForClass,
+    resolveClassTemplatePayload,
+    mergeExclusiveAreaRows,
+    mergeSpecialtyRows
   };
 });
