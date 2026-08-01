@@ -175,6 +175,17 @@ const FIXTURES = {
   const css = readFileSync(path.join(root, "css/planner.css"), "utf8");
   assert(/dashboard-ship-gallery--single/.test(css), "single-image styles present");
   assert(/dashboard-ship-gallery-item--single/.test(css), "single item styles present");
+  assert(/\.dashboard-ship-gallery-lightbox\[hidden\]/.test(css), "hidden lightbox forced off-screen");
+  assert(/\.dashboard-ship-gallery-lightbox:not\(\[hidden\]\)/.test(css), "visible lightbox uses grid layout");
+}
+
+// Lightbox markup starts hidden
+{
+  const html = renderShipGallerySection(FIXTURES["Queen Victoria"].images, {
+    heroUrl: FIXTURES["Queen Victoria"].heroUrl
+  });
+  assert(/id="shipGalleryLightbox"\s+hidden/.test(html), "lightbox includes hidden attribute");
+  assert(/aria-hidden="true"/.test(html), "lightbox marked aria-hidden when closed");
 }
 
 // No financial / itinerary / booking behaviour in this module

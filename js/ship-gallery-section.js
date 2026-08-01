@@ -51,7 +51,7 @@
   }
 
   function lightboxMarkup() {
-    return `<div class="dashboard-ship-gallery-lightbox" id="shipGalleryLightbox" hidden>
+    return `<div class="dashboard-ship-gallery-lightbox" id="shipGalleryLightbox" hidden aria-hidden="true">
       <button type="button" id="shipGalleryLightboxClose" aria-label="Close image">Close</button>
       <img id="shipGalleryLightboxImage" alt="">
     </div>`;

@@ -2609,7 +2609,7 @@ function renderShipGallerySection(images, heroUrl = "") {
         <img src="${escapeHtml(img.url)}" alt="${label}" loading="lazy" width="960" height="540">
       </button>
     </section>
-    <div class="dashboard-ship-gallery-lightbox" id="shipGalleryLightbox" hidden>
+    <div class="dashboard-ship-gallery-lightbox" id="shipGalleryLightbox" hidden aria-hidden="true">
       <button type="button" id="shipGalleryLightboxClose" aria-label="Close image">Close</button>
       <img id="shipGalleryLightboxImage" alt="">
     </div>`;
@@ -2623,39 +2623,69 @@ function renderShipGallerySection(images, heroUrl = "") {
       <div class="dashboard-ship-gallery-head"><h3>Explore your ship</h3></div>
       <div class="dashboard-ship-gallery-track">${items}</div>
     </section>
-    <div class="dashboard-ship-gallery-lightbox" id="shipGalleryLightbox" hidden>
+    <div class="dashboard-ship-gallery-lightbox" id="shipGalleryLightbox" hidden aria-hidden="true">
       <button type="button" id="shipGalleryLightboxClose" aria-label="Close image">Close</button>
       <img id="shipGalleryLightboxImage" alt="">
     </div>`;
+}
+
+function closeShipGalleryLightbox() {
+  const lightbox = document.getElementById("shipGalleryLightbox");
+  const imageEl = document.getElementById("shipGalleryLightboxImage");
+  if (!lightbox) return;
+  lightbox.hidden = true;
+  lightbox.setAttribute("aria-hidden", "true");
+  if (imageEl) {
+    imageEl.removeAttribute("src");
+    imageEl.alt = "";
+  }
+}
+
+function openShipGalleryLightbox(img) {
+  const lightbox = document.getElementById("shipGalleryLightbox");
+  const imageEl = document.getElementById("shipGalleryLightboxImage");
+  if (!lightbox || !imageEl || !img?.url) return;
+  imageEl.src = img.url;
+  imageEl.alt = img.alt || img.title || "Ship photo";
+  lightbox.hidden = false;
+  lightbox.setAttribute("aria-hidden", "false");
+  document.getElementById("shipGalleryLightboxClose")?.focus();
 }
 
 function bindShipGalleryInteractions(images) {
   const list = Array.isArray(images) ? images : [];
   const lightbox = document.getElementById("shipGalleryLightbox");
   const imageEl = document.getElementById("shipGalleryLightboxImage");
-  const closeBtn = document.getElementById("shipGalleryLightboxClose");
   if (!lightbox || !imageEl) return;
+
+  closeShipGalleryLightbox();
 
   document.querySelectorAll("[data-gallery-index]").forEach(button => {
     button.addEventListener("click", () => {
       const index = Number(button.getAttribute("data-gallery-index"));
-      const img = list[index];
-      if (!img?.url) return;
-      imageEl.src = img.url;
-      imageEl.alt = img.alt || img.title || "Ship photo";
-      lightbox.hidden = false;
+      openShipGalleryLightbox(list[index]);
     });
   });
-  closeBtn?.addEventListener("click", () => {
-    lightbox.hidden = true;
-    imageEl.src = "";
-  });
+
   lightbox.addEventListener("click", event => {
-    if (event.target === lightbox) {
-      lightbox.hidden = true;
-      imageEl.src = "";
+    const target = event.target;
+    if (
+      target === lightbox ||
+      target?.id === "shipGalleryLightboxClose" ||
+      target?.closest?.("#shipGalleryLightboxClose")
+    ) {
+      closeShipGalleryLightbox();
     }
   });
+
+  if (!window.__shipGalleryEscapeBound) {
+    window.__shipGalleryEscapeBound = true;
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape") return;
+      const active = document.getElementById("shipGalleryLightbox");
+      if (active && !active.hidden) closeShipGalleryLightbox();
+    });
+  }
 }
 
 function bindJourneyItineraryToggle(stops) {

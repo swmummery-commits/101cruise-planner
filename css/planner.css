@@ -8477,10 +8477,18 @@ html.portal-loading-active body {
   position: fixed;
   inset: 0;
   z-index: 13000;
-  display: grid;
-  place-items: center;
   padding: 24px;
   background: rgba(8, 24, 21, 0.82);
+}
+
+.dashboard-ship-gallery-lightbox[hidden] {
+  display: none !important;
+  pointer-events: none;
+}
+
+.dashboard-ship-gallery-lightbox:not([hidden]) {
+  display: grid;
+  place-items: center;
 }
 
 .dashboard-ship-gallery-lightbox img {
