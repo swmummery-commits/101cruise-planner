@@ -18,6 +18,18 @@ CREATE TABLE IF NOT EXISTS public.ci_ship_class_facility_templates (
 CREATE INDEX IF NOT EXISTS ci_ship_class_facility_templates_line_idx
   ON public.ci_ship_class_facility_templates (cruise_line_id);
 
+CREATE OR REPLACE FUNCTION public.set_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$;
+
 DROP TRIGGER IF EXISTS ci_ship_class_facility_templates_set_updated_at ON public.ci_ship_class_facility_templates;
 CREATE TRIGGER ci_ship_class_facility_templates_set_updated_at
   BEFORE UPDATE ON public.ci_ship_class_facility_templates
