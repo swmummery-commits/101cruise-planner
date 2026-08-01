@@ -7317,14 +7317,14 @@ function renderCiLineShipClassesSection(line) {
     const templateStatus = row.hasTemplate ? "Saved" : "Template not set";
     return `
       <tr class="ci-class-row" data-class-name="${esc(row.className)}" tabindex="0" role="button" onclick="openCiClassFacilitiesTemplateModalFromRow(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openCiClassFacilitiesTemplateModalFromRow(this);}">
-        <td>${esc(row.className)}</td>
-        <td>${row.activeShipCount}</td>
-        <td class="ci-class-members">${members}</td>
-        <td>${templateEa}</td>
-        <td>${templateSf}</td>
-        <td>${templateStatus}</td>
-        <td>${esc(row.syncStatusLabel)}</td>
-        <td><button type="button" class="admin-button secondary small" data-class-name="${esc(row.className)}" onclick="event.stopPropagation();openCiClassFacilitiesTemplateModalFromBtn(this)">Edit class facilities</button></td>
+        <td class="ci-class-col-name">${esc(row.className)}</td>
+        <td class="ci-class-col-count">${row.activeShipCount}</td>
+        <td class="ci-class-members ci-class-col-members">${members}</td>
+        <td class="ci-class-col-tmpl">${templateEa}</td>
+        <td class="ci-class-col-tmpl">${templateSf}</td>
+        <td class="ci-class-col-status">${templateStatus}</td>
+        <td class="ci-class-col-sync">${esc(row.syncStatusLabel)}</td>
+        <td class="ci-class-col-action"><button type="button" class="admin-button secondary small ci-class-edit-btn" data-class-name="${esc(row.className)}" onclick="event.stopPropagation();openCiClassFacilitiesTemplateModalFromBtn(this)">Edit template</button></td>
       </tr>`;
   }).join("");
   return `
@@ -7336,14 +7336,14 @@ function renderCiLineShipClassesSection(line) {
           <table class="ci-bulk-class-table ci-class-facilities-table" aria-label="Ship class facilities templates">
             <thead>
               <tr>
-                <th scope="col">Class</th>
-                <th scope="col">Active ships</th>
-                <th scope="col">Member ships</th>
-                <th scope="col">Template EA</th>
-                <th scope="col">Template SF</th>
-                <th scope="col">Template status</th>
-                <th scope="col">Ship sync</th>
-                <th scope="col">Action</th>
+                <th scope="col" class="ci-class-col-name">Class</th>
+                <th scope="col" class="ci-class-col-count">Active</th>
+                <th scope="col" class="ci-class-col-members">Members</th>
+                <th scope="col" class="ci-class-col-tmpl">Tmpl EA</th>
+                <th scope="col" class="ci-class-col-tmpl">Tmpl SF</th>
+                <th scope="col" class="ci-class-col-status">Status</th>
+                <th scope="col" class="ci-class-col-sync">Sync</th>
+                <th scope="col" class="ci-class-col-action">Action</th>
               </tr>
             </thead>
             <tbody>${tableRows}</tbody>
@@ -8328,8 +8328,7 @@ function renderCiLineForm(line) {
       ${editing ? `
         <div class="admin-actions-row ci-line-class-actions">
           <button type="button" class="admin-button secondary small" onclick="openCiBulkShipClassModalFromLine()">Manage ship classes</button>
-        </div>
-        ${renderCiLineShipClassesSection(line)}` : ""}
+        </div>` : ""}
       ${renderCiMediaField({
         kind: "logo",
         inputId: "ciLineLogo",
@@ -8374,6 +8373,7 @@ function renderCiLineForm(line) {
       </div>
       <p class="admin-small ci-form-note">Sold lines are automatically public when active. Lines list alphabetically by name.${editing ? " Slug and code stay fixed after creation." : ""}</p>
       <div class="admin-field ci-form-description"><label>Description</label><textarea id="ciLineDescription" rows="4">${esc(line?.description || "")}</textarea></div>
+      ${editing ? renderCiLineShipClassesSection(line) : ""}
       ${ciLineCreating ? `
         <div class="admin-actions-row">
           <button class="admin-button" onclick="saveCiLine()">Create line</button>

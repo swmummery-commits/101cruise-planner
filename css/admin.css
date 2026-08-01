@@ -7,6 +7,7 @@
   --brand-green-border: #BDEBDD;
   --brand-green-ink: #245C4E;
   --brand-green-focus: rgba(141, 217, 191, 0.32);
+  --admin-font-family: "Halyard Display", Arial, sans-serif;
 }
 
 /* Admin is a normal full-length document — never trap scroll in an inner viewport. */
@@ -29,7 +30,7 @@ body {
   max-width: 1180px;
   margin: 0 auto;
   padding: 26px 18px;
-  font-family: "Halyard Display", Arial, sans-serif;
+  font-family: var(--admin-font-family);
   color: #111;
   font-size: 14px;
   line-height: 1.45;
@@ -1275,6 +1276,17 @@ body.admin-loading-active {
   align-items: center;
   justify-content: center;
   padding: 20px;
+  font-family: var(--admin-font-family);
+  color: #111;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ci-bulk-class-overlay input,
+.ci-bulk-class-overlay select,
+.ci-bulk-class-overlay textarea,
+.ci-bulk-class-overlay button {
+  font: inherit;
 }
 
 .ci-bulk-class-modal {
@@ -1346,7 +1358,6 @@ body.admin-loading-active {
 }
 
 .ci-bulk-class-table-wrap {
-  overflow-x: auto;
   margin: 0 0 12px;
 }
 
@@ -1369,6 +1380,51 @@ body.admin-loading-active {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #667085;
+}
+
+.ci-class-facilities-table {
+  table-layout: fixed;
+  font-size: 0.68rem;
+  line-height: 1.25;
+}
+
+.ci-class-facilities-table th,
+.ci-class-facilities-table td {
+  padding: 5px 6px;
+}
+
+.ci-class-facilities-table th {
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+  white-space: normal;
+  hyphens: auto;
+}
+
+.ci-class-facilities-table .ci-class-col-name {
+  width: 11%;
+}
+
+.ci-class-facilities-table .ci-class-col-count {
+  width: 6%;
+  text-align: center;
+}
+
+.ci-class-facilities-table .ci-class-col-members {
+  width: 34%;
+}
+
+.ci-class-facilities-table .ci-class-col-tmpl {
+  width: 6%;
+  text-align: center;
+}
+
+.ci-class-facilities-table .ci-class-col-status,
+.ci-class-facilities-table .ci-class-col-sync {
+  width: 11%;
+}
+
+.ci-class-facilities-table .ci-class-col-action {
+  width: 9%;
 }
 
 .ci-class-facilities-panel {
@@ -1415,18 +1471,22 @@ body.admin-loading-active {
   min-width: 0;
 }
 
-.ci-class-facilities-table td:last-child,
-.ci-class-facilities-table th:last-child {
-  width: 1%;
-  white-space: nowrap;
+.ci-class-facilities-table .ci-class-members {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.25;
+  font-size: 0.66rem;
+  color: #475467;
 }
 
-.ci-class-facilities-table .ci-class-members {
-  min-width: 160px;
-  max-width: 320px;
+.ci-class-facilities-table .ci-class-edit-btn {
+  width: 100%;
+  padding: 4px 5px;
+  font-size: 0.62rem;
+  line-height: 1.2;
   white-space: normal;
-  word-break: break-word;
-  line-height: 1.35;
+  text-align: center;
 }
 
 .ci-autosave-status.is-unsaved {
