@@ -304,7 +304,7 @@
         <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
           <button type="button" class="admin-button secondary small" data-action="back">Back</button>
           <button type="button" class="admin-button secondary small" data-action="cancel">Cancel</button>
-          <button type="button" class="admin-button small" data-action="confirm-apply"${noTargets || noChanges || needsSave ? " disabled aria-disabled=\"true\"" : " disabled aria-disabled=\"true\""}>Apply to class ships</button>
+          <button type="button" class="admin-button small" data-action="confirm-apply"${noTargets || noChanges || needsSave ? " disabled aria-disabled=\"true\"" : " disabled"}>Apply to class ships</button>
         </div>`;
     }
     return `

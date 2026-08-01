@@ -255,6 +255,10 @@ assert.ok(adminJs.includes("Total ships"));
 assert.ok(adminJs.includes("activeMemberShipNames"));
 assert.ok(adminTplJs.includes("failedRows.length"));
 assert.ok(adminTplJs.includes("ciClassTplApplyAck"));
+assert.match(
+  adminTplJs,
+  /data-action="confirm-apply"\$\{noTargets \|\| noChanges \|\| needsSave \? " disabled aria-disabled=\\"true\\"" : " disabled"\}/
+);
 assert.ok(adminTplJs.includes("will be replaced"));
 assert.ok(adminHtml.includes("ci-ship-class-facilities-replace.js"));
 assert.ok(!adminHtml.includes("ci-ship-class-facilities-merge.js"));

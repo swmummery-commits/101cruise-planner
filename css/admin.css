@@ -1471,6 +1471,37 @@ body.admin-loading-active {
   min-width: 0;
 }
 
+.ci-class-tpl-modal .ci-class-tpl-ea-card {
+  width: 100%;
+}
+
+.ci-class-tpl-modal .ci-class-tpl-ea-name,
+.ci-class-tpl-modal .ci-class-tpl-ea-description,
+.ci-class-tpl-modal .ci-class-tpl-sf-label {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.ci-class-tpl-modal .ci-class-tpl-ea-description {
+  display: block;
+  min-height: 56px;
+  resize: vertical;
+}
+
+.ci-class-tpl-modal .ci-class-tpl-ea-description-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+  margin-top: 6px;
+}
+
 .ci-class-facilities-table .ci-class-members {
   white-space: normal;
   overflow-wrap: anywhere;
