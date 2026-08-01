@@ -7798,7 +7798,17 @@ function openCiSameClassFacilitiesCopyModal() {
     setCiAutosaveStatus("Facilities copy is unavailable — reload the page.", "error");
     return;
   }
-  window.CiShipFacilitiesItemCopyAdmin.open();
+  const currentId = document.getElementById("ciShipId")?.value || editingCiShipId;
+  const existing = currentId
+    ? ciCruiseShips.find((ship) => String(ship.id) === String(currentId))
+    : null;
+  const sourceShip = existing
+    ? { ...existing, facilities: readCiFacilitiesFromDom(existing.facilities) }
+    : null;
+  window.CiShipFacilitiesItemCopyAdmin.open({
+    sourceShipId: currentId,
+    sourceShip
+  });
 }
 
 function renderCiMediaField({ kind, inputId, url, previewClass, title }) {

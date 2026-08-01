@@ -495,7 +495,9 @@ assert.match(adminCss, /ci-bulk-class-modal-footer/);
 assert.match(adminCss, /@media \(max-width: 390px\)/);
 assert.match(adminCopyJs, /formatAggregateOperationSummary/);
 assert.match(adminCopyJs, /assertResultOutcomesReconcile/);
-assert.match(adminCopyJs, /lastPlans/);
+assert.match(adminCopyJs, /renderModalFailure/);
+assert.match(adminCopyJs, /resolveOpenSourceShip/);
+assert.match(adminJs, /readCiFacilitiesFromDom\(existing\.facilities\)/);
 assert.doesNotMatch(adminCopyJs, /window\.confirm/);
 
 assert.equal(

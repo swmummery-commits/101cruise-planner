@@ -35,10 +35,36 @@
     return window.ciCruiseLines || [];
   }
 
+  function normalizeFacilities(facilities) {
+    if (!facilities) return {};
+    if (typeof facilities === "string") {
+      try {
+        const parsed = JSON.parse(facilities);
+        return parsed && typeof parsed === "object" ? parsed : {};
+      } catch (_error) {
+        return {};
+      }
+    }
+    return typeof facilities === "object" ? facilities : {};
+  }
+
+  function normalizeShipId(value) {
+    return String(value == null ? "" : value).trim();
+  }
+
   function getSourceShip() {
     const ctx = modalContext;
     if (!ctx) return null;
-    return getShips().find(function (ship) { return ship.id === ctx.sourceShipId; }) || ctx.sourceShip || null;
+    const sourceId = normalizeShipId(ctx.sourceShipId);
+    const fromList = getShips().find(function (ship) {
+      return normalizeShipId(ship && ship.id) === sourceId;
+    });
+    const ship = fromList || ctx.sourceShip || null;
+    if (!ship) return null;
+    return {
+      ...ship,
+      facilities: normalizeFacilities(ship.facilities)
+    };
   }
 
   function getDraftClass() {
@@ -188,14 +214,17 @@
     const plans = buildPlans();
     const totals = itemCopy.summarizeAllPlans(plans);
     const conflictResolutions = readConflictResolutions();
-    const confirmation = itemCopy.buildConfirmationSummary({
-      sourceShipName: source.name,
-      cruiseLineName: line && line.name,
-      targetScope: modalContext.targetScope || readTargetScope(),
-      exclusiveItems: selectedExclusive,
-      specialtyItems: selectedSpecialty,
-      plans: plans
-    });
+    const step = modalContext.step;
+    const confirmation = step === STEP_CONFIRM
+      ? itemCopy.buildConfirmationSummary({
+        sourceShipName: source.name,
+        cruiseLineName: line && line.name,
+        targetScope: modalContext.targetScope || readTargetScope(),
+        exclusiveItems: selectedExclusive,
+        specialtyItems: selectedSpecialty,
+        plans: plans
+      })
+      : null;
 
     return {
       source,
@@ -288,6 +317,9 @@
   function renderSelectBody(vm) {
     const itemCopy = itemApi();
     const ctx = modalContext;
+    if (!itemCopy || !ctx) {
+      return `<p class="admin-small ci-item-copy-result-fail">Copy module unavailable. Reload the page and try again.</p>`;
+    }
     const scope = ctx.targetScope || itemCopy.TARGET_SCOPE_SAME_CLASS;
     const sameClassDisabled = !getDraftClass();
     const selectedEa = new Set(ctx.selectedEa || []);
@@ -442,6 +474,9 @@
   function renderConfirmBody(vm) {
     const itemCopy = itemApi();
     const c = vm.confirmation;
+    if (!c) {
+      return `<p class="admin-small ci-item-copy-result-fail">Could not build confirmation summary. Go back and try again.</p>`;
+    }
     const aggregateLines = itemCopy ? itemCopy.formatAggregateTotalsLines(c.aggregates) : [];
     return `
       <div class="ci-item-copy-confirm-meta">
@@ -494,7 +529,7 @@
     const itemCopy = itemApi();
     if (!itemCopy) return "";
     if (modalContext.step === STEP_CONFIRM) {
-      if (vm.confirmation.aggregates.noChanges) {
+      if (!vm.confirmation || vm.confirmation.aggregates.noChanges) {
         return "All selected items are already identical or set to keep existing — no changes to copy.";
       }
       const totals = vm.confirmation.aggregates;
@@ -529,8 +564,10 @@
     }
     if (step === STEP_CONFIRM) {
       const itemCopy = itemApi();
-      const noChanges = vm.confirmation.aggregates.noChanges;
-      const readyText = itemCopy ? itemCopy.formatReadyToCopySummary(vm.confirmation.aggregates) : "";
+      const noChanges = !vm.confirmation || vm.confirmation.aggregates.noChanges;
+      const readyText = itemCopy && vm.confirmation
+        ? itemCopy.formatReadyToCopySummary(vm.confirmation.aggregates)
+        : "";
       return `
         <p class="admin-small" id="ciItemCopySummary">${noChanges
           ? "All selected items are already identical or set to keep existing — no changes to copy."
@@ -567,28 +604,58 @@
     return "Copy ship facilities";
   }
 
-  function renderModal() {
-    const vm = buildViewModel();
-    if (!vm || !modalContext) return;
+  function renderModalFailure(message) {
     const overlay = document.getElementById("ciItemFacilitiesCopyOverlay");
-    if (!overlay) return;
-    const step = modalContext.step;
-    let body = "";
-    if (step === STEP_SELECT) body = renderSelectBody(vm);
-    else if (step === STEP_CONFLICTS) body = renderConflictsBody(vm);
-    else if (step === STEP_CONFIRM) body = renderConfirmBody(vm);
-    else if (step === STEP_RESULT) body = renderResultBody(vm);
-
+    if (!overlay || !modalContext) return;
     overlay.innerHTML = `
       <div class="ci-bulk-class-modal ci-item-copy-modal" role="dialog" aria-modal="true" aria-labelledby="ciItemCopyTitle">
         <div class="ci-bulk-class-modal-head">
-          <h4 id="ciItemCopyTitle">${esc(stepTitle(step))}</h4>
+          <h4 id="ciItemCopyTitle">Copy ship facilities</h4>
           <button type="button" class="admin-button secondary small" data-action="header-close">Close</button>
         </div>
-        <div class="ci-bulk-class-modal-body">${body}</div>
-        <div class="ci-bulk-class-modal-footer">${renderFooter(vm)}</div>
+        <div class="ci-bulk-class-modal-body">
+          <p class="admin-small ci-item-copy-result-fail">${esc(message || "Could not open copy dialog.")}</p>
+        </div>
+        <div class="ci-bulk-class-modal-footer">
+          <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer" data-footer-step="select">
+            <button type="button" class="admin-button small" data-action="header-close">Close</button>
+          </div>
+        </div>
       </div>`;
     bindModalEvents();
+  }
+
+  function renderModal() {
+    if (!modalContext) return;
+    const overlay = document.getElementById("ciItemFacilitiesCopyOverlay");
+    if (!overlay) return;
+    try {
+      const vm = buildViewModel();
+      if (!vm) {
+        renderModalFailure("Could not load the current ship for copying. Close, reload the ship editor, and try again.");
+        return;
+      }
+      const step = modalContext.step;
+      let body = "";
+      if (step === STEP_SELECT) body = renderSelectBody(vm);
+      else if (step === STEP_CONFLICTS) body = renderConflictsBody(vm);
+      else if (step === STEP_CONFIRM) body = renderConfirmBody(vm);
+      else if (step === STEP_RESULT) body = renderResultBody(vm);
+
+      overlay.innerHTML = `
+        <div class="ci-bulk-class-modal ci-item-copy-modal" role="dialog" aria-modal="true" aria-labelledby="ciItemCopyTitle">
+          <div class="ci-bulk-class-modal-head">
+            <h4 id="ciItemCopyTitle">${esc(stepTitle(step))}</h4>
+            <button type="button" class="admin-button secondary small" data-action="header-close">Close</button>
+          </div>
+          <div class="ci-bulk-class-modal-body">${body}</div>
+          <div class="ci-bulk-class-modal-footer">${renderFooter(vm)}</div>
+        </div>`;
+      bindModalEvents();
+    } catch (error) {
+      console.error("CiShipFacilitiesItemCopyAdmin render failed", error);
+      renderModalFailure(error && error.message ? error.message : "Copy dialog failed to open.");
+    }
   }
 
   function refreshModalContent() {
@@ -692,7 +759,7 @@
     const itemCopy = itemApi();
     const source = getSourceShip();
     const vm = buildViewModel();
-    if (!itemCopy || !source || !vm || vm.confirmation.aggregates.noChanges || !window.adminAuthHeaders) return;
+    if (!itemCopy || !source || !vm || !vm.confirmation || vm.confirmation.aggregates.noChanges || !window.adminAuthHeaders) return;
 
     const payload = {
       source_ship_id: source.id,
@@ -757,18 +824,43 @@
     return itemCopy.listFleetCopyTargets(getShips(), ship).length > 0;
   }
 
+  function resolveOpenSourceShip(options) {
+    const opts = options || {};
+    const sourceId = normalizeShipId(
+      opts.sourceShipId
+      || (document.getElementById("ciShipId") && document.getElementById("ciShipId").value)
+      || window.editingCiShipId
+    );
+    if (!sourceId) return null;
+    const provided = opts.sourceShip && normalizeShipId(opts.sourceShip.id) === sourceId
+      ? opts.sourceShip
+      : null;
+    const fromList = (Array.isArray(opts.ships) ? opts.ships : getShips()).find(function (ship) {
+      return normalizeShipId(ship && ship.id) === sourceId;
+    });
+    const ship = provided || fromList || null;
+    if (!ship) return null;
+    return {
+      ...ship,
+      id: ship.id,
+      facilities: normalizeFacilities(ship.facilities)
+    };
+  }
+
   function openModal(options) {
     const itemCopy = itemApi();
     if (!itemCopy) return;
     closeModal();
-    const sourceId = options && options.sourceShipId
-      || document.getElementById("ciShipId") && document.getElementById("ciShipId").value
-      || window.editingCiShipId;
-    const sourceShip = (options && options.ships || getShips()).find(function (ship) { return ship.id === sourceId; });
-    if (!sourceShip) return;
+    const sourceShip = resolveOpenSourceShip(options);
+    if (!sourceShip) {
+      if (window.setCiAutosaveStatus) {
+        window.setCiAutosaveStatus("Could not open facilities copy for this ship.", "error");
+      }
+      return;
+    }
 
     modalContext = {
-      sourceShipId: sourceId,
+      sourceShipId: normalizeShipId(sourceShip.id),
       sourceShip: sourceShip,
       shipClass: getDraftClass(),
       targetScope: getDraftClass() ? itemCopy.TARGET_SCOPE_SAME_CLASS : itemCopy.TARGET_SCOPE_FLEET,

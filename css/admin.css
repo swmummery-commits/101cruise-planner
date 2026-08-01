@@ -986,6 +986,7 @@ body.admin-loading-active {
 
 .ci-item-copy-modal.ci-bulk-class-modal {
   width: min(920px, 100%);
+  min-height: 240px;
 }
 
 .ci-item-copy-section {
