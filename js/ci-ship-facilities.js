@@ -67,6 +67,68 @@
     return true;
   }
 
+  const LEGACY_PROSE_STARTERS = [
+    "a ",
+    "an ",
+    "the ",
+    "featuring ",
+    "offering ",
+    "providing ",
+    "designed ",
+    "reserved ",
+    "available ",
+    "exclusive ",
+    "private ",
+    "located ",
+    "includes ",
+    "with "
+  ];
+
+  function remainderReadsAsProse(descPart) {
+    const desc = trim(descPart);
+    if (!desc) return false;
+    const lower = desc.toLowerCase();
+    const startsWithProse = LEGACY_PROSE_STARTERS.some(function (starter) {
+      return lower.startsWith(starter);
+    });
+    if (!startsWithProse) return false;
+    if (desc.length < 24 && desc.split(/\s+/).length < 5) return false;
+    return true;
+  }
+
+  function capitalizeDescriptionLead(text) {
+    const desc = trim(text);
+    if (!desc) return "";
+    return desc.charAt(0).toUpperCase() + desc.slice(1);
+  }
+
+  /**
+   * Render-time only — splits legacy whole-string entries for customer display.
+   * Never used for Admin load, serialize, compare, or persistence.
+   */
+  function inferLegacyDisplayFromString(text) {
+    const full = trim(text);
+    if (!full) {
+      return { name: "", description: "" };
+    }
+    const commaIdx = full.indexOf(",");
+    if (commaIdx < 0) {
+      return { name: full, description: "" };
+    }
+    const namePart = trim(full.slice(0, commaIdx));
+    const descPart = trim(full.slice(commaIdx + 1));
+    if (!namePart || !descPart || !isPlausibleShortExclusiveName(namePart)) {
+      return { name: full, description: "" };
+    }
+    if (!remainderReadsAsProse(descPart)) {
+      return { name: full, description: "" };
+    }
+    return {
+      name: namePart,
+      description: capitalizeDescriptionLead(descPart)
+    };
+  }
+
   /**
    * Optional Admin hint only — never applied automatically during normalisation.
    */
@@ -211,6 +273,15 @@
 
   function normalizeExclusiveAreasForDisplay(raw) {
     return normalizeShipFeatureList(raw).map(function (item) {
+      if (item.legacyString && !trim(item.description)) {
+        const inferred = inferLegacyDisplayFromString(item.name);
+        return {
+          name: inferred.name,
+          description: inferred.description,
+          icon_key: resolveIconKey(inferred.name, item.icon_key),
+          legacyString: true
+        };
+      }
       return {
         name: item.name,
         description: item.description,
@@ -333,6 +404,7 @@
   }
 
   return {
+    inferLegacyDisplayFromString: inferLegacyDisplayFromString,
     normalizeShipClass: normalizeShipClass,
     shipClassesMatch: shipClassesMatch,
     suggestLegacyExclusiveString: suggestLegacyExclusiveString,

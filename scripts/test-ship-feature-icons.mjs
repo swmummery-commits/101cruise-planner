@@ -88,13 +88,54 @@ const savedComma = CiFac.serializeSpecialtyFeaturesFromAdmin(commaRows);
 assert.equal(savedComma[0].name, "Fitness Center, with classes");
 assert.ok(!Array.isArray(savedComma[0]));
 
-// Whole-string legacy load (no automatic comma split)
+// Legacy sentence-style string — render-time split only (Admin load unchanged)
 const apexSentence =
   "The Retreat, a ship-within-a-ship concept for suite guests featuring a private sundeck, dedicated lounge, and the exclusive restaurant Luminae.";
+const apexDisplay = CiFac.normalizeExclusiveAreasForDisplay([apexSentence])[0];
+assert.equal(apexDisplay.name, "The Retreat");
+assert.match(apexDisplay.description, /^A ship-within-a-ship concept/);
+assert.match(apexDisplay.description, /, and the exclusive restaurant Luminae\./);
+assert.equal(apexDisplay.icon_key, "crown");
+
 const apexLoaded = CiFac.loadExclusiveAreasForAdmin([apexSentence]);
 assert.equal(apexLoaded.length, 1);
 assert.equal(apexLoaded[0].name, apexSentence);
 assert.equal(apexLoaded[0].description, "");
+
+// Structured object remains authoritative at display
+const structuredDisplay = CiFac.normalizeExclusiveAreasForDisplay([
+  { name: "The Retreat", description: "Curated copy from Admin.", icon_key: "crown" }
+])[0];
+assert.equal(structuredDisplay.name, "The Retreat");
+assert.equal(structuredDisplay.description, "Curated copy from Admin.");
+
+// Legacy simple name — no split
+const simpleName = CiFac.normalizeExclusiveAreasForDisplay(["Suite Deck"])[0];
+assert.equal(simpleName.name, "Suite Deck");
+assert.equal(simpleName.description, "");
+
+// Comma in name without prose remainder — keep intact
+const commaName = CiFac.normalizeExclusiveAreasForDisplay(["Fitness Center, with classes"])[0];
+assert.equal(commaName.name, "Fitness Center, with classes");
+assert.equal(commaName.description, "");
+
+// Structured multi-comma description unchanged
+const multiComma = CiFac.normalizeSpecialtyFeaturesForDisplay([
+  {
+    name: "Sky Zone",
+    description: "Indoor sports, games, fitness, and more.",
+    icon_key: "sports-court"
+  }
+])[0];
+assert.equal(multiComma.description, "Indoor sports, games, fitness, and more.");
+
+// Customer icon markup — standalone icons, no boxed holder
+const plannerCss = read("css/planner.css");
+assert.doesNotMatch(plannerCss, /\.ship-feature-icon-holder/);
+assert.match(plannerCss, /\.ship-feature-icon\b/);
+assert.doesNotMatch(plannerCss, /ship-feature-icon-holder[\s\S]*background:/);
+assert.match(plannerJs, /renderFeatureIconHtml\(iconKey, "ship-feature-icon"\)/);
+assert.match(plannerCss, /grid-template-columns:\s*26px minmax\(0, 1fr\)/);
 
 // Empty / null
 assert.equal(CiFac.normalizeShipFeatureList(null).length, 0);

@@ -6243,9 +6243,9 @@ function bindShipSpaceRatioExplainer() {
 function renderShipFeatureIcon(iconKey) {
   const icons = typeof CiShipFeatureIcons !== "undefined" ? CiShipFeatureIcons : null;
   if (icons && icons.renderFeatureIconHtml) {
-    return icons.renderFeatureIconHtml(iconKey, "ship-feature-icon-holder");
+    return icons.renderFeatureIconHtml(iconKey, "ship-feature-icon");
   }
-  return `<span class="ship-feature-icon-holder" aria-hidden="true"></span>`;
+  return `<span class="ship-feature-icon" aria-hidden="true"></span>`;
 }
 
 function renderShipFeatureListItem(item) {
