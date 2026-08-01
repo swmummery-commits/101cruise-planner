@@ -1423,7 +1423,27 @@ body.admin-loading-active {
 
 .ci-class-facilities-table .ci-class-members {
   min-width: 160px;
-  max-width: 280px;
+  max-width: 320px;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.35;
+}
+
+.ci-autosave-status.is-unsaved {
+  color: #b54708;
+}
+
+.ci-class-tpl-import-panel {
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 0 0 14px;
+  background: #fafafa;
+}
+
+.ci-class-tpl-import-panel.is-active {
+  border-color: #86a38b;
+  background: #f6faf7;
 }
 
 .ci-class-row {
@@ -1445,6 +1465,33 @@ body.admin-loading-active {
   align-items: flex-start;
   margin: 12px 0 0;
   font-size: 0.92rem;
+}
+
+@media (max-width: 768px) {
+  .ci-bulk-class-overlay,
+  .ci-item-copy-overlay {
+    padding: 12px;
+  }
+
+  .ci-bulk-class-modal,
+  .ci-item-copy-modal.ci-bulk-class-modal {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .ci-facility-compact-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ci-facility-row-actions--inline {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .ci-bulk-class-modal-actions {
+    flex-wrap: wrap;
+  }
 }
 
 .ci-bulk-class-card {

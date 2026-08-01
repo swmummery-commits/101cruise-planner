@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ship Class Facilities Template — Visual Review v1</title>
+  <link rel="stylesheet" href="../../css/admin.css">
+  <style>
+    body.vr-body { margin: 0; background: #f3f4f6; color: #111; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; overflow-x: hidden; }
+    .vr-capture-root { background: #fff; max-width: 100%; overflow-x: hidden; box-sizing: border-box; }
+    .vr-line-context { padding: 20px 24px 0; max-width: 1180px; box-sizing: border-box; }
+    .vr-line-context .ci-detail-title-row { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .vr-line-context .ci-detail-title { margin: 0; font-size: 1.35rem; }
+    .vr-line-context .ci-detail-subtitle { margin: 0 0 16px; color: #667085; font-size: 0.88rem; }
+    .vr-ship-context { padding: 20px 24px; max-width: 920px; }
+    .vr-modal-wrap { padding: 16px; max-width: 760px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+    .vr-modal-wrap.mobile { max-width: 390px; padding: 8px; }
+    .vr-modal-wrap .ci-bulk-class-modal { position: static; max-height: none; box-shadow: 0 10px 30px rgba(16, 24, 40, 0.12); width: 100%; max-width: 100%; box-sizing: border-box; }
+    .vr-hidden { display: none !important; }
+    .ci-class-tpl-status-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.78rem; background: #fff4eb; color: #b54708; border: 1px solid #fecdca; margin-left: 8px; }
+  </style>
+</head>
+<body class="vr-body">
+  <!-- 1. cruise-line-ship-classes-section -->
+  <div id="cruise-line-ship-classes-section" class="vr-capture-root">
+    <div class="vr-line-context">
+      <div class="ci-detail-title-row">
+        <h3 class="ci-detail-title">Celebrity Cruises</h3>
+      </div>
+      <p class="admin-small ci-detail-subtitle">Click Save line or select another cruise line to persist changes.</p>
+      <div class="ci-stats-panel">
+        <h4>Statistics</h4>
+        <div class="ci-stats-row">
+          <div class="ci-stat"><span class="ci-stat-label">Ships</span><span class="ci-stat-value">8</span></div>
+          <div class="ci-stat"><span class="ci-stat-label">Public ships</span><span class="ci-stat-value">8</span></div>
+        </div>
+      </div>
+      <div class="admin-actions-row ci-line-class-actions">
+        <button type="button" class="admin-button secondary small">Manage ship classes</button>
+      </div>
+    </div>
+    <div class="ci-class-facilities-panel" style="margin: 0 24px 24px;">
+      <h4>Ship classes</h4>
+      <p class="admin-small">Class templates replace the complete Exclusive Areas and Specialty Features sections when applied. Individual ships can still be edited afterward, but those sections will be replaced on the next class apply.</p>
+      <div class="ci-bulk-class-table-wrap">
+        <table class="ci-bulk-class-table ci-class-facilities-table">
+          <thead>
+            <tr>
+              <th>Class</th><th>Active ships</th><th>Member ships</th><th>Template EA</th><th>Template SF</th><th>Template status</th><th>Ship sync</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="ci-class-row">
+              <td>Edge class</td><td>5</td>
+              <td class="ci-class-members" title="Celebrity Edge, Celebrity Apex, Celebrity Ascent, Celebrity Beyond, Celebrity Xcel">Celebrity Edge, Celebrity Apex, Celebrity Ascent, Celebrity Beyond, Celebrity Xcel</td>
+              <td>2</td><td>4</td><td>Saved</td><td>4 ships match · 1 individually customised</td>
+              <td><button type="button" class="admin-button secondary small">Edit class facilities</button></td>
+            </tr>
+            <tr class="ci-class-row">
+              <td>Solstice class</td><td>5</td>
+              <td class="ci-class-members" title="Celebrity Solstice, Celebrity Equinox, Celebrity Eclipse, Celebrity Silhouette, Celebrity Reflection">Celebrity Solstice, Celebrity Equinox, Celebrity Eclipse, Celebrity Silhouette, Celebrity Reflection</td>
+              <td>1</td><td>3</td><td>Saved</td><td>All 5 ships match template</td>
+              <td><button type="button" class="admin-button secondary small">Edit class facilities</button></td>
+            </tr>
+            <tr class="ci-class-row">
+              <td>Millennium class</td><td>2</td>
+              <td class="ci-class-members">Celebrity Millennium, Celebrity Summit</td>
+              <td>—</td><td>—</td><td>Template not set</td><td>Template not set</td>
+              <td><button type="button" class="admin-button secondary small">Edit class facilities</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="admin-small ci-class-facilities-note">2 active ships are unassigned — use Manage ship classes to assign them.</p>
+    </div>
+  </div>
+
+  <!-- Shared EA/SF blocks -->
+  <template id="tpl-ea-retreat-blu">
+    <div class="ci-exclusive-area-card ci-class-tpl-ea-card" data-index="0">
+      <div class="ci-facility-compact-row">
+        <input type="text" class="ci-class-tpl-ea-name" value="The Retreat">
+        <div class="ci-facility-row-actions ci-facility-row-actions--inline">
+          <button type="button" class="admin-button secondary small">↑</button>
+          <button type="button" class="admin-button secondary small">↓</button>
+          <button type="button" class="admin-button secondary small">Remove</button>
+        </div>
+      </div>
+      <div class="ci-exclusive-area-description-wrap ci-class-tpl-ea-description-wrap">
+        <textarea class="ci-class-tpl-ea-description" rows="2">Ship-within-a-ship for suite guests with Luminae and private sundeck.</textarea>
+        <button type="button" class="admin-button secondary small">Hide description</button>
+      </div>
+    </div>
+    <div class="ci-exclusive-area-card ci-class-tpl-ea-card" data-index="1">
+      <div class="ci-facility-compact-row">
+        <input type="text" class="ci-class-tpl-ea-name" value="Blu">
+        <div class="ci-facility-row-actions ci-facility-row-actions--inline">
+          <button type="button" class="admin-button secondary small">↑</button>
+          <button type="button" class="admin-button secondary small">↓</button>
+          <button type="button" class="admin-button secondary small">Remove</button>
+        </div>
+      </div>
+      <div class="ci-exclusive-area-description-wrap ci-class-tpl-ea-description-wrap">
+        <textarea class="ci-class-tpl-ea-description" rows="2">Exclusive restaurant for AquaClass guests.</textarea>
+        <button type="button" class="admin-button secondary small">Hide description</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-sf-four">
+    <div class="ci-specialty-feature-row ci-class-tpl-sf-row"><input type="text" class="ci-class-tpl-sf-label" value="Magic Carpet"><div class="ci-facility-row-actions ci-facility-row-actions--inline"><button type="button" class="admin-button secondary small">↑</button><button type="button" class="admin-button secondary small">↓</button><button type="button" class="admin-button secondary small">Remove</button></div></div>
+    <div class="ci-specialty-feature-row ci-class-tpl-sf-row"><input type="text" class="ci-class-tpl-sf-label" value="Eden"><div class="ci-facility-row-actions ci-facility-row-actions--inline"><button type="button" class="admin-button secondary small">↑</button><button type="button" class="admin-button secondary small">↓</button><button type="button" class="admin-button secondary small">Remove</button></div></div>
+    <div class="ci-specialty-feature-row ci-class-tpl-sf-row"><input type="text" class="ci-class-tpl-sf-label" value="Rooftop Garden"><div class="ci-facility-row-actions ci-facility-row-actions--inline"><button type="button" class="admin-button secondary small">↑</button><button type="button" class="admin-button secondary small">↓</button><button type="button" class="admin-button secondary small">Remove</button></div></div>
+    <div class="ci-specialty-feature-row ci-class-tpl-sf-row"><input type="text" class="ci-class-tpl-sf-label" value="Grand Plaza"><div class="ci-facility-row-actions ci-facility-row-actions--inline"><button type="button" class="admin-button secondary small">↑</button><button type="button" class="admin-button secondary small">↓</button><button type="button" class="admin-button secondary small">Remove</button></div></div>
+  </template>
+
+  <!-- 2. class-template-editor-existing -->
+  <div id="class-template-editor-existing" class="vr-capture-root vr-hidden">
+    <div class="vr-modal-wrap">
+      <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal">
+        <div class="ci-bulk-class-modal-head">
+          <h4>Class facilities template — Edge class</h4>
+          <button type="button" class="admin-button secondary small">Close</button>
+        </div>
+        <div class="ci-bulk-class-modal-body">
+          <div class="ci-class-tpl-meta">
+            <p class="admin-small"><strong>Cruise line:</strong> Celebrity Cruises</p>
+            <p class="admin-small"><strong>Class:</strong> Edge class</p>
+            <p class="admin-small"><strong>Ships in class:</strong> 5 (5 active for apply)</p>
+          </div>
+          <div class="ci-class-tpl-import admin-actions-row">
+            <label class="admin-small">Import from ship
+              <select><option value="">Choose a ship…</option><option>Celebrity Edge</option></select>
+            </label>
+            <button type="button" class="admin-button secondary small">Import EA + SF</button>
+          </div>
+          <section class="ci-item-copy-section">
+            <div class="ci-item-copy-section-head"><h5>Exclusive Areas</h5><button type="button" class="admin-button secondary small">Add area</button></div>
+            <div id="ea-existing"></div>
+          </section>
+          <section class="ci-item-copy-section">
+            <div class="ci-item-copy-section-head"><h5>Specialty Features</h5><button type="button" class="admin-button secondary small">Add feature</button></div>
+            <div id="sf-existing"></div>
+          </section>
+          <p class="admin-small ci-item-copy-preserve-note">Applying replaces the complete Exclusive Areas and Specialty Features sections on each active ship in this class. Scalar facilities (pools, spa, etc.) are never changed. Import only prefills the editor — it does not save or apply.</p>
+        </div>
+        <div class="ci-bulk-class-modal-footer">
+          <p class="admin-small">Save the template without changing ships, or apply the saved template as a separate action.</p>
+          <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+            <button type="button" class="admin-button secondary small">Cancel</button>
+            <button type="button" class="admin-button secondary small">Save template</button>
+            <button type="button" class="admin-button small">Apply saved template…</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. class-template-editor-empty-sections -->
+  <div id="class-template-editor-empty-sections" class="vr-capture-root vr-hidden">
+    <div class="vr-modal-wrap">
+      <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal">
+        <div class="ci-bulk-class-modal-head"><h4>Class facilities template — Millennium class</h4><button type="button" class="admin-button secondary small">Close</button></div>
+        <div class="ci-bulk-class-modal-body">
+          <div class="ci-class-tpl-meta">
+            <p class="admin-small"><strong>Cruise line:</strong> Celebrity Cruises</p>
+            <p class="admin-small"><strong>Class:</strong> Millennium class</p>
+          </div>
+          <section class="ci-item-copy-section">
+            <div class="ci-item-copy-section-head"><h5>Exclusive Areas</h5><button type="button" class="admin-button secondary small">Add area</button></div>
+            <p class="admin-small">No exclusive areas in this template. An empty section is valid. When the saved template is deliberately applied, it will clear Exclusive Areas on class ships. Pools, spa, and other facilities remain unchanged.</p>
+            <div class="ci-exclusive-area-card ci-class-tpl-ea-card">
+              <div class="ci-facility-compact-row"><input type="text" class="ci-class-tpl-ea-name" value="" placeholder="Exclusive area name"></div>
+            </div>
+          </section>
+          <section class="ci-item-copy-section">
+            <div class="ci-item-copy-section-head"><h5>Specialty Features</h5><button type="button" class="admin-button secondary small">Add feature</button></div>
+            <div id="sf-empty-partial"></div>
+          </section>
+        </div>
+        <div class="ci-bulk-class-modal-footer">
+          <p class="admin-small">Save the template without changing ships, or apply the saved template as a separate action.</p>
+          <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+            <button type="button" class="admin-button secondary small">Cancel</button>
+            <button type="button" class="admin-button secondary small">Save template</button>
+            <button type="button" class="admin-button small" disabled aria-disabled="true">Apply saved template…</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. import-from-ship -->
+  <div id="import-from-ship" class="vr-capture-root vr-hidden">
+    <div class="vr-modal-wrap">
+      <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal">
+        <div class="ci-bulk-class-modal-head"><h4>Class facilities template — Edge class</h4><button type="button" class="admin-button secondary small">Close</button></div>
+        <div class="ci-bulk-class-modal-body">
+          <div class="ci-class-tpl-import-panel is-active">
+            <p class="admin-small"><strong>Import from ship</strong></p>
+            <p class="admin-small ci-class-tpl-warning">Import only prefills the editor. Nothing is saved or applied until you choose Save template or Apply saved template separately.</p>
+            <label class="admin-small">Source ship (active ships in Edge class on Celebrity Cruises)
+              <select><option>Celebrity Edge</option><option selected>Celebrity Apex</option><option>Celebrity Ascent</option><option>Celebrity Beyond</option><option>Celebrity Xcel</option></select>
+            </label>
+            <div class="admin-actions-row" style="margin-top:10px;">
+              <button type="button" class="admin-button secondary small">Cancel import</button>
+              <button type="button" class="admin-button small">Import values</button>
+            </div>
+          </div>
+          <section class="ci-item-copy-section"><div class="ci-item-copy-section-head"><h5>Exclusive Areas</h5></div><p class="admin-small">Editor unchanged until Import values is confirmed.</p></section>
+        </div>
+        <div class="ci-bulk-class-modal-footer">
+          <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+            <button type="button" class="admin-button secondary small">Cancel</button>
+            <button type="button" class="admin-button secondary small">Save template</button>
+            <button type="button" class="admin-button small" disabled aria-disabled="true">Apply saved template…</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. unsaved-template-state -->
+  <div id="unsaved-template-state" class="vr-capture-root vr-hidden">
+    <div class="vr-modal-wrap">
+      <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal">
+        <div class="ci-bulk-class-modal-head">
+          <h4>Class facilities template — Edge class <span class="ci-class-tpl-status-badge">Unsaved changes</span></h4>
+          <button type="button" class="admin-button secondary small">Close</button>
+        </div>
+        <div class="ci-bulk-class-modal-body">
+          <div class="ci-class-tpl-meta">
+            <p class="admin-small ci-class-tpl-warning">You have unsaved editor changes. Save the template before applying. Apply saved template always uses the last saved server template, not this draft.</p>
+          </div>
+          <section class="ci-item-copy-section">
+            <div class="ci-item-copy-section-head"><h5>Exclusive Areas</h5></div>
+            <div class="ci-exclusive-area-card ci-class-tpl-ea-card">
+              <div class="ci-facility-compact-row"><input type="text" class="ci-class-tpl-ea-name" value="The Retreat"></div>
+              <div class="ci-exclusive-area-description-wrap ci-class-tpl-ea-description-wrap"><textarea class="ci-class-tpl-ea-description" rows="2">Updated draft description — not yet saved.</textarea></div>
+            </div>
+            <div class="ci-exclusive-area-card ci-class-tpl-ea-card">
+              <div class="ci-facility-compact-row"><input type="text" class="ci-class-tpl-ea-name" value="Blu"></div>
+            </div>
+          </section>
+          <section class="ci-item-copy-section"><div class="ci-item-copy-section-head"><h5>Specialty Features</h5></div><div id="sf-unsaved"></div></section>
+        </div>
+        <div class="ci-bulk-class-modal-footer">
+          <p class="admin-small">Save the template without changing ships, or apply the saved template as a separate action.</p>
+          <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+            <button type="button" class="admin-button secondary small">Cancel</button>
+            <button type="button" class="admin-button secondary small">Save template</button>
+            <button type="button" class="admin-button small" disabled aria-disabled="true">Apply saved template…</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. apply-confirmation -->
+  <div id="apply-confirmation" class="vr-capture-root vr-hidden">
+    <div class="vr-modal-wrap">
+      <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal">
+        <div class="ci-bulk-class-modal-head"><h4>Apply class template — Edge class</h4><button type="button" class="admin-button secondary small">Close</button></div>
+        <div class="ci-bulk-class-modal-body" id="confirm-body-standard"></div>
+        <div class="ci-bulk-class-modal-footer">
+          <p class="admin-small">Confirm to replace EA and SF on active ships in this class.</p>
+          <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+            <button type="button" class="admin-button secondary small">Back</button>
+            <button type="button" class="admin-button secondary small">Cancel</button>
+            <button type="button" class="admin-button small" disabled aria-disabled="true">Confirm apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. apply-confirmation-acknowledged -->
+  <div id="apply-confirmation-acknowledged" class="vr-capture-root vr-hidden">
+    <div class="vr-modal-wrap">
+      <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal">
+        <div class="ci-bulk-class-modal-head"><h4>Apply class template — Edge class</h4><button type="button" class="admin-button secondary small">Close</button></div>
+        <div class="ci-bulk-class-modal-body" id="confirm-body-acked"></div>
+        <div class="ci-bulk-class-modal-footer">
+          <p class="admin-small"><strong>4 ships will change</strong> · <strong>1 already matching</strong></p>
+          <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+            <button type="button" class="admin-button secondary small">Back</button>
+            <button type="button" class="admin-button secondary small">Cancel</button>
+            <button type="button" class="admin-button small">Confirm apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. empty-section-clear-warning -->
+  <div id="empty-section-clear-warning" class="vr-capture-root vr-hidden">
+    <div class="vr-modal-wrap">
+      <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal">
+        <div class="ci-bulk-class-modal-head"><h4>Apply class template — Millennium class</h4><button type="button" class="admin-button secondary small">Close</button></div>
+        <div class="ci-bulk-class-modal-body" id="confirm-body-empty-ea"></div>
+        <div class="ci-bulk-class-modal-footer">
+          <p class="admin-small">Confirm to replace EA and SF on active ships in this class.</p>
+          <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer">
+            <button type="button" class="admin-button secondary small">Back</button>
+            <button type="button" class="admin-button secondary small">Cancel</button>
+            <button type="button" class="admin-button small" disabled aria-disabled="true">Confirm apply</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 9. apply-result -->
+  <div id="apply-result" class="vr-capture-root vr-hidden">
+    <div class="vr-modal-wrap">
+      <div class="ci-bulk-class-modal ci-item-copy-modal ci-class-tpl-modal">
+        <div class="ci-bulk-class-modal-head"><h4>Apply complete — Edge class</h4><button type="button" class="admin-button secondary small">Close</button></div>
+        <div class="ci-bulk-class-modal-body">
+          <div class="ci-item-copy-result-wrap">
+            <p class="admin-small"><strong>Apply complete</strong></p>
+            <p class="admin-small">Updated ships</p>
+            <ul class="ci-bulk-class-summary-list">
+              <li><strong>Celebrity Apex</strong> — updated</li>
+              <li><strong>Celebrity Ascent</strong> — updated</li>
+              <li><strong>Celebrity Beyond</strong> — updated</li>
+              <li><strong>Celebrity Xcel</strong> — updated</li>
+            </ul>
+            <p class="admin-small">Already matching</p>
+            <ul class="ci-bulk-class-summary-list"><li><strong>Celebrity Edge</strong> — already matching</li></ul>
+            <p class="admin-small">Failed ships</p>
+            <ul class="ci-bulk-class-summary-list"><li class="ci-item-copy-result-fail">None</li></ul>
+            <p class="admin-small">Class sync status recalculated: All 5 ships match template</p>
+          </div>
+        </div>
+        <div class="ci-bulk-class-modal-footer">
+          <div class="admin-actions-row ci-bulk-class-modal-actions ci-item-copy-footer"><button type="button" class="admin-button small">Close</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 10. individual-ship-template-note -->
+  <div id="individual-ship-template-note" class="vr-capture-root vr-hidden">
+    <div class="vr-ship-context">
+      <div class="ci-detail-title-row"><h3 class="ci-detail-title">Celebrity Apex</h3></div>
+      <p class="admin-small ci-detail-subtitle">Click Save ship or select another ship to persist changes.</p>
+      <div class="admin-field"><label>Ship class</label><input type="text" value="Edge class" readonly class="ci-id-readonly"></div>
+      <div class="ci-section-heading"><h4>Facilities</h4><button type="button" class="admin-button secondary small">Copy</button></div>
+      <p class="admin-small ci-class-template-note">This ship has a Edge class facilities template. Individual changes are allowed, but they will be replaced if the class template is applied again. <button type="button" class="admin-button secondary small ci-inline-link-btn">Edit class template on cruise line</button></p>
+      <div class="ci-form-grid">
+        <div class="admin-field"><label>Pools</label><input type="number" value="3"></div>
+        <div class="admin-field"><label>Dining Options</label><input type="number" value="8"></div>
+      </div>
+      <div class="ci-facility-section">
+        <div class="ci-section-heading"><h5>Exclusive area</h5><button type="button" class="admin-button secondary small">Copy facilities to other ships</button></div>
+        <div class="ci-exclusive-area-card"><div class="ci-exclusive-area-fields"><div class="admin-field"><label>Name</label><input type="text" class="ci-exclusive-area-name" value="The Retreat"></div><div class="admin-field"><label>Description</label><textarea class="ci-exclusive-area-description" rows="2">Different Retreat copy on Apex.</textarea></div></div></div>
+      </div>
+      <div class="ci-facility-section">
+        <div class="ci-section-heading"><h5>Specialty features</h5><button type="button" class="admin-button secondary small">Copy facilities to other ships</button></div>
+        <div class="ci-specialty-feature-row ci-facility-compact-row"><input type="text" class="ci-specialty-feature-label" value="Eden"></div>
+        <div class="ci-specialty-feature-row ci-facility-compact-row"><input type="text" class="ci-specialty-feature-label" value="Solarium"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 11 & 12 mobile clones filled by capture script viewport -->
+
+  <script>
+    function cloneTemplate(id, targetId) {
+      const tpl = document.getElementById(id);
+      const target = document.getElementById(targetId);
+      if (tpl && target) target.appendChild(tpl.content.cloneNode(true));
+    }
+    cloneTemplate("tpl-ea-retreat-blu", "ea-existing");
+    cloneTemplate("tpl-sf-four", "sf-existing");
+    cloneTemplate("tpl-sf-four", "sf-empty-partial");
+    cloneTemplate("tpl-sf-four", "sf-unsaved");
+
+    function confirmBody(opts) {
+      const ackChecked = opts.acked ? " checked" : "";
+      const ackDisabled = opts.acked ? "" : "";
+      return `
+        <p class="admin-small">Apply the saved class template to <strong>${opts.className}</strong> on <strong>Celebrity Cruises</strong>.</p>
+        <ul class="ci-bulk-class-summary-list">
+          <li><strong>Template Exclusive Areas:</strong> ${opts.ea}</li>
+          <li><strong>Template Specialty Features:</strong> ${opts.sf}</li>
+          <li>${opts.ships} active ships</li>
+          <li>${opts.change} will change</li>
+          <li>${opts.match} already matching</li>
+        </ul>
+        ${opts.clearWarning ? `<p class="admin-small ci-class-tpl-warning">${opts.clearWarning}</p>` : ""}
+        <p class="admin-small"><strong>Target ships</strong></p>
+        <ul class="ci-bulk-class-summary-list">${opts.shipList}</ul>
+        <p class="admin-small ci-class-tpl-warning">Individual ship customisations in these sections will be replaced.</p>
+        <p class="admin-small">Scalar facilities such as pools, spa, restaurants and bars will remain unchanged on each ship.</p>
+        <label class="ci-class-tpl-ack"><input type="checkbox"${ackChecked}${ackDisabled}> I understand this will replace the current Exclusive Areas and Specialty Features on the affected ships.</label>`;
+    }
+
+    document.getElementById("confirm-body-standard").innerHTML = confirmBody({
+      className: "Edge class",
+      ea: "The Retreat — Ship-within-a-ship…, Blu — Exclusive restaurant…",
+      sf: "Magic Carpet, Eden, Rooftop Garden, Grand Plaza",
+      ships: 5, change: 4, match: 1,
+      shipList: `
+        <li><strong>Celebrity Edge</strong> — Already matching</li>
+        <li><strong>Celebrity Apex</strong> — Will change</li>
+        <li><strong>Celebrity Ascent</strong> — Will change</li>
+        <li><strong>Celebrity Beyond</strong> — Will change</li>
+        <li><strong>Celebrity Xcel</strong> — Will change</li>`
+    });
+
+    document.getElementById("confirm-body-acked").innerHTML = confirmBody({
+      className: "Edge class",
+      ea: "The Retreat — Ship-within-a-ship…, Blu — Exclusive restaurant…",
+      sf: "Magic Carpet, Eden, Rooftop Garden, Grand Plaza",
+      ships: 5, change: 4, match: 1, acked: true,
+      shipList: `
+        <li><strong>Celebrity Edge</strong> — Already matching</li>
+        <li><strong>Celebrity Apex</strong> — Will change</li>
+        <li><strong>Celebrity Ascent</strong> — Will change</li>
+        <li><strong>Celebrity Beyond</strong> — Will change</li>
+        <li><strong>Celebrity Xcel</strong> — Will change</li>`
+    });
+
+    document.getElementById("confirm-body-empty-ea").innerHTML = confirmBody({
+      className: "Millennium class",
+      ea: "None — will clear existing Exclusive Areas on affected ships",
+      sf: "Solarium, Tuscan Grille, Eden",
+      ships: 2, change: 2, match: 0,
+      clearWarning: "The saved template has no Exclusive Areas. Applying will clear existing Exclusive Areas on ships that currently have them. Specialty Features will be replaced with the template list. Unrelated facilities remain unchanged.",
+      shipList: `
+        <li><strong>Celebrity Millennium</strong> — Will change (clears EA)</li>
+        <li><strong>Celebrity Summit</strong> — Will change (clears EA)</li>`
+    });
+  </script>
+</body>
+</html>
