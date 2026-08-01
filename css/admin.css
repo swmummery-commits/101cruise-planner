@@ -1004,6 +1004,10 @@ body.admin-loading-active {
   margin-bottom: 8px;
 }
 
+.ci-item-copy-section-foot {
+  margin-top: 10px;
+}
+
 .ci-item-copy-section-head h5,
 .ci-item-copy-section > h5 {
   margin: 0;
@@ -1435,8 +1439,17 @@ body.admin-loading-active {
   background: #fafafa;
 }
 
-.ci-class-facilities-panel h4 {
-  margin: 0 0 8px;
+.ci-class-facilities-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.ci-class-facilities-panel-head h4 {
+  margin: 0;
 }
 
 .ci-class-facilities-panel .admin-small {

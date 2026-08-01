@@ -284,16 +284,20 @@
       <section class="ci-item-copy-section">
         <div class="ci-item-copy-section-head">
           <h5>Exclusive Areas</h5>
-          <button type="button" class="admin-button secondary small" data-action="ea-add">Add area</button>
         </div>
         <div id="ciClassTplExclusiveList"></div>
+        <div class="ci-item-copy-section-foot">
+          <button type="button" class="admin-button secondary small" data-action="ea-add">Add area</button>
+        </div>
       </section>
       <section class="ci-item-copy-section">
         <div class="ci-item-copy-section-head">
           <h5>Specialty Features</h5>
-          <button type="button" class="admin-button secondary small" data-action="sf-add">Add feature</button>
         </div>
         <div id="ciClassTplSpecialtyList"></div>
+        <div class="ci-item-copy-section-foot">
+          <button type="button" class="admin-button secondary small" data-action="sf-add">Add feature</button>
+        </div>
       </section>
       <p class="admin-small ci-item-copy-preserve-note">Applying replaces the complete Exclusive Areas and Specialty Features sections on each active ship in this class. Scalar facilities (pools, spa, etc.) are never changed. Import only prefills the editor — it does not save or apply. Import from class adds selected items without removing what is already in the editor.</p>`;
   }

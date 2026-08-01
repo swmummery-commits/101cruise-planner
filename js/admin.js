@@ -7304,7 +7304,10 @@ function renderCiLineShipClassesSection(line) {
   if (!rows.length && !unassigned) {
     return `
       <div class="ci-class-facilities-panel" id="ciLineShipClassesPanel">
-        <h4>Ship classes</h4>
+        <div class="ci-class-facilities-panel-head">
+          <h4>Ship classes</h4>
+          <button type="button" class="admin-button secondary small" onclick="openCiBulkShipClassModalFromLine()">Manage ship classes</button>
+        </div>
         <p class="admin-small">Assign ship classes first, then create class facilities templates for Exclusive Areas and Specialty Features.</p>
       </div>`;
   }
@@ -7329,7 +7332,10 @@ function renderCiLineShipClassesSection(line) {
   }).join("");
   return `
     <div class="ci-class-facilities-panel" id="ciLineShipClassesPanel">
-      <h4>Ship classes</h4>
+      <div class="ci-class-facilities-panel-head">
+        <h4>Ship classes</h4>
+        <button type="button" class="admin-button secondary small" onclick="openCiBulkShipClassModalFromLine()">Manage ship classes</button>
+      </div>
       <p class="admin-small">Class templates replace the complete Exclusive Areas and Specialty Features sections when applied. Individual ships can still be edited afterward, but those sections will be replaced on the next class apply.</p>
       ${rows.length ? `
         <div class="ci-bulk-class-table-wrap">
@@ -8325,10 +8331,6 @@ function renderCiLineForm(line) {
       <p class="admin-small ci-detail-subtitle">${editing ? "Click Save line or select another cruise line to persist changes." : "Fill in the details, then create."}</p>
       ${editing ? `<p id="ciFormSaveError" class="admin-small admin-error" hidden></p>` : ""}
       ${renderCiLineStatsPanel(line)}
-      ${editing ? `
-        <div class="admin-actions-row ci-line-class-actions">
-          <button type="button" class="admin-button secondary small" onclick="openCiBulkShipClassModalFromLine()">Manage ship classes</button>
-        </div>` : ""}
       ${renderCiMediaField({
         kind: "logo",
         inputId: "ciLineLogo",
