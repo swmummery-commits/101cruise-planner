@@ -18,9 +18,21 @@ function read(rel) {
 }
 
 function loadCiShipFacilities() {
-  const sandbox = { module: { exports: {} }, exports: {} };
+  const Icons = loadModule("js/ci-ship-feature-icons.js");
+  const sandbox = { module: { exports: {} }, exports: {}, require, CiShipFeatureIcons: Icons };
   sandbox.exports = sandbox.module.exports;
+  sandbox.globalThis = sandbox;
+  sandbox.window = sandbox;
   vm.runInNewContext(read("js/ci-ship-facilities.js"), sandbox, { filename: "ci-ship-facilities.js" });
+  return sandbox.module.exports;
+}
+
+function loadModule(rel) {
+  const sandbox = { module: { exports: {} }, exports: {}, require };
+  sandbox.exports = sandbox.module.exports;
+  sandbox.globalThis = sandbox;
+  sandbox.window = sandbox;
+  vm.runInNewContext(read(rel), sandbox, { filename: path.basename(rel) });
   return sandbox.module.exports;
 }
 
@@ -64,10 +76,11 @@ assert.match(apexSuggested.description, /Luminae\./);
 const rawApex = [apexSentence];
 const apexLoaded = CiFac.loadExclusiveAreasForAdmin(rawApex);
 assert.equal(apexLoaded.length, 1);
-assert.equal(apexLoaded[0].name, "The Retreat");
-assert.equal(apexLoaded[0].showDescription, true);
+assert.equal(apexLoaded[0].name, apexSentence);
+assert.equal(apexLoaded[0].showDescription, false);
 assert.equal(rawApex[0], apexSentence);
 assert.equal(CiFac.serializeExclusiveAreasFromAdmin(apexLoaded).length, 1);
+assert.equal(CiFac.serializeExclusiveAreasFromAdmin(apexLoaded)[0].name, apexSentence);
 
 // Suggestion does not write until explicit save
 const unsavedRows = [{ name: "The Retreat", description: apexSuggested.description }];
@@ -95,11 +108,12 @@ const orderedSave = CiFac.serializeExclusiveAreasFromAdmin([
 assert.equal(orderedSave[0].name, "Alpha");
 assert.equal(orderedSave[1].name, "Beta");
 
-// Specialty features comma-safe
+// Specialty features comma-safe structured save
 const specialtySaved = CiFac.serializeSpecialtyFeaturesFromAdmin([
-  { label: "Fitness Center, with classes" }
+  { name: "Fitness Center, with classes", icon_key: "fitness" }
 ]);
-assert.equal(specialtySaved[0], "Fitness Center, with classes");
+assert.equal(specialtySaved[0].name, "Fitness Center, with classes");
+assert.equal(specialtySaved[0].icon_key, "fitness");
 
 // ship_class
 assert.equal(CiFac.normalizeShipClass("  Edge class  "), "Edge class");
@@ -224,13 +238,14 @@ assert.match(display[0].description, /Long prose/);
 assert.doesNotMatch(JSON.stringify(display), /\[object Object\]/);
 
 // Admin compact UI markers
-assert.match(adminJs, /Add another exclusive area/);
-assert.match(adminJs, /Add description/);
+assert.match(adminJs, /Add exclusive area/);
+assert.match(adminJs, /Add specialty feature/);
+assert.match(adminJs, /CiShipFeatureAdmin/);
 assert.match(adminJs, /Copy facilities to other ships/);
 assert.match(adminJs, /CiShipFacilitiesItemCopyAdmin/);
 assert.match(adminJs, /renderCiExclusiveAreaFieldStack/);
-assert.match(adminJs, /ci-exclusive-area-fields/);
-assert.match(read("css/admin.css"), /\.ci-exclusive-area-fields/);
+assert.match(adminJs, /ci-ship-feature-card/);
+assert.match(read("css/admin.css"), /\.ci-ship-feature-card/);
 assert.match(read("css/admin.css"), /width:\s*100%/);
 assert.match(read("css/admin.css"), /\.ci-facilities-copy-modal-footer/);
 assert.match(adminJs, /openCiSameClassFacilitiesCopyModal/);

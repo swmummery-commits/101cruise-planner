@@ -7737,52 +7737,61 @@ function ciFacilitiesApi() {
   return window.CiShipFacilities || null;
 }
 
-function renderCiExclusiveAreaFieldStack(row, index, { readonly = false } = {}) {
-  const showDescription = Boolean(row.showDescription || row.description);
-  const descHidden = showDescription ? "" : " hidden";
-  const addDescHidden = showDescription ? " hidden" : "";
-  const readAttr = readonly ? " readonly" : "";
-  const addDescBtn = readonly
-    ? `<button type="button" class="admin-button secondary small ci-exclusive-area-add-desc${addDescHidden}" disabled>Add description</button>`
-    : `<button type="button" class="admin-button secondary small ci-exclusive-area-add-desc${addDescHidden}" onclick="toggleCiExclusiveAreaDescription(${index}, true)">Add description</button>`;
+function ciShipFeatureAdminApi() {
+  return window.CiShipFeatureAdmin || null;
+}
 
-  return `
-      <div class="ci-exclusive-area-fields">
-        <div class="admin-field ci-exclusive-area-name-field">
-          <label>Name</label>
-          <input type="text" class="ci-exclusive-area-name" value="${esc(row.name || "")}" placeholder="e.g. The Retreat"${readAttr}>
-        </div>
-        ${addDescBtn}
-        <div class="ci-exclusive-area-description-wrap admin-field${descHidden}">
-          <label>Description <span class="admin-small">(optional)</span></label>
-          <textarea class="ci-exclusive-area-description" rows="2" placeholder="Short detail shown on My Ship"${readAttr}>${esc(row.description || "")}</textarea>
-        </div>
-      </div>
-  `;
+function bindCiShipFeatureList(root, rebuildFn) {
+  const admin = ciShipFeatureAdminApi();
+  if (!admin || !root) return;
+  admin.bindFeatureList(root, {
+    onShowDescription(index) {
+      const rows = admin.readFeatureRowsFromRoot(root);
+      if (!rows[index]) return;
+      rows[index].showDescription = true;
+      rebuildFn(rows);
+      root.querySelector(`.ci-ship-feature-card[data-index="${index}"] .ci-ship-feature-description`)?.focus();
+    },
+    onRemove(index) {
+      const rows = admin.readFeatureRowsFromRoot(root);
+      rows.splice(index, 1);
+      rebuildFn(rows);
+    },
+    onMove(index, delta) {
+      const rows = admin.readFeatureRowsFromRoot(root);
+      const next = index + delta;
+      if (next < 0 || next >= rows.length) return;
+      const copy = rows.slice();
+      const [item] = copy.splice(index, 1);
+      copy.splice(next, 0, item);
+      rebuildFn(copy);
+    }
+  });
+}
+
+function renderCiExclusiveAreaFieldStack(row, index, { readonly = false } = {}) {
+  const admin = ciShipFeatureAdminApi();
+  if (admin) {
+    return admin.renderFeatureRow(row, index, 1, {
+      readonly,
+      prefix: "ciExclusive",
+      cardClass: "ci-ship-feature-card ci-exclusive-area-card",
+      sectionLabel: "Exclusive area"
+    });
+  }
+  return "";
 }
 
 function renderCiExclusiveAreaCard(row, index, total) {
-  const fieldStack = renderCiExclusiveAreaFieldStack(row, index);
-  if (total <= 1) {
-    return `
-    <div class="ci-exclusive-area-card" data-index="${index}">
-      ${fieldStack}
-    </div>
-  `;
+  const admin = ciShipFeatureAdminApi();
+  if (admin) {
+    return admin.renderFeatureRow(row, index, total, {
+      prefix: "ciExclusive",
+      cardClass: "ci-ship-feature-card ci-exclusive-area-card",
+      sectionLabel: "Exclusive area"
+    });
   }
-  return `
-    <div class="ci-exclusive-area-card" data-index="${index}">
-      <div class="ci-exclusive-area-card-head">
-        <strong class="ci-exclusive-area-card-title">Exclusive area ${index + 1}</strong>
-      </div>
-      <div class="ci-exclusive-area-card-actions">
-        <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, -1)" title="Move up">↑</button>
-        <button type="button" class="admin-button secondary small" onclick="moveCiExclusiveAreaRow(${index}, 1)" title="Move down">↓</button>
-        <button type="button" class="admin-button secondary small" onclick="removeCiExclusiveAreaRow(${index})">Remove</button>
-      </div>
-      ${fieldStack}
-    </div>
-  `;
+  return "";
 }
 
 function renderCiExclusiveAreaSourcePreviewHtml() {
@@ -7790,70 +7799,91 @@ function renderCiExclusiveAreaSourcePreviewHtml() {
   if (!rows.length) {
     return `<p class="admin-small">No exclusive areas on the current form.</p>`;
   }
+  const admin = ciShipFeatureAdminApi();
   return `
     <div class="ci-exclusive-area-source-preview">
       <p class="admin-small"><strong>Source exclusive area${rows.length === 1 ? "" : "s"}</strong></p>
-      ${rows.map((row, index) => `
-        <div class="ci-exclusive-area-card ci-exclusive-area-card--preview">
-          ${rows.length > 1 ? `<strong class="ci-exclusive-area-card-title">Exclusive area ${index + 1}</strong>` : ""}
-          ${renderCiExclusiveAreaFieldStack(row, index, { readonly: true })}
-        </div>
-      `).join("")}
+      ${rows.map((row, index) => admin
+        ? admin.renderFeatureRow(row, index, rows.length, {
+          readonly: true,
+          prefix: "ciExclusivePreview",
+          cardClass: "ci-ship-feature-card ci-exclusive-area-card ci-exclusive-area-card--preview",
+          sectionLabel: "Exclusive area"
+        })
+        : "").join("")}
     </div>
   `;
+}
+
+function rebuildCiExclusiveAreasDom(rows) {
+  const root = document.getElementById("ciExclusiveAreasList");
+  const admin = ciShipFeatureAdminApi();
+  if (!root || !admin) return;
+  const list = rows.length ? rows : [{
+    name: "",
+    description: "",
+    icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+    showDescription: false,
+    needsDescription: false
+  }];
+  admin.rebuildFeatureList(root, list, {
+    prefix: "ciExclusive",
+    cardClass: "ci-ship-feature-card ci-exclusive-area-card",
+    sectionLabel: "Exclusive area"
+  });
+  bindCiShipFeatureList(root, rebuildCiExclusiveAreasDom);
 }
 
 function renderCiExclusiveAreasEditor(ship) {
   const api = ciFacilitiesApi();
   let rows = api ? api.loadExclusiveAreasForAdmin(ship?.facilities?.exclusive_areas) : [];
   if (!rows.length) {
-    rows = [{ name: "", description: "", showDescription: false }];
+    rows = [{
+      name: "",
+      description: "",
+      icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+      showDescription: false,
+      needsDescription: false
+    }];
   }
   const fragmented = api ? api.detectFragmentedLegacyExclusiveAreas(ship?.facilities?.exclusive_areas) : false;
   const canFacilitiesCopy = window.CiShipFacilitiesItemCopyAdmin?.canOpenCopy?.(ship);
+  setTimeout(function () {
+    bindCiShipFeatureList(document.getElementById("ciExclusiveAreasList"), rebuildCiExclusiveAreasDom);
+  }, 0);
   return `
     <div class="ci-facility-section">
       <div class="ci-section-heading">
-        <h5>Exclusive area</h5>
+        <h5>Exclusive Areas</h5>
         ${canFacilitiesCopy ? `<button type="button" class="admin-button secondary small" onclick="openCiSameClassFacilitiesCopyModal()">Copy facilities to other ships</button>` : ""}
       </div>
       ${fragmented ? `<p class="ci-facility-warning">Legacy entries may need combining before this ship is saved.</p>` : ""}
-      <p class="admin-small">Most ships have one exclusive area. Commas inside names or descriptions are preserved.</p>
+      <p class="admin-small">Each row supports an icon, name and description. Commas inside descriptions are preserved.</p>
       <div id="ciExclusiveAreasList">
         ${rows.map((row, index) => renderCiExclusiveAreaCard(row, index, rows.length)).join("")}
       </div>
       <div class="admin-actions-row" style="margin-top:8px;">
-        <button type="button" class="admin-button secondary small" onclick="addCiExclusiveAreaRow()">Add another exclusive area</button>
+        <button type="button" class="admin-button secondary small" onclick="addCiExclusiveAreaRow()">Add exclusive area</button>
       </div>
     </div>
   `;
 }
 
 function readCiExclusiveAreasFromDom() {
+  const admin = ciShipFeatureAdminApi();
   const root = document.getElementById("ciExclusiveAreasList");
-  if (!root) return [];
-  const rows = [];
-  root.querySelectorAll(".ci-exclusive-area-card").forEach((row) => {
-    const name = String(row.querySelector(".ci-exclusive-area-name")?.value || "").trim();
-    const description = String(row.querySelector(".ci-exclusive-area-description")?.value || "").trim();
-    const descWrap = row.querySelector(".ci-exclusive-area-description-wrap");
-    const showDescription = Boolean(descWrap && !descWrap.classList.contains("hidden"));
-    if (!name && !description) return;
-    rows.push({ name, description, showDescription: showDescription || Boolean(description) });
-  });
-  return rows;
-}
-
-function rebuildCiExclusiveAreasDom(rows) {
-  const root = document.getElementById("ciExclusiveAreasList");
-  if (!root) return;
-  const list = rows.length ? rows : [{ name: "", description: "", showDescription: false }];
-  root.innerHTML = list.map((row, index) => renderCiExclusiveAreaCard(row, index, list.length)).join("");
+  return admin ? admin.readFeatureRowsFromRoot(root) : [];
 }
 
 function addCiExclusiveAreaRow() {
   const rows = readCiExclusiveAreasFromDom();
-  rows.push({ name: "", description: "", showDescription: false });
+  rows.push({
+    name: "",
+    description: "",
+    icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+    showDescription: false,
+    needsDescription: false
+  });
   rebuildCiExclusiveAreasDom(rows);
 }
 
@@ -7879,63 +7909,69 @@ function toggleCiExclusiveAreaDescription(index, open) {
   rows[index].showDescription = open !== false;
   rebuildCiExclusiveAreasDom(rows);
   if (open !== false) {
-    const root = document.getElementById("ciExclusiveAreasList");
-    const card = root?.querySelector(`.ci-exclusive-area-card[data-index="${index}"]`);
-    card?.querySelector(".ci-exclusive-area-description")?.focus();
+    document.getElementById("ciExclusiveAreasList")
+      ?.querySelector(`.ci-ship-feature-card[data-index="${index}"] .ci-ship-feature-description`)
+      ?.focus();
   }
 }
 
-function renderCiSpecialtyFeatureRow(row, index) {
-  return `
-    <div class="ci-specialty-feature-row ci-facility-compact-row" data-index="${index}">
-      <input type="text" class="ci-specialty-feature-label" value="${esc(row.label || "")}" placeholder="Specialty feature">
-      <div class="ci-facility-row-actions ci-facility-row-actions--inline">
-        <button type="button" class="admin-button secondary small" onclick="moveCiSpecialtyFeatureRow(${index}, -1)" title="Move up">↑</button>
-        <button type="button" class="admin-button secondary small" onclick="moveCiSpecialtyFeatureRow(${index}, 1)" title="Move down">↓</button>
-        <button type="button" class="admin-button secondary small" onclick="removeCiSpecialtyFeatureRow(${index})">Remove</button>
-      </div>
-    </div>
-  `;
+function rebuildCiSpecialtyFeaturesDom(rows) {
+  const root = document.getElementById("ciSpecialtyFeaturesList");
+  const admin = ciShipFeatureAdminApi();
+  if (!root || !admin) return;
+  admin.rebuildFeatureList(root, rows, {
+    prefix: "ciSpecialty",
+    cardClass: "ci-ship-feature-card ci-specialty-feature-card",
+    sectionLabel: "Specialty feature"
+  });
+  bindCiShipFeatureList(root, rebuildCiSpecialtyFeaturesDom);
+}
+
+function renderCiSpecialtyFeatureRow(row, index, total) {
+  const admin = ciShipFeatureAdminApi();
+  if (!admin) return "";
+  return admin.renderFeatureRow(row, index, total || 1, {
+    prefix: "ciSpecialty",
+    cardClass: "ci-ship-feature-card ci-specialty-feature-card",
+    sectionLabel: "Specialty feature"
+  });
 }
 
 function renderCiSpecialtyFeaturesEditor(ship) {
   const api = ciFacilitiesApi();
   const rows = api ? api.loadSpecialtyFeaturesForAdmin(ship?.facilities?.specialty_features) : [];
+  setTimeout(function () {
+    bindCiShipFeatureList(document.getElementById("ciSpecialtyFeaturesList"), rebuildCiSpecialtyFeaturesDom);
+  }, 0);
   return `
     <div class="ci-facility-section">
       <h5>Specialty Features</h5>
-      <p class="admin-small">One feature per row. Commas inside a feature name are preserved.</p>
+      <p class="admin-small">Each row supports an icon, name and description. Commas inside descriptions are preserved.</p>
       <div id="ciSpecialtyFeaturesList">
-        ${rows.length ? rows.map(renderCiSpecialtyFeatureRow).join("") : ""}
+        ${rows.length ? rows.map((row, index) => renderCiSpecialtyFeatureRow(row, index, rows.length)).join("") : ""}
       </div>
       <div class="admin-actions-row" style="margin-top:8px;">
-        <button type="button" class="admin-button secondary small" onclick="addCiSpecialtyFeatureRow()">Add feature</button>
+        <button type="button" class="admin-button secondary small" onclick="addCiSpecialtyFeatureRow()">Add specialty feature</button>
       </div>
     </div>
   `;
 }
 
 function readCiSpecialtyFeaturesFromDom() {
+  const admin = ciShipFeatureAdminApi();
   const root = document.getElementById("ciSpecialtyFeaturesList");
-  if (!root) return [];
-  const rows = [];
-  root.querySelectorAll(".ci-specialty-feature-row").forEach((row) => {
-    const label = String(row.querySelector(".ci-specialty-feature-label")?.value || "").trim();
-    if (!label) return;
-    rows.push({ label });
-  });
-  return rows;
-}
-
-function rebuildCiSpecialtyFeaturesDom(rows) {
-  const root = document.getElementById("ciSpecialtyFeaturesList");
-  if (!root) return;
-  root.innerHTML = rows.map(renderCiSpecialtyFeatureRow).join("");
+  return admin ? admin.readFeatureRowsFromRoot(root) : [];
 }
 
 function addCiSpecialtyFeatureRow() {
   const rows = readCiSpecialtyFeaturesFromDom();
-  rows.push({ label: "" });
+  rows.push({
+    name: "",
+    description: "",
+    icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+    showDescription: false,
+    needsDescription: false
+  });
   rebuildCiSpecialtyFeaturesDom(rows);
 }
 

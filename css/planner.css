@@ -8102,6 +8102,96 @@ input[type="radio"] {
   max-width: 42rem;
 }
 
+.ship-feature-experiences-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  gap: 28px 32px;
+  align-items: start;
+}
+
+.ship-feature-column h3 {
+  margin: 0 0 6px;
+}
+
+.ship-feature-column-divider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(17, 24, 39, 0.08);
+}
+
+.ship-feature-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+
+.ship-feature-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.ship-feature-icon-holder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(141, 217, 191, 0.18);
+  color: var(--brand-dark-green, #245c4e);
+}
+
+.ship-feature-icon-holder .ship-feature-icon-svg {
+  width: 21px;
+  height: 21px;
+  display: block;
+}
+
+.ship-feature-copy {
+  min-width: 0;
+}
+
+.ship-feature-label {
+  display: inline-block;
+  max-width: 100%;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--brand-green, #8dd9bf);
+  color: var(--brand-dark-green, #245c4e);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.ship-feature-description {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  max-width: 34rem;
+}
+
+.ship-feature-unavailable {
+  margin: 14px 0 0;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 760px) {
+  .ship-feature-experiences-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+
+  .ship-feature-column-divider {
+    width: 100%;
+    height: 1px;
+  }
+}
+
 .ship-deck-card {
   display: block;
   padding: 22px 0 0;

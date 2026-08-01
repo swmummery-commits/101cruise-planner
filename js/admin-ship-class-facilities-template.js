@@ -43,31 +43,47 @@
     return window.ciShipClassFacilityTemplates || [];
   }
 
-  function readExclusiveRows() {
-    const root = document.getElementById("ciClassTplExclusiveList");
-    if (!root) return [];
-    const rows = [];
-    root.querySelectorAll(".ci-class-tpl-ea-card").forEach(function (card) {
-      const name = trim(card.querySelector(".ci-class-tpl-ea-name")?.value);
-      const description = trim(card.querySelector(".ci-class-tpl-ea-description")?.value);
-      const descWrap = card.querySelector(".ci-class-tpl-ea-description-wrap");
-      const showDescription = Boolean(descWrap && !descWrap.classList.contains("hidden"));
-      if (!name && !description) return;
-      rows.push({ name: name, description: description, showDescription: showDescription || Boolean(description) });
+  function featureAdminApi() {
+    return window.CiShipFeatureAdmin || null;
+  }
+
+  function bindClassTplFeatureList(root, rebuildFn) {
+    const admin = featureAdminApi();
+    if (!admin || !root) return;
+    admin.bindFeatureList(root, {
+      onShowDescription(index) {
+        const rows = admin.readFeatureRowsFromRoot(root);
+        if (!rows[index]) return;
+        rows[index].showDescription = true;
+        rebuildFn(rows);
+      },
+      onRemove(index) {
+        const rows = admin.readFeatureRowsFromRoot(root);
+        rows.splice(index, 1);
+        rebuildFn(rows);
+      },
+      onMove(index, delta) {
+        const rows = admin.readFeatureRowsFromRoot(root);
+        const next = index + delta;
+        if (next < 0 || next >= rows.length) return;
+        const copy = rows.slice();
+        const [item] = copy.splice(index, 1);
+        copy.splice(next, 0, item);
+        rebuildFn(copy);
+      }
     });
-    return rows;
+  }
+
+  function readExclusiveRows() {
+    const admin = featureAdminApi();
+    const root = document.getElementById("ciClassTplExclusiveList");
+    return admin ? admin.readFeatureRowsFromRoot(root) : [];
   }
 
   function readSpecialtyRows() {
+    const admin = featureAdminApi();
     const root = document.getElementById("ciClassTplSpecialtyList");
-    if (!root) return [];
-    const rows = [];
-    root.querySelectorAll(".ci-class-tpl-sf-row").forEach(function (row) {
-      const label = trim(row.querySelector(".ci-class-tpl-sf-label")?.value);
-      if (!label) return;
-      rows.push({ label: label });
-    });
-    return rows;
+    return admin ? admin.readFeatureRowsFromRoot(root) : [];
   }
 
   function serializeTemplatePayload() {
@@ -79,53 +95,42 @@
     };
   }
 
-  function renderExclusiveCard(row, index) {
-    const showDescription = Boolean(row.showDescription || row.description);
-    return `
-      <div class="ci-exclusive-area-card ci-class-tpl-ea-card" data-index="${index}">
-        <div class="ci-facility-compact-row">
-          <input type="text" class="ci-class-tpl-ea-name" value="${esc(row.name || "")}" placeholder="Exclusive area name">
-          <div class="ci-facility-row-actions ci-facility-row-actions--inline">
-            <button type="button" class="admin-button secondary small" data-action="ea-move-up" data-index="${index}" title="Move up">↑</button>
-            <button type="button" class="admin-button secondary small" data-action="ea-move-down" data-index="${index}" title="Move down">↓</button>
-            <button type="button" class="admin-button secondary small" data-action="ea-remove" data-index="${index}">Remove</button>
-          </div>
-        </div>
-        ${showDescription
-          ? `<div class="ci-exclusive-area-description-wrap ci-class-tpl-ea-description-wrap">
-              <textarea class="ci-class-tpl-ea-description" rows="2" placeholder="Description">${esc(row.description || "")}</textarea>
-              <button type="button" class="admin-button secondary small" data-action="ea-hide-desc" data-index="${index}">Hide description</button>
-            </div>`
-          : `<button type="button" class="admin-button secondary small" data-action="ea-show-desc" data-index="${index}">Add description</button>`}
-      </div>`;
-  }
-
-  function renderSpecialtyRow(row, index) {
-    return `
-      <div class="ci-specialty-feature-row ci-class-tpl-sf-row" data-index="${index}">
-        <input type="text" class="ci-class-tpl-sf-label" value="${esc(row.label || "")}" placeholder="Specialty feature">
-        <div class="ci-facility-row-actions ci-facility-row-actions--inline">
-          <button type="button" class="admin-button secondary small" data-action="sf-move-up" data-index="${index}">↑</button>
-          <button type="button" class="admin-button secondary small" data-action="sf-move-down" data-index="${index}">↓</button>
-          <button type="button" class="admin-button secondary small" data-action="sf-remove" data-index="${index}">Remove</button>
-        </div>
-      </div>`;
-  }
-
   function rebuildExclusiveDom(rows) {
+    const admin = featureAdminApi();
     const root = document.getElementById("ciClassTplExclusiveList");
-    if (!root) return;
-    const list = rows.length ? rows : [{ name: "", description: "", showDescription: false }];
-    root.innerHTML = list.map(function (row, index) {
-      return renderExclusiveCard(row, index);
-    }).join("");
+    if (!admin || !root) return;
+    const list = rows.length ? rows : [{
+      name: "",
+      description: "",
+      icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+      showDescription: false,
+      needsDescription: false
+    }];
+    admin.rebuildFeatureList(root, list, {
+      prefix: "ciClassTplEa",
+      cardClass: "ci-ship-feature-card ci-class-tpl-ea-card",
+      sectionLabel: "Exclusive area"
+    });
+    bindClassTplFeatureList(root, rebuildExclusiveDom);
   }
 
   function rebuildSpecialtyDom(rows) {
+    const admin = featureAdminApi();
     const root = document.getElementById("ciClassTplSpecialtyList");
-    if (!root) return;
-    const list = rows.length ? rows : [{ label: "" }];
-    root.innerHTML = list.map(renderSpecialtyRow).join("");
+    if (!admin || !root) return;
+    const list = rows.length ? rows : [{
+      name: "",
+      description: "",
+      icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+      showDescription: false,
+      needsDescription: false
+    }];
+    admin.rebuildFeatureList(root, list, {
+      prefix: "ciClassTplSf",
+      cardClass: "ci-ship-feature-card ci-class-tpl-sf-card",
+      sectionLabel: "Specialty feature"
+    });
+    bindClassTplFeatureList(root, rebuildSpecialtyDom);
   }
 
   function loadEditorFromPayload(payload) {
@@ -221,7 +226,7 @@
       return `
         <label class="ci-check-control ci-item-copy-source-item">
           <input type="checkbox" class="ci-class-tpl-import-sf" value="${index}" checked>
-          <span class="ci-item-copy-source-item-body"><strong>${esc(row.label)}</strong></span>
+          <span class="ci-item-copy-source-item-body"><strong>${esc(row.name || row.label)}</strong>${row.description ? `<span class="ci-item-copy-desc-preview">${esc(row.description)}</span>` : ""}</span>
         </label>`;
     }).join("");
     modalContext.classImportSource = {
@@ -600,7 +605,13 @@
     });
     overlay.querySelector("[data-action='ea-add']")?.addEventListener("click", function () {
       const rows = readExclusiveRows();
-      rows.push({ name: "", description: "", showDescription: false });
+      rows.push({
+        name: "",
+        description: "",
+        icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+        showDescription: false,
+        needsDescription: false
+      });
       rebuildExclusiveDom(rows);
     });
     overlay.addEventListener("click", function (event) {
@@ -620,9 +631,21 @@
         const selectedEa = eaIndexes.map(function (index) { return source.eaRows[index]; }).filter(Boolean);
         const selectedSf = sfIndexes.map(function (index) { return source.sfRows[index]; }).filter(Boolean);
         const mergedEa = api.mergeExclusiveAreaRows(readExclusiveRows().filter(function (row) { return trim(row.name); }), selectedEa);
-        const mergedSf = api.mergeSpecialtyRows(readSpecialtyRows().filter(function (row) { return trim(row.label); }), selectedSf);
-        rebuildExclusiveDom(mergedEa.length ? mergedEa : [{ name: "", description: "", showDescription: false }]);
-        rebuildSpecialtyDom(mergedSf.length ? mergedSf : [{ label: "" }]);
+        const mergedSf = api.mergeSpecialtyRows(readSpecialtyRows().filter(function (row) { return trim(row.name || row.label); }), selectedSf);
+        rebuildExclusiveDom(mergedEa.length ? mergedEa : [{
+          name: "",
+          description: "",
+          icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+          showDescription: false,
+          needsDescription: false
+        }]);
+        rebuildSpecialtyDom(mergedSf.length ? mergedSf : [{
+          name: "",
+          description: "",
+          icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+          showDescription: false,
+          needsDescription: false
+        }]);
         modalContext.editorLoaded = true;
         persistEditorDraft();
         if (window.setCiAutosaveStatus) {
@@ -630,59 +653,16 @@
         }
         return;
       }
-      const index = Number(btn.getAttribute("data-index"));
-      if (action === "ea-remove") {
-        rebuildExclusiveDom(readExclusiveRows().filter(function (_row, i) { return i !== index; }));
-      } else if (action === "ea-move-up") {
-        const rows = readExclusiveRows();
-        if (index > 0) {
-          const copy = rows.slice();
-          const item = copy.splice(index, 1)[0];
-          copy.splice(index - 1, 0, item);
-          rebuildExclusiveDom(copy);
-        }
-      } else if (action === "ea-move-down") {
-        const rows = readExclusiveRows();
-        if (index < rows.length - 1) {
-          const copy = rows.slice();
-          const item = copy.splice(index, 1)[0];
-          copy.splice(index + 1, 0, item);
-          rebuildExclusiveDom(copy);
-        }
-      } else if (action === "ea-show-desc") {
-        const rows = readExclusiveRows();
-        if (rows[index]) {
-          rows[index].showDescription = true;
-          rebuildExclusiveDom(rows);
-        }
-      } else if (action === "ea-hide-desc") {
-        const rows = readExclusiveRows();
-        if (rows[index]) {
-          rows[index].showDescription = false;
-          rebuildExclusiveDom(rows);
-        }
-      } else if (action === "sf-add") {
+      if (action === "sf-add") {
         const rows = readSpecialtyRows();
-        rows.push({ label: "" });
+        rows.push({
+          name: "",
+          description: "",
+          icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+          showDescription: false,
+          needsDescription: false
+        });
         rebuildSpecialtyDom(rows);
-      } else if (action === "sf-remove") {
-        rebuildSpecialtyDom(readSpecialtyRows().filter(function (_row, i) { return i !== index; }));
-      } else if (action === "sf-move-up") {
-        const rows = readSpecialtyRows();
-        if (index > 0) {
-          const copy = rows.slice();
-          const item = copy.splice(index, 1)[0];
-          copy.splice(index - 1, 0, item);
-          rebuildSpecialtyDom(copy);
-        }
-      } else if (action === "sf-move-down") {
-        const rows = readSpecialtyRows();
-        if (index < rows.length - 1) {
-          const copy = rows.slice();
-          const item = copy.splice(index, 1)[0];
-          copy.splice(index + 1, 0, item);
-          rebuildSpecialtyDom(copy);
-        }
       }
     });
   }

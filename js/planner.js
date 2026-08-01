@@ -5822,7 +5822,7 @@ function buildShipProfileFromBase44(ship, { shipName, cruiseLine } = {}) {
     : buildShipChipList(exclusiveRaw).map((name) => ({ name, description: "", legacyString: true }));
   const specialtyFeatures = ciFac
     ? ciFac.normalizeSpecialtyFeaturesForDisplay(specialtyRaw)
-    : buildShipChipList(specialtyRaw);
+    : buildShipChipList(specialtyRaw).map((name) => ({ name, description: "", icon_key: "sparkles", legacyString: true }));
 
   return {
     name: ship?.name || shipName || "My ship",
@@ -6240,28 +6240,64 @@ function bindShipSpaceRatioExplainer() {
   });
 }
 
-function renderShipChipGroup(items) {
-  return `
-    <div class="dashboard-snapshot-extras-tags ship-chip-group">
-      ${items.map(item => `<span class="dashboard-snapshot-extras-tag">${escapeHtml(item)}</span>`).join("")}
-    </div>
-  `;
+function renderShipFeatureIcon(iconKey) {
+  const icons = typeof CiShipFeatureIcons !== "undefined" ? CiShipFeatureIcons : null;
+  if (icons && icons.renderFeatureIconHtml) {
+    return icons.renderFeatureIconHtml(iconKey, "ship-feature-icon-holder");
+  }
+  return `<span class="ship-feature-icon-holder" aria-hidden="true"></span>`;
 }
 
-function renderShipExclusiveAreas(areas) {
-  if (!areas.length) return "";
+function renderShipFeatureListItem(item) {
+  const name = item && (item.name || item.label || (typeof item === "string" ? item : ""));
+  if (!name) return "";
+  const description = item && item.description ? String(item.description).trim() : "";
+  const icons = typeof CiShipFeatureIcons !== "undefined" ? CiShipFeatureIcons : null;
+  const iconKey = icons
+    ? icons.resolveShipFeatureIconKey(name, item && item.icon_key)
+    : (item && item.icon_key) || "sparkles";
   return `
-    <div class="ship-exclusive-areas">
-      ${areas.map((item) => `
-        <div class="ship-exclusive-area-item">
-          <div class="dashboard-snapshot-extras-tags ship-chip-group">
-            <span class="dashboard-snapshot-extras-tag">${escapeHtml(item.name)}</span>
-          </div>
-          ${item.description ? `<p class="ship-exclusive-area-detail planner-muted">${escapeHtml(item.description)}</p>` : ""}
-        </div>
-      `).join("")}
-    </div>
-  `;
+    <li class="ship-feature-item">
+      ${renderShipFeatureIcon(iconKey)}
+      <div class="ship-feature-copy">
+        <span class="ship-feature-label">${escapeHtml(String(name))}</span>
+        ${description ? `<p class="ship-feature-description planner-muted">${escapeHtml(description)}</p>` : ""}
+      </div>
+    </li>`;
+}
+
+function renderShipFeatureColumn(title, intro, items) {
+  const list = Array.isArray(items) ? items.filter((item) => item && (item.name || item.label || typeof item === "string")) : [];
+  return `
+    <div class="ship-feature-column">
+      <h3>${escapeHtml(title)}</h3>
+      <p class="planner-muted ship-section-intro">${escapeHtml(intro)}</p>
+      ${list.length
+        ? `<ul class="ship-feature-list">${list.map(renderShipFeatureListItem).join("")}</ul>`
+        : `<p class="ship-feature-unavailable planner-muted">${escapeHtml(SHIP_NOT_LISTED)}</p>`}
+    </div>`;
+}
+
+function renderShipFeatureExperiences(exclusiveAreas, specialtyFeatures) {
+  const hasExclusive = Array.isArray(exclusiveAreas) && exclusiveAreas.length > 0;
+  const hasSpecialty = Array.isArray(specialtyFeatures) && specialtyFeatures.length > 0;
+  if (!hasExclusive && !hasSpecialty) return "";
+  return `
+    <section class="ship-section-card ship-feature-experiences ship-reveal-block" style="--ship-delay:280ms">
+      <div class="ship-feature-experiences-grid">
+        ${renderShipFeatureColumn(
+          "Exclusive Areas",
+          "Quiet corners and elevated spaces made for your voyage.",
+          exclusiveAreas
+        )}
+        <div class="ship-feature-column-divider" aria-hidden="true"></div>
+        ${renderShipFeatureColumn(
+          "Specialty Features",
+          "Signature experiences unique to this ship.",
+          specialtyFeatures
+        )}
+      </div>
+    </section>`;
 }
 
 function renderShipRoomTypesUnavailable(message, detail) {
@@ -6568,21 +6604,7 @@ async function renderTheShip() {
           </section>
         </div>
 
-        ${ship.exclusiveAreas.length ? `
-          <section class="ship-section-card ship-reveal-block" style="--ship-delay:280ms">
-            <h3>Exclusive Areas</h3>
-            <p class="planner-muted ship-section-intro">Quiet corners and elevated spaces made for your voyage.</p>
-            ${renderShipExclusiveAreas(ship.exclusiveAreas)}
-          </section>
-        ` : ""}
-
-        ${ship.specialtyFeatures.length ? `
-          <section class="ship-section-card ship-reveal-block" style="--ship-delay:350ms">
-            <h3>Specialty Features</h3>
-            <p class="planner-muted ship-section-intro">Signature experiences unique to this ship.</p>
-            ${renderShipChipGroup(ship.specialtyFeatures)}
-          </section>
-        ` : ""}
+        ${renderShipFeatureExperiences(ship.exclusiveAreas, ship.specialtyFeatures)}
 
         <section class="ship-section-card ship-deck-card ship-reveal-block" style="--ship-delay:420ms">
           <div class="ship-deck-copy">

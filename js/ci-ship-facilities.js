@@ -1,6 +1,6 @@
 /**
  * Cruise Intelligence ship facilities — Exclusive Areas and Specialty Features.
- * Shared by Admin editor, My Cruise My Ship renderer, and Admin copy API.
+ * Shared by Admin editor, My Ship renderer, class templates, and copy tools.
  */
 (function (root, factory) {
   const api = factory();
@@ -19,6 +19,32 @@
 
   function isPlainObject(value) {
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  }
+
+  function getIconsApi() {
+    const root = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : null;
+    if (root && root.CiShipFeatureIcons) return root.CiShipFeatureIcons;
+    if (typeof module !== "undefined" && module.exports) {
+      try {
+        return require("./ci-ship-feature-icons.js");
+      } catch (_error) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  function resolveIconKey(name, explicitIconKey) {
+    const icons = getIconsApi();
+    if (icons && icons.resolveShipFeatureIconKey) {
+      return icons.resolveShipFeatureIconKey(name, explicitIconKey);
+    }
+    const key = trim(explicitIconKey);
+    return key || "sparkles";
+  }
+
+  function normalizeCompareText(value) {
+    return trim(value).replace(/\s+/g, " ").toLowerCase();
   }
 
   function normalizeShipClass(value) {
@@ -42,8 +68,7 @@
   }
 
   /**
-   * Presentation-only split for long legacy strings with a comma.
-   * Does not mutate stored records.
+   * Optional Admin hint only — never applied automatically during normalisation.
    */
   function suggestLegacyExclusiveString(text) {
     const full = trim(text);
@@ -62,9 +87,6 @@
     return { name: namePart, description: descPart, suggested: true };
   }
 
-  /**
-   * Detect already-fragmented legacy exclusive-area arrays (e.g. Celebrity Millennium).
-   */
   function detectFragmentedLegacyExclusiveAreas(raw) {
     if (!Array.isArray(raw) || raw.length < 4) return false;
     if (raw.some(function (entry) {
@@ -81,110 +103,129 @@
     });
   }
 
-  /**
-   * Load exclusive areas for compact Admin editor rows.
-   */
-  function loadExclusiveAreasForAdmin(raw) {
-    if (!Array.isArray(raw)) return [];
-    const rows = [];
-    raw.forEach(function (entry) {
-      if (isPlainObject(entry)) {
-        const name = trim(entry.name);
-        const description = trim(entry.description);
-        if (!name && !description) return;
-        rows.push({
-          name: name || description,
-          description: name ? description : "",
-          showDescription: Boolean(name ? description : false)
-        });
-        return;
-      }
-      const suggested = suggestLegacyExclusiveString(trim(entry));
-      rows.push({
-        name: suggested.name,
-        description: suggested.description,
-        showDescription: Boolean(suggested.description),
-        suggestedSplit: suggested.suggested
+  function normalizeShipFeatureEntry(entry) {
+    if (isPlainObject(entry)) {
+      const name = trim(entry.name || entry.label || "");
+      const description = trim(entry.description || "");
+      if (!name && !description) return null;
+      const resolvedName = name || description;
+      const item = {
+        name: resolvedName,
+        description: name && description ? description : "",
+        icon_key: resolveIconKey(resolvedName, entry.icon_key)
+      };
+      Object.keys(entry).forEach(function (key) {
+        if (key === "name" || key === "label" || key === "description" || key === "icon_key") return;
+        item[key] = entry[key];
       });
-    });
-    return rows;
+      return item;
+    }
+    if (typeof entry === "string" || typeof entry === "number") {
+      const text = trim(entry);
+      if (!text) return null;
+      return {
+        name: text,
+        description: "",
+        icon_key: resolveIconKey(text),
+        legacyString: true
+      };
+    }
+    return null;
   }
 
-  /**
-   * Serialize Admin exclusive-area rows for facilities.exclusive_areas storage.
-   */
-  function serializeExclusiveAreasFromAdmin(rows) {
+  function normalizeShipFeatureList(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.map(normalizeShipFeatureEntry).filter(Boolean);
+  }
+
+  function canonicalShipFeatureItem(item) {
+    if (!item) return null;
+    return {
+      name: trim(item.name),
+      description: trim(item.description),
+      icon_key: resolveIconKey(item.name, item.icon_key)
+    };
+  }
+
+  function canonicalShipFeatureList(raw) {
+    return normalizeShipFeatureList(raw).map(canonicalShipFeatureItem).filter(Boolean);
+  }
+
+  function shipFeatureListsEqual(leftRaw, rightRaw) {
+    const left = canonicalShipFeatureList(leftRaw);
+    const right = canonicalShipFeatureList(rightRaw);
+    return JSON.stringify(left) === JSON.stringify(right);
+  }
+
+  function loadShipFeaturesForAdmin(raw) {
+    return normalizeShipFeatureList(raw).map(function (item) {
+      return {
+        name: item.name,
+        description: item.description,
+        icon_key: item.icon_key,
+        showDescription: Boolean(item.description),
+        needsDescription: !item.description
+      };
+    });
+  }
+
+  function loadExclusiveAreasForAdmin(raw) {
+    return loadShipFeaturesForAdmin(raw);
+  }
+
+  function loadSpecialtyFeaturesForAdmin(raw) {
+    return loadShipFeaturesForAdmin(raw).map(function (row) {
+      return {
+        name: row.name,
+        description: row.description,
+        icon_key: row.icon_key,
+        showDescription: row.showDescription,
+        needsDescription: row.needsDescription,
+        label: row.name
+      };
+    });
+  }
+
+  function serializeShipFeaturesFromAdmin(rows) {
     if (!Array.isArray(rows)) return [];
     return rows
       .map(function (row) {
-        const name = trim(row && row.name);
-        const description = trim(row && row.description);
+        const name = trim(row && (row.name || row.label));
         if (!name) return null;
-        const item = { name: name };
+        const description = trim(row && row.description);
+        const icon_key = resolveIconKey(name, row && row.icon_key);
+        const item = { name: name, icon_key: icon_key };
         if (description) item.description = description;
         return item;
       })
       .filter(Boolean);
   }
 
-  function loadSpecialtyFeaturesForAdmin(raw) {
-    if (!Array.isArray(raw)) return [];
-    return raw
-      .map(function (entry) {
-        return trim(entry);
-      })
-      .filter(Boolean)
-      .map(function (label) {
-        return { label: label };
-      });
+  function serializeExclusiveAreasFromAdmin(rows) {
+    return serializeShipFeaturesFromAdmin(rows);
   }
 
   function serializeSpecialtyFeaturesFromAdmin(rows) {
-    if (!Array.isArray(rows)) return [];
-    return rows
-      .map(function (row) {
-        return trim(row && row.label);
-      })
-      .filter(Boolean);
+    return serializeShipFeaturesFromAdmin(rows);
   }
 
   function normalizeExclusiveAreasForDisplay(raw) {
-    if (!Array.isArray(raw)) return [];
-    return raw
-      .map(function (entry) {
-        if (isPlainObject(entry)) {
-          const name = trim(entry.name);
-          const description = trim(entry.description);
-          if (!name && !description) return null;
-          return {
-            name: name || description,
-            description: name && description ? description : "",
-            legacyString: false
-          };
-        }
-        const text = trim(entry);
-        if (!text) return null;
-        return { name: text, description: "", legacyString: true };
-      })
-      .filter(Boolean);
+    return normalizeShipFeatureList(raw).map(function (item) {
+      return {
+        name: item.name,
+        description: item.description,
+        icon_key: item.icon_key,
+        legacyString: Boolean(item.legacyString)
+      };
+    });
   }
 
   function normalizeSpecialtyFeaturesForDisplay(raw) {
-    if (!Array.isArray(raw)) return [];
-    return raw
-      .map(function (entry) {
-        if (isPlainObject(entry)) {
-          const label = trim(entry.name || entry.label || entry.description);
-          return label || null;
-        }
-        const text = trim(entry);
-        return text || null;
-      })
-      .filter(Boolean);
+    return normalizeExclusiveAreasForDisplay(raw);
   }
 
   function exclusiveAreasAsLabels(raw) {
-    return normalizeExclusiveAreasForDisplay(raw).map(function (item) {
+    return normalizeShipFeatureList(raw).map(function (item) {
       return item.name;
     });
   }
@@ -207,9 +248,6 @@
     return facilities;
   }
 
-  /**
-   * Same-class copy targets from in-memory ship catalogue rows.
-   */
   function listSameClassCopyTargets(ships, sourceShip, draftClass) {
     const sourceId = sourceShip && sourceShip.id;
     const lineId = sourceShip && sourceShip.cruise_line_id;
@@ -229,9 +267,6 @@
       });
   }
 
-  /**
-   * Merge copied facility sections into an existing facilities object.
-   */
   function mergeFacilitiesCopy(existingFacilities, patch) {
     const facilities = {
       ...(existingFacilities && typeof existingFacilities === "object" ? existingFacilities : {})
@@ -298,23 +333,31 @@
   }
 
   return {
-    normalizeShipClass,
-    shipClassesMatch,
-    suggestLegacyExclusiveString,
-    detectFragmentedLegacyExclusiveAreas,
-    loadExclusiveAreasForAdmin,
-    serializeExclusiveAreasFromAdmin,
-    loadSpecialtyFeaturesForAdmin,
-    serializeSpecialtyFeaturesFromAdmin,
-    normalizeExclusiveAreasForDisplay,
-    normalizeSpecialtyFeaturesForDisplay,
-    exclusiveAreasAsLabels,
-    mergeFacilitiesFromEditors,
-    listSameClassCopyTargets,
-    mergeFacilitiesCopy,
-    validateSameClassCopyRequest,
-    sameClassCopyButtonLabel,
-    sameClassCopyCanSubmit,
-    sameClassCopyConfirmMessage
+    normalizeShipClass: normalizeShipClass,
+    shipClassesMatch: shipClassesMatch,
+    suggestLegacyExclusiveString: suggestLegacyExclusiveString,
+    detectFragmentedLegacyExclusiveAreas: detectFragmentedLegacyExclusiveAreas,
+    normalizeShipFeatureEntry: normalizeShipFeatureEntry,
+    normalizeShipFeatureList: normalizeShipFeatureList,
+    canonicalShipFeatureItem: canonicalShipFeatureItem,
+    canonicalShipFeatureList: canonicalShipFeatureList,
+    shipFeatureListsEqual: shipFeatureListsEqual,
+    loadShipFeaturesForAdmin: loadShipFeaturesForAdmin,
+    loadExclusiveAreasForAdmin: loadExclusiveAreasForAdmin,
+    loadSpecialtyFeaturesForAdmin: loadSpecialtyFeaturesForAdmin,
+    serializeShipFeaturesFromAdmin: serializeShipFeaturesFromAdmin,
+    serializeExclusiveAreasFromAdmin: serializeExclusiveAreasFromAdmin,
+    serializeSpecialtyFeaturesFromAdmin: serializeSpecialtyFeaturesFromAdmin,
+    normalizeExclusiveAreasForDisplay: normalizeExclusiveAreasForDisplay,
+    normalizeSpecialtyFeaturesForDisplay: normalizeSpecialtyFeaturesForDisplay,
+    exclusiveAreasAsLabels: exclusiveAreasAsLabels,
+    mergeFacilitiesFromEditors: mergeFacilitiesFromEditors,
+    listSameClassCopyTargets: listSameClassCopyTargets,
+    mergeFacilitiesCopy: mergeFacilitiesCopy,
+    validateSameClassCopyRequest: validateSameClassCopyRequest,
+    sameClassCopyButtonLabel: sameClassCopyButtonLabel,
+    sameClassCopyCanSubmit: sameClassCopyCanSubmit,
+    sameClassCopyConfirmMessage: sameClassCopyConfirmMessage,
+    normalizeCompareText: normalizeCompareText
   };
 });

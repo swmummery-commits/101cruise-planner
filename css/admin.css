@@ -948,6 +948,133 @@ body.admin-loading-active {
   display: none;
 }
 
+.ci-ship-feature-card {
+  display: block;
+  width: 100%;
+  padding: 10px 0 12px;
+  border-bottom: 1px solid #f0f0f0;
+  box-sizing: border-box;
+}
+
+.ci-ship-feature-row-layout {
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.ci-ship-feature-fields .admin-field {
+  margin-bottom: 8px;
+}
+
+.ci-ship-feature-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 10px;
+}
+
+.ci-ship-feature-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.ci-ship-feature-needs-desc {
+  color: #9a6700;
+  margin: 0 0 8px;
+}
+
+.ci-ship-feature-icon-picker {
+  position: relative;
+}
+
+.ci-ship-feature-icon-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  color: #245c4e;
+  cursor: pointer;
+  font: inherit;
+}
+
+.ci-ship-feature-icon-trigger:focus-visible {
+  outline: 2px solid #8dd9bf;
+  outline-offset: 2px;
+}
+
+.ci-ship-feature-picker-svg,
+.ci-ship-feature-icon-option-svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.ci-ship-feature-icon-trigger-label {
+  font-size: 0.78rem;
+  text-align: left;
+}
+
+.ci-ship-feature-icon-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 4px);
+  left: 0;
+  width: min(280px, 90vw);
+  max-height: 220px;
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, 0.12);
+}
+
+.ci-ship-feature-icon-menu[hidden] {
+  display: none;
+}
+
+.ci-ship-feature-icon-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #245c4e;
+  cursor: pointer;
+}
+
+.ci-ship-feature-icon-option.selected,
+.ci-ship-feature-icon-option:focus-visible {
+  border-color: #8dd9bf;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(141, 217, 191, 0.35);
+}
+
+.ci-ship-feature-description-wrap.hidden {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .ci-ship-feature-row-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 .ci-facility-compact-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

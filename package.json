@@ -48,6 +48,7 @@
     "test:featured-cruise-dx": "node scripts/test-featured-cruise-destination-experience.mjs",
     "test:featured-cruise-article-v2": "node scripts/test-featured-cruise-article-v2.mjs",
     "test:ship-facilities-editor": "node scripts/test-ship-facilities-editor.mjs",
+    "test:ship-feature-icons": "node scripts/test-ship-feature-icons.mjs",
     "test:ship-facilities-item-copy": "node scripts/test-ship-facilities-item-copy.mjs",
     "test:ship-class-assignment": "node scripts/test-ship-class-assignment.mjs",
     "test:ship-class-facilities-template": "node scripts/test-ship-class-facilities-template.mjs",

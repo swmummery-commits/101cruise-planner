@@ -12,12 +12,17 @@
 })(typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : this, function () {
   "use strict";
 
-  function trim(value) {
-    return String(value == null ? "" : value).trim();
-  }
-
-  function isPlainObject(value) {
-    return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  function getFacilitiesApi() {
+    const rootRef = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : null;
+    if (rootRef && rootRef.CiShipFacilities) return rootRef.CiShipFacilities;
+    if (typeof module !== "undefined" && module.exports) {
+      try {
+        return require("./ci-ship-facilities.js");
+      } catch (_error) {
+        return null;
+      }
+    }
+    return null;
   }
 
   function deepClone(value) {
@@ -25,29 +30,13 @@
   }
 
   function canonicalExclusiveAreas(list) {
-    if (!Array.isArray(list)) return [];
-    return list.map(function (entry) {
-      if (isPlainObject(entry)) {
-        const name = trim(entry.name || entry.label || "");
-        const description = trim(entry.description || "");
-        if (!name && !description) return null;
-        const item = { name: name || description };
-        if (name && description) item.description = description;
-        return item;
-      }
-      const text = trim(entry);
-      return text ? { name: text } : null;
-    }).filter(Boolean);
+    const fac = getFacilitiesApi();
+    if (fac && fac.canonicalShipFeatureList) return fac.canonicalShipFeatureList(list);
+    return Array.isArray(list) ? list.slice() : [];
   }
 
   function canonicalSpecialtyFeatures(list) {
-    if (!Array.isArray(list)) return [];
-    return list.map(function (entry) {
-      if (isPlainObject(entry)) {
-        return trim(entry.name || entry.label || entry.value || entry.description || "");
-      }
-      return trim(entry);
-    }).filter(Boolean);
+    return canonicalExclusiveAreas(list);
   }
 
   function templateSections(template) {
@@ -131,12 +120,12 @@
   }
 
   return {
-    canonicalExclusiveAreas,
-    canonicalSpecialtyFeatures,
-    compareShipFacilitiesToTemplate,
-    applyClassTemplateToFacilities,
-    summarizeApplyPreview,
-    templatesPayloadEqual,
-    templateSections
+    canonicalExclusiveAreas: canonicalExclusiveAreas,
+    canonicalSpecialtyFeatures: canonicalSpecialtyFeatures,
+    compareShipFacilitiesToTemplate: compareShipFacilitiesToTemplate,
+    applyClassTemplateToFacilities: applyClassTemplateToFacilities,
+    summarizeApplyPreview: summarizeApplyPreview,
+    templatesPayloadEqual: templatesPayloadEqual,
+    templateSections: templateSections
   };
 });

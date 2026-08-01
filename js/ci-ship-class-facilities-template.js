@@ -356,7 +356,9 @@
       merged.push({
         name: trim(row.name),
         description: trim(row.description),
-        showDescription: Boolean(row.showDescription || row.description)
+        icon_key: trim(row.icon_key),
+        showDescription: Boolean(row.showDescription || row.description),
+        needsDescription: !trim(row.description)
       });
     });
     return merged;
@@ -367,15 +369,23 @@
     const incoming = Array.isArray(incomingRows) ? incomingRows : [];
     const seen = new Set(
       current
-        .map(function (row) { return normalizeSpecialtyLabel(row && row.label); })
+        .map(function (row) { return normalizeSpecialtyLabel(row && (row.name || row.label)); })
         .filter(Boolean)
     );
     const merged = current.slice();
     incoming.forEach(function (row) {
-      const key = normalizeSpecialtyLabel(row && row.label);
+      const name = trim(row.name || row.label);
+      const key = normalizeSpecialtyLabel(name);
       if (!key || seen.has(key)) return;
       seen.add(key);
-      merged.push({ label: trim(row.label) });
+      merged.push({
+        name: name,
+        label: name,
+        description: trim(row.description),
+        icon_key: trim(row.icon_key),
+        showDescription: Boolean(row.showDescription || row.description),
+        needsDescription: !trim(row.description)
+      });
     });
     return merged;
   }

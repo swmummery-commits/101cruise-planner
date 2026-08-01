@@ -56,17 +56,26 @@
     return `sf:${normalizeCompareText(value)}`;
   }
 
-  function exclusiveAreaStorageEntry(entry) {
+  function featureStorageEntry(entry) {
     if (isPlainObject(entry)) {
-      const name = collapseSpaces(entry.name);
+      const name = collapseSpaces(entry.name || entry.label);
       if (!name) return null;
       const item = { name: name };
       const description = collapseSpaces(entry.description);
+      const icon_key = trim(entry.icon_key);
       if (description) item.description = description;
+      if (icon_key) item.icon_key = icon_key;
       return item;
     }
     const text = collapseSpaces(entry);
     return text || null;
+  }
+
+  function exclusiveAreaStorageEntry(entry) {
+    const storage = featureStorageEntry(entry);
+    if (isPlainObject(storage)) return storage;
+    if (typeof storage === "string") return storage;
+    return null;
   }
 
   function descriptionsEquivalent(a, b) {
@@ -88,6 +97,7 @@
           kind: "structured",
           name: isPlainObject(storage) ? storage.name : String(storage),
           description: isPlainObject(storage) ? (storage.description || "") : "",
+          icon_key: isPlainObject(storage) ? (storage.icon_key || "") : "",
           legacy: false,
           storage: storage
         });
@@ -111,14 +121,35 @@
     if (!Array.isArray(raw)) return [];
     const items = [];
     raw.forEach(function (entry) {
-      const value = isPlainObject(entry)
-        ? collapseSpaces(entry.name || entry.label || entry.description)
-        : collapseSpaces(entry);
-      if (!value) return;
+      if (isPlainObject(entry)) {
+        const name = collapseSpaces(entry.name || entry.label || entry.description);
+        const description = collapseSpaces(entry.description);
+        if (!name && !description) return;
+        const storage = featureStorageEntry(entry);
+        if (!storage) return;
+        items.push({
+          source_key: makeSpecialtyFeatureSourceKey(name),
+          kind: "structured",
+          name: isPlainObject(storage) ? storage.name : String(storage),
+          description: isPlainObject(storage) ? (storage.description || "") : "",
+          icon_key: isPlainObject(storage) ? (storage.icon_key || "") : "",
+          legacy: false,
+          storage: storage,
+          value: name
+        });
+        return;
+      }
+      const text = collapseSpaces(entry);
+      if (!text) return;
       items.push({
-        source_key: makeSpecialtyFeatureSourceKey(value),
-        value: value,
-        storage: value
+        source_key: makeSpecialtyFeatureSourceKey(text),
+        kind: "legacy",
+        name: text,
+        description: "",
+        icon_key: "",
+        legacy: true,
+        storage: text,
+        value: text
       });
     });
     return items;
@@ -210,7 +241,10 @@
     if (idx < 0) return { status: "missing" };
     const targetEntry = raw[idx];
     const targetDescription = isPlainObject(targetEntry) ? trim(targetEntry.description) : "";
-    if (descriptionsEquivalent(sourceItem.description, targetDescription)) {
+    const targetIcon = isPlainObject(targetEntry) ? trim(targetEntry.icon_key) : "";
+    const sameDescription = descriptionsEquivalent(sourceItem.description, targetDescription);
+    const sameIcon = normalizeCompareText(sourceItem.icon_key || "") === normalizeCompareText(targetIcon || "");
+    if (sameDescription && sameIcon) {
       return {
         status: "identical",
         targetIndex: idx,
@@ -226,10 +260,21 @@
 
   function compareSpecialtyFeatureOnTarget(sourceItem, targetFacilities) {
     const raw = targetFacilities && targetFacilities.specialty_features;
-    const normalized = normalizeCompareText(sourceItem.value);
+    const normalized = normalizeCompareText(sourceItem.name || sourceItem.value);
     const idx = findSpecialtyIndex(raw, normalized);
     if (idx < 0) return { status: "missing" };
-    return { status: "identical", targetIndex: idx };
+    const targetEntry = raw[idx];
+    if (sourceItem.legacy && !isPlainObject(targetEntry)) {
+      return { status: "identical", targetIndex: idx, targetEntry: targetEntry };
+    }
+    const targetDescription = isPlainObject(targetEntry) ? trim(targetEntry.description) : "";
+    const targetIcon = isPlainObject(targetEntry) ? trim(targetEntry.icon_key) : "";
+    const sameDescription = descriptionsEquivalent(sourceItem.description, targetDescription);
+    const sameIcon = normalizeCompareText(sourceItem.icon_key || "") === normalizeCompareText(targetIcon || "");
+    if (sameDescription && sameIcon) {
+      return { status: "identical", targetIndex: idx, targetEntry: targetEntry };
+    }
+    return { status: "different", targetIndex: idx, targetEntry: targetEntry };
   }
 
   function defaultConflictAction() {
@@ -286,12 +331,19 @@
       const sourceItem = specialtyByKey[sel && sel.source_key];
       if (!sourceItem) return;
       const comparison = compareSpecialtyFeatureOnTarget(sourceItem, targetFacilities);
+      let plannedAction = "add";
+      if (comparison.status === "identical") plannedAction = "skip_identical";
+      else if (comparison.status === "different") {
+        plannedAction = resolveConflictAction(conflictResolutions, targetShipId, sourceItem.source_key) === "replace_source"
+          ? "replace"
+          : "keep_existing";
+      }
       items.push({
         category: "specialty_features",
         source_key: sourceItem.source_key,
         sourceItem: sourceItem,
         comparison: comparison,
-        plannedAction: comparison.status === "identical" ? "skip_identical" : "add"
+        plannedAction: plannedAction
       });
     });
     return items;
@@ -375,9 +427,20 @@
         return;
       }
       if (row.category === "specialty_features") {
-        if (action !== "add") return;
-        specialty.push(sourceItem.storage);
-        outcomes.push({ source_key: row.source_key, outcome: "added" });
+        if (action === "add") {
+          specialty.push(sourceItem.storage);
+          outcomes.push({ source_key: row.source_key, outcome: "added" });
+          return;
+        }
+        if (action === "replace" && isPlainObject(sourceItem.storage)) {
+          const idx = findSpecialtyIndex(specialty, normalizeCompareText(sourceItem.name || sourceItem.value));
+          if (idx >= 0) {
+            specialty[idx] = sourceItem.storage;
+            outcomes.push({ source_key: row.source_key, outcome: "replaced" });
+          } else {
+            outcomes.push({ source_key: row.source_key, outcome: "failed", error: "TARGET_MATCH_LOST" });
+          }
+        }
         return;
       }
       if (action === "add") {
