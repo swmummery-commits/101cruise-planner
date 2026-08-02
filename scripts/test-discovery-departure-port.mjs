@@ -340,6 +340,14 @@ async function main() {
     );
   });
 
+  await test("Review Queue uses safe data-action buttons instead of fragile onclick", () => {
+    const src = fs.readFileSync(path.join(root, "js/admin-cruise-discovery.js"), "utf8");
+    assert(/data-cd-review-action/.test(src), "review action data attributes present");
+    assert(/bindReviewQueueActions/.test(src), "delegated review click handler present");
+    assert(!/resolveGroup\(\$\{groupIdJson\}/.test(src), "fragile inline resolveGroup onclick removed");
+    assert(/match_destination/.test(src), "destination match action supported");
+  });
+
   await test("Browse Active UI exposes Add port and Remove actions", () => {
     const src = fs.readFileSync(path.join(root, "js/admin-cruise-discovery.js"), "utf8");
     assert(/openAddPort/.test(src), "openAddPort helper present");

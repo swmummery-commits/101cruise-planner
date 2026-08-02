@@ -255,6 +255,9 @@ async function listReviewGroups(body) {
     labels: {
       unknown_ship: "Unknown ship",
       missing_departure_date: "Missing departure date",
+      missing_departure_port: "Missing departure port",
+      invalid_departure_port: "Invalid departure value",
+      ambiguous_departure_port: "Ambiguous departure port",
       unknown_destination: "Unknown destination",
       missing_url: "Invalid sailing URL",
       ambiguous_match: "Ambiguous match",
@@ -270,7 +273,10 @@ async function loadPendingByGroupId(groupId) {
     "cruise_discovery_review_items?status=eq.pending&select=*&order=created_at.asc&limit=2000"
   );
   const { rows: enriched } = await enrichReviewSuggestions(rows || []);
-  return enriched.filter((item) => entityGroupKeyFromItem(item) === groupId);
+  return enriched.filter((item) => {
+    const key = item.payload?.entity_group_key || entityGroupKeyFromItem(item);
+    return key === groupId;
+  });
 }
 
 async function resolveReviewGroup(body, actor) {
@@ -286,7 +292,8 @@ async function resolveReviewGroup(body, actor) {
     action === "match_ship" ||
     action === "match_and_save_alias" ||
     body.apply_suggested_ship === true;
-  const applySuggestedDestination = body.apply_suggested_destination === true;
+  const applySuggestedDestination =
+    action === "match_destination" || body.apply_suggested_destination === true;
 
   const items = await loadPendingByGroupId(groupId);
   if (!items.length) {

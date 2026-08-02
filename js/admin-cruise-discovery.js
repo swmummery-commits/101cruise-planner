@@ -268,6 +268,40 @@
     `;
   }
 
+  function reviewActionBtn(action, groupId, label, primary) {
+    return `<button type="button" class="admin-button ${primary ? "black" : "secondary"} small" data-cd-review-action="${esc(
+      action
+    )}" data-cd-group-id="${esc(groupId)}">${esc(label)}</button>`;
+  }
+
+  function bindReviewQueueActions() {
+    if (typeof document === "undefined" || global.__cdReviewQueueBound) return;
+    global.__cdReviewQueueBound = true;
+    document.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-cd-review-action]");
+      if (!btn) return;
+      const action = btn.getAttribute("data-cd-review-action");
+      const groupId = btn.getAttribute("data-cd-group-id");
+      if (!action || !groupId) return;
+      event.preventDefault();
+      if (action === "reprocess") global.CruiseDiscoveryAdmin.reprocessGroup(groupId);
+      else if (action === "ignore") global.CruiseDiscoveryAdmin.ignoreGroup(groupId);
+      else if (action === "manual_date") global.CruiseDiscoveryAdmin.manualDateForGroup(groupId);
+      else if (action === "manual_port") global.CruiseDiscoveryAdmin.manualDeparturePortForGroup(groupId);
+      else if (action === "match_ship") {
+        global.CruiseDiscoveryAdmin.resolveGroup(groupId, { resolutionAction: "match_ship" });
+      } else if (action === "match_ship_alias") {
+        global.CruiseDiscoveryAdmin.resolveGroup(groupId, { resolutionAction: "match_and_save_alias" });
+      } else if (action === "match_destination") {
+        global.CruiseDiscoveryAdmin.resolveGroup(groupId, { resolutionAction: "match_destination" });
+      } else if (action === "apply_ship_url") {
+        global.CruiseDiscoveryAdmin.resolveGroup(groupId, { resolutionAction: "apply_ship_url" });
+      }
+    });
+  }
+
+  bindReviewQueueActions();
+
   function renderReview() {
     if (!reviewGroups.length) {
       return `${renderReviewBreakdown()}<p class="admin-muted" style="margin-top:16px">Review queue is empty${
@@ -276,14 +310,23 @@
     }
     return `
       ${renderReviewBreakdown()}
+      <div class="admin-card" style="margin:16px 0;padding:14px 16px;background:#f8faf9;border:1px solid #e3ece8">
+        <p class="admin-small" style="margin:0 0 8px"><strong>How to fix items in this queue</strong></p>
+        <ul class="admin-small" style="margin:0;padding-left:18px;line-height:1.5">
+          <li><strong>Use suggested match</strong> — when Discovery proposes a ship or destination, apply it to all affected sailings.</li>
+          <li><strong>Set departure port / date</strong> — for missing sailing details, enter the correct value manually.</li>
+          <li><strong>Retry automatic fix</strong> — re-runs matching after you update ships, destinations, ports, or aliases.</li>
+          <li><strong>Dismiss</strong> — not a real cruise (hub page, marketing page, duplicate). Removes from queue only.</li>
+        </ul>
+        <p class="admin-small admin-muted" style="margin:8px 0 0">To fix an already-active sailing, use <strong>Browse Active</strong> (set port / remove).</p>
+      </div>
       <div class="admin-row-actions" style="margin:12px 0">
         <button type="button" class="admin-button secondary small" onclick="CruiseDiscoveryAdmin.collapseDuplicates()">Collapse duplicates</button>
-        <button type="button" class="admin-button secondary small" onclick="CruiseDiscoveryAdmin.reprocessAllVisible()">Reprocess visible groups</button>
+        <button type="button" class="admin-button secondary small" onclick="CruiseDiscoveryAdmin.reprocessAllVisible()">Retry all visible groups</button>
       </div>
       <p class="admin-muted" style="margin-bottom:12px">
         ${esc(String(reviewGroups.length))} entity problem${reviewGroups.length === 1 ? "" : "s"}
         covering ${esc(String(reviewItemCount))} finding${reviewItemCount === 1 ? "" : "s"}.
-        Resolve once per group — aliases and matches reprocess all affected candidates.
       </p>
       <div class="usage-table-wrap">
         <table class="usage-table">
@@ -312,30 +355,38 @@
                           group.suggested_destination_confidence ?? "—"
                         }%)`
                       : "—";
-                const groupIdJson = JSON.stringify(group.group_id);
+                const groupId = String(group.group_id || "");
                 const isShip = group.item_type === "unknown_ship";
+                const isDestination = group.item_type === "unknown_destination";
                 const isMissingUrl = group.item_type === "missing_ship_url";
                 const actions = [
                   isShip && group.suggested_ship_id
-                    ? `<button type="button" class="admin-button black small" onclick='CruiseDiscoveryAdmin.resolveGroup(${groupIdJson}, {resolutionAction:"match_ship"})'>Match to existing ship</button>`
+                    ? reviewActionBtn("match_ship", groupId, "Use suggested ship", true)
                     : "",
                   isShip && group.suggested_ship_id
-                    ? `<button type="button" class="admin-button black small" onclick='CruiseDiscoveryAdmin.resolveGroup(${groupIdJson}, {resolutionAction:"match_and_save_alias"})'>Match and save alias</button>`
+                    ? reviewActionBtn("match_ship_alias", groupId, "Use ship + save alias", false)
+                    : "",
+                  isDestination && group.suggested_destination_id
+                    ? reviewActionBtn(
+                        "match_destination",
+                        groupId,
+                        `Use destination: ${group.suggested_destination_name || "suggested"}`,
+                        true
+                      )
                     : "",
                   isMissingUrl
-                    ? `<button type="button" class="admin-button black small" onclick='CruiseDiscoveryAdmin.resolveGroup(${groupIdJson}, {resolutionAction:"apply_ship_url"})'>Apply ship URL</button>`
+                    ? reviewActionBtn("apply_ship_url", groupId, "Apply ship URL", true)
                     : "",
                   group.item_type === "missing_departure_date" && group.affected_external_keys?.[0]
-                    ? `<button type="button" class="admin-button black small" onclick='CruiseDiscoveryAdmin.manualDateForGroup(${groupIdJson})'>Enter departure date</button>`
+                    ? reviewActionBtn("manual_date", groupId, "Enter departure date", true)
                     : "",
                   ["missing_departure_port", "invalid_departure_port", "ambiguous_departure_port"].includes(
                     group.item_type
                   )
-                    ? `<button type="button" class="admin-button black small" onclick='CruiseDiscoveryAdmin.manualDeparturePortForGroup(${groupIdJson})'>Set departure port</button>`
+                    ? reviewActionBtn("manual_port", groupId, "Set departure port", true)
                     : "",
-                  `<button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.reprocessGroup(${groupIdJson})'>Reprocess group</button>`,
-                  `<button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.resolveGroup(${groupIdJson}, {resolutionAction:"resolve"})'>Resolve group</button>`,
-                  `<button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.ignoreGroup(${groupIdJson})'>Ignore group</button>`
+                  reviewActionBtn("reprocess", groupId, "Retry automatic fix", false),
+                  reviewActionBtn("ignore", groupId, "Dismiss", false)
                 ]
                   .filter(Boolean)
                   .join(" ");
@@ -880,7 +931,9 @@
             options.resolutionAction === "match_and_save_alias" ||
             Boolean(options.applySuggestedShip),
           save_alias: options.resolutionAction === "match_and_save_alias",
-          apply_suggested_destination: Boolean(options.applySuggestedDestination),
+          apply_suggested_destination:
+            options.resolutionAction === "match_destination" ||
+            Boolean(options.applySuggestedDestination),
           apply_official_ship_url:
             options.resolutionAction === "apply_ship_url" ||
             Boolean(options.applyOfficialShipUrl)
