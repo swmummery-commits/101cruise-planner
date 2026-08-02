@@ -20,6 +20,7 @@
   let reviewFilterType = "";
   let reviewLabels = {};
   let activeCruises = [];
+  let departurePorts = [];
   let browseDestinationId = "";
   let browseLineId = "";
   let selectedLineId = "";
@@ -127,6 +128,14 @@
       if (!selectedLineId && lines[0]) selectedLineId = lines[0].id;
       if (!selectedDestinationId && destinations[0]) selectedDestinationId = destinations[0].id;
       if (view === "cruises") await loadActiveCruises();
+      if (!departurePorts.length) {
+        try {
+          const portResult = await api("list_departure_ports");
+          departurePorts = portResult.ports || [];
+        } catch (_error) {
+          departurePorts = [];
+        }
+      }
       if (!quiet) message = "";
     } catch (error) {
       message = error.message || "Failed to load Cruise Discovery";
@@ -170,6 +179,9 @@
     const cats = [
       ["unknown_ship", "Unknown Ship"],
       ["missing_departure_date", "Missing Departure Date"],
+      ["missing_departure_port", "Missing Departure Port"],
+      ["invalid_departure_port", "Invalid Departure Value"],
+      ["ambiguous_departure_port", "Ambiguous Departure Port"],
       ["unknown_destination", "Unknown Destination"],
       ["missing_url", "Invalid Sailing URL"],
       ["ambiguous_match", "Ambiguous Match"],
@@ -316,6 +328,11 @@
                   group.item_type === "missing_departure_date" && group.affected_external_keys?.[0]
                     ? `<button type="button" class="admin-button black small" onclick='CruiseDiscoveryAdmin.manualDateForGroup(${groupIdJson})'>Enter departure date</button>`
                     : "",
+                  ["missing_departure_port", "invalid_departure_port", "ambiguous_departure_port"].includes(
+                    group.item_type
+                  )
+                    ? `<button type="button" class="admin-button black small" onclick='CruiseDiscoveryAdmin.manualDeparturePortForGroup(${groupIdJson})'>Set departure port</button>`
+                    : "",
                   `<button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.reprocessGroup(${groupIdJson})'>Reprocess group</button>`,
                   `<button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.resolveGroup(${groupIdJson}, {resolutionAction:"resolve"})'>Resolve group</button>`,
                   `<button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.ignoreGroup(${groupIdJson})'>Ignore group</button>`
@@ -391,6 +408,22 @@
     ].join("");
   }
 
+  function departurePortSummary(cruise) {
+    const audit = cruise.departure_audit || {};
+    const meta = audit.departure_port_meta || {};
+    const current = cruise.departure_port || "—";
+    if (meta.status === "resolved" && current !== "—") {
+      return `${current}${meta.manual ? " (manual)" : ""}`;
+    }
+    if (audit.departure_port_raw && meta.status !== "resolved") {
+      return `${current} · raw: ${audit.departure_port_raw} · ${meta.status}`;
+    }
+    if (meta.status && meta.status !== "resolved" && meta.status !== "resolved_legacy") {
+      return `${current} · ${meta.status}${meta.reason ? `: ${meta.reason}` : ""}`;
+    }
+    return current;
+  }
+
   function renderActiveCruises() {
     const filters = `
       <div class="featured-cruises-toolbar" style="margin-bottom:12px">
@@ -433,13 +466,15 @@
           <td>${esc(cruise.ship_name || "—")}</td>
           <td>${destLink}</td>
           <td>${esc(nights)}</td>
-          <td>${esc(cruise.departure_port || "—")}</td>
+          <td>${esc(departurePortSummary(cruise))}</td>
           <td>${esc(fare)}</td>
           <td>${
             cruise.official_url
               ? `<a href="${esc(cruise.official_url)}" target="_blank" rel="noopener noreferrer">Official</a>`
               : "—"
-          }</td>
+          } · <button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.manualDeparturePort(${JSON.stringify(
+            cruise.id
+          )})'>Set port</button></td>
         </tr>`;
       })
       .join("");
@@ -917,6 +952,38 @@
         discovering = false;
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
+    },
+    async manualDeparturePort(cruiseId) {
+      const sample = departurePorts.slice(0, 8).map((p) => p.canonical_name).join(", ");
+      const value = global.prompt(
+        `Enter canonical departure port (e.g. ${sample || "Sydney, Vancouver, Seattle"})`,
+        ""
+      );
+      if (!value) return;
+      try {
+        const result = await api("manual_resolve_departure_port", {
+          cruise_id: cruiseId,
+          canonical_port_name: value
+        });
+        message = result.message || "Departure port saved.";
+        messageTone = "success";
+        await ensureLoaded({ quiet: true });
+      } catch (error) {
+        message = error.message || "Could not save departure port";
+        messageTone = "error";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+    },
+    async manualDeparturePortForGroup(groupId) {
+      const group = reviewGroups.find((g) => g.group_id === groupId);
+      const cruiseId = group?.affected_cruise_ids?.[0] || group?.payload?.cruise_id || null;
+      if (!cruiseId) {
+        message = "No affected cruise id found for this group.";
+        messageTone = "error";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+        return;
+      }
+      await CruiseDiscoveryAdmin.manualDeparturePort(cruiseId);
     },
     async collapseDuplicates() {
       try {

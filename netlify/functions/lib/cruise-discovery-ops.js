@@ -15,6 +15,7 @@ const {
   parseFlexibleDate,
   reviewFingerprint
 } = require("./cruise-discovery");
+const { mergeDeparturePortForUpsert } = require("./discovery-departure-port");
 
 // addDaysIso may not be exported — compute locally if needed
 function addDays(isoDate, days) {
@@ -69,6 +70,9 @@ const REVIEW_LABELS = {
   validation_failure: "Validation failure",
   ambiguous_match: "Ambiguous match",
   missing_departure_date: "Missing departure date",
+  missing_departure_port: "Missing departure port",
+  invalid_departure_port: "Invalid departure value",
+  ambiguous_departure_port: "Ambiguous departure port",
   other: "Other validation failure"
 };
 
@@ -80,6 +84,15 @@ function primaryReviewCategory(reasons, candidate) {
   if (!candidate?.ship_id) return "unknown_ship";
   if (!candidate?.destination_id) return "unknown_destination";
   if (!candidate?.departure_date) return "missing_departure_date";
+  if (Array.isArray(reasons) && reasons.some((r) => /Invalid departure value/i.test(r))) {
+    return "invalid_departure_port";
+  }
+  if (Array.isArray(reasons) && reasons.some((r) => /Missing departure port/i.test(r))) {
+    return "missing_departure_port";
+  }
+  if (Array.isArray(reasons) && reasons.some((r) => /Ambiguous departure port/i.test(r))) {
+    return "ambiguous_departure_port";
+  }
   if (!candidate?.official_url) return "missing_url";
   try {
     // eslint-disable-next-line no-new
@@ -119,6 +132,9 @@ function lifecycleFromValidation(reasons, { lowSignal = false } = {}) {
   if (reasons.some((r) => /Ship not matched/i.test(r))) return "match_required";
   if (reasons.some((r) => /Destination not matched/i.test(r))) return "match_required";
   if (reasons.some((r) => /Departure date/i.test(r))) return "validation_failed";
+  if (reasons.some((r) => /departure port|Invalid departure|Ambiguous departure/i.test(r))) {
+    return "validation_failed";
+  }
   if (reasons.some((r) => /Official URL/i.test(r))) return "validation_failed";
   return "validation_failed";
 }
@@ -268,41 +284,7 @@ async function upsertCandidateRecord(candidate, stats) {
       officialSailingId: candidate.official_sailing_id
     });
 
-  const reasons = validateCruise(candidate);
-  const status =
-    candidate.status === "ignored" || candidate.status === "ignored_low_signal"
-      ? candidate.status
-      : lifecycleFromValidation(reasons);
   const now = new Date().toISOString();
-
-  const payload = {
-    cruise_line_id: candidate.cruise_line_id,
-    ship_id: candidate.ship_id,
-    destination_id: candidate.destination_id || null,
-    departure_date: candidate.departure_date,
-    return_date: candidate.return_date,
-    nights: candidate.nights,
-    departure_port: candidate.departure_port,
-    itinerary: candidate.itinerary,
-    brochure_fare: candidate.brochure_fare,
-    currency: candidate.currency,
-    brochure_fare_display: candidate.brochure_fare_display,
-    official_url: candidate.official_url,
-    source_url: candidate.source_url || candidate.official_url,
-    external_key: candidate.external_key,
-    identity_key,
-    status,
-    match_confidence: candidate.match_confidence || (status === "active" ? "high" : "low"),
-    review_reason: reasons.length ? reasons.join("; ") : null,
-    raw_extract: candidate.raw_extract || {},
-    departure_date_raw: candidate.departure_date_raw || null,
-    return_date_raw: candidate.return_date_raw || null,
-    departure_date_manual: Boolean(candidate.departure_date_manual),
-    official_sailing_id: candidate.official_sailing_id || null,
-    last_seen_at: now,
-    last_verified_at: status === "active" ? now : null,
-    last_changed_at: now
-  };
 
   let prev = null;
   if (identity_key) {
@@ -317,7 +299,6 @@ async function upsertCandidateRecord(candidate, stats) {
     );
     prev = byExternal?.[0] || null;
   }
-  // Same URL + line without ship/date yet → suppress duplicates
   if (!prev && candidate.official_url && candidate.cruise_line_id) {
     const byUrl = await supabase(
       `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
@@ -332,6 +313,66 @@ async function upsertCandidateRecord(candidate, stats) {
         null;
     }
   }
+
+  const mergedDeparture = prev
+    ? mergeDeparturePortForUpsert(prev, candidate)
+    : {
+        departure_port: candidate.departure_port,
+        departure_port_meta: candidate.departure_port_meta || candidate.raw_extract?.departure_port_meta,
+        blocked: false,
+        reason: "new_record"
+      };
+
+  const candidateForValidation = {
+    ...candidate,
+    departure_port: mergedDeparture.departure_port,
+    departure_port_meta: mergedDeparture.departure_port_meta,
+    raw_extract: {
+      ...(candidate.raw_extract || {}),
+      departure_port_meta: mergedDeparture.departure_port_meta
+    }
+  };
+
+  const reasons = validateCruise(candidateForValidation);
+  const status =
+    candidate.status === "ignored" || candidate.status === "ignored_low_signal"
+      ? candidate.status
+      : lifecycleFromValidation(reasons);
+
+  const payload = {
+    cruise_line_id: candidate.cruise_line_id,
+    ship_id: candidate.ship_id,
+    destination_id: candidate.destination_id || null,
+    departure_date: candidate.departure_date,
+    return_date: candidate.return_date,
+    nights: candidate.nights,
+    departure_port: mergedDeparture.departure_port,
+    itinerary: candidate.itinerary,
+    brochure_fare: candidate.brochure_fare,
+    currency: candidate.currency,
+    brochure_fare_display: candidate.brochure_fare_display,
+    official_url: candidate.official_url,
+    source_url: candidate.source_url || candidate.official_url,
+    external_key: candidate.external_key,
+    identity_key,
+    status,
+    match_confidence: candidate.match_confidence || (status === "active" ? "high" : "low"),
+    review_reason: reasons.length ? reasons.join("; ") : null,
+    raw_extract: {
+      ...(candidate.raw_extract || {}),
+      departure_port_meta: mergedDeparture.departure_port_meta || candidate.raw_extract?.departure_port_meta || null,
+      departure_port_merge: mergedDeparture.blocked
+        ? { blocked: true, reason: mergedDeparture.reason }
+        : { blocked: false, reason: mergedDeparture.reason }
+    },
+    departure_date_raw: candidate.departure_date_raw || null,
+    return_date_raw: candidate.return_date_raw || null,
+    departure_date_manual: Boolean(candidate.departure_date_manual),
+    official_sailing_id: candidate.official_sailing_id || null,
+    last_seen_at: now,
+    last_verified_at: status === "active" ? now : null,
+    last_changed_at: now
+  };
 
   const destIds = [
     ...new Set(
@@ -358,7 +399,7 @@ async function upsertCandidateRecord(candidate, stats) {
   }
 
   const changedFields = [];
-  const track = ["ship_id", "destination_id", "departure_date", "nights", "brochure_fare_display", "itinerary", "status"];
+  const track = ["ship_id", "destination_id", "departure_date", "nights", "brochure_fare_display", "itinerary", "status", "departure_port"];
   for (const field of track) {
     if (String(prev[field] ?? "") !== String(payload[field] ?? "")) changedFields.push(field);
   }

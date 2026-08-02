@@ -22,3 +22,7 @@ tmp/route-map-previews/
 generated-assets/*
 !generated-assets/.gitignore
 !generated-assets/.gitkeep
+
+# Generated Discovery departure remediation manifests (dry-run / apply output)
+reports/departure-remediation-*.json
+reports/departure-remediation-rollback-*.json

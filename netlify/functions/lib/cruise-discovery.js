@@ -14,6 +14,12 @@ const {
   structuredExcerptHint
 } = require("./cruise-discovery-structured");
 const { resolveAdapter } = require("./cruise-discovery-adapters");
+const {
+  applyDepartureResolutionToCandidate,
+  validateDepartureForCandidate,
+  resolveDepartureFromSource,
+  legacyExtractDeparturePort
+} = require("./discovery-departure-port");
 
 const MONTHS = {
   jan: 0,
@@ -237,14 +243,7 @@ function extractFare(text) {
 }
 
 function extractDeparturePort(text) {
-  const raw = String(text || "");
-  const m = raw.match(
-    /\b(?:depart(?:s|ing)?|sails?|from|roundtrip from|round trip from)\s+(?:the\s+port\s+of\s+)?([A-Z][A-Za-z .'-]{2,40})(?:\s*[|,.]|\s+on\b|\s+to\b|$)/
-  );
-  if (!m) return null;
-  const port = m[1].replace(/\s+/g, " ").trim();
-  if (port.length < 3 || /^(the|our|your|this|a|an)\b/i.test(port)) return null;
-  return port.slice(0, 80);
+  return legacyExtractDeparturePort(text);
 }
 
 function extractItinerary(text) {
@@ -768,6 +767,9 @@ function validateCruise(candidate) {
       reasons.push("Official URL invalid");
     }
   }
+
+  const departureCheck = validateDepartureForCandidate(candidate);
+  reasons.push(...departureCheck.reasons);
   return reasons;
 }
 
@@ -915,6 +917,9 @@ function lifecycleFromValidation(reasons, { lowSignal = false } = {}) {
   if (reasons.some((r) => /Ship not matched/i.test(r))) return "match_required";
   if (reasons.some((r) => /Destination not matched/i.test(r))) return "match_required";
   if (reasons.some((r) => /Departure date/i.test(r))) return "validation_failed";
+  if (reasons.some((r) => /departure port|Invalid departure|Ambiguous departure/i.test(r))) {
+    return "validation_failed";
+  }
   if (reasons.some((r) => /Official URL/i.test(r))) return "validation_failed";
   return "validation_failed";
 }
@@ -995,17 +1000,25 @@ function buildCandidateFromSource({
     },
     matched_ship: matched.matched_ship,
     matched_destination: matched.matched_destination,
-    ship_name_guess: matched.ship_name_guess
+    ship_name_guess: matched.ship_name_guess,
+    destination_name: matched.matched_destination?.name || preferredDestination?.name || null
   };
 
-  const reasons = validateCruise(draft);
+  const withDeparture = applyDepartureResolutionToCandidate(draft, {
+    title: matched.title,
+    description: matched.description,
+    excerpt
+  });
+  withDeparture.departure_port_meta = withDeparture.departure_port_meta || withDeparture.raw_extract?.departure_port_meta;
+
+  const reasons = validateCruise(withDeparture);
   const confidence =
     reasons.length === 0 ? "high" : reasons.length <= 2 && draft.ship_id ? "medium" : "low";
   const status = lifecycleFromValidation(reasons);
 
   return {
     skip: false,
-    candidate: draft,
+    candidate: withDeparture,
     reasons,
     confidence,
     status,
@@ -1135,6 +1148,15 @@ function primaryReviewType(reasons, candidate) {
   if (!candidate.ship_id) return "unknown_ship";
   if (!candidate.destination_id) return "unknown_destination";
   if (!candidate.departure_date) return "missing_departure_date";
+  if (Array.isArray(reasons) && reasons.some((r) => /Invalid departure value/i.test(r))) {
+    return "invalid_departure_port";
+  }
+  if (Array.isArray(reasons) && reasons.some((r) => /Missing departure port/i.test(r))) {
+    return "missing_departure_port";
+  }
+  if (Array.isArray(reasons) && reasons.some((r) => /Ambiguous departure port/i.test(r))) {
+    return "ambiguous_departure_port";
+  }
   if (!candidate.official_url) return "missing_url";
   if (Array.isArray(reasons) && reasons.some((r) => /ambiguous/i.test(r))) return "ambiguous_match";
   return "validation_failure";
@@ -1556,6 +1578,8 @@ module.exports = {
   reviewFingerprint,
   dedupeReviewItems,
   validateCruise,
+  validateDepartureForCandidate,
+  resolveDepartureFromSource,
   extractCandidateFromText,
   buildCandidateFromSource,
   extractRawSignals,

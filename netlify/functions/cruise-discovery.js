@@ -37,6 +37,7 @@ const {
   loadShipAliases,
   upsertCandidateRecord
 } = require("./lib/cruise-discovery-ops");
+const { loadPortsCatalogue, resolveRawPortText, compactDepartureAudit } = require("./lib/discovery-departure-port");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -495,7 +496,7 @@ async function listCruises(body) {
   const destinationId = String(body.destination_id || "").trim();
   const cruiseLineId = String(body.cruise_line_id || "").trim();
   const parts = [
-    "select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare_display,currency,official_url,status,match_confidence,review_reason,discovered_at,last_seen_at,last_changed_at,ci_cruise_lines(name),ci_cruise_ships(name),destinations(name,slug)&order=departure_date.asc.nullslast&limit=" +
+    "select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare_display,currency,official_url,status,match_confidence,review_reason,raw_extract,discovered_at,last_seen_at,last_changed_at,ci_cruise_lines(name),ci_cruise_ships(name),destinations(name,slug)&order=departure_date.asc.nullslast&limit=" +
       limit
   ];
   if (status && status !== "all") {
@@ -504,16 +505,34 @@ async function listCruises(body) {
   if (destinationId) parts.unshift(`destination_id=eq.${encodeURIComponent(destinationId)}`);
   if (cruiseLineId) parts.unshift(`cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}`);
   const rows = await supabase(`discovered_cruises?${parts.join("&")}`);
-  const cruises = (rows || []).map((row) => ({
-    ...row,
-    cruise_line_name: row.ci_cruise_lines?.name || null,
-    ship_name: row.ci_cruise_ships?.name || null,
-    destination_name: row.destinations?.name || null,
-    destination_slug: row.destinations?.slug || null,
-    ci_cruise_lines: undefined,
-    ci_cruise_ships: undefined,
-    destinations: undefined
-  }));
+  const cruises = (rows || []).map((row) => {
+    const departure_audit = compactDepartureAudit(row.raw_extract || {}, row);
+    return {
+      id: row.id,
+      cruise_line_id: row.cruise_line_id,
+      ship_id: row.ship_id,
+      destination_id: row.destination_id,
+      departure_date: row.departure_date,
+      return_date: row.return_date,
+      nights: row.nights,
+      departure_port: row.departure_port,
+      itinerary: row.itinerary,
+      brochure_fare_display: row.brochure_fare_display,
+      currency: row.currency,
+      official_url: row.official_url,
+      status: row.status,
+      match_confidence: row.match_confidence,
+      review_reason: row.review_reason,
+      discovered_at: row.discovered_at,
+      last_seen_at: row.last_seen_at,
+      last_changed_at: row.last_changed_at,
+      departure_audit,
+      cruise_line_name: row.ci_cruise_lines?.name || null,
+      ship_name: row.ci_cruise_ships?.name || null,
+      destination_name: row.destinations?.name || null,
+      destination_slug: row.destinations?.slug || null
+    };
+  });
   return { success: true, cruises, count: cruises.length };
 }
 
@@ -692,6 +711,81 @@ async function listShipAliases(body) {
   return { success: true, aliases: rows || [] };
 }
 
+async function manualResolveDeparturePort(body, actor) {
+  const cruiseId = String(body.cruise_id || "").trim();
+  const canonicalPortName = String(body.canonical_port_name || "").trim();
+  if (!cruiseId) throw Object.assign(new Error("cruise_id is required"), { statusCode: 400 });
+  if (!canonicalPortName) {
+    throw Object.assign(new Error("canonical_port_name is required"), { statusCode: 400 });
+  }
+
+  const rows = await supabase(
+    `discovered_cruises?id=eq.${encodeURIComponent(cruiseId)}&select=*&limit=1`
+  );
+  const cruise = rows?.[0];
+  if (!cruise) throw Object.assign(new Error("Candidate not found"), { statusCode: 404 });
+
+  const resolved = resolveRawPortText(canonicalPortName, {
+    destinationName: cruise.raw_extract?.destination_name
+  });
+  if (resolved.status !== "resolved") {
+    throw Object.assign(new Error(resolved.reason || "Canonical port could not be resolved"), {
+      statusCode: 400
+    });
+  }
+
+  const meta = {
+    ...resolved,
+    manual: true,
+    manual_by: actor?.id || null,
+    manual_at: new Date().toISOString(),
+    previous_value: cruise.departure_port || null
+  };
+
+  await supabase(`discovered_cruises?id=eq.${encodeURIComponent(cruiseId)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      departure_port: resolved.canonicalPortName,
+      raw_extract: {
+        ...(cruise.raw_extract || {}),
+        departure_port_meta: meta,
+        departure_port_raw: meta.rawValue
+      },
+      last_changed_at: new Date().toISOString()
+    })
+  });
+
+  const result = await reprocessCandidateIds([cruiseId], {
+    actor,
+    context: {
+      action: "manual_departure_port_resolution",
+      selected_match: { canonical_port_name: resolved.canonicalPortName },
+      original_extract: cruise.raw_extract || {}
+    }
+  });
+
+  return {
+    success: true,
+    departure_port: resolved.canonicalPortName,
+    ...result,
+    message: `Departure port saved as ${resolved.canonicalPortName}. Reprocessed ${result.reprocessed}; promoted ${result.promoted}.`
+  };
+}
+
+async function listDeparturePorts() {
+  const ports = loadPortsCatalogue()
+    .filter((port) => port.canonical_name)
+    .map((port) => ({
+      id: port.id,
+      canonical_name: port.canonical_name,
+      display_name: port.display_name || port.canonical_name,
+      country: port.country || ""
+    }))
+    .sort((a, b) => a.canonical_name.localeCompare(b.canonical_name));
+  return { success: true, ports };
+}
+
 async function listResolutionAudit(body) {
   const limit = Math.min(Number(body.limit) || 30, 100);
   const rows = await supabase(
@@ -737,6 +831,12 @@ exports.handler = async (event) => {
     }
     if (action === "manual_resolve_date") {
       return jsonResponse(200, await manualResolveDate(body, actor));
+    }
+    if (action === "manual_resolve_departure_port") {
+      return jsonResponse(200, await manualResolveDeparturePort(body, actor));
+    }
+    if (action === "list_departure_ports") {
+      return jsonResponse(200, await listDeparturePorts());
     }
     if (action === "reprocess_candidates") {
       const ids = Array.isArray(body.cruise_ids) ? body.cruise_ids : [];
