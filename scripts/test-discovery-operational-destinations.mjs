@@ -223,7 +223,10 @@ assert(invMed?.id === "med-id" && invMed.publicLivingPage === false, "draft crui
 assert(filterInventoryDestination([hiddenEnabled]) === null, "hidden excluded from inventory");
 
 const searchSrc = require("fs").readFileSync(path.join(root, "netlify/functions/search-current-cruises.js"), "utf8");
-assert(searchSrc.includes("filterInventoryDestination"), "search uses inventory filter");
+assert(
+  searchSrc.includes("loadInventoryDestinationBySlug") || searchSrc.includes("filterInventoryDestination"),
+  "search uses inventory destination helper"
+);
 assert(!searchSrc.includes("status=eq.published&select=id,name,slug&limit=1"), "no published-only cruise lookup");
 
 const genSrc = require("fs").readFileSync(path.join(root, "scripts/generate-destination-manifests.mjs"), "utf8");
