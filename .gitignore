@@ -35,3 +35,5 @@ reports/operational-destination-seed-apply-*.json
 reports/operational-destination-seed-rollback-*.json
 reports/destination-correction-deterministic-*.json
 reports/destination-correction-rollback-*.json
+reports/crystal-record-correction-*.json
+reports/crystal-record-correction-rollback-*.json

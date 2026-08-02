@@ -33,6 +33,13 @@ const {
   ACTION: AUTOMATION_ACTION
 } = require("./discovery-auto-resolver");
 const { shouldSkipUrlBeforeFetch, canonicalDiscoveryUrl } = require("./discovery-source-memory");
+const {
+  isCrystalCruisesLine,
+  parseCrystalVoyageFromUrl,
+  extractCrystalTitleShip,
+  resolveCrystalShipEvidence,
+  crystalShipConflictBlocksActivation
+} = require("./discovery-crystal-ship");
 
 const MONTHS = {
   jan: 0,
@@ -815,8 +822,23 @@ function extractRawSignals({ title, description, url, excerpt, cruiseLine, struc
   if (!blob.trim() && !sv.departure_date && !sv.url) return null;
 
   const fare = extractFare(blob);
-  const shipGuesses = extractShipNameGuesses(`${title}\n${description}\n${excerpt}`, url, cruiseLine?.name);
+  let shipGuesses = extractShipNameGuesses(`${title}\n${description}\n${excerpt}`, url, cruiseLine?.name);
   if (sv.ship_name && !shipGuesses.includes(sv.ship_name)) shipGuesses.unshift(String(sv.ship_name));
+  if (isCrystalCruisesLine(cruiseLine?.name)) {
+    const voyage = parseCrystalVoyageFromUrl(url);
+    const titleShip = extractCrystalTitleShip(title);
+    const canonicalShip =
+      voyage?.shipName && titleShip && normaliseShipName(voyage.shipName) === normaliseShipName(titleShip)
+        ? voyage.shipName
+        : sv.ship_name || voyage?.shipName || titleShip;
+    if (canonicalShip) {
+      shipGuesses = [
+        String(canonicalShip),
+        ...shipGuesses.filter((g) => normaliseShipName(g) !== normaliseShipName(canonicalShip))
+      ];
+    }
+    shipGuesses = shipGuesses.filter((g) => !/^none cs[ey]/i.test(String(g).replace(/-/g, " ")));
+  }
   return {
     title: title || sv.title || null,
     description: description || sv.description || null,
@@ -888,8 +910,19 @@ function matchShipWithAliases(text, ships, aliases, cruiseLineName) {
   return ship ? { ship, via: "name", alias: null } : null;
 }
 
-function matchEntities(normalised, { cruiseLine, ships, destinations, preferredDestination, shipAliases, destinationAliases }) {
+function matchEntities(normalised, { cruiseLine, ships, destinations, preferredDestination, shipAliases, destinationAliases, structuredVoyage = null }) {
   if (!normalised) return null;
+
+  const crystalResolution = isCrystalCruisesLine(cruiseLine?.name)
+    ? resolveCrystalShipEvidence({
+        url: normalised.official_url || normalised.url,
+        title: normalised.title,
+        description: normalised.description,
+        structuredVoyage,
+        ships,
+        cruiseLineName: cruiseLine?.name
+      })
+    : null;
 
   let shipHit =
     matchShipWithAliases(
@@ -904,6 +937,20 @@ function matchEntities(normalised, { cruiseLine, ships, destinations, preferredD
       shipAliases || [],
       cruiseLine?.name
     );
+
+  if (crystalResolution?.ship && !crystalResolution.conflict) {
+    shipHit = { ship: crystalResolution.ship, via: "crystal_official_evidence", alias: null };
+  } else if (
+    crystalResolution?.conflict &&
+    crystalResolution.voyage?.shipName &&
+    extractCrystalTitleShip(normalised.title)
+  ) {
+    const urlShip = crystalResolution.evidence.find((e) => e.source === "url_voyage_code")?.ship;
+    const titleShip = crystalResolution.evidence.find((e) => e.source === "page_title")?.ship;
+    if (urlShip && titleShip && urlShip.id === titleShip.id) {
+      shipHit = { ship: urlShip, via: "crystal_url_title", alias: null };
+    }
+  }
 
   // Prefer destination only when the source text actually mentions it (never force).
   const destHits = matchDestination(
@@ -929,6 +976,7 @@ function matchEntities(normalised, { cruiseLine, ships, destinations, preferredD
     ship_id: shipHit?.ship?.id || null,
     matched_ship: shipHit?.ship || null,
     ship_match_via: shipHit?.via || null,
+    crystal_ship_resolution: crystalResolution || undefined,
     destination_id: destination?.id || null,
     matched_destination: destination || null,
     destination_ids: destHits.map((h) => h.dest.id),
@@ -1003,8 +1051,21 @@ function buildCandidateFromSource({
     destinations,
     preferredDestination,
     shipAliases,
-    destinationAliases
+    destinationAliases,
+    structuredVoyage
   });
+
+  if (crystalShipConflictBlocksActivation(matched.crystal_ship_resolution)) {
+    return {
+      skip: true,
+      reason: "crystal_ship_evidence_conflict",
+      signalScore: 0,
+      diagnostics: {
+        ship_name_guesses: matched.ship_name_guesses,
+        crystal_conflict: matched.crystal_ship_resolution.conflict
+      }
+    };
+  }
 
   const signalScore = cruiseSignalScore({
     departure_date: matched.departure_date,

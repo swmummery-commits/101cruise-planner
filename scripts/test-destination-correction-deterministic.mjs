@@ -79,8 +79,97 @@ const applySrc = fs.readFileSync(
   "utf8"
 );
 assert(applySrc.includes("updated_at=eq"), "apply verifies updated_at concurrency");
-assert(applySrc.includes("destination_id"), "apply patches destination_id only");
+assert(applySrc.includes("destination_id"), "apply patches destination_id");
 assert(applySrc.includes("rollback"), "rollback manifest supported");
+
+const crystalApplySrc = fs.readFileSync(
+  path.join(root, "scripts/apply-crystal-record-correction.mjs"),
+  "utf8"
+);
+assert(crystalApplySrc.includes("before_value_mismatch"), "crystal apply verifies before values");
+assert(crystalApplySrc.includes("rollback"), "crystal rollback manifest supported");
+
+const {
+  parseCrystalVoyageFromUrl,
+  resolveCrystalShipEvidence,
+  crystalShipConflictBlocksActivation,
+  CRYSTAL_VOYAGE_SHIP_CODES
+} = require(path.join(root, "netlify/functions/lib/discovery-crystal-ship"));
+const { buildCandidateFromSource } = require(path.join(root, "netlify/functions/lib/cruise-discovery"));
+
+const crystalShips = [
+  { id: "sym-id", name: "Crystal Symphony", cruise_line_id: "line-id" },
+  { id: "ser-id", name: "Crystal Serenity", cruise_line_id: "line-id" }
+];
+const crystalLine = { id: "line-id", name: "Crystal Cruises" };
+
+assert(
+  parseCrystalVoyageFromUrl("https://www.crystalcruises.com/cruises/none-csy-014-280918")?.code === "csy",
+  "csy URL code parsed"
+);
+assert(
+  parseCrystalVoyageFromUrl("https://www.crystalcruises.com/cruises/none-cse-013-270508")?.code === "cse",
+  "cse URL code parsed"
+);
+assert(CRYSTAL_VOYAGE_SHIP_CODES.csy === "Crystal Symphony", "csy maps to Symphony");
+assert(CRYSTAL_VOYAGE_SHIP_CODES.cse === "Crystal Serenity", "cse maps to Serenity");
+
+const csyResolution = resolveCrystalShipEvidence({
+  url: "https://www.crystalcruises.com/cruises/none-csy-014-280918",
+  title: "Crystal Symphony - Seward (Anchorage, Alaska) to Tokyo | Transoceanic | Crystal Cruises",
+  description: "Setting sail from Seward... Crystal Serenity's onboard offerings",
+  ships: crystalShips,
+  cruiseLineName: "Crystal Cruises"
+});
+assert(csyResolution.ship?.name === "Crystal Symphony", "structured/title/url override narrative Serenity");
+assert(!crystalShipConflictBlocksActivation(csyResolution), "agreeing strong evidence does not block");
+
+const conflictResolution = resolveCrystalShipEvidence({
+  url: "https://www.crystalcruises.com/cruises/none-cse-013-270508",
+  title: "Crystal Symphony - Yokohama to Seward | Transoceanic",
+  description: "Aboard Crystal Serenity",
+  ships: crystalShips,
+  cruiseLineName: "Crystal Cruises"
+});
+assert(crystalShipConflictBlocksActivation(conflictResolution), "conflicting strong ship evidence blocks activation");
+
+const sewardTokyo = resolveOperationalDestination({
+  title: "Crystal Symphony - Seward (Anchorage, Alaska) to Tokyo | Transoceanic",
+  description: "14-night transpacific crossing from Alaska to Japan",
+  departurePort: "Seward",
+  arrivalPort: "Tokyo",
+  itinerary: "Seward Homer Kodiak Kushiro Tokyo",
+  nights: 14,
+  destinations
+});
+assert(sewardTokyo.destinationKey === "transpacific", "Seward to Tokyo resolves Transpacific after port correction");
+
+const sdVanVerified = resolveOperationalDestination({
+  title: "Crystal Symphony - San Diego to Vancouver | North America & Canada",
+  description: "Eight-night North American adventure",
+  departurePort: "San Diego",
+  arrivalPort: "Vancouver",
+  itinerary: "San Diego San Francisco Victoria Vancouver",
+  nights: 8,
+  destinations
+});
+assert(sdVanVerified.destinationKey === "pacific-coast", "verified San Diego-Vancouver is Pacific Coast");
+
+const hiddenCandidate = buildCandidateFromSource({
+  title: "Crystal Symphony - Seward to Tokyo | Transoceanic",
+  description: "Crystal Serenity voyage",
+  url: "https://www.crystalcruises.com/cruises/none-cse-013-270508",
+  excerpt: "Crystal Symphony and Crystal Serenity",
+  cruiseLine: crystalLine,
+  ships: crystalShips,
+  destinations,
+  shipAliases: [],
+  destinationAliases: []
+});
+assert(
+  hiddenCandidate?.skip === true || hiddenCandidate?.status !== "active",
+  "invalid source identity does not produce active candidate when conflict unresolved"
+);
 
 const shipResolver = require(path.join(root, "netlify/functions/lib/discovery-ship-resolver"));
 assert(shipResolver.AUTO_ALIAS_WRITES_ENABLED === false, "auto alias writes disabled");
@@ -88,4 +177,4 @@ assert(shipResolver.AUTO_ALIAS_WRITES_ENABLED === false, "auto alias writes disa
 const adapters = require(path.join(root, "netlify/functions/lib/cruise-discovery-adapters"));
 assert(adapters.resolveAdapter({ name: "P&O Cruises Australia" }).id === "generic", "P&O AU excluded");
 
-console.log(`test-destination-correction-deterministic: 14 passed (${DESTINATION_RESOLVER_VERSION})`);
+console.log(`test-destination-correction-deterministic: 28 passed (${DESTINATION_RESOLVER_VERSION})`);
