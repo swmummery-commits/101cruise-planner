@@ -843,9 +843,37 @@
   gap: 8px;
   flex: 0 0 auto;
   margin: 0;
-  text-decoration: none;
   max-width: 100%;
   white-space: normal;
+  box-sizing: border-box;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid rgba(36, 92, 78, 0.22);
+  border-radius: 12px;
+  padding: 11px 16px;
+  background: #f5f7f6;
+  color: #111111;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  line-height: 1.35;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+a.ship-deck-button:visited {
+  color: #111111;
+}
+
+.ship-deck-button:hover {
+  border-color: rgba(141, 217, 191, 0.65);
+  background: #effaf6;
+  color: #111111;
+}
+
+.ship-deck-button:focus-visible {
+  outline: 2px solid #8DD9BF;
+  outline-offset: 2px;
+  border-color: rgba(141, 217, 191, 0.65);
 }
 
 .ship-deck-button--external {
@@ -1099,26 +1127,154 @@
   padding: 8px 0 0;
 }
 
-/* Public Featured Cruise page integration */
+/* Public Featured Cruise page integration — public mode only; portal layout unchanged */
 .fca-ci-ship-section .fca-section-title {
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .fca-ci-ship-mount .ci-ship-presentation.ship-page {
-  padding: 0 0 12px;
+  padding: 0 0 16px;
 }
 
-.fca-ci-ship-mount .ship-summary-card {
-  margin-bottom: 28px;
+[data-ci-ship-mode="public"] {
+  --ship-public-subheading-size: 1.125rem;
 }
 
-.fca-ci-ship-mount .ship-hero.has-image {
-  min-height: 240px;
+[data-ci-ship-mode="public"] .ship-hero.has-image {
+  min-height: 260px;
+  margin-bottom: 26px;
 }
 
-@media (max-width: 760px) {
+[data-ci-ship-mode="public"] .ship-identity-name {
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  font-weight: 600;
+}
+
+[data-ci-ship-mode="public"] .ship-section-card h3,
+[data-ci-ship-mode="public"] .ship-deck-copy h3 {
+  font-size: var(--ship-public-subheading-size);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+[data-ci-ship-mode="public"] .ship-summary-card {
+  padding: 16px 14px;
+  margin-bottom: 26px;
+}
+
+[data-ci-ship-mode="public"] .ship-content-stage {
+  gap: 28px;
+}
+
+[data-ci-ship-mode="public"] .ship-glance {
+  gap: 18px;
+}
+
+[data-ci-ship-mode="public"] .ship-glance-grid {
+  gap: 12px 10px;
+}
+
+[data-ci-ship-mode="public"] .ship-glance-item.is-status {
+  padding: 8px 10px;
+}
+
+[data-ci-ship-mode="public"] .ship-info-grid {
+  padding-top: 12px;
+  gap: 24px;
+}
+
+[data-ci-ship-mode="public"] .ship-accommodation-layout {
+  gap: 16px;
+}
+
+[data-ci-ship-mode="public"] .ship-room-legend {
+  gap: 8px 12px;
+}
+
+[data-ci-ship-mode="public"] .planner-muted {
+  margin: 0;
+  color: #5f6b67;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 768px) {
+  [data-ci-ship-mode="public"] .ship-summary-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px 14px;
+  }
+
+  [data-ci-ship-mode="public"] .ship-summary-stat:last-child {
+    grid-column: auto;
+  }
+
+  [data-ci-ship-mode="public"] .ship-glance-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  [data-ci-ship-mode="public"] .ship-glance-status {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  [data-ci-ship-mode="public"] .ship-info-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  [data-ci-ship-mode="public"] .ship-feature-experiences-grid {
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+    grid-template-areas:
+      "exclusive divider specialty"
+      "deckplans divider specialty";
+    gap: 24px 28px;
+  }
+
+  [data-ci-ship-mode="public"] .ship-feature-column-divider {
+    width: 1px;
+    height: auto;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-ci-ship-mode="public"] .ship-glance-status {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  [data-ci-ship-mode="public"] .ship-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-ci-ship-mode="public"] .ship-info-card:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 767px) {
   .fca-ci-ship-mount .ship-hero.has-image {
     grid-template-columns: minmax(0, 1fr);
     min-height: 0;
+  }
+
+  [data-ci-ship-mode="public"] .ship-summary-grid,
+  [data-ci-ship-mode="public"] .ship-glance-metrics,
+  [data-ci-ship-mode="public"] .ship-glance-status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  [data-ci-ship-mode="public"] .ship-summary-stat:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 420px) {
+  [data-ci-ship-mode="public"] .ship-summary-grid,
+  [data-ci-ship-mode="public"] .ship-glance-metrics,
+  [data-ci-ship-mode="public"] .ship-glance-status {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-ci-ship-mode="public"] .ship-summary-stat:last-child {
+    grid-column: auto;
   }
 }

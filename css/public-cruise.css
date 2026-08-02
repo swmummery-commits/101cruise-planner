@@ -1,7 +1,7 @@
 /* Public dynamic cruise page — centred editorial brochure */
 
 :root {
-  --public-cruise-max: 720px;
+  --public-cruise-max: 1080px;
   --brand-green: #8DD9BF;
   --public-header-ink: #111111;
 }

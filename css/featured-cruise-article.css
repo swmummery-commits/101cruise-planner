@@ -1,4 +1,4 @@
-/* Featured Cruise Article V2 — compact Squarespace embed layout */
+/* Featured Cruise Article V2 — public web page layout */
 
 :root {
   --fca-green: #8dd9bf;
@@ -6,8 +6,9 @@
   --fca-muted: #545454;
   --fca-soft: #f6f4f1;
   --fca-border: #e8e4df;
-  --fca-max: 760px;
-  --fca-pad: 16px;
+  --fca-max: 1080px;
+  --fca-pad: clamp(16px, 2.8vw, 28px);
+  --fca-prose-max: 42rem;
 }
 
 .fca-article {
@@ -16,18 +17,23 @@
   margin: 0 auto;
   color: var(--fca-ink);
   font-family: Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  line-height: 1.65;
+  font-size: 16px;
+  font-weight: 400;
 }
 
 .fca-section {
-  padding: 0 var(--fca-pad) 28px;
+  padding: 0 var(--fca-pad) 40px;
 }
 
 .fca-section-title {
-  margin: 0 0 14px;
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
+  margin: 0 0 18px;
+  padding-top: 4px;
+  font-size: clamp(1.375rem, 2.4vw, 1.625rem);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  color: var(--fca-ink);
 }
 
 .fca-hero {
@@ -145,22 +151,34 @@
 .fca-ship-overview,
 .fca-ship-personality,
 .fca-reason-body,
-.fca-cta-body {
-  margin: 0 0 14px;
-  font-size: 0.98rem;
+.fca-cta-body,
+.fca-tip-quote {
+  margin: 0 0 16px;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.65;
   color: var(--fca-ink);
 }
 
 .fca-editorial-body,
-.fca-editorial-full {
-  max-width: 42rem;
+.fca-editorial-full,
+.fca-season-body,
+.fca-reason-body {
+  max-width: var(--fca-prose-max);
+}
+
+.fca-reason-headline {
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .fca-read-more summary {
   cursor: pointer;
   color: var(--fca-ink);
-  font-weight: 600;
-  margin-bottom: 10px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  margin-bottom: 12px;
 }
 
 .fca-reason-list {
@@ -194,8 +212,7 @@
   height: auto;
 }
 
-.fca-reason-label,
-.fca-port-day {
+.fca-reason-label {
   margin: 0 0 4px;
   font-size: 0.72rem;
   letter-spacing: 0.06em;
@@ -203,11 +220,11 @@
   color: var(--fca-muted);
 }
 
-.fca-reason-headline,
-.fca-port-name {
+.fca-reason-headline {
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.35;
+  font-size: 1.05rem;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .fca-route-map {
@@ -224,13 +241,17 @@
 
 .fca-itinerary-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .fca-port-card {
-  padding: 12px;
-  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 84px;
+  padding: 10px 12px;
+  border-radius: 10px;
   border: 1px solid var(--fca-border);
   background: var(--fca-soft);
 }
@@ -240,16 +261,33 @@
 }
 
 .fca-port-monogram {
-  width: 34px;
-  height: 34px;
-  margin-bottom: 8px;
+  width: 30px;
+  height: 30px;
+  margin-bottom: 6px;
   border-radius: 999px;
   display: grid;
   place-items: center;
   background: #ffffff;
   border: 1px solid var(--fca-border);
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 600;
   color: var(--fca-muted);
+}
+
+.fca-port-day {
+  margin: 0 0 3px;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fca-muted);
+  font-weight: 500;
+}
+
+.fca-port-name {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.35;
 }
 
 .fca-ship-layout {
@@ -394,15 +432,19 @@
   }
 }
 
+@media (min-width: 600px) and (max-width: 899px) {
+  .fca-itinerary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 680px) {
   .fca-snapshot-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
-  .fca-itinerary-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
+@media (max-width: 599px) {
   .fca-ship-layout {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -428,7 +470,8 @@
 }
 
 .public-cruise-page:has(.fca-article) {
-  max-width: none;
+  max-width: min(1120px, calc(100vw - 32px));
+  margin: 0 auto;
 }
 
 .public-cruise-shell:has(.fca-article) {

@@ -82,13 +82,16 @@ assert.match(publicJs, /wantsLegacyArticleOverride/, "legacy override helper pre
 assert.match(publicJs, /get\("article"\) === "legacy"/, "legacy available via article=legacy");
 assert.match(publicJs, /renderLegacyPublicPage/, "legacy renderer retained as fallback");
 assert.doesNotMatch(publicJs, /bootFeaturedCruise/, "DX boot not used on public page");
-assert.match(cruiseHtml, /featured-cruise-article-v2-2/, "article v2 cache busting present");
+assert.match(cruiseHtml, /featured-cruise-article-v2-3/, "article v2 cache busting present");
 assert.match(cruiseHtml, /ci-ship-presentation\.js/, "shared ship presentation on cruise page");
 assert.match(cruiseHtml, /public-cruise-ship\.js/, "public cruise ship mount helper loaded");
 assert.doesNotMatch(cruiseHtml, /destination-experience-featured-cruise-components.js/, "DX components not on cruise page");
 assert.match(cruiseHtml, /featured-cruise-article.js/, "article v2 assets loaded");
 
-assert.match(read("css/featured-cruise-article.css"), /repeat\(4, minmax\(0, 1fr\)\)/, "desktop fact grid uses 4 columns");
+assert.match(read("css/featured-cruise-article.css"), /--fca-max:\s*1080px/, "desktop article uses widened container");
+assert.match(read("css/featured-cruise-article.css"), /repeat\(3, minmax\(0, 1fr\)\)/, "itinerary desktop uses 3 columns");
+assert.match(read("css/featured-cruise-article.css"), /font-weight:\s*500/, "section headings use medium weight");
+assert.match(read("css/featured-cruise-article.css"), /repeat\(4, minmax\(0, 1fr\)\)/, "legacy fact grid retains 4 columns");
 assert.match(read("css/featured-cruise-article.css"), /repeat\(3, minmax\(0, 1fr\)\)/, "tablet fact grid uses 3 columns");
 assert.ok(heroIntro.length <= Copy.HERO_INTRO_MAX + 40, "hero intro capped");
 assert.doesNotMatch(heroIntro, /\.\.\./, "hero intro not ellipsized mid-thought");

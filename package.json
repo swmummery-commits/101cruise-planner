@@ -48,6 +48,7 @@
     "test:featured-cruise-dx": "node scripts/test-featured-cruise-destination-experience.mjs",
     "test:featured-cruise-article-v2": "node scripts/test-featured-cruise-article-v2.mjs",
     "test:public-ci-ship-presentation": "node scripts/test-public-ci-ship-presentation.mjs",
+    "test:public-cruise-page-layout": "node scripts/test-public-cruise-page-layout.mjs",
     "test:ship-facilities-editor": "node scripts/test-ship-facilities-editor.mjs",
     "test:ship-feature-icons": "node scripts/test-ship-feature-icons.mjs",
     "test:get-ship-facilities": "node scripts/test-get-ship-facilities.mjs",
