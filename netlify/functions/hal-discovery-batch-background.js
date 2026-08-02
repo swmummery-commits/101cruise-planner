@@ -8,7 +8,7 @@
 const { runHalDiscoveryBatch } = require("./lib/holland-america-discovery-batch");
 const { catalogueDestinations } = require("./lib/holland-america-discovery-adapter");
 const { supabase } = require("./lib/cruise-discovery-runner");
-const { filterClassificationDestinations } = require("./lib/destination-queries");
+const { loadClassificationDestinations } = require("./lib/destination-queries");
 
 function cronSecret() {
   return String(process.env.DISCOVERY_CRON_SECRET || "").trim();
@@ -64,7 +64,7 @@ exports.handler = async (event) => {
       supabase(
         `ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(line.id)}&active=eq.true&select=id,name,cruise_line_id`
       ),
-      supabase("destinations?select=id,name,slug,status,classification_enabled")
+      loadClassificationDestinations(supabase)
     ]);
 
     const result = await runHalDiscoveryBatch({
@@ -74,7 +74,7 @@ exports.handler = async (event) => {
       maxPages,
       cruiseLine: line,
       ships: ships || [],
-      destinations: catalogueDestinations(filterClassificationDestinations(destRows || []))
+      destinations: catalogueDestinations(destRows || [])
     });
 
     return {

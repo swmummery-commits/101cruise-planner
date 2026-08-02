@@ -12,7 +12,7 @@
 
 const { readEngineFlag } = require("./lib/cruise-finder-v2/engine");
 const { categorizeResultsByDeparture } = require("./lib/cruise-finder-departure-match");
-const { filterInventoryDestination } = require("./lib/destination-queries");
+const { loadInventoryDestinationBySlug } = require("./lib/destination-queries");
 
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const MAX_BRAVE_QUERIES = 4;
@@ -801,6 +801,8 @@ async function supabaseGet(path) {
       (data && (data.message || data.error || data.hint)) || text || `HTTP ${response.status}`;
     const err = new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
     err.status = response.status;
+    err.statusCode = response.status;
+    err.body = data;
     throw err;
   }
   return data || [];
@@ -893,10 +895,7 @@ async function runDiscoveryCatalogue(input) {
     .toLowerCase();
   const destinationName = cleanText(input.destinationName || slug, 80);
 
-  const destinationRows = await supabaseGet(
-    `destinations?slug=ilike.${encodeURIComponent(slug)}&select=id,name,slug,status,classification_enabled&limit=1`
-  );
-  const destination = filterInventoryDestination(destinationRows);
+  const destination = await loadInventoryDestinationBySlug(supabaseGet, slug);
   if (!destination?.id) {
     return {
       ok: true,

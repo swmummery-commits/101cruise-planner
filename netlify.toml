@@ -28,6 +28,10 @@
   # Resumable HAL API batches — read-only by default.
   timeout = 60
 
+[functions."hal-discovery-smoke"]
+  # Synchronous HAL read-only smoke (max 3 pages, JSON response).
+  timeout = 60
+
 [functions."bulk-ship-images"]
   # ZIP download + hash + storage writes for ship image import.
   timeout = 60

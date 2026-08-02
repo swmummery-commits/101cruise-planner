@@ -10,7 +10,7 @@ const {
   loadDestinationAliases
 } = require("./cruise-discovery-ops");
 const { loadRejectedSourceMemory } = require("./discovery-source-memory");
-const { filterClassificationDestinations } = require("./destination-queries");
+const { loadClassificationDestinations } = require("./destination-queries");
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -271,11 +271,7 @@ async function discoverOneLine({
     throw Object.assign(new Error("cruise_line_id is required"), { statusCode: 400 });
   }
 
-  const destinations = filterClassificationDestinations(
-    await supabase(
-      "destinations?select=id,name,slug,primary_region,status&order=name.asc"
-    )
-  );
+  const destinations = await loadClassificationDestinations(supabase);
   const destScope = destinationId
     ? (destinations || []).find((d) => d.id === destinationId) || null
     : null;
