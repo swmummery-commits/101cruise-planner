@@ -19,6 +19,9 @@
   let reviewBreakdown = null;
   let reviewFilterType = "";
   let reviewLabels = {};
+  let lineHealth = [];
+  let lineHealthSummary = null;
+  let lastRunMeta = null;
   let activeCruises = [];
   let departurePorts = [];
   let browseDestinationId = "";
@@ -101,10 +104,15 @@
     activeCruises = result.cruises || [];
   }
 
+  function loadingPanel() {
+    if (typeof global.BrandLoading?.panelHtml === "function") {
+      return global.BrandLoading.panelHtml();
+    }
+    return `<p class="admin-muted">Hang tight! Just getting your info.</p>`;
+  }
+
   async function ensureLoaded({ quiet = false } = {}) {
-    loading = true;
-    if (!quiet && typeof global.renderAdmin === "function") global.renderAdmin();
-    try {
+    const load = async () => {
       const [dash, lineResult, destResult, runResult, reviewResult] = await Promise.all([
         api("dashboard"),
         api("list_lines"),
@@ -118,6 +126,14 @@
       ]);
       cards = dash.cards || null;
       reviewBreakdown = dash.review_breakdown || null;
+      lineHealth = dash.line_health || [];
+      lineHealthSummary = dash.line_health_summary || null;
+      lastRunMeta = {
+        type: dash.cards?.last_run_type,
+        scope: dash.cards?.last_run_scope,
+        line: dash.cards?.last_run_line_name,
+        isSingleLine: dash.cards?.last_run_is_single_line
+      };
       lines = lineResult.cruise_lines || [];
       destinations = destResult.destinations || [];
       runs = runResult.runs || [];
@@ -137,6 +153,19 @@
         }
       }
       if (!quiet) message = "";
+    };
+
+    loading = true;
+    if (!quiet && typeof global.renderAdmin === "function") global.renderAdmin();
+    try {
+      if (typeof global.AdminLoading?.withLoading === "function") {
+        await global.AdminLoading.withLoading(load, {
+          key: "cruise-discovery-load",
+          delayMs: 0
+        });
+      } else {
+        await load();
+      }
     } catch (error) {
       message = error.message || "Failed to load Cruise Discovery";
       messageTone = "error";
@@ -148,18 +177,28 @@
 
   function renderCards() {
     const c = cards || {};
+    const runNote =
+      lastRunMeta?.isSingleLine && lastRunMeta?.line
+        ? `<p class="admin-helper">Last run: <strong>${esc(lastRunMeta.type || "selected line")}</strong> — ${esc(lastRunMeta.line)}. Single-line metrics below do not represent full Discovery health.</p>`
+        : lastRunMeta?.type
+          ? `<p class="admin-helper">Last run type: <strong>${esc(lastRunMeta.type)}</strong>${lastRunMeta.line ? ` — ${esc(lastRunMeta.line)}` : ""}.</p>`
+          : "";
     const items = [
-      { label: "Active Cruises", value: c.active_cruises ?? "—" },
+      { label: "Active Future Sailings", value: c.active_cruises ?? "—" },
+      { label: "Active (all status, incl. past date)", value: c.active_cruises_all_status ?? "—" },
+      { label: "Past departure pending expire", value: c.active_past_departure_pending_expire ?? 0 },
+      { label: "Enabled Cruise Lines", value: c.enabled_cruise_lines ?? "—" },
+      { label: "Lines with future active", value: c.lines_with_future_active ?? 0 },
       { label: "Discovered Candidates — Last Run", value: c.discovered_candidates_last_run ?? 0 },
       { label: "Validated New Cruises — Last Run", value: c.validated_new_cruises_last_run ?? 0 },
-      { label: "Candidates Promoted — Last Run", value: c.candidates_promoted_last_run ?? 0 },
       { label: "Review Required", value: c.review_required ?? 0 },
       { label: "Duplicate Candidates Suppressed", value: c.duplicate_candidates_suppressed ?? 0 },
       { label: "Low-Signal Sources Ignored", value: c.low_signal_sources_ignored ?? 0 },
-      { label: "Cruise Lines Successfully Scanned", value: c.cruise_lines_scanned_ok ?? "—" },
-      { label: "Cruise Lines Unable to Scan", value: c.cruise_lines_unable_to_scan ?? 0 }
+      { label: "Lines scanned (last run)", value: c.cruise_lines_scanned_ok ?? "—" },
+      { label: "Lines unable to scan", value: c.cruise_lines_unable_to_scan ?? 0 }
     ];
     return `
+      ${runNote}
       <div class="usage-summary-grid research-audit-cards">
         ${items
           .map(
@@ -172,6 +211,51 @@
           .join("")}
       </div>
     `;
+  }
+
+  function renderLineHealth() {
+    if (!lineHealth?.length) return "";
+    const summary = lineHealthSummary || {};
+    const rows = lineHealth
+      .map(
+        (row) => `
+        <tr>
+          <td>${esc(row.cruise_line)}</td>
+          <td><span class="deck-plan-status deck-plan-status--${esc(row.source_health === "healthy" ? "approved" : row.source_health === "misconfigured" ? "missing" : "candidate")}">${esc(row.source_health)}</span></td>
+          <td>${esc(row.source_url_type || "—")}</td>
+          <td>${row.last_run_at ? esc(formatDate(row.last_run_at)) : "—"}</td>
+          <td>${esc(String(row.pages_checked ?? 0))}</td>
+          <td>${esc(String(row.candidates ?? 0))}</td>
+          <td>${esc(String(row.activated ?? 0))}</td>
+          <td>${esc(String(row.active_future_sailings ?? 0))}</td>
+          <td>${esc(row.primary_issue || "—")}</td>
+        </tr>`
+      )
+      .join("");
+    return `
+      <div class="admin-card" style="margin-top:16px">
+        <h3>Line source health</h3>
+        <p class="admin-helper">Operational status per enabled cruise line. Misconfigured or zero-yield lines need engineering attention — not Steve review.</p>
+        <p class="admin-small">Summary: ${esc(String(summary.healthy || 0))} healthy · ${esc(String(summary.misconfigured || 0))} misconfigured · ${esc(String(summary.extraction_failed || 0))} extraction failed · ${esc(String(summary.unsupported || 0))} not yet run</p>
+        <div class="research-table-wrap">
+          <table class="research-table">
+            <thead>
+              <tr>
+                <th>Cruise line</th>
+                <th>Status</th>
+                <th>Source type</th>
+                <th>Last run</th>
+                <th>Pages</th>
+                <th>Candidates</th>
+                <th>Activated</th>
+                <th>Active</th>
+                <th>Primary issue</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>`;
   }
 
   function renderReviewBreakdown() {
@@ -765,7 +849,7 @@
             }>Review Queue (${esc(String(reviewGroups.length || reviewItemCount))})</button>
             <button type="button" class="admin-button secondary small" onclick="CruiseDiscoveryAdmin.refresh()" ${
               loading || discovering ? "disabled" : ""
-            }>${loading ? "Loading…" : "Refresh"}</button>
+            }>Refresh</button>
           </div>
         </div>
         ${message && !discovering ? `<div class="admin-message ${messageClass}">${esc(message)}</div>` : ""}
@@ -774,15 +858,18 @@
 
       ${
         view === "review"
-          ? `<div class="admin-card" style="margin-top:16px"><h3>Review Queue</h3>${renderReview()}</div>`
+          ? `<div class="admin-card" style="margin-top:16px"><h3>Review Queue</h3>${loading ? loadingPanel() : renderReview()}</div>`
           : view === "cruises"
             ? `<div class="admin-card" style="margin-top:16px">
                 <h3>Browse Active Cruises</h3>
                 <p class="admin-helper">Complete sailings in the Discovery catalogue (status = active). These can appear on Living Destination pages and Cruise Finder.</p>
-                ${loading ? `<p class="admin-muted">Loading…</p>` : renderActiveCruises()}
+                ${loading ? loadingPanel() : renderActiveCruises()}
               </div>`
-            : `
+            : loading
+              ? `<div class="admin-card" style="margin-top:16px">${loadingPanel()}</div>`
+              : `
       ${renderCards()}
+      ${renderLineHealth()}
       ${renderReviewBreakdown()}
 
       <div class="admin-card" style="margin-top:16px">

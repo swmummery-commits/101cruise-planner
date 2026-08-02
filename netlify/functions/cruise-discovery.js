@@ -39,6 +39,11 @@ const {
 } = require("./lib/cruise-discovery-ops");
 const { loadPortsCatalogue, resolveRawPortText, compactDepartureAudit } = require("./lib/discovery-departure-port");
 const { matchDeparturePort } = require("./lib/cruise-finder-departure-match");
+const {
+  buildLineHealthRow,
+  summariseLineHealth,
+  inferRunType
+} = require("./lib/cruise-discovery-source-health");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -56,13 +61,27 @@ function jsonResponse(statusCode, body) {
 
 async function dashboard() {
   const today = new Date().toISOString().slice(0, 10);
-  const [active, lines, runs, review, candidates7d, validated7d] = await Promise.all([
+  const [
+    activeFuture,
+    activeAll,
+    lines,
+    runs,
+    review,
+    candidates7d,
+    validated7d,
+    expiredPending
+  ] = await Promise.all([
     supabase(
-      `discovered_cruises?status=eq.active&or=(departure_date.is.null,departure_date.gte.${today})&select=id&limit=1000`
+      `discovered_cruises?status=eq.active&or=(departure_date.is.null,departure_date.gte.${today})&select=id,cruise_line_id&limit=1000`
     ).catch(() => []),
-    supabase("ci_cruise_lines?active=eq.true&sold_by_101cruise=eq.true&select=id").catch(() => []),
     supabase(
-      "cruise_discovery_runs?select=id,scope,status,stats,started_at,finished_at,created_at,cruise_line_id,destination_id,error_message&order=created_at.desc&limit=25"
+      "discovered_cruises?status=eq.active&select=id,cruise_line_id,departure_date&limit=1000"
+    ).catch(() => []),
+    supabase(
+      "ci_cruise_lines?active=eq.true&sold_by_101cruise=eq.true&select=id,name,slug,website_url,cruise_search_url,fleet_page_url,active,sold_by_101cruise&order=name.asc"
+    ).catch(() => []),
+    supabase(
+      "cruise_discovery_runs?select=id,scope,status,stats,started_at,finished_at,created_at,cruise_line_id,destination_id,error_message&order=created_at.desc&limit=100"
     ).catch(() => []),
     supabase(
       "cruise_discovery_review_items?status=eq.pending&select=id,item_type&limit=2000"
@@ -74,6 +93,9 @@ async function dashboard() {
       `discovered_cruises?status=eq.active&discovered_at=gte.${new Date(
         Date.now() - 7 * 864e5
       ).toISOString()}&select=id&limit=1000`
+    ).catch(() => []),
+    supabase(
+      `discovered_cruises?status=eq.active&departure_date=lt.${today}&select=id&limit=1000`
     ).catch(() => [])
   ]);
 
@@ -96,22 +118,54 @@ async function dashboard() {
     else breakdown.other += 1;
   }
 
-  const recentRuns = runs || [];
-  const scannedOk = recentRuns.filter((r) => r.status === "completed").length;
-  const scannedFail = recentRuns.filter((r) => r.status === "failed").length;
+  const activeFutureByLine = {};
+  for (const row of activeFuture || []) {
+    activeFutureByLine[row.cruise_line_id] = (activeFutureByLine[row.cruise_line_id] || 0) + 1;
+  }
+  const activeAllByLine = {};
+  for (const row of activeAll || []) {
+    activeAllByLine[row.cruise_line_id] = (activeAllByLine[row.cruise_line_id] || 0) + 1;
+  }
+
+  const lineHealth = (lines || []).map((line) =>
+    buildLineHealthRow({ line, runs: runs || [], activeFutureByLine, activeAllByLine })
+  );
+  const lineHealthSummary = summariseLineHealth(lineHealth);
+
+  const lastRunLine = last?.cruise_line_id
+    ? (lines || []).find((l) => l.id === last.cruise_line_id)
+    : null;
+
+  const lastRunIsSingleLine =
+    last?.scope === "cruise_line" ||
+    last?.scope === "destination" ||
+    inferRunType(last) === "verify_selected_line" ||
+    inferRunType(last) === "discover_selected_cruise_line";
 
   return {
     success: true,
     cards: {
-      active_cruises: (active || []).length,
+      active_cruises: (activeFuture || []).length,
+      active_cruises_all_status: (activeAll || []).length,
+      active_past_departure_pending_expire: (expiredPending || []).length,
+      enabled_cruise_lines: (lines || []).length,
+      lines_with_future_active: lineHealthSummary.lines_with_future_active,
       discovered_candidates_last_run: s.candidates ?? 0,
       validated_new_cruises_last_run: s.cruises_inserted ?? s.upserted_active ?? 0,
       candidates_promoted_last_run: s.cruises_promoted ?? 0,
       review_required: reviewRows.length,
       duplicate_candidates_suppressed: s.duplicate_candidates_suppressed ?? s.unchanged ?? 0,
       low_signal_sources_ignored: s.skipped_non_cruise ?? 0,
-      cruise_lines_scanned_ok: s.cruise_lines_scanned ?? scannedOk,
-      cruise_lines_unable_to_scan: s.cruise_lines_failed ?? scannedFail,
+      auto_rejected_last_run: s.ignored_non_sailing_source ?? 0,
+      expired_cruises_total: null,
+      cruise_lines_scanned_ok: lastRunIsSingleLine ? 1 : s.cruise_lines_scanned ?? null,
+      cruise_lines_unable_to_scan: s.cruise_lines_failed ?? 0,
+      lines_producing_zero_last_run: s.candidates === 0 && last?.status === "completed" ? 1 : 0,
+      last_run_type: inferRunType(last),
+      last_run_scope: last?.scope || null,
+      last_run_line_name: lastRunLine?.name || null,
+      last_run_is_single_line: lastRunIsSingleLine,
+      last_full_discovery_run: null,
       // legacy keys kept for compatibility
       active_cruise_lines: (lines || []).length,
       last_discovery_run: last?.finished_at || last?.started_at || last?.created_at || null,
@@ -119,6 +173,8 @@ async function dashboard() {
       changed_cruises: s.changed ?? 0,
       candidates_last_7_days: (candidates7d || []).length
     },
+    line_health_summary: lineHealthSummary,
+    line_health: lineHealth,
     review_breakdown: breakdown,
     last_run_stats: s
   };

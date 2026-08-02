@@ -49,7 +49,7 @@ function extractNextData(html) {
 function walkCollectUrls(node, out, depth = 0) {
   if (!node || depth > 12) return;
   if (typeof node === "string") {
-    if (/^https?:\/\//i.test(node) && /itinerar|sail|voyage|booking|cruise/i.test(node)) {
+    if (/^https?:\/\//i.test(node) && /itinerar|sail|voyage|journey|booking|cruise/i.test(node)) {
       out.add(node);
     }
     return;
@@ -102,11 +102,118 @@ function extractAnchorUrls(html, baseUrl) {
     }
     try {
       const abs = base ? new URL(href, base).toString() : href;
-      if (/itinerar|sail|voyage|booking|find-a-cruise|cruise-search|depart|cruise-details/i.test(abs)) {
+      if (/itinerar|sail|voyage|journey|booking|find-a-cruise|cruise-search|depart|cruise-details|\/cruises?\//i.test(abs)) {
         urls.add(abs.split("#")[0]);
       }
     } catch {
       /* ignore */
+    }
+  }
+  return [...urls];
+}
+
+function walkCollectVoyages(node, out, depth = 0, ctx = {}) {
+  if (!node || depth > 14) return;
+  if (Array.isArray(node)) {
+    for (const item of node) walkCollectVoyages(item, out, depth + 1, ctx);
+    return;
+  }
+  if (typeof node !== "object") return;
+
+  const type = String(node["@type"] || node.type || "").toLowerCase();
+  const startDate = node.startDate || node.departureDate || node.sailDate || node.embarkDate || null;
+  const endDate = node.endDate || node.returnDate || node.disembarkDate || null;
+  const url = node.url || node.bookingUrl || node.offers?.url || ctx.url || null;
+  const name = node.name || node.title || node.headline || null;
+  const desc = node.description || null;
+  const location = node.departureLocation || node.location || node.embarkationPort || null;
+  const locName =
+    typeof location === "string"
+      ? location
+      : location?.name || location?.address?.addressLocality || null;
+  const duration = node.duration || node.numberOfDays || node.nights || null;
+  const identifier = node.identifier || node.sku || node.productID || node.voyageId || null;
+
+  const voyageLike =
+    startDate ||
+    (type && /trip|event|product|offer|cruise|voyage|itinerary|sailing/.test(type) && (name || url));
+
+  if (voyageLike && (startDate || url || identifier)) {
+    out.push({
+      source: ctx.source || "structured",
+      title: name ? String(name) : null,
+      description: desc ? String(desc) : null,
+      url: url ? String(url) : null,
+      departure_date: startDate ? String(startDate).slice(0, 10) : null,
+      return_date: endDate ? String(endDate).slice(0, 10) : null,
+      nights: typeof duration === "number" ? duration : null,
+      departure_port: locName ? String(locName) : null,
+      voyage_id: identifier ? String(identifier) : null,
+      ship_name: node.ship?.name || node.vehicle?.name || node.provider?.name || null
+    });
+  }
+
+  for (const v of Object.values(node)) {
+    if (v && typeof v === "object") walkCollectVoyages(v, out, depth + 1, ctx);
+  }
+}
+
+/**
+ * Extract voyage records from JSON-LD, Next.js data and embedded JSON blobs.
+ */
+function extractStructuredVoyages(html, pageUrl) {
+  const voyages = [];
+  const methods = [];
+  const jsonLd = extractJsonLd(html);
+  if (jsonLd.length) {
+    methods.push("json_ld_voyage");
+    for (const block of jsonLd) {
+      const items = Array.isArray(block) ? block : block["@graph"] ? block["@graph"] : [block];
+      for (const item of items) walkCollectVoyages(item, voyages, 0, { source: "json_ld", url: pageUrl });
+    }
+  }
+  const nextData = extractNextData(html);
+  if (nextData) {
+    methods.push("next_data_voyage");
+    walkCollectVoyages(nextData, voyages, 0, { source: "next_data", url: pageUrl });
+  }
+  const embedded = extractEmbeddedJsonBlobs(html);
+  if (embedded.length) {
+    methods.push("embedded_json_voyage");
+    for (const blob of embedded) walkCollectVoyages(blob, voyages, 0, { source: "embedded_json", url: pageUrl });
+  }
+
+  const seen = new Set();
+  const deduped = [];
+  for (const v of voyages) {
+    const key = [v.voyage_id || "", v.url || "", v.departure_date || "", v.title || ""].join("|");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(v);
+  }
+  return { voyages: deduped, methods: [...new Set(methods)] };
+}
+
+/** Parse sitemap XML for cruise-like loc URLs (no external fetch). */
+function extractSitemapLocs(xml, baseUrl) {
+  const urls = new Set();
+  const re = /<loc>([^<]+)<\/loc>/gi;
+  let m;
+  while ((m = re.exec(String(xml || ""))) !== null) {
+    const loc = String(m[1] || "").trim();
+    if (!loc) continue;
+    if (/itinerar|sail|voyage|journey|booking|cruise-details|find-a-cruise|\/cruises?\//i.test(loc)) {
+      try {
+        urls.add(new URL(loc.split("#")[0]).toString());
+      } catch {
+        if (baseUrl) {
+          try {
+            urls.add(new URL(loc, baseUrl).toString());
+          } catch {
+            /* ignore */
+          }
+        }
+      }
     }
   }
   return [...urls];
@@ -151,6 +258,8 @@ function extractStructuredSailingSources(html, pageUrl) {
   }
   if (apiHints.length) methods.push("api_hint");
 
+  const voyageExtract = extractStructuredVoyages(html, pageUrl);
+
   return {
     sailingUrls: [...sailingUrls]
       .filter(Boolean)
@@ -162,7 +271,9 @@ function extractStructuredSailingSources(html, pageUrl) {
       }),
     methods: [...new Set(methods)],
     apiHints,
-    hasStructured: Boolean(jsonLd.length || nextData || embedded.length)
+    hasStructured: Boolean(jsonLd.length || nextData || embedded.length),
+    structuredVoyages: voyageExtract.voyages,
+    voyageMethods: voyageExtract.methods
   };
 }
 
@@ -194,6 +305,8 @@ module.exports = {
   extractJsonLd,
   extractNextData,
   extractStructuredSailingSources,
+  extractStructuredVoyages,
+  extractSitemapLocs,
   structuredExcerptHint,
   extractAnchorUrls
 };

@@ -11,7 +11,8 @@ const { fetchSourceExcerpt } = require("./source-fetch");
 const { scoreSailingUrl, buildBraveSailingQueries } = require("./cruise-discovery-url-score");
 const {
   extractStructuredSailingSources,
-  structuredExcerptHint
+  structuredExcerptHint,
+  extractSitemapLocs
 } = require("./cruise-discovery-structured");
 const { resolveAdapter } = require("./cruise-discovery-adapters");
 const {
@@ -806,24 +807,29 @@ function cruiseSignalScore(signals) {
 /**
  * Stage 1 — extract raw signals only from source text (never invent).
  */
-function extractRawSignals({ title, description, url, excerpt, cruiseLine }) {
-  const blob = [title, description, excerpt].filter(Boolean).join("\n");
-  if (!blob.trim()) return null;
+function extractRawSignals({ title, description, url, excerpt, cruiseLine, structuredVoyage = null }) {
+  const sv = structuredVoyage || {};
+  const blob = [title, description, excerpt, sv.title, sv.description].filter(Boolean).join("\n");
+  if (!blob.trim() && !sv.departure_date && !sv.url) return null;
 
   const fare = extractFare(blob);
   const shipGuesses = extractShipNameGuesses(`${title}\n${description}\n${excerpt}`, url, cruiseLine?.name);
+  if (sv.ship_name && !shipGuesses.includes(sv.ship_name)) shipGuesses.unshift(String(sv.ship_name));
   return {
-    title: title || null,
-    description: description || null,
-    url,
+    title: title || sv.title || null,
+    description: description || sv.description || null,
+    url: url || sv.url || null,
     excerpt_chars: excerpt ? excerpt.length : 0,
     blob,
-    departure_date_raw: extractDepartureDate(blob),
-    nights_raw: extractNights(blob),
+    departure_date_raw: sv.departure_date || extractDepartureDate(blob),
+    nights_raw: sv.nights || extractNights(blob),
     fare_raw: fare,
-    departure_port_raw: extractDeparturePort(blob),
+    departure_port_raw: sv.departure_port || extractDeparturePort(blob),
     itinerary_raw: extractItinerary(blob),
-    ship_name_guesses: shipGuesses
+    ship_name_guesses: shipGuesses,
+    voyage_id: sv.voyage_id || null,
+    return_date_raw: sv.return_date || null,
+    extraction_evidence: sv.source ? { structured_source: sv.source } : undefined
   };
 }
 
@@ -832,12 +838,23 @@ function extractRawSignals({ title, description, url, excerpt, cruiseLine }) {
  */
 function normaliseCandidate(raw) {
   if (!raw) return null;
+  let nights = raw.nights_raw || null;
+  if (!nights && raw.departure_date_raw && raw.return_date_raw) {
+    try {
+      const a = new Date(`${raw.departure_date_raw}T00:00:00Z`).getTime();
+      const b = new Date(`${raw.return_date_raw}T00:00:00Z`).getTime();
+      if (Number.isFinite(a) && Number.isFinite(b) && b > a) nights = Math.round((b - a) / 86400000);
+    } catch {
+      /* ignore */
+    }
+  }
   return {
     ...raw,
     official_url: String(raw.url || "").trim(),
     canonical_url: canonicalUrl(raw.url),
     departure_date: raw.departure_date_raw || null,
-    nights: raw.nights_raw || null,
+    return_date: raw.return_date_raw || null,
+    nights,
     departure_port: raw.departure_port_raw
       ? raw.departure_port_raw.replace(/\s+/g, " ").trim()
       : null,
@@ -953,9 +970,10 @@ function buildCandidateFromSource({
   destinations,
   preferredDestination,
   shipAliases = [],
-  destinationAliases = []
+  destinationAliases = [],
+  structuredVoyage = null
 }) {
-  const raw = extractRawSignals({ title, description, url, excerpt, cruiseLine });
+  const raw = extractRawSignals({ title, description, url, excerpt, cruiseLine, structuredVoyage });
   if (!raw) return null;
 
   const nonSailing = classifyNonSailingSource({
@@ -1123,11 +1141,77 @@ async function searchOfficialCruises({ cruiseLine, destination, count = 8, adapt
 }
 
 /**
+ * Convert structured voyage record to a discovery hit (layer 1 extraction).
+ */
+function structuredVoyageToHit(voyage, cruiseLine, sourceMethod) {
+  const excerpt = [
+    voyage.title,
+    voyage.description,
+    voyage.departure_port ? `Departure port: ${voyage.departure_port}` : "",
+    voyage.ship_name ? `Ship: ${voyage.ship_name}` : "",
+    voyage.departure_date ? `Departure date: ${voyage.departure_date}` : ""
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return {
+    url: voyage.url || cruiseLine.cruise_search_url || cruiseLine.website_url,
+    title: voyage.title || `${cruiseLine.name} sailing`,
+    description: voyage.description || "",
+    excerpt,
+    source_method: sourceMethod || "structured_voyage",
+    structured_voyage: voyage
+  };
+}
+
+/**
+ * Fetch official sitemap(s) for sailing URLs.
+ */
+async function collectFromSitemap(cruiseLine, adapter) {
+  const base = String(cruiseLine.website_url || cruiseLine.cruise_search_url || "").trim();
+  if (!base) return { hits: [], pagesFetched: 0, diagnostics: [] };
+  let origin;
+  try {
+    origin = new URL(base).origin;
+  } catch {
+    return { hits: [], pagesFetched: 0, diagnostics: [] };
+  }
+  const paths = adapter.sitemapPaths || ["/sitemap.xml"];
+  const hits = [];
+  const diagnostics = [];
+  let pagesFetched = 0;
+  for (const p of paths) {
+    const sitemapUrl = `${origin}${p.startsWith("/") ? p : `/${p}`}`;
+    const fetched = await fetchSourceExcerpt(sitemapUrl, {
+      timeoutMs: 5_000,
+      maxExcerptChars: 500_000,
+      includeHtml: true
+    });
+    pagesFetched += 1;
+    if (!fetched.ok || !fetched.html) {
+      diagnostics.push({ url: sitemapUrl, decision: "skip", reason: fetched.error || "sitemap_fetch_failed" });
+      continue;
+    }
+    const locs = extractSitemapLocs(fetched.html, origin);
+    for (const loc of locs.slice(0, 40)) {
+      hits.push({
+        url: loc,
+        title: `${cruiseLine.name} sailing`,
+        description: "From official sitemap",
+        source_method: "sitemap"
+      });
+    }
+    if (locs.length) break;
+  }
+  return { hits, pagesFetched, diagnostics };
+}
+
+/**
  * Primary path: parse cruise_search_url for sailing links / structured data.
  */
 async function collectFromOfficialSearchPage(cruiseLine, destination, adapter) {
-  const searchUrl = String(cruiseLine.cruise_search_url || "").trim();
+  const searchUrl = String(cruiseLine.cruise_search_url || cruiseLine.website_url || "").trim();
   if (!searchUrl) return { hits: [], sourceMethod: null, diagnostics: [] };
+  const usedWebsiteFallback = !cruiseLine.cruise_search_url && Boolean(cruiseLine.website_url);
 
   const destName = destination?.name || "";
   const fetched = await fetchSourceExcerpt(searchUrl, {
@@ -1151,16 +1235,27 @@ async function collectFromOfficialSearchPage(cruiseLine, destination, adapter) {
   }
 
   const structured = extractStructuredSailingSources(fetched.html, searchUrl);
+  const htmlSize = String(fetched.html || "").length;
+  const javascriptEmpty = htmlSize < 1200 && !structured.hasStructured;
   let sourceMethod = "official_search_page";
   if (structured.methods.includes("next_data") || structured.methods.includes("embedded_json")) {
     sourceMethod = "official_embedded_json";
   } else if (structured.methods.includes("api_hint")) {
     sourceMethod = "official_api";
+  } else if (structured.voyageMethods?.includes("json_ld_voyage")) {
+    sourceMethod = "json_ld_voyage";
   }
 
   const host = hostnameOf(cruiseLine.website_url);
   const hits = [];
   const diagnostics = [];
+
+  if (structured.structuredVoyages?.length) {
+    for (const voyage of structured.structuredVoyages.slice(0, adapter.maxFetches || 15)) {
+      hits.push(structuredVoyageToHit(voyage, cruiseLine, sourceMethod));
+    }
+  }
+
   for (const url of structured.sailingUrls) {
     if (!isSameSite(url, host) && !isSameSite(url, hostnameOf(searchUrl))) continue;
     if (destName) {
@@ -1191,7 +1286,16 @@ async function collectFromOfficialSearchPage(cruiseLine, destination, adapter) {
     });
   }
 
-  return { hits, sourceMethod, diagnostics, pagesFetched: 1 };
+  return {
+    hits,
+    sourceMethod: usedWebsiteFallback ? "official_website_fallback" : sourceMethod,
+    diagnostics,
+    pagesFetched: 1,
+    htmlSize,
+    javascriptEmpty,
+    structuredVoyageCount: structured.structuredVoyages?.length || 0,
+    usedWebsiteFallback
+  };
 }
 
 function primaryReviewType(reasons, candidate) {
@@ -1228,6 +1332,14 @@ function dedupeReviewItems(items) {
  * Discover cruises for one cruise line (optionally scoped to one destination).
  * Sprint 11D.2: cruise_search_url first, score before fetch, Brave fallback.
  */
+/**
+ * Discovery search targets: explicit destination scope, or a single unfiltered pass.
+ * Line-wide runs must not loop published Living Destinations as implicit filters.
+ */
+function resolveDiscoveryDestinationTargets(destination) {
+  return destination ? [destination] : [null];
+}
+
 async function discoverForCruiseLine({
   cruiseLine,
   ships,
@@ -1241,7 +1353,8 @@ async function discoverForCruiseLine({
 }) {
   const adapter = resolveAdapter(cruiseLine);
   const fetchCap = Math.min(maxResults, adapter.maxFetches || 8);
-  const destList = destination ? [destination] : destinations || [];
+  // Line-wide discovery (no destination filter) must not iterate published Living Destinations.
+  const destList = resolveDiscoveryDestinationTargets(destination);
   const stats = {
     search_hits: 0,
     brave_results_received: 0,
@@ -1259,7 +1372,7 @@ async function discoverForCruiseLine({
     changed: 0,
     new: 0,
     review_items: 0,
-    destinations_scanned: destList.length,
+    destinations_scanned: destination ? destList.length : 0,
     pages_fetched: 0,
     candidates_validated: 0,
     source_method_counts: {},
@@ -1296,12 +1409,30 @@ async function discoverForCruiseLine({
       const official = await collectFromOfficialSearchPage(cruiseLine, dest, adapter);
       stats.pages_fetched += official.pagesFetched || 0;
       if (official.diagnostics?.length) urlDiagnostics.push(...official.diagnostics);
+      if (official.javascriptEmpty) stats.javascript_empty_html = true;
+      if (official.structuredVoyageCount) {
+        stats.structured_voyages_found = (stats.structured_voyages_found || 0) + official.structuredVoyageCount;
+      }
       if (official.hits?.length) {
         hits = official.hits;
         usedMethod = official.sourceMethod || "official_search_page";
       }
     } catch (error) {
       console.warn("official search page failed", cruiseLine.name, error.message);
+    }
+
+    if (!hits.length) {
+      try {
+        const sitemap = await collectFromSitemap(cruiseLine, adapter);
+        stats.pages_fetched += sitemap.pagesFetched || 0;
+        if (sitemap.diagnostics?.length) urlDiagnostics.push(...sitemap.diagnostics);
+        if (sitemap.hits?.length) {
+          hits = sitemap.hits;
+          usedMethod = "sitemap";
+        }
+      } catch (error) {
+        console.warn("sitemap collection failed", cruiseLine.name, error.message);
+      }
     }
 
     if (!hits.length) {
@@ -1343,6 +1474,33 @@ async function discoverForCruiseLine({
           decision: "skip",
           reason: "rejected_url_memory",
           source_method: hit.source_method || usedMethod
+        });
+        continue;
+      }
+
+      if (hit.structured_voyage) {
+        ranked.push({
+          hit,
+          scored: {
+            score: 100,
+            decision: "fetch",
+            reason: "structured_voyage",
+            positive: ["structured_voyage"],
+            negative: []
+          },
+          diag: {
+            url: hit.url,
+            canonical_url: canonicalUrl(hit.url),
+            title: hit.title || null,
+            snippet: hit.description || null,
+            sailing_score: 100,
+            positive_signals: ["structured_voyage"],
+            negative_signals: [],
+            decision: "fetch",
+            reason: "structured_voyage",
+            adapter_used: adapter.id,
+            source_method: hit.source_method || usedMethod
+          }
         });
         continue;
       }
@@ -1430,8 +1588,8 @@ async function discoverForCruiseLine({
       }
       seenUrls.add(urlKey);
 
-      let excerpt = "";
-      if (fetchPages) {
+      let excerpt = hit.excerpt || "";
+      if (fetchPages && !excerpt) {
         const fetched = await fetchSourceExcerpt(hit.url, {
           timeoutMs: 5_000,
           maxExcerptChars: 4_000,
@@ -1453,6 +1611,10 @@ async function discoverForCruiseLine({
           urlDiagnostics.push({ ...diag, sailing_score: scored.score });
           continue;
         }
+      } else if (hit.structured_voyage) {
+        stats.structured_voyages_used = (stats.structured_voyages_used || 0) + 1;
+        diag.decision = "structured_voyage";
+        diag.reason = "structured_voyage_no_fetch";
       }
       urlDiagnostics.push({ ...diag, sailing_score: scored.score });
 
@@ -1466,7 +1628,8 @@ async function discoverForCruiseLine({
         destinations: destinations || [],
         preferredDestination: dest,
         shipAliases,
-        destinationAliases
+        destinationAliases,
+        structuredVoyage: hit.structured_voyage || null
       });
 
       if (!built) continue;
@@ -1737,6 +1900,7 @@ module.exports = {
   searchOfficialCruises,
   collectFromOfficialSearchPage,
   discoverForCruiseLine,
+  resolveDiscoveryDestinationTargets,
   formatPublicSailing,
   scoreSailingUrl: require("./cruise-discovery-url-score").scoreSailingUrl,
   resolveAdapter: require("./cruise-discovery-adapters").resolveAdapter
