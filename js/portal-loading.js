@@ -12,7 +12,7 @@
   const OVERLAY_ID = "portal-loading-overlay";
   const BODY_LOCK_CLASS = "portal-loading-active";
   const PARENT_GEOMETRY_CLASS = "portal-loading-overlay--parent-viewport";
-  const INITIAL_MESSAGE = "Just getting the info for you - hang tight!";
+  const INITIAL_MESSAGE = "Hang tight! Just getting your info.";
   const FAIL_MESSAGE =
     "Something didn't load properly. Please try again in a moment.";
   let supportEl = null;
@@ -298,12 +298,9 @@
     ensureOverlay();
 
     if (activeCount === 1) {
-      setMessage(message || INITIAL_MESSAGE);
-      setSupportMessage(supportMessage || "");
+      setMessage(INITIAL_MESSAGE);
+      setSupportMessage("");
       clearTimers();
-    } else if (message) {
-      setMessage(message);
-      if (supportMessage != null) setSupportMessage(supportMessage);
     }
 
     syncVisibility();

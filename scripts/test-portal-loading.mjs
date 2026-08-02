@@ -160,6 +160,8 @@ assert(PARENT_ORIGINS.length === 2, "exactly two parent origins");
 assert(!/screen\.availHeight/.test(srcLoading.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "")), "screen.availHeight heuristic removed");
 assert(!/\blastPointerY\b|\bpointerdown\b|\banchorCenterY\b|\bcomputeOverlayBand\b/.test(srcLoading), "pointer/band heuristics removed");
 assert(!/postMessage\([^,]+,\s*"\*"\)/.test(srcLoading), "loading does not postMessage *");
+assert(srcLoading.includes("Hang tight! Just getting your info."), "canonical portal loading message");
+assert(!/Just getting the info for you/.test(srcLoading), "legacy loading copy removed");
 assert(!/postMessage\([^,]+,\s*"\*"\)/.test(srcHeight), "height does not postMessage *");
 assert(!/postMessage\([^,]+,\s*"\*"\)/.test(srcPlanner), "planner does not postMessage *");
 

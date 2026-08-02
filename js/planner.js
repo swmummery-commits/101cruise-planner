@@ -472,9 +472,6 @@ async function openSwitchBookingChooser(options = {}) {
 
   switchBookingLoadInFlight = true;
 
-  const FIND_MESSAGE = "Finding your cruises…";
-  const FIND_SUPPORT = "Please wait while we check the cruises linked to your account.";
-
   const run = async () => {
     // Always fetch on open (and on force retry). Do not open an empty chooser first.
     const meta =
@@ -490,8 +487,6 @@ async function openSwitchBookingChooser(options = {}) {
       meta = await PortalLoading.withLoading(run, {
         button,
         key: "find-linked-cruises",
-        message: FIND_MESSAGE,
-        supportMessage: FIND_SUPPORT,
         delayMs: 0
       });
     } else {

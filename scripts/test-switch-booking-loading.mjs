@@ -51,8 +51,8 @@ function extractFunction(src, name) {
 {
   const openFn = extractFunction(plannerSrc, "openSwitchBookingChooser");
   assert(/PortalLoading\.withLoading/.test(openFn), "starts PortalLoading before chooser");
-  assert(/Finding your cruises/.test(openFn), "finding message");
-  assert(/Please wait while we check the cruises linked to your account/.test(openFn), "support copy");
+  assert(!/Finding your cruises/.test(openFn), "no custom finding message override");
+  assert(!/Please wait while we check the cruises linked to your account/.test(openFn), "no custom support copy");
   assert(/delayMs:\s*0/.test(openFn), "no multi-second blank delay");
   assert(/switchBookingLoadInFlight/.test(openFn), "guards duplicate in-flight opens");
   assert(/find-linked-cruises/.test(openFn), "dedicated loading key");
@@ -151,8 +151,8 @@ function extractFunction(src, name) {
     },
     PortalLoading: {
       async withLoading(fn, opts) {
-        events.push(`loading-start:${opts.message || ""}`);
-        assert(/Finding your cruises/.test(opts.message || ""), "runtime finding message");
+        events.push("loading-start");
+        assert(!opts.message, "runtime uses canonical portal loading message");
         assert(opts.delayMs === 0, "runtime delay 0");
         try {
           return await fn();
@@ -179,7 +179,7 @@ function extractFunction(src, name) {
 
   assert(fetchCount === 1, "duplicate click does not create second request");
   assert(openCount === 1, "chooser opened once");
-  assert(events.indexOf("loading-start:Finding your cruises…") < events.indexOf("fetch-start"), "loading before fetch");
+  assert(events.indexOf("loading-start") < events.indexOf("fetch-start"), "loading before fetch");
   assert(events.indexOf("fetch-end") < events.indexOf("loading-end"), "loading stays until fetch done");
   assert(events.indexOf("loading-end") < events.indexOf("chooser-open"), "chooser after loading closes");
 }

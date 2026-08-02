@@ -8598,6 +8598,7 @@ html.portal-loading-active body {
 }
 
 .portal-loading-panel {
+  font-family: inherit;
   display: grid;
   justify-items: center;
   align-content: center;
@@ -8616,7 +8617,7 @@ html.portal-loading-active body {
 .portal-loading-message {
   margin: 0;
   color: #245c4e;
-  font-family: "Halyard Display", Arial, sans-serif;
+  font-family: inherit;
   font-size: 0.95rem;
   font-weight: 400;
   line-height: 1.45;
@@ -8627,7 +8628,7 @@ html.portal-loading-active body {
 .portal-loading-support {
   margin: 0;
   color: #5b6b67;
-  font-family: "Halyard Display", Arial, sans-serif;
+  font-family: inherit;
   font-size: 0.82rem;
   line-height: 1.4;
   text-align: center;

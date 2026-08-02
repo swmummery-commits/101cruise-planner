@@ -52,6 +52,8 @@ assert(loading.includes("101cruise-parent-viewport") || indexHtml.includes("port
 const loadingCode = loading.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
 assert(!/screen\.availHeight/.test(loadingCode), "no screen.availHeight heuristic");
 assert(!/computeOverlayBand/.test(loadingCode), "no computeOverlayBand heuristic");
+assert(loading.includes("Hang tight! Just getting your info."), "canonical portal loading message");
+assert(!/Just getting the info for you/.test(loading), "legacy loading copy removed");
 assert(planner.includes("PortalLoading.withLoading"), "wired loading");
 assert(indexHtml.includes("portal-height.js"), "portal height script loaded");
 
