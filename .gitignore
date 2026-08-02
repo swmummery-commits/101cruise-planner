@@ -28,3 +28,5 @@ reports/departure-remediation-*.json
 reports/departure-remediation-rollback-*.json
 reports/non-sailing-purge-*.json
 reports/review-queue-audit-*.json
+reports/discovery-automation-dry-run-*.json
+reports/discovery-review-reconciliation*.json

@@ -23,8 +23,13 @@ const {
 const {
   classifyNonSailingSource,
   slugTokenRejected,
-  guessLooksNonSailing
+  guessLooksNonSailing,
+  provesIndividualSailing
 } = require("./discovery-non-sailing-filter");
+const {
+  evaluateIngestionAutomation,
+  ACTION: AUTOMATION_ACTION
+} = require("./discovery-auto-resolver");
 const { shouldSkipUrlBeforeFetch, canonicalDiscoveryUrl } = require("./discovery-source-memory");
 
 const MONTHS = {
@@ -1039,6 +1044,23 @@ function buildCandidateFromSource({
   });
   withDeparture.departure_port_meta = withDeparture.departure_port_meta || withDeparture.raw_extract?.departure_port_meta;
 
+  const individualGate = provesIndividualSailing({
+    ship_id: withDeparture.ship_id,
+    departure_date: withDeparture.departure_date,
+    departure_port: withDeparture.departure_port,
+    departure_port_meta: withDeparture.departure_port_meta,
+    ship_name_guess: withDeparture.ship_name_guess,
+    ships
+  });
+  if (!individualGate.proven && signalScore < 4) {
+    return {
+      skip: true,
+      reason: individualGate.reason || "non_sailing_marketing_page",
+      signalScore,
+      diagnostics: { missing: individualGate.missing, ship_name_guesses: matched.ship_name_guesses }
+    };
+  }
+
   const reasons = validateCruise(withDeparture);
   const confidence =
     reasons.length === 0 ? "high" : reasons.length <= 2 && draft.ship_id ? "medium" : "low";
@@ -1248,6 +1270,8 @@ async function discoverForCruiseLine({
   const reviewItems = [];
   const seenUrls = new Set();
   const missingShipUrlSeen = new Set();
+  const lineConfigSeen = new Set();
+  const shipMaintenanceSeen = new Set();
 
   if (!hostnameOf(cruiseLine.website_url)) {
     reviewItems.push({
@@ -1511,11 +1535,85 @@ async function discoverForCruiseLine({
         destination_name: extracted.matched_destination?.name || null
       };
 
+      let ingestionAutomation = null;
+      if (built.status !== "active") {
+        ingestionAutomation = evaluateIngestionAutomation({
+          built,
+          extracted: { ...extracted, external_key: key },
+          cruiseLine,
+          ships,
+          destinations: destinations || [],
+          destinationAliases,
+          aliases: shipAliases
+        });
+
+        if (
+          ingestionAutomation.action === AUTOMATION_ACTION.AUTO_REJECT ||
+          ingestionAutomation.action === AUTOMATION_ACTION.CLOSE_OBSOLETE
+        ) {
+          stats.skipped_non_cruise += 1;
+          continue;
+        }
+
+        if (
+          ingestionAutomation.action === AUTOMATION_ACTION.SHIP_MAINTENANCE &&
+          ingestionAutomation.ship_maintenance
+        ) {
+          const maintKey = ingestionAutomation.ship_maintenance.dedupe_key;
+          if (!shipMaintenanceSeen.has(maintKey)) {
+            shipMaintenanceSeen.add(maintKey);
+            reviewItems.push({
+              item_type: "missing_ship_url",
+              title: `Catalogue: official ship URL needed for ${ingestionAutomation.ship_maintenance.ship_name}`,
+              detail: "Ship catalogue maintenance — does not block sailing approval.",
+              cruise_line_id: cruiseLine.id,
+              source_url: ingestionAutomation.ship_maintenance.suggested_official_ship_url,
+              payload: {
+                entity_group_key: maintKey,
+                ship_id: ingestionAutomation.ship_maintenance.ship_id,
+                maintenance_routing: "fleet_audit",
+                suggested_official_ship_url: ingestionAutomation.ship_maintenance.suggested_official_ship_url
+              }
+            });
+          }
+          candidates.push(row);
+          stats.candidates += 1;
+          continue;
+        }
+
+        if (ingestionAutomation.action === AUTOMATION_ACTION.LINE_CONFIG && ingestionAutomation.line_config_warning) {
+          const cfgKey = ingestionAutomation.line_config_warning.dedupe_key;
+          if (!lineConfigSeen.has(cfgKey)) {
+            lineConfigSeen.add(cfgKey);
+            reviewItems.push({
+              item_type: "missing_url",
+              title: `${cruiseLine.name}: configuration required`,
+              detail: "Cruise-line configuration maintenance — not a sailing approval decision.",
+              cruise_line_id: cruiseLine.id,
+              payload: {
+                entity_group_key: cfgKey,
+                configuration_field: ingestionAutomation.line_config_warning.field,
+                maintenance_routing: "line_configuration"
+              }
+            });
+          }
+          continue;
+        }
+
+        if (ingestionAutomation.action === AUTOMATION_ACTION.AUTO_PUBLISH) {
+          row.status = "active";
+        } else if (ingestionAutomation.action === AUTOMATION_ACTION.AUTO_RESOLVE) {
+          row.status = built.status;
+        } else if (ingestionAutomation.action !== AUTOMATION_ACTION.HUMAN_REVIEW) {
+          continue;
+        }
+      }
+
       candidates.push(row);
       stats.candidates += 1;
-      if (built.status === "active") stats.candidates_validated += 1;
+      if (row.status === "active") stats.candidates_validated += 1;
 
-      if (built.status !== "active") {
+      if (built.status !== "active" && ingestionAutomation?.action === AUTOMATION_ACTION.HUMAN_REVIEW) {
         const type = primaryReviewType(built.reasons, extracted);
         const payload = buildEntityReviewPayload({
           type,
@@ -1545,13 +1643,15 @@ async function discoverForCruiseLine({
       if (
         extracted.suggested_official_ship_url &&
         extracted.ship_id &&
-        !missingShipUrlSeen.has(extracted.ship_id)
+        !missingShipUrlSeen.has(extracted.ship_id) &&
+        built.status === "active"
       ) {
         missingShipUrlSeen.add(extracted.ship_id);
         reviewItems.push({
           item_type: "missing_ship_url",
-          title: `Confirm official ship URL for ${shipDisplay}`,
-          detail: "Discovery found a likely ship page; confirm before saving official_ship_url.",
+          title: `Catalogue: official ship URL needed for ${shipDisplay}`,
+          detail:
+            "Ship catalogue maintenance only — sailing data is otherwise valid. Confirm official_ship_url in Fleet Audit.",
           cruise_line_id: cruiseLine.id,
           source_url: extracted.suggested_official_ship_url,
           payload: {

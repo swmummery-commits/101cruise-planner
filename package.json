@@ -36,6 +36,8 @@
     "test:cruise-finder-departure-match": "node scripts/test-cruise-finder-departure-match.mjs",
     "test:discovery-departure-port": "node scripts/test-discovery-departure-port.mjs",
     "test:discovery-non-sailing-filter": "node scripts/test-discovery-non-sailing-filter.mjs",
+    "test:discovery-automation": "node scripts/test-discovery-automation.mjs",
+    "simulate:discovery-automation": "node scripts/simulate-discovery-automation.mjs --fetch",
     "poc:cruise-finder-v2": "node scripts/run-cruise-finder-v2-poc.mjs",
     "validate:track-cruises": "node scripts/validate-track-cruises-api.mjs",
     "test:track-cruises": "node scripts/test-track-cruises-validation.mjs",

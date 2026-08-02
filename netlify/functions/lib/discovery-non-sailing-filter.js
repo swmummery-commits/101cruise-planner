@@ -77,8 +77,18 @@ const HARD_REJECT_PATH_FRAGMENTS = [
   "/results/",
   "/find-cruises/",
   "/cruise-search/",
+  "/cruise-finder/",
+  "/offer/",
+  "/ports-of-call/",
+  "/rewards/",
+  "/rewards-program/",
+  "/scenic-and-emerald-rewards/",
+  "/afar/",
   "/homepage",
-  "/acq/"
+  "/acq/",
+  "/online-guides/",
+  "/guest-review/",
+  "/review-of-"
 ];
 
 /** Regional / marketing hubs — reject unless strong sailing evidence */
@@ -196,7 +206,9 @@ const NON_SAILING_TITLE_PATTERNS = [
   /\bvacation\s+package\b/i,
   /\bsearch\s+results\b/i,
   /\bfind\s+a\s+cruise\b/i,
-  /\bcommon\s+faq/i
+  /\bcommon\s+faq/i,
+  /\brewards?\s+program\b/i,
+  /\bscenic\s+&?\s+emerald\s+rewards\b/i
 ];
 
 const TRANSIENT_FETCH_REASONS = new Set([
@@ -421,6 +433,54 @@ function evaluateSailingEvidence(input = {}) {
   return { sufficient, score, signals };
 }
 
+/**
+ * Individual sailing gate — required before any page may enter sailing review or publish.
+ * Destination publication status is irrelevant; marketing expedition pages must fail here.
+ * @returns {{ proven: boolean, missing: string[], reason: string|null }}
+ */
+function provesIndividualSailing(input = {}) {
+  const knownShipNames =
+    input.knownShipNames || normaliseKnownShipNames(input.knownShipNamesList || input.ships?.map((s) => s.name));
+
+  const hasShip =
+    Boolean(input.ship_id) ||
+    Boolean(input.matched_ship?.id) ||
+    (input.shipResolution?.resolved && input.shipResolution.confidence >= 85) ||
+    Boolean(
+      input.ship_name_guess &&
+        matchesKnownShip(input.ship_name_guess, knownShipNames) &&
+        !guessLooksNonSailing(input.ship_name_guess, knownShipNames)
+    );
+
+  const departureDate = input.departure_date || input.raw_extract?.departure_date || null;
+  const hasFutureDate = departureDate && isFutureDate(departureDate);
+
+  const portMeta = input.departure_port_meta || input.raw_extract?.departure_port_meta;
+  const hasPort =
+    Boolean(input.departure_port && String(input.departure_port).trim().length > 2) ||
+    portMeta?.status === "resolved";
+
+  const missing = [];
+  if (!hasShip) missing.push("ship");
+  if (!hasFutureDate) missing.push("future_departure_date");
+  if (!hasPort) missing.push("embarkation_port");
+
+  return {
+    proven: missing.length === 0,
+    missing,
+    reason: missing.length ? "non_sailing_marketing_page" : null
+  };
+}
+
+/**
+ * Safety check before auto-reject writes — block if strong individual sailing evidence exists.
+ */
+function hasStrongIndividualSailingEvidence(input = {}) {
+  const evidence = evaluateSailingEvidence(input);
+  const individual = provesIndividualSailing(input);
+  return evidence.sufficient && individual.proven;
+}
+
 function isTransientFetchFailure(reason) {
   return TRANSIENT_FETCH_REASONS.has(String(reason || "").trim());
 }
@@ -455,6 +515,15 @@ function classifyNonSailingSource(input = {}) {
   const blob = `${title}\n${description}`.toLowerCase();
 
   const evidence = evaluateSailingEvidence({ ...input, title, description, knownShipNames });
+
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    if (host.startsWith("blog.") && !evidence.sufficient) {
+      return { rejected: true, reason: "non_sailing_blog_subdomain", override: false };
+    }
+  } catch {
+    /* ignore */
+  }
 
   if (pathMatchesHardReject(url)) {
     return { rejected: true, reason: "non_sailing_url_path", override: false };
@@ -525,6 +594,8 @@ module.exports = {
   guessLooksNonSailing,
   titleLooksNonSailing,
   evaluateSailingEvidence,
+  provesIndividualSailing,
+  hasStrongIndividualSailingEvidence,
   classifyNonSailingSource,
   isNonSailingUrl,
   isNonSailingSource,
