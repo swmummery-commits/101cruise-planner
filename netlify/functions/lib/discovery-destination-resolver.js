@@ -11,7 +11,7 @@ const {
 } = require("./destination-classification");
 const { portHintsForText, scoreDestinationsFromPortHints } = require("./destination-port-mappings");
 
-const DESTINATION_RESOLVER_VERSION = "2026-08-02.operational3";
+const DESTINATION_RESOLVER_VERSION = "2026-08-02.operational4";
 
 function slugForDestination(destinations, slugNeedle) {
   const needle = normaliseName(slugNeedle).replace(/\s+/g, "-");
@@ -322,10 +322,12 @@ function resolveOperationalDestination({
     merged.set("transpacific", Math.max(merged.get("transpacific") || 0, 95));
     evidence.push({ type: "multi_region", detail: "alaska_and_japan_ports", weight: 95 });
     merged.delete("alaska");
+    merged.delete("japan");
   } else if (alaskaCount >= 1 && (japanCount >= 1 || /\bjapanese\b|\bjapan grace\b/.test(hayNorm))) {
-    merged.set("transpacific", Math.max(merged.get("transpacific") || 0, 88));
-    evidence.push({ type: "multi_region", detail: "alaska_and_japan_route", weight: 88 });
+    merged.set("transpacific", Math.max(merged.get("transpacific") || 0, 96));
+    evidence.push({ type: "multi_region", detail: "alaska_and_japan_route", weight: 96 });
     merged.delete("alaska");
+    merged.delete("japan");
   }
 
   const isTransoceanicTitle = /transoceanic|transpacific|crossing the pacific/i.test(title);

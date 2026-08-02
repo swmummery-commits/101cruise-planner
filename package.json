@@ -46,6 +46,7 @@
     "smoke:hal-discovery-production": "node scripts/smoke-hal-discovery-production.mjs",
     "test:discovery-holland-america": "node scripts/test-discovery-holland-america.mjs",
     "test:destination-schema-compat": "node scripts/test-destination-schema-compat.mjs",
+    "test:destination-correction-deterministic": "node scripts/test-destination-correction-deterministic.mjs",
     "audit:discovery-inventory": "node scripts/audit-discovery-inventory.mjs",
     "simulate:discovery-lines": "node scripts/simulate-discovery-lines.mjs",
     "verify:priority-discovery-sources": "node scripts/verify-priority-discovery-sources.mjs",

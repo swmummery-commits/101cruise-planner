@@ -30,3 +30,8 @@ reports/non-sailing-purge-*.json
 reports/review-queue-audit-*.json
 reports/discovery-automation-dry-run-*.json
 reports/discovery-review-reconciliation*.json
+reports/operational-destination-backup-*.json
+reports/operational-destination-seed-apply-*.json
+reports/operational-destination-seed-rollback-*.json
+reports/destination-correction-deterministic-*.json
+reports/destination-correction-rollback-*.json
