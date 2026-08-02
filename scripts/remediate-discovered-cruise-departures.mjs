@@ -20,6 +20,7 @@ const require = createRequire(import.meta.url);
 const {
   classifyStoredDeparture,
   resolveDepartureFromSource,
+  resolveRawPortText,
   loadPortsCatalogue
 } = require(path.join(root, "netlify/functions/lib/discovery-departure-port.js"));
 

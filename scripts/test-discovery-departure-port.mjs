@@ -304,6 +304,68 @@ async function main() {
     );
   });
 
+  await test("Remediation script imports resolveRawPortText from shared module", () => {
+    const src = fs.readFileSync(
+      path.join(root, "scripts/remediate-discovered-cruise-departures.mjs"),
+      "utf8"
+    );
+    assert(
+      /resolveRawPortText,\s*\n\s*loadPortsCatalogue/.test(src),
+      "resolveRawPortText imported alongside shared helpers"
+    );
+    assert(
+      /discovery-departure-port\.js/.test(src),
+      "import sourced from discovery-departure-port.js"
+    );
+    assert(!/function resolveRawPortText/.test(src), "resolveRawPortText not redefined in script");
+    const shared = require(path.join(root, "netlify/functions/lib/discovery-departure-port.js"));
+    assert(typeof shared.resolveRawPortText === "function", "shared module exports resolveRawPortText");
+    assert(shared.resolveRawPortText("Sydney").status === "resolved", "resolveRawPortText usable from shared module");
+  });
+
+  await test("Remediation dry-run completes without ReferenceError", () => {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return;
+    }
+    const result = spawnSync(
+      process.execPath,
+      [path.join(root, "scripts/remediate-discovered-cruise-departures.mjs"), "--dry-run"],
+      { encoding: "utf8", env: process.env }
+    );
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    assert(result.status === 0, `dry-run exit code ${result.status}: ${output}`);
+    assert(!/ReferenceError.*resolveRawPortText/.test(output), "no resolveRawPortText ReferenceError");
+    assert(/No database writes performed \(dry-run\)/.test(output), "dry-run remains read-only");
+  });
+
+  await test("Remediation apply manifest parsing completes without writes", () => {
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return;
+    }
+    const manifestPath = path.join(
+      root,
+      "reports/departure-remediation-2026-08-02T02-06-05-790Z.json"
+    );
+    if (!fs.existsSync(manifestPath)) {
+      return;
+    }
+    const result = spawnSync(
+      process.execPath,
+      [
+        path.join(root, "scripts/remediate-discovered-cruise-departures.mjs"),
+        "--apply",
+        `--manifest=${manifestPath}`
+      ],
+      { encoding: "utf8", env: process.env }
+    );
+    const output = `${result.stdout || ""}${result.stderr || ""}`;
+    assert(result.status === 0, `apply validation exit code ${result.status}: ${output}`);
+    assert(!/ReferenceError.*resolveRawPortText/.test(output), "no resolveRawPortText ReferenceError");
+    const updatedMatch = output.match(/"updated":\s*(\d+)/);
+    assert(updatedMatch, "apply results include updated count");
+    assert(Number(updatedMatch[1]) === 0, "apply must not write when before values no longer match manifest");
+  });
+
   await test("Remediation apply mode requires approved manifest", () => {
     const result = spawnSync(
       process.execPath,
