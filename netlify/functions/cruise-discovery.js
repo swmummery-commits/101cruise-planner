@@ -37,6 +37,7 @@ const {
   loadShipAliases,
   upsertCandidateRecord
 } = require("./lib/cruise-discovery-ops");
+const { filterClassificationDestinations } = require("./lib/destination-queries");
 const { loadPortsCatalogue, resolveRawPortText, compactDepartureAudit } = require("./lib/discovery-departure-port");
 const { matchDeparturePort } = require("./lib/cruise-finder-departure-match");
 const {
@@ -188,10 +189,16 @@ async function listLines() {
 }
 
 async function listDestinations() {
+  // Published Living Destinations only — for destination-specific Discovery search UI.
   const rows = await supabase(
     "destinations?status=eq.published&select=id,name,slug,primary_region&order=display_order.asc,name.asc"
   );
-  return { success: true, destinations: rows || [] };
+  return {
+    success: true,
+    destinations: rows || [],
+    purpose: "destination_specific_search",
+    note: "Published Living Destinations only. Full and cruise-line discovery ignore this filter."
+  };
 }
 
 async function listRuns(body) {

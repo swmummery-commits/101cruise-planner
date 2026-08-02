@@ -1,0 +1,76 @@
+{
+  "response": {
+    "numFound": 4,
+    "start": 0,
+    "docs": [
+      {
+        "cruiseId": "X656",
+        "itineraryId": "A6G07C",
+        "contentPath": "/find-a-cruise/a6g07c/x656",
+        "name": "7-DAY ALASKA INSIDE PASSAGE",
+        "nightName": "7-NIGHT ALASKA INSIDE PASSAGE",
+        "shipName": "Zaandam#@#AA",
+        "shipId": "AA",
+        "duration": 7,
+        "departDate": "2027-05-08T00:00:00Z",
+        "arrivalDate": "2027-05-15T00:00:00Z",
+        "embarkPortName": "Vancouver, B.C., CA#@#YVR",
+        "embarkPortCode": "YVR",
+        "disembarkPortName": "Vancouver, B.C., CA",
+        "disembarkPortCode": "YVR",
+        "sortedPortNames_ss": [
+          "Vancouver, B.C., CA",
+          "Juneau, Alaska, US",
+          "Ketchikan, Alaska, US"
+        ],
+        "portOfCallIds": [
+          "Juneau, Alaska, US#@#JNU",
+          "Ketchikan, Alaska, US#@#KTN",
+          "Vancouver, B.C., CA#@#YVR"
+        ],
+        "destinationNames": ["ALASKA#@#A"],
+        "regionNames": ["Alaska Glacier Bay National Park#@#GB1"],
+        "language_country_code_s": "en_us"
+      },
+      {
+        "cruiseId": "C101",
+        "itineraryId": "C7E07A",
+        "contentPath": "/find-a-cruise/c7e07a/c101",
+        "name": "7-DAY CARIBBEAN TROPICAL",
+        "shipName": "Eurodam#@#ED",
+        "duration": 7,
+        "departDate": "2027-02-10T00:00:00Z",
+        "arrivalDate": "2027-02-17T00:00:00Z",
+        "embarkPortName": "Fort Lauderdale, Florida, US#@#FLL",
+        "disembarkPortName": "Fort Lauderdale, Florida, US",
+        "sortedPortNames_ss": ["Fort Lauderdale, Florida, US", "Half Moon Cay", "Amber Cove"],
+        "destinationNames": ["CARIBBEAN#@#C"],
+        "language_country_code_s": "en_us"
+      },
+      {
+        "cruiseId": "PAST1",
+        "itineraryId": "A6G07C",
+        "contentPath": "/find-a-cruise/a6g07c/past1",
+        "name": "7-DAY ALASKA INSIDE PASSAGE",
+        "shipName": "Zaandam#@#AA",
+        "duration": 7,
+        "departDate": "2024-05-08T00:00:00Z",
+        "arrivalDate": "2024-05-15T00:00:00Z",
+        "embarkPortName": "Vancouver, B.C., CA#@#YVR",
+        "destinationNames": ["ALASKA#@#A"]
+      },
+      {
+        "cruiseId": "X656",
+        "itineraryId": "A6G07C",
+        "contentPath": "/find-a-cruise/a6g07c/x656",
+        "name": "7-DAY ALASKA INSIDE PASSAGE",
+        "shipName": "Zaandam#@#AA",
+        "duration": 7,
+        "departDate": "2027-05-08T00:00:00Z",
+        "arrivalDate": "2027-05-15T00:00:00Z",
+        "embarkPortName": "Vancouver, B.C., CA#@#YVR",
+        "destinationNames": ["ALASKA#@#A"]
+      }
+    ]
+  }
+}

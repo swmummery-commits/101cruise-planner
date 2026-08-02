@@ -302,6 +302,7 @@ function structuredExcerptHint(html) {
 }
 
 module.exports = {
+  canonicalUrl,
   extractJsonLd,
   extractNextData,
   extractStructuredSailingSources,

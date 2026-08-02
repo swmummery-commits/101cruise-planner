@@ -10,6 +10,7 @@ const {
   loadDestinationAliases
 } = require("./cruise-discovery-ops");
 const { loadRejectedSourceMemory } = require("./discovery-source-memory");
+const { filterClassificationDestinations } = require("./destination-queries");
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -270,14 +271,18 @@ async function discoverOneLine({
     throw Object.assign(new Error("cruise_line_id is required"), { statusCode: 400 });
   }
 
-  const destinations = await supabase(
-    "destinations?status=eq.published&select=id,name,slug,primary_region&order=name.asc"
+  const destinations = filterClassificationDestinations(
+    await supabase(
+      "destinations?select=id,name,slug,primary_region,status&order=name.asc"
+    )
   );
   const destScope = destinationId
     ? (destinations || []).find((d) => d.id === destinationId) || null
     : null;
   if (destinationId && !destScope) {
-    throw Object.assign(new Error("Destination not found or not published"), { statusCode: 404 });
+    throw Object.assign(new Error("Destination not found or not enabled for classification"), {
+      statusCode: 404
+    });
   }
 
   const runInsert = await supabase("cruise_discovery_runs", {

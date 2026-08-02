@@ -16,6 +16,7 @@ const {
   reviewFingerprint
 } = require("./cruise-discovery");
 const { mergeDeparturePortForUpsert } = require("./discovery-departure-port");
+const { filterClassificationDestinations } = require("./destination-queries");
 
 // addDaysIso may not be exported — compute locally if needed
 function addDays(isoDate, days) {
@@ -477,8 +478,8 @@ async function reprocessCandidateIds(ids, { actor = null, context = {} } = {}) {
           cruise.cruise_line_id
         )}&active=eq.true&select=id,name,official_ship_url`
       );
-      const destinations = await supabase(
-        "destinations?status=eq.published&select=id,name,slug,primary_region"
+      const destinations = filterClassificationDestinations(
+        await supabase("destinations?select=id,name,slug,primary_region,status")
       );
       const destAliases = await loadDestinationAliases();
 

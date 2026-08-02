@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cruise Destination | 101cruise</title>
+  <link rel="stylesheet" href="/css/brand-loading.css" id="brand-loading-css">
   <style>
     body {
       margin: 0;
@@ -20,7 +21,10 @@
     data-cf-destination
     data-destination-experience-version="dx-route-fix-1"
   >
-    <p style="max-width:760px;margin:0 auto;color:#666;">Loading destination…</p>
+    <div class="brand-loading-panel" role="status" aria-live="polite">
+      <span class="brand-loading-boxes brand-loading-boxes--large brand-loading-spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+      <p class="brand-loading-message">Hang tight! Just getting your info.</p>
+    </div>
   </div>
   <script>
     (function () {

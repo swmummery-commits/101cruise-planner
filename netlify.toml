@@ -24,6 +24,10 @@
 [functions."cruise-discovery-wave-background"]
   # Background wave: loops all cruise lines (Netlify background ~15 min).
 
+[functions."hal-discovery-batch-background"]
+  # Resumable HAL API batches — read-only by default.
+  timeout = 60
+
 [functions."bulk-ship-images"]
   # ZIP download + hash + storage writes for ship image import.
   timeout = 60

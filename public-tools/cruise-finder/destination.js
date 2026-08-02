@@ -81,6 +81,7 @@
   };
 
   const LOADING_MESSAGES = [
+    "Hang tight! Just getting your info.",
     "Searching current cruise listings…",
     "Checking cruise-line listings…",
     "Reviewing matching sailings…",
@@ -522,23 +523,23 @@
   }
 
   function renderLoading() {
+    const boxes =
+      typeof BrandLoading !== "undefined" && BrandLoading.html
+        ? BrandLoading.html({ large: true, className: "cf-search-loading-spinner" })
+        : '<span class="brand-loading-boxes brand-loading-boxes--large" aria-hidden="true">' +
+          new Array(10).join("<span></span>") +
+          "</span>";
     mount.innerHTML = `
       <div class="cf-dest cf-search">
         <div class="cf-search-nav">
           <button type="button" class="cf-dest-back cf-search-linkbtn" data-back-destination>← Back to destination</button>
         </div>
-        <section class="cf-search-loading" aria-live="polite">
-          ${
-            typeof BrandLoading !== "undefined" && BrandLoading.html
-              ? BrandLoading.html({ large: true })
-              : '<span class="brand-loading-boxes brand-loading-boxes--large" aria-hidden="true">' +
-                new Array(10).join("<span></span>") +
-                "</span>"
-          }
-          <p class="cf-search-loading-title" data-loading-title>${escapeHtml(LOADING_MESSAGES[0])}</p>
-          <p class="cf-search-loading-note">This usually takes a few seconds.</p>
+        <section class="cf-search-loading brand-loading-panel cf-search-loading-panel" aria-live="polite">
+          ${boxes}
+          <p class="brand-loading-message cf-search-loading-title" data-loading-title>${escapeHtml(LOADING_MESSAGES[0])}</p>
         </section>
       </div>`;
+    if (typeof BrandLoading?.scan === "function") BrandLoading.scan(mount);
 
     const back = mount.querySelector("[data-back-destination]");
     if (back) {

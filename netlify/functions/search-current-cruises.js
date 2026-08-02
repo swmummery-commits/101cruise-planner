@@ -12,6 +12,7 @@
 
 const { readEngineFlag } = require("./lib/cruise-finder-v2/engine");
 const { categorizeResultsByDeparture } = require("./lib/cruise-finder-departure-match");
+const { filterInventoryDestination } = require("./lib/destination-queries");
 
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const MAX_BRAVE_QUERIES = 4;
@@ -890,11 +891,12 @@ async function runDiscoveryCatalogue(input) {
   const slug = String(input.destination || "")
     .trim()
     .toLowerCase();
+  const destinationName = cleanText(input.destinationName || slug, 80);
 
-  const destinations = await supabaseGet(
-    `destinations?slug=ilike.${encodeURIComponent(slug)}&status=eq.published&select=id,name,slug&limit=1`
+  const destinationRows = await supabaseGet(
+    `destinations?slug=ilike.${encodeURIComponent(slug)}&select=id,name,slug,status,classification_enabled&limit=1`
   );
-  const destination = Array.isArray(destinations) ? destinations[0] : null;
+  const destination = filterInventoryDestination(destinationRows);
   if (!destination?.id) {
     return {
       ok: true,
@@ -965,6 +967,8 @@ async function runDiscoveryCatalogue(input) {
       durationLabel: `${row.nights} nights`,
       departurePort: row.departure_port,
       destination: destination.name,
+      destinationSlug: destination.slug,
+      destinationPublicPage: destination.publicLivingPage === true,
       portsOfCall: parsePorts(row.itinerary, row.itinerary_ports),
       sourceName: cruiseLine,
       sourceUrl: row.official_url || row.source_url,

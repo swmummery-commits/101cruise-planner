@@ -27,6 +27,7 @@ const {
   guessLooksNonSailing,
   provesIndividualSailing
 } = require("./discovery-non-sailing-filter");
+const { classificationDestinations } = require("./destination-classification");
 const {
   evaluateIngestionAutomation,
   ACTION: AUTOMATION_ACTION
@@ -712,20 +713,21 @@ function matchDestination(text, destinations, aliases = []) {
   if (!hay.trim()) return [];
   const found = [];
   const seen = new Set();
+  const classifiable = classificationDestinations(destinations || []);
 
   for (const alias of aliases || []) {
     const needle = normaliseName(alias.normalised_alias || alias.raw_alias);
     if (!needle || needle.length < 3) continue;
     if (!hay.includes(` ${needle} `)) continue;
     if (seen.has(alias.destination_id)) continue;
-    const dest = (destinations || []).find((d) => d.id === alias.destination_id);
+    const dest = classifiable.find((d) => d.id === alias.destination_id);
     if (dest) {
       seen.add(dest.id);
       found.push({ dest, evidence: `alias:${alias.raw_alias}` });
     }
   }
 
-  const ranked = [...(destinations || [])].sort(
+  const ranked = [...classifiable].sort(
     (a, b) => normaliseName(b.name).length - normaliseName(a.name).length
   );
   for (const dest of ranked) {

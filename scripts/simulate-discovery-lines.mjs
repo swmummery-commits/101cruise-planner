@@ -153,7 +153,11 @@ async function main() {
     activeAllByLine[r.cruise_line_id] = (activeAllByLine[r.cruise_line_id] || 0) + 1;
   }
 
-  const targetLines = args.lines > 0 ? (lines || []).slice(0, args.lines) : lines || [];
+  let targetLines = args.lines > 0 ? (lines || []).slice(0, args.lines) : lines || [];
+  if (args.slugs.length) {
+    const slugSet = new Set(args.slugs);
+    targetLines = (lines || []).filter((l) => slugSet.has(l.slug));
+  }
   const perLine = [];
   for (const line of targetLines) {
     process.stderr.write(`Probing ${line.name}…\n`);

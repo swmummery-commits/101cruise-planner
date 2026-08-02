@@ -347,15 +347,6 @@ function simulateReviewItemAutomation(item, context = {}) {
     return result;
   }
 
-  if (item.item_type === "unknown_destination" && destResolution.resolved) {
-    result.subtype = SUBTYPE.AUTO_NOW;
-    result.proposed_action = ACTION.AUTO_RESOLVE;
-    result.proposed_status = "match_required";
-    result.human_review_necessary = false;
-    result.reasons = [`destination_resolved_via_${destResolution.method}`];
-    return result;
-  }
-
   const individualGate = provesIndividualSailing({
     ship_id: candidate.ship_id,
     departure_date: candidate.departure_date,
@@ -365,6 +356,15 @@ function simulateReviewItemAutomation(item, context = {}) {
     ships: ships.filter((s) => s.cruise_line_id === input.cruiseLineId),
     ship_name_guess: input.rawShipName
   });
+
+  if (item.item_type === "unknown_destination" && destResolution.resolved && individualGate.proven) {
+    result.subtype = SUBTYPE.AUTO_NOW;
+    result.proposed_action = ACTION.AUTO_RESOLVE;
+    result.proposed_status = "match_required";
+    result.human_review_necessary = false;
+    result.reasons = [`destination_resolved_via_${destResolution.method}`];
+    return result;
+  }
 
   if (!individualGate.proven) {
     result.subtype = SUBTYPE.CLOSE;

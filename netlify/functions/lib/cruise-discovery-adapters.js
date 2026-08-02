@@ -174,14 +174,18 @@ function cunardAdapter() {
 }
 
 function hollandAmericaAdapter() {
+  const hal = require("./holland-america-discovery-adapter");
   return {
     ...genericAdapter(),
     id: "holland-america",
     name: "Holland America Line",
+    sourceType: "hal_cruise_search_api",
     matchLine: /holland\s*america/i,
     acceptedUrlPatterns: [/\/cruise-search/i, /\/find-a-cruise/i, /\/cruises?\//i, /\/itinerar/i],
-    excludedUrlPatterns: [/\/ships?\//i, /\/activities\//i],
-    maxFetches: 15
+    excludedUrlPatterns: [/\/ships?\//i, /\/activities\//i, /\/cruise-destinations\//i, /\/faq\//i],
+    maxFetches: 25,
+    discoveryModule: hal,
+    sourceContract: hal.SOURCE_CONTRACT
   };
 }
 

@@ -1,0 +1,56 @@
+{
+  "response": {
+    "numFound": 3,
+    "start": 0,
+    "docs": [
+      {
+        "cruiseId": "W667",
+        "itineraryId": "O6N13A",
+        "contentPath": "/find-a-cruise/o6n13a/w667",
+        "name": "13-DAY NORTH PACIFIC CROSSING",
+        "nightName": "13-NIGHT NORTH PACIFIC CROSSING",
+        "shipName": "Westerdam#@#WE",
+        "duration": 13,
+        "departDate": "2026-09-13T00:00:00Z",
+        "arrivalDate": "2026-09-27T00:00:00Z",
+        "embarkPortName": "Vancouver, B.C., CA#@#YVR",
+        "disembarkPortName": "Tokyo, Japan",
+        "sortedPortNames_ss": ["Vancouver, B.C., CA", "Ketchikan, Alaska, US", "Tokyo, Japan"],
+        "destinationNames": ["ASIA#@#O"],
+        "language_country_code_s": "en_us"
+      },
+      {
+        "cruiseId": "W728",
+        "itineraryId": "A7N07CDAC",
+        "tourId": "T7ADAC",
+        "cruiseType": "SEA_FIRST",
+        "contentPath": "/find-a-cruise/a7n07cdac/w728",
+        "name": "14-Day Ultimate Denali DAC",
+        "shipName": "Westerdam#@#WE",
+        "duration": 14,
+        "departDate": "2027-05-09T00:00:00Z",
+        "arrivalDate": "2027-05-23T00:00:00Z",
+        "embarkPortName": "Vancouver, B.C., CA#@#YVR",
+        "disembarkPortName": "Fairbanks, Alaska",
+        "regionNames": ["Alaska Denali - 2 Days at Denali#@#4D2"],
+        "destinationNames": ["ALASKA#@#A"],
+        "cruiseOverviewImage": "/content/dam/hal/itin-destinations/alaska/c146-cruisetour-tundra-wilderness-tour-fog-desktop.jpg"
+      },
+      {
+        "cruiseId": "Y658",
+        "itineraryId": "E6N07F",
+        "contentPath": "/find-a-cruise/e6n07f/y658",
+        "name": "7-DAY FJORDS OF ICELAND",
+        "shipName": "Nieuw Statendam#@#NS",
+        "duration": 7,
+        "departDate": "2026-09-05T00:00:00Z",
+        "arrivalDate": "2026-09-12T00:00:00Z",
+        "embarkPortName": "Rotterdam, The Netherlands#@#RTM",
+        "disembarkPortName": "Reykjavik, Iceland",
+        "destinationNames": ["EUROPE#@#E"],
+        "regionNames": ["EUROPE NORTHERN#@#EN"],
+        "sortedPortNames_ss": ["Rotterdam, The Netherlands", "Reykjavik, Iceland", "Akureyri, Iceland"]
+      }
+    ]
+  }
+}

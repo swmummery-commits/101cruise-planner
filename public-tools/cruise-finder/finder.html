@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Cruise Finder | 101cruise</title>
+  <link rel="stylesheet" href="/css/brand-loading.css" id="brand-loading-css">
   <style>
     body {
       margin: 0;
@@ -16,7 +17,10 @@
 </head>
 <body>
   <div id="101cruise-cruise-finder" data-cf-finder>
-    <p style="max-width:760px;margin:0 auto;color:#666;">Loading holiday planner…</p>
+    <div class="brand-loading-panel" role="status" aria-live="polite">
+      <span class="brand-loading-boxes brand-loading-boxes--large brand-loading-spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+      <p class="brand-loading-message">Hang tight! Just getting your info.</p>
+    </div>
   </div>
   <script>
     (function () {
@@ -48,11 +52,13 @@
       css.href = base + "finder.css";
       document.head.appendChild(css);
 
-      loadScript(base + "destinations.js", function () {
-        loadScript(base + "approved-cruise-lines.js", function () {
-          loadScript(base + "destination-images.js", function () {
-            loadScript(base + "hero-images.js", function () {
-              loadScript(base + "finder.js", function () {});
+      loadScript("/js/brand-loading.js", function () {
+        loadScript(base + "destinations.js", function () {
+          loadScript(base + "approved-cruise-lines.js", function () {
+            loadScript(base + "destination-images.js", function () {
+              loadScript(base + "hero-images.js", function () {
+                loadScript(base + "finder.js", function () {});
+              });
             });
           });
         });

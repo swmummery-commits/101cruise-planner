@@ -885,12 +885,13 @@
             </select>
           </div>
           <div class="admin-field">
-            <label for="discoveryDestSelect">Destination</label>
+            <label for="discoveryDestSelect">Destination-specific search</label>
             <select id="discoveryDestSelect" onchange="CruiseDiscoveryAdmin.setDestination(this.value)" ${
               discovering ? "disabled" : ""
             }>
               ${destinationOptions()}
             </select>
+            <p class="admin-helper">Only used by “Discover Selected Destination”. Full and cruise-line discovery search all classification-enabled destinations.</p>
           </div>
         </div>
         <div class="admin-row-actions" style="margin-top:12px">
