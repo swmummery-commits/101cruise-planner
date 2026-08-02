@@ -496,7 +496,7 @@ async function listCruises(body) {
   const destinationId = String(body.destination_id || "").trim();
   const cruiseLineId = String(body.cruise_line_id || "").trim();
   const parts = [
-    "select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare_display,currency,official_url,status,match_confidence,review_reason,raw_extract,discovered_at,last_seen_at,last_changed_at,ci_cruise_lines(name),ci_cruise_ships(name),destinations(name,slug)&order=departure_date.asc.nullslast&limit=" +
+    "select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare_display,currency,official_url,status,match_confidence,review_reason,raw_extract,discovered_at,last_seen_at,last_changed_at,ci_cruise_lines(name),ci_cruise_ships(name),destinations!discovered_cruises_destination_id_fkey(name,slug)&order=departure_date.asc.nullslast&limit=" +
       limit
   ];
   if (status && status !== "all") {

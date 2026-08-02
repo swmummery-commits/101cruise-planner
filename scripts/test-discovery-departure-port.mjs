@@ -264,6 +264,15 @@ async function main() {
     );
   });
 
+  await test("list_cruises uses explicit destinations foreign key embed", () => {
+    const src = fs.readFileSync(path.join(root, "netlify/functions/cruise-discovery.js"), "utf8");
+    assert(
+      /destinations!discovered_cruises_destination_id_fkey\(name,slug\)/.test(src),
+      "list_cruises must disambiguate destinations embed"
+    );
+    assert(!/destinations\(name,slug\)/.test(src), "ambiguous destinations embed must not remain");
+  });
+
   await test("list_cruises uses compact departure audit fields only", () => {
     const src = fs.readFileSync(path.join(root, "netlify/functions/cruise-discovery.js"), "utf8");
     assert(/compactDepartureAudit/.test(src), "compact mapper used");
