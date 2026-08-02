@@ -53,6 +53,8 @@ const HARD_REJECT_PATH_FRAGMENTS = [
   "/entertainment/",
   "/onboard/",
   "/on-board/",
+  "/life-on-board/",
+  "/onboard-experience/",
   "/ships/",
   "/ship/",
   "/fleet/",
@@ -216,7 +218,13 @@ function safePath(url) {
 }
 
 function pathIncludesFragment(path, fragments) {
-  return fragments.some((frag) => path.includes(frag));
+  return fragments.some((frag) => {
+    const core = String(frag || "")
+      .replace(/^\/+|\/+$/g, "");
+    if (!core) return false;
+    const re = new RegExp(`(?:^|/)${core.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:/|$)`);
+    return re.test(path);
+  });
 }
 
 function pathMatchesHardReject(url) {
