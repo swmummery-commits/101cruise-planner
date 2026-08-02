@@ -38,6 +38,7 @@ const {
   upsertCandidateRecord
 } = require("./lib/cruise-discovery-ops");
 const { loadPortsCatalogue, resolveRawPortText, compactDepartureAudit } = require("./lib/discovery-departure-port");
+const { matchDeparturePort } = require("./lib/cruise-finder-departure-match");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -711,6 +712,36 @@ async function listShipAliases(body) {
   return { success: true, aliases: rows || [] };
 }
 
+async function loadSupabasePortsForMatching() {
+  const rows = await supabase(
+    "ports?select=id,canonical_name,display_name,country,country_code,aliases,status&status=in.(verified,provisional,needs_review)&order=canonical_name.asc&limit=2000"
+  ).catch(() => []);
+  return (rows || []).map((port) => ({
+    id: port.id,
+    canonical_name: port.canonical_name,
+    display_name: port.display_name || port.canonical_name,
+    country: port.country || "",
+    country_code: port.country_code || "",
+    aliases: Array.isArray(port.aliases) ? port.aliases : []
+  }));
+}
+
+function mergePortCatalogues(csvPorts, dbPorts) {
+  const byKey = new Map();
+  for (const port of [...(csvPorts || []), ...(dbPorts || [])]) {
+    const name = String(port?.canonical_name || "").trim();
+    if (!name) continue;
+    byKey.set(name.toLowerCase(), port);
+  }
+  return [...byKey.values()];
+}
+
+async function resolveAdminDeparturePort(canonicalPortName, context = {}) {
+  const dbPorts = await loadSupabasePortsForMatching();
+  const mergedPorts = mergePortCatalogues(loadPortsCatalogue(), dbPorts);
+  return resolveRawPortText(canonicalPortName, { ...context, ports: mergedPorts });
+}
+
 async function manualResolveDeparturePort(body, actor) {
   const cruiseId = String(body.cruise_id || "").trim();
   const canonicalPortName = String(body.canonical_port_name || "").trim();
@@ -725,13 +756,17 @@ async function manualResolveDeparturePort(body, actor) {
   const cruise = rows?.[0];
   if (!cruise) throw Object.assign(new Error("Candidate not found"), { statusCode: 404 });
 
-  const resolved = resolveRawPortText(canonicalPortName, {
+  const resolved = await resolveAdminDeparturePort(canonicalPortName, {
     destinationName: cruise.raw_extract?.destination_name
   });
   if (resolved.status !== "resolved") {
-    throw Object.assign(new Error(resolved.reason || "Canonical port could not be resolved"), {
-      statusCode: 400
-    });
+    throw Object.assign(
+      new Error(
+        resolved.reason ||
+          "Could not resolve to a canonical port. Add the port in Ports first, then try again."
+      ),
+      { statusCode: 400 }
+    );
   }
 
   const meta = {
@@ -774,7 +809,8 @@ async function manualResolveDeparturePort(body, actor) {
 }
 
 async function listDeparturePorts() {
-  const ports = loadPortsCatalogue()
+  const dbPorts = await loadSupabasePortsForMatching();
+  const ports = mergePortCatalogues(loadPortsCatalogue(), dbPorts)
     .filter((port) => port.canonical_name)
     .map((port) => ({
       id: port.id,
@@ -784,6 +820,41 @@ async function listDeparturePorts() {
     }))
     .sort((a, b) => a.canonical_name.localeCompare(b.canonical_name));
   return { success: true, ports };
+}
+
+async function hideDiscoveredCruise(body, actor) {
+  const cruiseId = String(body.cruise_id || "").trim();
+  if (!cruiseId) throw Object.assign(new Error("cruise_id is required"), { statusCode: 400 });
+
+  const rows = await supabase(
+    `discovered_cruises?id=eq.${encodeURIComponent(cruiseId)}&select=id,status,raw_extract&limit=1`
+  );
+  const cruise = rows?.[0];
+  if (!cruise) throw Object.assign(new Error("Cruise not found"), { statusCode: 404 });
+  if (cruise.status === "hidden") {
+    return { success: true, already_hidden: true, message: "Cruise was already removed from active inventory." };
+  }
+
+  const now = new Date().toISOString();
+  await supabase(`discovered_cruises?id=eq.${encodeURIComponent(cruiseId)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({
+      status: "hidden",
+      last_changed_at: now,
+      raw_extract: {
+        ...(cruise.raw_extract || {}),
+        admin_hidden_at: now,
+        admin_hidden_by: actor?.id || null
+      }
+    })
+  });
+
+  return {
+    success: true,
+    cruise_id: cruiseId,
+    message: "Cruise removed from active inventory."
+  };
 }
 
 async function listResolutionAudit(body) {
@@ -837,6 +908,9 @@ exports.handler = async (event) => {
     }
     if (action === "list_departure_ports") {
       return jsonResponse(200, await listDeparturePorts());
+    }
+    if (action === "hide_discovered_cruise") {
+      return jsonResponse(200, await hideDiscoveredCruise(body, actor));
     }
     if (action === "reprocess_candidates") {
       const ids = Array.isArray(body.cruise_ids) ? body.cruise_ids : [];

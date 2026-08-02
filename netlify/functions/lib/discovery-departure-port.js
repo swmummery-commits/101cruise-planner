@@ -122,7 +122,7 @@ function resolveRawPortText(rawValue, context = {}) {
     };
   }
 
-  const ports = loadPortsCatalogue();
+  const ports = context.ports || loadPortsCatalogue();
   const match = matchDeparturePort(raw, ports);
   if (match.status === "MATCHED") {
     const port = ports.find((p) => p.canonical_name === match.matchedName);

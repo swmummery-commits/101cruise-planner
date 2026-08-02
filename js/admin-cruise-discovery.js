@@ -408,6 +408,53 @@
     ].join("");
   }
 
+  function departurePortNeedsAttention(cruise) {
+    const meta = cruise.departure_audit?.departure_port_meta || {};
+    const port = String(cruise.departure_port || "").trim();
+    if (!port) return true;
+    if (meta.status && meta.status !== "resolved" && meta.status !== "resolved_legacy") return true;
+    if (cruise.departure_audit?.validation_status === "invalid") return true;
+    return false;
+  }
+
+  function suggestedPortName(cruise) {
+    const audit = cruise.departure_audit || {};
+    const raw = String(audit.departure_port_raw || "").trim();
+    if (raw) return raw.replace(/\s*\([^)]*\)\s*$/, "").trim();
+    const title = String(cruise.itinerary || "").trim();
+    const route = title.match(/\s[-–|]\s*(.+?)\s+to\s+/i);
+    if (route) return route[1].replace(/\([^)]*\)/g, "").trim();
+    return "";
+  }
+
+  function renderCruiseActions(cruise) {
+    const needsPort = departurePortNeedsAttention(cruise);
+    const suggested = suggestedPortName(cruise);
+    const suggestedJson = JSON.stringify(suggested);
+    const parts = [];
+    if (cruise.official_url) {
+      parts.push(
+        `<a href="${esc(cruise.official_url)}" target="_blank" rel="noopener noreferrer">Official</a>`
+      );
+    }
+    parts.push(
+      `<button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.manualDeparturePort(${JSON.stringify(
+        cruise.id
+      )})'>Set port</button>`
+    );
+    if (needsPort) {
+      parts.push(
+        `<button type="button" class="admin-button black small" onclick='CruiseDiscoveryAdmin.openAddPort(${suggestedJson})'>Add port</button>`
+      );
+    }
+    parts.push(
+      `<button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.removeCruise(${JSON.stringify(
+        cruise.id
+      )})'>Remove</button>`
+    );
+    return parts.join(" ");
+  }
+
   function departurePortSummary(cruise) {
     const audit = cruise.departure_audit || {};
     const meta = audit.departure_port_meta || {};
@@ -468,13 +515,7 @@
           <td>${esc(nights)}</td>
           <td>${esc(departurePortSummary(cruise))}</td>
           <td>${esc(fare)}</td>
-          <td>${
-            cruise.official_url
-              ? `<a href="${esc(cruise.official_url)}" target="_blank" rel="noopener noreferrer">Official</a>`
-              : "—"
-          } · <button type="button" class="admin-button secondary small" onclick='CruiseDiscoveryAdmin.manualDeparturePort(${JSON.stringify(
-            cruise.id
-          )})'>Set port</button></td>
+          <td class="admin-actions-cell">${renderCruiseActions(cruise)}</td>
         </tr>`;
       })
       .join("");
@@ -492,7 +533,7 @@
               <th>Nights</th>
               <th>From</th>
               <th>Fare</th>
-              <th>Link</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -954,9 +995,15 @@
       }
     },
     async manualDeparturePort(cruiseId) {
+      try {
+        const portResult = await api("list_departure_ports");
+        departurePorts = portResult.ports || departurePorts;
+      } catch (_error) {
+        // Keep existing catalogue if refresh fails.
+      }
       const sample = departurePorts.slice(0, 8).map((p) => p.canonical_name).join(", ");
       const value = global.prompt(
-        `Enter canonical departure port (e.g. ${sample || "Sydney, Vancouver, Seattle"})`,
+        `Enter canonical departure port (e.g. ${sample || "Sydney, Vancouver, Seattle"}).\n\nIf the port is missing from the catalogue, use Add port first, save it, then Set port again.`,
         ""
       );
       if (!value) return;
@@ -970,6 +1017,48 @@
         await ensureLoaded({ quiet: true });
       } catch (error) {
         message = error.message || "Could not save departure port";
+        messageTone = "error";
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+    },
+    openAddPort(suggestedName) {
+      const prefill = {
+        canonical_name: String(suggestedName || "").trim(),
+        display_name: String(suggestedName || "").trim(),
+        status: "provisional",
+        source: "admin"
+      };
+      if (typeof global.setTab === "function") {
+        global.setTab("ports-catalogue");
+      } else if (typeof setTab === "function") {
+        setTab("ports-catalogue");
+      }
+      window.setTimeout(() => {
+        if (global.PortsCatalogueAdmin?.startCreate) {
+          global.PortsCatalogueAdmin.startCreate(prefill);
+        }
+      }, 120);
+    },
+    async removeCruise(cruiseId) {
+      const cruise = activeCruises.find((row) => row.id === cruiseId);
+      const label = [
+        cruise?.cruise_line_name,
+        cruise?.ship_name,
+        cruise?.departure_date ? formatDay(cruise.departure_date) : null
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      const ok = global.confirm(
+        `Remove this cruise from active inventory?\n\n${label || cruiseId}\n\nIt will be hidden, not permanently deleted.`
+      );
+      if (!ok) return;
+      try {
+        const result = await api("hide_discovered_cruise", { cruise_id: cruiseId });
+        message = result.message || "Cruise removed.";
+        messageTone = "success";
+        await ensureLoaded({ quiet: true });
+      } catch (error) {
+        message = error.message || "Could not remove cruise";
         messageTone = "error";
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }

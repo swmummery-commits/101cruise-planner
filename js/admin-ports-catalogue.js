@@ -243,12 +243,12 @@
     }
   }
 
-  async function startCreate() {
+  async function startCreate(prefill = {}) {
     const ok = await flushBeforeSwitch();
     if (!ok) return;
     creating = true;
     selectedId = null;
-    draft = emptyDraft();
+    draft = { ...emptyDraft(), ...(prefill && typeof prefill === "object" ? prefill : {}) };
     setMessage("");
     rerender();
     window.setTimeout(() => document.getElementById("portCanonicalName")?.focus(), 40);

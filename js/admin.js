@@ -841,6 +841,10 @@ async function setTab(tab) {
   }
 }
 
+if (typeof window !== "undefined") {
+  window.setTab = setTab;
+}
+
 function getAdminCiCruiseLines() {
   return ciCruiseLines;
 }

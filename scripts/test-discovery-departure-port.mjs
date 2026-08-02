@@ -313,6 +313,41 @@ async function main() {
     );
   });
 
+  await test("Manual departure resolution merges Supabase ports catalogue", () => {
+    const src = fs.readFileSync(path.join(root, "netlify/functions/cruise-discovery.js"), "utf8");
+    assert(/loadSupabasePortsForMatching/.test(src), "loads Supabase ports for admin matching");
+    assert(/mergePortCatalogues/.test(src), "merges CSV and Supabase catalogues");
+    assert(/resolveAdminDeparturePort/.test(src), "admin resolver helper present");
+    assert(/ports: mergedPorts/.test(src), "passes merged ports to resolveRawPortText");
+  });
+
+  await test("resolveRawPortText accepts injected ports catalogue", () => {
+    const injected = [
+      { canonical_name: "San Diego", display_name: "San Diego", country: "United States", aliases: [] }
+    ];
+    const resolved = resolveRawPortText("San Diego", { ports: injected });
+    assert(resolved.status === "resolved", resolved.status);
+    assert(resolved.canonicalPortName === "San Diego", resolved.canonicalPortName);
+  });
+
+  await test("hide_discovered_cruise action is admin-authenticated", () => {
+    const src = fs.readFileSync(path.join(root, "netlify/functions/cruise-discovery.js"), "utf8");
+    const handler = src.slice(src.indexOf("exports.handler"));
+    assert(/hide_discovered_cruise/.test(src), "hide action registered");
+    assert(
+      handler.indexOf("requireAdmin") < handler.indexOf("hide_discovered_cruise"),
+      "auth before hide_discovered_cruise"
+    );
+  });
+
+  await test("Browse Active UI exposes Add port and Remove actions", () => {
+    const src = fs.readFileSync(path.join(root, "js/admin-cruise-discovery.js"), "utf8");
+    assert(/openAddPort/.test(src), "openAddPort helper present");
+    assert(/removeCruise/.test(src), "removeCruise helper present");
+    assert(/Add port/.test(src), "Add port button rendered");
+    assert(/Remove/.test(src), "Remove button rendered");
+  });
+
   await test("Remediation script imports resolveRawPortText from shared module", () => {
     const src = fs.readFileSync(
       path.join(root, "scripts/remediate-discovered-cruise-departures.mjs"),
