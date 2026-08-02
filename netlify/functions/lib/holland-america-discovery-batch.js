@@ -15,6 +15,8 @@ const {
   clearHalFetchCache
 } = require("./holland-america-discovery-adapter");
 const { resolveHalDiscoveryMode, assertHalWritesAllowed } = require("./holland-america-discovery-mode");
+const { applyHalBatchWrites, buildHalBatchManifest } = require("./holland-america-discovery-writes");
+const { supabase: defaultSupabase } = require("./cruise-discovery-ops");
 
 const DEFAULT_PAGES_PER_EXECUTION = 12;
 const DEFAULT_MAX_CANDIDATES_PER_EXECUTION = 100;
@@ -292,18 +294,55 @@ async function runHalDiscoveryBatch(context = {}) {
       failed: false
     });
 
+    const maxWrites = Math.min(
+      500,
+      Math.max(0, Number(context.maxWrites ?? context.max_writes ?? DEFAULT_MAX_CANDIDATES_PER_EXECUTION) || DEFAULT_MAX_CANDIDATES_PER_EXECUTION)
+    );
+    const eligibleWrites = normalised.filter((n) => n.complete_high_confidence && n.product_type === "cruise");
+    stats.writes_attempted = Math.min(eligibleWrites.length, maxWrites);
+
+    let writeResult = null;
+    let manifest = null;
+    const sb = context.supabase || defaultSupabase;
+
+    if (context.buildManifest) {
+      manifest = await buildHalBatchManifest({
+        products: normalised,
+        cruiseLine: context.cruiseLine,
+        destinations: context.destinations,
+        supabase: sb,
+        runId: runId || context.run_id
+      });
+    }
+
+    let writesPerformed = false;
     if (modeGate.writes_allowed && context.performWrites) {
       assertHalWritesAllowed(modeGate);
-      stats.writes_attempted = normalised.filter((n) => n.projected_activation).length;
-      // Intentionally blocked until HAL_DISCOVERY_WRITE hold is lifted.
-      stats.writes_performed = 0;
+      writeResult = await applyHalBatchWrites({
+        products: normalised,
+        cruiseLine: context.cruiseLine,
+        maxWrites,
+        runId: runId || context.run_id,
+        supabase: sb
+      });
+      stats.writes_performed = (writeResult.stats.inserted || 0) + (writeResult.stats.updated || 0);
+      stats.inserted = writeResult.stats.inserted;
+      stats.updated = writeResult.stats.updated;
+      stats.duplicate_skips = writeResult.stats.duplicate_skips;
+      stats.incomplete_skips = writeResult.stats.incomplete_skips;
+      stats.cruisetour_skips = writeResult.stats.cruisetour_skips;
+      stats.invalid_skips = writeResult.stats.invalid_skips;
+      stats.failed_writes = writeResult.stats.failed;
+      writesPerformed = stats.writes_performed > 0;
     }
 
     return {
       ok: true,
       blocked: false,
       mode: modeGate,
-      writes_performed: false,
+      writes_performed: writesPerformed,
+      write_result: writeResult,
+      manifest,
       source: SOURCE_CONTRACT,
       page_log: fetchResult.pageLog,
       cursor: {

@@ -37,3 +37,5 @@ reports/destination-correction-deterministic-*.json
 reports/destination-correction-rollback-*.json
 reports/crystal-record-correction-*.json
 reports/crystal-record-correction-rollback-*.json
+reports/hal-first-production-batch-manifest-*.json
+reports/hal-first-production-batch-rollback-*.json

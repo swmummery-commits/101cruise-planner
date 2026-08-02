@@ -47,7 +47,10 @@ exports.handler = async (event) => {
     const mode = String(body.mode || "production_read_only").trim();
     const cursorStart = Number(body.cursor_start ?? body.cursorStart ?? 0) || 0;
     const maxPages = Math.min(20, Math.max(1, Number(body.max_pages ?? body.maxPages ?? 12) || 12));
+    const maxWrites = Math.min(500, Math.max(0, Number(body.max_writes ?? body.maxWrites ?? 100) || 100));
     const runId = String(body.run_id || body.runId || `hal-batch-${Date.now()}`).trim();
+    const performWrites = mode === "production_write" && body.perform_writes !== false;
+    const buildManifest = body.build_manifest === true;
 
     const lines = await supabase(
       "ci_cruise_lines?slug=eq.holland-america-line&select=id,name,slug,website_url,cruise_search_url&limit=1"
@@ -72,9 +75,14 @@ exports.handler = async (event) => {
       runId,
       cursorStart,
       maxPages,
+      maxWrites,
+      maxCandidates: maxWrites,
+      performWrites,
+      buildManifest,
       cruiseLine: line,
       ships: ships || [],
-      destinations: catalogueDestinations(destRows || [])
+      destinations: catalogueDestinations(destRows || []),
+      supabase
     });
 
     return {
@@ -84,9 +92,17 @@ exports.handler = async (event) => {
         run_id: runId,
         mode: result.mode,
         writes_performed: result.writes_performed,
+        write_result: result.write_result || null,
+        manifest_summary: result.manifest
+          ? {
+              acceptance_gate: result.manifest.acceptance_gate,
+              product_count: result.manifest.products?.length || 0
+            }
+          : null,
         cursor: result.cursor,
         stats: result.stats,
         cruise_metrics: result.cruise_metrics,
+        destination_counts: result.destination_counts,
         blocked: result.blocked || false,
         reason: result.reason || null
       })
