@@ -26,6 +26,8 @@ function loadReconciliation() {
 
 const Reconcile = loadReconciliation();
 const plannerJs = read("js/planner.js");
+const shipPresentationJs = read("js/ci-ship-presentation.js");
+const shipCss = read("css/ci-ship-presentation.css");
 const adminJs = read("js/admin.js");
 
 const millenniumBreakdown = [
@@ -150,9 +152,10 @@ function cloneBreakdown(rows) {
 }
 
 // Planner wiring
-assert.match(plannerJs, /reconciliation\.centreMode === "total"/);
-assert.match(plannerJs, /ship-donut-centre.*is-blank/);
-assert.match(plannerJs, /renderShipAccommodationChart\(ship\.stateroomReconciliation/);
+assert.match(shipPresentationJs, /reconciliation\.centreMode === "total"/);
+assert.match(shipPresentationJs, /ship-donut-centre.*is-blank/);
+assert.match(shipPresentationJs, /renderShipAccommodationChart\(profile\.stateroomReconciliation, profile\.accommodation\)/);
+assert.match(plannerJs, /CiShipPresentation\.renderPresentationHtml/);
 
 // Admin messaging
 {
@@ -170,8 +173,8 @@ assert.match(adminJs, /renderCiStateroomReconcilePanel/);
 assert.match(adminJs, /validateStateroomSave/);
 
 for (const pattern of ["@media \\(max-width: 980px\\)", "@media \\(max-width: 900px\\)", "@media \\(max-width: 760px\\)"]) {
-  assert.match(read("css/planner.css"), new RegExp(pattern), `${pattern} styles present`);
+  assert.match(shipCss, new RegExp(pattern), `${pattern} styles present`);
 }
-assert.match(read("css/planner.css"), /\.ship-donut-centre\.is-blank/, "blank centre styles present");
+assert.match(shipCss, /\.ship-donut-centre\.is-blank/, "blank centre styles present");
 
 console.log("test-ship-stateroom-reconciliation: all tests passed");

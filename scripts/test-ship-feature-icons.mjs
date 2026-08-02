@@ -138,11 +138,13 @@ assert.equal(multiComma.description, "Indoor sports, games, fitness, and more.")
 
 // Customer icon markup — standalone icons, no boxed holder
 const plannerCss = read("css/planner.css");
-assert.doesNotMatch(plannerCss, /\.ship-feature-icon-holder/);
-assert.match(plannerCss, /\.ship-feature-icon\b/);
-assert.doesNotMatch(plannerCss, /ship-feature-icon-holder[\s\S]*background:/);
-assert.match(plannerJs, /renderFeatureIconHtml\(iconKey, "ship-feature-icon"\)/);
-assert.match(plannerCss, /grid-template-columns:\s*26px minmax\(0, 1fr\)/);
+const shipCss = read("css/ci-ship-presentation.css");
+const shipPresentationJs = read("js/ci-ship-presentation.js");
+assert.doesNotMatch(shipCss, /\.ship-feature-icon-holder/);
+assert.match(shipCss, /\.ship-feature-icon\b/);
+assert.doesNotMatch(shipCss, /ship-feature-icon-holder[\s\S]*background:/);
+assert.match(shipCss, /grid-template-columns:\s*26px minmax\(0, 1fr\)/);
+assert.match(shipPresentationJs, /renderFeatureIconHtml\(iconKey, "ship-feature-icon"\)/);
 
 // Empty / null
 assert.equal(CiFac.normalizeShipFeatureList(null).length, 0);
@@ -179,24 +181,21 @@ assert.equal(applied.facilities.exclusive_areas[0].name, "New Area");
 assert.equal(applied.facilities.specialty_features.length, 0);
 
 // Customer + admin wiring
-assert.match(plannerJs, /renderShipFeatureExperiences/);
-assert.match(plannerJs, /renderShipDeckPlansSubsection/);
-assert.match(plannerJs, /ship-feature-list/);
-assert.match(plannerJs, /ship-feature-column--exclusive/);
-assert.match(plannerJs, /ship-deck-subsection/);
+assert.match(shipPresentationJs, /renderShipFeatureExperiences/);
+assert.match(shipPresentationJs, /renderShipDeckPlansSubsection/);
+assert.match(shipPresentationJs, /ship-feature-list/);
+assert.match(shipPresentationJs, /ship-feature-column--exclusive/);
+assert.match(shipPresentationJs, /ship-deck-subsection/);
 assert.equal(
-  (plannerJs.match(/function renderShipDeckPlansSubsection/g) || []).length,
+  (shipPresentationJs.match(/function renderShipDeckPlansSubsection/g) || []).length,
   1,
   "single deck plans renderer"
 );
-assert.doesNotMatch(
-  plannerJs,
-  /renderShipFeatureExperiences[\s\S]*?<section class="ship-section-card ship-deck-card/,
-  "no separate full-width deck plans section"
-);
-assert.match(plannerCss, /grid-template-areas:[\s\S]*"exclusive divider specialty"/);
-assert.match(plannerCss, /"deckplans divider specialty"/);
-assert.match(plannerCss, /\.ship-deck-subsection[\s\S]*border-top/);
+assert.match(plannerJs, /CiShipPresentation\.renderPresentationHtml/);
+assert.match(shipCss, /grid-template-areas:[\s\S]*"exclusive divider specialty"/);
+assert.match(shipCss, /"deckplans divider specialty"/);
+assert.match(shipCss, /\.ship-deck-subsection[\s\S]*border-top/);
+assert.match(plannerCss, /@import url\("ci-ship-presentation.css"\)/);
 assert.match(adminJs, /CiShipFeatureAdmin/);
 assert.match(adminJs, /Add specialty feature/);
 

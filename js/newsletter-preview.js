@@ -581,67 +581,11 @@
         `;
       }
       case SECTION_IDS.ABOUT_SHIP: {
-        const ship = model.researchShip;
-        const facts = model.shipFacts;
-        if (!ship && !facts) return "";
-        const name = esc(ship?.entity_name || model.shipName || "the ship");
-        const overview = ship?.overview || ship?.summary_text || "";
-        const personality = ship?.personality || "";
-        const highlights = Array.isArray(ship?.key_highlights) ? ship.key_highlights.slice(0, 4) : [];
-        const factPairs = [
-          ["Built", facts?.built],
-          ["Refurbished", facts?.refurbished],
-          ["Guests", facts?.guests],
-          ["Crew", facts?.crew],
-          ["Decks", facts?.decks],
-          ["Restaurants", facts?.restaurants],
-          ["Pools", facts?.pools],
-          ["Spa", facts?.spa],
-          ["Casino", facts?.casino],
-          ["Kids Club", facts?.kids_club]
-        ]
-          .map(([label, value]) => [label, formatShipFactDisplay(value)])
-          .filter(([, v]) => v != null);
-        const image = ship?.image?.url
-          ? `<div class="nl-research-image"><img src="${esc(ship.image.url)}" alt="${esc(ship.image.alt_text || name)}" loading="lazy"></div>`
-          : "";
-        // Public /ship/{slug} pages are not live yet. canonical_slug is research metadata only —
-        // do not invent a guide URL or show "Coming Soon" on the customer page.
-        const guideHref = String(ship?.guide_url || ship?.guideHref || "").trim();
-        const guideLabel = ship?.entity_name
-          ? `Explore ${ship.entity_name}`
-          : model.shipName
-            ? `Explore ${model.shipName}`
-            : "View ship guide";
-        const guideLink = guideHref
-          ? `<p class="nl-research-guide-link"><a class="nl-ship-guide-cta" href="${esc(guideHref)}">${esc(guideLabel.toUpperCase())}</a></p>`
-          : "";
+        if (!model.shipName && !model.researchShip) return "";
         return `
-          <section class="nl-research-teaser nl-research-ship">
-            <h2 class="nl-research-heading">About the ship</h2>
-            <p class="nl-research-name">${name}</p>
-            ${image}
-            ${overview ? `<p class="nl-research-overview">${esc(overview)}</p>` : ""}
-            ${personality ? `<p class="nl-research-personality">${esc(personality)}</p>` : ""}
-            ${
-              factPairs.length
-                ? `<dl class="nl-research-facts">${factPairs
-                    .map(
-                      ([label, value]) =>
-                        `<div><dt>${esc(label)}</dt><dd>${esc(String(value))}</dd></div>`
-                    )
-                    .join("")}</dl>`
-                : ""
-            }
-            ${
-              highlights.length
-                ? `<ul class="nl-research-highlights">${highlights
-                    .map((h) => `<li>${esc(h)}</li>`)
-                    .join("")}</ul>`
-                : ""
-            }
-            ${ship?.pauls_tip ? `<p class="nl-research-tip"><strong>Paul's tip:</strong> ${esc(ship.pauls_tip)}</p>` : ""}
-            ${guideLink}
+          <section class="nl-research-teaser nl-research-ship fca-ci-ship-section">
+            <h2 class="nl-research-heading">Ship Info</h2>
+            <div class="fca-ci-ship-mount" data-fca-ci-ship-mount></div>
           </section>
         `;
       }

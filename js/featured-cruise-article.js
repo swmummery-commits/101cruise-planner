@@ -88,6 +88,14 @@
     if (!model) throw new Error("Could not build Featured Cruise Article model.");
     model = await resolveArticleMedia(model, cruise, options);
     mount.innerHTML = Components.renderPage(model);
+
+    var shipMount = mount.querySelector("[data-fca-ci-ship-mount]");
+    if (shipMount && root.PublicCruiseShip && root.PublicCruiseShip.mountCiShipPresentation) {
+      await root.PublicCruiseShip.mountCiShipPresentation(shipMount, cruise, {
+        onHeightChange: options.onHeightChange
+      });
+    }
+
     if (typeof options.onReady === "function") options.onReady();
     if (typeof options.onHeightChange === "function") options.onHeightChange();
     return model;

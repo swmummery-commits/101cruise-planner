@@ -331,7 +331,8 @@
       routeMap: imageFromMedia(cruise.route_map, "Route map for " + (routeTitle || "this cruise")),
       ports: buildPorts(cruise),
       seasonCallout: buildSeasonCallout(cruise),
-      ship: buildShip(cruise),
+      shipName: Copy.normalizeSpace(cruise.ship_name) || "",
+      ciShipEligible: Boolean(String(cruise.ship_name || "").trim()),
       paulsTip:
         Copy.normalizeSpace(
           (cruise.research && cruise.research.ship_full && cruise.research.ship_full.pauls_tip) ||

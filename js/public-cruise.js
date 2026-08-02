@@ -228,7 +228,14 @@
       shipFacts: cruise.research?.ship_facts || null
     });
     root.innerHTML = window.NewsletterPreview.renderPublicCruisePage(model, { escapeHtml: esc });
-    scheduleHeightReport();
+    const shipMount = root.querySelector("[data-fca-ci-ship-mount]");
+    if (shipMount && window.PublicCruiseShip?.mountCiShipPresentation) {
+      window.PublicCruiseShip.mountCiShipPresentation(shipMount, cruise, {
+        onHeightChange: scheduleHeightReport
+      }).finally(scheduleHeightReport);
+    } else {
+      scheduleHeightReport();
+    }
   }
 
   function wantsLegacyArticleOverride() {

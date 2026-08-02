@@ -11,7 +11,9 @@ import vm from "vm";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 const plannerSrc = readFileSync(path.join(root, "js/planner.js"), "utf8");
+const shipPresentationSrc = readFileSync(path.join(root, "js/ci-ship-presentation.js"), "utf8");
 const cssSrc = readFileSync(path.join(root, "css/planner.css"), "utf8");
+const shipCssSrc = readFileSync(path.join(root, "css/ci-ship-presentation.css"), "utf8");
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
@@ -30,21 +32,21 @@ assert(
   "baggage instruction uses subordinate class"
 );
 
-const deckIdx = plannerSrc.indexOf("Deck Plans");
-const buttonIdx = plannerSrc.indexOf("ship-deck-button", deckIdx);
-const mutedAfter = plannerSrc.indexOf("planner-muted", buttonIdx);
+const deckIdx = shipPresentationSrc.indexOf("Deck Plans");
+const buttonIdx = shipPresentationSrc.indexOf("ship-deck-button", deckIdx);
+const mutedAfter = shipPresentationSrc.indexOf("planner-muted", buttonIdx);
 assert(deckIdx > -1 && buttonIdx > deckIdx, "Deck Plans button follows heading");
 assert(mutedAfter > buttonIdx, "explanatory copy follows the Deck Plans button");
 assert(
-  /function renderShipDeckPlansSubsection/.test(plannerSrc),
+  /function renderShipDeckPlansSubsection/.test(shipPresentationSrc),
   "deck plans rendered via shared subsection helper"
 );
 assert(
-  !/ship-section-card ship-deck-card/.test(plannerSrc),
+  !/ship-section-card ship-deck-card/.test(shipPresentationSrc),
   "deck plans no longer uses standalone full-width card section"
 );
 assert(
-  /grid-template-areas:[\s\S]*"exclusive"[\s\S]*"specialty"[\s\S]*"deckplans"/.test(cssSrc),
+  /grid-template-areas:[\s\S]*"exclusive"[\s\S]*"specialty"[\s\S]*"deckplans"/.test(shipCssSrc),
   "mobile stacks Exclusive Areas, Specialty Features, then Deck Plans"
 );
 
@@ -72,7 +74,7 @@ assert(
 );
 
 assert(/\.packing-baggage-instruction\s*\{/.test(cssSrc), "baggage instruction CSS exists");
-assert(/\.ship-deck-copy\s*\{[\s\S]*display:\s*grid/.test(cssSrc), "deck plans stack as column grid");
+assert(/\.ship-deck-copy\s*\{[\s\S]*display:\s*grid/.test(shipCssSrc), "deck plans stack as column grid");
 
 /* Behavioural scroll helper test with DOM stubs */
 const scrollCalls = [];

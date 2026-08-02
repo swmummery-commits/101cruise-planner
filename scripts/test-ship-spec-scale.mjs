@@ -26,6 +26,8 @@ function loadSpecScale() {
 
 const SpecScale = loadSpecScale();
 const plannerJs = read("js/planner.js");
+const shipPresentationJs = read("js/ci-ship-presentation.js");
+const shipCss = read("css/ci-ship-presentation.css");
 const adminJs = read("js/admin.js");
 const css = read("css/planner.css");
 
@@ -203,23 +205,24 @@ const fullShip = {
 }
 
 // Planner wiring
-assert.match(plannerJs, /CiShipSpecScale/);
-assert.match(plannerJs, /renderShipStatRows/);
-assert.match(plannerJs, /bindShipSpaceRatioExplainer/);
-assert.match(plannerJs, /ship-space-ratio-popover/);
-assert.match(plannerJs, /ship-space-ratio-inline-panel/);
-assert.match(plannerJs, /portalSpaceRatioPopover/);
-assert.match(plannerJs, /restoreSpaceRatioPopover/);
-assert.match(plannerJs, /ship-space-ratio-popover--portaled/);
-assert.match(css, /\.ship-space-ratio-popover--portaled/);
-assert.match(css, /z-index:\s*14000/);
-assert.match(plannerJs, /addEventListener\("resize", repositionOpenPopover\)/);
-assert.doesNotMatch(plannerJs, /ship-scale-highlight/);
-assert.match(css, /\.ship-stat-list/);
-assert.match(css, /\.ship-space-ratio-popover/);
-assert.match(css, /\.ship-space-ratio-inline-panel/);
-assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.ship-space-ratio-popover[\s\S]*display:\s*none !important/);
-assert.match(css, /\.ship-space-ratio-inline-panel:not\(\[hidden\]\)/);
+assert.match(shipPresentationJs, /CiShipSpecScale/);
+assert.match(shipPresentationJs, /renderShipStatRows/);
+assert.match(shipPresentationJs, /bindShipSpaceRatioExplainer/);
+assert.match(shipPresentationJs, /ship-space-ratio-popover/);
+assert.match(shipPresentationJs, /ship-space-ratio-inline-panel/);
+assert.match(shipPresentationJs, /portalSpaceRatioPopover/);
+assert.match(shipPresentationJs, /restoreSpaceRatioPopover/);
+assert.match(shipPresentationJs, /ship-space-ratio-popover--portaled/);
+assert.match(shipCss, /\.ship-space-ratio-popover--portaled/);
+assert.match(shipCss, /z-index:\s*14000/);
+assert.match(shipPresentationJs, /addEventListener\("resize", repositionOpenPopover\)/);
+assert.match(plannerJs, /CiShipPresentation\.renderPresentationHtml/);
+assert.doesNotMatch(shipPresentationJs, /ship-scale-highlight/);
+assert.match(shipCss, /\.ship-stat-list/);
+assert.match(shipCss, /\.ship-space-ratio-popover/);
+assert.match(shipCss, /\.ship-space-ratio-inline-panel/);
+assert.match(shipCss, /@media \(max-width: 760px\)[\s\S]*\.ship-space-ratio-popover[\s\S]*display:\s*none !important/);
+assert.match(shipCss, /\.ship-space-ratio-inline-panel:not\(\[hidden\]\)/);
 
 // Admin wiring
 assert.match(adminJs, /ciShipBeam/);

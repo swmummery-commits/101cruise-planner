@@ -118,6 +118,7 @@ function mapSupabaseShip(row) {
     name: row.name,
     cruise_line_id: row.cruise_line_id,
     cruise_line_name: line.name || null,
+    cruise_line_logo_url: line.logo_url || null,
     legacy_base44_id: row.legacy_base44_id || null,
     passenger_capacity: row.passenger_capacity,
     crew_count: row.crew_count,
@@ -144,7 +145,7 @@ function mapSupabaseShip(row) {
 
 /** Columns safe before optional beam/speed migration is applied on production. */
 const SUPABASE_SHIP_SELECT =
-  'id,name,slug,status,cruise_line_id,legacy_base44_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,year_built,year_refurbished,facilities,hero_image_url,deck_plan_url,deck_plan_page_url,deck_plan_pdf_url,deck_plan_status,updated_at,ci_cruise_lines(id,name,slug)';
+  'id,name,slug,status,cruise_line_id,legacy_base44_id,passenger_capacity,crew_count,deck_count,stateroom_count,cabin_type_summary,stateroom_breakdown,length_metres,gross_tonnage,year_built,year_refurbished,facilities,hero_image_url,deck_plan_url,deck_plan_page_url,deck_plan_pdf_url,deck_plan_status,updated_at,ci_cruise_lines(id,name,slug,logo_url)';
 
 function formatSupabaseShipResponse(mappedShip) {
   const ship = pickShipFields(mappedShip);
@@ -154,6 +155,9 @@ function formatSupabaseShipResponse(mappedShip) {
   ship.deck_plan_url = mappedShip.deck_plan_url || null;
   if (mappedShip.hero_image_url) {
     ship.hero_image_url = mappedShip.hero_image_url;
+  }
+  if (mappedShip.cruise_line_logo_url) {
+    ship.cruise_line_logo_url = mappedShip.cruise_line_logo_url;
   }
   return ship;
 }

@@ -82,7 +82,9 @@ assert.match(publicJs, /wantsLegacyArticleOverride/, "legacy override helper pre
 assert.match(publicJs, /get\("article"\) === "legacy"/, "legacy available via article=legacy");
 assert.match(publicJs, /renderLegacyPublicPage/, "legacy renderer retained as fallback");
 assert.doesNotMatch(publicJs, /bootFeaturedCruise/, "DX boot not used on public page");
-assert.match(cruiseHtml, /featured-cruise-article-v2-1/, "article v2 cache busting present");
+assert.match(cruiseHtml, /featured-cruise-article-v2-2/, "article v2 cache busting present");
+assert.match(cruiseHtml, /ci-ship-presentation\.js/, "shared ship presentation on cruise page");
+assert.match(cruiseHtml, /public-cruise-ship\.js/, "public cruise ship mount helper loaded");
 assert.doesNotMatch(cruiseHtml, /destination-experience-featured-cruise-components.js/, "DX components not on cruise page");
 assert.match(cruiseHtml, /featured-cruise-article.js/, "article v2 assets loaded");
 
@@ -155,23 +157,15 @@ const brokenShipModel = await resolveWithMock(
   },
   ["https://cdn.example.com/broken-ship.jpg"]
 );
-assert.equal(brokenShipModel.ship.hero.url, "https://cdn.example.com/ship.jpg", "ship hero falls through to CI hero");
+assert.equal(brokenShipModel.shipName, "Sirena", "ship name retained for CI ship section");
 
-const allBrokenShipModel = await resolveWithMock(
-  Data.fromFeaturedCruise({
-    ...sparseCruise,
-    media: { ship_hero: { url: "https://cdn.example.com/ship.jpg" } },
-    research: { ship_full: { overview: "Ship overview" }, ship_facts: { guests: 1000 } }
-  }),
-  {
-    ...sparseCruise,
-    media: { ship_hero: { url: "https://cdn.example.com/ship.jpg" } },
-    research: { ship_full: { image: { url: "https://cdn.example.com/broken-ship.jpg" } }, ship_facts: { guests: 1000 } }
-  },
-  ["https://cdn.example.com/broken-ship.jpg", "https://cdn.example.com/ship.jpg"]
-);
-assert.ok(!allBrokenShipModel.ship.hero, "all broken ship images removed");
-assert.match(Components.renderPage(allBrokenShipModel), /fca-ship-layout--no-image/, "ship section without blank frame");
+const shipInfoHtml = Components.renderPage(brokenShipModel);
+assert.match(shipInfoHtml, /Ship Info/, "ship info heading");
+assert.match(shipInfoHtml, /data-fca-ci-ship-mount/, "ship info mount point");
+assert.doesNotMatch(shipInfoHtml, /Life on board/, "legacy life-on-board ship section removed");
+
+const sparseShipHtml = Components.renderPage(Data.fromFeaturedCruise({ ...sparseCruise, ship_name: "" }));
+assert.doesNotMatch(sparseShipHtml, /data-fca-ci-ship-mount/, "no ship section without ship name");
 
 const brokenPortModel = await resolveWithMock(
   Data.fromFeaturedCruise({

@@ -229,7 +229,7 @@ assert.equal(noSections.ok, false);
 // Renderer / labels
 assert.doesNotMatch(plannerJs, /Passenger decks/);
 assert.match(read("js/ci-ship-spec-scale.js"), /Total decks/);
-assert.match(plannerJs, /CiShipSpecScale/);
+assert.match(plannerJs, /CiShipPresentation/);
 assert.doesNotMatch(plannerJs, /passenger decks/);
 
 const display = CiFac.normalizeExclusiveAreasForDisplay([{ name: "The Retreat", description: "Long prose stays below the chip." }]);

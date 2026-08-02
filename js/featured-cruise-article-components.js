@@ -192,57 +192,11 @@
   }
 
   function renderShip(model) {
-    var ship = model.ship;
-    if (!ship) return "";
-    var hero =
-      ship.hero && ship.hero.loadState === "loaded"
-        ? `<div class="fca-ship-media">${renderImage(ship.hero, "fca-ship-img")}</div>`
-        : "";
-    var categories = (ship.categories || [])
-      .map(function (category, index) {
-        var open = index === 0 ? " open" : "";
-        return `
-        <details class="fca-ship-panel"${open}>
-          <summary>${esc(category.label)}</summary>
-          <p>${esc(category.body)}</p>
-        </details>`;
-      })
-      .join("");
-    var facts = (ship.facts || [])
-      .map(function (row) {
-        return `<div class="fca-ship-fact"><span>${esc(row.label)}</span><strong>${esc(row.value)}</strong></div>`;
-      })
-      .join("");
+    if (!model || !String(model.shipName || "").trim()) return "";
     return `
-      <section class="fca-section fca-ship" aria-labelledby="fca-ship-heading">
-        <h2 id="fca-ship-heading" class="fca-section-title">Life on board ${esc(ship.name)}</h2>
-        <div class="fca-ship-layout${hero ? "" : " fca-ship-layout--no-image"}">
-          ${hero}
-          <div class="fca-ship-copy">
-            ${ship.overview ? `<p class="fca-ship-overview">${esc(ship.overview)}</p>` : ""}
-            ${ship.personality ? `<p class="fca-ship-personality">${esc(ship.personality)}</p>` : ""}
-            ${
-              (ship.best_for || []).length
-                ? `<div class="fca-ship-list-block"><h3>Best suited to</h3><ul>${ship.best_for
-                    .map(function (item) {
-                      return `<li>${esc(item)}</li>`;
-                    })
-                    .join("")}</ul></div>`
-                : ""
-            }
-            ${
-              (ship.not_ideal_for || []).length
-                ? `<div class="fca-ship-list-block"><h3>May not suit travellers who…</h3><ul>${ship.not_ideal_for
-                    .map(function (item) {
-                      return `<li>${esc(item)}</li>`;
-                    })
-                    .join("")}</ul></div>`
-                : ""
-            }
-          </div>
-        </div>
-        ${categories ? `<div class="fca-ship-panels">${categories}</div>` : ""}
-        ${facts ? `<div class="fca-ship-facts"><h3>Ship at a glance</h3><div class="fca-ship-facts-grid">${facts}</div></div>` : ""}
+      <section class="fca-section fca-ci-ship-section" aria-labelledby="fca-ship-heading">
+        <h2 id="fca-ship-heading" class="fca-section-title">Ship Info</h2>
+        <div class="fca-ci-ship-mount" data-fca-ci-ship-mount></div>
       </section>`;
   }
 

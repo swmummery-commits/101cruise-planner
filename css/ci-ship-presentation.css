@@ -1,0 +1,1124 @@
+/* =========================================================
+   My Ship — premium brochure layout
+   ========================================================= */
+
+.ship-page {
+  padding: 8px 0 64px;
+}
+
+.ship-page-status {
+  padding: 36px 8px 72px;
+  max-width: 520px;
+}
+
+.ship-page-status .ship-status-title {
+  opacity: 1;
+  margin-bottom: 12px;
+  text-transform: none;
+}
+
+.ship-page-status .ship-identity-line {
+  opacity: 1;
+  margin: 0 0 14px;
+}
+
+.ship-page-status .planner-muted {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.ship-summary-value.is-static {
+  font-size: clamp(1rem, 1.8vw, 1.2rem);
+  letter-spacing: -0.02em;
+}
+
+.ship-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  min-height: 0;
+  margin: 4px 0 22px;
+  overflow: hidden;
+}
+
+.ship-hero.has-image {
+  grid-template-columns: minmax(260px, 0.78fr) minmax(360px, 1.22fr);
+  min-height: 300px;
+}
+
+.ship-hero-copy {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  padding: 28px 12px 28px 0;
+}
+
+.ship-hero-line-logo {
+  display: block;
+  width: auto;
+  height: 88px;
+  max-width: 320px;
+  object-fit: contain;
+  margin: 0 0 20px;
+  opacity: 0;
+}
+
+.ship-identity-name {
+  margin: 0 0 12px;
+  font-size: clamp(2.25rem, 4.8vw, 3.35rem);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: #16324f;
+  line-height: 1.02;
+  opacity: 0;
+}
+
+.ship-identity-line {
+  margin: 0;
+  color: #8a93a0;
+  font-size: 1.05rem;
+  font-weight: 400;
+  opacity: 0;
+}
+
+.ship-hero-media {
+  position: relative;
+  z-index: 1;
+  min-height: 280px;
+  height: 100%;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-32px);
+}
+
+.ship-hero-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  max-height: 360px;
+  object-fit: cover;
+  object-position: center right;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.28) 16%, #000 40%, #000 100%);
+  mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.28) 16%, #000 40%, #000 100%);
+}
+
+.ship-summary-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 22px 20px;
+  margin-bottom: 34px;
+  color: #173c37;
+  background: #f3f5f6;
+  border: 1px solid rgba(17, 24, 39, 0.04);
+  box-shadow: none;
+  opacity: 0;
+  transform: translateY(14px);
+}
+
+.ship-summary-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px 18px;
+}
+
+.ship-summary-stat {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
+  padding: 4px 2px;
+}
+
+.ship-summary-icon {
+  width: 26px;
+  height: 26px;
+  color: #2f7d6a;
+  opacity: 0.95;
+}
+
+.ship-summary-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ship-summary-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ship-summary-value {
+  font-size: clamp(1.35rem, 2.3vw, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  color: #16324f;
+  font-variant-numeric: tabular-nums;
+}
+
+.ship-summary-label {
+  color: #7b8491;
+  font-size: 0.78rem;
+  font-weight: 450;
+}
+
+.ship-section-card {
+  margin-bottom: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.ship-section-card h3 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #16324f;
+  letter-spacing: -0.02em;
+}
+
+.ship-section-intro {
+  margin: 0 0 22px;
+}
+
+.ship-glance-section {
+  padding-bottom: 8px;
+}
+
+.ship-glance {
+  display: grid;
+  gap: 22px;
+}
+
+.ship-glance-grid {
+  display: grid;
+  gap: 16px 14px;
+}
+
+.ship-glance-metrics {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.ship-glance-status {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.ship-glance-item {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 7px;
+  min-height: 0;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  transition: transform 0.25s ease;
+}
+
+.ship-glance-item.is-metric,
+.ship-glance-item.is-status {
+  grid-template-columns: 1fr;
+  align-items: center;
+}
+
+.ship-glance-item.is-status {
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  justify-items: start;
+  text-align: left;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  border-radius: 12px;
+  background: #fbfcfc;
+}
+
+.ship-glance-item:hover {
+  transform: translateY(-1px);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.ship-glance-item.is-status:hover {
+  border-color: rgba(141, 217, 191, 0.45);
+}
+
+.ship-glance-icon {
+  width: 26px;
+  height: 26px;
+  color: #2f7d6a;
+}
+
+.ship-glance-item.is-focus .ship-glance-icon {
+  width: 30px;
+  height: 30px;
+  color: #245C4E;
+}
+
+.ship-glance-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ship-glance-metric {
+  font-size: clamp(1.45rem, 2.2vw, 1.85rem);
+  font-weight: 600;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  color: #16324f;
+  font-variant-numeric: tabular-nums;
+}
+
+.ship-glance-item.is-focus .ship-glance-metric {
+  font-size: clamp(1.85rem, 2.8vw, 2.3rem);
+  font-weight: 650;
+  color: #12293f;
+}
+
+.ship-glance-item.is-metric .ship-glance-icon {
+  order: -1;
+}
+
+.ship-glance-item.is-metric .ship-glance-label {
+  order: 1;
+  color: #7b8491;
+  font-size: 0.78rem;
+  font-weight: 450;
+}
+
+.ship-glance-label {
+  min-width: 0;
+  color: #4b5563;
+  font-size: 0.84rem;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.ship-glance-empty {
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #a0a8b3;
+  font-size: 0.78rem;
+  font-weight: 450;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-transform: none;
+}
+
+.ship-glance-item.is-metric.is-empty .ship-glance-empty {
+  order: 0;
+  min-height: 1.85rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+.ship-glance-item.is-empty .ship-glance-icon {
+  color: #9aa3ad;
+  opacity: 0.8;
+}
+
+.ship-glance-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(141, 217, 191, 0.22);
+  color: #245C4E;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.ship-glance-value.is-no {
+  background: rgba(17, 24, 39, 0.06);
+  color: #6b7280;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+.ship-glance-yes {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ship-empty-note {
+  margin: 8px 0 0;
+}
+
+.ship-room-types-unavailable {
+  margin: 10px 0 0;
+}
+
+.ship-room-types-unavailable-title {
+  margin: 0 0 6px;
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+.ship-room-types-unavailable-detail {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.ship-info-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin: 0;
+  align-items: start;
+  padding-top: 8px;
+  border-top: 1px solid rgba(17, 24, 39, 0.06);
+}
+
+.ship-info-card {
+  margin-bottom: 0;
+  height: auto;
+  min-height: 0;
+  padding-top: 8px;
+}
+
+.ship-info-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.ship-spec-list,
+.ship-scale-list,
+.ship-stat-list {
+  display: grid;
+  gap: 0;
+  margin-top: 10px;
+}
+
+.ship-spec-row,
+.ship-scale-row,
+.ship-stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+  font-size: 0.92rem;
+  align-items: flex-start;
+}
+
+.ship-spec-row:first-child,
+.ship-scale-row:first-child,
+.ship-stat-row:first-child {
+  padding-top: 2px;
+}
+
+.ship-spec-row:last-child,
+.ship-scale-row:last-child,
+.ship-stat-row:last-child {
+  border-bottom: 0;
+}
+
+.ship-spec-row span,
+.ship-scale-row span,
+.ship-stat-label {
+  color: #7b8491;
+}
+
+.ship-spec-row strong,
+.ship-scale-row strong,
+.ship-stat-value,
+.ship-stat-value-stack strong {
+  color: #16324f;
+  font-weight: 600;
+  text-align: right;
+}
+
+.ship-stat-value-stack {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  text-align: right;
+}
+
+.ship-stat-row--space-ratio .ship-stat-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ship-space-ratio-control {
+  position: relative;
+  display: inline-flex;
+}
+
+.ship-stat-space-ratio-group {
+  display: grid;
+  gap: 0;
+}
+
+.ship-stat-space-ratio-group .ship-stat-row--space-ratio {
+  border-bottom: 0;
+}
+
+.ship-space-ratio-trigger {
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(36, 92, 78, 0.28);
+  border-radius: 999px;
+  background: rgba(141, 217, 191, 0.18);
+  color: #245C4E;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ship-space-ratio-trigger:focus-visible {
+  outline: 2px solid #8DD9BF;
+  outline-offset: 2px;
+}
+
+.ship-space-ratio-popover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1200;
+  width: min(320px, calc(100vw - 24px));
+  max-width: 340px;
+  padding: 12px 14px;
+  border: 1px solid rgba(36, 92, 78, 0.16);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(8, 24, 21, 0.12);
+  color: #4b5563;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.ship-space-ratio-popover--portaled {
+  z-index: 14000;
+  background: #ffffff;
+  opacity: 1;
+  isolation: isolate;
+  pointer-events: auto;
+}
+
+.ship-space-ratio-inline-panel {
+  display: none;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 12px 14px;
+  border: 1px solid rgba(36, 92, 78, 0.16);
+  border-radius: 12px;
+  background: #f8fcfa;
+  color: #4b5563;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.ship-space-ratio-inline-panel p,
+.ship-space-ratio-popover p {
+  margin: 0 0 8px;
+}
+
+.ship-space-ratio-inline-panel ul,
+.ship-space-ratio-popover ul {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+
+.ship-space-ratio-inline-panel li,
+.ship-space-ratio-popover li {
+  margin-bottom: 4px;
+}
+
+.ship-space-ratio-interpretation {
+  color: #245C4E;
+  font-size: 0.78rem;
+  font-weight: 550;
+  line-height: 1.3;
+}
+
+.ship-scale-highlight {
+  display: none;
+}
+
+.ship-accommodation-layout {
+  display: grid;
+  gap: 20px;
+  margin-top: 10px;
+  justify-items: center;
+}
+
+.ship-donut-wrap {
+  position: relative;
+  width: min(100%, 180px);
+  aspect-ratio: 1;
+}
+
+.ship-donut-chart {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.ship-donut-track,
+.ship-donut-segment {
+  fill: none;
+  stroke-width: 15;
+}
+
+.ship-donut-track {
+  stroke: rgba(36, 92, 78, 0.08);
+}
+
+.ship-donut-segment {
+  stroke-linecap: butt;
+  opacity: 0;
+}
+
+.ship-donut-centre {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.ship-donut-centre strong {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: #16324f;
+}
+
+.ship-donut-centre span {
+  margin-top: 2px;
+  color: #7b8491;
+  font-size: 0.7rem;
+}
+
+.ship-donut-centre.is-blank {
+  display: grid;
+  place-content: center;
+}
+
+.ship-room-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+.ship-room-legend li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.ship-room-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+}
+
+.ship-room-label {
+  color: #7b8491;
+  font-size: 0.84rem;
+}
+
+.ship-room-legend strong {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #16324f;
+}
+
+.ship-chip-group {
+  margin-top: 4px;
+}
+
+.ship-chip-group .dashboard-snapshot-extras-tag {
+  padding: 8px 14px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  background: var(--brand-green);
+  border: 1px solid var(--brand-green);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(36, 92, 78, 0.12);
+}
+
+.ship-exclusive-areas {
+  display: grid;
+  gap: 12px;
+}
+
+.ship-exclusive-area-item .ship-chip-group {
+  margin-top: 0;
+}
+
+.ship-exclusive-area-detail {
+  margin: 6px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  max-width: 42rem;
+}
+
+.ship-feature-experiences-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+  grid-template-areas:
+    "exclusive divider specialty"
+    "deckplans divider specialty";
+  gap: 28px 32px;
+  align-items: start;
+}
+
+.ship-feature-column--exclusive {
+  grid-area: exclusive;
+}
+
+.ship-feature-column--specialty {
+  grid-area: specialty;
+}
+
+.ship-feature-column h3 {
+  margin: 0 0 6px;
+}
+
+.ship-feature-column-divider {
+  grid-area: divider;
+  width: 1px;
+  align-self: stretch;
+  background: rgba(17, 24, 39, 0.08);
+}
+
+.ship-deck-subsection {
+  grid-area: deckplans;
+  min-width: 0;
+  margin-top: 6px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.ship-feature-experiences-grid--deck-only {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "deckplans";
+}
+
+.ship-feature-experiences-grid--deck-only .ship-deck-subsection {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.ship-feature-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 18px;
+}
+
+.ship-feature-item {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.ship-feature-icon {
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  color: #2f7d6a;
+  flex-shrink: 0;
+}
+
+.ship-feature-icon .ship-feature-icon-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.ship-feature-copy {
+  min-width: 0;
+}
+
+.ship-feature-label {
+  display: inline-block;
+  max-width: 100%;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--brand-green, #8dd9bf);
+  color: var(--brand-dark-green, #245c4e);
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.ship-feature-description {
+  margin: 8px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  max-width: 34rem;
+}
+
+.ship-feature-unavailable {
+  margin: 14px 0 0;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 760px) {
+  .ship-feature-experiences-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "exclusive"
+      "divider"
+      "specialty"
+      "deckplans";
+    gap: 24px;
+  }
+
+  .ship-feature-experiences-grid--deck-only {
+    grid-template-areas: "deckplans";
+  }
+
+  .ship-feature-column-divider {
+    width: 100%;
+    height: 1px;
+  }
+
+  .ship-deck-subsection {
+    margin-top: 0;
+    padding-top: 24px;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+}
+
+.ship-deck-copy {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  max-width: 100%;
+}
+
+.ship-deck-copy h3 {
+  margin: 0;
+}
+
+.ship-deck-copy .planner-muted {
+  margin: 0;
+}
+
+.ship-deck-button {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  margin: 0;
+  text-decoration: none;
+  max-width: 100%;
+  white-space: normal;
+}
+
+.ship-deck-button--external {
+  padding-right: 12px;
+}
+
+.ship-deck-external-icon {
+  width: 14px;
+  height: 14px;
+  display: inline-flex;
+  opacity: 0.85;
+}
+
+.ship-deck-external-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ship-deck-button-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+}
+
+.ship-deck-button-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.ship-deck-button.is-coming-soon,
+.ship-deck-button.is-coming-soon:hover {
+  cursor: default;
+  opacity: 0.78;
+  transform: none !important;
+  pointer-events: none;
+}
+
+.ship-content-stage {
+  display: grid;
+  gap: 34px;
+  opacity: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.ship-page.is-ready .ship-hero-line-logo {
+  animation: ship-fade-in 0.7s ease-out 0ms 1 forwards;
+}
+
+.ship-page.is-ready .ship-identity-name {
+  animation: ship-fade-in 0.8s ease-out 70ms 1 forwards;
+}
+
+.ship-page.is-ready .ship-identity-line {
+  animation: ship-fade-in 0.8s ease-out 140ms 1 forwards;
+}
+
+.ship-page.is-ready .ship-hero-media {
+  animation: ship-hero-image-in 3.2s ease-out 0ms 1 forwards;
+}
+
+.ship-page.is-ready .ship-summary-card {
+  animation: ship-rise-in 0.85s ease-out 220ms 1 forwards;
+}
+
+.ship-page.is-content-ready .ship-content-stage {
+  opacity: 1;
+}
+
+.ship-reveal-block {
+  position: relative;
+  z-index: 1;
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.ship-page.is-content-ready .ship-reveal-block {
+  animation: ship-rise-in 0.65s ease-out var(--ship-delay, 0ms) 1 forwards;
+}
+
+@keyframes ship-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes ship-hero-image-in {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes ship-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1100px) {
+  .ship-glance-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .ship-glance-status {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .ship-hero.has-image {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .ship-hero-media {
+    order: -1;
+    min-height: 220px;
+  }
+
+  .ship-hero-image {
+    min-height: 220px;
+    max-height: 260px;
+    -webkit-mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 55%, transparent 100%);
+  }
+
+  .ship-info-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .ship-accommodation-layout {
+    grid-template-columns: minmax(160px, 200px) minmax(0, 1fr);
+    align-items: center;
+    justify-items: stretch;
+  }
+}
+
+@media (max-width: 900px) {
+  .ship-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ship-glance-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .ship-glance-status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .ship-hero {
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .ship-space-ratio-popover {
+    display: none !important;
+  }
+
+  .ship-space-ratio-inline-panel:not([hidden]) {
+    display: block;
+  }
+
+  .ship-stat-space-ratio-group:not(:last-child) {
+    border-bottom: 1px solid rgba(17, 24, 39, 0.06);
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+  }
+
+  .ship-hero-line-logo {
+    height: 72px;
+    max-width: 240px;
+  }
+
+  .ship-identity-name {
+    font-size: clamp(1.85rem, 8vw, 2.4rem);
+  }
+
+  .ship-summary-card {
+    padding: 18px 14px;
+  }
+
+  .ship-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 10px;
+  }
+
+  .ship-summary-stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .ship-glance-metrics,
+  .ship-glance-status {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 10px;
+  }
+
+  .ship-deck-button {
+    justify-content: flex-start;
+  }
+
+  .ship-accommodation-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ship-page.is-ready .ship-hero-line-logo,
+  .ship-page.is-ready .ship-identity-name,
+  .ship-page.is-ready .ship-identity-line,
+  .ship-page.is-ready .ship-hero-media,
+  .ship-page.is-ready .ship-summary-card,
+  .ship-page.is-content-ready .ship-reveal-block {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .ship-glance-item {
+    transition: none !important;
+  }
+
+  .ship-donut-segment {
+    opacity: 1 !important;
+  }
+}
+
+.ship-deck-copy .ship-muted,
+.ship-feature-description,
+.ship-section-intro,
+.ci-ship-unavailable .ship-section-intro {
+  margin: 0;
+  color: #5f6b67;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.ci-ship-unavailable {
+  padding: 8px 0 0;
+}
+
+/* Public Featured Cruise page integration */
+.fca-ci-ship-section .fca-section-title {
+  margin-bottom: 18px;
+}
+
+.fca-ci-ship-mount .ci-ship-presentation.ship-page {
+  padding: 0 0 12px;
+}
+
+.fca-ci-ship-mount .ship-summary-card {
+  margin-bottom: 28px;
+}
+
+.fca-ci-ship-mount .ship-hero.has-image {
+  min-height: 240px;
+}
+
+@media (max-width: 760px) {
+  .fca-ci-ship-mount .ship-hero.has-image {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+}
