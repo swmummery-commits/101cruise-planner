@@ -152,7 +152,14 @@ function extractStructuredSailingSources(html, pageUrl) {
   if (apiHints.length) methods.push("api_hint");
 
   return {
-    sailingUrls: [...sailingUrls].filter(Boolean),
+    sailingUrls: [...sailingUrls]
+      .filter(Boolean)
+      .filter((u) => {
+        const { pathMatchesHardReject, pathMatchesRegionalHub, evaluateSailingEvidence } = require("./discovery-non-sailing-filter");
+        if (pathMatchesHardReject(u)) return false;
+        if (pathMatchesRegionalHub(u) && !/\/cruises?\//i.test(u)) return false;
+        return true;
+      }),
     methods: [...new Set(methods)],
     apiHints,
     hasStructured: Boolean(jsonLd.length || nextData || embedded.length)

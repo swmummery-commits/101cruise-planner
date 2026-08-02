@@ -91,7 +91,7 @@ function createSupabaseRest(rootDir) {
     return request(restPath, { method: "GET" });
   }
 
-  return { request, get, url };
+  return { request, get, url, patch: (restPath, body) => request(restPath, { method: "PATCH", body }) };
 }
 
 module.exports = {

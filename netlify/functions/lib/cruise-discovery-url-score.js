@@ -3,6 +3,11 @@
  * Prefer sailing/itinerary URLs; demote fleet/ship/marketing pages.
  */
 
+const {
+  classifyNonSailingSource,
+  evaluateSailingEvidence
+} = require("./discovery-non-sailing-filter");
+
 const POSITIVE_TERMS = [
   "itinerary",
   "itineraries",
@@ -43,31 +48,12 @@ const POSITIVE_PATH_FRAGMENTS = [
 ];
 
 const NEGATIVE_PATH_FRAGMENTS = [
+  ...require("./discovery-non-sailing-filter").HARD_REJECT_PATH_FRAGMENTS,
+  ...require("./discovery-non-sailing-filter").REGIONAL_HUB_PATH_FRAGMENTS,
   "/ships/",
   "/ship/",
-  "/fleet/",
-  "/destinations/",
-  "/destination/",
-  "/about/",
-  "/blog/",
-  "/news/",
-  "/offers/",
-  "/deals/",
-  "/why-cruise/",
-  "/experience/",
-  "/cabins/",
-  "/deck-plans/",
-  "/deckplans/",
-  "/restaurants/",
-  "/dining/",
-  "/entertainment/",
-  "/suites/",
-  "/stateroom",
-  "/media/",
-  "/press/",
-  "/careers/",
-  "/investors/"
-];
+  "/fleet/"
+].filter((frag, index, list) => list.indexOf(frag) === index);
 
 const NEGATIVE_TERMS = [
   "deck plan",
@@ -140,6 +126,24 @@ function scoreSailingUrl(hit, adapter = null) {
   const url = String(hit?.url || "").trim();
   const title = String(hit?.title || "");
   const snippet = String(hit?.description || hit?.snippet || "");
+
+  const preClass = classifyNonSailingSource({
+    url,
+    title,
+    description: snippet,
+    knownShipNamesList: hit?.knownShipNames || adapter?.knownShipNames
+  });
+  if (preClass.rejected) {
+    return {
+      score: -20,
+      positive: [],
+      negative: [preClass.reason],
+      hasSailingSignal: false,
+      decision: "skip",
+      reason: preClass.reason
+    };
+  }
+
   const { path } = safeUrlParts(url);
   const blob = `${url}\n${title}\n${snippet}`;
 
@@ -210,6 +214,7 @@ function scoreSailingUrl(hit, adapter = null) {
   }
 
   const hasSailingSignal =
+    evaluateSailingEvidence({ url, title, description: snippet }).sufficient ||
     hasExplicitDate(blob) ||
     hasNightsPhrase(blob) ||
     hasSailingId(blob) ||

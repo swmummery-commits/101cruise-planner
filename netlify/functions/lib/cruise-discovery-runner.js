@@ -9,6 +9,7 @@ const {
   loadShipAliases,
   loadDestinationAliases
 } = require("./cruise-discovery-ops");
+const { loadRejectedSourceMemory } = require("./discovery-source-memory");
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -237,6 +238,7 @@ function emptyAggregate() {
     sailing_urls_fetched: 0,
     generic_pages_skipped: 0,
     ignored_non_sailing_source: 0,
+    rejected_url_memory_skip: 0,
     pages_fetched: 0,
     candidates: 0,
     candidates_validated: 0,
@@ -307,9 +309,10 @@ async function discoverOneLine({
       `ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&active=eq.true&select=id,name,slug,official_ship_url,official_line_ship_id,ship_class,year_built,year_refurbished&order=name.asc`
     );
 
-    const [shipAliases, destinationAliases] = await Promise.all([
+    const [shipAliases, destinationAliases, rejectedUrlMemory] = await Promise.all([
       loadShipAliases(cruiseLineId),
-      loadDestinationAliases()
+      loadDestinationAliases(),
+      loadRejectedSourceMemory(supabase, { cruiseLineId })
     ]);
 
     const startedMs = Date.now();
@@ -321,7 +324,8 @@ async function discoverOneLine({
       fetchPages: true,
       maxResults: destScope ? 8 : 6,
       shipAliases,
-      destinationAliases
+      destinationAliases,
+      rejectedUrlMemory
     });
 
     aggregate.lines_scanned = 1;

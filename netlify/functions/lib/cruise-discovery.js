@@ -20,6 +20,12 @@ const {
   resolveDepartureFromSource,
   legacyExtractDeparturePort
 } = require("./discovery-departure-port");
+const {
+  classifyNonSailingSource,
+  slugTokenRejected,
+  guessLooksNonSailing
+} = require("./discovery-non-sailing-filter");
+const { shouldSkipUrlBeforeFetch, canonicalDiscoveryUrl } = require("./discovery-source-memory");
 
 const MONTHS = {
   jan: 0,
@@ -672,8 +678,10 @@ function extractShipNameGuesses(text, url, cruiseLineName) {
     for (const part of parts) {
       if (/ship|fleet|vessel/i.test(part)) continue;
       if (!/[a-z]/i.test(part)) continue;
-      if (part.length < 4) continue;
-      push(part.replace(/[-_]+/g, " "));
+      if (part.length < 5) continue;
+      const slugGuess = part.replace(/[-_]+/g, " ");
+      if (slugTokenRejected(slugGuess)) continue;
+      push(slugGuess);
     }
   } catch {
     /* ignore */
@@ -685,6 +693,7 @@ function extractShipNameGuesses(text, url, cruiseLineName) {
   return guesses.filter((g) => {
     const n = normaliseShipName(g);
     if (!n || n === lineKey) return false;
+    if (guessLooksNonSailing(g)) return false;
     const tokens = n.split(" ").filter((t) => t && !GENERIC_TOKENS.has(t));
     if (!tokens.length) return false;
     if (tokens.every((t) => lineTokens.has(t))) return false;
@@ -781,7 +790,8 @@ function cruiseSignalScore(signals) {
   let score = 0;
   if (signals.departure_date) score += 2;
   if (signals.nights) score += 1;
-  if (signals.ship_id || signals.ship_name_guess) score += 2;
+  if (signals.ship_id) score += 2;
+  else if (signals.ship_name_guess && !guessLooksNonSailing(signals.ship_name_guess)) score += 2;
   if (signals.brochure_fare_display) score += 1;
   if (signals.itinerary) score += 1;
   if (signals.departure_port) score += 1;
@@ -942,6 +952,24 @@ function buildCandidateFromSource({
 }) {
   const raw = extractRawSignals({ title, description, url, excerpt, cruiseLine });
   if (!raw) return null;
+
+  const nonSailing = classifyNonSailingSource({
+    url,
+    title,
+    description,
+    excerpt,
+    ship_name_guesses: raw.ship_name_guesses,
+    ships,
+    knownShipNamesList: (ships || []).map((s) => s.name)
+  });
+  if (nonSailing.rejected) {
+    return {
+      skip: true,
+      reason: nonSailing.reason,
+      signalScore: 0,
+      diagnostics: { ship_name_guesses: raw.ship_name_guesses }
+    };
+  }
 
   const normalised = normaliseCandidate(raw);
   const matched = matchEntities(normalised, {
@@ -1186,7 +1214,8 @@ async function discoverForCruiseLine({
   fetchPages = true,
   maxResults = 8,
   shipAliases = [],
-  destinationAliases = []
+  destinationAliases = [],
+  rejectedUrlMemory = null
 }) {
   const adapter = resolveAdapter(cruiseLine);
   const fetchCap = Math.min(maxResults, adapter.maxFetches || 8);
@@ -1198,6 +1227,7 @@ async function discoverForCruiseLine({
     sailing_urls_fetched: 0,
     generic_pages_skipped: 0,
     ignored_non_sailing_source: 0,
+    rejected_url_memory_skip: 0,
     candidates: 0,
     skipped_non_cruise: 0,
     duplicate_candidates_suppressed: 0,
@@ -1230,6 +1260,8 @@ async function discoverForCruiseLine({
     stats.review_items = reviewItems.length;
     return { candidates, reviewItems: dedupeReviewItems(reviewItems), stats, urlDiagnostics };
   }
+
+  const knownShipNamesList = (ships || []).map((s) => s.name).filter(Boolean);
 
   const targets = destList.length ? destList : [null];
   for (const dest of targets) {
@@ -1278,7 +1310,20 @@ async function discoverForCruiseLine({
 
     const ranked = [];
     for (const hit of hits) {
-      const scored = scoreSailingUrl(hit, adapter);
+      if (shouldSkipUrlBeforeFetch(hit.url, { memoryMap: rejectedUrlMemory })) {
+        stats.rejected_url_memory_skip += 1;
+        urlDiagnostics.push({
+          url: hit.url,
+          canonical_url: canonicalDiscoveryUrl(hit.url),
+          title: hit.title || null,
+          decision: "skip",
+          reason: "rejected_url_memory",
+          source_method: hit.source_method || usedMethod
+        });
+        continue;
+      }
+
+      const scored = scoreSailingUrl({ ...hit, knownShipNames: knownShipNamesList }, adapter);
       const diag = {
         url: hit.url,
         canonical_url: canonicalUrl(hit.url),
@@ -1319,7 +1364,11 @@ async function discoverForCruiseLine({
         stats.source_method_counts.brave_fallback =
           (stats.source_method_counts.brave_fallback || 0) + 1;
         for (const hit of braveHits) {
-          const scored = scoreSailingUrl(hit, adapter);
+          if (shouldSkipUrlBeforeFetch(hit.url, { memoryMap: rejectedUrlMemory })) {
+            stats.rejected_url_memory_skip += 1;
+            continue;
+          }
+          const scored = scoreSailingUrl({ ...hit, knownShipNames: knownShipNamesList }, adapter);
           const diag = {
             url: hit.url,
             canonical_url: canonicalUrl(hit.url),
