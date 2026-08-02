@@ -579,8 +579,33 @@
     bindSearchControls({ forceRefresh: true });
   }
 
-  function renderEmpty() {
+  function renderEmpty(payload) {
     stopLoadingMessages();
+    const summary = payload?.departureSummary || {};
+    const apiMessage = String(payload?.message || "").trim();
+    const catalogueStatus = String(payload?.catalogueStatus || "").trim();
+    const lead =
+      apiMessage ||
+      (catalogueStatus === "no_destination"
+        ? `We do not have verified sailings for ${currentDest?.name || "this destination"} in the catalogue yet. Discovery is live for Alaska today.`
+        : catalogueStatus === "filtered_out"
+          ? "Sailings exist for this destination, but none matched your selected dates, duration, or departure preferences."
+          : "Once Discovery has catalogue rows for this destination, complete sailings will appear here. You can also broaden dates/duration or ask Paul directly.");
+    const hints =
+      catalogueStatus === "no_destination"
+        ? [
+            "Try Alaska — our live verified catalogue destination today",
+            "Broaden your travel dates or choose flexible timing",
+            "Choose “I'll fly anywhere” for departure",
+            "Ask Paul for a tailored shortlist"
+          ]
+        : [
+            "Broaden your travel dates",
+            "Choose a flexible cruise length",
+            "Change your departure point to “I'll fly anywhere”",
+            "Ask Paul for a tailored shortlist"
+          ];
+
     mount.innerHTML = `
       <div class="cf-dest cf-search">
         <div class="cf-search-nav">
@@ -589,12 +614,14 @@
         </div>
         <section class="cf-search-state">
           <h2 class="cf-dest-section-title">We couldn’t find matching verified sailings for these exact preferences.</h2>
-          <p class="cf-dest-lead">Once Discovery has catalogue rows for this destination, complete sailings will appear here. You can also broaden dates/duration or ask Paul directly.</p>
+          <p class="cf-dest-lead">${escapeHtml(lead)}</p>
+          ${
+            summary.message && !apiMessage
+              ? `<p class="cf-dest-lead">${escapeHtml(summary.message)}</p>`
+              : ""
+          }
           <ul class="cf-search-hints">
-            <li>Broaden your travel dates</li>
-            <li>Choose a flexible cruise length</li>
-            <li>Change your departure point</li>
-            <li>Ask Paul for a tailored shortlist</li>
+            ${hints.map((hint) => `<li>${escapeHtml(hint)}</li>`).join("")}
           </ul>
           <div class="cf-search-actions">
             <button type="button" class="cf-dest-cta-btn" data-search-again>Search again</button>
@@ -632,7 +659,7 @@
     const totalCount = bestMatch.length + alsoWorth.length + alternatives.length;
 
     if (!totalCount) {
-      renderEmpty();
+      renderEmpty(payload);
       return;
     }
 

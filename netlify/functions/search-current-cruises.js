@@ -846,6 +846,13 @@ function matchesTiming(departureDate, input) {
   const d = new Date(`${departureDate}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return false;
 
+  const flexibleTiming = ["flexible", "school_holidays", "this_season"].includes(
+    String(input.timingMode || "").trim()
+  );
+  if (flexibleTiming && !input.startDate && !input.endDate) {
+    return true;
+  }
+
   if (input.startDate && input.endDate) {
     const start = new Date(`${input.startDate}T00:00:00Z`);
     const end = new Date(`${input.endDate}T00:00:00Z`);
@@ -898,7 +905,10 @@ async function runDiscoveryCatalogue(input) {
       alsoWorthConsidering: [],
       otherResults: [],
       departureSummary: null,
-      message: "No published Living Destination matches this Cruise Finder destination yet."
+      catalogueStatus: "no_destination",
+      totalInCatalogue: 0,
+      matchedCount: 0,
+      message: `We do not have verified sailings in the catalogue for ${destinationName} yet. Discovery is live for Alaska today — try Alaska, broaden your dates, or ask Paul for a tailored shortlist.`
     };
   }
 
@@ -969,6 +979,32 @@ async function runDiscoveryCatalogue(input) {
     destinationName: destination.name
   });
 
+  const totalInCatalogue = (rows || []).length;
+  const completeInCatalogue = (rows || []).filter((row) =>
+    isCompleteDiscoveryRow({
+      ...row,
+      cruise_line_name: lineNames.get(row.cruise_line_id) || null,
+      ship_name: shipNames.get(row.ship_id) || null
+    })
+  ).length;
+  const matchedCount = results.length;
+  const visibleCount =
+    departureBuckets.results.length +
+    departureBuckets.alsoWorthConsidering.length +
+    departureBuckets.otherResults.length;
+
+  let message = null;
+  if (visibleCount === 0 && matchedCount > 0) {
+    message =
+      departureBuckets.departureSummary?.message ||
+      "No sailings matched your selected departure port. Review alternative options below or change your departure preference.";
+  } else if (visibleCount === 0 && completeInCatalogue > 0) {
+    message =
+      "Sailings exist for this destination, but none matched your selected dates or cruise length. Try flexible dates or a broader duration.";
+  } else if (visibleCount === 0 && totalInCatalogue === 0) {
+    message = `No active verified sailings are in the Discovery catalogue for ${destination.name} yet.`;
+  }
+
   return {
     ok: true,
     source: "discovery",
@@ -978,8 +1014,12 @@ async function runDiscoveryCatalogue(input) {
     alsoWorthConsidering: departureBuckets.alsoWorthConsidering,
     otherResults: departureBuckets.otherResults,
     departureSummary: departureBuckets.departureSummary,
-    totalInCatalogue: (rows || []).length,
-    matchedCount: results.length
+    catalogueStatus:
+      visibleCount > 0 ? "ready" : completeInCatalogue > 0 ? "filtered_out" : "no_sailings",
+    totalInCatalogue,
+    completeInCatalogue,
+    matchedCount,
+    message
   };
 }
 

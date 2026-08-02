@@ -5,6 +5,7 @@
  */
 
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { createRequire } from "module";
 
@@ -196,6 +197,29 @@ async function main() {
     assert(stats.textOnly === 1, "text only");
     assert(stats.noUsableDeparture === 1, "empty departure");
     assert(stats.australianByPort.Sydney === 1, "Sydney counted");
+  });
+
+  await test("Search API ignores month/year filters for flexible timing modes", () => {
+    const src = fs.readFileSync(
+      path.join(root, "netlify/functions/search-current-cruises.js"),
+      "utf8"
+    );
+    assert(/flexibleTiming/.test(src), "flexible timing guard present");
+    assert(/school_holidays/.test(src), "school holidays treated as flexible timing");
+  });
+
+  await test("Search API returns catalogue-aware empty messages", () => {
+    const searchSrc = fs.readFileSync(
+      path.join(root, "netlify/functions/search-current-cruises.js"),
+      "utf8"
+    );
+    const destSrc = fs.readFileSync(
+      path.join(root, "public-tools/cruise-finder/destination.js"),
+      "utf8"
+    );
+    assert(/catalogueStatus/.test(searchSrc), "catalogue status returned");
+    assert(/filtered_out/.test(searchSrc), "filtered out status present");
+    assert(/renderEmpty\(payload\)/.test(destSrc), "destination page shows API empty context");
   });
 
   const failed = results.filter((r) => !r.ok);
