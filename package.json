@@ -33,6 +33,7 @@
     "test:route-map-workflow": "node scripts/test-route-map-workflow.mjs",
     "generate:ports-seed": "node scripts/generate-ports-seed-migration.mjs",
     "test:cruise-finder-v2": "node scripts/test-cruise-finder-v2.mjs",
+    "test:cruise-finder-departure-match": "node scripts/test-cruise-finder-departure-match.mjs",
     "poc:cruise-finder-v2": "node scripts/run-cruise-finder-v2-poc.mjs",
     "validate:track-cruises": "node scripts/validate-track-cruises-api.mjs",
     "test:track-cruises": "node scripts/test-track-cruises-validation.mjs",

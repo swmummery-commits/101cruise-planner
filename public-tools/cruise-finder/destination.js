@@ -458,6 +458,9 @@
       Array.isArray(result.portsOfCall) && result.portsOfCall.length
         ? `<div class="cf-sail-row"><span class="cf-sail-label">Ports</span><span class="cf-sail-value">${escapeHtml(result.portsOfCall.join(" · "))}</span></div>`
         : "";
+    const departureNote = result.departureNote
+      ? `<p class="cf-sail-departure-note">${escapeHtml(result.departureNote)}</p>`
+      : "";
 
     return `
       <article class="cf-sail-card">
@@ -467,6 +470,7 @@
         </div>
         <h3 class="cf-sail-ship">${escapeHtml(displayValue(result.ship))}</h3>
         <p class="cf-sail-summary">${escapeHtml(displayValue(result.itineraryTitle))}</p>
+        ${departureNote}
         <div class="cf-sail-grid">
           <div class="cf-sail-row"><span class="cf-sail-label">Departure</span><span class="cf-sail-value">${escapeHtml(displayValue(result.departureDate))}</span></div>
           <div class="cf-sail-row"><span class="cf-sail-label">Duration</span><span class="cf-sail-value">${escapeHtml(displayValue(result.durationLabel))}</span></div>
@@ -619,14 +623,78 @@
 
   function renderResults(payload) {
     stopLoadingMessages();
-    const results = (Array.isArray(payload.results) ? payload.results : []).filter(isCompleteSailing);
+    const bestMatch = (Array.isArray(payload.results) ? payload.results : []).filter(isCompleteSailing);
+    const alsoWorth = (Array.isArray(payload.alsoWorthConsidering) ? payload.alsoWorthConsidering : []).filter(
+      isCompleteSailing
+    );
+    const alternatives = (Array.isArray(payload.otherResults) ? payload.otherResults : []).filter(isCompleteSailing);
+    const summary = payload.departureSummary || {};
+    const totalCount = bestMatch.length + alsoWorth.length + alternatives.length;
 
-    if (!results.length) {
+    if (!totalCount) {
       renderEmpty();
       return;
     }
 
-    const primaryHtml = results.map((r) => resultCardHtml(r, currentDest, currentPrefs)).join("");
+    const sections = [];
+
+    if (summary.message && !bestMatch.length) {
+      sections.push(`
+        <section class="cf-search-state cf-search-state-inline">
+          <h2 class="cf-dest-section-title">${escapeHtml(summary.message)}</h2>
+          <p class="cf-dest-lead">You can adjust your search or review the alternatives below.</p>
+          <ul class="cf-search-hints">
+            <li>Adjust your dates</li>
+            <li>Increase or remove the budget limit</li>
+            <li>Consider another Australian departure port</li>
+            <li>View cruises requiring flights below</li>
+          </ul>
+        </section>`);
+    }
+
+    if (bestMatch.length) {
+      if (summary.flexible) {
+        sections.push(`
+        <section class="cf-dest-section cf-search-intro">
+          <h2 class="cf-dest-section-title">Current Cruises We Found</h2>
+          <p class="cf-dest-lead">These sailings come from the 101cruise Discovery catalogue (verified from official cruise line sources). Itineraries and availability can change.</p>
+        </section>
+        <div class="cf-sail-list">${bestMatch.map((r) => resultCardHtml(r, currentDest, currentPrefs)).join("")}</div>`);
+      } else {
+        sections.push(`
+        <section class="cf-dest-section cf-search-intro">
+          <h2 class="cf-dest-section-title">Best Match</h2>
+          <p class="cf-dest-lead">These sailings depart from ${escapeHtml(summary.selectedLabel || "your chosen port")} and match your other preferences.</p>
+        </section>
+        <div class="cf-sail-list">${bestMatch.map((r) => resultCardHtml(r, currentDest, currentPrefs)).join("")}</div>`);
+      }
+    }
+
+    if (alsoWorth.length) {
+      sections.push(`
+        <section class="cf-dest-section cf-search-intro">
+          <h2 class="cf-dest-section-title">Also Worth Considering</h2>
+          <p class="cf-dest-lead">Another relevant cruise from a nearby or same-country departure port.</p>
+        </section>
+        <div class="cf-sail-list">${alsoWorth.map((r) => resultCardHtml(r, currentDest, currentPrefs)).join("")}</div>`);
+    }
+
+    if (alternatives.length) {
+      sections.push(`
+        <section class="cf-dest-section cf-search-intro">
+          <h2 class="cf-dest-section-title">Alternative Option</h2>
+          <p class="cf-dest-lead">These sailings depart from a different port and may require flights or additional travel.</p>
+        </section>
+        <div class="cf-sail-list">${alternatives.map((r) => resultCardHtml(r, currentDest, currentPrefs)).join("")}</div>`);
+    }
+
+    if (!bestMatch.length && !summary.message && !summary.flexible) {
+      sections.unshift(`
+        <section class="cf-dest-section cf-search-intro">
+          <h2 class="cf-dest-section-title">Current Cruises We Found</h2>
+          <p class="cf-dest-lead">These sailings come from the 101cruise Discovery catalogue (verified from official cruise line sources). Itineraries and availability can change.</p>
+        </section>`);
+    }
 
     mount.innerHTML = `
       <div class="cf-dest cf-search">
@@ -634,14 +702,7 @@
           <button type="button" class="cf-dest-back cf-search-linkbtn" data-back-destination>← Back to destination</button>
           <a class="cf-search-link" href="${escapeHtml(finderBackUrl())}">Refine my search</a>
         </div>
-
-        <section class="cf-dest-section cf-search-intro">
-          <h2 class="cf-dest-section-title">Current Cruises We Found</h2>
-          <p class="cf-dest-lead">These sailings come from the 101cruise Discovery catalogue (verified from official cruise line sources). Itineraries and availability can change.</p>
-        </section>
-
-        <div class="cf-sail-list">${primaryHtml}</div>
-
+        ${sections.join("")}
         <div class="cf-search-actions cf-search-actions-bottom">
           <button type="button" class="cf-dest-cta-btn" data-search-again>Search again</button>
         </div>

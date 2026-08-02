@@ -11,6 +11,7 @@
  */
 
 const { readEngineFlag } = require("./lib/cruise-finder-v2/engine");
+const { categorizeResultsByDeparture } = require("./lib/cruise-finder-departure-match");
 
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const MAX_BRAVE_QUERIES = 4;
@@ -894,7 +895,9 @@ async function runDiscoveryCatalogue(input) {
       dateSearched: today,
       timingLabel: timingLabel(input),
       results: [],
+      alsoWorthConsidering: [],
       otherResults: [],
+      departureSummary: null,
       message: "No published Living Destination matches this Cruise Finder destination yet."
     };
   }
@@ -962,13 +965,19 @@ async function runDiscoveryCatalogue(input) {
     });
   }
 
+  const departureBuckets = categorizeResultsByDeparture(results, input.departure, {
+    destinationName: destination.name
+  });
+
   return {
     ok: true,
     source: "discovery",
     dateSearched: today,
     timingLabel: timingLabel(input),
-    results,
-    otherResults: [],
+    results: departureBuckets.results,
+    alsoWorthConsidering: departureBuckets.alsoWorthConsidering,
+    otherResults: departureBuckets.otherResults,
+    departureSummary: departureBuckets.departureSummary,
     totalInCatalogue: (rows || []).length,
     matchedCount: results.length
   };
