@@ -12,6 +12,7 @@
 
   let newsletters = [];
   let activeNewsletterId = null;
+  let preferCreatePanel = false;
   let issueNumber = null;
   let issueDate = "";
   let issueTemplate = "green-price-cards";
@@ -255,6 +256,7 @@
     if (!newsletters.length && global.supabaseClient) {
       /* async load happens in onCruisesReloaded / render prep */
     }
+    if (preferCreatePanel) return;
     if (activeNewsletterId) {
       const row = newsletters.find((n) => n.id === activeNewsletterId);
       if (row) {
@@ -346,6 +348,7 @@
       newsletters.unshift(data);
       global.newsletters = newsletters;
       syncActiveFromNewsletter(data);
+      preferCreatePanel = false;
       invalidateCache();
       issuePricingLoadedFor = "";
       await client.from("featured_cruise_newsletter_defaults").upsert({
@@ -1155,7 +1158,24 @@
     rerender();
   }
 
+  function startNewNewsletter() {
+    preferCreatePanel = true;
+    syncActiveFromNewsletter(null);
+    issuePricingLoadedFor = "";
+    issuePricingByCruiseId = {};
+    invalidateCache();
+    routeMapSaveResults = [];
+    issueMessage = "";
+    issueWarnings = [];
+    rerender();
+  }
+
   async function openNewsletterById(newsletterId) {
+    if (!newsletterId) {
+      startNewNewsletter();
+      return;
+    }
+    preferCreatePanel = false;
     const row = newsletters.find((n) => n.id === newsletterId);
     if (!row) return;
     syncActiveFromNewsletter(row);
@@ -1610,15 +1630,18 @@
       return `
         <div class="admin-field newsletter-open-field">
           <label for="newsletterOpenSelect">Open existing newsletter</label>
-          <select id="newsletterOpenSelect" onchange="if(this.value) NewsletterIssueComposer.openNewsletterById(this.value)" ${issueBusy ? "disabled" : ""}>
-            <option value="">Choose…</option>
-            ${newsletters
-              .map(
-                (n) =>
-                  `<option value="${esc(n.id)}" ${n.id === activeNewsletterId ? "selected" : ""}>Newsletter ${esc(String(n.newsletter_number))}${n.newsletter_date ? ` · ${esc(formatDate(n.newsletter_date))}` : ""}</option>`
-              )
-              .join("")}
-          </select>
+          <div class="newsletter-open-row">
+            <select id="newsletterOpenSelect" onchange="NewsletterIssueComposer.openNewsletterById(this.value)" ${issueBusy ? "disabled" : ""}>
+              <option value="">Choose…</option>
+              ${newsletters
+                .map(
+                  (n) =>
+                    `<option value="${esc(n.id)}" ${n.id === activeNewsletterId ? "selected" : ""}>Newsletter ${esc(String(n.newsletter_number))}${n.newsletter_date ? ` · ${esc(formatDate(n.newsletter_date))}` : ""}</option>`
+                )
+                .join("")}
+            </select>
+            <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.startNewNewsletter()" ${issueBusy ? "disabled" : ""}>+ New Newsletter</button>
+          </div>
         </div>
       `;
     }
@@ -1921,6 +1944,7 @@
     },
     selectIssueNumber,
     openNewsletterById,
+    startNewNewsletter,
     createNewsletter,
     startIssue,
     saveNewsletter,

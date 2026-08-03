@@ -5797,6 +5797,18 @@ body.admin-loading-active {
   margin-bottom: 14px;
 }
 
+.newsletter-open-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.newsletter-open-row select {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
 .newsletter-route-map-results {
   margin: 0 0 12px;
   padding-left: 1.2em;
