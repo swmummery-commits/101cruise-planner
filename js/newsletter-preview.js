@@ -320,6 +320,11 @@
     return sharedApi ? sharedApi.formatMoney(value) : String(Math.round(Number(value) || 0));
   }
 
+  function renderPerDay(display, sharedApi, esc) {
+    if (!display?.showPerDay || display.perDay == null) return "";
+    return `<div class="nl-price-metrics">$${money(sharedApi, display.perDay)}/day</div>`;
+  }
+
   function renderYouSave(display, sharedApi, esc, { emphasizePercent = false } = {}) {
     if (!display || display.saveAmount == null) return "";
     const percent =
@@ -343,6 +348,7 @@
         ? `<div class="nl-price-tier nl-price-tier-101">
             <div class="nl-price-tier-label">101CRUISE PRICE</div>
             <div class="nl-price-tier-value nl-price-101-value">$${money(sharedApi, mod.cruise101Price)}</div>
+            ${renderPerDay(mod.cruise101Display, sharedApi, esc)}
             ${renderYouSave(mod.cruise101Display, sharedApi, esc)}
           </div>`
         : "";
@@ -352,6 +358,7 @@
         ? `<div class="nl-price-tier nl-price-tier-airline">
             <div class="nl-price-tier-label">AIRLINE STAFF PRICE</div>
             <div class="nl-price-tier-value nl-price-airline-value">$${money(sharedApi, mod.airlinePrice)}</div>
+            ${renderPerDay(mod.airlineDisplay, sharedApi, esc)}
             ${renderYouSave(mod.airlineDisplay, sharedApi, esc, { emphasizePercent: true })}
           </div>`
         : "";

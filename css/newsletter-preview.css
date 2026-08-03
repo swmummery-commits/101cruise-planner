@@ -326,6 +326,13 @@
   color: #1a2b5c;
 }
 
+.nl-price-metrics {
+  margin-top: 4px;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 12px;
+  color: #374151;
+}
+
 .nl-price-you-save {
   margin-top: 8px;
   font-family: Helvetica, Arial, sans-serif;

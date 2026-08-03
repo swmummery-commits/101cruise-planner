@@ -684,6 +684,78 @@ const emptyIssue = Export.composeIssueHtml([], {
 });
 assert(!emptyIssue.ok, "empty issue fails");
 
+/* Price-per-day display rule (<= USD $150 inclusive) */
+const buildDiscountDisplay = Shared.buildDiscountDisplay;
+
+const d14999 = buildDiscountDisplay(5000, 1049.93, 7);
+assert(d14999.showPerDay === true && d14999.perDay <= 150, "$149.99/day shows (1049.93 / 7 nights)");
+
+const d150 = buildDiscountDisplay(5000, 1050, 7);
+assert(d150.showPerDay === true && d150.perDay === 150, "exactly $150/day shows");
+
+const d15001 = buildDiscountDisplay(5000, 1050.07, 7);
+assert(d15001.showPerDay === false, "$150.01/day hidden");
+
+const dMissingPrice = buildDiscountDisplay(5000, null, 7);
+assert(dMissingPrice.showPerDay === false, "missing price hides per day");
+
+const dZeroPrice = buildDiscountDisplay(5000, 0, 7);
+assert(dZeroPrice.showPerDay === false, "zero price hides per day");
+
+const dMissingNights = buildDiscountDisplay(5000, 1050, null);
+assert(dMissingNights.showPerDay === false, "missing nights hides per day");
+
+const dZeroNights = buildDiscountDisplay(5000, 1050, 0);
+assert(dZeroNights.showPerDay === false, "zero nights hides per day");
+
+const dInvalidNights = buildDiscountDisplay(5000, 1050, "abc");
+assert(dInvalidNights.showPerDay === false, "invalid nights hides per day");
+
+const d75pct = buildDiscountDisplay(400, 100, 7);
+assert(d75pct.showPercentOff === false && d75pct.percentOff == null, "75% off hidden (strict >75 rule)");
+
+const d76pct = buildDiscountDisplay(400, 96, 7);
+assert(d76pct.showPercentOff === true && d76pct.percentOff === 76, "76% off still shows");
+
+const perDayRows = [
+  {
+    room_label: "Inside",
+    brochure_price: 5000,
+    cruise_101_price: 1049.93,
+    airline_price: 1050,
+    display_order: 1
+  },
+  {
+    room_label: "Balcony",
+    brochure_price: 5000,
+    cruise_101_price: 1050.07,
+    airline_price: 1050.07,
+    display_order: 2
+  }
+];
+const perDayClassic = Export.generateFromModel(
+  {
+    ...baseModel("airline_staff"),
+    pricingModules: Shared.buildPricingModules(perDayRows, 7, { outputMode: "airline_staff" })
+  },
+  { ...genOpts("airline_staff", "classic-editorial"), pricingRows: perDayRows }
+);
+assert(perDayClassic.ok, `per-day classic export ok: ${(perDayClassic.errors || []).join("; ")}`);
+assert(/>\$150\/day</i.test(perDayClassic.html), "$149.99/day renders as rounded $150/day");
+assert(/>\$150\/day</i.test(perDayClassic.html), "exact $150/day renders");
+assert(!/>\$150\.01\/day</i.test(perDayClassic.html), "$150.01/day omitted from HTML");
+
+const perDayGreen = Export.generateFromModel(
+  {
+    ...baseModel("general"),
+    pricingModules: Shared.buildPricingModules(perDayRows, 7, { outputMode: "general" })
+  },
+  { ...genOpts("general", "green-price-cards"), pricingRows: perDayRows }
+);
+assert(perDayGreen.ok, `per-day green export ok: ${(perDayGreen.errors || []).join("; ")}`);
+assert(/>\$150\/day</i.test(perDayGreen.html), "green template shows qualifying per-day values");
+assert(!perDayGreen.html.includes("$150.01/day"), "green template omits over-threshold per day");
+
 console.log("mailchimp-export offline checks passed");
 console.log({
   classicAirlineBytes: classicAirline.html.length,

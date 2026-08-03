@@ -50,7 +50,7 @@
     if (discounted == null || !Number.isFinite(discounted) || discounted < 0) return result;
 
     const nightsNum = nights == null || nights === "" ? null : Number(nights);
-    if (nightsNum != null && Number.isFinite(nightsNum) && nightsNum >= 1) {
+    if (nightsNum != null && Number.isFinite(nightsNum) && nightsNum >= 1 && discounted > 0) {
       result.perDay = discounted / nightsNum;
       result.showPerDay = result.perDay <= 150;
     }

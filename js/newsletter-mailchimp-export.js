@@ -282,6 +282,11 @@
 
   /* ─── Classic Editorial (Sprint 13A — preserve) ───────────────────────── */
 
+  function renderClassicPerDay(display) {
+    if (!display?.showPerDay || display.perDay == null) return "";
+    return `<div style="font-family:Helvetica,Arial,sans-serif;font-size:12px;color:#374151;margin-top:4px;">$${escapeHtml(money(display.perDay))}/day</div>`;
+  }
+
   function renderClassicYouSave(display, { emphasizePercent = false } = {}) {
     if (!display || display.saveAmount == null) return "";
     const percent =
@@ -305,6 +310,7 @@
         ? `<div style="padding:4px 0 10px;">
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.6px;color:#545454;">101CRUISE PRICE</div>
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#111111;">$${escapeHtml(money(mod.cruise101Price))}</div>
+            ${renderClassicPerDay(mod.cruise101Display)}
             ${renderClassicYouSave(mod.cruise101Display)}
           </div>`
         : "";
@@ -314,6 +320,7 @@
         ? `<div style="padding:4px 0 10px;">
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;letter-spacing:0.6px;color:#545454;">AIRLINE STAFF PRICE</div>
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#111111;">$${escapeHtml(money(mod.airlinePrice))}</div>
+            ${renderClassicPerDay(mod.airlineDisplay)}
             ${renderClassicYouSave(mod.airlineDisplay, { emphasizePercent: true })}
           </div>`
         : "";
@@ -401,7 +408,7 @@
     return roomCount >= 4 ? "two-line" : "compact";
   }
 
-  function renderGreenFareBox({ label, price, saveAmount, percentOff }) {
+  function renderGreenFareBox({ label, price, saveAmount, percentOff, perDay }) {
     const saveLine =
       saveAmount != null
         ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.4px;color:#FFFFFF;margin-top:4px;line-height:1.25;">YOU SAVE $${escapeHtml(money(saveAmount))}</div>`
@@ -410,12 +417,17 @@
       percentOff != null
         ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;letter-spacing:0.5px;color:#FFFFFF;margin-top:6px;line-height:1.2;">${escapeHtml(percentOff)}% OFF</div>`
         : "";
+    const perDayLine =
+      perDay != null
+        ? `<div style="font-family:Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:0.4px;color:#FFFFFF;margin-top:4px;line-height:1.25;">$${escapeHtml(money(perDay))}/day</div>`
+        : "";
     return `
       <table role="presentation" class="cr101-gpc-fare" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:separate;border-radius:${GPC_RADIUS_PX}px;background-color:${BRAND_GREEN};">
         <tr>
           <td align="center" bgcolor="${BRAND_GREEN}" style="background-color:${BRAND_GREEN};border-radius:${GPC_RADIUS_PX}px;padding:10px 8px;text-align:center;">
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:700;letter-spacing:0.7px;text-transform:uppercase;color:#FFFFFF;line-height:1.2;">${escapeHtml(label)}</div>
             <div style="font-family:Helvetica,Arial,sans-serif;font-size:22px;font-weight:700;color:#FFFFFF;line-height:1.15;margin-top:4px;">$${escapeHtml(money(price))}</div>
+            ${perDayLine}
             ${saveLine}
             ${percentLine}
           </td>
@@ -441,7 +453,11 @@
             label: "101CRUISE PRICE",
             price: mod.cruise101Price,
             saveAmount: mod.cruise101Display?.saveAmount ?? null,
-            percentOff: null
+            percentOff: null,
+            perDay:
+              mod.cruise101Display?.showPerDay && mod.cruise101Display?.perDay != null
+                ? mod.cruise101Display.perDay
+                : null
           })
         : "";
 
@@ -459,7 +475,11 @@
             label: "AIRLINE STAFF PRICE",
             price: mod.airlinePrice,
             saveAmount: mod.airlineDisplay?.saveAmount ?? null,
-            percentOff: airlinePercent
+            percentOff: airlinePercent,
+            perDay:
+              mod.airlineDisplay?.showPerDay && mod.airlineDisplay?.perDay != null
+                ? mod.airlineDisplay.perDay
+                : null
           })
         : "";
 
