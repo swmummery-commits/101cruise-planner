@@ -34,7 +34,7 @@
 
   /**
    * Newsletter / public pricing display metrics.
-   * - Percentage off only when > 75%
+   * - Percentage off only when >= 75%
    * - GREAT DEAL when discount >= 85%
    * - Hide price per day when > USD $150
    */
@@ -57,8 +57,9 @@
 
     if (brochure != null && Number.isFinite(brochure) && brochure > discounted) {
       result.saveAmount = brochure - discounted;
-      const pct = Math.round((result.saveAmount / brochure) * 100);
-      if (pct > 75) {
+      const rawPct = (result.saveAmount / brochure) * 100;
+      const pct = Math.round(rawPct);
+      if (rawPct >= 75) {
         result.percentOff = pct;
         result.showPercentOff = true;
       }

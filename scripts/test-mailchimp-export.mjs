@@ -711,11 +711,20 @@ assert(dZeroNights.showPerDay === false, "zero nights hides per day");
 const dInvalidNights = buildDiscountDisplay(5000, 1050, "abc");
 assert(dInvalidNights.showPerDay === false, "invalid nights hides per day");
 
+const d7499pct = buildDiscountDisplay(10000, 2501, 7);
+assert(d7499pct.showPercentOff === false && d7499pct.percentOff == null, "raw 74.99% off hidden");
+
 const d75pct = buildDiscountDisplay(400, 100, 7);
-assert(d75pct.showPercentOff === false && d75pct.percentOff == null, "75% off hidden (strict >75 rule)");
+assert(d75pct.showPercentOff === true && d75pct.percentOff === 75, "raw exactly 75.00% off displays");
+
+const d7501pct = buildDiscountDisplay(10000, 2499, 7);
+assert(d7501pct.showPercentOff === true && d7501pct.percentOff === 75, "raw 75.01% off displays as rounded 75%");
 
 const d76pct = buildDiscountDisplay(400, 96, 7);
-assert(d76pct.showPercentOff === true && d76pct.percentOff === 76, "76% off still shows");
+assert(d76pct.showPercentOff === true && d76pct.percentOff === 76, "76% off displays");
+
+const dMissingBrochure = buildDiscountDisplay(null, 100, 7);
+assert(dMissingBrochure.showPercentOff === false && dMissingBrochure.percentOff == null, "missing brochure hides percent off");
 
 const perDayRows = [
   {
