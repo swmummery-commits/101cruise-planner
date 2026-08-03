@@ -84,7 +84,7 @@ async function main() {
   const countsBefore = await captureCounts(today, halLine?.id);
 
   const [ships, destRows] = await Promise.all([
-    sb.get(`ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(line.id)}&active=eq.true&select=id,name,cruise_line_id`),
+    sb.get(`ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(line.id)}&active=eq.true&select=id,name,cruise_line_id,official_line_ship_id`),
     sb.get("destinations?classification_enabled=eq.true&select=id,name,slug,status,classification_enabled")
   ]);
 
@@ -113,8 +113,12 @@ async function main() {
     sample_stats: simulation.sample_stats,
     cruise_metrics: simulation.cruise_metrics,
     destination_distribution: simulation.destination_distribution,
+    ocean_destination_distribution: simulation.ocean_destination_distribution,
+    river_destination_distribution: simulation.river_destination_distribution,
     ship_distribution: simulation.ship_distribution,
+    river_ship_distribution: simulation.river_ship_distribution,
     departure_port_distribution: simulation.departure_port_distribution,
+    river_departure_port_distribution: simulation.river_departure_port_distribution,
     ship_audit: shipAudit,
     port_audit: portAudit,
     counts_before: countsBefore,

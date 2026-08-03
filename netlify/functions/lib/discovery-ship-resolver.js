@@ -29,6 +29,17 @@ function lineShips(ships, cruiseLineId) {
   return (ships || []).filter((s) => s.cruise_line_id === cruiseLineId);
 }
 
+function resolveViaOfficialLineShipId(rawCode, ships) {
+  const code = String(rawCode || "").trim().toUpperCase();
+  if (!code) return null;
+  for (const ship of ships) {
+    if (String(ship.official_line_ship_id || "").trim().toUpperCase() === code) {
+      return { ship, method: "official_line_ship_id", confidence: 100, raw: rawCode };
+    }
+  }
+  return null;
+}
+
 function resolveViaExactName(rawName, ships, cruiseLineName) {
   const needle = stripLinePrefix(rawName, cruiseLineName);
   if (!needle || guessLooksNonSailing(needle)) return null;
@@ -136,6 +147,7 @@ function resolveViaUniqueFuzzy(rawName, ships, cruiseLineName) {
  */
 function resolveShipForLine({
   rawShipName,
+  rawShipCode,
   cruiseLineId,
   cruiseLineName,
   ships,
@@ -147,6 +159,9 @@ function resolveShipForLine({
   if (!lineScopedShips.length) {
     return { resolved: false, reason: "no_ships_for_line", resolverVersion: SHIP_RESOLVER_VERSION };
   }
+
+  const viaCode = resolveViaOfficialLineShipId(rawShipCode, lineScopedShips);
+  if (viaCode) return { resolved: true, ...viaCode, resolverVersion: SHIP_RESOLVER_VERSION };
 
   const sources = [
     rawShipName,

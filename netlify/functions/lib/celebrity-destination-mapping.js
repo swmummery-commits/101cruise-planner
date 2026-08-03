@@ -1,8 +1,13 @@
 /**
  * Celebrity Cruises — evidence-based operational destination mapping.
- * Maps official RCG destination codes and itinerary evidence to the 20 operational destinations.
+ * Maps official RCG destination codes and itinerary evidence to operational destinations.
  * No Alaska fallback. Unresolved products are skipped, not sent to review.
  */
+
+const CELEBRITY_RIVER_SHIP_CODES = Object.freeze(new Set(["RC", "RS", "RB", "RR", "RW"]));
+
+const RIVER_ROUTE_RE =
+  /danube|rhine|main river|nuremberg|vienna|budapest|basel|amsterdam|vilshofen|regensburg|brussels|oltenita|bucharest/i;
 
 const EXPLICIT_CROSSING_RE =
   /transatlantic|transpacific|transoceanic|pacific crossing|crossing the pacific|cross international dateline|north america to asia|asia to north america|north pacific crossing/i;
@@ -180,6 +185,37 @@ function resolveTranspacificSlug(raw) {
   return { slug: "transpacific", method: "celebrity_destination_code_TPACI" };
 }
 
+function isCelebrityRiverProduct(raw) {
+  const code = String(raw?.ship_code || "").toUpperCase();
+  if (CELEBRITY_RIVER_SHIP_CODES.has(code)) return true;
+  if (String(raw?.voyage_type || "").toUpperCase() === "RIVER") return true;
+  return false;
+}
+
+function extractRiverMetadata(raw) {
+  const blob = itineraryBlob(raw);
+  let river_name = null;
+  if (/danube/i.test(blob)) river_name = "Danube";
+  else if (/rhine|main river/i.test(blob)) river_name = "Rhine";
+  return {
+    river_name,
+    river_region: river_name ? "Europe" : null,
+    embarkation_city: raw?.departure_port || null,
+    arrival_city: raw?.arrival_port || null,
+    product_category: raw?.destination_name || null
+  };
+}
+
+function resolveCelebrityRiverDestination(raw) {
+  if (!isCelebrityRiverProduct(raw)) return null;
+  if (!RIVER_ROUTE_RE.test(itineraryBlob(raw))) return null;
+  return {
+    slug: "european-river-cruises",
+    method: "celebrity_river_evidence",
+    ...extractRiverMetadata(raw)
+  };
+}
+
 function resolveEuropeSlug(raw) {
   const blob = itineraryBlob(raw);
   for (const [pattern, slug] of ITINERARY_SLUG_HINTS) {
@@ -191,6 +227,10 @@ function resolveEuropeSlug(raw) {
 }
 
 function resolveCelebrityDestinationHints(raw) {
+  const river = resolveCelebrityRiverDestination(raw);
+  if (river) return river;
+  if (isCelebrityRiverProduct(raw)) return null;
+
   const code = String(raw?.destination_code || "").toUpperCase();
   const crossing = detectCrossingSlug(raw);
   if (crossing?.slug) return crossing;
@@ -246,7 +286,10 @@ function hasAlaskaFallback() {
 }
 
 module.exports = {
+  CELEBRITY_RIVER_SHIP_CODES,
   CELEBRITY_DESTINATION_CODE_SLUG,
+  isCelebrityRiverProduct,
+  resolveCelebrityRiverDestination,
   resolveCelebrityDestinationHints,
   detectCrossingSlug,
   hasAlaskaFallback

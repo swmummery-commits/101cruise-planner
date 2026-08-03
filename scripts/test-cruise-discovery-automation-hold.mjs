@@ -203,7 +203,7 @@ await test("Celebrity non-cruise products are identified", async () => {
   const type = celebrity.classifyProductType({
     masterSailing: { itinerary: { preTour: { duration: 3 }, voyageType: "OCEAN" } }
   });
-  if (type !== "cruisetour") throw new Error(`expected cruisetour got ${type}`);
+  if (type !== "ocean_cruisetour") throw new Error(`expected ocean_cruisetour got ${type}`);
 });
 
 await test("Princess official identity is stable", async () => {

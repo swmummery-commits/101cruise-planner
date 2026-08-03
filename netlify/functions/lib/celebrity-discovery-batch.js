@@ -30,9 +30,13 @@ function emptyBatchStats(skipStart = 0) {
     num_found_official: 0,
     itinerary_groups_seen: 0,
     sailing_products_normalised: 0,
+    product_type_ocean_cruise: 0,
+    product_type_river_cruise: 0,
+    product_type_ocean_cruisetour: 0,
+    product_type_river_cruisetour: 0,
+    product_type_unknown: 0,
     product_type_cruise: 0,
     product_type_cruisetour: 0,
-    product_type_unknown: 0,
     duplicates_suppressed: 0,
     writes_attempted: 0,
     writes_performed: 0,
@@ -110,9 +114,19 @@ async function runCelebrityDiscoveryBatch({
     for (const raw of expanded.products) {
       const normalised = normaliseCelebrityProduct(raw, context);
       products.push(normalised);
-      if (normalised.product_type === "cruise") stats.product_type_cruise += 1;
-      else if (normalised.product_type === "cruisetour") stats.product_type_cruisetour += 1;
-      else stats.product_type_unknown += 1;
+      if (normalised.product_type === "ocean_cruise") {
+        stats.product_type_ocean_cruise += 1;
+        stats.product_type_cruise += 1;
+      } else if (normalised.product_type === "river_cruise") {
+        stats.product_type_river_cruise += 1;
+        stats.product_type_cruise += 1;
+      } else if (normalised.product_type === "ocean_cruisetour") {
+        stats.product_type_ocean_cruisetour += 1;
+        stats.product_type_cruisetour += 1;
+      } else if (normalised.product_type === "river_cruisetour") {
+        stats.product_type_river_cruisetour += 1;
+        stats.product_type_cruisetour += 1;
+      } else stats.product_type_unknown += 1;
       if (products.length >= maxCandidates) break;
     }
     stats.sailing_products_normalised = products.length;

@@ -113,14 +113,14 @@ await test("10. Group id remains supporting evidence", () => {
   if (celebrityAdapter.officialGroupKey(raw) !== "RF03FLL-247688799") throw new Error("group");
 });
 
-await test("11. Cruisetours detected from structured land-tour data", () => {
-  const type = celebrityAdapter.classifyCelebrityProductType({ pre_tour_duration: 3 });
-  if (type.productType !== "cruisetour") throw new Error(type.productType);
+await test("11. Ocean cruisetours detected from structured land-tour data", () => {
+  const type = celebrityAdapter.classifyCelebrityProductType({ pre_tour_duration: 3, voyage_type: "OCEAN" });
+  if (type.productType !== "ocean_cruisetour") throw new Error(type.productType);
 });
 
-await test("12. Cruise products are not misclassified as cruisetours", () => {
+await test("12. Ocean cruise products are not misclassified as cruisetours", () => {
   const type = celebrityAdapter.classifyCelebrityProductType({ voyage_type: "OCEAN", itinerary_name: "Western Caribbean" });
-  if (type.productType !== "cruise") throw new Error(type.productType);
+  if (type.productType !== "ocean_cruise") throw new Error(type.productType);
 });
 
 await test("13. Destination codes map deterministically", () => {
@@ -252,6 +252,204 @@ await test("24. Existing HAL inventory gate remains separate", () => {
     const gate = halMode.resolveHalDiscoveryMode("production_write");
     if (gate.writes_allowed) throw new Error("HAL writes allowed");
   });
+});
+
+const riverShipFixtures = [
+  { code: "RC", name: "Celebrity Compass", id: "ship-rc" },
+  { code: "RS", name: "Celebrity Seeker", id: "ship-rs" },
+  { code: "RB", name: "Celebrity Boundless", id: "ship-rb" },
+  { code: "RR", name: "Celebrity Roamer", id: "ship-rr" },
+  { code: "RW", name: "Celebrity Wanderer", id: "ship-rw" }
+];
+const lineCtx = { cruiseLine: { id: "line", name: "Celebrity Cruises" } };
+const riverDest = {
+  id: "dest-erc",
+  name: "European River Cruises",
+  slug: "european-river-cruises",
+  classification_enabled: true,
+  status: "draft"
+};
+
+for (const ship of riverShipFixtures) {
+  await test(`25.${ship.code}. ${ship.name} resolves to canonical river ship`, () => {
+    const norm = celebrityAdapter.normaliseCelebrityProduct(
+      {
+        official_sailing_id: `${ship.code}_2027-08-01`,
+        departure_date: "2027-08-01",
+        ship_name: ship.name,
+        ship_code: ship.code,
+        departure_port: "Nuremberg",
+        destination_code: "EUROP",
+        destination_name: "Europe",
+        itinerary_name: "Danube – Nuremberg-Vienna",
+        nights: 7,
+        official_url: "https://www.celebritycruises.com/itinerary/example",
+        voyage_type: "RIVER"
+      },
+      {
+        ...lineCtx,
+        ships: [{ id: ship.id, name: ship.name, cruise_line_id: "line", official_line_ship_id: ship.code }],
+        destinations: [riverDest]
+      }
+    );
+    if (!norm.ship_resolution?.resolved || norm.ship_resolution.ship.id !== ship.id) {
+      throw new Error(`ship not resolved for ${ship.name}`);
+    }
+  });
+}
+
+await test("26. Celebrity Flora remains ocean/expedition ship", () => {
+  const type = celebrityAdapter.classifyCelebrityProductType({
+    ship_code: "FL",
+    ship_name: "Celebrity Flora",
+    voyage_type: "OCEAN",
+    itinerary_name: "Galapagos Outer Loop"
+  });
+  if (type.productType !== "ocean_cruise") throw new Error(type.productType);
+  if (celebrityMapping.isCelebrityRiverProduct({ ship_code: "FL", voyage_type: "OCEAN" })) {
+    throw new Error("Flora misclassified as river");
+  }
+});
+
+await test("27. Standard river sailing is classified river_cruise", () => {
+  const type = celebrityAdapter.classifyCelebrityProductType({
+    voyage_type: "RIVER",
+    ship_code: "RC",
+    itinerary_name: "Danube – Nuremberg-Vienna"
+  });
+  if (type.productType !== "river_cruise") throw new Error(type.productType);
+});
+
+await test("28. Bundled river land package is classified river_cruisetour", () => {
+  const type = celebrityAdapter.classifyCelebrityProductType({
+    voyage_type: "RIVER",
+    ship_code: "RC",
+    pre_tour_duration: 2,
+    itinerary_name: "Danube with Prague"
+  });
+  if (type.productType !== "river_cruisetour") throw new Error(type.productType);
+});
+
+await test("29. Optional land extensions do not reclassify base river sailing", () => {
+  const type = celebrityAdapter.classifyCelebrityProductType({
+    voyage_type: "RIVER",
+    ship_code: "RC",
+    itinerary_name: "Danube – Nuremberg-Vienna with optional hotel stay"
+  });
+  if (type.productType !== "river_cruise") throw new Error(type.productType);
+});
+
+await test("30. River cruise maps to European River Cruises", () => {
+  const hint = celebrityMapping.resolveCelebrityDestinationHints({
+    ship_code: "RC",
+    voyage_type: "RIVER",
+    itinerary_name: "Danube – Nuremberg-Vienna",
+    departure_port: "Nuremberg"
+  });
+  if (hint.slug !== "european-river-cruises") throw new Error(JSON.stringify(hint));
+});
+
+await test("31. River products are included in eligible simulation metrics", () => {
+  const metrics = celebrityAdapter.computeCelebrityMetrics([
+    {
+      product_type: "river_cruise",
+      complete_high_confidence: true,
+      ship_resolution: { resolved: true },
+      departure_port_resolution: { status: "resolved" },
+      destination_resolution: { status: "resolved" },
+      failure_reasons: []
+    },
+    {
+      product_type: "ocean_cruise",
+      complete_high_confidence: false,
+      ship_resolution: { resolved: true },
+      departure_port_resolution: { status: "resolved" },
+      destination_resolution: { status: "resolved" },
+      failure_reasons: ["confidence:needs_review"]
+    }
+  ]);
+  if (metrics.combined_eligible.eligible_river_cruises !== 1) throw new Error("river not counted");
+  if (metrics.combined_eligible.total_projected_active_inserts !== 1) throw new Error("insert count wrong");
+});
+
+await test("32. River cruisetours do not enter the proposed write set", () => {
+  const norm = celebrityAdapter.normaliseCelebrityProduct(
+    {
+      official_sailing_id: "RC_2027-08-01",
+      departure_date: "2027-08-01",
+      ship_name: "Celebrity Compass",
+      ship_code: "RC",
+      departure_port: "Nuremberg",
+      itinerary_name: "Danube with Prague",
+      pre_tour_duration: 3,
+      nights: 10,
+      official_url: "https://www.celebritycruises.com/itinerary/example",
+      voyage_type: "RIVER"
+    },
+    {
+      ...lineCtx,
+      ships: [{ id: "ship-rc", name: "Celebrity Compass", cruise_line_id: "line", official_line_ship_id: "RC" }],
+      destinations: [riverDest]
+    }
+  );
+  if (norm.product_type !== "river_cruisetour") throw new Error(norm.product_type);
+  if (norm.complete_high_confidence) throw new Error("cruisetour should not be complete");
+  if (norm.proposed_action !== "skip_incomplete") throw new Error(norm.proposed_action);
+});
+
+await test("33. Inland embarkation locations are not discarded as invalid seaports", () => {
+  const port = celebrityAdapter.normaliseCelebrityProduct(
+    {
+      official_sailing_id: "RC_2027-08-01",
+      departure_date: "2027-08-01",
+      ship_name: "Celebrity Compass",
+      ship_code: "RC",
+      departure_port: "Vilshofen",
+      itinerary_name: "Danube - Vienna & Budapest",
+      nights: 7,
+      official_url: "https://www.celebritycruises.com/itinerary/example",
+      voyage_type: "RIVER"
+    },
+    {
+      ...lineCtx,
+      ships: [{ id: "ship-rc", name: "Celebrity Compass", cruise_line_id: "line", official_line_ship_id: "RC" }],
+      destinations: [riverDest]
+    }
+  );
+  if (port.departure_port_resolution?.status !== "resolved") throw new Error("inland port rejected");
+});
+
+await test("34. Ship seed manifest is idempotent by design", () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(root, "reports/celebrity-river-ship-seed-manifest-2026-08-03.json"), "utf8")
+  );
+  const codes = manifest.ships.map((s) => s.official_line_ship_id);
+  if (new Set(codes).size !== codes.length) throw new Error("duplicate ship codes in manifest");
+  if (manifest.ships.some((s) => s.proposed_action !== "insert")) throw new Error("unexpected action");
+});
+
+await test("35. Destination seed manifest is idempotent by design", () => {
+  const manifest = JSON.parse(
+    fs.readFileSync(path.join(root, "reports/celebrity-river-ship-seed-manifest-2026-08-03.json"), "utf8")
+  );
+  if (manifest.destination.slug !== "european-river-cruises") throw new Error("slug mismatch");
+  if (manifest.destination.status !== "draft") throw new Error("must remain draft");
+});
+
+await test("36. Draft European River Cruises destination remains private", () => {
+  const { isPublicLivingDestination } = require(path.join(root, "netlify/functions/lib/destination-classification"));
+  if (isPublicLivingDestination({ status: "draft", classification_enabled: true })) {
+    throw new Error("draft destination treated as public");
+  }
+});
+
+await test("37. European River Cruises is in operational catalogue", () => {
+  const { OPERATIONAL_DESTINATION_CATALOGUE } = require(path.join(
+    root,
+    "netlify/functions/lib/destination-classification"
+  ));
+  const entry = OPERATIONAL_DESTINATION_CATALOGUE.find((d) => d.slug === "european-river-cruises");
+  if (!entry || entry.classification_enabled !== true) throw new Error("catalogue entry missing");
 });
 
 console.log(`\ntest-celebrity-discovery: ${passed} passed`);

@@ -12,10 +12,10 @@ const { evaluateDiscoveryConfidence } = require("./discovery-confidence");
 const { provesIndividualSailing } = require("./discovery-non-sailing-filter");
 const { catalogueDestinations } = require("./holland-america-discovery-adapter");
 const { fetchRcgInventoryPages, fetchRcgSearchPage, DEFAULT_SEARCH_QUERY } = require("./rcg-graphql-discovery-source");
-const { resolveCelebrityDestinationHints } = require("./celebrity-destination-mapping");
+const { resolveCelebrityDestinationHints, isCelebrityRiverProduct, CELEBRITY_RIVER_SHIP_CODES } = require("./celebrity-destination-mapping");
 
 const ADAPTER_ID = "celebrity";
-const ADAPTER_VERSION = "2026-08-03.celebrity2";
+const ADAPTER_VERSION = "2026-08-03.celebrity3";
 const GRAPH_URL = "https://www.celebritycruises.com/graph";
 const BRAND_HOST = "https://www.celebritycruises.com";
 
@@ -37,10 +37,32 @@ const REQUEST_DELAY_MS = 150;
 const CELEBRITY_PORT_ALIASES = Object.freeze({
   "cape liberty": "Bayonne, New Jersey",
   "benoa (bali)": "Benoa, Bali",
-  "benoa": "Benoa, Bali",
+  benoa: "Benoa, Bali",
   "seoul (incheon)": "Incheon, South Korea",
-  "baltra island": "Baltra, Galapagos"
+  "baltra island": "Baltra, Galapagos",
+  nuremberg: "Nuremberg, Germany",
+  vilshofen: "Vilshofen, Germany",
+  budapest: "Budapest, Hungary",
+  vienna: "Vienna, Austria",
+  basel: "Basel, Switzerland",
+  regensburg: "Regensburg, Germany",
+  brussels: "Brussels, Belgium",
+  "bucharest (oltenita)": "Oltenita, Romania",
+  oltenita: "Oltenita, Romania"
 });
+
+function isEligibleCelebrityCruise(productType) {
+  return productType === "ocean_cruise" || productType === "river_cruise";
+}
+
+function isCelebrityCruisetour(productType) {
+  return productType === "ocean_cruisetour" || productType === "river_cruisetour";
+}
+
+function isCelebrityRiverShip(raw) {
+  const code = String(raw?.ship_code || "").toUpperCase();
+  return CELEBRITY_RIVER_SHIP_CODES.has(code);
+}
 
 function officialProductKey(raw) {
   return raw?.official_sailing_id || raw?.sailing_id || null;
@@ -55,17 +77,33 @@ function classifyCelebrityProductType(raw) {
   const post = raw?.post_tour_duration;
   const voyageType = String(raw?.voyage_type || "").toUpperCase();
   const nameBlob = [raw?.itinerary_name, raw?.destination_name].filter(Boolean).join(" ");
+  const isRiver = voyageType === "RIVER" || isCelebrityRiverShip(raw);
+  const hasBundledLand = Boolean(pre || post);
+  const nameCruisetour = /quito &|land tour|cruisetour|overland|denali|yukon/i.test(nameBlob);
 
-  if (pre || post) {
-    return { productType: "cruisetour", reason: "celebrity_land_tour_component", extractable_cruise_segment: false };
+  if (isRiver) {
+    if (hasBundledLand) {
+      return {
+        productType: "river_cruisetour",
+        reason: "celebrity_river_land_tour_component",
+        extractable_cruise_segment: false
+      };
+    }
+    return {
+      productType: "river_cruise",
+      reason: "celebrity_river_sailing",
+      extractable_cruise_segment: true
+    };
   }
-  if (/quito &|land tour|cruisetour|overland|denali|yukon/i.test(nameBlob)) {
-    return { productType: "cruisetour", reason: "celebrity_cruisetour_name", extractable_cruise_segment: false };
+
+  if (hasBundledLand || nameCruisetour) {
+    return {
+      productType: "ocean_cruisetour",
+      reason: hasBundledLand ? "celebrity_land_tour_component" : "celebrity_cruisetour_name",
+      extractable_cruise_segment: false
+    };
   }
-  if (voyageType === "RIVER") {
-    return { productType: "unknown", reason: "celebrity_river", extractable_cruise_segment: false };
-  }
-  return { productType: "cruise", reason: "standard_sailing", extractable_cruise_segment: true };
+  return { productType: "ocean_cruise", reason: "standard_sailing", extractable_cruise_segment: true };
 }
 
 function buildOfficialUrl(productViewLink) {
@@ -189,6 +227,19 @@ function resolveCelebrityDeparturePort(raw) {
     const meta = resolveRawPortText(value, { sourceField: "celebrity_graphql" });
     if (meta.status === "resolved") return meta;
   }
+
+  if (isCelebrityRiverProduct(raw) && alias) {
+    return {
+      rawValue: raw.departure_port,
+      canonicalPortId: null,
+      canonicalPortName: alias,
+      confidence: "adapter_alias",
+      status: "resolved",
+      reason: null,
+      sourceField: "celebrity_graphql.river_alias"
+    };
+  }
+
   return resolveRawPortText(raw.departure_port, { sourceField: "celebrity_graphql" });
 }
 
@@ -203,10 +254,11 @@ function normaliseCelebrityProduct(raw, context = {}) {
   } = context;
 
   const product = productMeta || classifyCelebrityProductType(raw);
-  const isCruiseProduct = product.productType === "cruise";
+  const isCruiseProduct = isEligibleCelebrityCruise(product.productType);
 
   const shipResolution = resolveShipForLine({
     rawShipName: raw.ship_name,
+    rawShipCode: raw.ship_code,
     cruiseLineId: cruiseLine?.id,
     cruiseLineName: cruiseLine?.name || "Celebrity Cruises",
     ships,
@@ -233,7 +285,11 @@ function normaliseCelebrityProduct(raw, context = {}) {
       sailing_id: raw.official_sailing_id,
       destination_code: raw.destination_code,
       destination_name: raw.destination_name,
-      structured_source: raw.structured_source
+      structured_source: raw.structured_source,
+      voyage_type: raw.voyage_type,
+      ship_code: raw.ship_code,
+      river_name: destHints?.river_name || null,
+      river_region: destHints?.river_region || null
     }
   };
 
@@ -331,9 +387,13 @@ function summariseCelebrityProducts(products, context = {}) {
   const today = context.today || new Date().toISOString().slice(0, 10);
   const stats = {
     raw_sailing_products: products.length,
+    ocean_cruises: 0,
+    river_cruises: 0,
+    ocean_cruisetours: 0,
+    river_cruisetours: 0,
+    unknown_products: 0,
     genuine_cruises: 0,
     cruisetours: 0,
-    unknown_products: 0,
     with_official_identity: 0,
     future_products: 0,
     past_products: 0,
@@ -349,22 +409,46 @@ function summariseCelebrityProducts(products, context = {}) {
       if (seen.has(id)) stats.duplicate_identities += 1;
       seen.add(id);
     } else stats.malformed += 1;
-    if (p.product_type === "cruise") stats.genuine_cruises += 1;
-    else if (p.product_type === "cruisetour") stats.cruisetours += 1;
-    else stats.unknown_products += 1;
+    if (p.product_type === "ocean_cruise") {
+      stats.ocean_cruises += 1;
+      stats.genuine_cruises += 1;
+    } else if (p.product_type === "river_cruise") {
+      stats.river_cruises += 1;
+      stats.genuine_cruises += 1;
+    } else if (p.product_type === "ocean_cruisetour") {
+      stats.ocean_cruisetours += 1;
+      stats.cruisetours += 1;
+    } else if (p.product_type === "river_cruisetour") {
+      stats.river_cruisetours += 1;
+      stats.cruisetours += 1;
+    } else stats.unknown_products += 1;
     if (raw.departure_date >= today) stats.future_products += 1;
     else stats.past_products += 1;
   }
   return stats;
 }
 
+function segmentMetrics(products) {
+  const total = Math.max(products.length, 1);
+  const shipResolved = products.filter((p) => p.ship_resolution?.resolved).length;
+  const portResolved = products.filter((p) => p.departure_port_resolution?.status === "resolved").length;
+  const destResolved = products.filter((p) => p.destination_resolution?.status === "resolved").length;
+  const complete = products.filter((p) => p.complete_high_confidence).length;
+  return {
+    count: products.length,
+    ship_match_rate_pct: Math.round((shipResolved / total) * 1000) / 10,
+    departure_port_rate_pct: Math.round((portResolved / total) * 1000) / 10,
+    destination_resolution_rate_pct: Math.round((destResolved / total) * 1000) / 10,
+    complete_high_confidence: complete,
+    complete_high_confidence_rate_pct: Math.round((complete / total) * 1000) / 10,
+    projected_active: complete
+  };
+}
+
 function computeCelebrityMetrics(normalisedProducts) {
-  const cruises = normalisedProducts.filter((p) => p.product_type === "cruise");
-  const total = Math.max(cruises.length, 1);
-  const shipResolved = cruises.filter((p) => p.ship_resolution?.resolved).length;
-  const portResolved = cruises.filter((p) => p.departure_port_resolution?.status === "resolved").length;
-  const destResolved = cruises.filter((p) => p.destination_resolution?.status === "resolved").length;
-  const complete = cruises.filter((p) => p.complete_high_confidence).length;
+  const oceanCruises = normalisedProducts.filter((p) => p.product_type === "ocean_cruise");
+  const riverCruises = normalisedProducts.filter((p) => p.product_type === "river_cruise");
+  const eligible = [...oceanCruises, ...riverCruises];
   const skipReasons = {};
   for (const p of normalisedProducts) {
     if (p.complete_high_confidence) continue;
@@ -372,17 +456,33 @@ function computeCelebrityMetrics(normalisedProducts) {
       skipReasons[r] = (skipReasons[r] || 0) + 1;
     }
   }
+  const combinedComplete = eligible.filter((p) => p.complete_high_confidence).length;
   return {
-    genuine_cruise_products: cruises.length,
-    ship_match_rate_pct: Math.round((shipResolved / total) * 1000) / 10,
-    departure_port_rate_pct: Math.round((portResolved / total) * 1000) / 10,
-    destination_resolution_rate_pct: Math.round((destResolved / total) * 1000) / 10,
-    complete_high_confidence: complete,
-    complete_high_confidence_rate_pct: Math.round((complete / total) * 1000) / 10,
-    projected_active: complete,
-    projected_steve_reviews: normalisedProducts.filter(
-      (p) => p.destination_resolution?.status === "ambiguous"
-    ).length,
+    ocean_inventory: segmentMetrics(oceanCruises),
+    river_inventory: segmentMetrics(riverCruises),
+    combined_eligible: {
+      eligible_ocean_cruises: oceanCruises.length,
+      eligible_river_cruises: riverCruises.length,
+      total_projected_active_inserts: combinedComplete,
+      duplicate_identities: normalisedProducts.filter((p, i, arr) => {
+        const id = p.official_product_key;
+        return id && arr.findIndex((x) => x.official_product_key === id) !== i;
+      }).length,
+      incomplete_skips: normalisedProducts.length - combinedComplete,
+      projected_steve_reviews: normalisedProducts.filter((p) => p.destination_resolution?.status === "ambiguous").length
+    },
+    ocean_cruisetours: normalisedProducts.filter((p) => p.product_type === "ocean_cruisetour").length,
+    river_cruisetours: normalisedProducts.filter((p) => p.product_type === "river_cruisetour").length,
+    unknown_products: normalisedProducts.filter((p) => p.product_type === "unknown").length,
+    genuine_cruise_products: eligible.length,
+    ship_match_rate_pct: segmentMetrics(eligible).ship_match_rate_pct,
+    departure_port_rate_pct: segmentMetrics(eligible).departure_port_rate_pct,
+    destination_resolution_rate_pct: segmentMetrics(eligible).destination_resolution_rate_pct,
+    complete_high_confidence: combinedComplete,
+    complete_high_confidence_rate_pct:
+      eligible.length > 0 ? Math.round((combinedComplete / eligible.length) * 1000) / 10 : 0,
+    projected_active: combinedComplete,
+    projected_steve_reviews: normalisedProducts.filter((p) => p.destination_resolution?.status === "ambiguous").length,
     skip_reasons: skipReasons
   };
 }
@@ -416,11 +516,27 @@ async function simulateCelebrityInventory(context = {}) {
     sample_stats: summariseCelebrityProducts(normalised, { today }),
     cruise_metrics: metrics,
     destination_distribution: distributionCounts(
-      normalised.filter((p) => p.product_type === "cruise"),
+      normalised.filter((p) => isEligibleCelebrityCruise(p.product_type)),
+      (p) => p.destination_resolution?.destinationKey
+    ),
+    ocean_destination_distribution: distributionCounts(
+      normalised.filter((p) => p.product_type === "ocean_cruise"),
+      (p) => p.destination_resolution?.destinationKey
+    ),
+    river_destination_distribution: distributionCounts(
+      normalised.filter((p) => p.product_type === "river_cruise"),
       (p) => p.destination_resolution?.destinationKey
     ),
     ship_distribution: distributionCounts(normalised, (p) => p.raw?.ship_name),
+    river_ship_distribution: distributionCounts(
+      normalised.filter((p) => p.product_type === "river_cruise" || p.product_type === "river_cruisetour"),
+      (p) => p.raw?.ship_name
+    ),
     departure_port_distribution: distributionCounts(normalised, (p) => p.candidate?.departure_port || p.raw?.departure_port),
+    river_departure_port_distribution: distributionCounts(
+      normalised.filter((p) => p.product_type === "river_cruise" || p.product_type === "river_cruisetour"),
+      (p) => p.candidate?.departure_port || p.raw?.departure_port
+    ),
     products: normalised,
     writes_blocked: true
   };
@@ -480,6 +596,11 @@ module.exports = {
   SOURCE_CONTRACT,
   GRAPH_URL,
   DEFAULT_PAGE_SIZE,
+  CELEBRITY_RIVER_SHIP_CODES,
+  CELEBRITY_PORT_ALIASES,
+  isEligibleCelebrityCruise,
+  isCelebrityCruisetour,
+  isCelebrityRiverShip,
   officialProductKey,
   officialGroupKey,
   classifyCelebrityProductType,

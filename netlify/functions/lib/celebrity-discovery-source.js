@@ -65,9 +65,12 @@ function officialProductKey(cruise) {
 function classifyProductType(cruise) {
   const itin = cruise?.masterSailing?.itinerary;
   if (!itin) return "unknown";
-  if (itin.preTour?.duration || itin.postTour?.duration) return "cruisetour";
-  if (String(itin.voyageType || "").toUpperCase() === "RIVER") return "river";
-  return "cruise";
+  const code = String(itin.ship?.code || "").toUpperCase();
+  const isRiver = String(itin.voyageType || "").toUpperCase() === "RIVER" || ["RC", "RS", "RB", "RR", "RW"].includes(code);
+  const hasBundledLand = Boolean(itin.preTour?.duration || itin.postTour?.duration);
+  if (isRiver) return hasBundledLand ? "river_cruisetour" : "river_cruise";
+  if (hasBundledLand) return "ocean_cruisetour";
+  return "ocean_cruise";
 }
 
 function parseCelebrityCruise(doc, today) {
@@ -187,10 +190,12 @@ function summariseCelebrityProducts(products, today) {
   };
   for (const p of products) {
     if (p.official_product_key || p.group_id) stats.with_official_identity += 1;
-    if (p.product_type === "cruise") stats.genuine_cruises += 1;
-    else if (p.product_type === "cruisetour") stats.cruisetours += 1;
-    else if (p.product_type === "river") stats.river_products += 1;
-    else stats.unknown_type += 1;
+    if (p.product_type === "ocean_cruise" || p.product_type === "river_cruise") {
+      stats.genuine_cruises += 1;
+      if (p.product_type === "river_cruise") stats.river_products += 1;
+    } else if (p.product_type === "ocean_cruisetour" || p.product_type === "river_cruisetour") {
+      stats.cruisetours += 1;
+    } else stats.unknown_type += 1;
     if (p.departure_date && p.departure_date >= today) stats.future_products += 1;
     else if (p.future_sailing_count === 0) stats.past_only += 1;
   }

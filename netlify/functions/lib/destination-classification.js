@@ -299,6 +299,21 @@ const OPERATIONAL_DESTINATION_CATALOGUE = [
     living_destination_required: true
   },
   {
+    key: "european-river-cruises",
+    name: "European River Cruises",
+    slug: "european-river-cruises",
+    classification_enabled: true,
+    public_status: "draft",
+    primary_region: "Europe",
+    parent_region: null,
+    aliases: ["danube river", "rhine river", "european river cruise"],
+    representative_ports: ["Amsterdam", "Basel", "Budapest", "Vienna", "Nuremberg", "Vilshofen"],
+    route_signals: ["danube", "rhine", "main river", "river cruise"],
+    exclusions: ["northern europe", "mediterranean", "british isles", "generic europe"],
+    cruise_finder_immediate: false,
+    living_destination_required: true
+  },
+  {
     key: "galapagos",
     name: "Galapagos",
     slug: "galapagos",
@@ -325,6 +340,7 @@ const DESTINATION_PRECEDENCE = [
   "transatlantic",
   "panama-canal",
   "galapagos",
+  "european-river-cruises",
   "antarctica",
   "norwegian-fjords",
   "british-isles",

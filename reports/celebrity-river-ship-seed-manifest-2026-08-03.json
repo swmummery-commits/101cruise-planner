@@ -1,0 +1,128 @@
+{
+  "generated_at": "2026-08-03T09:00:00.000Z",
+  "mode": "celebrity_river_ship_and_destination_seed",
+  "writes_performed": false,
+  "cruise_line_id": "aa2c50ed-7ff5-472d-bc96-3d686d76c5ec",
+  "cruise_line_name": "Celebrity Cruises",
+  "cruise_line_slug": "celebrity-cruises",
+  "ship_table": "ci_cruise_ships",
+  "entry_count": 5,
+  "ships": [
+    {
+      "name": "Celebrity Compass",
+      "slug": "celebrity-compass",
+      "official_line_ship_id": "RC",
+      "vessel_type": "river",
+      "status": "under_construction",
+      "active": true,
+      "ship_class": "River",
+      "official_ship_url": "https://www.celebritycruises.com/river/cruise-ships/celebrity-compass",
+      "source_name": "celebrity_graphql",
+      "source_url": "https://www.celebritycruises.com/graph",
+      "maiden_voyage_note": "August 2027 inaugural Danube sailings (official Celebrity river hub)",
+      "graphql_evidence": {
+        "voyage_type": "RIVER",
+        "sample_itinerary": "Danube – Nuremberg-Vienna",
+        "sample_departure_port": "Nuremberg"
+      },
+      "expected_existing_match": null,
+      "proposed_action": "insert",
+      "rollback_action": "delete_if_inserted"
+    },
+    {
+      "name": "Celebrity Seeker",
+      "slug": "celebrity-seeker",
+      "official_line_ship_id": "RS",
+      "vessel_type": "river",
+      "status": "under_construction",
+      "active": true,
+      "ship_class": "River",
+      "official_ship_url": "https://www.celebritycruises.com/river/cruise-ships/celebrity-seeker",
+      "source_name": "celebrity_graphql",
+      "source_url": "https://www.celebritycruises.com/graph",
+      "maiden_voyage_note": "August 2027 inaugural Danube sailings (official Celebrity river hub)",
+      "graphql_evidence": {
+        "voyage_type": "RIVER",
+        "sample_itinerary": "Danube - Vienna & Budapest",
+        "sample_departure_port": "Vilshofen"
+      },
+      "expected_existing_match": null,
+      "proposed_action": "insert",
+      "rollback_action": "delete_if_inserted"
+    },
+    {
+      "name": "Celebrity Boundless",
+      "slug": "celebrity-boundless",
+      "official_line_ship_id": "RB",
+      "vessel_type": "river",
+      "status": "under_construction",
+      "active": true,
+      "ship_class": "River",
+      "official_ship_url": "https://www.celebritycruises.com/river/cruise-ships/celebrity-boundless",
+      "source_name": "celebrity_graphql",
+      "source_url": "https://www.celebritycruises.com/graph",
+      "maiden_voyage_note": "August 2027 inaugural Danube sailings (official Celebrity river hub)",
+      "graphql_evidence": {
+        "voyage_type": "RIVER",
+        "sample_itinerary": "Danube – Budapest & Vienna",
+        "sample_departure_port": "Budapest"
+      },
+      "expected_existing_match": null,
+      "proposed_action": "insert",
+      "rollback_action": "delete_if_inserted"
+    },
+    {
+      "name": "Celebrity Roamer",
+      "slug": "celebrity-roamer",
+      "official_line_ship_id": "RR",
+      "vessel_type": "river",
+      "status": "under_construction",
+      "active": true,
+      "ship_class": "River",
+      "official_ship_url": "https://www.celebritycruises.com/river/cruise-ships/celebrity-roamer",
+      "source_name": "celebrity_graphql",
+      "source_url": "https://www.celebritycruises.com/graph",
+      "maiden_voyage_note": "August 2027 inaugural Rhine sailings (official Celebrity river hub)",
+      "graphql_evidence": {
+        "voyage_type": "RIVER",
+        "sample_itinerary": "Rhine Amsterdam – Basel",
+        "sample_departure_port": "Amsterdam"
+      },
+      "expected_existing_match": null,
+      "proposed_action": "insert",
+      "rollback_action": "delete_if_inserted"
+    },
+    {
+      "name": "Celebrity Wanderer",
+      "slug": "celebrity-wanderer",
+      "official_line_ship_id": "RW",
+      "vessel_type": "river",
+      "status": "under_construction",
+      "active": true,
+      "ship_class": "River",
+      "official_ship_url": "https://www.celebritycruises.com/river/cruise-ships/celebrity-wanderer",
+      "source_name": "celebrity_graphql",
+      "source_url": "https://www.celebritycruises.com/graph",
+      "maiden_voyage_note": "August 2027 inaugural Rhine sailings (official Celebrity river hub)",
+      "graphql_evidence": {
+        "voyage_type": "RIVER",
+        "sample_itinerary": "Rhine Amsterdam – Basel",
+        "sample_departure_port": "Amsterdam"
+      },
+      "expected_existing_match": null,
+      "proposed_action": "insert",
+      "rollback_action": "delete_if_inserted"
+    }
+  ],
+  "destination": {
+    "canonical_name": "European River Cruises",
+    "slug": "european-river-cruises",
+    "status": "draft",
+    "classification_enabled": true,
+    "primary_region": "Europe",
+    "display_order": 110,
+    "proposed_action": "insert",
+    "rollback_action": "delete_if_inserted",
+    "notes": "Operational classification destination only — no public Living Destination page"
+  }
+}
