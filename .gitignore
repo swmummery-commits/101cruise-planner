@@ -45,3 +45,5 @@ reports/hal-third-production-batch-manifest-*.json
 reports/hal-third-production-batch-rollback-*.json
 reports/hal-automatic-batch-rollback-*.json
 reports/hal-automatic-continuation-*.json
+reports/celebrity-readonly-simulation.json
+reports/celebrity-readonly-simulation-*.json

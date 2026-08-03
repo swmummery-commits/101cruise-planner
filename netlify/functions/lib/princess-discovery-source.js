@@ -150,7 +150,21 @@ async function probePrincessInventory({
       graphql_aem: "www.princess.com/graphql/execute.json/princess/ (masterdata, not search)",
       hal_solr_analogy: false,
       static_html_inventory: false,
-      preferred_next_step: "Map UBE search request from browser session (Polar Bear SPA)"
+      preferred_next_step: "Map UBE search request from browser session (Polar Bear SPA)",
+    ube_session_requirements: {
+      endpoint: "https://gw.api.princess.com/pcl-web/internal/ube/v1/cruises",
+      method: "GET or POST (browser uses authenticated session)",
+      required_parameters: ["productcompany", "bookingcompany"],
+      parameter_transport: "Request headers or session-bound query — not accepted as anonymous query params",
+      client_id_header: "pcl-client-id / AppId JSON (prod client id exposed in SPA bundle)",
+      cookies_or_tokens: "Likely session cookies from /ube/v1.0/auth bootstrap; withCredentials:true in SPA",
+      bootstrap_endpoint: "/ube/v1.0/auth",
+      anonymous_server_side: false,
+      logged_in_customer_required: false,
+      stable_server_side_use: "Not proven — SPA session bootstrap required",
+      terms_suitability: "Treat as booking-platform API; do not bypass access controls",
+      legitimate_path: "Reverse-engineer anonymous bootstrap from official cruise-search SPA or request official partner API documentation"
+    }
     }
   };
 }
