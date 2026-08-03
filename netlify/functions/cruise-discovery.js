@@ -19,6 +19,10 @@ const {
   discoverOneLine
 } = require("./lib/cruise-discovery-runner");
 const {
+  assertCruiseDiscoveryAutomationEnabled,
+  assertExpireSailedEnabled
+} = require("./lib/cruise-discovery-automation");
+const {
   groupReviewItems,
   entityGroupKeyFromItem,
   suggestShipMatch,
@@ -620,6 +624,7 @@ async function listCruises(body) {
 }
 
 async function startDiscovery(body, actor) {
+  assertCruiseDiscoveryAutomationEnabled("start_discovery");
   const scope = String(body.scope || "cruise_line").trim();
   const cruiseLineId = String(body.cruise_line_id || "").trim();
   const destinationId = String(body.destination_id || "").trim();
@@ -968,6 +973,7 @@ exports.handler = async (event) => {
     if (action === "list_cruises") return jsonResponse(200, await listCruises(body));
     if (action === "start_discovery") return jsonResponse(200, await startDiscovery(body, actor));
     if (action === "expire_sailed") {
+      assertExpireSailedEnabled();
       const result = await expireSailedCruises();
       return jsonResponse(200, { success: true, ...result });
     }

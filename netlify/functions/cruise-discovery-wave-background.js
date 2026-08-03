@@ -11,6 +11,9 @@ const {
   discoverOneLine,
   listActiveSoldCruiseLineIds
 } = require("./lib/cruise-discovery-runner");
+const {
+  isCruiseDiscoveryAutomationEnabled
+} = require("./lib/cruise-discovery-automation");
 
 function cronSecret() {
   return String(process.env.DISCOVERY_CRON_SECRET || "").trim();
@@ -38,6 +41,18 @@ function assertCronAuth(event) {
 exports.handler = async (event) => {
   try {
     assertCronAuth(event);
+
+    if (!isCruiseDiscoveryAutomationEnabled()) {
+      return {
+        statusCode: 409,
+        body: JSON.stringify({
+          success: false,
+          blocked: true,
+          reason: "discovery_automation_disabled",
+          message: "CRUISE_DISCOVERY_AUTOMATION_ENABLED is false"
+        })
+      };
+    }
 
     let body = {};
     try {
