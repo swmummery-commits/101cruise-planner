@@ -9597,7 +9597,6 @@ async function startNewFeaturedCruise() {
     featuredCruiseMessage = "Newsletter defaults could not be loaded. Enter Newsletter Number and Publication Date manually.";
     featuredCruiseMessageTone = "error";
   }
-  const composerIssue = window.NewsletterIssueComposer?.getSelectedIssue?.();
   featuredFormDraft = {
     newsletter_id: composerIssue?.id || null,
     newsletter_number: composerIssue?.number ?? featuredNewsletterDefaults.newsletter_number,
