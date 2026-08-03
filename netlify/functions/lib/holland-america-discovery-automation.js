@@ -37,7 +37,7 @@ function evaluateAutomaticQualityGate({ manifest, stats, cruiseMetrics, writeRes
   const gate = manifest?.acceptance_gate
     ? manifest.acceptance_gate
     : manifest
-      ? evaluateAcceptanceGate(manifest)
+      ? evaluateAcceptanceGate(manifest, { minComplete: 1 })
       : { passed: true, failures: [] };
   if (!gate.passed) {
     failures.push(...(gate.failures || []).map((f) => `acceptance_gate:${f}`));
@@ -48,9 +48,6 @@ function evaluateAutomaticQualityGate({ manifest, stats, cruiseMetrics, writeRes
   const attempted = (writes.inserted || 0) + (writes.updated || 0) + (writes.failed || 0);
   const failureRate = attempted ? ((writes.failed || 0) / attempted) * 100 : 0;
 
-  if ((stats?.product_type_cruisetour || 0) > 0 && (writes.inserted || 0) > 0) {
-    failures.push("cruisetour_insertion_attempted");
-  }
   if (gate.failures?.includes("fairbanks_cruise_embarkation")) {
     failures.push("fairbanks_embarkation_proposed");
   }
@@ -69,8 +66,16 @@ function evaluateAutomaticQualityGate({ manifest, stats, cruiseMetrics, writeRes
   if ((metrics.departure_port_rate_pct ?? 100) < AUTOMATIC_STOP_THRESHOLDS.departure_port_rate_pct) {
     failures.push(`departure_port_below_threshold:${metrics.departure_port_rate_pct}`);
   }
-  if ((metrics.destination_resolution_rate_pct ?? 100) < AUTOMATIC_STOP_THRESHOLDS.destination_resolution_rate_pct) {
-    failures.push(`destination_resolution_below_threshold:${metrics.destination_resolution_rate_pct}`);
+  const proposedWrites =
+    manifest?.products?.filter((p) => ["insert_active", "update_existing"].includes(p.proposed_action)) || [];
+  const writeSetDestOk = proposedWrites.filter(
+    (p) => p.product_type === "cruise" && p.destination_id
+  );
+  const writeSetResolutionPct = proposedWrites.length
+    ? Math.round((writeSetDestOk.length / proposedWrites.length) * 1000) / 10
+    : 100;
+  if (writeSetResolutionPct < AUTOMATIC_STOP_THRESHOLDS.destination_resolution_rate_pct) {
+    failures.push(`destination_resolution_below_threshold:${writeSetResolutionPct}`);
   }
   if ((stats?.cursor_start ?? 0) >= (stats?.next_cursor_start ?? 0) && (stats?.products_normalised || 0) > 0) {
     failures.push("cursor_failed_to_advance");

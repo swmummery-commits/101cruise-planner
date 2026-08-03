@@ -4,6 +4,7 @@
 
 const { ADAPTER_ID, ADAPTER_VERSION } = require("./holland-america-discovery-adapter");
 const { HAL_DISCOVERY_WRITE_ENABLED } = require("./holland-america-discovery-mode");
+const { isHalAutomaticContinuationEnabled } = require("./holland-america-discovery-automation");
 
 const HAL_RUN_TYPE = "hal_controlled_batch";
 const HAL_AUTO_RUN_TYPE = "hal_automatic_batch";
@@ -151,8 +152,8 @@ async function loadHalInventoryProgress(supabase, cruiseLineId) {
   const last = halRuns[0] || null;
   const lastCompleted = completed[0] || null;
   const nextCursor =
-    lastCompleted?.stats?.next_cursor ??
     last?.stats?.next_cursor ??
+    lastCompleted?.stats?.next_cursor ??
     lastCompleted?.stats?.cursor_end ??
     0;
   const numFound = lastCompleted?.stats?.num_found_official ?? last?.stats?.num_found_official ?? null;
@@ -188,8 +189,17 @@ async function loadHalInventoryProgress(supabase, cruiseLineId) {
     last_run_status: last?.status || null,
     last_run_type: last?.stats?.run_type || last?.scope || null,
     last_failure_reason: last?.error_message || last?.stats?.failure_reason || null,
-    automatic_continuation_enabled: false
+    automatic_continuation_enabled: isHalAutomaticContinuationEnabled()
   };
+}
+
+async function findRunningHalBatch(supabase, cruiseLineId) {
+  const runs = await supabase(
+    `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.running&select=id,status,stats,started_at&order=started_at.desc&limit=5`
+  );
+  return (runs || []).filter((r) =>
+    [HAL_RUN_TYPE, HAL_AUTO_RUN_TYPE].includes(r.stats?.run_type)
+  );
 }
 
 module.exports = {
@@ -201,5 +211,6 @@ module.exports = {
   createHalDiscoveryRun,
   completeHalDiscoveryRun,
   failHalDiscoveryRun,
-  loadHalInventoryProgress
+  loadHalInventoryProgress,
+  findRunningHalBatch
 };

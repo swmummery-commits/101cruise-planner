@@ -15,7 +15,7 @@ const {
   clearHalFetchCache
 } = require("./holland-america-discovery-adapter");
 const { resolveHalDiscoveryMode, assertHalWritesAllowed } = require("./holland-america-discovery-mode");
-const { applyHalBatchWrites, buildHalBatchManifest } = require("./holland-america-discovery-writes");
+const { applyHalBatchWrites, buildHalBatchManifest, evaluateAcceptanceGate } = require("./holland-america-discovery-writes");
 const { supabase: defaultSupabase } = require("./cruise-discovery-ops");
 const { createHalBatchTiming } = require("./holland-america-discovery-timing");
 const {
@@ -352,6 +352,51 @@ async function runHalDiscoveryBatch(context = {}) {
     let writesPerformed = false;
     if (modeGate.writes_allowed && context.performWrites) {
       assertHalWritesAllowed(modeGate);
+      if (automatic && manifest) {
+        const preWriteGate = evaluateAcceptanceGate(manifest, { minComplete: 1 });
+        if (!preWriteGate.passed) {
+          stats.batch_status = "failed";
+          stats.automatic_gate_failures = preWriteGate.failures.map((f) => `pre_write_acceptance:${f}`);
+          if (dbRun?.id) {
+            await failHalDiscoveryRun(sb, dbRun.id, {
+              stats: buildHalRunStats({
+                runType: "hal_automatic_batch",
+                mode: modeGate,
+                cursorStart: stats.cursor_start,
+                cursorEnd: stats.next_cursor_start,
+                pagesFetched: stats.pages_fetched,
+                productsEncountered: stats.products_normalised,
+                proposedWrites: stats.writes_attempted,
+                inserted: 0,
+                updated: 0,
+                skipped: stats,
+                failed: 0,
+                nextCursor: stats.cursor_start,
+                numFoundOfficial: stats.num_found_official,
+                timing: timing.snapshot(),
+                cruiseMetrics: summary.cruise_metrics,
+                destinationCounts: summary.destinationCounts,
+                aggregatedHealth: stats.aggregated_health,
+                writesEnabled: modeGate.writes_allowed,
+                runId
+              }),
+              errorMessage: stats.automatic_gate_failures.join("; "),
+              reason: stats.automatic_gate_failures[0]
+            });
+          }
+          return {
+            ok: false,
+            blocked: false,
+            mode: modeGate,
+            writes_performed: false,
+            manifest,
+            automatic_gate: { passed: false, failures: stats.automatic_gate_failures },
+            run_record_id: dbRun?.id || null,
+            timing: timing.snapshot(),
+            stats: { ...stats, batch_status: "failed" }
+          };
+        }
+      }
       const autoLimits = halAutomaticLimits();
       timing.start("writes_total");
       writeResult = await applyHalBatchWrites({

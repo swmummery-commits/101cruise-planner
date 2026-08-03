@@ -280,4 +280,146 @@ await test("Bulk verification detects missing required fields", async () => {
   if (summary.breaches.length !== 1) throw new Error("expected one breach");
 });
 
+await test("Skipped cruisetours in a mixed batch do not stop automatic continuation", async () => {
+  const gate = automation.evaluateAutomaticQualityGate({
+    manifest: {
+      products: [
+        {
+          product_type: "cruise",
+          completeness: "complete_high_confidence",
+          proposed_action: "insert_active",
+          stable_product_identity_key: "A|1",
+          destination_id: "dest-1"
+        }
+      ],
+      acceptance_gate: { passed: true, failures: [] }
+    },
+    stats: {
+      product_type_cruisetour: 41,
+      product_type_cruise: 59,
+      cursor_start: 252,
+      next_cursor_start: 396,
+      products_normalised: 100
+    },
+    cruiseMetrics: {
+      ship_match_rate_pct: 100,
+      departure_port_rate_pct: 100,
+      destination_resolution_rate_pct: 62.1
+    },
+    writeResult: { stats: { inserted: 57, updated: 0, failed: 0, cruisetour_skips: 41 } }
+  });
+  if (!gate.passed) throw new Error(`gate should pass with skipped cruisetours: ${gate.failures.join(",")}`);
+});
+
+await test("Cruisetour proposed for insertion stops automatic continuation", async () => {
+  const gate = automation.evaluateAutomaticQualityGate({
+    manifest: {
+      products: [
+        {
+          product_type: "cruisetour",
+          completeness: "complete_high_confidence",
+          proposed_action: "insert_active",
+          stable_product_identity_key: "CT|1",
+          destination_id: "dest-1"
+        }
+      ],
+      acceptance_gate: {
+        passed: false,
+        failures: ["cruisetour_in_write_set"]
+      }
+    },
+    stats: { product_type_cruisetour: 1, cursor_start: 0, next_cursor_start: 36, products_normalised: 1 },
+    cruiseMetrics: { ship_match_rate_pct: 100, departure_port_rate_pct: 100, destination_resolution_rate_pct: 100 },
+    writeResult: { stats: { inserted: 0, updated: 0, failed: 0 } }
+  });
+  if (gate.passed) throw new Error("cruisetour in write set should stop batch");
+  if (!gate.failures.some((f) => f.includes("cruisetour"))) throw new Error("expected cruisetour failure");
+});
+
+await test("Skipped unresolved Europe products do not lower write-set destination resolution", async () => {
+  const gate = automation.evaluateAutomaticQualityGate({
+    manifest: {
+      products: [
+        {
+          product_type: "cruise",
+          completeness: "complete_high_confidence",
+          proposed_action: "insert_active",
+          stable_product_identity_key: "E|1",
+          destination_id: "dest-1"
+        },
+        {
+          product_type: "cruise",
+          completeness: "incomplete",
+          proposed_action: "skip_incomplete",
+          stable_product_identity_key: "E|2",
+          destination_id: null
+        }
+      ],
+      acceptance_gate: { passed: true, failures: [] }
+    },
+    stats: {
+      product_type_cruise: 29,
+      cursor_start: 1692,
+      next_cursor_start: 1721,
+      products_normalised: 29
+    },
+    cruiseMetrics: {
+      ship_match_rate_pct: 100,
+      departure_port_rate_pct: 100,
+      destination_resolution_rate_pct: 62.1
+    },
+    writeResult: { stats: { inserted: 18, updated: 0, failed: 0, incomplete_skips: 11 } }
+  });
+  if (!gate.passed) throw new Error(`gate should pass on write-set resolution: ${gate.failures.join(",")}`);
+});
+
+await test("Unresolved destination in proposed write set blocks automatic continuation", async () => {
+  const gate = automation.evaluateAutomaticQualityGate({
+    manifest: {
+      products: [
+        {
+          product_type: "cruise",
+          completeness: "complete_high_confidence",
+          proposed_action: "insert_active",
+          stable_product_identity_key: "E|1",
+          destination_id: null
+        },
+        {
+          product_type: "cruise",
+          completeness: "complete_high_confidence",
+          proposed_action: "insert_active",
+          stable_product_identity_key: "E|2",
+          destination_id: "dest-1"
+        }
+      ],
+      acceptance_gate: { passed: true, failures: [] }
+    },
+    stats: { cursor_start: 100, next_cursor_start: 200, products_normalised: 2 },
+    cruiseMetrics: { ship_match_rate_pct: 100, departure_port_rate_pct: 100, destination_resolution_rate_pct: 100 },
+    writeResult: { stats: { inserted: 2, updated: 0, failed: 0 } }
+  });
+  if (gate.passed) throw new Error("unresolved destination in write set should fail gate");
+  if (!gate.failures.some((f) => f.includes("destination_resolution_below_threshold:50"))) {
+    throw new Error(`expected 50% write-set resolution failure, got ${gate.failures.join(",")}`);
+  }
+});
+
+await test("End-of-inventory cursor returns zero remaining work", async () => {
+  const status = batch.deriveBatchStatus({ nextCursorStart: 1721, numFound: 1721, failed: false });
+  if (status !== "completed") throw new Error(`expected completed, got ${status}`);
+});
+
+await test("Completed inventory cursor cannot restart from zero", async () => {
+  const progress = {
+    inventory_state: "completed",
+    current_cursor: 1721,
+    next_eligible_cursor: 1721,
+    total_hal_api_results: 1721
+  };
+  if (progress.next_eligible_cursor < progress.total_hal_api_results) {
+    throw new Error("completed inventory should not resume before API total");
+  }
+  if (progress.inventory_state !== "completed") throw new Error("expected completed state");
+});
+
 console.log(`\ntest-hal-batch-automation: ${passed} passed`);

@@ -9,6 +9,11 @@ const { runHalDiscoveryBatch } = require("./lib/holland-america-discovery-batch"
 const { catalogueDestinations } = require("./lib/holland-america-discovery-adapter");
 const { supabase } = require("./lib/cruise-discovery-runner");
 const { loadClassificationDestinations } = require("./lib/destination-queries");
+const {
+  halAutomaticLimits,
+  isHalAutomaticContinuationEnabled
+} = require("./lib/holland-america-discovery-automation");
+const { loadHalInventoryProgress, findRunningHalBatch } = require("./lib/holland-america-discovery-run-tracking");
 
 function cronSecret() {
   return String(process.env.DISCOVERY_CRON_SECRET || "").trim();
@@ -52,6 +57,11 @@ exports.handler = async (event) => {
     const performWrites = mode === "production_write" && body.perform_writes !== false;
     const buildManifest = body.build_manifest === true;
 
+    const automaticRequested =
+      body.automatic === true ||
+      (body.automatic !== false && isHalAutomaticContinuationEnabled() && mode === "production_write");
+    const autoLimits = halAutomaticLimits();
+
     const lines = await supabase(
       "ci_cruise_lines?slug=eq.holland-america-line&select=id,name,slug,website_url,cruise_search_url&limit=1"
     );
@@ -63,6 +73,31 @@ exports.handler = async (event) => {
       };
     }
 
+    let resolvedCursorStart = cursorStart;
+    if (automaticRequested && !body.cursor_start && body.cursorStart == null) {
+      const progress = await loadHalInventoryProgress(supabase, line.id);
+      resolvedCursorStart = progress.next_eligible_cursor ?? 0;
+      const running = await findRunningHalBatch(supabase, line.id);
+      if (running.length) {
+        return {
+          statusCode: 409,
+          body: JSON.stringify({
+            success: false,
+            blocked: true,
+            reason: "hal_batch_already_running",
+            running_run_ids: running.map((r) => r.id)
+          })
+        };
+      }
+    }
+
+    const resolvedMaxPages = automaticRequested
+      ? Math.min(autoLimits.max_pages, maxPages)
+      : maxPages;
+    const resolvedMaxWrites = automaticRequested
+      ? Math.min(autoLimits.max_writes, maxWrites)
+      : maxWrites;
+
     const [ships, destRows] = await Promise.all([
       supabase(
         `ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(line.id)}&active=eq.true&select=id,name,cruise_line_id`
@@ -73,12 +108,16 @@ exports.handler = async (event) => {
     const result = await runHalDiscoveryBatch({
       mode,
       runId,
-      cursorStart,
-      maxPages,
-      maxWrites,
-      maxCandidates: maxWrites,
+      cursorStart: resolvedCursorStart,
+      maxPages: resolvedMaxPages,
+      maxWrites: resolvedMaxWrites,
+      maxCandidates: resolvedMaxWrites,
       performWrites,
-      buildManifest,
+      buildManifest: buildManifest || automaticRequested,
+      recordRun: body.record_run === true || automaticRequested,
+      automatic: automaticRequested,
+      writeConcurrency: automaticRequested ? autoLimits.write_concurrency : undefined,
+      useCache: body.use_cache !== false,
       cruiseLine: line,
       ships: ships || [],
       destinations: catalogueDestinations(destRows || []),
@@ -100,6 +139,7 @@ exports.handler = async (event) => {
             }
           : null,
         cursor: result.cursor,
+        automatic: automaticRequested,
         stats: result.stats,
         cruise_metrics: result.cruise_metrics,
         destination_counts: result.destination_counts,
