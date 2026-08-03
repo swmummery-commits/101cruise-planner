@@ -17,6 +17,18 @@ const {
 const { resolveHalDiscoveryMode, assertHalWritesAllowed } = require("./holland-america-discovery-mode");
 const { applyHalBatchWrites, buildHalBatchManifest } = require("./holland-america-discovery-writes");
 const { supabase: defaultSupabase } = require("./cruise-discovery-ops");
+const { createHalBatchTiming } = require("./holland-america-discovery-timing");
+const {
+  createHalDiscoveryRun,
+  completeHalDiscoveryRun,
+  failHalDiscoveryRun,
+  buildHalRunStats
+} = require("./holland-america-discovery-run-tracking");
+const {
+  evaluateAutomaticQualityGate,
+  halAutomaticLimits,
+  isHalAutomaticContinuationEnabled
+} = require("./holland-america-discovery-automation");
 
 const DEFAULT_PAGES_PER_EXECUTION = 12;
 const DEFAULT_MAX_CANDIDATES_PER_EXECUTION = 100;
@@ -238,8 +250,12 @@ async function runHalDiscoveryBatch(context = {}) {
   const stats = emptyBatchStats();
   stats.mode = modeGate.mode;
   stats.writes_allowed = modeGate.writes_allowed;
+  const timing = createHalBatchTiming();
+  timing.startBatch();
+  let dbRun = null;
 
   try {
+    timing.start("hal_api_fetch");
     const fetchResult = await fetchHalBatchPages({
       cursorStart: context.cursorStart ?? context.cursor_start ?? 0,
       maxPages: context.maxPages ?? context.max_pages ?? DEFAULT_PAGES_PER_EXECUTION,
@@ -247,6 +263,7 @@ async function runHalDiscoveryBatch(context = {}) {
       today: context.today,
       useCache: context.useCache !== false
     });
+    timing.end("hal_api_fetch");
 
     if (!fetchResult.ok) {
       stats.batch_status = "failed";
@@ -258,10 +275,12 @@ async function runHalDiscoveryBatch(context = {}) {
           ...stats,
           ...fetchResult,
           batch_status: "failed"
-        }
+        },
+        timing: timing.snapshot()
       };
     }
 
+    timing.start("normalisation");
     const normalised = [];
     const maxCandidates =
       context.maxCandidates ??
@@ -273,6 +292,7 @@ async function runHalDiscoveryBatch(context = {}) {
       const row = normaliseHalVoyage(raw, { ...context, productMeta });
       normalised.push(row);
     }
+    timing.end("normalisation");
 
     const summary = summariseNormalisedRows(normalised);
     stats.api_calls = fetchResult.apiCalls;
@@ -304,8 +324,21 @@ async function runHalDiscoveryBatch(context = {}) {
     let writeResult = null;
     let manifest = null;
     const sb = context.supabase || defaultSupabase;
+    const recordRun = context.recordRun === true;
+    const automatic = Boolean(context.automatic || isHalAutomaticContinuationEnabled());
+
+    if (recordRun && context.cruiseLine?.id && sb) {
+      dbRun = await createHalDiscoveryRun(sb, {
+        cruiseLineId: context.cruiseLine.id,
+        runId,
+        mode: modeGate,
+        cursorStart: stats.cursor_start,
+        automatic
+      });
+    }
 
     if (context.buildManifest) {
+      timing.start("manifest_generation");
       manifest = await buildHalBatchManifest({
         products: normalised,
         cruiseLine: context.cruiseLine,
@@ -313,18 +346,24 @@ async function runHalDiscoveryBatch(context = {}) {
         supabase: sb,
         runId: runId || context.run_id
       });
+      timing.end("manifest_generation");
     }
 
     let writesPerformed = false;
     if (modeGate.writes_allowed && context.performWrites) {
       assertHalWritesAllowed(modeGate);
+      const autoLimits = halAutomaticLimits();
+      timing.start("writes_total");
       writeResult = await applyHalBatchWrites({
         products: normalised,
         cruiseLine: context.cruiseLine,
         maxWrites,
         runId: runId || context.run_id,
-        supabase: sb
+        supabase: sb,
+        writeConcurrency: context.writeConcurrency ?? autoLimits.write_concurrency,
+        timing
       });
+      timing.end("writes_total");
       stats.writes_performed = (writeResult.stats.inserted || 0) + (writeResult.stats.updated || 0);
       stats.inserted = writeResult.stats.inserted;
       stats.updated = writeResult.stats.updated;
@@ -334,6 +373,99 @@ async function runHalDiscoveryBatch(context = {}) {
       stats.invalid_skips = writeResult.stats.invalid_skips;
       stats.failed_writes = writeResult.stats.failed;
       writesPerformed = stats.writes_performed > 0;
+
+      if (context.buildManifest && manifest && automatic) {
+        const autoGate = evaluateAutomaticQualityGate({
+          manifest,
+          stats,
+          cruiseMetrics: summary.cruise_metrics,
+          writeResult
+        });
+        if (!autoGate.passed) {
+          stats.batch_status = "failed";
+          stats.automatic_gate_failures = autoGate.failures;
+          if (dbRun?.id) {
+            await failHalDiscoveryRun(sb, dbRun.id, {
+              stats: buildHalRunStats({
+                runType: automatic ? "hal_automatic_batch" : "hal_controlled_batch",
+                mode: modeGate,
+                cursorStart: stats.cursor_start,
+                cursorEnd: stats.next_cursor_start,
+                pagesFetched: stats.pages_fetched,
+                productsEncountered: stats.products_normalised,
+                proposedWrites: stats.writes_attempted,
+                inserted: stats.inserted,
+                updated: stats.updated,
+                skipped: stats,
+                failed: stats.failed_writes,
+                nextCursor: stats.next_cursor_start,
+                numFoundOfficial: stats.num_found_official,
+                timing: timing.snapshot(),
+                cruiseMetrics: summary.cruise_metrics,
+                destinationCounts: summary.destinationCounts,
+                aggregatedHealth: stats.aggregated_health,
+                writesEnabled: modeGate.writes_allowed,
+                runId
+              }),
+              errorMessage: autoGate.failures.join("; "),
+              reason: autoGate.failures[0]
+            });
+          }
+          return {
+            ok: false,
+            blocked: false,
+            mode: modeGate,
+            writes_performed: writesPerformed,
+            write_result: writeResult,
+            manifest,
+            automatic_gate: autoGate,
+            run_record_id: dbRun?.id || null,
+            timing: timing.snapshot(),
+            stats: { ...stats, batch_status: "failed" }
+          };
+        }
+      }
+    }
+
+    const timingSnapshot = timing.snapshot();
+    stats.timing = timingSnapshot;
+
+    if (dbRun?.id && sb) {
+      const runStats = buildHalRunStats({
+        runType: automatic ? "hal_automatic_batch" : "hal_controlled_batch",
+        mode: modeGate,
+        cursorStart: stats.cursor_start,
+        cursorEnd: stats.next_cursor_start,
+        pagesFetched: stats.pages_fetched,
+        productsEncountered: stats.products_normalised,
+        proposedWrites: stats.writes_attempted,
+        inserted: stats.inserted || 0,
+        updated: stats.updated || 0,
+        skipped: {
+          duplicate_skips: stats.duplicate_skips,
+          incomplete_skips: stats.incomplete_skips,
+          cruisetour_skips: stats.cruisetour_skips,
+          invalid_skips: stats.invalid_skips
+        },
+        failed: stats.failed_writes || 0,
+        nextCursor: stats.next_cursor_start,
+        numFoundOfficial: stats.num_found_official,
+        timing: timingSnapshot,
+        cruiseMetrics: summary.cruise_metrics,
+        destinationCounts: summary.destinationCounts,
+        aggregatedHealth: stats.aggregated_health,
+        writesEnabled: modeGate.writes_allowed,
+        runId
+      });
+      if (stats.batch_status === "failed") {
+        await failHalDiscoveryRun(sb, dbRun.id, {
+          stats: runStats,
+          errorMessage: stats.error || "HAL batch failed",
+          reason: stats.error || "hal_batch_failed"
+        });
+      } else {
+        await completeHalDiscoveryRun(sb, dbRun.id, { stats: runStats });
+      }
     }
 
     return {
@@ -343,6 +475,7 @@ async function runHalDiscoveryBatch(context = {}) {
       writes_performed: writesPerformed,
       write_result: writeResult,
       manifest,
+      run_record_id: dbRun?.id || null,
       source: SOURCE_CONTRACT,
       page_log: fetchResult.pageLog,
       cursor: {
@@ -352,11 +485,41 @@ async function runHalDiscoveryBatch(context = {}) {
         completed: stats.batch_status === "completed"
       },
       stats,
+      timing: timingSnapshot,
       cruise_metrics: summary.cruise_metrics,
       failure_reason_counts: summary.failureCounts,
       destination_counts: summary.destinationCounts,
       products: normalised
     };
+  } catch (err) {
+    if (dbRun?.id && (context.supabase || defaultSupabase)) {
+      await failHalDiscoveryRun(context.supabase || defaultSupabase, dbRun.id, {
+        stats: buildHalRunStats({
+          runType: "hal_controlled_batch",
+          mode: modeGate,
+          cursorStart: stats.cursor_start,
+          cursorEnd: stats.next_cursor_start,
+          pagesFetched: stats.pages_fetched,
+          productsEncountered: stats.products_normalised,
+          proposedWrites: stats.writes_attempted,
+          inserted: stats.inserted || 0,
+          updated: stats.updated || 0,
+          skipped: stats,
+          failed: stats.failed_writes || 1,
+          nextCursor: stats.next_cursor_start,
+          numFoundOfficial: stats.num_found_official,
+          timing: timing.snapshot(),
+          cruiseMetrics: {},
+          destinationCounts: {},
+          aggregatedHealth: stats.aggregated_health,
+          writesEnabled: modeGate.writes_allowed,
+          runId
+        }),
+        errorMessage: err.message || String(err),
+        reason: "hal_batch_exception"
+      }).catch(() => {});
+    }
+    throw err;
   } finally {
     releaseRunLock(runId || lock.run_id);
   }

@@ -272,7 +272,7 @@ async function writeResolutionAudit(entry) {
  * Upsert a candidate by identity_key (preferred) then external_key.
  * Never duplicates an active sailing during reprocessing.
  */
-async function upsertCandidateRecord(candidate, stats) {
+async function upsertCandidateRecord(candidate, stats, options = {}) {
   const identity_key =
     candidate.identity_key ||
     cruiseIdentityKey({
@@ -287,8 +287,8 @@ async function upsertCandidateRecord(candidate, stats) {
 
   const now = new Date().toISOString();
 
-  let prev = null;
-  if (identity_key) {
+  let prev = options.prevRecord || null;
+  if (!prev && identity_key) {
     const byIdentity = await supabase(
       `discovered_cruises?identity_key=eq.${encodeURIComponent(identity_key)}&select=*&limit=1`
     );

@@ -45,6 +45,8 @@ const {
   summariseLineHealth,
   inferRunType
 } = require("./lib/cruise-discovery-source-health");
+const { loadHalInventoryProgress } = require("./lib/holland-america-discovery-run-tracking");
+const { describeAutomaticContinuationArchitecture } = require("./lib/holland-america-discovery-automation");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -141,7 +143,15 @@ async function dashboard() {
     last?.scope === "cruise_line" ||
     last?.scope === "destination" ||
     inferRunType(last) === "verify_selected_line" ||
-    inferRunType(last) === "discover_selected_cruise_line";
+    inferRunType(last) === "discover_selected_cruise_line" ||
+    inferRunType(last) === "hal_controlled_batch" ||
+    inferRunType(last) === "hal_automatic_batch";
+
+  const halLine = (lines || []).find((l) => l.slug === "holland-america-line");
+  let halInventoryProgress = null;
+  if (halLine?.id) {
+    halInventoryProgress = await loadHalInventoryProgress(supabase, halLine.id).catch(() => null);
+  }
 
   return {
     success: true,
@@ -176,6 +186,8 @@ async function dashboard() {
     },
     line_health_summary: lineHealthSummary,
     line_health: lineHealth,
+    hal_inventory_progress: halInventoryProgress,
+    hal_automatic_continuation: describeAutomaticContinuationArchitecture(),
     review_breakdown: breakdown,
     last_run_stats: s
   };

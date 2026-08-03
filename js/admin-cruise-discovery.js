@@ -21,6 +21,7 @@
   let reviewLabels = {};
   let lineHealth = [];
   let lineHealthSummary = null;
+  let halInventoryProgress = null;
   let lastRunMeta = null;
   let activeCruises = [];
   let departurePorts = [];
@@ -128,6 +129,7 @@
       reviewBreakdown = dash.review_breakdown || null;
       lineHealth = dash.line_health || [];
       lineHealthSummary = dash.line_health_summary || null;
+      halInventoryProgress = dash.hal_inventory_progress || null;
       lastRunMeta = {
         type: dash.cards?.last_run_type,
         scope: dash.cards?.last_run_scope,
@@ -175,6 +177,31 @@
     }
   }
 
+  function renderHalInventoryProgress() {
+    const h = halInventoryProgress;
+    if (!h) return "";
+    const pct =
+      h.total_hal_api_results > 0
+        ? Math.min(100, Math.round((h.current_cursor / h.total_hal_api_results) * 100))
+        : null;
+    return `
+      <section class="admin-panel admin-hal-progress" aria-label="Holland America inventory progress">
+        <h3 class="admin-subheading">Holland America inventory (HAL API only)</h3>
+        <p class="admin-helper">Controlled HAL batches — not Full Discovery or other cruise lines.</p>
+        <ul class="admin-kv-list">
+          <li><strong>State:</strong> ${esc(h.inventory_state || "unknown")}</li>
+          <li><strong>Cursor:</strong> ${esc(String(h.current_cursor ?? "—"))}${h.total_hal_api_results ? ` / ${esc(String(h.total_hal_api_results))}` : ""}${pct != null ? ` (${pct}%)` : ""}</li>
+          <li><strong>Next eligible cursor:</strong> ${esc(String(h.next_eligible_cursor ?? "—"))}</li>
+          <li><strong>Completed batches:</strong> ${esc(String(h.completed_batches ?? 0))}</li>
+          <li><strong>Records activated:</strong> ${esc(String(h.records_activated ?? 0))}</li>
+          <li><strong>Cruisetours skipped:</strong> ${esc(String(h.skipped_cruisetours ?? 0))}</li>
+          <li><strong>Europe unresolved (aggregated):</strong> ${esc(String(h.europe_unresolved_total ?? 0))}</li>
+          <li><strong>Last batch duration:</strong> ${h.last_batch_duration_ms ? `${esc(String(Math.round(h.last_batch_duration_ms / 1000)))}s` : "—"}</li>
+          <li><strong>Automatic continuation:</strong> ${h.automatic_continuation_enabled ? "enabled" : "disabled (hold)"}</li>
+        </ul>
+      </section>`;
+  }
+
   function renderCards() {
     const c = cards || {};
     const runNote =
@@ -199,6 +226,7 @@
     ];
     return `
       ${runNote}
+      ${renderHalInventoryProgress()}
       <div class="usage-summary-grid research-audit-cards">
         ${items
           .map(
@@ -321,14 +349,18 @@
     const rows = runs
       .map((run) => {
         const stats = run.stats || {};
+        const isHal = stats.run_type === "hal_controlled_batch" || stats.run_type === "hal_automatic_batch";
+        const inserted = isHal ? stats.inserted ?? "—" : stats.new ?? "—";
+        const changed = isHal ? stats.updated ?? "—" : stats.changed ?? "—";
+        const scopeLabel = isHal ? `${run.scope} (cursor ${stats.cursor_start ?? "?"}→${stats.next_cursor ?? "?"})` : run.scope;
         return `<tr>
           <td>${esc(formatDate(run.created_at))}</td>
-          <td>${esc(run.scope)}</td>
+          <td>${esc(scopeLabel)}</td>
           <td>${esc(run.status)}</td>
-          <td>${esc(String(stats.new ?? "—"))}</td>
-          <td>${esc(String(stats.changed ?? "—"))}</td>
+          <td>${esc(String(inserted))}</td>
+          <td>${esc(String(changed))}</td>
           <td>${esc(String(stats.review_items ?? "—"))}</td>
-          <td class="admin-small">${esc(run.error_message || "")}</td>
+          <td class="admin-small">${esc(run.error_message || stats.failure_reason || "")}</td>
         </tr>`;
       })
       .join("");

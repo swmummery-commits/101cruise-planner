@@ -6,7 +6,7 @@
 const crypto = require("crypto");
 const { officialProductKey, ADAPTER_ID, ADAPTER_VERSION } = require("./holland-america-discovery-adapter");
 const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
-const { canonicalUrl } = require("./cruise-discovery-structured");
+const { createHalBatchTiming, mapWithConcurrency } = require("./holland-america-discovery-timing");
 
 function halExternalKey(cruiseLineId, productKey) {
   const basis = [ADAPTER_ID, cruiseLineId || "", productKey || ""].join("|");
@@ -244,7 +244,32 @@ async function buildHalBatchManifest({ products, cruiseLine, destinations, supab
   return manifest;
 }
 
-async function applyHalBatchWrites({ products, cruiseLine, maxWrites = 40, runId, supabase }) {
+async function bulkVerifyWrittenRecords(supabase, writeDetails) {
+  const ids = (writeDetails || []).map((d) => d.discovered_cruise_id).filter(Boolean);
+  if (!ids.length || !supabase) return { verified: 0, rows: [] };
+  const rows = await supabase(
+    `discovered_cruises?id=in.(${ids.join(",")})&select=id,status,official_url,source_url,official_sailing_id,raw_extract,departure_date,return_date,nights,departure_port,destination_id,ship_id`
+  );
+  const byId = new Map((rows || []).map((r) => [r.id, r]));
+  let verified = 0;
+  for (const detail of writeDetails) {
+    const row = byId.get(detail.discovered_cruise_id);
+    if (!row) continue;
+    const key = row.raw_extract?.hal_product_key || row.official_sailing_id;
+    if (row.status === "active" && row.official_url && key === detail.hal_product_key) verified += 1;
+  }
+  return { verified, rows: rows || [] };
+}
+
+async function applyHalBatchWrites({
+  products,
+  cruiseLine,
+  maxWrites = 40,
+  runId,
+  supabase,
+  writeConcurrency = 5,
+  timing = null
+}) {
   const stats = {
     inserted: 0,
     updated: 0,
@@ -255,9 +280,22 @@ async function applyHalBatchWrites({ products, cruiseLine, maxWrites = 40, runId
     failed: 0,
     write_details: []
   };
-  const upsertStats = { new: 0, changed: 0, unchanged: 0, upserted_active: 0, cruises_inserted: 0, duplicate_candidates_suppressed: 0 };
+  const upsertStats = {
+    new: 0,
+    changed: 0,
+    unchanged: 0,
+    upserted_active: 0,
+    cruises_inserted: 0,
+    duplicate_candidates_suppressed: 0
+  };
   let writesRemaining = maxWrites;
+  const localTiming = timing || createHalBatchTiming();
 
+  localTiming.start("supabase_reads");
+  const indexes = supabase ? await indexExistingHalRecords(supabase, cruiseLine.id) : null;
+  localTiming.end("supabase_reads");
+
+  const writeQueue = [];
   for (const row of products) {
     if (row.product_type === "cruisetour") {
       stats.cruisetour_skips += 1;
@@ -279,8 +317,15 @@ async function applyHalBatchWrites({ products, cruiseLine, maxWrites = 40, runId
       continue;
     }
 
+    const existing = indexes ? findExistingRecord(indexes, row, cruiseLine) : null;
+    writeQueue.push({ row, candidate, existing });
+    writesRemaining -= 1;
+  }
+
+  localTiming.start("supabase_writes");
+  await mapWithConcurrency(writeQueue, writeConcurrency, async ({ row, candidate, existing }) => {
     try {
-      const result = await upsertCandidateRecord(candidate, upsertStats);
+      const result = await upsertCandidateRecord(candidate, upsertStats, { prevRecord: existing });
       const detail = {
         hal_product_key: officialProductKey(row.raw),
         discovered_cruise_id: result.row?.id || null,
@@ -292,15 +337,12 @@ async function applyHalBatchWrites({ products, cruiseLine, maxWrites = 40, runId
 
       if (result.created && result.status === "active") {
         stats.inserted += 1;
-        writesRemaining -= 1;
       } else if (result.duplicate) {
         stats.duplicate_skips += 1;
       } else if (!result.created && result.status === "active") {
         stats.updated += 1;
-        writesRemaining -= 1;
       } else if (!result.created) {
         stats.updated += 1;
-        writesRemaining -= 1;
       }
     } catch (err) {
       stats.failed += 1;
@@ -309,12 +351,19 @@ async function applyHalBatchWrites({ products, cruiseLine, maxWrites = 40, runId
         error: err.message || String(err)
       });
     }
-  }
+  });
+  localTiming.end("supabase_writes");
+
+  localTiming.start("verification_reads");
+  const verification = await bulkVerifyWrittenRecords(supabase, stats.write_details);
+  localTiming.end("verification_reads");
 
   return {
     run_id: runId || null,
     stats,
-    upsert_stats: upsertStats
+    upsert_stats: upsertStats,
+    verification,
+    timing: localTiming.snapshot()
   };
 }
 
@@ -326,6 +375,7 @@ module.exports = {
   evaluateAcceptanceGate,
   buildHalBatchManifest,
   applyHalBatchWrites,
+  bulkVerifyWrittenRecords,
   indexExistingHalRecords,
   findExistingRecord
 };

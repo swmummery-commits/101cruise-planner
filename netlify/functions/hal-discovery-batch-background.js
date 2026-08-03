@@ -103,6 +103,8 @@ exports.handler = async (event) => {
         stats: result.stats,
         cruise_metrics: result.cruise_metrics,
         destination_counts: result.destination_counts,
+        run_record_id: result.run_record_id || null,
+        timing: result.timing || null,
         blocked: result.blocked || false,
         reason: result.reason || null
       })

@@ -125,6 +125,9 @@ function classifyLineHealth({ line, lastRun, activeFutureCount, activeAllCount }
 
 function inferRunType(run) {
   if (!run) return "none";
+  const rt = run.stats?.run_type || "";
+  if (rt === "hal_controlled_batch") return "hal_controlled_batch";
+  if (rt === "hal_automatic_batch") return "hal_automatic_batch";
   const tb = run.stats?.triggered_by || "";
   if (tb === "selected_line_verification") return "verify_selected_line";
   if (tb === "weekly_cron") return "scheduled_wave";

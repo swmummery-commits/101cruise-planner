@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 /**
- * Controlled Holland America first production batch.
+ * Controlled Holland America third (final manual) production batch (cursor 72).
  *
- *   node scripts/run-hal-first-production-batch.mjs --precheck
- *   node scripts/run-hal-first-production-batch.mjs --manifest
- *   node scripts/run-hal-first-production-batch.mjs --gate
- *   node scripts/run-hal-first-production-batch.mjs --apply-production
- *   node scripts/run-hal-first-production-batch.mjs --idempotency-check
+ *   node scripts/run-hal-third-production-batch.mjs --precheck
+ *   node scripts/run-hal-third-production-batch.mjs --manifest
+ *   node scripts/run-hal-third-production-batch.mjs --gate
+ *   node scripts/run-hal-third-production-batch.mjs --apply-local
+ *   node scripts/run-hal-third-production-batch.mjs --idempotency-local
  */
 
 import fs from "fs";
@@ -23,12 +23,14 @@ const { runHalDiscoveryBatch } = require(path.join(root, "netlify/functions/lib/
 const { catalogueDestinations } = require(path.join(root, "netlify/functions/lib/holland-america-discovery-adapter"));
 const { evaluateAcceptanceGate } = require(path.join(root, "netlify/functions/lib/holland-america-discovery-writes"));
 const { HAL_DISCOVERY_WRITE_ENABLED } = require(path.join(root, "netlify/functions/lib/holland-america-discovery-mode"));
+const { isHalAutomaticContinuationEnabled } = require(path.join(root, "netlify/functions/lib/holland-america-discovery-automation"));
 
-const MANIFEST_PATH = path.join(root, "reports/hal-first-production-batch-manifest-2026-08-02.json");
-const CURSOR_START = 0;
+const MANIFEST_PATH = path.join(root, "reports/hal-third-production-batch-manifest-2026-08-03.json");
+const CURSOR_START = 72;
 const MAX_PAGES = 3;
 const MAX_WRITES = 40;
-const RUN_ID = `hal-first-batch-2026-08-02T${new Date().toISOString().replace(/[:.]/g, "-").slice(11, 19)}Z`;
+const BATCH_LABEL = "hal-third-batch";
+const RUN_ID = `${BATCH_LABEL}-2026-08-03T${new Date().toISOString().replace(/[:.]/g, "-").slice(11, 19)}Z`;
 
 function loadEnv() {
   try {
@@ -49,29 +51,25 @@ function parseArgs(argv) {
     precheck: false,
     manifest: false,
     gate: false,
-    applyProduction: false,
     applyLocal: false,
-    idempotencyLocal: false,
-    idempotencyCheck: false
+    idempotencyLocal: false
   };
   for (const arg of argv.slice(2)) {
     if (arg === "--precheck") args.precheck = true;
     if (arg === "--manifest") args.manifest = true;
     if (arg === "--gate") args.gate = true;
-    if (arg === "--apply-production") args.applyProduction = true;
     if (arg === "--apply-local") args.applyLocal = true;
-    if (arg === "--idempotency-check") args.idempotencyCheck = true;
     if (arg === "--idempotency-local") args.idempotencyLocal = true;
   }
   if (!Object.values(args).some(Boolean)) args.precheck = true;
   return args;
 }
 
-async function headCount(table) {
+async function headCount(table, query = "") {
   const https = require("https");
   const { url, key } = getSupabaseConfig(root);
   return new Promise((resolve, reject) => {
-    const u = new URL(`${url}/rest/v1/${table}?select=id`);
+    const u = new URL(`${url}/rest/v1/${table}?select=id${query ? `&${query}` : ""}`);
     const req = https.request(
       u,
       { method: "HEAD", headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: "count=exact" } },
@@ -86,7 +84,8 @@ async function headCount(table) {
   });
 }
 
-async function fetchCounts() {
+async function fetchDetailedCounts(sb, halLineId) {
+  const today = new Date().toISOString().slice(0, 10);
   const tables = [
     "discovered_cruises",
     "cruise_discovery_review_items",
@@ -94,19 +93,28 @@ async function fetchCounts() {
     "destinations",
     "destination_ports",
     "cruise_destination_aliases",
-    "cruise_discovery_resolution_audit"
+    "cruise_discovery_resolution_audit",
+    "cruise_discovery_runs"
   ];
-  const out = {};
-  for (const table of tables) out[table] = await headCount(table);
-  return out;
-}
+  const table_counts = {};
+  for (const table of tables) table_counts[table] = await headCount(table);
 
-async function activeFutureCount(sb) {
-  const today = new Date().toISOString().slice(0, 10);
-  const rows = await sb.get(
-    `discovered_cruises?status=eq.active&departure_date=gte.${today}&select=id`
-  );
-  return rows?.length || 0;
+  return {
+    table_counts,
+    discovered_cruises_all: table_counts.discovered_cruises,
+    discovered_cruises_active: await headCount("discovered_cruises", "status=eq.active"),
+    discovered_cruises_active_future: await headCount(
+      "discovered_cruises",
+      `status=eq.active&departure_date=gte.${today}`
+    ),
+    holland_america_discovered_cruises: halLineId
+      ? await headCount("discovered_cruises", `cruise_line_id=eq.${encodeURIComponent(halLineId)}`)
+      : 0,
+    holland_america_active: halLineId
+      ? await headCount("discovered_cruises", `cruise_line_id=eq.${encodeURIComponent(halLineId)}&status=eq.active`)
+      : 0,
+    hal_controlled_runs: await headCount("cruise_discovery_runs", "scope=eq.cruise_line")
+  };
 }
 
 async function loadHalContext(sb) {
@@ -137,51 +145,30 @@ async function runSmoke() {
     body: JSON.stringify({ mode: "production_read_only" })
   });
   const body = await response.json();
-  return { status: response.status, body };
+  return { status: response.status, ok: response.status === 200 && body.ok === true, body };
 }
 
-async function invokeProductionBatch(payload) {
-  const secret = String(process.env.DISCOVERY_CRON_SECRET || "").trim();
-  if (!secret) throw new Error("DISCOVERY_CRON_SECRET required");
-  const response = await fetch(`${siteUrl}/.netlify/functions/hal-discovery-batch-background`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "x-discovery-cron-secret": secret },
-    body: JSON.stringify(payload)
-  });
-  const text = await response.text();
-  let body;
-  try {
-    body = JSON.parse(text);
-  } catch {
-    body = { raw: text.slice(0, 500) };
-  }
-  return { status: response.status, body };
-}
-
-async function runPrecheck(sb) {
-  const counts = await fetchCounts();
-  const activeFuture = await activeFutureCount(sb);
+async function runPrecheck(sb, ctx) {
+  const counts = await fetchDetailedCounts(sb, ctx.line.id);
   const smoke = await runSmoke();
   const destRows = await sb.get("destinations?select=id,classification_enabled");
   const classificationEnabled = (destRows || []).filter((d) => d.classification_enabled === true).length;
 
   return {
     phase: "precheck",
-    deployed_commit_check: "9151b16 or later required (verify via Netlify deploy)",
-    hal_write_flag_local_process: HAL_DISCOVERY_WRITE_ENABLED,
+    batch: 3,
+    approved_cursor_start: CURSOR_START,
+    prior_batches_completed_through: CURSOR_START - 1,
+    hal_write_flag_local: HAL_DISCOVERY_WRITE_ENABLED,
+    hal_write_flag_expected: false,
+    hal_automatic_continuation_enabled: isHalAutomaticContinuationEnabled(),
     smoke,
     destination_count_classification_enabled: classificationEnabled,
-    table_counts: counts,
-    active_future_sailings: activeFuture,
-    hal_existing_rows: (
-      await sb.get(
-        "discovered_cruises?select=id&ci_cruise_lines.slug=eq.holland-america-line&limit=1"
-      ).catch(() => [])
-    )?.length || 0
+    counts
   };
 }
 
-async function runManifest(sb, ctx) {
+async function runManifest(ctx) {
   const { supabase } = require(path.join(root, "netlify/functions/lib/cruise-discovery-ops"));
   const result = await runHalDiscoveryBatch({
     mode: "production_read_only",
@@ -192,6 +179,7 @@ async function runManifest(sb, ctx) {
     maxWrites: MAX_WRITES,
     buildManifest: true,
     performWrites: false,
+    recordRun: false,
     cruiseLine: ctx.line,
     ships: ctx.ships,
     destinations: ctx.destinations,
@@ -200,6 +188,7 @@ async function runManifest(sb, ctx) {
 
   const manifest = {
     ...result.manifest,
+    batch: 3,
     run_id: RUN_ID,
     cursor_start: CURSOR_START,
     max_pages: MAX_PAGES,
@@ -207,7 +196,8 @@ async function runManifest(sb, ctx) {
     batch_stats: result.stats,
     cruise_metrics: result.cruise_metrics,
     destination_counts: result.destination_counts,
-    page_log: result.page_log
+    page_log: result.page_log,
+    timing: result.timing
   };
 
   fs.mkdirSync(path.dirname(MANIFEST_PATH), { recursive: true });
@@ -218,27 +208,33 @@ async function runManifest(sb, ctx) {
     manifest_path: MANIFEST_PATH,
     acceptance_gate: manifest.acceptance_gate,
     product_count: manifest.products?.length || 0,
-    proposed_writes: manifest.acceptance_gate?.proposed_write_count || 0
+    proposed_writes: manifest.acceptance_gate?.proposed_write_count || 0,
+    next_cursor: result.cursor?.next_start,
+    timing: result.timing
   };
 }
 
 function runGate() {
   if (!fs.existsSync(MANIFEST_PATH)) throw new Error(`Manifest missing: ${MANIFEST_PATH}`);
   const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
-  const gate = evaluateAcceptanceGate(manifest);
+  const gate = evaluateAcceptanceGate(manifest, { minComplete: 25 });
+  if (gate.proposed_write_count > MAX_WRITES) {
+    gate.passed = false;
+    gate.failures.push(`proposed_writes_exceed_cap:${gate.proposed_write_count}>${MAX_WRITES}`);
+  }
   return { phase: "gate", passed: gate.passed, gate, manifest_path: MANIFEST_PATH };
 }
 
 async function runApplyLocal(ctx) {
   const gate = runGate();
   if (!gate.passed) throw new Error(`Acceptance gate failed: ${JSON.stringify(gate.gate.failures)}`);
-
   if (String(process.env.HAL_DISCOVERY_WRITE_ENABLED || "").toLowerCase() !== "true") {
-    throw new Error("HAL_DISCOVERY_WRITE_ENABLED must be true for local apply");
+    throw new Error("HAL_DISCOVERY_WRITE_ENABLED must be true for apply");
   }
 
   const { supabase } = require(path.join(root, "netlify/functions/lib/cruise-discovery-ops"));
-  const countsBefore = await fetchCounts();
+  const sb = createSupabaseRest(root);
+  const countsBefore = await fetchDetailedCounts(sb, ctx.line.id);
   const started = Date.now();
 
   const result = await runHalDiscoveryBatch({
@@ -250,18 +246,18 @@ async function runApplyLocal(ctx) {
     maxWrites: MAX_WRITES,
     performWrites: true,
     buildManifest: false,
+    recordRun: true,
     cruiseLine: ctx.line,
     ships: ctx.ships,
     destinations: ctx.destinations,
     supabase
   });
 
-  const countsAfter = await fetchCounts();
+  const countsAfter = await fetchDetailedCounts(sb, ctx.line.id);
   const rollbackPath = path.join(
     root,
-    `reports/hal-first-production-batch-rollback-${new Date().toISOString().replace(/[:.]/g, "-")}.json`
+    `reports/hal-third-production-batch-rollback-${new Date().toISOString().replace(/[:.]/g, "-")}.json`
   );
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
   const writeDetails = result.write_result?.stats?.write_details || [];
 
   fs.writeFileSync(
@@ -269,13 +265,17 @@ async function runApplyLocal(ctx) {
     JSON.stringify(
       {
         created_at: new Date().toISOString(),
+        batch: 3,
         run_id: RUN_ID,
+        run_record_id: result.run_record_id,
+        cursor_start: CURSOR_START,
         apply_timestamp: new Date().toISOString(),
-        apply_mode: "local_production_write",
         write_result: result.write_result,
+        timing: result.timing,
         rollback_actions: writeDetails.map((d) => ({
           hal_product_identity: d.hal_product_key,
           discovered_cruise_id: d.discovered_cruise_id,
+          created: d.created,
           rollback: { delete_on_rollback: d.created === true }
         }))
       },
@@ -286,77 +286,29 @@ async function runApplyLocal(ctx) {
 
   return {
     phase: "apply_local",
+    batch: 3,
     run_id: RUN_ID,
+    run_record_id: result.run_record_id,
     elapsed_ms: Date.now() - started,
-    result,
-    rollback_path: rollbackPath,
-    table_counts_before: countsBefore,
-    table_counts_after: countsAfter
-  };
-}
-
-async function runApplyProduction() {
-  const gate = runGate();
-  if (!gate.passed) throw new Error(`Acceptance gate failed: ${JSON.stringify(gate.gate.failures)}`);
-
-  const payload = {
-    mode: "production_write",
     cursor_start: CURSOR_START,
-    max_pages: MAX_PAGES,
-    max_writes: MAX_WRITES,
-    run_id: RUN_ID,
-    perform_writes: true
-  };
-
-  const result = await invokeProductionBatch(payload);
-  if (result.status !== 200 || !result.body?.success) {
-    throw new Error(`Production batch failed: ${JSON.stringify(result)}`);
-  }
-
-  const rollbackPath = path.join(
-    root,
-    `reports/hal-first-production-batch-rollback-${new Date().toISOString().replace(/[:.]/g, "-")}.json`
-  );
-  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8"));
-  const inserted = result.body.write_result?.stats?.write_details?.filter((d) => d.created) || [];
-
-  fs.writeFileSync(
-    rollbackPath,
-    JSON.stringify(
-      {
-        created_at: new Date().toISOString(),
-        run_id: RUN_ID,
-        apply_timestamp: new Date().toISOString(),
-        production_response: result.body,
-        rollback_actions: manifest.products
-          .filter((p) => ["insert_active", "update_existing"].includes(p.proposed_action))
-          .map((p) => ({
-            hal_product_identity: p.stable_product_identity_key,
-            discovered_cruise_id: inserted.find((d) => d.hal_product_key === p.stable_product_identity_key)?.discovered_cruise_id || p.existing_discovered_cruise_id,
-            proposed_action: p.proposed_action,
-            rollback: p.rollback
-          }))
-      },
-      null,
-      2
-    )
-  );
-
-  return {
-    phase: "apply",
-    run_id: RUN_ID,
-    production_status: result.status,
-    result: result.body,
-    rollback_path: rollbackPath
+    next_cursor: result.cursor?.next_start,
+    stats: result.stats,
+    write_result: result.write_result,
+    destination_counts: result.destination_counts,
+    timing: result.timing,
+    rollback_path: rollbackPath,
+    counts_before: countsBefore,
+    counts_after: countsAfter
   };
 }
 
 async function runIdempotencyLocal(ctx) {
   if (String(process.env.HAL_DISCOVERY_WRITE_ENABLED || "").toLowerCase() !== "true") {
-    throw new Error("HAL_DISCOVERY_WRITE_ENABLED must be true for idempotency local check");
+    throw new Error("HAL_DISCOVERY_WRITE_ENABLED must be true for idempotency check");
   }
   const { supabase } = require(path.join(root, "netlify/functions/lib/cruise-discovery-ops"));
-  const countsBefore = await fetchCounts();
+  const sb = createSupabaseRest(root);
+  const countsBefore = await fetchDetailedCounts(sb, ctx.line.id);
   const result = await runHalDiscoveryBatch({
     mode: "production_write",
     runId: `${RUN_ID}-idempotency`,
@@ -365,37 +317,24 @@ async function runIdempotencyLocal(ctx) {
     maxCandidates: MAX_WRITES,
     maxWrites: MAX_WRITES,
     performWrites: true,
+    recordRun: false,
     cruiseLine: ctx.line,
     ships: ctx.ships,
     destinations: ctx.destinations,
     supabase
   });
-  const countsAfter = await fetchCounts();
+  const countsAfter = await fetchDetailedCounts(sb, ctx.line.id);
   return {
     phase: "idempotency_local",
+    batch: 3,
     inserted: result.write_result?.stats?.inserted || 0,
     updated: result.write_result?.stats?.updated || 0,
     duplicate_skips: result.write_result?.stats?.duplicate_skips || 0,
+    incomplete_skips: result.write_result?.stats?.incomplete_skips || 0,
     failed: result.write_result?.stats?.failed || 0,
-    table_counts_before: countsBefore,
-    table_counts_after: countsAfter
-  };
-}
-
-async function runIdempotencyCheck() {
-  const payload = {
-    mode: "production_write",
-    cursor_start: CURSOR_START,
-    max_pages: MAX_PAGES,
-    max_writes: MAX_WRITES,
-    run_id: `${RUN_ID}-idempotency`,
-    perform_writes: true
-  };
-  const result = await invokeProductionBatch(payload);
-  return {
-    phase: "idempotency",
-    status: result.status,
-    body: result.body
+    timing: result.timing,
+    counts_before: countsBefore,
+    counts_after: countsAfter
   };
 }
 
@@ -405,14 +344,12 @@ async function main() {
   const ctx = await loadHalContext(sb);
 
   let out;
-  if (args.precheck) out = await runPrecheck(sb);
-  else if (args.manifest) out = await runManifest(sb, ctx);
+  if (args.precheck) out = await runPrecheck(sb, ctx);
+  else if (args.manifest) out = await runManifest(ctx);
   else if (args.gate) out = runGate();
-  else if (args.applyProduction) out = await runApplyProduction();
   else if (args.applyLocal) out = await runApplyLocal(ctx);
   else if (args.idempotencyLocal) out = await runIdempotencyLocal(ctx);
-  else if (args.idempotencyCheck) out = await runIdempotencyCheck();
-  else out = await runPrecheck(sb);
+  else out = await runPrecheck(sb, ctx);
 
   console.log(JSON.stringify(out, null, 2));
 }
