@@ -233,31 +233,11 @@
     }
 
     const slug = slugifyPublicSlug(model.publicSlug || options.publicSlug || "");
-    const publicationStatus = String(
-      options.publicationStatus || model.publicationStatus || model.publication_status || ""
-    )
-      .trim()
-      .toLowerCase();
-    // Soft admin previews may render drafts; hard export must not emit dead Explore More links.
-    const enforcePublicPage = !options.softValidation;
-
-    if (enforcePublicPage) {
-      if (!slug || publicationStatus !== "published") {
-        errors.push(
-          "Public page unavailable. This cruise has not been published or has no valid public slug."
-        );
-      }
-    } else if (!slug) {
-      errors.push("Set a Public Slug so Explore More can open the live cruise page.");
-    }
-
-    const cta = buildExploreMoreUrl(model, { ...options, publicSlug: slug || options.publicSlug });
-    if (!cta) {
-      errors.push(
-        "The Explore More link is missing or invalid. Set a Public Slug so the cruise page address can be built."
-      );
-    } else if (!isAbsoluteHttpsUrl(cta) || isLocalOrDevUrl(cta) || isAdminOrProtectedUrl(cta)) {
+    const cta = slug ? buildExploreMoreUrl(model, { ...options, publicSlug: slug }) : "";
+    if (slug && cta && (!isAbsoluteHttpsUrl(cta) || isLocalOrDevUrl(cta) || isAdminOrProtectedUrl(cta))) {
       errors.push("The Explore More link must be a full public https address.");
+    } else if (slug && !cta) {
+      errors.push("The Explore More link is missing or invalid. Check the public slug.");
     }
 
     return { ok: errors.length === 0, errors, outputMode, templateKey, ctaUrl: cta, publicSlug: slug };
@@ -820,9 +800,11 @@
       `
       : "";
 
-    const cta = isGreen
-      ? renderGreenCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE")
-      : renderClassicCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE");
+    const cta = ctaUrl
+      ? isGreen
+        ? renderGreenCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE")
+        : renderClassicCtaButton(ctaUrl, model.exploreMoreLabel || "EXPLORE MORE")
+      : "";
 
     const routeMap = model.routeMapUrl
       ? `
@@ -939,7 +921,7 @@ ${styleBlock}
 
   /**
    * Compose a multi-cruise newsletter issue fragment.
-   * cruisePayloads: [{ model, pricingRows?, publicationStatus?, publicSlug?, name? }]
+   * cruisePayloads: [{ model, pricingRows?, publicSlug?, name? }]
    */
   function composeIssueHtml(cruisePayloads, options = {}) {
     const soft = Boolean(options.softValidation);
@@ -971,7 +953,6 @@ ${styleBlock}
         outputMode,
         templateKey,
         pricingRows: payload.pricingRows,
-        publicationStatus: payload.publicationStatus,
         publicSlug: payload.publicSlug || payload.model?.publicSlug,
         softValidation: soft
       });

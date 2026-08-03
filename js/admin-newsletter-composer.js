@@ -1,23 +1,17 @@
 /**
- * Sprint 13C — Newsletter Issue Composer.
+ * Newsletter Issue Composer — newsletter-first workspace.
  *
- * Assembles Featured Cruises for one newsletter number into a multi-cruise
- * Mailchimp fragment. Reuses NewsletterPreview + NewsletterMailchimpExport.
- *
- * TEMPORARY — design template persistence:
- * The selected Design Template is stored in browser localStorage keyed by
- * newsletter number. The current schema has no per-issue record
- * (featured_cruise_newsletter_defaults is a singleton for new-cruise defaults
- * only; featured_cruises has no template column). Do not invent a denormalised
- * template field on every cruise. Replace this with a newsletter_issues (or
- * equivalent) persistence field when that table is introduced.
+ * Newsletters are persisted in public.newsletters. Each Featured Cruise links via
+ * newsletter_id (canonical) with newsletter_number/date kept in sync for legacy queries.
  */
 (function (global) {
   "use strict";
 
-  /** @temporary Replace when newsletter issue rows support a template column. */
+  /** @deprecated Migrated to newsletters.design_template — read once for legacy browser data. */
   const TEMPLATE_STORAGE_KEY = "101cruise.newsletterIssue.templateByNumber.temporary";
 
+  let newsletters = [];
+  let activeNewsletterId = null;
   let issueNumber = null;
   let issueDate = "";
   let issueTemplate = "green-price-cards";
@@ -27,6 +21,10 @@
   let issueMessage = "";
   let issueMessageTone = "";
   let issueWarnings = [];
+  let routeMapSaveResults = [];
+  let routeMapSaveBusy = false;
+  let routeMapBatchId = 0;
+  const ROUTE_MAP_FETCH_MS = 120000;
   let issueHtml = {
     airline: "",
     general: "",
@@ -123,8 +121,51 @@
     return "green-price-cards";
   }
 
+  function getActiveNewsletter() {
+    if (activeNewsletterId) {
+      const row = newsletters.find((n) => n.id === activeNewsletterId);
+      if (row) return row;
+    }
+    if (issueNumber != null) {
+      return newsletters.find((n) => Number(n.newsletter_number) === Number(issueNumber)) || null;
+    }
+    return null;
+  }
+
+  async function loadNewslettersFromDb() {
+    const client = global.supabaseClient;
+    if (!client) {
+      newsletters = [];
+      return newsletters;
+    }
+    const { data, error } = await client
+      .from("newsletters")
+      .select("id,newsletter_number,newsletter_date,design_template,created_at,updated_at")
+      .order("newsletter_number", { ascending: false });
+    if (error) {
+      // Table may not exist until migration is applied — fall back to cruise-derived issues.
+      console.warn("newsletters load skipped", error.message);
+      newsletters = [];
+      return newsletters;
+    }
+    newsletters = data || [];
+    global.newsletters = newsletters;
+    return newsletters;
+  }
+
+  function migrateTemplateFromLocalStorage(number) {
+    try {
+      const map = JSON.parse(localStorage.getItem(TEMPLATE_STORAGE_KEY) || "{}") || {};
+      const stored = map[String(number)];
+      if (stored === "classic-editorial" || stored === "green-price-cards") return stored;
+    } catch {
+      /* ignore */
+    }
+    return null;
+  }
+
   function availableNewsletterNumbers() {
-    const set = new Set();
+    const set = new Set(newsletters.map((n) => Number(n.newsletter_number)).filter(Number.isFinite));
     for (const row of getCruises()) {
       if (row.newsletter_number != null && row.newsletter_number !== "") {
         set.add(Number(row.newsletter_number));
@@ -138,16 +179,40 @@
     return [...set].filter((n) => Number.isFinite(n)).sort((a, b) => b - a);
   }
 
+  function syncActiveFromNewsletter(row) {
+    if (!row) {
+      activeNewsletterId = null;
+      issueNumber = null;
+      issueDate = "";
+      issueTemplate = "green-price-cards";
+      return;
+    }
+    activeNewsletterId = row.id;
+    issueNumber = Number(row.newsletter_number);
+    issueDate = row.newsletter_date || resolveIssueDate(issueNumber) || "";
+    issueTemplate =
+      row.design_template === "classic-editorial" ? "classic-editorial" : "green-price-cards";
+  }
+
   function cruisesForCurrentIssue() {
-    if (issueNumber == null || issueNumber === "") return [];
-    const num = Number(issueNumber);
-    return getCruises()
-      .filter((row) => Number(row.newsletter_number) === num)
-      .sort((a, b) => {
-        const order = Number(a.display_order || 0) - Number(b.display_order || 0);
-        if (order) return order;
-        return String(a.headline || "").localeCompare(String(b.headline || ""), "en");
-      });
+    const cruises = getCruises();
+    const num = issueNumber != null && issueNumber !== "" ? Number(issueNumber) : null;
+    const seen = new Set();
+    const matched = [];
+    for (const row of cruises) {
+      const inIssue =
+        (activeNewsletterId && row.newsletter_id === activeNewsletterId) ||
+        (num != null && Number(row.newsletter_number) === num);
+      if (!inIssue || seen.has(row.id)) continue;
+      seen.add(row.id);
+      matched.push(row);
+    }
+    if (!matched.length) return [];
+    return matched.sort((a, b) => {
+      const order = Number(a.display_order || 0) - Number(b.display_order || 0);
+      if (order) return order;
+      return String(a.headline || "").localeCompare(String(b.headline || ""), "en");
+    });
   }
 
   function unassignedCruises() {
@@ -187,69 +252,415 @@
   }
 
   function ensureIssueSelected() {
+    if (!newsletters.length && global.supabaseClient) {
+      /* async load happens in onCruisesReloaded / render prep */
+    }
+    if (activeNewsletterId) {
+      const row = newsletters.find((n) => n.id === activeNewsletterId);
+      if (row) {
+        syncActiveFromNewsletter(row);
+        return;
+      }
+    }
     const numbers = availableNewsletterNumbers();
     const defaults = getDefaults();
     if (issueNumber == null || issueNumber === "") {
-      if (defaults.newsletter_number != null && defaults.newsletter_number !== "") {
+      if (newsletters.length) {
+        syncActiveFromNewsletter(newsletters[0]);
+      } else if (defaults.newsletter_number != null && defaults.newsletter_number !== "") {
         issueNumber = Number(defaults.newsletter_number);
+        issueDate = resolveIssueDate(issueNumber) || defaults.newsletter_publication_date || "";
+        const migrated = migrateTemplateFromLocalStorage(issueNumber);
+        issueTemplate = migrated || templateForNumber(issueNumber);
       } else if (numbers.length) {
         issueNumber = numbers[0];
+        issueDate = resolveIssueDate(issueNumber) || "";
+        issueTemplate = templateForNumber(issueNumber);
       } else {
         issueNumber = null;
+        activeNewsletterId = null;
       }
-    }
-    if (issueNumber != null) {
-      issueDate = resolveIssueDate(issueNumber) || defaults.newsletter_publication_date || "";
-      issueTemplate = templateForNumber(issueNumber);
+    } else if (issueNumber != null) {
+      const row = newsletters.find((n) => Number(n.newsletter_number) === Number(issueNumber));
+      if (row) syncActiveFromNewsletter(row);
+      else {
+        issueDate = resolveIssueDate(issueNumber) || defaults.newsletter_publication_date || "";
+        issueTemplate = templateForNumber(issueNumber);
+      }
     }
   }
 
-  async function startIssue() {
-    const numberInput = document.getElementById("newsletterStartNumber");
-    const dateInput = document.getElementById("newsletterStartDate");
+  async function createNewsletter() {
+    const numberInput = document.getElementById("newsletterCreateNumber");
+    const dateInput = document.getElementById("newsletterCreateDate");
     const rawNumber = numberInput?.value ?? "";
     const nextNumber = Number(rawNumber);
     if (!Number.isFinite(nextNumber) || nextNumber < 1) {
-      issueMessage = "Enter a newsletter number (for example 77) to start this issue.";
+      issueMessage = "Enter a newsletter number (for example 77).";
       issueMessageTone = "error";
       rerender();
       return;
     }
-    const nextDate = String(dateInput?.value || "").trim() || getDefaults().newsletter_publication_date || "";
-    issueNumber = nextNumber;
-    issueDate = nextDate;
-    issueTemplate = templateForNumber(issueNumber);
-    saveTemplateForNumber(issueNumber, issueTemplate);
-    invalidateCache();
-    issuePricingLoadedFor = "";
-
-    // Persist as newsletter defaults so New Cruise inherits this issue.
+    const nextDate = String(dateInput?.value || "").trim();
+    if (!nextDate) {
+      issueMessage = "Enter the newsletter date.";
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
+    const duplicate = newsletters.find((n) => Number(n.newsletter_number) === nextNumber);
+    if (duplicate) {
+      issueMessage = `Newsletter ${nextNumber} already exists. Open it from the list or choose another number.`;
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
+    const client = global.supabaseClient;
+    if (!client) {
+      issueMessage = "Database client is not ready.";
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
     try {
-      if (global.supabaseClient) {
-        await global.supabaseClient.from("featured_cruise_newsletter_defaults").upsert({
-          id: 1,
+      issueBusy = true;
+      issueMessage = "Creating newsletter…";
+      issueMessageTone = "running";
+      rerender();
+      const migratedTemplate = migrateTemplateFromLocalStorage(nextNumber) || "green-price-cards";
+      const { data, error } = await client
+        .from("newsletters")
+        .insert({
           newsletter_number: nextNumber,
-          newsletter_publication_date: nextDate || null
-        });
-        global.featuredNewsletterDefaults = {
-          newsletter_number: nextNumber,
-          newsletter_publication_date: nextDate || null
-        };
+          newsletter_date: nextDate,
+          design_template: migratedTemplate
+        })
+        .select("id,newsletter_number,newsletter_date,design_template")
+        .single();
+      if (error) {
+        if (/duplicate|unique/i.test(error.message || "")) {
+          throw new Error(`Newsletter ${nextNumber} already exists. Choose another number.`);
+        }
+        throw new Error(error.message || "Could not create newsletter.");
       }
-    } catch {
-      /* defaults upsert is best-effort */
+      newsletters.unshift(data);
+      global.newsletters = newsletters;
+      syncActiveFromNewsletter(data);
+      invalidateCache();
+      issuePricingLoadedFor = "";
+      await client.from("featured_cruise_newsletter_defaults").upsert({
+        id: 1,
+        newsletter_number: nextNumber,
+        newsletter_publication_date: nextDate
+      });
+      global.featuredNewsletterDefaults = {
+        newsletter_number: nextNumber,
+        newsletter_publication_date: nextDate
+      };
+      issueMessage = `Newsletter ${nextNumber} created. Add cruises below.`;
+      issueMessageTone = "success";
+    } catch (error) {
+      issueMessage = error.message || "Could not create newsletter.";
+      issueMessageTone = "error";
+    } finally {
+      issueBusy = false;
+      rerender();
+    }
+  }
+
+  /** @deprecated Use createNewsletter — kept for any stale onclick handlers. */
+  async function startIssue() {
+    return createNewsletter();
+  }
+
+  async function saveNewsletter() {
+    if (issueBusy || routeMapSaveBusy) return;
+    const active = getActiveNewsletter();
+    if (!active?.id) {
+      issueMessage = "Create or open a newsletter before saving.";
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
+    const numberInput = document.getElementById("newsletterWorkspaceNumber");
+    const dateInput = document.getElementById("newsletterWorkspaceDate");
+    const templateSelect = document.getElementById("newsletterIssueTemplate");
+    const rawNumber = numberInput?.value ?? active.newsletter_number;
+    const nextNumber = Number(rawNumber);
+    const nextDate = String(dateInput?.value || "").trim();
+    const nextTemplate =
+      templateSelect?.value === "classic-editorial" ? "classic-editorial" : "green-price-cards";
+
+    if (!Number.isFinite(nextNumber) || nextNumber < 1) {
+      issueMessage = "Newsletter number must be a whole number of at least 1.";
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
+    if (!nextDate) {
+      issueMessage = "Newsletter date is required.";
+      issueMessageTone = "error";
+      rerender();
+      return;
+    }
+    const duplicate = newsletters.find(
+      (n) => Number(n.newsletter_number) === nextNumber && n.id !== active.id
+    );
+    if (duplicate) {
+      issueMessage = `Newsletter number ${nextNumber} is already used by another issue.`;
+      issueMessageTone = "error";
+      rerender();
+      return;
     }
 
-    issueMessage = `Newsletter ${nextNumber} ready. Add your existing cruises below.`;
-    issueMessageTone = "success";
-    try {
-      const cruises = cruisesForCurrentIssue();
-      await ensurePricingLoaded(cruises);
-      issueWarnings = collectWarnings(cruises);
-    } catch {
-      issueWarnings = [];
+    const client = global.supabaseClient;
+    if (!client) {
+      issueMessage = "Database client is not ready.";
+      issueMessageTone = "error";
+      rerender();
+      return;
     }
-    rerender();
+
+    const batchId = ++routeMapBatchId;
+
+    try {
+      issueBusy = true;
+      routeMapSaveBusy = true;
+      routeMapSaveResults = [];
+      issueMessage = "Saving newsletter…";
+      issueMessageTone = "running";
+      rerender();
+
+      const { data: savedNewsletter, error: newsletterError } = await client
+        .from("newsletters")
+        .update({
+          newsletter_number: nextNumber,
+          newsletter_date: nextDate,
+          design_template: nextTemplate
+        })
+        .eq("id", active.id)
+        .select("id,newsletter_number,newsletter_date,design_template")
+        .single();
+      if (newsletterError) {
+        if (/duplicate|unique/i.test(newsletterError.message || "")) {
+          throw new Error(`Newsletter number ${nextNumber} is already in use.`);
+        }
+        throw new Error(newsletterError.message || "Could not save newsletter.");
+      }
+      const idx = newsletters.findIndex((n) => n.id === active.id);
+      if (idx >= 0) newsletters[idx] = savedNewsletter;
+      else newsletters.unshift(savedNewsletter);
+      global.newsletters = newsletters;
+      syncActiveFromNewsletter(savedNewsletter);
+      issueTemplate = nextTemplate;
+
+      // Sync linkage fields only — never overwrite unrelated cruise content.
+      const { data: linkedById, error: linkedByIdError } = await client
+        .from("featured_cruises")
+        .select("id")
+        .eq("newsletter_id", savedNewsletter.id);
+      if (linkedByIdError) throw new Error(linkedByIdError.message);
+
+      const { data: linkedByNumber, error: linkedByNumberError } = await client
+        .from("featured_cruises")
+        .select("id")
+        .eq("newsletter_number", nextNumber)
+        .is("newsletter_id", null);
+      if (linkedByNumberError) throw new Error(linkedByNumberError.message);
+
+      const cruiseIds = [
+        ...new Set([...(linkedById || []).map((r) => r.id), ...(linkedByNumber || []).map((r) => r.id)])
+      ];
+
+      if (cruiseIds.length) {
+        const syncPayload = {
+          newsletter_id: savedNewsletter.id,
+          newsletter_number: nextNumber,
+          newsletter_publication_date: nextDate
+        };
+        const updates = cruiseIds.map((id) =>
+          client.from("featured_cruises").update(syncPayload).eq("id", id)
+        );
+        const results = await Promise.all(updates);
+        const failed = results.find((r) => r.error);
+        if (failed) throw new Error(failed.error.message);
+        for (const cruise of getCruises()) {
+          if (!cruiseIds.includes(cruise.id)) continue;
+          cruise.newsletter_id = savedNewsletter.id;
+          cruise.newsletter_number = nextNumber;
+          cruise.newsletter_publication_date = nextDate;
+        }
+      }
+
+      await client.from("featured_cruise_newsletter_defaults").upsert({
+        id: 1,
+        newsletter_number: nextNumber,
+        newsletter_publication_date: nextDate
+      });
+      global.featuredNewsletterDefaults = {
+        newsletter_number: nextNumber,
+        newsletter_publication_date: nextDate
+      };
+
+      invalidateCache();
+      issueMessage = "Newsletter saved. Generating missing route maps…";
+      issueMessageTone = "running";
+      rerender();
+
+      if (batchId !== routeMapBatchId) return;
+
+      const cruises = cruisesForCurrentIssue();
+      const mapResults = await generateMissingRouteMaps(cruises, { batchId });
+      if (batchId !== routeMapBatchId) return;
+
+      routeMapSaveResults = mapResults;
+
+      if (typeof global.loadFeaturedCruises === "function") {
+        await global.loadFeaturedCruises();
+      }
+
+      const generated = mapResults.filter((r) => r.status === "generated").length;
+      const retained = mapResults.filter((r) => r.status === "retained").length;
+      const needsCoords = mapResults.filter((r) => r.status === "needs_coordinates").length;
+      const failedMaps = mapResults.filter((r) => r.status === "failed");
+
+      const parts = ["Newsletter saved"];
+      if (generated) parts.push(`${generated} route map${generated === 1 ? "" : "s"} generated`);
+      if (retained) parts.push(`${retained} existing route map${retained === 1 ? "" : "s"} retained`);
+      if (needsCoords) parts.push(`${needsCoords} cruise${needsCoords === 1 ? "" : "s"} need coordinates`);
+      if (failedMaps.length) parts.push(`${failedMaps.length} route map failure${failedMaps.length === 1 ? "" : "s"}`);
+
+      issueMessage = parts.join(" · ");
+      issueMessageTone = failedMaps.length ? "error" : "success";
+    } catch (error) {
+      issueMessage = error.message || "Could not save newsletter.";
+      issueMessageTone = "error";
+    } finally {
+      if (batchId === routeMapBatchId) {
+        issueBusy = false;
+        routeMapSaveBusy = false;
+        rerender();
+      }
+    }
+  }
+
+  async function fetchRouteMapGenerate(body, { batchId } = {}) {
+    if (batchId != null && batchId !== routeMapBatchId) {
+      throw new Error("Route map batch superseded.");
+    }
+    const headers =
+      typeof global.adminAuthHeaders === "function"
+        ? await global.adminAuthHeaders({ "Content-Type": "application/json" })
+        : { "Content-Type": "application/json" };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ROUTE_MAP_FETCH_MS);
+    try {
+      const response = await fetch("/.netlify/functions/route-map-generate", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+      const data = await response.json().catch(() => ({}));
+      return { response, data };
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error("Route map generation timed out. Try again or use Generate on the cruise form.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function generateMissingRouteMaps(cruises, { batchId } = {}) {
+    const results = [];
+    const inFlight = new Set();
+    for (const cruise of cruises) {
+      if (batchId != null && batchId !== routeMapBatchId) break;
+      const name = cruise.headline || "Untitled cruise";
+      const hasGenerated =
+        Boolean(cruise.route_map_png_path && cruise.route_map_svg_path) ||
+        Boolean(cruise.route_map_generated_at);
+      const hasManual = Boolean(cruise.route_map_media_id || cruise.route_map_image_url);
+      if (hasGenerated || hasManual) {
+        results.push({ cruiseId: cruise.id, name, status: "retained" });
+        continue;
+      }
+      const canGenerate =
+        typeof global.featuredCruiseCanGenerateRouteMap === "function"
+          ? global.featuredCruiseCanGenerateRouteMap(cruise)
+          : false;
+      if (!canGenerate) {
+        results.push({
+          cruiseId: cruise.id,
+          name,
+          status: "needs_coordinates",
+          message: "Add itinerary port coordinates before a route map can be generated."
+        });
+        continue;
+      }
+      if (inFlight.has(cruise.id)) continue;
+      inFlight.add(cruise.id);
+      try {
+        const { response, data } = await fetchRouteMapGenerate(
+          {
+            action: "generate",
+            featured_cruise_id: cruise.id,
+            png_width: 2000,
+            force_reroute: false
+          },
+          { batchId }
+        );
+        if (response.ok && data.ok) {
+          results.push({ cruiseId: cruise.id, name, status: "generated" });
+          if (typeof global.loadFeaturedCruises === "function") {
+            await global.loadFeaturedCruises();
+          }
+        } else {
+          const errMsg =
+            data.errors?.[0]?.message || data.error || "Route map generation failed.";
+          results.push({ cruiseId: cruise.id, name, status: "failed", message: errMsg });
+        }
+      } catch (error) {
+        results.push({
+          cruiseId: cruise.id,
+          name,
+          status: "failed",
+          message: error.message || "Route map generation failed."
+        });
+      } finally {
+        inFlight.delete(cruise.id);
+      }
+    }
+    return results;
+  }
+
+  async function retryRouteMapForCruise(cruiseId) {
+    const cruise = getCruises().find((c) => c.id === cruiseId);
+    if (!cruise) return;
+    try {
+      issueBusy = true;
+      routeMapSaveBusy = true;
+      issueMessage = `Generating route map for ${cruise.headline || "cruise"}…`;
+      issueMessageTone = "running";
+      rerender();
+      const [result] = await generateMissingRouteMaps([cruise], { batchId: ++routeMapBatchId });
+      routeMapSaveResults = [result];
+      if (typeof global.loadFeaturedCruises === "function") await global.loadFeaturedCruises();
+      issueMessage =
+        result.status === "generated"
+          ? `Route map generated for ${result.name}.`
+          : result.message || "Route map generation failed.";
+      issueMessageTone = result.status === "generated" ? "success" : "error";
+    } catch (error) {
+      issueMessage = error.message || "Route map generation failed.";
+      issueMessageTone = "error";
+    } finally {
+      issueBusy = false;
+      routeMapSaveBusy = false;
+      rerender();
+    }
   }
 
   function heroThumbUrl(cruise) {
@@ -279,10 +690,8 @@
       if (!hero) warnings.push(`${name}: missing hero image`);
       if (!hasPrice) warnings.push(`${name}: missing pricing`);
       if (!String(cruise.public_slug || "").trim()) warnings.push(`${name}: missing public slug`);
-      if ((cruise.publication_status || "draft") !== "published") {
-        warnings.push(
-          `${name}: Public page unavailable — set Publication Status to Published before export (Explore More must open a live page).`
-        );
+      if (String(cruise.public_slug || "").trim() && !hero) {
+        warnings.push(`${name}: has a public slug but is missing a hero image`);
       }
     }
     return warnings;
@@ -682,7 +1091,6 @@
       name: cruise.headline || "Untitled cruise",
       model: buildModelForCruise(cruise, outputMode),
       pricingRows: issuePricingByCruiseId[cruise.id] || [],
-      publicationStatus: cruise.publication_status || "draft",
       publicSlug: cruise.public_slug || ""
     }));
   }
@@ -724,13 +1132,38 @@
   async function selectIssueNumber(value) {
     const next = value === "" || value == null ? null : Number(value);
     issueNumber = Number.isFinite(next) ? next : null;
-    issueDate = issueNumber != null ? resolveIssueDate(issueNumber) : "";
-    issueTemplate = issueNumber != null ? templateForNumber(issueNumber) : "green-price-cards";
+    const row = issueNumber != null ? newsletters.find((n) => Number(n.newsletter_number) === issueNumber) : null;
+    if (row) syncActiveFromNewsletter(row);
+    else {
+      activeNewsletterId = null;
+      issueDate = issueNumber != null ? resolveIssueDate(issueNumber) : "";
+      issueTemplate = issueNumber != null ? templateForNumber(issueNumber) : "green-price-cards";
+    }
     issuePricingLoadedFor = "";
     issuePricingByCruiseId = {};
     invalidateCache();
+    routeMapSaveResults = [];
     issueMessage = "";
     addPickerOpen = false;
+    try {
+      const cruises = cruisesForCurrentIssue();
+      await ensurePricingLoaded(cruises);
+      issueWarnings = collectWarnings(cruises);
+    } catch {
+      issueWarnings = [];
+    }
+    rerender();
+  }
+
+  async function openNewsletterById(newsletterId) {
+    const row = newsletters.find((n) => n.id === newsletterId);
+    if (!row) return;
+    syncActiveFromNewsletter(row);
+    issuePricingLoadedFor = "";
+    issuePricingByCruiseId = {};
+    invalidateCache();
+    routeMapSaveResults = [];
+    issueMessage = "";
     try {
       const cruises = cruisesForCurrentIssue();
       await ensurePricingLoaded(cruises);
@@ -751,7 +1184,7 @@
     issueHtml.airline = "";
     issueHtml.general = "";
     issueHtml.previewMode = "";
-    issueMessage = `Design template set to ${issueTemplate === "classic-editorial" ? "Classic Editorial" : "Green Price Cards"}. Click Preview to refresh.`;
+    issueMessage = `Design template set to ${issueTemplate === "classic-editorial" ? "Classic Editorial" : "Green Price Cards"}. Save the newsletter to persist, then Preview to refresh.`;
     issueMessageTone = "info";
     rerender();
   }
@@ -845,9 +1278,10 @@
       issueBusy = true;
       const { error } = await global.supabaseClient
         .from("featured_cruises")
-        .update({ newsletter_number: null, newsletter_publication_date: null })
+        .update({ newsletter_id: null, newsletter_number: null, newsletter_publication_date: null })
         .eq("id", cruiseId);
       if (error) throw new Error(error.message);
+      cruise.newsletter_id = null;
       cruise.newsletter_number = null;
       cruise.newsletter_publication_date = null;
       invalidateCache();
@@ -891,12 +1325,14 @@
       issueBusy = true;
       const existing = cruisesForCurrentIssue();
       let nextOrder = existing.reduce((max, row) => Math.max(max, Number(row.display_order) || 0), 0);
+      const active = getActiveNewsletter();
       const date = issueDate || getDefaults().newsletter_publication_date || null;
       for (const id of ids) {
         nextOrder += 1;
         const { error } = await global.supabaseClient
           .from("featured_cruises")
           .update({
+            newsletter_id: active?.id || null,
             newsletter_number: Number(issueNumber),
             newsletter_publication_date: date,
             display_order: nextOrder
@@ -905,6 +1341,7 @@
         if (error) throw new Error(error.message);
         const local = getCruises().find((c) => c.id === id);
         if (local) {
+          local.newsletter_id = active?.id || null;
           local.newsletter_number = Number(issueNumber);
           local.newsletter_publication_date = date;
           local.display_order = nextOrder;
@@ -1069,10 +1506,12 @@
       const existing = cruisesForCurrentIssue();
       const nextOrder =
         existing.reduce((max, row) => Math.max(max, Number(row.display_order) || 0), 0) + 1;
+      const active = getActiveNewsletter();
       const date = issueDate || getDefaults().newsletter_publication_date || null;
       const { error } = await global.supabaseClient
         .from("featured_cruises")
         .update({
+          newsletter_id: active?.id || null,
           newsletter_number: Number(issueNumber),
           newsletter_publication_date: date,
           display_order: nextOrder
@@ -1081,6 +1520,7 @@
       if (error) throw new Error(error.message);
       const local = getCruises().find((c) => c.id === cruiseId);
       if (local) {
+        local.newsletter_id = active?.id || null;
         local.newsletter_number = Number(issueNumber);
         local.newsletter_publication_date = date;
         local.display_order = nextOrder;
@@ -1138,30 +1578,81 @@
     `;
   }
 
-  function renderStartIssuePanel() {
-    if (issueNumber != null) return "";
+  function renderCreateNewsletterPanel() {
     const defaults = getDefaults();
     const suggestedNumber = defaults.newsletter_number || "";
     const suggestedDate = defaults.newsletter_publication_date || "";
-    const orphanCount = unnumberedCruises().length;
+    const active = getActiveNewsletter();
+    if (active) return "";
     return `
-      <div class="admin-message admin-error" style="margin:0 0 14px">
-        No newsletter issue is selected yet${orphanCount ? ` — but ${orphanCount} existing cruise${orphanCount === 1 ? "" : "s"} ${orphanCount === 1 ? "was" : "were"} found without a newsletter number` : ""}.
-        Enter a newsletter number below to start, then add those cruises to the issue.
+      <div class="newsletter-workspace-create">
+        <h4>Create Newsletter</h4>
+        <p class="admin-muted">Enter the newsletter number and date once. All cruises you add will inherit this issue.</p>
+        <div class="newsletter-issue-start">
+          <div class="admin-field">
+            <label for="newsletterCreateNumber">Newsletter Number <span class="admin-required">*</span></label>
+            <input id="newsletterCreateNumber" type="number" min="1" step="1" value="${esc(String(suggestedNumber || ""))}" placeholder="77">
+          </div>
+          <div class="admin-field">
+            <label for="newsletterCreateDate">Newsletter Date <span class="admin-required">*</span></label>
+            <input id="newsletterCreateDate" type="date" value="${esc(suggestedDate || "")}">
+          </div>
+          <div class="admin-field" style="align-self:end">
+            <button type="button" class="admin-button black" onclick="NewsletterIssueComposer.createNewsletter()" ${issueBusy ? "disabled" : ""}>Create Newsletter</button>
+          </div>
+        </div>
       </div>
-      <div class="newsletter-issue-start">
-        <div class="admin-field">
-          <label for="newsletterStartNumber">Start Newsletter Number</label>
-          <input id="newsletterStartNumber" type="number" min="1" step="1" value="${esc(String(suggestedNumber || ""))}" placeholder="77">
+    `;
+  }
+
+  function renderOpenNewsletterPanel() {
+    if (newsletters.length) {
+      return `
+        <div class="admin-field newsletter-open-field">
+          <label for="newsletterOpenSelect">Open existing newsletter</label>
+          <select id="newsletterOpenSelect" onchange="if(this.value) NewsletterIssueComposer.openNewsletterById(this.value)" ${issueBusy ? "disabled" : ""}>
+            <option value="">Choose…</option>
+            ${newsletters
+              .map(
+                (n) =>
+                  `<option value="${esc(n.id)}" ${n.id === activeNewsletterId ? "selected" : ""}>Newsletter ${esc(String(n.newsletter_number))}${n.newsletter_date ? ` · ${esc(formatDate(n.newsletter_date))}` : ""}</option>`
+              )
+              .join("")}
+          </select>
         </div>
-        <div class="admin-field">
-          <label for="newsletterStartDate">Issue Date</label>
-          <input id="newsletterStartDate" type="date" value="${esc(suggestedDate || "")}">
-        </div>
-        <div class="admin-field" style="align-self:end">
-          <button type="button" class="admin-button black" onclick="NewsletterIssueComposer.startIssue()" ${issueBusy ? "disabled" : ""}>Start newsletter issue</button>
-        </div>
-      </div>
+      `;
+    }
+    return "";
+  }
+
+  function renderRouteMapSaveResults() {
+    if (!routeMapSaveResults.length) return "";
+    return `
+      <ul class="newsletter-route-map-results">
+        ${routeMapSaveResults
+          .map((row) => {
+            const statusLabel =
+              row.status === "generated"
+                ? "Generated"
+                : row.status === "retained"
+                  ? "Existing map kept"
+                  : row.status === "needs_coordinates"
+                    ? "Needs coordinates"
+                    : "Failed";
+            const tone =
+              row.status === "failed"
+                ? "admin-error"
+                : row.status === "needs_coordinates"
+                  ? "admin-muted"
+                  : "admin-success";
+            const retry =
+              row.status === "failed"
+                ? `<button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.retryRouteMapForCruise('${esc(row.cruiseId)}')" ${routeMapSaveBusy || issueBusy ? "disabled" : ""}>Retry</button>`
+                : "";
+            return `<li class="${tone}"><strong>${esc(row.name)}</strong>: ${esc(statusLabel)}${row.message ? ` — ${esc(row.message)}` : ""} ${retry}</li>`;
+          })
+          .join("")}
+      </ul>
     `;
   }
 
@@ -1217,7 +1708,8 @@
     const thumb = heroThumbUrl(cruise);
     const line = cruise.ci_cruise_lines?.name || "Cruise line not set";
     const ship = cruise.ci_cruise_ships?.name || "Ship not set";
-    const status = cruise.publication_status || "draft";
+    const slug = String(cruise.public_slug || "").trim();
+    const publicHint = slug ? `<span class="admin-small">Public page</span>` : "";
     const id = esc(cruise.id);
     return `
       <article
@@ -1235,7 +1727,7 @@
           <span class="newsletter-issue-card-copy">
             <strong>${esc(cruise.headline || "Untitled cruise")}</strong>
             <span class="admin-muted">${esc(line)} · ${esc(ship)}</span>
-            <span class="admin-small">Departure ${esc(formatDate(cruise.departure_date))} · <span class="featured-status-pill status-${esc(status)}">${esc(typeof global.featuredStatusLabel === "function" ? global.featuredStatusLabel(status) : status)}</span></span>
+            <span class="admin-small">Departure ${esc(formatDate(cruise.departure_date))}${publicHint ? ` · ${publicHint}` : ""}</span>
           </span>
         </button>
         <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.removeCruise('${id}')" ${issueBusy ? "disabled" : ""}>Remove</button>
@@ -1245,6 +1737,7 @@
 
   function render() {
     ensureIssueSelected();
+    const active = getActiveNewsletter();
     const numbers = availableNewsletterNumbers();
     const cruises = cruisesForCurrentIssue();
     if (!issueWarnings.length && cruises.length && Object.keys(issuePricingByCruiseId).length) {
@@ -1260,58 +1753,80 @@
             ? "admin-running"
             : "";
 
+    const workspaceBanner = active
+      ? `<div class="newsletter-workspace-active">
+          <span class="newsletter-workspace-badge">Editing Newsletter ${esc(String(active.newsletter_number))}</span>
+          ${active.newsletter_date ? `<span class="admin-muted">${esc(formatDate(active.newsletter_date))}</span>` : ""}
+        </div>`
+      : `<div class="admin-message" style="margin:0 0 14px">No newsletter is open. Create a new newsletter or open an existing one to add cruises.</div>`;
+
     return `
       <div class="admin-card newsletter-issue-composer">
         <div class="admin-list-top">
           <div>
-            <h3>Newsletter${issueNumber != null ? ` ${esc(String(issueNumber))}` : ""}</h3>
-            <p class="admin-muted">Assemble cruises into one Mailchimp-ready issue. Edit individual cruise content by opening a card.</p>
+            <h3>Newsletter Content</h3>
+            <p class="admin-muted">Create or open a newsletter, add cruises, then save. Route maps generate automatically when coordinates allow.</p>
           </div>
           <div class="admin-actions-row">
-            <button type="button" class="admin-button secondary" onclick="startNewFeaturedCruise()" ${issueBusy ? "disabled" : ""}>+ New Cruise</button>
+            ${active ? `<button type="button" class="admin-button black" onclick="NewsletterIssueComposer.saveNewsletter()" ${issueBusy || routeMapSaveBusy ? "disabled" : ""}>${routeMapSaveBusy ? "Generating maps…" : "Save Newsletter"}</button>` : ""}
+            <button type="button" class="admin-button secondary" onclick="startNewFeaturedCruise()" ${issueBusy || !active ? "disabled" : ""} title="${active ? "" : "Open a newsletter first"}">+ Add Cruise</button>
           </div>
         </div>
 
-        <div class="newsletter-issue-header">
+        ${workspaceBanner}
+
+        <div class="newsletter-workspace-toolbar">
+          ${renderOpenNewsletterPanel()}
+          ${renderCreateNewsletterPanel()}
+        </div>
+
+        ${
+          active
+            ? `<div class="newsletter-issue-header newsletter-workspace-fields">
           <div class="admin-field">
-            <label for="newsletterIssueNumber">Newsletter Number</label>
-            <select id="newsletterIssueNumber" onchange="NewsletterIssueComposer.selectIssueNumber(this.value)" ${issueBusy || !numbers.length ? "disabled" : ""}>
-              ${
-                numbers.length
-                  ? numbers
-                      .map(
-                        (n) =>
-                          `<option value="${esc(String(n))}" ${Number(n) === Number(issueNumber) ? "selected" : ""}>${esc(String(n))}</option>`
-                      )
-                      .join("")
-                  : `<option value="">No issues yet</option>`
-              }
-            </select>
+            <label for="newsletterWorkspaceNumber">Newsletter Number</label>
+            <input id="newsletterWorkspaceNumber" type="number" min="1" step="1" value="${esc(String(active.newsletter_number))}" ${issueBusy ? "disabled" : ""}>
           </div>
-          <div class="admin-field newsletter-issue-date-field">
-            <label>Issue Date</label>
-            <div class="newsletter-issue-date-row">
-              <div class="newsletter-issue-static">${esc(issueDate ? formatDate(issueDate) : "—")}</div>
-              <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.printRecord()" ${issueBusy || issueNumber == null || !cruises.length ? "disabled" : ""} title="Open cruise record and print or save as PDF">Print / PDF</button>
-            </div>
+          <div class="admin-field">
+            <label for="newsletterWorkspaceDate">Newsletter Date</label>
+            <input id="newsletterWorkspaceDate" type="date" value="${esc(active.newsletter_date || issueDate || "")}" ${issueBusy ? "disabled" : ""}>
           </div>
           <div class="admin-field">
             <label for="newsletterIssueTemplate">Design Template</label>
-            <select id="newsletterIssueTemplate" onchange="NewsletterIssueComposer.setTemplate(this.value)" ${issueBusy || issueNumber == null ? "disabled" : ""}>
+            <select id="newsletterIssueTemplate" onchange="NewsletterIssueComposer.setTemplate(this.value)" ${issueBusy ? "disabled" : ""}>
               <option value="green-price-cards" ${issueTemplate === "green-price-cards" ? "selected" : ""}>Green Price Cards</option>
               <option value="classic-editorial" ${issueTemplate === "classic-editorial" ? "selected" : ""}>Classic Editorial</option>
             </select>
+          </div>
+          <div class="admin-field newsletter-issue-date-field">
+            <label>Export tools</label>
+            <div class="newsletter-issue-date-row">
+              <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.printRecord()" ${issueBusy || !cruises.length ? "disabled" : ""} title="Open cruise record and print or save as PDF">Print / PDF</button>
+            </div>
           </div>
           <div class="admin-field">
             <label>Status</label>
             <div class="newsletter-issue-static"><span class="newsletter-issue-status status-${esc(status.key)}">${esc(status.label)}</span></div>
           </div>
-        </div>
-          <p class="admin-helper newsletter-issue-header-note">Temporary: design template is remembered in this browser only until newsletter issues get a database field. After changing template, click <strong>Preview</strong> again — Green Price Cards shows green room headers and fare boxes; Classic Editorial shows the bordered price columns.</p>
-
-        ${renderStartIssuePanel()}
+        </div>`
+            : numbers.length
+              ? `<div class="admin-field">
+            <label for="newsletterIssueNumber">Quick open by number</label>
+            <select id="newsletterIssueNumber" onchange="NewsletterIssueComposer.selectIssueNumber(this.value)" ${issueBusy ? "disabled" : ""}>
+              <option value="">Choose…</option>
+              ${numbers
+                .map(
+                  (n) =>
+                    `<option value="${esc(String(n))}" ${Number(n) === Number(issueNumber) ? "selected" : ""}>Newsletter ${esc(String(n))}</option>`
+                )
+                .join("")}
+            </select>
+          </div>`
+              : ""
+        }
 
         ${issueMessage ? `<div class="admin-message ${msgClass}">${esc(issueMessage)}</div>` : ""}
+        ${renderRouteMapSaveResults()}
         ${
           issueWarnings.length
             ? `<ul class="newsletter-issue-warnings">${issueWarnings
@@ -1324,16 +1839,18 @@
 
         <section class="newsletter-issue-section">
           <div class="admin-list-top">
-            <h4>Cruises in this issue</h4>
-            <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.openAddPicker()" ${issueBusy || issueNumber == null ? "disabled" : ""}>+ Add Cruise</button>
+            <h4>Cruises in this newsletter</h4>
+            <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.openAddPicker()" ${issueBusy || !active ? "disabled" : ""}>+ Add Cruise</button>
           </div>
           ${
-            !cruises.length
-              ? `<p class="admin-muted">No cruises assigned to this newsletter yet. Add an existing cruise or create a new one with this newsletter number.</p>`
-              : `<div class="newsletter-issue-list" ondragover="NewsletterIssueComposer.allowDrop(event)" ondrop="NewsletterIssueComposer.onDrop(event)">
+            !active
+              ? `<p class="admin-muted">Create or open a newsletter to see its cruises here.</p>`
+              : !cruises.length
+                ? `<p class="admin-muted">No cruises in this newsletter yet. Use Add Cruise to create or assign one.</p>`
+                : `<div class="newsletter-issue-list" ondragover="NewsletterIssueComposer.allowDrop(event)" ondrop="NewsletterIssueComposer.onDrop(event)">
                   ${cruises.map(renderCruiseCard).join("")}
                 </div>
-                <p class="admin-helper">Drag ☰ to reorder. Order is saved automatically and used for preview and export.</p>`
+                <p class="admin-helper">Drag ☰ to reorder. Order is saved when you reorder; use Save Newsletter to persist issue details and generate route maps.</p>`
           }
         </section>
 
@@ -1356,7 +1873,7 @@
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('airline_staff','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download Airline HTML</button>
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('general','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download General HTML</button>
           </div>
-          <p class="admin-helper">Export includes every cruise in this issue, in list order, using the selected design template. Each cruise must be <strong>Published</strong> with a Public Slug, hero, map and pricing so Explore More opens <code>https://www.101cruise.com.au/cruise?slug={slug}</code>.</p>
+          <p class="admin-helper">Export includes every cruise in this newsletter, in list order. Each cruise needs a hero, route map, pricing, and public slug for Explore More to link to <code>https://www.101cruise.com.au/cruise?slug={slug}</code>. Cruises without a slug omit Explore More.</p>
         </section>
 
         ${
@@ -1373,9 +1890,10 @@
     `;
   }
 
-  function onCruisesReloaded() {
+  async function onCruisesReloaded() {
     issuePricingLoadedFor = "";
     invalidateCache();
+    await loadNewslettersFromDb();
     ensureIssueSelected();
     const cruises = cruisesForCurrentIssue();
     ensurePricingLoaded(cruises)
@@ -1389,12 +1907,23 @@
   global.NewsletterIssueComposer = {
     render,
     onCruisesReloaded,
+    loadNewslettersFromDb,
+    getActiveNewsletter,
     getSelectedIssue() {
       ensureIssueSelected();
-      return { number: issueNumber, date: issueDate, template: issueTemplate };
+      const active = getActiveNewsletter();
+      return {
+        id: active?.id || null,
+        number: issueNumber,
+        date: issueDate,
+        template: issueTemplate
+      };
     },
     selectIssueNumber,
+    openNewsletterById,
+    createNewsletter,
     startIssue,
+    saveNewsletter,
     setTemplate,
     openAddPicker,
     closeAddPicker,
@@ -1410,6 +1939,8 @@
     preview,
     createSocialPack,
     exportHtml,
-    printRecord
+    printRecord,
+    retryRouteMapForCruise,
+    generateMissingRouteMaps
   };
 })(typeof window !== "undefined" ? window : globalThis);

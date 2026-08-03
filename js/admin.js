@@ -475,19 +475,45 @@ async function adminAuthHeaders(extra = {}) {
 }
 
 /**
+ * Canonical loading panel for Admin content areas (nine-square + message).
+ */
+function brandLoadingPanel(message) {
+  if (typeof BrandLoading?.panelHtml === "function") {
+    return BrandLoading.panelHtml(message ? { message: String(message) } : undefined);
+  }
+  const text =
+    message ||
+    (typeof BrandLoading?.CANONICAL_MESSAGE === "string"
+      ? BrandLoading.CANONICAL_MESSAGE
+      : "Hang tight! Just getting your info.");
+  return `<p class="admin-muted">${esc(text)}</p>`;
+}
+
+/**
  * Uniform Admin waiting overlay (nine-square BrandLoading).
  * Use for any open/load/save that can take more than a moment.
  */
 async function withAdminBusy(fn, options = {}) {
+  const defaultMessage =
+    typeof BrandLoading?.CANONICAL_MESSAGE === "string"
+      ? BrandLoading.CANONICAL_MESSAGE
+      : "Hang tight! Just getting your info.";
   if (typeof window.AdminLoading?.withLoading === "function") {
+    const defaultMessage =
+      typeof BrandLoading?.CANONICAL_MESSAGE === "string"
+        ? BrandLoading.CANONICAL_MESSAGE
+        : "Hang tight! Just getting your info.";
+    const supportMessage =
+      options.supportMessage !== undefined
+        ? options.supportMessage
+        : options.message && options.message !== defaultMessage
+          ? String(options.message)
+          : "";
     return window.AdminLoading.withLoading(fn, {
       delayMs: Number.isFinite(Number(options.delayMs)) ? Number(options.delayMs) : 0,
       key: options.key || "admin-busy",
-      message: options.message || "Please wait…",
-      supportMessage:
-        options.supportMessage === undefined
-          ? "Please wait a moment."
-          : options.supportMessage
+      message: defaultMessage,
+      supportMessage
     });
   }
   return fn();
@@ -1330,7 +1356,7 @@ function renderBookingDocumentsPanel() {
           <label>Booking reference</label>
           <input type="text" id="bookingDocumentsReference" value="${esc(refValue)}" placeholder="Example: 10175811" oninput="bookingDocumentsRefInput=this.value" onkeydown="handleBookingDocumentsKeydown(event)">
         </div>
-        <button class="admin-button black" onclick="loadBookingDocumentsWorkspace()" ${bookingDocumentsLoading ? "disabled" : ""}>${bookingDocumentsLoading ? "Loading…" : "Load booking"}</button>
+        <button class="admin-button black" onclick="loadBookingDocumentsWorkspace()" ${bookingDocumentsLoading ? "disabled" : ""}>Load booking</button>
         ${isRunning && bookingDocumentsMessage ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(bookingDocumentsMessage)}</span>` : ""}
       </div>
 
@@ -1482,7 +1508,7 @@ function renderCrmDocumentsPanel(booking) {
         </div>
         <div class="admin-actions-row" style="align-items:center">
           <button class="admin-button secondary small" onclick="loadCrmDocuments()" ${crmDocumentsLoading ? "disabled" : ""}>
-            ${crmDocumentsLoading ? "Loading…" : "Refresh documents"}
+            Refresh documents
           </button>
           ${isRunning && /^(Loading)/i.test(String(crmDocumentsMessage || "")) ? `<span class="admin-running-status" role="status" aria-live="polite">${esc(crmDocumentsMessage)}</span>` : ""}
         </div>
@@ -6116,7 +6142,7 @@ function renderUsageInsightsPanel() {
             <tbody>
               ${
                 usageInsightsLoading
-                  ? `<tr><td colspan="6" class="usage-empty">Loading…</td></tr>`
+                  ? `<tr><td colspan="6" class="usage-empty">${brandLoadingPanel()}</td></tr>`
                   : toolUsage.length
                     ? toolUsage
                         .map(
@@ -6167,7 +6193,7 @@ function renderUsageInsightsPanel() {
             <tbody>
               ${
                 usageInsightsLoading
-                  ? `<tr><td colspan="6" class="usage-empty">Loading…</td></tr>`
+                  ? `<tr><td colspan="6" class="usage-empty">${brandLoadingPanel()}</td></tr>`
                   : customers.length
                     ? customers
                         .map(row => {
@@ -6437,7 +6463,7 @@ function buildUsageSequenceInsight(customers) {
 function renderUsageFeatureAdoptionSection(data, isLoading) {
   const adoption = buildUsageFeatureAdoption(data);
   const body = isLoading
-    ? `<p class="admin-muted">Loading…</p>`
+    ? brandLoadingPanel()
     : adoption.totalCustomers <= 0 || !adoption.rows.length
       ? `<p class="admin-muted">No feature adoption data in this range yet.</p>`
       : `<div class="usage-adoption-list">
@@ -6475,7 +6501,7 @@ function renderUsageFeatureAdoptionSection(data, isLoading) {
 function renderUsageEngagementFunnelSection(data, isLoading) {
   const funnel = buildUsageEngagementFunnel(data);
   const body = isLoading
-    ? `<p class="admin-muted">Loading…</p>`
+    ? brandLoadingPanel()
     : funnel.stages.length < 2
       ? `<p class="admin-muted">Not enough engagement data to build a funnel for this range.</p>`
       : `<ol class="usage-funnel-list">
@@ -6519,7 +6545,7 @@ function renderUsageEngagementFunnelSection(data, isLoading) {
 function renderUsageCustomerInsightsSection(data, isLoading) {
   const insights = isLoading ? [] : buildUsageCustomerInsights(data);
   const body = isLoading
-    ? `<p class="admin-muted">Loading…</p>`
+    ? brandLoadingPanel()
     : insights.length
       ? `<ul class="usage-insights-list">
           ${insights.map(item => `<li>${esc(item)}</li>`).join("")}
@@ -6746,7 +6772,7 @@ function renderSettingsPanel() {
           <p class="admin-muted">Manage who can sign in to 101cruise Admin. Granting access updates both the profile flag and the admin allow-list.</p>
         </div>
         <button type="button" class="admin-button secondary small" onclick="loadAdminSettingsUsers()" ${adminSettingsLoading ? "disabled" : ""}>
-          ${adminSettingsLoading ? "Loading…" : "Refresh"}
+          Refresh
         </button>
       </div>
 
@@ -6785,7 +6811,7 @@ function renderSettingsPanel() {
           <tbody>
             ${
               adminSettingsLoading
-                ? `<tr><td colspan="5" class="usage-empty">Loading users…</td></tr>`
+                ? `<tr><td colspan="5" class="usage-empty">${brandLoadingPanel()}</td></tr>`
                 : rows
                   ? rows
                   : `<tr><td colspan="5" class="usage-empty">No users found.</td></tr>`
@@ -9205,8 +9231,26 @@ function featuredSlugify(value) {
     .slice(0, 80);
 }
 
-function suggestFeaturedSlug({ headline, shipName, departureDate }) {
-  return featuredSlugify([headline, shipName, departureDate].filter(Boolean).join(" "));
+function suggestFeaturedSlug({ headline, shipName, lineName, destinationStrip, departureDate }) {
+  return featuredSlugify(
+    [lineName, shipName, headline, destinationStrip, departureDate].filter(Boolean).join(" ")
+  );
+}
+
+function generateFeaturedHeroAlt(draft = featuredFormDraft || {}) {
+  const lineName = ciCruiseLines.find((row) => row.id === draft.cruise_line_id)?.name || "";
+  const shipName = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id)?.name || "";
+  const destination =
+    buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port) ||
+    String(draft.destination_strip || "").trim();
+  const parts = [draft.headline, shipName, lineName, destination].filter(Boolean);
+  return parts.join(" — ") || "Cruise image";
+}
+
+function featuredPublicPageUrl(slug) {
+  const clean = featuredSlugify(String(slug || "").trim());
+  if (!clean) return "";
+  return `https://www.101cruise.com.au/cruise?slug=${encodeURIComponent(clean)}`;
 }
 
 /** Calendar-date arithmetic without UTC shift. */
@@ -9323,6 +9367,9 @@ async function ensureFeaturedCruisesLoaded() {
         }
         await loadFeaturedCruises();
         await loadFeaturedRoomTypes();
+        if (window.NewsletterIssueComposer?.loadNewslettersFromDb) {
+          await window.NewsletterIssueComposer.loadNewslettersFromDb();
+        }
         try {
           await loadFeaturedNewsletterDefaults();
         } catch (_defaultsError) {
@@ -9512,6 +9559,13 @@ function offerInclusionsFromCruise(existing, pricingRows = []) {
 }
 
 async function startNewFeaturedCruise() {
+  const composerIssue = window.NewsletterIssueComposer?.getSelectedIssue?.();
+  if (!composerIssue?.id && composerIssue?.number == null) {
+    featuredCruiseMessage = "Create or open a newsletter before adding a cruise.";
+    featuredCruiseMessageTone = "error";
+    renderAdmin();
+    return;
+  }
   const stored = readFeaturedLocalDraft();
   if (stored?.draft && !stored.editingFeaturedCruiseId) {
     const restore = window.confirm(
@@ -9545,10 +9599,8 @@ async function startNewFeaturedCruise() {
   }
   const composerIssue = window.NewsletterIssueComposer?.getSelectedIssue?.();
   featuredFormDraft = {
-    newsletter_number:
-      composerIssue?.number != null
-        ? composerIssue.number
-        : featuredNewsletterDefaults.newsletter_number,
+    newsletter_id: composerIssue?.id || null,
+    newsletter_number: composerIssue?.number ?? featuredNewsletterDefaults.newsletter_number,
     newsletter_publication_date:
       composerIssue?.date || featuredNewsletterDefaults.newsletter_publication_date,
     publication_status: "draft",
@@ -9840,6 +9892,7 @@ async function editFeaturedCruise(id, { skipLock = false } = {}) {
     featuredRoomTypePromptIndex = null;
     clearMailchimpPoc();
     featuredFormDraft = {
+      newsletter_id: existing.newsletter_id || null,
       newsletter_number: existing.newsletter_number,
       newsletter_publication_date: existing.newsletter_publication_date || "",
       publication_status: existing.publication_status || "draft",
@@ -10200,7 +10253,7 @@ function buildFeaturedNewsletterPreviewModel(modeOverride) {
     headline: draft.headline || "",
     hero: resolved.hero,
     heroImageUrl: resolved.hero?.url || "",
-    heroImageAlt: resolved.hero?.altText || draft.hero_image_alt || draft.headline || "Cruise image",
+    heroImageAlt: resolved.hero?.altText || generateFeaturedHeroAlt(draft) || draft.headline || "Cruise image",
     departureDate: departure,
     returnDate,
     nights: nightsNum,
@@ -10287,7 +10340,6 @@ function generateMailchimpHtml(mode) {
     outputMode,
     templateKey,
     pricingRows: featuredFormPricing,
-    publicationStatus: featuredFormDraft.publication_status || "draft",
     publicSlug: featuredFormDraft.public_slug || model.publicSlug || ""
   });
 
@@ -10411,7 +10463,7 @@ function renderMailchimpPocPanel() {
              <div class="mailchimp-poc-preview" aria-label="Mailchimp HTML preview">${mailchimpPoc.previewHtml}</div>
              <label class="admin-field mailchimp-poc-code-label" for="mailchimpPocHtml">HTML fragment (read-only)</label>
              <textarea id="mailchimpPocHtml" class="mailchimp-poc-code" readonly rows="12" aria-label="Mailchimp HTML fragment">${esc(mailchimpPoc.html)}</textarea>`
-          : `<p class="admin-helper">Choose a design template, then generate Airline Staff or General HTML from this cruise special. Cruise must be <strong>Published</strong> with a Public Slug for Explore More.</p>`
+          : `<p class="admin-helper">Generate HTML from this cruise. Explore More appears only when a public slug is set.</p>`
       }
     </section>
   `;
@@ -10449,13 +10501,10 @@ function renderFeaturedNewsletterPreviewModal() {
     featuredNewsletterPreviewTemplate === "classic-editorial"
       ? "classic-editorial"
       : "green-price-cards";
-  const isPublished = (draft.publication_status || "draft") === "published";
   const slug = String(draft.public_slug || "").trim();
-  const publishHint = !isPublished
-    ? `<div class="admin-message admin-error" style="margin:0 0 14px">Explore More will show “not currently available” until this cruise is <strong>Published</strong> and Saved. Current status: ${esc(featuredStatusLabel(draft.publication_status))}.</div>`
-    : !slug
-      ? `<div class="admin-message admin-error" style="margin:0 0 14px">Set a Public Slug and Save before Explore More can open the public page.</div>`
-      : `<div class="admin-message admin-success" style="margin:0 0 14px">Public page: <code>/cruise?slug=${esc(featuredSlugify(slug))}</code> — only works after Save while status is Published.</div>`;
+  const publishHint = !slug
+    ? `<div class="admin-message admin-muted" style="margin:0 0 14px">No public slug — Explore More will be omitted from the newsletter. Add a slug and save to enable the public page.</div>`
+    : `<div class="admin-message admin-success" style="margin:0 0 14px">Public page: <code>${esc(featuredPublicPageUrl(slug))}</code></div>`;
 
   let articleHtml = "";
   let warningsHtml = "";
@@ -10467,7 +10516,6 @@ function renderFeaturedNewsletterPreviewModal() {
       outputMode,
       templateKey,
       pricingRows: featuredFormPricing,
-      publicationStatus: draft.publication_status || "draft",
       publicSlug: slug,
       softValidation: true
     });
@@ -10581,11 +10629,7 @@ function captureFeaturedDraftFromDom() {
   const nightsNum = nightsRaw === "" ? null : Number(nightsRaw);
   featuredFormDraft = {
     ...featuredFormDraft,
-    newsletter_number: document.getElementById("fcNewsletterNumber")?.value || "",
-    newsletter_publication_date: document.getElementById("fcNewsletterDate")?.value || "",
-    publication_status: document.getElementById("fcPublicationStatus")?.value || "draft",
     public_slug: document.getElementById("fcPublicSlug")?.value || "",
-    create_public_page: Boolean(document.getElementById("fcCreatePublicPage")?.checked),
     headline: document.getElementById("fcHeadline")?.value || "",
     departure_port: document.getElementById("fcDeparturePort")?.value || "",
     arrival_port: document.getElementById("fcArrivalPort")?.value || "",
@@ -10598,7 +10642,6 @@ function captureFeaturedDraftFromDom() {
     full_description: document.getElementById("fcFullDescription")?.value || "",
     use_ship_hero_image: featuredFormDraft.use_ship_hero_image !== false,
     hero_image_url: featuredFormDraft.hero_image_url || "",
-    hero_image_alt: document.getElementById("fcHeroImageAlt")?.value || featuredFormDraft.hero_image_alt || "",
     hero_media_id: featuredFormDraft.hero_media_id || null,
     hero_media: featuredFormDraft.hero_media || null,
     route_map_image_url: featuredFormDraft.route_map_image_url || "",
@@ -10748,6 +10791,7 @@ function onFeaturedPortsChange() {
   const strip = buildFeaturedDestinationStrip(dep, arr) || "";
   const preview = document.getElementById("fcDestinationStripPreview");
   if (preview) preview.textContent = strip ? `Destination strip preview: ${strip}` : "Destination strip preview: —";
+  maybeRefreshFeaturedSlug();
 }
 
 function onFeaturedSlugInput() {
@@ -10759,10 +10803,29 @@ function maybeRefreshFeaturedSlug() {
   const slugInput = document.getElementById("fcPublicSlug");
   if (!slugInput) return;
   const headline = document.getElementById("fcHeadline")?.value || "";
+  const lineId = document.getElementById("fcCruiseLineId")?.value || "";
+  const lineName = ciCruiseLines.find((line) => line.id === lineId)?.name || "";
   const shipId = document.getElementById("fcCruiseShipId")?.value || "";
   const shipName = ciCruiseShips.find((ship) => ship.id === shipId)?.name || "";
+  const departurePort = document.getElementById("fcDeparturePort")?.value || "";
+  const arrivalPort = document.getElementById("fcArrivalPort")?.value || "";
+  const destinationStrip = buildFeaturedDestinationStrip(departurePort, arrivalPort) || "";
   const departureDate = document.getElementById("fcDepartureDate")?.value || "";
-  slugInput.value = suggestFeaturedSlug({ headline, shipName, departureDate });
+  slugInput.value = suggestFeaturedSlug({
+    headline,
+    shipName,
+    lineName,
+    destinationStrip,
+    departureDate
+  });
+}
+
+function clearFeaturedPublicSlug() {
+  featuredSlugManuallyEdited = true;
+  if (featuredFormDraft) featuredFormDraft.public_slug = "";
+  const slugInput = document.getElementById("fcPublicSlug");
+  if (slugInput) slugInput.value = "";
+  renderAdmin();
 }
 
 function updateFeaturedHeroPreview() {
@@ -11540,6 +11603,8 @@ async function deleteFeaturedGeneratedRouteMap() {
 
 window.generateFeaturedRouteMap = generateFeaturedRouteMap;
 window.deleteFeaturedGeneratedRouteMap = deleteFeaturedGeneratedRouteMap;
+window.featuredCruiseCanGenerateRouteMap = featuredCruiseCanGenerateRouteMap;
+window.clearFeaturedPublicSlug = clearFeaturedPublicSlug;
 
 function renderFeaturedHeroImageSection(draft) {
   const resolved = resolveFeaturedCruiseImages(draft);
@@ -11549,41 +11614,41 @@ function renderFeaturedHeroImageSection(draft) {
     (draft.hero_media_id ? window.MediaLibraryAdmin?.findById?.(draft.hero_media_id) : null);
   const ship = ciCruiseShips.find((row) => row.id === draft.cruise_ship_id);
   const hasCi = Boolean(ship?.hero_image_url);
-  const altWarn = !(draft.hero_image_alt || media?.alt_text || hero?.altText);
+  const autoAlt = generateFeaturedHeroAlt(draft);
   return `
     <section class="featured-form-section">
       <h4>Hero Image</h4>
-      <div class="featured-media-source-actions">
-        <button type="button" class="admin-button secondary small" data-action="featured-hero-default" onclick="setFeaturedHeroDefaultShip(event)" ${featuredHeroDefaultBusy ? "disabled" : ""}>Use Default Ship Image</button>
-        <button type="button" class="admin-button secondary small" data-action="featured-hero-picker" onclick="openFeaturedHeroMediaPicker(event)">Choose from Media Library</button>
-        <button type="button" class="admin-button secondary small" onclick="openFeaturedHeroUpload()">Upload New Image</button>
-        ${hasCi ? `<button type="button" class="admin-button secondary small" onclick="setFeaturedHeroLegacyCi()">Use Legacy Cruise Intelligence Image</button>` : ""}
-      </div>
-      <div class="featured-media-preview-block">
-        <div id="fcHeroPreview" class="featured-image-preview-wrap">
-          ${
-            hero?.url
-              ? `<img class="featured-image-preview" src="${esc(hero.url)}" alt="${esc(hero.altText || "Hero preview")}" ${hero.width ? `width="${esc(hero.width)}"` : ""} ${hero.height ? `height="${esc(hero.height)}"` : ""} onerror="this.outerHTML='<div class=&quot;admin-empty-preview&quot;>Image could not load</div>'">`
-              : `<div class="admin-empty-preview">No image selected</div>`
-          }
+      <div class="featured-media-layout">
+        <div class="featured-media-preview-col">
+          <div id="fcHeroPreview" class="featured-image-preview-wrap">
+            ${
+              hero?.url
+                ? `<img class="featured-image-preview" src="${esc(hero.url)}" alt="${esc(hero.altText || autoAlt)}" ${hero.width ? `width="${esc(hero.width)}"` : ""} ${hero.height ? `height="${esc(hero.height)}"` : ""} onerror="this.outerHTML='<div class=&quot;admin-empty-preview&quot;>Image could not load</div>'">`
+                : `<div class="admin-empty-preview">No image selected</div>`
+            }
+          </div>
         </div>
-        <div class="featured-media-meta">
-          <p class="featured-media-source">Source: ${esc(hero?.source || "No image selected")}</p>
-          ${media ? `<p class="admin-small">${esc(media.title)}</p>` : ""}
-          ${
-            draft.hero_media_id
-              ? `<div class="admin-actions-row">
-                  <button type="button" class="admin-button secondary small" onclick="openFeaturedHeroMediaPicker()">Replace Image</button>
-                  <button type="button" class="admin-button secondary small" onclick="removeFeaturedHeroOverride()">Remove Override</button>
-                </div>`
-              : ""
-          }
+        <div class="featured-media-controls-col">
+          <div class="featured-media-source-actions">
+            <button type="button" class="admin-button secondary small" data-action="featured-hero-default" onclick="setFeaturedHeroDefaultShip(event)" ${featuredHeroDefaultBusy ? "disabled" : ""}>Use Default Ship Image</button>
+            <button type="button" class="admin-button secondary small" data-action="featured-hero-picker" onclick="openFeaturedHeroMediaPicker(event)">Choose from Media Library</button>
+            <button type="button" class="admin-button secondary small" onclick="openFeaturedHeroUpload()">Upload New Image</button>
+            ${hasCi ? `<button type="button" class="admin-button secondary small" onclick="setFeaturedHeroLegacyCi()">Use Legacy Cruise Intelligence Image</button>` : ""}
+          </div>
+          <div class="featured-media-meta">
+            <p class="featured-media-source">Source: ${esc(hero?.source || "No image selected")}</p>
+            ${media ? `<p class="admin-small">${esc(media.title)}</p>` : ""}
+            <p class="admin-helper">Alt text: ${esc(autoAlt)}</p>
+            ${
+              draft.hero_media_id
+                ? `<div class="admin-actions-row">
+                    <button type="button" class="admin-button secondary small" onclick="openFeaturedHeroMediaPicker()">Replace Image</button>
+                    <button type="button" class="admin-button secondary small" onclick="removeFeaturedHeroOverride()">Remove Override</button>
+                  </div>`
+                : ""
+            }
+          </div>
         </div>
-      </div>
-      <div class="admin-field" style="margin-top:12px">
-        <label for="fcHeroImageAlt">Image alt text override</label>
-        <input id="fcHeroImageAlt" type="text" value="${esc(draft.hero_image_alt || "")}" placeholder="${esc(media?.alt_text || hero?.altText || "Uses media library alt text when empty")}">
-        ${altWarn ? `<div class="admin-helper featured-alt-warn">Alt text is empty — add one for accessibility.</div>` : `<div class="admin-helper">Optional override. Defaults to the media library alt text.</div>`}
       </div>
     </section>
   `;
@@ -11630,7 +11695,12 @@ function renderFeaturedRouteMapSection(draft) {
     <section id="featured-route-map-section" class="featured-form-section">
       <h4>Route Map</h4>
       <div class="featured-route-map-layout${hasPreview ? " has-preview" : ""}">
-        <div class="featured-route-map-sidebar">
+        ${
+          hasPreview
+            ? `<div class="featured-route-map-preview-col">${genParts.previewHtml}</div>`
+            : `<div class="featured-route-map-preview-col"><div class="admin-empty-preview">No generated route map yet</div></div>`
+        }
+        <div class="featured-route-map-controls-col">
           ${readiness}
           <div class="featured-media-source-actions">
             ${genButton}
@@ -11651,31 +11721,24 @@ function renderFeaturedRouteMapSection(draft) {
               : ""
           }
           ${genParts.metaHtml}
-        </div>
-        ${
-          hasPreview
-            ? `<div class="featured-route-map-preview-col">${genParts.previewHtml}</div>`
-            : ""
-        }
-      </div>
-      <div class="featured-media-preview-block">
-        <p class="admin-small" style="margin-bottom:8px">Manual Media Library selection (optional — not overwritten by Generate)</p>
-        <div class="featured-image-preview-wrap">
-          ${
-            manualUrl
-              ? `<img class="featured-image-preview" src="${esc(manualUrl)}" alt="${esc(media?.alt_text || "Route map")}" loading="lazy">`
-              : `<div class="admin-empty-preview">No manual route map selected</div>`
-          }
-        </div>
-        <div class="featured-media-meta">
-          <p class="featured-media-source">Source: ${esc(
-            media
-              ? "Featured Cruise Media Library selection"
-              : manualUrl
-                ? "Legacy route map URL"
-                : "No image selected"
-          )}</p>
-          ${media ? `<p class="admin-small">${esc(media.title)}</p>` : ""}
+          <div class="featured-route-map-manual-preview">
+            <p class="admin-small" style="margin-bottom:8px">Manual Media Library selection (optional — not overwritten by Generate)</p>
+            <div class="featured-image-preview-wrap featured-route-map-manual-thumb">
+              ${
+                manualUrl
+                  ? `<img class="featured-image-preview" src="${esc(manualUrl)}" alt="${esc(media?.alt_text || "Route map")}" loading="lazy">`
+                  : `<div class="admin-empty-preview">No manual route map selected</div>`
+              }
+            </div>
+            <p class="featured-media-source">Source: ${esc(
+              media
+                ? "Featured Cruise Media Library selection"
+                : manualUrl
+                  ? "Legacy route map URL"
+                  : "No image selected"
+            )}</p>
+            ${media ? `<p class="admin-small">${esc(media.title)}</p>` : ""}
+          </div>
         </div>
       </div>
     </section>
@@ -11860,7 +11923,7 @@ function renderFeaturedCruisesPanel() {
         String(featuredCruiseMessage).trim() === String(featuredEditLockBlocked.message || "").trim()
       );
     const loadNote = featuredCruiseLoading
-      ? `<p class="admin-muted">Loading newsletter cruises…</p>`
+      ? brandLoadingPanel()
       : showInlineMessage
         ? `<div class="admin-message ${
             featuredCruiseMessageTone === "error"
@@ -12004,7 +12067,14 @@ function renderFeaturedCruiseForm() {
   const strip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port) || "";
   const returnDate = addCalendarDays(draft.departure_date, draft.nights === "" ? null : Number(draft.nights));
   const pickerModal = window.MediaLibraryAdmin?.renderPickerModal?.() || "";
-  const statusIsDraft = (draft.publication_status || "draft") === "draft";
+  const composerIssue = window.NewsletterIssueComposer?.getSelectedIssue?.();
+  const newsletterLabel = composerIssue?.number
+    ? `Newsletter ${composerIssue.number}${composerIssue.date ? ` · ${formatAdminDate(composerIssue.date)}` : ""}`
+    : draft.newsletter_number
+      ? `Newsletter ${draft.newsletter_number}`
+      : "Not assigned";
+  const slugRaw = String(draft.public_slug || "").trim();
+  const publicUrl = slugRaw ? featuredPublicPageUrl(slugRaw) : "";
   const localBackupNote = featuredLocalDraftSavedAt
     ? `Browser backup updated ${new Date(featuredLocalDraftSavedAt).toLocaleTimeString()}.`
     : "Browser backup starts after you type or apply a port list.";
@@ -12014,49 +12084,40 @@ function renderFeaturedCruiseForm() {
       <div class="admin-list-top">
         <div>
           <h3>${existing ? "Edit Cruise" : "New Cruise"}</h3>
-          <p class="admin-muted">Newsletter workspace. Drafts can be saved incomplete. ${esc(localBackupNote)}</p>
+          <p class="admin-muted">${esc(newsletterLabel)} · ${esc(localBackupNote)}</p>
         </div>
         <div class="admin-actions-row">
           <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
           <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
           <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${
-            featuredCruiseSaving ? "Saving…" : statusIsDraft ? "Save draft" : "Save"
+            featuredCruiseSaving ? "Saving…" : "Save Cruise"
           }</button>
           ${inlineRunning}
         </div>
       </div>
       ${!isRunning ? `<div class="admin-message ${messageClass}">${esc(featuredCruiseMessage)}</div>` : ""}
-      <p class="admin-helper" style="margin-top:0">While status is <strong>Draft</strong>, Save keeps whatever you have (ports, notes, partial pricing). Headline / nights / departure are only required when you set status to <strong>Published</strong>. Only one person can edit this cruise at a time.</p>
 
-      <section class="featured-form-section featured-newsletter-section">
-        <h4>Newsletter and Publication</h4>
-        <div class="featured-newsletter-row">
-          <div class="admin-field">
-            <label for="fcNewsletterNumber">Newsletter Number</label>
-            <input id="fcNewsletterNumber" type="number" min="1" step="1" placeholder="76" value="${esc(draft.newsletter_number ?? "")}">
+      <section class="featured-form-section featured-public-page-section">
+        <h4>Public Page</h4>
+        <div class="featured-public-slug-row">
+          <div class="admin-field featured-span-2">
+            <label for="fcPublicSlug">Public slug</label>
+            <input id="fcPublicSlug" type="text" value="${esc(draft.public_slug || "")}" oninput="onFeaturedSlugInput()" placeholder="Auto-generated from cruise details">
+            <div class="admin-helper">Leave blank for no public page and no Explore More button in the newsletter.</div>
           </div>
-          <div class="admin-field">
-            <label for="fcNewsletterDate">Newsletter Publication Date</label>
-            <input id="fcNewsletterDate" type="date" value="${esc(draft.newsletter_publication_date || "")}">
+          <div class="admin-field featured-public-url-actions">
+            <label>Public page URL</label>
+            ${
+              publicUrl
+                ? `<div class="featured-public-url"><code>${esc(publicUrl)}</code></div>`
+                : `<div class="admin-muted">No public page — slug is empty</div>`
+            }
+            <div class="admin-actions-row">
+              <button type="button" class="admin-button secondary small" onclick="maybeRefreshFeaturedSlug(); renderAdmin();">Regenerate slug</button>
+              <button type="button" class="admin-button secondary small" onclick="clearFeaturedPublicSlug()">Clear slug</button>
+            </div>
           </div>
-          <div class="admin-field">
-            <label for="fcPublicationStatus">Publication Status</label>
-            <select id="fcPublicationStatus">
-              <option value="draft" ${(draft.publication_status || "draft") === "draft" ? "selected" : ""}>Draft</option>
-              <option value="published" ${draft.publication_status === "published" ? "selected" : ""}>Published</option>
-              <option value="archived" ${draft.publication_status === "archived" ? "selected" : ""}>Archived</option>
-            </select>
-          </div>
-          <div class="admin-field">
-            <label for="fcPublicSlug">Public Slug</label>
-            <input id="fcPublicSlug" type="text" value="${esc(draft.public_slug || "")}" oninput="onFeaturedSlugInput()" placeholder="auto-suggested">
-          </div>
-          <label class="admin-check-chip featured-check featured-create-public">
-            <input id="fcCreatePublicPage" type="checkbox" ${draft.create_public_page ? "checked" : ""}>
-            <span>Create public page</span>
-          </label>
         </div>
-        <p class="admin-helper">Public page URL: /cruise?slug={public-slug} on www.101cruise.com.au. Only Published cruises are publicly visible. Airline prices are never exposed on the public page. Assign this cruise to a newsletter number to include it in the Newsletter Issue Composer.</p>
       </section>
 
       <section class="featured-form-section">
@@ -12079,7 +12140,7 @@ function renderFeaturedCruiseForm() {
         <div class="featured-details-row">
           <div class="admin-field">
             <label for="fcCruiseLineId">Cruise Line</label>
-            <select id="fcCruiseLineId" onchange="onFeaturedLineChange()">
+            <select id="fcCruiseLineId" onchange="onFeaturedLineChange(); maybeRefreshFeaturedSlug()">
               <option value="">Select cruise line</option>
               ${lines.map((line) => `<option value="${esc(line.id)}" ${line.id === selectedLineId ? "selected" : ""}>${esc(line.name)}</option>`).join("")}
             </select>
@@ -12171,7 +12232,7 @@ function renderFeaturedCruiseForm() {
         ${existing ? `<button class="admin-button secondary" onclick="deleteFeaturedCruise('${esc(existing.id)}')" ${featuredCruiseSaving ? "disabled" : ""}>Delete</button>` : ""}
         <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
         <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${
-          featuredCruiseSaving ? "Saving…" : statusIsDraft ? "Save draft" : "Save"
+          featuredCruiseSaving ? "Saving…" : "Save Cruise"
         }</button>
         ${inlineRunning}
       </div>
@@ -12184,8 +12245,17 @@ function renderFeaturedCruiseForm() {
 async function saveFeaturedCruise() {
   captureFeaturedDraftFromDom();
   const draft = featuredFormDraft || {};
-  const publicationStatus = draft.publication_status || "draft";
-  const isPublishing = publicationStatus === "published";
+  const composerIssue = window.NewsletterIssueComposer?.getSelectedIssue?.();
+  const newsletterId = draft.newsletter_id || composerIssue?.id || null;
+  let newsletterNumber = composerIssue?.number ?? draft.newsletter_number ?? null;
+  let newsletterDate = composerIssue?.date || draft.newsletter_publication_date || null;
+  if (newsletterNumber != null && newsletterNumber !== "") newsletterNumber = Number(newsletterNumber);
+
+  const slugRaw = String(draft.public_slug || "").trim();
+  const publicSlug = slugRaw ? featuredSlugify(slugRaw) : null;
+  const publicationStatus = publicSlug ? "published" : "draft";
+  const createPublicPage = Boolean(publicSlug);
+  const isPublishing = Boolean(publicSlug);
 
   let headline = String(draft.headline || "").trim();
   if (!headline) {
@@ -12209,12 +12279,10 @@ async function saveFeaturedCruise() {
     if (headlineEl) headlineEl.value = headline;
   }
 
-  const newsletterRaw = String(draft.newsletter_number ?? "").trim();
-  let newsletterNumber = null;
+  const newsletterRaw = newsletterNumber != null && newsletterNumber !== "" ? String(newsletterNumber) : "";
   if (newsletterRaw !== "") {
-    newsletterNumber = Number(newsletterRaw);
     if (!Number.isInteger(newsletterNumber) || newsletterNumber < 1) {
-      featuredCruiseMessage = "Newsletter Number must be a whole number of at least 1.";
+      featuredCruiseMessage = "Active newsletter number is invalid.";
       featuredCruiseMessageTone = "error";
       persistFeaturedLocalDraftNow();
       renderAdmin();
@@ -12252,8 +12320,6 @@ async function saveFeaturedCruise() {
     departureDate && nights != null ? addCalendarDays(departureDate, nights) : draft.return_date || null;
   const destinationStrip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port);
 
-  const slugRaw = String(draft.public_slug || "").trim();
-  const publicSlug = slugRaw ? featuredSlugify(slugRaw) : null;
   if (slugRaw && !/^[a-z0-9]+(-[a-z0-9]+)*$/.test(publicSlug || "")) {
     featuredCruiseMessage = "Public slug must use lowercase letters, numbers and hyphens only.";
     featuredCruiseMessageTone = "error";
@@ -12261,12 +12327,31 @@ async function saveFeaturedCruise() {
     renderAdmin();
     return;
   }
-  if (isPublishing && draft.create_public_page && !publicSlug) {
-    featuredCruiseMessage = "Public slug is required when Create public page is on.";
-    featuredCruiseMessageTone = "error";
-    persistFeaturedLocalDraftNow();
-    renderAdmin();
-    return;
+
+  if (publicSlug) {
+    let conflictQuery = supabaseClient
+      .from("featured_cruises")
+      .select("id,headline")
+      .eq("public_slug", publicSlug)
+      .limit(1);
+    if (editingFeaturedCruiseId) {
+      conflictQuery = conflictQuery.neq("id", editingFeaturedCruiseId);
+    }
+    const { data: conflictRows, error: conflictError } = await conflictQuery;
+    if (conflictError) {
+      featuredCruiseMessage = "Could not verify slug availability. Try again.";
+      featuredCruiseMessageTone = "error";
+      persistFeaturedLocalDraftNow();
+      renderAdmin();
+      return;
+    }
+    if (conflictRows?.length) {
+      featuredCruiseMessage = `That public slug is already used by “${conflictRows[0].headline || "another cruise"}”. Choose a different slug.`;
+      featuredCruiseMessageTone = "error";
+      persistFeaturedLocalDraftNow();
+      renderAdmin();
+      return;
+    }
   }
 
   renumberFeaturedPricingOrders();
@@ -12369,7 +12454,7 @@ async function saveFeaturedCruise() {
         (draft.hero_media_id && (draft.hero_media?.public_url || draft.hero_media?.url)) ||
         normalizeUrl(draft.hero_image_url) ||
         null,
-      hero_image_alt: String(draft.hero_image_alt || "").trim() || null,
+      hero_image_alt: generateFeaturedHeroAlt(draft),
       route_map_media_id: draft.route_map_media_id || null,
       route_map_image_url:
         sanitizeFeaturedRouteMapImageUrl(
@@ -12388,11 +12473,12 @@ async function saveFeaturedCruise() {
       laundry: Boolean(draft.laundry),
       onboard_credit: onboardCredit,
       other_information: String(draft.other_information || "").trim() || null,
+      newsletter_id: newsletterId,
       newsletter_number: newsletterNumber,
-      newsletter_publication_date: draft.newsletter_publication_date || null,
+      newsletter_publication_date: newsletterDate,
       publication_status: publicationStatus,
       display_order: Number(draft.display_order || 0) || 0,
-      create_public_page: Boolean(draft.create_public_page),
+      create_public_page: createPublicPage,
       public_slug: publicSlug,
       updated_by: currentUser?.id || null
     };
@@ -12400,7 +12486,7 @@ async function saveFeaturedCruise() {
     const newsletterChanged =
       String(featuredNewsletterDefaultsBaseline.newsletter_number ?? "") !== String(newsletterNumber ?? "") ||
       String(featuredNewsletterDefaultsBaseline.newsletter_publication_date || "") !==
-        String(draft.newsletter_publication_date || "");
+        String(newsletterDate || "");
 
     const missingColumnMatch = (message) => {
       const match = String(message || "").match(
@@ -12555,7 +12641,7 @@ async function saveFeaturedCruise() {
       }`;
       featuredCruiseMessageTone = "error";
     } else {
-      featuredCruiseMessage = isPublishing ? "Cruise saved." : "Draft saved. You can fill in the rest later.";
+      featuredCruiseMessage = isPublishing ? "Cruise saved." : "Cruise saved (no public page — slug is empty).";
       featuredCruiseMessageTone = "success";
     }
   } catch (error) {

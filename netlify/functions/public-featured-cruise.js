@@ -4,7 +4,7 @@
  * GET /.netlify/functions/public-featured-cruise?slug=<public_slug>
  *
  * Security:
- * - Only publication_status = published
+ * - Public when public_slug is set and publication_status is not archived
  * - Airline prices and category codes are never returned
  * - Uses service role server-side only
  * - Returns resolved public-safe media only
@@ -352,7 +352,7 @@ async function loadPublishedCruise(slug) {
       const path =
         `featured_cruises?select=${encodeURIComponent(select)}` +
         `&public_slug=eq.${encodeURIComponent(slug)}` +
-        `&publication_status=eq.published` +
+        `&publication_status=neq.archived` +
         `&limit=1`;
       const rows = await supabaseGet(path);
       return Array.isArray(rows) ? rows[0] || null : null;

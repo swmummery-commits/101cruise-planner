@@ -277,7 +277,7 @@
         is_overnight:
           Boolean(row.querySelector("[data-fc-itin='overnight']")?.checked) ||
           stopType === "overnight_port",
-        notes: row.querySelector("[data-fc-itin='notes']")?.value || "",
+        notes: stop.notes || "",
         port_id: atSea ? null : prev.port_id || null,
         port: atSea ? null : prev.port || null,
         matchDecision: prev.matchDecision || null
@@ -1002,7 +1002,90 @@
     `;
   }
 
-  function renderAutocomplete(stop) {
+  function portNeedsCoordinates(stop) {
+    if (!stop?.port_id || !stop.port) return false;
+    if (I().isAtSeaStopType(stop.stop_type)) return false;
+    const lat = stop.port.latitude;
+    const lng = stop.port.longitude;
+    return lat == null || lng == null || lat === "" || lng === "";
+  }
+
+  function renderCoordinateFields(stop) {
+    if (!stop.port_id || I().isAtSeaStopType(stop.stop_type)) return "";
+    const lat = stop._editLat ?? stop.port?.latitude ?? "";
+    const lng = stop._editLng ?? stop.port?.longitude ?? "";
+    if (!portNeedsCoordinates(stop) && stop._coordMessage == null && !stop._coordError) return "";
+    return `
+      <div class="fc-itin-coords" data-local-id="${esc(stop.localId)}">
+        <span class="fc-itin-coords-label">Coordinates</span>
+        <label class="fc-itin-coord">
+          <span>Lat</span>
+          <input data-fc-itin="latitude" type="number" step="any" min="-90" max="90" value="${esc(lat === null || lat === undefined ? "" : String(lat))}" placeholder="-90 to 90" aria-label="Latitude">
+        </label>
+        <label class="fc-itin-coord">
+          <span>Lng</span>
+          <input data-fc-itin="longitude" type="number" step="any" min="-180" max="180" value="${esc(lng === null || lng === undefined ? "" : String(lng))}" placeholder="-180 to 180" aria-label="Longitude">
+        </label>
+        <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.savePortCoordinates('${esc(stop.localId)}')">Save coordinates</button>
+        ${stop._coordError ? `<span class="admin-error fc-itin-coord-msg">${esc(stop._coordError)}</span>` : ""}
+        ${stop._coordMessage ? `<span class="admin-success fc-itin-coord-msg">${esc(stop._coordMessage)}</span>` : ""}
+      </div>
+    `;
+  }
+
+  async function savePortCoordinates(localId) {
+    captureFromDom();
+    const stop = stops.find((s) => s.localId === localId);
+    if (!stop) return;
+    stop._coordError = "";
+    stop._coordMessage = "";
+    if (!stop.port_id) {
+      stop._coordError = "Resolve this port before saving coordinates.";
+      rerender();
+      return;
+    }
+    const row = document.querySelector(`.fc-itin-row[data-local-id="${CSS.escape(String(localId))}"]`);
+    const latRaw = row?.querySelector("[data-fc-itin='latitude']")?.value ?? "";
+    const lngRaw = row?.querySelector("[data-fc-itin='longitude']")?.value ?? "";
+    const lat = latRaw === "" ? null : Number(latRaw);
+    const lng = lngRaw === "" ? null : Number(lngRaw);
+    if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      stop._coordError = "Enter valid latitude and longitude.";
+      rerender();
+      return;
+    }
+    if (lat < -90 || lat > 90) {
+      stop._coordError = "Latitude must be between -90 and 90.";
+      rerender();
+      return;
+    }
+    if (lng < -180 || lng > 180) {
+      stop._coordError = "Longitude must be between -180 and 180.";
+      rerender();
+      return;
+    }
+    try {
+      const data = await portsCatalogueApi("update", {
+        id: stop.port_id,
+        port: { latitude: lat, longitude: lng }
+      });
+      const updated = data.port;
+      if (!updated?.id) throw new Error("Could not update port coordinates.");
+      const idx = portsCache.findIndex((p) => p.id === updated.id);
+      if (idx >= 0) portsCache[idx] = updated;
+      else portsCache.push(updated);
+      stop.port = updated;
+      stop._editLat = lat;
+      stop._editLng = lng;
+      stop._coordMessage = "Coordinates saved to Ports catalogue.";
+      const set = ensureOpenStopSet();
+      if (!portNeedsCoordinates(stop)) set.delete(localId);
+      rerender();
+    } catch (error) {
+      stop._coordError = error.message || "Could not save coordinates.";
+      rerender();
+    }
+  }
     if (!autocomplete.open || autocomplete.localId !== stop.localId) return "";
     const results = I().searchPorts(autocomplete.query, portsCache, { limit: 8 });
     if (!results.length) {
@@ -1043,6 +1126,7 @@
           `<option value="${esc(t.value)}" ${stop.stop_type === t.value ? "selected" : ""}>${esc(t.label)}</option>`
       )
       .join("");
+    const primaryFlag = flags.find((f) => /Matched|Provisional|Unresolved|Needs Review|Incomplete|At Sea/i.test(f)) || flags[0] || "";
     return `
       <div
         class="fc-itin-row ${open ? "is-open" : "is-collapsed"} ${draggedLocalId === stop.localId ? "is-dragging" : ""}"
@@ -1060,23 +1144,13 @@
             onclick="FeaturedItineraryEditor.toggleStop('${localId}')"
           >
             <span class="fc-itin-chevron" aria-hidden="true">${open ? "▾" : "▸"}</span>
-            <span class="fc-itin-summary-day">Stop ${esc(String(stop.display_order || index + 1))}</span>
-            ${
-              stop.day_number !== "" && stop.day_number != null
-                ? `<span class="fc-itin-summary-sailing-day">Day ${esc(String(stop.day_number))}</span>`
-                : ""
-            }
-            <span class="fc-itin-summary-type">${esc(typeLabel)}</span>
+            <span class="fc-itin-summary-day">${stop.day_number !== "" && stop.day_number != null ? `Day ${esc(String(stop.day_number))}` : `Stop ${esc(String(stop.display_order || index + 1))}`}</span>
             <span class="fc-itin-summary-port">${esc(portLabel)}</span>
-            ${
-              flags.length
-                ? `<span class="fc-itin-summary-flags">${flags
-                    .slice(0, 2)
-                    .map((f) => renderItinFlag(f))
-                    .join("")}</span>`
-                : ""
-            }
           </button>
+          <span class="fc-itin-summary-status" title="${esc(flags.join(", "))}">
+            ${primaryFlag ? renderItinFlag(primaryFlag) : ""}
+            ${portNeedsCoordinates(stop) ? renderItinFlag("Missing Coordinates") : ""}
+          </span>
         </div>
         <div class="fc-itin-row-details" ${open ? "" : "hidden"}>
           <div class="fc-itin-fields">
@@ -1123,6 +1197,7 @@
               <input data-fc-itin="overnight" type="checkbox" ${stop.is_overnight ? "checked" : ""} ${atSea ? "disabled" : ""}>
             </label>
           </div>
+          ${renderCoordinateFields(stop)}
           <div class="fc-itin-flags" title="${esc(flags.join(", "))}">
             ${flags.map((f) => renderItinFlag(f)).join("")}
           </div>
@@ -1135,10 +1210,6 @@
             <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.duplicateStop('${localId}')">Duplicate</button>
             <button type="button" class="admin-button secondary small" onclick="FeaturedItineraryEditor.removeStop('${localId}')">Remove</button>
           </div>
-          <label class="fc-itin-notes">
-            <span>Notes</span>
-            <input data-fc-itin="notes" type="text" value="${esc(stop.notes || "")}" placeholder="Optional notes">
-          </label>
           <input data-fc-itin="stop_date" type="hidden" value="${esc(stop.stop_date || "")}">
         </div>
       </div>
@@ -1331,6 +1402,7 @@
     toggleStop,
     expandAllStops,
     collapseAllStops,
+    savePortCoordinates,
     renderSection,
     renderRouteMapReadiness,
     getRouteMapStatus: () => routeMapStatus,

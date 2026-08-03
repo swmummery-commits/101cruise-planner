@@ -384,14 +384,25 @@ assert(
   "Explore More uses www.101cruise.com.au/cruise?slug={slug}"
 );
 
-const draftBlocked = Export.generateFromModel(baseModel("general"), {
+const draftWithSlug = Export.generateFromModel(baseModel("general"), {
   ...genOpts("general", "classic-editorial"),
   publicationStatus: "draft"
 });
-assert(!draftBlocked.ok, "draft status blocks hard export (no dead Explore More links)");
+assert(draftWithSlug.ok, "slug present allows export regardless of legacy publication status");
 assert(
-  /Public page unavailable/i.test((draftBlocked.errors || []).join(" ")),
-  "draft export shows public page unavailable message"
+  draftWithSlug.html.includes('href="https://www.101cruise.com.au/cruise?slug=pacific-escape"'),
+  "export with slug includes Explore More CTA"
+);
+
+const draftNoSlugNoPublic = Export.generateFromModel(
+  { ...baseModel("general"), publicSlug: "", landingPageUrl: "" },
+  { ...genOpts("general", "classic-editorial"), publicSlug: "", publicationStatus: "draft" }
+);
+assert(draftNoSlugNoPublic.ok, "draft with blank slug still exports newsletter content");
+assert(!/EXPLORE MORE/i.test(draftNoSlugNoPublic.html), "blank slug omits Explore More");
+assert(
+  !draftNoSlugNoPublic.html.includes("/cruise?slug="),
+  "blank slug emits no public cruise link"
 );
 
 const draftSoftPreview = Export.generateFromModel(baseModel("general"), {
@@ -405,8 +416,8 @@ const noSlug = Export.generateFromModel(
   { ...baseModel("general"), publicSlug: "", landingPageUrl: "" },
   { ...genOpts("general", "classic-editorial"), publicSlug: "" }
 );
-assert(!noSlug.ok, "missing slug blocks export");
-assert(/Public page unavailable/i.test((noSlug.errors || []).join(" ")), "missing slug uses public page message");
+assert(noSlug.ok, "missing slug still exports (Explore More omitted)");
+assert(!/EXPLORE MORE/i.test(noSlug.html), "no slug omits Explore More button");
 
 const missingHero = Export.generateFromModel(
   { ...baseModel("general"), heroImageUrl: "" },
@@ -612,7 +623,7 @@ const issueBlocked = Export.composeIssueHtml(
 );
 assert(!issueBlocked.ok, "hard export blocks cruise missing required assets");
 
-const issueDraftBlocked = Export.composeIssueHtml(
+const issueDraftWithSlug = Export.composeIssueHtml(
   [
     {
       ...cruiseA,
@@ -626,11 +637,29 @@ const issueDraftBlocked = Export.composeIssueHtml(
     softValidation: false
   }
 );
-assert(!issueDraftBlocked.ok, "hard issue export blocks draft cruises");
+assert(issueDraftWithSlug.ok, "issue export succeeds when slug is present (publication status ignored)");
 assert(
-  /Public page unavailable/i.test((issueDraftBlocked.errors || []).join(" ")),
-  "issue export reports public page unavailable for draft"
+  issueDraftWithSlug.html.includes('href="https://www.101cruise.com.au/cruise?slug=barcelona-istanbul"'),
+  "issue export includes Explore More when slug present"
 );
+
+const issueNoSlug = Export.composeIssueHtml(
+  [
+    {
+      ...cruiseA,
+      model: { ...baseModel("airline_staff"), publicSlug: "", landingPageUrl: "" },
+      publicSlug: ""
+    }
+  ],
+  {
+    outputMode: "airline_staff",
+    templateKey: "green-price-cards",
+    newsletterNumber: 77,
+    softValidation: false
+  }
+);
+assert(issueNoSlug.ok, "issue export succeeds without slug");
+assert(!/EXPLORE MORE/i.test(issueNoSlug.html), "issue export omits Explore More without slug");
 
 const issueDraftSoft = Export.composeIssueHtml(
   [
