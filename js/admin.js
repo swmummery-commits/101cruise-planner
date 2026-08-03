@@ -114,7 +114,8 @@ let ciLoading = false;
 /* ========== Featured Cruises (Sprint 9 workflow refinement) ========== */
 let featuredCruises = [];
 let featuredCruisePricing = [];
-let featuredCruiseRoomTypes = [];
+let stateroomTypesActive = [];
+let stateroomTypesLoadError = "";
 let featuredNewsletterDefaults = { newsletter_number: null, newsletter_publication_date: null };
 let editingFeaturedCruiseId = null;
 let showFeaturedCruiseForm = false;
@@ -138,7 +139,6 @@ let featuredFormPricing = [];
 let featuredFormDraft = null; // parent field snapshot for new/edit
 let featuredNewsletterDefaultsBaseline = { newsletter_number: null, newsletter_publication_date: null };
 let featuredItineraryFallback = "";
-let featuredRoomTypePromptIndex = null;
 let draggedFeaturedPricingLocalId = null;
 let featuredPricingDragFromHandle = false;
 let showFeaturedNewsletterPreview = false;
@@ -822,7 +822,6 @@ async function setTab(tab) {
     featuredSlugManuallyEdited = false;
     featuredFormPricing = [];
     featuredFormDraft = null;
-    featuredRoomTypePromptIndex = null;
     showFeaturedNewsletterPreview = false;
   }
   renderAdmin();
@@ -860,6 +859,11 @@ async function setTab(tab) {
   if (resolved === "ports-catalogue") {
     if (window.PortsCatalogueAdmin?.ensureLoaded) {
       window.PortsCatalogueAdmin.ensureLoaded({ quiet: true });
+    }
+  }
+  if (resolved === "stateroom-types") {
+    if (window.StateroomTypesAdmin?.ensureLoaded) {
+      window.StateroomTypesAdmin.ensureLoaded({ quiet: true });
     }
   }
   if (resolved === "settings") {
@@ -958,6 +962,7 @@ const ADMIN_NAV_GROUPS = [
     id: "administration",
     label: "Administration",
     items: [
+      { id: "stateroom-types", label: "Stateroom Types" },
       { id: "usage-insights", label: "Usage & Insights" },
       { id: "settings", label: "Settings" }
     ]
@@ -1073,6 +1078,13 @@ const ADMIN_MAIN_TABS = [
   { id: "smart-profiles", label: "Smart Profiles", render: () => renderSmartProfilesPanel() },
   { id: "calculator-data", label: "Drinks Calculator", render: () => renderCalculatorDataPanel() },
   { id: "usage-insights", label: "Usage & Insights", render: () => renderUsageInsightsPanel() },
+  {
+    id: "stateroom-types",
+    label: "Stateroom Types",
+    render: () =>
+      window.StateroomTypesAdmin?.renderPanel?.() ||
+      renderComingSoonPanel("Stateroom Types", "Stateroom types module failed to load.")
+  },
   { id: "settings", label: "Settings", render: () => renderSettingsPanel() }
 ];
 
@@ -9366,7 +9378,7 @@ async function ensureFeaturedCruisesLoaded() {
           await loadCruiseIntelligenceData({ quiet: true });
         }
         await loadFeaturedCruises();
-        await loadFeaturedRoomTypes();
+        await loadStateroomTypesForPricing();
         if (window.NewsletterIssueComposer?.loadNewslettersFromDb) {
           await window.NewsletterIssueComposer.loadNewslettersFromDb();
         }
@@ -9420,25 +9432,36 @@ async function loadFeaturedCruises() {
   }
 }
 
-async function loadFeaturedRoomTypes() {
-  const { data, error } = await supabaseClient
-    .from("featured_cruise_room_types")
-    .select("id,name,sort_order")
-    .order("sort_order", { ascending: true })
-    .order("name", { ascending: true });
-  if (error) {
-    console.warn("Featured room types load skipped", error.message);
-    featuredCruiseRoomTypes = [
-      { name: "Inside" },
-      { name: "Oceanview" },
-      { name: "Balcony" },
-      { name: "Concierge Class" },
-      { name: "Aqua Class" },
-      { name: "Suite" }
-    ];
+async function loadStateroomTypesForPricing() {
+  stateroomTypesLoadError = "";
+  const svc = window.StateroomTypesService;
+  if (!svc) {
+    stateroomTypesActive = [];
+    stateroomTypesLoadError = "Stateroom types service failed to load.";
     return;
   }
-  featuredCruiseRoomTypes = data || [];
+  try {
+    stateroomTypesActive = await svc.listActiveStateroomTypes({ client: supabaseClient });
+  } catch (error) {
+    console.warn("Stateroom types load skipped", error.message);
+    stateroomTypesActive = [];
+    stateroomTypesLoadError = error.message || "Could not load stateroom types.";
+  }
+}
+window.loadStateroomTypesForPricing = loadStateroomTypesForPricing;
+
+function renderFeaturedRoomTypeSelectOptions(currentLabel) {
+  const svc = window.StateroomTypesService;
+  const options = svc
+    ? svc.buildRoomTypeSelectOptions(stateroomTypesActive, currentLabel)
+    : [{ value: "", label: "Select room type", selected: !String(currentLabel || "").trim(), inactive: false }];
+  return options
+    .map((option) => {
+      const selected = option.selected ? " selected" : "";
+      const inactiveClass = option.inactive ? ' class="is-inactive-room-type"' : "";
+      return `<option value="${esc(option.value)}"${inactiveClass}${selected}>${esc(option.label)}</option>`;
+    })
+    .join("");
 }
 
 async function loadFeaturedNewsletterDefaults() {
@@ -9583,7 +9606,6 @@ async function startNewFeaturedCruise() {
   featuredSlugManuallyEdited = false;
   featuredFormPricing = [blankFeaturedPricing(1)];
   featuredItineraryFallback = "";
-  featuredRoomTypePromptIndex = null;
   draggedFeaturedPricingLocalId = null;
   featuredPricingDragFromHandle = false;
   clearMailchimpPoc();
@@ -9888,7 +9910,6 @@ async function editFeaturedCruise(id, { skipLock = false } = {}) {
     featuredRouteMapSectionMessageTone = "";
     showFeaturedCruiseForm = true;
     featuredSlugManuallyEdited = Boolean(existing.public_slug);
-    featuredRoomTypePromptIndex = null;
     clearMailchimpPoc();
     featuredFormDraft = {
       newsletter_id: existing.newsletter_id || null,
@@ -10135,7 +10156,6 @@ function cancelFeaturedCruiseForm() {
   featuredFormPricing = [];
   featuredFormDraft = null;
   featuredSlugManuallyEdited = false;
-  featuredRoomTypePromptIndex = null;
   draggedFeaturedPricingLocalId = null;
   featuredPricingDragFromHandle = false;
   showFeaturedNewsletterPreview = false;
@@ -11786,101 +11806,6 @@ function refreshFeaturedPricingCalcs() {
   });
 }
 
-function filteredFeaturedRoomTypeNames(query) {
-  const q = String(query || "").trim().toLowerCase();
-  const names = featuredCruiseRoomTypes.map((r) => String(r?.name || "").trim()).filter(Boolean);
-  const filtered = q ? names.filter((n) => n.toLowerCase().includes(q)) : names;
-  return filtered.slice(0, 14);
-}
-
-function renderFeaturedRoomTypeSuggestHtml(index, query) {
-  const names = filteredFeaturedRoomTypeNames(query);
-  if (!names.length) {
-    return `<div class="featured-room-type-ac" role="listbox"><div class="featured-room-type-ac-empty">No saved room types match</div></div>`;
-  }
-  return `
-    <div class="featured-room-type-ac" role="listbox">
-      ${names
-        .map(
-          (name) => `
-        <button type="button" class="featured-room-type-ac-item" role="option" data-name="${esc(name)}" onmousedown="event.preventDefault()" onclick="selectFeaturedRoomType(${index}, this.getAttribute('data-name'))">${esc(name)}</button>`
-        )
-        .join("")}
-    </div>`;
-}
-
-function refreshFeaturedRoomTypeSuggest(index) {
-  const input = document.getElementById(`fcPriceRoom-${index}`);
-  const mount = document.getElementById(`fcRoomTypeSuggest-${index}`);
-  if (!mount || !input) return;
-  if (document.activeElement !== input) {
-    mount.innerHTML = "";
-    return;
-  }
-  mount.innerHTML = renderFeaturedRoomTypeSuggestHtml(index, input.value);
-}
-
-function openFeaturedRoomTypeSuggest(index) {
-  refreshFeaturedRoomTypeSuggest(index);
-}
-
-function closeFeaturedRoomTypeSuggest(index) {
-  const mount = document.getElementById(`fcRoomTypeSuggest-${index}`);
-  if (mount) mount.innerHTML = "";
-}
-
-function closeFeaturedRoomTypeSuggestSoon(index) {
-  window.setTimeout(() => closeFeaturedRoomTypeSuggest(index), 140);
-}
-
-function selectFeaturedRoomType(index, name) {
-  const input = document.getElementById(`fcPriceRoom-${index}`);
-  if (input) {
-    input.value = name;
-    input.focus();
-  }
-  closeFeaturedRoomTypeSuggest(index);
-  onFeaturedRoomTypeInput(index);
-  refreshFeaturedPricingCalcs();
-}
-
-function onFeaturedRoomTypeInput(index) {
-  const value = String(document.getElementById(`fcPriceRoom-${index}`)?.value || "").trim();
-  const known = featuredCruiseRoomTypes.some((r) => r.name.toLowerCase() === value.toLowerCase());
-  featuredRoomTypePromptIndex = value && !known ? index : null;
-  const prompt = document.getElementById(`fcRoomTypeSave-${index}`);
-  if (prompt) {
-    prompt.hidden = !(value && !known);
-    prompt.querySelector("[data-label]") && (prompt.querySelector("[data-label]").textContent = `Save “${value}” for future use`);
-  }
-  refreshFeaturedRoomTypeSuggest(index);
-}
-
-async function saveFeaturedRoomTypeFromRow(index) {
-  const value = String(document.getElementById(`fcPriceRoom-${index}`)?.value || "").trim();
-  if (!value) return;
-  const { error } = await supabaseClient.from("featured_cruise_room_types").insert({
-    name: value,
-    sort_order: (featuredCruiseRoomTypes.length + 1) * 10
-  });
-  if (error) {
-    if (/duplicate|unique/i.test(error.message || "")) {
-      await loadFeaturedRoomTypes();
-      featuredRoomTypePromptIndex = null;
-      renderAdmin();
-      return;
-    }
-    featuredCruiseMessage = error.message || "Could not save room type.";
-    featuredCruiseMessageTone = "error";
-    renderAdmin();
-    return;
-  }
-  await loadFeaturedRoomTypes();
-  featuredRoomTypePromptIndex = null;
-  captureFeaturedDraftFromDom();
-  renderAdmin();
-}
-
 function renderFeaturedCruisesPanel() {
   if (showFeaturedCruiseForm) return renderFeaturedCruiseForm();
 
@@ -11993,8 +11918,10 @@ function renderFeaturedCruiseListItem(row) {
 
 function renderFeaturedPricingBlock(row, index, nights) {
   const calcs = buildFeaturedPriceCalcs(row, nights);
-  const showSaveRoom = featuredRoomTypePromptIndex === index;
   const localId = row.local_id || `price-${index}`;
+  const roomTypeLoadNote = stateroomTypesLoadError
+    ? `<div class="admin-message admin-error">${esc(stateroomTypesLoadError)}</div>`
+    : "";
   return `
     <div
       class="featured-pricing-block"
@@ -12013,12 +11940,11 @@ function renderFeaturedPricingBlock(row, index, nights) {
           onpointerdown="onFeaturedPriceHandlePointerDown(event)"
         >☰</span>
         <div class="admin-field featured-room-type-field">
-          <label>Room Type</label>
-          <input id="fcPriceRoom-${index}" data-fc-price="room" type="text" value="${esc(row.room_label)}" autocomplete="off" onfocus="openFeaturedRoomTypeSuggest(${index})" oninput="onFeaturedRoomTypeInput(${index}); refreshFeaturedPricingCalcs()" onblur="closeFeaturedRoomTypeSuggestSoon(${index})">
-          <div id="fcRoomTypeSuggest-${index}" class="featured-room-type-suggest-mount"></div>
-          <div id="fcRoomTypeSave-${index}" class="featured-room-type-save" ${showSaveRoom ? "" : "hidden"}>
-            <button type="button" class="admin-button secondary small" onclick="saveFeaturedRoomTypeFromRow(${index})"><span data-label>Save “${esc(row.room_label)}” for future use</span></button>
-          </div>
+          <label for="fcPriceRoom-${index}">Room Type</label>
+          <select id="fcPriceRoom-${index}" data-fc-price="room" onchange="refreshFeaturedPricingCalcs()">
+            ${renderFeaturedRoomTypeSelectOptions(row.room_label)}
+          </select>
+          ${roomTypeLoadNote}
         </div>
         <div class="admin-field featured-category-field">
           <label>Category</label>
