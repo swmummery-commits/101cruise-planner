@@ -46,7 +46,12 @@
     "private-dining": {
       label: "Private dining",
       group: "exclusive",
-      paths: `<path d="m12 2 2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01Z"/><path d="M8.5 9v4a1.5 1.5 0 0 0 3 0V9"/><path d="M10 9v10"/><path d="M17 15V9a3.5 3.5 0 0 0-3.5 3.5V14a1.5 1.5 0 0 0 3 0v5"/>`
+      paths: `<path d="m12 3.5 2.4 5.2L19 9.5l-4 3.9 0.95 5.6L12 16.2 8.05 19l0.95-5.6-4-3.9 4.6-0.8Z"/><path d="M10.2 11.5v1.6a0.8 0.8 0 0 0 1.6 0v-1.6"/><path d="M11 11.5v5.5"/><path d="M14.2 14.8V11.8a2.2 2.2 0 0 0-2.2 2.2v0.55a0.8 0.8 0 0 0 1.6 0v2.25"/>`
+    },
+    "suite-attendant": {
+      label: "Suite attendant",
+      group: "exclusive",
+      paths: `<circle cx="12" cy="5.5" r="2.25"/><path d="M9.75 8.25h4.5"/><path d="M9.75 8.25 8.75 9.75"/><path d="M14.25 8.25 15.25 9.75"/><path d="M8.25 20v-5.5a3.75 3.75 0 0 1 7.5 0V20"/><path d="M5 13.5h3.75"/><path d="M5 14.25v0.75a0.75 0.75 0 0 0 0.75 0.75h2.25"/>`
     },
     terrace: {
       label: "Terrace",
@@ -231,6 +236,7 @@
     lounge: ["lounge", "concierge club", "diamond club", "executive lounge", "suite lounge", "club lounge", "premium lounge"],
     "sun-deck": ["sun deck", "sundeck", "private deck", "suite sun deck", "sanctuary", "adults-only deck"],
     "private-dining": ["private restaurant", "exclusive restaurant", "blu", "luminae", "coastal kitchen", "dining room", "specialty dining"],
+    "suite-attendant": ["personal suite attendant", "suite attendant", "butler", "stateroom attendant", "room attendant", "personal butler", "24 hour butler"],
     fitness: ["fitness", "fitness center", "fitness centre", "gym", "exercise", "fitness center, with classes"],
     spa: ["spa", "thermal suite", "wellness", "hydrotherapy"],
     cinema: ["cinema", "movie", "film", "outdoor screen"],
