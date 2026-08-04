@@ -116,6 +116,7 @@ let featuredCruises = [];
 let featuredCruisePricing = [];
 let stateroomTypesActive = [];
 let stateroomTypesLoadError = "";
+let stateroomTypesCatalogLoading = false;
 let cruiseLineStateroomAllocations = {};
 let featuredNewsletterDefaults = { newsletter_number: null, newsletter_publication_date: null };
 let editingFeaturedCruiseId = null;
@@ -863,7 +864,7 @@ async function setTab(tab) {
     }
   }
   if (resolved === "cruise-lines" || resolved === "cruise-ships") {
-    loadStateroomTypesForPricing();
+    loadStateroomTypesForPricing({ rerender: true });
   }
   if (resolved === "stateroom-types") {
     if (window.StateroomTypesAdmin?.ensureLoaded) {
@@ -6888,6 +6889,7 @@ async function initAdmin() {
   }
 
   await loadAdminData();
+  await loadStateroomTypesForPricing({ rerender: false });
   renderAdmin();
 }
 
@@ -9442,23 +9444,40 @@ async function loadFeaturedCruises() {
   }
 }
 
-async function loadStateroomTypesForPricing() {
+async function loadStateroomTypesForPricing({ rerender = true } = {}) {
   stateroomTypesLoadError = "";
   const svc = window.StateroomTypesService;
   if (!svc) {
     stateroomTypesActive = [];
     cruiseLineStateroomAllocations = {};
     stateroomTypesLoadError = "Stateroom types service failed to load.";
+    if (rerender) renderAdmin();
     return;
   }
+
+  stateroomTypesCatalogLoading = true;
+  if (rerender) renderAdmin();
+
   try {
-    stateroomTypesActive = await svc.listActiveStateroomTypes({ client: supabaseClient });
-    cruiseLineStateroomAllocations = await svc.loadCruiseLineStateroomAllocations();
+    try {
+      stateroomTypesActive = await svc.listActiveStateroomTypes({ client: supabaseClient });
+    } catch (directError) {
+      stateroomTypesActive = await svc.listActiveStateroomTypes();
+    }
   } catch (error) {
     console.warn("Stateroom types load skipped", error.message);
     stateroomTypesActive = [];
-    cruiseLineStateroomAllocations = {};
     stateroomTypesLoadError = error.message || "Could not load stateroom types.";
+  }
+
+  try {
+    cruiseLineStateroomAllocations = await svc.loadCruiseLineStateroomAllocations();
+  } catch (error) {
+    console.warn("Cruise line stateroom allocations load skipped", error.message);
+    cruiseLineStateroomAllocations = {};
+  } finally {
+    stateroomTypesCatalogLoading = false;
+    if (rerender) renderAdmin();
   }
 }
 window.loadStateroomTypesForPricing = loadStateroomTypesForPricing;
@@ -9486,6 +9505,21 @@ async function persistCiLineStateroomTypes(lineId) {
 
 function renderCiLineStateroomTypesSection(line) {
   if (!line?.id) return "";
+  if (stateroomTypesCatalogLoading) {
+    return `
+      <div class="ci-stateroom-types-panel">
+        <h4>Room types for newsletter pricing</h4>
+        <p class="admin-muted admin-running-status" role="status">Loading stateroom types…</p>
+      </div>`;
+  }
+  if (stateroomTypesLoadError) {
+    return `
+      <div class="ci-stateroom-types-panel">
+        <h4>Room types for newsletter pricing</h4>
+        <div class="admin-message admin-error">${esc(stateroomTypesLoadError)}</div>
+        <button type="button" class="admin-button secondary small" onclick="loadStateroomTypesForPricing({ rerender: true })">Retry</button>
+      </div>`;
+  }
   const svc = window.StateroomTypesService;
   const types = svc ? svc.sortStateroomTypes(stateroomTypesActive) : stateroomTypesActive.slice();
   const assigned = new Set((cruiseLineStateroomAllocations[line.id] || []).map(String));
@@ -9493,13 +9527,13 @@ function renderCiLineStateroomTypesSection(line) {
     return `
       <div class="ci-stateroom-types-panel">
         <h4>Room types for newsletter pricing</h4>
-        <p class="admin-small">No active stateroom types found. Add types under Administration → Stateroom Types.</p>
+        <p class="admin-small">No active stateroom types exist yet. Create them under <button type="button" class="admin-button secondary small ci-inline-link-btn" onclick="setTab('stateroom-types')">Administration → Stateroom Types</button>, then return here to assign them to ${esc(line.name || "this cruise line")}.</p>
       </div>`;
   }
   return `
     <div class="ci-stateroom-types-panel">
       <h4>Room types for newsletter pricing</h4>
-      <p class="admin-small">Choose which room types appear when entering prices for this cruise line. Leave all unchecked to allow every active type. Order follows the master Stateroom Types list.</p>
+      <p class="admin-small">Tick the room types available when entering newsletter prices for ${esc(line.name || "this cruise line")}. Leave all unchecked to allow every active type. Order follows Administration → Stateroom Types.</p>
       <div class="ci-checkbox-row ci-stateroom-type-grid">
         ${types
           .map(

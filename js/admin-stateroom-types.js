@@ -415,7 +415,7 @@
           <div>
             <p class="admin-nav-eyebrow">Administration</p>
             <h3>Stateroom Types</h3>
-            <p class="admin-muted">Manage the room types available when entering cruise pricing.</p>
+            <p class="admin-muted">Manage the room type labels used across 101cruise. Assign types to cruise lines under Cruise Database → Cruise Lines.</p>
           </div>
           <div>
             <button type="button" class="admin-button" onclick="StateroomTypesAdmin.startCreate()" ${loading || saving || reordering ? "disabled" : ""}>Add Stateroom Type</button>
