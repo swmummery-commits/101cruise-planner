@@ -210,6 +210,7 @@
   }
 
   return {
+    renderIconPicker: renderIconPicker,
     renderFeatureRow: renderFeatureRow,
     readFeatureRowsFromRoot: readFeatureRowsFromRoot,
     rebuildFeatureList: rebuildFeatureList,

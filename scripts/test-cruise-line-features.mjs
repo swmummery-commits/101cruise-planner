@@ -184,4 +184,46 @@ assert.ok(netlifyFn.includes('action === "reorder"'));
 assert.ok(adminCss.includes(".ci-class-tpl-feature-list"));
 assert.ok(adminCss.includes(".ci-line-features-panel"));
 
+// Icon picker must be exported — renderFeatureForm calls it when Add/Edit opens.
+assert.equal(typeof loadGlobalModule("js/ci-ship-feature-admin.js").CiShipFeatureAdmin.renderIconPicker, "function");
+
+{
+  const sandbox = { globalThis: {}, window: {}, module: { exports: {} } };
+  sandbox.window = sandbox.globalThis;
+  sandbox.exports = sandbox.module.exports;
+  for (const rel of [
+    "js/ci-ship-feature-icons.js",
+    "js/ci-ship-class-facilities-template.js",
+    "js/cruise-line-features-service.js",
+    "js/ci-ship-feature-admin.js",
+    "js/admin-cruise-line-features.js"
+  ]) {
+    vm.runInNewContext(read(rel), sandbox, { filename: path.basename(rel) });
+  }
+  const g = sandbox.globalThis;
+  g.esc = (v) => String(v ?? "");
+  g.ciCruiseShips = [{ id: "s1", cruise_line_id: "line1", name: "Ship A", ship_class: "Solstice" }];
+  g.ciShipClassFacilityTemplates = [];
+  g.setCiLineTab = function () {};
+  g.renderCiAdmin = function () {
+    g._sectionHtml = g.CruiseLineFeaturesAdmin.renderSection({ id: "line1", name: "Test Line" });
+  };
+  g.CruiseLineFeaturesService.listFeaturesForLine = async () => [
+    {
+      id: "f1",
+      cruise_line_id: "line1",
+      feature_type: "exclusive_area",
+      name: "Blu",
+      icon_key: "dining",
+      is_active: true
+    }
+  ];
+  await g.CruiseLineFeaturesAdmin.loadForLine("line1", { rerenderOnComplete: false });
+  g.CruiseLineFeaturesAdmin.startCreate("exclusive_area");
+  assert.ok(String(g._sectionHtml || "").includes("ci-line-feature-form"), "Add should render feature form");
+  assert.ok(String(g._sectionHtml || "").includes("Add exclusive area"), "Add form title should render");
+  g.CruiseLineFeaturesAdmin.startEdit("f1");
+  assert.ok(String(g._sectionHtml || "").includes("Edit feature"), "Edit should render feature form");
+}
+
 console.log("test-cruise-line-features: all assertions passed");
