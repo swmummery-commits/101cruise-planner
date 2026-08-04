@@ -199,6 +199,83 @@
     return orphans;
   }
 
+  function featureItemFromCatalogueRow(row) {
+    const item = {
+      name: trimName(row?.name),
+      icon_key: String(row?.icon_key || "sparkles").trim() || "sparkles"
+    };
+    const description = trimName(row?.description);
+    if (description) item.description = description;
+    return item;
+  }
+
+  function templateArrayKey(featureType) {
+    if (featureType === FEATURE_TYPES.EXCLUSIVE_AREA) return "exclusive_areas";
+    if (featureType === FEATURE_TYPES.SPECIALTY_FEATURE) return "specialty_features";
+    return null;
+  }
+
+  function mergeFeatureIntoTemplatePayload(payload, featureType, item) {
+    const key = templateArrayKey(featureType);
+    if (!key || !item?.name) {
+      return {
+        exclusive_areas: Array.isArray(payload?.exclusive_areas) ? payload.exclusive_areas.slice() : [],
+        specialty_features: Array.isArray(payload?.specialty_features) ? payload.specialty_features.slice() : []
+      };
+    }
+    const next = {
+      exclusive_areas: Array.isArray(payload?.exclusive_areas) ? payload.exclusive_areas.slice() : [],
+      specialty_features: Array.isArray(payload?.specialty_features) ? payload.specialty_features.slice() : []
+    };
+    const arr = next[key];
+    const norm = normalizeName(item.name);
+    const idx = arr.findIndex(function (entry) {
+      return normalizeName(featureItemName(entry)) === norm;
+    });
+    if (idx >= 0) arr[idx] = Object.assign({}, arr[idx], item);
+    else arr.push(item);
+    return next;
+  }
+
+  function removeFeatureFromTemplatePayload(payload, featureType, name) {
+    const key = templateArrayKey(featureType);
+    const next = {
+      exclusive_areas: Array.isArray(payload?.exclusive_areas) ? payload.exclusive_areas.slice() : [],
+      specialty_features: Array.isArray(payload?.specialty_features) ? payload.specialty_features.slice() : []
+    };
+    if (!key) return next;
+    const norm = normalizeName(name);
+    next[key] = next[key].filter(function (entry) {
+      return normalizeName(featureItemName(entry)) !== norm;
+    });
+    return next;
+  }
+
+  function mergeFeatureIntoShipFacilities(facilities, featureType, item) {
+    const key = templateArrayKey(featureType);
+    const next = Object.assign({}, facilities && typeof facilities === "object" ? facilities : {});
+    if (!key || !item?.name) return next;
+    const arr = Array.isArray(next[key]) ? next[key].slice() : [];
+    const norm = normalizeName(item.name);
+    const idx = arr.findIndex(function (entry) {
+      return normalizeName(featureItemName(entry)) === norm;
+    });
+    if (idx >= 0) arr[idx] = Object.assign({}, arr[idx], item);
+    else arr.push(item);
+    next[key] = arr;
+    return next;
+  }
+
+  function shipHasFeature(ship, featureType, name) {
+    const key = templateArrayKey(featureType);
+    if (!key || !ship) return false;
+    const arr = ship.facilities && Array.isArray(ship.facilities[key]) ? ship.facilities[key] : [];
+    const norm = normalizeName(name);
+    return arr.some(function (entry) {
+      return normalizeName(featureItemName(entry)) === norm;
+    });
+  }
+
   async function api(action, extra = {}) {
     const headers =
       typeof global.adminAuthHeaders === "function"
@@ -263,6 +340,11 @@
     buildTemplatePayloadFromCatalogue,
     deriveSelectedIdsFromTemplate,
     orphanTemplateItems,
+    featureItemFromCatalogueRow,
+    mergeFeatureIntoTemplatePayload,
+    removeFeatureFromTemplatePayload,
+    mergeFeatureIntoShipFacilities,
+    shipHasFeature,
     listFeaturesForLine,
     createFeature,
     updateFeature,
@@ -280,7 +362,12 @@
     buildTemplatePayloadFromCatalogue,
     deriveSelectedIdsFromTemplate,
     orphanTemplateItems,
-    listActiveFeaturesFromRows
+    listActiveFeaturesFromRows,
+    featureItemFromCatalogueRow,
+    mergeFeatureIntoTemplatePayload,
+    removeFeatureFromTemplatePayload,
+    mergeFeatureIntoShipFacilities,
+    shipHasFeature
   };
 
   global.CruiseLineFeaturesService = service;

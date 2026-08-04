@@ -24,7 +24,9 @@
       name: "",
       description: "",
       icon_key: "sparkles",
-      is_active: true
+      is_active: true,
+      assignedClassKeys: [],
+      assignedShipIds: []
     };
   }
 
@@ -95,12 +97,80 @@
     return service ? service.listActiveFeaturesFromRows(rows) : rows.filter((row) => row.is_active !== false);
   }
 
+  function tplApi() {
+    return global.CiShipClassFacilitiesTemplate || null;
+  }
+
+  function lineShips() {
+    return (global.ciCruiseShips || []).filter(function (ship) {
+      return ship && ship.cruise_line_id === activeLineId;
+    });
+  }
+
+  function lineTemplates() {
+    return (global.ciShipClassFacilityTemplates || []).filter(function (row) {
+      return row && row.cruise_line_id === activeLineId;
+    });
+  }
+
+  function classOptionsForLine() {
+    const api = tplApi();
+    if (!api || !activeLineId) return [];
+    return api.listDistinctClassesForLine(global.ciCruiseShips || [], activeLineId);
+  }
+
+  function classKeyForName(className) {
+    const api = tplApi();
+    return api ? api.normalizeClassKey(className) : String(className || "").trim().toLowerCase();
+  }
+
+  function templateIncludesFeature(template, featureType, name) {
+    const service = svc();
+    if (!service || !template) return false;
+    const key =
+      featureType === "exclusive_area"
+        ? "exclusive_areas"
+        : featureType === "specialty_feature"
+          ? "specialty_features"
+          : null;
+    if (!key) return false;
+    const norm = service.normalizeName(name);
+    return (Array.isArray(template[key]) ? template[key] : []).some(function (item) {
+      return service.normalizeName(service.featureItemName(item)) === norm;
+    });
+  }
+
+  function assignedClassKeysForFeature(featureType, name) {
+    const api = tplApi();
+    if (!api || !name) return [];
+    const templates = lineTemplates();
+    return classOptionsForLine().filter(function (className) {
+      const template = api.templateRecordForClass(templates, activeLineId, className);
+      return templateIncludesFeature(template, featureType, name);
+    }).map(classKeyForName);
+  }
+
+  function assignedShipIdsForFeature(featureType, name) {
+    const service = svc();
+    if (!service || !name) return [];
+    return lineShips()
+      .filter(function (ship) {
+        return service.shipHasFeature(ship, featureType, name);
+      })
+      .map(function (ship) {
+        return String(ship.id);
+      });
+  }
+
   function featureToDraft(row) {
+    const featureType = row?.feature_type || "";
     return {
       name: row?.name || "",
       description: row?.description || "",
       icon_key: row?.icon_key || "sparkles",
-      is_active: row?.is_active !== false
+      is_active: row?.is_active !== false,
+      assignedClassKeys: assignedClassKeysForFeature(featureType, row?.name),
+      assignedShipIds: assignedShipIdsForFeature(featureType, row?.name)
     };
   }
 
@@ -110,9 +180,224 @@
       name: String(get("ciLineFeatureName") || "").trim(),
       description: String(get("ciLineFeatureDescription") || "").trim(),
       icon_key: String(document.querySelector("#ciLineFeaturesPanel .ci-ship-feature-icon-key")?.value || draft.icon_key || "sparkles").trim() || "sparkles",
-      is_active: String(get("ciLineFeatureActive") || "true") !== "false"
+      is_active: String(get("ciLineFeatureActive") || "true") !== "false",
+      assignedClassKeys: Array.from(document.querySelectorAll(".ci-line-feature-class-cb:checked")).map(function (el) {
+        return String(el.value || "").trim();
+      }).filter(Boolean),
+      assignedShipIds: Array.from(document.querySelectorAll(".ci-line-feature-ship-cb:checked")).map(function (el) {
+        return String(el.value || "").trim();
+      }).filter(Boolean)
     };
     return draft;
+  }
+
+  function renderAssignmentSection(featureType) {
+    const classes = classOptionsForLine();
+    const ships = lineShips()
+      .slice()
+      .sort(function (a, b) {
+        return String(a.name || "").localeCompare(String(b.name || ""), undefined, { sensitivity: "base" });
+      });
+    const selectedClasses = new Set((draft.assignedClassKeys || []).map(String));
+    const selectedShips = new Set((draft.assignedShipIds || []).map(String));
+
+    const classList = classes.length
+      ? classes
+          .map(function (className) {
+            const key = classKeyForName(className);
+            const memberCount = ships.filter(function (ship) {
+              return classKeyForName(ship.ship_class) === key;
+            }).length;
+            const checked = selectedClasses.has(key) ? "checked" : "";
+            return `
+              <label class="ci-check-control ci-line-feature-assign-item">
+                <input type="checkbox" class="ci-line-feature-class-cb" value="${esc(key)}" data-class-name="${esc(className)}" ${checked}>
+                <span>${esc(className)} <span class="admin-small">(${memberCount} ship${memberCount === 1 ? "" : "s"})</span></span>
+              </label>`;
+          })
+          .join("")
+      : `<p class="admin-small">No ship classes assigned on this line yet. Assign classes under Ship Classes, then return here.</p>`;
+
+    const shipList = ships.length
+      ? ships
+          .map(function (ship) {
+            const checked = selectedShips.has(String(ship.id)) ? "checked" : "";
+            const classLabel = ship.ship_class ? ` · ${esc(ship.ship_class)}` : "";
+            return `
+              <label class="ci-check-control ci-line-feature-assign-item">
+                <input type="checkbox" class="ci-line-feature-ship-cb" value="${esc(ship.id)}" ${checked}>
+                <span>${esc(ship.name || "Untitled ship")}<span class="admin-small">${classLabel}</span></span>
+              </label>`;
+          })
+          .join("")
+      : `<p class="admin-small">No ships on this cruise line yet.</p>`;
+
+    const typeLabel = featureType === "exclusive_area" ? "exclusive area" : "specialty feature";
+    return `
+      <div class="ci-line-feature-assign">
+        <h5>Assign this ${esc(typeLabel)}</h5>
+        <p class="admin-small">Choose which ship classes and ships this ${esc(typeLabel)} belongs to. Class selections update facilities templates. Ship selections add or remove only this feature — other ship facilities stay intact.</p>
+        <div class="ci-line-feature-assign-block">
+          <h6>Ship classes</h6>
+          <div class="ci-line-feature-assign-grid">${classList}</div>
+        </div>
+        <div class="ci-line-feature-assign-block">
+          <h6>Individual ships</h6>
+          <div class="ci-line-feature-assign-grid">${shipList}</div>
+        </div>
+      </div>`;
+  }
+
+  async function saveClassAssignments(featureType, savedFeature, previousName) {
+    const service = svc();
+    const api = tplApi();
+    if (!service || !api || !activeLineId || !window.adminAuthHeaders) return { classesUpdated: 0 };
+
+    const selectedKeys = new Set((draft.assignedClassKeys || []).map(String));
+    const classes = classOptionsForLine();
+    const item = service.featureItemFromCatalogueRow(savedFeature);
+    const oldName = previousName || savedFeature.name;
+    let classesUpdated = 0;
+
+    for (let i = 0; i < classes.length; i += 1) {
+      const className = classes[i];
+      const key = classKeyForName(className);
+      const existing = api.templateRecordForClass(lineTemplates(), activeLineId, className);
+      const basePayload = existing
+        ? {
+            exclusive_areas: Array.isArray(existing.exclusive_areas) ? existing.exclusive_areas : [],
+            specialty_features: Array.isArray(existing.specialty_features) ? existing.specialty_features : []
+          }
+        : api.resolveClassTemplatePayload({
+            templates: lineTemplates(),
+            ships: global.ciCruiseShips || [],
+            cruiseLineId: activeLineId,
+            className: className
+          }).payload;
+
+      const hadFeature =
+        templateIncludesFeature(
+          {
+            exclusive_areas: basePayload.exclusive_areas,
+            specialty_features: basePayload.specialty_features
+          },
+          featureType,
+          oldName
+        ) ||
+        templateIncludesFeature(
+          {
+            exclusive_areas: basePayload.exclusive_areas,
+            specialty_features: basePayload.specialty_features
+          },
+          featureType,
+          savedFeature.name
+        );
+      const shouldHave = selectedKeys.has(key);
+      if (!shouldHave && !hadFeature) continue;
+
+      let nextPayload = basePayload;
+      if (oldName && service.normalizeName(oldName) !== service.normalizeName(savedFeature.name)) {
+        nextPayload = service.removeFeatureFromTemplatePayload(nextPayload, featureType, oldName);
+      }
+      if (shouldHave) {
+        nextPayload = service.mergeFeatureIntoTemplatePayload(nextPayload, featureType, item);
+      } else {
+        nextPayload = service.removeFeatureFromTemplatePayload(nextPayload, featureType, savedFeature.name);
+        if (oldName) nextPayload = service.removeFeatureFromTemplatePayload(nextPayload, featureType, oldName);
+      }
+
+      const headers = await window.adminAuthHeaders({ "Content-Type": "application/json" });
+      const response = await fetch("/.netlify/functions/ci-ship-class-facilities-save", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({
+          cruise_line_id: activeLineId,
+          class_name: className,
+          exclusive_areas: nextPayload.exclusive_areas,
+          specialty_features: nextPayload.specialty_features
+        })
+      });
+      const data = await response.json().catch(function () {
+        return {};
+      });
+      if (!response.ok || data.success === false) {
+        throw new Error(data.detail || data.error || `Could not update ${className} template.`);
+      }
+      if (data.template && window.mergeCiShipClassFacilityTemplate) {
+        window.mergeCiShipClassFacilityTemplate(data.template);
+      }
+      classesUpdated += 1;
+    }
+
+    if (window.refreshCiLineShipClassesSection) window.refreshCiLineShipClassesSection();
+    return { classesUpdated: classesUpdated };
+  }
+
+  async function saveShipAssignments(featureType, savedFeature, previousName) {
+    const service = svc();
+    const client = global.supabaseClient;
+    if (!service || !client || !activeLineId) return { shipsUpdated: 0 };
+
+    const selectedIds = new Set((draft.assignedShipIds || []).map(String));
+    const item = service.featureItemFromCatalogueRow(savedFeature);
+    const namesToClear = [savedFeature.name, previousName]
+      .map(function (name) {
+        return service.normalizeName(name);
+      })
+      .filter(Boolean);
+    let shipsUpdated = 0;
+
+    const targets = lineShips().filter(function (ship) {
+      const id = String(ship.id);
+      const selected = selectedIds.has(id);
+      const currentlyHas =
+        service.shipHasFeature(ship, featureType, savedFeature.name) ||
+        (previousName && service.shipHasFeature(ship, featureType, previousName));
+      return selected || currentlyHas;
+    });
+
+    for (let i = 0; i < targets.length; i += 1) {
+      const ship = targets[i];
+      const selected = selectedIds.has(String(ship.id));
+      let nextFacilities = ship.facilities && typeof ship.facilities === "object" ? Object.assign({}, ship.facilities) : {};
+      const arrayKey =
+        featureType === "exclusive_area"
+          ? "exclusive_areas"
+          : featureType === "specialty_feature"
+            ? "specialty_features"
+            : null;
+      if (!arrayKey) continue;
+
+      if (selected) {
+        nextFacilities = service.mergeFeatureIntoShipFacilities(nextFacilities, featureType, item);
+      } else {
+        const arr = Array.isArray(nextFacilities[arrayKey]) ? nextFacilities[arrayKey].slice() : [];
+        nextFacilities[arrayKey] = arr.filter(function (entry) {
+          return !namesToClear.includes(service.normalizeName(service.featureItemName(entry)));
+        });
+        if (!nextFacilities[arrayKey].length) delete nextFacilities[arrayKey];
+      }
+
+      const result = await client
+        .from("ci_cruise_ships")
+        .update({ facilities: nextFacilities })
+        .eq("id", ship.id)
+        .select()
+        .single();
+      if (result.error) {
+        throw new Error(result.error.message || `Could not update ${ship.name || "ship"}.`);
+      }
+      const idx = (global.ciCruiseShips || []).findIndex(function (row) {
+        return row.id === ship.id;
+      });
+      if (idx >= 0) {
+        global.ciCruiseShips[idx] = Object.assign({}, global.ciCruiseShips[idx], result.data || { facilities: nextFacilities });
+      }
+      shipsUpdated += 1;
+    }
+
+    if (window.syncCiCatalogueWindowState) window.syncCiCatalogueWindowState();
+    return { shipsUpdated: shipsUpdated };
   }
 
   async function loadForLine(lineId, { rerenderOnComplete = true } = {}) {
@@ -151,6 +436,9 @@
     const iconApi = icons();
     if (iconApi) draft.icon_key = iconApi.FALLBACK_KEY;
     setMessage("", "");
+    if (activeLineId && typeof global.loadCiShipClassFacilityTemplatesForLine === "function") {
+      global.loadCiShipClassFacilityTemplatesForLine(activeLineId);
+    }
     rerender({ activateFeaturesTab: true });
   }
 
@@ -165,6 +453,9 @@
     editingId = featureId;
     draft = featureToDraft(row);
     setMessage("", "");
+    if (activeLineId && typeof global.loadCiShipClassFacilityTemplatesForLine === "function") {
+      global.loadCiShipClassFacilityTemplatesForLine(activeLineId);
+    }
     rerender({ activateFeaturesTab: true });
   }
 
@@ -187,11 +478,13 @@
     const row = editingId ? features.find((item) => item.id === editingId) : null;
     const featureType = row?.feature_type || creatingType;
     if (!featureType) return;
+    const previousName = row?.name || "";
 
     saving = true;
     setMessage("Saving feature…", "running");
-    rerender();
+    rerender({ activateFeaturesTab: true });
     try {
+      let savedFeature = null;
       if (editingId) {
         const validation = service.validateFeatureInput({
           name: draft.name,
@@ -207,8 +500,7 @@
           setMessage(validation.error, "error");
           return;
         }
-        await service.updateFeature(editingId, validation.payload);
-        setMessage("Feature saved.", "success");
+        savedFeature = await service.updateFeature(editingId, validation.payload);
       } else {
         const validation = service.buildCreatePayload({
           name: draft.name,
@@ -223,9 +515,31 @@
           setMessage(validation.error, "error");
           return;
         }
-        await service.createFeature(validation.payload);
-        setMessage("Feature created.", "success");
+        savedFeature = await service.createFeature(validation.payload);
       }
+
+      savedFeature = Object.assign({}, savedFeature || {}, {
+        name: draft.name,
+        description: draft.description,
+        icon_key: draft.icon_key,
+        is_active: draft.is_active,
+        feature_type: featureType
+      });
+
+      const classResult = await saveClassAssignments(featureType, savedFeature, previousName);
+      const shipResult = await saveShipAssignments(featureType, savedFeature, previousName);
+
+      const parts = ["Feature saved."];
+      if (classResult.classesUpdated) {
+        parts.push(
+          `Updated ${classResult.classesUpdated} class template${classResult.classesUpdated === 1 ? "" : "s"}.`
+        );
+      }
+      if (shipResult.shipsUpdated) {
+        parts.push(`Updated ${shipResult.shipsUpdated} ship${shipResult.shipsUpdated === 1 ? "" : "s"}.`);
+      }
+      setMessage(parts.join(" "), "success");
+
       await loadForLine(activeLineId, { rerenderOnComplete: false });
       creatingType = "";
       editingId = null;
@@ -234,7 +548,7 @@
       setMessage(error.message || "Could not save feature.", "error");
     } finally {
       saving = false;
-      rerender();
+      rerender({ activateFeaturesTab: true });
     }
   }
 
@@ -394,6 +708,7 @@
             </div>
           </div>
         </div>
+        ${renderAssignmentSection(featureType)}
         <div class="admin-actions-row">
           <button type="button" class="admin-button small" onclick="CruiseLineFeaturesAdmin.saveFeature()" ${saving ? "disabled" : ""}>Save feature</button>
           <button type="button" class="admin-button secondary small" onclick="CruiseLineFeaturesAdmin.cancelEdit()">Cancel</button>
@@ -470,7 +785,7 @@
     return `
       <div class="ci-line-features-panel" id="ciLineFeaturesPanel">
         <h4>Ship features catalogue</h4>
-        <p class="admin-small">Define branded Exclusive Areas and Specialty Features once for ${esc(line.name || "this line")}. Class templates then pick from this list with checkboxes.</p>
+        <p class="admin-small">Define branded Exclusive Areas and Specialty Features once for ${esc(line.name || "this line")}. When you add or edit a feature, you can assign it to ship classes and individual ships here.</p>
         ${message ? `<p class="admin-small ${msgClass}">${esc(message)}</p>` : ""}
         ${renderFeatureList("exclusive_area", "Exclusive Areas")}
         ${renderFeatureList("specialty_feature", "Specialty Features")}

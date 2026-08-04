@@ -115,6 +115,42 @@ assert.equal(t.filterByType(catalogue, "specialty_feature").length, 2);
   assert.equal(good.payload.display_order, 30);
 }
 
+// Merge / remove helpers for feature assignment
+{
+  const merged = t.mergeFeatureIntoTemplatePayload(
+    {
+      exclusive_areas: [{ name: "The Haven", icon_key: "crown" }],
+      specialty_features: []
+    },
+    "specialty_feature",
+    { name: "Mandara Spa", icon_key: "spa", description: "Full-service spa" }
+  );
+  assert.equal(merged.specialty_features.length, 1);
+  assert.equal(merged.specialty_features[0].name, "Mandara Spa");
+  assert.equal(merged.exclusive_areas.length, 1);
+
+  const updated = t.mergeFeatureIntoTemplatePayload(merged, "exclusive_area", {
+    name: "The Haven",
+    icon_key: "crown",
+    description: "Suite enclave"
+  });
+  assert.equal(updated.exclusive_areas.length, 1);
+  assert.equal(updated.exclusive_areas[0].description, "Suite enclave");
+
+  const removed = t.removeFeatureFromTemplatePayload(updated, "specialty_feature", "Mandara Spa");
+  assert.equal(removed.specialty_features.length, 0);
+  assert.equal(removed.exclusive_areas.length, 1);
+
+  const shipFacilities = t.mergeFeatureIntoShipFacilities(
+    { pools: 3, exclusive_areas: [{ name: "The Haven", icon_key: "crown" }] },
+    "specialty_feature",
+    { name: "Cagney's Steakhouse", icon_key: "dining" }
+  );
+  assert.equal(shipFacilities.pools, 3);
+  assert.equal(shipFacilities.specialty_features.length, 1);
+  assert.equal(t.shipHasFeature({ facilities: shipFacilities }, "specialty_feature", "Cagney's Steakhouse"), true);
+}
+
 const adminJs = read("js/admin.js");
 const adminTplJs = read("js/admin-ship-class-facilities-template.js");
 const adminLineFeaturesJs = read("js/admin-cruise-line-features.js");
@@ -131,6 +167,11 @@ assert.ok(adminLineFeaturesJs.includes("CruiseLineFeaturesAdmin.startCreate"));
 assert.ok(adminLineFeaturesJs.includes("CruiseLineFeaturesAdmin.startEdit"));
 assert.ok(adminLineFeaturesJs.includes("CruiseLineFeaturesAdmin.deleteFeature"));
 assert.ok(adminLineFeaturesJs.includes("startCreate,"));
+assert.ok(adminLineFeaturesJs.includes("renderAssignmentSection"));
+assert.ok(adminLineFeaturesJs.includes("ci-line-feature-class-cb"));
+assert.ok(adminLineFeaturesJs.includes("ci-line-feature-ship-cb"));
+assert.ok(adminLineFeaturesJs.includes("saveClassAssignments"));
+assert.ok(adminLineFeaturesJs.includes("saveShipAssignments"));
 assert.ok(adminJs.includes("window.renderAdmin = renderAdmin"));
 assert.ok(adminTplJs.includes("ci-class-tpl-feature-cb"));
 assert.ok(adminTplJs.includes("usesCatalogueMode"));

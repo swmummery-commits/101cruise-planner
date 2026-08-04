@@ -1332,8 +1332,54 @@ body.admin-loading-active {
   margin: 0 0 0.35rem;
 }
 
-.ci-line-feature-group {
-  margin-top: 0.75rem;
+.ci-line-feature-assign {
+  margin: 14px 0 4px;
+  padding: 12px 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  background: #fafafa;
+}
+
+.ci-line-feature-assign > h5 {
+  margin: 0 0 4px;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.ci-line-feature-assign > .admin-small {
+  margin: 0 0 12px;
+}
+
+.ci-line-feature-assign-block + .ci-line-feature-assign-block {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.ci-line-feature-assign-block h6 {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #666;
+}
+
+.ci-line-feature-assign-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 14px;
+}
+
+.ci-line-feature-assign-item {
+  align-items: flex-start;
+  padding: 4px 0;
+}
+
+@media (max-width: 720px) {
+  .ci-line-feature-assign-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .ci-line-tab-panel .ci-line-feature-group:first-of-type {
