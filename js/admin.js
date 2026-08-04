@@ -104,12 +104,22 @@ let ciLineCreating = false;
 let ciShipCreating = false;
 let ciLineMasterScrollTop = 0;
 let ciShipMasterScrollTop = 0;
+let ciLineListScrollY = 0;
+let ciLineActiveTab = "details";
+let ciLineFormBaseline = null;
 let ciAutosaveStatus = "";
 let ciSaving = false;
 let ciPersistInFlight = null;
 let ciMessage = "";
 let ciMessageTone = "";
 let ciLoading = false;
+
+const CI_LINE_TABS = [
+  { id: "details", label: "Details" },
+  { id: "room-types", label: "Room Types" },
+  { id: "features", label: "Features" },
+  { id: "ship-classes", label: "Ship Classes" }
+];
 
 /* ========== Featured Cruises (Sprint 9 workflow refinement) ========== */
 let featuredCruises = [];
@@ -812,6 +822,8 @@ async function setTab(tab) {
   editingCiShipId = null;
   ciLineCreating = false;
   ciShipCreating = false;
+  ciLineActiveTab = "details";
+  ciLineFormBaseline = null;
   if (!isCruiseCatalogueTab(resolved)) {
     ciMessage = "";
     ciMessageTone = "";
@@ -1215,6 +1227,7 @@ function renderAdminActivePanel() {
 }
 
 function renderAdmin() {
+  const ciLineDraft = captureCiLineFormDraftFromDom();
   app.classList.toggle("is-calculator-data", activeTab === "calculator-data");
   ensureAdminNavListeners();
   app.innerHTML = `
@@ -1254,6 +1267,20 @@ function renderAdmin() {
   }
   if (window.CruiseLineFeaturesAdmin?.afterRender) {
     window.CruiseLineFeaturesAdmin.afterRender();
+  }
+  restoreCiLineFormDraftToDom(ciLineDraft);
+  syncCiLineDetailDomTabs();
+  updateCiLineSaveButtonState();
+  syncCiLineAdminUrl();
+  if (
+    activeTab === "cruise-lines" &&
+    ciSubView === "lines" &&
+    editingCiLineId &&
+    !ciLineCreating &&
+    document.getElementById("ciLineId") &&
+    !ciLineFormBaseline
+  ) {
+    ciLineFormBaseline = captureCiLineFormDraftFromDom();
   }
 }
 
@@ -6894,7 +6921,15 @@ async function initAdmin() {
 
   await loadAdminData();
   await loadStateroomTypesForPricing({ rerender: false });
+  applyCiLineAdminUrlState();
   renderAdmin();
+  syncCiLineAdminUrl();
+  if (editingCiLineId && !ciLineCreating) {
+    loadCiShipClassFacilityTemplatesForLine(editingCiLineId);
+    if (window.CruiseLineFeaturesAdmin?.loadForLine) {
+      window.CruiseLineFeaturesAdmin.loadForLine(editingCiLineId);
+    }
+  }
 }
 
 function renderAdminPasswordUpdate(message = "") {
@@ -6979,11 +7014,233 @@ function restoreCiMasterScroll() {
   requestAnimationFrame(apply);
 }
 
+function normalizeCiLineTab(tab) {
+  const value = String(tab || "").trim().toLowerCase();
+  if (CI_LINE_TABS.some((item) => item.id === value)) return value;
+  return "details";
+}
+
+function captureCiLineFormDraftFromDom() {
+  const idEl = document.getElementById("ciLineId");
+  if (!idEl) return null;
+  const id = String(idEl.value || "").trim();
+  if (!id) return null;
+  if (editingCiLineId && id !== editingCiLineId) return null;
+  return {
+    id,
+    name: String(document.getElementById("ciLineName")?.value || ""),
+    slug: String(document.getElementById("ciLineSlug")?.value || ""),
+    code: String(document.getElementById("ciLineCode")?.value || ""),
+    country: String(document.getElementById("ciLineCountry")?.value || ""),
+    lineType: String(document.getElementById("ciLineType")?.value || ""),
+    website: String(document.getElementById("ciLineWebsite")?.value || ""),
+    cruiseSearch: String(document.getElementById("ciLineCruiseSearch")?.value || ""),
+    shipNamingStyle: String(document.getElementById("ciLineShipNamingStyle")?.value || ""),
+    active: Boolean(document.getElementById("ciLineActive")?.checked),
+    sold: Boolean(document.getElementById("ciLineSold")?.checked),
+    description: String(document.getElementById("ciLineDescription")?.value || ""),
+    logoUrl: String(document.getElementById("ciLineLogo")?.value || ""),
+    stateroomTypeIds: readCiLineStateroomTypeIdsFromDom().slice().sort()
+  };
+}
+
+function restoreCiLineFormDraftToDom(draft) {
+  if (!draft?.id || draft.id !== editingCiLineId) return;
+  if (!document.getElementById("ciLineId")) return;
+  const setVal = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  };
+  setVal("ciLineName", draft.name);
+  setVal("ciLineSlug", draft.slug);
+  setVal("ciLineCode", draft.code);
+  setVal("ciLineCountry", draft.country);
+  setVal("ciLineType", draft.lineType);
+  setVal("ciLineWebsite", draft.website);
+  setVal("ciLineCruiseSearch", draft.cruiseSearch);
+  setVal("ciLineShipNamingStyle", draft.shipNamingStyle);
+  setVal("ciLineDescription", draft.description);
+  setVal("ciLineLogo", draft.logoUrl);
+  const active = document.getElementById("ciLineActive");
+  if (active) active.checked = Boolean(draft.active);
+  const sold = document.getElementById("ciLineSold");
+  if (sold) sold.checked = Boolean(draft.sold);
+  const assigned = new Set((draft.stateroomTypeIds || []).map(String));
+  document.querySelectorAll(".ci-line-stateroom-type-cb").forEach((el) => {
+    el.checked = assigned.has(String(el.value || ""));
+  });
+  const logoPreview = document.getElementById("ciLineLogoPreview");
+  const logoEmpty = document.getElementById("ciLineLogoPreviewEmpty");
+  if (draft.logoUrl && logoPreview) {
+    logoPreview.src = draft.logoUrl;
+    logoPreview.style.display = "";
+    if (logoEmpty) logoEmpty.hidden = true;
+  }
+}
+
+function ciLineFormIsDirty() {
+  if (!editingCiLineId || ciLineCreating || !ciLineFormBaseline) return false;
+  const current = captureCiLineFormDraftFromDom();
+  if (!current) return false;
+  return JSON.stringify(current) !== JSON.stringify(ciLineFormBaseline);
+}
+
+function markCiLineFormBaseline() {
+  ciLineFormBaseline = captureCiLineFormDraftFromDom();
+}
+
+function syncCiLineAdminUrl() {
+  if (typeof window === "undefined" || !window.history?.replaceState) return;
+  try {
+    const url = new URL(window.location.href);
+    const onCruiseLines = activeTab === "cruise-lines" && ciSubView === "lines";
+    if (onCruiseLines) {
+      url.searchParams.set("section", "cruise-lines");
+      if (editingCiLineId && !ciLineCreating) {
+        url.searchParams.set("line", editingCiLineId);
+        url.searchParams.set("tab", normalizeCiLineTab(ciLineActiveTab));
+      } else {
+        url.searchParams.delete("line");
+        url.searchParams.delete("tab");
+      }
+    } else if (
+      url.searchParams.get("section") === "cruise-lines" ||
+      url.searchParams.has("line") ||
+      url.searchParams.has("tab")
+    ) {
+      url.searchParams.delete("section");
+      url.searchParams.delete("line");
+      url.searchParams.delete("tab");
+    } else {
+      return;
+    }
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (next !== current) {
+      window.history.replaceState({}, document.title, next);
+    }
+  } catch (_error) {
+    /* ignore malformed URL environments */
+  }
+}
+
+function applyCiLineAdminUrlState() {
+  if (typeof window === "undefined") return;
+  try {
+    const params = new URLSearchParams(window.location.search || "");
+    const section = String(params.get("section") || "").trim();
+    const lineId = String(params.get("line") || "").trim();
+    if (section && section !== "cruise-lines" && !lineId) return;
+    if (section === "cruise-lines" || lineId) {
+      activeTab = "cruise-lines";
+      ciSubView = "lines";
+    }
+    if (!lineId) return;
+    editingCiLineId = lineId;
+    ciLineCreating = false;
+    ciLineActiveTab = normalizeCiLineTab(params.get("tab"));
+  } catch (_error) {
+    /* ignore */
+  }
+}
+
+function syncCiLineDetailDomTabs() {
+  const root = document.getElementById("ciLineDetailWorkspace");
+  if (!root) return;
+  const active = normalizeCiLineTab(ciLineActiveTab);
+  root.querySelectorAll('[role="tab"][data-ci-line-tab]').forEach((tab) => {
+    const selected = tab.getAttribute("data-ci-line-tab") === active;
+    tab.classList.toggle("active", selected);
+    tab.setAttribute("aria-selected", selected ? "true" : "false");
+    tab.tabIndex = selected ? 0 : -1;
+  });
+  root.querySelectorAll('[role="tabpanel"][data-ci-line-tabpanel]').forEach((panel) => {
+    const match = panel.getAttribute("data-ci-line-tabpanel") === active;
+    panel.hidden = !match;
+    panel.classList.toggle("is-active", match);
+  });
+}
+
+function updateCiLineSaveButtonState() {
+  const btn = document.getElementById("ciLineSaveBtn");
+  if (!btn) return;
+  if (ciSaving || ciAutosaveStatus === "Saving…") {
+    btn.textContent = "Saving…";
+    btn.disabled = true;
+    return;
+  }
+  if (ciAutosaveStatus === "Saved") {
+    btn.textContent = "Saved";
+    btn.disabled = false;
+    return;
+  }
+  if (ciAutosaveStatus === "Save failed" || ciMessageTone === "error") {
+    btn.textContent = "Save failed";
+    btn.disabled = false;
+    return;
+  }
+  btn.textContent = "Save line";
+  btn.disabled = false;
+}
+
+function setCiLineTab(tab) {
+  const next = normalizeCiLineTab(tab);
+  if (next === normalizeCiLineTab(ciLineActiveTab)) return;
+  ciLineActiveTab = next;
+  syncCiLineDetailDomTabs();
+  syncCiLineAdminUrl();
+}
+
+function onCiLineTabKeydown(event) {
+  const key = event.key;
+  if (key !== "ArrowLeft" && key !== "ArrowRight" && key !== "Home" && key !== "End") return;
+  const tabs = Array.from(document.querySelectorAll('#ciLineDetailTabs [role="tab"]'));
+  if (!tabs.length) return;
+  const currentIndex = tabs.findIndex((tab) => tab.getAttribute("data-ci-line-tab") === normalizeCiLineTab(ciLineActiveTab));
+  let nextIndex = currentIndex < 0 ? 0 : currentIndex;
+  if (key === "ArrowLeft") nextIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+  if (key === "ArrowRight") nextIndex = (currentIndex + 1) % tabs.length;
+  if (key === "Home") nextIndex = 0;
+  if (key === "End") nextIndex = tabs.length - 1;
+  event.preventDefault();
+  const nextTab = tabs[nextIndex]?.getAttribute("data-ci-line-tab");
+  if (!nextTab) return;
+  setCiLineTab(nextTab);
+  tabs[nextIndex]?.focus();
+}
+
+function returnToCiLinesList({ force = false } = {}) {
+  if (!force && ciLineFormIsDirty()) {
+    const discard = window.confirm(
+      "You have unsaved changes. Return to the Cruise Lines list without saving?\n\nOK = Discard changes\nCancel = Stay here"
+    );
+    if (!discard) return;
+  }
+  editingCiLineId = null;
+  ciLineCreating = false;
+  ciLineActiveTab = "details";
+  ciLineFormBaseline = null;
+  ciAutosaveStatus = "";
+  ciMessage = "";
+  ciMessageTone = "";
+  clearCiSaveError();
+  renderCiAdmin();
+  syncCiLineAdminUrl();
+  const restoreY = ciLineListScrollY || 0;
+  const applyScroll = () => {
+    window.scrollTo(0, restoreY);
+    restoreCiMasterScroll();
+  };
+  applyScroll();
+  requestAnimationFrame(applyScroll);
+}
+
 function renderCiAdmin() {
   syncCiCatalogueWindowState();
   captureCiMasterScroll();
   renderAdmin();
   restoreCiMasterScroll();
+  syncCiLineAdminUrl();
 }
 
 function syncCiCatalogueWindowState() {
@@ -6999,9 +7256,11 @@ function syncCiCatalogueWindowState() {
 function setCiAutosaveStatus(text, tone) {
   ciAutosaveStatus = text || "";
   const el = document.getElementById("ciAutosaveStatus");
-  if (!el) return;
-  el.textContent = ciAutosaveStatus;
-  el.className = `ci-autosave-status${tone ? ` is-${tone}` : ""}`;
+  if (el) {
+    el.textContent = ciAutosaveStatus;
+    el.className = `ci-autosave-status${tone ? ` is-${tone}` : ""}`;
+  }
+  updateCiLineSaveButtonState();
 }
 
 function clearCiSaveError() {
@@ -7125,6 +7384,8 @@ async function setCiSubView(view) {
   ciShipCreating = false;
   editingCiLineId = null;
   editingCiShipId = null;
+  ciLineActiveTab = "details";
+  ciLineFormBaseline = null;
   ciAutosaveStatus = "";
   renderCiAdmin();
 }
@@ -7132,10 +7393,7 @@ async function setCiSubView(view) {
 function refreshCiLineMasterList() {
   const list = document.getElementById("ciLineMasterList");
   const count = document.getElementById("ciLineListCount");
-  if (!list) {
-    renderCiAdmin();
-    return;
-  }
+  if (!list) return;
   const scroll = list.scrollTop;
   const filtered = getFilteredCiLines();
   list.innerHTML = filtered.length
@@ -7228,7 +7486,7 @@ function renderCruiseIntelligencePanel() {
         <div>
           <p class="admin-nav-eyebrow">Cruise Database</p>
           <h3>${esc(sectionLabel)}</h3>
-          <p class="admin-muted">Canonical cruise-line and ship catalogue (ci_cruise_lines / ci_cruise_ships). Edits save when you select another item.</p>
+          <p class="admin-muted">Canonical cruise-line and ship catalogue (ci_cruise_lines / ci_cruise_ships). Cruise lines open in a full-width tabbed workspace; ships still use the list beside the editor.</p>
         </div>
       </div>
       ${
@@ -7247,13 +7505,7 @@ function renderCruiseIntelligencePanel() {
   `;
 }
 
-function renderCiLinesSection() {
-  const filtered = getFilteredCiLines();
-  const selectedLine = ciLineCreating
-    ? null
-    : (editingCiLineId ? ciCruiseLines.find((l) => l.id === editingCiLineId) : null);
-  const showDetail = ciLineCreating || Boolean(selectedLine);
-
+function renderCiLinesListToolbar(filtered) {
   return `
     <div class="ci-toolbar">
       <div class="ci-toolbar-controls">
@@ -7269,8 +7521,40 @@ function renderCiLinesSection() {
       </div>
       <div class="admin-small"><span id="ciLineListCount">${filtered.length} of ${ciCruiseLines.length}</span> lines</div>
     </div>
-    <div class="ci-master-detail">
-      <aside class="ci-master" aria-label="Cruise lines">
+  `;
+}
+
+function renderCiLinesSection() {
+  if (ciLineCreating) {
+    return `
+      <div class="ci-line-workspace ci-line-workspace--create" id="ciLineDetailWorkspace">
+        ${renderCiLineForm(null)}
+      </div>
+    `;
+  }
+
+  if (editingCiLineId) {
+    const selectedLine = ciCruiseLines.find((l) => l.id === editingCiLineId);
+    if (!selectedLine) {
+      return `
+        <div class="ci-line-workspace ci-line-workspace--missing" id="ciLineDetailWorkspace">
+          <button type="button" class="ci-line-back-btn" onclick="returnToCiLinesList({ force: true })">← Cruise Lines</button>
+          <div class="ci-line-missing">
+            <h3>Cruise line not found</h3>
+            <p class="admin-muted">This cruise line is missing or no longer available.</p>
+            <button type="button" class="admin-button" onclick="returnToCiLinesList({ force: true })">Return to Cruise Lines</button>
+          </div>
+        </div>
+      `;
+    }
+    return renderCiLineDetailWorkspace(selectedLine);
+  }
+
+  const filtered = getFilteredCiLines();
+  return `
+    <div class="ci-line-list-mode">
+      ${renderCiLinesListToolbar(filtered)}
+      <div class="ci-line-list-panel" aria-label="Cruise lines">
         <div class="ci-master-header">
           <span>Cruise Lines</span>
         </div>
@@ -7279,18 +7563,12 @@ function renderCiLinesSection() {
             ? filtered.map(renderCiLineMasterRow).join("")
             : `<p class="admin-small ci-master-empty">No cruise lines match these filters.</p>`}
         </div>
-      </aside>
-      <section class="ci-detail" aria-label="Cruise line details">
-        ${showDetail
-          ? renderCiLineForm(selectedLine)
-          : `<div class="ci-detail-empty"><p class="admin-muted" style="margin:0;">Select a cruise line to view and edit details.</p></div>`}
-      </section>
+      </div>
     </div>
   `;
 }
 
 function renderCiLineMasterRow(line) {
-  const selected = !ciLineCreating && editingCiLineId === line.id;
   const shipCount = getCiLineShipStats(line.id).total;
   const shipLabel = shipCount === 1 ? "1 ship" : `${shipCount} ships`;
   const meta = [
@@ -7304,7 +7582,7 @@ function renderCiLineMasterRow(line) {
   ].filter(Boolean).join(" · ");
 
   return `
-    <button type="button" class="ci-master-row ${selected ? "is-selected" : ""}" onclick="selectCiLine('${esc(line.id)}')">
+    <button type="button" class="ci-master-row" onclick="selectCiLine('${esc(line.id)}')">
       <span class="ci-master-row-title">${esc(line.name)}</span>
       <span class="ci-master-row-meta">${esc(meta)}</span>
     </button>
@@ -7520,7 +7798,7 @@ function renderCiShipClassTemplateNote(ship) {
 
 function jumpToCiLineClassTemplate(lineId) {
   if (!lineId) return;
-  selectCiLine(lineId);
+  selectCiLine(lineId, { tab: "ship-classes" });
 }
 
 function mergeCiShipClassFacilityTemplate(row) {
@@ -7539,6 +7817,10 @@ window.refreshCiLineShipClassesSection = refreshCiLineShipClassesSection;
 window.refreshCiLineClassFacilitiesSection = refreshCiLineShipClassesSection;
 window.mergeCiShipClassFacilityTemplate = mergeCiShipClassFacilityTemplate;
 window.loadCiShipClassFacilityTemplatesForLine = loadCiShipClassFacilityTemplatesForLine;
+window.setCiLineTab = setCiLineTab;
+window.returnToCiLinesList = returnToCiLinesList;
+window.normalizeCiLineTab = normalizeCiLineTab;
+window.onCiLineTabKeydown = onCiLineTabKeydown;
 
 function normalizeCiStateroomBreakdown(raw) {
   if (!raw) return [];
@@ -8534,22 +8816,16 @@ async function uploadCiMediaFile(event, inputId, kind) {
   }
 }
 
-function renderCiLineForm(line) {
-  const editing = Boolean(line);
+function renderCiLineDetailsFields(line) {
+  const editing = Boolean(line?.id);
   const slugReadonly = editing ? `readonly class="ci-id-readonly" aria-readonly="true"` : `placeholder="auto from name if blank"`;
   const codeReadonly = editing ? `readonly class="ci-id-readonly" aria-readonly="true"` : "";
-  const statusClass = ciAutosaveStatus
-    ? (ciMessageTone === "error" ? "is-error" : ciAutosaveStatus === "Saving…" ? "is-saving" : "is-saved")
-    : "";
   return `
-    <div>
-      <div class="ci-detail-title-row">
-        <h3 class="ci-detail-title">${editing ? esc(line.name) : "New cruise line"}</h3>
-        ${editing ? `<span id="ciAutosaveStatus" class="ci-autosave-status ${statusClass}">${esc(ciAutosaveStatus)}</span>` : ""}
-      </div>
-      <p class="admin-small ci-detail-subtitle">${editing ? "Click Save line or select another cruise line to persist changes." : "Fill in the details, then create."}</p>
-      ${editing ? `<p id="ciFormSaveError" class="admin-small admin-error" hidden></p>` : ""}
+    <input type="hidden" id="ciLineId" value="${esc(line?.id || "")}">
+    <section class="ci-line-section">
       ${renderCiLineStatsPanel(line)}
+    </section>
+    <section class="ci-line-section">
       ${renderCiMediaField({
         kind: "logo",
         inputId: "ciLineLogo",
@@ -8557,8 +8833,10 @@ function renderCiLineForm(line) {
         previewClass: "admin-logo-preview",
         title: "Logo"
       })}
-      <input type="hidden" id="ciLineId" value="${esc(line?.id || "")}">
-      <div class="ci-form-grid">
+    </section>
+    <section class="ci-line-section">
+      <h4 class="ci-line-section-title">Cruise-line information</h4>
+      <div class="ci-form-grid ci-line-details-grid">
         <div class="admin-field"><label>Name</label><input id="ciLineName" value="${esc(line?.name || "")}"></div>
         <div class="admin-field"><label>Slug</label><input id="ciLineSlug" value="${esc(line?.slug || "")}" ${slugReadonly}></div>
         <div class="admin-field"><label>Code</label><input id="ciLineCode" value="${esc(line?.code || "")}" ${codeReadonly}></div>
@@ -8569,8 +8847,6 @@ function renderCiLineForm(line) {
             ${["ocean", "river", "expedition", "yacht", "specialty"].map((t) => `<option value="${t}" ${line?.line_type === t ? "selected" : ""}>${t}</option>`).join("")}
           </select>
         </div>
-        <div class="admin-field"><label>Website URL</label><input id="ciLineWebsite" value="${esc(line?.website_url || "")}"></div>
-        <div class="admin-field"><label>Cruise search URL</label><input id="ciLineCruiseSearch" value="${esc(line?.cruise_search_url || "")}" placeholder="Official find-a-cruise page (optional)"></div>
         <div class="admin-field"><label>Ship naming style</label>
           <select id="ciLineShipNamingStyle">
             ${[
@@ -8586,27 +8862,159 @@ function renderCiLineForm(line) {
               .join("")}
           </select>
         </div>
+        <div class="admin-field ci-line-field-span-2"><label>Website URL</label><input id="ciLineWebsite" value="${esc(line?.website_url || "")}"></div>
+        <div class="admin-field ci-line-field-span-2"><label>Cruise search URL</label><input id="ciLineCruiseSearch" value="${esc(line?.cruise_search_url || "")}" placeholder="Official find-a-cruise page (optional)"></div>
       </div>
       <p class="admin-small ci-form-note">Ship naming style is set per cruise line. Short vessel avoids “Oceania Allura” when the line is already Oceania; branded keeps names like Explora I where stripping the brand would look wrong.</p>
+    </section>
+    <section class="ci-line-section">
+      <h4 class="ci-line-section-title">Status</h4>
       <div class="ci-checkbox-row">
         <label class="ci-check-control"><input type="checkbox" id="ciLineActive" ${line?.active !== false ? "checked" : ""}> Active</label>
         <label class="ci-check-control"><input type="checkbox" id="ciLineSold" ${line?.sold_by_101cruise ? "checked" : ""}> Sold by 101cruise</label>
       </div>
       <p class="admin-small ci-form-note">Sold lines are automatically public when active. Lines list alphabetically by name.${editing ? " Slug and code stay fixed after creation." : ""}</p>
+    </section>
+    <section class="ci-line-section">
       <div class="admin-field ci-form-description"><label>Description</label><textarea id="ciLineDescription" rows="4">${esc(line?.description || "")}</textarea></div>
-      ${editing ? renderCiLineStateroomTypesSection(line) : ""}
-      ${editing ? (window.CruiseLineFeaturesAdmin?.renderSection?.(line) || "") : ""}
-      ${editing ? renderCiLineShipClassesSection(line) : ""}
-      ${ciLineCreating ? `
-        <div class="admin-actions-row">
-          <button class="admin-button" onclick="saveCiLine()">Create line</button>
-          <button class="admin-button secondary" onclick="cancelCiLineForm()">Cancel</button>
+    </section>
+  `;
+}
+
+function renderCiLineDetailHeader(line) {
+  const statusClass = ciAutosaveStatus
+    ? (ciMessageTone === "error" ? "is-error" : ciAutosaveStatus === "Saving…" ? "is-saving" : "is-saved")
+    : "";
+  const active = line?.active !== false;
+  const sold = Boolean(line?.sold_by_101cruise);
+  const logoUrl = String(line?.logo_url || "").trim();
+  const saveLabel = ciSaving || ciAutosaveStatus === "Saving…"
+    ? "Saving…"
+    : ciAutosaveStatus === "Saved"
+      ? "Saved"
+      : ciAutosaveStatus === "Save failed" || ciMessageTone === "error"
+        ? "Save failed"
+        : "Save line";
+  return `
+    <div class="ci-line-detail-header">
+      <button type="button" class="ci-line-back-btn" onclick="returnToCiLinesList()">← Cruise Lines</button>
+      <div class="ci-line-detail-header-main">
+        <div class="ci-line-detail-identity">
+          ${logoUrl
+            ? `<img class="ci-line-detail-logo" src="${esc(logoUrl)}" alt="" onerror="this.style.display='none'">`
+            : `<div class="ci-line-detail-logo ci-line-detail-logo--empty" aria-hidden="true"></div>`}
+          <div class="ci-line-detail-titles">
+            <h3 class="ci-detail-title">${esc(line?.name || "Cruise line")}</h3>
+            ${line?.code ? `<p class="ci-line-detail-code">${esc(line.code)}</p>` : ""}
+            <p class="ci-line-detail-status">
+              <span class="ci-stat-flag ${active ? "" : "is-off"}">${active ? "Active" : "Inactive"}</span>
+              <span class="ci-line-detail-status-sep" aria-hidden="true">·</span>
+              <span class="ci-stat-flag ${sold ? "" : "is-off"}">${sold ? "Sold by 101cruise" : "Not sold by 101cruise"}</span>
+            </p>
+          </div>
         </div>
-      ` : `
-        <div class="admin-actions-row">
-          <button type="button" class="admin-button" id="ciLineSaveBtn" onclick="saveCiLine()">Save line</button>
+        <div class="ci-line-detail-actions">
+          <span id="ciAutosaveStatus" class="ci-autosave-status ${statusClass}">${esc(ciAutosaveStatus)}</span>
+          <button type="button" class="admin-button" id="ciLineSaveBtn" onclick="saveCiLine()" ${ciSaving ? "disabled" : ""}>${saveLabel}</button>
         </div>
-      `}
+      </div>
+      <p id="ciFormSaveError" class="admin-small admin-error" hidden></p>
+    </div>
+  `;
+}
+
+function renderCiLineDetailTabs() {
+  const active = normalizeCiLineTab(ciLineActiveTab);
+  return `
+    <div class="ci-line-tabs" id="ciLineDetailTabs" role="tablist" aria-label="Cruise line sections" onkeydown="onCiLineTabKeydown(event)">
+      ${CI_LINE_TABS.map((tab) => `
+        <button
+          type="button"
+          class="ci-line-tab ${tab.id === active ? "active" : ""}"
+          role="tab"
+          id="ciLineTab-${tab.id}"
+          data-ci-line-tab="${tab.id}"
+          aria-selected="${tab.id === active ? "true" : "false"}"
+          aria-controls="ciLineTabPanel-${tab.id}"
+          tabindex="${tab.id === active ? "0" : "-1"}"
+          onclick="setCiLineTab('${tab.id}')"
+        >${esc(tab.label)}</button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderCiLineDetailWorkspace(line) {
+  const active = normalizeCiLineTab(ciLineActiveTab);
+  return `
+    <div class="ci-line-workspace ci-line-workspace--detail" id="ciLineDetailWorkspace">
+      ${renderCiLineDetailHeader(line)}
+      ${renderCiLineDetailTabs()}
+      <div class="ci-line-tab-panels">
+        <div
+          class="ci-line-tab-panel ${active === "details" ? "is-active" : ""}"
+          role="tabpanel"
+          id="ciLineTabPanel-details"
+          data-ci-line-tabpanel="details"
+          aria-labelledby="ciLineTab-details"
+          ${active === "details" ? "" : "hidden"}
+        >
+          ${renderCiLineDetailsFields(line)}
+        </div>
+        <div
+          class="ci-line-tab-panel ${active === "room-types" ? "is-active" : ""}"
+          role="tabpanel"
+          id="ciLineTabPanel-room-types"
+          data-ci-line-tabpanel="room-types"
+          aria-labelledby="ciLineTab-room-types"
+          ${active === "room-types" ? "" : "hidden"}
+        >
+          ${renderCiLineStateroomTypesSection(line)}
+        </div>
+        <div
+          class="ci-line-tab-panel ${active === "features" ? "is-active" : ""}"
+          role="tabpanel"
+          id="ciLineTabPanel-features"
+          data-ci-line-tabpanel="features"
+          aria-labelledby="ciLineTab-features"
+          ${active === "features" ? "" : "hidden"}
+        >
+          ${window.CruiseLineFeaturesAdmin?.renderSection?.(line) || ""}
+        </div>
+        <div
+          class="ci-line-tab-panel ${active === "ship-classes" ? "is-active" : ""}"
+          role="tabpanel"
+          id="ciLineTabPanel-ship-classes"
+          data-ci-line-tabpanel="ship-classes"
+          aria-labelledby="ciLineTab-ship-classes"
+          ${active === "ship-classes" ? "" : "hidden"}
+        >
+          ${renderCiLineShipClassesSection(line)}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCiLineForm(line) {
+  const editing = Boolean(line);
+  const statusClass = ciAutosaveStatus
+    ? (ciMessageTone === "error" ? "is-error" : ciAutosaveStatus === "Saving…" ? "is-saving" : "is-saved")
+    : "";
+  return `
+    <div>
+      <button type="button" class="ci-line-back-btn" onclick="cancelCiLineForm()">← Cruise Lines</button>
+      <div class="ci-detail-title-row">
+        <h3 class="ci-detail-title">${editing ? esc(line.name) : "New cruise line"}</h3>
+        ${editing ? `<span id="ciAutosaveStatus" class="ci-autosave-status ${statusClass}">${esc(ciAutosaveStatus)}</span>` : ""}
+      </div>
+      <p class="admin-small ci-detail-subtitle">${editing ? "Use Save line to persist changes." : "Fill in the details, then create."}</p>
+      ${editing ? `<p id="ciFormSaveError" class="admin-small admin-error" hidden></p>` : ""}
+      ${renderCiLineDetailsFields(line)}
+      <div class="admin-actions-row">
+        <button class="admin-button" onclick="saveCiLine()">Create line</button>
+        <button class="admin-button secondary" onclick="cancelCiLineForm()">Cancel</button>
+      </div>
     </div>
   `;
 }
@@ -8629,14 +9037,22 @@ async function flushCiCurrentForm() {
 async function startCiLineCreate() {
   const ok = await flushCiCurrentForm();
   if (!ok) return;
+  ciLineListScrollY = window.scrollY || 0;
+  captureCiMasterScroll();
   editingCiLineId = null;
   ciLineCreating = true;
+  ciLineActiveTab = "details";
+  ciLineFormBaseline = null;
   ciAutosaveStatus = "";
   renderCiAdmin();
 }
 
-async function selectCiLine(id) {
-  if (!ciLineCreating && editingCiLineId === id) return;
+async function selectCiLine(id, { tab = null, preserveTab = false } = {}) {
+  if (!ciLineCreating && editingCiLineId === id) {
+    if (tab) setCiLineTab(tab);
+    return;
+  }
+  ciLineListScrollY = window.scrollY || 0;
   captureCiMasterScroll();
   if (!ciLineCreating) {
     const ok = await flushCiCurrentForm();
@@ -8647,8 +9063,13 @@ async function selectCiLine(id) {
   }
   editingCiLineId = id;
   ciLineCreating = false;
+  ciLineActiveTab = preserveTab && tab == null
+    ? normalizeCiLineTab(ciLineActiveTab)
+    : normalizeCiLineTab(tab || "details");
+  ciLineFormBaseline = null;
   ciAutosaveStatus = "";
   ciMessage = "";
+  ciMessageTone = "";
   renderCiAdmin();
   loadCiShipClassFacilityTemplatesForLine(id);
   if (window.CruiseLineFeaturesAdmin?.loadForLine) {
@@ -8657,10 +9078,7 @@ async function selectCiLine(id) {
 }
 
 function cancelCiLineForm() {
-  editingCiLineId = null;
-  ciLineCreating = false;
-  ciAutosaveStatus = "";
-  renderCiAdmin();
+  returnToCiLinesList({ force: true });
 }
 
 function mergeCiLineRecord(saved) {
@@ -8703,10 +9121,12 @@ async function persistCiLine({ quiet = false } = {}) {
   }
 
   ciSaving = true;
+  updateCiLineSaveButtonState();
   if (quiet) setCiAutosaveStatus("Saving…", "saving");
   else {
     ciMessage = "Saving…";
     ciMessageTone = "running";
+    setCiAutosaveStatus("Saving…", "saving");
   }
 
   let result;
@@ -8718,11 +9138,13 @@ async function persistCiLine({ quiet = false } = {}) {
     }
   } finally {
     ciSaving = false;
+    updateCiLineSaveButtonState();
   }
 
   if (result.error) {
     const message = humanizeCiSaveError(result.error.message, { entity: "line", name });
     revealCiSaveError(message);
+    updateCiLineSaveButtonState();
     if (!quiet) renderCiAdmin();
     return false;
   }
@@ -8731,25 +9153,38 @@ async function persistCiLine({ quiet = false } = {}) {
   const savedId = result.data?.id || id;
   const allocOk = await persistCiLineStateroomTypes(savedId);
   if (!allocOk) {
+    updateCiLineSaveButtonState();
     if (!quiet) renderCiAdmin();
     return false;
   }
   if (quiet) {
     setCiAutosaveStatus("Saved", "saved");
     clearCiSaveError();
+    markCiLineFormBaseline();
     refreshCiLineMasterList();
   } else {
+    const wasCreating = ciLineCreating;
     ciMessage = "Cruise line saved.";
     ciMessageTone = "success";
     ciLineCreating = false;
     editingCiLineId = savedId || null;
     ciAutosaveStatus = "Saved";
+    if (wasCreating) ciLineActiveTab = "details";
     renderCiAdmin();
+    markCiLineFormBaseline();
+    syncCiLineAdminUrl();
+    if (wasCreating && savedId) {
+      loadCiShipClassFacilityTemplatesForLine(savedId);
+      if (window.CruiseLineFeaturesAdmin?.loadForLine) {
+        window.CruiseLineFeaturesAdmin.loadForLine(savedId);
+      }
+    }
   }
   return true;
 }
 
 async function saveCiLine() {
+  if (ciSaving) return;
   captureCiMasterScroll();
   await persistCiLine({ quiet: false });
 }
@@ -9596,7 +10031,7 @@ function renderCiLineStateroomTypesSection(line) {
   return `
     <div class="ci-stateroom-types-panel">
       <h4>Room types for newsletter pricing</h4>
-      <p class="admin-small">Tick the room types available when entering newsletter prices for ${esc(line.name || "this cruise line")}. Leave all unchecked to allow every active type. Order follows Administration → Stateroom Types.</p>
+      <p class="admin-small">Select the room types available when entering newsletter prices for this cruise line. Leave all unchecked to allow every active type. Order follows Administration → Stateroom Types.</p>
       <div class="ci-checkbox-row ci-stateroom-type-grid">
         ${types
           .map(
