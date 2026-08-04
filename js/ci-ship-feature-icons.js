@@ -46,7 +46,7 @@
     "private-dining": {
       label: "Private dining",
       group: "exclusive",
-      paths: `<path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
+      paths: `<path d="m12 2 2.9 6.26L22 9.27l-5 4.87L18.18 22 12 18.56 5.82 22 7 14.14l-5-4.87 7.1-1.01Z"/><path d="M8.5 9v4a1.5 1.5 0 0 0 3 0V9"/><path d="M10 9v10"/><path d="M17 15V9a3.5 3.5 0 0 0-3.5 3.5V14a1.5 1.5 0 0 0 3 0v5"/>`
     },
     terrace: {
       label: "Terrace",

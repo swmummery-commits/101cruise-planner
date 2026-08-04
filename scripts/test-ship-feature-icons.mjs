@@ -51,6 +51,8 @@ assert.ok(Icons.renderIconSvg("pool").includes("<svg"));
 assert.ok(Icons.renderFeatureIconHtml("spa").includes("ship-feature-icon"));
 assert.notEqual(Icons.ICONS.dining.paths, Icons.ICONS["private-dining"].paths);
 assert.match(Icons.renderIconSvg("dining"), /m5 0\.5/);
+assert.match(Icons.renderIconSvg("private-dining"), /m12 2 2\.9 6\.26/);
+assert.match(Icons.renderIconSvg("private-dining"), /M8\.5 9v4/);
 
 // Legacy string arrays
 const legacyEa = CiFac.normalizeExclusiveAreasForDisplay(["Suite Deck", "Premium Lounge"]);
