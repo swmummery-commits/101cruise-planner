@@ -266,6 +266,60 @@ async function reorderStateroomTypes(orderedIds) {
   return listStateroomTypes();
 }
 
+async function listLineAllocations() {
+  const rows = await supabase(
+    "cruise_line_stateroom_types?select=cruise_line_id,stateroom_type_id&limit=5000"
+  );
+  const allocations = {};
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const lineId = String(row?.cruise_line_id || "").trim();
+    const typeId = String(row?.stateroom_type_id || "").trim();
+    if (!lineId || !typeId) continue;
+    if (!allocations[lineId]) allocations[lineId] = [];
+    allocations[lineId].push(typeId);
+  }
+  return allocations;
+}
+
+async function saveLineAllocations(cruiseLineId, stateroomTypeIds) {
+  const lineId = String(cruiseLineId || "").trim();
+  if (!lineId) badRequest("Cruise line id is required.");
+
+  const lineRows = await supabase(
+    `ci_cruise_lines?select=id&id=eq.${encodeURIComponent(lineId)}&limit=1`
+  );
+  if (!Array.isArray(lineRows) || !lineRows[0]) badRequest("Cruise line not found.");
+
+  const ids = Array.isArray(stateroomTypeIds)
+    ? [...new Set(stateroomTypeIds.map((id) => String(id || "").trim()).filter(Boolean))]
+    : [];
+
+  if (ids.length) {
+    const typeRows = await supabase(
+      `stateroom_types?select=id&is_active=eq.true&id=in.(${ids.map(encodeURIComponent).join(",")})`
+    );
+    const validIds = new Set((Array.isArray(typeRows) ? typeRows : []).map((row) => String(row.id)));
+    for (const id of ids) {
+      if (!validIds.has(id)) badRequest("One or more selected stateroom types are invalid or inactive.");
+    }
+  }
+
+  await supabase(`cruise_line_stateroom_types?cruise_line_id=eq.${encodeURIComponent(lineId)}`, {
+    method: "DELETE",
+    prefer: "return=minimal"
+  });
+
+  if (ids.length) {
+    await supabase("cruise_line_stateroom_types", {
+      method: "POST",
+      prefer: "return=minimal",
+      body: ids.map((stateroom_type_id) => ({ cruise_line_id: lineId, stateroom_type_id }))
+    });
+  }
+
+  return listLineAllocations();
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") {
     return jsonResponse(204, {});
@@ -309,6 +363,16 @@ exports.handler = async function handler(event) {
     if (action === "reorder") {
       const stateroom_types = await reorderStateroomTypes(body.ordered_ids);
       return jsonResponse(200, { success: true, stateroom_types, reordered: true });
+    }
+
+    if (action === "list_line_allocations") {
+      const allocations = await listLineAllocations();
+      return jsonResponse(200, { success: true, allocations });
+    }
+
+    if (action === "save_line_allocations") {
+      const allocations = await saveLineAllocations(body.cruise_line_id, body.stateroom_type_ids);
+      return jsonResponse(200, { success: true, allocations });
     }
 
     return jsonResponse(400, { success: false, error: "Unknown action" });

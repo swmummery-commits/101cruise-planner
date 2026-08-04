@@ -78,6 +78,65 @@
     return dedupeSelectOptions(options);
   }
 
+  function normalizeAllocationMap(raw) {
+    const map = {};
+    if (!raw || typeof raw !== "object") return map;
+    for (const [lineId, ids] of Object.entries(raw)) {
+      if (!lineId) continue;
+      map[lineId] = Array.isArray(ids) ? ids.map(String).filter(Boolean) : [];
+    }
+    return map;
+  }
+
+  function filterActiveTypesForCruiseLine(allActiveTypes, cruiseLineId, allocationMap) {
+    if (!cruiseLineId) return [];
+    const assigned = allocationMap?.[cruiseLineId];
+    if (!Array.isArray(assigned) || assigned.length === 0) {
+      return listActiveStateroomTypesFromRows(allActiveTypes);
+    }
+    const allowed = new Set(assigned.map(String));
+    return sortStateroomTypes(
+      (allActiveTypes || []).filter((row) => row?.is_active !== false && allowed.has(String(row.id)))
+    );
+  }
+
+  function buildRoomTypeSelectOptionsForCruiseLine(allActiveTypes, cruiseLineId, allocationMap, currentLabel) {
+    if (!cruiseLineId) {
+      return [{ value: "", label: "Select cruise line first", selected: true, inactive: false }];
+    }
+    const allowedTypes = filterActiveTypesForCruiseLine(allActiveTypes, cruiseLineId, allocationMap);
+    const current = trimName(currentLabel);
+    const currentKey = normalizeName(current);
+    const allowed = dedupeByNormalizedName(allowedTypes);
+    const options = [{ value: "", label: "Select room type", selected: !current, inactive: false }];
+
+    for (const type of allowed) {
+      const name = trimName(type?.name);
+      if (!name) continue;
+      options.push({
+        value: name,
+        label: name,
+        selected: currentKey !== "" && normalizeName(name) === currentKey,
+        inactive: false
+      });
+    }
+
+    const allowedKeys = new Set(allowed.map((type) => normalizeName(type?.name)).filter(Boolean));
+    if (current && !allowedKeys.has(currentKey)) {
+      const inactiveGlobal = (allActiveTypes || []).some(
+        (type) => type?.is_active === false && normalizeName(type?.name) === currentKey
+      );
+      options.push({
+        value: current,
+        label: inactiveGlobal ? `${current} (inactive)` : `${current} (not on this line)`,
+        selected: true,
+        inactive: true
+      });
+    }
+
+    return dedupeSelectOptions(options);
+  }
+
   function dedupeSelectOptions(options) {
     const seen = new Set();
     const out = [];
@@ -221,6 +280,19 @@
     return Boolean(result.in_use);
   }
 
+  async function loadCruiseLineStateroomAllocations() {
+    const result = await api("list_line_allocations");
+    return normalizeAllocationMap(result.allocations || {});
+  }
+
+  async function saveCruiseLineStateroomTypes(cruiseLineId, stateroomTypeIds) {
+    const result = await api("save_line_allocations", {
+      cruise_line_id: cruiseLineId,
+      stateroom_type_ids: stateroomTypeIds
+    });
+    return normalizeAllocationMap(result.allocations || {});
+  }
+
   async function reorderStateroomTypes(orderedIds) {
     const result = await api("reorder", { ordered_ids: orderedIds });
     return result.stateroom_types || [];
@@ -233,6 +305,9 @@
     dedupeByNormalizedName,
     listActiveStateroomTypesFromRows,
     buildRoomTypeSelectOptions,
+    normalizeAllocationMap,
+    filterActiveTypesForCruiseLine,
+    buildRoomTypeSelectOptionsForCruiseLine,
     validateStateroomTypeInput,
     buildCreatePayload,
     buildReorderPayload,
@@ -243,7 +318,9 @@
     updateStateroomType,
     deleteStateroomType,
     checkStateroomTypeUsage,
-    reorderStateroomTypes
+    reorderStateroomTypes,
+    loadCruiseLineStateroomAllocations,
+    saveCruiseLineStateroomTypes
   };
 
   service.__test__ = {
@@ -252,6 +329,9 @@
     sortStateroomTypes,
     dedupeByNormalizedName,
     buildRoomTypeSelectOptions,
+    normalizeAllocationMap,
+    filterActiveTypesForCruiseLine,
+    buildRoomTypeSelectOptionsForCruiseLine,
     validateStateroomTypeInput,
     buildCreatePayload,
     buildReorderPayload,

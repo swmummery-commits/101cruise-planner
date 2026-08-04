@@ -116,6 +116,7 @@ let featuredCruises = [];
 let featuredCruisePricing = [];
 let stateroomTypesActive = [];
 let stateroomTypesLoadError = "";
+let cruiseLineStateroomAllocations = {};
 let featuredNewsletterDefaults = { newsletter_number: null, newsletter_publication_date: null };
 let editingFeaturedCruiseId = null;
 let showFeaturedCruiseForm = false;
@@ -860,6 +861,9 @@ async function setTab(tab) {
     if (window.PortsCatalogueAdmin?.ensureLoaded) {
       window.PortsCatalogueAdmin.ensureLoaded({ quiet: true });
     }
+  }
+  if (resolved === "cruise-lines" || resolved === "cruise-ships") {
+    loadStateroomTypesForPricing();
   }
   if (resolved === "stateroom-types") {
     if (window.StateroomTypesAdmin?.ensureLoaded) {
@@ -8542,6 +8546,7 @@ function renderCiLineForm(line) {
       </div>
       <p class="admin-small ci-form-note">Sold lines are automatically public when active. Lines list alphabetically by name.${editing ? " Slug and code stay fixed after creation." : ""}</p>
       <div class="admin-field ci-form-description"><label>Description</label><textarea id="ciLineDescription" rows="4">${esc(line?.description || "")}</textarea></div>
+      ${editing ? renderCiLineStateroomTypesSection(line) : ""}
       ${editing ? renderCiLineShipClassesSection(line) : ""}
       ${ciLineCreating ? `
         <div class="admin-actions-row">
@@ -8672,6 +8677,11 @@ async function persistCiLine({ quiet = false } = {}) {
 
   mergeCiLineRecord(result.data);
   const savedId = result.data?.id || id;
+  const allocOk = await persistCiLineStateroomTypes(savedId);
+  if (!allocOk) {
+    if (!quiet) renderCiAdmin();
+    return false;
+  }
   if (quiet) {
     setCiAutosaveStatus("Saved", "saved");
     clearCiSaveError();
@@ -9437,23 +9447,92 @@ async function loadStateroomTypesForPricing() {
   const svc = window.StateroomTypesService;
   if (!svc) {
     stateroomTypesActive = [];
+    cruiseLineStateroomAllocations = {};
     stateroomTypesLoadError = "Stateroom types service failed to load.";
     return;
   }
   try {
     stateroomTypesActive = await svc.listActiveStateroomTypes({ client: supabaseClient });
+    cruiseLineStateroomAllocations = await svc.loadCruiseLineStateroomAllocations();
   } catch (error) {
     console.warn("Stateroom types load skipped", error.message);
     stateroomTypesActive = [];
+    cruiseLineStateroomAllocations = {};
     stateroomTypesLoadError = error.message || "Could not load stateroom types.";
   }
 }
 window.loadStateroomTypesForPricing = loadStateroomTypesForPricing;
 
-function renderFeaturedRoomTypeSelectOptions(currentLabel) {
+function readCiLineStateroomTypeIdsFromDom() {
+  return Array.from(document.querySelectorAll(".ci-line-stateroom-type-cb:checked"))
+    .map((el) => String(el.value || "").trim())
+    .filter(Boolean);
+}
+
+async function persistCiLineStateroomTypes(lineId) {
   const svc = window.StateroomTypesService;
+  if (!svc || !lineId) return true;
+  try {
+    cruiseLineStateroomAllocations = await svc.saveCruiseLineStateroomTypes(
+      lineId,
+      readCiLineStateroomTypeIdsFromDom()
+    );
+    return true;
+  } catch (error) {
+    revealCiSaveError(error.message || "Could not save stateroom type assignments.");
+    return false;
+  }
+}
+
+function renderCiLineStateroomTypesSection(line) {
+  if (!line?.id) return "";
+  const svc = window.StateroomTypesService;
+  const types = svc ? svc.sortStateroomTypes(stateroomTypesActive) : stateroomTypesActive.slice();
+  const assigned = new Set((cruiseLineStateroomAllocations[line.id] || []).map(String));
+  if (!types.length) {
+    return `
+      <div class="ci-stateroom-types-panel">
+        <h4>Room types for newsletter pricing</h4>
+        <p class="admin-small">No active stateroom types found. Add types under Administration → Stateroom Types.</p>
+      </div>`;
+  }
+  return `
+    <div class="ci-stateroom-types-panel">
+      <h4>Room types for newsletter pricing</h4>
+      <p class="admin-small">Choose which room types appear when entering prices for this cruise line. Leave all unchecked to allow every active type. Order follows the master Stateroom Types list.</p>
+      <div class="ci-checkbox-row ci-stateroom-type-grid">
+        ${types
+          .map(
+            (type) => `
+          <label class="ci-check-control">
+            <input type="checkbox" class="ci-line-stateroom-type-cb" value="${esc(type.id)}" ${assigned.has(String(type.id)) ? "checked" : ""}>
+            ${esc(type.name)}
+          </label>
+        `
+          )
+          .join("")}
+      </div>
+    </div>`;
+}
+
+function featuredCruiseLineIdForPricing() {
+  return (
+    featuredFormDraft?.cruise_line_id ||
+    document.getElementById("fcCruiseLineId")?.value ||
+    ""
+  );
+}
+
+function renderFeaturedRoomTypeSelectOptions(currentLabel, cruiseLineId) {
+  const svc = window.StateroomTypesService;
+  const lineId = cruiseLineId || featuredCruiseLineIdForPricing();
   const options = svc
-    ? svc.buildRoomTypeSelectOptions(stateroomTypesActive, currentLabel)
+    ? svc.buildRoomTypeSelectOptionsForCruiseLine(
+        stateroomTypesActive,
+        lineId,
+        cruiseLineStateroomAllocations,
+        currentLabel
+      )
     : [{ value: "", label: "Select room type", selected: !String(currentLabel || "").trim(), inactive: false }];
   return options
     .map((option) => {
@@ -11942,7 +12021,7 @@ function renderFeaturedPricingBlock(row, index, nights) {
         <div class="admin-field featured-room-type-field">
           <label for="fcPriceRoom-${index}">Room Type</label>
           <select id="fcPriceRoom-${index}" data-fc-price="room" onchange="refreshFeaturedPricingCalcs()">
-            ${renderFeaturedRoomTypeSelectOptions(row.room_label)}
+            ${renderFeaturedRoomTypeSelectOptions(row.room_label, featuredCruiseLineIdForPricing())}
           </select>
           ${roomTypeLoadNote}
         </div>

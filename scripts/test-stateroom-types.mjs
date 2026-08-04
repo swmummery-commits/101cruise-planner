@@ -189,4 +189,53 @@ assert(/reorderStateroomTypes/.test(read("js/stateroom-types-service.js")), "ser
 
 assert.equal(Svc.nextDisplayOrder(seedRows), 80, "next display order uses max + 10");
 
+const allocationMap = {
+  "line-celebrity": ["id-inside", "id-balcony", "id-suite"],
+  "line-hal": ["id-oceanview", "id-balcony"]
+};
+const masterTypes = [
+  { id: "id-inside", name: "Inside", display_order: 1, is_active: true },
+  { id: "id-oceanview", name: "Oceanview", display_order: 2, is_active: true },
+  { id: "id-balcony", name: "Balcony", display_order: 3, is_active: true },
+  { id: "id-suite", name: "Suite", display_order: 4, is_active: true }
+];
+
+const celebrityTypes = Svc.filterActiveTypesForCruiseLine(masterTypes, "line-celebrity", allocationMap);
+assert.deepEqual(
+  celebrityTypes.map((row) => row.name),
+  ["Inside", "Balcony", "Suite"]
+);
+
+const fallbackTypes = Svc.filterActiveTypesForCruiseLine(masterTypes, "line-princess", allocationMap);
+assert.equal(fallbackTypes.length, 4, "unconfigured line falls back to all active types");
+
+const noLineOptions = Svc.buildRoomTypeSelectOptionsForCruiseLine(masterTypes, "", allocationMap, "");
+assert.equal(noLineOptions[0].label, "Select cruise line first");
+
+const celebrityOptions = Svc.buildRoomTypeSelectOptionsForCruiseLine(
+  masterTypes,
+  "line-celebrity",
+  allocationMap,
+  ""
+);
+assert.ok(!celebrityOptions.some((opt) => opt.value === "Oceanview"), "line filter hides unassigned types");
+
+const retainedOption = Svc.buildRoomTypeSelectOptionsForCruiseLine(
+  masterTypes,
+  "line-celebrity",
+  allocationMap,
+  "Oceanview"
+);
+assert.ok(
+  retainedOption.some((opt) => opt.value === "Oceanview" && /not on this line/i.test(opt.label)),
+  "saved label outside line allocation remains visible"
+);
+
+assert(/cruise_line_stateroom_types/.test(read("supabase/migrations/20260805_cruise_line_stateroom_types.sql")));
+assert(/list_line_allocations/.test(fnSrc));
+assert(/save_line_allocations/.test(fnSrc));
+assert(/renderCiLineStateroomTypesSection/.test(adminJs));
+assert(/buildRoomTypeSelectOptionsForCruiseLine/.test(adminJs));
+assert(/ci-line-stateroom-type-cb/.test(adminJs));
+
 console.log("test-stateroom-types: ok");

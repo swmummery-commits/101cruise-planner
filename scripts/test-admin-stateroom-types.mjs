@@ -18,6 +18,8 @@ assert(/action === "delete"/.test(fnSrc), "API supports delete");
 assert(/action === "list"/.test(fnSrc), "API supports list");
 assert(/action === "check_usage"/.test(fnSrc), "API supports check_usage");
 assert(/action === "reorder"/.test(fnSrc), "API supports reorder");
+assert(/list_line_allocations/.test(fnSrc), "API supports list_line_allocations");
+assert(/save_line_allocations/.test(fnSrc), "API supports save_line_allocations");
 
 assert(/StateroomTypesAdmin/.test(uiSrc), "UI exports StateroomTypesAdmin");
 assert(/function renderPanel/.test(uiSrc), "UI has renderPanel");
