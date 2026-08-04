@@ -73,7 +73,18 @@ for (const mod of modules) {
 }
 
 assert.match(read("js/admin.js"), /persistCiLine[\s\S]*?withAdminBusy\(doPersist,\s*\{[\s\S]*?saving:\s*true/);
-assert.match(read("js/admin.js"), /persistCiShip[\s\S]*?withAdminBusy\(doPersist,\s*\{[\s\S]*?saving:\s*true/);
+assert.match(adminJs, /persistCiShip[\s\S]*?withAdminBusy\(doPersist,\s*\{[\s\S]*?saving:\s*true/);
 assert.match(read(".cursor/rules/admin-saving-indicator.mdc"), /AdminLoading\.withSaving/);
+
+const adminLoadingJs = read("js/admin-loading.js");
+const adminEmbedJs = read("js/admin-squarespace-embed.js");
+const adminCss = read("css/admin.css");
+const adminHtml = read("admin.html");
+
+assert.match(adminLoadingJs, /applyOverlayGeometry/);
+assert.match(adminLoadingJs, /101cruise-parent-viewport/);
+assert.match(adminEmbedJs, /101cruise-parent-viewport/);
+assert.match(adminCss, /admin-loading-overlay--parent-viewport/);
+assert.ok(adminHtml.includes("portal-parent-viewport.js"), "admin loads parent viewport bridge");
 
 console.log("test-admin-saving-indicator: all assertions passed");

@@ -186,13 +186,16 @@ async function updateFeature(id, raw) {
     err.calm = true;
     throw err;
   }
+  const incomingType =
+    raw && typeof raw === "object" ? trimName(raw.feature_type) : "";
+  const nextType = FEATURE_TYPES.has(incomingType) ? incomingType : existing.feature_type;
   const fields = sanitizeFeatureFields(
-    { ...existing, ...(raw && typeof raw === "object" ? raw : {}) },
+    { ...existing, ...(raw && typeof raw === "object" ? raw : {}), feature_type: nextType },
     { requireLine: false, requireType: false }
   );
   const duplicate = await findDuplicate(
     existing.cruise_line_id,
-    existing.feature_type,
+    nextType,
     fields.normalized_name,
     featureId
   );
@@ -205,6 +208,9 @@ async function updateFeature(id, raw) {
     is_active: fields.is_active,
     updated_at: new Date().toISOString()
   };
+  if (nextType !== existing.feature_type) {
+    payload.feature_type = nextType;
+  }
   try {
     const rows = await supabase(`ci_cruise_line_features?id=eq.${encodeURIComponent(featureId)}`, {
       method: "PATCH",

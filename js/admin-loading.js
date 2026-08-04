@@ -1,5 +1,6 @@
 /**
  * Shared Admin waiting overlay — nine-square BrandLoading + calm messages.
+ * Positions in the visible viewport when embedded (parent geometry postMessage).
  * Browser global: AdminLoading
  */
 (function (root) {
@@ -7,6 +8,8 @@
 
   var OVERLAY_ID = "admin-loading-overlay";
   var BODY_LOCK_CLASS = "admin-loading-active";
+  var PARENT_GEOMETRY_CLASS = "admin-loading-overlay--parent-viewport";
+  var VISUAL_GEOMETRY_CLASS = "admin-loading-overlay--visual-viewport";
   var INITIAL_MESSAGE =
     typeof BrandLoading !== "undefined" && BrandLoading.CANONICAL_MESSAGE
       ? BrandLoading.CANONICAL_MESSAGE
@@ -17,12 +20,29 @@
       : "Hang tight! Saving your info.";
   var FAIL_MESSAGE = "Something didn't load properly. Please try again in a moment.";
 
+  var bridge =
+    typeof root.PortalParentViewport !== "undefined" ? root.PortalParentViewport : null;
+  var PARENT_ORIGINS = bridge
+    ? bridge.PARENT_ORIGINS
+    : ["https://www.101cruise.com.au", "https://101cruise.com.au"];
+  var MSG = bridge
+    ? bridge.MSG
+    : {
+        PARENT_VIEWPORT: "101cruise-parent-viewport",
+        REQUEST_PARENT_VIEWPORT: "101cruise-request-parent-viewport",
+        LOADING_STATE: "101cruise-admin-loading-state"
+      };
+
   var refs = new Map();
   var overlayEl = null;
   var messageEl = null;
   var supportEl = null;
   var failTimer = null;
   var activeCount = 0;
+  var latestParentGeometry = null;
+  var parentListenerBound = false;
+  var geometryListenersBound = false;
+  var parentLoadingNotified = false;
 
   function prefersReducedMotion() {
     return (
@@ -32,8 +52,166 @@
     );
   }
 
+  function isEmbedded() {
+    return typeof window !== "undefined" && window.parent && window.parent !== window;
+  }
+
+  function isAllowedParentOrigin(origin) {
+    if (bridge && bridge.isAllowedParentOrigin) return bridge.isAllowedParentOrigin(origin);
+    return PARENT_ORIGINS.indexOf(String(origin || "")) !== -1;
+  }
+
+  function postToParents(payload) {
+    if (!isEmbedded()) return;
+    for (var i = 0; i < PARENT_ORIGINS.length; i += 1) {
+      try {
+        window.parent.postMessage(payload, PARENT_ORIGINS[i]);
+      } catch (_error) {
+        /* ignore */
+      }
+    }
+  }
+
+  function resolveOverlayBox(parentGeometry, fallbackInnerHeight) {
+    if (bridge && bridge.resolveOverlayBox) {
+      return bridge.resolveOverlayBox(parentGeometry, fallbackInnerHeight);
+    }
+    if (
+      parentGeometry &&
+      Number.isFinite(Number(parentGeometry.visibleTop)) &&
+      Number.isFinite(Number(parentGeometry.visibleHeight)) &&
+      Number(parentGeometry.visibleHeight) > 0
+    ) {
+      return {
+        mode: "parent",
+        top: Math.max(0, Math.round(Number(parentGeometry.visibleTop))),
+        height: Math.max(1, Math.round(Number(parentGeometry.visibleHeight)))
+      };
+    }
+    var h = Math.max(1, Math.round(Number(fallbackInnerHeight) || 0) || 800);
+    return { mode: "direct", top: 0, height: h };
+  }
+
+  function resolveLocalViewportBox() {
+    var vv = typeof window !== "undefined" && window.visualViewport;
+    if (vv && Number.isFinite(vv.offsetTop) && Number.isFinite(vv.height) && vv.height > 0) {
+      return {
+        mode: "visual",
+        top: Math.max(0, Math.round(vv.offsetTop)),
+        height: Math.max(1, Math.round(vv.height))
+      };
+    }
+    return null;
+  }
+
+  function requestParentViewport() {
+    postToParents({ type: MSG.REQUEST_PARENT_VIEWPORT });
+  }
+
+  function notifyParentLoading(active) {
+    if (!isEmbedded()) return;
+    if (active && parentLoadingNotified) return;
+    if (!active && !parentLoadingNotified) return;
+    parentLoadingNotified = Boolean(active);
+    postToParents({ type: MSG.LOADING_STATE, active: Boolean(active) });
+  }
+
+  function bindParentViewportListener() {
+    if (parentListenerBound || typeof window === "undefined") return;
+    parentListenerBound = true;
+    window.addEventListener("message", function (event) {
+      if (!isAllowedParentOrigin(event.origin)) return;
+      var data = event.data || {};
+      if (!data || data.type !== MSG.PARENT_VIEWPORT) return;
+      var visibleTop = Number(data.visibleTop);
+      var visibleHeight = Number(data.visibleHeight);
+      if (!Number.isFinite(visibleTop) || !Number.isFinite(visibleHeight)) return;
+
+      if (visibleHeight > 0) {
+        latestParentGeometry = {
+          visibleTop: visibleTop,
+          visibleHeight: visibleHeight,
+          visibleWidth: Number(data.visibleWidth) || 0,
+          iframeHeight: Number(data.iframeHeight) || 0,
+          parentViewportHeight: Number(data.parentViewportHeight) || 0
+        };
+      }
+
+      if (activeCount > 0) applyOverlayGeometry();
+    });
+  }
+
+  function bindGeometryListeners() {
+    if (geometryListenersBound || typeof window === "undefined") return;
+    geometryListenersBound = true;
+    var schedule = function () {
+      if (activeCount > 0) {
+        requestParentViewport();
+        applyOverlayGeometry();
+      }
+    };
+    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("resize", schedule);
+    window.addEventListener("orientationchange", schedule);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("scroll", schedule);
+      window.visualViewport.addEventListener("resize", schedule);
+    }
+  }
+
+  function applyOverlayGeometry() {
+    ensureOverlay();
+    if (!overlayEl) return;
+
+    var fallback =
+      (typeof window !== "undefined" &&
+        window.visualViewport &&
+        window.visualViewport.height) ||
+      (typeof window !== "undefined" && window.innerHeight) ||
+      800;
+
+    var box = resolveOverlayBox(latestParentGeometry, fallback);
+    if (box.mode !== "parent") {
+      var local = resolveLocalViewportBox();
+      if (local) box = local;
+    }
+
+    overlayEl.style.position = "fixed";
+    overlayEl.style.left = "0";
+    overlayEl.style.right = "0";
+    overlayEl.style.width = "100%";
+    overlayEl.style.top = box.top + "px";
+    overlayEl.style.bottom = "auto";
+    overlayEl.style.height = box.height + "px";
+    overlayEl.style.maxHeight = box.height + "px";
+    overlayEl.style.margin = "0";
+    overlayEl.style.transform = "none";
+    overlayEl.classList.toggle(PARENT_GEOMETRY_CLASS, box.mode === "parent");
+    overlayEl.classList.toggle(VISUAL_GEOMETRY_CLASS, box.mode === "visual");
+  }
+
+  function clearOverlayGeometry() {
+    if (!overlayEl) return;
+    overlayEl.classList.remove(PARENT_GEOMETRY_CLASS);
+    overlayEl.classList.remove(VISUAL_GEOMETRY_CLASS);
+    overlayEl.style.top = "";
+    overlayEl.style.bottom = "";
+    overlayEl.style.height = "";
+    overlayEl.style.maxHeight = "";
+    overlayEl.style.width = "";
+    overlayEl.style.left = "";
+    overlayEl.style.right = "";
+    overlayEl.style.margin = "";
+    overlayEl.style.transform = "";
+    overlayEl.style.position = "";
+  }
+
   function ensureOverlay() {
     if (overlayEl || typeof document === "undefined") return overlayEl;
+
+    bindParentViewportListener();
+    bindGeometryListeners();
+
     overlayEl = document.createElement("div");
     overlayEl.id = OVERLAY_ID;
     overlayEl.className = "admin-loading-overlay";
@@ -95,7 +273,16 @@
     var visible = activeCount > 0;
     overlayEl.classList.toggle("is-visible", visible);
     overlayEl.setAttribute("aria-busy", visible ? "true" : "false");
-    // Never lock document scroll — Admin pages must grow with content.
+
+    if (visible) {
+      requestParentViewport();
+      applyOverlayGeometry();
+      notifyParentLoading(true);
+    } else {
+      clearOverlayGeometry();
+      notifyParentLoading(false);
+    }
+
     if (typeof document !== "undefined" && document.body) {
       document.body.classList.remove(BODY_LOCK_CLASS);
     }

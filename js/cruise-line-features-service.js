@@ -266,6 +266,19 @@
     return next;
   }
 
+  function removeFeatureFromShipFacilities(facilities, featureType, name) {
+    const key = templateArrayKey(featureType);
+    const next = Object.assign({}, facilities && typeof facilities === "object" ? facilities : {});
+    if (!key || !name) return next;
+    const norm = normalizeName(name);
+    const arr = Array.isArray(next[key]) ? next[key].slice() : [];
+    next[key] = arr.filter(function (entry) {
+      return normalizeName(featureItemName(entry)) !== norm;
+    });
+    if (!next[key].length) delete next[key];
+    return next;
+  }
+
   function shipHasFeature(ship, featureType, name) {
     const key = templateArrayKey(featureType);
     if (!key || !ship) return false;
@@ -344,6 +357,7 @@
     mergeFeatureIntoTemplatePayload,
     removeFeatureFromTemplatePayload,
     mergeFeatureIntoShipFacilities,
+    removeFeatureFromShipFacilities,
     shipHasFeature,
     listFeaturesForLine,
     createFeature,
@@ -367,6 +381,7 @@
     mergeFeatureIntoTemplatePayload,
     removeFeatureFromTemplatePayload,
     mergeFeatureIntoShipFacilities,
+    removeFeatureFromShipFacilities,
     shipHasFeature
   };
 

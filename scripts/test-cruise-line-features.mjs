@@ -149,6 +149,11 @@ assert.equal(t.filterByType(catalogue, "specialty_feature").length, 2);
   assert.equal(shipFacilities.pools, 3);
   assert.equal(shipFacilities.specialty_features.length, 1);
   assert.equal(t.shipHasFeature({ facilities: shipFacilities }, "specialty_feature", "Cagney's Steakhouse"), true);
+
+  const without = t.removeFeatureFromShipFacilities(shipFacilities, "specialty_feature", "Cagney's Steakhouse");
+  assert.equal(without.specialty_features, undefined);
+  assert.equal(t.shipHasFeature({ facilities: without }, "specialty_feature", "Cagney's Steakhouse"), false);
+  assert.equal(without.exclusive_areas.length, 1);
 }
 
 const adminJs = read("js/admin.js");
@@ -172,6 +177,11 @@ assert.ok(adminLineFeaturesJs.includes("ci-line-feature-class-cb"));
 assert.ok(adminLineFeaturesJs.includes("ci-line-feature-ship-cb"));
 assert.ok(adminLineFeaturesJs.includes("saveClassAssignments"));
 assert.ok(adminLineFeaturesJs.includes("saveShipAssignments"));
+assert.ok(adminLineFeaturesJs.includes("saveMoveFromDom"));
+assert.ok(adminLineFeaturesJs.includes("migrateFeatureTypeAssignments"));
+assert.ok(adminLineFeaturesJs.includes("findDraggedRow"));
+assert.ok(!adminLineFeaturesJs.includes("dragged.parentElement !== list"));
+assert.ok(netlifyFn.includes("payload.feature_type = nextType"));
 assert.ok(adminJs.includes("window.renderAdmin = renderAdmin"));
 assert.ok(adminTplJs.includes("ci-class-tpl-feature-cb"));
 assert.ok(adminTplJs.includes("usesCatalogueMode"));

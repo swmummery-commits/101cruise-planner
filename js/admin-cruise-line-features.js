@@ -17,6 +17,7 @@
   let creatingType = "";
   let draft = emptyDraft();
   let draggedFeatureId = null;
+  let draggedSourceType = "";
   let dragFromHandle = false;
 
   function emptyDraft() {
@@ -411,6 +412,98 @@
     return { shipsUpdated: shipsUpdated };
   }
 
+  async function migrateFeatureTypeAssignments(sourceType, targetType, featureRow) {
+    const service = svc();
+    const api = tplApi();
+    if (!service || !featureRow?.name) return { classesUpdated: 0, shipsUpdated: 0 };
+
+    const item = service.featureItemFromCatalogueRow(featureRow);
+    const name = featureRow.name;
+    let classesUpdated = 0;
+    let shipsUpdated = 0;
+
+    if (api && window.adminAuthHeaders && activeLineId) {
+      const classes = classOptionsForLine();
+      for (let i = 0; i < classes.length; i += 1) {
+        const className = classes[i];
+        const existing = api.templateRecordForClass(lineTemplates(), activeLineId, className);
+        const basePayload = existing
+          ? {
+              exclusive_areas: Array.isArray(existing.exclusive_areas) ? existing.exclusive_areas : [],
+              specialty_features: Array.isArray(existing.specialty_features) ? existing.specialty_features : []
+            }
+          : api.resolveClassTemplatePayload({
+              templates: lineTemplates(),
+              ships: global.ciCruiseShips || [],
+              cruiseLineId: activeLineId,
+              className: className
+            }).payload;
+
+        if (!templateIncludesFeature(basePayload, sourceType, name)) continue;
+
+        let nextPayload = service.removeFeatureFromTemplatePayload(basePayload, sourceType, name);
+        nextPayload = service.mergeFeatureIntoTemplatePayload(nextPayload, targetType, item);
+
+        const headers = await window.adminAuthHeaders({ "Content-Type": "application/json" });
+        const response = await fetch("/.netlify/functions/ci-ship-class-facilities-save", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({
+            cruise_line_id: activeLineId,
+            class_name: className,
+            exclusive_areas: nextPayload.exclusive_areas,
+            specialty_features: nextPayload.specialty_features
+          })
+        });
+        const data = await response.json().catch(function () {
+          return {};
+        });
+        if (!response.ok || data.success === false) {
+          throw new Error(data.detail || data.error || `Could not update ${className} template.`);
+        }
+        if (data.template && window.mergeCiShipClassFacilityTemplate) {
+          window.mergeCiShipClassFacilityTemplate(data.template);
+        }
+        classesUpdated += 1;
+      }
+      if (window.refreshCiLineShipClassesSection) window.refreshCiLineShipClassesSection();
+    }
+
+    const client = global.supabaseClient;
+    if (client && activeLineId) {
+      const ships = lineShips();
+      for (let i = 0; i < ships.length; i += 1) {
+        const ship = ships[i];
+        if (!service.shipHasFeature(ship, sourceType, name)) continue;
+
+        let nextFacilities =
+          ship.facilities && typeof ship.facilities === "object" ? Object.assign({}, ship.facilities) : {};
+        nextFacilities = service.removeFeatureFromShipFacilities(nextFacilities, sourceType, name);
+        nextFacilities = service.mergeFeatureIntoShipFacilities(nextFacilities, targetType, item);
+
+        const result = await client
+          .from("ci_cruise_ships")
+          .update({ facilities: nextFacilities })
+          .eq("id", ship.id)
+          .select()
+          .single();
+        if (result.error) {
+          throw new Error(result.error.message || `Could not update ${ship.name || "ship"}.`);
+        }
+        const idx = (global.ciCruiseShips || []).findIndex(function (row) {
+          return row.id === ship.id;
+        });
+        if (idx >= 0) {
+          global.ciCruiseShips[idx] = Object.assign({}, global.ciCruiseShips[idx], result.data || { facilities: nextFacilities });
+        }
+        shipsUpdated += 1;
+      }
+      if (window.syncCiCatalogueWindowState) window.syncCiCatalogueWindowState();
+    }
+
+    return { classesUpdated: classesUpdated, shipsUpdated: shipsUpdated };
+  }
+
   async function loadForLine(lineId, { rerenderOnComplete = true } = {}) {
     const service = svc();
     activeLineId = String(lineId || "").trim();
@@ -591,6 +684,21 @@
     }, "Deleting feature…");
   }
 
+  function findDraggedRow() {
+    if (!draggedFeatureId) return null;
+    const panel = document.getElementById("ciLineFeaturesPanel");
+    if (!panel) return null;
+    return panel.querySelector(
+      `.ci-line-feature-row[data-feature-id="${CSS.escape(String(draggedFeatureId))}"]`
+    );
+  }
+
+  function clearDropTargets() {
+    document.querySelectorAll(".ci-line-feature-list.is-drop-target").forEach(function (list) {
+      list.classList.remove("is-drop-target");
+    });
+  }
+
   function onDragHandlePointerDown(event) {
     dragFromHandle = true;
     event.stopPropagation();
@@ -603,6 +711,7 @@
     }
     dragFromHandle = false;
     draggedFeatureId = String(id || "");
+    draggedSourceType = String(event.currentTarget?.getAttribute("data-feature-type") || "");
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", draggedFeatureId);
     event.currentTarget.classList.add("is-dragging");
@@ -610,12 +719,21 @@
 
   function onDragEnd(event) {
     dragFromHandle = false;
+    clearDropTargets();
     event.currentTarget?.classList.remove("is-dragging");
-    const wasDragging = Boolean(draggedFeatureId);
-    const featureType = event.currentTarget?.closest("[data-feature-type]")?.getAttribute("data-feature-type");
+    const featureId = draggedFeatureId;
+    const sourceType = draggedSourceType;
     draggedFeatureId = null;
-    if (wasDragging && featureType) {
-      saveOrderFromDom(featureType);
+    draggedSourceType = "";
+    if (!featureId) return;
+
+    const targetType = event.currentTarget?.closest("[data-feature-type]")?.getAttribute("data-feature-type");
+    if (!targetType) return;
+
+    if (sourceType && sourceType !== targetType) {
+      saveMoveFromDom(featureId, sourceType, targetType);
+    } else {
+      saveOrderFromDom(targetType);
     }
   }
 
@@ -625,13 +743,22 @@
     event.dataTransfer.dropEffect = "move";
 
     const list = event.currentTarget;
-    const dragged = list.querySelector(
-      `.ci-line-feature-row[data-feature-id="${CSS.escape(String(draggedFeatureId))}"]`
-    );
-    if (!dragged || dragged.parentElement !== list) return;
+    const dragged = findDraggedRow();
+    if (!dragged) return;
+
+    clearDropTargets();
+    list.classList.add("is-drop-target");
+
+    const targetType = list.getAttribute("data-feature-type");
+    const sourceList = dragged.parentElement;
+    if (sourceList !== list && targetType) {
+      dragged.setAttribute("data-feature-type", targetType);
+      const placeholder = list.querySelector(":scope > .admin-small");
+      if (placeholder) placeholder.remove();
+    }
 
     const cards = Array.from(list.querySelectorAll(".ci-line-feature-row:not(.is-dragging)"));
-    const afterElement = cards.find((card) => {
+    const afterElement = cards.find(function (card) {
       const rect = card.getBoundingClientRect();
       return event.clientY < rect.top + rect.height / 2;
     });
@@ -662,6 +789,7 @@
     const service = svc();
     if (!service || saving || reordering || !activeLineId) return;
     const orderedIds = readOrderedIdsFromDom(featureType);
+    if (!orderedIds.length) return;
     const reorder = service.buildReorderPayload(orderedIds);
     if (!reorder.ok) {
       setMessage(reorder.error, "error");
@@ -685,6 +813,80 @@
         rerender();
       }
     }, "Saving feature order…");
+  }
+
+  async function saveMoveFromDom(featureId, sourceType, targetType) {
+    const service = svc();
+    if (!service || saving || reordering || !activeLineId) return;
+    const row = features.find(function (item) {
+      return item.id === featureId;
+    });
+    if (!row) {
+      await loadForLine(activeLineId);
+      return;
+    }
+
+    const duplicate = features.some(function (item) {
+      return (
+        item.id !== featureId &&
+        item.feature_type === targetType &&
+        service.normalizeName(item.name) === service.normalizeName(row.name)
+      );
+    });
+    if (duplicate) {
+      setMessage("A feature with this name already exists in that section.", "error");
+      await loadForLine(activeLineId);
+      return;
+    }
+
+    const sourceIds = readOrderedIdsFromDom(sourceType);
+    const targetIds = readOrderedIdsFromDom(targetType);
+    const sourceReorder = sourceIds.length ? service.buildReorderPayload(sourceIds) : { ok: true };
+    const targetReorder = service.buildReorderPayload(targetIds);
+    if (!sourceReorder.ok) {
+      setMessage(sourceReorder.error, "error");
+      await loadForLine(activeLineId);
+      return;
+    }
+    if (!targetReorder.ok) {
+      setMessage(targetReorder.error, "error");
+      await loadForLine(activeLineId);
+      return;
+    }
+
+    const targetLabel = targetType === "exclusive_area" ? "Exclusive Areas" : "Specialty Features";
+
+    return withSavingOverlay(async function () {
+      reordering = true;
+      setMessage(`Moving to ${targetLabel}…`, "running");
+      rerender();
+      try {
+        await service.updateFeature(featureId, { feature_type: targetType });
+        if (sourceIds.length) {
+          await service.reorderFeatures(activeLineId, sourceType, sourceIds);
+        }
+        await service.reorderFeatures(activeLineId, targetType, targetIds);
+        const migration = await migrateFeatureTypeAssignments(sourceType, targetType, row);
+        features = await service.listFeaturesForLine(activeLineId);
+        syncWindowCache();
+        const parts = [`Moved to ${targetLabel}.`];
+        if (migration.classesUpdated) {
+          parts.push(
+            `Updated ${migration.classesUpdated} class template${migration.classesUpdated === 1 ? "" : "s"}.`
+          );
+        }
+        if (migration.shipsUpdated) {
+          parts.push(`Updated ${migration.shipsUpdated} ship${migration.shipsUpdated === 1 ? "" : "s"}.`);
+        }
+        setMessage(parts.join(" "), "success");
+      } catch (error) {
+        setMessage(error.message || "Could not move feature.", "error");
+        await loadForLine(activeLineId, { rerenderOnComplete: false });
+      } finally {
+        reordering = false;
+        rerender();
+      }
+    }, `Moving to ${targetLabel}…`);
   }
 
   function renderFeatureForm(featureType) {
@@ -745,7 +947,7 @@
             const svg = iconApi ? iconApi.renderIconSvg(row.icon_key, "ci-line-feature-icon") : "";
             return `
           <div class="ci-line-feature-row${inactive}" draggable="true" data-feature-id="${esc(row.id)}" data-feature-type="${esc(featureType)}">
-            <button type="button" class="ci-drag-handle" aria-label="Drag to reorder" data-ci-line-feature-action="drag-handle">⋮⋮</button>
+            <button type="button" class="ci-drag-handle" aria-label="Drag to reorder or move between sections" data-ci-line-feature-action="drag-handle">⋮⋮</button>
             <span class="ci-line-feature-icon-wrap">${svg}</span>
             <div class="ci-line-feature-copy">
               <strong>${esc(row.name)}</strong>
@@ -802,7 +1004,7 @@
     return `
       <div class="ci-line-features-panel" id="ciLineFeaturesPanel">
         <h4>Ship features catalogue</h4>
-        <p class="admin-small">Define branded Exclusive Areas and Specialty Features once for ${esc(line.name || "this line")}. When you add or edit a feature, you can assign it to ship classes and individual ships here.</p>
+        <p class="admin-small">Define branded Exclusive Areas and Specialty Features once for ${esc(line.name || "this line")}. Drag items between sections to change type, or use the handle to reorder. When you add or edit a feature, you can assign it to ship classes and individual ships here.</p>
         ${message ? `<p class="admin-small ${msgClass}">${esc(message)}</p>` : ""}
         ${renderFeatureList("exclusive_area", "Exclusive Areas")}
         ${renderFeatureList("specialty_feature", "Specialty Features")}
