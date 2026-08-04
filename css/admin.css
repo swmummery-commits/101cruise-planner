@@ -5365,6 +5365,48 @@ body.admin-loading-active {
   color: #245c4e;
 }
 
+.stateroom-type-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stateroom-type-row.is-dragging {
+  opacity: 0.55;
+}
+
+.stateroom-type-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #9aa5a0;
+  font-size: 14px;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.stateroom-type-drag-handle:hover {
+  color: #5f6f69;
+  background: rgba(141, 217, 191, 0.18);
+}
+
+.stateroom-type-drag-handle:active,
+.stateroom-type-row.is-dragging .stateroom-type-drag-handle {
+  cursor: grabbing;
+  color: #245c4e;
+}
+
+.stateroom-types-sort-list .admin-list-item {
+  cursor: default;
+}
+
 .featured-pricing-main-row .admin-field label,
 .featured-newsletter-row .admin-field label,
 .featured-ports-row .admin-field label,

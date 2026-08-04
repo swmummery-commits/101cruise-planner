@@ -59,7 +59,6 @@ assert.equal(deduped.length, 7, "duplicate seed names collapse case-insensitivel
 // 2. Duplicate names differing only by case are rejected.
 const duplicateCheck = Svc.validateStateroomTypeInput({
   name: "balcony",
-  display_order: 10,
   is_active: true,
   existingRows: seedRows
 });
@@ -70,12 +69,20 @@ assert.equal(Svc.trimName("  Oceanview  "), "Oceanview");
 assert.equal(Svc.normalizeName("  Oceanview  "), "oceanview");
 const trimmedValidation = Svc.validateStateroomTypeInput({
   name: "  Studio  ",
-  display_order: 20,
   is_active: true,
   existingRows: seedRows
 });
 assert.equal(trimmedValidation.ok, true);
 assert.equal(trimmedValidation.payload.name, "Studio");
+assert.equal("display_order" in trimmedValidation.payload, false, "create validation does not expose display order");
+
+const createPayload = Svc.buildCreatePayload({
+  name: "Studio",
+  is_active: true,
+  existingRows: seedRows
+});
+assert.equal(createPayload.ok, true);
+assert.equal(createPayload.payload.display_order, 80);
 
 // 4. Active stateroom types populate Room Type dropdowns.
 const activeOnly = Svc.listActiveStateroomTypesFromRows(seedRows);
@@ -96,7 +103,7 @@ assert.ok(inactiveOption, "inactive saved label remains selectable");
 assert.match(inactiveOption.label, /inactive/i);
 assert.equal(inactiveOption.selected, true);
 
-// 7. Display order controls dropdown ordering.
+// 7. Drag order controls dropdown ordering.
 const reordered = Svc.listActiveStateroomTypesFromRows([
   { name: "Suite", display_order: 30, is_active: true },
   { name: "Inside", display_order: 10, is_active: true },
@@ -120,17 +127,24 @@ const rowsWithIds = seedRows.map((row, index) => ({ ...row, id: `seed-${index}` 
 const balconyRow = rowsWithIds.find((row) => row.name === "Balcony");
 const editValidation = Svc.validateStateroomTypeInput({
   name: "Balcony",
-  display_order: 3,
   is_active: true,
   existingRows: rowsWithIds,
   editingId: balconyRow.id
 });
 assert.equal(editValidation.ok, true);
 
+const reorderPayload = Svc.buildReorderPayload(["a", "b", "c"]);
+assert.equal(reorderPayload.ok, true);
+assert.deepEqual(
+  reorderPayload.payload.map((row) => row.display_order),
+  [10, 20, 30]
+);
+
 // 10 & 11. Delete behaviour is enforced server-side.
 assert(/action === "delete"/.test(fnSrc), "delete action exists");
 assert(/cannot be deleted/.test(fnSrc), "used type deletion blocked with message");
 assert(/check_usage/.test(fnSrc), "usage check action exists");
+assert(/action === "reorder"/.test(fnSrc), "reorder action exists");
 assert(/room_label=ilike/.test(fnSrc), "usage check queries pricing by room label");
 
 // 12 & 13. Existing newsletter pricing remains intact (label snapshots, no FK rewrite).
@@ -169,6 +183,9 @@ assert(!/saveFeaturedRoomTypeFromRow/.test(adminJs), "inline room type save remo
 assert(!/featured_cruise_room_types/.test(adminJs), "admin.js no longer reads legacy room types table");
 assert(/renderFeaturedRoomTypeSelectOptions/.test(adminJs), "shared select builder wired");
 assert(/listActiveStateroomTypes/.test(read("js/stateroom-types-service.js")), "service exposes active list");
+assert(!/stateroomTypeDisplayOrder/.test(adminUi), "display order field removed from admin UI");
+assert(/stateroom-type-drag-handle/.test(adminUi), "drag handle rendered");
+assert(/reorderStateroomTypes/.test(read("js/stateroom-types-service.js")), "service exposes reorder");
 
 assert.equal(Svc.nextDisplayOrder(seedRows), 80, "next display order uses max + 10");
 

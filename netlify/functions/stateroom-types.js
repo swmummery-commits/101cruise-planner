@@ -4,8 +4,9 @@
  * POST /.netlify/functions/stateroom-types
  * Body:
  *   { action: "list" }
- *   { action: "create", stateroom_type: { name, display_order, is_active } }
- *   { action: "update", id, stateroom_type: { name, display_order, is_active } }
+ *   { action: "create", stateroom_type: { name, is_active } }
+ *   { action: "update", id, stateroom_type: { name, is_active } }
+ *   { action: "reorder", ordered_ids: ["uuid", ...] }
  *   { action: "delete", id }
  *   { action: "check_usage", id }
  */
@@ -94,18 +95,25 @@ function parseDisplayOrder(value, fallback = 0) {
   return Number.isFinite(n) ? Math.trunc(n) : fallback;
 }
 
-function sanitizePayload(raw) {
+function sanitizeNameFields(raw) {
   const body = raw && typeof raw === "object" ? raw : {};
   const name = trimName(body.name);
   if (!name) badRequest("Stateroom type name is required.");
-  const displayOrder = parseDisplayOrder(body.display_order, NaN);
-  if (!Number.isFinite(displayOrder)) badRequest("Display order must be a whole number.");
   return {
     name,
     normalized_name: normalizeName(name),
-    display_order: displayOrder,
     is_active: body.is_active !== false
   };
+}
+
+async function nextDisplayOrderValue() {
+  const rows = await listStateroomTypes();
+  if (!rows.length) return 10;
+  const max = rows.reduce(
+    (acc, row) => Math.max(acc, parseDisplayOrder(row?.display_order, 0)),
+    0
+  );
+  return max + 10;
 }
 
 async function listStateroomTypes() {
@@ -146,9 +154,13 @@ async function isStateroomTypeInUse(stateroomType) {
 }
 
 async function createStateroomType(raw) {
-  const payload = sanitizePayload(raw);
-  const duplicate = await findDuplicate(payload.normalized_name);
+  const fields = sanitizeNameFields(raw);
+  const duplicate = await findDuplicate(fields.normalized_name);
   if (duplicate) badRequest("A stateroom type with this name already exists.");
+  const payload = {
+    ...fields,
+    display_order: await nextDisplayOrderValue()
+  };
   try {
     const rows = await supabase("stateroom_types", {
       method: "POST",
@@ -176,9 +188,13 @@ async function updateStateroomType(id, raw) {
     err.calm = true;
     throw err;
   }
-  const payload = sanitizePayload({ ...existing, ...(raw && typeof raw === "object" ? raw : {}) });
-  const duplicate = await findDuplicate(payload.normalized_name, typeId);
+  const fields = sanitizeNameFields({ ...existing, ...(raw && typeof raw === "object" ? raw : {}) });
+  const duplicate = await findDuplicate(fields.normalized_name, typeId);
   if (duplicate) badRequest("A stateroom type with this name already exists.");
+  const payload = {
+    ...fields,
+    display_order: existing.display_order
+  };
   try {
     const rows = await supabase(`stateroom_types?id=eq.${encodeURIComponent(typeId)}`, {
       method: "PATCH",
@@ -217,6 +233,37 @@ async function deleteStateroomType(id) {
     prefer: "return=minimal"
   });
   return existing;
+}
+
+async function reorderStateroomTypes(orderedIds) {
+  const ids = Array.isArray(orderedIds)
+    ? orderedIds.map((id) => String(id || "").trim()).filter(Boolean)
+    : [];
+  if (!ids.length) badRequest("Reorder requires at least one stateroom type.");
+  const seen = new Set();
+  for (const id of ids) {
+    if (seen.has(id)) badRequest("Reorder list contains duplicate ids.");
+    seen.add(id);
+  }
+
+  const existing = await listStateroomTypes();
+  const existingIds = new Set(existing.map((row) => row.id));
+  if (ids.length !== existing.length) {
+    badRequest("Reorder must include every stateroom type.");
+  }
+  for (const id of ids) {
+    if (!existingIds.has(id)) badRequest("Reorder includes an unknown stateroom type.");
+  }
+
+  const updates = ids.map((id, index) =>
+    supabase(`stateroom_types?id=eq.${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      prefer: "return=minimal",
+      body: { display_order: (index + 1) * 10 }
+    })
+  );
+  await Promise.all(updates);
+  return listStateroomTypes();
 }
 
 exports.handler = async function handler(event) {
@@ -259,6 +306,11 @@ exports.handler = async function handler(event) {
       return jsonResponse(200, { success: true, in_use });
     }
 
+    if (action === "reorder") {
+      const stateroom_types = await reorderStateroomTypes(body.ordered_ids);
+      return jsonResponse(200, { success: true, stateroom_types, reordered: true });
+    }
+
     return jsonResponse(400, { success: false, error: "Unknown action" });
   } catch (error) {
     const statusCode = error.statusCode || (/calm/.test(String(error.calm)) ? 400 : 500);
@@ -272,6 +324,6 @@ exports.handler = async function handler(event) {
 exports.__test__ = {
   trimName,
   normalizeName,
-  sanitizePayload,
+  sanitizeNameFields,
   isStateroomTypeInUse
 };

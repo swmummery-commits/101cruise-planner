@@ -9,16 +9,18 @@
   let loading = false;
   let loadError = "";
   let saving = false;
+  let reordering = false;
   let message = "";
   let messageTone = "";
   let editingId = null;
   let creating = false;
   let draft = emptyDraft();
+  let draggedStateroomTypeId = null;
+  let stateroomTypeDragFromHandle = false;
 
   function emptyDraft() {
     return {
       name: "",
-      display_order: "10",
       is_active: true
     };
   }
@@ -55,7 +57,6 @@
   function typeToDraft(row) {
     return {
       name: row?.name || "",
-      display_order: String(row?.display_order ?? 0),
       is_active: row?.is_active !== false
     };
   }
@@ -64,10 +65,15 @@
     const get = (id) => document.getElementById(id)?.value;
     draft = {
       name: String(get("stateroomTypeName") || "").trim(),
-      display_order: String(get("stateroomTypeDisplayOrder") ?? "").trim(),
       is_active: String(get("stateroomTypeActive") || "true") !== "false"
     };
     return draft;
+  }
+
+  async function refreshPricingTypes() {
+    if (typeof global.loadStateroomTypesForPricing === "function") {
+      await global.loadStateroomTypesForPricing();
+    }
   }
 
   async function ensureLoaded({ force = false, quiet = false } = {}) {
@@ -100,12 +106,7 @@
   function startCreate() {
     creating = true;
     editingId = null;
-    const svc = service();
-    draft = {
-      name: "",
-      display_order: String(svc ? svc.nextDisplayOrder(stateroomTypes) : 10),
-      is_active: true
-    };
+    draft = emptyDraft();
     setMessage("", "");
     rerender();
   }
@@ -132,34 +133,39 @@
     const svc = service();
     if (!svc || saving) return;
     readDraftFromDom();
-    const validation = svc.validateStateroomTypeInput({
-      name: draft.name,
-      display_order: draft.display_order,
-      is_active: draft.is_active,
-      existingRows: stateroomTypes,
-      editingId
-    });
-    if (!validation.ok) {
-      setMessage(validation.error, "error");
-      rerender();
-      return;
-    }
 
     saving = true;
     setMessage("Saving stateroom type…", "running");
     rerender();
     try {
       if (editingId) {
+        const validation = svc.validateStateroomTypeInput({
+          name: draft.name,
+          is_active: draft.is_active,
+          existingRows: stateroomTypes,
+          editingId
+        });
+        if (!validation.ok) {
+          setMessage(validation.error, "error");
+          return;
+        }
         await svc.updateStateroomType(editingId, validation.payload);
         setMessage("Stateroom type saved.", "success");
       } else {
+        const validation = svc.buildCreatePayload({
+          name: draft.name,
+          is_active: draft.is_active,
+          existingRows: stateroomTypes
+        });
+        if (!validation.ok) {
+          setMessage(validation.error, "error");
+          return;
+        }
         await svc.createStateroomType(validation.payload);
         setMessage("Stateroom type created.", "success");
       }
       await ensureLoaded({ force: true, quiet: true });
-      if (typeof global.loadStateroomTypesForPricing === "function") {
-        await global.loadStateroomTypesForPricing();
-      }
+      await refreshPricingTypes();
       creating = false;
       editingId = null;
       draft = emptyDraft();
@@ -187,13 +193,102 @@
       setMessage(`Deleted “${label}”.`, "success");
       if (editingId === id) cancelEdit();
       await ensureLoaded({ force: true, quiet: true });
-      if (typeof global.loadStateroomTypesForPricing === "function") {
-        await global.loadStateroomTypesForPricing();
-      }
+      await refreshPricingTypes();
     } catch (error) {
       setMessage(error.message || "Could not delete stateroom type.", "error");
     } finally {
       saving = false;
+      rerender();
+    }
+  }
+
+  function onDragHandlePointerDown(event) {
+    stateroomTypeDragFromHandle = true;
+    event.stopPropagation();
+  }
+
+  function onDragStart(event, id) {
+    if (!stateroomTypeDragFromHandle || saving || reordering) {
+      event.preventDefault();
+      return;
+    }
+    stateroomTypeDragFromHandle = false;
+    draggedStateroomTypeId = String(id || "");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", draggedStateroomTypeId);
+    event.currentTarget.classList.add("is-dragging");
+  }
+
+  function onDragEnd(event) {
+    stateroomTypeDragFromHandle = false;
+    event.currentTarget?.classList.remove("is-dragging");
+    const wasDragging = Boolean(draggedStateroomTypeId);
+    draggedStateroomTypeId = null;
+    if (wasDragging) {
+      saveOrderFromDom();
+    }
+  }
+
+  function allowDrop(event) {
+    if (!draggedStateroomTypeId || saving || reordering) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+
+    const list = event.currentTarget;
+    const dragged = list.querySelector(
+      `.stateroom-type-row[data-stateroom-type-id="${CSS.escape(String(draggedStateroomTypeId))}"]`
+    );
+    if (!dragged || dragged.parentElement !== list) return;
+
+    const cards = Array.from(list.querySelectorAll(".stateroom-type-row:not(.is-dragging)"));
+    const afterElement = cards.find((card) => {
+      const rect = card.getBoundingClientRect();
+      return event.clientY < rect.top + rect.height / 2;
+    });
+
+    if (afterElement) {
+      if (dragged.nextSibling !== afterElement) list.insertBefore(dragged, afterElement);
+    } else if (list.lastElementChild !== dragged) {
+      list.appendChild(dragged);
+    }
+  }
+
+  function onDrop(event) {
+    if (!draggedStateroomTypeId) return;
+    event.preventDefault();
+  }
+
+  function readOrderedIdsFromDom() {
+    const list = document.getElementById("stateroomTypesSortList");
+    if (!list) return [];
+    return Array.from(list.querySelectorAll("[data-stateroom-type-id]"))
+      .map((el) => el.getAttribute("data-stateroom-type-id"))
+      .filter(Boolean);
+  }
+
+  async function saveOrderFromDom() {
+    const svc = service();
+    if (!svc || saving || reordering) return;
+    const orderedIds = readOrderedIdsFromDom();
+    const reorder = svc.buildReorderPayload(orderedIds);
+    if (!reorder.ok) {
+      setMessage(reorder.error, "error");
+      rerender();
+      return;
+    }
+
+    reordering = true;
+    setMessage("Saving order…", "running");
+    rerender();
+    try {
+      stateroomTypes = await svc.reorderStateroomTypes(orderedIds);
+      await refreshPricingTypes();
+      setMessage("Order saved.", "success");
+    } catch (error) {
+      setMessage(error.message || "Could not save stateroom type order.", "error");
+      await ensureLoaded({ force: true, quiet: true });
+    } finally {
+      reordering = false;
       rerender();
     }
   }
@@ -219,18 +314,12 @@
           <label for="stateroomTypeName">Stateroom Type Name</label>
           <input id="stateroomTypeName" type="text" value="${esc(draft.name)}" placeholder="e.g. Balcony" maxlength="120">
         </div>
-        <div class="admin-grid compact">
-          <div class="admin-field">
-            <label for="stateroomTypeDisplayOrder">Display Order</label>
-            <input id="stateroomTypeDisplayOrder" type="number" step="1" value="${esc(draft.display_order)}">
-          </div>
-          <div class="admin-field">
-            <label for="stateroomTypeActive">Active</label>
-            <select id="stateroomTypeActive">
-              <option value="true" ${draft.is_active ? "selected" : ""}>Active</option>
-              <option value="false" ${!draft.is_active ? "selected" : ""}>Inactive</option>
-            </select>
-          </div>
+        <div class="admin-field">
+          <label for="stateroomTypeActive">Active</label>
+          <select id="stateroomTypeActive">
+            <option value="true" ${draft.is_active ? "selected" : ""}>Active</option>
+            <option value="false" ${!draft.is_active ? "selected" : ""}>Inactive</option>
+          </select>
         </div>
         <div class="admin-form-actions">
           <button type="button" class="admin-button" onclick="StateroomTypesAdmin.saveStateroomType()" ${saving ? "disabled" : ""}>Save</button>
@@ -260,20 +349,41 @@
     }
 
     return `
-      <div class="admin-reference-list">
+      <p class="admin-muted">Drag rows to set the order used in pricing dropdowns.</p>
+      <div
+        class="admin-reference-list stateroom-types-sort-list"
+        id="stateroomTypesSortList"
+        ondragover="StateroomTypesAdmin.allowDrop(event)"
+        ondrop="StateroomTypesAdmin.onDrop(event)"
+      >
         ${rows
           .map(
             (row) => `
-          <div class="admin-list-item compact-item">
+          <div
+            class="admin-list-item compact-item stateroom-type-row"
+            data-stateroom-type-id="${esc(row.id)}"
+            draggable="true"
+            ondragstart="StateroomTypesAdmin.onDragStart(event, '${esc(row.id)}')"
+            ondragend="StateroomTypesAdmin.onDragEnd(event)"
+          >
             <div class="admin-list-top">
-              <div>
-                <strong>${esc(row.name)}</strong>
-                <div class="admin-small">Display order: ${esc(row.display_order ?? 0)}</div>
-                ${
-                  row.is_active !== false
-                    ? `<span class="admin-pill">Active</span>`
-                    : `<span class="admin-pill inactive">Inactive</span>`
-                }
+              <div class="stateroom-type-row-main">
+                <span
+                  class="stateroom-type-drag-handle"
+                  role="button"
+                  tabindex="0"
+                  aria-label="Drag to reorder stateroom type"
+                  title="Drag to reorder"
+                  onpointerdown="StateroomTypesAdmin.onDragHandlePointerDown(event)"
+                >☰</span>
+                <div>
+                  <strong>${esc(row.name)}</strong>
+                  ${
+                    row.is_active !== false
+                      ? `<span class="admin-pill">Active</span>`
+                      : `<span class="admin-pill inactive">Inactive</span>`
+                  }
+                </div>
               </div>
               <div class="admin-inline-actions">
                 <button type="button" class="admin-button secondary small" onclick="StateroomTypesAdmin.startEdit('${esc(row.id)}')">Edit</button>
@@ -308,7 +418,7 @@
             <p class="admin-muted">Manage the room types available when entering cruise pricing.</p>
           </div>
           <div>
-            <button type="button" class="admin-button" onclick="StateroomTypesAdmin.startCreate()" ${loading || saving ? "disabled" : ""}>Add Stateroom Type</button>
+            <button type="button" class="admin-button" onclick="StateroomTypesAdmin.startCreate()" ${loading || saving || reordering ? "disabled" : ""}>Add Stateroom Type</button>
           </div>
         </div>
         ${showTopMessage ? `<div class="admin-message ${msgClass}">${esc(message)}</div>` : ""}
@@ -329,6 +439,11 @@
     startEdit,
     cancelEdit,
     saveStateroomType,
-    deleteStateroomType
+    deleteStateroomType,
+    onDragHandlePointerDown,
+    onDragStart,
+    onDragEnd,
+    allowDrop,
+    onDrop
   };
 })(typeof window !== "undefined" ? window : globalThis);

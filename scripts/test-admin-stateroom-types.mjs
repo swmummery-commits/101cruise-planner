@@ -17,11 +17,14 @@ assert(/action === "update"/.test(fnSrc), "API supports update");
 assert(/action === "delete"/.test(fnSrc), "API supports delete");
 assert(/action === "list"/.test(fnSrc), "API supports list");
 assert(/action === "check_usage"/.test(fnSrc), "API supports check_usage");
+assert(/action === "reorder"/.test(fnSrc), "API supports reorder");
 
 assert(/StateroomTypesAdmin/.test(uiSrc), "UI exports StateroomTypesAdmin");
 assert(/function renderPanel/.test(uiSrc), "UI has renderPanel");
 assert(/saveStateroomType/.test(uiSrc), "UI save path");
 assert(/deleteStateroomType/.test(uiSrc), "UI delete path");
+assert(/onDragStart/.test(uiSrc), "UI drag start handler");
+assert(!/stateroomTypeDisplayOrder/.test(uiSrc), "UI no longer exposes display order field");
 
 assert(/admin-stateroom-types\.js/.test(adminHtml), "admin.html loads stateroom types module");
 assert(/stateroom-types", label: "Stateroom Types"/.test(adminSrc), "Stateroom Types nav item present");

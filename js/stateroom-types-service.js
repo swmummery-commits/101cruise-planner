@@ -90,14 +90,10 @@
     return out;
   }
 
-  function validateStateroomTypeInput({ name, display_order, is_active, existingRows, editingId }) {
+  function validateStateroomTypeInput({ name, is_active, existingRows, editingId }) {
     const trimmed = trimName(name);
     if (!trimmed) {
       return { ok: false, error: "Stateroom type name is required." };
-    }
-    const order = parseDisplayOrder(display_order, NaN);
-    if (!Number.isFinite(order)) {
-      return { ok: false, error: "Display order must be a whole number." };
     }
     const normalized = normalizeName(trimmed);
     const duplicate = (existingRows || []).some((row) => {
@@ -112,9 +108,43 @@
       payload: {
         name: trimmed,
         normalized_name: normalized,
-        display_order: order,
         is_active: is_active !== false
       }
+    };
+  }
+
+  function buildCreatePayload({ name, is_active, existingRows }) {
+    const validation = validateStateroomTypeInput({ name, is_active, existingRows });
+    if (!validation.ok) return validation;
+    return {
+      ok: true,
+      payload: {
+        ...validation.payload,
+        display_order: nextDisplayOrder(existingRows)
+      }
+    };
+  }
+
+  function buildReorderPayload(orderedIds) {
+    const ids = Array.isArray(orderedIds)
+      ? orderedIds.map((id) => String(id || "").trim()).filter(Boolean)
+      : [];
+    if (!ids.length) {
+      return { ok: false, error: "Reorder requires at least one stateroom type." };
+    }
+    const seen = new Set();
+    for (const id of ids) {
+      if (seen.has(id)) {
+        return { ok: false, error: "Reorder list contains duplicate ids." };
+      }
+      seen.add(id);
+    }
+    return {
+      ok: true,
+      payload: ids.map((id, index) => ({
+        id,
+        display_order: (index + 1) * 10
+      }))
     };
   }
 
@@ -191,6 +221,11 @@
     return Boolean(result.in_use);
   }
 
+  async function reorderStateroomTypes(orderedIds) {
+    const result = await api("reorder", { ordered_ids: orderedIds });
+    return result.stateroom_types || [];
+  }
+
   const service = {
     trimName,
     normalizeName,
@@ -199,13 +234,16 @@
     listActiveStateroomTypesFromRows,
     buildRoomTypeSelectOptions,
     validateStateroomTypeInput,
+    buildCreatePayload,
+    buildReorderPayload,
     nextDisplayOrder,
     listAllStateroomTypes,
     listActiveStateroomTypes,
     createStateroomType,
     updateStateroomType,
     deleteStateroomType,
-    checkStateroomTypeUsage
+    checkStateroomTypeUsage,
+    reorderStateroomTypes
   };
 
   service.__test__ = {
@@ -215,6 +253,8 @@
     dedupeByNormalizedName,
     buildRoomTypeSelectOptions,
     validateStateroomTypeInput,
+    buildCreatePayload,
+    buildReorderPayload,
     nextDisplayOrder,
     listActiveStateroomTypesFromRows
   };
