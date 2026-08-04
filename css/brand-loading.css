@@ -82,5 +82,17 @@
   font-size: 15px;
   line-height: 1.5;
   color: #444;
+  font-weight: 400;
   font-family: "Halyard Display", Arial, sans-serif;
+}
+
+/* Universal calm weight for shared loading copy (Hang tight! …) */
+.brand-loading-message,
+.admin-loading-message,
+.portal-loading-message,
+.public-cruise-loading,
+.dc-calc-status:not(.is-error),
+.dc-v2-status:not(.is-error),
+.media-picker-loading-message {
+  font-weight: 400;
 }

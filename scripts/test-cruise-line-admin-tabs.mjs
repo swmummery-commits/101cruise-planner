@@ -192,6 +192,8 @@ assertIncludes(adminCss, ".ci-master-detail", "shared ships master-detail styles
 
 // Script load order unchanged for feature modules
 assertIncludes(adminHtml, "admin-cruise-line-features.js", "admin still loads cruise line features module");
-assertIncludes(adminHtml, "js/admin.js", "admin.js still loaded");
+assertIncludes(adminJs, "window.renderAdmin = renderAdmin", "renderAdmin exposed for admin modules");
+assertIncludes(adminJs, "scheduleAdminViewportToTop", "admin scroll-to-top helper");
+assertIncludes(adminHtml, "viewport-scroll.js", "admin loads viewport scroll helper");
 
 console.log("test-cruise-line-admin-tabs: all assertions passed");

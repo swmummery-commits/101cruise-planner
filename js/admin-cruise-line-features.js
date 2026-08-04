@@ -52,8 +52,59 @@
   }
 
   function rerender() {
+    if (typeof global.renderCiAdmin === "function") {
+      global.renderCiAdmin();
+      return;
+    }
     if (typeof global.renderAdmin === "function") global.renderAdmin();
   }
+
+  let featureActionsBound = false;
+
+  function handleFeatureActionClick(event) {
+    const btn = event.target.closest("[data-ci-line-feature-action]");
+    if (!btn) return;
+    const panel = document.getElementById("ciLineFeaturesPanel");
+    if (!panel || !panel.contains(btn)) return;
+    const action = btn.getAttribute("data-ci-line-feature-action");
+    if (action === "create") {
+      event.preventDefault();
+      startCreate(btn.getAttribute("data-feature-type"));
+      return;
+    }
+    if (action === "edit") {
+      event.preventDefault();
+      startEdit(btn.getAttribute("data-feature-id"));
+      return;
+    }
+    if (action === "delete") {
+      event.preventDefault();
+      deleteFeature(btn.getAttribute("data-feature-id"));
+      return;
+    }
+    if (action === "save") {
+      event.preventDefault();
+      saveFeature();
+      return;
+    }
+    if (action === "cancel") {
+      event.preventDefault();
+      cancelEdit();
+      return;
+    }
+    if (action === "retry") {
+      event.preventDefault();
+      loadForLine(activeLineId);
+    }
+  }
+
+  function ensureFeatureActionDelegation() {
+    if (featureActionsBound || typeof document === "undefined") return;
+    featureActionsBound = true;
+    document.addEventListener("click", handleFeatureActionClick);
+  }
+
+  ensureFeatureActionDelegation();
 
   function setMessage(text, tone) {
     message = text || "";

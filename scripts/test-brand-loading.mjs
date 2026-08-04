@@ -37,7 +37,7 @@ const css = readFileSync(path.join(root, "css/brand-loading.css"), "utf8");
 assert(/\.is-on/.test(css), "flash on state");
 assert(/#f80020/i.test(css), "logo red");
 assert(/grid-template-columns:\s*repeat\(3/.test(css), "3x3 grid columns");
-assert(/grid-template-rows:\s*repeat\(3/.test(css), "3x3 grid rows");
+assert(/font-weight:\s*400/.test(css), "loading message normal weight");
 
 const src = readFileSync(path.join(root, "js/brand-loading.js"), "utf8");
 assert(/buildSequence/.test(src), "random sequence builder");

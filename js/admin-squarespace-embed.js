@@ -71,6 +71,18 @@
     if (data.type === MSG_HEIGHT) {
       applyIframeHeight(data.height);
     }
+    if (data.type === "101cruise-scroll-top") {
+      var iframe = findFrame();
+      if (!iframe) return;
+      try {
+        iframe.scrollIntoView({ block: "start", behavior: "auto" });
+      } catch (err) {
+        /* ignore */
+      }
+      var rect = iframe.getBoundingClientRect();
+      var top = (window.scrollY || window.pageYOffset || 0) + rect.top - HEADER_GAP_PX;
+      window.scrollTo(0, Math.max(0, Math.ceil(top)));
+    }
   });
 
   function bindFrame() {

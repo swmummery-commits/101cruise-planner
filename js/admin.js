@@ -839,6 +839,7 @@ async function setTab(tab) {
     showFeaturedNewsletterPreview = false;
   }
   renderAdmin();
+  scheduleAdminViewportToTop();
   if (resolved === "calculator-data") {
     refreshBeveragePackagesGrid();
   }
@@ -6985,6 +6986,18 @@ async function adminUpdatePassword() {
    Cruise Intelligence (ci_cruise_lines / ci_cruise_ships)
    ========================================================= */
 
+function scheduleAdminViewportToTop() {
+  if (typeof window.ViewportScroll?.scheduleScrollToTop === "function") {
+    window.ViewportScroll.scheduleScrollToTop();
+    return;
+  }
+  try {
+    window.scrollTo(0, 0);
+  } catch (_error) {
+    /* ignore */
+  }
+}
+
 function slugifyCi(value) {
   return String(value || "")
     .normalize("NFKD")
@@ -7388,6 +7401,7 @@ async function setCiSubView(view) {
   ciLineFormBaseline = null;
   ciAutosaveStatus = "";
   renderCiAdmin();
+  scheduleAdminViewportToTop();
 }
 
 function refreshCiLineMasterList() {
@@ -9045,6 +9059,7 @@ async function startCiLineCreate() {
   ciLineFormBaseline = null;
   ciAutosaveStatus = "";
   renderCiAdmin();
+  scheduleAdminViewportToTop();
 }
 
 async function selectCiLine(id, { tab = null, preserveTab = false } = {}) {
@@ -9071,6 +9086,7 @@ async function selectCiLine(id, { tab = null, preserveTab = false } = {}) {
   ciMessage = "";
   ciMessageTone = "";
   renderCiAdmin();
+  scheduleAdminViewportToTop();
   loadCiShipClassFacilityTemplatesForLine(id);
   if (window.CruiseLineFeaturesAdmin?.loadForLine) {
     window.CruiseLineFeaturesAdmin.loadForLine(id);
@@ -9361,6 +9377,7 @@ async function startCiShipCreate() {
   ciShipCreating = true;
   ciAutosaveStatus = "";
   renderCiAdmin();
+  scheduleAdminViewportToTop();
 }
 
 async function selectCiShip(id) {
@@ -9378,6 +9395,7 @@ async function selectCiShip(id) {
   ciAutosaveStatus = "";
   ciMessage = "";
   renderCiAdmin();
+  scheduleAdminViewportToTop();
 }
 
 function cancelCiShipForm() {
@@ -13238,6 +13256,9 @@ if (typeof window !== "undefined") {
   if (typeof window.AdminHeight?.start === "function") {
     window.AdminHeight.start();
   }
+  window.renderAdmin = renderAdmin;
+  window.renderCiAdmin = renderCiAdmin;
+  window.scheduleAdminViewportToTop = scheduleAdminViewportToTop;
 }
 
 initAdmin();

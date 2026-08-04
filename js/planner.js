@@ -2705,6 +2705,11 @@ async function openDocumentsWithLoading(event) {
 
 async function navigateWithLoading(key, action, event) {
   const button = event?.currentTarget || null;
+  if (typeof window.ViewportScroll?.scheduleScrollToTop === "function") {
+    window.ViewportScroll.scheduleScrollToTop();
+  } else {
+    scheduleScrollPlannerToTop();
+  }
   if (typeof PortalLoading?.withLoading === "function") {
     return PortalLoading.withLoading(action, { button, key });
   }

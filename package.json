@@ -87,6 +87,7 @@
     "test:stateroom-types": "node scripts/test-stateroom-types.mjs",
     "test:cruise-line-features": "node scripts/test-cruise-line-features.mjs",
     "test:cruise-line-admin-tabs": "node scripts/test-cruise-line-admin-tabs.mjs",
+    "test:viewport-scroll": "node scripts/test-viewport-scroll.mjs",
     "test:ship-spec-scale": "node scripts/test-ship-spec-scale.mjs"
   },
   "devDependencies": {
