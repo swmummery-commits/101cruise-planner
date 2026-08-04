@@ -81,7 +81,7 @@
     spa: {
       label: "Spa",
       group: "specialty",
-      paths: `<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>`
+      paths: `<path d="M12 3c-2 3-5 4-5 7a5 5 0 0 0 10 0c0-3-3-4-5-7z"/><path d="M8 14c-1.5 1.5-2 3-2 4.5"/><path d="M16 14c1.5 1.5 2 3 2 4.5"/><path d="M10 20h4"/>`
     },
     theatre: {
       label: "Theatre",

@@ -85,6 +85,7 @@
     "test:ship-class-facilities-template": "node scripts/test-ship-class-facilities-template.mjs",
     "test:ship-stateroom-reconciliation": "node scripts/test-ship-stateroom-reconciliation.mjs",
     "test:stateroom-types": "node scripts/test-stateroom-types.mjs",
+    "test:cruise-line-features": "node scripts/test-cruise-line-features.mjs",
     "test:ship-spec-scale": "node scripts/test-ship-spec-scale.mjs"
   },
   "devDependencies": {

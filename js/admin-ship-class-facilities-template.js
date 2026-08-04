@@ -47,6 +47,55 @@
     return window.CiShipFeatureAdmin || null;
   }
 
+  function featuresSvc() {
+    return window.CruiseLineFeaturesService || null;
+  }
+
+  function getLineCatalogue() {
+    return window.ciCruiseLineFeatures || [];
+  }
+
+  function usesCatalogueMode() {
+    const catalogue = getLineCatalogue();
+    return Boolean(featuresSvc() && catalogue.length);
+  }
+
+  function readSelectedFeatureIds() {
+    const overlay = document.getElementById("ciClassFacilitiesTemplateOverlay");
+    if (!overlay) return modalContext?.selectedFeatureIds || [];
+    return [...overlay.querySelectorAll(".ci-class-tpl-feature-cb:checked")]
+      .map(function (el) { return String(el.value || "").trim(); })
+      .filter(Boolean);
+  }
+
+  function deriveSelectionFromPayload(payload) {
+    const svc = featuresSvc();
+    const catalogue = getLineCatalogue();
+    if (!svc || !catalogue.length) return [];
+    return svc.deriveSelectedIdsFromTemplate(catalogue, payload);
+  }
+
+  function mergeSelectionWithImportedRows(eaRows, sfRows) {
+    const svc = featuresSvc();
+    const catalogue = getLineCatalogue();
+    if (!svc || !catalogue.length) return readSelectedFeatureIds();
+    const names = new Set();
+    (eaRows || []).forEach(function (row) {
+      const key = svc.normalizeName(row?.name);
+      if (key) names.add(`exclusive_area:${key}`);
+    });
+    (sfRows || []).forEach(function (row) {
+      const key = svc.normalizeName(row?.name || row?.label);
+      if (key) names.add(`specialty_feature:${key}`);
+    });
+    const selected = new Set(readSelectedFeatureIds());
+    catalogue.forEach(function (row) {
+      const key = `${row.feature_type}:${svc.normalizeName(row.name)}`;
+      if (names.has(key)) selected.add(String(row.id));
+    });
+    return [...selected];
+  }
+
   function bindClassTplFeatureList(root, rebuildFn) {
     const admin = featureAdminApi();
     if (!admin || !root) return;
@@ -87,6 +136,11 @@
   }
 
   function serializeTemplatePayload() {
+    const svc = featuresSvc();
+    const catalogue = getLineCatalogue();
+    if (svc && catalogue.length) {
+      return svc.buildTemplatePayloadFromCatalogue(catalogue, readSelectedFeatureIds());
+    }
     const fac = facApi();
     if (!fac) return { exclusive_areas: [], specialty_features: [] };
     return {
@@ -134,10 +188,54 @@
   }
 
   function loadEditorFromPayload(payload) {
+    if (usesCatalogueMode()) {
+      modalContext.selectedFeatureIds = deriveSelectionFromPayload(payload);
+      modalContext.orphanItems = featuresSvc().orphanTemplateItems(getLineCatalogue(), payload);
+      return;
+    }
     const fac = facApi();
     if (!fac) return;
     rebuildExclusiveDom(fac.loadExclusiveAreasForAdmin(payload && payload.exclusive_areas));
     rebuildSpecialtyDom(fac.loadSpecialtyFeaturesForAdmin(payload && payload.specialty_features));
+  }
+
+  function renderCatalogueSection(featureType, title, selectedIds) {
+    const svc = featuresSvc();
+    const iconApi = window.CiShipFeatureIcons;
+    const items = svc
+      ? svc.listActiveFeaturesFromRows(svc.filterByType(getLineCatalogue(), featureType))
+      : [];
+    const selected = new Set((selectedIds || []).map(String));
+    if (!items.length) {
+      return `
+        <section class="ci-item-copy-section">
+          <div class="ci-item-copy-section-head"><h5>${esc(title)}</h5></div>
+          <p class="admin-small">No ${title.toLowerCase()} in this line's catalogue yet. Add them on the cruise line page under <strong>Ship features catalogue</strong>.</p>
+        </section>`;
+    }
+    const checks = items.map(function (row) {
+      const svg = iconApi ? iconApi.renderIconSvg(row.icon_key, "ci-class-tpl-feature-icon") : "";
+      return `
+        <label class="ci-check-control ci-class-tpl-feature-item">
+          <input type="checkbox" class="ci-class-tpl-feature-cb" value="${esc(row.id)}" data-feature-type="${esc(featureType)}" ${selected.has(String(row.id)) ? "checked" : ""}>
+          <span class="ci-class-tpl-feature-item-body">
+            ${svg}
+            <span><strong>${esc(row.name)}</strong>${row.description ? `<span class="ci-item-copy-desc-preview">${esc(row.description)}</span>` : ""}</span>
+          </span>
+        </label>`;
+    }).join("");
+    return `
+      <section class="ci-item-copy-section">
+        <div class="ci-item-copy-section-head"><h5>${esc(title)}</h5></div>
+        <div class="ci-class-tpl-feature-list">${checks}</div>
+      </section>`;
+  }
+
+  function renderOrphanWarning() {
+    const orphans = modalContext?.orphanItems || [];
+    if (!orphans.length) return "";
+    const labels = orphans.map(function (item) { return item.name; }).join(", ");
+    return `<p class="admin-small ci-class-tpl-warning">Saved template includes ${orphans.length} item${orphans.length === 1 ? "" : "s"} not in this line's catalogue (${esc(labels)}). Add them to the catalogue or they will drop off when you save.</p>`;
   }
 
   function currentTemplateRecord() {
@@ -261,12 +359,16 @@
       return `<option value="${esc(className)}">${esc(className)}</option>`;
     }).join("");
     const selectedImportClass = modalContext.classImportClass || "";
+    const catalogueMode = usesCatalogueMode();
+    const selectedIds = modalContext.selectedFeatureIds || deriveSelectionFromPayload(savedTemplatePayload());
     return `
       <div class="ci-class-tpl-meta">
         <p class="admin-small"><strong>Cruise line:</strong> ${esc(vm.line && vm.line.name || "—")}</p>
         <p class="admin-small"><strong>Class:</strong> ${esc(vm.className)}</p>
         <p class="admin-small"><strong>Ships in class:</strong> ${vm.classShips.length} (${vm.applyPreview.targets.length} active for apply)</p>
-        ${vm.hasUnsavedDraft ? `<p class="admin-small ci-class-tpl-warning">You have unsaved editor changes. Save the template before applying.</p>` : ""}
+        ${catalogueMode ? `<p class="admin-small">Tick the features that belong on every ship in this class. Names, descriptions, and icons come from the line catalogue.</p>` : ""}
+        ${vm.hasUnsavedDraft ? `<p class="admin-small ci-class-tpl-warning">You have unsaved changes. Save the template before applying.</p>` : ""}
+        ${catalogueMode ? renderOrphanWarning() : ""}
       </div>
       <div class="ci-class-tpl-import admin-actions-row">
         <label class="admin-small">Import from ship
@@ -286,6 +388,10 @@
         </label>
         <div id="ciClassTplImportClassPanel" class="ci-class-tpl-import-class-panel">${selectedImportClass ? renderClassImportPanel(selectedImportClass) : `<p class="admin-small">Copy selected items from another class template into this editor.</p>`}</div>
       </div>
+      ${catalogueMode ? `
+        ${renderCatalogueSection("exclusive_area", "Exclusive Areas", selectedIds)}
+        ${renderCatalogueSection("specialty_feature", "Specialty Features", selectedIds)}
+      ` : `
       <section class="ci-item-copy-section">
         <div class="ci-item-copy-section-head">
           <h5>Exclusive Areas</h5>
@@ -303,8 +409,8 @@
         <div class="ci-item-copy-section-foot">
           <button type="button" class="admin-button secondary small" data-action="sf-add">Add feature</button>
         </div>
-      </section>
-      <p class="admin-small ci-item-copy-preserve-note">Applying replaces the complete Exclusive Areas and Specialty Features sections on each active ship in this class. Scalar facilities (pools, spa, etc.) are never changed. Import only prefills the editor — it does not save or apply. Import from class adds selected items without removing what is already in the editor.</p>`;
+      </section>`}
+      <p class="admin-small ci-item-copy-preserve-note">Applying replaces the complete Exclusive Areas and Specialty Features sections on each active ship in this class. Scalar facilities (pools, spa, etc.) are never changed. Import only prefills the editor — it does not save or apply. Import from class adds selected items without removing what is already selected.</p>`;
   }
 
   function renderConfirmBody(vm) {
@@ -429,7 +535,12 @@
         </div>`;
 
       if (step === STEP_EDIT) {
-        if (modalContext.editorLoaded) {
+        if (usesCatalogueMode()) {
+          if (!modalContext.editorLoaded) {
+            loadEditorFromPayload(savedTemplatePayload());
+            modalContext.editorLoaded = true;
+          }
+        } else if (modalContext.editorLoaded) {
           loadEditorFromPayload(modalContext.draftPayload);
         } else {
           loadEditorFromPayload(savedTemplatePayload());
@@ -451,6 +562,9 @@
   }
 
   function persistEditorDraft() {
+    if (usesCatalogueMode()) {
+      modalContext.selectedFeatureIds = readSelectedFeatureIds();
+    }
     modalContext.draftPayload = serializeTemplatePayload();
   }
 
@@ -591,9 +705,21 @@
       if (!api || !shipId) return;
       const ship = getShips().find(function (row) { return row.id === shipId; });
       if (!ship) return;
-      loadEditorFromPayload(api.extractTemplateFromShip(ship));
-      modalContext.editorLoaded = true;
-      persistEditorDraft();
+      const payload = api.extractTemplateFromShip(ship);
+      if (usesCatalogueMode()) {
+        modalContext.selectedFeatureIds = mergeSelectionWithImportedRows(
+          facApi()?.loadExclusiveAreasForAdmin(payload.exclusive_areas) || [],
+          facApi()?.loadSpecialtyFeaturesForAdmin(payload.specialty_features) || []
+        );
+        modalContext.orphanItems = featuresSvc().orphanTemplateItems(getLineCatalogue(), payload);
+        modalContext.editorLoaded = true;
+        persistEditorDraft();
+        renderModal();
+      } else {
+        loadEditorFromPayload(payload);
+        modalContext.editorLoaded = true;
+        persistEditorDraft();
+      }
     });
     overlay.querySelector("#ciClassTplImportClass")?.addEventListener("change", function () {
       modalContext.classImportClass = trim(this.value);
@@ -630,6 +756,16 @@
         });
         const selectedEa = eaIndexes.map(function (index) { return source.eaRows[index]; }).filter(Boolean);
         const selectedSf = sfIndexes.map(function (index) { return source.sfRows[index]; }).filter(Boolean);
+        if (usesCatalogueMode()) {
+          modalContext.selectedFeatureIds = mergeSelectionWithImportedRows(selectedEa, selectedSf);
+          modalContext.editorLoaded = true;
+          persistEditorDraft();
+          renderModal();
+          if (window.setCiAutosaveStatus) {
+            window.setCiAutosaveStatus(`Imported ${selectedEa.length} area(s) and ${selectedSf.length} feature(s) from ${source.className || "class"}`, "saved");
+          }
+          return;
+        }
         const mergedEa = api.mergeExclusiveAreaRows(readExclusiveRows().filter(function (row) { return trim(row.name); }), selectedEa);
         const mergedSf = api.mergeSpecialtyRows(readSpecialtyRows().filter(function (row) { return trim(row.name || row.label); }), selectedSf);
         rebuildExclusiveDom(mergedEa.length ? mergedEa : [{
@@ -679,7 +815,9 @@
       draftPayload: { exclusive_areas: [], specialty_features: [] },
       lastResult: null,
       classImportClass: "",
-      classImportSource: null
+      classImportSource: null,
+      selectedFeatureIds: [],
+      orphanItems: []
     };
     const overlay = document.createElement("div");
     overlay.id = "ciClassFacilitiesTemplateOverlay";

@@ -36,7 +36,10 @@
     const catalog = icons ? icons.listIconCatalog() : [];
     const options = catalog.map(function (item) {
       const selected = item.key === iconKey ? " selected" : "";
-      return `<button type="button" class="ci-ship-feature-icon-option${selected}" data-icon-key="${esc(item.key)}" title="${esc(item.label)}" aria-label="${esc(item.label)}">${icons.renderIconSvg(item.key, "ci-ship-feature-icon-option-svg")}</button>`;
+      return `<button type="button" class="ci-ship-feature-icon-option${selected}" data-icon-key="${esc(item.key)}" title="${esc(item.label)}" aria-label="${esc(item.label)}">
+        ${icons.renderIconSvg(item.key, "ci-ship-feature-icon-option-svg")}
+        <span class="ci-ship-feature-icon-option-label">${esc(item.label)}</span>
+      </button>`;
     }).join("");
 
     return `

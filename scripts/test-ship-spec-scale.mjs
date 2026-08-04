@@ -231,6 +231,9 @@ assert.match(adminJs, /beam_metres/);
 assert.match(adminJs, /cruising_speed_knots/);
 assert.match(adminJs, /Beam \/ width \(metres\)/);
 assert.match(adminJs, /Cruising speed \(knots\)/);
+assert.match(adminJs, /20260801_ci_ship_beam_cruising_speed/);
+assert.match(adminJs, /noteCiShipSpecSaveMismatch/);
+assert.match(adminJs, /refreshCiShipAutosaveStatusDom/);
 
 // Migration documents final field names
 const migration = read("supabase/migrations/20260801_ci_ship_beam_cruising_speed.sql");

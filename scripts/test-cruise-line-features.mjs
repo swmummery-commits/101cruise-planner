@@ -1,0 +1,144 @@
+#!/usr/bin/env node
+/**
+ * Cruise line feature catalogue + class template checkbox assignment tests.
+ */
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const root = path.join(__dirname, "..");
+
+function read(rel) {
+  return fs.readFileSync(path.join(root, rel), "utf8");
+}
+
+function loadGlobalModule(rel) {
+  const sandbox = { globalThis: {}, window: {}, module: { exports: {} } };
+  sandbox.window = sandbox.globalThis;
+  sandbox.exports = sandbox.module.exports;
+  vm.runInNewContext(read(rel), sandbox, { filename: path.basename(rel) });
+  return sandbox.globalThis;
+}
+
+const svcSandbox = loadGlobalModule("js/cruise-line-features-service.js");
+const Service = svcSandbox.CruiseLineFeaturesService;
+const t = Service.__test__;
+
+const catalogue = [
+  {
+    id: "ea-1",
+    cruise_line_id: "line-a",
+    feature_type: "exclusive_area",
+    name: "The Haven",
+    normalized_name: "the haven",
+    description: "Suite enclave",
+    icon_key: "crown",
+    display_order: 10,
+    is_active: true
+  },
+  {
+    id: "sf-1",
+    cruise_line_id: "line-a",
+    feature_type: "specialty_feature",
+    name: "Cagney's Steakhouse",
+    normalized_name: "cagney's steakhouse",
+    description: "",
+    icon_key: "dining",
+    display_order: 10,
+    is_active: true
+  },
+  {
+    id: "sf-2",
+    cruise_line_id: "line-a",
+    feature_type: "specialty_feature",
+    name: "Mandara Spa",
+    normalized_name: "mandara spa",
+    description: "Full-service spa",
+    icon_key: "spa",
+    display_order: 20,
+    is_active: true
+  }
+];
+
+// Sorting + filtering
+assert.equal(t.filterByType(catalogue, "exclusive_area").length, 1);
+assert.equal(t.filterByType(catalogue, "specialty_feature").length, 2);
+
+// Template payload from checkbox selection
+{
+  const payload = t.buildTemplatePayloadFromCatalogue(catalogue, ["ea-1", "sf-2"]);
+  assert.equal(payload.exclusive_areas.length, 1);
+  assert.equal(payload.exclusive_areas[0].name, "The Haven");
+  assert.equal(payload.specialty_features.length, 1);
+  assert.equal(payload.specialty_features[0].name, "Mandara Spa");
+  assert.equal(payload.specialty_features[0].icon_key, "spa");
+}
+
+// Derive selected ids from saved template
+{
+  const ids = t.deriveSelectedIdsFromTemplate(catalogue, {
+    exclusive_areas: [{ name: "The Haven", icon_key: "crown" }],
+    specialty_features: [{ name: "Cagney's Steakhouse", icon_key: "dining" }]
+  });
+  assert.deepEqual(ids.sort(), ["ea-1", "sf-1"].sort());
+}
+
+// Orphan detection
+{
+  const orphans = t.orphanTemplateItems(catalogue, {
+    exclusive_areas: [{ name: "Legacy Lounge" }],
+    specialty_features: [{ name: "Cagney's Steakhouse" }]
+  });
+  assert.equal(orphans.length, 1);
+  assert.equal(orphans[0].name, "Legacy Lounge");
+}
+
+// Validation
+{
+  const bad = t.buildCreatePayload({
+    name: "",
+    feature_type: "exclusive_area",
+    cruise_line_id: "line-a",
+    existingRows: catalogue
+  });
+  assert.equal(bad.ok, false);
+  const good = t.buildCreatePayload({
+    name: "Vibe Beach Club",
+    feature_type: "specialty_feature",
+    cruise_line_id: "line-a",
+    existingRows: catalogue
+  });
+  assert.equal(good.ok, true);
+  assert.equal(good.payload.display_order, 30);
+}
+
+const adminJs = read("js/admin.js");
+const adminTplJs = read("js/admin-ship-class-facilities-template.js");
+const adminLineFeaturesJs = read("js/admin-cruise-line-features.js");
+const adminHtml = read("admin.html");
+const adminCss = read("css/admin.css");
+const featureAdminJs = read("js/ci-ship-feature-admin.js");
+const iconsJs = read("js/ci-ship-feature-icons.js");
+const migration = read("supabase/migrations/20260806_ci_cruise_line_features.sql");
+const netlifyFn = read("netlify/functions/cruise-line-features.js");
+
+assert.ok(adminHtml.includes("cruise-line-features-service.js"));
+assert.ok(adminHtml.includes("admin-cruise-line-features.js"));
+assert.ok(adminJs.includes("CruiseLineFeaturesAdmin"));
+assert.ok(adminJs.includes("ciCruiseLineFeatures"));
+assert.ok(adminLineFeaturesJs.includes("Ship features catalogue"));
+assert.ok(adminTplJs.includes("ci-class-tpl-feature-cb"));
+assert.ok(adminTplJs.includes("usesCatalogueMode"));
+assert.ok(adminTplJs.includes("renderCatalogueSection"));
+assert.match(featureAdminJs, /ci-ship-feature-icon-option-label/);
+assert.match(iconsJs, /label: "Spa"/);
+assert.match(iconsJs, /spa:\s*\{[\s\S]*?M12 3c-2 3-5 4-5 7/);
+assert.ok(migration.includes("ci_cruise_line_features"));
+assert.ok(netlifyFn.includes('action === "reorder"'));
+assert.ok(adminCss.includes(".ci-class-tpl-feature-list"));
+assert.ok(adminCss.includes(".ci-line-features-panel"));
+
+console.log("test-cruise-line-features: all assertions passed");

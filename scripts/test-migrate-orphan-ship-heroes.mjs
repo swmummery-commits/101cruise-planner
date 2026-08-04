@@ -183,6 +183,7 @@ async function main() {
   const admin = readFileSync(path.join(root, "js/admin.js"), "utf8");
   assert(/Choose from Media Library/.test(admin), "ship hero uses Media Library");
   assert(/openCiShipHeroMediaPicker/.test(admin), "picker opener");
+  assert(/renderAdminActivePanel\(\)[\s\S]*renderPickerModal/.test(admin), "picker modal renders globally");
   assert(/set_ship_hero/.test(admin), "uses set_ship_hero action");
   assert(/Ship heroes are managed in Media Library/.test(admin), "helper copy");
   const shipField = admin.match(/if \(isShip\) \{[\s\S]*?return `/);

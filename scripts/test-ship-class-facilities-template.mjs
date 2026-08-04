@@ -262,6 +262,7 @@ assert.match(
 assert.ok(adminTplJs.includes("ciClassTplImportClass"));
 assert.ok(adminTplJs.includes("import-class-selected"));
 assert.ok(adminTplJs.includes("mergeExclusiveAreaRows"));
+assert.ok(adminTplJs.includes("ci-class-tpl-feature-cb"));
 
 // CLASS IMPORT MERGE
 {

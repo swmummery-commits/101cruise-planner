@@ -1240,6 +1240,7 @@ function renderAdmin() {
     </nav>
 
     ${renderAdminActivePanel()}
+    ${window.MediaLibraryAdmin?.renderPickerModal?.() || ""}
   `;
   // Keep lock state readable by AdminToast action buttons.
   window.featuredEditLockBlocked = featuredEditLockBlocked;
@@ -1250,6 +1251,9 @@ function renderAdmin() {
   }
   if (typeof window.AdminHeight?.schedule === "function") {
     window.AdminHeight.schedule();
+  }
+  if (window.CruiseLineFeaturesAdmin?.afterRender) {
+    window.CruiseLineFeaturesAdmin.afterRender();
   }
 }
 
@@ -6987,6 +6991,9 @@ function syncCiCatalogueWindowState() {
   window.ciCruiseShips = ciCruiseShips;
   window.ciShipClassFacilityTemplates = ciShipClassFacilityTemplates;
   window.editingCiLineId = editingCiLineId;
+  if (window.CruiseLineFeaturesAdmin?.getFeatures) {
+    window.ciCruiseLineFeatures = window.CruiseLineFeaturesAdmin.getFeatures();
+  }
 }
 
 function setCiAutosaveStatus(text, tone) {
@@ -7043,6 +7050,17 @@ function confirmDiscardCiChangesOnFlushFailure() {
 
 function humanizeCiSaveError(rawMessage, { entity = "record", name = "" } = {}) {
   const message = String(rawMessage || "").trim();
+  const missingShipColumn = message.match(/Could not find the '([^']+)' column of 'ci_cruise_ships'/i);
+  if (missingShipColumn) {
+    const col = missingShipColumn[1];
+    if (col === "beam_metres" || col === "cruising_speed_knots") {
+      return "Beam and cruising speed could not be saved. Apply Supabase migration 20260801_ci_ship_beam_cruising_speed.sql, then reload the API schema cache in Supabase if needed.";
+    }
+    return `Ship save failed: database column “${col}” is missing. Confirm the latest Cruise Intelligence migrations have been applied.`;
+  }
+  if (/beam_metres|cruising_speed_knots/i.test(message) && /check constraint|violates check/i.test(message)) {
+    return "Beam and cruising speed must be greater than zero, or left blank.";
+  }
   if (/duplicate key|unique constraint|ci_cruise_ships_line_norm_name|ci_cruise_lines.*name/i.test(message)) {
     if (entity === "ship" && name) {
       return `Another ship on this cruise line is already named “${name}”. Each ship name must be unique within its line.`;
@@ -7053,6 +7071,34 @@ function humanizeCiSaveError(rawMessage, { entity = "record", name = "" } = {}) 
     return `That ${entity} name is already in use.`;
   }
   return message || "Your changes could not be saved.";
+}
+
+function refreshCiShipAutosaveStatusDom() {
+  const el = document.getElementById("ciAutosaveStatus");
+  if (!el) return;
+  const statusClass = ciAutosaveStatus
+    ? ciMessageTone === "error"
+      ? "is-error"
+      : ciAutosaveStatus === "Saving…"
+        ? "is-saving"
+        : "is-saved"
+    : "";
+  el.textContent = ciAutosaveStatus;
+  el.className = `ci-autosave-status ${statusClass}`.trim();
+}
+
+function noteCiShipSpecSaveMismatch(savedRow, payload) {
+  const requestedBeam = payload?.beam_metres;
+  const requestedSpeed = payload?.cruising_speed_knots;
+  const savedBeam = savedRow?.beam_metres ?? null;
+  const savedSpeed = savedRow?.cruising_speed_knots ?? null;
+  if (
+    (requestedBeam != null && savedBeam == null) ||
+    (requestedSpeed != null && savedSpeed == null)
+  ) {
+    return "Other ship details saved, but beam / cruising speed did not persist. Apply migration 20260801_ci_ship_beam_cruising_speed.sql on Supabase.";
+  }
+  return "";
 }
 
 async function runCiPersist(task) {
@@ -8549,6 +8595,7 @@ function renderCiLineForm(line) {
       <p class="admin-small ci-form-note">Sold lines are automatically public when active. Lines list alphabetically by name.${editing ? " Slug and code stay fixed after creation." : ""}</p>
       <div class="admin-field ci-form-description"><label>Description</label><textarea id="ciLineDescription" rows="4">${esc(line?.description || "")}</textarea></div>
       ${editing ? renderCiLineStateroomTypesSection(line) : ""}
+      ${editing ? (window.CruiseLineFeaturesAdmin?.renderSection?.(line) || "") : ""}
       ${editing ? renderCiLineShipClassesSection(line) : ""}
       ${ciLineCreating ? `
         <div class="admin-actions-row">
@@ -8604,6 +8651,9 @@ async function selectCiLine(id) {
   ciMessage = "";
   renderCiAdmin();
   loadCiShipClassFacilityTemplatesForLine(id);
+  if (window.CruiseLineFeaturesAdmin?.loadForLine) {
+    window.CruiseLineFeaturesAdmin.loadForLine(id);
+  }
 }
 
 function cancelCiLineForm() {
@@ -9114,7 +9164,7 @@ async function persistCiShip({ quiet = false } = {}) {
 
   if (!cruiseLineId || !name) {
     revealCiSaveError("Cruise line and ship name are required.");
-    if (!quiet) renderCiAdmin();
+    refreshCiShipAutosaveStatusDom();
     return false;
   }
   if (!slug) slug = slugifyCi(name);
@@ -9126,7 +9176,7 @@ async function persistCiShip({ quiet = false } = {}) {
   const numericFieldErrors = [beamField.error, speedField.error].filter(Boolean);
   if (numericFieldErrors.length) {
     revealCiSaveError(numericFieldErrors[0]);
-    if (!quiet) renderCiAdmin();
+    refreshCiShipAutosaveStatusDom();
     return false;
   }
 
@@ -9170,7 +9220,7 @@ async function persistCiShip({ quiet = false } = {}) {
       saveError.hidden = false;
     }
     revealCiSaveError(stateroomValidation.errors[0]);
-    if (!quiet) renderCiAdmin();
+    refreshCiShipAutosaveStatusDom();
     return false;
   }
   const saveError = document.getElementById("ciStateroomSaveError");
@@ -9203,13 +9253,26 @@ async function persistCiShip({ quiet = false } = {}) {
   if (result.error) {
     const message = humanizeCiSaveError(result.error.message, { entity: "ship", name });
     revealCiSaveError(message);
-    if (!quiet) renderCiAdmin();
+    if (quiet) setCiAutosaveStatus("Save failed", "error");
+    else refreshCiShipAutosaveStatusDom();
     return false;
   }
 
+  const specMismatch = noteCiShipSpecSaveMismatch(result.data, payload);
   mergeCiShipRecord(result.data);
   syncCiCatalogueWindowState();
   const savedId = result.data?.id || id;
+  if (specMismatch) {
+    revealCiSaveError(specMismatch);
+    if (quiet) setCiAutosaveStatus("Saved with warnings", "error");
+    else {
+      ciMessage = specMismatch;
+      ciMessageTone = "error";
+      ciAutosaveStatus = "Saved with warnings";
+      renderCiAdmin();
+    }
+    return false;
+  }
   if (quiet) {
     setCiAutosaveStatus("Saved", "saved");
     clearCiSaveError();
@@ -12104,7 +12167,6 @@ function renderFeaturedCruiseForm() {
       : "";
   const strip = buildFeaturedDestinationStrip(draft.departure_port, draft.arrival_port) || "";
   const returnDate = addCalendarDays(draft.departure_date, draft.nights === "" ? null : Number(draft.nights));
-  const pickerModal = window.MediaLibraryAdmin?.renderPickerModal?.() || "";
   const composerIssue = window.NewsletterIssueComposer?.getSelectedIssue?.();
   const newsletterLabel = composerIssue?.number
     ? `Newsletter ${composerIssue.number}${composerIssue.date ? ` · ${formatAdminDate(composerIssue.date)}` : ""}`
@@ -12275,7 +12337,6 @@ function renderFeaturedCruiseForm() {
         ${inlineRunning}
       </div>
     </div>
-    ${pickerModal}
     ${renderFeaturedNewsletterPreviewModal()}
   `;
 }
