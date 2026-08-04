@@ -51,60 +51,29 @@
     return global.CiShipFeatureAdmin || null;
   }
 
-  function rerender() {
-    if (typeof global.renderCiAdmin === "function") {
-      global.renderCiAdmin();
-      return;
+  function rerender(options) {
+    const opts = options && typeof options === "object" ? options : {};
+    if (opts.activateFeaturesTab && typeof global.setCiLineTab === "function") {
+      try {
+        global.setCiLineTab("features");
+      } catch (_error) {
+        /* ignore */
+      }
     }
-    if (typeof global.renderAdmin === "function") global.renderAdmin();
-  }
-
-  let featureActionsBound = false;
-
-  function handleFeatureActionClick(event) {
-    const btn = event.target.closest("[data-ci-line-feature-action]");
-    if (!btn) return;
-    const panel = document.getElementById("ciLineFeaturesPanel");
-    if (!panel || !panel.contains(btn)) return;
-    const action = btn.getAttribute("data-ci-line-feature-action");
-    if (action === "create") {
-      event.preventDefault();
-      startCreate(btn.getAttribute("data-feature-type"));
-      return;
-    }
-    if (action === "edit") {
-      event.preventDefault();
-      startEdit(btn.getAttribute("data-feature-id"));
-      return;
-    }
-    if (action === "delete") {
-      event.preventDefault();
-      deleteFeature(btn.getAttribute("data-feature-id"));
-      return;
-    }
-    if (action === "save") {
-      event.preventDefault();
-      saveFeature();
-      return;
-    }
-    if (action === "cancel") {
-      event.preventDefault();
-      cancelEdit();
-      return;
-    }
-    if (action === "retry") {
-      event.preventDefault();
-      loadForLine(activeLineId);
+    try {
+      if (typeof global.renderCiAdmin === "function") {
+        global.renderCiAdmin();
+        return;
+      }
+      if (typeof global.renderAdmin === "function") {
+        global.renderAdmin();
+        return;
+      }
+      console.error("CruiseLineFeaturesAdmin: renderAdmin is not available");
+    } catch (error) {
+      console.error("CruiseLineFeaturesAdmin: render failed", error);
     }
   }
-
-  function ensureFeatureActionDelegation() {
-    if (featureActionsBound || typeof document === "undefined") return;
-    featureActionsBound = true;
-    document.addEventListener("click", handleFeatureActionClick);
-  }
-
-  ensureFeatureActionDelegation();
 
   function setMessage(text, tone) {
     message = text || "";
@@ -171,23 +140,32 @@
   }
 
   function startCreate(featureType) {
-    creatingType = featureType;
+    const type = String(featureType || "").trim();
+    if (type !== "exclusive_area" && type !== "specialty_feature") {
+      console.warn("CruiseLineFeaturesAdmin.startCreate: invalid feature type", featureType);
+      return;
+    }
+    creatingType = type;
     editingId = null;
     draft = emptyDraft();
     const iconApi = icons();
     if (iconApi) draft.icon_key = iconApi.FALLBACK_KEY;
     setMessage("", "");
-    rerender();
+    rerender({ activateFeaturesTab: true });
   }
 
   function startEdit(id) {
-    const row = features.find((item) => item.id === id);
-    if (!row) return;
+    const featureId = String(id || "").trim();
+    const row = features.find((item) => item.id === featureId);
+    if (!row) {
+      console.warn("CruiseLineFeaturesAdmin.startEdit: feature not found", id);
+      return;
+    }
     creatingType = "";
-    editingId = id;
+    editingId = featureId;
     draft = featureToDraft(row);
     setMessage("", "");
-    rerender();
+    rerender({ activateFeaturesTab: true });
   }
 
   function cancelEdit() {
@@ -195,7 +173,11 @@
     editingId = null;
     draft = emptyDraft();
     setMessage("", "");
-    rerender();
+    rerender({ activateFeaturesTab: true });
+  }
+
+  function retryLoad() {
+    return loadForLine(activeLineId);
   }
 
   async function saveFeature() {
@@ -413,8 +395,8 @@
           </div>
         </div>
         <div class="admin-actions-row">
-          <button type="button" class="admin-button small" data-ci-line-feature-action="save" ${saving ? "disabled" : ""}>Save feature</button>
-          <button type="button" class="admin-button secondary small" data-ci-line-feature-action="cancel">Cancel</button>
+          <button type="button" class="admin-button small" onclick="CruiseLineFeaturesAdmin.saveFeature()" ${saving ? "disabled" : ""}>Save feature</button>
+          <button type="button" class="admin-button secondary small" onclick="CruiseLineFeaturesAdmin.cancelEdit()">Cancel</button>
         </div>
       </div>`;
   }
@@ -439,8 +421,8 @@
               ${row.is_active === false ? `<span class="admin-small ci-line-feature-inactive-tag">Inactive</span>` : ""}
             </div>
             <div class="ci-line-feature-actions">
-              <button type="button" class="admin-button secondary small" data-ci-line-feature-action="edit" data-feature-id="${esc(row.id)}">Edit</button>
-              <button type="button" class="admin-button secondary small" data-ci-line-feature-action="delete" data-feature-id="${esc(row.id)}">Delete</button>
+              <button type="button" class="admin-button secondary small" onclick="CruiseLineFeaturesAdmin.startEdit('${esc(row.id)}')">Edit</button>
+              <button type="button" class="admin-button secondary small" onclick="CruiseLineFeaturesAdmin.deleteFeature('${esc(row.id)}')">Delete</button>
             </div>
           </div>`;
           })
@@ -451,7 +433,7 @@
       <div class="ci-line-feature-group">
         <div class="ci-line-feature-group-head">
           <h5>${esc(title)}</h5>
-          <button type="button" class="admin-button secondary small" data-ci-line-feature-action="create" data-feature-type="${esc(featureType)}" ${saving ? "disabled" : ""}>Add</button>
+          <button type="button" class="admin-button secondary small" onclick="CruiseLineFeaturesAdmin.startCreate('${esc(featureType)}')" ${saving ? "disabled" : ""}>Add</button>
         </div>
         ${renderFeatureForm(featureType)}
         <div id="${listId}" class="ci-line-feature-list" data-feature-type="${esc(featureType)}">${list}</div>
@@ -472,7 +454,7 @@
         <div class="ci-line-features-panel" id="ciLineFeaturesPanel">
           <h4>Ship features catalogue</h4>
           <div class="admin-message admin-error">${esc(loadError)}</div>
-          <button type="button" class="admin-button secondary small" data-ci-line-feature-action="retry">Retry</button>
+          <button type="button" class="admin-button secondary small" onclick="CruiseLineFeaturesAdmin.retryLoad()">Retry</button>
         </div>`;
     }
 
@@ -510,32 +492,6 @@
     if (!panel) return;
     bindIconPickers(panel);
 
-    panel.querySelectorAll("[data-ci-line-feature-action='create']").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        startCreate(btn.getAttribute("data-feature-type"));
-      });
-    });
-    panel.querySelectorAll("[data-ci-line-feature-action='edit']").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        startEdit(btn.getAttribute("data-feature-id"));
-      });
-    });
-    panel.querySelectorAll("[data-ci-line-feature-action='delete']").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        deleteFeature(btn.getAttribute("data-feature-id"));
-      });
-    });
-    panel.querySelectorAll("[data-ci-line-feature-action='save']").forEach(function (btn) {
-      btn.addEventListener("click", saveFeature);
-    });
-    panel.querySelectorAll("[data-ci-line-feature-action='cancel']").forEach(function (btn) {
-      btn.addEventListener("click", cancelEdit);
-    });
-    panel.querySelectorAll("[data-ci-line-feature-action='retry']").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        loadForLine(activeLineId);
-      });
-    });
     panel.querySelectorAll("[data-ci-line-feature-action='drag-handle']").forEach(function (btn) {
       btn.addEventListener("pointerdown", onDragHandlePointerDown);
     });
@@ -555,6 +511,12 @@
     renderSection,
     afterRender,
     loadForLine,
+    startCreate,
+    startEdit,
+    cancelEdit,
+    saveFeature,
+    deleteFeature,
+    retryLoad,
     getFeatures: function () {
       return features.slice();
     },

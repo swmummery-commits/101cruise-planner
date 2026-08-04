@@ -7202,6 +7202,9 @@ function setCiLineTab(tab) {
   ciLineActiveTab = next;
   syncCiLineDetailDomTabs();
   syncCiLineAdminUrl();
+  if (next === "features" && window.CruiseLineFeaturesAdmin?.afterRender) {
+    window.CruiseLineFeaturesAdmin.afterRender();
+  }
 }
 
 function onCiLineTabKeydown(event) {

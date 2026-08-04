@@ -127,9 +127,11 @@ const netlifyFn = read("netlify/functions/cruise-line-features.js");
 
 assert.ok(adminHtml.includes("cruise-line-features-service.js"));
 assert.ok(adminHtml.includes("admin-cruise-line-features.js"));
-assert.ok(adminJs.includes("CruiseLineFeaturesAdmin"));
-assert.ok(adminJs.includes("ciCruiseLineFeatures"));
-assert.ok(adminLineFeaturesJs.includes("Ship features catalogue"));
+assert.ok(adminLineFeaturesJs.includes("CruiseLineFeaturesAdmin.startCreate"));
+assert.ok(adminLineFeaturesJs.includes("CruiseLineFeaturesAdmin.startEdit"));
+assert.ok(adminLineFeaturesJs.includes("CruiseLineFeaturesAdmin.deleteFeature"));
+assert.ok(adminLineFeaturesJs.includes("startCreate,"));
+assert.ok(adminJs.includes("window.renderAdmin = renderAdmin"));
 assert.ok(adminTplJs.includes("ci-class-tpl-feature-cb"));
 assert.ok(adminTplJs.includes("usesCatalogueMode"));
 assert.ok(adminTplJs.includes("renderCatalogueSection"));
