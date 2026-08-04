@@ -1,0 +1,76 @@
+{
+  "generated_at": "2026-08-02T03:41:16.490Z",
+  "mode": "prepare-only-not-applied",
+  "items": [
+    {
+      "review_item_id": "f902bd1a-612d-4659-8515-a20db61b2c5b",
+      "discovered_cruise_id": null,
+      "url": "https://www.amawaterways.com/au/life-on-board",
+      "title": "Luxury OnBoard Service | River Cruise",
+      "rejection_reason": "non_sailing_url_path",
+      "before_status": "pending",
+      "proposed_status": "ignored",
+      "proposed_cruise_status": "hidden",
+      "rollback": {
+        "review_status": "pending",
+        "cruise_status": "match_required"
+      }
+    },
+    {
+      "review_item_id": "204a5701-03df-4574-a870-02194a1db38c",
+      "discovered_cruise_id": "611d3337-e21b-4d59-b53d-4e4f97c4b9da",
+      "url": "https://atlasoceanvoyages.com/offers",
+      "title": "Exclusive Offers | Atlas Ocean Voyages",
+      "rejection_reason": "non_sailing_url_path",
+      "before_status": "pending",
+      "proposed_status": "ignored",
+      "proposed_cruise_status": "hidden",
+      "rollback": {
+        "review_status": "pending",
+        "cruise_status": "match_required"
+      }
+    },
+    {
+      "review_item_id": "f0b3b268-024e-4ffa-afa9-45f2a9f04208",
+      "discovered_cruise_id": "296768a6-0206-43db-ae12-9ebd0f0537ce",
+      "url": "https://atlasoceanvoyages.com/destinations",
+      "title": "Atlas Destinations | Atlas Ocean Voyages",
+      "rejection_reason": "non_sailing_url_path",
+      "before_status": "pending",
+      "proposed_status": "ignored",
+      "proposed_cruise_status": "hidden",
+      "rollback": {
+        "review_status": "pending",
+        "cruise_status": "match_required"
+      }
+    },
+    {
+      "review_item_id": "e256ef3c-ab57-4eea-865f-d97fd29c9fa1",
+      "discovered_cruise_id": "bda3e657-2b57-4825-be72-a5127cda5d9c",
+      "url": "https://www.avalonwaterways.com/newsroom/",
+      "title": "News Room - Avalon Waterways",
+      "rejection_reason": "ship_unresolved",
+      "before_status": "pending",
+      "proposed_status": "ignored",
+      "proposed_cruise_status": "hidden",
+      "rollback": {
+        "review_status": "pending",
+        "cruise_status": "match_required"
+      }
+    },
+    {
+      "review_item_id": "a7a40664-47b4-4cbc-b4ef-f234deac661b",
+      "discovered_cruise_id": "faf8568f-ab7e-4b69-9942-c9121bec97c6",
+      "url": "https://www.avalonwaterways.com/river-cruises/avalon-vista/",
+      "title": "Avalon Vista - Avalon Waterways® Europe River Cruises",
+      "rejection_reason": "ship_unresolved",
+      "before_status": "pending",
+      "proposed_status": "ignored",
+      "proposed_cruise_status": "hidden",
+      "rollback": {
+        "review_status": "pending",
+        "cruise_status": "match_required"
+      }
+    }
+  ]
+}

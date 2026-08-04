@@ -1,0 +1,165 @@
+{
+  "generated_at": "2026-08-02T05:32:32.728Z",
+  "mode": "holland_america_discovery_simulation",
+  "writes_performed": false,
+  "source_contract": {
+    "adapter_id": "holland-america",
+    "adapter_version": "2026-08-02.hal3",
+    "primary_endpoint": "https://www.hollandamerica.com/search/halcruisesearch",
+    "method": "GET",
+    "query_parameters": {
+      "q": "Wildcard query — use '*' for full catalogue",
+      "size": "Page size (1–100 recommended)",
+      "start": "Zero-based offset for pagination"
+    },
+    "required_headers": {
+      "Accept": "application/json",
+      "User-Agent": "101cruise-discovery/1.0 (+https://101cruise.com.au)"
+    },
+    "pagination": "Solr-style start/size; response.response.numFound total",
+    "locale": "en/au default for configured AU search URL; API fields use en_us_* when present",
+    "authentication_required": false,
+    "cookies_required": false,
+    "response_format": "JSON — response.docs[] voyage records",
+    "voyages_per_response": "API returns ~12 docs per request regardless of size param; paginate with start += docs.length",
+    "rate_limit_observed": "None observed in read-only testing; use caching and page caps",
+    "public_website_intended": true,
+    "individual_itinerary_url_pattern": "https://www.hollandamerica.com/{locale}{contentPath}",
+    "json_ld_fallback": "TouristTrip schema on individual find-a-cruise pages"
+  },
+  "cruise_line": "Holland America Line",
+  "summary": {
+    "official_source": "https://www.hollandamerica.com/search/halcruisesearch",
+    "api_calls": 144,
+    "num_found_official": 1725,
+    "raw_api_records": 1725,
+    "unique_official_products": 1725,
+    "product_type_cruise": 1097,
+    "product_type_cruisetour": 628,
+    "product_type_unknown": 0,
+    "genuine_cruise_products": 1097,
+    "complete_high_confidence": 1055,
+    "incomplete_cruise": 42,
+    "duplicates_suppressed": 0,
+    "transpacific_crossing_products": 21,
+    "transpacific_resolved_count": 21,
+    "ship_match_rate_pct": 100,
+    "departure_date_rate_pct": 100,
+    "departure_port_rate_pct": 100,
+    "destination_resolution_rate_pct": 96.2,
+    "projected_activations": 1055,
+    "projected_aggregated_maintenance": {
+      "cruisetour_products": 628,
+      "europe_unresolved": 42,
+      "fairbanks_land_embark": 164
+    },
+    "projected_steve_reviews": 0,
+    "estimated_full_inventory": 1725,
+    "ingestion_audit": {
+      "num_found_official": 1725,
+      "raw_docs_seen": 1725,
+      "unique_official_products": 1725,
+      "ingestion_audit": {
+        "past_departures": 0,
+        "malformed_docs": 0,
+        "exact_duplicate_products_suppressed": 0
+      },
+      "product_type_counts": {
+        "cruise": 1097,
+        "cruisetour": 628,
+        "unknown": 0
+      },
+      "separately_bookable_products_preserved": 1725
+    },
+    "acceptance_gate": {
+      "at_least_1000_cruise_products": true,
+      "complete_rate_80pct": true,
+      "ship_rate_95pct": true,
+      "date_rate_95pct": true,
+      "port_rate_85pct": true,
+      "destination_rate_80pct": true,
+      "steve_reviews_lte_5": true,
+      "cruisetours_excluded": true,
+      "no_fairbanks_port_shortcut": true,
+      "passed": true
+    }
+  },
+  "destination_counts": {
+    "alaska": 133,
+    "norwegian-fjords": 179,
+    "mediterranean": 162,
+    "transpacific": 21,
+    "canada-new-england": 5,
+    "panama-canal": 56,
+    "pacific-coast": 13,
+    "south-pacific": 16,
+    "mexican-riviera": 39,
+    "british-isles": 78,
+    "transatlantic": 43,
+    "australia-new-zealand": 41,
+    "caribbean": 178,
+    "antarctica": 15,
+    "asia": 11,
+    "world-cruise": 8,
+    "japan": 16,
+    "northern-europe": 41
+  },
+  "failure_reason_counts": {
+    "destination_unresolved": 42,
+    "cruisetour_excluded": 628,
+    "missing_departure_port": 164
+  },
+  "unknown_ships": [],
+  "examples": [
+    {
+      "title": "7-DAY ALASKA INSIDE PASSAGE",
+      "ship": "ms Zaandam",
+      "departure_date": "2026-08-12",
+      "departure_port": "Vancouver",
+      "nights": 7,
+      "destination": "alaska",
+      "product_type": "cruise",
+      "url": "https://www.hollandamerica.com/en/au/find-a-cruise/a6g07c/x656"
+    },
+    {
+      "title": "7-DAY FJORDS OF ICELAND",
+      "ship": "ms Rotterdam",
+      "departure_date": "2026-08-16",
+      "departure_port": "Rotterdam",
+      "nights": 7,
+      "destination": "norwegian-fjords",
+      "product_type": "cruise",
+      "url": "https://www.hollandamerica.com/en/au/find-a-cruise/e6n07l/y658"
+    },
+    {
+      "title": "7-DAY WESTERN MEDITERRANEAN",
+      "ship": "ms Oosterdam",
+      "departure_date": "2026-08-29",
+      "departure_port": "Civitavecchia",
+      "nights": 7,
+      "destination": "mediterranean",
+      "product_type": "cruise",
+      "url": "https://www.hollandamerica.com/en/au/find-a-cruise/e6m07g/o653"
+    },
+    {
+      "title": "13-DAY NORTH PACIFIC CROSSING",
+      "ship": "ms Westerdam",
+      "departure_date": "2026-09-13",
+      "departure_port": "Vancouver",
+      "nights": 13,
+      "destination": "transpacific",
+      "product_type": "cruise",
+      "url": "https://www.hollandamerica.com/en/au/find-a-cruise/o6n13a/w667"
+    },
+    {
+      "title": "7-DAY CANADA & NEW ENGLAND: UNESCO SITES & QUEBECOIS NIGHTS",
+      "ship": "ms Zuiderdam",
+      "departure_date": "2026-09-26",
+      "departure_port": "Quebec City",
+      "nights": 7,
+      "destination": "canada-new-england",
+      "product_type": "cruise",
+      "url": "https://www.hollandamerica.com/en/au/find-a-cruise/n6n07m/u671"
+    }
+  ]
+}

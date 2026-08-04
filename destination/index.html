@@ -10,6 +10,7 @@
   <meta property="og:site_name" content="101cruise">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/favicon.png">
+  <link rel="stylesheet" href="/css/brand-loading.css">
   <link rel="stylesheet" href="/css/public-cruise.css">
   <link rel="stylesheet" href="/css/public-destination.css">
   <script>
@@ -41,11 +42,15 @@
       </header>
 
       <div id="public-destination-app" class="public-cruise-body">
-        <p class="public-cruise-loading">Loading destination…</p>
+        <div class="brand-loading-panel public-cruise-loading-panel" role="status" aria-live="polite">
+          <span class="brand-loading-boxes brand-loading-boxes--large brand-loading-spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+          <p class="brand-loading-message">Hang tight! Just getting your info.</p>
+        </div>
       </div>
     </div>
   </main>
 
+  <script src="/js/brand-loading.js"></script>
   <script src="/js/destination-page-data.js"></script>
   <script src="/js/public-destination.js"></script>
 </body>

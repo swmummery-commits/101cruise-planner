@@ -1,0 +1,224 @@
+{
+  "generated_at": "2026-08-02T04:20:22.018Z",
+  "mode": "read_only_simulation",
+  "writes_performed": false,
+  "summary": {
+    "enabled_lines": 33,
+    "probed_lines": 8,
+    "fetch_ok": 8,
+    "fetch_failed": 0,
+    "lines_with_structured_voyages": 1,
+    "lines_with_sailing_urls": 8,
+    "lines_with_sitemap_urls": 0,
+    "javascript_empty_lines": 0,
+    "misconfigured_lines": 0,
+    "projected_active_inventory": 8,
+    "lines_with_future_active": 3
+  },
+  "per_line": [
+    {
+      "cruise_line_id": "8aa1d0a8-c04c-4494-8ff3-928e811057e1",
+      "cruise_line": "Atlas Cruises",
+      "adapter_id": "atlas",
+      "source_url": "https://atlasoceanvoyages.com/",
+      "fetch_ok": true,
+      "http_status": null,
+      "html_bytes": 180101,
+      "javascript_empty": false,
+      "structured_methods": [
+        "result_links"
+      ],
+      "voyage_methods": [],
+      "sailing_urls_found": 20,
+      "structured_voyages_found": 0,
+      "sitemap_urls_found": 0,
+      "api_hints": [],
+      "likely_sailing_pages": 20,
+      "primary_issue": null,
+      "source_health": "temporarily_unavailable"
+    },
+    {
+      "cruise_line_id": "aa2c50ed-7ff5-472d-bc96-3d686d76c5ec",
+      "cruise_line": "Celebrity Cruises",
+      "adapter_id": "celebrity",
+      "source_url": "https://www.celebritycruises.com/cruise-search",
+      "fetch_ok": true,
+      "http_status": null,
+      "html_bytes": 180224,
+      "javascript_empty": false,
+      "structured_methods": [
+        "result_links",
+        "api_hint"
+      ],
+      "voyage_methods": [],
+      "sailing_urls_found": 3,
+      "structured_voyages_found": 0,
+      "sitemap_urls_found": 0,
+      "api_hints": [
+        "https://www.celebritycruises.com/webstatic/site-search/v0/bundle.css",
+        "https://www.celebritycruises.com/webstatic/site-search/v0/bundle.js"
+      ],
+      "likely_sailing_pages": 3,
+      "primary_issue": null,
+      "source_health": "temporarily_unavailable"
+    },
+    {
+      "cruise_line_id": "8b28c83e-2bf0-44ce-9795-ec3051c34050",
+      "cruise_line": "Explora Journeys",
+      "adapter_id": "explora",
+      "source_url": "https://www.explorajourneys.com/int/en/destinations-globe",
+      "fetch_ok": true,
+      "http_status": null,
+      "html_bytes": 180191,
+      "javascript_empty": false,
+      "structured_methods": [
+        "json_ld",
+        "result_links",
+        "api_hint"
+      ],
+      "voyage_methods": [
+        "json_ld_voyage"
+      ],
+      "sailing_urls_found": 52,
+      "structured_voyages_found": 0,
+      "sitemap_urls_found": 0,
+      "api_hints": [
+        "https://maps.googleapis.com/maps/api/js?key=AIzaSyBhJ6b74smlwqNKrL2rsT-CgmaWa5jtI14&loading=async&libraries=places&v=weekly"
+      ],
+      "likely_sailing_pages": 52,
+      "primary_issue": null,
+      "source_health": "temporarily_unavailable"
+    },
+    {
+      "cruise_line_id": "a8d0e678-0cb2-4ea7-ad73-251f0eb36ea2",
+      "cruise_line": "Holland America Line",
+      "adapter_id": "holland-america",
+      "source_url": "https://www.hollandamerica.com/en/au/find-a-cruise",
+      "fetch_ok": true,
+      "http_status": null,
+      "html_bytes": 180072,
+      "javascript_empty": false,
+      "structured_methods": [
+        "result_links",
+        "api_hint"
+      ],
+      "voyage_methods": [],
+      "sailing_urls_found": 26,
+      "structured_voyages_found": 0,
+      "sitemap_urls_found": 0,
+      "api_hints": [
+        "https://www.hollandamerica.com/en/au/global-search",
+        "https://www.hollandamerica.com/en/au/global-search"
+      ],
+      "likely_sailing_pages": 26,
+      "primary_issue": null,
+      "source_health": "healthy_no_current_sailings"
+    },
+    {
+      "cruise_line_id": "c5f5361f-ebe5-4ff4-babe-7eb07f609bae",
+      "cruise_line": "Norwegian Cruise Line",
+      "adapter_id": "generic",
+      "source_url": "https://www.ncl.com/",
+      "fetch_ok": true,
+      "http_status": null,
+      "html_bytes": 114009,
+      "javascript_empty": false,
+      "structured_methods": [
+        "json_ld",
+        "result_links",
+        "api_hint"
+      ],
+      "voyage_methods": [
+        "json_ld_voyage"
+      ],
+      "sailing_urls_found": 10,
+      "structured_voyages_found": 0,
+      "sitemap_urls_found": 0,
+      "api_hints": [
+        "http://www.ncl.com/au/en/search?Ntt={search_term}",
+        "http://www.ncl.com/au/en/search?Ntt={search_term}"
+      ],
+      "likely_sailing_pages": 10,
+      "primary_issue": null,
+      "source_health": "temporarily_unavailable"
+    },
+    {
+      "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+      "cruise_line": "Princess Cruises",
+      "adapter_id": "princess",
+      "source_url": "https://www.princess.com/",
+      "fetch_ok": true,
+      "http_status": null,
+      "html_bytes": 180177,
+      "javascript_empty": false,
+      "structured_methods": [
+        "json_ld",
+        "result_links"
+      ],
+      "voyage_methods": [
+        "json_ld_voyage"
+      ],
+      "sailing_urls_found": 10,
+      "structured_voyages_found": 2,
+      "sitemap_urls_found": 0,
+      "api_hints": [],
+      "likely_sailing_pages": 12,
+      "primary_issue": null,
+      "source_health": "temporarily_unavailable"
+    },
+    {
+      "cruise_line_id": "efc86b9e-6ff9-4f09-80c7-1df4e25acaef",
+      "cruise_line": "Seabourn Cruise Line",
+      "adapter_id": "generic",
+      "source_url": "https://www.seabourn.com/en/au/cruise-search",
+      "fetch_ok": true,
+      "http_status": null,
+      "html_bytes": 180129,
+      "javascript_empty": false,
+      "structured_methods": [
+        "json_ld",
+        "result_links",
+        "api_hint"
+      ],
+      "voyage_methods": [
+        "json_ld_voyage"
+      ],
+      "sailing_urls_found": 30,
+      "structured_voyages_found": 0,
+      "sitemap_urls_found": 0,
+      "api_hints": [
+        "https://www.seabourn.com/en/au/global-search",
+        "https://www.seabourn.com/en/au/global-search"
+      ],
+      "likely_sailing_pages": 30,
+      "primary_issue": null,
+      "source_health": "temporarily_unavailable"
+    },
+    {
+      "cruise_line_id": "99666d77-1975-4d24-9ac2-461c1fb8191a",
+      "cruise_line": "Virgin Voyages",
+      "adapter_id": "virgin-voyages",
+      "source_url": "https://www.virginvoyages.com/book",
+      "fetch_ok": true,
+      "http_status": null,
+      "html_bytes": 179633,
+      "javascript_empty": false,
+      "structured_methods": [
+        "result_links",
+        "api_hint"
+      ],
+      "voyage_methods": [],
+      "sailing_urls_found": 3,
+      "structured_voyages_found": 0,
+      "sitemap_urls_found": 0,
+      "api_hints": [
+        "https://prod.cdn-vv.com/book/_next/static/chunks/app/voyage-planner/(with-header)/find-a-voyage/@quickSearch/default-7089b0411a80e9f4.js",
+        "https://prod.virginvoyages.com/graphql",
+        "https://prod.virginvoyages.com/graphql"
+      ],
+      "likely_sailing_pages": 3,
+      "primary_issue": null,
+      "source_health": "temporarily_unavailable"
+    }
+  ]
+}

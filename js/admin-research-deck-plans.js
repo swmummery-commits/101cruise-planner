@@ -5,6 +5,11 @@
 (function (global) {
   "use strict";
 
+  function loadingPanel() {
+    if (global.BrandLoading?.panelHtml) return global.BrandLoading.panelHtml();
+    return `<p class="admin-muted">Hang tight! Just getting your info.</p>`;
+  }
+
   function loadingBoxes(opts) {
     if (global.BrandLoading && typeof global.BrandLoading.html === "function") {
       return global.BrandLoading.html(opts);
@@ -867,7 +872,7 @@
 
   function renderTable() {
     if (loading && !ships.length) {
-      return `<p class="admin-muted">Loading ships…</p>`;
+      return loadingPanel();
     }
     if (!ships.length) {
       return `<div class="admin-card"><p class="admin-muted">No ships match these filters.</p></div>`;
@@ -1485,8 +1490,7 @@
       pendingLineIds = picked;
       saveStoredLineIds(picked);
 
-      beginBusy("queue", "Loading review queue…");
-      try {
+      const loadQueue = async () => {
         const data = await api("list_review_queue", {
           cruise_line_ids: picked
         });
@@ -1504,11 +1508,24 @@
           : "No ships with candidates for the selected lines. Run Research Missing Deck Plans first.";
         messageTone = rapidQueue.length ? "success" : "info";
         bindRapidKeys();
+      };
+
+      try {
+        if (typeof global.AdminLoading?.withLoading === "function") {
+          await global.AdminLoading.withLoading(loadQueue, {
+            key: "deck-plans-review-queue",
+            delayMs: 0,
+            supportMessage: "Loading review queue…"
+          });
+        } else {
+          beginBusy("queue", "Loading review queue…");
+          await loadQueue();
+          endBusy();
+        }
       } catch (error) {
         message = error.message || "Failed to load review queue";
         messageTone = "error";
       } finally {
-        endBusy();
         if (typeof global.renderAdmin === "function") global.renderAdmin();
       }
     },

@@ -146,6 +146,13 @@
     return text;
   }
 
+  function loadingPanelHtml() {
+    if (typeof BrandLoading !== "undefined" && BrandLoading.panelHtml) {
+      return BrandLoading.panelHtml({ className: "dc-calc-loading-panel" });
+    }
+    return '<p class="dc-calc-status">Hang tight! Just getting your info.</p>';
+  }
+
   function slugify(value) {
     return String(value || "")
       .toLowerCase()
@@ -1168,7 +1175,8 @@
       return;
     }
 
-    mount.innerHTML = `<section class="dc-calc"><p class="dc-calc-status">Loading calculator…</p></section>`;
+    mount.innerHTML = `<section class="dc-calc">${loadingPanelHtml()}</section>`;
+    if (typeof BrandLoading?.scan === "function") BrandLoading.scan(mount);
 
     try {
       const [linesPayload, detailPayload] = await Promise.all([

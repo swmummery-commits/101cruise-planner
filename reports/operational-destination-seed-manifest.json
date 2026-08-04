@@ -1,0 +1,646 @@
+{
+  "generated_at": "2026-08-02T05:01:54.899Z",
+  "mode": "operational_destination_seed",
+  "writes_performed": false,
+  "migration_required": "supabase/migrations/20260802_destination_classification.sql",
+  "entry_count": 20,
+  "entries": [
+    {
+      "proposed_key": "alaska",
+      "canonical_name": "Alaska",
+      "slug": "alaska",
+      "classification_enabled": true,
+      "public_status": "published",
+      "primary_region": "North America",
+      "parent_region": null,
+      "aliases": [
+        "alaskan",
+        "inside passage",
+        "hubbard glacier"
+      ],
+      "representative_ports": [
+        "Juneau",
+        "Ketchikan",
+        "Sitka",
+        "Skagway",
+        "Whittier",
+        "Seward",
+        "Seattle"
+      ],
+      "route_signals": [
+        "alaska",
+        "inside passage",
+        "hubbard glacier",
+        "glacier bay"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "use_existing_row",
+      "existing_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "before_state": {
+        "id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "published",
+        "name": "Alaska"
+      },
+      "rollback_action": "no_change",
+      "cruise_finder_immediate": true,
+      "living_destination_editorial_required": false
+    },
+    {
+      "proposed_key": "caribbean",
+      "canonical_name": "Caribbean",
+      "slug": "caribbean",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Caribbean",
+      "parent_region": null,
+      "aliases": [
+        "eastern caribbean",
+        "western caribbean",
+        "southern caribbean"
+      ],
+      "representative_ports": [
+        "Miami",
+        "Fort Lauderdale",
+        "San Juan",
+        "Bridgetown",
+        "St Thomas"
+      ],
+      "route_signals": [
+        "caribbean",
+        "bahamas",
+        "antilles"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": true,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "mediterranean",
+      "canonical_name": "Mediterranean",
+      "slug": "mediterranean",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Europe",
+      "parent_region": "europe",
+      "aliases": [
+        "med",
+        "western mediterranean",
+        "eastern mediterranean"
+      ],
+      "representative_ports": [
+        "Barcelona",
+        "Rome",
+        "Civitavecchia",
+        "Venice",
+        "Athens",
+        "Piraeus",
+        "Santorini"
+      ],
+      "route_signals": [
+        "mediterranean",
+        "aegean",
+        "adriatic",
+        "tyrrhenian"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": true,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "northern-europe",
+      "canonical_name": "Northern Europe",
+      "slug": "northern-europe",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Europe",
+      "parent_region": "europe",
+      "aliases": [
+        "northern european",
+        "scandinavia"
+      ],
+      "representative_ports": [
+        "Copenhagen",
+        "Stockholm",
+        "Hamburg",
+        "Amsterdam",
+        "Rotterdam"
+      ],
+      "route_signals": [
+        "northern europe",
+        "baltic sea",
+        "scandinavia"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "norwegian-fjords",
+      "canonical_name": "Norwegian Fjords",
+      "slug": "norwegian-fjords",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Europe",
+      "parent_region": "northern-europe",
+      "aliases": [
+        "norway fjords",
+        "fjords"
+      ],
+      "representative_ports": [
+        "Bergen",
+        "Geiranger",
+        "Flam",
+        "Oslo"
+      ],
+      "route_signals": [
+        "norwegian fjords",
+        "geiranger",
+        "fjord"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "british-isles",
+      "canonical_name": "British Isles",
+      "slug": "british-isles",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Europe",
+      "parent_region": "northern-europe",
+      "aliases": [
+        "uk ireland",
+        "britain ireland"
+      ],
+      "representative_ports": [
+        "Southampton",
+        "Dublin",
+        "Edinburgh",
+        "Liverpool"
+      ],
+      "route_signals": [
+        "british isles",
+        "ireland",
+        "scotland"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "canada-new-england",
+      "canonical_name": "Canada and New England",
+      "slug": "canada-new-england",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "North America",
+      "parent_region": null,
+      "aliases": [
+        "new england canada",
+        "fall foliage"
+      ],
+      "representative_ports": [
+        "Quebec City",
+        "Montreal",
+        "Boston",
+        "Halifax",
+        "Bar Harbor"
+      ],
+      "route_signals": [
+        "canada new england",
+        "new england",
+        "fall foliage"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "japan",
+      "canonical_name": "Japan",
+      "slug": "japan",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Asia",
+      "parent_region": "asia",
+      "aliases": [
+        "japanese",
+        "tokyo",
+        "yokohama",
+        "osaka"
+      ],
+      "representative_ports": [
+        "Tokyo",
+        "Yokohama",
+        "Osaka",
+        "Kobe",
+        "Hiroshima"
+      ],
+      "route_signals": [
+        "japan",
+        "japanese",
+        "honshu",
+        "kyushu"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": true,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "asia",
+      "canonical_name": "Asia",
+      "slug": "asia",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Asia",
+      "parent_region": null,
+      "aliases": [
+        "southeast asia",
+        "far east"
+      ],
+      "representative_ports": [
+        "Singapore",
+        "Hong Kong",
+        "Ho Chi Minh City",
+        "Bangkok"
+      ],
+      "route_signals": [
+        "asia",
+        "southeast asia"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": true,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "australia-new-zealand",
+      "canonical_name": "Australia and New Zealand",
+      "slug": "australia-new-zealand",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Oceania",
+      "parent_region": null,
+      "aliases": [
+        "australasia",
+        "down under"
+      ],
+      "representative_ports": [
+        "Sydney",
+        "Auckland",
+        "Melbourne",
+        "Wellington",
+        "Bay of Islands"
+      ],
+      "route_signals": [
+        "australia",
+        "new zealand",
+        "australasia"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": true,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "south-pacific",
+      "canonical_name": "South Pacific",
+      "slug": "south-pacific",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Oceania",
+      "parent_region": null,
+      "aliases": [
+        "pacific islands",
+        "polynesia"
+      ],
+      "representative_ports": [
+        "Papeete",
+        "Bora Bora",
+        "Fiji",
+        "Noumea"
+      ],
+      "route_signals": [
+        "south pacific",
+        "tahiti",
+        "fiji",
+        "polynesia"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "hawaii",
+      "canonical_name": "Hawaii",
+      "slug": "hawaii",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Pacific",
+      "parent_region": null,
+      "aliases": [
+        "hawaiian islands",
+        "honolulu"
+      ],
+      "representative_ports": [
+        "Honolulu",
+        "Maui",
+        "Kona",
+        "Hilo"
+      ],
+      "route_signals": [
+        "hawaii",
+        "hawaiian"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "antarctica",
+      "canonical_name": "Antarctica",
+      "slug": "antarctica",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Polar",
+      "parent_region": null,
+      "aliases": [
+        "antarctic",
+        "peninsula"
+      ],
+      "representative_ports": [
+        "Ushuaia",
+        "Port Stanley",
+        "Punta Arenas"
+      ],
+      "route_signals": [
+        "antarctica",
+        "antarctic peninsula",
+        "drake passage"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "transatlantic",
+      "canonical_name": "Transatlantic",
+      "slug": "transatlantic",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Ocean crossing",
+      "parent_region": null,
+      "aliases": [
+        "crossing the atlantic",
+        "repositioning atlantic"
+      ],
+      "representative_ports": [
+        "Southampton",
+        "New York",
+        "Barcelona",
+        "Fort Lauderdale"
+      ],
+      "route_signals": [
+        "transatlantic",
+        "crossing the atlantic",
+        "atlantic crossing"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "transpacific",
+      "canonical_name": "Transpacific",
+      "slug": "transpacific",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Ocean crossing",
+      "parent_region": null,
+      "aliases": [
+        "pacific crossing",
+        "crossing the pacific",
+        "transoceanic"
+      ],
+      "representative_ports": [
+        "Tokyo",
+        "Yokohama",
+        "Vancouver",
+        "Seattle",
+        "Seward",
+        "Sydney",
+        "San Francisco"
+      ],
+      "route_signals": [
+        "transpacific",
+        "transoceanic",
+        "crossing the pacific",
+        "pacific ocean crossing"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "world-cruise",
+      "canonical_name": "World Cruise",
+      "slug": "world-cruise",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Global",
+      "parent_region": null,
+      "aliases": [
+        "grand voyage",
+        "world voyage",
+        "around the world"
+      ],
+      "representative_ports": [],
+      "route_signals": [
+        "world cruise",
+        "grand voyage",
+        "world voyage"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "panama-canal",
+      "canonical_name": "Panama Canal",
+      "slug": "panama-canal",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "Central America",
+      "parent_region": null,
+      "aliases": [
+        "canal transit",
+        "panama"
+      ],
+      "representative_ports": [
+        "Colon",
+        "Panama City",
+        "Cartagena"
+      ],
+      "route_signals": [
+        "panama canal",
+        "canal transit"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "mexican-riviera",
+      "canonical_name": "Mexican Riviera",
+      "slug": "mexican-riviera",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "North America",
+      "parent_region": null,
+      "aliases": [
+        "mexico pacific"
+      ],
+      "representative_ports": [
+        "Cabo San Lucas",
+        "Puerto Vallarta",
+        "Mazatlan",
+        "San Diego"
+      ],
+      "route_signals": [
+        "mexican riviera",
+        "baja"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "pacific-coast",
+      "canonical_name": "Pacific Coast",
+      "slug": "pacific-coast",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "North America",
+      "parent_region": null,
+      "aliases": [
+        "california coast",
+        "pacific northwest",
+        "west coast"
+      ],
+      "representative_ports": [
+        "San Diego",
+        "Los Angeles",
+        "San Francisco",
+        "Seattle",
+        "Vancouver",
+        "Victoria"
+      ],
+      "route_signals": [
+        "pacific coast",
+        "california coast",
+        "pacific northwest",
+        "west coast"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": true,
+      "living_destination_editorial_required": true
+    },
+    {
+      "proposed_key": "galapagos",
+      "canonical_name": "Galapagos",
+      "slug": "galapagos",
+      "classification_enabled": true,
+      "public_status": "draft",
+      "primary_region": "South America",
+      "parent_region": null,
+      "aliases": [
+        "galapagos islands"
+      ],
+      "representative_ports": [
+        "Baltra",
+        "San Cristobal"
+      ],
+      "route_signals": [
+        "galapagos"
+      ],
+      "display_order": 100,
+      "proposed_id_strategy": "insert_new_uuid",
+      "existing_id": null,
+      "before_state": null,
+      "rollback_action": "delete_inserted_row",
+      "cruise_finder_immediate": false,
+      "living_destination_editorial_required": true
+    }
+  ]
+}

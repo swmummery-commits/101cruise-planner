@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Drinks Calculator | 101cruise</title>
+  <link rel="stylesheet" href="/css/brand-loading.css">
   <style>
     body {
       margin: 0;
@@ -16,7 +17,10 @@
 </head>
 <body>
   <div id="101cruise-drinks-calculator" data-dc-calculator>
-    <p style="max-width:960px;margin:0 auto;color:#666;">Loading calculator…</p>
+    <div class="brand-loading-panel" role="status" aria-live="polite">
+      <span class="brand-loading-boxes brand-loading-boxes--large brand-loading-spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+      <p class="brand-loading-message">Hang tight! Just getting your info.</p>
+    </div>
   </div>
   <script src="/js/usage-track.js"></script>
   <script>
@@ -30,18 +34,30 @@
       css.rel = "stylesheet";
       css.href = base + "calculator.css";
       document.head.appendChild(css);
-      var s = document.createElement("script");
-      s.src = base + "calculator.js";
-      s.onerror = function () {
-        var mount = document.getElementById("101cruise-drinks-calculator");
-        if (mount) {
-          mount.innerHTML =
-            '<p style="max-width:960px;margin:0 auto;color:#8a2f2f;">Could not load calculator.js from ' +
-            s.src +
-            ". Hard-refresh or check the deploy includes public-tools/drinks-calculator/.</p>";
-        }
-      };
-      document.body.appendChild(s);
+      loadScript("/js/brand-loading.js", function () {
+        var s = document.createElement("script");
+        s.src = base + "calculator.js";
+        s.onerror = function () {
+          var mount = document.getElementById("101cruise-drinks-calculator");
+          if (mount) {
+            mount.innerHTML =
+              '<p style="max-width:960px;margin:0 auto;color:#8a2f2f;">Could not load calculator.js from ' +
+              s.src +
+              ". Hard-refresh or check the deploy includes public-tools/drinks-calculator/.</p>";
+          }
+        };
+        document.body.appendChild(s);
+      });
+
+      function loadScript(src, next) {
+        var el = document.createElement("script");
+        el.src = src;
+        el.onload = next;
+        el.onerror = function () {
+          next();
+        };
+        document.body.appendChild(el);
+      }
     })();
   </script>
 </body>

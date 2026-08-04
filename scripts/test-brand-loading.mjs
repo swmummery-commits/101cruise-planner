@@ -11,13 +11,18 @@ import { fileURLToPath } from "url";
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
-const { html, play, stop, BOX_COUNT } = require("../js/brand-loading.js");
+const { html, panelHtml, play, stop, BOX_COUNT, CANONICAL_MESSAGE } = require("../js/brand-loading.js");
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg);
 }
 
 assert(BOX_COUNT === 9, "nine box count");
+assert(CANONICAL_MESSAGE === "Hang tight! Just getting your info.", "canonical loading message");
+assert(typeof panelHtml === "function", "panelHtml API");
+const panel = panelHtml();
+assert(/brand-loading-panel/.test(panel), "panel wrapper");
+assert(/Hang tight! Just getting your info\./.test(panel), "panel message");
 assert(typeof play === "function" && typeof stop === "function", "play/stop API");
 
 const markup = html({ large: true, className: "portal-loading-spinner" });
@@ -40,7 +45,9 @@ assert(/MutationObserver/.test(src), "auto-binds inserted indicators");
 
 const indexHtml = readFileSync(path.join(root, "index.html"), "utf8");
 const adminHtml = readFileSync(path.join(root, "admin.html"), "utf8");
+const adminLoading = readFileSync(path.join(root, "js/admin-loading.js"), "utf8");
 assert(indexHtml.includes("brand-loading.css") && indexHtml.includes("brand-loading.js"), "portal loads shared assets");
 assert(adminHtml.includes("brand-loading.css") && adminHtml.includes("brand-loading.js"), "admin loads shared assets");
+assert(adminLoading.includes("Hang tight! Just getting your info."), "admin loading uses canonical message");
 
 console.log("test-brand-loading: ok");

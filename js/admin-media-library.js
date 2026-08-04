@@ -940,7 +940,7 @@
 
   function renderMediaResultsHtml() {
     const rows = filteredMediaItems();
-    if (mediaLoading) return `<p class="admin-muted">Loading media…</p>`;
+    if (mediaLoading) return loadingPanel();
     if (!rows.length) {
       return `<div class="admin-card featured-cruise-empty"><p class="admin-muted">No images yet. Upload the first one.</p></div>`;
     }
@@ -1114,17 +1114,14 @@
       </article>`;
   }
 
+  function loadingPanel() {
+    if (global.BrandLoading?.panelHtml) return global.BrandLoading.panelHtml();
+    return `<p class="admin-muted">Hang tight! Just getting your info.</p>`;
+  }
+
   function renderPickerResultsHtml() {
     if (pickerLoading || mediaLoading) {
-      const loader =
-        typeof global.BrandLoading?.html === "function"
-          ? global.BrandLoading.html({ large: true })
-          : "";
-      return `
-        <div class="media-picker-loading" role="status" aria-live="polite">
-          ${loader}
-          <p class="media-picker-loading-message">Loading images…</p>
-        </div>`;
+      return `<div class="media-picker-loading">${loadingPanel()}</div>`;
     }
     const rows = pickerCandidateRows();
     if (!rows.length) {

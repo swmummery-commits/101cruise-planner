@@ -167,18 +167,30 @@
     return ports.find((p) => p.id === selectedId) || null;
   }
 
+  function loadingPanel() {
+    if (global.BrandLoading?.panelHtml) return global.BrandLoading.panelHtml();
+    return `<p class="admin-muted">Hang tight! Just getting your info.</p>`;
+  }
+
   async function ensureLoaded({ force = false, quiet = false } = {}) {
     if (ports.length && !force && !loading) return ports;
+    const load = async () => {
+      const data = await api("list");
+      ports = Array.isArray(data.ports) ? data.ports : [];
+      if (!ports.length) {
+        setMessage("Ports catalogue is empty. Add the first port, or apply the seed migration in Supabase.", "info");
+      }
+    };
     loading = true;
     if (!quiet) {
       setMessage("");
       rerender();
     }
     try {
-      const data = await api("list");
-      ports = Array.isArray(data.ports) ? data.ports : [];
-      if (!ports.length) {
-        setMessage("Ports catalogue is empty. Add the first port, or apply the seed migration in Supabase.", "info");
+      if (typeof global.AdminLoading?.withLoading === "function") {
+        await global.AdminLoading.withLoading(load, { key: "ports-catalogue", delayMs: 0 });
+      } else {
+        await load();
       }
     } catch (error) {
       ports = [];
@@ -204,14 +216,14 @@
     const count = typeof document !== "undefined" ? document.getElementById("portsListCount") : null;
     const filtered = filteredPorts();
     if (count) {
-      count.textContent = loading ? "Loading…" : `${filtered.length} of ${ports.length} ports`;
+      count.textContent = loading ? "Hang tight! Just getting your info." : `${filtered.length} of ${ports.length} ports`;
     }
     if (!list) {
       rerender();
       return;
     }
     if (loading) {
-      list.innerHTML = `<p class="admin-small ci-master-empty">Loading ports…</p>`;
+      list.innerHTML = loadingPanel();
       return;
     }
     list.innerHTML = filtered.length
@@ -492,7 +504,7 @@
             </select>
             <button type="button" class="admin-button black small" onclick="PortsCatalogueAdmin.startCreate()" ${saving || loading ? "disabled" : ""}>Add port</button>
           </div>
-          <div class="admin-small"><span id="portsListCount">${loading ? "Loading…" : `${filtered.length} of ${ports.length} ports`}</span></div>
+          <div class="admin-small"><span id="portsListCount">${loading ? "Hang tight! Just getting your info." : `${filtered.length} of ${ports.length} ports`}</span></div>
         </div>
         <div class="ci-master-detail">
           <aside class="ci-master" aria-label="Ports">
@@ -500,7 +512,7 @@
             <div class="ci-master-list" id="portsMasterList">
               ${
                 loading
-                  ? `<p class="admin-small ci-master-empty">Loading ports…</p>`
+                  ? loadingPanel()
                   : filtered.length
                     ? filtered.map(renderMasterRow).join("")
                     : `<p class="admin-small ci-master-empty">No ports match these filters.</p>`

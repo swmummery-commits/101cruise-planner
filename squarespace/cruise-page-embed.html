@@ -23,6 +23,8 @@
   - Auto-resizes iframe height via postMessage (no nested scrollbars)
 -->
 
+<link rel="stylesheet" href="https://admirable-tiramisu-d4da8a.netlify.app/css/brand-loading.css">
+
 <style>
   #cr101-cruise-embed-wrap {
     width: 100%;
@@ -51,7 +53,12 @@
 </style>
 
 <div id="cr101-cruise-embed-wrap">
-  <div id="cr101-cruise-embed-msg">Loading cruise…</div>
+  <div id="cr101-cruise-embed-msg">
+    <div class="brand-loading-panel" role="status" aria-live="polite">
+      <span class="brand-loading-boxes brand-loading-boxes--large brand-loading-spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+      <p class="brand-loading-message">Hang tight! Just getting your info.</p>
+    </div>
+  </div>
   <iframe
     id="cr101-cruise-embed-frame"
     title="101cruise cruise details"

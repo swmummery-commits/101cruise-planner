@@ -514,7 +514,11 @@
     if (!root || !Data) return;
 
     const slug = slugFromPath() || "alaska";
-    root.innerHTML = `<p class="public-cruise-loading">Loading destination…</p>`;
+    root.innerHTML =
+      typeof BrandLoading !== "undefined" && BrandLoading.panelHtml
+        ? BrandLoading.panelHtml({ className: "public-cruise-loading-panel" })
+        : `<p class="public-cruise-loading">Hang tight! Just getting your info.</p>`;
+    if (typeof BrandLoading?.scan === "function") BrandLoading.scan(root);
 
     try {
       const pageDest = await fetchDestination(slug);

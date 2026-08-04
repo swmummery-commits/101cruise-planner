@@ -75,9 +75,7 @@
   }
 
   async function ensureLoaded({ quiet = false } = {}) {
-    loading = true;
-    if (!quiet && typeof global.renderAdmin === "function") global.renderAdmin();
-    try {
+    const load = async () => {
       const [dash, lineResult, runResult] = await Promise.all([
         api("dashboard"),
         api("list_lines"),
@@ -89,6 +87,15 @@
       runs = runResult.runs || [];
       if (!selectedLineId && lines[0]) selectedLineId = lines[0].id;
       if (!quiet) message = "";
+    };
+    loading = true;
+    if (!quiet && typeof global.renderAdmin === "function") global.renderAdmin();
+    try {
+      if (typeof global.AdminLoading?.withLoading === "function") {
+        await global.AdminLoading.withLoading(load, { key: "fleet-audit-load", delayMs: 0 });
+      } else {
+        await load();
+      }
     } catch (error) {
       message = error.message || "Failed to load Cruise Line Audit";
       messageTone = "error";
@@ -323,7 +330,7 @@
           </div>
         </div>
         ${message && !isRunningTone() ? `<p class="admin-message ${messageClassName()}">${esc(message)}</p>` : ""}
-        ${loading ? `<p class="admin-muted">Loading…</p>` : ""}
+        ${loading ? (global.BrandLoading?.panelHtml ? global.BrandLoading.panelHtml() : `<p class="admin-muted">Hang tight! Just getting your info.</p>`) : ""}
         ${renderCards()}
         ${renderHealth()}
 

@@ -7,7 +7,10 @@
 
   var OVERLAY_ID = "admin-loading-overlay";
   var BODY_LOCK_CLASS = "admin-loading-active";
-  var INITIAL_MESSAGE = "Please wait…";
+  var INITIAL_MESSAGE =
+    typeof BrandLoading !== "undefined" && BrandLoading.CANONICAL_MESSAGE
+      ? BrandLoading.CANONICAL_MESSAGE
+      : "Hang tight! Just getting your info.";
   var FAIL_MESSAGE = "Something didn't load properly. Please try again in a moment.";
 
   var refs = new Map();

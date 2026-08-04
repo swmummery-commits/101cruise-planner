@@ -1,0 +1,413 @@
+{
+  "generated_at": "2026-08-02T05:01:54.906Z",
+  "mode": "destination_correction_dry_run",
+  "writes_performed": false,
+  "alaska_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+  "summary": {
+    "total": 8,
+    "correctly_tagged_alaska": 4,
+    "incorrectly_tagged_alaska": 4,
+    "needs_correction": 4
+  },
+  "entries": [
+    {
+      "discovered_cruise_id": "2b775aec-32ec-4a4a-97b3-03a16d2ed2f8",
+      "cruise_line": "Regent Seven Seas Cruises",
+      "ship": "Seven Seas Explorer",
+      "departure_date": "2026-08-05",
+      "departure_port": "Whittier",
+      "arrival_port": "Vancouver",
+      "duration_nights": 7,
+      "source_url": "https://www.rssc.com/cruises/EXP260805/summary",
+      "itinerary_ports": "Alaska Luxury Cruise - Whittier to Vancouver on Aug",
+      "current_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "current_destination_name": "Alaska",
+      "proposed_destination_key": "alaska",
+      "proposed_destination_name": "Alaska",
+      "proposed_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "proposed_outcome": "operational_correction",
+      "confidence": "high",
+      "status": "resolved",
+      "evidence_summary": [
+        {
+          "type": "title_region",
+          "detail": "title_region_label",
+          "weight": 88
+        },
+        {
+          "type": "itinerary_ports",
+          "detail": "whittier, vancouver",
+          "weight": 70
+        },
+        {
+          "type": "method",
+          "detail": "title_region"
+        },
+        {
+          "type": "method",
+          "detail": "itinerary_ports"
+        }
+      ],
+      "alaska_assignment_correct": true,
+      "source_record_valid": true,
+      "other_issues": [],
+      "rollback_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "rollback_destination_name": "Alaska"
+    },
+    {
+      "discovered_cruise_id": "1ded636b-e397-49b8-9084-6dd31de5e5f2",
+      "cruise_line": "Regent Seven Seas Cruises",
+      "ship": "Seven Seas Explorer",
+      "departure_date": "2026-08-26",
+      "departure_port": "Vancouver",
+      "arrival_port": "Whittier",
+      "duration_nights": 7,
+      "source_url": "https://www.rssc.com/cruises/EXP260826/summary",
+      "itinerary_ports": "Alaska Luxury Cruise - Vancouver to Whittier on Aug",
+      "current_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "current_destination_name": "Alaska",
+      "proposed_destination_key": "alaska",
+      "proposed_destination_name": "Alaska",
+      "proposed_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "proposed_outcome": "operational_correction",
+      "confidence": "high",
+      "status": "resolved",
+      "evidence_summary": [
+        {
+          "type": "title_region",
+          "detail": "title_region_label",
+          "weight": 88
+        },
+        {
+          "type": "itinerary_ports",
+          "detail": "whittier, vancouver",
+          "weight": 70
+        },
+        {
+          "type": "method",
+          "detail": "title_region"
+        },
+        {
+          "type": "method",
+          "detail": "itinerary_ports"
+        }
+      ],
+      "alaska_assignment_correct": true,
+      "source_record_valid": true,
+      "other_issues": [],
+      "rollback_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "rollback_destination_name": "Alaska"
+    },
+    {
+      "discovered_cruise_id": "d3197a12-3c5e-4921-aa11-fdc31c5f1311",
+      "cruise_line": "Regent Seven Seas Cruises",
+      "ship": "Seven Seas Explorer",
+      "departure_date": "2026-09-18",
+      "departure_port": "Seattle",
+      "arrival_port": "Seattle",
+      "duration_nights": 12,
+      "source_url": "https://www.rssc.com/cruises/EXP260918/summary",
+      "itinerary_ports": "Alaska Luxury Cruise - Seattle to Seattle on Sep",
+      "current_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "current_destination_name": "Alaska",
+      "proposed_destination_key": "alaska",
+      "proposed_destination_name": "Alaska",
+      "proposed_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "proposed_outcome": "operational_correction",
+      "confidence": "high",
+      "status": "resolved",
+      "evidence_summary": [
+        {
+          "type": "title_region",
+          "detail": "title_region_label",
+          "weight": 88
+        },
+        {
+          "type": "pacific_coast_route",
+          "detail": "endpoint_pacific_coast",
+          "weight": 92
+        },
+        {
+          "type": "itinerary_ports",
+          "detail": "seattle",
+          "weight": 70
+        },
+        {
+          "type": "method",
+          "detail": "title_region"
+        },
+        {
+          "type": "method",
+          "detail": "pacific_coast_route"
+        },
+        {
+          "type": "method",
+          "detail": "itinerary_ports"
+        }
+      ],
+      "alaska_assignment_correct": true,
+      "source_record_valid": true,
+      "other_issues": [],
+      "rollback_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "rollback_destination_name": "Alaska"
+    },
+    {
+      "discovered_cruise_id": "60f71bc7-af1f-429a-a4fa-85b3f6e0701c",
+      "cruise_line": "Crystal Cruises",
+      "ship": "Crystal Serenity",
+      "departure_date": "2027-05-08",
+      "departure_port": "San Diego",
+      "arrival_port": "Vancouver",
+      "duration_nights": 20,
+      "source_url": "https://www.crystalcruises.com/cruises/none-csy-008-280625",
+      "itinerary_ports": "Crystal Symphony - San Diego to Vancouver",
+      "current_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "current_destination_name": "Alaska",
+      "proposed_destination_key": "pacific-coast",
+      "proposed_destination_name": "Pacific Coast",
+      "proposed_destination_id": null,
+      "proposed_outcome": "operational_data_quality_investigation",
+      "confidence": "high",
+      "status": "resolved",
+      "evidence_summary": [
+        {
+          "type": "title_region",
+          "detail": "title_region_label_weak",
+          "weight": 45
+        },
+        {
+          "type": "pacific_coast_route",
+          "detail": "endpoint_pacific_coast",
+          "weight": 92
+        },
+        {
+          "type": "itinerary_ports",
+          "detail": "vancouver, san diego",
+          "weight": 70
+        },
+        {
+          "type": "method",
+          "detail": "title_region"
+        },
+        {
+          "type": "method",
+          "detail": "pacific_coast_route"
+        },
+        {
+          "type": "method",
+          "detail": "itinerary_ports"
+        }
+      ],
+      "alaska_assignment_correct": false,
+      "source_record_valid": false,
+      "other_issues": [
+        "ship_guess_noise_from_url_slug",
+        "voyage_identity_mismatch_crystal_symphony_vs_serenity",
+        "ship_guess_noise_from_url_slug"
+      ],
+      "rollback_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "rollback_destination_name": "Alaska"
+    },
+    {
+      "discovered_cruise_id": "b78df16b-d81e-42de-a012-22a615c28bb0",
+      "cruise_line": "Crystal Cruises",
+      "ship": "Crystal Serenity",
+      "departure_date": "2027-05-08",
+      "departure_port": "Yokohama",
+      "arrival_port": "Seward",
+      "duration_nights": 14,
+      "source_url": "https://www.crystalcruises.com/cruises/none-cse-013-270508",
+      "itinerary_ports": null,
+      "current_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "current_destination_name": "Alaska",
+      "proposed_destination_key": "transpacific",
+      "proposed_destination_name": "Transpacific",
+      "proposed_destination_id": null,
+      "proposed_outcome": "operational_correction",
+      "confidence": "high",
+      "status": "resolved",
+      "evidence_summary": [
+        {
+          "type": "title_region",
+          "detail": "title_region_label",
+          "weight": 90
+        },
+        {
+          "type": "crossing_route",
+          "detail": "voyage_type_transpacific",
+          "weight": 88
+        },
+        {
+          "type": "itinerary_ports",
+          "detail": "seward, anchorage, tokyo, yokohama",
+          "weight": 70
+        },
+        {
+          "type": "method",
+          "detail": "title_region"
+        },
+        {
+          "type": "method",
+          "detail": "crossing_route"
+        },
+        {
+          "type": "method",
+          "detail": "itinerary_ports"
+        }
+      ],
+      "alaska_assignment_correct": false,
+      "source_record_valid": false,
+      "other_issues": [
+        "ship_guess_noise_from_url_slug"
+      ],
+      "rollback_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "rollback_destination_name": "Alaska"
+    },
+    {
+      "discovered_cruise_id": "408898c0-9353-4029-9ce2-054638e1eb46",
+      "cruise_line": "Crystal Cruises",
+      "ship": "Crystal Serenity",
+      "departure_date": "2027-07-12",
+      "departure_port": "Vancouver",
+      "arrival_port": "Seward",
+      "duration_nights": 10,
+      "source_url": "https://www.crystalcruises.com/cruises/none-cse-007-270712?insider=l7l4m-rocky-camin",
+      "itinerary_ports": "Crystal Serenity - Vancouver to Seward",
+      "current_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "current_destination_name": "Alaska",
+      "proposed_destination_key": "alaska",
+      "proposed_destination_name": "Alaska",
+      "proposed_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "proposed_outcome": "operational_correction",
+      "confidence": "high",
+      "status": "resolved",
+      "evidence_summary": [
+        {
+          "type": "title_region",
+          "detail": "title_region_label",
+          "weight": 88
+        },
+        {
+          "type": "itinerary_ports",
+          "detail": "seward, anchorage, vancouver",
+          "weight": 70
+        },
+        {
+          "type": "method",
+          "detail": "title_region"
+        },
+        {
+          "type": "method",
+          "detail": "itinerary_ports"
+        }
+      ],
+      "alaska_assignment_correct": true,
+      "source_record_valid": false,
+      "other_issues": [
+        "ship_guess_noise_from_url_slug"
+      ],
+      "rollback_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "rollback_destination_name": "Alaska"
+    },
+    {
+      "discovered_cruise_id": "ba81d07e-9a1b-44e0-9850-e5ea372b12b4",
+      "cruise_line": "Explora Journeys",
+      "ship": "EXPLORA III",
+      "departure_date": "2027-09-11",
+      "departure_port": "Vancouver",
+      "arrival_port": "Japanese Grace",
+      "duration_nights": 16,
+      "source_url": "https://explorajourneys.com/int/en/destinations-globe/tra/journeys/vantyo-16-v2?id-journey=EL20270911VANTYO",
+      "itinerary_ports": null,
+      "current_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "current_destination_name": "Alaska",
+      "proposed_destination_key": "transpacific",
+      "proposed_destination_name": "Transpacific",
+      "proposed_destination_id": null,
+      "proposed_outcome": "operational_correction",
+      "confidence": "high",
+      "status": "resolved",
+      "evidence_summary": [
+        {
+          "type": "itinerary_ports",
+          "detail": "ketchikan, sitka, hubbard, vancouver",
+          "weight": 70
+        },
+        {
+          "type": "multi_region",
+          "detail": "alaska_and_japan_route",
+          "weight": 88
+        },
+        {
+          "type": "method",
+          "detail": "itinerary_ports"
+        },
+        {
+          "type": "method",
+          "detail": "multi_region"
+        }
+      ],
+      "alaska_assignment_correct": false,
+      "source_record_valid": true,
+      "other_issues": [],
+      "rollback_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "rollback_destination_name": "Alaska"
+    },
+    {
+      "discovered_cruise_id": "857fc5e4-0c7a-41aa-8400-2df2a01611f0",
+      "cruise_line": "Crystal Cruises",
+      "ship": "Crystal Serenity",
+      "departure_date": "2028-09-18",
+      "departure_port": "s the Pacific Ocean from Alaska",
+      "arrival_port": "Japan",
+      "duration_nights": 14,
+      "source_url": "https://www.crystalcruises.com/cruises/none-csy-014-280918",
+      "itinerary_ports": null,
+      "current_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "current_destination_name": "Alaska",
+      "proposed_destination_key": "transpacific",
+      "proposed_destination_name": "Transpacific",
+      "proposed_destination_id": null,
+      "proposed_outcome": "operational_data_quality_investigation",
+      "confidence": "high",
+      "status": "resolved",
+      "evidence_summary": [
+        {
+          "type": "title_region",
+          "detail": "title_region_label",
+          "weight": 90
+        },
+        {
+          "type": "crossing_route",
+          "detail": "voyage_type_transpacific",
+          "weight": 88
+        },
+        {
+          "type": "itinerary_ports",
+          "detail": "seward, anchorage, homer, kodiak, tokyo",
+          "weight": 70
+        },
+        {
+          "type": "method",
+          "detail": "title_region"
+        },
+        {
+          "type": "method",
+          "detail": "crossing_route"
+        },
+        {
+          "type": "method",
+          "detail": "itinerary_ports"
+        }
+      ],
+      "alaska_assignment_correct": false,
+      "source_record_valid": false,
+      "other_issues": [
+        "departure_port_conflicts_with_title_route",
+        "ship_guess_noise_from_url_slug"
+      ],
+      "rollback_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "rollback_destination_name": "Alaska"
+    }
+  ]
+}

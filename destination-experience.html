@@ -8,6 +8,7 @@
   <meta name="robots" content="noindex,nofollow">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/favicon.png">
+  <link rel="stylesheet" href="/css/brand-loading.css">
   <link rel="stylesheet" href="/css/destination-experience.css">
 </head>
 <body class="dx-shell">
@@ -21,10 +22,14 @@
 
   <main id="destination-experience-app" aria-live="polite">
     <div class="dx-wrap" style="padding:48px 0;">
-      <p style="margin:0;color:#5a635e;">Loading destination experience…</p>
+      <div class="brand-loading-panel" role="status" aria-live="polite">
+        <span class="brand-loading-boxes brand-loading-boxes--large brand-loading-spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+        <p class="brand-loading-message">Hang tight! Just getting your info.</p>
+      </div>
     </div>
   </main>
 
+  <script src="/js/brand-loading.js"></script>
   <script src="/public-tools/cruise-finder/destinations.js"></script>
   <script src="/public-tools/cruise-finder/destination-content.js"></script>
   <script src="/public-tools/cruise-finder/approved-cruise-lines.js"></script>

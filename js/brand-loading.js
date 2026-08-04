@@ -15,6 +15,7 @@
   var BOX_COUNT = 9;
   var LIVE_ATTR = "data-brand-loading-live";
   var STATE_KEY = "_brandLoadingState";
+  var CANONICAL_MESSAGE = "Hang tight! Just getting your info.";
 
   /**
    * @param {{ inline?: boolean, large?: boolean, className?: string }=} opts
@@ -177,11 +178,38 @@
     }
   }
 
+  /**
+   * Full loading panel: nine-square animation + canonical message.
+   * @param {{ message?: string, large?: boolean, className?: string, spinnerClass?: string }=} opts
+   */
+  function panelHtml(opts) {
+    var options = opts && typeof opts === "object" ? opts : {};
+    var message =
+      options.message != null ? String(options.message) : CANONICAL_MESSAGE;
+    var panelClass = "brand-loading-panel";
+    if (options.className) panelClass += " " + String(options.className);
+    return (
+      '<div class="' +
+      panelClass +
+      '" role="status" aria-live="polite">' +
+      html({
+        large: options.large !== false,
+        className: options.spinnerClass || "brand-loading-spinner"
+      }) +
+      '<p class="brand-loading-message">' +
+      message +
+      "</p>" +
+      "</div>"
+    );
+  }
+
   return {
     html: html,
+    panelHtml: panelHtml,
     play: play,
     stop: stop,
     scan: scan,
+    CANONICAL_MESSAGE: CANONICAL_MESSAGE,
     BOX_COUNT: BOX_COUNT
   };
 });

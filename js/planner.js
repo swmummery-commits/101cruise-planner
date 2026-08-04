@@ -2941,6 +2941,13 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function plannerLoadingPanel() {
+  if (typeof BrandLoading?.panelHtml === "function") {
+    return BrandLoading.panelHtml({ className: "planner-loading-panel" });
+  }
+  return '<p class="planner-muted">Hang tight! Just getting your info.</p>';
+}
+
 function getPriorityClass(priority) {
   const normalized = String(priority || "Tip").toLowerCase();
   if (normalized === "essential") return "priority-essential";
@@ -3901,7 +3908,7 @@ async function renderDocuments() {
       </section>
       <div id="documents-message" class="planner-message"></div>
       <section id="documents-list" class="documents-list">
-        <div class="planner-card"><p class="planner-muted">Loading documents…</p></div>
+        <div class="planner-card">${plannerLoadingPanel()}</div>
       </section>
     </div>`;
   scheduleScrollPlannerToTop();
@@ -5636,7 +5643,7 @@ async function renderTheShip() {
       <div class="ship-page-status" role="status" aria-live="polite">
         <p class="planner-kicker">My ship</p>
         <h1 class="ship-identity-name ship-status-title">${escapeHtml(shipName || "My Ship")}</h1>
-        <p class="planner-muted">Loading ship information…</p>
+        ${plannerLoadingPanel()}
       </div>
     </div>
   `;

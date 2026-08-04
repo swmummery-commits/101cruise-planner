@@ -129,12 +129,15 @@
 
         <section class="dc-intro-section dc-intro-chooser" aria-labelledby="dc-choose-title">
           <h2 class="dc-intro-section-title" id="dc-choose-title">Choose your cruise line</h2>
-          <p id="dc-intro-status" class="dc-intro-status" role="status" aria-live="polite">Loading cruise lines…</p>
+          <div id="dc-intro-status" class="dc-intro-status brand-loading-panel" role="status" aria-live="polite">
+            <span class="brand-loading-boxes brand-loading-boxes--large brand-loading-spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+            <p class="brand-loading-message">Hang tight! Just getting your info.</p>
+          </div>
           <div class="dc-intro-field">
             <label class="dc-intro-label" for="dc-intro-line-select">Choose your cruise line</label>
             <div class="dc-intro-select-wrap">
               <select id="dc-intro-line-select" class="dc-intro-select" disabled>
-                <option value="">Loading cruise lines…</option>
+                <option value="">Hang tight! Just getting your info.</option>
               </select>
             </div>
           </div>
@@ -159,9 +162,14 @@
   function setStatus(message, isError) {
     const status = document.getElementById("dc-intro-status");
     if (!status) return;
-    status.textContent = message || "";
-    status.classList.toggle("is-error", Boolean(isError));
-    status.hidden = !message;
+    if (!message) {
+      status.hidden = true;
+      status.textContent = "";
+      return;
+    }
+    status.hidden = false;
+    status.className = "dc-intro-status" + (isError ? " is-error" : "");
+    status.innerHTML = escapeHtml(message);
   }
 
   function renderLogoGrid(lines) {
@@ -228,12 +236,31 @@
     });
   }
 
+  function showLoadingPanel() {
+    const status = document.getElementById("dc-intro-status");
+    if (!status) return;
+    const panelHtml =
+      typeof BrandLoading !== "undefined" && BrandLoading.panelHtml
+        ? BrandLoading.panelHtml()
+        : '<div class="brand-loading-panel" role="status" aria-live="polite"><span class="brand-loading-boxes brand-loading-boxes--large" aria-hidden="true">' +
+          new Array(10).join("<span></span>") +
+          '</span><p class="brand-loading-message">Hang tight! Just getting your info.</p></div>';
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = panelHtml;
+    const next = wrapper.firstElementChild;
+    if (!next) return;
+    next.id = "dc-intro-status";
+    next.classList.add("dc-intro-status");
+    status.replaceWith(next);
+    if (typeof BrandLoading?.scan === "function") BrandLoading.scan(next);
+  }
+
   async function loadLines() {
     const select = document.getElementById("dc-intro-line-select");
     const button = document.getElementById("dc-intro-open");
     if (select) select.disabled = true;
     if (button) button.disabled = true;
-    setStatus("Loading cruise lines…", false);
+    showLoadingPanel();
 
     try {
       const response = await fetch(LINES_API_URL, {

@@ -1,0 +1,290 @@
+{
+  "generated_at": "2026-08-02T04:20:02.465Z",
+  "applied_from_manifest": "priority-source-config-manifest.json",
+  "entries": [
+    {
+      "cruise_line_id": "8aa1d0a8-c04c-4494-8ff3-928e811057e1",
+      "cruise_line_name": "Atlas Cruises",
+      "slug": "atlas-cruises",
+      "website_url": "https://atlasoceanvoyages.com/",
+      "current_cruise_search_url": null,
+      "proposed_cruise_search_url": "https://atlasoceanvoyages.com/",
+      "source_type": "homepage",
+      "adapter_id": "atlas",
+      "category": "expedition",
+      "verification_evidence": {
+        "fetch_ok": true,
+        "sailing_links": 20,
+        "structured_voyages": 0,
+        "likely_sailing_pages": 20,
+        "expected_extraction_method": "official_search_page_links",
+        "rejection_reason": null,
+        "candidates_probed": [
+          {
+            "url": "https://atlasoceanvoyages.com/expeditions",
+            "fetch_ok": true,
+            "likely_sailing_pages": 0,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://atlasoceanvoyages.com/",
+            "fetch_ok": true,
+            "likely_sailing_pages": 20,
+            "official_domain_ok": true
+          }
+        ]
+      },
+      "rollback_cruise_search_url": null
+    },
+    {
+      "cruise_line_id": "aa2c50ed-7ff5-472d-bc96-3d686d76c5ec",
+      "cruise_line_name": "Celebrity Cruises",
+      "slug": "celebrity-cruises",
+      "website_url": "https://www.celebritycruises.com/",
+      "current_cruise_search_url": null,
+      "proposed_cruise_search_url": "https://www.celebritycruises.com/cruise-search",
+      "source_type": "search_page",
+      "adapter_id": "celebrity",
+      "category": "ocean",
+      "verification_evidence": {
+        "fetch_ok": true,
+        "sailing_links": 3,
+        "structured_voyages": 0,
+        "likely_sailing_pages": 3,
+        "expected_extraction_method": "official_search_page_links",
+        "rejection_reason": null,
+        "candidates_probed": [
+          {
+            "url": "https://www.celebritycruises.com/cruise-search",
+            "fetch_ok": true,
+            "likely_sailing_pages": 3,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://www.celebritycruises.com/find-a-cruise",
+            "fetch_ok": false,
+            "likely_sailing_pages": 0,
+            "official_domain_ok": true
+          }
+        ]
+      },
+      "rollback_cruise_search_url": null
+    },
+    {
+      "cruise_line_id": "8b28c83e-2bf0-44ce-9795-ec3051c34050",
+      "cruise_line_name": "Explora Journeys",
+      "slug": "explora-journeys",
+      "website_url": "https://explorajourneys.com/",
+      "current_cruise_search_url": null,
+      "proposed_cruise_search_url": "https://www.explorajourneys.com/int/en/destinations-globe",
+      "source_type": "other_official_url",
+      "adapter_id": "explora",
+      "category": "ocean",
+      "verification_evidence": {
+        "fetch_ok": true,
+        "sailing_links": 52,
+        "structured_voyages": 0,
+        "likely_sailing_pages": 52,
+        "expected_extraction_method": "official_search_page_links",
+        "rejection_reason": null,
+        "candidates_probed": [
+          {
+            "url": "https://www.explorajourneys.com/int/en/destinations-globe",
+            "fetch_ok": true,
+            "likely_sailing_pages": 52,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://explorajourneys.com/int/en/destinations-globe",
+            "fetch_ok": true,
+            "likely_sailing_pages": 52,
+            "official_domain_ok": true
+          }
+        ]
+      },
+      "rollback_cruise_search_url": null
+    },
+    {
+      "cruise_line_id": "a8d0e678-0cb2-4ea7-ad73-251f0eb36ea2",
+      "cruise_line_name": "Holland America Line",
+      "slug": "holland-america-line",
+      "website_url": "https://www.hollandamerica.com/",
+      "current_cruise_search_url": null,
+      "proposed_cruise_search_url": "https://www.hollandamerica.com/en/au/find-a-cruise",
+      "source_type": "search_page",
+      "adapter_id": "holland-america",
+      "category": "ocean",
+      "verification_evidence": {
+        "fetch_ok": true,
+        "sailing_links": 26,
+        "structured_voyages": 0,
+        "likely_sailing_pages": 26,
+        "expected_extraction_method": "official_search_page_links",
+        "rejection_reason": null,
+        "candidates_probed": [
+          {
+            "url": "https://www.hollandamerica.com/en/au/cruise-search",
+            "fetch_ok": false,
+            "likely_sailing_pages": 0,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://www.hollandamerica.com/en/au/find-a-cruise",
+            "fetch_ok": true,
+            "likely_sailing_pages": 26,
+            "official_domain_ok": true
+          }
+        ]
+      },
+      "rollback_cruise_search_url": null
+    },
+    {
+      "cruise_line_id": "c5f5361f-ebe5-4ff4-babe-7eb07f609bae",
+      "cruise_line_name": "Norwegian Cruise Line",
+      "slug": "norwegian-cruise-line",
+      "website_url": "https://www.ncl.com/",
+      "current_cruise_search_url": null,
+      "proposed_cruise_search_url": "https://www.ncl.com/",
+      "source_type": "homepage",
+      "adapter_id": "generic",
+      "category": "ocean",
+      "verification_evidence": {
+        "fetch_ok": true,
+        "sailing_links": 10,
+        "structured_voyages": 0,
+        "likely_sailing_pages": 10,
+        "expected_extraction_method": "official_search_page_links",
+        "rejection_reason": null,
+        "candidates_probed": [
+          {
+            "url": "https://www.ncl.com/cruise-search",
+            "fetch_ok": false,
+            "likely_sailing_pages": 0,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://www.ncl.com/vacations",
+            "fetch_ok": true,
+            "likely_sailing_pages": 0,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://www.ncl.com/",
+            "fetch_ok": true,
+            "likely_sailing_pages": 10,
+            "official_domain_ok": true
+          }
+        ]
+      },
+      "rollback_cruise_search_url": null
+    },
+    {
+      "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+      "cruise_line_name": "Princess Cruises",
+      "slug": "princess-cruises",
+      "website_url": "https://www.princess.com/",
+      "current_cruise_search_url": null,
+      "proposed_cruise_search_url": "https://www.princess.com/",
+      "source_type": "homepage",
+      "adapter_id": "princess",
+      "category": "ocean",
+      "verification_evidence": {
+        "fetch_ok": true,
+        "sailing_links": 10,
+        "structured_voyages": 2,
+        "likely_sailing_pages": 12,
+        "expected_extraction_method": "structured_voyage_json",
+        "rejection_reason": null,
+        "candidates_probed": [
+          {
+            "url": "https://www.princess.com/cruise-search",
+            "fetch_ok": true,
+            "likely_sailing_pages": 0,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://www.princess.com/cruise-search/results",
+            "fetch_ok": true,
+            "likely_sailing_pages": 0,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://www.princess.com/",
+            "fetch_ok": true,
+            "likely_sailing_pages": 12,
+            "official_domain_ok": true
+          }
+        ]
+      },
+      "rollback_cruise_search_url": null
+    },
+    {
+      "cruise_line_id": "efc86b9e-6ff9-4f09-80c7-1df4e25acaef",
+      "cruise_line_name": "Seabourn Cruise Line",
+      "slug": "seabourn-cruise-line",
+      "website_url": "https://www.seabourn.com/",
+      "current_cruise_search_url": null,
+      "proposed_cruise_search_url": "https://www.seabourn.com/en/au/cruise-search",
+      "source_type": "search_page",
+      "adapter_id": "generic",
+      "category": "ocean",
+      "verification_evidence": {
+        "fetch_ok": true,
+        "sailing_links": 30,
+        "structured_voyages": 0,
+        "likely_sailing_pages": 30,
+        "expected_extraction_method": "official_search_page_links",
+        "rejection_reason": null,
+        "candidates_probed": [
+          {
+            "url": "https://www.seabourn.com/en/au/cruise-search",
+            "fetch_ok": true,
+            "likely_sailing_pages": 30,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://www.seabourn.com/en/au/find-a-cruise",
+            "fetch_ok": true,
+            "likely_sailing_pages": 13,
+            "official_domain_ok": true
+          }
+        ]
+      },
+      "rollback_cruise_search_url": null
+    },
+    {
+      "cruise_line_id": "99666d77-1975-4d24-9ac2-461c1fb8191a",
+      "cruise_line_name": "Virgin Voyages",
+      "slug": "virgin-voyages",
+      "website_url": "https://www.virginvoyages.com/",
+      "current_cruise_search_url": null,
+      "proposed_cruise_search_url": "https://www.virginvoyages.com/book",
+      "source_type": "other_official_url",
+      "adapter_id": "virgin-voyages",
+      "category": "ocean",
+      "verification_evidence": {
+        "fetch_ok": true,
+        "sailing_links": 3,
+        "structured_voyages": 0,
+        "likely_sailing_pages": 3,
+        "expected_extraction_method": "official_search_page_links",
+        "rejection_reason": null,
+        "candidates_probed": [
+          {
+            "url": "https://www.virginvoyages.com/book/voyage-search",
+            "fetch_ok": false,
+            "likely_sailing_pages": 0,
+            "official_domain_ok": true
+          },
+          {
+            "url": "https://www.virginvoyages.com/book",
+            "fetch_ok": true,
+            "likely_sailing_pages": 3,
+            "official_domain_ok": true
+          }
+        ]
+      },
+      "rollback_cruise_search_url": null
+    }
+  ]
+}

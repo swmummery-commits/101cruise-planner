@@ -5,6 +5,11 @@
 (function (global) {
   "use strict";
 
+  function loadingPanel() {
+    if (global.BrandLoading?.panelHtml) return global.BrandLoading.panelHtml();
+    return `<p class="admin-muted">Hang tight! Just getting your info.</p>`;
+  }
+
   function loadingBoxes(opts) {
     if (global.BrandLoading && typeof global.BrandLoading.html === "function") {
       return global.BrandLoading.html(opts);
@@ -619,7 +624,7 @@
         </div>
         ${
           loading
-            ? `<p class="admin-muted">Loading…</p>`
+            ? loadingPanel()
             : items.length
               ? `<div class="research-table-wrap">
                   <table class="research-table">

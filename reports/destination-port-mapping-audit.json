@@ -1,0 +1,27 @@
+{
+  "total_canonical_ports": 240,
+  "ports_with_destination_hints": 43,
+  "ports_without_mapping": 197,
+  "high_value_unmapped_sample": [
+    "Tarragona",
+    "Valencia",
+    "Alicante",
+    "Cartagena",
+    "Malaga",
+    "Cadiz",
+    "Gibraltar",
+    "Palma de Mallorca",
+    "Ibiza",
+    "Mahon",
+    "Marseille",
+    "Toulon",
+    "Cannes",
+    "Villefranche-sur-Mer",
+    "Monaco",
+    "Ajaccio",
+    "Bastia",
+    "Livorno",
+    "La Spezia",
+    "Genoa"
+  ]
+}

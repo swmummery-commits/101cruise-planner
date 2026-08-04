@@ -1101,6 +1101,13 @@
     });
   }
 
+  function loadingPanelHtml() {
+    if (typeof BrandLoading !== "undefined" && BrandLoading.panelHtml) {
+      return BrandLoading.panelHtml({ className: "dc-v2-loading-panel" });
+    }
+    return '<p class="dc-v2-status">Hang tight! Just getting your info.</p>';
+  }
+
   async function init() {
     mount = document.getElementById(MOUNT_ID) || document.querySelector("[data-dc-calculator-v2]");
     if (!mount) {
@@ -1108,7 +1115,8 @@
       return;
     }
 
-    mount.innerHTML = `<div class="dc-v2"><p class="dc-v2-status">Loading calculator…</p></div>`;
+    mount.innerHTML = `<div class="dc-v2">${loadingPanelHtml()}</div>`;
+    if (typeof BrandLoading?.scan === "function") BrandLoading.scan(mount);
 
     try {
       const linesPayload = await fetchJson(LINES_API_URL, REQUEST_TIMEOUT_MS);
