@@ -49,6 +49,17 @@
     messageTone = tone || "";
   }
 
+  function withSavingOverlay(fn, supportMessage) {
+    const loading = global.AdminLoading;
+    if (loading?.withSaving) {
+      return loading.withSaving(fn, {
+        key: "stateroom-types",
+        supportMessage: supportMessage || ""
+      });
+    }
+    return fn();
+  }
+
   function sortedTypes() {
     const svc = service();
     return svc ? svc.sortStateroomTypes(stateroomTypes) : stateroomTypes.slice();
@@ -134,47 +145,49 @@
     if (!svc || saving) return;
     readDraftFromDom();
 
-    saving = true;
-    setMessage("Saving stateroom type…", "running");
-    rerender();
-    try {
-      if (editingId) {
-        const validation = svc.validateStateroomTypeInput({
-          name: draft.name,
-          is_active: draft.is_active,
-          existingRows: stateroomTypes,
-          editingId
-        });
-        if (!validation.ok) {
-          setMessage(validation.error, "error");
-          return;
-        }
-        await svc.updateStateroomType(editingId, validation.payload);
-        setMessage("Stateroom type saved.", "success");
-      } else {
-        const validation = svc.buildCreatePayload({
-          name: draft.name,
-          is_active: draft.is_active,
-          existingRows: stateroomTypes
-        });
-        if (!validation.ok) {
-          setMessage(validation.error, "error");
-          return;
-        }
-        await svc.createStateroomType(validation.payload);
-        setMessage("Stateroom type created.", "success");
-      }
-      await ensureLoaded({ force: true, quiet: true });
-      await refreshPricingTypes();
-      creating = false;
-      editingId = null;
-      draft = emptyDraft();
-    } catch (error) {
-      setMessage(error.message || "Could not save stateroom type.", "error");
-    } finally {
-      saving = false;
+    return withSavingOverlay(async function () {
+      saving = true;
+      setMessage("Saving stateroom type…", "running");
       rerender();
-    }
+      try {
+        if (editingId) {
+          const validation = svc.validateStateroomTypeInput({
+            name: draft.name,
+            is_active: draft.is_active,
+            existingRows: stateroomTypes,
+            editingId
+          });
+          if (!validation.ok) {
+            setMessage(validation.error, "error");
+            return;
+          }
+          await svc.updateStateroomType(editingId, validation.payload);
+          setMessage("Stateroom type saved.", "success");
+        } else {
+          const validation = svc.buildCreatePayload({
+            name: draft.name,
+            is_active: draft.is_active,
+            existingRows: stateroomTypes
+          });
+          if (!validation.ok) {
+            setMessage(validation.error, "error");
+            return;
+          }
+          await svc.createStateroomType(validation.payload);
+          setMessage("Stateroom type created.", "success");
+        }
+        await ensureLoaded({ force: true, quiet: true });
+        await refreshPricingTypes();
+        creating = false;
+        editingId = null;
+        draft = emptyDraft();
+      } catch (error) {
+        setMessage(error.message || "Could not save stateroom type.", "error");
+      } finally {
+        saving = false;
+        rerender();
+      }
+    }, "Saving stateroom type…");
   }
 
   async function deleteStateroomType(id) {
@@ -185,21 +198,23 @@
     const label = row.name || "this stateroom type";
     if (!global.confirm(`Delete stateroom type “${label}”? This cannot be undone.`)) return;
 
-    saving = true;
-    setMessage("Checking usage…", "running");
-    rerender();
-    try {
-      await svc.deleteStateroomType(id);
-      setMessage(`Deleted “${label}”.`, "success");
-      if (editingId === id) cancelEdit();
-      await ensureLoaded({ force: true, quiet: true });
-      await refreshPricingTypes();
-    } catch (error) {
-      setMessage(error.message || "Could not delete stateroom type.", "error");
-    } finally {
-      saving = false;
+    return withSavingOverlay(async function () {
+      saving = true;
+      setMessage("Checking usage…", "running");
       rerender();
-    }
+      try {
+        await svc.deleteStateroomType(id);
+        setMessage(`Deleted “${label}”.`, "success");
+        if (editingId === id) cancelEdit();
+        await ensureLoaded({ force: true, quiet: true });
+        await refreshPricingTypes();
+      } catch (error) {
+        setMessage(error.message || "Could not delete stateroom type.", "error");
+      } finally {
+        saving = false;
+        rerender();
+      }
+    }, "Deleting stateroom type…");
   }
 
   function onDragHandlePointerDown(event) {
@@ -277,20 +292,22 @@
       return;
     }
 
-    reordering = true;
-    setMessage("Saving order…", "running");
-    rerender();
-    try {
-      stateroomTypes = await svc.reorderStateroomTypes(orderedIds);
-      await refreshPricingTypes();
-      setMessage("Order saved.", "success");
-    } catch (error) {
-      setMessage(error.message || "Could not save stateroom type order.", "error");
-      await ensureLoaded({ force: true, quiet: true });
-    } finally {
-      reordering = false;
+    return withSavingOverlay(async function () {
+      reordering = true;
+      setMessage("Saving order…", "running");
       rerender();
-    }
+      try {
+        stateroomTypes = await svc.reorderStateroomTypes(orderedIds);
+        await refreshPricingTypes();
+        setMessage("Order saved.", "success");
+      } catch (error) {
+        setMessage(error.message || "Could not save stateroom type order.", "error");
+        await ensureLoaded({ force: true, quiet: true });
+      } finally {
+        reordering = false;
+        rerender();
+      }
+    }, "Saving stateroom type order…");
   }
 
   function renderForm() {

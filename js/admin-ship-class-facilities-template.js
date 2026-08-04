@@ -582,33 +582,45 @@
     if (window.refreshCiLineShipClassesSection) window.refreshCiLineShipClassesSection();
   }
 
+  function withSavingOverlay(fn, supportMessage) {
+    if (window.AdminLoading?.withSaving) {
+      return window.AdminLoading.withSaving(fn, {
+        key: "ci-class-template",
+        supportMessage: supportMessage || ""
+      });
+    }
+    return fn();
+  }
+
   async function saveTemplate() {
     const api = tplApi();
     if (!api || !modalContext || !window.adminAuthHeaders) return;
     persistEditorDraft();
-    try {
-      const headers = await window.adminAuthHeaders({ "Content-Type": "application/json" });
-      const response = await fetch("/.netlify/functions/ci-ship-class-facilities-save", {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify({
-          cruise_line_id: modalContext.cruiseLineId,
-          class_name: modalContext.className,
-          exclusive_areas: modalContext.draftPayload.exclusive_areas,
-          specialty_features: modalContext.draftPayload.specialty_features
-        })
-      });
-      const data = await response.json().catch(function () { return {}; });
-      if (!response.ok || data.success === false) {
-        if (window.setCiAutosaveStatus) window.setCiAutosaveStatus(data.detail || data.error || "Template save failed", "error");
-        return;
+    return withSavingOverlay(async function () {
+      try {
+        const headers = await window.adminAuthHeaders({ "Content-Type": "application/json" });
+        const response = await fetch("/.netlify/functions/ci-ship-class-facilities-save", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({
+            cruise_line_id: modalContext.cruiseLineId,
+            class_name: modalContext.className,
+            exclusive_areas: modalContext.draftPayload.exclusive_areas,
+            specialty_features: modalContext.draftPayload.specialty_features
+          })
+        });
+        const data = await response.json().catch(function () { return {}; });
+        if (!response.ok || data.success === false) {
+          if (window.setCiAutosaveStatus) window.setCiAutosaveStatus(data.detail || data.error || "Template save failed", "error");
+          return;
+        }
+        upsertTemplateLocal(data.template);
+        if (window.setCiAutosaveStatus) window.setCiAutosaveStatus("Class template saved", "saved");
+        renderModal();
+      } catch (error) {
+        if (window.setCiAutosaveStatus) window.setCiAutosaveStatus(String(error.message || error), "error");
       }
-      upsertTemplateLocal(data.template);
-      if (window.setCiAutosaveStatus) window.setCiAutosaveStatus("Class template saved", "saved");
-      renderModal();
-    } catch (error) {
-      if (window.setCiAutosaveStatus) window.setCiAutosaveStatus(String(error.message || error), "error");
-    }
+    }, "Saving class template…");
   }
 
   function upsertTemplateLocal(row) {
@@ -630,35 +642,42 @@
     if (!modalContext || !window.adminAuthHeaders) return;
     const ack = document.getElementById("ciClassTplApplyAck");
     if (!ack || !ack.checked) return;
-    const btn = document.querySelector("[data-action='confirm-apply']");
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = "Applying…";
-    }
-    try {
-      const headers = await window.adminAuthHeaders({ "Content-Type": "application/json" });
-      const response = await fetch("/.netlify/functions/ci-ship-class-facilities-apply", {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify({
-          cruise_line_id: modalContext.cruiseLineId,
-          class_name: modalContext.className
-        })
-      });
-      const data = await response.json().catch(function () { return {}; });
-      if (!response.ok || data.success === false) {
-        modalContext.lastResult = { error: data.detail || data.error || "Apply failed." };
-        goToStep(STEP_RESULT);
-        return;
+    return withSavingOverlay(async function () {
+      const btn = document.querySelector("[data-action='confirm-apply']");
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "Applying…";
       }
-      applyShipUpdatesLocal(data.updated || []);
-      modalContext.lastResult = data;
-      if (window.setCiAutosaveStatus) window.setCiAutosaveStatus("Class template applied", "saved");
-      goToStep(STEP_RESULT);
-    } catch (error) {
-      modalContext.lastResult = { error: String(error.message || error) };
-      goToStep(STEP_RESULT);
-    }
+      try {
+        const headers = await window.adminAuthHeaders({ "Content-Type": "application/json" });
+        const response = await fetch("/.netlify/functions/ci-ship-class-facilities-apply", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify({
+            cruise_line_id: modalContext.cruiseLineId,
+            class_name: modalContext.className
+          })
+        });
+        const data = await response.json().catch(function () { return {}; });
+        if (!response.ok || data.success === false) {
+          modalContext.lastResult = { error: data.detail || data.error || "Apply failed." };
+          goToStep(STEP_RESULT);
+          return;
+        }
+        applyShipUpdatesLocal(data.updated || []);
+        modalContext.lastResult = data;
+        if (window.setCiAutosaveStatus) window.setCiAutosaveStatus("Class template applied", "saved");
+        goToStep(STEP_RESULT);
+      } catch (error) {
+        modalContext.lastResult = { error: String(error.message || error) };
+        goToStep(STEP_RESULT);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = "Apply to ships";
+        }
+      }
+    }, "Applying class template to ships…");
   }
 
   function applyShipUpdatesLocal(updatedRows) {

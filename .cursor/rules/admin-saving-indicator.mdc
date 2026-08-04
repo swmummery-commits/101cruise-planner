@@ -1,0 +1,47 @@
+---
+description: Always show the Admin saving overlay (nine-square BrandLoading) during save/delete operations
+globs:
+  - js/admin*.js
+  - js/*-admin*.js
+  - admin.html
+alwaysApply: false
+---
+
+# Admin saving indicator (required)
+
+Whenever Admin code **saves, deletes, or applies** data that may take more than a moment, show the shared waiting overlay — do **not** rely on inline text alone.
+
+## Standard pattern
+
+Use `AdminLoading.withSaving()` (preferred) or `withAdminBusy(fn, { saving: true, supportMessage: "…" })` from `js/admin.js`:
+
+```javascript
+return global.AdminLoading.withSaving(async () => {
+  // set local saving flags, rerender if needed, await network/DB work
+}, {
+  key: "unique-operation-key",
+  supportMessage: "Saving feature…" // optional detail under the main message
+});
+```
+
+## Messages
+
+- **Loading / fetching:** `BrandLoading.CANONICAL_MESSAGE` → `"Hang tight! Just getting your info."`
+- **Saving / deleting / applying:** `BrandLoading.SAVING_MESSAGE` → `"Hang tight! Saving your info."`
+
+The overlay is the animated nine-square logo from `brand-loading.css` / `admin-loading.js`.
+
+## When to use
+
+- Explicit Save / Create / Delete / Apply buttons
+- Multi-step writes (e.g. feature + class templates + ships)
+- Any async persist that replaces DOM or navigates away
+
+## When inline-only is OK
+
+- Quiet background autosave (`quiet: true`) — button/status text is enough
+- Instant client-only state (tab switch, form draft) with no network call
+
+## New modules
+
+Standalone admin modules loaded before `admin.js` should call `global.AdminLoading.withSaving` directly (see `withSavingOverlay` helpers in cruise-line features, stateroom types, ports, media library).

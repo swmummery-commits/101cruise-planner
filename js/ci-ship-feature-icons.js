@@ -201,7 +201,7 @@
     dining: {
       label: "Dining",
       group: "specialty",
-      paths: `<path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
+      paths: `<path d="m5 0.5 0.4 0.85 0.95 0.14-0.68 0.66 0.16 0.94-0.83-0.5-0.83 0.5 0.16-0.94-0.68-0.66 0.95-0.14Z"/><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
     },
     drinks: {
       label: "Drinks / bar",

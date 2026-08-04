@@ -56,6 +56,17 @@
     messageTone = tone || "";
   }
 
+  function withSavingOverlay(fn, supportMessage) {
+    const loading = global.AdminLoading;
+    if (loading?.withSaving) {
+      return loading.withSaving(fn, {
+        key: "ports-catalogue",
+        supportMessage: supportMessage || ""
+      });
+    }
+    return fn();
+  }
+
   async function api(action, extra = {}) {
     const headers =
       typeof global.adminAuthHeaders === "function"
@@ -295,45 +306,52 @@
       throw new Error("Canonical name is required.");
     }
 
-    saving = true;
-    if (!quiet) {
-      setMessage("Saving…", "running");
-      rerender();
-    }
-
-    try {
-      const payload = draftPayload();
-      let result;
-      if (creating || !selectedId) {
-        result = await api("create", { port: payload });
-      } else {
-        result = await api("update", { id: selectedId, port: payload });
+    const performSave = async function () {
+      saving = true;
+      if (!quiet) {
+        setMessage("Saving…", "running");
+        rerender();
       }
-      const port = result.port;
-      if (!port?.id) throw new Error("Port was not returned after save.");
 
-      const idx = ports.findIndex((p) => p.id === port.id);
-      if (idx >= 0) ports[idx] = port;
-      else ports.push(port);
-      ports.sort((a, b) =>
-        String(a.canonical_name || "").localeCompare(String(b.canonical_name || ""), undefined, {
-          sensitivity: "base"
-        })
-      );
+      try {
+        const payload = draftPayload();
+        let result;
+        if (creating || !selectedId) {
+          result = await api("create", { port: payload });
+        } else {
+          result = await api("update", { id: selectedId, port: payload });
+        }
+        const port = result.port;
+        if (!port?.id) throw new Error("Port was not returned after save.");
 
-      creating = false;
-      selectedId = port.id;
-      draft = portToDraft(port);
-      syncItineraryPortsCache();
-      if (!quiet) setMessage(`Saved “${port.display_name || port.canonical_name}”.`, "success");
-      return port;
-    } catch (error) {
-      setMessage(error.message || "Could not save port.", "error");
-      throw error;
-    } finally {
-      saving = false;
-      if (!quiet) rerender();
+        const idx = ports.findIndex((p) => p.id === port.id);
+        if (idx >= 0) ports[idx] = port;
+        else ports.push(port);
+        ports.sort((a, b) =>
+          String(a.canonical_name || "").localeCompare(String(b.canonical_name || ""), undefined, {
+            sensitivity: "base"
+          })
+        );
+
+        creating = false;
+        selectedId = port.id;
+        draft = portToDraft(port);
+        syncItineraryPortsCache();
+        if (!quiet) setMessage(`Saved “${port.display_name || port.canonical_name}”.`, "success");
+        return port;
+      } catch (error) {
+        setMessage(error.message || "Could not save port.", "error");
+        throw error;
+      } finally {
+        saving = false;
+        if (!quiet) rerender();
+      }
+    };
+
+    if (!quiet) {
+      return withSavingOverlay(performSave, "Saving port…");
     }
+    return performSave();
   }
 
   async function deleteSelectedPort() {
@@ -345,23 +363,25 @@
     );
     if (!confirmed) return;
 
-    saving = true;
-    setMessage("Deleting…", "running");
-    rerender();
-    try {
-      await api("delete", { id: port.id });
-      ports = ports.filter((p) => p.id !== port.id);
-      creating = false;
-      selectedId = null;
-      draft = emptyDraft();
-      syncItineraryPortsCache();
-      setMessage(`Deleted “${label}”.`, "success");
-    } catch (error) {
-      setMessage(error.message || "Could not delete port.", "error");
-    } finally {
-      saving = false;
+    return withSavingOverlay(async function () {
+      saving = true;
+      setMessage("Deleting…", "running");
       rerender();
-    }
+      try {
+        await api("delete", { id: port.id });
+        ports = ports.filter((p) => p.id !== port.id);
+        creating = false;
+        selectedId = null;
+        draft = emptyDraft();
+        syncItineraryPortsCache();
+        setMessage(`Deleted “${label}”.`, "success");
+      } catch (error) {
+        setMessage(error.message || "Could not delete port.", "error");
+      } finally {
+        saving = false;
+        rerender();
+      }
+    }, "Deleting port…");
   }
 
   function renderMasterRow(port) {

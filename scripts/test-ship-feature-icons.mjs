@@ -49,6 +49,8 @@ assert.equal(Icons.isKnownIconKey("not-real"), false);
 assert.equal(Icons.resolveShipFeatureIconKey("Unknown Widget", "not-real"), Icons.FALLBACK_KEY);
 assert.ok(Icons.renderIconSvg("pool").includes("<svg"));
 assert.ok(Icons.renderFeatureIconHtml("spa").includes("ship-feature-icon"));
+assert.notEqual(Icons.ICONS.dining.paths, Icons.ICONS["private-dining"].paths);
+assert.match(Icons.renderIconSvg("dining"), /m5 0\.5/);
 
 // Legacy string arrays
 const legacyEa = CiFac.normalizeExclusiveAreasForDisplay(["Suite Deck", "Premium Lounge"]);

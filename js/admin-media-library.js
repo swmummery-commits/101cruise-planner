@@ -55,6 +55,17 @@
           .replaceAll('"', "&quot;");
   }
 
+  function withSavingOverlay(fn, supportMessage) {
+    const loading = global.AdminLoading;
+    if (loading?.withSaving) {
+      return loading.withSaving(fn, {
+        key: "media-library",
+        supportMessage: supportMessage || ""
+      });
+    }
+    return fn();
+  }
+
   async function mediaApi(action, payload = {}) {
     const headers =
       typeof global.adminAuthHeaders === "function"
@@ -405,53 +416,56 @@
   async function saveMediaEditor() {
     const row = mediaItems.find((m) => m.id === editingMediaId);
     if (!row || mediaSaving) return;
-    // Capture before any re-render — otherwise checkbox/text edits are wiped by
-    // stale mediaItems values (root cause of Default reverting on Save).
     const payload = captureMediaEditorFromDom(row);
     if ((payload.media_type || row.media_type) === "ship") {
-      // Ship hero is managed only via set_ship_hero.
       delete payload.is_default;
     }
-    mediaSaving = true;
-    mediaMessage = "Saving…";
-    mediaMessageTone = "";
-    if (typeof global.renderAdmin === "function") global.renderAdmin();
-    try {
-      await mediaApi("update_record", payload);
-      await loadMediaLibrary({ quiet: true });
-      mediaMessage = "Media saved.";
-      mediaMessageTone = "success";
-      editingMediaId = null;
-    } catch (error) {
-      mediaMessage = error.message || "Could not save media.";
-      mediaMessageTone = "error";
-    } finally {
-      mediaSaving = false;
+
+    return withSavingOverlay(async function () {
+      mediaSaving = true;
+      mediaMessage = "Saving…";
+      mediaMessageTone = "";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
-    }
+      try {
+        await mediaApi("update_record", payload);
+        await loadMediaLibrary({ quiet: true });
+        mediaMessage = "Media saved.";
+        mediaMessageTone = "success";
+        editingMediaId = null;
+      } catch (error) {
+        mediaMessage = error.message || "Could not save media.";
+        mediaMessageTone = "error";
+      } finally {
+        mediaSaving = false;
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+    }, "Saving media…");
   }
 
   async function deleteMediaEditor() {
     const row = mediaItems.find((m) => m.id === editingMediaId);
     if (!row) return;
     if (!window.confirm(`Delete “${row.title}”? This cannot be undone.`)) return;
-    mediaSaving = true;
-    mediaMessage = "Deleting…";
-    mediaMessageTone = "";
-    if (typeof global.renderAdmin === "function") global.renderAdmin();
-    try {
-      await mediaApi("delete_record", { id: row.id });
-      await loadMediaLibrary({ quiet: true });
-      editingMediaId = null;
-      mediaMessage = "Media deleted.";
-      mediaMessageTone = "success";
-    } catch (error) {
-      mediaMessage = error.message || "Could not delete media.";
-      mediaMessageTone = "error";
-    } finally {
-      mediaSaving = false;
+
+    return withSavingOverlay(async function () {
+      mediaSaving = true;
+      mediaMessage = "Deleting…";
+      mediaMessageTone = "";
       if (typeof global.renderAdmin === "function") global.renderAdmin();
-    }
+      try {
+        await mediaApi("delete_record", { id: row.id });
+        await loadMediaLibrary({ quiet: true });
+        editingMediaId = null;
+        mediaMessage = "Media deleted.";
+        mediaMessageTone = "success";
+      } catch (error) {
+        mediaMessage = error.message || "Could not delete media.";
+        mediaMessageTone = "error";
+      } finally {
+        mediaSaving = false;
+        if (typeof global.renderAdmin === "function") global.renderAdmin();
+      }
+    }, "Deleting media…");
   }
 
   async function replaceMediaImage(event) {

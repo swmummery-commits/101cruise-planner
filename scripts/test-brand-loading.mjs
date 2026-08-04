@@ -19,6 +19,8 @@ function assert(cond, msg) {
 
 assert(BOX_COUNT === 9, "nine box count");
 assert(CANONICAL_MESSAGE === "Hang tight! Just getting your info.", "canonical loading message");
+const { SAVING_MESSAGE } = require("../js/brand-loading.js");
+assert(SAVING_MESSAGE === "Hang tight! Saving your info.", "saving message");
 assert(typeof panelHtml === "function", "panelHtml API");
 const panel = panelHtml();
 assert(/brand-loading-panel/.test(panel), "panel wrapper");
@@ -48,6 +50,6 @@ const adminHtml = readFileSync(path.join(root, "admin.html"), "utf8");
 const adminLoading = readFileSync(path.join(root, "js/admin-loading.js"), "utf8");
 assert(indexHtml.includes("brand-loading.css") && indexHtml.includes("brand-loading.js"), "portal loads shared assets");
 assert(adminHtml.includes("brand-loading.css") && adminHtml.includes("brand-loading.js"), "admin loads shared assets");
-assert(adminLoading.includes("Hang tight! Just getting your info."), "admin loading uses canonical message");
+assert(adminLoading.includes("Hang tight! Saving your info."), "admin loading uses saving message");
 
 console.log("test-brand-loading: ok");

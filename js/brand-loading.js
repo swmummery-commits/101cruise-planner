@@ -16,6 +16,7 @@
   var LIVE_ATTR = "data-brand-loading-live";
   var STATE_KEY = "_brandLoadingState";
   var CANONICAL_MESSAGE = "Hang tight! Just getting your info.";
+  var SAVING_MESSAGE = "Hang tight! Saving your info.";
 
   /**
    * @param {{ inline?: boolean, large?: boolean, className?: string }=} opts
@@ -210,6 +211,7 @@
     stop: stop,
     scan: scan,
     CANONICAL_MESSAGE: CANONICAL_MESSAGE,
+    SAVING_MESSAGE: SAVING_MESSAGE,
     BOX_COUNT: BOX_COUNT
   };
 });

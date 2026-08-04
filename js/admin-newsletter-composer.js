@@ -426,6 +426,7 @@
 
     const batchId = ++routeMapBatchId;
 
+    const runSave = async () => {
     try {
       issueBusy = true;
       routeMapSaveBusy = true;
@@ -544,6 +545,16 @@
         routeMapSaveBusy = false;
         rerender();
       }
+    }
+    };
+
+    if (typeof global.AdminLoading?.withSaving === "function") {
+      await global.AdminLoading.withSaving(runSave, {
+        key: "newsletter-save",
+        supportMessage: "Saving newsletter…"
+      });
+    } else {
+      await runSave();
     }
   }
 

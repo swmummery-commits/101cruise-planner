@@ -506,26 +506,30 @@ function brandLoadingPanel(message) {
  * Use for any open/load/save that can take more than a moment.
  */
 async function withAdminBusy(fn, options = {}) {
-  const defaultMessage =
-    typeof BrandLoading?.CANONICAL_MESSAGE === "string"
-      ? BrandLoading.CANONICAL_MESSAGE
-      : "Hang tight! Just getting your info.";
-  if (typeof window.AdminLoading?.withLoading === "function") {
-    const defaultMessage =
-      typeof BrandLoading?.CANONICAL_MESSAGE === "string"
+  const isSaving = Boolean(options.saving);
+  const defaultMessage = isSaving
+    ? (typeof BrandLoading?.SAVING_MESSAGE === "string"
+        ? BrandLoading.SAVING_MESSAGE
+        : "Hang tight! Saving your info.")
+    : (typeof BrandLoading?.CANONICAL_MESSAGE === "string"
         ? BrandLoading.CANONICAL_MESSAGE
-        : "Hang tight! Just getting your info.";
+        : "Hang tight! Just getting your info.");
+  if (typeof window.AdminLoading?.withLoading === "function") {
     const supportMessage =
       options.supportMessage !== undefined
         ? options.supportMessage
         : options.message && options.message !== defaultMessage
           ? String(options.message)
           : "";
-    return window.AdminLoading.withLoading(fn, {
+    const runner = isSaving && typeof window.AdminLoading.withSaving === "function"
+      ? window.AdminLoading.withSaving.bind(window.AdminLoading)
+      : window.AdminLoading.withLoading.bind(window.AdminLoading);
+    return runner(fn, {
       delayMs: Number.isFinite(Number(options.delayMs)) ? Number(options.delayMs) : 0,
-      key: options.key || "admin-busy",
-      message: defaultMessage,
-      supportMessage
+      key: options.key || (isSaving ? "admin-saving" : "admin-busy"),
+      message: options.message || defaultMessage,
+      supportMessage,
+      button: options.button || null
     });
   }
   return fn();
@@ -2467,6 +2471,8 @@ async function saveShip() {
   message.className = "admin-message admin-running";
   message.innerText = "Saving...";
 
+  return withAdminBusy(
+    async () => {
   let result;
   if (id) {
     result = await supabaseClient
@@ -2500,6 +2506,9 @@ async function saveShip() {
   editingShipId = null;
   await loadAdminData();
   renderAdmin();
+    },
+    { saving: true, key: "legacy-ship-save", supportMessage: "Saving ship…" }
+  );
 }
 
 function editChecklistSection(id) {
@@ -2537,6 +2546,8 @@ async function saveChecklistSection() {
   message.className = "admin-message admin-running";
   message.innerText = "Saving...";
 
+  return withAdminBusy(
+    async () => {
   let result;
   if (id) {
     result = await supabaseClient
@@ -2564,6 +2575,9 @@ async function saveChecklistSection() {
   editingChecklistSectionId = null;
   await loadAdminData();
   renderAdmin();
+    },
+    { saving: true, key: "checklist-section-save", supportMessage: "Saving checklist section…" }
+  );
 }
 
 function editChecklistItem(id) {
@@ -2630,6 +2644,8 @@ async function saveChecklistItem() {
   message.className = "admin-message admin-running";
   message.innerText = "Saving...";
 
+  return withAdminBusy(
+    async () => {
   let result;
   if (id) {
     result = await supabaseClient
@@ -2657,6 +2673,9 @@ async function saveChecklistItem() {
   editingChecklistItemId = null;
   await loadAdminData();
   renderAdmin();
+    },
+    { saving: true, key: "checklist-item-save", supportMessage: "Saving checklist item…" }
+  );
 }
 
 async function toggleChecklistItemActive(itemId, newActiveValue) {
@@ -5605,6 +5624,8 @@ async function saveBeveragePackage() {
     return;
   }
 
+  return withAdminBusy(
+    async () => {
   const { data, error } = await supabaseClient
     .from("cruise_line_beverage_packages")
     .insert({
@@ -5631,14 +5652,15 @@ async function saveBeveragePackage() {
   showBeveragePackageForm = false;
   beveragePackageMessage = `Added ${packageName}.`;
   beveragePackageMessageTone = "success";
-  // Always re-fetch from Supabase so the grid matches the database
-  // (never rely on a local append that can go stale or miss nested fields).
   const refreshed = await reloadBeveragePackages();
   if (!refreshed) {
     beveragePackageMessage = `Added ${packageName}, but the package list could not be refreshed. Reload Admin to see all rows.`;
     beveragePackageMessageTone = "error";
   }
   renderAdmin();
+    },
+    { saving: true, key: "beverage-package-save", supportMessage: "Saving beverage package…" }
+  );
 }
 
 function collectActiveBeveragePackagePayload() {
@@ -9139,67 +9161,78 @@ async function persistCiLine({ quiet = false } = {}) {
     payload.source_name = "Admin";
   }
 
-  ciSaving = true;
-  updateCiLineSaveButtonState();
-  if (quiet) setCiAutosaveStatus("Saving…", "saving");
-  else {
-    ciMessage = "Saving…";
-    ciMessageTone = "running";
-    setCiAutosaveStatus("Saving…", "saving");
-  }
-
-  let result;
-  try {
-    if (id) {
-      result = await supabaseClient.from("ci_cruise_lines").update(payload).eq("id", id).select().single();
-    } else {
-      result = await supabaseClient.from("ci_cruise_lines").insert(payload).select().single();
+  async function doPersist() {
+    ciSaving = true;
+    updateCiLineSaveButtonState();
+    if (quiet) setCiAutosaveStatus("Saving…", "saving");
+    else {
+      ciMessage = "Saving…";
+      ciMessageTone = "running";
+      setCiAutosaveStatus("Saving…", "saving");
     }
-  } finally {
-    ciSaving = false;
-    updateCiLineSaveButtonState();
-  }
 
-  if (result.error) {
-    const message = humanizeCiSaveError(result.error.message, { entity: "line", name });
-    revealCiSaveError(message);
-    updateCiLineSaveButtonState();
-    if (!quiet) renderCiAdmin();
-    return false;
-  }
+    let result;
+    try {
+      if (id) {
+        result = await supabaseClient.from("ci_cruise_lines").update(payload).eq("id", id).select().single();
+      } else {
+        result = await supabaseClient.from("ci_cruise_lines").insert(payload).select().single();
+      }
+    } finally {
+      ciSaving = false;
+      updateCiLineSaveButtonState();
+    }
 
-  mergeCiLineRecord(result.data);
-  const savedId = result.data?.id || id;
-  const allocOk = await persistCiLineStateroomTypes(savedId);
-  if (!allocOk) {
-    updateCiLineSaveButtonState();
-    if (!quiet) renderCiAdmin();
-    return false;
-  }
-  if (quiet) {
-    setCiAutosaveStatus("Saved", "saved");
-    clearCiSaveError();
-    markCiLineFormBaseline();
-    refreshCiLineMasterList();
-  } else {
-    const wasCreating = ciLineCreating;
-    ciMessage = "Cruise line saved.";
-    ciMessageTone = "success";
-    ciLineCreating = false;
-    editingCiLineId = savedId || null;
-    ciAutosaveStatus = "Saved";
-    if (wasCreating) ciLineActiveTab = "details";
-    renderCiAdmin();
-    markCiLineFormBaseline();
-    syncCiLineAdminUrl();
-    if (wasCreating && savedId) {
-      loadCiShipClassFacilityTemplatesForLine(savedId);
-      if (window.CruiseLineFeaturesAdmin?.loadForLine) {
-        window.CruiseLineFeaturesAdmin.loadForLine(savedId);
+    if (result.error) {
+      const message = humanizeCiSaveError(result.error.message, { entity: "line", name });
+      revealCiSaveError(message);
+      updateCiLineSaveButtonState();
+      if (!quiet) renderCiAdmin();
+      return false;
+    }
+
+    mergeCiLineRecord(result.data);
+    const savedId = result.data?.id || id;
+    const allocOk = await persistCiLineStateroomTypes(savedId);
+    if (!allocOk) {
+      updateCiLineSaveButtonState();
+      if (!quiet) renderCiAdmin();
+      return false;
+    }
+    if (quiet) {
+      setCiAutosaveStatus("Saved", "saved");
+      clearCiSaveError();
+      markCiLineFormBaseline();
+      refreshCiLineMasterList();
+    } else {
+      const wasCreating = ciLineCreating;
+      ciMessage = "Cruise line saved.";
+      ciMessageTone = "success";
+      ciLineCreating = false;
+      editingCiLineId = savedId || null;
+      ciAutosaveStatus = "Saved";
+      if (wasCreating) ciLineActiveTab = "details";
+      renderCiAdmin();
+      markCiLineFormBaseline();
+      syncCiLineAdminUrl();
+      if (wasCreating && savedId) {
+        loadCiShipClassFacilityTemplatesForLine(savedId);
+        if (window.CruiseLineFeaturesAdmin?.loadForLine) {
+          window.CruiseLineFeaturesAdmin.loadForLine(savedId);
+        }
       }
     }
+    return true;
   }
-  return true;
+
+  if (!quiet) {
+    return withAdminBusy(doPersist, {
+      saving: true,
+      key: "ci-line-save",
+      supportMessage: "Saving cruise line…"
+    });
+  }
+  return doPersist();
 }
 
 async function saveCiLine() {
@@ -9687,61 +9720,72 @@ async function persistCiShip({ quiet = false } = {}) {
     payload.source_name = "Admin";
   }
 
-  ciSaving = true;
-  if (quiet) setCiAutosaveStatus("Saving…", "saving");
-  else {
-    ciMessage = "Saving…";
-    ciMessageTone = "running";
-  }
-
-  const selectCols = "*, ci_cruise_lines(id, name, slug)";
-  let result;
-  try {
-    if (id) {
-      result = await supabaseClient.from("ci_cruise_ships").update(payload).eq("id", id).select(selectCols).single();
-    } else {
-      result = await supabaseClient.from("ci_cruise_ships").insert(payload).select(selectCols).single();
-    }
-  } finally {
-    ciSaving = false;
-  }
-
-  if (result.error) {
-    const message = humanizeCiSaveError(result.error.message, { entity: "ship", name });
-    revealCiSaveError(message);
-    if (quiet) setCiAutosaveStatus("Save failed", "error");
-    else refreshCiShipAutosaveStatusDom();
-    return false;
-  }
-
-  const specMismatch = noteCiShipSpecSaveMismatch(result.data, payload);
-  mergeCiShipRecord(result.data);
-  syncCiCatalogueWindowState();
-  const savedId = result.data?.id || id;
-  if (specMismatch) {
-    revealCiSaveError(specMismatch);
-    if (quiet) setCiAutosaveStatus("Saved with warnings", "error");
+  async function doPersist() {
+    ciSaving = true;
+    if (quiet) setCiAutosaveStatus("Saving…", "saving");
     else {
-      ciMessage = specMismatch;
-      ciMessageTone = "error";
-      ciAutosaveStatus = "Saved with warnings";
+      ciMessage = "Saving…";
+      ciMessageTone = "running";
+    }
+
+    const selectCols = "*, ci_cruise_lines(id, name, slug)";
+    let result;
+    try {
+      if (id) {
+        result = await supabaseClient.from("ci_cruise_ships").update(payload).eq("id", id).select(selectCols).single();
+      } else {
+        result = await supabaseClient.from("ci_cruise_ships").insert(payload).select(selectCols).single();
+      }
+    } finally {
+      ciSaving = false;
+    }
+
+    if (result.error) {
+      const message = humanizeCiSaveError(result.error.message, { entity: "ship", name });
+      revealCiSaveError(message);
+      if (quiet) setCiAutosaveStatus("Save failed", "error");
+      else refreshCiShipAutosaveStatusDom();
+      return false;
+    }
+
+    const specMismatch = noteCiShipSpecSaveMismatch(result.data, payload);
+    mergeCiShipRecord(result.data);
+    syncCiCatalogueWindowState();
+    const savedId = result.data?.id || id;
+    if (specMismatch) {
+      revealCiSaveError(specMismatch);
+      if (quiet) setCiAutosaveStatus("Saved with warnings", "error");
+      else {
+        ciMessage = specMismatch;
+        ciMessageTone = "error";
+        ciAutosaveStatus = "Saved with warnings";
+        renderCiAdmin();
+      }
+      return false;
+    }
+    if (quiet) {
+      setCiAutosaveStatus("Saved", "saved");
+      clearCiSaveError();
+      refreshCiShipMasterList();
+    } else {
+      ciMessage = "Ship saved.";
+      ciMessageTone = "success";
+      ciShipCreating = false;
+      editingCiShipId = savedId || null;
+      ciAutosaveStatus = "Saved";
       renderCiAdmin();
     }
-    return false;
+    return true;
   }
-  if (quiet) {
-    setCiAutosaveStatus("Saved", "saved");
-    clearCiSaveError();
-    refreshCiShipMasterList();
-  } else {
-    ciMessage = "Ship saved.";
-    ciMessageTone = "success";
-    ciShipCreating = false;
-    editingCiShipId = savedId || null;
-    ciAutosaveStatus = "Saved";
-    renderCiAdmin();
+
+  if (!quiet) {
+    return withAdminBusy(doPersist, {
+      saving: true,
+      key: "ci-ship-save",
+      supportMessage: "Saving ship…"
+    });
   }
-  return true;
+  return doPersist();
 }
 
 async function saveCiShip() {
@@ -13209,9 +13253,9 @@ async function saveFeaturedCruise() {
   }
     },
     {
+      saving: true,
       key: "featured-cruise-save",
-      message: "Saving this cruise…",
-      supportMessage: "Please wait while we save the cruise, pricing and itinerary."
+      supportMessage: "Saving cruise, pricing and itinerary…"
     }
   );
 }
@@ -13244,9 +13288,9 @@ async function deleteFeaturedCruise(id) {
   }
     },
     {
+      saving: true,
       key: "featured-cruise-delete",
-      message: "Deleting this cruise…",
-      supportMessage: "Please wait a moment."
+      supportMessage: "Deleting cruise…"
     }
   );
 }

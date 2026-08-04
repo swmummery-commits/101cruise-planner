@@ -86,6 +86,17 @@
     global.ciCruiseLineFeatures = features.slice();
   }
 
+  function withSavingOverlay(fn, supportMessage) {
+    const loading = global.AdminLoading;
+    if (loading?.withSaving) {
+      return loading.withSaving(fn, {
+        key: "ci-line-features",
+        supportMessage: supportMessage || ""
+      });
+    }
+    return fn();
+  }
+
   function sortedFeatures(featureType) {
     const service = svc();
     return service ? service.filterByType(features, featureType) : [];
@@ -480,76 +491,78 @@
     if (!featureType) return;
     const previousName = row?.name || "";
 
-    saving = true;
-    setMessage("Saving feature…", "running");
-    rerender({ activateFeaturesTab: true });
-    try {
-      let savedFeature = null;
-      if (editingId) {
-        const validation = service.validateFeatureInput({
-          name: draft.name,
-          description: draft.description,
-          icon_key: draft.icon_key,
-          is_active: draft.is_active,
-          feature_type: featureType,
-          cruise_line_id: activeLineId,
-          existingRows: features,
-          editingId
-        });
-        if (!validation.ok) {
-          setMessage(validation.error, "error");
-          return;
-        }
-        savedFeature = await service.updateFeature(editingId, validation.payload);
-      } else {
-        const validation = service.buildCreatePayload({
-          name: draft.name,
-          description: draft.description,
-          icon_key: draft.icon_key,
-          is_active: draft.is_active,
-          feature_type: featureType,
-          cruise_line_id: activeLineId,
-          existingRows: features
-        });
-        if (!validation.ok) {
-          setMessage(validation.error, "error");
-          return;
-        }
-        savedFeature = await service.createFeature(validation.payload);
-      }
-
-      savedFeature = Object.assign({}, savedFeature || {}, {
-        name: draft.name,
-        description: draft.description,
-        icon_key: draft.icon_key,
-        is_active: draft.is_active,
-        feature_type: featureType
-      });
-
-      const classResult = await saveClassAssignments(featureType, savedFeature, previousName);
-      const shipResult = await saveShipAssignments(featureType, savedFeature, previousName);
-
-      const parts = ["Feature saved."];
-      if (classResult.classesUpdated) {
-        parts.push(
-          `Updated ${classResult.classesUpdated} class template${classResult.classesUpdated === 1 ? "" : "s"}.`
-        );
-      }
-      if (shipResult.shipsUpdated) {
-        parts.push(`Updated ${shipResult.shipsUpdated} ship${shipResult.shipsUpdated === 1 ? "" : "s"}.`);
-      }
-      setMessage(parts.join(" "), "success");
-
-      await loadForLine(activeLineId, { rerenderOnComplete: false });
-      creatingType = "";
-      editingId = null;
-      draft = emptyDraft();
-    } catch (error) {
-      setMessage(error.message || "Could not save feature.", "error");
-    } finally {
-      saving = false;
+    return withSavingOverlay(async function () {
+      saving = true;
+      setMessage("Saving feature…", "running");
       rerender({ activateFeaturesTab: true });
-    }
+      try {
+        let savedFeature = null;
+        if (editingId) {
+          const validation = service.validateFeatureInput({
+            name: draft.name,
+            description: draft.description,
+            icon_key: draft.icon_key,
+            is_active: draft.is_active,
+            feature_type: featureType,
+            cruise_line_id: activeLineId,
+            existingRows: features,
+            editingId
+          });
+          if (!validation.ok) {
+            setMessage(validation.error, "error");
+            return;
+          }
+          savedFeature = await service.updateFeature(editingId, validation.payload);
+        } else {
+          const validation = service.buildCreatePayload({
+            name: draft.name,
+            description: draft.description,
+            icon_key: draft.icon_key,
+            is_active: draft.is_active,
+            feature_type: featureType,
+            cruise_line_id: activeLineId,
+            existingRows: features
+          });
+          if (!validation.ok) {
+            setMessage(validation.error, "error");
+            return;
+          }
+          savedFeature = await service.createFeature(validation.payload);
+        }
+
+        savedFeature = Object.assign({}, savedFeature || {}, {
+          name: draft.name,
+          description: draft.description,
+          icon_key: draft.icon_key,
+          is_active: draft.is_active,
+          feature_type: featureType
+        });
+
+        const classResult = await saveClassAssignments(featureType, savedFeature, previousName);
+        const shipResult = await saveShipAssignments(featureType, savedFeature, previousName);
+
+        const parts = ["Feature saved."];
+        if (classResult.classesUpdated) {
+          parts.push(
+            `Updated ${classResult.classesUpdated} class template${classResult.classesUpdated === 1 ? "" : "s"}.`
+          );
+        }
+        if (shipResult.shipsUpdated) {
+          parts.push(`Updated ${shipResult.shipsUpdated} ship${shipResult.shipsUpdated === 1 ? "" : "s"}.`);
+        }
+        setMessage(parts.join(" "), "success");
+
+        await loadForLine(activeLineId, { rerenderOnComplete: false });
+        creatingType = "";
+        editingId = null;
+        draft = emptyDraft();
+      } catch (error) {
+        setMessage(error.message || "Could not save feature.", "error");
+      } finally {
+        saving = false;
+        rerender({ activateFeaturesTab: true });
+      }
+    }, "Saving feature…");
   }
 
   async function deleteFeature(id) {
@@ -560,20 +573,22 @@
     const label = row.name || "this feature";
     if (!global.confirm(`Delete “${label}”? Class templates that use it will need updating.`)) return;
 
-    saving = true;
-    setMessage("Deleting feature…", "running");
-    rerender();
-    try {
-      await service.deleteFeature(id);
-      setMessage(`Deleted “${label}”.`, "success");
-      if (editingId === id) cancelEdit();
-      await loadForLine(activeLineId, { rerenderOnComplete: false });
-    } catch (error) {
-      setMessage(error.message || "Could not delete feature.", "error");
-    } finally {
-      saving = false;
+    return withSavingOverlay(async function () {
+      saving = true;
+      setMessage("Deleting feature…", "running");
       rerender();
-    }
+      try {
+        await service.deleteFeature(id);
+        setMessage(`Deleted “${label}”.`, "success");
+        if (editingId === id) cancelEdit();
+        await loadForLine(activeLineId, { rerenderOnComplete: false });
+      } catch (error) {
+        setMessage(error.message || "Could not delete feature.", "error");
+      } finally {
+        saving = false;
+        rerender();
+      }
+    }, "Deleting feature…");
   }
 
   function onDragHandlePointerDown(event) {
@@ -654,20 +669,22 @@
       return;
     }
 
-    reordering = true;
-    setMessage("Saving order…", "running");
-    rerender();
-    try {
-      features = await service.reorderFeatures(activeLineId, featureType, orderedIds);
-      syncWindowCache();
-      setMessage("Order saved.", "success");
-    } catch (error) {
-      setMessage(error.message || "Could not save feature order.", "error");
-      await loadForLine(activeLineId, { rerenderOnComplete: false });
-    } finally {
-      reordering = false;
+    return withSavingOverlay(async function () {
+      reordering = true;
+      setMessage("Saving order…", "running");
       rerender();
-    }
+      try {
+        features = await service.reorderFeatures(activeLineId, featureType, orderedIds);
+        syncWindowCache();
+        setMessage("Order saved.", "success");
+      } catch (error) {
+        setMessage(error.message || "Could not save feature order.", "error");
+        await loadForLine(activeLineId, { rerenderOnComplete: false });
+      } finally {
+        reordering = false;
+        rerender();
+      }
+    }, "Saving feature order…");
   }
 
   function renderFeatureForm(featureType) {

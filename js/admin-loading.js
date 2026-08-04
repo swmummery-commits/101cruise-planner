@@ -11,6 +11,10 @@
     typeof BrandLoading !== "undefined" && BrandLoading.CANONICAL_MESSAGE
       ? BrandLoading.CANONICAL_MESSAGE
       : "Hang tight! Just getting your info.";
+  var SAVING_MESSAGE =
+    typeof BrandLoading !== "undefined" && BrandLoading.SAVING_MESSAGE
+      ? BrandLoading.SAVING_MESSAGE
+      : "Hang tight! Saving your info.";
   var FAIL_MESSAGE = "Something didn't load properly. Please try again in a moment.";
 
   var refs = new Map();
@@ -189,12 +193,25 @@
     }
   }
 
+  async function withSaving(asyncFn, options) {
+    var opts = options && typeof options === "object" ? options : {};
+    return withLoading(asyncFn, {
+      delayMs: Number.isFinite(Number(opts.delayMs)) ? Number(opts.delayMs) : 0,
+      key: opts.key || "admin-saving",
+      message: opts.message ? String(opts.message) : SAVING_MESSAGE,
+      supportMessage: opts.supportMessage != null ? String(opts.supportMessage) : null,
+      button: opts.button || null
+    });
+  }
+
   root.AdminLoading = {
     show: show,
     hide: hide,
     withLoading: withLoading,
+    withSaving: withSaving,
     fail: fail,
     setMessage: setMessage,
-    setSupportMessage: setSupportMessage
+    setSupportMessage: setSupportMessage,
+    SAVING_MESSAGE: SAVING_MESSAGE
   };
 })(typeof window !== "undefined" ? window : globalThis);
