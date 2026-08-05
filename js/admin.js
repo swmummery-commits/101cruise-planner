@@ -7311,6 +7311,13 @@ window.returnToCiLinesList = returnToCiLinesList;
 window.normalizeCiLineTab = normalizeCiLineTab;
 window.onCiLineTabKeydown = onCiLineTabKeydown;
 
+function parseCiStateroomSqm(raw) {
+  if (raw === null || raw === undefined || raw === "") return "";
+  const number = Number(raw);
+  if (!Number.isFinite(number) || number <= 0) return "";
+  return number;
+}
+
 function normalizeCiStateroomBreakdown(raw) {
   if (!raw) return [];
   if (typeof raw === "string") {
@@ -7326,14 +7333,15 @@ function normalizeCiStateroomBreakdown(raw) {
       if (!entry || typeof entry !== "object") return;
       const label = String(entry.label || entry.name || entry.type || entry.stateroom_type || "").trim();
       const countRaw = entry.count ?? entry.value ?? entry.quantity;
+      const sqm = parseCiStateroomSqm(entry.sqm ?? entry.square_metres ?? entry.size_sqm);
       if (!label) return;
       if (countRaw === null || countRaw === undefined || countRaw === "") {
-        rows.push({ label, count: "" });
+        rows.push({ label, count: "", sqm });
         return;
       }
       const count = Number(countRaw);
       if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return;
-      rows.push({ label, count });
+      rows.push({ label, count, sqm });
     });
     return sortStateroomCategoryRows(rows);
   }
@@ -7345,13 +7353,14 @@ function normalizeCiStateroomBreakdown(raw) {
           const label = String(entry.name || entry.label || "").trim();
           if (!label) return;
           const countRaw = entry.count ?? entry.value;
+          const sqm = parseCiStateroomSqm(entry.sqm ?? entry.square_metres ?? entry.size_sqm);
           if (countRaw === null || countRaw === undefined || countRaw === "") {
-            rows.push({ label, count: "" });
+            rows.push({ label, count: "", sqm });
             return;
           }
           const count = Number(countRaw);
           if (!Number.isFinite(count) || count < 0 || !Number.isInteger(count)) return;
-          rows.push({ label, count });
+          rows.push({ label, count, sqm });
         });
         return;
       }
@@ -7409,11 +7418,21 @@ function humaniseCiCabinLabel(key) {
     .trim();
 }
 
+function normalizeCiStateroomRowForDom(row) {
+  return {
+    label: row.label || "",
+    count: row.count == null ? "" : row.count,
+    sqm: row.sqm == null ? "" : row.sqm
+  };
+}
+
 function renderCiStateroomRow(row, index) {
   const countVal = row.count === "" || row.count == null ? "" : String(row.count);
+  const sqmVal = row.sqm === "" || row.sqm == null ? "" : String(row.sqm);
   return `
     <div class="ci-stateroom-row" data-index="${index}">
       <input type="text" class="ci-stateroom-label" value="${esc(row.label || "")}" placeholder="Cabin type" oninput="updateCiStateroomTotals()">
+      <input type="number" class="ci-stateroom-sqm" min="0" step="0.1" value="${esc(sqmVal)}" placeholder="Sqm" title="Square metres (optional)" oninput="updateCiStateroomTotals()">
       <input type="number" class="ci-stateroom-count" min="0" step="1" value="${esc(countVal)}" placeholder="Qty" oninput="updateCiStateroomTotals()">
       <div class="ci-stateroom-row-actions">
         <button type="button" class="admin-button secondary small" onclick="moveCiStateroomRow(${index}, -1)" title="Move up">↑</button>
@@ -7510,16 +7529,18 @@ function readCiStateroomBreakdownFromDom() {
   root.querySelectorAll(".ci-stateroom-row").forEach((row) => {
     const label = String(row.querySelector(".ci-stateroom-label")?.value || "").trim();
     const countRaw = String(row.querySelector(".ci-stateroom-count")?.value || "").trim();
-    if (!label && !countRaw) return;
+    const sqmRaw = String(row.querySelector(".ci-stateroom-sqm")?.value || "").trim();
+    if (!label && !countRaw && !sqmRaw) return;
     if (!label) return;
+    const sqm = sqmRaw ? parseCiStateroomSqm(sqmRaw) : "";
     if (!countRaw) {
-      rows.push({ label, count: null });
+      rows.push({ label, count: null, ...(sqm !== "" ? { sqm } : {}) });
       return;
     }
     if (!/^\d+$/.test(countRaw)) return;
     const count = Number(countRaw);
     if (!Number.isInteger(count) || count < 0) return;
-    rows.push({ label, count });
+    rows.push({ label, count, ...(sqm !== "" ? { sqm } : {}) });
   });
   return rows;
 }
@@ -7578,14 +7599,14 @@ function rebuildCiStateroomDom(rows) {
 
 function addCiStateroomRow() {
   const rows = readCiStateroomBreakdownFromDom() || [];
-  rows.push({ label: "", count: "" });
-  rebuildCiStateroomDom(rows.map((r) => ({ label: r.label, count: r.count == null ? "" : r.count })));
+  rows.push({ label: "", count: "", sqm: "" });
+  rebuildCiStateroomDom(rows.map(normalizeCiStateroomRowForDom));
 }
 
 function removeCiStateroomRow(index) {
   const rows = readCiStateroomBreakdownFromDom() || [];
   rows.splice(index, 1);
-  rebuildCiStateroomDom(rows.map((r) => ({ label: r.label, count: r.count == null ? "" : r.count })));
+  rebuildCiStateroomDom(rows.map(normalizeCiStateroomRowForDom));
 }
 
 function moveCiStateroomRow(index, delta) {
@@ -7595,7 +7616,7 @@ function moveCiStateroomRow(index, delta) {
   const copy = rows.slice();
   const [item] = copy.splice(index, 1);
   copy.splice(next, 0, item);
-  rebuildCiStateroomDom(copy.map((r) => ({ label: r.label, count: r.count == null ? "" : r.count })));
+  rebuildCiStateroomDom(copy.map(normalizeCiStateroomRowForDom));
 }
 
 function ciFacilitiesApi() {
@@ -9142,7 +9163,12 @@ async function persistCiShip({ quiet = false } = {}) {
     payload.stateroom_breakdown = sortStateroomCategoryRows(
       breakdown
         .filter((row) => row.label && row.count != null)
-        .map((row) => ({ label: row.label, count: row.count }))
+        .map((row) => {
+          const saved = { label: row.label, count: row.count };
+          const sqm = parseCiStateroomSqm(row.sqm);
+          if (sqm !== "") saved.sqm = sqm;
+          return saved;
+        })
     );
   }
 

@@ -171,6 +171,21 @@ assert.match(plannerJs, /CiShipPresentation\.renderPresentationHtml/);
 
 assert.match(adminJs, /renderCiStateroomReconcilePanel/);
 assert.match(adminJs, /validateStateroomSave/);
+assert.match(adminJs, /ci-stateroom-sqm/);
+
+// Optional sqm is preserved through reconciliation
+{
+  const result = Reconcile.reconcileStateroomDisplay({
+    stateroomCount: 100,
+    stateroomBreakdown: [
+      { label: "Balcony", count: 60, sqm: 18.5 },
+      { label: "Suite", count: 40 }
+    ]
+  });
+  assert.equal(result.status, "exact");
+  assert.equal(result.renderedCategories[0].sqm, 18.5);
+  assert.equal(result.renderedCategories[1].sqm, undefined);
+}
 
 for (const pattern of ["@media \\(max-width: 980px\\)", "@media \\(max-width: 900px\\)", "@media \\(max-width: 760px\\)"]) {
   assert.match(shipCss, new RegExp(pattern), `${pattern} styles present`);

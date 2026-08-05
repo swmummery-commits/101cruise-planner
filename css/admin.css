@@ -2310,7 +2310,7 @@ body.admin-loading-active {
 
 .ci-stateroom-row {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(90px, 0.5fr) auto;
+  grid-template-columns: minmax(0, 1.4fr) minmax(72px, 0.35fr) minmax(90px, 0.5fr) auto;
   gap: 8px;
   align-items: center;
   margin-bottom: 8px;

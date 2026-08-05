@@ -61,6 +61,13 @@
     return number;
   }
 
+  function parseSqm(raw) {
+    if (raw === null || raw === undefined || raw === "") return null;
+    const number = Number(raw);
+    if (!Number.isFinite(number) || number <= 0) return null;
+    return number;
+  }
+
   function parseBreakdownRows(raw, invalidRows) {
     const rows = [];
     if (!raw) return rows;
@@ -74,7 +81,7 @@
       }
     }
 
-    const pushRow = (label, countRaw) => {
+    const pushRow = (label, countRaw, sqmRaw) => {
       const text = trim(label);
       if (!text) return;
       const count = parseIntegerCount(countRaw);
@@ -85,7 +92,10 @@
         return;
       }
       if (count === 0) return;
-      rows.push({ label: text, count });
+      const row = { label: text, count };
+      const sqm = parseSqm(sqmRaw);
+      if (sqm != null) row.sqm = sqm;
+      rows.push(row);
     };
 
     if (Array.isArray(value)) {
@@ -93,7 +103,8 @@
         if (!entry || typeof entry !== "object") return;
         pushRow(
           entry.label || entry.name || entry.type || entry.stateroom_type,
-          entry.count ?? entry.value ?? entry.quantity
+          entry.count ?? entry.value ?? entry.quantity,
+          entry.sqm ?? entry.square_metres ?? entry.size_sqm
         );
       });
       return rows;
@@ -104,7 +115,11 @@
         if (key === "custom" && Array.isArray(entryValue)) {
           entryValue.forEach((entry) => {
             if (!entry || typeof entry !== "object") return;
-            pushRow(entry.name || entry.label, entry.count ?? entry.value);
+            pushRow(
+              entry.name || entry.label,
+              entry.count ?? entry.value,
+              entry.sqm ?? entry.square_metres ?? entry.size_sqm
+            );
           });
           return;
         }
@@ -157,11 +172,15 @@
   }
 
   function toRenderedCategories(rows) {
-    return sortCategories(rows).map((row) => ({
-      label: row.label,
-      count: row.count,
-      value: row.count
-    }));
+    return sortCategories(rows).map((row) => {
+      const category = {
+        label: row.label,
+        count: row.count,
+        value: row.count
+      };
+      if (row.sqm != null) category.sqm = row.sqm;
+      return category;
+    });
   }
 
   function sumCounts(rows) {
