@@ -188,7 +188,7 @@ assert.doesNotMatch(brokenPortHtml, /fca-port-card--photo/, "failed port avoids 
 assert.doesNotMatch(Components.renderPage(sparseModel), /airline staff/i, "no airline staff pricing");
 assert.match(read("js/newsletter-mailchimp-export.js"), /101cruise\.com\.au\/cruise\?slug=/, "explore more URL unchanged");
 
-const cfRoute = read("scripts/test-cruise-finder-live-route.mjs");
-assert.match(cfRoute, /destinationPageUrl/, "cruise finder route test still present");
+const cfRoute = read("scripts/test-destination-routing.mjs");
+assert.match(cfRoute, /destinationPageUrl/, "destination routing test present");
 
 console.log("test-featured-cruise-article-v2.mjs: all checks passed");

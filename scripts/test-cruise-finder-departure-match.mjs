@@ -213,13 +213,10 @@ async function main() {
       path.join(root, "netlify/functions/search-current-cruises.js"),
       "utf8"
     );
-    const destSrc = fs.readFileSync(
-      path.join(root, "public-tools/cruise-finder/destination.js"),
-      "utf8"
-    );
+    const destSrc = fs.readFileSync(path.join(root, "js/public-destination.js"), "utf8");
     assert(/catalogueStatus/.test(searchSrc), "catalogue status returned");
     assert(/filtered_out/.test(searchSrc), "filtered out status present");
-    assert(/renderEmpty\(payload\)/.test(destSrc), "destination page shows API empty context");
+    assert(/renderNotFound\(/.test(destSrc), "living destination page handles missing destinations");
   });
 
   const failed = results.filter((r) => !r.ok);

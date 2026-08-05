@@ -113,13 +113,13 @@
 
 [[redirects]]
   from = "/cruise-destination"
-  to = "/public-tools/cruise-finder/destination.html"
-  status = 200
+  to = "/destination/index.html"
+  status = 301
 
 [[redirects]]
   from = "/cruise-destination/"
-  to = "/public-tools/cruise-finder/destination.html"
-  status = 200
+  to = "/destination/index.html"
+  status = 301
 
 [[redirects]]
   from = "/cruise/*"
@@ -143,10 +143,10 @@
 
 [[redirects]]
   from = "/destination-experience"
-  to = "/destination-experience.html"
-  status = 200
+  to = "/destination/index.html"
+  status = 301
 
 [[redirects]]
   from = "/destination-experience/"
-  to = "/destination-experience.html"
-  status = 200
+  to = "/destination/index.html"
+  status = 301
