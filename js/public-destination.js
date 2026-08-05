@@ -251,11 +251,30 @@
     `;
   }
 
+  function isDisplayableBrochureFare(value) {
+    const text = String(value || "").trim();
+    if (!text) return false;
+    const lower = text.toLowerCase();
+    if (
+      lower.includes("see official brochure fare") ||
+      lower === "official brochure fare" ||
+      lower.includes("price on request") ||
+      lower.includes("contact for price") ||
+      lower.includes("call for price") ||
+      lower === "tbc" ||
+      lower === "n/a"
+    ) {
+      return false;
+    }
+    return /\d/.test(text);
+  }
+
   function renderCruiseCard(dest, c) {
-    const fareHtml = c.brochureFare
+    const displayFare = isDisplayableBrochureFare(c.brochureFare) ? c.brochureFare : null;
+    const fareHtml = displayFare
       ? `<p class="dest-cruise-fare">
             <span class="dest-cruise-fare-label">From</span>
-            <span class="dest-cruise-fare-value">${esc(c.brochureFare)}</span>
+            <span class="dest-cruise-fare-value">${esc(displayFare)}</span>
           </p>`
       : "";
     const footClass = fareHtml ? "dest-cruise-foot" : "dest-cruise-foot dest-cruise-foot--cta-only";

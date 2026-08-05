@@ -1913,9 +1913,30 @@ function formatAuDate(iso) {
   }
 }
 
+function isDisplayableBrochureFare(value) {
+  const text = String(value || "").trim();
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  if (
+    lower.includes("see official brochure fare") ||
+    lower === "official brochure fare" ||
+    lower.includes("price on request") ||
+    lower.includes("contact for price") ||
+    lower.includes("call for price") ||
+    lower.includes("enquire for price") ||
+    lower.includes("inquire for price") ||
+    lower === "tbc" ||
+    lower === "n/a"
+  ) {
+    return false;
+  }
+  // Require a numeric price component — currency symbols alone are not enough.
+  return /\d/.test(text);
+}
+
 function resolveBrochureFare(row) {
   const display = String(row.brochure_fare_display || "").trim();
-  if (display) return display;
+  if (display && isDisplayableBrochureFare(display)) return display;
   if (row.brochure_fare != null && row.currency) {
     return `From ${row.currency} $${Number(row.brochure_fare).toLocaleString("en-AU")} pp`;
   }
@@ -1995,6 +2016,8 @@ module.exports = {
   discoverForCruiseLine,
   resolveDiscoveryDestinationTargets,
   formatPublicSailing,
+  isDisplayableBrochureFare,
+  resolveBrochureFare,
   scoreSailingUrl: require("./cruise-discovery-url-score").scoreSailingUrl,
   resolveAdapter: require("./cruise-discovery-adapters").resolveAdapter
 };

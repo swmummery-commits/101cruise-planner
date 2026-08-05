@@ -13,7 +13,7 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 const require = createRequire(import.meta.url);
 
-const { formatPublicSailing } = require("../netlify/functions/lib/cruise-discovery.js");
+const { formatPublicSailing, isDisplayableBrochureFare } = require("../netlify/functions/lib/cruise-discovery.js");
 const { buildCruiseCatalog } = require("../netlify/functions/lib/destination-page.js");
 
 const withDates = formatPublicSailing(
@@ -39,7 +39,8 @@ const noFare = formatPublicSailing(
     id: 2,
     departure_date: "2026-08-26",
     nights: 7,
-    itinerary: "Anchorage"
+    itinerary: "Anchorage",
+    brochure_fare_display: "See official brochure fare"
   },
   "Line",
   "Ship"
@@ -49,6 +50,9 @@ assert.equal(noFare.brochureFare, null);
 assert.equal(noFare.hasBrochureFare, false);
 assert.equal(noFare.scheduleLabel, "Departs 26 Aug 2026 · 7 nights");
 assert.ok(!String(noFare.brochureFare || "").includes("See official"), "no brochure placeholder");
+assert.equal(isDisplayableBrochureFare("See official brochure fare"), false);
+assert.equal(isDisplayableBrochureFare("From USD $4,999 pp"), true);
+assert.equal(isDisplayableBrochureFare("Price on request"), false);
 
 const noDate = formatPublicSailing({ id: 3, nights: 7, itinerary: "Unknown" }, "Line", "Ship");
 assert.equal(noDate.hasDate, false);
@@ -66,7 +70,7 @@ const publicCss = read("css/public-destination.css");
 assert.ok(!publicJs.includes("See official brochure fare"), "placeholder removed from renderer");
 assert.ok(!publicJs.includes("Official Brochure Fare"), "brochure label removed when no price");
 assert.ok(publicJs.includes("dest-cruise-date"), "prominent date line in cards");
-assert.ok(publicJs.includes("c.brochureFare"), "fare only when data exists");
+assert.ok(publicJs.includes("isDisplayableBrochureFare"), "client-side fare guard");
 assert.match(publicCss, /\.dest-cruise-itin-value[\s\S]*?font-weight:\s*400/, "itinerary text not medium weight");
 assert.match(publicCss, /\.dest-snap-value[\s\S]*?font-weight:\s*400/, "snapshot values stay regular weight");
 assert.ok(publicJs.includes("dest-gtk-list"), "good to know uses fact list");
