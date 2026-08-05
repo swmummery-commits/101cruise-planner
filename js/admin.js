@@ -2957,20 +2957,58 @@ function getPackingRestrictionBadge(item) {
   return { label: `Baggage: ${readable}`, className: "custom-restriction" };
 }
 
+function splitPackingAppliesTags(value) {
+  if (Array.isArray(value)) {
+    return value.map(item => String(item || "").trim()).filter(Boolean).filter(tag => tag.toLowerCase() !== "all");
+  }
+  return String(value ?? "")
+    .split(/[,;\n]+/)
+    .map(part => part.trim())
+    .filter(Boolean)
+    .filter(tag => tag.toLowerCase() !== "all");
+}
+
+function getPackingAppliesTagGroups(item) {
+  return [
+    { type: "destination", label: "Destination", className: "packing-apply-destination", values: splitPackingAppliesTags(item?.destination_tags) },
+    { type: "climate", label: "Climate", className: "packing-apply-climate", values: splitPackingAppliesTags(item?.climate_tags) },
+    { type: "traveller", label: "Traveller", className: "packing-apply-traveller", values: splitPackingAppliesTags(item?.traveller_types) },
+    { type: "dress", label: "Dress", className: "packing-apply-dress", values: splitPackingAppliesTags(item?.dress_codes) },
+    { type: "cruise-line", label: "Cruise line", className: "packing-apply-cruise-line", values: splitPackingAppliesTags(item?.cruise_line_tags) }
+  ].filter(group => group.values.length);
+}
+
+function renderPackingAppliesPills(item) {
+  const groups = getPackingAppliesTagGroups(item);
+  if (!groups.length) {
+    return `
+      <div class="packing-apply-block">
+        <div class="admin-small packing-apply-heading"><strong>Recommended for</strong></div>
+        <div class="packing-apply-pills">
+          <span class="admin-pill packing-apply-pill packing-apply-broad">All destinations & climates</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const pills = groups.flatMap(group =>
+    group.values.map(value =>
+      `<span class="admin-pill packing-apply-pill ${esc(group.className)}" title="${esc(group.label)}">${esc(value)}</span>`
+    )
+  );
+
+  return `
+    <div class="packing-apply-block">
+      <div class="admin-small packing-apply-heading"><strong>Recommended for</strong></div>
+      <div class="packing-apply-pills">${pills.join("")}</div>
+    </div>
+  `;
+}
+
 function renderPackingItemCard(item) {
   const isEditing = String(editingPackingItemId || "") === String(item.id);
   const restrictionBadge = getPackingRestrictionBadge(item);
   const categoryLocalOrder = getPackingCategoryLocalOrder(item);
-  const appliesPreview = [
-    item.destination_tags && `Destinations: ${formatPackingPrintValue(item.destination_tags)}`,
-    item.climate_tags && `Climates: ${formatPackingPrintValue(item.climate_tags)}`,
-    item.traveller_types && `Travellers: ${formatPackingPrintValue(item.traveller_types)}`,
-    item.dress_codes && `Dress: ${formatPackingPrintValue(item.dress_codes)}`,
-    item.cruise_line_tags && `Cruise lines: ${formatPackingPrintValue(item.cruise_line_tags)}`
-  ].filter(Boolean).join(" • ") || "Applies broadly";
-  const ruleText = isEssentialPackingItem(item)
-    ? "Essential item included on every cruise"
-    : formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags, "Applies broadly");
   const reorderAttributes = packingReorderMode
     ? `draggable="true" data-category-id="${esc(item.category_id)}" ondragstart="startPackingItemDrag(event, ${item.id})" ondragend="endPackingItemDrag(event)" onclick="event.preventDefault()"`
     : `onclick="editPackingItem(${item.id})"`;
@@ -2988,14 +3026,15 @@ function renderPackingItemCard(item) {
               <span class="packing-order-badge" title="Order within this category">${esc(categoryLocalOrder)}</span>
             </div>
             <div class="admin-small"><strong>Category:</strong> ${esc(getPackingCategoryName(item.category_id))}</div>
-            <div class="admin-small"><strong>Applies to:</strong> ${esc(appliesPreview)}</div>
+            ${renderPackingAppliesPills(item)}
             <div class="admin-small"><strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
             ${item.description ? `<div class="admin-small">${esc(item.description)}</div>` : ""}
             ${item.help_text ? `<div class="admin-small"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
-            <div class="admin-small"><strong>Logic:</strong> ${esc(ruleText)}</div>
-            ${restrictionBadge ? `<span class="admin-pill packing-restriction-badge ${esc(restrictionBadge.className)}">${esc(restrictionBadge.label)}</span>` : ""}
-            ${isEssentialPackingItem(item) ? `<span class="admin-pill essential-pill">Essential</span>` : ""}
-            ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
+            <div class="packing-card-status-pills">
+              ${restrictionBadge ? `<span class="admin-pill packing-restriction-badge ${esc(restrictionBadge.className)}">${esc(restrictionBadge.label)}</span>` : ""}
+              ${isEssentialPackingItem(item) ? `<span class="admin-pill essential-pill">Essential</span>` : ""}
+              ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
+            </div>
           </div>
           <div class="admin-row-actions" onclick="event.stopPropagation()">
             <span class="admin-row-hint">Click to edit</span>
