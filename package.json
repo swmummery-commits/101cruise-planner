@@ -90,7 +90,8 @@
     "test:cruise-line-admin-tabs": "node scripts/test-cruise-line-admin-tabs.mjs",
     "test:viewport-scroll": "node scripts/test-viewport-scroll.mjs",
     "test:ship-spec-scale": "node scripts/test-ship-spec-scale.mjs",
-    "test:retire-smart-profiles": "node scripts/test-retire-smart-profiles.mjs"
+    "test:retire-smart-profiles": "node scripts/test-retire-smart-profiles.mjs",
+    "test:packing-admin-restriction-badges": "node scripts/test-packing-admin-restriction-badges.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.1"

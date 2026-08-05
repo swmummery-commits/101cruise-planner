@@ -2939,11 +2939,27 @@ function getPackingCategoryLocalOrder(item) {
   return index >= 0 ? index + 1 : "–";
 }
 
+/** Baggage-placement badge for Packing Admin cards. Null when unrestricted (do not show "Any location"). */
+function getPackingRestrictionBadge(item) {
+  const restriction = String(item?.packing_restriction ?? "").trim().toLowerCase();
+  if (!restriction || restriction === "any") return null;
+  if (restriction === "carry-on-only") {
+    return { label: "Carry-on only", className: "carry-on" };
+  }
+  if (restriction === "checked-only") {
+    return { label: "Checked luggage only", className: "checked-only" };
+  }
+  const readable = restriction
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, char => char.toUpperCase());
+  return { label: `Baggage: ${readable}`, className: "custom-restriction" };
+}
+
 function renderPackingItemCard(item) {
   const isEditing = String(editingPackingItemId || "") === String(item.id);
-  const restriction = item.packing_restriction || "any";
-  const restrictionLabel = restriction === "carry-on-only" ? "Carry-on only" : restriction === "checked-only" ? "Checked luggage only" : "Any location";
-  const restrictionClass = restriction === "carry-on-only" ? "carry-on" : restriction === "checked-only" ? "checked-only" : "any-location";
+  const restrictionBadge = getPackingRestrictionBadge(item);
   const categoryLocalOrder = getPackingCategoryLocalOrder(item);
   const appliesPreview = [
     item.destination_tags && `Destinations: ${formatPackingPrintValue(item.destination_tags)}`,
@@ -2977,7 +2993,7 @@ function renderPackingItemCard(item) {
             ${item.description ? `<div class="admin-small">${esc(item.description)}</div>` : ""}
             ${item.help_text ? `<div class="admin-small"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
             <div class="admin-small"><strong>Logic:</strong> ${esc(ruleText)}</div>
-            <span class="admin-pill packing-restriction-badge ${restrictionClass}">${esc(restrictionLabel)}</span>
+            ${restrictionBadge ? `<span class="admin-pill packing-restriction-badge ${esc(restrictionBadge.className)}">${esc(restrictionBadge.label)}</span>` : ""}
             ${isEssentialPackingItem(item) ? `<span class="admin-pill essential-pill">Essential</span>` : ""}
             ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
           </div>
