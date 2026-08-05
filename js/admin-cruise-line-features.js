@@ -528,12 +528,24 @@
     }
   }
 
+  function clearBusyState() {
+    saving = false;
+    reordering = false;
+    draggedFeatureId = null;
+    draggedSourceType = "";
+    dragFromHandle = false;
+    clearDropTargets();
+    const loading = global.AdminLoading;
+    if (loading?.resetAll) loading.resetAll();
+  }
+
   function startCreate(featureType) {
     const type = String(featureType || "").trim();
     if (type !== "exclusive_area" && type !== "specialty_feature") {
       console.warn("CruiseLineFeaturesAdmin.startCreate: invalid feature type", featureType);
       return;
     }
+    clearBusyState();
     creatingType = type;
     editingId = null;
     draft = emptyDraft();
@@ -553,6 +565,7 @@
       console.warn("CruiseLineFeaturesAdmin.startEdit: feature not found", id);
       return;
     }
+    clearBusyState();
     creatingType = "";
     editingId = featureId;
     draft = featureToDraft(row);
@@ -694,6 +707,7 @@
   }
 
   function clearDropTargets() {
+    if (typeof document === "undefined") return;
     document.querySelectorAll(".ci-line-feature-list.is-drop-target").forEach(function (list) {
       list.classList.remove("is-drop-target");
     });
@@ -896,13 +910,19 @@
 
     const title = editingId ? "Edit feature" : featureType === "exclusive_area" ? "Add exclusive area" : "Add specialty feature";
     const admin = featureAdmin();
-    const iconRow = admin
-      ? admin.renderIconPicker(
-          { name: draft.name, icon_key: draft.icon_key },
-          0,
-          "ciLineFeature"
-        )
-      : "";
+    let iconRow = "";
+    try {
+      iconRow = admin
+        ? admin.renderIconPicker(
+            { name: draft.name, icon_key: draft.icon_key },
+            0,
+            "ciLineFeature"
+          )
+        : "";
+    } catch (error) {
+      console.error("CruiseLineFeaturesAdmin: icon picker render failed", error);
+      iconRow = `<p class="admin-small admin-error">Icon picker failed to load.</p>`;
+    }
 
     return `
       <div class="admin-card ci-line-feature-form">
@@ -1051,6 +1071,7 @@
     saveFeature,
     deleteFeature,
     retryLoad,
+    resetUi: clearBusyState,
     getFeatures: function () {
       return features.slice();
     },

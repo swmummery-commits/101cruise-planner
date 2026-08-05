@@ -33,14 +33,6 @@
     const iconKey = trim(row.icon_key) || (icons ? icons.FALLBACK_KEY : "sparkles");
     const label = icons ? icons.iconLabel(iconKey) : iconKey;
     const svg = icons ? icons.renderIconSvg(iconKey, "ci-ship-feature-picker-svg") : "";
-    const catalog = icons ? icons.listIconCatalog() : [];
-    const options = catalog.map(function (item) {
-      const selected = item.key === iconKey ? " selected" : "";
-      return `<button type="button" class="ci-ship-feature-icon-option${selected}" data-icon-key="${esc(item.key)}" title="${esc(item.label)}" aria-label="${esc(item.label)}">
-        ${icons.renderIconSvg(item.key, "ci-ship-feature-icon-option-svg")}
-        <span class="ci-ship-feature-icon-option-label">${esc(item.label)}</span>
-      </button>`;
-    }).join("");
 
     return `
       <div class="ci-ship-feature-icon-picker" data-prefix="${esc(prefix)}" data-index="${index}">
@@ -49,8 +41,22 @@
           <span class="ci-ship-feature-icon-trigger-label">${esc(label)}</span>
         </button>
         <input type="hidden" class="ci-ship-feature-icon-key" value="${esc(iconKey)}">
-        <div class="ci-ship-feature-icon-menu" role="listbox" hidden>${options}</div>
+        <div class="ci-ship-feature-icon-menu" role="listbox" hidden data-lazy-icons="1"></div>
       </div>`;
+  }
+
+  function populateIconMenu(menu, selectedKey) {
+    const icons = iconsApi();
+    if (!icons || !menu || menu.dataset.populated === "1") return;
+    const iconKey = trim(selectedKey) || icons.FALLBACK_KEY;
+    menu.innerHTML = icons.listIconCatalog().map(function (item) {
+      const selected = item.key === iconKey ? " selected" : "";
+      return `<button type="button" class="ci-ship-feature-icon-option${selected}" data-icon-key="${esc(item.key)}" title="${esc(item.label)}" aria-label="${esc(item.label)}">
+        ${icons.renderIconSvg(item.key, "ci-ship-feature-icon-option-svg")}
+        <span class="ci-ship-feature-icon-option-label">${esc(item.label)}</span>
+      </button>`;
+    }).join("");
+    menu.dataset.populated = "1";
   }
 
   function renderFeatureRow(row, index, total, options) {
@@ -147,6 +153,8 @@
         const picker = trigger.closest(".ci-ship-feature-icon-picker");
         const menu = picker?.querySelector(".ci-ship-feature-icon-menu");
         if (!menu) return;
+        const hidden = picker?.querySelector(".ci-ship-feature-icon-key");
+        populateIconMenu(menu, hidden?.value);
         const open = menu.hasAttribute("hidden");
         root.querySelectorAll(".ci-ship-feature-icon-menu").forEach(function (node) {
           node.hidden = true;

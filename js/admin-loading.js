@@ -391,12 +391,20 @@
     });
   }
 
+  function resetAll() {
+    refs.clear();
+    activeCount = 0;
+    clearTimers();
+    syncVisibility();
+  }
+
   root.AdminLoading = {
     show: show,
     hide: hide,
     withLoading: withLoading,
     withSaving: withSaving,
     fail: fail,
+    resetAll: resetAll,
     setMessage: setMessage,
     setSupportMessage: setSupportMessage,
     SAVING_MESSAGE: SAVING_MESSAGE
