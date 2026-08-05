@@ -375,7 +375,7 @@
   font-weight: 400;
   letter-spacing: 0.01em;
   color: var(--dest-ink);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 /* ---- Suitability ---- */
@@ -553,6 +553,22 @@
   line-height: 1.15;
 }
 
+.dest-cruise-date {
+  margin: 14px 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--dest-ink);
+  line-height: 1.35;
+}
+
+.dest-cruise-port {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--dest-muted);
+}
+
 .dest-cruise-meta {
   display: flex;
   flex-wrap: wrap;
@@ -596,9 +612,9 @@
 
 .dest-cruise-itin-value {
   margin: 0;
-  font-size: 1.05rem;
-  line-height: 1.5;
-  font-weight: 500;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  font-weight: 400;
   color: var(--dest-ink);
 }
 
@@ -608,6 +624,11 @@
   gap: 20px;
   align-items: end;
   margin-top: 22px;
+}
+
+.dest-cruise-foot--cta-only {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: end;
 }
 
 .dest-btn-cruise-cta {

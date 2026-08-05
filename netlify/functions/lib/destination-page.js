@@ -232,13 +232,15 @@ function buildDestinationPageDto({
 }
 
 function buildCruiseCatalog(rows, { lineNames = new Map(), shipNames = new Map() } = {}) {
-  const sailings = (rows || []).map((row) =>
-    formatPublicSailing(
-      row,
-      lineNames.get(row.cruise_line_id) || null,
-      shipNames.get(row.ship_id) || null
+  const sailings = (rows || [])
+    .map((row) =>
+      formatPublicSailing(
+        row,
+        lineNames.get(row.cruise_line_id) || null,
+        shipNames.get(row.ship_id) || null
+      )
     )
-  );
+    .filter((sailing) => sailing.hasDate);
   return {
     totalCount: sailings.length,
     pageSize: 6,

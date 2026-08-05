@@ -93,7 +93,8 @@
     "test:retire-smart-profiles": "node scripts/test-retire-smart-profiles.mjs",
     "test:packing-admin-restriction-badges": "node scripts/test-packing-admin-restriction-badges.mjs",
     "test:packing-recommendation-settings": "node scripts/test-packing-recommendation-settings.mjs",
-    "test:checklist-admin-save": "node scripts/test-checklist-admin-save.mjs"
+    "test:checklist-admin-save": "node scripts/test-checklist-admin-save.mjs",
+    "test:public-destination-cruise-cards": "node scripts/test-public-destination-cruise-cards.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.1"

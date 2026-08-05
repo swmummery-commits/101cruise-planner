@@ -252,27 +252,37 @@
   }
 
   function renderCruiseCard(dest, c) {
+    const fareHtml = c.brochureFare
+      ? `<p class="dest-cruise-fare">
+            <span class="dest-cruise-fare-label">From</span>
+            <span class="dest-cruise-fare-value">${esc(c.brochureFare)}</span>
+          </p>`
+      : "";
+    const footClass = fareHtml ? "dest-cruise-foot" : "dest-cruise-foot dest-cruise-foot--cta-only";
     return `
       <article class="dest-cruise-card">
         <div class="dest-cruise-top">
           <p class="dest-cruise-line">${esc(c.cruiseLine)}</p>
           <h3 class="dest-cruise-ship">${esc(c.shipName)}</h3>
         </div>
-        <div class="dest-cruise-meta">
-          <span>${esc(c.duration)}</span>
-          <span>${esc(c.departureDate)}</span>
-        </div>
+        ${
+          c.scheduleLabel
+            ? `<p class="dest-cruise-date">${esc(c.scheduleLabel)}</p>`
+            : ""
+        }
+        ${
+          c.departurePort
+            ? `<p class="dest-cruise-port">From ${esc(c.departurePort)}</p>`
+            : ""
+        }
         <div class="dest-cruise-itinerary">
           <p class="dest-cruise-itin-label">Itinerary</p>
           <p class="dest-cruise-itin-value">${esc(c.itinerary)}</p>
         </div>
-        <div class="dest-cruise-foot">
-          <p class="dest-cruise-fare">
-            <span class="dest-cruise-fare-label">Official Brochure Fare</span>
-            <span class="dest-cruise-fare-value">${esc(c.brochureFare)}</span>
-          </p>
+        <div class="${footClass}">
+          ${fareHtml}
           <a class="dest-btn dest-btn-primary dest-btn-block dest-btn-cruise-cta" href="${esc(
-            Data.contactMailto(dest.name, `${c.shipName} · ${c.departureDate}`)
+            Data.contactMailto(dest.name, `${c.shipName} · ${c.scheduleLabel || c.dateLabel || ""}`)
           )}">Contact Paul for a better price</a>
         </div>
       </article>`;

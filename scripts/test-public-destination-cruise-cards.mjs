@@ -1,0 +1,73 @@
+/**
+ * Public destination page — cruise card formatting and presentation rules.
+ *
+ * Run: node scripts/test-public-destination-cruise-cards.mjs
+ */
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath, pathToFileURL } from "node:url";
+import { createRequire } from "node:module";
+
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
+const require = createRequire(import.meta.url);
+
+const { formatPublicSailing } = require("../netlify/functions/lib/cruise-discovery.js");
+const { buildCruiseCatalog } = require("../netlify/functions/lib/destination-page.js");
+
+const withDates = formatPublicSailing(
+  {
+    id: 1,
+    departure_date: "2026-08-26",
+    return_date: "2026-09-02",
+    nights: 7,
+    itinerary: "Juneau, Alaska",
+    brochure_fare_display: "From USD $4,999 pp"
+  },
+  "Regent Seven Seas Cruises",
+  "Seven Seas Explorer"
+);
+
+assert.match(withDates.scheduleLabel, /26 Aug 2026 – 2 Sep(?:t)? 2026 · 7 nights/);
+assert.equal(withDates.hasDate, true);
+assert.equal(withDates.brochureFare, "From USD $4,999 pp");
+assert.equal(withDates.hasBrochureFare, true);
+
+const noFare = formatPublicSailing(
+  {
+    id: 2,
+    departure_date: "2026-08-26",
+    nights: 7,
+    itinerary: "Anchorage"
+  },
+  "Line",
+  "Ship"
+);
+
+assert.equal(noFare.brochureFare, null);
+assert.equal(noFare.hasBrochureFare, false);
+assert.equal(noFare.scheduleLabel, "Departs 26 Aug 2026 · 7 nights");
+assert.ok(!String(noFare.brochureFare || "").includes("See official"), "no brochure placeholder");
+
+const noDate = formatPublicSailing({ id: 3, nights: 7, itinerary: "Unknown" }, "Line", "Ship");
+assert.equal(noDate.hasDate, false);
+assert.equal(noDate.scheduleLabel, "7 nights");
+
+const catalog = buildCruiseCatalog([
+  { id: 1, departure_date: "2026-08-26", nights: 7, cruise_line_id: 1, ship_id: 1 },
+  { id: 2, nights: 5, cruise_line_id: 1, ship_id: 2 }
+]);
+assert.equal(catalog.totalCount, 1, "sailings without departure dates are excluded");
+
+const publicJs = read("js/public-destination.js");
+const publicCss = read("css/public-destination.css");
+
+assert.ok(!publicJs.includes("See official brochure fare"), "placeholder removed from renderer");
+assert.ok(!publicJs.includes("Official Brochure Fare"), "brochure label removed when no price");
+assert.ok(publicJs.includes("dest-cruise-date"), "prominent date line in cards");
+assert.ok(publicJs.includes("c.brochureFare"), "fare only when data exists");
+assert.match(publicCss, /\.dest-cruise-itin-value[\s\S]*?font-weight:\s*400/, "itinerary text not medium weight");
+assert.match(publicCss, /\.dest-snap-value[\s\S]*?font-weight:\s*400/, "snapshot values stay regular weight");
+
+console.log("test-public-destination-cruise-cards: all assertions passed");

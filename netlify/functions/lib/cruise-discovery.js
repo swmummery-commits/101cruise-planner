@@ -1899,31 +1899,61 @@ async function discoverForCruiseLine({
 }
 
 
-function formatPublicSailing(row, lineName, shipName) {
-  const nights = row.nights ? `${row.nights} nights` : "—";
-  let departureDate = "—";
-  if (row.departure_date) {
-    try {
-      departureDate = new Date(`${row.departure_date}T00:00:00Z`).toLocaleDateString("en-AU", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        timeZone: "UTC"
-      });
-    } catch {
-      departureDate = row.departure_date;
-    }
+function formatAuDate(iso) {
+  if (!iso) return null;
+  try {
+    return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC"
+    });
+  } catch {
+    return String(iso);
   }
+}
+
+function resolveBrochureFare(row) {
+  const display = String(row.brochure_fare_display || "").trim();
+  if (display) return display;
+  if (row.brochure_fare != null && row.currency) {
+    return `From ${row.currency} $${Number(row.brochure_fare).toLocaleString("en-AU")} pp`;
+  }
+  return null;
+}
+
+function formatPublicSailing(row, lineName, shipName) {
+  const nightCount = Number(row.nights);
+  const duration = Number.isFinite(nightCount) && nightCount > 0
+    ? `${nightCount} night${nightCount === 1 ? "" : "s"}`
+    : null;
+  const departureDate = formatAuDate(row.departure_date);
+  const returnDate = formatAuDate(row.return_date);
+  const brochureFare = resolveBrochureFare(row);
+
+  let dateLabel = null;
+  if (departureDate && returnDate) {
+    dateLabel = `${departureDate} – ${returnDate}`;
+  } else if (departureDate) {
+    dateLabel = `Departs ${departureDate}`;
+  }
+
+  const scheduleParts = [dateLabel, duration].filter(Boolean);
+  const scheduleLabel = scheduleParts.join(" · ");
+
   return {
     id: row.id,
     cruiseLine: lineName || row.cruise_line_name || "Cruise line",
     shipName: shipName || row.ship_name || "Ship",
-    duration: nights,
-    departureDate,
+    duration,
+    departureDate: departureDate || null,
+    returnDate: returnDate || null,
+    dateLabel,
+    scheduleLabel,
+    hasDate: Boolean(departureDate),
     itinerary: row.itinerary || "Itinerary details on official cruise page",
-    brochureFare: row.brochure_fare_display || (row.brochure_fare && row.currency
-      ? `From ${row.currency} $${Number(row.brochure_fare).toLocaleString("en-AU")} pp`
-      : "See official brochure fare"),
+    brochureFare,
+    hasBrochureFare: Boolean(brochureFare),
     officialUrl: row.official_url || null,
     nights: row.nights,
     departurePort: row.departure_port || null,
