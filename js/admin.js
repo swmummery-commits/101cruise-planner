@@ -3575,12 +3575,28 @@ async function savePackingItem() {
   const savedItemId = result.data?.id || id;
 
   editingPackingItemId = null;
+  showPackingItemForm = false;
   await loadAdminData();
   renderAdmin();
+
+  const findSavedCard = () =>
+    document.querySelector(`[data-packing-item-id="${CSS.escape(String(savedItemId))}"]`);
+
+  // Return to the saved item so Steve can continue down the list.
+  // Uses ViewportScroll so Squarespace parent-page scrolling stays aligned after the form collapses.
+  if (typeof window.ViewportScroll?.scheduleScrollToElement === "function") {
+    window.ViewportScroll.scheduleScrollToElement(findSavedCard, { gap: 24, behavior: "auto" });
+  } else {
+    requestAnimationFrame(() => {
+      const savedCard = findSavedCard();
+      if (!savedCard) return;
+      savedCard.scrollIntoView({ behavior: "auto", block: "start" });
+    });
+  }
+
   requestAnimationFrame(() => {
-    const savedCard = document.querySelector(`[data-packing-item-id="${CSS.escape(String(savedItemId))}"]`);
+    const savedCard = findSavedCard();
     if (!savedCard) return;
-    savedCard.scrollIntoView({ behavior: "smooth", block: "center" });
     savedCard.classList.add("is-just-saved");
     window.setTimeout(() => savedCard.classList.remove("is-just-saved"), 2200);
   });

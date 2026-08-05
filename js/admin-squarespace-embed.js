@@ -181,6 +181,18 @@
       var rect = iframe.getBoundingClientRect();
       var top = (window.scrollY || window.pageYOffset || 0) + rect.top - HEADER_GAP_PX;
       window.scrollTo(0, Math.max(0, Math.ceil(top)));
+      return;
+    }
+
+    if (data.type === "101cruise-scroll-to") {
+      var targetFrame = findFrame();
+      if (!targetFrame) return;
+      var gap = Number.isFinite(Number(data.gap)) ? Number(data.gap) : HEADER_GAP_PX;
+      var offsetTop = Math.max(0, Number(data.offsetTop) || 0);
+      var frameRect = targetFrame.getBoundingClientRect();
+      var absoluteTop =
+        (window.scrollY || window.pageYOffset || 0) + frameRect.top + offsetTop - gap;
+      window.scrollTo(0, Math.max(0, Math.ceil(absoluteTop)));
     }
   });
 
