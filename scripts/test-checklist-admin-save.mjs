@@ -40,5 +40,13 @@ assert.match(
   "saving overlay wired"
 );
 assert.ok(adminCss.includes(".checklist-admin-item.is-just-saved"), "saved pulse on checklist card");
+assert.ok(adminJs.includes("function deleteChecklistItem"), "checklist delete handler");
+assert.match(adminJs, /deleteChecklistItem\(\$\{item\.id\}\)/, "checklist delete on summary card");
+assert.ok(adminJs.includes("Unpublish instead if you only want to hide it"), "delete confirm mentions unpublish");
+assert.ok(adminJs.includes("function togglePackingItemActive"), "packing unpublish toggle");
+assert.match(adminJs, /togglePackingItemActive\(\$\{item\.id\}/, "packing unpublish on summary card");
+assert.match(adminJs, /deletePackingItem\(\$\{item\.id\}\)/, "packing delete on summary card");
+assert.ok(adminJs.includes('AdminToast.show("Checklist item deleted."'), "checklist delete toast");
+assert.ok(adminJs.includes('AdminToast.show("Packing item deleted."'), "packing delete toast");
 
 console.log("test-checklist-admin-save: all assertions passed");

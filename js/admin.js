@@ -2297,6 +2297,7 @@ function renderChecklistItemForm(editingItem, formKey = "add") {
 
     <button class="admin-button" onclick="saveChecklistItem('${formKey}')">${editingItem ? "Save Item" : "Add Item"}</button>
     ${editingItem ? `<button class="admin-button secondary" onclick="cancelChecklistItemEdit()">Cancel</button>` : ""}
+    ${editingItem ? `<button class="admin-button danger" onclick="deleteChecklistItem(${editingItem.id})">Delete Item</button>` : ""}
     <div id="${field("item-message")}" class="admin-message" aria-live="polite"></div>
   `;
 }
@@ -2328,9 +2329,10 @@ function renderChecklistItemsList(items) {
             ${item.button1_text || item.button2_text ? `<div class="admin-small checklist-admin-copy"><strong>Links:</strong> ${esc([item.button1_text, item.button2_text].filter(Boolean).join(" / "))}</div>` : ""}
             ${item.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
           </div>
-          <div>
+          <div class="admin-row-actions">
             <button class="admin-button secondary small" onclick="editChecklistItem(${item.id})">Edit</button>
             <button class="admin-button secondary small" onclick="toggleChecklistItemActive(${item.id}, ${item.active ? "false" : "true"})">${item.active ? "Unpublish" : "Publish"}</button>
+            <button class="admin-button danger small" onclick="deleteChecklistItem(${item.id})">Delete</button>
           </div>
         </div>
       `}
@@ -2670,6 +2672,61 @@ async function toggleChecklistItemActive(itemId, newActiveValue) {
 
   await loadAdminData();
   renderAdmin();
+}
+
+async function deleteChecklistItem(itemId) {
+  const item = checklistItems.find(row => String(row.id) === String(itemId));
+  const itemTitle = item ? item.title : "this checklist item";
+  const confirmed = window.confirm(
+    `Delete "${itemTitle}"?\n\nThis permanently removes the checklist item. Customer progress for this task will also be removed. Unpublish instead if you only want to hide it.`
+  );
+  if (!confirmed) return;
+
+  return withAdminBusy(
+    async () => {
+      const progressDelete = await supabaseClient
+        .from("checklist_progress")
+        .delete()
+        .eq("checklist_item_id", itemId);
+      if (progressDelete.error) {
+        console.warn("Checklist progress cleanup failed", progressDelete.error);
+      }
+
+      const customerProgressDelete = await supabaseClient
+        .from("customer_checklist_progress")
+        .delete()
+        .eq("checklist_item_id", itemId);
+      if (customerProgressDelete.error) {
+        console.warn("Customer checklist progress cleanup failed", customerProgressDelete.error);
+      }
+
+      const itemDelete = await supabaseClient
+        .from("checklist_items")
+        .delete()
+        .eq("id", itemId);
+
+      if (itemDelete.error) {
+        console.error("Delete checklist item error", itemDelete.error);
+        alert(itemDelete.error.message || "Unable to delete this checklist item.");
+        if (typeof window.AdminToast?.show === "function") {
+          window.AdminToast.show("Could not delete checklist item.", "error");
+        }
+        return;
+      }
+
+      if (String(editingChecklistItemId) === String(itemId)) {
+        editingChecklistItemId = null;
+      }
+
+      await loadAdminData();
+      renderAdmin();
+
+      if (typeof window.AdminToast?.show === "function") {
+        window.AdminToast.show("Checklist item deleted.", "success");
+      }
+    },
+    { saving: true, key: "checklist-item-delete", supportMessage: "Deleting checklist item…" }
+  );
 }
 
 async function refreshAdminData() {
@@ -3077,6 +3134,7 @@ function renderPackingItemCard(item) {
           </div>
           <div class="admin-row-actions" onclick="event.stopPropagation()">
             <span class="admin-row-hint">Click to edit</span>
+            <button class="admin-button secondary small" onclick="togglePackingItemActive(${item.id}, ${item.active ? "false" : "true"})">${item.active ? "Unpublish" : "Publish"}</button>
             <button class="admin-button danger small" onclick="deletePackingItem(${item.id})">Delete</button>
           </div>
         </div>
@@ -3700,25 +3758,61 @@ async function deletePackingItem(itemId) {
   const item = packingItems.find(row => String(row.id) === String(itemId));
   const itemName = item ? item.name : "this packing item";
 
-  const confirmed = window.confirm(`Delete "${itemName}"?\n\nThis will permanently remove the packing item.`);
+  const confirmed = window.confirm(
+    `Delete "${itemName}"?\n\nThis permanently removes the packing item. Unpublish instead if you only want to hide it from customers.`
+  );
   if (!confirmed) return;
 
-  try {
-    const itemDelete = await supabaseClient
-      .from("packing_items")
-      .delete()
-      .eq("id", itemId);
+  return withAdminBusy(
+    async () => {
+      const legacyMappingDelete = await supabaseClient
+        .from("packing_item_profiles")
+        .delete()
+        .eq("packing_item_id", itemId);
+      if (legacyMappingDelete.error) {
+        console.warn("Legacy packing profile mapping cleanup failed", legacyMappingDelete.error);
+      }
 
-    if (itemDelete.error) throw itemDelete.error;
+      const itemDelete = await supabaseClient
+        .from("packing_items")
+        .delete()
+        .eq("id", itemId);
 
-    editingPackingItemId = null;
-    showPackingItemForm = false;
-    await loadAdminData();
-    renderAdmin();
-  } catch (error) {
-    console.error("Delete packing item error", error);
-    alert(error.message || "Unable to delete this packing item.");
+      if (itemDelete.error) {
+        console.error("Delete packing item error", itemDelete.error);
+        alert(itemDelete.error.message || "Unable to delete this packing item.");
+        if (typeof window.AdminToast?.show === "function") {
+          window.AdminToast.show("Could not delete packing item.", "error");
+        }
+        return;
+      }
+
+      editingPackingItemId = null;
+      showPackingItemForm = false;
+      await loadAdminData();
+      renderAdmin();
+
+      if (typeof window.AdminToast?.show === "function") {
+        window.AdminToast.show("Packing item deleted.", "success");
+      }
+    },
+    { saving: true, key: "packing-item-delete", supportMessage: "Deleting packing item…" }
+  );
+}
+
+async function togglePackingItemActive(itemId, newActiveValue) {
+  const { error } = await supabaseClient
+    .from("packing_items")
+    .update({ active: newActiveValue })
+    .eq("id", itemId);
+
+  if (error) {
+    alert(error.message);
+    return;
   }
+
+  await loadAdminData();
+  renderAdmin();
 }
 
 
