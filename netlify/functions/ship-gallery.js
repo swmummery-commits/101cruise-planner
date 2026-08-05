@@ -115,7 +115,7 @@ async function loadShipMedia(shipId) {
   const rows = await rest(
     `media_library?select=id,title,alt_text,public_url,media_type,ship_id,cruise_line_id,tags,is_default,is_active&ship_id=eq.${encodeURIComponent(
       shipId
-    )}&media_type=eq.ship&is_active=eq.true&public_url=not.is.null&order=is_default.desc,title.asc&limit=50`
+    )}&is_active=eq.true&public_url=not.is.null&media_type=in.(ship,general)&order=is_default.asc,title.asc&limit=50`
   );
   return Array.isArray(rows) ? rows : [];
 }
@@ -135,6 +135,7 @@ function readQuery(event) {
 
   return {
     ship: String(params.ship || params.name || params.ship_name || body.ship || "").trim(),
+    shipId: String(params.ship_id || params.shipId || body.ship_id || body.shipId || "").trim(),
     cruiseLine: String(
       params.cruise_line || params.cruiseLine || body.cruise_line || body.cruiseLine || ""
     ).trim(),
@@ -157,30 +158,34 @@ exports.handler = async function (event) {
     const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     const session = bearer ? verifyToken(bearer, secret) : null;
 
-    const { ship, cruiseLine: cruiseLineRaw, heroUrl } = readQuery(event);
+    const { ship, shipId, cruiseLine: cruiseLineRaw, heroUrl } = readQuery(event);
     const cruiseLine = resolveCruiseLineAlias(cruiseLineRaw) || cruiseLineRaw;
 
-    if (!ship) {
+    if (!ship && !shipId) {
       return jsonResponse(400, {
         success: false,
-        error: "SHIP_NAME_REQUIRED"
+        error: "SHIP_NAME_OR_ID_REQUIRED"
       });
     }
 
-    const [supabaseShips, aliases] = await Promise.all([
-      listSupabaseShips(),
-      listShipAliases()
-    ]);
+    let matchedShip = null;
 
-    const scoped = filterSupabaseByLine(supabaseShips, cruiseLine);
-    const resolution = resolveCruiseShip(
-      scoped.length ? scoped : supabaseShips,
-      ship,
-      cruiseLine,
-      aliases
-    );
+    if (shipId) {
+      const [supabaseShips, aliases] = await Promise.all([listSupabaseShips(), listShipAliases()]);
+      const scoped = filterSupabaseByLine(supabaseShips, cruiseLine);
+      matchedShip = (scoped.length ? scoped : supabaseShips).find((row) => String(row.id) === String(shipId)) || null;
+      if (!matchedShip) {
+        const rows = await rest(
+          `ci_cruise_ships?select=id,name,cruise_line_id,hero_image_url,ci_cruise_lines(id,name)&id=eq.${encodeURIComponent(
+            shipId
+          )}&limit=1`
+        );
+        const row = Array.isArray(rows) ? rows[0] : null;
+        if (row) matchedShip = mapSupabaseShip(row);
+      }
+    }
 
-    if (!resolution || resolution.status === "not_found") {
+    if (!matchedShip && !ship) {
       return jsonResponse(200, {
         success: true,
         images: [],
@@ -190,17 +195,43 @@ exports.handler = async function (event) {
       });
     }
 
-    if (resolution.status === "ambiguous") {
-      return jsonResponse(200, {
-        success: true,
-        images: [],
-        ship: null,
-        reason: "ship_ambiguous",
-        session: session ? { booking_reference: session.booking_reference || null } : null
-      });
+    if (!matchedShip) {
+      const [supabaseShips, aliases] = await Promise.all([
+        listSupabaseShips(),
+        listShipAliases()
+      ]);
+
+      const scoped = filterSupabaseByLine(supabaseShips, cruiseLine);
+      const resolution = resolveCruiseShip(
+        scoped.length ? scoped : supabaseShips,
+        ship,
+        cruiseLine,
+        aliases
+      );
+
+      if (!resolution || resolution.status === "not_found") {
+        return jsonResponse(200, {
+          success: true,
+          images: [],
+          ship: null,
+          reason: "ship_not_found",
+          session: session ? { booking_reference: session.booking_reference || null } : null
+        });
+      }
+
+      if (resolution.status === "ambiguous") {
+        return jsonResponse(200, {
+          success: true,
+          images: [],
+          ship: null,
+          reason: "ship_ambiguous",
+          session: session ? { booking_reference: session.booking_reference || null } : null
+        });
+      }
+
+      matchedShip = resolution.ship;
     }
 
-    const matchedShip = resolution.ship;
     const mediaRows = await loadShipMedia(matchedShip.id);
     const excludeHero = heroUrl || matchedShip.hero_image_url || null;
     const images = filterShipGalleryMedia(mediaRows, {

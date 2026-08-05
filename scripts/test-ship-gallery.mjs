@@ -119,6 +119,30 @@ const duplicateUrlRow = {
 };
 assert(filterShipGalleryMedia([rows[0], duplicateUrlRow], { heroUrl: HERO, limit: 8 }).length === 1, "duplicate urls removed");
 
+const defaultOnly = filterShipGalleryMedia(
+  [{ ...rows[0], is_default: true }, rows[3]],
+  { heroUrl: HERO, limit: 8 }
+);
+assert(defaultOnly.length === 1, "is_default hero rows excluded from gallery");
+assert(defaultOnly[0].id === "4", "non-default gallery row kept");
+
+const generalType = filterShipGalleryMedia(
+  [{
+    id: "8",
+    title: "Deck",
+    alt_text: "Deck",
+    public_url: "https://cdn.example.com/ships/general-deck.jpg",
+    media_type: "general",
+    ship_id: "ship-1",
+    cruise_line_id: "line-1",
+    tags: [],
+    is_default: false,
+    is_active: true
+  }],
+  { heroUrl: HERO, limit: 8 }
+);
+assert(generalType.length === 1, "ship-linked general media included");
+
 const filtered = filterShipGalleryMedia(rows, { heroUrl: HERO, limit: 8 });
 assert(filtered.length === 2, "filters logos, hero duplicate, and inactive rows");
 assert(

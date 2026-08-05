@@ -49,9 +49,10 @@ function filterShipGalleryMedia(rows, options = {}) {
 
   return (rows || [])
     .filter((row) => row && row.is_active !== false && row.public_url)
-    .filter((row) => row.media_type === "ship")
     .filter((row) => row.ship_id)
+    .filter((row) => row.media_type === "ship" || row.media_type === "general")
     .filter((row) => !isLogoMedia(row))
+    .filter((row) => row.is_default !== true)
     .filter((row) => !isHeroUrlMatch(row, heroUrl))
     .filter((row) => {
       const url = String(row.public_url || "").trim();

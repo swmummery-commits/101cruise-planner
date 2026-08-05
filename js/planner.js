@@ -2559,13 +2559,14 @@ async function loadCustomerTextItinerary() {
   }
 }
 
-async function loadShipGalleryImages(cruise, heroUrl = "") {
-  if (!cruise?.ship_name) return [];
+async function loadShipGalleryImages(cruise, heroUrl = "", shipId = "") {
+  const shipName = cruise?.ship_name || cruise?.ship || "";
+  if (!shipName && !shipId) return [];
   try {
-    const params = new URLSearchParams({
-      ship: cruise.ship_name || "",
-      cruise_line: cruise.cruise_line || ""
-    });
+    const params = new URLSearchParams();
+    if (shipName) params.set("ship", shipName);
+    if (cruise?.cruise_line) params.set("cruise_line", cruise.cruise_line);
+    if (shipId) params.set("ship_id", String(shipId));
     if (heroUrl) params.set("hero_url", heroUrl);
     const headers = { Accept: "application/json" };
     if (customerSessionToken) headers.Authorization = `Bearer ${customerSessionToken}`;
@@ -2847,14 +2848,22 @@ async function renderDashboard() {
     await resolveFullBookingPayload(mainCruise);
   }
   const bookingPayload = customerBooking || mainCruise?._preview_booking || null;
-  const mainShipImage = mainCruise
-    ? await loadShipHeroImage(mainCruise.ship_name, mainCruise.cruise_line)
-    : "";
+  let ciShipRecord = null;
+  if (mainCruise?.ship_name) {
+    try {
+      const resolved = await fetchShipFromBase44(mainCruise.ship_name, mainCruise.cruise_line || "");
+      if (resolved.ok) ciShipRecord = resolved.ship || null;
+    } catch (_error) {
+      /* gallery falls back to name lookup */
+    }
+  }
+  const mainShipImage = ciShipRecord?.hero_image_url
+    || (mainCruise ? await loadShipHeroImage(mainCruise.ship_name, mainCruise.cruise_line) : "");
   const [checklistData, packingData, textItinerary, shipGalleryImages, linkedMeta] = await Promise.all([
     loadDashboardChecklistData(mainCruise),
     loadDashboardPackingData(mainCruise),
     loadCustomerTextItinerary(),
-    loadShipGalleryImages(mainCruise, mainShipImage),
+    loadShipGalleryImages(mainCruise, mainShipImage, ciShipRecord?.id || ""),
     customerMode ? fetchCustomerLinkedBookings() : Promise.resolve({ can_switch: false })
   ]);
   const showSwitchBooking =
@@ -2947,7 +2956,14 @@ async function renderDashboard() {
     startLiveCountdown(mainCruise, countdownConfig);
   }
   bindJourneyItineraryToggle(textItinerary.stops || []);
-  bindShipGalleryInteractions(shipGalleryImages);
+  if (shipGalleryImages.length) {
+    bindShipGalleryInteractions(
+      normaliseShipPageGalleryImages(shipGalleryImages, {
+        heroUrl: mainShipImage,
+        limit: 8
+      })
+    );
+  }
 }
 
 function escapeHtml(value) {
@@ -5817,7 +5833,8 @@ async function renderTheShip() {
   const heroUrl = String(result.ship?.hero_image_url || shipImage || "").trim();
   const galleryImages = await loadShipGalleryImages(
     { ship_name: shipName, cruise_line: cruiseLine },
-    heroUrl
+    heroUrl,
+    result.ship?.id || ""
   );
   const galleryShipName = profile.name || shipName;
   const galleryHtml = renderShipPageGallerySection(galleryImages, {
