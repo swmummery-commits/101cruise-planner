@@ -46,7 +46,7 @@
     "private-dining": {
       label: "Private dining",
       group: "exclusive",
-      paths: `<path d="m12 3.5 2.4 5.2L19 9.5l-4 3.9 0.95 5.6L12 16.2 8.05 19l0.95-5.6-4-3.9 4.6-0.8Z"/><path d="M10.2 11.5v1.6a0.8 0.8 0 0 0 1.6 0v-1.6"/><path d="M11 11.5v5.5"/><path d="M14.2 14.8V11.8a2.2 2.2 0 0 0-2.2 2.2v0.55a0.8 0.8 0 0 0 1.6 0v2.25"/>`
+      paths: `<path d="m17 0.5 0.4 0.85 0.95 0.14-0.68 0.66 0.16 0.94-0.83-0.5-0.83 0.5 0.16-0.94-0.68-0.66 0.95-0.14Z"/><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
     },
     "suite-attendant": {
       label: "Suite attendant",

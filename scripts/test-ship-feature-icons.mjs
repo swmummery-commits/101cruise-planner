@@ -51,8 +51,8 @@ assert.ok(Icons.renderIconSvg("pool").includes("<svg"));
 assert.ok(Icons.renderFeatureIconHtml("spa").includes("ship-feature-icon"));
 assert.notEqual(Icons.ICONS.dining.paths, Icons.ICONS["private-dining"].paths);
 assert.match(Icons.renderIconSvg("dining"), /m5 0\.5/);
-assert.match(Icons.renderIconSvg("private-dining"), /m12 3\.5 2\.4 5\.2/);
-assert.match(Icons.renderIconSvg("private-dining"), /M10\.2 11\.5v1\.6/);
+assert.match(Icons.renderIconSvg("private-dining"), /m17 0\.5/);
+assert.match(Icons.renderIconSvg("private-dining"), /M21 15V2/);
 assert.match(Icons.renderIconSvg("suite-attendant"), /M5 13\.5h3\.75/);
 assert.equal(Icons.resolveShipFeatureIconKey("Personal Suite Attendant"), "suite-attendant");
 
