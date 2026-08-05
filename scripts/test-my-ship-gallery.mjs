@@ -194,4 +194,10 @@ const SHIP_B_ROW = {
   assert(/\.ship-page-gallery-grid[\s\S]*width: 100%/.test(css), "gallery grid stays within content width");
 }
 
+// Stylesheet must load directly — mid-file @import in planner.css is ignored by browsers
+{
+  const indexHtml = readFileSync(path.join(root, "index.html"), "utf8");
+  assert(/ci-ship-presentation\.css/.test(indexHtml), "index.html links ship presentation css directly");
+}
+
 console.log("test-my-ship-gallery: ok");

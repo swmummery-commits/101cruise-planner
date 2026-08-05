@@ -7507,8 +7507,9 @@ input[type="radio"] {
 
 /* =========================================================
    My Ship — premium brochure layout (shared: css/ci-ship-presentation.css)
+   Loaded via explicit <link> in index.html — @import here is ignored
+   when not at the top of the stylesheet.
    ========================================================= */
-@import url("ci-ship-presentation.css");
 
 /* =============================================================================
    Client Portal shared helpers — loading overlay, ship gallery, journey layout
