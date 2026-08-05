@@ -4094,22 +4094,35 @@ const PACKING_DESTINATIONS = [
 function getDefaultPackingDestination(cruise) {
   const text = [
     cruise?.destination,
+    cruise?.cruise_region,
+    cruise?.itinerary,
     cruise?.arrival_port,
     cruise?.disembarkation_port,
     cruise?.to_port,
-    cruise?.itinerary,
-    cruise?.cruise_region
+    cruise?.embarkation_port,
+    cruise?.departing_port,
+    cruise?.departure_port,
+    getDashboardValue(cruise, ["destination", "cruise_region", "itinerary", "arrival_port", "disembarkation_port", "to_port", "embarkation_port", "departing_port", "departure_port"], "")
   ].filter(Boolean).join(" ").toLowerCase();
 
+  if (!text.trim()) return null;
   if (text.includes("alaska")) return "Alaska";
   if (text.includes("norway") || text.includes("northern europe") || text.includes("fjord")) return "Norway / Northern Europe";
-  if (text.includes("mediterranean") || text.includes("greek") || text.includes("greece") || text.includes("italy") || text.includes("spain")) return "Mediterranean / Greek Isles";
+  if (text.includes("mediterranean") || text.includes("greek") || text.includes("greece") || text.includes("italy") || text.includes("spain") || text.includes("france") || text.includes("croatia")) return "Mediterranean / Greek Isles";
   if (text.includes("caribbean") || text.includes("bahamas")) return "Caribbean / Bahamas";
+  if (text.includes("bermuda")) return "Bermuda";
+  if (text.includes("mexico") || text.includes("mexican riviera")) return "Mexican Riviera";
   if (text.includes("hawaii")) return "Hawaii";
-  if (text.includes("asia") || text.includes("singapore") || text.includes("thailand") || text.includes("vietnam")) return "Asia / Southeast Asia";
+  if (text.includes("asia") || text.includes("singapore") || text.includes("thailand") || text.includes("vietnam") || text.includes("japan") || text.includes("china")) return "Asia / Southeast Asia";
+  if (text.includes("uk") || text.includes("ireland") || text.includes("british isles") || text.includes("southampton") || text.includes("dover")) return "UK & Ireland";
+  if (text.includes("canary")) return "Canary Islands";
   if (text.includes("australia") || text.includes("new zealand")) return "Australia & New Zealand";
+  if (text.includes("transatlantic")) return "Transatlantic Crossing";
+  if (text.includes("transpacific")) return "Transpacific Crossing";
+  if (text.includes("canada") || text.includes("new england")) return "Canada & New England";
+  if (text.includes("panama")) return "Panama Canal";
   if (text.includes("antarctica")) return "Antarctica";
-  return "Mediterranean / Greek Isles";
+  return null;
 }
 
 function getDefaultDressCode(cruise) {
@@ -4144,33 +4157,6 @@ async function loadPackingPreferences(cruise) {
   return data || null;
 }
 
-async function savePackingPreferencesFromForm() {
-  const cruise = await loadCurrentCruise();
-  if (!cruise) return;
-  const payload = {
-    user_id: currentUser.id,
-    cruise_id: cruise.id,
-    traveller_type: document.getElementById("packingTravellerType")?.value || getDefaultTravellerType(cruise),
-    destination: document.getElementById("packingDestination")?.value || getDefaultPackingDestination(cruise),
-    dress_code: document.getElementById("packingDressCode")?.value || getDefaultDressCode(cruise),
-    checked_baggage_allowance_kg: parseOptionalPackingNumber("packingCheckedBaggageAllowance"),
-    cabin_baggage_allowance_kg: parseOptionalPackingNumber("packingCabinBaggageAllowance"),
-    updated_at: new Date().toISOString()
-  };
-
-  const { error } = await supabaseClient
-    .from("user_packing_preferences")
-    .upsert(payload, { onConflict: "user_id,cruise_id" });
-
-  if (error) {
-    console.error("Packing preferences save error", error);
-    alert("Could not save packing settings. Please try again.");
-    return;
-  }
-
-  renderPackingPlanner();
-}
-
 function parseOptionalPackingNumber(id) {
   const raw = String(document.getElementById(id)?.value || "").trim();
   if (raw === "") return null;
@@ -4189,6 +4175,8 @@ function ruleMatches(value, selected) {
   const tags = splitRuleTags(value);
   if (!tags.length) return true;
   const s = String(selected || "").trim().toLowerCase();
+  // Restricted items need a known context value. Empty/unknown context must not match via "".includes.
+  if (!s) return false;
   return tags.some(tag => tag === s || s.includes(tag) || tag.includes(s));
 }
 
@@ -4201,10 +4189,40 @@ function packingItemApplies(item, context) {
 }
 
 function getClimateFromDestination(destination) {
-  const value = String(destination || "").toLowerCase();
-  if (value.includes("alaska") || value.includes("norway") || value.includes("antarctica")) return "Cold";
-  if (value.includes("caribbean") || value.includes("bahamas") || value.includes("hawaii") || value.includes("asia")) return "Tropical";
+  const value = String(destination || "").trim().toLowerCase();
+  if (!value) return "";
+  if (value.includes("alaska") || value.includes("norway") || value.includes("antarctica") || value.includes("polar")) return "Cold";
+  if (value.includes("caribbean") || value.includes("bahamas") || value.includes("hawaii") || value.includes("asia") || value.includes("mexico") || value.includes("bermuda") || value.includes("canary")) return "Tropical";
   return "Warm";
+}
+
+let packingRecommendationsOpen = false;
+
+function resolvePackingRecommendationContext(cruise, preferences = null) {
+  const bookingDestination = getDefaultPackingDestination(cruise);
+  const savedDestination = String(preferences?.destination || "").trim();
+  const hasDestinationOverride = Boolean(savedDestination);
+  const destination = hasDestinationOverride ? savedDestination : bookingDestination;
+  const bookingDressCode = getDefaultDressCode(cruise);
+  const savedDressCode = String(preferences?.dress_code || "").trim();
+  const hasDressOverride = Boolean(savedDressCode);
+  const dressCode = hasDressOverride ? savedDressCode : bookingDressCode;
+  const travellerType = getDefaultTravellerType(cruise);
+  const climate = destination ? getClimateFromDestination(destination) : "";
+  return {
+    bookingDestination,
+    destination: destination || "",
+    destinationLabel: destination || "Destination not recognised",
+    hasDestinationOverride,
+    destinationRecognised: Boolean(bookingDestination),
+    bookingDressCode,
+    dressCode,
+    hasDressOverride,
+    travellerType,
+    climate,
+    cruiseLine: cruise?.cruise_line || "",
+    isAdjusted: hasDestinationOverride || (hasDressOverride && savedDressCode !== bookingDressCode)
+  };
 }
 
 let activePackingProfileKey = null;
@@ -4887,66 +4905,114 @@ function recalculatePackingSummary() {
   updatePackingWeightDisplay(summary);
 }
 
-async function savePackingPreferencesFromForm() {
+async function savePackingRecommendationPreferences({ clearDestinationOverride = false, rerender = true } = {}) {
+  const cruise = await loadCurrentCruise();
+  if (!cruise) return;
+  const bookingDestination = getDefaultPackingDestination(cruise);
+  const destinationValue = clearDestinationOverride
+    ? ""
+    : String(document.getElementById("packingDestination")?.value || "").trim();
+  let dressValue = String(document.getElementById("packingDressCode")?.value || "").trim();
+  if (!dressValue) {
+    if (customerMode) {
+      dressValue = String(customerPackingPreferences?.dress_code || "").trim();
+    } else if (currentUser?.id) {
+      const existing = await loadPackingPreferences(cruise);
+      dressValue = String(existing?.dress_code || "").trim();
+    }
+  }
+  if (!dressValue) dressValue = getDefaultDressCode(cruise);
+  const preferencesPayload = {
+    traveller_type: getDefaultTravellerType(cruise),
+    destination: destinationValue,
+    dress_code: dressValue
+  };
+
+  if (customerMode) {
+    await customerPackingRequest("save_preferences", { preferences: preferencesPayload });
+    customerPackingPreferences = { ...(customerPackingPreferences || {}), ...preferencesPayload };
+  } else if (currentUser?.id) {
+    const { error } = await supabaseClient.from("user_packing_preferences").upsert({
+      user_id: currentUser.id,
+      cruise_id: cruise.id,
+      ...preferencesPayload,
+      updated_at: new Date().toISOString()
+    }, { onConflict: "user_id,cruise_id" });
+    if (error) {
+      console.error("Packing recommendation save error", error);
+      alert("Could not save packing recommendations. Please try again.");
+      return;
+    }
+  }
+
+  if (rerender) await renderPackingPlanner();
+}
+
+async function savePackingBaggageAllowances() {
   const cruise = await loadCurrentCruise();
   const profile = getActivePackingProfile();
-  if (!cruise || !profile) return;
-  const globalPayload = {
-    user_id: currentUser.id,
-    cruise_id: cruise.id,
-    traveller_type: document.getElementById("packingTravellerType")?.value || getDefaultTravellerType(cruise),
-    destination: document.getElementById("packingDestination")?.value || getDefaultPackingDestination(cruise),
-    dress_code: document.getElementById("packingDressCode")?.value || getDefaultDressCode(cruise),
-    updated_at: new Date().toISOString()
-  };
+  if (!cruise || !profile || profile.profile_type !== "traveller") return;
+
   const profilePayload = {
-    user_id: currentUser.id,
+    user_id: currentUser?.id,
     cruise_key: String(cruise.id),
     profile_key: profile.profile_key,
     profile_name: profile.profile_name,
     profile_type: profile.profile_type,
     display_order: profile.display_order,
-    checked_baggage_allowance_kg: profile.profile_type === "traveller" ? parseOptionalPackingNumber("packingCheckedBaggageAllowance") : null,
-    cabin_baggage_allowance_kg: profile.profile_type === "traveller" ? parseOptionalPackingNumber("packingCabinBaggageAllowance") : null,
+    checked_baggage_allowance_kg: parseOptionalPackingNumber("packingCheckedBaggageAllowance"),
+    cabin_baggage_allowance_kg: parseOptionalPackingNumber("packingCabinBaggageAllowance"),
     updated_at: new Date().toISOString()
   };
 
   if (customerMode) {
-    const preferencesPayload = {
-      traveller_type: globalPayload.traveller_type,
-      destination: globalPayload.destination,
-      dress_code: globalPayload.dress_code
-    };
     const profileForCustomer = { ...profilePayload };
     delete profileForCustomer.user_id;
     delete profileForCustomer.cruise_key;
-    const [, profileResult] = await Promise.all([
-      customerPackingRequest("save_preferences", { preferences: preferencesPayload }),
-      customerPackingRequest("save_profiles", { profiles: [profileForCustomer] })
-    ]);
-    customerPackingPreferences = { ...(customerPackingPreferences || {}), ...preferencesPayload };
+    const profileResult = await customerPackingRequest("save_profiles", { profiles: [profileForCustomer] });
     const savedProfile = profileResult?.profiles?.[0] || profileForCustomer;
     const index = packingV2Profiles.findIndex(item => item.profile_key === profile.profile_key);
     if (index >= 0) packingV2Profiles[index] = { ...packingV2Profiles[index], ...savedProfile };
     return;
   }
-  const [globalResult, profileResult] = await Promise.all([
-    supabaseClient.from("user_packing_preferences").upsert(globalPayload, { onConflict: "user_id,cruise_id" }),
-    supabaseClient.from("user_packing_v2_profiles").upsert(profilePayload, { onConflict: "user_id,cruise_key,profile_key" })
-  ]);
-  if (globalResult.error || profileResult.error) {
-    console.error("Packing settings save error", globalResult.error || profileResult.error);
-    alert("Could not save packing settings. Please try again.");
+
+  if (!currentUser?.id) return;
+  const { error } = await supabaseClient
+    .from("user_packing_v2_profiles")
+    .upsert(profilePayload, { onConflict: "user_id,cruise_key,profile_key" });
+  if (error) {
+    console.error("Packing baggage save error", error);
+    alert("Could not save baggage allowances. Please try again.");
     return;
   }
   const index = packingV2Profiles.findIndex(item => item.profile_key === profile.profile_key);
   if (index >= 0) packingV2Profiles[index] = { ...packingV2Profiles[index], ...profilePayload };
 }
 
+/** @deprecated Use savePackingRecommendationPreferences / savePackingBaggageAllowances */
+async function savePackingPreferencesFromForm() {
+  await savePackingBaggageAllowances();
+}
+
 let packingPreferencesAutoSaveTimer = null;
 function schedulePackingPreferencesSave(immediate = false) {
   clearTimeout(packingPreferencesAutoSaveTimer);
-  packingPreferencesAutoSaveTimer = setTimeout(() => savePackingPreferencesFromForm(), immediate ? 0 : 650);
+  packingPreferencesAutoSaveTimer = setTimeout(() => savePackingBaggageAllowances(), immediate ? 0 : 650);
+}
+
+function schedulePackingRecommendationSave(immediate = false) {
+  clearTimeout(packingPreferencesAutoSaveTimer);
+  packingPreferencesAutoSaveTimer = setTimeout(() => savePackingRecommendationPreferences({ rerender: true }), immediate ? 0 : 650);
+}
+
+function togglePackingRecommendationsAdjust() {
+  packingRecommendationsOpen = !packingRecommendationsOpen;
+  renderPackingPlanner();
+}
+
+async function useBookingPackingDestination() {
+  packingRecommendationsOpen = true;
+  await savePackingRecommendationPreferences({ clearDestinationOverride: true, rerender: true });
 }
 
 function parseOptionalPackingNumber(id) {
@@ -4956,43 +5022,72 @@ function parseOptionalPackingNumber(id) {
   return Number.isFinite(value) && value >= 0 ? value : null;
 }
 
-function renderPackingControls(preferences, cruise, profile = getActivePackingProfile()) {
-  const travellerType = preferences?.traveller_type === "Group" ? getDefaultTravellerType(cruise) : (preferences?.traveller_type || getDefaultTravellerType(cruise));
-  const destination = preferences?.destination || getDefaultPackingDestination(cruise);
-  const dressCode = preferences?.dress_code || getDefaultDressCode(cruise);
-  const isCabin = profile?.profile_type === "cabin";
+function renderPackingRecommendationContext(cruise, recommendation) {
+  const shipLabel = cruise?.ship_name || cruise?.cruise_line || "Your cruise";
+  const selectDestination = recommendation.hasDestinationOverride
+    ? recommendation.destination
+    : (recommendation.bookingDestination || "");
+  const selectDress = recommendation.dressCode || recommendation.bookingDressCode;
   return `
-    <section class="planner-card packing-settings-card ${isCabin ? "is-cabin" : ""}">
+    <section class="packing-recommendation-context" aria-label="Packing recommendations">
+      <div class="packing-recommendation-summary">
+        <p class="packing-recommendation-meta">
+          <span>${escapeHtml(shipLabel)}</span>
+          <span aria-hidden="true">•</span>
+          <span class="${recommendation.destination ? "" : "is-unrecognised"}">${escapeHtml(recommendation.destinationLabel)}</span>
+          <span aria-hidden="true">•</span>
+          <span>${escapeHtml(recommendation.dressCode)}</span>
+        </p>
+        ${recommendation.isAdjusted ? `<p class="packing-recommendation-adjusted">Recommendations adjusted for this cruise</p>` : ""}
+        ${!recommendation.destinationRecognised && !recommendation.hasDestinationOverride
+          ? `<p class="packing-recommendation-prompt">Destination not recognised from your booking. Use Adjust recommendations to set it.</p>`
+          : ""}
+        <button type="button" class="planner-button secondary small packing-adjust-toggle" onclick="togglePackingRecommendationsAdjust()" aria-expanded="${packingRecommendationsOpen ? "true" : "false"}">
+          ${packingRecommendationsOpen ? "Hide recommendation settings" : "Adjust recommendations"}
+        </button>
+      </div>
+      ${packingRecommendationsOpen ? `
+        <div class="packing-recommendation-adjust">
+          <p class="planner-muted packing-recommendation-help">Your destination is taken from your booking. Change these settings only if the packing recommendations do not match your cruise.</p>
+          <div class="packing-recommendation-fields">
+            <label>
+              <span>Destination</span>
+              <select id="packingDestination" onchange="schedulePackingRecommendationSave(true)">
+                <option value="" ${!selectDestination ? "selected" : ""}>${recommendation.destinationRecognised ? "Use booking destination" : "Choose destination…"}</option>
+                ${PACKING_DESTINATIONS.map(value => `<option value="${escapeHtml(value)}" ${selectDestination === value ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              <span>Dress style</span>
+              <select id="packingDressCode" onchange="schedulePackingRecommendationSave(true)">
+                ${["Casual", "Smart Casual", "Semi Formal", "Formal"].map(value => `<option value="${value}" ${selectDress === value ? "selected" : ""}>${value}</option>`).join("")}
+              </select>
+            </label>
+          </div>
+          <div class="packing-recommendation-actions">
+            <button type="button" class="planner-button secondary small" onclick="useBookingPackingDestination()" ${recommendation.hasDestinationOverride ? "" : "disabled"}>Use booking destination</button>
+          </div>
+        </div>
+      ` : ""}
+    </section>
+  `;
+}
+
+function renderPackingControls(preferences, cruise, profile = getActivePackingProfile()) {
+  if (profile?.profile_type === "cabin") return "";
+  return `
+    <section class="planner-card packing-settings-card">
       <div class="packing-settings-heading">
         <div>
-          <h3>${isCabin ? "Shared packing settings" : `${escapeHtml(profile?.profile_name || "Traveller")}'s packing settings`}</h3>
-          <p class="planner-muted">${isCabin ? "These settings apply to the whole booking and update your packing recommendations." : "Allowances are entered for this traveller only and save automatically."}</p>
+          <h3>${escapeHtml(profile?.profile_name || "Traveller")}'s baggage allowances</h3>
+          <p class="planner-muted">Allowances are entered for this traveller only and save automatically.</p>
         </div>
       </div>
-      <div class="packing-settings-grid ${isCabin ? "packing-settings-grid-cabin" : ""}">
-        <label><span>Who is travelling?</span>
-          <select id="packingTravellerType" onchange="schedulePackingPreferencesSave(true)">
-            ${["Solo", "Couple", "Family"].map(type => `<option value="${type}" ${travellerType === type ? "selected" : ""}>${type}</option>`).join("")}
-          </select>
-        </label>
-        <label><span>Destination</span>
-          <select id="packingDestination" onchange="schedulePackingPreferencesSave(true)">
-            ${PACKING_DESTINATIONS.map(value => `<option value="${escapeHtml(value)}" ${destination === value ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}
-          </select>
-        </label>
-        <label><span>Dress code</span>
-          <select id="packingDressCode" onchange="schedulePackingPreferencesSave(true)">
-            ${["Casual", "Smart Casual", "Semi Formal", "Formal"].map(value => `<option value="${value}" ${dressCode === value ? "selected" : ""}>${value}</option>`).join("")}
-          </select>
-        </label>
+      <p class="packing-baggage-instruction">Please add your airline baggage allowance below so the system can determine your capacity as you select what to pack.</p>
+      <div class="packing-baggage-fields">
+        <label class="packing-baggage-field"><span>Checked baggage</span><div class="packing-allowance-input"><input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.checked_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
+        <label class="packing-baggage-field"><span>Cabin baggage</span><div class="packing-allowance-input"><input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.cabin_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
       </div>
-      ${isCabin ? "" : `
-        <p class="packing-baggage-instruction">Please add your airline baggage allowance below so the system can determine your capacity as you select what to pack.</p>
-        <div class="packing-baggage-fields">
-          <label class="packing-baggage-field"><span>Checked baggage</span><div class="packing-allowance-input"><input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.checked_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
-          <label class="packing-baggage-field"><span>Cabin baggage</span><div class="packing-allowance-input"><input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.cabin_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
-        </div>
-      `}
     </section>
   `;
 }
@@ -5170,12 +5265,13 @@ async function renderPackingPlanner() {
   if (!activePackingProfileKey || !packingV2Profiles.some(profile => profile.profile_key === activePackingProfileKey)) activePackingProfileKey = storedProfile || packingV2Profiles[0]?.profile_key;
   const profile = getActivePackingProfile();
   packingShowSelectedOnly = localStorage.getItem(`101cruise_selected_only_${String(cruise.id)}_${profile?.profile_key || "profile"}`) === "1";
+  const recommendation = resolvePackingRecommendationContext(cruise, preferences);
   const context = {
-    destination: preferences?.destination || getDefaultPackingDestination(cruise),
-    travellerType: preferences?.traveller_type || getDefaultTravellerType(cruise),
-    dressCode: preferences?.dress_code || getDefaultDressCode(cruise),
-    climate: getClimateFromDestination(preferences?.destination || getDefaultPackingDestination(cruise)),
-    cruiseLine: cruise.cruise_line || ""
+    destination: recommendation.destination,
+    travellerType: recommendation.travellerType,
+    dressCode: recommendation.dressCode,
+    climate: recommendation.climate,
+    cruiseLine: recommendation.cruiseLine
   };
 
   const [{ data: categories }, { data: items }, personalResult] = await Promise.all([
@@ -5246,7 +5342,12 @@ async function renderPackingPlanner() {
     <div id="packing-page" class="packing-page packing-assistant-v2 ${isCabinProfile ? "is-cabin-page" : ""}">
       ${renderPlannerNav("packing")}
       <div class="checklist-toolbar planner-card slim-card packing-toolbar">
-        <div><p class="planner-kicker">Packing Assistant</p><h2>${isCabinProfile ? "Cabin" : `${escapeHtml(profile.profile_name)}'s Packing`}</h2><p class="planner-muted">${isCabinProfile ? "Shared items for the cabin that are distributed across all travellers." : `${escapeHtml(cruise.ship_name || cruise.cruise_line || "Your cruise")} • ${escapeHtml(context.destination)} • ${escapeHtml(context.dressCode)}`}</p></div>
+        <div>
+          <p class="planner-kicker">Packing Assistant</p>
+          <h2>${isCabinProfile ? "Cabin" : `${escapeHtml(profile.profile_name)}'s Packing`}</h2>
+          ${renderPackingRecommendationContext(cruise, recommendation)}
+          ${isCabinProfile ? `<p class="planner-muted packing-cabin-toolbar-note">Shared items for the cabin that are distributed across all travellers.</p>` : ""}
+        </div>
         <div class="checklist-toolbar-actions"><button class="planner-button secondary" id="selectedOnlyButton" onclick="toggleSelectedOnly()">Show Selected Only</button><button class="planner-button secondary" id="hidePackedButton" onclick="toggleHidePacked()">Hide Packed</button><button class="planner-button secondary" onclick="resetPackingProgress()">Reset</button><button class="planner-button secondary" onclick="printPackingList()">Print</button><button class="planner-button" onclick="savePackingPdf()">Save PDF</button></div>
       </div>
       ${renderPackingProfileTabs(packingV2Profiles)}

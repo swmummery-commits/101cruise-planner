@@ -18,6 +18,20 @@
 
 Empty tags for a dimension mean “matches any”. The planner does **not** read `smart_profiles`, `smart_profile_members`, `packing_item_profiles`, or `smart_profile_groups`.
 
+If the item has tags for a dimension but the context value is empty/unknown, the item does **not** apply for that dimension (no guessed Mediterranean destination or climate).
+
+## Recommendation context resolution
+
+`resolvePackingRecommendationContext(cruise, preferences)`:
+
+- `travellerType` — always `getDefaultTravellerType(cruise)` (booking-derived)
+- `destination` — saved override if present, else `getDefaultPackingDestination(cruise)` (null when unrecognised; never silently Mediterranean)
+- `dressCode` — saved override if present, else `getDefaultDressCode(cruise)`
+- `climate` — from effective destination, or empty when destination unknown
+- `cruiseLine` — from cruise record
+
+Cruise-level prefs save via `savePackingRecommendationPreferences`. Traveller baggage saves via `savePackingBaggageAllowances` only.
+
 ## Admin
 
 Admin Packing edits and saves the five direct rule fields on `packing_items`. The retired Smart Profiles Admin tab, CRUD UI, and writes to `packing_item_profiles` have been removed from application code.
@@ -41,3 +55,5 @@ Do not confuse with Smart Profiles:
 - `user_packing_v2_state` — quantities, packed flags, packing locations per `profile_key`
 
 Runtime symbols: `packingV2Profiles`, `activePackingProfileKey`.
+
+Preference tables remain for rollback compatibility (`user_packing_preferences` / `customer_packing_preferences`). Do not delete columns or rows in this change. Unknown destinations must never silently default to Mediterranean.

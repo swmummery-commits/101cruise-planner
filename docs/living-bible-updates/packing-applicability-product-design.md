@@ -32,3 +32,12 @@ Customer Packing Assistant still uses per-traveller and Cabin packing lists:
 - Separate packing progress, quantities, packing locations, and packed states
 
 This customer profile system (`user_packing_v2_profiles` / `user_packing_v2_state`) is **not** the retired Smart Profiles feature and must not be renamed or conflated with it.
+
+## Packing recommendation settings (cruise-level)
+
+- Traveller type is **booking-derived** (Solo / Couple / Family from traveller count and names). Customers are not asked “Who is travelling?”.
+- Destination defaults from booking confirmation / CRM fields. Unknown destinations must **never** silently default to Mediterranean.
+- Destination and dress style are **cruise-level** recommendation settings, shown once above Stephen / Paul / Cabin tabs.
+- Customers may open **Adjust recommendations** only when needed; **Use booking destination** clears a destination override.
+- Baggage allowances remain **traveller-specific**.
+- Cabin is a shared booking checklist and does not show traveller/destination/dress controls.
