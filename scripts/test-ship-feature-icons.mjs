@@ -50,11 +50,20 @@ assert.equal(Icons.resolveShipFeatureIconKey("Unknown Widget", "not-real"), Icon
 assert.ok(Icons.renderIconSvg("pool").includes("<svg"));
 assert.ok(Icons.renderFeatureIconHtml("spa").includes("ship-feature-icon"));
 assert.notEqual(Icons.ICONS.dining.paths, Icons.ICONS["private-dining"].paths);
-assert.match(Icons.renderIconSvg("dining"), /m5 0\.5/);
-assert.match(Icons.renderIconSvg("private-dining"), /m17 0\.5/);
+assert.doesNotMatch(Icons.renderIconSvg("dining"), /m18 1\.2|m6 1\.2|m5 0\.5/);
+assert.match(Icons.renderIconSvg("dining"), /M3 2v7/);
+assert.match(Icons.renderIconSvg("private-dining"), /m18 1\.2 1\.1 2\.4/);
 assert.match(Icons.renderIconSvg("private-dining"), /M21 15V2/);
 assert.match(Icons.renderIconSvg("suite-attendant"), /M5 13\.5h3\.75/);
 assert.equal(Icons.resolveShipFeatureIconKey("Personal Suite Attendant"), "suite-attendant");
+assert.match(Icons.renderIconSvg("observation"), /cx="8" cy="11" r="3"/);
+assert.match(Icons.renderIconSvg("spa"), /M4 15h16/);
+assert.match(Icons.renderIconSvg("theatre"), /M8 17h8/);
+assert.match(Icons.renderIconSvg("surf"), /M7 15\.5h8/);
+assert.match(Icons.renderIconSvg("ice-rink"), /M5\.5 15\.5v2/);
+assert.match(Icons.renderIconSvg("cooking"), /M7 14h10/);
+assert.match(Icons.renderIconSvg("zodiac"), /M3 14\.5c/);
+assert.equal(Icons.resolveShipFeatureIconKey("Zodiac Landing"), "zodiac");
 
 // Legacy string arrays
 const legacyEa = CiFac.normalizeExclusiveAreasForDisplay(["Suite Deck", "Premium Lounge"]);

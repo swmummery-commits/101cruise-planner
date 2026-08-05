@@ -46,7 +46,7 @@
     "private-dining": {
       label: "Private dining",
       group: "exclusive",
-      paths: `<path d="m17 0.5 0.4 0.85 0.95 0.14-0.68 0.66 0.16 0.94-0.83-0.5-0.83 0.5 0.16-0.94-0.68-0.66 0.95-0.14Z"/><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
+      paths: `<path d="m18 1.2 1.1 2.4 2.65 0.38-1.95 1.85 0.45 2.6L18 6.9 16.05 8.4l0.45-2.6-1.95-1.85 2.65-0.38Z"/><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
     },
     "suite-attendant": {
       label: "Suite attendant",
@@ -66,7 +66,7 @@
     observation: {
       label: "Observation",
       group: "exclusive",
-      paths: `<circle cx="12" cy="12" r="3"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/>`
+      paths: `<circle cx="8" cy="11" r="3"/><circle cx="16" cy="11" r="3"/><path d="M11 11h2"/><path d="M8 14v4"/><path d="M16 14v4"/>`
     },
     star: {
       label: "Star",
@@ -86,12 +86,12 @@
     spa: {
       label: "Spa",
       group: "specialty",
-      paths: `<path d="M12 3c-2 3-5 4-5 7a5 5 0 0 0 10 0c0-3-3-4-5-7z"/><path d="M8 14c-1.5 1.5-2 3-2 4.5"/><path d="M16 14c1.5 1.5 2 3 2 4.5"/><path d="M10 20h4"/>`
+      paths: `<path d="M4 15h16"/><path d="M6 15v3"/><path d="M18 15v3"/><circle cx="7.5" cy="12.5" r="1.4"/><path d="M9 13h5"/><circle cx="14" cy="7.5" r="1.6"/><path d="M14 9.1v3.9"/><path d="M12.5 13h3"/>`
     },
     theatre: {
       label: "Theatre",
       group: "specialty",
-      paths: `<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/>`
+      paths: `<path d="M5 4v16"/><path d="M5 4c1.5 2 1.5 4 0 6"/><path d="M5 10c1.5 2 1.5 4 0 6"/><path d="M19 4v16"/><path d="M19 4c-1.5 2-1.5 4 0 6"/><path d="M19 10c-1.5 2-1.5 4 0 6"/><path d="M4 20h16"/><path d="M8 17h8"/>`
     },
     "live-music": {
       label: "Live music",
@@ -126,7 +126,7 @@
     surf: {
       label: "Surf / FlowRider",
       group: "specialty",
-      paths: `<path d="M2 18c2-1 4-1 6 0s4 1 6 0 4-1 6 0"/><path d="M8 12V6l4-2 4 2v6"/>`
+      paths: `<path d="M2 18c2.5-1 4.5-1 7 0s4.5 1 7 0 2.5-1 5 0"/><path d="M7 15.5h8"/><circle cx="13" cy="9" r="1.5"/><path d="M13 10.5v4"/><path d="m11.5 14.5 1.5-1.5 1.5 1.5"/>`
     },
     "roller-coaster": {
       label: "Roller coaster",
@@ -141,7 +141,7 @@
     "ice-rink": {
       label: "Ice rink",
       group: "specialty",
-      paths: `<rect x="3" y="8" width="18" height="10" rx="2"/><path d="M8 12h8"/><path d="M12 8v10"/>`
+      paths: `<path d="M7 5v7"/><path d="M5.5 12h3"/><path d="M5.5 14h3"/><path d="M5.5 15.5v2"/><path d="M15 5v7"/><path d="M13.5 12h3"/><path d="M13.5 14h3"/><path d="M16.5 15.5v2"/>`
     },
     skydiving: {
       label: "Skydiving simulator",
@@ -201,12 +201,12 @@
     cooking: {
       label: "Cooking",
       group: "specialty",
-      paths: `<path d="M6 13h12"/><path d="M6 13a4 4 0 0 1 0-8h12a4 4 0 0 1 0 8"/><path d="M8 21h8"/><path d="M12 17v4"/>`
+      paths: `<path d="M6 16h12"/><path d="M8 16v2"/><path d="M16 16v2"/><path d="M7 14h10"/><path d="M12 5c-1.5 2.5-3 4-3 6a3 3 0 0 0 6 0c0-2-1.5-3.5-3-6z"/>`
     },
     dining: {
       label: "Dining",
       group: "specialty",
-      paths: `<path d="m5 0.5 0.4 0.85 0.95 0.14-0.68 0.66 0.16 0.94-0.83-0.5-0.83 0.5 0.16-0.94-0.68-0.66 0.95-0.14Z"/><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
+      paths: `<path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
     },
     drinks: {
       label: "Drinks / bar",
@@ -222,6 +222,11 @@
       label: "Compass / discovery",
       group: "specialty",
       paths: `<circle cx="12" cy="12" r="9"/><path d="m16 8-4 8-4-8 8-4z"/>`
+    },
+    zodiac: {
+      label: "Zodiac boat",
+      group: "specialty",
+      paths: `<path d="M3 14.5c2.5-3.5 6-5 9-5s6.5 1.5 9 5"/><path d="M4 14.5h16"/><path d="M6.5 14.5v2.5"/><path d="M17.5 14.5v2.5"/><path d="M9 11.5h6"/>`
     },
     sparkles: {
       label: "General feature",
@@ -252,7 +257,8 @@
     "art-gallery": ["art", "gallery", "exhibition"],
     science: ["science", "laboratory", "research centre", "research center"],
     marina: ["marina", "watersports platform", "water sports platform", "yacht marina"],
-    expedition: ["expedition", "discovery centre", "discovery center", "submarine", "zodiac"],
+    zodiac: ["zodiac", "zodiac landing", "rubber boat", "rib boat", "inflatable boat", "tender boat"],
+    expedition: ["expedition", "discovery centre", "discovery center", "submarine"],
     pool: ["pool", "main pool", "swimming pool"],
     theatre: ["theatre", "theater", "show lounge"],
     casino: ["casino"],
