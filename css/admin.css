@@ -1387,6 +1387,45 @@ body.admin-loading-active {
   color: #666;
 }
 
+.ci-line-feature-assign-ships {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #eee;
+}
+
+.ci-line-feature-assign-ships-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #666;
+  list-style: none;
+}
+
+.ci-line-feature-assign-ships-summary::-webkit-details-marker {
+  display: none;
+}
+
+.ci-line-feature-assign-ships-summary::before {
+  content: "▸";
+  font-size: 0.75rem;
+  line-height: 1;
+  color: #888;
+  transition: transform 0.15s ease;
+}
+
+.ci-line-feature-assign-ships[open] .ci-line-feature-assign-ships-summary::before {
+  transform: rotate(90deg);
+}
+
+.ci-line-feature-assign-ships-grid {
+  margin-top: 8px;
+}
+
 .ci-line-feature-assign-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

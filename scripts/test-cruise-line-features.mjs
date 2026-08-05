@@ -173,6 +173,7 @@ assert.ok(adminLineFeaturesJs.includes("CruiseLineFeaturesAdmin.startEdit"));
 assert.ok(adminLineFeaturesJs.includes("CruiseLineFeaturesAdmin.deleteFeature"));
 assert.ok(adminLineFeaturesJs.includes("startCreate,"));
 assert.ok(adminLineFeaturesJs.includes("renderAssignmentSection"));
+assert.ok(adminLineFeaturesJs.includes("ci-line-feature-assign-ships"));
 assert.ok(adminLineFeaturesJs.includes("ci-line-feature-class-cb"));
 assert.ok(adminLineFeaturesJs.includes("ci-line-feature-ship-cb"));
 assert.ok(adminLineFeaturesJs.includes("saveClassAssignments"));

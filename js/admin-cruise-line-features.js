@@ -244,6 +244,13 @@
           .join("")
       : `<p class="admin-small">No ships on this cruise line yet.</p>`;
 
+    const selectedShipCount = ships.filter(function (ship) {
+      return selectedShips.has(String(ship.id));
+    }).length;
+    const shipCountLabel = ships.length
+      ? `${ships.length} ship${ships.length === 1 ? "" : "s"}${selectedShipCount ? `, ${selectedShipCount} selected` : ""}`
+      : "";
+
     const typeLabel = featureType === "exclusive_area" ? "exclusive area" : "specialty feature";
     return `
       <div class="ci-line-feature-assign">
@@ -253,10 +260,12 @@
           <h6>Ship classes</h6>
           <div class="ci-line-feature-assign-grid">${classList}</div>
         </div>
-        <div class="ci-line-feature-assign-block">
-          <h6>Individual ships</h6>
-          <div class="ci-line-feature-assign-grid">${shipList}</div>
-        </div>
+        <details class="ci-line-feature-assign-ships">
+          <summary class="ci-line-feature-assign-ships-summary">
+            Individual ships${shipCountLabel ? ` <span class="admin-small">(${esc(shipCountLabel)})</span>` : ""}
+          </summary>
+          <div class="ci-line-feature-assign-grid ci-line-feature-assign-ships-grid">${shipList}</div>
+        </details>
       </div>`;
   }
 
