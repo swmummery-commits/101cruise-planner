@@ -198,6 +198,11 @@
       group: "specialty",
       paths: `<path d="M3 18h18"/><path d="M6 18V8l6-3 6 3v10"/><path d="M10 12h4"/>`
     },
+    "outdoor-platform": {
+      label: "Outdoor platform",
+      group: "specialty",
+      paths: `<path d="M4 4v10"/><path d="M4 4h2"/><path d="M6 7h14"/><path d="M6 9h14"/><path d="M6 9 4 11"/><path d="M10 7v2"/><path d="M14 7v2"/><path d="M18 7v2"/><path d="M2 17c2-1 4-1 6 0s4 1 6 0 4-1 6 0"/><path d="M2 20c2-1 4-1 6 0s4 1 6 0 4-1 6 0"/>`
+    },
     garden: {
       label: "Garden",
       group: "specialty",
@@ -263,6 +268,7 @@
     "art-gallery": ["art", "gallery", "exhibition"],
     science: ["science", "laboratory", "research centre", "research center"],
     marina: ["marina", "watersports platform", "water sports platform", "yacht marina"],
+    "outdoor-platform": ["outdoor platform", "magic carpet", "magic carpet platform", "cantilevered platform"],
     zodiac: ["zodiac", "zodiac landing", "rubber boat", "rib boat", "inflatable boat", "tender boat"],
     expedition: ["expedition", "discovery centre", "discovery center", "submarine"],
     pool: ["pool", "main pool", "swimming pool"],

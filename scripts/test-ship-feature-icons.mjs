@@ -68,6 +68,10 @@ assert.match(Icons.renderIconSvg("ice-rink"), /M5\.5 15\.5v2/);
 assert.match(Icons.renderIconSvg("cooking"), /M7 14h10/);
 assert.match(Icons.renderIconSvg("zip-line"), /M12 14v1\.25/);
 assert.equal(Icons.resolveShipFeatureIconKey("Zodiac Landing"), "zodiac");
+assert.equal(Icons.resolveShipFeatureIconKey("Outdoor Platform"), "outdoor-platform");
+assert.equal(Icons.resolveShipFeatureIconKey("Magic Carpet"), "outdoor-platform");
+assert.match(Icons.renderIconSvg("outdoor-platform"), /M6 7h14/);
+assert.match(Icons.renderIconSvg("outdoor-platform"), /M2 17c2-1/);
 
 // Legacy string arrays
 const legacyEa = CiFac.normalizeExclusiveAreasForDisplay(["Suite Deck", "Premium Lounge"]);
