@@ -1278,3 +1278,80 @@ a.ship-deck-button:visited {
     grid-column: auto;
   }
 }
+
+/* My Ship — supplementary photo grid */
+.ship-page-gallery {
+  margin-top: 36px;
+  width: 100%;
+}
+
+.ship-page-gallery-head h3 {
+  margin: 0 0 14px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #16324f;
+  letter-spacing: -0.01em;
+}
+
+.ship-page-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.ship-page-gallery-item {
+  position: relative;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #edf5f2;
+  cursor: zoom-in;
+  aspect-ratio: 4 / 3;
+}
+
+.ship-page-gallery-item[hidden] {
+  display: none;
+}
+
+.ship-page-gallery-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ship-page-gallery-item:focus-visible {
+  outline: 2px solid #8dd9bf;
+  outline-offset: 2px;
+}
+
+@media (max-width: 980px) {
+  .ship-page-gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .ship-page-gallery-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 360px) {
+  .ship-page-gallery-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ship-page-gallery {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+  }
+}

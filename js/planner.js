@@ -2573,7 +2573,7 @@ async function loadShipGalleryImages(cruise, heroUrl = "") {
     const data = await response.json().catch(() => null);
     if (!response.ok || !data?.success) return [];
     const images = Array.isArray(data.images) ? data.images : [];
-    return images.slice(0, 5);
+    return images.slice(0, 8);
   } catch (error) {
     console.warn("Ship gallery load failed", error);
     return [];
@@ -2622,6 +2622,20 @@ function renderShipGallerySection(images, heroUrl = "") {
       <button type="button" id="shipGalleryLightboxClose" aria-label="Close image">Close</button>
       <img id="shipGalleryLightboxImage" alt="">
     </div>`;
+}
+
+function renderShipPageGallerySection(images, options = {}) {
+  if (typeof ShipGallerySection !== "undefined" && ShipGallerySection.renderShipPageGallerySection) {
+    return ShipGallerySection.renderShipPageGallerySection(images, options);
+  }
+  return "";
+}
+
+function normaliseShipPageGalleryImages(images, options = {}) {
+  if (typeof ShipGallerySection !== "undefined" && ShipGallerySection.normaliseShipGalleryImages) {
+    return ShipGallerySection.normaliseShipGalleryImages(images, options);
+  }
+  return Array.isArray(images) ? images : [];
 }
 
 function closeShipGalleryLightbox() {
@@ -5800,16 +5814,36 @@ async function renderTheShip() {
   if (!shipImage && shipName && shipName !== profile.name) {
     shipImage = await loadShipPageImage(shipName);
   }
+  const heroUrl = String(result.ship?.hero_image_url || shipImage || "").trim();
+  const galleryImages = await loadShipGalleryImages(
+    { ship_name: shipName, cruise_line: cruiseLine },
+    heroUrl
+  );
+  const galleryShipName = profile.name || shipName;
+  const galleryHtml = renderShipPageGallerySection(galleryImages, {
+    heroUrl,
+    shipName: galleryShipName
+  });
 
   app.innerHTML = `
     <div class="ship-page">
       ${renderPlannerNav("ship")}
       ${CiShipPresentation.renderPresentationHtml(profile, { mode: "portal", cruiseLineLogo, shipImage })}
+      ${galleryHtml}
     </div>
   `;
 
   CiShipPresentation.initialiseMotion(app.querySelector(".ship-page"));
   CiShipPresentation.bindSpaceRatioExplainer(app.querySelector(".ship-page"));
+
+  if (galleryHtml) {
+    const galleryList = normaliseShipPageGalleryImages(galleryImages, {
+      heroUrl,
+      limit: 8,
+      defaultAlt: `${galleryShipName} additional ship photo`
+    });
+    bindShipGalleryInteractions(galleryList);
+  }
 }
 
 if (typeof window !== "undefined") {

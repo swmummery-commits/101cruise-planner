@@ -91,6 +91,34 @@ assert(isLogoMedia(rows[0]) === false, "ship photo is not logo");
 assert(isDefaultHeroDuplicate(rows[2], HERO) === true, "default hero duplicate detected");
 assert(isDefaultHeroDuplicate(rows[0], HERO) === false, "non-hero url kept");
 
+const heroLeak = {
+  id: "6",
+  title: "Hero leak non-default",
+  alt_text: "Hero",
+  public_url: HERO,
+  media_type: "ship",
+  ship_id: "ship-1",
+  cruise_line_id: null,
+  tags: [],
+  is_default: false,
+  is_active: true
+};
+assert(filterShipGalleryMedia([rows[0], heroLeak], { heroUrl: HERO, limit: 8 }).length === 1, "hero url excluded even when not default");
+
+const duplicateUrlRow = {
+  id: "7",
+  title: "Duplicate url",
+  alt_text: "Dup",
+  public_url: rows[0].public_url,
+  media_type: "ship",
+  ship_id: "ship-1",
+  cruise_line_id: null,
+  tags: [],
+  is_default: false,
+  is_active: true
+};
+assert(filterShipGalleryMedia([rows[0], duplicateUrlRow], { heroUrl: HERO, limit: 8 }).length === 1, "duplicate urls removed");
+
 const filtered = filterShipGalleryMedia(rows, { heroUrl: HERO, limit: 8 });
 assert(filtered.length === 2, "filters logos, hero duplicate, and inactive rows");
 assert(

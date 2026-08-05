@@ -32,24 +32,33 @@ function isLogoMedia(row) {
   return false;
 }
 
-function isDefaultHeroDuplicate(row, heroUrl) {
+function isHeroUrlMatch(row, heroUrl) {
   const url = String(row?.public_url || "").trim();
   const hero = String(heroUrl || "").trim();
-  if (!url || !hero) return false;
-  if (url !== hero) return false;
-  return Boolean(row.is_default);
+  return Boolean(url && hero && url === hero);
+}
+
+function isDefaultHeroDuplicate(row, heroUrl) {
+  return isHeroUrlMatch(row, heroUrl) && Boolean(row?.is_default);
 }
 
 function filterShipGalleryMedia(rows, options = {}) {
   const heroUrl = options.heroUrl || options.hero_url || null;
   const limit = Number.isFinite(Number(options.limit)) ? Number(options.limit) : 8;
+  const seen = new Set();
 
   return (rows || [])
     .filter((row) => row && row.is_active !== false && row.public_url)
     .filter((row) => row.media_type === "ship")
     .filter((row) => row.ship_id)
     .filter((row) => !isLogoMedia(row))
-    .filter((row) => !isDefaultHeroDuplicate(row, heroUrl))
+    .filter((row) => !isHeroUrlMatch(row, heroUrl))
+    .filter((row) => {
+      const url = String(row.public_url || "").trim();
+      if (!url || seen.has(url)) return false;
+      seen.add(url);
+      return true;
+    })
     .slice(0, limit)
     .map((row) => ({
       id: row.id,
@@ -62,6 +71,7 @@ function filterShipGalleryMedia(rows, options = {}) {
 module.exports = {
   normaliseText,
   isLogoMedia,
+  isHeroUrlMatch,
   isDefaultHeroDuplicate,
   filterShipGalleryMedia
 };

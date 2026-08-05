@@ -27,10 +27,12 @@
   }
 
   /**
-   * Drop blank URLs and an accidental hero duplicate before render.
+   * Drop blank URLs, hero duplicate, and repeated URLs before render.
    */
   function normaliseShipGalleryImages(images, options = {}) {
     const heroUrl = String(options.heroUrl || options.hero_url || "").trim();
+    const limit = Number.isFinite(Number(options.limit)) ? Number(options.limit) : null;
+    const defaultAlt = String(options.defaultAlt || "").trim();
     const list = Array.isArray(images) ? images : [];
     const out = [];
     const seen = new Set();
@@ -43,9 +45,10 @@
       seen.add(url);
       out.push({
         url,
-        alt: String(img.alt || img.alt_text || img.title || "Ship photo"),
+        alt: String(img.alt || img.alt_text || img.title || defaultAlt || "Ship photo"),
         title: String(img.title || "")
       });
+      if (limit != null && out.length >= limit) break;
     }
     return out;
   }
@@ -63,7 +66,7 @@
       : "dashboard-ship-gallery-item";
     const label = escapeHtml(img.alt || img.title || "Ship photo");
     return `<button type="button" class="${cls}" data-gallery-index="${index}" aria-label="${label}">
-      <img src="${escapeHtml(img.url)}" alt="${label}" loading="lazy" width="960" height="540">
+      <img src="${escapeHtml(img.url)}" alt="${label}" loading="lazy" width="960" height="540" onerror="this.closest('.dashboard-ship-gallery-item')?.setAttribute('hidden','')">
     </button>`;
   }
 
@@ -93,10 +96,44 @@
     ${lightboxMarkup()}`;
   }
 
+  /**
+   * Compact grid gallery for My Ship page — "More photos of [Ship Name]".
+   */
+  function renderShipPageGallerySection(images, options = {}) {
+    const shipName = String(options.shipName || options.ship_name || "").trim();
+    if (!shipName) return "";
+
+    const defaultAlt = `${shipName} additional ship photo`;
+    const list = normaliseShipGalleryImages(images, {
+      heroUrl: options.heroUrl || options.hero_url,
+      limit: options.limit ?? 8,
+      defaultAlt
+    });
+    if (list.length === 0) return "";
+
+    const heading = `More photos of ${shipName}`;
+    const items = list
+      .map((img, index) => {
+        const label = escapeHtml(img.alt || defaultAlt);
+        return `<button type="button" class="ship-page-gallery-item" data-gallery-index="${index}" aria-label="${label}">
+      <img src="${escapeHtml(img.url)}" alt="${label}" loading="lazy" decoding="async" width="480" height="320" onerror="this.closest('.ship-page-gallery-item')?.setAttribute('hidden','')">
+    </button>`;
+      })
+      .join("");
+
+    return `
+    <section class="ship-page-gallery" aria-label="${escapeHtml(heading)}">
+      <div class="ship-page-gallery-head"><h3>${escapeHtml(heading)}</h3></div>
+      <div class="ship-page-gallery-grid">${items}</div>
+    </section>
+    ${lightboxMarkup()}`;
+  }
+
   return {
     escapeHtml,
     normaliseShipGalleryImages,
     renderShipGallerySection,
+    renderShipPageGallerySection,
     render: renderShipGallerySection
   };
 });

@@ -194,4 +194,16 @@ const FIXTURES = {
   assert(!/fully_paid|instalment|booking_reference|itinerary|payment/i.test(src), "no finance/booking/itinerary logic");
 }
 
+// Ship page gallery renderer
+{
+  const { renderShipPageGallerySection: renderPageGallery } = require("../js/ship-gallery-section.js");
+  const html = renderPageGallery(
+    [{ url: "https://cdn.example.com/ships/edge-01.jpg", alt: "Deck" }],
+    { heroUrl: HERO, shipName: "Celebrity Edge" }
+  );
+  assert(/More photos of Celebrity Edge/.test(html), "ship page heading uses ship name");
+  assert(/ship-page-gallery-grid/.test(html), "ship page uses compact grid");
+  assert(!/Explore your ship/.test(html), "ship page does not reuse dashboard heading");
+}
+
 console.log("test-ship-gallery-section: ok");
