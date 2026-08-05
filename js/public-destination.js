@@ -344,9 +344,6 @@
               Load More Cruises
             </button>
           </div>
-          <div class="dest-cruise-section-cta">
-            <a class="dest-btn dest-btn-primary" href="${esc(contactUrl)}">Contact Paul for a better price</a>
-          </div>
         </div>
       </section>
     `;

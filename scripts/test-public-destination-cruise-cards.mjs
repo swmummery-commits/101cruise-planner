@@ -70,7 +70,7 @@ const publicCss = read("css/public-destination.css");
 assert.ok(!publicJs.includes("See official brochure fare"), "placeholder removed from renderer");
 assert.ok(!publicJs.includes("Official Brochure Fare"), "brochure label removed when no price");
 assert.ok(publicJs.includes("dest-cruise-date"), "prominent date line in cards");
-assert.ok(publicJs.includes("isDisplayableBrochureFare"), "client-side fare guard");
+assert.ok(!publicJs.includes("dest-cruise-section-cta"), "no duplicate cruises section contact button");
 assert.match(publicCss, /\.dest-cruise-itin-value[\s\S]*?font-weight:\s*400/, "itinerary text not medium weight");
 assert.match(publicCss, /\.dest-snap-value[\s\S]*?font-weight:\s*400/, "snapshot values stay regular weight");
 assert.ok(publicJs.includes("dest-gtk-list"), "good to know uses fact list");
