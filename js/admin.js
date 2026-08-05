@@ -6817,6 +6817,11 @@ function humanizeCiSaveError(rawMessage, { entity = "record", name = "" } = {}) 
     }
     return `That ${entity} name is already in use.`;
   }
+  if (/foreign key|still referenced|violates.*constraint/i.test(message)) {
+    if (entity === "ship") {
+      return "This ship could not be deleted because other records still reference it.";
+    }
+  }
   return message || "Your changes could not be saved.";
 }
 
@@ -8871,6 +8876,7 @@ function renderCiShipForm(ship) {
       ` : `
         <div class="admin-actions-row">
           <button type="button" class="admin-button" id="ciShipSaveBtn" onclick="saveCiShip()">Save ship</button>
+          <button type="button" class="admin-button danger" onclick="deleteCiShip()">Delete ship</button>
         </div>
       `}
     </div>
@@ -9115,6 +9121,11 @@ function mergeCiShipRecord(saved) {
   }
 }
 
+function removeCiShipRecord(id) {
+  if (!id) return;
+  ciCruiseShips = ciCruiseShips.filter((ship) => ship.id !== id);
+}
+
 async function persistCiShip({ quiet = false } = {}) {
   if (ciSaving) return false;
   const id = document.getElementById("ciShipId")?.value || "";
@@ -9267,6 +9278,52 @@ async function persistCiShip({ quiet = false } = {}) {
 async function saveCiShip() {
   captureCiMasterScroll();
   await persistCiShip({ quiet: false });
+}
+
+async function deleteCiShip() {
+  const id = document.getElementById("ciShipId")?.value || editingCiShipId;
+  if (!id || ciShipCreating || ciSaving) return;
+  const ship = ciCruiseShips.find((row) => row.id === id);
+  const name = ship?.name || document.getElementById("ciShipName")?.value || "this ship";
+  if (
+    !window.confirm(
+      `Permanently delete “${name}” from the Cruise Database?\n\nThis removes the ship record and linked deck plans. Featured cruises and media library items will keep their other data with the ship link cleared.\n\nThis cannot be undone.`
+    )
+  ) {
+    return;
+  }
+
+  captureCiMasterScroll();
+  return withAdminBusy(
+    async () => {
+      ciSaving = true;
+      try {
+        const { error } = await supabaseClient.from("ci_cruise_ships").delete().eq("id", id);
+        if (error) throw new Error(humanizeCiSaveError(error.message, { entity: "ship", name }));
+        removeCiShipRecord(id);
+        syncCiCatalogueWindowState();
+        editingCiShipId = null;
+        ciShipCreating = false;
+        ciAutosaveStatus = "";
+        ciMessage = `Ship “${name}” deleted.`;
+        ciMessageTone = "success";
+        renderCiAdmin();
+        restoreCiMasterScroll();
+      } catch (error) {
+        ciMessage = error.message || "Could not delete ship.";
+        ciMessageTone = "error";
+        renderCiAdmin();
+        restoreCiMasterScroll();
+      } finally {
+        ciSaving = false;
+      }
+    },
+    {
+      saving: true,
+      key: "ci-ship-delete",
+      supportMessage: "Deleting ship…"
+    }
+  );
 }
 
 /* =========================================================

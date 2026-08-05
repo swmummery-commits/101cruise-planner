@@ -55,6 +55,9 @@ assertMatch(
   /function renderCiShipsSection\(\)[\s\S]*?ci-master-detail[\s\S]*?ciShipMasterList/,
   "ships administration retains master-detail layout"
 );
+assertIncludes(adminJs, "deleteCiShip", "ship delete handler");
+assertIncludes(adminJs, "Delete ship", "ship delete button");
+assertMatch(adminJs, /\.from\("ci_cruise_ships"\)\.delete\(\)/, "ship delete uses supabase delete");
 
 // Tabs
 assertIncludes(adminJs, 'id: "details"', "Details tab id");
