@@ -309,7 +309,7 @@
         : "";
 
     return `
-      <section class="dest-section dest-reveal" id="cruises" style="--dest-delay: 220ms">
+      <section class="dest-section dest-reveal" id="cruises" style="--dest-delay: 360ms">
         <div class="dest-wrap">
           <h2 class="dest-section-title" id="dest-cruise-heading">${esc(String(total))} Cruises Available for ${esc(dest.name)}</h2>
           ${
@@ -389,20 +389,20 @@
 
   function renderGoodToKnow(dest) {
     if (!Array.isArray(dest.goodToKnow) || !dest.goodToKnow.length) return "";
-    const cells = dest.goodToKnow
+    const rows = dest.goodToKnow
       .map(
         (item) => `
-        <div class="dest-gtk-cell">
+        <li class="dest-gtk-row">
           <p class="dest-gtk-label">${esc(item.label)}</p>
           <p class="dest-gtk-value">${esc(item.value)}</p>
-        </div>`
+        </li>`
       )
       .join("");
     return `
       <section class="dest-section dest-reveal" style="--dest-delay: 300ms">
-        <div class="dest-wrap">
+        <div class="dest-wrap dest-wrap-narrow">
           <h2 class="dest-section-title">Good To Know</h2>
-          <div class="dest-gtk-strip" role="list">${cells}</div>
+          <ul class="dest-gtk-list">${rows}</ul>
         </div>
       </section>
     `;
@@ -468,10 +468,10 @@
         ${renderSnapshot(dest)}
         ${renderSuitability(dest)}
         ${renderPorts(dest)}
-        ${renderCruises(dest, contactUrl)}
         ${renderLines(dest)}
         ${renderGoodToKnow(dest)}
         ${renderFaqs(dest)}
+        ${renderCruises(dest, contactUrl)}
         ${renderFinalCta(dest, contactUrl)}
         ${renderFooter()}
       </article>

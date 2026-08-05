@@ -69,5 +69,13 @@ assert.ok(publicJs.includes("dest-cruise-date"), "prominent date line in cards")
 assert.ok(publicJs.includes("c.brochureFare"), "fare only when data exists");
 assert.match(publicCss, /\.dest-cruise-itin-value[\s\S]*?font-weight:\s*400/, "itinerary text not medium weight");
 assert.match(publicCss, /\.dest-snap-value[\s\S]*?font-weight:\s*400/, "snapshot values stay regular weight");
+assert.ok(publicJs.includes("dest-gtk-list"), "good to know uses fact list");
+assert.ok(!publicJs.includes("dest-gtk-strip"), "old gtk strip removed");
+assert.ok(!publicCss.includes(".dest-gtk-cell"), "old gtk cells removed");
+assert.match(
+  publicJs,
+  /renderPorts\(dest\)[\s\S]*renderLines\(dest\)[\s\S]*renderGoodToKnow\(dest\)[\s\S]*renderFaqs\(dest\)[\s\S]*renderCruises\(dest/,
+  "cruises section comes after destination info"
+);
 
 console.log("test-public-destination-cruise-cards: all assertions passed");
