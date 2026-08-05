@@ -14,10 +14,6 @@ let checklistSections = [];
 let checklistItems = [];
 let packingCategories = [];
 let packingItems = [];
-let smartProfileGroups = [];
-let smartProfiles = [];
-let smartProfileMembers = [];
-let packingItemProfiles = [];
 /** Leaf nav id (Sprint 16C IA). Legacy "cruise-intelligence" redirects to cruise-lines. */
 let activeTab = "cruise-lines";
 let editingShipId = null;
@@ -35,9 +31,6 @@ let activePackingAdminView = "items";
 let showPackingCategoryForm = false;
 let showPackingItemForm = false;
 let showImportDataPanel = false;
-let selectedSmartProfileType = "climate";
-let editingSmartProfileId = null;
-let showSmartProfileForm = false;
 let crmSyncResult = null;
 let crmSyncMessage = "";
 let crmSyncLoading = false;
@@ -616,28 +609,6 @@ async function loadAdminData() {
     .order("name", { ascending: true });
 
 
-  const { data: smartProfileGroupRows, error: smartProfileGroupsError } = await supabaseClient
-    .from("smart_profile_groups")
-    .select("*")
-    .order("display_order", { ascending: true })
-    .order("name", { ascending: true });
-
-  const { data: smartProfileRows, error: smartProfilesError } = await supabaseClient
-    .from("smart_profiles")
-    .select("*")
-    .order("display_order", { ascending: true })
-    .order("name", { ascending: true });
-
-  const { data: smartProfileMemberRows, error: smartProfileMembersError } = await supabaseClient
-    .from("smart_profile_members")
-    .select("*")
-    .order("member_type", { ascending: true })
-    .order("member_value", { ascending: true });
-
-  const { data: packingItemProfileRows, error: packingItemProfilesError } = await supabaseClient
-    .from("packing_item_profiles")
-    .select("*");
-
   const { data: calculatorRateRows, error: calculatorRatesError } = await supabaseClient
     .from("cruise_line_calculator_rates")
     .select("*, cruise_lines(id, name)")
@@ -685,34 +656,6 @@ async function loadAdminData() {
     packingItems = [];
   } else {
     packingItems = packingItemRows || [];
-  }
-
-  if (smartProfileGroupsError) {
-    console.warn("Smart profile group load skipped", smartProfileGroupsError);
-    smartProfileGroups = [];
-  } else {
-    smartProfileGroups = smartProfileGroupRows || [];
-  }
-
-  if (smartProfilesError) {
-    console.warn("Smart profile load skipped", smartProfilesError);
-    smartProfiles = [];
-  } else {
-    smartProfiles = smartProfileRows || [];
-  }
-
-  if (smartProfileMembersError) {
-    console.warn("Smart profile member load skipped", smartProfileMembersError);
-    smartProfileMembers = [];
-  } else {
-    smartProfileMembers = smartProfileMemberRows || [];
-  }
-
-  if (packingItemProfilesError) {
-    console.warn("Packing item profile mapping load skipped", packingItemProfilesError);
-    packingItemProfiles = [];
-  } else {
-    packingItemProfiles = packingItemProfileRows || [];
   }
 
   if (calculatorRatesError) {
@@ -770,6 +713,7 @@ async function loadAdminData() {
 function normalizeAdminTab(tab) {
   if (tab === "cruise-intelligence" || tab === "cruise-lines-legacy") return "cruise-lines";
   if (tab === "ships") return "cruise-ships";
+  if (tab === "smart-profiles") return "packing";
   return tab;
 }
 
@@ -798,8 +742,6 @@ async function setTab(tab) {
   editingPackingItemId = null;
   showPackingCategoryForm = false;
   showPackingItemForm = false;
-  editingSmartProfileId = null;
-  showSmartProfileForm = false;
   editingCalculatorRateId = null;
   activeCalculatorRateId = null;
   showCalculatorRateForm = false;
@@ -968,7 +910,6 @@ const ADMIN_NAV_GROUPS = [
       { id: "booking-documents", label: "Booking Documents" },
       { id: "packing", label: "Packing" },
       { id: "checklist", label: "Checklist" },
-      { id: "smart-profiles", label: "Smart Profiles" },
       { id: "calculator-data", label: "Drinks Calculator" }
     ]
   },
@@ -1097,7 +1038,6 @@ const ADMIN_MAIN_TABS = [
   },
   { id: "checklist", label: "Checklist", render: () => renderChecklistPanel() },
   { id: "packing", label: "Packing", render: () => renderPackingPanel() },
-  { id: "smart-profiles", label: "Smart Profiles", render: () => renderSmartProfilesPanel() },
   { id: "calculator-data", label: "Drinks Calculator", render: () => renderCalculatorDataPanel() },
   { id: "usage-insights", label: "Usage & Insights", render: () => renderUsageInsightsPanel() },
   {
@@ -2732,684 +2672,10 @@ function formatPackingRule(value, fallback = "Applies to all") {
   return text ? esc(text) : fallback;
 }
 
-function profileTypeIcon(type) {
-  return {
-    climate: "🌍",
-    traveller: "👥",
-    dress: "🎩",
-    cruise_type: "🚢",
-    destination: "📍"
-  }[type] || "⭐";
-}
-
-function profileTypeLabel(type) {
-  const group = smartProfileGroups.find(item => item.profile_type === type);
-  return group ? group.name : String(type || "Smart Profiles").replaceAll("_", " ");
-}
-
-function getProfilesByType(type) {
-  return smartProfiles
-    .filter(profile => profile.profile_type === type)
-    .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0) || String(a.name || "").localeCompare(String(b.name || "")));
-}
-
-function getSmartProfileMembers(profileId) {
-  return smartProfileMembers
-    .filter(member => String(member.profile_id) === String(profileId))
-    .sort((a, b) => String(a.member_type || "").localeCompare(String(b.member_type || "")) || String(a.member_value || "").localeCompare(String(b.member_value || "")));
-}
-
-function getPackingProfileIdsForItem(itemId) {
-  return packingItemProfiles
-    .filter(row => String(row.packing_item_id) === String(itemId))
-    .map(row => String(row.profile_id));
-}
-
-function getProfileUsageCount(profileId) {
-  return packingItemProfiles.filter(row => String(row.profile_id) === String(profileId)).length;
-}
-
-function profileKeyFromName(name) {
-  return String(name || "")
-    .trim()
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-}
-
-function parseMemberLines(value) {
-  return String(value || "")
-    .split(/\n|;/)
-    .map(line => line.trim())
-    .filter(Boolean)
-    .map(line => {
-      const parts = line.split(":");
-      if (parts.length >= 2) {
-        return { member_type: parts.shift().trim() || "value", member_value: parts.join(":").trim() };
-      }
-      return { member_type: "value", member_value: line };
-    })
-    .filter(item => item.member_value);
-}
-
-function smartProfileMemberConfig(profileType) {
-  const cruiseTypeOptions = ["Ocean", "River", "Expedition", "Luxury", "Small Ship", "World Cruise", "Family Cruise"];
-  const cruiseLineOptions = cruiseLines.map(line => line.name).filter(Boolean).sort((a, b) => a.localeCompare(b));
-
-  if (profileType === "climate") {
-    return {
-      title: "Applies to destinations / regions",
-      helper: "Tick every destination or region that should use this climate profile.",
-      memberType: "destination",
-      options: PACKING_DESTINATION_OPTIONS
-    };
-  }
-
-  if (profileType === "destination") {
-    return {
-      title: "Destinations included",
-      helper: "Tick the destination names that belong to this destination profile.",
-      memberType: "destination",
-      options: PACKING_DESTINATION_OPTIONS
-    };
-  }
-
-  if (profileType === "traveller") {
-    return {
-      title: "Applies to traveller types",
-      helper: "Tick the traveller types this profile should apply to.",
-      memberType: "traveller",
-      options: PACKING_TRAVELLER_OPTIONS
-    };
-  }
-
-  if (profileType === "dress") {
-    return {
-      title: "Applies to cruise lines",
-      helper: "Tick cruise lines where this dress profile is relevant.",
-      memberType: "cruise_line",
-      options: cruiseLineOptions
-    };
-  }
-
-  if (profileType === "cruise_type") {
-    return {
-      title: "Applies to cruise types",
-      helper: "Tick the cruise styles that should use this profile.",
-      memberType: "cruise_type",
-      options: cruiseTypeOptions
-    };
-  }
-
-  return {
-    title: "Applies to",
-    helper: "Tick every option this profile should apply to.",
-    memberType: "value",
-    options: []
-  };
-}
-
-function getSmartProfileSelectedMemberValues(profileId, memberType) {
-  return getSmartProfileMembers(profileId)
-    .filter(member => String(member.member_type || "") === String(memberType || "value"))
-    .map(member => String(member.member_value || ""));
-}
-
-function getPackingItemIdsForProfile(profileId) {
-  return packingItemProfiles
-    .filter(row => String(row.profile_id) === String(profileId))
-    .map(row => String(row.packing_item_id));
-}
 
 function isEssentialPackingItem(item) {
   return item && (item.include_on_every_cruise === true || String(item.include_on_every_cruise).toLowerCase() === "true");
 }
-
-function togglePackingEssentialMode() {
-  const checkbox = document.getElementById("packingItemEssential");
-  const intelligence = document.getElementById("packingItemSmartProfileBlock");
-  if (!checkbox || !intelligence) return;
-
-  intelligence.classList.toggle("is-hidden", checkbox.checked);
-  intelligence.querySelectorAll("input[type='checkbox']").forEach(input => {
-    input.disabled = checkbox.checked;
-    if (checkbox.checked) {
-      input.checked = false;
-      input.closest(".admin-check-chip")?.classList.remove("is-selected");
-    }
-  });
-}
-
-function toggleSmartProfileChip(input) {
-  if (!input) return;
-  input.closest(".admin-check-chip")?.classList.toggle("is-selected", input.checked);
-}
-
-function setSmartProfileSelectorGroup(selector, checked) {
-  document.querySelectorAll(selector).forEach(input => {
-    input.checked = checked;
-    toggleSmartProfileChip(input);
-  });
-}
-
-function setSmartProfileMemberCheckboxes(checked) {
-  setSmartProfileSelectorGroup(".smartProfileMemberCheckbox", checked);
-}
-
-function setSmartProfilePackingCheckboxes(checked) {
-  setSmartProfileSelectorGroup(".smartProfilePackingCheckbox", checked);
-}
-
-function canonicalPackingCategoryName(name) {
-  const raw = String(name || "Uncategorised").trim();
-  const normalised = raw.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").trim();
-
-  const aliases = {
-    "documents": "Travel Documents",
-    "travel documents": "Travel Documents",
-    "money payments": "Money & Payments",
-    "money and payments": "Money & Payments",
-    "shoes": "Footwear",
-    "footwear": "Footwear",
-    "swimwear pool": "Pool & Beach",
-    "swimwear and pool": "Pool & Beach",
-    "pool beach": "Pool & Beach",
-    "pool and beach": "Pool & Beach",
-    "toiletries": "Toiletries & Personal Care",
-    "toiletries personal care": "Toiletries & Personal Care",
-    "toiletries and personal care": "Toiletries & Personal Care",
-    "medication": "Health & Medication",
-    "health medication": "Health & Medication",
-    "health and medication": "Health & Medication",
-    "electronics": "Electronics and Charging",
-    "electronics charging": "Electronics and Charging",
-    "electronics and charging": "Electronics and Charging",
-    "bags luggage": "Bags & Luggage",
-    "bags and luggage": "Bags & Luggage",
-    "cabin comfort": "Cabin Essentials",
-    "cabin essentials": "Cabin Essentials",
-    "laundry care": "Laundry & Care",
-    "laundry and care": "Laundry & Care",
-    "kids family": "Kids & Family",
-    "kids and family": "Kids & Family",
-    "cold weather gear": "Cold Weather Gear",
-    "polar expedition": "Polar & Expedition",
-    "polar and expedition": "Polar & Expedition",
-    "last minute": "Last Minute",
-    "last minute items": "Last Minute",
-    "shore excursions": "Shore Excursions",
-    "evening wear": "Evening Wear",
-    "clothing": "Clothing"
-  };
-
-  return aliases[normalised] || raw;
-}
-
-function canonicalPackingCategoryIcon(categoryName) {
-  const icons = {
-    "Travel Documents": "📄",
-    "Money & Payments": "💳",
-    "Clothing": "👕",
-    "Footwear": "👞",
-    "Pool & Beach": "🏖️",
-    "Toiletries & Personal Care": "🧴",
-    "Health & Medication": "💊",
-    "Evening Wear": "🎩",
-    "Electronics and Charging": "🔌",
-    "Bags & Luggage": "🧳",
-    "Cabin Essentials": "🛏️",
-    "Laundry & Care": "🧺",
-    "Kids & Family": "👶",
-    "Cold Weather Gear": "🧥",
-    "Polar & Expedition": "🧳",
-    "Last Minute": "🚨",
-    "Shore Excursions": "🎒"
-  };
-  return icons[categoryName] || "🧳";
-}
-
-function setSmartProfilePackingCategoryCheckboxes(categoryKey, checked) {
-  const selector = `.smartProfilePackingCheckbox[data-category-key="${CSS.escape(categoryKey)}"]`;
-  setSmartProfileSelectorGroup(selector, checked);
-}
-
-
-function filterSmartProfilePackingItems() {
-  const search = String(document.getElementById("smartProfilePackingSearch")?.value || "").trim().toLowerCase();
-  document.querySelectorAll(".smart-profile-packing-row").forEach(row => {
-    const text = String(row.getAttribute("data-search") || "").toLowerCase();
-    row.style.display = !search || text.includes(search) ? "" : "none";
-  });
-}
-
-function renderSmartProfileMemberSelector(editingProfile, profileType) {
-  const config = smartProfileMemberConfig(profileType);
-  const selectedValues = editingProfile ? getSmartProfileSelectedMemberValues(editingProfile.id, config.memberType) : [];
-
-  if (!config.options.length) {
-    return `
-      <div class="admin-profile-selector">
-        <div class="admin-section-mini-title">${esc(config.title)}</div>
-        <p class="admin-helper">No options are available yet.</p>
-      </div>
-    `;
-  }
-
-  return `
-    <div class="admin-profile-selector smart-profile-member-selector">
-      <div class="admin-list-top compact-list-top">
-        <div>
-          <div class="admin-section-mini-title">${esc(config.title)}</div>
-          <p class="admin-helper">${esc(config.helper)}</p>
-        </div>
-        <div class="admin-actions-row compact-actions">
-          <button type="button" class="admin-button secondary small" onclick="setSmartProfileMemberCheckboxes(true)">Select All</button>
-          <button type="button" class="admin-button secondary small" onclick="setSmartProfileMemberCheckboxes(false)">Clear All</button>
-        </div>
-      </div>
-      <input type="hidden" id="smartProfileMemberType" value="${esc(config.memberType)}">
-      <div class="admin-check-grid smart-profile-member-grid">
-        ${config.options.map(option => {
-          const checked = selectedValues.includes(option);
-          return `
-            <label class="admin-check-chip ${checked ? "is-selected" : ""}">
-              <input type="checkbox" class="smartProfileMemberCheckbox" value="${esc(option)}" ${checked ? "checked" : ""} onchange="toggleSmartProfileChip(this)">
-              <span>${esc(option)}</span>
-            </label>
-          `;
-        }).join("")}
-      </div>
-    </div>
-  `;
-}
-
-function renderSmartProfilePackingItemSelector(editingProfile) {
-  if (!editingProfile) {
-    return `
-      <div class="admin-profile-selector">
-        <div class="admin-section-mini-title">Packing Items</div>
-        <p class="admin-helper">Save the profile first, then reopen it to assign packing items.</p>
-      </div>
-    `;
-  }
-
-  const selectedItemIds = getPackingItemIdsForProfile(editingProfile.id);
-  const categoryById = new Map(packingCategories.map(category => [String(category.id), category]));
-  const categoryGroups = new Map();
-
-  packingItems.filter(item => !isEssentialPackingItem(item)).forEach(item => {
-    const originalCategory = categoryById.get(String(item.category_id));
-    const canonicalName = canonicalPackingCategoryName(originalCategory?.name || "Uncategorised");
-    const categoryKey = profileKeyFromName(canonicalName || "uncategorised");
-
-    if (!categoryGroups.has(categoryKey)) {
-      categoryGroups.set(categoryKey, {
-        key: categoryKey,
-        name: canonicalName,
-        icon: canonicalPackingCategoryIcon(canonicalName),
-        displayOrder: Number(originalCategory?.display_order || 999),
-        items: []
-      });
-    }
-
-    categoryGroups.get(categoryKey).items.push({ item, originalCategory });
-  });
-
-  const sortedGroups = Array.from(categoryGroups.values()).sort((a, b) => {
-    const orderCompare = Number(a.displayOrder || 0) - Number(b.displayOrder || 0);
-    if (orderCompare !== 0) return orderCompare;
-    return String(a.name || "").localeCompare(String(b.name || ""));
-  });
-
-  if (!sortedGroups.length) {
-    return `
-      <div class="admin-profile-selector smart-profile-packing-selector">
-        <div class="admin-section-mini-title">Additional Packing Items</div>
-        <p class="admin-helper">All packing items are currently marked as Essential, so there are no profile-specific items to assign.</p>
-      </div>
-    `;
-  }
-
-  return `
-    <div class="admin-profile-selector smart-profile-packing-selector">
-      <div class="admin-list-top compact-list-top">
-        <div>
-          <div class="admin-section-mini-title">Additional Packing Items</div>
-          <p class="admin-helper">Tick only the extra items that should appear when this profile applies. Essential items are included on every cruise and are hidden here.</p>
-        </div>
-        <div class="admin-actions-row compact-actions">
-          <button type="button" class="admin-button secondary small" onclick="setSmartProfilePackingCheckboxes(true)">Select All</button>
-          <button type="button" class="admin-button secondary small" onclick="setSmartProfilePackingCheckboxes(false)">Clear All</button>
-        </div>
-      </div>
-
-      <div class="admin-field smart-profile-search-field">
-        <label>Search packing items</label>
-        <input type="text" id="smartProfilePackingSearch" placeholder="Search by item or category" oninput="filterSmartProfilePackingItems()">
-      </div>
-
-      <div class="smart-profile-packing-groups">
-        ${sortedGroups.map(group => {
-          const items = group.items
-            .sort((a, b) => Number(a.item.display_order || 0) - Number(b.item.display_order || 0) || String(a.item.name || "").localeCompare(String(b.item.name || "")));
-          if (!items.length) return "";
-          const selectedCount = items.filter(({ item }) => selectedItemIds.includes(String(item.id))).length;
-          return `
-            <div class="smart-profile-packing-group" data-category-key="${esc(group.key)}">
-              <div class="smart-profile-packing-group-header">
-                <h4>${esc(group.icon)} ${esc(group.name)} <span class="admin-small">(${selectedCount}/${items.length})</span></h4>
-                <div class="admin-actions-row compact-actions">
-                  <button type="button" class="admin-button secondary mini" onclick="setSmartProfilePackingCategoryCheckboxes('${esc(group.key)}', true)">Select All</button>
-                  <button type="button" class="admin-button secondary mini" onclick="setSmartProfilePackingCategoryCheckboxes('${esc(group.key)}', false)">Clear All</button>
-                </div>
-              </div>
-              <div class="admin-check-grid smart-profile-packing-grid">
-                ${items.map(({ item, originalCategory }) => {
-                  const checked = selectedItemIds.includes(String(item.id));
-                  const searchText = `${item.name || ""} ${group.name || ""} ${originalCategory?.name || ""} ${item.description || ""}`;
-                  return `
-                    <label class="admin-check-chip smart-profile-packing-row ${checked ? "is-selected" : ""}" data-search="${esc(searchText)}">
-                      <input type="checkbox" class="smartProfilePackingCheckbox" data-category-key="${esc(group.key)}" value="${esc(item.id)}" ${checked ? "checked" : ""} onchange="toggleSmartProfileChip(this)">
-                      <span>${esc(item.name)}</span>
-                    </label>
-                  `;
-                }).join("")}
-              </div>
-            </div>
-          `;
-        }).join("")}
-      </div>
-    </div>
-  `;
-}
-
-function renderPackingProfileSelector(item) {
-  if (!smartProfiles.length) {
-    return `<div class="admin-message">Smart Profiles are not loaded yet. Run the Smart Profiles SQL foundation first, then refresh Admin.</div>`;
-  }
-  const selectedIds = item ? getPackingProfileIdsForItem(item.id) : [];
-  const groups = smartProfileGroups.length ? [...smartProfileGroups].sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)) : [];
-  const essential = isEssentialPackingItem(item);
-  return `
-    <div class="admin-profile-selector ${essential ? "is-hidden" : ""}" id="packingItemSmartProfileBlock">
-      <div class="admin-section-mini-title">When should this item be added?</div>
-      <p class="admin-helper">Use this only for items that vary by destination, climate, traveller type, cruise type or dress profile. Essential items do not need Smart Profiles.</p>
-      ${groups.map(group => {
-        const profiles = getProfilesByType(group.profile_type);
-        if (!profiles.length) return "";
-        return `
-          <div class="admin-profile-picker-group">
-            <div class="admin-small"><strong>${profileTypeIcon(group.profile_type)} ${esc(group.name)}</strong></div>
-            <div class="admin-check-grid compact-chips">
-              ${profiles.map(profile => {
-                const checked = selectedIds.includes(String(profile.id));
-                return `
-                  <label class="admin-check-chip ${checked ? "is-selected" : ""}">
-                    <input type="checkbox" class="packingProfileCheckbox" value="${profile.id}" ${checked ? "checked" : ""} ${essential ? "disabled" : ""} onchange="this.closest('.admin-check-chip').classList.toggle('is-selected', this.checked)">
-                    <span>${esc(profile.name)}</span>
-                  </label>
-                `;
-              }).join("")}
-            </div>
-          </div>
-        `;
-      }).join("")}
-    </div>
-  `;
-}
-
-
-function renderSmartProfilesPanel() {
-  const groups = smartProfileGroups.length ? smartProfileGroups : [
-    { profile_type: "climate", name: "Climate Profiles", description: "Climate rules used by packing and future planner intelligence." },
-    { profile_type: "traveller", name: "Traveller Profiles", description: "Solo, couple and family profiles." },
-    { profile_type: "dress", name: "Dress Profiles", description: "Casual, semi-formal and formal dress expectations." },
-    { profile_type: "cruise_type", name: "Cruise Type Profiles", description: "Ocean, river, expedition and other cruise styles." },
-    { profile_type: "destination", name: "Destination Profiles", description: "Reusable destination and region profiles." }
-  ];
-  const profiles = getProfilesByType(selectedSmartProfileType);
-  const editingProfile = smartProfiles.find(profile => String(profile.id) === String(editingSmartProfileId));
-
-  return `
-    <div class="admin-card admin-packing-hero-card">
-      <div class="admin-list-top">
-        <div>
-          <h3>Smart Profiles</h3>
-          <p class="admin-muted">Reusable profile rules that will power packing, preparation, documents and readiness intelligence.</p>
-        </div>
-        <div class="admin-actions-row compact-actions">
-          <button class="admin-button secondary" onclick="showNewSmartProfileForm()">Add Profile</button>
-          <button class="admin-button secondary" onclick="refreshAdminData()">Refresh</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="admin-card">
-      <div class="admin-profile-type-grid">
-        ${groups.map(group => {
-          const count = getProfilesByType(group.profile_type).length;
-          return `
-            <button class="admin-profile-type-card ${selectedSmartProfileType === group.profile_type ? "active" : ""}" onclick="setSmartProfileType('${esc(group.profile_type)}')">
-              <span class="profile-type-icon">${profileTypeIcon(group.profile_type)}</span>
-              <span>
-                <strong>${esc(group.name)}</strong>
-                <small>${count} profile${count === 1 ? "" : "s"}</small>
-              </span>
-            </button>
-          `;
-        }).join("")}
-      </div>
-    </div>
-
-    ${showSmartProfileForm ? renderSmartProfileForm(editingProfile) : ""}
-
-    <div class="admin-card">
-      <div class="admin-list-top">
-        <div>
-          <h3>${profileTypeIcon(selectedSmartProfileType)} ${esc(profileTypeLabel(selectedSmartProfileType))}</h3>
-          <p class="admin-muted">Click a profile to edit its rules and assigned packing items.</p>
-        </div>
-      </div>
-      ${profiles.length ? `<div class="admin-packing-item-grid">${profiles.map(renderSmartProfileCard).join("")}</div>` : `<p class="admin-muted">No profiles found for this type.</p>`}
-    </div>
-  `;
-}
-
-function setSmartProfileType(type) {
-  selectedSmartProfileType = type;
-  editingSmartProfileId = null;
-  showSmartProfileForm = false;
-  crmSyncMessage = "";
-  crmSyncLoading = false;
-  renderAdmin();
-}
-
-function showNewSmartProfileForm() {
-  editingSmartProfileId = null;
-  showSmartProfileForm = true;
-  renderAdmin();
-}
-
-function editSmartProfile(profileId) {
-  editingSmartProfileId = profileId;
-  showSmartProfileForm = true;
-  renderAdmin();
-}
-
-function cancelSmartProfileEdit() {
-  editingSmartProfileId = null;
-  showSmartProfileForm = false;
-  crmSyncMessage = "";
-  crmSyncLoading = false;
-  renderAdmin();
-}
-
-function renderSmartProfileCard(profile) {
-  const members = getSmartProfileMembers(profile.id);
-  const usage = getProfileUsageCount(profile.id);
-  return `
-    <div class="admin-list-item admin-clickable-row packing-item-row" onclick="editSmartProfile(${profile.id})">
-      <div class="admin-list-top">
-        <div>
-          <strong class="checklist-admin-title">${profileTypeIcon(profile.profile_type)} ${esc(profile.name)}</strong>
-          <div class="admin-small">Key: ${esc(profile.profile_key)}</div>
-          ${profile.description ? `<div class="admin-small">${esc(profile.description)}</div>` : ""}
-          ${members.length ? `<div class="admin-small"><strong>Applies to:</strong> ${members.slice(0, 4).map(member => esc(member.member_value)).join(", ")}${members.length > 4 ? ` +${members.length - 4} more` : ""}</div>` : `<div class="admin-small">No members yet.</div>`}
-          <span class="admin-pill">Used by ${usage} packing item${usage === 1 ? "" : "s"}</span>
-          ${profile.active ? `<span class="admin-pill">Published</span>` : `<span class="admin-pill inactive">Unpublished</span>`}
-        </div>
-        <span class="admin-row-hint">Click to edit</span>
-      </div>
-    </div>
-  `;
-}
-
-function renderSmartProfileForm(editingProfile) {
-  const profileType = editingProfile ? editingProfile.profile_type : selectedSmartProfileType;
-  const profileLabel = profileTypeLabel(profileType).replace(/ Profiles$/i, " Profile");
-
-  return `
-    <div class="admin-card admin-form-card smart-profile-editor-card">
-      <h3>${editingProfile ? esc(profileLabel) : "Add Smart Profile"}</h3>
-      <input type="hidden" id="smartProfileId" value="${editingProfile ? editingProfile.id : ""}">
-
-      <div class="admin-grid compact">
-        <div class="admin-field">
-          <label>Profile type</label>
-          <select id="smartProfileType" onchange="selectedSmartProfileType=this.value; renderAdmin()">
-            ${smartProfileGroups.map(group => `<option value="${esc(group.profile_type)}" ${profileType === group.profile_type ? "selected" : ""}>${esc(group.name)}</option>`).join("")}
-          </select>
-        </div>
-        <div class="admin-field">
-          <label>Status</label>
-          <select id="smartProfileActive">
-            <option value="true" ${!editingProfile || editingProfile.active ? "selected" : ""}>Published</option>
-            <option value="false" ${editingProfile && !editingProfile.active ? "selected" : ""}>Unpublished</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="admin-grid compact">
-        <div class="admin-field">
-          <label>Name</label>
-          <input type="text" id="smartProfileName" value="${editingProfile ? esc(editingProfile.name) : ""}" placeholder="Cold Climate">
-        </div>
-        <div class="admin-field">
-          <label>Profile key</label>
-          <input type="text" id="smartProfileKey" value="${editingProfile ? esc(editingProfile.profile_key) : ""}" placeholder="cold_climate">
-          <div class="admin-helper">Leave blank for a new profile and Admin will generate it from the name.</div>
-        </div>
-      </div>
-
-      <div class="admin-field">
-        <label>Description</label>
-        <textarea id="smartProfileDescription" placeholder="What this profile means and when it should be used.">${editingProfile ? esc(editingProfile.description || "") : ""}</textarea>
-      </div>
-
-      ${renderSmartProfileMemberSelector(editingProfile, profileType)}
-
-      ${renderSmartProfilePackingItemSelector(editingProfile)}
-
-      <div class="admin-field">
-        <label>Display order</label>
-        <input type="number" id="smartProfileDisplayOrder" value="${editingProfile ? esc(editingProfile.display_order || 0) : "0"}">
-      </div>
-
-      <button class="admin-button" onclick="saveSmartProfile()">${editingProfile ? "Save Profile" : "Add Profile"}</button>
-      <button class="admin-button secondary" onclick="cancelSmartProfileEdit()">Cancel</button>
-      <div id="smart-profile-message" class="admin-message"></div>
-    </div>
-  `;
-}
-
-async function saveSmartProfile() {
-  const id = document.getElementById("smartProfileId").value;
-  const name = document.getElementById("smartProfileName").value.trim();
-  const profileType = document.getElementById("smartProfileType").value;
-  const message = document.getElementById("smart-profile-message");
-
-  if (!name) {
-    if (message) message.innerText = "Please enter a profile name.";
-    return;
-  }
-
-  const payload = {
-    profile_type: profileType,
-    profile_key: document.getElementById("smartProfileKey").value.trim() || profileKeyFromName(name),
-    name,
-    description: document.getElementById("smartProfileDescription").value.trim() || null,
-    display_order: Number(document.getElementById("smartProfileDisplayOrder").value || 0),
-    active: document.getElementById("smartProfileActive").value === "true"
-  };
-
-  let savedId = id;
-  const result = id
-    ? await supabaseClient.from("smart_profiles").update(payload).eq("id", id).select("id").single()
-    : await supabaseClient.from("smart_profiles").insert(payload).select("id").single();
-
-  if (result.error) {
-    console.error("Save smart profile error", result.error);
-    if (message) message.innerText = result.error.message;
-    return;
-  }
-
-  savedId = result.data?.id || savedId;
-
-  const memberType = document.getElementById("smartProfileMemberType")?.value || "value";
-  const selectedMemberValues = Array.from(document.querySelectorAll(".smartProfileMemberCheckbox"))
-    .filter(input => input.checked)
-    .map(input => input.value)
-    .filter(Boolean);
-
-  const deleteResult = await supabaseClient.from("smart_profile_members").delete().eq("profile_id", savedId);
-  if (deleteResult.error) {
-    console.error("Smart profile member delete error", deleteResult.error);
-    if (message) message.innerText = deleteResult.error.message;
-    return;
-  }
-
-  if (selectedMemberValues.length) {
-    const memberRows = selectedMemberValues.map(value => ({ profile_id: savedId, member_type: memberType, member_value: value }));
-    const insertResult = await supabaseClient.from("smart_profile_members").insert(memberRows);
-    if (insertResult.error) {
-      console.error("Smart profile member insert error", insertResult.error);
-      if (message) message.innerText = insertResult.error.message;
-      return;
-    }
-  }
-
-  if (savedId) {
-    const selectedPackingItemIds = Array.from(document.querySelectorAll(".smartProfilePackingCheckbox"))
-      .filter(input => input.checked)
-      .map(input => Number(input.value))
-      .filter(Boolean);
-
-    const deletePackingResult = await supabaseClient.from("packing_item_profiles").delete().eq("profile_id", savedId);
-    if (deletePackingResult.error) {
-      console.error("Smart profile packing mapping delete error", deletePackingResult.error);
-      if (message) message.innerText = deletePackingResult.error.message;
-      return;
-    }
-
-    if (selectedPackingItemIds.length) {
-      const packingRows = selectedPackingItemIds.map(itemId => ({ packing_item_id: itemId, profile_id: Number(savedId) }));
-      const insertPackingResult = await supabaseClient.from("packing_item_profiles").insert(packingRows);
-      if (insertPackingResult.error) {
-        console.error("Smart profile packing mapping insert error", insertPackingResult.error);
-        if (message) message.innerText = insertPackingResult.error.message;
-        return;
-      }
-    }
-  }
-
-  selectedSmartProfileType = profileType;
-  editingSmartProfileId = null;
-  showSmartProfileForm = false;
-  await loadAdminData();
-  renderAdmin();
-}
-
 
 function formatPackingPrintValue(value, fallback = "—") {
   if (Array.isArray(value)) {
@@ -3420,17 +2686,6 @@ function formatPackingPrintValue(value, fallback = "—") {
   const text = String(value ?? "").trim();
   if (!text || text.toLowerCase() === "all") return fallback;
   return text;
-}
-
-function getPackingProfileNamesForItem(itemId) {
-  const profileIds = getPackingProfileIdsForItem(itemId).map(String);
-  if (!profileIds.length) return [];
-
-  return smartProfiles
-    .filter(profile => profileIds.includes(String(profile.id)))
-    .map(profile => profile.name || profile.profile_name || `Profile ${profile.id}`)
-    .filter(Boolean)
-    .sort((a, b) => String(a).localeCompare(String(b)));
 }
 
 function printPackingItemLibrary() {
@@ -3448,7 +2703,6 @@ function printPackingItemLibrary() {
   }
 
   const rows = sortedItems.map(item => {
-    const profiles = getPackingProfileNamesForItem(item.id);
     const essential = isEssentialPackingItem(item);
     return `
       <tr>
@@ -3459,7 +2713,6 @@ function printPackingItemLibrary() {
         <td class="number">${esc(Number(item.weight_kg || 0).toFixed(2))}</td>
         <td>${item.active ? "Published" : "Unpublished"}</td>
         <td class="number">${esc(item.display_order ?? 0)}</td>
-        <td>${esc(formatPackingPrintValue(profiles))}</td>
         <td>${esc(formatPackingPrintValue(item.destination_tags))}</td>
         <td>${esc(formatPackingPrintValue(item.climate_tags))}</td>
         <td>${esc(formatPackingPrintValue(item.traveller_types))}</td>
@@ -3528,7 +2781,6 @@ function printPackingItemLibrary() {
         <th>Weight kg</th>
         <th>Status</th>
         <th>Order</th>
-        <th>Smart Profiles</th>
         <th>Destinations</th>
         <th>Climates</th>
         <th>Travellers</th>
@@ -3573,7 +2825,6 @@ function printPackingItemAuditList() {
   }
 
   const rows = sortedItems.map(item => {
-    const profiles = getPackingProfileNamesForItem(item.id);
     return `
       <tr>
         <td>${esc(getPackingCategoryName(item.category_id))}</td>
@@ -3581,7 +2832,10 @@ function printPackingItemAuditList() {
         <td>${esc(item.item_type || "—")}</td>
         <td class="number">${esc(Number(item.weight_kg || 0).toFixed(2))} kg</td>
         <td>${esc(formatPackingPrintValue(item.climate_tags))}</td>
-        <td>${esc(formatPackingPrintValue(profiles))}</td>
+        <td>${esc(formatPackingPrintValue(item.destination_tags))}</td>
+        <td>${esc(formatPackingPrintValue(item.traveller_types))}</td>
+        <td>${esc(formatPackingPrintValue(item.dress_codes))}</td>
+        <td>${esc(formatPackingPrintValue(item.cruise_line_tags))}</td>
       </tr>`;
   }).join("");
 
@@ -3647,7 +2901,10 @@ function printPackingItemAuditList() {
         <th>Item Type</th>
         <th>Weight</th>
         <th>Climates</th>
-        <th>Smart Profiles</th>
+        <th>Destinations</th>
+        <th>Travellers</th>
+        <th>Dress Codes</th>
+        <th>Cruise Lines</th>
       </tr>
     </thead>
     <tbody>${rows}</tbody>
@@ -3684,19 +2941,20 @@ function getPackingCategoryLocalOrder(item) {
 
 function renderPackingItemCard(item) {
   const isEditing = String(editingPackingItemId || "") === String(item.id);
-  const assignedProfileIds = getPackingProfileIdsForItem(item.id);
-  const assignedProfiles = assignedProfileIds
-    .map(profileId => smartProfiles.find(profile => String(profile.id) === String(profileId))?.name)
-    .filter(Boolean);
-  const profilePreview = assignedProfiles.length ? assignedProfiles.join(" • ") : "None assigned";
   const restriction = item.packing_restriction || "any";
   const restrictionLabel = restriction === "carry-on-only" ? "Carry-on only" : restriction === "checked-only" ? "Checked luggage only" : "Any location";
   const restrictionClass = restriction === "carry-on-only" ? "carry-on" : restriction === "checked-only" ? "checked-only" : "any-location";
-  const assignedProfileCount = assignedProfileIds.length;
   const categoryLocalOrder = getPackingCategoryLocalOrder(item);
+  const appliesPreview = [
+    item.destination_tags && `Destinations: ${formatPackingPrintValue(item.destination_tags)}`,
+    item.climate_tags && `Climates: ${formatPackingPrintValue(item.climate_tags)}`,
+    item.traveller_types && `Travellers: ${formatPackingPrintValue(item.traveller_types)}`,
+    item.dress_codes && `Dress: ${formatPackingPrintValue(item.dress_codes)}`,
+    item.cruise_line_tags && `Cruise lines: ${formatPackingPrintValue(item.cruise_line_tags)}`
+  ].filter(Boolean).join(" • ") || "Applies broadly";
   const ruleText = isEssentialPackingItem(item)
     ? "Essential item included on every cruise"
-    : (assignedProfileCount ? `Smart Profile item (${assignedProfileCount} profile${assignedProfileCount === 1 ? "" : "s"})` : formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags, "Profile-specific item"));
+    : formatPackingRule(item.destination_tags || item.climate_tags || item.traveller_types || item.dress_codes || item.cruise_line_tags, "Applies broadly");
   const reorderAttributes = packingReorderMode
     ? `draggable="true" data-category-id="${esc(item.category_id)}" ondragstart="startPackingItemDrag(event, ${item.id})" ondragend="endPackingItemDrag(event)" onclick="event.preventDefault()"`
     : `onclick="editPackingItem(${item.id})"`;
@@ -3714,7 +2972,7 @@ function renderPackingItemCard(item) {
               <span class="packing-order-badge" title="Order within this category">${esc(categoryLocalOrder)}</span>
             </div>
             <div class="admin-small"><strong>Category:</strong> ${esc(getPackingCategoryName(item.category_id))}</div>
-            <div class="admin-small"><strong>Smart Profiles:</strong> ${esc(profilePreview)}</div>
+            <div class="admin-small"><strong>Applies to:</strong> ${esc(appliesPreview)}</div>
             <div class="admin-small"><strong>Weight:</strong> ${esc(Number(item.weight_kg || 0).toFixed(2))} kg each</div>
             ${item.description ? `<div class="admin-small">${esc(item.description)}</div>` : ""}
             ${item.help_text ? `<div class="admin-small"><strong>Why:</strong> ${esc(item.help_text)}</div>` : ""}
@@ -4175,7 +3433,7 @@ function renderPackingItemForm(editingItem) {
 
     <div class="admin-field admin-essential-field">
       <label class="admin-check-line">
-        <input type="checkbox" id="packingItemEssential" ${editingItem && isEssentialPackingItem(editingItem) ? "checked" : ""} onchange="togglePackingEssentialMode()">
+        <input type="checkbox" id="packingItemEssential" ${editingItem && isEssentialPackingItem(editingItem) ? "checked" : ""}>
         <span>Essential</span>
       </label>
       <div class="admin-helper">Tick this when the item should be included on every cruise. Essential items do not need destination, climate, traveller, cruise type or dress profile rules.</div>
@@ -4315,7 +3573,6 @@ async function savePackingItem() {
   }
 
   const savedItemId = result.data?.id || id;
-  await savePackingItemProfileSelections(savedItemId, message);
 
   editingPackingItemId = null;
   await loadAdminData();
@@ -4329,46 +3586,14 @@ async function savePackingItem() {
   });
 }
 
-async function savePackingItemProfileSelections(itemId, message) {
-  const checkboxes = Array.from(document.querySelectorAll(".packingProfileCheckbox"));
-  if (!itemId || !checkboxes.length) return;
-
-  const selectedProfileIds = checkboxes.filter(input => input.checked).map(input => Number(input.value)).filter(Boolean);
-  const deleteResult = await supabaseClient.from("packing_item_profiles").delete().eq("packing_item_id", itemId);
-  if (deleteResult.error) {
-    console.error("Packing profile mapping delete error", deleteResult.error);
-    if (message) message.innerText = deleteResult.error.message;
-    throw deleteResult.error;
-  }
-
-  if (!selectedProfileIds.length) return;
-
-  const rows = selectedProfileIds.map(profileId => ({ packing_item_id: Number(itemId), profile_id: profileId }));
-  const insertResult = await supabaseClient.from("packing_item_profiles").insert(rows);
-  if (insertResult.error) {
-    console.error("Packing profile mapping insert error", insertResult.error);
-    if (message) message.innerText = insertResult.error.message;
-    throw insertResult.error;
-  }
-}
-
-
-
 async function deletePackingItem(itemId) {
   const item = packingItems.find(row => String(row.id) === String(itemId));
   const itemName = item ? item.name : "this packing item";
 
-  const confirmed = window.confirm(`Delete "${itemName}"?\n\nThis will permanently remove the item and remove it from any Smart Profiles.`);
+  const confirmed = window.confirm(`Delete "${itemName}"?\n\nThis will permanently remove the packing item.`);
   if (!confirmed) return;
 
   try {
-    const profileDelete = await supabaseClient
-      .from("packing_item_profiles")
-      .delete()
-      .eq("packing_item_id", itemId);
-
-    if (profileDelete.error) throw profileDelete.error;
-
     const itemDelete = await supabaseClient
       .from("packing_items")
       .delete()
