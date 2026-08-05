@@ -1,7 +1,7 @@
 /**
  * Admin Usage & Insights aggregates.
  *
- * GET /.netlify/functions/usage-insights?range=7d|30d|90d|today|custom&from=&to=
+ * GET /.netlify/functions/usage-insights?range=7d|30d|90d|today|custom&from=&to=&admins=exclude|include
  * GET /.netlify/functions/usage-insights?range=7d&customer=<booking_reference>
  *
  * Requires Admin JWT. Reads via service role.
@@ -84,6 +84,31 @@ const EVENT_LABELS = {
   login: "Signed in",
   logout: "Signed out"
 };
+
+function parseAdminsFilter(params) {
+  const value = String(params?.admins || "exclude").trim().toLowerCase();
+  return value === "include" ? "include" : "exclude";
+}
+
+async function loadAdminUserIds() {
+  const [profileRows, adminRows] = await Promise.all([
+    rest("profiles?is_admin=eq.true&select=id&limit=200"),
+    rest("admin_users?active=eq.true&auth_user_id=not.is.null&select=auth_user_id&limit=200")
+  ]);
+  const ids = new Set();
+  for (const row of profileRows) {
+    if (row?.id) ids.add(String(row.id));
+  }
+  for (const row of adminRows) {
+    if (row?.auth_user_id) ids.add(String(row.auth_user_id));
+  }
+  return ids;
+}
+
+function filterAdminEvents(events, adminIds, adminsFilter) {
+  if (adminsFilter !== "exclude" || !adminIds?.size) return events;
+  return events.filter(event => !event.user_id || !adminIds.has(String(event.user_id)));
+}
 
 function resolveRange(params) {
   const now = new Date();
@@ -329,12 +354,15 @@ exports.handler = async function handler(event) {
     await requireAdmin(event);
     const params = event.queryStringParameters || {};
     const rangeInfo = resolveRange(params);
+    const adminsFilter = parseAdminsFilter(params);
+    const adminUserIds = adminsFilter === "exclude" ? await loadAdminUserIds() : new Set();
 
     const andFilter = `and=(occurred_at.gte.${rangeInfo.start.toISOString()},occurred_at.lte.${rangeInfo.end.toISOString()})`;
-    const events = await rest(
+    const rawEvents = await rest(
       `usage_events?select=id,occurred_at,user_id,booking_reference,session_id,surface,module,event_type,metadata,device_type&${andFilter}&order=occurred_at.desc&limit=${RANGE_EVENT_LIMIT}`
     );
-    const rangeCapped = events.length >= RANGE_EVENT_LIMIT;
+    const rangeCapped = rawEvents.length >= RANGE_EVENT_LIMIT;
+    const events = filterAdminEvents(rawEvents, adminUserIds, adminsFilter);
 
     if (params.customer) {
       const key = String(params.customer).trim();
@@ -352,6 +380,7 @@ exports.handler = async function handler(event) {
       return jsonResponse(200, {
         success: true,
         range: rangeInfo.range,
+        admins: adminsFilter,
         from: rangeInfo.start.toISOString(),
         to: rangeInfo.end.toISOString(),
         reporting: {
@@ -360,8 +389,9 @@ exports.handler = async function handler(event) {
           lookback_capped: false,
           range_limit: RANGE_EVENT_LIMIT,
           lookback_limit: LOOKBACK_EVENT_LIMIT,
-          range_rows: events.length,
-          lookback_rows: 0
+          range_rows: rawEvents.length,
+          lookback_rows: 0,
+          admins_excluded: adminsFilter === "exclude" ? adminUserIds.size : 0
         },
         customer
       });
@@ -373,10 +403,11 @@ exports.handler = async function handler(event) {
     // whose most recent activity is older than 30 days.
     const lookbackStart = new Date();
     lookbackStart.setUTCDate(lookbackStart.getUTCDate() - 180);
-    const lookbackEvents = await rest(
+    const rawLookbackEvents = await rest(
       `usage_events?select=booking_reference,user_id,session_id,occurred_at,surface&and=(surface.eq.my_cruise,occurred_at.gte.${lookbackStart.toISOString()})&order=occurred_at.desc&limit=${LOOKBACK_EVENT_LIMIT}`
     );
-    const lookbackCapped = lookbackEvents.length >= LOOKBACK_EVENT_LIMIT;
+    const lookbackCapped = rawLookbackEvents.length >= LOOKBACK_EVENT_LIMIT;
+    const lookbackEvents = filterAdminEvents(rawLookbackEvents, adminUserIds, adminsFilter);
     const lastSeen = new Map();
     lookbackEvents.forEach(event => {
       if (!event.booking_reference && !event.user_id) return;
@@ -396,6 +427,7 @@ exports.handler = async function handler(event) {
     return jsonResponse(200, {
       success: true,
       range: rangeInfo.range,
+      admins: adminsFilter,
       from: rangeInfo.start.toISOString(),
       to: rangeInfo.end.toISOString(),
       reporting: {
@@ -404,8 +436,9 @@ exports.handler = async function handler(event) {
         lookback_capped: lookbackCapped,
         range_limit: RANGE_EVENT_LIMIT,
         lookback_limit: LOOKBACK_EVENT_LIMIT,
-        range_rows: events.length,
-        lookback_rows: lookbackEvents.length
+        range_rows: rawEvents.length,
+        lookback_rows: rawLookbackEvents.length,
+        admins_excluded: adminsFilter === "exclude" ? adminUserIds.size : 0
       },
       ...insights
     });
@@ -419,3 +452,7 @@ exports.handler = async function handler(event) {
     });
   }
 };
+
+exports.parseAdminsFilter = parseAdminsFilter;
+exports.filterAdminEvents = filterAdminEvents;
+exports.buildInsights = buildInsights;

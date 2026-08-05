@@ -69,6 +69,7 @@ let beveragePackageInlineStatus = "";
 let usageInsightsRange = "7d";
 let usageInsightsCustomFrom = "";
 let usageInsightsCustomTo = "";
+let usageInsightsAdminFilter = "exclude";
 let usageInsightsSearch = "";
 let usageInsightsData = null;
 let usageInsightsLoading = false;
@@ -5464,6 +5465,7 @@ function formatUsageTrend(trend) {
 
 function usageInsightsQuery() {
   const params = new URLSearchParams({ range: usageInsightsRange || "7d" });
+  params.set("admins", usageInsightsAdminFilter === "include" ? "include" : "exclude");
   if (usageInsightsRange === "custom") {
     if (usageInsightsCustomFrom) params.set("from", usageInsightsCustomFrom);
     if (usageInsightsCustomTo) params.set("to", usageInsightsCustomTo);
@@ -5512,6 +5514,11 @@ function setUsageInsightsRange(range) {
   } else {
     renderAdmin();
   }
+}
+
+function setUsageInsightsAdminFilter(value) {
+  usageInsightsAdminFilter = value === "include" ? "include" : "exclude";
+  loadUsageInsights();
 }
 
 function applyUsageInsightsCustomRange() {
@@ -5592,8 +5599,17 @@ function renderUsageInsightsPanel() {
             ${usageInsightsLoading ? `<span class="admin-running-status" role="status" aria-live="polite">Refreshing…</span>` : ""}
           </div>
         </div>
-        <div class="usage-range-row" role="group" aria-label="Date range">
-          ${rangeButtons}
+        <div class="usage-insights-toolbar">
+          <div class="usage-range-row" role="group" aria-label="Date range">
+            ${rangeButtons}
+          </div>
+          <div class="admin-field admin-filter-field usage-admin-filter">
+            <label for="usageInsightsAdminFilter">Admins</label>
+            <select id="usageInsightsAdminFilter" onchange="setUsageInsightsAdminFilter(this.value)">
+              <option value="exclude" ${usageInsightsAdminFilter !== "include" ? "selected" : ""}>Exclude admins</option>
+              <option value="include" ${usageInsightsAdminFilter === "include" ? "selected" : ""}>Include admins</option>
+            </select>
+          </div>
         </div>
         ${
           usageInsightsRange === "custom"
@@ -5602,6 +5618,11 @@ function renderUsageInsightsPanel() {
                 <label>To <input type="date" id="usageInsightsTo" value="${esc(usageInsightsCustomTo)}"></label>
                 <button type="button" class="admin-button black small" onclick="applyUsageInsightsCustomRange()">Apply</button>
               </div>`
+            : ""
+        }
+        ${
+          usageInsightsAdminFilter !== "include"
+            ? `<p class="admin-muted usage-admin-filter-note">Site admin activity is excluded from customer metrics.</p>`
             : ""
         }
         ${usageInsightsMessage ? `<div class="admin-message admin-error">${esc(usageInsightsMessage)}</div>` : ""}

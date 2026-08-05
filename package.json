@@ -72,6 +72,7 @@
     "test:cruise-intelligence": "node scripts/test-cruise-intelligence.mjs",
     "test:bulk-ship-images": "node scripts/test-bulk-ship-images.mjs",
     "test:destination-routing": "node scripts/test-destination-routing.mjs",
+    "test:usage-insights-admin-filter": "node scripts/test-usage-insights-admin-filter.mjs",
     "test:destination-shell-sync": "node scripts/sync-destination-shells-from-research.mjs --dry-run",
     "seed:cruise-finder-featured-ports": "node scripts/seed-cruise-finder-featured-ports.mjs --apply",
     "test:featured-cruise-article-v2": "node scripts/test-featured-cruise-article-v2.mjs",
