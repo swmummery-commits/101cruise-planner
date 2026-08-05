@@ -59,10 +59,16 @@ assert.equal(noDate.hasDate, false);
 assert.equal(noDate.scheduleLabel, "7 nights");
 
 const catalog = buildCruiseCatalog([
-  { id: 1, departure_date: "2026-08-26", nights: 7, cruise_line_id: 1, ship_id: 1 },
-  { id: 2, nights: 5, cruise_line_id: 1, ship_id: 2 }
+  { id: 1, departure_date: "2026-09-01", nights: 7, cruise_line_id: 1, ship_id: 1 },
+  { id: 2, departure_date: "2026-08-26", nights: 5, cruise_line_id: 1, ship_id: 2 },
+  { id: 3, nights: 5, cruise_line_id: 1, ship_id: 3 }
 ]);
-assert.equal(catalog.totalCount, 1, "sailings without departure dates are excluded");
+assert.equal(catalog.totalCount, 2, "sailings without departure dates are excluded");
+assert.deepEqual(
+  catalog.sailings.map((s) => s.departureDateIso),
+  ["2026-08-26", "2026-09-01"],
+  "sailings sorted by departure date ascending"
+);
 
 const publicJs = read("js/public-destination.js");
 const publicCss = read("css/public-destination.css");
@@ -76,6 +82,9 @@ assert.match(publicCss, /\.dest-snap-value[\s\S]*?font-weight:\s*400/, "snapshot
 assert.ok(publicJs.includes("dest-gtk-list"), "good to know uses fact list");
 assert.ok(!publicJs.includes("dest-gtk-strip"), "old gtk strip removed");
 assert.ok(!publicCss.includes(".dest-gtk-cell"), "old gtk cells removed");
+assert.match(publicCss, /\.dest-cruise-list[\s\S]*?grid-template-columns:\s*repeat\(3/, "three cruise columns on desktop");
+assert.match(publicCss, /@media \(max-width: 1080px\)[\s\S]*?repeat\(2/, "two columns on medium screens");
+assert.match(publicCss, /@media \(max-width: 640px\)[\s\S]*?grid-template-columns:\s*1fr/, "single column on mobile");
 assert.match(
   publicJs,
   /renderPorts\(dest\)[\s\S]*renderLines\(dest\)[\s\S]*renderGoodToKnow\(dest\)[\s\S]*renderFaqs\(dest\)[\s\S]*renderCruises\(dest/,

@@ -1969,6 +1969,7 @@ function formatPublicSailing(row, lineName, shipName) {
     duration,
     departureDate: departureDate || null,
     returnDate: returnDate || null,
+    departureDateIso: row.departure_date || null,
     dateLabel,
     scheduleLabel,
     hasDate: Boolean(departureDate),

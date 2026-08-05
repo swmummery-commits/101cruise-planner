@@ -520,8 +520,10 @@
 
 .dest-cruise-list {
   display: grid;
-  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
   margin-top: 4px;
+  align-items: stretch;
 }
 
 .dest-cruise-showing {
@@ -529,33 +531,36 @@
 }
 
 .dest-cruise-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: #fff;
   border: 1px solid var(--dest-line);
-  border-radius: 22px;
-  padding: 28px 28px 24px;
+  border-radius: 16px;
+  padding: 18px 16px 16px;
   box-shadow: 0 1px 0 rgba(17, 17, 17, 0.03);
 }
 
 .dest-cruise-line {
-  margin: 0 0 6px;
-  font-size: 12px;
+  margin: 0 0 4px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--brand-green-ink);
 }
 
 .dest-cruise-ship {
   margin: 0;
-  font-size: clamp(1.45rem, 2.5vw, 1.85rem);
+  font-size: 1.05rem;
   font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
 
 .dest-cruise-date {
-  margin: 14px 0 0;
-  font-size: 1.05rem;
+  margin: 8px 0 0;
+  font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--dest-ink);
@@ -563,8 +568,8 @@
 }
 
 .dest-cruise-port {
-  margin: 6px 0 0;
-  font-size: 0.9rem;
+  margin: 4px 0 0;
+  font-size: 0.8125rem;
   font-weight: 400;
   color: var(--dest-muted);
 }
@@ -594,50 +599,53 @@
 }
 
 .dest-cruise-itinerary {
-  margin-top: 22px;
-  padding: 18px 20px;
-  border-radius: 14px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
   background: var(--brand-green-soft);
   border: 1px solid #d7efe6;
+  flex: 1;
 }
 
 .dest-cruise-itin-label {
-  margin: 0 0 6px;
-  font-size: 11px;
+  margin: 0 0 4px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--brand-green-ink);
 }
 
 .dest-cruise-itin-value {
   margin: 0;
-  font-size: 0.9375rem;
-  line-height: 1.55;
+  font-size: 0.8125rem;
+  line-height: 1.45;
   font-weight: 400;
   color: var(--dest-ink);
 }
 
 .dest-cruise-foot {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: 10px;
   align-items: end;
-  margin-top: 22px;
+  margin-top: 14px;
 }
 
 .dest-cruise-foot--cta-only {
-  grid-template-columns: minmax(0, 1fr);
-  justify-items: end;
+  grid-template-columns: 1fr;
+  justify-items: stretch;
 }
 
 .dest-btn-cruise-cta {
-  white-space: nowrap;
-  min-width: 300px;
-  padding-left: 18px;
-  padding-right: 18px;
-  letter-spacing: 0.04em;
-  font-size: 12px;
+  white-space: normal;
+  min-width: 0;
+  width: 100%;
+  padding: 11px 10px;
+  letter-spacing: 0.03em;
+  font-size: 10px;
+  line-height: 1.35;
+  text-align: center;
 }
 
 .dest-cruise-fare-label {
@@ -651,7 +659,7 @@
 }
 
 .dest-cruise-fare-value {
-  font-size: 1.35rem;
+  font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: -0.02em;
   color: var(--dest-ink);
@@ -924,6 +932,12 @@
 
 /* ---- Responsive ---- */
 
+@media (max-width: 1080px) {
+  .dest-cruise-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 980px) {
   .dest-port-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -932,15 +946,6 @@
   .dest-port-grid .dest-port-card:nth-child(4),
   .dest-port-grid .dest-port-card:nth-child(5) {
     grid-column: span 1;
-  }
-
-  .dest-cruise-foot {
-    grid-template-columns: 1fr;
-  }
-
-  .dest-btn-cruise-cta {
-    min-width: 0;
-    width: 100%;
   }
 }
 
@@ -994,6 +999,12 @@
   }
 }
 
+@media (max-width: 640px) {
+  .dest-cruise-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
   .dest-snap-grid {
     grid-template-columns: 1fr;
@@ -1004,15 +1015,11 @@
   }
 
   .dest-cruise-card {
-    padding: 22px 18px;
+    padding: 16px 14px 14px;
   }
 
   .dest-btn-cruise-cta {
-    white-space: nowrap;
     font-size: 11px;
-    letter-spacing: 0.03em;
-    padding-left: 12px;
-    padding-right: 12px;
   }
 }
 

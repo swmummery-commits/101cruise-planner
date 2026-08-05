@@ -70,14 +70,22 @@
   /** Prefer API discovery catalog; never invent placeholder sailings. */
   function getCruiseCatalog(dest) {
     if (dest?.cruiseCatalog && Array.isArray(dest.cruiseCatalog.sailings)) {
+      const sailings = [...dest.cruiseCatalog.sailings].sort((a, b) => {
+        const left = String(a.departureDateIso || a.departureDate || "");
+        const right = String(b.departureDateIso || b.departureDate || "");
+        if (left && right) return left.localeCompare(right);
+        if (left) return -1;
+        if (right) return 1;
+        return 0;
+      });
       return {
         totalCount:
           dest.cruiseCatalog.totalCount != null
             ? dest.cruiseCatalog.totalCount
-            : dest.cruiseCatalog.sailings.length,
+            : sailings.length,
         pageSize: dest.cruiseCatalog.pageSize || CRUISE_PAGE_SIZE,
         source: dest.cruiseCatalog.source || "discovery",
-        sailings: dest.cruiseCatalog.sailings
+        sailings
       };
     }
     return emptyCruiseCatalog();

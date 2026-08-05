@@ -232,7 +232,15 @@ function buildDestinationPageDto({
 }
 
 function buildCruiseCatalog(rows, { lineNames = new Map(), shipNames = new Map() } = {}) {
-  const sailings = (rows || [])
+  const sailings = [...(rows || [])]
+    .sort((a, b) => {
+      const left = String(a.departure_date || "");
+      const right = String(b.departure_date || "");
+      if (left && right) return left.localeCompare(right);
+      if (left) return -1;
+      if (right) return 1;
+      return 0;
+    })
     .map((row) =>
       formatPublicSailing(
         row,
