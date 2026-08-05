@@ -46,7 +46,12 @@
     "private-dining": {
       label: "Private dining",
       group: "exclusive",
-      paths: `<path d="m18 1.2 1.1 2.4 2.65 0.38-1.95 1.85 0.45 2.6L18 6.9 16.05 8.4l0.45-2.6-1.95-1.85 2.65-0.38Z"/><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
+      paths: `<path d="m18 0.1 1.1 2.4 2.65 0.38-1.95 1.85 0.45 2.6L18 5.8 16.05 7.3l0.45-2.6-1.95-1.85 2.65-0.38Z"/><path d="M3 2v7c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/>`
+    },
+    "private-sundeck": {
+      label: "Private sundeck",
+      group: "exclusive",
+      paths: `<path d="M3 15h11"/><path d="M3 15 5 11"/><path d="M14 15v2"/><circle cx="7.5" cy="12" r="1.25"/><path d="M8.75 12.5h4"/><circle cx="18" cy="7.5" r="1.35"/><path d="M18 8.85v5"/><path d="M16.5 11.5h3"/><path d="M16.5 12.25v0.75a0.75 0.75 0 0 0 0.75 0.75h1.5"/>`
     },
     "suite-attendant": {
       label: "Suite attendant",
@@ -156,7 +161,7 @@
     "zip-line": {
       label: "Zip line",
       group: "specialty",
-      paths: `<path d="M4 6h16"/><path d="M6 6v2"/><path d="M18 6v2"/><path d="M8 20l8-12"/>`
+      paths: `<path d="M4 6h16"/><path d="M6 6v2"/><path d="M18 6v2"/><path d="M8 20l8-12"/><path d="M12 14v1.25"/><circle cx="12" cy="17.25" r="1.35"/><path d="M12 18.6v2.4"/><path d="M9.5 19.5h5"/>`
     },
     "mini-golf": {
       label: "Mini golf",
@@ -226,7 +231,7 @@
     zodiac: {
       label: "Zodiac boat",
       group: "specialty",
-      paths: `<path d="M3 14.5c2.5-3.5 6-5 9-5s6.5 1.5 9 5"/><path d="M4 14.5h16"/><path d="M6.5 14.5v2.5"/><path d="M17.5 14.5v2.5"/><path d="M9 11.5h6"/>`
+      paths: `<path d="M2 17c2-1 4-1 6 0s4 1 6 0 4-1 6 0"/><path d="M2 20c2-1 4-1 6 0s4 1 6 0 4-1 6 0"/><path d="M3 9.5c2.5 3.5 6 5 9 5s6.5-1.5 9-5"/><path d="M4 9.5h16"/><path d="M6.5 9.5v-2.5"/><path d="M17.5 9.5v-2.5"/><path d="M9 12.5h6"/>`
     },
     sparkles: {
       label: "General feature",
@@ -239,7 +244,8 @@
   const ALIAS_GROUPS = {
     crown: ["suite deck", "queens grill", "princess grill", "yacht club", "the haven", "the retreat", "rockstar", "premium suite"],
     lounge: ["lounge", "concierge club", "diamond club", "executive lounge", "suite lounge", "club lounge", "premium lounge"],
-    "sun-deck": ["sun deck", "sundeck", "private deck", "suite sun deck", "sanctuary", "adults-only deck"],
+    "private-sundeck": ["private sundeck", "private sun deck", "retreat sundeck", "suite sundeck", "the retreat sundeck"],
+    "sun-deck": ["sun deck", "sundeck", "suite sun deck", "sanctuary", "adults-only deck"],
     "private-dining": ["private restaurant", "exclusive restaurant", "blu", "luminae", "coastal kitchen", "dining room", "specialty dining"],
     "suite-attendant": ["personal suite attendant", "suite attendant", "butler", "stateroom attendant", "room attendant", "personal butler", "24 hour butler"],
     fitness: ["fitness", "fitness center", "fitness centre", "gym", "exercise", "fitness center, with classes"],

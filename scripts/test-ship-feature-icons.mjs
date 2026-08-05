@@ -52,7 +52,11 @@ assert.ok(Icons.renderFeatureIconHtml("spa").includes("ship-feature-icon"));
 assert.notEqual(Icons.ICONS.dining.paths, Icons.ICONS["private-dining"].paths);
 assert.doesNotMatch(Icons.renderIconSvg("dining"), /m18 1\.2|m6 1\.2|m5 0\.5/);
 assert.match(Icons.renderIconSvg("dining"), /M3 2v7/);
-assert.match(Icons.renderIconSvg("private-dining"), /m18 1\.2 1\.1 2\.4/);
+assert.match(Icons.renderIconSvg("private-dining"), /m18 0\.1 1\.1 2\.4/);
+assert.match(Icons.renderIconSvg("private-sundeck"), /M3 15h11/);
+assert.match(Icons.renderIconSvg("zodiac"), /M2 17c2-1/);
+assert.match(Icons.renderIconSvg("zodiac"), /M3 9\.5c2\.5 3\.5/);
+assert.equal(Icons.resolveShipFeatureIconKey("Private Sundeck"), "private-sundeck");
 assert.match(Icons.renderIconSvg("private-dining"), /M21 15V2/);
 assert.match(Icons.renderIconSvg("suite-attendant"), /M5 13\.5h3\.75/);
 assert.equal(Icons.resolveShipFeatureIconKey("Personal Suite Attendant"), "suite-attendant");
@@ -62,7 +66,7 @@ assert.match(Icons.renderIconSvg("theatre"), /M8 17h8/);
 assert.match(Icons.renderIconSvg("surf"), /M7 15\.5h8/);
 assert.match(Icons.renderIconSvg("ice-rink"), /M5\.5 15\.5v2/);
 assert.match(Icons.renderIconSvg("cooking"), /M7 14h10/);
-assert.match(Icons.renderIconSvg("zodiac"), /M3 14\.5c/);
+assert.match(Icons.renderIconSvg("zip-line"), /M12 14v1\.25/);
 assert.equal(Icons.resolveShipFeatureIconKey("Zodiac Landing"), "zodiac");
 
 // Legacy string arrays

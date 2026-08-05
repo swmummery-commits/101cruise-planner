@@ -189,6 +189,7 @@ assert.ok(adminTplJs.includes("renderCatalogueSection"));
 assert.match(featureAdminJs, /ci-ship-feature-icon-option-label/);
 assert.match(iconsJs, /label: "Spa"/);
 assert.match(iconsJs, /spa:\s*\{[\s\S]*?M4 15h16/);
+assert.match(iconsJs, /"private-sundeck":\s*\{/);
 assert.match(iconsJs, /zodiac:\s*\{/);
 assert.ok(migration.includes("ci_cruise_line_features"));
 assert.ok(netlifyFn.includes('action === "reorder"'));
