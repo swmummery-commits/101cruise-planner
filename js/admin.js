@@ -2158,7 +2158,9 @@ function renderChecklistPanel() {
 
     <div class="admin-card">
       <h3>Add Checklist Item</h3>
-      ${renderChecklistItemForm(null)}
+      ${editingChecklistItemId
+        ? `<p class="admin-muted">Finish editing the checklist item below before adding another.</p>`
+        : renderChecklistItemForm(null, "add")}
     </div>
 
     <div class="admin-card">
@@ -2184,14 +2186,47 @@ function renderChecklistPanel() {
   `;
 }
 
-function renderChecklistItemForm(editingItem) {
+function checklistItemFieldId(base, formKey) {
+  return `${base}-${formKey}`;
+}
+
+function readChecklistItemFormValues(formKey) {
+  const field = (base) => document.getElementById(checklistItemFieldId(base, formKey));
+  return {
+    id: field("checklistItemId")?.value || "",
+    sectionId: Number(field("itemSectionId")?.value || 0),
+    priority: field("itemPriority")?.value || "Tip",
+    title: field("itemTitle")?.value.trim() || "",
+    description: field("itemDescription")?.value.trim() || "",
+    whyItMatters: field("itemWhyItMatters")?.value.trim() || "",
+    button1Text: field("itemButton1Text")?.value.trim() || "",
+    button1Url: normalizeUrl(field("itemButton1Url")?.value || ""),
+    button2Text: field("itemButton2Text")?.value.trim() || "",
+    button2Url: normalizeUrl(field("itemButton2Url")?.value || ""),
+    displayOrder: Number(field("itemDisplayOrder")?.value || 0),
+    active: field("itemActive")?.value === "true",
+    message: field("item-message")
+  };
+}
+
+function setChecklistItemFormMessage(messageEl, tone, text) {
+  if (!messageEl) {
+    if (text) alert(text);
+    return;
+  }
+  messageEl.className = `admin-message admin-${tone}`;
+  messageEl.innerText = text;
+}
+
+function renderChecklistItemForm(editingItem, formKey = "add") {
+  const field = (base) => checklistItemFieldId(base, formKey);
   return `
-    <input type="hidden" id="checklistItemId" value="${editingItem ? editingItem.id : ""}">
+    <input type="hidden" id="${field("checklistItemId")}" value="${editingItem ? editingItem.id : ""}">
 
     <div class="admin-grid">
       <div class="admin-field">
         <label>Section</label>
-        <select id="itemSectionId">
+        <select id="${field("itemSectionId")}">
           <option value="">Select section</option>
           ${checklistSections.map(section => `
             <option value="${section.id}" ${editingItem && editingItem.section_id === section.id ? "selected" : ""}>${esc(section.name)}</option>
@@ -2201,7 +2236,7 @@ function renderChecklistItemForm(editingItem) {
 
       <div class="admin-field">
         <label>Priority</label>
-        <select id="itemPriority">
+        <select id="${field("itemPriority")}">
           ${["Essential", "Tip", "Optional"].map(priority => `
             <option value="${priority}" ${editingItem && editingItem.priority === priority ? "selected" : ""}>${priority}</option>
           `).join("")}
@@ -2211,58 +2246,58 @@ function renderChecklistItemForm(editingItem) {
 
     <div class="admin-field">
       <label>Title</label>
-      <input type="text" id="itemTitle" value="${editingItem ? esc(editingItem.title) : ""}" placeholder="Purchase travel insurance">
+      <input type="text" id="${field("itemTitle")}" value="${editingItem ? esc(editingItem.title) : ""}" placeholder="Purchase travel insurance">
     </div>
 
     <div class="admin-field">
       <label>Description</label>
-      <textarea id="itemDescription" placeholder="Short description shown under the task">${editingItem ? esc(editingItem.description || "") : ""}</textarea>
+      <textarea id="${field("itemDescription")}" placeholder="Short description shown under the task">${editingItem ? esc(editingItem.description || "") : ""}</textarea>
     </div>
 
     <div class="admin-field">
       <label>Why it matters</label>
-      <textarea id="itemWhyItMatters" placeholder="Explain why this task is important">${editingItem ? esc(editingItem.why_it_matters || "") : ""}</textarea>
+      <textarea id="${field("itemWhyItMatters")}" placeholder="Explain why this task is important">${editingItem ? esc(editingItem.why_it_matters || "") : ""}</textarea>
     </div>
 
     <div class="admin-grid">
       <div class="admin-field">
         <label>Button 1 text</label>
-        <input type="text" id="itemButton1Text" value="${editingItem ? esc(editingItem.button1_text || "") : ""}" placeholder="Compare Travel Insurance">
+        <input type="text" id="${field("itemButton1Text")}" value="${editingItem ? esc(editingItem.button1_text || "") : ""}" placeholder="Compare Travel Insurance">
       </div>
       <div class="admin-field">
         <label>Button 1 URL</label>
-        <input type="text" id="itemButton1Url" value="${editingItem ? esc(editingItem.button1_url || "") : ""}" placeholder="/travel-insurance">
+        <input type="text" id="${field("itemButton1Url")}" value="${editingItem ? esc(editingItem.button1_url || "") : ""}" placeholder="/travel-insurance">
       </div>
     </div>
 
     <div class="admin-grid">
       <div class="admin-field">
         <label>Button 2 text</label>
-        <input type="text" id="itemButton2Text" value="${editingItem ? esc(editingItem.button2_text || "") : ""}" placeholder="Read our guide">
+        <input type="text" id="${field("itemButton2Text")}" value="${editingItem ? esc(editingItem.button2_text || "") : ""}" placeholder="Read our guide">
       </div>
       <div class="admin-field">
         <label>Button 2 URL</label>
-        <input type="text" id="itemButton2Url" value="${editingItem ? esc(editingItem.button2_url || "") : ""}" placeholder="/cruise-guides">
+        <input type="text" id="${field("itemButton2Url")}" value="${editingItem ? esc(editingItem.button2_url || "") : ""}" placeholder="/cruise-guides">
       </div>
     </div>
 
     <div class="admin-grid compact">
       <div class="admin-field">
         <label>Display order</label>
-        <input type="number" id="itemDisplayOrder" value="${editingItem ? esc(editingItem.display_order || 0) : "0"}">
+        <input type="number" id="${field("itemDisplayOrder")}" value="${editingItem ? esc(editingItem.display_order || 0) : "0"}">
       </div>
       <div class="admin-field">
         <label>Status</label>
-        <select id="itemActive">
+        <select id="${field("itemActive")}">
           <option value="true" ${!editingItem || editingItem.active ? "selected" : ""}>Published</option>
           <option value="false" ${editingItem && !editingItem.active ? "selected" : ""}>Unpublished</option>
         </select>
       </div>
     </div>
 
-    <button class="admin-button" onclick="saveChecklistItem()">${editingItem ? "Save Item" : "Add Item"}</button>
+    <button class="admin-button" onclick="saveChecklistItem('${formKey}')">${editingItem ? "Save Item" : "Add Item"}</button>
     ${editingItem ? `<button class="admin-button secondary" onclick="cancelChecklistItemEdit()">Cancel</button>` : ""}
-    <div id="item-message" class="admin-message"></div>
+    <div id="${field("item-message")}" class="admin-message" aria-live="polite"></div>
   `;
 }
 
@@ -2281,7 +2316,7 @@ function renderChecklistItemsList(items) {
     <div class="admin-list-item checklist-admin-item" id="checklist-item-${item.id}">
       ${editingChecklistItemId === item.id ? `
         <h3>Edit Checklist Item</h3>
-        ${renderChecklistItemForm(item)}
+        ${renderChecklistItemForm(item, `edit-${item.id}`)}
       ` : `
         <div class="admin-list-top">
           <div>
@@ -2540,79 +2575,83 @@ function setChecklistSectionFilter(value) {
   renderAdmin();
 }
 
-async function saveChecklistItem() {
-  const id = document.getElementById("checklistItemId").value;
-  const sectionId = Number(document.getElementById("itemSectionId").value);
-  const priority = document.getElementById("itemPriority").value;
-  const title = document.getElementById("itemTitle").value.trim();
-  const description = document.getElementById("itemDescription").value.trim();
-  const whyItMatters = document.getElementById("itemWhyItMatters").value.trim();
-  const button1Text = document.getElementById("itemButton1Text").value.trim();
-  const button1Url = normalizeUrl(document.getElementById("itemButton1Url").value);
-  const button2Text = document.getElementById("itemButton2Text").value.trim();
-  const button2Url = normalizeUrl(document.getElementById("itemButton2Url").value);
-  const displayOrder = Number(document.getElementById("itemDisplayOrder").value) || 0;
-  const active = document.getElementById("itemActive").value === "true";
-  const message = document.getElementById("item-message");
+async function saveChecklistItem(formKey = "add") {
+  const form = readChecklistItemFormValues(formKey);
+  const message = form.message;
 
-  if (!sectionId) {
-    message.className = "admin-message admin-error";
-    message.innerText = "Please select a section.";
+  if (!form.sectionId) {
+    setChecklistItemFormMessage(message, "error", "Please select a section.");
     return;
   }
 
-  if (!title) {
-    message.className = "admin-message admin-error";
-    message.innerText = "Please enter the item title.";
+  if (!form.title) {
+    setChecklistItemFormMessage(message, "error", "Please enter the item title.");
     return;
   }
 
   const payload = {
-    section_id: sectionId,
-    title,
-    description: description || null,
-    priority,
-    why_it_matters: whyItMatters || null,
-    button1_text: button1Text || null,
-    button1_url: button1Url || null,
-    button2_text: button2Text || null,
-    button2_url: button2Url || null,
-    display_order: displayOrder,
-    active
+    section_id: form.sectionId,
+    title: form.title,
+    description: form.description || null,
+    priority: form.priority,
+    why_it_matters: form.whyItMatters || null,
+    button1_text: form.button1Text || null,
+    button1_url: form.button1Url || null,
+    button2_text: form.button2Text || null,
+    button2_url: form.button2Url || null,
+    display_order: form.displayOrder,
+    active: form.active
   };
 
-  message.className = "admin-message admin-running";
-  message.innerText = "Saving...";
+  setChecklistItemFormMessage(message, "running", "Saving…");
 
   return withAdminBusy(
     async () => {
-  let result;
-  if (id) {
-    result = await supabaseClient
-      .from("checklist_items")
-      .update(payload)
-      .eq("id", Number(id))
-      .select();
-  } else {
-    result = await supabaseClient
-      .from("checklist_items")
-      .insert(payload)
-      .select();
-  }
+      let result;
+      if (form.id) {
+        result = await supabaseClient
+          .from("checklist_items")
+          .update(payload)
+          .eq("id", Number(form.id))
+          .select("id");
+      } else {
+        result = await supabaseClient
+          .from("checklist_items")
+          .insert(payload)
+          .select("id");
+      }
 
-  if (result.error) {
-    console.error("Save checklist item error", result.error);
-    message.className = "admin-message admin-error";
-    message.innerText = result.error.message;
-    return;
-  }
+      if (result.error) {
+        console.error("Save checklist item error", result.error);
+        setChecklistItemFormMessage(message, "error", result.error.message);
+        if (typeof window.AdminToast?.show === "function") {
+          window.AdminToast.show("Could not save checklist item.", "error");
+        }
+        return;
+      }
 
-  message.className = "admin-message admin-success";
-  message.innerText = "Saved successfully.";
+      const savedItemId = result.data?.[0]?.id || form.id;
+      editingChecklistItemId = null;
+      await loadAdminData();
+      renderAdmin();
 
-  editingChecklistItemId = null;
-  await loadAdminData();
-  renderAdmin();
+      if (typeof window.AdminToast?.show === "function") {
+        window.AdminToast.show("Checklist item saved.", "success");
+      }
+
+      const findSavedCard = () => document.getElementById(`checklist-item-${savedItemId}`);
+      if (typeof window.ViewportScroll?.scheduleScrollToElement === "function") {
+        window.ViewportScroll.scheduleScrollToElement(findSavedCard, { gap: 24, behavior: "auto" });
+      } else {
+        requestAnimationFrame(() => findSavedCard()?.scrollIntoView({ behavior: "auto", block: "center" }));
+      }
+
+      requestAnimationFrame(() => {
+        const savedCard = findSavedCard();
+        if (!savedCard) return;
+        savedCard.classList.add("is-just-saved");
+        window.setTimeout(() => savedCard.classList.remove("is-just-saved"), 2200);
+      });
     },
     { saving: true, key: "checklist-item-save", supportMessage: "Saving checklist item…" }
   );

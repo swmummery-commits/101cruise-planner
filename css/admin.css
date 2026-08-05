@@ -2573,6 +2573,10 @@ body.admin-loading-active {
   border-left: 4px solid #8DD9BF;
 }
 
+.checklist-admin-item.is-just-saved {
+  animation: packingItemSavedPulse 2.2s ease-out;
+}
+
 .checklist-admin-title {
   font-size: 15px;
   font-weight: 700;
