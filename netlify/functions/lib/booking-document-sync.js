@@ -66,32 +66,12 @@ function normaliseDocumentType(raw) {
   return "Other";
 }
 
-function pickVisibility(doc) {
-  const candidates = [
-    doc.visible_to_client,
-    doc.document_visible_to_customer,
-    doc.visible_to_customer,
-    doc.is_visible_to_client,
-    doc.show_on_website,
-    doc.customer_visible,
-    doc.visible_on_101cruise,
-    doc.visible_to_client_on_website,
-    doc.visible_to_client_on_101cruise_website
-  ];
-  for (const value of candidates) {
-    if (typeof value === "boolean") return value;
-    if (typeof value === "string") {
-      const lowered = value.trim().toLowerCase();
-      if (["true", "yes", "1"].includes(lowered)) return true;
-      if (["false", "no", "0"].includes(lowered)) return false;
-    }
-    if (value === 1) return true;
-    if (value === 0) return false;
-  }
+function pickVisibility() {
+  // Base44 booking library documents are customer-facing; CRM has no usable visibility control.
   return true;
 }
 
-function pickNoteVisibility(doc, documentVisible) {
+function pickNoteVisibility(doc) {
   const candidates = [
     doc.note_visible_to_customer,
     doc.notes_visible_to_customer,
@@ -106,7 +86,7 @@ function pickNoteVisibility(doc, documentVisible) {
       if (["false", "no", "0"].includes(lowered)) return false;
     }
   }
-  return documentVisible;
+  return true;
 }
 
 function pickBase44DocumentId(doc) {
@@ -159,7 +139,7 @@ function guessMimeType(filename, responseHeaders = {}) {
 
 function mapBase44Document(doc, booking = {}) {
   const documentVisible = pickVisibility(doc);
-  const noteVisible = pickNoteVisibility(doc, documentVisible);
+  const noteVisible = pickNoteVisibility(doc);
   const base44DocumentId = pickBase44DocumentId(doc);
   const base44BookingId = normalise(booking.base44_booking_id) || null;
   const bookingReference = normalise(booking.booking_reference).toUpperCase() || null;
@@ -263,7 +243,6 @@ function metadataChanged(existing, mapped) {
     existing.original_filename !== mapped.original_filename ||
     existing.document_type !== mapped.document_type ||
     existing.note !== mapped.note ||
-    Boolean(existing.document_visible_to_customer) !== Boolean(mapped.document_visible_to_customer) ||
     Boolean(existing.note_visible_to_customer) !== Boolean(mapped.note_visible_to_customer) ||
     existing.source_file_url_hash !== mapped.source_file_url_hash
   );
@@ -561,7 +540,8 @@ async function syncBookingDocuments(rest, booking, source = null, options = {}) 
                 last_seen_at: nowIso,
                 last_synced_at: nowIso,
                 is_active: true,
-                source_deleted_at: null
+                source_deleted_at: null,
+                document_visible_to_customer: true
               },
               mirrorSchema
             )

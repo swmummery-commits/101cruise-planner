@@ -3848,8 +3848,10 @@ function sortDocuments(documents) {
 }
 
 function isDocumentVisibleToCustomer(document) {
-  if (document.document_visible_to_customer === false) return false;
-  if (document.visible_to_customer === false || document.visible_to_client === false) return false;
+  // Base44 booking library documents are customer-facing regardless of CRM visibility flags.
+  if (document.source === "crm" || document.source === "booking" || document.source_system === "101cruise" || document.source_system === "base44") {
+    return true;
+  }
   return true;
 }
 
@@ -4028,8 +4030,6 @@ async function renderDocuments() {
       let libraryDocuments = await listBookingLibraryDocuments();
       if (!libraryDocuments.length) {
         libraryDocuments = fallbackBookingDocumentsFromPayload();
-      } else {
-        libraryDocuments = libraryDocuments.filter(isDocumentVisibleToCustomer);
       }
       documents = sortDocuments(
         libraryDocuments.map((document) => ({

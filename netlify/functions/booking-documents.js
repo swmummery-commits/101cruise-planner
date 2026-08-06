@@ -197,7 +197,7 @@ exports.handler = async function (event) {
           { method: 'GET' }
         );
         const row = rows?.[0];
-        if (!row || row.document_visible_to_customer === false) {
+        if (!row) {
           return jsonResponse(404, { success: false, error: 'Document not found.' });
         }
         const fileUrl = await resolveFileUrl(row, storageClient);
@@ -206,8 +206,8 @@ exports.handler = async function (event) {
       }
 
       const rows = await restWithActiveFallback(
-        `booking_documents?or=(${filters.join(',')})&document_visible_to_customer=eq.true&is_active=eq.true&order=uploaded_at.desc`,
-        `booking_documents?or=(${filters.join(',')})&document_visible_to_customer=eq.true&order=uploaded_at.desc`,
+        `booking_documents?or=(${filters.join(',')})&is_active=eq.true&order=uploaded_at.desc`,
+        `booking_documents?or=(${filters.join(',')})&order=uploaded_at.desc`,
         { method: 'GET' }
       );
 

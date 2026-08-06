@@ -18,7 +18,8 @@ const {
   normaliseDocumentType,
   buildSyncKey,
   buildSourceFingerprint,
-  hashValue
+  hashValue,
+  pickVisibility
 } = require("../netlify/functions/lib/booking-document-sync.js");
 const { isBookingConfirmationType } = require("../netlify/functions/lib/itinerary-document-hash.js");
 
@@ -321,6 +322,219 @@ assert(!isBookingConfirmationType("Travel Insurance"), "18: insurance not confir
     sourceFileUrlHash: hashValue("https://y")
   });
   assert(fallback.length === 32, "identity: fallback fingerprint length");
+}
+
+/* Visibility: Base44 documents are always customer-facing */
+{
+  const hidden = mapBase44Document(
+    {
+      id: "vis-false",
+      document_type: "Other",
+      filename: "hidden.pdf",
+      file_url: "https://base44.example/hidden.pdf",
+      document_visible_to_customer: false
+    },
+    booking
+  );
+  assert(hidden.document_visible_to_customer === true, "21: document_visible_to_customer false still maps true");
+  assert(pickVisibility({ document_visible_to_customer: false }) === true, "21: pickVisibility ignores false");
+
+  const visible = mapBase44Document(
+    {
+      id: "vis-true",
+      document_type: "Other",
+      filename: "visible.pdf",
+      file_url: "https://base44.example/visible.pdf",
+      document_visible_to_customer: true
+    },
+    booking
+  );
+  assert(visible.document_visible_to_customer === true, "22: document_visible_to_customer true maps true");
+
+  const missing = mapBase44Document(
+    { id: "vis-missing", document_type: "Other", filename: "plain.pdf", file_url: "https://base44.example/plain.pdf" },
+    booking
+  );
+  assert(missing.document_visible_to_customer === true, "23: missing visibility field maps true");
+
+  for (const field of ["visible_to_customer", "customer_visible", "is_customer_visible", "visible_to_client"]) {
+    const alt = mapBase44Document(
+      {
+        id: `alt-${field}`,
+        document_type: "Other",
+        filename: `${field}.pdf`,
+        file_url: `https://base44.example/${field}.pdf`,
+        [field]: false
+      },
+      booking
+    );
+    assert(alt.document_visible_to_customer === true, `24: ${field}=false does not hide document`);
+  }
+}
+
+/* Visibility change true -> false does not archive */
+{
+  const store = makeStore();
+  await syncWith(
+    [
+      {
+        id: "flip-1",
+        document_type: "Other",
+        filename: "flip.pdf",
+        file_url: "https://base44.example/flip.pdf",
+        document_visible_to_customer: true
+      }
+    ],
+    store
+  );
+  await syncWith(
+    [
+      {
+        id: "flip-1",
+        document_type: "Other",
+        filename: "flip.pdf",
+        file_url: "https://base44.example/flip.pdf",
+        document_visible_to_customer: false
+      }
+    ],
+    store
+  );
+  const row = store.rows.get("base44:flip-1");
+  assert(row.is_active === true, "25: visibility flip to false keeps document active");
+  assert(row.document_visible_to_customer === true, "25: visibility flip to false keeps customer-visible true");
+}
+
+/* SWM123456: Booking Confirmation + Signed Terms & Conditions */
+{
+  const swmBooking = { base44_booking_id: "bk-swm", booking_reference: "SWM123456" };
+  const confirmation = mapBase44Document(
+    {
+      id: "swm-bc",
+      document_type: "Booking Confirmation",
+      filename: "Booking Confirmation.pdf",
+      file_url: "https://base44.example/swm-confirmation.pdf",
+      document_visible_to_customer: true
+    },
+    swmBooking
+  );
+  const terms = mapBase44Document(
+    {
+      id: "swm-terms",
+      document_type: "Signed Terms & Conditions",
+      filename: "Signed Terms & Conditions.pdf",
+      file_url: "https://base44.example/swm-terms.pdf",
+      document_visible_to_customer: false,
+      visible_to_customer: false,
+      customer_visible: false
+    },
+    swmBooking
+  );
+  assert(confirmation.document_visible_to_customer === true, "26: SWM confirmation visible");
+  assert(terms.document_visible_to_customer === true, "26: SWM terms visible despite CRM flags");
+  assert(normaliseDocumentType(terms.document_type) === "Other", "26: SWM terms categorised as Other");
+
+  const store = makeStore();
+  extractCalls = 0;
+  await syncBookingDocuments(store.rest, swmBooking, {
+    documents: [
+      {
+        id: "swm-bc",
+        document_type: "Booking Confirmation",
+        filename: "Booking Confirmation.pdf",
+        file_url: "https://base44.example/swm-confirmation.pdf"
+      },
+      {
+        id: "swm-terms",
+        document_type: "Signed Terms & Conditions",
+        filename: "Signed Terms & Conditions.pdf",
+        file_url: "https://base44.example/swm-terms.pdf",
+        document_visible_to_customer: false
+      }
+    ]
+  }, {
+    downloadFile: mockDownload,
+    storageClient: mockStorage,
+    processTextItinerary: mockExtract
+  });
+  assert(store.rows.size === 2, "26: SWM sync stores both documents");
+  assert(extractCalls === 1, "26: only confirmation triggers extraction");
+}
+
+/* API layers do not filter CRM documents by visibility */
+{
+  const customerSrc = await import("fs").then((fs) => fs.readFileSync(path.join(root, "netlify/functions/customer-documents.js"), "utf8"));
+  const bookingSrc = await import("fs").then((fs) => fs.readFileSync(path.join(root, "netlify/functions/booking-documents.js"), "utf8"));
+  const plannerSrc = await import("fs").then((fs) => fs.readFileSync(path.join(root, "js/planner.js"), "utf8"));
+  assert(!customerSrc.includes("document_visible_to_customer=eq.true"), "27: customer list ignores visibility filter");
+  assert(!bookingSrc.includes("document_visible_to_customer=eq.true"), "27: booking list ignores visibility filter");
+  assert(!customerSrc.includes("document_visible_to_customer === false"), "27: customer download ignores visibility check");
+  assert(!bookingSrc.includes("document_visible_to_customer === false"), "27: booking download ignores visibility check");
+  assert(!plannerSrc.includes("document_visible_to_customer === false"), "27: planner ignores document visibility filter");
+}
+
+/* Reactivate previously hidden CRM document on sync touch */
+{
+  const store = makeStore();
+  store.rows.set("base44:react-1", {
+    id: "react-1",
+    sync_key: "base44:react-1",
+    source_system: "base44",
+    base44_booking_id: booking.base44_booking_id,
+    booking_reference: booking.booking_reference,
+    filename: "react.pdf",
+    file_url: "https://base44.example/react.pdf",
+    document_type: "Other",
+    storage_path: "bk-test-001/react/react.pdf",
+    content_hash: "existing-hash",
+    source_file_url_hash: hashValue("https://base44.example/react.pdf"),
+    document_visible_to_customer: false,
+    is_active: true
+  });
+  await syncWith(
+    [
+      {
+        id: "react-1",
+        document_type: "Other",
+        filename: "react.pdf",
+        file_url: "https://base44.example/react.pdf",
+        document_visible_to_customer: false
+      }
+    ],
+    store
+  );
+  const row = store.rows.get("base44:react-1");
+  assert(row.document_visible_to_customer === true, "28: previously hidden row reactivated to visible");
+  assert(row.is_active === true, "28: previously hidden row stays active");
+}
+
+/* Repeated login/reconciliation creates no duplicates with mixed visibility */
+{
+  const store = makeStore();
+  const docs = [
+    {
+      id: "dup-vis",
+      document_type: "Other",
+      filename: "dup.pdf",
+      file_url: "https://base44.example/dup.pdf",
+      document_visible_to_customer: false
+    }
+  ];
+  await syncWith(docs, store);
+  await syncWith(docs, store);
+  await syncWith([{ ...docs[0], document_visible_to_customer: true }], store);
+  assert(store.rows.size === 1, "29: repeated sync with visibility changes keeps one row");
+}
+
+/* Signed URLs only — no Base44 URL or storage path in customer list responses */
+{
+  const customerSrc = await import("fs").then((fs) => fs.readFileSync(path.join(root, "netlify/functions/customer-documents.js"), "utf8"));
+  const mapBlock = customerSrc.slice(
+    customerSrc.indexOf("function mapCrmDocument"),
+    customerSrc.indexOf("function mapCustomerDocument")
+  );
+  assert(customerSrc.includes("download_action: 'get_download_url'"), "30: CRM docs use on-demand signed URLs");
+  assert(!mapBlock.includes("file_url"), "30: mapCrmDocument does not expose file_url");
+  assert(!/return \{[\s\S]*storage_path:/.test(mapBlock), "30: mapCrmDocument response omits storage_path");
 }
 
 console.log("\nAll booking document sync tests passed.\n");

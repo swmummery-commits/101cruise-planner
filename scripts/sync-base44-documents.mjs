@@ -38,33 +38,12 @@ function normalise(value) {
   return String(value || "").trim();
 }
 
-function pickVisibility(doc) {
-  // Canonical Base44 field: visible_to_client (whole document).
-  const candidates = [
-    doc.visible_to_client,
-    doc.document_visible_to_customer,
-    doc.visible_to_customer,
-    doc.is_visible_to_client,
-    doc.show_on_website,
-    doc.customer_visible,
-    doc.visible_on_101cruise,
-    doc.visible_to_client_on_website,
-    doc.visible_to_client_on_101cruise_website
-  ];
-  for (const value of candidates) {
-    if (typeof value === "boolean") return value;
-    if (typeof value === "string") {
-      const lowered = value.trim().toLowerCase();
-      if (["true", "yes", "1"].includes(lowered)) return true;
-      if (["false", "no", "0"].includes(lowered)) return false;
-    }
-    if (value === 1) return true;
-    if (value === 0) return false;
-  }
+function pickVisibility() {
+  // Base44 booking library documents are customer-facing; CRM has no usable visibility control.
   return true;
 }
 
-function pickNoteVisibility(doc, documentVisible) {
+function pickNoteVisibility(doc) {
   const candidates = [
     doc.note_visible_to_customer,
     doc.notes_visible_to_customer,
@@ -79,7 +58,7 @@ function pickNoteVisibility(doc, documentVisible) {
       if (["false", "no", "0"].includes(lowered)) return false;
     }
   }
-  return documentVisible;
+  return true;
 }
 
 function pickBase44DocumentId(doc) {
@@ -105,7 +84,7 @@ function buildSyncKey({ base44BookingId, bookingReference, base44DocumentId, fil
 
 function mapDoc(doc, booking) {
   const documentVisible = pickVisibility(doc);
-  const noteVisible = pickNoteVisibility(doc, documentVisible);
+  const noteVisible = pickNoteVisibility(doc);
   const base44DocumentId = pickBase44DocumentId(doc);
   const base44BookingId = normalise(booking.base44_booking_id) || null;
   const bookingReference = normalise(booking.booking_reference).toUpperCase() || null;
@@ -210,7 +189,6 @@ async function main() {
     already_synced: 0,
     require_insert: 0,
     require_update: 0,
-    hidden_from_customers: 0,
     with_notes: 0,
     unmatched_bookings: 0,
     inaccessible_files: 0,
@@ -259,7 +237,6 @@ async function main() {
       const mapped = mapDoc(doc, booking);
       syncKeyCounts.set(mapped.sync_key, (syncKeyCounts.get(mapped.sync_key) || 0) + 1);
 
-      if (!mapped.document_visible_to_customer) stats.hidden_from_customers += 1;
       if (mapped.note) stats.with_notes += 1;
       if (!mapped.file_url) stats.inaccessible_files += 1;
 
@@ -296,7 +273,6 @@ async function main() {
             existing.file_url !== mapped.file_url ||
             existing.note !== mapped.note ||
             existing.document_type !== mapped.document_type ||
-            Boolean(existing.document_visible_to_customer) !== Boolean(mapped.document_visible_to_customer) ||
             Boolean(existing.note_visible_to_customer) !== Boolean(mapped.note_visible_to_customer);
           if (changed) stats.require_update += 1;
         }
@@ -331,7 +307,6 @@ async function main() {
   console.log(`Already synced:                ${stats.already_synced}`);
   console.log(`Requiring insertion:           ${stats.require_insert}`);
   console.log(`Requiring update:              ${stats.require_update}`);
-  console.log(`Hidden from customers:         ${stats.hidden_from_customers}`);
   console.log(`Documents with notes:          ${stats.with_notes}`);
   console.log(`Unmatched / empty bookings:    ${stats.unmatched_bookings}`);
   console.log(`Missing file URL:              ${stats.inaccessible_files}`);
