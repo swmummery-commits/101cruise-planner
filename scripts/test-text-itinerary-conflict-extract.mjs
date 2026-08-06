@@ -174,7 +174,8 @@ const existingConfirmation = {
   updated_at: "2026-07-26T08:05:23.000Z",
   last_synced_at: "2026-07-26T08:04:46.000Z",
   note: "Admin note keep me",
-  document_visible_to_customer: true
+  document_visible_to_customer: true,
+  storage_path: "base44/booking/confirmation.pdf"
 };
 
 let documentUpserts = 0;
@@ -232,6 +233,52 @@ assert(
   conflictSync.text_itinerary_process?.[0]?.reason === "extracted",
   "text itinerary process recorded"
 );
+
+/* Admin conflict must not block mirror when storage_path is missing */
+{
+  const legacyExisting = {
+    ...existingConfirmation,
+    id: "doc-legacy",
+    sync_key: "base44:legacy-1",
+    storage_path: null,
+    file_url: "https://example.com/legacy-confirmation.pdf"
+  };
+  let legacyUpserts = 0;
+  const legacyRest = async (pathPart, options = {}) => {
+    if (pathPart.includes("booking_documents?sync_key=") && (options.method || "GET") === "GET") {
+      return [legacyExisting];
+    }
+    if (pathPart.includes("booking_documents?on_conflict=sync_key") && options.method === "POST") {
+      legacyUpserts += 1;
+      return [{ ...JSON.parse(options.body), id: legacyExisting.id }];
+    }
+    if (pathPart.includes("booking_documents?id=eq.") && options.method === "PATCH") {
+      return [{ ...legacyExisting, ...JSON.parse(options.body) }];
+    }
+    return [];
+  };
+  const legacySync = await syncBookingDocuments(
+    legacyRest,
+    {
+      ...sixNightBooking,
+      documents: [
+        {
+          id: "legacy-1",
+          document_type: "Booking Confirmation",
+          filename: "legacy-confirmation.pdf",
+          file_url: "https://example.com/legacy-confirmation.pdf"
+        }
+      ]
+    },
+    null,
+    {
+      skipFileMirror: true,
+      processTextItinerary: async () => ({ ok: true, skipped: true, reason: "skipped" })
+    }
+  );
+  assert(legacySync.skipped_conflict === 0, "legacy without storage bypasses admin conflict");
+  assert(legacyUpserts === 1, "legacy without storage still upserts");
+}
 
 /* Non-Booking-Confirmation conflicts do not trigger extraction */
 processCalls = 0;
