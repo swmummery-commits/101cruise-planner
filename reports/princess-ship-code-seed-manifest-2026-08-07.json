@@ -1,0 +1,26 @@
+{
+  "phase": "princess_official_line_ship_id_seed",
+  "status": "pending_approval",
+  "cruise_line_slug": "princess-cruises",
+  "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+  "notes": "Apply via reviewed migration only. Maps official Princess resdb ship codes to existing ci_cruise_ships rows. MS Excellence Princess has no current resdb sailings.",
+  "ships": [
+    { "official_line_ship_id": "AP", "name": "Grand Princess", "supabase_match_name": "Grand Princess" },
+    { "official_line_ship_id": "CB", "name": "Caribbean Princess", "supabase_match_name": "Caribbean Princess" },
+    { "official_line_ship_id": "CO", "name": "Coral Princess", "supabase_match_name": "Coral Princess" },
+    { "official_line_ship_id": "DI", "name": "Diamond Princess", "supabase_match_name": "Diamond Princess" },
+    { "official_line_ship_id": "EP", "name": "Emerald Princess", "supabase_match_name": "Emerald Princess" },
+    { "official_line_ship_id": "EX", "name": "Enchanted Princess", "supabase_match_name": "Enchanted Princess" },
+    { "official_line_ship_id": "GP", "name": "Regal Princess", "supabase_match_name": "Regal Princess" },
+    { "official_line_ship_id": "IP", "name": "Island Princess", "supabase_match_name": "Island Princess" },
+    { "official_line_ship_id": "KP", "name": "Crown Princess", "supabase_match_name": "Crown Princess" },
+    { "official_line_ship_id": "MJ", "name": "Majestic Princess", "supabase_match_name": "Majestic Princess" },
+    { "official_line_ship_id": "RP", "name": "Royal Princess", "supabase_match_name": "Royal Princess" },
+    { "official_line_ship_id": "RU", "name": "Ruby Princess", "supabase_match_name": "Ruby Princess" },
+    { "official_line_ship_id": "SA", "name": "Sapphire Princess", "supabase_match_name": "Sapphire Princess" },
+    { "official_line_ship_id": "ST", "name": "Star Princess", "supabase_match_name": "Star Princess" },
+    { "official_line_ship_id": "SU", "name": "Sun Princess", "supabase_match_name": "Sun Princess" },
+    { "official_line_ship_id": "XP", "name": "Discovery Princess", "supabase_match_name": "Discovery Princess" },
+    { "official_line_ship_id": "YP", "name": "Sky Princess", "supabase_match_name": "Sky Princess" }
+  ]
+}

@@ -242,7 +242,28 @@ function pathIncludesFragment(path, fragments) {
 function pathMatchesHardReject(url) {
   const path = safePath(url);
   if (!path) return false;
+  if (isStructuredOfficialSailingDetailUrl(url)) return false;
   return pathIncludesFragment(path, HARD_REJECT_PATH_FRAGMENTS);
+}
+
+/** Individual sailing detail URLs from official line SPAs — not marketing hub pages. */
+function isStructuredOfficialSailingDetailUrl(url) {
+  try {
+    const u = new URL(String(url || "").trim());
+    const path = u.pathname.toLowerCase();
+    if (!path.includes("/cruise-search/details")) return false;
+    const params = u.searchParams;
+    return Boolean(
+      params.get("voyagecode") ||
+        params.get("voyageCode") ||
+        params.get("saildate") ||
+        params.get("sailDate") ||
+        params.get("shipcode") ||
+        params.get("shipCode")
+    );
+  } catch {
+    return false;
+  }
 }
 
 function pathMatchesRegionalHub(url) {

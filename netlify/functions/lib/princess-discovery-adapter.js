@@ -34,12 +34,25 @@ const PRINCESS_TRADE_CODE_SLUG = Object.freeze({
   P: "australia-new-zealand",
   S: "south-pacific",
   T: "panama-canal",
-  W: "world-cruise"
+  W: "world-cruise",
+  Z: "australia-new-zealand"
+});
+
+/** Official Princess resdb port codes → canonical catalogue names (reviewed, not auto-aliases). */
+const PRINCESS_PORT_CODE_MAP = Object.freeze({
+  FLL: "Fort Lauderdale (Port Everglades), Florida",
+  BGI: "Bridgetown, Barbados",
+  NYC: "New York, New York",
+  SA3: "Valparaíso (Santiago), Chile"
 });
 
 const PRINCESS_PORT_ALIASES = Object.freeze({
   "cape liberty": "Bayonne, New Jersey",
-  benoa: "Benoa, Bali"
+  benoa: "Benoa, Bali",
+  barbados: "Bridgetown, Barbados",
+  "ft. lauderdale, florida": "Fort Lauderdale (Port Everglades), Florida",
+  "new york city (manhattan or brooklyn), new york": "New York, New York",
+  "san antonio (for santiago), chile": "Valparaíso (Santiago), Chile"
 });
 
 function isEligiblePrincessCruise(productType) {
@@ -66,7 +79,9 @@ function resolvePrincessDestinationHints(raw) {
 }
 
 function resolvePrincessDeparturePort(raw) {
-  const candidates = [raw.departure_port, raw.departure_port_code].filter(Boolean);
+  const code = String(raw.departure_port_code || "").trim().toUpperCase();
+  const mappedName = code ? PRINCESS_PORT_CODE_MAP[code] : null;
+  const candidates = [mappedName, raw.departure_port, raw.departure_port_code].filter(Boolean);
   for (const value of candidates) {
     const alias = PRINCESS_PORT_ALIASES[String(value).toLowerCase()];
     const meta = resolveRawPortText(alias || value, { sourceField: "princess_resdb" });
@@ -160,30 +175,39 @@ function normalisePrincessProduct(raw, context = {}) {
   candidate.destination_id = destResult.status === "resolved" ? destResult.destinationId : null;
 
   const validationReasons = validateCruise({
-    cruiseLineId: candidate.cruise_line_id,
-    shipId: candidate.ship_id,
-    departureDate: candidate.departure_date,
-    departurePort: candidate.departure_port,
-    destinationId: candidate.destination_id,
-    nights: candidate.nights,
-    officialUrl: candidate.official_url
+    ...candidate,
+    destination_id: candidate.destination_id
   });
 
   const individual = provesIndividualSailing({
-    departureDate: candidate.departure_date,
-    shipName: raw.ship_name,
-    nights: candidate.nights,
-    officialUrl: candidate.official_url
+    ship_id: candidate.ship_id,
+    departure_date: candidate.departure_date,
+    departure_port: candidate.departure_port,
+    departure_port_meta: candidate.departure_port_meta,
+    shipResolution,
+    ships: ships.filter((s) => s.cruise_line_id === cruiseLine?.id),
+    ship_name_guess: raw.ship_name
   });
 
   const confidenceEval = evaluateDiscoveryConfidence({
-    shipResolved: shipResolution.resolved,
-    departureDatePresent: Boolean(candidate.departure_date),
-    departurePortResolved: portMeta.status === "resolved",
-    destinationStatus: destResult.status,
-    individualSailing: individual.proven,
-    officialUrlPresent: Boolean(candidate.official_url),
-    officialIdentityPresent: Boolean(officialProductKey(raw))
+    ...candidate,
+    cruiseLine,
+    cruise_line_name: cruiseLine?.name,
+    title: raw.itinerary_id,
+    url: candidate.official_url,
+    official_url: candidate.official_url,
+    shipResolution: shipResolution.resolved
+      ? { ship: shipResolution.ship, method: shipResolution.method, confidence: shipResolution.confidence }
+      : null,
+    destinationResolution: {
+      resolved: destResult.status === "resolved",
+      destination_id: candidate.destination_id,
+      destination_key: destResult.destinationKey,
+      confidence: destResult.confidence === "high" ? 95 : destResult.confidence === "medium" ? 80 : 60
+    },
+    ship_name: shipResolution.ship?.name || raw.ship_name,
+    ships: ships.filter((s) => s.cruise_line_id === cruiseLine?.id),
+    ship_name_guess: raw.ship_name
   });
 
   const complete =
@@ -194,7 +218,8 @@ function normalisePrincessProduct(raw, context = {}) {
     destResult.status === "resolved" &&
     portMeta.status === "resolved" &&
     individual.proven &&
-    confidenceEval.level === "high";
+    validationReasons.length === 0 &&
+    (confidenceEval.outcome === "auto_publish" || confidenceEval.outcome === "high_confidence");
 
   const failureReasons = [];
   if (product.productType === "cruisetour") failureReasons.push("cruisetour_excluded");
@@ -203,6 +228,10 @@ function normalisePrincessProduct(raw, context = {}) {
   if (!candidate.departure_port && portMeta.status !== "resolved") failureReasons.push("missing_departure_port");
   if (destResult.status === "unresolved") failureReasons.push("destination_unresolved");
   if (destResult.status === "ambiguous") failureReasons.push("destination_ambiguous");
+  if (validationReasons.length) failureReasons.push(...validationReasons.map((r) => `validation:${r}`));
+  if (confidenceEval.outcome !== "auto_publish" && confidenceEval.outcome !== "high_confidence") {
+    failureReasons.push(`confidence:${confidenceEval.outcome}`);
+  }
   if (!officialProductKey(raw)) failureReasons.push("missing_official_identity");
 
   return {

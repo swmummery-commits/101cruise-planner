@@ -99,6 +99,20 @@ test("7. buildOfficialUrl uses voyageCode query params", () => {
   }
 });
 
+test("8. individual sailing gate uses structured Princess evidence", () => {
+  const { provesIndividualSailing } = require(path.join(root, "netlify/functions/lib/discovery-non-sailing-filter"));
+  const individual = provesIndividualSailing({
+    ship_id: "ship-1",
+    departure_date: "2026-09-01",
+    departure_port: "Sydney, Australia",
+    departure_port_meta: { status: "resolved" },
+    shipResolution: { resolved: true, confidence: 100 },
+    ships: [{ id: "ship-1", name: "Sapphire Princess", cruise_line_id: "line" }],
+    ship_name_guess: "Sapphire Princess"
+  });
+  if (!individual.proven) throw new Error(JSON.stringify(individual));
+});
+
 async function optionalLiveProbe() {
   const fetchResult = await source.fetchAllPrincessRawSailings({ today: inv.perthCalendarDate() });
   if (!fetchResult.ok) {
@@ -144,7 +158,7 @@ async function optionalLiveProbe() {
   if ((simulation.raw_group_count || 0) < 500) throw new Error("live source group count too low");
   if ((simulation.raw_sailing_count || 0) < 1000) throw new Error("live sailing count too low");
   passed += 1;
-  console.log("✓ 8. live Princess resdb source probe");
+  console.log("✓ 9. live Princess resdb source probe");
 }
 
 optionalLiveProbe()

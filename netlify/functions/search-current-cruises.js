@@ -991,7 +991,7 @@ async function runDiscoveryCatalogue(input) {
       portsOfCall: parsePorts(row.itinerary, row.itinerary_ports),
       sourceName: cruiseLine,
       sourceUrl: row.official_url || row.source_url,
-      dateSearched: String(row.last_verified_at || row.last_seen_at || today).slice(0, 10),
+      dateSearched: String(row.last_verified_at || row.last_seen_at || perthToday).slice(0, 10),
       confidence: "HIGH",
       statusLabel: "Verified sailing",
       brochureFare: row.brochure_fare_display || null
@@ -1031,7 +1031,7 @@ async function runDiscoveryCatalogue(input) {
   return {
     ok: true,
     source: "discovery",
-    dateSearched: today,
+    dateSearched: perthToday,
     timingLabel: timingLabel(input),
     results: departureBuckets.results,
     alsoWorthConsidering: departureBuckets.alsoWorthConsidering,
