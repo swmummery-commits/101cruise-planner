@@ -503,6 +503,12 @@ async function applyCelebrityBatchWrites({
         stats.inserted += 1;
         if (row.product_type === "ocean_cruise") stats.ocean_inserts += 1;
         if (row.product_type === "river_cruise") stats.river_inserts += 1;
+        if (indexes && result.row?.id) {
+          const pk = officialProductKey(row.raw);
+          if (pk) indexes.byProductKey.set(pk, result.row);
+          if (result.row.identity_key) indexes.byIdentity.set(result.row.identity_key, result.row);
+          if (result.row.external_key) indexes.byExternal.set(result.row.external_key, result.row);
+        }
       } else if (result.duplicate) {
         stats.duplicate_skips += 1;
       } else if (!result.created && result.status === "active") {

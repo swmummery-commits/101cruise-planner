@@ -300,6 +300,14 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
     );
     prev = byExternal?.[0] || null;
   }
+  if (!prev && candidate.official_sailing_id && candidate.cruise_line_id) {
+    const bySailingId = await supabase(
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
+        candidate.cruise_line_id
+      )}&official_sailing_id=eq.${encodeURIComponent(candidate.official_sailing_id)}&select=*&limit=1`
+    );
+    prev = bySailingId?.[0] || null;
+  }
   if (!prev && candidate.official_url && candidate.cruise_line_id) {
     const byUrl = await supabase(
       `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
