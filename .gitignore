@@ -49,3 +49,9 @@ reports/celebrity-readonly-simulation.json
 reports/celebrity-readonly-simulation-*.json
 reports/celebrity-river-ship-backup-*.json
 reports/celebrity-river-ship-seed-rollback-*.json
+reports/celebrity-first-production-batch-manifest-*.json
+reports/celebrity-first-production-batch-rollback-*.json
+reports/celebrity-automatic-batch-rollback-*.json
+reports/celebrity-automatic-continuation-*.json
+reports/celebrity-legacy-audit-*.json
+reports/celebrity-pagination-reconciliation-*.json

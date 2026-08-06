@@ -23,7 +23,7 @@ function isCelebrityAutomaticContinuationEnabled() {
 function celebrityAutomaticLimits() {
   return {
     max_pages: Math.min(20, Math.max(1, Number(process.env.CELEBRITY_AUTO_MAX_PAGES) || 12)),
-    max_writes: Math.min(500, Math.max(1, Number(process.env.CELEBRITY_AUTO_MAX_WRITES) || 40)),
+    max_writes: Math.min(500, Math.max(1, Number(process.env.CELEBRITY_AUTO_MAX_WRITES) || 100)),
     write_concurrency: Math.min(10, Math.max(1, Number(process.env.CELEBRITY_AUTO_WRITE_CONCURRENCY) || 5)),
     sequential_only: true,
     overlapping_batches_blocked: true

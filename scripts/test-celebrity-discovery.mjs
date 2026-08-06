@@ -452,4 +452,64 @@ await test("37. European River Cruises is in operational catalogue", () => {
   if (!entry || entry.classification_enabled !== true) throw new Error("catalogue entry missing");
 });
 
+const celebrityWrites = require(path.join(root, "netlify/functions/lib/celebrity-discovery-writes"));
+const celebrityMode = require(path.join(root, "netlify/functions/lib/celebrity-discovery-mode"));
+
+await test("38. Controlled manifest cannot exceed 40 writes", () => {
+  const products = Array.from({ length: 50 }, (_, i) => ({
+    product_type: i % 2 ? "river_cruise" : "ocean_cruise",
+    complete_high_confidence: true,
+    official_product_key: `ID_${i}`,
+    destination_resolution: { destinationKey: "caribbean", status: "resolved" },
+    candidate: { destination_id: "d1", departure_port: "Miami" },
+    raw: { official_sailing_id: `ID_${i}`, official_url: "https://example.com", ship_code: "RF" },
+    ship_resolution: { resolved: true, ship: { id: "s1", name: "Celebrity Reflection" } }
+  }));
+  const selected = celebrityWrites.selectControlledBatchProducts(products, { oceanTarget: 20, riverTarget: 20, maxWrites: 40 });
+  if (selected.length > 40) throw new Error(`too many ${selected.length}`);
+});
+
+await test("39. Write flag defaults disabled", () => {
+  withEnv("CELEBRITY_DISCOVERY_WRITE_ENABLED", undefined, () => {
+    const gate = celebrityMode.resolveCelebrityDiscoveryMode("production_write");
+    if (gate.writes_allowed) throw new Error("writes allowed");
+  });
+});
+
+await test("40. Cruisetours cannot enter write set via classifyProposedAction", () => {
+  const action = celebrityWrites.classifyProposedAction(
+    { product_type: "ocean_cruisetour", complete_high_confidence: true, raw: {} },
+    null
+  );
+  if (action !== "ocean_cruisetour_skip") throw new Error(action);
+});
+
+await test("41. Background worker exists for Celebrity batches", () => {
+  const src = fs.readFileSync(path.join(root, "netlify/functions/celebrity-discovery-batch-background.js"), "utf8");
+  if (!src.includes("runCelebrityDiscoveryBatch")) throw new Error("missing batch runner");
+  if (!src.includes("controlled_sailing_ids")) throw new Error("missing controlled ids");
+});
+
+await test("42. Celebrity writes module supports exact legacy match action", () => {
+  const action = celebrityWrites.classifyProposedAction(
+    {
+      product_type: "ocean_cruise",
+      complete_high_confidence: true,
+      raw: { official_sailing_id: "X_2028-01-01" },
+      candidate: { ship_id: "s1", destination_id: "d1", departure_date: "2028-01-01", departure_port: "Miami" }
+    },
+    {
+      id: "existing",
+      cruise_line_id: "line",
+      official_sailing_id: "X_2028-01-01",
+      status: "hidden",
+      ship_id: "s0",
+      destination_id: "d1",
+      departure_date: "2028-01-01",
+      departure_port: "Miami"
+    }
+  );
+  if (action !== "update_exact_legacy_match") throw new Error(action);
+});
+
 console.log(`\ntest-celebrity-discovery: ${passed} passed`);

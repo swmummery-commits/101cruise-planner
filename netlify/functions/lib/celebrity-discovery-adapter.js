@@ -194,12 +194,14 @@ function expandGraphGroupsToRawSailings(groups, { today, futureOnly = true } = {
 
 async function fetchCelebrityInventoryPages(options = {}) {
   const pageSize = Math.min(100, Math.max(1, Number(options.pageSize) || DEFAULT_PAGE_SIZE));
-  const maxPages = options.maxPages != null ? Number(options.maxPages) : DEFAULT_MAX_API_CALLS;
+  const maxPages =
+    options.maxPages === null ? null : options.maxPages != null ? Number(options.maxPages) : DEFAULT_MAX_API_CALLS;
   return fetchRcgInventoryPages({
     graphUrl: GRAPH_URL,
     pageSize,
     maxPages,
     maxGroups: options.maxGroups,
+    startSkip: options.skipStart ?? options.startSkip ?? 0,
     requestDelayMs: options.requestDelayMs ?? REQUEST_DELAY_MS,
     query: options.query || DEFAULT_SEARCH_QUERY
   });
