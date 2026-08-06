@@ -277,6 +277,39 @@ function storeCustomerSession(session, remember) {
   storage.setItem(CUSTOMER_SESSION_STORAGE_KEY, JSON.stringify(session));
 }
 
+let customerBookingRefreshPromise = null;
+
+async function refreshCustomerBookingFromCrm() {
+  if (!customerMode || !customerSessionToken) return null;
+  if (customerBookingRefreshPromise) return customerBookingRefreshPromise;
+
+  customerBookingRefreshPromise = (async () => {
+    try {
+      const response = await fetch("/.netlify/functions/customer-refresh-booking", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${customerSessionToken}`,
+          "Content-Type": "application/json"
+        },
+        cache: "no-store"
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.success || !data?.booking) return null;
+      const session = { token: customerSessionToken, booking: data.booking };
+      storeCustomerSession(session, rememberCustomerPreference());
+      activateCustomerSession(session);
+      return data.booking;
+    } catch (error) {
+      console.warn("Customer booking refresh failed", error);
+      return null;
+    } finally {
+      customerBookingRefreshPromise = null;
+    }
+  })();
+
+  return customerBookingRefreshPromise;
+}
+
 function clearCustomerSession() {
   localStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
   sessionStorage.removeItem(CUSTOMER_SESSION_STORAGE_KEY);
@@ -413,6 +446,7 @@ async function accessMyCruise() {
       const response = await fetch("/.netlify/functions/customer-access", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        cache: "no-store",
         body: JSON.stringify({ booking_reference: bookingReference, surname })
       });
       const data = await response.json().catch(() => null);
@@ -5475,6 +5509,7 @@ async function initPlanner() {
   const storedCustomerSession = getStoredCustomerSession();
   if (storedCustomerSession && activateCustomerSession(storedCustomerSession)) {
     try {
+      await refreshCustomerBookingFromCrm();
       await customerPackingRequest("load");
       await renderDashboard();
       return;

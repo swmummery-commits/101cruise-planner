@@ -89,7 +89,17 @@
     "cruise_payment_2_date",
     "cruise_payment_3",
     "cruise_payment_3_date",
+    "payment_2_received_amount",
+    "payment_2_received_date",
+    "payment_3_received_amount",
+    "payment_3_received_date",
+    "final_payment_received_amount",
+    "final_payment_received_date",
+    "extra_payment_received_amount",
+    "extra_payment_received_date",
+    "to_be_paid",
     "fully_paid_date",
+    "fully_paid_date_normalised",
     "deposit_due_date",
     "extra_payment_due_date",
     "final_payment_due_date",
@@ -109,13 +119,21 @@
     "payment_2_due_date",
     "payment_3_amount",
     "payment_3_due_date",
+    "payment_2_received_amount",
+    "payment_2_received_date",
+    "payment_3_received_amount",
+    "payment_3_received_date",
+    "final_payment_received_amount",
+    "final_payment_received_date",
     "final_payment_due_date",
     "final_payment_due_date_normalised",
     "final_payment_reminder_date",
     "amount_received",
+    "total_paid",
     "balance_owing",
     "payment_status",
-    "fully_paid_date"
+    "fully_paid_date",
+    "fully_paid_date_normalised"
   ];
 
   /** Push whitelist: keep cache accurate without sensitive private data. */
@@ -217,6 +235,66 @@
     return Number.isNaN(d.getTime()) ? null : m[1];
   }
 
+  function roundMoney(value) {
+    if (value == null || !Number.isFinite(value)) return null;
+    return Math.round(value * 100) / 100;
+  }
+
+  function normalizeMoneyZero(value) {
+    const n = parseMoney(value);
+    if (n == null) return null;
+    if (Math.abs(n) <= MONEY_EPS) return 0;
+    return roundMoney(Math.max(0, n));
+  }
+
+  function readAuthoritativeBalance(booking = {}) {
+    for (const key of ["to_be_paid", "balance_to_be_paid", "amount_to_be_paid"]) {
+      const value = normalizeMoneyZero(booking[key]);
+      if (value != null) return value;
+    }
+    return null;
+  }
+
+  function sumReceivedPayments(booking = {}) {
+    let total = 0;
+    let hasComponent = false;
+
+    const depositAmount = parseMoney(booking.cruise_deposit ?? booking.deposit_amount);
+    const depositPaidDate = parseDate(
+      booking.cruise_deposit_date ?? booking.deposit_paid_date ?? booking.deposit_payment_date
+    );
+    if (depositAmount != null && depositAmount > MONEY_EPS && depositPaidDate) {
+      total += depositAmount;
+      hasComponent = true;
+    }
+
+    const receiptPairs = [
+      ["payment_2_received_amount", "payment_2_received_date"],
+      ["payment_3_received_amount", "payment_3_received_date"],
+      ["final_payment_received_amount", "final_payment_received_date"],
+      ["extra_payment_received_amount", "extra_payment_received_date"]
+    ];
+    for (const [amountKey, dateKey] of receiptPairs) {
+      const amount = parseMoney(booking[amountKey]);
+      const receiptDate = parseDate(booking[dateKey]);
+      if (amount != null && amount > MONEY_EPS && receiptDate) {
+        total += amount;
+        hasComponent = true;
+      }
+    }
+
+    if (!hasComponent) return null;
+    return roundMoney(total);
+  }
+
+  function derivePaymentStatus(balanceOwing, amountReceived) {
+    if (balanceOwing === 0) return "fully_paid";
+    if (balanceOwing != null && balanceOwing > MONEY_EPS) {
+      return amountReceived != null && amountReceived > MONEY_EPS ? "partially_paid" : "payment_outstanding";
+    }
+    return "unknown";
+  }
+
   function nearlyEqual(a, b) {
     if (a == null || b == null) return false;
     return Math.abs(a - b) <= MONEY_EPS;
@@ -315,17 +393,15 @@
     const payment3DueDate = parseDate(
       booking.cruise_payment_3_date ?? booking.payment_3_due_date
     );
-    const fullyPaidDate = parseDate(booking.fully_paid_date);
+    const fullyPaidDate = parseDate(booking.fully_paid_date ?? booking.fully_paid_date_normalised);
     const depositDueDate = parseDate(booking.deposit_due_date);
     const storedFinalDue = parseDate(booking.final_payment_due_date);
     const reminderDeposit = parseDate(booking.reminder_deposit_due);
     const reminderFinal = parseDate(
       booking.reminder_final_payment_due ?? booking.final_payment_reminder_date
     );
-    const statusRaw = String(booking.payment_status || "")
-      .trim()
-      .toLowerCase()
-      .replace(/[\s-]+/g, "_");
+    const authoritativeBalance = readAuthoritativeBalance(booking);
+    const totalReceivedFromReceipts = sumReceivedPayments(booking);
 
     const scheduledInstalments =
       (payment2Amount != null && payment2Amount > MONEY_EPS ? payment2Amount : 0) +
@@ -337,7 +413,10 @@
       payment2Amount,
       payment3Amount,
       fullyPaidDate,
-      statusRaw,
+      statusRaw: String(booking.payment_status || "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, "_"),
       booking
     });
     const independentScheduledReceipt = scheduledInstalmentsHaveIndependentReceipt(
@@ -345,37 +424,25 @@
       payment3Amount,
       booking
     );
-    // Ignore contradictory fully_paid_date for classification only (do not mutate Base44).
     const effectiveFullyPaidDate = contradictoryFullyPaid ? null : fullyPaidDate;
 
-    // Authoritative final due = instalment due date, then stored due.
-    // Never use reminder as final_payment_due_date.
     let finalPaymentDueDate = payment2DueDate || payment3DueDate || storedFinalDue || null;
     if (finalPaymentDueDate && reminderFinal && finalPaymentDueDate === reminderFinal && payment2DueDate) {
       finalPaymentDueDate = payment2DueDate;
     }
-    // Legacy bug: API put reminder into final_payment_due_date with no payment_2_date.
     if (
       !payment2DueDate &&
       storedFinalDue &&
       reminderFinal &&
       storedFinalDue === reminderFinal
     ) {
-      finalPaymentDueDate = null; // unknown due; reminder kept separately
+      finalPaymentDueDate = null;
     } else if (!payment2DueDate && storedFinalDue && !reminderFinal) {
       finalPaymentDueDate = storedFinalDue;
     } else if (payment2DueDate) {
       finalPaymentDueDate = payment2DueDate;
     }
 
-    let amountReceived = null;
-    if (depositAmount != null && depositAmount > MONEY_EPS && depositPaidDate) {
-      amountReceived = depositAmount;
-    } else if (booking.amount_received != null) {
-      amountReceived = parseMoney(booking.amount_received);
-    }
-
-    // Detect legacy false amount_paid = sum of deposit + scheduled instalments.
     const legacyAmountPaid = parseMoney(booking.amount_paid);
     const scheduledSum =
       (depositAmount || 0) + (payment2Amount || 0) + (payment3Amount || 0);
@@ -383,78 +450,65 @@
       legacyAmountPaid != null &&
       price != null &&
       nearlyEqual(legacyAmountPaid, scheduledSum) &&
-      payment2Amount != null &&
-      payment2Amount > MONEY_EPS &&
-      !effectiveFullyPaidDate;
+      hasScheduledOutstanding &&
+      !effectiveFullyPaidDate &&
+      !independentScheduledReceipt;
 
-    if (legacySummedInstalments) {
-      // Ignore false amount_paid; keep deposit-only received when dated.
-      if (amountReceived == null && depositPaidDate && depositAmount != null) {
-        amountReceived = depositAmount;
-      }
-    } else if (
-      amountReceived == null &&
-      legacyAmountPaid != null &&
-      depositAmount != null &&
-      nearlyEqual(legacyAmountPaid, depositAmount)
-    ) {
-      amountReceived = depositAmount;
-    }
-
+    let amountReceived = null;
     if (contradictoryFullyPaid && depositAmount != null && depositAmount > MONEY_EPS) {
-      // Ignore helper amount_received that equals the full cruise price.
+      amountReceived = depositAmount;
+    } else if (totalReceivedFromReceipts != null) {
+      amountReceived = totalReceivedFromReceipts;
+    } else if (booking.amount_received != null && !contradictoryFullyPaid) {
+      amountReceived = parseMoney(booking.amount_received);
+    } else if (legacySummedInstalments && depositAmount != null && depositAmount > MONEY_EPS) {
+      amountReceived = depositAmount;
+    } else if (depositAmount != null && depositAmount > MONEY_EPS && depositPaidDate) {
       amountReceived = depositAmount;
     }
 
     let balanceOwing = null;
     if (contradictoryFullyPaid && hasScheduledOutstanding) {
       balanceOwing = scheduledInstalments;
-      if (depositAmount != null && depositAmount > MONEY_EPS) {
-        amountReceived = depositAmount;
-      }
-    } else if (effectiveFullyPaidDate && price != null && !hasScheduledOutstanding) {
+      if (depositAmount != null && depositAmount > MONEY_EPS) amountReceived = depositAmount;
+    } else if (
+      (hasScheduledOutstanding && independentScheduledReceipt) ||
+      (totalReceivedFromReceipts != null && price != null && nearlyEqual(totalReceivedFromReceipts, price)) ||
+      (effectiveFullyPaidDate && independentScheduledReceipt) ||
+      (effectiveFullyPaidDate && !hasScheduledOutstanding)
+    ) {
       balanceOwing = 0;
-      amountReceived = amountReceived != null ? amountReceived : price;
-    } else if (effectiveFullyPaidDate && independentScheduledReceipt && price != null) {
-      balanceOwing = 0;
-      amountReceived = amountReceived != null ? amountReceived : price;
-    } else if (payment2Amount != null && payment2Amount > MONEY_EPS && !effectiveFullyPaidDate) {
-      // Scheduled final instalment is still owing unless fully paid.
+      amountReceived = amountReceived != null ? amountReceived : totalReceivedFromReceipts ?? price;
+    } else if (totalReceivedFromReceipts != null && price != null) {
+      balanceOwing = normalizeMoneyZero(price - totalReceivedFromReceipts);
+      amountReceived = totalReceivedFromReceipts;
+    } else if (authoritativeBalance != null) {
+      balanceOwing = authoritativeBalance;
+    } else if (hasScheduledOutstanding && !independentScheduledReceipt) {
       balanceOwing = scheduledInstalments;
     } else if (price != null && amountReceived != null) {
-      balanceOwing = Math.max(0, price - amountReceived);
+      balanceOwing = normalizeMoneyZero(price - amountReceived);
     } else {
-      const rawBalance = parseMoney(booking.balance_owing);
-      // Do not trust zero balance when fully_paid_date is null and instalments exist.
-      if (rawBalance != null && !(rawBalance === 0 && payment2Amount > MONEY_EPS && !effectiveFullyPaidDate)) {
-        balanceOwing = rawBalance;
+      const rawBalance = normalizeMoneyZero(booking.balance_owing);
+      const canTrustZeroBalance =
+        rawBalance === 0 &&
+        (independentScheduledReceipt ||
+          effectiveFullyPaidDate ||
+          (amountReceived != null && price != null && nearlyEqual(amountReceived, price)));
+      if (rawBalance != null) {
+        if (rawBalance !== 0 || canTrustZeroBalance || !hasScheduledOutstanding) {
+          balanceOwing = rawBalance;
+        }
       }
     }
 
-    let paymentStatus = "unknown";
-    if (
-      (effectiveFullyPaidDate && !hasScheduledOutstanding) ||
-      (effectiveFullyPaidDate && independentScheduledReceipt) ||
-      (balanceOwing === 0 &&
-        amountReceived != null &&
-        price != null &&
-        nearlyEqual(amountReceived, price) &&
-        !hasScheduledOutstanding)
-    ) {
-      paymentStatus = "fully_paid";
-      balanceOwing = 0;
-    } else if (
-      depositPaidDate &&
-      depositAmount != null &&
-      depositAmount > MONEY_EPS &&
-      balanceOwing != null &&
-      balanceOwing > MONEY_EPS
-    ) {
-      // Integration/API status token (client maps this to the customer label).
-      paymentStatus = "partially_paid";
-    } else if (balanceOwing != null && balanceOwing > MONEY_EPS) {
-      paymentStatus = "payment_outstanding";
+    if (legacySummedInstalments && hasScheduledOutstanding && !independentScheduledReceipt) {
+      balanceOwing = scheduledInstalments;
+      if (depositAmount != null && depositAmount > MONEY_EPS) amountReceived = depositAmount;
     }
+
+    let paymentStatus = derivePaymentStatus(balanceOwing, amountReceived);
+    if (paymentStatus === "fully_paid") balanceOwing = 0;
 
     return {
       cruise_price_usd: price,
@@ -464,15 +518,21 @@
       payment_2_due_date: payment2DueDate,
       payment_3_amount: payment3Amount,
       payment_3_due_date: payment3DueDate,
+      payment_2_received_amount: parseMoney(booking.payment_2_received_amount),
+      payment_2_received_date: parseDate(booking.payment_2_received_date),
+      payment_3_received_amount: parseMoney(booking.payment_3_received_amount),
+      payment_3_received_date: parseDate(booking.payment_3_received_date),
+      final_payment_received_amount: parseMoney(booking.final_payment_received_amount),
+      final_payment_received_date: parseDate(booking.final_payment_received_date),
       final_payment_due_date: finalPaymentDueDate,
       final_payment_due_date_normalised: finalPaymentDueDate,
       final_payment_reminder_date: reminderFinal,
       deposit_due_date: depositDueDate,
       reminder_deposit_due: reminderDeposit,
-      // Integration response: never emit a contradictory fully_paid_date.
-      // Does not mutate the CruiseBooking entity in Base44.
-      fully_paid_date: contradictoryFullyPaid ? null : fullyPaidDate,
+      fully_paid_date: effectiveFullyPaidDate,
+      fully_paid_date_normalised: effectiveFullyPaidDate,
       amount_received: amountReceived,
+      total_paid: amountReceived,
       balance_owing: balanceOwing,
       payment_status: paymentStatus,
       // Legacy raw passthrough names for compatibility

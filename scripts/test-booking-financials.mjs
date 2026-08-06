@@ -29,6 +29,26 @@ function moneyIncludes(value, amountText) {
   return String(value || "").includes(amountText);
 }
 
+const { applyBookingFinance, deriveBookingFinance } = require("../base44/bookingFinance.js");
+
+/** Patricia Groen production-equivalent fixture (66072682). */
+const PATRICIA_GROEN_FULLY_PAID = {
+  booking_reference: "66072682",
+  cruise_price_usd: 2427.6,
+  cruise_deposit: null,
+  cruise_deposit_date: "2026-08-06",
+  cruise_payment_2: 2427.6,
+  payment_2_amount: 2427.6,
+  payment_2_received_amount: 2427.6,
+  payment_2_received_date: "2026-08-06",
+  deposit_paid_date: "2026-08-06",
+  fully_paid_date: null,
+  fully_paid_date_normalised: "2026-08-06",
+  amount_received: 2427.6,
+  balance_owing: 0,
+  payment_status: "fully_paid"
+};
+
 const NOW = "2026-07-26T00:00:00.000Z";
 
 /** Current legacy getBookingFor101Cruise payload for CD5Q25 (pre-refresh cache). */
@@ -125,7 +145,7 @@ function assertCd5q25Display(f, { expectDepositDate, expectFinalDue }) {
   assert(f.deposit_status === "paid", "CD5Q25 deposit paid");
   assert(f.deposit_paid_amount === 349.86, "CD5Q25 deposit amount");
   assert(
-    f.overall_payment_status_label === "Deposit paid — balance outstanding",
+    f.overall_payment_status_label === "Partially paid",
     "CD5Q25 status label"
   );
   assert(!/fully paid/i.test(f.overall_payment_status_label), "CD5Q25 not Fully paid");
@@ -138,7 +158,7 @@ function assertCd5q25Display(f, { expectDepositDate, expectFinalDue }) {
   assert(moneyIncludes(byKey.cruise_price?.value, "1,816.86"), "display cruise price");
   assert(moneyIncludes(byKey.deposit_paid?.value, "349.86"), "display deposit");
   assert(moneyIncludes(byKey.balance_owing?.value, "1,467.00"), "display balance");
-  assert(byKey.payment_status?.value === "Deposit paid — balance outstanding", "display status");
+  assert(byKey.payment_status?.value === "Partially paid", "display status");
 
   if (expectDepositDate) {
     assert(f.deposit_paid_date === "2026-07-25", "deposit paid date");
@@ -179,7 +199,7 @@ function assertCd5q25Display(f, { expectDepositDate, expectFinalDue }) {
   assert(f.notes.includes("using_corrected_normalised_contract"), "corrected note");
   assert(f.notes.includes("amount_received_from_corrected_api"), "consumes amount_received");
   assert(f.notes.includes("balance_from_corrected_api"), "consumes balance_owing");
-  assert(f.notes.includes("mapped_partially_paid_to_deposit_paid_balance_outstanding"), "partially_paid mapped");
+  assert(f.notes.includes("mapped_partially_paid_status"), "partially_paid mapped");
   assert(f.amount_received !== 1816.86, "payment_2 not in amount received");
   assertCd5q25Display(f, { expectDepositDate: true, expectFinalDue: true });
 }
@@ -222,7 +242,7 @@ function assertCd5q25Display(f, { expectDepositDate, expectFinalDue }) {
   assert(f.final_payment_reminder_date === "2026-08-30", "prefer final_payment_reminder_date");
   assert(f.amount_received === 100, "prefer amount_received");
   assert(f.balance_owing === 950, "prefer corrected balance_owing");
-  assert(f.overall_payment_status_label === "Deposit paid — balance outstanding", "partially_paid label");
+  assert(f.overall_payment_status_label === "Partially paid", "partially_paid label");
 }
 
 // --- final_payment_due_date_normalised recognised ---
@@ -369,6 +389,8 @@ function assertCd5q25Display(f, { expectDepositDate, expectFinalDue }) {
   assert(/renderDashboardSnapshot[\s\S]*renderSharedFinancialRows/.test(plannerSrc), "snapshot");
   assert(/renderBookingCruiseSection[\s\S]*renderSharedFinancialRows/.test(plannerSrc), "booking");
   assert(!/cacheBookingInSupabase/.test(plannerSrc), "no financial write on page load");
+  assert(/refreshCustomerBookingFromCrm/.test(plannerSrc), "booking refresh helper");
+  assert(/customer-refresh-booking/.test(plannerSrc), "refresh endpoint wired");
 }
 
 // --- push/pull contract still exposes safe fields ---
@@ -501,9 +523,153 @@ function assertCd5q25Display(f, { expectDepositDate, expectFinalDue }) {
   assert(JSON.stringify(a) === JSON.stringify(b), "identical dashboard/booking rows");
   const byKey = Object.fromEntries(a.map(r => [r.key, r.value]));
   assert(moneyIncludes(byKey.balance_owing, "1,467.00"), "shared row balance");
-  assert(byKey.payment_status === "Deposit paid — balance outstanding", "shared row status");
+  assert(byKey.payment_status === "Partially paid", "shared row status");
   assert(byKey.final_payment_due === "13 September 2026", "shared row final due");
   assert(byKey.final_payment_due !== "Check booking confirmation", "genuine due kept");
+}
+
+// --- Patricia Groen production scenario ---
+{
+  const applied = applyBookingFinance(PATRICIA_GROEN_FULLY_PAID);
+  assert(applied.balance_owing === 0, "Patricia server balance zero");
+  assert(applied.payment_status === "fully_paid", "Patricia server fully paid");
+  assert(applied.amount_received === 2427.6, "Patricia server amount received");
+
+  const f = normaliseBookingFinancials(applied, { now: NOW });
+  assert(f.balance_owing === 0, "Patricia client balance zero");
+  assert(f.overall_payment_status_label === "Paid in full", "Patricia Paid in full");
+  const rows = buildFinancialDisplayRows(f, { formatMoney: formatFinancialUsd });
+  const byKey = Object.fromEntries(rows.map(r => [r.key, r]));
+  assert(moneyIncludes(byKey.balance_owing?.value, "0.00"), "Patricia display zero balance");
+  assert(byKey.payment_status?.value === "Paid in full", "Patricia display status");
+}
+
+// --- fully unpaid booking ---
+{
+  const f = normaliseBookingFinancials(
+    applyBookingFinance({
+      cruise_price_usd: 2427.6,
+      cruise_payment_2: 2427.6,
+      payment_2_amount: 2427.6
+    }),
+    { now: NOW }
+  );
+  assert(f.balance_owing === 2427.6, "unpaid balance full scheduled instalment");
+  assert(f.overall_payment_status_label === "Balance outstanding", "unpaid status");
+}
+
+// --- partially paid booking ---
+{
+  const f = normaliseBookingFinancials(
+    applyBookingFinance({
+      cruise_price_usd: 2427.6,
+      cruise_deposit: 500,
+      cruise_deposit_date: "2026-01-01",
+      deposit_amount: 500,
+      deposit_paid_date: "2026-01-01",
+      cruise_payment_2: 1927.6,
+      payment_2_amount: 1927.6
+    }),
+    { now: NOW }
+  );
+  assert(f.amount_received === 500, "partial amount received");
+  assert(f.balance_owing === 1927.6, "partial balance");
+  assert(f.overall_payment_status_label === "Partially paid", "partial status");
+}
+
+// --- explicit CRM balance numeric zero stays zero ---
+{
+  const derived = deriveBookingFinance({
+    cruise_price_usd: 2427.6,
+    cruise_payment_2: 2427.6,
+    payment_2_received_amount: 2427.6,
+    payment_2_received_date: "2026-08-06",
+    balance_owing: 0
+  });
+  assert(derived.balance_owing === 0, "explicit zero balance preserved");
+}
+
+// --- explicit CRM balance string zero ---
+{
+  const derived = deriveBookingFinance({
+    cruise_price_usd: 2427.6,
+    cruise_payment_2: 2427.6,
+    payment_2_received_amount: 2427.6,
+    payment_2_received_date: "2026-08-06",
+    balance_owing: "0.00"
+  });
+  assert(derived.balance_owing === 0, "string zero balance");
+}
+
+// --- deposit + extra + final received payments counted once ---
+{
+  const derived = deriveBookingFinance({
+    cruise_price_usd: 3000,
+    cruise_deposit: 500,
+    cruise_deposit_date: "2026-01-01",
+    payment_2_amount: 1500,
+    payment_2_received_amount: 1500,
+    payment_2_received_date: "2026-02-01",
+    payment_3_amount: 1000,
+    payment_3_received_amount: 1000,
+    payment_3_received_date: "2026-03-01"
+  });
+  assert(derived.amount_received === 3000, "all receipts summed");
+  assert(derived.balance_owing === 0, "all receipts fully paid");
+}
+
+// --- scheduled payment without received amount not counted ---
+{
+  const derived = deriveBookingFinance({
+    cruise_price_usd: 2427.6,
+    cruise_deposit: 500,
+    cruise_deposit_date: "2026-01-01",
+    payment_2_amount: 1927.6,
+    payment_2_due_date: "2026-09-01"
+  });
+  assert(derived.amount_received === 500, "scheduled not counted as paid");
+  assert(derived.balance_owing === 1927.6, "scheduled still owing");
+}
+
+// --- invalid or blank payment values handled safely ---
+{
+  const derived = deriveBookingFinance({
+    cruise_price_usd: 1000,
+    cruise_deposit: "",
+    cruise_payment_2: "not-a-number",
+    payment_2_received_amount: null,
+    balance_owing: ""
+  });
+  assert(derived.balance_owing == null, "blank balance stays unknown");
+}
+
+// --- minor rounding difference treated as zero ---
+{
+  const derived = deriveBookingFinance({
+    cruise_price_usd: 2427.6,
+    cruise_deposit: 500,
+    cruise_deposit_date: "2026-01-01",
+    payment_2_received_amount: 1927.599,
+    payment_2_received_date: "2026-02-01"
+  });
+  assert(derived.balance_owing === 0, "sub-cent rounding zero balance");
+}
+
+// --- missing payment data must not default to full cruise price ---
+{
+  const f = normaliseBookingFinancials({ cruise_price_usd: 2427.6 }, { now: NOW });
+  assert(f.balance_owing == null || f.balance_owing !== 2427.6, "missing data not full price");
+  assert(f.overall_payment_status_label !== "Balance outstanding" || f.balance_owing > 0, "no false outstanding");
+}
+
+// --- authoritative to_be_paid from CRM ---
+{
+  const derived = deriveBookingFinance({
+    cruise_price_usd: 2427.6,
+    cruise_payment_2: 2427.6,
+    to_be_paid: 0
+  });
+  assert(derived.balance_owing === 0, "to_be_paid zero honoured");
 }
 
 console.log("test-booking-financials: all assertions passed");

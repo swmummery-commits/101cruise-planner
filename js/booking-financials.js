@@ -84,7 +84,12 @@
         parseDateOnly(booking.payment_3_due_date) ||
         parseDateOnly(booking.final_payment_due_date_normalised) ||
         parseDateOnly(booking.final_payment_reminder_date) ||
-        parseMoneyStrict(booking.amount_received) != null
+        parseMoneyStrict(booking.amount_received) != null ||
+        parseMoneyStrict(booking.payment_2_received_amount) != null ||
+        parseDateOnly(booking.payment_2_received_date) ||
+        parseMoneyStrict(booking.final_payment_received_amount) != null ||
+        parseDateOnly(booking.final_payment_received_date) ||
+        parseDateOnly(booking.fully_paid_date_normalised)
     );
   }
 
@@ -152,7 +157,7 @@
     const payment3 = firstMoney(booking.payment_3_amount, booking.cruise_payment_3);
     const payment2Due = firstDate(booking.payment_2_due_date, booking.cruise_payment_2_date);
     const payment3Due = firstDate(booking.payment_3_due_date, booking.cruise_payment_3_date);
-    const fullyPaidDate = parseDateOnly(booking.fully_paid_date);
+    const fullyPaidDate = firstDate(booking.fully_paid_date, booking.fully_paid_date_normalised);
     const reminderDeposit = firstDate(booking.reminder_deposit_due, booking.deposit_reminder_date);
     const reminderFinal = firstDate(
       booking.final_payment_reminder_date,
@@ -285,11 +290,22 @@
     } else if (
       corrected &&
       balanceRaw != null &&
-      !(statusRaw === "fully_paid" && balanceRaw === 0 && hasScheduledOutstanding && !effectiveFullyPaidDate)
+      (balanceRaw !== 0 ||
+        independentScheduledReceipt ||
+        effectiveFullyPaidDate ||
+        statusRaw === "fully_paid" ||
+        (amountReceived != null && price != null && nearlyEqual(amountReceived, price)))
     ) {
-      // Trust corrected balance_owing from normalised contract.
       balanceOwing = balanceRaw;
       notes.push("balance_from_corrected_api");
+    } else if (
+      (hasScheduledOutstanding && independentScheduledReceipt) ||
+      (effectiveFullyPaidDate && independentScheduledReceipt) ||
+      (effectiveFullyPaidDate && !hasScheduledOutstanding)
+    ) {
+      balanceOwing = 0;
+      amountReceived = amountReceived != null ? amountReceived : price;
+      notes.push("fully_paid_from_independent_receipt");
     } else if (effectiveFullyPaidDate && !hasScheduledOutstanding) {
       balanceOwing = 0;
       amountReceived = amountReceived != null ? amountReceived : price;
@@ -298,29 +314,20 @@
         depositPaidAmount = depositAmount;
       }
       notes.push("fully_paid_date_present");
-    } else if (effectiveFullyPaidDate && independentScheduledReceipt) {
-      balanceOwing = 0;
-      amountReceived = amountReceived != null ? amountReceived : price;
-      if (depositAmount != null && depositAmount > MONEY_EPS) {
-        depositStatus = "paid";
-        depositPaidAmount = depositAmount;
-      }
-      notes.push("fully_paid_date_present");
-      notes.push("independent_instalment_receipt_evidence");
-    } else if (hasScheduledOutstanding) {
+    } else if (hasScheduledOutstanding && !independentScheduledReceipt) {
       balanceOwing = scheduledInstalments;
       notes.push("balance_from_scheduled_instalments");
     } else if (price != null && amountReceived != null) {
       balanceOwing = Math.max(0, price - amountReceived);
-    } else if (balanceRaw != null && balanceRaw !== 0) {
+    } else if (balanceRaw != null) {
       balanceOwing = balanceRaw;
-    } else if (balanceRaw === 0 && statusRaw === "fully_paid" && !hasScheduledOutstanding) {
-      balanceOwing = 0;
     }
 
     if (!corrected && hasScheduledOutstanding && (statusRaw === "fully_paid" || balanceRaw === 0 || legacySummedInstalments)) {
-      balanceOwing = scheduledInstalments;
-      notes.push("blocked_false_fully_paid_from_scheduled_instalments");
+      if (!independentScheduledReceipt) {
+        balanceOwing = scheduledInstalments;
+        notes.push("blocked_false_fully_paid_from_scheduled_instalments");
+      }
     }
 
     if (
@@ -328,7 +335,8 @@
       hasScheduledOutstanding &&
       statusRaw === "fully_paid" &&
       !effectiveFullyPaidDate &&
-      !contradictoryFullyPaid
+      !contradictoryFullyPaid &&
+      !independentScheduledReceipt
     ) {
       balanceOwing = scheduledInstalments;
       notes.push("blocked_false_fully_paid_from_scheduled_instalments");
@@ -358,19 +366,21 @@
         notes.push("fully_paid_date_null_blocks_unsupported_fully_paid");
       }
     } else if (
-      (statusRaw === "partially_paid" || hasScheduledOutstanding || contradictoryFullyPaid) &&
+      (statusRaw === "partially_paid" || contradictoryFullyPaid) &&
       depositStatus === "paid" &&
       balanceOwing != null &&
       balanceOwing > MONEY_EPS
     ) {
-      overallPaymentStatus = "deposit_paid_balance_outstanding";
-      notes.push("mapped_partially_paid_to_deposit_paid_balance_outstanding");
+      overallPaymentStatus = "partially_paid";
+      notes.push("mapped_partially_paid_status");
+    } else if (statusRaw === "partially_paid" && balanceOwing != null && balanceOwing > MONEY_EPS) {
+      overallPaymentStatus = "partially_paid";
     } else if (statusRaw === "no_payment") {
       overallPaymentStatus = balanceOwing != null && balanceOwing > MONEY_EPS ? "payment_outstanding" : "unknown";
     } else if (statusRaw === "unknown") {
       overallPaymentStatus = "unknown";
     } else if (depositStatus === "paid" && balanceOwing != null && balanceOwing > MONEY_EPS) {
-      overallPaymentStatus = "deposit_paid_balance_outstanding";
+      overallPaymentStatus = "partially_paid";
     } else if (balanceOwing != null && balanceOwing > MONEY_EPS) {
       overallPaymentStatus = "payment_outstanding";
     } else if (
@@ -384,8 +394,7 @@
     }
 
     if (balanceOwing != null && balanceOwing > MONEY_EPS && overallPaymentStatus === "fully_paid") {
-      overallPaymentStatus =
-        depositStatus === "paid" ? "deposit_paid_balance_outstanding" : "payment_outstanding";
+      overallPaymentStatus = "partially_paid";
       notes.push("blocked_fully_paid_with_positive_balance");
     }
 
@@ -394,9 +403,10 @@
     }
 
     const labels = {
-      fully_paid: "Fully paid",
+      fully_paid: "Paid in full",
+      partially_paid: "Partially paid",
       payment_outstanding: "Balance outstanding",
-      deposit_paid_balance_outstanding: "Deposit paid — balance outstanding",
+      deposit_paid_balance_outstanding: "Partially paid",
       unknown: "Check booking confirmation"
     };
 
