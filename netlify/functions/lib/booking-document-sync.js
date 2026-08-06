@@ -509,7 +509,7 @@ async function syncBookingDocuments(rest, booking, source = null, options = {}) 
         continue;
       }
 
-      if (existing && isAdminConflict(existing)) {
+      if (existing && isAdminConflict(existing) && existing.storage_path) {
         result.skipped_conflict += 1;
         await maybeProcessTextItinerary({
           rest,

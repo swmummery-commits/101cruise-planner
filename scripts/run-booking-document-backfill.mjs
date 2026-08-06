@@ -98,7 +98,7 @@ async function runBatch(cursor) {
     batch_size: batchSize,
     bookings_scanned: (cacheRows || []).length,
     bookings_processed: 0,
-    documents: { discovered: 0, inserted: 0, updated: 0, unchanged: 0, archived: 0, failed: 0 },
+    documents: { discovered: 0, inserted: 0, updated: 0, unchanged: 0, archived: 0, failed: 0, skipped_conflict: 0 },
     errors: [],
     next_cursor: cursor + batchSize,
     has_more: (cacheRows || []).length === batchSize
@@ -130,6 +130,7 @@ async function runBatch(cursor) {
       batch.documents.unchanged += syncResult.unchanged || 0;
       batch.documents.archived += syncResult.archived || 0;
       batch.documents.failed += syncResult.failed || 0;
+      batch.documents.skipped_conflict = (batch.documents.skipped_conflict || 0) + (syncResult.skipped_conflict || 0);
       if (syncResult.errors?.length) {
         batch.errors.push(
           ...syncResult.errors.slice(0, 3).map((entry) => ({
@@ -158,7 +159,7 @@ async function main() {
   const totals = {
     mode: dryRun ? "dry-run" : "apply",
     batches: [],
-    documents: { discovered: 0, inserted: 0, updated: 0, unchanged: 0, archived: 0, failed: 0 },
+    documents: { discovered: 0, inserted: 0, updated: 0, unchanged: 0, archived: 0, failed: 0, skipped_conflict: 0 },
     bookings_processed: 0
   };
 

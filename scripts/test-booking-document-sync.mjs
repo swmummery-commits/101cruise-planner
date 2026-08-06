@@ -525,6 +525,43 @@ assert(!isBookingConfirmationType("Travel Insurance"), "18: insurance not confir
   assert(store.rows.size === 1, "29: repeated sync with visibility changes keeps one row");
 }
 
+/* Admin conflict must not block initial Storage mirror for legacy rows */
+{
+  const store = makeStore();
+  const now = new Date().toISOString();
+  const lastSynced = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  store.rows.set("base44:legacy-conflict", {
+    id: "legacy-conflict",
+    sync_key: "base44:legacy-conflict",
+    source_system: "base44",
+    base44_booking_id: booking.base44_booking_id,
+    booking_reference: booking.booking_reference,
+    filename: "legacy.pdf",
+    file_url: "https://base44.example/legacy.pdf",
+    document_type: "Booking Confirmation",
+    source_file_url_hash: hashValue("https://base44.example/legacy.pdf"),
+    updated_at: now,
+    last_synced_at: lastSynced,
+    document_visible_to_customer: true,
+    is_active: true
+  });
+  const result = await syncWith(
+    [
+      {
+        id: "legacy-conflict",
+        document_type: "Booking Confirmation",
+        filename: "legacy.pdf",
+        file_url: "https://base44.example/legacy.pdf"
+      }
+    ],
+    store
+  );
+  const row = store.rows.get("base44:legacy-conflict");
+  assert(result.skipped_conflict === 0, "31: legacy row bypasses admin conflict for mirror");
+  assert(row.storage_path, "31: legacy row mirrored to storage");
+  assert(!row.file_url, "31: legacy file_url cleared after mirror");
+}
+
 /* Signed URLs only — no Base44 URL or storage path in customer list responses */
 {
   const customerSrc = await import("fs").then((fs) => fs.readFileSync(path.join(root, "netlify/functions/customer-documents.js"), "utf8"));
