@@ -28,7 +28,7 @@ const KEEP_FALSE = [
 ];
 
 function run(args) {
-  const result = spawnSync("netlify", args, { cwd: root, encoding: "utf8" });
+  const result = spawnSync("npm", ["exec", "--", "netlify", ...args], { cwd: root, encoding: "utf8" });
   return { ok: result.status === 0, stdout: result.stdout, stderr: result.stderr, status: result.status };
 }
 
