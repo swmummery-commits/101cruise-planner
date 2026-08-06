@@ -102,8 +102,28 @@ function createSupabaseRest(rootDir) {
   return { request, get, post, url, patch: (restPath, body) => request(restPath, { method: "PATCH", body }) };
 }
 
+/** Adapter matching netlify/functions cruise-discovery-runner supabase(path, options) signature. */
+function createMaintenanceSupabase(rootDir) {
+  const rest = createSupabaseRest(rootDir);
+  return async function supabase(restPath, options = {}) {
+    const method = (options.method || "GET").toUpperCase();
+    const prefer = options.headers?.Prefer || options.prefer;
+    if (method === "PATCH") {
+      return rest.patch(restPath, options.body);
+    }
+    if (method === "POST") {
+      return rest.post(restPath, options.body, { prefer });
+    }
+    if (method === "HEAD") {
+      return rest.request(restPath, { method: "HEAD", prefer: prefer || "count=exact" });
+    }
+    return rest.get(restPath);
+  };
+}
+
 module.exports = {
   loadEnvFile,
   getSupabaseConfig,
-  createSupabaseRest
+  createSupabaseRest,
+  createMaintenanceSupabase
 };

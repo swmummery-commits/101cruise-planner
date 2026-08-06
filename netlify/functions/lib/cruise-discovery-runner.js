@@ -54,34 +54,59 @@ function todayIsoDate() {
 
 /**
  * Mark past sailings as expired (never hard-delete — keep for reporting).
- * A sailing is expired when departure_date is before today.
+ * Uses Australia/Perth calendar date: expire when departure_date is strictly before today in Perth.
  */
-async function expireSailedCruises() {
-  const today = todayIsoDate();
+async function expireSailedCruises(options = {}) {
+  const {
+    perthDate = null,
+    runId = null,
+    recordMetadata = true,
+    selectStatuses = "active,review_required,match_required,validation_failed,ready,discovered"
+  } = options;
+
+  const today =
+    perthDate ||
+    new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Perth" }).format(new Date());
   const now = new Date().toISOString();
   let expiredCount = 0;
+  const expiredIds = [];
 
-  // PostgREST caps rows per request; loop until none left.
   for (let pass = 0; pass < 50; pass += 1) {
     const rows = await supabase(
-      `discovered_cruises?status=in.(active,review_required,match_required,validation_failed,ready,discovered)&departure_date=lt.${today}&select=id`,
-      {
+      `discovered_cruises?status=in.(${selectStatuses})&departure_date=lt.${today}&select=id,status,departure_date,raw_extract&limit=200`,
+      { method: "GET" }
+    );
+    if (!Array.isArray(rows) || !rows.length) break;
+
+    for (const row of rows) {
+      const rawExtract = { ...(row.raw_extract || {}) };
+      if (recordMetadata) {
+        rawExtract.expired_at = now;
+        rawExtract.expiration_reason = "departure_date_before_perth_calendar_date";
+        rawExtract.expiration_run_id = runId || null;
+        rawExtract.previous_status = row.status;
+        rawExtract.maintenance_expired_at = now;
+      }
+      await supabase(`discovered_cruises?id=eq.${encodeURIComponent(row.id)}`, {
         method: "PATCH",
-        headers: { Prefer: "return=representation" },
+        headers: { Prefer: "return=minimal" },
         body: JSON.stringify({
           status: "expired",
-          last_changed_at: now
+          last_changed_at: now,
+          raw_extract: rawExtract
         })
-      }
-    );
-    const n = Array.isArray(rows) ? rows.length : 0;
-    expiredCount += n;
-    if (n === 0) break;
+      });
+      expiredCount += 1;
+      expiredIds.push(row.id);
+    }
+    if (rows.length < 200) break;
   }
 
   return {
     expired_count: expiredCount,
-    as_of: today
+    expired_ids: expiredIds,
+    as_of: today,
+    timezone: "Australia/Perth"
   };
 }
 

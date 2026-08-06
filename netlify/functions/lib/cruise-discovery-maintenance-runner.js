@@ -1,0 +1,503 @@
+/**
+ * Weekly cruise-line inventory maintenance runner (HAL + Celebrity).
+ * Fetches full official snapshot, compares with production, applies bounded writes.
+ */
+
+const crypto = require("crypto");
+const {
+  simulateHalDiscovery,
+  catalogueDestinations: halCatalogueDestinations,
+  officialProductKey: halOfficialProductKey
+} = require("./holland-america-discovery-adapter");
+const {
+  simulateCelebrityInventory,
+  catalogueDestinations: celebrityCatalogueDestinations,
+  isEligibleCelebrityCruise,
+  officialProductKey: celebrityOfficialProductKey
+} = require("./celebrity-discovery-adapter");
+const {
+  buildHalBatchManifest,
+  applyHalBatchWrites,
+  indexExistingHalRecords
+} = require("./holland-america-discovery-writes");
+const {
+  buildCelebrityBatchManifest,
+  applyCelebrityBatchWrites,
+  indexExistingCelebrityRecords
+} = require("./celebrity-discovery-writes");
+const { resolveHalDiscoveryMode } = require("./holland-america-discovery-mode");
+const { resolveCelebrityDiscoveryMode } = require("./celebrity-discovery-mode");
+const { supabase: defaultSupabase } = require("./cruise-discovery-ops");
+const { loadClassificationDestinations } = require("./destination-queries");
+const {
+  HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
+  CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
+  perthCalendarDate
+} = require("./cruise-discovery-maintenance");
+const { headCountSupabase, loadCelebrityDatabaseInventoryCounts } = require("./celebrity-inventory-counts");
+
+const activeMaintenanceLocks = new Map();
+const MAX_WRITES_PER_BATCH = 100;
+
+async function loadActiveProductionTotal(supabase, cruiseLineId, lineSlug) {
+  if (lineSlug === "celebrity-cruises") {
+    const counts = await loadCelebrityDatabaseInventoryCounts(supabase, cruiseLineId);
+    return counts.active;
+  }
+  return headCountSupabase(
+    supabase,
+    "discovered_cruises",
+    `cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&status=eq.active`
+  );
+}
+
+function snapshotChecksum(payload) {
+  return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+}
+
+function acquireMaintenanceLock(lineSlug, runId) {
+  const key = `${lineSlug}:${runId || "default"}`;
+  if (activeMaintenanceLocks.has(lineSlug)) {
+    return { acquired: false, reason: "overlapping_maintenance_blocked", line_slug: lineSlug };
+  }
+  activeMaintenanceLocks.set(lineSlug, { runId: key, started: Date.now() });
+  return { acquired: true, lock_key: key };
+}
+
+function releaseMaintenanceLock(lineSlug) {
+  activeMaintenanceLocks.delete(lineSlug);
+}
+
+async function loadLineContext(supabase, lineSlug) {
+  const line = (
+    await supabase(`ci_cruise_lines?slug=eq.${encodeURIComponent(lineSlug)}&select=id,name,slug,website_url,cruise_search_url&limit=1`)
+  )?.[0];
+  if (!line) throw new Error(`Cruise line not found: ${lineSlug}`);
+  const destRows = await loadClassificationDestinations(supabase);
+  const destinations =
+    lineSlug === "holland-america-line"
+      ? halCatalogueDestinations(destRows || [])
+      : celebrityCatalogueDestinations(destRows || []);
+  const ships = await supabase(
+    `ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(line.id)}&active=eq.true&select=id,name,cruise_line_id,official_line_ship_id,ship_class`
+  );
+  return { line, destinations, ships: ships || [], destRows: destRows || [] };
+}
+
+async function findPreviousSuccessfulMaintenanceRun(supabase, cruiseLineId, runType) {
+  const runs = await supabase(
+    `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.completed&select=id,stats,finished_at,created_at&order=finished_at.desc&limit=20`
+  );
+  return (runs || []).find((r) => r.stats?.run_type === runType && r.stats?.trigger_type === "scheduled") || null;
+}
+
+function computeHalResolutionRates(products) {
+  const cruises = products.filter((p) => p.product_type === "cruise");
+  const total = cruises.length || 1;
+  const complete = cruises.filter((p) => p.complete_high_confidence);
+  return {
+    eligible_total: complete.length,
+    ship_resolution_pct: (cruises.filter((p) => p.ship_resolution?.resolved).length / total) * 100,
+    departure_port_resolution_pct:
+      (cruises.filter(
+        (p) => p.candidate?.departure_port || p.candidate?.departure_port_meta?.status === "resolved"
+      ).length /
+        total) *
+      100,
+    destination_resolution_pct:
+      (cruises.filter((p) => p.destination_resolution?.status === "resolved").length / total) * 100,
+    identity_coverage_pct: 100,
+    duplicate_official_identities: 0
+  };
+}
+
+function computeCelebrityResolutionRates(products) {
+  const eligible = products.filter((p) => p.complete_high_confidence && isEligibleCelebrityCruise(p.product_type));
+  const rivers = eligible.filter((p) => p.product_type === "river_cruise");
+  const riverTotal = rivers.length || 1;
+  const total = eligible.length || 1;
+  const keys = new Set();
+  let dups = 0;
+  for (const p of eligible) {
+    const k = celebrityOfficialProductKey(p.raw);
+    if (keys.has(k)) dups += 1;
+    keys.add(k);
+  }
+  return {
+    eligible_total: eligible.length,
+    ship_resolution_pct: (eligible.filter((p) => p.ship_resolution?.resolved).length / total) * 100,
+    departure_port_resolution_pct:
+      (eligible.filter((p) => p.departure_port_resolution?.status === "resolved").length / total) * 100,
+    destination_resolution_pct:
+      (eligible.filter((p) => p.destination_resolution?.status === "resolved").length / total) * 100,
+    river_ship_resolution_pct:
+      rivers.length === 0
+        ? 100
+        : (rivers.filter((p) => p.ship_resolution?.resolved).length / riverTotal) * 100,
+    river_departure_port_resolution_pct:
+      rivers.length === 0
+        ? 100
+        : (rivers.filter((p) => p.departure_port_resolution?.status === "resolved").length / riverTotal) * 100,
+    river_destination_resolution_pct:
+      rivers.length === 0
+        ? 100
+        : (rivers.filter((p) => p.destination_resolution?.status === "resolved").length / riverTotal) * 100,
+    identity_coverage_pct: eligible.length ? ((eligible.length - dups) / eligible.length) * 100 : 100,
+    duplicate_official_identities: dups
+  };
+}
+
+function evaluateMaintenanceQualityGate({ lineSlug, metrics, previousEligible, manifest, dryRun }) {
+  const failures = [];
+  const eligible = metrics.eligible_total || 0;
+  const prev = previousEligible?.stats?.eligible_total ?? previousEligible?.stats?.official_eligible_total ?? null;
+
+  if (prev != null && prev > 0 && eligible < prev * 0.8) {
+    failures.push("eligible_inventory_collapse_gt_20pct");
+  }
+  if (metrics.ship_resolution_pct < 98) failures.push("ship_resolution_below_98pct");
+  if (metrics.departure_port_resolution_pct < 95) failures.push("departure_port_resolution_below_95pct");
+  if (metrics.destination_resolution_pct < 90) failures.push("destination_resolution_below_90pct");
+  if (metrics.identity_coverage_pct < 100) failures.push("identity_coverage_below_100pct");
+  if ((metrics.duplicate_official_identities || 0) > 0) failures.push("duplicate_official_identities");
+
+  if (lineSlug === "celebrity-cruises") {
+    if (metrics.river_ship_resolution_pct < 100) failures.push("river_ship_resolution_below_100pct");
+    if (metrics.river_departure_port_resolution_pct < 100) failures.push("river_departure_port_below_100pct");
+    if (metrics.river_destination_resolution_pct < 100) failures.push("river_destination_below_100pct");
+  }
+
+  const writes = (manifest?.products || []).filter((p) =>
+    ["insert_active", "update_existing", "update_exact_legacy_match"].includes(p.proposed_action)
+  );
+  if (writes.some((p) => String(p.product_type || "").includes("cruisetour"))) {
+    failures.push("cruisetour_in_proposed_write_set");
+  }
+
+  if (dryRun && failures.length) {
+    return { passed: false, failures, blocked: true };
+  }
+  if (!dryRun && failures.length) {
+    return { passed: false, failures, blocked: true };
+  }
+  return { passed: true, failures: [], blocked: false };
+}
+
+async function findSourceAbsentActive({ supabase, cruiseLineId, eligibleKeys, today, officialProductKeyFn }) {
+  const rows = [];
+  let offset = 0;
+  const pageSize = 1000;
+  while (true) {
+    const batch = await supabase(
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&status=eq.active&departure_date=gte.${today}&select=id,official_sailing_id,departure_date,raw_extract&limit=${pageSize}&offset=${offset}`
+    );
+    if (!batch?.length) break;
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  const absent = [];
+  for (const row of rows) {
+    const sid =
+      row.official_sailing_id ||
+      row.raw_extract?.celebrity_sailing_id ||
+      row.raw_extract?.hal_product_key ||
+      null;
+    const key = sid || (row.raw_extract ? officialProductKeyFn(row.raw_extract) : null);
+    if (key && !eligibleKeys.has(key)) {
+      absent.push({
+        discovered_cruise_id: row.id,
+        official_sailing_id: sid || key,
+        departure_date: row.departure_date,
+        action: "source_absent_retained_active"
+      });
+    }
+  }
+  return absent;
+}
+
+async function runHalWeeklyMaintenance(context = {}) {
+  const sb = context.supabase || defaultSupabase;
+  const dryRun = Boolean(context.dryRun ?? context.dry_run);
+  const performWrites = Boolean(context.performWrites ?? context.perform_writes) && !dryRun;
+  const maxWrites = Math.min(MAX_WRITES_PER_BATCH, Number(context.maxWrites ?? context.max_writes ?? 100) || 100);
+  const runId = String(context.runId || context.run_id || `hal-weekly-${Date.now()}`).trim();
+  const today = context.today || perthCalendarDate();
+  const lineSlug = "holland-america-line";
+  const runType = HAL_WEEKLY_MAINTENANCE_RUN_TYPE;
+
+  const lock = acquireMaintenanceLock(lineSlug, runId);
+  if (!lock.acquired) {
+    return { ok: false, blocked: true, reason: lock.reason, line_slug: lineSlug };
+  }
+
+  try {
+    const { line, destinations, ships } = await loadLineContext(sb, lineSlug);
+    const modeGate = resolveHalDiscoveryMode(performWrites ? "weekly_maintenance" : "production_read_only");
+    if (performWrites && !modeGate.writes_allowed) {
+      return { ok: false, blocked: true, reason: modeGate.reason, line_slug: lineSlug };
+    }
+
+    const simulation = await simulateHalDiscovery({
+      cruiseLine: line,
+      ships,
+      destinations,
+      today,
+      useCache: false
+    });
+
+    if (!simulation?.voyages?.length && simulation?.fetch_failed) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: true,
+        reason: "official_source_unreachable",
+        line_slug: lineSlug,
+        simulation
+      };
+    }
+
+    const normalised = simulation.voyages || simulation.normalised || [];
+    const products = normalised.filter((p) => p.complete_high_confidence && p.product_type === "cruise");
+    const eligibleKeys = new Set(products.map((p) => halOfficialProductKey(p.raw)).filter(Boolean));
+    const metrics = computeHalResolutionRates(normalised);
+    const previousRun = await findPreviousSuccessfulMaintenanceRun(sb, line.id, runType);
+
+    const manifest = await buildHalBatchManifest({
+      products: normalised,
+      cruiseLine: line,
+      destinations,
+      supabase: sb,
+      runId
+    });
+
+    const proposedInserts = manifest.products.filter((p) => p.proposed_action === "insert_active");
+    const proposedUpdates = manifest.products.filter((p) => p.proposed_action === "update_existing");
+    const unchanged = manifest.products.filter((p) => p.proposed_action === "duplicate_skip");
+    const sourceAbsent = await findSourceAbsentActive({
+      supabase: sb,
+      cruiseLineId: line.id,
+      eligibleKeys,
+      today,
+      officialProductKeyFn: (raw) => halOfficialProductKey(raw)
+    });
+
+    const qualityGate = evaluateMaintenanceQualityGate({
+      lineSlug,
+      metrics,
+      previousEligible: previousRun,
+      manifest,
+      dryRun
+    });
+
+    const snapshotId = snapshotChecksum(Array.from(eligibleKeys).sort());
+
+    const summary = {
+      line_slug: lineSlug,
+      run_id: runId,
+      run_type: runType,
+      trigger_type: context.triggerType || context.trigger_type || "scheduled",
+      dry_run: dryRun,
+      official_source_total: simulation.num_found_official || simulation.raw_voyage_count || null,
+      eligible_total: metrics.eligible_total,
+      active_production_total: await loadActiveProductionTotal(sb, line.id, lineSlug),
+      proposed_inserts: proposedInserts.length,
+      proposed_updates: proposedUpdates.length,
+      unchanged: unchanged.length,
+      source_absent_active: sourceAbsent.length,
+      source_absent_sailing_ids: sourceAbsent.map((r) => r.official_sailing_id),
+      cruisetours_excluded: normalised.filter((p) => p.product_type === "cruisetour").length,
+      incomplete_skipped: normalised.filter((p) => !p.complete_high_confidence).length,
+      resolution_rates: metrics,
+      quality_gate: qualityGate,
+      snapshot_id: snapshotId,
+      inventory_changed: false
+    };
+
+    if (!qualityGate.passed) {
+      return { ok: false, blocked: true, failed: true, reason: qualityGate.failures.join("; "), summary };
+    }
+
+    if (dryRun || !performWrites) {
+      return { ok: true, dry_run: true, summary, manifest };
+    }
+
+    const writeProducts = normalised.filter((row) => {
+      const entry = manifest.products.find(
+        (p) => p.stable_product_identity_key === halOfficialProductKey(row.raw)
+      );
+      return entry && ["insert_active", "update_existing"].includes(entry.proposed_action);
+    });
+
+    const writeResult = await applyHalBatchWrites({
+      products: writeProducts.slice(0, maxWrites),
+      cruiseLine: line,
+      maxWrites,
+      runId,
+      supabase: sb,
+      destinations,
+      performWrites: true,
+      mode: "weekly_maintenance"
+    });
+
+    summary.inserts = writeResult.stats?.inserted || 0;
+    summary.updates = writeResult.stats?.updated || 0;
+    summary.duplicate_skips = writeResult.stats?.duplicate_skips || 0;
+    summary.failed_writes = writeResult.stats?.failed || 0;
+    summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
+
+    return {
+      ok: writeResult.stats?.failed === 0,
+      summary,
+      write_result: writeResult.stats,
+      manifest
+    };
+  } finally {
+    releaseMaintenanceLock(lineSlug);
+  }
+}
+
+async function runCelebrityWeeklyMaintenance(context = {}) {
+  const sb = context.supabase || defaultSupabase;
+  const dryRun = Boolean(context.dryRun ?? context.dry_run);
+  const performWrites = Boolean(context.performWrites ?? context.perform_writes) && !dryRun;
+  const maxWrites = Math.min(MAX_WRITES_PER_BATCH, Number(context.maxWrites ?? context.max_writes ?? 100) || 100);
+  const runId = String(context.runId || context.run_id || `celebrity-weekly-${Date.now()}`).trim();
+  const today = context.today || perthCalendarDate();
+  const lineSlug = "celebrity-cruises";
+  const runType = CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE;
+
+  const lock = acquireMaintenanceLock(lineSlug, runId);
+  if (!lock.acquired) {
+    return { ok: false, blocked: true, reason: lock.reason, line_slug: lineSlug };
+  }
+
+  try {
+    const { line, destinations, ships } = await loadLineContext(sb, lineSlug);
+    const modeGate = resolveCelebrityDiscoveryMode(performWrites ? "weekly_maintenance" : "production_read_only");
+    if (performWrites && !modeGate.writes_allowed) {
+      return { ok: false, blocked: true, reason: modeGate.reason, line_slug: lineSlug };
+    }
+
+    const simulation = await simulateCelebrityInventory({
+      cruiseLine: line,
+      ships,
+      destinations,
+      today,
+      useCache: false
+    });
+
+    const products = (simulation.products || []).filter(
+      (p) => p.complete_high_confidence && isEligibleCelebrityCruise(p.product_type)
+    );
+    const eligibleKeys = new Set(products.map((p) => celebrityOfficialProductKey(p.raw)).filter(Boolean));
+    const metrics = computeCelebrityResolutionRates(simulation.products || []);
+    const previousRun = await findPreviousSuccessfulMaintenanceRun(sb, line.id, runType);
+
+    const manifest = await buildCelebrityBatchManifest({
+      products: simulation.products || [],
+      cruiseLine: line,
+      destinations,
+      supabase: sb,
+      runId
+    });
+
+    const proposedInserts = manifest.products.filter((p) => p.proposed_action === "insert_active");
+    const proposedUpdates = manifest.products.filter((p) => p.proposed_action === "update_exact_legacy_match");
+    const unchanged = manifest.products.filter((p) => p.proposed_action === "duplicate_skip");
+    const sourceAbsent = await findSourceAbsentActive({
+      supabase: sb,
+      cruiseLineId: line.id,
+      eligibleKeys,
+      today,
+      officialProductKeyFn: (raw) => celebrityOfficialProductKey(raw)
+    });
+
+    const qualityGate = evaluateMaintenanceQualityGate({
+      lineSlug,
+      metrics,
+      previousEligible: previousRun,
+      manifest,
+      dryRun
+    });
+
+    const snapshotId = snapshotChecksum(Array.from(eligibleKeys).sort());
+
+    const activeProductionTotal = await loadActiveProductionTotal(sb, line.id, lineSlug);
+
+    const summary = {
+      line_slug: lineSlug,
+      run_id: runId,
+      run_type: runType,
+      trigger_type: context.triggerType || context.trigger_type || "scheduled",
+      dry_run: dryRun,
+      official_source_total: simulation.official_reported_total || null,
+      eligible_total: metrics.eligible_total,
+      active_production_total: activeProductionTotal,
+      proposed_inserts: proposedInserts.length,
+      proposed_updates: proposedUpdates.length,
+      unchanged: unchanged.length,
+      source_absent_active: sourceAbsent.length,
+      source_absent_sailing_ids: sourceAbsent.map((r) => r.official_sailing_id),
+      cruisetours_excluded: (simulation.products || []).filter((p) =>
+        String(p.product_type || "").includes("cruisetour")
+      ).length,
+      incomplete_skipped: (simulation.products || []).filter((p) => !p.complete_high_confidence).length,
+      resolution_rates: metrics,
+      quality_gate: qualityGate,
+      snapshot_id: snapshotId,
+      inventory_changed: false
+    };
+
+    if (!qualityGate.passed) {
+      return { ok: false, blocked: true, failed: true, reason: qualityGate.failures.join("; "), summary };
+    }
+
+    if (dryRun || !performWrites) {
+      return { ok: true, dry_run: true, summary, manifest };
+    }
+
+    const writeProducts = (simulation.products || []).filter((row) => {
+      const entry = manifest.products.find(
+        (p) => p.stable_identity_key === celebrityOfficialProductKey(row.raw)
+      );
+      return entry && ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
+    });
+
+    const writeResult = await applyCelebrityBatchWrites({
+      products: writeProducts.slice(0, maxWrites),
+      cruiseLine: line,
+      maxWrites,
+      runId,
+      supabase: sb,
+      destinations,
+      performWrites: true,
+      mode: "weekly_maintenance"
+    });
+
+    summary.inserts = writeResult.stats?.inserted || 0;
+    summary.updates = writeResult.stats?.updated || 0;
+    summary.duplicate_skips = writeResult.stats?.duplicate_skips || 0;
+    summary.failed_writes = writeResult.stats?.failed || 0;
+    summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
+
+    return {
+      ok: writeResult.stats?.failed === 0,
+      summary,
+      write_result: writeResult.stats,
+      manifest
+    };
+  } finally {
+    releaseMaintenanceLock(lineSlug);
+  }
+}
+
+module.exports = {
+  runHalWeeklyMaintenance,
+  runCelebrityWeeklyMaintenance,
+  acquireMaintenanceLock,
+  releaseMaintenanceLock,
+  evaluateMaintenanceQualityGate,
+  findSourceAbsentActive,
+  MAX_WRITES_PER_BATCH
+};

@@ -126,6 +126,9 @@ function classifyLineHealth({ line, lastRun, activeFutureCount, activeAllCount }
 function inferRunType(run) {
   if (!run) return "none";
   const rt = run.stats?.run_type || "";
+  if (rt === "hal_weekly_maintenance") return "hal_weekly_maintenance";
+  if (rt === "celebrity_weekly_maintenance") return "celebrity_weekly_maintenance";
+  if (rt === "daily_expiry_maintenance") return "daily_expiry_maintenance";
   if (rt === "hal_controlled_batch") return "hal_controlled_batch";
   if (rt === "hal_automatic_batch") return "hal_automatic_batch";
   const tb = run.stats?.triggered_by || "";

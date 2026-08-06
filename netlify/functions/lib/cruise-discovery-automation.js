@@ -38,12 +38,15 @@ function assertExpireSailedEnabled() {
 }
 
 function describeDiscoveryAutomationHold() {
+  const { describeMaintenanceHold } = require("./cruise-discovery-maintenance");
   return {
     automation_enabled: isCruiseDiscoveryAutomationEnabled(),
     expire_sailed_enabled: isCruiseDiscoveryExpireSailedEnabled(),
     scheduled_function: "cruise-discovery-cron",
     schedule: "0 6 * * 1 (Monday 06:00 UTC)",
-    wave_worker: "cruise-discovery-wave-background"
+    wave_worker: "cruise-discovery-wave-background",
+    note: "General Full Discovery remains disabled unless CRUISE_DISCOVERY_AUTOMATION_ENABLED=true.",
+    dedicated_maintenance: describeMaintenanceHold()
   };
 }
 

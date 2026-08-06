@@ -14,9 +14,24 @@
   timeout = 60
 
 [functions."cruise-discovery-cron"]
-  # Weekly: expire sailed cruises, then kick full discovery wave.
+  # Legacy weekly orchestrator — expire + full discovery wave (disabled via CRUISE_DISCOVERY_AUTOMATION_ENABLED).
   schedule = "0 6 * * 1"
   timeout = 60
+
+[functions."hal-weekly-maintenance-cron"]
+  # HAL weekly official-source reconciliation — Sunday 18:00 UTC (Monday 02:00 Perth).
+  schedule = "0 18 * * 0"
+  timeout = 900
+
+[functions."celebrity-weekly-maintenance-cron"]
+  # Celebrity weekly official-source reconciliation — Sunday 19:00 UTC (Monday 03:00 Perth).
+  schedule = "0 19 * * 0"
+  timeout = 900
+
+[functions."cruise-daily-expiry-cron"]
+  # Daily sailed-cruise expiration — 17:30 UTC (01:30 Australia/Perth).
+  schedule = "30 17 * * *"
+  timeout = 300
 
 # itinerary-exceptions-digest schedule removed — journey-map extraction retired.
 # Function file may remain for historical compatibility but must not be scheduled.

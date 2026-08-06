@@ -163,6 +163,10 @@ async function dashboard() {
     celebrityInventoryProgress = await loadCelebrityInventoryProgress(supabase, celebrityLine.id).catch(() => null);
   }
 
+  const { loadMaintenanceDashboard } = require("./lib/cruise-discovery-maintenance-tracking");
+  const { describeMaintenanceHold } = require("./lib/cruise-discovery-maintenance");
+  const maintenanceDashboard = await loadMaintenanceDashboard(supabase, lines || []).catch(() => null);
+
   return {
     success: true,
     cards: {
@@ -198,6 +202,8 @@ async function dashboard() {
     line_health: lineHealth,
     hal_inventory_progress: halInventoryProgress,
     celebrity_inventory_progress: celebrityInventoryProgress,
+    maintenance_dashboard: maintenanceDashboard,
+    maintenance_hold: describeMaintenanceHold(),
     hal_automatic_continuation: describeAutomaticContinuationArchitecture(),
     review_breakdown: breakdown,
     last_run_stats: s

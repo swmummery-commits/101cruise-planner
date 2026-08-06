@@ -22,6 +22,7 @@
   let lineHealth = [];
   let lineHealthSummary = null;
   let halInventoryProgress = null;
+  let maintenanceDashboard = null;
   let lastRunMeta = null;
   let activeCruises = [];
   let departurePorts = [];
@@ -130,6 +131,7 @@
       lineHealth = dash.line_health || [];
       lineHealthSummary = dash.line_health_summary || null;
       halInventoryProgress = dash.hal_inventory_progress || null;
+      maintenanceDashboard = dash.maintenance_dashboard || null;
       lastRunMeta = {
         type: dash.cards?.last_run_type,
         scope: dash.cards?.last_run_scope,
@@ -175,6 +177,55 @@
       loading = false;
       if (typeof global.renderAdmin === "function") global.renderAdmin();
     }
+  }
+
+  function renderMaintenancePanel(line) {
+    if (!line) return "";
+    const title = line.cruise_line_slug === "celebrity-cruises" ? "Celebrity" : "Holland America";
+    return `
+      <section class="admin-panel admin-maintenance-line" aria-label="${esc(title)} weekly maintenance">
+        <h3 class="admin-subheading">${esc(title)} weekly maintenance</h3>
+        ${line.warning ? `<p class="admin-alert admin-alert-warn">${esc(line.warning)}</p>` : ""}
+        <ul class="admin-kv-list">
+          <li><strong>Automation:</strong> ${esc(line.automation_status || "—")}</li>
+          <li><strong>Freshness:</strong> ${esc(line.freshness_status || "—")}</li>
+          <li><strong>Perth schedule:</strong> ${esc(line.perth_schedule || "—")}</li>
+          <li><strong>UTC schedule:</strong> ${esc(line.utc_schedule || "—")}</li>
+          <li><strong>Last successful refresh:</strong> ${formatDate(line.last_successful_refresh)}</li>
+          <li><strong>Official eligible:</strong> ${esc(String(line.official_eligible_inventory ?? "—"))}</li>
+          <li><strong>Active production:</strong> ${esc(String(line.active_production_inventory ?? "—"))}</li>
+          <li><strong>Added last run:</strong> ${esc(String(line.newly_added_last_run ?? 0))}</li>
+          <li><strong>Updated last run:</strong> ${esc(String(line.updated_last_run ?? 0))}</li>
+          <li><strong>Unchanged last run:</strong> ${esc(String(line.unchanged_last_run ?? 0))}</li>
+          <li><strong>Source-absent active:</strong> ${esc(String(line.source_absent_active ?? 0))}</li>
+          <li><strong>Worker:</strong> ${esc(line.worker_state || "idle")}</li>
+        </ul>
+      </section>`;
+  }
+
+  function renderMaintenanceDashboard() {
+    const m = maintenanceDashboard;
+    if (!m) return "";
+    const expiry = m.daily_expiry;
+    return `
+      <section class="admin-panel admin-maintenance-dashboard" aria-label="Scheduled inventory maintenance">
+        <h3 class="admin-subheading">Hands-off inventory maintenance</h3>
+        <p class="admin-helper">Database row counts — not summed run insert totals. General Full Discovery remains on hold.</p>
+        ${renderMaintenancePanel(m.hal)}
+        ${renderMaintenancePanel(m.celebrity)}
+        ${
+          expiry
+            ? `<section class="admin-panel"><h3 class="admin-subheading">Daily expiry</h3>
+        ${expiry.warning ? `<p class="admin-alert admin-alert-warn">${esc(expiry.warning)}</p>` : ""}
+        <ul class="admin-kv-list">
+          <li><strong>Automation:</strong> ${esc(expiry.automation_status || "—")}</li>
+          <li><strong>Perth schedule:</strong> ${esc(expiry.perth_schedule || "—")}</li>
+          <li><strong>Last successful run:</strong> ${formatDate(expiry.last_successful_run)}</li>
+          <li><strong>Expired last run:</strong> ${esc(String(expiry.cruises_expired_last_run ?? 0))}</li>
+        </ul></section>`
+            : ""
+        }
+      </section>`;
   }
 
   function renderHalInventoryProgress() {
@@ -226,6 +277,7 @@
     ];
     return `
       ${runNote}
+      ${renderMaintenanceDashboard()}
       ${renderHalInventoryProgress()}
       <div class="usage-summary-grid research-audit-cards">
         ${items

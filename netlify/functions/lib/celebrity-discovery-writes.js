@@ -295,9 +295,20 @@ function selectControlledBatchProducts(normalisedProducts, { oceanTarget = 20, r
 }
 
 async function indexExistingCelebrityRecords(supabase, cruiseLineId) {
-  const rows = await supabase(
-    `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,status,official_url,external_key,identity_key,official_sailing_id,raw_extract`
-  );
+  const select =
+    "id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,status,official_url,external_key,identity_key,official_sailing_id,raw_extract";
+  const rows = [];
+  let offset = 0;
+  const pageSize = 1000;
+  while (true) {
+    const batch = await supabase(
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&select=${select}&limit=${pageSize}&offset=${offset}`
+    );
+    if (!batch?.length) break;
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
   const byProductKey = new Map();
   const byIdentity = new Map();
   const byExternal = new Map();

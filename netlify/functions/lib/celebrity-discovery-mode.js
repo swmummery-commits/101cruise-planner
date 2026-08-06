@@ -6,7 +6,7 @@
 const CELEBRITY_DISCOVERY_WRITE_ENABLED =
   String(process.env.CELEBRITY_DISCOVERY_WRITE_ENABLED || "").trim().toLowerCase() === "true";
 
-const VALID_MODES = new Set(["simulation", "production_read_only", "production_write"]);
+const VALID_MODES = new Set(["simulation", "production_read_only", "production_write", "weekly_maintenance"]);
 
 function resolveCelebrityDiscoveryMode(requestedMode) {
   const raw = String(requestedMode || "").trim().toLowerCase();
@@ -19,6 +19,19 @@ function resolveCelebrityDiscoveryMode(requestedMode) {
       writes_allowed: false,
       reason: raw ? "invalid_mode_defaults_read_only" : "missing_mode_defaults_read_only"
     };
+  }
+
+  if (mode === "weekly_maintenance") {
+    const { isCelebrityWeeklyReconciliationEnabled } = require("./cruise-discovery-maintenance");
+    if (!isCelebrityWeeklyReconciliationEnabled()) {
+      return {
+        mode,
+        requested_mode: raw,
+        writes_allowed: false,
+        reason: "celebrity_weekly_reconciliation_disabled"
+      };
+    }
+    return { mode, requested_mode: raw, writes_allowed: true, reason: null };
   }
 
   if (mode === "production_write") {
