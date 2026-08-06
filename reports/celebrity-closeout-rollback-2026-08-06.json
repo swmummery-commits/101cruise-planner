@@ -1,0 +1,17 @@
+{
+  "generated_at": "2026-08-06T06:55:09.103Z",
+  "run_id": "celebrity-closeout-2026-08-06T06-55-08-002Z",
+  "db_run_id": "ba1bfe9b-63b7-4df8-ab2c-9ac6ea35bd78",
+  "manifest_checksum": "7e1951d658c5888d727a7093cda6962ec014c01d86cd1fd8283474f45e882d0a",
+  "source_snapshot_checksum": "b5ced1975043f81e1ac94e8c3f95dfa0798e8b779d6363776555c7a618dfa1c2",
+  "rollback_entries": [
+    {
+      "action": "delete_inserted",
+      "discovered_cruise_id": "40fc3653-09c7-4ac0-ab05-3b61be4f9852",
+      "official_sailing_id": "SM07A393_2026-08-28",
+      "rollback": {
+        "delete_on_rollback": true
+      }
+    }
+  ]
+}

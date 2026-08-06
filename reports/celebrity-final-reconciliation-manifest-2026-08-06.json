@@ -1,0 +1,49 @@
+{
+  "generated_at": "2026-08-06T06:45:00.000Z",
+  "audit_phase": "celebrity_inventory_reconciliation",
+  "production_writes": "hold_except_deterministic_repair",
+  "summary": {
+    "authoritative_discovered_cruises_total": 2266,
+    "authoritative_celebrity_active": 1202,
+    "authoritative_celebrity_typed_ocean": 1032,
+    "authoritative_celebrity_typed_river": 170,
+    "authoritative_celebrity_untyped_active": 0,
+    "hal_active_unchanged": 771,
+    "prior_report_errors": [
+      "final discovered_cruises ~1266 was incorrect; authoritative total is 2266",
+      "32 untyped active rows was incorrect; authoritative untyped count is 0",
+      "expected Celebrity active ~843 ignored 359 broken-pagination auto inserts before the final 803-batch session"
+    ],
+    "insert_reconciliation": {
+      "clean_controlled_batch": 40,
+      "broken_pagination_auto_batches_db": 359,
+      "full_eligible_queue_local_session": 803,
+      "total_celebrity_net_inserts": 1202,
+      "formula": "1064 post-rollback + 1202 celebrity inserts = 2266 discovered_cruises"
+    }
+  },
+  "corrections": [],
+  "documented_gaps": [
+    {
+      "official_sailing_id": "SM07A393_2026-08-28",
+      "product_type": "ocean_cruise",
+      "issue": "eligible_in_official_graphql_but_missing_from_active_database",
+      "reason_not_auto_repaired": "production import hold; single-record insert requires explicit approved write",
+      "evidence": "simulateCelebrityInventory on 2026-08-06 confirms complete_high_confidence eligible ocean_cruise",
+      "recommended_action_when_writes_re_enabled": "insert via controlled single-sailing write using official_sailing_id_only matching"
+    }
+  ],
+  "run_tracking_gaps": [
+    {
+      "issue": "local continuation scripts did not persist cruise_discovery_runs rows for clean controlled batch (40) or final full-queue session (803)",
+      "impact": "Admin run-sum totals under-count inserts; must use unique discovered_cruises rows",
+      "db_batch_runs_only_sum": 359,
+      "local_session_files": [
+        "reports/celebrity-first-production-batch-manifest-2026-08-06-v2.json",
+        "reports/celebrity-automatic-continuation-2026-08-06T06-24-09-878Z.json"
+      ]
+    }
+  ],
+  "rollback_manifest": null,
+  "notes": "No deterministic hide/backfill corrections proposed. All 1202 active Celebrity rows are typed, batch-marked, have unique official_sailing_id values, and show zero active cruisetours."
+}

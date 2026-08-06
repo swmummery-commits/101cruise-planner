@@ -1,0 +1,82 @@
+{
+  "generated_at": "2026-08-06T06:54:48.083Z",
+  "source_snapshot": "/Users/stevemummery/Developer/101cruise-planner/reports/celebrity-closeout-snapshot-2026-08-06.json",
+  "source_snapshot_checksum": "b5ced1975043f81e1ac94e8c3f95dfa0798e8b779d6363776555c7a618dfa1c2",
+  "set_reconciliation": "/Users/stevemummery/Developer/101cruise-planner/reports/celebrity-closeout-set-reconciliation-2026-08-06.json",
+  "actions": [
+    {
+      "action": "insert_missing_eligible",
+      "official_sailing_id": "SM07A393_2026-08-28",
+      "discovered_cruise_id": null,
+      "before_values": null,
+      "proposed_values": {
+        "status": "active",
+        "official_sailing_id": "SM07A393_2026-08-28",
+        "official_group_id": "SM07YVR-1380934501",
+        "product_type": "ocean_cruise",
+        "ship": "Celebrity Summit",
+        "departure_date": "2026-08-28",
+        "return_date": "2026-09-04",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "destination": "alaska",
+        "source_url": "https://www.celebritycruises.com/itinerary/7-night-alaska-northbound-glacier-from-vancouver-on-celebrity-sm07a393?saildate=2026-08-28&packagecode=sm07a393&groupid=sm07yvr-1380934501&country=usa",
+        "confidence": "high",
+        "completeness": "complete_high_confidence",
+        "pre_tour_duration": null,
+        "post_tour_duration": null
+      },
+      "official_source_evidence": {
+        "official_sailing_id": "SM07A393_2026-08-28",
+        "official_group_id": "SM07YVR-1380934501",
+        "product_type": "ocean_cruise",
+        "ship": "Celebrity Summit",
+        "departure_date": "2026-08-28",
+        "return_date": "2026-09-04",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "destination": "alaska",
+        "source_url": "https://www.celebritycruises.com/itinerary/7-night-alaska-northbound-glacier-from-vancouver-on-celebrity-sm07a393?saildate=2026-08-28&packagecode=sm07a393&groupid=sm07yvr-1380934501&country=usa",
+        "confidence": "high",
+        "completeness": "complete_high_confidence",
+        "pre_tour_duration": null,
+        "post_tour_duration": null
+      },
+      "source_snapshot_timestamp": "2026-08-06T06:54:31.135Z",
+      "reason": "eligible_in_official_snapshot_missing_from_active_database",
+      "expected_updated_at": null,
+      "rollback_values": {
+        "delete_on_rollback": true
+      }
+    },
+    {
+      "action": "unchanged",
+      "official_sailing_id": "EC10U115_2026-10-09",
+      "discovered_cruise_id": "a259fa20-5384-47d5-b473-63a4da47823f",
+      "classification": "A",
+      "reason": "still_valid_eligible_cruise_in_current_graphql"
+    },
+    {
+      "action": "unchanged",
+      "official_sailing_id": "SL13K066_2026-11-22",
+      "discovered_cruise_id": "01edd11e-5b0d-49e4-b5a9-ce84bda04f23",
+      "classification": "C",
+      "reason": "absent_from_current_full_graphql_fetch"
+    },
+    {
+      "action": "unchanged",
+      "official_sailing_id": "AX08U056_2027-05-28",
+      "discovered_cruise_id": "f81dcfbb-e2e8-46e4-b6e2-f08ddc1569fe",
+      "classification": "C",
+      "reason": "absent_from_current_full_graphql_fetch"
+    },
+    {
+      "action": "unchanged",
+      "official_sailing_id": "SI09W213_2028-02-24",
+      "discovered_cruise_id": "3a1947a8-190e-4fe6-901e-28e6e712838a",
+      "classification": "A",
+      "reason": "still_valid_eligible_cruise_in_current_graphql"
+    }
+  ],
+  "checksum": "7e1951d658c5888d727a7093cda6962ec014c01d86cd1fd8283474f45e882d0a"
+}

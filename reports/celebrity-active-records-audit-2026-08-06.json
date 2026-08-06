@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-08-06T07:07:49.582Z",
+  "official_eligible": {
+    "ocean": 1034,
+    "river": 170,
+    "total": 1204
+  },
+  "database_active": {
+    "total": 1203,
+    "ocean": 1033,
+    "river": 170,
+    "untyped": 0,
+    "cruisetours": 0,
+    "hotel_origin": 0
+  },
+  "delta": {
+    "ocean_over_eligible": -1,
+    "river_under_eligible": 0
+  },
+  "activation_audit": {
+    "total": 0,
+    "compliant": 0,
+    "ocean_cruises": 0,
+    "river_cruises": 0,
+    "missing_departure_port": 0,
+    "missing_nights_and_return": 0,
+    "missing_destination": 0,
+    "missing_url": 0,
+    "identity_duplicates": 0,
+    "other_breaches": 0,
+    "breaches": []
+  },
+  "not_in_eligible_inventory": [],
+  "wrong_product_type": [],
+  "missing_eligible_from_db": [
+    {
+      "official_sailing_id": "EC10U115_2026-09-18",
+      "product_type": "ocean_cruise"
+    }
+  ],
+  "untyped_active_detail": []
+}

@@ -1,0 +1,222 @@
+{
+  "generated_at": "2026-08-06T06:36:33.456Z",
+  "queries": {
+    "celebrity_line_id": "aa2c50ed-7ff5-472d-bc96-3d686d76c5ec",
+    "hal_line_id": "a8d0e678-0cb2-4ea7-ad73-251f0eb36ea2",
+    "head_count_pattern": "HEAD /rest/v1/{table}?select=id&{filters} Prefer: count=exact",
+    "celebrity_fetch": "discovered_cruises?cruise_line_id=eq.aa2c50ed-7ff5-472d-bc96-3d686d76c5ec&select=..."
+  },
+  "all_discovered_cruises": {
+    "total": 2266,
+    "active": 1981,
+    "active_future": 1980,
+    "expired": 18,
+    "hidden": 136,
+    "match_required": 86,
+    "validation_failed": 45
+  },
+  "hal_active": 771,
+  "celebrity": {
+    "total": 1214,
+    "active": 1202,
+    "active_future": 1202,
+    "inactive_by_status": {
+      "hidden": 5,
+      "match_required": 4,
+      "validation_failed": 3
+    },
+    "with_official_sailing_id": 1202,
+    "without_official_sailing_id": 12,
+    "active_ocean_cruise": 1032,
+    "active_river_cruise": 170,
+    "active_other_product_type": 0,
+    "active_untyped": 0,
+    "active_batch_marked": 1202,
+    "active_with_celebrity_adapter": 1202,
+    "active_no_batch_metadata": 0,
+    "duplicate_official_sailing_ids": [],
+    "duplicate_identity_keys": []
+  },
+  "review_and_aliases": {
+    "pending_review": 1,
+    "total_review": 249,
+    "ship_aliases": 98,
+    "destination_aliases": 0,
+    "discovered_cruise_destinations": 0,
+    "destinations": 22,
+    "destination_ports": 60
+  },
+  "run_reconciliation": [
+    {
+      "run_record_id": "92710d60-b75c-4d12-adf0-88025f9998a8",
+      "run_id": "celebrity-auto-2026-08-06T06-22-31-840Z-batch-1",
+      "run_type": "celebrity_automatic_batch",
+      "status": "completed",
+      "started_at": "2026-08-06T06:22:40.035+00:00",
+      "finished_at": "2026-08-06T06:22:47.238+00:00",
+      "inserted": 100,
+      "updated": 0,
+      "failed_writes": 0,
+      "proposed_writes": 100
+    },
+    {
+      "run_record_id": "7f335957-2c6f-4dc7-ae6c-a236cd7a6eae",
+      "run_id": "celebrity-auto-2026-08-06T06-22-31-840Z-batch-2",
+      "run_type": "celebrity_automatic_batch",
+      "status": "completed",
+      "started_at": "2026-08-06T06:22:53.541+00:00",
+      "finished_at": "2026-08-06T06:22:58.326+00:00",
+      "inserted": 59,
+      "updated": 0,
+      "failed_writes": 0,
+      "proposed_writes": 59
+    },
+    {
+      "run_record_id": "5bfbee86-4168-4ad3-a003-33e2bead1ab9",
+      "run_id": "celebrity-auto-2026-08-06T06-23-19-601Z-batch-1",
+      "run_type": "celebrity_automatic_batch",
+      "status": "completed",
+      "started_at": "2026-08-06T06:23:28.994+00:00",
+      "finished_at": "2026-08-06T06:23:36.75+00:00",
+      "inserted": 100,
+      "updated": 0,
+      "failed_writes": 0,
+      "proposed_writes": 100
+    },
+    {
+      "run_record_id": "b948dd08-eabd-49e3-ba64-c552406322bf",
+      "run_id": "celebrity-auto-2026-08-06T06-23-19-601Z-batch-2",
+      "run_type": "celebrity_automatic_batch",
+      "status": "completed",
+      "started_at": "2026-08-06T06:23:43.803+00:00",
+      "finished_at": "2026-08-06T06:23:51.32+00:00",
+      "inserted": 100,
+      "updated": 0,
+      "failed_writes": 0,
+      "proposed_writes": 100
+    }
+  ],
+  "auto_session_file": "celebrity-automatic-continuation-2026-08-06T06-24-09-878Z.json",
+  "auto_session": {
+    "official_inventory_total": 534,
+    "eligible_pending_at_start": 803,
+    "batches": [
+      {
+        "run_id": "celebrity-auto-2026-08-06T06-24-09-878Z-batch-1",
+        "batch_num": 1,
+        "attempted": 100,
+        "inserted": 100,
+        "updated": 0,
+        "duplicate_skips": 0,
+        "failed": 0
+      },
+      {
+        "run_id": "celebrity-auto-2026-08-06T06-24-09-878Z-batch-2",
+        "batch_num": 2,
+        "attempted": 100,
+        "inserted": 100,
+        "updated": 0,
+        "duplicate_skips": 0,
+        "failed": 0
+      },
+      {
+        "run_id": "celebrity-auto-2026-08-06T06-24-09-878Z-batch-3",
+        "batch_num": 3,
+        "attempted": 100,
+        "inserted": 100,
+        "updated": 0,
+        "duplicate_skips": 0,
+        "failed": 0
+      },
+      {
+        "run_id": "celebrity-auto-2026-08-06T06-24-09-878Z-batch-4",
+        "batch_num": 4,
+        "attempted": 100,
+        "inserted": 100,
+        "updated": 0,
+        "duplicate_skips": 0,
+        "failed": 0
+      },
+      {
+        "run_id": "celebrity-auto-2026-08-06T06-24-09-878Z-batch-5",
+        "batch_num": 5,
+        "attempted": 100,
+        "inserted": 100,
+        "updated": 0,
+        "duplicate_skips": 0,
+        "failed": 0
+      },
+      {
+        "run_id": "celebrity-auto-2026-08-06T06-24-09-878Z-batch-6",
+        "batch_num": 6,
+        "attempted": 100,
+        "inserted": 100,
+        "updated": 0,
+        "duplicate_skips": 0,
+        "failed": 0
+      },
+      {
+        "run_id": "celebrity-auto-2026-08-06T06-24-09-878Z-batch-7",
+        "batch_num": 7,
+        "attempted": 100,
+        "inserted": 100,
+        "updated": 0,
+        "duplicate_skips": 0,
+        "failed": 0
+      },
+      {
+        "run_id": "celebrity-auto-2026-08-06T06-24-09-878Z-batch-8",
+        "batch_num": 8,
+        "attempted": 100,
+        "inserted": 100,
+        "updated": 0,
+        "duplicate_skips": 0,
+        "failed": 0
+      },
+      {
+        "run_id": "celebrity-auto-2026-08-06T06-24-09-878Z-batch-9",
+        "batch_num": 9,
+        "attempted": 3,
+        "inserted": 3,
+        "updated": 0,
+        "duplicate_skips": 0,
+        "failed": 0
+      }
+    ],
+    "batch_count": 9,
+    "completed": true
+  },
+  "rollback_files_found": [
+    "reports/celebrity-first-production-batch-rollback-2026-08-06T05-26-12-313Z.json",
+    "reports/celebrity-first-production-batch-rollback-2026-08-06T06-08-20-016Z.json"
+  ],
+  "stage_arithmetic": {
+    "post_rollback_expected": {
+      "discovered_cruises": 1064,
+      "celebrity_active": 0
+    },
+    "clean_controlled_inserts": 40,
+    "auto_session_reported": {
+      "batches": 9,
+      "sum_inserted": 803,
+      "eligible_pending_at_start": 803
+    },
+    "current_database": {
+      "discovered_cruises_total": 2266,
+      "celebrity_total": 1214,
+      "celebrity_active": 1202,
+      "celebrity_active_future": 1202,
+      "celebrity_typed_ocean": 1032,
+      "celebrity_typed_river": 170,
+      "celebrity_typed_other": 0,
+      "celebrity_untyped_active": 0,
+      "celebrity_with_official_sailing_id": 1202,
+      "celebrity_batch_marked": 1202,
+      "celebrity_with_adapter": 1202
+    },
+    "naive_sum_error_explanation": "1064 + 40 + 803 assumes every automatic write was a net new discovered_cruises row with no intervening broken-auto inserts/deletes and no cross-line effects; actual net delta = current_total - 1064",
+    "net_discovered_delta_from_post_rollback": 1202,
+    "net_celebrity_active_delta_from_post_rollback": 1202
+  },
+  "untyped_active_audit": []
+}

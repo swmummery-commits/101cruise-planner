@@ -1,0 +1,13 @@
+{
+  "generated_at": "2026-08-06T07:13:20.187Z",
+  "source_snapshot_checksum": "20ff96eac8cb77114b44cf66af74974b127b43ad722eb83d33bb837163844332",
+  "actions": [
+    {
+      "action": "unchanged",
+      "official_sailing_id": "XC07M834_2026-08-22",
+      "reason": "out_of_snapshot_documented"
+    }
+  ],
+  "deterministic_action_count": 0,
+  "checksum": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+}

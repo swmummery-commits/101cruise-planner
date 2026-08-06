@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-08-06T07:13:20.187Z",
+  "snapshot_checksum": "20ff96eac8cb77114b44cf66af74974b127b43ad722eb83d33bb837163844332",
+  "official_eligible": {
+    "total": 1203,
+    "ocean": 1033,
+    "river": 170
+  },
+  "production_active": {
+    "total": 1203,
+    "ocean": 1033,
+    "river": 170
+  },
+  "eligible_in_production": {
+    "total": 1202,
+    "ocean_db": 1032,
+    "river_db": 170
+  },
+  "out_of_snapshot": {
+    "total": 1,
+    "ocean": 1,
+    "river": 0,
+    "sailing_ids": [
+      "XC07M834_2026-08-22"
+    ]
+  },
+  "matched_types": {
+    "ocean_ocean": 1032,
+    "river_river": 170
+  },
+  "mismatch_counts": {
+    "total": 0,
+    "official_river_database_ocean": 0,
+    "official_ocean_database_river": 0
+  },
+  "mismatches": [],
+  "official_river_database_ocean_ids": [],
+  "official_ocean_database_river_ids": [],
+  "out_of_snapshot_audit": [
+    {
+      "official_sailing_id": "EC10U115_2026-10-09",
+      "discovered_cruise_id": "a259fa20-5384-47d5-b473-63a4da47823f",
+      "database_product_type": "ocean_cruise",
+      "database_ship_code": "EC",
+      "in_fresh_graphql": true,
+      "in_eligible_snapshot": true,
+      "fresh_official_product_type": "ocean_cruise",
+      "fresh_official_ship_code": "EC"
+    },
+    {
+      "official_sailing_id": "SI09W213_2028-02-24",
+      "discovered_cruise_id": "3a1947a8-190e-4fe6-901e-28e6e712838a",
+      "database_product_type": "ocean_cruise",
+      "database_ship_code": "SI",
+      "in_fresh_graphql": true,
+      "in_eligible_snapshot": true,
+      "fresh_official_product_type": "ocean_cruise",
+      "fresh_official_ship_code": "SI"
+    },
+    {
+      "official_sailing_id": "SL13K066_2026-11-22",
+      "discovered_cruise_id": "01edd11e-5b0d-49e4-b5a9-ce84bda04f23",
+      "database_product_type": "ocean_cruise",
+      "database_ship_code": "SL",
+      "in_fresh_graphql": true,
+      "in_eligible_snapshot": true,
+      "fresh_official_product_type": "ocean_cruise",
+      "fresh_official_ship_code": "SL"
+    },
+    {
+      "official_sailing_id": "AX08U056_2027-05-28",
+      "discovered_cruise_id": "f81dcfbb-e2e8-46e4-b6e2-f08ddc1569fe",
+      "database_product_type": "ocean_cruise",
+      "database_ship_code": "AX",
+      "in_fresh_graphql": true,
+      "in_eligible_snapshot": true,
+      "fresh_official_product_type": "ocean_cruise",
+      "fresh_official_ship_code": "AX"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-08-06T07:43:12.628Z",
+  "run_id": "celebrity-membership-closeout-2026-08-06T07-43-11-693Z",
+  "db_run_id": "ccde4640-f4a1-491e-a3fd-89955311e856",
+  "manifest_checksum": "5cccdfd73f931054e0546a7a90f6bc2ddb1603e268735aad2afabb593eb1093a",
+  "snapshot_checksum": "86034b65f0e787cbfb0db7213cd5c1f28d5d5c7f152778068a53b43636246970",
+  "rollback_entries": [
+    {
+      "action": "delete_inserted",
+      "discovered_cruise_id": "a2996a2b-dd87-43c0-a1e8-bb5af17a3614",
+      "official_sailing_id": "EC10U115_2026-09-18"
+    }
+  ]
+}

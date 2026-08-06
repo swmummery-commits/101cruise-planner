@@ -61,6 +61,13 @@ function assert(cond, msg) {
   if (!cond) throw new Error(msg);
 }
 
+function countWords(text) {
+  return String(text || "")
+    .replace(/#\w+/g, "")
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
 function pngDims(buf) {
   return {
     width: buf.readUInt32BE(16),
@@ -503,15 +510,28 @@ async function main() {
 
     const caption = buildCaption({
       ...model,
-      shortEditorial: "Follow the ancient trade routes of the Mediterranean.",
-      headline: "Mediterranean masterpieces meet timeless Aegean treasures."
+      shortEditorial:
+        "Departing on 5 November 2026, this seven-night voyage aboard Oceania Sirena is a wonderful blend of history, culture and unforgettable scenery.",
+      headline: "Mediterranean masterpieces meet timeless Aegean treasures.",
+      departurePort: "Rome, Italy",
+      arrivalPort: "Istanbul, Turkey",
+      ports: ["Rome, Italy", "Naples", "Messina, Sicily", "Valletta", "Piraeus", "Istanbul, Turkey"],
+      nights: 7,
+      lineName: "Oceania Cruises",
+      shipName: "Sirena"
     });
-    assert(caption.includes("Follow the ancient trade routes"), "caption includes cruise description");
+    assert(/Time to get warm\?/i.test(caption), "caption opens with conversational hook");
+    assert(/Oceania Sirena/i.test(caption), "caption names ship naturally");
+    assert(/Talk to Paul today/i.test(caption), "caption includes paul cta");
+    assert(/get your cruise on/i.test(caption), "caption includes brand sign-off");
+    assert((caption.match(/#\w+/g) || []).length === 5, "caption has five hashtags");
+    assert(/#OceaniaCruises/i.test(caption), "caption includes cruise line hashtag");
+    assert(countWords(caption) <= 50, "caption stays succinct");
     assert(!caption.includes("paul@101cruise.com.au"), "caption omits email");
     assert(!caption.includes("101cruise.com.au"), "caption omits website");
     assert(!caption.toLowerCase().includes("airline"), "caption no airline");
     assert(!/US\$|FROM US\$|per person in USD|Ask Paul for his best price/i.test(caption), "caption has no pricing");
-    assert(caption.includes("Includes:") || !model.inclusions?.length, "caption keeps inclusions when present");
+    assert(!caption.includes("Includes:"), "caption omits inclusion list");
     passed += 1;
   }
 

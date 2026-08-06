@@ -1,0 +1,76 @@
+{
+  "generated_at": "2026-08-06T07:51:00.565Z",
+  "phase": "celebrity_final_membership_closeout",
+  "source_snapshot_checksum": "b28c3ef98ed09595a3667dc09076c3157083879d18933dee718d2cfb6ff9450e",
+  "source_snapshot_timestamp": "2026-08-06T07:43:33.588Z",
+  "actions": [
+    {
+      "action": "hold_for_evidence",
+      "official_sailing_id": "EC10U115_2026-09-18",
+      "proposed_action": "hold_for_evidence",
+      "official_source_evidence": {
+        "in_official_inventory": true,
+        "in_eligible_set": true,
+        "official_sailing_id": "EC10U115_2026-09-18",
+        "official_group_id": "EC10ATH-1682456889",
+        "product_type": "ocean_cruise",
+        "ship": "Celebrity Eclipse",
+        "ship_code": "EC",
+        "departure_date": "2026-09-18",
+        "return_date": "2026-09-28",
+        "nights": 10,
+        "departure_port": "Piraeus",
+        "destination": "mediterranean",
+        "source_url": "https://www.celebritycruises.com/itinerary/10-night-adriatic-greek-isles-cruise-from-athens-piraeus-on-celebrity-ec10u115?saildate=2026-09-18&packagecode=ec10u115&groupid=ec10ath-1682456889&country=usa",
+        "pre_tour_duration": null,
+        "post_tour_duration": null,
+        "completeness": "complete_high_confidence",
+        "confidence": "high",
+        "ship_resolved": true,
+        "departure_port_resolved": true,
+        "destination_resolved": true,
+        "failure_reasons": [],
+        "database_record_id": "a2996a2b-dd87-43c0-a1e8-bb5af17a3614",
+        "database_match": {
+          "id": "a2996a2b-dd87-43c0-a1e8-bb5af17a3614",
+          "status": "active",
+          "product_type": "ocean_cruise",
+          "departure_date": "2026-09-18"
+        }
+      },
+      "reason": "already_present_by_official_sailing_id",
+      "source_snapshot_timestamp": "2026-08-06T07:43:33.588Z",
+      "source_checksum": "b28c3ef98ed09595a3667dc09076c3157083879d18933dee718d2cfb6ff9450e"
+    },
+    {
+      "action": "unchanged",
+      "official_sailing_id": "XC07M834_2026-08-22",
+      "discovered_cruise_id": "0a6eff39-79f5-42a7-b7a4-e29c9cd0e977",
+      "current_classification": "ocean_cruise",
+      "proposed_action": "unchanged",
+      "official_source_evidence": {
+        "in_official_inventory": false,
+        "in_eligible_set": false,
+        "database_record_id": "0a6eff39-79f5-42a7-b7a4-e29c9cd0e977",
+        "database_match": {
+          "id": "0a6eff39-79f5-42a7-b7a4-e29c9cd0e977",
+          "status": "active",
+          "product_type": "ocean_cruise",
+          "departure_date": "2026-08-22"
+        }
+      },
+      "classification_code": "C",
+      "reason": "absent_from_current_full_graphql_fetch_leave_active_without_deterministic_withdrawal_evidence",
+      "source_snapshot_timestamp": "2026-08-06T07:43:33.588Z",
+      "source_checksum": "b28c3ef98ed09595a3667dc09076c3157083879d18933dee718d2cfb6ff9450e",
+      "before_values": {
+        "status": "active"
+      },
+      "rollback_values": {
+        "status": "active"
+      }
+    }
+  ],
+  "deterministic_insert_count": 0,
+  "checksum": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+}

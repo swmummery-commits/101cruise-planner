@@ -1,0 +1,20 @@
+{
+  "counts_before": {
+    "discovered_cruises": 2267,
+    "active_discovered_cruises": 1982,
+    "celebrity_total": 1215,
+    "celebrity_active": 1203,
+    "celebrity_ocean_active": 1033,
+    "celebrity_river_active": 170,
+    "hal_active": 771,
+    "pending_reviews": 1,
+    "total_review_items": 249,
+    "ship_aliases": 94,
+    "destination_aliases": 0,
+    "destinations": 22,
+    "destination_ports": 60,
+    "discovery_runs": 174
+  },
+  "manifest_checksum": "5cccdfd73f931054e0546a7a90f6bc2ddb1603e268735aad2afabb593eb1093a",
+  "snapshot_checksum": "86034b65f0e787cbfb0db7213cd5c1f28d5d5c7f152778068a53b43636246970"
+}
