@@ -89,8 +89,22 @@ function computeFreshnessLabel(lastSuccessfulAt) {
   return "Stale";
 }
 
+function resolveEnvFlag(rawValue) {
+  const trimmed = String(rawValue ?? "").trim().toLowerCase();
+  if (trimmed === "true") {
+    return { state: "explicit_true", effective: true, raw: "true" };
+  }
+  if (trimmed === "false") {
+    return { state: "explicit_false", effective: false, raw: "false" };
+  }
+  return { state: "unset_default_false", effective: false, raw: null };
+}
+
 function describeMaintenanceHold() {
   return {
+    hal_weekly_reconciliation: resolveEnvFlag(process.env.HAL_WEEKLY_RECONCILIATION_ENABLED),
+    celebrity_weekly_reconciliation: resolveEnvFlag(process.env.CELEBRITY_WEEKLY_RECONCILIATION_ENABLED),
+    cruise_daily_expiry: resolveEnvFlag(process.env.CRUISE_DAILY_EXPIRY_ENABLED),
     hal_weekly_reconciliation_enabled: isHalWeeklyReconciliationEnabled(),
     celebrity_weekly_reconciliation_enabled: isCelebrityWeeklyReconciliationEnabled(),
     cruise_daily_expiry_enabled: isCruiseDailyExpiryEnabled(),
@@ -123,5 +137,6 @@ module.exports = {
   assertCelebrityWeeklyMaintenanceEnabled,
   assertDailyExpiryEnabled,
   computeFreshnessLabel,
+  resolveEnvFlag,
   describeMaintenanceHold
 };

@@ -67,6 +67,9 @@
     "maintenance:dry-run": "node scripts/run-maintenance-dry-runs.cjs",
     "maintenance:controlled-run": "node scripts/run-maintenance-controlled.mjs",
     "test:scheduled-maintenance": "node scripts/test-scheduled-maintenance.mjs",
+    "test:maintenance-hardening": "node scripts/test-maintenance-hardening.mjs",
+    "maintenance:historical-manifest": "node scripts/generate-hal-maintenance-historical-manifest.cjs",
+    "maintenance:apply-hardening-migration": "node scripts/apply-maintenance-hardening-migration.mjs",
     "verify:discovery-hold-production": "node scripts/verify-discovery-hold-production.mjs",
     "hal:readonly-continuation-dry-run": "node scripts/run-hal-readonly-continuation-dry-run.mjs",
     "test:destination-schema-compat": "node scripts/test-destination-schema-compat.mjs",
@@ -109,7 +112,11 @@
     "test:packing-admin-restriction-badges": "node scripts/test-packing-admin-restriction-badges.mjs",
     "test:packing-recommendation-settings": "node scripts/test-packing-recommendation-settings.mjs",
     "test:checklist-admin-save": "node scripts/test-checklist-admin-save.mjs",
-    "test:public-destination-cruise-cards": "node scripts/test-public-destination-cruise-cards.mjs"
+    "test:public-destination-cruise-cards": "node scripts/test-public-destination-cruise-cards.mjs",
+    "test:booking-document-sync": "node scripts/test-booking-document-sync.mjs",
+    "test:booking-document-release": "node scripts/test-booking-document-sync.mjs && node scripts/test-booking-financials.mjs && node scripts/test-text-itinerary-conflict-extract.mjs && node scripts/test-itinerary-retirement.mjs && node scripts/test-itinerary-auto-process.mjs && node scripts/test-itinerary-migrations.mjs && node scripts/test-text-itinerary.mjs && node scripts/test-my-cruise-booking-only-access.mjs && node scripts/test-customer-linked-bookings.mjs && node scripts/test-client-portal-experience.mjs && node scripts/test-client-portal-ui-fixes.mjs",
+    "apply:booking-document-mirror-migration": "node scripts/apply-booking-document-mirror-migration.mjs",
+    "backfill:booking-documents": "node scripts/run-booking-document-backfill.mjs --apply"
   },
   "devDependencies": {
     "playwright": "^1.49.1"

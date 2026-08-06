@@ -39,7 +39,15 @@ function createSupabaseRest(rootDir) {
   function request(restPath, options = {}) {
     const method = options.method || "GET";
     const prefer = options.prefer || (method === "GET" ? "count=exact" : "return=representation");
-    const body = options.body != null ? JSON.stringify(options.body) : null;
+    let body = options.body;
+    if (body != null && typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch {
+        /* keep string */
+      }
+    }
+    const serialized = body != null ? JSON.stringify(body) : null;
 
     return new Promise((resolve, reject) => {
       const u = new URL(`${url}/rest/v1/${restPath.replace(/^\//, "")}`);
@@ -49,7 +57,7 @@ function createSupabaseRest(rootDir) {
         Accept: "application/json",
         Prefer: prefer
       };
-      if (body) headers["Content-Type"] = "application/json";
+      if (serialized) headers["Content-Type"] = "application/json";
 
       const req = https.request(
         u,
@@ -82,7 +90,7 @@ function createSupabaseRest(rootDir) {
         }
       );
       req.on("error", reject);
-      if (body) req.write(body);
+      if (serialized) req.write(serialized);
       req.end();
     });
   }

@@ -189,7 +189,11 @@ async function loadHalInventoryProgress(supabase, cruiseLineId) {
     last_run_status: last?.status || null,
     last_run_type: last?.stats?.run_type || last?.scope || null,
     last_failure_reason: last?.error_message || last?.stats?.failure_reason || null,
-    automatic_continuation_enabled: isHalAutomaticContinuationEnabled()
+    automatic_continuation_enabled: isHalAutomaticContinuationEnabled(),
+    automatic_continuation_flag: (() => {
+      const { resolveEnvFlag } = require("./cruise-discovery-maintenance");
+      return resolveEnvFlag(process.env.HAL_AUTOMATIC_CONTINUATION_ENABLED);
+    })()
   };
 }
 

@@ -1,0 +1,656 @@
+{
+  "manifest_purpose": "historical_audit_hal_maintenance_inserts_2026_08_06",
+  "cruise_line_id": "a8d0e678-0cb2-4ea7-ad73-251f0eb36ea2",
+  "cruise_line_slug": "holland-america-line",
+  "created_at": "2026-08-06T13:20:01.432Z",
+  "total_records": 60,
+  "batch_count": 3,
+  "records_outside_windows": 0,
+  "batches": [
+    {
+      "batch_key": "batch_090113_utc",
+      "batch_label": "~09:01:13 UTC",
+      "window_from": "2026-08-06T09:01:00Z",
+      "window_to": "2026-08-06T09:02:00Z",
+      "record_count": 20,
+      "inserted_record_ids": [
+        "841b3d78-e223-4983-9de1-cae3f0af24e3",
+        "8878d5d3-49b9-4168-a9ee-e0e2509d72ed",
+        "b80a9510-6d3f-4811-9ee6-f8938d3b78bf",
+        "fdbc9d69-250c-482c-8234-f318728fb9d7",
+        "d3527a66-00d3-473f-b1c2-a81e286e4d9e",
+        "2347294c-072f-4686-b42a-e36b7a13a7af",
+        "acd75c81-ba08-4de7-81f1-b82b9dbf255e",
+        "ae542a0e-7a48-4dc9-b4fd-25c81fbdf909",
+        "4e459eb4-2fa6-4704-8624-e77ef0e47c36",
+        "363fd22c-fb72-4e0a-b154-d376d697fff9",
+        "c5158d4b-025e-4f95-9f36-dc87f9abe47c",
+        "83a0771a-f0d3-44cc-ab79-f5d1c539da2b",
+        "3c1fe808-d72a-4b28-9209-4ea4ca910d5a",
+        "bce853df-9b66-4575-8ed9-d6b04162c91c",
+        "fa8fb5ae-6256-4ee6-8a23-15a122983e8b",
+        "257b39e4-5614-4780-983b-3eb3eb91508d",
+        "c47245df-661f-4691-a7db-542f3ed798c0",
+        "5e5bff6f-e983-40ff-b00d-1aeb1b0d99b3",
+        "80514b11-0691-4264-9113-4431bbf12410",
+        "6be88490-7633-4af0-848c-892e551c5bba"
+      ],
+      "official_sailing_ids": [
+        "A6S07B|W655",
+        "A6E07A|D662",
+        "A6G07A|K665",
+        "E6NA14|J661",
+        "E6NK14|Y663",
+        "E6M21D|O658A",
+        "N6N07J|U674",
+        "C6F21G|I672A",
+        "P7H14B|N711",
+        "S7S31A|O715A",
+        "P7S43A|N719A",
+        "C7E11A|Y723",
+        "M7S18A|K717A",
+        "M7S14A|K717B",
+        "M7S07A|K717",
+        "C7E07G|J731",
+        "C7E14D|J731A",
+        "C7F21E|I723A",
+        "C7F12A|I723",
+        "W7W35B|V710F"
+      ],
+      "records": [
+        {
+          "discovered_cruise_id": "841b3d78-e223-4983-9de1-cae3f0af24e3",
+          "official_sailing_id": "A6S07B|W655",
+          "departure_date": "2026-08-09",
+          "return_date": "2026-08-16",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:13.881129+00:00"
+        },
+        {
+          "discovered_cruise_id": "8878d5d3-49b9-4168-a9ee-e0e2509d72ed",
+          "official_sailing_id": "A6E07A|D662",
+          "departure_date": "2026-08-15",
+          "return_date": "2026-08-22",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:13.881637+00:00"
+        },
+        {
+          "discovered_cruise_id": "b80a9510-6d3f-4811-9ee6-f8938d3b78bf",
+          "official_sailing_id": "A6G07A|K665",
+          "departure_date": "2026-09-12",
+          "return_date": "2026-09-19",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:13.884654+00:00"
+        },
+        {
+          "discovered_cruise_id": "fdbc9d69-250c-482c-8234-f318728fb9d7",
+          "official_sailing_id": "E6NA14|J661",
+          "departure_date": "2026-09-19",
+          "return_date": "2026-10-03",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:13.88555+00:00"
+        },
+        {
+          "discovered_cruise_id": "d3527a66-00d3-473f-b1c2-a81e286e4d9e",
+          "official_sailing_id": "E6NK14|Y663",
+          "departure_date": "2026-09-13",
+          "return_date": "2026-09-27",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:13.89101+00:00"
+        },
+        {
+          "discovered_cruise_id": "2347294c-072f-4686-b42a-e36b7a13a7af",
+          "official_sailing_id": "E6M21D|O658A",
+          "departure_date": "2026-09-23",
+          "return_date": "2026-10-14",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:14.522004+00:00"
+        },
+        {
+          "discovered_cruise_id": "acd75c81-ba08-4de7-81f1-b82b9dbf255e",
+          "official_sailing_id": "N6N07J|U674",
+          "departure_date": "2026-10-03",
+          "return_date": "2026-10-10",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:14.535998+00:00"
+        },
+        {
+          "discovered_cruise_id": "ae542a0e-7a48-4dc9-b4fd-25c81fbdf909",
+          "official_sailing_id": "C6F21G|I672A",
+          "departure_date": "2026-10-18",
+          "return_date": "2026-11-08",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:14.539641+00:00"
+        },
+        {
+          "discovered_cruise_id": "4e459eb4-2fa6-4704-8624-e77ef0e47c36",
+          "official_sailing_id": "P7H14B|N711",
+          "departure_date": "2027-01-17",
+          "return_date": "2027-01-31",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:14.540753+00:00"
+        },
+        {
+          "discovered_cruise_id": "363fd22c-fb72-4e0a-b154-d376d697fff9",
+          "official_sailing_id": "S7S31A|O715A",
+          "departure_date": "2027-03-09",
+          "return_date": "2027-04-09",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:15.286703+00:00"
+        },
+        {
+          "discovered_cruise_id": "c5158d4b-025e-4f95-9f36-dc87f9abe47c",
+          "official_sailing_id": "P7S43A|N719A",
+          "departure_date": "2027-03-14",
+          "return_date": "2027-04-25",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:15.876674+00:00"
+        },
+        {
+          "discovered_cruise_id": "83a0771a-f0d3-44cc-ab79-f5d1c539da2b",
+          "official_sailing_id": "C7E11A|Y723",
+          "departure_date": "2027-03-16",
+          "return_date": "2027-03-27",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:15.918209+00:00"
+        },
+        {
+          "discovered_cruise_id": "3c1fe808-d72a-4b28-9209-4ea4ca910d5a",
+          "official_sailing_id": "M7S18A|K717A",
+          "departure_date": "2027-03-20",
+          "return_date": "2027-04-07",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:15.919336+00:00"
+        },
+        {
+          "discovered_cruise_id": "bce853df-9b66-4575-8ed9-d6b04162c91c",
+          "official_sailing_id": "M7S14A|K717B",
+          "departure_date": "2027-03-20",
+          "return_date": "2027-04-03",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:15.923875+00:00"
+        },
+        {
+          "discovered_cruise_id": "fa8fb5ae-6256-4ee6-8a23-15a122983e8b",
+          "official_sailing_id": "M7S07A|K717",
+          "departure_date": "2027-03-20",
+          "return_date": "2027-03-27",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:15.923965+00:00"
+        },
+        {
+          "discovered_cruise_id": "257b39e4-5614-4780-983b-3eb3eb91508d",
+          "official_sailing_id": "C7E07G|J731",
+          "departure_date": "2027-03-21",
+          "return_date": "2027-03-28",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:16.456035+00:00"
+        },
+        {
+          "discovered_cruise_id": "c47245df-661f-4691-a7db-542f3ed798c0",
+          "official_sailing_id": "C7E14D|J731A",
+          "departure_date": "2027-03-21",
+          "return_date": "2027-04-04",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:16.490278+00:00"
+        },
+        {
+          "discovered_cruise_id": "5e5bff6f-e983-40ff-b00d-1aeb1b0d99b3",
+          "official_sailing_id": "C7F21E|I723A",
+          "departure_date": "2027-03-21",
+          "return_date": "2027-04-11",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:16.490279+00:00"
+        },
+        {
+          "discovered_cruise_id": "80514b11-0691-4264-9113-4431bbf12410",
+          "official_sailing_id": "C7F12A|I723",
+          "departure_date": "2027-03-21",
+          "return_date": "2027-04-02",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:16.491429+00:00"
+        },
+        {
+          "discovered_cruise_id": "6be88490-7633-4af0-848c-892e551c5bba",
+          "official_sailing_id": "W7W35B|V710F",
+          "departure_date": "2027-03-22",
+          "return_date": "2027-04-26",
+          "status": "active",
+          "created_at": "2026-08-06T09:01:16.500816+00:00"
+        }
+      ]
+    },
+    {
+      "batch_key": "batch_091153_utc",
+      "batch_label": "~09:11:53 UTC",
+      "window_from": "2026-08-06T09:11:00Z",
+      "window_to": "2026-08-06T09:12:30Z",
+      "record_count": 20,
+      "inserted_record_ids": [
+        "d6abea28-d4f0-4d3c-a84e-ed8f15b5fdac",
+        "070f6e99-4d61-4483-9487-dd2ac1f345c4",
+        "1f557a4f-1f20-401c-85a2-6c9d5c062ae0",
+        "76098621-89d4-4ea3-9500-9cfc745fcdaf",
+        "b7035766-27f9-4d7f-84e3-ab8c4542646f",
+        "c32318e5-ae06-4589-91aa-fe19197ba889",
+        "093f9eec-c415-4457-bf8c-84a0ba174b67",
+        "b4e4430c-da11-458d-9853-36cb495a4b0f",
+        "b0e1cc82-b3d0-4d7c-abb2-66afa5500d51",
+        "a9e7ecfe-c100-49a3-a61b-06aeeed9aab8",
+        "3c10c697-3741-44ea-8cf6-e9fd19c80609",
+        "5709d38b-5980-4e65-baef-05718a49e372",
+        "d5fd22e0-b1f3-48be-84af-45e7763a5bfe",
+        "79880424-1f50-4141-b9d7-659f4b3dea83",
+        "816998dc-5673-455c-be8f-ff57743f100a",
+        "a9c20aa6-3763-4d9d-972b-6a76594a0e33",
+        "b15f4a50-9b70-40f7-8284-80c4bf4265a6",
+        "9ac80f00-63ae-4bb3-a912-43482ba35f51",
+        "4d721d49-7c58-4f95-aeb7-ba424ab1bd6a",
+        "8a804332-340e-44da-b814-47b9ad653825"
+      ],
+      "official_sailing_ids": [
+        "S7S16A|O718",
+        "C7E04A|U724",
+        "W7W54A|V710E",
+        "C7S11A|D727",
+        "C7X14M|U724A",
+        "M7R11A|K718",
+        "E7T22B|Y726A",
+        "E7T15A|Y726",
+        "H7H28A|K718B",
+        "M7R07A|K718A",
+        "C7S10C|U725",
+        "C7S20C|U725A",
+        "C7E07B|J734",
+        "P7S29A|N722",
+        "M7R07D|X719",
+        "L7M04A|K718C",
+        "T7P14A|D732B",
+        "C7S09B|I726",
+        "T7P20A|D732A",
+        "T7P21A|D732"
+      ],
+      "records": [
+        {
+          "discovered_cruise_id": "d6abea28-d4f0-4d3c-a84e-ed8f15b5fdac",
+          "official_sailing_id": "S7S16A|O718",
+          "departure_date": "2027-03-24",
+          "return_date": "2027-04-09",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:53.871758+00:00"
+        },
+        {
+          "discovered_cruise_id": "070f6e99-4d61-4483-9487-dd2ac1f345c4",
+          "official_sailing_id": "C7E04A|U724",
+          "departure_date": "2027-03-24",
+          "return_date": "2027-03-28",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:53.920996+00:00"
+        },
+        {
+          "discovered_cruise_id": "1f557a4f-1f20-401c-85a2-6c9d5c062ae0",
+          "official_sailing_id": "W7W54A|V710E",
+          "departure_date": "2027-03-22",
+          "return_date": "2027-05-15",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:53.922437+00:00"
+        },
+        {
+          "discovered_cruise_id": "76098621-89d4-4ea3-9500-9cfc745fcdaf",
+          "official_sailing_id": "C7S11A|D727",
+          "departure_date": "2027-03-23",
+          "return_date": "2027-04-03",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:53.936381+00:00"
+        },
+        {
+          "discovered_cruise_id": "b7035766-27f9-4d7f-84e3-ab8c4542646f",
+          "official_sailing_id": "C7X14M|U724A",
+          "departure_date": "2027-03-24",
+          "return_date": "2027-04-07",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:53.940109+00:00"
+        },
+        {
+          "discovered_cruise_id": "c32318e5-ae06-4589-91aa-fe19197ba889",
+          "official_sailing_id": "M7R11A|K718",
+          "departure_date": "2027-03-27",
+          "return_date": "2027-04-07",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:54.527216+00:00"
+        },
+        {
+          "discovered_cruise_id": "093f9eec-c415-4457-bf8c-84a0ba174b67",
+          "official_sailing_id": "E7T22B|Y726A",
+          "departure_date": "2027-03-27",
+          "return_date": "2027-04-18",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:54.529032+00:00"
+        },
+        {
+          "discovered_cruise_id": "b4e4430c-da11-458d-9853-36cb495a4b0f",
+          "official_sailing_id": "E7T15A|Y726",
+          "departure_date": "2027-03-27",
+          "return_date": "2027-04-11",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:54.530275+00:00"
+        },
+        {
+          "discovered_cruise_id": "b0e1cc82-b3d0-4d7c-abb2-66afa5500d51",
+          "official_sailing_id": "H7H28A|K718B",
+          "departure_date": "2027-03-27",
+          "return_date": "2027-04-24",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:54.535313+00:00"
+        },
+        {
+          "discovered_cruise_id": "a9e7ecfe-c100-49a3-a61b-06aeeed9aab8",
+          "official_sailing_id": "M7R07A|K718A",
+          "departure_date": "2027-03-27",
+          "return_date": "2027-04-03",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:54.556523+00:00"
+        },
+        {
+          "discovered_cruise_id": "3c10c697-3741-44ea-8cf6-e9fd19c80609",
+          "official_sailing_id": "C7S10C|U725",
+          "departure_date": "2027-03-28",
+          "return_date": "2027-04-07",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.118665+00:00"
+        },
+        {
+          "discovered_cruise_id": "5709d38b-5980-4e65-baef-05718a49e372",
+          "official_sailing_id": "C7S20C|U725A",
+          "departure_date": "2027-03-28",
+          "return_date": "2027-04-17",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.126798+00:00"
+        },
+        {
+          "discovered_cruise_id": "d5fd22e0-b1f3-48be-84af-45e7763a5bfe",
+          "official_sailing_id": "C7E07B|J734",
+          "departure_date": "2027-03-28",
+          "return_date": "2027-04-04",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.134742+00:00"
+        },
+        {
+          "discovered_cruise_id": "79880424-1f50-4141-b9d7-659f4b3dea83",
+          "official_sailing_id": "P7S29A|N722",
+          "departure_date": "2027-03-28",
+          "return_date": "2027-04-25",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.148042+00:00"
+        },
+        {
+          "discovered_cruise_id": "816998dc-5673-455c-be8f-ff57743f100a",
+          "official_sailing_id": "M7R07D|X719",
+          "departure_date": "2027-03-28",
+          "return_date": "2027-04-04",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.152499+00:00"
+        },
+        {
+          "discovered_cruise_id": "a9c20aa6-3763-4d9d-972b-6a76594a0e33",
+          "official_sailing_id": "L7M04A|K718C",
+          "departure_date": "2027-04-03",
+          "return_date": "2027-04-07",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.706538+00:00"
+        },
+        {
+          "discovered_cruise_id": "b15f4a50-9b70-40f7-8284-80c4bf4265a6",
+          "official_sailing_id": "T7P14A|D732B",
+          "departure_date": "2027-04-03",
+          "return_date": "2027-04-17",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.71997+00:00"
+        },
+        {
+          "discovered_cruise_id": "9ac80f00-63ae-4bb3-a912-43482ba35f51",
+          "official_sailing_id": "C7S09B|I726",
+          "departure_date": "2027-04-02",
+          "return_date": "2027-04-11",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.724604+00:00"
+        },
+        {
+          "discovered_cruise_id": "4d721d49-7c58-4f95-aeb7-ba424ab1bd6a",
+          "official_sailing_id": "T7P20A|D732A",
+          "departure_date": "2027-04-03",
+          "return_date": "2027-04-23",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.725979+00:00"
+        },
+        {
+          "discovered_cruise_id": "8a804332-340e-44da-b814-47b9ad653825",
+          "official_sailing_id": "T7P21A|D732",
+          "departure_date": "2027-04-03",
+          "return_date": "2027-04-24",
+          "status": "active",
+          "created_at": "2026-08-06T09:11:55.729309+00:00"
+        }
+      ]
+    },
+    {
+      "batch_key": "batch_092506_utc",
+      "batch_label": "~09:25:06 UTC",
+      "window_from": "2026-08-06T09:25:00Z",
+      "window_to": "2026-08-06T09:26:30Z",
+      "record_count": 20,
+      "inserted_record_ids": [
+        "fd9864d5-d55b-4de9-8fa6-649da7fbf0d2",
+        "74b30e4c-12bd-4395-9e90-1e4dd8514c11",
+        "8c243cee-6bf0-4c7d-b87d-1ae5fcfdf324",
+        "e36b0985-c505-457c-a9b3-f446a360c9d9",
+        "6a1842c5-7365-4e8a-b5a2-d9e53986eae2",
+        "bdc43566-e9fb-4371-810a-6499e17c4ae6",
+        "8378bba1-1d99-496a-9c19-dfa7185ceffe",
+        "01535760-f0df-41ea-b0fd-488e02a8d750",
+        "5460f30c-267c-4845-b97b-5d6f12711c9b",
+        "4493d366-c030-408a-be99-8ab42a265fff",
+        "7df78967-07d9-4d47-be74-b3a5b85d28ad",
+        "2b0df98f-7d27-4c01-b64d-fddd9cafd89b",
+        "83ae81dd-7fd0-472d-adab-a6ec4059d62c",
+        "87aa31a9-e667-4cd0-8b7b-ff5330c50060",
+        "f8cb26d6-a195-4f08-b413-562b765c74a8",
+        "c20f3aab-ec6b-435f-9456-fe2760883254",
+        "830a4781-d38f-47e6-aa33-1534ae052aaf",
+        "c09e80b2-a4ee-49f0-8c3d-1e427482df48",
+        "76704618-04e8-4b6a-b787-de2ceced963b",
+        "90573a40-f279-4840-af1d-d1658f475116"
+      ],
+      "official_sailing_ids": [
+        "E7T27A|J737A",
+        "E7T13A|J737",
+        "E7T12A|J737B",
+        "M7S13A|X720",
+        "E7T26B|J737C",
+        "C7E10A|U726",
+        "E7T25C|O721A",
+        "E7T14C|O721",
+        "T7P17A|I727A",
+        "H7H17B|K722",
+        "E7N14H|Y727A",
+        "E7N07C|Y727",
+        "T7P21B|I727",
+        "E7N28B|J737E",
+        "A7S07C|W729",
+        "A7E07C|N730",
+        "A7G07G|X730",
+        "E7N07V|U737",
+        "A7E07B|D738",
+        "A7G07F|K731"
+      ],
+      "records": [
+        {
+          "discovered_cruise_id": "fd9864d5-d55b-4de9-8fa6-649da7fbf0d2",
+          "official_sailing_id": "E7T27A|J737A",
+          "departure_date": "2027-04-04",
+          "return_date": "2027-05-01",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.111022+00:00"
+        },
+        {
+          "discovered_cruise_id": "74b30e4c-12bd-4395-9e90-1e4dd8514c11",
+          "official_sailing_id": "E7T13A|J737",
+          "departure_date": "2027-04-04",
+          "return_date": "2027-04-17",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.115456+00:00"
+        },
+        {
+          "discovered_cruise_id": "8c243cee-6bf0-4c7d-b87d-1ae5fcfdf324",
+          "official_sailing_id": "E7T12A|J737B",
+          "departure_date": "2027-04-04",
+          "return_date": "2027-04-16",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.134902+00:00"
+        },
+        {
+          "discovered_cruise_id": "e36b0985-c505-457c-a9b3-f446a360c9d9",
+          "official_sailing_id": "M7S13A|X720",
+          "departure_date": "2027-04-04",
+          "return_date": "2027-04-17",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.165996+00:00"
+        },
+        {
+          "discovered_cruise_id": "6a1842c5-7365-4e8a-b5a2-d9e53986eae2",
+          "official_sailing_id": "E7T26B|J737C",
+          "departure_date": "2027-04-04",
+          "return_date": "2027-04-30",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.167065+00:00"
+        },
+        {
+          "discovered_cruise_id": "bdc43566-e9fb-4371-810a-6499e17c4ae6",
+          "official_sailing_id": "C7E10A|U726",
+          "departure_date": "2027-04-07",
+          "return_date": "2027-04-17",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.753552+00:00"
+        },
+        {
+          "discovered_cruise_id": "8378bba1-1d99-496a-9c19-dfa7185ceffe",
+          "official_sailing_id": "E7T25C|O721A",
+          "departure_date": "2027-04-09",
+          "return_date": "2027-05-04",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.75659+00:00"
+        },
+        {
+          "discovered_cruise_id": "01535760-f0df-41ea-b0fd-488e02a8d750",
+          "official_sailing_id": "E7T14C|O721",
+          "departure_date": "2027-04-09",
+          "return_date": "2027-04-23",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.766083+00:00"
+        },
+        {
+          "discovered_cruise_id": "5460f30c-267c-4845-b97b-5d6f12711c9b",
+          "official_sailing_id": "T7P17A|I727A",
+          "departure_date": "2027-04-11",
+          "return_date": "2027-04-28",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.774825+00:00"
+        },
+        {
+          "discovered_cruise_id": "4493d366-c030-408a-be99-8ab42a265fff",
+          "official_sailing_id": "H7H17B|K722",
+          "departure_date": "2027-04-07",
+          "return_date": "2027-04-24",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:06.778055+00:00"
+        },
+        {
+          "discovered_cruise_id": "7df78967-07d9-4d47-be74-b3a5b85d28ad",
+          "official_sailing_id": "E7N14H|Y727A",
+          "departure_date": "2027-04-11",
+          "return_date": "2027-04-25",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.355324+00:00"
+        },
+        {
+          "discovered_cruise_id": "2b0df98f-7d27-4c01-b64d-fddd9cafd89b",
+          "official_sailing_id": "E7N07C|Y727",
+          "departure_date": "2027-04-11",
+          "return_date": "2027-04-18",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.355579+00:00"
+        },
+        {
+          "discovered_cruise_id": "83ae81dd-7fd0-472d-adab-a6ec4059d62c",
+          "official_sailing_id": "T7P21B|I727",
+          "departure_date": "2027-04-11",
+          "return_date": "2027-05-02",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.357995+00:00"
+        },
+        {
+          "discovered_cruise_id": "87aa31a9-e667-4cd0-8b7b-ff5330c50060",
+          "official_sailing_id": "E7N28B|J737E",
+          "departure_date": "2027-04-16",
+          "return_date": "2027-05-14",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.369807+00:00"
+        },
+        {
+          "discovered_cruise_id": "f8cb26d6-a195-4f08-b413-562b765c74a8",
+          "official_sailing_id": "A7S07C|W729",
+          "departure_date": "2027-05-16",
+          "return_date": "2027-05-23",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.379053+00:00"
+        },
+        {
+          "discovered_cruise_id": "c20f3aab-ec6b-435f-9456-fe2760883254",
+          "official_sailing_id": "A7E07C|N730",
+          "departure_date": "2027-05-16",
+          "return_date": "2027-05-23",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.956+00:00"
+        },
+        {
+          "discovered_cruise_id": "830a4781-d38f-47e6-aa33-1534ae052aaf",
+          "official_sailing_id": "A7G07G|X730",
+          "departure_date": "2027-05-19",
+          "return_date": "2027-05-26",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.961589+00:00"
+        },
+        {
+          "discovered_cruise_id": "c09e80b2-a4ee-49f0-8c3d-1e427482df48",
+          "official_sailing_id": "E7N07V|U737",
+          "departure_date": "2027-05-22",
+          "return_date": "2027-05-29",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.96536+00:00"
+        },
+        {
+          "discovered_cruise_id": "76704618-04e8-4b6a-b787-de2ceced963b",
+          "official_sailing_id": "A7E07B|D738",
+          "departure_date": "2027-05-22",
+          "return_date": "2027-05-29",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.978351+00:00"
+        },
+        {
+          "discovered_cruise_id": "90573a40-f279-4840-af1d-d1658f475116",
+          "official_sailing_id": "A7G07F|K731",
+          "departure_date": "2027-05-22",
+          "return_date": "2027-05-29",
+          "status": "active",
+          "created_at": "2026-08-06T09:25:07.996851+00:00"
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "all_have_official_identity": true,
+    "all_active": true,
+    "no_duplicate_active_identities_among_batches": true,
+    "no_conflicts_with_other_active_hal": true
+  }
+}

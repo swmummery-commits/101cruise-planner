@@ -38,8 +38,14 @@ function assertExpireSailedEnabled() {
 }
 
 function describeDiscoveryAutomationHold() {
-  const { describeMaintenanceHold } = require("./cruise-discovery-maintenance");
+  const { describeMaintenanceHold, resolveEnvFlag } = require("./cruise-discovery-maintenance");
   return {
+    automation: resolveEnvFlag(process.env.CRUISE_DISCOVERY_AUTOMATION_ENABLED),
+    expire_sailed: resolveEnvFlag(process.env.CRUISE_DISCOVERY_EXPIRE_SAILED_ENABLED),
+    hal_discovery_write: resolveEnvFlag(process.env.HAL_DISCOVERY_WRITE_ENABLED),
+    hal_automatic_continuation: resolveEnvFlag(process.env.HAL_AUTOMATIC_CONTINUATION_ENABLED),
+    celebrity_discovery_write: resolveEnvFlag(process.env.CELEBRITY_DISCOVERY_WRITE_ENABLED),
+    celebrity_automatic_continuation: resolveEnvFlag(process.env.CELEBRITY_AUTOMATIC_CONTINUATION_ENABLED),
     automation_enabled: isCruiseDiscoveryAutomationEnabled(),
     expire_sailed_enabled: isCruiseDiscoveryExpireSailedEnabled(),
     scheduled_function: "cruise-discovery-cron",

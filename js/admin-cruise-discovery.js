@@ -23,6 +23,7 @@
   let lineHealthSummary = null;
   let halInventoryProgress = null;
   let maintenanceDashboard = null;
+  let maintenanceHold = null;
   let lastRunMeta = null;
   let activeCruises = [];
   let departurePorts = [];
@@ -132,6 +133,7 @@
       lineHealthSummary = dash.line_health_summary || null;
       halInventoryProgress = dash.hal_inventory_progress || null;
       maintenanceDashboard = dash.maintenance_dashboard || null;
+      maintenanceHold = dash.maintenance_hold || maintenanceDashboard?.flag_hold || null;
       lastRunMeta = {
         type: dash.cards?.last_run_type,
         scope: dash.cards?.last_run_scope,
@@ -179,15 +181,28 @@
     }
   }
 
+  function formatFlagState(flag) {
+    if (!flag || typeof flag !== "object") return "—";
+    if (flag.state === "explicit_true") return "explicitly enabled";
+    if (flag.state === "explicit_false") return "explicitly disabled";
+    if (flag.state === "unset_default_false") return "unset (defaults to disabled)";
+    return String(flag.state || "—");
+  }
+
   function renderMaintenancePanel(line) {
     if (!line) return "";
     const title = line.cruise_line_slug === "celebrity-cruises" ? "Celebrity" : "Holland America";
+    const workerNote =
+      line.worker_state === "already_running"
+        ? `<p class="admin-helper">Another maintenance invocation holds the database lock — no action taken.</p>`
+        : "";
     return `
       <section class="admin-panel admin-maintenance-line" aria-label="${esc(title)} weekly maintenance">
         <h3 class="admin-subheading">${esc(title)} weekly maintenance</h3>
         ${line.warning ? `<p class="admin-alert admin-alert-warn">${esc(line.warning)}</p>` : ""}
+        ${workerNote}
         <ul class="admin-kv-list">
-          <li><strong>Automation:</strong> ${esc(line.automation_status || "—")}</li>
+          <li><strong>Automation:</strong> ${esc(line.automation_status || "—")}${line.automation_flag ? ` (${esc(formatFlagState(line.automation_flag))})` : ""}</li>
           <li><strong>Freshness:</strong> ${esc(line.freshness_status || "—")}</li>
           <li><strong>Perth schedule:</strong> ${esc(line.perth_schedule || "—")}</li>
           <li><strong>UTC schedule:</strong> ${esc(line.utc_schedule || "—")}</li>
@@ -207,21 +222,35 @@
     const m = maintenanceDashboard;
     if (!m) return "";
     const expiry = m.daily_expiry;
+    const hold = maintenanceHold || m.flag_hold;
+    const bulkFlags = hold?.bulk_import_flags_must_remain_false || [];
+    const holdFlags = hold
+      ? `<section class="admin-panel"><h3 class="admin-subheading">Maintenance flag clarity</h3>
+        <ul class="admin-kv-list">
+          <li><strong>HAL weekly:</strong> ${esc(formatFlagState(hold.hal_weekly_reconciliation))}</li>
+          <li><strong>Celebrity weekly:</strong> ${esc(formatFlagState(hold.celebrity_weekly_reconciliation))}</li>
+          <li><strong>Daily expiry:</strong> ${esc(formatFlagState(hold.cruise_daily_expiry))}</li>
+          ${bulkFlags.map((f) => `<li><strong>${esc(f)}:</strong> unset or false (bulk import hold)</li>`).join("")}
+        </ul></section>`
+      : "";
     return `
       <section class="admin-panel admin-maintenance-dashboard" aria-label="Scheduled inventory maintenance">
         <h3 class="admin-subheading">Hands-off inventory maintenance</h3>
         <p class="admin-helper">Database row counts — not summed run insert totals. General Full Discovery remains on hold.</p>
+        ${holdFlags}
         ${renderMaintenancePanel(m.hal)}
         ${renderMaintenancePanel(m.celebrity)}
         ${
           expiry
             ? `<section class="admin-panel"><h3 class="admin-subheading">Daily expiry</h3>
         ${expiry.warning ? `<p class="admin-alert admin-alert-warn">${esc(expiry.warning)}</p>` : ""}
+        ${expiry.worker_state === "already_running" ? `<p class="admin-helper">Daily expiry already running — no duplicate invocation.</p>` : ""}
         <ul class="admin-kv-list">
-          <li><strong>Automation:</strong> ${esc(expiry.automation_status || "—")}</li>
+          <li><strong>Automation:</strong> ${esc(expiry.automation_status || "—")}${expiry.automation_flag ? ` (${esc(formatFlagState(expiry.automation_flag))})` : ""}</li>
           <li><strong>Perth schedule:</strong> ${esc(expiry.perth_schedule || "—")}</li>
           <li><strong>Last successful run:</strong> ${formatDate(expiry.last_successful_run)}</li>
           <li><strong>Expired last run:</strong> ${esc(String(expiry.cruises_expired_last_run ?? 0))}</li>
+          <li><strong>Worker:</strong> ${esc(expiry.worker_state || "idle")}</li>
         </ul></section>`
             : ""
         }
@@ -248,7 +277,7 @@
           <li><strong>Cruisetours skipped:</strong> ${esc(String(h.skipped_cruisetours ?? 0))}</li>
           <li><strong>Europe unresolved (aggregated):</strong> ${esc(String(h.europe_unresolved_total ?? 0))}</li>
           <li><strong>Last batch duration:</strong> ${h.last_batch_duration_ms ? `${esc(String(Math.round(h.last_batch_duration_ms / 1000)))}s` : "—"}</li>
-          <li><strong>Automatic continuation:</strong> ${h.automatic_continuation_enabled ? "enabled" : "disabled (hold)"}</li>
+          <li><strong>Automatic continuation:</strong> ${esc(formatFlagState(h.automatic_continuation_flag || { state: h.automatic_continuation_enabled ? "explicit_true" : "unset_default_false" }))}</li>
         </ul>
       </section>`;
   }

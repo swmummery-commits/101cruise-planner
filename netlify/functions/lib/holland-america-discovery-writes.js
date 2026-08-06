@@ -7,6 +7,7 @@ const crypto = require("crypto");
 const { officialProductKey, ADAPTER_ID, ADAPTER_VERSION } = require("./holland-america-discovery-adapter");
 const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
 const { createHalBatchTiming, mapWithConcurrency } = require("./holland-america-discovery-timing");
+const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
 function halExternalKey(cruiseLineId, productKey) {
   const basis = [ADAPTER_ID, cruiseLineId || "", productKey || ""].join("|");
@@ -279,7 +280,8 @@ async function applyHalBatchWrites({
   runId,
   supabase,
   writeConcurrency = 5,
-  timing = null
+  timing = null,
+  maintenanceTrace = null
 }) {
   const stats = {
     inserted: 0,
@@ -337,12 +339,20 @@ async function applyHalBatchWrites({
   await mapWithConcurrency(writeQueue, writeConcurrency, async ({ row, candidate, existing }) => {
     try {
       const result = await upsertCandidateRecord(candidate, upsertStats, { prevRecord: existing });
+      const productKey = officialProductKey(row.raw);
       const detail = {
-        hal_product_key: officialProductKey(row.raw),
+        hal_product_key: productKey,
+        official_sailing_id: productKey,
         discovered_cruise_id: result.row?.id || null,
         created: result.created,
         duplicate: result.duplicate,
-        status: result.status
+        status: result.status,
+        before_values: snapshotRecordForRollback(existing),
+        after_values: result.created
+          ? snapshotRecordForRollback(result.row)
+          : snapshotRecordForRollback({ ...existing, ...candidate, id: existing?.id }),
+        maintenance_run_id: maintenanceTrace?.run_id || runId || null,
+        maintenance_run_record_id: maintenanceTrace?.run_record_id || null
       };
       stats.write_details.push(detail);
 

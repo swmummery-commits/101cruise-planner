@@ -8,6 +8,12 @@ const {
   finalizeMaintenanceRun,
   buildMaintenanceRunStats
 } = require("./cruise-discovery-maintenance-tracking");
+const {
+  acquireMaintenanceDbLock,
+  releaseMaintenanceDbLock,
+  dailyExpiryLockKey
+} = require("./cruise-discovery-maintenance-locks");
+const { persistMaintenanceManifest } = require("./cruise-discovery-maintenance-manifests");
 
 function cronSecret() {
   return String(process.env.DISCOVERY_CRON_SECRET || "").trim();
@@ -65,6 +71,7 @@ async function executeWeeklyMaintenance({
       performWrites: !dryRun,
       maxWrites,
       runId,
+      runRecordId: dbRun?.id || null,
       supabase: sb,
       triggerType
     });
@@ -72,12 +79,38 @@ async function executeWeeklyMaintenance({
     const summary = result.summary || {};
     summary.duration_ms = Date.now() - started;
     summary.failure_reason = result.reason || null;
+    summary.worker_state = result.worker_state || (result.blocked ? "already_running" : "idle");
 
     const stats = buildMaintenanceRunStats(summary, {
       run_type: runType,
       run_id: runId,
-      trigger_type: triggerType
+      trigger_type: triggerType,
+      worker_state: summary.worker_state,
+      blocked: result.blocked === true,
+      rollback_manifest_id: summary.rollback_manifest_id || null
     });
+
+    if (result.blocked && result.reason === "maintenance_lock_held") {
+      await finalizeMaintenanceRun(sb, dbRun?.id, {
+        status: "completed",
+        stats: {
+          ...stats,
+          inventory_changed: false,
+          blocked_by_lock: true,
+          failure_reason: null
+        },
+        errorMessage: null
+      });
+      return {
+        success: true,
+        blocked: true,
+        already_running: true,
+        run_id: runId,
+        run_record_id: dbRun?.id,
+        reason: result.reason,
+        summary
+      };
+    }
 
     if (!result.ok) {
       await finalizeMaintenanceRun(sb, dbRun?.id, {
@@ -93,6 +126,19 @@ async function executeWeeklyMaintenance({
         blocked: result.blocked,
         summary
       };
+    }
+
+    if (dryRun && summary) {
+      await persistMaintenanceManifest(sb, {
+        manifestType: "dry_run",
+        manifest: {
+          run_id: runId,
+          run_record_id: dbRun?.id,
+          cruise_line_slug: lineSlug,
+          trigger_type: triggerType,
+          summary
+        }
+      }).catch(() => null);
     }
 
     await finalizeMaintenanceRun(sb, dbRun?.id, {
@@ -131,6 +177,24 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
   if (!dryRun) assertDailyExpiryEnabled();
 
   const runId = `daily-expiry-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+  const lockKey = dailyExpiryLockKey();
+  const lock = await acquireMaintenanceDbLock(supabase, {
+    lockKey,
+    ownerId: runId,
+    runId,
+    leaseSeconds: 300
+  });
+
+  if (!lock.acquired) {
+    return {
+      success: true,
+      blocked: true,
+      already_running: true,
+      reason: lock.reason || "maintenance_lock_held",
+      worker_state: "already_running"
+    };
+  }
+
   const dbRun = await createMaintenanceRun(supabase, {
     cruiseLineId: null,
     runId,
@@ -159,6 +223,20 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
     }
 
     const expire = await expireSailedCruises({ runId, recordMetadata: true });
+    const manifest = {
+      run_id: runId,
+      run_record_id: dbRun?.id,
+      trigger_type: triggerType,
+      as_of: expire.as_of,
+      timezone: expire.timezone,
+      expired_record_ids: expire.expired_ids || [],
+      expired_count: expire.expired_count
+    };
+    await persistMaintenanceManifest(supabase, {
+      manifestType: "rollback",
+      manifest
+    }).catch(() => null);
+
     const stats = {
       run_type: DAILY_EXPIRY_RUN_TYPE,
       run_id: runId,
@@ -167,7 +245,8 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
       as_of: expire.as_of,
       timezone: expire.timezone,
       duration_ms: Date.now() - started,
-      inventory_changed: expire.expired_count > 0
+      inventory_changed: expire.expired_count > 0,
+      expired_record_ids: expire.expired_ids || []
     };
     await finalizeMaintenanceRun(supabase, dbRun?.id, { status: "completed", stats });
     return { success: true, expire, stats, elapsed_ms: Date.now() - started };
@@ -178,6 +257,8 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
       errorMessage: error.message
     });
     throw error;
+  } finally {
+    await releaseMaintenanceDbLock(supabase, { lockKey, ownerId: runId });
   }
 }
 

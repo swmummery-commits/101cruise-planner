@@ -113,4 +113,13 @@ test("13. Princess remains unprocessed", () => {
   if ("princess-cruises" === "celebrity-cruises") throw new Error("scope leak");
 });
 
+test("14. resolveEnvFlag reports unset as unset_default_false", () => {
+  withEnv("HAL_WEEKLY_RECONCILIATION_ENABLED", undefined, () => {
+    delete require.cache[require.resolve(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance"))];
+    const m = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance"));
+    const flag = m.resolveEnvFlag(process.env.HAL_WEEKLY_RECONCILIATION_ENABLED);
+    if (flag.state !== "unset_default_false") throw new Error(flag.state);
+  });
+});
+
 console.log(`\ntest-scheduled-maintenance: ${passed} passed`);

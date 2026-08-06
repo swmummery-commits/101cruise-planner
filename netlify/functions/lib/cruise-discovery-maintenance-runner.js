@@ -35,8 +35,13 @@ const {
   perthCalendarDate
 } = require("./cruise-discovery-maintenance");
 const { headCountSupabase, loadCelebrityDatabaseInventoryCounts } = require("./celebrity-inventory-counts");
+const {
+  acquireMaintenanceDbLock,
+  releaseMaintenanceDbLock,
+  weeklyLockKey
+} = require("./cruise-discovery-maintenance-locks");
+const { persistMaintenanceRollbackManifest } = require("./cruise-discovery-maintenance-manifests");
 
-const activeMaintenanceLocks = new Map();
 const MAX_WRITES_PER_BATCH = 100;
 
 async function loadActiveProductionTotal(supabase, cruiseLineId, lineSlug) {
@@ -55,17 +60,20 @@ function snapshotChecksum(payload) {
   return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 }
 
-function acquireMaintenanceLock(lineSlug, runId) {
-  const key = `${lineSlug}:${runId || "default"}`;
-  if (activeMaintenanceLocks.has(lineSlug)) {
-    return { acquired: false, reason: "overlapping_maintenance_blocked", line_slug: lineSlug };
-  }
-  activeMaintenanceLocks.set(lineSlug, { runId: key, started: Date.now() });
-  return { acquired: true, lock_key: key };
+async function acquireMaintenanceLock(supabase, lineSlug, runId, runRecordId = null) {
+  return acquireMaintenanceDbLock(supabase, {
+    lockKey: weeklyLockKey(lineSlug),
+    ownerId: runId,
+    runId,
+    runRecordId
+  });
 }
 
-function releaseMaintenanceLock(lineSlug) {
-  activeMaintenanceLocks.delete(lineSlug);
+async function releaseMaintenanceLock(supabase, lineSlug, runId) {
+  return releaseMaintenanceDbLock(supabase, {
+    lockKey: weeklyLockKey(lineSlug),
+    ownerId: runId
+  });
 }
 
 async function loadLineContext(supabase, lineSlug) {
@@ -222,13 +230,20 @@ async function runHalWeeklyMaintenance(context = {}) {
   const performWrites = Boolean(context.performWrites ?? context.perform_writes) && !dryRun;
   const maxWrites = Math.min(MAX_WRITES_PER_BATCH, Number(context.maxWrites ?? context.max_writes ?? 100) || 100);
   const runId = String(context.runId || context.run_id || `hal-weekly-${Date.now()}`).trim();
+  const runRecordId = context.runRecordId || context.run_record_id || null;
   const today = context.today || perthCalendarDate();
   const lineSlug = "holland-america-line";
   const runType = HAL_WEEKLY_MAINTENANCE_RUN_TYPE;
 
-  const lock = acquireMaintenanceLock(lineSlug, runId);
+  const lock = await acquireMaintenanceLock(sb, lineSlug, runId, runRecordId);
   if (!lock.acquired) {
-    return { ok: false, blocked: true, reason: lock.reason, line_slug: lineSlug };
+    return {
+      ok: false,
+      blocked: true,
+      reason: lock.reason || "maintenance_lock_held",
+      worker_state: lock.worker_state || "already_running",
+      line_slug: lineSlug
+    };
   }
 
   try {
@@ -337,7 +352,23 @@ async function runHalWeeklyMaintenance(context = {}) {
       supabase: sb,
       destinations,
       performWrites: true,
-      mode: "weekly_maintenance"
+      mode: "weekly_maintenance",
+      maintenanceTrace: {
+        run_id: runId,
+        run_record_id: runRecordId,
+        cruise_line_id: line.id,
+        cruise_line_slug: lineSlug,
+        trigger_type: context.triggerType || context.trigger_type || "scheduled"
+      }
+    });
+
+    const rollback = await persistMaintenanceRollbackManifest(sb, {
+      runId,
+      runRecordId,
+      cruiseLineId: line.id,
+      lineSlug,
+      triggerType: context.triggerType || context.trigger_type,
+      writeResult
     });
 
     summary.inserts = writeResult.stats?.inserted || 0;
@@ -345,15 +376,17 @@ async function runHalWeeklyMaintenance(context = {}) {
     summary.duplicate_skips = writeResult.stats?.duplicate_skips || 0;
     summary.failed_writes = writeResult.stats?.failed || 0;
     summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
+    summary.rollback_manifest_id = rollback?.manifest_record_id || null;
 
     return {
       ok: writeResult.stats?.failed === 0,
       summary,
       write_result: writeResult.stats,
-      manifest
+      manifest,
+      rollback_manifest: rollback?.manifest || null
     };
   } finally {
-    releaseMaintenanceLock(lineSlug);
+    await releaseMaintenanceLock(sb, lineSlug, runId);
   }
 }
 
@@ -363,13 +396,20 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
   const performWrites = Boolean(context.performWrites ?? context.perform_writes) && !dryRun;
   const maxWrites = Math.min(MAX_WRITES_PER_BATCH, Number(context.maxWrites ?? context.max_writes ?? 100) || 100);
   const runId = String(context.runId || context.run_id || `celebrity-weekly-${Date.now()}`).trim();
+  const runRecordId = context.runRecordId || context.run_record_id || null;
   const today = context.today || perthCalendarDate();
   const lineSlug = "celebrity-cruises";
   const runType = CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE;
 
-  const lock = acquireMaintenanceLock(lineSlug, runId);
+  const lock = await acquireMaintenanceLock(sb, lineSlug, runId, runRecordId);
   if (!lock.acquired) {
-    return { ok: false, blocked: true, reason: lock.reason, line_slug: lineSlug };
+    return {
+      ok: false,
+      blocked: true,
+      reason: lock.reason || "maintenance_lock_held",
+      worker_state: lock.worker_state || "already_running",
+      line_slug: lineSlug
+    };
   }
 
   try {
@@ -472,7 +512,23 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
       supabase: sb,
       destinations,
       performWrites: true,
-      mode: "weekly_maintenance"
+      mode: "weekly_maintenance",
+      maintenanceTrace: {
+        run_id: runId,
+        run_record_id: runRecordId,
+        cruise_line_id: line.id,
+        cruise_line_slug: lineSlug,
+        trigger_type: context.triggerType || context.trigger_type || "scheduled"
+      }
+    });
+
+    const rollback = await persistMaintenanceRollbackManifest(sb, {
+      runId,
+      runRecordId,
+      cruiseLineId: line.id,
+      lineSlug,
+      triggerType: context.triggerType || context.trigger_type,
+      writeResult
     });
 
     summary.inserts = writeResult.stats?.inserted || 0;
@@ -480,15 +536,17 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
     summary.duplicate_skips = writeResult.stats?.duplicate_skips || 0;
     summary.failed_writes = writeResult.stats?.failed || 0;
     summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
+    summary.rollback_manifest_id = rollback?.manifest_record_id || null;
 
     return {
       ok: writeResult.stats?.failed === 0,
       summary,
       write_result: writeResult.stats,
-      manifest
+      manifest,
+      rollback_manifest: rollback?.manifest || null
     };
   } finally {
-    releaseMaintenanceLock(lineSlug);
+    await releaseMaintenanceLock(sb, lineSlug, runId);
   }
 }
 

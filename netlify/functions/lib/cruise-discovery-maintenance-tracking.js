@@ -8,11 +8,18 @@ const {
   DAILY_EXPIRY_RUN_TYPE,
   MAINTENANCE_SCHEDULES,
   computeFreshnessLabel,
+  resolveEnvFlag,
+  describeMaintenanceHold,
   isHalWeeklyReconciliationEnabled,
   isCelebrityWeeklyReconciliationEnabled,
   isCruiseDailyExpiryEnabled
 } = require("./cruise-discovery-maintenance");
 const { loadCelebrityDatabaseInventoryCounts, headCountSupabase } = require("./celebrity-inventory-counts");
+const {
+  loadMaintenanceLockStatus,
+  weeklyLockKey,
+  dailyExpiryLockKey
+} = require("./cruise-discovery-maintenance-locks");
 
 async function createMaintenanceRun(supabase, { cruiseLineId, runId, runType, triggerType = "scheduled", stats = {} }) {
   const insert = await supabase("cruise_discovery_runs", {
@@ -114,10 +121,24 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
   }
 
   const schedule = MAINTENANCE_SCHEDULES[scheduleKey];
+  const lockStatus = await loadMaintenanceLockStatus(supabase, weeklyLockKey(lineSlug)).catch(() => ({
+    held: false,
+    worker_state: "idle"
+  }));
+
+  let workerState = "idle";
+  if (lockStatus.held) workerState = "already_running";
+  else if (lastAttempt?.stats?.blocked_by_lock) workerState = "already_running";
+  else if (lastAttempt?.status === "running") workerState = "running";
 
   return {
     cruise_line_slug: lineSlug,
     automation_status: enabled ? "enabled" : "disabled",
+    automation_flag: resolveEnvFlag(
+      lineSlug === "holland-america-line"
+        ? process.env.HAL_WEEKLY_RECONCILIATION_ENABLED
+        : process.env.CELEBRITY_WEEKLY_RECONCILIATION_ENABLED
+    ),
     refresh_cadence: schedule?.perth_display || null,
     cron_utc: schedule?.cron_utc || null,
     perth_schedule: schedule?.perth_display || null,
@@ -140,7 +161,10 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     skipped_cruisetours: lastSuccess?.stats?.cruisetours_skipped ?? 0,
     failed_records: lastSuccess?.stats?.failed_writes ?? 0,
     run_duration_ms: lastSuccess?.stats?.duration_ms ?? null,
-    worker_state: lastAttempt?.status === "running" ? "running" : "idle",
+    worker_state: workerState,
+    lock_held: lockStatus.held === true,
+    lock_expires_at: lockStatus.expires_at || null,
+    blocked_by_lock_last_attempt: lastAttempt?.stats?.blocked_by_lock === true,
     inventory_changed_on_last_attempt: lastAttempt?.stats?.inventory_changed === true,
     warning:
       freshness === "Failed" && lastFailed
@@ -158,16 +182,27 @@ async function loadDailyExpiryStatus(supabase) {
   const lastSuccess = expiryRuns.find((r) => r.status === "completed") || null;
   const lastFailed = expiryRuns.find((r) => r.status === "failed") || null;
   const schedule = MAINTENANCE_SCHEDULES.daily_expiry;
+  const lockStatus = await loadMaintenanceLockStatus(supabase, dailyExpiryLockKey()).catch(() => ({
+    held: false,
+    worker_state: "idle"
+  }));
+
+  let workerState = "idle";
+  if (lockStatus.held) workerState = "already_running";
+  else if (lastAttempt?.status === "running") workerState = "running";
 
   return {
     automation_status: isCruiseDailyExpiryEnabled() ? "enabled" : "disabled",
+    automation_flag: resolveEnvFlag(process.env.CRUISE_DAILY_EXPIRY_ENABLED),
     perth_schedule: schedule.perth_display,
     utc_schedule: schedule.utc_display,
     cron_utc: schedule.cron_utc,
     last_successful_run: lastSuccess?.finished_at || null,
     cruises_expired_last_run: lastSuccess?.stats?.expired_count ?? 0,
     last_failure_reason: lastFailed?.error_message || null,
-    worker_state: lastAttempt?.status === "running" ? "running" : "idle",
+    worker_state: workerState,
+    lock_held: lockStatus.held === true,
+    lock_expires_at: lockStatus.expires_at || null,
     warning:
       lastFailed && (!lastSuccess || new Date(lastFailed.finished_at) > new Date(lastSuccess.finished_at))
         ? `Daily expiry failed on ${new Date(lastFailed.finished_at || lastFailed.started_at).toLocaleDateString("en-AU", { timeZone: "Australia/Perth" })}. Existing inventory remains unchanged.`
@@ -197,7 +232,12 @@ async function loadMaintenanceDashboard(supabase, lines = []) {
       "celebrity_weekly"
     ));
   const dailyExpiry = await loadDailyExpiryStatus(supabase);
-  return { hal, celebrity, daily_expiry: dailyExpiry };
+  return {
+    hal,
+    celebrity,
+    daily_expiry: dailyExpiry,
+    flag_hold: describeMaintenanceHold()
+  };
 }
 
 module.exports = {

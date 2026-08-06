@@ -14,6 +14,7 @@ const {
 } = require("./celebrity-discovery-adapter");
 const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
 const { createCelebrityBatchTiming, mapWithConcurrency } = require("./celebrity-discovery-timing");
+const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
 const RIVER_SHIP_CODES = new Set(["RC", "RS", "RB", "RR", "RW"]);
 const HOTEL_ORIGIN_PATTERN = /hotel/i;
@@ -425,7 +426,8 @@ async function applyCelebrityBatchWrites({
   supabase,
   writeConcurrency = 5,
   timing = null,
-  controlledSelection = null
+  controlledSelection = null,
+  maintenanceTrace = null
 }) {
   const stats = {
     inserted: 0,
@@ -531,13 +533,18 @@ async function applyCelebrityBatchWrites({
 
       const detail = {
         celebrity_sailing_id: expectedSailingId,
+        official_sailing_id: expectedSailingId,
         celebrity_group_id: officialGroupKey(row.raw),
         product_type: row.product_type,
         discovered_cruise_id: result.row.id,
         created: result.created,
         duplicate: result.duplicate,
         status: result.status,
-        action
+        action,
+        before_values: snapshotRecordForRollback(upsertExisting),
+        after_values: snapshotRecordForRollback(result.row),
+        maintenance_run_id: maintenanceTrace?.run_id || runId || null,
+        maintenance_run_record_id: maintenanceTrace?.run_record_id || null
       };
       stats.write_details.push(detail);
 
