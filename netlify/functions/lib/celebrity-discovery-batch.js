@@ -229,7 +229,11 @@ async function runCelebrityDiscoveryBatch(context = {}) {
     const normalised = [];
     const maxCandidates =
       context.maxCandidates ?? context.max_candidates ?? DEFAULT_MAX_CANDIDATES_PER_EXECUTION;
-    const productsToNormalise = fullInventory ? fetchResult.products : fetchResult.products.slice(0, maxCandidates);
+    const normalizeAllFetched =
+      fullInventory || Boolean(context.automatic) || Boolean(context.controlledBatch && context.performWrites);
+    const productsToNormalise = normalizeAllFetched
+      ? fetchResult.products
+      : fetchResult.products.slice(0, maxCandidates);
     for (const raw of productsToNormalise) {
       normalised.push(normaliseCelebrityProduct(raw, context));
     }

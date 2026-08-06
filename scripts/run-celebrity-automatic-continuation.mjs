@@ -82,8 +82,9 @@ async function runBatches(ctx) {
   let skipStart = 0;
   let completed = false;
   let batchNum = 0;
+  let stagnantBatches = 0;
 
-  while (!completed && batchNum < 50) {
+  while (!completed && batchNum < 80) {
     batchNum += 1;
     const runId = `celebrity-auto-${SESSION}-batch-${batchNum}`;
     const result = await runCelebrityDiscoveryBatch({
@@ -92,7 +93,7 @@ async function runBatches(ctx) {
       skipStart,
       maxPages: 12,
       maxWrites: MAX_WRITES,
-      maxCandidates: MAX_WRITES,
+      maxCandidates: 5000,
       performWrites: true,
       recordRun: true,
       automatic: true,
@@ -117,7 +118,9 @@ async function runBatches(ctx) {
 
     skipStart = result.cursor?.next_start ?? result.stats?.next_skip ?? skipStart;
     completed = result.stats?.batch_status === "completed" || skipStart >= (result.stats?.num_found_official || 0);
-    if ((result.stats?.inserted || 0) + (result.stats?.updated || 0) === 0 && !completed) break;
+    const wrote = (result.stats?.inserted || 0) + (result.stats?.updated || 0);
+    stagnantBatches = wrote === 0 ? stagnantBatches + 1 : 0;
+    if (stagnantBatches >= 3 && !completed) break;
   }
 
   const summary = { batches, batch_count: batches.length, completed };
