@@ -227,11 +227,10 @@ async function saveShipAlias({
 async function syncCruiseDestinations(cruiseId, destinationIds, evidenceById = {}) {
   if (!cruiseId) return;
   const ids = [...new Set((destinationIds || []).filter(Boolean))];
-  // Replace associations for this cruise
+  if (!ids.length) return;
   await supabase(`discovered_cruise_destinations?cruise_id=eq.${encodeURIComponent(cruiseId)}`, {
     method: "DELETE"
   }).catch(() => null);
-  if (!ids.length) return;
   await supabase("discovered_cruise_destinations", {
     method: "POST",
     headers: { Prefer: "return=minimal" },
@@ -243,6 +242,17 @@ async function syncCruiseDestinations(cruiseId, destinationIds, evidenceById = {
       }))
     )
   });
+}
+
+function officialSailingIdOfRecord(record) {
+  return record?.official_sailing_id || record?.raw_extract?.celebrity_sailing_id || null;
+}
+
+function recordsShareOfficialSailingId(prev, candidate) {
+  const prevId = officialSailingIdOfRecord(prev);
+  const nextId = candidate?.official_sailing_id || null;
+  if (!prevId || !nextId) return false;
+  return prevId === nextId;
 }
 
 async function writeResolutionAudit(entry) {
@@ -288,6 +298,9 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
   const now = new Date().toISOString();
 
   let prev = options.prevRecord || null;
+  const matchPolicy = options.matchPolicy || "default";
+  const syncDestinationLinks = options.syncDestinationLinks !== false;
+
   if (!prev && identity_key) {
     const byIdentity = await supabase(
       `discovered_cruises?identity_key=eq.${encodeURIComponent(identity_key)}&select=*&limit=1`
@@ -308,7 +321,12 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
     );
     prev = bySailingId?.[0] || null;
   }
-  if (!prev && candidate.official_url && candidate.cruise_line_id) {
+  if (
+    !prev &&
+    matchPolicy !== "official_sailing_id_only" &&
+    candidate.official_url &&
+    candidate.cruise_line_id
+  ) {
     const byUrl = await supabase(
       `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
         candidate.cruise_line_id
@@ -321,6 +339,15 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
         byUrl.find((r) => !r.departure_date) ||
         null;
     }
+  }
+
+  if (
+    prev &&
+    matchPolicy === "official_sailing_id_only" &&
+    candidate.official_sailing_id &&
+    !recordsShareOfficialSailingId(prev, candidate)
+  ) {
+    prev = null;
   }
 
   const mergedDeparture = prev
@@ -393,13 +420,25 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
     payload.discovered_at = now;
     payload.first_seen_at = now;
     payload.change_log = [{ field: "created", status, at: now }];
-    const created = await supabase("discovered_cruises", {
-      method: "POST",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify(payload)
-    });
-    const row = created?.[0];
-    if (row?.id) await syncCruiseDestinations(row.id, destIds, candidate.destination_evidence || {});
+    let row = null;
+    try {
+      const created = await supabase("discovered_cruises", {
+        method: "POST",
+        headers: { Prefer: "return=representation" },
+        body: JSON.stringify(payload)
+      });
+      row = created?.[0] || null;
+      if (row?.id && syncDestinationLinks) {
+        await syncCruiseDestinations(row.id, destIds, candidate.destination_evidence || {});
+      }
+    } catch (err) {
+      if (row?.id) {
+        await supabase(`discovered_cruises?id=eq.${encodeURIComponent(row.id)}`, {
+          method: "DELETE"
+        }).catch(() => null);
+      }
+      throw err;
+    }
     stats.new += 1;
     if (status === "active") stats.upserted_active += 1;
     else if (status !== "ignored_low_signal" && status !== "ignored") stats.upserted_review += 1;
@@ -423,7 +462,9 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
         identity_key: prev.identity_key || identity_key
       })
     });
-    if (destIds.length) await syncCruiseDestinations(prev.id, destIds, candidate.destination_evidence || {});
+    if (destIds.length && syncDestinationLinks) {
+      await syncCruiseDestinations(prev.id, destIds, candidate.destination_evidence || {});
+    }
     stats.unchanged += 1;
     stats.duplicate_candidates_suppressed = (stats.duplicate_candidates_suppressed || 0) + 1;
     return { row: prev, created: false, promoted: false, status: prev.status, reasons, duplicate: true };
@@ -448,7 +489,9 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
     headers: { Prefer: "return=minimal" },
     body: JSON.stringify(payload)
   });
-  if (destIds.length) await syncCruiseDestinations(prev.id, destIds, candidate.destination_evidence || {});
+  if (destIds.length && syncDestinationLinks) {
+    await syncCruiseDestinations(prev.id, destIds, candidate.destination_evidence || {});
+  }
 
   stats.changed += 1;
   if (nextStatus === "active" && prev.status !== "active") {
@@ -695,6 +738,8 @@ module.exports = {
   matchShipWithAliases,
   saveShipAlias,
   syncCruiseDestinations,
+  officialSailingIdOfRecord,
+  recordsShareOfficialSailingId,
   writeResolutionAudit,
   upsertCandidateRecord,
   reprocessCandidateIds,

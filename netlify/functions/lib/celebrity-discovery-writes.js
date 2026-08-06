@@ -93,17 +93,6 @@ function classifyProposedAction(row, existing) {
     return changed ? "update_exact_legacy_match" : "duplicate_skip";
   }
 
-  if (existing.status === "active") {
-    const candidate = buildCelebrityUpsertCandidate(row, { id: existing.cruise_line_id });
-    if (!candidate) return "invalid_skip";
-    const changed =
-      existing.ship_id !== candidate.ship_id ||
-      existing.destination_id !== candidate.destination_id ||
-      existing.departure_date !== candidate.departure_date ||
-      existing.status !== "active";
-    return changed ? "update_exact_legacy_match" : "duplicate_skip";
-  }
-
   return "insert_active";
 }
 
@@ -136,6 +125,7 @@ function buildManifestEntry(row, cruiseLine, destinations, existing) {
     official_celebrity_sailing_id: productKey,
     official_celebrity_group_id: groupKey,
     stable_identity_key: productKey,
+    shared_official_url: false,
     product_type: row.product_type,
     source_url: row.raw?.official_url || row.candidate?.official_url || null,
     canonical_ship_id: row.ship_resolution?.ship?.id || row.candidate?.ship_id || null,
@@ -205,6 +195,12 @@ function evaluateAcceptanceGate(manifest, { minOcean = 1, minRiver = 1, maxWrite
   }
   if (writes.length > maxWrites) {
     failures.push(`write_count_exceeds_max:${writes.length}>${maxWrites}`);
+  }
+
+  if (manifest.controlled_batch) {
+    const updates = writes.filter((p) => p.proposed_action === "update_exact_legacy_match");
+    if (updates.length > 0) failures.push(`unexpected_controlled_updates:${updates.length}`);
+    if (writes.length < maxWrites) failures.push(`insufficient_controlled_writes:${writes.length}<${maxWrites}`);
   }
 
   const oceanWrites = writes.filter((p) => p.product_type === "ocean_cruise");
@@ -356,6 +352,16 @@ async function buildCelebrityBatchManifest({
     return buildManifestEntry(row, cruiseLine, destinations, existing);
   });
 
+  const urlCounts = new Map();
+  for (const entry of entries) {
+    const url = entry.source_url || entry.official_url;
+    if (url) urlCounts.set(url, (urlCounts.get(url) || 0) + 1);
+  }
+  for (const entry of entries) {
+    const url = entry.source_url || entry.official_url;
+    entry.shared_official_url = url ? (urlCounts.get(url) || 0) > 1 : false;
+  }
+
   const manifest = {
     generated_at: new Date().toISOString(),
     mode: controlledBatch ? "celebrity_first_production_batch_manifest" : "celebrity_batch_manifest",
@@ -484,14 +490,39 @@ async function applyCelebrityBatchWrites({
   }
 
   localTiming.start("supabase_writes");
+  const CELEBRITY_UPSERT_OPTIONS = {
+    matchPolicy: "official_sailing_id_only",
+    syncDestinationLinks: false
+  };
+
   await mapWithConcurrency(writeQueue, writeConcurrency, async ({ row, candidate, existing, action }) => {
     try {
-      const result = await upsertCandidateRecord(candidate, upsertStats, { prevRecord: existing });
+      const upsertExisting = action === "update_exact_legacy_match" ? existing : null;
+      const result = await upsertCandidateRecord(candidate, upsertStats, {
+        ...CELEBRITY_UPSERT_OPTIONS,
+        prevRecord: upsertExisting
+      });
+      const expectedSailingId = officialProductKey(row.raw);
+      const actualSailingId =
+        result.row?.official_sailing_id || result.row?.raw_extract?.celebrity_sailing_id || null;
+      const identityVerified =
+        !expectedSailingId || !actualSailingId || expectedSailingId === actualSailingId;
+
+      if (!result.row?.id || !identityVerified) {
+        stats.failed += 1;
+        stats.write_details.push({
+          celebrity_sailing_id: expectedSailingId,
+          error: identityVerified ? "missing_row_after_write" : "official_sailing_identity_mismatch",
+          action
+        });
+        return;
+      }
+
       const detail = {
-        celebrity_sailing_id: officialProductKey(row.raw),
+        celebrity_sailing_id: expectedSailingId,
         celebrity_group_id: officialGroupKey(row.raw),
         product_type: row.product_type,
-        discovered_cruise_id: result.row?.id || null,
+        discovered_cruise_id: result.row.id,
         created: result.created,
         duplicate: result.duplicate,
         status: result.status,
@@ -499,22 +530,22 @@ async function applyCelebrityBatchWrites({
       };
       stats.write_details.push(detail);
 
-      if (result.created && result.status === "active") {
+      if (result.duplicate) {
+        stats.duplicate_skips += 1;
+      } else if (result.created && result.status === "active") {
         stats.inserted += 1;
         if (row.product_type === "ocean_cruise") stats.ocean_inserts += 1;
         if (row.product_type === "river_cruise") stats.river_inserts += 1;
-        if (indexes && result.row?.id) {
+        if (indexes) {
           const pk = officialProductKey(row.raw);
           if (pk) indexes.byProductKey.set(pk, result.row);
           if (result.row.identity_key) indexes.byIdentity.set(result.row.identity_key, result.row);
           if (result.row.external_key) indexes.byExternal.set(result.row.external_key, result.row);
         }
-      } else if (result.duplicate) {
-        stats.duplicate_skips += 1;
+      } else if (!result.created && result.status === "active" && action === "update_exact_legacy_match") {
+        stats.updated += 1;
       } else if (!result.created && result.status === "active") {
-        stats.updated += 1;
-      } else if (!result.created) {
-        stats.updated += 1;
+        stats.duplicate_skips += 1;
       }
     } catch (err) {
       stats.failed += 1;

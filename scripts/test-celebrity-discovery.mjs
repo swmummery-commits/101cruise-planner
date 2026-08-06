@@ -512,4 +512,69 @@ await test("42. Celebrity writes module supports exact legacy match action", () 
   if (action !== "update_exact_legacy_match") throw new Error(action);
 });
 
+const cruiseOps = require(path.join(root, "netlify/functions/lib/cruise-discovery-ops"));
+
+await test("43. Shared group URL does not classify as duplicate update", () => {
+  const sharedUrl = "https://www.celebritycruises.com/itinerary/shared-group";
+  const a = celebrityWrites.classifyProposedAction(
+    {
+      product_type: "ocean_cruise",
+      complete_high_confidence: true,
+      raw: { official_sailing_id: "A_2028-01-01", official_url: sharedUrl },
+      candidate: { ship_id: "s1", destination_id: "d1", departure_date: "2028-01-01", departure_port: "Miami" }
+    },
+    {
+      id: "other",
+      cruise_line_id: "line",
+      official_sailing_id: "B_2028-02-01",
+      status: "active",
+      ship_id: "s1",
+      destination_id: "d1",
+      departure_date: "2028-02-01",
+      official_url: sharedUrl
+    }
+  );
+  if (a !== "insert_active") throw new Error(a);
+});
+
+await test("44. Official sailing id mismatch clears prev for insert", () => {
+  if (
+    !cruiseOps.recordsShareOfficialSailingId(
+      { official_sailing_id: "A_2028-01-01" },
+      { official_sailing_id: "B_2028-02-01" }
+    )
+  ) {
+    /* expected */
+  } else throw new Error("should not share");
+});
+
+await test("45. Controlled gate rejects unexpected updates", () => {
+  const gate = celebrityWrites.evaluateAcceptanceGate(
+    {
+      controlled_batch: true,
+      products: [
+        {
+          proposed_action: "update_exact_legacy_match",
+          product_type: "ocean_cruise",
+          stable_identity_key: "A",
+          destination_id: "d1",
+          completeness: "complete_high_confidence"
+        }
+      ]
+    },
+    { maxWrites: 40 }
+  );
+  if (gate.passed) throw new Error("should fail updates");
+});
+
+await test("46. Celebrity upsert skips destination join table", () => {
+  const src = fs.readFileSync(path.join(root, "netlify/functions/lib/celebrity-discovery-writes.js"), "utf8");
+  if (!src.includes("syncDestinationLinks: false")) throw new Error("missing skip");
+});
+
+await test("47. URL lookup disabled for official_sailing_id_only policy", () => {
+  const src = fs.readFileSync(path.join(root, "netlify/functions/lib/cruise-discovery-ops.js"), "utf8");
+  if (!src.includes('matchPolicy !== "official_sailing_id_only"')) throw new Error("missing guard");
+});
+
 console.log(`\ntest-celebrity-discovery: ${passed} passed`);

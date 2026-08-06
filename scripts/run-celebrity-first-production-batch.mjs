@@ -38,8 +38,8 @@ const { fetchRowsBySailingIds, summariseActivationAudit } = require(path.join(
   "scripts/lib/celebrity-batch-audit.cjs"
 ));
 
-const MANIFEST_PATH = path.join(root, "reports/celebrity-first-production-batch-manifest-2026-08-06.json");
-const RUN_ID = `celebrity-first-batch-2026-08-06T${new Date().toISOString().replace(/[:.]/g, "-").slice(11, 19)}Z`;
+const MANIFEST_PATH = path.join(root, "reports/celebrity-first-production-batch-manifest-2026-08-06-v2.json");
+const RUN_ID = `celebrity-clean-batch-2026-08-06T${new Date().toISOString().replace(/[:.]/g, "-").slice(11, 19)}Z`;
 const MAX_WRITES = 40;
 
 function loadEnv() {
@@ -243,6 +243,15 @@ async function runManifest(sb, ctx) {
     controlled_river: controlledSelection.filter((p) => p.product_type === "river_cruise").length
   };
   manifest.controlled_sailing_ids = controlledSelection.map((p) => p.official_product_key);
+  manifest.shared_url_groups = Object.fromEntries(
+    [...controlledSelection.reduce((map, p) => {
+      const url = p.raw?.official_url || p.candidate?.official_url;
+      if (!url) return map;
+      if (!map.has(url)) map.set(url, []);
+      map.get(url).push(p.official_product_key);
+      return map;
+    }, new Map())].filter(([, ids]) => ids.length > 1)
+  );
 
   fs.mkdirSync(path.dirname(MANIFEST_PATH), { recursive: true });
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
