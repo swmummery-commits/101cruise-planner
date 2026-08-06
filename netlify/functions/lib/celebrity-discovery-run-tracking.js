@@ -11,6 +11,7 @@ const CELEBRITY_AUTO_RUN_TYPE = "celebrity_automatic_batch";
 const CELEBRITY_RECON_RUN_TYPE = "celebrity_import_reconciliation";
 const CELEBRITY_CLOSEOUT_RUN_TYPE = "celebrity_closeout_repair";
 const CELEBRITY_CLASSIFICATION_RUN_TYPE = "celebrity_classification_reconciliation";
+const CELEBRITY_MEMBERSHIP_CLOSEOUT_RUN_TYPE = "celebrity_membership_closeout";
 
 function celebrityRunScope() {
   return "cruise_line";
@@ -77,7 +78,9 @@ function buildCelebrityRunStats({
             ? "celebrity_closeout_repair"
             : resolvedType === CELEBRITY_CLASSIFICATION_RUN_TYPE
               ? "celebrity_classification_reconciliation"
-              : "celebrity_controlled_batch")
+              : resolvedType === CELEBRITY_MEMBERSHIP_CLOSEOUT_RUN_TYPE
+                ? "celebrity_membership_closeout"
+                : "celebrity_controlled_batch")
   };
 }
 
@@ -167,7 +170,8 @@ async function loadCelebrityInventoryProgress(supabase, cruiseLineId) {
     CELEBRITY_AUTO_RUN_TYPE,
     CELEBRITY_RECON_RUN_TYPE,
     CELEBRITY_CLOSEOUT_RUN_TYPE,
-    CELEBRITY_CLASSIFICATION_RUN_TYPE
+    CELEBRITY_CLASSIFICATION_RUN_TYPE,
+    CELEBRITY_MEMBERSHIP_CLOSEOUT_RUN_TYPE
   ]);
   const celebrityRuns = (runs || []).filter((r) => trackedTypes.has(r.stats?.run_type));
   const batchRuns = celebrityRuns.filter((r) =>
@@ -176,8 +180,11 @@ async function loadCelebrityInventoryProgress(supabase, cruiseLineId) {
   const reconRuns = celebrityRuns.filter((r) => r.stats?.run_type === CELEBRITY_RECON_RUN_TYPE);
   const closeoutRuns = celebrityRuns.filter((r) => r.stats?.run_type === CELEBRITY_CLOSEOUT_RUN_TYPE);
   const classificationRuns = celebrityRuns.filter((r) => r.stats?.run_type === CELEBRITY_CLASSIFICATION_RUN_TYPE);
+  const membershipRuns = celebrityRuns.filter((r) => r.stats?.run_type === CELEBRITY_MEMBERSHIP_CLOSEOUT_RUN_TYPE);
   const latestClassification = classificationRuns[0] || null;
+  const latestMembership = membershipRuns[0] || null;
   const classificationStats = latestClassification?.stats || {};
+  const membershipStats = latestMembership?.stats || {};
   const completed = celebrityRuns.filter((r) => r.status === "completed");
   const last = celebrityRuns[0] || null;
   const lastCompleted = completed[0] || null;
@@ -244,11 +251,25 @@ async function loadCelebrityInventoryProgress(supabase, cruiseLineId) {
       active_river_cruises: inventory.river_active,
       tracked_run_inserts: trackedBatchTotals.inserted,
       historical_reconciled_imports: historicalUntracked.total_untracked_records,
-      official_eligible_snapshot_total: classificationStats.official_eligible_total ?? null,
+      official_eligible_snapshot_total:
+        membershipStats.official_eligible_total ?? classificationStats.official_eligible_total ?? null,
       official_eligible_ocean: classificationStats.official_eligible_ocean ?? null,
       official_eligible_river: classificationStats.official_eligible_river ?? null,
       product_type_mismatch_count: classificationStats.product_type_mismatches ?? 0,
-      out_of_snapshot_active_count: classificationStats.out_of_snapshot_active ?? null
+      eligible_but_missing_count: membershipStats.eligible_missing_from_production ?? null,
+      out_of_snapshot_active_count:
+        membershipStats.out_of_snapshot_active ?? classificationStats.out_of_snapshot_active ?? null
+    },
+    membership_closeout: {
+      last_run_id: membershipStats.run_id || null,
+      last_run_record_id: latestMembership?.id || null,
+      last_run_at: latestMembership?.finished_at || latestMembership?.created_at || null,
+      eligible_missing_from_production: membershipStats.eligible_missing_from_production ?? null,
+      out_of_snapshot_active: membershipStats.out_of_snapshot_active ?? null,
+      out_of_snapshot_sailing_ids: membershipStats.out_of_snapshot_sailing_ids || [],
+      inserted_official_sailing_id: membershipStats.inserted_official_sailing_id || null,
+      snapshot_checksum: membershipStats.snapshot_checksum || null,
+      note: "Membership stats from latest membership close-out run"
     },
     classification_reconciliation: {
       last_run_id: classificationStats.run_id || null,
@@ -292,6 +313,7 @@ module.exports = {
   CELEBRITY_RECON_RUN_TYPE,
   CELEBRITY_CLOSEOUT_RUN_TYPE,
   CELEBRITY_CLASSIFICATION_RUN_TYPE,
+  CELEBRITY_MEMBERSHIP_CLOSEOUT_RUN_TYPE,
   buildCelebrityRunStats,
   createCelebrityDiscoveryRun,
   finalizeCelebrityDiscoveryRun,

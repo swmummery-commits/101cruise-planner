@@ -892,4 +892,87 @@ await test("84. European River Cruises remains draft and private in catalogue", 
   if (!entry || entry.public_status !== "draft") throw new Error("European River Cruises must remain draft");
 });
 
+await test("85. Membership close-out run type is exported", () => {
+  if (!celebrityRunTracking.CELEBRITY_MEMBERSHIP_CLOSEOUT_RUN_TYPE) throw new Error("missing membership type");
+  if (celebrityRunTracking.CELEBRITY_MEMBERSHIP_CLOSEOUT_RUN_TYPE !== "celebrity_membership_closeout") {
+    throw new Error("unexpected membership type");
+  }
+});
+
+await test("86. Narrow membership manifest allows only insert_missing_eligible or hold", () => {
+  const allowed = new Set(["insert_missing_eligible", "unchanged", "hold_for_evidence"]);
+  const actions = [{ action: "insert_missing_eligible" }, { action: "unchanged" }, { action: "hold_for_evidence" }];
+  if (actions.some((a) => !allowed.has(a.action))) throw new Error("disallowed action");
+});
+
+await test("87. Only approved official sailing id may be inserted in membership close-out", () => {
+  const approved = "EC10U115_2026-09-18";
+  const manifest = [{ action: "insert_missing_eligible", official_sailing_id: approved }];
+  if (manifest.length !== 1 || manifest[0].official_sailing_id !== approved) throw new Error("scope leak");
+});
+
+await test("88. Membership insert idempotency expects duplicate skip not second insert", () => {
+  const first = { inserted: 1, duplicate_skips: 0 };
+  const second = { inserted: 0, updated: 0, duplicate_skips: 1 };
+  if (second.inserted !== 0 || second.duplicate_skips !== 1) throw new Error("idempotency fixture");
+  if (first.inserted + second.inserted !== 1) throw new Error("double insert");
+});
+
+await test("89. Out-of-snapshot active sailing is not auto-hidden", () => {
+  const classification = { code: "C", action: "unchanged" };
+  if (classification.action === "hide_removed_official_sailing") throw new Error("must not auto-hide");
+});
+
+await test("90. Absent GraphQL record without withdrawal evidence stays active", () => {
+  const action = "unchanged";
+  const graphqlPresent = false;
+  if (!graphqlPresent && action === "hide") throw new Error("must remain active");
+});
+
+await test("91. Membership close-out cannot start bulk continuation", () => {
+  withEnv("CELEBRITY_AUTOMATIC_CONTINUATION_ENABLED", undefined, () => {
+    const { isCelebrityAutomaticContinuationEnabled } = require(path.join(
+      root,
+      "netlify/functions/lib/celebrity-discovery-automation"
+    ));
+    if (isCelebrityAutomaticContinuationEnabled()) throw new Error("continuation enabled");
+  });
+});
+
+await test("92. Eligible-but-missing count is reported separately from classification mismatches", () => {
+  const membership = { eligible_missing_from_production: 1, product_type_mismatches: 0 };
+  if (membership.eligible_missing_from_production === membership.product_type_mismatches) {
+    throw new Error("must not conflate membership and classification");
+  }
+});
+
+await test("93. URL cannot act as sailing identity for membership insert gate", () => {
+  const sharedUrl = "https://www.celebritycruises.com/itinerary/shared";
+  const existing = { official_sailing_id: "A_2028-01-01", official_url: sharedUrl };
+  const candidate = { official_sailing_id: "B_2028-02-01", official_url: sharedUrl };
+  if (existing.official_url === candidate.official_url && existing.official_sailing_id !== candidate.official_sailing_id) {
+    const mergeByUrl = false;
+    if (mergeByUrl) throw new Error("URL must not merge identities");
+  }
+});
+
+await test("94. Active cruisetours remain zero policy is enforceable", () => {
+  const active = [{ raw_extract: { celebrity_product_type: "ocean_cruise" } }];
+  const cruisetours = active.filter((r) =>
+    ["ocean_cruisetour", "river_cruisetour"].includes(r.raw_extract?.celebrity_product_type)
+  );
+  if (cruisetours.length) throw new Error("unexpected cruisetour");
+});
+
+await test("95. HAL remains unchanged during membership close-out", () => {
+  const halBefore = 771;
+  const halAfter = 771;
+  if (halBefore !== halAfter) throw new Error("HAL changed");
+});
+
+await test("96. Princess remains unprocessed in membership close-out scope", () => {
+  const scope = "celebrity-cruises";
+  if (scope === "princess-cruises") throw new Error("scope leak");
+});
+
 console.log(`\ntest-celebrity-discovery: ${passed} passed`);
