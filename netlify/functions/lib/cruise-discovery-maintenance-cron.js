@@ -206,8 +206,10 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
   try {
     if (dryRun) {
       const today = perthCalendarDate();
+      const { publicBookingCutoffDate, PUBLIC_BOOKING_CUTOFF_DAYS } = require("./public-discovered-cruise-inventory");
+      const cutoffDate = publicBookingCutoffDate(today);
       const rows = await supabase(
-        `discovered_cruises?status=in.(active,review_required,match_required,validation_failed,ready,discovered)&departure_date=lt.${today}&select=id,cruise_line_id,departure_date,status&limit=500`
+        `discovered_cruises?status=in.(active,review_required,match_required,validation_failed,ready,discovered)&departure_date=lte.${cutoffDate}&select=id,cruise_line_id,departure_date,status&limit=500`
       );
       const stats = {
         run_type: DAILY_EXPIRY_RUN_TYPE,
@@ -216,6 +218,8 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
         dry_run: true,
         expired_count: (rows || []).length,
         as_of: today,
+        cutoff_date: cutoffDate,
+        cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
         timezone: "Australia/Perth"
       };
       await finalizeMaintenanceRun(supabase, dbRun?.id, { status: "completed", stats });

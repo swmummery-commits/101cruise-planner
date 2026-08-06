@@ -5,6 +5,7 @@
 const {
   HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
   CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
+  PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
   DAILY_EXPIRY_RUN_TYPE,
   MAINTENANCE_SCHEDULES,
   computeFreshnessLabel,
@@ -12,6 +13,7 @@ const {
   describeMaintenanceHold,
   isHalWeeklyReconciliationEnabled,
   isCelebrityWeeklyReconciliationEnabled,
+  isPrincessWeeklyReconciliationEnabled,
   isCruiseDailyExpiryEnabled
 } = require("./cruise-discovery-maintenance");
 const { loadCelebrityDatabaseInventoryCounts, headCountSupabase } = require("./celebrity-inventory-counts");
@@ -111,7 +113,9 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
   const enabled =
     lineSlug === "holland-america-line"
       ? isHalWeeklyReconciliationEnabled()
-      : isCelebrityWeeklyReconciliationEnabled();
+      : lineSlug === "princess-cruises"
+        ? isPrincessWeeklyReconciliationEnabled()
+        : isCelebrityWeeklyReconciliationEnabled();
 
   let freshness = "Stale";
   if (lastFailed && (!lastSuccess || new Date(lastFailed.finished_at) > new Date(lastSuccess.finished_at))) {
@@ -137,7 +141,9 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     automation_flag: resolveEnvFlag(
       lineSlug === "holland-america-line"
         ? process.env.HAL_WEEKLY_RECONCILIATION_ENABLED
-        : process.env.CELEBRITY_WEEKLY_RECONCILIATION_ENABLED
+        : lineSlug === "princess-cruises"
+          ? process.env.PRINCESS_WEEKLY_RECONCILIATION_ENABLED
+          : process.env.CELEBRITY_WEEKLY_RECONCILIATION_ENABLED
     ),
     refresh_cadence: schedule?.perth_display || null,
     cron_utc: schedule?.cron_utc || null,
@@ -168,7 +174,7 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     inventory_changed_on_last_attempt: lastAttempt?.stats?.inventory_changed === true,
     warning:
       freshness === "Failed" && lastFailed
-        ? `${lineSlug === "celebrity-cruises" ? "Celebrity" : "Holland America"} weekly refresh failed on ${new Date(lastFailed.finished_at || lastFailed.started_at).toLocaleDateString("en-AU", { timeZone: "Australia/Perth" })}. Existing inventory remains unchanged. Review the source error before the next scheduled run.`
+        ? `${lineSlug === "celebrity-cruises" ? "Celebrity" : lineSlug === "princess-cruises" ? "Princess" : "Holland America"} weekly refresh failed on ${new Date(lastFailed.finished_at || lastFailed.started_at).toLocaleDateString("en-AU", { timeZone: "Australia/Perth" })}. Existing inventory remains unchanged. Review the source error before the next scheduled run.`
         : null
   };
 }
@@ -213,6 +219,7 @@ async function loadDailyExpiryStatus(supabase) {
 async function loadMaintenanceDashboard(supabase, lines = []) {
   const halLine = lines.find((l) => l.slug === "holland-america-line");
   const celebrityLine = lines.find((l) => l.slug === "celebrity-cruises");
+  const princessLine = lines.find((l) => l.slug === "princess-cruises");
   const hal =
     halLine?.id &&
     (await loadWeeklyMaintenanceStatus(
@@ -231,10 +238,20 @@ async function loadMaintenanceDashboard(supabase, lines = []) {
       CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
       "celebrity_weekly"
     ));
+  const princess =
+    princessLine?.id &&
+    (await loadWeeklyMaintenanceStatus(
+      supabase,
+      princessLine.id,
+      "princess-cruises",
+      PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
+      "princess_weekly"
+    ));
   const dailyExpiry = await loadDailyExpiryStatus(supabase);
   return {
     hal,
     celebrity,
+    princess,
     daily_expiry: dailyExpiry,
     flag_hold: describeMaintenanceHold()
   };
@@ -249,5 +266,6 @@ module.exports = {
   loadMaintenanceDashboard,
   HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
   CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
+  PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
   DAILY_EXPIRY_RUN_TYPE
 };

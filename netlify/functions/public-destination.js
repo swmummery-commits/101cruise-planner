@@ -20,6 +20,11 @@ const {
   mediaDto
 } = require("./lib/destination-page.js");
 const { applyDestinationImageFallbacks } = require("./lib/destination-image-fallbacks.js");
+const {
+  perthCalendarDate,
+  publicBookingMinimumDepartureDate,
+  isCruisePubliclyBookable
+} = require("./lib/public-discovered-cruise-inventory");
 
 function jsonResponse(statusCode, body, cacheControl = "public, max-age=300, stale-while-revalidate=86400") {
   const empty = body === "" || body == null;
@@ -210,15 +215,23 @@ exports.handler = async (event) => {
     const heroMedia =
       mediaMap.get(destination.hero_media_id) || mediaMap.get(research.media_id) || null;
 
-    const today = new Date().toISOString().slice(0, 10);
+    const perthToday = perthCalendarDate();
+    const minDeparture = publicBookingMinimumDepartureDate(perthToday);
     let cruiseRows = [];
     try {
       cruiseRows = await supabaseGet(
         `discovered_cruises?destination_id=eq.${encodeURIComponent(destination.id)}` +
           `&status=eq.active` +
-          `&or=(departure_date.is.null,departure_date.gte.${today})` +
+          `&departure_date=gte.${minDeparture}` +
           `&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare,currency,brochure_fare_display,official_url` +
-          `&order=departure_date.asc.nullslast&limit=200`
+          `&order=departure_date.asc&limit=200`
+      );
+      cruiseRows = (cruiseRows || []).filter((row) =>
+        isCruisePubliclyBookable({
+          departureDate: row.departure_date,
+          status: "active",
+          perthToday
+        })
       );
     } catch (cruiseError) {
       console.warn("destination cruises load skipped", cruiseError.message || cruiseError);

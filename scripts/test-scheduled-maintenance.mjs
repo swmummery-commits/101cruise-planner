@@ -78,7 +78,19 @@ test("7. Celebrity maintenance run type constant exists", () => {
   if (maintenance.CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE !== "celebrity_weekly_maintenance") throw new Error("Celebrity type");
 });
 
-test("8. Inventory collapse gate blocks writes", () => {
+test("8. Princess weekly cron uses Sunday 20:00 UTC", () => {
+  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.cron_utc !== "0 20 * * 0") throw new Error("Princess cron mismatch");
+});
+
+test("9. Princess weekly flag defaults false", () => {
+  withEnv("PRINCESS_WEEKLY_RECONCILIATION_ENABLED", undefined, () => {
+    delete require.cache[require.resolve(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance"))];
+    const m = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance"));
+    if (m.isPrincessWeeklyReconciliationEnabled()) throw new Error("Princess default enabled");
+  });
+});
+
+test("10. Inventory collapse gate blocks writes", () => {
   const gate = evaluateMaintenanceQualityGate({
     lineSlug: "holland-america-line",
     metrics: { eligible_total: 500, ship_resolution_pct: 99, departure_port_resolution_pct: 96, destination_resolution_pct: 91, identity_coverage_pct: 100, duplicate_official_identities: 0 },
@@ -89,31 +101,36 @@ test("8. Inventory collapse gate blocks writes", () => {
   if (gate.passed) throw new Error("collapse gate should fail");
 });
 
-test("9. Perth calendar date helper returns YYYY-MM-DD", () => {
+test("11. Perth calendar date helper returns YYYY-MM-DD", () => {
   const d = maintenance.perthCalendarDate(new Date("2026-08-05T20:00:00Z"));
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) throw new Error(d);
 });
 
-test("10. Freshness Current within 8 days", () => {
+test("12. Freshness Current within 8 days", () => {
   const label = maintenance.computeFreshnessLabel(new Date(Date.now() - 3 * 86400000).toISOString());
   if (label !== "Current") throw new Error(label);
 });
 
-test("11. Source absent policy retains active records", () => {
+test("13. Source absent policy retains active records", () => {
   const action = "source_absent_retained_active";
   if (action === "hide_removed_official_sailing") throw new Error("must not auto-hide");
 });
 
-test("12. P&O Cruises Australia remains excluded from maintenance scope", () => {
+test("14. P&O Cruises Australia remains excluded from maintenance scope", () => {
   const excluded = "p-o-cruises-australia";
   if (excluded === "holland-america-line") throw new Error("scope leak");
 });
 
-test("13. Princess remains unprocessed", () => {
-  if ("princess-cruises" === "celebrity-cruises") throw new Error("scope leak");
+test("15. Princess uses dedicated weekly maintenance not general discovery", () => {
+  if (maintenance.PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE !== "princess_weekly_maintenance") {
+    throw new Error("Princess maintenance run type missing");
+  }
+  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.function !== "princess-weekly-maintenance-cron") {
+    throw new Error("Princess cron function missing");
+  }
 });
 
-test("14. resolveEnvFlag reports unset as unset_default_false", () => {
+test("16. resolveEnvFlag reports unset as unset_default_false", () => {
   withEnv("HAL_WEEKLY_RECONCILIATION_ENABLED", undefined, () => {
     delete require.cache[require.resolve(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance"))];
     const m = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance"));

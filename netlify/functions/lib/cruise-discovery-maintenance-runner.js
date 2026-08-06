@@ -16,6 +16,12 @@ const {
   officialProductKey: celebrityOfficialProductKey
 } = require("./celebrity-discovery-adapter");
 const {
+  simulatePrincessInventory,
+  catalogueDestinations: princessCatalogueDestinations,
+  isEligiblePrincessCruise,
+  officialProductKey: princessOfficialProductKey
+} = require("./princess-discovery-adapter");
+const {
   buildHalBatchManifest,
   applyHalBatchWrites,
   indexExistingHalRecords
@@ -25,13 +31,19 @@ const {
   applyCelebrityBatchWrites,
   indexExistingCelebrityRecords
 } = require("./celebrity-discovery-writes");
+const {
+  buildPrincessBatchManifest,
+  applyPrincessBatchWrites
+} = require("./princess-discovery-writes");
 const { resolveHalDiscoveryMode } = require("./holland-america-discovery-mode");
 const { resolveCelebrityDiscoveryMode } = require("./celebrity-discovery-mode");
+const { resolvePrincessDiscoveryMode } = require("./princess-discovery-mode");
 const { supabase: defaultSupabase } = require("./cruise-discovery-ops");
 const { loadClassificationDestinations } = require("./destination-queries");
 const {
   HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
   CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
+  PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
   perthCalendarDate
 } = require("./cruise-discovery-maintenance");
 const { headCountSupabase, loadCelebrityDatabaseInventoryCounts } = require("./celebrity-inventory-counts");
@@ -41,6 +53,11 @@ const {
   weeklyLockKey
 } = require("./cruise-discovery-maintenance-locks");
 const { persistMaintenanceRollbackManifest } = require("./cruise-discovery-maintenance-manifests");
+const {
+  partitionByPublicBookingCutoff,
+  PUBLIC_BOOKING_CUTOFF_DAYS,
+  publicBookingMinimumDepartureDate
+} = require("./public-discovered-cruise-inventory");
 
 const MAX_WRITES_PER_BATCH = 100;
 
@@ -85,7 +102,9 @@ async function loadLineContext(supabase, lineSlug) {
   const destinations =
     lineSlug === "holland-america-line"
       ? halCatalogueDestinations(destRows || [])
-      : celebrityCatalogueDestinations(destRows || []);
+      : lineSlug === "princess-cruises"
+        ? princessCatalogueDestinations(destRows || [])
+        : celebrityCatalogueDestinations(destRows || []);
   const ships = await supabase(
     `ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(line.id)}&active=eq.true&select=id,name,cruise_line_id,official_line_ship_id,ship_class`
   );
@@ -155,6 +174,28 @@ function computeCelebrityResolutionRates(products) {
   };
 }
 
+function computePrincessResolutionRates(products) {
+  const eligible = products.filter((p) => p.complete_high_confidence && isEligiblePrincessCruise(p.product_type));
+  const total = eligible.length || 1;
+  const keys = new Set();
+  let dups = 0;
+  for (const p of eligible) {
+    const k = princessOfficialProductKey(p.raw);
+    if (keys.has(k)) dups += 1;
+    keys.add(k);
+  }
+  return {
+    eligible_total: eligible.length,
+    ship_resolution_pct: (eligible.filter((p) => p.ship_resolution?.resolved).length / total) * 100,
+    departure_port_resolution_pct:
+      (eligible.filter((p) => p.departure_port_resolution?.status === "resolved").length / total) * 100,
+    destination_resolution_pct:
+      (eligible.filter((p) => p.destination_resolution?.status === "resolved").length / total) * 100,
+    identity_coverage_pct: eligible.length ? ((eligible.length - dups) / eligible.length) * 100 : 100,
+    duplicate_official_identities: dups
+  };
+}
+
 function evaluateMaintenanceQualityGate({ lineSlug, metrics, previousEligible, manifest, dryRun }) {
   const failures = [];
   const eligible = metrics.eligible_total || 0;
@@ -192,12 +233,13 @@ function evaluateMaintenanceQualityGate({ lineSlug, metrics, previousEligible, m
 }
 
 async function findSourceAbsentActive({ supabase, cruiseLineId, eligibleKeys, today, officialProductKeyFn }) {
+  const minDeparture = publicBookingMinimumDepartureDate(today);
   const rows = [];
   let offset = 0;
   const pageSize = 1000;
   while (true) {
     const batch = await supabase(
-      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&status=eq.active&departure_date=gte.${today}&select=id,official_sailing_id,departure_date,raw_extract&limit=${pageSize}&offset=${offset}`
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&status=eq.active&departure_date=gte.${minDeparture}&select=id,official_sailing_id,departure_date,raw_extract&limit=${pageSize}&offset=${offset}`
     );
     if (!batch?.length) break;
     rows.push(...batch);
@@ -209,6 +251,7 @@ async function findSourceAbsentActive({ supabase, cruiseLineId, eligibleKeys, to
     const sid =
       row.official_sailing_id ||
       row.raw_extract?.celebrity_sailing_id ||
+      row.raw_extract?.princess_sailing_id ||
       row.raw_extract?.hal_product_key ||
       null;
     const key = sid || (row.raw_extract ? officialProductKeyFn(row.raw_extract) : null);
@@ -273,13 +316,21 @@ async function runHalWeeklyMaintenance(context = {}) {
     }
 
     const normalised = simulation.voyages || simulation.normalised || [];
-    const products = normalised.filter((p) => p.complete_high_confidence && p.product_type === "cruise");
+    const { publiclyEligible: normalisedPublic, withinCutoff: withinPublicCutoff } =
+      partitionByPublicBookingCutoff(
+        normalised,
+        (p) => p.candidate?.departure_date || p.departure_date || p.raw?.departure_date,
+        today
+      );
+    const products = normalisedPublic.filter(
+      (p) => p.complete_high_confidence && p.product_type === "cruise"
+    );
     const eligibleKeys = new Set(products.map((p) => halOfficialProductKey(p.raw)).filter(Boolean));
     const metrics = computeHalResolutionRates(normalised);
     const previousRun = await findPreviousSuccessfulMaintenanceRun(sb, line.id, runType);
 
     const manifest = await buildHalBatchManifest({
-      products: normalised,
+      products: normalisedPublic,
       cruiseLine: line,
       destinations,
       supabase: sb,
@@ -323,6 +374,8 @@ async function runHalWeeklyMaintenance(context = {}) {
       source_absent_sailing_ids: sourceAbsent.map((r) => r.official_sailing_id),
       cruisetours_excluded: normalised.filter((p) => p.product_type === "cruisetour").length,
       incomplete_skipped: normalised.filter((p) => !p.complete_high_confidence).length,
+      within_public_cutoff_excluded: withinPublicCutoff.length,
+      public_booking_cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
       resolution_rates: metrics,
       quality_gate: qualityGate,
       snapshot_id: snapshotId,
@@ -337,7 +390,7 @@ async function runHalWeeklyMaintenance(context = {}) {
       return { ok: true, dry_run: true, summary, manifest };
     }
 
-    const writeProducts = normalised.filter((row) => {
+    const writeProducts = normalisedPublic.filter((row) => {
       const entry = manifest.products.find(
         (p) => p.stable_product_identity_key === halOfficialProductKey(row.raw)
       );
@@ -427,15 +480,22 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
       useCache: false
     });
 
-    const products = (simulation.products || []).filter(
+    const { publiclyEligible: celebrityPublic, withinCutoff: withinPublicCutoff } =
+      partitionByPublicBookingCutoff(
+        simulation.products || [],
+        (p) => p.candidate?.departure_date || p.departure_date || p.raw?.departure_date,
+        today
+      );
+
+    const products = celebrityPublic.filter(
       (p) => p.complete_high_confidence && isEligibleCelebrityCruise(p.product_type)
     );
     const eligibleKeys = new Set(products.map((p) => celebrityOfficialProductKey(p.raw)).filter(Boolean));
-    const metrics = computeCelebrityResolutionRates(simulation.products || []);
+    const metrics = computeCelebrityResolutionRates(celebrityPublic);
     const previousRun = await findPreviousSuccessfulMaintenanceRun(sb, line.id, runType);
 
     const manifest = await buildCelebrityBatchManifest({
-      products: simulation.products || [],
+      products: celebrityPublic,
       cruiseLine: line,
       destinations,
       supabase: sb,
@@ -483,6 +543,8 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
         String(p.product_type || "").includes("cruisetour")
       ).length,
       incomplete_skipped: (simulation.products || []).filter((p) => !p.complete_high_confidence).length,
+      within_public_cutoff_excluded: withinPublicCutoff.length,
+      public_booking_cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
       resolution_rates: metrics,
       quality_gate: qualityGate,
       snapshot_id: snapshotId,
@@ -497,7 +559,7 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
       return { ok: true, dry_run: true, summary, manifest };
     }
 
-    const writeProducts = (simulation.products || []).filter((row) => {
+    const writeProducts = celebrityPublic.filter((row) => {
       const entry = manifest.products.find(
         (p) => p.stable_identity_key === celebrityOfficialProductKey(row.raw)
       );
@@ -550,9 +612,185 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
   }
 }
 
+async function runPrincessWeeklyMaintenance(context = {}) {
+  const sb = context.supabase || defaultSupabase;
+  const dryRun = Boolean(context.dryRun ?? context.dry_run);
+  const performWrites = Boolean(context.performWrites ?? context.perform_writes) && !dryRun;
+  const maxWrites = Math.min(MAX_WRITES_PER_BATCH, Number(context.maxWrites ?? context.max_writes ?? 100) || 100);
+  const runId = String(context.runId || context.run_id || `princess-weekly-${Date.now()}`).trim();
+  const runRecordId = context.runRecordId || context.run_record_id || null;
+  const today = context.today || perthCalendarDate();
+  const lineSlug = "princess-cruises";
+  const runType = PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE;
+
+  const lock = await acquireMaintenanceLock(sb, lineSlug, runId, runRecordId);
+  if (!lock.acquired) {
+    return {
+      ok: false,
+      blocked: true,
+      reason: lock.reason || "maintenance_lock_held",
+      worker_state: lock.worker_state || "already_running",
+      line_slug: lineSlug
+    };
+  }
+
+  try {
+    const { line, destinations, ships } = await loadLineContext(sb, lineSlug);
+    const modeGate = resolvePrincessDiscoveryMode(performWrites ? "weekly_maintenance" : "production_read_only");
+    if (performWrites && !modeGate.writes_allowed) {
+      return { ok: false, blocked: true, reason: modeGate.reason, line_slug: lineSlug };
+    }
+
+    const simulation = await simulatePrincessInventory({
+      cruiseLine: line,
+      ships,
+      destinations,
+      today,
+      useCache: false
+    });
+
+    if (!simulation?.products?.length && simulation?.fetch_failed) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: true,
+        reason: "official_source_unreachable",
+        line_slug: lineSlug,
+        simulation
+      };
+    }
+
+    const normalised = simulation.products || [];
+    const { publiclyEligible: princessPublic, withinCutoff: withinPublicCutoff } =
+      partitionByPublicBookingCutoff(
+        normalised,
+        (p) => p.candidate?.departure_date || p.departure_date || p.raw?.departure_date,
+        today
+      );
+    const products = princessPublic.filter(
+      (p) => p.complete_high_confidence && isEligiblePrincessCruise(p.product_type)
+    );
+    const eligibleKeys = new Set(products.map((p) => princessOfficialProductKey(p.raw)).filter(Boolean));
+    const metrics = computePrincessResolutionRates(princessPublic);
+    const previousRun = await findPreviousSuccessfulMaintenanceRun(sb, line.id, runType);
+
+    const manifest = await buildPrincessBatchManifest({
+      products: princessPublic,
+      cruiseLine: line,
+      destinations,
+      supabase: sb,
+      runId
+    });
+
+    const proposedInserts = manifest.products.filter((p) => p.proposed_action === "insert_active");
+    const proposedUpdates = manifest.products.filter((p) => p.proposed_action === "update_exact_legacy_match");
+    const unchanged = manifest.products.filter((p) => p.proposed_action === "duplicate_skip");
+    const sourceAbsent = await findSourceAbsentActive({
+      supabase: sb,
+      cruiseLineId: line.id,
+      eligibleKeys,
+      today,
+      officialProductKeyFn: (raw) => princessOfficialProductKey(raw)
+    });
+
+    const qualityGate = evaluateMaintenanceQualityGate({
+      lineSlug,
+      metrics,
+      previousEligible: previousRun,
+      manifest,
+      dryRun
+    });
+
+    const snapshotId = snapshotChecksum(Array.from(eligibleKeys).sort());
+
+    const summary = {
+      line_slug: lineSlug,
+      run_id: runId,
+      run_type: runType,
+      trigger_type: context.triggerType || context.trigger_type || "scheduled",
+      dry_run: dryRun,
+      official_source_total: simulation.num_found_official || simulation.raw_group_count || null,
+      eligible_total: metrics.eligible_total,
+      active_production_total: await loadActiveProductionTotal(sb, line.id, lineSlug),
+      proposed_inserts: proposedInserts.length,
+      proposed_updates: proposedUpdates.length,
+      unchanged: unchanged.length,
+      source_absent_active: sourceAbsent.length,
+      source_absent_sailing_ids: sourceAbsent.map((r) => r.official_sailing_id),
+      cruisetours_excluded: normalised.filter((p) => p.product_type === "cruisetour").length,
+      incomplete_skipped: normalised.filter((p) => !p.complete_high_confidence).length,
+      within_public_cutoff_excluded: withinPublicCutoff.length,
+      public_booking_cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
+      resolution_rates: metrics,
+      quality_gate: qualityGate,
+      snapshot_id: snapshotId,
+      inventory_changed: false
+    };
+
+    if (!qualityGate.passed) {
+      return { ok: false, blocked: true, failed: true, reason: qualityGate.failures.join("; "), summary };
+    }
+
+    if (dryRun || !performWrites) {
+      return { ok: true, dry_run: true, summary, manifest };
+    }
+
+    const writeProducts = princessPublic.filter((row) => {
+      const entry = manifest.products.find(
+        (p) => p.stable_identity_key === princessOfficialProductKey(row.raw)
+      );
+      return entry && ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
+    });
+
+    const writeResult = await applyPrincessBatchWrites({
+      products: writeProducts.slice(0, maxWrites),
+      cruiseLine: line,
+      maxWrites,
+      runId,
+      supabase: sb,
+      destinations,
+      performWrites: true,
+      maintenanceTrace: {
+        run_id: runId,
+        run_record_id: runRecordId,
+        cruise_line_id: line.id,
+        cruise_line_slug: lineSlug,
+        trigger_type: context.triggerType || context.trigger_type || "scheduled"
+      }
+    });
+
+    const rollback = await persistMaintenanceRollbackManifest(sb, {
+      runId,
+      runRecordId,
+      cruiseLineId: line.id,
+      lineSlug,
+      triggerType: context.triggerType || context.trigger_type,
+      writeResult
+    });
+
+    summary.inserts = writeResult.stats?.inserted || 0;
+    summary.updates = writeResult.stats?.updated || 0;
+    summary.duplicate_skips = writeResult.stats?.duplicate_skips || 0;
+    summary.failed_writes = writeResult.stats?.failed || 0;
+    summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
+    summary.rollback_manifest_id = rollback?.manifest_record_id || null;
+
+    return {
+      ok: writeResult.stats?.failed === 0,
+      summary,
+      write_result: writeResult.stats,
+      manifest,
+      rollback_manifest: rollback?.manifest || null
+    };
+  } finally {
+    await releaseMaintenanceLock(sb, lineSlug, runId);
+  }
+}
+
 module.exports = {
   runHalWeeklyMaintenance,
   runCelebrityWeeklyMaintenance,
+  runPrincessWeeklyMaintenance,
   acquireMaintenanceLock,
   releaseMaintenanceLock,
   evaluateMaintenanceQualityGate,

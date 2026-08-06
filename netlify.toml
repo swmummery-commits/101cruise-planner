@@ -28,6 +28,11 @@
   schedule = "0 19 * * 0"
   timeout = 900
 
+[functions."princess-weekly-maintenance-cron"]
+  # Princess weekly official-source reconciliation — Sunday 20:00 UTC (Monday 04:00 Perth).
+  schedule = "0 20 * * 0"
+  timeout = 900
+
 [functions."cruise-daily-expiry-cron"]
   # Daily sailed-cruise expiration — 17:30 UTC (01:30 Australia/Perth).
   schedule = "30 17 * * *"

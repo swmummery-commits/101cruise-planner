@@ -8,6 +8,9 @@ const HAL_WEEKLY_RECONCILIATION_ENABLED =
 const CELEBRITY_WEEKLY_RECONCILIATION_ENABLED =
   String(process.env.CELEBRITY_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
 
+const PRINCESS_WEEKLY_RECONCILIATION_ENABLED =
+  String(process.env.PRINCESS_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
+
 const CRUISE_DAILY_EXPIRY_ENABLED =
   String(process.env.CRUISE_DAILY_EXPIRY_ENABLED || "").trim().toLowerCase() === "true";
 
@@ -26,6 +29,12 @@ const MAINTENANCE_SCHEDULES = {
     utc_display: "Sunday 19:00 UTC",
     function: "celebrity-weekly-maintenance-cron"
   },
+  princess_weekly: {
+    cron_utc: "0 20 * * 0",
+    perth_display: "Monday 04:00 Australia/Perth",
+    utc_display: "Sunday 20:00 UTC",
+    function: "princess-weekly-maintenance-cron"
+  },
   daily_expiry: {
     cron_utc: "30 17 * * *",
     perth_display: "Daily 01:30 Australia/Perth",
@@ -36,6 +45,7 @@ const MAINTENANCE_SCHEDULES = {
 
 const HAL_WEEKLY_MAINTENANCE_RUN_TYPE = "hal_weekly_maintenance";
 const CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE = "celebrity_weekly_maintenance";
+const PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE = "princess_weekly_maintenance";
 const DAILY_EXPIRY_RUN_TYPE = "daily_expiry_maintenance";
 
 function perthCalendarDate(reference = new Date()) {
@@ -48,6 +58,10 @@ function isHalWeeklyReconciliationEnabled() {
 
 function isCelebrityWeeklyReconciliationEnabled() {
   return CELEBRITY_WEEKLY_RECONCILIATION_ENABLED;
+}
+
+function isPrincessWeeklyReconciliationEnabled() {
+  return PRINCESS_WEEKLY_RECONCILIATION_ENABLED;
 }
 
 function isCruiseDailyExpiryEnabled() {
@@ -68,6 +82,16 @@ function assertCelebrityWeeklyMaintenanceEnabled() {
       "Celebrity weekly maintenance is disabled (CELEBRITY_WEEKLY_RECONCILIATION_ENABLED=false)"
     );
     err.code = "celebrity_weekly_maintenance_disabled";
+    throw err;
+  }
+}
+
+function assertPrincessWeeklyMaintenanceEnabled() {
+  if (!isPrincessWeeklyReconciliationEnabled()) {
+    const err = new Error(
+      "Princess weekly maintenance is disabled (PRINCESS_WEEKLY_RECONCILIATION_ENABLED=false)"
+    );
+    err.code = "princess_weekly_maintenance_disabled";
     throw err;
   }
 }
@@ -104,9 +128,11 @@ function describeMaintenanceHold() {
   return {
     hal_weekly_reconciliation: resolveEnvFlag(process.env.HAL_WEEKLY_RECONCILIATION_ENABLED),
     celebrity_weekly_reconciliation: resolveEnvFlag(process.env.CELEBRITY_WEEKLY_RECONCILIATION_ENABLED),
+    princess_weekly_reconciliation: resolveEnvFlag(process.env.PRINCESS_WEEKLY_RECONCILIATION_ENABLED),
     cruise_daily_expiry: resolveEnvFlag(process.env.CRUISE_DAILY_EXPIRY_ENABLED),
     hal_weekly_reconciliation_enabled: isHalWeeklyReconciliationEnabled(),
     celebrity_weekly_reconciliation_enabled: isCelebrityWeeklyReconciliationEnabled(),
+    princess_weekly_reconciliation_enabled: isPrincessWeeklyReconciliationEnabled(),
     cruise_daily_expiry_enabled: isCruiseDailyExpiryEnabled(),
     operational_timezone: OPERATIONAL_TIMEZONE,
     schedules: MAINTENANCE_SCHEDULES,
@@ -115,7 +141,8 @@ function describeMaintenanceHold() {
       "HAL_DISCOVERY_WRITE_ENABLED",
       "HAL_AUTOMATIC_CONTINUATION_ENABLED",
       "CELEBRITY_DISCOVERY_WRITE_ENABLED",
-      "CELEBRITY_AUTOMATIC_CONTINUATION_ENABLED"
+      "CELEBRITY_AUTOMATIC_CONTINUATION_ENABLED",
+      "PRINCESS_DISCOVERY_WRITE_ENABLED"
     ]
   };
 }
@@ -123,18 +150,22 @@ function describeMaintenanceHold() {
 module.exports = {
   HAL_WEEKLY_RECONCILIATION_ENABLED,
   CELEBRITY_WEEKLY_RECONCILIATION_ENABLED,
+  PRINCESS_WEEKLY_RECONCILIATION_ENABLED,
   CRUISE_DAILY_EXPIRY_ENABLED,
   OPERATIONAL_TIMEZONE,
   MAINTENANCE_SCHEDULES,
   HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
   CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
+  PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
   DAILY_EXPIRY_RUN_TYPE,
   perthCalendarDate,
   isHalWeeklyReconciliationEnabled,
   isCelebrityWeeklyReconciliationEnabled,
+  isPrincessWeeklyReconciliationEnabled,
   isCruiseDailyExpiryEnabled,
   assertHalWeeklyMaintenanceEnabled,
   assertCelebrityWeeklyMaintenanceEnabled,
+  assertPrincessWeeklyMaintenanceEnabled,
   assertDailyExpiryEnabled,
   computeFreshnessLabel,
   resolveEnvFlag,

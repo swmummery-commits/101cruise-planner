@@ -67,7 +67,16 @@ function jsonResponse(statusCode, body) {
 }
 
 async function dashboard() {
-  const today = new Date().toISOString().slice(0, 10);
+  const {
+    perthCalendarDate,
+    publicBookingMinimumDepartureDate,
+    publicBookingCutoffDate,
+    PUBLIC_BOOKING_CUTOFF_DAYS
+  } = require("./lib/public-discovered-cruise-inventory");
+
+  const perthToday = perthCalendarDate();
+  const minPublicDeparture = publicBookingMinimumDepartureDate(perthToday);
+  const publicCutoffDate = publicBookingCutoffDate(perthToday);
   const [
     activeFuture,
     activeAll,
@@ -79,7 +88,7 @@ async function dashboard() {
     expiredPending
   ] = await Promise.all([
     supabase(
-      `discovered_cruises?status=eq.active&or=(departure_date.is.null,departure_date.gte.${today})&select=id,cruise_line_id&limit=1000`
+      `discovered_cruises?status=eq.active&departure_date=gte.${minPublicDeparture}&select=id,cruise_line_id&limit=1000`
     ).catch(() => []),
     supabase(
       "discovered_cruises?status=eq.active&select=id,cruise_line_id,departure_date&limit=1000"
@@ -102,7 +111,7 @@ async function dashboard() {
       ).toISOString()}&select=id&limit=1000`
     ).catch(() => []),
     supabase(
-      `discovered_cruises?status=eq.active&departure_date=lt.${today}&select=id&limit=1000`
+      `discovered_cruises?status=eq.active&departure_date=lte.${publicCutoffDate}&select=id&limit=1000`
     ).catch(() => [])
   ]);
 
@@ -605,6 +614,7 @@ async function listCruises(body) {
   if (destinationId) parts.unshift(`destination_id=eq.${encodeURIComponent(destinationId)}`);
   if (cruiseLineId) parts.unshift(`cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}`);
   const rows = await supabase(`discovered_cruises?${parts.join("&")}`);
+  const { describePublicAvailability } = require("./lib/public-discovered-cruise-inventory");
   const cruises = (rows || []).map((row) => {
     const departure_audit = compactDepartureAudit(row.raw_extract || {}, row);
     return {
@@ -627,6 +637,7 @@ async function listCruises(body) {
       last_seen_at: row.last_seen_at,
       last_changed_at: row.last_changed_at,
       departure_audit,
+      public_availability: describePublicAvailability(row),
       cruise_line_name: row.ci_cruise_lines?.name || null,
       ship_name: row.ci_cruise_ships?.name || null,
       destination_name: row.destinations?.name || null,

@@ -13,6 +13,13 @@
 const { readEngineFlag } = require("./lib/cruise-finder-v2/engine");
 const { categorizeResultsByDeparture } = require("./lib/cruise-finder-departure-match");
 const { loadInventoryDestinationBySlug } = require("./lib/destination-queries");
+const {
+  perthCalendarDate,
+  publicBookingMinimumDepartureDate,
+  publicBookingCutoffDate,
+  isCruisePubliclyBookable,
+  PUBLIC_BOOKING_CUTOFF_DAYS
+} = require("./lib/public-discovered-cruise-inventory");
 
 const BRAVE_ENDPOINT = "https://api.search.brave.com/res/v1/web/search";
 const MAX_BRAVE_QUERIES = 4;
@@ -581,6 +588,7 @@ function allowRequest(key) {
 }
 
 function cacheKey(input) {
+  const perthToday = perthCalendarDate();
   return JSON.stringify({
     d: input.destination,
     tm: input.timingMode,
@@ -590,7 +598,9 @@ function cacheKey(input) {
     ed: input.endDate,
     dur: input.durationId,
     dep: input.departure,
-    lines: (input.cruiseLines || []).slice(0, 6)
+    lines: (input.cruiseLines || []).slice(0, 6),
+    pubCutoff: PUBLIC_BOOKING_CUTOFF_DAYS,
+    pubAsOf: perthToday
   });
 }
 
@@ -889,7 +899,8 @@ function isCompleteDiscoveryRow(row) {
  * Load complete active sailings for a destination from Discovery DB.
  */
 async function runDiscoveryCatalogue(input) {
-  const today = new Date().toISOString().slice(0, 10);
+  const perthToday = perthCalendarDate();
+  const minDeparture = publicBookingMinimumDepartureDate(perthToday);
   const slug = String(input.destination || "")
     .trim()
     .toLowerCase();
@@ -900,7 +911,7 @@ async function runDiscoveryCatalogue(input) {
     return {
       ok: true,
       source: "discovery",
-      dateSearched: today,
+      dateSearched: perthToday,
       timingLabel: timingLabel(input),
       results: [],
       alsoWorthConsidering: [],
@@ -916,7 +927,7 @@ async function runDiscoveryCatalogue(input) {
   const rows = await supabaseGet(
     `discovered_cruises?destination_id=eq.${encodeURIComponent(destination.id)}` +
       `&status=eq.active` +
-      `&departure_date=gte.${today}` +
+      `&departure_date=gte.${minDeparture}` +
       `&select=id,cruise_line_id,ship_id,departure_date,return_date,nights,departure_port,itinerary,itinerary_ports,brochure_fare_display,currency,official_url,source_url,last_verified_at,last_seen_at` +
       `&order=departure_date.asc&limit=100`
   );
@@ -949,6 +960,15 @@ async function runDiscoveryCatalogue(input) {
       ship_name: ship
     };
     if (!isCompleteDiscoveryRow(enriched)) continue;
+    if (
+      !isCruisePubliclyBookable({
+        departureDate: row.departure_date,
+        status: "active",
+        perthToday
+      })
+    ) {
+      continue;
+    }
     if (!matchesDuration(row.nights, input.durationId)) continue;
     if (!matchesTiming(row.departure_date, input)) continue;
     if (preferredLines.size && !preferredLines.has(String(cruiseLine).toLowerCase())) {

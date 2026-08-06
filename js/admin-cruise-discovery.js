@@ -191,7 +191,12 @@
 
   function renderMaintenancePanel(line) {
     if (!line) return "";
-    const title = line.cruise_line_slug === "celebrity-cruises" ? "Celebrity" : "Holland America";
+    const title =
+      line.cruise_line_slug === "celebrity-cruises"
+        ? "Celebrity"
+        : line.cruise_line_slug === "princess-cruises"
+          ? "Princess"
+          : "Holland America";
     const workerNote =
       line.worker_state === "already_running"
         ? `<p class="admin-helper">Another maintenance invocation holds the database lock — no action taken.</p>`
@@ -229,6 +234,7 @@
         <ul class="admin-kv-list">
           <li><strong>HAL weekly:</strong> ${esc(formatFlagState(hold.hal_weekly_reconciliation))}</li>
           <li><strong>Celebrity weekly:</strong> ${esc(formatFlagState(hold.celebrity_weekly_reconciliation))}</li>
+          <li><strong>Princess weekly:</strong> ${esc(formatFlagState(hold.princess_weekly_reconciliation))}</li>
           <li><strong>Daily expiry:</strong> ${esc(formatFlagState(hold.cruise_daily_expiry))}</li>
           ${bulkFlags.map((f) => `<li><strong>${esc(f)}:</strong> unset or false (bulk import hold)</li>`).join("")}
         </ul></section>`
@@ -236,10 +242,11 @@
     return `
       <section class="admin-panel admin-maintenance-dashboard" aria-label="Scheduled inventory maintenance">
         <h3 class="admin-subheading">Hands-off inventory maintenance</h3>
-        <p class="admin-helper">Database row counts — not summed run insert totals. General Full Discovery remains on hold.</p>
+        <p class="admin-helper">Database row counts — not summed run insert totals. General Full Discovery remains on hold. Public customer inventory hides sailings within ${esc(String(21))} days of departure (Perth calendar).</p>
         ${holdFlags}
         ${renderMaintenancePanel(m.hal)}
         ${renderMaintenancePanel(m.celebrity)}
+        ${renderMaintenancePanel(m.princess)}
         ${
           expiry
             ? `<section class="admin-panel"><h3 class="admin-subheading">Daily expiry</h3>
@@ -293,7 +300,7 @@
     const items = [
       { label: "Active Future Sailings", value: c.active_cruises ?? "—" },
       { label: "Active (all status, incl. past date)", value: c.active_cruises_all_status ?? "—" },
-      { label: "Past departure pending expire", value: c.active_past_departure_pending_expire ?? 0 },
+      { label: "Within 21-day cutoff (pending expiry)", value: c.active_past_departure_pending_expire ?? 0 },
       { label: "Enabled Cruise Lines", value: c.enabled_cruise_lines ?? "—" },
       { label: "Lines with future active", value: c.lines_with_future_active ?? 0 },
       { label: "Discovered Candidates — Last Run", value: c.discovered_candidates_last_run ?? 0 },
@@ -755,8 +762,13 @@
                 dest
               )}</a>`
             : esc(dest);
+        const pub = cruise.public_availability || {};
+        const pubNote =
+          pub.publicly_bookable === false && pub.public_unavailability_label
+            ? `<br><span class="admin-muted">${esc(pub.public_unavailability_label)}</span>`
+            : "";
         return `<tr>
-          <td>${esc(formatDay(cruise.departure_date))}</td>
+          <td>${esc(formatDay(cruise.departure_date))}${pubNote}</td>
           <td>${esc(cruise.cruise_line_name || "—")}</td>
           <td>${esc(cruise.ship_name || "—")}</td>
           <td>${destLink}</td>

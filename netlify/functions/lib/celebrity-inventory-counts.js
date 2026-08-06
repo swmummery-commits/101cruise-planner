@@ -27,8 +27,12 @@ async function headCountSupabase(supabase, table, query = "") {
   });
 }
 
+const { perthCalendarDate } = require("./cruise-discovery-maintenance");
+const { publicBookingMinimumDepartureDate } = require("./public-discovered-cruise-inventory");
+
 async function loadCelebrityDatabaseInventoryCounts(supabase, cruiseLineId) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = perthCalendarDate();
+  const minPublicDeparture = publicBookingMinimumDepartureDate(today);
   const enc = encodeURIComponent(cruiseLineId);
   const [
     total,
@@ -46,7 +50,7 @@ async function loadCelebrityDatabaseInventoryCounts(supabase, cruiseLineId) {
     headCountSupabase(
       supabase,
       "discovered_cruises",
-      `cruise_line_id=eq.${enc}&status=eq.active&departure_date=gte.${today}`
+      `cruise_line_id=eq.${enc}&status=eq.active&departure_date=gte.${minPublicDeparture}`
     ),
     headCountSupabase(
       supabase,

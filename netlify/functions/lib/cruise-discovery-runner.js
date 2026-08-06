@@ -48,13 +48,21 @@ async function supabase(path, options = {}) {
   return data;
 }
 
+const {
+  perthCalendarDate,
+  publicBookingCutoffDate,
+  expirationMetadataForMaintenance,
+  PUBLIC_BOOKING_CUTOFF_DAYS
+} = require("./public-discovered-cruise-inventory");
+
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
 }
 
 /**
- * Mark past sailings as expired (never hard-delete — keep for reporting).
- * Uses Australia/Perth calendar date: expire when departure_date is strictly before today in Perth.
+ * Remove cruises from public inventory (status → expired; never hard-delete).
+ * Uses Australia/Perth calendar date: expire when departure_date is on or before
+ * the 21-day public booking cutoff (or past departure).
  */
 async function expireSailedCruises(options = {}) {
   const {
@@ -64,16 +72,15 @@ async function expireSailedCruises(options = {}) {
     selectStatuses = "active,review_required,match_required,validation_failed,ready,discovered"
   } = options;
 
-  const today =
-    perthDate ||
-    new Intl.DateTimeFormat("en-CA", { timeZone: "Australia/Perth" }).format(new Date());
+  const today = perthDate || perthCalendarDate();
+  const cutoffDate = publicBookingCutoffDate(today);
   const now = new Date().toISOString();
   let expiredCount = 0;
   const expiredIds = [];
 
   for (let pass = 0; pass < 50; pass += 1) {
     const rows = await supabase(
-      `discovered_cruises?status=in.(${selectStatuses})&departure_date=lt.${today}&select=id,status,departure_date,raw_extract&limit=200`,
+      `discovered_cruises?status=in.(${selectStatuses})&departure_date=lte.${cutoffDate}&select=id,status,departure_date,raw_extract&limit=200`,
       { method: "GET" }
     );
     if (!Array.isArray(rows) || !rows.length) break;
@@ -81,8 +88,14 @@ async function expireSailedCruises(options = {}) {
     for (const row of rows) {
       const rawExtract = { ...(row.raw_extract || {}) };
       if (recordMetadata) {
+        const meta = expirationMetadataForMaintenance({
+          departureDate: row.departure_date,
+          perthToday: today
+        });
         rawExtract.expired_at = now;
-        rawExtract.expiration_reason = "departure_date_before_perth_calendar_date";
+        rawExtract.expiration_reason =
+          meta?.expiration_reason || "outside_public_booking_window";
+        rawExtract.public_unavailability = meta?.public_unavailability || null;
         rawExtract.expiration_run_id = runId || null;
         rawExtract.previous_status = row.status;
         rawExtract.maintenance_expired_at = now;
@@ -106,6 +119,8 @@ async function expireSailedCruises(options = {}) {
     expired_count: expiredCount,
     expired_ids: expiredIds,
     as_of: today,
+    cutoff_date: cutoffDate,
+    cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
     timezone: "Australia/Perth"
   };
 }
