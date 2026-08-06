@@ -8,6 +8,7 @@
  * Env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, BASE44_BOOKING_FUNCTION_URL, BASE44_API_KEY
  */
 
+import { execSync } from "child_process";
 import { createRequire } from "module";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -15,6 +16,9 @@ import { fileURLToPath } from "url";
 const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
+
+const { createSupabaseRest } = require(path.join(root, "scripts/lib/supabase-rest.cjs"));
+createSupabaseRest(root);
 
 const { fetchBase44Booking, cacheBookingInSupabase, supabaseRest } = require(
   path.join(root, "netlify/functions/booking-service.js")
@@ -24,14 +28,41 @@ const { syncBookingDocuments } = require(path.join(root, "netlify/functions/lib/
 const args = new Set(process.argv.slice(2));
 const apply = args.has("--apply");
 const dryRun = !apply || args.has("--dry-run");
+const useNetlifyEnv = args.has("--use-netlify-env");
 const batchSize = Math.min(Math.max(Number(process.env.BATCH_SIZE || 20), 1), 50);
 const startCursor = Math.max(Number(process.env.CURSOR || 0), 0);
 const maxBatches = Math.max(Number(process.env.MAX_BATCHES || 9999), 1);
 
-function env(name) {
-  const value = process.env[name];
-  if (!value) throw new Error(`${name} is required`);
-  return value;
+function loadNetlifyEnv(name) {
+  const netlifyBin =
+    process.env.NETLIFY_CLI_BIN ||
+    "/Users/stevemummery/.npm/_npx/5897f426ba328dd1/node_modules/.bin/netlify";
+  const raw = execSync(`${netlifyBin} env:get ${name} --context production`, {
+    cwd: root,
+    stdio: ["ignore", "pipe", "pipe"],
+    encoding: "utf8",
+    timeout: 240000
+  });
+  const lines = raw
+    .split("\n")
+    .map((line) => line.trim().replace(/^["']|["']$/g, ""))
+    .filter(Boolean)
+    .filter((line) => !line.startsWith("npm warn"));
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    const value = lines[i];
+    if (value && !/No value set/i.test(value)) return value;
+  }
+  return "";
+}
+
+function ensureEnv(name) {
+  if (process.env[name]) return process.env[name];
+  if (useNetlifyEnv) {
+    const value = loadNetlifyEnv(name);
+    if (value) process.env[name] = value;
+  }
+  if (!process.env[name]) throw new Error(`${name} is required`);
+  return process.env[name];
 }
 
 function isEligibleBooking(row) {
@@ -119,10 +150,10 @@ async function runBatch(cursor) {
 }
 
 async function main() {
-  env("SUPABASE_URL");
-  env("SUPABASE_SERVICE_ROLE_KEY");
-  env("BASE44_BOOKING_FUNCTION_URL");
-  env("BASE44_API_KEY");
+  ensureEnv("SUPABASE_URL");
+  ensureEnv("SUPABASE_SERVICE_ROLE_KEY");
+  ensureEnv("BASE44_BOOKING_FUNCTION_URL");
+  ensureEnv("BASE44_API_KEY");
 
   const totals = {
     mode: dryRun ? "dry-run" : "apply",
