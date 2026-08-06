@@ -62,6 +62,7 @@
     "audit:celebrity-inventory-reconciliation": "node scripts/audit-celebrity-inventory-reconciliation.mjs",
     "audit:celebrity-active-records": "node scripts/audit-celebrity-active-records.mjs",
     "celebrity:closeout-reconciliation": "node scripts/celebrity-closeout-reconciliation.mjs",
+    "celebrity:product-type-reconciliation": "node scripts/celebrity-product-type-reconciliation.cjs",
     "verify:discovery-hold-production": "node scripts/verify-discovery-hold-production.mjs",
     "hal:readonly-continuation-dry-run": "node scripts/run-hal-readonly-continuation-dry-run.mjs",
     "test:destination-schema-compat": "node scripts/test-destination-schema-compat.mjs",

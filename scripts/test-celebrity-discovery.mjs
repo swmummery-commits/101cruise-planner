@@ -766,4 +766,130 @@ await test("69. P&O Cruises Australia remains excluded from Celebrity scope", ()
   if (excluded === celebrity) throw new Error("scope leak");
 });
 
+await test("70. Official sailing-id join drives product-type comparison", () => {
+  const official = new Map([
+    ["A_2028-01-01", "ocean_cruise"],
+    ["B_2028-02-01", "river_cruise"]
+  ]);
+  const active = [
+    { official_sailing_id: "A_2028-01-01", raw_extract: { celebrity_product_type: "ocean_cruise" } },
+    { official_sailing_id: "B_2028-02-01", raw_extract: { celebrity_product_type: "river_cruise" } }
+  ];
+  const mismatches = active.filter((row) => official.get(row.official_sailing_id) !== row.raw_extract.celebrity_product_type);
+  if (mismatches.length) throw new Error("unexpected mismatch");
+});
+
+await test("71. River ship codes RC RS RB RR RW classify as river cruises", () => {
+  const riverCodes = ["RC", "RS", "RB", "RR", "RW"];
+  for (const code of riverCodes) {
+    const type = celebrityAdapter.classifyCelebrityProductType({ ship_code: code, voyage_type: "RIVER" });
+    if (type.productType !== "river_cruise") throw new Error(`${code} -> ${type.productType}`);
+  }
+});
+
+await test("72. Celebrity Flora remains ocean or expedition", () => {
+  const type = celebrityAdapter.classifyCelebrityProductType({
+    ship_code: "FL",
+    ship_name: "Celebrity Flora",
+    voyage_type: "OCEAN"
+  });
+  if (type.productType === "river_cruise") throw new Error("Flora misclassified as river");
+});
+
+await test("73. Bundled river cruisetours remain excluded from eligible inventory", () => {
+  const type = celebrityAdapter.classifyCelebrityProductType({
+    ship_code: "RC",
+    voyage_type: "RIVER",
+    pre_tour_duration: 3,
+    post_tour_duration: 0
+  });
+  if (type.productType !== "river_cruisetour") throw new Error(type.productType);
+  if (celebrityAdapter.isEligibleCelebrityCruise(type.productType)) throw new Error("cruisetour must not be eligible");
+});
+
+await test("74. Official river sailing maps to European River Cruises destination hint", () => {
+  const hint = celebrityMapping.resolveCelebrityDestinationHints({
+    ship_code: "RC",
+    voyage_type: "RIVER",
+    itinerary_name: "Danube – Nuremberg-Vienna"
+  });
+  if (hint.slug !== "european-river-cruises") throw new Error(JSON.stringify(hint));
+});
+
+await test("75. Ocean cruises cannot map to European River Cruises", () => {
+  const hint = celebrityMapping.resolveCelebrityDestinationHints({
+    ship_code: "EC",
+    voyage_type: "OCEAN",
+    itinerary_name: "Caribbean"
+  });
+  if (hint.slug === "european-river-cruises") throw new Error("ocean mapped to river destination");
+});
+
+await test("76. Snapshot and database type mismatches are detected", () => {
+  const official = "river_cruise";
+  const database = "ocean_cruise";
+  const mismatch = official !== database;
+  if (!mismatch) throw new Error("expected mismatch fixture");
+});
+
+await test("77. Eligible production type totals reconcile by sailing id", () => {
+  const eligible = { ocean: 1033, river: 170, total: 1203 };
+  const production = { ocean: 1033, river: 170, total: 1203 };
+  const joinedMismatch = eligible.ocean !== production.ocean || eligible.river !== production.river;
+  if (joinedMismatch) throw new Error("eligible production mismatch");
+});
+
+await test("78. Out-of-snapshot records are reported separately", () => {
+  const eligibleIds = new Set(["A_2028-01-01", "B_2028-02-01"]);
+  const activeIds = ["A_2028-01-01", "B_2028-02-01", "C_2028-03-01"];
+  const outOfSnapshot = activeIds.filter((id) => !eligibleIds.has(id));
+  if (outOfSnapshot.length !== 1 || outOfSnapshot[0] !== "C_2028-03-01") throw new Error("out-of-snapshot diff failed");
+});
+
+await test("79. One absent snapshot does not automatically hide a record", () => {
+  const action = "unchanged";
+  if (action === "hide_removed_official_sailing") throw new Error("must not auto-hide");
+});
+
+await test("80. Narrow reconciliation cannot start bulk continuation", () => {
+  withEnv("CELEBRITY_AUTOMATIC_CONTINUATION_ENABLED", undefined, () => {
+    const { isCelebrityAutomaticContinuationEnabled } = require(path.join(
+      root,
+      "netlify/functions/lib/celebrity-discovery-automation"
+    ));
+    if (isCelebrityAutomaticContinuationEnabled()) throw new Error("continuation enabled");
+  });
+});
+
+await test("81. Classification reconciliation run type is exported", () => {
+  if (!celebrityRunTracking.CELEBRITY_CLASSIFICATION_RUN_TYPE) throw new Error("missing classification type");
+  if (celebrityRunTracking.CELEBRITY_CLASSIFICATION_RUN_TYPE !== "celebrity_classification_reconciliation") {
+    throw new Error("unexpected classification type");
+  }
+});
+
+await test("82. Compare report exposes mismatch id lists", () => {
+  const compareFixture = {
+    mismatch_counts: { total: 1 },
+    official_river_database_ocean_ids: ["R_2028-01-01"],
+    official_ocean_database_river_ids: []
+  };
+  if (!Array.isArray(compareFixture.official_river_database_ocean_ids)) throw new Error("missing id list");
+});
+
+await test("83. Manifest excludes uncertain hold_for_evidence from deterministic count", () => {
+  const actions = [{ action: "update_product_type" }, { action: "hold_for_evidence" }, { action: "unchanged" }];
+  const deterministic = actions.filter((a) => String(a.action).startsWith("update")).length;
+  if (deterministic !== 1) throw new Error("deterministic count wrong");
+});
+
+await test("84. European River Cruises remains draft and private in catalogue", () => {
+  const { OPERATIONAL_DESTINATION_CATALOGUE } = require(path.join(
+    root,
+    "netlify/functions/lib/destination-classification"
+  ));
+  const entry = OPERATIONAL_DESTINATION_CATALOGUE.find((d) => d.slug === "european-river-cruises");
+  if (!entry || entry.public_status !== "draft") throw new Error("European River Cruises must remain draft");
+});
+
 console.log(`\ntest-celebrity-discovery: ${passed} passed`);

@@ -10,6 +10,7 @@ const CELEBRITY_RUN_TYPE = "celebrity_controlled_batch";
 const CELEBRITY_AUTO_RUN_TYPE = "celebrity_automatic_batch";
 const CELEBRITY_RECON_RUN_TYPE = "celebrity_import_reconciliation";
 const CELEBRITY_CLOSEOUT_RUN_TYPE = "celebrity_closeout_repair";
+const CELEBRITY_CLASSIFICATION_RUN_TYPE = "celebrity_classification_reconciliation";
 
 function celebrityRunScope() {
   return "cruise_line";
@@ -74,7 +75,9 @@ function buildCelebrityRunStats({
           ? "celebrity_import_reconciliation"
           : resolvedType === CELEBRITY_CLOSEOUT_RUN_TYPE
             ? "celebrity_closeout_repair"
-            : "celebrity_controlled_batch")
+            : resolvedType === CELEBRITY_CLASSIFICATION_RUN_TYPE
+              ? "celebrity_classification_reconciliation"
+              : "celebrity_controlled_batch")
   };
 }
 
@@ -163,7 +166,8 @@ async function loadCelebrityInventoryProgress(supabase, cruiseLineId) {
     CELEBRITY_RUN_TYPE,
     CELEBRITY_AUTO_RUN_TYPE,
     CELEBRITY_RECON_RUN_TYPE,
-    CELEBRITY_CLOSEOUT_RUN_TYPE
+    CELEBRITY_CLOSEOUT_RUN_TYPE,
+    CELEBRITY_CLASSIFICATION_RUN_TYPE
   ]);
   const celebrityRuns = (runs || []).filter((r) => trackedTypes.has(r.stats?.run_type));
   const batchRuns = celebrityRuns.filter((r) =>
@@ -171,6 +175,9 @@ async function loadCelebrityInventoryProgress(supabase, cruiseLineId) {
   );
   const reconRuns = celebrityRuns.filter((r) => r.stats?.run_type === CELEBRITY_RECON_RUN_TYPE);
   const closeoutRuns = celebrityRuns.filter((r) => r.stats?.run_type === CELEBRITY_CLOSEOUT_RUN_TYPE);
+  const classificationRuns = celebrityRuns.filter((r) => r.stats?.run_type === CELEBRITY_CLASSIFICATION_RUN_TYPE);
+  const latestClassification = classificationRuns[0] || null;
+  const classificationStats = latestClassification?.stats || {};
   const completed = celebrityRuns.filter((r) => r.status === "completed");
   const last = celebrityRuns[0] || null;
   const lastCompleted = completed[0] || null;
@@ -236,7 +243,26 @@ async function loadCelebrityInventoryProgress(supabase, cruiseLineId) {
       active_ocean_cruises: inventory.ocean_active,
       active_river_cruises: inventory.river_active,
       tracked_run_inserts: trackedBatchTotals.inserted,
-      historical_reconciled_imports: historicalUntracked.total_untracked_records
+      historical_reconciled_imports: historicalUntracked.total_untracked_records,
+      official_eligible_snapshot_total: classificationStats.official_eligible_total ?? null,
+      official_eligible_ocean: classificationStats.official_eligible_ocean ?? null,
+      official_eligible_river: classificationStats.official_eligible_river ?? null,
+      product_type_mismatch_count: classificationStats.product_type_mismatches ?? 0,
+      out_of_snapshot_active_count: classificationStats.out_of_snapshot_active ?? null
+    },
+    classification_reconciliation: {
+      last_run_id: classificationStats.run_id || null,
+      last_run_record_id: latestClassification?.id || null,
+      last_run_at: latestClassification?.finished_at || latestClassification?.created_at || null,
+      product_type_mismatches: classificationStats.product_type_mismatches ?? 0,
+      official_eligible_total: classificationStats.official_eligible_total ?? null,
+      official_eligible_ocean: classificationStats.official_eligible_ocean ?? null,
+      official_eligible_river: classificationStats.official_eligible_river ?? null,
+      eligible_in_production_total: classificationStats.eligible_in_production_total ?? null,
+      out_of_snapshot_active: classificationStats.out_of_snapshot_active ?? null,
+      out_of_snapshot_sailing_ids: classificationStats.out_of_snapshot_sailing_ids || [],
+      snapshot_checksum: classificationStats.snapshot_checksum || null,
+      note: "Inventory counts from unique database rows; classification stats from latest reconciliation run"
     },
     ocean_cruisetours_excluded: oceanCruisetourSkips,
     river_cruisetours_excluded: riverCruisetourSkips,
@@ -265,6 +291,7 @@ module.exports = {
   CELEBRITY_AUTO_RUN_TYPE,
   CELEBRITY_RECON_RUN_TYPE,
   CELEBRITY_CLOSEOUT_RUN_TYPE,
+  CELEBRITY_CLASSIFICATION_RUN_TYPE,
   buildCelebrityRunStats,
   createCelebrityDiscoveryRun,
   finalizeCelebrityDiscoveryRun,
