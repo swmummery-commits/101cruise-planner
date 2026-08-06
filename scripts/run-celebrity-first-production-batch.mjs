@@ -37,6 +37,11 @@ const { fetchRowsBySailingIds, summariseActivationAudit } = require(path.join(
   root,
   "scripts/lib/celebrity-batch-audit.cjs"
 ));
+const { withCelebrityRunRecord } = require(path.join(root, "scripts/lib/celebrity-run-tracking.cjs"));
+const { CELEBRITY_RUN_TYPE } = require(path.join(
+  root,
+  "netlify/functions/lib/celebrity-discovery-run-tracking"
+));
 
 const MANIFEST_PATH = path.join(root, "reports/celebrity-first-production-batch-manifest-2026-08-06-v2.json");
 const RUN_ID = `celebrity-clean-batch-2026-08-06T${new Date().toISOString().replace(/[:.]/g, "-").slice(11, 19)}Z`;
@@ -298,14 +303,35 @@ async function runApplyLocal(ctx) {
   const countsBefore = await fetchBaselineCounts(ctx.line.id, ctx.halLine?.id);
   const started = Date.now();
 
-  const writeResult = await applyCelebrityBatchWrites({
-    products: simulation.products,
-    cruiseLine: ctx.line,
-    maxWrites: MAX_WRITES,
-    runId: RUN_ID,
+  const tracked = await withCelebrityRunRecord({
     supabase,
-    controlledSelection
+    cruiseLineId: ctx.line.id,
+    runId: manifest.run_id || RUN_ID,
+    runType: CELEBRITY_RUN_TYPE,
+    mode: "production_write",
+    writesEnabled: true,
+    execute: async () => {
+      const writeResult = await applyCelebrityBatchWrites({
+        products: simulation.products,
+        cruiseLine: ctx.line,
+        maxWrites: MAX_WRITES,
+        runId: manifest.run_id || RUN_ID,
+        supabase,
+        controlledSelection
+      });
+      return {
+        stats: writeResult.stats,
+        timing: writeResult.timing,
+        proposed_writes: controlledSelection.length,
+        run_stats: {
+          proposed_writes: controlledSelection.length,
+          duplicate_skips: writeResult.stats.duplicate_skips,
+          incomplete_skips: writeResult.stats.incomplete_skips
+        }
+      };
+    }
   });
+  const writeResult = tracked.result;
 
   const countsAfter = await fetchBaselineCounts(ctx.line.id, ctx.halLine?.id);
   const rollbackPath = path.join(
@@ -321,7 +347,8 @@ async function runApplyLocal(ctx) {
         run_id: RUN_ID,
         apply_timestamp: new Date().toISOString(),
         apply_mode: "local_production_write",
-        write_result: writeResult,
+        db_run_id: tracked.db_run_id,
+        write_result: writeResult.stats,
         rollback_actions: (writeResult.stats.write_details || []).map((d) => ({
           celebrity_sailing_id: d.celebrity_sailing_id,
           discovered_cruise_id: d.discovered_cruise_id,
@@ -344,7 +371,7 @@ async function runApplyLocal(ctx) {
     run_id: RUN_ID,
     elapsed_ms: Date.now() - started,
     write_result: writeResult.stats,
-    activation_audit: summariseActivationAudit(auditRows),
+    db_run_id: tracked.db_run_id,
     rollback_path: rollbackPath,
     table_counts_before: countsBefore,
     table_counts_after: countsAfter

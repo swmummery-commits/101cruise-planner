@@ -23,6 +23,11 @@ const { applyCelebrityBatchWrites, indexExistingCelebrityRecords } = require(pat
   root,
   "netlify/functions/lib/celebrity-discovery-writes"
 ));
+const { withCelebrityRunRecord } = require(path.join(root, "scripts/lib/celebrity-run-tracking.cjs"));
+const { CELEBRITY_AUTO_RUN_TYPE } = require(path.join(
+  root,
+  "netlify/functions/lib/celebrity-discovery-run-tracking"
+));
 const { supabase } = require(path.join(root, "netlify/functions/lib/cruise-discovery-ops"));
 
 const SESSION = new Date().toISOString().replace(/[:.]/g, "-");
@@ -104,14 +109,36 @@ async function runBatches(ctx) {
     const slice = pending.slice(offset, offset + BATCH_SIZE);
     if (!slice.length) break;
     const runId = `celebrity-auto-${SESSION}-batch-${batchNum}`;
-    const writeResult = await applyCelebrityBatchWrites({
-      products: simulation.products,
-      cruiseLine: ctx.line,
-      maxWrites: BATCH_SIZE,
-      runId,
+    const tracked = await withCelebrityRunRecord({
       supabase,
-      controlledSelection: slice
+      cruiseLineId: ctx.line.id,
+      runId,
+      runType: CELEBRITY_AUTO_RUN_TYPE,
+      automatic: true,
+      mode: "production_write",
+      writesEnabled: true,
+      execute: async () => {
+        const writeResult = await applyCelebrityBatchWrites({
+          products: simulation.products,
+          cruiseLine: ctx.line,
+          maxWrites: BATCH_SIZE,
+          runId,
+          supabase,
+          controlledSelection: slice
+        });
+        return {
+          stats: writeResult.stats,
+          timing: writeResult.timing,
+          proposed_writes: slice.length,
+          run_stats: {
+            proposed_writes: slice.length,
+            duplicate_skips: writeResult.stats.duplicate_skips,
+            incomplete_skips: writeResult.stats.incomplete_skips
+          }
+        };
+      }
     });
+    const writeResult = tracked.result;
 
     batches.push({
       run_id: runId,

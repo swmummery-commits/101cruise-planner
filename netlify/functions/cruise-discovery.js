@@ -152,9 +152,15 @@ async function dashboard() {
     inferRunType(last) === "hal_automatic_batch";
 
   const halLine = (lines || []).find((l) => l.slug === "holland-america-line");
+  const celebrityLine = (lines || []).find((l) => l.slug === "celebrity-cruises");
   let halInventoryProgress = null;
+  let celebrityInventoryProgress = null;
   if (halLine?.id) {
     halInventoryProgress = await loadHalInventoryProgress(supabase, halLine.id).catch(() => null);
+  }
+  if (celebrityLine?.id) {
+    const { loadCelebrityInventoryProgress } = require("./lib/celebrity-discovery-run-tracking");
+    celebrityInventoryProgress = await loadCelebrityInventoryProgress(supabase, celebrityLine.id).catch(() => null);
   }
 
   return {
@@ -191,6 +197,7 @@ async function dashboard() {
     line_health_summary: lineHealthSummary,
     line_health: lineHealth,
     hal_inventory_progress: halInventoryProgress,
+    celebrity_inventory_progress: celebrityInventoryProgress,
     hal_automatic_continuation: describeAutomaticContinuationArchitecture(),
     review_breakdown: breakdown,
     last_run_stats: s

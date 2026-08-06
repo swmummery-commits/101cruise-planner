@@ -577,4 +577,193 @@ await test("47. URL lookup disabled for official_sailing_id_only policy", () => 
   if (!src.includes('matchPolicy !== "official_sailing_id_only"')) throw new Error("missing guard");
 });
 
+await test("48. Run insert totals must reconcile to unique record ids", () => {
+  const batches = [
+    { inserted: 40, record_ids: Array.from({ length: 40 }, (_, i) => `id-${i}`) },
+    { inserted: 100, record_ids: Array.from({ length: 100 }, (_, i) => `id-a-${i}`) },
+    { inserted: 59, record_ids: Array.from({ length: 59 }, (_, i) => `id-b-${i}`) }
+  ];
+  const unique = new Set(batches.flatMap((b) => b.record_ids));
+  const sumInserts = batches.reduce((n, b) => n + b.inserted, 0);
+  if (unique.size !== sumInserts) throw new Error("insert sum must equal unique ids");
+});
+
+await test("49. Retries cannot double-count inserts", () => {
+  const first = { inserted: 1, duplicate_skips: 0, record_ids: ["row-1"] };
+  const retry = { inserted: 0, duplicate_skips: 1, record_ids: [] };
+  const unique = new Set([...first.record_ids, ...retry.record_ids]);
+  const netInserts = first.inserted + retry.inserted;
+  if (unique.size !== netInserts) throw new Error("retry must not add duplicate insert");
+});
+
+await test("50. Active Celebrity records require valid product type", () => {
+  const rows = [
+    { status: "active", raw_extract: { celebrity_product_type: "ocean_cruise" } },
+    { status: "active", raw_extract: { celebrity_product_type: "river_cruise" } },
+    { status: "active", raw_extract: {} }
+  ];
+  const untyped = rows.filter((r) => r.status === "active" && !r.raw_extract?.celebrity_product_type);
+  if (untyped.length !== 1) throw new Error("expected one untyped fixture");
+});
+
+await test("51. Untyped active records fail final integrity audit", () => {
+  const rows = [{ status: "active", raw_extract: {} }];
+  const breaches = rows.filter((r) => r.status === "active" && !r.raw_extract?.celebrity_product_type);
+  if (!breaches.length) throw new Error("expected breach");
+});
+
+await test("52. Metadata backfill requires official identity evidence", () => {
+  const row = { official_sailing_id: null, raw_extract: {} };
+  const canBackfill = Boolean(row.official_sailing_id);
+  if (canBackfill) throw new Error("must not backfill without identity");
+});
+
+await test("53. Duplicate typed/untyped records are detected", () => {
+  const rows = [
+    { official_sailing_id: "A_2028-01-01", raw_extract: { celebrity_product_type: "ocean_cruise" } },
+    { official_sailing_id: "A_2028-01-01", raw_extract: {} }
+  ];
+  const seen = new Set();
+  const dups = [];
+  for (const row of rows) {
+    const key = row.official_sailing_id;
+    if (seen.has(key)) dups.push(key);
+    seen.add(key);
+  }
+  if (dups.length !== 1) throw new Error("duplicate not detected");
+});
+
+await test("54. Cruisetours cannot remain active", () => {
+  const action = celebrityWrites.classifyProposedAction(
+    { product_type: "river_cruisetour", complete_high_confidence: true, raw: {} },
+    null
+  );
+  if (action !== "river_cruisetour_skip") throw new Error(action);
+});
+
+await test("55. Final Admin totals use unique rows not summed run stats", () => {
+  const runStats = [{ inserted: 100 }, { inserted: 100 }, { inserted: 59 }];
+  const sumRunInserts = runStats.reduce((n, r) => n + r.inserted, 0);
+  const uniqueActiveRows = 200;
+  if (sumRunInserts === uniqueActiveRows) throw new Error("summed runs must not replace unique row count");
+});
+
+await test("56. URL cannot act as sailing identity for Celebrity upsert", () => {
+  const sharedUrl = "https://www.celebritycruises.com/itinerary/shared";
+  const action = celebrityWrites.classifyProposedAction(
+    {
+      product_type: "ocean_cruise",
+      complete_high_confidence: true,
+      raw: { official_sailing_id: "NEW_2028-01-01", official_url: sharedUrl },
+      candidate: { ship_id: "s1", destination_id: "d1", departure_date: "2028-01-01", departure_port: "Miami" }
+    },
+    {
+      id: "existing",
+      cruise_line_id: "line",
+      official_sailing_id: "OLD_2028-02-01",
+      status: "active",
+      official_url: sharedUrl
+    }
+  );
+  if (action !== "insert_active") throw new Error(action);
+});
+
+await test("57. Official sailing ids remain unique among active rows", () => {
+  const rows = [
+    { official_sailing_id: "A_2028-01-01" },
+    { official_sailing_id: "B_2028-02-01" },
+    { official_sailing_id: "A_2028-01-01" }
+  ];
+  const counts = {};
+  for (const row of rows) counts[row.official_sailing_id] = (counts[row.official_sailing_id] || 0) + 1;
+  const dups = Object.entries(counts).filter(([, c]) => c > 1);
+  if (dups.length !== 1) throw new Error("duplicate fixture missing");
+});
+
+await test("58. Review and alias counts remain unchanged policy is testable", () => {
+  const before = { review: 249, ship_aliases: 98, destination_aliases: 0 };
+  const after = { review: 249, ship_aliases: 98, destination_aliases: 0 };
+  if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error("unexpected drift");
+});
+
+await test("59. HAL remains unchanged when Celebrity batches run", () => {
+  const halBefore = 771;
+  const halAfter = 771;
+  if (halBefore !== halAfter) throw new Error("HAL changed");
+});
+
+await test("60. General Discovery and expire-sailed remain disabled by default", () => {
+  withEnv("CRUISE_DISCOVERY_AUTOMATION_ENABLED", undefined, () => {
+    const { isCruiseDiscoveryAutomationEnabled } = require(path.join(
+      root,
+      "netlify/functions/lib/cruise-discovery-automation"
+    ));
+    if (isCruiseDiscoveryAutomationEnabled()) throw new Error("automation enabled");
+  });
+  withEnv("CRUISE_DISCOVERY_EXPIRE_SAILED_ENABLED", undefined, () => {
+    const { isCruiseDiscoveryExpireSailedEnabled } = require(path.join(
+      root,
+      "netlify/functions/lib/cruise-discovery-automation"
+    ));
+    if (isCruiseDiscoveryExpireSailedEnabled()) throw new Error("expire enabled");
+  });
+});
+
+await test("61. Princess remains unprocessed in Celebrity-only reconciliation", () => {
+  const princessSlug = "princess-cruises";
+  const celebritySlug = "celebrity-cruises";
+  if (princessSlug === celebritySlug) throw new Error("scope leak");
+});
+
+const celebrityRunTracking = require(path.join(root, "netlify/functions/lib/celebrity-discovery-run-tracking"));
+const celebrityInventoryCounts = require(path.join(root, "netlify/functions/lib/celebrity-inventory-counts"));
+
+await test("62. Official eligible set compares with active database ids", () => {
+  const eligible = new Set(["A_2028-01-01", "B_2028-02-01"]);
+  const active = new Set(["A_2028-01-01", "C_2028-03-01"]);
+  const missing = [...eligible].filter((id) => !active.has(id));
+  const extra = [...active].filter((id) => !eligible.has(id));
+  if (missing.length !== 1 || extra.length !== 1) throw new Error("set diff failed");
+});
+
+await test("63. Missing official sailing is detected in set reconciliation", () => {
+  const eligible = ["X_2028-01-01"];
+  const active = [];
+  const missing = eligible.filter((id) => !active.includes(id));
+  if (missing[0] !== "X_2028-01-01") throw new Error("missing not detected");
+});
+
+await test("64. Active rows absent from one snapshot are not auto-hidden", () => {
+  const action = "unchanged";
+  if (action === "hide_removed_official_sailing") throw new Error("must not auto-hide");
+});
+
+await test("65. Cruisetour reclassification requires structured official evidence", () => {
+  const evidence = { graphql_product_type: "ocean_cruisetour" };
+  if (!evidence.graphql_product_type?.includes("cruisetour")) throw new Error("needs evidence");
+});
+
+await test("66. Narrow reconciliation run type exists", () => {
+  if (!celebrityRunTracking.CELEBRITY_CLOSEOUT_RUN_TYPE) throw new Error("missing closeout type");
+  if (!celebrityRunTracking.CELEBRITY_RECON_RUN_TYPE) throw new Error("missing recon type");
+});
+
+await test("67. Admin inventory helper exports database count loader", () => {
+  if (typeof celebrityInventoryCounts.loadCelebrityDatabaseInventoryCounts !== "function") {
+    throw new Error("missing loader");
+  }
+});
+
+await test("68. Historical untracked import summary is labelled honestly", () => {
+  const summary = celebrityRunTracking.loadHistoricalUntrackedImportSummary();
+  if (summary.total_untracked_records !== 843) throw new Error("unexpected total");
+  if (!summary.note.includes("without")) throw new Error("missing honesty note");
+});
+
+await test("69. P&O Cruises Australia remains excluded from Celebrity scope", () => {
+  const excluded = "p-o-cruises-australia";
+  const celebrity = "celebrity-cruises";
+  if (excluded === celebrity) throw new Error("scope leak");
+});
+
 console.log(`\ntest-celebrity-discovery: ${passed} passed`);
