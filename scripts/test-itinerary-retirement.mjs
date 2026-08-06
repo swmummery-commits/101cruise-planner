@@ -21,7 +21,7 @@ const indexHtml = readFileSync(path.join(root, "index.html"), "utf8");
 const adminSrc = readFileSync(path.join(root, "js/admin.js"), "utf8");
 const getBooking = readFileSync(path.join(root, "netlify/functions/get-booking.js"), "utf8");
 const bookingDocs = readFileSync(path.join(root, "netlify/functions/booking-documents.js"), "utf8");
-const docSync = readFileSync(path.join(root, "netlify/functions/document-sync.js"), "utf8");
+const docSync = readFileSync(path.join(root, "netlify/functions/lib/booking-document-sync.js"), "utf8");
 const customerAccess = readFileSync(path.join(root, "netlify/functions/customer-access.js"), "utf8");
 const adminItinerary = readFileSync(path.join(root, "netlify/functions/admin-itinerary.js"), "utf8");
 const exceptionsApi = readFileSync(path.join(root, "netlify/functions/itinerary-exceptions.js"), "utf8");
@@ -80,7 +80,7 @@ assert(/processTextItinerary/.test(docSync), "sync calls text-only processTextIt
 assert(!/processBookingConfirmation|processConfirmationDocuments/.test(docSync), "sync does not call map auto-process");
 assert(!/confirmation_candidates\.push/.test(docSync), "sync does not enqueue candidates");
 assert(!/processBookingConfirmation|extractItineraryWithOpenAI/.test(customerAccess), "customer login never extracts map");
-assert(/never extract/i.test(customerAccess), "customer-access documents no-extract");
+assert(/syncDocumentsForBooking/.test(customerAccess), "customer-access syncs booking documents");
 
 assert(/itinerary_map_feature_retired/.test(adminItinerary), "admin-itinerary retired");
 assert(/410/.test(adminItinerary), "admin-itinerary returns 410");

@@ -3858,6 +3858,42 @@ function customerFacingNote(document) {
   return String(document.note || document.notes || "").trim();
 }
 
+async function fetchDocumentDownloadUrl(entry) {
+  const data = await customerDocumentsRequest("get_download_url", {
+    id: entry.id,
+    source: entry.source
+  });
+  if (!data?.url) throw new Error(data?.error || "This document file is temporarily unavailable.");
+  return data.url;
+}
+
+async function openDocumentEntry(id, source) {
+  try {
+    const url = await fetchDocumentDownloadUrl({ id, source });
+    openDocument(url);
+  } catch (error) {
+    alert(error.message || "This document file is temporarily unavailable. Please try again later or contact 101cruise.");
+  }
+}
+
+async function downloadDocumentEntry(id, source, filename) {
+  try {
+    const url = await fetchDocumentDownloadUrl({ id, source });
+    downloadDocument(url, filename);
+  } catch (error) {
+    alert(error.message || "This document file is temporarily unavailable. Please try again later or contact 101cruise.");
+  }
+}
+
+async function printDocumentEntry(id, source) {
+  try {
+    const url = await fetchDocumentDownloadUrl({ id, source });
+    printDocument(url);
+  } catch (error) {
+    alert(error.message || "This document file is temporarily unavailable. Please try again later or contact 101cruise.");
+  }
+}
+
 function openDocument(url) {
   if (!url) {
     alert("This document file is temporarily unavailable. Please try again later or contact 101cruise.");
@@ -3891,12 +3927,13 @@ function printDocument(url) {
 }
 
 function renderDocumentCard(document) {
-  const source = document.source === "customer" ? "You" : "101cruise";
+  const sourceLabel = document.source === "customer" ? "Uploaded by you" : "From 101cruise";
   const primary = normaliseDocumentType(document.document_type).toLowerCase() === "booking confirmation";
   const note = customerFacingNote(document);
-  const fileUrl = document.file_unavailable ? "" : (document.file_url || "");
-  const encodedUrl = encodeURIComponent(fileUrl);
+  const docId = escapeHtml(document.id || "");
+  const docSource = escapeHtml(document.source || "crm");
   const encodedFilename = encodeURIComponent(document.filename || "travel-document");
+  const unavailable = document.file_unavailable;
   return `
     <article class="document-card document-row ${primary ? "document-card-primary" : ""}">
       <div class="document-card-icon" aria-hidden="true">${getDocumentIcon(document)}</div>
@@ -3907,16 +3944,16 @@ function renderDocumentCard(document) {
             <h3>${escapeHtml(normaliseDocumentType(document.document_type))}</h3>
             ${note ? `<p class="document-notes">${escapeHtml(note)}</p>` : ""}
           </div>
-          <span class="document-source-badge">${escapeHtml(source)}</span>
+          <span class="document-source-badge">${escapeHtml(sourceLabel)}</span>
         </div>
         <p class="document-filename">${escapeHtml(document.filename || "Travel document")}</p>
         <p class="document-meta">Added ${escapeHtml(formatDocumentDate(document.uploaded_date || document.uploaded_at))}</p>
-        ${document.file_unavailable || !fileUrl ? `<p class="document-unavailable">This file is temporarily unavailable. Please try again later.</p>` : ""}
+        ${unavailable ? `<p class="document-unavailable">This file is temporarily unavailable. Please try again later.</p>` : ""}
         <div class="document-actions">
-          <button class="planner-button secondary" onclick="openDocument(decodeURIComponent('${encodedUrl}'))">Open</button>
-          <button class="planner-button secondary" onclick="downloadDocument(decodeURIComponent('${encodedUrl}'), decodeURIComponent('${encodedFilename}'))">Download</button>
-          <button class="planner-button secondary" onclick="printDocument(decodeURIComponent('${encodedUrl}'))">Print</button>
-          ${document.source === "customer" ? `<button class="document-delete-button" onclick="deleteCustomerDocument('${escapeHtml(document.id)}')">Delete</button>` : ""}
+          <button class="planner-button secondary" ${unavailable ? "disabled" : `onclick="openDocumentEntry('${docId}', '${docSource}')"`}>Open</button>
+          <button class="planner-button secondary" ${unavailable ? "disabled" : `onclick="downloadDocumentEntry('${docId}', '${docSource}', decodeURIComponent('${encodedFilename}'))"`}>Download</button>
+          <button class="planner-button secondary" ${unavailable ? "disabled" : `onclick="printDocumentEntry('${docId}', '${docSource}')"`}>Print</button>
+          ${document.deletable ? `<button class="document-delete-button" onclick="deleteCustomerDocument('${docId}')">Delete</button>` : ""}
         </div>
       </div>
     </article>`;
@@ -3983,19 +4020,25 @@ async function renderDocuments() {
   scheduleScrollPlannerToTop();
 
   try {
-    let libraryDocuments = await listBookingLibraryDocuments();
-    if (!libraryDocuments.length) {
-      libraryDocuments = fallbackBookingDocumentsFromPayload();
-    } else {
-      libraryDocuments = libraryDocuments.filter(isDocumentVisibleToCustomer);
-    }
-
-    let customerDocuments = [];
+    let documents = [];
     if (customerMode) {
-      const data = await customerDocumentsRequest("list");
-      customerDocuments = (data.documents || []).map(document => ({ ...document, source: "customer" }));
+      const data = await customerDocumentsRequest("list_all");
+      documents = sortDocuments(data.documents || []);
+    } else {
+      let libraryDocuments = await listBookingLibraryDocuments();
+      if (!libraryDocuments.length) {
+        libraryDocuments = fallbackBookingDocumentsFromPayload();
+      } else {
+        libraryDocuments = libraryDocuments.filter(isDocumentVisibleToCustomer);
+      }
+      documents = sortDocuments(
+        libraryDocuments.map((document) => ({
+          ...document,
+          source: document.source || "crm",
+          deletable: false
+        }))
+      );
     }
-    const documents = sortDocuments([...libraryDocuments, ...customerDocuments]);
     const list = document.getElementById("documents-list");
     if (!documents.length) {
       list.innerHTML = `<div class="planner-card documents-empty"><div class="documents-empty-icon" aria-hidden="true">${documentOutlineIcon("file")}</div><h3>No documents are available yet</h3><p class="planner-muted">When your 101cruise consultant shares booking documents with you, they will appear here. You can also upload your own insurance, flight or travel documents.</p></div>`;

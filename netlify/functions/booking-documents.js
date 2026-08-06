@@ -7,8 +7,11 @@
 const crypto = require('crypto');
 const { requireAdmin, getConfig } = require('./admin-auth');
 const { fingerprintBookingDocument } = require('./lib/itinerary-document-hash');
-
-const BUCKET = 'booking-documents';
+const {
+  BUCKET,
+  createDefaultStorageClient,
+  normaliseDocumentType
+} = require('./lib/booking-document-sync');
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
   'application/pdf',
@@ -64,6 +67,17 @@ async function rest(path, options = {}) {
   return data;
 }
 
+async function restWithActiveFallback(primaryPath, fallbackPath, options = {}) {
+  try {
+    return await rest(primaryPath, options);
+  } catch (error) {
+    if (/is_active/i.test(error.message || '') && fallbackPath) {
+      return rest(fallbackPath, options);
+    }
+    throw error;
+  }
+}
+
 async function storage(path, options = {}) {
   const { supabaseUrl, serviceKey } = getConfig();
   const headers = {
@@ -111,22 +125,32 @@ async function signedDownload(path) {
 function publicDocumentView(row, { includeInternal = false } = {}) {
   const base = {
     id: row.id,
-    document_type: row.document_type,
+    document_type: normaliseDocumentType(row.document_type),
     filename: row.filename,
-    file_url: row.file_url,
     note: row.note_visible_to_customer === false ? null : row.note,
     uploaded_at: row.uploaded_at,
+    source: 'crm',
     source_system: row.source_system === 'base44' ? '101cruise' : row.source_system,
-    document_visible_to_customer: row.document_visible_to_customer
+    document_visible_to_customer: row.document_visible_to_customer,
+    deletable: false,
+    download_action: 'get_download_url'
   };
   if (!includeInternal) return base;
   return {
     ...row,
+    ...base,
     note_for_customer: row.note_visible_to_customer === false ? null : row.note
   };
 }
 
-async function resolveFileUrl(row) {
+async function resolveFileUrl(row, storageClient) {
+  if (row.storage_path && storageClient) {
+    try {
+      return await storageClient.sign(row.storage_path);
+    } catch {
+      return null;
+    }
+  }
   if (row.storage_path) {
     try {
       return await signedDownload(row.storage_path);
@@ -134,7 +158,7 @@ async function resolveFileUrl(row) {
       return null;
     }
   }
-  return row.file_url || null;
+  return null;
 }
 
 function getBearer(event) {
@@ -153,7 +177,7 @@ exports.handler = async function (event) {
 
     // ---- Customer path ----
     const customerSession = verifyCustomerToken(bearer, process.env.CUSTOMER_SESSION_SECRET || '');
-    if (customerSession && (!action || action === 'list')) {
+    if (customerSession && (!action || action === 'list' || action === 'get_download_url')) {
       const bookingId = String(customerSession.booking_id || '');
       const bookingRef = String(customerSession.booking_reference || '').toUpperCase();
       const filters = [];
@@ -161,21 +185,36 @@ exports.handler = async function (event) {
       if (bookingId) filters.push(`base44_booking_id.eq.${encodeURIComponent(bookingId)}`);
       if (!filters.length) return jsonResponse(400, { success: false, error: 'Booking context is missing.' });
 
-      const rows = await rest(
+      const { supabaseUrl, serviceKey } = getConfig();
+      const storageClient = createDefaultStorageClient(supabaseUrl, serviceKey);
+
+      if (action === 'get_download_url') {
+        const id = String(body.id || '').trim();
+        if (!id) return jsonResponse(400, { success: false, error: 'Document id is required.' });
+        const rows = await restWithActiveFallback(
+          `booking_documents?id=eq.${encodeURIComponent(id)}&or=(${filters.join(',')})&is_active=eq.true&limit=1`,
+          `booking_documents?id=eq.${encodeURIComponent(id)}&or=(${filters.join(',')})&limit=1`,
+          { method: 'GET' }
+        );
+        const row = rows?.[0];
+        if (!row || row.document_visible_to_customer === false) {
+          return jsonResponse(404, { success: false, error: 'Document not found.' });
+        }
+        const fileUrl = await resolveFileUrl(row, storageClient);
+        if (!fileUrl) return jsonResponse(503, { success: false, error: 'This file is temporarily unavailable.' });
+        return jsonResponse(200, { success: true, url: fileUrl, source: 'crm' });
+      }
+
+      const rows = await restWithActiveFallback(
+        `booking_documents?or=(${filters.join(',')})&document_visible_to_customer=eq.true&is_active=eq.true&order=uploaded_at.desc`,
         `booking_documents?or=(${filters.join(',')})&document_visible_to_customer=eq.true&order=uploaded_at.desc`,
         { method: 'GET' }
       );
 
-      const documents = await Promise.all(
-        (rows || []).map(async (row) => {
-          const fileUrl = await resolveFileUrl(row);
-          return {
-            ...publicDocumentView(row),
-            file_url: fileUrl,
-            file_unavailable: !fileUrl
-          };
-        })
-      );
+      const documents = (rows || []).map((row) => ({
+        ...publicDocumentView(row),
+        file_unavailable: !row.storage_path
+      }));
 
       return jsonResponse(200, { success: true, documents });
     }
@@ -194,10 +233,12 @@ exports.handler = async function (event) {
       if (!filters.length) return jsonResponse(400, { success: false, error: 'booking_reference or booking_id is required' });
 
       const rows = await rest(`booking_documents?or=(${filters.join(',')})&order=uploaded_at.desc`, { method: 'GET' });
+      const { supabaseUrl, serviceKey } = getConfig();
+      const storageClient = createDefaultStorageClient(supabaseUrl, serviceKey);
       const documents = await Promise.all(
         (rows || []).map(async (row) => ({
           ...publicDocumentView(row, { includeInternal: true }),
-          file_url: await resolveFileUrl(row),
+          file_url: await resolveFileUrl(row, storageClient),
           editable: row.source_system === 'admin'
         }))
       );

@@ -1,4 +1,8 @@
 const crypto = require('crypto');
+const {
+  createDefaultStorageClient,
+  normaliseDocumentType
+} = require('./lib/booking-document-sync');
 
 const BUCKET = 'customer-documents';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -61,6 +65,17 @@ async function rest(path, options = {}) {
   return data;
 }
 
+async function restWithActiveFallback(primaryPath, fallbackPath, options = {}) {
+  try {
+    return await rest(primaryPath, options);
+  } catch (error) {
+    if (/is_active/i.test(error.message || '') && fallbackPath) {
+      return rest(fallbackPath, options);
+    }
+    throw error;
+  }
+}
+
 async function storage(path, options = {}) {
   const { url, key } = config();
   const headers = {
@@ -92,8 +107,8 @@ function safeFilename(value) {
   return `${stem}${ext}`;
 }
 
-async function signedDownload(path) {
-  const signed = await storage(`object/sign/${BUCKET}/${encodeURI(path)}`, {
+async function signedDownload(bucket, path) {
+  const signed = await storage(`object/sign/${bucket}/${encodeURI(path)}`, {
     method: 'POST',
     body: JSON.stringify({ expiresIn: 3600 })
   });
@@ -101,6 +116,65 @@ async function signedDownload(path) {
   const signedPath = signed?.signedURL || signed?.signedUrl || signed?.signed_url;
   if (!signedPath) return null;
   return signedPath.startsWith('http') ? signedPath : `${url}/storage/v1${signedPath}`;
+}
+
+function bookingFilters(session) {
+  const bookingId = String(session.booking_id || '');
+  const bookingRef = String(session.booking_reference || '').toUpperCase();
+  const filters = [];
+  if (bookingRef) filters.push(`booking_reference.eq.${encodeURIComponent(bookingRef)}`);
+  if (bookingId) filters.push(`base44_booking_id.eq.${encodeURIComponent(bookingId)}`);
+  return { bookingId, bookingRef, filters };
+}
+
+function mapCrmDocument(row) {
+  return {
+    id: row.id,
+    source: 'crm',
+    deletable: false,
+    document_type: normaliseDocumentType(row.document_type),
+    filename: row.filename,
+    uploaded_at: row.uploaded_at,
+    notes: row.note_visible_to_customer === false ? null : row.note,
+    download_action: 'get_download_url',
+    file_unavailable: !row.storage_path
+  };
+}
+
+function mapCustomerDocument(row) {
+  return {
+    id: row.id,
+    source: 'customer',
+    deletable: true,
+    document_type: normaliseDocumentType(row.document_type),
+    filename: row.filename,
+    uploaded_at: row.uploaded_at,
+    notes: row.notes || null,
+    download_action: 'get_download_url',
+    file_unavailable: !row.storage_path
+  };
+}
+
+async function listUnifiedDocuments(session) {
+  const { bookingId, filters } = bookingFilters(session);
+  const crmRows = filters.length
+    ? await restWithActiveFallback(
+        `booking_documents?or=(${filters.join(',')})&document_visible_to_customer=eq.true&is_active=eq.true&order=uploaded_at.desc`,
+        `booking_documents?or=(${filters.join(',')})&document_visible_to_customer=eq.true&order=uploaded_at.desc`,
+        { method: 'GET' }
+      )
+    : [];
+  const customerRows = await rest(
+    `customer_documents?booking_id=eq.${encodeURIComponent(bookingId)}&order=uploaded_at.desc`,
+    { method: 'GET' }
+  );
+  const crmDocuments = (crmRows || []).map(mapCrmDocument);
+  const customerDocuments = (customerRows || []).map(mapCustomerDocument);
+  return {
+    documents: [...crmDocuments, ...customerDocuments],
+    crm_documents: crmDocuments,
+    customer_documents: customerDocuments
+  };
 }
 
 exports.handler = async function(event) {
@@ -117,12 +191,56 @@ exports.handler = async function(event) {
     const bookingId = String(session.booking_id || '');
     const action = body.action;
 
+    if (action === 'list_all') {
+      const unified = await listUnifiedDocuments(session);
+      return jsonResponse(200, { success: true, ...unified });
+    }
+
+    if (action === 'get_download_url') {
+      const id = String(body.id || '').trim();
+      const source = String(body.source || '').trim().toLowerCase();
+      if (!id || !source) return jsonResponse(400, { success: false, error: 'Document id and source are required.' });
+
+      if (source === 'customer') {
+        const rows = await rest(
+          `customer_documents?id=eq.${encodeURIComponent(id)}&booking_id=eq.${encodeURIComponent(bookingId)}&limit=1`,
+          { method: 'GET' }
+        );
+        const row = rows?.[0];
+        if (!row) return jsonResponse(404, { success: false, error: 'Document not found.' });
+        const url = await signedDownload(BUCKET, row.storage_path);
+        if (!url) return jsonResponse(503, { success: false, error: 'This file is temporarily unavailable.' });
+        return jsonResponse(200, { success: true, url, source: 'customer' });
+      }
+
+      if (source === 'crm') {
+        const { filters } = bookingFilters(session);
+        if (!filters.length) return jsonResponse(400, { success: false, error: 'Booking context is missing.' });
+        const rows = await restWithActiveFallback(
+          `booking_documents?id=eq.${encodeURIComponent(id)}&or=(${filters.join(',')})&is_active=eq.true&limit=1`,
+          `booking_documents?id=eq.${encodeURIComponent(id)}&or=(${filters.join(',')})&limit=1`,
+          { method: 'GET' }
+        );
+        const row = rows?.[0];
+        if (!row || row.document_visible_to_customer === false) {
+          return jsonResponse(404, { success: false, error: 'Document not found.' });
+        }
+        if (!row.storage_path) {
+          return jsonResponse(503, { success: false, error: 'This file is temporarily unavailable.' });
+        }
+        const { url: supabaseUrl, key } = config();
+        const storageClient = createDefaultStorageClient(supabaseUrl, key);
+        const signedUrl = await storageClient.sign(row.storage_path);
+        if (!signedUrl) return jsonResponse(503, { success: false, error: 'This file is temporarily unavailable.' });
+        return jsonResponse(200, { success: true, url: signedUrl, source: 'crm' });
+      }
+
+      return jsonResponse(400, { success: false, error: 'Unsupported document source.' });
+    }
+
     if (action === 'list') {
       const rows = await rest(`customer_documents?booking_id=eq.${encodeURIComponent(bookingId)}&order=uploaded_at.desc`, { method: 'GET' });
-      const documents = await Promise.all((rows || []).map(async row => ({
-        ...row,
-        file_url: await signedDownload(row.storage_path)
-      })));
+      const documents = (rows || []).map(mapCustomerDocument);
       return jsonResponse(200, { success: true, documents });
     }
 

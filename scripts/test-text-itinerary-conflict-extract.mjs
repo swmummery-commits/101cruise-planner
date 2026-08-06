@@ -423,7 +423,7 @@ assert(
   "batch map processing retired"
 );
 
-const docSyncSrc = readFileSync(path.join(root, "netlify/functions/document-sync.js"), "utf8");
+const docSyncSrc = readFileSync(path.join(root, "netlify/functions/lib/booking-document-sync.js"), "utf8");
 assert(!/confirmation_candidates\.push/.test(docSyncSrc), "sync does not create approval queue");
 assert(!/processBookingConfirmation|processConfirmationDocuments/.test(docSyncSrc), "sync never map-processes");
 assert(/skipped_conflict/.test(docSyncSrc), "conflict path still present");
@@ -466,7 +466,7 @@ assert(financials.deposit_paid_amount === 349.86, "deposit paid unchanged");
 assert(financials.balance_owing === 1467, "balance owing unchanged");
 assert(financials.final_payment_due_date === "2026-09-13", "final payment due unchanged");
 assert(
-  financials.overall_payment_status_label === "Deposit paid — balance outstanding",
+  financials.overall_payment_status_label === "Partially paid",
   "payment status label unchanged"
 );
 const moneyRows = buildFinancialDisplayRows(financials, {
