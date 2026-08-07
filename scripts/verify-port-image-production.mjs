@@ -276,21 +276,26 @@ async function publicCheck(rest) {
   const slug = "mediterranean";
   const response = await fetch(`${NETLIFY_ORIGIN}/.netlify/functions/public-destination?slug=${slug}`);
   const data = await response.json();
-  const ports = data?.destination?.featuredPorts || [];
+  const ports = data?.destination?.ports || [];
   const civitPort = ports.find((p) => /civitavecchia|rome/i.test(p?.name || ""));
-  const blankPort = ports.find((p) => !p?.media?.url);
+  const blankPorts = ports.filter((p) => !p?.media?.url);
 
   const report = {
     phase: "public_check",
     http_status: response.status,
+    destination_loaded: Boolean(data?.success),
+    ports_on_page: ports.length,
     civitavecchia_has_stored_image: Boolean(civit[0]?.hero_media_id),
+    civitavecchia_public_name: civitPort?.name || null,
+    civitavecchia_public_media_id: civitPort?.mediaId || null,
     civitavecchia_public_media_url: civitPort?.media?.url || null,
-    blank_ports_exist: ports.filter((p) => !p?.media?.url).length,
-    sample_blank_port: blankPort?.name || null,
+    blank_ports_count: blankPorts.length,
+    sample_blank_port: blankPorts[0]?.name || null,
     country_fallback_disabled: portImageFallback("mediterranean", "test", "Test") === null,
-    destination_hero_present: Boolean(data?.destination?.hero?.url || data?.destination?.media?.url),
+    destination_hero_present: Boolean(data?.destination?.hero?.url),
     passed:
       response.ok &&
+      data?.success &&
       portImageFallback("x", "y", "z") === null &&
       (civit[0]?.hero_media_id ? Boolean(civitPort?.media?.url) : true)
   };
