@@ -29,6 +29,9 @@ const {
   statusForCandidate,
   statusForScores,
   isVesselPrimarySubject,
+  licenseIsUsable,
+  destinationSpecificityScores,
+  genericImageryPenalty,
   GEO_AUTO_MIN,
   SUIT_AUTO_MIN
 } = loadCjs("netlify/functions/lib/port-image-finder/scoring.js");
@@ -38,7 +41,12 @@ const {
   lookupCataloguePort,
   resolveCatalogueMediaIds
 } = loadCjs("netlify/functions/lib/port-image-finder/resolve-public.js");
-const { canOverwritePortImage } = loadCjs("netlify/functions/lib/port-image-finder/apply.js");
+const {
+  canOverwritePortImage,
+  approveReviewedPortImage,
+  assertCandidateApplicable,
+  __resetDownloadThrottleForTests
+} = loadCjs("netlify/functions/lib/port-image-finder/apply.js");
 const { portImageFallback, applyDestinationImageFallbacks } = loadCjs(
   "netlify/functions/lib/destination-image-fallbacks.js"
 );
@@ -239,6 +247,128 @@ const ranked = pickBestCandidate(
 );
 assert(/british columbia|harbour|waterfront/i.test(ranked[0]?.candidate?.title || ""), "prefers BC Victoria harbour imagery");
 
+// --- Destination name weighting (Ísafjörður harbour vs generic Iceland road) ---
+const isafjordurPort = {
+  canonical_name: "Ísafjörður",
+  city: "Ísafjörður",
+  country: "Iceland",
+  country_code: "IS"
+};
+const isafHarbour = scorePortImageCandidate(
+  {
+    provider: "wikimedia",
+    title: "Ísafjörður harbour 2017.jpg",
+    url: "https://upload.wikimedia.org/w/isaf-harbour.jpg",
+    width: 1400,
+    height: 900,
+    license: "CC BY-SA 4.0"
+  },
+  isafjordurPort
+);
+const isafRoad = scorePortImageCandidate(
+  {
+    provider: "wikimedia",
+    title: "Road 61, Iceland",
+    url: "https://upload.wikimedia.org/w/road61.jpg",
+    width: 1600,
+    height: 900,
+    license: "CC BY-SA 4.0"
+  },
+  isafjordurPort
+);
+assert(isafHarbour.geographic > isafRoad.geographic, "destination harbour outranks generic Iceland road on geo");
+assert(
+  pickBestCandidate(
+    [
+      { provider: "wikimedia", title: "Road 61, Iceland", url: "https://x/a.jpg", width: 1600, height: 900, license: "CC BY-SA 4.0" },
+      { provider: "wikimedia", title: "Ísafjörður harbour 2017.jpg", url: "https://x/b.jpg", width: 1400, height: 900, license: "CC BY-SA 4.0" }
+    ],
+    isafjordurPort
+  )[0]?.candidate?.title.includes("harbour"),
+  "harbour image ranks first for Ísafjörður"
+);
+
+// --- Generic country imagery penalty ---
+const mykonosPort = { canonical_name: "Mykonos", city: "Mykonos", country: "Greece", country_code: "GR" };
+const mykonosHarbour = scorePortImageCandidate(
+  { provider: "wikimedia", title: "Mykonos harbour waterfront", url: "https://x/m.jpg", width: 1200, height: 800, license: "CC BY 2.0" },
+  mykonosPort
+);
+const greekIslands = scorePortImageCandidate(
+  { provider: "wikimedia", title: "Greek islands coastline", url: "https://x/g.jpg", width: 1200, height: 800, license: "CC BY 2.0" },
+  mykonosPort
+);
+assert(mykonosHarbour.geographic > greekIslands.geographic, "Mykonos harbour outranks generic Greek islands");
+assert(genericImageryPenalty({ title: "Greek islands coastline" }, mykonosPort) > 0, "generic region-only title penalised");
+
+// --- Brave unlicensed cannot auto-apply ---
+const unlicensedBrave = {
+  provider: "brave",
+  title: "Singapore Marina Bay skyline",
+  url: "https://cdn.example.com/sg.jpg",
+  width: 1200,
+  height: 800
+};
+assert(!licenseIsUsable(unlicensedBrave), "Brave without licence is not usable");
+assert.throws(
+  () => assertCandidateApplicable(unlicensedBrave, { imageStatus: "AUTO_APPROVED" }),
+  /Brave images cannot be applied/
+);
+const braveScores = scorePortImageCandidate(unlicensedBrave, {
+  canonical_name: "Singapore",
+  country: "Singapore",
+  country_code: "SG"
+});
+assert(statusForCandidate({ ...braveScores, candidate: unlicensedBrave }) !== "AUTO_APPROVED", "unlicensed Brave never AUTO_APPROVED");
+
+const licensedWiki = {
+  provider: "wikimedia",
+  title: "Singapore harbour waterfront",
+  url: "https://upload.wikimedia.org/w/sg.jpg",
+  width: 1400,
+  height: 900,
+  license: "CC BY 2.0"
+};
+const braveVsWiki = pickBestCandidate([unlicensedBrave, licensedWiki], {
+  canonical_name: "Singapore",
+  country: "Singapore",
+  country_code: "SG"
+});
+assert(String(braveVsWiki[0]?.candidate?.provider).toLowerCase() === "wikimedia", "licensed Wikimedia ranks above unlicensed Brave");
+
+// --- NEEDS_REVIEW remains non-public; approval → MANUAL ---
+const needsReviewPort = { id: "port-mykonos-test", canonical_name: "Mykonos", hero_media_id: "media-review", image_status: "NEEDS_REVIEW" };
+const publicIndex = indexPortsCatalogue([needsReviewPort]);
+assert(!lookupCataloguePort("Mykonos", publicIndex), "NEEDS_REVIEW is not public");
+const manualPort = { ...needsReviewPort, image_status: "MANUAL" };
+const publicIndexManual = indexPortsCatalogue([manualPort]);
+assert(lookupCataloguePort("Mykonos", publicIndexManual)?.hero_media_id === "media-review", "MANUAL is public");
+
+let approvePatch = null;
+const mockSupabase = {
+  fetchRest: async (path, options) => {
+    if (options?.method === "PATCH") {
+      approvePatch = options.body;
+      return [{ ...needsReviewPort, ...options.body }];
+    }
+    throw new Error("unexpected");
+  }
+};
+const approved = await approveReviewedPortImage(mockSupabase, needsReviewPort);
+assert(approved.approved_existing === true, "approval reuses existing media");
+assert(approvePatch.image_status === "MANUAL", "approval sets MANUAL status");
+assert(!canOverwritePortImage({ image_status: "MANUAL", hero_media_id: "abc" }), "manual image cannot be overwritten");
+
+// --- Batch matching uses canonical/alias-aware resolution ---
+const sydneyPort = {
+  canonical_name: "Sydney",
+  city: "Sydney",
+  country: "Australia",
+  country_code: "AU",
+  region: "New South Wales"
+};
+assert(destinationSpecificityScores({ title: "Sydney Harbour Bridge panorama" }, sydneyPort).titleHit, "Sydney name in title detected");
+
 // --- Manual image protection ---
 assert(!canOverwritePortImage({ image_status: "MANUAL", hero_media_id: "abc" }), "manual image cannot be overwritten");
 assert(canOverwritePortImage({ image_status: "NO_IMAGE", hero_media_id: null }), "missing image can be enriched");
@@ -298,7 +428,10 @@ assert(/resolveCatalogueMediaIds/.test(publicDestSrc), "public destination resol
 assert(/resolveCatalogueMediaIds/.test(researchSrc), "featured cruise itinerary uses catalogue port images");
 assert(/function braveImageSearch/.test(braveSrc), "brave image search helper exists");
 assert(/action === "find_candidates"/.test(fnSrc), "port-image-finder supports find_candidates");
+assert(/action === "approve_reviewed"/.test(fnSrc), "port-image-finder supports approve_reviewed");
 assert(/action === "bulk_missing"/.test(fnSrc), "port-image-finder supports bulk_missing");
+assert(/approveReviewedPortImage/.test(adminSrc), "admin UI supports approving NEEDS_REVIEW images");
+assert(/Approve for Explore/.test(adminSrc), "admin shows explicit approval action");
 assert(/image_status/.test(migrationSrc), "migration adds image_status");
 assert(/isMissingImageSchemaError/.test(catalogueFnSrc), "ports catalogue tolerates missing image schema");
 assert(/isVesselPrimarySubject/.test(read("netlify/functions/lib/port-image-finder/scoring.js")), "scoring exports vessel-primary detection");

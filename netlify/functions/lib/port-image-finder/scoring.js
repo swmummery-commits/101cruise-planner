@@ -110,6 +110,63 @@ function isVesselPrimarySubject(candidate) {
   return { vesselPrimary: false, reason: null };
 }
 
+function normalizeMatchText(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function destinationNamesForPort(port) {
+  const names = new Set();
+  for (const value of [searchIdentityName(port), primaryName(port), port?.city]) {
+    const n = normalizeMatchText(value);
+    if (n.length >= 3) names.add(n);
+  }
+  for (const alias of Array.isArray(port?.aliases) ? port.aliases : []) {
+    const n = normalizeMatchText(alias);
+    if (n.length >= 3) names.add(n);
+  }
+  return [...names];
+}
+
+function destinationSpecificityScores(candidate, port) {
+  const title = normalizeMatchText(normaliseTitle(candidate?.title));
+  const hay = normalizeMatchText(candidateHaystack(candidate));
+  const names = destinationNamesForPort(port);
+  let titleHit = false;
+  let anyHit = false;
+  for (const name of names) {
+    if (name.length < 4) continue;
+    if (title.includes(name)) titleHit = true;
+    if (hay.includes(name)) anyHit = true;
+  }
+  return { titleHit, anyHit, names };
+}
+
+function genericImageryPenalty(candidate, port) {
+  const { titleHit, anyHit } = destinationSpecificityScores(candidate, port);
+  if (anyHit) return 0;
+
+  const title = normalizeMatchText(normaliseTitle(candidate?.title));
+  const hay = normalizeMatchText(candidateHaystack(candidate));
+  const countryScore = countryMentionScore(hay, port);
+  const genericTitle =
+    /\b(road\s+\d+|route\s+\d+|highway|landscape|coastline|coast|countryside|tropical|mountains?|scenery|generic)\b/i.test(
+      title
+    );
+  const genericRegionOnly = /\b(greek islands?|south pacific|caribbean|scandinavia|alaska|iceland|australia|norway)\b/i.test(
+    title
+  );
+
+  if (genericTitle && countryScore > 0) return 38;
+  if (genericRegionOnly && !PORT_DESTINATION_RE.test(title)) return 30;
+  if (countryScore >= 20 && !PORT_DESTINATION_RE.test(title)) return 24;
+  return 0;
+}
+
 function candidateHaystack(candidate) {
   return [candidate?.title, candidate?.description, candidate?.sourceUrl, candidate?.pageUrl, candidate?.credit]
     .filter(Boolean)
@@ -158,10 +215,13 @@ function dimensionScore(candidate) {
 
 function licenseIsUsable(candidate) {
   const provider = String(candidate?.provider || "").toLowerCase();
+  const license = String(candidate?.license || "").toLowerCase();
   if (provider === "pexels") return true;
   if (provider === "manual") return true;
+  if (provider === "brave") {
+    return /public domain|cc0|cc-by|creative commons/.test(license);
+  }
   if (provider === "wikimedia") {
-    const license = String(candidate?.license || "").toLowerCase();
     return /public domain|cc0|cc-by|creative commons/.test(license) || Boolean(license);
   }
   return false;
@@ -171,10 +231,14 @@ function computeGeographicScore(candidate, port) {
   const text = candidateHaystack(candidate);
   if (hasConflictingLocation(text, port)) return 0;
 
+  const specificity = destinationSpecificityScores(candidate, port);
   let score = 20;
   score += nameMatchScore(text, port);
   score += countryMentionScore(text, port);
+  if (specificity.titleHit) score += 30;
+  else if (specificity.anyHit) score += 14;
   if (PORT_DESTINATION_RE.test(text)) score += 8;
+  score -= genericImageryPenalty(candidate, port);
 
   const provider = String(candidate?.provider || "").toLowerCase();
   if (provider === "wikimedia") score += 8;
@@ -246,6 +310,7 @@ function scorePortImageCandidate(candidate, port) {
   const geographic = computeGeographicScore(candidate, port);
   const suitability = computeSuitabilityScore(candidate);
   const confidence = computeOverallConfidence(geographic, suitability, { vesselPrimary: vessel.vesselPrimary });
+  const specificity = destinationSpecificityScores(candidate, port);
 
   const reasons = [];
   if (geographic >= 70) reasons.push("geo_match");
@@ -253,6 +318,12 @@ function scorePortImageCandidate(candidate, port) {
   if (suitability < 50) reasons.push("ship_or_low_suitability");
   if (SHIP_DOMINANT_RE.test(String(candidate?.title || ""))) reasons.push("ship_dominated");
   if (vessel.vesselPrimary) reasons.push("vessel_primary_subject");
+
+  if (specificity.titleHit) reasons.push("destination_in_title");
+  if (genericImageryPenalty(candidate, port) > 0) reasons.push("generic_imagery");
+  if (String(candidate?.provider || "").toLowerCase() === "brave" && !licenseIsUsable(candidate)) {
+    reasons.push("unlicensed_brave");
+  }
 
   const rejected = geographic < 25 || suitability < 20 || confidence < 20;
 
@@ -272,7 +343,18 @@ function pickBestCandidate(candidates, port) {
     .map((candidate) => ({ candidate, ...scorePortImageCandidate(candidate, port) }))
     .filter((row) => !row.rejected)
     .sort((a, b) => {
+      const aSpec = destinationSpecificityScores(a.candidate, port);
+      const bSpec = destinationSpecificityScores(b.candidate, port);
+      if (aSpec.titleHit !== bSpec.titleHit) return bSpec.titleHit ? 1 : -1;
       if (a.vesselPrimary !== b.vesselPrimary) return a.vesselPrimary ? 1 : -1;
+      const aBrave = String(a.candidate?.provider || "").toLowerCase() === "brave";
+      const bBrave = String(b.candidate?.provider || "").toLowerCase() === "brave";
+      const aWiki =
+        String(a.candidate?.provider || "").toLowerCase() === "wikimedia" && licenseIsUsable(a.candidate);
+      const bWiki =
+        String(b.candidate?.provider || "").toLowerCase() === "wikimedia" && licenseIsUsable(b.candidate);
+      if (aWiki !== bWiki) return bWiki ? 1 : -1;
+      if (aBrave !== bBrave) return aBrave ? 1 : -1;
       if (b.confidence !== a.confidence) return b.confidence - a.confidence;
       if (b.suitability !== a.suitability) return b.suitability - a.suitability;
       return b.geographic - a.geographic;
@@ -284,8 +366,16 @@ function statusForScores(scores, provider) {
   const suit = Number(scores?.suitability) || 0;
   const overall = Number(scores?.confidence) || 0;
   const p = String(provider || "").toLowerCase();
+  const licensed = licenseIsUsable({ provider: p, license: scores?.license });
 
   if (scores?.vesselPrimary) {
+    if (geo >= GEO_REVIEW_MIN && suit >= SUIT_REVIEW_MIN && overall >= OVERALL_REVIEW_MIN) {
+      return "NEEDS_REVIEW";
+    }
+    return "NO_IMAGE";
+  }
+
+  if (p === "brave" && !licensed) {
     if (geo >= GEO_REVIEW_MIN && suit >= SUIT_REVIEW_MIN && overall >= OVERALL_REVIEW_MIN) {
       return "NEEDS_REVIEW";
     }
@@ -296,7 +386,8 @@ function statusForScores(scores, provider) {
     geo >= GEO_AUTO_MIN &&
     suit >= SUIT_AUTO_MIN &&
     overall >= 80 &&
-    licenseIsUsable({ provider, license: scores?.license })
+    licensed &&
+    p !== "brave"
   ) {
     if (p === "wikimedia" || p === "pexels" || p === "manual") return "AUTO_APPROVED";
   }
@@ -332,5 +423,8 @@ module.exports = {
   computeSuitabilityScore,
   computeOverallConfidence,
   licenseIsUsable,
-  isVesselPrimarySubject
+  isVesselPrimarySubject,
+  destinationSpecificityScores,
+  genericImageryPenalty,
+  destinationNamesForPort
 };

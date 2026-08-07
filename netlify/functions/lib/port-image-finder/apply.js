@@ -4,9 +4,13 @@
 
 const crypto = require("crypto");
 const { primaryName } = require("./queries");
+const { licenseIsUsable } = require("./scoring");
 
 const BUCKET = "cruise-media";
 const VALID_STATUS = new Set(["MANUAL", "AUTO_APPROVED", "NEEDS_REVIEW", "NO_IMAGE"]);
+const MIN_WIKIMEDIA_DOWNLOAD_INTERVAL_MS = 3000;
+
+let lastWikimediaDownloadAt = 0;
 
 function slugify(value) {
   return String(value || "")
@@ -30,7 +34,21 @@ function extensionForType(contentType) {
   return ".jpg";
 }
 
-async function downloadImage(url, timeoutMs = 12_000) {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isWikimediaUrl(url) {
+  return /wikimedia\.org|upload\.wikimedia/i.test(String(url || ""));
+}
+
+async function downloadImage(url, timeoutMs = 12_000, attempt = 0) {
+  if (isWikimediaUrl(url)) {
+    const wait = Math.max(0, MIN_WIKIMEDIA_DOWNLOAD_INTERVAL_MS - (Date.now() - lastWikimediaDownloadAt));
+    if (wait > 0) await sleep(wait);
+    lastWikimediaDownloadAt = Date.now();
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -38,6 +56,12 @@ async function downloadImage(url, timeoutMs = 12_000) {
       signal: controller.signal,
       headers: { Accept: "image/*" }
     });
+    if (response.status === 429 && attempt < 2) {
+      clearTimeout(timer);
+      const retryAfter = Number(response.headers.get("retry-after") || "3");
+      await sleep(Math.min(Math.max(retryAfter, 3) * 1000, 60_000));
+      return downloadImage(url, timeoutMs, attempt + 1);
+    }
     if (!response.ok) {
       throw new Error(`Image download failed (${response.status})`);
     }
@@ -55,6 +79,52 @@ function canOverwritePortImage(port, { force = false } = {}) {
   if (!port) return false;
   if (port.image_status === "MANUAL" && port.hero_media_id && !force) return false;
   return true;
+}
+
+function assertCandidateApplicable(candidate, { imageStatus = "MANUAL" } = {}) {
+  const provider = String(candidate?.provider || "").toLowerCase();
+  if (provider === "brave" && !licenseIsUsable(candidate)) {
+    const err = new Error(
+      "Brave images cannot be applied without a clear reusable licence. Use Wikimedia or approve manually after verifying rights."
+    );
+    err.statusCode = 400;
+    err.calm = true;
+    throw err;
+  }
+  if (provider === "brave" && imageStatus === "AUTO_APPROVED" && !licenseIsUsable(candidate)) {
+    const err = new Error("Unlicensed Brave candidates cannot be auto-approved.");
+    err.statusCode = 400;
+    err.calm = true;
+    throw err;
+  }
+}
+
+/**
+ * Promote a stored NEEDS_REVIEW image to MANUAL without re-downloading or creating duplicate media.
+ */
+async function approveReviewedPortImage(supabase, port) {
+  if (!port?.id) {
+    const err = new Error("Port is required.");
+    err.statusCode = 400;
+    err.calm = true;
+    throw err;
+  }
+  if (String(port.image_status || "").toUpperCase() !== "NEEDS_REVIEW" || !port.hero_media_id) {
+    const err = new Error("Only stored NEEDS_REVIEW images can be approved for Explore display.");
+    err.statusCode = 400;
+    err.calm = true;
+    throw err;
+  }
+
+  const rows = await supabase.fetchRest(`ports?id=eq.${encodeURIComponent(port.id)}`, {
+    method: "PATCH",
+    prefer: "return=representation",
+    body: { image_status: "MANUAL" }
+  });
+  const updated = Array.isArray(rows) ? rows[0] : rows;
+  if (!updated?.id) throw new Error("Port was not updated after approval.");
+
+  return { port: updated, media: null, approved_existing: true };
 }
 
 /**
@@ -86,6 +156,8 @@ async function applyPortImageCandidate(supabase, port, candidate, options = {}) 
     err.calm = true;
     throw err;
   }
+
+  assertCandidateApplicable(candidate, { imageStatus });
 
   const portName = primaryName(port);
   const { buffer, contentType } = await downloadImage(imageUrl);
@@ -144,11 +216,18 @@ async function applyPortImageCandidate(supabase, port, candidate, options = {}) 
   });
   const updated = Array.isArray(updatedRows) ? updatedRows[0] : updatedRows;
 
-  return { port: updated, media };
+  return { port: updated, media, approved_existing: false };
+}
+
+function __resetDownloadThrottleForTests() {
+  lastWikimediaDownloadAt = 0;
 }
 
 module.exports = {
   applyPortImageCandidate,
+  approveReviewedPortImage,
   canOverwritePortImage,
-  downloadImage
+  downloadImage,
+  assertCandidateApplicable,
+  __resetDownloadThrottleForTests
 };

@@ -10,7 +10,7 @@
 
 const { requireAdmin } = require("./admin-auth");
 const { findPortImageCandidates, RECHECK_DAYS } = require("./lib/port-image-finder/search");
-const { applyPortImageCandidate } = require("./lib/port-image-finder/apply");
+const { applyPortImageCandidate, approveReviewedPortImage } = require("./lib/port-image-finder/apply");
 const { PORT_IMAGE_SELECT } = require("./lib/port-image-finder/resolve-public");
 
 const PORT_SELECT =
@@ -275,6 +275,33 @@ async function actionApplyCandidate(body) {
   };
 }
 
+async function actionApproveReviewed(body) {
+  const portId = String(body.port_id || "").trim();
+  if (!portId) {
+    const err = new Error("port_id is required");
+    err.statusCode = 400;
+    err.calm = true;
+    throw err;
+  }
+
+  const supabase = makeSupabaseClient();
+  const port = await loadPortById(supabase, portId);
+  if (!port) {
+    const err = new Error("Port not found");
+    err.statusCode = 404;
+    err.calm = true;
+    throw err;
+  }
+
+  const approved = await approveReviewedPortImage(supabase, port);
+  return {
+    success: true,
+    port: approved.port,
+    media: approved.media,
+    approved_existing: approved.approved_existing
+  };
+}
+
 async function listMissingPorts(supabase, { offset = 0, limit = BULK_BATCH_DEFAULT, force = false } = {}) {
   let rows;
   try {
@@ -342,19 +369,34 @@ async function actionBulkMissing(body) {
       };
 
       if (search.autoApply?.candidate) {
-        const applied = await applyPortImageCandidate(supabase, port, search.autoApply.candidate, {
-          imageStatus: "AUTO_APPROVED",
-          searchQuery: search.primaryQuery,
-          confidence: search.autoApply.confidence
-        });
-        updatedPort = applied.port;
-        summary.auto_approved += 1;
-        results.push({
-          port_id: port.id,
-          name: port.canonical_name,
-          outcome: "auto_approved",
-          confidence: search.autoApply.confidence
-        });
+        const provider = String(search.autoApply.candidate.provider || "").toLowerCase();
+        if (provider === "brave") {
+          summary.needs_review += 1;
+          patch.image_status = "NEEDS_REVIEW";
+          patch.image_confidence = search.autoApply.confidence || null;
+          updatedPort = await patchPortSearchState(supabase, port.id, patch);
+          results.push({
+            port_id: port.id,
+            name: port.canonical_name,
+            outcome: "needs_review",
+            confidence: search.autoApply.confidence,
+            note: "brave_discovery_only"
+          });
+        } else {
+          const applied = await applyPortImageCandidate(supabase, port, search.autoApply.candidate, {
+            imageStatus: "AUTO_APPROVED",
+            searchQuery: search.primaryQuery,
+            confidence: search.autoApply.confidence
+          });
+          updatedPort = applied.port;
+          summary.auto_approved += 1;
+          results.push({
+            port_id: port.id,
+            name: port.canonical_name,
+            outcome: "auto_approved",
+            confidence: search.autoApply.confidence
+          });
+        }
       } else if (search.suggestedStatus === "NEEDS_REVIEW") {
         patch.image_status = "NEEDS_REVIEW";
         updatedPort = await patchPortSearchState(supabase, port.id, patch);
@@ -419,6 +461,9 @@ exports.handler = async function handler(event) {
     if (action === "apply_candidate") {
       return jsonResponse(200, await actionApplyCandidate(body));
     }
+    if (action === "approve_reviewed") {
+      return jsonResponse(200, await actionApproveReviewed(body));
+    }
     if (action === "bulk_missing") {
       return jsonResponse(200, await actionBulkMissing(body));
     }
@@ -439,6 +484,7 @@ exports.handler = async function handler(event) {
 exports._internal = {
   actionFindCandidates,
   actionApplyCandidate,
+  actionApproveReviewed,
   actionBulkMissing,
   makeSupabaseClient
 };

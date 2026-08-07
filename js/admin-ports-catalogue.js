@@ -142,6 +142,37 @@
     }, "Searching for port images…");
   }
 
+  function hasStoredReviewImage(port) {
+    return Boolean(
+      port?.hero_media_id && String(port?.image_status || "").toUpperCase() === "NEEDS_REVIEW"
+    );
+  }
+
+  async function approveReviewedPortImage() {
+    const port = selectedPort();
+    if (!port?.id || !hasStoredReviewImage(port)) return;
+
+    return withSavingOverlay(async function () {
+      imageLoading = true;
+      setMessage("Approving image for Explore display…", "running");
+      rerender();
+      try {
+        const data = await imageApi("approve_reviewed", { port_id: port.id });
+        if (data.port?.id) {
+          const idx = ports.findIndex((p) => p.id === data.port.id);
+          if (idx >= 0) ports[idx] = { ...ports[idx], ...data.port };
+          draft = portToDraft(data.port);
+        }
+        setMessage("Image approved for Explore display. Status is now Manual and protected from overwrite.", "success");
+      } catch (error) {
+        setMessage(error.message || "Could not approve image.", "error");
+      } finally {
+        imageLoading = false;
+        rerender();
+      }
+    }, "Approving image…");
+  }
+
   async function applyPortImageCandidate(candidate) {
     const port = selectedPort();
     if (!port?.id || !candidate) return;
@@ -568,6 +599,7 @@
     if (creating || !port) return "";
 
     const hasImage = hasPortImage(port);
+    const pendingReview = hasStoredReviewImage(port);
     const status = imageStatusLabel(port.image_status);
     const confidence =
       port.image_confidence != null && port.image_confidence !== ""
@@ -591,7 +623,22 @@
           }
           ${checked ? `<p class="admin-small"><strong>Last checked:</strong> ${esc(checked)}</p>` : ""}
         </div>`
-      : `<p class="admin-muted admin-small" style="margin:0 0 12px">No port-specific image yet. Country images are not used as a fallback on Explore pages.</p>`;
+      : pendingReview
+        ? `
+        <div class="ports-image-current">
+          <p class="admin-small"><strong>Status:</strong> ${esc(status)} — stored but <strong>not public</strong> until approved.</p>
+          <p class="admin-muted admin-small" style="margin:8px 0">An image was found automatically and saved for review. Approve it to show on Cruise Finder Explore pages.</p>
+          <p class="admin-small"><strong>Source:</strong> ${esc(port.image_source || "—")}</p>
+          ${port.image_license ? `<p class="admin-small"><strong>Licence:</strong> ${esc(port.image_license)}</p>` : ""}
+          ${port.image_credit ? `<p class="admin-small"><strong>Credit:</strong> ${esc(port.image_credit)}</p>` : ""}
+          ${
+            port.image_source_url
+              ? `<p class="admin-small"><strong>Source page:</strong> <a href="${esc(port.image_source_url)}" target="_blank" rel="noopener noreferrer">View source</a></p>`
+              : ""
+          }
+          <button type="button" class="admin-button black small" style="margin-top:8px" onclick="PortsCatalogueAdmin.approveReviewedPortImage()" ${imageLoading || saving ? "disabled" : ""}>Approve for Explore</button>
+        </div>`
+        : `<p class="admin-muted admin-small" style="margin:0 0 12px">No port-specific image yet. Country images are not used as a fallback on Explore pages.</p>`;
 
     const candidates = (imageCandidates.length ? imageCandidates : port.image_candidates || [])
       .slice(0, 8)
@@ -815,6 +862,7 @@
     findPortImageAgain,
     applyPortImageCandidate,
     applyPortImageCandidateByIndex,
+    approveReviewedPortImage,
     bulkFindMissingPortImages
   };
 })(typeof window !== "undefined" ? window : globalThis);
