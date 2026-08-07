@@ -188,15 +188,22 @@ async function fetchPrincessResdbCatalogue({ session, cruiseType = "C", agencyCo
     `resdb/p1.0/products?agencyCountry=${encodeURIComponent(agencyCountry)}` +
     `&cruiseType=${encodeURIComponent(cruiseType)}` +
     "&voyageStatus=A&webDisplay=Y&promoFilter=all&light=true";
+  const sessionVariants = [
+    session,
+    { ...session, cookie: null },
+    { ...session, cookie: null, bookingCompany: DEFAULT_BOOKING_COMPANY },
+    { ...session, bookingCompany: DEFAULT_BOOKING_COMPANY }
+  ];
   let lastError = null;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    if (attempt > 0) await sleep(500 * attempt);
+  for (let attempt = 0; attempt < sessionVariants.length; attempt += 1) {
+    if (attempt > 0) await sleep(400 * attempt);
+    const variant = sessionVariants[attempt];
     const result = await princessApiGet(query, {
       session: {
-        clientId: session.clientId,
-        cookie: session.cookie,
-        productCompany: session.productCompany,
-        bookingCompany: session.bookingCompany
+        clientId: variant.clientId,
+        cookie: variant.cookie || null,
+        productCompany: variant.productCompany,
+        bookingCompany: variant.bookingCompany
       }
     });
     if (result.ok) {
