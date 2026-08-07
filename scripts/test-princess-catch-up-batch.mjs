@@ -161,7 +161,14 @@ test("recovered write is included in rollback manifest builder", () => {
   }
 });
 
-test("sanitised source diagnostics omit cookie headers", () => {
+test("Princess source uses native https transport for API requests", () => {
+  const sourceSrc = fs.readFileSync(
+    path.join(root, "netlify/functions/lib/princess-discovery-source.js"),
+    "utf8"
+  );
+  if (!sourceSrc.includes("princessTransportGet")) throw new Error("missing https transport");
+  if (!sourceSrc.includes('transport: "https"')) throw new Error("missing transport diagnostic");
+});
   const source = require(path.join(root, "netlify/functions/lib/princess-discovery-source"));
   const headers = source.sanitizeResponseHeaders({
     "content-type": "application/json",

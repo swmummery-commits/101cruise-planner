@@ -10,6 +10,7 @@
  * Official sailing identity: {itinerary_id}|{ship_code}|{departure_date_yyyy_mm_dd}
  */
 
+const https = require("https");
 const { canonicalUrl } = require("./cruise-discovery-structured");
 const { fetchSourceExcerpt } = require("./source-fetch");
 
@@ -182,6 +183,47 @@ function describeCatalogueAttempt(sessionVariant, attemptIndex) {
   };
 }
 
+function readNodeSetCookies(headers = {}) {
+  const raw = headers["set-cookie"];
+  if (!raw) return [];
+  return Array.isArray(raw) ? raw : [raw];
+}
+
+async function princessTransportGet(url, headers, { timeoutMs = 30000 } = {}) {
+  const parsed = new URL(url);
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        protocol: parsed.protocol,
+        hostname: parsed.hostname,
+        path: `${parsed.pathname}${parsed.search}`,
+        method: "GET",
+        headers,
+        timeout: timeoutMs
+      },
+      (response) => {
+        let text = "";
+        response.on("data", (chunk) => {
+          text += chunk;
+        });
+        response.on("end", () => {
+          resolve({
+            status: response.statusCode || 0,
+            headers: response.headers || {},
+            text,
+            setCookie: readNodeSetCookies(response.headers)
+          });
+        });
+      }
+    );
+    req.on("timeout", () => {
+      req.destroy(new Error("princess_source_timeout"));
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
+
 async function princessApiGet(path, { session = null, clientId = null, collectDiagnostics = false } = {}) {
   const started = Date.now();
   const id = clientId || session?.clientId || (await resolvePclClientId());
@@ -200,31 +242,32 @@ async function princessApiGet(path, { session = null, clientId = null, collectDi
   if (session?.cookie) headers.Cookie = session.cookie;
 
   const url = path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
-  const response = await fetch(url, { method: "GET", headers, redirect: "follow" });
-  const text = await response.text();
+  const response = await princessTransportGet(url, headers);
+  const text = response.text;
   let data = null;
   try {
     data = text ? JSON.parse(text) : null;
   } catch (_err) {
     data = null;
   }
-  const setCookie = readResponseSetCookies(response);
+  const setCookie = response.setCookie || [];
   const result = {
     ok: response.status >= 200 && response.status < 300,
     status: response.status,
     data,
     text,
-    headers: Object.fromEntries(response.headers.entries()),
+    headers: response.headers,
     setCookie
   };
   if (collectDiagnostics) {
     result.diagnostics = {
       http_status: response.status,
       elapsed_ms: Date.now() - started,
-      response_content_type: response.headers.get("content-type"),
-      response_content_length: response.headers.get("content-length"),
-      response_headers: sanitizeResponseHeaders(result.headers),
+      response_content_type: response.headers["content-type"] || null,
+      response_content_length: response.headers["content-length"] || null,
+      response_headers: sanitizeResponseHeaders(response.headers),
       body_excerpt: sanitizeBodyExcerpt(text),
+      transport: "https",
       request: {
         bootstrap_cookies_used: Boolean(session?.cookie),
         client_id_included: Boolean(id),
