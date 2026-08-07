@@ -44,6 +44,9 @@ const TEST_PORTS = [
 const PORT_SELECT =
   "id,canonical_name,display_name,city,country,country_code,region,aliases,hero_media_id,image_status,image_source,image_source_url,image_credit,image_license,image_search_query,image_confidence,image_last_checked_at,image_candidates";
 
+const PORT_SELECT_BASIC =
+  "id,canonical_name,display_name,city,country,country_code,region,aliases";
+
 function parseArgs(argv) {
   const args = {
     audit: false,
@@ -113,8 +116,19 @@ function makeSupabaseClient(rest) {
 }
 
 async function loadAllPorts(rest) {
-  const rows = await rest.get(`ports?select=${encodeURIComponent(PORT_SELECT)}&order=canonical_name.asc&limit=2000`);
-  return Array.isArray(rows) ? rows : [];
+  try {
+    const rows = await rest.get(`ports?select=${encodeURIComponent(PORT_SELECT)}&order=canonical_name.asc&limit=2000`);
+    return Array.isArray(rows) ? rows : [];
+  } catch (error) {
+    if (!/hero_media_id|image_status|image_candidates/i.test(String(error.message || ""))) throw error;
+    const rows = await rest.get(`ports?select=${encodeURIComponent(PORT_SELECT_BASIC)}&order=canonical_name.asc&limit=2000`);
+    return (Array.isArray(rows) ? rows : []).map((row) => ({
+      ...row,
+      hero_media_id: null,
+      image_status: null,
+      image_candidates: []
+    }));
+  }
 }
 
 function findTestPort(allPorts, spec) {
