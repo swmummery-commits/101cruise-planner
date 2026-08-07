@@ -2,8 +2,20 @@ const { syncBookingDocuments } = require('./document-sync');
 const { canonicalCruiseLineDisplayName } = require('./lib/resolve-cruise-ship');
 const { applyBookingFinance } = require('../../base44/bookingFinance');
 
+const BASE44_FETCH_TIMEOUT_MS = Number(process.env.BASE44_FETCH_TIMEOUT_MS || 8000);
+const CACHE_FRESH_MS = Number(process.env.BOOKING_CACHE_FRESH_MS || 24 * 60 * 60 * 1000);
+const CACHE_STALE_ACCEPTABLE_MS = Number(process.env.BOOKING_CACHE_STALE_MS || 7 * 24 * 60 * 60 * 1000);
+
 function normalise(value) {
   return String(value || '').trim();
+}
+
+function normaliseRef(value) {
+  return normalise(value).toUpperCase();
+}
+
+function normaliseSurname(value) {
+  return normaliseRef(value);
 }
 
 function canonicaliseBookingCruiseLine(booking) {
@@ -73,38 +85,166 @@ async function supabaseRest(path, options = {}) {
   return data;
 }
 
-async function fetchBase44Booking({ booking_reference, booking_id }) {
-  const reference = normalise(booking_reference).toUpperCase();
+async function fetchBase44Booking({ booking_reference, booking_id, timeoutMs = 0, fetchImpl = fetch } = {}) {
+  const reference = normaliseRef(booking_reference);
   const id = normalise(booking_id);
   if (!reference && !id) throw new Error('Booking reference or booking ID is required');
 
   const { base44Url, base44ApiKey } = getConfig();
   const payload = id ? { booking_id: id } : { booking_reference: reference };
-  const response = await fetch(base44Url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': base44ApiKey
-    },
-    body: JSON.stringify(payload)
-  });
+  const effectiveTimeout = timeoutMs > 0 ? timeoutMs : 0;
+  const controller = effectiveTimeout ? new AbortController() : null;
+  const timer =
+    controller &&
+    setTimeout(() => {
+      controller.abort();
+    }, effectiveTimeout);
 
-  const data = await response.json().catch(() => null);
-  if (!response.ok) {
-    const message = data?.error || data?.message || `Base44 booking request failed (HTTP ${response.status})`;
-    const error = new Error(message);
-    error.statusCode = response.status;
+  try {
+    const response = await fetchImpl(base44Url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': base44ApiKey
+      },
+      body: JSON.stringify(payload),
+      signal: controller?.signal
+    });
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = data?.error || data?.message || `Base44 booking request failed (HTTP ${response.status})`;
+      const error = new Error(message);
+      error.statusCode = response.status;
+      throw error;
+    }
+
+    if (!data?.booking) {
+      const error = new Error('Booking was not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const booking = applySafeBookingFinance(canonicaliseBookingCruiseLine(data.booking));
+    return { booking, source: { ...data, booking } };
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      const timeoutError = new Error('Base44 booking request timed out');
+      timeoutError.code = 'base44_timeout';
+      throw timeoutError;
+    }
+    throw error;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function readBookingCache({ booking_reference, booking_id, rest = supabaseRest } = {}) {
+  if (!getSupabaseConfig()) return null;
+  const reference = normaliseRef(booking_reference);
+  const id = normalise(booking_id);
+  if (!reference && !id) return null;
+
+  const select =
+    'base44_booking_id,booking_reference,passenger1_last_name,last_synced_at,updated_at,raw_payload';
+  const path = reference
+    ? `base44_booking_cache?booking_reference=eq.${encodeURIComponent(reference)}&select=${select}&limit=1`
+    : `base44_booking_cache?base44_booking_id=eq.${encodeURIComponent(id)}&select=${select}&limit=1`;
+
+  const rows = await rest(path, { method: 'GET' });
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
+function cacheAgeMs(cacheRow) {
+  const stamp = cacheRow?.last_synced_at || cacheRow?.updated_at;
+  if (!stamp) return Number.POSITIVE_INFINITY;
+  const age = Date.now() - new Date(stamp).getTime();
+  return Number.isFinite(age) ? age : Number.POSITIVE_INFINITY;
+}
+
+function classifyBookingCache(cacheRow) {
+  if (!cacheRow?.raw_payload || typeof cacheRow.raw_payload !== 'object') {
+    return { usable: false, freshness: 'unusable' };
+  }
+  const ageMs = cacheAgeMs(cacheRow);
+  if (ageMs <= CACHE_FRESH_MS) return { usable: true, freshness: 'fresh', ageMs };
+  if (ageMs <= CACHE_STALE_ACCEPTABLE_MS) return { usable: true, freshness: 'stale_acceptable', ageMs };
+  return { usable: true, freshness: 'stale', ageMs };
+}
+
+function bookingFromCacheRow(cacheRow) {
+  return applySafeBookingFinance(canonicaliseBookingCruiseLine({ ...cacheRow.raw_payload }));
+}
+
+function sourceFromBooking(booking) {
+  return {
+    booking,
+    documents: Array.isArray(booking?.documents) ? booking.documents : []
+  };
+}
+
+async function resolveCustomerBooking(
+  { booking_reference, surname },
+  { rest = supabaseRest, fetchImpl = fetch, timeoutMs = BASE44_FETCH_TIMEOUT_MS } = {}
+) {
+  const reference = normaliseRef(booking_reference);
+  const surnameNorm = normaliseSurname(surname);
+  if (!reference || !surnameNorm) {
+    const error = new Error('Booking number and lead traveller surname are required.');
+    error.code = 'invalid_request';
     throw error;
   }
 
-  if (!data?.booking) {
-    const error = new Error('Booking was not found');
-    error.statusCode = 404;
+  const cacheRow = await readBookingCache({ booking_reference: reference, rest });
+  const cacheInfo = classifyBookingCache(cacheRow);
+
+  if (cacheRow && normaliseSurname(cacheRow.passenger1_last_name) !== surnameNorm) {
+    const error = new Error('We could not match those booking details.');
+    error.code = 'surname_mismatch';
     throw error;
   }
 
-  const booking = applySafeBookingFinance(canonicaliseBookingCruiseLine(data.booking));
-  return { booking, source: { ...data, booking } };
+  let booking;
+  let source;
+  let bookingSource = 'live';
+  let cacheFallback = false;
+
+  try {
+    ({ booking, source } = await fetchBase44Booking({
+      booking_reference: reference,
+      timeoutMs,
+      fetchImpl
+    }));
+  } catch (fetchError) {
+    if (cacheInfo.usable && cacheRow) {
+      booking = bookingFromCacheRow(cacheRow);
+      source = sourceFromBooking(booking);
+      bookingSource = 'cache';
+      cacheFallback = true;
+    } else if (fetchError.code === 'base44_timeout') {
+      const error = new Error('The booking service is taking longer than expected. Please try again.');
+      error.code = 'base44_timeout';
+      error.httpStatus = 503;
+      throw error;
+    } else {
+      throw fetchError;
+    }
+  }
+
+  if (normaliseSurname(booking.passenger1_last_name) !== surnameNorm) {
+    const error = new Error('We could not match those booking details.');
+    error.code = 'surname_mismatch';
+    throw error;
+  }
+
+  return {
+    booking,
+    source,
+    bookingSource,
+    cacheFallback,
+    cacheFreshness: cacheInfo.freshness,
+    cacheRow
+  };
 }
 
 async function cacheBookingInSupabase(booking) {
@@ -144,12 +284,12 @@ async function cacheBookingInSupabase(booking) {
   return Array.isArray(rows) ? rows[0] || null : rows;
 }
 
-async function syncDocumentsForBooking(booking, source = null) {
+async function syncDocumentsForBooking(booking, source = null, options = {}) {
   if (!getSupabaseConfig()) {
     return { found: 0, upserted: 0, skipped_conflict: 0, skipped_other_source: 0, errors: ['Supabase not configured'], rows: [] };
   }
   try {
-    return await syncBookingDocuments(supabaseRest, booking, source);
+    return await syncBookingDocuments(supabaseRest, booking, source, options);
   } catch (error) {
     // Table may not exist until migration is applied.
     console.warn('Document sync skipped or failed', error.message || error);
@@ -165,7 +305,15 @@ async function syncDocumentsForBooking(booking, source = null) {
 }
 
 module.exports = {
+  BASE44_FETCH_TIMEOUT_MS,
+  CACHE_FRESH_MS,
+  CACHE_STALE_ACCEPTABLE_MS,
   fetchBase44Booking,
+  readBookingCache,
+  classifyBookingCache,
+  resolveCustomerBooking,
+  bookingFromCacheRow,
+  sourceFromBooking,
   cacheBookingInSupabase,
   syncDocumentsForBooking,
   supabaseRest,

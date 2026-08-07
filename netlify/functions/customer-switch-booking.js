@@ -10,7 +10,10 @@
 const {
   fetchBase44Booking,
   cacheBookingInSupabase,
-  syncDocumentsForBooking,
+  readBookingCache,
+  bookingFromCacheRow,
+  sourceFromBooking,
+  BASE44_FETCH_TIMEOUT_MS,
   supabaseRest
 } = require("./booking-service");
 const {
@@ -109,14 +112,26 @@ exports.handler = async function (event) {
 
     let booking;
     let source;
+    let fromLive = false;
     try {
-      ({ booking, source } = await fetchBase44Booking({ booking_id: targetId }));
+      ({ booking, source } = await fetchBase44Booking({
+        booking_id: targetId,
+        timeoutMs: BASE44_FETCH_TIMEOUT_MS
+      }));
+      fromLive = true;
     } catch (lookupError) {
-      console.warn("customer-switch-booking Base44 pull failed", lookupError);
-      return jsonResponse(502, {
-        success: false,
-        error: "We couldn’t open that cruise just now. Please try again."
-      });
+      const cacheRow = await readBookingCache({ booking_id: targetId });
+      if (cacheRow?.raw_payload) {
+        booking = bookingFromCacheRow(cacheRow);
+        source = sourceFromBooking(booking);
+      } else {
+        console.warn("customer-switch-booking Base44 pull failed", lookupError);
+        return jsonResponse(502, {
+          success: false,
+          error: "We couldn’t open that cruise just now. Please try again.",
+          retryable: lookupError.code === "base44_timeout"
+        });
+      }
     }
 
     // Confirm pulled booking still matches the secure identity
@@ -127,11 +142,8 @@ exports.handler = async function (event) {
       });
     }
 
-    await cacheBookingInSupabase(booking);
-    try {
-      await syncDocumentsForBooking(booking, source);
-    } catch (syncError) {
-      console.warn("customer-switch-booking document sync failed", syncError);
+    if (fromLive) {
+      await cacheBookingInSupabase(booking);
     }
 
     const token = mintBookingSessionToken(booking, secret);

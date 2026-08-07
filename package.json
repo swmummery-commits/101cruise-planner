@@ -115,7 +115,7 @@
     "test:checklist-admin-save": "node scripts/test-checklist-admin-save.mjs",
     "test:public-destination-cruise-cards": "node scripts/test-public-destination-cruise-cards.mjs",
     "test:booking-document-sync": "node scripts/test-booking-document-sync.mjs",
-    "test:booking-document-release": "node scripts/test-booking-document-sync.mjs && node scripts/test-booking-financials.mjs && node scripts/test-text-itinerary-conflict-extract.mjs && node scripts/test-itinerary-retirement.mjs && node scripts/test-itinerary-auto-process.mjs && node scripts/test-itinerary-migrations.mjs && node scripts/test-text-itinerary.mjs && node scripts/test-my-cruise-booking-only-access.mjs && node scripts/test-customer-linked-bookings.mjs && node scripts/test-client-portal-experience.mjs && node scripts/test-client-portal-ui-fixes.mjs",
+    "test:booking-document-release": "node scripts/test-booking-document-sync.mjs && node scripts/test-booking-financials.mjs && node scripts/test-text-itinerary-conflict-extract.mjs && node scripts/test-itinerary-retirement.mjs && node scripts/test-itinerary-auto-process.mjs && node scripts/test-itinerary-migrations.mjs && node scripts/test-text-itinerary.mjs && node scripts/test-my-cruise-booking-only-access.mjs && node scripts/test-customer-linked-bookings.mjs && node scripts/test-customer-access-performance.mjs && node scripts/test-client-portal-experience.mjs && node scripts/test-client-portal-ui-fixes.mjs",
     "apply:booking-document-mirror-migration": "node scripts/apply-booking-document-mirror-migration.mjs",
     "backfill:booking-documents": "node scripts/run-booking-document-backfill.mjs --apply"
   },

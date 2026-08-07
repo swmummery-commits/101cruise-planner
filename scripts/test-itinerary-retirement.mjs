@@ -80,7 +80,8 @@ assert(/processTextItinerary/.test(docSync), "sync calls text-only processTextIt
 assert(!/processBookingConfirmation|processConfirmationDocuments/.test(docSync), "sync does not call map auto-process");
 assert(!/confirmation_candidates\.push/.test(docSync), "sync does not enqueue candidates");
 assert(!/processBookingConfirmation|extractItineraryWithOpenAI/.test(customerAccess), "customer login never extracts map");
-assert(/syncDocumentsForBooking/.test(customerAccess), "customer-access syncs booking documents");
+assert(!/syncDocumentsForBooking/.test(customerAccess), "customer-access does not block on document sync");
+assert(/resolveCustomerBooking/.test(customerAccess), "customer-access uses cache-aware booking resolver");
 
 assert(/itinerary_map_feature_retired/.test(adminItinerary), "admin-itinerary retired");
 assert(/410/.test(adminItinerary), "admin-itinerary returns 410");

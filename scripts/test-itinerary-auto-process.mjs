@@ -64,7 +64,7 @@ assert(!/processConfirmationDocuments/.test(getBooking), "admin get-booking does
 
 const customerAccess = readFileSync(path.join(root, "netlify/functions/customer-access.js"), "utf8");
 assert(!/processConfirmationDocuments|processBookingConfirmation|extractItineraryWithOpenAI/.test(customerAccess), "customer-access has no map extract");
-assert(/syncDocumentsForBooking/.test(customerAccess), "customer-access syncs booking documents");
+assert(!/syncDocumentsForBooking/.test(customerAccess), "customer-access does not block on document sync");
 
 const bookingDocs = readFileSync(path.join(root, "netlify/functions/booking-documents.js"), "utf8");
 assert(!/processBookingConfirmation/.test(bookingDocs), "admin uploads do not auto-process");
