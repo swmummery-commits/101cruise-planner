@@ -27,10 +27,19 @@ async function supabase(path, options = {}) {
     Accept: "application/json",
     ...(options.headers || {})
   };
-  if (options.body !== undefined && options.body !== null) {
+  let body = options.body;
+  if (body !== undefined && body !== null) {
     headers["Content-Type"] = headers["Content-Type"] || "application/json";
+    if (
+      typeof body === "object" &&
+      !(body instanceof Buffer) &&
+      !(body instanceof Uint8Array) &&
+      !(typeof body.getBoundary === "function")
+    ) {
+      body = JSON.stringify(body);
+    }
   }
-  const response = await fetch(`${url}/rest/v1/${path}`, { ...options, headers });
+  const response = await fetch(`${url}/rest/v1/${path}`, { ...options, body, headers });
   const text = await response.text();
   let data = null;
   try {

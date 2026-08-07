@@ -32,17 +32,24 @@ async function resolveCronSecret() {
   if (String(process.env.DISCOVERY_CRON_SECRET || "").trim()) {
     return String(process.env.DISCOVERY_CRON_SECRET).trim();
   }
-  try {
-    const { execSync } = require("child_process");
-    const value = execSync("netlify env:get DISCOVERY_CRON_SECRET --context production", {
-      cwd: root,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"]
-    }).trim();
-    return value;
-  } catch {
-    return "";
+  const { execSync } = require("child_process");
+  const commands = [
+    "netlify env:get DISCOVERY_CRON_SECRET --context production",
+    "npm exec -- netlify env:get DISCOVERY_CRON_SECRET --context production"
+  ];
+  for (const command of commands) {
+    try {
+      const value = execSync(command, {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"]
+      }).trim();
+      if (value) return value;
+    } catch {
+      /* try next */
+    }
   }
+  return "";
 }
 
 async function main() {
