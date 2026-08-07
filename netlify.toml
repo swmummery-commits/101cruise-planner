@@ -33,6 +33,9 @@
   schedule = "0 20 * * 0"
   timeout = 900
 
+[functions."princess-discovery-smoke"]
+  timeout = 900
+
 [functions."cruise-daily-expiry-cron"]
   # Daily sailed-cruise expiration — 17:30 UTC (01:30 Australia/Perth).
   schedule = "30 17 * * *"

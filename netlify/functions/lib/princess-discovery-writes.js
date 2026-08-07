@@ -187,6 +187,30 @@ async function buildPrincessBatchManifest({ products, cruiseLine, destinations, 
   };
 }
 
+function assertPrincessWriteCandidate(candidate, cruiseLine) {
+  if (!candidate) {
+    const err = new Error("princess_write_candidate_missing");
+    err.code = "princess_write_candidate_missing";
+    throw err;
+  }
+  if (!candidate.cruise_line_id) {
+    const err = new Error("princess_write_candidate_missing_cruise_line_id");
+    err.code = "princess_write_candidate_missing_cruise_line_id";
+    throw err;
+  }
+  if (cruiseLine?.id && candidate.cruise_line_id !== cruiseLine.id) {
+    const err = new Error("princess_write_candidate_cruise_line_mismatch");
+    err.code = "princess_write_candidate_cruise_line_mismatch";
+    throw err;
+  }
+  if (!candidate.ship_id) {
+    const err = new Error("princess_write_candidate_missing_ship_id");
+    err.code = "princess_write_candidate_missing_ship_id";
+    throw err;
+  }
+  return candidate;
+}
+
 async function applyPrincessBatchWrites({
   products,
   cruiseLine,
@@ -210,6 +234,7 @@ async function applyPrincessBatchWrites({
 
   let writesRemaining = maxWrites;
   const indexes = supabase ? await indexExistingPrincessRecords(supabase, cruiseLine.id) : null;
+  const upsertStats = { new: 0, upserted_active: 0, cruises_inserted: 0, cruises_updated: 0 };
 
   for (const row of products || []) {
     if (isPrincessCruisetour(row.product_type)) {
@@ -233,9 +258,22 @@ async function applyPrincessBatchWrites({
     }
     if (writesRemaining <= 0) break;
 
-    const candidate = buildPrincessUpsertCandidate(row, cruiseLine);
-    if (!candidate) {
+    const built = buildPrincessUpsertCandidate(row, cruiseLine);
+    if (!built) {
       stats.invalid_skips += 1;
+      continue;
+    }
+
+    let candidate;
+    try {
+      candidate = assertPrincessWriteCandidate(built, cruiseLine);
+    } catch (validationError) {
+      stats.failed += 1;
+      stats.write_details.push({
+        princess_sailing_id: built.official_sailing_id || officialProductKey(row.raw),
+        proposed_action: action,
+        error: validationError.message || String(validationError)
+      });
       continue;
     }
 
@@ -243,21 +281,20 @@ async function applyPrincessBatchWrites({
 
     try {
       const before = existing ? snapshotRecordForRollback(existing) : null;
-      const result = await upsertCandidateRecord(supabase, candidate, {
-        existing,
-        adapterId: ADAPTER_ID,
-        runId,
-        maintenanceTrace
+      const result = await upsertCandidateRecord(candidate, upsertStats, {
+        matchPolicy: "official_sailing_id_only",
+        syncDestinationLinks: false,
+        prevRecord: action === "update_exact_legacy_match" ? existing : null
       });
       writesRemaining -= 1;
-      if (result.action === "inserted") stats.inserted += 1;
-      else if (result.action === "updated") stats.updated += 1;
-      else stats.duplicate_skips += 1;
+      if (result.created) stats.inserted += 1;
+      else stats.updated += 1;
       stats.write_details.push({
-        discovered_cruise_id: result.id,
+        discovered_cruise_id: result.row?.id || null,
         princess_sailing_id: candidate.official_sailing_id,
         proposed_action: action,
-        result_action: result.action,
+        result_action: result.created ? "inserted" : "updated",
+        created: result.created === true,
         rollback_before: before
       });
     } catch (error) {
@@ -278,5 +315,6 @@ module.exports = {
   buildPrincessBatchManifest,
   applyPrincessBatchWrites,
   indexExistingPrincessRecords,
-  classifyProposedAction
+  classifyProposedAction,
+  assertPrincessWriteCandidate
 };

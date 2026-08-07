@@ -7,6 +7,7 @@ const LOCK_TABLE = "cruise_discovery_maintenance_locks";
 const DEFAULT_LEASE_SECONDS = {
   "holland-america-line:weekly": 900,
   "celebrity-cruises:weekly": 900,
+  "princess-cruises:weekly": 900,
   daily_expiry: 300
 };
 
@@ -22,6 +23,7 @@ async function acquireLockViaRunningRun(supabase, params) {
   const runTypeByLock = {
     "holland-america-line:weekly": "hal_weekly_maintenance",
     "celebrity-cruises:weekly": "celebrity_weekly_maintenance",
+    "princess-cruises:weekly": "princess_weekly_maintenance",
     daily_expiry: "daily_expiry_maintenance"
   };
   const runType = runTypeByLock[params.lockKey];
@@ -223,6 +225,23 @@ async function releaseMaintenanceDbLock(supabase, { lockKey, ownerId }) {
   return true;
 }
 
+async function verifyMaintenanceLockOwnership(supabase, { lockKey, ownerId }) {
+  const status = await loadMaintenanceLockStatus(supabase, lockKey);
+  if (!status.held) {
+    return { ok: false, reason: "maintenance_lock_not_held", status };
+  }
+  if (status.owner_id !== ownerId) {
+    return {
+      ok: false,
+      reason: "maintenance_lock_owner_mismatch",
+      expected_owner_id: ownerId,
+      actual_owner_id: status.owner_id,
+      status
+    };
+  }
+  return { ok: true, reason: null, status };
+}
+
 async function loadMaintenanceLockStatus(supabase, lockKey) {
   const rows = await supabase(
     `${LOCK_TABLE}?lock_key=eq.${encodeURIComponent(lockKey)}&select=lock_key,owner_id,run_id,run_record_id,acquired_at,expires_at&limit=1`
@@ -247,5 +266,6 @@ module.exports = {
   DEFAULT_LEASE_SECONDS,
   acquireMaintenanceDbLock,
   releaseMaintenanceDbLock,
+  verifyMaintenanceLockOwnership,
   loadMaintenanceLockStatus
 };

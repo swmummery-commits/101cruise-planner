@@ -113,6 +113,90 @@ test("8. individual sailing gate uses structured Princess evidence", () => {
   if (!individual.proven) throw new Error(JSON.stringify(individual));
 });
 
+test("9. all 17 active Princess resdb ship codes in approved seed manifest", () => {
+  const expected = [
+    "SU", "GP", "EX", "DI", "CB", "SA", "KP", "ST", "EP", "YP", "XP", "AP", "RP", "CO", "MJ", "IP", "RU"
+  ];
+  const manifest = JSON.parse(
+    require("fs").readFileSync(path.join(root, "reports/princess-ship-code-seed-manifest-2026-08-07.json"), "utf8")
+  );
+  const codes = manifest.ships.map((s) => s.official_line_ship_id);
+  if (new Set(codes).size !== 17) throw new Error("duplicate seed code");
+  if (codes.sort().join(",") !== expected.sort().join(",")) throw new Error(`codes mismatch ${codes.join(",")}`);
+});
+
+test("10. trade code Z maps to australia-new-zealand", () => {
+  if (adapter.PRINCESS_TRADE_CODE_SLUG.Z !== "australia-new-zealand") {
+    throw new Error(`Z mapped to ${adapter.PRINCESS_TRADE_CODE_SLUG.Z}`);
+  }
+});
+
+test("11. trade code 0 has no forced destination mapping", () => {
+  if (adapter.PRINCESS_TRADE_CODE_SLUG["0"]) throw new Error("trade code 0 must remain unresolved");
+});
+
+test("12. controlled batch max writes capped at 20", () => {
+  const src = require("fs").readFileSync(path.join(root, "scripts/run-princess-first-production-batch.mjs"), "utf8");
+  if (!src.includes("const MAX_WRITES = 20")) throw new Error("MAX_WRITES not 20");
+});
+
+test("13. Princess discovery write flag defaults false", () => {
+  const effective =
+    String(process.env.PRINCESS_DISCOVERY_WRITE_ENABLED || "").trim().toLowerCase() === "true";
+  if (effective) throw new Error("PRINCESS_DISCOVERY_WRITE_ENABLED must be false during tests");
+});
+
+test("14. seed manifest excludes MS Excellence Princess from guessed code", () => {
+  const manifest = JSON.parse(
+    require("fs").readFileSync(path.join(root, "reports/princess-ship-code-seed-manifest-2026-08-07.json"), "utf8")
+  );
+  const excellence = manifest.ships.find((s) => /excellence/i.test(s.name));
+  if (excellence) throw new Error("excellence must not be in seed manifest");
+  if (manifest.notes && !manifest.notes.includes("Excellence")) throw new Error("missing excellence note");
+});
+
+test("15. Princess writer rejects null cruise_line_id before database write", () => {
+  const writes = require(path.join(root, "netlify/functions/lib/princess-discovery-writes"));
+  let threw = false;
+  try {
+    writes.assertPrincessWriteCandidate(
+      { ship_id: "ship-1", cruise_line_id: null, official_sailing_id: "X|Y|2026-09-01" },
+      { id: "line-1" }
+    );
+  } catch (error) {
+    threw = error.code === "princess_write_candidate_missing_cruise_line_id";
+  }
+  if (!threw) throw new Error("expected cruise_line_id validation error");
+});
+
+test("16. Princess writer uses upsertCandidateRecord(candidate, stats, options) contract", () => {
+  const src = require("fs").readFileSync(
+    path.join(root, "netlify/functions/lib/princess-discovery-writes.js"),
+    "utf8"
+  );
+  if (src.includes("upsertCandidateRecord(supabase,")) {
+    throw new Error("positional supabase argument regression");
+  }
+  if (!src.includes("upsertCandidateRecord(candidate, upsertStats")) {
+    throw new Error("expected named upsert contract");
+  }
+});
+
+test("17. Princess weekly lock key is registered for DB maintenance locks", () => {
+  const locks = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-locks"));
+  if (!locks.DEFAULT_LEASE_SECONDS["princess-cruises:weekly"]) {
+    throw new Error("missing princess lease seconds");
+  }
+});
+
+test("18. controlled batch script blocks duplicate apply when 20 active records exist", () => {
+  const src = require("fs").readFileSync(path.join(root, "scripts/run-princess-first-production-batch.mjs"), "utf8");
+  if (!src.includes("countsBefore.princess_active >= MAX_WRITES")) {
+    throw new Error("missing duplicate controlled apply guard");
+  }
+  if (!src.includes("loadMaintenanceLockStatus")) throw new Error("missing preflight lock check");
+});
+
 async function optionalLiveProbe() {
   const fetchResult = await source.fetchAllPrincessRawSailings({ today: inv.perthCalendarDate() });
   if (!fetchResult.ok) {
@@ -158,7 +242,7 @@ async function optionalLiveProbe() {
   if ((simulation.raw_group_count || 0) < 500) throw new Error("live source group count too low");
   if ((simulation.raw_sailing_count || 0) < 1000) throw new Error("live sailing count too low");
   passed += 1;
-  console.log("✓ 9. live Princess resdb source probe");
+  console.log("✓ 19. live Princess resdb source probe");
 }
 
 optionalLiveProbe()

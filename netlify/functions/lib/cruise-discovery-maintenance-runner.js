@@ -50,6 +50,7 @@ const { headCountSupabase, loadCelebrityDatabaseInventoryCounts } = require("./c
 const {
   acquireMaintenanceDbLock,
   releaseMaintenanceDbLock,
+  verifyMaintenanceLockOwnership,
   weeklyLockKey
 } = require("./cruise-discovery-maintenance-locks");
 const { persistMaintenanceRollbackManifest } = require("./cruise-discovery-maintenance-manifests");
@@ -636,7 +637,11 @@ async function runPrincessWeeklyMaintenance(context = {}) {
 
   try {
     const { line, destinations, ships } = await loadLineContext(sb, lineSlug);
-    const modeGate = resolvePrincessDiscoveryMode(performWrites ? "weekly_maintenance" : "production_read_only");
+    const writeMode =
+      context.writeMode ||
+      context.write_mode ||
+      (performWrites ? "weekly_maintenance" : "production_read_only");
+    const modeGate = resolvePrincessDiscoveryMode(writeMode);
     if (performWrites && !modeGate.writes_allowed) {
       return { ok: false, blocked: true, reason: modeGate.reason, line_slug: lineSlug };
     }
@@ -733,6 +738,19 @@ async function runPrincessWeeklyMaintenance(context = {}) {
 
     if (dryRun || !performWrites) {
       return { ok: true, dry_run: true, summary, manifest };
+    }
+
+    const lockKey = weeklyLockKey(lineSlug);
+    const lockOwnership = await verifyMaintenanceLockOwnership(sb, { lockKey, ownerId: runId });
+    if (!lockOwnership.ok) {
+      return {
+        ok: false,
+        blocked: true,
+        reason: lockOwnership.reason || "maintenance_lock_lost_before_write",
+        worker_state: "already_running",
+        line_slug: lineSlug,
+        summary
+      };
     }
 
     const writeProducts = princessPublic.filter((row) => {

@@ -172,6 +172,47 @@ await test("HAL and Celebrity locks are independent", async () => {
   if (!hal.acquired || !cel.acquired) throw new Error("independent locks");
 });
 
+await test("Princess weekly lock rejects concurrent second owner", async () => {
+  const sb = createMockLockSupabase();
+  const first = await locks.acquireMaintenanceDbLock(sb, {
+    lockKey: locks.weeklyLockKey("princess-cruises"),
+    ownerId: "princess-run-a",
+    leaseSeconds: 900
+  });
+  const second = await locks.acquireMaintenanceDbLock(sb, {
+    lockKey: locks.weeklyLockKey("princess-cruises"),
+    ownerId: "princess-run-b",
+    leaseSeconds: 900
+  });
+  if (!first.acquired) throw new Error("first princess lock should acquire");
+  if (second.acquired) throw new Error("second princess lock should be blocked");
+  if (second.worker_state !== "already_running") throw new Error("expected already_running");
+});
+
+await test("verifyMaintenanceLockOwnership detects owner mismatch", async () => {
+  const sb = createMockLockSupabase();
+  await locks.acquireMaintenanceDbLock(sb, {
+    lockKey: locks.weeklyLockKey("princess-cruises"),
+    ownerId: "owner-a",
+    leaseSeconds: 60
+  });
+  const check = await locks.verifyMaintenanceLockOwnership(sb, {
+    lockKey: locks.weeklyLockKey("princess-cruises"),
+    ownerId: "owner-b"
+  });
+  if (check.ok) throw new Error("should fail ownership check");
+  if (check.reason !== "maintenance_lock_owner_mismatch") throw new Error(check.reason);
+});
+
+await test("Princess maintenance runner re-checks lock ownership before writes", () => {
+  const src = fs.readFileSync(
+    path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner.js"),
+    "utf8"
+  );
+  if (!src.includes("verifyMaintenanceLockOwnership")) throw new Error("missing pre-write lock verify");
+  if (!src.includes("maintenance_lock_lost_before_write")) throw new Error("missing blocked write path");
+});
+
 await test("rollback manifest captures inserted and updated record IDs", () => {
   const manifest = manifests.buildRollbackManifestFromWriteResult({
     runId: "run-1",
