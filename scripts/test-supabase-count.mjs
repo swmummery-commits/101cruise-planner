@@ -74,11 +74,22 @@ async function main() {
     if (!src.includes("actualActiveExact")) throw new Error("verify script still uses row length as authoritative count");
   });
 
-  await test("CI smoke script uses existing Princess adapter and forbids writes", async () => {
+  await test("CI smoke script uses existing maintenance runner and forbids writes", async () => {
     const src = fs.readFileSync(path.join(root, "scripts/princess-source-smoke-ci.mjs"), "utf8");
-    if (!src.includes("simulatePrincessInventory")) throw new Error("CI smoke must use Princess adapter");
+    if (!src.includes("runPrincessWeeklyMaintenance")) throw new Error("CI smoke must use maintenance runner");
+    if (!src.includes("performWrites: false")) throw new Error("CI smoke must disable writes");
     if (!src.includes("inventory_writes_performed: false")) throw new Error("missing zero-write confirmation");
-    if (src.includes("performWrites: true")) throw new Error("CI smoke must not perform writes");
+    if (!src.includes("exactCountSupabase")) throw new Error("CI smoke must use exact counts");
+  });
+
+  await test("GitHub workflow is workflow_dispatch only with write flags disabled", async () => {
+    const wf = fs.readFileSync(path.join(root, ".github/workflows/princess-source-smoke.yml"), "utf8");
+    if (!wf.includes("workflow_dispatch")) throw new Error("workflow must support manual dispatch");
+    if (/^\s*schedule:/m.test(wf)) throw new Error("workflow must not be scheduled");
+    if (!wf.includes('PRINCESS_DISCOVERY_WRITE_ENABLED: "false"')) {
+      throw new Error("workflow must disable Princess write flag");
+    }
+    if (!wf.includes("secrets.SUPABASE_URL")) throw new Error("workflow missing SUPABASE_URL secret");
   });
 
   console.log(`\ntest-supabase-count: ${passed} passed`);
