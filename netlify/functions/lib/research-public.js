@@ -3,6 +3,7 @@
  */
 
 const { toPublicResearchTeaser, normaliseContentJson } = require("./research-schemas");
+const { resolveCatalogueMediaIds } = require("./port-image-finder/resolve-public");
 const { normaliseEntityKey } = require("./research-normalize");
 const { loadStructuredItinerary, annotateItineraryStop } = require("./marine-route-itinerary");
 
@@ -346,9 +347,46 @@ async function loadPortImages(supabaseGet, stopNames, destinationName) {
   );
   if (!names.length) return out;
 
+  let catalogueIds = new Map();
+  try {
+    catalogueIds = await resolveCatalogueMediaIds(supabaseGet, names);
+  } catch (error) {
+    console.warn("catalogue port images skipped", error.message || error);
+  }
+
+  const catalogueMediaCache = Object.create(null);
+
   for (const name of names) {
     const key = normaliseEntityKey(name);
     if (out[key]) continue;
+
+    const catalogueMediaId = catalogueIds.get(key);
+    if (catalogueMediaId) {
+      try {
+        if (!catalogueMediaCache[catalogueMediaId]) {
+          const rows = await supabaseGet(
+            `media_library?id=eq.${encodeURIComponent(catalogueMediaId)}&is_active=eq.true` +
+              `&select=id,title,alt_text,public_url,width,height&limit=1`
+          );
+          catalogueMediaCache[catalogueMediaId] = Array.isArray(rows) ? rows[0] : null;
+        }
+        const media = catalogueMediaCache[catalogueMediaId];
+        if (media?.public_url) {
+          out[key] = {
+            url: media.public_url,
+            alt_text: media.alt_text || name,
+            title: media.title || name,
+            width: media.width,
+            height: media.height,
+            source: "ports_catalogue"
+          };
+          continue;
+        }
+      } catch (error) {
+        console.warn("catalogue port media skipped", name, error.message || error);
+      }
+    }
+
     try {
       const encodedPort = encodeURIComponent(name);
       const rows = await supabaseGet(
@@ -371,7 +409,8 @@ async function loadPortImages(supabaseGet, stopNames, destinationName) {
           alt_text: media.alt_text || name,
           title: media.title || name,
           width: media.width,
-          height: media.height
+          height: media.height,
+          source: "media_library"
         };
       }
     } catch (error) {

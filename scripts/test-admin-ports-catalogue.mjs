@@ -28,6 +28,8 @@ assert(/api\("update"/.test(uiSrc), "UI update path");
 assert(/admin-ports-catalogue\.js/.test(adminHtml), "admin.html loads ports module");
 assert(!/ports-catalogue", label: "Ports", placeholder: true/.test(adminSrc), "Ports nav not placeholder");
 assert(/PortsCatalogueAdmin\?\.renderPanel/.test(adminSrc), "Admin tab renders ports panel");
+assert(/port-image-finder/.test(uiSrc), "Ports admin uses port image finder");
+assert(/Find missing port images/.test(uiSrc), "Ports admin has bulk enrichment action");
 assert(/resolved === "ports-catalogue"/.test(adminSrc), "setTab loads ports catalogue");
 
 console.log("test-admin-ports-catalogue: ok");

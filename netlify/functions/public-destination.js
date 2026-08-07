@@ -20,6 +20,8 @@ const {
   mediaDto
 } = require("./lib/destination-page.js");
 const { applyDestinationImageFallbacks } = require("./lib/destination-image-fallbacks.js");
+const { resolveCatalogueMediaIds } = require("./lib/port-image-finder/resolve-public");
+const { normaliseEntityKey } = require("./lib/research-normalize");
 const {
   perthCalendarDate,
   publicBookingMinimumDepartureDate,
@@ -211,6 +213,23 @@ exports.handler = async (event) => {
       research.media_id,
       ...(Array.isArray(ports) ? ports.map((p) => p.hero_media_id) : [])
     ];
+
+    const portNamesNeedingCatalogue = (Array.isArray(ports) ? ports : [])
+      .filter((p) => !p?.hero_media_id)
+      .map((p) => p?.name)
+      .filter(Boolean);
+    const catalogueMediaByName = await resolveCatalogueMediaIds(supabaseGet, portNamesNeedingCatalogue);
+    for (const mediaId of catalogueMediaByName.values()) {
+      if (mediaId) mediaIds.push(mediaId);
+    }
+
+    const enrichedPorts = (Array.isArray(ports) ? ports : []).map((port) => {
+      if (port?.hero_media_id) return port;
+      const key = normaliseEntityKey(port?.name || "");
+      const catalogueMediaId = catalogueMediaByName.get(key);
+      if (!catalogueMediaId) return port;
+      return { ...port, hero_media_id: catalogueMediaId, _catalogue_image: true };
+    });
     const mediaMap = await loadMediaMap(mediaIds);
     const heroMedia =
       mediaMap.get(destination.hero_media_id) || mediaMap.get(research.media_id) || null;
@@ -261,7 +280,7 @@ exports.handler = async (event) => {
       destination,
       research,
       heroMedia,
-      ports: Array.isArray(ports) ? ports : [],
+      ports: enrichedPorts,
       portMediaById: mediaMap,
       cruiseCatalog
     });

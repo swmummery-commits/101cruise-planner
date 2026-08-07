@@ -985,6 +985,44 @@ body.admin-loading-active {
   }
 }
 
+.ports-image-candidates {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.ports-image-candidate {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid #e8e8e8;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.ports-image-candidate-thumb {
+  width: 120px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eee;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ports-image-candidate-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ports-image-candidate-meta .admin-small {
+  margin: 0 0 4px;
+}
+
 .ci-media-field {
   margin: 0 0 16px;
   padding: 12px 14px;

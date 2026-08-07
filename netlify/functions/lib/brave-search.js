@@ -82,6 +82,86 @@ async function braveSearch(apiKey, query, options = {}) {
 }
 
 /**
+ * Brave Image Search — discovery only; licensing must be verified separately.
+ */
+async function braveImageSearch(apiKey, query, options = {}) {
+  const key = String(apiKey || getBraveApiKey() || "").trim();
+  if (!key) {
+    const err = new Error("BRAVE_SEARCH_API_KEY is not configured");
+    err.code = "search_provider_unavailable";
+    err.statusCode = 503;
+    throw err;
+  }
+
+  const q = String(query || "").trim();
+  if (!q) return [];
+
+  const url = new URL("https://api.search.brave.com/res/v1/images/search");
+  url.searchParams.set("q", q);
+  url.searchParams.set("count", String(Math.min(50, options.count || 20)));
+  url.searchParams.set("country", options.country || "AU");
+  url.searchParams.set("search_lang", "en");
+  url.searchParams.set("safesearch", "strict");
+
+  const timeoutMs = Math.max(2000, Number(options.timeoutMs) || 8_000);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  let response;
+  try {
+    response = await fetch(url.toString(), {
+      method: "GET",
+      signal: controller.signal,
+      headers: {
+        Accept: "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": key
+      }
+    });
+  } catch (error) {
+    const err = new Error(
+      error.name === "AbortError" ? "Brave image search timed out" : error.message || "Brave image search failed"
+    );
+    err.code = "search_provider_unavailable";
+    err.statusCode = 503;
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+
+  if (!response.ok) {
+    const err = new Error(
+      (data && (data.message || data.error)) || `Brave image search failed (${response.status})`
+    );
+    err.code = "search_provider_unavailable";
+    err.statusCode = response.status === 429 ? 429 : 503;
+    throw err;
+  }
+
+  const results = Array.isArray(data?.results) ? data.results : [];
+  return results.map((row) => ({
+    title: row?.title || "",
+    url: row?.properties?.url || row?.url || "",
+    thumbUrl: row?.thumbnail?.src || row?.thumbnail?.url || "",
+    width: row?.properties?.width || row?.thumbnail?.width || null,
+    height: row?.properties?.height || row?.thumbnail?.height || null,
+    sourceUrl: row?.url || "",
+    pageUrl: row?.url || "",
+    provider: "brave",
+    license: null,
+    credit: row?.source || ""
+  }));
+}
+
+/**
  * Deduplicate by URL then domain+title.
  * @param {Array<{ url?: string, title?: string }>} results
  */
@@ -109,7 +189,9 @@ function dedupeSearchResults(results) {
 
 module.exports = {
   BRAVE_ENDPOINT,
+  BRAVE_IMAGE_ENDPOINT: "https://api.search.brave.com/res/v1/images/search",
   getBraveApiKey,
   braveSearch,
+  braveImageSearch,
   dedupeSearchResults
 };

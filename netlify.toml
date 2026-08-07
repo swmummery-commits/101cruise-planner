@@ -67,6 +67,10 @@
   # ZIP download + hash + storage writes for ship image import.
   timeout = 60
 
+[functions."port-image-finder"]
+  # Port image discovery (Wikimedia / Pexels / Brave) and bulk enrichment batches.
+  timeout = 120
+
 [functions."route-map-generate"]
   # Route Object load/create + SVG + PNG rasterisation.
   # Prefer native @resvg/resvg-js; fall back to @resvg/resvg-wasm when the Linux

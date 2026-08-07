@@ -73,7 +73,7 @@ async function supabase(restPath, options = {}) {
 }
 
 const PORT_SELECT =
-  "id,canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases,status,match_key,source,source_url,source_featured_cruise_id,verified_at,created_at,updated_at";
+  "id,canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases,status,match_key,source,source_url,source_featured_cruise_id,verified_at,created_at,updated_at,hero_media_id,image_status,image_source,image_source_url,image_credit,image_license,image_search_query,image_confidence,image_last_checked_at,image_candidates";
 
 const ALLOWED_STATUS = new Set(["verified", "provisional", "needs_review"]);
 

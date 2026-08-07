@@ -18,6 +18,10 @@
   let selectedId = null;
   let creating = false;
   let draft = emptyDraft();
+  let imageLoading = false;
+  let imageCandidates = [];
+  let bulkRunning = false;
+  let bulkSummary = null;
 
   function emptyDraft() {
     return {
@@ -65,6 +69,163 @@
       });
     }
     return fn();
+  }
+
+  async function imageApi(action, extra = {}) {
+    const headers =
+      typeof global.adminAuthHeaders === "function"
+        ? await global.adminAuthHeaders({ "Content-Type": "application/json" })
+        : { "Content-Type": "application/json" };
+    const response = await fetch("/.netlify/functions/port-image-finder", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action, ...extra })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok || data.success === false) {
+      const err = new Error(data.error || `Port image finder failed (HTTP ${response.status})`);
+      err.statusCode = response.status;
+      throw err;
+    }
+    return data;
+  }
+
+  function syncPortImageState(port) {
+    imageCandidates = Array.isArray(port?.image_candidates) ? port.image_candidates : [];
+  }
+
+  function imageStatusLabel(status) {
+    const s = String(status || "").toUpperCase();
+    if (s === "MANUAL") return "Manual";
+    if (s === "AUTO_APPROVED") return "Auto-approved";
+    if (s === "NEEDS_REVIEW") return "Needs review";
+    if (s === "NO_IMAGE") return "No image";
+    return "Not searched";
+  }
+
+  function hasPortImage(port) {
+    return Boolean(
+      port?.hero_media_id &&
+        ["MANUAL", "AUTO_APPROVED"].includes(String(port?.image_status || "").toUpperCase())
+    );
+  }
+
+  async function findPortImage({ force = false } = {}) {
+    const port = selectedPort();
+    if (!port?.id) return;
+
+    return withSavingOverlay(async function () {
+      imageLoading = true;
+      setMessage("Searching for port images…", "running");
+      rerender();
+      try {
+        const data = await imageApi("find_candidates", { port_id: port.id, force });
+        if (data.port?.id) {
+          const idx = ports.findIndex((p) => p.id === data.port.id);
+          if (idx >= 0) ports[idx] = { ...ports[idx], ...data.port };
+          if (selectedId === data.port.id) draft = portToDraft(data.port);
+        }
+        imageCandidates = Array.isArray(data.candidates) ? data.candidates : [];
+        if (data.skipped) {
+          setMessage(`Search skipped: ${data.reason || "already set"}.`, "info");
+        } else if (!imageCandidates.length) {
+          setMessage("No suitable port images found. Try again later or upload manually via Media Library.", "info");
+        } else {
+          setMessage(`Found ${imageCandidates.length} candidate${imageCandidates.length === 1 ? "" : "s"}.`, "success");
+        }
+      } catch (error) {
+        setMessage(error.message || "Could not search for port images.", "error");
+      } finally {
+        imageLoading = false;
+        rerender();
+      }
+    }, "Searching for port images…");
+  }
+
+  async function applyPortImageCandidate(candidate) {
+    const port = selectedPort();
+    if (!port?.id || !candidate) return;
+
+    return withSavingOverlay(async function () {
+      imageLoading = true;
+      setMessage("Saving port image…", "running");
+      rerender();
+      try {
+        const data = await imageApi("apply_candidate", {
+          port_id: port.id,
+          candidate,
+          image_status: "MANUAL",
+          search_query: port.image_search_query || null
+        });
+        if (data.port?.id) {
+          const idx = ports.findIndex((p) => p.id === data.port.id);
+          if (idx >= 0) ports[idx] = { ...ports[idx], ...data.port };
+          draft = portToDraft(data.port);
+        }
+        imageCandidates = [];
+        setMessage("Port image saved.", "success");
+      } catch (error) {
+        setMessage(error.message || "Could not save port image.", "error");
+      } finally {
+        imageLoading = false;
+        rerender();
+      }
+    }, "Saving port image…");
+  }
+
+  function applyPortImageCandidateByIndex(index) {
+    const port = selectedPort();
+    const list = imageCandidates.length ? imageCandidates : port?.image_candidates || [];
+    const candidate = list[Number(index)];
+    if (!candidate) return;
+    return applyPortImageCandidate(candidate);
+  }
+
+  async function findPortImageAgain() {
+    return findPortImage({ force: true });
+  }
+
+  async function bulkFindMissingPortImages() {
+    const confirmed = window.confirm(
+      "Find missing port images in batches?\n\nManual images are never overwritten. Recently searched ports may be skipped."
+    );
+    if (!confirmed) return;
+
+    bulkRunning = true;
+    bulkSummary = { auto_approved: 0, needs_review: 0, no_image: 0, skipped: 0, errors: 0, processed: 0 };
+    setMessage("Starting bulk port image search…", "running");
+    rerender();
+
+    let offset = 0;
+    let hasMore = true;
+
+    try {
+      while (hasMore) {
+        setMessage(`Bulk search in progress… (${bulkSummary.processed} ports processed)`, "running");
+        rerender();
+        const data = await imageApi("bulk_missing", { offset, limit: 5, auto_apply: true });
+        const summary = data.summary || {};
+        bulkSummary.auto_approved += summary.auto_approved || 0;
+        bulkSummary.needs_review += summary.needs_review || 0;
+        bulkSummary.no_image += summary.no_image || 0;
+        bulkSummary.skipped += summary.skipped || 0;
+        bulkSummary.errors += summary.errors || 0;
+        bulkSummary.processed += summary.processed || 0;
+        offset = data.next_offset || offset + (data.batch_size || 0);
+        hasMore = Boolean(data.has_more) && (data.batch_size || 0) > 0;
+        if ((data.batch_size || 0) === 0) hasMore = false;
+      }
+      await ensureLoaded({ force: true, quiet: true });
+      setMessage(
+        `Bulk complete — ${bulkSummary.auto_approved} auto-approved, ${bulkSummary.needs_review} need review, ${bulkSummary.no_image} no suitable image, ${bulkSummary.skipped} skipped.`,
+        "success"
+      );
+    } catch (error) {
+      setMessage(error.message || "Bulk port image search failed.", "error");
+    } finally {
+      bulkRunning = false;
+      rerender();
+    }
   }
 
   async function api(action, extra = {}) {
@@ -286,6 +447,7 @@
     creating = false;
     selectedId = id;
     draft = portToDraft(port);
+    syncPortImageState(port);
     setMessage("");
     rerender();
   }
@@ -294,6 +456,7 @@
     creating = false;
     selectedId = null;
     draft = emptyDraft();
+    imageCandidates = [];
     setMessage("");
     rerender();
   }
@@ -401,6 +564,84 @@
       </button>`;
   }
 
+  function renderImageSection(port) {
+    if (creating || !port) return "";
+
+    const hasImage = hasPortImage(port);
+    const status = imageStatusLabel(port.image_status);
+    const confidence =
+      port.image_confidence != null && port.image_confidence !== ""
+        ? `${Math.round(Number(port.image_confidence))}%`
+        : "";
+    const checked = port.image_last_checked_at
+      ? new Date(port.image_last_checked_at).toLocaleString()
+      : "";
+
+    const currentBlock = hasImage
+      ? `
+        <div class="ports-image-current">
+          <p class="admin-small"><strong>Status:</strong> ${esc(status)}${confidence ? ` · <strong>Confidence:</strong> ${esc(confidence)}` : ""}</p>
+          <p class="admin-small"><strong>Source:</strong> ${esc(port.image_source || "—")}</p>
+          ${port.image_license ? `<p class="admin-small"><strong>Licence:</strong> ${esc(port.image_license)}</p>` : ""}
+          ${port.image_credit ? `<p class="admin-small"><strong>Credit:</strong> ${esc(port.image_credit)}</p>` : ""}
+          ${
+            port.image_source_url
+              ? `<p class="admin-small"><strong>Source page:</strong> <a href="${esc(port.image_source_url)}" target="_blank" rel="noopener noreferrer">View source</a></p>`
+              : ""
+          }
+          ${checked ? `<p class="admin-small"><strong>Last checked:</strong> ${esc(checked)}</p>` : ""}
+        </div>`
+      : `<p class="admin-muted admin-small" style="margin:0 0 12px">No port-specific image yet. Country images are not used as a fallback on Explore pages.</p>`;
+
+    const candidates = (imageCandidates.length ? imageCandidates : port.image_candidates || [])
+      .slice(0, 8)
+      .map((candidate, index) => {
+        const dims =
+          candidate.width && candidate.height ? `${candidate.width}×${candidate.height}` : "";
+        return `
+          <article class="ports-image-candidate">
+            <div class="ports-image-candidate-thumb">
+              ${
+                candidate.thumbUrl || candidate.url
+                  ? `<img src="${esc(candidate.thumbUrl || candidate.url)}" alt="" loading="lazy">`
+                  : `<span class="admin-muted admin-small">No preview</span>`
+              }
+            </div>
+            <div class="ports-image-candidate-meta">
+              <p class="admin-small"><strong>${esc(candidate.provider || "unknown")}</strong>${candidate.confidence != null ? ` · ${esc(String(candidate.confidence))}%` : ""}</p>
+              <p class="admin-small">${esc(candidate.title || candidate.description || "Untitled")}</p>
+              ${dims ? `<p class="admin-small">${esc(dims)}</p>` : ""}
+              ${candidate.license ? `<p class="admin-small">Licence: ${esc(candidate.license)}</p>` : ""}
+              ${
+                candidate.sourceUrl
+                  ? `<p class="admin-small"><a href="${esc(candidate.sourceUrl)}" target="_blank" rel="noopener noreferrer">Source</a></p>`
+                  : ""
+              }
+              <button type="button" class="admin-button black small" onclick="PortsCatalogueAdmin.applyPortImageCandidateByIndex(${index})" ${imageLoading || saving ? "disabled" : ""}>Use image</button>
+            </div>
+          </article>`;
+      })
+      .join("");
+
+    return `
+      <div class="ports-image-panel admin-card" style="margin-top:20px;padding:16px">
+        <h4 style="margin:0 0 8px">Port image</h4>
+        <p class="admin-muted admin-small" style="margin:0 0 12px">Port-specific imagery for Cruise Finder Explore pages. Searches Wikimedia Commons first, then Pexels (if configured), then Brave for discovery.</p>
+        ${currentBlock}
+        <div class="admin-actions-row" style="gap:8px;flex-wrap:wrap;margin:12px 0">
+          <button type="button" class="admin-button black small" onclick="PortsCatalogueAdmin.findPortImage()" ${imageLoading || saving || bulkRunning ? "disabled" : ""}>${imageLoading ? "Searching…" : "Find image"}</button>
+          <button type="button" class="admin-button secondary small" onclick="PortsCatalogueAdmin.findPortImageAgain()" ${imageLoading || saving || bulkRunning ? "disabled" : ""}>Search again</button>
+        </div>
+        ${
+          candidates
+            ? `<div class="ports-image-candidates">${candidates}</div>`
+            : port.image_status === "NEEDS_REVIEW" && !imageCandidates.length
+              ? `<p class="admin-small admin-muted">Candidates were saved previously but are not shown in this session. Click Find image to refresh.</p>`
+              : ""
+        }
+      </div>`;
+  }
+
   function renderForm() {
     const port = selectedPort();
     const title = creating ? "New port" : port?.display_name || port?.canonical_name || "Port";
@@ -483,6 +724,7 @@
             : ""
         }
       </div>
+      ${renderImageSection(port)}
     `;
   }
 
@@ -522,7 +764,8 @@
               <option value="missing" ${coordsFilter === "missing" ? "selected" : ""}>Missing coords</option>
               <option value="has" ${coordsFilter === "has" ? "selected" : ""}>Has coords</option>
             </select>
-            <button type="button" class="admin-button black small" onclick="PortsCatalogueAdmin.startCreate()" ${saving || loading ? "disabled" : ""}>Add port</button>
+            <button type="button" class="admin-button black small" onclick="PortsCatalogueAdmin.startCreate()" ${saving || loading || bulkRunning ? "disabled" : ""}>Add port</button>
+            <button type="button" class="admin-button secondary small" onclick="PortsCatalogueAdmin.bulkFindMissingPortImages()" ${saving || loading || bulkRunning || imageLoading ? "disabled" : ""}>${bulkRunning ? "Bulk search running…" : "Find missing port images"}</button>
           </div>
           <div class="admin-small"><span id="portsListCount">${loading ? "Hang tight! Just getting your info." : `${filtered.length} of ${ports.length} ports`}</span></div>
         </div>
@@ -561,6 +804,11 @@
     selectPort,
     cancelEdit,
     savePort,
-    deleteSelectedPort
+    deleteSelectedPort,
+    findPortImage,
+    findPortImageAgain,
+    applyPortImageCandidate,
+    applyPortImageCandidateByIndex,
+    bulkFindMissingPortImages
   };
 })(typeof window !== "undefined" ? window : globalThis);
