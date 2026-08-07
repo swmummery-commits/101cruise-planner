@@ -27,9 +27,26 @@ loadEnv();
 const siteUrl = String(
   process.env.NETLIFY_SITE_URL || process.env.URL || "https://admirable-tiramisu-d4da8a.netlify.app"
 ).replace(/\/$/, "");
-const secret = String(process.env.DISCOVERY_CRON_SECRET || "").trim();
+
+async function resolveCronSecret() {
+  if (String(process.env.DISCOVERY_CRON_SECRET || "").trim()) {
+    return String(process.env.DISCOVERY_CRON_SECRET).trim();
+  }
+  try {
+    const { execSync } = require("child_process");
+    const value = execSync("netlify env:get DISCOVERY_CRON_SECRET --context production", {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"]
+    }).trim();
+    return value;
+  } catch {
+    return "";
+  }
+}
 
 async function main() {
+  const secret = await resolveCronSecret();
   if (!secret) {
     console.error("DISCOVERY_CRON_SECRET is required for production smoke test");
     process.exit(1);

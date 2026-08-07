@@ -753,12 +753,18 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       };
     }
 
-    const writeProducts = princessPublic.filter((row) => {
-      const entry = manifest.products.find(
-        (p) => p.stable_identity_key === princessOfficialProductKey(row.raw)
-      );
-      return entry && ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
-    });
+    const writeProducts = princessPublic
+      .filter((row) => {
+        const entry = manifest.products.find(
+          (p) => p.stable_identity_key === princessOfficialProductKey(row.raw)
+        );
+        return entry && ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
+      })
+      .sort((a, b) => {
+        const ka = princessOfficialProductKey(a.raw) || "";
+        const kb = princessOfficialProductKey(b.raw) || "";
+        return ka.localeCompare(kb);
+      });
 
     const writeResult = await applyPrincessBatchWrites({
       products: writeProducts.slice(0, maxWrites),

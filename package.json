@@ -47,6 +47,7 @@
     "smoke:hal-discovery-production": "node scripts/smoke-hal-discovery-production.mjs",
     "smoke:princess-discovery-production": "node scripts/smoke-princess-discovery-production.mjs",
     "verify:princess-production-records": "node scripts/verify-princess-production-records.mjs",
+    "test:princess-catch-up-batch": "node scripts/test-princess-catch-up-batch.mjs",
     "test:discovery-holland-america": "node scripts/test-discovery-holland-america.mjs",
     "test:hal-batch-automation": "node scripts/test-hal-batch-automation.mjs",
     "test:cruise-discovery-automation-hold": "node scripts/test-cruise-discovery-automation-hold.mjs",

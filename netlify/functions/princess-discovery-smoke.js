@@ -10,6 +10,12 @@
 const { runPrincessWeeklyMaintenance } = require("./lib/cruise-discovery-maintenance-runner");
 const { supabase } = require("./lib/cruise-discovery-runner");
 const { loadMaintenanceLockStatus, weeklyLockKey } = require("./lib/cruise-discovery-maintenance-locks");
+const {
+  createMaintenanceRun,
+  finalizeMaintenanceRun,
+  buildMaintenanceRunStats
+} = require("./lib/cruise-discovery-maintenance-tracking");
+const { PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE } = require("./lib/cruise-discovery-maintenance");
 
 function cronSecret() {
   return String(process.env.DISCOVERY_CRON_SECRET || "").trim();
@@ -61,15 +67,44 @@ exports.handler = async (event) => {
     }
 
     const lockBefore = await loadMaintenanceLockStatus(supabase, lockKey);
+    const lines = await supabase(
+      "ci_cruise_lines?slug=eq.princess-cruises&select=id,name,slug&limit=1"
+    );
+    const line = lines?.[0];
+    const dbRun = line
+      ? await createMaintenanceRun(supabase, {
+          cruiseLineId: line.id,
+          runId,
+          runType: PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
+          triggerType: "production_smoke",
+          stats: { line_slug: "princess-cruises", smoke: true }
+        })
+      : null;
+
     const result = await runPrincessWeeklyMaintenance({
       dryRun: true,
       performWrites: false,
       maxWrites: 0,
       runId,
+      runRecordId: dbRun?.id || null,
       triggerType: "production_smoke",
       supabase
     });
     const lockAfter = await loadMaintenanceLockStatus(supabase, lockKey);
+
+    if (dbRun?.id) {
+      const summary = result.summary || {};
+      await finalizeMaintenanceRun(supabase, dbRun.id, {
+        status: result.ok ? "completed" : "failed",
+        stats: buildMaintenanceRunStats(summary, {
+          run_type: PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
+          run_id: runId,
+          trigger_type: "production_smoke",
+          smoke: true,
+          inventory_changed: false
+        })
+      });
+    }
 
     const summary = result.summary || {};
     const rates = summary.resolution_rates || {};
@@ -79,6 +114,8 @@ exports.handler = async (event) => {
       dry_run: true,
       blocked: result.blocked === true,
       reason: result.reason || null,
+      deployedCommitRef: process.env.COMMIT_REF || process.env.DEPLOY_ID || null,
+      runRecordId: dbRun?.id || null,
       officialSourceTotal: summary.official_source_total ?? null,
       eligibleTotal: summary.eligible_total ?? null,
       activeProductionTotal: summary.active_production_total ?? null,

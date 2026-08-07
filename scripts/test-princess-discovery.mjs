@@ -135,9 +135,9 @@ test("11. trade code 0 has no forced destination mapping", () => {
   if (adapter.PRINCESS_TRADE_CODE_SLUG["0"]) throw new Error("trade code 0 must remain unresolved");
 });
 
-test("12. controlled batch max writes capped at 20", () => {
+test("12. controlled batch max writes capped at 20 for first batch", () => {
   const src = require("fs").readFileSync(path.join(root, "scripts/run-princess-first-production-batch.mjs"), "utf8");
-  if (!src.includes("const MAX_WRITES = 20")) throw new Error("MAX_WRITES not 20");
+  if (!src.includes("FIRST_BATCH_MAX = 20")) throw new Error("FIRST_BATCH_MAX not 20");
 });
 
 test("13. Princess discovery write flag defaults false", () => {
@@ -191,10 +191,17 @@ test("17. Princess weekly lock key is registered for DB maintenance locks", () =
 
 test("18. controlled batch script blocks duplicate apply when 20 active records exist", () => {
   const src = require("fs").readFileSync(path.join(root, "scripts/run-princess-first-production-batch.mjs"), "utf8");
-  if (!src.includes("countsBefore.princess_active >= MAX_WRITES")) {
+  if (!src.includes("countsBefore.princess_active >= FIRST_BATCH_MAX")) {
     throw new Error("missing duplicate controlled apply guard");
   }
   if (!src.includes("loadMaintenanceLockStatus")) throw new Error("missing preflight lock check");
+});
+
+test("19. catch-up batch requires explicit --next-batch checkpoint args", () => {
+  const src = require("fs").readFileSync(path.join(root, "scripts/run-princess-first-production-batch.mjs"), "utf8");
+  if (!src.includes("--next-batch")) throw new Error("missing next-batch flag");
+  if (!src.includes("--expected-snapshot-id=")) throw new Error("missing snapshot checkpoint");
+  if (!src.includes("CATCHUP_MAX = 100")) throw new Error("missing 100 cap");
 });
 
 async function optionalLiveProbe() {
@@ -242,7 +249,7 @@ async function optionalLiveProbe() {
   if ((simulation.raw_group_count || 0) < 500) throw new Error("live source group count too low");
   if ((simulation.raw_sailing_count || 0) < 1000) throw new Error("live sailing count too low");
   passed += 1;
-  console.log("✓ 19. live Princess resdb source probe");
+  console.log("✓ 20. live Princess resdb source probe");
 }
 
 optionalLiveProbe()
