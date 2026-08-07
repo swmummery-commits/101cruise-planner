@@ -13,7 +13,8 @@ const { loadMaintenanceLockStatus, weeklyLockKey } = require("./lib/cruise-disco
 const {
   createMaintenanceRun,
   finalizeMaintenanceRun,
-  buildMaintenanceRunStats
+  buildMaintenanceRunStats,
+  resolveMaintenanceRunStatus
 } = require("./lib/cruise-discovery-maintenance-tracking");
 const { PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE } = require("./lib/cruise-discovery-maintenance");
 
@@ -88,6 +89,7 @@ exports.handler = async (event) => {
       runId,
       runRecordId: dbRun?.id || null,
       triggerType: "production_smoke",
+      collectSourceDiagnostics: true,
       supabase
     });
     const lockAfter = await loadMaintenanceLockStatus(supabase, lockKey);
@@ -95,7 +97,7 @@ exports.handler = async (event) => {
     if (dbRun?.id) {
       const summary = result.summary || {};
       await finalizeMaintenanceRun(supabase, dbRun.id, {
-        status: result.ok ? "completed" : "failed",
+        status: resolveMaintenanceRunStatus({ ok: result.ok, summary }),
         stats: buildMaintenanceRunStats(summary, {
           run_type: PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
           run_id: runId,
@@ -118,6 +120,7 @@ exports.handler = async (event) => {
         : result.simulation?.fetch_result?.fetch_failed
           ? "catalogue"
           : null;
+    const sourceDiagnostics = result.simulation?.source_diagnostics || null;
     const payload = {
       ok: result.ok === true && !result.blocked,
       mode: "production_read_only",
@@ -126,6 +129,7 @@ exports.handler = async (event) => {
       reason: result.reason || null,
       sourceError,
       sourceErrorStage,
+      sourceDiagnostics,
       deployedCommitRef: process.env.COMMIT_REF || process.env.DEPLOY_ID || null,
       runRecordId: dbRun?.id || null,
       officialSourceTotal: summary.official_source_total ?? null,

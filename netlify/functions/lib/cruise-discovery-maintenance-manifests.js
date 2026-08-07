@@ -36,20 +36,27 @@ function buildRollbackManifestFromWriteResult({
   const updated = [];
 
   for (const detail of details) {
-    if (detail.error) continue;
+    if (detail.error && !detail.recovered_after_fetch_failure) continue;
     const entry = {
       discovered_cruise_id: detail.discovered_cruise_id || null,
       official_sailing_id:
         detail.official_sailing_id ||
+        detail.princess_sailing_id ||
         detail.hal_product_key ||
         detail.celebrity_sailing_id ||
         null,
-      action: detail.created ? "insert" : detail.duplicate ? "duplicate_skip" : "update",
-      before_values: detail.before_values || null,
-      after_values: detail.after_values || null
+      action: detail.created || detail.recovered_after_fetch_failure ? "insert" : detail.duplicate ? "duplicate_skip" : "update",
+      before_values: detail.before_values || detail.rollback_before || null,
+      after_values: detail.after_values || null,
+      recovered_after_fetch_failure: detail.recovered_after_fetch_failure === true
     };
-    if (detail.created && detail.discovered_cruise_id) inserted.push(entry);
-    else if (!detail.duplicate && detail.discovered_cruise_id && detail.before_values) updated.push(entry);
+    const isInsert =
+      detail.discovered_cruise_id &&
+      (detail.created || detail.result_action === "inserted" || detail.recovered_after_fetch_failure);
+    if (isInsert) inserted.push(entry);
+    else if (!detail.duplicate && detail.discovered_cruise_id && (detail.before_values || detail.rollback_before)) {
+      updated.push(entry);
+    }
   }
 
   return {

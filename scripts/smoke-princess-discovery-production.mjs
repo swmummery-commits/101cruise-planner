@@ -3,6 +3,7 @@
  * Production read-only Princess Discovery smoke test (deployed function).
  *
  *   npm run smoke:princess-discovery-production
+ *   node scripts/smoke-princess-discovery-production.mjs --expected-active=120
  */
 
 import path from "path";
@@ -11,6 +12,14 @@ import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+
+function parseArgs(argv) {
+  const out = { expectedActive: null };
+  for (const arg of argv.slice(2)) {
+    if (arg.startsWith("--expected-active=")) out.expectedActive = Number(arg.split("=")[1]);
+  }
+  return out;
+}
 
 function loadEnv() {
   try {
@@ -35,7 +44,7 @@ async function resolveCronSecret() {
   const { execSync } = require("child_process");
   const commands = [
     "netlify env:get DISCOVERY_CRON_SECRET --context production",
-    "npm exec -- netlify env:get DISCOVERY_CRON_SECRET --context production"
+    "npx --yes netlify-cli env:get DISCOVERY_CRON_SECRET --context production"
   ];
   for (const command of commands) {
     try {
@@ -53,6 +62,7 @@ async function resolveCronSecret() {
 }
 
 async function main() {
+  const args = parseArgs(process.argv);
   const secret = await resolveCronSecret();
   if (!secret) {
     console.error("DISCOVERY_CRON_SECRET is required for production smoke test");
@@ -78,11 +88,23 @@ async function main() {
     body = { ok: false, parseError: true, rawPreview: text.slice(0, 200) };
   }
 
+  const expectedActive = args.expectedActive;
+  const actualActive = body.activeProductionTotal;
   const summary = {
     ok: response.status === 200 && body.ok === true,
     status: response.status,
     endpoint: "princess-discovery-smoke",
     elapsed_ms: Date.now() - started,
+    expected_active: expectedActive,
+    actual_active: actualActive,
+    active_delta:
+      expectedActive != null && actualActive != null ? actualActive - expectedActive : null,
+    proposed_inserts: body.proposedInserts ?? null,
+    unchanged: body.unchanged ?? null,
+    snapshot_id: body.snapshotId ?? null,
+    source_error: body.sourceError ?? null,
+    source_error_stage: body.sourceErrorStage ?? null,
+    source_diagnostics: body.sourceDiagnostics ?? null,
     ...body
   };
 
@@ -90,10 +112,12 @@ async function main() {
 
   if (
     !summary.ok ||
-    summary.writesPerformed ||
-    summary.rollbackManifestId ||
-    summary.activeProductionTotal !== 20 ||
-    summary.qualityGatePassed !== true
+    body.writesPerformed ||
+    body.rollbackManifestId ||
+    body.sourceError ||
+    body.sourceErrorStage ||
+    body.qualityGatePassed !== true ||
+    (expectedActive != null && actualActive !== expectedActive)
   ) {
     process.exit(1);
   }

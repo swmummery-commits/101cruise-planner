@@ -81,6 +81,109 @@ test("catch-up idempotency uses catch_up_idempotency_verification trigger", () =
   if (!batchSrc.includes("--catch-up-idempotency")) throw new Error("missing flag");
 });
 
+test("verify script does not hardcode EXPECTED_ACTIVE=20", () => {
+  const verifySrc = fs.readFileSync(path.join(root, "scripts/verify-princess-production-records.mjs"), "utf8");
+  if (/EXPECTED_ACTIVE\s*=\s*20/.test(verifySrc)) throw new Error("stale hardcoded active count");
+  if (!verifySrc.includes("--expected-active=")) throw new Error("missing expected active arg");
+});
+
+test("partial batch with unrecovered failures stays failed", () => {
+  const tracking = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-tracking"));
+  const status = tracking.resolveMaintenanceRunStatus({
+    ok: false,
+    summary: { inserts: 99, updates: 0, failed_writes: 1 }
+  });
+  if (status !== "failed") throw new Error("expected failed with unrecovered partial failure");
+});
+
+test("fully reconciled batch with zero failed_writes becomes completed", () => {
+  const tracking = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-tracking"));
+  const status = tracking.resolveMaintenanceRunStatus({
+    ok: true,
+    summary: { inserts: 100, updates: 0, failed_writes: 0, recovered_after_fetch_failure: 1 }
+  });
+  if (status !== "completed") throw new Error("expected completed after reconciliation");
+});
+
+test("failed before writes remains failed", () => {
+  const tracking = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-tracking"));
+  const status = tracking.resolveMaintenanceRunStatus({
+    ok: false,
+    summary: { inserts: 0, updates: 0, failed_writes: 0 }
+  });
+  if (status !== "failed") throw new Error("expected failed with zero commits");
+});
+
+test("fetch failed write can recover when record already committed", async () => {
+  const officialSailingId = "AST070|ST|2027-09-12";
+  const lineId = "line-princess";
+  const sb = async (restPath) => {
+    if (restPath.includes("official_sailing_id=eq.")) {
+      return [
+        {
+          id: "recovered-id",
+          status: "active",
+          official_sailing_id: officialSailingId,
+          cruise_line_id: lineId,
+          ship_id: "ship-1",
+          departure_date: "2027-09-12"
+        }
+      ];
+    }
+    return [];
+  };
+  const row = await writes.recoverCommittedWriteAfterFetchFailure?.(sb, lineId, officialSailingId, {
+    ship_id: "ship-1",
+    departure_date: "2027-09-12"
+  });
+  if (!row || row.id !== "recovered-id") {
+    throw new Error("expected recovered active row");
+  }
+});
+
+test("recovered write is included in rollback manifest builder", () => {
+  const manifests = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-manifests"));
+  const manifest = manifests.buildRollbackManifestFromWriteResult({
+    runId: "run-1",
+    writeResult: {
+      write_details: [
+        {
+          discovered_cruise_id: "recovered-id",
+          princess_sailing_id: "AST070|ST|2027-09-12",
+          result_action: "inserted",
+          recovered_after_fetch_failure: true
+        }
+      ]
+    }
+  });
+  if (!manifest.inserted_record_ids.includes("recovered-id")) {
+    throw new Error("expected recovered id in rollback manifest");
+  }
+});
+
+test("sanitised source diagnostics omit cookie headers", () => {
+  const source = require(path.join(root, "netlify/functions/lib/princess-discovery-source"));
+  const headers = source.sanitizeResponseHeaders({
+    "content-type": "application/json",
+    "set-cookie": "secret=abc",
+    server: "AkamaiGHost"
+  });
+  if (headers["set-cookie"]) throw new Error("cookie header leaked");
+  if (!headers["content-type"]) throw new Error("expected safe header retained");
+});
+
+test("catch-up audit reconciliation script exists", () => {
+  const auditSrc = fs.readFileSync(path.join(root, "scripts/reconcile-princess-catch-up-audit.mjs"), "utf8");
+  if (!auditSrc.includes("historical_audit")) throw new Error("missing supplemental audit manifest");
+  if (!auditSrc.includes("recovered_after_fetch_failure")) throw new Error("missing recovery metadata");
+});
+
+test("smoke script accepts explicit expected active checkpoint", () => {
+  const smokeSrc = fs.readFileSync(path.join(root, "scripts/smoke-princess-discovery-production.mjs"), "utf8");
+  if (/EXPECTED_ACTIVE\s*=\s*20/.test(smokeSrc)) throw new Error("stale hardcoded active count");
+  if (!smokeSrc.includes("--expected-active=")) throw new Error("missing expected active arg");
+});
+
 test("Princess lock blocks concurrent second owner", async () => {
   const store = new Map();
   const sb = async (restPath, options = {}) => {

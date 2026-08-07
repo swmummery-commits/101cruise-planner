@@ -132,10 +132,58 @@ function readResponseSetCookies(response) {
     return response.headers.getSetCookie();
   }
   const combined = response.headers.get("set-cookie");
-  return combined ? [combined] : [];
+  if (!combined) return [];
+  // Avoid splitting on commas inside Expires= attributes when only a combined header exists.
+  return combined.split(/,(?=\s*[A-Za-z0-9_.-]+=)/).map((part) => part.trim()).filter(Boolean);
 }
 
-async function princessApiGet(path, { session = null, clientId = null } = {}) {
+const SAFE_RESPONSE_HEADER_KEYS = [
+  "content-type",
+  "content-length",
+  "server",
+  "date",
+  "cache-control",
+  "x-request-id",
+  "x-correlation-id",
+  "x-akamai-request-id",
+  "x-akamai-session-info",
+  "x-akamai-transformed"
+];
+
+function sanitizeResponseHeaders(headers = {}) {
+  const out = {};
+  for (const [key, value] of Object.entries(headers || {})) {
+    const lower = String(key).toLowerCase();
+    if (lower.includes("cookie") || lower.includes("authorization") || lower.includes("secret")) continue;
+    if (SAFE_RESPONSE_HEADER_KEYS.some((allowed) => lower.includes(allowed))) {
+      out[lower] = String(value).slice(0, 200);
+    }
+  }
+  return out;
+}
+
+function sanitizeBodyExcerpt(text, maxLen = 240) {
+  const cleaned = String(text || "")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+  if (!cleaned) return null;
+  return cleaned.slice(0, maxLen);
+}
+
+function describeCatalogueAttempt(sessionVariant, attemptIndex) {
+  return {
+    attempt: attemptIndex + 1,
+    bootstrap_cookies_used: Boolean(sessionVariant?.cookie),
+    client_id_included: Boolean(sessionVariant?.clientId),
+    bookingcompany: sessionVariant?.bookingCompany || DEFAULT_BOOKING_COMPANY,
+    productcompany: sessionVariant?.productCompany || DEFAULT_PRODUCT_COMPANY,
+    agencyCountry: DEFAULT_AGENCY_COUNTRY
+  };
+}
+
+async function princessApiGet(path, { session = null, clientId = null, collectDiagnostics = false } = {}) {
+  const started = Date.now();
   const id = clientId || session?.clientId || (await resolvePclClientId());
   const bookingCompany =
     session?.bookingCompany || session?.booking_company || DEFAULT_BOOKING_COMPANY;
@@ -161,7 +209,7 @@ async function princessApiGet(path, { session = null, clientId = null } = {}) {
     data = null;
   }
   const setCookie = readResponseSetCookies(response);
-  return {
+  const result = {
     ok: response.status >= 200 && response.status < 300,
     status: response.status,
     data,
@@ -169,12 +217,33 @@ async function princessApiGet(path, { session = null, clientId = null } = {}) {
     headers: Object.fromEntries(response.headers.entries()),
     setCookie
   };
+  if (collectDiagnostics) {
+    result.diagnostics = {
+      http_status: response.status,
+      elapsed_ms: Date.now() - started,
+      response_content_type: response.headers.get("content-type"),
+      response_content_length: response.headers.get("content-length"),
+      response_headers: sanitizeResponseHeaders(result.headers),
+      body_excerpt: sanitizeBodyExcerpt(text),
+      request: {
+        bootstrap_cookies_used: Boolean(session?.cookie),
+        client_id_included: Boolean(id),
+        bookingcompany: bookingCompany,
+        productcompany: productCompany,
+        agencyCountry: DEFAULT_AGENCY_COUNTRY,
+        path: path.startsWith("http") ? path.replace(API_BASE, "") : path
+      }
+    };
+  }
+  return result;
 }
 
 async function bootstrapPrincessSession(options = {}) {
+  const collectDiagnostics = options.collectDiagnostics === true;
   const clientId = options.clientId || (await resolvePclClientId());
   const result = await princessApiGet("/ube/p1.0/ube?env=prod&country=AU", {
     clientId,
+    collectDiagnostics,
     session: {
       productCompany: DEFAULT_PRODUCT_COMPANY,
       bookingCompany: DEFAULT_BOOKING_COMPANY
@@ -184,7 +253,13 @@ async function bootstrapPrincessSession(options = {}) {
     return {
       ok: false,
       error: result.data?.message || result.data?.httpMessage || `ube_bootstrap_http_${result.status}`,
-      clientId
+      clientId,
+      diagnostics: collectDiagnostics
+        ? {
+            stage: "bootstrap",
+            attempts: [result.diagnostics].filter(Boolean)
+          }
+        : null
     };
   }
   const settings = result.data?.ube?.settings || {};
@@ -197,7 +272,14 @@ async function bootstrapPrincessSession(options = {}) {
     cookie,
     productCompany: settings.productCompany || DEFAULT_PRODUCT_COMPANY,
     bookingCompany: features.bookingCompanyCode || features.id || DEFAULT_BOOKING_COMPANY,
-    settings
+    settings,
+    diagnostics: collectDiagnostics
+      ? {
+          stage: "bootstrap",
+          attempts: [result.diagnostics].filter(Boolean),
+          cookie_count: (result.setCookie || []).length
+        }
+      : null
   };
 }
 
@@ -205,7 +287,8 @@ async function fetchPrincessResdbCatalogue({
   session,
   cruiseType = "C",
   agencyCountry = DEFAULT_AGENCY_COUNTRY,
-  light = true
+  light = true,
+  collectDiagnostics = false
 } = {}) {
   const query =
     `resdb/p1.0/products?agencyCountry=${encodeURIComponent(agencyCountry)}` +
@@ -218,10 +301,12 @@ async function fetchPrincessResdbCatalogue({
     { ...session, bookingCompany: DEFAULT_BOOKING_COMPANY }
   ];
   let lastError = null;
+  const attempts = [];
   for (let attempt = 0; attempt < sessionVariants.length; attempt += 1) {
     if (attempt > 0) await sleep(400 * attempt);
     const variant = sessionVariants[attempt];
     const result = await princessApiGet(query, {
+      collectDiagnostics,
       session: {
         clientId: variant.clientId,
         cookie: variant.cookie || null,
@@ -229,16 +314,28 @@ async function fetchPrincessResdbCatalogue({
         bookingCompany: variant.bookingCompany
       }
     });
+    if (collectDiagnostics && result.diagnostics) {
+      attempts.push({
+        ...describeCatalogueAttempt(variant, attempt),
+        ...result.diagnostics
+      });
+    }
     if (result.ok) {
       const products = result.data?.products || [];
-      return { ok: true, products, raw_count: products.length };
+      return {
+        ok: true,
+        products,
+        raw_count: products.length,
+        diagnostics: collectDiagnostics ? { stage: "catalogue", attempts } : null
+      };
     }
     lastError = result.data?.httpMessage || result.data?.message || `products_http_${result.status}`;
   }
   return {
     ok: false,
     error: lastError || "products_fetch_failed",
-    products: []
+    products: [],
+    diagnostics: collectDiagnostics ? { stage: "catalogue", attempts } : null
   };
 }
 
@@ -348,14 +445,16 @@ function expandProductGroupsToRawSailings(
 
 async function fetchAllPrincessRawSailings(options = {}) {
   const today = options.today || new Date().toISOString().slice(0, 10);
-  const session = options.session || (await bootstrapPrincessSession(options));
+  const collectDiagnostics = options.collectDiagnostics === true;
+  const session = options.session || (await bootstrapPrincessSession({ ...options, collectDiagnostics }));
   if (!session.ok) {
     return {
       ok: false,
       fetch_failed: true,
       error: session.error,
       products: [],
-      session
+      session,
+      source_diagnostics: session.diagnostics || null
     };
   }
 
@@ -367,8 +466,8 @@ async function fetchAllPrincessRawSailings(options = {}) {
   };
 
   const [catalogue, catalogueNames, reference] = await Promise.all([
-    fetchPrincessResdbCatalogue({ session: sessionCtx, cruiseType: "C", light: true }),
-    fetchPrincessResdbCatalogue({ session: sessionCtx, cruiseType: "C", light: false }),
+    fetchPrincessResdbCatalogue({ session: sessionCtx, cruiseType: "C", light: true, collectDiagnostics }),
+    fetchPrincessResdbCatalogue({ session: sessionCtx, cruiseType: "C", light: false, collectDiagnostics }),
     fetchPrincessReferenceData(sessionCtx)
   ]);
 
@@ -378,7 +477,11 @@ async function fetchAllPrincessRawSailings(options = {}) {
       fetch_failed: true,
       error: catalogue.error,
       products: [],
-      session: sessionCtx
+      session: sessionCtx,
+      source_diagnostics: {
+        bootstrap: session.diagnostics || null,
+        catalogue: catalogue.diagnostics || null
+      }
     };
   }
 
@@ -403,6 +506,12 @@ async function fetchAllPrincessRawSailings(options = {}) {
     itinerary_name_count: itineraryNamesById.size,
     itinerary_names_fetch_failed: !catalogueNames.ok,
     reference,
+    source_diagnostics: collectDiagnostics
+      ? {
+          bootstrap: session.diagnostics || null,
+          catalogue: catalogue.diagnostics || null
+        }
+      : null,
     ...expanded,
     source_contract: SOURCE_CONTRACT
   };
@@ -525,5 +634,7 @@ module.exports = {
   discoverOfficialVoyageUrls,
   normalisePrincessVoyage,
   probePrincessInventory,
-  summarisePrincessProducts
+  summarisePrincessProducts,
+  sanitizeResponseHeaders,
+  sanitizeBodyExcerpt
 };

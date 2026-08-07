@@ -429,6 +429,12 @@ async function runHalWeeklyMaintenance(context = {}) {
     summary.updates = writeResult.stats?.updated || 0;
     summary.duplicate_skips = writeResult.stats?.duplicate_skips || 0;
     summary.failed_writes = writeResult.stats?.failed || 0;
+    summary.recovered_after_fetch_failure = writeResult.stats?.recovered_after_fetch_failure || 0;
+    summary.write_attempts =
+      (writeResult.stats?.inserted || 0) +
+      (writeResult.stats?.updated || 0) +
+      (writeResult.stats?.failed || 0) +
+      (writeResult.stats?.duplicate_skips || 0);
     summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
     summary.rollback_manifest_id = rollback?.manifest_record_id || null;
 
@@ -598,6 +604,12 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
     summary.updates = writeResult.stats?.updated || 0;
     summary.duplicate_skips = writeResult.stats?.duplicate_skips || 0;
     summary.failed_writes = writeResult.stats?.failed || 0;
+    summary.recovered_after_fetch_failure = writeResult.stats?.recovered_after_fetch_failure || 0;
+    summary.write_attempts =
+      (writeResult.stats?.inserted || 0) +
+      (writeResult.stats?.updated || 0) +
+      (writeResult.stats?.failed || 0) +
+      (writeResult.stats?.duplicate_skips || 0);
     summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
     summary.rollback_manifest_id = rollback?.manifest_record_id || null;
 
@@ -651,7 +663,8 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       ships,
       destinations,
       today,
-      useCache: false
+      useCache: false,
+      collectSourceDiagnostics: Boolean(context.collectSourceDiagnostics ?? context.collect_source_diagnostics)
     });
 
     if (!simulation?.products?.length && simulation?.fetch_failed) {
@@ -733,11 +746,11 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     };
 
     if (!qualityGate.passed) {
-      return { ok: false, blocked: true, failed: true, reason: qualityGate.failures.join("; "), summary };
+      return { ok: false, blocked: true, failed: true, reason: qualityGate.failures.join("; "), summary, simulation };
     }
 
     if (dryRun || !performWrites) {
-      return { ok: true, dry_run: true, summary, manifest };
+      return { ok: true, dry_run: true, summary, manifest, simulation };
     }
 
     const lockKey = weeklyLockKey(lineSlug);
@@ -796,6 +809,12 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     summary.updates = writeResult.stats?.updated || 0;
     summary.duplicate_skips = writeResult.stats?.duplicate_skips || 0;
     summary.failed_writes = writeResult.stats?.failed || 0;
+    summary.recovered_after_fetch_failure = writeResult.stats?.recovered_after_fetch_failure || 0;
+    summary.write_attempts =
+      (writeResult.stats?.inserted || 0) +
+      (writeResult.stats?.updated || 0) +
+      (writeResult.stats?.failed || 0) +
+      (writeResult.stats?.duplicate_skips || 0);
     summary.inventory_changed = (summary.inserts || 0) + (summary.updates || 0) > 0;
     summary.rollback_manifest_id = rollback?.manifest_record_id || null;
 

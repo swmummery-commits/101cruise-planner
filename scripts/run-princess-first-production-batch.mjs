@@ -40,7 +40,8 @@ const { runPrincessWeeklyMaintenance } = require(path.join(
 const {
   createMaintenanceRun,
   finalizeMaintenanceRun,
-  buildMaintenanceRunStats
+  buildMaintenanceRunStats,
+  resolveMaintenanceRunStatus
 } = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-tracking"));
 const { PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE } = require(path.join(
   root,
@@ -365,7 +366,7 @@ async function runBatch({
   if (dbRun?.id) {
     const summary = result.summary || {};
     await finalizeMaintenanceRun(sb, dbRun.id, {
-      status: result.ok ? "completed" : "failed",
+      status: resolveMaintenanceRunStatus({ ok: result.ok, summary }),
       stats: buildMaintenanceRunStats(summary, {
         run_type: PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
         run_id: runId,
@@ -379,7 +380,7 @@ async function runBatch({
 
   const countsAfter = await baselineCounts();
   const insertedIds = (result.write_result?.write_details || [])
-    .filter((d) => d.created || d.result_action === "inserted")
+    .filter((d) => d.created || d.result_action === "inserted" || d.recovered_after_fetch_failure)
     .map((d) => d.discovered_cruise_id)
     .filter(Boolean);
 

@@ -59,6 +59,17 @@ async function finalizeMaintenanceRun(supabase, runRecordId, { status, stats, er
   return { id: runRecordId, status, stats };
 }
 
+/**
+ * Genuine unrecovered write failures keep status `failed` even when some inserts committed.
+ * Metrics (inserts, failed_writes, recovered_after_fetch_failure) carry partial-batch detail.
+ */
+function resolveMaintenanceRunStatus({ ok, summary = {} }) {
+  const failed = Number(summary.failed_writes) || 0;
+  if (failed > 0) return "failed";
+  if (ok) return "completed";
+  return "failed";
+}
+
 function buildMaintenanceRunStats(summary, extra = {}) {
   return {
     run_type: summary.run_type,
@@ -77,6 +88,8 @@ function buildMaintenanceRunStats(summary, extra = {}) {
     cruisetours_skipped: summary.cruisetours_excluded ?? 0,
     incomplete_skipped: summary.incomplete_skipped ?? 0,
     failed_writes: summary.failed_writes ?? 0,
+    recovered_after_fetch_failure: summary.recovered_after_fetch_failure ?? 0,
+    write_attempts: summary.write_attempts ?? null,
     proposed_inserts: summary.proposed_inserts ?? 0,
     proposed_updates: summary.proposed_updates ?? 0,
     quality_gate: summary.quality_gate || null,
@@ -261,6 +274,7 @@ module.exports = {
   createMaintenanceRun,
   finalizeMaintenanceRun,
   buildMaintenanceRunStats,
+  resolveMaintenanceRunStatus,
   loadWeeklyMaintenanceStatus,
   loadDailyExpiryStatus,
   loadMaintenanceDashboard,

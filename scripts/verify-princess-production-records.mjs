@@ -3,6 +3,8 @@
  * Verify Princess production records + Cruise Finder visibility.
  *
  *   node scripts/verify-princess-production-records.mjs
+ *   node scripts/verify-princess-production-records.mjs --expected-active=120
+ *   node scripts/verify-princess-production-records.mjs --expected-active=120 --expected-snapshot-id=<id>
  */
 
 import path from "path";
@@ -18,10 +20,20 @@ const { publicBookingMinimumDepartureDate, perthCalendarDate } = require(path.jo
 ));
 
 const PRINCESS_LINE_ID = "c19f40a7-c160-4035-a845-14dada550e1f";
-const EXPECTED_ACTIVE = 20;
 const siteUrl = String(
   process.env.NETLIFY_SITE_URL || process.env.URL || "https://admirable-tiramisu-d4da8a.netlify.app"
 ).replace(/\/$/, "");
+
+function parseArgs(argv) {
+  const out = { expectedActive: null, expectedSnapshotId: null };
+  for (const arg of argv.slice(2)) {
+    if (arg.startsWith("--expected-active=")) out.expectedActive = Number(arg.split("=")[1]);
+    if (arg.startsWith("--expected-snapshot-id=")) {
+      out.expectedSnapshotId = String(arg.split("=")[1]).trim();
+    }
+  }
+  return out;
+}
 
 function loadEnv() {
   try {
@@ -52,6 +64,7 @@ async function searchCurrentCruises(body) {
 }
 
 async function main() {
+  const args = parseArgs(process.argv);
   const sb = createSupabaseRest(root);
   const minDep = publicBookingMinimumDepartureDate(perthCalendarDate());
   const rows = await sb.get(
@@ -64,7 +77,12 @@ async function main() {
   const ecr = rows.filter((r) => String(r.official_sailing_id || "").startsWith("ECR12A|CB|"));
   const issues = [];
 
-  if (rows.length !== EXPECTED_ACTIVE) issues.push({ issue: "active_count", expected: EXPECTED_ACTIVE, actual: rows.length });
+  const expectedActive = args.expectedActive != null ? args.expectedActive : null;
+  const delta = expectedActive != null ? rows.length - expectedActive : null;
+
+  if (expectedActive != null && rows.length !== expectedActive) {
+    issues.push({ issue: "active_count", expected: expectedActive, actual: rows.length, delta });
+  }
   if (ecr.length) issues.push({ issue: "rolled_back_ecr12a_present", count: ecr.length });
 
   const identities = new Set();
@@ -72,7 +90,9 @@ async function main() {
     if (!row.cruise_line_id) issues.push({ id: row.id, issue: "null_cruise_line_id" });
     if (row.cruise_line_id !== PRINCESS_LINE_ID) issues.push({ id: row.id, issue: "wrong_line" });
     if (!row.official_sailing_id) issues.push({ id: row.id, issue: "missing_identity" });
-    if (identities.has(row.official_sailing_id)) issues.push({ id: row.id, issue: "duplicate_identity", sid: row.official_sailing_id });
+    if (identities.has(row.official_sailing_id)) {
+      issues.push({ id: row.id, issue: "duplicate_identity", sid: row.official_sailing_id });
+    }
     identities.add(row.official_sailing_id);
     if (String(row.departure_date).slice(0, 10) < minDep) {
       issues.push({ id: row.id, issue: "inside_cutoff", departure_date: row.departure_date });
@@ -162,7 +182,10 @@ async function main() {
 
   const report = {
     db_verification: {
-      active_count: rows.length,
+      expected_active: expectedActive,
+      actual_active: rows.length,
+      delta,
+      expected_snapshot_id: args.expectedSnapshotId || null,
       min_departure: minDep,
       ecr12a_remaining: ecr.length,
       issues
@@ -172,7 +195,7 @@ async function main() {
     celebrity_available: celSailings.length > 0,
     ok:
       issues.length === 0 &&
-      rows.length === EXPECTED_ACTIVE &&
+      (expectedActive == null || rows.length === expectedActive) &&
       finderChecks.some((c) => c.scenario === "alaska-princess" && c.princess_hits > 0)
   };
 

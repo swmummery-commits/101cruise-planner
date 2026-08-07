@@ -212,6 +212,36 @@ function assertPrincessWriteCandidate(candidate, cruiseLine) {
   return candidate;
 }
 
+function isAmbiguousTransportError(message) {
+  const msg = String(message || "");
+  return /fetch failed|network error|ECONNRESET|ETIMEDOUT|socket hang up|UND_ERR/i.test(msg);
+}
+
+async function recoverCommittedWriteAfterFetchFailure(
+  supabase,
+  cruiseLineId,
+  officialSailingId,
+  expected = {}
+) {
+  if (!supabase || !cruiseLineId || !officialSailingId) return null;
+  const rows = await supabase(
+    `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
+      cruiseLineId
+    )}&official_sailing_id=eq.${encodeURIComponent(
+      officialSailingId
+    )}&select=id,status,official_sailing_id,cruise_line_id,ship_id,departure_date&limit=1`
+  );
+  const row = Array.isArray(rows) ? rows[0] : null;
+  if (!row?.id || row.status !== "active") return null;
+  if (row.cruise_line_id !== cruiseLineId) return null;
+  if (row.official_sailing_id !== officialSailingId) return null;
+  if (expected.ship_id && row.ship_id !== expected.ship_id) return null;
+  if (expected.departure_date && String(row.departure_date).slice(0, 10) !== String(expected.departure_date).slice(0, 10)) {
+    return null;
+  }
+  return row;
+}
+
 async function applyPrincessBatchWrites({
   products,
   cruiseLine,
@@ -230,6 +260,7 @@ async function applyPrincessBatchWrites({
     cruisetour_skips: 0,
     invalid_skips: 0,
     failed: 0,
+    recovered_after_fetch_failure: 0,
     write_details: []
   };
 
@@ -299,11 +330,40 @@ async function applyPrincessBatchWrites({
         rollback_before: before
       });
     } catch (error) {
+      const msg = error.message || String(error);
+      const recovered =
+        isAmbiguousTransportError(msg) && supabase
+          ? await recoverCommittedWriteAfterFetchFailure(
+              supabase,
+              cruiseLine.id,
+              candidate.official_sailing_id,
+              {
+                ship_id: candidate.ship_id,
+                departure_date: candidate.departure_date
+              }
+            )
+          : null;
+      if (recovered) {
+        writesRemaining -= 1;
+        stats.inserted += 1;
+        stats.recovered_after_fetch_failure += 1;
+        stats.write_details.push({
+          discovered_cruise_id: recovered.id,
+          princess_sailing_id: candidate.official_sailing_id,
+          proposed_action: action,
+          result_action: "inserted",
+          created: true,
+          recovered_after_fetch_failure: true,
+          transport_error: msg,
+          rollback_before: existing ? snapshotRecordForRollback(existing) : null
+        });
+        continue;
+      }
       stats.failed += 1;
       stats.write_details.push({
         princess_sailing_id: candidate.official_sailing_id,
         proposed_action: action,
-        error: error.message || String(error)
+        error: msg
       });
     }
   }
@@ -317,5 +377,7 @@ module.exports = {
   applyPrincessBatchWrites,
   indexExistingPrincessRecords,
   classifyProposedAction,
-  assertPrincessWriteCandidate
+  assertPrincessWriteCandidate,
+  recoverCommittedWriteAfterFetchFailure,
+  isAmbiguousTransportError
 };

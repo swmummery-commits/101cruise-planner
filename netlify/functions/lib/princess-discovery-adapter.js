@@ -257,7 +257,11 @@ function normalisePrincessProduct(raw, context = {}) {
 
 async function simulatePrincessInventory(context = {}) {
   const today = context.today || new Date().toISOString().slice(0, 10);
-  const fetchResult = await fetchAllPrincessRawSailings({ today, futureOnly: true });
+  const fetchResult = await fetchAllPrincessRawSailings({
+    today,
+    futureOnly: true,
+    collectDiagnostics: context.collectSourceDiagnostics === true
+  });
 
   const normalised = [];
   const failureCounts = {};
@@ -318,6 +322,7 @@ async function simulatePrincessInventory(context = {}) {
       destination_counts: destinationCounts
     },
     fetch_result: fetchResult,
+    source_diagnostics: fetchResult.source_diagnostics || null,
     source_contract: SOURCE_CONTRACT
   };
 }
