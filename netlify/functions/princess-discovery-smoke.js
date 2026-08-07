@@ -112,6 +112,12 @@ exports.handler = async (event) => {
       result.simulation?.fetch_result?.error ||
       result.simulation?.fetch_result?.session?.error ||
       null;
+    const sourceErrorStage =
+      result.simulation?.fetch_result?.session && result.simulation?.fetch_result?.session?.ok === false
+        ? "bootstrap"
+        : result.simulation?.fetch_result?.fetch_failed
+          ? "catalogue"
+          : null;
     const payload = {
       ok: result.ok === true && !result.blocked,
       mode: "production_read_only",
@@ -119,6 +125,7 @@ exports.handler = async (event) => {
       blocked: result.blocked === true,
       reason: result.reason || null,
       sourceError,
+      sourceErrorStage,
       deployedCommitRef: process.env.COMMIT_REF || process.env.DEPLOY_ID || null,
       runRecordId: dbRun?.id || null,
       officialSourceTotal: summary.official_source_total ?? null,

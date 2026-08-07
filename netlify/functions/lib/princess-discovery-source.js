@@ -109,6 +109,14 @@ async function resolvePclClientId() {
   return DEFAULT_CLIENT_ID;
 }
 
+function readResponseSetCookies(response) {
+  if (typeof response.headers.getSetCookie === "function") {
+    return response.headers.getSetCookie();
+  }
+  const combined = response.headers.get("set-cookie");
+  return combined ? [combined] : [];
+}
+
 async function princessApiGet(path, { session = null, clientId = null } = {}) {
   const id = clientId || session?.clientId || (await resolvePclClientId());
   const bookingCompany =
@@ -134,9 +142,7 @@ async function princessApiGet(path, { session = null, clientId = null } = {}) {
   } catch (_err) {
     data = null;
   }
-  const setCookie = typeof response.headers.getSetCookie === "function"
-    ? response.headers.getSetCookie()
-    : response.headers.raw?.()["set-cookie"] || [];
+  const setCookie = readResponseSetCookies(response);
   return {
     ok: response.status >= 200 && response.status < 300,
     status: response.status,

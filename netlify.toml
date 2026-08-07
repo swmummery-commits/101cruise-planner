@@ -1,6 +1,9 @@
 [functions]
   directory = "netlify/functions"
 
+[build.environment]
+  NODE_VERSION = "20"
+
 [functions."research-content-generate"]
   # Research runs Brave + source fetches + OpenAI; allow longer than default.
   timeout = 60
