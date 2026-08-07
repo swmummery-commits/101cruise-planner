@@ -108,12 +108,17 @@ exports.handler = async (event) => {
 
     const summary = result.summary || {};
     const rates = summary.resolution_rates || {};
+    const sourceError =
+      result.simulation?.fetch_result?.error ||
+      result.simulation?.fetch_result?.session?.error ||
+      null;
     const payload = {
       ok: result.ok === true && !result.blocked,
       mode: "production_read_only",
       dry_run: true,
       blocked: result.blocked === true,
       reason: result.reason || null,
+      sourceError,
       deployedCommitRef: process.env.COMMIT_REF || process.env.DEPLOY_ID || null,
       runRecordId: dbRun?.id || null,
       officialSourceTotal: summary.official_source_total ?? null,

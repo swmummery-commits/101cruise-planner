@@ -93,22 +93,23 @@ function classifyProductType(raw) {
 async function resolvePclClientId() {
   const envId = String(process.env.PRINCESS_PCL_CLIENT_ID || "").trim();
   if (envId) return envId;
-  try {
-    const chunk = await fetchSourceExcerpt(
-      "https://www.princess.com/cruise-search/_next/static/chunks/commons.3bc1da26bfee81df1d5d.js",
-      { timeoutMs: 15000, maxExcerptChars: 500000, userAgent: USER_AGENT }
-    );
-    const text = chunk.excerpt || chunk.html || "";
-    const m = text.match(/32e7224[a-f0-9]{24}/i) || text.match(/[a-f0-9]{32}/i);
-    if (m) return m[0];
-  } catch (_err) {
-    /* fallback below */
+  if (String(process.env.PRINCESS_PCL_CLIENT_ID_REFRESH || "").trim().toLowerCase() === "true") {
+    try {
+      const chunk = await fetchSourceExcerpt(
+        "https://www.princess.com/cruise-search/_next/static/chunks/commons.3bc1da26bfee81df1d5d.js",
+        { timeoutMs: 15000, maxExcerptChars: 500000, userAgent: USER_AGENT }
+      );
+      const text = chunk.excerpt || chunk.html || "";
+      const m = text.match(/32e7224[a-f0-9]{24}/i) || text.match(/[a-f0-9]{32}/i);
+      if (m) return m[0];
+    } catch (_err) {
+      /* fallback below */
+    }
   }
   return DEFAULT_CLIENT_ID;
 }
 
 async function princessApiGet(path, { session = null, clientId = null } = {}) {
-  const https = require("https");
   const id = clientId || session?.clientId || (await resolvePclClientId());
   const bookingCompany =
     session?.bookingCompany || session?.booking_company || DEFAULT_BOOKING_COMPANY;
@@ -125,34 +126,25 @@ async function princessApiGet(path, { session = null, clientId = null } = {}) {
   if (session?.cookie) headers.Cookie = session.cookie;
 
   const url = path.startsWith("http") ? path : `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
-  const u = new URL(url);
-
-  return new Promise((resolve, reject) => {
-    https
-      .get(u, { headers }, (res) => {
-        let text = "";
-        res.on("data", (chunk) => {
-          text += chunk;
-        });
-        res.on("end", () => {
-          let data = null;
-          try {
-            data = text ? JSON.parse(text) : null;
-          } catch (_err) {
-            data = null;
-          }
-          resolve({
-            ok: res.statusCode >= 200 && res.statusCode < 300,
-            status: res.statusCode,
-            data,
-            text,
-            headers: res.headers,
-            setCookie: res.headers["set-cookie"] || []
-          });
-        });
-      })
-      .on("error", reject);
-  });
+  const response = await fetch(url, { method: "GET", headers, redirect: "follow" });
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (_err) {
+    data = null;
+  }
+  const setCookie = typeof response.headers.getSetCookie === "function"
+    ? response.headers.getSetCookie()
+    : response.headers.raw?.()["set-cookie"] || [];
+  return {
+    ok: response.status >= 200 && response.status < 300,
+    status: response.status,
+    data,
+    text,
+    headers: Object.fromEntries(response.headers.entries()),
+    setCookie
+  };
 }
 
 async function bootstrapPrincessSession(options = {}) {
