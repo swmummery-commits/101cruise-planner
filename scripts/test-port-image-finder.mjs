@@ -41,7 +41,7 @@ const publicDestSrc = read("netlify/functions/public-destination.js");
 const researchSrc = read("netlify/functions/lib/research-public.js");
 const braveSrc = read("netlify/functions/lib/brave-search.js");
 const destPageDataSrc = read("js/destination-page-data.js");
-const migrationSrc = read("supabase/migrations/20260808_ports_image_finder.sql");
+const migrationSrc = read("supabase/migrations/20260807_ports_image_finder.sql");
 
 // Query generation
 const civitQueries = buildPortImageQueries({
