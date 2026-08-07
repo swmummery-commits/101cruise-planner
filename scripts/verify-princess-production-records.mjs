@@ -13,7 +13,7 @@ import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const { createSupabaseRest, getSupabaseConfig } = require(path.join(root, "scripts/lib/supabase-rest.cjs"));
+const { createSupabaseRest, exactCountSupabase, fetchAllPaginated } = require(path.join(root, "scripts/lib/supabase-rest.cjs"));
 const { publicBookingMinimumDepartureDate, perthCalendarDate } = require(path.join(
   root,
   "netlify/functions/lib/public-discovered-cruise-inventory"
@@ -67,8 +67,11 @@ async function main() {
   const args = parseArgs(process.argv);
   const sb = createSupabaseRest(root);
   const minDep = publicBookingMinimumDepartureDate(perthCalendarDate());
-  const rows = await sb.get(
-    `discovered_cruises?cruise_line_id=eq.${PRINCESS_LINE_ID}&status=eq.active&select=id,cruise_line_id,ship_id,destination_id,departure_date,departure_port,official_url,official_sailing_id,raw_extract&order=departure_date.asc`
+  const activeFilter = `cruise_line_id=eq.${PRINCESS_LINE_ID}&status=eq.active`;
+  const { count: actualActiveExact } = await exactCountSupabase(root, "discovered_cruises", activeFilter);
+  const rows = await fetchAllPaginated(
+    root,
+    `discovered_cruises?${activeFilter}&select=id,cruise_line_id,ship_id,destination_id,departure_date,departure_port,official_url,official_sailing_id,raw_extract&order=departure_date.asc`
   );
   const ships = await sb.get(
     `ci_cruise_ships?cruise_line_id=eq.${PRINCESS_LINE_ID}&select=id,name,official_line_ship_id`
@@ -78,10 +81,10 @@ async function main() {
   const issues = [];
 
   const expectedActive = args.expectedActive != null ? args.expectedActive : null;
-  const delta = expectedActive != null ? rows.length - expectedActive : null;
+  const delta = expectedActive != null ? actualActiveExact - expectedActive : null;
 
-  if (expectedActive != null && rows.length !== expectedActive) {
-    issues.push({ issue: "active_count", expected: expectedActive, actual: rows.length, delta });
+  if (expectedActive != null && actualActiveExact !== expectedActive) {
+    issues.push({ issue: "active_count", expected: expectedActive, actual: actualActiveExact, delta });
   }
   if (ecr.length) issues.push({ issue: "rolled_back_ecr12a_present", count: ecr.length });
 
@@ -183,7 +186,8 @@ async function main() {
   const report = {
     db_verification: {
       expected_active: expectedActive,
-      actual_active: rows.length,
+      actual_active: actualActiveExact,
+      rows_loaded: rows.length,
       delta,
       expected_snapshot_id: args.expectedSnapshotId || null,
       min_departure: minDep,
@@ -195,7 +199,7 @@ async function main() {
     celebrity_available: celSailings.length > 0,
     ok:
       issues.length === 0 &&
-      (expectedActive == null || rows.length === expectedActive) &&
+      (expectedActive == null || actualActiveExact === expectedActive) &&
       finderChecks.some((c) => c.scenario === "alaska-princess" && c.princess_hits > 0)
   };
 

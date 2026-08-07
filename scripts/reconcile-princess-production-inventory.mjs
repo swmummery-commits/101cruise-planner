@@ -13,7 +13,7 @@ import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-const { createSupabaseRest } = require(path.join(root, "scripts/lib/supabase-rest.cjs"));
+const { createSupabaseRest, exactCountSupabase, fetchAllPaginated } = require(path.join(root, "scripts/lib/supabase-rest.cjs"));
 
 const PRINCESS_LINE_ID = "c19f40a7-c160-4035-a845-14dada550e1f";
 const FIRST_BATCH_RUN = "princess-controlled-apply-2026-08-07T00-20-47-206Z";
@@ -46,10 +46,14 @@ async function main() {
   const firstIds = idsFromReport(firstReport);
   const catchIds = idsFromReport(catchupReport);
 
-  const active = await sb.get(
-    `discovered_cruises?cruise_line_id=eq.${PRINCESS_LINE_ID}&status=eq.active&select=id,official_sailing_id,departure_date,departure_port,created_at,updated_at&order=created_at.asc`
+  const activeFilter = `cruise_line_id=eq.${PRINCESS_LINE_ID}&status=eq.active`;
+  const { count: activeExact } = await exactCountSupabase(root, "discovered_cruises", activeFilter);
+  const active = await fetchAllPaginated(
+    root,
+    `discovered_cruises?${activeFilter}&select=id,official_sailing_id,departure_date,departure_port,created_at,updated_at&order=created_at.asc`
   );
-  const allPrincess = await sb.get(
+  const allPrincess = await fetchAllPaginated(
+    root,
     `discovered_cruises?cruise_line_id=eq.${PRINCESS_LINE_ID}&select=id,status,official_sailing_id,created_at`
   );
   const runs = await sb.get(
@@ -79,7 +83,8 @@ async function main() {
 
   const report = {
     reconciled_at: new Date().toISOString(),
-    active_total: active.length,
+    active_total: activeExact,
+    active_rows_loaded: active.length,
     arithmetic: {
       first_controlled_batch: groupA.length,
       catch_up_tracked: groupB.length,

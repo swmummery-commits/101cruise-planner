@@ -84,9 +84,18 @@ async function loadCelebrityDatabaseInventoryCounts(supabase, cruiseLineId) {
     )
   ]);
 
-  const activeRows = await supabase(
-    `discovered_cruises?cruise_line_id=eq.${enc}&status=eq.active&select=official_sailing_id,raw_extract`
-  );
+  const activeRows = [];
+  let offset = 0;
+  const pageSize = 1000;
+  while (true) {
+    const batch = await supabase(
+      `discovered_cruises?cruise_line_id=eq.${enc}&status=eq.active&select=official_sailing_id,raw_extract&limit=${pageSize}&offset=${offset}`
+    );
+    if (!batch?.length) break;
+    activeRows.push(...batch);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
   const sailingCounts = {};
   for (const row of activeRows || []) {
     const sid = row.official_sailing_id || row.raw_extract?.celebrity_sailing_id;

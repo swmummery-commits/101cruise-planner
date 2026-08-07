@@ -33,6 +33,45 @@ function getSupabaseConfig(rootDir) {
   return { url, key };
 }
 
+function exactCountSupabase(rootDir, table, query = "") {
+  const { url, key } = getSupabaseConfig(rootDir);
+  return new Promise((resolve, reject) => {
+    const u = new URL(`${url}/rest/v1/${table}?select=id${query ? `&${query}` : ""}`);
+    https
+      .request(
+        u,
+        { method: "HEAD", headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: "count=exact" } },
+        (res) => {
+          const range = res.headers["content-range"] || "";
+          const m = range.match(/\/(\d+)/);
+          resolve({
+            count: m ? Number(m[1]) : 0,
+            contentRange: range,
+            statusCode: res.statusCode || 0
+          });
+        }
+      )
+      .on("error", reject)
+      .end();
+  });
+}
+
+async function fetchAllPaginated(rootDir, restPath, { pageSize = 1000, maxRows = null } = {}) {
+  const sb = createSupabaseRest(rootDir);
+  const separator = restPath.includes("?") ? "&" : "?";
+  const rows = [];
+  let offset = 0;
+  while (true) {
+    const batch = await sb.get(`${restPath}${separator}limit=${pageSize}&offset=${offset}`);
+    if (!Array.isArray(batch) || !batch.length) break;
+    rows.push(...batch);
+    if (maxRows != null && rows.length >= maxRows) return rows.slice(0, maxRows);
+    if (batch.length < pageSize) break;
+    offset += pageSize;
+  }
+  return rows;
+}
+
 function createSupabaseRest(rootDir) {
   const { url, key } = getSupabaseConfig(rootDir);
 
@@ -107,7 +146,7 @@ function createSupabaseRest(rootDir) {
     });
   }
 
-  return { request, get, post, url, patch: (restPath, body) => request(restPath, { method: "PATCH", body }) };
+  return { request, get, post, url, patch: (restPath, body) => request(restPath, { method: "PATCH", body }), exactCount: (table, query = "") => exactCountSupabase(rootDir, table, query), fetchAll: (restPath, options = {}) => fetchAllPaginated(rootDir, restPath, options) };
 }
 
 /** Adapter matching netlify/functions cruise-discovery-runner supabase(path, options) signature. */
@@ -132,6 +171,8 @@ function createMaintenanceSupabase(rootDir) {
 module.exports = {
   loadEnvFile,
   getSupabaseConfig,
+  exactCountSupabase,
+  fetchAllPaginated,
   createSupabaseRest,
   createMaintenanceSupabase
 };
