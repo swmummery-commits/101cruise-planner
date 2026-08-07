@@ -64,6 +64,8 @@ function serialiseCandidate(row) {
     geographic: row.geographic,
     suitability: row.suitability,
     confidence: row.confidence,
+    vesselPrimary: row.vesselPrimary,
+    vesselReason: row.vesselReason,
     reasons: row.reasons || []
   };
 }

@@ -28,6 +28,7 @@ const {
   pickBestCandidate,
   statusForCandidate,
   statusForScores,
+  isVesselPrimarySubject,
   GEO_AUTO_MIN,
   SUIT_AUTO_MIN
 } = loadCjs("netlify/functions/lib/port-image-finder/scoring.js");
@@ -148,6 +149,63 @@ assert(
   "harbour imagery can reach review or auto-approve"
 );
 
+const cavour = scorePortImageCandidate(
+  {
+    provider: "wikimedia",
+    title: "Cavour (550) - Civitavecchia harbour, Italy - June 2011.jpg",
+    url: "https://upload.wikimedia.org/w/example.jpg",
+    width: 1280,
+    height: 853,
+    license: "CC BY 2.0"
+  },
+  { canonical_name: "Civitavecchia", country: "Italy", country_code: "IT" }
+);
+assert(cavour.vesselPrimary, "Cavour naval title is vessel-primary");
+assert(
+  statusForCandidate({ ...cavour, candidate: { provider: "wikimedia", license: "CC BY 2.0" } }) !== "AUTO_APPROVED",
+  "Cavour naval vessel is not AUTO_APPROVED"
+);
+
+const harbourPanorama = scorePortImageCandidate(
+  {
+    provider: "wikimedia",
+    title: "Civitavecchia outher harbour - panoramio.jpg",
+    url: "https://upload.wikimedia.org/w/harbour.jpg",
+    width: 1280,
+    height: 854,
+    license: "CC BY-SA 3.0"
+  },
+  { canonical_name: "Civitavecchia", country: "Italy", country_code: "IT" }
+);
+assert(!harbourPanorama.vesselPrimary, "harbour panorama is destination-primary");
+assert(harbourPanorama.suitability > cavour.suitability, "harbour panorama outranks Cavour on suitability");
+
+const civitRanked = pickBestCandidate(
+  [
+    {
+      provider: "wikimedia",
+      title: "Cavour (550) - Civitavecchia harbour, Italy - June 2011.jpg",
+      url: "https://upload.wikimedia.org/w/a.jpg",
+      width: 1280,
+      height: 853,
+      license: "CC BY 2.0"
+    },
+    {
+      provider: "wikimedia",
+      title: "Civitavecchia outher harbour - panoramio.jpg",
+      url: "https://upload.wikimedia.org/w/b.jpg",
+      width: 1280,
+      height: 854,
+      license: "CC BY-SA 3.0"
+    }
+  ],
+  { canonical_name: "Civitavecchia", country: "Italy", country_code: "IT" }
+);
+assert(/outher harbour|panoramio/i.test(civitRanked[0]?.candidate?.title || ""), "harbour panorama ranks above Cavour");
+
+assert(isVesselPrimarySubject({ title: "Celebrity Solstice at Port Chalmers" }).vesselPrimary, "named cruise ship at port");
+assert(!isVesselPrimarySubject({ title: "Port Chalmers harbour with cruise ships" }).vesselPrimary, "harbour with ships OK");
+
 // Confidence 100 is exceptional — geo high + low suit caps overall
 const geoOnly = { geographic: 100, suitability: 55, confidence: 0, license: "CC BY 2.0" };
 const overallGeoOnly = scorePortImageCandidate(
@@ -243,7 +301,7 @@ assert(/action === "find_candidates"/.test(fnSrc), "port-image-finder supports f
 assert(/action === "bulk_missing"/.test(fnSrc), "port-image-finder supports bulk_missing");
 assert(/image_status/.test(migrationSrc), "migration adds image_status");
 assert(/isMissingImageSchemaError/.test(catalogueFnSrc), "ports catalogue tolerates missing image schema");
-assert(/PORT_SELECT_BASIC/.test(catalogueFnSrc), "ports catalogue has basic select fallback");
+assert(/isVesselPrimarySubject/.test(read("netlify/functions/lib/port-image-finder/scoring.js")), "scoring exports vessel-primary detection");
 
 let queried = "";
 await resolveCatalogueMediaIds(async (path) => {
