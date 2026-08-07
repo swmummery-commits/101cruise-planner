@@ -1943,6 +1943,30 @@ function resolveBrochureFare(row) {
   return null;
 }
 
+const PRINCESS_VOYAGE_CODE_ITINERARY_RE = /^[A-Z]{2,4}\d{2}[A-Z0-9]{0,2}$/;
+
+function isPrincessVoyageCodeItinerary(value) {
+  return PRINCESS_VOYAGE_CODE_ITINERARY_RE.test(String(value || "").trim());
+}
+
+/** Prefer stored marketing names over Princess voyage codes on public pages. */
+function resolvePublicItineraryLabel(row) {
+  const stored = String(row.itinerary || "").trim();
+  if (!stored) return "Itinerary details on official cruise page";
+
+  const extract = row.raw_extract && typeof row.raw_extract === "object" ? row.raw_extract : null;
+  const princessName = String(extract?.princess_itinerary_name || "").trim();
+  if (princessName && princessName !== stored) return princessName;
+
+  if (isPrincessVoyageCodeItinerary(stored)) {
+    const dep = String(row.departure_port || "").trim();
+    const arr = String(row.arrival_port || "").trim();
+    if (dep && arr && dep !== arr) return `${dep} → ${arr}`;
+  }
+
+  return stored;
+}
+
 function formatPublicSailing(row, lineName, shipName) {
   const nightCount = Number(row.nights);
   const duration = Number.isFinite(nightCount) && nightCount > 0
@@ -1973,7 +1997,7 @@ function formatPublicSailing(row, lineName, shipName) {
     dateLabel,
     scheduleLabel,
     hasDate: Boolean(departureDate),
-    itinerary: row.itinerary || "Itinerary details on official cruise page",
+    itinerary: resolvePublicItineraryLabel(row),
     brochureFare,
     hasBrochureFare: Boolean(brochureFare),
     officialUrl: row.official_url || null,
@@ -2019,6 +2043,8 @@ module.exports = {
   formatPublicSailing,
   isDisplayableBrochureFare,
   resolveBrochureFare,
+  resolvePublicItineraryLabel,
+  isPrincessVoyageCodeItinerary,
   scoreSailingUrl: require("./cruise-discovery-url-score").scoreSailingUrl,
   resolveAdapter: require("./cruise-discovery-adapters").resolveAdapter
 };

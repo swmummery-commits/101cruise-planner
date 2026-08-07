@@ -14,7 +14,7 @@ const { canonicalUrl } = require("./cruise-discovery-structured");
 const { fetchSourceExcerpt } = require("./source-fetch");
 
 const ADAPTER_ID = "princess";
-const ADAPTER_VERSION = "2026-08-06.princess1";
+const ADAPTER_VERSION = "2026-08-07.princess2";
 const USER_AGENT = "101cruise-discovery/1.0 (+https://101cruise.com.au)";
 const API_BASE = "https://gw.api.princess.com/pcl-web/internal";
 const DEFAULT_CLIENT_ID = "32e7224ac6cc41302f673c5f5d27b4ba";
@@ -31,7 +31,8 @@ const SOURCE_CONTRACT = {
   authentication_required: true,
   authentication_notes:
     "Requires pcl-client-id header (public SPA client id) plus productcompany/bookingcompany headers. UBE bootstrap sets booking company for AU (PA).",
-  pagination: "Single light=true catalogue response (~1005 cruise product groups, ~1969 dated sailings expanded client-side)",
+  pagination:
+    "Parallel light=true (sail dates) + light=false (itinerary names) catalogue (~1005 groups, ~1969 sailings expanded client-side)",
   official_identity_formula: "{itinerary_id}|{ship_code}|{departure_date_iso}",
   official_url_formula:
     "https://www.princess.com/cruise-search/details/?voyageCode={itinerary_id}&shipCode={ship_code}&sailDate={yyyymmdd}",
@@ -40,6 +41,23 @@ const SOURCE_CONTRACT = {
 
 const CRUISETOUR_RE =
   /cruisetour|land\s+and\s+sea|denali|yukon|overland|ultimate\s+alaska|tundra\s+wilderness/i;
+
+/** Princess official voyage codes stored when itinerary names are missing (e.g. ANG07A, ASG070). */
+const PRINCESS_VOYAGE_CODE_RE = /^[A-Z]{2,4}\d{2}[A-Z0-9]{0,2}$/;
+
+function isPrincessVoyageCode(value) {
+  return PRINCESS_VOYAGE_CODE_RE.test(String(value || "").trim());
+}
+
+function buildPrincessItineraryNameMap(groups) {
+  const map = new Map();
+  for (const group of groups || []) {
+    const id = group.id || group.itinerary_id;
+    const name = String(group.name || "").trim();
+    if (id && name) map.set(id, name);
+  }
+  return map;
+}
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -183,11 +201,16 @@ async function bootstrapPrincessSession(options = {}) {
   };
 }
 
-async function fetchPrincessResdbCatalogue({ session, cruiseType = "C", agencyCountry = DEFAULT_AGENCY_COUNTRY } = {}) {
+async function fetchPrincessResdbCatalogue({
+  session,
+  cruiseType = "C",
+  agencyCountry = DEFAULT_AGENCY_COUNTRY,
+  light = true
+} = {}) {
   const query =
     `resdb/p1.0/products?agencyCountry=${encodeURIComponent(agencyCountry)}` +
     `&cruiseType=${encodeURIComponent(cruiseType)}` +
-    "&voyageStatus=A&webDisplay=Y&promoFilter=all&light=true";
+    `&voyageStatus=A&webDisplay=Y&promoFilter=all&light=${light ? "true" : "false"}`;
   const sessionVariants = [
     session,
     { ...session, cookie: null },
@@ -234,7 +257,10 @@ async function fetchPrincessReferenceData(session) {
   };
 }
 
-function expandProductGroupsToRawSailings(groups, { shipsById = {}, portsById = {}, today, futureOnly = true } = {}) {
+function expandProductGroupsToRawSailings(
+  groups,
+  { shipsById = {}, portsById = {}, itineraryNamesById = new Map(), today, futureOnly = true } = {}
+) {
   const products = [];
   const seen = new Set();
   let duplicateSailingIds = 0;
@@ -252,6 +278,8 @@ function expandProductGroupsToRawSailings(groups, { shipsById = {}, portsById = 
     const disPort = group.embkDbkPortIds?.[1] || group.embkDbkPortIds?.[0] || null;
     const portMeta = embPort ? portsById[embPort] : null;
     const tradeIds = (group.trades || []).map((t) => t.id).filter(Boolean);
+    const itinerary_name =
+      itineraryNamesById.get(itineraryId) || String(group.name || "").trim() || null;
 
     for (const shipEntry of group.ships || []) {
       const shipCode = shipEntry.id;
@@ -273,6 +301,7 @@ function expandProductGroupsToRawSailings(groups, { shipsById = {}, portsById = 
           structured_source: "princess_resdb_products",
           itinerary_id: itineraryId,
           itinerary_group_id: itineraryId,
+          itinerary_name,
           official_sailing_id: null,
           ship_code: shipCode,
           ship_name: shipMeta.name || null,
@@ -337,8 +366,9 @@ async function fetchAllPrincessRawSailings(options = {}) {
     bookingCompany: session.bookingCompany
   };
 
-  const [catalogue, reference] = await Promise.all([
-    fetchPrincessResdbCatalogue({ session: sessionCtx, cruiseType: "C" }),
+  const [catalogue, catalogueNames, reference] = await Promise.all([
+    fetchPrincessResdbCatalogue({ session: sessionCtx, cruiseType: "C", light: true }),
+    fetchPrincessResdbCatalogue({ session: sessionCtx, cruiseType: "C", light: false }),
     fetchPrincessReferenceData(sessionCtx)
   ]);
 
@@ -352,9 +382,14 @@ async function fetchAllPrincessRawSailings(options = {}) {
     };
   }
 
+  const itineraryNamesById = catalogueNames.ok
+    ? buildPrincessItineraryNameMap(catalogueNames.products)
+    : new Map();
+
   const expanded = expandProductGroupsToRawSailings(catalogue.products, {
     shipsById: reference.shipsById,
     portsById: reference.portsById,
+    itineraryNamesById,
     today,
     futureOnly: options.futureOnly !== false
   });
@@ -365,6 +400,8 @@ async function fetchAllPrincessRawSailings(options = {}) {
     session: sessionCtx,
     num_found_official: catalogue.raw_count,
     raw_group_count: catalogue.raw_count,
+    itinerary_name_count: itineraryNamesById.size,
+    itinerary_names_fetch_failed: !catalogueNames.ok,
     reference,
     ...expanded,
     source_contract: SOURCE_CONTRACT
@@ -481,6 +518,8 @@ module.exports = {
   bootstrapPrincessSession,
   fetchPrincessResdbCatalogue,
   fetchPrincessReferenceData,
+  buildPrincessItineraryNameMap,
+  isPrincessVoyageCode,
   expandProductGroupsToRawSailings,
   fetchAllPrincessRawSailings,
   discoverOfficialVoyageUrls,

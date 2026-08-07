@@ -13,7 +13,7 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const read = (rel) => fs.readFileSync(path.join(root, rel), "utf8");
 const require = createRequire(import.meta.url);
 
-const { formatPublicSailing, isDisplayableBrochureFare } = require("../netlify/functions/lib/cruise-discovery.js");
+const { formatPublicSailing, isDisplayableBrochureFare, resolvePublicItineraryLabel } = require("../netlify/functions/lib/cruise-discovery.js");
 const { buildCruiseCatalog } = require("../netlify/functions/lib/destination-page.js");
 
 const withDates = formatPublicSailing(
@@ -53,6 +53,30 @@ assert.ok(!String(noFare.brochureFare || "").includes("See official"), "no broch
 assert.equal(isDisplayableBrochureFare("See official brochure fare"), false);
 assert.equal(isDisplayableBrochureFare("From USD $4,999 pp"), true);
 assert.equal(isDisplayableBrochureFare("Price on request"), false);
+
+assert.equal(
+  resolvePublicItineraryLabel({
+    itinerary: "ANG07A",
+    raw_extract: { princess_itinerary_name: "Voyage of the Glaciers (Northbound)" }
+  }),
+  "Voyage of the Glaciers (Northbound)"
+);
+assert.equal(
+  resolvePublicItineraryLabel({
+    itinerary: "ANG07A",
+    departure_port: "Vancouver, Canada",
+    arrival_port: "Anchorage (Whittier), Alaska"
+  }),
+  "Vancouver, Canada → Anchorage (Whittier), Alaska"
+);
+assert.equal(
+  formatPublicSailing(
+    { id: 9, departure_date: "2026-08-29", nights: 7, itinerary: "Inside Passage (Roundtrip Seattle)" },
+    "Princess Cruises",
+    "Star Princess"
+  ).itinerary,
+  "Inside Passage (Roundtrip Seattle)"
+);
 
 const noDate = formatPublicSailing({ id: 3, nights: 7, itinerary: "Unknown" }, "Line", "Ship");
 assert.equal(noDate.hasDate, false);

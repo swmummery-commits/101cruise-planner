@@ -78,6 +78,7 @@ function classifyProposedAction(row, existing) {
       existing.return_date !== candidate.return_date ||
       existing.nights !== candidate.nights ||
       String(existing.departure_port || "") !== String(candidate.departure_port || "") ||
+      String(existing.itinerary || "") !== String(candidate.itinerary || "") ||
       existing.status !== "active";
     return changed ? "update_exact_legacy_match" : "duplicate_skip";
   }

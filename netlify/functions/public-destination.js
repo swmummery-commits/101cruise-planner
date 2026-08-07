@@ -223,7 +223,7 @@ exports.handler = async (event) => {
         `discovered_cruises?destination_id=eq.${encodeURIComponent(destination.id)}` +
           `&status=eq.active` +
           `&departure_date=gte.${minDeparture}` +
-          `&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare,currency,brochure_fare_display,official_url` +
+          `&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,raw_extract,brochure_fare,currency,brochure_fare_display,official_url` +
           `&order=departure_date.asc&limit=200`
       );
       cruiseRows = (cruiseRows || []).filter((row) =>

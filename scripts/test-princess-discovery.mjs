@@ -57,6 +57,52 @@ test("2. expand light product groups to dated sailings", () => {
   if (expanded.products.length !== 2) throw new Error(`expected 2 got ${expanded.products.length}`);
 });
 
+test("2b. expand attaches official itinerary_name from name map", () => {
+  const expanded = source.expandProductGroupsToRawSailings([FIXTURE_GROUP], {
+    shipsById: { SA: { id: "SA", name: "Sky Princess" } },
+    portsById: { CPH: { id: "CPH", name: "Copenhagen, Denmark" } },
+    itineraryNamesById: new Map([["ECR12A", "Norway & Sweden Cruise"]]),
+    today: "2026-08-06"
+  });
+  if (expanded.products[0]?.itinerary_name !== "Norway & Sweden Cruise") {
+    throw new Error(`expected marketing name got ${expanded.products[0]?.itinerary_name}`);
+  }
+});
+
+test("2c. adapter stores marketing itinerary name instead of voyage code", () => {
+  const result = adapter.normalisePrincessProduct(
+    {
+      source: "princess_resdb",
+      structured_source: "princess_resdb_products",
+      itinerary_id: "ANG07A",
+      itinerary_name: "Voyage of the Glaciers (Northbound)",
+      ship_code: "XP",
+      ship_name: "Discovery Princess",
+      departure_date: "2026-08-29",
+      return_date: "2026-09-05",
+      nights: 7,
+      departure_port_code: "YVR",
+      departure_port: "Vancouver, Canada",
+      arrival_port: "Anchorage (Whittier), Alaska",
+      trade_ids: ["A"],
+      official_url: "https://www.princess.com/cruise-search/details?voyagecode=ang07a"
+    },
+    {
+      cruiseLine: { id: "line-1", name: "Princess Cruises" },
+      ships: [{ id: "ship-1", name: "Discovery Princess", cruise_line_id: "line-1", official_line_ship_id: "XP" }],
+      destinations: adapter.catalogueDestinations([
+        { id: "dest-1", name: "Alaska", slug: "alaska", status: "published", classification_enabled: true }
+      ])
+    }
+  );
+  if (result.candidate.itinerary !== "Voyage of the Glaciers (Northbound)") {
+    throw new Error(`expected marketing name got ${result.candidate.itinerary}`);
+  }
+  if (result.candidate.raw_extract?.princess_itinerary_id !== "ANG07A") {
+    throw new Error("missing princess_itinerary_id in raw_extract");
+  }
+});
+
 test("3. cruisetour classifier excludes land-tour names", () => {
   if (source.classifyProductType({ name: "Ultimate Alaska Cruisetour" }) !== "cruisetour") {
     throw new Error("cruisetour name");
@@ -153,6 +199,45 @@ test("14. seed manifest excludes MS Excellence Princess from guessed code", () =
   const excellence = manifest.ships.find((s) => /excellence/i.test(s.name));
   if (excellence) throw new Error("excellence must not be in seed manifest");
   if (manifest.notes && !manifest.notes.includes("Excellence")) throw new Error("missing excellence note");
+});
+
+test("15b. Princess duplicate skip treats itinerary name upgrade as update", () => {
+  const writes = require(path.join(root, "netlify/functions/lib/princess-discovery-writes"));
+  const existing = {
+    cruise_line_id: "line-1",
+    official_sailing_id: "ANG07A|XP|2026-08-29",
+    ship_id: "ship-1",
+    destination_id: "dest-1",
+    departure_date: "2026-08-29",
+    return_date: "2026-09-05",
+    nights: 7,
+    departure_port: "Vancouver, Canada",
+    itinerary: "ANG07A",
+    status: "active"
+  };
+  const row = {
+    product_type: "cruise",
+    complete_high_confidence: true,
+    raw: {
+      itinerary_id: "ANG07A",
+      ship_code: "XP",
+      departure_date: "2026-08-29"
+    },
+    candidate: {
+      ship_id: "ship-1",
+      destination_id: "dest-1",
+      departure_date: "2026-08-29",
+      return_date: "2026-09-05",
+      nights: 7,
+      departure_port: "Vancouver, Canada",
+      itinerary: "Voyage of the Glaciers (Northbound)",
+      official_url: "https://www.princess.com/example"
+    }
+  };
+  const action = writes.classifyProposedAction(row, existing);
+  if (action !== "update_exact_legacy_match") {
+    throw new Error(`expected update_exact_legacy_match got ${action}`);
+  }
 });
 
 test("15. Princess writer rejects null cruise_line_id before database write", () => {

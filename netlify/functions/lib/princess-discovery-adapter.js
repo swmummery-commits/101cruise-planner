@@ -125,6 +125,7 @@ function normalisePrincessProduct(raw, context = {}) {
 
   const portMeta = resolvePrincessDeparturePort(raw);
   const destHints = resolvePrincessDestinationHints(raw);
+  const itineraryLabel = String(raw.itinerary_name || "").trim() || raw.itinerary_id;
 
   const candidate = {
     cruise_line_id: cruiseLine?.id,
@@ -134,11 +135,12 @@ function normalisePrincessProduct(raw, context = {}) {
     nights: raw.nights,
     departure_port: portMeta.status === "resolved" ? portMeta.canonicalPortName : null,
     departure_port_meta: portMeta,
-    itinerary: raw.itinerary_id,
+    itinerary: itineraryLabel,
     official_url: raw.official_url,
     source_url: raw.official_url,
     raw_extract: {
       princess_itinerary_id: raw.itinerary_id,
+      princess_itinerary_name: raw.itinerary_name || null,
       princess_ship_code: raw.ship_code,
       princess_trade_ids: raw.trade_ids || [],
       princess_product_type: product.productType,
@@ -152,8 +154,8 @@ function normalisePrincessProduct(raw, context = {}) {
   }
 
   const destResult = resolveOperationalDestination({
-    title: raw.itinerary_id,
-    description: (raw.trade_ids || []).join(" "),
+    title: itineraryLabel,
+    description: [raw.itinerary_name, (raw.trade_ids || []).join(" ")].filter(Boolean).join(" "),
     itinerary: candidate.itinerary,
     structuredDestination: destHints.structuredDestination || null,
     departurePort: candidate.departure_port || raw.departure_port,
@@ -193,7 +195,7 @@ function normalisePrincessProduct(raw, context = {}) {
     ...candidate,
     cruiseLine,
     cruise_line_name: cruiseLine?.name,
-    title: raw.itinerary_id,
+    title: itineraryLabel,
     url: candidate.official_url,
     official_url: candidate.official_url,
     shipResolution: shipResolution.resolved
