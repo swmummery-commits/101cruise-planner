@@ -252,7 +252,9 @@
     next.id = "dc-intro-status";
     next.classList.add("dc-intro-status");
     status.replaceWith(next);
-    if (typeof BrandLoading?.scan === "function") BrandLoading.scan(next);
+    if (typeof BrandLoading !== "undefined" && typeof BrandLoading.scan === "function") {
+      BrandLoading.scan(next);
+    }
   }
 
   async function loadLines() {

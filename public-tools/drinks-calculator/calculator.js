@@ -1176,7 +1176,9 @@
     }
 
     mount.innerHTML = `<section class="dc-calc">${loadingPanelHtml()}</section>`;
-    if (typeof BrandLoading?.scan === "function") BrandLoading.scan(mount);
+    if (typeof BrandLoading !== "undefined" && typeof BrandLoading.scan === "function") {
+      BrandLoading.scan(mount);
+    }
 
     try {
       const [linesPayload, detailPayload] = await Promise.all([

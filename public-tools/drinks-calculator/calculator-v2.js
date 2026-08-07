@@ -1116,7 +1116,9 @@
     }
 
     mount.innerHTML = `<div class="dc-v2">${loadingPanelHtml()}</div>`;
-    if (typeof BrandLoading?.scan === "function") BrandLoading.scan(mount);
+    if (typeof BrandLoading !== "undefined" && typeof BrandLoading.scan === "function") {
+      BrandLoading.scan(mount);
+    }
 
     try {
       const linesPayload = await fetchJson(LINES_API_URL, REQUEST_TIMEOUT_MS);
