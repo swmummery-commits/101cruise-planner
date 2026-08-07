@@ -24,6 +24,7 @@ const { findPortImageCandidates } = require(path.join(
   root,
   "netlify/functions/lib/port-image-finder/search.js"
 ));
+const { statusForCandidate } = require(path.join(root, "netlify/functions/lib/port-image-finder/scoring.js"));
 const { applyPortImageCandidate, canOverwritePortImage } = require(path.join(
   root,
   "netlify/functions/lib/port-image-finder/apply.js"
@@ -147,6 +148,8 @@ function summariseCandidate(candidate) {
   return {
     provider: candidate?.provider || "",
     title: candidate?.title || "",
+    geographic: candidate?.geographic ?? null,
+    suitability: candidate?.suitability ?? null,
     confidence: candidate?.confidence ?? null,
     license: candidate?.license || null,
     sourceUrl: candidate?.sourceUrl || candidate?.pageUrl || "",
@@ -193,26 +196,35 @@ async function runSearch(allPorts) {
     const search = await findPortImageCandidates(port, { force: true, autoApply: false });
     const top = search.candidates?.[0] || null;
     const locationOk = top ? assessLocation(port, top, spec) : null;
-
-    let status = "no result";
-    if (search.skipped) status = `skipped:${search.reason}`;
-    else if (!top) status = "no result";
-    else if (top.confidence >= 82 && (top.provider === "wikimedia" || top.provider === "pexels") && locationOk) {
-      status = "AUTO_APPROVED";
-    } else if (top.confidence >= 52 && locationOk) status = "NEEDS_REVIEW";
-    else if (top && !locationOk) status = "rejected";
-    else if (top) status = "NEEDS_REVIEW";
+    const scoredTop = top
+      ? {
+          geographic: top.geographic,
+          suitability: top.suitability,
+          confidence: top.confidence,
+          candidate: top
+        }
+      : null;
+    const status = scoredTop ? statusForCandidate(scoredTop) : search.skipped ? `skipped:${search.reason}` : "NO_IMAGE";
+    const correct =
+      search.skipped && search.reason === "manual_image"
+        ? true
+        : !port
+          ? false
+          : locationOk !== false && (status !== "AUTO_APPROVED" || (top?.suitability ?? 0) >= 70);
 
     results.push({
       port: spec.label,
-      catalogue_name: port.canonical_name,
+      catalogue_match: port.canonical_name,
       port_id: port.id,
       found_in_catalogue: true,
       queries: search.queries || [],
       primary_query: search.primaryQuery || null,
       best_source: top?.provider || null,
+      geographic: top?.geographic ?? null,
+      suitability: top?.suitability ?? null,
       best_confidence: top?.confidence ?? null,
       status,
+      correct,
       location_ok: locationOk,
       license: top?.license || null,
       top_candidates: (search.candidates || []).slice(0, 3).map(summariseCandidate),
@@ -269,17 +281,29 @@ async function runApplySample(allPorts, searchResults) {
 
 async function runBraveCheck() {
   const hasKey = Boolean(getBraveApiKey());
-  const report = { phase: "brave_image_search", key_configured: hasKey, works: false, error: null, result_count: 0 };
+  const report = {
+    phase: "brave_image_search",
+    key_configured: hasKey,
+    http_status: null,
+    image_search_available: false,
+    works: false,
+    error: null,
+    result_count: 0
+  };
   if (!hasKey) {
     console.log(JSON.stringify(report, null, 2));
     return report;
   }
   try {
     const results = await braveImageSearch(null, "Civitavecchia Italy cruise port harbour", { count: 3 });
-    report.works = Array.isArray(results);
-    report.result_count = results.length;
+    report.http_status = 200;
+    report.image_search_available = Array.isArray(results);
+    report.works = Array.isArray(results) && results.length > 0;
+    report.result_count = Array.isArray(results) ? results.length : 0;
   } catch (error) {
     report.error = error.message || String(error);
+    report.http_status = error.statusCode || null;
+    report.image_search_available = false;
   }
   console.log(JSON.stringify(report, null, 2));
   return report;

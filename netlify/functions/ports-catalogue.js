@@ -75,6 +75,51 @@ async function supabase(restPath, options = {}) {
 const PORT_SELECT =
   "id,canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases,status,match_key,source,source_url,source_featured_cruise_id,verified_at,created_at,updated_at,hero_media_id,image_status,image_source,image_source_url,image_credit,image_license,image_search_query,image_confidence,image_last_checked_at,image_candidates";
 
+const PORT_SELECT_BASIC =
+  "id,canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases,status,match_key,source,source_url,source_featured_cruise_id,verified_at,created_at,updated_at";
+
+function isMissingImageSchemaError(error) {
+  const msg = String(error?.message || "");
+  return /hero_media_id|image_status|image_candidates|image_last_checked_at|schema cache/i.test(msg);
+}
+
+function withImageDefaults(port, { schemaWarning = false } = {}) {
+  if (!port || typeof port !== "object") return port;
+  return {
+    ...port,
+    hero_media_id: port.hero_media_id ?? null,
+    image_status: port.image_status ?? null,
+    image_source: port.image_source ?? null,
+    image_source_url: port.image_source_url ?? null,
+    image_credit: port.image_credit ?? null,
+    image_license: port.image_license ?? null,
+    image_search_query: port.image_search_query ?? null,
+    image_confidence: port.image_confidence ?? null,
+    image_last_checked_at: port.image_last_checked_at ?? null,
+    image_candidates: Array.isArray(port.image_candidates) ? port.image_candidates : [],
+    ...(schemaWarning
+      ? {
+          image_schema_warning:
+            "Port Image Finder migration is not applied yet. Image tools are unavailable until supabase/migrations/20260807_ports_image_finder.sql is run."
+        }
+      : {})
+  };
+}
+
+async function fetchPortsSelect(selectFields) {
+  const rows = await supabase(
+    `ports?select=${encodeURIComponent(selectFields)}&order=canonical_name.asc&limit=2000`
+  );
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function fetchPortByIdSelect(id, selectFields) {
+  const rows = await supabase(
+    `ports?select=${encodeURIComponent(selectFields)}&id=eq.${encodeURIComponent(id)}&limit=1`
+  );
+  return Array.isArray(rows) && rows[0] ? rows[0] : null;
+}
+
 const ALLOWED_STATUS = new Set(["verified", "provisional", "needs_review"]);
 
 function stripDiacritics(value) {
@@ -126,10 +171,14 @@ function badRequest(message) {
 }
 
 async function listPorts() {
-  const rows = await supabase(
-    `ports?select=${encodeURIComponent(PORT_SELECT)}&order=canonical_name.asc&limit=2000`
-  );
-  return Array.isArray(rows) ? rows : [];
+  try {
+    const rows = await fetchPortsSelect(PORT_SELECT);
+    return rows.map((row) => withImageDefaults(row));
+  } catch (error) {
+    if (!isMissingImageSchemaError(error)) throw error;
+    const rows = await fetchPortsSelect(PORT_SELECT_BASIC);
+    return rows.map((row) => withImageDefaults(row, { schemaWarning: true }));
+  }
 }
 
 function sanitizeProvisional(bodyPort) {
@@ -207,17 +256,35 @@ function sanitizePortFields(bodyPort, { requireCanonical = true } = {}) {
 
 async function findByMatchKey(matchKey) {
   if (!matchKey) return null;
-  const rows = await supabase(
-    `ports?select=${encodeURIComponent(PORT_SELECT)}&match_key=eq.${encodeURIComponent(matchKey)}&limit=1`
-  );
-  return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  const query = `ports?select=${encodeURIComponent(PORT_SELECT)}&match_key=eq.${encodeURIComponent(matchKey)}&limit=1`;
+  try {
+    const rows = await supabase(query);
+    const port = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    return port ? withImageDefaults(port) : null;
+  } catch (error) {
+    if (!isMissingImageSchemaError(error)) throw error;
+    const rows = await supabase(
+      `ports?select=${encodeURIComponent(PORT_SELECT_BASIC)}&match_key=eq.${encodeURIComponent(matchKey)}&limit=1`
+    );
+    const port = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    return port ? withImageDefaults(port, { schemaWarning: true }) : null;
+  }
 }
 
 async function findById(id) {
-  const rows = await supabase(
-    `ports?select=${encodeURIComponent(PORT_SELECT)}&id=eq.${encodeURIComponent(id)}&limit=1`
-  );
-  return Array.isArray(rows) && rows[0] ? rows[0] : null;
+  const query = `ports?select=${encodeURIComponent(PORT_SELECT)}&id=eq.${encodeURIComponent(id)}&limit=1`;
+  try {
+    const rows = await supabase(query);
+    const port = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    return port ? withImageDefaults(port) : null;
+  } catch (error) {
+    if (!isMissingImageSchemaError(error)) throw error;
+    const rows = await supabase(
+      `ports?select=${encodeURIComponent(PORT_SELECT_BASIC)}&id=eq.${encodeURIComponent(id)}&limit=1`
+    );
+    const port = Array.isArray(rows) && rows[0] ? rows[0] : null;
+    return port ? withImageDefaults(port, { schemaWarning: true }) : null;
+  }
 }
 
 async function createProvisional(bodyPort) {

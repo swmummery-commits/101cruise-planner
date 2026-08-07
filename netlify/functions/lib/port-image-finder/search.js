@@ -3,13 +3,15 @@
  */
 
 const { buildPortImageQueries } = require("./queries");
-const { pickBestCandidate, statusForConfidence } = require("./scoring");
+const { pickBestCandidate, statusForCandidate } = require("./scoring");
 const { searchWikimediaCommons } = require("./sources/wikimedia");
 const { searchPexels } = require("./sources/pexels");
 const { braveImageSearch, getBraveApiKey } = require("../brave-search");
 
 const RECHECK_DAYS = 30;
 const SHORTLIST_SIZE = 8;
+const STRONG_CANDIDATE_GEO = 78;
+const STRONG_CANDIDATE_SUIT = 72;
 
 function dedupeCandidates(candidates) {
   const seen = new Set();
@@ -59,9 +61,31 @@ function serialiseCandidate(row) {
     pageUrl: row.candidate?.pageUrl || "",
     license: row.candidate?.license || null,
     credit: row.candidate?.credit || null,
+    geographic: row.geographic,
+    suitability: row.suitability,
     confidence: row.confidence,
     reasons: row.reasons || []
   };
+}
+
+function hasStrongCandidate(scored) {
+  return scored.some(
+    (row) => row.geographic >= STRONG_CANDIDATE_GEO && row.suitability >= STRONG_CANDIDATE_SUIT && row.confidence >= 78
+  );
+}
+
+async function searchWikimediaQueries(queries, port, collected) {
+  for (const query of queries) {
+    try {
+      const wiki = await searchWikimediaCommons(query, { limit: 10 });
+      collected.push(...wiki);
+    } catch (error) {
+      console.warn("wikimedia port search skipped", query, error.message);
+      if (String(error.code || "") === "rate_limited") break;
+    }
+    const interim = pickBestCandidate(dedupeCandidates(collected), port);
+    if (hasStrongCandidate(interim)) break;
+  }
 }
 
 /**
@@ -94,17 +118,11 @@ async function findPortImageCandidates(port, options = {}) {
   const country = countryCodeForSearch(port);
   const collected = [];
 
-  for (const query of queries.slice(0, 3)) {
-    try {
-      const wiki = await searchWikimediaCommons(query, { limit: 10 });
-      collected.push(...wiki);
-    } catch (error) {
-      console.warn("wikimedia port search skipped", query, error.message);
-    }
-    if (collected.length >= 20) break;
-  }
+  await searchWikimediaQueries(queries, port, collected);
 
-  if (collected.length < 12) {
+  let scored = pickBestCandidate(dedupeCandidates(collected), port);
+
+  if (!hasStrongCandidate(scored)) {
     for (const query of queries.slice(0, 2)) {
       try {
         const pexels = await searchPexels(query, { limit: 8 });
@@ -113,31 +131,34 @@ async function findPortImageCandidates(port, options = {}) {
         console.warn("pexels port search skipped", query, error.message);
       }
     }
+    scored = pickBestCandidate(dedupeCandidates(collected), port);
   }
 
-  if (collected.length < 12 && getBraveApiKey()) {
+  if (!hasStrongCandidate(scored) && getBraveApiKey()) {
     for (const query of queries.slice(0, 2)) {
       try {
-        const brave = await braveImageSearch(null, query, { count: 15, country });
+        const brave = await braveImageSearch(null, query, { count: 12, country });
         collected.push(...brave);
       } catch (error) {
         console.warn("brave port image search skipped", query, error.message);
       }
     }
+    scored = pickBestCandidate(dedupeCandidates(collected), port);
   }
 
-  const scored = pickBestCandidate(dedupeCandidates(collected), port);
   const shortlist = scored.slice(0, SHORTLIST_SIZE).map(serialiseCandidate);
+  const top = scored[0] || null;
 
   let autoApply = null;
-  if (options.autoApply && scored[0]) {
-    const top = scored[0];
-    const status = statusForConfidence(top.confidence, top.candidate?.provider);
+  if (options.autoApply && top) {
+    const status = statusForCandidate(top);
     if (status === "AUTO_APPROVED") {
       autoApply = {
         candidate: serialiseCandidate(top),
         status,
-        confidence: top.confidence
+        confidence: top.confidence,
+        geographic: top.geographic,
+        suitability: top.suitability
       };
     }
   }
@@ -149,11 +170,10 @@ async function findPortImageCandidates(port, options = {}) {
     primaryQuery,
     candidates: shortlist,
     autoApply,
-    bestConfidence: scored[0]?.confidence || 0,
-    suggestedStatus:
-      scored[0] && scored[0].confidence >= 52
-        ? statusForConfidence(scored[0].confidence, scored[0].candidate?.provider)
-        : "NO_IMAGE"
+    bestConfidence: top?.confidence || 0,
+    bestGeographic: top?.geographic || 0,
+    bestSuitability: top?.suitability || 0,
+    suggestedStatus: top ? statusForCandidate(top) : "NO_IMAGE"
   };
 }
 
@@ -162,5 +182,6 @@ module.exports = {
   SHORTLIST_SIZE,
   buildPortImageQueries,
   findPortImageCandidates,
-  shouldSkipRecentSearch
+  shouldSkipRecentSearch,
+  hasStrongCandidate
 };

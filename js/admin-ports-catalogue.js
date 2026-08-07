@@ -608,7 +608,13 @@
               }
             </div>
             <div class="ports-image-candidate-meta">
-              <p class="admin-small"><strong>${esc(candidate.provider || "unknown")}</strong>${candidate.confidence != null ? ` · ${esc(String(candidate.confidence))}%` : ""}</p>
+              <p class="admin-small"><strong>${esc(candidate.provider || "unknown")}</strong>${
+                candidate.geographic != null || candidate.suitability != null || candidate.confidence != null
+                  ? ` · Geo ${esc(String(candidate.geographic ?? "—"))}% · Suit ${esc(String(candidate.suitability ?? "—"))}% · Overall ${esc(String(candidate.confidence ?? "—"))}%`
+                  : candidate.confidence != null
+                    ? ` · ${esc(String(candidate.confidence))}%`
+                    : ""
+              }</p>
               <p class="admin-small">${esc(candidate.title || candidate.description || "Untitled")}</p>
               ${dims ? `<p class="admin-small">${esc(dims)}</p>` : ""}
               ${candidate.license ? `<p class="admin-small">Licence: ${esc(candidate.license)}</p>` : ""}

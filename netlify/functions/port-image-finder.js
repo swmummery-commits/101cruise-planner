@@ -16,7 +16,38 @@ const { PORT_IMAGE_SELECT } = require("./lib/port-image-finder/resolve-public");
 const PORT_SELECT =
   `${PORT_IMAGE_SELECT},image_source_url,image_search_query,image_confidence,image_last_checked_at,image_candidates`;
 
+const PORT_SELECT_BASIC =
+  "id,canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases,status,match_key";
+
 const BULK_BATCH_DEFAULT = 5;
+
+function isMissingImageSchemaError(error) {
+  const msg = String(error?.message || "");
+  return /hero_media_id|image_status|image_candidates|image_last_checked_at|schema cache/i.test(msg);
+}
+
+function withImageDefaults(port, { schemaWarning = false } = {}) {
+  if (!port || typeof port !== "object") return port;
+  return {
+    ...port,
+    hero_media_id: port.hero_media_id ?? null,
+    image_status: port.image_status ?? null,
+    image_source: port.image_source ?? null,
+    image_source_url: port.image_source_url ?? null,
+    image_credit: port.image_credit ?? null,
+    image_license: port.image_license ?? null,
+    image_search_query: port.image_search_query ?? null,
+    image_confidence: port.image_confidence ?? null,
+    image_last_checked_at: port.image_last_checked_at ?? null,
+    image_candidates: Array.isArray(port.image_candidates) ? port.image_candidates : [],
+    ...(schemaWarning
+      ? {
+          image_schema_warning:
+            "Port Image Finder migration is not applied yet. Run supabase/migrations/20260807_ports_image_finder.sql before saving image metadata."
+        }
+      : {})
+  };
+}
 
 function jsonResponse(statusCode, body) {
   return {
@@ -108,19 +139,39 @@ function makeSupabaseClient() {
 }
 
 async function loadPortById(supabase, portId) {
-  const rows = await supabase.fetchRest(
-    `ports?select=${encodeURIComponent(PORT_SELECT)}&id=eq.${encodeURIComponent(portId)}&limit=1`
-  );
-  return Array.isArray(rows) ? rows[0] || null : null;
+  try {
+    const rows = await supabase.fetchRest(
+      `ports?select=${encodeURIComponent(PORT_SELECT)}&id=eq.${encodeURIComponent(portId)}&limit=1`
+    );
+    const port = Array.isArray(rows) ? rows[0] || null : null;
+    return port ? withImageDefaults(port) : null;
+  } catch (error) {
+    if (!isMissingImageSchemaError(error)) throw error;
+    const rows = await supabase.fetchRest(
+      `ports?select=${encodeURIComponent(PORT_SELECT_BASIC)}&id=eq.${encodeURIComponent(portId)}&limit=1`
+    );
+    const port = Array.isArray(rows) ? rows[0] || null : null;
+    return port ? withImageDefaults(port, { schemaWarning: true }) : null;
+  }
 }
 
 async function patchPortSearchState(supabase, portId, payload) {
-  const rows = await supabase.fetchRest(`ports?id=eq.${encodeURIComponent(portId)}`, {
-    method: "PATCH",
-    prefer: "return=representation",
-    body: payload
-  });
-  return Array.isArray(rows) ? rows[0] || null : rows;
+  try {
+    const rows = await supabase.fetchRest(`ports?id=eq.${encodeURIComponent(portId)}`, {
+      method: "PATCH",
+      prefer: "return=representation",
+      body: payload
+    });
+    return Array.isArray(rows) ? rows[0] || null : rows;
+  } catch (error) {
+    if (!isMissingImageSchemaError(error)) throw error;
+    const err = new Error(
+      "Port Image Finder database migration is not applied. Run supabase/migrations/20260807_ports_image_finder.sql in Supabase SQL Editor."
+    );
+    err.statusCode = 503;
+    err.calm = true;
+    throw err;
+  }
 }
 
 async function actionFindCandidates(body) {
@@ -156,6 +207,7 @@ async function actionFindCandidates(body) {
   }
 
   let updatedPort = port;
+  let schemaWarning = port.image_schema_warning || null;
   const patch = {
     image_candidates: result.candidates || [],
     image_search_query: result.primaryQuery || null,
@@ -170,7 +222,9 @@ async function actionFindCandidates(body) {
     patch.image_confidence = result.bestConfidence || null;
   }
 
-  updatedPort = await patchPortSearchState(supabase, portId, patch);
+  if (!schemaWarning) {
+    updatedPort = await patchPortSearchState(supabase, portId, patch);
+  }
 
   return {
     success: true,
@@ -181,6 +235,9 @@ async function actionFindCandidates(body) {
     candidates: result.candidates,
     suggested_status: result.suggestedStatus,
     best_confidence: result.bestConfidence,
+    best_geographic: result.bestGeographic,
+    best_suitability: result.bestSuitability,
+    ...(schemaWarning ? { image_schema_warning: schemaWarning, candidates_persisted: false } : { candidates_persisted: true }),
     recheck_days: RECHECK_DAYS
   };
 }
@@ -219,11 +276,22 @@ async function actionApplyCandidate(body) {
 }
 
 async function listMissingPorts(supabase, { offset = 0, limit = BULK_BATCH_DEFAULT, force = false } = {}) {
-  const rows = await supabase.fetchRest(
-    `ports?select=${encodeURIComponent(PORT_SELECT)}` +
-      `&or=(hero_media_id.is.null,image_status.eq.NO_IMAGE,image_status.eq.NEEDS_REVIEW)` +
-      `&order=canonical_name.asc&offset=${offset}&limit=${limit + 50}`
-  );
+  let rows;
+  try {
+    rows = await supabase.fetchRest(
+      `ports?select=${encodeURIComponent(PORT_SELECT)}` +
+        `&or=(hero_media_id.is.null,image_status.eq.NO_IMAGE,image_status.eq.NEEDS_REVIEW)` +
+        `&order=canonical_name.asc&offset=${offset}&limit=${limit + 50}`
+    );
+  } catch (error) {
+    if (!isMissingImageSchemaError(error)) throw error;
+    const err = new Error(
+      "Port Image Finder database migration is not applied. Bulk enrichment requires supabase/migrations/20260807_ports_image_finder.sql."
+    );
+    err.statusCode = 503;
+    err.calm = true;
+    throw err;
+  }
   const all = Array.isArray(rows) ? rows : [];
   const filtered = all.filter((port) => {
     if (port.image_status === "MANUAL" && port.hero_media_id) return false;

@@ -31,5 +31,7 @@ assert(/PortsCatalogueAdmin\?\.renderPanel/.test(adminSrc), "Admin tab renders p
 assert(/port-image-finder/.test(uiSrc), "Ports admin uses port image finder");
 assert(/Find missing port images/.test(uiSrc), "Ports admin has bulk enrichment action");
 assert(/resolved === "ports-catalogue"/.test(adminSrc), "setTab loads ports catalogue");
+assert(/isMissingImageSchemaError/.test(fnSrc), "ports catalogue API handles missing image migration");
+assert(/image_schema_warning/.test(fnSrc), "ports catalogue surfaces schema warning to admin");
 
 console.log("test-admin-ports-catalogue: ok");

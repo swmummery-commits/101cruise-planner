@@ -59,9 +59,19 @@ function hasConflictingLocation(text, port) {
     if (!textMentionsGroup(hay, group)) continue;
 
     // Ambiguous city names: require region hint when both groups could match partial tokens
-    const portName = String(port?.canonical_name || "").trim().toLowerCase();
-    const ambiguousNames = ["albany", "newcastle", "victoria", "portland", "sydney", "birmingham", "richmond"];
-    if (ambiguousNames.includes(portName)) {
+    const portName = String(port?.canonical_name || port?.display_name || "").trim().toLowerCase();
+    const ambiguousNames = [
+      "albany",
+      "newcastle",
+      "victoria",
+      "victoria bc",
+      "portland",
+      "sydney",
+      "birmingham",
+      "richmond"
+    ];
+    const isAmbiguous = ambiguousNames.some((name) => portName === name || portName.startsWith(`${name} `));
+    if (isAmbiguous) {
       if (portRegion && hay.includes(portRegion)) return false;
       if (portGroup && textMentionsGroup(hay, portGroup)) return false;
       return true;
