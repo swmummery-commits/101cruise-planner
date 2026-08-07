@@ -41,8 +41,12 @@
    * Resolve a Featured Port image.
    * Contract: Media Library approved assets only — never open-web / AI search.
    */
+  /**
+   * Resolve port image for Featured Ports cards.
+   * Only Media Library assets are returned; no placeholders or hero crops.
+   */
   function resolvePortImage(port) {
-    if (port?.media?.url) {
+    if (port?.mediaId && port?.media?.url) {
       return {
         url: port.media.url,
         alt: port.media.alt || port.name,
@@ -54,7 +58,7 @@
       url: "",
       alt: port?.name || "Port",
       objectPosition: "center center",
-      source: "placeholder"
+      source: "none"
     };
   }
 

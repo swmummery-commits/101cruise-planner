@@ -1,0 +1,42 @@
+(node:2713) Warning: Accessing non-existent property 'validateCruise' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2713) Warning: Accessing non-existent property 'validateCruise' of module exports inside circular dependency
+(node:2713) Warning: Accessing non-existent property 'extractDepartureDate' of module exports inside circular dependency
+{
+  "today": "2026-08-07",
+  "trade_code_Z_audit": {
+    "source_groups_with_Z": 0,
+    "expanded_sailings_with_Z": 0,
+    "distinct_itinerary_ids": 0,
+    "itinerary_patterns": [],
+    "region_classification": {
+      "australia_new_zealand_only": 0,
+      "asia_only": 0,
+      "mixed_or_unclear": 0
+    },
+    "mapping_recommendation": "retain australia-new-zealand for trade code Z"
+  },
+  "trade_code_0": {
+    "count": 0,
+    "sailings": [],
+    "treatment": "excluded_unresolved"
+  },
+  "eligibility_reconciliation": {
+    "expanded_dated_sailings": 0,
+    "genuine_ocean": 0,
+    "cruisetours_excluded": 0,
+    "within_21_day_cutoff": 0,
+    "publicly_eligible_ocean": 0,
+    "complete_high_confidence_all": 0,
+    "complete_high_confidence_public": 0,
+    "gap_public_to_complete": 0,
+    "exclusion_reason_counts_among_incomplete_public": {},
+    "exclusion_sum": 0
+  },
+  "dry_run_summary": null,
+  "quality_gate": null,
+  "proposed_inserts": 0,
+  "proposed_updates": 0,
+  "unchanged": 0,
+  "ship_resolution_official_code": 0
+}

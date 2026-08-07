@@ -1,0 +1,69 @@
+{
+  "phase": "apply",
+  "run_id": "princess-controlled-idempotency-2026-08-07T00-32-50-549Z",
+  "run_record_id": "2f7e6cd4-da08-4cfb-aa34-cbd3ebeea383",
+  "trigger_type": "idempotency_verification",
+  "result_ok": true,
+  "summary": {
+    "line_slug": "princess-cruises",
+    "run_id": "princess-controlled-idempotency-2026-08-07T00-32-50-549Z",
+    "run_type": "princess_weekly_maintenance",
+    "trigger_type": "idempotency_verification",
+    "dry_run": true,
+    "official_source_total": 1005,
+    "eligible_total": 1514,
+    "active_production_total": 20,
+    "proposed_inserts": 1494,
+    "proposed_updates": 0,
+    "unchanged": 20,
+    "source_absent_active": 0,
+    "source_absent_sailing_ids": [],
+    "cruisetours_excluded": 0,
+    "incomplete_skipped": 391,
+    "within_public_cutoff_excluded": 64,
+    "public_booking_cutoff_days": 21,
+    "resolution_rates": {
+      "eligible_total": 1514,
+      "ship_resolution_pct": 100,
+      "departure_port_resolution_pct": 100,
+      "destination_resolution_pct": 100,
+      "identity_coverage_pct": 100,
+      "duplicate_official_identities": 0
+    },
+    "quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    },
+    "snapshot_id": "a5af27eebc5d279aef857eb5beeabf8656fd68b1d31a0c270cd97472bdbef7e8",
+    "inventory_changed": false
+  },
+  "quality_gate": {
+    "passed": true,
+    "failures": [],
+    "blocked": false
+  },
+  "write_result": null,
+  "rollback_manifest_id": null,
+  "counts_before": {
+    "princess_active": 20,
+    "hal_active": 831,
+    "celebrity_active": 1204,
+    "manifests": 3
+  },
+  "counts_after": {
+    "princess_active": 20,
+    "hal_active": 831,
+    "celebrity_active": 1204,
+    "manifests": 3
+  },
+  "inserted_ids": [],
+  "inserted_verification": {
+    "ok": true,
+    "issues": [],
+    "minDeparture": "2026-08-29"
+  },
+  "princess_active_delta": 0,
+  "hal_unchanged": true,
+  "celebrity_unchanged": true
+}

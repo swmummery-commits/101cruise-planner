@@ -451,6 +451,10 @@
   background: linear-gradient(145deg, #e8f5f0, #f4f7f5);
 }
 
+.dest-port-card--text-only .dest-port-body {
+  padding-top: 18px;
+}
+
 /* ---- Featured ports ---- */
 
 .dest-port-grid {

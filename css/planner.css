@@ -5313,6 +5313,11 @@ html, body {
   letter-spacing: -0.04em;
 }
 
+.planner-boot-loading {
+  min-height: 140px;
+  padding: 12px 0 4px;
+}
+
 .customer-access-card .planner-field {
   margin-top: 18px;
 }

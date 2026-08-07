@@ -1,0 +1,2040 @@
+(node:2818) Warning: Accessing non-existent property 'validateCruise' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:2818) Warning: Accessing non-existent property 'validateCruise' of module exports inside circular dependency
+(node:2818) Warning: Accessing non-existent property 'extractDepartureDate' of module exports inside circular dependency
+{
+  "today": "2026-08-07",
+  "trade_code_Z_audit": {
+    "source_groups_with_Z": 0,
+    "expanded_sailings_with_Z": 115,
+    "distinct_itinerary_ids": 83,
+    "itinerary_patterns": [
+      {
+        "itinerary_id": "ZBS02A",
+        "sailings": 6,
+        "ships": [
+          "AP",
+          "KP",
+          "RP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-11-02",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2026-11-23",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          },
+          {
+            "departure_date": "2026-12-03",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          },
+          {
+            "departure_date": "2027-04-28",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2027-09-02",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2028-09-17",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBR14H",
+        "sailings": 4,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-02-01",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2027-02-15",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2028-01-31",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2028-02-14",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZFR04A",
+        "sailings": 4,
+        "ships": [
+          "SA"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "JFM"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-12-11",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "SA"
+          },
+          {
+            "departure_date": "2027-12-15",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "SA"
+          },
+          {
+            "departure_date": "2028-01-12",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "SA"
+          },
+          {
+            "departure_date": "2028-01-25",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZFS17B",
+        "sailings": 3,
+        "ships": [
+          "AP",
+          "KP"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-18",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Sydney, Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2027-04-13",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2027-05-17",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR13D",
+        "sailings": 3,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-12-05",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          },
+          {
+            "departure_date": "2027-02-07",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          },
+          {
+            "departure_date": "2028-03-14",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR14B",
+        "sailings": 3,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-01-16",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          },
+          {
+            "departure_date": "2027-12-05",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          },
+          {
+            "departure_date": "2028-01-15",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBS03C",
+        "sailings": 3,
+        "ships": [
+          "AP",
+          "SA"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-23",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "SA"
+          },
+          {
+            "departure_date": "2028-03-27",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2028-05-31",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR28G",
+        "sailings": 2,
+        "ships": [
+          "AP",
+          "KP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-07",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2027-04-02",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBS26D",
+        "sailings": 2,
+        "ships": [
+          "AP",
+          "KP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-07",
+            "dep": "Sydney, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2027-04-02",
+            "dep": "Sydney, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSJ11C",
+        "sailings": 2,
+        "ships": [
+          "AP",
+          "KP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "JFM"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-07",
+            "dep": "Sydney, Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2027-04-02",
+            "dep": "Sydney, Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA06E",
+        "sailings": 2,
+        "ships": [
+          "AP",
+          "KP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "ADL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-07",
+            "dep": "Sydney, Australia",
+            "arr": "Adelaide, Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2027-04-02",
+            "dep": "Sydney, Australia",
+            "arr": "Adelaide, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSM04C",
+        "sailings": 2,
+        "ships": [
+          "AP",
+          "KP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "MEL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-07",
+            "dep": "Sydney, Australia",
+            "arr": "Melbourne, Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2027-04-02",
+            "dep": "Sydney, Australia",
+            "arr": "Melbourne, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZMS24A",
+        "sailings": 2,
+        "ships": [
+          "AP",
+          "KP"
+        ],
+        "departure_ports": [
+          "MEL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-11",
+            "dep": "Melbourne, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2027-04-06",
+            "dep": "Melbourne, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZAS22A",
+        "sailings": 2,
+        "ships": [
+          "AP",
+          "KP"
+        ],
+        "departure_ports": [
+          "ADL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-13",
+            "dep": "Adelaide, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2027-04-08",
+            "dep": "Adelaide, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZFB15A",
+        "sailings": 2,
+        "ships": [
+          "AP",
+          "KP"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-18",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "KP"
+          },
+          {
+            "departure_date": "2027-05-17",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSB020",
+        "sailings": 2,
+        "ships": [
+          "AP",
+          "SA"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-12-09",
+            "dep": "Sydney, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2027-11-24",
+            "dep": "Sydney, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBR12C",
+        "sailings": 2,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-12-11",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2027-01-20",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR03C",
+        "sailings": 2,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-03-25",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          },
+          {
+            "departure_date": "2028-03-11",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSJ11A",
+        "sailings": 2,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "JFM"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-20",
+            "dep": "Sydney, Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "AP"
+          },
+          {
+            "departure_date": "2028-03-02",
+            "dep": "Sydney, Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR07A",
+        "sailings": 2,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-23",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          },
+          {
+            "departure_date": "2027-11-28",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSB02A",
+        "sailings": 1,
+        "ships": [
+          "KP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-09-02",
+            "dep": "Sydney, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "KP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZAS040",
+        "sailings": 1,
+        "ships": [
+          "KP"
+        ],
+        "departure_ports": [
+          "AKL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-10-03",
+            "dep": "Auckland, New Zealand",
+            "arr": "Sydney, Australia",
+            "ship": "KP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR15B",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-11-03",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA05C",
+        "sailings": 1,
+        "ships": [
+          "KP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "AKL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-11-04",
+            "dep": "Sydney, Australia",
+            "arr": "Auckland, New Zealand",
+            "ship": "KP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR12D",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-11-18",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBR10A",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-11-23",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR10A",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-11-25",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR09B",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-11-30",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR04E",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-12-18",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR13E",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-12-22",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBR14G",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2026-12-23",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR08C",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-01-30",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA14B",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "AKL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-02-20",
+            "dep": "Sydney, Australia",
+            "arr": "Auckland, New Zealand",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBR07C",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-03-01",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZAS13E",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "AKL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-03-06",
+            "dep": "Auckland, New Zealand",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBR08A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-03-08",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBS12A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-03-08",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBS04C",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-03-16",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR06A",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-03-19",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA05D",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "AKL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-03-28",
+            "dep": "Sydney, Australia",
+            "arr": "Auckland, New Zealand",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSF17F",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "JFM"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-04-30",
+            "dep": "Sydney, Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA040",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "AKL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-06-17",
+            "dep": "Sydney, Australia",
+            "arr": "Auckland, New Zealand",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSJ11D",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-09",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA05E",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "ADL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-09",
+            "dep": "Sydney, Australia",
+            "arr": "Adelaide, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSM02A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "MEL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-09",
+            "dep": "Sydney, Australia",
+            "arr": "Melbourne, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZFS16B",
+        "sailings": 1,
+        "ships": [
+          "SA"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-10",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Sydney, Australia",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZFB13A",
+        "sailings": 1,
+        "ships": [
+          "SA"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-10",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZMR13B",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "MEL"
+        ],
+        "arrival_ports": [
+          "MEL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-11",
+            "dep": "Melbourne, Australia",
+            "arr": "Melbourne, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZAR12A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "ADL"
+        ],
+        "arrival_ports": [
+          "ADL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-14",
+            "dep": "Adelaide, Australia",
+            "arr": "Adelaide, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZAS07B",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "AKL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-16",
+            "dep": "Auckland, New Zealand",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR29A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-20",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR43A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-20",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZMS25A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "MEL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-24",
+            "dep": "Melbourne, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZAS23A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "ADL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-26",
+            "dep": "Adelaide, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA15A",
+        "sailings": 1,
+        "ships": [
+          "SA"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "AKL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-26",
+            "dep": "Sydney, Australia",
+            "arr": "Auckland, New Zealand",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZFS18A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-10-31",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZAS14B",
+        "sailings": 1,
+        "ships": [
+          "SA"
+        ],
+        "departure_ports": [
+          "AKL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-11-10",
+            "dep": "Auckland, New Zealand",
+            "arr": "Sydney, Australia",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR15C",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-11-13",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR14F",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-11-18",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSF17A",
+        "sailings": 1,
+        "ships": [
+          "SA"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "JFM"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-11-24",
+            "dep": "Sydney, Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBF15A",
+        "sailings": 1,
+        "ships": [
+          "SA"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "JFM"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-11-26",
+            "dep": "Brisbane, Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSB04B",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-12-02",
+            "dep": "Sydney, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBR10F",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-12-06",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBR07B",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-12-16",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR13F",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2027-12-23",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR13A",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-01-02",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZJR10B",
+        "sailings": 1,
+        "ships": [
+          "SA"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "JFM"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-01-02",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZJR09A",
+        "sailings": 1,
+        "ships": [
+          "SA"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "JFM"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-01-16",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Perth (Fremantle), Australia",
+            "ship": "SA"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBR12A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-01-19",
+            "dep": "Brisbane, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR15D",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-01-29",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA13D",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "AKL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-02-13",
+            "dep": "Sydney, Australia",
+            "arr": "Auckland, New Zealand",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZAS14A",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "AKL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-02-26",
+            "dep": "Auckland, New Zealand",
+            "arr": "Sydney, Australia",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBS03B",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-02-28",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZBS31A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "BNE"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-02-28",
+            "dep": "Brisbane, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSR28A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-03-02",
+            "dep": "Sydney, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA06B",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "ADL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-03-02",
+            "dep": "Sydney, Australia",
+            "arr": "Adelaide, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSM04A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "MEL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-03-02",
+            "dep": "Sydney, Australia",
+            "arr": "Melbourne, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZMS24C",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "MEL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-03-06",
+            "dep": "Melbourne, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZAS22D",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "ADL"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-03-08",
+            "dep": "Adelaide, Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZFS17A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "SYD"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-03-13",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Sydney, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZFB14A",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "JFM"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-03-13",
+            "dep": "Perth (Fremantle), Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSA05G",
+        "sailings": 1,
+        "ships": [
+          "RP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "AKL"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-03-27",
+            "dep": "Sydney, Australia",
+            "arr": "Auckland, New Zealand",
+            "ship": "RP"
+          }
+        ]
+      },
+      {
+        "itinerary_id": "ZSB03B",
+        "sailings": 1,
+        "ships": [
+          "AP"
+        ],
+        "departure_ports": [
+          "SYD"
+        ],
+        "arrival_ports": [
+          "BNE"
+        ],
+        "sample": [
+          {
+            "departure_date": "2028-04-13",
+            "dep": "Sydney, Australia",
+            "arr": "Brisbane, Australia",
+            "ship": "AP"
+          }
+        ]
+      }
+    ],
+    "region_classification": {
+      "australia_new_zealand_only": 115,
+      "asia_only": 0,
+      "mixed_or_unclear": 0
+    },
+    "mapping_recommendation": "retain australia-new-zealand for trade code Z"
+  },
+  "trade_code_0": {
+    "count": 1,
+    "sailings": [
+      {
+        "itinerary_id": "OFS11B",
+        "departure_date": "2028-02-12",
+        "dep": "Perth (Fremantle), Australia",
+        "arr": "Singapore"
+      }
+    ],
+    "treatment": "excluded_unresolved"
+  },
+  "eligibility_reconciliation": {
+    "expanded_dated_sailings": 1969,
+    "genuine_ocean": 1969,
+    "cruisetours_excluded": 0,
+    "within_21_day_cutoff": 64,
+    "publicly_eligible_ocean": 1905,
+    "complete_high_confidence_all": 1578,
+    "complete_high_confidence_public": 1514,
+    "gap_public_to_complete": 391,
+    "exclusion_reason_counts_among_incomplete_public": {
+      "complete_high_confidence": 1514,
+      "validation_gate": 391,
+      "low_confidence": 391,
+      "destination_unresolved": 1
+    },
+    "exclusion_sum": 2297
+  },
+  "dry_run_summary": {
+    "line_slug": "princess-cruises",
+    "run_id": "princess-weekly-1786063224346",
+    "run_type": "princess_weekly_maintenance",
+    "trigger_type": "production_dry_run",
+    "dry_run": true,
+    "official_source_total": 1005,
+    "eligible_total": 1514,
+    "active_production_total": 20,
+    "proposed_inserts": 1494,
+    "proposed_updates": 0,
+    "unchanged": 20,
+    "source_absent_active": 0,
+    "source_absent_sailing_ids": [],
+    "cruisetours_excluded": 0,
+    "incomplete_skipped": 391,
+    "within_public_cutoff_excluded": 64,
+    "public_booking_cutoff_days": 21,
+    "resolution_rates": {
+      "eligible_total": 1514,
+      "ship_resolution_pct": 100,
+      "departure_port_resolution_pct": 100,
+      "destination_resolution_pct": 100,
+      "identity_coverage_pct": 100,
+      "duplicate_official_identities": 0
+    },
+    "quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    },
+    "snapshot_id": "a5af27eebc5d279aef857eb5beeabf8656fd68b1d31a0c270cd97472bdbef7e8",
+    "inventory_changed": false
+  },
+  "quality_gate": {
+    "passed": true,
+    "failures": [],
+    "blocked": false
+  },
+  "proposed_inserts": 1494,
+  "proposed_updates": 0,
+  "unchanged": 20,
+  "ship_resolution_official_code": 1905
+}

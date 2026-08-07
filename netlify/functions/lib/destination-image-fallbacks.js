@@ -52,36 +52,8 @@ const DESTINATION_HEROES = {
   }
 };
 
-/** Port images keyed as `${destinationSlug}:${portSlug}` */
-const PORT_IMAGES = {
-  // Until Media Library assets are linked, use the approved Alaska hero with
-  // distinct crops so each card shows a photograph (not an empty placeholder).
-  "alaska:juneau": {
-    url: `${CF_IMAGES}/alaska-hero.png`,
-    objectPosition: "18% 42%",
-    alt: "Juneau, Alaska"
-  },
-  "alaska:skagway": {
-    url: `${CF_IMAGES}/alaska-hero.png`,
-    objectPosition: "48% 28%",
-    alt: "Skagway, Alaska"
-  },
-  "alaska:ketchikan": {
-    url: `${CF_IMAGES}/alaska-hero.png`,
-    objectPosition: "72% 48%",
-    alt: "Ketchikan, Alaska"
-  },
-  "alaska:sitka": {
-    url: `${CF_IMAGES}/alaska-hero.png`,
-    objectPosition: "35% 55%",
-    alt: "Sitka, Alaska"
-  },
-  "alaska:icy-strait-point": {
-    url: `${CF_IMAGES}/alaska-hero.png`,
-    objectPosition: "60% 35%",
-    alt: "Icy Strait Point, Alaska"
-  }
-};
+/** @deprecated Port static fallbacks removed — only Media Library port assets are shown. */
+const PORT_IMAGES = {};
 
 function cleanSlug(raw) {
   return String(raw || "")
@@ -103,30 +75,13 @@ function destinationHeroFallback(slug, name) {
   };
 }
 
-function portImageFallback(destinationSlug, portSlug, portName) {
-  const key = `${cleanSlug(destinationSlug)}:${cleanSlug(portSlug)}`;
-  const hit = PORT_IMAGES[key];
-  if (hit) {
-    return {
-      url: hit.url,
-      alt: hit.alt || portName || portSlug,
-      objectPosition: hit.objectPosition || "center center",
-      source: "static_fallback"
-    };
-  }
-  // Last resort: destination hero crop for known destinations
-  const hero = DESTINATION_HEROES[cleanSlug(destinationSlug)];
-  if (!hero) return null;
-  return {
-    url: hero.url,
-    alt: portName || portSlug || "Port",
-    objectPosition: "center 35%",
-    source: "static_fallback"
-  };
+function portImageFallback(_destinationSlug, _portSlug, _portName) {
+  return null;
 }
 
 /**
- * Fill missing hero / port media on a living destination DTO.
+ * Fill missing hero media on a living destination DTO.
+ * Port images are never synthesised from destination heroes or shared crops.
  */
 function applyDestinationImageFallbacks(page) {
   if (!page || typeof page !== "object") return page;
@@ -135,15 +90,6 @@ function applyDestinationImageFallbacks(page) {
   if (!page.hero?.url) {
     const hero = destinationHeroFallback(slug, page.name);
     if (hero) page.hero = hero;
-  }
-
-  if (Array.isArray(page.ports)) {
-    page.ports = page.ports.map((port) => {
-      if (port?.media?.url) return port;
-      const media = portImageFallback(slug, port.slug || port.name, port.name);
-      if (!media) return port;
-      return { ...port, media };
-    });
   }
 
   return page;

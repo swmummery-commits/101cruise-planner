@@ -1,0 +1,4 @@
+(node:19336) Warning: Accessing non-existent property 'SOURCE_CONTRACT' of module exports inside circular dependency
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19336) Warning: Accessing non-existent property 'validateCruise' of module exports inside circular dependency
+(node:19336) Warning: Accessing non-existent property 'extractDepartureDate' of module exports inside circular dependency

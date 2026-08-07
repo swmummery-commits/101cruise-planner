@@ -1,0 +1,72 @@
+{
+  "phase": "catch_up_idempotency",
+  "run_id": "princess-catch-up-idempotency-2026-08-07T05-58-02-486Z",
+  "run_record_id": "7b0a7b07-4484-4b80-99a3-f96fa8dbabf8",
+  "trigger_type": "catch_up_idempotency_verification",
+  "next_batch": true,
+  "expected_active_count": 120,
+  "expected_snapshot_id": "a5af27eebc5d279aef857eb5beeabf8656fd68b1d31a0c270cd97472bdbef7e8",
+  "result_ok": true,
+  "summary": {
+    "line_slug": "princess-cruises",
+    "run_id": "princess-catch-up-idempotency-2026-08-07T05-58-02-486Z",
+    "run_type": "princess_weekly_maintenance",
+    "trigger_type": "catch_up_idempotency_verification",
+    "dry_run": true,
+    "official_source_total": 1005,
+    "eligible_total": 1514,
+    "active_production_total": 120,
+    "proposed_inserts": 1394,
+    "proposed_updates": 0,
+    "unchanged": 120,
+    "source_absent_active": 0,
+    "source_absent_sailing_ids": [],
+    "cruisetours_excluded": 0,
+    "incomplete_skipped": 391,
+    "within_public_cutoff_excluded": 64,
+    "public_booking_cutoff_days": 21,
+    "resolution_rates": {
+      "eligible_total": 1514,
+      "ship_resolution_pct": 100,
+      "departure_port_resolution_pct": 100,
+      "destination_resolution_pct": 100,
+      "identity_coverage_pct": 100,
+      "duplicate_official_identities": 0
+    },
+    "quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    },
+    "snapshot_id": "a5af27eebc5d279aef857eb5beeabf8656fd68b1d31a0c270cd97472bdbef7e8",
+    "inventory_changed": false
+  },
+  "quality_gate": {
+    "passed": true,
+    "failures": [],
+    "blocked": false
+  },
+  "write_result": null,
+  "rollback_manifest_id": null,
+  "counts_before": {
+    "princess_active": 120,
+    "hal_active": 831,
+    "celebrity_active": 1204,
+    "manifests": 4
+  },
+  "counts_after": {
+    "princess_active": 120,
+    "hal_active": 831,
+    "celebrity_active": 1204,
+    "manifests": 4
+  },
+  "inserted_ids": [],
+  "inserted_verification": {
+    "ok": true,
+    "issues": [],
+    "minDeparture": "2026-08-29"
+  },
+  "princess_active_delta": 0,
+  "hal_unchanged": true,
+  "celebrity_unchanged": true
+}

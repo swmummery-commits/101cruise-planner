@@ -465,7 +465,7 @@ async function accessMyCruise() {
 
   if (typeof PortalLoading?.withLoading === "function") {
     try {
-      await PortalLoading.withLoading(run, { button, key: "customer-login" });
+      await PortalLoading.withLoading(run, { button, key: "customer-login", delayMs: 0 });
     } catch {
       /* message already shown */
     }
@@ -5551,10 +5551,23 @@ async function initPlanner() {
 
   const storedCustomerSession = getStoredCustomerSession();
   if (storedCustomerSession && activateCustomerSession(storedCustomerSession)) {
-    try {
+    const restoreSession = async () => {
       await refreshCustomerBookingFromCrm();
-      await customerPackingRequest("load");
+      try {
+        await customerPackingRequest("load");
+      } catch (error) {
+        // Packing is non-blocking for dashboard access; stale sessions should still open.
+        console.warn("Customer packing preload skipped", error);
+      }
       await renderDashboard();
+    };
+
+    try {
+      if (typeof PortalLoading?.withLoading === "function") {
+        await PortalLoading.withLoading(restoreSession, { key: "session-restore", delayMs: 0 });
+      } else {
+        await restoreSession();
+      }
       return;
     } catch (error) {
       console.warn("Stored customer session could not be restored", error);
@@ -5948,4 +5961,16 @@ if (typeof window !== "undefined") {
   window.renderDashboardCountdownPanel = renderDashboardCountdownPanel;
 }
 
-initPlanner();
+initPlanner().catch((error) => {
+  console.error("My Cruise failed to start", error);
+  try {
+    clearCustomerSession();
+    renderCustomerAccess("We couldn't open My Cruise just now. Please try again.", true);
+  } catch (_fallbackError) {
+    if (app) {
+      app.innerHTML =
+        '<main class="customer-access-page"><section class="customer-access-card planner-card">' +
+        '<p class="planner-error">We couldn\'t open My Cruise just now. Please refresh and try again.</p></section></main>';
+    }
+  }
+});

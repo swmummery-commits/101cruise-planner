@@ -220,18 +220,18 @@
     const cards = ports
       .map((port) => {
         const image = Data.resolvePortImage(port);
+        const hasRealImage = Boolean(port.mediaId && image.url);
         const href = port.guideHref || `#ports`;
         const mediaAttr = port.mediaKey ? ` data-media-key="${esc(port.mediaKey)}"` : "";
         const mediaIdAttr = port.mediaId ? ` data-media-id="${esc(port.mediaId)}"` : "";
-        const placeholderClass = image.source === "placeholder" ? " is-placeholder" : "";
-        const imgHtml = image.url
-          ? `<img src="${esc(image.url)}" alt="${esc(image.alt)}" loading="lazy">`
-          : `<div class="dest-port-placeholder" aria-hidden="true"></div>`;
+        const mediaHtml = hasRealImage
+          ? `<div class="dest-port-media" style="--dest-port-pos: ${esc(image.objectPosition || "center center")}">
+            <img src="${esc(image.url)}" alt="${esc(image.alt)}" loading="lazy">
+          </div>`
+          : "";
         return `
-        <a class="dest-port-card${placeholderClass}" href="${esc(href)}" data-port-slug="${esc(port.slug || "")}"${mediaAttr}${mediaIdAttr} aria-label="${esc(port.name)}${port.guideHref ? "" : " — port guide coming soon"}">
-          <div class="dest-port-media" style="--dest-port-pos: ${esc(image.objectPosition || "center center")}">
-            ${imgHtml}
-          </div>
+        <a class="dest-port-card${hasRealImage ? "" : " dest-port-card--text-only"}" href="${esc(href)}" data-port-slug="${esc(port.slug || "")}"${mediaAttr}${mediaIdAttr} aria-label="${esc(port.name)}${port.guideHref ? "" : " — port guide coming soon"}">
+          ${mediaHtml}
           <div class="dest-port-body">
             <h3 class="dest-port-name">${esc(port.name)}</h3>
             <p class="dest-port-desc">${esc(port.description)}</p>

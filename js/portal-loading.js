@@ -231,6 +231,11 @@
     messageEl = overlayEl.querySelector(".portal-loading-message");
     supportEl = overlayEl.querySelector(".portal-loading-support");
 
+    const spinnerEl = overlayEl.querySelector(".brand-loading-boxes");
+    if (spinnerEl && typeof BrandLoading !== "undefined" && BrandLoading.play) {
+      BrandLoading.play(spinnerEl);
+    }
+
     if (prefersReducedMotion()) {
       overlayEl.classList.add("portal-loading-reduced-motion");
     }
@@ -360,7 +365,11 @@
       }
     }
 
-    delayTimer = setTimeout(startUi, Math.max(0, delayMs));
+    if (delayMs <= 0) {
+      startUi();
+    } else {
+      delayTimer = setTimeout(startUi, delayMs);
+    }
 
     try {
       return await asyncFn();
