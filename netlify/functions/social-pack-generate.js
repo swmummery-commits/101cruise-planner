@@ -30,6 +30,7 @@ const {
 const { buildSocialPackZip } = require("./lib/social-pack-zip");
 const { buildCaption } = require("./lib/social-pack-caption");
 const { uploadZipAndSign } = require("./lib/social-pack-export-storage");
+const { normaliseTemplate } = require("./lib/social-pack-template");
 
 /** Stay under Netlify sync response practical limit (~6MB). */
 const PREVIEW_SAFE_BYTES = Math.floor(5.5 * 1024 * 1024);
@@ -151,10 +152,11 @@ function logPreview(event) {
   }
 }
 
-async function buildPackForCruise(id, { index = 1, treatment = "soft", includedRoomLabels, manualMediaId } = {}) {
+async function buildPackForCruise(id, { index = 1, treatment = "soft", template = "classic", includedRoomLabels, manualMediaId } = {}) {
   let model = await loadFeaturedCruisePackModel(id, {
     index,
     treatment,
+    template: normaliseTemplate(template),
     manualMediaId: manualMediaId || null
   });
   applyRoomSelection(model, includedRoomLabels);
@@ -184,6 +186,7 @@ async function handlePreview(body) {
     return jsonResponse(400, safeClientError("featured_cruise_id is required", correlationId));
   }
   const treatment = normaliseTreatment(body.treatment);
+  const template = normaliseTemplate(body.template);
   const { includedRoomLabels, manualMediaId } = cruiseOptionsFromBody(body, id);
 
   try {
@@ -193,12 +196,14 @@ async function handlePreview(body) {
       stage,
       featured_cruise_id: id,
       correlation_id: correlationId,
+      template,
       preview_dimensions: { width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT }
     });
 
     let model = await loadFeaturedCruisePackModel(id, {
       index: 1,
       treatment,
+      template,
       manualMediaId: manualMediaId || null
     });
     const availableOffers = [...(model.offers || [])];
@@ -234,6 +239,7 @@ async function handlePreview(body) {
       caption: model.caption,
       warnings: model.readiness.warnings || [],
       treatment: model.treatment,
+      template: model.template,
       preview: true,
       correlation_id: correlationId,
       background: {
@@ -320,6 +326,7 @@ async function handleDownloadIssue(body) {
     return jsonResponse(400, { success: false, error: "newsletter_number is required" });
   }
   const treatment = normaliseTreatment(body.treatment);
+  const template = normaliseTemplate(body.template);
   let ids = Array.isArray(body.featured_cruise_ids)
     ? body.featured_cruise_ids.map((id) => String(id || "").trim()).filter(Boolean)
     : [];
@@ -338,6 +345,7 @@ async function handleDownloadIssue(body) {
     const result = await buildPackForCruise(ids[i], {
       index: i + 1,
       treatment,
+      template,
       includedRoomLabels: opts.includedRoomLabels,
       manualMediaId: opts.manualMediaId
     });
@@ -374,10 +382,12 @@ async function handleDownloadCruise(body) {
   }
   const newsletterNumber = Number(body.newsletter_number) || 0;
   const treatment = normaliseTreatment(body.treatment);
+  const template = normaliseTemplate(body.template);
   const { includedRoomLabels, manualMediaId } = cruiseOptionsFromBody(body, id);
   const result = await buildPackForCruise(id, {
     index: Math.max(1, Math.trunc(Number(body.index) || 1)),
     treatment,
+    template,
     includedRoomLabels,
     manualMediaId
   });

@@ -44,6 +44,8 @@ const {
   buildSlidePlan,
   renderCruisePack
 } = require("../netlify/functions/lib/social-pack-render.js");
+const { normaliseTemplate } = require("../netlify/functions/lib/social-pack-template.js");
+const { renderPremiumDarkOfferSvg, resolvePremiumDarkRoute } = require("../netlify/functions/lib/social-pack-premium-dark.js");
 const { buildSocialPackZip } = require("../netlify/functions/lib/social-pack-zip.js");
 const { assessReadiness } = require("../netlify/functions/lib/social-pack-data.js");
 const {
@@ -532,6 +534,96 @@ async function main() {
     assert(!caption.toLowerCase().includes("airline"), "caption no airline");
     assert(!/US\$|FROM US\$|per person in USD|Ask Paul for his best price/i.test(caption), "caption has no pricing");
     assert(!caption.includes("Includes:"), "caption omits inclusion list");
+    passed += 1;
+  }
+
+  // Template selection — classic default, premium_dark offer slides
+  {
+    const templateModel = {
+      backgroundDataUri: tinyPngDataUri(),
+      brandLogoDataUri: tinyPngDataUri(),
+      routeHeadline: "BARCELONA TO ISTANBUL",
+      departurePort: "Barcelona, Spain",
+      arrivalPort: "Istanbul, Turkey",
+      inclusions: ["Wi-Fi", "Gratuities", "Alcohol Package", "All Dining"],
+      offers: [
+        {
+          roomLabel: "Balcony",
+          roomLabelDisplay: "BALCONY",
+          roomSlug: "balcony",
+          brochureLabel: "US$10,498",
+          priceLabel: "US$1,498",
+          showBrochure: true,
+          brochurePrice: 10498,
+          cruise101Price: 1498
+        }
+      ],
+      offer: {
+        roomLabel: "Balcony",
+        roomLabelDisplay: "BALCONY",
+        roomSlug: "balcony",
+        brochureLabel: "US$10,498",
+        priceLabel: "US$1,498",
+        showBrochure: true,
+        brochurePrice: 10498,
+        cruise101Price: 1498
+      }
+    };
+
+    assert(normaliseTemplate(undefined) === "classic", "no template → classic");
+    assert(normaliseTemplate("classic") === "classic", "classic → classic");
+    assert(normaliseTemplate("premium_dark") === "premium_dark", "premium_dark → premium_dark");
+    assert(normaliseTemplate("premium-dark") === "premium_dark", "hyphen alias");
+    assert(normaliseTemplate("unknown") === "classic", "invalid → classic");
+
+    const classicOffer = renderOfferSvg(templateModel, 0);
+    assert(classicOffer.includes("BROCHURE PRICE"), "classic retains brochure pill");
+    assert(classicOffer.includes(">INCLUDES<"), "classic retains includes heading");
+
+    const pdOffer = renderPremiumDarkOfferSvg(templateModel, 0);
+    assert(pdOffer.includes("BARCELONA TO ISTANBUL"), "premium dark route");
+    assert(pdOffer.includes("$10,498*") || pdOffer.includes("10,498"), "premium dark brochure price");
+    assert(pdOffer.includes(GREEN), "premium dark website green");
+    assert(pdOffer.includes(">BALCONY<"), "premium dark cabin type");
+    assert(pdOffer.includes(">WI-FI<") || pdOffer.includes("WI-FI"), "premium dark inclusion label");
+    assert(pdOffer.includes(">GRATUITIES<") || pdOffer.includes("GRATUITIES"), "premium dark gratuities");
+    assert(!pdOffer.includes(">INCLUDES<"), "premium dark omits INCLUDES heading");
+    assert(!pdOffer.includes("BROCHURE PRICE"), "premium dark omits brochure pill label");
+    assert(!pdOffer.includes("101CRUISE PRICE"), "premium dark omits price pill label");
+    assert(!pdOffer.includes("per person"), "premium dark omits per person pill copy");
+    assert(pdOffer.includes("* Price in US dollars"), "premium dark disclaimer");
+    assert(pdOffer.includes('stroke="#F80020"'), "red strike-through");
+    assert(pdOffer.includes('stroke="#DDE2E8"'), "subtle light divider line");
+
+    const marketingModel = {
+      ...templateModel,
+      headline: "Greek Isles, Mediterranean Escape on an unforgettable voyage",
+      destinationStrip: "GREEK ISLES, MEDITERRANEAN ESCAPE",
+      routeHeadline: "",
+      departurePort: "Athens",
+      arrivalPort: "Istanbul, Turkey",
+      ports: ["Athens", "Santorini", "Istanbul"]
+    };
+    assert(resolvePremiumDarkRoute(marketingModel) === "ATHENS TO ISTANBUL", "route from itinerary ports");
+    const marketingSvg = renderPremiumDarkOfferSvg(marketingModel, 0);
+    assert(marketingSvg.includes("ATHENS TO ISTANBUL"), "premium dark shows endpoints not marketing");
+    assert(!marketingSvg.includes("GREEK ISLES"), "premium dark excludes destination strip copy");
+
+    const classicPack = await renderCruisePack({ ...templateModel, template: "classic" });
+    const pdPack = await renderCruisePack({ ...templateModel, template: "premium_dark" });
+    assert(classicPack.svgs["02-offer-balcony.png"] !== pdPack.svgs["02-offer-balcony.png"], "offer svg differs by template");
+    assert(
+      classicPack.svgs["01-main-cruise.png"] === pdPack.svgs["01-main-cruise.png"],
+      "main slide unchanged for premium_dark"
+    );
+    assert(
+      classicPack.svgs["final-call-to-action.png"] === pdPack.svgs["final-call-to-action.png"],
+      "cta slide unchanged for premium_dark"
+    );
+
+    const invalidPack = await renderCruisePack({ ...templateModel, template: "futuristic" });
+    assert(invalidPack.svgs["02-offer-balcony.png"] === classicPack.svgs["02-offer-balcony.png"], "invalid template falls back to classic");
+
     passed += 1;
   }
 

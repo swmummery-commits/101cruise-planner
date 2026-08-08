@@ -10,6 +10,7 @@ const {
   renderOfferSvg,
   renderCtaSvg
 } = require("./social-pack-svg");
+const { normaliseTemplate } = require("./social-pack-template");
 
 const MAX_BYTES = 8 * 1024 * 1024;
 const FETCH_TIMEOUT_MS = 20000;
@@ -508,7 +509,13 @@ async function renderCruisePack(model, options = {}) {
       const { renderMasterConceptA } = require("./social-pack-master-slide");
       svg = renderMasterConceptA(slideModel);
     } else if (item.kind === "offer") {
-      svg = renderOfferSvg(slideModel, item.offerIndex || 0);
+      const template = normaliseTemplate(model.template);
+      if (template === "premium_dark") {
+        const { renderPremiumDarkOfferSvg } = require("./social-pack-premium-dark");
+        svg = renderPremiumDarkOfferSvg(slideModel, item.offerIndex || 0);
+      } else {
+        svg = renderOfferSvg(slideModel, item.offerIndex || 0);
+      }
     } else if (item.kind === "journey") {
       // Not part of the approved weekly pack; kept for optional/legacy use only.
       svg = renderJourneySvg(slideModel);

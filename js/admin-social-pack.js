@@ -13,6 +13,7 @@
   let message = "";
   let messageTone = "";
   let treatment = "soft";
+  let packTemplate = "classic";
   let socialMediaId = null;
   let imagePickerOpen = false;
   let imagePickerTab = "recommended";
@@ -96,6 +97,7 @@
     previewId = null;
     socialMediaId = null;
     treatment = "soft";
+    packTemplate = "classic";
     imagePickerOpen = false;
     roomSelections = {};
     candidateCache = {};
@@ -201,6 +203,7 @@
             action: "preview",
             featured_cruise_id: id,
             treatment,
+            template: packTemplate,
             social_media_id: socialMediaId,
             included_room_labels: includedRoomsFor(id)
           })
@@ -250,6 +253,13 @@
   async function regeneratePreview() {
     if (!previewId || busy) return;
     await previewCruise(previewId);
+  }
+
+  async function setPackTemplate(value) {
+    packTemplate = String(value || "classic").toLowerCase();
+    if (!["classic", "premium_dark"].includes(packTemplate)) packTemplate = "classic";
+    if (previewId) await regeneratePreview();
+    else rerender();
   }
 
   async function setTreatment(value) {
@@ -387,6 +397,7 @@
         featured_cruise_id: cruiseId,
         index,
         treatment,
+        template: packTemplate,
         social_media_id: cruiseId === previewId ? socialMediaId : null,
         included_room_labels: includedRoomsFor(cruiseId),
         cruise_options: buildCruiseOptions([cruiseId])
@@ -425,6 +436,7 @@
                 featured_cruise_id: ids[0],
                 index: 1,
                 treatment,
+                template: packTemplate,
                 social_media_id: ids[0] === previewId ? socialMediaId : null,
                 included_room_labels: includedRoomsFor(ids[0])
               })
@@ -532,6 +544,7 @@
                 cruises.findIndex((c) => c.id === previewId) + 1
               ),
               treatment,
+              template: packTemplate,
               social_media_id: socialMediaId,
               included_room_labels: includedRoomsFor(previewId)
             })
@@ -760,6 +773,20 @@
                   ? `
                     <div class="social-pack-controls">
                       <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.openImagePicker()" ${busy ? "disabled" : ""}>Change Social Image</button>
+                      <div class="social-pack-treatment" role="group" aria-label="Pack template">
+                        <span class="admin-small">Template</span>
+                        ${[
+                          ["classic", "Classic"],
+                          ["premium_dark", "Premium Dark"]
+                        ]
+                          .map(
+                            ([value, label]) =>
+                              `<button type="button" class="media-filter-chip ${
+                                packTemplate === value ? "is-active" : ""
+                              }" onclick="SocialPackAdmin.setPackTemplate('${value}')" ${busy ? "disabled" : ""}>${label}</button>`
+                          )
+                          .join("")}
+                      </div>
                       <div class="social-pack-treatment" role="group" aria-label="Background treatment">
                         <span class="admin-small">Background</span>
                         ${["clear", "soft", "strong"]
@@ -835,6 +862,7 @@
     downloadThisCruise,
     stepPreview,
     setTreatment,
+    setPackTemplate,
     openImagePicker,
     closeImagePicker,
     setImagePickerTab,

@@ -26,6 +26,7 @@ const {
   resolveSocialBackground,
   buildDestinationPickerSections
 } = require("./social-pack-destination");
+const { normaliseTemplate } = require("./social-pack-template");
 
 function config() {
   const url = process.env.SUPABASE_URL;
@@ -158,6 +159,7 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
   const index = options.index || 1;
   const manualMediaId = options.manualMediaId || options.social_media_id || null;
   const treatment = String(options.treatment || "soft").toLowerCase();
+  const template = normaliseTemplate(options.template);
 
   const rows = await supabase(
     `/rest/v1/featured_cruises?id=eq.${encodeURIComponent(id)}&select=id,headline,destination_strip,departure_date,return_date,departure_port,arrival_port,nights,short_editorial,itinerary_summary,public_slug,publication_status,newsletter_number,display_order,hero_media_id,hero_image_url,hero_image_alt,route_map_media_id,route_map_image_url,route_map_png_path,route_map_status,cruise_line_id,cruise_ship_id,alcohol_package,wifi,gratuities,all_tours,all_dining,laundry,onboard_credit,other_information,ci_cruise_lines(name,logo_url),ci_cruise_ships(name,hero_image_url)&limit=1`
@@ -293,6 +295,7 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
       ])
     ),
     treatment,
+    template,
     // Approved pack treatments (locked):
     // main → mild master soften; pricing → clear photo; CTA → strong blur
     slideTreatments: {
