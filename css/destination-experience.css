@@ -441,12 +441,15 @@
   min-height: 44px;
 }
 
-.dx-style-tile.is-active,
+.dx-style-tile.is-active {
+  background: #8dd9bf;
+  color: var(--dx-ink);
+  border-color: #8dd9bf;
+}
+
 .dx-style-tile:focus-visible {
-  background: var(--dx-ink);
-  color: #fff;
-  border-color: var(--dx-ink);
-  outline: none;
+  outline: 2px solid var(--dx-ink);
+  outline-offset: 2px;
 }
 
 .dx-style-panel {
