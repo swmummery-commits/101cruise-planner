@@ -1,19 +1,29 @@
 /**
- * Premium Dark Social Pack offer slide — Qantas-style layout with 101cruise branding.
- * Offer/pricing slides only (slides 2–4). Main and CTA remain Classic.
+ * Premium Dark Social Pack — main + offer slides.
+ * Classic main/offer/CTA remain untouched in their own modules.
  */
 
 const { escapeXml, buildRouteHeadline } = require("./social-pack-copy");
 const { FAMILY } = require("./social-pack-fonts");
 const { GREEN } = require("./social-pack-svg");
 const { displayPrice } = require("./social-pack-offer-cta");
+const {
+  curatedPorts,
+  masterBackground,
+  greenFooter,
+  FOOTER_H,
+  WIDTH: W,
+  HEIGHT: H
+} = require("./social-pack-master-slide");
 
-const W = 1080;
-const H = 1350;
 const WHITE = "#FFFFFF";
 const RED = "#F80020";
 const LIGHT_GREY = "#C8CDD4";
 const DIVIDER_STROKE = "#DDE2E8";
+const ROUTE_FONT_SIZE = 88;
+const ROUTE_FONT_WEIGHT = 800;
+const BROCHURE_FONT_SIZE = 44;
+const DISCLAIMER_TEXT = "* prices are per person in USD & subject to availability.";
 
 function frame(body) {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -63,14 +73,13 @@ function premiumDarkBackground(model) {
     </g>`;
 }
 
-function brandLogo(model, { y, size = 140 } = {}) {
+function brandLogo(model, { y, size = 130 } = {}) {
   if (model.brandLogoDataUri) {
     return `<image href="${model.brandLogoDataUri}" x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" preserveAspectRatio="xMidYMid meet"/>`;
   }
   return `<rect x="${(W - size) / 2}" y="${y}" width="${size}" height="${size}" fill="${RED}"/>`;
 }
 
-/** Inline 3×3 nine-red-square brand motif for divider centre. */
 function nineSquareMotif(cx, cy, { size = 30 } = {}) {
   const cell = size / 3;
   const gap = 1.2;
@@ -98,10 +107,6 @@ function brandDivider(y) {
   `;
 }
 
-/**
- * Premium Dark route — always ORIGIN TO DESTINATION from itinerary endpoints.
- * Never uses marketing headline or destination_strip copy.
- */
 function resolvePremiumDarkRoute(model) {
   const fromPorts = buildRouteHeadline(model.departurePort, model.arrivalPort);
   if (fromPorts) return fromPorts;
@@ -138,20 +143,128 @@ function estimateMontserratWidth(text, fontSize) {
 
 function routeText(model) {
   const raw = resolvePremiumDarkRoute(model);
-  if (!raw) return { text: "", fontSize: 32 };
-  let fontSize = 32;
-  if (raw.length > 36) fontSize = 28;
-  if (raw.length > 44) fontSize = 24;
-  if (raw.length > 52) fontSize = 20;
-  const maxW = W - 80;
-  while (fontSize >= 18 && estimateMontserratWidth(raw, fontSize) > maxW) {
+  if (!raw) return { text: "", fontSize: ROUTE_FONT_SIZE };
+  let fontSize = ROUTE_FONT_SIZE;
+  const maxW = W - 72;
+  while (fontSize >= 52 && estimateMontserratWidth(raw, fontSize) > maxW) {
     fontSize -= 2;
   }
-  return { text: raw, fontSize };
+  return { text: raw, fontSize, fontWeight: ROUTE_FONT_WEIGHT };
+}
+
+function mainRouteHeadline(model, { x = 540, y = 280, size = ROUTE_FONT_SIZE } = {}) {
+  const route = resolvePremiumDarkRoute(model) || String(model.routeHeadline || model.destinationStrip || "").trim();
+  let from = "BARCELONA";
+  let to = "ISTANBUL";
+  if (/ TO /i.test(route)) {
+    const parts = route.split(/\s+TO\s+/i);
+    from = (parts[0] || from).toUpperCase();
+    to = (parts[1] || to).toUpperCase();
+  } else if (route) {
+    from = route.toUpperCase();
+    to = "";
+  }
+  const lineGap = Math.round(size * 1.02);
+  if (!to) {
+    return `<text x="${x}" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="${ROUTE_FONT_WEIGHT}">${escapeXml(
+      from
+    )}</text>`;
+  }
+  return `
+    <text x="${x}" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="${ROUTE_FONT_WEIGHT}">${escapeXml(
+      from
+    )}</text>
+    <text x="${x}" y="${y + lineGap}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="${ROUTE_FONT_WEIGHT}">${escapeXml(
+      "TO"
+    )}</text>
+    <text x="${x}" y="${y + lineGap * 2}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="${ROUTE_FONT_WEIGHT}">${escapeXml(
+      to
+    )}</text>`;
+}
+
+function nightsDatesLine(model, { x = 540, y, size = 36 } = {}) {
+  const nights = String(model.nightsLabel || "").toUpperCase() || "10 NIGHTS";
+  const dates = String(model.dateRangeFull || model.dateRange || "").toUpperCase();
+  const text = dates ? `${nights}  |  ${dates}` : nights;
+  return `<text x="${x}" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="700">${escapeXml(
+    text
+  )}</text>`;
+}
+
+function shipLabel(model) {
+  const ship = String(model.shipName || "OCEANIA SIRENA").toUpperCase();
+  return /oceania/i.test(ship) ? ship : `OCEANIA ${ship}`.replace(/\s+/g, " ").trim();
+}
+
+function shipLine(model, { x = 540, y, size = 36 } = {}) {
+  return `<text x="${x}" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="700">${escapeXml(
+    shipLabel(model)
+  )}</text>`;
+}
+
+function portsLine(ports, { y, fontSize = 40 } = {}) {
+  const text = ports.join(" · ");
+  const lineGap = Math.round(fontSize * 1.28);
+  if (text.length > 42) {
+    const mid = Math.ceil(ports.length / 2);
+    const line1 = ports.slice(0, mid).join(" · ");
+    const line2 = ports.slice(mid).join(" · ");
+    return `
+      <text x="540" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
+        line1
+      )}</text>
+      <text x="540" y="${y + lineGap}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
+        line2
+      )}</text>`;
+  }
+  return `<text x="540" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
+    text
+  )}</text>`;
+}
+
+/** Bottom-anchored inverted white shield for the cruise-line logo. */
+function cruiseLineLogoBottom(model, { footerH = FOOTER_H } = {}) {
+  const tipH = 20;
+  const padX = 36;
+  const padTop = 14;
+  const padBottom = 18;
+  const lw = Number(model.cruiseLineLogoWidth) || 0;
+  const lh = Number(model.cruiseLineLogoHeight) || 0;
+  const aspect = lw > 0 && lh > 0 ? lw / lh : 3.1;
+  const logoH = 72;
+  const logoW = Math.min(420, Math.round(logoH * aspect));
+  const bannerW = logoW + padX * 2;
+  const bodyH = padTop + logoH + padBottom;
+  const bannerH = bodyH + tipH;
+  const x = (W - bannerW) / 2;
+  const baseY = H - footerH;
+  const path = [
+    `M ${x} ${baseY}`,
+    `L ${x + bannerW} ${baseY}`,
+    `L ${x + bannerW} ${baseY - bodyH}`,
+    `L ${x + bannerW / 2} ${baseY - bannerH}`,
+    `L ${x} ${baseY - bodyH}`,
+    "Z"
+  ].join(" ");
+  const logoY = baseY - bodyH + padTop;
+  if (model.cruiseLineLogoDataUri) {
+    return `
+      <g>
+        <path d="${path}" fill="${WHITE}"/>
+        <image href="${model.cruiseLineLogoDataUri}" x="${x + padX}" y="${logoY}" width="${logoW}" height="${logoH}" preserveAspectRatio="xMidYMid meet"/>
+      </g>`;
+  }
+  return `
+    <g>
+      <path d="${path}" fill="${WHITE}"/>
+      <text x="540" y="${logoY + Math.round(logoH * 0.72)}" text-anchor="middle" fill="#111" font-family="${FAMILY}" font-size="24" font-weight="700">${escapeXml(
+        String(model.lineName || "").toUpperCase()
+      )}</text>
+    </g>`;
 }
 
 function brochurePriceBlock(price, y) {
-  const fontSize = 44;
+  const fontSize = BROCHURE_FONT_SIZE;
   const textW = estimateMontserratWidth(price, fontSize);
   const cx = W / 2;
   const strikeY = y - Math.round(fontSize * 0.35);
@@ -165,7 +278,8 @@ function brochurePriceBlock(price, y) {
 
 function cruise101PriceBlock(price, y) {
   const approxChars = Math.max(5, String(price).length);
-  let fontSize = Math.min(108, Math.max(72, Math.round(560 / approxChars)));
+  const minHero = Math.round(BROCHURE_FONT_SIZE * 1.32);
+  let fontSize = Math.min(132, Math.max(minHero, Math.round(620 / approxChars)));
   const cx = W / 2;
   return `
     <text x="${cx}" y="${y}" text-anchor="middle" fill="${GREEN}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="800">${escapeXml(
@@ -198,7 +312,7 @@ function cabinPill(label, y) {
 function listInclusionItems(model) {
   const raw = Array.isArray(model.inclusions) ? model.inclusions : [];
   const items = raw.map((s) => String(s || "").trim()).filter(Boolean);
-  if (items.length) return items.slice(0, 4);
+  if (items.length) return items.slice(0, 8);
   if (model.primaryInclusion) return [String(model.primaryInclusion).trim()].filter(Boolean);
   return [];
 }
@@ -210,7 +324,20 @@ function normaliseInclusionLabel(item) {
     .toUpperCase();
 }
 
-function inclusionIcon(label, cx, cy, size = 36) {
+/**
+ * Distribute N benefits into row counts (max 4 per row).
+ * 1–4 → one row; 5→3+2; 6→3+3; 7→4+3; 8→4+4
+ */
+function distributeBenefitRows(count) {
+  const n = Math.max(0, Math.min(8, Math.trunc(Number(count) || 0)));
+  if (n <= 4) return [n];
+  if (n === 5) return [3, 2];
+  if (n === 6) return [3, 3];
+  if (n === 7) return [4, 3];
+  return [4, 4];
+}
+
+function inclusionIcon(label, cx, cy, size = 34) {
   const key = String(label || "").toLowerCase();
   const s = size;
   const half = s / 2;
@@ -264,7 +391,6 @@ function inclusionIcon(label, cx, cy, size = 36) {
         <circle cx="${half}" cy="${half}" r="${s * 0.12}" fill="none" stroke="${GREEN}" stroke-width="2.4"/>
       </g>`;
   }
-  // Generic checkmark fallback
   return `
     <g transform="translate(${x} ${y})">
       <circle cx="${half}" cy="${half}" r="${s * 0.32}" fill="none" stroke="${GREEN}" stroke-width="2.6"/>
@@ -272,47 +398,114 @@ function inclusionIcon(label, cx, cy, size = 36) {
     </g>`;
 }
 
-function benefitsPanel(items, { y, h = 220 } = {}) {
-  const list = (items || []).filter(Boolean).slice(0, 4);
-  if (!list.length) return "";
+function measureBenefitsPanel(items) {
+  const list = (items || []).filter(Boolean).slice(0, 8);
+  if (!list.length) return { height: 0, rows: [] };
+
+  const rowCounts = distributeBenefitRows(list.length);
+  const rows = [];
+  let idx = 0;
+  for (const count of rowCounts) {
+    rows.push(list.slice(idx, idx + count));
+    idx += count;
+  }
+
+  const padTop = 22;
+  const rowBlockH = 78;
+  const rowGap = 16;
+  const disclaimerBlockH = 46;
+  const height =
+    padTop + rows.length * rowBlockH + Math.max(0, rows.length - 1) * rowGap + disclaimerBlockH;
+
+  return { height, rows, padTop, rowBlockH, rowGap, disclaimerBlockH };
+}
+
+function benefitsPanel(items, { y } = {}) {
+  const layout = measureBenefitsPanel(items);
+  if (!layout.rows.length) return { svg: "", height: 0, y };
 
   const marginX = 56;
   const panelW = W - marginX * 2;
   const panelX = marginX;
   const panelY = y;
-  const count = list.length;
-  const colW = panelW / count;
-  const iconY = panelY + 52;
-  const labelSize = count >= 4 ? 17 : count === 3 ? 19 : 21;
-  const labelY = panelY + 108;
+  const maxCols = 4;
+  const colW = panelW / maxCols;
+  const iconSize = 34;
 
-  const separators = [];
-  for (let i = 1; i < count; i += 1) {
-    const sx = panelX + colW * i;
-    separators.push(
-      `<line x1="${sx}" y1="${panelY + 28}" x2="${sx}" y2="${panelY + h - 28}" stroke="${GREEN}" stroke-width="1.5" stroke-opacity="0.65"/>`
-    );
+  const rowParts = [];
+  let rowY = panelY + layout.padTop;
+  for (const rowItems of layout.rows) {
+    const n = rowItems.length;
+    const rowSpanW = colW * n;
+    const rowStartX = panelX + (panelW - rowSpanW) / 2;
+    const labelSize = n >= 4 ? 16 : n === 3 ? 18 : 20;
+    const iconY = rowY + 18;
+    const labelY = rowY + 58;
+
+    const separators = [];
+    for (let i = 1; i < n; i += 1) {
+      const sx = rowStartX + colW * i;
+      separators.push(
+        `<line x1="${sx}" y1="${rowY - 4}" x2="${sx}" y2="${rowY + 66}" stroke="${GREEN}" stroke-width="1.5" stroke-opacity="0.55"/>`
+      );
+    }
+
+    const cols = rowItems
+      .map((item, i) => {
+        const cx = rowStartX + colW * i + colW / 2;
+        const label = normaliseInclusionLabel(item);
+        let ls = labelSize;
+        while (ls >= 13 && estimateMontserratWidth(label, ls) > colW - 14) ls -= 1;
+        return `
+          ${inclusionIcon(item, cx, iconY, iconSize)}
+          <text x="${cx}" y="${labelY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${ls}" font-weight="700" letter-spacing="0.5">${escapeXml(
+            label
+          )}</text>`;
+      })
+      .join("\n");
+
+    rowParts.push(`${separators.join("\n")}${cols}`);
+    rowY += layout.rowBlockH + layout.rowGap;
   }
 
-  const columns = list
-    .map((item, i) => {
-      const cx = panelX + colW * i + colW / 2;
-      const label = normaliseInclusionLabel(item);
-      let ls = labelSize;
-      while (ls >= 14 && estimateMontserratWidth(label, ls) > colW - 16) ls -= 1;
-      return `
-        ${inclusionIcon(item, cx, iconY, 38)}
-        <text x="${cx}" y="${labelY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${ls}" font-weight="700" letter-spacing="0.6">${escapeXml(
-          label
-        )}</text>`;
-    })
-    .join("\n");
+  const disclaimerY = panelY + layout.height - 18;
+  const separatorY = panelY + layout.height - layout.disclaimerBlockH + 6;
 
-  return `
-    <rect x="${panelX}" y="${panelY}" width="${panelW}" height="${h}" rx="28" fill="#000000" fill-opacity="0.88" stroke="${GREEN}" stroke-width="2"/>
-    ${separators.join("\n")}
-    ${columns}
+  const svg = `
+    <rect x="${panelX}" y="${panelY}" width="${panelW}" height="${layout.height}" rx="24" fill="#000000" fill-opacity="0.88" stroke="${GREEN}" stroke-width="2"/>
+    ${rowParts.join("\n")}
+    <line x1="${panelX + 24}" y1="${separatorY}" x2="${panelX + panelW - 24}" y2="${separatorY}" stroke="${GREEN}" stroke-width="1" stroke-opacity="0.35"/>
+    <text x="${W / 2}" y="${disclaimerY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="13" font-weight="400">${escapeXml(
+      DISCLAIMER_TEXT
+    )}</text>
   `;
+
+  return { svg, height: layout.height, y: panelY };
+}
+
+/** Premium Dark main slide — 101cruise top, cruise line bottom tab. */
+function renderPremiumDarkMainSvg(model) {
+  const ports = curatedPorts(model);
+  const headlineY = 280;
+  const headlineLineGap = Math.round(ROUTE_FONT_SIZE * 1.02);
+  const headlineEnd = headlineY + headlineLineGap * 2;
+  const portsY = 740;
+  const midGap = (headlineEnd + portsY) / 2;
+  const nightsDatesY = Math.round(midGap - 24);
+  const shipY = nightsDatesY + 48;
+
+  const body = `
+    ${masterBackground(model, { concept: "a" })}
+    ${brandLogo(model, { y: 36, size: 130 })}
+    ${brandDivider(198)}
+    ${mainRouteHeadline(model, { y: headlineY, size: ROUTE_FONT_SIZE })}
+    ${nightsDatesLine(model, { y: nightsDatesY, size: 36 })}
+    ${shipLine(model, { y: shipY, size: 36 })}
+    ${portsLine(ports, { y: portsY, fontSize: 40 })}
+    ${cruiseLineLogoBottom(model)}
+    ${greenFooter()}
+  `;
+  return frame(body);
 }
 
 /** Premium Dark offer / pricing slide */
@@ -341,31 +534,35 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
   const room = offer.roomLabelDisplay || offer.roomLabel || "";
   const includeItems = listInclusionItems(model);
 
+  const panelBottomMargin = 52;
+  const panelLayout = measureBenefitsPanel(includeItems);
+  const panelY = panelLayout.height
+    ? H - panelBottomMargin - panelLayout.height
+    : H - panelBottomMargin;
+  const benefits = benefitsPanel(includeItems, { y: panelY });
+
   const logoY = 36;
   const dividerY = 198;
   const route = routeText(model);
-  let cursorY = dividerY + 52;
+  let cursorY = dividerY + 48;
 
   let routeBlock = "";
   if (route.text) {
-    routeBlock = `<text x="540" y="${cursorY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${route.fontSize}" font-weight="600" letter-spacing="1.6">${escapeXml(
+    routeBlock = `<text x="540" y="${cursorY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${route.fontSize}" font-weight="${route.fontWeight}" letter-spacing="1.4">${escapeXml(
       route.text
     )}</text>`;
-    cursorY += 56;
+    cursorY += Math.round(route.fontSize * 0.95);
   }
 
+  cursorY += 28;
   let brochureBlock = "";
   if (showBrochure) {
     brochureBlock = brochurePriceBlock(brochure, cursorY + 36);
-    cursorY += 88;
+    cursorY += 72;
   }
 
-  const priceY = cursorY + 72;
-  const cabinY = priceY + 56;
-  const panelH = 220;
-  const panelY = H - panelH - 96;
-  const benefitsBlock = benefitsPanel(includeItems, { y: panelY, h: panelH });
-  const discY = panelY + panelH + (benefitsBlock ? 36 : 0);
+  const priceY = cursorY + 64;
+  const cabinY = priceY + 52;
 
   const body = `
     ${premiumDarkBackground(model)}
@@ -375,15 +572,18 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
     ${brochureBlock}
     ${cruise101PriceBlock(price, priceY)}
     ${cabinPill(room, cabinY)}
-    ${benefitsBlock}
-    <text x="540" y="${discY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="14" font-weight="400">* Price in US dollars &amp; subject to availability.</text>
+    ${benefits.svg}
   `;
   return frame(body);
 }
 
 module.exports = {
+  renderPremiumDarkMainSvg,
   renderPremiumDarkOfferSvg,
   resolvePremiumDarkRoute,
+  distributeBenefitRows,
+  measureBenefitsPanel,
+  DISCLAIMER_TEXT,
   nineSquareMotif,
   premiumDarkBackground
 };

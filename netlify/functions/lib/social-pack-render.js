@@ -506,8 +506,14 @@ async function renderCruisePack(model, options = {}) {
 
     let svg;
     if (item.kind === "main") {
-      const { renderMasterConceptA } = require("./social-pack-master-slide");
-      svg = renderMasterConceptA(slideModel);
+      const template = normaliseTemplate(model.template);
+      if (template === "premium_dark") {
+        const { renderPremiumDarkMainSvg } = require("./social-pack-premium-dark");
+        svg = renderPremiumDarkMainSvg(slideModel);
+      } else {
+        const { renderMasterConceptA } = require("./social-pack-master-slide");
+        svg = renderMasterConceptA(slideModel);
+      }
     } else if (item.kind === "offer") {
       const template = normaliseTemplate(model.template);
       if (template === "premium_dark") {

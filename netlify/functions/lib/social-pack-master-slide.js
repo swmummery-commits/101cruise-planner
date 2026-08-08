@@ -361,6 +361,8 @@ module.exports = {
   FOOTER_H,
   curatedPorts,
   cruiseLineLogo,
+  masterBackground,
+  greenFooter,
   renderMasterConceptA,
   renderMasterConceptB,
   renderMasterConceptC

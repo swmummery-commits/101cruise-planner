@@ -151,15 +151,12 @@
         return next;
       });
       const firstReady = cruises.find((c) => c.selected && c.readiness?.status !== "blocked");
-      message = "";
-      if (firstReady) {
-        await previewCruise(firstReady.id);
-      } else {
-        message = "No cruises are ready to generate yet.";
-        messageTone = "error";
-        busy = false;
-        rerender();
-      }
+      message = firstReady
+        ? "Choose a template, then click Preview on a cruise."
+        : "No cruises are ready to generate yet.";
+      messageTone = firstReady ? "" : "error";
+      busy = false;
+      rerender();
     } catch (error) {
       busy = false;
       message = error.message || "Could not open Social Pack.";
@@ -701,6 +698,24 @@
       </div>`;
   }
 
+  function renderTemplateSelector() {
+    return `
+      <div class="social-pack-treatment" role="group" aria-label="Pack template">
+        <span class="admin-small">Template</span>
+        ${[
+          ["classic", "Classic"],
+          ["premium_dark", "Premium Dark"]
+        ]
+          .map(
+            ([value, label]) =>
+              `<button type="button" class="media-filter-chip ${
+                packTemplate === value ? "is-active" : ""
+              }" onclick="SocialPackAdmin.setPackTemplate('${value}')" ${busy ? "disabled" : ""}>${label}</button>`
+          )
+          .join("")}
+      </div>`;
+  }
+
   function renderSlides() {
     if (!preview?.slides) return "";
     const order = preview.slide_order || Object.keys(preview.slides);
@@ -737,6 +752,7 @@
             <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.close()" ${busy ? "disabled" : ""}>Close</button>
           </div>
           ${message ? `<div class="admin-message ${msgClass}">${esc(message)}</div>` : ""}
+          ${renderTemplateSelector()}
           <div class="social-pack-layout">
             <div class="social-pack-list">
               ${cruises
@@ -773,20 +789,6 @@
                   ? `
                     <div class="social-pack-controls">
                       <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.openImagePicker()" ${busy ? "disabled" : ""}>Change Social Image</button>
-                      <div class="social-pack-treatment" role="group" aria-label="Pack template">
-                        <span class="admin-small">Template</span>
-                        ${[
-                          ["classic", "Classic"],
-                          ["premium_dark", "Premium Dark"]
-                        ]
-                          .map(
-                            ([value, label]) =>
-                              `<button type="button" class="media-filter-chip ${
-                                packTemplate === value ? "is-active" : ""
-                              }" onclick="SocialPackAdmin.setPackTemplate('${value}')" ${busy ? "disabled" : ""}>${label}</button>`
-                          )
-                          .join("")}
-                      </div>
                       <div class="social-pack-treatment" role="group" aria-label="Background treatment">
                         <span class="admin-small">Background</span>
                         ${["clear", "soft", "strong"]
@@ -829,7 +831,7 @@
                       <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(-1)" ${busy ? "disabled" : ""}>Previous cruise</button>
                       <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(1)" ${busy ? "disabled" : ""}>Next cruise</button>
                     </div>`
-                  : `<p class="admin-muted">${busy ? "Creating your social graphics…" : "Select a ready cruise to preview."}</p>`
+                  : `<p class="admin-muted">${busy ? "Creating your social graphics…" : "Choose a template above, then click Preview on a cruise."}</p>`
               }
             </div>
           </div>

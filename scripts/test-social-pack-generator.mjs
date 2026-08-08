@@ -45,7 +45,7 @@ const {
   renderCruisePack
 } = require("../netlify/functions/lib/social-pack-render.js");
 const { normaliseTemplate } = require("../netlify/functions/lib/social-pack-template.js");
-const { renderPremiumDarkOfferSvg, resolvePremiumDarkRoute } = require("../netlify/functions/lib/social-pack-premium-dark.js");
+const { renderPremiumDarkOfferSvg, renderPremiumDarkMainSvg, resolvePremiumDarkRoute, distributeBenefitRows, measureBenefitsPanel, DISCLAIMER_TEXT } = require("../netlify/functions/lib/social-pack-premium-dark.js");
 const { buildSocialPackZip } = require("../netlify/functions/lib/social-pack-zip.js");
 const { assessReadiness } = require("../netlify/functions/lib/social-pack-data.js");
 const {
@@ -537,14 +537,20 @@ async function main() {
     passed += 1;
   }
 
-  // Template selection — classic default, premium_dark offer slides
+  // Template selection — classic default, premium_dark main + offer slides
   {
     const templateModel = {
       backgroundDataUri: tinyPngDataUri(),
       brandLogoDataUri: tinyPngDataUri(),
+      cruiseLineLogoDataUri: tinyPngDataUri(),
       routeHeadline: "BARCELONA TO ISTANBUL",
       departurePort: "Barcelona, Spain",
       arrivalPort: "Istanbul, Turkey",
+      nightsLabel: "10 NIGHTS",
+      dateRangeFull: "17–27 AUGUST 2026",
+      shipName: "Sirena",
+      lineName: "Oceania Cruises",
+      ports: ["Barcelona", "Palermo", "Istanbul"],
       inclusions: ["Wi-Fi", "Gratuities", "Alcohol Package", "All Dining"],
       offers: [
         {
@@ -576,24 +582,82 @@ async function main() {
     assert(normaliseTemplate("premium-dark") === "premium_dark", "hyphen alias");
     assert(normaliseTemplate("unknown") === "classic", "invalid → classic");
 
+    const adminSrc = fs.readFileSync(path.join(root, "js/admin-social-pack.js"), "utf8");
+    assert(/function renderTemplateSelector\(\)/.test(adminSrc), "shared template selector helper");
+    assert(/renderTemplateSelector\(\)/.test(adminSrc), "template selector rendered in modal");
+    assert(/Choose a template/.test(adminSrc), "pre-preview template guidance");
+    assert(!/await previewCruise\(firstReady\.id\)/.test(adminSrc), "no auto-preview before template choice");
+
     const classicOffer = renderOfferSvg(templateModel, 0);
     assert(classicOffer.includes("BROCHURE PRICE"), "classic retains brochure pill");
     assert(classicOffer.includes(">INCLUDES<"), "classic retains includes heading");
 
+    const pdMain = renderPremiumDarkMainSvg(templateModel);
+    assert(pdMain.includes('y="36"') || pdMain.includes("y=\"36\""), "101cruise logo at top");
+    assert(pdMain.includes("1286") && pdMain.includes("1162"), "inverted bottom cruise-line tab anchors from footer");
+    assert(!pdMain.includes("cruiseLineLogo(model)"), "premium main uses bottom cruise-line tab");
+    assert(pdMain.includes(">BARCELONA<") && pdMain.includes(">ISTANBUL<"), "main route endpoints");
+
     const pdOffer = renderPremiumDarkOfferSvg(templateModel, 0);
-    assert(pdOffer.includes("BARCELONA TO ISTANBUL"), "premium dark route");
+    assert(pdOffer.includes("BARCELONA TO ISTANBUL"), "premium dark single-line route");
+    assert(pdOffer.includes('font-weight="800"'), "offer route weight matches main");
+    assert(/font-size="(5[2-9]|[6-9]\d|1[01]\d|12[0-8])"/.test(pdOffer), "offer route uses large type");
     assert(pdOffer.includes("$10,498*") || pdOffer.includes("10,498"), "premium dark brochure price");
     assert(pdOffer.includes(GREEN), "premium dark website green");
     assert(pdOffer.includes(">BALCONY<"), "premium dark cabin type");
     assert(pdOffer.includes(">WI-FI<") || pdOffer.includes("WI-FI"), "premium dark inclusion label");
-    assert(pdOffer.includes(">GRATUITIES<") || pdOffer.includes("GRATUITIES"), "premium dark gratuities");
     assert(!pdOffer.includes(">INCLUDES<"), "premium dark omits INCLUDES heading");
-    assert(!pdOffer.includes("BROCHURE PRICE"), "premium dark omits brochure pill label");
-    assert(!pdOffer.includes("101CRUISE PRICE"), "premium dark omits price pill label");
-    assert(!pdOffer.includes("per person"), "premium dark omits per person pill copy");
-    assert(pdOffer.includes("* Price in US dollars"), "premium dark disclaimer");
+    assert(!pdOffer.includes("* Price in US dollars"), "old external disclaimer removed");
+    assert(pdOffer.includes("* prices are per person in USD"), "disclaimer inside benefits panel");
+    assert(pdOffer.includes("subject to availability."), "disclaimer exact ending");
     assert(pdOffer.includes('stroke="#F80020"'), "red strike-through");
     assert(pdOffer.includes('stroke="#DDE2E8"'), "subtle light divider line");
+
+    const oneItem = renderPremiumDarkOfferSvg({ ...templateModel, inclusions: ["Wi-Fi"] }, 0);
+    assert(measureBenefitsPanel(["Wi-Fi"]).height < 180, "one inclusion panel is compact");
+    assert(oneItem.includes(">WI-FI<") || oneItem.includes("WI-FI"), "one inclusion renders");
+
+    const twoItem = renderPremiumDarkOfferSvg({ ...templateModel, inclusions: ["Wi-Fi", "Gratuities"] }, 0);
+    assert(measureBenefitsPanel(["Wi-Fi", "Gratuities"]).height < 200, "two inclusion panel is shallow");
+    assert(twoItem.includes(">WI-FI<") || twoItem.includes("WI-FI"), "two-item row 1");
+    assert(twoItem.includes(">GRATUITIES<") || twoItem.includes("GRATUITIES"), "two-item row 2");
+
+    const fourItem = renderPremiumDarkOfferSvg(
+      { ...templateModel, inclusions: ["Wi-Fi", "Gratuities", "Alcohol Package", "All Dining"] },
+      0
+    );
+    assert(distributeBenefitRows(4).join(",") === "4", "four inclusions in one row");
+    assert(fourItem.includes(">ALL DINING<") || fourItem.includes("ALL DINING"), "four inclusion row");
+
+    const sixItem = renderPremiumDarkOfferSvg(
+      {
+        ...templateModel,
+        inclusions: ["Wi-Fi", "Gratuities", "Drinks", "Dining", "On Board Credit", "Laundry"]
+      },
+      0
+    );
+    assert(distributeBenefitRows(6).join(",") === "3,3", "six inclusions split 3+3");
+    assert(measureBenefitsPanel(Array.from({ length: 6 }, (_, i) => `Item ${i + 1}`)).rows.length === 2, "six items use two rows");
+
+    const sevenItem = renderPremiumDarkOfferSvg(
+      {
+        ...templateModel,
+        inclusions: ["Wi-Fi", "Gratuities", "Drinks", "Dining", "On Board Credit", "Laundry", "Tours"]
+      },
+      0
+    );
+    assert(distributeBenefitRows(7).join(",") === "4,3", "seven inclusions split 4+3");
+    assert(sevenItem.includes(">TOURS<") || sevenItem.includes("TOURS"), "seven inclusion second row");
+
+    const eightItem = renderPremiumDarkOfferSvg(
+      {
+        ...templateModel,
+        inclusions: ["Wi-Fi", "Gratuities", "Drinks", "Dining", "On Board Credit", "Laundry", "Tours", "Specialty Dining"]
+      },
+      0
+    );
+    assert(distributeBenefitRows(8).join(",") === "4,4", "eight inclusions split 4+4");
+    assert(Math.max(...distributeBenefitRows(8)) <= 4, "max four per row");
 
     const marketingModel = {
       ...templateModel,
@@ -613,8 +677,8 @@ async function main() {
     const pdPack = await renderCruisePack({ ...templateModel, template: "premium_dark" });
     assert(classicPack.svgs["02-offer-balcony.png"] !== pdPack.svgs["02-offer-balcony.png"], "offer svg differs by template");
     assert(
-      classicPack.svgs["01-main-cruise.png"] === pdPack.svgs["01-main-cruise.png"],
-      "main slide unchanged for premium_dark"
+      classicPack.svgs["01-main-cruise.png"] !== pdPack.svgs["01-main-cruise.png"],
+      "premium dark main slide uses its own renderer"
     );
     assert(
       classicPack.svgs["final-call-to-action.png"] === pdPack.svgs["final-call-to-action.png"],
