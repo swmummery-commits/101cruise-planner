@@ -372,8 +372,6 @@ async function main() {
         outcome: "error",
         error: error.message
       });
-      completed.add(port.id);
-      checkpoint.completedPortIds = [...completed];
       checkpoint.results = results;
       checkpoint.summary = summary;
       if (!args.dryRun) saveCheckpoint(checkpoint);

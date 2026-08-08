@@ -57,7 +57,9 @@ const {
   assertCanonicalApplyTarget,
   replaceAutoApprovedPortImage,
   canReplaceAutoApprovedPortImage,
-  __resetDownloadThrottleForTests
+  __resetDownloadThrottleForTests,
+  getMediaByStoragePath,
+  isDuplicateStoragePathError
 } = loadCjs("netlify/functions/lib/port-image-finder/apply.js");
 const {
   auditStoredPortImage,
@@ -515,6 +517,9 @@ let replacePatch = null;
 let mediaCreated = null;
 const replaceSupabase = {
   fetchRest: async (path, options) => {
+    if (path.startsWith("media_library?select=") && path.includes("storage_path=eq.")) {
+      return [];
+    }
     if (options?.method === "POST" && path === "media_library") {
       mediaCreated = options.body;
       return [{ id: "media-new", public_url: "https://example.test/new.jpg", storage_path: "ports/la/new.jpg" }];
@@ -847,6 +852,61 @@ assert(isVesselPrimarySubject(tampaUss).vesselPrimary, "USS commissioning image 
 const warnemundePort = { canonical_name: "Warnemunde", city: "Warnemunde", country: "Germany", country_code: "DE", aliases: ["Rostock"] };
 const warnemundeShip = { title: "Rostock Ostsee (49833072171).jpg", provider: "wikimedia", license: "CC BY 2.0" };
 assert(isVesselPrimarySubject(warnemundeShip).vesselPrimary, "Warnemünde Ostsee ship photo flagged vessel-primary");
+
+assert(
+  isDuplicateStoragePathError(new Error('duplicate key value violates unique constraint "media_library_storage_path_uidx"')),
+  "duplicate storage-path error detected"
+);
+
+let duplicateApplyPatch = null;
+const duplicateApplySupabase = {
+  fetchRest: async (path, options) => {
+    if (options?.method === "POST" && path === "media_library") {
+      throw new Error('duplicate key value violates unique constraint "media_library_storage_path_uidx"');
+    }
+    if (path.startsWith("media_library?select=") && path.includes("storage_path=eq.")) {
+      return [{ id: "media-existing", title: "Aerial view of Darwin NT.jpg", storage_path: "ports/darwin/45611d762daa.jpg" }];
+    }
+    if (options?.method === "PATCH") {
+      duplicateApplyPatch = options.body;
+      return [{ id: "darwin-id", canonical_name: "Darwin", hero_media_id: options.body.hero_media_id, image_status: options.body.image_status }];
+    }
+    throw new Error(`unexpected duplicate apply fetch: ${path}`);
+  },
+  publicObjectUrl: (sp) => `https://example.test/${sp}`,
+  uploadObject: async () => {}
+};
+const duplicateFetchOrig = globalThis.fetch;
+globalThis.fetch = async () => ({
+  ok: true,
+  status: 200,
+  headers: { get: () => "image/jpeg" },
+  arrayBuffer: async () => Buffer.alloc(4096)
+});
+try {
+  __resetDownloadThrottleForTests();
+  const { applyPortImageCandidate } = loadCjs("netlify/functions/lib/port-image-finder/apply.js");
+  const applied = await applyPortImageCandidate(
+    duplicateApplySupabase,
+    { id: "darwin-id", canonical_name: "Darwin", city: "Darwin", country: "Australia", country_code: "AU", hero_media_id: null, image_status: "NO_IMAGE" },
+    {
+      title: "Aerial view of Darwin NT.jpg",
+      description: "Darwin harbour Australia",
+      url: "https://upload.wikimedia.org/wikipedia/commons/test-darwin.jpg",
+      provider: "wikimedia",
+      license: "CC BY 2.0",
+      sourceUrl: "https://commons.wikimedia.org/wiki/File:Aerial_view_of_Darwin_NT.jpg",
+      width: 1400,
+      height: 900
+    },
+    { imageStatus: "AUTO_APPROVED", confidence: 90 }
+  );
+  assert(applied.media.id === "media-existing", "duplicate storage path reuses existing media_library row");
+  assert(duplicateApplyPatch.hero_media_id === "media-existing", "port links to reused media row");
+} finally {
+  globalThis.fetch = duplicateFetchOrig;
+  __resetDownloadThrottleForTests();
+}
 
 let queried = "";
 await resolveCatalogueMediaIds(async (path) => {

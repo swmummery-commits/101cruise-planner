@@ -46,6 +46,17 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isDuplicateStoragePathError(error) {
+  return /duplicate key|media_library_storage_path_uidx|already exists/i.test(String(error?.message || ""));
+}
+
+async function getMediaByStoragePath(supabase, storagePath) {
+  const rows = await supabase.fetchRest(
+    `media_library?select=id,title,storage_path,public_url,source_url,import_source&storage_path=eq.${encodeURIComponent(storagePath)}&limit=1`
+  );
+  return Array.isArray(rows) ? rows[0] || null : null;
+}
+
 function isWikimediaUrl(url) {
   return /wikimedia\.org|upload\.wikimedia/i.test(String(url || ""));
 }
@@ -213,12 +224,21 @@ async function applyPortImageCandidate(supabase, port, candidate, options = {}) 
     is_active: true
   };
 
-  const mediaRows = await supabase.fetchRest("media_library", {
-    method: "POST",
-    prefer: "return=representation",
-    body: mediaPayload
-  });
-  const media = Array.isArray(mediaRows) ? mediaRows[0] : mediaRows;
+  let media = await getMediaByStoragePath(supabase, storagePath);
+  if (!media) {
+    try {
+      const mediaRows = await supabase.fetchRest("media_library", {
+        method: "POST",
+        prefer: "return=representation",
+        body: mediaPayload
+      });
+      media = Array.isArray(mediaRows) ? mediaRows[0] : mediaRows;
+    } catch (error) {
+      if (!isDuplicateStoragePathError(error)) throw error;
+      media = await getMediaByStoragePath(supabase, storagePath);
+      if (!media?.id) throw error;
+    }
+  }
   if (!media?.id) throw new Error("media_library row was not created");
 
   const portPatch = {
@@ -318,5 +338,7 @@ module.exports = {
   downloadImage,
   assertCandidateApplicable,
   assertCanonicalApplyTarget,
+  getMediaByStoragePath,
+  isDuplicateStoragePathError,
   __resetDownloadThrottleForTests
 };
