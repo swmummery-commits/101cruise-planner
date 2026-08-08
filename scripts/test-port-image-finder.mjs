@@ -37,6 +37,9 @@ const {
   candidatePassesEligibility,
   classifyImageAge,
   isMilitaryWarDestinationImagery,
+  physicalPortDestinationBoost,
+  comparableModernAlternative,
+  computeGeographicScore,
   GEO_AUTO_MIN,
   SUIT_AUTO_MIN
 } = loadCjs("netlify/functions/lib/port-image-finder/scoring.js");
@@ -50,8 +53,15 @@ const {
   canOverwritePortImage,
   approveReviewedPortImage,
   assertCandidateApplicable,
+  assertCanonicalApplyTarget,
   __resetDownloadThrottleForTests
 } = loadCjs("netlify/functions/lib/port-image-finder/apply.js");
+const { resolveCanonicalPort, validatePortIdentity } = loadCjs(
+  "netlify/functions/lib/port-image-finder/port-resolution.js"
+);
+const { buildDiscoverSummary, buildApplySummary } = loadCjs(
+  "netlify/functions/lib/port-image-finder/batch-metrics.js"
+);
 const { portImageFallback, applyDestinationImageFallbacks } = loadCjs(
   "netlify/functions/lib/destination-image-fallbacks.js"
 );
@@ -354,7 +364,8 @@ const laSpeziaCandidates = [
   },
   {
     provider: "wikimedia",
-    title: "Guns in the harbour of La Spezia.jpg",
+    title: "La Spezia harbour waterfront Italy.jpg",
+    description: "View of La Spezia commercial harbour waterfront",
     url: "https://upload.wikimedia.org/w/harbour.jpg",
     width: 1280,
     height: 854,
@@ -363,7 +374,7 @@ const laSpeziaCandidates = [
 ];
 assert(isMilitaryWarDestinationImagery(laSpeziaCandidates[0]), "Lancaster image flagged as military/war");
 const laSpeziaEligible = pickEligibleCandidate(laSpeziaCandidates, laSpeziaPort);
-assert(/harbour of La Spezia/i.test(laSpeziaEligible?.candidate?.title || ""), "fallthrough skips military image for harbour candidate");
+assert(/harbour waterfront/i.test(laSpeziaEligible?.candidate?.title || ""), "fallthrough skips military image for harbour candidate");
 const laSpeziaContext = pickEligibleCandidateWithContext(laSpeziaCandidates, laSpeziaPort);
 assert(laSpeziaContext.rank >= 1, "eligible candidate selected from shortlist");
 assert(!isMilitaryWarDestinationImagery(laSpeziaContext.row?.candidate), "selected candidate is not military/war imagery");
@@ -517,6 +528,170 @@ assert(/image_status/.test(migrationSrc), "migration adds image_status");
 assert(/isMissingImageSchemaError/.test(catalogueFnSrc), "ports catalogue tolerates missing image schema");
 assert(/pickEligibleCandidate/.test(read("netlify/functions/lib/port-image-finder/scoring.js")), "scoring exports eligible candidate fallthrough");
 assert(/classifyImageAge/.test(read("netlify/functions/lib/port-image-finder/scoring.js")), "scoring exports image age classification");
+
+// --- Canonical port resolution: Costa Maya must never resolve to Ensenada ---
+const cataloguePorts = [
+  {
+    id: "ensenada-id",
+    canonical_name: "Ensenada",
+    city: "Ensenada",
+    country: "Mexico",
+    country_code: "MX",
+    region: "Mexican Riviera",
+    aliases: []
+  },
+  {
+    id: "costa-maya-id",
+    canonical_name: "Costa Maya",
+    city: "Mahahual",
+    country: "Mexico",
+    country_code: "MX",
+    region: "Caribbean",
+    aliases: ["Mahahual", "Costa Maya Mexico"]
+  },
+  {
+    id: "cozumel-id",
+    canonical_name: "Cozumel",
+    city: "Cozumel",
+    country: "Mexico",
+    country_code: "MX",
+    region: "Caribbean",
+    aliases: ["Isla Cozumel"]
+  }
+];
+
+const costaMayaSpec = {
+  label: "Costa Maya, Mexico",
+  match: /costa maya|mahahual/i,
+  requireCanonical: /costa maya/i,
+  forbiddenCanonical: /ensenada|cozumel|playa del carmen/i,
+  country: /mexico/i
+};
+const ensenadaSpec = {
+  label: "Ensenada, Mexico",
+  match: /ensenada/i,
+  requireCanonical: /ensenada/i,
+  forbiddenCanonical: /costa maya|mahahual/i,
+  country: /mexico/i
+};
+
+const costaResolution = resolveCanonicalPort(cataloguePorts, costaMayaSpec);
+assert(costaResolution.ok === true, "Costa Maya resolves");
+assert(costaResolution.port.id === "costa-maya-id", "Costa Maya resolves to Costa Maya record only");
+assert(costaResolution.port.id !== "ensenada-id", "Costa Maya never resolves to Ensenada");
+
+const ensenadaResolution = resolveCanonicalPort(cataloguePorts, ensenadaSpec);
+assert(ensenadaResolution.ok === true, "Ensenada resolves");
+assert(ensenadaResolution.port.id === "ensenada-id", "Ensenada resolves to Ensenada only");
+assert(ensenadaResolution.port.id !== "costa-maya-id", "Ensenada never resolves to Costa Maya");
+
+assert.throws(
+  () => assertCanonicalApplyTarget(costaMayaSpec, cataloguePorts[0]),
+  /PORT_RESOLUTION_FAILED/,
+  "apply refuses Costa Maya write to Ensenada"
+);
+assert.doesNotThrow(
+  () => assertCanonicalApplyTarget(costaMayaSpec, cataloguePorts[1]),
+  "apply allows Costa Maya write to Costa Maya record"
+);
+
+const unresolved = resolveCanonicalPort(cataloguePorts, {
+  label: "Missing Port",
+  match: /atlantis/i,
+  requireCanonical: /atlantis/i,
+  country: /ocean/i
+});
+assert(unresolved.ok === false && unresolved.code === "PORT_RESOLUTION_FAILED", "unresolved port returns PORT_RESOLUTION_FAILED");
+
+// --- Batch metrics reconcile from one result set ---
+const mockDiscoveries = [
+  { label: "A", found: false },
+  { label: "B", found: false, reason: "PORT_RESOLUTION_FAILED" },
+  { label: "C", found: true, skipped: "existing_image" },
+  { label: "D", found: true, editorialRating: "GOOD" },
+  { label: "E", found: true, editorialRating: "ACCEPTABLE" },
+  { label: "F", found: true, editorialRating: "POOR" }
+];
+const metrics = buildDiscoverSummary(mockDiscoveries, 6);
+assert(metrics.reconciled === true, "discover summary reconciles");
+assert(metrics.missingCount === 1, "missing count correct");
+assert(metrics.resolutionFailureCount === 1, "resolution failure count correct");
+assert(metrics.canonicalMatches === 4, "canonical matches correct");
+assert(metrics.processed === 3, "processed excludes skipped");
+assert(metrics.ratings.GOOD === 1 && metrics.ratings.ACCEPTABLE === 1 && metrics.ratings.POOR === 1, "ratings from processed only");
+
+const mockApply = [
+  { applied: true, imageStatus: "AUTO_APPROVED", editorialRating: "GOOD", licensed: true, geographic: 80 },
+  { applied: true, imageStatus: "AUTO_APPROVED", editorialRating: "ACCEPTABLE", licensed: true, geographic: 70 },
+  { applied: false, reason: "no_suitable_candidate" }
+];
+const applyMetrics = buildApplySummary(mockApply, metrics);
+assert(applyMetrics.reconciled === true, "apply summary reconciles");
+assert(applyMetrics.applied === 2 && applyMetrics.notApplied === 1, "applied + notApplied = total");
+assert(applyMetrics.autoApprovalEditorialAccuracy === 100, "auto approval editorial accuracy from applied AUTO_APPROVED");
+
+// --- Historical candidate yields to comparable modern candidate ---
+const nassauHistoric = {
+  title: "Nassau Bahamas harbour 1979",
+  description: "Nassau waterfront view",
+  provider: "wikimedia",
+  license: "Public domain",
+  width: 1400,
+  height: 900
+};
+const nassauModern = {
+  title: "Nassau Bahamas waterfront 2018",
+  description: "Nassau cruise port waterfront",
+  provider: "wikimedia",
+  license: "CC BY-SA 4.0",
+  width: 1400,
+  height: 900
+};
+const nassauPort = { canonical_name: "Nassau", city: "Nassau", country: "Bahamas", country_code: "BS" };
+const nassauContext = pickEligibleCandidateWithContext([nassauHistoric, nassauModern], nassauPort);
+assert(/2018/i.test(nassauContext.row?.candidate?.title || ""), "modern Nassau candidate preferred over historical");
+assert(nassauContext.displacedHistorical === true, "historical displacement flagged");
+
+// --- LA/San Pedro destination relevance ---
+const laPort = {
+  canonical_name: "Los Angeles",
+  city: "San Pedro",
+  country: "United States",
+  country_code: "US",
+  aliases: ["San Pedro", "Los Angeles"]
+};
+const santaMonica = { title: "Santa Monica Beach California", provider: "wikimedia", license: "Public domain" };
+const sanPedro = { title: "San Pedro Port of Los Angeles waterfront", provider: "wikimedia", license: "Public domain" };
+assert(
+  computeGeographicScore(sanPedro, laPort) > computeGeographicScore(santaMonica, laPort),
+  "San Pedro waterfront outscores Santa Monica Beach for LA/San Pedro port"
+);
+assert(physicalPortDestinationBoost(sanPedro, laPort) > 0, "physical port boost applied to San Pedro imagery");
+assert(physicalPortDestinationBoost(santaMonica, laPort) < 0, "metro beach penalty applied to Santa Monica Beach");
+
+// --- Ensenada rejects Bahía de los Ángeles imagery ---
+const ensenadaPort = { canonical_name: "Ensenada", city: "Ensenada", country: "Mexico", country_code: "MX" };
+const bahiaImage = {
+  title: "Faro Punta Arenas, Bahia de los Angeles.jpg",
+  description: "Lighthouse at Bahía de los Ángeles, Ensenada Municipality, Baja California, Mexico.",
+  provider: "wikimedia",
+  license: "Public domain"
+};
+assert(
+  computeGeographicScore(bahiaImage, ensenadaPort) === 0,
+  "Bahía de los Ángeles imagery rejected for Ensenada city port"
+);
+
+// --- La Spezia military harbour guns excluded ---
+const gunsImage = {
+  title: "Guns in the harbour of La Spezia.jpg",
+  description: "Exercise guns in the military harbour of La Spezia (Liguria, Italy).",
+  provider: "wikimedia",
+  license: "Public domain"
+};
+assert(isMilitaryWarDestinationImagery(gunsImage), "La Spezia military harbour guns detected");
+const gunsRow = scorePortImageCandidate(gunsImage, laSpeziaPort);
+assert(!candidatePassesEligibility(gunsRow, laSpeziaPort), "La Spezia guns image fails eligibility");
 
 let queried = "";
 await resolveCatalogueMediaIds(async (path) => {

@@ -27,6 +27,11 @@ const { applyPortImageCandidate, canOverwritePortImage } = require(path.join(
   "netlify/functions/lib/port-image-finder/apply.js"
 ));
 const { resolveCatalogueMediaIds } = require(path.join(root, "netlify/functions/lib/port-image-finder/resolve-public.js"));
+const { resolveCanonicalPort } = require(path.join(root, "netlify/functions/lib/port-image-finder/port-resolution.js"));
+const { buildDiscoverSummary, buildApplySummary } = require(path.join(
+  root,
+  "netlify/functions/lib/port-image-finder/batch-metrics.js"
+));
 
 const CIVIT_ID = "777a9a1d-55e2-4330-89d0-59ec08bca45d";
 const TEN_PORT_IDS = [
@@ -127,6 +132,8 @@ const BATCH_PORTS = [
   {
     label: "Costa Maya, Mexico",
     match: /costa maya|mahahual/i,
+    requireCanonical: /costa maya/i,
+    forbiddenCanonical: /ensenada|cozumel|playa del carmen/i,
     country: /mexico/i,
     aliases: ["Costa Maya", "Mahahual"]
   },
@@ -675,7 +682,8 @@ async function applyPick(rest, result) {
     const applied = await applyPortImageCandidate(supabase, port, pick.candidate, {
       imageStatus,
       searchQuery: search.primaryQuery,
-      confidence: pick.confidence
+      confidence: pick.confidence,
+      resolutionSpec: spec
     });
 
     const reloaded = (
@@ -725,11 +733,18 @@ async function main() {
 
   const discoveries = [];
   for (const spec of BATCH_PORTS) {
-    const port = findCataloguePort(allPorts, spec);
-    if (!port) {
-      discoveries.push({ label: spec.label, found: false });
+    const resolution = resolveCanonicalPort(allPorts, spec);
+    if (!resolution.ok) {
+      discoveries.push({
+        label: spec.label,
+        found: false,
+        reason: resolution.reason === "not_found" ? "missing" : "PORT_RESOLUTION_FAILED",
+        code: resolution.code,
+        candidates: resolution.candidates || null
+      });
       continue;
     }
+    const port = resolution.port;
     if (port.image_status === "MANUAL" && port.hero_media_id) {
       discoveries.push({ label: spec.label, found: true, skipped: "manual_protected", port_id: port.id, catalogue: port.canonical_name });
       continue;
@@ -748,21 +763,23 @@ async function main() {
     discoveries.push({ label: spec.label, found: true, ...(await discoverPort(port, spec)) });
   }
 
-  const ratings = { GOOD: 0, ACCEPTABLE: 0, POOR: 0, WRONG: 0, NO_IMAGE: 0 };
-  for (const d of discoveries) {
-    if (d.editorialRating) ratings[d.editorialRating] = (ratings[d.editorialRating] || 0) + 1;
-    else if (!d.found || d.skipped) continue;
-    else ratings.NO_IMAGE += 1;
-  }
-
+  const discoverSummary = buildDiscoverSummary(discoveries, BATCH_PORTS.length);
   const discoverAccuracy = buildDiscoverAccuracy(discoveries);
 
   const summary = {
     phase: "discover",
-    requested: BATCH_PORTS.length,
-    found: discoveries.filter((d) => d.found).length,
-    missing: discoveries.filter((d) => !d.found).map((d) => d.label),
-    ratings,
+    requested: discoverSummary.requested,
+    missing: discoverSummary.missing,
+    missingCount: discoverSummary.missingCount,
+    resolutionFailures: discoverSummary.resolutionFailures,
+    resolutionFailureCount: discoverSummary.resolutionFailureCount,
+    canonicalMatches: discoverSummary.canonicalMatches,
+    skipped: discoverSummary.skipped,
+    processed: discoverSummary.processed,
+    ratings: discoverSummary.ratings,
+    ratingsTotal: discoverSummary.ratingsTotal,
+    reconciled: discoverSummary.reconciled,
+    formulas: discoverSummary.formulas,
     historicalDisplacements: discoverAccuracy.historicalDisplacements,
     ageBreakdown: discoverAccuracy.ageBreakdown,
     api_stats: apiStats,
@@ -827,6 +844,7 @@ async function main() {
 
   const appliedUrls = applyResults.filter((r) => r.applied).map((r) => r.publicUrl);
   const duplicateUrls = appliedUrls.filter((u, i) => appliedUrls.indexOf(u) !== i);
+  const applySummary = buildApplySummary(applyResults, discoverSummary);
   const applyAccuracy = buildApplyAccuracy(applyResults);
 
   console.log(
@@ -834,9 +852,12 @@ async function main() {
       {
         phase: "apply",
         apply_results: applyResults,
-        autoApprovalEditorialAccuracy: applyAccuracy.autoApprovalEditorialAccuracy,
-        geographicAccuracy: applyAccuracy.geographicAccuracy,
-        licensingAccuracy: applyAccuracy.licensingAccuracy,
+        applySummary,
+        autoApprovalEditorialAccuracy: applySummary.autoApprovalEditorialAccuracy,
+        geographicAccuracy: applySummary.geographicAccuracy,
+        licensingAccuracy: applySummary.licensingAccuracy,
+        reconciled: applySummary.reconciled,
+        formulas: applySummary.formulas,
         civitavecchia_unchanged:
           civitBefore?.hero_media_id === civitAfter?.hero_media_id && civitAfter?.image_status === "MANUAL",
         ten_port_intact: JSON.stringify(tenPortBefore) === JSON.stringify(tenPortAfter),

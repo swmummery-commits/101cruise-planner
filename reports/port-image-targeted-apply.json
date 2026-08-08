@@ -1,0 +1,218 @@
+{
+  "phase": "apply",
+  "discoverSummary": {
+    "requested": 12,
+    "missing": [],
+    "missingCount": 0,
+    "resolutionFailures": [],
+    "resolutionFailureCount": 0,
+    "canonicalMatches": 12,
+    "skipped": 1,
+    "processed": 11,
+    "ratings": {
+      "GOOD": 10,
+      "ACCEPTABLE": 0,
+      "POOR": 0,
+      "WRONG": 0,
+      "NO_IMAGE": 1
+    },
+    "ratingsTotal": 11,
+    "historicalDisplacements": 0,
+    "ageBreakdown": {
+      "MODERN": 1,
+      "HISTORICAL": 0,
+      "UNKNOWN": 10
+    },
+    "formulas": {
+      "requested": "BATCH_PORTS.length",
+      "missing": "discoveries where found === false and not PORT_RESOLUTION_FAILED",
+      "resolutionFailures": "discoveries where found === false and PORT_RESOLUTION_FAILED",
+      "canonicalMatches": "discoveries where found === true",
+      "skipped": "canonicalMatches with skipped flag",
+      "processed": "canonicalMatches without skipped",
+      "ratingsTotal": "sum(GOOD, ACCEPTABLE, POOR, WRONG, NO_IMAGE) === processed",
+      "reconcile": "requested === missing.count + resolutionFailures.count + canonicalMatches.count"
+    },
+    "reconciled": true
+  },
+  "applySummary": {
+    "applied": 2,
+    "notApplied": 10,
+    "autoApproved": 0,
+    "needsReview": 2,
+    "noImage": 1,
+    "appliedRatings": {
+      "GOOD": 2,
+      "ACCEPTABLE": 0,
+      "POOR": 0,
+      "WRONG": 0
+    },
+    "autoApprovalEditorialAccuracy": null,
+    "geographicAccuracy": 100,
+    "licensingAccuracy": 100,
+    "formulas": {
+      "applied": "applyResults where applied === true",
+      "notApplied": "applyResults where applied === false",
+      "geographicAccuracy": "geographically acceptable applied / applied",
+      "autoApprovalEditorialAccuracy": "AUTO_APPROVED with GOOD or ACCEPTABLE / AUTO_APPROVED applied",
+      "licensingAccuracy": "applied with licensed !== false / applied",
+      "processedReconcile": "applied + notApplied === discoverSummary.processed (when same batch)"
+    },
+    "reconciled": true
+  },
+  "formulas": {
+    "requested": "BATCH_PORTS.length",
+    "missing": "discoveries where found === false and not PORT_RESOLUTION_FAILED",
+    "resolutionFailures": "discoveries where found === false and PORT_RESOLUTION_FAILED",
+    "canonicalMatches": "discoveries where found === true",
+    "skipped": "canonicalMatches with skipped flag",
+    "processed": "canonicalMatches without skipped",
+    "ratingsTotal": "sum(GOOD, ACCEPTABLE, POOR, WRONG, NO_IMAGE) === processed",
+    "reconcile": "requested === missing.count + resolutionFailures.count + canonicalMatches.count",
+    "applied": "applyResults where applied === true",
+    "notApplied": "applyResults where applied === false",
+    "geographicAccuracy": "geographically acceptable applied / applied",
+    "autoApprovalEditorialAccuracy": "AUTO_APPROVED with GOOD or ACCEPTABLE / AUTO_APPROVED applied",
+    "licensingAccuracy": "applied with licensed !== false / applied",
+    "processedReconcile": "applied + notApplied === discoverSummary.processed (when same batch)"
+  },
+  "table": [
+    {
+      "Port": "Costa Maya, Mexico",
+      "Canonical match": "Costa Maya",
+      "Candidate": "—",
+      "Age": "—",
+      "Status": "discovered",
+      "Editorial": "NO_IMAGE",
+      "Applied": "no"
+    },
+    {
+      "Port": "Ensenada, Mexico",
+      "Canonical match": "Ensenada",
+      "Candidate": "Catalina Island and Ensenada Cruise - panoramio (97).jpg",
+      "Age": "UNKNOWN",
+      "Status": "NEEDS_REVIEW",
+      "Editorial": "GOOD",
+      "Applied": "yes"
+    },
+    {
+      "Port": "Darwin, Northern Territory, Australia",
+      "Canonical match": "Darwin",
+      "Candidate": "Aerial view of Darwin NT.jpg",
+      "Age": "UNKNOWN",
+      "Status": "AUTO_APPROVED",
+      "Editorial": "GOOD",
+      "Applied": "no"
+    },
+    {
+      "Port": "Picton, New Zealand",
+      "Canonical match": "Picton",
+      "Candidate": "00 1189 Picton - Neuseeland.jpg",
+      "Age": "UNKNOWN",
+      "Status": "AUTO_APPROVED",
+      "Editorial": "GOOD",
+      "Applied": "no"
+    },
+    {
+      "Port": "Prince Rupert, British Columbia, Canada",
+      "Canonical match": "Prince Rupert",
+      "Candidate": "Prince Rupert Harbour 6.jpg",
+      "Age": "UNKNOWN",
+      "Status": "AUTO_APPROVED",
+      "Editorial": "GOOD",
+      "Applied": "no"
+    },
+    {
+      "Port": "Belfast, Northern Ireland",
+      "Canonical match": "Belfast",
+      "Candidate": "Workboats and pontoon, Belfast harbour (March 2016) - geograph.org.uk - 4848112.jpg",
+      "Age": "MODERN",
+      "Status": "AUTO_APPROVED",
+      "Editorial": "GOOD",
+      "Applied": "no"
+    },
+    {
+      "Port": "Los Angeles/San Pedro, California, USA",
+      "Canonical match": "Los Angeles",
+      "Candidate": "Los Angeles (California, USA), Santa Monica Beach -- 2012 -- 5301.jpg",
+      "Age": "MODERN",
+      "Status": "AUTO_APPROVED",
+      "Editorial": "WRONG",
+      "Applied": "comparison"
+    },
+    {
+      "Port": "Nassau, Bahamas",
+      "Canonical match": "Nassau",
+      "Candidate": "Nassau harbour Bahamas Dec 1979.jpg",
+      "Age": "UNKNOWN",
+      "Status": "AUTO_APPROVED",
+      "Editorial": "GOOD",
+      "Applied": "no"
+    },
+    {
+      "Port": "Marseille, France",
+      "Canonical match": "Marseille",
+      "Candidate": "Marseille harbour postcard.jpg",
+      "Age": "UNKNOWN",
+      "Status": "AUTO_APPROVED",
+      "Editorial": "GOOD",
+      "Applied": "no"
+    },
+    {
+      "Port": "Quebec City, Canada",
+      "Canonical match": "Quebec City",
+      "Candidate": "Quebec-wharf.jpg",
+      "Age": "UNKNOWN",
+      "Status": "AUTO_APPROVED",
+      "Editorial": "GOOD",
+      "Applied": "no"
+    },
+    {
+      "Port": "St John's, Antigua",
+      "Canonical match": "St Johns Antigua",
+      "Candidate": "St. John's Harbour, Antigua LCCN2003671765.jpg",
+      "Age": "UNKNOWN",
+      "Status": "AUTO_APPROVED",
+      "Editorial": "GOOD",
+      "Applied": "no"
+    },
+    {
+      "Port": "La Spezia, Italy",
+      "Canonical match": "La Spezia",
+      "Candidate": "19014 Framura, Province of La Spezia, Italy - panoramio.jpg",
+      "Age": "UNKNOWN",
+      "Status": "NEEDS_REVIEW",
+      "Editorial": "GOOD",
+      "Applied": "yes"
+    }
+  ],
+  "ensenada": {
+    "id": "196f674c-0fed-4d2a-aba3-d518d7054746",
+    "hero_media_id": "5baeac27-a197-4291-bf22-ba1a292e09c1",
+    "image_status": "NEEDS_REVIEW"
+  },
+  "costaMaya": {
+    "id": "6698ee3c-9c1c-4c3f-b0c5-76b81849e796",
+    "canonical_name": "Costa Maya"
+  },
+  "api_stats": {
+    "wikimediaRequests": 0,
+    "wikimedia429": 0,
+    "wikimediaDownload429": 0,
+    "braveRequests": 0,
+    "braveResults": 0,
+    "braveRejectedLicensing": 0
+  },
+  "passEval": {
+    "pass": false,
+    "recommendation": "DO NOT RUN FULL CATALOGUE YET",
+    "checks": {
+      "zeroWrongCanonicalWrites": true,
+      "reportingReconciled": true,
+      "ensenadaIndependent": true,
+      "historicalPreferenceImproved": false,
+      "autoApprovalEditorialAccuracy": null
+    }
+  },
+  "recommendation": "DO NOT RUN FULL CATALOGUE YET"
+}

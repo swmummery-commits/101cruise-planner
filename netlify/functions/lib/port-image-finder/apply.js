@@ -5,6 +5,7 @@
 const crypto = require("crypto");
 const { primaryName } = require("./queries");
 const { licenseIsUsable } = require("./scoring");
+const { assertCanonicalApplyTarget } = require("./port-resolution");
 
 const BUCKET = "cruise-media";
 const VALID_STATUS = new Set(["MANUAL", "AUTO_APPROVED", "NEEDS_REVIEW", "NO_IMAGE"]);
@@ -134,6 +135,9 @@ async function approveReviewedPortImage(supabase, port) {
  * @param {{ imageStatus?: string, force?: boolean }} [options]
  */
 async function applyPortImageCandidate(supabase, port, candidate, options = {}) {
+  if (options.resolutionSpec) {
+    assertCanonicalApplyTarget(options.resolutionSpec, port);
+  }
   if (!canOverwritePortImage(port, options)) {
     const err = new Error("This port has a manual image and cannot be overwritten automatically.");
     err.statusCode = 409;
@@ -229,5 +233,6 @@ module.exports = {
   canOverwritePortImage,
   downloadImage,
   assertCandidateApplicable,
+  assertCanonicalApplyTarget,
   __resetDownloadThrottleForTests
 };

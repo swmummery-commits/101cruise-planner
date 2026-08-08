@@ -33,7 +33,7 @@ const HISTORICAL_SIGNAL_RE =
   /\b(photochrom|historic photograph|historical photograph|archives?|circa|c\.\s*\d{4}|dated\s+\d{4}|18\d{2}s|1890s|1900s|1910s|1920s|1930s|1940s|1950s|19th century|early 20th century|waterfront 1890|harbour 1898|harbor 1898|harbour 1913|harbor 1913)\b/i;
 
 const MILITARY_WAR_DESTINATION_RE =
-  /\b(lancaster|bomber|bombardment|bombing raid|aerial attack|silhouetted over|naval combat|world war|wwii|ww2|wartime raid|military aircraft|war damage|anti-?aircraft|strafing|invasion fleet|torpedo attack|battleship|destroyer firing|naval bombardment)\b/i;
+  /\b(lancaster|bomber|bombardment|bombing raid|aerial attack|silhouetted over|naval combat|world war|wwii|ww2|wartime raid|military aircraft|war damage|anti-?aircraft|strafing|invasion fleet|torpedo attack|battleship|destroyer firing|naval bombardment|military harbour|military harbor|naval base|exercise guns|guns in the harbour|guns in the harbor|naval ships)\b/i;
 
 const ELIGIBLE_SHORTLIST = 8;
 
@@ -158,6 +158,31 @@ function destinationSpecificityScores(candidate, port) {
     if (hay.includes(name)) anyHit = true;
   }
   return { titleHit, anyHit, names };
+}
+
+function physicalPortDestinationBoost(candidate, port) {
+  const title = normalizeMatchText(normaliseTitle(candidate?.title));
+  const names = destinationNamesForPort(port);
+  const portContext = names.join(" ");
+
+  if (/los angeles|san pedro|long beach/i.test(portContext)) {
+    if (
+      /san pedro|port of los angeles|world cruise center|los angeles harbour|los angeles harbor|la harbour|la harbor|cruise terminal|port of la\b/i.test(
+        title
+      )
+    ) {
+      return 14;
+    }
+    if (/santa monica|venice beach|malibu|hollywood|beverly hills|downtown los angeles/i.test(title)) {
+      return -22;
+    }
+  }
+
+  const hasPhysicalPortAlias = /san pedro|port of|harbour|harbor|waterfront|terminal/i.test(portContext);
+  if (hasPhysicalPortAlias && /port of|harbour|harbor|waterfront|terminal|wharf|pier/i.test(title)) {
+    return 6;
+  }
+  return 0;
 }
 
 function genericImageryPenalty(candidate, port) {
@@ -289,6 +314,12 @@ function computeGeographicScore(candidate, port) {
   if (String(port?.canonical_name || "").trim().toLowerCase() === "cozumel" && /playa del carmen|terminal maritima playa/i.test(titleOnly)) {
     return 0;
   }
+  if (String(port?.canonical_name || "").trim().toLowerCase() === "ensenada") {
+    const hayLower = candidateHaystack(candidate).toLowerCase();
+    if (/bah[ií]a de los [aá]ngeles|bahia de los angeles|punta arenas.*bah[ií]a/i.test(hayLower)) {
+      return 0;
+    }
+  }
 
   const text = candidateHaystack(candidate);
   if (hasConflictingLocation(text, port)) return 0;
@@ -301,6 +332,7 @@ function computeGeographicScore(candidate, port) {
   else if (specificity.anyHit) score += 14;
   if (PORT_DESTINATION_RE.test(text)) score += 8;
   score -= genericImageryPenalty(candidate, port);
+  score += physicalPortDestinationBoost(candidate, port);
 
   const provider = String(candidate?.provider || "").toLowerCase();
   if (provider === "wikimedia") score += 8;
@@ -482,29 +514,64 @@ function candidatePassesEligibility(row, port) {
   return true;
 }
 
+function isDatedForModernPreference(candidate) {
+  const age = classifyImageAge(candidate);
+  if (age.historical || age.ageClass === "HISTORICAL") return true;
+  const years = extractYearSignals(candidateHaystack(candidate));
+  return years.length > 0 && Math.max(...years) < 1990;
+}
+
+function comparableModernAlternative(modernRow, historicalRow) {
+  if (!modernRow || !historicalRow) return false;
+  if (modernRow.geographic < historicalRow.geographic - 10) return false;
+  if (modernRow.suitability < historicalRow.suitability - 12) return false;
+  if (modernRow.confidence < historicalRow.confidence - 15) return false;
+  return true;
+}
+
+function pickFirstEligibleWithModernPreference(ranked, port, { limit = ELIGIBLE_SHORTLIST } = {}) {
+  const eligible = [];
+  for (let i = 0; i < Math.min(limit, ranked.length); i++) {
+    if (candidatePassesEligibility(ranked[i], port)) {
+      eligible.push({ row: ranked[i], rank: i + 1 });
+    }
+  }
+  if (!eligible.length) return { row: null, rank: null, displacedHistorical: false };
+
+  let chosen = eligible[0];
+  let displacedHistorical = false;
+  if (isDatedForModernPreference(chosen.row.candidate)) {
+    for (let j = 1; j < eligible.length; j++) {
+      const candidateAge = classifyImageAge(eligible[j].row.candidate);
+      if (candidateAge.ageClass === "MODERN" && comparableModernAlternative(eligible[j].row, chosen.row)) {
+        chosen = eligible[j];
+        displacedHistorical = true;
+        break;
+      }
+    }
+  }
+  return { row: chosen.row, rank: chosen.rank, displacedHistorical };
+}
+
 function pickEligibleCandidate(candidates, port, { limit = ELIGIBLE_SHORTLIST } = {}) {
   const ranked = pickBestCandidate(candidates, port);
-  for (const row of ranked.slice(0, limit)) {
-    if (candidatePassesEligibility(row, port)) return row;
-  }
-  return null;
+  return pickFirstEligibleWithModernPreference(ranked, port, { limit }).row;
 }
 
 function pickEligibleCandidateWithContext(candidates, port, { limit = ELIGIBLE_SHORTLIST } = {}) {
   const ranked = pickBestCandidate(candidates, port);
   const rawTop = ranked[0] || null;
-  for (let i = 0; i < Math.min(limit, ranked.length); i++) {
-    if (candidatePassesEligibility(ranked[i], port)) {
-      return {
-        row: ranked[i],
-        rank: i + 1,
-        ranked,
-        rawTop,
-        displacedHistorical: Boolean(rawTop && i > 0 && classifyImageAge(rawTop.candidate).historical)
-      };
-    }
+  const picked = pickFirstEligibleWithModernPreference(ranked, port, { limit });
+  if (!picked.row) {
+    return { row: null, rank: null, ranked, rawTop, displacedHistorical: false };
   }
-  return { row: null, rank: null, ranked, rawTop, displacedHistorical: false };
+  return {
+    row: picked.row,
+    rank: picked.rank,
+    ranked,
+    rawTop,
+    displacedHistorical: picked.displacedHistorical
+  };
 }
 
 function statusForCandidate(row) {
@@ -538,7 +605,10 @@ module.exports = {
   isVesselPrimarySubject,
   destinationSpecificityScores,
   genericImageryPenalty,
+  physicalPortDestinationBoost,
   destinationNamesForPort,
+  comparableModernAlternative,
+  isDatedForModernPreference,
   classifyImageAge,
   isMilitaryWarDestinationImagery,
   historicalSuitabilityPenalty
