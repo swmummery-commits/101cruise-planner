@@ -51,6 +51,11 @@ function titleSegments(title) {
     .filter(Boolean);
 }
 
+/** Flickr / Commons trailing numeric file IDs — not naval pennants or hull numbers. */
+function isLikelyPhotoFileId(text) {
+  return /\(\d{6,}\)/.test(String(text || ""));
+}
+
 /**
  * Detect when a vessel is the principal subject (not incidental in a wide harbour scene).
  */
@@ -67,11 +72,18 @@ function isVesselPrimarySubject(candidate) {
   if (/\bview of\b.*\b(harbour|harbor|port|waterfront|city)\b/i.test(combined)) {
     return { vesselPrimary: false, reason: "view_of_destination" };
   }
+  if (/\bview over\b.*\b(harbour|harbor|port|waterfront|city)\b/i.test(combined)) {
+    return { vesselPrimary: false, reason: "view_over_destination" };
+  }
 
   const segments = titleSegments(title);
   const lead = (segments[0] || titleLower).toLowerCase();
 
-  if (/^\w[\w\s.-]*\(\d+\)/i.test(segments[0] || title) && !/\b(harbour|harbor|waterfront|port|lighthouse|leuchtturm|hafen|skyline|cityscape)\b/i.test(lead)) {
+  if (
+    /^\w[\w\s.-]*\(\d+\)/i.test(segments[0] || title) &&
+    !isLikelyPhotoFileId(segments[0] || title) &&
+    !/\b(harbour|harbor|waterfront|port|lighthouse|leuchtturm|hafen|skyline|cityscape)\b/i.test(lead)
+  ) {
     return { vesselPrimary: true, reason: "hull_number_lead" };
   }
   if (/^uss\s+/i.test(titleLower) && /\b(commissioning|in port|at port|naval|patrol|corvette|frigate|destroyer)\b/i.test(combined)) {
@@ -80,7 +92,12 @@ function isVesselPrimarySubject(candidate) {
   if (/^(tcg|hms|uss|rv|ms|mv|ss)\s+/i.test(titleLower) && /\([A-Z]?-?\d+\)/i.test(title)) {
     return { vesselPrimary: true, reason: "named_warship" };
   }
-  if (/\([A-Z]{0,3}-?\d+\)/i.test(title) && /\b(in port|at port|harbour|harbor|naval|patrol|corvette|frigate|destroyer)\b/i.test(combined)) {
+  if (
+    /\([A-Z]{0,3}-?\d+\)/i.test(title) &&
+    !isLikelyPhotoFileId(title) &&
+    /\b(in port|at port|naval|patrol|corvette|frigate|destroyer)\b/i.test(combined) &&
+    !/\b(harbour|harbor|waterfront)\b.*\(\d{6,}\)/i.test(titleLower)
+  ) {
     return { vesselPrimary: true, reason: "pennant_in_port" };
   }
 
@@ -160,6 +177,22 @@ function destinationSpecificityScores(candidate, port) {
     if (title.includes(name)) titleHit = true;
     if (hay.includes(name)) anyHit = true;
   }
+  if (!titleHit) {
+    for (const name of names) {
+      const parts = name.split(" ").filter(Boolean);
+      if (parts.length < 2 || parts[0].length < 4) continue;
+      const lead = parts[0];
+      const portDeLead = new RegExp(`\\bport de ${lead}\\b`, "i");
+      const compound = new RegExp(`\\b${lead}\\b.*\\b${parts[1]}\\b`, "i");
+      if (portDeLead.test(title) || compound.test(title)) {
+        titleHit = true;
+        break;
+      }
+    }
+  }
+  if (hasKnownWrongDestinationMatch(candidate, port)) {
+    titleHit = false;
+  }
   return { titleHit, anyHit, names };
 }
 
@@ -179,6 +212,10 @@ function physicalPortDestinationBoost(candidate, port) {
     if (/santa monica|venice beach|malibu|hollywood|beverly hills|downtown los angeles/i.test(title)) {
       return -22;
     }
+  }
+
+  if (/palma de mallorca|^palma\b/i.test(portContext) && /port de palma|palma de mallorca|port of palma|aerial.*palma/i.test(title)) {
+    return 16;
   }
 
   const hasPhysicalPortAlias = /san pedro|port of|harbour|harbor|waterfront|terminal/i.test(portContext);
@@ -342,6 +379,15 @@ function hasKnownWrongDestinationMatch(candidate, port) {
     canonical === "punta arenas" &&
     (/patagonien\b|patagonia\b|puerto eden/i.test(hayLower) || /\b1983-12 patagonien\b/i.test(titleOnly)) &&
     !/punta arenas|magellan|magallanes|strait of magellan/i.test(hayLower)
+  ) {
+    return true;
+  }
+  if (
+    canonical === "valencia" &&
+    /\bdenia\b|\bdénia\b/i.test(titleOnly) &&
+    !/\bvalencia\b/i.test(
+      titleOnly.replace(/pa[ií]s valenci[aà]|comunitat valenciana|valencian community|marina alta/gi, "")
+    )
   ) {
     return true;
   }
@@ -652,5 +698,6 @@ module.exports = {
   classifyImageAge,
   isMilitaryWarDestinationImagery,
   historicalSuitabilityPenalty,
-  hasKnownWrongDestinationMatch
+  hasKnownWrongDestinationMatch,
+  isLikelyPhotoFileId
 };

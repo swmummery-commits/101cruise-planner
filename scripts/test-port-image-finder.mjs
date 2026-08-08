@@ -850,8 +850,74 @@ const tampaPort = { canonical_name: "Tampa", city: "Tampa", country: "United Sta
 const tampaUss = { title: "USS Typhoon (PC-5) commissioning in Tampa Bay.jpg", provider: "wikimedia", license: "Public domain" };
 assert(isVesselPrimarySubject(tampaUss).vesselPrimary, "USS commissioning image flagged vessel-primary");
 const warnemundePort = { canonical_name: "Warnemunde", city: "Warnemunde", country: "Germany", country_code: "DE", aliases: ["Rostock"] };
-const warnemundeShip = { title: "Rostock Ostsee (49833072171).jpg", provider: "wikimedia", license: "CC BY 2.0" };
-assert(isVesselPrimarySubject(warnemundeShip).vesselPrimary, "Warnemünde Ostsee ship photo flagged vessel-primary");
+const warnemundeShip = { title: "AIDAbella at Warnemünde.jpg", provider: "wikimedia", license: "CC BY 2.0" };
+assert(isVesselPrimarySubject(warnemundeShip).vesselPrimary, "named cruise ship at harbour flagged vessel-primary");
+const stockholmHarbour = {
+  title: "Sweden - Stockholm 39 - view over the harbour (6943507962).jpg",
+  provider: "wikimedia",
+  license: "CC BY 2.0"
+};
+assert(!isVesselPrimarySubject(stockholmHarbour).vesselPrimary, "Stockholm harbour view with Flickr ID is not vessel-primary");
+const stJohnsHarbour = {
+  title: "St John's harbour (15683472336).jpg",
+  provider: "wikimedia",
+  license: "CC BY 2.0"
+};
+assert(!isVesselPrimarySubject(stJohnsHarbour).vesselPrimary, "St John's harbour with Flickr ID is not vessel-primary");
+const villefrancheHarbour = { title: "Villefranche (168200841).jpeg", provider: "wikimedia", license: "CC BY 2.0" };
+assert(!isVesselPrimarySubject(villefrancheHarbour).vesselPrimary, "Villefranche destination with Flickr ID is not vessel-primary");
+
+// --- Palma de Mallorca: Port de Palma title must not be WRONG geography ---
+const palmaPort = { canonical_name: "Palma de Mallorca", city: "Palma de Mallorca", country: "Spain", country_code: "ES" };
+const palmaImage = {
+  title: "Vista aèria del Port de Palma.JPG",
+  provider: "wikimedia",
+  license: "CC BY-SA 3.0",
+  sourceUrl: "https://commons.wikimedia.org/wiki/File:Vista_a%C3%A8ria_del_Port_de_Palma.JPG"
+};
+assert(!hasKnownWrongDestinationMatch(palmaImage, palmaPort), "Port de Palma is not wrong destination for Palma de Mallorca");
+assert(computeGeographicScore(palmaImage, palmaPort) >= 55, "Port de Palma geographic score acceptable for Palma de Mallorca");
+assert(!hasWrongGeographyForPort(palmaPort, palmaImage), "Port de Palma passes Palma de Mallorca geography audit");
+
+// --- Valencia: Dénia must not qualify as Valencia city ---
+const valenciaPort = { canonical_name: "Valencia", city: "Valencia", country: "Spain", country_code: "ES" };
+const deniaImage = {
+  title: "0.5. Port de Dénia (Marina Alta, País Valencià).jpg",
+  provider: "wikimedia",
+  license: "CC BY-SA 4.0"
+};
+assert(hasKnownWrongDestinationMatch(deniaImage, valenciaPort), "Dénia rejected for Valencia city");
+assert(hasWrongGeographyForPort(valenciaPort, deniaImage), "Dénia fails Valencia geography audit");
+
+// --- St John's Newfoundland vs Saint John New Brunswick remain distinct ---
+const saintJohnNbPort = { canonical_name: "Saint John", city: "Saint John", country: "Canada", country_code: "CA", region: "Canada New England", aliases: ["St John NB"] };
+const stJohnsNlPort = {
+  canonical_name: "St Johns Newfoundland",
+  city: "St John's",
+  country: "Canada",
+  country_code: "CA",
+  region: "Canada New England",
+  aliases: ["Newfoundland", "St Johns"]
+};
+const saintJohnNbImage = { title: "Saint John Harbour Bridge viewed from Martello Tower.jpg", provider: "wikimedia", license: "CC BY 2.0" };
+assert(!hasWrongGeographyForPort(saintJohnNbPort, saintJohnNbImage), "Saint John NB harbour image valid for Saint John");
+assert(!hasWrongGeographyForPort(stJohnsNlPort, stJohnsHarbour), "St John's NL harbour image valid for St Johns Newfoundland");
+
+// --- Duplicate canonical integrity: darwin|australia ---
+const { assertNoDuplicateCanonicalPorts } = loadCjs("scripts/lib/port-canonical-integrity.cjs");
+assertNoDuplicateCanonicalPorts([
+  { canonical_name: "Darwin", country: "Australia", match_key: "darwin|australia" },
+  { canonical_name: "Southampton", country: "United Kingdom", match_key: "southampton|united kingdom" }
+]);
+try {
+  assertNoDuplicateCanonicalPorts([
+    { canonical_name: "Darwin", country: "Australia", match_key: "darwin|australia" },
+    { canonical_name: "Darwin", country: null, match_key: "darwin|" }
+  ]);
+  assert(false, "duplicate Darwin should throw");
+} catch {
+  assert(true, "duplicate Darwin detected");
+}
 
 assert(
   isDuplicateStoragePathError(new Error('duplicate key value violates unique constraint "media_library_storage_path_uidx"')),
