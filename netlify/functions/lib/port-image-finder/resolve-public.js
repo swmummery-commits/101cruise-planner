@@ -61,16 +61,95 @@ function indexPortsCatalogue(portRows) {
   return index;
 }
 
+function catalogueRowsFromIndex(catalogueIndex) {
+  if (!catalogueIndex) return [];
+  const rows = [];
+  const seen = new Set();
+  for (const row of catalogueIndex.values()) {
+    if (!row?.id || seen.has(row.id)) continue;
+    seen.add(row.id);
+    rows.push(row);
+  }
+  return rows;
+}
+
+function rankCataloguePortMatches(portName, rows) {
+  const target = normaliseEntityKey(portName);
+  return (rows || [])
+    .filter(hasValidPortImage)
+    .map((row) => {
+      let score = 0;
+      if (normaliseEntityKey(row.canonical_name) === target) score += 100;
+      if (normaliseEntityKey(row.city) === target) score += 80;
+      if (normaliseEntityKey(row.display_name) === target) score += 70;
+      if (
+        (Array.isArray(row.aliases) ? row.aliases : []).some(
+          (alias) => normaliseEntityKey(alias) === target
+        )
+      ) {
+        score += 40;
+      }
+      for (const key of nameKeysForLookup(portName)) {
+        if (portLookupKeys(row).has(key)) score += 20;
+      }
+      if (String(row.image_status || "").toUpperCase() === "MANUAL") score += 5;
+      return { row, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+}
+
 /**
  * @param {string} portName
  * @param {Map<string, object>} catalogueIndex
+ * @param {Array<object>} [catalogueRows]
  */
-function lookupCataloguePort(portName, catalogueIndex) {
+function lookupCataloguePort(portName, catalogueIndex, catalogueRows) {
+  const target = normaliseEntityKey(portName);
+  if (!target) return null;
+
+  const rows = Array.isArray(catalogueRows) && catalogueRows.length
+    ? catalogueRows.filter(hasValidPortImage)
+    : catalogueRowsFromIndex(catalogueIndex);
+
+  const exactCanonical = rows.filter((row) => normaliseEntityKey(row.canonical_name) === target);
+  if (exactCanonical.length === 1) return exactCanonical[0];
+  if (exactCanonical.length > 1) return rankCataloguePortMatches(portName, exactCanonical)[0]?.row || exactCanonical[0];
+
+  const exactCity = rows.filter((row) => normaliseEntityKey(row.city) === target);
+  if (exactCity.length === 1) return exactCity[0];
+
+  const ranked = rankCataloguePortMatches(portName, rows);
+  if (ranked.length) return ranked[0].row;
+
   for (const key of nameKeysForLookup(portName)) {
-    const hit = catalogueIndex.get(key);
+    const hit = catalogueIndex?.get(key);
     if (hit) return hit;
   }
   return null;
+}
+
+/**
+ * Prefer approved canonical ports catalogue imagery over legacy destination_ports heroes.
+ */
+function resolvePublicPortHeroMedia(portRow, catalogueMediaByName) {
+  const key = normaliseEntityKey(portRow?.name || "");
+  const catalogueId = key ? catalogueMediaByName.get(key) : null;
+  if (catalogueId) {
+    return {
+      hero_media_id: catalogueId,
+      source: "ports_catalogue",
+      legacy_hero_media_id: portRow?.hero_media_id || null
+    };
+  }
+  if (portRow?.hero_media_id) {
+    return {
+      hero_media_id: portRow.hero_media_id,
+      source: "destination_ports_legacy",
+      legacy_hero_media_id: portRow.hero_media_id
+    };
+  }
+  return { hero_media_id: null, source: "none", legacy_hero_media_id: null };
 }
 
 /**
@@ -87,9 +166,10 @@ async function resolveCatalogueMediaIds(supabaseGet, portNames) {
       `ports?hero_media_id=not.is.null&image_status=in.(MANUAL,AUTO_APPROVED)` +
         `&select=${encodeURIComponent(PORT_IMAGE_SELECT)}&limit=2000`
     );
-    const index = indexPortsCatalogue(Array.isArray(rows) ? rows : []);
+    const catalogueRows = Array.isArray(rows) ? rows : [];
+    const index = indexPortsCatalogue(catalogueRows);
     for (const name of names) {
-      const hit = lookupCataloguePort(name, index);
+      const hit = lookupCataloguePort(name, index, catalogueRows);
       if (hit?.hero_media_id) {
         out.set(normaliseEntityKey(name), hit.hero_media_id);
       }
@@ -107,5 +187,7 @@ module.exports = {
   indexPortsCatalogue,
   lookupCataloguePort,
   resolveCatalogueMediaIds,
+  resolvePublicPortHeroMedia,
+  rankCataloguePortMatches,
   hasValidPortImage
 };

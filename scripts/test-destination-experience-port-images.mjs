@@ -14,7 +14,8 @@ const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const {
   indexPortsCatalogue,
   lookupCataloguePort,
-  nameKeysForLookup
+  nameKeysForLookup,
+  resolvePublicPortHeroMedia
 } = require(path.join(root, "netlify/functions/lib/port-image-finder/resolve-public.js"));
 
 const catalogueRows = [
@@ -108,5 +109,49 @@ for (const row of cases) {
 
 assert(nameKeysForLookup("Rome (Civitavecchia)").includes("civitavecchia"), "paren alias keys generated");
 assert(nameKeysForLookup("Venice / Ravenna").includes("ravenna"), "slash alias keys generated");
+
+const ambiguousCatalogue = [
+  {
+    canonical_name: "Sydney Nova Scotia",
+    display_name: "Sydney, Nova Scotia, Canada",
+    city: "Sydney",
+    country: "Canada",
+    country_code: "CA",
+    aliases: ["Sydney"],
+    hero_media_id: "media-sydney-ns",
+    image_status: "AUTO_APPROVED"
+  },
+  {
+    canonical_name: "Sydney",
+    display_name: "Sydney, Australia",
+    city: "Sydney",
+    country: "Australia",
+    country_code: "AU",
+    aliases: [],
+    hero_media_id: "media-sydney-au",
+    image_status: "MANUAL"
+  }
+];
+const ambiguousIndex = indexPortsCatalogue(ambiguousCatalogue);
+const sydneyHit = lookupCataloguePort("Sydney", ambiguousIndex, ambiguousCatalogue);
+assert.equal(sydneyHit?.canonical_name, "Sydney", "plain Sydney resolves to Australia, not Nova Scotia");
+assert.equal(sydneyHit?.hero_media_id, "media-sydney-au", "plain Sydney uses approved Australia hero");
+
+const legacyPortRow = {
+  name: "Sydney",
+  hero_media_id: "media-destination-old"
+};
+const catalogueMap = new Map([["sydney", "media-sydney-au"]]);
+const resolvedHero = resolvePublicPortHeroMedia(legacyPortRow, catalogueMap);
+assert.equal(resolvedHero.hero_media_id, "media-sydney-au", "canonical ports hero overrides destination_ports legacy");
+assert.equal(resolvedHero.source, "ports_catalogue", "canonical source recorded");
+assert.equal(resolvedHero.legacy_hero_media_id, "media-destination-old", "legacy id preserved for audit");
+
+const legacyOnly = resolvePublicPortHeroMedia(
+  { name: "Obscure Port", hero_media_id: "media-legacy-only" },
+  new Map()
+);
+assert.equal(legacyOnly.hero_media_id, "media-legacy-only", "legacy destination_ports hero kept when no canonical image");
+assert.equal(legacyOnly.source, "destination_ports_legacy", "legacy fallback source");
 
 console.log("test-destination-experience-port-images: ok");
