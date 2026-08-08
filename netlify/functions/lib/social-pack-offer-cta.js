@@ -22,6 +22,10 @@ const FOOTER_H = MASTER_FOOTER_H;
 /** Shared white-pill fill — slightly translucent across all pills */
 const PILL_FILL = WHITE;
 const PILL_OPACITY = 0.82;
+const INCLUDES_ITEM_FONT_SIZE = 20;
+const DISCLAIMER_FONT_SIZE = INCLUDES_ITEM_FONT_SIZE;
+const DISCLAIMER_LINE_GAP = 24;
+const DISCLAIMER_PILL_H = 72;
 
 function frame(body) {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -309,8 +313,8 @@ function includesStrip({ y, items = [] } = {}) {
   const list = (items || []).filter(Boolean);
   if (!list.length) return "";
 
-  const headerSize = 20;
-  const itemSize = 20;
+  const headerSize = INCLUDES_ITEM_FONT_SIZE;
+  const itemSize = INCLUDES_ITEM_FONT_SIZE;
   const tickSize = 16;
   const tickGap = 8;
   const afterHeader = 22;
@@ -472,9 +476,11 @@ function renderOfferSvg(model, offerIndex = 0) {
     const includeItems = listInclusionItems(model);
     const includesY = fareY + fareH + 28;
     const discW = 520;
-    const discH = 58;
+    const discH = DISCLAIMER_PILL_H;
     const discX = Math.round((W - discW) / 2);
     const discY = H - FOOTER_H - discH - 12;
+    const disclaimerLine1Y = discY + Math.round(DISCLAIMER_FONT_SIZE * 1.35);
+    const disclaimerLine2Y = disclaimerLine1Y + DISCLAIMER_LINE_GAP;
     const roomX = pillX - 36;
     const roomY = (showBrochure ? brochureY : fareY) - 72;
     content = `
@@ -507,10 +513,10 @@ function renderOfferSvg(model, offerIndex = 0) {
       <g filter="url(#pillShadow)">
         <rect x="${discX}" y="${discY}" width="${discW}" height="${discH}" rx="20" fill="${PILL_FILL}" fill-opacity="${PILL_OPACITY}"/>
       </g>
-      <text x="540" y="${discY + 22}" text-anchor="middle" fill="#222" font-family="${FAMILY}" font-size="15" font-weight="400">${escapeXml(
+      <text x="540" y="${disclaimerLine1Y}" text-anchor="middle" fill="#222" font-family="${FAMILY}" font-size="${DISCLAIMER_FONT_SIZE}" font-weight="500">${escapeXml(
         AIRLINE_STAFF_LINE
       )}</text>
-      <text x="540" y="${discY + 42}" text-anchor="middle" fill="#222" font-family="${FAMILY}" font-size="15" font-weight="400">${escapeXml(
+      <text x="540" y="${disclaimerLine2Y}" text-anchor="middle" fill="#222" font-family="${FAMILY}" font-size="${DISCLAIMER_FONT_SIZE}" font-weight="500">${escapeXml(
         CLASSIC_PRICE_DISCLAIMER
       )}</text>
     `;

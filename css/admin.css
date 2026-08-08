@@ -7795,6 +7795,22 @@ body.admin-loading-active {
   margin-top: 16px;
 }
 
+.social-pack-template-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: rgba(17, 24, 22, 0.45);
+}
+
+.social-pack-template-prompt-card {
+  width: min(480px, 100%);
+  text-align: center;
+}
+
 .social-pack-overlay {
   position: fixed;
   inset: 0;

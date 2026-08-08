@@ -394,6 +394,7 @@ async function main() {
     assert(offerSvg.includes("INCLUDES"), "includes pill");
     assert(offerSvg.includes("rotate(-6"), "angled room pill");
     assert(offerSvg.includes("* Price in US dollars"), "disclaimer pill");
+    assert(offerSvg.includes('font-size="20"') && offerSvg.includes("Ask Paul for even better prices"), "classic disclaimer matches includes size");
     assert(offerSvg.includes("Ask Paul for even better prices for Airline Staff"), "classic airline staff disclaimer");
     assert(offerSvg.includes("fill-opacity=\"0.82\""), "translucent pills");
 
@@ -592,11 +593,11 @@ async function main() {
 
     const adminSrc = fs.readFileSync(path.join(root, "js/admin-social-pack.js"), "utf8");
     assert(/function renderTemplateSelector\(\)/.test(adminSrc), "shared template selector helper");
-    assert(/renderTemplateSelector\(\)/.test(adminSrc), "template selector rendered in modal");
-    assert(/showTemplateChoiceToast/.test(adminSrc), "template choice toast on open");
+    assert(/renderTemplateSelector\(\)/.test(adminSrc), "template selector rendered in workspace");
+    assert(/renderTemplatePrompt\(\)/.test(adminSrc), "centered template prompt on open");
     assert(/packTemplateChosen/.test(adminSrc), "template must be chosen before preview");
     assert(/ensureTemplateChosen/.test(adminSrc), "preview blocked until template chosen");
-    assert(/AdminToast\.show/.test(adminSrc), "uses admin toast for template choice");
+    assert(!/showTemplateChoiceToast/.test(adminSrc), "template prompt is centered, not toast");
     assert(!/await previewCruise\(firstReady\.id\)/.test(adminSrc), "no auto-preview before template choice");
 
     const classicOffer = renderOfferSvg(templateModel, 0);
@@ -650,6 +651,7 @@ async function main() {
     assert(!pdOffer.includes("* Price in US dollars"), "old external disclaimer removed");
     assert(pdOffer.includes("* prices are per person in USD"), "disclaimer inside benefits panel");
     assert(pdOffer.includes("Ask Paul for even better prices for Airline Staff"), "premium dark airline staff disclaimer");
+    assert(pdOffer.includes('font-size="16"') && pdOffer.includes("Ask Paul for even better prices"), "premium dark disclaimer matches four-item benefit size");
     assert(pdOffer.includes("subject to availability."), "disclaimer exact ending");
     assert(pdOffer.includes('stroke="#F80020"'), "red strike-through");
     assert((pdOffer.match(/stroke="#DDE2E8"/g) || []).length >= 2, "divider line gaps around red squares");
@@ -688,11 +690,12 @@ async function main() {
     assert(!/Regent\.png|Oceania\.png|hard-code/i.test(pdSrc), "premium dark does not hard-code cruise-line logos");
 
     const oneItem = renderPremiumDarkOfferSvg({ ...templateModel, inclusions: ["Wi-Fi"] }, 0);
-    assert(measureBenefitsPanel(["Wi-Fi"]).height < 180, "one inclusion panel is compact");
+    assert(measureBenefitsPanel(["Wi-Fi"]).height < 200, "one inclusion panel is compact");
     assert(oneItem.includes(">WI-FI<") || oneItem.includes("WI-FI"), "one inclusion renders");
 
     const twoItem = renderPremiumDarkOfferSvg({ ...templateModel, inclusions: ["Wi-Fi", "Gratuities"] }, 0);
     assert(measureBenefitsPanel(["Wi-Fi", "Gratuities"]).height < 200, "two inclusion panel is shallow");
+    assert(twoItem.includes('font-size="20"') && twoItem.includes("Ask Paul for even better prices"), "premium dark disclaimer matches two-item benefit size");
     assert(twoItem.includes(">WI-FI<") || twoItem.includes("WI-FI"), "two-item row 1");
     assert(twoItem.includes(">GRATUITIES<") || twoItem.includes("GRATUITIES"), "two-item row 2");
 

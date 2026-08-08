@@ -23,14 +23,12 @@
   /** @type {Record<string, Array<{id:string}>>} full image pools for Next/Previous */
   let candidateCache = {};
   let lastDownloadUrl = null;
-  let templateToastShown = false;
   let packTemplateChosen = false;
 
   function ensureTemplateChosen() {
     if (packTemplateChosen) return true;
     message = "Choose Classic or Premium Dark before generating previews.";
     messageTone = "error";
-    showTemplateChoiceToast();
     rerender();
     return false;
   }
@@ -214,7 +212,7 @@
     roomSelections = {};
     candidateCache = {};
     lastDownloadUrl = null;
-    templateToastShown = false;
+    packTemplateChosen = false;
     message = "Checking cruise readiness…";
     messageTone = "";
     cruises = (issueCruises || []).map((row) => ({
@@ -231,7 +229,6 @@
       readiness: { status: "pending", label: "Checking…" }
     }));
     rerender();
-    showTemplateChoiceToast();
 
     const run = async () => {
     try {
@@ -365,42 +362,12 @@
     await previewCruise(previewId);
   }
 
-  function showTemplateChoiceToast() {
-    if (templateToastShown || !open || busy) return;
-    if (typeof global.AdminToast?.show !== "function") return;
-    templateToastShown = true;
-    global.AdminToast.show("Choose a Social Pack template before previewing or downloading.", "info", {
-      force: true,
-      durationMs: 0,
-      actions: [
-        {
-          label: "Classic",
-          onClick: () => {
-            packTemplate = "classic";
-            packTemplateChosen = true;
-            message = "";
-            messageTone = "";
-            rerender();
-          }
-        },
-        {
-          label: "Premium Dark",
-          onClick: () => {
-            packTemplate = "premium_dark";
-            packTemplateChosen = true;
-            message = "";
-            messageTone = "";
-            rerender();
-          }
-        }
-      ]
-    });
-  }
-
   async function setPackTemplate(value) {
     packTemplate = String(value || "classic").toLowerCase();
     if (!["classic", "premium_dark"].includes(packTemplate)) packTemplate = "classic";
     packTemplateChosen = true;
+    message = "";
+    messageTone = "";
     if (previewId) await regeneratePreview();
     else rerender();
   }
@@ -732,7 +699,6 @@
     roomSelections = {};
     candidateCache = {};
     lastDownloadUrl = null;
-    templateToastShown = false;
     packTemplateChosen = false;
     message = "";
     if (typeof global.renderAdmin === "function") global.renderAdmin();
@@ -1004,6 +970,22 @@
     `;
   }
 
+  function renderTemplatePrompt() {
+    return `
+      <div class="social-pack-template-prompt" role="dialog" aria-modal="true" aria-label="Choose Social Pack template">
+        <div class="social-pack-template-prompt-card admin-card">
+          <p class="admin-nav-eyebrow">Social Pack</p>
+          <h4>Choose a template</h4>
+          <p class="admin-muted">Pick Classic or Premium Dark before previewing or downloading.</p>
+          <div class="admin-actions-row" style="justify-content:center;margin-top:16px">
+            <button type="button" class="admin-button black" onclick="SocialPackAdmin.setPackTemplate('classic')" ${busy ? "disabled" : ""}>Classic</button>
+            <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.setPackTemplate('premium_dark')" ${busy ? "disabled" : ""}>Premium Dark</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderPanel() {
     const options = newsletterOptions();
     const selected = panelIssueNumber ?? issueNumber ?? "";
@@ -1042,6 +1024,7 @@
               : `<p class="admin-muted">Choose a newsletter issue to load its cruises.</p>`
         }
       </div>
+      ${open && !packTemplateChosen && !busy ? renderTemplatePrompt() : ""}
     `;
   }
 

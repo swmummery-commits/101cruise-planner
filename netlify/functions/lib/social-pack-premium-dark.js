@@ -29,8 +29,22 @@ const CRUISE_LINE_LOGO_H = 88;
 const CRUISE_LINE_SHIELD_CLEARANCE = 150;
 const BROCHURE_FONT_SIZE = 44;
 const PANEL_FILL_OPACITY = 0.72;
-const DISCLAIMER_FONT_SIZE = 13;
 const DISCLAIMER_TEXT = PREMIUM_DARK_PRICE_DISCLAIMER;
+
+function benefitLabelSizeForRow(count) {
+  const n = Number(count) || 0;
+  return n >= 4 ? 16 : n === 3 ? 18 : 20;
+}
+
+function disclaimerLayoutForRows(rows) {
+  const fontSize = (rows || []).reduce(
+    (max, row) => Math.max(max, benefitLabelSizeForRow(row.length)),
+    16
+  );
+  const lineGap = Math.round(fontSize * 1.15);
+  const blockH = fontSize * 2 + lineGap + 18;
+  return { fontSize, lineGap, blockH };
+}
 
 function frame(body) {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -519,11 +533,11 @@ function measureBenefitsPanel(items) {
   const padTop = 22;
   const rowBlockH = 78;
   const rowGap = 16;
-  const disclaimerBlockH = 62;
+  const disclaimerBlockH = disclaimerLayoutForRows(rows).blockH;
   const height =
     padTop + rows.length * rowBlockH + Math.max(0, rows.length - 1) * rowGap + disclaimerBlockH;
 
-  return { height, rows, padTop, rowBlockH, rowGap, disclaimerBlockH };
+  return { height, rows, padTop, rowBlockH, rowGap, disclaimerBlockH, disclaimerLayout: disclaimerLayoutForRows(rows) };
 }
 
 function benefitsPanel(items, { y } = {}) {
@@ -544,7 +558,7 @@ function benefitsPanel(items, { y } = {}) {
     const n = rowItems.length;
     const rowSpanW = colW * n;
     const rowStartX = panelX + (panelW - rowSpanW) / 2;
-    const labelSize = n >= 4 ? 16 : n === 3 ? 18 : 20;
+    const labelSize = benefitLabelSizeForRow(n);
     const iconY = rowY + 18;
     const labelY = rowY + 58;
 
@@ -560,7 +574,7 @@ function benefitsPanel(items, { y } = {}) {
       .map((item, i) => {
         const cx = rowStartX + colW * i + colW / 2;
         const label = normaliseInclusionLabel(item);
-        let ls = labelSize;
+        let ls = benefitLabelSizeForRow(n);
         while (ls >= 13 && estimateMontserratWidth(label, ls) > colW - 14) ls -= 1;
         return `
           ${inclusionIcon(item, cx, iconY, iconSize)}
@@ -574,18 +588,20 @@ function benefitsPanel(items, { y } = {}) {
     rowY += layout.rowBlockH + layout.rowGap;
   }
 
-  const disclaimerY = panelY + layout.height - 18;
-  const airlineStaffY = disclaimerY - 16;
+  const disclaimerLayout = layout.disclaimerLayout || disclaimerLayoutForRows(layout.rows);
+  const disclaimerFontSize = disclaimerLayout.fontSize;
+  const disclaimerY = panelY + layout.height - 20;
+  const airlineStaffY = disclaimerY - disclaimerLayout.lineGap;
   const separatorY = panelY + layout.height - layout.disclaimerBlockH + 6;
 
   const svg = `
     <rect x="${panelX}" y="${panelY}" width="${panelW}" height="${layout.height}" rx="24" fill="#000000" fill-opacity="${PANEL_FILL_OPACITY}" stroke="${GREEN}" stroke-width="2"/>
     ${rowParts.join("\n")}
     <line x1="${panelX + 24}" y1="${separatorY}" x2="${panelX + panelW - 24}" y2="${separatorY}" stroke="${GREEN}" stroke-width="1" stroke-opacity="0.35"/>
-    <text x="${W / 2}" y="${airlineStaffY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="${DISCLAIMER_FONT_SIZE}" font-weight="400">${escapeXml(
+    <text x="${W / 2}" y="${airlineStaffY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="${disclaimerFontSize}" font-weight="500">${escapeXml(
       AIRLINE_STAFF_LINE
     )}</text>
-    <text x="${W / 2}" y="${disclaimerY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="${DISCLAIMER_FONT_SIZE}" font-weight="400">${escapeXml(
+    <text x="${W / 2}" y="${disclaimerY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="${disclaimerFontSize}" font-weight="500">${escapeXml(
       DISCLAIMER_TEXT
     )}</text>
   `;
