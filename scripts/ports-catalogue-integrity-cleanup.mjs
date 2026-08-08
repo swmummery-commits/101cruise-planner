@@ -24,16 +24,6 @@ const CONSOLIDATIONS = [
     remove_id: "50e16fa6-72ee-4194-a7d9-14e9c0b921e9",
     keep_id: "dfc9fc3d-2ed3-4713-89d2-55042b870cb7",
     reason: "Orlando is not a cruise port; Port Canaveral is the canonical berth"
-  },
-  {
-    remove_id: "3b3244bc-2a86-46a5-b93d-302646a03761",
-    keep_id: "762f0f0d-1efd-4a6e-9fb3-4afc68e104a0",
-    reason: "Seville is inland; Cadiz is the cruise port with Seville customer alias"
-  },
-  {
-    remove_id: "bf65bd8b-ce3d-4507-bfcc-a13c5ff2efb2",
-    keep_id: "6fff4757-cbc5-480a-b776-cebf75d11966",
-    reason: "Bangkok duplicate; Laem Chabang is the canonical cruise port with Bangkok alias"
   }
 ];
 
@@ -59,14 +49,7 @@ const GEO_FIXES = [
   }
 ];
 
-const ALIAS_FIXES = [
-  {
-    id: "762f0f0d-1efd-4a6e-9fb3-4afc68e104a0",
-    canonical_name: "Cadiz",
-    aliases: ["Seville"],
-    reason: "Remove redundant self-alias Cadiz; keep Seville customer alias"
-  }
-];
+const ALIAS_FIXES = [];
 
 async function repointFeaturedStops(rest, fromId, toId) {
   const stops = await rest.get(

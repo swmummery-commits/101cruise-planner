@@ -1,5 +1,11 @@
 /**
  * Guard against duplicate canonical port records sharing identity keys.
+ *
+ * Physical port vs customer-facing destination:
+ * - canonical_name / city / coordinates / match_key identify the physical berth
+ * - display_name and qualified aliases carry marketed destination labels
+ *   (e.g. Laem Chabang display "Laem Chabang (Bangkok)", Phu My display
+ *   "Phu My (Ho Chi Minh City)") without merging distinct physical ports
  */
 
 function normalizeIdentity(name, country, matchKey) {

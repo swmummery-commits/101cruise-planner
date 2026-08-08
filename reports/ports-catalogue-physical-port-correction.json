@@ -1,0 +1,221 @@
+{
+  "mode": "apply",
+  "steps": [
+    {
+      "action": "restore_seville",
+      "record": {
+        "id": "3b3244bc-2a86-46a5-b93d-302646a03761",
+        "canonical_name": "Seville",
+        "display_name": "Seville, Spain",
+        "city": "Seville",
+        "country": "Spain",
+        "country_code": "ES",
+        "region": "Andalusia",
+        "latitude": 37.3585,
+        "longitude": -6.025,
+        "aliases": [
+          "Sevilla"
+        ],
+        "status": "verified",
+        "match_key": "seville|spain",
+        "hero_media_id": null,
+        "image_status": "NO_IMAGE"
+      },
+      "note": "Itinerary faaf7bdb lists Seville, Spain explicitly — not Cádiz gateway"
+    },
+    {
+      "action": "cadiz_aliases_cleared",
+      "id": "762f0f0d-1efd-4a6e-9fb3-4afc68e104a0",
+      "aliases": [],
+      "note": "Seville is a separate physical port; no cross-alias"
+    },
+    {
+      "action": "repoint_seville_stop",
+      "stop_id": "dec87f1d-5fd5-4b63-a337-da4b3c9f5199",
+      "port_id": "3b3244bc-2a86-46a5-b93d-302646a03761",
+      "entered_port_text": "Seville, Spain"
+    },
+    {
+      "action": "restore_bangkok_port",
+      "record": {
+        "id": "bf65bd8b-ce3d-4507-bfcc-a13c5ff2efb2",
+        "canonical_name": "Bangkok Port",
+        "display_name": "Bangkok Port (Khlong Toei), Thailand",
+        "city": "Khlong Toei",
+        "country": "Thailand",
+        "country_code": "TH",
+        "region": "Southeast Asia",
+        "latitude": 13.7035,
+        "longitude": 100.584,
+        "aliases": [
+          "Khlong Toei",
+          "Bangkok Port Khlong Toei"
+        ],
+        "status": "verified",
+        "match_key": "bangkok port|thailand",
+        "hero_media_id": "85f892cb-8563-4677-954e-fa00646af923",
+        "image_status": "AUTO_APPROVED"
+      },
+      "note": "Original featured stop port_id was Bangkok/Khlong Toei before cleanup migration"
+    },
+    {
+      "action": "laem_chabang_aliases_cleared",
+      "id": "6fff4757-cbc5-480a-b776-cebf75d11966",
+      "aliases": [],
+      "note": "Customer-facing Bangkok kept in display_name only"
+    },
+    {
+      "action": "repoint_bangkok_stop",
+      "stop_id": "b120d856-e6a9-4edf-b123-bbd87c589ba0",
+      "port_id": "bf65bd8b-ce3d-4507-bfcc-a13c5ff2efb2",
+      "entered_port_text": "Bangkok, Thailand",
+      "note": "Restored to Khlong Toei record that existed before erroneous Laem Chabang merge"
+    },
+    {
+      "action": "create_chan_may",
+      "record": {
+        "canonical_name": "Chan May",
+        "display_name": "Chan May (Hue), Vietnam",
+        "city": "Chan May",
+        "country": "Vietnam",
+        "country_code": "VN",
+        "region": "Southeast Asia",
+        "latitude": 16.267,
+        "longitude": 111.324,
+        "aliases": [
+          "Chan May Port",
+          "Hue cruise port"
+        ],
+        "status": "verified",
+        "match_key": "chan may|vietnam",
+        "hero_media_id": null,
+        "image_status": "NO_IMAGE"
+      },
+      "created": [
+        {
+          "id": "c22af43b-6716-4c2f-b36f-1a3f8bf109de",
+          "canonical_name": "Chan May",
+          "display_name": "Chan May (Hue), Vietnam",
+          "city": "Chan May",
+          "country": "Vietnam",
+          "country_code": "VN",
+          "region": "Southeast Asia",
+          "latitude": 16.267,
+          "longitude": 111.324,
+          "aliases": [
+            "Chan May Port",
+            "Hue cruise port"
+          ],
+          "status": "verified",
+          "source": null,
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "match_key": "chan may|vietnam",
+          "verified_at": null,
+          "created_at": "2026-08-08T05:55:34.509055+00:00",
+          "updated_at": "2026-08-08T05:55:34.509055+00:00",
+          "hero_media_id": null,
+          "image_status": "NO_IMAGE",
+          "image_source": null,
+          "image_source_url": null,
+          "image_credit": null,
+          "image_license": null,
+          "image_search_query": null,
+          "image_confidence": null,
+          "image_last_checked_at": null,
+          "image_candidates": []
+        }
+      ]
+    },
+    {
+      "action": "rename_hcmc_to_phu_my",
+      "id": "26c80a9c-d3ec-47fe-8c12-24f5ec388677",
+      "before": {
+        "canonical_name": "Ho Chi Minh City",
+        "city": "Ho Chi Minh City",
+        "latitude": 10.768,
+        "longitude": 106.707
+      },
+      "after": {
+        "canonical_name": "Phu My",
+        "display_name": "Phu My (Ho Chi Minh City), Vietnam",
+        "city": "Phu My",
+        "country": "Vietnam",
+        "country_code": "VN",
+        "region": "Southeast Asia",
+        "latitude": 10.59,
+        "longitude": 107.01,
+        "aliases": [
+          "Ho Chi Minh City",
+          "Saigon",
+          "Ho Chi Minh City Saigon"
+        ],
+        "match_key": "phu my|vietnam"
+      },
+      "references": 1,
+      "note": "Physical port is Phu My; HCMC remains customer-facing via display/aliases"
+    },
+    {
+      "action": "cross_alias_fix",
+      "id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+      "canonical_name": "Yokohama",
+      "body": {
+        "aliases": [],
+        "display_name": "Yokohama (Tokyo), Japan"
+      }
+    },
+    {
+      "action": "cross_alias_fix",
+      "id": "7e7a0b4e-07b9-40b6-afa0-3e71746e4289",
+      "canonical_name": "Kobe",
+      "body": {
+        "aliases": [
+          "Kyoto"
+        ],
+        "display_name": "Kobe (Kyoto), Japan"
+      }
+    },
+    {
+      "action": "cross_alias_fix",
+      "id": "068205a5-4add-4c7c-902b-27a7398cc8a6",
+      "canonical_name": "Long Beach",
+      "body": {
+        "aliases": [],
+        "display_name": "Long Beach, California"
+      }
+    },
+    {
+      "action": "cross_alias_fix",
+      "id": "07d4ae0f-55c4-4bbb-9b77-a64d75bc2fca",
+      "canonical_name": "Penang",
+      "body": {
+        "aliases": [],
+        "display_name": "Penang (George Town), Malaysia"
+      }
+    },
+    {
+      "action": "cross_alias_fix",
+      "id": "062b5569-511e-4846-bbf5-7652a05e939e",
+      "canonical_name": "Los Angeles",
+      "body": {
+        "aliases": [
+          "LA",
+          "San Pedro"
+        ],
+        "display_name": "Los Angeles (San Pedro), USA"
+      }
+    },
+    {
+      "action": "benoa_geography",
+      "country": "Indonesia",
+      "region": "Bali",
+      "match_key": "benoa|indonesia"
+    },
+    {
+      "action": "miami_geography",
+      "country": "United States",
+      "region": "Florida",
+      "match_key": "miami|united states"
+    }
+  ]
+}
