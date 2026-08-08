@@ -4,9 +4,9 @@
  */
 
 const { escapeXml, buildRouteHeadline } = require("./social-pack-copy");
-const { FAMILY } = require("./social-pack-fonts");
+const { FAMILY, FAMILY_CTA } = require("./social-pack-fonts");
 const { GREEN } = require("./social-pack-svg");
-const { displayPrice } = require("./social-pack-offer-cta");
+const { displayPrice, loadGetYourCruiseOnDataUri } = require("./social-pack-offer-cta");
 const {
   curatedPorts,
   masterBackground,
@@ -23,6 +23,7 @@ const DIVIDER_STROKE = "#DDE2E8";
 const ROUTE_FONT_SIZE = 88;
 const ROUTE_FONT_WEIGHT = 800;
 const BROCHURE_FONT_SIZE = 44;
+const PANEL_FILL_OPACITY = 0.72;
 const DISCLAIMER_TEXT = "* prices are per person in USD & subject to availability.";
 
 function frame(body) {
@@ -263,6 +264,12 @@ function cruiseLineLogoBottom(model, { footerH = FOOTER_H } = {}) {
     </g>`;
 }
 
+function heroPriceFontSize(price) {
+  const approxChars = Math.max(5, String(price).length);
+  const minHero = Math.round(BROCHURE_FONT_SIZE * 1.32);
+  return Math.min(148, Math.max(minHero, Math.round(760 / approxChars)));
+}
+
 function brochurePriceBlock(price, y) {
   const fontSize = BROCHURE_FONT_SIZE;
   const textW = estimateMontserratWidth(price, fontSize);
@@ -276,13 +283,11 @@ function brochurePriceBlock(price, y) {
   `;
 }
 
-function cruise101PriceBlock(price, y) {
-  const approxChars = Math.max(5, String(price).length);
-  const minHero = Math.round(BROCHURE_FONT_SIZE * 1.32);
-  let fontSize = Math.min(132, Math.max(minHero, Math.round(620 / approxChars)));
+function cruise101PriceBlock(price, y, { fontSize = null } = {}) {
+  const px = fontSize || heroPriceFontSize(price);
   const cx = W / 2;
   return `
-    <text x="${cx}" y="${y}" text-anchor="middle" fill="${GREEN}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="800">${escapeXml(
+    <text x="${cx}" y="${y}" text-anchor="middle" fill="${GREEN}" font-family="${FAMILY}" font-size="${px}" font-weight="800">${escapeXml(
       price
     )}</text>
   `;
@@ -472,7 +477,7 @@ function benefitsPanel(items, { y } = {}) {
   const separatorY = panelY + layout.height - layout.disclaimerBlockH + 6;
 
   const svg = `
-    <rect x="${panelX}" y="${panelY}" width="${panelW}" height="${layout.height}" rx="24" fill="#000000" fill-opacity="0.88" stroke="${GREEN}" stroke-width="2"/>
+    <rect x="${panelX}" y="${panelY}" width="${panelW}" height="${layout.height}" rx="24" fill="#000000" fill-opacity="${PANEL_FILL_OPACITY}" stroke="${GREEN}" stroke-width="2"/>
     ${rowParts.join("\n")}
     <line x1="${panelX + 24}" y1="${separatorY}" x2="${panelX + panelW - 24}" y2="${separatorY}" stroke="${GREEN}" stroke-width="1" stroke-opacity="0.35"/>
     <text x="${W / 2}" y="${disclaimerY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="13" font-weight="400">${escapeXml(
@@ -483,25 +488,64 @@ function benefitsPanel(items, { y } = {}) {
   return { svg, height: layout.height, y: panelY };
 }
 
+/** Centre the main slide route/meta block between header and bottom shield. */
+function layoutMainTextGroup(ports) {
+  const routeLineGap = Math.round(ROUTE_FONT_SIZE * 1.02);
+  const routeBlockH = routeLineGap * 2;
+  const metaGap = 44;
+  const nightsSize = 36;
+  const shipSize = 36;
+  const portsSize = 40;
+  const portsText = ports.join(" · ");
+  const portsLines = portsText.length > 42 ? 2 : 1;
+  const portsBlockH = portsLines === 2 ? Math.round(portsSize * 2.28) : portsSize;
+  const groupH = routeBlockH + metaGap + nightsSize + metaGap + shipSize + metaGap + portsBlockH;
+  const zoneTop = 232;
+  const zoneBottom = H - FOOTER_H - 128;
+  const headlineY = Math.round((zoneTop + zoneBottom - groupH) / 2);
+  return {
+    headlineY,
+    nightsDatesY: headlineY + routeBlockH + metaGap,
+    shipY: headlineY + routeBlockH + metaGap + metaGap + Math.round(nightsSize * 0.72),
+    portsY: headlineY + routeBlockH + metaGap * 2 + Math.round(nightsSize * 0.72) + metaGap + Math.round(shipSize * 0.72)
+  };
+}
+
+/** Centre the offer content stack between header and benefits panel. */
+function layoutOfferStack({ route, showBrochure, price, panelY }) {
+  const routeH = Math.round(route.fontSize * 0.92);
+  const brochureBlockH = showBrochure ? 68 : 0;
+  const heroPx = heroPriceFontSize(price);
+  const heroH = Math.round(heroPx * 0.82);
+  const cabinH = 52;
+  const gapRouteBrochure = showBrochure ? 28 : 0;
+  const gapBrochureHero = showBrochure ? 22 : 34;
+  const gapHeroCabin = 18;
+  const stackH = routeH + brochureBlockH + heroH + cabinH + gapRouteBrochure + gapBrochureHero + gapHeroCabin;
+  const zoneTop = 228;
+  const zoneBottom = Math.max(zoneTop + stackH, panelY - 20);
+  const routeY = Math.round((zoneTop + zoneBottom - stackH) / 2 + route.fontSize * 0.32);
+  let cursor = routeY + routeH + gapRouteBrochure;
+  const brochureY = showBrochure ? cursor + 34 : null;
+  if (showBrochure) cursor += brochureBlockH + gapBrochureHero;
+  const priceY = cursor + Math.round(heroPx * 0.72);
+  const cabinY = priceY + gapHeroCabin + Math.round(heroPx * 0.12);
+  return { routeY, brochureY, priceY, cabinY, heroPx };
+}
+
 /** Premium Dark main slide — 101cruise top, cruise line bottom tab. */
 function renderPremiumDarkMainSvg(model) {
   const ports = curatedPorts(model);
-  const headlineY = 280;
-  const headlineLineGap = Math.round(ROUTE_FONT_SIZE * 1.02);
-  const headlineEnd = headlineY + headlineLineGap * 2;
-  const portsY = 740;
-  const midGap = (headlineEnd + portsY) / 2;
-  const nightsDatesY = Math.round(midGap - 24);
-  const shipY = nightsDatesY + 48;
+  const layout = layoutMainTextGroup(ports);
 
   const body = `
     ${masterBackground(model, { concept: "a" })}
     ${brandLogo(model, { y: 36, size: 130 })}
     ${brandDivider(198)}
-    ${mainRouteHeadline(model, { y: headlineY, size: ROUTE_FONT_SIZE })}
-    ${nightsDatesLine(model, { y: nightsDatesY, size: 36 })}
-    ${shipLine(model, { y: shipY, size: 36 })}
-    ${portsLine(ports, { y: portsY, fontSize: 40 })}
+    ${mainRouteHeadline(model, { y: layout.headlineY, size: ROUTE_FONT_SIZE })}
+    ${nightsDatesLine(model, { y: layout.nightsDatesY, size: 36 })}
+    ${shipLine(model, { y: layout.shipY, size: 36 })}
+    ${portsLine(ports, { y: layout.portsY, fontSize: 40 })}
     ${cruiseLineLogoBottom(model)}
     ${greenFooter()}
   `;
@@ -544,25 +588,24 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
   const logoY = 36;
   const dividerY = 198;
   const route = routeText(model);
-  let cursorY = dividerY + 48;
+  const stack = layoutOfferStack({
+    route,
+    showBrochure,
+    price,
+    panelY
+  });
 
   let routeBlock = "";
   if (route.text) {
-    routeBlock = `<text x="540" y="${cursorY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${route.fontSize}" font-weight="${route.fontWeight}" letter-spacing="1.4">${escapeXml(
+    routeBlock = `<text x="540" y="${stack.routeY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${route.fontSize}" font-weight="${route.fontWeight}" letter-spacing="1.4">${escapeXml(
       route.text
     )}</text>`;
-    cursorY += Math.round(route.fontSize * 0.95);
   }
 
-  cursorY += 28;
   let brochureBlock = "";
-  if (showBrochure) {
-    brochureBlock = brochurePriceBlock(brochure, cursorY + 36);
-    cursorY += 72;
+  if (showBrochure && stack.brochureY != null) {
+    brochureBlock = brochurePriceBlock(brochure, stack.brochureY);
   }
-
-  const priceY = cursorY + 64;
-  const cabinY = priceY + 52;
 
   const body = `
     ${premiumDarkBackground(model)}
@@ -570,9 +613,75 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
     ${brandDivider(dividerY)}
     ${routeBlock}
     ${brochureBlock}
-    ${cruise101PriceBlock(price, priceY)}
-    ${cabinPill(room, cabinY)}
+    ${cruise101PriceBlock(price, stack.priceY, { fontSize: stack.heroPx })}
+    ${cabinPill(room, stack.cabinY)}
     ${benefits.svg}
+  `;
+  return frame(body);
+}
+
+/** Premium Dark CTA — three-line headline, script, email, logo. */
+function renderPremiumDarkCtaSvg(model) {
+  const brandSize = 220;
+  const brandY = H - FOOTER_H - brandSize - 36;
+  const href = model.backgroundDataUri || model.heroDataUri;
+  let bg = `<rect width="${W}" height="${H}" fill="#0b1220"/>`;
+  if (href) {
+    const imgW = Number(model.backgroundWidth || model.heroWidth) || W;
+    const imgH = Number(model.backgroundHeight || model.heroHeight) || H;
+    const boxRatio = W / H;
+    const imgRatio = imgW / Math.max(1, imgH);
+    let dw;
+    let dh;
+    if (imgRatio > boxRatio) {
+      dh = H;
+      dw = H * imgRatio;
+    } else {
+      dw = W;
+      dh = W / imgRatio;
+    }
+    const dx = (W - dw) / 2;
+    const dy = (H - dh) / 2;
+    bg = `
+      <defs><clipPath id="ctaClip"><rect width="${W}" height="${H}"/></clipPath></defs>
+      <g clip-path="url(#ctaClip)">
+        <image href="${href}" x="${dx}" y="${dy}" width="${dw}" height="${dh}" preserveAspectRatio="xMidYMid slice"/>
+        <rect width="${W}" height="${H}" fill="#050814" fill-opacity="0.48"/>
+      </g>`;
+  }
+
+  const headlineSize = 96;
+  const headlineGap = Math.round(headlineSize * 0.92);
+  const headlineY = 250;
+  const scriptY = headlineY + headlineGap * 3 + 36;
+  const scriptH = 148;
+  const scriptUri = loadGetYourCruiseOnDataUri();
+  const scriptBlock = scriptUri
+    ? `<image href="${scriptUri}" x="${(W - 820) / 2}" y="${scriptY}" width="820" height="${scriptH}" preserveAspectRatio="xMidYMid meet"/>`
+    : `<text x="540" y="${scriptY + 80}" text-anchor="middle" fill="${WHITE}" font-family="Great Vibes" font-size="92">Get your cruise on!</text>`;
+
+  const scriptInkBottom = scriptY + 118;
+  const logoInkTop = brandY + 9;
+  const emailSize = 52;
+  const gap = logoInkTop - scriptInkBottom;
+  const emailY = Math.round(scriptInkBottom + (gap - emailSize) / 2 + emailSize * 0.8);
+
+  const body = `
+    ${bg}
+    <defs>
+      <filter id="pdCtaHeadlineShadow" x="-20%" y="-20%" width="140%" height="160%">
+        <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.55"/>
+      </filter>
+    </defs>
+    <g filter="url(#pdCtaHeadlineShadow)">
+      <text x="540" y="${headlineY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY_CTA}" font-size="${headlineSize}" font-weight="700" letter-spacing="1.5">TALK TO</text>
+      <text x="540" y="${headlineY + headlineGap}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY_CTA}" font-size="${headlineSize}" font-weight="700" letter-spacing="1.5">PAUL</text>
+      <text x="540" y="${headlineY + headlineGap * 2}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY_CTA}" font-size="${headlineSize}" font-weight="700" letter-spacing="1.5">TODAY</text>
+    </g>
+    ${scriptBlock}
+    <text x="540" y="${emailY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${emailSize}" font-weight="400">paul@101cruise.com.au</text>
+    ${brandLogo(model, { y: brandY, size: brandSize })}
+    ${greenFooter()}
   `;
   return frame(body);
 }
@@ -580,10 +689,15 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
 module.exports = {
   renderPremiumDarkMainSvg,
   renderPremiumDarkOfferSvg,
+  renderPremiumDarkCtaSvg,
   resolvePremiumDarkRoute,
   distributeBenefitRows,
   measureBenefitsPanel,
+  heroPriceFontSize,
+  layoutMainTextGroup,
+  layoutOfferStack,
   DISCLAIMER_TEXT,
+  PANEL_FILL_OPACITY,
   nineSquareMotif,
   premiumDarkBackground
 };

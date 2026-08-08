@@ -526,7 +526,13 @@ async function renderCruisePack(model, options = {}) {
       // Not part of the approved weekly pack; kept for optional/legacy use only.
       svg = renderJourneySvg(slideModel);
     } else {
-      svg = renderCtaSvg(slideModel);
+      const template = normaliseTemplate(model.template);
+      if (template === "premium_dark") {
+        const { renderPremiumDarkCtaSvg } = require("./social-pack-premium-dark");
+        svg = renderPremiumDarkCtaSvg(slideModel);
+      } else {
+        svg = renderCtaSvg(slideModel);
+      }
     }
 
     const rendered = svgToPngBuffer(svg, { width: outputWidth, height: outputHeight });

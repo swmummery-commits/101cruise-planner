@@ -45,7 +45,7 @@ const {
   renderCruisePack
 } = require("../netlify/functions/lib/social-pack-render.js");
 const { normaliseTemplate } = require("../netlify/functions/lib/social-pack-template.js");
-const { renderPremiumDarkOfferSvg, renderPremiumDarkMainSvg, resolvePremiumDarkRoute, distributeBenefitRows, measureBenefitsPanel, DISCLAIMER_TEXT } = require("../netlify/functions/lib/social-pack-premium-dark.js");
+const { renderPremiumDarkOfferSvg, renderPremiumDarkMainSvg, renderPremiumDarkCtaSvg, resolvePremiumDarkRoute, distributeBenefitRows, measureBenefitsPanel, layoutMainTextGroup, heroPriceFontSize, PANEL_FILL_OPACITY, DISCLAIMER_TEXT } = require("../netlify/functions/lib/social-pack-premium-dark.js");
 const { buildSocialPackZip } = require("../netlify/functions/lib/social-pack-zip.js");
 const { assessReadiness } = require("../netlify/functions/lib/social-pack-data.js");
 const {
@@ -593,15 +593,18 @@ async function main() {
     assert(classicOffer.includes(">INCLUDES<"), "classic retains includes heading");
 
     const pdMain = renderPremiumDarkMainSvg(templateModel);
+    const mainLayout = layoutMainTextGroup(templateModel.ports);
+    assert(mainLayout.headlineY > 300, "main text block moved downward");
     assert(pdMain.includes('y="36"') || pdMain.includes("y=\"36\""), "101cruise logo at top");
     assert(pdMain.includes("1286") && pdMain.includes("1162"), "inverted bottom cruise-line tab anchors from footer");
-    assert(!pdMain.includes("cruiseLineLogo(model)"), "premium main uses bottom cruise-line tab");
     assert(pdMain.includes(">BARCELONA<") && pdMain.includes(">ISTANBUL<"), "main route endpoints");
 
     const pdOffer = renderPremiumDarkOfferSvg(templateModel, 0);
     assert(pdOffer.includes("BARCELONA TO ISTANBUL"), "premium dark single-line route");
     assert(pdOffer.includes('font-weight="800"'), "offer route weight matches main");
-    assert(/font-size="(5[2-9]|[6-9]\d|1[01]\d|12[0-8])"/.test(pdOffer), "offer route uses large type");
+    assert(/font-size="(5[2-9]|[6-9]\d|1[0-4]\d)"/.test(pdOffer), "offer route uses large type");
+    assert(heroPriceFontSize("US$1,498") >= 58, "hero price uses larger fit sizing");
+    assert(pdOffer.includes(`fill-opacity="${PANEL_FILL_OPACITY}"`), "benefits panel more transparent");
     assert(pdOffer.includes("$10,498*") || pdOffer.includes("10,498"), "premium dark brochure price");
     assert(pdOffer.includes(GREEN), "premium dark website green");
     assert(pdOffer.includes(">BALCONY<"), "premium dark cabin type");
@@ -673,6 +676,13 @@ async function main() {
     assert(marketingSvg.includes("ATHENS TO ISTANBUL"), "premium dark shows endpoints not marketing");
     assert(!marketingSvg.includes("GREEK ISLES"), "premium dark excludes destination strip copy");
 
+    const pdCta = renderPremiumDarkCtaSvg(templateModel);
+    assert(pdCta.includes(">TALK TO<"), "premium dark cta line 1");
+    assert(pdCta.includes(">PAUL<"), "premium dark cta line 2");
+    assert(pdCta.includes(">TODAY<"), "premium dark cta line 3");
+    assert(pdCta.includes('font-size="96"'), "premium dark cta headline larger");
+    assert(!pdCta.includes(">TALK TO PAUL<"), "premium dark cta not two-line classic heading");
+
     const classicPack = await renderCruisePack({ ...templateModel, template: "classic" });
     const pdPack = await renderCruisePack({ ...templateModel, template: "premium_dark" });
     assert(classicPack.svgs["02-offer-balcony.png"] !== pdPack.svgs["02-offer-balcony.png"], "offer svg differs by template");
@@ -681,8 +691,12 @@ async function main() {
       "premium dark main slide uses its own renderer"
     );
     assert(
-      classicPack.svgs["final-call-to-action.png"] === pdPack.svgs["final-call-to-action.png"],
-      "cta slide unchanged for premium_dark"
+      classicPack.svgs["final-call-to-action.png"] !== pdPack.svgs["final-call-to-action.png"],
+      "premium dark cta uses its own renderer"
+    );
+    assert(
+      classicPack.svgs["final-call-to-action.png"].includes("TALK TO PAUL"),
+      "classic cta unchanged"
     );
 
     const invalidPack = await renderCruisePack({ ...templateModel, template: "futuristic" });
