@@ -1393,38 +1393,6 @@
     }
   }
 
-  async function createSocialPack() {
-    ensureIssueSelected();
-    const list = cruisesForCurrentIssue();
-    if (!list.length) {
-      issueMessage = "Add cruises to this issue before creating a Social Pack.";
-      issueMessageTone = "error";
-      rerender();
-      return;
-    }
-    if (!global.SocialPackAdmin?.openForIssue) {
-      issueMessage = "Social Pack module failed to load.";
-      issueMessageTone = "error";
-      rerender();
-      return;
-    }
-    // Resolve hero thumbnails for the modal list using existing media resolver when available.
-    const withHero = [];
-    for (const cruise of list) {
-      let hero = null;
-      try {
-        if (typeof global.resolveFeaturedCruiseImages === "function") {
-          const resolved = await global.resolveFeaturedCruiseImages(cruise);
-          hero = resolved?.hero || null;
-        }
-      } catch (_e) {
-        /* ignore */
-      }
-      withHero.push({ ...cruise, hero });
-    }
-    await global.SocialPackAdmin.openForIssue(issueNumber, withHero);
-  }
-
   async function preview(outputMode) {
     const run = async () => {
     try {
@@ -1893,7 +1861,6 @@
           <div class="admin-actions-row">
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.preview('airline_staff')" ${issueBusy || !cruises.length ? "disabled" : ""}>Preview Airline Newsletter</button>
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.preview('general')" ${issueBusy || !cruises.length ? "disabled" : ""}>Preview General Newsletter</button>
-            <button type="button" class="admin-button black" onclick="NewsletterIssueComposer.createSocialPack()" ${issueBusy || !cruises.length ? "disabled" : ""}>Create Social Pack</button>
           </div>
         </section>
 
@@ -1920,7 +1887,6 @@
         }
       </div>
       ${renderAddPicker()}
-      ${typeof global.SocialPackAdmin?.renderModal === "function" ? global.SocialPackAdmin.renderModal() : ""}
     `;
   }
 
@@ -1972,7 +1938,6 @@
     allowDrop,
     onDrop,
     preview,
-    createSocialPack,
     exportHtml,
     printRecord,
     retryRouteMapForCruise,

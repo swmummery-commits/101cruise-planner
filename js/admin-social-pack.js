@@ -7,6 +7,7 @@
   let open = false;
   let busy = false;
   let issueNumber = null;
+  let panelIssueNumber = null;
   let cruises = [];
   let previewId = null;
   let preview = null;
@@ -86,6 +87,104 @@
     return options;
   }
 
+  function formatDate(value) {
+    if (typeof global.formatAdminDate === "function") return global.formatAdminDate(value);
+    return value || "";
+  }
+
+  function newsletterOptions() {
+    const byNumber = new Map();
+    const rows = Array.isArray(global.newsletters) ? global.newsletters : [];
+    for (const row of rows) {
+      const number = Number(row.newsletter_number);
+      if (!Number.isFinite(number)) continue;
+      byNumber.set(number, {
+        number,
+        id: row.id || null,
+        date: row.newsletter_date || null
+      });
+    }
+    const cruises = Array.isArray(global.featuredCruises) ? global.featuredCruises : [];
+    for (const cruise of cruises) {
+      if (cruise.newsletter_number == null || cruise.newsletter_number === "") continue;
+      const number = Number(cruise.newsletter_number);
+      if (!Number.isFinite(number) || byNumber.has(number)) continue;
+      byNumber.set(number, {
+        number,
+        id: cruise.newsletter_id || null,
+        date: cruise.newsletter_publication_date || null
+      });
+    }
+    return [...byNumber.values()].sort((a, b) => b.number - a.number);
+  }
+
+  function cruisesForIssue(number, newsletterId = null) {
+    const cruises = Array.isArray(global.featuredCruises) ? global.featuredCruises : [];
+    const num = number != null && number !== "" ? Number(number) : null;
+    const seen = new Set();
+    const matched = [];
+    for (const row of cruises) {
+      const inIssue =
+        (newsletterId && row.newsletter_id === newsletterId) ||
+        (num != null && Number(row.newsletter_number) === num);
+      if (!inIssue || seen.has(row.id)) continue;
+      seen.add(row.id);
+      matched.push(row);
+    }
+    if (!matched.length) return [];
+    return matched.sort((a, b) => {
+      const order = Number(a.display_order || 0) - Number(b.display_order || 0);
+      if (order) return order;
+      return String(a.headline || "").localeCompare(String(b.headline || ""), "en");
+    });
+  }
+
+  async function ensureLoaded({ quiet = false } = {}) {
+    if (typeof global.ensureFeaturedCruisesLoaded === "function") {
+      await global.ensureFeaturedCruisesLoaded({ quiet });
+    }
+    if (global.NewsletterIssueComposer?.loadNewslettersFromDb) {
+      await global.NewsletterIssueComposer.loadNewslettersFromDb();
+    }
+  }
+
+  async function selectPanelIssue(value) {
+    if (busy) return;
+    if (!value) {
+      close();
+      return;
+    }
+    panelIssueNumber = Number(value);
+    message = "";
+    messageTone = "";
+    const option = newsletterOptions().find((row) => row.number === panelIssueNumber);
+    const list = cruisesForIssue(panelIssueNumber, option?.id || null);
+    if (!list.length) {
+      open = false;
+      cruises = [];
+      preview = null;
+      previewId = null;
+      message = "Add cruises to this newsletter before creating a Social Pack.";
+      messageTone = "error";
+      rerender();
+      return;
+    }
+    const withHero = [];
+    for (const cruise of list) {
+      let hero = null;
+      try {
+        if (typeof global.resolveFeaturedCruiseImages === "function") {
+          const resolved = await global.resolveFeaturedCruiseImages(cruise);
+          hero = resolved?.hero || null;
+        }
+      } catch (_e) {
+        /* ignore */
+      }
+      withHero.push({ ...cruise, hero });
+    }
+    await openForIssue(panelIssueNumber, withHero);
+  }
+
   async function withAdminLoading(fn, { forZip = false } = {}) {
     if (global.AdminLoading?.withLoading) {
       return global.AdminLoading.withLoading(fn, {
@@ -102,6 +201,7 @@
 
   async function openForIssue(number, issueCruises) {
     issueNumber = Number(number);
+    panelIssueNumber = issueNumber;
     open = true;
     busy = true;
     preview = null;
@@ -622,6 +722,8 @@
 
   function close() {
     open = false;
+    issueNumber = null;
+    panelIssueNumber = null;
     preview = null;
     previewId = null;
     cruises = [];
@@ -788,130 +890,170 @@
       </div>`;
   }
 
-  function renderModal() {
-    if (!open) return "";
+  function renderWorkspace() {
     const selectedCount = cruises.filter((c) => c.selected).length;
     const msgClass =
       messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : "";
     const bg = preview?.background;
     const activeCruise = cruises.find((c) => c.id === previewId);
     return `
-      <div class="social-pack-overlay" role="dialog" aria-modal="true" aria-label="Create Social Pack">
-        <div class="social-pack-modal admin-card">
-          <div class="admin-list-top">
-            <div>
-              <p class="admin-nav-eyebrow">Marketing</p>
-              <h3>Create Social Pack</h3>
-              <p class="admin-muted">Newsletter ${esc(issueNumber)} · ${esc(selectedCount)} selected</p>
-            </div>
-            <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.close()" ${busy ? "disabled" : ""}>Close</button>
+      <div class="social-pack-workspace">
+        <div class="admin-list-top">
+          <div>
+            <p class="admin-muted">Newsletter ${esc(issueNumber)} · ${esc(selectedCount)} selected</p>
           </div>
-          ${message ? `<div class="admin-message ${msgClass}">${esc(message)}</div>` : ""}
-          ${renderTemplateSelector()}
-          <div class="social-pack-layout">
-            <div class="social-pack-list">
-              ${cruises
-                .map(
-                  (c) => `
-                <div class="social-pack-cruise ${c.id === previewId ? "is-active" : ""} ${c.readiness?.status === "blocked" ? "is-blocked" : ""}">
-                  <label class="social-pack-cruise-main">
-                    <input type="checkbox" ${c.selected ? "checked" : ""} ${
-                      c.readiness?.status === "blocked" || busy ? "disabled" : ""
-                    } onchange="SocialPackAdmin.toggleCruise('${esc(c.id)}')">
-                    <span class="social-pack-thumb">${
-                      c.heroUrl
-                        ? `<img src="${esc(c.heroUrl)}" alt="" loading="lazy">`
-                        : `<span class="admin-empty-preview">No image</span>`
-                    }</span>
-                    <span class="social-pack-cruise-copy">
-                      <strong>${esc(c.destination || c.headline || "Cruise")}</strong>
-                      <span class="admin-small">${esc([c.line, c.ship].filter(Boolean).join(" · "))}</span>
-                      <span class="admin-small">${esc([c.departure, c.returnDate].filter(Boolean).join(" → "))}</span>
-                      <span class="admin-small">${esc(c.readiness?.label || "")}</span>
-                    </span>
-                  </label>
-                  <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.previewCruise('${esc(c.id)}')" ${
-                    busy || c.readiness?.status === "blocked" ? "disabled" : ""
-                  }>Preview</button>
-                  ${c.id === previewId ? renderRoomChecks(c) : ""}
-                </div>`
-                )
-                .join("")}
-            </div>
-            <div class="social-pack-preview">
-              ${
-                preview?.slides
-                  ? `
-                    <div class="social-pack-controls">
-                      <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.openImagePicker()" ${busy ? "disabled" : ""}>Change Social Image</button>
-                      <div class="social-pack-treatment" role="group" aria-label="Background treatment">
-                        <span class="admin-small">Background</span>
-                        ${["clear", "soft", "strong"]
-                          .map(
-                            (t) =>
-                              `<button type="button" class="media-filter-chip ${
-                                treatment === t ? "is-active" : ""
-                              }" onclick="SocialPackAdmin.setTreatment('${t}')" ${busy ? "disabled" : ""}>${
-                                t.charAt(0).toUpperCase() + t.slice(1)
-                              }</button>`
-                          )
-                          .join("")}
-                      </div>
-                      <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.stepBackground(-1)" ${busy ? "disabled" : ""}>Previous Image</button>
-                      <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.stepBackground(1)" ${busy ? "disabled" : ""}>Next Image</button>
-                      <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.regeneratePreview()" ${busy ? "disabled" : ""}>Regenerate Preview</button>
-                    </div>
-                    ${
-                      bg
-                        ? `<p class="admin-small">Image: ${esc(bg.title || bg.media_id || "—")} · ${esc(
-                            bg.destination_key || ""
-                          )} · ${esc(bg.match_role || "")} · rotation ${esc(
-                            String(bg.rotation_index ?? "")
-                          )}/${esc(String(bg.candidate_count ?? ""))}</p>`
-                        : ""
-                    }
-                    <p class="admin-small">Preview is reduced resolution for Admin. Downloads remain full 1080×1350.</p>
-                    ${
-                      activeCruise && !(activeCruise.offers || []).length
-                        ? `<div class="admin-message admin-error">No public room prices are available for this cruise.</div>`
-                        : ""
-                    }
-                    ${renderImagePicker()}
-                    ${renderSlides()}
-                    <label class="admin-field"><span>Caption</span>
-                      <textarea class="social-pack-caption" readonly rows="10">${esc(preview.caption || "")}</textarea>
-                    </label>
-                    <div class="admin-actions-row">
-                      <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.copyCaption()" ${busy ? "disabled" : ""}>Copy caption</button>
-                      <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(-1)" ${busy ? "disabled" : ""}>Previous cruise</button>
-                      <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(1)" ${busy ? "disabled" : ""}>Next cruise</button>
-                    </div>`
-                  : `<p class="admin-muted">${busy ? "Creating your social graphics…" : "Click Preview on a cruise when ready."}</p>`
-              }
-            </div>
-          </div>
-          <div class="admin-actions-row" style="margin-top:16px">
-            <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.downloadThisCruise()" ${
-              busy || !previewId ? "disabled" : ""
-            }>Download This Cruise</button>
-            <button type="button" class="admin-button black" onclick="SocialPackAdmin.downloadZip()" ${
-              busy || !selectedIds().length ? "disabled" : ""
-            }>${busy ? "Working…" : "Download Newsletter Social Pack"}</button>
-            <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.close()" ${busy ? "disabled" : ""}>Close</button>
-          </div>
-          ${
-            lastDownloadUrl
-              ? `<p class="admin-muted" style="margin-top:10px"><a href="${esc(lastDownloadUrl)}" target="_blank" rel="noopener">Open last download link</a> (expires soon)</p>`
-              : ""
-          }
         </div>
+        ${message ? `<div class="admin-message ${msgClass}">${esc(message)}</div>` : ""}
+        ${renderTemplateSelector()}
+        <div class="social-pack-layout">
+          <div class="social-pack-list">
+            ${cruises
+              .map(
+                (c) => `
+              <div class="social-pack-cruise ${c.id === previewId ? "is-active" : ""} ${c.readiness?.status === "blocked" ? "is-blocked" : ""}">
+                <label class="social-pack-cruise-main">
+                  <input type="checkbox" ${c.selected ? "checked" : ""} ${
+                    c.readiness?.status === "blocked" || busy ? "disabled" : ""
+                  } onchange="SocialPackAdmin.toggleCruise('${esc(c.id)}')">
+                  <span class="social-pack-thumb">${
+                    c.heroUrl
+                      ? `<img src="${esc(c.heroUrl)}" alt="" loading="lazy">`
+                      : `<span class="admin-empty-preview">No image</span>`
+                  }</span>
+                  <span class="social-pack-cruise-copy">
+                    <strong>${esc(c.destination || c.headline || "Cruise")}</strong>
+                    <span class="admin-small">${esc([c.line, c.ship].filter(Boolean).join(" · "))}</span>
+                    <span class="admin-small">${esc([c.departure, c.returnDate].filter(Boolean).join(" → "))}</span>
+                    <span class="admin-small">${esc(c.readiness?.label || "")}</span>
+                  </span>
+                </label>
+                <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.previewCruise('${esc(c.id)}')" ${
+                  busy || c.readiness?.status === "blocked" ? "disabled" : ""
+                }>Preview</button>
+                ${c.id === previewId ? renderRoomChecks(c) : ""}
+              </div>`
+              )
+              .join("")}
+          </div>
+          <div class="social-pack-preview">
+            ${
+              preview?.slides
+                ? `
+                  <div class="social-pack-controls">
+                    <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.openImagePicker()" ${busy ? "disabled" : ""}>Change Social Image</button>
+                    <div class="social-pack-treatment" role="group" aria-label="Background treatment">
+                      <span class="admin-small">Background</span>
+                      ${["clear", "soft", "strong"]
+                        .map(
+                          (t) =>
+                            `<button type="button" class="media-filter-chip ${
+                              treatment === t ? "is-active" : ""
+                            }" onclick="SocialPackAdmin.setTreatment('${t}')" ${busy ? "disabled" : ""}>${
+                              t.charAt(0).toUpperCase() + t.slice(1)
+                            }</button>`
+                        )
+                        .join("")}
+                    </div>
+                    <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.stepBackground(-1)" ${busy ? "disabled" : ""}>Previous Image</button>
+                    <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.stepBackground(1)" ${busy ? "disabled" : ""}>Next Image</button>
+                    <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.regeneratePreview()" ${busy ? "disabled" : ""}>Regenerate Preview</button>
+                  </div>
+                  ${
+                    bg
+                      ? `<p class="admin-small">Image: ${esc(bg.title || bg.media_id || "—")} · ${esc(
+                          bg.destination_key || ""
+                        )} · ${esc(bg.match_role || "")} · rotation ${esc(
+                          String(bg.rotation_index ?? "")
+                        )}/${esc(String(bg.candidate_count ?? ""))}</p>`
+                      : ""
+                  }
+                  <p class="admin-small">Preview is reduced resolution for Admin. Downloads remain full 1080×1350.</p>
+                  ${
+                    activeCruise && !(activeCruise.offers || []).length
+                      ? `<div class="admin-message admin-error">No public room prices are available for this cruise.</div>`
+                      : ""
+                  }
+                  ${renderImagePicker()}
+                  ${renderSlides()}
+                  <label class="admin-field"><span>Caption</span>
+                    <textarea class="social-pack-caption" readonly rows="10">${esc(preview.caption || "")}</textarea>
+                  </label>
+                  <div class="admin-actions-row">
+                    <button type="button" class="admin-button secondary small" onclick="SocialPackAdmin.copyCaption()" ${busy ? "disabled" : ""}>Copy caption</button>
+                    <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(-1)" ${busy ? "disabled" : ""}>Previous cruise</button>
+                    <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(1)" ${busy ? "disabled" : ""}>Next cruise</button>
+                  </div>`
+                : `<p class="admin-muted">${busy ? "Creating your social graphics…" : "Click Preview on a cruise when ready."}</p>`
+            }
+          </div>
+        </div>
+        <div class="admin-actions-row" style="margin-top:16px">
+          <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.downloadThisCruise()" ${
+            busy || !previewId ? "disabled" : ""
+          }>Download This Cruise</button>
+          <button type="button" class="admin-button black" onclick="SocialPackAdmin.downloadZip()" ${
+            busy || !selectedIds().length ? "disabled" : ""
+          }>${busy ? "Working…" : "Download Newsletter Social Pack"}</button>
+        </div>
+        ${
+          lastDownloadUrl
+            ? `<p class="admin-muted" style="margin-top:10px"><a href="${esc(lastDownloadUrl)}" target="_blank" rel="noopener">Open last download link</a> (expires soon)</p>`
+            : ""
+        }
       </div>
     `;
+  }
+
+  function renderPanel() {
+    const options = newsletterOptions();
+    const selected = panelIssueNumber ?? issueNumber ?? "";
+    const idleMsgClass =
+      messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : "";
+    return `
+      <div class="admin-card social-pack-panel">
+        <div class="admin-list-top">
+          <div>
+            <p class="admin-nav-eyebrow">Marketing</p>
+            <h3>Social Pack</h3>
+            <p class="admin-muted">Create Instagram graphics and captions for cruises in a newsletter issue.</p>
+          </div>
+        </div>
+        <label class="admin-field">
+          <span>Newsletter issue</span>
+          <select onchange="SocialPackAdmin.selectPanelIssue(this.value)" ${busy ? "disabled" : ""}>
+            <option value="">Choose newsletter…</option>
+            ${options
+              .map(
+                (row) =>
+                  `<option value="${row.number}" ${
+                    Number(selected) === row.number ? "selected" : ""
+                  }>Newsletter ${esc(row.number)}${
+                    row.date ? ` · ${esc(formatDate(row.date))}` : ""
+                  }</option>`
+              )
+              .join("")}
+          </select>
+        </label>
+        ${
+          open
+            ? renderWorkspace()
+            : message
+              ? `<div class="admin-message ${idleMsgClass}">${esc(message)}</div>`
+              : `<p class="admin-muted">Choose a newsletter issue to load its cruises.</p>`
+        }
+      </div>
+    `;
+  }
+
+  function renderModal() {
+    return "";
   }
 
   global.SocialPackAdmin = {
     openForIssue,
     close,
+    ensureLoaded,
+    selectPanelIssue,
     toggleCruise,
     toggleRoom: applyRoomSelectionAndPreview,
     previewCruise,
@@ -927,6 +1069,7 @@
     stepBackground,
     regeneratePreview,
     copyCaption,
+    renderPanel,
     renderModal,
     isOpen: () => open
   };

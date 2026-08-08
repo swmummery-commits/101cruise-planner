@@ -797,6 +797,10 @@ async function setTab(tab) {
     ensureFeaturedCruisesLoaded();
     if (window.MediaLibraryAdmin) window.MediaLibraryAdmin.ensureLoaded({ quiet: true });
   }
+  if (resolved === "social-pack") {
+    ensureFeaturedCruisesLoaded();
+    if (window.SocialPackAdmin?.ensureLoaded) window.SocialPackAdmin.ensureLoaded({ quiet: true });
+  }
   if (resolved === "media-library") {
     if (window.MediaLibraryAdmin) window.MediaLibraryAdmin.ensureLoaded();
     if (window.MediaBulkShipImages) window.MediaBulkShipImages.ensureLoaded();
@@ -919,6 +923,7 @@ const ADMIN_NAV_GROUPS = [
     label: "Marketing",
     items: [
       { id: "featured-cruises", label: "Newsletter" },
+      { id: "social-pack", label: "Social Pack" },
       { id: "media-library", label: "Media Library" }
     ]
   },
@@ -1023,6 +1028,14 @@ const ADMIN_MAIN_TABS = [
     id: "featured-cruises",
     label: "Newsletter",
     render: () => renderFeaturedCruisesPanel()
+  },
+  {
+    id: "social-pack",
+    label: "Social Pack",
+    render: () =>
+      window.SocialPackAdmin
+        ? window.SocialPackAdmin.renderPanel()
+        : `<div class="admin-card"><p class="admin-muted">Social Pack module failed to load.</p></div>`
   },
   {
     id: "media-library",

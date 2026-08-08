@@ -7791,6 +7791,10 @@ body.admin-loading-active {
 }
 
 /* Social Pack modal */
+.social-pack-panel .social-pack-workspace {
+  margin-top: 16px;
+}
+
 .social-pack-overlay {
   position: fixed;
   inset: 0;
