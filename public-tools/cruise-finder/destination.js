@@ -649,13 +649,44 @@
     );
   }
 
+  function sailingDepartureTimestamp(result) {
+    const iso = result?.departureDateIso;
+    if (iso) {
+      const text = String(iso).trim();
+      const parsed = Date.parse(text.includes("T") ? text : `${text}T00:00:00Z`);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+    const display = String(result?.departureDate || "").trim();
+    if (display) {
+      const parsed = Date.parse(display);
+      if (!Number.isNaN(parsed)) return parsed;
+    }
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  function sortSailingsChronologically(list) {
+    return [...(Array.isArray(list) ? list : [])].sort((a, b) => {
+      const byDate = sailingDepartureTimestamp(a) - sailingDepartureTimestamp(b);
+      if (byDate !== 0) return byDate;
+      const byLine = String(a.cruiseLine || "").localeCompare(String(b.cruiseLine || ""), "en", {
+        sensitivity: "base"
+      });
+      if (byLine !== 0) return byLine;
+      return String(a.ship || "").localeCompare(String(b.ship || ""), "en", { sensitivity: "base" });
+    });
+  }
+
   function renderResults(payload) {
     stopLoadingMessages();
-    const bestMatch = (Array.isArray(payload.results) ? payload.results : []).filter(isCompleteSailing);
-    const alsoWorth = (Array.isArray(payload.alsoWorthConsidering) ? payload.alsoWorthConsidering : []).filter(
-      isCompleteSailing
+    const bestMatch = sortSailingsChronologically(
+      (Array.isArray(payload.results) ? payload.results : []).filter(isCompleteSailing)
     );
-    const alternatives = (Array.isArray(payload.otherResults) ? payload.otherResults : []).filter(isCompleteSailing);
+    const alsoWorth = sortSailingsChronologically(
+      (Array.isArray(payload.alsoWorthConsidering) ? payload.alsoWorthConsidering : []).filter(isCompleteSailing)
+    );
+    const alternatives = sortSailingsChronologically(
+      (Array.isArray(payload.otherResults) ? payload.otherResults : []).filter(isCompleteSailing)
+    );
     const summary = payload.departureSummary || {};
     const totalCount = bestMatch.length + alsoWorth.length + alternatives.length;
 

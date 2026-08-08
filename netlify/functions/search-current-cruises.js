@@ -981,6 +981,7 @@ async function runDiscoveryCatalogue(input) {
       ship,
       itineraryTitle: row.itinerary || `${ship} — ${destination.name}`,
       departureDate: formatIsoDateAu(row.departure_date),
+      departureDateIso: row.departure_date,
       returnDate: row.return_date ? formatIsoDateAu(row.return_date) : null,
       durationNights: row.nights,
       durationLabel: `${row.nights} nights`,

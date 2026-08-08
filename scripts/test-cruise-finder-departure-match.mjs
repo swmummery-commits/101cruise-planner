@@ -170,6 +170,19 @@ async function main() {
     );
   });
 
+  await test("Flexible departure bucket sorts by embarkation date ascending", () => {
+    const rows = [
+      sailing({ departurePort: "Barcelona, Spain", departureDate: "12 Nov 2026", departureDateIso: "2026-11-12" }),
+      sailing({ departurePort: "Barcelona, Spain", departureDate: "10 Sep 2026", departureDateIso: "2026-09-10" }),
+      sailing({ departurePort: "Barcelona, Spain", departureDate: "4 Oct 2026", departureDateIso: "2026-10-04" })
+    ];
+    const buckets = categorizeResultsByDeparture(rows, "anywhere");
+    const dates = buckets.results.map((row) => row.departureDate);
+    assert(dates[0] === "10 Sep 2026", "first sailing is earliest");
+    assert(dates[1] === "4 Oct 2026", "second sailing is middle");
+    assert(dates[2] === "12 Nov 2026", "third sailing is latest");
+  });
+
   await test("Existing sailings with mixed constraints still categorise", () => {
     const rows = [
       sailing({ departurePort: "Sydney, Australia", departureDate: "01 Apr 2026" }),

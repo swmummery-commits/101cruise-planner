@@ -193,8 +193,29 @@ function classifyDepartureMatch(sailingPortText, departureId, ports) {
   };
 }
 
+function sailingDepartureTimestamp(row) {
+  const iso = row?.departureDateIso || row?.departure_date;
+  if (iso) {
+    const text = String(iso).trim();
+    const parsed = Date.parse(text.includes("T") ? text : `${text}T00:00:00Z`);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  const display = String(row?.departureDate || "").trim();
+  if (display) {
+    const parsed = Date.parse(display);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
 function sortByDepartureDate(a, b) {
-  return String(a.departureDate || "").localeCompare(String(b.departureDate || ""));
+  const byDate = sailingDepartureTimestamp(a) - sailingDepartureTimestamp(b);
+  if (byDate !== 0) return byDate;
+  const byLine = String(a.cruiseLine || "").localeCompare(String(b.cruiseLine || ""), "en", {
+    sensitivity: "base"
+  });
+  if (byLine !== 0) return byLine;
+  return String(a.ship || "").localeCompare(String(b.ship || ""), "en", { sensitivity: "base" });
 }
 
 /**
