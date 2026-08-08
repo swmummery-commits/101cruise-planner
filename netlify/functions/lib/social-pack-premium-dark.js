@@ -374,12 +374,13 @@ function brochurePriceBlock(price, y) {
   const fontSize = BROCHURE_FONT_SIZE;
   const textW = estimateMontserratWidth(price, fontSize);
   const cx = W / 2;
-  const strikeY = y - Math.round(fontSize * 0.35);
+  const strikeMid = y - Math.round(fontSize * 0.35);
+  const strikeSlant = Math.round(fontSize * 0.32);
   return `
     <text x="${cx}" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="600">${escapeXml(
       price
     )}</text>
-    <line x1="${cx - textW / 2 - 8}" y1="${strikeY}" x2="${cx + textW / 2 + 8}" y2="${strikeY}" stroke="${RED}" stroke-width="3" stroke-linecap="round"/>
+    <line x1="${cx - textW / 2 - 8}" y1="${strikeMid - strikeSlant}" x2="${cx + textW / 2 + 8}" y2="${strikeMid + strikeSlant}" stroke="${RED}" stroke-width="3" stroke-linecap="round"/>
   `;
 }
 

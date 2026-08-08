@@ -166,6 +166,8 @@ function pricePill({ x, y, w, h, label, price, priceColor = "#111", strike = fal
   // Optical mid of the $ amount sits halfway between the two outer baselines
   const midOptical = (labelY + ppY) / 2;
   const priceY = Math.round(midOptical + pricePx * 0.28);
+  const strikeMid = priceY - Math.round(pricePx * 0.32);
+  const strikeSlant = Math.round(pricePx * 0.28);
 
   return `
     <g filter="url(#pillShadow)">
@@ -179,9 +181,9 @@ function pricePill({ x, y, w, h, label, price, priceColor = "#111", strike = fal
     )}</text>
     ${
       strike
-        ? `<line x1="${cx - priceBlockW / 2}" y1="${priceY - Math.round(pricePx * 0.32)}" x2="${
+        ? `<line x1="${cx - priceBlockW / 2}" y1="${strikeMid - strikeSlant}" x2="${
             cx + priceBlockW / 2
-          }" y2="${priceY - Math.round(pricePx * 0.32)}" stroke="#111" stroke-width="7" stroke-linecap="round"/>`
+          }" y2="${strikeMid + strikeSlant}" stroke="#111" stroke-width="7" stroke-linecap="round"/>`
         : ""
     }
     <text x="${cx}" y="${ppY}" text-anchor="middle" fill="#222" font-family="${FAMILY}" font-size="${ppSize}" font-weight="600">per person</text>
