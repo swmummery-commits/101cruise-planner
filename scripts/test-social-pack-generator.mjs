@@ -379,7 +379,8 @@ async function main() {
     assert(mainSvg.includes("#8DD9BF"), "green footer main");
     assert(mainSvg.includes("fill-opacity"), "treatment overlay present");
     assert(!mainSvg.includes(airlineToken), "no airline in main");
-    assert(!offerSvg.toLowerCase().includes("airline"), "no airline word in offer");
+    assert(!offerSvg.includes(airlineToken), "no airline pricing in offer");
+    assert(offerSvg.includes("Ask Paul for even better prices for Airline Staff"), "airline staff disclaimer in offer");
     assert(offerSvg.includes("101CRUISE PRICE"), "public price panel");
     assert(ctaSvg.includes("TALK TO PAUL"), "cta talk line");
     assert(ctaSvg.includes(">TODAY<"), "cta today line");
@@ -393,6 +394,7 @@ async function main() {
     assert(offerSvg.includes("INCLUDES"), "includes pill");
     assert(offerSvg.includes("rotate(-6"), "angled room pill");
     assert(offerSvg.includes("* Price in US dollars"), "disclaimer pill");
+    assert(offerSvg.includes("Ask Paul for even better prices for Airline Staff"), "classic airline staff disclaimer");
     assert(offerSvg.includes("fill-opacity=\"0.82\""), "translucent pills");
 
     // Approved treatments: pricing clear, CTA strong (main uses master soften)
@@ -647,9 +649,10 @@ async function main() {
     assert(!pdOffer.includes(">INCLUDES<"), "premium dark omits INCLUDES heading");
     assert(!pdOffer.includes("* Price in US dollars"), "old external disclaimer removed");
     assert(pdOffer.includes("* prices are per person in USD"), "disclaimer inside benefits panel");
+    assert(pdOffer.includes("Ask Paul for even better prices for Airline Staff"), "premium dark airline staff disclaimer");
     assert(pdOffer.includes("subject to availability."), "disclaimer exact ending");
     assert(pdOffer.includes('stroke="#F80020"'), "red strike-through");
-    assert(pdOffer.includes('stroke="#DDE2E8"'), "subtle light divider line");
+    assert((pdOffer.match(/stroke="#DDE2E8"/g) || []).length >= 2, "divider line gaps around red squares");
     assert(pdOffer.includes(`y="${HEIGHT - 64}"`) && pdOffer.includes(`fill="${GREEN}"`), "offer slide restores green footer band");
 
     const regentModel = {

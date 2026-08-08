@@ -9,6 +9,7 @@
 const fs = require("fs");
 const path = require("path");
 const { escapeXml } = require("./social-pack-copy");
+const { AIRLINE_STAFF_LINE, CLASSIC_PRICE_DISCLAIMER } = require("./social-pack-disclaimer");
 const { FAMILY, FAMILY_CTA } = require("./social-pack-fonts");
 const { cruiseLineLogo, FOOTER_H: MASTER_FOOTER_H, GREEN } = require("./social-pack-master-slide");
 
@@ -469,8 +470,9 @@ function renderOfferSvg(model, offerIndex = 0) {
     const includeItems = listInclusionItems(model);
     const includesY = fareY + fareH + 28;
     const discW = 520;
+    const discH = 58;
     const discX = Math.round((W - discW) / 2);
-    const discY = H - FOOTER_H - 52;
+    const discY = H - FOOTER_H - discH - 12;
     const roomX = pillX - 36;
     const roomY = (showBrochure ? brochureY : fareY) - 72;
     content = `
@@ -501,9 +503,14 @@ function renderOfferSvg(model, offerIndex = 0) {
       })}
       ${includesStrip({ y: includesY, items: includeItems })}
       <g filter="url(#pillShadow)">
-        <rect x="${discX}" y="${discY}" width="${discW}" height="40" rx="20" fill="${PILL_FILL}" fill-opacity="${PILL_OPACITY}"/>
+        <rect x="${discX}" y="${discY}" width="${discW}" height="${discH}" rx="20" fill="${PILL_FILL}" fill-opacity="${PILL_OPACITY}"/>
       </g>
-      <text x="540" y="${discY + 26}" text-anchor="middle" fill="#222" font-family="${FAMILY}" font-size="15" font-weight="400">* Price in US dollars &amp; subject to availability.</text>
+      <text x="540" y="${discY + 22}" text-anchor="middle" fill="#222" font-family="${FAMILY}" font-size="15" font-weight="400">${escapeXml(
+        AIRLINE_STAFF_LINE
+      )}</text>
+      <text x="540" y="${discY + 42}" text-anchor="middle" fill="#222" font-family="${FAMILY}" font-size="15" font-weight="400">${escapeXml(
+        CLASSIC_PRICE_DISCLAIMER
+      )}</text>
     `;
   } else {
     // No public room prices — Main + CTA still generate; pricing cards are omitted from the plan.

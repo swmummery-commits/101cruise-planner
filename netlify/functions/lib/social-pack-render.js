@@ -551,9 +551,9 @@ async function renderCruisePack(model, options = {}) {
     }
   }
   if (
-    /\bairline(?:\s+staff|\s+prices?|_price)?\b/i.test(joined) ||
+    /\bairline_price\b/i.test(joined) ||
     /\bairfares?\b/i.test(joined) ||
-    /\bairline_price\b/i.test(joined)
+    /\bairline\s+prices?\b/i.test(joined)
   ) {
     throw new Error("Airline pricing leaked into social graphics.");
   }

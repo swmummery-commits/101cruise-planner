@@ -5,6 +5,7 @@
 
 const { escapeXml, buildRouteHeadline, stripPortLabel } = require("./social-pack-copy");
 const { buildShipDisplay } = require("./social-pack-caption");
+const { AIRLINE_STAFF_LINE, PREMIUM_DARK_PRICE_DISCLAIMER } = require("./social-pack-disclaimer");
 const { FAMILY, FAMILY_CTA } = require("./social-pack-fonts");
 const { GREEN } = require("./social-pack-svg");
 const { displayPrice, loadGetYourCruiseOnDataUri } = require("./social-pack-offer-cta");
@@ -28,7 +29,8 @@ const CRUISE_LINE_LOGO_H = 88;
 const CRUISE_LINE_SHIELD_CLEARANCE = 150;
 const BROCHURE_FONT_SIZE = 44;
 const PANEL_FILL_OPACITY = 0.72;
-const DISCLAIMER_TEXT = "* prices are per person in USD & subject to availability.";
+const DISCLAIMER_FONT_SIZE = 13;
+const DISCLAIMER_TEXT = PREMIUM_DARK_PRICE_DISCLAIMER;
 
 function frame(body) {
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -104,11 +106,17 @@ function nineSquareMotif(cx, cy, { size = 30 } = {}) {
 function brandDivider(y) {
   const lineW = 420;
   const cx = W / 2;
+  const motifSize = 28;
+  const gap = 10;
+  const halfMotif = motifSize / 2;
   const x1 = cx - lineW / 2;
   const x2 = cx + lineW / 2;
+  const leftEnd = cx - halfMotif - gap;
+  const rightStart = cx + halfMotif + gap;
   return `
-    <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${DIVIDER_STROKE}" stroke-width="1.5" stroke-opacity="0.82"/>
-    ${nineSquareMotif(cx, y, { size: 28 })}
+    <line x1="${x1}" y1="${y}" x2="${leftEnd}" y2="${y}" stroke="${DIVIDER_STROKE}" stroke-width="1.5" stroke-opacity="0.82"/>
+    <line x1="${rightStart}" y1="${y}" x2="${x2}" y2="${y}" stroke="${DIVIDER_STROKE}" stroke-width="1.5" stroke-opacity="0.82"/>
+    ${nineSquareMotif(cx, y, { size: motifSize })}
   `;
 }
 
@@ -510,7 +518,7 @@ function measureBenefitsPanel(items) {
   const padTop = 22;
   const rowBlockH = 78;
   const rowGap = 16;
-  const disclaimerBlockH = 46;
+  const disclaimerBlockH = 62;
   const height =
     padTop + rows.length * rowBlockH + Math.max(0, rows.length - 1) * rowGap + disclaimerBlockH;
 
@@ -566,13 +574,17 @@ function benefitsPanel(items, { y } = {}) {
   }
 
   const disclaimerY = panelY + layout.height - 18;
+  const airlineStaffY = disclaimerY - 16;
   const separatorY = panelY + layout.height - layout.disclaimerBlockH + 6;
 
   const svg = `
     <rect x="${panelX}" y="${panelY}" width="${panelW}" height="${layout.height}" rx="24" fill="#000000" fill-opacity="${PANEL_FILL_OPACITY}" stroke="${GREEN}" stroke-width="2"/>
     ${rowParts.join("\n")}
     <line x1="${panelX + 24}" y1="${separatorY}" x2="${panelX + panelW - 24}" y2="${separatorY}" stroke="${GREEN}" stroke-width="1" stroke-opacity="0.35"/>
-    <text x="${W / 2}" y="${disclaimerY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="13" font-weight="400">${escapeXml(
+    <text x="${W / 2}" y="${airlineStaffY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="${DISCLAIMER_FONT_SIZE}" font-weight="400">${escapeXml(
+      AIRLINE_STAFF_LINE
+    )}</text>
+    <text x="${W / 2}" y="${disclaimerY}" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="${DISCLAIMER_FONT_SIZE}" font-weight="400">${escapeXml(
       DISCLAIMER_TEXT
     )}</text>
   `;
