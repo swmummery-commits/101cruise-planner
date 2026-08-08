@@ -265,9 +265,16 @@ function cruiseLineLogoBottom(model, { footerH = FOOTER_H } = {}) {
 }
 
 function heroPriceFontSize(price) {
-  const approxChars = Math.max(5, String(price).length);
+  const text = String(price);
+  const approxChars = Math.max(5, text.length);
   const minHero = Math.round(BROCHURE_FONT_SIZE * 1.32);
-  return Math.min(148, Math.max(minHero, Math.round(760 / approxChars)));
+  const maxHero = 200;
+  let fontSize = Math.min(maxHero, Math.max(minHero, Math.round(1520 / approxChars)));
+  const maxW = W - 64;
+  while (fontSize > minHero && estimateMontserratWidth(text, fontSize) > maxW) {
+    fontSize -= 2;
+  }
+  return fontSize;
 }
 
 function brochurePriceBlock(price, y) {
@@ -492,7 +499,7 @@ function benefitsPanel(items, { y } = {}) {
 function layoutMainTextGroup(ports) {
   const routeLineGap = Math.round(ROUTE_FONT_SIZE * 1.02);
   const routeBlockH = routeLineGap * 2;
-  const metaGap = 44;
+  const metaGap = 72;
   const nightsSize = 36;
   const shipSize = 36;
   const portsSize = 40;
@@ -518,9 +525,9 @@ function layoutOfferStack({ route, showBrochure, price, panelY }) {
   const heroPx = heroPriceFontSize(price);
   const heroH = Math.round(heroPx * 0.82);
   const cabinH = 52;
-  const gapRouteBrochure = showBrochure ? 28 : 0;
-  const gapBrochureHero = showBrochure ? 22 : 34;
-  const gapHeroCabin = 18;
+  const gapRouteBrochure = showBrochure ? 32 : 0;
+  const gapBrochureHero = showBrochure ? 28 : 38;
+  const gapHeroCabin = 24;
   const stackH = routeH + brochureBlockH + heroH + cabinH + gapRouteBrochure + gapBrochureHero + gapHeroCabin;
   const zoneTop = 228;
   const zoneBottom = Math.max(zoneTop + stackH, panelY - 20);
@@ -651,7 +658,7 @@ function renderPremiumDarkCtaSvg(model) {
   }
 
   const headlineSize = 96;
-  const headlineGap = Math.round(headlineSize * 0.92);
+  const headlineGap = Math.round(headlineSize * 1.18);
   const headlineY = 250;
   const scriptY = headlineY + headlineGap * 3 + 36;
   const scriptH = 148;
