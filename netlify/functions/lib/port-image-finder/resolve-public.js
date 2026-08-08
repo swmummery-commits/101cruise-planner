@@ -92,10 +92,10 @@ function rankCataloguePortMatches(portName, rows) {
       for (const key of nameKeysForLookup(portName)) {
         if (portLookupKeys(row).has(key)) score += 20;
       }
-      if (String(row.image_status || "").toUpperCase() === "MANUAL") score += 5;
+      if (score >= 40 && String(row.image_status || "").toUpperCase() === "MANUAL") score += 5;
       return { row, score };
     })
-    .filter((entry) => entry.score > 0)
+    .filter((entry) => entry.score >= 20)
     .sort((a, b) => b.score - a.score);
 }
 

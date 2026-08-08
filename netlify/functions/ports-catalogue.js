@@ -12,6 +12,9 @@
  */
 
 const { requireAdmin } = require("./admin-auth");
+const {
+  assertCanonicalPortNameAllowed
+} = require("./lib/port-canonical-integrity");
 
 function jsonResponse(statusCode, body) {
   return {
@@ -185,6 +188,7 @@ function sanitizeProvisional(bodyPort) {
   const raw = bodyPort && typeof bodyPort === "object" ? bodyPort : {};
   const canonical = String(raw.canonical_name || "").trim();
   if (!canonical) badRequest("canonical_name is required");
+  assertCanonicalPortNameAllowed(canonical);
   const country = String(raw.country || "").trim() || null;
   const matchKey = String(raw.match_key || "").trim() || buildMatchKey(canonical, country || "");
   const featuredId = String(raw.source_featured_cruise_id || "").trim() || null;
@@ -207,6 +211,7 @@ function sanitizePortFields(bodyPort, { requireCanonical = true } = {}) {
   const raw = bodyPort && typeof bodyPort === "object" ? bodyPort : {};
   const canonical = String(raw.canonical_name || "").trim();
   if (requireCanonical && !canonical) badRequest("Canonical name is required.");
+  if (canonical) assertCanonicalPortNameAllowed(canonical);
 
   const country = String(raw.country || "").trim() || null;
   const statusRaw = String(raw.status || "provisional").trim();

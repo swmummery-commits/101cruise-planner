@@ -1,0 +1,1140 @@
+{
+  "generated_at": "2026-08-08T05:42:26.865Z",
+  "starting": {
+    "total_ports": 265,
+    "image_status_counts": {
+      "AUTO_APPROVED": 199,
+      "NO_IMAGE": 23,
+      "NEEDS_REVIEW": 21,
+      "MANUAL": 22
+    },
+    "status_counts": {
+      "verified": 249,
+      "provisional": 16
+    }
+  },
+  "reference_tables": [
+    "featured_cruise_itinerary_stops.port_id",
+    "cruise_sailings.departure_port_id",
+    "cruise_sailings.arrival_port_id",
+    "cruise_sailing_itinerary.port_id"
+  ],
+  "duplicates": {
+    "exact_name_country": [],
+    "match_key": [],
+    "identity_finder": [],
+    "same_name_different_country": [],
+    "coord_rounded": []
+  },
+  "alias_collisions": [
+    {
+      "alias": "Osaka",
+      "aliasOwner": {
+        "id": "7e7a0b4e-07b9-40b6-afa0-3e71746e4289",
+        "canonical_name": "Kobe",
+        "country": "Japan"
+      },
+      "canonicalOwner": {
+        "id": "42beea1b-7b1d-42a2-8a7c-b08ae62d301d",
+        "canonical_name": "Osaka",
+        "country": "Japan"
+      }
+    },
+    {
+      "alias": "Los Angeles",
+      "aliasOwner": {
+        "id": "068205a5-4add-4c7c-902b-27a7398cc8a6",
+        "canonical_name": "Long Beach",
+        "country": "United States"
+      },
+      "canonicalOwner": {
+        "id": "062b5569-511e-4846-bbf5-7652a05e939e",
+        "canonical_name": "Los Angeles",
+        "country": "United States"
+      }
+    },
+    {
+      "alias": "George Town",
+      "aliasOwner": {
+        "id": "07d4ae0f-55c4-4bbb-9b77-a64d75bc2fca",
+        "canonical_name": "Penang",
+        "country": "Malaysia"
+      },
+      "canonicalOwner": {
+        "id": "437173f0-a853-4135-82b9-737d51261a99",
+        "canonical_name": "George Town",
+        "country": "Cayman Islands"
+      }
+    },
+    {
+      "alias": "Tokyo",
+      "aliasOwner": {
+        "id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+        "canonical_name": "Yokohama",
+        "country": "Japan"
+      },
+      "canonicalOwner": {
+        "id": "16cee34d-4ca7-411b-8a09-23ae3c8b716c",
+        "canonical_name": "Tokyo",
+        "country": "Japan"
+      }
+    }
+  ],
+  "suspicious_records": [],
+  "match_key": {
+    "blank": [],
+    "duplicates": []
+  },
+  "coordinates": {
+    "null_count": 0,
+    "zero_zero": [],
+    "swapped_suspect": [],
+    "duplicate_coords": []
+  },
+  "geography_contradictions": [
+    {
+      "id": "57249f82-6f63-4348-8866-4a95d8bf6d47",
+      "canonical_name": "Gibraltar",
+      "country": "Gibraltar",
+      "region": "Mediterranean",
+      "city": "Gibraltar",
+      "issues": [
+        "city_equals_country"
+      ]
+    },
+    {
+      "id": "528630de-ef0a-4345-b734-a0c57b44851f",
+      "canonical_name": "Hong Kong",
+      "country": "Hong Kong",
+      "region": "East Asia",
+      "city": "Hong Kong",
+      "issues": [
+        "city_equals_country"
+      ]
+    },
+    {
+      "id": "c2cd9ba3-67ea-42a8-8d3d-39578b664fc7",
+      "canonical_name": "Monaco",
+      "country": "Monaco",
+      "region": "Mediterranean",
+      "city": "Monaco",
+      "issues": [
+        "city_equals_country"
+      ]
+    },
+    {
+      "id": "1bb80470-1a28-4610-af17-d0204e52f91b",
+      "canonical_name": "Singapore",
+      "country": "Singapore",
+      "region": null,
+      "city": "Singapore",
+      "issues": [
+        "city_equals_country"
+      ]
+    }
+  ],
+  "media_integrity": {
+    "broken": []
+  },
+  "orphaned_references": [],
+  "miami_fort_lauderdale": {
+    "miami": [
+      {
+        "id": "c4e3861f-88b1-428c-9cd7-a0703cc0517d",
+        "canonical_name": "Miami",
+        "display_name": "Miami, Florida",
+        "city": "Miami",
+        "country": "Florida",
+        "country_code": null,
+        "region": null,
+        "latitude": 25.7741566,
+        "longitude": -80.1935973,
+        "aliases": [],
+        "status": "verified",
+        "match_key": "miami|florida",
+        "source": "featured_cruise_itinerary",
+        "source_url": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSX4HRpcEMBZvt4FpRk53Eg8V5vFXYJLA5miRLBRyvPnKY0FQwuLnu8xf4&s=10",
+        "source_featured_cruise_id": "cce03c52-ebac-47cb-8227-2dbafcc8d56e",
+        "verified_at": "2026-08-08T05:32:26.026+00:00",
+        "created_at": "2026-07-29T09:47:09.313738+00:00",
+        "updated_at": "2026-08-08T05:32:40.495371+00:00",
+        "hero_media_id": "117f447d-2ed3-4a61-94a8-6d5b36a4e75d",
+        "image_status": "AUTO_APPROVED",
+        "image_source": "wikimedia",
+        "image_source_url": "https://commons.wikimedia.org/wiki/File:Miami_Beach_(Bar_Harbour)_-_Sea_View_Hotel.jpg",
+        "image_credit": "MWM Publishers",
+        "image_license": "Public domain",
+        "image_search_query": "Miami Florida harbour",
+        "image_confidence": 92,
+        "image_last_checked_at": "2026-08-08T05:31:39.979+00:00"
+      }
+    ],
+    "fortLauderdale": [
+      {
+        "id": "30269036-ac1e-45c2-87f5-57ffe2ca8eb6",
+        "canonical_name": "Fort Lauderdale",
+        "display_name": "Fort Lauderdale (Port Everglades), Florida",
+        "city": "Fort Lauderdale",
+        "country": "United States",
+        "country_code": "US",
+        "region": "Caribbean",
+        "latitude": 26.098,
+        "longitude": -80.123,
+        "aliases": [
+          "Port Everglades"
+        ],
+        "status": "verified",
+        "match_key": "fort lauderdale|united states",
+        "source": "seed:ports_catalogue",
+        "source_url": "https://assets.simpleviewinc.com/simpleview/image/upload/c_limit,h_1200,q_75,w_1200/v1/clients/porteverglades/Port_Ev_43451_9f52467b-399a-4d52-8d6a-3b750291c16d.jpg",
+        "source_featured_cruise_id": null,
+        "verified_at": "2026-07-23T09:18:47.838984+00:00",
+        "created_at": "2026-07-23T09:18:47.838984+00:00",
+        "updated_at": "2026-08-08T05:33:58.83049+00:00",
+        "hero_media_id": "d6861068-a8f3-462e-8b83-fc7dd6d3ee6f",
+        "image_status": "NEEDS_REVIEW",
+        "image_source": "wikimedia",
+        "image_source_url": "https://commons.wikimedia.org/wiki/File:Fisherman_in_Port_Everglades,_Fort-Lauderdale,_Florida-Taquiner_les_poissons_parmi_les_paquebots_-_panoramio.jpg",
+        "image_credit": "Richard Mc Neil",
+        "image_license": "CC BY 3.0",
+        "image_search_query": "Port Everglades United States harbour",
+        "image_confidence": 72,
+        "image_last_checked_at": "2026-08-08T02:44:09.266+00:00"
+      }
+    ]
+  },
+  "protected_same_name_groups": [],
+  "customer_destination_mappings": [
+    {
+      "term": "Civitavecchia",
+      "matches": [
+        {
+          "id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+          "canonical_name": "Civitavecchia",
+          "display_name": "Civitavecchia (Rome), Italy",
+          "city": "Civitavecchia",
+          "country": "Italy",
+          "country_code": "IT",
+          "region": null,
+          "latitude": 42.093,
+          "longitude": 11.79,
+          "aliases": [
+            "Rome",
+            "Roma",
+            "Civitavecchia Rome"
+          ],
+          "status": "verified",
+          "match_key": "civitavecchia|italy",
+          "source": "seed:sprint_13e_coords",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-22T10:02:58.181607+00:00",
+          "created_at": "2026-07-22T10:02:58.181607+00:00",
+          "updated_at": "2026-08-07T10:15:01.132171+00:00",
+          "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+          "image_status": "MANUAL",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Civitavecchia_outher_harbour_-_panoramio.jpg",
+          "image_credit": "trolvag",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Civitavecchia Italy harbour",
+          "image_confidence": 75,
+          "image_last_checked_at": "2026-08-07T10:15:01.019+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Port Chalmers",
+      "matches": [
+        {
+          "id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+          "canonical_name": "Port Chalmers",
+          "display_name": "Port Chalmers (Dunedin), New Zealand",
+          "city": "Dunedin",
+          "country": "New Zealand",
+          "country_code": "NZ",
+          "region": "Otago",
+          "latitude": -45.814,
+          "longitude": 170.619,
+          "aliases": [
+            "Dunedin",
+            "Port Chalmers",
+            "Port Chalmers Dunedin"
+          ],
+          "status": "verified",
+          "match_key": "port chalmers|new zealand",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T01:24:36.958011+00:00",
+          "hero_media_id": "874738a7-ff62-4acf-adcd-90b66468e6eb",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Port_Chalmers_graving_dock_with_dredge.jpg",
+          "image_credit": "T. Scollay",
+          "image_license": "Public domain",
+          "image_search_query": "Port Chalmers New Zealand harbour",
+          "image_confidence": 94,
+          "image_last_checked_at": "2026-08-08T01:24:36.828+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Benoa",
+      "matches": [
+        {
+          "id": "7a72afc1-934b-47ad-896a-11ced05430d1",
+          "canonical_name": "Benoa",
+          "display_name": "Benoa, Bali",
+          "city": "Benoa",
+          "country": "Bali",
+          "country_code": null,
+          "region": null,
+          "latitude": -8.8033275,
+          "longitude": 115.209695,
+          "aliases": [],
+          "status": "provisional",
+          "match_key": "benoa|bali",
+          "source": "featured_cruise_itinerary",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": null,
+          "created_at": "2026-07-23T05:53:00.139899+00:00",
+          "updated_at": "2026-08-07T10:47:35.117906+00:00",
+          "hero_media_id": "a14fb1af-b530-45bb-9402-d4bedfbd5b33",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Benoa_Bali_Indonesia_Fish-Trawlers-in-Benoa-Harbour-01.jpg",
+          "image_credit": "CEphoto, Uwe Aranas",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Benoa Bali harbour",
+          "image_confidence": 92,
+          "image_last_checked_at": "2026-08-07T10:47:34.968+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Phu My",
+      "matches": []
+    },
+    {
+      "term": "Laem Chabang",
+      "matches": [
+        {
+          "id": "6fff4757-cbc5-480a-b776-cebf75d11966",
+          "canonical_name": "Laem Chabang",
+          "display_name": "Laem Chabang (Bangkok), Thailand",
+          "city": "Laem Chabang",
+          "country": "Thailand",
+          "country_code": "TH",
+          "region": "Southeast Asia",
+          "latitude": 13.083,
+          "longitude": 100.883,
+          "aliases": [
+            "Bangkok"
+          ],
+          "status": "verified",
+          "match_key": "laem chabang|thailand",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T03:04:26.218214+00:00",
+          "hero_media_id": "d59df3e0-3718-489c-a8c8-a1530db618b9",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Laem_Chabang.jpg",
+          "image_credit": "Lokomotive74",
+          "image_license": "CC BY 2.5",
+          "image_search_query": "Laem Chabang Thailand harbour",
+          "image_confidence": 92,
+          "image_last_checked_at": "2026-08-08T03:04:26.137+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Keelung",
+      "matches": [
+        {
+          "id": "eec3ca67-e4cb-4635-84b9-2fcaeb0015fe",
+          "canonical_name": "Keelung",
+          "display_name": "Keelung (Taipei), Taiwan",
+          "city": "Keelung",
+          "country": "Taiwan",
+          "country_code": "TW",
+          "region": "East Asia",
+          "latitude": 25.137,
+          "longitude": 121.747,
+          "aliases": [
+            "Taipei"
+          ],
+          "status": "verified",
+          "match_key": "keelung|taiwan",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T01:25:46.038182+00:00",
+          "hero_media_id": "dac1bc7e-5595-4a2e-9ce4-ba7d79f3946b",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Keelung_Boats_Pier_20080322.jpg",
+          "image_credit": "yeowatzup",
+          "image_license": "CC BY 2.0",
+          "image_search_query": "Keelung Taiwan harbour",
+          "image_confidence": 92,
+          "image_last_checked_at": "2026-08-08T01:25:45.908+00:00"
+        }
+      ]
+    },
+    {
+      "term": "San Pedro",
+      "matches": [
+        {
+          "id": "062b5569-511e-4846-bbf5-7652a05e939e",
+          "canonical_name": "Los Angeles",
+          "display_name": "Los Angeles, USA",
+          "city": "Los Angeles",
+          "country": "United States",
+          "country_code": "US",
+          "region": "California",
+          "latitude": 33.732,
+          "longitude": -118.271,
+          "aliases": [
+            "LA",
+            "San Pedro"
+          ],
+          "status": "verified",
+          "match_key": "los angeles|united states",
+          "source": "seed:sprint_13e_coords",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-22T10:02:58.181607+00:00",
+          "created_at": "2026-07-22T10:02:58.181607+00:00",
+          "updated_at": "2026-08-08T02:30:24.477805+00:00",
+          "hero_media_id": "b3f4c6b5-239b-4d1f-9419-b300339fc398",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Los_Angeles_Harbour_Light_House_-_panoramio.jpg",
+          "image_credit": "Shane Smith",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Los Angeles United States harbour",
+          "image_confidence": 72,
+          "image_last_checked_at": "2026-08-08T02:30:24.382+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Chan May",
+      "matches": []
+    },
+    {
+      "term": "Mahahual",
+      "matches": [
+        {
+          "id": "6698ee3c-9c1c-4c3f-b0c5-76b81849e796",
+          "canonical_name": "Costa Maya",
+          "display_name": "Costa Maya, Mexico",
+          "city": "Mahahual",
+          "country": "Mexico",
+          "country_code": "MX",
+          "region": "Caribbean",
+          "latitude": 18.713,
+          "longitude": -87.709,
+          "aliases": [
+            "Mahahual",
+            "Costa Maya Mexico"
+          ],
+          "status": "verified",
+          "match_key": "costa maya|mexico",
+          "source": "admin:port_image_catalogue_additions",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": null,
+          "created_at": "2026-08-08T01:49:15.823084+00:00",
+          "updated_at": "2026-08-08T02:42:20.768435+00:00",
+          "hero_media_id": null,
+          "image_status": "NO_IMAGE",
+          "image_source": null,
+          "image_source_url": null,
+          "image_credit": null,
+          "image_license": null,
+          "image_search_query": "Costa Maya Mexico harbour",
+          "image_confidence": null,
+          "image_last_checked_at": "2026-08-08T02:42:20.676+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Athinios",
+      "matches": [
+        {
+          "id": "61fb5b1f-bbfc-4723-943a-752cd8b0ad22",
+          "canonical_name": "Santorini",
+          "display_name": "Santorini (Athíniós), Greece",
+          "city": "Santorini",
+          "country": "Greece",
+          "country_code": "GR",
+          "region": "Eastern Mediterranean",
+          "latitude": 36.385,
+          "longitude": 25.429,
+          "aliases": [
+            "Thira",
+            "Fira",
+            "Athinios",
+            "Santorini Greece"
+          ],
+          "status": "verified",
+          "match_key": "santorini|greece",
+          "source": "admin:port_image_catalogue_additions",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": null,
+          "created_at": "2026-08-08T01:14:01.378226+00:00",
+          "updated_at": "2026-08-08T01:30:57.120992+00:00",
+          "hero_media_id": "8cb41f1e-3d4c-4a59-945a-08fe987560b8",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Traditional_cave_houses_at_Mesa_Gialos_-_old_harbour_of_Fira_-_Santorini_-_Greece_-_02.jpg",
+          "image_credit": "Norbert Nagel",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Santorini Greece harbour",
+          "image_confidence": 94,
+          "image_last_checked_at": "2026-08-08T01:30:56.991+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Santorini",
+      "matches": [
+        {
+          "id": "61fb5b1f-bbfc-4723-943a-752cd8b0ad22",
+          "canonical_name": "Santorini",
+          "display_name": "Santorini (Athíniós), Greece",
+          "city": "Santorini",
+          "country": "Greece",
+          "country_code": "GR",
+          "region": "Eastern Mediterranean",
+          "latitude": 36.385,
+          "longitude": 25.429,
+          "aliases": [
+            "Thira",
+            "Fira",
+            "Athinios",
+            "Santorini Greece"
+          ],
+          "status": "verified",
+          "match_key": "santorini|greece",
+          "source": "admin:port_image_catalogue_additions",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": null,
+          "created_at": "2026-08-08T01:14:01.378226+00:00",
+          "updated_at": "2026-08-08T01:30:57.120992+00:00",
+          "hero_media_id": "8cb41f1e-3d4c-4a59-945a-08fe987560b8",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Traditional_cave_houses_at_Mesa_Gialos_-_old_harbour_of_Fira_-_Santorini_-_Greece_-_02.jpg",
+          "image_credit": "Norbert Nagel",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Santorini Greece harbour",
+          "image_confidence": 94,
+          "image_last_checked_at": "2026-08-08T01:30:56.991+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Yokohama",
+      "matches": [
+        {
+          "id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+          "canonical_name": "Yokohama",
+          "display_name": "Yokohama, Japan",
+          "city": "Yokohama",
+          "country": "Japan",
+          "country_code": "JP",
+          "region": "Japan",
+          "latitude": 35.455,
+          "longitude": 139.638,
+          "aliases": [
+            "Tokyo"
+          ],
+          "status": "verified",
+          "match_key": "yokohama|japan",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T01:24:47.484201+00:00",
+          "hero_media_id": "df3a021b-d5d1-4b7c-8f5a-47562bf02e25",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Yokohama,_Japan;_panoramic_view_of_Yokohama_town,_looking_Wellcome_V0037386.jpg",
+          "image_credit": "https://wellcomeimages.org/indexplus/obf_images/fe/3a/c74eed42e27d43088ef656297441.jpg Gallery: https://wellcomeimages.org/indexplus/image/V0037386.html Wellcome Collection gallery (2018-04-06): https://wellcomecollection.org/works/n5d5sjqh CC-BY-4.0",
+          "image_license": "CC BY 4.0",
+          "image_search_query": "Yokohama Japan harbour",
+          "image_confidence": 95,
+          "image_last_checked_at": "2026-08-08T01:24:47.352+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Tokyo",
+      "matches": [
+        {
+          "id": "16cee34d-4ca7-411b-8a09-23ae3c8b716c",
+          "canonical_name": "Tokyo",
+          "display_name": "Tokyo, Japan",
+          "city": "Tokyo",
+          "country": "Japan",
+          "country_code": "JP",
+          "region": "Japan",
+          "latitude": 35.617,
+          "longitude": 139.795,
+          "aliases": [
+            "Tokyo International Cruise Terminal"
+          ],
+          "status": "verified",
+          "match_key": "tokyo|japan",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T04:13:23.200318+00:00",
+          "hero_media_id": "49a14dc8-a593-453d-8ddc-5f6a4e927d64",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Tokyo_International_Cruise_Terminal_04.jpg",
+          "image_credit": "Mr.Asylum",
+          "image_license": "CC BY-SA 4.0",
+          "image_search_query": "Tokyo Bay waterfront Japan",
+          "image_confidence": 94,
+          "image_last_checked_at": "2026-08-08T04:13:23.137+00:00"
+        },
+        {
+          "id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+          "canonical_name": "Yokohama",
+          "display_name": "Yokohama, Japan",
+          "city": "Yokohama",
+          "country": "Japan",
+          "country_code": "JP",
+          "region": "Japan",
+          "latitude": 35.455,
+          "longitude": 139.638,
+          "aliases": [
+            "Tokyo"
+          ],
+          "status": "verified",
+          "match_key": "yokohama|japan",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T01:24:47.484201+00:00",
+          "hero_media_id": "df3a021b-d5d1-4b7c-8f5a-47562bf02e25",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Yokohama,_Japan;_panoramic_view_of_Yokohama_town,_looking_Wellcome_V0037386.jpg",
+          "image_credit": "https://wellcomeimages.org/indexplus/obf_images/fe/3a/c74eed42e27d43088ef656297441.jpg Gallery: https://wellcomeimages.org/indexplus/image/V0037386.html Wellcome Collection gallery (2018-04-06): https://wellcomecollection.org/works/n5d5sjqh CC-BY-4.0",
+          "image_license": "CC BY 4.0",
+          "image_search_query": "Yokohama Japan harbour",
+          "image_confidence": 95,
+          "image_last_checked_at": "2026-08-08T01:24:47.352+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Los Angeles",
+      "matches": [
+        {
+          "id": "068205a5-4add-4c7c-902b-27a7398cc8a6",
+          "canonical_name": "Long Beach",
+          "display_name": "Long Beach, California",
+          "city": "Long Beach",
+          "country": "United States",
+          "country_code": "US",
+          "region": "North America Pacific",
+          "latitude": 33.754,
+          "longitude": -118.216,
+          "aliases": [
+            "Los Angeles"
+          ],
+          "status": "verified",
+          "match_key": "long beach|united states",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T03:06:20.681134+00:00",
+          "hero_media_id": "7950b850-0606-4336-9552-9ff068394d7f",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Long_Beach_harbour_sunset_-_panoramio.jpg",
+          "image_credit": "Erwin Kreijne",
+          "image_license": "CC BY 3.0",
+          "image_search_query": "Long Beach United States harbour",
+          "image_confidence": 92,
+          "image_last_checked_at": "2026-08-08T03:06:20.6+00:00"
+        },
+        {
+          "id": "062b5569-511e-4846-bbf5-7652a05e939e",
+          "canonical_name": "Los Angeles",
+          "display_name": "Los Angeles, USA",
+          "city": "Los Angeles",
+          "country": "United States",
+          "country_code": "US",
+          "region": "California",
+          "latitude": 33.732,
+          "longitude": -118.271,
+          "aliases": [
+            "LA",
+            "San Pedro"
+          ],
+          "status": "verified",
+          "match_key": "los angeles|united states",
+          "source": "seed:sprint_13e_coords",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-22T10:02:58.181607+00:00",
+          "created_at": "2026-07-22T10:02:58.181607+00:00",
+          "updated_at": "2026-08-08T02:30:24.477805+00:00",
+          "hero_media_id": "b3f4c6b5-239b-4d1f-9419-b300339fc398",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Los_Angeles_Harbour_Light_House_-_panoramio.jpg",
+          "image_credit": "Shane Smith",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Los Angeles United States harbour",
+          "image_confidence": 72,
+          "image_last_checked_at": "2026-08-08T02:30:24.382+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Dunedin",
+      "matches": [
+        {
+          "id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+          "canonical_name": "Port Chalmers",
+          "display_name": "Port Chalmers (Dunedin), New Zealand",
+          "city": "Dunedin",
+          "country": "New Zealand",
+          "country_code": "NZ",
+          "region": "Otago",
+          "latitude": -45.814,
+          "longitude": 170.619,
+          "aliases": [
+            "Dunedin",
+            "Port Chalmers",
+            "Port Chalmers Dunedin"
+          ],
+          "status": "verified",
+          "match_key": "port chalmers|new zealand",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T01:24:36.958011+00:00",
+          "hero_media_id": "874738a7-ff62-4acf-adcd-90b66468e6eb",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Port_Chalmers_graving_dock_with_dredge.jpg",
+          "image_credit": "T. Scollay",
+          "image_license": "Public domain",
+          "image_search_query": "Port Chalmers New Zealand harbour",
+          "image_confidence": 94,
+          "image_last_checked_at": "2026-08-08T01:24:36.828+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Bangkok",
+      "matches": [
+        {
+          "id": "6fff4757-cbc5-480a-b776-cebf75d11966",
+          "canonical_name": "Laem Chabang",
+          "display_name": "Laem Chabang (Bangkok), Thailand",
+          "city": "Laem Chabang",
+          "country": "Thailand",
+          "country_code": "TH",
+          "region": "Southeast Asia",
+          "latitude": 13.083,
+          "longitude": 100.883,
+          "aliases": [
+            "Bangkok"
+          ],
+          "status": "verified",
+          "match_key": "laem chabang|thailand",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T03:04:26.218214+00:00",
+          "hero_media_id": "d59df3e0-3718-489c-a8c8-a1530db618b9",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Laem_Chabang.jpg",
+          "image_credit": "Lokomotive74",
+          "image_license": "CC BY 2.5",
+          "image_search_query": "Laem Chabang Thailand harbour",
+          "image_confidence": 92,
+          "image_last_checked_at": "2026-08-08T03:04:26.137+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Ho Chi Minh",
+      "matches": [
+        {
+          "id": "26c80a9c-d3ec-47fe-8c12-24f5ec388677",
+          "canonical_name": "Ho Chi Minh City",
+          "display_name": "Ho Chi Minh City (Saigon), Vietnam",
+          "city": "Ho Chi Minh City",
+          "country": "Vietnam",
+          "country_code": null,
+          "region": null,
+          "latitude": 10.768,
+          "longitude": 106.707,
+          "aliases": [],
+          "status": "verified",
+          "match_key": "ho chi minh city|vietnam",
+          "source": "manual_coordinate_seed_13e",
+          "source_url": null,
+          "source_featured_cruise_id": "df92d676-fd6c-4427-9763-f07f124985af",
+          "verified_at": null,
+          "created_at": "2026-07-23T01:05:42.484707+00:00",
+          "updated_at": "2026-08-07T10:47:42.525314+00:00",
+          "hero_media_id": "e1ee5ff6-b1a0-4e63-a573-e0513db4be13",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Ho_Chi_Minh_City_Skyline_at_Night.jpg",
+          "image_credit": "Tran Van Ngoc",
+          "image_license": "CC0",
+          "image_search_query": "Ho Chi Minh City Vietnam harbour",
+          "image_confidence": 93,
+          "image_last_checked_at": "2026-08-07T10:47:42.375+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Da Nang",
+      "matches": [
+        {
+          "id": "58914173-9c3d-4d30-9ecb-c54ec21e54b5",
+          "canonical_name": "Da Nang",
+          "display_name": "Đà Nẵng, Vietnam",
+          "city": "Đà Nẵng",
+          "country": "Vietnam",
+          "country_code": "VN",
+          "region": "Southeast Asia",
+          "latitude": 16.114,
+          "longitude": 108.214,
+          "aliases": [
+            "Hue",
+            "Hoi An",
+            "Danang"
+          ],
+          "status": "verified",
+          "match_key": "da nang|vietnam",
+          "source": "admin",
+          "source_url": "https://splash247.com/wp-content/uploads/2021/03/Danang-Port-780x470.jpg",
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-08-08T05:04:18.747+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T05:42:16.826199+00:00",
+          "hero_media_id": "4f6c04ec-fca9-470a-9b80-41db4dea89f8",
+          "image_status": "NEEDS_REVIEW",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:2.9_Marines_line_up_at_Da_Nang_Harbour.jpg",
+          "image_credit": "official USMC photo by Sergeant M. S. Detherage from the Jonathan F. Abel Collection (COLL/3611) at the Archives Branch, Marine Corps History Division",
+          "image_license": "CC BY 2.0",
+          "image_search_query": "Da Nang Vietnam harbour",
+          "image_confidence": 85,
+          "image_last_checked_at": "2026-08-08T05:03:25.6+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Costa Maya",
+      "matches": [
+        {
+          "id": "6698ee3c-9c1c-4c3f-b0c5-76b81849e796",
+          "canonical_name": "Costa Maya",
+          "display_name": "Costa Maya, Mexico",
+          "city": "Mahahual",
+          "country": "Mexico",
+          "country_code": "MX",
+          "region": "Caribbean",
+          "latitude": 18.713,
+          "longitude": -87.709,
+          "aliases": [
+            "Mahahual",
+            "Costa Maya Mexico"
+          ],
+          "status": "verified",
+          "match_key": "costa maya|mexico",
+          "source": "admin:port_image_catalogue_additions",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": null,
+          "created_at": "2026-08-08T01:49:15.823084+00:00",
+          "updated_at": "2026-08-08T02:42:20.768435+00:00",
+          "hero_media_id": null,
+          "image_status": "NO_IMAGE",
+          "image_source": null,
+          "image_source_url": null,
+          "image_credit": null,
+          "image_license": null,
+          "image_search_query": "Costa Maya Mexico harbour",
+          "image_confidence": null,
+          "image_last_checked_at": "2026-08-08T02:42:20.676+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Livorno",
+      "matches": [
+        {
+          "id": "4e12bb28-24fd-48fb-a212-7b9b45cf2682",
+          "canonical_name": "Livorno",
+          "display_name": "Livorno (Florence/Pisa), Italy",
+          "city": "Livorno",
+          "country": "Italy",
+          "country_code": "IT",
+          "region": "Mediterranean",
+          "latitude": 43.5485,
+          "longitude": 10.301,
+          "aliases": [
+            "Florence",
+            "Pisa",
+            "Tuscany"
+          ],
+          "status": "verified",
+          "match_key": "livorno|italy",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T01:32:00.944927+00:00",
+          "hero_media_id": "85ff89f4-7ba5-4cec-89ad-0834a5143eb4",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Sunset_at_Livorno_harbour,_Italy.jpg",
+          "image_credit": "Marcoduemila",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Livorno Italy harbour",
+          "image_confidence": 94,
+          "image_last_checked_at": "2026-08-08T01:32:00.815+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Florence",
+      "matches": [
+        {
+          "id": "ed994a26-f3d2-43d3-87e2-ad2a78ef5172",
+          "canonical_name": "La Spezia",
+          "display_name": "La Spezia (Cinque Terre), Italy",
+          "city": "La Spezia",
+          "country": "Italy",
+          "country_code": "IT",
+          "region": "Mediterranean",
+          "latitude": 44.1025,
+          "longitude": 9.8241,
+          "aliases": [
+            "Cinque Terre",
+            "Florence"
+          ],
+          "status": "verified",
+          "match_key": "la spezia|italy",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T01:53:47.512337+00:00",
+          "hero_media_id": "6254258a-cb38-4c58-85fd-149495cc3eaf",
+          "image_status": "NEEDS_REVIEW",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:19014_Framura,_Province_of_La_Spezia,_Italy_-_panoramio.jpg",
+          "image_credit": "jim walton",
+          "image_license": "CC BY 3.0",
+          "image_search_query": "La Spezia Italy harbour",
+          "image_confidence": 72,
+          "image_last_checked_at": "2026-08-08T01:53:47.386+00:00"
+        },
+        {
+          "id": "4e12bb28-24fd-48fb-a212-7b9b45cf2682",
+          "canonical_name": "Livorno",
+          "display_name": "Livorno (Florence/Pisa), Italy",
+          "city": "Livorno",
+          "country": "Italy",
+          "country_code": "IT",
+          "region": "Mediterranean",
+          "latitude": 43.5485,
+          "longitude": 10.301,
+          "aliases": [
+            "Florence",
+            "Pisa",
+            "Tuscany"
+          ],
+          "status": "verified",
+          "match_key": "livorno|italy",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T01:32:00.944927+00:00",
+          "hero_media_id": "85ff89f4-7ba5-4cec-89ad-0834a5143eb4",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Sunset_at_Livorno_harbour,_Italy.jpg",
+          "image_credit": "Marcoduemila",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Livorno Italy harbour",
+          "image_confidence": 94,
+          "image_last_checked_at": "2026-08-08T01:32:00.815+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Valencia",
+      "matches": [
+        {
+          "id": "edb5ac77-63ca-477e-ad40-767b1c922f42",
+          "canonical_name": "Valencia",
+          "display_name": "Valencia, Spain",
+          "city": "Valencia",
+          "country": "Spain",
+          "country_code": "ES",
+          "region": "Mediterranean",
+          "latitude": 39.4481,
+          "longitude": -0.3167,
+          "aliases": [],
+          "status": "verified",
+          "match_key": "valencia|spain",
+          "source": "seed:ports_catalogue",
+          "source_url": null,
+          "source_featured_cruise_id": null,
+          "verified_at": "2026-07-23T09:18:47.838984+00:00",
+          "created_at": "2026-07-23T09:18:47.838984+00:00",
+          "updated_at": "2026-08-08T05:27:43.934691+00:00",
+          "hero_media_id": "60ab2693-6f5c-4ad1-8a0f-05da89f79f57",
+          "image_status": "MANUAL",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Valencia_Harbour.jpg",
+          "image_credit": "Andrew Thomas from Shrewsbury, UK",
+          "image_license": "CC BY-SA 2.0",
+          "image_search_query": null,
+          "image_confidence": 92,
+          "image_last_checked_at": "2026-08-08T05:27:43.854+00:00"
+        }
+      ]
+    },
+    {
+      "term": "Palma",
+      "matches": [
+        {
+          "id": "fcbe4b6e-eda6-44fb-92db-4603d3edef0e",
+          "canonical_name": "Las Palmas, Gran Canaria",
+          "display_name": "Las Palmas, Gran Canaria, Canary Islands",
+          "city": "Las Palmas, Gran Canaria",
+          "country": "Canary Islands",
+          "country_code": null,
+          "region": null,
+          "latitude": 28.0744336,
+          "longitude": -15.4513642,
+          "aliases": [],
+          "status": "provisional",
+          "match_key": "las palmas, gran canaria|canary islands",
+          "source": "featured_cruise_itinerary",
+          "source_url": null,
+          "source_featured_cruise_id": "cce03c52-ebac-47cb-8227-2dbafcc8d56e",
+          "verified_at": null,
+          "created_at": "2026-07-29T09:47:03.486309+00:00",
+          "updated_at": "2026-08-08T03:05:04.389652+00:00",
+          "hero_media_id": null,
+          "image_status": "NO_IMAGE",
+          "image_source": null,
+          "image_source_url": null,
+          "image_credit": null,
+          "image_license": null,
+          "image_search_query": "Las Palmas, Gran Canaria Canary Islands harbour",
+          "image_confidence": null,
+          "image_last_checked_at": "2026-08-08T03:05:04.095+00:00"
+        },
+        {
+          "id": "f8b4381d-f65a-447f-93f4-2baf19535f40",
+          "canonical_name": "Palma de Mallorca",
+          "display_name": "Palma de Mallorca, Spain",
+          "city": "Palma de Mallorca",
+          "country": "Spain",
+          "country_code": null,
+          "region": null,
+          "latitude": 39.5686,
+          "longitude": 2.6425,
+          "aliases": [],
+          "status": "verified",
+          "match_key": "palma de mallorca|spain",
+          "source": "manual_coordinate_seed_13e",
+          "source_url": null,
+          "source_featured_cruise_id": "faaf7bdb-fa33-437c-a34f-819cbf527967",
+          "verified_at": "2026-08-08T05:10:15.242+00:00",
+          "created_at": "2026-07-23T01:08:11.238212+00:00",
+          "updated_at": "2026-08-08T05:10:33.466656+00:00",
+          "hero_media_id": "c61e75d5-727b-4296-b567-acc34958a7f5",
+          "image_status": "MANUAL",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:Vista_a%C3%A8ria_del_Port_de_Palma.JPG",
+          "image_credit": "No machine-readable author provided. Chixoy assumed (based on copyright claims).",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Palma de Mallorca Spain harbour",
+          "image_confidence": 63,
+          "image_last_checked_at": "2026-08-08T05:10:11.839+00:00"
+        },
+        {
+          "id": "eaaeeed1-cfab-4e50-aeae-e765d92019af",
+          "canonical_name": "Santa Cruz de La Palma",
+          "display_name": "Santa Cruz de La Palma, Spain",
+          "city": "Santa Cruz de La Palma",
+          "country": "Spain",
+          "country_code": null,
+          "region": null,
+          "latitude": 28.6818901,
+          "longitude": -17.7663354,
+          "aliases": [],
+          "status": "provisional",
+          "match_key": "santa cruz de la palma|spain",
+          "source": "featured_cruise_itinerary",
+          "source_url": null,
+          "source_featured_cruise_id": "cce03c52-ebac-47cb-8227-2dbafcc8d56e",
+          "verified_at": null,
+          "created_at": "2026-07-29T09:47:05.919816+00:00",
+          "updated_at": "2026-08-08T03:34:09.168169+00:00",
+          "hero_media_id": "2a7eee3a-8aa0-4f65-9d76-ef50af6551f2",
+          "image_status": "AUTO_APPROVED",
+          "image_source": "wikimedia",
+          "image_source_url": "https://commons.wikimedia.org/wiki/File:La_Palma_-_Bre%C3%B1a_Alta_-_Avenida_Bajamar_%2B_Port_of_Santa_Cruz_de_La_Palma_%2B_MSC_Armonia_01_ies.jpg",
+          "image_credit": "Frank Vincentz",
+          "image_license": "CC BY-SA 3.0",
+          "image_search_query": "Santa Cruz de La Palma Spain harbour",
+          "image_confidence": 94,
+          "image_last_checked_at": "2026-08-08T03:34:09.072+00:00"
+        }
+      ]
+    }
+  ],
+  "consolidation_candidates": []
+}

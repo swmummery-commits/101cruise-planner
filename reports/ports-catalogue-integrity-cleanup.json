@@ -1,0 +1,135 @@
+{
+  "mode": "apply",
+  "started_at": "2026-08-08T05:42:14.599Z",
+  "consolidations": [
+    {
+      "reason": "Orlando is not a cruise port; Port Canaveral is the canonical berth",
+      "keep": {
+        "id": "dfc9fc3d-2ed3-4713-89d2-55042b870cb7",
+        "canonical_name": "Port Canaveral",
+        "image_status": "NEEDS_REVIEW",
+        "hero_media_id": "f7d51e43-c9b1-4938-9bb5-f4b327b49ed3"
+      },
+      "remove": {
+        "id": "50e16fa6-72ee-4194-a7d9-14e9c0b921e9",
+        "canonical_name": "Orlando",
+        "image_status": "NEEDS_REVIEW",
+        "hero_media_id": "b37a2e1e-44d4-4fe3-adc2-73f2e899cdae"
+      },
+      "references_migrated": [
+        {
+          "stop_id": "34e1081e-5d24-4f5d-8564-91195fc9d6fe",
+          "entered_port_text": "Orlando, Florida"
+        }
+      ],
+      "references_remaining": 0,
+      "removed": true
+    },
+    {
+      "reason": "Seville is inland; Cadiz is the cruise port with Seville customer alias",
+      "keep": {
+        "id": "762f0f0d-1efd-4a6e-9fb3-4afc68e104a0",
+        "canonical_name": "Cadiz",
+        "image_status": "AUTO_APPROVED",
+        "hero_media_id": "e9876ff1-32d4-4d4a-adac-215fa65fb3f9"
+      },
+      "remove": {
+        "id": "3b3244bc-2a86-46a5-b93d-302646a03761",
+        "canonical_name": "Seville",
+        "image_status": "NEEDS_REVIEW",
+        "hero_media_id": "b9fbcd04-9ce9-4ab1-92c4-abf6647f6b10"
+      },
+      "references_migrated": [
+        {
+          "stop_id": "dec87f1d-5fd5-4b63-a337-da4b3c9f5199",
+          "entered_port_text": "Seville, Spain"
+        }
+      ],
+      "references_remaining": 0,
+      "removed": true
+    },
+    {
+      "reason": "Bangkok duplicate; Laem Chabang is the canonical cruise port with Bangkok alias",
+      "keep": {
+        "id": "6fff4757-cbc5-480a-b776-cebf75d11966",
+        "canonical_name": "Laem Chabang",
+        "image_status": "AUTO_APPROVED",
+        "hero_media_id": "d59df3e0-3718-489c-a8c8-a1530db618b9"
+      },
+      "remove": {
+        "id": "bf65bd8b-ce3d-4507-bfcc-a13c5ff2efb2",
+        "canonical_name": "Bangkok",
+        "image_status": "AUTO_APPROVED",
+        "hero_media_id": "85f892cb-8563-4677-954e-fa00646af923"
+      },
+      "references_migrated": [
+        {
+          "stop_id": "b120d856-e6a9-4edf-b123-bbd87c589ba0",
+          "entered_port_text": "Bangkok, Thailand"
+        }
+      ],
+      "references_remaining": 0,
+      "removed": true
+    }
+  ],
+  "deletions": [
+    {
+      "reason": "April 2028 is not a port (accidental admin/import garbage)",
+      "port": {
+        "id": "0cdb0e4a-6ac2-421c-aef7-8f344e8a34d3",
+        "canonical_name": "April 2028",
+        "country": null,
+        "hero_media_id": null,
+        "image_status": "NO_IMAGE",
+        "aliases": [],
+        "match_key": "april 2028|",
+        "region": null,
+        "latitude": null,
+        "longitude": null
+      },
+      "references": 0,
+      "removed": true
+    }
+  ],
+  "geo_fixes": [
+    {
+      "canonical_name": "Vancouver",
+      "reason": "Vancouver region was incorrectly Alaska",
+      "before": {
+        "region": "Alaska",
+        "latitude": 49.288,
+        "longitude": -123.111
+      },
+      "after": {
+        "region": "British Columbia"
+      }
+    },
+    {
+      "canonical_name": "Da Nang",
+      "reason": "Restore seed coordinates lost from catalogue row",
+      "before": {
+        "region": "Southeast Asia",
+        "latitude": null,
+        "longitude": null
+      },
+      "after": {
+        "latitude": 16.114,
+        "longitude": 108.214
+      }
+    }
+  ],
+  "alias_fixes": [
+    {
+      "canonical_name": "Cadiz",
+      "reason": "Remove redundant self-alias Cadiz; keep Seville customer alias",
+      "before": [
+        "Cadiz",
+        "Seville"
+      ],
+      "after": [
+        "Seville"
+      ]
+    }
+  ],
+  "errors": []
+}

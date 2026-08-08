@@ -154,4 +154,7 @@ const legacyOnly = resolvePublicPortHeroMedia(
 assert.equal(legacyOnly.hero_media_id, "media-legacy-only", "legacy destination_ports hero kept when no canonical image");
 assert.equal(legacyOnly.source, "destination_ports_legacy", "legacy fallback source");
 
+const noFalsePublicMatch = lookupCataloguePort("Fort Lauderdale", ambiguousIndex, ambiguousCatalogue);
+assert.equal(noFalsePublicMatch, null, "unmatched port names do not fall back to unrelated catalogue rows");
+
 console.log("test-destination-experience-port-images: ok");
