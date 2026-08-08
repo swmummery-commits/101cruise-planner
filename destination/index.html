@@ -15,25 +15,14 @@
   <link rel="stylesheet" href="/css/public-destination.css?v=20260807a">
   <script>
     (function () {
-      var params = new URLSearchParams(location.search);
-      var querySlug = String(params.get("destination") || params.get("slug") || "")
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9-]+/g, "-")
-        .replace(/^-+|-+$/g, "");
       var parts = (location.pathname || "/").split("/").filter(Boolean);
       var idx = parts.indexOf("destination");
-      var pathSlug = idx >= 0 ? decodeURIComponent(parts[idx + 1] || "").toLowerCase() : "";
-      if (/^index\.html?$/i.test(pathSlug)) pathSlug = "";
-
-      if (querySlug && !pathSlug) {
-        params.delete("destination");
-        params.delete("slug");
-        var qs = params.toString();
-        location.replace(
-          "/destination/" + encodeURIComponent(querySlug) + (qs ? "?" + qs : "")
-        );
-      }
+      var slug = idx >= 0 ? decodeURIComponent(parts[idx + 1] || "").toLowerCase() : "";
+      var living = { alaska: true };
+      if (!slug || living[slug]) return;
+      var params = new URLSearchParams(location.search);
+      params.set("destination", slug);
+      location.replace("/cruise-destination?" + params.toString());
     })();
   </script>
 </head>

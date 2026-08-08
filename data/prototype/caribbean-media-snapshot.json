@@ -1,0 +1,62 @@
+{
+  "snapshot_at": "2026-07-30T02:18:56.72848+00:00",
+  "source": "read-only Supabase media_library query (destination_name = Caribbean, is_active = true)",
+  "read_only": true,
+  "items": [
+    {
+      "id": "ff7db916-d216-4f23-96e2-2fd626a6b3a4",
+      "title": "bavaro-beach-dominican-republic-2-CARIBBEACHES0721-aa7f21c92acb497cb45482fb4cf75de3",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/destinations/caribbean/1785377917359-665f5739-bavaro-beach-dominican-republic-2-CARIBBEACHES0721-aa7f21c92acb497cb45482fb4cf75.jpg",
+      "media_type": "destination",
+      "destination_name": "Caribbean",
+      "is_default": true,
+      "is_active": true,
+      "created_at": "2026-07-30T02:18:41.019038+00:00",
+      "alt_text": "Caribbean beach"
+    },
+    {
+      "id": "7262c757-6254-47e8-9cf3-f1748da5aa59",
+      "title": "GettyImages-868106464-5b390498c9e77c001aad0491",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/destinations/caribbean/1785377922540-b685601b-GettyImages-868106464-5b390498c9e77c001aad0491.jpg",
+      "media_type": "destination",
+      "destination_name": "Caribbean",
+      "is_default": false,
+      "is_active": true,
+      "created_at": "2026-07-30T02:18:45.062897+00:00",
+      "alt_text": "Caribbean destination"
+    },
+    {
+      "id": "090d0128-da82-4481-a813-ff71233936d0",
+      "title": "images",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/destinations/caribbean/1785377926253-7b91d1f2-images.jpg",
+      "media_type": "destination",
+      "destination_name": "Caribbean",
+      "is_default": false,
+      "is_active": true,
+      "created_at": "2026-07-30T02:18:48.716329+00:00",
+      "alt_text": "Caribbean destination"
+    },
+    {
+      "id": "bd3680aa-4843-45cc-b227-99f642aa5180",
+      "title": "palm-fringed-beach-from-above-caribbean-sea-royalty-free-image-1656340421",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/destinations/caribbean/1785377929903-423c3926-palm-fringed-beach-from-above-caribbean-sea-royalty-free-image-1656340421.jpeg",
+      "media_type": "destination",
+      "destination_name": "Caribbean",
+      "is_default": false,
+      "is_active": true,
+      "created_at": "2026-07-30T02:18:52.906338+00:00",
+      "alt_text": "Palm-fringed Caribbean beach from above"
+    },
+    {
+      "id": "63e75424-e9d4-441b-9238-5ca72505a143",
+      "title": "The-Caribbean-Island",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/destinations/caribbean/1785377934213-739e45a3-The-Caribbean-Island.jpg",
+      "media_type": "destination",
+      "destination_name": "Caribbean",
+      "is_default": false,
+      "is_active": true,
+      "created_at": "2026-07-30T02:18:56.72848+00:00",
+      "alt_text": "Caribbean island"
+    }
+  ]
+}
