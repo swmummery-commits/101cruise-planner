@@ -203,7 +203,7 @@ function listInclusionItems(model) {
 }
 
 /** Rough advance width for Montserrat semi/bold — good enough to centre tick+label pairs. */
-function estimateMontserratWidth(text, fontSize) {
+function estimateMontserratWidth(text, fontSize, { letterSpacing = 0 } = {}) {
   let w = 0;
   for (const ch of String(text)) {
     if (ch === " " || ch === "-") w += fontSize * 0.3;
@@ -212,7 +212,83 @@ function estimateMontserratWidth(text, fontSize) {
     else if (ch >= "A" && ch <= "Z") w += fontSize * 0.66;
     else w += fontSize * 0.55;
   }
-  return w;
+  return w + Math.max(0, String(text).length - 1) * letterSpacing;
+}
+
+function measureIncludesItemWidth(item, itemSize, tickSize, tickGap) {
+  return tickSize + tickGap + estimateMontserratWidth(item, itemSize) * 1.1;
+}
+
+function layoutIncludesRows(list, { headerSize, itemSize, tickSize, tickGap, afterHeader, betweenItems, maxInnerW }) {
+  const headerW = estimateMontserratWidth("INCLUDES", headerSize, { letterSpacing: 1.4 });
+  const itemWidths = list.map((item) => measureIncludesItemWidth(item, itemSize, tickSize, tickGap));
+
+  let singleW = headerW + afterHeader;
+  for (let i = 0; i < list.length; i += 1) {
+    singleW += itemWidths[i];
+    if (i < list.length - 1) singleW += betweenItems;
+  }
+  if (singleW <= maxInnerW) {
+    return {
+      rows: [
+        {
+          withHeader: true,
+          items: list.map((item, i) => ({ item, width: itemWidths[i] }))
+        }
+      ],
+      innerW: singleW
+    };
+  }
+
+  const row1 = [];
+  let row1W = headerW + afterHeader;
+  let idx = 0;
+  for (; idx < list.length; idx += 1) {
+    const gap = row1.length > 0 ? betweenItems : 0;
+    const nextW = row1W + gap + itemWidths[idx];
+    if (row1.length > 0 && nextW > maxInnerW) break;
+    row1W = nextW;
+    row1.push({ item: list[idx], width: itemWidths[idx] });
+  }
+
+  const row2 = list.slice(idx).map((item, i) => ({ item, width: itemWidths[idx + i] }));
+  let row2W = 0;
+  for (let i = 0; i < row2.length; i += 1) {
+    row2W += row2[i].width;
+    if (i < row2.length - 1) row2W += betweenItems;
+  }
+
+  const rows = [{ withHeader: true, items: row1 }];
+  if (row2.length) rows.push({ withHeader: false, items: row2 });
+  return { rows, innerW: Math.max(row1W, row2W) };
+}
+
+function renderIncludesRow(row, { startX, baselineY, headerSize, itemSize, tickSize, tickGap, afterHeader, betweenItems }) {
+  let cursorX = startX;
+  const parts = [];
+
+  if (row.withHeader) {
+    parts.push(
+      `<text x="${cursorX}" y="${baselineY}" text-anchor="start" fill="#222" font-family="${FAMILY}" font-size="${headerSize}" font-weight="800" letter-spacing="1.4">INCLUDES</text>`
+    );
+    cursorX +=
+      estimateMontserratWidth("INCLUDES", headerSize, { letterSpacing: 1.4 }) + afterHeader;
+  }
+
+  row.items.forEach(({ item }, i) => {
+    const tickX = cursorX + tickSize / 2;
+    const textX = cursorX + tickSize + tickGap;
+    parts.push(greenTick(tickX, baselineY - 6, tickSize));
+    parts.push(
+      `<text x="${textX}" y="${baselineY}" text-anchor="start" fill="#222" font-family="${FAMILY}" font-size="${itemSize}" font-weight="600">${escapeXml(
+        item
+      )}</text>`
+    );
+    cursorX += measureIncludesItemWidth(item, itemSize, tickSize, tickGap);
+    if (i < row.items.length - 1) cursorX += betweenItems;
+  });
+
+  return parts.join("\n");
 }
 
 function greenTick(cx, cy, size = 20) {
@@ -223,49 +299,60 @@ function greenTick(cx, cy, size = 20) {
 }
 
 /**
- * Slim horizontal includes strip — one capsule: INCLUDES ✓ Wi-Fi ✓ Gratuities.
- * Content-width pill, centred under the price box.
+ * Slim includes strip — one capsule, expanding to fit all items on-slide.
+ * Wraps to a second row when the full list would exceed the safe width.
  */
-function includesStrip({ x, y, w, items = [] } = {}) {
+function includesStrip({ y, items = [] } = {}) {
   const list = (items || []).filter(Boolean);
   if (!list.length) return "";
 
-  const h = 48;
   const headerSize = 20;
   const itemSize = 20;
   const tickSize = 16;
   const tickGap = 8;
   const afterHeader = 22;
-  const betweenItems = 26;
-  const padX = 32;
-  const baselineY = y + Math.round(h * 0.64);
+  const betweenItems = 22;
+  const padX = 28;
+  const rowH = 48;
+  const rowGap = 8;
+  const maxStripW = W - 72;
 
-  const headerW = estimateMontserratWidth("INCLUDES", headerSize);
-  let itemsW = 0;
-  for (let i = 0; i < list.length; i += 1) {
-    itemsW += tickSize + tickGap + estimateMontserratWidth(list[i], itemSize);
-    if (i < list.length - 1) itemsW += betweenItems;
-  }
-  const contentW = headerW + afterHeader + itemsW;
-  const stripW = Math.min(w, contentW + padX * 2);
-  const stripX = x + (w - stripW) / 2;
-  let cursorX = stripX + padX;
+  const layout = layoutIncludesRows(list, {
+    headerSize,
+    itemSize,
+    tickSize,
+    tickGap,
+    afterHeader,
+    betweenItems,
+    maxInnerW: maxStripW - padX * 2
+  });
+  const stripW = Math.min(maxStripW, layout.innerW + padX * 2);
+  const stripX = (W - stripW) / 2;
+  const h = layout.rows.length === 1 ? rowH : rowH * 2 + rowGap;
+  const firstBaselineY = y + Math.round(rowH * 0.64);
+  const secondBaselineY = y + rowH + rowGap + Math.round(rowH * 0.64);
 
-  const header = `<text x="${cursorX}" y="${baselineY}" text-anchor="start" fill="#222" font-family="${FAMILY}" font-size="${headerSize}" font-weight="800" letter-spacing="1.4">INCLUDES</text>`;
-  cursorX += headerW + afterHeader;
-
-  const itemParts = list
-    .map((item, i) => {
-      const tickX = cursorX + tickSize / 2;
-      const textX = cursorX + tickSize + tickGap;
-      const block = `
-        ${greenTick(tickX, baselineY - 6, tickSize)}
-        <text x="${textX}" y="${baselineY}" text-anchor="start" fill="#222" font-family="${FAMILY}" font-size="${itemSize}" font-weight="600">${escapeXml(
-          item
-        )}</text>`;
-      cursorX += tickSize + tickGap + estimateMontserratWidth(item, itemSize);
-      if (i < list.length - 1) cursorX += betweenItems;
-      return block;
+  const rowSvgs = layout.rows
+    .map((row, i) => {
+      let rowW = 0;
+      if (row.withHeader) {
+        rowW += estimateMontserratWidth("INCLUDES", headerSize, { letterSpacing: 1.4 }) + afterHeader;
+      }
+      row.items.forEach(({ width }, j) => {
+        rowW += width;
+        if (j < row.items.length - 1) rowW += betweenItems;
+      });
+      const startX = stripX + padX + Math.max(0, (stripW - padX * 2 - rowW) / 2);
+      return renderIncludesRow(row, {
+        startX,
+        baselineY: i === 0 ? firstBaselineY : secondBaselineY,
+        headerSize,
+        itemSize,
+        tickSize,
+        tickGap,
+        afterHeader,
+        betweenItems
+      });
     })
     .join("\n");
 
@@ -273,8 +360,7 @@ function includesStrip({ x, y, w, items = [] } = {}) {
     <g filter="url(#pillShadow)">
       <rect x="${stripX}" y="${y}" width="${stripW}" height="${h}" rx="${h / 2}" fill="${PILL_FILL}" fill-opacity="${PILL_OPACITY}"/>
     </g>
-    ${header}
-    ${itemParts}
+    ${rowSvgs}
   `;
 }
 
@@ -413,7 +499,7 @@ function renderOfferSvg(model, offerIndex = 0) {
         priceColor: RED,
         strike: false
       })}
-      ${includesStrip({ x: pillX, y: includesY, w: pillW, items: includeItems })}
+      ${includesStrip({ y: includesY, items: includeItems })}
       <g filter="url(#pillShadow)">
         <rect x="${discX}" y="${discY}" width="${discW}" height="40" rx="20" fill="${PILL_FILL}" fill-opacity="${PILL_OPACITY}"/>
       </g>
