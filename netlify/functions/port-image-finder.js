@@ -10,7 +10,7 @@
 
 const { requireAdmin } = require("./admin-auth");
 const { findPortImageCandidates, RECHECK_DAYS } = require("./lib/port-image-finder/search");
-const { applyPortImageCandidate, approveReviewedPortImage } = require("./lib/port-image-finder/apply");
+const { applyPortImageCandidate, approveReviewedPortImage, replaceAutoApprovedPortImage } = require("./lib/port-image-finder/apply");
 const { PORT_IMAGE_SELECT } = require("./lib/port-image-finder/resolve-public");
 
 const PORT_SELECT =
@@ -302,6 +302,41 @@ async function actionApproveReviewed(body) {
   };
 }
 
+async function actionReplaceAutoApproved(body) {
+  const portId = String(body.port_id || "").trim();
+  const candidate = body.candidate && typeof body.candidate === "object" ? body.candidate : null;
+  if (!portId || !candidate) {
+    const err = new Error("port_id and candidate are required");
+    err.statusCode = 400;
+    err.calm = true;
+    throw err;
+  }
+
+  const supabase = makeSupabaseClient();
+  const port = await loadPortById(supabase, portId);
+  if (!port) {
+    const err = new Error("Port not found");
+    err.statusCode = 404;
+    err.calm = true;
+    throw err;
+  }
+
+  const imageStatus = String(body.image_status || "AUTO_APPROVED").trim().toUpperCase();
+  const replaced = await replaceAutoApprovedPortImage(supabase, port, candidate, {
+    imageStatus,
+    searchQuery: body.search_query || port.image_search_query || null,
+    confidence: candidate.confidence
+  });
+
+  return {
+    success: true,
+    port: replaced.port,
+    media: replaced.media,
+    previous_media_id: replaced.previous_media_id,
+    replaced: true
+  };
+}
+
 async function listMissingPorts(supabase, { offset = 0, limit = BULK_BATCH_DEFAULT, force = false } = {}) {
   let rows;
   try {
@@ -463,6 +498,9 @@ exports.handler = async function handler(event) {
     }
     if (action === "approve_reviewed") {
       return jsonResponse(200, await actionApproveReviewed(body));
+    }
+    if (action === "replace_auto_approved") {
+      return jsonResponse(200, await actionReplaceAutoApproved(body));
     }
     if (action === "bulk_missing") {
       return jsonResponse(200, await actionBulkMissing(body));

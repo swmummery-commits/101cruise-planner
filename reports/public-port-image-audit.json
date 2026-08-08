@@ -1,0 +1,768 @@
+{
+  "generated_at": "2026-08-08T02:30:39.833Z",
+  "metrics": {
+    "autoApprovedAudited": 63,
+    "manualAudited": 2,
+    "keep": 62,
+    "review": 0,
+    "replace": 1,
+    "wrongGeography": 0,
+    "editorialPoor": 1,
+    "licensingFailures": 0,
+    "vesselPrimary": 1,
+    "militaryWar": 0,
+    "genericFailures": 0,
+    "historical": 5,
+    "needsReviewCount": 10,
+    "noImageCount": 198,
+    "currentPublicAutoApprovalQuality": 98.4,
+    "currentPublicGeographicAccuracy": 100,
+    "currentPublicLicensingAccuracy": 100,
+    "formulas": {
+      "autoApprovedAudited": "audit rows where image_status === AUTO_APPROVED",
+      "manualAudited": "audit rows where image_status === MANUAL",
+      "keepReviewReplace": "KEEP + REVIEW + REPLACE === autoApprovedAudited",
+      "publicAutoApprovalQuality": "KEEP / autoApprovedAudited",
+      "publicGeographicAccuracy": "(autoApprovedAudited - wrongGeography) / autoApprovedAudited",
+      "publicLicensingAccuracy": "(autoApprovedAudited - licensingFailures) / autoApprovedAudited"
+    },
+    "reconciled": true,
+    "exceptions": {
+      "review": [],
+      "replace": [
+        {
+          "port": "Melbourne",
+          "current_image": "Victoria Harbour, Docklands, Melbourne Australia (4588018134).jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "vessel_primary"
+          ]
+        }
+      ]
+    },
+    "manual": [
+      {
+        "port": "Mykonos",
+        "current_image": "Mykonos harbour view.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Civitavecchia",
+        "current_image": "Civitavecchia outher harbour - panoramio.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      }
+    ]
+  },
+  "table": [
+    {
+      "Port": "Bangkok",
+      "Current image": "Bangkok Harbour cranes.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Auckland",
+      "Current image": "Waitemata Auckland Harbour 47.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Benoa",
+      "Current image": "Benoa Bali Indonesia Fish-Trawlers-in-Benoa-Harbour-01.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Marseille",
+      "Current image": "Marseille harbour postcard.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Bergen",
+      "Current image": "Harbour Bergen Norway 2009 1.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Reykjavik",
+      "Current image": "Reykjavík Harbour02.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Vancouver",
+      "Current image": "Waterfront Station Vancouver 04.JPG",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "San Francisco",
+      "Current image": "San Francisco (CA, USA), Municipal Pier, Blick auf Fort Mason -- 2022 -- 0903.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Seattle",
+      "Current image": "Seattle (WA, USA), Olympic Sculpture Park, Blick auf Elliott Bay -- 2022 -- 1654.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Nassau",
+      "Current image": "Nassau harbour Bahamas Dec 1979.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "dated_historical_good"
+    },
+    {
+      "Port": "Castries",
+      "Current image": "John Compton Hwy, Castries City, Saint Lucia - panoramio.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Basseterre",
+      "Current image": "St. Kitts, Karibik - Marina in Basseterre - panoramio.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Ketchikan",
+      "Current image": "Puerto de Ketchikan, Alaska, Estados Unidos, 2017-08-16, DD 49.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Sitka",
+      "Current image": "Sitka Waterfront 1890s.JPG",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "dated_historical_good"
+    },
+    {
+      "Port": "Icy Strait Point",
+      "Current image": "Icy Strait Point Waterfront.JPG",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Quebec City",
+      "Current image": "Quebec-wharf.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Hobart",
+      "Current image": "Lascar Constitution Dock (Hobart) (4551798599).jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Fremantle",
+      "Current image": "Fremantle Fishing Boat Harbour gnangarra 5291.JPG",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Nagasaki",
+      "Current image": "Nagasaki Port Terminal.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Cairns",
+      "Current image": "The Sebel Cairns Harbour Lights.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Napier",
+      "Current image": "Marine Parade Garden Napier-4025.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Osaka",
+      "Current image": "Osaka Harbour 大阪港 - panoramio.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Hiroshima",
+      "Current image": "Boat out of Hiroshima harbour - panoramio.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Shanghai",
+      "Current image": "Port of Shanghai, Yangshan Deep-water Harbour Zone, 02.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Phuket",
+      "Current image": "Puerto de Phuket, Tailandia, 2013-08-19, DD 02.JPG",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Mykonos",
+      "Current image": "Mykonos harbour view.jpg",
+      "Status": "MANUAL",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Port Chalmers",
+      "Current image": "Port Chalmers graving dock with dredge.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Wellington",
+      "Current image": "Wellington Harbour, New Zealand, Nov. 2009.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Rhodes",
+      "Current image": "Harbour Rhodes town Greece 1.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Civitavecchia",
+      "Current image": "Civitavecchia outher harbour - panoramio.jpg",
+      "Status": "MANUAL",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Juneau",
+      "Current image": "Puerto de Juneau, Alaska, Estados Unidos, 2017-08-17, DD 12.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Melbourne",
+      "Current image": "Victoria Harbour, Docklands, Melbourne Australia (4588018134).jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "POOR",
+      "Action": "REPLACE",
+      "Reasons": "vessel_primary"
+    },
+    {
+      "Port": "Ho Chi Minh City",
+      "Current image": "Ho Chi Minh City Skyline at Night.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Hong Kong",
+      "Current image": "Hong Kong Skyline Restitch - Dec 2007.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Skagway",
+      "Current image": "Skagway-harbour-1898.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "dated_historical_good"
+    },
+    {
+      "Port": "Victoria BC",
+      "Current image": "Inner Harbor Architecture - Victoria BC - Canada.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Philipsburg",
+      "Current image": "Philipsburg Harbour, St. Maarten.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "St Thomas",
+      "Current image": "View of the town of St. Thomas 11477 1H.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Naples",
+      "Current image": "Harbor, Naples, Italy-LCCN2001700918.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "dated_historical_good"
+    },
+    {
+      "Port": "Kotor",
+      "Current image": "Ljuta, Bahía de Kotor, Montenegro, 2014-04-19, DD 02.JPG",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Brisbane",
+      "Current image": "Brisbane Harbour bridge (Australia 2010).jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Adelaide",
+      "Current image": "Harbour Town, Adelaide 1.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Yokohama",
+      "Current image": "Yokohama, Japan; panoramic view of Yokohama town, looking Wellcome V0037386.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Kobe",
+      "Current image": "Kobe Kobe Port Tower Blick auf die Harbour Area 14.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Busan",
+      "Current image": "Korea busan pusan harbour cargo container terminal.JPG",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Keelung",
+      "Current image": "Keelung Boats Pier 20080322.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Seward",
+      "Current image": "Seward Small Boat Harbour on a cloudy day - Flickr - marknenadov.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Santorini",
+      "Current image": "Traditional cave houses at Mesa Gialos - old harbour of Fira - Santorini - Greece - 02.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "San Diego",
+      "Current image": "San Diego (California, USA), Embarcadero -- 2012 -- 5384.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Boston",
+      "Current image": "Boston Harborwalk Seaport District South Boston Waterfront.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "New York",
+      "Current image": "New York City (New York, USA), Statue of Liberty -- 2012 -- 6660.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Cozumel",
+      "Current image": "Cozumel - Palmeras Restaurant (Our 1996 Margaritas).jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Los Angeles",
+      "Current image": "Los Angeles Harbour Light House - panoramio.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "George Town",
+      "Current image": "Waterfront, George Town, Grand Cayman.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Bridgetown",
+      "Current image": "Deep Water Harbour, Bridgetown-001.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "St Johns Antigua",
+      "Current image": "St. John's Harbour, Antigua LCCN2003671765.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Road Town",
+      "Current image": "Roadtown, Tortola.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Corfu",
+      "Current image": "Aerial view of Kontogialos Beach and Harbour, Corfu, Greece (53698157079).jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Livorno",
+      "Current image": "Sunset at Livorno harbour, Italy.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Valletta",
+      "Current image": "Malta - Senglea - Gardjola Gardens - La Guardiola Safe Haven Gardens - Echaugette (reconstructed) 11 - Grand Harbour & Valletta Waterfront.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Flam",
+      "Current image": "Flam Hafen 22.07.2008.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Darwin",
+      "Current image": "Aerial view of Darwin NT.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Prince Rupert",
+      "Current image": "Prince Rupert Harbour 6.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Picton",
+      "Current image": "00 1189 Picton - Neuseeland.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "ACCEPTABLE",
+      "Action": "KEEP",
+      "Reasons": "—"
+    },
+    {
+      "Port": "Belfast",
+      "Current image": "Workboats and pontoon, Belfast harbour (March 2016) - geograph.org.uk - 4848112.jpg",
+      "Status": "AUTO_APPROVED",
+      "Current rating": "GOOD",
+      "Action": "KEEP",
+      "Reasons": "—"
+    }
+  ],
+  "exceptions": {
+    "review": [],
+    "replace": [
+      {
+        "port": "Melbourne",
+        "current_image": "Victoria Harbour, Docklands, Melbourne Australia (4588018134).jpg",
+        "status": "AUTO_APPROVED",
+        "editorial": "POOR",
+        "action": "REPLACE",
+        "reasons": [
+          "vessel_primary"
+        ]
+      }
+    ]
+  },
+  "needsReview": [
+    {
+      "port": "La Spezia",
+      "port_id": "ed994a26-f3d2-43d3-87e2-ad2a78ef5172",
+      "image": "19014 Framura, Province of La Spezia, Italy - panoramio.jpg",
+      "source": "wikimedia",
+      "licence": "CC BY 3.0",
+      "scores": {
+        "geographic": 100,
+        "suitability": 64,
+        "confidence": 72,
+        "vesselPrimary": false
+      },
+      "editorial": "ACCEPTABLE"
+    },
+    {
+      "port": "Geiranger",
+      "port_id": "ca907e11-0a42-4737-9398-2bf90a56766a",
+      "image": "Geiranger, view from the port-2.jpg",
+      "source": "wikimedia",
+      "licence": "Public domain",
+      "scores": {
+        "geographic": 88,
+        "suitability": 64,
+        "confidence": 72,
+        "vesselPrimary": false
+      },
+      "editorial": "ACCEPTABLE"
+    },
+    {
+      "port": "Noumea",
+      "port_id": "b0728ab0-8296-4a4e-a092-ee5dfade750c",
+      "image": "Church and Harbour in Noumea.jpg",
+      "source": "wikimedia",
+      "licence": "Public domain",
+      "scores": {
+        "geographic": 96,
+        "suitability": 86,
+        "confidence": 92,
+        "vesselPrimary": false
+      },
+      "editorial": "GOOD"
+    },
+    {
+      "port": "Port Vila",
+      "port_id": "10631b12-3a03-4bae-8128-60d3a331ab1c",
+      "image": "Port Vila harbour entrance, Vanuatu, 2 June 2006 - Flickr - PhillipC.jpg",
+      "source": "wikimedia",
+      "licence": "CC BY 2.0",
+      "scores": {
+        "geographic": 100,
+        "suitability": 86,
+        "confidence": 94,
+        "vesselPrimary": false
+      },
+      "editorial": "GOOD"
+    },
+    {
+      "port": "Dubrovnik",
+      "port_id": "1190b7ba-bc51-4ebe-b7a9-bfa79ca0fa30",
+      "image": "Old harbour, Dubrovnik, Croatia.jpg",
+      "source": "wikimedia",
+      "licence": "CC BY-SA 3.0",
+      "scores": {
+        "geographic": 96,
+        "suitability": 86,
+        "confidence": 92,
+        "vesselPrimary": false
+      },
+      "editorial": "GOOD"
+    },
+    {
+      "port": "Sydney",
+      "port_id": "581e73fb-acb9-4d4d-845a-9833a9171f0e",
+      "image": "Sydney Harbour Bridge 01.jpg",
+      "source": "wikimedia",
+      "licence": "CC BY-SA 3.0",
+      "scores": {
+        "geographic": 96,
+        "suitability": 86,
+        "confidence": 92,
+        "vesselPrimary": false
+      },
+      "editorial": "GOOD"
+    },
+    {
+      "port": "Singapore",
+      "port_id": "1bb80470-1a28-4610-af17-d0204e52f91b",
+      "image": "Port of Singapore behind Resorts World Station, Sentosa - 2019.jpg",
+      "source": "wikimedia",
+      "licence": "CC BY-SA 4.0",
+      "scores": {
+        "geographic": 96,
+        "suitability": 86,
+        "confidence": 92,
+        "vesselPrimary": false
+      },
+      "editorial": "GOOD"
+    },
+    {
+      "port": "Tauranga",
+      "port_id": "375c7f61-c023-4bfb-b2d6-7883159cebe3",
+      "image": "Tauranga, New Zealand (6870869678).jpg",
+      "source": "wikimedia",
+      "licence": "CC BY-SA 2.0",
+      "scores": {
+        "geographic": 100,
+        "suitability": 64,
+        "confidence": 72,
+        "vesselPrimary": false
+      },
+      "editorial": "ACCEPTABLE"
+    },
+    {
+      "port": "Isafjordur",
+      "port_id": "f05cc387-be7d-4407-8a6c-ec82c0b066c9",
+      "image": "Ísafjörður harbour 2017.jpg",
+      "source": "wikimedia",
+      "licence": "CC BY-SA 4.0",
+      "scores": {
+        "geographic": 96,
+        "suitability": 86,
+        "confidence": 92,
+        "vesselPrimary": false
+      },
+      "editorial": "GOOD"
+    },
+    {
+      "port": "Ensenada",
+      "port_id": "196f674c-0fed-4d2a-aba3-d518d7054746",
+      "image": "Catalina Island and Ensenada Cruise - panoramio (97).jpg",
+      "source": "wikimedia",
+      "licence": "CC BY 3.0",
+      "scores": {
+        "geographic": 88,
+        "suitability": 64,
+        "confidence": 72,
+        "vesselPrimary": false
+      },
+      "editorial": "ACCEPTABLE"
+    }
+  ],
+  "manualProtection": {
+    "civitavecchia": {
+      "id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+      "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+      "image_status": "MANUAL",
+      "unchanged": true
+    },
+    "mykonos": {
+      "id": "f0763a6a-6f1b-46ce-a600-308fb65d53ce",
+      "hero_media_id": "e7315cfb-a54c-41e9-8c99-ec8cd69c1d9b",
+      "image_status": "MANUAL",
+      "unchanged": true
+    }
+  },
+  "costaMaya": {
+    "canonical_name": "Costa Maya",
+    "image_status": "NO_IMAGE",
+    "search": {
+      "eligible": false,
+      "candidate": null,
+      "suggested_status": "NO_IMAGE"
+    },
+    "note": "NO_IMAGE - ACCEPTABLE"
+  },
+  "recommendation": "DO NOT RUN FULL MISSING-PORT ENRICHMENT YET"
+}

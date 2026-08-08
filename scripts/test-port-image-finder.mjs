@@ -54,8 +54,15 @@ const {
   approveReviewedPortImage,
   assertCandidateApplicable,
   assertCanonicalApplyTarget,
+  replaceAutoApprovedPortImage,
+  canReplaceAutoApprovedPortImage,
   __resetDownloadThrottleForTests
 } = loadCjs("netlify/functions/lib/port-image-finder/apply.js");
+const {
+  auditStoredPortImage,
+  buildPublicAuditMetrics,
+  hasWrongGeographyForPort
+} = loadCjs("netlify/functions/lib/port-image-finder/public-image-audit.js");
 const { resolveCanonicalPort, validatePortIdentity } = loadCjs(
   "netlify/functions/lib/port-image-finder/port-resolution.js"
 );
@@ -464,6 +471,105 @@ assert(destinationSpecificityScores({ title: "Sydney Harbour Bridge panorama" },
 // --- Manual image protection ---
 assert(!canOverwritePortImage({ image_status: "MANUAL", hero_media_id: "abc" }), "manual image cannot be overwritten");
 assert(canOverwritePortImage({ image_status: "NO_IMAGE", hero_media_id: null }), "missing image can be enriched");
+assert(
+  !canOverwritePortImage({ image_status: "AUTO_APPROVED", hero_media_id: "abc" }),
+  "AUTO_APPROVED image cannot be overwritten without deliberate replace action"
+);
+assert(
+  canOverwritePortImage({ image_status: "AUTO_APPROVED", hero_media_id: "abc" }, { replaceAutoApproved: true }),
+  "AUTO_APPROVED replacement requires explicit replaceAutoApproved flag"
+);
+assert(
+  canReplaceAutoApprovedPortImage({ image_status: "AUTO_APPROVED", hero_media_id: "abc" }),
+  "canReplaceAutoApprovedPortImage detects replaceable AUTO_APPROVED ports"
+);
+assert(!canReplaceAutoApprovedPortImage({ image_status: "MANUAL", hero_media_id: "abc" }), "MANUAL cannot be auto-replaced");
+
+const laPortAudit = {
+  canonical_name: "Los Angeles",
+  city: "San Pedro",
+  country: "United States",
+  country_code: "US",
+  aliases: ["San Pedro", "Los Angeles"]
+};
+assert(
+  hasWrongGeographyForPort(laPortAudit, { title: "Los Angeles (California, USA), Santa Monica Beach -- 2012 -- 5301.jpg" }),
+  "Santa Monica Beach fails LA/San Pedro geography audit"
+);
+
+const mockAutoAudits = [
+  { image_status: "AUTO_APPROVED", action: "KEEP", editorial: "GOOD", reasons: [], dated: false, ageClass: "MODERN" },
+  { image_status: "AUTO_APPROVED", action: "KEEP", editorial: "GOOD", reasons: [], dated: false, ageClass: "MODERN" },
+  { image_status: "AUTO_APPROVED", action: "REVIEW", editorial: "ACCEPTABLE", reasons: ["dated_historical_acceptable"], dated: true, ageClass: "UNKNOWN" },
+  { image_status: "AUTO_APPROVED", action: "REPLACE", editorial: "WRONG", reasons: ["wrong_geography_or_destination"], dated: false, ageClass: "MODERN" },
+  { image_status: "MANUAL", action: "KEEP", editorial: "GOOD", reasons: [], dated: false, ageClass: "MODERN" }
+];
+const auditMetrics = buildPublicAuditMetrics(mockAutoAudits);
+assert(auditMetrics.reconciled === true, "public audit metrics reconcile");
+assert(auditMetrics.keep === 2 && auditMetrics.review === 1 && auditMetrics.replace === 1, "KEEP/REVIEW/REPLACE counts correct");
+assert(auditMetrics.autoApprovedAudited === 4, "AUTO_APPROVED audited count correct");
+assert(auditMetrics.currentPublicAutoApprovalQuality === 50, "public auto approval quality = KEEP/autoApproved");
+
+let replacePatch = null;
+let mediaCreated = null;
+const replaceSupabase = {
+  fetchRest: async (path, options) => {
+    if (options?.method === "POST" && path === "media_library") {
+      mediaCreated = options.body;
+      return [{ id: "media-new", public_url: "https://example.test/new.jpg", storage_path: "ports/la/new.jpg" }];
+    }
+    if (options?.method === "PATCH") {
+      replacePatch = options.body;
+      return [{ id: "la-id", canonical_name: "Los Angeles", hero_media_id: "media-new", image_status: "AUTO_APPROVED" }];
+    }
+    throw new Error(`unexpected ${path}`);
+  },
+  publicObjectUrl: (sp) => `https://example.test/${sp}`,
+  uploadObject: async () => {}
+};
+const laAutoPort = {
+  id: "la-id",
+  canonical_name: "Los Angeles",
+  city: "San Pedro",
+  country: "United States",
+  country_code: "US",
+  aliases: ["San Pedro"],
+  hero_media_id: "media-old",
+  image_status: "AUTO_APPROVED"
+};
+const laReplacement = {
+  title: "San Pedro Port of Los Angeles waterfront",
+  description: "San Pedro cruise terminal waterfront Los Angeles California",
+  url: "https://upload.wikimedia.org/wikipedia/commons/test-la.jpg",
+  provider: "wikimedia",
+  license: "CC BY-SA 4.0",
+  sourceUrl: "https://commons.wikimedia.org/wiki/File:test-la.jpg",
+  width: 1400,
+  height: 900
+};
+const replaceFetchOrig = globalThis.fetch;
+globalThis.fetch = async () => ({
+  ok: true,
+  status: 200,
+  headers: { get: () => "image/jpeg" },
+  arrayBuffer: async () => Buffer.alloc(4096)
+});
+try {
+  __resetDownloadThrottleForTests();
+  const replaced = await replaceAutoApprovedPortImage(replaceSupabase, laAutoPort, laReplacement, {
+    imageStatus: "AUTO_APPROVED"
+  });
+  assert(replaced.replaced === true, "replaceAutoApprovedPortImage marks replacement");
+  assert(replaced.previous_media_id === "media-old", "replacement preserves previous media id reference");
+  assert(replacePatch.hero_media_id === "media-new", "replacement updates hero_media_id");
+  assert(mediaCreated.import_source === "port_image_finder:wikimedia", "replacement preserves licensing metadata import source");
+} finally {
+  globalThis.fetch = replaceFetchOrig;
+  __resetDownloadThrottleForTests();
+}
+
+assert(!canOverwritePortImage({ image_status: "MANUAL", hero_media_id: "abc" }), "manual image cannot be overwritten");
+assert(canOverwritePortImage({ image_status: "NO_IMAGE", hero_media_id: null }), "missing image can be enriched");
 
 // --- Public catalogue resolution ---
 const catalogue = indexPortsCatalogue([
@@ -522,7 +628,8 @@ assert(/function braveImageSearch/.test(braveSrc), "brave image search helper ex
 assert(/action === "find_candidates"/.test(fnSrc), "port-image-finder supports find_candidates");
 assert(/action === "approve_reviewed"/.test(fnSrc), "port-image-finder supports approve_reviewed");
 assert(/action === "bulk_missing"/.test(fnSrc), "port-image-finder supports bulk_missing");
-assert(/approveReviewedPortImage/.test(adminSrc), "admin UI supports approving NEEDS_REVIEW images");
+assert(/replace_auto_approved/.test(fnSrc), "port-image-finder supports replace_auto_approved");
+assert(/replaceAutoApprovedPortImage/.test(adminSrc), "admin UI supports Find better image replacement");
 assert(/Approve for Explore/.test(adminSrc), "admin shows explicit approval action");
 assert(/image_status/.test(migrationSrc), "migration adds image_status");
 assert(/isMissingImageSchemaError/.test(catalogueFnSrc), "ports catalogue tolerates missing image schema");

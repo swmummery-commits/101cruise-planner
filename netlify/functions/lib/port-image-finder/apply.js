@@ -4,8 +4,15 @@
 
 const crypto = require("crypto");
 const { primaryName } = require("./queries");
-const { licenseIsUsable } = require("./scoring");
+const {
+  licenseIsUsable,
+  scorePortImageCandidate,
+  statusForCandidate,
+  candidatePassesEligibility,
+  isMilitaryWarDestinationImagery
+} = require("./scoring");
 const { assertCanonicalApplyTarget } = require("./port-resolution");
+const { editorialRating, hasWrongGeographyForPort } = require("./public-image-audit");
 
 const BUCKET = "cruise-media";
 const VALID_STATUS = new Set(["MANUAL", "AUTO_APPROVED", "NEEDS_REVIEW", "NO_IMAGE"]);
@@ -76,10 +83,19 @@ async function downloadImage(url, timeoutMs = 12_000, attempt = 0) {
   }
 }
 
-function canOverwritePortImage(port, { force = false } = {}) {
+function canOverwritePortImage(port, { force = false, replaceAutoApproved = false } = {}) {
   if (!port) return false;
-  if (port.image_status === "MANUAL" && port.hero_media_id && !force) return false;
+  const status = String(port.image_status || "").toUpperCase();
+  if (status === "MANUAL" && port.hero_media_id && !force) return false;
+  if (status === "AUTO_APPROVED" && port.hero_media_id && !replaceAutoApproved) return false;
   return true;
+}
+
+function canReplaceAutoApprovedPortImage(port) {
+  return (
+    String(port?.image_status || "").toUpperCase() === "AUTO_APPROVED" &&
+    Boolean(port?.hero_media_id)
+  );
 }
 
 function assertCandidateApplicable(candidate, { imageStatus = "MANUAL" } = {}) {
@@ -139,7 +155,12 @@ async function applyPortImageCandidate(supabase, port, candidate, options = {}) 
     assertCanonicalApplyTarget(options.resolutionSpec, port);
   }
   if (!canOverwritePortImage(port, options)) {
-    const err = new Error("This port has a manual image and cannot be overwritten automatically.");
+    const status = String(port.image_status || "").toUpperCase();
+    const err = new Error(
+      status === "AUTO_APPROVED"
+        ? "This port has an AUTO_APPROVED image. Use replace_auto_approved to replace it deliberately."
+        : "This port has a manual image and cannot be overwritten automatically."
+    );
     err.statusCode = 409;
     err.calm = true;
     throw err;
@@ -223,6 +244,67 @@ async function applyPortImageCandidate(supabase, port, candidate, options = {}) 
   return { port: updated, media, approved_existing: false };
 }
 
+function repairReplacementEligible(scored, port, candidate) {
+  if (!licenseIsUsable(candidate)) return false;
+  if (scored.vesselPrimary || isMilitaryWarDestinationImagery(candidate)) return false;
+  if (hasWrongGeographyForPort(port, candidate)) return false;
+  const editorial = editorialRating(scored, port, candidate);
+  if (editorial !== "GOOD" && editorial !== "ACCEPTABLE") return false;
+  if (scored.geographic < 55 || scored.suitability < 50) return false;
+  return true;
+}
+
+/**
+ * Deliberately replace an existing AUTO_APPROVED port image.
+ * Does not delete the previous media_library row (may still be referenced elsewhere).
+ */
+async function replaceAutoApprovedPortImage(supabase, port, candidate, options = {}) {
+  if (!canReplaceAutoApprovedPortImage(port)) {
+    const err = new Error("Only stored AUTO_APPROVED port images can be replaced through this action.");
+    err.statusCode = 409;
+    err.calm = true;
+    throw err;
+  }
+
+  if (options.resolutionSpec) {
+    assertCanonicalApplyTarget(options.resolutionSpec, port);
+  }
+
+  const scored = { candidate, ...scorePortImageCandidate(candidate, port) };
+  if (!repairReplacementEligible(scored, port, candidate)) {
+    const err = new Error("Replacement candidate is not eligible under current port image rules.");
+    err.statusCode = 400;
+    err.calm = true;
+    throw err;
+  }
+
+  const editorial = editorialRating(scored, port, candidate);
+  let imageStatus = String(options.imageStatus || "AUTO_APPROVED").trim().toUpperCase();
+  if (imageStatus === "AUTO_APPROVED") {
+    const autoEligible = statusForCandidate(scored) === "AUTO_APPROVED";
+    const repairAuto =
+      editorial === "GOOD" ||
+      (editorial === "ACCEPTABLE" && scored.geographic >= 70 && scored.suitability >= 55);
+    if (!autoEligible && !repairAuto) {
+      imageStatus = "NEEDS_REVIEW";
+    }
+  }
+
+  const previousMediaId = port.hero_media_id;
+  const result = await applyPortImageCandidate(supabase, port, candidate, {
+    ...options,
+    imageStatus,
+    replaceAutoApproved: true
+  });
+
+  return {
+    ...result,
+    previous_media_id: previousMediaId,
+    replaced: true,
+    editorial
+  };
+}
+
 function __resetDownloadThrottleForTests() {
   lastWikimediaDownloadAt = 0;
 }
@@ -230,7 +312,9 @@ function __resetDownloadThrottleForTests() {
 module.exports = {
   applyPortImageCandidate,
   approveReviewedPortImage,
+  replaceAutoApprovedPortImage,
   canOverwritePortImage,
+  canReplaceAutoApprovedPortImage,
   downloadImage,
   assertCandidateApplicable,
   assertCanonicalApplyTarget,

@@ -204,6 +204,47 @@
     }, "Saving port image…");
   }
 
+  async function replaceAutoApprovedPortImage() {
+    const port = selectedPort();
+    if (!port?.id) return;
+    const list = imageCandidates.length ? imageCandidates : port?.image_candidates || [];
+    if (!list.length) {
+      setMessage("Find image candidates first, then choose a replacement.", "error");
+      return;
+    }
+    const candidate = list[0];
+    const confirmed = window.confirm(
+      "Replace the current AUTO_APPROVED image with the top eligible candidate?\n\nManual images are never replaced automatically."
+    );
+    if (!confirmed) return;
+
+    return withSavingOverlay(async function () {
+      imageLoading = true;
+      setMessage("Replacing AUTO_APPROVED image…", "running");
+      rerender();
+      try {
+        const data = await imageApi("replace_auto_approved", {
+          port_id: port.id,
+          candidate,
+          image_status: "AUTO_APPROVED",
+          search_query: port.image_search_query || null
+        });
+        if (data.port?.id) {
+          const idx = ports.findIndex((p) => p.id === data.port.id);
+          if (idx >= 0) ports[idx] = { ...ports[idx], ...data.port };
+          draft = portToDraft(data.port);
+        }
+        imageCandidates = [];
+        setMessage("AUTO_APPROVED image replaced.", "success");
+      } catch (error) {
+        setMessage(error.message || "Could not replace image.", "error");
+      } finally {
+        imageLoading = false;
+        rerender();
+      }
+    }, "Replacing image…");
+  }
+
   function applyPortImageCandidateByIndex(index) {
     const port = selectedPort();
     const list = imageCandidates.length ? imageCandidates : port?.image_candidates || [];
@@ -684,6 +725,11 @@
         <div class="admin-actions-row" style="gap:8px;flex-wrap:wrap;margin:12px 0">
           <button type="button" class="admin-button black small" onclick="PortsCatalogueAdmin.findPortImage()" ${imageLoading || saving || bulkRunning ? "disabled" : ""}>${imageLoading ? "Searching…" : "Find image"}</button>
           <button type="button" class="admin-button secondary small" onclick="PortsCatalogueAdmin.findPortImageAgain()" ${imageLoading || saving || bulkRunning ? "disabled" : ""}>Search again</button>
+          ${
+            String(port.image_status || "").toUpperCase() === "AUTO_APPROVED"
+              ? `<button type="button" class="admin-button secondary small" onclick="PortsCatalogueAdmin.replaceAutoApprovedPortImage()" ${imageLoading || saving || bulkRunning ? "disabled" : ""}>Find better image</button>`
+              : ""
+          }
         </div>
         ${
           candidates
@@ -863,6 +909,7 @@
     applyPortImageCandidate,
     applyPortImageCandidateByIndex,
     approveReviewedPortImage,
+    replaceAutoApprovedPortImage,
     bulkFindMissingPortImages
   };
 })(typeof window !== "undefined" ? window : globalThis);
