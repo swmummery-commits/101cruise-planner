@@ -103,6 +103,7 @@ Roseau,"Roseau, Dominica",Roseau,Dominica,DM,Caribbean,15.296,-61.387,
 Fort-de-France,"Fort-de-France, Martinique",Fort-de-France,Martinique,MQ,Caribbean,14.6,-61.069,Martinique
 Castries,"Castries, St Lucia",Castries,Saint Lucia,LC,Caribbean,14.011,-60.992,St Lucia
 Bridgetown,"Bridgetown, Barbados",Bridgetown,Barbados,BB,Caribbean,13.105,-59.629,
+George Town,"George Town, Grand Cayman",George Town,Cayman Islands,KY,Caribbean,19.2866,-81.3745,Grand Cayman|Grand Cayman Cayman Islands|Georgetown
 Kingstown,"Kingstown, St Vincent",Kingstown,Saint Vincent and the Grenadines,VC,Caribbean,13.148,-61.224,St Vincent
 St Georges Grenada,"St George’s, Grenada",St George’s,Grenada,GD,Caribbean,12.052,-61.752,Grenada|St Georges
 Willemstad,"Willemstad, Curaçao",Willemstad,Curaçao,CW,Caribbean,12.109,-68.934,Curacao
@@ -197,6 +198,8 @@ Kobe,"Kobe, Japan",Kobe,Japan,JP,Japan,34.682,135.19,Osaka|Kyoto
 Osaka,"Osaka, Japan",Osaka,Japan,JP,Japan,34.657,135.432,Kyoto
 Hiroshima,"Hiroshima, Japan",Hiroshima,Japan,JP,Japan,34.352,132.455,
 Nagasaki,"Nagasaki, Japan",Nagasaki,Japan,JP,Japan,32.744,129.872,
+Busan,"Busan, South Korea",Busan,South Korea,KR,East Asia,35.1028,129.0403,Pusan|Busan South Korea
+Kagoshima,"Kagoshima, Japan",Kagoshima,Japan,JP,Japan,31.5894,130.5611,
 Halong Bay,"Hạ Long Bay, Vietnam",Hạ Long,Vietnam,VN,Southeast Asia,20.951,107.07,Halong|Ha Long
 Da Nang,"Đà Nẵng, Vietnam",Đà Nẵng,Vietnam,VN,Southeast Asia,16.114,108.214,Hue|Hoi An|Danang
 Ho Chi Minh City,"Phu My (Ho Chi Minh City), Vietnam",Phu My,Vietnam,VN,Southeast Asia,10.59,107.01,Saigon|Ho Chi Minh City|Phu My
@@ -236,7 +239,7 @@ Pisco,"Pisco (General San Martín), Peru",Pisco,Peru,PE,South America,-13.708,-7
 Hanga Roa,"Hanga Roa (Easter Island), Chile",Hanga Roa,Chile,CL,South Pacific,-27.15,-109.432,Easter Island|Rapa Nui|Isla de Pascua|Easter Island Chile
 Key West,"Key West, Florida",Key West,United States,US,Caribbean,24.56,-81.807,Key West Florida
 Whittier,"Whittier, Alaska",Whittier,United States,US,Alaska,60.774,-148.684,Whittier Alaska
-Santorini,"Santorini (Athíniós), Greece",Santorini,Greece,GR,Eastern Mediterranean,36.385,25.429,Thira|Athinios|Santorini Greece
+Santorini,"Santorini (Athíniós), Greece",Santorini,Greece,GR,Eastern Mediterranean,36.385,25.429,Thira|Fira|Athinios|Santorini Greece
 Istanbul,"Istanbul, Turkey",Istanbul,Turkey,TR,Eastern Mediterranean,41.023,28.985,Constantinople|Istanbul Turkey
 Cartagena Colombia,"Cartagena, Colombia",Cartagena,Colombia,CO,South America,10.406,-75.539,Cartagena|Cartagena de Indias|Cartagena Colombia
 Rotterdam,"Rotterdam, Netherlands",Rotterdam,Netherlands,NL,Northern Europe,51.9244,4.4777,Rotterdam The Netherlands|Rotterdam Netherlands

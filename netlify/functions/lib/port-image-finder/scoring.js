@@ -29,6 +29,14 @@ const DESTINATION_SCENE_RE =
 const SHIP_DOMINANT_RE =
   /\b((m\/s|m-s|ms|mv|ss|rms)\s+[a-z0-9-]+|celebrity\s+[a-z]+|azamara\s+[a-z]+|queen mary|oasis of the|symphony of the|costa [a-z]+|aidab[a-z]*|mein schiff|norwegian [a-z]+|carnival [a-z]+|royal caribbean|ocean liner|passenger ship|cruise ship|cruise ships|two ships|three ships|ships and)\b/i;
 
+const HISTORICAL_SIGNAL_RE =
+  /\b(photochrom|historic photograph|historical photograph|archives?|circa|c\.\s*\d{4}|dated\s+\d{4}|18\d{2}s|1890s|1900s|1910s|1920s|1930s|1940s|1950s|19th century|early 20th century|waterfront 1890|harbour 1898|harbor 1898|harbour 1913|harbor 1913)\b/i;
+
+const MILITARY_WAR_DESTINATION_RE =
+  /\b(lancaster|bomber|bombardment|bombing raid|aerial attack|silhouetted over|naval combat|world war|wwii|ww2|wartime raid|military aircraft|war damage|anti-?aircraft|strafing|invasion fleet|torpedo attack|battleship|destroyer firing|naval bombardment)\b/i;
+
+const ELIGIBLE_SHORTLIST = 8;
+
 function normaliseTitle(value) {
   return String(value || "")
     .replace(/^File:/i, "")
@@ -65,6 +73,12 @@ function isVesselPrimarySubject(candidate) {
 
   if (/^\w[\w\s.-]*\(\d+\)/i.test(segments[0] || title)) {
     return { vesselPrimary: true, reason: "hull_number_lead" };
+  }
+  if (/^(tcg|hms|uss|rv|ms|mv|ss)\s+/i.test(titleLower) && /\([A-Z]?-?\d+\)/i.test(title)) {
+    return { vesselPrimary: true, reason: "named_warship" };
+  }
+  if (/\([A-Z]{0,3}-?\d+\)/i.test(title) && /\b(in port|at port|harbour|harbor|naval|patrol|corvette|frigate|destroyer)\b/i.test(combined)) {
+    return { vesselPrimary: true, reason: "pennant_in_port" };
   }
 
   if (CRUISE_LINE_OR_VESSEL_NAME.test(lead) && !DESTINATION_SCENE_RE.test(lead)) {
@@ -167,6 +181,49 @@ function genericImageryPenalty(candidate, port) {
   return 0;
 }
 
+function extractYearSignals(text) {
+  const hay = String(text || "");
+  const years = [];
+  for (const match of hay.matchAll(/\b(18\d{2}|19[0-9]{2}|20[0-1]\d)\b/g)) {
+    years.push(Number(match[1]));
+  }
+  return years;
+}
+
+function classifyImageAge(candidate) {
+  const hay = candidateHaystack(candidate);
+  const militaryWar = isMilitaryWarDestinationImagery(candidate);
+  if (militaryWar) {
+    return { ageClass: "HISTORICAL", historical: true, militaryWar: true };
+  }
+  if (HISTORICAL_SIGNAL_RE.test(hay)) {
+    return { ageClass: "HISTORICAL", historical: true, militaryWar: false };
+  }
+  const years = extractYearSignals(hay);
+  if (years.length) {
+    const maxYear = Math.max(...years);
+    if (maxYear < 1970) {
+      return { ageClass: "HISTORICAL", historical: true, militaryWar: false };
+    }
+    if (maxYear >= 2000) {
+      return { ageClass: "MODERN", historical: false, militaryWar: false };
+    }
+    return { ageClass: "UNKNOWN", historical: false, militaryWar: false };
+  }
+  return { ageClass: "UNKNOWN", historical: false, militaryWar: false };
+}
+
+function isMilitaryWarDestinationImagery(candidate) {
+  return MILITARY_WAR_DESTINATION_RE.test(candidateHaystack(candidate));
+}
+
+function historicalSuitabilityPenalty(candidate) {
+  const age = classifyImageAge(candidate);
+  if (age.militaryWar) return 45;
+  if (age.historical) return 14;
+  return 0;
+}
+
 function candidateHaystack(candidate) {
   return [candidate?.title, candidate?.description, candidate?.sourceUrl, candidate?.pageUrl, candidate?.credit]
     .filter(Boolean)
@@ -228,6 +285,11 @@ function licenseIsUsable(candidate) {
 }
 
 function computeGeographicScore(candidate, port) {
+  const titleOnly = normaliseTitle(candidate?.title).toLowerCase();
+  if (String(port?.canonical_name || "").trim().toLowerCase() === "cozumel" && /playa del carmen|terminal maritima playa/i.test(titleOnly)) {
+    return 0;
+  }
+
   const text = candidateHaystack(candidate);
   if (hasConflictingLocation(text, port)) return 0;
 
@@ -272,6 +334,7 @@ function computeSuitabilityScore(candidate) {
   if (shipHits >= 2 && portHits === 0) score -= 25;
 
   if (vessel.vesselPrimary) score -= 48;
+  score -= historicalSuitabilityPenalty(candidate);
 
   return Math.max(0, Math.min(100, Math.round(score)));
 }
@@ -321,6 +384,8 @@ function scorePortImageCandidate(candidate, port) {
 
   if (specificity.titleHit) reasons.push("destination_in_title");
   if (genericImageryPenalty(candidate, port) > 0) reasons.push("generic_imagery");
+  if (classifyImageAge(candidate).historical) reasons.push("historical_imagery");
+  if (isMilitaryWarDestinationImagery(candidate)) reasons.push("military_war_imagery");
   if (String(candidate?.provider || "").toLowerCase() === "brave" && !licenseIsUsable(candidate)) {
     reasons.push("unlicensed_brave");
   }
@@ -355,6 +420,10 @@ function pickBestCandidate(candidates, port) {
         String(b.candidate?.provider || "").toLowerCase() === "wikimedia" && licenseIsUsable(b.candidate);
       if (aWiki !== bWiki) return bWiki ? 1 : -1;
       if (aBrave !== bBrave) return aBrave ? 1 : -1;
+      const aAge = classifyImageAge(a.candidate);
+      const bAge = classifyImageAge(b.candidate);
+      if (aAge.militaryWar !== bAge.militaryWar) return aAge.militaryWar ? 1 : -1;
+      if (aAge.historical !== bAge.historical) return aAge.historical ? 1 : -1;
       if (b.confidence !== a.confidence) return b.confidence - a.confidence;
       if (b.suitability !== a.suitability) return b.suitability - a.suitability;
       return b.geographic - a.geographic;
@@ -399,6 +468,45 @@ function statusForScores(scores, provider) {
   return "NO_IMAGE";
 }
 
+function candidatePassesEligibility(row, port) {
+  if (!row || row.rejected) return false;
+  if (row.vesselPrimary) return false;
+  if (isMilitaryWarDestinationImagery(row.candidate)) return false;
+  if (String(row.candidate?.provider || "").toLowerCase() === "brave" && !licenseIsUsable(row.candidate)) {
+    return false;
+  }
+  if (row.geographic < GEO_REVIEW_MIN) return false;
+  if (row.suitability < SUIT_REVIEW_MIN) return false;
+  if (row.confidence < OVERALL_REVIEW_MIN) return false;
+  if (statusForCandidate(row) === "NO_IMAGE") return false;
+  return true;
+}
+
+function pickEligibleCandidate(candidates, port, { limit = ELIGIBLE_SHORTLIST } = {}) {
+  const ranked = pickBestCandidate(candidates, port);
+  for (const row of ranked.slice(0, limit)) {
+    if (candidatePassesEligibility(row, port)) return row;
+  }
+  return null;
+}
+
+function pickEligibleCandidateWithContext(candidates, port, { limit = ELIGIBLE_SHORTLIST } = {}) {
+  const ranked = pickBestCandidate(candidates, port);
+  const rawTop = ranked[0] || null;
+  for (let i = 0; i < Math.min(limit, ranked.length); i++) {
+    if (candidatePassesEligibility(ranked[i], port)) {
+      return {
+        row: ranked[i],
+        rank: i + 1,
+        ranked,
+        rawTop,
+        displacedHistorical: Boolean(rawTop && i > 0 && classifyImageAge(rawTop.candidate).historical)
+      };
+    }
+  }
+  return { row: null, rank: null, ranked, rawTop, displacedHistorical: false };
+}
+
 function statusForCandidate(row) {
   return statusForScores(
     {
@@ -415,8 +523,12 @@ function statusForCandidate(row) {
 module.exports = {
   GEO_AUTO_MIN,
   SUIT_AUTO_MIN,
+  ELIGIBLE_SHORTLIST,
   scorePortImageCandidate,
   pickBestCandidate,
+  pickEligibleCandidate,
+  pickEligibleCandidateWithContext,
+  candidatePassesEligibility,
   statusForScores,
   statusForCandidate,
   computeGeographicScore,
@@ -426,5 +538,8 @@ module.exports = {
   isVesselPrimarySubject,
   destinationSpecificityScores,
   genericImageryPenalty,
-  destinationNamesForPort
+  destinationNamesForPort,
+  classifyImageAge,
+  isMilitaryWarDestinationImagery,
+  historicalSuitabilityPenalty
 };

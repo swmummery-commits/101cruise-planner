@@ -144,18 +144,13 @@ function findCataloguePort(allPorts, spec) {
       port.canonical_name,
       port.display_name,
       port.city,
-      ...(Array.isArray(port.aliases) ? port.aliases : []),
-      ...(spec.aliases || [])
+      ...(Array.isArray(port.aliases) ? port.aliases : [])
     ]
       .filter(Boolean)
       .map(normalizeKey);
 
-    const matchKeys = names.filter((n) => spec.match.test(n) || spec.match.test(n.replace(/\s+/g, " ")));
-    if (matchKeys.length === 0) {
-      const canonical = normalizeKey(port.canonical_name);
-      const city = normalizeKey(port.city);
-      if (!(spec.match.test(canonical) || spec.match.test(city))) return false;
-    }
+    const nameMatch = names.some((n) => spec.match.test(n));
+    if (!nameMatch) return false;
     return true;
   });
 

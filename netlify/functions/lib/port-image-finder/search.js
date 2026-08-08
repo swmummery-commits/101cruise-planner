@@ -3,7 +3,7 @@
  */
 
 const { buildPortImageQueries } = require("./queries");
-const { pickBestCandidate, statusForCandidate } = require("./scoring");
+const { pickBestCandidate, pickEligibleCandidate, pickEligibleCandidateWithContext, statusForCandidate } = require("./scoring");
 const { searchWikimediaCommons } = require("./sources/wikimedia");
 const { searchPexels } = require("./sources/pexels");
 const { braveImageSearch, getBraveApiKey } = require("../brave-search");
@@ -149,18 +149,22 @@ async function findPortImageCandidates(port, options = {}) {
   }
 
   const shortlist = scored.slice(0, SHORTLIST_SIZE).map(serialiseCandidate);
-  const top = scored[0] || null;
+  const deduped = dedupeCandidates(collected);
+  const eligible = pickEligibleCandidate(deduped, port, { limit: SHORTLIST_SIZE });
+  const eligibleContext = pickEligibleCandidateWithContext(deduped, port, { limit: SHORTLIST_SIZE });
+  const top = eligible || null;
+  const rawTop = scored[0] || null;
 
   let autoApply = null;
-  if (options.autoApply && top) {
-    const status = statusForCandidate(top);
+  if (options.autoApply && eligible) {
+    const status = statusForCandidate(eligible);
     if (status === "AUTO_APPROVED") {
       autoApply = {
-        candidate: serialiseCandidate(top),
+        candidate: serialiseCandidate(eligible),
         status,
-        confidence: top.confidence,
-        geographic: top.geographic,
-        suitability: top.suitability
+        confidence: eligible.confidence,
+        geographic: eligible.geographic,
+        suitability: eligible.suitability
       };
     }
   }
@@ -175,7 +179,11 @@ async function findPortImageCandidates(port, options = {}) {
     bestConfidence: top?.confidence || 0,
     bestGeographic: top?.geographic || 0,
     bestSuitability: top?.suitability || 0,
-    suggestedStatus: top ? statusForCandidate(top) : "NO_IMAGE"
+    suggestedStatus: top ? statusForCandidate(top) : "NO_IMAGE",
+    selectedRank: eligibleContext.rank,
+    displacedHistorical: eligibleContext.displacedHistorical,
+    rawTopCandidate: rawTop ? serialiseCandidate(rawTop) : null,
+    eligibleCandidate: eligible ? serialiseCandidate(eligible) : null
   };
 }
 

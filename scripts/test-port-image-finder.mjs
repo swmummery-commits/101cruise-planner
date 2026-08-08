@@ -32,6 +32,11 @@ const {
   licenseIsUsable,
   destinationSpecificityScores,
   genericImageryPenalty,
+  pickEligibleCandidate,
+  pickEligibleCandidateWithContext,
+  candidatePassesEligibility,
+  classifyImageAge,
+  isMilitaryWarDestinationImagery,
   GEO_AUTO_MIN,
   SUIT_AUTO_MIN
 } = loadCjs("netlify/functions/lib/port-image-finder/scoring.js");
@@ -336,6 +341,82 @@ const braveVsWiki = pickBestCandidate([unlicensedBrave, licensedWiki], {
 });
 assert(String(braveVsWiki[0]?.candidate?.provider).toLowerCase() === "wikimedia", "licensed Wikimedia ranks above unlicensed Brave");
 
+// --- La Spezia candidate fallthrough ---
+const laSpeziaPort = { canonical_name: "La Spezia", city: "La Spezia", country: "Italy", country_code: "IT" };
+const laSpeziaCandidates = [
+  {
+    provider: "wikimedia",
+    title: "An Avro Lancaster silhouetted over the Italian port of La Spezia on the night of 13-14 April 1943. C3697.jpg",
+    url: "https://upload.wikimedia.org/w/lancaster.jpg",
+    width: 1280,
+    height: 854,
+    license: "Public domain"
+  },
+  {
+    provider: "wikimedia",
+    title: "Guns in the harbour of La Spezia.jpg",
+    url: "https://upload.wikimedia.org/w/harbour.jpg",
+    width: 1280,
+    height: 854,
+    license: "Public domain"
+  }
+];
+assert(isMilitaryWarDestinationImagery(laSpeziaCandidates[0]), "Lancaster image flagged as military/war");
+const laSpeziaEligible = pickEligibleCandidate(laSpeziaCandidates, laSpeziaPort);
+assert(/harbour of La Spezia/i.test(laSpeziaEligible?.candidate?.title || ""), "fallthrough skips military image for harbour candidate");
+const laSpeziaContext = pickEligibleCandidateWithContext(laSpeziaCandidates, laSpeziaPort);
+assert(laSpeziaContext.rank >= 1, "eligible candidate selected from shortlist");
+assert(!isMilitaryWarDestinationImagery(laSpeziaContext.row?.candidate), "selected candidate is not military/war imagery");
+assert(!candidatePassesEligibility({ ...scorePortImageCandidate(laSpeziaCandidates[0], laSpeziaPort), candidate: laSpeziaCandidates[0] }, laSpeziaPort), "military image fails eligibility");
+const laSpeziaTopRanked = pickBestCandidate(laSpeziaCandidates, laSpeziaPort)[0];
+assert(!isMilitaryWarDestinationImagery(laSpeziaTopRanked?.candidate), "military image no longer wins raw ranking");
+assert(
+  isVesselPrimarySubject({ title: "TCG Edincik (M-260) in la Spezia.jpg" }).vesselPrimary,
+  "naval pennant-number title treated as vessel-primary"
+);
+
+// --- Cozumel vs Playa del Carmen conflict ---
+assert(
+  scorePortImageCandidate(
+    { provider: "wikimedia", title: "Terminal Maritima Playa del Carmen.JPG", url: "https://x/a.jpg", width: 1200, height: 800, license: "CC BY 2.0", description: "Passenger ferries to Cozumel depart from here." },
+    { canonical_name: "Cozumel", country: "Mexico", country_code: "MX" }
+  ).geographic === 0,
+  "Playa del Carmen title rejected for Cozumel even when description mentions Cozumel"
+);
+
+// --- Historical image penalty ---
+const skagwayModern = {
+  provider: "wikimedia",
+  title: "Skagway Alaska harbour waterfront 2019.jpg",
+  url: "https://upload.wikimedia.org/w/skagway-modern.jpg",
+  width: 1400,
+  height: 900,
+  license: "CC BY 2.0"
+};
+const skagwayHistoric = {
+  provider: "wikimedia",
+  title: "Skagway-harbour-1898.jpg",
+  url: "https://upload.wikimedia.org/w/skagway-1898.jpg",
+  width: 1400,
+  height: 900,
+  license: "Public domain"
+};
+assert(classifyImageAge(skagwayHistoric).ageClass === "HISTORICAL", "1898 harbour image classified historical");
+assert(classifyImageAge(skagwayModern).ageClass === "MODERN", "2019 image classified modern");
+const skagwayRanked = pickBestCandidate([skagwayHistoric, skagwayModern], {
+  canonical_name: "Skagway",
+  city: "Skagway",
+  country: "United States",
+  country_code: "US",
+  region: "Alaska"
+});
+assert(/2019/i.test(skagwayRanked[0]?.candidate?.title || ""), "modern Skagway image outranks 1898 harbour when both eligible");
+assert(
+  scorePortImageCandidate(skagwayModern, { canonical_name: "Skagway", country: "United States", country_code: "US" }).suitability >
+    scorePortImageCandidate(skagwayHistoric, { canonical_name: "Skagway", country: "United States", country_code: "US" }).suitability,
+  "historical suitability penalty applied"
+);
+
 // --- NEEDS_REVIEW remains non-public; approval → MANUAL ---
 const needsReviewPort = { id: "port-mykonos-test", canonical_name: "Mykonos", hero_media_id: "media-review", image_status: "NEEDS_REVIEW" };
 const publicIndex = indexPortsCatalogue([needsReviewPort]);
@@ -434,7 +515,8 @@ assert(/approveReviewedPortImage/.test(adminSrc), "admin UI supports approving N
 assert(/Approve for Explore/.test(adminSrc), "admin shows explicit approval action");
 assert(/image_status/.test(migrationSrc), "migration adds image_status");
 assert(/isMissingImageSchemaError/.test(catalogueFnSrc), "ports catalogue tolerates missing image schema");
-assert(/isVesselPrimarySubject/.test(read("netlify/functions/lib/port-image-finder/scoring.js")), "scoring exports vessel-primary detection");
+assert(/pickEligibleCandidate/.test(read("netlify/functions/lib/port-image-finder/scoring.js")), "scoring exports eligible candidate fallthrough");
+assert(/classifyImageAge/.test(read("netlify/functions/lib/port-image-finder/scoring.js")), "scoring exports image age classification");
 
 let queried = "";
 await resolveCatalogueMediaIds(async (path) => {

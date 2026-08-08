@@ -53,13 +53,13 @@ function hasConflictingLocation(text, port) {
   const portKey = normalizeCountryKey(port?.country, port?.country_code);
   const portGroup = groupForKey(portKey);
   const portRegion = String(port?.region || "").trim().toLowerCase();
+  const portName = String(port?.canonical_name || port?.display_name || "").trim().toLowerCase();
 
   for (const group of COUNTRY_GROUPS) {
     if (portGroup && group.codes[0] === portGroup.codes[0]) continue;
     if (!textMentionsGroup(hay, group)) continue;
 
     // Ambiguous city names: require region hint when both groups could match partial tokens
-    const portName = String(port?.canonical_name || port?.display_name || "").trim().toLowerCase();
     const ambiguousNames = [
       "albany",
       "newcastle",
