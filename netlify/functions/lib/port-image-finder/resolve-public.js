@@ -119,6 +119,33 @@ function rankCataloguePortMatches(portName, rows) {
     .sort((a, b) => b.score - a.score);
 }
 
+function queryHasCountryOrRegionContext(portName) {
+  const parts = String(portName || "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return parts.length >= 2;
+}
+
+/** Fail-safe when competing ports in different countries score similarly without country context. */
+function isAmbiguousWithoutCountryContext(portName, ranked) {
+  if (!Array.isArray(ranked) || ranked.length <= 1) return false;
+  if (queryHasCountryOrRegionContext(portName)) return false;
+  const viable = ranked.filter((entry) => entry.score >= 20);
+  if (viable.length <= 1) return false;
+  const countries = new Set(
+    viable.map((entry) => normaliseEntityKey(entry.row?.country)).filter(Boolean)
+  );
+  if (countries.size <= 1) return false;
+  const top = viable[0].score;
+  return viable.some(
+    (entry, index) =>
+      index > 0 &&
+      top - entry.score <= 10 &&
+      normaliseEntityKey(entry.row?.country) !== normaliseEntityKey(viable[0].row?.country)
+  );
+}
+
 function resolveCompoundLabelPort(portName, rows) {
   const compound = lookupCompoundPortLabel(portName);
   if (!compound) return null;
@@ -152,13 +179,20 @@ function lookupCataloguePort(portName, catalogueIndex, catalogueRows) {
 
   const exactCanonical = rows.filter((row) => normaliseEntityKey(row.canonical_name) === target);
   if (exactCanonical.length === 1) return exactCanonical[0];
-  if (exactCanonical.length > 1) return rankCataloguePortMatches(portName, exactCanonical)[0]?.row || exactCanonical[0];
+  if (exactCanonical.length > 1) {
+    const rankedCanonical = rankCataloguePortMatches(portName, exactCanonical);
+    if (isAmbiguousWithoutCountryContext(portName, rankedCanonical)) return null;
+    return rankedCanonical[0]?.row || exactCanonical[0];
+  }
 
   const exactCity = rows.filter((row) => normaliseEntityKey(row.city) === target);
   if (exactCity.length === 1) return exactCity[0];
 
   const ranked = rankCataloguePortMatches(portName, rows);
-  if (ranked.length) return ranked[0].row;
+  if (ranked.length) {
+    if (isAmbiguousWithoutCountryContext(portName, ranked)) return null;
+    return ranked[0].row;
+  }
 
   for (const key of nameKeysForLookup(portName)) {
     const hit = catalogueIndex?.get(key);
@@ -231,5 +265,6 @@ module.exports = {
   resolveCatalogueMediaIds,
   resolvePublicPortHeroMedia,
   rankCataloguePortMatches,
+  isAmbiguousWithoutCountryContext,
   hasValidPortImage
 };

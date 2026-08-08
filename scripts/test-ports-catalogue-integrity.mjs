@@ -54,6 +54,10 @@ const physicalPorts = [
   { canonical_name: "Tokyo", country: "Japan", aliases: ["Tokyo International Cruise Terminal"], hero_media_id: "media-tokyo", image_status: "AUTO_APPROVED" },
   { canonical_name: "Yokohama", country: "Japan", display_name: "Yokohama (Tokyo), Japan", aliases: [], hero_media_id: "media-yoko", image_status: "AUTO_APPROVED" },
   { canonical_name: "Port Chalmers", country: "New Zealand", display_name: "Port Chalmers (Dunedin), New Zealand", aliases: [], hero_media_id: "media-pc", image_status: "AUTO_APPROVED" },
+  { canonical_name: "Saint John", country: "Canada", aliases: ["St John NB"], hero_media_id: "media-sj-nb", image_status: "MANUAL" },
+  { canonical_name: "St Johns Newfoundland", country: "Canada", display_name: "St John's, Newfoundland", city: "St John's", aliases: ["Newfoundland", "St Johns"], hero_media_id: "media-sj-nl", image_status: "MANUAL" },
+  { canonical_name: "St Johns Antigua", country: "Antigua and Barbuda", display_name: "St John's, Antigua", city: "St John's", aliases: ["Antigua", "St Johns"], hero_media_id: "media-sj-ag", image_status: "AUTO_APPROVED" },
+  { canonical_name: "Miami", country: "United States", region: "Florida", aliases: [], hero_media_id: "media-miami", image_status: "AUTO_APPROVED" },
   { canonical_name: "Phu My", country: "Vietnam", aliases: ["Ho Chi Minh City"], hero_media_id: "media-pm", image_status: "AUTO_APPROVED" },
   { canonical_name: "Tokyo", country: "Japan", hero_media_id: "media-tokyo", image_status: "AUTO_APPROVED" },
   { canonical_name: "Yokohama", country: "Japan", aliases: [], hero_media_id: "media-yoko", image_status: "AUTO_APPROVED" },
@@ -78,6 +82,11 @@ const checks = [
   ["Yokohama", "Yokohama"],
   ["Tokyo / Yokohama", "Yokohama"],
   ["Dunedin / Port Chalmers", "Port Chalmers"],
+  ["Saint John", "Saint John"],
+  ["St John's", null],
+  ["St John's, Antigua", "St Johns Antigua"],
+  ["St Johns Newfoundland", "St Johns Newfoundland"],
+  ["Miami", "Miami"],
   ["Ho Chi Minh City", "Phu My"],
   ["Tokyo", "Tokyo"],
   ["Yokohama", "Yokohama"],
@@ -87,7 +96,11 @@ const checks = [
 ];
 for (const [query, expected] of checks) {
   const hit = lookupCataloguePort(query, idx, physicalPorts.filter(hasValidPortImage));
-  assert.equal(hit?.canonical_name, expected, `${query} resolves to ${expected}`);
+  if (expected === null) {
+    assert.equal(hit, null, `${query} must not resolve without sufficient context`);
+  } else {
+    assert.equal(hit?.canonical_name, expected, `${query} resolves to ${expected}`);
+  }
 }
 
 for (const badQuery of ["Hue", "Hoi An", "Bangkok"]) {

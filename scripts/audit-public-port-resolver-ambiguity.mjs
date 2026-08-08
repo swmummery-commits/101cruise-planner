@@ -19,7 +19,8 @@ const {
   portLookupKeys,
   hasValidPortImage,
   rankCataloguePortMatches,
-  resolveCompoundLabelPort
+  resolveCompoundLabelPort,
+  isAmbiguousWithoutCountryContext
 } = require(path.join(root, "netlify/functions/lib/port-image-finder/resolve-public.js"));
 const { normaliseEntityKey } = require(path.join(root, "netlify/functions/lib/research-normalize.js"));
 
@@ -49,6 +50,9 @@ function lookupCataloguePortWithMethod(portName, catalogueIndex, catalogueRows) 
   }
   if (exactCanonical.length > 1) {
     const ranked = rankCataloguePortMatches(portName, exactCanonical);
+    if (isAmbiguousWithoutCountryContext(portName, ranked)) {
+      return { row: null, method: "ambiguous", candidates: exactCanonical, ranked: ranked.map((r) => ({ id: r.row.id, name: r.row.canonical_name, score: r.score })) };
+    }
     return {
       row: ranked[0]?.row || exactCanonical[0],
       method: "ranked_disambiguated",
@@ -70,6 +74,14 @@ function lookupCataloguePortWithMethod(portName, catalogueIndex, catalogueRows) 
   }
   if (aliasHits.length > 1) {
     const ranked = rankCataloguePortMatches(portName, aliasHits);
+    if (isAmbiguousWithoutCountryContext(portName, ranked)) {
+      return {
+        row: null,
+        method: "ambiguous_alias",
+        candidates: aliasHits,
+        ranked: ranked.map((r) => ({ id: r.row.id, name: r.row.canonical_name, score: r.score }))
+      };
+    }
     return {
       row: ranked[0]?.row || aliasHits[0],
       method: "ranked_disambiguated",
@@ -85,6 +97,14 @@ function lookupCataloguePortWithMethod(portName, catalogueIndex, catalogueRows) 
 
   const ranked = rankCataloguePortMatches(portName, rows);
   if (ranked.length) {
+    if (isAmbiguousWithoutCountryContext(portName, ranked)) {
+      return {
+        row: null,
+        method: "ambiguous",
+        candidates: ranked.map((r) => r.row),
+        ranked: ranked.slice(0, 5).map((r) => ({ id: r.row.id, name: r.row.canonical_name, score: r.score }))
+      };
+    }
     return {
       row: ranked[0].row,
       method: ranked.length > 1 && ranked[0].score === ranked[1].score ? "ranked_tie" : "ranked_disambiguated",
@@ -159,31 +179,95 @@ function findAmbiguousKeys(approvedRows) {
   return collisions.sort((a, b) => a.lookup_term.localeCompare(b.lookup_term));
 }
 
+function parseQueryCountry(portName) {
+  const parts = String(portName || "")
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (parts.length < 2) return { namePart: String(portName || "").trim(), countryPart: "" };
+  return { namePart: parts.slice(0, -1).join(", "), countryPart: parts[parts.length - 1] };
+}
+
+function lookupCatalogueIdentity(portName, allRows) {
+  const rows = (allRows || []).map((row) => ({
+    ...row,
+    hero_media_id: row.hero_media_id || "identity-only",
+    image_status: row.image_status || "AUTO_APPROVED"
+  }));
+
+  const compound = resolveCompoundLabelPort(portName, rows);
+  if (compound) return { row: compound, method: "compound_label" };
+
+  const target = normaliseEntityKey(portName);
+  const exactCanonical = rows.filter((row) => normaliseEntityKey(row.canonical_name) === target);
+  if (exactCanonical.length === 1) return { row: exactCanonical[0], method: "exact_canonical" };
+
+  const aliasHits = rows.filter((row) =>
+    (Array.isArray(row.aliases) ? row.aliases : []).some((a) => normaliseEntityKey(a) === target)
+  );
+  if (aliasHits.length === 1) return { row: aliasHits[0], method: "alias" };
+
+  const { namePart, countryPart } = parseQueryCountry(portName);
+  const nameTarget = normaliseEntityKey(namePart);
+  const countryTarget = normaliseEntityKey(countryPart);
+  if (nameTarget && countryTarget) {
+    const contextual = rows.filter((row) => {
+      const nameHit =
+        normaliseEntityKey(row.canonical_name) === nameTarget ||
+        (Array.isArray(row.aliases) ? row.aliases : []).some((a) => normaliseEntityKey(a) === nameTarget);
+      return nameHit && normaliseEntityKey(row.country) === countryTarget;
+    });
+    if (contextual.length === 1) return { row: contextual[0], method: "contextual_alias" };
+  }
+
+  const ranked = rankCataloguePortMatches(portName, rows);
+  if (ranked.length) {
+    if (isAmbiguousWithoutCountryContext(portName, ranked)) {
+      return { row: null, method: "ambiguous" };
+    }
+    return { row: ranked[0].row, method: "ranked" };
+  }
+
+  return { row: null, method: "unresolved" };
+}
+
+function matchesExpect(row, expect) {
+  if (expect === null) return !row;
+  if (!row || !expect) return false;
+  return Object.entries(expect).every(([k, v]) => String(row[k] || "") === String(v));
+}
+
 const KNOWN_CHECKS = [
-  { query: "Sydney", expect: { canonical_name: "Sydney", country: "Australia" } },
-  { query: "Sydney (Nova Scotia)", expect: { canonical_name: "Sydney Nova Scotia", country: "Canada" } },
-  { query: "Newcastle", expect: { canonical_name: "Newcastle", country: "Australia" } },
-  { query: "Newcastle upon Tyne", expect: { canonical_name: "Newcastle upon Tyne", country: "United Kingdom" } },
-  { query: "Saint John", expect: { canonical_name: "Saint John", country: "Canada" } },
-  { query: "St John's", expect: { canonical_name: "St John's", country: "Canada" } },
-  { query: "Victoria BC", expect: { canonical_name: "Victoria BC", country: "Canada" } },
-  { query: "Albany", expect: { canonical_name: "Albany", country: "Australia" } },
-  { query: "Tokyo", expect: { canonical_name: "Tokyo", country: "Japan" } },
-  { query: "Yokohama", expect: { canonical_name: "Yokohama", country: "Japan" } },
-  { query: "Tokyo / Yokohama", expect: { canonical_name: "Yokohama", country: "Japan" } },
-  { query: "Vancouver", expect: { canonical_name: "Vancouver", country: "Canada" } },
-  { query: "Southampton", expect: { canonical_name: "Southampton", country: "United Kingdom" } },
-  { query: "Miami", expect: { canonical_name: "Miami", country: "Florida" } },
-  { query: "Fort Lauderdale", expect: null },
-  { query: "Palma de Mallorca", expect: { canonical_name: "Palma de Mallorca" } },
-  { query: "Valencia", expect: { canonical_name: "Valencia", country: "Spain" } },
-  { query: "Rome (Civitavecchia)", expect: { canonical_name: "Civitavecchia", country: "Italy" } },
-  { query: "Civitavecchia", expect: { canonical_name: "Civitavecchia", country: "Italy" } },
-  { query: "Port Chalmers", expect: { canonical_name: "Port Chalmers", country: "New Zealand" } },
-  { query: "Dunedin / Port Chalmers", expect: { canonical_name: "Port Chalmers", country: "New Zealand" } },
-  { query: "Costa Maya", expect: null },
-  { query: "Mahahual", expect: { canonical_name: "Costa Maya", country: "Mexico" } },
-  { query: "Ensenada", expect: null }
+  { query: "Sydney", canonical: { canonical_name: "Sydney", country: "Australia" }, public: { canonical_name: "Sydney", country: "Australia" } },
+  { query: "Sydney (Nova Scotia)", canonical: { canonical_name: "Sydney Nova Scotia", country: "Canada" }, public: { canonical_name: "Sydney Nova Scotia", country: "Canada" } },
+  { query: "Newcastle", canonical: { canonical_name: "Newcastle", country: "Australia" }, public: { canonical_name: "Newcastle", country: "Australia" } },
+  { query: "Newcastle upon Tyne", canonical: { canonical_name: "Newcastle upon Tyne", country: "United Kingdom" }, public: { canonical_name: "Newcastle upon Tyne", country: "United Kingdom" } },
+  { query: "Saint John", canonical: { canonical_name: "Saint John", country: "Canada" }, public: { canonical_name: "Saint John", country: "Canada" } },
+  { query: "Saint John, New Brunswick", canonical: { canonical_name: "Saint John", country: "Canada" }, public: { canonical_name: "Saint John", country: "Canada" } },
+  { query: "St John's", canonical: null, public: null, note: "ambiguous bare name (Newfoundland vs Antigua)" },
+  { query: "St Johns Newfoundland", canonical: { canonical_name: "St Johns Newfoundland", country: "Canada" }, public: { canonical_name: "St Johns Newfoundland", country: "Canada" } },
+  { query: "St John's, Newfoundland", canonical: { canonical_name: "St Johns Newfoundland", country: "Canada" }, public: { canonical_name: "St Johns Newfoundland", country: "Canada" } },
+  { query: "St John's, Antigua", canonical: { canonical_name: "St Johns Antigua", country: "Antigua and Barbuda" }, public: { canonical_name: "St Johns Antigua", country: "Antigua and Barbuda" } },
+  { query: "St Johns Antigua", canonical: { canonical_name: "St Johns Antigua", country: "Antigua and Barbuda" }, public: { canonical_name: "St Johns Antigua", country: "Antigua and Barbuda" } },
+  { query: "Victoria BC", canonical: { canonical_name: "Victoria BC", country: "Canada" }, public: { canonical_name: "Victoria BC", country: "Canada" } },
+  { query: "Albany", canonical: { canonical_name: "Albany", country: "Australia" }, public: { canonical_name: "Albany", country: "Australia" } },
+  { query: "Tokyo", canonical: { canonical_name: "Tokyo", country: "Japan" }, public: { canonical_name: "Tokyo", country: "Japan" } },
+  { query: "Yokohama", canonical: { canonical_name: "Yokohama", country: "Japan" }, public: { canonical_name: "Yokohama", country: "Japan" } },
+  { query: "Tokyo / Yokohama", canonical: { canonical_name: "Yokohama", country: "Japan" }, public: { canonical_name: "Yokohama", country: "Japan" } },
+  { query: "Vancouver", canonical: { canonical_name: "Vancouver", country: "Canada" }, public: { canonical_name: "Vancouver", country: "Canada" } },
+  { query: "Southampton", canonical: { canonical_name: "Southampton", country: "United Kingdom" }, public: { canonical_name: "Southampton", country: "United Kingdom" } },
+  { query: "Miami", canonical: { canonical_name: "Miami", country: "United States", region: "Florida" }, public: { canonical_name: "Miami", country: "United States", region: "Florida" } },
+  { query: "Fort Lauderdale", canonical: { canonical_name: "Fort Lauderdale", country: "United States" }, public: null, note: "catalogue record; no approved public image" },
+  { query: "Palma de Mallorca", canonical: { canonical_name: "Palma de Mallorca" }, public: { canonical_name: "Palma de Mallorca" } },
+  { query: "Valencia", canonical: { canonical_name: "Valencia", country: "Spain" }, public: { canonical_name: "Valencia", country: "Spain" } },
+  { query: "Rome (Civitavecchia)", canonical: { canonical_name: "Civitavecchia", country: "Italy" }, public: { canonical_name: "Civitavecchia", country: "Italy" } },
+  { query: "Civitavecchia", canonical: { canonical_name: "Civitavecchia", country: "Italy" }, public: { canonical_name: "Civitavecchia", country: "Italy" } },
+  { query: "Port Chalmers", canonical: { canonical_name: "Port Chalmers", country: "New Zealand" }, public: { canonical_name: "Port Chalmers", country: "New Zealand" } },
+  { query: "Dunedin / Port Chalmers", canonical: { canonical_name: "Port Chalmers", country: "New Zealand" }, public: { canonical_name: "Port Chalmers", country: "New Zealand" } },
+  { query: "Costa Maya", canonical: { canonical_name: "Costa Maya", country: "Mexico" }, public: null, note: "correct identity; no approved public image" },
+  { query: "Mahahual", canonical: { canonical_name: "Costa Maya", country: "Mexico" }, public: null, note: "alias identity; no approved public image" },
+  { query: "Mahahual, Mexico", canonical: { canonical_name: "Costa Maya", country: "Mexico" }, public: null, note: "alias identity with country; no approved public image" },
+  { query: "Ensenada", canonical: { canonical_name: "Ensenada", country: "Mexico" }, public: null, note: "catalogue record; excluded from approved public image resolver" }
 ];
 
 async function fetchLiveMedia(slug, portNames) {
@@ -202,6 +286,10 @@ async function main() {
     root,
     "ports?hero_media_id=not.is.null&image_status=in.(MANUAL,AUTO_APPROVED)" +
       "&select=id,canonical_name,display_name,city,country,country_code,region,aliases,match_key,hero_media_id,image_status"
+  );
+  const allCatalogueRows = await fetchAllPaginated(
+    root,
+    "ports?select=id,canonical_name,display_name,city,country,country_code,region,aliases,match_key,hero_media_id,image_status"
   );
   const index = indexPortsCatalogue(approvedRows);
 
@@ -270,33 +358,58 @@ async function main() {
   });
 
   const knownVerification = KNOWN_CHECKS.map((check) => {
-    const result = lookupCataloguePortWithMethod(check.query, index, approvedRows);
-    const row = result.row;
-    let ok = false;
-    if (check.expect === null) ok = !row;
-    else if (row && check.expect) {
-      ok = Object.entries(check.expect).every(([k, v]) => String(row[k] || "") === String(v));
+    const identity = lookupCatalogueIdentity(check.query, allCatalogueRows);
+    const publicResult = lookupCataloguePortWithMethod(check.query, index, approvedRows);
+    const canonicalOk = matchesExpect(identity.row, check.canonical);
+    const publicOk = matchesExpect(publicResult.row, check.public);
+    let category = "correct_canonical_resolution";
+    if (check.canonical === null && check.public === null && canonicalOk && publicOk) {
+      category = "correct_unresolved_ambiguity";
+    } else if (canonicalOk && check.public === null && !publicResult.row) {
+      category = "correct_canonical_no_public_image";
+    } else if (!canonicalOk) {
+      category = "wrong_canonical_resolution";
+    } else if (canonicalOk && !publicOk && check.public !== null) {
+      category = "wrong_public_media_resolution";
+    } else if (canonicalOk && !publicOk && check.public === null && publicResult.row) {
+      category = "wrong_public_media_resolution";
     }
     return {
       query: check.query,
-      ok,
-      ...portDto(row, result.method),
-      expected: check.expect
+      note: check.note || null,
+      category,
+      canonical_ok: canonicalOk,
+      public_ok: publicOk,
+      ok: canonicalOk && publicOk,
+      identity: identity.row
+        ? {
+            port_id: identity.row.id,
+            canonical_name: identity.row.canonical_name,
+            country: identity.row.country,
+            image_status: identity.row.image_status,
+            method: identity.method
+          }
+        : { method: identity.method, resolved: false },
+      public: portDto(publicResult.row, publicResult.method, {
+        ranked: publicResult.ranked,
+        candidate_count: publicResult.candidates?.length || 0
+      }),
+      expected: { canonical: check.canonical, public: check.public }
     };
   });
 
-  const wrongResolutions = [];
-  for (const check of knownVerification) {
-    if (!check.ok) {
-      wrongResolutions.push({
-        requested_port: check.query,
-        wrong_canonical: check.canonical_name || null,
-        wrong_port_id: check.port_id || null,
-        correct_canonical: check.expected,
-        cause: check.method
-      });
-    }
-  }
+  const knownSummary = {
+    correct_canonical_resolutions: knownVerification.filter((c) =>
+      ["correct_canonical_resolution", "correct_canonical_no_public_image"].includes(c.category)
+    ).length,
+    correct_unresolved_ambiguities: knownVerification.filter((c) => c.category === "correct_unresolved_ambiguity").length,
+    correct_canonical_no_public_image: knownVerification.filter((c) => c.category === "correct_canonical_no_public_image").length,
+    wrong_canonical_resolutions: knownVerification.filter((c) => c.category === "wrong_canonical_resolution").length,
+    wrong_public_media_resolutions: knownVerification.filter((c) => c.category === "wrong_public_media_resolution").length
+  };
+
+  const wrongCanonical = knownVerification.filter((c) => c.category === "wrong_canonical_resolution");
+  const wrongPublicMedia = knownVerification.filter((c) => c.category === "wrong_public_media_resolution");
 
   const mediaByPortId = new Map(approvedRows.map((p) => [p.hero_media_id, p.id]));
   const imageConsistency = [];
@@ -357,7 +470,9 @@ async function main() {
       unresolved_public_names: distinctResolutions.filter((r) => !r.resolved).length,
       known_checks_passed: knownVerification.filter((c) => c.ok).length,
       known_checks_total: knownVerification.length,
-      wrong_resolutions: wrongResolutions.length,
+      known_check_summary: knownSummary,
+      wrong_canonical_resolutions: knownSummary.wrong_canonical_resolutions,
+      wrong_public_media_resolutions: knownSummary.wrong_public_media_resolutions,
       explore_port_cards_checked: cardsChecked,
       canonical_media_mismatches: mismatches,
       unresolved_port_cards: unresolvedCards
@@ -366,7 +481,8 @@ async function main() {
     compound_port_labels: compoundLabels,
     ambiguous_lookup_keys: ambiguousWithWinner,
     known_verification: knownVerification,
-    wrong_resolutions: wrongResolutions,
+    wrong_canonical_resolutions: wrongCanonical,
+    wrong_public_media_resolutions: wrongPublicMedia,
     image_consistency_issues: imageConsistency.filter((x) => x.status !== undefined && x.status !== "unresolved_no_image"),
     destination_ports_architecture: {
       active_destination_port_rows: destinationPorts.length,
@@ -386,13 +502,19 @@ async function main() {
   console.log("Unresolved:", report.summary.unresolved_public_names);
   console.log("Ambiguous lookup keys:", report.summary.ambiguous_lookup_keys);
   console.log("Known checks:", report.summary.known_checks_passed + "/" + report.summary.known_checks_total);
-  console.log("Wrong resolutions:", report.summary.wrong_resolutions);
+  console.log("Known summary:", JSON.stringify(report.summary.known_check_summary));
+  console.log("Wrong canonical:", report.summary.wrong_canonical_resolutions);
+  console.log("Wrong public media:", report.summary.wrong_public_media_resolutions);
   console.log("Explore cards checked:", report.summary.explore_port_cards_checked);
   console.log("Canonical/media mismatches:", report.summary.canonical_media_mismatches);
   console.log("Report:", out);
-  if (wrongResolutions.length) {
-    console.log("\nWrong resolutions:");
-    for (const w of wrongResolutions) console.log(" ", JSON.stringify(w));
+  if (wrongCanonical.length) {
+    console.log("\nWrong canonical resolutions:");
+    for (const w of wrongCanonical) console.log(" ", JSON.stringify({ query: w.query, identity: w.identity, expected: w.expected.canonical }));
+  }
+  if (wrongPublicMedia.length) {
+    console.log("\nWrong public media resolutions:");
+    for (const w of wrongPublicMedia) console.log(" ", JSON.stringify({ query: w.query, public: w.public, expected: w.expected.public }));
   }
 }
 
