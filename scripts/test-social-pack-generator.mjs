@@ -46,7 +46,7 @@ const {
   renderCruisePack
 } = require("../netlify/functions/lib/social-pack-render.js");
 const { normaliseTemplate } = require("../netlify/functions/lib/social-pack-template.js");
-const { renderPremiumDarkOfferSvg, renderPremiumDarkMainSvg, renderPremiumDarkCtaSvg, resolvePremiumDarkRoute, distributeBenefitRows, measureBenefitsPanel, measurePortsBlock, layoutMainTextGroup, heroPriceFontSize, routeText, shipLabel, premiumDarkItineraryPorts, PANEL_FILL_OPACITY, DISCLAIMER_TEXT } = require("../netlify/functions/lib/social-pack-premium-dark.js");
+const { renderPremiumDarkOfferSvg, renderPremiumDarkMainSvg, renderPremiumDarkCtaSvg, resolvePremiumDarkRoute, distributeBenefitRows, measureBenefitsPanel, measurePortsBlock, layoutMainTextGroup, heroPriceFontSize, routeText, shipLabel, premiumDarkItineraryPorts, CRUISE_LINE_SHIELD_CLEARANCE, PANEL_FILL_OPACITY, DISCLAIMER_TEXT } = require("../netlify/functions/lib/social-pack-premium-dark.js");
 const { buildSocialPackZip } = require("../netlify/functions/lib/social-pack-zip.js");
 const { assessReadiness } = require("../netlify/functions/lib/social-pack-data.js");
 const {
@@ -605,7 +605,8 @@ async function main() {
     const mainLayout = layoutMainTextGroup(templateModel);
     assert(mainLayout.headlineY > 300, "main text block moved downward");
     assert(pdMain.includes('y="36"') || pdMain.includes("y=\"36\""), "101cruise logo at top");
-    assert(pdMain.includes("1286") && pdMain.includes("1162"), "inverted bottom cruise-line tab anchors from footer");
+    assert(pdMain.includes('height="88"'), "cruise-line logo enlarged");
+    assert(/L [^"]+ 1350/.test(pdMain), "cruise-line shield sits on slide bottom");
     assert(pdMain.includes(">BARCELONA<") && pdMain.includes(">ISTANBUL<"), "main route endpoints");
     assert(pdMain.includes(">OCEANIA SIRENA<"), "main slide uses canonical ship display");
 
@@ -749,7 +750,11 @@ async function main() {
     assert(pdCta.includes(">TODAY<"), "premium dark cta line 3");
     assert(pdCta.includes('font-size="96"'), "premium dark cta headline larger");
     assert(!pdCta.includes(">TALK TO PAUL<"), "premium dark cta not two-line classic heading");
-    assert(pdCta.includes(templateModel.cruiseLineLogoDataUri), "cta slide includes cruise-line logo shield");
+    assert((pdOffer.match(/height="88"/g) || []).length >= 1, "offer slide has enlarged cruise-line logo");
+    assert((pdCta.match(/height="88"/g) || []).length === 0, "cta slide omits cruise-line logo");
+    assert(!pdCta.includes('stroke="#DDE2E8"'), "cta slide omits top divider line");
+    assert(/y="(9[0-9]{2}|1[0-1][0-9]{2})"/.test(pdCta), "cta 101cruise logo in bottom third");
+    assert(/height="200"/.test(pdCta), "cta uses larger bottom-third 101cruise logo");
 
     const classicPack = await renderCruisePack({ ...templateModel, template: "classic" });
     const pdPack = await renderCruisePack({ ...templateModel, template: "premium_dark" });

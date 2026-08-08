@@ -24,7 +24,8 @@ const DIVIDER_STROKE = "#DDE2E8";
 const ROUTE_FONT_SIZE = 88;
 const ROUTE_FONT_WEIGHT = 800;
 const ROUTE_SIDE_MARGIN = 36;
-const CRUISE_LINE_SHIELD_CLEARANCE = 132;
+const CRUISE_LINE_LOGO_H = 88;
+const CRUISE_LINE_SHIELD_CLEARANCE = 150;
 const BROCHURE_FONT_SIZE = 44;
 const PANEL_FILL_OPACITY = 0.72;
 const DISCLAIMER_TEXT = "* prices are per person in USD & subject to availability.";
@@ -307,22 +308,22 @@ function shipLine(model, { x = 540, y, size = 36 } = {}) {
   )}</text>`;
 }
 
-/** Bottom-anchored inverted white shield for the cruise-line logo. */
-function cruiseLineLogoBottom(model, { footerH = FOOTER_H } = {}) {
-  const tipH = 20;
-  const padX = 36;
-  const padTop = 14;
-  const padBottom = 18;
+/** Bottom-anchored inverted white shield for the cruise-line logo. Overlaps the green footer band. */
+function cruiseLineLogoBottom(model) {
+  const tipH = 22;
+  const padX = 40;
+  const padTop = 16;
+  const padBottom = 20;
   const lw = Number(model.cruiseLineLogoWidth) || 0;
   const lh = Number(model.cruiseLineLogoHeight) || 0;
   const aspect = lw > 0 && lh > 0 ? lw / lh : 3.1;
-  const logoH = 72;
-  const logoW = Math.min(420, Math.round(logoH * aspect));
+  const logoH = CRUISE_LINE_LOGO_H;
+  const logoW = Math.min(460, Math.round(logoH * aspect));
   const bannerW = logoW + padX * 2;
   const bodyH = padTop + logoH + padBottom;
   const bannerH = bodyH + tipH;
   const x = (W - bannerW) / 2;
-  const baseY = H - footerH;
+  const baseY = H;
   const path = [
     `M ${x} ${baseY}`,
     `L ${x + bannerW} ${baseY}`,
@@ -636,8 +637,8 @@ function renderPremiumDarkMainSvg(model) {
     ${nightsDatesLine(model, { y: layout.nightsDatesY, size: 36 })}
     ${shipLine(model, { y: layout.shipY, size: 36 })}
     ${portsLine(ports, { y: layout.portsY })}
-    ${cruiseLineLogoBottom(model)}
     ${greenFooter()}
+    ${cruiseLineLogoBottom(model)}
   `;
   return frame(body);
 }
@@ -653,8 +654,8 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
       ${brandDivider(210)}
       <text x="540" y="480" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="36" font-weight="700">ASK PAUL FOR HIS BEST PRICE</text>
       <text x="540" y="540" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="22" font-weight="500">Public pricing will appear when available</text>
-      ${cruiseLineLogoBottom(model)}
       ${greenFooter()}
+      ${cruiseLineLogoBottom(model)}
     `;
     return frame(body);
   }
@@ -706,13 +707,13 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
     ${cruise101PriceBlock(price, stack.priceY, { fontSize: stack.heroPx })}
     ${cabinPill(room, stack.cabinY)}
     ${benefits.svg}
-    ${cruiseLineLogoBottom(model)}
     ${greenFooter()}
+    ${cruiseLineLogoBottom(model)}
   `;
   return frame(body);
 }
 
-/** Premium Dark CTA — three-line headline, script, email, logo. */
+/** Premium Dark CTA — three-line headline, script, email, 101cruise logo in lower third. */
 function renderPremiumDarkCtaSvg(model) {
   const href = model.backgroundDataUri || model.heroDataUri;
   let bg = `<rect width="${W}" height="${H}" fill="#0b1220"/>`;
@@ -742,22 +743,22 @@ function renderPremiumDarkCtaSvg(model) {
 
   const headlineSize = 96;
   const headlineGap = Math.round(headlineSize * 1.18);
-  const headlineY = 250;
-  const scriptY = headlineY + headlineGap * 3 + 36;
+  const headlineY = 220;
+  const scriptY = headlineY + headlineGap * 3 + 48;
   const scriptH = 148;
   const scriptUri = loadGetYourCruiseOnDataUri();
   const scriptBlock = scriptUri
     ? `<image href="${scriptUri}" x="${(W - 820) / 2}" y="${scriptY}" width="820" height="${scriptH}" preserveAspectRatio="xMidYMid meet"/>`
     : `<text x="540" y="${scriptY + 80}" text-anchor="middle" fill="${WHITE}" font-family="Great Vibes" font-size="92">Get your cruise on!</text>`;
 
-  const scriptInkBottom = scriptY + 118;
+  const brandSize = 200;
+  const bottomThirdTop = Math.round(H * (2 / 3));
+  const brandY = bottomThirdTop + Math.round((H / 3 - FOOTER_H - brandSize) / 2);
   const emailSize = 52;
-  const emailY = scriptInkBottom + 72;
+  const emailY = brandY - 64;
 
   const body = `
     ${bg}
-    ${brandLogo(model, { y: 36, size: 130 })}
-    ${brandDivider(198)}
     <defs>
       <filter id="pdCtaHeadlineShadow" x="-20%" y="-20%" width="140%" height="160%">
         <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.55"/>
@@ -770,7 +771,7 @@ function renderPremiumDarkCtaSvg(model) {
     </g>
     ${scriptBlock}
     <text x="540" y="${emailY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${emailSize}" font-weight="400">paul@101cruise.com.au</text>
-    ${cruiseLineLogoBottom(model)}
+    ${brandLogo(model, { y: brandY, size: brandSize })}
     ${greenFooter()}
   `;
   return frame(body);
@@ -790,6 +791,7 @@ module.exports = {
   threeLineRouteHeight,
   shipLabel,
   CRUISE_LINE_SHIELD_CLEARANCE,
+  CRUISE_LINE_LOGO_H,
   layoutMainTextGroup,
   layoutOfferStack,
   DISCLAIMER_TEXT,
