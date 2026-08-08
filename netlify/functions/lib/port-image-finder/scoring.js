@@ -71,8 +71,11 @@ function isVesselPrimarySubject(candidate) {
   const segments = titleSegments(title);
   const lead = (segments[0] || titleLower).toLowerCase();
 
-  if (/^\w[\w\s.-]*\(\d+\)/i.test(segments[0] || title)) {
+  if (/^\w[\w\s.-]*\(\d+\)/i.test(segments[0] || title) && !/\b(harbour|harbor|waterfront|port|lighthouse|leuchtturm|hafen|skyline|cityscape)\b/i.test(lead)) {
     return { vesselPrimary: true, reason: "hull_number_lead" };
+  }
+  if (/^uss\s+/i.test(titleLower) && /\b(commissioning|in port|at port|naval|patrol|corvette|frigate|destroyer)\b/i.test(combined)) {
+    return { vesselPrimary: true, reason: "us_navy_vessel_event" };
   }
   if (/^(tcg|hms|uss|rv|ms|mv|ss)\s+/i.test(titleLower) && /\([A-Z]?-?\d+\)/i.test(title)) {
     return { vesselPrimary: true, reason: "named_warship" };
@@ -255,6 +258,10 @@ function candidateHaystack(candidate) {
     .join(" ");
 }
 
+function destinationSignalHaystack(candidate) {
+  return [candidate?.title, candidate?.description, candidate?.sourceUrl, candidate?.pageUrl].filter(Boolean).join(" ");
+}
+
 function nameMatchScore(text, port) {
   const names = new Set(
     [searchIdentityName(port), primaryName(port), port?.city]
@@ -309,6 +316,38 @@ function licenseIsUsable(candidate) {
   return false;
 }
 
+function hasKnownWrongDestinationMatch(candidate, port) {
+  const canonical = String(port?.canonical_name || "").trim().toLowerCase();
+  const titleOnly = normaliseTitle(candidate?.title).toLowerCase();
+  const hayLower = candidateHaystack(candidate).toLowerCase();
+
+  if (canonical === "tokyo" && /ogasawara|chichijima|futami|bonin islands|hahajima|mukojima/i.test(hayLower) && !/\btokyo\b/i.test(titleOnly)) {
+    return true;
+  }
+  if (
+    canonical === "casablanca" &&
+    /diamond harbour|diamond harbor|navire\s+(diamond|victoria)\s+harbour/i.test(hayLower) &&
+    !/casablanca|morocco|maroc/i.test(hayLower)
+  ) {
+    return true;
+  }
+  if (
+    canonical === "kahului" &&
+    (/cocos nucifera|coconut palm\b/i.test(titleOnly) || /\bstarr\s+\d+.*cocos/i.test(titleOnly)) &&
+    !/kahului|maui|hawaii/i.test(hayLower)
+  ) {
+    return true;
+  }
+  if (
+    canonical === "punta arenas" &&
+    (/patagonien\b|patagonia\b|puerto eden/i.test(hayLower) || /\b1983-12 patagonien\b/i.test(titleOnly)) &&
+    !/punta arenas|magellan|magallanes|strait of magellan/i.test(hayLower)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function computeGeographicScore(candidate, port) {
   const titleOnly = normaliseTitle(candidate?.title).toLowerCase();
   if (String(port?.canonical_name || "").trim().toLowerCase() === "cozumel" && /playa del carmen|terminal maritima playa/i.test(titleOnly)) {
@@ -320,9 +359,10 @@ function computeGeographicScore(candidate, port) {
       return 0;
     }
   }
+  if (hasKnownWrongDestinationMatch(candidate, port)) return 0;
 
   const text = candidateHaystack(candidate);
-  if (hasConflictingLocation(text, port)) return 0;
+  if (hasConflictingLocation(destinationSignalHaystack(candidate), port)) return 0;
 
   const specificity = destinationSpecificityScores(candidate, port);
   let score = 20;
@@ -390,7 +430,7 @@ function scorePortImageCandidate(candidate, port) {
   const text = candidateHaystack(candidate);
   const vessel = isVesselPrimarySubject(candidate);
 
-  if (hasConflictingLocation(text, port)) {
+  if (hasConflictingLocation(destinationSignalHaystack(candidate), port)) {
     return {
       geographic: 0,
       suitability: 0,
@@ -611,5 +651,6 @@ module.exports = {
   isDatedForModernPreference,
   classifyImageAge,
   isMilitaryWarDestinationImagery,
-  historicalSuitabilityPenalty
+  historicalSuitabilityPenalty,
+  hasKnownWrongDestinationMatch
 };

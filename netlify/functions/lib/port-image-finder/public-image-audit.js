@@ -12,7 +12,8 @@ const {
   genericImageryPenalty,
   destinationSpecificityScores,
   isDatedForModernPreference,
-  computeGeographicScore
+  computeGeographicScore,
+  hasKnownWrongDestinationMatch
 } = require("./scoring");
 
 const HISTORICAL_AUDIT_PORTS = new Set([
@@ -72,6 +73,7 @@ function hasWrongGeographyForPort(port, candidate) {
   }
   if (canonical === "cozumel" && /playa del carmen|terminal maritima playa/i.test(title)) return true;
   if (canonical === "costa maya" && /ensenada|cozumel only|playa del carmen only/i.test(hay)) return true;
+  if (hasKnownWrongDestinationMatch(candidate, port)) return true;
   return computeGeographicScore(candidate, port) <= 0;
 }
 

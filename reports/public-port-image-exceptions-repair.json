@@ -1,0 +1,332 @@
+{
+  "mode": "apply",
+  "results": [
+    {
+      "port": "Tampa",
+      "preAudit": {
+        "port_id": "1b668ecd-c1e1-4587-a656-cde826c474b2",
+        "canonical_name": "Tampa",
+        "hero_media_id": "7dff905a-8f2d-447c-9d47-1e15bc159b90",
+        "current_image": "USS Typhoon (PC-5) commissioning in Tampa Bay.jpg",
+        "image_source": "wikimedia",
+        "image_license": "Public domain",
+        "image_source_url": "https://commons.wikimedia.org/wiki/File:USS_Typhoon_(PC-5)_commissioning_in_Tampa_Bay.jpg",
+        "expected_problem": "vessel_primary",
+        "audit_action": "REPLACE",
+        "audit_reasons": [
+          "vessel_primary"
+        ],
+        "editorial": "NO_IMAGE",
+        "scores": {
+          "geographic": 96,
+          "suitability": 16,
+          "confidence": 13,
+          "vesselPrimary": true
+        },
+        "publicly_resolved": true,
+        "still_needs_repair": true
+      },
+      "old_image": "USS Typhoon (PC-5) commissioning in Tampa Bay.jpg",
+      "problem": "vessel_primary",
+      "replacement": {
+        "title": "Tampa Bay Estuary Pillar Sign on Riverwalk.jpg",
+        "licence": "CC BY-SA 4.0",
+        "credit": "DanTD",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Tampa_Bay_Estuary_Pillar_Sign_on_Riverwalk.jpg"
+      },
+      "new_rating": "GOOD",
+      "new_status": "AUTO_APPROVED",
+      "post_audit_action": "KEEP",
+      "previous_media_id": "7dff905a-8f2d-447c-9d47-1e15bc159b90",
+      "previous_media_preserved": true,
+      "new_media_id": "872d50e2-5019-457c-b185-162885cd0420",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/ports/tampa/592847e7e06a.jpg",
+      "publicly_resolved": true,
+      "outcome": "REPLACED"
+    },
+    {
+      "port": "Tokyo",
+      "preAudit": {
+        "port_id": "16cee34d-4ca7-411b-8a09-23ae3c8b716c",
+        "canonical_name": "Tokyo",
+        "hero_media_id": "a06f4360-c858-4477-bafa-ecdfeae22cdb",
+        "current_image": "Port of Futami, Chichijima, Ogasawara.jpg",
+        "image_source": "wikimedia",
+        "image_license": "CC BY-SA 3.0",
+        "image_source_url": "https://commons.wikimedia.org/wiki/File:Port_of_Futami,_Chichijima,_Ogasawara.jpg",
+        "expected_problem": "wrong_geography_or_destination",
+        "audit_action": "REPLACE",
+        "audit_reasons": [
+          "wrong_geography_or_destination"
+        ],
+        "editorial": "NO_IMAGE",
+        "scores": {
+          "geographic": 0,
+          "suitability": 64,
+          "confidence": 0,
+          "vesselPrimary": false
+        },
+        "publicly_resolved": true,
+        "still_needs_repair": true
+      },
+      "old_image": "Port of Futami, Chichijima, Ogasawara.jpg",
+      "problem": "wrong_geography_or_destination",
+      "replacement": {
+        "title": "Tokyo International Cruise Terminal 04.jpg",
+        "licence": "CC BY-SA 4.0",
+        "credit": "Mr.Asylum",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Tokyo_International_Cruise_Terminal_04.jpg"
+      },
+      "new_rating": "GOOD",
+      "new_status": "AUTO_APPROVED",
+      "post_audit_action": "KEEP",
+      "previous_media_id": "a06f4360-c858-4477-bafa-ecdfeae22cdb",
+      "previous_media_preserved": true,
+      "new_media_id": "49a14dc8-a593-453d-8ddc-5f6a4e927d64",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/ports/tokyo/a2828c59af09.jpg",
+      "publicly_resolved": true,
+      "outcome": "REPLACED"
+    },
+    {
+      "port": "La Goulette",
+      "preAudit": {
+        "port_id": "e5a5c9f2-ec8a-4ab0-9481-9ad1b09994ea",
+        "canonical_name": "La Goulette",
+        "hero_media_id": "25be1d7a-68dc-412e-b8b0-6042a3b834cb",
+        "current_image": "AerialPhotoOfLaGoulette.JPG",
+        "image_source": "wikimedia",
+        "image_license": "CC BY-SA 3.0",
+        "image_source_url": "https://commons.wikimedia.org/wiki/File:AerialPhotoOfLaGoulette.JPG",
+        "expected_problem": "wrong_geography_or_destination",
+        "audit_action": "REPLACE",
+        "audit_reasons": [
+          "wrong_geography_or_destination"
+        ],
+        "editorial": "WRONG",
+        "scores": {
+          "geographic": 28,
+          "suitability": 42,
+          "confidence": 22,
+          "vesselPrimary": false
+        },
+        "publicly_resolved": false,
+        "still_needs_repair": true
+      },
+      "old_image": "AerialPhotoOfLaGoulette.JPG",
+      "problem": "wrong_geography_or_destination",
+      "replacement": {
+        "title": "Haven van La Goulette, RP-P-1909-2169.jpg",
+        "licence": "CC0",
+        "credit": "Rijksmuseum",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Haven_van_La_Goulette,_RP-P-1909-2169.jpg"
+      },
+      "new_rating": "GOOD",
+      "new_status": "AUTO_APPROVED",
+      "post_audit_action": "REPLACE",
+      "previous_media_id": "25be1d7a-68dc-412e-b8b0-6042a3b834cb",
+      "previous_media_preserved": true,
+      "new_media_id": "a71a208d-79a3-438f-bda5-dd202e64223d",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/ports/la-goulette/e97288b1b4cd.jpg",
+      "publicly_resolved": false,
+      "outcome": "REPLACED_NEEDS_REVIEW"
+    },
+    {
+      "port": "Punta Arenas",
+      "preAudit": {
+        "port_id": "68eb4286-c3c6-4249-86f9-54452d5cf2ba",
+        "canonical_name": "Punta Arenas",
+        "hero_media_id": "e8d2ee8d-1df1-4275-8a26-6d806a6ff307",
+        "current_image": "1983-12 patagonien 07.jpg",
+        "image_source": "wikimedia",
+        "image_license": "CC BY-SA 4.0",
+        "image_source_url": "https://commons.wikimedia.org/wiki/File:1983-12_patagonien_07.jpg",
+        "expected_problem": "wrong_geography_or_destination",
+        "audit_action": "REPLACE",
+        "audit_reasons": [
+          "wrong_geography_or_destination"
+        ],
+        "editorial": "NO_IMAGE",
+        "scores": {
+          "geographic": 0,
+          "suitability": 42,
+          "confidence": 0,
+          "vesselPrimary": false
+        },
+        "publicly_resolved": false,
+        "still_needs_repair": true
+      },
+      "old_image": "1983-12 patagonien 07.jpg",
+      "problem": "wrong_geography_or_destination",
+      "replacement": {
+        "title": "Punta Arenas-View1.jpg",
+        "licence": "CC BY-SA 2.5",
+        "credit": "No machine-readable author provided. Heretiq assumed (based on copyright claims).",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Punta_Arenas-View1.jpg"
+      },
+      "new_rating": "GOOD",
+      "new_status": "AUTO_APPROVED",
+      "post_audit_action": "REPLACE",
+      "previous_media_id": "e8d2ee8d-1df1-4275-8a26-6d806a6ff307",
+      "previous_media_preserved": true,
+      "new_media_id": "17f1d271-c2e1-43a9-9deb-fc2f6c06c8de",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/ports/punta-arenas/66f29028eb99.jpg",
+      "publicly_resolved": false,
+      "outcome": "REPLACED_NEEDS_REVIEW"
+    },
+    {
+      "port": "Casablanca",
+      "preAudit": {
+        "port_id": "b0c941c0-3983-4683-8881-dea10bc4bc27",
+        "canonical_name": "Casablanca",
+        "hero_media_id": "c217f351-3960-470d-9fae-fdf7f507d1a4",
+        "current_image": "Navire DIAMOND HARBOUR en mer.jpg",
+        "image_source": "wikimedia",
+        "image_license": "CC BY-SA 4.0",
+        "image_source_url": "https://commons.wikimedia.org/wiki/File:Navire_DIAMOND_HARBOUR_en_mer.jpg",
+        "expected_problem": "wrong_geography_or_destination",
+        "audit_action": "REPLACE",
+        "audit_reasons": [
+          "wrong_geography_or_destination"
+        ],
+        "editorial": "NO_IMAGE",
+        "scores": {
+          "geographic": 0,
+          "suitability": 64,
+          "confidence": 0,
+          "vesselPrimary": false
+        },
+        "publicly_resolved": true,
+        "still_needs_repair": true
+      },
+      "old_image": "Navire DIAMOND HARBOUR en mer.jpg",
+      "problem": "wrong_geography_or_destination",
+      "replacement": {
+        "title": "Casablanca waterfront Morocco (16954494852).jpg",
+        "licence": "CC BY 2.0",
+        "credit": "Esin Üstün from Istanbul, Turkey",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Casablanca_waterfront_Morocco_(16954494852).jpg"
+      },
+      "new_rating": "GOOD",
+      "new_status": "AUTO_APPROVED",
+      "post_audit_action": "KEEP",
+      "previous_media_id": "c217f351-3960-470d-9fae-fdf7f507d1a4",
+      "previous_media_preserved": true,
+      "new_media_id": "45920cfc-95a1-4fb0-bc57-b1b011dd02e3",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/ports/casablanca/2cfd191a56e2.jpg",
+      "publicly_resolved": true,
+      "outcome": "REPLACED"
+    },
+    {
+      "port": "Kahului",
+      "preAudit": {
+        "port_id": "105c6614-bfc5-48c9-92f3-1cce279963fc",
+        "canonical_name": "Kahului",
+        "hero_media_id": "fa57e1b9-1c05-4eeb-8306-2096c15d6e07",
+        "current_image": "Starr 030612-0076 Cocos nucifera.jpg",
+        "image_source": "wikimedia",
+        "image_license": "CC BY 3.0",
+        "image_source_url": "https://commons.wikimedia.org/wiki/File:Starr_030612-0076_Cocos_nucifera.jpg",
+        "expected_problem": "wrong_geography_or_destination",
+        "audit_action": "REPLACE",
+        "audit_reasons": [
+          "wrong_geography_or_destination"
+        ],
+        "editorial": "NO_IMAGE",
+        "scores": {
+          "geographic": 0,
+          "suitability": 42,
+          "confidence": 0,
+          "vesselPrimary": false
+        },
+        "publicly_resolved": true,
+        "still_needs_repair": true
+      },
+      "old_image": "Starr 030612-0076 Cocos nucifera.jpg",
+      "problem": "wrong_geography_or_destination",
+      "replacement": {
+        "title": "Kahului Bay.JPG",
+        "licence": "Public domain",
+        "credit": "en:User:Sinoue@yahoo.com",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Kahului_Bay.JPG"
+      },
+      "new_rating": "GOOD",
+      "new_status": "AUTO_APPROVED",
+      "post_audit_action": "KEEP",
+      "previous_media_id": "fa57e1b9-1c05-4eeb-8306-2096c15d6e07",
+      "previous_media_preserved": true,
+      "new_media_id": "8779de7c-0ff2-4791-9a9e-7e0e8a059e68",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/ports/kahului/5f8c1afe1522.jpg",
+      "publicly_resolved": true,
+      "outcome": "REPLACED"
+    },
+    {
+      "port": "Warnemunde",
+      "preAudit": {
+        "port_id": "a821037a-3726-432b-9d73-b85a325c70d0",
+        "canonical_name": "Warnemunde",
+        "hero_media_id": "bd6ea9cd-0ae1-4816-a368-96ef3ef6be29",
+        "current_image": "Rostock Ostsee (49833072171).jpg",
+        "image_source": "wikimedia",
+        "image_license": "CC BY 4.0",
+        "image_source_url": "https://commons.wikimedia.org/wiki/File:Rostock_Ostsee_(49833072171).jpg",
+        "expected_problem": "vessel_primary",
+        "audit_action": "REPLACE",
+        "audit_reasons": [
+          "vessel_primary"
+        ],
+        "editorial": "NO_IMAGE",
+        "scores": {
+          "geographic": 88,
+          "suitability": 0,
+          "confidence": 0,
+          "vesselPrimary": true
+        },
+        "publicly_resolved": true,
+        "still_needs_repair": true
+      },
+      "old_image": "Rostock Ostsee (49833072171).jpg",
+      "problem": "vessel_primary",
+      "replacement": {
+        "title": "Teepott, Leuchtturm, Warnemünde, 2019 (01).jpg",
+        "licence": "CC BY-SA 4.0",
+        "credit": "Bahnfrend",
+        "source_url": "https://commons.wikimedia.org/wiki/File:Teepott,_Leuchtturm,_Warnem%C3%BCnde,_2019_(01).jpg"
+      },
+      "new_rating": "GOOD",
+      "new_status": "AUTO_APPROVED",
+      "post_audit_action": "REPLACE",
+      "previous_media_id": "bd6ea9cd-0ae1-4816-a368-96ef3ef6be29",
+      "previous_media_preserved": true,
+      "new_media_id": "407d1a05-c3b4-4fdd-a94b-15a0737699bc",
+      "public_url": "https://xikbibxyinttllxamgao.supabase.co/storage/v1/object/public/cruise-media/ports/warnemunde/66d30de47610.jpg",
+      "publicly_resolved": true,
+      "outcome": "REPLACED_NEEDS_REVIEW"
+    }
+  ],
+  "protected": {
+    "civitavecchia": {
+      "canonical_name": "Civitavecchia",
+      "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+      "image_status": "MANUAL",
+      "unchanged": true
+    },
+    "mykonos": {
+      "canonical_name": "Mykonos",
+      "hero_media_id": "e7315cfb-a54c-41e9-8c99-ec8cd69c1d9b",
+      "image_status": "MANUAL",
+      "unchanged": true
+    },
+    "losAngeles": {
+      "canonical_name": "Los Angeles",
+      "hero_media_id": "b3f4c6b5-239b-4d1f-9419-b300339fc398",
+      "image_status": "AUTO_APPROVED",
+      "unchanged": true
+    },
+    "melbourne": {
+      "canonical_name": "Melbourne",
+      "hero_media_id": "119c2c95-eb2e-4a31-8476-9760a7cceadd",
+      "image_status": "AUTO_APPROVED",
+      "unchanged": true
+    }
+  }
+}

@@ -41,7 +41,8 @@ const {
   comparableModernAlternative,
   computeGeographicScore,
   GEO_AUTO_MIN,
-  SUIT_AUTO_MIN
+  SUIT_AUTO_MIN,
+  hasKnownWrongDestinationMatch
 } = loadCjs("netlify/functions/lib/port-image-finder/scoring.js");
 const { hasConflictingLocation } = loadCjs("netlify/functions/lib/port-image-finder/country-match.js");
 const {
@@ -799,6 +800,53 @@ const gunsImage = {
 assert(isMilitaryWarDestinationImagery(gunsImage), "La Spezia military harbour guns detected");
 const gunsRow = scorePortImageCandidate(gunsImage, laSpeziaPort);
 assert(!candidatePassesEligibility(gunsRow, laSpeziaPort), "La Spezia guns image fails eligibility");
+
+// --- Public exception regression: Tokyo Ogasawara must not qualify as Tokyo ---
+const tokyoPort = { canonical_name: "Tokyo", city: "Tokyo", country: "Japan", country_code: "JP", aliases: ["Tokyo International Cruise Terminal"] };
+const ogasawaraImage = {
+  title: "Port of Futami, Chichijima, Ogasawara.jpg",
+  provider: "wikimedia",
+  license: "CC BY-SA 4.0"
+};
+assert(hasKnownWrongDestinationMatch(ogasawaraImage, tokyoPort), "Ogasawara/Futami rejected for Tokyo");
+assert(computeGeographicScore(ogasawaraImage, tokyoPort) === 0, "Ogasawara/Futami geographic score zero for Tokyo");
+assert(hasWrongGeographyForPort(tokyoPort, ogasawaraImage), "Ogasawara/Futami fails Tokyo geography audit");
+
+// --- Casablanca: Diamond Harbour ship name must not qualify ---
+const casablancaPort = { canonical_name: "Casablanca", city: "Casablanca", country: "Morocco", country_code: "MA" };
+const diamondHarbourImage = {
+  title: "Navire DIAMOND HARBOUR en mer.jpg",
+  provider: "wikimedia",
+  license: "Public domain"
+};
+assert(hasKnownWrongDestinationMatch(diamondHarbourImage, casablancaPort), "Diamond Harbour rejected for Casablanca");
+assert(computeGeographicScore(diamondHarbourImage, casablancaPort) === 0, "Diamond Harbour geographic score zero for Casablanca");
+
+// --- Kahului: generic tropical plant imagery must not qualify ---
+const kahuluiPort = { canonical_name: "Kahului", city: "Kahului", country: "United States", country_code: "US", region: "Hawaii", aliases: ["Maui"] };
+const coconutImage = { title: "Starr 030612-0076 Cocos nucifera.jpg", provider: "wikimedia", license: "CC BY 2.0" };
+assert(hasKnownWrongDestinationMatch(coconutImage, kahuluiPort), "generic coconut plant rejected for Kahului");
+assert(hasWrongGeographyForPort(kahuluiPort, coconutImage), "generic coconut plant fails Kahului geography audit");
+
+// --- Punta Arenas: generic Patagonia without destination evidence must not auto-approve ---
+const puntaArenasPort = {
+  canonical_name: "Punta Arenas",
+  city: "Punta Arenas",
+  country: "Chile",
+  country_code: "CL",
+  aliases: ["Patagonia"]
+};
+const genericPatagoniaImage = { title: "1983-12 patagonien 07.jpg", provider: "wikimedia", license: "CC BY-SA 3.0" };
+assert(hasKnownWrongDestinationMatch(genericPatagoniaImage, puntaArenasPort), "generic Patagonia rejected for Punta Arenas");
+assert(computeGeographicScore(genericPatagoniaImage, puntaArenasPort) === 0, "generic Patagonia geographic score zero for Punta Arenas");
+
+// --- Tampa / Warnemünde vessel-primary regressions ---
+const tampaPort = { canonical_name: "Tampa", city: "Tampa", country: "United States", country_code: "US" };
+const tampaUss = { title: "USS Typhoon (PC-5) commissioning in Tampa Bay.jpg", provider: "wikimedia", license: "Public domain" };
+assert(isVesselPrimarySubject(tampaUss).vesselPrimary, "USS commissioning image flagged vessel-primary");
+const warnemundePort = { canonical_name: "Warnemunde", city: "Warnemunde", country: "Germany", country_code: "DE", aliases: ["Rostock"] };
+const warnemundeShip = { title: "Rostock Ostsee (49833072171).jpg", provider: "wikimedia", license: "CC BY 2.0" };
+assert(isVesselPrimarySubject(warnemundeShip).vesselPrimary, "Warnemünde Ostsee ship photo flagged vessel-primary");
 
 let queried = "";
 await resolveCatalogueMediaIds(async (path) => {

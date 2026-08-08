@@ -12,9 +12,12 @@ const COUNTRY_GROUPS = [
   { codes: ["ES"], names: ["spain", "spanish"], regions: ["catalonia", "andalusia", "balearic"] },
   { codes: ["GR"], names: ["greece", "greek"], regions: ["aegean", "crete", "santorini"] },
   { codes: ["NO"], names: ["norway", "norwegian"], regions: ["fjord", "bergen", "tromso"] },
+  { codes: ["JP"], names: ["japan", "japanese"], regions: ["tokyo", "yokohama", "osaka"] },
+  { codes: ["CL"], names: ["chile", "chilean"], regions: ["patagonia", "magallanes", "punta arenas"] },
+  { codes: ["MA"], names: ["morocco", "moroccan", "maroc"], regions: ["casablanca"] },
+  { codes: ["TN"], names: ["tunisia", "tunisian"], regions: ["tunis", "la goulette"] },
   { codes: ["IS"], names: ["iceland", "icelandic"], regions: ["akureyri", "reykjavik"] }
 ];
-
 function normalizeCountryKey(country, countryCode) {
   const code = String(countryCode || "").trim().toUpperCase();
   if (code) {
