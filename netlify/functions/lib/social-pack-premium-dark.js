@@ -22,10 +22,9 @@ const RED = "#F80020";
 const LIGHT_GREY = "#C8CDD4";
 const DIVIDER_STROKE = "#DDE2E8";
 const ROUTE_FONT_SIZE = 88;
-const OFFER_ROUTE_FONT_SIZE = Math.round(ROUTE_FONT_SIZE * 0.82);
-const OFFER_ROUTE_MIN_SIZE = Math.round(OFFER_ROUTE_FONT_SIZE * 0.72);
-const OFFER_ROUTE_SIDE_MARGIN = 96;
 const ROUTE_FONT_WEIGHT = 800;
+const ROUTE_SIDE_MARGIN = 36;
+const CRUISE_LINE_SHIELD_CLEARANCE = 132;
 const BROCHURE_FONT_SIZE = 44;
 const PANEL_FILL_OPACITY = 0.72;
 const DISCLAIMER_TEXT = "* prices are per person in USD & subject to availability.";
@@ -148,23 +147,114 @@ function routeText(model) {
   const raw = resolvePremiumDarkRoute(model);
   if (!raw) return { text: "", fontSize: ROUTE_FONT_SIZE };
   let fontSize = ROUTE_FONT_SIZE;
-  const maxW = W - 72;
+  const maxW = W - ROUTE_SIDE_MARGIN * 2;
   while (fontSize >= 52 && estimateMontserratWidth(raw, fontSize) > maxW) {
     fontSize -= 2;
   }
   return { text: raw, fontSize, fontWeight: ROUTE_FONT_WEIGHT };
 }
 
-/** Offer-slide route — smaller than main, with wider side margins. */
-function offerRouteText(model) {
-  const raw = resolvePremiumDarkRoute(model);
-  if (!raw) return { text: "", fontSize: OFFER_ROUTE_FONT_SIZE };
-  let fontSize = OFFER_ROUTE_FONT_SIZE;
-  const maxW = W - OFFER_ROUTE_SIDE_MARGIN * 2;
-  while (fontSize >= OFFER_ROUTE_MIN_SIZE && estimateMontserratWidth(raw, fontSize) > maxW) {
-    fontSize -= 2;
+function threeLineRouteHeight(fontSize) {
+  const lineGap = Math.round(fontSize * 1.02);
+  return lineGap * 2 + Math.round(fontSize * 0.35);
+}
+
+function premiumDarkItineraryPorts(model) {
+  return curatedPorts(model)
+    .map((p) => stripPortLabel(String(p)).toUpperCase())
+    .filter(Boolean);
+}
+
+function splitPortsForWidth(ports, fontSize, maxWidth) {
+  const sep = " · ";
+  for (let i = 1; i < ports.length; i += 1) {
+    const line1 = ports.slice(0, i).join(sep);
+    const line2 = ports.slice(i).join(sep);
+    if (
+      estimateMontserratWidth(line1, fontSize) <= maxWidth &&
+      estimateMontserratWidth(line2, fontSize) <= maxWidth
+    ) {
+      return { line1, line2 };
+    }
   }
-  return { text: raw, fontSize, fontWeight: ROUTE_FONT_WEIGHT };
+  const mid = Math.ceil(ports.length / 2);
+  return {
+    line1: ports.slice(0, mid).join(sep),
+    line2: ports.slice(mid).join(sep)
+  };
+}
+
+function measurePortsBlock(ports, { maxWidth = W - 80, maxFontSize = 36, minFontSize = 20 } = {}) {
+  const labels = (ports || []).filter(Boolean);
+  if (!labels.length) return { lines: 0, fontSize: maxFontSize, height: 0 };
+  const fullText = labels.join(" · ");
+  for (let lineCount = 1; lineCount <= 2; lineCount += 1) {
+    let fontSize = maxFontSize;
+    while (fontSize >= minFontSize) {
+      if (lineCount === 1 && estimateMontserratWidth(fullText, fontSize) <= maxWidth) {
+        return { lines: 1, fontSize, height: fontSize };
+      }
+      if (lineCount === 2) {
+        const { line1, line2 } = splitPortsForWidth(labels, fontSize, maxWidth);
+        if (
+          estimateMontserratWidth(line1, fontSize) <= maxWidth &&
+          estimateMontserratWidth(line2, fontSize) <= maxWidth
+        ) {
+          return { lines: 2, fontSize, height: Math.round(fontSize * 2.28) };
+        }
+      }
+      fontSize -= 1;
+    }
+  }
+  return { lines: 2, fontSize: minFontSize, height: Math.round(minFontSize * 2.28) };
+}
+
+function portsLine(ports, { y, maxWidth = W - 80, maxFontSize = 36, minFontSize = 20, maxLines = 2 } = {}) {
+  const labels = (ports || []).filter(Boolean);
+  if (!labels.length) return "";
+
+  const sep = " · ";
+  const fullText = labels.join(sep);
+  const lineGap = (fontSize) => Math.round(fontSize * 1.28);
+
+  for (let lines = 1; lines <= maxLines; lines += 1) {
+    let fontSize = maxFontSize;
+    while (fontSize >= minFontSize) {
+      if (lines === 1 && estimateMontserratWidth(fullText, fontSize) <= maxWidth) {
+        return `<text x="540" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
+          fullText
+        )}</text>`;
+      }
+      if (lines === 2) {
+        const { line1, line2 } = splitPortsForWidth(labels, fontSize, maxWidth);
+        if (
+          estimateMontserratWidth(line1, fontSize) <= maxWidth &&
+          estimateMontserratWidth(line2, fontSize) <= maxWidth
+        ) {
+          const gap = lineGap(fontSize);
+          return `
+      <text x="540" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
+            line1
+          )}</text>
+      <text x="540" y="${y + gap}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
+            line2
+          )}</text>`;
+        }
+      }
+      fontSize -= 1;
+    }
+  }
+
+  const fontSize = minFontSize;
+  const { line1, line2 } = splitPortsForWidth(labels, fontSize, maxWidth);
+  const gap = lineGap(fontSize);
+  return `
+      <text x="540" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
+        line1
+      )}</text>
+      <text x="540" y="${y + gap}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
+        line2
+      )}</text>`;
 }
 
 function mainRouteHeadline(model, { x = 540, y = 280, size = ROUTE_FONT_SIZE } = {}) {
@@ -173,8 +263,8 @@ function mainRouteHeadline(model, { x = 540, y = 280, size = ROUTE_FONT_SIZE } =
   let to = "ISTANBUL";
   if (/ TO /i.test(route)) {
     const parts = route.split(/\s+TO\s+/i);
-    from = (parts[0] || from).toUpperCase();
-    to = (parts[1] || to).toUpperCase();
+    from = stripPortLabel(parts[0] || from).toUpperCase();
+    to = stripPortLabel(parts[1] || to).toUpperCase();
   } else if (route) {
     from = route.toUpperCase();
     to = "";
@@ -214,26 +304,6 @@ function shipLabel(model) {
 function shipLine(model, { x = 540, y, size = 36 } = {}) {
   return `<text x="${x}" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="700">${escapeXml(
     shipLabel(model)
-  )}</text>`;
-}
-
-function portsLine(ports, { y, fontSize = 40 } = {}) {
-  const text = ports.join(" · ");
-  const lineGap = Math.round(fontSize * 1.28);
-  if (text.length > 42) {
-    const mid = Math.ceil(ports.length / 2);
-    const line1 = ports.slice(0, mid).join(" · ");
-    const line2 = ports.slice(mid).join(" · ");
-    return `
-      <text x="540" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
-        line1
-      )}</text>
-      <text x="540" y="${y + lineGap}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
-        line2
-      )}</text>`;
-  }
-  return `<text x="540" y="${y}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${fontSize}" font-weight="500">${escapeXml(
-    text
   )}</text>`;
 }
 
@@ -510,19 +580,18 @@ function benefitsPanel(items, { y } = {}) {
 }
 
 /** Centre the main slide route/meta block between header and bottom shield. */
-function layoutMainTextGroup(ports) {
+function layoutMainTextGroup(model) {
+  const ports = premiumDarkItineraryPorts(model);
+  const portsMeasure = measurePortsBlock(ports);
   const routeLineGap = Math.round(ROUTE_FONT_SIZE * 1.02);
   const routeBlockH = routeLineGap * 2;
   const metaGap = 72;
   const nightsSize = 36;
   const shipSize = 36;
-  const portsSize = 40;
-  const portsText = ports.join(" · ");
-  const portsLines = portsText.length > 42 ? 2 : 1;
-  const portsBlockH = portsLines === 2 ? Math.round(portsSize * 2.28) : portsSize;
+  const portsBlockH = portsMeasure.height || 36;
   const groupH = routeBlockH + metaGap + nightsSize + metaGap + shipSize + metaGap + portsBlockH;
   const zoneTop = 232;
-  const zoneBottom = H - FOOTER_H - 128;
+  const zoneBottom = H - FOOTER_H - CRUISE_LINE_SHIELD_CLEARANCE;
   const headlineY = Math.round((zoneTop + zoneBottom - groupH) / 2);
   return {
     headlineY,
@@ -534,7 +603,7 @@ function layoutMainTextGroup(ports) {
 
 /** Centre the offer content stack between header and benefits panel. */
 function layoutOfferStack({ route, showBrochure, price, panelY }) {
-  const routeH = Math.round(route.fontSize * 0.92);
+  const routeH = threeLineRouteHeight(route.fontSize);
   const brochureBlockH = showBrochure ? 68 : 0;
   const heroPx = heroPriceFontSize(price);
   const heroH = Math.round(heroPx * 0.82);
@@ -556,8 +625,8 @@ function layoutOfferStack({ route, showBrochure, price, panelY }) {
 
 /** Premium Dark main slide — 101cruise top, cruise line bottom tab. */
 function renderPremiumDarkMainSvg(model) {
-  const ports = curatedPorts(model);
-  const layout = layoutMainTextGroup(ports);
+  const ports = premiumDarkItineraryPorts(model);
+  const layout = layoutMainTextGroup(model);
 
   const body = `
     ${masterBackground(model, { concept: "a" })}
@@ -566,7 +635,7 @@ function renderPremiumDarkMainSvg(model) {
     ${mainRouteHeadline(model, { y: layout.headlineY, size: ROUTE_FONT_SIZE })}
     ${nightsDatesLine(model, { y: layout.nightsDatesY, size: 36 })}
     ${shipLine(model, { y: layout.shipY, size: 36 })}
-    ${portsLine(ports, { y: layout.portsY, fontSize: 40 })}
+    ${portsLine(ports, { y: layout.portsY })}
     ${cruiseLineLogoBottom(model)}
     ${greenFooter()}
   `;
@@ -584,6 +653,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
       ${brandDivider(210)}
       <text x="540" y="480" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="36" font-weight="700">ASK PAUL FOR HIS BEST PRICE</text>
       <text x="540" y="540" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="22" font-weight="500">Public pricing will appear when available</text>
+      ${cruiseLineLogoBottom(model)}
       ${greenFooter()}
     `;
     return frame(body);
@@ -600,7 +670,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
   const room = offer.roomLabelDisplay || offer.roomLabel || "";
   const includeItems = listInclusionItems(model);
 
-  const panelBottomMargin = FOOTER_H + 12;
+  const panelBottomMargin = FOOTER_H + CRUISE_LINE_SHIELD_CLEARANCE + 12;
   const panelLayout = measureBenefitsPanel(includeItems);
   const panelY = panelLayout.height
     ? H - panelBottomMargin - panelLayout.height
@@ -609,7 +679,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
 
   const logoY = 36;
   const dividerY = 198;
-  const route = offerRouteText(model);
+  const route = routeText(model);
   const stack = layoutOfferStack({
     route,
     showBrochure,
@@ -619,9 +689,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
 
   let routeBlock = "";
   if (route.text) {
-    routeBlock = `<text x="540" y="${stack.routeY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${route.fontSize}" font-weight="${route.fontWeight}" letter-spacing="1.4">${escapeXml(
-      route.text
-    )}</text>`;
+    routeBlock = mainRouteHeadline(model, { y: stack.routeY, size: route.fontSize });
   }
 
   let brochureBlock = "";
@@ -638,6 +706,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
     ${cruise101PriceBlock(price, stack.priceY, { fontSize: stack.heroPx })}
     ${cabinPill(room, stack.cabinY)}
     ${benefits.svg}
+    ${cruiseLineLogoBottom(model)}
     ${greenFooter()}
   `;
   return frame(body);
@@ -645,8 +714,6 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
 
 /** Premium Dark CTA — three-line headline, script, email, logo. */
 function renderPremiumDarkCtaSvg(model) {
-  const brandSize = 220;
-  const brandY = H - FOOTER_H - brandSize - 36;
   const href = model.backgroundDataUri || model.heroDataUri;
   let bg = `<rect width="${W}" height="${H}" fill="#0b1220"/>`;
   if (href) {
@@ -684,13 +751,13 @@ function renderPremiumDarkCtaSvg(model) {
     : `<text x="540" y="${scriptY + 80}" text-anchor="middle" fill="${WHITE}" font-family="Great Vibes" font-size="92">Get your cruise on!</text>`;
 
   const scriptInkBottom = scriptY + 118;
-  const logoInkTop = brandY + 9;
   const emailSize = 52;
-  const gap = logoInkTop - scriptInkBottom;
-  const emailY = Math.round(scriptInkBottom + (gap - emailSize) / 2 + emailSize * 0.8);
+  const emailY = scriptInkBottom + 72;
 
   const body = `
     ${bg}
+    ${brandLogo(model, { y: 36, size: 130 })}
+    ${brandDivider(198)}
     <defs>
       <filter id="pdCtaHeadlineShadow" x="-20%" y="-20%" width="140%" height="160%">
         <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#000" flood-opacity="0.55"/>
@@ -703,7 +770,7 @@ function renderPremiumDarkCtaSvg(model) {
     </g>
     ${scriptBlock}
     <text x="540" y="${emailY}" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="${emailSize}" font-weight="400">paul@101cruise.com.au</text>
-    ${brandLogo(model, { y: brandY, size: brandSize })}
+    ${cruiseLineLogoBottom(model)}
     ${greenFooter()}
   `;
   return frame(body);
@@ -717,10 +784,12 @@ module.exports = {
   distributeBenefitRows,
   measureBenefitsPanel,
   heroPriceFontSize,
-  offerRouteText,
+  routeText,
+  measurePortsBlock,
+  premiumDarkItineraryPorts,
+  threeLineRouteHeight,
   shipLabel,
-  OFFER_ROUTE_FONT_SIZE,
-  OFFER_ROUTE_SIDE_MARGIN,
+  CRUISE_LINE_SHIELD_CLEARANCE,
   layoutMainTextGroup,
   layoutOfferStack,
   DISCLAIMER_TEXT,

@@ -46,7 +46,7 @@ const {
   renderCruisePack
 } = require("../netlify/functions/lib/social-pack-render.js");
 const { normaliseTemplate } = require("../netlify/functions/lib/social-pack-template.js");
-const { renderPremiumDarkOfferSvg, renderPremiumDarkMainSvg, renderPremiumDarkCtaSvg, resolvePremiumDarkRoute, distributeBenefitRows, measureBenefitsPanel, layoutMainTextGroup, heroPriceFontSize, offerRouteText, shipLabel, OFFER_ROUTE_FONT_SIZE, OFFER_ROUTE_SIDE_MARGIN, PANEL_FILL_OPACITY, DISCLAIMER_TEXT } = require("../netlify/functions/lib/social-pack-premium-dark.js");
+const { renderPremiumDarkOfferSvg, renderPremiumDarkMainSvg, renderPremiumDarkCtaSvg, resolvePremiumDarkRoute, distributeBenefitRows, measureBenefitsPanel, measurePortsBlock, layoutMainTextGroup, heroPriceFontSize, routeText, shipLabel, premiumDarkItineraryPorts, PANEL_FILL_OPACITY, DISCLAIMER_TEXT } = require("../netlify/functions/lib/social-pack-premium-dark.js");
 const { buildSocialPackZip } = require("../netlify/functions/lib/social-pack-zip.js");
 const { assessReadiness } = require("../netlify/functions/lib/social-pack-data.js");
 const {
@@ -602,24 +602,42 @@ async function main() {
     assert(classicOffer.includes(">INCLUDES<"), "classic retains includes heading");
 
     const pdMain = renderPremiumDarkMainSvg(templateModel);
-    const mainLayout = layoutMainTextGroup(templateModel.ports);
+    const mainLayout = layoutMainTextGroup(templateModel);
     assert(mainLayout.headlineY > 300, "main text block moved downward");
     assert(pdMain.includes('y="36"') || pdMain.includes("y=\"36\""), "101cruise logo at top");
     assert(pdMain.includes("1286") && pdMain.includes("1162"), "inverted bottom cruise-line tab anchors from footer");
     assert(pdMain.includes(">BARCELONA<") && pdMain.includes(">ISTANBUL<"), "main route endpoints");
     assert(pdMain.includes(">OCEANIA SIRENA<"), "main slide uses canonical ship display");
 
-    const offerRoute = offerRouteText(templateModel);
-    assert(offerRoute.fontSize <= OFFER_ROUTE_FONT_SIZE, "offer route base size reduced");
-    assert(offerRoute.fontSize < 88, "offer route smaller than main route");
-    assert(OFFER_ROUTE_SIDE_MARGIN >= 96, "offer route keeps wide side margins");
+    const longPortsModel = {
+      ...templateModel,
+      departurePort: "Rome, Italy",
+      arrivalPort: "Fort Lauderdale (Port Everglades), Florida",
+      ports: [
+        "Rome, Italy",
+        "Cagliari, Sardinia",
+        "Malaga, Spain",
+        "Funchal (Madeira)",
+        "Kings Wharf (Bermuda)",
+        "Fort Lauderdale (Port Everglades), Florida"
+      ]
+    };
+    const longPorts = premiumDarkItineraryPorts(longPortsModel);
+    assert(!longPorts.some((p) => p.includes("(")), "itinerary ports strip parenthetical qualifiers");
+    const portsFit = measurePortsBlock(longPorts);
+    assert(portsFit.fontSize >= 20, "itinerary ports shrink to fit width");
+    const longMain = renderPremiumDarkMainSvg(longPortsModel);
+    assert(!longMain.includes("PORT EVERGLADES"), "main slide omits bracketed port qualifiers");
+    assert(!longMain.includes("MADEIRA"), "main slide omits parenthetical island names");
+
+    const route = routeText(templateModel);
+    assert(route.fontSize >= 52, "route uses main-slide sizing logic");
     assert(heroPriceFontSize("$1,498*") >= 190, "hero price sizing unchanged");
 
     const pdOffer = renderPremiumDarkOfferSvg(templateModel, 0);
-    assert(pdOffer.includes("BARCELONA TO ISTANBUL"), "premium dark single-line route");
-    assert(pdOffer.includes('font-weight="800"'), "offer route weight matches main");
-    assert(pdOffer.includes(`font-size="${offerRoute.fontSize}"`), "offer route uses reduced fit sizing");
-    assert(!pdOffer.includes('font-size="88"'), "offer route not main-slide size");
+    assert(pdOffer.includes(">BARCELONA<") && pdOffer.includes(">TO<") && pdOffer.includes(">ISTANBUL<"), "offer route uses three-line main headline");
+    assert(pdOffer.includes(`font-size="${route.fontSize}"`), "offer route matches main route font size");
+    assert(pdOffer.includes(templateModel.cruiseLineLogoDataUri), "offer slide includes cruise-line logo shield");
     assert(pdOffer.includes(`fill-opacity="${PANEL_FILL_OPACITY}"`), "benefits panel more transparent");
     assert(pdOffer.includes("$10,498*") || pdOffer.includes("10,498"), "premium dark brochure price");
     assert(pdOffer.includes(GREEN), "premium dark website green");
@@ -660,7 +678,7 @@ async function main() {
     assert(buildShipDisplay("Celebrity Cruises", "Celebrity Ascent") === "Celebrity Ascent", "celebrity ship display");
     assert(shipLabel(celebrityModel) === "CELEBRITY ASCENT", "title slide celebrity ship without Oceania prefix");
     const celebrityOffer = renderPremiumDarkOfferSvg(celebrityModel, 0);
-    assert(celebrityOffer.includes("ROME TO FORT LAUDERDALE"), "offer route strips parenthetical port text");
+    assert(celebrityOffer.includes(">ROME<") && celebrityOffer.includes(">FORT LAUDERDALE<"), "offer route strips parenthetical port text");
     assert(!celebrityOffer.includes("PORT EVERGLADES"), "offer route omits bracketed qualifier");
     const pdSrc = fs.readFileSync(path.join(root, "netlify/functions/lib/social-pack-premium-dark.js"), "utf8");
     assert(!/Regent\.png|Oceania\.png|hard-code/i.test(pdSrc), "premium dark does not hard-code cruise-line logos");
@@ -722,7 +740,7 @@ async function main() {
     };
     assert(resolvePremiumDarkRoute(marketingModel) === "ATHENS TO ISTANBUL", "route from itinerary ports");
     const marketingSvg = renderPremiumDarkOfferSvg(marketingModel, 0);
-    assert(marketingSvg.includes("ATHENS TO ISTANBUL"), "premium dark shows endpoints not marketing");
+    assert(marketingSvg.includes(">ATHENS<") && marketingSvg.includes(">ISTANBUL<"), "premium dark shows endpoints not marketing");
     assert(!marketingSvg.includes("GREEK ISLES"), "premium dark excludes destination strip copy");
 
     const pdCta = renderPremiumDarkCtaSvg(templateModel);
@@ -731,6 +749,7 @@ async function main() {
     assert(pdCta.includes(">TODAY<"), "premium dark cta line 3");
     assert(pdCta.includes('font-size="96"'), "premium dark cta headline larger");
     assert(!pdCta.includes(">TALK TO PAUL<"), "premium dark cta not two-line classic heading");
+    assert(pdCta.includes(templateModel.cruiseLineLogoDataUri), "cta slide includes cruise-line logo shield");
 
     const classicPack = await renderCruisePack({ ...templateModel, template: "classic" });
     const pdPack = await renderCruisePack({ ...templateModel, template: "premium_dark" });
