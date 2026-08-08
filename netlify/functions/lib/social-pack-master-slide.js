@@ -208,26 +208,30 @@ function portsLine(ports, { y, maxWidth = 920, fontSize = 34, anchorX = 540, anc
 }
 
 function routeHeadline(model, { x = 540, y = 280, anchor = "middle", size = 88 } = {}) {
-  const route = String(model.routeHeadline || model.destinationStrip || "")
-    .replace(/\s+TO\s+/i, "\nTO ")
-    .trim();
-  let line1 = "BARCELONA";
-  let line2 = "TO ISTANBUL";
-  if (route.includes("\n")) {
-    const parts = route.split("\n").map((s) => s.trim());
-    line1 = parts[0] || line1;
-    line2 = parts[1] || line2;
-  } else if (/ TO /i.test(route)) {
+  const route = String(model.routeHeadline || model.destinationStrip || "").trim();
+  let from = "BARCELONA";
+  let to = "ISTANBUL";
+  if (/ TO /i.test(route)) {
     const parts = route.split(/\s+TO\s+/i);
-    line1 = (parts[0] || line1).toUpperCase();
-    line2 = `TO ${(parts[1] || "ISTANBUL").toUpperCase()}`;
+    from = (parts[0] || from).toUpperCase();
+    to = (parts[1] || to).toUpperCase();
+  } else if (route.includes("\n")) {
+    const parts = route.split("\n").map((s) => s.trim());
+    from = (parts[0] || from).replace(/^TO\s+/i, "").toUpperCase();
+    to = (parts[parts.length - 1] || to).replace(/^TO\s+/i, "").toUpperCase();
+  } else if (route) {
+    from = route.toUpperCase();
   }
+  const lineGap = Math.round(size * 1.02);
   return `
     <text x="${x}" y="${y}" text-anchor="${anchor}" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="800">${escapeXml(
-      line1
+      from
     )}</text>
-    <text x="${x}" y="${y + Math.round(size * 1.02)}" text-anchor="${anchor}" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="800">${escapeXml(
-      line2
+    <text x="${x}" y="${y + lineGap}" text-anchor="${anchor}" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="800">${escapeXml(
+      "TO"
+    )}</text>
+    <text x="${x}" y="${y + lineGap * 2}" text-anchor="${anchor}" fill="${WHITE}" font-family="${FAMILY}" font-size="${size}" font-weight="800">${escapeXml(
+      to
     )}</text>`;
 }
 
@@ -289,8 +293,9 @@ function renderMasterConceptA(model) {
   const ports = curatedPorts(model);
   const headlineY = 240;
   const headlineSize = 92;
-  const headlineEnd = headlineY + Math.round(headlineSize * 1.02);
-  const portsY = 700;
+  const headlineLineGap = Math.round(headlineSize * 1.02);
+  const headlineEnd = headlineY + headlineLineGap * 2;
+  const portsY = 740;
   // Nights/dates + ship sit halfway between route headline and ports
   const midGap = (headlineEnd + portsY) / 2;
   const nightsDatesY = Math.round(midGap - 24);
