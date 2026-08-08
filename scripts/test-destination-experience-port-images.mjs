@@ -72,6 +72,33 @@ const catalogueRows = [
     aliases: ["Venice"],
     hero_media_id: "media-ravenna",
     image_status: "AUTO_APPROVED"
+  },
+  {
+    canonical_name: "Tokyo",
+    display_name: "Tokyo, Japan",
+    city: "Tokyo",
+    country: "Japan",
+    aliases: ["Tokyo International Cruise Terminal"],
+    hero_media_id: "media-tokyo",
+    image_status: "AUTO_APPROVED"
+  },
+  {
+    canonical_name: "Yokohama",
+    display_name: "Yokohama (Tokyo), Japan",
+    city: "Yokohama",
+    country: "Japan",
+    aliases: [],
+    hero_media_id: "media-yokohama",
+    image_status: "AUTO_APPROVED"
+  },
+  {
+    canonical_name: "Port Chalmers",
+    display_name: "Port Chalmers (Dunedin), New Zealand",
+    city: "Port Chalmers",
+    country: "New Zealand",
+    aliases: [],
+    hero_media_id: "media-port-chalmers",
+    image_status: "AUTO_APPROVED"
   }
 ];
 
@@ -84,11 +111,13 @@ const cases = [
   { label: "Athens (Piraeus)", expect: "Piraeus", media: "media-piraeus" },
   { label: "Dubrovnik", expect: "Dubrovnik", media: "media-dubrovnik" },
   { label: "Venice / Ravenna", expect: "Ravenna", media: "media-ravenna" },
+  { label: "Tokyo / Yokohama", expect: "Yokohama", media: "media-yokohama" },
+  { label: "Dunedin / Port Chalmers", expect: "Port Chalmers", media: "media-port-chalmers" },
   { label: "Mystery Port", expect: null, media: null }
 ];
 
 for (const row of cases) {
-  const hit = lookupCataloguePort(row.label, index);
+  const hit = lookupCataloguePort(row.label, index, catalogueRows);
   const resolved = hit?.canonical_name || null;
   const media = hit?.hero_media_id || null;
   console.log(
@@ -109,6 +138,13 @@ for (const row of cases) {
 
 assert(nameKeysForLookup("Rome (Civitavecchia)").includes("civitavecchia"), "paren alias keys generated");
 assert(nameKeysForLookup("Venice / Ravenna").includes("ravenna"), "slash alias keys generated");
+
+const tokyoOnly = lookupCataloguePort("Tokyo", index);
+const yokohamaOnly = lookupCataloguePort("Yokohama", index);
+assert.equal(tokyoOnly?.canonical_name, "Tokyo", "Tokyo resolves to Tokyo");
+assert.equal(yokohamaOnly?.canonical_name, "Yokohama", "Yokohama resolves to Yokohama");
+assert.equal(tokyoOnly?.hero_media_id, "media-tokyo", "Tokyo keeps Tokyo media");
+assert.equal(yokohamaOnly?.hero_media_id, "media-yokohama", "Yokohama keeps Yokohama media");
 
 const ambiguousCatalogue = [
   {

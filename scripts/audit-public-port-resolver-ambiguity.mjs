@@ -18,7 +18,8 @@ const {
   nameKeysForLookup,
   portLookupKeys,
   hasValidPortImage,
-  rankCataloguePortMatches
+  rankCataloguePortMatches,
+  resolveCompoundLabelPort
 } = require(path.join(root, "netlify/functions/lib/port-image-finder/resolve-public.js"));
 const { normaliseEntityKey } = require(path.join(root, "netlify/functions/lib/research-normalize.js"));
 
@@ -36,6 +37,11 @@ function lookupCataloguePortWithMethod(portName, catalogueIndex, catalogueRows) 
   const rows = Array.isArray(catalogueRows) && catalogueRows.length
     ? catalogueRows.filter(hasValidPortImage)
     : [...catalogueIndex.values()];
+
+  const compoundHit = resolveCompoundLabelPort(portName, rows);
+  if (compoundHit) {
+    return { row: compoundHit, method: "compound_label", candidates: [compoundHit] };
+  }
 
   const exactCanonical = rows.filter((row) => normaliseEntityKey(row.canonical_name) === target);
   if (exactCanonical.length === 1) {
@@ -164,6 +170,7 @@ const KNOWN_CHECKS = [
   { query: "Albany", expect: { canonical_name: "Albany", country: "Australia" } },
   { query: "Tokyo", expect: { canonical_name: "Tokyo", country: "Japan" } },
   { query: "Yokohama", expect: { canonical_name: "Yokohama", country: "Japan" } },
+  { query: "Tokyo / Yokohama", expect: { canonical_name: "Yokohama", country: "Japan" } },
   { query: "Vancouver", expect: { canonical_name: "Vancouver", country: "Canada" } },
   { query: "Southampton", expect: { canonical_name: "Southampton", country: "United Kingdom" } },
   { query: "Miami", expect: { canonical_name: "Miami", country: "Florida" } },
@@ -206,6 +213,21 @@ async function main() {
     publicNames.push(...names.map((n) => ({ name: n, slug })));
   }
   const distinctNames = [...new Set(publicNames.map((p) => p.name))];
+
+  const compoundLabels = [];
+  for (const [slug, cfg] of Object.entries(content)) {
+    const names = [...new Set([...(cfg.popular_ports || []), ...(cfg.departure_ports || [])])];
+    for (const label of names) {
+      if (!/[/()]|&|\bvia\b/i.test(label)) continue;
+      const result = lookupCataloguePortWithMethod(label, index, approvedRows);
+      compoundLabels.push({
+        destination_slug: slug,
+        label,
+        configured_canonical: cfg.port_canonical_names?.[label] || null,
+        ...portDto(result.row, result.method)
+      });
+    }
+  }
 
   const resolutions = [];
   for (const entry of publicNames) {
@@ -341,6 +363,7 @@ async function main() {
       unresolved_port_cards: unresolvedCards
     },
     distinct_resolutions: distinctResolutions,
+    compound_port_labels: compoundLabels,
     ambiguous_lookup_keys: ambiguousWithWinner,
     known_verification: knownVerification,
     wrong_resolutions: wrongResolutions,

@@ -28,6 +28,10 @@
     japan: {
       popular_ports: ["Tokyo / Yokohama", "Kobe", "Osaka", "Nagasaki", "Hakodate", "Aomori"],
       departure_ports: ["Tokyo / Yokohama", "Kobe", "Osaka"],
+      /** Customer-facing compound labels → canonical physical port (see compound-port-labels.js). */
+      port_canonical_names: {
+        "Tokyo / Yokohama": "Yokohama"
+      },
       key_reasons: [
         "Strong cultural experiences in every port",
         "Excellent food at sea and ashore",

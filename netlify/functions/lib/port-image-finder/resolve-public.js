@@ -3,6 +3,7 @@
  */
 
 const { normaliseEntityKey } = require("../research-normalize");
+const { lookupCompoundPortLabel } = require("../compound-port-labels");
 
 const PORT_IMAGE_SELECT =
   "id,canonical_name,display_name,city,country,country_code,region,aliases,match_key,hero_media_id,image_status,image_source,image_credit,image_license";
@@ -84,8 +85,9 @@ function catalogueRowsFromIndex(catalogueIndex) {
   const rows = [];
   const seen = new Set();
   for (const row of catalogueIndex.values()) {
-    if (!row?.id || seen.has(row.id)) continue;
-    seen.add(row.id);
+    const dedupeKey = row?.id || `${row?.canonical_name || ""}|${row?.country || ""}`;
+    if (!dedupeKey || seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
     rows.push(row);
   }
   return rows;
@@ -117,6 +119,21 @@ function rankCataloguePortMatches(portName, rows) {
     .sort((a, b) => b.score - a.score);
 }
 
+function resolveCompoundLabelPort(portName, rows) {
+  const compound = lookupCompoundPortLabel(portName);
+  if (!compound) return null;
+  const targetName = normaliseEntityKey(compound.canonical_name);
+  const targetCountry = compound.country ? normaliseEntityKey(compound.country) : null;
+  const matches = (rows || []).filter(
+    (row) =>
+      normaliseEntityKey(row.canonical_name) === targetName &&
+      (!targetCountry || normaliseEntityKey(row.country) === targetCountry)
+  );
+  if (matches.length === 1) return matches[0];
+  if (matches.length > 1) return rankCataloguePortMatches(portName, matches)[0]?.row || matches[0];
+  return null;
+}
+
 /**
  * @param {string} portName
  * @param {Map<string, object>} catalogueIndex
@@ -129,6 +146,9 @@ function lookupCataloguePort(portName, catalogueIndex, catalogueRows) {
   const rows = Array.isArray(catalogueRows) && catalogueRows.length
     ? catalogueRows.filter(hasValidPortImage)
     : catalogueRowsFromIndex(catalogueIndex);
+
+  const compoundHit = resolveCompoundLabelPort(portName, rows);
+  if (compoundHit) return compoundHit;
 
   const exactCanonical = rows.filter((row) => normaliseEntityKey(row.canonical_name) === target);
   if (exactCanonical.length === 1) return exactCanonical[0];
@@ -206,6 +226,8 @@ module.exports = {
   portLookupKeys,
   indexPortsCatalogue,
   lookupCataloguePort,
+  resolveCompoundLabelPort,
+  lookupCompoundPortLabel,
   resolveCatalogueMediaIds,
   resolvePublicPortHeroMedia,
   rankCataloguePortMatches,
