@@ -146,8 +146,29 @@
     return contains.length === 1 ? contains[0] : null;
   }
 
-  function applyPortMedia(ports, portMediaRows, destinationName) {
+  function applyPortMedia(ports, portMediaRows, destinationName, cataloguePortRows) {
+    var catalogueByName = Object.create(null);
+    asArray(cataloguePortRows).forEach(function (row) {
+      if (!row || !row.public_url) return;
+      var key = normalisePortName(row.port_name);
+      if (key) catalogueByName[key] = row;
+    });
+
     return asArray(ports).map(function (port) {
+      var catalogue = catalogueByName[normalisePortName(port.name)];
+      if (catalogue) {
+        return Object.assign({}, port, {
+          image: {
+            url: catalogue.public_url,
+            alt: catalogue.alt_text || port.name + " port",
+            objectPosition: "center center",
+            mediaId: catalogue.id || null,
+            title: catalogue.title || port.name,
+            source: catalogue.resolved_via || "ports_catalogue"
+          }
+        });
+      }
+
       var match = matchPortMedia(port.name, portMediaRows, destinationName);
       if (!match) return port;
       return Object.assign({}, port, {
@@ -169,6 +190,9 @@
     var params = new URLSearchParams();
     if (slug) params.set("slug", slug);
     if (destinationName) params.set("name", destinationName);
+    if (Array.isArray(options.portNames) && options.portNames.length) {
+      params.set("ports", options.portNames.join("|"));
+    }
     var response = await fetch(endpoint + "?" + params.toString(), {
       method: "GET",
       cache: "no-store"
@@ -178,6 +202,7 @@
     return {
       destinationMedia: asArray(payload.destination_media),
       portMedia: asArray(payload.port_media),
+      cataloguePortMedia: asArray(payload.catalogue_port_media),
       source: "media_library_live"
     };
   }
@@ -203,6 +228,7 @@
       return {
         destinationMedia: await loadCaribbeanMedia(options),
         portMedia: [],
+        cataloguePortMedia: [],
         source: "media_library_snapshot"
       };
     }
@@ -213,10 +239,11 @@
         return {
           destinationMedia: await loadCaribbeanMedia(options),
           portMedia: [],
+          cataloguePortMedia: [],
           source: "media_library_snapshot"
         };
       }
-      return { destinationMedia: [], portMedia: [], source: "unavailable" };
+      return { destinationMedia: [], portMedia: [], cataloguePortMedia: [], source: "unavailable" };
     }
   }
 

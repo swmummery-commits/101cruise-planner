@@ -284,7 +284,7 @@ assert.match(css, /\.dx-ports-grid\s*\{[^}]*grid-template-columns:\s*repeat\(3,\
 assert.match(css, /@media \(max-width: 980px\)[\s\S]*\.dx-ports-grid[\s\S]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/, "tablet ports 2 columns");
 assert.match(css, /@media \(max-width: 640px\)[\s\S]*\.dx-ports-grid[\s\S]*grid-template-columns:\s*1fr/, "mobile ports 1 column");
 assert.match(css, /\.dx-ports-section\s*\{[^}]*background:\s*#8dd9bf/i, "Popular Ports background is #8DD9BF");
-assert.match(css, /\.dx-port-card--fallback[\s\S]*background:\s*rgba\(255,\s*255,\s*255,\s*0\.92\)/, "port fallback cards stay pale");
+assert.match(css, /\.dx-port-card--name-only[\s\S]*background:\s*rgba\(255,\s*255,\s*255,\s*0\.92\)/, "name-only port cards stay pale");
 assert.match(css, /\.dx-port-card--photo[\s\S]*background:\s*var\(--dx-navy\)/, "photo port cards stay dark");
 assert.match(css, /\.dx-line-logo-panel/, "cruise-line logo contrast panel");
 assert(!/grid-auto-columns:\s*minmax\(240px/.test(css), "port carousel track removed");
@@ -298,8 +298,9 @@ assert(/robots" content="noindex/.test(page), "prototype noindex");
 
 const componentSrc = read("js/destination-experience-components.js");
 assert.match(componentSrc, /data-dx-dest-image/, "destination image slots in markup");
-assert.match(componentSrc, /dx-port-card--fallback/, "pale port fallback cards");
+assert.match(componentSrc, /dx-port-card--name-only/, "name-only port cards when no image");
 assert.match(componentSrc, /dx-port-card--photo/, "port photo cards when image exists");
+assert.doesNotMatch(componentSrc, /dx-port-monogram/, "monogram fallback removed from popular ports");
 assert.match(componentSrc, /dx-line-name/, "cruise-line names beneath logos");
 
 const loaderSrc = read("js/destination-experience-image-loader.js");

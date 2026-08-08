@@ -78,14 +78,33 @@ const japanHtml = Components.renderPage(
   Data.applyTimingContext(japan, Data.parseTimingFromCruiseFinder({ timingMode: "flexible" }))
 );
 assert(/data-dx-slug="japan"/.test(japanHtml));
-assert(!/dx-port-card--photo/.test(japanHtml) || true);
-assert.match(japanHtml, /dx-port-card--fallback/, "destinations without port photos use pale fallback cards");
-assert.equal((japanHtml.match(/dx-port-card--fallback/g) || []).length, japan.ports.length);
+assert.match(japanHtml, /dx-port-card--name-only/, "destinations without port photos use name-only cards");
+assert.doesNotMatch(japanHtml, /dx-port-monogram/, "no monogram initials on port cards");
+assert.equal((japanHtml.match(/dx-port-card--name-only/g) || []).length, japan.ports.length);
+
+const medPorts = Media.applyPortMedia(
+  [{ name: "Barcelona" }, { name: "Rome (Civitavecchia)" }],
+  [],
+  "Mediterranean",
+  [
+    {
+      port_name: "Barcelona",
+      public_url: "https://example.com/barcelona.jpg",
+      alt_text: "Barcelona port",
+      id: "media-barcelona",
+      resolved_via: "ports_catalogue"
+    }
+  ]
+);
+assert.equal(medPorts[0].image.url, "https://example.com/barcelona.jpg");
+assert.equal(medPorts[0].image.source, "ports_catalogue");
+assert.ok(!medPorts[1].image, "unmatched port has no image");
 
 const caribbeanPorts = Media.applyPortMedia(
   [{ name: "St Thomas" }, { name: "Cozumel" }],
   [],
-  "Caribbean"
+  "Caribbean",
+  []
 );
 assert.equal(caribbeanPorts.length, 2);
 assert.ok(caribbeanPorts.every((port) => !port.image));
@@ -102,10 +121,13 @@ assert(!/cf-dest-media/.test(destJs), "legacy static hero markup removed");
 
 const mediaFn = read("netlify/functions/public-destination-media.js");
 assert(/media_type=eq\.destination/.test(mediaFn));
+assert(/resolveCatalogueMediaIds/.test(mediaFn), "catalogue port images resolved server-side");
+assert(/catalogue_port_media/.test(mediaFn), "catalogue port media returned in payload");
 assert(!/\.insert\(|\.update\(|\.delete\(/.test(mediaFn), "destination media endpoint is read-only");
 
 const mediaModule = read("js/destination-experience-media.js");
 assert(/public-destination-media/.test(mediaModule));
+assert(/cataloguePortMedia/.test(mediaModule));
 assert(/loadDestinationMedia/.test(mediaModule));
 
 console.log("test-cruise-finder-destination-experience: ok");

@@ -283,8 +283,7 @@
                 </article>`;
                 }
                 return `
-                <article class="dx-port-card dx-port-card--fallback" role="listitem">
-                  <div class="dx-port-monogram" aria-hidden="true">${esc(portInitial(port.name))}</div>
+                <article class="dx-port-card dx-port-card--name-only" role="listitem">
                   <h3 class="dx-port-name">${esc(port.name)}</h3>
                 </article>`;
               })

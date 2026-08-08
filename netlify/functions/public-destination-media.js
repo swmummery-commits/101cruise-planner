@@ -2,10 +2,15 @@
  * Public read-only destination media from Media Library.
  *
  * GET /.netlify/functions/public-destination-media?slug=caribbean&name=Caribbean
+ * Optional: &ports=Barcelona|Rome%20(Civitavecchia)|Santorini
  *
- * Returns active destination + port media with explicit destination association.
+ * Returns active destination + port media with explicit destination association,
+ * plus optional ports-catalogue hero images for named ports.
  * Read-only — no writes.
  */
+
+const { resolveCatalogueMediaIds } = require("./lib/port-image-finder/resolve-public");
+const { normaliseEntityKey } = require("./lib/research-normalize");
 
 function jsonResponse(statusCode, body) {
   const empty = body === "" || body == null;
@@ -55,6 +60,56 @@ async function supabaseGet(path) {
   return data || [];
 }
 
+function parsePortNames(raw) {
+  return String(raw || "")
+    .split("|")
+    .map((part) => decodeURIComponent(part).trim())
+    .filter(Boolean)
+    .slice(0, 24);
+}
+
+async function loadMediaMap(ids) {
+  const unique = [...new Set((ids || []).filter(Boolean))];
+  const map = new Map();
+  if (!unique.length) return map;
+
+  const rows = await supabaseGet(
+    `media_library?id=in.(${unique.join(",")})&is_active=eq.true` +
+      `&select=id,title,alt_text,public_url,media_type,source_url`
+  );
+  for (const row of rows || []) {
+    if (row?.id) map.set(row.id, row);
+  }
+  return map;
+}
+
+async function resolveCataloguePortMedia(portNames) {
+  const names = [...new Set((portNames || []).map((n) => String(n || "").trim()).filter(Boolean))];
+  if (!names.length) return [];
+
+  const mediaIdByName = await resolveCatalogueMediaIds(supabaseGet, names);
+  const mediaMap = await loadMediaMap([...mediaIdByName.values()]);
+  const out = [];
+
+  for (const name of names) {
+    const mediaId = mediaIdByName.get(normaliseEntityKey(name));
+    const media = mediaId ? mediaMap.get(mediaId) : null;
+    if (!media?.public_url) continue;
+    out.push({
+      id: media.id,
+      title: media.title || name,
+      alt_text: media.alt_text || `${name} port`,
+      public_url: media.public_url,
+      media_type: "port",
+      port_name: name,
+      resolved_via: "ports_catalogue",
+      is_active: true
+    });
+  }
+
+  return out;
+}
+
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") return jsonResponse(204, "");
   if (event.httpMethod !== "GET") {
@@ -87,12 +142,18 @@ exports.handler = async function handler(event) {
         `&select=${select}&order=created_at.asc`
     );
 
+    const requestedPorts = parsePortNames(event.queryStringParameters?.ports);
+    const cataloguePortMedia = requestedPorts.length
+      ? await resolveCataloguePortMedia(requestedPorts)
+      : [];
+
     return jsonResponse(200, {
       success: true,
       slug: slug || null,
       destination_name: destinationName,
       destination_media: Array.isArray(destinationMedia) ? destinationMedia : [],
-      port_media: Array.isArray(portMedia) ? portMedia : []
+      port_media: Array.isArray(portMedia) ? portMedia : [],
+      catalogue_port_media: cataloguePortMedia
     });
   } catch (error) {
     console.error("public-destination-media", String(error.message || error).slice(0, 160));

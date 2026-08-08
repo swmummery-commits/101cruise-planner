@@ -233,7 +233,10 @@
     try {
       var payload = await root.DestinationExperienceMedia.loadDestinationMedia(slug, destinationName, {
         source: options.mediaSource === "snapshot" ? "snapshot" : "live",
-        allowSnapshotFallback: !!options.allowSnapshotFallback
+        allowSnapshotFallback: !!options.allowSnapshotFallback,
+        portNames: (current.ports || []).map(function (port) {
+          return port && port.name;
+        }).filter(Boolean)
       });
       var assigned = root.DestinationExperienceMedia.assignDestinationImages(
         slug,
@@ -245,7 +248,8 @@
       current.ports = root.DestinationExperienceMedia.applyPortMedia(
         current.ports || [],
         payload.portMedia || [],
-        destinationName
+        destinationName,
+        payload.cataloguePortMedia || []
       );
       current.mediaSource = payload.source || "media_library_live";
       return current;
