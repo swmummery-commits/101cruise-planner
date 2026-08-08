@@ -9,7 +9,8 @@ const require = createRequire(import.meta.url);
 const {
   findDuplicateCanonicalPorts,
   isSuspiciousCanonicalPortName,
-  assertCanonicalPortNameAllowed
+  assertCanonicalPortNameAllowed,
+  assertChanMayCoordinates
 } = require(path.join(root, "scripts/lib/port-canonical-integrity.cjs"));
 
 assert.throws(() => assertCanonicalPortNameAllowed("April 2028"), /year_or_date/);
@@ -48,8 +49,8 @@ const physicalPorts = [
     hero_media_id: "media-lcb",
     image_status: "AUTO_APPROVED"
   },
-  { canonical_name: "Chan May", country: "Vietnam", hero_media_id: "media-cm", image_status: "AUTO_APPROVED" },
-  { canonical_name: "Da Nang", country: "Vietnam", aliases: ["Hue"], hero_media_id: "media-dn", image_status: "AUTO_APPROVED" },
+  { canonical_name: "Chan May", country: "Vietnam", display_name: "Chan May (Hue), Vietnam", latitude: 16.333444, longitude: 108.013667, aliases: ["Chan May Port"], hero_media_id: "media-cm", image_status: "AUTO_APPROVED" },
+  { canonical_name: "Da Nang", country: "Vietnam", aliases: ["Danang"], hero_media_id: "media-dn", image_status: "AUTO_APPROVED" },
   { canonical_name: "Phu My", country: "Vietnam", aliases: ["Ho Chi Minh City"], hero_media_id: "media-pm", image_status: "AUTO_APPROVED" },
   { canonical_name: "Tokyo", country: "Japan", hero_media_id: "media-tokyo", image_status: "AUTO_APPROVED" },
   { canonical_name: "Yokohama", country: "Japan", aliases: [], hero_media_id: "media-yoko", image_status: "AUTO_APPROVED" },
@@ -67,7 +68,9 @@ const checks = [
   ["Bangkok Port", "Bangkok Port"],
   ["Laem Chabang", "Laem Chabang"],
   ["Chan May", "Chan May"],
+  ["Chan May Port", "Chan May"],
   ["Da Nang", "Da Nang"],
+  ["Danang", "Da Nang"],
   ["Ho Chi Minh City", "Phu My"],
   ["Tokyo", "Tokyo"],
   ["Yokohama", "Yokohama"],
@@ -79,5 +82,16 @@ for (const [query, expected] of checks) {
   const hit = lookupCataloguePort(query, idx, physicalPorts.filter(hasValidPortImage));
   assert.equal(hit?.canonical_name, expected, `${query} resolves to ${expected}`);
 }
+
+for (const badQuery of ["Hue", "Hoi An", "Bangkok"]) {
+  const hit = lookupCataloguePort(badQuery, idx, physicalPorts.filter(hasValidPortImage));
+  assert.equal(hit, null, `${badQuery} must not resolve via display_name destination wording or cross-port alias`);
+}
+
+assertChanMayCoordinates(16.333444, 108.013667);
+assert.throws(
+  () => assertChanMayCoordinates(16.267, 111.324),
+  /outside expected Chân Mây port area/
+);
 
 console.log("test-ports-catalogue-integrity: ok");

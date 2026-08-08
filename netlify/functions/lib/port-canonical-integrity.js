@@ -88,10 +88,24 @@ function assertCanonicalPortNameAllowed(name) {
   }
 }
 
+function assertChanMayCoordinates(latitude, longitude) {
+  const lat = Number(latitude);
+  const lon = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+    throw new Error(`Chan May coordinates must be numeric: ${latitude}, ${longitude}`);
+  }
+  if (lat < 16.2 || lat > 16.45 || lon < 107.8 || lon > 108.2) {
+    throw new Error(
+      `Chan May coordinates outside expected Chân Mây port area: ${latitude}, ${longitude}`
+    );
+  }
+}
+
 module.exports = {
   normalizeIdentity,
   findDuplicateCanonicalPorts,
   assertNoDuplicateCanonicalPorts,
   isSuspiciousCanonicalPortName,
-  assertCanonicalPortNameAllowed
+  assertCanonicalPortNameAllowed,
+  assertChanMayCoordinates
 };

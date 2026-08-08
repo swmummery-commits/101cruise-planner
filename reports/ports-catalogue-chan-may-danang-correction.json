@@ -1,0 +1,41 @@
+{
+  "mode": "apply",
+  "coordinate_source": "Chan May Port JSC (chanmayport.com.vn) and Vietnam Seaports Association: 16°20′00.4″N, 108°00′49.2″E",
+  "chan_may": {
+    "before": {
+      "latitude": 16.267,
+      "longitude": 111.324,
+      "country": "Vietnam",
+      "region": "Southeast Asia",
+      "aliases": [
+        "Chan May Port",
+        "Hue cruise port"
+      ],
+      "image_status": "NO_IMAGE"
+    },
+    "after": {
+      "latitude": 16.333444,
+      "longitude": 108.013667,
+      "aliases": [
+        "Chan May Port"
+      ],
+      "country": "Vietnam",
+      "region": "Southeast Asia",
+      "image_status": "NO_IMAGE"
+    }
+  },
+  "da_nang": {
+    "before": {
+      "aliases": [
+        "Hue",
+        "Hoi An",
+        "Danang"
+      ]
+    },
+    "after": {
+      "aliases": [
+        "Danang"
+      ]
+    }
+  }
+}

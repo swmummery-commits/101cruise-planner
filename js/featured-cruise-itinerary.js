@@ -129,6 +129,13 @@
     return [...new Set(names)];
   }
 
+  function portIdentityHaystacks(port) {
+    const names = [port.canonical_name, port.city, ...aliasList(port)]
+      .map((n) => String(n || "").trim())
+      .filter(Boolean);
+    return [...new Set(names)];
+  }
+
   function formatAutocompleteLabel(port) {
     if (!port) return "";
     if (port.display_name) return String(port.display_name);
@@ -157,6 +164,7 @@
     }
 
     const candidates = portSearchHaystacks(port).map(normalizePortText);
+    const identityCandidates = portIdentityHaystacks(port).map(normalizePortText);
     const canonical = normalizePortText(port.canonical_name);
     const display = normalizePortText(port.display_name);
     const city = normalizePortText(port.city);
@@ -170,9 +178,9 @@
     }
 
     const exactNameHit =
-      candidates.includes(nameNorm) ||
-      candidates.includes(fullNorm) ||
-      (bracketNorm && candidates.includes(bracketNorm));
+      identityCandidates.includes(nameNorm) ||
+      identityCandidates.includes(fullNorm) ||
+      (bracketNorm && identityCandidates.includes(bracketNorm));
 
     const matchKeyEntered = buildMatchKey(parsed.nameCore || enteredPortText, countryEntered || port.country);
     if (port.match_key && matchKeyEntered && port.match_key === matchKeyEntered) {
@@ -189,8 +197,8 @@
       reasons.push("exact_alias_or_city");
     } else if (
       bracketNorm &&
-      (canonical === bracketNorm || candidates.includes(bracketNorm)) &&
-      (nameNorm === city || nameNorm === canonical || candidates.includes(nameNorm))
+      (canonical === bracketNorm || identityCandidates.includes(bracketNorm)) &&
+      (nameNorm === city || nameNorm === canonical || identityCandidates.includes(nameNorm))
     ) {
       // Athens (Piraeus) ↔ Piraeus (Athens)
       score = countryExact || countryMissing ? 88 : 70;
@@ -199,7 +207,7 @@
       nameNorm &&
       (canonical.includes(nameNorm) ||
         nameNorm.includes(canonical) ||
-        candidates.some((c) => c.includes(nameNorm) || nameNorm.includes(c)))
+        identityCandidates.some((c) => c.includes(nameNorm) || nameNorm.includes(c)))
     ) {
       score = countryExact ? 72 : 55;
       reasons.push("partial_name");

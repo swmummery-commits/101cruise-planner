@@ -26,15 +26,33 @@ function nameKeysForLookup(name) {
   return [...keys].filter(Boolean);
 }
 
+function nameKeysForDisplayCatalogue(name) {
+  const raw = String(name || "").trim();
+  if (!raw) return [];
+  const keys = new Set();
+  keys.add(normaliseEntityKey(raw));
+  const beforeParen = raw.replace(/\([^)]*\)/g, " ").trim();
+  if (beforeParen && beforeParen !== raw) keys.add(normaliseEntityKey(beforeParen));
+  const slashParts = raw.split(/\s*\/\s*/);
+  for (const part of slashParts) {
+    const p = part.trim();
+    if (p) keys.add(normaliseEntityKey(p));
+  }
+  return [...keys].filter(Boolean);
+}
+
 function portLookupKeys(portRow) {
   const keys = new Set();
   for (const value of [
     portRow?.canonical_name,
-    portRow?.display_name,
     portRow?.city,
     ...(Array.isArray(portRow?.aliases) ? portRow.aliases : [])
   ]) {
     for (const key of nameKeysForLookup(value)) keys.add(key);
+  }
+  const display = String(portRow?.display_name || "").trim();
+  if (display) {
+    for (const key of nameKeysForDisplayCatalogue(display)) keys.add(key);
   }
   return keys;
 }
@@ -184,6 +202,8 @@ async function resolveCatalogueMediaIds(supabaseGet, portNames) {
 module.exports = {
   PORT_IMAGE_SELECT,
   nameKeysForLookup,
+  nameKeysForDisplayCatalogue,
+  portLookupKeys,
   indexPortsCatalogue,
   lookupCataloguePort,
   resolveCatalogueMediaIds,
