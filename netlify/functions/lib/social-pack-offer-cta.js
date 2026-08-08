@@ -1,7 +1,7 @@
 /**
  * Finalised Social Pack Offer (pricing) + CTA slides.
  * Pricing: one card per cabin — clear destination photo, translucent white pills,
- * strike brochure, angled cabin-type badge, includes list. Public cruise prices only
+ * strike brochure, angled cabin-type badge, slim includes strip. Public cruise prices only
  * (brochure + 101cruise) — never airline / airfare.
  * CTA: League Spartan + bundled Feeling Passionate script artwork PNG + email.
  */
@@ -223,47 +223,58 @@ function greenTick(cx, cy, size = 20) {
 }
 
 /**
- * Includes pill — "INCLUDES" header + green-tick rows. Height scales with items.
- * Each tick+label row is centred independently.
+ * Slim horizontal includes strip — one capsule: INCLUDES ✓ Wi-Fi ✓ Gratuities.
+ * Content-width pill, centred under the price box.
  */
-function includesPill({ x, y, w, items = [] } = {}) {
+function includesStrip({ x, y, w, items = [] } = {}) {
   const list = (items || []).filter(Boolean);
   if (!list.length) return "";
 
-  const headerSize = 26;
-  const rowSize = 24;
-  const rowGap = 44;
-  const topPad = 48;
-  const bottomPad = 36;
-  const h = topPad + headerSize + 18 + list.length * rowGap + bottomPad;
-  const cx = x + w / 2;
-  const headerY = y + topPad;
-  const firstRowY = headerY + 48;
-  const tickSize = 20;
-  const tickGap = 12;
+  const h = 48;
+  const headerSize = 20;
+  const itemSize = 20;
+  const tickSize = 16;
+  const tickGap = 8;
+  const afterHeader = 22;
+  const betweenItems = 26;
+  const padX = 32;
+  const baselineY = y + Math.round(h * 0.64);
 
-  const rows = list
+  const headerW = estimateMontserratWidth("INCLUDES", headerSize);
+  let itemsW = 0;
+  for (let i = 0; i < list.length; i += 1) {
+    itemsW += tickSize + tickGap + estimateMontserratWidth(list[i], itemSize);
+    if (i < list.length - 1) itemsW += betweenItems;
+  }
+  const contentW = headerW + afterHeader + itemsW;
+  const stripW = Math.min(w, contentW + padX * 2);
+  const stripX = x + (w - stripW) / 2;
+  let cursorX = stripX + padX;
+
+  const header = `<text x="${cursorX}" y="${baselineY}" text-anchor="start" fill="#222" font-family="${FAMILY}" font-size="${headerSize}" font-weight="800" letter-spacing="1.4">INCLUDES</text>`;
+  cursorX += headerW + afterHeader;
+
+  const itemParts = list
     .map((item, i) => {
-      const ry = firstRowY + i * rowGap;
-      const textW = estimateMontserratWidth(item, rowSize);
-      const blockW = tickSize + tickGap + textW;
-      const blockLeft = cx - blockW / 2;
-      const tickX = blockLeft + tickSize / 2;
-      const textX = blockLeft + tickSize + tickGap;
-      return `
-        ${greenTick(tickX, ry - 8, tickSize)}
-        <text x="${textX}" y="${ry}" text-anchor="start" fill="#222" font-family="${FAMILY}" font-size="${rowSize}" font-weight="600">${escapeXml(
+      const tickX = cursorX + tickSize / 2;
+      const textX = cursorX + tickSize + tickGap;
+      const block = `
+        ${greenTick(tickX, baselineY - 6, tickSize)}
+        <text x="${textX}" y="${baselineY}" text-anchor="start" fill="#222" font-family="${FAMILY}" font-size="${itemSize}" font-weight="600">${escapeXml(
           item
         )}</text>`;
+      cursorX += tickSize + tickGap + estimateMontserratWidth(item, itemSize);
+      if (i < list.length - 1) cursorX += betweenItems;
+      return block;
     })
     .join("\n");
 
   return `
     <g filter="url(#pillShadow)">
-      <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${PILL_FILL}" fill-opacity="${PILL_OPACITY}"/>
+      <rect x="${stripX}" y="${y}" width="${stripW}" height="${h}" rx="${h / 2}" fill="${PILL_FILL}" fill-opacity="${PILL_OPACITY}"/>
     </g>
-    <text x="${cx}" y="${headerY}" text-anchor="middle" fill="#222" font-family="${FAMILY}" font-size="${headerSize}" font-weight="800" letter-spacing="1.6">INCLUDES</text>
-    ${rows}
+    ${header}
+    ${itemParts}
   `;
 }
 
@@ -402,7 +413,7 @@ function renderOfferSvg(model, offerIndex = 0) {
         priceColor: RED,
         strike: false
       })}
-      ${includesPill({ x: pillX, y: includesY, w: pillW, items: includeItems })}
+      ${includesStrip({ x: pillX, y: includesY, w: pillW, items: includeItems })}
       <g filter="url(#pillShadow)">
         <rect x="${discX}" y="${discY}" width="${discW}" height="40" rx="20" fill="${PILL_FILL}" fill-opacity="${PILL_OPACITY}"/>
       </g>
