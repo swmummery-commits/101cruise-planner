@@ -23,10 +23,11 @@ const {
   cruiseFolderSlug,
   formatAuDateRange,
   formatAuDepartingFull,
-  buildRouteHeadline
+  buildRouteHeadline,
+  stripPortLabel
 } = require("../netlify/functions/lib/social-pack-copy.js");
 const { buildPortList, buildInclusions } = require("../netlify/functions/lib/social-pack-itinerary.js");
-const { buildCaption } = require("../netlify/functions/lib/social-pack-caption.js");
+const { buildCaption, buildShipDisplay } = require("../netlify/functions/lib/social-pack-caption.js");
 const {
   renderMainCruiseSvg,
   renderJourneySvg,
@@ -45,7 +46,7 @@ const {
   renderCruisePack
 } = require("../netlify/functions/lib/social-pack-render.js");
 const { normaliseTemplate } = require("../netlify/functions/lib/social-pack-template.js");
-const { renderPremiumDarkOfferSvg, renderPremiumDarkMainSvg, renderPremiumDarkCtaSvg, resolvePremiumDarkRoute, distributeBenefitRows, measureBenefitsPanel, layoutMainTextGroup, heroPriceFontSize, PANEL_FILL_OPACITY, DISCLAIMER_TEXT } = require("../netlify/functions/lib/social-pack-premium-dark.js");
+const { renderPremiumDarkOfferSvg, renderPremiumDarkMainSvg, renderPremiumDarkCtaSvg, resolvePremiumDarkRoute, distributeBenefitRows, measureBenefitsPanel, layoutMainTextGroup, heroPriceFontSize, offerRouteText, shipLabel, OFFER_ROUTE_FONT_SIZE, OFFER_ROUTE_SIDE_MARGIN, PANEL_FILL_OPACITY, DISCLAIMER_TEXT } = require("../netlify/functions/lib/social-pack-premium-dark.js");
 const { buildSocialPackZip } = require("../netlify/functions/lib/social-pack-zip.js");
 const { assessReadiness } = require("../netlify/functions/lib/social-pack-data.js");
 const {
@@ -298,6 +299,11 @@ async function main() {
   {
     assert(formatAuDepartingFull("2026-08-17") === "DEPARTING 17 AUGUST 2026", "full AU departing");
     assert(buildRouteHeadline("Barcelona, Spain", "Istanbul, Turkey") === "BARCELONA TO ISTANBUL", "route");
+    assert(
+      buildRouteHeadline("Rome, Italy", "Fort Lauderdale (Port Everglades), Florida") === "ROME TO FORT LAUDERDALE",
+      "route strips parenthetical port qualifiers"
+    );
+    assert(stripPortLabel("Fort Lauderdale (Port Everglades), Florida") === "Fort Lauderdale", "stripPortLabel");
     assert(GREEN === "#8DD9BF", "campaign green");
     passed += 1;
   }
@@ -585,7 +591,10 @@ async function main() {
     const adminSrc = fs.readFileSync(path.join(root, "js/admin-social-pack.js"), "utf8");
     assert(/function renderTemplateSelector\(\)/.test(adminSrc), "shared template selector helper");
     assert(/renderTemplateSelector\(\)/.test(adminSrc), "template selector rendered in modal");
-    assert(/Choose a template/.test(adminSrc), "pre-preview template guidance");
+    assert(/showTemplateChoiceToast/.test(adminSrc), "template choice toast on open");
+    assert(/packTemplateChosen/.test(adminSrc), "template must be chosen before preview");
+    assert(/ensureTemplateChosen/.test(adminSrc), "preview blocked until template chosen");
+    assert(/AdminToast\.show/.test(adminSrc), "uses admin toast for template choice");
     assert(!/await previewCruise\(firstReady\.id\)/.test(adminSrc), "no auto-preview before template choice");
 
     const classicOffer = renderOfferSvg(templateModel, 0);
@@ -598,12 +607,19 @@ async function main() {
     assert(pdMain.includes('y="36"') || pdMain.includes("y=\"36\""), "101cruise logo at top");
     assert(pdMain.includes("1286") && pdMain.includes("1162"), "inverted bottom cruise-line tab anchors from footer");
     assert(pdMain.includes(">BARCELONA<") && pdMain.includes(">ISTANBUL<"), "main route endpoints");
+    assert(pdMain.includes(">OCEANIA SIRENA<"), "main slide uses canonical ship display");
+
+    const offerRoute = offerRouteText(templateModel);
+    assert(offerRoute.fontSize <= OFFER_ROUTE_FONT_SIZE, "offer route base size reduced");
+    assert(offerRoute.fontSize < 88, "offer route smaller than main route");
+    assert(OFFER_ROUTE_SIDE_MARGIN >= 96, "offer route keeps wide side margins");
+    assert(heroPriceFontSize("$1,498*") >= 190, "hero price sizing unchanged");
 
     const pdOffer = renderPremiumDarkOfferSvg(templateModel, 0);
     assert(pdOffer.includes("BARCELONA TO ISTANBUL"), "premium dark single-line route");
     assert(pdOffer.includes('font-weight="800"'), "offer route weight matches main");
-    assert(/font-size="(5[2-9]|[6-9]\d|1[0-4]\d)"/.test(pdOffer), "offer route uses large type");
-    assert(heroPriceFontSize("US$1,498") >= 58, "hero price uses larger fit sizing");
+    assert(pdOffer.includes(`font-size="${offerRoute.fontSize}"`), "offer route uses reduced fit sizing");
+    assert(!pdOffer.includes('font-size="88"'), "offer route not main-slide size");
     assert(pdOffer.includes(`fill-opacity="${PANEL_FILL_OPACITY}"`), "benefits panel more transparent");
     assert(pdOffer.includes("$10,498*") || pdOffer.includes("10,498"), "premium dark brochure price");
     assert(pdOffer.includes(GREEN), "premium dark website green");
@@ -615,6 +631,39 @@ async function main() {
     assert(pdOffer.includes("subject to availability."), "disclaimer exact ending");
     assert(pdOffer.includes('stroke="#F80020"'), "red strike-through");
     assert(pdOffer.includes('stroke="#DDE2E8"'), "subtle light divider line");
+    assert(pdOffer.includes(`y="${HEIGHT - 64}"`) && pdOffer.includes(`fill="${GREEN}"`), "offer slide restores green footer band");
+
+    const regentModel = {
+      ...templateModel,
+      lineName: "Regent Seven Seas Cruises",
+      shipName: "Seven Seas Voyager",
+      cruiseLineLogoUrl: "https://example.com/regent.png",
+      cruiseLineLogoDataUri: tinyPngDataUri(),
+      departurePort: "Istanbul, Turkey",
+      arrivalPort: "Trieste, Italy",
+      routeHeadline: "ISTANBUL TO TRIESTE"
+    };
+    assert(shipLabel(regentModel) === "SEVEN SEAS VOYAGER", "ship label uses canonical line+ship rules");
+    assert(!shipLabel(regentModel).includes("OCEANIA"), "no incorrect Oceania prefix on Regent ship");
+    const regentMain = renderPremiumDarkMainSvg(regentModel);
+    assert(regentMain.includes(">SEVEN SEAS VOYAGER<"), "title slide shows correct ship name");
+    assert(!regentMain.includes("OCEANIA SEVEN SEAS"), "title slide rejects mixed line/ship combo");
+    assert(regentMain.includes(regentModel.cruiseLineLogoDataUri), "title slide uses cruise-line logo from model");
+    const celebrityModel = {
+      ...templateModel,
+      lineName: "Celebrity Cruises",
+      shipName: "Celebrity Ascent",
+      departurePort: "Rome, Italy",
+      arrivalPort: "Fort Lauderdale (Port Everglades), Florida"
+    };
+    assert(buildShipDisplay("Oceania Cruises", "Celebrity Ascent") === "Celebrity Ascent", "no cross-line ship prefix");
+    assert(buildShipDisplay("Celebrity Cruises", "Celebrity Ascent") === "Celebrity Ascent", "celebrity ship display");
+    assert(shipLabel(celebrityModel) === "CELEBRITY ASCENT", "title slide celebrity ship without Oceania prefix");
+    const celebrityOffer = renderPremiumDarkOfferSvg(celebrityModel, 0);
+    assert(celebrityOffer.includes("ROME TO FORT LAUDERDALE"), "offer route strips parenthetical port text");
+    assert(!celebrityOffer.includes("PORT EVERGLADES"), "offer route omits bracketed qualifier");
+    const pdSrc = fs.readFileSync(path.join(root, "netlify/functions/lib/social-pack-premium-dark.js"), "utf8");
+    assert(!/Regent\.png|Oceania\.png|hard-code/i.test(pdSrc), "premium dark does not hard-code cruise-line logos");
 
     const oneItem = renderPremiumDarkOfferSvg({ ...templateModel, inclusions: ["Wi-Fi"] }, 0);
     assert(measureBenefitsPanel(["Wi-Fi"]).height < 180, "one inclusion panel is compact");

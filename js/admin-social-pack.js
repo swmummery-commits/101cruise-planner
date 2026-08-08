@@ -22,6 +22,17 @@
   /** @type {Record<string, Array<{id:string}>>} full image pools for Next/Previous */
   let candidateCache = {};
   let lastDownloadUrl = null;
+  let templateToastShown = false;
+  let packTemplateChosen = false;
+
+  function ensureTemplateChosen() {
+    if (packTemplateChosen) return true;
+    message = "Choose Classic or Premium Dark before generating previews.";
+    messageTone = "error";
+    showTemplateChoiceToast();
+    rerender();
+    return false;
+  }
 
   function esc(value) {
     return typeof global.esc === "function"
@@ -98,10 +109,12 @@
     socialMediaId = null;
     treatment = "soft";
     packTemplate = "classic";
+    packTemplateChosen = false;
     imagePickerOpen = false;
     roomSelections = {};
     candidateCache = {};
     lastDownloadUrl = null;
+    templateToastShown = false;
     message = "Checking cruise readiness…";
     messageTone = "";
     cruises = (issueCruises || []).map((row) => ({
@@ -118,6 +131,7 @@
       readiness: { status: "pending", label: "Checking…" }
     }));
     rerender();
+    showTemplateChoiceToast();
 
     const run = async () => {
     try {
@@ -151,9 +165,7 @@
         return next;
       });
       const firstReady = cruises.find((c) => c.selected && c.readiness?.status !== "blocked");
-      message = firstReady
-        ? "Choose a template, then click Preview on a cruise."
-        : "No cruises are ready to generate yet.";
+      message = firstReady ? "" : "No cruises are ready to generate yet.";
       messageTone = firstReady ? "" : "error";
       busy = false;
       rerender();
@@ -178,6 +190,7 @@
   }
 
   async function previewCruise(id) {
+    if (!ensureTemplateChosen()) return;
     if (busy && previewId === id && preview) return;
     if (previewId !== id) {
       socialMediaId = null;
@@ -252,9 +265,42 @@
     await previewCruise(previewId);
   }
 
+  function showTemplateChoiceToast() {
+    if (templateToastShown || !open || busy) return;
+    if (typeof global.AdminToast?.show !== "function") return;
+    templateToastShown = true;
+    global.AdminToast.show("Choose a Social Pack template before previewing or downloading.", "info", {
+      force: true,
+      durationMs: 0,
+      actions: [
+        {
+          label: "Classic",
+          onClick: () => {
+            packTemplate = "classic";
+            packTemplateChosen = true;
+            message = "";
+            messageTone = "";
+            rerender();
+          }
+        },
+        {
+          label: "Premium Dark",
+          onClick: () => {
+            packTemplate = "premium_dark";
+            packTemplateChosen = true;
+            message = "";
+            messageTone = "";
+            rerender();
+          }
+        }
+      ]
+    });
+  }
+
   async function setPackTemplate(value) {
     packTemplate = String(value || "classic").toLowerCase();
     if (!["classic", "premium_dark"].includes(packTemplate)) packTemplate = "classic";
+    packTemplateChosen = true;
     if (previewId) await regeneratePreview();
     else rerender();
   }
@@ -411,6 +457,7 @@
   }
 
   async function downloadZip() {
+    if (!ensureTemplateChosen()) return;
     const ids = selectedIds();
     if (!ids.length || busy) return;
     busy = true;
@@ -519,6 +566,7 @@
   }
 
   async function downloadThisCruise() {
+    if (!ensureTemplateChosen()) return;
     if (!previewId || busy) return;
     busy = true;
     message = "Preparing your social pack…";
@@ -582,6 +630,8 @@
     roomSelections = {};
     candidateCache = {};
     lastDownloadUrl = null;
+    templateToastShown = false;
+    packTemplateChosen = false;
     message = "";
     if (typeof global.renderAdmin === "function") global.renderAdmin();
   }
@@ -591,6 +641,7 @@
   }
 
   function stepPreview(delta) {
+    if (!ensureTemplateChosen()) return;
     const ready = selectedReady();
     if (!ready.length) return;
     socialMediaId = null;
@@ -699,7 +750,11 @@
   }
 
   function renderTemplateSelector() {
+    const prompt = packTemplateChosen
+      ? ""
+      : `<p class="admin-small admin-error">Choose a template before previewing or downloading.</p>`;
     return `
+      ${prompt}
       <div class="social-pack-treatment" role="group" aria-label="Pack template">
         <span class="admin-small">Template</span>
         ${[
@@ -709,7 +764,7 @@
           .map(
             ([value, label]) =>
               `<button type="button" class="media-filter-chip ${
-                packTemplate === value ? "is-active" : ""
+                packTemplateChosen && packTemplate === value ? "is-active" : ""
               }" onclick="SocialPackAdmin.setPackTemplate('${value}')" ${busy ? "disabled" : ""}>${label}</button>`
           )
           .join("")}
@@ -831,7 +886,7 @@
                       <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(-1)" ${busy ? "disabled" : ""}>Previous cruise</button>
                       <button type="button" class="admin-button secondary" onclick="SocialPackAdmin.stepPreview(1)" ${busy ? "disabled" : ""}>Next cruise</button>
                     </div>`
-                  : `<p class="admin-muted">${busy ? "Creating your social graphics…" : "Choose a template above, then click Preview on a cruise."}</p>`
+                  : `<p class="admin-muted">${busy ? "Creating your social graphics…" : "Click Preview on a cruise when ready."}</p>`
               }
             </div>
           </div>

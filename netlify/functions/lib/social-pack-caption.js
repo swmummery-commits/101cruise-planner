@@ -100,6 +100,29 @@ function buildShipDisplay(lineName, shipName) {
   if (shipLower.includes(brandLower) || shipLower.startsWith(brandLower.split(/\s+/)[0])) {
     return ship;
   }
+  // Ship already names a different cruise line — do not prepend the record's line brand.
+  const foreignBrands = [
+    "celebrity",
+    "regent",
+    "princess",
+    "holland america",
+    "cunard",
+    "seabourn",
+    "silversea",
+    "viking",
+    "norwegian",
+    "carnival",
+    "royal caribbean",
+    "msc",
+    "oceania",
+    "azamara",
+    "windstar"
+  ];
+  for (const foreign of foreignBrands) {
+    if (shipLower.includes(foreign) && !brandLower.includes(foreign.split(/\s+/)[0])) {
+      return ship;
+    }
+  }
   return `${brand} ${ship}`;
 }
 

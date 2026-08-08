@@ -128,15 +128,16 @@ function formatNightsLabel(nights) {
  * Deterministic route headline from departure + arrival ports.
  * BARCELONA TO ISTANBUL
  */
+function stripPortLabel(value) {
+  return normaliseWhitespace(String(value || ""))
+    .replace(/\s*\([^)]*\)/g, "")
+    .replace(/,.*$/, "")
+    .trim();
+}
+
 function buildRouteHeadline(departurePort, arrivalPort) {
-  const dep = normaliseWhitespace(departurePort)
-    .replace(/,.*$/, "")
-    .trim()
-    .toUpperCase();
-  const arr = normaliseWhitespace(arrivalPort)
-    .replace(/,.*$/, "")
-    .trim()
-    .toUpperCase();
+  const dep = stripPortLabel(departurePort).toUpperCase();
+  const arr = stripPortLabel(arrivalPort).toUpperCase();
   if (dep && arr) return `${dep} TO ${arr}`;
   return dep || arr || "";
 }
@@ -189,6 +190,7 @@ module.exports = {
   formatDuration,
   formatNightsLabel,
   buildRouteHeadline,
+  stripPortLabel,
   buildAboardLine,
   slugifyPart,
   cruiseFolderSlug,

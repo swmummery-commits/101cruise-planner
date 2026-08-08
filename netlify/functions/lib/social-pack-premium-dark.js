@@ -3,7 +3,8 @@
  * Classic main/offer/CTA remain untouched in their own modules.
  */
 
-const { escapeXml, buildRouteHeadline } = require("./social-pack-copy");
+const { escapeXml, buildRouteHeadline, stripPortLabel } = require("./social-pack-copy");
+const { buildShipDisplay } = require("./social-pack-caption");
 const { FAMILY, FAMILY_CTA } = require("./social-pack-fonts");
 const { GREEN } = require("./social-pack-svg");
 const { displayPrice, loadGetYourCruiseOnDataUri } = require("./social-pack-offer-cta");
@@ -21,6 +22,9 @@ const RED = "#F80020";
 const LIGHT_GREY = "#C8CDD4";
 const DIVIDER_STROKE = "#DDE2E8";
 const ROUTE_FONT_SIZE = 88;
+const OFFER_ROUTE_FONT_SIZE = Math.round(ROUTE_FONT_SIZE * 0.82);
+const OFFER_ROUTE_MIN_SIZE = Math.round(OFFER_ROUTE_FONT_SIZE * 0.72);
+const OFFER_ROUTE_SIDE_MARGIN = 96;
 const ROUTE_FONT_WEIGHT = 800;
 const BROCHURE_FONT_SIZE = 44;
 const PANEL_FILL_OPACITY = 0.72;
@@ -114,15 +118,13 @@ function resolvePremiumDarkRoute(model) {
 
   const ports = Array.isArray(model.ports) ? model.ports.filter(Boolean) : [];
   if (ports.length >= 2) {
-    const origin = String(ports[0]).replace(/,.*$/, "").trim();
-    const destination = String(ports[ports.length - 1])
-      .replace(/,.*$/, "")
-      .trim();
+    const origin = stripPortLabel(ports[0]);
+    const destination = stripPortLabel(ports[ports.length - 1]);
     const fromItinerary = buildRouteHeadline(origin, destination);
     if (fromItinerary) return fromItinerary;
   }
   if (ports.length === 1) {
-    return buildRouteHeadline(String(ports[0]).replace(/,.*$/, "").trim(), "");
+    return buildRouteHeadline(stripPortLabel(ports[0]), "");
   }
 
   const existing = String(model.routeHeadline || "").trim().toUpperCase();
@@ -148,6 +150,18 @@ function routeText(model) {
   let fontSize = ROUTE_FONT_SIZE;
   const maxW = W - 72;
   while (fontSize >= 52 && estimateMontserratWidth(raw, fontSize) > maxW) {
+    fontSize -= 2;
+  }
+  return { text: raw, fontSize, fontWeight: ROUTE_FONT_WEIGHT };
+}
+
+/** Offer-slide route — smaller than main, with wider side margins. */
+function offerRouteText(model) {
+  const raw = resolvePremiumDarkRoute(model);
+  if (!raw) return { text: "", fontSize: OFFER_ROUTE_FONT_SIZE };
+  let fontSize = OFFER_ROUTE_FONT_SIZE;
+  const maxW = W - OFFER_ROUTE_SIDE_MARGIN * 2;
+  while (fontSize >= OFFER_ROUTE_MIN_SIZE && estimateMontserratWidth(raw, fontSize) > maxW) {
     fontSize -= 2;
   }
   return { text: raw, fontSize, fontWeight: ROUTE_FONT_WEIGHT };
@@ -193,8 +207,8 @@ function nightsDatesLine(model, { x = 540, y, size = 36 } = {}) {
 }
 
 function shipLabel(model) {
-  const ship = String(model.shipName || "OCEANIA SIRENA").toUpperCase();
-  return /oceania/i.test(ship) ? ship : `OCEANIA ${ship}`.replace(/\s+/g, " ").trim();
+  const display = buildShipDisplay(model.lineName, model.shipName);
+  return String(display || model.shipName || "").toUpperCase();
 }
 
 function shipLine(model, { x = 540, y, size = 36 } = {}) {
@@ -570,6 +584,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
       ${brandDivider(210)}
       <text x="540" y="480" text-anchor="middle" fill="${WHITE}" font-family="${FAMILY}" font-size="36" font-weight="700">ASK PAUL FOR HIS BEST PRICE</text>
       <text x="540" y="540" text-anchor="middle" fill="${LIGHT_GREY}" font-family="${FAMILY}" font-size="22" font-weight="500">Public pricing will appear when available</text>
+      ${greenFooter()}
     `;
     return frame(body);
   }
@@ -585,7 +600,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
   const room = offer.roomLabelDisplay || offer.roomLabel || "";
   const includeItems = listInclusionItems(model);
 
-  const panelBottomMargin = 52;
+  const panelBottomMargin = FOOTER_H + 12;
   const panelLayout = measureBenefitsPanel(includeItems);
   const panelY = panelLayout.height
     ? H - panelBottomMargin - panelLayout.height
@@ -594,7 +609,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
 
   const logoY = 36;
   const dividerY = 198;
-  const route = routeText(model);
+  const route = offerRouteText(model);
   const stack = layoutOfferStack({
     route,
     showBrochure,
@@ -623,6 +638,7 @@ function renderPremiumDarkOfferSvg(model, offerIndex = 0) {
     ${cruise101PriceBlock(price, stack.priceY, { fontSize: stack.heroPx })}
     ${cabinPill(room, stack.cabinY)}
     ${benefits.svg}
+    ${greenFooter()}
   `;
   return frame(body);
 }
@@ -701,6 +717,10 @@ module.exports = {
   distributeBenefitRows,
   measureBenefitsPanel,
   heroPriceFontSize,
+  offerRouteText,
+  shipLabel,
+  OFFER_ROUTE_FONT_SIZE,
+  OFFER_ROUTE_SIDE_MARGIN,
   layoutMainTextGroup,
   layoutOfferStack,
   DISCLAIMER_TEXT,

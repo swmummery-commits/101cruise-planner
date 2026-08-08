@@ -1,6 +1,4 @@
-/**
- * Itinerary / port list helpers for Social Pack Slide 2.
- */
+const { stripPortLabel } = require("./social-pack-copy");
 
 function parseItinerarySummary(summary) {
   return String(summary || "")
@@ -22,7 +20,7 @@ function portsFromStops(stops) {
     return ao - bo;
   });
   return ordered
-    .map((s) => String(s.port_label || s.name || s.port_name || "").trim())
+    .map((s) => stripPortLabel(s.port_label || s.name || s.port_name || ""))
     .filter(Boolean);
 }
 
@@ -34,14 +32,16 @@ function buildPortList({ stops, itinerarySummary, departurePort, arrivalPort, ma
   let ports = portsFromStops(stops);
   if (!ports.length) ports = parseItinerarySummary(itinerarySummary);
 
-  const dep = String(departurePort || "").trim();
-  const arr = String(arrivalPort || "").trim();
-  if (dep && (!ports.length || ports[0].toLowerCase() !== dep.toLowerCase())) {
+  const dep = stripPortLabel(departurePort);
+  const arr = stripPortLabel(arrivalPort);
+  if (dep && (!ports.length || stripPortLabel(ports[0]).toLowerCase() !== dep.toLowerCase())) {
     ports = [dep, ...ports];
   }
-  if (arr && (!ports.length || ports[ports.length - 1].toLowerCase() !== arr.toLowerCase())) {
+  if (arr && (!ports.length || stripPortLabel(ports[ports.length - 1]).toLowerCase() !== arr.toLowerCase())) {
     ports = [...ports, arr];
   }
+
+  ports = ports.map((p) => stripPortLabel(p)).filter(Boolean);
 
   // Deduplicate consecutive duplicates only
   const deduped = [];
