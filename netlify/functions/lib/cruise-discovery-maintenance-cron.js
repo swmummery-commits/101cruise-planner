@@ -153,6 +153,11 @@ async function executeWeeklyMaintenance({
       run_record_id: dbRun?.id,
       dry_run: dryRun,
       summary,
+      write_result: result.write_result || null,
+      rollback_manifest: result.rollback_manifest || null,
+      rollback_result: result.rollback_result || null,
+      simulation: result.simulation || null,
+      zero_change_apply: result.zero_change_apply === true,
       elapsed_ms: Date.now() - started
     };
   } catch (error) {

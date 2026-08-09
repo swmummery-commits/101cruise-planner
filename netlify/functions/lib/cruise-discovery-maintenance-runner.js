@@ -62,6 +62,8 @@ const {
 const { buildPrincessReconciliationSummary } = require("./princess-reconciliation-summary");
 
 const MAX_WRITES_PER_BATCH = 100;
+const MAX_WEEKLY_WRITES = 30;
+const WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP = "weekly_change_volume_exceeds_initial_cap";
 
 async function loadActiveProductionTotal(supabase, cruiseLineId, lineSlug) {
   if (lineSlug === "celebrity-cruises") {
@@ -764,8 +766,56 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       return { ok: false, blocked: true, failed: true, reason: qualityGate.failures.join("; "), summary, simulation };
     }
 
+    if (!reconciliation.reconciliation_arithmetic_ok) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: true,
+        reason: "reconciliation_arithmetic_failed",
+        summary,
+        simulation
+      };
+    }
+
     if (dryRun || !performWrites) {
       return { ok: true, dry_run: true, summary, manifest, simulation };
+    }
+
+    const isWeeklyMaintenanceWrite =
+      (context.writeMode || context.write_mode || "weekly_maintenance") === "weekly_maintenance";
+    const combinedProposed = proposedInserts.length + proposedUpdates.length;
+    const effectiveMaxWrites = isWeeklyMaintenanceWrite
+      ? Math.min(maxWrites, MAX_WEEKLY_WRITES)
+      : maxWrites;
+    summary.effective_max_writes = effectiveMaxWrites;
+
+    if (isWeeklyMaintenanceWrite && combinedProposed > MAX_WEEKLY_WRITES) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: true,
+        reason: WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP,
+        summary: {
+          ...summary,
+          weekly_write_cap: MAX_WEEKLY_WRITES,
+          combined_proposed_changes: combinedProposed,
+          proposed_inserts: proposedInserts.length,
+          proposed_updates: proposedUpdates.length
+        },
+        simulation
+      };
+    }
+
+    if (combinedProposed === 0) {
+      summary.inserts = 0;
+      summary.updates = 0;
+      summary.failed_writes = 0;
+      summary.recovered_after_fetch_failure = 0;
+      summary.write_attempts = 0;
+      summary.duplicate_skips = unchanged.length;
+      summary.inventory_changed = false;
+      summary.zero_change_apply = true;
+      return { ok: true, dry_run: false, zero_change_apply: true, summary, manifest, simulation };
     }
 
     const lockKey = weeklyLockKey(lineSlug);
@@ -795,9 +845,9 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       });
 
     const writeResult = await applyPrincessBatchWrites({
-      products: writeProducts.slice(0, maxWrites),
+      products: writeProducts.slice(0, effectiveMaxWrites),
       cruiseLine: line,
-      maxWrites,
+      maxWrites: effectiveMaxWrites,
       runId,
       supabase: sb,
       destinations,
@@ -836,8 +886,9 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     return {
       ok: writeResult.stats?.failed === 0,
       summary,
-      write_result: writeResult.stats,
+      write_result: writeResult,
       manifest,
+      rollback_result: rollback || null,
       rollback_manifest: rollback?.manifest || null
     };
   } finally {
@@ -853,5 +904,7 @@ module.exports = {
   releaseMaintenanceLock,
   evaluateMaintenanceQualityGate,
   findSourceAbsentActive,
-  MAX_WRITES_PER_BATCH
+  MAX_WRITES_PER_BATCH,
+  MAX_WEEKLY_WRITES,
+  WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP
 };

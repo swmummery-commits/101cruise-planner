@@ -18,6 +18,10 @@ const workflowSrc = fs.readFileSync(
   path.join(root, ".github/workflows/princess-weekly-maintenance.yml"),
   "utf8"
 );
+const applyWorkflowSrc = fs.readFileSync(
+  path.join(root, ".github/workflows/princess-weekly-maintenance-apply.yml"),
+  "utf8"
+);
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 
 let passed = 0;
@@ -48,23 +52,32 @@ test("2. writes_performed = 0 in report builder", () => {
   if (report.writes_performed !== 0) throw new Error("writes_performed must be 0");
 });
 
-test("3. apply is blocked in Phase A", () => {
+test("3. --apply requires exact CLI confirmation", () => {
   let threw = false;
   try {
-    cli.assertPhaseAApplyBlocked({ apply: true });
+    cli.assertWeeklyApplyAllowed(
+      { apply: true, confirm: "WRONG", maxWrites: 30 },
+      { PRINCESS_WEEKLY_RECONCILIATION_ENABLED: "true", RUNNER_LABELS: "self-hosted,princess-local-mac" }
+    );
   } catch (error) {
-    threw = error.code === cli.PHASE_A_APPLY_BLOCKED;
+    threw = error.code === "weekly_apply_confirmation_required";
   }
-  if (!threw) throw new Error("apply must be blocked");
-  if (!scriptSrc.includes("assertPhaseAApplyBlocked")) throw new Error("script must block apply");
+  if (!threw) throw new Error("apply must require exact confirmation token");
 });
 
-test("4. weekly write flag cannot enable apply path in Phase A script", () => {
-  if (scriptSrc.includes("performWrites: true")) throw new Error("script must not perform writes");
-  if (scriptSrc.includes("PRINCESS_WEEKLY_RECONCILIATION_ENABLED=true")) {
-    throw new Error("script must not enable weekly flag");
+test("4. weekly flag alone cannot trigger writes without apply contract", () => {
+  if (!scriptSrc.includes("assertWeeklyApplyAllowed")) throw new Error("script must validate apply contract");
+  if (!scriptSrc.includes('dryRun: true')) throw new Error("dry-run path must remain");
+  let threw = false;
+  try {
+    cli.assertWeeklyApplyAllowed(
+      { apply: true, confirm: cli.WEEKLY_APPLY_CONFIRMATION_TOKEN, maxWrites: 30 },
+      { PRINCESS_WEEKLY_RECONCILIATION_ENABLED: "false", RUNNER_LABELS: "self-hosted,princess-local-mac" }
+    );
+  } catch (error) {
+    threw = error.code === "princess_weekly_reconciliation_disabled";
   }
-  if (!scriptSrc.includes("dryRun: true")) throw new Error("must remain dry run");
+  if (!threw) throw new Error("weekly flag alone must not enable apply");
 });
 
 test("5. quality-gate success => exit 0", () => {
@@ -328,6 +341,292 @@ test("23. reconciliation flags false when arithmetic fails", () => {
   if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) {
     throw new Error("expected non-zero exit when reconciliation arithmetic fails");
   }
+});
+
+test("24. apply requires weekly flag true", () => {
+  let threw = false;
+  try {
+    cli.assertWeeklyApplyAllowed(
+      { apply: true, confirm: cli.WEEKLY_APPLY_CONFIRMATION_TOKEN, maxWrites: 10 },
+      { RUNNER_LABELS: "self-hosted,princess-local-mac" }
+    );
+  } catch (error) {
+    threw = error.code === "princess_weekly_reconciliation_disabled";
+  }
+  if (!threw) throw new Error("apply must require weekly flag");
+});
+
+test("25. incorrect workflow confirmation blocks job", () => {
+  if (!cli.verifyWorkflowConfirmationInput("WRONG")) {
+    /* expected */
+  } else {
+    throw new Error("wrong confirmation must fail");
+  }
+  if (!cli.verifyWorkflowConfirmationInput("PRINCESS-WEEKLY-MAINTENANCE")) {
+    throw new Error("correct confirmation must pass");
+  }
+  if (!applyWorkflowSrc.includes('if [ "${{ github.event.inputs.confirmation }}" != "PRINCESS-WEEKLY-MAINTENANCE" ]')) {
+    throw new Error("apply workflow must verify confirmation before maintenance");
+  }
+});
+
+test("26. local/self-hosted apply accepted", () => {
+  cli.assertWeeklyApplyEnvironment({ RUNNER_LABELS: "self-hosted,princess-local-mac", GITHUB_ACTIONS: "true" });
+  cli.assertWeeklyApplyEnvironment({});
+});
+
+test("27. GitHub-hosted apply rejected", () => {
+  let threw = false;
+  try {
+    cli.assertWeeklyApplyEnvironment({
+      GITHUB_ACTIONS: "true",
+      RUNNER_OS: "ubuntu-latest",
+      RUNNER_LABELS: "ubuntu-latest"
+    });
+  } catch (error) {
+    threw = error.code === "weekly_apply_cloud_hosted_forbidden";
+  }
+  if (!threw) throw new Error("cloud hosted must be rejected");
+});
+
+test("28. Netlify apply rejected", () => {
+  let threw = false;
+  try {
+    cli.assertWeeklyApplyEnvironment({ NETLIFY: "true" });
+  } catch (error) {
+    threw = error.code === "weekly_apply_netlify_forbidden";
+  }
+  if (!threw) throw new Error("netlify must be rejected");
+});
+
+test("29. max weekly cap is 30", () => {
+  if (cli.MAX_WEEKLY_WRITES !== 30) throw new Error("cap must be 30");
+  if (cli.resolveEffectiveWeeklyMaxWrites(30) !== 30) throw new Error("30 must be allowed");
+});
+
+test("30. user cannot raise cap above 30", () => {
+  if (cli.resolveEffectiveWeeklyMaxWrites(100) !== 30) throw new Error("100 must cap to 30");
+  if (cli.resolveEffectiveWeeklyMaxWrites(31) !== 30) throw new Error("31 must cap to 30");
+});
+
+test("31. exactly 30 proposed writes may proceed", () => {
+  const cap = cli.assessWeeklyChangeVolumeCap(20, 10);
+  if (!cap.ok || cap.combined_proposed_changes !== 30) throw new Error("30 combined must pass cap");
+});
+
+test("32. 31 proposed writes stop with zero-write cap assessment", () => {
+  const cap = cli.assessWeeklyChangeVolumeCap(20, 11);
+  if (cap.ok || cap.reason !== cli.WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP) {
+    throw new Error("31 combined must fail cap");
+  }
+  if (cap.cap !== 30) throw new Error("cap must be reported as 30");
+});
+
+test("33. inserts + updates share the 30 cap", () => {
+  const cap = cli.assessWeeklyChangeVolumeCap(15, 16);
+  if (cap.ok) throw new Error("15+16 must exceed cap");
+});
+
+test("34. zero-change apply completes successfully", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: cli.classifyExecutionEnvironment({}, { applyMode: true }),
+    executeResult: {
+      success: true,
+      summary: {
+        quality_gate: { passed: true },
+        reconciliation_arithmetic_ok: true,
+        proposed_inserts: 0,
+        proposed_updates: 0,
+        zero_change_apply: true
+      }
+    },
+    maintenanceResult: { summary: { quality_gate: { passed: true }, zero_change_apply: true }, ok: true },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 },
+    writeAccounting: { accounting_ok: true, attempted: 0, committed: 0, genuinely_failed: 0, unchanged: 1503, source_absent_active: 0 },
+    manifestValidation: { ok: true, zero_writes: true, manifest_record_count: 0 },
+    postWriteReconciliation: { ok: true, skipped: true },
+    postWriteVerification: { ok: true, skipped: true }
+  });
+  if (cli.resolveWeeklyMaintenanceExitCode(report) !== 0) throw new Error("zero-change apply must exit 0");
+  if (report.writes?.zero_change_apply !== true) throw new Error("must mark zero_change_apply");
+});
+
+test("35. zero-change apply performs zero writes", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: true, summary: { quality_gate: { passed: true }, reconciliation_arithmetic_ok: true, zero_change_apply: true } },
+    maintenanceResult: { ok: true, summary: { quality_gate: { passed: true }, zero_change_apply: true } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 },
+    writeAccounting: { accounting_ok: true, attempted: 0, committed: 0, genuinely_failed: 0, unchanged: 1503, source_absent_active: 0 },
+    manifestValidation: { ok: true, zero_writes: true, manifest_record_count: 0 }
+  });
+  if (report.writes_performed !== 0) throw new Error("zero writes required");
+});
+
+test("36. quality gate failure blocks apply", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: false, summary: { quality_gate: { passed: false, failures: ["ship_resolution_below_98pct"] } } },
+    maintenanceResult: { ok: false, summary: { quality_gate: { passed: false } } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 }
+  });
+  if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) throw new Error("QG failure must non-zero");
+});
+
+test("37. lock failure blocks apply", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: false, blocked: true, reason: "maintenance_lock_held" },
+    maintenanceResult: { blocked: true, reason: "maintenance_lock_held" },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 }
+  });
+  if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) throw new Error("lock block must non-zero");
+});
+
+test("38. manifest count must equal commits", () => {
+  const summary = { inserts: 2, updates: 1, rollback_manifest_id: "abc" };
+  const manifest = {
+    inserted: [{ discovered_cruise_id: "a", official_sailing_id: "x" }],
+    updated: [{ discovered_cruise_id: "b", official_sailing_id: "y" }],
+    inserted_record_ids: ["a"],
+    updated_record_ids: ["b"]
+  };
+  const ok = cli.validateRollbackManifestIntegrity({ rollbackResult: { manifest }, summary, writeResult: {} });
+  if (ok.ok) throw new Error("2 entries != 3 commits must fail");
+  const good = cli.validateRollbackManifestIntegrity({
+    rollbackResult: {
+      manifest: {
+        inserted: [
+          { discovered_cruise_id: "a", official_sailing_id: "x" },
+          { discovered_cruise_id: "b", official_sailing_id: "y" }
+        ],
+        updated: [{ discovered_cruise_id: "c", official_sailing_id: "z" }],
+        inserted_record_ids: ["a", "b"],
+        updated_record_ids: ["c"]
+      }
+    },
+    summary,
+    writeResult: {}
+  });
+  if (!good.ok || good.manifest_record_count !== 3) throw new Error("matching manifest must pass");
+});
+
+test("39. post-write failure blocks success", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: true, summary: { quality_gate: { passed: true }, reconciliation_arithmetic_ok: true, inserts: 1, updates: 0, write_attempts: 1 } },
+    maintenanceResult: { ok: true, summary: { inserts: 1, updates: 0, write_attempts: 1, quality_gate: { passed: true } } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1504 },
+    writeAccounting: { accounting_ok: true, attempted: 1, committed: 1, genuinely_failed: 0, unchanged: 0, source_absent_active: 0 },
+    manifestValidation: { ok: true, manifest_record_count: 1 },
+    postWriteReconciliation: { ok: false, reason: "post_write_idempotency_anomaly" }
+  });
+  if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) throw new Error("post-write failure must non-zero");
+});
+
+test("40. idempotency anomaly blocks success", () => {
+  const anomaly = cli.validatePostWriteReconciliation({
+    reconciliation_arithmetic_ok: true,
+    all_active_recognised_in_eligible_source: true,
+    proposed_inserts: 2,
+    proposed_updates: 0
+  });
+  if (anomaly.ok) throw new Error("idempotency anomaly must fail");
+});
+
+test("41. apply workflow has workflow_dispatch only", () => {
+  if (!applyWorkflowSrc.includes("workflow_dispatch")) throw new Error("missing workflow_dispatch");
+});
+
+test("42. apply workflow has NO schedule", () => {
+  if (/^\s*schedule:/m.test(applyWorkflowSrc) || applyWorkflowSrc.includes("cron:")) {
+    throw new Error("apply workflow must not include schedule/cron");
+  }
+});
+
+test("43. apply workflow targets self-hosted princess-local-mac", () => {
+  if (!applyWorkflowSrc.includes("self-hosted")) throw new Error("missing self-hosted");
+  if (!applyWorkflowSrc.includes("princess-local-mac")) throw new Error("missing princess-local-mac");
+});
+
+test("44. apply workflow requires confirmation input", () => {
+  if (!applyWorkflowSrc.includes("confirmation:")) throw new Error("missing confirmation input");
+  if (!applyWorkflowSrc.includes("PRINCESS-WEEKLY-MAINTENANCE")) throw new Error("missing confirmation token");
+});
+
+test("45. apply workflow uses weekly flag only in apply step", () => {
+  if (!applyWorkflowSrc.includes('PRINCESS_WEEKLY_RECONCILIATION_ENABLED: "true"')) {
+    throw new Error("apply step must set weekly flag");
+  }
+  if (/PRINCESS_DISCOVERY_WRITE_ENABLED:\s*"true"/.test(applyWorkflowSrc)) {
+    throw new Error("apply must not use discovery write flag");
+  }
+  const dryTrueCount = (workflowSrc.match(/PRINCESS_WEEKLY_RECONCILIATION_ENABLED:\s*"true"/g) || []).length;
+  if (dryTrueCount !== 0) throw new Error("dry-run workflow must not enable weekly flag");
+});
+
+test("46. dry-run workflow remains unchanged/read-only", () => {
+  if (workflowSrc.includes("--apply")) throw new Error("dry-run workflow must not include apply");
+  if (/PRINCESS_WEEKLY_RECONCILIATION_ENABLED:\s*"true"/.test(workflowSrc)) {
+    throw new Error("dry-run workflow must keep weekly flag false");
+  }
+  if (!workflowSrc.includes("princess:weekly-maintenance")) throw new Error("dry-run command must remain");
+});
+
+test("47. apply and dry-run share concurrency group", () => {
+  if (!applyWorkflowSrc.includes("group: princess-weekly-maintenance")) throw new Error("apply missing concurrency group");
+  if (!workflowSrc.includes("group: princess-weekly-maintenance")) throw new Error("dry-run missing concurrency group");
+});
+
+test("48. write accounting attempted = committed + failed", () => {
+  const accounting = cli.extractWriteAccounting(
+    { inserts: 3, updates: 2, failed_writes: 1, write_attempts: 6 },
+    { inserted: 3, updated: 2, failed: 1 }
+  );
+  if (!accounting.accounting_ok) throw new Error("valid accounting must pass");
+  if (accounting.attempted !== 6 || accounting.committed !== 5 || accounting.genuinely_failed !== 1) {
+    throw new Error("accounting fields mismatch");
+  }
+});
+
+test("49. cap exceeded apply report fails", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: {
+      success: false,
+      reason: cli.WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP,
+      summary: { quality_gate: { passed: true }, reconciliation_arithmetic_ok: true, proposed_inserts: 20, proposed_updates: 11 }
+    },
+    maintenanceResult: { ok: false, reason: cli.WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 },
+    writeCapAssessment: cli.assessWeeklyChangeVolumeCap(20, 11)
+  });
+  if (report.status !== "failed") throw new Error("cap exceeded must fail");
+  if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) throw new Error("cap exceeded must non-zero exit");
 });
 
 console.log(`\ntest-princess-weekly-maintenance: ${passed} passed`);

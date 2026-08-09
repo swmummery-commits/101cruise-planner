@@ -1,31 +1,59 @@
 /**
- * Princess weekly maintenance CLI helpers (Phase A: dry-run only).
+ * Princess weekly maintenance CLI helpers (Phase A dry-run + Phase C manual apply).
  */
 
 const fs = require("fs");
 const path = require("path");
 const { buildPrincessReconciliationSummary } = require("./princess-reconciliation-summary");
+const { buildRollbackManifestFromWriteResult } = require("./cruise-discovery-maintenance-manifests");
 
 const PHASE_A_APPLY_BLOCKED = "weekly_apply_not_enabled_in_phase_a";
+const WEEKLY_APPLY_CONFIRMATION_TOKEN = "PRINCESS-WEEKLY-MAINTENANCE";
+const MAX_WEEKLY_WRITES = 30;
+const WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP = "weekly_change_volume_exceeds_initial_cap";
 const SECRET_KEY_PATTERN =
   /secret|password|token|service_role|api_key|authorization|cookie|set-cookie/i;
 
 function parseWeeklyMaintenanceArgs(argv = process.argv) {
-  const apply = argv.slice(2).some((arg) => arg === "--apply" || arg.startsWith("--apply="));
-  return { apply, dryRun: !apply };
+  const args = argv.slice(2);
+  const apply = args.some((arg) => arg === "--apply" || arg.startsWith("--apply="));
+  let confirm = null;
+  let maxWrites = null;
+  for (const arg of args) {
+    if (arg.startsWith("--confirm=")) confirm = arg.slice("--confirm=".length);
+    else if (arg === "--confirm" || arg.startsWith("--confirm")) {
+      const idx = args.indexOf(arg);
+      if (args[idx + 1] && !args[idx + 1].startsWith("--")) confirm = args[idx + 1];
+    }
+    if (arg.startsWith("--max-writes=")) maxWrites = Number(arg.slice("--max-writes=".length));
+    else if (arg === "--max-writes") {
+      const idx = args.indexOf(arg);
+      if (args[idx + 1] && !args[idx + 1].startsWith("--")) maxWrites = Number(args[idx + 1]);
+    }
+  }
+  return { apply, dryRun: !apply, confirm, maxWrites };
+}
+
+function makeWeeklyError(code, message) {
+  const err = new Error(message || code);
+  err.code = code;
+  return err;
 }
 
 function assertPhaseAApplyBlocked(args) {
   if (args?.apply) {
-    const err = new Error(PHASE_A_APPLY_BLOCKED);
-    err.code = PHASE_A_APPLY_BLOCKED;
-    throw err;
+    throw makeWeeklyError(PHASE_A_APPLY_BLOCKED, PHASE_A_APPLY_BLOCKED);
   }
 }
 
-function classifyExecutionEnvironment(env = process.env) {
+function isWeeklyReconciliationFlagEnabled(env = process.env) {
+  return String(env.PRINCESS_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
+}
+
+function classifyExecutionEnvironment(env = process.env, { applyMode = false } = {}) {
   const isGitHubActions = env.GITHUB_ACTIONS === "true";
   const isCi = Boolean(env.CI);
+  const isNetlify = env.NETLIFY === "true" || Boolean(env.AWS_LAMBDA_FUNCTION_NAME);
   const runnerLabels = String(env.RUNNER_LABELS || "")
     .split(",")
     .map((s) => s.trim())
@@ -38,7 +66,8 @@ function classifyExecutionEnvironment(env = process.env) {
     /^(ubuntu|windows|macos)-/i.test(String(env.RUNNER_OS || ""));
 
   let sourceEnvironment = "local_mac";
-  if (isGitHubActions && isSelfHosted) sourceEnvironment = "github_self_hosted_mac";
+  if (isNetlify) sourceEnvironment = "netlify";
+  else if (isGitHubActions && isSelfHosted) sourceEnvironment = "github_self_hosted_mac";
   else if (isGitHubActions && isCloudHosted) sourceEnvironment = "github_hosted_cloud";
   else if (isCi && !isGitHubActions) sourceEnvironment = "ci_other";
 
@@ -56,9 +85,87 @@ function classifyExecutionEnvironment(env = process.env) {
     self_hosted_expected: true,
     self_hosted_detected: isSelfHosted,
     cloud_hosted_detected: isCloudHosted,
+    netlify_detected: isNetlify,
     source_environment: sourceEnvironment,
-    phase: "A",
-    apply_enabled: false
+    phase: applyMode ? "C" : "A",
+    apply_enabled: applyMode
+  };
+}
+
+function assertWeeklyApplyEnvironment(env = process.env) {
+  const classified = classifyExecutionEnvironment(env, { applyMode: true });
+  if (classified.netlify_detected) {
+    throw makeWeeklyError("weekly_apply_netlify_forbidden", "weekly_apply_netlify_forbidden");
+  }
+  if (classified.cloud_hosted_detected) {
+    throw makeWeeklyError("weekly_apply_cloud_hosted_forbidden", "weekly_apply_cloud_hosted_forbidden");
+  }
+  if (classified.source_environment === "ci_other") {
+    throw makeWeeklyError("weekly_apply_ci_forbidden", "weekly_apply_ci_forbidden");
+  }
+  if (
+    classified.github_actions &&
+    !classified.self_hosted_detected &&
+    classified.source_environment !== "local_mac"
+  ) {
+    throw makeWeeklyError("weekly_apply_cloud_hosted_forbidden", "weekly_apply_cloud_hosted_forbidden");
+  }
+  const allowed =
+    classified.source_environment === "local_mac" ||
+    classified.source_environment === "github_self_hosted_mac";
+  if (!allowed) {
+    throw makeWeeklyError("weekly_apply_environment_forbidden", "weekly_apply_environment_forbidden");
+  }
+  return classified;
+}
+
+function assertWeeklyApplyAllowed(args, env = process.env) {
+  if (!args?.apply) return;
+  if (args.confirm !== WEEKLY_APPLY_CONFIRMATION_TOKEN) {
+    throw makeWeeklyError("weekly_apply_confirmation_required", "weekly_apply_confirmation_required");
+  }
+  if (!isWeeklyReconciliationFlagEnabled(env)) {
+    throw makeWeeklyError(
+      "princess_weekly_reconciliation_disabled",
+      "Princess weekly maintenance is disabled (PRINCESS_WEEKLY_RECONCILIATION_ENABLED=false)"
+    );
+  }
+  assertWeeklyApplyEnvironment(env);
+  if (args.maxWrites == null || Number.isNaN(Number(args.maxWrites))) {
+    throw makeWeeklyError("weekly_apply_max_writes_required", "weekly_apply_max_writes_required");
+  }
+  const effective = resolveEffectiveWeeklyMaxWrites(args.maxWrites);
+  if (effective == null) {
+    throw makeWeeklyError("weekly_apply_max_writes_invalid", "weekly_apply_max_writes_invalid");
+  }
+}
+
+function resolveEffectiveWeeklyMaxWrites(requestedMax) {
+  const n = Number(requestedMax);
+  if (!Number.isFinite(n) || n < 1) return null;
+  return Math.min(Math.floor(n), MAX_WEEKLY_WRITES);
+}
+
+function assessWeeklyChangeVolumeCap(proposedInserts, proposedUpdates) {
+  const inserts = Number(proposedInserts) || 0;
+  const updates = Number(proposedUpdates) || 0;
+  const combined = inserts + updates;
+  if (combined > MAX_WEEKLY_WRITES) {
+    return {
+      ok: false,
+      reason: WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP,
+      proposed_inserts: inserts,
+      proposed_updates: updates,
+      combined_proposed_changes: combined,
+      cap: MAX_WEEKLY_WRITES
+    };
+  }
+  return {
+    ok: true,
+    proposed_inserts: inserts,
+    proposed_updates: updates,
+    combined_proposed_changes: combined,
+    cap: MAX_WEEKLY_WRITES
   };
 }
 
@@ -78,6 +185,98 @@ function computeEligibleChangeMetrics(currentEligible, previousEligible) {
   };
 }
 
+function extractWriteAccounting(summary = {}, writeResult = {}) {
+  const stats = writeResult?.stats || writeResult || {};
+  const committed = (summary.inserts || stats.inserted || 0) + (summary.updates || stats.updated || 0);
+  const genuinelyFailed = summary.failed_writes ?? stats.failed ?? 0;
+  const recovered =
+    summary.recovered_after_fetch_failure ?? stats.recovered_after_fetch_failure ?? 0;
+  const attempted = summary.write_attempts ?? committed + genuinelyFailed;
+  const unchanged = summary.duplicate_skips ?? summary.unchanged ?? 0;
+  const accountingOk = attempted === committed + genuinelyFailed;
+  return {
+    accounting_ok: accountingOk,
+    attempted,
+    committed,
+    recovered_after_fetch_failure: recovered,
+    genuinely_failed: genuinelyFailed,
+    unchanged,
+    source_absent_active: summary.source_absent_active ?? 0
+  };
+}
+
+function validateRollbackManifestIntegrity({ rollbackResult, summary, writeResult, runMeta = {} }) {
+  const committed = (summary?.inserts || 0) + (summary?.updates || 0);
+  if (committed === 0) {
+    const skipped =
+      rollbackResult?.skipped === true ||
+      rollbackResult?.reason === "no_writes" ||
+      summary?.rollback_manifest_id == null;
+    if (skipped) {
+      return { ok: true, zero_writes: true, manifest_record_count: 0 };
+    }
+    return { ok: false, reason: "zero_writes_unexpected_manifest" };
+  }
+
+  const manifest =
+    rollbackResult?.manifest ||
+    buildRollbackManifestFromWriteResult({
+      runId: runMeta.runId || summary.run_id,
+      runRecordId: runMeta.runRecordId || null,
+      cruiseLineId: runMeta.cruiseLineId || null,
+      lineSlug: "princess-cruises",
+      triggerType: runMeta.triggerType || summary.trigger_type,
+      writeResult: writeResult || { stats: summary, write_details: writeResult?.write_details }
+    });
+
+  const inserted = manifest.inserted || [];
+  const updated = manifest.updated || [];
+  const manifestRecordCount = inserted.length + updated.length;
+  const allIds = [
+    ...(manifest.inserted_record_ids || []),
+    ...(manifest.updated_record_ids || [])
+  ].filter(Boolean);
+  if (new Set(allIds).size !== allIds.length) {
+    return { ok: false, reason: "duplicate_manifest_entries" };
+  }
+  if (manifestRecordCount !== committed) {
+    return {
+      ok: false,
+      reason: "manifest_count_mismatch",
+      expected: committed,
+      actual: manifestRecordCount
+    };
+  }
+  for (const entry of [...inserted, ...updated]) {
+    if (!entry.discovered_cruise_id) {
+      return { ok: false, reason: "manifest_missing_record_id" };
+    }
+    if (!entry.official_sailing_id) {
+      return { ok: false, reason: "manifest_missing_official_sailing_id" };
+    }
+  }
+  return { ok: true, manifest_record_count: manifestRecordCount, manifest_id: summary?.rollback_manifest_id ?? null };
+}
+
+function validatePostWriteReconciliation(postWriteSummary) {
+  if (!postWriteSummary) {
+    return { ok: false, reason: "missing_post_write_reconciliation" };
+  }
+  if (postWriteSummary.reconciliation_arithmetic_ok !== true) {
+    return { ok: false, reason: "post_write_reconciliation_arithmetic_failed" };
+  }
+  if (postWriteSummary.all_active_recognised_in_eligible_source !== true) {
+    return { ok: false, reason: "post_write_active_not_recognised" };
+  }
+  const idempotencyWrites =
+    (postWriteSummary.outstanding_eligible_inserts ?? postWriteSummary.proposed_inserts ?? 0) +
+    (postWriteSummary.proposed_updates ?? 0);
+  if (idempotencyWrites !== 0) {
+    return { ok: false, reason: "post_write_idempotency_anomaly", idempotency_writes: idempotencyWrites };
+  }
+  return { ok: true, idempotency_writes: 0 };
+}
+
 function buildWeeklyMaintenanceReport({
   mode = "dry_run",
   startedAt,
@@ -87,10 +286,15 @@ function buildWeeklyMaintenanceReport({
   maintenanceResult,
   countsBefore,
   countsAfter,
-  previousEligibleTotal = null
+  previousEligibleTotal = null,
+  writeCapAssessment = null,
+  writeAccounting = null,
+  manifestValidation = null,
+  postWriteReconciliation = null,
+  postWriteVerification = null
 }) {
   const summary = executeResult?.summary || maintenanceResult?.summary || {};
-  const simulation = maintenanceResult?.simulation || {};
+  const simulation = maintenanceResult?.simulation || executeResult?.simulation || {};
   const fetchResult = simulation.fetch_result || {};
   const rates = summary.resolution_rates || {};
   const reconciliationSummary = buildPrincessReconciliationSummary({
@@ -100,7 +304,7 @@ function buildWeeklyMaintenanceReport({
     outstandingEligibleInserts: summary.outstanding_eligible_inserts ?? summary.proposed_inserts ?? 0,
     proposedUpdates: summary.proposed_updates ?? 0,
     sourceAbsentActive: summary.source_absent_active ?? 0,
-    writesExecuted: 0
+    writesExecuted: writeAccounting?.committed ?? (summary.inserts || 0) + (summary.updates || 0)
   });
   const reconciliation = {
     active_production_total:
@@ -145,19 +349,41 @@ function buildWeeklyMaintenanceReport({
     maintenanceResult?.failed === true ||
     maintenanceResult?.reason === "official_source_unreachable";
 
+  const capAssessment =
+    writeCapAssessment ||
+    assessWeeklyChangeVolumeCap(
+      summary.proposed_inserts ?? proposedInserts,
+      summary.proposed_updates ?? proposedUpdates
+    );
+
+  const accounting =
+    mode === "apply"
+      ? writeAccounting || extractWriteAccounting(summary, maintenanceResult?.write_result || executeResult?.write_result)
+      : null;
+
+  const writesPerformed =
+    mode === "apply" ? accounting?.committed ?? (summary.inserts || 0) + (summary.updates || 0) : 0;
+
   const status = resolveWeeklyMaintenanceStatus({
+    mode,
     executeResult,
     maintenanceResult,
     sourceFetchFailed,
     qualityGate,
     reconciliation,
     countsBefore,
-    countsAfter
+    countsAfter,
+    writeCapAssessment: capAssessment,
+    writeAccounting: accounting,
+    manifestValidation,
+    postWriteReconciliation,
+    postWriteVerification,
+    writesPerformed
   });
 
-  return {
+  const report = {
     mode,
-    phase: "A",
+    phase: mode === "apply" ? "C" : "A",
     started_at: startedAt,
     ended_at: endedAt,
     elapsed_ms: endedAt && startedAt ? new Date(endedAt).getTime() - new Date(startedAt).getTime() : null,
@@ -191,6 +417,7 @@ function buildWeeklyMaintenanceReport({
       proposed_updates: proposedUpdates,
       combined_proposed_changes: combinedProposedChanges
     },
+    write_cap: capAssessment,
     source_absent: sourceAbsent,
     snapshot_id: summary.snapshot_id ?? null,
     counts_before: countsBefore,
@@ -199,28 +426,65 @@ function buildWeeklyMaintenanceReport({
       countsBefore?.princess != null &&
       countsAfter?.princess != null &&
       countsBefore.princess === countsAfter.princess,
-    writes_performed: 0,
+    writes_performed: writesPerformed,
     blocked: executeResult?.blocked === true || maintenanceResult?.blocked === true,
     status,
-    error: status === "failed" ? executeResult?.reason || maintenanceResult?.reason || null : null
+    error:
+      status === "failed"
+        ? executeResult?.reason || maintenanceResult?.reason || capAssessment?.reason || null
+        : null
   };
+
+  if (mode === "apply") {
+    report.writes = {
+      cap: MAX_WEEKLY_WRITES,
+      effective_max_writes: summary.effective_max_writes ?? null,
+      proposed_inserts: capAssessment.proposed_inserts ?? proposedInserts,
+      proposed_updates: capAssessment.proposed_updates ?? proposedUpdates,
+      combined_proposed_changes: capAssessment.combined_proposed_changes ?? combinedProposedChanges,
+      ...accounting,
+      rollback_manifest_id: summary.rollback_manifest_id ?? null,
+      zero_change_apply: summary.zero_change_apply === true || writesPerformed === 0
+    };
+    report.manifest_validation = manifestValidation || null;
+    report.post_write_reconciliation = postWriteReconciliation || null;
+    report.post_write_verification = postWriteVerification || null;
+  }
+
+  return report;
 }
 
 function resolveWeeklyMaintenanceStatus({
+  mode = "dry_run",
   executeResult,
   maintenanceResult,
   sourceFetchFailed,
   qualityGate,
   reconciliation,
   countsBefore,
-  countsAfter
+  countsAfter,
+  writeCapAssessment,
+  writeAccounting,
+  manifestValidation,
+  postWriteReconciliation,
+  postWriteVerification,
+  writesPerformed = 0
 }) {
   if (executeResult?.success === false && !executeResult?.blocked) return "failed";
   if (maintenanceResult?.ok === false && !maintenanceResult?.blocked) return "failed";
   if (sourceFetchFailed) return "failed";
   if (qualityGate?.passed === false) return "failed";
   if (reconciliation?.reconciliation_arithmetic_ok === false) return "failed";
+  if (mode === "apply" && writeCapAssessment && writeCapAssessment.ok === false) return "failed";
+  if (mode === "apply" && writeAccounting && writeAccounting.accounting_ok === false) return "failed";
+  if (mode === "apply" && manifestValidation && manifestValidation.ok === false) return "failed";
+  if (mode === "apply" && postWriteReconciliation && postWriteReconciliation.ok === false) return "failed";
+  if (mode === "apply" && postWriteVerification && postWriteVerification.ok === false) return "failed";
+  if (mode === "apply" && writesPerformed > 0) {
+    if (maintenanceResult?.ok === false || executeResult?.success === false) return "failed";
+  }
   if (
+    mode === "dry_run" &&
     countsBefore?.princess != null &&
     countsAfter?.princess != null &&
     countsBefore.princess !== countsAfter.princess
@@ -259,8 +523,10 @@ function redactSecrets(value, key = "") {
 function formatWeeklyMaintenanceSummary(report) {
   const r = report.reconciliation || {};
   const qg = report.quality_gate?.passed === true ? "passed" : report.quality_gate?.passed === false ? "failed" : "unknown";
-  return [
-    "Princess Weekly Maintenance — DRY RUN",
+  const title =
+    report.mode === "apply" ? "Princess Weekly Maintenance — MANUAL APPLY" : "Princess Weekly Maintenance — DRY RUN";
+  const lines = [
+    title,
     "",
     `Active: ${r.active_production_total ?? "—"}`,
     `Eligible: ${r.eligible_total ?? "—"}`,
@@ -269,15 +535,23 @@ function formatWeeklyMaintenanceSummary(report) {
     `Proposed updates: ${r.proposed_updates ?? "—"}`,
     `Source absent: ${report.source_absent?.count ?? "—"}`,
     `Quality gate: ${qg}`,
-    `Snapshot: ${report.snapshot_id ?? "—"}`,
-    "Writes: 0",
-    `Status: ${report.status}`
-  ].join("\n");
+    `Snapshot: ${report.snapshot_id ?? "—"}`
+  ];
+  if (report.mode === "apply") {
+    lines.push(`Write cap: ${report.write_cap?.cap ?? MAX_WEEKLY_WRITES}`);
+    lines.push(`Committed: ${report.writes?.committed ?? 0}`);
+    lines.push(`Attempted: ${report.writes?.attempted ?? 0}`);
+  } else {
+    lines.push("Writes: 0");
+  }
+  lines.push(`Status: ${report.status}`);
+  return lines.join("\n");
 }
 
 function writeWeeklyMaintenanceReportFile(report, reportsDir) {
   const stamp = (report.started_at || new Date().toISOString()).replace(/[:.]/g, "-");
-  const filename = `princess-weekly-maintenance-${stamp}.json`;
+  const suffix = report.mode === "apply" ? "apply" : "maintenance";
+  const filename = `princess-weekly-${suffix}-${stamp}.json`;
   const filePath = path.join(reportsDir, filename);
   const safe = redactSecrets(report);
   fs.mkdirSync(reportsDir, { recursive: true });
@@ -285,16 +559,32 @@ function writeWeeklyMaintenanceReportFile(report, reportsDir) {
   return { filePath, filename };
 }
 
+function verifyWorkflowConfirmationInput(provided, expected = WEEKLY_APPLY_CONFIRMATION_TOKEN) {
+  return String(provided || "").trim() === expected;
+}
+
 module.exports = {
   PHASE_A_APPLY_BLOCKED,
+  WEEKLY_APPLY_CONFIRMATION_TOKEN,
+  MAX_WEEKLY_WRITES,
+  WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP,
   parseWeeklyMaintenanceArgs,
   assertPhaseAApplyBlocked,
+  assertWeeklyApplyAllowed,
+  assertWeeklyApplyEnvironment,
+  isWeeklyReconciliationFlagEnabled,
   classifyExecutionEnvironment,
+  resolveEffectiveWeeklyMaxWrites,
+  assessWeeklyChangeVolumeCap,
   computeEligibleChangeMetrics,
+  extractWriteAccounting,
+  validateRollbackManifestIntegrity,
+  validatePostWriteReconciliation,
   buildWeeklyMaintenanceReport,
   resolveWeeklyMaintenanceStatus,
   resolveWeeklyMaintenanceExitCode,
   redactSecrets,
   formatWeeklyMaintenanceSummary,
-  writeWeeklyMaintenanceReportFile
+  writeWeeklyMaintenanceReportFile,
+  verifyWorkflowConfirmationInput
 };

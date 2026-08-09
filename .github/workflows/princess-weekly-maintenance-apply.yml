@@ -1,0 +1,62 @@
+name: Princess Weekly Maintenance (MANUAL APPLY)
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type PRINCESS-WEEKLY-MAINTENANCE to confirm
+        required: true
+        type: string
+      max_writes:
+        description: Max writes (hard cap 30 regardless of input)
+        required: true
+        default: "30"
+        type: string
+
+concurrency:
+  group: princess-weekly-maintenance
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  princess-weekly-apply:
+    runs-on:
+      - self-hosted
+      - princess-local-mac
+    timeout-minutes: 45
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      PRINCESS_DISCOVERY_WRITE_ENABLED: "false"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "20"
+
+      - name: Verify manual apply confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirmation }}" != "PRINCESS-WEEKLY-MAINTENANCE" ]; then
+            echo "Invalid confirmation token — no maintenance command will run."
+            exit 1
+          fi
+
+      - name: Run Princess weekly maintenance apply
+        env:
+          PRINCESS_WEEKLY_RECONCILIATION_ENABLED: "true"
+        run: |
+          npm run princess:weekly-maintenance -- --apply --confirm=PRINCESS-WEEKLY-MAINTENANCE --max-writes=${{ github.event.inputs.max_writes }}
+
+      - name: Upload apply report artifact
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: princess-weekly-maintenance-apply-report
+          path: reports/princess-weekly-apply-*.json
+          if-no-files-found: ignore
+          retention-days: 90
