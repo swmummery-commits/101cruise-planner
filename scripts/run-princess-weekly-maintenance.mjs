@@ -49,7 +49,10 @@ const { loadWeeklyMaintenanceStatus } = require(path.join(
   "netlify/functions/lib/cruise-discovery-maintenance-tracking"
 ));
 const cli = require(path.join(root, "netlify/functions/lib/princess-weekly-maintenance-cli"));
-const batchLib = require(path.join(root, "scripts/lib/princess-controlled-catch-up-batch.cjs"));
+const postWriteVerification = require(path.join(
+  root,
+  "netlify/functions/lib/princess-post-write-verification"
+));
 
 const PRINCESS_LINE_ID = "c19f40a7-c160-4035-a845-14dada550e1f";
 const REPORT_DIR = path.join(root, "reports");
@@ -78,14 +81,12 @@ async function loadPreviousEligibleTotal(sb) {
   }
 }
 
-async function runPostWriteVerification(rootDir, insertedIds) {
+async function runPostWriteVerification(sb, insertedIds) {
   if (!insertedIds?.length) {
     return { ok: true, skipped: true, reason: "no_inserts_to_verify" };
   }
-  const sb = createMaintenanceSupabase(rootDir);
-  const rows = await batchLib.fetchPrincessActiveRows(rootDir, sb, insertedIds);
-  const deps = batchLib.loadBatchDeps(rootDir);
-  const verification = batchLib.verifyInsertedRows(rows, deps);
+  const rows = await postWriteVerification.fetchPrincessActiveRows(sb, insertedIds);
+  const verification = postWriteVerification.verifyInsertedRows(rows);
   return {
     ok: verification.ok,
     issues: verification.issues,
@@ -202,7 +203,7 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
       .map((d) => d.discovered_cruise_id)
       .filter(Boolean);
 
-    postWriteVerification = await runPostWriteVerification(root, insertedIds);
+    postWriteVerification = await runPostWriteVerification(sb, insertedIds);
 
     const reconciliationRun = await runPostWriteReconciliationDryRun(sb, executeResult.run_id || "weekly-apply");
     postWriteReconciliation = cli.validatePostWriteReconciliation(reconciliationRun.summary);

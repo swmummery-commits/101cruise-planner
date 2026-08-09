@@ -629,4 +629,56 @@ test("49. cap exceeded apply report fails", () => {
   if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) throw new Error("cap exceeded must non-zero exit");
 });
 
+test("50. weekly apply entry resolves all runtime modules", () => {
+  const runtimeModules = [
+    "scripts/lib/supabase-rest.cjs",
+    "netlify/functions/lib/cruise-discovery-maintenance-cron.js",
+    "netlify/functions/lib/cruise-discovery-maintenance-runner.js",
+    "netlify/functions/lib/cruise-discovery-maintenance.js",
+    "netlify/functions/lib/cruise-discovery-maintenance-tracking.js",
+    "netlify/functions/lib/princess-weekly-maintenance-cli.js",
+    "netlify/functions/lib/princess-post-write-verification.js",
+    "netlify/functions/lib/princess-reconciliation-summary.js",
+    "netlify/functions/lib/cruise-discovery-maintenance-manifests.js"
+  ];
+  for (const rel of runtimeModules) {
+    const full = path.join(root, rel);
+    if (!fs.existsSync(full)) throw new Error(`missing runtime module: ${rel}`);
+    require(full);
+  }
+  if (scriptSrc.includes("princess-controlled-catch-up-batch.cjs")) {
+    throw new Error("weekly apply must not require uncommitted catch-up batch module");
+  }
+  if (!scriptSrc.includes("princess-post-write-verification")) {
+    throw new Error("weekly apply must use committed post-write verification module");
+  }
+});
+
+test("51. weekly apply CLI loads without module resolution error", () => {
+  const { spawnSync } = require("child_process");
+  const result = spawnSync(
+    process.execPath,
+    [
+      path.join(root, "scripts/run-princess-weekly-maintenance.mjs"),
+      "--apply",
+      "--confirm=WRONG",
+      "--max-writes=30"
+    ],
+    {
+      cwd: root,
+      env: {
+        ...process.env,
+        PRINCESS_WEEKLY_RECONCILIATION_ENABLED: "true",
+        RUNNER_LABELS: "self-hosted,princess-local-mac"
+      },
+      encoding: "utf8"
+    }
+  );
+  const combined = `${result.stdout || ""}${result.stderr || ""}`;
+  if (/Cannot find module/i.test(combined)) {
+    throw new Error(`module resolution failure on apply entry: ${combined}`);
+  }
+  if (result.status === 0) throw new Error("wrong confirmation must not exit 0");
+});
+
 console.log(`\ntest-princess-weekly-maintenance: ${passed} passed`);
