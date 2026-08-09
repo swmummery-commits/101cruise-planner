@@ -269,4 +269,65 @@ test("21. successful dry-run with proposed inserts still exit 0", () => {
   if (cli.resolveWeeklyMaintenanceExitCode(report) !== 0) throw new Error("proposed inserts should not fail dry-run");
 });
 
+test("22. reconciliation flags derived from counts when summary omits them", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "dry_run",
+    startedAt: "2026-08-09T01:01:18.888Z",
+    endedAt: "2026-08-09T01:01:24.722Z",
+    environment: {},
+    executeResult: {
+      success: true,
+      summary: {
+        active_production_total: 1503,
+        eligible_total: 1503,
+        unchanged: 1503,
+        proposed_inserts: 0,
+        proposed_updates: 0,
+        source_absent_active: 0,
+        quality_gate: { passed: true }
+      }
+    },
+    maintenanceResult: { summary: { quality_gate: { passed: true } } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 },
+    previousEligibleTotal: 1506
+  });
+  if (report.reconciliation.reconciliation_arithmetic_ok !== true) {
+    throw new Error("expected reconciliation_arithmetic_ok derived true");
+  }
+  if (report.reconciliation.all_active_recognised_in_eligible_source !== true) {
+    throw new Error("expected all_active_recognised_in_eligible_source derived true");
+  }
+});
+
+test("23. reconciliation flags false when arithmetic fails", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "dry_run",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: {
+      success: true,
+      summary: {
+        active_production_total: 1503,
+        eligible_total: 1503,
+        unchanged: 1500,
+        proposed_inserts: 0,
+        proposed_updates: 0,
+        source_absent_active: 0,
+        quality_gate: { passed: true }
+      }
+    },
+    maintenanceResult: { summary: { quality_gate: { passed: true } } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 }
+  });
+  if (report.reconciliation.reconciliation_arithmetic_ok !== false) {
+    throw new Error("expected reconciliation_arithmetic_ok derived false");
+  }
+  if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) {
+    throw new Error("expected non-zero exit when reconciliation arithmetic fails");
+  }
+});
+
 console.log(`\ntest-princess-weekly-maintenance: ${passed} passed`);

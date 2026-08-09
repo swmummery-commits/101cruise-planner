@@ -4,6 +4,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const { buildPrincessReconciliationSummary } = require("./princess-reconciliation-summary");
 
 const PHASE_A_APPLY_BLOCKED = "weekly_apply_not_enabled_in_phase_a";
 const SECRET_KEY_PATTERN =
@@ -92,17 +93,35 @@ function buildWeeklyMaintenanceReport({
   const simulation = maintenanceResult?.simulation || {};
   const fetchResult = simulation.fetch_result || {};
   const rates = summary.resolution_rates || {};
+  const reconciliationSummary = buildPrincessReconciliationSummary({
+    activeProductionTotal: summary.active_production_total ?? countsAfter?.princess ?? 0,
+    eligibleTotal: summary.eligible_total ?? 0,
+    recognisedExistingEligible: summary.recognised_existing_eligible ?? summary.unchanged ?? 0,
+    outstandingEligibleInserts: summary.outstanding_eligible_inserts ?? summary.proposed_inserts ?? 0,
+    proposedUpdates: summary.proposed_updates ?? 0,
+    sourceAbsentActive: summary.source_absent_active ?? 0,
+    writesExecuted: 0
+  });
   const reconciliation = {
-    active_production_total: summary.active_production_total ?? countsAfter?.princess ?? null,
-    eligible_total: summary.eligible_total ?? null,
-    recognised_existing_eligible: summary.recognised_existing_eligible ?? summary.unchanged ?? null,
+    active_production_total:
+      summary.active_production_total ?? countsAfter?.princess ?? reconciliationSummary.active_production_total,
+    eligible_total: summary.eligible_total ?? reconciliationSummary.eligible_total,
+    recognised_existing_eligible:
+      summary.recognised_existing_eligible ??
+      summary.unchanged ??
+      reconciliationSummary.recognised_existing_eligible,
     outstanding_eligible_inserts:
-      summary.outstanding_eligible_inserts ?? summary.proposed_inserts ?? null,
-    proposed_updates: summary.proposed_updates ?? null,
-    source_absent_active: summary.source_absent_active ?? null,
-    reconciliation_arithmetic_ok: summary.reconciliation_arithmetic_ok ?? null,
-    all_active_recognised_in_eligible_source: summary.all_active_recognised_in_eligible_source ?? null,
-    ...computeEligibleChangeMetrics(summary.eligible_total, previousEligibleTotal)
+      summary.outstanding_eligible_inserts ??
+      summary.proposed_inserts ??
+      reconciliationSummary.outstanding_eligible_inserts,
+    proposed_updates: summary.proposed_updates ?? reconciliationSummary.proposed_updates,
+    source_absent_active: summary.source_absent_active ?? reconciliationSummary.source_absent_active,
+    reconciliation_arithmetic_ok:
+      summary.reconciliation_arithmetic_ok ?? reconciliationSummary.reconciliation_arithmetic_ok,
+    all_active_recognised_in_eligible_source:
+      summary.all_active_recognised_in_eligible_source ??
+      reconciliationSummary.all_active_recognised_in_eligible_source,
+    ...computeEligibleChangeMetrics(summary.eligible_total ?? reconciliationSummary.eligible_total, previousEligibleTotal)
   };
 
   const proposedInserts = reconciliation.outstanding_eligible_inserts ?? 0;

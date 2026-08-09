@@ -59,6 +59,7 @@ const {
   PUBLIC_BOOKING_CUTOFF_DAYS,
   publicBookingMinimumDepartureDate
 } = require("./public-discovered-cruise-inventory");
+const { buildPrincessReconciliationSummary } = require("./princess-reconciliation-summary");
 
 const MAX_WRITES_PER_BATCH = 100;
 
@@ -720,6 +721,16 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     });
 
     const snapshotId = snapshotChecksum(Array.from(eligibleKeys).sort());
+    const activeProductionTotal = await loadActiveProductionTotal(sb, line.id, lineSlug);
+    const reconciliation = buildPrincessReconciliationSummary({
+      activeProductionTotal,
+      eligibleTotal: metrics.eligible_total,
+      recognisedExistingEligible: unchanged.length,
+      outstandingEligibleInserts: proposedInserts.length,
+      proposedUpdates: proposedUpdates.length,
+      sourceAbsentActive: sourceAbsent.length,
+      writesExecuted: 0
+    });
 
     const summary = {
       line_slug: lineSlug,
@@ -729,12 +740,16 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       dry_run: dryRun,
       official_source_total: simulation.num_found_official || simulation.raw_group_count || null,
       eligible_total: metrics.eligible_total,
-      active_production_total: await loadActiveProductionTotal(sb, line.id, lineSlug),
+      active_production_total: activeProductionTotal,
       proposed_inserts: proposedInserts.length,
       proposed_updates: proposedUpdates.length,
       unchanged: unchanged.length,
+      recognised_existing_eligible: reconciliation.recognised_existing_eligible,
+      outstanding_eligible_inserts: reconciliation.outstanding_eligible_inserts,
       source_absent_active: sourceAbsent.length,
       source_absent_sailing_ids: sourceAbsent.map((r) => r.official_sailing_id),
+      reconciliation_arithmetic_ok: reconciliation.reconciliation_arithmetic_ok,
+      all_active_recognised_in_eligible_source: reconciliation.all_active_recognised_in_eligible_source,
       cruisetours_excluded: normalised.filter((p) => p.product_type === "cruisetour").length,
       incomplete_skipped: normalised.filter((p) => !p.complete_high_confidence).length,
       within_public_cutoff_excluded: withinPublicCutoff.length,
