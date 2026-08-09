@@ -189,4 +189,26 @@ assert(
   "index.html unchanged for batch module"
 );
 
+/* Module nav + packing quantity mobile fixes (2026-08-09c) */
+assert(
+  /@media \(max-width: 900px\)[\s\S]*Show all module tabs without horizontal scroll/.test(cssSrc),
+  "mobile module nav shows all tabs in a grid instead of horizontal scroll"
+);
+assert(
+  /\.planner-page-header \.planner-module-nav[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/.test(cssSrc),
+  "module nav uses 4-column grid on mobile"
+);
+assert(
+  /@media \(max-width: 640px\)[\s\S]*\.packing-row[\s\S]*grid-template-columns: 22px 44px/.test(cssSrc),
+  "packing row uses narrow quantity column on mobile"
+);
+assert(
+  /\.packing-quantity-input[\s\S]*width: 40px/.test(cssSrc),
+  "packing quantity input narrowed for mobile"
+);
+assert(
+  /planner\.css\?v=20260809c/.test(readFileSync(path.join(root, "index.html"), "utf8")),
+  "index.html cache-busts planner.css for mobile nav/quantity fixes"
+);
+
 console.log("test-client-portal-ui-fixes: ok");

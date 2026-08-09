@@ -4430,7 +4430,8 @@ html, body {
 
 @media (max-width: 640px) {
   .packing-row {
-    grid-template-columns: 22px 76px minmax(0, 1fr) auto;
+    grid-template-columns: 22px 44px minmax(0, 1fr) auto;
+    gap: 10px;
     align-items: start;
   }
 
@@ -4444,6 +4445,15 @@ html, body {
     grid-row: 1;
     justify-content: flex-start;
     padding-left: 0;
+  }
+
+  .packing-quantity-input {
+    width: 40px;
+    min-width: 40px;
+    max-width: 44px;
+    min-height: 34px;
+    padding: 5px 4px;
+    font-size: 13px;
   }
 
   .packing-main-cell {
@@ -6692,20 +6702,40 @@ input[type="radio"] {
 
 @media (max-width: 900px) {
   .planner-page-header {
-    flex-wrap: wrap;
-    gap: 8px 12px;
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 10px;
   }
 
+  /* Show all module tabs without horizontal scroll — users were missing off-screen tabs */
   .planner-page-header .planner-module-nav {
-    justify-content: flex-start;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    -webkit-overflow-scrolling: touch;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    justify-content: stretch;
+    overflow-x: visible;
+    flex-wrap: wrap;
+    gap: 2px 4px;
+    width: 100%;
   }
 
   .planner-page-header .planner-module-nav-button {
-    flex: 0 0 auto;
+    flex: unset;
+    width: 100%;
+    min-width: 0;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.78rem !important;
+    padding: 7px 6px !important;
+    min-height: 36px !important;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .planner-page-header .planner-module-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
