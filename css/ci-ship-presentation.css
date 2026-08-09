@@ -1355,3 +1355,36 @@ a.ship-deck-button:visited {
     transform: none;
   }
 }
+
+/* Portal mobile — prevent YES/No pills overlapping feature labels (2026-08-09) */
+@media (max-width: 900px) {
+  .ship-glance-item.is-status {
+    grid-template-columns: 22px minmax(0, 1fr) auto;
+    column-gap: 8px;
+    align-items: center;
+  }
+
+  .ship-glance-label {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.3;
+  }
+
+  .ship-glance-value,
+  .ship-glance-empty {
+    flex-shrink: 0;
+    justify-self: end;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 520px) {
+  .ship-glance-status {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ship-glance-item.is-status {
+    width: 100%;
+  }
+}

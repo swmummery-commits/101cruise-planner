@@ -147,4 +147,38 @@ assert(
   "unrelated dashboard navigation does not force Documents scroll helper"
 );
 
+/* Mobile + iframe embed fixes (2026-08-09) */
+assert(
+  /Portal mobile \+ iframe embed fixes/.test(cssSrc),
+  "planner.css includes portal mobile + iframe fix block"
+);
+assert(
+  /html\.is-embedded \.dashboard-hero[\s\S]*width: 100% !important/.test(cssSrc),
+  "embedded hero uses 100% width instead of 100vw bleed"
+);
+assert(
+  /@media \(max-width: 820px\)[\s\S]*\.dashboard-countdown-panel[\s\S]*position: relative !important/.test(cssSrc),
+  "mobile hero stacks countdown in document flow"
+);
+assert(
+  /@media \(max-width: 760px\)[\s\S]*\.dashboard-snapshot-row[\s\S]*grid-template-columns: minmax\(0, 1fr\)/.test(cssSrc),
+  "mobile snapshot rows stack label above value"
+);
+assert(
+  /\.dashboard-snapshot-traveller-name[\s\S]*white-space: normal !important/.test(cssSrc),
+  "traveller names wrap on mobile"
+);
+assert(
+  /Portal mobile — prevent YES\/No pills/.test(shipCssSrc),
+  "ship presentation includes YES pill overlap fix"
+);
+assert(
+  /\.ship-glance-label[\s\S]*min-width: 0/.test(shipCssSrc),
+  "ship glance labels can shrink below content width"
+);
+assert(
+  !/princess-controlled-catch-up-batch/.test(readFileSync(path.join(root, "index.html"), "utf8")),
+  "index.html unchanged for batch module"
+);
+
 console.log("test-client-portal-ui-fixes: ok");

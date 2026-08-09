@@ -8138,3 +8138,239 @@ html.switch-booking-open body {
   }
 }
 
+/* =========================================================
+   Portal mobile + iframe embed fixes (2026-08-09)
+   Resolves countdown/logo overlap, snapshot overflow, embed 100vw bleed.
+   ========================================================= */
+
+html.is-embedded,
+html.is-embedded body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+html.is-embedded .dashboard-page,
+html.is-embedded #cruise-planner-app {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+html.is-embedded .dashboard-hero {
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+html.is-embedded .dashboard-content-wrap,
+html.is-embedded .planner-module-nav,
+html.is-embedded .planner-shell,
+html.is-embedded .checklist-page,
+html.is-embedded .packing-page,
+html.is-embedded .budget-page,
+html.is-embedded .ship-page {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box;
+}
+
+@media (max-width: 820px) {
+  .dashboard-hero {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 0 12px !important;
+    overflow: hidden !important;
+  }
+
+  .dashboard-hero.has-image {
+    min-height: 200px;
+    background-size: cover !important;
+    background-position: center center !important;
+  }
+
+  .dashboard-hero-content {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 84px 20px 12px !important;
+    order: 1;
+    z-index: 2;
+  }
+
+  .dashboard-hero-kicker {
+    white-space: normal !important;
+    font-size: clamp(1.65rem, 7.5vw, 2.35rem) !important;
+    line-height: 1.08 !important;
+  }
+
+  .dashboard-hero h1 {
+    font-size: clamp(1.35rem, 6vw, 1.85rem) !important;
+    line-height: 1.12 !important;
+  }
+
+  .dashboard-hero-date,
+  .dashboard-hero-route {
+    font-size: clamp(0.88rem, 3.8vw, 1rem) !important;
+    line-height: 1.35 !important;
+  }
+
+  .dashboard-countdown-panel {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    left: auto !important;
+    bottom: auto !important;
+    transform: none !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 16px 12px !important;
+    order: 2;
+    z-index: 2;
+    box-sizing: border-box;
+  }
+
+  .dashboard-hero.has-cruise-logo .dashboard-countdown-panel {
+    bottom: auto !important;
+    margin-bottom: 10px !important;
+  }
+
+  .dashboard-cruise-line-logo {
+    position: relative !important;
+    left: auto !important;
+    bottom: auto !important;
+    order: 3;
+    z-index: 2;
+    margin: 0 20px 4px !important;
+    height: auto !important;
+    max-height: 68px !important;
+    max-width: min(160px, 46vw) !important;
+    width: auto !important;
+    object-fit: contain;
+  }
+
+  .dashboard-hero > .dashboard-brand-logo {
+    position: absolute !important;
+    top: 16px !important;
+    left: 16px !important;
+    width: 72px !important;
+    z-index: 4 !important;
+  }
+
+  .dashboard-content-wrap {
+    width: calc(100% - 32px) !important;
+    max-width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .dashboard-welcome-strip {
+    margin-top: 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-snapshot-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box;
+  }
+
+  .dashboard-snapshot-list,
+  .dashboard-snapshot-extras,
+  .dashboard-snapshot-footer {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .dashboard-snapshot-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 4px !important;
+    align-items: start !important;
+    padding: 10px 0 !important;
+  }
+
+  .dashboard-snapshot-row span {
+    font-size: 0.72rem !important;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #687873 !important;
+  }
+
+  .dashboard-snapshot-row strong {
+    text-align: left !important;
+    font-size: 0.88rem !important;
+    line-height: 1.4 !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .dashboard-snapshot-row-travellers {
+    align-items: flex-start !important;
+  }
+
+  .dashboard-snapshot-travellers {
+    align-items: flex-start !important;
+    text-align: left !important;
+    width: 100% !important;
+  }
+
+  .dashboard-snapshot-traveller-name {
+    white-space: normal !important;
+    text-align: left !important;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: 100% !important;
+  }
+
+  .dashboard-snapshot-extras-tags {
+    gap: 6px;
+  }
+
+  .dashboard-snapshot-extras-tag {
+    max-width: 100%;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.35;
+  }
+
+  .dashboard-v2-grid > .dashboard-snapshot-card,
+  .dashboard-v2-top-row > .dashboard-snapshot-card {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .dashboard-v2-grid > .dashboard-snapshot-card .dashboard-snapshot-list,
+  .dashboard-v2-top-row > .dashboard-snapshot-card .dashboard-snapshot-list {
+    overflow: visible !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .dashboard-countdown-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    row-gap: 8px;
+  }
+
+  .dashboard-countdown-grid div {
+    border-right: 0 !important;
+  }
+}
+
