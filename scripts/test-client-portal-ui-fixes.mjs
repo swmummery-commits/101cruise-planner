@@ -211,4 +211,18 @@ assert(
   "index.html cache-busts planner.css for mobile nav/quantity fixes"
 );
 
+/* Onboard at a Glance — 3 icons across on mobile (2026-08-09c) */
+assert(
+  /@media \(max-width: 760px\)[\s\S]*\.ship-glance-metrics,\s*\n\s*\.ship-glance-status[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/.test(shipCssSrc),
+  "onboard glance grids use 3 columns on mobile"
+);
+assert(
+  /@media \(max-width: 520px\)[\s\S]*\.ship-glance-status[\s\S]*repeat\(3, minmax\(0, 1fr\)\)/.test(shipCssSrc),
+  "narrow phones keep 3 glance columns instead of stacking to one"
+);
+assert(
+  /ci-ship-presentation\.css\?v=20260809c/.test(readFileSync(path.join(root, "index.html"), "utf8")),
+  "index.html cache-busts ship presentation CSS for glance grid fix"
+);
+
 console.log("test-client-portal-ui-fixes: ok");
