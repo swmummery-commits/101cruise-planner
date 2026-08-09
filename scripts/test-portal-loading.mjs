@@ -168,6 +168,8 @@ assert(!/postMessage\([^,]+,\s*"\*"\)/.test(srcPlanner), "planner does not postM
 // --- Height listener / embed wiring ---
 assert(srcEmbed.includes(MSG.HEIGHT) || srcEmbed.includes("101cruise-my-cruise-height"), "embed listens for height");
 assert(srcEmbed.includes("applyIframeHeight") || srcEmbed.includes("style.height"), "embed updates iframe height");
+assert(srcEmbed.includes('iframe.style.overflow = "hidden"'), "embed disables iframe internal scroll");
+assert(srcEmbed.includes('setAttribute("scrolling", "no")'), "embed sets scrolling=no on iframe");
 assert(srcEmbed.includes("scheduleViewport") || srcEmbed.includes("postViewport"), "height change triggers viewport");
 assert(srcHeight.includes("101cruise-my-cruise-height"), "child posts height");
 assert(srcHeight.includes("ResizeObserver"), "height uses ResizeObserver");

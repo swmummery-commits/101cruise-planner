@@ -84,6 +84,9 @@
     if (next > MAX_HEIGHT) return;
     iframe.style.height = next + "px";
     iframe.setAttribute("height", String(next));
+    iframe.style.overflow = "hidden";
+    iframe.style.overscrollBehavior = "none";
+    iframe.setAttribute("scrolling", "no");
     scheduleViewport();
   }
 
@@ -160,6 +163,9 @@
   function bindFrame() {
     var iframe = findFrame();
     if (!iframe) return;
+    iframe.style.overflow = "hidden";
+    iframe.style.overscrollBehavior = "none";
+    iframe.setAttribute("scrolling", "no");
     iframe.addEventListener("load", function () {
       scheduleViewport();
       try {

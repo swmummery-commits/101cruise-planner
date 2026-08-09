@@ -9,14 +9,16 @@
   --brand-green-focus: rgba(141, 217, 191, 0.32);
 }
 
-/* Embedded in Squarespace iframe: size to content, no tall empty band. */
+/* Embedded in Squarespace iframe: parent page scrolls; child must not scroll internally. */
 html.is-embedded,
 html.is-embedded body {
   height: auto !important;
   min-height: 0 !important;
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
   background: #fafafa;
+  touch-action: manipulation;
 }
 
 html.is-embedded #cruise-planner-app {
@@ -7110,16 +7112,20 @@ input[type="radio"] {
 
 @media (max-width: 390px) {
   .dashboard-countdown-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    row-gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    row-gap: 0 !important;
   }
 
   .dashboard-countdown-grid div {
-    border-right: 0 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.22) !important;
   }
 
   .dashboard-countdown-grid span {
-    font-size: 1.15rem !important;
+    font-size: clamp(0.92rem, 3.8vw, 1.15rem) !important;
+  }
+
+  .dashboard-countdown-grid small {
+    font-size: 0.52rem !important;
   }
 
   .dashboard-hero-kicker {
@@ -8147,6 +8153,8 @@ html.is-embedded,
 html.is-embedded body {
   overflow-x: clip;
   max-width: 100%;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
 }
 
 html.is-embedded .dashboard-page,
@@ -8233,10 +8241,44 @@ html.is-embedded .ship-page {
     width: auto !important;
     min-width: 0 !important;
     max-width: none !important;
-    margin: 0 16px 12px !important;
+    margin: 0 16px 10px !important;
+    padding: 10px 12px 12px !important;
     order: 2;
     z-index: 2;
     box-sizing: border-box;
+  }
+
+  .dashboard-countdown-panel p {
+    margin-bottom: 6px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .dashboard-countdown-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    row-gap: 0 !important;
+    column-gap: 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: 0 !important;
+  }
+
+  .dashboard-countdown-grid div {
+    border-right: 1px solid rgba(255, 255, 255, 0.22) !important;
+  }
+
+  .dashboard-countdown-grid div:last-child {
+    border-right: 0 !important;
+  }
+
+  .dashboard-countdown-grid span {
+    font-size: clamp(1rem, 4.2vw, 1.35rem) !important;
+    line-height: 1 !important;
+  }
+
+  .dashboard-countdown-grid small {
+    font-size: 0.56rem !important;
+    margin-top: 3px !important;
+    letter-spacing: 0.02em;
   }
 
   .dashboard-hero.has-cruise-logo .dashboard-countdown-panel {
@@ -8365,12 +8407,12 @@ html.is-embedded .ship-page {
 
 @media (max-width: 390px) {
   .dashboard-countdown-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    row-gap: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    row-gap: 0 !important;
   }
 
   .dashboard-countdown-grid div {
-    border-right: 0 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.22) !important;
   }
 }
 

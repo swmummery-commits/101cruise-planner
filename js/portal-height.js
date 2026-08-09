@@ -24,7 +24,8 @@
     // Measure app content only — body/document scrollHeight tracks the iframe
     // viewport and creates a resize feedback loop with the parent.
     var height = Math.max(root.scrollHeight || 0, root.offsetHeight || 0);
-    return Math.max(Math.ceil(height + 12), 360);
+    var rect = root.getBoundingClientRect ? root.getBoundingClientRect().height : 0;
+    return Math.max(Math.ceil(Math.max(height, rect) + 32), 360);
   }
 
   function postToParents(payload) {

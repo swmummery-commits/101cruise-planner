@@ -177,6 +177,14 @@ assert(
   "ship glance labels can shrink below content width"
 );
 assert(
+  /grid-template-columns: repeat\(4, minmax\(0, 1fr\)\) !important/.test(cssSrc),
+  "mobile countdown stays on one row"
+);
+assert(
+  /html\.is-embedded[\s\S]*overflow: hidden !important/.test(cssSrc),
+  "embedded iframe child document does not scroll internally"
+);
+assert(
   !/princess-controlled-catch-up-batch/.test(readFileSync(path.join(root, "index.html"), "utf8")),
   "index.html unchanged for batch module"
 );
