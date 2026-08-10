@@ -1,0 +1,26 @@
+name: Explora Source Smoke (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  explora-source-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run read-only Explora source smoke
+        env:
+          EXPLORA_DISCOVERY_WRITE_ENABLED: "false"
+          EXPLORA_WEEKLY_RECONCILIATION_ENABLED: "false"
+        run: node scripts/explora-source-smoke-ci.mjs

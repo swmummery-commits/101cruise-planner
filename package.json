@@ -61,6 +61,8 @@
     "seed:explora-ship-codes": "node scripts/apply-explora-ship-code-seed.mjs",
     "test:supabase-count": "node scripts/test-supabase-count.mjs",
     "smoke:princess-source-ci": "node scripts/princess-source-smoke-ci.mjs",
+    "smoke:explora-source-ci": "node scripts/explora-source-smoke-ci.mjs",
+    "verify:explora-preproduction": "node scripts/verify-explora-preproduction.mjs",
     "test:discovery-holland-america": "node scripts/test-discovery-holland-america.mjs",
     "test:hal-batch-automation": "node scripts/test-hal-batch-automation.mjs",
     "test:cruise-discovery-automation-hold": "node scripts/test-cruise-discovery-automation-hold.mjs",

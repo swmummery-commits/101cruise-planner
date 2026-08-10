@@ -194,6 +194,14 @@ assert(marketing?.skip === true, "med marketing rejected");
 assert(detectCrossingRoute("Transoceanic voyage", "", "", "Yokohama", "Seward")?.slug === "transpacific", "transpacific");
 assert(detectCrossingRoute("Transatlantic crossing", "", "", "Southampton", "New York")?.slug === "transatlantic", "transatlantic");
 assert(detectCrossingRoute("World Cruise 2027", "", "", "", "")?.slug === "world-cruise", "world cruise");
+assert(
+  detectCrossingRoute("Grand Journey", "", "", "Hamburg", "New York")?.slug === "transatlantic",
+  "europe-na atlantic endpoints"
+);
+assert(
+  detectCrossingRoute("Grand Journey", "", "", "Lisbon", "Copenhagen") == null,
+  "europe-europe endpoints are not transatlantic"
+);
 
 const explora = resolveOperationalDestination({
   title: "A Grand Journey from Glacier Majesty to Japanese Grace",

@@ -398,10 +398,25 @@ test("32. complete_high_confidence passes for a fully resolved journey", () => {
   if (!result.complete_high_confidence) throw new Error(result.failure_reasons.join(","));
 });
 
-test("33. unresolved departure port blocks completeness", () => {
+test("33. reviewed Red Sea embarkation ports resolve from catalogue aliases/codes", () => {
+  const cases = [
+    ["Jeddah, Saudi Arabia", "JED", "Jeddah"],
+    ["Safaga, Egypt", "SGA", "Safaga"],
+    ["Hamburg, Germany", "HAM", "Hamburg"],
+    ["Panama City (Amador), Panama", "PAC", "Panama City"]
+  ];
+  for (const [rawPort, embark, expected] of cases) {
+    const meta = adapter.resolveExploraDeparturePort({ departure_port: rawPort, embark_code: embark });
+    if (meta.status !== "resolved" || meta.canonicalPortName !== expected) {
+      throw new Error(`${rawPort} → ${JSON.stringify(meta.canonicalPortName || meta.status)}`);
+    }
+  }
+});
+
+test("33b. unresolved departure port blocks completeness", () => {
   const result = normaliseFixture({
-    detail: { ports: ["Jeddah, Saudi Arabia", "Safaga, Egypt"] },
-    raw: { embark_code: "JED", disembark_code: "SGA" }
+    detail: { ports: ["Unknownportville, Atlantis"] },
+    raw: { embark_code: "ZZZ", disembark_code: "YYY", departure_port: "Unknownportville, Atlantis" }
   });
   if (result.complete_high_confidence) throw new Error("should not be complete");
   if (!result.failure_reasons.includes("missing_departure_port")) throw new Error(result.failure_reasons.join(","));
@@ -421,6 +436,12 @@ test("35. unknown ship blocks completeness", () => {
   const result = normaliseFixture({ context: { ships: [] } });
   if (result.complete_high_confidence) throw new Error("should not be complete");
   if (!result.failure_reasons.includes("unknown_ship")) throw new Error(result.failure_reasons.join(","));
+});
+
+test("35b. missing detail enrichment blocks completeness", () => {
+  const result = normaliseFixture({ raw: { detail_enriched: false } });
+  if (result.complete_high_confidence) throw new Error("unenriched journeys must not be complete");
+  if (!result.failure_reasons.includes("detail_page_not_enriched")) throw new Error(result.failure_reasons.join(","));
 });
 
 test("36. eligibility helper accepts ocean_cruise and rejects land products", () => {

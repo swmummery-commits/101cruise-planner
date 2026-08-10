@@ -82,7 +82,14 @@ const EXPLORA_PORT_CODE_MAP = Object.freeze({
   LAX: "Los Angeles",
   CPH: "Copenhagen",
   BGI: "Bridgetown",
-  GOA: "Genoa"
+  GOA: "Genoa",
+  HAM: "Hamburg",
+  JED: "Jeddah",
+  AYT: "Antalya",
+  SGA: "Safaga",
+  SOK: "Sokhna",
+  MAO: "Manaus",
+  AMD: "Panama City"
 });
 
 /** JSON-LD place names that need a reviewed rewrite before catalogue matching. */
@@ -303,6 +310,7 @@ function normaliseExploraProduct(raw, context = {}) {
 
   const complete =
     isCruiseProduct &&
+    Boolean(raw.detail_enriched) &&
     shipResolution.resolved &&
     Boolean(candidate.departure_date) &&
     Boolean(candidate.destination_id) &&

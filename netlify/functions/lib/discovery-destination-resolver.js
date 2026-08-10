@@ -201,6 +201,45 @@ function detectCrossingRoute(title, description, itinerary, departurePort, arriv
       return { slug: "transpacific", score: 90, method: "endpoint_transpacific" };
     }
   }
+
+  // Shared Europe ↔ North America Atlantic endpoint crossing (same idea as Celebrity port-crossing).
+  // Only fires when endpoints are on opposite sides — Europe↔Europe coastal hops stay unresolved here.
+  const europeAtlantic = [
+    "southampton",
+    "hamburg",
+    "lisbon",
+    "barcelona",
+    "civitavecchia",
+    "rome",
+    "venice",
+    "copenhagen",
+    "reykjavik",
+    "amsterdam",
+    "rotterdam",
+    "le havre",
+    "warnemunde",
+    "stockholm",
+    "piraeus",
+    "athens",
+    "istanbul"
+  ];
+  const northAmericaAtlantic = [
+    "new york",
+    "miami",
+    "fort lauderdale",
+    "quebec",
+    "boston",
+    "cape liberty",
+    "montreal",
+    "halifax"
+  ];
+  const euDep = europeAtlantic.some((t) => dep.includes(t));
+  const euArr = europeAtlantic.some((t) => arr.includes(t));
+  const naDep = northAmericaAtlantic.some((t) => dep.includes(t));
+  const naArr = northAmericaAtlantic.some((t) => arr.includes(t));
+  if ((euDep && naArr) || (naDep && euArr)) {
+    return { slug: "transatlantic", score: 90, method: "endpoint_transatlantic" };
+  }
   return null;
 }
 
