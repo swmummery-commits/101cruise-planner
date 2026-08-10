@@ -1,78 +1,404 @@
 (() => {
   "use strict";
-  const PAGE_COUNT=36, PAGE_PATH="./pages", PAGE_EXT="webp", MOBILE_BREAKPOINT=800, TURN_MS=640, BUILD_ID="20260810-1615";
-  const book=document.getElementById("book"), leftSlot=document.getElementById("leftSlot"), rightSlot=document.getElementById("rightSlot"), singleSlot=document.getElementById("singleSlot"), prevButton=document.getElementById("prevButton"), nextButton=document.getElementById("nextButton"), stagePrev=document.getElementById("stagePrev"), stageNext=document.getElementById("stageNext"), fullscreenButton=document.getElementById("fullscreenButton"), viewerStage=document.getElementById("viewerStage"), pageStatus=document.getElementById("pageStatus"), progressBar=document.getElementById("progressBar");
 
-  const flipSheet=document.createElement("div");
-  flipSheet.className="flip-sheet";
-  flipSheet.innerHTML='<div class="flip-face flip-front"></div><div class="flip-face flip-back"></div>';
+  const PAGE_COUNT = 36;
+  const PAGE_PATH = "./pages";
+  const PAGE_EXT = "webp";
+  const MOBILE_BREAKPOINT = 800;
+  const TURN_MS = 820;
+  const BUILD_ID = "20260810-1628";
+
+  const book = document.getElementById("book");
+  const leftSlot = document.getElementById("leftSlot");
+  const rightSlot = document.getElementById("rightSlot");
+  const singleSlot = document.getElementById("singleSlot");
+  const prevButton = document.getElementById("prevButton");
+  const nextButton = document.getElementById("nextButton");
+  const stagePrev = document.getElementById("stagePrev");
+  const stageNext = document.getElementById("stageNext");
+  const fullscreenButton = document.getElementById("fullscreenButton");
+  const viewerStage = document.getElementById("viewerStage");
+  const pageStatus = document.getElementById("pageStatus");
+  const progressBar = document.getElementById("progressBar");
+
+  const flipSheet = document.createElement("div");
+  flipSheet.className = "flip-sheet";
+  flipSheet.setAttribute("aria-hidden", "true");
+  flipSheet.innerHTML = '<div class="flip-face flip-front"></div><div class="flip-face flip-back"></div>';
   book.appendChild(flipSheet);
-  const flipFront=flipSheet.querySelector(".flip-front"), flipBack=flipSheet.querySelector(".flip-back");
+  const flipFront = flipSheet.querySelector(".flip-front");
+  const flipBack = flipSheet.querySelector(".flip-back");
 
-  let currentView=0, touchStartX=null, touchStartY=null, busy=false;
-  const isMobile=()=>matchMedia(`(max-width:${MOBILE_BREAKPOINT}px)`).matches;
-  const DESKTOP_VIEWS=(()=>{const v=[[1]];for(let p=2;p<=PAGE_COUNT-1;p+=2)v.push([p,p+1]);v.push([PAGE_COUNT]);return v})();
-  const totalViews=()=>isMobile()?PAGE_COUNT:DESKTOP_VIEWS.length;
-  const currentPages=()=>isMobile()?[currentView+1]:DESKTOP_VIEWS[currentView];
-  const pageFile=p=>`${PAGE_PATH}/page-${String(p).padStart(2,"0")}.${PAGE_EXT}?v=${BUILD_ID}`;
+  let currentView = 0;
+  let touchStartX = null;
+  let touchStartY = null;
+  let busy = false;
 
-  function makePage(page){
-    const img=new Image(); img.className="page-image"; img.alt=`101cruise Digital Guide page ${page}`; img.decoding="async"; img.draggable=false;
-    const wrap=document.createElement("div"); wrap.className="page-art";
-    const loading=document.createElement("div"); loading.className="page-loading"; loading.textContent=`Loading page ${page}…`; wrap.appendChild(loading);
-    img.onload=()=>wrap.replaceChildren(img);
-    img.onerror=()=>{const e=document.createElement("div");e.className="page-error";e.textContent=`Page ${page} could not be loaded.`;wrap.replaceChildren(e)};
-    img.src=pageFile(page); return wrap;
-  }
-  const setPage=(slot,page)=>slot.replaceChildren(makePage(page));
-  const clearSlots=()=>{leftSlot.replaceChildren();rightSlot.replaceChildren();singleSlot.replaceChildren()};
-  function renderSingle(page){book.classList.add("single-mode");clearSlots();setPage(singleSlot,page)}
-  function renderSpread(l,r){book.classList.remove("single-mode");clearSlots();setPage(leftSlot,l);setPage(rightSlot,r)}
-  function setBookMode(){const p=currentPages(); if(!isMobile()&&p.length===2)book.dataset.mode="spread"; else if(p[0]===1)book.dataset.mode="cover"; else if(p[p.length-1]===PAGE_COUNT)book.dataset.mode="back"; else book.dataset.mode="single"}
-  function updateBookEdges(){if(isMobile())return;const max=Math.max(1,totalViews()-1),progress=currentView/max,left=1.5+progress*2.5,right=4-progress*2.5;book.style.setProperty("--left-stack",`${left.toFixed(1)}px`);book.style.setProperty("--right-stack",`${right.toFixed(1)}px`)}
-  function updateStatus(){const p=currentPages();pageStatus.textContent=isMobile()?`Page ${p[0]} / ${PAGE_COUNT}`:(p.length===1&&p[0]===1)?"Cover":(p.length===1&&p[0]===PAGE_COUNT)?"Back cover":`Pages ${p[0]}–${p[1]}`;const max=totalViews()-1;progressBar.style.width=`${max?(currentView/max)*100:100}%`;const start=currentView===0,end=currentView===max;prevButton.disabled=start;nextButton.disabled=end;stagePrev.disabled=start;stageNext.disabled=end;updateBookEdges()}
-  function preload(page){if(page<1||page>PAGE_COUNT)return;const img=new Image();img.src=pageFile(page)}
-  function preloadNearby(){const p=currentPages(),first=p[0],last=p[p.length-1];for(let o=1;o<=4;o++){preload(first-o);preload(last+o)}}
-  function resetFlip(){flipSheet.className="flip-sheet";flipFront.replaceChildren();flipBack.replaceChildren();book.classList.remove("is-turning")}
-  function fallback(dir){const cls=dir>0?"is-forward":"is-back";book.classList.remove("is-forward","is-back");void book.offsetWidth;book.classList.add(cls);setTimeout(()=>book.classList.remove(cls),300)}
-  function render(dir=0){resetFlip();const p=currentPages();if(isMobile()||p.length===1)renderSingle(p[0]);else renderSpread(p[0],p[1]);setBookMode();updateStatus();preloadNearby();if(dir)fallback(dir)}
+  const imageCache = new Map();
+  const isMobile = () => matchMedia(`(max-width:${MOBILE_BREAKPOINT}px)`).matches;
+  const DESKTOP_VIEWS = (() => {
+    const views = [[1]];
+    for (let page = 2; page <= PAGE_COUNT - 1; page += 2) views.push([page, page + 1]);
+    views.push([PAGE_COUNT]);
+    return views;
+  })();
 
-  function flipForward(oldPages,newPages){
-    busy=true;
-    setPage(leftSlot,oldPages[0]); setPage(rightSlot,newPages[1]);
-    flipFront.replaceChildren(makePage(oldPages[1])); flipBack.replaceChildren(makePage(newPages[0]));
-    flipSheet.className="flip-sheet active from-right"; book.classList.add("is-turning"); void flipSheet.offsetWidth;
-    requestAnimationFrame(()=>flipSheet.classList.add("turning"));
-    setTimeout(()=>{currentView+=1;resetFlip();renderSpread(newPages[0],newPages[1]);setBookMode();updateStatus();preloadNearby();busy=false},TURN_MS+40);
-  }
-  function flipBackward(oldPages,newPages){
-    busy=true;
-    setPage(leftSlot,newPages[0]); setPage(rightSlot,oldPages[1]);
-    flipFront.replaceChildren(makePage(oldPages[0])); flipBack.replaceChildren(makePage(newPages[1]));
-    flipSheet.className="flip-sheet active from-left"; book.classList.add("is-turning"); void flipSheet.offsetWidth;
-    requestAnimationFrame(()=>flipSheet.classList.add("turning"));
-    setTimeout(()=>{currentView-=1;resetFlip();renderSpread(newPages[0],newPages[1]);setBookMode();updateStatus();preloadNearby();busy=false},TURN_MS+40);
-  }
-  function openCover(){busy=true;book.classList.add("cover-opening");setTimeout(()=>{book.classList.remove("cover-opening");currentView=1;render();fallback(1);busy=false},500)}
-  function move(dir){
-    if(busy)return;const nextView=currentView+dir;if(nextView<0||nextView>=totalViews())return;
-    if(isMobile()){currentView=nextView;render(dir);return}
-    const oldPages=DESKTOP_VIEWS[currentView],newPages=DESKTOP_VIEWS[nextView];
-    if(dir>0&&currentView===0){openCover();return}
-    if(oldPages.length===2&&newPages.length===2){dir>0?flipForward(oldPages,newPages):flipBackward(oldPages,newPages);return}
-    currentView=nextView;render(dir);
+  const totalViews = () => (isMobile() ? PAGE_COUNT : DESKTOP_VIEWS.length);
+  const currentPages = () => (isMobile() ? [currentView + 1] : DESKTOP_VIEWS[currentView]);
+  const pageFile = (page) => `${PAGE_PATH}/page-${String(page).padStart(2, "0")}.${PAGE_EXT}?v=${BUILD_ID}`;
+
+  function ensurePageLoaded(page) {
+    if (page < 1 || page > PAGE_COUNT) return Promise.resolve();
+    if (imageCache.has(page)) return imageCache.get(page);
+
+    const promise = new Promise((resolve) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = async () => {
+        try { await img.decode(); } catch (_) {}
+        resolve();
+      };
+      img.onerror = () => resolve();
+      img.src = pageFile(page);
+    });
+
+    imageCache.set(page, promise);
+    return promise;
   }
 
-  prevButton.onclick=()=>move(-1); nextButton.onclick=()=>move(1); stagePrev.onclick=()=>move(-1); stageNext.onclick=()=>move(1);
-  document.addEventListener("keydown",e=>{if(["ArrowRight","PageDown"," "].includes(e.key)){e.preventDefault();move(1)}else if(["ArrowLeft","PageUp"].includes(e.key)){e.preventDefault();move(-1)}else if(e.key==="Home"&&!busy){currentView=0;render(-1)}else if(e.key==="End"&&!busy){currentView=totalViews()-1;render(1)}});
-  viewerStage.addEventListener("touchstart",e=>{const t=e.changedTouches[0];touchStartX=t.clientX;touchStartY=t.clientY},{passive:true});
-  viewerStage.addEventListener("touchend",e=>{if(touchStartX===null)return;const t=e.changedTouches[0],dx=t.clientX-touchStartX,dy=t.clientY-touchStartY;touchStartX=touchStartY=null;if(Math.abs(dx)>=48&&Math.abs(dx)>Math.abs(dy))move(dx<0?1:-1)},{passive:true});
-  fullscreenButton.onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch(_){}};
-  document.addEventListener("fullscreenchange",()=>{fullscreenButton.textContent=document.fullscreenElement?"Exit full screen":"Full screen"});
-  document.addEventListener("contextmenu",e=>{if(e.target.closest(".viewer-stage"))e.preventDefault()});
-  document.addEventListener("dragstart",e=>{if(e.target.closest(".viewer-stage"))e.preventDefault()});
+  function makePage(page, ready = false) {
+    const img = new Image();
+    img.className = "page-image";
+    img.alt = `101cruise Digital Guide page ${page}`;
+    img.decoding = "async";
+    img.draggable = false;
 
-  let wasMobile=isMobile(),resizeTimer;
-  addEventListener("resize",()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{const now=isMobile();if(now===wasMobile){updateBookEdges();return}const oldPages=wasMobile?[currentView+1]:DESKTOP_VIEWS[currentView],page=oldPages[0];currentView=now?page-1:page===1?0:page===PAGE_COUNT?DESKTOP_VIEWS.length-1:Math.ceil((page-1)/2);wasMobile=now;render()},100)});
+    const wrap = document.createElement("div");
+    wrap.className = "page-art";
+
+    if (!ready) {
+      const loading = document.createElement("div");
+      loading.className = "page-loading";
+      loading.textContent = `Loading page ${page}…`;
+      wrap.appendChild(loading);
+      img.onload = () => wrap.replaceChildren(img);
+    } else {
+      wrap.appendChild(img);
+    }
+
+    img.onerror = () => {
+      const error = document.createElement("div");
+      error.className = "page-error";
+      error.textContent = `Page ${page} could not be loaded.`;
+      wrap.replaceChildren(error);
+    };
+
+    img.src = pageFile(page);
+    return wrap;
+  }
+
+  const setPage = (slot, page, ready = false) => slot.replaceChildren(makePage(page, ready));
+  const clearSlots = () => {
+    leftSlot.replaceChildren();
+    rightSlot.replaceChildren();
+    singleSlot.replaceChildren();
+  };
+
+  function renderSingle(page) {
+    book.classList.add("single-mode");
+    clearSlots();
+    setPage(singleSlot, page);
+  }
+
+  function renderSpread(leftPage, rightPage, ready = false) {
+    book.classList.remove("single-mode");
+    clearSlots();
+    setPage(leftSlot, leftPage, ready);
+    setPage(rightSlot, rightPage, ready);
+  }
+
+  function setBookMode() {
+    const pages = currentPages();
+    if (!isMobile() && pages.length === 2) book.dataset.mode = "spread";
+    else if (pages[0] === 1) book.dataset.mode = "cover";
+    else if (pages[pages.length - 1] === PAGE_COUNT) book.dataset.mode = "back";
+    else book.dataset.mode = "single";
+  }
+
+  function updateBookEdges() {
+    if (isMobile()) return;
+    const max = Math.max(1, totalViews() - 1);
+    const progress = currentView / max;
+    const left = 1.5 + progress * 2.5;
+    const right = 4 - progress * 2.5;
+    book.style.setProperty("--left-stack", `${left.toFixed(1)}px`);
+    book.style.setProperty("--right-stack", `${right.toFixed(1)}px`);
+  }
+
+  function updateStatus() {
+    const pages = currentPages();
+    pageStatus.textContent = isMobile()
+      ? `Page ${pages[0]} / ${PAGE_COUNT}`
+      : pages.length === 1 && pages[0] === 1
+        ? "Cover"
+        : pages.length === 1 && pages[0] === PAGE_COUNT
+          ? "Back cover"
+          : `Pages ${pages[0]}–${pages[1]}`;
+
+    const max = totalViews() - 1;
+    progressBar.style.width = `${max ? (currentView / max) * 100 : 100}%`;
+    const atStart = currentView === 0;
+    const atEnd = currentView === max;
+    prevButton.disabled = atStart;
+    nextButton.disabled = atEnd;
+    stagePrev.disabled = atStart;
+    stageNext.disabled = atEnd;
+    updateBookEdges();
+  }
+
+  function preload(page) {
+    void ensurePageLoaded(page);
+  }
+
+  function preloadNearby() {
+    const pages = currentPages();
+    const first = pages[0];
+    const last = pages[pages.length - 1];
+    for (let offset = 1; offset <= 4; offset += 1) {
+      preload(first - offset);
+      preload(last + offset);
+    }
+  }
+
+  function resetFlip() {
+    flipSheet.className = "flip-sheet";
+    flipFront.replaceChildren();
+    flipBack.replaceChildren();
+    book.classList.remove("is-turning");
+  }
+
+  function fallback(direction) {
+    const className = direction > 0 ? "is-forward" : "is-back";
+    book.classList.remove("is-forward", "is-back");
+    void book.offsetWidth;
+    book.classList.add(className);
+    setTimeout(() => book.classList.remove(className), 360);
+  }
+
+  function render(direction = 0) {
+    resetFlip();
+    const pages = currentPages();
+    if (isMobile() || pages.length === 1) renderSingle(pages[0]);
+    else renderSpread(pages[0], pages[1]);
+    setBookMode();
+    updateStatus();
+    preloadNearby();
+    if (direction) fallback(direction);
+  }
+
+  function runFlip(originClass) {
+    return new Promise((resolve) => {
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        flipSheet.removeEventListener("transitionend", onTransitionEnd);
+        resolve();
+      };
+      const onTransitionEnd = (event) => {
+        if (event.target === flipSheet && event.propertyName === "transform") finish();
+      };
+
+      flipSheet.addEventListener("transitionend", onTransitionEnd);
+      flipSheet.className = `flip-sheet active ${originClass}`;
+      book.classList.add("is-turning");
+      void flipSheet.offsetWidth;
+      requestAnimationFrame(() => requestAnimationFrame(() => flipSheet.classList.add("turning")));
+      setTimeout(finish, TURN_MS + 180);
+    });
+  }
+
+  async function flipForward(oldPages, newPages) {
+    busy = true;
+
+    await Promise.all([
+      ensurePageLoaded(oldPages[0]),
+      ensurePageLoaded(oldPages[1]),
+      ensurePageLoaded(newPages[0]),
+      ensurePageLoaded(newPages[1])
+    ]);
+
+    setPage(leftSlot, oldPages[0], true);
+    setPage(rightSlot, newPages[1], true);
+    flipFront.replaceChildren(makePage(oldPages[1], true));
+    flipBack.replaceChildren(makePage(newPages[0], true));
+
+    await runFlip("from-right");
+
+    currentView += 1;
+
+    // Replace the static spread while the turned sheet is still covering it.
+    // This prevents Safari exposing the previous left page for a frame.
+    renderSpread(newPages[0], newPages[1], true);
+    setBookMode();
+    updateStatus();
+    preloadNearby();
+
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    resetFlip();
+    busy = false;
+  }
+
+  async function flipBackward(oldPages, newPages) {
+    busy = true;
+
+    await Promise.all([
+      ensurePageLoaded(oldPages[0]),
+      ensurePageLoaded(oldPages[1]),
+      ensurePageLoaded(newPages[0]),
+      ensurePageLoaded(newPages[1])
+    ]);
+
+    setPage(leftSlot, newPages[0], true);
+    setPage(rightSlot, oldPages[1], true);
+    flipFront.replaceChildren(makePage(oldPages[0], true));
+    flipBack.replaceChildren(makePage(newPages[1], true));
+
+    await runFlip("from-left");
+
+    currentView -= 1;
+
+    renderSpread(newPages[0], newPages[1], true);
+    setBookMode();
+    updateStatus();
+    preloadNearby();
+
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    resetFlip();
+    busy = false;
+  }
+
+  function openCover() {
+    busy = true;
+    book.classList.add("cover-opening");
+    setTimeout(() => {
+      book.classList.remove("cover-opening");
+      currentView = 1;
+      render();
+      fallback(1);
+      busy = false;
+    }, 650);
+  }
+
+  function move(direction) {
+    if (busy) return;
+    const nextView = currentView + direction;
+    if (nextView < 0 || nextView >= totalViews()) return;
+
+    if (isMobile()) {
+      currentView = nextView;
+      render(direction);
+      return;
+    }
+
+    const oldPages = DESKTOP_VIEWS[currentView];
+    const newPages = DESKTOP_VIEWS[nextView];
+
+    if (direction > 0 && currentView === 0) {
+      openCover();
+      return;
+    }
+
+    if (oldPages.length === 2 && newPages.length === 2) {
+      if (direction > 0) void flipForward(oldPages, newPages);
+      else void flipBackward(oldPages, newPages);
+      return;
+    }
+
+    currentView = nextView;
+    render(direction);
+  }
+
+  prevButton.onclick = () => move(-1);
+  nextButton.onclick = () => move(1);
+  stagePrev.onclick = () => move(-1);
+  stageNext.onclick = () => move(1);
+
+  document.addEventListener("keydown", (event) => {
+    if (["ArrowRight", "PageDown", " "].includes(event.key)) {
+      event.preventDefault();
+      move(1);
+    } else if (["ArrowLeft", "PageUp"].includes(event.key)) {
+      event.preventDefault();
+      move(-1);
+    } else if (event.key === "Home" && !busy) {
+      currentView = 0;
+      render(-1);
+    } else if (event.key === "End" && !busy) {
+      currentView = totalViews() - 1;
+      render(1);
+    }
+  });
+
+  viewerStage.addEventListener("touchstart", (event) => {
+    const touch = event.changedTouches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+  }, { passive: true });
+
+  viewerStage.addEventListener("touchend", (event) => {
+    if (touchStartX === null) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    touchStartX = null;
+    touchStartY = null;
+    if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy)) move(dx < 0 ? 1 : -1);
+  }, { passive: true });
+
+  fullscreenButton.onclick = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch (_) {}
+  };
+
+  document.addEventListener("fullscreenchange", () => {
+    fullscreenButton.textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
+  });
+
+  document.addEventListener("contextmenu", (event) => {
+    if (event.target.closest(".viewer-stage")) event.preventDefault();
+  });
+
+  document.addEventListener("dragstart", (event) => {
+    if (event.target.closest(".viewer-stage")) event.preventDefault();
+  });
+
+  let wasMobile = isMobile();
+  let resizeTimer;
+  addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const nowMobile = isMobile();
+      if (nowMobile === wasMobile) {
+        updateBookEdges();
+        return;
+      }
+
+      const oldPages = wasMobile ? [currentView + 1] : DESKTOP_VIEWS[currentView];
+      const page = oldPages[0];
+      currentView = nowMobile
+        ? page - 1
+        : page === 1
+          ? 0
+          : page === PAGE_COUNT
+            ? DESKTOP_VIEWS.length - 1
+            : Math.ceil((page - 1) / 2);
+      wasMobile = nowMobile;
+      render();
+    }, 100);
+  });
+
   render();
 })();
