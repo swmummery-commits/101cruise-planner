@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1b2a">
+  <title>101cruise Digital Guide</title>
+  <meta name="description" content="The 101cruise digital guide.">
+  <link rel="stylesheet" href="./guide.css">
+</head>
+<body>
+  <main class="guide-shell" aria-label="101cruise digital guide">
+    <header class="guide-toolbar">
+      <a class="brand" href="/" aria-label="Back to 101cruise"><span>101cruise</span></a>
+      <div class="toolbar-actions">
+        <button class="icon-button" id="prevButton" type="button" aria-label="Previous page">‹</button>
+        <div class="page-status" aria-live="polite"><span id="pageStatus">Cover</span></div>
+        <button class="icon-button" id="nextButton" type="button" aria-label="Next page">›</button>
+        <button class="text-button" id="fullscreenButton" type="button">Full screen</button>
+      </div>
+    </header>
+
+    <section class="viewer-stage" id="viewerStage">
+      <div class="book" id="book">
+        <div class="book-shadow" aria-hidden="true"></div>
+        <div class="page-slot left-slot" id="leftSlot"></div>
+        <div class="page-slot right-slot" id="rightSlot"></div>
+        <div class="single-slot" id="singleSlot"></div>
+        <div class="spine" aria-hidden="true"></div>
+      </div>
+      <button class="stage-hit stage-hit-left" id="stagePrev" type="button" aria-label="Previous"></button>
+      <button class="stage-hit stage-hit-right" id="stageNext" type="button" aria-label="Next"></button>
+    </section>
+
+    <footer class="guide-footer">
+      <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+      <p>Use the arrows, swipe, or your keyboard to move through the guide.</p>
+    </footer>
+  </main>
+  <script src="./guide.js" defer></script>
+</body>
+</html>
