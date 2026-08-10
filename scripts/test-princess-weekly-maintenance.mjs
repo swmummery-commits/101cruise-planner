@@ -365,9 +365,18 @@ test("25. incorrect workflow confirmation blocks job", () => {
   if (!cli.verifyWorkflowConfirmationInput("PRINCESS-WEEKLY-MAINTENANCE")) {
     throw new Error("correct confirmation must pass");
   }
-  if (!applyWorkflowSrc.includes('if [ "${{ github.event.inputs.confirmation }}" != "PRINCESS-WEEKLY-MAINTENANCE" ]')) {
-    throw new Error("apply workflow must verify confirmation before maintenance");
+  if (!applyWorkflowSrc.includes("if: github.event_name == 'workflow_dispatch'")) {
+    throw new Error("manual confirmation must only apply to workflow_dispatch");
   }
+  if (!applyWorkflowSrc.includes('type: choice')) {
+    throw new Error("manual confirmation must use choice input");
+  }
+  const manualCtx = cli.resolveWorkflowApplyContext({
+    eventName: "workflow_dispatch",
+    confirmationInput: "princess-weekly-maintenance",
+    maxWritesInput: 30
+  });
+  if (manualCtx.ok) throw new Error("lowercase manual confirmation must fail");
 });
 
 test("26. local/self-hosted apply accepted", () => {
@@ -554,13 +563,17 @@ test("40. idempotency anomaly blocks success", () => {
   if (anomaly.ok) throw new Error("idempotency anomaly must fail");
 });
 
-test("41. apply workflow has workflow_dispatch only", () => {
+test("41. apply workflow supports workflow_dispatch and schedule", () => {
   if (!applyWorkflowSrc.includes("workflow_dispatch")) throw new Error("missing workflow_dispatch");
+  if (!/^\s*schedule:/m.test(applyWorkflowSrc)) throw new Error("missing schedule trigger");
 });
 
-test("42. apply workflow has NO schedule", () => {
-  if (/^\s*schedule:/m.test(applyWorkflowSrc) || applyWorkflowSrc.includes("cron:")) {
-    throw new Error("apply workflow must not include schedule/cron");
+test("42. apply workflow schedule cron is Sunday 20:00 UTC", () => {
+  if (!applyWorkflowSrc.includes('cron: "0 20 * * 0"') && !applyWorkflowSrc.includes("cron: '0 20 * * 0'")) {
+    throw new Error("apply workflow must use cron 0 20 * * 0");
+  }
+  if (!applyWorkflowSrc.includes("Monday 04:00 Australia/Perth = Sunday 20:00 UTC")) {
+    throw new Error("missing Perth schedule comment");
   }
 });
 
@@ -569,9 +582,10 @@ test("43. apply workflow targets self-hosted princess-local-mac", () => {
   if (!applyWorkflowSrc.includes("princess-local-mac")) throw new Error("missing princess-local-mac");
 });
 
-test("44. apply workflow requires confirmation input", () => {
+test("44. apply workflow requires deliberate confirmation choice", () => {
   if (!applyWorkflowSrc.includes("confirmation:")) throw new Error("missing confirmation input");
   if (!applyWorkflowSrc.includes("PRINCESS-WEEKLY-MAINTENANCE")) throw new Error("missing confirmation token");
+  if (!applyWorkflowSrc.includes("options:")) throw new Error("confirmation must use fixed options");
 });
 
 test("45. apply workflow uses weekly flag only in apply step", () => {
@@ -679,6 +693,212 @@ test("51. weekly apply CLI loads without module resolution error", () => {
     throw new Error(`module resolution failure on apply entry: ${combined}`);
   }
   if (result.status === 0) throw new Error("wrong confirmation must not exit 0");
+});
+
+test("52. only one Princess weekly automatic schedule exists", () => {
+  const workflowDir = path.join(root, ".github/workflows");
+  const sources = fs.readdirSync(workflowDir).map((file) => fs.readFileSync(path.join(workflowDir, file), "utf8"));
+  const count = cli.countPrincessWeeklyCronSchedules(sources);
+  if (count !== 1) throw new Error(`expected exactly 1 Princess weekly cron, found ${count}`);
+});
+
+test("53. dry-run workflow still has no schedule", () => {
+  if (/^\s*schedule:/m.test(workflowSrc) || workflowSrc.includes("cron:")) {
+    throw new Error("dry-run workflow must remain schedule-free");
+  }
+});
+
+test("54. scheduled apply context supplies fixed confirmation safely", () => {
+  const ctx = cli.resolveWorkflowApplyContext({ eventName: "schedule" });
+  if (!ctx.ok || ctx.trigger_type !== "scheduled") throw new Error("scheduled context must ok");
+  if (ctx.confirmation_token !== cli.WEEKLY_APPLY_CONFIRMATION_TOKEN) throw new Error("scheduled token mismatch");
+  if (ctx.max_writes !== 30) throw new Error("scheduled max_writes must be 30");
+});
+
+test("55. manual apply context requires exact confirmation choice", () => {
+  const ok = cli.resolveWorkflowApplyContext({
+    eventName: "workflow_dispatch",
+    confirmationInput: cli.WEEKLY_APPLY_CONFIRMATION_TOKEN,
+    maxWritesInput: 30
+  });
+  if (!ok.ok || ok.trigger_type !== "manual") throw new Error("manual context must ok");
+});
+
+test("56. scheduled event maps to apply runner trigger type", () => {
+  if (cli.resolveMaintenanceRunnerTriggerType("scheduled") !== "weekly_scheduled_apply") {
+    throw new Error("scheduled runner trigger mismatch");
+  }
+  if (cli.resolveMaintenanceRunnerTriggerType("manual") !== "weekly_manual_apply") {
+    throw new Error("manual runner trigger mismatch");
+  }
+});
+
+test("57. apply workflow sets scheduled trigger env on apply step", () => {
+  if (!applyWorkflowSrc.includes("PRINCESS_WEEKLY_TRIGGER_TYPE")) {
+    throw new Error("apply workflow must pass trigger type env");
+  }
+  if (!applyWorkflowSrc.includes("github.event_name == 'schedule'")) {
+    throw new Error("apply workflow must branch scheduled vs manual trigger");
+  }
+});
+
+test("58. apply workflow has no GitHub-hosted fallback", () => {
+  if (applyWorkflowSrc.includes("ubuntu-latest") || applyWorkflowSrc.includes("macos-latest")) {
+    throw new Error("apply workflow must not list cloud runners");
+  }
+});
+
+test("59. manual max_writes choice cannot exceed hard cap in workflow", () => {
+  if (!applyWorkflowSrc.includes("max_writes")) throw new Error("missing max_writes input");
+  const capStep = applyWorkflowSrc.match(/Resolve apply max writes[\s\S]*?Run Princess weekly maintenance apply/)?.[0] || "";
+  if (!/\[ "\$REQUESTED" -gt 30 \]/.test(capStep)) throw new Error("workflow must clamp max_writes to 30");
+});
+
+test("60. report includes manual vs scheduled trigger type", () => {
+  const scheduled = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "scheduled",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: true, summary: { quality_gate: { passed: true }, reconciliation_arithmetic_ok: true, zero_change_apply: true } },
+    maintenanceResult: { ok: true, summary: { quality_gate: { passed: true }, zero_change_apply: true } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 },
+    writeAccounting: { accounting_ok: true, attempted: 0, committed: 0, genuinely_failed: 0, unchanged: 1503, source_absent_active: 0 },
+    manifestValidation: { ok: true, zero_writes: true, manifest_record_count: 0 },
+    postWriteReconciliation: { ok: true, skipped: true },
+    postWriteVerification: { ok: true, skipped: true }
+  });
+  if (scheduled.trigger_type !== "scheduled") throw new Error("scheduled trigger missing");
+  if (scheduled.execution_mode !== "apply") throw new Error("execution mode missing");
+  const manual = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "manual",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: true, summary: { quality_gate: { passed: true }, reconciliation_arithmetic_ok: true, zero_change_apply: true } },
+    maintenanceResult: { ok: true, summary: { quality_gate: { passed: true }, zero_change_apply: true } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 },
+    writeAccounting: { accounting_ok: true, attempted: 0, committed: 0, genuinely_failed: 0, unchanged: 1503, source_absent_active: 0 },
+    manifestValidation: { ok: true, zero_writes: true, manifest_record_count: 0 },
+    postWriteReconciliation: { ok: true, skipped: true },
+    postWriteVerification: { ok: true, skipped: true }
+  });
+  if (manual.trigger_type !== "manual") throw new Error("manual trigger missing");
+});
+
+test("61. zero-change scheduled apply returns success", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "scheduled",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: true, summary: { quality_gate: { passed: true }, reconciliation_arithmetic_ok: true, zero_change_apply: true } },
+    maintenanceResult: { ok: true, summary: { quality_gate: { passed: true }, zero_change_apply: true } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 },
+    writeAccounting: { accounting_ok: true, attempted: 0, committed: 0, genuinely_failed: 0, unchanged: 1503, source_absent_active: 0 },
+    manifestValidation: { ok: true, zero_writes: true, manifest_record_count: 0 },
+    postWriteReconciliation: { ok: true, skipped: true },
+    postWriteVerification: { ok: true, skipped: true }
+  });
+  if (cli.resolveWeeklyMaintenanceExitCode(report) !== 0) throw new Error("zero-change scheduled apply must exit 0");
+});
+
+test("62. GitHub job summary helper omits secrets", () => {
+  const summary = cli.buildGitHubJobSummary(
+    cli.buildWeeklyMaintenanceReport({
+      mode: "apply",
+      triggerType: "scheduled",
+      startedAt: "2026-08-09T00:00:00.000Z",
+      endedAt: "2026-08-09T00:01:00.000Z",
+      environment: { supabase_service_role_key: "[REDACTED]" },
+      executeResult: { success: true, summary: { quality_gate: { passed: true }, reconciliation_arithmetic_ok: true, eligible_total: 1503, active_production_total: 1503 } },
+      maintenanceResult: { ok: true, summary: { quality_gate: { passed: true } } },
+      countsBefore: { princess: 1503 },
+      countsAfter: { princess: 1503 },
+      writeAccounting: { accounting_ok: true, attempted: 0, committed: 0, genuinely_failed: 0, unchanged: 1503, source_absent_active: 2 },
+      manifestValidation: { ok: true, zero_writes: true, manifest_record_count: 0 },
+      postWriteReconciliation: { ok: true, skipped: true },
+      postWriteVerification: { ok: true, skipped: true }
+    })
+  );
+  if (!summary.includes("Princess Weekly Maintenance")) throw new Error("summary title missing");
+  if (!summary.includes("Scheduled")) throw new Error("scheduled trigger missing from summary");
+  if (/secret|eyJ[A-Za-z0-9_-]+\./.test(summary)) throw new Error("summary must not leak secrets");
+});
+
+test("63. apply workflow publishes GitHub job summary", () => {
+  if (!applyWorkflowSrc.includes("Publish GitHub job summary")) throw new Error("missing job summary step");
+  if (!applyWorkflowSrc.includes("GITHUB_STEP_SUMMARY")) throw new Error("missing step summary output");
+  if (!applyWorkflowSrc.includes("if: always()")) throw new Error("summary/artifact should use always()");
+});
+
+test("64. apply workflow keeps discovery and automation flags false", () => {
+  if (!applyWorkflowSrc.includes('PRINCESS_DISCOVERY_WRITE_ENABLED: "false"')) {
+    throw new Error("discovery write flag must remain false");
+  }
+  if (!applyWorkflowSrc.includes('CRUISE_DISCOVERY_AUTOMATION_ENABLED: "false"')) {
+    throw new Error("automation flag must remain false");
+  }
+});
+
+test("65. run script resolves scheduled trigger from env", () => {
+  if (!scriptSrc.includes("PRINCESS_WEEKLY_TRIGGER_TYPE")) {
+    throw new Error("run script must read scheduled trigger env");
+  }
+  if (!scriptSrc.includes('resolveMaintenanceRunnerTriggerType')) {
+    throw new Error("run script must map workflow trigger to runner trigger");
+  }
+});
+
+test("66. scheduled source failure blocks apply", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "scheduled",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: false, reason: "official_source_unreachable" },
+    maintenanceResult: { failed: true, reason: "official_source_unreachable", simulation: { fetch_result: { fetch_failed: true } } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 }
+  });
+  if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) throw new Error("scheduled source failure must non-zero");
+});
+
+test("67. scheduled reconciliation failure blocks apply", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "scheduled",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: true, summary: { quality_gate: { passed: true }, reconciliation_arithmetic_ok: false } },
+    maintenanceResult: { summary: { quality_gate: { passed: true }, reconciliation_arithmetic_ok: false } },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 }
+  });
+  if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) throw new Error("scheduled reconciliation failure must non-zero");
+});
+
+test("68. scheduled lock failure blocks apply", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "scheduled",
+    startedAt: "2026-08-09T00:00:00.000Z",
+    endedAt: "2026-08-09T00:01:00.000Z",
+    environment: {},
+    executeResult: { success: false, blocked: true, reason: "maintenance_lock_held" },
+    maintenanceResult: { blocked: true, reason: "maintenance_lock_held" },
+    countsBefore: { princess: 1503 },
+    countsAfter: { princess: 1503 }
+  });
+  if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) throw new Error("scheduled lock failure must non-zero");
 });
 
 console.log(`\ntest-princess-weekly-maintenance: ${passed} passed`);

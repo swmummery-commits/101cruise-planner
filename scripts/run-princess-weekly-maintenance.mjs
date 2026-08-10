@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Princess weekly maintenance — Phase A dry-run (default) + Phase C manual apply.
+ * Princess weekly maintenance — Phase A dry-run (default) + Phase C apply (manual or scheduled).
  *
  *   npm run princess:weekly-maintenance
  *   node scripts/run-princess-weekly-maintenance.mjs
@@ -141,7 +141,8 @@ async function runDryRun({ startedAt, environment, countsBefore, sb, previousEli
   });
 }
 
-async function runApply({ startedAt, environment, countsBefore, sb, previousEligibleTotal, maxWrites }) {
+async function runApply({ startedAt, environment, countsBefore, sb, previousEligibleTotal, maxWrites, triggerType }) {
+  const runnerTriggerType = cli.resolveMaintenanceRunnerTriggerType(triggerType);
   const executeResult = await executeWeeklyMaintenance({
     lineSlug: "princess-cruises",
     cruiseLineId: PRINCESS_LINE_ID,
@@ -151,11 +152,11 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
       runPrincessWeeklyMaintenance({
         ...ctx,
         writeMode: "weekly_maintenance",
-        triggerType: "weekly_manual_apply"
+        triggerType: runnerTriggerType
       }),
     dryRun: false,
     maxWrites,
-    triggerType: "weekly_manual_apply",
+    triggerType: runnerTriggerType,
     supabaseClient: sb
   });
 
@@ -190,7 +191,7 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
       runId: executeResult.run_id,
       runRecordId: executeResult.run_record_id,
       cruiseLineId: PRINCESS_LINE_ID,
-      triggerType: "weekly_manual_apply"
+      triggerType: runnerTriggerType
     }
   });
 
@@ -227,6 +228,7 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
 
   return cli.buildWeeklyMaintenanceReport({
     mode: "apply",
+    triggerType,
     startedAt,
     endedAt,
     environment,
@@ -253,6 +255,12 @@ async function main() {
   }
 
   const applyMode = args.apply;
+  const triggerType =
+    process.env.PRINCESS_WEEKLY_TRIGGER_TYPE === "scheduled"
+      ? "scheduled"
+      : applyMode
+        ? "manual"
+        : null;
   if (applyMode) {
     cli.assertWeeklyApplyAllowed(args, process.env);
   }
@@ -269,7 +277,8 @@ async function main() {
         countsBefore,
         sb,
         previousEligibleTotal,
-        maxWrites: cli.resolveEffectiveWeeklyMaxWrites(args.maxWrites)
+        maxWrites: cli.resolveEffectiveWeeklyMaxWrites(args.maxWrites),
+        triggerType
       })
     : await runDryRun({
         startedAt,

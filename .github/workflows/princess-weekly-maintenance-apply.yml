@@ -1,17 +1,24 @@
-name: Princess Weekly Maintenance (MANUAL APPLY)
+name: Princess Weekly Maintenance (APPLY)
 
 on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: Type PRINCESS-WEEKLY-MAINTENANCE to confirm
+        description: Confirm production maintenance apply
         required: true
-        type: string
+        type: choice
+        options:
+          - PRINCESS-WEEKLY-MAINTENANCE
       max_writes:
         description: Max writes (hard cap 30 regardless of input)
         required: true
         default: "30"
-        type: string
+        type: choice
+        options:
+          - "30"
+  schedule:
+    # Monday 04:00 Australia/Perth = Sunday 20:00 UTC
+    - cron: "0 20 * * 0"
 
 concurrency:
   group: princess-weekly-maintenance
@@ -30,6 +37,7 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       PRINCESS_DISCOVERY_WRITE_ENABLED: "false"
+      CRUISE_DISCOVERY_AUTOMATION_ENABLED: "false"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -40,17 +48,33 @@ jobs:
           node-version: "20"
 
       - name: Verify manual apply confirmation
+        if: github.event_name == 'workflow_dispatch'
         run: |
           if [ "${{ github.event.inputs.confirmation }}" != "PRINCESS-WEEKLY-MAINTENANCE" ]; then
             echo "Invalid confirmation token — no maintenance command will run."
             exit 1
           fi
 
+      - name: Resolve apply max writes (hard cap 30)
+        id: apply_cap
+        run: |
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            echo "max_writes=30" >> "$GITHUB_OUTPUT"
+          else
+            REQUESTED="${{ github.event.inputs.max_writes }}"
+            if [ -z "$REQUESTED" ] || [ "$REQUESTED" -gt 30 ] 2>/dev/null || [ "$REQUESTED" -lt 1 ] 2>/dev/null; then
+              REQUESTED=30
+            fi
+            echo "max_writes=$REQUESTED" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run Princess weekly maintenance apply
+        id: maintenance_apply
         env:
           PRINCESS_WEEKLY_RECONCILIATION_ENABLED: "true"
+          PRINCESS_WEEKLY_TRIGGER_TYPE: ${{ github.event_name == 'schedule' && 'scheduled' || 'manual' }}
         run: |
-          npm run princess:weekly-maintenance -- --apply --confirm=PRINCESS-WEEKLY-MAINTENANCE --max-writes=${{ github.event.inputs.max_writes }}
+          npm run princess:weekly-maintenance -- --apply --confirm=PRINCESS-WEEKLY-MAINTENANCE --max-writes=${{ steps.apply_cap.outputs.max_writes }}
 
       - name: Upload apply report artifact
         uses: actions/upload-artifact@v7
@@ -60,3 +84,23 @@ jobs:
           path: reports/princess-weekly-apply-*.json
           if-no-files-found: ignore
           retention-days: 90
+
+      - name: Publish GitHub job summary
+        if: always()
+        run: |
+          REPORT=$(ls -t reports/princess-weekly-apply-*.json 2>/dev/null | head -1 || true)
+          if [ -z "$REPORT" ] || [ ! -f "$REPORT" ]; then
+            {
+              echo "## Princess Weekly Maintenance"
+              echo ""
+              echo "**Trigger:** ${{ github.event_name == 'schedule' && 'Scheduled' || 'Manual' }}"
+              echo "**Status:** FAILED (no report artifact)"
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          REPORT="$REPORT" node - <<'NODE'
+          const fs = require("fs");
+          const cli = require("./netlify/functions/lib/princess-weekly-maintenance-cli");
+          const report = JSON.parse(fs.readFileSync(process.env.REPORT, "utf8"));
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${cli.buildGitHubJobSummary(report)}\n`);
+          NODE

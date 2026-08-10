@@ -1,5 +1,5 @@
 /**
- * Princess weekly maintenance CLI helpers (Phase A dry-run + Phase C manual apply).
+ * Princess weekly maintenance CLI helpers (Phase A dry-run + Phase C apply).
  */
 
 const fs = require("fs");
@@ -279,6 +279,7 @@ function validatePostWriteReconciliation(postWriteSummary) {
 
 function buildWeeklyMaintenanceReport({
   mode = "dry_run",
+  triggerType = null,
   startedAt,
   endedAt,
   environment,
@@ -384,6 +385,8 @@ function buildWeeklyMaintenanceReport({
   const report = {
     mode,
     phase: mode === "apply" ? "C" : "A",
+    trigger_type: triggerType,
+    execution_mode: mode === "apply" ? "apply" : "dry_run",
     started_at: startedAt,
     ended_at: endedAt,
     elapsed_ms: endedAt && startedAt ? new Date(endedAt).getTime() - new Date(startedAt).getTime() : null,
@@ -523,10 +526,20 @@ function redactSecrets(value, key = "") {
 function formatWeeklyMaintenanceSummary(report) {
   const r = report.reconciliation || {};
   const qg = report.quality_gate?.passed === true ? "passed" : report.quality_gate?.passed === false ? "failed" : "unknown";
+  const triggerLabel =
+    report.trigger_type === "scheduled"
+      ? "Scheduled"
+      : report.trigger_type === "manual"
+        ? "Manual"
+        : report.mode === "apply"
+          ? "Manual"
+          : "Dry run";
   const title =
-    report.mode === "apply" ? "Princess Weekly Maintenance — MANUAL APPLY" : "Princess Weekly Maintenance — DRY RUN";
+    report.mode === "apply" ? "Princess Weekly Maintenance" : "Princess Weekly Maintenance — DRY RUN";
   const lines = [
     title,
+    `Trigger: ${triggerLabel}`,
+    `Execution mode: ${report.execution_mode || report.mode}`,
     "",
     `Active: ${r.active_production_total ?? "—"}`,
     `Eligible: ${r.eligible_total ?? "—"}`,
@@ -541,6 +554,13 @@ function formatWeeklyMaintenanceSummary(report) {
     lines.push(`Write cap: ${report.write_cap?.cap ?? MAX_WEEKLY_WRITES}`);
     lines.push(`Committed: ${report.writes?.committed ?? 0}`);
     lines.push(`Attempted: ${report.writes?.attempted ?? 0}`);
+    lines.push(`Writes performed: ${report.writes_performed ?? 0}`);
+    if (report.writes?.zero_change_apply === true) {
+      lines.push("Zero-change apply: yes");
+    }
+    const reconOk = report.post_write_reconciliation?.ok;
+    if (reconOk === true) lines.push("Reconciliation: PASS");
+    else if (reconOk === false) lines.push("Reconciliation: FAIL");
   } else {
     lines.push("Writes: 0");
   }
@@ -561,6 +581,83 @@ function writeWeeklyMaintenanceReportFile(report, reportsDir) {
 
 function verifyWorkflowConfirmationInput(provided, expected = WEEKLY_APPLY_CONFIRMATION_TOKEN) {
   return String(provided || "").trim() === expected;
+}
+
+function resolveWorkflowTriggerType(eventName) {
+  if (eventName === "schedule") return "scheduled";
+  if (eventName === "workflow_dispatch") return "manual";
+  return null;
+}
+
+function resolveWorkflowApplyContext({ eventName, confirmationInput, maxWritesInput } = {}) {
+  const trigger_type = resolveWorkflowTriggerType(eventName);
+  if (!trigger_type) {
+    return { ok: false, reason: "unsupported_workflow_event", event_name: eventName || null };
+  }
+  if (trigger_type === "manual" && !verifyWorkflowConfirmationInput(confirmationInput)) {
+    return { ok: false, reason: "weekly_apply_confirmation_required", trigger_type };
+  }
+  const max_writes = resolveEffectiveWeeklyMaxWrites(maxWritesInput ?? MAX_WEEKLY_WRITES);
+  if (max_writes == null) {
+    return { ok: false, reason: "weekly_apply_max_writes_invalid", trigger_type };
+  }
+  return {
+    ok: true,
+    trigger_type,
+    confirmation_token: WEEKLY_APPLY_CONFIRMATION_TOKEN,
+    max_writes
+  };
+}
+
+function resolveMaintenanceRunnerTriggerType(workflowTriggerType) {
+  return workflowTriggerType === "scheduled" ? "weekly_scheduled_apply" : "weekly_manual_apply";
+}
+
+function buildGitHubJobSummary(report) {
+  const r = report.reconciliation || {};
+  const triggerLabel =
+    report.trigger_type === "scheduled"
+      ? "Scheduled"
+      : report.trigger_type === "manual"
+        ? "Manual"
+        : "Unknown";
+  const reconStatus =
+    report.post_write_reconciliation?.ok === true
+      ? "PASS"
+      : report.post_write_reconciliation?.ok === false
+        ? "FAIL"
+        : report.reconciliation?.reconciliation_arithmetic_ok === true
+          ? "PASS"
+          : report.reconciliation?.reconciliation_arithmetic_ok === false
+            ? "FAIL"
+            : "—";
+  const statusLabel = report.status === "completed" ? "SUCCESS" : report.status === "blocked" ? "BLOCKED" : "FAILED";
+  return [
+    "## Princess Weekly Maintenance",
+    "",
+    `**Trigger:** ${triggerLabel}`,
+    `**Execution mode:** ${report.execution_mode || report.mode}`,
+    "",
+    `**Eligible source cruises:** ${r.eligible_total ?? "—"}`,
+    `**Active production:** ${r.active_production_total ?? "—"}`,
+    `**Proposed inserts:** ${report.proposed_change_metrics?.proposed_inserts ?? r.outstanding_eligible_inserts ?? "—"}`,
+    `**Proposed updates:** ${report.proposed_change_metrics?.proposed_updates ?? r.proposed_updates ?? "—"}`,
+    `**Committed:** ${report.writes?.committed ?? 0}`,
+    `**Source absent retained:** ${report.source_absent?.count ?? "—"}`,
+    `**Writes performed:** ${report.writes_performed ?? 0}`,
+    `**Reconciliation:** ${reconStatus}`,
+    `**Status:** ${statusLabel}`
+  ].join("\n");
+}
+
+function countPrincessWeeklyCronSchedules(workflowSources = []) {
+  let count = 0;
+  for (const src of workflowSources) {
+    if (/^\s*schedule:/m.test(src) && /0 20 \* \* 0/.test(src) && /princess/i.test(src)) {
+      count += 1;
+    }
+  }
+  return count;
 }
 
 module.exports = {
@@ -586,5 +683,10 @@ module.exports = {
   redactSecrets,
   formatWeeklyMaintenanceSummary,
   writeWeeklyMaintenanceReportFile,
-  verifyWorkflowConfirmationInput
+  verifyWorkflowConfirmationInput,
+  resolveWorkflowTriggerType,
+  resolveWorkflowApplyContext,
+  resolveMaintenanceRunnerTriggerType,
+  buildGitHubJobSummary,
+  countPrincessWeeklyCronSchedules
 };
