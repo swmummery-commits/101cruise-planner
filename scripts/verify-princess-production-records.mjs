@@ -18,6 +18,10 @@ const { publicBookingMinimumDepartureDate, perthCalendarDate } = require(path.jo
   root,
   "netlify/functions/lib/public-discovered-cruise-inventory"
 ));
+const { auditEcr12aRollbackState } = require(path.join(
+  root,
+  "netlify/functions/lib/princess-ecr12a-rollback-audit.js"
+));
 
 const PRINCESS_LINE_ID = "c19f40a7-c160-4035-a845-14dada550e1f";
 const siteUrl = String(
@@ -77,8 +81,11 @@ async function main() {
     `ci_cruise_ships?cruise_line_id=eq.${PRINCESS_LINE_ID}&select=id,name,official_line_ship_id`
   );
   const shipById = Object.fromEntries(ships.map((s) => [s.id, s]));
-  const ecr = rows.filter((r) => String(r.official_sailing_id || "").startsWith("ECR12A|CB|"));
-  const issues = [];
+  const manifestRows = await sb.get(
+    "cruise_discovery_maintenance_manifests?cruise_line_slug=eq.princess-cruises&select=id,run_id,created_at,manifest&order=created_at.asc"
+  );
+  const rollbackAudit = auditEcr12aRollbackState({ activeRows: rows, manifestRows });
+  const issues = [...rollbackAudit.issues];
 
   const expectedActive = args.expectedActive != null ? args.expectedActive : null;
   const delta = expectedActive != null ? actualActiveExact - expectedActive : null;
@@ -86,8 +93,6 @@ async function main() {
   if (expectedActive != null && actualActiveExact !== expectedActive) {
     issues.push({ issue: "active_count", expected: expectedActive, actual: actualActiveExact, delta });
   }
-  if (ecr.length) issues.push({ issue: "rolled_back_ecr12a_present", count: ecr.length });
-
   const identities = new Set();
   for (const row of rows) {
     if (!row.cruise_line_id) issues.push({ id: row.id, issue: "null_cruise_line_id" });
@@ -191,7 +196,7 @@ async function main() {
       delta,
       expected_snapshot_id: args.expectedSnapshotId || null,
       min_departure: minDep,
-      ecr12a_remaining: ecr.length,
+      ecr12a_rollback_audit: rollbackAudit,
       issues
     },
     cruise_finder: finderChecks,

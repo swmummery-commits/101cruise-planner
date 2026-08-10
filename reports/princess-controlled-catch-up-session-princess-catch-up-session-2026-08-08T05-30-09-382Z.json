@@ -1,0 +1,67 @@
+{
+  "session_id": "princess-catch-up-session-2026-08-08T05-30-09-382Z",
+  "started_at": "2026-08-08T05:30:10.717Z",
+  "ended_at": "2026-08-08T05:30:16.804Z",
+  "mode": "apply",
+  "local_execution_guard": {
+    "ok": true,
+    "local_only": true
+  },
+  "expected_start_active": 816,
+  "actual_start_active": 816,
+  "requested_max_batches": 3,
+  "hard_max_batches": 3,
+  "hard_max_writes_per_batch": 100,
+  "hard_max_writes_per_session": 300,
+  "session_status": "stopped",
+  "stop_reason": "quality_gate_failed",
+  "completion_reason": null,
+  "total_attempted": 0,
+  "total_committed": 0,
+  "total_recovered": 0,
+  "total_failed": 0,
+  "batches": [
+    {
+      "batch_number": 1,
+      "fresh_active_checkpoint": 816,
+      "snapshot_id": null,
+      "eligible_total": null,
+      "recognised_existing_eligible": null,
+      "outstanding_eligible_inserts": null,
+      "quality_gate": null,
+      "continuation": {
+        "continue": false,
+        "reason": "quality_gate_failed"
+      }
+    }
+  ],
+  "counts_start": {
+    "princess_active": 816,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 14
+  },
+  "counts_end": {
+    "princess_active": 816,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 14
+  },
+  "preview": null,
+  "writes_performed": 0,
+  "final": {
+    "princess_active": 816,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "automation_flags": {
+      "PRINCESS_WEEKLY_RECONCILIATION_ENABLED": "(unset)",
+      "PRINCESS_DISCOVERY_WRITE_ENABLED": "true",
+      "CRUISE_DISCOVERY_AUTOMATION_ENABLED": "(unset)"
+    }
+  },
+  "preflight_misclassification_annotation": {
+    "note": "Historical report only: stop_reason=quality_gate_failed with quality_gate=null was a preflight misclassification defect subsequently fixed. Most likely cause: maintenance lock unavailable before source fetch; quality gate was never evaluated.",
+    "annotated_at": "2026-08-08T05:45:00.000Z",
+    "correct_semantics": "stop_reason=lock_unavailable, quality_gate_evaluated=false"
+  }
+}

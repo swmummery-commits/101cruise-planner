@@ -1,0 +1,825 @@
+{
+  "generated_at": "2026-08-08T05:28:20.480Z",
+  "counts": {
+    "total": 271,
+    "AUTO_APPROVED": 202,
+    "MANUAL": 22,
+    "NEEDS_REVIEW": 23,
+    "NO_IMAGE": 24
+  },
+  "reconciliation": 271,
+  "metrics": {
+    "autoApprovedAudited": 202,
+    "manualAudited": 22,
+    "keep": 155,
+    "review": 3,
+    "replace": 44,
+    "wrongGeography": 0,
+    "editorialPoor": 44,
+    "licensingFailures": 0,
+    "vesselPrimary": 0,
+    "militaryWar": 0,
+    "genericFailures": 0,
+    "historical": 11,
+    "needsReviewCount": 23,
+    "noImageCount": 24,
+    "currentPublicAutoApprovalQuality": 76.7,
+    "currentPublicGeographicAccuracy": 100,
+    "currentPublicLicensingAccuracy": 100,
+    "formulas": {
+      "autoApprovedAudited": "audit rows where image_status === AUTO_APPROVED",
+      "manualAudited": "audit rows where image_status === MANUAL",
+      "keepReviewReplace": "KEEP + REVIEW + REPLACE === autoApprovedAudited",
+      "publicAutoApprovalQuality": "KEEP / autoApprovedAudited",
+      "publicGeographicAccuracy": "(autoApprovedAudited - wrongGeography) / autoApprovedAudited",
+      "publicLicensingAccuracy": "(autoApprovedAudited - licensingFailures) / autoApprovedAudited"
+    },
+    "reconciled": true,
+    "exceptions": {
+      "review": [
+        {
+          "port": "Naples",
+          "current_image": "Harbor, Naples, Italy-LCCN2001700918.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "ACCEPTABLE",
+          "action": "REVIEW",
+          "reasons": [
+            "dated_historical_acceptable"
+          ]
+        },
+        {
+          "port": "Sitka",
+          "current_image": "Sitka Waterfront 1890s.JPG",
+          "status": "AUTO_APPROVED",
+          "editorial": "ACCEPTABLE",
+          "action": "REVIEW",
+          "reasons": [
+            "dated_historical_acceptable"
+          ]
+        },
+        {
+          "port": "Skagway",
+          "current_image": "Skagway-harbour-1898.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "ACCEPTABLE",
+          "action": "REVIEW",
+          "reasons": [
+            "dated_historical_acceptable"
+          ]
+        }
+      ],
+      "replace": [
+        {
+          "port": "Abu Dhabi",
+          "current_image": "Vista Panoramica-Abu Dhabi3541.JPG",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Bastia",
+          "current_image": "Mega smeralda bastia.JPG",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Buenos Aires",
+          "current_image": "Buenos Aires 2007 081.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Cadiz",
+          "current_image": "Puerto de la Bahía de Cádiz, España, 2015-12-08, DD 25-27 HDR.JPG",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Catania",
+          "current_image": "Porto di Catania 2024.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Cozumel",
+          "current_image": "Cozumel - Palmeras Restaurant (Our 1996 Margaritas).jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Flam",
+          "current_image": "Flam Hafen 22.07.2008.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Fort-de-France",
+          "current_image": "Captn Faulknor in the Zebra of 16 guns storming Fort Royal, Martinique.585 x 715 mm.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Hobart",
+          "current_image": "Lascar Constitution Dock (Hobart) (4551798599).jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Ibiza",
+          "current_image": "IbizaTown.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Juneau",
+          "current_image": "Puerto de Juneau, Alaska, Estados Unidos, 2017-08-17, DD 12.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Ketchikan",
+          "current_image": "Puerto de Ketchikan, Alaska, Estados Unidos, 2017-08-16, DD 49.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Kota Kinabalu",
+          "current_image": "Beef Burger In Kota Kinabalu, Malaysia.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Kotor",
+          "current_image": "Ljuta, Bahía de Kotor, Montenegro, 2014-04-19, DD 02.JPG",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "La Goulette",
+          "current_image": "Haven van La Goulette, RP-P-1909-2169.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Laem Chabang",
+          "current_image": "Laem Chabang.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Longyearbyen",
+          "current_image": "Sjöomraadet Longyearbyen IMG 8904 rk 136722.JPG",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Mahon",
+          "current_image": "Mahon Hafen.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Montevideo",
+          "current_image": "MontevideoTCP.JPG",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Moorea",
+          "current_image": "PF-Moorea-anleger.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Muara",
+          "current_image": "Bank Indonesia Muara.JPG",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Oranjestad",
+          "current_image": "SS \"Oranjestad\".jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Papeete",
+          "current_image": "Rade de Papeete.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Phuket",
+          "current_image": "Puerto de Phuket, Tailandia, 2013-08-19, DD 02.JPG",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Picton",
+          "current_image": "00 1189 Picton - Neuseeland.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Piraeus",
+          "current_image": "Attica 06-13 Piraeus 01 Port.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Ponta Delgada",
+          "current_image": "Ponta Delgada, Açores.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Port Chalmers",
+          "current_image": "Port Chalmers graving dock with dredge.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Puerto Baquerizo Moreno",
+          "current_image": "2022-05-21 Charles Darwin Bust San Cristóbal 01.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Puerto Plata",
+          "current_image": "Puerto Plata 1.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Punta Arenas",
+          "current_image": "Punta Arenas-View1.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Road Town",
+          "current_image": "Roadtown, Tortola.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "San Diego",
+          "current_image": "San Diego (California, USA), Embarcadero -- 2012 -- 5384.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Savona",
+          "current_image": "Savona Portos.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Sorrento",
+          "current_image": "Sorrento, Italy.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Split",
+          "current_image": "Bartol Kasic, Split (P1080964).jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Tangier",
+          "current_image": "Tangier - 44699733295.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Tarragona",
+          "current_image": "Tarragona punta del Miracle-20130225-RM-111231.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Trieste",
+          "current_image": "Trieste, View towards Sanctuary of Monte Grisa, Italy.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Tromso",
+          "current_image": "Puerto, Tromsø, Noruega, 2019-09-04, DD 48.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Ushuaia",
+          "current_image": "Ushuaia6a (js).jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Valparaiso",
+          "current_image": "Chilean warships at Valparaiso in September 1975.jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Venice",
+          "current_image": "View of a Bridge in Venice (SM 416).png",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        },
+        {
+          "port": "Warnemunde",
+          "current_image": "Teepott, Leuchtturm, Warnemünde, 2019 (01).jpg",
+          "status": "AUTO_APPROVED",
+          "editorial": "POOR",
+          "action": "REPLACE",
+          "reasons": [
+            "editorial_poor"
+          ]
+        }
+      ]
+    },
+    "manual": [
+      {
+        "port": "Cabo San Lucas",
+        "current_image": "Cabo San Lucas Harbour Master's Post - panoramio.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Cagliari",
+        "current_image": "Edward Gennys Fanshawe, Pula, Bay of Cagliari, June 1857 (Sardinia).jpg",
+        "status": "MANUAL",
+        "editorial": "ACCEPTABLE",
+        "action": "REVIEW",
+        "reasons": [
+          "dated_image"
+        ]
+      },
+      {
+        "port": "Cape Town",
+        "current_image": "Cape Town (ZA), Waterfront, Kran -- 2024 -- 2907.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Civitavecchia",
+        "current_image": "Civitavecchia outher harbour - panoramio.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Dubrovnik",
+        "current_image": "Old harbour, Dubrovnik 01.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Haines",
+        "current_image": "Waterfront and dock, Haines, ca 1914 (CURTIS 1895).jpeg",
+        "status": "MANUAL",
+        "editorial": "ACCEPTABLE",
+        "action": "REVIEW",
+        "reasons": [
+          "dated_image"
+        ]
+      },
+      {
+        "port": "Isafjordur",
+        "current_image": "Ísafjörður, Iceland - panoramio (4).jpg",
+        "status": "MANUAL",
+        "editorial": "POOR",
+        "action": "REPLACE",
+        "reasons": [
+          "editorial_poor"
+        ]
+      },
+      {
+        "port": "Mykonos",
+        "current_image": "Mykonos harbour view.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Newcastle upon Tyne",
+        "current_image": "Port of Tyne, Shields Harbour - geograph.org.uk - 4041908.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Noumea",
+        "current_image": "Church and Harbour in Noumea.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Palma de Mallorca",
+        "current_image": "Vista aèria del Port de Palma.JPG",
+        "status": "MANUAL",
+        "editorial": "POOR",
+        "action": "REPLACE",
+        "reasons": [
+          "editorial_poor"
+        ]
+      },
+      {
+        "port": "Port Vila",
+        "current_image": "Port Vila Harbour (Imagicity 816).jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Puerto Vallarta",
+        "current_image": "El Malecón Puerto Vallarta (228717327).jpeg",
+        "status": "MANUAL",
+        "editorial": "POOR",
+        "action": "REPLACE",
+        "reasons": [
+          "editorial_poor"
+        ]
+      },
+      {
+        "port": "Saint John",
+        "current_image": "Saint John Harbour Bridge viewed from Martello Tower.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Singapore",
+        "current_image": "Singapore (SG), Marina South -- 2019 -- 4723.jpg",
+        "status": "MANUAL",
+        "editorial": "ACCEPTABLE",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Southampton",
+        "current_image": "Small pond, Harbour Parade, Southampton - geograph.org.uk - 4736495.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "St Johns Newfoundland",
+        "current_image": "St John's harbour (15683472336).jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Stockholm",
+        "current_image": "Sweden - Stockholm 39 - view over the harbour (6943507962).jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Sydney",
+        "current_image": "Sydney Opera House - Dec 2008.jpg",
+        "status": "MANUAL",
+        "editorial": "POOR",
+        "action": "REPLACE",
+        "reasons": [
+          "editorial_poor"
+        ]
+      },
+      {
+        "port": "Tilbury",
+        "current_image": "London International Cruise Terminal Building at Tilbury - geograph.org.uk - 6254920.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Valencia",
+        "current_image": "Valencia Harbour.jpg",
+        "status": "MANUAL",
+        "editorial": "GOOD",
+        "action": "KEEP",
+        "reasons": []
+      },
+      {
+        "port": "Villefranche-sur-Mer",
+        "current_image": "Villefranche (168200841).jpeg",
+        "status": "MANUAL",
+        "editorial": "POOR",
+        "action": "REPLACE",
+        "reasons": [
+          "editorial_poor"
+        ]
+      }
+    ]
+  },
+  "allPublicAudit": {
+    "KEEP": 170,
+    "REVIEW": 5,
+    "REPLACE": 49,
+    "WRONG": 0
+  },
+  "issues": {
+    "wrongGeo": [],
+    "vessel": [],
+    "lic": [],
+    "replace": [
+      "Abu Dhabi",
+      "Bastia",
+      "Buenos Aires",
+      "Cadiz",
+      "Catania",
+      "Cozumel",
+      "Flam",
+      "Fort-de-France",
+      "Hobart",
+      "Ibiza",
+      "Isafjordur",
+      "Juneau",
+      "Ketchikan",
+      "Kota Kinabalu",
+      "Kotor",
+      "La Goulette",
+      "Laem Chabang",
+      "Longyearbyen",
+      "Mahon",
+      "Montevideo",
+      "Moorea",
+      "Muara",
+      "Oranjestad",
+      "Palma de Mallorca",
+      "Papeete",
+      "Phuket",
+      "Picton",
+      "Piraeus",
+      "Ponta Delgada",
+      "Port Chalmers",
+      "Puerto Baquerizo Moreno",
+      "Puerto Plata",
+      "Puerto Vallarta",
+      "Punta Arenas",
+      "Road Town",
+      "San Diego",
+      "Savona",
+      "Sorrento",
+      "Split",
+      "Sydney",
+      "Tangier",
+      "Tarragona",
+      "Trieste",
+      "Tromso",
+      "Ushuaia",
+      "Valparaiso",
+      "Venice",
+      "Villefranche-sur-Mer",
+      "Warnemunde"
+    ]
+  },
+  "brokenHero": [],
+  "dupDarwin": 1,
+  "dupSouthampton": 1,
+  "dupAll": [
+    {
+      "key": "fort lauderdale",
+      "ids": [
+        "f31ee684-297d-47dd-8add-793a51c6b039",
+        "30269036-ac1e-45c2-87f5-57ffe2ca8eb6"
+      ]
+    },
+    {
+      "key": "miami",
+      "ids": [
+        "21d149ea-75cb-4413-ad8d-77087b310857",
+        "c4e3861f-88b1-428c-9cd7-a0703cc0517d"
+      ]
+    }
+  ],
+  "resolution": {
+    "Cape Town": {
+      "status": "MANUAL",
+      "hero": true,
+      "resolved": false
+    },
+    "Cabo San Lucas": {
+      "status": "MANUAL",
+      "hero": true,
+      "resolved": false
+    },
+    "Palma de Mallorca": {
+      "status": "MANUAL",
+      "hero": true,
+      "resolved": false
+    },
+    "Valencia": {
+      "status": "MANUAL",
+      "hero": true,
+      "resolved": true
+    },
+    "Southampton": {
+      "status": "MANUAL",
+      "hero": true,
+      "resolved": true
+    },
+    "Civitavecchia": {
+      "status": "MANUAL",
+      "hero": true,
+      "resolved": true
+    },
+    "Mykonos": {
+      "status": "MANUAL",
+      "hero": true,
+      "resolved": true
+    }
+  }
+}

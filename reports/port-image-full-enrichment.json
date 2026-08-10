@@ -1,0 +1,1845 @@
+{
+  "mode": "run",
+  "starting": {
+    "total": 273,
+    "AUTO_APPROVED": 194,
+    "MANUAL": 2,
+    "NEEDS_REVIEW": 34,
+    "NO_IMAGE": 43,
+    "other": 0
+  },
+  "eligible_count": 43,
+  "processed_count": 216,
+  "summary": {
+    "attempted": 191,
+    "resolution_successes": 191,
+    "resolution_failures": 0,
+    "auto_approved_added": 141,
+    "needs_review_added": 26,
+    "no_image": 24,
+    "skipped_protected": 0,
+    "skipped": 0,
+    "licensing_rejections": 0,
+    "vessel_primary_rejections": 0,
+    "errors": 26,
+    "systemic_failures": 0
+  },
+  "api_stats": {
+    "wikimediaSearch429": 0,
+    "wikimediaDownload429": 0,
+    "wikimediaDownloads": 12,
+    "braveRequests": 0,
+    "braveResults": 0,
+    "retries": 7
+  },
+  "ending": {
+    "total": 273,
+    "AUTO_APPROVED": 204,
+    "MANUAL": 2,
+    "NEEDS_REVIEW": 36,
+    "NO_IMAGE": 31,
+    "other": 0
+  },
+  "protection": {
+    "civitavecchia_unchanged": true
+  },
+  "results": [
+    {
+      "port_id": "435c596f-4e03-4857-941a-2926cc7e5a84",
+      "canonical_name": "Aarhus",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "City name sign in winter snow at pier harbour Aarhus Denmark 2.jpg",
+      "editorial": "GOOD",
+      "media_id": "913f68e1-19e0-4102-aa9e-83276ae9a659",
+      "resolved_port_id": "435c596f-4e03-4857-941a-2926cc7e5a84"
+    },
+    {
+      "port_id": "97527157-ded1-4c0c-a6d1-726cf56756ce",
+      "canonical_name": "Abu Dhabi",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Vista Panoramica-Abu Dhabi3541.JPG",
+      "editorial": "GOOD",
+      "media_id": "f65107ac-5eb6-4e64-9911-ce61059793c6",
+      "resolved_port_id": "97527157-ded1-4c0c-a6d1-726cf56756ce"
+    },
+    {
+      "port_id": "4827b096-b90f-4fa0-a608-5f69c789746d",
+      "canonical_name": "Agadir",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "02-beach-harbour-agadir-morocco.JPG",
+      "editorial": "GOOD",
+      "media_id": "9ad1346e-35f3-485e-a909-46627334c23b",
+      "resolved_port_id": "4827b096-b90f-4fa0-a608-5f69c789746d"
+    },
+    {
+      "port_id": "e421f27e-f72e-4d30-9f48-f2eb723841bb",
+      "canonical_name": "Airlie Beach",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Airlie-Beach-harbor-1286.jpg",
+      "editorial": "GOOD",
+      "media_id": "db7a77ea-6117-4279-8723-06c223b5e56e",
+      "resolved_port_id": "e421f27e-f72e-4d30-9f48-f2eb723841bb"
+    },
+    {
+      "port_id": "1b64fb60-c2e5-4f5c-a99b-3725e685ec4c",
+      "canonical_name": "Ajaccio",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Ajaccio harbour - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "f9fda1e2-0946-4661-aae7-b23548cbad86",
+      "resolved_port_id": "1b64fb60-c2e5-4f5c-a99b-3725e685ec4c"
+    },
+    {
+      "port_id": "eed8a1b5-c0b7-4321-9ee4-22dc8cae0b3b",
+      "canonical_name": "Akureyri",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Iceland Akureyri Harbour.JPG",
+      "editorial": "GOOD",
+      "media_id": "fa547d21-508b-4457-a3ec-264a01831400",
+      "resolved_port_id": "eed8a1b5-c0b7-4321-9ee4-22dc8cae0b3b"
+    },
+    {
+      "port_id": "1fd4dbf9-0e28-4c63-9700-47551431786a",
+      "canonical_name": "Albany",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Port of Albany and Princess Royal Harbour, April 2022 02.jpg",
+      "editorial": "GOOD",
+      "media_id": "d7cd32f2-b7cd-4678-be9e-8734e5893a51",
+      "resolved_port_id": "1fd4dbf9-0e28-4c63-9700-47551431786a"
+    },
+    {
+      "port_id": "eea5dbf3-ad59-46d0-9d3f-8220275eb170",
+      "canonical_name": "Alesund",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Alesund inner city (harbour).jpg",
+      "editorial": "GOOD",
+      "media_id": "2f9ecc9e-acde-4f86-b7e0-fc5fe05fcb61",
+      "resolved_port_id": "eea5dbf3-ad59-46d0-9d3f-8220275eb170"
+    },
+    {
+      "port_id": "4eb4df88-723b-41bf-a15a-a442ff272b13",
+      "canonical_name": "Alicante",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Alicante Harbour 01.JPG",
+      "editorial": "GOOD",
+      "media_id": "65b64023-7617-4762-b88d-c112f318bee5",
+      "resolved_port_id": "4eb4df88-723b-41bf-a15a-a442ff272b13"
+    },
+    {
+      "port_id": "71eb9a89-feb4-45e8-879b-32dcc5754af6",
+      "canonical_name": "Amsterdam",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Amsterdam - Oosterdok - View SE on Museum Harbour & Maritime Museum Amsterdam.jpg",
+      "editorial": "GOOD",
+      "media_id": "fddb4770-d66d-4893-a151-87ec33d96b35",
+      "resolved_port_id": "71eb9a89-feb4-45e8-879b-32dcc5754af6"
+    },
+    {
+      "port_id": "0cdb0e4a-6ac2-421c-aef7-8f344e8a34d3",
+      "canonical_name": "April 2028",
+      "outcome": "NO_IMAGE",
+      "candidate": "Isafjord, harbour - panoramio.jpg"
+    },
+    {
+      "port_id": "52b945a6-77ea-4703-b695-af8884504c74",
+      "canonical_name": "Argostoli",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "c913f98b-fc9f-4b7f-9edd-7c9a6b39e3df",
+      "canonical_name": "Arrecife, Lanzarote",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Arrecife, Lanzarote 2011.JPG",
+      "editorial": "GOOD",
+      "media_id": "12799779-2c01-4b08-9794-744ec5438d54",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "d05f4060-d7be-43ef-b880-6a5a128656a7",
+      "canonical_name": "Ashdod",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Ashdod Marina Aerial View.jpg",
+      "editorial": "GOOD",
+      "media_id": "aa003ebd-7c1c-4e6c-842b-2f180cb82354",
+      "resolved_port_id": "d05f4060-d7be-43ef-b880-6a5a128656a7"
+    },
+    {
+      "port_id": "fb85a286-ca78-495d-aa20-38f486db1994",
+      "canonical_name": "Baltimore",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "US Navy 100830-N-0757M-002 Adm. J.C. Harvey Jr., right, commander of U.S. Fleet Forces Command, is interviewed by WBAL TV-11 reporter Sandra Shaw at the Inner Harbour during Baltimore Navy Week.jpg",
+      "editorial": "GOOD",
+      "media_id": "8bc849f8-36f2-4a3b-ad1d-2845d3cbd10c",
+      "resolved_port_id": "fb85a286-ca78-495d-aa20-38f486db1994"
+    },
+    {
+      "port_id": "a5696896-1555-48ca-acf2-3ec459a59735",
+      "canonical_name": "Baltra",
+      "outcome": "NO_IMAGE",
+      "candidate": "Charito santa cruz terminal 2021-11-16 1.jpg"
+    },
+    {
+      "port_id": "d1096166-0e64-41c6-adc4-f8479230098b",
+      "canonical_name": "Barcelona",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Aerial view of the marina Port Olympic in Barcelona, Spain (51227311660).jpg",
+      "editorial": "GOOD",
+      "media_id": "6a63d77d-5cfa-411d-b784-ef622683a33f",
+      "resolved_port_id": "d1096166-0e64-41c6-adc4-f8479230098b"
+    },
+    {
+      "port_id": "e6ac687c-9c05-4a73-91b1-eaca3f6c7201",
+      "canonical_name": "Bastia",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Mega smeralda bastia.JPG",
+      "editorial": "GOOD",
+      "media_id": "bebf4156-4d7f-406c-a106-f2c290f1aef5",
+      "resolved_port_id": "e6ac687c-9c05-4a73-91b1-eaca3f6c7201"
+    },
+    {
+      "port_id": "ed67af63-f4dd-432d-b08d-27cf9bb69ab9",
+      "canonical_name": "Bimini",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "The Bahamas - DPLA - 8e928260c0d03a3944fe363fe259570d.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "3da7a815-a375-4564-8345-afb6bd8265d4",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "4afd7614-22ce-4e1d-95f5-cc19d53552e3",
+      "canonical_name": "Bora Bora",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "FP-bora-vaitape-hafen.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "87f6b36a-98d8-48de-9f3c-6fcae2bace0a",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "fa4de966-f9f7-431a-888b-4f3ef6f0dca0",
+      "canonical_name": "Bozcaada",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Bozcaada-harbor.JPG",
+      "editorial": "GOOD",
+      "media_id": "801eb07a-dbf9-4d77-a946-226102701061",
+      "resolved_port_id": "fa4de966-f9f7-431a-888b-4f3ef6f0dca0"
+    },
+    {
+      "port_id": "04150e74-2c56-413e-a48c-a0484179ecd2",
+      "canonical_name": "Buenos Aires",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Buenos Aires 2007 081.jpg",
+      "editorial": "GOOD",
+      "media_id": "5ff1429e-fc4c-47fa-96c2-f5f1ce386942",
+      "resolved_port_id": "04150e74-2c56-413e-a48c-a0484179ecd2"
+    },
+    {
+      "port_id": "626ed8e0-3f62-481b-8949-39cff2a9d540",
+      "canonical_name": "Burnie",
+      "outcome": "NO_IMAGE",
+      "candidate": "Burnie Waterfront (25873843040).jpg"
+    },
+    {
+      "port_id": "900c448d-8a74-416a-8035-4b06e3fa3b90",
+      "canonical_name": "Cabo San Lucas",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Cabo San Lucas Harbour Master's Post - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "97ee611c-0ff9-4dec-ac9c-b28d16bf2734",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "762f0f0d-1efd-4a6e-9fb3-4afc68e104a0",
+      "canonical_name": "Cadiz",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Puerto de la Bahía de Cádiz, España, 2015-12-08, DD 25-27 HDR.JPG",
+      "editorial": "GOOD",
+      "media_id": "e9876ff1-32d4-4d4a-adac-215fa65fb3f9",
+      "resolved_port_id": "762f0f0d-1efd-4a6e-9fb3-4afc68e104a0"
+    },
+    {
+      "port_id": "55ab530e-ddca-421b-8721-71d75f391f66",
+      "canonical_name": "Cagliari",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Edward Gennys Fanshawe, Pula, Bay of Cagliari, June 1857 (Sardinia).jpg",
+      "editorial": "GOOD",
+      "media_id": "98d15010-1170-4013-b467-fb1fba20fda2",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "5ea4cb53-247c-4e40-8928-0bfcc136ec18",
+      "canonical_name": "Cannes",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Boats in Cannes Harbour - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "8c377752-5f9a-4395-a794-f393091ac29a",
+      "resolved_port_id": "5ea4cb53-247c-4e40-8928-0bfcc136ec18"
+    },
+    {
+      "port_id": "f3807bb8-a8f9-4792-9bab-b5c344c294c5",
+      "canonical_name": "Cape Town",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Cape Town (ZA), Waterfront, Kran -- 2024 -- 2907.jpg",
+      "editorial": "GOOD",
+      "media_id": "838b344c-9523-4956-9041-e19a87b2b42a",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "56282a91-56be-4c21-8749-4da54e4bbc47",
+      "canonical_name": "Cartagena",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Waterfront if Cartagena x.jpg",
+      "editorial": "GOOD",
+      "media_id": "94a2dfed-3a7d-4264-8e88-20b9144985ed",
+      "resolved_port_id": "56282a91-56be-4c21-8749-4da54e4bbc47"
+    },
+    {
+      "port_id": "b0c941c0-3983-4683-8881-dea10bc4bc27",
+      "canonical_name": "Casablanca",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Navire DIAMOND HARBOUR en mer.jpg",
+      "editorial": "GOOD",
+      "media_id": "c217f351-3960-470d-9fae-fdf7f507d1a4",
+      "resolved_port_id": "b0c941c0-3983-4683-8881-dea10bc4bc27"
+    },
+    {
+      "port_id": "b0d4a34b-46e7-4d3d-b4fe-396e03ef95a6",
+      "canonical_name": "Catania",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Porto di Catania 2024.jpg",
+      "editorial": "GOOD",
+      "media_id": "619a1de3-dfbd-4432-8833-696c4598fb3f",
+      "resolved_port_id": "b0d4a34b-46e7-4d3d-b4fe-396e03ef95a6"
+    },
+    {
+      "port_id": "20f49403-ea6b-4814-99b6-5e3e4cee718d",
+      "canonical_name": "Charlottetown",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Charlottetown Waterfront, PEI (21450844589).jpg",
+      "editorial": "GOOD",
+      "media_id": "3b357646-d10a-456c-ad86-aee30d13a97e",
+      "resolved_port_id": "20f49403-ea6b-4814-99b6-5e3e4cee718d"
+    },
+    {
+      "port_id": "b071e8e5-85d8-4b3d-89dd-6e21f16edb60",
+      "canonical_name": "Christchurch",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Lyttelton Harbour and Christchurch, New Zealand (ISS016-E-12668).jpg",
+      "editorial": "GOOD",
+      "media_id": "ed81328f-f8e9-49eb-a7bb-ab06833d880a",
+      "resolved_port_id": "b071e8e5-85d8-4b3d-89dd-6e21f16edb60"
+    },
+    {
+      "port_id": "30eed702-b64b-4e65-890a-ce65e1fbfa37",
+      "canonical_name": "Cobh",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Harbour at An Cobh - geograph.org.uk - 249716.jpg",
+      "editorial": "GOOD",
+      "media_id": "01eaa4b2-3200-4037-902c-f919c0faf4b2",
+      "resolved_port_id": "30eed702-b64b-4e65-890a-ce65e1fbfa37"
+    },
+    {
+      "port_id": "72dbed7f-6c02-44bc-ac0c-c11bc9b68db7",
+      "canonical_name": "Cochin",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Kochi Harbour Terminus.JPG",
+      "editorial": "GOOD",
+      "media_id": "cae786bd-c8fc-4d3a-b488-d6a03ed3e432",
+      "resolved_port_id": "72dbed7f-6c02-44bc-ac0c-c11bc9b68db7"
+    },
+    {
+      "port_id": "0e3148ca-4543-42ed-905d-757415cf18a3",
+      "canonical_name": "Colombo",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "ColomboHarbour-SriLanka02.jpg",
+      "editorial": "GOOD",
+      "media_id": "cc2b5774-39de-4f2f-bd24-b4acc658aa15",
+      "resolved_port_id": "0e3148ca-4543-42ed-905d-757415cf18a3"
+    },
+    {
+      "port_id": "bbb446ef-77e3-4300-8178-3f5278cb56b5",
+      "canonical_name": "Copenhagen",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Copenhagen Harbour Buses - Knippelsbro terminal.jpg",
+      "editorial": "GOOD",
+      "media_id": "a13cd40b-37b6-4d15-8392-3827efc668d4",
+      "resolved_port_id": "bbb446ef-77e3-4300-8178-3f5278cb56b5"
+    },
+    {
+      "port_id": "6698ee3c-9c1c-4c3f-b0c5-76b81849e796",
+      "canonical_name": "Costa Maya",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "58914173-9c3d-4d30-9ecb-c54ec21e54b5",
+      "canonical_name": "Da Nang",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "2.9 Marines line up at Da Nang Harbour.jpg",
+      "editorial": "GOOD",
+      "media_id": "4f6c04ec-fca9-470a-9b80-41db4dea89f8",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "25317fe5-9aa4-42b9-b226-e5a6dffbae8f",
+      "canonical_name": "Doha",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Doha Dhow Harbour 04.jpg",
+      "editorial": "GOOD",
+      "media_id": "5b476734-013d-43a7-b65b-a49896f6dc55",
+      "resolved_port_id": "25317fe5-9aa4-42b9-b226-e5a6dffbae8f"
+    },
+    {
+      "port_id": "330c9ccf-3e03-4ef1-98ba-0189744a5fb6",
+      "canonical_name": "Dover",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Dover Harbour - geograph.org.uk - 824175.jpg",
+      "editorial": "GOOD",
+      "media_id": "634c8a51-ea78-423a-9e9e-30a2feb6518e",
+      "resolved_port_id": "330c9ccf-3e03-4ef1-98ba-0189744a5fb6"
+    },
+    {
+      "port_id": "1e59c12a-af7e-4bce-9cff-530f44351577",
+      "canonical_name": "Dubai",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Port Rashid.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "c68a3053-b061-4cea-a6e7-5dc198365591",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "68747ce9-92df-42c4-b5a2-37b5f95e18ab",
+      "canonical_name": "Dublin",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "County Dublin - Howth Harbour - 20180630163339.jpg",
+      "editorial": "GOOD",
+      "media_id": "6e14a41b-ecd3-470f-b61e-c797ab470ae3",
+      "resolved_port_id": "68747ce9-92df-42c4-b5a2-37b5f95e18ab"
+    },
+    {
+      "port_id": "4976d96f-22c6-4c4b-9d2e-8870d3e73b56",
+      "canonical_name": "Durban",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Durban Harbour - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "ed7ee5f8-8319-4a65-ab0f-b201b324f9f8",
+      "resolved_port_id": "4976d96f-22c6-4c4b-9d2e-8870d3e73b56"
+    },
+    {
+      "port_id": "d89372d6-97e0-414a-b75e-162c98c69c97",
+      "canonical_name": "Eden",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "4692b2e4-90bf-495b-83b5-7e38da2a5ccb",
+      "canonical_name": "Edinburgh",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "The scene at Newhaven Harbour, Edinburgh - geograph.org.uk - 1227825.jpg",
+      "editorial": "GOOD",
+      "media_id": "03d3fba0-1526-4501-be66-cb7204166b98",
+      "resolved_port_id": "4692b2e4-90bf-495b-83b5-7e38da2a5ccb"
+    },
+    {
+      "port_id": "30269036-ac1e-45c2-87f5-57ffe2ca8eb6",
+      "canonical_name": "Fort Lauderdale",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Fisherman in Port Everglades, Fort-Lauderdale, Florida-Taquiner les poissons parmi les paquebots - panoramio.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "d6861068-a8f3-462e-8b83-fc7dd6d3ee6f",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "f31ee684-297d-47dd-8add-793a51c6b039",
+      "canonical_name": "Fort Lauderdale",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "722f60e4-d01d-4f1c-bcf6-8fd7c71420e1",
+      "canonical_name": "Fort-de-France",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "9ef2a488-3c89-4ffd-a11e-8eebba48e5b0",
+      "canonical_name": "Freeport",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Entrance to Freeport Harbour.JPG",
+      "editorial": "GOOD",
+      "media_id": "1e4acf41-5b11-4333-bbbd-5941f8a312c6",
+      "resolved_port_id": "9ef2a488-3c89-4ffd-a11e-8eebba48e5b0"
+    },
+    {
+      "port_id": "57dd1993-c0a0-4978-ae51-0190986bfa7c",
+      "canonical_name": "Funchal",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Madeira-Funchal-harbour-02ESD.jpg",
+      "editorial": "GOOD",
+      "media_id": "2418b229-c8a4-49e7-89fe-ded69eab9b87",
+      "resolved_port_id": "57dd1993-c0a0-4978-ae51-0190986bfa7c"
+    },
+    {
+      "port_id": "baf57db1-6fae-4fbd-a7d5-530a8d6f83c7",
+      "canonical_name": "Galveston",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "FEMA - 38432 - Aerial view of waterfront buildings on Galveston Island in Texas.jpg",
+      "editorial": "GOOD",
+      "media_id": "88cad26a-a5f5-453b-b330-a5efc32bfcf9",
+      "resolved_port_id": "baf57db1-6fae-4fbd-a7d5-530a8d6f83c7"
+    },
+    {
+      "port_id": "f6893d79-c003-4414-b018-9164035892c7",
+      "canonical_name": "Galway",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "d4c8a2e7-1858-484f-9479-05c0103490d8",
+      "canonical_name": "Genoa",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Aerial view - Harbour of Genoa, Italy - DSC01158.JPG",
+      "editorial": "GOOD",
+      "media_id": "efefba03-451e-42a4-8f01-5bf1bfdc8bd2",
+      "resolved_port_id": "d4c8a2e7-1858-484f-9479-05c0103490d8"
+    },
+    {
+      "port_id": "5fd4fb10-8a77-4bfa-b2c2-05f8c1d9e451",
+      "canonical_name": "Giardini Naxos",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "57249f82-6f63-4348-8866-4a95d8bf6d47",
+      "canonical_name": "Gibraltar",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Gibraltar Harbour 01.jpg",
+      "editorial": "GOOD",
+      "media_id": "cfa42bb9-fd48-492c-8bb3-4498c99bc9a5",
+      "resolved_port_id": "57249f82-6f63-4348-8866-4a95d8bf6d47"
+    },
+    {
+      "port_id": "60688b7a-fe10-41d9-b692-da04947e8d63",
+      "canonical_name": "Greenock",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "02febfcd-492c-46c0-8077-4355fd601fc2",
+      "canonical_name": "Gythio",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "a8408739-3cee-488b-9b64-af9c4712375f",
+      "canonical_name": "Haifa",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Port of Haifa 2752-1.jpg",
+      "editorial": "GOOD",
+      "media_id": "42b5f316-5a60-4e7b-a656-c131a8073adf",
+      "resolved_port_id": "a8408739-3cee-488b-9b64-af9c4712375f"
+    },
+    {
+      "port_id": "1b4b433a-3099-4d42-b7bb-98dd662dbd59",
+      "canonical_name": "Haines",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Waterfront and dock, Haines, ca 1914 (CURTIS 1895).jpeg",
+      "editorial": "GOOD",
+      "media_id": "81d0e557-5ded-4c26-8f52-8cb84f3e93c2",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "4d4ba3ef-69f2-4f5e-ae00-7605c71b3c4c",
+      "canonical_name": "Halifax",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Harbour Hopper – Halifax Harbour, NS – (2018-08-26).jpg",
+      "editorial": "GOOD",
+      "media_id": "61e92c59-a069-4212-b82b-3589d632a1ff",
+      "resolved_port_id": "4d4ba3ef-69f2-4f5e-ae00-7605c71b3c4c"
+    },
+    {
+      "port_id": "cb4d52b4-e22a-4edc-b597-c178984c2306",
+      "canonical_name": "Halong Bay",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "71bc154a-339f-48a6-9c09-ad6e6b9d93a2",
+      "canonical_name": "Hamilton",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Hamilton Harbour in Bermuda 01.jpg",
+      "editorial": "GOOD",
+      "media_id": "8fc9e3b2-cf71-477a-ac9d-617a6f8c892f",
+      "resolved_port_id": "71bc154a-339f-48a6-9c09-ad6e6b9d93a2"
+    },
+    {
+      "port_id": "9d586b14-28e8-4967-abea-0773cb78a894",
+      "canonical_name": "Helsinki",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Harbour rail tracks in Eira, Helsinki, Finland 2000.jpg",
+      "editorial": "GOOD",
+      "media_id": "32938576-a3ae-4c2e-af8b-4db994e17234",
+      "resolved_port_id": "9d586b14-28e8-4967-abea-0773cb78a894"
+    },
+    {
+      "port_id": "c77923ae-88dd-4034-8bca-1ed7954161e2",
+      "canonical_name": "Heraklion, Crete",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Heráklion Harbour authority, Heraklion, Crete, Greece - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "6c15c08e-243f-41fb-b43c-b2f4db6de78d",
+      "resolved_port_id": "c77923ae-88dd-4034-8bca-1ed7954161e2"
+    },
+    {
+      "port_id": "12d7b22b-fa6b-4449-949e-2e2829779828",
+      "canonical_name": "Hilo",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "700bbca7-3825-4bf4-b28d-1c3554411338",
+      "canonical_name": "Honningsvag",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Honningsvag Harbour.jpg",
+      "editorial": "GOOD",
+      "media_id": "3965646c-3cd0-4276-850a-71bbf88bb702",
+      "resolved_port_id": "700bbca7-3825-4bf4-b28d-1c3554411338"
+    },
+    {
+      "port_id": "59d6c210-8eb4-4d15-b112-be0312ca402a",
+      "canonical_name": "Honolulu",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "The Harbour, Honolulu, engraving by George Pearson, after Burgess.jpg",
+      "editorial": "GOOD",
+      "media_id": "f0277cfa-bd82-4774-90df-c865543a13c8",
+      "resolved_port_id": "59d6c210-8eb4-4d15-b112-be0312ca402a"
+    },
+    {
+      "port_id": "4c2100f3-a95a-48d6-a519-6b6270b0a3ca",
+      "canonical_name": "Ibiza",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "985ce637-bd76-4695-9adc-90e2ed83bf40",
+      "canonical_name": "Ilhabela",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "2488079d-1f0d-4d70-a027-54abf6eab0e5",
+      "canonical_name": "Istanbul",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Eminonu waterfront with Yeni Cami and Suleymaniye Mosque from Galata Bridge, Istanbul - Tarik Kaan Muslu.jpg",
+      "editorial": "GOOD",
+      "media_id": "a1507dce-9e44-4b64-8924-0f3c19a434f4",
+      "resolved_port_id": "2488079d-1f0d-4d70-a027-54abf6eab0e5"
+    },
+    {
+      "port_id": "9e7606cc-3817-43e9-8d81-b79e6ebbdbfd",
+      "canonical_name": "Izmir",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Breakwater S Head light at Izmir Harbour, Izmir, Turkey.jpg",
+      "editorial": "GOOD",
+      "media_id": "cfe785f4-bdbe-46ee-a759-3a827991c0f6",
+      "resolved_port_id": "9e7606cc-3817-43e9-8d81-b79e6ebbdbfd"
+    },
+    {
+      "port_id": "1c82af62-d93a-4de3-98ba-47c554067b00",
+      "canonical_name": "Kagoshima",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "FileA landscape of a detached island, Takeshima port in Kagoshima prefecture of Japan 2.png",
+      "editorial": "GOOD",
+      "media_id": "5d5f44b1-8ea1-405d-8c03-c04bfaaac2eb",
+      "resolved_port_id": "1c82af62-d93a-4de3-98ba-47c554067b00"
+    },
+    {
+      "port_id": "105c6614-bfc5-48c9-92f3-1cce279963fc",
+      "canonical_name": "Kahului",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Starr 030612-0076 Cocos nucifera.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "fa57e1b9-1c05-4eeb-8306-2096c15d6e07",
+      "resolved_port_id": "105c6614-bfc5-48c9-92f3-1cce279963fc"
+    },
+    {
+      "port_id": "16d8485a-963f-4a2f-b4c0-af6b96cf4e80",
+      "canonical_name": "Kaohsiung",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Taiwan Kaohsiung Harbour.jpg",
+      "editorial": "GOOD",
+      "media_id": "79e376f6-dce6-40ea-94c1-19bd47da2f97",
+      "resolved_port_id": "16d8485a-963f-4a2f-b4c0-af6b96cf4e80"
+    },
+    {
+      "port_id": "2390775c-77d4-46e8-8c19-f45fb3b3cc51",
+      "canonical_name": "Katakolon",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "4e150233-ff45-4319-8540-34495c3824e1",
+      "canonical_name": "Kiel",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Kiel, Germany, view of the Harbour.jpg",
+      "editorial": "GOOD",
+      "media_id": "171b3a52-7121-443f-85cd-d23039912b8a",
+      "resolved_port_id": "4e150233-ff45-4319-8540-34495c3824e1"
+    },
+    {
+      "port_id": "1744157b-4bd0-441a-917f-33167e861a8c",
+      "canonical_name": "Kingstown",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "1f6ed5f8-9f6f-4fed-8b6b-b3729454355a",
+      "canonical_name": "Ko Samui",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "8aa06038-8a13-4f1d-a341-5fd12d8e96e9",
+      "canonical_name": "Koper",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "18d4ce82-7912-45cf-9e8c-799e7b904e60",
+      "canonical_name": "Kota Kinabalu",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Beef Burger In Kota Kinabalu, Malaysia.jpg",
+      "editorial": "GOOD",
+      "media_id": "bde3fdcc-e488-43e1-a5cc-1200f2be80b8",
+      "resolved_port_id": "18d4ce82-7912-45cf-9e8c-799e7b904e60"
+    },
+    {
+      "port_id": "51647e8e-3786-437e-b12d-399b1227da89",
+      "canonical_name": "Kralendijk",
+      "outcome": "NO_IMAGE",
+      "candidate": "Tranquile harbour of Kralendijk (Bonaire 2014) (15110514704).jpg"
+    },
+    {
+      "port_id": "c8424262-9f87-43a7-a033-c97d8c53359a",
+      "canonical_name": "Kristiansand",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Kristiansand harbour- 20250524 - 02.jpg",
+      "editorial": "GOOD",
+      "media_id": "079d1700-e021-49af-a23c-6d31a7e1d9a6",
+      "resolved_port_id": "c8424262-9f87-43a7-a033-c97d8c53359a"
+    },
+    {
+      "port_id": "dfc10cf7-ad1d-4ea2-84be-a99c9ec46b6e",
+      "canonical_name": "Kusadasi",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Kuşadası - harbour.jpg",
+      "editorial": "GOOD",
+      "media_id": "4b3d13d4-9273-4288-9c0e-6eee06029d30",
+      "resolved_port_id": "dfc10cf7-ad1d-4ea2-84be-a99c9ec46b6e"
+    },
+    {
+      "port_id": "e5a5c9f2-ec8a-4ab0-9481-9ad1b09994ea",
+      "canonical_name": "La Goulette",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "AerialPhotoOfLaGoulette.JPG",
+      "editorial": "ACCEPTABLE",
+      "media_id": "25be1d7a-68dc-412e-b8b0-6042a3b834cb",
+      "resolved_port_id": "e5a5c9f2-ec8a-4ab0-9481-9ad1b09994ea"
+    },
+    {
+      "port_id": "6fff4757-cbc5-480a-b776-cebf75d11966",
+      "canonical_name": "Laem Chabang",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Laem Chabang.jpg",
+      "editorial": "GOOD",
+      "media_id": "d59df3e0-3718-489c-a8c8-a1530db618b9",
+      "resolved_port_id": "6fff4757-cbc5-480a-b776-cebf75d11966"
+    },
+    {
+      "port_id": "ba69500b-fc90-4704-b525-f666cdd507ed",
+      "canonical_name": "Larnaca",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "View of Larnaca waterfront, Cyprus. Wellcome V0037328.jpg",
+      "editorial": "GOOD",
+      "media_id": "bbaa1409-1f52-4c5b-a77d-2b23abe92d8c",
+      "resolved_port_id": "ba69500b-fc90-4704-b525-f666cdd507ed"
+    },
+    {
+      "port_id": "fcbe4b6e-eda6-44fb-92db-4603d3edef0e",
+      "canonical_name": "Las Palmas, Gran Canaria",
+      "outcome": "NO_IMAGE",
+      "candidate": "San Cristobal Fishing Warf-Las Palmas de Gran Canaria.jpg"
+    },
+    {
+      "port_id": "4bf0c5ef-3f5a-4437-93c6-ac77d357de25",
+      "canonical_name": "Lautoka",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "2fcb58d9-451d-4b1e-a202-e8a087eaae26",
+      "canonical_name": "Lifou",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Santal Bay, Lifou, 2007 (1).JPG",
+      "editorial": "GOOD",
+      "media_id": "416b4efc-16fd-424d-aafc-76b288586c5f",
+      "resolved_port_id": "2fcb58d9-451d-4b1e-a202-e8a087eaae26"
+    },
+    {
+      "port_id": "e7185c90-671e-4298-a34d-599b0971f2e1",
+      "canonical_name": "Limassol",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Cranes Limassol Harbour 20110703.jpg",
+      "editorial": "GOOD",
+      "media_id": "ebb5165d-4ed6-41af-8f34-86938f689c00",
+      "resolved_port_id": "e7185c90-671e-4298-a34d-599b0971f2e1"
+    },
+    {
+      "port_id": "f4d2428c-cd49-4bca-91d9-35cfb5a650de",
+      "canonical_name": "Lisbon",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Lisbon Waterfront 2007 FIL. 2007. Lisboa, Portugal.jpg",
+      "editorial": "GOOD",
+      "media_id": "154248df-054f-4cf6-aa92-1bb4e6c42015",
+      "resolved_port_id": "f4d2428c-cd49-4bca-91d9-35cfb5a650de"
+    },
+    {
+      "port_id": "dc7fe1ca-7ff5-462e-a696-c30da2bf43e0",
+      "canonical_name": "Liverpool",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Port of Liverpool Building, Pier Head, Liverpool - geograph.org.uk - 83682.jpg",
+      "editorial": "GOOD",
+      "media_id": "2e986dea-7cbf-4e38-8f83-4e8469658e81",
+      "resolved_port_id": "dc7fe1ca-7ff5-462e-a696-c30da2bf43e0"
+    },
+    {
+      "port_id": "068205a5-4add-4c7c-902b-27a7398cc8a6",
+      "canonical_name": "Long Beach",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Long Beach harbour sunset - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "7950b850-0606-4336-9552-9ff068394d7f",
+      "resolved_port_id": "068205a5-4add-4c7c-902b-27a7398cc8a6"
+    },
+    {
+      "port_id": "0986f4a7-abcc-4d15-a126-ff38a14c0b49",
+      "canonical_name": "Longyearbyen",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Sjöomraadet Longyearbyen IMG 8904 rk 136722.JPG",
+      "editorial": "GOOD",
+      "media_id": "0900ca02-3027-47c4-8238-885127e28360",
+      "resolved_port_id": "0986f4a7-abcc-4d15-a126-ff38a14c0b49"
+    },
+    {
+      "port_id": "e290452f-8750-48a4-8b41-3cd853fe3715",
+      "canonical_name": "Luganville",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "08d9b9b2-9f65-401e-be90-885dabb630c0",
+      "canonical_name": "Mahon",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Mahon Hafen.jpg",
+      "editorial": "GOOD",
+      "media_id": "bf3a465d-e8fd-4857-a58f-22c890b54ab3",
+      "resolved_port_id": "08d9b9b2-9f65-401e-be90-885dabb630c0"
+    },
+    {
+      "port_id": "972ede3f-7839-482d-be26-cd9f53a44939",
+      "canonical_name": "Malaga",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Panoramic view of Málaga harbour. Andalusia, Spain, Southeastern Europe.jpg",
+      "editorial": "GOOD",
+      "media_id": "2b43a363-63ca-4b54-8469-6ab99e1ef185",
+      "resolved_port_id": "972ede3f-7839-482d-be26-cd9f53a44939"
+    },
+    {
+      "port_id": "d6a54b31-118b-419a-8bec-db8550a6e846",
+      "canonical_name": "Male",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Male City Aerial, The Capital city of Maldives - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "9edd60db-014c-4dd0-a5e3-f6d6d81d2ac1",
+      "resolved_port_id": "d6a54b31-118b-419a-8bec-db8550a6e846"
+    },
+    {
+      "port_id": "9b420eee-c863-479d-8e15-cac4e2c6b8de",
+      "canonical_name": "Marmaris",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Marmaris harbor (aerial view), Muğla Province, southwest Turkey, Mediterranean.jpg",
+      "editorial": "GOOD",
+      "media_id": "320273cd-301c-4e8f-883b-19b5bfbf26e4",
+      "resolved_port_id": "9b420eee-c863-479d-8e15-cac4e2c6b8de"
+    },
+    {
+      "port_id": "c8020618-43a5-438c-9461-5e29197a5bbf",
+      "canonical_name": "Mazatlan",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Mazatlán Harbour at Dawn - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "43ea42bf-df2d-4104-9857-b89efc43ee66",
+      "resolved_port_id": "c8020618-43a5-438c-9461-5e29197a5bbf"
+    },
+    {
+      "port_id": "56ad6df6-2f29-4de6-85b1-9e357e129f9a",
+      "canonical_name": "Messina",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Messina harbour - aerial view.jpg",
+      "editorial": "GOOD",
+      "media_id": "00e22929-56bc-4c61-b105-9d6f3a7439e1",
+      "resolved_port_id": "56ad6df6-2f29-4de6-85b1-9e357e129f9a"
+    },
+    {
+      "port_id": "c4e3861f-88b1-428c-9cd7-a0703cc0517d",
+      "canonical_name": "Miami",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Miami Beach (Bar Harbour) - Sea View Hotel.jpg",
+      "editorial": "GOOD",
+      "media_id": "117f447d-2ed3-4a61-94a8-6d5b36a4e75d",
+      "resolved_port_id": "c4e3861f-88b1-428c-9cd7-a0703cc0517d"
+    },
+    {
+      "port_id": "21d149ea-75cb-4413-ad8d-77087b310857",
+      "canonical_name": "Miami",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Miami Beach - Singapore Resort Motel 01.jpg",
+      "editorial": "GOOD",
+      "media_id": "40993123-f157-4cfd-8ffd-0df37147f9fb",
+      "resolved_port_id": "21d149ea-75cb-4413-ad8d-77087b310857"
+    },
+    {
+      "port_id": "c2cd9ba3-67ea-42a8-8d3d-39578b664fc7",
+      "canonical_name": "Monaco",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "3b01f00d-3ded-4b19-bf20-f844cbe597d3",
+      "canonical_name": "Montevideo",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "MontevideoTCP.JPG",
+      "editorial": "GOOD",
+      "media_id": "69cd1de8-ad75-4db5-b653-13974ab59f0b",
+      "resolved_port_id": "3b01f00d-3ded-4b19-bf20-f844cbe597d3"
+    },
+    {
+      "port_id": "90c81405-7029-42dc-adf4-f3cd0e18a8a2",
+      "canonical_name": "Montreal",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Jacques Cartier Bridge in Montreal, Québec.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "1461a04c-e174-46b8-a455-a020729fbc6e",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "c0880b9f-8395-418d-aea8-6e8e0d763364",
+      "canonical_name": "Moorea",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "PF-Moorea-anleger.jpg",
+      "editorial": "GOOD",
+      "media_id": "76e3a14c-e759-4a1c-ab2c-f20fd4c3f2c0",
+      "resolved_port_id": "c0880b9f-8395-418d-aea8-6e8e0d763364"
+    },
+    {
+      "port_id": "6ab58211-2c5d-4331-85d9-42e4b4a2cfdc",
+      "canonical_name": "Muara",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Bank Indonesia Muara.JPG",
+      "editorial": "GOOD",
+      "media_id": "e6aacd3e-fc87-4f8c-8d39-560fb1c8f45c",
+      "resolved_port_id": "6ab58211-2c5d-4331-85d9-42e4b4a2cfdc"
+    },
+    {
+      "port_id": "0e1428d2-956a-42b8-a449-5ce24e2d0bfc",
+      "canonical_name": "Mumbai",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Mumbai Harbour, India, Ships in Mumbai Harbour (Front Bay).jpg",
+      "editorial": "GOOD",
+      "media_id": "f0daca54-d786-48be-b6e9-4969b7e164f0",
+      "resolved_port_id": "0e1428d2-956a-42b8-a449-5ce24e2d0bfc"
+    },
+    {
+      "port_id": "70b98075-768b-4f47-87e7-ea651ac40cee",
+      "canonical_name": "Muscat",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "ce9b5d8c-e14c-4dc7-8b6b-f59e6c9fec2a",
+      "canonical_name": "Mystery Island",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "f5e134cd-fcb0-48d5-86ab-8540c22f3ff3",
+      "canonical_name": "Mytilene, Lesbos",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Mytilini harbour, view from the air, Mytilini, Lesbos, Greece.jpg",
+      "editorial": "GOOD",
+      "media_id": "fcf4dd99-4be9-4358-a4fc-6d9e68dd58cb",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "e22fea9f-1ab6-41f8-87e6-344ebc069c1e",
+      "canonical_name": "Nawiliwili",
+      "outcome": "NO_IMAGE",
+      "candidate": "Wahiawa Harbour, South Side of Kauai, Hawaiian Group, by the U.S.Ex.Ex. 1840. Waimea Bay, Southwest Side of Kauai, Hawaiian Gourp (IA dr wahiawa-harbour-south-side-of-kauai-hawaiian-group-by-the-usexex-184-6956000).jpg"
+    },
+    {
+      "port_id": "02ca424b-9cb3-4da4-9d3f-19c818b15f34",
+      "canonical_name": "New Orleans",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Waterfront in New Orleans, French market sidewalk scene, Louisiana by Walker Evans.jpg",
+      "editorial": "GOOD",
+      "media_id": "f4846409-c3ba-41eb-92c1-f0de5de2981b",
+      "resolved_port_id": "02ca424b-9cb3-4da4-9d3f-19c818b15f34"
+    },
+    {
+      "port_id": "bc33587d-591f-46af-a3c9-0f590131b183",
+      "canonical_name": "Newcastle",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "LeeWharfNewcastle.jpg",
+      "editorial": "GOOD",
+      "media_id": "165173ec-dab2-4cb7-80fe-aee28e4f61fb",
+      "resolved_port_id": "bc33587d-591f-46af-a3c9-0f590131b183"
+    },
+    {
+      "port_id": "f5d74f92-e886-40fb-916b-4e14268b339b",
+      "canonical_name": "Newcastle upon Tyne",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "ff2f1cea-ee13-415f-98ad-6e71d9339b5d",
+      "canonical_name": "Norfolk",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "JS Katori in Norfolk harbour, -10 Jul. 1987 a.jpg",
+      "editorial": "GOOD",
+      "media_id": "6b5a02db-23fc-4fca-a58b-11609b8a7137",
+      "resolved_port_id": "ff2f1cea-ee13-415f-98ad-6e71d9339b5d"
+    },
+    {
+      "port_id": "771408c9-2e1a-4616-a05e-7b56ea653a25",
+      "canonical_name": "Nosy Be",
+      "outcome": "NO_IMAGE",
+      "candidate": "Harbour of St Mary's on the east side of Madagascar - by John Brohier ; J. Russel sculp. - btv1b8595750n.jpg"
+    },
+    {
+      "port_id": "0fea5e2a-6823-45cc-a4a4-b0bbd8f344d0",
+      "canonical_name": "Nuuk",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Greenland 10, Nuuk, harbour, Kilisaatinut.JPG",
+      "editorial": "GOOD",
+      "media_id": "ceedeafd-fbab-4aa5-ad86-2667c08d0a53",
+      "resolved_port_id": "0fea5e2a-6823-45cc-a4a4-b0bbd8f344d0"
+    },
+    {
+      "port_id": "e03377c6-c553-49f2-abd0-82ccd51a7474",
+      "canonical_name": "Ocho Rios",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "33065fbc-ab01-4723-8225-675dfd2dfe35",
+      "canonical_name": "Olbia",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Aerial view of Olbia.jpg",
+      "editorial": "GOOD",
+      "media_id": "b8c15969-e7b1-46d2-9210-8773611bdb2e",
+      "resolved_port_id": "33065fbc-ab01-4723-8225-675dfd2dfe35"
+    },
+    {
+      "port_id": "d3de55cc-88fa-4dd9-a401-699a2ad1a89b",
+      "canonical_name": "Oranjestad",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "SS \"Oranjestad\".jpg",
+      "editorial": "GOOD",
+      "media_id": "e65fcffb-6a41-44fe-a97d-da7210710e3c",
+      "resolved_port_id": "d3de55cc-88fa-4dd9-a401-699a2ad1a89b"
+    },
+    {
+      "port_id": "50e16fa6-72ee-4194-a7d9-14e9c0b921e9",
+      "canonical_name": "Orlando",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Kings Cross Station (Universal Orlando) May 2023.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "b37a2e1e-44d4-4fe3-adc2-73f2e899cdae",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "c0bda0b5-bcef-4fad-a167-42f949843b14",
+      "canonical_name": "Oslo",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Oslo harbour colors modified.jpg",
+      "editorial": "GOOD",
+      "media_id": "df9d73b2-374f-4286-9af1-629104a05eac",
+      "resolved_port_id": "c0bda0b5-bcef-4fad-a167-42f949843b14"
+    },
+    {
+      "port_id": "a5dbfca0-6070-4cc1-95b2-741da110418b",
+      "canonical_name": "Palermo",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Port of Palermo, Sicily, Italy (9459168372).jpg",
+      "editorial": "GOOD",
+      "media_id": "f30ee318-83f0-4c74-a309-ac5ff4267e17",
+      "resolved_port_id": "a5dbfca0-6070-4cc1-95b2-741da110418b"
+    },
+    {
+      "port_id": "10ebe81d-18c3-4cb3-b62c-bb7f341f7546",
+      "canonical_name": "Palm Beach",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Palm Beach Qld Surf Life Saving Club - World Inter-Club Surf Life Saving Championships Hawaii 1983 - Pearl Harbour, Oahu - Photo Graham Stockwell 10403-014-012.jpg",
+      "editorial": "GOOD",
+      "media_id": "13ec5616-1e7d-4832-aa36-6072d5b862ca",
+      "resolved_port_id": "10ebe81d-18c3-4cb3-b62c-bb7f341f7546"
+    },
+    {
+      "port_id": "f8b4381d-f65a-447f-93f4-2baf19535f40",
+      "canonical_name": "Palma de Mallorca",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "a24c8a25-2c97-44d7-b8e4-4520bf8d415d",
+      "canonical_name": "Papeete",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Rade de Papeete.jpg",
+      "editorial": "GOOD",
+      "media_id": "511fd799-564a-4c7d-b706-c203d37654b0",
+      "resolved_port_id": "a24c8a25-2c97-44d7-b8e4-4520bf8d415d"
+    },
+    {
+      "port_id": "8104fe99-360a-4a2a-8e79-af74efd0cc2c",
+      "canonical_name": "Paros",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Small harbour, Paros island, Greece.jpg",
+      "editorial": "GOOD",
+      "media_id": "5cd06c58-a234-45e6-846c-c7a3347105b4",
+      "resolved_port_id": "8104fe99-360a-4a2a-8e79-af74efd0cc2c"
+    },
+    {
+      "port_id": "07d4ae0f-55c4-4bbb-9b77-a64d75bc2fca",
+      "canonical_name": "Penang",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Penang Malaysia Harbour-cranes-01.jpg",
+      "editorial": "GOOD",
+      "media_id": "f3f9e973-1751-43b1-9768-53b6d58a5117",
+      "resolved_port_id": "07d4ae0f-55c4-4bbb-9b77-a64d75bc2fca"
+    },
+    {
+      "port_id": "4082b42f-2878-448b-ab71-ff6ef887caec",
+      "canonical_name": "Perfect Day at CocoCay",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "0c7cbda9-da36-49dc-871e-87855d561af6",
+      "canonical_name": "Piraeus",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Attica 06-13 Piraeus 01 Port.jpg",
+      "editorial": "GOOD",
+      "media_id": "c77dfa8d-9132-4e37-b0cf-1fa8f70e6f34",
+      "resolved_port_id": "0c7cbda9-da36-49dc-871e-87855d561af6"
+    },
+    {
+      "port_id": "43d6c5b1-f9e4-4427-84b7-5acf66722ac0",
+      "canonical_name": "Pointe-a-Pitre",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "A Plan of the harbour at Point à Pitre on the island of Guadeloupe. LOC 75693288.jpg",
+      "editorial": "GOOD",
+      "media_id": "7eca364b-bcbe-4a29-a540-f85131117ae5",
+      "resolved_port_id": "43d6c5b1-f9e4-4427-84b7-5acf66722ac0"
+    },
+    {
+      "port_id": "a1ea2820-d855-480a-821d-00beea0a5fe0",
+      "canonical_name": "Ponta Delgada",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Ponta Delgada, Açores.jpg",
+      "editorial": "GOOD",
+      "media_id": "fe48ba75-dacd-412f-b0a8-df109b1c7ce4",
+      "resolved_port_id": "a1ea2820-d855-480a-821d-00beea0a5fe0"
+    },
+    {
+      "port_id": "dfc9fc3d-2ed3-4713-89d2-55042b870cb7",
+      "canonical_name": "Port Canaveral",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Wish in Port Canaveral 2024.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "f7d51e43-c9b1-4938-9bb5-f4b327b49ed3",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "5edb3a71-a4cf-480f-8c16-e97cbf5c0551",
+      "canonical_name": "Port Douglas",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Entering Port Douglas Harbour. - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "3498dafb-3822-435c-8413-1eecc5caa1b8",
+      "resolved_port_id": "5edb3a71-a4cf-480f-8c16-e97cbf5c0551"
+    },
+    {
+      "port_id": "b21225a6-0762-4bc3-8302-30ea31d4b840",
+      "canonical_name": "Port Elizabeth",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Old Harbour Board Building Fleming Street - Port Elizabeth.jpg",
+      "editorial": "GOOD",
+      "media_id": "140e3497-66ff-42c2-9185-4697c3ea1834",
+      "resolved_port_id": "b21225a6-0762-4bc3-8302-30ea31d4b840"
+    },
+    {
+      "port_id": "1dc0d08e-cd84-48d0-9453-950722b63232",
+      "canonical_name": "Port Klang",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "MY-port-klang-westh-kreuzf-terminal.jpg",
+      "editorial": "GOOD",
+      "media_id": "d9bc13fb-70cc-48da-9191-acd7ffeac54f",
+      "resolved_port_id": "1dc0d08e-cd84-48d0-9453-950722b63232"
+    },
+    {
+      "port_id": "b138d2d3-acdc-4249-a0ea-62409f759108",
+      "canonical_name": "Portimao",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "December Tropic Colors of Atlantic Ocean Gulf Stream - Master Earth Photography 1989 Shark Harbour Portimao - Blue Merlin - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "79df4660-e9bf-491d-a2a0-e229f71ab47c",
+      "resolved_port_id": "b138d2d3-acdc-4249-a0ea-62409f759108"
+    },
+    {
+      "port_id": "1e9b19aa-0d04-4d2d-a025-e9e708fd8a9a",
+      "canonical_name": "Portsmouth",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Portsmouth MMB 21 Harbour - Cumbrian Fisher.jpg",
+      "editorial": "GOOD",
+      "media_id": "f4f34e43-eec4-4b47-b551-339b061c487d",
+      "resolved_port_id": "1e9b19aa-0d04-4d2d-a025-e9e708fd8a9a"
+    },
+    {
+      "port_id": "ecde0e79-eee8-464d-af97-0f6f91284509",
+      "canonical_name": "Puerto Ayora",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Puerto Ayora Harbour, Isla Santa Cruz, Galapagos - panoramio.jpg",
+      "editorial": "GOOD",
+      "media_id": "a929943b-62bc-444e-b6f7-7797ab7bf330",
+      "resolved_port_id": "ecde0e79-eee8-464d-af97-0f6f91284509"
+    },
+    {
+      "port_id": "2640a5e2-45da-4d9a-8e2b-e08df6fc99f4",
+      "canonical_name": "Puerto Baquerizo Moreno",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "2022-05-21 Charles Darwin Bust San Cristóbal 01.jpg",
+      "editorial": "GOOD",
+      "media_id": "b33d956d-d291-4936-b53f-dcb96b6b63ab",
+      "resolved_port_id": "2640a5e2-45da-4d9a-8e2b-e08df6fc99f4"
+    },
+    {
+      "port_id": "e773190b-ce9e-4d42-953b-eaaacf0d3e50",
+      "canonical_name": "Puerto Chacabuco",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Puerto Chacabuco.JPG",
+      "editorial": "ACCEPTABLE",
+      "media_id": "735a5fdf-9dd0-4e65-b611-d734468f7003",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "fbb88663-89e1-4ee1-9d93-40d8cec43fcd",
+      "canonical_name": "Puerto Madryn",
+      "outcome": "NO_IMAGE",
+      "candidate": "Puerto Madryn Skyline (15620785379).jpg"
+    },
+    {
+      "port_id": "e0ba3db6-de02-445b-a196-7fbf90fe5a70",
+      "canonical_name": "Puerto Montt",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Chile - Puerto Montt 03 - waterfront prominade (6983568495).jpg",
+      "editorial": "GOOD",
+      "media_id": "f168d31c-10a5-40e3-b077-b6c4642544c0",
+      "resolved_port_id": "e0ba3db6-de02-445b-a196-7fbf90fe5a70"
+    },
+    {
+      "port_id": "d3f4f744-b058-40f4-9f36-9ce7f8d8f803",
+      "canonical_name": "Puerto Plata",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Puerto Plata 1.jpg",
+      "editorial": "GOOD",
+      "media_id": "5a586cc7-ea09-40d5-97db-ad223ebeaddf",
+      "resolved_port_id": "d3f4f744-b058-40f4-9f36-9ce7f8d8f803"
+    },
+    {
+      "port_id": "2aebf57a-3bb8-4a5e-bd86-2a66025c5af8",
+      "canonical_name": "Puerto Vallarta",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "68eb4286-c3c6-4249-86f9-54452d5cf2ba",
+      "canonical_name": "Punta Arenas",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "1983-12 patagonien 07.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "e8d2ee8d-1df1-4275-8a26-6d806a6ff307",
+      "resolved_port_id": "68eb4286-c3c6-4249-86f9-54452d5cf2ba"
+    },
+    {
+      "port_id": "9a687bc5-0267-43b0-99e4-8bff7760a5bf",
+      "canonical_name": "Punta del Este",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Punta del Este's harbour.jpg",
+      "editorial": "GOOD",
+      "media_id": "ddec00f5-8014-4422-a7fa-c89b0901068e",
+      "resolved_port_id": "9a687bc5-0267-43b0-99e4-8bff7760a5bf"
+    },
+    {
+      "port_id": "7c137c89-19d2-4c9b-9fb3-b058328ddacd",
+      "canonical_name": "Ravenna",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Marina Ravenna.jpg",
+      "editorial": "GOOD",
+      "media_id": "205d46d0-467f-4014-9111-00dde733339e",
+      "resolved_port_id": "7c137c89-19d2-4c9b-9fb3-b058328ddacd"
+    },
+    {
+      "port_id": "075be694-6794-4910-9837-f880b7bbeb5d",
+      "canonical_name": "Recife",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Nederlandse schepen op de rede van Recife, Brazilië.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "ca8e1d41-8151-43f1-847e-4847afda46eb",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "c6e2b739-d64e-4cec-aada-1e46c7d71fd1",
+      "canonical_name": "Rio de Janeiro",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "20171020173435 - Baia de Guanabara - Rampa do Clube de Regatas Guanabara - Botafogo - Rio de Janeiro - Brazil.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "0de21d0e-7d10-43db-88f5-a6c022574aaa",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "5f5e9578-b7ec-4e59-a239-f0bc07c119f7",
+      "canonical_name": "Roseau",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Roseau, Dominica - drawn by Lieut. Caddy, Royl. Artilly. ; engraved by J. Harris. LCCN91790577.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "2fc311ed-5000-4871-8e93-691b962fed1f",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "5cac4f8e-578e-467b-b0f9-7c5a064a2d9f",
+      "canonical_name": "Royal Naval Dockyard",
+      "outcome": "NO_IMAGE",
+      "candidate": "Portsmouth MMB 24 Royal Naval Dockyard.jpg"
+    },
+    {
+      "port_id": "8bdc4ac5-ecf9-45c2-9934-488043db8afc",
+      "canonical_name": "Saint John",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "bfc93efe-1d73-45c2-95c7-aec10139336b",
+      "canonical_name": "Salerno",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Salerno, Italy; panoramic view of the beach and harbour. Tin Wellcome V0014459.jpg",
+      "editorial": "GOOD",
+      "media_id": "68e284e2-69bd-4f3d-a7fd-5ab9bdd1dc90",
+      "resolved_port_id": "bfc93efe-1d73-45c2-95c7-aec10139336b"
+    },
+    {
+      "port_id": "bf7b3fed-f891-4a0f-a6f6-b22cd0b925bb",
+      "canonical_name": "Salvador",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "View over Harbour Area from Hotel Arthemis - Salvador - Brazil.jpg",
+      "editorial": "GOOD",
+      "media_id": "528b4ea3-e53a-42c3-a2fe-4751ae9020d3",
+      "resolved_port_id": "bf7b3fed-f891-4a0f-a6f6-b22cd0b925bb"
+    },
+    {
+      "port_id": "92d544b9-e4db-4777-9007-b853b35d3b10",
+      "canonical_name": "San Juan",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "San Juan Puerto Rico Harbour 1983 01.jpg",
+      "editorial": "GOOD",
+      "media_id": "e0af85ba-8a96-4335-afc7-4b845ee0c6a3",
+      "resolved_port_id": "92d544b9-e4db-4777-9007-b853b35d3b10"
+    },
+    {
+      "port_id": "eaaeeed1-cfab-4e50-aeae-e765d92019af",
+      "canonical_name": "Santa Cruz de La Palma",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "La Palma - Breña Alta - Avenida Bajamar + Port of Santa Cruz de La Palma + MSC Armonia 01 ies.jpg",
+      "editorial": "GOOD",
+      "media_id": "2a7eee3a-8aa0-4f65-9d76-ef50af6551f2",
+      "resolved_port_id": "eaaeeed1-cfab-4e50-aeae-e765d92019af"
+    },
+    {
+      "port_id": "301b492b-3fae-4bfa-a1ca-8ad4f6498ca1",
+      "canonical_name": "Santos",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "SantosHarbour.JPG",
+      "editorial": "GOOD",
+      "media_id": "8c81f6ef-5cea-494d-ab39-fd2089e7ff04",
+      "resolved_port_id": "301b492b-3fae-4bfa-a1ca-8ad4f6498ca1"
+    },
+    {
+      "port_id": "32df9dce-62bd-46ce-a727-305ae775dd4d",
+      "canonical_name": "Sarande",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Sarandë, Albania 2022-11 - Harbour view.jpg",
+      "editorial": "GOOD",
+      "media_id": "8295b68c-d86a-4f76-91c5-b7d8972c11c8",
+      "resolved_port_id": "32df9dce-62bd-46ce-a727-305ae775dd4d"
+    },
+    {
+      "port_id": "97c60e5f-1bf9-4d7e-bbb5-291429ddb3a3",
+      "canonical_name": "Savona",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Savona Portos.jpg",
+      "editorial": "GOOD",
+      "media_id": "65f325b4-82fe-42bf-99d3-d2cca48cafb4",
+      "resolved_port_id": "97c60e5f-1bf9-4d7e-bbb5-291429ddb3a3"
+    },
+    {
+      "port_id": "3b3244bc-2a86-46a5-b93d-302646a03761",
+      "canonical_name": "Seville",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "ca5ab35d-8515-4ea5-a708-4a480e6d05b3",
+      "canonical_name": "Sihanoukville",
+      "outcome": "NO_IMAGE",
+      "candidate": null
+    },
+    {
+      "port_id": "24a66bb2-7100-45dd-9add-e7b003dd78d2",
+      "canonical_name": "Sorrento",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Sorrento, Italy.jpg",
+      "editorial": "GOOD",
+      "media_id": "2a4ef111-c4ad-4fe1-91f2-45ce64988320",
+      "resolved_port_id": "24a66bb2-7100-45dd-9add-e7b003dd78d2"
+    },
+    {
+      "port_id": "b76ccee1-8e45-496e-b0ff-834980471ee8",
+      "canonical_name": "Southampton",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "De Vere Grand Harbour Hotel, Southampton - geograph.org.uk - 26084.jpg",
+      "editorial": "GOOD",
+      "media_id": "ad6ec534-2720-4cdb-838d-f12bb398d165",
+      "resolved_port_id": "b76ccee1-8e45-496e-b0ff-834980471ee8"
+    },
+    {
+      "port_id": "87e59e5a-5295-4b58-8502-7708810fdf5c",
+      "canonical_name": "Southampton",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "f55c4c13-65ee-49e0-8483-05e4c5e7e167",
+      "canonical_name": "Split",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Bartol Kasic, Split (P1080964).jpg",
+      "editorial": "GOOD",
+      "media_id": "e58792e4-200a-4c4d-aa56-a34e7ba7eade",
+      "resolved_port_id": "f55c4c13-65ee-49e0-8483-05e4c5e7e167"
+    },
+    {
+      "port_id": "efb21c25-c61d-4699-9bb9-7423fe5652ec",
+      "canonical_name": "St Croix",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Christiansted National Historic Site, Virgin Islands (64a951bf-37e6-400f-b007-73cb83b68b3f).jpg",
+      "editorial": "GOOD",
+      "media_id": "144abf57-3e54-432e-a096-1a8be325f3b2",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "49f6eca2-61d3-4b9d-a4cb-c0e49fdd6186",
+      "canonical_name": "St Georges Grenada",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "View of the Harbour, St. George’s, Grenada, W.I. (print) GAC 6705.jpg",
+      "editorial": "GOOD",
+      "media_id": "4fa49916-f3d2-48cc-be90-a9478fceef21",
+      "resolved_port_id": "49f6eca2-61d3-4b9d-a4cb-c0e49fdd6186"
+    },
+    {
+      "port_id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+      "canonical_name": "St Johns Newfoundland",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Harbour, Town and Narrows of St. John's, Newfoundland.jpg",
+      "editorial": "GOOD",
+      "media_id": "39672297-52f0-4cdf-8af8-b7a4bedf6a89",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "f8342880-34db-4160-90ed-11b1adfe553f",
+      "canonical_name": "Stavanger",
+      "outcome": "AUTO_APPROVED",
+      "candidate": ".00 2759 Stavanger harbour - Norway.jpg",
+      "editorial": "GOOD",
+      "media_id": "96dbdb7f-a6e3-4f95-9458-2f1f5a42a9b7",
+      "resolved_port_id": "f8342880-34db-4160-90ed-11b1adfe553f"
+    },
+    {
+      "port_id": "1a410b63-2789-4d89-8466-7c12d5a185c0",
+      "canonical_name": "Stockholm",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "a431d09a-cffe-460d-9931-a2833882ad33",
+      "canonical_name": "Suva",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "The harbour, Suva, Fiji (NYPL Hades-2359163-4043519).jpg",
+      "editorial": "GOOD",
+      "media_id": "7f5f235e-5c74-4ab8-9ba1-bd6796d12b68",
+      "resolved_port_id": "a431d09a-cffe-460d-9931-a2833882ad33"
+    },
+    {
+      "port_id": "859ec3a2-a4b9-4367-8539-e9d1714e88f1",
+      "canonical_name": "Sydney Nova Scotia",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Sydney, Nova Scotia waterfront from Dobson Yacht Club.jpg",
+      "editorial": "GOOD",
+      "media_id": "bd785b29-88d9-4238-a648-225fefb17b63",
+      "resolved_port_id": "859ec3a2-a4b9-4367-8539-e9d1714e88f1"
+    },
+    {
+      "port_id": "288c657a-864a-4805-b054-2b8ba6f9fcfd",
+      "canonical_name": "Syracuse",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Syracuse - harbour - excursions boat - detail with lifebelt and ropes.jpg",
+      "editorial": "GOOD",
+      "media_id": "34519554-af07-45d9-a41a-7e4cefe8a720",
+      "resolved_port_id": "288c657a-864a-4805-b054-2b8ba6f9fcfd"
+    },
+    {
+      "port_id": "d3937bd5-2463-48e0-afb3-0203184388dc",
+      "canonical_name": "Tallinn",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Pirita harbour (Tallinn Olympic Yachting Centre) 01.JPG",
+      "editorial": "GOOD",
+      "media_id": "3c916f4a-317e-45e7-9c7f-f72e362b2435",
+      "resolved_port_id": "d3937bd5-2463-48e0-afb3-0203184388dc"
+    },
+    {
+      "port_id": "1b668ecd-c1e1-4587-a656-cde826c474b2",
+      "canonical_name": "Tampa",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "USS Typhoon (PC-5) commissioning in Tampa Bay.jpg",
+      "editorial": "GOOD",
+      "media_id": "7dff905a-8f2d-447c-9d47-1e15bc159b90",
+      "resolved_port_id": "1b668ecd-c1e1-4587-a656-cde826c474b2"
+    },
+    {
+      "port_id": "493bac1d-8485-4480-9120-6d5774f977d2",
+      "canonical_name": "Tangier",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Tangier - 44699733295.jpg",
+      "editorial": "GOOD",
+      "media_id": "3b61739f-0304-44b6-a805-162ef91ede08",
+      "resolved_port_id": "493bac1d-8485-4480-9120-6d5774f977d2"
+    },
+    {
+      "port_id": "dda4942c-2590-427a-8a03-742720af0e99",
+      "canonical_name": "Tarragona",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Tarragona punta del Miracle-20130225-RM-111231.jpg",
+      "editorial": "GOOD",
+      "media_id": "f6cae2c5-c020-4ce6-98fd-7782681038f7",
+      "resolved_port_id": "dda4942c-2590-427a-8a03-742720af0e99"
+    },
+    {
+      "port_id": "e52145e8-e2d3-44fe-9609-75ec9a83c555",
+      "canonical_name": "Tianjin",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Entrance of Harbour Park, Tianjin Harbour.jpg",
+      "editorial": "GOOD",
+      "media_id": "7e21333f-1cf7-4892-b984-9325abd20760",
+      "resolved_port_id": "e52145e8-e2d3-44fe-9609-75ec9a83c555"
+    },
+    {
+      "port_id": "28cf6bb0-683f-49fd-8c12-a37ffdfb20ce",
+      "canonical_name": "Tilbury",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "16cee34d-4ca7-411b-8a09-23ae3c8b716c",
+      "canonical_name": "Tokyo",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Port of Futami, Chichijima, Ogasawara.jpg",
+      "editorial": "GOOD",
+      "media_id": "a06f4360-c858-4477-bafa-ecdfeae22cdb",
+      "resolved_port_id": "16cee34d-4ca7-411b-8a09-23ae3c8b716c"
+    },
+    {
+      "port_id": "b96331eb-c5a8-46d3-8496-527ee8c39aac",
+      "canonical_name": "Toulon",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Le Hardi-class destroyers scuttled at Toulon in November 1942.jpg",
+      "editorial": "GOOD",
+      "media_id": "f7af395b-95b1-41f9-90cc-fcb1871d9134",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "608c9ff2-2fb9-4638-8fbe-41a62a537b4f",
+      "canonical_name": "Trieste",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Trieste, View towards Sanctuary of Monte Grisa, Italy.jpg",
+      "editorial": "GOOD",
+      "media_id": "5f627173-46aa-47fb-9bde-ef2a7e38c0d5",
+      "resolved_port_id": "608c9ff2-2fb9-4638-8fbe-41a62a537b4f"
+    },
+    {
+      "port_id": "c290dd40-9196-40fe-b93d-904f4911d5c1",
+      "canonical_name": "Tromso",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Puerto, Tromsø, Noruega, 2019-09-04, DD 48.jpg",
+      "editorial": "GOOD",
+      "media_id": "240c3d12-34b5-4b76-b9bc-7dc11ab3c136",
+      "resolved_port_id": "c290dd40-9196-40fe-b93d-904f4911d5c1"
+    },
+    {
+      "port_id": "5dad4b64-e900-4756-9fd9-2e06b197ad4a",
+      "canonical_name": "Ushuaia",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Ushuaia6a (js).jpg",
+      "editorial": "GOOD",
+      "media_id": "80083758-6de8-4e17-a3c4-0fcc22731f8b",
+      "resolved_port_id": "5dad4b64-e900-4756-9fd9-2e06b197ad4a"
+    },
+    {
+      "port_id": "edb5ac77-63ca-477e-ad40-767b1c922f42",
+      "canonical_name": "Valencia",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "0.5. Port de Dénia (Marina Alta, País Valencià).jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "50b5ac20-f000-4c72-9af8-73493c3a0ada",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "9dce60a7-8618-4b0a-ac59-a4c836dd494e",
+      "canonical_name": "Valparaiso",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Chilean warships at Valparaiso in September 1975.jpg",
+      "editorial": "GOOD",
+      "media_id": "6d578470-1037-4718-9208-f11dce9bafeb",
+      "resolved_port_id": "9dce60a7-8618-4b0a-ac59-a4c836dd494e"
+    },
+    {
+      "port_id": "e7535a4d-1559-4bc8-bd0d-db06c02e1116",
+      "canonical_name": "Venice",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "View of a Bridge in Venice (SM 416).png",
+      "editorial": "GOOD",
+      "media_id": "8f086a28-0ed0-4827-a3c3-ad03c681d224",
+      "resolved_port_id": "e7535a4d-1559-4bc8-bd0d-db06c02e1116"
+    },
+    {
+      "port_id": "75da0c43-966f-43d5-803f-29c9132b5d4a",
+      "canonical_name": "Vigo",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "LE PORT DE VIGO, ESPAGNE ).jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "4b1b5dda-db41-48c4-9c57-d075738e7b09",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "6675d361-dcbe-461f-b455-d971cd21e530",
+      "canonical_name": "Villefranche-sur-Mer",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "06000 Port de Nice, France - panoramio.jpg",
+      "editorial": "ACCEPTABLE",
+      "media_id": "d17e18f6-ed53-4da4-979b-052633efcadc",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "44beb7c0-583d-4c38-a89a-e5b74d7e4e9f",
+      "canonical_name": "Walvis Bay",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Walvis Bay aerial.jpg",
+      "editorial": "GOOD",
+      "media_id": "ab0d33f7-bab9-47ac-ba52-bf011b00153c",
+      "resolved_port_id": "44beb7c0-583d-4c38-a89a-e5b74d7e4e9f"
+    },
+    {
+      "port_id": "a821037a-3726-432b-9d73-b85a325c70d0",
+      "canonical_name": "Warnemunde",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Rostock Ostsee (49833072171).jpg",
+      "editorial": "GOOD",
+      "media_id": "bd6ea9cd-0ae1-4816-a368-96ef3ef6be29",
+      "resolved_port_id": "a821037a-3726-432b-9d73-b85a325c70d0"
+    },
+    {
+      "port_id": "38aa7fcc-fd35-4e61-abca-105b7d7af43e",
+      "canonical_name": "Willemstad",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Historic Area of Willemstad, Inner City and Harbour, Curaçao-139160.jpg",
+      "editorial": "GOOD",
+      "media_id": "7ab4b5f9-b0ef-4fe6-8d89-7399630ef312",
+      "resolved_port_id": "38aa7fcc-fd35-4e61-abca-105b7d7af43e"
+    },
+    {
+      "port_id": "cd6b31f3-34cd-4da2-a453-ac9700b2d1f6",
+      "canonical_name": "Zadar",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Waterfront Mansion - Zadar - Croatia.jpg",
+      "editorial": "GOOD",
+      "media_id": "73bee599-c56e-433b-981f-529aa4d0d292",
+      "resolved_port_id": "cd6b31f3-34cd-4da2-a453-ac9700b2d1f6"
+    },
+    {
+      "port_id": "a0767afe-b197-4c4c-b019-2617680076e3",
+      "canonical_name": "Darwin",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Aerial view of Darwin NT.jpg",
+      "editorial": "GOOD",
+      "media_id": "07be7d7b-c668-4514-97b4-6434419fe99c",
+      "resolved_port_id": "a0767afe-b197-4c4c-b019-2617680076e3"
+    },
+    {
+      "port_id": "f31ee684-297d-47dd-8add-793a51c6b039",
+      "canonical_name": "Fort Lauderdale",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Closed Lifeguard Station on a Beach in Fort Lauderdale, FL (251561825).jpg",
+      "editorial": "GOOD",
+      "media_id": "c031d200-0f02-4df3-9189-0e62d1f268bb",
+      "resolved_port_id": "f31ee684-297d-47dd-8add-793a51c6b039"
+    },
+    {
+      "port_id": "722f60e4-d01d-4f1c-bcf6-8fd7c71420e1",
+      "canonical_name": "Fort-de-France",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Captn Faulknor in the Zebra of 16 guns storming Fort Royal, Martinique.585 x 715 mm.jpg",
+      "editorial": "GOOD",
+      "media_id": "18e4530c-0c8c-4ef6-90af-132ec6ecdb7e",
+      "resolved_port_id": "722f60e4-d01d-4f1c-bcf6-8fd7c71420e1"
+    },
+    {
+      "port_id": "f6893d79-c003-4414-b018-9164035892c7",
+      "canonical_name": "Galway",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Galway Harbour - geograph.org.uk - 4308928.jpg",
+      "editorial": "GOOD",
+      "media_id": "52a76d61-48fb-40de-bf4d-3fc625c7423a",
+      "resolved_port_id": "f6893d79-c003-4414-b018-9164035892c7"
+    },
+    {
+      "port_id": "60688b7a-fe10-41d9-b692-da04947e8d63",
+      "canonical_name": "Greenock",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Finnarrow at Great Harbour, Greenock - geograph.org.uk - 3358039.jpg",
+      "editorial": "GOOD",
+      "media_id": "2e601f56-7810-4a87-8224-88d53d40e62f",
+      "resolved_port_id": "60688b7a-fe10-41d9-b692-da04947e8d63"
+    },
+    {
+      "port_id": "12d7b22b-fa6b-4449-949e-2e2829779828",
+      "canonical_name": "Hilo",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Douglas PD-1 take-off Hilo 1932.jpg",
+      "editorial": "GOOD",
+      "media_id": "a74edb3e-7cc3-4706-a965-67b2238558b1",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "4c2100f3-a95a-48d6-a519-6b6270b0a3ca",
+      "canonical_name": "Ibiza",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "IbizaTown.jpg",
+      "editorial": "GOOD",
+      "media_id": "1695d99c-bc64-42c1-9c50-c78551e59aa3",
+      "resolved_port_id": "4c2100f3-a95a-48d6-a519-6b6270b0a3ca"
+    },
+    {
+      "port_id": "1744157b-4bd0-441a-917f-33167e861a8c",
+      "canonical_name": "Kingstown",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Kingstown Harbour, St. Vincent W.I.jpg",
+      "editorial": "GOOD",
+      "media_id": "53096d83-befc-4da6-a74f-bdb4bcf2832e",
+      "resolved_port_id": "1744157b-4bd0-441a-917f-33167e861a8c"
+    },
+    {
+      "port_id": "e290452f-8750-48a4-8b41-3cd853fe3715",
+      "canonical_name": "Luganville",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Luganville waterfront.jpg",
+      "editorial": "GOOD",
+      "media_id": "c1eaade8-6b33-4d80-8899-0694cd3e76f8",
+      "resolved_port_id": "e290452f-8750-48a4-8b41-3cd853fe3715"
+    },
+    {
+      "port_id": "c2cd9ba3-67ea-42a8-8d3d-39578b664fc7",
+      "canonical_name": "Monaco",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "Monaco city and harbour.jpeg",
+      "editorial": "GOOD",
+      "media_id": "916d0b97-34c3-4f68-860e-90ff96a50a66",
+      "resolved_port_id": "c2cd9ba3-67ea-42a8-8d3d-39578b664fc7"
+    },
+    {
+      "port_id": "70b98075-768b-4f47-87e7-ea651ac40cee",
+      "canonical_name": "Muscat",
+      "outcome": "AUTO_APPROVED",
+      "candidate": "INS Delhi entering Muscat Harbour in 2015.jpg",
+      "editorial": "GOOD",
+      "media_id": "6663986c-912a-4d1c-9354-e162d143e7f9",
+      "resolved_port_id": "70b98075-768b-4f47-87e7-ea651ac40cee"
+    },
+    {
+      "port_id": "f5d74f92-e886-40fb-916b-4e14268b339b",
+      "canonical_name": "Newcastle upon Tyne",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "f8b4381d-f65a-447f-93f4-2baf19535f40",
+      "canonical_name": "Palma de Mallorca",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "2aebf57a-3bb8-4a5e-bd86-2a66025c5af8",
+      "canonical_name": "Puerto Vallarta",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "8bdc4ac5-ecf9-45c2-9934-488043db8afc",
+      "canonical_name": "Saint John",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "3b3244bc-2a86-46a5-b93d-302646a03761",
+      "canonical_name": "Seville",
+      "outcome": "NEEDS_REVIEW",
+      "candidate": "Some objections against the Treaty of Seville, consider'd; in a letter to a noble peer. Fleuron N023538-2.png",
+      "editorial": "ACCEPTABLE",
+      "media_id": "b9fbcd04-9ce9-4ab1-92c4-abf6647f6b10",
+      "note": "stored_non_public"
+    },
+    {
+      "port_id": "87e59e5a-5295-4b58-8502-7708810fdf5c",
+      "canonical_name": "Southampton",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "1a410b63-2789-4d89-8466-7c12d5a185c0",
+      "canonical_name": "Stockholm",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    },
+    {
+      "port_id": "28cf6bb0-683f-49fd-8c12-a37ffdfb20ce",
+      "canonical_name": "Tilbury",
+      "outcome": "RATE_LIMITED",
+      "error": "Image download failed (429)"
+    }
+  ]
+}

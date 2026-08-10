@@ -1,0 +1,83 @@
+{
+  "mode": "dry_run",
+  "phase": "A",
+  "started_at": "2026-08-09T01:01:18.888Z",
+  "ended_at": "2026-08-09T01:01:24.722Z",
+  "elapsed_ms": 5834,
+  "environment": {
+    "platform": "darwin",
+    "architecture": "arm64",
+    "node_version": "v24.18.0",
+    "ci": false,
+    "github_actions": false,
+    "github_run_id": null,
+    "github_run_attempt": null,
+    "github_ref": null,
+    "runner_os": null,
+    "runner_labels": [],
+    "self_hosted_expected": true,
+    "self_hosted_detected": false,
+    "cloud_hosted_detected": false,
+    "source_environment": "local_mac",
+    "phase": "A",
+    "apply_enabled": false
+  },
+  "run_id": "princess-cruises-weekly-2026-08-09T01-01-19-680Z",
+  "run_record_id": "068e1751-25a0-4d05-bc3a-df2e835239ee",
+  "source": {
+    "fetch_failed": false,
+    "official_source_total": 1000,
+    "expanded_sailings": null,
+    "within_public_cutoff_excluded": 65,
+    "incomplete_skipped": 390,
+    "cruisetours_excluded": 0,
+    "error": null
+  },
+  "quality_gate": {
+    "evaluated": true,
+    "passed": true,
+    "failures": [],
+    "blocked": false
+  },
+  "resolution": {
+    "ship_resolution_pct": 100,
+    "departure_port_resolution_pct": 100,
+    "destination_resolution_pct": 100,
+    "identity_coverage_pct": 100
+  },
+  "reconciliation": {
+    "active_production_total": 1503,
+    "eligible_total": 1503,
+    "recognised_existing_eligible": 1503,
+    "outstanding_eligible_inserts": 0,
+    "proposed_updates": 0,
+    "source_absent_active": 0,
+    "reconciliation_arithmetic_ok": true,
+    "all_active_recognised_in_eligible_source": true,
+    "previous_eligible_total": 1506,
+    "eligible_delta": -3,
+    "eligible_change_pct": -0.1992
+  },
+  "proposed_change_metrics": {
+    "proposed_inserts": 0,
+    "proposed_updates": 0,
+    "combined_proposed_changes": 0
+  },
+  "source_absent": {
+    "count": 0,
+    "sailing_ids": [],
+    "policy": "source_absent_retained_active"
+  },
+  "snapshot_id": "1d99dd5990f396a9f2a755e30cbd2dd2ffae4974fb45f99588799c30b39ec1f4",
+  "counts_before": {
+    "princess": 1503
+  },
+  "counts_after": {
+    "princess": 1503
+  },
+  "inventory_unchanged": true,
+  "writes_performed": 0,
+  "blocked": false,
+  "status": "completed",
+  "error": null
+}

@@ -1,0 +1,557 @@
+{
+  "mode": "simulation",
+  "writes_performed": 0,
+  "read_only": true,
+  "started_at": "2026-08-10T05:47:36.305Z",
+  "ended_at": "2026-08-10T05:49:45.524Z",
+  "today": "2026-08-10",
+  "line": {
+    "id": "8b28c83e-2bf0-44ce-9795-ec3051c34050",
+    "slug": "explora-journeys",
+    "name": "Explora Journeys"
+  },
+  "source_contract": {
+    "adapter_id": "explora",
+    "adapter_version": "2026-08-10.explora1",
+    "primary_endpoint": "https://explorajourneys.com/int/en/journey.sitemap.xml",
+    "detail_endpoint_formula": "https://explorajourneys.com/int/en/destinations-globe/{region}/journeys/{slug}?id-journey={JOURNEY_ID}",
+    "method": "GET",
+    "authentication_required": false,
+    "authentication_notes": "Public sitemap and public journey detail pages; no session or client id required.",
+    "pagination": "Single sitemap document listing every published journey (one <loc> per sailing)",
+    "official_identity_formula": "{SHIP2}{YYYYMMDD}{EMBARK3}{DISEMBARK3}",
+    "official_identity_source": "id-journey query parameter (uppercased)",
+    "official_url_formula": "sitemap <loc> (int/en locale preferred)",
+    "structured_metadata": "schema.org Product + Trip JSON-LD, plus meta description carrying ship name and nights",
+    "land_product_exclusion": "Only /journeys/ URLs carrying id-journey are ingested; hotel-only / land-only titles are classified non_cruise"
+  },
+  "source_audit": {
+    "sitemap_url": "https://explorajourneys.com/int/en/journey.sitemap.xml",
+    "raw_locs": 535,
+    "parsed": 535,
+    "duplicate_journey_ids": 0,
+    "skipped": 0,
+    "skip_reasons": {},
+    "past_journeys_skipped": 127,
+    "detail_requested": 408,
+    "detail_enriched": 364,
+    "detail_failed": 44,
+    "concurrency": 8
+  },
+  "counts": {
+    "official_sitemap_journeys": 535,
+    "future_journeys_fetched": 408,
+    "ocean_cruises": 408,
+    "non_cruise_excluded": 0,
+    "complete_high_confidence": 326,
+    "within_public_cutoff_excluded": 25,
+    "publicly_eligible_complete": 302,
+    "proposed_inserts": 301,
+    "proposed_updates": 1,
+    "recognised_existing_eligible": 0
+  },
+  "resolution": {
+    "ship_resolution_pct": 100,
+    "departure_port_resolution_pct": 91.17647058823529,
+    "destination_resolution_pct": 82.1078431372549,
+    "identity_coverage_pct": 100
+  },
+  "detail_failures": {
+    "count": 44,
+    "by_error": {
+      "http_500": 44
+    },
+    "sample": [
+      {
+        "journey_id": "EP20260810FSAIST",
+        "error": "http_500"
+      },
+      {
+        "journey_id": "EP20260820ISTFSA",
+        "error": "http_500"
+      },
+      {
+        "journey_id": "EP20260831FSAIST",
+        "error": "http_500"
+      },
+      {
+        "journey_id": "EP20260910ISTFSA",
+        "error": "http_500"
+      },
+      {
+        "journey_id": "EP20260921FSAIST",
+        "error": "http_500"
+      },
+      {
+        "journey_id": "EP20261001ISTFSA",
+        "error": "http_500"
+      },
+      {
+        "journey_id": "EP20261029FSAIST",
+        "error": "http_500"
+      },
+      {
+        "journey_id": "EP20261105ISTAYT",
+        "error": "http_500"
+      },
+      {
+        "journey_id": "EP20261114AYTIST",
+        "error": "http_500"
+      },
+      {
+        "journey_id": "EP20261119PIRDXB",
+        "error": "http_500"
+      }
+    ]
+  },
+  "failure_counts": {
+    "confidence:review": 82,
+    "destination_unresolved": 73,
+    "validation:Destination not matched": 73,
+    "detail_page_not_enriched": 44,
+    "missing_departure_port": 36,
+    "validation:Missing departure port": 13,
+    "validation:Invalid departure value: Jeddah, Saudi Arabia": 10,
+    "validation:Invalid departure value: Hamburg, Germany": 8,
+    "validation:Invalid departure value: Manaus, Brazil": 3,
+    "validation:Invalid departure value: Panama City (Amador), Panama": 2
+  },
+  "destination_counts": {
+    "mediterranean": 133,
+    "caribbean": 116,
+    "northern-europe": 32,
+    "alaska": 14,
+    "japan": 14,
+    "asia": 12,
+    "canada-new-england": 10,
+    "pacific-coast": 2,
+    "transpacific": 2
+  },
+  "unresolved": {
+    "ships": [],
+    "departure_ports": [
+      "Jeddah, Saudi Arabia",
+      "Hamburg, Germany",
+      "Panama City (Amador), Panama",
+      "AYT",
+      "JED",
+      "SGA",
+      "SOK",
+      "Manaus, Brazil"
+    ],
+    "destinations": [
+      {
+        "journey_id": "EA20280121JEDJED",
+        "region_code": "api",
+        "itinerary_name": "A Journey through Middle Eastern Charms & Archaeological Wonders",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EA20280130JEDJED",
+        "region_code": "api",
+        "itinerary_name": "A Journey of Ancient Arabian Wonders & Modern Marvels",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EA20280208JEDJED",
+        "region_code": "api",
+        "itinerary_name": "A Journey through Middle Eastern Charms & Archaeological Wonders",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EA20280217JEDJED",
+        "region_code": "api",
+        "itinerary_name": "A Journey of Ancient Arabian Wonders & Modern Marvels",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EA20280226JEDJED",
+        "region_code": "api",
+        "itinerary_name": "A Journey through Middle Eastern Charms & Archaeological Wonders",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EA20280306JEDJED",
+        "region_code": "api",
+        "itinerary_name": "A Journey of Ancient Arabian Wonders & Modern Marvels",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EA20280315JEDFSA",
+        "region_code": "tra",
+        "itinerary_name": "A Grand Journey Through Arabia's Mystic Past to Venice's Timeless Elegance",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EA20280429LISSOU",
+        "region_code": "tra",
+        "itinerary_name": "A Journey of Vineyards, Culture & Atlantic Shore",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EL20260810LISCPH",
+        "region_code": "tra",
+        "itinerary_name": "A Grand Journey from Vineyard Valleys to Fjord-Kissed Peaks",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EL20260907HAMNYC",
+        "region_code": "tra",
+        "itinerary_name": "A Grand Journey of Stunning Boreal Scenery & Northern Cultural Heritage",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EL20260907HAMQUE",
+        "region_code": "tra",
+        "itinerary_name": "A Grand Journey of Atlantic Adventures, Nordic Marvels & Glacier-Sculpted Allure",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EL20260909SOUNYC",
+        "region_code": "tra",
+        "itinerary_name": "A Grand Journey of Fjord Mysteries, Arctic Wilderness & Coastal Heritage",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EL20260909SOUQUE",
+        "region_code": "tra",
+        "itinerary_name": "A Grand Journey through Nordic Wonders, Geothermal Delights & Remote Coastal Beauty",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EL20260917REYNYC",
+        "region_code": "tra",
+        "itinerary_name": "A Grand Journey through Icelandic Fjords, Greenlandic Traditions & North American Gems",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EL20260917REYQUE",
+        "region_code": "tra",
+        "itinerary_name": "A Grand Journey through Rugged Landscapes & Remote Coastal Scenery",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EL20270422AMDLAX",
+        "region_code": "pac",
+        "itinerary_name": "A Journey of Mayan Discovery & Mexican Exploration",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EO20270423LISSOU",
+        "region_code": "tra",
+        "itinerary_name": "A Journey of Vineyards, Culture & Atlantic Shore",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EO20270825HAMNYC",
+        "region_code": "tra",
+        "itinerary_name": "A Journey Through Greenlandic Villages & North American Icons",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EO20270825HAMQUE",
+        "region_code": "tra",
+        "itinerary_name": "A Journey of Celtic Isles, Arctic Passages & Canadian Charm",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EO20270904REYQUE",
+        "region_code": "tra",
+        "itinerary_name": "A Journey through Spectacular Waters & Nordic Coastal Contours",
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261119PIRDXB",
+        "region_code": "tra",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261129PIRDX1",
+        "region_code": "tra",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261129PIRDXB",
+        "region_code": "tra",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261205JEDDXB",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261214DXBDX1",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261214DXBDXB",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261221DXBDX1",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261221DXBDXB",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261228DXBDX1",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20261228DXBDXB",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270104DXBDX1",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270104DXBDXB",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270111DXBDX1",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270111DXBDXB",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270118DXBDX1",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270118DXBDXB",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270125DXBDX1",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270125DXBDXB",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270201DXBDXB",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270201DXBJED",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270208DXBJE1",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270208DXBJED",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270208DXBSGA",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270208DXBSOK",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270216JEDJED",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270219SGASGA",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270221SOKSOK",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270225JEDJED",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270228SGASGA",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      },
+      {
+        "journey_id": "EP20270306JEDJED",
+        "region_code": "api",
+        "itinerary_name": null,
+        "status": "unresolved"
+      }
+    ]
+  },
+  "sample_eligible": [
+    {
+      "official_sailing_id": "EA20271204CVVIST",
+      "ship": "EXPLORA V",
+      "departure_date": "2027-12-04",
+      "return_date": "2027-12-11",
+      "nights": 7,
+      "departure_port": "Civitavecchia",
+      "destination": "mediterranean",
+      "itinerary": "A Journey through Italy's Timeless Wonders to Istanbul's Vibrant Soul",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/med/journeys/cvvist-07-v1?id-journey=EA20271204CVVIST"
+    },
+    {
+      "official_sailing_id": "EA20271212ISTCVV",
+      "ship": "EXPLORA V",
+      "departure_date": "2027-12-12",
+      "return_date": "2027-12-19",
+      "nights": 7,
+      "departure_port": "Istanbul",
+      "destination": "mediterranean",
+      "itinerary": "A Journey through Istanbul's Cosmopolitan Vibrancy to Rome's Timeless Wonders",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/med/journeys/istcvv-07-v1?id-journey=EA20271212ISTCVV"
+    },
+    {
+      "official_sailing_id": "EA20271219CVVBCN",
+      "ship": "EXPLORA V",
+      "departure_date": "2027-12-19",
+      "return_date": "2027-12-26",
+      "nights": 7,
+      "departure_port": "Civitavecchia",
+      "destination": "mediterranean",
+      "itinerary": "A Journey through Italy's Rich Heritage to Catalan Elegance",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/med/journeys/cvvbcn-07-v17?id-journey=EA20271219CVVBCN"
+    },
+    {
+      "official_sailing_id": "EA20271226BCNCVV",
+      "ship": "EXPLORA V",
+      "departure_date": "2027-12-26",
+      "return_date": "2028-01-02",
+      "nights": 7,
+      "departure_port": "Barcelona",
+      "destination": "mediterranean",
+      "itinerary": "A Journey of New Year Festivities through the Splendid Mediterranean",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/med/journeys/bcncvv-07-v14?id-journey=EA20271226BCNCVV"
+    },
+    {
+      "official_sailing_id": "EA20280102CVVBCN",
+      "ship": "EXPLORA V",
+      "departure_date": "2028-01-02",
+      "return_date": "2028-01-09",
+      "nights": 7,
+      "departure_port": "Civitavecchia",
+      "destination": "mediterranean",
+      "itinerary": "A Journey Through Fortresses, Medinas and Balearic Splendour",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/med/journeys/cvvbcn-07-v16?id-journey=EA20280102CVVBCN"
+    },
+    {
+      "official_sailing_id": "EA20280109BCNJED",
+      "ship": "EXPLORA V",
+      "departure_date": "2028-01-09",
+      "return_date": "2028-01-21",
+      "nights": 12,
+      "departure_port": "Barcelona",
+      "destination": "mediterranean",
+      "itinerary": "A Grand Journey through Catalan Shores to Saudi Arabian Mystique",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/tra/journeys/bcnjed-12-v1?id-journey=EA20280109BCNJED"
+    },
+    {
+      "official_sailing_id": "EA20280325FSAPIR",
+      "ship": "EXPLORA V",
+      "departure_date": "2028-03-25",
+      "return_date": "2028-04-01",
+      "nights": 7,
+      "departure_port": "Venice",
+      "destination": "mediterranean",
+      "itinerary": "A Journey of Empires, Myths & Seas",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/med/journeys/fsapir-07-v20?id-journey=EA20280325FSAPIR"
+    },
+    {
+      "official_sailing_id": "EA20280401PIRFSA",
+      "ship": "EXPLORA V",
+      "departure_date": "2028-04-01",
+      "return_date": "2028-04-08",
+      "nights": 7,
+      "departure_port": "Piraeus",
+      "destination": "mediterranean",
+      "itinerary": "A Journey Through Ancient Stories, Isles & Eternal Seas",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/med/journeys/pirfsa-07-v12?id-journey=EA20280401PIRFSA"
+    },
+    {
+      "official_sailing_id": "EA20280408FSACVV",
+      "ship": "EXPLORA V",
+      "departure_date": "2028-04-08",
+      "return_date": "2028-04-15",
+      "nights": 7,
+      "departure_port": "Venice",
+      "destination": "mediterranean",
+      "itinerary": "A Journey of Adriatic Shores & Mediterranean Legends",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/med/journeys/fsacvv-07-v1?id-journey=EA20280408FSACVV"
+    },
+    {
+      "official_sailing_id": "EA20280415CVVBCN",
+      "ship": "EXPLORA V",
+      "departure_date": "2028-04-15",
+      "return_date": "2028-04-22",
+      "nights": 7,
+      "departure_port": "Civitavecchia",
+      "destination": "mediterranean",
+      "itinerary": "A Journey of Riviera Glamour & Island Serenity",
+      "official_url": "https://explorajourneys.com/int/en/destinations-globe/med/journeys/cvvbcn-07-v19?id-journey=EA20280415CVVBCN"
+    }
+  ]
+}

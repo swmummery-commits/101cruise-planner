@@ -406,6 +406,23 @@ async function runBatch({
     max_writes: effectiveMaxWrites,
     result_ok: result.ok,
     summary: result.summary || null,
+    reconciliation_summary: result.summary
+      ? {
+          active_production_total: result.summary.active_production_total ?? null,
+          eligible_total: result.summary.eligible_total ?? null,
+          recognised_existing_eligible:
+            result.summary.recognised_existing_eligible ?? result.summary.unchanged ?? null,
+          outstanding_eligible_inserts:
+            result.summary.outstanding_eligible_inserts ?? result.summary.proposed_inserts ?? null,
+          proposed_updates: result.summary.proposed_updates ?? null,
+          source_absent_active: result.summary.source_absent_active ?? null,
+          writes_executed:
+            (result.write_result?.inserted || 0) + (result.write_result?.updated || 0),
+          reconciliation_arithmetic_ok: result.summary.reconciliation_arithmetic_ok ?? null,
+          all_active_recognised_in_eligible_source:
+            result.summary.all_active_recognised_in_eligible_source ?? null
+        }
+      : null,
     quality_gate: result.summary?.quality_gate || null,
     write_result: result.write_result || null,
     rollback_manifest_id: result.summary?.rollback_manifest_id || null,

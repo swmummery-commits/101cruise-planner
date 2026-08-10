@@ -1,0 +1,285 @@
+{
+  "session_id": "princess-catch-up-session-2026-08-08T08-08-42-056Z",
+  "started_at": "2026-08-08T08:08:43.106Z",
+  "ended_at": "2026-08-08T08:12:25.827Z",
+  "mode": "apply",
+  "local_execution_guard": {
+    "ok": true,
+    "local_only": true
+  },
+  "expected_start_active": 1116,
+  "actual_start_active": 1116,
+  "requested_max_batches": 3,
+  "hard_max_batches": 3,
+  "hard_max_writes_per_batch": 100,
+  "hard_max_writes_per_session": 300,
+  "session_status": "completed",
+  "stop_reason": null,
+  "completion_reason": "requested_batch_limit_reached",
+  "total_attempted": 300,
+  "total_committed": 300,
+  "total_recovered": 0,
+  "total_failed": 0,
+  "batches": [
+    {
+      "batch_number": 1,
+      "fresh_active_checkpoint": 1116,
+      "snapshot_id": "4d0e8a1fae17fc802568f5d894ef397666ecb99e064a5b56cdbdff23419bf399",
+      "eligible_total": 1506,
+      "recognised_existing_eligible": 1116,
+      "outstanding_eligible_inserts": 390,
+      "quality_gate": {
+        "passed": true,
+        "failures": [],
+        "blocked": false
+      },
+      "continuation": {
+        "continue": true,
+        "completed": false,
+        "reason": null,
+        "batchIndex": 2,
+        "batchesCompleted": 1,
+        "totalAttemptedWrites": 100,
+        "totalCommittedWrites": 100
+      },
+      "run_id": "princess-session-batch-1-apply-2026-08-08T08-08-48-371Z",
+      "run_record_id": "857a902e-d449-46a7-a27c-90236e127e40",
+      "manifest_id": "a8b82eb5-8c6b-45ea-9bca-a24b5ce2dbf5",
+      "attempted": 100,
+      "committed": 100,
+      "recovered": 0,
+      "failed": 0,
+      "post_write_verification": {
+        "ok": true,
+        "issues": [],
+        "minDeparture": "2026-08-30"
+      },
+      "manifest_reconciliation": {
+        "ok": true,
+        "manifest_count": 100,
+        "committed_count": 100,
+        "unique_manifest_count": 100,
+        "missing_from_manifest": [],
+        "extra_in_manifest": [],
+        "duplicate_manifest_ids": 0,
+        "recovered_count": 0
+      },
+      "idempotency_result": {
+        "ok": true,
+        "active": 1216,
+        "recognised": 1216,
+        "outstanding": 290,
+        "updates": 0,
+        "eligible": 1506
+      },
+      "idempotency_reconciliation": {
+        "active_production_total": 1216,
+        "eligible_total": 1506,
+        "recognised_existing_eligible": 1216,
+        "outstanding_eligible_inserts": 290,
+        "proposed_updates": 0,
+        "source_absent_active": 0,
+        "writes_executed": 0,
+        "reconciliation_arithmetic_ok": true,
+        "all_active_recognised_in_eligible_source": true
+      },
+      "cruise_finder": {
+        "ok": true,
+        "status": 200,
+        "search_failed": false
+      },
+      "collateral_check": {
+        "ok": true,
+        "attributable": false,
+        "halDelta": 0,
+        "celebrityDelta": 0
+      },
+      "post_write_ok": true,
+      "stop_reason": null
+    },
+    {
+      "batch_number": 2,
+      "fresh_active_checkpoint": 1216,
+      "snapshot_id": "4d0e8a1fae17fc802568f5d894ef397666ecb99e064a5b56cdbdff23419bf399",
+      "eligible_total": 1506,
+      "recognised_existing_eligible": 1216,
+      "outstanding_eligible_inserts": 290,
+      "quality_gate": {
+        "passed": true,
+        "failures": [],
+        "blocked": false
+      },
+      "continuation": {
+        "continue": true,
+        "completed": false,
+        "reason": null,
+        "batchIndex": 3,
+        "batchesCompleted": 2,
+        "totalAttemptedWrites": 200,
+        "totalCommittedWrites": 200
+      },
+      "run_id": "princess-session-batch-2-apply-2026-08-08T08-09-58-503Z",
+      "run_record_id": "64f9c39a-0a9a-4293-a9d8-8b478d7f31bb",
+      "manifest_id": "32c44676-5c16-4d1b-87a8-c80086ecd5b5",
+      "attempted": 100,
+      "committed": 100,
+      "recovered": 0,
+      "failed": 0,
+      "post_write_verification": {
+        "ok": true,
+        "issues": [],
+        "minDeparture": "2026-08-30"
+      },
+      "manifest_reconciliation": {
+        "ok": true,
+        "manifest_count": 100,
+        "committed_count": 100,
+        "unique_manifest_count": 100,
+        "missing_from_manifest": [],
+        "extra_in_manifest": [],
+        "duplicate_manifest_ids": 0,
+        "recovered_count": 0
+      },
+      "idempotency_result": {
+        "ok": true,
+        "active": 1316,
+        "recognised": 1316,
+        "outstanding": 190,
+        "updates": 0,
+        "eligible": 1506
+      },
+      "idempotency_reconciliation": {
+        "active_production_total": 1316,
+        "eligible_total": 1506,
+        "recognised_existing_eligible": 1316,
+        "outstanding_eligible_inserts": 190,
+        "proposed_updates": 0,
+        "source_absent_active": 0,
+        "writes_executed": 0,
+        "reconciliation_arithmetic_ok": true,
+        "all_active_recognised_in_eligible_source": true
+      },
+      "cruise_finder": {
+        "ok": true,
+        "status": 200,
+        "search_failed": false
+      },
+      "collateral_check": {
+        "ok": true,
+        "attributable": false,
+        "halDelta": 0,
+        "celebrityDelta": 0
+      },
+      "post_write_ok": true,
+      "stop_reason": null
+    },
+    {
+      "batch_number": 3,
+      "fresh_active_checkpoint": 1316,
+      "snapshot_id": "4d0e8a1fae17fc802568f5d894ef397666ecb99e064a5b56cdbdff23419bf399",
+      "eligible_total": 1506,
+      "recognised_existing_eligible": 1316,
+      "outstanding_eligible_inserts": 190,
+      "quality_gate": {
+        "passed": true,
+        "failures": [],
+        "blocked": false
+      },
+      "continuation": {
+        "continue": false,
+        "completed": true,
+        "completion_reason": "requested_batch_limit_reached",
+        "reason": null,
+        "batchIndex": 3,
+        "batchesCompleted": 3,
+        "totalAttemptedWrites": 300,
+        "totalCommittedWrites": 300
+      },
+      "run_id": "princess-session-batch-3-apply-2026-08-08T08-11-15-574Z",
+      "run_record_id": "287e113b-3284-4d58-9c32-c12f715fa7c9",
+      "manifest_id": "663207d1-d05f-4fa9-8c79-9ddb20963df2",
+      "attempted": 100,
+      "committed": 100,
+      "recovered": 0,
+      "failed": 0,
+      "post_write_verification": {
+        "ok": true,
+        "issues": [],
+        "minDeparture": "2026-08-30"
+      },
+      "manifest_reconciliation": {
+        "ok": true,
+        "manifest_count": 100,
+        "committed_count": 100,
+        "unique_manifest_count": 100,
+        "missing_from_manifest": [],
+        "extra_in_manifest": [],
+        "duplicate_manifest_ids": 0,
+        "recovered_count": 0
+      },
+      "idempotency_result": {
+        "ok": true,
+        "active": 1416,
+        "recognised": 1416,
+        "outstanding": 90,
+        "updates": 0,
+        "eligible": 1506
+      },
+      "idempotency_reconciliation": {
+        "active_production_total": 1416,
+        "eligible_total": 1506,
+        "recognised_existing_eligible": 1416,
+        "outstanding_eligible_inserts": 90,
+        "proposed_updates": 0,
+        "source_absent_active": 0,
+        "writes_executed": 0,
+        "reconciliation_arithmetic_ok": true,
+        "all_active_recognised_in_eligible_source": true
+      },
+      "cruise_finder": {
+        "ok": true,
+        "status": 200,
+        "search_failed": false
+      },
+      "collateral_check": {
+        "ok": true,
+        "attributable": false,
+        "halDelta": 0,
+        "celebrityDelta": 0
+      },
+      "post_write_ok": true,
+      "stop_reason": null
+    }
+  ],
+  "counts_start": {
+    "princess_active": 1116,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 17
+  },
+  "counts_end": {
+    "princess_active": 1416,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 20
+  },
+  "preview": null,
+  "writes_performed": 300,
+  "final": {
+    "princess_active": 1416,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "active_production_total": 1416,
+    "eligible_total": 1506,
+    "recognised_existing_eligible": 1416,
+    "outstanding_eligible_inserts": 90,
+    "proposed_updates": 0,
+    "source_absent_active": 0,
+    "reconciliation_arithmetic_ok": true,
+    "automation_flags": {
+      "PRINCESS_WEEKLY_RECONCILIATION_ENABLED": "(unset)",
+      "PRINCESS_DISCOVERY_WRITE_ENABLED": "true",
+      "CRUISE_DISCOVERY_AUTOMATION_ENABLED": "(unset)"
+    }
+  }
+}

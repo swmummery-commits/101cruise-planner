@@ -1,0 +1,1007 @@
+{
+  "phase": "apply",
+  "run_id": "princess-session-batch-2-apply-2026-08-08T08-09-58-503Z",
+  "run_record_id": "64f9c39a-0a9a-4293-a9d8-8b478d7f31bb",
+  "trigger_type": "controlled_catch_up_session_batch",
+  "next_batch": true,
+  "expected_active_count": 1216,
+  "expected_snapshot_id": "4d0e8a1fae17fc802568f5d894ef397666ecb99e064a5b56cdbdff23419bf399",
+  "max_writes": 100,
+  "result_ok": true,
+  "summary": {
+    "line_slug": "princess-cruises",
+    "run_id": "princess-session-batch-2-apply-2026-08-08T08-09-58-503Z",
+    "run_type": "princess_weekly_maintenance",
+    "trigger_type": "controlled_catch_up_session_batch",
+    "dry_run": false,
+    "official_source_total": 1000,
+    "eligible_total": 1506,
+    "active_production_total": 1216,
+    "proposed_inserts": 290,
+    "proposed_updates": 0,
+    "unchanged": 1216,
+    "recognised_existing_eligible": 1216,
+    "outstanding_eligible_inserts": 290,
+    "source_absent_active": 0,
+    "source_absent_sailing_ids": [],
+    "reconciliation_arithmetic_ok": true,
+    "all_active_recognised_in_eligible_source": true,
+    "cruisetours_excluded": 0,
+    "incomplete_skipped": 390,
+    "within_public_cutoff_excluded": 62,
+    "public_booking_cutoff_days": 21,
+    "resolution_rates": {
+      "eligible_total": 1506,
+      "ship_resolution_pct": 100,
+      "departure_port_resolution_pct": 100,
+      "destination_resolution_pct": 100,
+      "identity_coverage_pct": 100,
+      "duplicate_official_identities": 0
+    },
+    "quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    },
+    "snapshot_id": "4d0e8a1fae17fc802568f5d894ef397666ecb99e064a5b56cdbdff23419bf399",
+    "inventory_changed": true,
+    "inserts": 100,
+    "updates": 0,
+    "duplicate_skips": 0,
+    "failed_writes": 0,
+    "recovered_after_fetch_failure": 0,
+    "write_attempts": 100,
+    "rollback_manifest_id": "32c44676-5c16-4d1b-87a8-c80086ecd5b5"
+  },
+  "reconciliation_summary": {
+    "active_production_total": 1216,
+    "eligible_total": 1506,
+    "recognised_existing_eligible": 1216,
+    "outstanding_eligible_inserts": 290,
+    "proposed_updates": 0,
+    "source_absent_active": 0,
+    "writes_executed": 100,
+    "reconciliation_arithmetic_ok": true,
+    "all_active_recognised_in_eligible_source": true
+  },
+  "quality_gate": {
+    "passed": true,
+    "failures": [],
+    "blocked": false
+  },
+  "write_result": {
+    "inserted": 100,
+    "updated": 0,
+    "duplicate_skips": 0,
+    "incomplete_skips": 0,
+    "cruisetour_skips": 0,
+    "invalid_skips": 0,
+    "failed": 0,
+    "recovered_after_fetch_failure": 0,
+    "write_details": [
+      {
+        "discovered_cruise_id": "dbb16fd2-de20-4a4c-8234-f38d43f0ad51",
+        "princess_sailing_id": "FSF46A|YP|2027-09-25",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "fcd19f87-db1a-44d0-9e5d-320432072ed3",
+        "princess_sailing_id": "FSN14B|MJ|2026-09-19",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "dec67905-7106-4bc8-b2f5-9d46fc084826",
+        "princess_sailing_id": "FSN15A|GP|2027-08-06",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "f6a9eb74-709e-4778-b98d-206db42f574d",
+        "princess_sailing_id": "FSN22B|GP|2027-07-30",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "124328b1-4fba-45b4-a256-bb9bec2f816a",
+        "princess_sailing_id": "FSN26A|MJ|2026-09-07",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "f1fe73a7-699a-43e3-92a2-66f350fec268",
+        "princess_sailing_id": "FSP15A|YP|2026-11-05",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "f9fca4c2-2a98-4a23-9607-ff578a34959b",
+        "princess_sailing_id": "FSP27A|YP|2026-10-24",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "5cff5baf-c185-4256-9c0d-abd0f5a80f85",
+        "princess_sailing_id": "FSS37A|MJ|2027-10-30",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "5eab5750-fa41-4f93-b734-184b505a6cfb",
+        "princess_sailing_id": "HFR16A|RU|2026-09-17",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "e2ac437f-48f2-4a1f-b9ce-44cdbfd85e42",
+        "princess_sailing_id": "HFR16A|RU|2026-11-08",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "e16db4df-4d8f-46d6-aa98-dec579bea71c",
+        "princess_sailing_id": "HFR16A|RU|2026-11-29",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "a1f8b9f2-9431-4508-ad67-cab14367df25",
+        "princess_sailing_id": "HFR16A|RU|2027-01-11",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "dbdddae5-0375-4f39-8ba5-69504c2dc541",
+        "princess_sailing_id": "HFR16A|RU|2027-01-27",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "7bc263dc-2e6c-4719-8ff3-ac1fc32611ae",
+        "princess_sailing_id": "HFR16A|RU|2027-02-12",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "c2476eb8-8504-4481-a883-b79b1d87d268",
+        "princess_sailing_id": "HFR16A|RU|2027-02-28",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "cd4877d7-c662-4d8d-a391-b4d70780fc4c",
+        "princess_sailing_id": "HFR16A|RU|2027-03-16",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "3e072b3f-2fec-4e50-a669-42ac0adc7683",
+        "princess_sailing_id": "HFR16A|RU|2027-04-01",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "4f988377-3ef6-40de-a3f4-3bfe75da5de9",
+        "princess_sailing_id": "HFR16A|RU|2027-09-25",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "d9b424a5-01d9-4f3a-9989-e28aec5606d6",
+        "princess_sailing_id": "HFR16A|RU|2027-10-11",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "bc3d0af7-8aad-4bf1-90be-62181214f060",
+        "princess_sailing_id": "HFR16A|RU|2027-11-07",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "9279cc56-ff98-4331-929e-ee4c46eda1fd",
+        "princess_sailing_id": "HFR16A|RU|2027-11-28",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "ca7c6dff-a4a5-416b-a9d0-4c049bfed971",
+        "princess_sailing_id": "HFR16A|RU|2028-01-31",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "6f9e89a8-28bf-4981-9fa9-451fc5509af1",
+        "princess_sailing_id": "HFR16A|RU|2028-02-16",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "417865e1-1505-4607-8454-f3457e8ce137",
+        "princess_sailing_id": "HFR16A|RU|2028-03-03",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "dbffffba-d1b1-4ec1-af43-97f898a6d0dd",
+        "princess_sailing_id": "HFR16A|RU|2028-04-09",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "2f687de3-9efc-4b7b-b96f-82fc6e07c30d",
+        "princess_sailing_id": "HFR16B|RU|2026-12-26",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "cf859e09-d4e5-4a50-b9b3-563ab3da33fc",
+        "princess_sailing_id": "HFR16B|RU|2027-12-14",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "c80ed57f-dd37-44e3-96ea-c6d6a5814943",
+        "princess_sailing_id": "HFR16B|RU|2027-12-30",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "35d8c374-ef78-43f2-86fe-21aab660fb49",
+        "princess_sailing_id": "HFR16C|RU|2028-01-15",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "2e7e12fd-11f9-47b0-abda-5835e27d2a71",
+        "princess_sailing_id": "HFR16D|RU|2026-10-23",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "697d3868-6f99-4376-805a-deffb87b6c3f",
+        "princess_sailing_id": "HRL16A|EP|2026-09-30",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "385cd1c8-8442-4100-bf95-c04897cbc0b6",
+        "princess_sailing_id": "HRL16A|EP|2026-10-16",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "7c525c9b-fb17-47dc-95c1-2886964c2485",
+        "princess_sailing_id": "HRL16A|EP|2026-11-08",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "0f4ece98-c82d-4688-ad6b-98efc481d01d",
+        "princess_sailing_id": "HRL16A|EP|2026-11-28",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "f68f5fce-9e52-48af-b4e7-b9f65b56008f",
+        "princess_sailing_id": "HRL16A|EP|2027-01-09",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "82a8cb69-836f-4e9e-9803-339cf51c4251",
+        "princess_sailing_id": "HRL16A|EP|2027-01-25",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "d3357d41-2b91-4ef0-bc94-9aa832628a64",
+        "princess_sailing_id": "HRL16A|EP|2027-02-10",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "b2cf7578-a7d8-47f4-816b-32722315bf71",
+        "princess_sailing_id": "HRL16A|EP|2027-02-26",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "b5bb8b8a-f721-4f98-8b8b-14894ced6b48",
+        "princess_sailing_id": "HRL16A|EP|2027-04-04",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "1e253a39-5ceb-4ed6-ae43-7909f21e77f4",
+        "princess_sailing_id": "HRL16A|EP|2027-10-04",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "05ccc35e-d0aa-4b05-bbe6-639fd0c2a3ff",
+        "princess_sailing_id": "HRL16A|KP|2027-09-27",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "1dcbb5a9-77f1-4359-a95d-a41a9db04a43",
+        "princess_sailing_id": "HRL16A|KP|2027-11-07",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "07acf4fc-c596-4afa-bcbe-16ab7dd4c9db",
+        "princess_sailing_id": "HRL16A|KP|2027-11-28",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "a74dd681-110d-43d8-80b0-4838dc8eb05a",
+        "princess_sailing_id": "HRL16A|KP|2028-01-09",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "ba6bd16a-e5a3-4c70-a8fa-1390a5232746",
+        "princess_sailing_id": "HRL16A|KP|2028-01-25",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "d8005c64-17c4-45a8-928f-89b0ab537a92",
+        "princess_sailing_id": "HRL16C|EP|2026-12-14",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "347c5087-92e5-42c1-b1cf-7ebc73d331e4",
+        "princess_sailing_id": "HRL16C|KP|2027-12-14",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "d11fd448-93c5-4ff4-bdf8-74825b747ba8",
+        "princess_sailing_id": "HYH10A|RP|2027-09-21",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "79f20863-d44d-424c-af2f-34dcc67fda03",
+        "princess_sailing_id": "OAS28A|CO|2027-03-03",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "ecb3604c-84c2-4dd3-b0b8-98d4c8bd8007",
+        "princess_sailing_id": "OBS15A|AP|2028-04-16",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "98bc8f48-a906-43a3-b450-628f65294002",
+        "princess_sailing_id": "OFR14A|SA|2027-12-19",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "e2361395-430c-4b7e-98ae-3519c7da6b5a",
+        "princess_sailing_id": "OFR14A|SA|2028-01-29",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "a7919bfd-6ed8-41e4-b8c2-2c7b577a7f9a",
+        "princess_sailing_id": "OFS11B|SA|2028-02-12",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "7a8e5d33-8f56-4303-8cd8-c9c00f385ad8",
+        "princess_sailing_id": "OHT10A|CO|2027-04-13",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "34e045cd-883b-4474-911f-15476bdcbdca",
+        "princess_sailing_id": "OLS33A|SA|2026-11-22",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "b4f2fe3c-e83d-4215-86bc-bf6d31e13b90",
+        "princess_sailing_id": "OLT19A|SA|2026-11-22",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "7f1d8788-a4e6-4166-9e92-6db8eda47eb4",
+        "princess_sailing_id": "OSB13A|RP|2026-11-10",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "48fc31ee-b22b-436f-afa8-7d2345e58f2f",
+        "princess_sailing_id": "OSB16A|AP|2028-05-15",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "b1ecc858-60f4-4c7a-8c8e-24bab69e9e1f",
+        "princess_sailing_id": "OSB24A|RP|2026-10-30",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "f2556260-8585-445a-b14d-7e930c1d8cca",
+        "princess_sailing_id": "OSB25A|SA|2027-09-28",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "bcf2eb1a-adb8-4ca9-a5df-5704d5543ed6",
+        "princess_sailing_id": "OSF12A|SA|2027-09-28",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "bafcf469-c5e6-410f-8edc-5617a1ca6bff",
+        "princess_sailing_id": "OSH13A|CO|2027-03-31",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "50f711c7-3496-4fbb-94c4-72407b6c8e2b",
+        "princess_sailing_id": "OSR10A|DI|2026-12-09",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "efc5f536-35f1-4650-b0e9-875b7d087f6c",
+        "princess_sailing_id": "OSR11A|RP|2026-10-30",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "562dd410-84a3-42be-bc27-a358734017dd",
+        "princess_sailing_id": "OSR12B|DI|2027-12-11",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "1b2d9ec4-6416-4708-8be0-407e443ec82e",
+        "princess_sailing_id": "OSR13A|DI|2028-02-03",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "053afcc9-ef57-4d4c-8390-191d995c905c",
+        "princess_sailing_id": "OSR14D|SA|2026-12-26",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "724cbb7f-c00d-467f-88f5-e98bd4067369",
+        "princess_sailing_id": "OSR14D|SA|2027-02-06",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "9ab16985-b139-4084-be02-1917ab9a22c6",
+        "princess_sailing_id": "OSR14E|DI|2027-12-23",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "c763ae9f-3af8-446b-8b60-be38357bf5a9",
+        "princess_sailing_id": "OSR14E|DI|2028-01-06",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "53e91e97-7388-4968-9443-c43687161611",
+        "princess_sailing_id": "OSR14E|DI|2028-01-20",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "2a661c39-d64d-4c45-8039-bbc5cb0cc383",
+        "princess_sailing_id": "OSR16A|DI|2027-02-13",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "0924dda0-450b-4419-90f9-44a4e2219766",
+        "princess_sailing_id": "OSR24B|DI|2026-12-09",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "50b68324-c0c8-4d77-86cd-e43c3c42b16c",
+        "princess_sailing_id": "OSR28A|SA|2027-01-09",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "82da30fc-d7a6-4e85-974d-7693ced11558",
+        "princess_sailing_id": "OSR42C|SA|2026-12-26",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "6d862cfa-d6d0-43d6-b92f-47d76dfe373d",
+        "princess_sailing_id": "OSR42D|SA|2027-01-09",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "9fd7d8e2-2865-4806-a039-be35338f15f7",
+        "princess_sailing_id": "OSS15A|RP|2026-11-10",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "c71ab72e-b69b-462e-847c-7fb3069ebcf9",
+        "princess_sailing_id": "OSS18B|AP|2028-04-13",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "057b2fe2-61f7-48dd-90f8-281382610d95",
+        "princess_sailing_id": "OSS19A|AP|2028-05-15",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "a603d8dc-c944-44d2-9e44-eeeb8aa39467",
+        "princess_sailing_id": "OSS26A|RP|2026-09-19",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "dacfa172-5241-4c8d-8680-588f8b5d4d94",
+        "princess_sailing_id": "OSS26B|RP|2026-10-30",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "d1b24922-9823-419d-b494-3a5ffc9eb8de",
+        "princess_sailing_id": "OSS28A|SA|2027-09-28",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "266ea6d2-dddf-43e1-8c87-fe483645de5e",
+        "princess_sailing_id": "OSS32B|CO|2027-02-27",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "c24822f1-0ac6-4826-8148-77f39c0fc477",
+        "princess_sailing_id": "OST13A|DI|2028-02-16",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "db92307b-8db4-4ebb-b0b4-782ff538127a",
+        "princess_sailing_id": "OST14A|SA|2027-02-20",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "352ce975-e9c0-474e-91bc-c1d2c38050e9",
+        "princess_sailing_id": "OST14B|SA|2027-01-09",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "2d3bb141-723a-48c4-b21b-a73123b07128",
+        "princess_sailing_id": "OST14D|RP|2026-09-19",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "030fce70-f071-484a-a4bc-e8e553dfc2b3",
+        "princess_sailing_id": "OST15B|SA|2028-02-23",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "d448bc6d-ad4e-49d0-af1e-41771deff314",
+        "princess_sailing_id": "OST25A|SA|2027-02-20",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "d8a5ca52-cb30-4651-b2f2-4235371d21f9",
+        "princess_sailing_id": "OST26A|DI|2028-02-03",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "20fedc51-a4f0-4bb3-9ba0-ee311196659e",
+        "princess_sailing_id": "OST27A|DI|2028-02-16",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "411c7790-74c7-43ee-8daf-0f5cc6604582",
+        "princess_sailing_id": "OST28A|SA|2026-12-26",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "2c949021-5b9c-4dca-9de6-935dcfd84560",
+        "princess_sailing_id": "OST28B|SA|2027-02-06",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "6dd6329a-b7b5-4e3c-b599-6f6321ce733f",
+        "princess_sailing_id": "OSY12B|DI|2027-01-02",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "6e37aa4e-e026-4a8f-8ec8-da3337bd49e6",
+        "princess_sailing_id": "OSY12B|DI|2027-01-14",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "a20ae5d2-173a-4fd5-b5aa-92d5ca48a36a",
+        "princess_sailing_id": "OSY14E|DI|2026-12-19",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "95898fb5-8dce-4509-8da5-0afde940752f",
+        "princess_sailing_id": "OSY15B|DI|2027-03-01",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "e07bebe8-aeae-44b2-9d83-f74e6e8cc878",
+        "princess_sailing_id": "OSY26A|DI|2027-03-01",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "2954e29d-a4ff-4383-8081-5c4e3f85c742",
+        "princess_sailing_id": "OSY31A|DI|2027-02-13",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      },
+      {
+        "discovered_cruise_id": "713a96a9-89d3-40e6-bd8a-d2502a82b4a9",
+        "princess_sailing_id": "OTL23A|CO|2027-04-23",
+        "proposed_action": "insert_active",
+        "result_action": "inserted",
+        "created": true,
+        "rollback_before": null
+      }
+    ]
+  },
+  "rollback_manifest_id": "32c44676-5c16-4d1b-87a8-c80086ecd5b5",
+  "counts_before": {
+    "princess_active": 1216,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 18
+  },
+  "counts_after": {
+    "princess_active": 1316,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 19
+  },
+  "inserted_ids": [
+    "dbb16fd2-de20-4a4c-8234-f38d43f0ad51",
+    "fcd19f87-db1a-44d0-9e5d-320432072ed3",
+    "dec67905-7106-4bc8-b2f5-9d46fc084826",
+    "f6a9eb74-709e-4778-b98d-206db42f574d",
+    "124328b1-4fba-45b4-a256-bb9bec2f816a",
+    "f1fe73a7-699a-43e3-92a2-66f350fec268",
+    "f9fca4c2-2a98-4a23-9607-ff578a34959b",
+    "5cff5baf-c185-4256-9c0d-abd0f5a80f85",
+    "5eab5750-fa41-4f93-b734-184b505a6cfb",
+    "e2ac437f-48f2-4a1f-b9ce-44cdbfd85e42",
+    "e16db4df-4d8f-46d6-aa98-dec579bea71c",
+    "a1f8b9f2-9431-4508-ad67-cab14367df25",
+    "dbdddae5-0375-4f39-8ba5-69504c2dc541",
+    "7bc263dc-2e6c-4719-8ff3-ac1fc32611ae",
+    "c2476eb8-8504-4481-a883-b79b1d87d268",
+    "cd4877d7-c662-4d8d-a391-b4d70780fc4c",
+    "3e072b3f-2fec-4e50-a669-42ac0adc7683",
+    "4f988377-3ef6-40de-a3f4-3bfe75da5de9",
+    "d9b424a5-01d9-4f3a-9989-e28aec5606d6",
+    "bc3d0af7-8aad-4bf1-90be-62181214f060",
+    "9279cc56-ff98-4331-929e-ee4c46eda1fd",
+    "ca7c6dff-a4a5-416b-a9d0-4c049bfed971",
+    "6f9e89a8-28bf-4981-9fa9-451fc5509af1",
+    "417865e1-1505-4607-8454-f3457e8ce137",
+    "dbffffba-d1b1-4ec1-af43-97f898a6d0dd",
+    "2f687de3-9efc-4b7b-b96f-82fc6e07c30d",
+    "cf859e09-d4e5-4a50-b9b3-563ab3da33fc",
+    "c80ed57f-dd37-44e3-96ea-c6d6a5814943",
+    "35d8c374-ef78-43f2-86fe-21aab660fb49",
+    "2e7e12fd-11f9-47b0-abda-5835e27d2a71",
+    "697d3868-6f99-4376-805a-deffb87b6c3f",
+    "385cd1c8-8442-4100-bf95-c04897cbc0b6",
+    "7c525c9b-fb17-47dc-95c1-2886964c2485",
+    "0f4ece98-c82d-4688-ad6b-98efc481d01d",
+    "f68f5fce-9e52-48af-b4e7-b9f65b56008f",
+    "82a8cb69-836f-4e9e-9803-339cf51c4251",
+    "d3357d41-2b91-4ef0-bc94-9aa832628a64",
+    "b2cf7578-a7d8-47f4-816b-32722315bf71",
+    "b5bb8b8a-f721-4f98-8b8b-14894ced6b48",
+    "1e253a39-5ceb-4ed6-ae43-7909f21e77f4",
+    "05ccc35e-d0aa-4b05-bbe6-639fd0c2a3ff",
+    "1dcbb5a9-77f1-4359-a95d-a41a9db04a43",
+    "07acf4fc-c596-4afa-bcbe-16ab7dd4c9db",
+    "a74dd681-110d-43d8-80b0-4838dc8eb05a",
+    "ba6bd16a-e5a3-4c70-a8fa-1390a5232746",
+    "d8005c64-17c4-45a8-928f-89b0ab537a92",
+    "347c5087-92e5-42c1-b1cf-7ebc73d331e4",
+    "d11fd448-93c5-4ff4-bdf8-74825b747ba8",
+    "79f20863-d44d-424c-af2f-34dcc67fda03",
+    "ecb3604c-84c2-4dd3-b0b8-98d4c8bd8007",
+    "98bc8f48-a906-43a3-b450-628f65294002",
+    "e2361395-430c-4b7e-98ae-3519c7da6b5a",
+    "a7919bfd-6ed8-41e4-b8c2-2c7b577a7f9a",
+    "7a8e5d33-8f56-4303-8cd8-c9c00f385ad8",
+    "34e045cd-883b-4474-911f-15476bdcbdca",
+    "b4f2fe3c-e83d-4215-86bc-bf6d31e13b90",
+    "7f1d8788-a4e6-4166-9e92-6db8eda47eb4",
+    "48fc31ee-b22b-436f-afa8-7d2345e58f2f",
+    "b1ecc858-60f4-4c7a-8c8e-24bab69e9e1f",
+    "f2556260-8585-445a-b14d-7e930c1d8cca",
+    "bcf2eb1a-adb8-4ca9-a5df-5704d5543ed6",
+    "bafcf469-c5e6-410f-8edc-5617a1ca6bff",
+    "50f711c7-3496-4fbb-94c4-72407b6c8e2b",
+    "efc5f536-35f1-4650-b0e9-875b7d087f6c",
+    "562dd410-84a3-42be-bc27-a358734017dd",
+    "1b2d9ec4-6416-4708-8be0-407e443ec82e",
+    "053afcc9-ef57-4d4c-8390-191d995c905c",
+    "724cbb7f-c00d-467f-88f5-e98bd4067369",
+    "9ab16985-b139-4084-be02-1917ab9a22c6",
+    "c763ae9f-3af8-446b-8b60-be38357bf5a9",
+    "53e91e97-7388-4968-9443-c43687161611",
+    "2a661c39-d64d-4c45-8039-bbc5cb0cc383",
+    "0924dda0-450b-4419-90f9-44a4e2219766",
+    "50b68324-c0c8-4d77-86cd-e43c3c42b16c",
+    "82da30fc-d7a6-4e85-974d-7693ced11558",
+    "6d862cfa-d6d0-43d6-b92f-47d76dfe373d",
+    "9fd7d8e2-2865-4806-a039-be35338f15f7",
+    "c71ab72e-b69b-462e-847c-7fb3069ebcf9",
+    "057b2fe2-61f7-48dd-90f8-281382610d95",
+    "a603d8dc-c944-44d2-9e44-eeeb8aa39467",
+    "dacfa172-5241-4c8d-8680-588f8b5d4d94",
+    "d1b24922-9823-419d-b494-3a5ffc9eb8de",
+    "266ea6d2-dddf-43e1-8c87-fe483645de5e",
+    "c24822f1-0ac6-4826-8148-77f39c0fc477",
+    "db92307b-8db4-4ebb-b0b4-782ff538127a",
+    "352ce975-e9c0-474e-91bc-c1d2c38050e9",
+    "2d3bb141-723a-48c4-b21b-a73123b07128",
+    "030fce70-f071-484a-a4bc-e8e553dfc2b3",
+    "d448bc6d-ad4e-49d0-af1e-41771deff314",
+    "d8a5ca52-cb30-4651-b2f2-4235371d21f9",
+    "20fedc51-a4f0-4bb3-9ba0-ee311196659e",
+    "411c7790-74c7-43ee-8daf-0f5cc6604582",
+    "2c949021-5b9c-4dca-9de6-935dcfd84560",
+    "6dd6329a-b7b5-4e3c-b599-6f6321ce733f",
+    "6e37aa4e-e026-4a8f-8ec8-da3337bd49e6",
+    "a20ae5d2-173a-4fd5-b5aa-92d5ca48a36a",
+    "95898fb5-8dce-4509-8da5-0afde940752f",
+    "e07bebe8-aeae-44b2-9d83-f74e6e8cc878",
+    "2954e29d-a4ff-4383-8081-5c4e3f85c742",
+    "713a96a9-89d3-40e6-bd8a-d2502a82b4a9"
+  ],
+  "inserted_verification": {
+    "ok": true,
+    "issues": [],
+    "minDeparture": "2026-08-30"
+  },
+  "princess_active_delta": 100,
+  "hal_unchanged": true,
+  "celebrity_unchanged": true
+}

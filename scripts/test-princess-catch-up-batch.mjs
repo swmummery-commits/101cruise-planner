@@ -193,6 +193,26 @@ test("smoke script accepts explicit expected active checkpoint", () => {
   if (!smokeSrc.includes("--expected-active=")) throw new Error("missing expected active arg");
 });
 
+test("reconciliation summary exposes recognised_existing_eligible distinct from pre-batch checkpoint", () => {
+  const recon = require(path.join(root, "netlify/functions/lib/princess-reconciliation-summary"));
+  const summary = recon.buildPrincessReconciliationSummary({
+    activeProductionTotal: 416,
+    eligibleTotal: 1506,
+    recognisedExistingEligible: 416,
+    outstandingEligibleInserts: 1090,
+    proposedUpdates: 0,
+    sourceAbsentActive: 0
+  });
+  if (summary.recognised_existing_eligible !== 416) throw new Error("expected 416 recognised");
+  if (summary.all_active_recognised_in_eligible_source !== true) {
+    throw new Error("all active must be recognised when source_absent=0");
+  }
+  if (!runnerSrc.includes("recognised_existing_eligible")) {
+    throw new Error("runner must emit recognised_existing_eligible");
+  }
+  if (!batchSrc.includes("reconciliation_summary")) throw new Error("batch report missing reconciliation_summary");
+});
+
 test("Princess lock blocks concurrent second owner", async () => {
   const store = new Map();
   const sb = async (restPath, options = {}) => {

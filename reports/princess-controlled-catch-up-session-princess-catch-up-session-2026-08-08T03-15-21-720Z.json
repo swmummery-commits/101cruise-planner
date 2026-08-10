@@ -1,0 +1,47 @@
+{
+  "session_id": "princess-catch-up-session-2026-08-08T03-15-21-720Z",
+  "started_at": "2026-08-08T03:15:22.763Z",
+  "ended_at": "2026-08-08T03:15:28.464Z",
+  "mode": "dry_run",
+  "local_execution_guard": {
+    "ok": true,
+    "local_only": true,
+    "mode": "read_only"
+  },
+  "expected_start_active": null,
+  "actual_start_active": 416,
+  "requested_max_batches": 3,
+  "hard_max_batches": 3,
+  "hard_max_writes_per_batch": 100,
+  "hard_max_writes_per_session": 300,
+  "session_status": "stopped",
+  "stop_reason": "quality_gate_failed",
+  "total_attempted": 0,
+  "total_committed": 0,
+  "total_recovered": 0,
+  "total_failed": 0,
+  "batches": [],
+  "counts_start": {
+    "princess_active": 416,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 10
+  },
+  "counts_end": null,
+  "preview": {
+    "quality_gate": null,
+    "writes_performed": 0
+  },
+  "writes_performed": 0,
+  "final": {
+    "princess_active": 416,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "outstanding_eligible_inserts": null,
+    "automation_flags": {
+      "PRINCESS_WEEKLY_RECONCILIATION_ENABLED": "(unset)",
+      "PRINCESS_DISCOVERY_WRITE_ENABLED": "(unset)",
+      "CRUISE_DISCOVERY_AUTOMATION_ENABLED": "(unset)"
+    }
+  }
+}

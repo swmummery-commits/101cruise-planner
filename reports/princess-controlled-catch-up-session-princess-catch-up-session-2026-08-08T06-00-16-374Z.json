@@ -1,0 +1,74 @@
+{
+  "session_id": "princess-catch-up-session-2026-08-08T06-00-16-374Z",
+  "started_at": "2026-08-08T06:00:17.202Z",
+  "ended_at": "2026-08-08T06:00:21.920Z",
+  "mode": "dry_run",
+  "local_execution_guard": {
+    "ok": true,
+    "local_only": true,
+    "mode": "read_only"
+  },
+  "expected_start_active": null,
+  "actual_start_active": 816,
+  "requested_max_batches": 3,
+  "hard_max_batches": 3,
+  "hard_max_writes_per_batch": 100,
+  "hard_max_writes_per_session": 300,
+  "session_status": "preview_complete",
+  "stop_reason": null,
+  "completion_reason": null,
+  "total_attempted": 0,
+  "total_committed": 0,
+  "total_recovered": 0,
+  "total_failed": 0,
+  "batches": [],
+  "counts_start": {
+    "princess_active": 816,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 14
+  },
+  "counts_end": {
+    "princess_active": 816,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 14
+  },
+  "preview": {
+    "active_production_total": 816,
+    "outstanding_eligible_inserts": 690,
+    "theoretical_max_batches": 3,
+    "theoretical_max_writes": 300,
+    "hard_max_batches": 3,
+    "hard_max_writes_per_session": 300,
+    "hard_max_writes_per_batch": 100,
+    "writes_performed": 0,
+    "snapshot_id": "4d0e8a1fae17fc802568f5d894ef397666ecb99e064a5b56cdbdff23419bf399",
+    "eligible_total": 1506,
+    "recognised_existing_eligible": 816,
+    "reconciliation_arithmetic_ok": true,
+    "quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    }
+  },
+  "writes_performed": 0,
+  "final": {
+    "princess_active": 816,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "active_production_total": 816,
+    "eligible_total": 1506,
+    "recognised_existing_eligible": 816,
+    "outstanding_eligible_inserts": 690,
+    "proposed_updates": null,
+    "source_absent_active": null,
+    "reconciliation_arithmetic_ok": true,
+    "automation_flags": {
+      "PRINCESS_WEEKLY_RECONCILIATION_ENABLED": "(unset)",
+      "PRINCESS_DISCOVERY_WRITE_ENABLED": "(unset)",
+      "CRUISE_DISCOVERY_AUTOMATION_ENABLED": "(unset)"
+    }
+  }
+}

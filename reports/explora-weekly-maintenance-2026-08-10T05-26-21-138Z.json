@@ -1,0 +1,74 @@
+{
+  "mode": "dry_run",
+  "execution_mode": "dry_run",
+  "started_at": "2026-08-10T05:26:21.138Z",
+  "ended_at": "2026-08-10T05:29:08.249Z",
+  "environment": {
+    "platform": "darwin",
+    "node_version": "v24.18.0",
+    "ci": false,
+    "github_actions": false,
+    "runner_labels": [],
+    "self_hosted_detected": false,
+    "cloud_hosted_detected": false,
+    "netlify_detected": false,
+    "source_environment": "local_mac",
+    "apply_enabled": false
+  },
+  "line_slug": "explora-journeys",
+  "run_id": "explora-weekly-2026-08-10T05-26-21-138Z",
+  "source": {
+    "fetch_failed": false,
+    "official_source_total": 535,
+    "within_public_cutoff_excluded": 25,
+    "incomplete_skipped": 85,
+    "non_cruise_excluded": 0,
+    "error": null
+  },
+  "quality_gate": {
+    "passed": true,
+    "failures": [],
+    "blocked": false
+  },
+  "resolution": {
+    "ship_resolution_pct": 100,
+    "departure_port_resolution_pct": 100,
+    "destination_resolution_pct": 100,
+    "identity_coverage_pct": 100
+  },
+  "reconciliation": {
+    "active_production_total": 1,
+    "eligible_total": 299,
+    "recognised_existing_eligible": 0,
+    "outstanding_eligible_inserts": 299,
+    "proposed_updates": 0,
+    "source_absent_active": 0,
+    "reconciliation_arithmetic_ok": true,
+    "all_active_recognised_in_eligible_source": false
+  },
+  "write_cap": {
+    "ok": false,
+    "reason": "weekly_change_volume_exceeds_initial_cap",
+    "proposed_inserts": 299,
+    "proposed_updates": 0,
+    "combined_proposed_changes": 299,
+    "cap": 25
+  },
+  "source_absent": {
+    "count": 0,
+    "sailing_ids": [],
+    "policy": "source_absent_retained_active"
+  },
+  "snapshot_id": "b2eab0daa11cf1da6fb2e18b515c19820ecdc8af5287e015f4fe10f4955e7caa",
+  "counts_before": {
+    "explora": 1
+  },
+  "counts_after": {
+    "explora": 1
+  },
+  "inventory_unchanged": true,
+  "writes_performed": 0,
+  "blocked": false,
+  "post_write_verification": null,
+  "status": "completed"
+}

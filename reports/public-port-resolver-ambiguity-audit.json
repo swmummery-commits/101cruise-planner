@@ -1,0 +1,4263 @@
+{
+  "generated_at": "2026-08-08T07:56:32.974Z",
+  "summary": {
+    "public_port_name_usages": 97,
+    "distinct_public_port_names": 86,
+    "ambiguous_lookup_keys": 12,
+    "resolved_public_names": 68,
+    "unresolved_public_names": 18,
+    "known_checks_passed": 30,
+    "known_checks_total": 30,
+    "known_check_summary": {
+      "correct_canonical_resolutions": 29,
+      "correct_unresolved_ambiguities": 1,
+      "correct_canonical_no_public_image": 5,
+      "wrong_canonical_resolutions": 0,
+      "wrong_public_media_resolutions": 0
+    },
+    "wrong_canonical_resolutions": 0,
+    "wrong_public_media_resolutions": 0,
+    "explore_port_cards_checked": 69,
+    "canonical_media_mismatches": 0,
+    "unresolved_port_cards": 15
+  },
+  "distinct_resolutions": [
+    {
+      "requested_name": "Juneau",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "4b1cc6fe-6bc6-4caa-9d1d-3ad80192e364",
+      "canonical_name": "Juneau",
+      "display_name": "Juneau, Alaska",
+      "city": "Juneau",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "2a790c01-9ae6-429f-9c5b-887711c94e57",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Skagway",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "7f2ee7c7-28e4-4a7c-a618-73e92bd3d799",
+      "canonical_name": "Skagway",
+      "display_name": "Skagway, Alaska",
+      "city": "Skagway",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "d3fd705b-1849-436f-8458-56109c0a6639",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Ketchikan",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "8c201113-4365-43ca-bdf6-b78b1c2a1392",
+      "canonical_name": "Ketchikan",
+      "display_name": "Ketchikan, Alaska",
+      "city": "Ketchikan",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "6d911a4c-ac74-40ef-bd1d-a78f07580527",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Sitka",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "18dbba5c-54f3-471c-a879-e21fd39c3ba7",
+      "canonical_name": "Sitka",
+      "display_name": "Sitka, Alaska",
+      "city": "Sitka",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "4ce498c3-8d4c-41ea-82db-9189371afd5e",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Icy Strait Point",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "378cb7aa-f13d-446d-b38f-e76f435029ca",
+      "canonical_name": "Icy Strait Point",
+      "display_name": "Icy Strait Point, Alaska",
+      "city": "Hoonah",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "c440587c-6e47-46f5-9de0-39ed9eda09c2",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Seward",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "7743b4d4-024f-4c43-aa24-b968ab6b4e86",
+      "canonical_name": "Seward",
+      "display_name": "Seward, Alaska",
+      "city": "Seward",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "699f9526-3ec9-4708-95d4-b60fa415fbba",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Vancouver",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "96d097a0-24a8-4388-a463-307f14fed7f3",
+      "canonical_name": "Vancouver",
+      "display_name": "Vancouver, Canada",
+      "city": "Vancouver",
+      "region": "British Columbia",
+      "country": "Canada",
+      "hero_media_id": "4d12bd5f-24a0-4443-bfa9-a5e7be23c50e",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Seattle",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "61c7f166-20c9-4699-8ed9-1a59c1e03cbe",
+      "canonical_name": "Seattle",
+      "display_name": "Seattle, Washington",
+      "city": "Seattle",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "faa58b96-3b65-4234-b74b-cdf1079753ae",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Whittier",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Tokyo / Yokohama",
+      "method": "compound_label",
+      "resolved": true,
+      "port_id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+      "canonical_name": "Yokohama",
+      "display_name": "Yokohama (Tokyo), Japan",
+      "city": "Yokohama",
+      "region": "Japan",
+      "country": "Japan",
+      "hero_media_id": "df3a021b-d5d1-4b7c-8f5a-47562bf02e25",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Kobe",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "7e7a0b4e-07b9-40b6-afa0-3e71746e4289",
+      "canonical_name": "Kobe",
+      "display_name": "Kobe (Kyoto), Japan",
+      "city": "Kobe",
+      "region": "Japan",
+      "country": "Japan",
+      "hero_media_id": "98dd076f-977a-433d-b38d-cf1460ac40b3",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Osaka",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "42beea1b-7b1d-42a2-8a7c-b08ae62d301d",
+      "canonical_name": "Osaka",
+      "display_name": "Osaka, Japan",
+      "city": "Osaka",
+      "region": "Japan",
+      "country": "Japan",
+      "hero_media_id": "b82bc0cf-fa89-4a0c-8e22-63f64890819e",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Nagasaki",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "31af4f33-1b90-401e-93d1-b0b857357c86",
+      "canonical_name": "Nagasaki",
+      "display_name": "Nagasaki, Japan",
+      "city": "Nagasaki",
+      "region": "Japan",
+      "country": "Japan",
+      "hero_media_id": "42ad5dc1-1a72-4d11-8557-2715dad5f8e7",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Hakodate",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Aomori",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Barcelona",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "d1096166-0e64-41c6-adc4-f8479230098b",
+      "canonical_name": "Barcelona",
+      "display_name": "Barcelona, Spain",
+      "city": "Barcelona",
+      "region": null,
+      "country": "Spain",
+      "hero_media_id": "6a63d77d-5cfa-411d-b784-ef622683a33f",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Rome (Civitavecchia)",
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+      "canonical_name": "Civitavecchia",
+      "display_name": "Civitavecchia (Rome), Italy",
+      "city": "Civitavecchia",
+      "region": null,
+      "country": "Italy",
+      "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+      "image_status": "MANUAL",
+      "ranked": [
+        {
+          "id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+          "name": "Civitavecchia",
+          "score": 45
+        }
+      ],
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Santorini",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "61fb5b1f-bbfc-4723-943a-752cd8b0ad22",
+      "canonical_name": "Santorini",
+      "display_name": "Santorini (Athíniós), Greece",
+      "city": "Santorini",
+      "region": "Eastern Mediterranean",
+      "country": "Greece",
+      "hero_media_id": "8cb41f1e-3d4c-4a59-945a-08fe987560b8",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Athens (Piraeus)",
+      "method": "alias",
+      "resolved": true,
+      "port_id": "0c7cbda9-da36-49dc-871e-87855d561af6",
+      "canonical_name": "Piraeus",
+      "display_name": "Piraeus (Athens), Greece",
+      "city": "Piraeus",
+      "region": null,
+      "country": "Greece",
+      "hero_media_id": "c77dfa8d-9132-4e37-b0cf-1fa8f70e6f34",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Dubrovnik",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "1190b7ba-bc51-4ebe-b7a9-bfa79ca0fa30",
+      "canonical_name": "Dubrovnik",
+      "display_name": "Dubrovnik, Croatia",
+      "city": "Dubrovnik",
+      "region": null,
+      "country": "Croatia",
+      "hero_media_id": "61937233-2dd9-4da8-9083-9d984ac4ceef",
+      "image_status": "MANUAL",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Venice / Ravenna",
+      "method": "ranked_tie",
+      "resolved": true,
+      "port_id": "7c137c89-19d2-4c9b-9fb3-b058328ddacd",
+      "canonical_name": "Ravenna",
+      "display_name": "Ravenna, Italy",
+      "city": "Ravenna",
+      "region": "Adriatic",
+      "country": "Italy",
+      "hero_media_id": "205d46d0-467f-4014-9111-00dde733339e",
+      "image_status": "AUTO_APPROVED",
+      "ranked": [
+        {
+          "id": "7c137c89-19d2-4c9b-9fb3-b058328ddacd",
+          "name": "Ravenna",
+          "score": 20
+        },
+        {
+          "id": "e7535a4d-1559-4bc8-bd0d-db06c02e1116",
+          "name": "Venice",
+          "score": 20
+        }
+      ],
+      "candidate_count": 2
+    },
+    {
+      "requested_name": "Istanbul",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "2488079d-1f0d-4d70-a027-54abf6eab0e5",
+      "canonical_name": "Istanbul",
+      "display_name": "Istanbul, Turkey",
+      "city": "Istanbul",
+      "region": null,
+      "country": "Turkey",
+      "hero_media_id": "a1507dce-9e44-4b64-8924-0f3c19a434f4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Mykonos",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "f0763a6a-6f1b-46ce-a600-308fb65d53ce",
+      "canonical_name": "Mykonos",
+      "display_name": "Mykonos, Greece",
+      "city": "Mykonos",
+      "region": null,
+      "country": "Greece",
+      "hero_media_id": "e7315cfb-a54c-41e9-8c99-ec8cd69c1d9b",
+      "image_status": "MANUAL",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Rhodes",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "6000ebca-7158-475f-a92f-e283dffefebd",
+      "canonical_name": "Rhodes",
+      "display_name": "Rhodes, Greece",
+      "city": "Rhodes",
+      "region": null,
+      "country": "Greece",
+      "hero_media_id": "b05b52be-f972-4dbf-b4d6-8fb693a3081d",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Crete",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Corfu",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "20d77c99-d804-4052-8b57-26315a8661c1",
+      "canonical_name": "Corfu",
+      "display_name": "Corfu, Greece",
+      "city": "Corfu",
+      "region": "Mediterranean",
+      "country": "Greece",
+      "hero_media_id": "61386372-f9d1-4798-9832-e58e8fa1a725",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Bergen",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "98029a26-c887-4d5d-b4ab-2903b4df78bb",
+      "canonical_name": "Bergen",
+      "display_name": "Bergen, Norway",
+      "city": "Bergen",
+      "region": "Norwegian Fjords",
+      "country": "Norway",
+      "hero_media_id": "3d2341f0-ec5a-46fa-8adf-b5fdcd005ceb",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Geiranger",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Flam",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "4e49d4ce-d4c9-43d7-997e-18c5cf96e20d",
+      "canonical_name": "Flam",
+      "display_name": "Flåm, Norway",
+      "city": "Flåm",
+      "region": "Norwegian Fjords",
+      "country": "Norway",
+      "hero_media_id": "fe616537-86f1-4925-bf0e-2fe0840bb0c4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Stavanger",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "f8342880-34db-4160-90ed-11b1adfe553f",
+      "canonical_name": "Stavanger",
+      "display_name": "Stavanger, Norway",
+      "city": "Stavanger",
+      "region": "Norwegian Fjords",
+      "country": "Norway",
+      "hero_media_id": "96dbdb7f-a6e3-4f95-9458-2f1f5a42a9b7",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Tromsø",
+      "method": "exact_city",
+      "resolved": true,
+      "port_id": "c290dd40-9196-40fe-b93d-904f4911d5c1",
+      "canonical_name": "Tromso",
+      "display_name": "Tromsø, Norway",
+      "city": "Tromsø",
+      "region": "Arctic",
+      "country": "Norway",
+      "hero_media_id": "240c3d12-34b5-4b76-b9bc-7dc11ab3c136",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Ålesund",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "eea5dbf3-ad59-46d0-9d3f-8220275eb170",
+      "canonical_name": "Alesund",
+      "display_name": "Ålesund, Norway",
+      "city": "Ålesund",
+      "region": "Norwegian Fjords",
+      "country": "Norway",
+      "hero_media_id": "2f9ecc9e-acde-4f86-b7e0-fc5fe05fcb61",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Copenhagen",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "bbb446ef-77e3-4300-8178-3f5278cb56b5",
+      "canonical_name": "Copenhagen",
+      "display_name": "Copenhagen, Denmark",
+      "city": "Copenhagen",
+      "region": "Baltic",
+      "country": "Denmark",
+      "hero_media_id": "a13cd40b-37b6-4d15-8392-3827efc668d4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Southampton",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "b76ccee1-8e45-496e-b0ff-834980471ee8",
+      "canonical_name": "Southampton",
+      "display_name": "Southampton, England",
+      "city": "Southampton",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "06694b42-e233-4346-b53c-fa1b50099461",
+      "image_status": "MANUAL",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Amsterdam",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "71eb9a89-feb4-45e8-879b-32dcc5754af6",
+      "canonical_name": "Amsterdam",
+      "display_name": "Amsterdam, Netherlands",
+      "city": "Amsterdam",
+      "region": "Northern Europe",
+      "country": "Netherlands",
+      "hero_media_id": "fddb4770-d66d-4893-a151-87ec33d96b35",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Edinburgh / Newhaven",
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "4692b2e4-90bf-495b-83b5-7e38da2a5ccb",
+      "canonical_name": "Edinburgh",
+      "display_name": "Edinburgh (South Queensferry), Scotland",
+      "city": "South Queensferry",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "03d3fba0-1526-4501-be66-cb7204166b98",
+      "image_status": "AUTO_APPROVED",
+      "ranked": [
+        {
+          "id": "4692b2e4-90bf-495b-83b5-7e38da2a5ccb",
+          "name": "Edinburgh",
+          "score": 20
+        }
+      ],
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Dublin",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "68747ce9-92df-42c4-b5a2-37b5f95e18ab",
+      "canonical_name": "Dublin",
+      "display_name": "Dublin, Ireland",
+      "city": "Dublin",
+      "region": "Northern Europe",
+      "country": "Ireland",
+      "hero_media_id": "6e14a41b-ecd3-470f-b61e-c797ab470ae3",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Cork",
+      "method": "alias",
+      "resolved": true,
+      "port_id": "30eed702-b64b-4e65-890a-ce65e1fbfa37",
+      "canonical_name": "Cobh",
+      "display_name": "Cobh (Cork), Ireland",
+      "city": "Cobh",
+      "region": "Northern Europe",
+      "country": "Ireland",
+      "hero_media_id": "01eaa4b2-3200-4037-902c-f919c0faf4b2",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Liverpool",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "dc7fe1ca-7ff5-462e-a696-c30da2bf43e0",
+      "canonical_name": "Liverpool",
+      "display_name": "Liverpool, England",
+      "city": "Liverpool",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "2e986dea-7cbf-4e38-8f83-4e8469658e81",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Invergordon",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Belfast",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "90767369-4b5b-48d1-8df9-8696a233b459",
+      "canonical_name": "Belfast",
+      "display_name": "Belfast, Northern Ireland",
+      "city": "Belfast",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "f8ed07a6-71f0-4a3e-b18f-a4aa0f8a58ad",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Dover",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "330c9ccf-3e03-4ef1-98ba-0189744a5fb6",
+      "canonical_name": "Dover",
+      "display_name": "Dover, England",
+      "city": "Dover",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "634c8a51-ea78-423a-9e9e-30a2feb6518e",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "St Thomas",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "f87d4e8e-fc07-4451-a0a7-f2c47058467a",
+      "canonical_name": "St Thomas",
+      "display_name": "Charlotte Amalie, St Thomas",
+      "city": "Charlotte Amalie",
+      "region": "Caribbean",
+      "country": "U.S. Virgin Islands",
+      "hero_media_id": "c2e27c46-cbac-42e2-8c93-bbe157ac4745",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Cozumel",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "13d801a4-e9e9-4def-9a53-aec3481aec9c",
+      "canonical_name": "Cozumel",
+      "display_name": "Cozumel, Mexico",
+      "city": "Cozumel",
+      "region": "Caribbean",
+      "country": "Mexico",
+      "hero_media_id": "fe0a1460-3e00-4a30-884b-89ebfb923638",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "St Maarten",
+      "method": "alias",
+      "resolved": true,
+      "port_id": "59bb0042-a030-41c1-b0ee-1a4723079c4a",
+      "canonical_name": "Philipsburg",
+      "display_name": "Philipsburg, St Maarten",
+      "city": "Philipsburg",
+      "region": "Caribbean",
+      "country": "Sint Maarten",
+      "hero_media_id": "30503684-801b-4bf0-a7fb-a6445b675da7",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Barbados",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Nassau",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "8193fd68-b93f-4a26-a1f2-6e0399476b68",
+      "canonical_name": "Nassau",
+      "display_name": "Nassau, Bahamas",
+      "city": "Nassau",
+      "region": "Bahamas",
+      "country": "Bahamas",
+      "hero_media_id": "33541e5e-dadc-4b5b-a52b-dda857a7565a",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Grand Cayman",
+      "method": "alias",
+      "resolved": true,
+      "port_id": "437173f0-a853-4135-82b9-737d51261a99",
+      "canonical_name": "George Town",
+      "display_name": "George Town, Grand Cayman",
+      "city": "George Town",
+      "region": "Caribbean",
+      "country": "Cayman Islands",
+      "hero_media_id": "db9342eb-5dee-4f4f-bdcf-b46a1a41b0d4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Miami",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "c4e3861f-88b1-428c-9cd7-a0703cc0517d",
+      "canonical_name": "Miami",
+      "display_name": "Miami, Florida",
+      "city": "Miami",
+      "region": "Florida",
+      "country": "United States",
+      "hero_media_id": "117f447d-2ed3-4a61-94a8-6d5b36a4e75d",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Fort Lauderdale",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "San Juan",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "92d544b9-e4db-4777-9007-b853b35d3b10",
+      "canonical_name": "San Juan",
+      "display_name": "San Juan, Puerto Rico",
+      "city": "San Juan",
+      "region": "Caribbean",
+      "country": "Puerto Rico",
+      "hero_media_id": "e0af85ba-8a96-4335-afc7-4b845ee0c6a3",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Galveston",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "baf57db1-6fae-4fbd-a7d5-530a8d6f83c7",
+      "canonical_name": "Galveston",
+      "display_name": "Galveston, Texas",
+      "city": "Galveston",
+      "region": "Caribbean",
+      "country": "United States",
+      "hero_media_id": "88cad26a-a5f5-453b-b330-a5efc32bfcf9",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Noumea",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "b0728ab0-8296-4a4e-a092-ee5dfade750c",
+      "canonical_name": "Noumea",
+      "display_name": "Nouméa, New Caledonia",
+      "city": "Nouméa",
+      "region": "South Pacific",
+      "country": "New Caledonia",
+      "hero_media_id": "af5e2316-6496-497c-8efe-86c848e3081f",
+      "image_status": "MANUAL",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Suva",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "a431d09a-cffe-460d-9931-a2833882ad33",
+      "canonical_name": "Suva",
+      "display_name": "Suva, Fiji",
+      "city": "Suva",
+      "region": "South Pacific",
+      "country": "Fiji",
+      "hero_media_id": "7f5f235e-5c74-4ab8-9ba1-bd6796d12b68",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Port Vila",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "10631b12-3a03-4bae-8128-60d3a331ab1c",
+      "canonical_name": "Port Vila",
+      "display_name": "Port Vila, Vanuatu",
+      "city": "Port Vila",
+      "region": "South Pacific",
+      "country": "Vanuatu",
+      "hero_media_id": "a81acf69-0bc4-458e-9dfe-7b583a86ee5f",
+      "image_status": "MANUAL",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Lautoka",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Mystery Island",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Lifou",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "2fcb58d9-451d-4b1e-a202-e8a087eaae26",
+      "canonical_name": "Lifou",
+      "display_name": "Lifou, New Caledonia",
+      "city": "Wé",
+      "region": "South Pacific",
+      "country": "New Caledonia",
+      "hero_media_id": "416b4efc-16fd-424d-aafc-76b288586c5f",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Sydney",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "581e73fb-acb9-4d4d-845a-9833a9171f0e",
+      "canonical_name": "Sydney",
+      "display_name": "Sydney, Australia",
+      "city": "Sydney",
+      "region": null,
+      "country": "Australia",
+      "hero_media_id": "3bf9d458-d96d-43cc-b8a5-0c0a40aeacd2",
+      "image_status": "MANUAL",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Brisbane",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "f5054d13-1fc3-49c1-b7d8-07ccb6cebb01",
+      "canonical_name": "Brisbane",
+      "display_name": "Brisbane, Australia",
+      "city": "Brisbane",
+      "region": "Australia",
+      "country": "Australia",
+      "hero_media_id": "07c88311-5770-40cb-a634-48a597cf11f1",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Auckland",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "852f5080-064d-4d2e-af72-c2c79ffb23a4",
+      "canonical_name": "Auckland",
+      "display_name": "Auckland, New Zealand",
+      "city": "Auckland",
+      "region": null,
+      "country": "New Zealand",
+      "hero_media_id": "6cf9b3e9-981a-41c9-8f37-aae654522e63",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Melbourne",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "dd642750-375f-4cad-af64-6c38d109d9c8",
+      "canonical_name": "Melbourne",
+      "display_name": "Melbourne, Australia",
+      "city": "Melbourne",
+      "region": "Australia",
+      "country": "Australia",
+      "hero_media_id": "119c2c95-eb2e-4a31-8476-9760a7cceadd",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Hobart",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "67468d15-f5d3-4245-9d19-6ca9da392595",
+      "canonical_name": "Hobart",
+      "display_name": "Hobart, Australia",
+      "city": "Hobart",
+      "region": "Australia",
+      "country": "Australia",
+      "hero_media_id": "deba80d0-0e95-43a9-9df6-72697734f3d1",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Wellington",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "7bc0ff3c-26e3-4adb-80ed-3bd32565ba19",
+      "canonical_name": "Wellington",
+      "display_name": "Wellington, New Zealand",
+      "city": "Wellington",
+      "region": "New Zealand",
+      "country": "New Zealand",
+      "hero_media_id": "599cf351-6de8-43c2-b87e-92ca577d7580",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Dunedin / Port Chalmers",
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+      "canonical_name": "Port Chalmers",
+      "display_name": "Port Chalmers (Dunedin), New Zealand",
+      "city": "Dunedin",
+      "region": "Otago",
+      "country": "New Zealand",
+      "hero_media_id": "874738a7-ff62-4acf-adcd-90b66468e6eb",
+      "image_status": "AUTO_APPROVED",
+      "ranked": [
+        {
+          "id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+          "name": "Port Chalmers",
+          "score": 40
+        }
+      ],
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Ushuaia",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "5dad4b64-e900-4756-9fd9-2e06b197ad4a",
+      "canonical_name": "Ushuaia",
+      "display_name": "Ushuaia, Argentina",
+      "city": "Ushuaia",
+      "region": "Antarctica Gateway",
+      "country": "Argentina",
+      "hero_media_id": "80083758-6de8-4e17-a3c4-0fcc22731f8b",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Port Stanley",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "South Shetland landings",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Antarctic Peninsula sites",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Buenos Aires",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "04150e74-2c56-413e-a48c-a0484179ecd2",
+      "canonical_name": "Buenos Aires",
+      "display_name": "Buenos Aires, Argentina",
+      "city": "Buenos Aires",
+      "region": "South America",
+      "country": "Argentina",
+      "hero_media_id": "5ff1429e-fc4c-47fa-96c2-f5f1ce386942",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Punta Arenas",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "68eb4286-c3c6-4249-86f9-54452d5cf2ba",
+      "canonical_name": "Punta Arenas",
+      "display_name": "Punta Arenas, Chile",
+      "city": "Punta Arenas",
+      "region": "Antarctica Gateway",
+      "country": "Chile",
+      "hero_media_id": "17f1d271-c2e1-43a9-9deb-fc2f6c06c8de",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Quebec City",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "17426b65-f40e-48c0-b917-e3191aa6d803",
+      "canonical_name": "Quebec City",
+      "display_name": "Québec City, Canada",
+      "city": "Québec City",
+      "region": "Canada New England",
+      "country": "Canada",
+      "hero_media_id": "2087e4c2-6ce2-431a-a6a5-0a043df5ca9d",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Halifax",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "4d4ba3ef-69f2-4f5e-ae00-7605c71b3c4c",
+      "canonical_name": "Halifax",
+      "display_name": "Halifax, Nova Scotia",
+      "city": "Halifax",
+      "region": "Canada New England",
+      "country": "Canada",
+      "hero_media_id": "61e92c59-a069-4212-b82b-3589d632a1ff",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Boston",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "d6ad1da7-cd34-4551-b06f-0beef5f8e53e",
+      "canonical_name": "Boston",
+      "display_name": "Boston, Massachusetts",
+      "city": "Boston",
+      "region": "North America Atlantic",
+      "country": "United States",
+      "hero_media_id": "03761e18-d176-4979-9922-060ed6ffef63",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Bar Harbor",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Saint John",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "8bdc4ac5-ecf9-45c2-9934-488043db8afc",
+      "canonical_name": "Saint John",
+      "display_name": "Saint John, New Brunswick",
+      "city": "Saint John",
+      "region": "Canada New England",
+      "country": "Canada",
+      "hero_media_id": "6e1edf8e-ac1d-465b-9e92-1fe68d510778",
+      "image_status": "MANUAL",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Sydney (Nova Scotia)",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "859ec3a2-a4b9-4367-8539-e9d1714e88f1",
+      "canonical_name": "Sydney Nova Scotia",
+      "display_name": "Sydney, Nova Scotia",
+      "city": "Sydney",
+      "region": "Canada New England",
+      "country": "Canada",
+      "hero_media_id": "bd785b29-88d9-4238-a648-225fefb17b63",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "New York",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "74e6a42d-654c-4d11-9081-ef3f986ec922",
+      "canonical_name": "New York",
+      "display_name": "New York, New York",
+      "city": "New York",
+      "region": "North America Atlantic",
+      "country": "United States",
+      "hero_media_id": "90a2e7ee-4e1d-49b8-a57f-9e8f5f74aeff",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Montreal",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Honolulu",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "59d6c210-8eb4-4d15-b112-be0312ca402a",
+      "canonical_name": "Honolulu",
+      "display_name": "Honolulu, Hawaii",
+      "city": "Honolulu",
+      "region": "Hawaii",
+      "country": "United States",
+      "hero_media_id": "f0277cfa-bd82-4774-90df-c865543a13c8",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Maui (Kahului)",
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "105c6614-bfc5-48c9-92f3-1cce279963fc",
+      "canonical_name": "Kahului",
+      "display_name": "Kahului, Maui",
+      "city": "Kahului",
+      "region": "Hawaii",
+      "country": "United States",
+      "hero_media_id": "8779de7c-0ff2-4791-9a9e-7e0e8a059e68",
+      "image_status": "AUTO_APPROVED",
+      "ranked": [
+        {
+          "id": "105c6614-bfc5-48c9-92f3-1cce279963fc",
+          "name": "Kahului",
+          "score": 40
+        }
+      ],
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "Kona",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Hilo",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Nawiliwili (Kauai)",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0
+    },
+    {
+      "requested_name": "Los Angeles",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "062b5569-511e-4846-bbf5-7652a05e939e",
+      "canonical_name": "Los Angeles",
+      "display_name": "Los Angeles (San Pedro), USA",
+      "city": "Los Angeles",
+      "region": "California",
+      "country": "United States",
+      "hero_media_id": "b3f4c6b5-239b-4d1f-9419-b300339fc398",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    },
+    {
+      "requested_name": "San Francisco",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "9a95490a-cb4d-49df-9f52-97493a21b326",
+      "canonical_name": "San Francisco",
+      "display_name": "San Francisco, California",
+      "city": "San Francisco",
+      "region": "North America Pacific",
+      "country": "United States",
+      "hero_media_id": "82dd5e59-008d-4e45-a72d-27445465c0e7",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1
+    }
+  ],
+  "compound_port_labels": [
+    {
+      "destination_slug": "japan",
+      "label": "Tokyo / Yokohama",
+      "configured_canonical": "Yokohama",
+      "method": "compound_label",
+      "resolved": true,
+      "port_id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+      "canonical_name": "Yokohama",
+      "display_name": "Yokohama (Tokyo), Japan",
+      "city": "Yokohama",
+      "region": "Japan",
+      "country": "Japan",
+      "hero_media_id": "df3a021b-d5d1-4b7c-8f5a-47562bf02e25",
+      "image_status": "AUTO_APPROVED"
+    },
+    {
+      "destination_slug": "mediterranean",
+      "label": "Rome (Civitavecchia)",
+      "configured_canonical": null,
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+      "canonical_name": "Civitavecchia",
+      "display_name": "Civitavecchia (Rome), Italy",
+      "city": "Civitavecchia",
+      "region": null,
+      "country": "Italy",
+      "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+      "image_status": "MANUAL"
+    },
+    {
+      "destination_slug": "mediterranean",
+      "label": "Athens (Piraeus)",
+      "configured_canonical": null,
+      "method": "alias",
+      "resolved": true,
+      "port_id": "0c7cbda9-da36-49dc-871e-87855d561af6",
+      "canonical_name": "Piraeus",
+      "display_name": "Piraeus (Athens), Greece",
+      "city": "Piraeus",
+      "region": null,
+      "country": "Greece",
+      "hero_media_id": "c77dfa8d-9132-4e37-b0cf-1fa8f70e6f34",
+      "image_status": "AUTO_APPROVED"
+    },
+    {
+      "destination_slug": "mediterranean",
+      "label": "Venice / Ravenna",
+      "configured_canonical": null,
+      "method": "ranked_tie",
+      "resolved": true,
+      "port_id": "7c137c89-19d2-4c9b-9fb3-b058328ddacd",
+      "canonical_name": "Ravenna",
+      "display_name": "Ravenna, Italy",
+      "city": "Ravenna",
+      "region": "Adriatic",
+      "country": "Italy",
+      "hero_media_id": "205d46d0-467f-4014-9111-00dde733339e",
+      "image_status": "AUTO_APPROVED"
+    },
+    {
+      "destination_slug": "greek-islands",
+      "label": "Athens (Piraeus)",
+      "configured_canonical": null,
+      "method": "alias",
+      "resolved": true,
+      "port_id": "0c7cbda9-da36-49dc-871e-87855d561af6",
+      "canonical_name": "Piraeus",
+      "display_name": "Piraeus (Athens), Greece",
+      "city": "Piraeus",
+      "region": null,
+      "country": "Greece",
+      "hero_media_id": "c77dfa8d-9132-4e37-b0cf-1fa8f70e6f34",
+      "image_status": "AUTO_APPROVED"
+    },
+    {
+      "destination_slug": "greek-islands",
+      "label": "Rome (Civitavecchia)",
+      "configured_canonical": null,
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+      "canonical_name": "Civitavecchia",
+      "display_name": "Civitavecchia (Rome), Italy",
+      "city": "Civitavecchia",
+      "region": null,
+      "country": "Italy",
+      "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+      "image_status": "MANUAL"
+    },
+    {
+      "destination_slug": "british-isles",
+      "label": "Edinburgh / Newhaven",
+      "configured_canonical": null,
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "4692b2e4-90bf-495b-83b5-7e38da2a5ccb",
+      "canonical_name": "Edinburgh",
+      "display_name": "Edinburgh (South Queensferry), Scotland",
+      "city": "South Queensferry",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "03d3fba0-1526-4501-be66-cb7204166b98",
+      "image_status": "AUTO_APPROVED"
+    },
+    {
+      "destination_slug": "australia-new-zealand",
+      "label": "Dunedin / Port Chalmers",
+      "configured_canonical": null,
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+      "canonical_name": "Port Chalmers",
+      "display_name": "Port Chalmers (Dunedin), New Zealand",
+      "city": "Dunedin",
+      "region": "Otago",
+      "country": "New Zealand",
+      "hero_media_id": "874738a7-ff62-4acf-adcd-90b66468e6eb",
+      "image_status": "AUTO_APPROVED"
+    },
+    {
+      "destination_slug": "canada-new-england",
+      "label": "Sydney (Nova Scotia)",
+      "configured_canonical": null,
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "859ec3a2-a4b9-4367-8539-e9d1714e88f1",
+      "canonical_name": "Sydney Nova Scotia",
+      "display_name": "Sydney, Nova Scotia",
+      "city": "Sydney",
+      "region": "Canada New England",
+      "country": "Canada",
+      "hero_media_id": "bd785b29-88d9-4238-a648-225fefb17b63",
+      "image_status": "AUTO_APPROVED"
+    },
+    {
+      "destination_slug": "hawaii",
+      "label": "Maui (Kahului)",
+      "configured_canonical": null,
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "105c6614-bfc5-48c9-92f3-1cce279963fc",
+      "canonical_name": "Kahului",
+      "display_name": "Kahului, Maui",
+      "city": "Kahului",
+      "region": "Hawaii",
+      "country": "United States",
+      "hero_media_id": "8779de7c-0ff2-4791-9a9e-7e0e8a059e68",
+      "image_status": "AUTO_APPROVED"
+    },
+    {
+      "destination_slug": "hawaii",
+      "label": "Nawiliwili (Kauai)",
+      "configured_canonical": null,
+      "method": "unresolved",
+      "resolved": false
+    }
+  ],
+  "ambiguous_lookup_keys": [
+    {
+      "lookup_term": "antarctica",
+      "candidate_1": {
+        "id": "5dad4b64-e900-4756-9fd9-2e06b197ad4a",
+        "canonical_name": "Ushuaia",
+        "country": "Argentina",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "68eb4286-c3c6-4249-86f9-54452d5cf2ba",
+        "canonical_name": "Punta Arenas",
+        "country": "Chile",
+        "image_status": "AUTO_APPROVED"
+      },
+      "all_candidates": [
+        {
+          "id": "5dad4b64-e900-4756-9fd9-2e06b197ad4a",
+          "canonical_name": "Ushuaia",
+          "country": "Argentina",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "68eb4286-c3c6-4249-86f9-54452d5cf2ba",
+          "canonical_name": "Punta Arenas",
+          "country": "Chile",
+          "image_status": "AUTO_APPROVED"
+        }
+      ],
+      "current_winner": null,
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "corsica",
+      "candidate_1": {
+        "id": "1b64fb60-c2e5-4f5c-a99b-3725e685ec4c",
+        "canonical_name": "Ajaccio",
+        "country": "France",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "e6ac687c-9c05-4a73-91b1-eaca3f6c7201",
+        "canonical_name": "Bastia",
+        "country": "France",
+        "image_status": "AUTO_APPROVED"
+      },
+      "all_candidates": [
+        {
+          "id": "1b64fb60-c2e5-4f5c-a99b-3725e685ec4c",
+          "canonical_name": "Ajaccio",
+          "country": "France",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "e6ac687c-9c05-4a73-91b1-eaca3f6c7201",
+          "canonical_name": "Bastia",
+          "country": "France",
+          "image_status": "AUTO_APPROVED"
+        }
+      ],
+      "current_winner": {
+        "id": "1b64fb60-c2e5-4f5c-a99b-3725e685ec4c",
+        "canonical_name": "Ajaccio",
+        "method": "ranked_disambiguated"
+      },
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "galapagos",
+      "candidate_1": {
+        "id": "ecde0e79-eee8-464d-af97-0f6f91284509",
+        "canonical_name": "Puerto Ayora",
+        "country": "Ecuador",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "2640a5e2-45da-4d9a-8e2b-e08df6fc99f4",
+        "canonical_name": "Puerto Baquerizo Moreno",
+        "country": "Ecuador",
+        "image_status": "AUTO_APPROVED"
+      },
+      "all_candidates": [
+        {
+          "id": "ecde0e79-eee8-464d-af97-0f6f91284509",
+          "canonical_name": "Puerto Ayora",
+          "country": "Ecuador",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "2640a5e2-45da-4d9a-8e2b-e08df6fc99f4",
+          "canonical_name": "Puerto Baquerizo Moreno",
+          "country": "Ecuador",
+          "image_status": "AUTO_APPROVED"
+        }
+      ],
+      "current_winner": {
+        "id": "ecde0e79-eee8-464d-af97-0f6f91284509",
+        "canonical_name": "Puerto Ayora",
+        "method": "ranked_disambiguated"
+      },
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "george-town",
+      "candidate_1": {
+        "id": "07d4ae0f-55c4-4bbb-9b77-a64d75bc2fca",
+        "canonical_name": "Penang",
+        "country": "Malaysia",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "437173f0-a853-4135-82b9-737d51261a99",
+        "canonical_name": "George Town",
+        "country": "Cayman Islands",
+        "image_status": "AUTO_APPROVED"
+      },
+      "all_candidates": [
+        {
+          "id": "07d4ae0f-55c4-4bbb-9b77-a64d75bc2fca",
+          "canonical_name": "Penang",
+          "country": "Malaysia",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "437173f0-a853-4135-82b9-737d51261a99",
+          "canonical_name": "George Town",
+          "country": "Cayman Islands",
+          "image_status": "AUTO_APPROVED"
+        }
+      ],
+      "current_winner": {
+        "id": "437173f0-a853-4135-82b9-737d51261a99",
+        "canonical_name": "George Town",
+        "method": "exact_canonical"
+      },
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "jerusalem",
+      "candidate_1": {
+        "id": "a8408739-3cee-488b-9b64-af9c4712375f",
+        "canonical_name": "Haifa",
+        "country": "Israel",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "d05f4060-d7be-43ef-b880-6a5a128656a7",
+        "canonical_name": "Ashdod",
+        "country": "Israel",
+        "image_status": "AUTO_APPROVED"
+      },
+      "all_candidates": [
+        {
+          "id": "a8408739-3cee-488b-9b64-af9c4712375f",
+          "canonical_name": "Haifa",
+          "country": "Israel",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "d05f4060-d7be-43ef-b880-6a5a128656a7",
+          "canonical_name": "Ashdod",
+          "country": "Israel",
+          "image_status": "AUTO_APPROVED"
+        }
+      ],
+      "current_winner": {
+        "id": "a8408739-3cee-488b-9b64-af9c4712375f",
+        "canonical_name": "Haifa",
+        "method": "ranked_disambiguated"
+      },
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "kyoto",
+      "candidate_1": {
+        "id": "42beea1b-7b1d-42a2-8a7c-b08ae62d301d",
+        "canonical_name": "Osaka",
+        "country": "Japan",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "7e7a0b4e-07b9-40b6-afa0-3e71746e4289",
+        "canonical_name": "Kobe",
+        "country": "Japan",
+        "image_status": "AUTO_APPROVED"
+      },
+      "all_candidates": [
+        {
+          "id": "42beea1b-7b1d-42a2-8a7c-b08ae62d301d",
+          "canonical_name": "Osaka",
+          "country": "Japan",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "7e7a0b4e-07b9-40b6-afa0-3e71746e4289",
+          "canonical_name": "Kobe",
+          "country": "Japan",
+          "image_status": "AUTO_APPROVED"
+        }
+      ],
+      "current_winner": {
+        "id": "42beea1b-7b1d-42a2-8a7c-b08ae62d301d",
+        "canonical_name": "Osaka",
+        "method": "ranked_disambiguated"
+      },
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "london",
+      "candidate_1": {
+        "id": "330c9ccf-3e03-4ef1-98ba-0189744a5fb6",
+        "canonical_name": "Dover",
+        "country": "United Kingdom",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "b76ccee1-8e45-496e-b0ff-834980471ee8",
+        "canonical_name": "Southampton",
+        "country": "United Kingdom",
+        "image_status": "MANUAL"
+      },
+      "all_candidates": [
+        {
+          "id": "330c9ccf-3e03-4ef1-98ba-0189744a5fb6",
+          "canonical_name": "Dover",
+          "country": "United Kingdom",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "b76ccee1-8e45-496e-b0ff-834980471ee8",
+          "canonical_name": "Southampton",
+          "country": "United Kingdom",
+          "image_status": "MANUAL"
+        },
+        {
+          "id": "28cf6bb0-683f-49fd-8c12-a37ffdfb20ce",
+          "canonical_name": "Tilbury",
+          "country": "United Kingdom",
+          "image_status": "MANUAL"
+        }
+      ],
+      "current_winner": {
+        "id": "b76ccee1-8e45-496e-b0ff-834980471ee8",
+        "canonical_name": "Southampton",
+        "method": "ranked_disambiguated"
+      },
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "sardinia",
+      "candidate_1": {
+        "id": "33065fbc-ab01-4723-8225-675dfd2dfe35",
+        "canonical_name": "Olbia",
+        "country": "Italy",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "55ab530e-ddca-421b-8721-71d75f391f66",
+        "canonical_name": "Cagliari",
+        "country": "Italy",
+        "image_status": "MANUAL"
+      },
+      "all_candidates": [
+        {
+          "id": "33065fbc-ab01-4723-8225-675dfd2dfe35",
+          "canonical_name": "Olbia",
+          "country": "Italy",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "55ab530e-ddca-421b-8721-71d75f391f66",
+          "canonical_name": "Cagliari",
+          "country": "Italy",
+          "image_status": "MANUAL"
+        }
+      ],
+      "current_winner": {
+        "id": "55ab530e-ddca-421b-8721-71d75f391f66",
+        "canonical_name": "Cagliari",
+        "method": "ranked_disambiguated"
+      },
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "sicily",
+      "candidate_1": {
+        "id": "b0d4a34b-46e7-4d3d-b4fe-396e03ef95a6",
+        "canonical_name": "Catania",
+        "country": "Italy",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "56ad6df6-2f29-4de6-85b1-9e357e129f9a",
+        "canonical_name": "Messina",
+        "country": "Italy",
+        "image_status": "AUTO_APPROVED"
+      },
+      "all_candidates": [
+        {
+          "id": "b0d4a34b-46e7-4d3d-b4fe-396e03ef95a6",
+          "canonical_name": "Catania",
+          "country": "Italy",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "56ad6df6-2f29-4de6-85b1-9e357e129f9a",
+          "canonical_name": "Messina",
+          "country": "Italy",
+          "image_status": "AUTO_APPROVED"
+        }
+      ],
+      "current_winner": {
+        "id": "b0d4a34b-46e7-4d3d-b4fe-396e03ef95a6",
+        "canonical_name": "Catania",
+        "method": "ranked_disambiguated"
+      },
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "st-john-s",
+      "candidate_1": {
+        "id": "0df6194f-c894-4149-9454-3df06c091ae3",
+        "canonical_name": "St Johns Antigua",
+        "country": "Antigua and Barbuda",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+        "canonical_name": "St Johns Newfoundland",
+        "country": "Canada",
+        "image_status": "MANUAL"
+      },
+      "all_candidates": [
+        {
+          "id": "0df6194f-c894-4149-9454-3df06c091ae3",
+          "canonical_name": "St Johns Antigua",
+          "country": "Antigua and Barbuda",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+          "canonical_name": "St Johns Newfoundland",
+          "country": "Canada",
+          "image_status": "MANUAL"
+        }
+      ],
+      "current_winner": null,
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "st-johns",
+      "candidate_1": {
+        "id": "0df6194f-c894-4149-9454-3df06c091ae3",
+        "canonical_name": "St Johns Antigua",
+        "country": "Antigua and Barbuda",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+        "canonical_name": "St Johns Newfoundland",
+        "country": "Canada",
+        "image_status": "MANUAL"
+      },
+      "all_candidates": [
+        {
+          "id": "0df6194f-c894-4149-9454-3df06c091ae3",
+          "canonical_name": "St Johns Antigua",
+          "country": "Antigua and Barbuda",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+          "canonical_name": "St Johns Newfoundland",
+          "country": "Canada",
+          "image_status": "MANUAL"
+        }
+      ],
+      "current_winner": null,
+      "enough_context_without_destination": true
+    },
+    {
+      "lookup_term": "sydney",
+      "candidate_1": {
+        "id": "859ec3a2-a4b9-4367-8539-e9d1714e88f1",
+        "canonical_name": "Sydney Nova Scotia",
+        "country": "Canada",
+        "image_status": "AUTO_APPROVED"
+      },
+      "candidate_2": {
+        "id": "581e73fb-acb9-4d4d-845a-9833a9171f0e",
+        "canonical_name": "Sydney",
+        "country": "Australia",
+        "image_status": "MANUAL"
+      },
+      "all_candidates": [
+        {
+          "id": "859ec3a2-a4b9-4367-8539-e9d1714e88f1",
+          "canonical_name": "Sydney Nova Scotia",
+          "country": "Canada",
+          "image_status": "AUTO_APPROVED"
+        },
+        {
+          "id": "581e73fb-acb9-4d4d-845a-9833a9171f0e",
+          "canonical_name": "Sydney",
+          "country": "Australia",
+          "image_status": "MANUAL"
+        }
+      ],
+      "current_winner": {
+        "id": "581e73fb-acb9-4d4d-845a-9833a9171f0e",
+        "canonical_name": "Sydney",
+        "method": "exact_canonical"
+      },
+      "enough_context_without_destination": true
+    }
+  ],
+  "known_verification": [
+    {
+      "query": "Sydney",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "581e73fb-acb9-4d4d-845a-9833a9171f0e",
+        "canonical_name": "Sydney",
+        "country": "Australia",
+        "image_status": "MANUAL",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "581e73fb-acb9-4d4d-845a-9833a9171f0e",
+        "canonical_name": "Sydney",
+        "display_name": "Sydney, Australia",
+        "city": "Sydney",
+        "region": null,
+        "country": "Australia",
+        "hero_media_id": "3bf9d458-d96d-43cc-b8a5-0c0a40aeacd2",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Sydney",
+          "country": "Australia"
+        },
+        "public": {
+          "canonical_name": "Sydney",
+          "country": "Australia"
+        }
+      }
+    },
+    {
+      "query": "Sydney (Nova Scotia)",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "859ec3a2-a4b9-4367-8539-e9d1714e88f1",
+        "canonical_name": "Sydney Nova Scotia",
+        "country": "Canada",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "859ec3a2-a4b9-4367-8539-e9d1714e88f1",
+        "canonical_name": "Sydney Nova Scotia",
+        "display_name": "Sydney, Nova Scotia",
+        "city": "Sydney",
+        "region": "Canada New England",
+        "country": "Canada",
+        "hero_media_id": "bd785b29-88d9-4238-a648-225fefb17b63",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Sydney Nova Scotia",
+          "country": "Canada"
+        },
+        "public": {
+          "canonical_name": "Sydney Nova Scotia",
+          "country": "Canada"
+        }
+      }
+    },
+    {
+      "query": "Newcastle",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "bc33587d-591f-46af-a3c9-0f590131b183",
+        "canonical_name": "Newcastle",
+        "country": "Australia",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "bc33587d-591f-46af-a3c9-0f590131b183",
+        "canonical_name": "Newcastle",
+        "display_name": "Newcastle, New South Wales",
+        "city": "Newcastle",
+        "region": "New South Wales",
+        "country": "Australia",
+        "hero_media_id": "165173ec-dab2-4cb7-80fe-aee28e4f61fb",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Newcastle",
+          "country": "Australia"
+        },
+        "public": {
+          "canonical_name": "Newcastle",
+          "country": "Australia"
+        }
+      }
+    },
+    {
+      "query": "Newcastle upon Tyne",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "f5d74f92-e886-40fb-916b-4e14268b339b",
+        "canonical_name": "Newcastle upon Tyne",
+        "country": "United Kingdom",
+        "image_status": "MANUAL",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "f5d74f92-e886-40fb-916b-4e14268b339b",
+        "canonical_name": "Newcastle upon Tyne",
+        "display_name": "Newcastle, England",
+        "city": "Newcastle upon Tyne",
+        "region": "Northern Europe",
+        "country": "United Kingdom",
+        "hero_media_id": "4bdf5a8c-a470-4655-8c54-7bcfa7416ddb",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Newcastle upon Tyne",
+          "country": "United Kingdom"
+        },
+        "public": {
+          "canonical_name": "Newcastle upon Tyne",
+          "country": "United Kingdom"
+        }
+      }
+    },
+    {
+      "query": "Saint John",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "8bdc4ac5-ecf9-45c2-9934-488043db8afc",
+        "canonical_name": "Saint John",
+        "country": "Canada",
+        "image_status": "MANUAL",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "8bdc4ac5-ecf9-45c2-9934-488043db8afc",
+        "canonical_name": "Saint John",
+        "display_name": "Saint John, New Brunswick",
+        "city": "Saint John",
+        "region": "Canada New England",
+        "country": "Canada",
+        "hero_media_id": "6e1edf8e-ac1d-465b-9e92-1fe68d510778",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Saint John",
+          "country": "Canada"
+        },
+        "public": {
+          "canonical_name": "Saint John",
+          "country": "Canada"
+        }
+      }
+    },
+    {
+      "query": "Saint John, New Brunswick",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "8bdc4ac5-ecf9-45c2-9934-488043db8afc",
+        "canonical_name": "Saint John",
+        "country": "Canada",
+        "image_status": "MANUAL",
+        "method": "ranked"
+      },
+      "public": {
+        "method": "exact_display",
+        "resolved": true,
+        "port_id": "8bdc4ac5-ecf9-45c2-9934-488043db8afc",
+        "canonical_name": "Saint John",
+        "display_name": "Saint John, New Brunswick",
+        "city": "Saint John",
+        "region": "Canada New England",
+        "country": "Canada",
+        "hero_media_id": "6e1edf8e-ac1d-465b-9e92-1fe68d510778",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Saint John",
+          "country": "Canada"
+        },
+        "public": {
+          "canonical_name": "Saint John",
+          "country": "Canada"
+        }
+      }
+    },
+    {
+      "query": "St John's",
+      "note": "ambiguous bare name (Newfoundland vs Antigua)",
+      "category": "correct_unresolved_ambiguity",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "method": "ambiguous",
+        "resolved": false
+      },
+      "public": {
+        "method": "ambiguous",
+        "resolved": false,
+        "ranked": [
+          {
+            "id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+            "name": "St Johns Newfoundland",
+            "score": 105
+          },
+          {
+            "id": "0df6194f-c894-4149-9454-3df06c091ae3",
+            "name": "St Johns Antigua",
+            "score": 100
+          }
+        ],
+        "candidate_count": 2
+      },
+      "expected": {
+        "canonical": null,
+        "public": null
+      }
+    },
+    {
+      "query": "St Johns Newfoundland",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+        "canonical_name": "St Johns Newfoundland",
+        "country": "Canada",
+        "image_status": "MANUAL",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+        "canonical_name": "St Johns Newfoundland",
+        "display_name": "St John’s, Newfoundland",
+        "city": "St John’s",
+        "region": "Canada New England",
+        "country": "Canada",
+        "hero_media_id": "991c1920-3346-4c6d-b515-2edac0786f05",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "St Johns Newfoundland",
+          "country": "Canada"
+        },
+        "public": {
+          "canonical_name": "St Johns Newfoundland",
+          "country": "Canada"
+        }
+      }
+    },
+    {
+      "query": "St John's, Newfoundland",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+        "canonical_name": "St Johns Newfoundland",
+        "country": "Canada",
+        "image_status": "MANUAL",
+        "method": "ranked"
+      },
+      "public": {
+        "method": "exact_display",
+        "resolved": true,
+        "port_id": "2f8004a1-7d2c-40d8-a1d5-011668fd885c",
+        "canonical_name": "St Johns Newfoundland",
+        "display_name": "St John’s, Newfoundland",
+        "city": "St John’s",
+        "region": "Canada New England",
+        "country": "Canada",
+        "hero_media_id": "991c1920-3346-4c6d-b515-2edac0786f05",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "St Johns Newfoundland",
+          "country": "Canada"
+        },
+        "public": {
+          "canonical_name": "St Johns Newfoundland",
+          "country": "Canada"
+        }
+      }
+    },
+    {
+      "query": "St John's, Antigua",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "0df6194f-c894-4149-9454-3df06c091ae3",
+        "canonical_name": "St Johns Antigua",
+        "country": "Antigua and Barbuda",
+        "image_status": "AUTO_APPROVED",
+        "method": "ranked"
+      },
+      "public": {
+        "method": "exact_display",
+        "resolved": true,
+        "port_id": "0df6194f-c894-4149-9454-3df06c091ae3",
+        "canonical_name": "St Johns Antigua",
+        "display_name": "St John’s, Antigua",
+        "city": "St John’s",
+        "region": "Caribbean",
+        "country": "Antigua and Barbuda",
+        "hero_media_id": "da49b2e9-484e-43af-b1cd-df03d37b228e",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "St Johns Antigua",
+          "country": "Antigua and Barbuda"
+        },
+        "public": {
+          "canonical_name": "St Johns Antigua",
+          "country": "Antigua and Barbuda"
+        }
+      }
+    },
+    {
+      "query": "St Johns Antigua",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "0df6194f-c894-4149-9454-3df06c091ae3",
+        "canonical_name": "St Johns Antigua",
+        "country": "Antigua and Barbuda",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "0df6194f-c894-4149-9454-3df06c091ae3",
+        "canonical_name": "St Johns Antigua",
+        "display_name": "St John’s, Antigua",
+        "city": "St John’s",
+        "region": "Caribbean",
+        "country": "Antigua and Barbuda",
+        "hero_media_id": "da49b2e9-484e-43af-b1cd-df03d37b228e",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "St Johns Antigua",
+          "country": "Antigua and Barbuda"
+        },
+        "public": {
+          "canonical_name": "St Johns Antigua",
+          "country": "Antigua and Barbuda"
+        }
+      }
+    },
+    {
+      "query": "Victoria BC",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "81878efc-8929-47c0-9b20-673ace01c506",
+        "canonical_name": "Victoria BC",
+        "country": "Canada",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "81878efc-8929-47c0-9b20-673ace01c506",
+        "canonical_name": "Victoria BC",
+        "display_name": "Victoria, British Columbia",
+        "city": "Victoria",
+        "region": "British Columbia",
+        "country": "Canada",
+        "hero_media_id": "6b65b02e-2ec2-4e79-879f-ab1842f17e5d",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Victoria BC",
+          "country": "Canada"
+        },
+        "public": {
+          "canonical_name": "Victoria BC",
+          "country": "Canada"
+        }
+      }
+    },
+    {
+      "query": "Albany",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "1fd4dbf9-0e28-4c63-9700-47551431786a",
+        "canonical_name": "Albany",
+        "country": "Australia",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "1fd4dbf9-0e28-4c63-9700-47551431786a",
+        "canonical_name": "Albany",
+        "display_name": "Albany, Western Australia",
+        "city": "Albany",
+        "region": "Western Australia",
+        "country": "Australia",
+        "hero_media_id": "d7cd32f2-b7cd-4678-be9e-8734e5893a51",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Albany",
+          "country": "Australia"
+        },
+        "public": {
+          "canonical_name": "Albany",
+          "country": "Australia"
+        }
+      }
+    },
+    {
+      "query": "Tokyo",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "16cee34d-4ca7-411b-8a09-23ae3c8b716c",
+        "canonical_name": "Tokyo",
+        "country": "Japan",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "16cee34d-4ca7-411b-8a09-23ae3c8b716c",
+        "canonical_name": "Tokyo",
+        "display_name": "Tokyo, Japan",
+        "city": "Tokyo",
+        "region": "Japan",
+        "country": "Japan",
+        "hero_media_id": "49a14dc8-a593-453d-8ddc-5f6a4e927d64",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Tokyo",
+          "country": "Japan"
+        },
+        "public": {
+          "canonical_name": "Tokyo",
+          "country": "Japan"
+        }
+      }
+    },
+    {
+      "query": "Yokohama",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+        "canonical_name": "Yokohama",
+        "country": "Japan",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+        "canonical_name": "Yokohama",
+        "display_name": "Yokohama (Tokyo), Japan",
+        "city": "Yokohama",
+        "region": "Japan",
+        "country": "Japan",
+        "hero_media_id": "df3a021b-d5d1-4b7c-8f5a-47562bf02e25",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Yokohama",
+          "country": "Japan"
+        },
+        "public": {
+          "canonical_name": "Yokohama",
+          "country": "Japan"
+        }
+      }
+    },
+    {
+      "query": "Tokyo / Yokohama",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+        "canonical_name": "Yokohama",
+        "country": "Japan",
+        "image_status": "AUTO_APPROVED",
+        "method": "compound_label"
+      },
+      "public": {
+        "method": "compound_label",
+        "resolved": true,
+        "port_id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+        "canonical_name": "Yokohama",
+        "display_name": "Yokohama (Tokyo), Japan",
+        "city": "Yokohama",
+        "region": "Japan",
+        "country": "Japan",
+        "hero_media_id": "df3a021b-d5d1-4b7c-8f5a-47562bf02e25",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Yokohama",
+          "country": "Japan"
+        },
+        "public": {
+          "canonical_name": "Yokohama",
+          "country": "Japan"
+        }
+      }
+    },
+    {
+      "query": "Vancouver",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "96d097a0-24a8-4388-a463-307f14fed7f3",
+        "canonical_name": "Vancouver",
+        "country": "Canada",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "96d097a0-24a8-4388-a463-307f14fed7f3",
+        "canonical_name": "Vancouver",
+        "display_name": "Vancouver, Canada",
+        "city": "Vancouver",
+        "region": "British Columbia",
+        "country": "Canada",
+        "hero_media_id": "4d12bd5f-24a0-4443-bfa9-a5e7be23c50e",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Vancouver",
+          "country": "Canada"
+        },
+        "public": {
+          "canonical_name": "Vancouver",
+          "country": "Canada"
+        }
+      }
+    },
+    {
+      "query": "Southampton",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "b76ccee1-8e45-496e-b0ff-834980471ee8",
+        "canonical_name": "Southampton",
+        "country": "United Kingdom",
+        "image_status": "MANUAL",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "b76ccee1-8e45-496e-b0ff-834980471ee8",
+        "canonical_name": "Southampton",
+        "display_name": "Southampton, England",
+        "city": "Southampton",
+        "region": "Northern Europe",
+        "country": "United Kingdom",
+        "hero_media_id": "06694b42-e233-4346-b53c-fa1b50099461",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Southampton",
+          "country": "United Kingdom"
+        },
+        "public": {
+          "canonical_name": "Southampton",
+          "country": "United Kingdom"
+        }
+      }
+    },
+    {
+      "query": "Miami",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "c4e3861f-88b1-428c-9cd7-a0703cc0517d",
+        "canonical_name": "Miami",
+        "country": "United States",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "c4e3861f-88b1-428c-9cd7-a0703cc0517d",
+        "canonical_name": "Miami",
+        "display_name": "Miami, Florida",
+        "city": "Miami",
+        "region": "Florida",
+        "country": "United States",
+        "hero_media_id": "117f447d-2ed3-4a61-94a8-6d5b36a4e75d",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Miami",
+          "country": "United States",
+          "region": "Florida"
+        },
+        "public": {
+          "canonical_name": "Miami",
+          "country": "United States",
+          "region": "Florida"
+        }
+      }
+    },
+    {
+      "query": "Fort Lauderdale",
+      "note": "catalogue record; no approved public image",
+      "category": "correct_canonical_no_public_image",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "30269036-ac1e-45c2-87f5-57ffe2ca8eb6",
+        "canonical_name": "Fort Lauderdale",
+        "country": "United States",
+        "image_status": "NEEDS_REVIEW",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "unresolved",
+        "resolved": false,
+        "candidate_count": 0
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Fort Lauderdale",
+          "country": "United States"
+        },
+        "public": null
+      }
+    },
+    {
+      "query": "Palma de Mallorca",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "f8b4381d-f65a-447f-93f4-2baf19535f40",
+        "canonical_name": "Palma de Mallorca",
+        "country": "Spain",
+        "image_status": "MANUAL",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "f8b4381d-f65a-447f-93f4-2baf19535f40",
+        "canonical_name": "Palma de Mallorca",
+        "display_name": "Palma de Mallorca, Spain",
+        "city": "Palma de Mallorca",
+        "region": null,
+        "country": "Spain",
+        "hero_media_id": "c61e75d5-727b-4296-b567-acc34958a7f5",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Palma de Mallorca"
+        },
+        "public": {
+          "canonical_name": "Palma de Mallorca"
+        }
+      }
+    },
+    {
+      "query": "Valencia",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "edb5ac77-63ca-477e-ad40-767b1c922f42",
+        "canonical_name": "Valencia",
+        "country": "Spain",
+        "image_status": "MANUAL",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "edb5ac77-63ca-477e-ad40-767b1c922f42",
+        "canonical_name": "Valencia",
+        "display_name": "Valencia, Spain",
+        "city": "Valencia",
+        "region": "Mediterranean",
+        "country": "Spain",
+        "hero_media_id": "60ab2693-6f5c-4ad1-8a0f-05da89f79f57",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Valencia",
+          "country": "Spain"
+        },
+        "public": {
+          "canonical_name": "Valencia",
+          "country": "Spain"
+        }
+      }
+    },
+    {
+      "query": "Rome (Civitavecchia)",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+        "canonical_name": "Civitavecchia",
+        "country": "Italy",
+        "image_status": "MANUAL",
+        "method": "ranked"
+      },
+      "public": {
+        "method": "ranked_disambiguated",
+        "resolved": true,
+        "port_id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+        "canonical_name": "Civitavecchia",
+        "display_name": "Civitavecchia (Rome), Italy",
+        "city": "Civitavecchia",
+        "region": null,
+        "country": "Italy",
+        "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+        "image_status": "MANUAL",
+        "ranked": [
+          {
+            "id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+            "name": "Civitavecchia",
+            "score": 45
+          }
+        ],
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Civitavecchia",
+          "country": "Italy"
+        },
+        "public": {
+          "canonical_name": "Civitavecchia",
+          "country": "Italy"
+        }
+      }
+    },
+    {
+      "query": "Civitavecchia",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+        "canonical_name": "Civitavecchia",
+        "country": "Italy",
+        "image_status": "MANUAL",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+        "canonical_name": "Civitavecchia",
+        "display_name": "Civitavecchia (Rome), Italy",
+        "city": "Civitavecchia",
+        "region": null,
+        "country": "Italy",
+        "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+        "image_status": "MANUAL",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Civitavecchia",
+          "country": "Italy"
+        },
+        "public": {
+          "canonical_name": "Civitavecchia",
+          "country": "Italy"
+        }
+      }
+    },
+    {
+      "query": "Port Chalmers",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+        "canonical_name": "Port Chalmers",
+        "country": "New Zealand",
+        "image_status": "AUTO_APPROVED",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "exact_canonical",
+        "resolved": true,
+        "port_id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+        "canonical_name": "Port Chalmers",
+        "display_name": "Port Chalmers (Dunedin), New Zealand",
+        "city": "Dunedin",
+        "region": "Otago",
+        "country": "New Zealand",
+        "hero_media_id": "874738a7-ff62-4acf-adcd-90b66468e6eb",
+        "image_status": "AUTO_APPROVED",
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Port Chalmers",
+          "country": "New Zealand"
+        },
+        "public": {
+          "canonical_name": "Port Chalmers",
+          "country": "New Zealand"
+        }
+      }
+    },
+    {
+      "query": "Dunedin / Port Chalmers",
+      "note": null,
+      "category": "correct_canonical_resolution",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+        "canonical_name": "Port Chalmers",
+        "country": "New Zealand",
+        "image_status": "AUTO_APPROVED",
+        "method": "ranked"
+      },
+      "public": {
+        "method": "ranked_disambiguated",
+        "resolved": true,
+        "port_id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+        "canonical_name": "Port Chalmers",
+        "display_name": "Port Chalmers (Dunedin), New Zealand",
+        "city": "Dunedin",
+        "region": "Otago",
+        "country": "New Zealand",
+        "hero_media_id": "874738a7-ff62-4acf-adcd-90b66468e6eb",
+        "image_status": "AUTO_APPROVED",
+        "ranked": [
+          {
+            "id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+            "name": "Port Chalmers",
+            "score": 40
+          }
+        ],
+        "candidate_count": 1
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Port Chalmers",
+          "country": "New Zealand"
+        },
+        "public": {
+          "canonical_name": "Port Chalmers",
+          "country": "New Zealand"
+        }
+      }
+    },
+    {
+      "query": "Costa Maya",
+      "note": "correct identity; no approved public image",
+      "category": "correct_canonical_no_public_image",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "6698ee3c-9c1c-4c3f-b0c5-76b81849e796",
+        "canonical_name": "Costa Maya",
+        "country": "Mexico",
+        "image_status": "NO_IMAGE",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "unresolved",
+        "resolved": false,
+        "candidate_count": 0
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Costa Maya",
+          "country": "Mexico"
+        },
+        "public": null
+      }
+    },
+    {
+      "query": "Mahahual",
+      "note": "alias identity; no approved public image",
+      "category": "correct_canonical_no_public_image",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "6698ee3c-9c1c-4c3f-b0c5-76b81849e796",
+        "canonical_name": "Costa Maya",
+        "country": "Mexico",
+        "image_status": "NO_IMAGE",
+        "method": "alias"
+      },
+      "public": {
+        "method": "unresolved",
+        "resolved": false,
+        "candidate_count": 0
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Costa Maya",
+          "country": "Mexico"
+        },
+        "public": null
+      }
+    },
+    {
+      "query": "Mahahual, Mexico",
+      "note": "alias identity with country; no approved public image",
+      "category": "correct_canonical_no_public_image",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "6698ee3c-9c1c-4c3f-b0c5-76b81849e796",
+        "canonical_name": "Costa Maya",
+        "country": "Mexico",
+        "image_status": "NO_IMAGE",
+        "method": "contextual_alias"
+      },
+      "public": {
+        "method": "unresolved",
+        "resolved": false,
+        "candidate_count": 0
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Costa Maya",
+          "country": "Mexico"
+        },
+        "public": null
+      }
+    },
+    {
+      "query": "Ensenada",
+      "note": "catalogue record; excluded from approved public image resolver",
+      "category": "correct_canonical_no_public_image",
+      "canonical_ok": true,
+      "public_ok": true,
+      "ok": true,
+      "identity": {
+        "port_id": "196f674c-0fed-4d2a-aba3-d518d7054746",
+        "canonical_name": "Ensenada",
+        "country": "Mexico",
+        "image_status": "NEEDS_REVIEW",
+        "method": "exact_canonical"
+      },
+      "public": {
+        "method": "unresolved",
+        "resolved": false,
+        "candidate_count": 0
+      },
+      "expected": {
+        "canonical": {
+          "canonical_name": "Ensenada",
+          "country": "Mexico"
+        },
+        "public": null
+      }
+    }
+  ],
+  "wrong_canonical_resolutions": [],
+  "wrong_public_media_resolutions": [],
+  "image_consistency_issues": [],
+  "destination_ports_architecture": {
+    "active_destination_port_rows": 60,
+    "rows_with_port_id_fk": 0,
+    "rows_with_hero_media_id": 0,
+    "note": "destination_ports has no ports.id FK; Cruise Finder Explore uses destination-content.js names resolved via public-destination-media catalogue lookup"
+  },
+  "resolutions_by_destination": [
+    {
+      "destination_slug": "alaska",
+      "requested_name": "Juneau",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "4b1cc6fe-6bc6-4caa-9d1d-3ad80192e364",
+      "canonical_name": "Juneau",
+      "display_name": "Juneau, Alaska",
+      "city": "Juneau",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "2a790c01-9ae6-429f-9c5b-887711c94e57",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "alaska",
+      "requested_name": "Skagway",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "7f2ee7c7-28e4-4a7c-a618-73e92bd3d799",
+      "canonical_name": "Skagway",
+      "display_name": "Skagway, Alaska",
+      "city": "Skagway",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "d3fd705b-1849-436f-8458-56109c0a6639",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "alaska",
+      "requested_name": "Ketchikan",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "8c201113-4365-43ca-bdf6-b78b1c2a1392",
+      "canonical_name": "Ketchikan",
+      "display_name": "Ketchikan, Alaska",
+      "city": "Ketchikan",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "6d911a4c-ac74-40ef-bd1d-a78f07580527",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "alaska",
+      "requested_name": "Sitka",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "18dbba5c-54f3-471c-a879-e21fd39c3ba7",
+      "canonical_name": "Sitka",
+      "display_name": "Sitka, Alaska",
+      "city": "Sitka",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "4ce498c3-8d4c-41ea-82db-9189371afd5e",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "alaska",
+      "requested_name": "Icy Strait Point",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "378cb7aa-f13d-446d-b38f-e76f435029ca",
+      "canonical_name": "Icy Strait Point",
+      "display_name": "Icy Strait Point, Alaska",
+      "city": "Hoonah",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "c440587c-6e47-46f5-9de0-39ed9eda09c2",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "alaska",
+      "requested_name": "Seward",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "7743b4d4-024f-4c43-aa24-b968ab6b4e86",
+      "canonical_name": "Seward",
+      "display_name": "Seward, Alaska",
+      "city": "Seward",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "699f9526-3ec9-4708-95d4-b60fa415fbba",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "alaska",
+      "requested_name": "Vancouver",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "96d097a0-24a8-4388-a463-307f14fed7f3",
+      "canonical_name": "Vancouver",
+      "display_name": "Vancouver, Canada",
+      "city": "Vancouver",
+      "region": "British Columbia",
+      "country": "Canada",
+      "hero_media_id": "4d12bd5f-24a0-4443-bfa9-a5e7be23c50e",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "alaska",
+      "requested_name": "Seattle",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "61c7f166-20c9-4699-8ed9-1a59c1e03cbe",
+      "canonical_name": "Seattle",
+      "display_name": "Seattle, Washington",
+      "city": "Seattle",
+      "region": "Alaska",
+      "country": "United States",
+      "hero_media_id": "faa58b96-3b65-4234-b74b-cdf1079753ae",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "alaska",
+      "requested_name": "Whittier",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "japan",
+      "requested_name": "Tokyo / Yokohama",
+      "method": "compound_label",
+      "resolved": true,
+      "port_id": "5914e09c-4f2b-4534-ad64-32b3f75ffd7c",
+      "canonical_name": "Yokohama",
+      "display_name": "Yokohama (Tokyo), Japan",
+      "city": "Yokohama",
+      "region": "Japan",
+      "country": "Japan",
+      "hero_media_id": "df3a021b-d5d1-4b7c-8f5a-47562bf02e25",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "japan",
+      "requested_name": "Kobe",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "7e7a0b4e-07b9-40b6-afa0-3e71746e4289",
+      "canonical_name": "Kobe",
+      "display_name": "Kobe (Kyoto), Japan",
+      "city": "Kobe",
+      "region": "Japan",
+      "country": "Japan",
+      "hero_media_id": "98dd076f-977a-433d-b38d-cf1460ac40b3",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "japan",
+      "requested_name": "Osaka",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "42beea1b-7b1d-42a2-8a7c-b08ae62d301d",
+      "canonical_name": "Osaka",
+      "display_name": "Osaka, Japan",
+      "city": "Osaka",
+      "region": "Japan",
+      "country": "Japan",
+      "hero_media_id": "b82bc0cf-fa89-4a0c-8e22-63f64890819e",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "japan",
+      "requested_name": "Nagasaki",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "31af4f33-1b90-401e-93d1-b0b857357c86",
+      "canonical_name": "Nagasaki",
+      "display_name": "Nagasaki, Japan",
+      "city": "Nagasaki",
+      "region": "Japan",
+      "country": "Japan",
+      "hero_media_id": "42ad5dc1-1a72-4d11-8557-2715dad5f8e7",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "japan",
+      "requested_name": "Hakodate",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "japan",
+      "requested_name": "Aomori",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "mediterranean",
+      "requested_name": "Barcelona",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "d1096166-0e64-41c6-adc4-f8479230098b",
+      "canonical_name": "Barcelona",
+      "display_name": "Barcelona, Spain",
+      "city": "Barcelona",
+      "region": null,
+      "country": "Spain",
+      "hero_media_id": "6a63d77d-5cfa-411d-b784-ef622683a33f",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "mediterranean",
+      "requested_name": "Rome (Civitavecchia)",
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+      "canonical_name": "Civitavecchia",
+      "display_name": "Civitavecchia (Rome), Italy",
+      "city": "Civitavecchia",
+      "region": null,
+      "country": "Italy",
+      "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+      "image_status": "MANUAL",
+      "ranked": [
+        {
+          "id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+          "name": "Civitavecchia",
+          "score": 45
+        }
+      ],
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "mediterranean",
+      "requested_name": "Santorini",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "61fb5b1f-bbfc-4723-943a-752cd8b0ad22",
+      "canonical_name": "Santorini",
+      "display_name": "Santorini (Athíniós), Greece",
+      "city": "Santorini",
+      "region": "Eastern Mediterranean",
+      "country": "Greece",
+      "hero_media_id": "8cb41f1e-3d4c-4a59-945a-08fe987560b8",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "mediterranean",
+      "requested_name": "Athens (Piraeus)",
+      "method": "alias",
+      "resolved": true,
+      "port_id": "0c7cbda9-da36-49dc-871e-87855d561af6",
+      "canonical_name": "Piraeus",
+      "display_name": "Piraeus (Athens), Greece",
+      "city": "Piraeus",
+      "region": null,
+      "country": "Greece",
+      "hero_media_id": "c77dfa8d-9132-4e37-b0cf-1fa8f70e6f34",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "mediterranean",
+      "requested_name": "Dubrovnik",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "1190b7ba-bc51-4ebe-b7a9-bfa79ca0fa30",
+      "canonical_name": "Dubrovnik",
+      "display_name": "Dubrovnik, Croatia",
+      "city": "Dubrovnik",
+      "region": null,
+      "country": "Croatia",
+      "hero_media_id": "61937233-2dd9-4da8-9083-9d984ac4ceef",
+      "image_status": "MANUAL",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "mediterranean",
+      "requested_name": "Venice / Ravenna",
+      "method": "ranked_tie",
+      "resolved": true,
+      "port_id": "7c137c89-19d2-4c9b-9fb3-b058328ddacd",
+      "canonical_name": "Ravenna",
+      "display_name": "Ravenna, Italy",
+      "city": "Ravenna",
+      "region": "Adriatic",
+      "country": "Italy",
+      "hero_media_id": "205d46d0-467f-4014-9111-00dde733339e",
+      "image_status": "AUTO_APPROVED",
+      "ranked": [
+        {
+          "id": "7c137c89-19d2-4c9b-9fb3-b058328ddacd",
+          "name": "Ravenna",
+          "score": 20
+        },
+        {
+          "id": "e7535a4d-1559-4bc8-bd0d-db06c02e1116",
+          "name": "Venice",
+          "score": 20
+        }
+      ],
+      "candidate_count": 2,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "mediterranean",
+      "requested_name": "Istanbul",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "2488079d-1f0d-4d70-a027-54abf6eab0e5",
+      "canonical_name": "Istanbul",
+      "display_name": "Istanbul, Turkey",
+      "city": "Istanbul",
+      "region": null,
+      "country": "Turkey",
+      "hero_media_id": "a1507dce-9e44-4b64-8924-0f3c19a434f4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "greek-islands",
+      "requested_name": "Santorini",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "61fb5b1f-bbfc-4723-943a-752cd8b0ad22",
+      "canonical_name": "Santorini",
+      "display_name": "Santorini (Athíniós), Greece",
+      "city": "Santorini",
+      "region": "Eastern Mediterranean",
+      "country": "Greece",
+      "hero_media_id": "8cb41f1e-3d4c-4a59-945a-08fe987560b8",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "greek-islands",
+      "requested_name": "Mykonos",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "f0763a6a-6f1b-46ce-a600-308fb65d53ce",
+      "canonical_name": "Mykonos",
+      "display_name": "Mykonos, Greece",
+      "city": "Mykonos",
+      "region": null,
+      "country": "Greece",
+      "hero_media_id": "e7315cfb-a54c-41e9-8c99-ec8cd69c1d9b",
+      "image_status": "MANUAL",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "greek-islands",
+      "requested_name": "Rhodes",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "6000ebca-7158-475f-a92f-e283dffefebd",
+      "canonical_name": "Rhodes",
+      "display_name": "Rhodes, Greece",
+      "city": "Rhodes",
+      "region": null,
+      "country": "Greece",
+      "hero_media_id": "b05b52be-f972-4dbf-b4d6-8fb693a3081d",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "greek-islands",
+      "requested_name": "Crete",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "greek-islands",
+      "requested_name": "Athens (Piraeus)",
+      "method": "alias",
+      "resolved": true,
+      "port_id": "0c7cbda9-da36-49dc-871e-87855d561af6",
+      "canonical_name": "Piraeus",
+      "display_name": "Piraeus (Athens), Greece",
+      "city": "Piraeus",
+      "region": null,
+      "country": "Greece",
+      "hero_media_id": "c77dfa8d-9132-4e37-b0cf-1fa8f70e6f34",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "greek-islands",
+      "requested_name": "Corfu",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "20d77c99-d804-4052-8b57-26315a8661c1",
+      "canonical_name": "Corfu",
+      "display_name": "Corfu, Greece",
+      "city": "Corfu",
+      "region": "Mediterranean",
+      "country": "Greece",
+      "hero_media_id": "61386372-f9d1-4798-9832-e58e8fa1a725",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "greek-islands",
+      "requested_name": "Istanbul",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "2488079d-1f0d-4d70-a027-54abf6eab0e5",
+      "canonical_name": "Istanbul",
+      "display_name": "Istanbul, Turkey",
+      "city": "Istanbul",
+      "region": null,
+      "country": "Turkey",
+      "hero_media_id": "a1507dce-9e44-4b64-8924-0f3c19a434f4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "greek-islands",
+      "requested_name": "Rome (Civitavecchia)",
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+      "canonical_name": "Civitavecchia",
+      "display_name": "Civitavecchia (Rome), Italy",
+      "city": "Civitavecchia",
+      "region": null,
+      "country": "Italy",
+      "hero_media_id": "65c3389d-9342-4c45-9547-d3d6ccc166ba",
+      "image_status": "MANUAL",
+      "ranked": [
+        {
+          "id": "777a9a1d-55e2-4330-89d0-59ec08bca45d",
+          "name": "Civitavecchia",
+          "score": 45
+        }
+      ],
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "norwegian-fjords",
+      "requested_name": "Bergen",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "98029a26-c887-4d5d-b4ab-2903b4df78bb",
+      "canonical_name": "Bergen",
+      "display_name": "Bergen, Norway",
+      "city": "Bergen",
+      "region": "Norwegian Fjords",
+      "country": "Norway",
+      "hero_media_id": "3d2341f0-ec5a-46fa-8adf-b5fdcd005ceb",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "norwegian-fjords",
+      "requested_name": "Geiranger",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "norwegian-fjords",
+      "requested_name": "Flam",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "4e49d4ce-d4c9-43d7-997e-18c5cf96e20d",
+      "canonical_name": "Flam",
+      "display_name": "Flåm, Norway",
+      "city": "Flåm",
+      "region": "Norwegian Fjords",
+      "country": "Norway",
+      "hero_media_id": "fe616537-86f1-4925-bf0e-2fe0840bb0c4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "norwegian-fjords",
+      "requested_name": "Stavanger",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "f8342880-34db-4160-90ed-11b1adfe553f",
+      "canonical_name": "Stavanger",
+      "display_name": "Stavanger, Norway",
+      "city": "Stavanger",
+      "region": "Norwegian Fjords",
+      "country": "Norway",
+      "hero_media_id": "96dbdb7f-a6e3-4f95-9458-2f1f5a42a9b7",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "norwegian-fjords",
+      "requested_name": "Tromsø",
+      "method": "exact_city",
+      "resolved": true,
+      "port_id": "c290dd40-9196-40fe-b93d-904f4911d5c1",
+      "canonical_name": "Tromso",
+      "display_name": "Tromsø, Norway",
+      "city": "Tromsø",
+      "region": "Arctic",
+      "country": "Norway",
+      "hero_media_id": "240c3d12-34b5-4b76-b9bc-7dc11ab3c136",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "norwegian-fjords",
+      "requested_name": "Ålesund",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "eea5dbf3-ad59-46d0-9d3f-8220275eb170",
+      "canonical_name": "Alesund",
+      "display_name": "Ålesund, Norway",
+      "city": "Ålesund",
+      "region": "Norwegian Fjords",
+      "country": "Norway",
+      "hero_media_id": "2f9ecc9e-acde-4f86-b7e0-fc5fe05fcb61",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "norwegian-fjords",
+      "requested_name": "Copenhagen",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "bbb446ef-77e3-4300-8178-3f5278cb56b5",
+      "canonical_name": "Copenhagen",
+      "display_name": "Copenhagen, Denmark",
+      "city": "Copenhagen",
+      "region": "Baltic",
+      "country": "Denmark",
+      "hero_media_id": "a13cd40b-37b6-4d15-8392-3827efc668d4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "norwegian-fjords",
+      "requested_name": "Southampton",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "b76ccee1-8e45-496e-b0ff-834980471ee8",
+      "canonical_name": "Southampton",
+      "display_name": "Southampton, England",
+      "city": "Southampton",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "06694b42-e233-4346-b53c-fa1b50099461",
+      "image_status": "MANUAL",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "norwegian-fjords",
+      "requested_name": "Amsterdam",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "71eb9a89-feb4-45e8-879b-32dcc5754af6",
+      "canonical_name": "Amsterdam",
+      "display_name": "Amsterdam, Netherlands",
+      "city": "Amsterdam",
+      "region": "Northern Europe",
+      "country": "Netherlands",
+      "hero_media_id": "fddb4770-d66d-4893-a151-87ec33d96b35",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Edinburgh / Newhaven",
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "4692b2e4-90bf-495b-83b5-7e38da2a5ccb",
+      "canonical_name": "Edinburgh",
+      "display_name": "Edinburgh (South Queensferry), Scotland",
+      "city": "South Queensferry",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "03d3fba0-1526-4501-be66-cb7204166b98",
+      "image_status": "AUTO_APPROVED",
+      "ranked": [
+        {
+          "id": "4692b2e4-90bf-495b-83b5-7e38da2a5ccb",
+          "name": "Edinburgh",
+          "score": 20
+        }
+      ],
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Dublin",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "68747ce9-92df-42c4-b5a2-37b5f95e18ab",
+      "canonical_name": "Dublin",
+      "display_name": "Dublin, Ireland",
+      "city": "Dublin",
+      "region": "Northern Europe",
+      "country": "Ireland",
+      "hero_media_id": "6e14a41b-ecd3-470f-b61e-c797ab470ae3",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Cork",
+      "method": "alias",
+      "resolved": true,
+      "port_id": "30eed702-b64b-4e65-890a-ce65e1fbfa37",
+      "canonical_name": "Cobh",
+      "display_name": "Cobh (Cork), Ireland",
+      "city": "Cobh",
+      "region": "Northern Europe",
+      "country": "Ireland",
+      "hero_media_id": "01eaa4b2-3200-4037-902c-f919c0faf4b2",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Liverpool",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "dc7fe1ca-7ff5-462e-a696-c30da2bf43e0",
+      "canonical_name": "Liverpool",
+      "display_name": "Liverpool, England",
+      "city": "Liverpool",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "2e986dea-7cbf-4e38-8f83-4e8469658e81",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Invergordon",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Belfast",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "90767369-4b5b-48d1-8df9-8696a233b459",
+      "canonical_name": "Belfast",
+      "display_name": "Belfast, Northern Ireland",
+      "city": "Belfast",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "f8ed07a6-71f0-4a3e-b18f-a4aa0f8a58ad",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Southampton",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "b76ccee1-8e45-496e-b0ff-834980471ee8",
+      "canonical_name": "Southampton",
+      "display_name": "Southampton, England",
+      "city": "Southampton",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "06694b42-e233-4346-b53c-fa1b50099461",
+      "image_status": "MANUAL",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Dover",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "330c9ccf-3e03-4ef1-98ba-0189744a5fb6",
+      "canonical_name": "Dover",
+      "display_name": "Dover, England",
+      "city": "Dover",
+      "region": "Northern Europe",
+      "country": "United Kingdom",
+      "hero_media_id": "634c8a51-ea78-423a-9e9e-30a2feb6518e",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Amsterdam",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "71eb9a89-feb4-45e8-879b-32dcc5754af6",
+      "canonical_name": "Amsterdam",
+      "display_name": "Amsterdam, Netherlands",
+      "city": "Amsterdam",
+      "region": "Northern Europe",
+      "country": "Netherlands",
+      "hero_media_id": "fddb4770-d66d-4893-a151-87ec33d96b35",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "british-isles",
+      "requested_name": "Copenhagen",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "bbb446ef-77e3-4300-8178-3f5278cb56b5",
+      "canonical_name": "Copenhagen",
+      "display_name": "Copenhagen, Denmark",
+      "city": "Copenhagen",
+      "region": "Baltic",
+      "country": "Denmark",
+      "hero_media_id": "a13cd40b-37b6-4d15-8392-3827efc668d4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "St Thomas",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "f87d4e8e-fc07-4451-a0a7-f2c47058467a",
+      "canonical_name": "St Thomas",
+      "display_name": "Charlotte Amalie, St Thomas",
+      "city": "Charlotte Amalie",
+      "region": "Caribbean",
+      "country": "U.S. Virgin Islands",
+      "hero_media_id": "c2e27c46-cbac-42e2-8c93-bbe157ac4745",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "Cozumel",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "13d801a4-e9e9-4def-9a53-aec3481aec9c",
+      "canonical_name": "Cozumel",
+      "display_name": "Cozumel, Mexico",
+      "city": "Cozumel",
+      "region": "Caribbean",
+      "country": "Mexico",
+      "hero_media_id": "fe0a1460-3e00-4a30-884b-89ebfb923638",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "St Maarten",
+      "method": "alias",
+      "resolved": true,
+      "port_id": "59bb0042-a030-41c1-b0ee-1a4723079c4a",
+      "canonical_name": "Philipsburg",
+      "display_name": "Philipsburg, St Maarten",
+      "city": "Philipsburg",
+      "region": "Caribbean",
+      "country": "Sint Maarten",
+      "hero_media_id": "30503684-801b-4bf0-a7fb-a6445b675da7",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "Barbados",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "Nassau",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "8193fd68-b93f-4a26-a1f2-6e0399476b68",
+      "canonical_name": "Nassau",
+      "display_name": "Nassau, Bahamas",
+      "city": "Nassau",
+      "region": "Bahamas",
+      "country": "Bahamas",
+      "hero_media_id": "33541e5e-dadc-4b5b-a52b-dda857a7565a",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "Grand Cayman",
+      "method": "alias",
+      "resolved": true,
+      "port_id": "437173f0-a853-4135-82b9-737d51261a99",
+      "canonical_name": "George Town",
+      "display_name": "George Town, Grand Cayman",
+      "city": "George Town",
+      "region": "Caribbean",
+      "country": "Cayman Islands",
+      "hero_media_id": "db9342eb-5dee-4f4f-bdcf-b46a1a41b0d4",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "Miami",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "c4e3861f-88b1-428c-9cd7-a0703cc0517d",
+      "canonical_name": "Miami",
+      "display_name": "Miami, Florida",
+      "city": "Miami",
+      "region": "Florida",
+      "country": "United States",
+      "hero_media_id": "117f447d-2ed3-4a61-94a8-6d5b36a4e75d",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "Fort Lauderdale",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "San Juan",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "92d544b9-e4db-4777-9007-b853b35d3b10",
+      "canonical_name": "San Juan",
+      "display_name": "San Juan, Puerto Rico",
+      "city": "San Juan",
+      "region": "Caribbean",
+      "country": "Puerto Rico",
+      "hero_media_id": "e0af85ba-8a96-4335-afc7-4b845ee0c6a3",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "caribbean",
+      "requested_name": "Galveston",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "baf57db1-6fae-4fbd-a7d5-530a8d6f83c7",
+      "canonical_name": "Galveston",
+      "display_name": "Galveston, Texas",
+      "city": "Galveston",
+      "region": "Caribbean",
+      "country": "United States",
+      "hero_media_id": "88cad26a-a5f5-453b-b330-a5efc32bfcf9",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "south-pacific",
+      "requested_name": "Noumea",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "b0728ab0-8296-4a4e-a092-ee5dfade750c",
+      "canonical_name": "Noumea",
+      "display_name": "Nouméa, New Caledonia",
+      "city": "Nouméa",
+      "region": "South Pacific",
+      "country": "New Caledonia",
+      "hero_media_id": "af5e2316-6496-497c-8efe-86c848e3081f",
+      "image_status": "MANUAL",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "south-pacific",
+      "requested_name": "Suva",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "a431d09a-cffe-460d-9931-a2833882ad33",
+      "canonical_name": "Suva",
+      "display_name": "Suva, Fiji",
+      "city": "Suva",
+      "region": "South Pacific",
+      "country": "Fiji",
+      "hero_media_id": "7f5f235e-5c74-4ab8-9ba1-bd6796d12b68",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "south-pacific",
+      "requested_name": "Port Vila",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "10631b12-3a03-4bae-8128-60d3a331ab1c",
+      "canonical_name": "Port Vila",
+      "display_name": "Port Vila, Vanuatu",
+      "city": "Port Vila",
+      "region": "South Pacific",
+      "country": "Vanuatu",
+      "hero_media_id": "a81acf69-0bc4-458e-9dfe-7b583a86ee5f",
+      "image_status": "MANUAL",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "south-pacific",
+      "requested_name": "Lautoka",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "south-pacific",
+      "requested_name": "Mystery Island",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "south-pacific",
+      "requested_name": "Lifou",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "2fcb58d9-451d-4b1e-a202-e8a087eaae26",
+      "canonical_name": "Lifou",
+      "display_name": "Lifou, New Caledonia",
+      "city": "Wé",
+      "region": "South Pacific",
+      "country": "New Caledonia",
+      "hero_media_id": "416b4efc-16fd-424d-aafc-76b288586c5f",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "south-pacific",
+      "requested_name": "Sydney",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "581e73fb-acb9-4d4d-845a-9833a9171f0e",
+      "canonical_name": "Sydney",
+      "display_name": "Sydney, Australia",
+      "city": "Sydney",
+      "region": null,
+      "country": "Australia",
+      "hero_media_id": "3bf9d458-d96d-43cc-b8a5-0c0a40aeacd2",
+      "image_status": "MANUAL",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "south-pacific",
+      "requested_name": "Brisbane",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "f5054d13-1fc3-49c1-b7d8-07ccb6cebb01",
+      "canonical_name": "Brisbane",
+      "display_name": "Brisbane, Australia",
+      "city": "Brisbane",
+      "region": "Australia",
+      "country": "Australia",
+      "hero_media_id": "07c88311-5770-40cb-a634-48a597cf11f1",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "south-pacific",
+      "requested_name": "Auckland",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "852f5080-064d-4d2e-af72-c2c79ffb23a4",
+      "canonical_name": "Auckland",
+      "display_name": "Auckland, New Zealand",
+      "city": "Auckland",
+      "region": null,
+      "country": "New Zealand",
+      "hero_media_id": "6cf9b3e9-981a-41c9-8f37-aae654522e63",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "australia-new-zealand",
+      "requested_name": "Sydney",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "581e73fb-acb9-4d4d-845a-9833a9171f0e",
+      "canonical_name": "Sydney",
+      "display_name": "Sydney, Australia",
+      "city": "Sydney",
+      "region": null,
+      "country": "Australia",
+      "hero_media_id": "3bf9d458-d96d-43cc-b8a5-0c0a40aeacd2",
+      "image_status": "MANUAL",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "australia-new-zealand",
+      "requested_name": "Melbourne",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "dd642750-375f-4cad-af64-6c38d109d9c8",
+      "canonical_name": "Melbourne",
+      "display_name": "Melbourne, Australia",
+      "city": "Melbourne",
+      "region": "Australia",
+      "country": "Australia",
+      "hero_media_id": "119c2c95-eb2e-4a31-8476-9760a7cceadd",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "australia-new-zealand",
+      "requested_name": "Hobart",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "67468d15-f5d3-4245-9d19-6ca9da392595",
+      "canonical_name": "Hobart",
+      "display_name": "Hobart, Australia",
+      "city": "Hobart",
+      "region": "Australia",
+      "country": "Australia",
+      "hero_media_id": "deba80d0-0e95-43a9-9df6-72697734f3d1",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "australia-new-zealand",
+      "requested_name": "Auckland",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "852f5080-064d-4d2e-af72-c2c79ffb23a4",
+      "canonical_name": "Auckland",
+      "display_name": "Auckland, New Zealand",
+      "city": "Auckland",
+      "region": null,
+      "country": "New Zealand",
+      "hero_media_id": "6cf9b3e9-981a-41c9-8f37-aae654522e63",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "australia-new-zealand",
+      "requested_name": "Wellington",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "7bc0ff3c-26e3-4adb-80ed-3bd32565ba19",
+      "canonical_name": "Wellington",
+      "display_name": "Wellington, New Zealand",
+      "city": "Wellington",
+      "region": "New Zealand",
+      "country": "New Zealand",
+      "hero_media_id": "599cf351-6de8-43c2-b87e-92ca577d7580",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "australia-new-zealand",
+      "requested_name": "Dunedin / Port Chalmers",
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+      "canonical_name": "Port Chalmers",
+      "display_name": "Port Chalmers (Dunedin), New Zealand",
+      "city": "Dunedin",
+      "region": "Otago",
+      "country": "New Zealand",
+      "hero_media_id": "874738a7-ff62-4acf-adcd-90b66468e6eb",
+      "image_status": "AUTO_APPROVED",
+      "ranked": [
+        {
+          "id": "2aa1d7fe-89b6-432e-a8d6-d5c6d70fe82f",
+          "name": "Port Chalmers",
+          "score": 40
+        }
+      ],
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "australia-new-zealand",
+      "requested_name": "Brisbane",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "f5054d13-1fc3-49c1-b7d8-07ccb6cebb01",
+      "canonical_name": "Brisbane",
+      "display_name": "Brisbane, Australia",
+      "city": "Brisbane",
+      "region": "Australia",
+      "country": "Australia",
+      "hero_media_id": "07c88311-5770-40cb-a634-48a597cf11f1",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "antarctica",
+      "requested_name": "Ushuaia",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "5dad4b64-e900-4756-9fd9-2e06b197ad4a",
+      "canonical_name": "Ushuaia",
+      "display_name": "Ushuaia, Argentina",
+      "city": "Ushuaia",
+      "region": "Antarctica Gateway",
+      "country": "Argentina",
+      "hero_media_id": "80083758-6de8-4e17-a3c4-0fcc22731f8b",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "antarctica",
+      "requested_name": "Port Stanley",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "antarctica",
+      "requested_name": "South Shetland landings",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "antarctica",
+      "requested_name": "Antarctic Peninsula sites",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "antarctica",
+      "requested_name": "Buenos Aires",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "04150e74-2c56-413e-a48c-a0484179ecd2",
+      "canonical_name": "Buenos Aires",
+      "display_name": "Buenos Aires, Argentina",
+      "city": "Buenos Aires",
+      "region": "South America",
+      "country": "Argentina",
+      "hero_media_id": "5ff1429e-fc4c-47fa-96c2-f5f1ce386942",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "antarctica",
+      "requested_name": "Punta Arenas",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "68eb4286-c3c6-4249-86f9-54452d5cf2ba",
+      "canonical_name": "Punta Arenas",
+      "display_name": "Punta Arenas, Chile",
+      "city": "Punta Arenas",
+      "region": "Antarctica Gateway",
+      "country": "Chile",
+      "hero_media_id": "17f1d271-c2e1-43a9-9deb-fc2f6c06c8de",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "canada-new-england",
+      "requested_name": "Quebec City",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "17426b65-f40e-48c0-b917-e3191aa6d803",
+      "canonical_name": "Quebec City",
+      "display_name": "Québec City, Canada",
+      "city": "Québec City",
+      "region": "Canada New England",
+      "country": "Canada",
+      "hero_media_id": "2087e4c2-6ce2-431a-a6a5-0a043df5ca9d",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "canada-new-england",
+      "requested_name": "Halifax",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "4d4ba3ef-69f2-4f5e-ae00-7605c71b3c4c",
+      "canonical_name": "Halifax",
+      "display_name": "Halifax, Nova Scotia",
+      "city": "Halifax",
+      "region": "Canada New England",
+      "country": "Canada",
+      "hero_media_id": "61e92c59-a069-4212-b82b-3589d632a1ff",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "canada-new-england",
+      "requested_name": "Boston",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "d6ad1da7-cd34-4551-b06f-0beef5f8e53e",
+      "canonical_name": "Boston",
+      "display_name": "Boston, Massachusetts",
+      "city": "Boston",
+      "region": "North America Atlantic",
+      "country": "United States",
+      "hero_media_id": "03761e18-d176-4979-9922-060ed6ffef63",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "canada-new-england",
+      "requested_name": "Bar Harbor",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "canada-new-england",
+      "requested_name": "Saint John",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "8bdc4ac5-ecf9-45c2-9934-488043db8afc",
+      "canonical_name": "Saint John",
+      "display_name": "Saint John, New Brunswick",
+      "city": "Saint John",
+      "region": "Canada New England",
+      "country": "Canada",
+      "hero_media_id": "6e1edf8e-ac1d-465b-9e92-1fe68d510778",
+      "image_status": "MANUAL",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "canada-new-england",
+      "requested_name": "Sydney (Nova Scotia)",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "859ec3a2-a4b9-4367-8539-e9d1714e88f1",
+      "canonical_name": "Sydney Nova Scotia",
+      "display_name": "Sydney, Nova Scotia",
+      "city": "Sydney",
+      "region": "Canada New England",
+      "country": "Canada",
+      "hero_media_id": "bd785b29-88d9-4238-a648-225fefb17b63",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "canada-new-england",
+      "requested_name": "New York",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "74e6a42d-654c-4d11-9081-ef3f986ec922",
+      "canonical_name": "New York",
+      "display_name": "New York, New York",
+      "city": "New York",
+      "region": "North America Atlantic",
+      "country": "United States",
+      "hero_media_id": "90a2e7ee-4e1d-49b8-a57f-9e8f5f74aeff",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "canada-new-england",
+      "requested_name": "Montreal",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "hawaii",
+      "requested_name": "Honolulu",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "59d6c210-8eb4-4d15-b112-be0312ca402a",
+      "canonical_name": "Honolulu",
+      "display_name": "Honolulu, Hawaii",
+      "city": "Honolulu",
+      "region": "Hawaii",
+      "country": "United States",
+      "hero_media_id": "f0277cfa-bd82-4774-90df-c865543a13c8",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "hawaii",
+      "requested_name": "Maui (Kahului)",
+      "method": "ranked_disambiguated",
+      "resolved": true,
+      "port_id": "105c6614-bfc5-48c9-92f3-1cce279963fc",
+      "canonical_name": "Kahului",
+      "display_name": "Kahului, Maui",
+      "city": "Kahului",
+      "region": "Hawaii",
+      "country": "United States",
+      "hero_media_id": "8779de7c-0ff2-4791-9a9e-7e0e8a059e68",
+      "image_status": "AUTO_APPROVED",
+      "ranked": [
+        {
+          "id": "105c6614-bfc5-48c9-92f3-1cce279963fc",
+          "name": "Kahului",
+          "score": 40
+        }
+      ],
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "hawaii",
+      "requested_name": "Kona",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "hawaii",
+      "requested_name": "Hilo",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "hawaii",
+      "requested_name": "Nawiliwili (Kauai)",
+      "method": "unresolved",
+      "resolved": false,
+      "candidate_count": 0,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "hawaii",
+      "requested_name": "Vancouver",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "96d097a0-24a8-4388-a463-307f14fed7f3",
+      "canonical_name": "Vancouver",
+      "display_name": "Vancouver, Canada",
+      "city": "Vancouver",
+      "region": "British Columbia",
+      "country": "Canada",
+      "hero_media_id": "4d12bd5f-24a0-4443-bfa9-a5e7be23c50e",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "hawaii",
+      "requested_name": "Los Angeles",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "062b5569-511e-4846-bbf5-7652a05e939e",
+      "canonical_name": "Los Angeles",
+      "display_name": "Los Angeles (San Pedro), USA",
+      "city": "Los Angeles",
+      "region": "California",
+      "country": "United States",
+      "hero_media_id": "b3f4c6b5-239b-4d1f-9419-b300339fc398",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    },
+    {
+      "destination_slug": "hawaii",
+      "requested_name": "San Francisco",
+      "method": "exact_canonical",
+      "resolved": true,
+      "port_id": "9a95490a-cb4d-49df-9f52-97493a21b326",
+      "canonical_name": "San Francisco",
+      "display_name": "San Francisco, California",
+      "city": "San Francisco",
+      "region": "North America Pacific",
+      "country": "United States",
+      "hero_media_id": "82dd5e59-008d-4e45-a72d-27445465c0e7",
+      "image_status": "AUTO_APPROVED",
+      "candidate_count": 1,
+      "matched_key": null
+    }
+  ]
+}

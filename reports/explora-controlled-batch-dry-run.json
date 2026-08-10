@@ -1,0 +1,86 @@
+{
+  "phase": "dry_run",
+  "run_id": "explora-dry-run-2026-08-10T05-36-13-555Z",
+  "run_record_id": null,
+  "trigger_type": "controlled_dry_run",
+  "batch_size": 100,
+  "writes_performed": 0,
+  "result_ok": true,
+  "summary": {
+    "line_slug": "explora-journeys",
+    "run_id": "explora-dry-run-2026-08-10T05-36-13-555Z",
+    "run_type": "explora_weekly_maintenance",
+    "trigger_type": "controlled_dry_run",
+    "dry_run": true,
+    "official_source_total": 535,
+    "eligible_total": 299,
+    "active_production_total": 1,
+    "proposed_inserts": 299,
+    "proposed_updates": 0,
+    "unchanged": 0,
+    "recognised_existing_eligible": 0,
+    "outstanding_eligible_inserts": 299,
+    "source_absent_active": 0,
+    "source_absent_sailing_ids": [],
+    "reconciliation_arithmetic_ok": true,
+    "all_active_recognised_in_eligible_source": false,
+    "non_cruise_excluded": 0,
+    "incomplete_skipped": 85,
+    "within_public_cutoff_excluded": 25,
+    "public_booking_cutoff_days": 21,
+    "resolution_rates": {
+      "eligible_total": 299,
+      "ship_resolution_pct": 100,
+      "departure_port_resolution_pct": 100,
+      "destination_resolution_pct": 100,
+      "identity_coverage_pct": 100,
+      "duplicate_official_identities": 0
+    },
+    "quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    },
+    "snapshot_id": "b2eab0daa11cf1da6fb2e18b515c19820ecdc8af5287e015f4fe10f4955e7caa",
+    "weekly_write_cap": 25,
+    "inventory_changed": false
+  },
+  "reconciliation_summary": {
+    "active_production_total": 1,
+    "eligible_total": 299,
+    "recognised_existing_eligible": 0,
+    "outstanding_eligible_inserts": 299,
+    "proposed_updates": 0,
+    "source_absent_active": 0,
+    "reconciliation_arithmetic_ok": true
+  },
+  "quality_gate": {
+    "passed": true,
+    "failures": [],
+    "blocked": false
+  },
+  "write_result": null,
+  "rollback_manifest_id": null,
+  "counts_before": {
+    "explora_active": 1,
+    "princess_active": 1502,
+    "hal_active": 824,
+    "celebrity_active": 1173
+  },
+  "counts_after": {
+    "explora_active": 1,
+    "princess_active": 1502,
+    "hal_active": 824,
+    "celebrity_active": 1173
+  },
+  "inserted_ids": [],
+  "inserted_verification": {
+    "ok": true,
+    "issues": [],
+    "minDeparture": "2026-09-01"
+  },
+  "explora_active_delta": 0,
+  "princess_unchanged": true,
+  "hal_unchanged": true,
+  "celebrity_unchanged": true
+}

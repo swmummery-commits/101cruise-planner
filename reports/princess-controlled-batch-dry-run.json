@@ -1,31 +1,35 @@
 {
   "phase": "dry_run",
-  "run_id": "princess-dry-run-2026-08-07T03-54-35-555Z",
+  "run_id": "princess-dry-run-2026-08-08T02-57-00-584Z",
   "run_record_id": null,
-  "trigger_type": "controlled_dry_run",
+  "trigger_type": "catch_up_dry_run",
   "next_batch": false,
   "max_writes": 20,
   "result_ok": true,
   "summary": {
     "line_slug": "princess-cruises",
-    "run_id": "princess-dry-run-2026-08-07T03-54-35-555Z",
+    "run_id": "princess-dry-run-2026-08-08T02-57-00-584Z",
     "run_type": "princess_weekly_maintenance",
-    "trigger_type": "controlled_dry_run",
+    "trigger_type": "catch_up_dry_run",
     "dry_run": true,
-    "official_source_total": 1005,
-    "eligible_total": 1514,
-    "active_production_total": 20,
-    "proposed_inserts": 1494,
+    "official_source_total": 1004,
+    "eligible_total": 1506,
+    "active_production_total": 416,
+    "proposed_inserts": 1090,
     "proposed_updates": 0,
-    "unchanged": 20,
+    "unchanged": 416,
+    "recognised_existing_eligible": 416,
+    "outstanding_eligible_inserts": 1090,
     "source_absent_active": 0,
     "source_absent_sailing_ids": [],
+    "reconciliation_arithmetic_ok": true,
+    "all_active_recognised_in_eligible_source": true,
     "cruisetours_excluded": 0,
-    "incomplete_skipped": 391,
-    "within_public_cutoff_excluded": 64,
+    "incomplete_skipped": 390,
+    "within_public_cutoff_excluded": 72,
     "public_booking_cutoff_days": 21,
     "resolution_rates": {
-      "eligible_total": 1514,
+      "eligible_total": 1506,
       "ship_resolution_pct": 100,
       "departure_port_resolution_pct": 100,
       "destination_resolution_pct": 100,
@@ -37,8 +41,19 @@
       "failures": [],
       "blocked": false
     },
-    "snapshot_id": "a5af27eebc5d279aef857eb5beeabf8656fd68b1d31a0c270cd97472bdbef7e8",
+    "snapshot_id": "4d0e8a1fae17fc802568f5d894ef397666ecb99e064a5b56cdbdff23419bf399",
     "inventory_changed": false
+  },
+  "reconciliation_summary": {
+    "active_production_total": 416,
+    "eligible_total": 1506,
+    "recognised_existing_eligible": 416,
+    "outstanding_eligible_inserts": 1090,
+    "proposed_updates": 0,
+    "source_absent_active": 0,
+    "writes_executed": 0,
+    "reconciliation_arithmetic_ok": true,
+    "all_active_recognised_in_eligible_source": true
   },
   "quality_gate": {
     "passed": true,
@@ -48,22 +63,22 @@
   "write_result": null,
   "rollback_manifest_id": null,
   "counts_before": {
-    "princess_active": 20,
-    "hal_active": 831,
-    "celebrity_active": 1204,
-    "manifests": 3
+    "princess_active": 416,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 10
   },
   "counts_after": {
-    "princess_active": 20,
-    "hal_active": 831,
-    "celebrity_active": 1204,
-    "manifests": 3
+    "princess_active": 416,
+    "hal_active": 824,
+    "celebrity_active": 1172,
+    "manifests": 10
   },
   "inserted_ids": [],
   "inserted_verification": {
     "ok": true,
     "issues": [],
-    "minDeparture": "2026-08-29"
+    "minDeparture": "2026-08-30"
   },
   "princess_active_delta": 0,
   "hal_unchanged": true,
