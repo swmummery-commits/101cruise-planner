@@ -1,58 +1,247 @@
 (() => {
   "use strict";
-  const PAGE_COUNT=36, PAGE_PATH="./pages", PAGE_EXT="webp", MOBILE_BREAKPOINT=800;
-  const book=document.getElementById("book"),leftSlot=document.getElementById("leftSlot"),
-  rightSlot=document.getElementById("rightSlot"),singleSlot=document.getElementById("singleSlot"),
-  prevButton=document.getElementById("prevButton"),nextButton=document.getElementById("nextButton"),
-  stagePrev=document.getElementById("stagePrev"),stageNext=document.getElementById("stageNext"),
-  fullscreenButton=document.getElementById("fullscreenButton"),viewerStage=document.getElementById("viewerStage"),
-  pageStatus=document.getElementById("pageStatus"),progressBar=document.getElementById("progressBar");
-  let currentView=0,touchStartX=null,touchStartY=null;
-  const isMobile=()=>matchMedia(`(max-width:${MOBILE_BREAKPOINT}px)`).matches;
-  const desktopViews=()=>{const v=[[1]];for(let p=2;p<=PAGE_COUNT-1;p+=2)v.push([p,p+1]);v.push([PAGE_COUNT]);return v};
-  const DESKTOP_VIEWS=desktopViews();
-  const totalViews=()=>isMobile()?PAGE_COUNT:DESKTOP_VIEWS.length;
-  const pageFile=p=>`${PAGE_PATH}/page-${String(p).padStart(2,"0")}.${PAGE_EXT}`;
-  const currentPages=()=>isMobile()?[currentView+1]:DESKTOP_VIEWS[currentView];
 
-  function makePage(p){
-    const img=new Image();img.className="page-image";img.alt=`101cruise Digital Guide page ${p}`;img.decoding="async";img.draggable=false;
-    const wrap=document.createElement("div");wrap.style.position="absolute";wrap.style.inset="0";
-    const loading=document.createElement("div");loading.className="page-loading";loading.textContent=`Loading page ${p}…`;wrap.appendChild(loading);
-    img.onload=()=>wrap.replaceChildren(img);
-    img.onerror=()=>{const e=document.createElement("div");e.className="page-error";e.innerHTML=`Page ${p} artwork is not installed yet.<code>${pageFile(p)}</code>`;wrap.replaceChildren(e)};
-    img.src=pageFile(p);return wrap;
-  }
-  function clear(){leftSlot.replaceChildren();rightSlot.replaceChildren();singleSlot.replaceChildren()}
-  function single(p){book.classList.add("single-mode");clear();singleSlot.appendChild(makePage(p))}
-  function spread(a,b){book.classList.remove("single-mode");clear();leftSlot.appendChild(makePage(a));rightSlot.appendChild(makePage(b))}
-  function status(){
-    const p=currentPages();pageStatus.textContent=isMobile()?`Page ${p[0]} / ${PAGE_COUNT}`:
-      (p.length===1&&p[0]===1)?"Cover":(p.length===1&&p[0]===PAGE_COUNT)?"Back cover":`Pages ${p[0]}–${p[1]}`;
-    const max=totalViews()-1;progressBar.style.width=`${max?currentView/max*100:100}%`;
-    prevButton.disabled=currentView===0;nextButton.disabled=currentView===totalViews()-1;
-  }
-  function preload(p){if(p<1||p>PAGE_COUNT)return;const i=new Image();i.src=pageFile(p)}
-  function preloadNearby(){const p=currentPages(),first=p[0],last=p[p.length-1];for(let o=1;o<=3;o++){preload(first-o);preload(last+o)}}
-  function animate(dir){const c=dir>0?"is-forward":"is-back";book.classList.remove("is-forward","is-back");void book.offsetWidth;book.classList.add(c);setTimeout(()=>book.classList.remove(c),320)}
-  function render(dir=0){const p=currentPages();if(isMobile()||p.length===1)single(p[0]);else spread(p[0],p[1]);status();preloadNearby();if(dir)animate(dir)}
-  function next(){if(currentView>=totalViews()-1)return;currentView++;render(1)}
-  function prev(){if(currentView<=0)return;currentView--;render(-1)}
-  prevButton.onclick=prev;nextButton.onclick=next;stagePrev.onclick=prev;stageNext.onclick=next;
-  document.addEventListener("keydown",e=>{if(["ArrowRight","PageDown"," "].includes(e.key)){e.preventDefault();next()}if(["ArrowLeft","PageUp"].includes(e.key)){e.preventDefault();prev()}if(e.key==="Home"){currentView=0;render(-1)}if(e.key==="End"){currentView=totalViews()-1;render(1)}});
-  viewerStage.addEventListener("touchstart",e=>{const t=e.changedTouches[0];touchStartX=t.clientX;touchStartY=t.clientY},{passive:true});
-  viewerStage.addEventListener("touchend",e=>{if(touchStartX===null)return;const t=e.changedTouches[0],dx=t.clientX-touchStartX,dy=t.clientY-touchStartY;touchStartX=touchStartY=null;if(Math.abs(dx)<48||Math.abs(dx)<Math.abs(dy))return;dx<0?next():prev()},{passive:true});
-  fullscreenButton.onclick=async()=>{try{document.fullscreenElement?await document.exitFullscreen():await document.documentElement.requestFullscreen()}catch{}};
-  document.addEventListener("fullscreenchange",()=>fullscreenButton.textContent=document.fullscreenElement?"Exit full screen":"Full screen");
-  document.addEventListener("contextmenu",e=>{if(e.target.closest(".viewer-stage"))e.preventDefault()});
-  document.addEventListener("dragstart",e=>{if(e.target.closest(".viewer-stage"))e.preventDefault()});
+  const PAGE_COUNT = 36;
+  const PAGE_PATH = "./pages";
+  const PAGE_EXT = "webp";
+  const MOBILE_BREAKPOINT = 800;
 
-  let wasMobile=isMobile(),timer;
-  addEventListener("resize",()=>{clearTimeout(timer);timer=setTimeout(()=>{
-    const now=isMobile();if(now===wasMobile)return;
-    const oldPages=wasMobile?[currentView+1]:DESKTOP_VIEWS[currentView],page=oldPages[0];
-    if(now)currentView=page-1;else currentView=page===1?0:page===PAGE_COUNT?DESKTOP_VIEWS.length-1:Math.ceil((page-1)/2);
-    wasMobile=now;render();
-  },120)});
+  const book = document.getElementById("book");
+  const leftSlot = document.getElementById("leftSlot");
+  const rightSlot = document.getElementById("rightSlot");
+  const singleSlot = document.getElementById("singleSlot");
+  const prevButton = document.getElementById("prevButton");
+  const nextButton = document.getElementById("nextButton");
+  const stagePrev = document.getElementById("stagePrev");
+  const stageNext = document.getElementById("stageNext");
+  const fullscreenButton = document.getElementById("fullscreenButton");
+  const viewerStage = document.getElementById("viewerStage");
+  const pageStatus = document.getElementById("pageStatus");
+  const progressBar = document.getElementById("progressBar");
+
+  let currentView = 0;
+  let touchStartX = null;
+  let touchStartY = null;
+  let busy = false;
+
+  const isMobile = () => matchMedia(`(max-width:${MOBILE_BREAKPOINT}px)`).matches;
+  const desktopViews = () => {
+    const views = [[1]];
+    for (let page = 2; page <= PAGE_COUNT - 1; page += 2) views.push([page, page + 1]);
+    views.push([PAGE_COUNT]);
+    return views;
+  };
+  const DESKTOP_VIEWS = desktopViews();
+  const totalViews = () => (isMobile() ? PAGE_COUNT : DESKTOP_VIEWS.length);
+  const currentPages = () => (isMobile() ? [currentView + 1] : DESKTOP_VIEWS[currentView]);
+  const pageFile = (page) => `${PAGE_PATH}/page-${String(page).padStart(2, "0")}.${PAGE_EXT}`;
+
+  function makePage(page) {
+    const img = new Image();
+    img.className = "page-image";
+    img.alt = `101cruise Digital Guide page ${page}`;
+    img.decoding = "async";
+    img.draggable = false;
+
+    const wrap = document.createElement("div");
+    wrap.className = "page-art";
+
+    const loading = document.createElement("div");
+    loading.className = "page-loading";
+    loading.textContent = `Loading page ${page}…`;
+    wrap.appendChild(loading);
+
+    img.onload = () => wrap.replaceChildren(img);
+    img.onerror = () => {
+      const error = document.createElement("div");
+      error.className = "page-error";
+      error.textContent = `Page ${page} could not be loaded.`;
+      wrap.replaceChildren(error);
+    };
+    img.src = pageFile(page);
+    return wrap;
+  }
+
+  function clearSlots() {
+    leftSlot.replaceChildren();
+    rightSlot.replaceChildren();
+    singleSlot.replaceChildren();
+  }
+
+  function renderSingle(page) {
+    book.classList.add("single-mode");
+    clearSlots();
+    singleSlot.appendChild(makePage(page));
+  }
+
+  function renderSpread(leftPage, rightPage) {
+    book.classList.remove("single-mode");
+    clearSlots();
+    leftSlot.appendChild(makePage(leftPage));
+    rightSlot.appendChild(makePage(rightPage));
+  }
+
+  function setBookMode() {
+    const pages = currentPages();
+    if (!isMobile() && pages.length === 2) book.dataset.mode = "spread";
+    else if (pages[0] === 1) book.dataset.mode = "cover";
+    else if (pages[pages.length - 1] === PAGE_COUNT) book.dataset.mode = "back";
+    else book.dataset.mode = "single";
+  }
+
+  function updateBookEdges() {
+    if (isMobile()) return;
+    const max = Math.max(1, totalViews() - 1);
+    const progress = currentView / max;
+    const left = 3 + progress * 9;
+    const right = 12 - progress * 9;
+    book.style.setProperty("--left-stack", `${left.toFixed(1)}px`);
+    book.style.setProperty("--right-stack", `${right.toFixed(1)}px`);
+  }
+
+  function updateStatus() {
+    const pages = currentPages();
+    pageStatus.textContent = isMobile()
+      ? `Page ${pages[0]} / ${PAGE_COUNT}`
+      : pages.length === 1 && pages[0] === 1
+        ? "Cover"
+        : pages.length === 1 && pages[0] === PAGE_COUNT
+          ? "Back cover"
+          : `Pages ${pages[0]}–${pages[1]}`;
+
+    const max = totalViews() - 1;
+    progressBar.style.width = `${max ? (currentView / max) * 100 : 100}%`;
+    const atStart = currentView === 0;
+    const atEnd = currentView === max;
+    prevButton.disabled = atStart;
+    nextButton.disabled = atEnd;
+    stagePrev.disabled = atStart;
+    stageNext.disabled = atEnd;
+    updateBookEdges();
+  }
+
+  function preload(page) {
+    if (page < 1 || page > PAGE_COUNT) return;
+    const img = new Image();
+    img.src = pageFile(page);
+  }
+
+  function preloadNearby() {
+    const pages = currentPages();
+    const first = pages[0];
+    const last = pages[pages.length - 1];
+    for (let offset = 1; offset <= 3; offset += 1) {
+      preload(first - offset);
+      preload(last + offset);
+    }
+  }
+
+  function animate(direction) {
+    const className = direction > 0 ? "is-forward" : "is-back";
+    book.classList.remove("is-forward", "is-back");
+    void book.offsetWidth;
+    book.classList.add(className);
+    setTimeout(() => book.classList.remove(className), 300);
+  }
+
+  function render(direction = 0) {
+    const pages = currentPages();
+    if (isMobile() || pages.length === 1) renderSingle(pages[0]);
+    else renderSpread(pages[0], pages[1]);
+    setBookMode();
+    updateStatus();
+    preloadNearby();
+    if (direction) animate(direction);
+  }
+
+  function move(direction) {
+    if (busy) return;
+    const nextView = currentView + direction;
+    if (nextView < 0 || nextView >= totalViews()) return;
+    busy = true;
+    currentView = nextView;
+    render(direction);
+    setTimeout(() => { busy = false; }, 230);
+  }
+
+  prevButton.onclick = () => move(-1);
+  nextButton.onclick = () => move(1);
+  stagePrev.onclick = () => move(-1);
+  stageNext.onclick = () => move(1);
+
+  document.addEventListener("keydown", (event) => {
+    if (["ArrowRight", "PageDown", " "].includes(event.key)) {
+      event.preventDefault();
+      move(1);
+    } else if (["ArrowLeft", "PageUp"].includes(event.key)) {
+      event.preventDefault();
+      move(-1);
+    } else if (event.key === "Home") {
+      currentView = 0;
+      render(-1);
+    } else if (event.key === "End") {
+      currentView = totalViews() - 1;
+      render(1);
+    }
+  });
+
+  viewerStage.addEventListener("touchstart", (event) => {
+    const touch = event.changedTouches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+  }, { passive: true });
+
+  viewerStage.addEventListener("touchend", (event) => {
+    if (touchStartX === null) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - touchStartX;
+    const dy = touch.clientY - touchStartY;
+    touchStartX = null;
+    touchStartY = null;
+    if (Math.abs(dx) >= 48 && Math.abs(dx) > Math.abs(dy)) move(dx < 0 ? 1 : -1);
+  }, { passive: true });
+
+  fullscreenButton.onclick = async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen();
+    } catch (_) {}
+  };
+
+  document.addEventListener("fullscreenchange", () => {
+    fullscreenButton.textContent = document.fullscreenElement ? "Exit full screen" : "Full screen";
+  });
+
+  document.addEventListener("contextmenu", (event) => {
+    if (event.target.closest(".viewer-stage")) event.preventDefault();
+  });
+  document.addEventListener("dragstart", (event) => {
+    if (event.target.closest(".viewer-stage")) event.preventDefault();
+  });
+
+  let wasMobile = isMobile();
+  let resizeTimer;
+  addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      const nowMobile = isMobile();
+      if (nowMobile === wasMobile) {
+        updateBookEdges();
+        return;
+      }
+      const oldPages = wasMobile ? [currentView + 1] : DESKTOP_VIEWS[currentView];
+      const page = oldPages[0];
+      currentView = nowMobile
+        ? page - 1
+        : page === 1
+          ? 0
+          : page === PAGE_COUNT
+            ? DESKTOP_VIEWS.length - 1
+            : Math.ceil((page - 1) / 2);
+      wasMobile = nowMobile;
+      render();
+    }, 100);
+  });
+
   render();
 })();
