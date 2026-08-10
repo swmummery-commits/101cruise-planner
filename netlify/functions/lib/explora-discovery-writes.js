@@ -327,15 +327,49 @@ async function applyExploraBatchWrites({
         prevRecord: action === "update_exact_legacy_match" ? existing : null
       });
       writesRemaining -= 1;
-      if (result.created) stats.inserted += 1;
+
+      // official_sailing_id_only clears prev when the legacy row has a null sailing id, so an
+      // intended legacy update can insert a canonical row beside the orphan. Retire the orphan.
+      let legacySuperseded = false;
+      if (
+        action === "update_exact_legacy_match" &&
+        result.created &&
+        existing?.id &&
+        result.row?.id &&
+        existing.id !== result.row.id &&
+        supabase
+      ) {
+        await supabase(`discovered_cruises?id=eq.${encodeURIComponent(existing.id)}`, {
+          method: "PATCH",
+          headers: { Prefer: "return=minimal" },
+          body: JSON.stringify({
+            status: "ignored",
+            review_reason: "explora_legacy_superseded_by_official_sailing_record",
+            raw_extract: {
+              ...(existing.raw_extract || {}),
+              explora_legacy_remediation: {
+                at: new Date().toISOString(),
+                reason: "update_exact_legacy_match_inserted_under_official_sailing_id_only",
+                superseded_by_discovered_cruise_id: result.row.id,
+                official_sailing_id: candidate.official_sailing_id,
+                run_id: runId || null
+              }
+            }
+          })
+        });
+        legacySuperseded = true;
+      }
+
+      if (result.created && !legacySuperseded) stats.inserted += 1;
       else stats.updated += 1;
       stats.write_details.push({
         discovered_cruise_id: result.row?.id || null,
         explora_sailing_id: candidate.official_sailing_id,
         official_sailing_id: candidate.official_sailing_id,
         proposed_action: action,
-        result_action: result.created ? "inserted" : "updated",
-        created: result.created === true,
+        result_action: legacySuperseded ? "updated_via_insert_and_legacy_retire" : result.created ? "inserted" : "updated",
+        created: result.created === true && !legacySuperseded,
+        legacy_superseded_id: legacySuperseded ? existing.id : null,
         rollback_before: before
       });
     } catch (error) {

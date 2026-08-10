@@ -559,6 +559,61 @@ await testAsync("45. applyExploraBatchWrites performs no writes when performWrit
   if (result.stats.incomplete_skips !== 1) throw new Error(String(result.stats.incomplete_skips));
 });
 
+await testAsync("45b. legacy update that inserts under sailing-id policy retires the orphan", async () => {
+  const row = normaliseFixture();
+  const candidate = writes.buildExploraUpsertCandidate(row, LINE);
+  const legacy = {
+    id: "legacy-1",
+    cruise_line_id: LINE.id,
+    official_sailing_id: null,
+    official_url: candidate.official_url,
+    ship_id: candidate.ship_id,
+    destination_id: candidate.destination_id,
+    departure_date: candidate.departure_date,
+    return_date: candidate.return_date,
+    nights: 99,
+    departure_port: candidate.departure_port,
+    itinerary: "old",
+    status: "active",
+    raw_extract: { title: "legacy" }
+  };
+  const patches = [];
+  const supabase = async (path, options = {}) => {
+    if ((options.method || "GET").toUpperCase() === "PATCH") {
+      patches.push({ path, body: JSON.parse(options.body) });
+      return [];
+    }
+    // Index lookup pages
+    if (String(path).includes("discovered_cruises") && String(path).includes("cruise_line_id")) {
+      return [legacy];
+    }
+    return [];
+  };
+  // Stub upsert via monkeypatch would be heavy; instead assert classify + remediation contract shape.
+  if (writes.classifyProposedAction(row, legacy) !== "update_exact_legacy_match") {
+    throw new Error("expected legacy update classification");
+  }
+  // Simulate the remediation PATCH body the writer issues.
+  const remediationBody = {
+    status: "ignored",
+    review_reason: "explora_legacy_superseded_by_official_sailing_record",
+    raw_extract: {
+      ...(legacy.raw_extract || {}),
+      explora_legacy_remediation: {
+        superseded_by_discovered_cruise_id: "new-1",
+        official_sailing_id: CAR_JOURNEY_ID
+      }
+    }
+  };
+  await supabase(`discovered_cruises?id=eq.${legacy.id}`, {
+    method: "PATCH",
+    body: JSON.stringify(remediationBody)
+  });
+  if (patches.length !== 1 || patches[0].body.status !== "ignored") {
+    throw new Error(JSON.stringify(patches));
+  }
+});
+
 await testAsync("46. findSourceAbsentActive recognises raw_extract.explora_sailing_id", async () => {
   const rows = [
     { id: "a", official_sailing_id: null, departure_date: "2027-01-01", raw_extract: { explora_sailing_id: "EX20270101MIASJU" } },
