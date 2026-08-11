@@ -1,0 +1,102 @@
+/* 101cruise guide: stable full-spread footprint for front/back covers */
+
+@media (min-width: 801px) {
+  /* Keep the overall book footprint the same size as an open spread.
+     Only the visible cover occupies half of it. This removes the size jump
+     between the closed cover and pages 2–3. */
+  .book.single-mode[data-mode="cover"],
+  .book.single-mode[data-mode="back"] {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: min(calc((100dvh - 132px) * (2960 / 2100)), calc(100vw - 190px)) !important;
+    aspect-ratio: 2960 / 2100 !important;
+  }
+
+  .book.single-mode[data-mode="cover"] .single-slot,
+  .book.single-mode[data-mode="back"] .single-slot {
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 50% !important;
+    height: 100% !important;
+    display: block !important;
+  }
+
+  /* Front cover is the right-hand board, hinged at the centre spine. */
+  .book.single-mode[data-mode="cover"] .single-slot {
+    left: auto !important;
+    right: 0 !important;
+    transform-origin: left center !important;
+  }
+
+  /* Back cover finishes as the left-hand board, hinged at the centre spine. */
+  .book.single-mode[data-mode="back"] .single-slot {
+    left: 0 !important;
+    right: auto !important;
+    transform-origin: right center !important;
+  }
+
+  /* Replace the old centred-cover animation. The cover now swings naturally
+     from the right-hand side towards the left around the centre spine. */
+  .book[data-mode="cover"].cover-opening .single-slot {
+    transform-origin: left center !important;
+    animation: guideFrontCoverOpen 650ms cubic-bezier(.20,.62,.24,1) forwards !important;
+    will-change: transform, opacity;
+  }
+
+  @keyframes guideFrontCoverOpen {
+    0% {
+      transform: rotateY(0deg);
+      opacity: 1;
+    }
+    72% {
+      transform: rotateY(-70deg);
+      opacity: 1;
+    }
+    94% {
+      transform: rotateY(-88deg);
+      opacity: .96;
+    }
+    100% {
+      transform: rotateY(-92deg);
+      opacity: 0;
+    }
+  }
+
+  /* When returning from pages 2–3, let the front cover close back onto
+     the right-hand side instead of simply appearing there. */
+  .book.single-mode[data-mode="cover"].is-back {
+    animation: none !important;
+  }
+  .book.single-mode[data-mode="cover"].is-back .single-slot {
+    animation: guideFrontCoverClose 340ms cubic-bezier(.24,.02,.24,1) forwards !important;
+  }
+  @keyframes guideFrontCoverClose {
+    from {
+      transform: rotateY(-88deg);
+      opacity: .12;
+    }
+    to {
+      transform: rotateY(0deg);
+      opacity: 1;
+    }
+  }
+
+  /* The final back cover closes onto the left-hand side from the centre. */
+  .book.single-mode[data-mode="back"].is-forward {
+    animation: none !important;
+  }
+  .book.single-mode[data-mode="back"].is-forward .single-slot {
+    animation: guideBackCoverClose 340ms cubic-bezier(.24,.02,.24,1) forwards !important;
+  }
+  @keyframes guideBackCoverClose {
+    from {
+      transform: rotateY(88deg);
+      opacity: .12;
+    }
+    to {
+      transform: rotateY(0deg);
+      opacity: 1;
+    }
+  }
+}
