@@ -92,7 +92,10 @@
 
   function holdSuppress() {
     book.classList.add("physical-cover-suppress");
-    setTimeout(() => book.classList.remove("physical-cover-suppress"), TURN_MS + 520);
+    // Long enough to cover both the physical 650 ms turn and viewer-v3's
+    // short fallback animation, even for transitions where the real state
+    // change is intentionally delayed until the physical leaf has landed.
+    setTimeout(() => book.classList.remove("physical-cover-suppress"), 1900);
   }
 
   function finishAfter(ms, fn) {
