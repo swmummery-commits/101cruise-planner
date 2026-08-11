@@ -1,12 +1,14 @@
 (() => {
   "use strict";
 
-  const PAGE_COUNT = 36;
+  const PAGE_COUNT = 40;
   const PAGE_PATH = "./pages";
   const PAGE_EXT = "webp";
   const MOBILE_BREAKPOINT = 800;
   const HALF_TURN_MS = 460;
-  const BUILD_ID = "20260810-1640";
+  // One fresh cache key per viewer load. This prevents Safari/browser caches
+  // from showing an older WebP after a page file has been replaced in GitHub.
+  const BUILD_ID = Date.now().toString(36);
 
   const book = document.getElementById("book");
   const leftSlot = document.getElementById("leftSlot");
