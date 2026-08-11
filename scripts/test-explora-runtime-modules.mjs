@@ -125,4 +125,32 @@ test("Explora scripts exist", () => {
   }
 });
 
-console.log(`\n${passed} runtime module checks passed`);
+await (async () => {
+  const { buildExploraControlledBatchReportPath } = await import(
+    path.join(root, "scripts/run-explora-first-production-batch.mjs")
+  );
+  test("controlled-batch report paths are unique per run id", () => {
+    const a = buildExploraControlledBatchReportPath(
+      path.join(root, "reports"),
+      "explora-apply-2026-08-10T10-04-57-125Z"
+    );
+    const b = buildExploraControlledBatchReportPath(
+      path.join(root, "reports"),
+      "explora-apply-2026-08-11T08-16-03-366Z"
+    );
+    if (a === b) throw new Error("distinct run ids must produce distinct report paths");
+    if (!a.endsWith("explora-controlled-batch-explora-apply-2026-08-10T10-04-57-125Z.json")) {
+      throw new Error(`unexpected path a: ${a}`);
+    }
+    if (!b.endsWith("explora-controlled-batch-explora-apply-2026-08-11T08-16-03-366Z.json")) {
+      throw new Error(`unexpected path b: ${b}`);
+    }
+    if (path.basename(a) === "explora-controlled-batch-apply.json") {
+      throw new Error("generic apply report filename must not be reused");
+    }
+  });
+  console.log(`\n${passed} runtime module checks passed`);
+})().catch((error) => {
+  console.error(error.message || error);
+  process.exit(1);
+});

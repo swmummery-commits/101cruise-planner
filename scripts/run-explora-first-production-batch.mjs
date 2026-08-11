@@ -56,6 +56,15 @@ const MAX_BATCH_SIZE = 100;
 const APPLY_CONFIRMATION_TOKEN = "EXPLORA-FIRST-PRODUCTION-BATCH";
 const REPORT_DIR = path.join(root, "reports");
 
+/** Unique local report path per controlled-batch run (avoids overwriting prior apply reports). */
+export function buildExploraControlledBatchReportPath(reportDir, runId) {
+  const safeRunId = String(runId || "unknown")
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "unknown";
+  return path.join(reportDir, `explora-controlled-batch-${safeRunId}.json`);
+}
+
 function parseArgs(argv) {
   const args = {
     dryRun: false,
@@ -204,7 +213,7 @@ async function runBatch({ dryRun, apply, idempotency, batchSize, triggerType, ru
   };
 
   fs.mkdirSync(REPORT_DIR, { recursive: true });
-  const reportPath = path.join(REPORT_DIR, `explora-controlled-batch-${runIdSuffix}.json`);
+  const reportPath = buildExploraControlledBatchReportPath(REPORT_DIR, runId);
   fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
   report.report_path = reportPath;
   return report;
@@ -254,7 +263,12 @@ async function main() {
   console.log(JSON.stringify(report, null, 2));
 }
 
-main().catch((err) => {
-  console.error(err.message || err);
-  process.exit(1);
-});
+const isDirectRun =
+  process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isDirectRun) {
+  main().catch((err) => {
+    console.error(err.message || err);
+    process.exit(1);
+  });
+}
