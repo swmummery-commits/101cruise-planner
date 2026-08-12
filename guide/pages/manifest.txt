@@ -1,0 +1,41 @@
+Verified conversion from 101cruise Digital Guide MASTER - Pages 1-40 v1(2).zip
+page-01.webp <- Cover.png
+page-02.webp <- Page 2 - Welcome.png
+page-03.webp <- Page 3 - Welcome Image.png
+page-04.webp <- Page 4 - Meet Paul.png
+page-05.webp <- Page 5 - Paul Facts.png
+page-06.webp <- Page 6 - Holiday Starts Left.png
+page-07.webp <- Page 7 - Holiday Starts Image Right.png
+page-08.webp <- Page 8 - Find the Cruise That Fits Left.png
+page-09.webp <- Page 9 - Find the Cruise That Fits Right.png
+page-10.webp <- Page 10 - Curated Cruise Deals.png
+page-11.webp <- Page 11 - Curated Deals Image.png
+page-12.webp <- Page 12 - Discover Your Match.png
+page-13.webp <- Page 13 - Cruise Finder Screens.png
+page-14.webp <- Page 14 - Experience Makes a Difference.png
+page-15.webp <- Page 15 - Experience Image and Questions.png
+page-16.webp <- Page 16 - More Choice Better Fit.png
+page-17.webp <- Page 17 - Cruise Line Logos.png
+page-18.webp <- Page 18 - Special Pricing.png
+page-19.webp <- Page 19 - Special Pricing Image.png
+page-20.webp <- Page 20 - Virgin Balcony Left.png
+page-21.webp <- Page 21 - Virgin Balcony Right.png
+page-22.webp <- Page 22 - Your Cruise. All in One Place.png
+page-23.webp <- Page 23 - My Cruise Visual.png
+page-24.webp <- Page 24 - Everything You Need.png
+page-25.webp <- Page 25 - My Cruise Features.png
+page-26.webp <- Page 26 - Know Your Ship.png
+page-27.webp <- Page 27 - Your Ship Details.png
+page-28.webp <- Page 28 Atlas Penguins Left.png
+page-29.webp <- Page 29 Atlas Penguins Right.png
+page-30.webp <- Page 30 - Plan The Details.png
+page-31.webp <- Page 31 - Planning Features.png
+page-32.webp <- Page 32 - More Than The Cruise.png
+page-33.webp <- Page 33 - More Than The Cruise Image.png
+page-34.webp <- Page 34 - Destination Reset Left.png
+page-35.webp <- Page 35 - Destination Reset Right.png
+page-36.webp <- Page 36 - Personal Service.png
+page-37.webp <- Page 37 - What People Say Testimonials.png
+page-38.webp <- Page 38 - Closing Hero Left.png
+page-39.webp <- Page 39 - Closing Hero Right.png
+page-40.webp <- Page 40 - Back Cover.png
