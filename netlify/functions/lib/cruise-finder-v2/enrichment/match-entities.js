@@ -66,11 +66,33 @@ function splitCsvLine(line) {
 }
 
 function defaultCataloguePaths() {
-  const root = path.resolve(__dirname, "../../../../../");
+  // Netlify sync vs background bundles can place this module at different depths.
+  // Prefer the first root that actually contains the ports catalogue.
+  const roots = [
+    path.resolve(__dirname, "../../../../../"), // repo root from enrichment/ (local + typical sync)
+    path.resolve(__dirname, "../../../../"),
+    path.resolve(__dirname, "../../../"),
+    path.resolve(__dirname, "../../"),
+    process.env.LAMBDA_TASK_ROOT || "",
+    process.cwd()
+  ].filter(Boolean);
+
+  for (const root of roots) {
+    const portsCsv = path.join(root, "data/ports/ports-catalogue.csv");
+    if (fs.existsSync(portsCsv)) {
+      return {
+        portsCsv,
+        linesCsv: path.join(root, "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv"),
+        shipsCsv: path.join(root, "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv")
+      };
+    }
+  }
+
+  const fallbackRoot = roots[0] || process.cwd();
   return {
-    portsCsv: path.join(root, "data/ports/ports-catalogue.csv"),
-    linesCsv: path.join(root, "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv"),
-    shipsCsv: path.join(root, "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv")
+    portsCsv: path.join(fallbackRoot, "data/ports/ports-catalogue.csv"),
+    linesCsv: path.join(fallbackRoot, "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv"),
+    shipsCsv: path.join(fallbackRoot, "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv")
   };
 }
 

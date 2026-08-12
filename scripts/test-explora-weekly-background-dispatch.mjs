@@ -303,6 +303,21 @@ test("22. duplicate official identity fails quality gate", () => {
   }
 });
 
+test("23. ports catalogue path resolves for Netlify-style roots", () => {
+  const match = require(path.join(root, "netlify/functions/lib/cruise-finder-v2/enrichment/match-entities"));
+  const catalogues = match.loadLocalCatalogues();
+  if (!Array.isArray(catalogues.ports) || catalogues.ports.length < 10) {
+    throw new Error("ports catalogue failed to load");
+  }
+  if (!String(catalogues.paths.portsCsv).includes("ports-catalogue.csv")) {
+    throw new Error(catalogues.paths.portsCsv);
+  }
+  const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
+  if (!toml.includes('data/ports/ports-catalogue.csv')) {
+    throw new Error("background included_files missing ports catalogue");
+  }
+});
+
 console.log(`\n${passed} tests passed, ${failures.length} failed`);
 if (failures.length) {
   console.error(JSON.stringify(failures, null, 2));

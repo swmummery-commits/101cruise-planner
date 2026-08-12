@@ -47,6 +47,12 @@
   # Background worker for Explora weekly maintenance (Netlify background ~15 min).
   # NOT scheduled. Invoked only by the thin launcher (or authorised manual dispatch).
   # Filename -background suffix enables background mode.
+  # Include catalogue CSVs — background bundles do not always preserve repo-relative data paths.
+  included_files = [
+    "data/ports/ports-catalogue.csv",
+    "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv",
+    "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv"
+  ]
 
 [functions."princess-discovery-smoke"]
   timeout = 900
