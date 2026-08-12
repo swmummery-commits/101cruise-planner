@@ -320,6 +320,9 @@ test("26. the Explora cron function is documented but not scheduled", () => {
   if (!schedule) throw new Error("missing schedule entry");
   if (schedule.schedule_registered !== false) throw new Error("Explora must stay unregistered");
   if (schedule.function !== "explora-weekly-maintenance-cron") throw new Error(schedule.function);
+  if (schedule.background_function !== "explora-weekly-maintenance-background") {
+    throw new Error(schedule.background_function);
+  }
   if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.schedule_registered === false) {
     throw new Error("Princess schedule must remain registered");
   }

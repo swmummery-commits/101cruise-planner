@@ -72,6 +72,24 @@ const MODULES = [
   {
     file: "netlify/functions/explora-weekly-maintenance-cron.js",
     exports: ["handler"]
+  },
+  {
+    file: "netlify/functions/explora-weekly-maintenance-background.js",
+    exports: ["handler"]
+  },
+  {
+    file: "netlify/functions/lib/explora-weekly-maintenance-dispatch.js",
+    exports: [
+      "BACKGROUND_FUNCTION_NAME",
+      "LAUNCHER_FUNCTION_NAME",
+      "dispatchExploraWeeklyBackground",
+      "runExploraWeeklyBackgroundMaintenance",
+      "assertCronAuth",
+      "assertLauncherAuth",
+      "resolveDryRun",
+      "resolveMaxWrites",
+      "redactSecrets"
+    ]
   }
 ];
 

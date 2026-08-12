@@ -39,16 +39,17 @@ const MAINTENANCE_SCHEDULES = {
     function: "princess-weekly-maintenance-cron"
   },
   /**
-   * Documented only — the Explora scheduled function is intentionally NOT registered in
-   * netlify.toml. Onboarding runs are manual until the inventory is reconciled.
+   * Documented only — the Explora scheduled launcher is intentionally NOT registered in
+   * netlify.toml until activation. Long-running work runs in the background worker.
    */
   explora_weekly: {
     cron_utc: "0 21 * * 0",
     perth_display: "Monday 05:00 Australia/Perth",
     utc_display: "Sunday 21:00 UTC",
     function: "explora-weekly-maintenance-cron",
+    background_function: "explora-weekly-maintenance-background",
     schedule_registered: false,
-    schedule_hold_reason: "explora_onboarding_manual_only"
+    schedule_hold_reason: "explora_weekly_runtime_hardening_pending_activation"
   },
   daily_expiry: {
     cron_utc: "30 17 * * *",
