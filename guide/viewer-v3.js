@@ -6,8 +6,6 @@
   const PAGE_EXT = "webp";
   const MOBILE_BREAKPOINT = 800;
   const HALF_TURN_MS = 460;
-  // One fresh cache key per viewer load. This prevents Safari/browser caches
-  // from showing an older WebP after a page file has been replaced in GitHub.
   const BUILD_ID = Date.now().toString(36);
 
   const book = document.getElementById("book");
@@ -119,6 +117,14 @@
     setPage(rightSlot, rightPage, ready);
   }
 
+  function prepareTransitionBase(leftPage, rightPage) {
+    book.classList.remove("single-mode");
+    clearSlots();
+    if (leftPage) setPage(leftSlot, leftPage, true);
+    if (rightPage) setPage(rightSlot, rightPage, true);
+    book.dataset.mode = "spread";
+  }
+
   function setBookMode() {
     const pages = currentPages();
     if (!isMobile() && pages.length === 2) book.dataset.mode = "spread";
@@ -201,8 +207,8 @@
     if (direction) fallback(direction);
   }
 
-  function setFlipPhase(side, page, angle) {
-    flipSheet.className = `flip-sheet active half-${side}`;
+  function setFlipPhase(side, page, angle, extraClass = "") {
+    flipSheet.className = `flip-sheet active half-${side}${extraClass ? ` ${extraClass}` : ""}`;
     flipFace.replaceChildren(makePage(page, true));
     flipSheet.style.transition = "none";
     flipSheet.style.webkitTransition = "none";
@@ -245,15 +251,12 @@
       ensurePageLoaded(newPages[1])
     ]);
 
-    // The left page remains in place; the future right page is already underneath.
     setPage(leftSlot, oldPages[0], true);
     setPage(rightSlot, newPages[1], true);
 
-    // First half: old right page closes towards the centre until it is edge-on.
     setFlipPhase("right", oldPages[1], 0);
     await animateFlipTo(-90);
 
-    // Swap artwork only while the sheet is edge-on, then open the new left page.
     setFlipPhase("left", newPages[0], 90);
     await animateFlipTo(0);
 
@@ -275,15 +278,12 @@
       ensurePageLoaded(newPages[1])
     ]);
 
-    // The future left page is already underneath; the right page stays until covered.
     setPage(leftSlot, newPages[0], true);
     setPage(rightSlot, oldPages[1], true);
 
-    // First half: old left page closes towards the centre until it is edge-on.
     setFlipPhase("left", oldPages[0], 0);
     await animateFlipTo(90);
 
-    // Swap artwork at the edge-on point and open the future right page.
     setFlipPhase("right", newPages[1], -90);
     await animateFlipTo(0);
 
@@ -296,16 +296,84 @@
     busy = false;
   }
 
-  function openCover() {
+  async function openFrontCover() {
     busy = true;
-    book.classList.add("cover-opening");
-    setTimeout(() => {
-      book.classList.remove("cover-opening");
-      currentView = 1;
-      render();
-      fallback(1);
-      busy = false;
-    }, 650);
+    await Promise.all([ensurePageLoaded(1), ensurePageLoaded(2), ensurePageLoaded(3)]);
+
+    setFlipPhase("right", 1, 0, "cover-turn");
+    prepareTransitionBase(null, 3);
+    await animateFlipTo(-90);
+
+    setFlipPhase("left", 2, 90, "cover-turn");
+    await animateFlipTo(0);
+
+    currentView = 1;
+    renderSpread(2, 3, true);
+    setBookMode();
+    updateStatus();
+    preloadNearby();
+    resetFlip();
+    busy = false;
+  }
+
+  async function closeFrontCover() {
+    busy = true;
+    await Promise.all([ensurePageLoaded(1), ensurePageLoaded(2), ensurePageLoaded(3)]);
+
+    setFlipPhase("left", 2, 0, "cover-turn");
+    prepareTransitionBase(null, 3);
+    await animateFlipTo(90);
+
+    setFlipPhase("right", 1, -90, "cover-turn");
+    await animateFlipTo(0);
+
+    currentView = 0;
+    renderSingle(1);
+    setBookMode();
+    updateStatus();
+    preloadNearby();
+    resetFlip();
+    busy = false;
+  }
+
+  async function closeBackCover() {
+    busy = true;
+    await Promise.all([ensurePageLoaded(38), ensurePageLoaded(39), ensurePageLoaded(40)]);
+
+    setFlipPhase("right", 39, 0, "cover-turn");
+    prepareTransitionBase(38, null);
+    await animateFlipTo(-90);
+
+    setFlipPhase("left", 40, 90, "cover-turn");
+    await animateFlipTo(0);
+
+    currentView = DESKTOP_VIEWS.length - 1;
+    renderSingle(40);
+    setBookMode();
+    updateStatus();
+    preloadNearby();
+    resetFlip();
+    busy = false;
+  }
+
+  async function openBackCover() {
+    busy = true;
+    await Promise.all([ensurePageLoaded(38), ensurePageLoaded(39), ensurePageLoaded(40)]);
+
+    setFlipPhase("left", 40, 0, "cover-turn");
+    prepareTransitionBase(38, null);
+    await animateFlipTo(90);
+
+    setFlipPhase("right", 39, -90, "cover-turn");
+    await animateFlipTo(0);
+
+    currentView = DESKTOP_VIEWS.length - 2;
+    renderSpread(38, 39, true);
+    setBookMode();
+    updateStatus();
+    preloadNearby();
+    resetFlip();
+    busy = false;
   }
 
   function move(direction) {
@@ -323,7 +391,22 @@
     const newPages = DESKTOP_VIEWS[nextView];
 
     if (direction > 0 && currentView === 0) {
-      openCover();
+      void openFrontCover();
+      return;
+    }
+
+    if (direction < 0 && currentView === 1) {
+      void closeFrontCover();
+      return;
+    }
+
+    if (direction > 0 && newPages.length === 1 && newPages[0] === PAGE_COUNT) {
+      void closeBackCover();
+      return;
+    }
+
+    if (direction < 0 && oldPages.length === 1 && oldPages[0] === PAGE_COUNT) {
+      void openBackCover();
       return;
     }
 
