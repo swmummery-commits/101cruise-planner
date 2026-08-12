@@ -39,8 +39,8 @@ const MAINTENANCE_SCHEDULES = {
     function: "princess-weekly-maintenance-cron"
   },
   /**
-   * Documented only — the Explora scheduled launcher is intentionally NOT registered in
-   * netlify.toml until activation. Long-running work runs in the background worker.
+   * Explora weekly launcher is registered in netlify.toml.
+   * Long-running work runs in the background worker.
    */
   explora_weekly: {
     cron_utc: "0 21 * * 0",
@@ -48,8 +48,7 @@ const MAINTENANCE_SCHEDULES = {
     utc_display: "Sunday 21:00 UTC",
     function: "explora-weekly-maintenance-cron",
     background_function: "explora-weekly-maintenance-background",
-    schedule_registered: false,
-    schedule_hold_reason: "explora_weekly_runtime_hardening_pending_activation"
+    schedule_registered: true
   },
   daily_expiry: {
     cron_utc: "30 17 * * *",

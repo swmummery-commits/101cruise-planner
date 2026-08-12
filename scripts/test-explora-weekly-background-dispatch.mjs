@@ -64,16 +64,21 @@ test("2. background worker module exports handler", () => {
   if (typeof background.handler !== "function") throw new Error("background handler missing");
 });
 
-test("3. schedule remains disabled in MAINTENANCE_SCHEDULES and netlify.toml", () => {
+test("3. schedule is registered on the thin launcher in MAINTENANCE_SCHEDULES and netlify.toml", () => {
   const schedule = maintenance.MAINTENANCE_SCHEDULES.explora_weekly;
-  if (schedule.schedule_registered !== false) throw new Error("schedule_registered must be false");
+  if (schedule.schedule_registered !== true) throw new Error("schedule_registered must be true");
+  if (schedule.cron_utc !== "0 21 * * 0") throw new Error(schedule.cron_utc);
   if (schedule.function !== "explora-weekly-maintenance-cron") throw new Error(schedule.function);
   if (schedule.background_function !== "explora-weekly-maintenance-background") {
     throw new Error(schedule.background_function);
   }
   const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
   const block = toml.match(/\[functions\."explora-weekly-maintenance-cron"\][\s\S]*?(?=\n\[|$)/)?.[0] || "";
-  if (/^\s*schedule\s*=/m.test(block)) throw new Error("live schedule must not be registered");
+  if (!/^\s*schedule\s*=\s*"0 21 \* \* 0"/m.test(block)) {
+    throw new Error("approved schedule must be registered on the thin launcher");
+  }
+  const bgBlock = toml.match(/\[functions\."explora-weekly-maintenance-background"\][\s\S]*?(?=\n\[|$)/)?.[0] || "";
+  if (/^\s*schedule\s*=/m.test(bgBlock)) throw new Error("background must not be scheduled");
   if (!toml.includes("explora-weekly-maintenance-background")) throw new Error("background missing from toml");
 });
 

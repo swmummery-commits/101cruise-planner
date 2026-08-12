@@ -485,8 +485,11 @@ test("39. weekly_maintenance mode is blocked while the reconciliation flag is of
 test("40. Explora weekly reconciliation flag defaults false with its own run type", () => {
   if (maintenance.isExploraWeeklyReconciliationEnabled()) throw new Error("flag enabled");
   if (maintenance.EXPLORA_WEEKLY_MAINTENANCE_RUN_TYPE !== "explora_weekly_maintenance") throw new Error("run type");
-  if (maintenance.MAINTENANCE_SCHEDULES.explora_weekly.schedule_registered !== false) {
-    throw new Error("Explora schedule must stay unregistered");
+  if (maintenance.MAINTENANCE_SCHEDULES.explora_weekly.schedule_registered !== true) {
+    throw new Error("Explora schedule must be registered");
+  }
+  if (maintenance.MAINTENANCE_SCHEDULES.explora_weekly.cron_utc !== "0 21 * * 0") {
+    throw new Error("Explora cron must remain 0 21 * * 0");
   }
 });
 

@@ -37,10 +37,10 @@
   timeout = 900
 
 [functions."explora-weekly-maintenance-cron"]
-  # Thin Scheduled Function launcher — intentionally UNSCHEDULED until activation.
-  # Target slot once enabled: schedule = "0 21 * * 0" (Sunday 21:00 UTC / Monday 05:00 Perth).
+  # Thin Scheduled Function launcher — Sunday 21:00 UTC / Monday 05:00 Australia/Perth.
   # Must stay a short launcher: Netlify Scheduled Functions hard-cap at ~30s.
   # Long-running work is dispatched to explora-weekly-maintenance-background.
+  schedule = "0 21 * * 0"
   timeout = 26
 
 [functions."explora-weekly-maintenance-background"]
