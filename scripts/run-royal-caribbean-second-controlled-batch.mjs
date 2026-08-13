@@ -1,15 +1,12 @@
 #!/usr/bin/env node
 /**
- * Royal Caribbean International — first controlled production batch (exactly 20 cruises).
+ * Royal Caribbean International — second controlled production batch (exactly 100 cruises).
  *
- *   node scripts/run-royal-caribbean-first-controlled-batch.mjs --preflight
- *   node scripts/run-royal-caribbean-first-controlled-batch.mjs --dry-run
- *   node scripts/run-royal-caribbean-first-controlled-batch.mjs --manifest
- *   ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED=true node scripts/run-royal-caribbean-first-controlled-batch.mjs --apply --confirm=ROYAL-CARIBBEAN-FIRST-CONTROLLED-BATCH --manifest-path=reports/...
- *   node scripts/run-royal-caribbean-first-controlled-batch.mjs --full --dry-run-only
- *   ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED=true node scripts/run-royal-caribbean-first-controlled-batch.mjs --full --apply --confirm=ROYAL-CARIBBEAN-FIRST-CONTROLLED-BATCH
+ *   node scripts/run-royal-caribbean-second-controlled-batch.mjs --preflight
+ *   node scripts/run-royal-caribbean-second-controlled-batch.mjs --manifest
+ *   ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED=true node scripts/run-royal-caribbean-second-controlled-batch.mjs --full --apply --confirm=ROYAL-CARIBBEAN-SECOND-CONTROLLED-BATCH
  *
- * Hard limit: MAX 20 inserts. No --limit above 20. No unbounded apply.
+ * Hard limit: MAX 100 inserts. No --limit. No unbounded apply.
  */
 
 import fs from "fs";
@@ -29,32 +26,35 @@ try {
 }
 
 const {
-  createMaintenanceSupabase,
-  getSupabaseConfig
+  createMaintenanceSupabase
 } = require(path.join(root, "scripts/lib/supabase-rest.cjs"));
 const {
   simulateRoyalCaribbeanInventory,
   catalogueDestinations,
-  LINE_SLUG
+  LINE_SLUG,
+  officialProductKey
 } = require(path.join(root, "netlify/functions/lib/royal-caribbean-discovery-adapter"));
 const {
   buildRoyalCaribbeanBatchManifest,
   indexExistingRoyalCaribbeanRecords,
-  applyRoyalCaribbeanBatchWrites
+  applyRoyalCaribbeanBatchWrites,
+  isLegacyHtmlDiscoveryRow
 } = require(path.join(root, "netlify/functions/lib/royal-caribbean-discovery-writes"));
 const {
-  MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
+  MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2,
   RC_LINE_ID,
+  BATCH1_OFFICIAL_SAILING_IDS,
   CONTROLLED_BATCH_PROFILES,
   selectControlledBatchProducts,
   buildFrozenManifest,
-  computeManifestHash,
   computeSourceSnapshotId,
   validateFrozenManifest,
   validateManifestAgainstProduction,
+  concurrencyPreflightManifestIds,
   evaluatePreWriteDryRunGate,
   buildRoyalCaribbeanReconciliationArithmetic,
-  evaluateRoyalCaribbeanDryRunHealth
+  evaluateRoyalCaribbeanDryRunHealth,
+  compareSourceSnapshots
 } = require(path.join(root, "netlify/functions/lib/royal-caribbean-controlled-batch"));
 const {
   resolveRoyalCaribbeanDiscoveryMode,
@@ -64,7 +64,8 @@ const {
 const {
   countGenuineRoyalCaribbeanSailings,
   fetchRoyalCaribbeanRowsByIds,
-  verifyManifestRowsAgainstProduction
+  verifyManifestRowsAgainstProduction,
+  verifyBatch1ProductionRecords
 } = require(path.join(root, "netlify/functions/lib/royal-caribbean-post-write-verification"));
 const { perthCalendarDate } = require(path.join(root, "netlify/functions/lib/public-discovered-cruise-inventory"));
 const { isRoyalCaribbeanWeeklyReconciliationEnabled } = require(path.join(
@@ -73,8 +74,12 @@ const { isRoyalCaribbeanWeeklyReconciliationEnabled } = require(path.join(
 ));
 
 const REPORT_DIR = path.join(root, "reports");
-const APPLY_CONFIRMATION = "ROYAL-CARIBBEAN-FIRST-CONTROLLED-BATCH";
-const PROMPT3_SHA = "d3cd4ca960cac7f401340f15a2b0dd746249e053";
+const BATCH2_PROFILE = CONTROLLED_BATCH_PROFILES.batch2;
+const APPLY_CONFIRMATION = BATCH2_PROFILE.confirm_token;
+const PROMPT4_SHA = "31374b1c59b0ef49f8ce425a94bb7544aa2fc78d";
+const PROMPT4_SOURCE_SNAPSHOT_ID = "5443e05f4fec1eb5";
+const PROMPT4_PREWRITE_PROPOSED_INSERTS = 2984;
+const PROMPT4_POSTWRITE_OUTSTANDING = 2965;
 
 function parseArgs(argv) {
   const args = {
@@ -106,7 +111,7 @@ function parseArgs(argv) {
     if (arg.startsWith("--manifest=")) args.manifestPath = path.resolve(arg.split("=")[1]);
     if (arg.startsWith("--batch-id=")) args.batchId = String(arg.split("=")[1]).trim();
     if (arg.startsWith("--limit=")) {
-      throw new Error("Royal Caribbean controlled batch rejects --limit. Hard maximum is 20.");
+      throw new Error("Royal Caribbean controlled batch rejects --limit. Hard maximum is 100.");
     }
   }
   if (args.full) {
@@ -148,38 +153,39 @@ async function loadLineContext(sb) {
   return { line, destinations: catalogueDestinations(destRows || []) };
 }
 
-async function verifyPrompt3Metadata(sb) {
-  const heroRows = await sb(
-    `ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(
-      RC_LINE_ID
-    )}&name=eq.${encodeURIComponent("Hero of the Seas")}&select=id,name,official_line_ship_id,active,status&limit=5`
-  );
-  const heroExact = (heroRows || []).filter((r) => r.name === "Hero of the Seas");
-  const colonResolve = require(path.join(root, "netlify/functions/lib/royal-caribbean-discovery-adapter"));
-  const { resolveRawPortText, resetPortsCache } = require(path.join(
-    root,
-    "netlify/functions/lib/discovery-departure-port"
-  ));
-  resetPortsCache();
-  const colon = resolveRawPortText("Colón", { sourceField: "royal_caribbean_graphql" });
-  const colonAscii = resolveRawPortText("Colon", { sourceField: "royal_caribbean_graphql" });
-  const colonCode = colonResolve.classifyItineraryStop({ name: "Colón", code: "ONX" });
-  return {
-    hero: {
-      count: heroExact.length,
-      ok: heroExact.length === 1 && heroExact[0].official_line_ship_id === "HE" && heroExact[0].active !== false,
-      record: heroExact[0] || null
-    },
-    colon: {
-      ok:
-        colon.status === "resolved" &&
-        colonAscii.status === "resolved" &&
-        colon.canonicalPortName === colonAscii.canonicalPortName &&
-        colonCode.classification === "alias_resolved",
-      colon,
-      colonAscii,
-      colonCode
+function collectProductionSailingIds(indexes) {
+  const ids = new Set();
+  for (const row of indexes.byProductKey.values()) {
+    if (row?.official_sailing_id && !isLegacyHtmlDiscoveryRow(row)) {
+      ids.add(row.official_sailing_id);
     }
+  }
+  return ids;
+}
+
+function buildDryRunSnapshotSummary(simulation, manifest, arithmetic) {
+  const products = simulation?.products || [];
+  const ocean = products.filter((p) => p.product_type === "ocean_cruise");
+  const eligibleOcean = ocean.filter((p) => p.ocean_bucket === "eligible");
+  return {
+    source_snapshot_id: computeSourceSnapshotId(simulation),
+    sailing_ids: products.map((p) => officialProductKey(p.raw)).filter(Boolean),
+    unique_sailings: products.length,
+    ordinary_ocean: ocean.length,
+    cruisetours_excluded: products.filter((p) => p.product_type === "ocean_cruisetour").length,
+    within_21_day: products.filter((p) => p.product_type === "ocean_cruise" && p.ocean_bucket === "within_cutoff").length,
+    incomplete: ocean.filter((p) => p.ocean_bucket === "incomplete").length,
+    eligible: eligibleOcean.length,
+    proposed_inserts: manifest.products.filter((p) => p.proposed_action === "insert_active").length,
+    recognised_existing: manifest.products.filter((p) =>
+      ["duplicate_skip", "update_exact_legacy_match"].includes(p.proposed_action)
+    ).length,
+    outstanding_eligible: eligibleOcean.filter((p) => {
+      const entry = manifest.products.find((m) => m.stable_identity_key === p.official_sailing_id);
+      return entry?.proposed_action === "insert_active";
+    }).length,
+    proposed_updates: manifest.products.filter((p) => p.proposed_action === "update_exact_legacy_match").length,
+    reconciliation_arithmetic_ok: arithmetic.reconciliation_arithmetic_ok
   };
 }
 
@@ -199,7 +205,7 @@ async function runFreshDryRun(sb, today) {
     cruiseLine: line,
     destinations,
     supabase: sb,
-    runId: `rc-prompt4-prewrite-${Date.now()}`
+    runId: `rc-prompt5-${Date.now()}`
   });
   const ocean = (simulation.products || []).filter((p) => p.product_type === "ocean_cruise");
   const eligibleOcean = ocean.filter((p) => p.ocean_bucket === "eligible");
@@ -232,28 +238,30 @@ async function runFreshDryRun(sb, today) {
   return { line, destinations, ships, simulation, manifest, arithmetic, health, today };
 }
 
-function buildManifestFromDryRun(dryRunResult, batchId) {
+function buildManifestFromDryRun(dryRunResult, batchId, excludeSailingIds) {
   const { line, destinations, simulation, today } = dryRunResult;
-  const indexes = dryRunResult.indexes;
   const selection = selectControlledBatchProducts(simulation.products, {
-    maxWrites: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
-    today
+    maxWrites: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2,
+    today,
+    excludeSailingIds,
+    profile: BATCH2_PROFILE
   });
-  if (selection.selected.length < MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH) {
+  if (selection.selected.length < MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2) {
     throw new Error(
-      `Insufficient eligible candidates for 20-cruise batch: ${selection.selected.length} available`
+      `Insufficient eligible candidates for 100-cruise batch: ${selection.selected.length} available`
     );
   }
   const sourceSnapshotId = computeSourceSnapshotId(simulation);
   const manifest = buildFrozenManifest({
-    selected: selection.selected.slice(0, MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH),
+    selected: selection.selected.slice(0, MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2),
     cruiseLine: line,
     destinations,
     batchId,
     sourceSnapshotId,
     sourceFetchedAt: new Date().toISOString(),
     today,
-    profile: CONTROLLED_BATCH_PROFILES.batch1
+    profile: BATCH2_PROFILE,
+    exclude_overlap_ids: [...BATCH1_OFFICIAL_SAILING_IDS]
   });
   return { manifest, selection, sourceSnapshotId };
 }
@@ -263,12 +271,12 @@ async function main() {
   const startedAt = new Date().toISOString();
   const batchId =
     args.batchId ||
-    `royal-caribbean-batch1-${startedAt.replace(/[:.]/g, "-").slice(0, 19)}`;
+    `royal-caribbean-batch2-${startedAt.replace(/[:.]/g, "-").slice(0, 19)}`;
   const report = {
-    phase: "royal_caribbean_prompt4_controlled_batch",
+    phase: "royal_caribbean_prompt5_controlled_batch",
     started_at: startedAt,
     batch_id: batchId,
-    max_batch_size: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH
+    max_batch_size: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2
   };
 
   report.repository_checkpoint = {
@@ -276,7 +284,7 @@ async function main() {
     head: git("git rev-parse HEAD"),
     origin_main: git("git rev-parse origin/main"),
     local_main: git("git rev-parse main"),
-    prompt3_sha: PROMPT3_SHA,
+    prompt4_sha: PROMPT4_SHA,
     status_sample: git("git status --short").split("\n").slice(0, 15)
   };
 
@@ -294,14 +302,12 @@ async function main() {
         cwd: root,
         encoding: "utf8"
       });
-      const passed = (testOut.match(/(\d+) passed/) || [])[1];
-      report.tests_preflight = { command: "node scripts/test-royal-caribbean-discovery.mjs", passed: Number(passed) };
+      report.tests_preflight = { command: "node scripts/test-royal-caribbean-discovery.mjs", passed: Number((testOut.match(/(\d+) passed/) || [])[1]) };
       const batchOut = execSync("node scripts/test-royal-caribbean-controlled-batch.mjs", {
         cwd: root,
         encoding: "utf8"
       });
-      const batchPassed = (batchOut.match(/(\d+) passed/) || [])[1];
-      report.tests_preflight.controlled_batch_passed = Number(batchPassed);
+      report.tests_preflight.controlled_batch_passed = Number((batchOut.match(/(\d+) passed/) || [])[1]);
     } catch (error) {
       throw new Error(`Royal Caribbean tests failed: ${error.message}`);
     } finally {
@@ -312,26 +318,30 @@ async function main() {
   const sb = createMaintenanceSupabase(root);
   const today = perthCalendarDate();
 
-  if (args.preflight || args.manifest || args.dryRun || args.apply || args.full) {
-    report.metadata_verification = await verifyPrompt3Metadata(sb);
-    if (!report.metadata_verification.hero.ok || !report.metadata_verification.colon.ok) {
-      throw new Error("Prompt 3 metadata verification failed");
+  if (args.preflight || args.dryRun || args.manifest || args.apply || args.full) {
+    report.batch1_integrity = await verifyBatch1ProductionRecords(sb);
+    if (!report.batch1_integrity.ok) {
+      throw new Error(`Batch 1 integrity check failed: ${JSON.stringify(report.batch1_integrity.issues.slice(0, 5))}`);
     }
   }
 
   let dryRunResult = null;
+  let preWriteSnapshot = null;
   if (args.dryRun || args.manifest || args.apply || args.full) {
     dryRunResult = await runFreshDryRun(sb, today);
+    preWriteSnapshot = buildDryRunSnapshotSummary(dryRunResult.simulation, dryRunResult.manifest, dryRunResult.arithmetic);
     report.pre_write_dry_run = {
-      unique_sailings: dryRunResult.simulation.products?.length,
-      ordinary_ocean: dryRunResult.simulation.classification?.ordinary_ocean_cruises,
-      cruisetours_excluded: dryRunResult.simulation.classification?.ocean_cruisetours_excluded,
-      within_21_day: dryRunResult.simulation.time_eligibility?.within_21_day_cutoff,
-      adapter_incomplete: dryRunResult.simulation.products?.filter(
-        (p) => p.product_type === "ocean_cruise" && p.ocean_bucket === "incomplete"
-      ).length,
-      proposed_inserts: dryRunResult.manifest.products.filter((p) => p.proposed_action === "insert_active").length,
-      reconciliation_arithmetic_ok: dryRunResult.arithmetic.reconciliation_arithmetic_ok,
+      source_snapshot_id: preWriteSnapshot.source_snapshot_id,
+      unique_sailings: preWriteSnapshot.unique_sailings,
+      ordinary_ocean: preWriteSnapshot.ordinary_ocean,
+      cruisetours_excluded: preWriteSnapshot.cruisetours_excluded,
+      within_21_day: preWriteSnapshot.within_21_day,
+      incomplete: preWriteSnapshot.incomplete,
+      eligible: preWriteSnapshot.eligible,
+      proposed_inserts: preWriteSnapshot.proposed_inserts,
+      recognised_existing: preWriteSnapshot.recognised_existing,
+      outstanding_eligible: preWriteSnapshot.outstanding_eligible,
+      reconciliation_arithmetic_ok: preWriteSnapshot.reconciliation_arithmetic_ok,
       dry_run_health: dryRunResult.health,
       ship_audit: {
         total: dryRunResult.simulation.ship_audit?.total_source_ships,
@@ -353,16 +363,33 @@ async function main() {
     }
   }
 
+  report.source_drift_since_prompt4 = {
+    prompt4_source_snapshot_id: PROMPT4_SOURCE_SNAPSHOT_ID,
+    prompt4_pre_write_proposed_inserts: PROMPT4_PREWRITE_PROPOSED_INSERTS,
+    prompt4_post_write_outstanding_eligible: PROMPT4_POSTWRITE_OUTSTANDING,
+    current_pre_write_source_snapshot_id: preWriteSnapshot?.source_snapshot_id || null,
+    current_pre_write_proposed_inserts: preWriteSnapshot?.proposed_inserts || null,
+    current_pre_write_outstanding_eligible: preWriteSnapshot?.outstanding_eligible || null,
+    explanation:
+      "Count movement between Prompt 4 and Prompt 5 reflects live Royal Caribbean catalogue changes (source movement) plus the 20 database inserts from Batch 1. Simple subtraction previous_outstanding - 100 is invalid unless the source snapshot is unchanged."
+  };
+
   let manifest = null;
   if (args.manifestPath) {
     manifest = JSON.parse(fs.readFileSync(args.manifestPath, "utf8"));
     report.manifest_path = args.manifestPath;
   } else if (args.manifest || args.apply || args.full) {
     dryRunResult.indexes = await indexExistingRoyalCaribbeanRecords(sb, dryRunResult.line.id);
-    const built = buildManifestFromDryRun(dryRunResult, batchId);
+    const existingIds = collectProductionSailingIds(dryRunResult.indexes);
+    report.production_exclusion = {
+      recognised_existing_count: existingIds.size,
+      batch1_ids_in_production: BATCH1_OFFICIAL_SAILING_IDS.filter((id) => existingIds.has(id)).length
+    };
+    const built = buildManifestFromDryRun(dryRunResult, batchId, existingIds);
     manifest = built.manifest;
     report.batch_selection = {
       eligible_pool_size: built.selection.eligible_pool_size,
+      excluded_existing_count: built.selection.excluded_existing_count,
       composition: built.selection.composition,
       official_sailing_ids: manifest.entries.map((e) => e.official_sailing_id),
       departure_range: {
@@ -380,21 +407,26 @@ async function main() {
   }
 
   if (manifest && (args.manifest || args.apply || args.full)) {
-    dryRunResult = dryRunResult || (await runFreshDryRun(sb, today));
+    const indexes = await indexExistingRoyalCaribbeanRecords(sb, dryRunResult.line.id);
     const preWriteGate = evaluatePreWriteDryRunGate({
       simulation: dryRunResult.simulation,
       manifest,
       arithmetic: dryRunResult.arithmetic,
       health: dryRunResult.health
     });
-    const indexes = await indexExistingRoyalCaribbeanRecords(sb, dryRunResult.line.id);
     const prodValidation = await validateManifestAgainstProduction(manifest, indexes);
-    const manifestValidation = validateFrozenManifest(manifest, { expectedHash: manifest.manifest_hash, today });
+    const manifestValidation = validateFrozenManifest(manifest, {
+      expectedHash: manifest.manifest_hash,
+      today,
+      priorSailingIds: BATCH1_OFFICIAL_SAILING_IDS
+    });
     report.pre_write_gates = {
       ...manifestValidation.gates,
       existing_official_sailing_ids_0: prodValidation.existing_official_sailing_ids === 0,
+      overlap_with_batch1_0: manifestValidation.gates.overlap_with_prior_batch_0,
       dry_run_gate: preWriteGate.passed,
-      production_manifest_gate: prodValidation.passed
+      production_manifest_gate: prodValidation.passed,
+      reconciliation_arithmetic_ok: dryRunResult.arithmetic.reconciliation_arithmetic_ok
     };
     if (!manifestValidation.passed || !prodValidation.passed || !preWriteGate.passed) {
       throw new Error(
@@ -412,8 +444,23 @@ async function main() {
     if (args.confirm !== APPLY_CONFIRMATION) {
       throw new Error(`--confirm=${APPLY_CONFIRMATION} required for --apply`);
     }
+    if (args.confirm === "ROYAL-CARIBBEAN-FIRST-CONTROLLED-BATCH") {
+      throw new Error("Batch 1 confirmation token cannot authorise Batch 2 apply");
+    }
     const modeGate = resolveRoyalCaribbeanDiscoveryMode("controlled_batch");
     assertRoyalCaribbeanWritesAllowed(modeGate);
+
+    const concurrencyIndexes = await indexExistingRoyalCaribbeanRecords(sb, dryRunResult.line.id);
+    const concurrency = await concurrencyPreflightManifestIds(manifest, concurrencyIndexes);
+    report.concurrency_preflight = {
+      existing_manifest_ids: concurrency.existing_official_sailing_ids,
+      passed: concurrency.passed
+    };
+    if (!concurrency.passed) {
+      throw new Error(
+        `Concurrency preflight failed: ${concurrency.existing_official_sailing_ids} manifest IDs already exist — abort before first write`
+      );
+    }
 
     const writeResult = await applyRoyalCaribbeanBatchWrites({
       mode: "controlled_batch",
@@ -422,8 +469,9 @@ async function main() {
       supabase: sb,
       runId: batchId,
       expectedHash: manifest.manifest_hash,
-      expectedCount: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
-      maxWrites: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
+      expectedCount: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2,
+      maxWrites: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2,
+      confirmToken: APPLY_CONFIRMATION,
       performWrites: true
     });
 
@@ -434,7 +482,10 @@ async function main() {
       duplicate_skips: writeResult.stats.duplicate_skips,
       stopped_early: writeResult.stats.stopped_early,
       inserted_ids: writeResult.stats.inserted_ids,
-      write_details: writeResult.stats.write_details
+      write_details: writeResult.stats.write_details,
+      unattempted_ids: manifest.entries
+        .map((e) => e.official_sailing_id)
+        .filter((id) => !writeResult.stats.write_details.some((d) => d.official_sailing_id === id))
     };
 
     manifest.writes_performed = true;
@@ -446,8 +497,8 @@ async function main() {
       generated_at: new Date().toISOString()
     });
 
-    if (writeResult.stats.inserted !== MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH) {
-      throw new Error(`Expected exactly ${MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH} inserts, got ${writeResult.stats.inserted}`);
+    if (writeResult.stats.inserted !== MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2) {
+      throw new Error(`Expected exactly ${MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2} inserts, got ${writeResult.stats.inserted}`);
     }
   }
 
@@ -471,27 +522,29 @@ async function main() {
   }
 
   report.genuine_sailing_count_after = await countGenuineRoyalCaribbeanSailings(sb);
+  report.batch1_integrity_post_apply = await verifyBatch1ProductionRecords(sb);
 
+  let postWriteSnapshot = null;
   if (args.postDryRun || args.full) {
     const postDry = await runFreshDryRun(sb, today);
+    postWriteSnapshot = buildDryRunSnapshotSummary(postDry.simulation, postDry.manifest, postDry.arithmetic);
+    postWriteSnapshot.database_inserts_between_snapshots = MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2;
     report.post_write_dry_run = {
-      recognised_existing_eligible: postDry.manifest.products.filter((p) =>
-        ["duplicate_skip", "update_exact_legacy_match"].includes(p.proposed_action)
-      ).length,
-      outstanding_eligible_inserts: postDry.manifest.products.filter((p) => p.proposed_action === "insert_active")
-        .length,
-      proposed_updates: postDry.manifest.products.filter((p) => p.proposed_action === "update_exact_legacy_match")
-        .length,
+      source_snapshot_id: postWriteSnapshot.source_snapshot_id,
+      recognised_existing_eligible: postWriteSnapshot.recognised_existing,
+      outstanding_eligible_inserts: postWriteSnapshot.outstanding_eligible,
+      proposed_updates: postWriteSnapshot.proposed_updates,
       incomplete_skipped: postDry.manifest.products.filter((p) => p.proposed_action === "incomplete_skip").length,
-      cutoff_skipped: postDry.manifest.products.filter((p) => p.proposed_action === "within_21_day_cutoff_skip")
-        .length,
+      cutoff_skipped: postDry.manifest.products.filter((p) => p.proposed_action === "within_21_day_cutoff_skip").length,
       cruisetour_skipped: postDry.manifest.products.filter((p) => p.proposed_action === "ocean_cruisetour_skip").length,
       reconciliation_arithmetic_ok: postDry.arithmetic.reconciliation_arithmetic_ok,
       duplicate_skips: postDry.manifest.products.filter((p) => p.proposed_action === "duplicate_skip").length
     };
-    writeReport(`royal-caribbean-prompt4-postwrite-dry-run.json`, {
+    report.pre_post_source_drift = compareSourceSnapshots(preWriteSnapshot, postWriteSnapshot);
+    writeReport(`royal-caribbean-prompt5-postwrite-dry-run.json`, {
       generated_at: new Date().toISOString(),
       summary: report.post_write_dry_run,
+      source_drift: report.pre_post_source_drift,
       reconciliation_arithmetic: postDry.arithmetic
     });
   }
@@ -506,8 +559,9 @@ async function main() {
       supabase: sb,
       runId: `${batchId}-idempotency-check`,
       expectedHash: manifest.manifest_hash,
-      expectedCount: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
-      maxWrites: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
+      expectedCount: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2,
+      maxWrites: MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2,
+      confirmToken: APPLY_CONFIRMATION,
       performWrites: false
     });
     report.idempotency_proof = {
@@ -515,14 +569,23 @@ async function main() {
       existing_official_sailing_ids: replayValidation.existing_official_sailing_ids,
       dry_replay_would_insert: idempotentApply.stats.inserted,
       dry_replay_duplicate_aborts: idempotentApply.stats.duplicate_skips,
-      all_20_recognised: replayValidation.existing_official_sailing_ids === MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH
+      all_100_recognised: replayValidation.existing_official_sailing_ids === MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2
     };
   }
 
   report.completed_at = new Date().toISOString();
-  report.recommendation = report.post_write_verification_ok === true ? "READY FOR NEXT CONTROLLED BATCH" : null;
-  const reportPath = writeReport(`royal-caribbean-prompt4-controlled-batch-${batchId}.json`, report);
-  console.log(JSON.stringify({ ok: true, report: reportPath, recommendation: report.recommendation }, null, 2));
+  const inventoryDelta =
+    report.genuine_sailing_count_after.genuine_sailing_count -
+    report.genuine_sailing_count_before.genuine_sailing_count;
+  const allOk =
+    report.post_write_verification_ok === true &&
+    inventoryDelta === MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2 &&
+    report.batch1_integrity_post_apply?.ok === true &&
+    report.idempotency_proof?.all_100_recognised === true;
+  report.recommendation = allOk ? "READY FOR FINAL CATCH-UP PLANNING" : "STOP — BATCH 2 ISSUE";
+
+  const reportPath = writeReport(`royal-caribbean-prompt5-controlled-batch-${batchId}.json`, report);
+  console.log(JSON.stringify({ ok: allOk, report: reportPath, recommendation: report.recommendation }, null, 2));
 }
 
 main().catch((error) => {
