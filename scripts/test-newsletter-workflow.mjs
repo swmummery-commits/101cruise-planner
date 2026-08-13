@@ -41,7 +41,28 @@ const staticChecks = [
   ["slug manual edit guard", /if \(featuredSlugManuallyEdited\) return/.test(adminJs)],
   ["duplicate slug validation message", /already used by/.test(adminJs)],
   ["public API excludes archived", /publication_status=neq\.archived/.test(publicFn)],
-  ["mailchimp validate ignores publicationStatus gate", !/publicationStatus !== "published"/.test(mailchimpJs)]
+  ["mailchimp validate ignores publicationStatus gate", !/publicationStatus !== "published"/.test(mailchimpJs)],
+  ["Add Cruise buttons create a new cruise, not the existing-cruise picker", (() => {
+    const handlers = [...composerJs.matchAll(/onclick="([^"]+)"[^>]*>\+ Add Cruise/g)].map((m) => m[1]);
+    return (
+      handlers.length >= 2 &&
+      handlers.every((handler) => handler === "startNewFeaturedCruise()") &&
+      !handlers.some((handler) => /openAddPicker|confirmAddPicker|addCruiseToIssue/.test(handler))
+    );
+  })()],
+  ["new cruise inherits active newsletter_id from composer", (() => {
+    const fn = adminJs.match(/async function startNewFeaturedCruise\(\)[\s\S]*?^async function /m)?.[0] || "";
+    return (
+      /NewsletterIssueComposer\?\.getSelectedIssue/.test(fn) &&
+      /newsletter_id:\s*composerIssue\?\.id/.test(fn) &&
+      /newsletter_number:\s*composerIssue\?\.number/.test(fn)
+    );
+  })()],
+  ["saveFeaturedCruise persists composer newsletter_id", /const newsletterId = draft\.newsletter_id \|\| composerIssue\?\.id/.test(adminJs) && /newsletter_id:\s*newsletterId/.test(adminJs)],
+  ["startNewFeaturedCruise does not reassign existing featured_cruises rows", (() => {
+    const fn = adminJs.match(/async function startNewFeaturedCruise\(\)[\s\S]*?^async function /m)?.[0] || "";
+    return fn.length > 0 && !/\.from\(["']featured_cruises["']\)/.test(fn) && !/openAddPicker|confirmAddPicker/.test(fn);
+  })()]
 ];
 
 let failed = 0;
@@ -148,6 +169,157 @@ try {
   assert("cleared slug removes CTA", cleared.ok && !/EXPLORE MORE/i.test(cleared.html));
 } catch (error) {
   console.error("FAIL: runtime mailchimp checks —", error.message);
+  failed += 1;
+}
+
+try {
+  const localStore = {};
+  const newsletters = [
+    { id: "nl-79", newsletter_number: 79, newsletter_date: "2026-08-13", design_template: "green-price-cards" },
+    { id: "nl-78", newsletter_number: 78, newsletter_date: "2026-08-06", design_template: "green-price-cards" },
+    { id: "nl-77", newsletter_number: 77, newsletter_date: "2026-07-30", design_template: "green-price-cards" }
+  ];
+  const cruise77 = {
+    id: "cruise-77",
+    headline: "Mediterranean from Newsletter 77",
+    newsletter_id: "nl-77",
+    newsletter_number: 77,
+    newsletter_publication_date: "2026-07-30",
+    display_order: 1,
+    publication_status: "published"
+  };
+  const cruise78 = {
+    id: "cruise-78",
+    headline: "Alaska from Newsletter 78",
+    newsletter_id: "nl-78",
+    newsletter_number: 78,
+    newsletter_publication_date: "2026-08-06",
+    display_order: 1,
+    publication_status: "published"
+  };
+  const snapshot77 = { ...cruise77 };
+  const snapshot78 = { ...cruise78 };
+
+  const composerSandbox = {
+    console,
+    URL,
+    URLSearchParams,
+    Intl,
+    Number,
+    String,
+    Boolean,
+    Array,
+    Object,
+    Math,
+    JSON,
+    RegExp,
+    Error,
+    localStorage: {
+      getItem(key) {
+        return Object.prototype.hasOwnProperty.call(localStore, key) ? localStore[key] : null;
+      },
+      setItem(key, value) {
+        localStore[key] = String(value);
+      },
+      removeItem(key) {
+        delete localStore[key];
+      }
+    },
+    featuredCruises: [cruise77, cruise78],
+    featuredNewsletterDefaults: { newsletter_number: 79, newsletter_publication_date: "2026-08-13" },
+    renderAdmin() {},
+    supabaseClient: {
+      from(table) {
+        const result = { data: table === "newsletters" ? newsletters : [], error: null };
+        const chain = {
+          select() {
+            return chain;
+          },
+          order() {
+            return chain;
+          },
+          eq() {
+            return chain;
+          },
+          in() {
+            return chain;
+          },
+          is() {
+            return chain;
+          },
+          then(resolve, reject) {
+            return Promise.resolve(result).then(resolve, reject);
+          }
+        };
+        return chain;
+      }
+    },
+    module: { exports: {} },
+    exports: {}
+  };
+  composerSandbox.globalThis = composerSandbox;
+  composerSandbox.window = composerSandbox;
+  const composerContext = vm.createContext(composerSandbox);
+  vm.runInContext(composerJs, composerContext, { filename: "js/admin-newsletter-composer.js" });
+
+  const Composer = composerSandbox.NewsletterIssueComposer;
+  await Composer.loadNewslettersFromDb();
+  await Composer.openNewsletterById("nl-79");
+
+  const selected = Composer.getSelectedIssue();
+  assert("active newsletter 79 is selected for inheritance", selected.id === "nl-79" && Number(selected.number) === 79);
+
+  const htmlBefore = Composer.render();
+  const addCruiseHandlers = [...htmlBefore.matchAll(/onclick="([^"]+)"[^>]*>\+ Add Cruise/g)].map((m) => m[1]);
+  assert(
+    "Add Cruise on Newsletter 79 opens new-cruise creation",
+    addCruiseHandlers.length >= 2 && addCruiseHandlers.every((handler) => handler === "startNewFeaturedCruise()")
+  );
+  assert(
+    "Add Cruise does not open the existing-cruise picker",
+    !htmlBefore.includes("openAddPicker") &&
+      !htmlBefore.includes("Select cruises not already in Newsletter") &&
+      !htmlBefore.includes("currently Newsletter 77") &&
+      !htmlBefore.includes("currently Newsletter 78")
+  );
+  assert(
+    "Newsletter 79 starts with no assigned cruises",
+    htmlBefore.includes("No cruises in this newsletter yet") &&
+      !htmlBefore.includes("Mediterranean from Newsletter 77") &&
+      !htmlBefore.includes("Alaska from Newsletter 78")
+  );
+
+  const created = {
+    id: "cruise-79-new",
+    headline: "New Newsletter 79 Test Cruise",
+    newsletter_id: selected.id,
+    newsletter_number: selected.number,
+    newsletter_publication_date: selected.date,
+    display_order: 1,
+    publication_status: "draft"
+  };
+  composerSandbox.featuredCruises.push(created);
+
+  const htmlAfter = Composer.render();
+  assert(
+    "saved cruise appears in Newsletter 79 list",
+    htmlAfter.includes("New Newsletter 79 Test Cruise") && htmlAfter.includes('data-cruise-id="cruise-79-new"')
+  );
+  assert(
+    "previous newsletter cruises were not reassigned",
+    cruise77.newsletter_id === snapshot77.newsletter_id &&
+      cruise77.newsletter_number === snapshot77.newsletter_number &&
+      cruise78.newsletter_id === snapshot78.newsletter_id &&
+      cruise78.newsletter_number === snapshot78.newsletter_number &&
+      !htmlAfter.includes("Mediterranean from Newsletter 77") &&
+      !htmlAfter.includes("Alaska from Newsletter 78")
+  );
+  assert(
+    "created cruise payload is associated with Newsletter 79",
+    created.newsletter_id === "nl-79" && Number(created.newsletter_number) === 79
+  );
+} catch (error) {
+  console.error("FAIL: newsletter Add Cruise workflow —", error.message);
   failed += 1;
 }
 

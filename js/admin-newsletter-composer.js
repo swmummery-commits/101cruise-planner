@@ -1842,13 +1842,13 @@
         <section class="newsletter-issue-section">
           <div class="admin-list-top">
             <h4>Cruises in this newsletter</h4>
-            <button type="button" class="admin-button secondary small" onclick="NewsletterIssueComposer.openAddPicker()" ${issueBusy || !active ? "disabled" : ""}>+ Add Cruise</button>
+            <button type="button" class="admin-button secondary small" onclick="startNewFeaturedCruise()" ${issueBusy || !active ? "disabled" : ""}>+ Add Cruise</button>
           </div>
           ${
             !active
               ? `<p class="admin-muted">Create or open a newsletter to see its cruises here.</p>`
               : !cruises.length
-                ? `<p class="admin-muted">No cruises in this newsletter yet. Use Add Cruise to create or assign one.</p>`
+                ? `<p class="admin-muted">No cruises in this newsletter yet. Use Add Cruise to create a new cruise for this newsletter.</p>`
                 : `<div class="newsletter-issue-list" ondragover="NewsletterIssueComposer.allowDrop(event)" ondrop="NewsletterIssueComposer.onDrop(event)">
                   ${cruises.map(renderCruiseCard).join("")}
                 </div>
