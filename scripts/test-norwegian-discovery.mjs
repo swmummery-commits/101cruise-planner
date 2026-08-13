@@ -223,6 +223,100 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(unknownNorm.ship_resolution.resolved === false, "unknown ship fails closed");
   assert(unknownNorm.failure_reasons.includes("unresolved_ship"), "unknown ship reason recorded");
 
+  const scheduleUrl = (code) =>
+    `https://www.ncl.com/au/en/cruises/${code}/schedule?itineraryCode=${code}`;
+
+  const reconciliationEligible = [
+    { official_sailing_id: "ACTIVE7MIABPIMIA|2027-01-01" },
+    { official_sailing_id: "MATCH7MIABPIMIA|2027-02-01" },
+    { official_sailing_id: "HIDDEN7MIABPIMIA|2027-03-01" },
+    { official_sailing_id: "MISSING7MIABPIMIA|2027-04-01" }
+  ];
+
+  const reconciliationRows = [
+    {
+      id: "db-active",
+      status: "active",
+      official_sailing_id: "ACTIVE7MIABPIMIA|2027-01-01",
+      external_key: "active-key",
+      identity_key: "active-identity",
+      itinerary: "ACTIVE7MIABPIMIA",
+      departure_date: "2027-01-01",
+      official_url: scheduleUrl("ACTIVE7MIABPIMIA")
+    },
+    {
+      id: "db-match",
+      status: "match_required",
+      official_sailing_id: "MATCH7MIABPIMIA|2027-02-01",
+      external_key: "match-key",
+      identity_key: "match-identity",
+      itinerary: "MATCH7MIABPIMIA",
+      departure_date: "2027-02-01",
+      official_url: scheduleUrl("MATCH7MIABPIMIA")
+    },
+    {
+      id: "db-hidden",
+      status: "hidden",
+      official_sailing_id: "HIDDEN7MIABPIMIA|2027-03-01",
+      external_key: "hidden-key",
+      identity_key: "hidden-identity",
+      itinerary: "HIDDEN7MIABPIMIA",
+      departure_date: "2027-03-01",
+      official_url: scheduleUrl("HIDDEN7MIABPIMIA")
+    },
+    {
+      id: "legacy-generic",
+      status: "match_required",
+      official_sailing_id: null,
+      official_url: "https://www.ncl.com/au/en/travel-blog/2026-alaska-cruises",
+      external_key: "legacy-key"
+    }
+  ];
+
+  const reconciliation = await ncl.reconcileProductionReadOnly({
+    cruiseLineId: nclLine.id,
+    eligibleProducts: reconciliationEligible,
+    supabaseQuery: async () => reconciliationRows,
+    today: ctx.today
+  });
+
+  assert(reconciliation.recognised_existing_eligible === 3, "active/match_required/hidden genuine rows recognised");
+  assert(reconciliation.outstanding_eligible_inserts === 1, "missing source voyage remains outstanding");
+  assert(reconciliation.source_recognition.recognised_active === 1, "active recognised separately");
+  assert(reconciliation.source_recognition.recognised_match_required === 1, "match_required recognised separately");
+  assert(reconciliation.source_recognition.legacy_generic_ignored === 1, "legacy generic row excluded");
+  assert(reconciliation.legacy_generic_rows === 1, "legacy generic count isolated");
+  assert(reconciliation.genuine_inventory_rows === 3, "genuine inventory excludes legacy generic");
+  assert(reconciliation.reconciliation_arithmetic.reconciles === true, "recognition + outstanding arithmetic");
+
+  const duplicateRows = [
+    ...reconciliationRows.slice(0, 2),
+    {
+      id: "db-dup",
+      status: "match_required",
+      official_sailing_id: "MATCH7MIABPIMIA|2027-02-01",
+      external_key: "dup-key",
+      identity_key: "dup-identity",
+      itinerary: "MATCH7MIABPIMIA",
+      departure_date: "2027-02-01",
+      official_url: scheduleUrl("MATCH7MIABPIMIA")
+    }
+  ];
+  const duplicateReconciliation = await ncl.reconcileProductionReadOnly({
+    cruiseLineId: nclLine.id,
+    eligibleProducts: reconciliationEligible.slice(0, 2),
+    supabaseQuery: async () => duplicateRows,
+    today: ctx.today
+  });
+  assert(
+    duplicateReconciliation.duplicate_diagnostics.duplicate_official_sailing_ids.length === 1,
+    "duplicate official sailing ids fail reconciliation"
+  );
+  assert(duplicateReconciliation.reconciliation_arithmetic.reconciles === false, "duplicate identities break arithmetic");
+
+  assert(ncl.isGenuineInventoryRow(reconciliationRows[1]), "match_required schedule row is genuine");
+  assert(!ncl.isGenuineInventoryRow(reconciliationRows[3]), "legacy generic row is not genuine");
+
   const simulation = await ncl.simulateNorwegianDiscovery({
     cruiseLine: nclLine,
     ships: nclShips,

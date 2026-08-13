@@ -733,74 +733,175 @@ function isLegacyGenericDiscoveryRow(row) {
   return false;
 }
 
+function isGenuineInventoryRow(row) {
+  if (!row || isLegacyGenericDiscoveryRow(row)) return false;
+  return Boolean(row.official_sailing_id);
+}
+
+function indexGenuineRowsByOfficialId(genuineRows) {
+  const byOfficial = new Map();
+  for (const row of genuineRows || []) {
+    const key = row.official_sailing_id;
+    if (!key) continue;
+    if (!byOfficial.has(key)) byOfficial.set(key, []);
+    byOfficial.get(key).push(row);
+  }
+  return byOfficial;
+}
+
+function findDuplicateIdentityGroups(genuineRows, keySelector) {
+  const groups = new Map();
+  for (const row of genuineRows || []) {
+    const key = keySelector(row);
+    if (!key) continue;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(row.id);
+  }
+  return [...groups.entries()]
+    .filter(([, ids]) => ids.length > 1)
+    .map(([key, ids]) => ({ key, count: ids.length, ids }));
+}
+
 async function reconcileProductionReadOnly({ cruiseLineId, eligibleProducts, supabaseQuery, today = perthCalendarDate() }) {
   const rows =
     (await supabaseQuery?.(
-      `discovered_cruises?cruise_line_id=eq.${cruiseLineId}&select=id,status,departure_date,ship_id,official_sailing_id,official_url,external_key,raw_extract&limit=5000`
+      `discovered_cruises?cruise_line_id=eq.${cruiseLineId}&select=id,status,departure_date,ship_id,official_sailing_id,official_url,external_key,identity_key,itinerary,raw_extract&limit=5000`
     )) || [];
 
   const statusCounts = {};
   for (const row of rows) statusCounts[row.status] = (statusCounts[row.status] || 0) + 1;
 
+  const legacyGenericRows = rows.filter((r) => isLegacyGenericDiscoveryRow(r));
+  const genuineRows = rows.filter((r) => isGenuineInventoryRow(r));
   const activeRows = rows.filter((r) => r.status === "active");
-  const legacyRows = rows.filter((r) => r.status !== "active" || isLegacyGenericDiscoveryRow(r));
-  const genuineActiveRows = activeRows.filter((r) => !isLegacyGenericDiscoveryRow(r));
+  const genuineActiveRows = genuineRows.filter((r) => r.status === "active");
+  const genuineMatchRequiredRows = genuineRows.filter((r) => r.status === "match_required");
+  const genuineHiddenRows = genuineRows.filter((r) => r.status === "hidden");
+  const genuineOtherStatusRows = genuineRows.filter(
+    (r) => !["active", "match_required", "hidden"].includes(r.status)
+  );
 
   const eligibleByOfficial = new Map(
     eligibleProducts.map((p) => [p.official_sailing_id, p]).filter(([key]) => Boolean(key))
   );
-  const productionOfficialIds = new Set(genuineActiveRows.map((r) => r.official_sailing_id).filter(Boolean));
+
+  const genuineByOfficial = indexGenuineRowsByOfficialId(genuineRows);
+  const productionOfficialIds = new Set(genuineByOfficial.keys());
 
   const recognised = eligibleProducts.filter((p) => productionOfficialIds.has(p.official_sailing_id));
   const outstanding = eligibleProducts.filter((p) => !productionOfficialIds.has(p.official_sailing_id));
-  const sourceAbsentActive = genuineActiveRows.filter(
+
+  const recognisedActive = recognised.filter((p) =>
+    (genuineByOfficial.get(p.official_sailing_id) || []).some((r) => r.status === "active")
+  );
+  const recognisedMatchRequired = recognised.filter((p) =>
+    (genuineByOfficial.get(p.official_sailing_id) || []).some((r) => r.status === "match_required")
+  );
+  const recognisedOtherStatuses = recognised.filter((p) => {
+    const statuses = new Set((genuineByOfficial.get(p.official_sailing_id) || []).map((r) => r.status));
+    return !statuses.has("active") && !statuses.has("match_required");
+  });
+
+  const sourceAbsentExisting = genuineRows.filter(
     (r) => r.official_sailing_id && !eligibleByOfficial.has(r.official_sailing_id)
   );
+  const sourceAbsentActive = sourceAbsentExisting.filter((r) => r.status === "active");
 
-  const within21Exclusions = eligibleProducts.length
-    ? 0
-    : 0;
-
-  const classificationCounts = rows.reduce(
-    (acc, row) => {
-      if (row.status !== "active") acc.legacy_or_non_active += 1;
-      else if (isLegacyGenericDiscoveryRow(row)) acc.legacy_generic_active_like += 1;
-      else acc.genuine_active += 1;
-      return acc;
-    },
-    { legacy_or_non_active: 0, legacy_generic_active_like: 0, genuine_active: 0 }
+  const duplicateOfficialSailingIds = findDuplicateIdentityGroups(genuineRows, (r) => r.official_sailing_id);
+  const duplicateExternalKeys = findDuplicateIdentityGroups(genuineRows, (r) => r.external_key);
+  const duplicateItineraryDate = findDuplicateIdentityGroups(
+    genuineRows,
+    (r) => `${r.itinerary || ""}|${r.departure_date || ""}`
   );
+  const duplicateIdentityKeys = findDuplicateIdentityGroups(genuineRows, (r) => r.identity_key);
+
+  const identityCollisions =
+    duplicateOfficialSailingIds.length +
+    duplicateExternalKeys.length +
+    duplicateItineraryDate.length +
+    duplicateIdentityKeys.length;
+
+  const publication_state = {
+    active_public: genuineActiveRows.length,
+    match_required_review: genuineMatchRequiredRows.length,
+    hidden_genuine: genuineHiddenRows.length,
+    other_genuine_statuses: genuineOtherStatusRows.length
+  };
+
+  const source_recognition = {
+    recognised_existing_eligible: recognised.length,
+    recognised_active: recognisedActive.length,
+    recognised_match_required: recognisedMatchRequired.length,
+    recognised_other_statuses: recognisedOtherStatuses.length,
+    outstanding_eligible_inserts: outstanding.length,
+    proposed_updates: 0,
+    source_absent_existing: sourceAbsentExisting.length,
+    source_absent_active: sourceAbsentActive.length,
+    legacy_generic_ignored: legacyGenericRows.length
+  };
+
+  const reconciliation_arithmetic = {
+    eligible_source_ocean_sailings: eligibleProducts.length,
+    recognised_existing_eligible: recognised.length,
+    outstanding_eligible_inserts: outstanding.length,
+    proposed_updates: 0,
+    source_absent_existing: sourceAbsentExisting.length,
+    source_absent_active: sourceAbsentActive.length,
+    legacy_generic_ignored: legacyGenericRows.length,
+    duplicate_identity_groups:
+      duplicateOfficialSailingIds.length +
+      duplicateExternalKeys.length +
+      duplicateItineraryDate.length +
+      duplicateIdentityKeys.length,
+    reconciles:
+      recognised.length + outstanding.length === eligibleProducts.length &&
+      identityCollisions === 0 &&
+      sourceAbsentActive.length <= genuineActiveRows.length
+  };
 
   return {
     status_counts: statusCounts,
     total_rows: rows.length,
     active_count: activeRows.length,
+    genuine_inventory_rows: genuineRows.length,
     genuine_active_count: genuineActiveRows.length,
-    legacy_generic_rows: legacyRows.length,
-    legacy_generic_samples: legacyRows.slice(0, 9).map((r) => ({
+    legacy_generic_rows: legacyGenericRows.length,
+    legacy_generic_samples: legacyGenericRows.slice(0, 9).map((r) => ({
       id: r.id,
       status: r.status,
       official_url: r.official_url,
       official_sailing_id: r.official_sailing_id,
       source_method: r.raw_extract?.discovery_11d2?.source_method || r.raw_extract?.structured_source || null
     })),
+    publication_state,
+    source_recognition,
     recognised_existing_eligible: recognised.length,
     outstanding_eligible_inserts: outstanding.length,
     proposed_updates: 0,
+    source_absent_existing: sourceAbsentExisting.length,
     source_absent_active: sourceAbsentActive.length,
-    within_21_day_exclusions_count: within21Exclusions,
+    within_21_day_exclusions_count: 0,
     non_ocean_exclusions_count: null,
-    classification_counts: classificationCounts,
-    reconciliation_arithmetic: {
-      eligible_source_ocean_sailings: eligibleProducts.length,
-      recognised_existing_eligible: recognised.length,
-      outstanding_eligible_inserts: outstanding.length,
-      proposed_updates: 0,
-      source_absent_active: sourceAbsentActive.length,
-      reconciles:
-        recognised.length + outstanding.length === eligibleProducts.length &&
-        sourceAbsentActive.length <= genuineActiveRows.length
+    duplicate_diagnostics: {
+      duplicate_official_sailing_ids: duplicateOfficialSailingIds,
+      duplicate_external_keys: duplicateExternalKeys,
+      duplicate_itinerary_date: duplicateItineraryDate,
+      duplicate_identity_keys: duplicateIdentityKeys,
+      duplicate_count:
+        duplicateOfficialSailingIds.length +
+        duplicateExternalKeys.length +
+        duplicateItineraryDate.length +
+        duplicateIdentityKeys.length
     },
+    classification_counts: {
+      genuine_inventory: genuineRows.length,
+      legacy_generic: legacyGenericRows.length,
+      active_public: genuineActiveRows.length,
+      match_required_review: genuineMatchRequiredRows.length,
+      hidden_genuine: genuineHiddenRows.length,
+      other_genuine_statuses: genuineOtherStatusRows.length
+    },
+    reconciliation_arithmetic,
     as_of_date: today
   };
 }
@@ -1079,5 +1180,6 @@ module.exports = {
   assessPortOfCallEnrichmentNeeds,
   fetchAndParseCatalogue,
   simulateNorwegianDiscovery,
-  isLegacyGenericDiscoveryRow
+  isLegacyGenericDiscoveryRow,
+  isGenuineInventoryRow
 };
