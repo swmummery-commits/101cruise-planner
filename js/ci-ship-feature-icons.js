@@ -103,6 +103,11 @@
       group: "specialty",
       paths: `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>`
     },
+    dancing: {
+      label: "Dancing",
+      group: "specialty",
+      paths: `<circle cx="7.5" cy="5.5" r="1.6"/><path d="M7.5 7.1V12"/><path d="M7.5 8.5 5.5 6.5"/><path d="M7.5 8.5 10.5 9"/><path d="M7.5 12 5.5 17"/><path d="M7.5 12 8.5 17"/><circle cx="16.5" cy="5.5" r="1.6"/><path d="M16.5 7.1V12"/><path d="M16.5 8.5 13.5 9"/><path d="M16.5 8.5 18.5 6.5"/><path d="M16.5 12 15.5 17"/><path d="M16.5 12 18.5 17"/>`
+    },
     cinema: {
       label: "Cinema",
       group: "specialty",
@@ -273,6 +278,7 @@
     expedition: ["expedition", "discovery centre", "discovery center", "submarine"],
     pool: ["pool", "main pool", "swimming pool"],
     theatre: ["theatre", "theater", "show lounge"],
+    dancing: ["dancing", "dance", "dance club", "dance floor", "ballroom", "nightclub", "disco", "dance studio", "latin dancing"],
     casino: ["casino"],
     shopping: ["shopping", "shops", "boutique"],
     games: ["arcade", "games room", "game room"],

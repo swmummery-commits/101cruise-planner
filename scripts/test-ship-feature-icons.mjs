@@ -70,6 +70,11 @@ assert.match(Icons.renderIconSvg("zip-line"), /M12 14v1\.25/);
 assert.equal(Icons.resolveShipFeatureIconKey("Zodiac Landing"), "zodiac");
 assert.equal(Icons.resolveShipFeatureIconKey("Outdoor Platform"), "outdoor-platform");
 assert.equal(Icons.resolveShipFeatureIconKey("Magic Carpet"), "outdoor-platform");
+assert.equal(Icons.resolveShipFeatureIconKey("Dance Club"), "dancing");
+assert.equal(Icons.resolveShipFeatureIconKey("Ballroom Dancing"), "dancing");
+assert.ok(Icons.isKnownIconKey("dancing"));
+assert.match(Icons.renderIconSvg("dancing"), /cx="7\.5" cy="5\.5"/);
+assert.match(Icons.renderIconSvg("dancing"), /cx="16\.5" cy="5\.5"/);
 assert.match(Icons.renderIconSvg("outdoor-platform"), /M6 7h14/);
 assert.match(Icons.renderIconSvg("outdoor-platform"), /M2 17c2-1/);
 
