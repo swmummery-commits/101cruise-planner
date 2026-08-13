@@ -1,0 +1,26 @@
+name: Royal Caribbean Prompt 9 Netlify Debug
+
+on:
+  push:
+    branches:
+      - feat/royal-caribbean-final-catchup
+
+permissions:
+  contents: read
+
+jobs:
+  debug-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wait briefly for Deploy Preview
+        run: sleep 20
+
+      - name: Probe temporary preview smoke once
+        shell: bash
+        run: |
+          set -x
+          curl --max-time 40 -i -sS \
+            -X POST 'https://deploy-preview-1--admirable-tiramisu-d4da8a.netlify.app/.netlify/functions/royal-caribbean-prompt9-preview-smoke' \
+            -H 'Content-Type: application/json' \
+            --data '{"confirmation":"RC_PROMPT9_PREVIEW_PROOF_2026"}'
