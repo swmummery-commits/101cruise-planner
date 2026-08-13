@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-08-13T02:32:35.585Z",
+  "summary": {
+    "source_snapshot_id": "5443e05f4fec1eb5",
+    "recognised_existing_eligible": 120,
+    "outstanding_eligible_inserts": 2865,
+    "proposed_updates": 0,
+    "incomplete_skipped": 14,
+    "cutoff_skipped": 67,
+    "cruisetour_skipped": 194,
+    "reconciliation_arithmetic_ok": true,
+    "duplicate_skips": 120
+  },
+  "source_drift": {
+    "pre_snapshot_id": "4baa464c18bc0d5b",
+    "post_snapshot_id": "5443e05f4fec1eb5",
+    "pre_unique_sailings": 3261,
+    "post_unique_sailings": 3260,
+    "source_added_sailings": 0,
+    "source_removed_sailings": 1,
+    "source_added_sample": [],
+    "source_removed_sample": [
+      "AL06W286_2026-08-16"
+    ],
+    "pre_proposed_inserts": 2965,
+    "post_proposed_inserts": 2865,
+    "pre_recognised_existing": 20,
+    "post_recognised_existing": 120,
+    "database_inserts_between_snapshots": 100,
+    "note": "Outstanding eligible insert counts can change due to live source movement as well as database inserts. Do not assume previous_outstanding - inserted = new_outstanding."
+  },
+  "reconciliation_arithmetic": {
+    "source_unique_sailings": 3260,
+    "product_accounted": 3260,
+    "product_arithmetic_ok": true,
+    "ordinary_ocean": 3066,
+    "cruisetour_excluded": 194,
+    "unknown_products": 0,
+    "other_product_types": 0,
+    "ocean_incomplete": 14,
+    "ocean_eligible": 2985,
+    "ocean_within_cutoff": 67,
+    "ocean_past": 0,
+    "ocean_unfamiliar_status": 0,
+    "ocean_other_exclusions": 0,
+    "ocean_accounted": 3066,
+    "ocean_arithmetic_ok": true,
+    "recognised_existing_eligible": 120,
+    "outstanding_eligible_inserts": 2865,
+    "proposed_updates": 0,
+    "eligible_accounted": 2985,
+    "eligible_arithmetic_ok": true,
+    "reconciliation_arithmetic_ok": true
+  }
+}

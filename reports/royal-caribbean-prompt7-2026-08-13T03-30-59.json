@@ -1,0 +1,824 @@
+{
+  "phase": "royal_caribbean_prompt7_source_enumeration_audit",
+  "started_at": "2026-08-13T03:30:59.379Z",
+  "audit_id": "royal-caribbean-prompt7-2026-08-13T03-30-59",
+  "read_only": true,
+  "production_mutations": {
+    "cruise_inserts": 0,
+    "cruise_updates": 0,
+    "cruise_deletes": 0,
+    "expiry_changes": 0,
+    "ships": 0,
+    "ports": 0,
+    "aliases": 0,
+    "destinations": 0,
+    "legacy_rows": 0
+  },
+  "repository_state": {
+    "branch": "feat/royal-caribbean-final-catchup",
+    "head": "463ccfbfab5ec3791b6e15759c76f44697e8da7d",
+    "origin_main": "1cea5a50d64484f29aaffce0f5eb3833437ea8c0",
+    "commits_vs_main": [
+      "463ccfb Add Royal Caribbean final catch-up with frozen master manifest and 250-record chunks.",
+      "de87742 Add Royal Caribbean second controlled batch of 100 sailings.",
+      "c8cde92 Add Royal Caribbean bounded write layer and first controlled batch of 20.",
+      "0bb7132 Resolve Royal Caribbean Hero of the Seas and Colón metadata blockers.",
+      "acb906e Add Royal Caribbean read-only discovery and dry-run maintenance pipeline."
+    ]
+  },
+  "production_inventory": {
+    "total_rows": 2997,
+    "genuine_sailing_count": 2983,
+    "legacy_html_count": 14,
+    "unique_official_sailing_ids": 2983,
+    "unique_identity_keys": 2983,
+    "duplicate_official_sailing_ids": [],
+    "duplicate_identity_keys": [],
+    "earliest_departure": "2026-09-04",
+    "latest_departure": "2028-04-27",
+    "official_sailing_ids": {},
+    "identity_keys": {},
+    "by_official_sailing_id": {}
+  },
+  "prompt6_identity_reconstruction": {
+    "master_manifest_count": 2863,
+    "master_snapshot_id": "acb57d5b93367e66",
+    "pre_catchup_count": 120,
+    "prompt6_final_snapshot_id": "44d6b7454488db0b",
+    "prompt6_reported": {
+      "recognised_existing_eligible": 2342,
+      "live_outstanding_eligible": 632
+    }
+  },
+  "global_pagination_audit": {
+    "runs": [
+      {
+        "started_at": "2026-08-13T03:31:05.547Z",
+        "completed_at": "2026-08-13T03:31:18.209Z",
+        "results_total": 917,
+        "pages_requested": 19,
+        "raw_group_records": 910,
+        "unique_group_ids": 910,
+        "unique_sailing_ids": 3254,
+        "duplicate_group_ids_suppressed": 7,
+        "duplicate_sailing_ids": 0,
+        "page_boundary_sample": [
+          {
+            "skip": 0,
+            "ok": true,
+            "returned": 50,
+            "total": 917,
+            "first_group_id": "VY03LAX-1965471073",
+            "last_group_id": "HM04PCN-4069340908"
+          },
+          {
+            "skip": 50,
+            "ok": true,
+            "returned": 50,
+            "total": 917,
+            "first_group_id": "AL04MIA-441628504",
+            "last_group_id": "FR05MIA-1172079608"
+          },
+          {
+            "skip": 100,
+            "ok": true,
+            "returned": 50,
+            "total": 918,
+            "first_group_id": "WN03MIA-319096340",
+            "last_group_id": "SC05BAO-3778606901"
+          },
+          {
+            "skip": 800,
+            "ok": true,
+            "returned": 50,
+            "total": 917,
+            "first_group_id": "AN11YVR-986791531",
+            "last_group_id": "AN12SWD-637523613"
+          },
+          {
+            "skip": 850,
+            "ok": true,
+            "returned": 50,
+            "total": 917,
+            "first_group_id": "AN12SWD-369362274",
+            "last_group_id": "AN13YVR-920316647"
+          },
+          {
+            "skip": 900,
+            "ok": true,
+            "returned": 17,
+            "total": 917,
+            "first_group_id": "AN13YVR-1477364104",
+            "last_group_id": "EX13BCN-677903297"
+          }
+        ]
+      },
+      {
+        "started_at": "2026-08-13T03:31:19.710Z",
+        "completed_at": "2026-08-13T03:31:31.446Z",
+        "results_total": 917,
+        "pages_requested": 19,
+        "raw_group_records": 912,
+        "unique_group_ids": 912,
+        "unique_sailing_ids": 3259,
+        "duplicate_group_ids_suppressed": 5,
+        "duplicate_sailing_ids": 0,
+        "page_boundary_sample": [
+          {
+            "skip": 0,
+            "ok": true,
+            "returned": 50,
+            "total": 918,
+            "first_group_id": "VY03LAX-1965471073",
+            "last_group_id": "HM04PCN-4069340908"
+          },
+          {
+            "skip": 50,
+            "ok": true,
+            "returned": 50,
+            "total": 917,
+            "first_group_id": "AL04MIA-441628504",
+            "last_group_id": "FR05MIA-1172079608"
+          },
+          {
+            "skip": 100,
+            "ok": true,
+            "returned": 50,
+            "total": 917,
+            "first_group_id": "WN03MIA-319096340",
+            "last_group_id": "SC05BAO-3778606901"
+          },
+          {
+            "skip": 800,
+            "ok": true,
+            "returned": 50,
+            "total": 917,
+            "first_group_id": "AN11YVR-986791531",
+            "last_group_id": "AN12SWD-637523613"
+          },
+          {
+            "skip": 850,
+            "ok": true,
+            "returned": 50,
+            "total": 918,
+            "first_group_id": "AN12SWD-637523613",
+            "last_group_id": "AN13SWD-2170154717"
+          },
+          {
+            "skip": 900,
+            "ok": true,
+            "returned": 17,
+            "total": 917,
+            "first_group_id": "AN13YVR-1477364104",
+            "last_group_id": "EX13BCN-677903297"
+          }
+        ]
+      },
+      {
+        "started_at": "2026-08-13T03:31:32.948Z",
+        "completed_at": "2026-08-13T03:31:44.682Z",
+        "results_total": 918,
+        "pages_requested": 19,
+        "raw_group_records": 913,
+        "unique_group_ids": 913,
+        "unique_sailing_ids": 3257,
+        "duplicate_group_ids_suppressed": 4,
+        "duplicate_sailing_ids": 0,
+        "page_boundary_sample": [
+          {
+            "skip": 0,
+            "ok": true,
+            "returned": 50,
+            "total": 917,
+            "first_group_id": "VY03LAX-1965471073",
+            "last_group_id": "HM04PCN-4069340908"
+          },
+          {
+            "skip": 50,
+            "ok": true,
+            "returned": 50,
+            "total": 918,
+            "first_group_id": "AL04MIA-441628504",
+            "last_group_id": "FR05MIA-1172079608"
+          },
+          {
+            "skip": 100,
+            "ok": true,
+            "returned": 50,
+            "total": 918,
+            "first_group_id": "WN03MIA-319096340",
+            "last_group_id": "SC05BAO-3778606901"
+          },
+          {
+            "skip": 800,
+            "ok": true,
+            "returned": 50,
+            "total": 918,
+            "first_group_id": "AN10SWD-2136385518",
+            "last_group_id": "AN11SWD-263990310"
+          },
+          {
+            "skip": 850,
+            "ok": true,
+            "returned": 50,
+            "total": 917,
+            "first_group_id": "AN12SWD-369362274",
+            "last_group_id": "AN13YVR-920316647"
+          },
+          {
+            "skip": 900,
+            "ok": true,
+            "returned": 17,
+            "total": 918,
+            "first_group_id": "AN13YVR-920316647",
+            "last_group_id": "EX13BCN-677903297"
+          }
+        ]
+      }
+    ],
+    "comparisons": [
+      {
+        "a": 1,
+        "b": 2,
+        "sailing_symmetric_diff": 11,
+        "only_in_a_sample": [
+          "SC10I048_2027-10-11",
+          "ID09N078_2026-10-15",
+          "AN13AF08_2027-07-23"
+        ],
+        "only_in_b_sample": [
+          "EN07W689_2026-08-15",
+          "SR07W895_2027-10-31",
+          "SR07W897_2027-12-31",
+          "AL08E155_2026-08-22",
+          "AL08E155_2026-09-19",
+          "AN16T115_2027-04-14",
+          "NV13T153_2027-04-29",
+          "AN09K161_2026-12-19"
+        ]
+      },
+      {
+        "a": 1,
+        "b": 3,
+        "sailing_symmetric_diff": 11,
+        "only_in_a_sample": [
+          "SC10I048_2027-10-11",
+          "EX07M804_2026-09-19",
+          "EX07M807_2026-10-17",
+          "AN12BP06_2027-08-08"
+        ],
+        "only_in_b_sample": [
+          "AL08E155_2026-08-22",
+          "AL08E155_2026-09-19",
+          "AN16T115_2027-04-14",
+          "NV13T153_2027-04-29",
+          "AN09K161_2026-12-19",
+          "AN10BN09_2027-07-13",
+          "AN11AC04_2027-06-11"
+        ]
+      },
+      {
+        "a": 2,
+        "b": 3,
+        "sailing_symmetric_diff": 10,
+        "only_in_a_sample": [
+          "EN07W689_2026-08-15",
+          "SR07W895_2027-10-31",
+          "SR07W897_2027-12-31",
+          "EX07M804_2026-09-19",
+          "EX07M807_2026-10-17",
+          "AN12BP06_2027-08-08"
+        ],
+        "only_in_b_sample": [
+          "ID09N078_2026-10-15",
+          "AN10BN09_2027-07-13",
+          "AN11AC04_2027-06-11",
+          "AN13AF08_2027-07-23"
+        ]
+      }
+    ]
+  },
+  "partition_strategy": {
+    "api_ship_filter_supported": false,
+    "api_date_filter_supported": false,
+    "note": "Royal Caribbean GraphQL filter strings do not reduce results.total in testing; authoritative method unions multiple page-size global passes",
+    "page_sizes": [
+      25,
+      50,
+      100
+    ],
+    "union_group_ids": 917,
+    "union_sailing_ids": 3263,
+    "pass_comparisons": [
+      {
+        "a_page_size": 25,
+        "b_page_size": 50,
+        "group_symmetric_diff": 14,
+        "sailing_symmetric_diff": 17
+      },
+      {
+        "a_page_size": 25,
+        "b_page_size": 100,
+        "group_symmetric_diff": 8,
+        "sailing_symmetric_diff": 13
+      },
+      {
+        "a_page_size": 50,
+        "b_page_size": 100,
+        "group_symmetric_diff": 6,
+        "sailing_symmetric_diff": 14
+      }
+    ],
+    "ship_coverage": {
+      "method": "ship_coverage_partition",
+      "supported_api_ship_filter": false,
+      "note": "Post-union ship coverage audit — not independent API-filtered partitions",
+      "fleet_ok": true,
+      "fleet_ship_count": 31,
+      "covered_ship_codes": [
+        "AD",
+        "AL",
+        "AN",
+        "BR",
+        "EN",
+        "EX",
+        "FR",
+        "GR",
+        "HM",
+        "HE",
+        "IC",
+        "ID",
+        "JW",
+        "LE",
+        "LB",
+        "MA",
+        "NV",
+        "OA",
+        "OY",
+        "OV",
+        "QN",
+        "RD",
+        "RH",
+        "SR",
+        "SC",
+        "ST",
+        "SY",
+        "UT",
+        "VI",
+        "VY",
+        "WN"
+      ],
+      "missing_ship_codes": [],
+      "partitions": [
+        {
+          "ship_code": "AD",
+          "unique_sailing_ids": 102,
+          "sample_sailing_ids": [
+            "AD06W275_2026-08-29",
+            "AD06W275_2026-09-26",
+            "AD08E150_2026-08-21"
+          ]
+        },
+        {
+          "ship_code": "AL",
+          "unique_sailing_ids": 90,
+          "sample_sailing_ids": [
+            "AL3BH279_2027-01-18",
+            "AL3BH210_2027-01-29",
+            "AL3BH210_2027-02-05"
+          ]
+        },
+        {
+          "ship_code": "AN",
+          "unique_sailing_ids": 265,
+          "sample_sailing_ids": [
+            "AN03K083_2026-10-30",
+            "AN03K084_2026-11-20",
+            "AN03K090_2027-10-24"
+          ]
+        },
+        {
+          "ship_code": "BR",
+          "unique_sailing_ids": 97,
+          "sample_sailing_ids": [
+            "BR3BH231_2026-11-20",
+            "BR3BH232_2026-11-27",
+            "BR3BH233_2026-12-04"
+          ]
+        },
+        {
+          "ship_code": "EN",
+          "unique_sailing_ids": 95,
+          "sample_sailing_ids": [
+            "EN04W233_2027-11-15",
+            "EN04W237_2027-11-29",
+            "EN04W237_2027-12-27"
+          ]
+        },
+        {
+          "ship_code": "EX",
+          "unique_sailing_ids": 88,
+          "sample_sailing_ids": [
+            "EX04E026_2027-02-15",
+            "EX4BH361_2027-01-18",
+            "EX05W637_2026-12-16"
+          ]
+        },
+        {
+          "ship_code": "FR",
+          "unique_sailing_ids": 98,
+          "sample_sailing_ids": [
+            "FR4BH373_2026-08-27",
+            "FR4BH376_2026-12-31",
+            "FR4BH558_2027-12-30"
+          ]
+        },
+        {
+          "ship_code": "GR",
+          "unique_sailing_ids": 134,
+          "sample_sailing_ids": [
+            "GR07R042_2027-04-24",
+            "GR07D543_2027-05-08",
+            "GR07D543_2027-05-22"
+          ]
+        },
+        {
+          "ship_code": "HM",
+          "unique_sailing_ids": 102,
+          "sample_sailing_ids": [
+            "HM2BH021_2026-09-03",
+            "HM2BH021_2026-10-01",
+            "HM2BH021_2026-10-29"
+          ]
+        },
+        {
+          "ship_code": "HE",
+          "unique_sailing_ids": 37,
+          "sample_sailing_ids": [
+            "HE3BH280_2027-08-11",
+            "HE07E566_2027-08-21",
+            "HE07E566_2027-08-28"
+          ]
+        },
+        {
+          "ship_code": "IC",
+          "unique_sailing_ids": 86,
+          "sample_sailing_ids": [
+            "IC07W697_2026-09-05",
+            "IC07W697_2026-09-26",
+            "IC07W697_2026-10-17"
+          ]
+        },
+        {
+          "ship_code": "ID",
+          "unique_sailing_ids": 81,
+          "sample_sailing_ids": [
+            "ID05W704_2027-03-02",
+            "ID05W703_2027-02-25",
+            "ID07W748_2026-12-06"
+          ]
+        },
+        {
+          "ship_code": "JW",
+          "unique_sailing_ids": 157,
+          "sample_sailing_ids": [
+            "JW4BH433_2026-09-21",
+            "JW4BH430_2026-08-31",
+            "JW4BH432_2026-09-14"
+          ]
+        },
+        {
+          "ship_code": "LE",
+          "unique_sailing_ids": 117,
+          "sample_sailing_ids": [
+            "LE3BH214_2026-11-11",
+            "LE06W296_2026-11-22",
+            "LE06W296_2026-12-06"
+          ]
+        },
+        {
+          "ship_code": "LB",
+          "unique_sailing_ids": 119,
+          "sample_sailing_ids": [
+            "LB05W648_2026-10-31",
+            "LB05W649_2026-11-09",
+            "LB05W648_2026-11-14"
+          ]
+        },
+        {
+          "ship_code": "MA",
+          "unique_sailing_ids": 82,
+          "sample_sailing_ids": [
+            "MA05W678_2026-08-31",
+            "MA05W679_2026-09-05",
+            "MA05W678_2026-09-14"
+          ]
+        },
+        {
+          "ship_code": "NV",
+          "unique_sailing_ids": 54,
+          "sample_sailing_ids": [
+            "NV03I207_2026-11-09",
+            "NV03I207_2026-11-16",
+            "NV03I208_2026-11-24"
+          ]
+        },
+        {
+          "ship_code": "OA",
+          "unique_sailing_ids": 124,
+          "sample_sailing_ids": [
+            "OA4BH367_2026-11-09",
+            "OA4BH368_2026-11-16",
+            "OA4BH369_2026-11-23"
+          ]
+        },
+        {
+          "ship_code": "OY",
+          "unique_sailing_ids": 75,
+          "sample_sailing_ids": [
+            "OY7BH144_2026-11-08",
+            "OY7BH144_2026-11-15",
+            "OY7BH144_2026-11-22"
+          ]
+        },
+        {
+          "ship_code": "OV",
+          "unique_sailing_ids": 115,
+          "sample_sailing_ids": [
+            "OV03X039_2026-09-21",
+            "OV03X039_2026-09-28",
+            "OV03X047_2026-10-01"
+          ]
+        },
+        {
+          "ship_code": "QN",
+          "unique_sailing_ids": 92,
+          "sample_sailing_ids": [
+            "QN03X035_2026-08-28",
+            "QN03X035_2026-09-11",
+            "QN03X037_2026-09-14"
+          ]
+        },
+        {
+          "ship_code": "RD",
+          "unique_sailing_ids": 115,
+          "sample_sailing_ids": [
+            "RD05W707_2026-08-29",
+            "RD05W706_2026-09-07",
+            "RD05W707_2026-09-12"
+          ]
+        },
+        {
+          "ship_code": "RH",
+          "unique_sailing_ids": 81,
+          "sample_sailing_ids": [
+            "RH04W238_2027-04-15",
+            "RH07D514_2026-08-15",
+            "RH07D514_2026-08-29"
+          ]
+        },
+        {
+          "ship_code": "SR",
+          "unique_sailing_ids": 96,
+          "sample_sailing_ids": [
+            "SR02X003_2026-10-02",
+            "SR03X043_2026-10-15",
+            "SR03X044_2026-12-03"
+          ]
+        },
+        {
+          "ship_code": "SC",
+          "unique_sailing_ids": 121,
+          "sample_sailing_ids": [
+            "SC02I142_2026-11-20",
+            "SC02I142_2026-12-11",
+            "SC02I142_2026-12-18"
+          ]
+        },
+        {
+          "ship_code": "ST",
+          "unique_sailing_ids": 87,
+          "sample_sailing_ids": [
+            "ST07W708_2026-08-30",
+            "ST07W708_2026-09-20",
+            "ST07W708_2026-10-11"
+          ]
+        },
+        {
+          "ship_code": "SY",
+          "unique_sailing_ids": 82,
+          "sample_sailing_ids": [
+            "SY4BH550_2027-08-18",
+            "SY4BH551_2028-02-06",
+            "SY07W700_2026-10-18"
+          ]
+        },
+        {
+          "ship_code": "UT",
+          "unique_sailing_ids": 173,
+          "sample_sailing_ids": [
+            "UT4BH339_2026-08-24",
+            "UT4BH339_2026-08-31",
+            "UT4BH339_2026-09-07"
+          ]
+        },
+        {
+          "ship_code": "VI",
+          "unique_sailing_ids": 74,
+          "sample_sailing_ids": [
+            "VI07D503_2026-11-01",
+            "VI07D503_2026-11-15",
+            "VI07D513_2027-03-28"
+          ]
+        },
+        {
+          "ship_code": "VY",
+          "unique_sailing_ids": 62,
+          "sample_sailing_ids": [
+            "VY03X045_2026-10-05",
+            "VY03X046_2026-12-18",
+            "VY06X022_2026-10-16"
+          ]
+        },
+        {
+          "ship_code": "WN",
+          "unique_sailing_ids": 162,
+          "sample_sailing_ids": [
+            "WN4BH352_2026-08-24",
+            "WN4BH351_2026-08-31",
+            "WN4BH353_2026-09-07"
+          ]
+        }
+      ]
+    }
+  },
+  "global_vs_partitioned": {
+    "global_single_pass_page_50": {
+      "unique_group_ids": 910,
+      "unique_sailing_ids": 3254
+    },
+    "authoritative_union": {
+      "unique_group_ids": 917,
+      "unique_sailing_ids": 3263
+    },
+    "group_symmetric_diff": {
+      "only_in_a": [],
+      "only_in_b": [
+        "SR07TPA-2072238347",
+        "AL08FLL-2222518596",
+        "AN16SYD-2971113566",
+        "NV13SIN-3587973103",
+        "AN09SYD-448738219",
+        "AN10SWD-2136385518",
+        "AN11YVR-871613580"
+      ],
+      "symmetric_count": 7
+    },
+    "sailing_symmetric_diff": {
+      "only_in_a": [],
+      "only_in_b": [
+        "SR07W895_2027-10-31",
+        "SR07W897_2027-12-31",
+        "AL08E155_2026-08-22",
+        "AL08E155_2026-09-19",
+        "AN16T115_2027-04-14",
+        "NV13T153_2027-04-29",
+        "AN09K161_2026-12-19",
+        "AN10BN09_2027-07-13",
+        "AN11AC04_2027-06-11"
+      ],
+      "symmetric_count": 9
+    }
+  },
+  "identity_set_analysis": {
+    "production_count": 2983,
+    "master_manifest_count": 2863,
+    "authoritative_source_count": 3263,
+    "global_page50_source_count": 3254,
+    "production_intersect_source": 2983,
+    "production_minus_source": 0,
+    "source_minus_production": 280,
+    "master_minus_source": 0,
+    "source_minus_master": 400,
+    "pre_catchup_minus_source": 0,
+    "production_minus_global": 6,
+    "global_minus_production": 277
+  },
+  "production_absent_from_authoritative_source": [],
+  "direct_lookup_audit": [],
+  "revised_reconciliation": {
+    "global_page50": {
+      "source_snapshot_id": "d7bbbb7a5dde468c",
+      "duplicate_skip": 2977,
+      "within_21_day_cutoff_skip": 67,
+      "incomplete_skip": 14,
+      "insert_active": 3,
+      "ocean_cruisetour_skip": 193,
+      "recognised_existing_eligible": 2977,
+      "outstanding_eligible_inserts": 3,
+      "reconciliation_arithmetic_ok": true
+    },
+    "authoritative_union": {
+      "source_snapshot_id": "7b05390d85335313",
+      "duplicate_skip": 2983,
+      "within_21_day_cutoff_skip": 68,
+      "incomplete_skip": 14,
+      "insert_active": 3,
+      "ocean_cruisetour_skip": 195,
+      "recognised_existing_eligible": 2983,
+      "outstanding_eligible_inserts": 3,
+      "reconciliation_arithmetic_ok": true
+    }
+  },
+  "discrepancy_explanation": {
+    "prompt6_reported_outstanding_632": 632,
+    "prompt6_reported_recognised_2342": 2342,
+    "arithmetic_gap_2983_minus_2342": 641,
+    "root_causes": [
+      "global_offset_pagination_misses_sailings_that_union_or_detail_lookup_recover"
+    ],
+    "revised_outstanding_eligible_union": 3,
+    "revised_outstanding_eligible_global": 3,
+    "genuinely_new_since_master_manifest": 280,
+    "production_ids_in_outstanding_union_but_already_in_production": 0,
+    "master_ids_missed_by_global_but_present_in_union": 6,
+    "production_not_recognised_as_eligible_existing": 0,
+    "breakdown_of_production_not_recognised": {
+      "inside_21_day_cutoff_in_source": 0,
+      "past_in_source": 0,
+      "incomplete_in_source": 0,
+      "duplicate_skip_eligible": 2983,
+      "absent_from_authoritative_source": 0,
+      "absent_from_global_source": 6
+    },
+    "post_manifest_classification": {
+      "genuinely_new_since_master": 280,
+      "enumeration_artefact_global_vs_union": 9,
+      "already_in_production_but_classified_insert": 0
+    }
+  },
+  "enumeration_health": {
+    "royal_caribbean_source_enumeration_ok": true,
+    "failures": [],
+    "global_vs_union": {
+      "group_symmetric_diff": 7,
+      "sailing_symmetric_diff": 9,
+      "only_in_union_groups": [
+        "SR07TPA-2072238347",
+        "AL08FLL-2222518596",
+        "AN16SYD-2971113566",
+        "NV13SIN-3587973103",
+        "AN09SYD-448738219",
+        "AN10SWD-2136385518",
+        "AN11YVR-871613580"
+      ],
+      "only_in_union_sailings": [
+        "SR07W895_2027-10-31",
+        "SR07W897_2027-12-31",
+        "AL08E155_2026-08-22",
+        "AL08E155_2026-09-19",
+        "AN16T115_2027-04-14",
+        "NV13T153_2027-04-29",
+        "AN09K161_2026-12-19",
+        "AN10BN09_2027-07-13",
+        "AN11AC04_2027-06-11"
+      ],
+      "only_in_global_sailings": []
+    },
+    "production_absent_from_union_count": 0,
+    "detail_retrievable_absent_from_union_count": 0
+  },
+  "authoritative_enumeration_method": {
+    "method": "multi_page_size_union",
+    "page_sizes": [
+      25,
+      50,
+      100
+    ],
+    "stop_condition": "each pass uses stop_at_total then union; weekly maintenance should adopt this union before reconciliation",
+    "dedupe": "unique group id + unique official_sailing_id across passes",
+    "snapshot_id": "7b05390d85335313",
+    "source_absence_action_allowed": true
+  },
+  "revised_status_of_reported_632": {
+    "prompt6_reported": 632,
+    "revised_union_outstanding": 3,
+    "revised_global_outstanding": 3,
+    "genuinely_new_since_manifest": 280,
+    "enumeration_artefacts": 6,
+    "note": "632 was computed from a single global fetch after catch-up; union enumeration and eligibility rules explain most of the inflation"
+  },
+  "tests_preflight": {
+    "discovery": 44,
+    "controlled_batch": 19,
+    "catchup": 17,
+    "enumeration": 11
+  },
+  "recommendation": "NOT READY FOR WEEKLY AUTOMATION",
+  "completed_at": "2026-08-13T03:34:14.274Z",
+  "cloud_runtime": {
+    "github_actions_source_smoke": "NOT EXECUTED — gh CLI unavailable; workflow royal-caribbean-source-smoke.yml present on branch",
+    "netlify_runtime": "NOT PROVEN — netlify CLI unavailable; royal-caribbean-discovery-smoke function added locally, not deployed/invoked on Netlify"
+  },
+  "recommendation_blocker": "Netlify runtime proof mandatory before weekly automation validation"
+}

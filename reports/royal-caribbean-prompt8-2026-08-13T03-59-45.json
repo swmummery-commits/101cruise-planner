@@ -1,0 +1,3018 @@
+{
+  "generated_at": "2026-08-13T04:02:02.828Z",
+  "started_at": "2026-08-13T03:59:45.501Z",
+  "mode": "royal_caribbean_prompt8_validation",
+  "read_only": true,
+  "repository_checkpoint": {
+    "branch": "feat/royal-caribbean-final-catchup",
+    "head": "1d5aaa63618c8669e1353ca8abd9ef7bf82addba",
+    "origin_main": "a936110780e181e92994e3e325cecff0f27b0999"
+  },
+  "supabase_url": "https://xikbibxyinttllxamgao.supabase.co",
+  "production_inventory": {
+    "genuine_sailing_count": 2983,
+    "unique_official_sailing_ids": 2983,
+    "unique_identity_keys": 2983,
+    "duplicate_official_sailing_ids": [],
+    "duplicate_identity_keys": [],
+    "legacy_html_count": 14,
+    "earliest_departure": "2026-09-04",
+    "latest_departure": "2028-04-27"
+  },
+  "weekly_source_wiring": {
+    "authoritative_enumeration": true,
+    "union_page_sizes": [
+      25,
+      50,
+      100
+    ]
+  },
+  "netlify_runtime": {
+    "status": "NOT PROVEN",
+    "reason": "DISCOVERY_CRON_SECRET unavailable for authenticated Netlify smoke invocation"
+  },
+  "github_runtime": {
+    "status": "NOT EXECUTED",
+    "reason": "gh CLI unavailable in execution environment"
+  },
+  "weekly_dry_run": {
+    "ok": true,
+    "duration_ms": 130442,
+    "summary": {
+      "line_slug": "royal-caribbean-international",
+      "cruise_line": "Royal Caribbean International",
+      "run_id": "royal-caribbean-prompt8-2026-08-13T03-59-45-501Z",
+      "run_type": "royal_caribbean_weekly_maintenance",
+      "trigger_type": "prompt8_weekly_validation",
+      "dry_run": true,
+      "writes_allowed": false,
+      "authoritative_enumeration": true,
+      "union_page_sizes": [
+        25,
+        50,
+        100
+      ],
+      "source_snapshot_id": "9a4c3645a4430ddc",
+      "official_source_total": 918,
+      "itinerary_groups": 917,
+      "union_groups": 917,
+      "union_sailing_identities": 3263,
+      "sailing_records_expanded": 3263,
+      "unique_sailing_ids": 3263,
+      "duplicate_sailing_ids": 0,
+      "pages_requested": 134,
+      "pages_successful": 134,
+      "pages_failed": 0,
+      "classification": {
+        "ordinary_ocean_cruises": 3068,
+        "ocean_cruisetours_excluded": 195,
+        "unknown_products": 0,
+        "other_product_types": 0,
+        "source_complete": 3263,
+        "source_incomplete": 0,
+        "incompleteness_reasons": {},
+        "source_statuses": {
+          "OPEN": 3263
+        },
+        "unfamiliar_status_records": 0
+      },
+      "time_eligibility": {
+        "future_sailings": 3263,
+        "more_than_21_day_eligible": 3193,
+        "within_21_day_cutoff": 70,
+        "already_departed": 0,
+        "perth_cutoff_date": "2026-09-03"
+      },
+      "ship_audit": {
+        "total_source_ships": 31,
+        "resolved": 31,
+        "unresolved": 0,
+        "source_ships": [
+          {
+            "source_ship_code": "AD",
+            "source_ship_name": "Adventure of the Seas",
+            "sailings": 102,
+            "resolved": true,
+            "db_ship_id": "891ac463-070c-4291-9f23-a53631e40e22",
+            "db_ship_name": "Adventure of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "AD",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "AL",
+            "source_ship_name": "Allure of the Seas",
+            "sailings": 90,
+            "resolved": true,
+            "db_ship_id": "5a35e68f-a6ad-4264-a0da-eaa638af0b69",
+            "db_ship_name": "Allure of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "AL",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "AN",
+            "source_ship_name": "Anthem of the Seas",
+            "sailings": 265,
+            "resolved": true,
+            "db_ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+            "db_ship_name": "Anthem of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "AN",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "BR",
+            "source_ship_name": "Brilliance of the Seas",
+            "sailings": 97,
+            "resolved": true,
+            "db_ship_id": "50c86be4-674b-4f81-93e5-ff31e6167766",
+            "db_ship_name": "Brilliance of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "BR",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "EN",
+            "source_ship_name": "Enchantment of the Seas",
+            "sailings": 96,
+            "resolved": true,
+            "db_ship_id": "4515bff5-d770-4dad-98e4-24a3650536cb",
+            "db_ship_name": "Enchantment of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "EN",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "EX",
+            "source_ship_name": "Explorer of the Seas",
+            "sailings": 88,
+            "resolved": true,
+            "db_ship_id": "a5d369bd-7667-4b47-963b-c9355f41ef3e",
+            "db_ship_name": "Explorer of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "EX",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "FR",
+            "source_ship_name": "Freedom of the Seas",
+            "sailings": 97,
+            "resolved": true,
+            "db_ship_id": "ff043725-92b4-4304-a941-58af9ca4bebc",
+            "db_ship_name": "Freedom of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "FR",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "GR",
+            "source_ship_name": "Grandeur of the Seas",
+            "sailings": 134,
+            "resolved": true,
+            "db_ship_id": "51c02b72-fea3-47e6-95c9-7f6861ca9214",
+            "db_ship_name": "Grandeur of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "GR",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "HM",
+            "source_ship_name": "Harmony of the Seas",
+            "sailings": 102,
+            "resolved": true,
+            "db_ship_id": "0bc14a21-08a6-4c6c-b8dc-142b0501c340",
+            "db_ship_name": "Harmony of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "HM",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "HE",
+            "source_ship_name": "Hero of the Seas",
+            "sailings": 37,
+            "resolved": true,
+            "db_ship_id": "928352c7-a71c-4079-bd2f-e0ca28a031a2",
+            "db_ship_name": "Hero of the Seas",
+            "current_official_line_ship_id": "HE",
+            "proposed_official_line_ship_id": null,
+            "resolution_method": "official_line_ship_id",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "IC",
+            "source_ship_name": "Icon of the Seas",
+            "sailings": 86,
+            "resolved": true,
+            "db_ship_id": "193071d7-46ee-438f-9025-ff9551ce4aa2",
+            "db_ship_name": "Icon of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "IC",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "ID",
+            "source_ship_name": "Independence of the Seas",
+            "sailings": 81,
+            "resolved": true,
+            "db_ship_id": "6586c133-6390-417d-b761-d78d05bf298b",
+            "db_ship_name": "Independence of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "ID",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "JW",
+            "source_ship_name": "Jewel of the Seas",
+            "sailings": 157,
+            "resolved": true,
+            "db_ship_id": "cbbc9f3c-1a72-4ebd-a2ee-67447552f799",
+            "db_ship_name": "Jewel of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "JW",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "LE",
+            "source_ship_name": "Legend of the Seas",
+            "sailings": 117,
+            "resolved": true,
+            "db_ship_id": "86ee7da8-9f03-4e75-b220-8b72945b4666",
+            "db_ship_name": "Legend of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "LE",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "LB",
+            "source_ship_name": "Liberty of the Seas",
+            "sailings": 119,
+            "resolved": true,
+            "db_ship_id": "1f45af9a-c4eb-4b2d-95b1-deb460466bc5",
+            "db_ship_name": "Liberty of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "LB",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "MA",
+            "source_ship_name": "Mariner of the Seas",
+            "sailings": 82,
+            "resolved": true,
+            "db_ship_id": "d561a315-1fe9-4d74-ae25-05aa5616866c",
+            "db_ship_name": "Mariner of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "MA",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "NV",
+            "source_ship_name": "Navigator of the Seas",
+            "sailings": 54,
+            "resolved": true,
+            "db_ship_id": "34ab9aaa-2ef7-42be-b749-62d569478cb1",
+            "db_ship_name": "Navigator of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "NV",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "OA",
+            "source_ship_name": "Oasis of the Seas",
+            "sailings": 124,
+            "resolved": true,
+            "db_ship_id": "3797ea63-dab7-4ce3-8fd3-5fa83f358c3d",
+            "db_ship_name": "Oasis of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "OA",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "OY",
+            "source_ship_name": "Odyssey of the Seas",
+            "sailings": 75,
+            "resolved": true,
+            "db_ship_id": "8a4ce0bc-1f5f-4749-8e5f-2d4db1fab451",
+            "db_ship_name": "Odyssey of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "OY",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "OV",
+            "source_ship_name": "Ovation of the Seas",
+            "sailings": 115,
+            "resolved": true,
+            "db_ship_id": "841c8dc2-f60d-40bd-98c8-21226efa3a51",
+            "db_ship_name": "Ovation of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "OV",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "QN",
+            "source_ship_name": "Quantum of the Seas",
+            "sailings": 92,
+            "resolved": true,
+            "db_ship_id": "f1b1bb07-9cea-4636-8adf-cfa7aafd580e",
+            "db_ship_name": "Quantum of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "QN",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "RD",
+            "source_ship_name": "Radiance of the Seas",
+            "sailings": 115,
+            "resolved": true,
+            "db_ship_id": "136dd517-ff7f-4f5e-be56-d403371f04c8",
+            "db_ship_name": "Radiance of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "RD",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "RH",
+            "source_ship_name": "Rhapsody of the Seas",
+            "sailings": 81,
+            "resolved": true,
+            "db_ship_id": "1ba66416-82c3-410c-8810-af379e226c8b",
+            "db_ship_name": "Rhapsody of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "RH",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "SR",
+            "source_ship_name": "Serenade of the Seas",
+            "sailings": 96,
+            "resolved": true,
+            "db_ship_id": "39c9ce64-267d-45f7-a9af-800ecaf18c21",
+            "db_ship_name": "Serenade of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "SR",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "SC",
+            "source_ship_name": "Spectrum of the Seas",
+            "sailings": 121,
+            "resolved": true,
+            "db_ship_id": "65296346-d83b-4b4a-afbb-c1ae15a8f56b",
+            "db_ship_name": "Spectrum of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "SC",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "ST",
+            "source_ship_name": "Star of the Seas",
+            "sailings": 87,
+            "resolved": true,
+            "db_ship_id": "43ac6966-22ac-4b43-b901-27a3cf31ee58",
+            "db_ship_name": "Star of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "ST",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "SY",
+            "source_ship_name": "Symphony of the Seas",
+            "sailings": 82,
+            "resolved": true,
+            "db_ship_id": "845a2f9e-7dcb-4dad-ae4d-741602f2304a",
+            "db_ship_name": "Symphony of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "SY",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "UT",
+            "source_ship_name": "Utopia of the Seas",
+            "sailings": 173,
+            "resolved": true,
+            "db_ship_id": "d7639d55-9819-442d-9d36-4d069bdf305b",
+            "db_ship_name": "Utopia of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "UT",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "VI",
+            "source_ship_name": "Vision of the Seas",
+            "sailings": 74,
+            "resolved": true,
+            "db_ship_id": "c120ff42-2840-4eaa-87e0-50307733a4af",
+            "db_ship_name": "Vision of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "VI",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "VY",
+            "source_ship_name": "Voyager of the Seas",
+            "sailings": 62,
+            "resolved": true,
+            "db_ship_id": "df64239d-412b-435d-a3b2-41a5ac041e1c",
+            "db_ship_name": "Voyager of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "VY",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "WN",
+            "source_ship_name": "Wonder of the Seas",
+            "sailings": 162,
+            "resolved": true,
+            "db_ship_id": "6d8b4849-77af-4b7a-9e05-af96d136d529",
+            "db_ship_name": "Wonder of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "WN",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          }
+        ],
+        "source_ships_missing_in_db": [],
+        "db_ships_absent_from_source": [
+          {
+            "db_ship_id": "4eb6b3f4-d810-4a47-9895-9674de3c3412",
+            "db_ship_name": "Monarch of the Seas",
+            "active": false,
+            "official_line_ship_id": null
+          },
+          {
+            "db_ship_id": "acaba3fe-a562-4313-88de-97c16a0f7cfc",
+            "db_ship_name": "Luminosa",
+            "active": true,
+            "official_line_ship_id": null
+          },
+          {
+            "db_ship_id": "0d54b34c-8f5a-48d4-adc1-ad2291bed079",
+            "db_ship_name": "Magnifica",
+            "active": true,
+            "official_line_ship_id": null
+          },
+          {
+            "db_ship_id": "7eb3acc6-220d-45bf-96e4-0f6cc26e3075",
+            "db_ship_name": "Majesty of the Seas",
+            "active": true,
+            "official_line_ship_id": null
+          },
+          {
+            "db_ship_id": "0fc8dddc-2fbd-42f0-996e-a1398ea990a9",
+            "db_ship_name": "International Dream",
+            "active": true,
+            "official_line_ship_id": null
+          }
+        ],
+        "suspicious_line_assignments": [
+          {
+            "db_ship_id": "4eb6b3f4-d810-4a47-9895-9674de3c3412",
+            "db_ship_name": "Monarch of the Seas",
+            "active": false,
+            "in_current_source_fleet": false,
+            "reason": "questionable_royal_caribbean_line_assignment"
+          },
+          {
+            "db_ship_id": "acaba3fe-a562-4313-88de-97c16a0f7cfc",
+            "db_ship_name": "Luminosa",
+            "active": true,
+            "in_current_source_fleet": false,
+            "reason": "questionable_royal_caribbean_line_assignment"
+          },
+          {
+            "db_ship_id": "0d54b34c-8f5a-48d4-adc1-ad2291bed079",
+            "db_ship_name": "Magnifica",
+            "active": true,
+            "in_current_source_fleet": false,
+            "reason": "questionable_royal_caribbean_line_assignment"
+          },
+          {
+            "db_ship_id": "7eb3acc6-220d-45bf-96e4-0f6cc26e3075",
+            "db_ship_name": "Majesty of the Seas",
+            "active": true,
+            "in_current_source_fleet": false,
+            "reason": "questionable_royal_caribbean_line_assignment"
+          },
+          {
+            "db_ship_id": "0fc8dddc-2fbd-42f0-996e-a1398ea990a9",
+            "db_ship_name": "International Dream",
+            "active": true,
+            "in_current_source_fleet": false,
+            "reason": "questionable_royal_caribbean_line_assignment"
+          }
+        ],
+        "proposed_official_line_ship_id_assignments": [
+          {
+            "source_ship_code": "AD",
+            "source_ship_name": "Adventure of the Seas",
+            "sailings": 102,
+            "resolved": true,
+            "db_ship_id": "891ac463-070c-4291-9f23-a53631e40e22",
+            "db_ship_name": "Adventure of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "AD",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "AL",
+            "source_ship_name": "Allure of the Seas",
+            "sailings": 90,
+            "resolved": true,
+            "db_ship_id": "5a35e68f-a6ad-4264-a0da-eaa638af0b69",
+            "db_ship_name": "Allure of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "AL",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "AN",
+            "source_ship_name": "Anthem of the Seas",
+            "sailings": 265,
+            "resolved": true,
+            "db_ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+            "db_ship_name": "Anthem of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "AN",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "BR",
+            "source_ship_name": "Brilliance of the Seas",
+            "sailings": 97,
+            "resolved": true,
+            "db_ship_id": "50c86be4-674b-4f81-93e5-ff31e6167766",
+            "db_ship_name": "Brilliance of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "BR",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "EN",
+            "source_ship_name": "Enchantment of the Seas",
+            "sailings": 96,
+            "resolved": true,
+            "db_ship_id": "4515bff5-d770-4dad-98e4-24a3650536cb",
+            "db_ship_name": "Enchantment of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "EN",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "EX",
+            "source_ship_name": "Explorer of the Seas",
+            "sailings": 88,
+            "resolved": true,
+            "db_ship_id": "a5d369bd-7667-4b47-963b-c9355f41ef3e",
+            "db_ship_name": "Explorer of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "EX",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "FR",
+            "source_ship_name": "Freedom of the Seas",
+            "sailings": 97,
+            "resolved": true,
+            "db_ship_id": "ff043725-92b4-4304-a941-58af9ca4bebc",
+            "db_ship_name": "Freedom of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "FR",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "GR",
+            "source_ship_name": "Grandeur of the Seas",
+            "sailings": 134,
+            "resolved": true,
+            "db_ship_id": "51c02b72-fea3-47e6-95c9-7f6861ca9214",
+            "db_ship_name": "Grandeur of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "GR",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "HM",
+            "source_ship_name": "Harmony of the Seas",
+            "sailings": 102,
+            "resolved": true,
+            "db_ship_id": "0bc14a21-08a6-4c6c-b8dc-142b0501c340",
+            "db_ship_name": "Harmony of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "HM",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "IC",
+            "source_ship_name": "Icon of the Seas",
+            "sailings": 86,
+            "resolved": true,
+            "db_ship_id": "193071d7-46ee-438f-9025-ff9551ce4aa2",
+            "db_ship_name": "Icon of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "IC",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "ID",
+            "source_ship_name": "Independence of the Seas",
+            "sailings": 81,
+            "resolved": true,
+            "db_ship_id": "6586c133-6390-417d-b761-d78d05bf298b",
+            "db_ship_name": "Independence of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "ID",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "JW",
+            "source_ship_name": "Jewel of the Seas",
+            "sailings": 157,
+            "resolved": true,
+            "db_ship_id": "cbbc9f3c-1a72-4ebd-a2ee-67447552f799",
+            "db_ship_name": "Jewel of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "JW",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "LE",
+            "source_ship_name": "Legend of the Seas",
+            "sailings": 117,
+            "resolved": true,
+            "db_ship_id": "86ee7da8-9f03-4e75-b220-8b72945b4666",
+            "db_ship_name": "Legend of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "LE",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "LB",
+            "source_ship_name": "Liberty of the Seas",
+            "sailings": 119,
+            "resolved": true,
+            "db_ship_id": "1f45af9a-c4eb-4b2d-95b1-deb460466bc5",
+            "db_ship_name": "Liberty of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "LB",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "MA",
+            "source_ship_name": "Mariner of the Seas",
+            "sailings": 82,
+            "resolved": true,
+            "db_ship_id": "d561a315-1fe9-4d74-ae25-05aa5616866c",
+            "db_ship_name": "Mariner of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "MA",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "NV",
+            "source_ship_name": "Navigator of the Seas",
+            "sailings": 54,
+            "resolved": true,
+            "db_ship_id": "34ab9aaa-2ef7-42be-b749-62d569478cb1",
+            "db_ship_name": "Navigator of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "NV",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "OA",
+            "source_ship_name": "Oasis of the Seas",
+            "sailings": 124,
+            "resolved": true,
+            "db_ship_id": "3797ea63-dab7-4ce3-8fd3-5fa83f358c3d",
+            "db_ship_name": "Oasis of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "OA",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "OY",
+            "source_ship_name": "Odyssey of the Seas",
+            "sailings": 75,
+            "resolved": true,
+            "db_ship_id": "8a4ce0bc-1f5f-4749-8e5f-2d4db1fab451",
+            "db_ship_name": "Odyssey of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "OY",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "OV",
+            "source_ship_name": "Ovation of the Seas",
+            "sailings": 115,
+            "resolved": true,
+            "db_ship_id": "841c8dc2-f60d-40bd-98c8-21226efa3a51",
+            "db_ship_name": "Ovation of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "OV",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "QN",
+            "source_ship_name": "Quantum of the Seas",
+            "sailings": 92,
+            "resolved": true,
+            "db_ship_id": "f1b1bb07-9cea-4636-8adf-cfa7aafd580e",
+            "db_ship_name": "Quantum of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "QN",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "RD",
+            "source_ship_name": "Radiance of the Seas",
+            "sailings": 115,
+            "resolved": true,
+            "db_ship_id": "136dd517-ff7f-4f5e-be56-d403371f04c8",
+            "db_ship_name": "Radiance of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "RD",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "RH",
+            "source_ship_name": "Rhapsody of the Seas",
+            "sailings": 81,
+            "resolved": true,
+            "db_ship_id": "1ba66416-82c3-410c-8810-af379e226c8b",
+            "db_ship_name": "Rhapsody of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "RH",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "SR",
+            "source_ship_name": "Serenade of the Seas",
+            "sailings": 96,
+            "resolved": true,
+            "db_ship_id": "39c9ce64-267d-45f7-a9af-800ecaf18c21",
+            "db_ship_name": "Serenade of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "SR",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "SC",
+            "source_ship_name": "Spectrum of the Seas",
+            "sailings": 121,
+            "resolved": true,
+            "db_ship_id": "65296346-d83b-4b4a-afbb-c1ae15a8f56b",
+            "db_ship_name": "Spectrum of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "SC",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "ST",
+            "source_ship_name": "Star of the Seas",
+            "sailings": 87,
+            "resolved": true,
+            "db_ship_id": "43ac6966-22ac-4b43-b901-27a3cf31ee58",
+            "db_ship_name": "Star of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "ST",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "SY",
+            "source_ship_name": "Symphony of the Seas",
+            "sailings": 82,
+            "resolved": true,
+            "db_ship_id": "845a2f9e-7dcb-4dad-ae4d-741602f2304a",
+            "db_ship_name": "Symphony of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "SY",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "UT",
+            "source_ship_name": "Utopia of the Seas",
+            "sailings": 173,
+            "resolved": true,
+            "db_ship_id": "d7639d55-9819-442d-9d36-4d069bdf305b",
+            "db_ship_name": "Utopia of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "UT",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "VI",
+            "source_ship_name": "Vision of the Seas",
+            "sailings": 74,
+            "resolved": true,
+            "db_ship_id": "c120ff42-2840-4eaa-87e0-50307733a4af",
+            "db_ship_name": "Vision of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "VI",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "VY",
+            "source_ship_name": "Voyager of the Seas",
+            "sailings": 62,
+            "resolved": true,
+            "db_ship_id": "df64239d-412b-435d-a3b2-41a5ac041e1c",
+            "db_ship_name": "Voyager of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "VY",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          },
+          {
+            "source_ship_code": "WN",
+            "source_ship_name": "Wonder of the Seas",
+            "sailings": 162,
+            "resolved": true,
+            "db_ship_id": "6d8b4849-77af-4b7a-9e05-af96d136d529",
+            "db_ship_name": "Wonder of the Seas",
+            "current_official_line_ship_id": null,
+            "proposed_official_line_ship_id": "WN",
+            "resolution_method": "exact_name",
+            "confidence": 100,
+            "unresolved": false
+          }
+        ]
+      },
+      "port_audit": {
+        "exact_resolved": 159,
+        "alias_resolved": 22,
+        "unresolved_conventional": 58,
+        "scenic_cruising": 11,
+        "sea_day": 0,
+        "likely_aliases": [
+          {
+            "classification": "unresolved_conventional",
+            "name": "Yucatan (Progreso)",
+            "code": "PRO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "RD05W750_2027-11-22",
+            "count": 12,
+            "sample_sailing_ids": [
+              "RD05W750_2027-11-22",
+              "RD05W750_2027-12-06",
+              "RD05W750_2028-01-03",
+              "RD05W750_2028-01-17",
+              "RD05W750_2028-02-28"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Jeju (Seogwipo)",
+            "code": "SPO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC05J038_2027-06-13",
+            "count": 24,
+            "sample_sailing_ids": [
+              "SC05J038_2027-06-13",
+              "SC05J041_2027-07-29",
+              "SC05J055_2028-02-21",
+              "SC04I859_2026-09-19",
+              "SC04I858_2026-09-27"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Okinawa (Naha)",
+            "code": "OKA",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC04I856_2026-08-28",
+            "count": 38,
+            "sample_sailing_ids": [
+              "SC04I856_2026-08-28",
+              "SC04I857_2026-10-20",
+              "SC04I899_2027-02-01",
+              "SC04I905_2027-03-20",
+              "SC04I857_2027-04-06"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Hue / Danang (Chan May)",
+            "code": "CHA",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC04I860_2026-11-16",
+            "count": 8,
+            "sample_sailing_ids": [
+              "SC04I860_2026-11-16",
+              "SC04I892_2027-11-08",
+              "SC04I892_2027-12-06",
+              "QN10I047_2028-03-24",
+              "QN10I043_2027-11-04"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Bruges/Zeebruge (Brussels)",
+            "code": "BRU",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "FR03U028_2027-10-15",
+            "count": 7,
+            "sample_sailing_ids": [
+              "FR03U028_2027-10-15",
+              "FR05U034_2027-07-18",
+              "FR05U035_2027-08-17",
+              "FR07U281_2027-07-25",
+              "LB07U249_2026-08-16"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Chania (Souda)",
+            "code": "CHQ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "RH07M878_2027-06-18",
+            "count": 12,
+            "sample_sailing_ids": [
+              "RH07M878_2027-06-18",
+              "RH07M878_2027-08-20",
+              "RH07M878_2027-09-10",
+              "RH07M879_2027-07-16",
+              "RH07M879_2027-08-27"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Sasebo (Uragashira)",
+            "code": "SGR",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC08I101_2028-03-23",
+            "count": 1,
+            "sample_sailing_ids": [
+              "SC08I101_2028-03-23"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Porto (Leixoes)",
+            "code": "OPO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "MA09M349_2027-09-25",
+            "count": 5,
+            "sample_sailing_ids": [
+              "MA09M349_2027-09-25",
+              "MA09M346_2027-05-27",
+              "MA09M346_2027-09-16",
+              "MA09M345_2027-05-18",
+              "MA10M413_2027-09-06"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Miyazaki (Aburatsu)",
+            "code": "ABU",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC08I097_2027-01-11",
+            "count": 1,
+            "sample_sailing_ids": [
+              "SC08I097_2027-01-11"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Sapporo (Muroran)",
+            "code": "SAP",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "QN14T270_2027-09-27",
+            "count": 3,
+            "sample_sailing_ids": [
+              "QN14T270_2027-09-27",
+              "SC10I048_2027-10-11",
+              "NV15T244_2026-10-02"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Sasebo (Miura)",
+            "code": "SSO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC10I049_2027-10-21",
+            "count": 1,
+            "sample_sailing_ids": [
+              "SC10I049_2027-10-21"
+            ]
+          }
+        ],
+        "unresolved_conventional_ports": [
+          {
+            "classification": "unresolved_conventional",
+            "name": "Catalina Island",
+            "code": "CAT",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SR04X058_2026-10-11",
+            "count": 71,
+            "sample_sailing_ids": [
+              "SR04X058_2026-10-11",
+              "SR04X058_2026-11-29",
+              "SR04X058_2026-12-06",
+              "SR04X058_2027-01-10",
+              "SR04X058_2027-01-17"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Puerto Costa Maya",
+            "code": "CMM",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "RD05W707_2026-08-29",
+            "count": 592,
+            "sample_sailing_ids": [
+              "RD05W707_2026-08-29",
+              "RD05W706_2026-09-07",
+              "RD05W707_2026-09-12",
+              "RD05W706_2026-09-21",
+              "RD05W707_2026-09-26"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Astoria",
+            "code": "AST",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SR05R020_2026-09-27",
+            "count": 3,
+            "sample_sailing_ids": [
+              "SR05R020_2026-09-27",
+              "SR07R039_2027-05-02",
+              "SR07R041_2027-09-26"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Falmouth",
+            "code": "FMT",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "AD06W275_2026-08-29",
+            "count": 106,
+            "sample_sailing_ids": [
+              "AD06W275_2026-08-29",
+              "AD06W275_2026-09-26",
+              "ID07W748_2026-12-06",
+              "FR05W763_2026-11-14",
+              "FR05E073_2027-04-03"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Charlotte Amalie",
+            "code": "STT",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "AD08E150_2026-08-21",
+            "count": 254,
+            "sample_sailing_ids": [
+              "AD08E150_2026-08-21",
+              "AD08E151_2026-09-18",
+              "AD08E151_2026-10-16",
+              "VI07D503_2026-11-01",
+              "VI07D503_2026-11-15"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "La Paz",
+            "code": "LPZ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SR07X069_2026-10-04",
+            "count": 11,
+            "sample_sailing_ids": [
+              "SR07X069_2026-10-04",
+              "SR07X070_2026-10-18",
+              "SR07X069_2026-10-25",
+              "SR07X070_2026-11-15",
+              "SR07X069_2027-01-03"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Victoria",
+            "code": "YVJ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SR07R039_2027-05-02",
+            "count": 45,
+            "sample_sailing_ids": [
+              "SR07R039_2027-05-02",
+              "VY07A457_2027-05-14",
+              "VY07A426_2026-09-25",
+              "VY07A456_2027-05-07",
+              "VY07A456_2027-05-21"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Labadee",
+            "code": "LAB",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "AD04E035_2028-03-27",
+            "count": 77,
+            "sample_sailing_ids": [
+              "AD04E035_2028-03-27",
+              "AD05E116_2027-11-26",
+              "AD05E116_2028-02-04",
+              "AD05E088_2027-07-09",
+              "AD05E088_2027-07-23"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "St. John's",
+            "code": "ANU",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "RH07D514_2026-08-15",
+            "count": 110,
+            "sample_sailing_ids": [
+              "RH07D514_2026-08-15",
+              "RH07D514_2026-08-29",
+              "RH07D514_2026-09-12",
+              "RH07D514_2026-09-26",
+              "RH07D514_2026-10-10"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Yucatan (Progreso)",
+            "code": "PRO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "RD05W750_2027-11-22",
+            "count": 12,
+            "sample_sailing_ids": [
+              "RD05W750_2027-11-22",
+              "RD05W750_2027-12-06",
+              "RD05W750_2028-01-03",
+              "RD05W750_2028-01-17",
+              "RD05W750_2028-02-28"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Ishigaki",
+            "code": "ISG",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC04I876_2027-01-24",
+            "count": 7,
+            "sample_sailing_ids": [
+              "SC04I876_2027-01-24",
+              "SC05J056_2028-02-26",
+              "SC05J012_2026-11-11",
+              "SC05J013_2026-12-01",
+              "SC05J015_2026-12-13"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Jeju (Seogwipo)",
+            "code": "SPO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC05J038_2027-06-13",
+            "count": 24,
+            "sample_sailing_ids": [
+              "SC05J038_2027-06-13",
+              "SC05J041_2027-07-29",
+              "SC05J055_2028-02-21",
+              "SC04I859_2026-09-19",
+              "SC04I858_2026-09-27"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Okinawa (Naha)",
+            "code": "OKA",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC04I856_2026-08-28",
+            "count": 38,
+            "sample_sailing_ids": [
+              "SC04I856_2026-08-28",
+              "SC04I857_2026-10-20",
+              "SC04I899_2027-02-01",
+              "SC04I905_2027-03-20",
+              "SC04I857_2027-04-06"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Fukuoka",
+            "code": "FUK",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC05J062_2027-02-17",
+            "count": 22,
+            "sample_sailing_ids": [
+              "SC05J062_2027-02-17",
+              "SC05J036_2027-05-30",
+              "SC05J040_2027-07-24",
+              "SC05J042_2027-08-15",
+              "SC05J054_2028-02-16"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Hue / Danang (Chan May)",
+            "code": "CHA",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC04I860_2026-11-16",
+            "count": 8,
+            "sample_sailing_ids": [
+              "SC04I860_2026-11-16",
+              "SC04I892_2027-11-08",
+              "SC04I892_2027-12-06",
+              "QN10I047_2028-03-24",
+              "QN10I043_2027-11-04"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Bruges/Zeebruge (Brussels)",
+            "code": "BRU",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "FR03U028_2027-10-15",
+            "count": 7,
+            "sample_sailing_ids": [
+              "FR03U028_2027-10-15",
+              "FR05U034_2027-07-18",
+              "FR05U035_2027-08-17",
+              "FR07U281_2027-07-25",
+              "LB07U249_2026-08-16"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Cabo Rojo",
+            "code": "CBJ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "FR09D171_2026-09-24",
+            "count": 66,
+            "sample_sailing_ids": [
+              "FR09D171_2026-09-24",
+              "FR09D173_2026-10-22",
+              "FR09D176_2026-12-03",
+              "FR09D153_2027-11-18",
+              "FR09D154_2027-12-02"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "St. George's",
+            "code": "GND",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "VI07D512_2027-02-28",
+            "count": 10,
+            "sample_sailing_ids": [
+              "VI07D512_2027-02-28",
+              "VI07D563_2028-01-23",
+              "VI07D557_2027-12-05",
+              "VI07D555_2027-11-21",
+              "VI07D564_2028-01-30"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Bodrum",
+            "code": "BXN",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "RH07M876_2027-05-28",
+            "count": 10,
+            "sample_sailing_ids": [
+              "RH07M876_2027-05-28",
+              "RH07M876_2027-07-09",
+              "RH07M880_2027-07-30",
+              "RH07M880_2027-10-01",
+              "RH07M878_2027-06-18"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Rhodes",
+            "code": "RHO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "RH07M876_2027-05-28",
+            "count": 10,
+            "sample_sailing_ids": [
+              "RH07M876_2027-05-28",
+              "RH07M876_2027-07-09",
+              "RH07M880_2027-07-30",
+              "RH07M880_2027-10-01",
+              "RH07M884_2027-10-29"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Chania (Souda)",
+            "code": "CHQ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "RH07M878_2027-06-18",
+            "count": 12,
+            "sample_sailing_ids": [
+              "RH07M878_2027-06-18",
+              "RH07M878_2027-08-20",
+              "RH07M878_2027-09-10",
+              "RH07M879_2027-07-16",
+              "RH07M879_2027-08-27"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Montego Bay",
+            "code": "MBJ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "MA07W743_2026-12-19",
+            "count": 2,
+            "sample_sailing_ids": [
+              "MA07W743_2026-12-19",
+              "MA07W742_2027-02-13"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Endicott Arm & Dawes Glacier",
+            "code": "ENC",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "VY07A458_2027-05-28",
+            "count": 29,
+            "sample_sailing_ids": [
+              "VY07A458_2027-05-28",
+              "VY07A458_2027-06-04",
+              "VY07A458_2027-06-11",
+              "VY07A458_2027-06-18",
+              "VY07A458_2027-06-25"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "La Coruna",
+            "code": "LCG",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "FR12T086_2027-10-18",
+            "count": 13,
+            "sample_sailing_ids": [
+              "FR12T086_2027-10-18",
+              "FR07U277_2027-05-16",
+              "FR07U277_2027-05-30",
+              "FR08U069_2027-09-20",
+              "FR08U066_2027-06-26"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Vigo",
+            "code": "VGO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "FR12T086_2027-10-18",
+            "count": 14,
+            "sample_sailing_ids": [
+              "FR12T086_2027-10-18",
+              "FR07U277_2027-05-16",
+              "FR07U277_2027-05-30",
+              "FR08U069_2027-09-20",
+              "FR08U066_2027-06-26"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Kumamoto",
+            "code": "KMJ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC05J045_2027-09-19",
+            "count": 5,
+            "sample_sailing_ids": [
+              "SC05J045_2027-09-19",
+              "SC08I100_2028-03-15",
+              "SC09I922_2026-12-20",
+              "SC11I024_2027-11-20",
+              "NV12I202_2027-02-13"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Split",
+            "code": "SPU",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "BR07M886_2027-05-15",
+            "count": 39,
+            "sample_sailing_ids": [
+              "BR07M886_2027-05-15",
+              "BR07M886_2027-05-22",
+              "BR07M888_2027-06-05",
+              "BR07M886_2027-06-12",
+              "BR07M886_2027-06-26"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Naples / Capri",
+            "code": "NAP",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "MA07M901_2027-08-06",
+            "count": 106,
+            "sample_sailing_ids": [
+              "MA07M901_2027-08-06",
+              "EX07M855_2027-07-19",
+              "EX07M861_2027-07-05",
+              "EX07M861_2027-09-27",
+              "MA09M347_2027-06-15"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Santa Margherita",
+            "code": "SML",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "EX07M856_2027-05-24",
+            "count": 6,
+            "sample_sailing_ids": [
+              "EX07M856_2027-05-24",
+              "EX07M856_2027-06-14",
+              "EX07M856_2027-07-26",
+              "EX07M864_2027-08-16",
+              "EX07M856_2027-09-06"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Sasebo (Uragashira)",
+            "code": "SGR",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC08I101_2028-03-23",
+            "count": 1,
+            "sample_sailing_ids": [
+              "SC08I101_2028-03-23"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Porto (Leixoes)",
+            "code": "OPO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "MA09M349_2027-09-25",
+            "count": 5,
+            "sample_sailing_ids": [
+              "MA09M349_2027-09-25",
+              "MA09M346_2027-05-27",
+              "MA09M346_2027-09-16",
+              "MA09M345_2027-05-18",
+              "MA10M413_2027-09-06"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Argostoli",
+            "code": "ARM",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "EX07M802_2026-08-29",
+            "count": 3,
+            "sample_sailing_ids": [
+              "EX07M802_2026-08-29",
+              "EX07M805_2026-09-26",
+              "MA07M897_2027-07-09"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Royal Beach Club Lelepa",
+            "code": "LEL",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "VY07K118_2027-11-25",
+            "count": 16,
+            "sample_sailing_ids": [
+              "VY07K118_2027-11-25",
+              "VY07K115_2027-10-29",
+              "VY07K117_2027-11-12",
+              "VY07K116_2027-11-05",
+              "AN09K174_2027-11-08"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Alexandria",
+            "code": "ALY",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "RH07M875_2027-05-21",
+            "count": 16,
+            "sample_sailing_ids": [
+              "RH07M875_2027-05-21",
+              "RH07M875_2027-05-21",
+              "RH07M875_2027-06-11",
+              "RH07M875_2027-06-11",
+              "RH07M875_2027-07-02"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Bilbao",
+            "code": "BIL",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "FR07U277_2027-05-16",
+            "count": 13,
+            "sample_sailing_ids": [
+              "FR07U277_2027-05-16",
+              "FR07U277_2027-05-30",
+              "FR08U066_2027-06-26",
+              "FR08U068_2027-08-09",
+              "FR08U070_2027-10-07"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Tenerife",
+            "code": "TCI",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "MA10M414_2027-10-04",
+            "count": 1,
+            "sample_sailing_ids": [
+              "MA10M414_2027-10-04"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Gran Canaria",
+            "code": "PLC",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "MA10M414_2027-10-04",
+            "count": 1,
+            "sample_sailing_ids": [
+              "MA10M414_2027-10-04"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Portland",
+            "code": "PWM",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "VI09N085_2027-08-26",
+            "count": 10,
+            "sample_sailing_ids": [
+              "VI09N085_2027-08-26",
+              "VI09N085_2027-10-07",
+              "VI09N086_2027-09-09",
+              "VI09N086_2027-09-23",
+              "ID09N081_2027-09-02"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Langkawi",
+            "code": "LGK",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "NV05J001_2026-11-19",
+            "count": 5,
+            "sample_sailing_ids": [
+              "NV05J001_2026-11-19",
+              "NV05J002_2026-12-28",
+              "NV05J029_2027-01-23",
+              "NV05J004_2027-03-21",
+              "NV10I042_2027-01-02"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Santa Marta",
+            "code": "SMR",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "GR07D491_2026-12-19",
+            "count": 6,
+            "sample_sailing_ids": [
+              "GR07D491_2026-12-19",
+              "GR07D496_2027-01-23",
+              "GR07D497_2027-01-30",
+              "GR7IP223_2026-12-20",
+              "GR7IP228_2027-01-24"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Gijon",
+            "code": "GIJ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "FR09U063_2027-09-28",
+            "count": 1,
+            "sample_sailing_ids": [
+              "FR09U063_2027-09-28"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Port of Spain",
+            "code": "POS",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "GR10D096_2026-11-14",
+            "count": 1,
+            "sample_sailing_ids": [
+              "GR10D096_2026-11-14"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Scarborough",
+            "code": "TAB",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "GR10D096_2026-11-14",
+            "count": 1,
+            "sample_sailing_ids": [
+              "GR10D096_2026-11-14"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Miyazaki (Aburatsu)",
+            "code": "ABU",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC08I097_2027-01-11",
+            "count": 1,
+            "sample_sailing_ids": [
+              "SC08I097_2027-01-11"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "International Dateline",
+            "code": "XID",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "QN14T270_2027-09-27",
+            "count": 7,
+            "sample_sailing_ids": [
+              "QN14T270_2027-09-27",
+              "AN18T049_2026-10-11",
+              "NV15T244_2026-10-02",
+              "AN16T115_2027-04-14",
+              "QN23T004_2027-04-11"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Sapporo (Muroran)",
+            "code": "SAP",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "QN14T270_2027-09-27",
+            "count": 3,
+            "sample_sailing_ids": [
+              "QN14T270_2027-09-27",
+              "SC10I048_2027-10-11",
+              "NV15T244_2026-10-02"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Haugesund",
+            "code": "HAU",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "FR07U279_2027-06-14",
+            "count": 3,
+            "sample_sailing_ids": [
+              "FR07U279_2027-06-14",
+              "FR07U280_2027-07-11",
+              "LB07U249_2026-08-16"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Olden",
+            "code": "OLN",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "FR07U279_2027-06-14",
+            "count": 4,
+            "sample_sailing_ids": [
+              "FR07U279_2027-06-14",
+              "FR07U280_2027-07-11",
+              "FR07U281_2027-07-25",
+              "LB07U249_2026-08-16"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Raiatea",
+            "code": "RFP",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "AN18T049_2026-10-11",
+            "count": 5,
+            "sample_sailing_ids": [
+              "AN18T049_2026-10-11",
+              "AN16T115_2027-04-14",
+              "QN23T004_2027-04-11",
+              "AN17T057_2027-10-06",
+              "VY25T003_2027-10-01"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Nha Trang",
+            "code": "NHA",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "QN10I047_2028-03-24",
+            "count": 2,
+            "sample_sailing_ids": [
+              "QN10I047_2028-03-24",
+              "QN10I045_2028-02-20"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Niigata",
+            "code": "KIJ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC08I091_2026-09-11",
+            "count": 2,
+            "sample_sailing_ids": [
+              "SC08I091_2026-09-11",
+              "SC08I092_2026-10-24"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Bay Of Islands",
+            "code": "BYO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "AN09K160_2026-12-02",
+            "count": 4,
+            "sample_sailing_ids": [
+              "AN09K160_2026-12-02",
+              "AN09K165_2027-02-12",
+              "AN11K175_2028-03-22",
+              "AN09K161_2026-12-19"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Kochi",
+            "code": "KCZ",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC09I926_2028-01-03",
+            "count": 2,
+            "sample_sailing_ids": [
+              "SC09I926_2028-01-03",
+              "QN13T155_2027-10-12"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Ponce",
+            "code": "PSE",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "LE06W296_2027-03-28",
+            "count": 2,
+            "sample_sailing_ids": [
+              "LE06W296_2027-03-28",
+              "LE06W296_2027-04-11"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Sasebo (Miura)",
+            "code": "SSO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SC10I049_2027-10-21",
+            "count": 1,
+            "sample_sailing_ids": [
+              "SC10I049_2027-10-21"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Cherbourg",
+            "code": "CER",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "LB07U251_2026-10-03",
+            "count": 2,
+            "sample_sailing_ids": [
+              "LB07U251_2026-10-03",
+              "LB08U053_2026-09-25"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Puerto Quetzal",
+            "code": "GUA",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SR15T253_2027-10-07",
+            "count": 1,
+            "sample_sailing_ids": [
+              "SR15T253_2027-10-07"
+            ]
+          },
+          {
+            "classification": "unresolved_conventional",
+            "name": "Puntarenas",
+            "code": "SJO",
+            "reason": "Could not resolve to a canonical port",
+            "role": "itinerary",
+            "sample_sailing_id": "SR15T253_2027-10-07",
+            "count": 1,
+            "sample_sailing_ids": [
+              "SR15T253_2027-10-07"
+            ]
+          }
+        ],
+        "scenic_cruising_stops": [
+          {
+            "classification": "scenic_cruising",
+            "name": "Hubbard Glacier",
+            "code": "YAK",
+            "role": "itinerary",
+            "sample_sailing_id": "OV07A418_2026-08-14",
+            "count": 24,
+            "sample_sailing_ids": [
+              "OV07A418_2026-08-14",
+              "OV07A420_2026-08-28",
+              "AN07A461_2027-05-14",
+              "AN07A463_2027-05-28",
+              "AN07A467_2027-06-25"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Inside Passage",
+            "code": "ISP",
+            "reason": "Invalid non-port text (region_or_theme)",
+            "role": "itinerary",
+            "sample_sailing_id": "SR07A481_2027-05-23",
+            "count": 33,
+            "sample_sailing_ids": [
+              "SR07A481_2027-05-23",
+              "SR07A481_2027-05-23",
+              "SR07A481_2027-06-06",
+              "SR07A481_2027-06-06",
+              "SR07A483_2027-06-13"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Tracy Arm Fjord",
+            "code": "TFJ",
+            "role": "itinerary",
+            "sample_sailing_id": "SR07A481_2027-05-23",
+            "count": 16,
+            "sample_sailing_ids": [
+              "SR07A481_2027-05-23",
+              "SR07A481_2027-06-06",
+              "SR07A483_2027-06-13",
+              "SR07A481_2027-06-20",
+              "SR07A483_2027-06-27"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Bay of Kotor (Cruising)",
+            "code": "KTX",
+            "role": "itinerary",
+            "sample_sailing_id": "BR07M887_2027-05-29",
+            "count": 6,
+            "sample_sailing_ids": [
+              "BR07M887_2027-05-29",
+              "BR07M887_2027-07-31",
+              "BR07M887_2027-10-02",
+              "BR07M891_2027-10-23",
+              "EX07M801_2026-08-22"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Napali Coast (Cruising)",
+            "code": "NPL",
+            "role": "itinerary",
+            "sample_sailing_id": "AN10H049_2027-09-26",
+            "count": 2,
+            "sample_sailing_ids": [
+              "AN10H049_2027-09-26",
+              "AN12H026_2026-09-29"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Willis Island (Cruising)",
+            "code": "WIL",
+            "role": "itinerary",
+            "sample_sailing_id": "QN07K106_2026-11-20",
+            "count": 6,
+            "sample_sailing_ids": [
+              "QN07K106_2026-11-20",
+              "QN07K110_2027-02-19",
+              "QN07K114_2027-03-05",
+              "QN06K032_2027-01-16",
+              "VY06K034_2027-11-19"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Dusky Sound (Cruising)",
+            "code": "DKY",
+            "role": "itinerary",
+            "sample_sailing_id": "AN09K158_2026-11-11",
+            "count": 8,
+            "sample_sailing_ids": [
+              "AN09K158_2026-11-11",
+              "AN09K162_2026-12-28",
+              "AN09K172_2027-03-27",
+              "AN09K176_2027-11-29",
+              "AN11K175_2028-03-22"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Doubtful Sound (Cruising)",
+            "code": "DBS",
+            "role": "itinerary",
+            "sample_sailing_id": "AN09K158_2026-11-11",
+            "count": 8,
+            "sample_sailing_ids": [
+              "AN09K158_2026-11-11",
+              "AN09K162_2026-12-28",
+              "AN09K172_2027-03-27",
+              "AN09K176_2027-11-29",
+              "AN11K175_2028-03-22"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Milford Sound (Cruising)",
+            "code": "MFN",
+            "role": "itinerary",
+            "sample_sailing_id": "AN09K158_2026-11-11",
+            "count": 8,
+            "sample_sailing_ids": [
+              "AN09K158_2026-11-11",
+              "AN09K162_2026-12-28",
+              "AN09K172_2027-03-27",
+              "AN09K176_2027-11-29",
+              "AN11K175_2028-03-22"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Solar Eclipse (Cruising)",
+            "code": "ECL",
+            "role": "itinerary",
+            "sample_sailing_id": "MA07M900_2027-07-30",
+            "count": 1,
+            "sample_sailing_ids": [
+              "MA07M900_2027-07-30"
+            ]
+          },
+          {
+            "classification": "scenic_cruising",
+            "name": "Panama Canal (Cruising)",
+            "code": "PTY",
+            "role": "itinerary",
+            "sample_sailing_id": "SR15T253_2027-10-07",
+            "count": 1,
+            "sample_sailing_ids": [
+              "SR15T253_2027-10-07"
+            ]
+          }
+        ],
+        "unresolved_embarkation_ports": []
+      },
+      "destination_audit": {
+        "source_values": [
+          {
+            "source_code": "ALCAN",
+            "source_name": "Alaska",
+            "mapped_destination": "alaska",
+            "mapping_method": "royal_caribbean_destination_code_ALCAN",
+            "unresolved": false,
+            "sailings": 88
+          },
+          {
+            "source_code": "ATLCO",
+            "source_name": "Canada & New England",
+            "mapped_destination": "canada-new-england",
+            "mapping_method": "royal_caribbean_destination_code_ATLCO",
+            "unresolved": false,
+            "sailings": 14
+          },
+          {
+            "source_code": "AUSTL",
+            "source_name": "Australia & New Zealand",
+            "mapped_destination": "australia-new-zealand",
+            "mapping_method": "royal_caribbean_australasia_route",
+            "unresolved": false,
+            "sailings": 38
+          },
+          {
+            "source_code": "BAHAM",
+            "source_name": "Bahamas",
+            "mapped_destination": "caribbean",
+            "mapping_method": "royal_caribbean_destination_code_BAHAM",
+            "unresolved": false,
+            "sailings": 685
+          },
+          {
+            "source_code": "BERMU",
+            "source_name": "Bermuda",
+            "mapped_destination": "caribbean",
+            "mapping_method": "royal_caribbean_destination_code_BERMU",
+            "unresolved": false,
+            "sailings": 36
+          },
+          {
+            "source_code": "CARIB",
+            "source_name": "Caribbean",
+            "mapped_destination": "caribbean",
+            "mapping_method": "royal_caribbean_destination_code_CARIB",
+            "unresolved": false,
+            "sailings": 1486
+          },
+          {
+            "source_code": "EUROP",
+            "source_name": "Europe",
+            "mapped_destination": "british-isles",
+            "mapping_method": "royal_caribbean_europe_itinerary",
+            "unresolved": false,
+            "sailings": 238
+          },
+          {
+            "source_code": "FAR.E",
+            "source_name": "Asia",
+            "mapped_destination": "asia",
+            "mapping_method": "royal_caribbean_far_east_broad",
+            "unresolved": false,
+            "sailings": 191
+          },
+          {
+            "source_code": "HAWAI",
+            "source_name": "Hawaii",
+            "mapped_destination": "hawaii",
+            "mapping_method": "royal_caribbean_destination_code_HAWAI",
+            "unresolved": false,
+            "sailings": 3
+          },
+          {
+            "source_code": "ISLAN",
+            "source_name": "Repositioning",
+            "mapped_destination": "caribbean",
+            "mapping_method": null,
+            "unresolved": false,
+            "sailings": 7
+          },
+          {
+            "source_code": "MEXCO",
+            "source_name": "Mexico",
+            "mapped_destination": "mexican-riviera",
+            "mapping_method": "royal_caribbean_destination_code_MEXCO",
+            "unresolved": false,
+            "sailings": 212
+          },
+          {
+            "source_code": "PACIF",
+            "source_name": "Pacific Northwest",
+            "mapped_destination": "pacific-coast",
+            "mapping_method": "royal_caribbean_pacific_coastal",
+            "unresolved": false,
+            "sailings": 4
+          },
+          {
+            "source_code": "SOPAC",
+            "source_name": "South Pacific",
+            "mapped_destination": "south-pacific",
+            "mapping_method": "royal_caribbean_destination_code_SOPAC",
+            "unresolved": false,
+            "sailings": 40
+          },
+          {
+            "source_code": "T.ATL",
+            "source_name": "Transatlantic",
+            "mapped_destination": "transatlantic",
+            "mapping_method": "royal_caribbean_crossing_name",
+            "unresolved": false,
+            "sailings": 18
+          },
+          {
+            "source_code": "T.PAN",
+            "source_name": "Panama Canal",
+            "mapped_destination": "panama-canal",
+            "mapping_method": "royal_caribbean_destination_code_T.PAN",
+            "unresolved": false,
+            "sailings": 1
+          },
+          {
+            "source_code": "TPACI",
+            "source_name": "Transpacific",
+            "mapped_destination": "transpacific",
+            "mapping_method": "royal_caribbean_crossing_name",
+            "unresolved": false,
+            "sailings": 7
+          }
+        ],
+        "mapped_values": [
+          {
+            "source_code": "ALCAN",
+            "source_name": "Alaska",
+            "mapped_destination": "alaska",
+            "mapping_method": "royal_caribbean_destination_code_ALCAN",
+            "unresolved": false,
+            "sailings": 88
+          },
+          {
+            "source_code": "ATLCO",
+            "source_name": "Canada & New England",
+            "mapped_destination": "canada-new-england",
+            "mapping_method": "royal_caribbean_destination_code_ATLCO",
+            "unresolved": false,
+            "sailings": 14
+          },
+          {
+            "source_code": "AUSTL",
+            "source_name": "Australia & New Zealand",
+            "mapped_destination": "australia-new-zealand",
+            "mapping_method": "royal_caribbean_australasia_route",
+            "unresolved": false,
+            "sailings": 38
+          },
+          {
+            "source_code": "BAHAM",
+            "source_name": "Bahamas",
+            "mapped_destination": "caribbean",
+            "mapping_method": "royal_caribbean_destination_code_BAHAM",
+            "unresolved": false,
+            "sailings": 685
+          },
+          {
+            "source_code": "BERMU",
+            "source_name": "Bermuda",
+            "mapped_destination": "caribbean",
+            "mapping_method": "royal_caribbean_destination_code_BERMU",
+            "unresolved": false,
+            "sailings": 36
+          },
+          {
+            "source_code": "CARIB",
+            "source_name": "Caribbean",
+            "mapped_destination": "caribbean",
+            "mapping_method": "royal_caribbean_destination_code_CARIB",
+            "unresolved": false,
+            "sailings": 1486
+          },
+          {
+            "source_code": "EUROP",
+            "source_name": "Europe",
+            "mapped_destination": "british-isles",
+            "mapping_method": "royal_caribbean_europe_itinerary",
+            "unresolved": false,
+            "sailings": 238
+          },
+          {
+            "source_code": "FAR.E",
+            "source_name": "Asia",
+            "mapped_destination": "asia",
+            "mapping_method": "royal_caribbean_far_east_broad",
+            "unresolved": false,
+            "sailings": 191
+          },
+          {
+            "source_code": "HAWAI",
+            "source_name": "Hawaii",
+            "mapped_destination": "hawaii",
+            "mapping_method": "royal_caribbean_destination_code_HAWAI",
+            "unresolved": false,
+            "sailings": 3
+          },
+          {
+            "source_code": "ISLAN",
+            "source_name": "Repositioning",
+            "mapped_destination": "caribbean",
+            "mapping_method": null,
+            "unresolved": false,
+            "sailings": 7
+          },
+          {
+            "source_code": "MEXCO",
+            "source_name": "Mexico",
+            "mapped_destination": "mexican-riviera",
+            "mapping_method": "royal_caribbean_destination_code_MEXCO",
+            "unresolved": false,
+            "sailings": 212
+          },
+          {
+            "source_code": "PACIF",
+            "source_name": "Pacific Northwest",
+            "mapped_destination": "pacific-coast",
+            "mapping_method": "royal_caribbean_pacific_coastal",
+            "unresolved": false,
+            "sailings": 4
+          },
+          {
+            "source_code": "SOPAC",
+            "source_name": "South Pacific",
+            "mapped_destination": "south-pacific",
+            "mapping_method": "royal_caribbean_destination_code_SOPAC",
+            "unresolved": false,
+            "sailings": 40
+          },
+          {
+            "source_code": "T.ATL",
+            "source_name": "Transatlantic",
+            "mapped_destination": "transatlantic",
+            "mapping_method": "royal_caribbean_crossing_name",
+            "unresolved": false,
+            "sailings": 18
+          },
+          {
+            "source_code": "T.PAN",
+            "source_name": "Panama Canal",
+            "mapped_destination": "panama-canal",
+            "mapping_method": "royal_caribbean_destination_code_T.PAN",
+            "unresolved": false,
+            "sailings": 1
+          },
+          {
+            "source_code": "TPACI",
+            "source_name": "Transpacific",
+            "mapped_destination": "transpacific",
+            "mapping_method": "royal_caribbean_crossing_name",
+            "unresolved": false,
+            "sailings": 7
+          }
+        ],
+        "unresolved_values": []
+      },
+      "production_genuine_sailing_count": 2983,
+      "production_legacy_html_count": 14,
+      "recognised_existing_eligible_sailings": 2982,
+      "proposed_new_eligible_sailings": 3,
+      "proposed_inserts": 3,
+      "proposed_insert_sample": [
+        "SY08W060_2026-09-12",
+        "VI10D104_2027-04-04",
+        "RH10D103_2027-03-06"
+      ],
+      "proposed_updates": 0,
+      "update_analysis": {
+        "safe_update_allowlist": [
+          "official_url",
+          "booking_url",
+          "sailing_status",
+          "return_date",
+          "nights",
+          "departure_port"
+        ],
+        "review_required_fields": [
+          "ship_id",
+          "destination_id",
+          "departure_date",
+          "identity_key",
+          "official_sailing_id",
+          "itinerary"
+        ],
+        "safe_proposed_updates": [],
+        "review_required_updates": [],
+        "no_change_records": 2982,
+        "identity_mutation_forbidden": true
+      },
+      "source_duplicates_skipped": 0,
+      "duplicate_skips": 2982,
+      "incomplete_skipped": 14,
+      "cruisetours_excluded": 195,
+      "within_public_cutoff_excluded": 69,
+      "unfamiliar_status_skipped": 0,
+      "legacy_html_discovery_artefacts": [
+        {
+          "id": "31da07bf-f9f1-44c5-a3ec-b68e3f1d244a",
+          "status": "validation_failed",
+          "official_url": "https://www.royalcaribbean.com/aus/en/alaska-cruise-tours",
+          "official_sailing_id": null
+        },
+        {
+          "id": "3cabc788-664d-4458-94c6-c39b8e74097b",
+          "status": "hidden",
+          "official_url": "https://www.royalcaribbean.com/guides/best-alaska-cruises",
+          "official_sailing_id": null
+        },
+        {
+          "id": "3f8852db-9bce-4963-b2f3-2d39b07ac0c4",
+          "status": "validation_failed",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-inside-passage-cruise-from-vancouver-on-serenade-SR07A482",
+          "official_sailing_id": null
+        },
+        {
+          "id": "43676ec1-a238-4d8d-8e08-0a98baebf042",
+          "status": "validation_failed",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-experience-cruise-from-seattle-on-voyager-VY07A456",
+          "official_sailing_id": null
+        },
+        {
+          "id": "56739382-6007-458f-9298-7dec599932b5",
+          "status": "validation_failed",
+          "official_url": "https://www.royalcaribbean.com/cruise-deals/last-minute-cruises",
+          "official_sailing_id": null
+        },
+        {
+          "id": "6da50cc0-f25d-4954-9038-10d334fb878d",
+          "status": "validation_failed",
+          "official_url": "https://www.royalcaribbean.com/cruises?search=destination%3AALCAN",
+          "official_sailing_id": null
+        },
+        {
+          "id": "70fa2a2c-d6d8-4f04-8be0-535027a50800",
+          "status": "validation_failed",
+          "official_url": "https://www.royalcaribbean.com/aus/en/itinerary/7-night-alaska-adventure-from-vancouver-on-anthem-AN07A460",
+          "official_sailing_id": null
+        },
+        {
+          "id": "7c1a8319-61a6-4f21-afe2-d63f8da3d92c",
+          "status": "validation_failed",
+          "official_url": "https://www.royalcaribbean.com/aus/en/alaska-cruises",
+          "official_sailing_id": null
+        },
+        {
+          "id": "7dfc9a06-82f1-4ed5-b5ff-1da981302cf9",
+          "status": "hidden",
+          "official_url": "https://www.royalcaribbean.com/aus/en/faq/topics/cruisetours",
+          "official_sailing_id": null
+        },
+        {
+          "id": "8dd3dbae-18fd-4056-98dc-9f7fab577937",
+          "status": "validation_failed",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-experience-from-seattle-on-voyager-VY07SEA-2105097221",
+          "official_sailing_id": null
+        },
+        {
+          "id": "d0197be6-8bf7-4d08-a685-2a26b1f4f21f",
+          "status": "validation_failed",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-experience-cruise-from-seattle-on-voyager-VY07A426",
+          "official_sailing_id": null
+        },
+        {
+          "id": "d172eef0-fdce-4c68-8e74-ebea81d31c58",
+          "status": "match_required",
+          "official_url": "https://www.royalcaribbean.com/alaska-cruises",
+          "official_sailing_id": null
+        },
+        {
+          "id": "f3a60e38-0345-40ec-b9b9-b2e724d044b3",
+          "status": "hidden",
+          "official_url": "https://www.royalcaribbean.com/alaska-cruise-tours",
+          "official_sailing_id": null
+        },
+        {
+          "id": "fab398f1-40c1-41ec-9024-2e51c0cdb3ec",
+          "status": "hidden",
+          "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-adventure-cruise-from-seattle-on-voyager-VY07A426",
+          "official_sailing_id": null
+        }
+      ],
+      "source_absent_active": 0,
+      "source_absent_sailing_ids": [],
+      "enumeration_gap_sailings": [
+        "FR05E073_2027-04-17"
+      ],
+      "source_absence_policy": {
+        "policy": "consecutive_healthy_authoritative_absence",
+        "required_consecutive_healthy_absences": 2,
+        "enumeration_healthy": true,
+        "source_absence_actions_allowed": false,
+        "source_absent_candidate_count": 0,
+        "source_absent_action_eligible_count": 0,
+        "source_absence_cleared_count": 0,
+        "source_absent_candidates": [],
+        "source_absent_action_eligible": [],
+        "source_absence_cleared": [],
+        "note": "First healthy absence retains active status. Hide/expire requires two consecutive healthy authoritative absences."
+      },
+      "source_absence_actions_allowed": true,
+      "production_cutoff_candidates": [],
+      "public_booking_cutoff_days": 21,
+      "public_booking_cutoff_date": "2026-09-03",
+      "enumeration_health": {
+        "royal_caribbean_source_enumeration_ok": true,
+        "failures": [
+          "enumeration_gap_recovered_via_detail_lookup"
+        ],
+        "production_absent_from_union_count": 1,
+        "production_absent_from_union_ids": [
+          "FR05E073_2027-04-17"
+        ],
+        "detail_lookup_recoverable_count": 1,
+        "confirmed_source_removed_count": 0,
+        "unexplained_production_absent_count": 0,
+        "authoritative_union": true
+      },
+      "detail_lookup_audit": [
+        {
+          "official_sailing_id": "FR05E073_2027-04-17",
+          "group_id": "FR05MIA-4164238080",
+          "detail_ok": true,
+          "sailing_present_in_detail": true,
+          "retrievable": true
+        }
+      ],
+      "royal_caribbean_source_enumeration_ok": true,
+      "ship_coverage": {
+        "method": "ship_coverage_partition",
+        "supported_api_ship_filter": false,
+        "note": "Post-union ship coverage audit — not independent API-filtered partitions",
+        "fleet_ok": true,
+        "fleet_ship_count": 31,
+        "covered_ship_codes": [
+          "AD",
+          "AL",
+          "AN",
+          "BR",
+          "EN",
+          "EX",
+          "FR",
+          "GR",
+          "HM",
+          "HE",
+          "IC",
+          "ID",
+          "JW",
+          "LE",
+          "LB",
+          "MA",
+          "NV",
+          "OA",
+          "OY",
+          "OV",
+          "QN",
+          "RD",
+          "RH",
+          "SR",
+          "SC",
+          "ST",
+          "SY",
+          "UT",
+          "VI",
+          "VY",
+          "WN"
+        ],
+        "missing_ship_codes": [],
+        "partitions": [
+          {
+            "ship_code": "AD",
+            "unique_sailing_ids": 102,
+            "sample_sailing_ids": [
+              "AD06W275_2026-08-29",
+              "AD06W275_2026-09-26",
+              "AD08E150_2026-08-21"
+            ]
+          },
+          {
+            "ship_code": "AL",
+            "unique_sailing_ids": 90,
+            "sample_sailing_ids": [
+              "AL3BH279_2027-01-18",
+              "AL3BH210_2027-01-29",
+              "AL3BH210_2027-02-05"
+            ]
+          },
+          {
+            "ship_code": "AN",
+            "unique_sailing_ids": 265,
+            "sample_sailing_ids": [
+              "AN03K083_2026-10-30",
+              "AN03K084_2026-11-20",
+              "AN03K090_2027-10-24"
+            ]
+          },
+          {
+            "ship_code": "BR",
+            "unique_sailing_ids": 97,
+            "sample_sailing_ids": [
+              "BR3BH231_2026-11-20",
+              "BR3BH232_2026-11-27",
+              "BR3BH233_2026-12-04"
+            ]
+          },
+          {
+            "ship_code": "EN",
+            "unique_sailing_ids": 96,
+            "sample_sailing_ids": [
+              "EN04W233_2027-11-15",
+              "EN04W237_2027-11-29",
+              "EN04W237_2027-12-27"
+            ]
+          },
+          {
+            "ship_code": "EX",
+            "unique_sailing_ids": 88,
+            "sample_sailing_ids": [
+              "EX04E026_2027-02-15",
+              "EX4BH361_2027-01-18",
+              "EX05W637_2026-12-16"
+            ]
+          },
+          {
+            "ship_code": "FR",
+            "unique_sailing_ids": 97,
+            "sample_sailing_ids": [
+              "FR4BH373_2026-08-27",
+              "FR4BH376_2026-12-31",
+              "FR4BH558_2027-12-30"
+            ]
+          },
+          {
+            "ship_code": "GR",
+            "unique_sailing_ids": 134,
+            "sample_sailing_ids": [
+              "GR07R042_2027-04-24",
+              "GR07D543_2027-05-08",
+              "GR07D543_2027-05-22"
+            ]
+          },
+          {
+            "ship_code": "HM",
+            "unique_sailing_ids": 102,
+            "sample_sailing_ids": [
+              "HM2BH021_2026-09-03",
+              "HM2BH021_2026-10-01",
+              "HM2BH021_2026-10-29"
+            ]
+          },
+          {
+            "ship_code": "HE",
+            "unique_sailing_ids": 37,
+            "sample_sailing_ids": [
+              "HE3BH280_2027-08-11",
+              "HE07E566_2027-08-21",
+              "HE07E566_2027-08-28"
+            ]
+          },
+          {
+            "ship_code": "IC",
+            "unique_sailing_ids": 86,
+            "sample_sailing_ids": [
+              "IC07W697_2026-09-05",
+              "IC07W697_2026-09-26",
+              "IC07W697_2026-10-17"
+            ]
+          },
+          {
+            "ship_code": "ID",
+            "unique_sailing_ids": 81,
+            "sample_sailing_ids": [
+              "ID05W704_2027-03-02",
+              "ID05W703_2027-02-25",
+              "ID07W748_2026-12-06"
+            ]
+          },
+          {
+            "ship_code": "JW",
+            "unique_sailing_ids": 157,
+            "sample_sailing_ids": [
+              "JW4BH433_2026-09-21",
+              "JW4BH430_2026-08-31",
+              "JW4BH432_2026-09-14"
+            ]
+          },
+          {
+            "ship_code": "LE",
+            "unique_sailing_ids": 117,
+            "sample_sailing_ids": [
+              "LE3BH214_2026-11-11",
+              "LE06W296_2026-11-22",
+              "LE06W296_2026-12-06"
+            ]
+          },
+          {
+            "ship_code": "LB",
+            "unique_sailing_ids": 119,
+            "sample_sailing_ids": [
+              "LB05W648_2026-10-31",
+              "LB05W649_2026-11-09",
+              "LB05W648_2026-11-14"
+            ]
+          },
+          {
+            "ship_code": "MA",
+            "unique_sailing_ids": 82,
+            "sample_sailing_ids": [
+              "MA05W678_2026-08-31",
+              "MA05W679_2026-09-05",
+              "MA05W678_2026-09-14"
+            ]
+          },
+          {
+            "ship_code": "NV",
+            "unique_sailing_ids": 54,
+            "sample_sailing_ids": [
+              "NV03I207_2026-11-09",
+              "NV03I207_2026-11-16",
+              "NV03I208_2026-11-24"
+            ]
+          },
+          {
+            "ship_code": "OA",
+            "unique_sailing_ids": 124,
+            "sample_sailing_ids": [
+              "OA4BH367_2026-11-09",
+              "OA4BH368_2026-11-16",
+              "OA4BH369_2026-11-23"
+            ]
+          },
+          {
+            "ship_code": "OY",
+            "unique_sailing_ids": 75,
+            "sample_sailing_ids": [
+              "OY7BH144_2026-11-08",
+              "OY7BH144_2026-11-15",
+              "OY7BH144_2026-11-22"
+            ]
+          },
+          {
+            "ship_code": "OV",
+            "unique_sailing_ids": 115,
+            "sample_sailing_ids": [
+              "OV03X039_2026-09-21",
+              "OV03X039_2026-09-28",
+              "OV03X047_2026-10-01"
+            ]
+          },
+          {
+            "ship_code": "QN",
+            "unique_sailing_ids": 92,
+            "sample_sailing_ids": [
+              "QN03X035_2026-08-28",
+              "QN03X035_2026-09-11",
+              "QN03X037_2026-09-14"
+            ]
+          },
+          {
+            "ship_code": "RD",
+            "unique_sailing_ids": 115,
+            "sample_sailing_ids": [
+              "RD05W707_2026-08-29",
+              "RD05W706_2026-09-07",
+              "RD05W707_2026-09-12"
+            ]
+          },
+          {
+            "ship_code": "RH",
+            "unique_sailing_ids": 81,
+            "sample_sailing_ids": [
+              "RH04W238_2027-04-15",
+              "RH07D514_2026-08-15",
+              "RH07D514_2026-08-29"
+            ]
+          },
+          {
+            "ship_code": "SR",
+            "unique_sailing_ids": 96,
+            "sample_sailing_ids": [
+              "SR02X003_2026-10-02",
+              "SR03X043_2026-10-15",
+              "SR03X044_2026-12-03"
+            ]
+          },
+          {
+            "ship_code": "SC",
+            "unique_sailing_ids": 121,
+            "sample_sailing_ids": [
+              "SC02I142_2026-11-20",
+              "SC02I142_2026-12-11",
+              "SC02I142_2026-12-18"
+            ]
+          },
+          {
+            "ship_code": "ST",
+            "unique_sailing_ids": 87,
+            "sample_sailing_ids": [
+              "ST07W708_2026-08-30",
+              "ST07W708_2026-09-20",
+              "ST07W708_2026-10-11"
+            ]
+          },
+          {
+            "ship_code": "SY",
+            "unique_sailing_ids": 82,
+            "sample_sailing_ids": [
+              "SY4BH550_2027-08-18",
+              "SY4BH551_2028-02-06",
+              "SY07W700_2026-10-18"
+            ]
+          },
+          {
+            "ship_code": "UT",
+            "unique_sailing_ids": 173,
+            "sample_sailing_ids": [
+              "UT4BH339_2026-08-24",
+              "UT4BH339_2026-08-31",
+              "UT4BH339_2026-09-07"
+            ]
+          },
+          {
+            "ship_code": "VI",
+            "unique_sailing_ids": 74,
+            "sample_sailing_ids": [
+              "VI07D503_2026-11-01",
+              "VI07D503_2026-11-15",
+              "VI07D513_2027-03-28"
+            ]
+          },
+          {
+            "ship_code": "VY",
+            "unique_sailing_ids": 62,
+            "sample_sailing_ids": [
+              "VY03X045_2026-10-05",
+              "VY03X046_2026-12-18",
+              "VY06X022_2026-10-16"
+            ]
+          },
+          {
+            "ship_code": "WN",
+            "unique_sailing_ids": 162,
+            "sample_sailing_ids": [
+              "WN4BH352_2026-08-24",
+              "WN4BH351_2026-08-31",
+              "WN4BH353_2026-09-07"
+            ]
+          }
+        ]
+      },
+      "reconciliation_arithmetic": {
+        "source_unique_sailings": 3263,
+        "product_accounted": 3263,
+        "product_arithmetic_ok": true,
+        "ordinary_ocean": 3068,
+        "cruisetour_excluded": 195,
+        "unknown_products": 0,
+        "other_product_types": 0,
+        "ocean_incomplete": 14,
+        "ocean_eligible": 2985,
+        "ocean_within_cutoff": 69,
+        "ocean_past": 0,
+        "ocean_unfamiliar_status": 0,
+        "ocean_other_exclusions": 0,
+        "ocean_accounted": 3068,
+        "ocean_arithmetic_ok": true,
+        "recognised_existing_eligible": 2982,
+        "outstanding_eligible_inserts": 3,
+        "proposed_updates": 0,
+        "eligible_accounted": 2985,
+        "eligible_arithmetic_ok": true,
+        "reconciliation_arithmetic_ok": true
+      },
+      "reconciliation_arithmetic_ok": true,
+      "dry_run_health": {
+        "passed": true,
+        "failures": []
+      },
+      "weekly_health": {
+        "source_runtime_ok": true,
+        "royal_caribbean_source_enumeration_ok": true,
+        "reconciliation_arithmetic_ok": true,
+        "ship_resolution_ok": true,
+        "embarkation_resolution_ok": true,
+        "unknown_status_count": 0,
+        "new_eligible_count": 3,
+        "proposed_update_count": 0,
+        "source_absent_candidate_count": 0,
+        "cutoff_candidate_count": 0,
+        "source_absence_actions_allowed": false,
+        "actual_writes": 0,
+        "weekly_change_volume_exceeded": false,
+        "weekly_write_ceiling": {
+          "max_proposed_inserts": 100,
+          "max_proposed_updates": 50,
+          "max_source_absent_actions": 20,
+          "max_total_proposed_changes": 150,
+          "rationale": "Catalogue ~3,000 sailings; normal weekly movement is small. Sudden hundreds of changes indicate enumeration or logic failure."
+        },
+        "weekly_maintenance_healthy": true,
+        "failures": []
+      },
+      "weekly_maintenance_healthy": true,
+      "adapter_incomplete_by_reason": {
+        "destination_unresolved": 14,
+        "confidence:review": 14
+      },
+      "proposed_writes": 3,
+      "duration_ms": 130431,
+      "actual_writes": 0,
+      "production_cruise_inserts": 0,
+      "production_cruise_updates": 0,
+      "production_cruise_deletes": 0,
+      "production_expiry_changes": 0,
+      "production_ship_changes": 0,
+      "production_alias_changes": 0,
+      "production_port_changes": 0,
+      "production_destination_changes": 0,
+      "inventory_changed": false
+    },
+    "actual_writes": 0
+  },
+  "cutoff_boundary_test": {
+    "today_perth": "2026-08-13",
+    "day_22": "2026-09-04",
+    "day_21": "2026-09-03",
+    "day_20": "2026-09-02",
+    "eligible_22_days": true,
+    "hide_candidate_21_days": true,
+    "hide_candidate_20_days": true
+  },
+  "weekly_write_architecture": {
+    "frozen_maintenance_manifest": true,
+    "explicit_insert_update_expiry_sections": true,
+    "post_write_verification": true,
+    "write_ceiling": {
+      "max_proposed_inserts": 100,
+      "max_proposed_updates": 50,
+      "max_source_absent_actions": 20,
+      "max_total_proposed_changes": 150,
+      "rationale": "Catalogue ~3,000 sailings; normal weekly movement is small. Sudden hundreds of changes indicate enumeration or logic failure."
+    }
+  },
+  "schedule_recommendation": {
+    "cron_utc": "0 22 * * 0",
+    "perth_display": "Monday 06:00 Australia/Perth",
+    "utc_display": "Sunday 22:00 UTC",
+    "function": "royal-caribbean-weekly-maintenance-cron",
+    "schedule_registered": false
+  },
+  "production_impact": {
+    "cruise_inserts": 0,
+    "cruise_updates": 0,
+    "cruise_deletes": 0,
+    "expiry_changes": 0,
+    "ship_changes": 0,
+    "port_changes": 0,
+    "alias_changes": 0,
+    "destination_changes": 0,
+    "legacy_row_changes": 0
+  },
+  "recommendation": "NOT READY TO ENABLE WEEKLY MAINTENANCE",
+  "recommendation_blocker": "Netlify runtime not proven — deploy RC branch and invoke royal-caribbean-discovery-smoke from Netlify infrastructure"
+}

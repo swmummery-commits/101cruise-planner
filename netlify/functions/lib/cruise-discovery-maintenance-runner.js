@@ -95,6 +95,7 @@ const {
   assessSeabournWeeklyWriteSafety,
   isSeabournSourceAbsenceDeactivationEnabled
 } = require("./seabourn-weekly-update-policy");
+const { runRoyalCaribbeanWeeklyMaintenance } = require("./royal-caribbean-weekly-maintenance");
 
 const MAX_WRITES_PER_BATCH = 100;
 const MAX_WEEKLY_WRITES = 30;
@@ -1672,12 +1673,44 @@ async function runSeabournWeeklyMaintenance(context = {}) {
   }
 }
 
+async function runFromMaintenanceRunner(context = {}) {
+  const sb = context.supabaseClient || context.supabase || defaultSupabase;
+  const dryRun = context.dryRun ?? context.dry_run;
+  const explicitDryRun = dryRun === undefined ? true : Boolean(dryRun);
+  const performWrites =
+    Boolean(context.performWrites ?? context.perform_writes) && !explicitDryRun;
+
+  return runRoyalCaribbeanWeeklyMaintenance({
+    ...context,
+    dryRun: explicitDryRun,
+    dry_run: explicitDryRun,
+    performWrites,
+    perform_writes: performWrites,
+    runId: context.runId || context.run_id,
+    run_id: context.runId || context.run_id,
+    triggerType: context.triggerType || context.trigger_type,
+    trigger_type: context.triggerType || context.trigger_type,
+    supabase: sb,
+    authoritativeEnumeration: context.authoritativeEnumeration,
+    unionPageSizes: context.unionPageSizes,
+    requestDelayMs: context.requestDelayMs,
+    today: context.today,
+    _deps: { loadLineContext, findSourceAbsentActive, findPreviousSuccessfulMaintenanceRun }
+  });
+}
+
 module.exports = {
   runHalWeeklyMaintenance,
   runCelebrityWeeklyMaintenance,
   runPrincessWeeklyMaintenance,
   runExploraWeeklyMaintenance,
   runSeabournWeeklyMaintenance,
+  runRoyalCaribbeanWeeklyMaintenance: (context = {}) =>
+    runRoyalCaribbeanWeeklyMaintenance({
+      ...context,
+      _deps: { loadLineContext, findSourceAbsentActive, findPreviousSuccessfulMaintenanceRun }
+    }),
+  runFromMaintenanceRunner,
   acquireMaintenanceLock,
   releaseMaintenanceLock,
   evaluateMaintenanceQualityGate,

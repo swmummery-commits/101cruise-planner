@@ -10,6 +10,7 @@ const DEFAULT_LEASE_SECONDS = {
   "princess-cruises:weekly": 900,
   "explora-journeys:weekly": 900,
   "seabourn-cruise-line:weekly": 900,
+  "royal-caribbean-international:weekly": 900,
   daily_expiry: 300
 };
 
@@ -28,6 +29,7 @@ async function acquireLockViaRunningRun(supabase, params) {
     "princess-cruises:weekly": "princess_weekly_maintenance",
     "explora-journeys:weekly": "explora_weekly_maintenance",
     "seabourn-cruise-line:weekly": "seabourn_weekly_maintenance",
+    "royal-caribbean-international:weekly": "royal_caribbean_weekly_maintenance",
     daily_expiry: "daily_expiry_maintenance"
   };
   const runType = runTypeByLock[params.lockKey];
