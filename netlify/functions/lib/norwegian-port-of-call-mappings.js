@@ -187,7 +187,31 @@ const NCL_PORT_OF_CALL_CODES = Object.freeze([
     note: "Port Denarau / Denarau Marina cruise gateway"
   },
   { code: "SVU", source_name: "Savusavu, Fiji", canonical_name: "Savusavu", classification: "NEW_PORT_REQUIRED", country: "Fiji" },
-  { code: "DRA", source_name: "Dravuni, Fiji", canonical_name: "Dravuni", classification: "NEW_PORT_REQUIRED", country: "Fiji" }
+  { code: "DRA", source_name: "Dravuni, Fiji", canonical_name: "Dravuni", classification: "NEW_PORT_REQUIRED", country: "Fiji" },
+  { code: "NPO", source_name: "Newport, Rhode Island", canonical_name: "Newport Rhode Island", classification: "NEW_PORT_REQUIRED", country: "United States", note: "New England cruise port — not Newport UK/Wales" },
+  { code: "BHB", source_name: "Bar Harbor, Maine", canonical_name: "Bar Harbor", classification: "NEW_PORT_REQUIRED", country: "United States" },
+  { code: "CBR", source_name: "Cabo Rojo, Dominican Republic", canonical_name: "Cabo Rojo", classification: "NEW_PORT_REQUIRED", country: "Dominican Republic" },
+  { code: "ISH", source_name: "Ishigaki, Japan", canonical_name: "Ishigaki", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  { code: "JJU", source_name: "Jeju, South Korea", canonical_name: "Jeju", classification: "NEW_PORT_REQUIRED", country: "South Korea" },
+  { code: "HK1", source_name: "Hakata (Fukuoka), Japan", canonical_name: "Fukuoka", classification: "NEW_PORT_REQUIRED", country: "Japan", note: "Hakata is the physical cruise terminal serving Fukuoka" },
+  { code: "MAT", source_name: "Matsuyama, Japan", canonical_name: "Matsuyama", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  { code: "KAN", source_name: "Kangaroo Island, Australia", canonical_name: "Kangaroo Island", classification: "NEW_PORT_REQUIRED", country: "Australia", note: "Penneshaw / Kangaroo Island cruise anchorage" },
+  { code: "RIX", source_name: "Riga, Latvia", canonical_name: "Riga", classification: "NEW_PORT_REQUIRED", country: "Latvia" },
+  { code: "KLJ", source_name: "Klaipeda, Lithuania", canonical_name: "Klaipeda", classification: "NEW_PORT_REQUIRED", country: "Lithuania" },
+  { code: "GDY", source_name: "Gdynia, Poland", canonical_name: "Gdynia", classification: "NEW_PORT_REQUIRED", country: "Poland" },
+  { code: "PRM", source_name: "Portimão, Portugal", canonical_name: "Portimao", classification: "NEW_PORT_REQUIRED", country: "Portugal" },
+  { code: "BE9", source_name: "Beppu, Japan", canonical_name: "Beppu", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  { code: "LBI", source_name: "Saguenay (La Baie), Québec", canonical_name: "Saguenay", classification: "NEW_PORT_REQUIRED", country: "Canada", note: "La Baie cruise terminal — not Quebec City" },
+  { code: "RNN", source_name: "Ronne, Bornholm, Denmark", canonical_name: "Ronne Bornholm", classification: "NEW_PORT_REQUIRED", country: "Denmark" },
+  { code: "RJK", source_name: "Rijeka, Croatia", canonical_name: "Rijeka", classification: "NEW_PORT_REQUIRED", country: "Croatia" },
+  { code: "VIS", source_name: "Vik, Norway", canonical_name: "Vik Norway", classification: "NEW_PORT_REQUIRED", country: "Norway", note: "Vik in Sogn — distinct from Visby (VBY)" },
+  { code: "MIY", source_name: "Miyakojima (Okinawa), Japan", canonical_name: "Miyakojima", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  { code: "SAS", source_name: "Sasebo, Japan", canonical_name: "Sasebo", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  { code: "MUA", source_name: "Muara, Brunei Darussalam", canonical_name: "Muara", classification: "NEW_PORT_REQUIRED", country: "Brunei" },
+  { code: "KKB", source_name: "Kota Kinabalu, Malaysia", canonical_name: "Kota Kinabalu", classification: "NEW_PORT_REQUIRED", country: "Malaysia" },
+  { code: "PPS", source_name: "Puerto Princesa, Philippines", canonical_name: "Puerto Princesa", classification: "NEW_PORT_REQUIRED", country: "Philippines" },
+  { code: "COR", source_name: "Coron, Philippines", canonical_name: "Coron", classification: "NEW_PORT_REQUIRED", country: "Philippines" },
+  { code: "VBY", source_name: "Visby, Sweden", canonical_name: "Visby", classification: "NEW_PORT_REQUIRED", country: "Sweden" }
 ]);
 
 const POC_CODE_TO_MAPPING = Object.freeze(Object.fromEntries(NCL_PORT_OF_CALL_CODES.map((row) => [row.code, row])));

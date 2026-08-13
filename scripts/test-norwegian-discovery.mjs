@@ -395,6 +395,10 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(poc.getPortOfCallCanonicalName("BAR") === "Bar", "Bar ME disambiguated to Bar, Montenegro via code");
   assert(poc.getPortOfCallCanonicalName("PSY") === "Stanley", "Stanley Falkland Islands mapped");
   assert(poc.getPortOfCallCanonicalName("BPI") === "Harvest Caye", "Harvest Caye remains distinct");
+  assert(poc.getPortOfCallCanonicalName("NPO") === "Newport Rhode Island", "Newport RI mapped distinctly");
+  assert(poc.getPortOfCallCanonicalName("VIS") === "Vik Norway", "Vik Norway distinct from Visby");
+  assert(poc.getPortOfCallCanonicalName("VBY") === "Visby", "Visby Sweden mapped");
+  assert(poc.getPortOfCallCanonicalName("RIX") === "Riga", "Riga Latvia mapped");
 
   const phase6aCodes = {
     ACA: "Acapulco",
