@@ -204,7 +204,7 @@ Hiroshima,"Hiroshima, Japan",Hiroshima,Japan,JP,Japan,34.352,132.455,
 Nagasaki,"Nagasaki, Japan",Nagasaki,Japan,JP,Japan,32.744,129.872,
 Busan,"Busan, South Korea",Busan,South Korea,KR,East Asia,35.1028,129.0403,Pusan|Busan South Korea
 Kagoshima,"Kagoshima, Japan",Kagoshima,Japan,JP,Japan,31.5894,130.5611,
-Halong Bay,"Hạ Long Bay, Vietnam",Hạ Long,Vietnam,VN,Southeast Asia,20.951,107.07,Halong|Ha Long
+Halong Bay,"Hạ Long Bay, Vietnam",Hạ Long,Vietnam,VN,Southeast Asia,20.951,107.07,Halong|Ha Long|Hanoi (Ha Long Bay)|HAN
 Da Nang,"Đà Nẵng, Vietnam",Đà Nẵng,Vietnam,VN,Southeast Asia,16.114,108.214,Hue|Hoi An|Danang
 Ho Chi Minh City,"Phu My (Ho Chi Minh City), Vietnam",Phu My,Vietnam,VN,Southeast Asia,10.59,107.01,Saigon|Ho Chi Minh City|Phu My
 Sihanoukville,"Sihanoukville, Cambodia",Sihanoukville,Cambodia,KH,Southeast Asia,10.625,103.523,
@@ -293,3 +293,18 @@ Maizuru,"Maizuru, Japan",Maizuru,Japan,JP,Japan,35.474,135.386,Maizuru Japan
 Kona,"Kona, Hawaii",Kailua-Kona,United States,US,Hawaii,19.64,-155.996,Kona Hawaii|Kailua-Kona|Kailua Kona
 Melilla,"Melilla, Spain",Melilla,Spain,ES,Mediterranean,35.292,-2.938,Melillia Spain|Melillia
 Stanley,"Stanley, Falkland Islands",Stanley,Falkland Islands,FK,South America,-51.692,-57.859,Stanley Falkland Islands|Port Stanley|PSY
+Acapulco,"Acapulco, Mexico",Acapulco,Mexico,MX,Mexican Riviera,16.853,-99.823,Acapulco Mexico|ACA
+Puerto Quetzal,"Puerto Quetzal, Guatemala",Puerto Quetzal,Guatemala,GT,Central America,13.933,-90.783,Puerto Quetzal Guatemala|PRQ
+Puerto Caldera,"Puerto Caldera, Costa Rica",Puerto Caldera,Costa Rica,CR,Central America,9.952,-84.713,Puntarenas (Puerto Caldera)|Puntarenas|PCL
+Horta,"Horta, Azores",Horta,Portugal,PT,Atlantic Islands,38.535,-28.626,Horta Azores|Faial|HOR
+Leixoes,"Leixões, Portugal",Leixoes,Portugal,PT,Northern Europe,41.185,-8.698,Oporto|Porto|Lexioes|LXO
+Astoria Oregon,"Astoria, Oregon",Astoria Oregon,United States,US,Pacific Coast,46.188,-123.834,Astoria Oregon|Astoria|AST
+Bari,"Bari, Italy",Bari,Italy,IT,Adriatic,41.117,16.871,Bari Italy|BRI
+Kochi Japan,"Kochi, Japan",Kochi Japan,Japan,JP,Japan,33.559,133.531,Kochi Japan|KCZ
+Naha,"Naha, Japan",Naha,Japan,JP,Japan,26.212,127.679,Naha (Okinawa)|Naha Okinawa|NAH
+Niigata,"Niigata, Japan",Niigata,Japan,JP,Japan,37.916,139.036,Niigata Japan|NII
+Chan May,"Chan May, Vietnam",Chan May,Vietnam,VN,Southeast Asia,16.327,107.741,Chan May Vietnam|CMY
+Phillip Island,"Phillip Island, Australia",Phillip Island,Australia,AU,Australia,-38.483,145.238,Phillip Island Australia|ESS
+Denarau,"Denarau, Fiji",Denarau,Fiji,FJ,South Pacific,-18.126,177.317,Port Denarau|Denarau Fiji|DEN
+Savusavu,"Savusavu, Fiji",Savusavu,Fiji,FJ,South Pacific,-16.782,179.326,Savusavu Fiji|SVU
+Dravuni,"Dravuni, Fiji",Dravuni,Fiji,FJ,South Pacific,-18.783,178.533,Dravuni Fiji|DRA

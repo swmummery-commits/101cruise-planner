@@ -373,7 +373,9 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
   const status =
     candidate.status === "ignored" || candidate.status === "ignored_low_signal"
       ? candidate.status
-      : lifecycleFromValidation(reasons);
+      : candidate.status === "match_required"
+        ? "match_required"
+        : lifecycleFromValidation(reasons);
 
   const payload = {
     cruise_line_id: candidate.cruise_line_id,

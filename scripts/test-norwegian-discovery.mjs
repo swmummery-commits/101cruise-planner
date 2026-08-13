@@ -396,6 +396,39 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(poc.getPortOfCallCanonicalName("PSY") === "Stanley", "Stanley Falkland Islands mapped");
   assert(poc.getPortOfCallCanonicalName("BPI") === "Harvest Caye", "Harvest Caye remains distinct");
 
+  const phase6aCodes = {
+    ACA: "Acapulco",
+    PRQ: "Puerto Quetzal",
+    PCL: "Puerto Caldera",
+    HOR: "Horta",
+    LXO: "Leixoes",
+    AST: "Astoria Oregon",
+    BRI: "Bari",
+    KCZ: "Kochi Japan",
+    NAH: "Naha",
+    NII: "Niigata",
+    CMY: "Chan May",
+    HAN: "Halong Bay",
+    ESS: "Phillip Island",
+    DEN: "Denarau",
+    SVU: "Savusavu",
+    DRA: "Dravuni"
+  };
+  for (const [code, canonical] of Object.entries(phase6aCodes)) {
+    assert(poc.getPortOfCallCanonicalName(code) === canonical, `Phase 6A port ${code} maps to ${canonical}`);
+  }
+
+  const simCounts = {
+    raw: 2492,
+    ocean: 2062,
+    cutoff: 45,
+    eligible: 2017,
+    cruisetours: 430
+  };
+  assert(simCounts.ocean - simCounts.cutoff === simCounts.eligible, "ocean minus cutoff equals eligible");
+  assert(simCounts.raw >= simCounts.ocean, "raw sailings include ocean subset");
+  assert(simCounts.cruisetours > 0, "cruisetour count reported separately from eligible ocean");
+
   const getawayRow = {
     nights: 11,
     raw_extract: { ncl_itinerary_code: "GETAWAY11SOULEHZEEMLYSKJAESAKUISAREY" },
@@ -420,6 +453,10 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(destPlan.slug === "caribbean", "marketing EXTRAORDINARY_JOURNEYS ignored for primary destination");
   const transPlan = nclDest.resolveSlugFromCodes(["EXTRAORDINARY_JOURNEYS", "TRANSATLANTIC"]);
   assert(transPlan.slug === "transatlantic", "TRANSATLANTIC chosen over marketing tag");
+  const ausPlan = nclDest.resolveSlugFromCodes(["AUSTRALIA", "EXTRAORDINARY_JOURNEYS"]);
+  assert(ausPlan.slug === "australia-new-zealand", "AUSTRALIA maps to australia-new-zealand");
+  const pacificCoastalPlan = nclDest.resolveSlugFromCodes(["PACIFIC_COASTAL"]);
+  assert(pacificCoastalPlan.slug === "pacific-coast", "PACIFIC_COASTAL maps to pacific-coast");
 
   const simulation = await ncl.simulateNorwegianDiscovery({
     cruiseLine: nclLine,

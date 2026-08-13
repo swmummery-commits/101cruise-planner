@@ -1,6 +1,6 @@
 /**
  * Norwegian Cruise Line controlled-batch manifest + production writes.
- * Phase 4 inserts use match_required (non-public review state).
+ * Phase 4/6 inserts use match_required (non-public review state).
  */
 
 const crypto = require("crypto");
@@ -16,6 +16,11 @@ const {
 const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 const { PUBLIC_BOOKING_CUTOFF_DAYS, daysUntilDeparture } = require("./public-discovered-cruise-inventory");
+const {
+  resolveNorwegianDestinationAssignment,
+  auditNorwegianDestinationCodes,
+  NCL_DESTINATION_CODE_SLUG
+} = require("./norwegian-destination-mapping");
 
 const NCL_LINE_ID = "c5f5361f-ebe5-4ff4-babe-7eb07f609bae";
 
@@ -27,7 +32,7 @@ function computeReturnDate(departureDate, nights) {
   return dt.toISOString().slice(0, 10);
 }
 
-function buildNorwegianUpsertCandidate(normalised, cruiseLine) {
+function buildNorwegianUpsertCandidate(normalised, cruiseLine, options = {}) {
   if (!normalised?.complete_eligible) return null;
   const raw = normalised.raw || {};
   const productKey = normalised.official_sailing_id || officialProductKey(raw);
@@ -53,7 +58,7 @@ function buildNorwegianUpsertCandidate(normalised, cruiseLine) {
   return {
     cruise_line_id: cruiseLine.id,
     ship_id: shipId,
-    destination_id: null,
+    destination_id: options.destination_id ?? normalised.destination_id ?? null,
     departure_date: raw.departure_date,
     return_date: computeReturnDate(raw.departure_date, nights),
     nights,
@@ -66,6 +71,7 @@ function buildNorwegianUpsertCandidate(normalised, cruiseLine) {
     identity_key,
     official_sailing_id: productKey,
     match_confidence: "medium",
+    status: options.phase?.includes("controlled") || options.controlledBatch ? "match_required" : undefined,
     raw_extract: {
       ncl_itinerary_code: raw.itinerary_code,
       ncl_ship_code: raw.ship_code,
@@ -74,7 +80,7 @@ function buildNorwegianUpsertCandidate(normalised, cruiseLine) {
       ncl_adapter_id: ADAPTER_ID,
       ncl_adapter_version: ADAPTER_VERSION,
       ncl_controlled_batch: true,
-      ncl_phase: "phase4_controlled_import",
+      ncl_phase: options.phase || "phase4_controlled_import",
       departure_port_meta: portMeta,
       source_timestamp: raw.source_timestamp || null
     }
@@ -97,9 +103,29 @@ function isLegacyGenericRow(row) {
   return false;
 }
 
-function buildManifestEntry(normalised, cruiseLine, existing, batchPosition) {
+function buildManifestEntry(normalised, cruiseLine, existing, batchPosition, options = {}) {
   const raw = normalised.raw || {};
-  const candidate = buildNorwegianUpsertCandidate(normalised, cruiseLine);
+  const destinationAssignment = options.destinations?.length
+    ? resolveNorwegianDestinationAssignment({
+        destination_codes: raw.destination_codes || [],
+        dbRow: {
+          departure_port: normalised.departure_port_meta?.canonicalPortName || null,
+          nights: raw.duration,
+          itinerary: raw.itinerary_code
+        },
+        destinations: options.destinations
+      })
+    : null;
+
+  const unknownCodes = (destinationAssignment?.destination_codes || []).filter(
+    (code) => !(code in NCL_DESTINATION_CODE_SLUG) && !["EXTRAORDINARY_JOURNEYS", "WEEKEND"].includes(code)
+  );
+
+  const candidate = buildNorwegianUpsertCandidate(normalised, cruiseLine, {
+    phase: options.phase,
+    destination_id: destinationAssignment?.destination_id || null,
+    controlledBatch: true
+  });
   const action = classifyProposedAction(normalised, existing);
 
   return {
@@ -116,6 +142,11 @@ function buildManifestEntry(normalised, cruiseLine, existing, batchPosition) {
     resolved_departure_port_id: normalised.departure_port_meta?.canonicalPortId || null,
     duration: raw.duration,
     destination_codes: raw.destination_codes || [],
+    proposed_canonical_destination: destinationAssignment?.proposed_slug || null,
+    resolved_destination_id: destinationAssignment?.destination_id || null,
+    resolved_destination_name: destinationAssignment?.destination_name || null,
+    destination_assignment_method: destinationAssignment?.method || null,
+    unknown_destination_codes: unknownCodes,
     source_url: candidate?.official_url || raw.schedule_url,
     proposed_action: action,
     proposed_status: "match_required",
@@ -124,19 +155,27 @@ function buildManifestEntry(normalised, cruiseLine, existing, batchPosition) {
   };
 }
 
-function evaluateDryRunGate(manifest) {
+function evaluateDryRunGate(manifest, options = {}) {
+  const expectedCount = options.expectedCount ?? 25;
+  const requireDestination = options.requireDestination === true;
   const failures = [];
   const entries = manifest.entries || [];
   const writes = entries.filter((e) => e.proposed_action === "insert_match_required");
 
-  if (entries.length !== 25) failures.push(`expected_25_entries:${entries.length}`);
-  if (writes.length !== 25) failures.push(`expected_25_inserts:${writes.length}`);
+  if (entries.length !== expectedCount) failures.push(`expected_${expectedCount}_entries:${entries.length}`);
+  if (writes.length !== expectedCount) failures.push(`expected_${expectedCount}_inserts:${writes.length}`);
   if (entries.some((e) => e.proposed_action !== "insert_match_required")) {
     failures.push("non_insert_actions_present");
   }
   if (writes.some((e) => !e.official_sailing_id || !e.external_key)) failures.push("missing_identity");
   if (writes.some((e) => !e.resolved_ship_id)) failures.push("unresolved_ship");
   if (writes.some((e) => !e.resolved_departure_port)) failures.push("unresolved_port");
+  if (requireDestination && writes.some((e) => !e.resolved_destination_id)) {
+    failures.push("unresolved_destination");
+  }
+  if (writes.some((e) => (e.unknown_destination_codes || []).length)) {
+    failures.push("unknown_ncl_destination_code");
+  }
   if (new Set(writes.map((w) => w.official_sailing_id)).size !== writes.length) {
     failures.push("duplicate_official_sailing_id_in_manifest");
   }
@@ -149,7 +188,8 @@ function evaluateDryRunGate(manifest) {
     failures,
     proposed_inserts: writes.length,
     proposed_updates: 0,
-    proposed_deletes: 0
+    proposed_deletes: 0,
+    expected_count: expectedCount
   };
 }
 
@@ -182,25 +222,44 @@ function findExistingRecord(indexes, normalised) {
   return indexes.byOfficial.get(key) || indexes.byExternal.get(normalised.external_key) || null;
 }
 
-async function buildManifestFromEntries({ entries, cruiseLine, supabase, batchId, sourceTimestamp }) {
+async function buildManifestFromEntries({
+  entries,
+  cruiseLine,
+  supabase,
+  batchId,
+  sourceTimestamp,
+  mode = "norwegian_phase4_controlled_batch",
+  phase = "phase4_controlled_import",
+  expectedCount = 25,
+  requireDestination = false
+}) {
   const indexes = supabase ? await indexExistingNorwegianRecords(supabase, cruiseLine.id) : { byOfficial: new Map(), byExternal: new Map() };
+  const destinations = supabase
+    ? await supabase("destinations?select=id,name,slug,status,classification_enabled&order=slug.asc")
+    : [];
   const manifestEntries = entries.map((normalised, index) => {
     const existing = findExistingRecord(indexes, normalised);
-    return buildManifestEntry(normalised, cruiseLine, existing, index + 1);
+    return buildManifestEntry(normalised, cruiseLine, existing, index + 1, {
+      destinations: destinations || [],
+      phase
+    });
   });
 
   const manifest = {
     batch_id: batchId,
     generated_at: new Date().toISOString(),
-    mode: "norwegian_phase4_controlled_batch",
+    mode,
     adapter_id: ADAPTER_ID,
     adapter_version: ADAPTER_VERSION,
     cruise_line_id: cruiseLine.id,
     source_timestamp: sourceTimestamp,
     writes_performed: false,
+    destination_code_audit: auditNorwegianDestinationCodes(
+      manifestEntries.map((entry) => ({ destination_codes: entry.destination_codes }))
+    ),
     entries: manifestEntries
   };
-  manifest.dry_run_gate = evaluateDryRunGate(manifest);
+  manifest.dry_run_gate = evaluateDryRunGate(manifest, { expectedCount, requireDestination });
   return manifest;
 }
 
@@ -244,11 +303,13 @@ async function applyManifestWrites({ manifest, cruiseLine, supabase, maxWrites =
       }
     };
 
-    const candidate = buildNorwegianUpsertCandidate(normalised, cruiseLine);
+    const candidate = entry.candidate || buildNorwegianUpsertCandidate(normalised, cruiseLine);
     if (!candidate) {
       stats.failed += 1;
       continue;
     }
+    if (entry.resolved_destination_id) candidate.destination_id = entry.resolved_destination_id;
+    candidate.status = "match_required";
 
     const existing = findExistingRecord(indexes, { official_sailing_id: entry.official_sailing_id, external_key: entry.external_key });
     if (existing && !isLegacyGenericRow(existing)) {
@@ -259,9 +320,6 @@ async function applyManifestWrites({ manifest, cruiseLine, supabase, maxWrites =
         discovered_cruise_id: existing.id
       });
       continue;
-    }
-    if (existing && isLegacyGenericRow(existing)) {
-      // legacy rows must never be matched — treat as no existing genuine voyage
     }
 
     try {
@@ -331,6 +389,36 @@ const PHASE3_EMBARK_SLOTS = [
 
 const CONTROL_EMBARK_SLOTS = ["MIA", "SOU", "SEA", "BCN", "SJU", "PCV", "YOK", "CIV", "PIR"];
 
+const PHASE6_EXTRA_EMBARK_SLOTS = [
+  { code: "PWM", label: "Portland Maine" },
+  { code: "POP", label: "Puerto Plata" },
+  { code: "MLA", label: "Valletta" },
+  { code: "LAX", label: "Los Angeles" },
+  { code: "HNL", label: "Honolulu" },
+  { code: "SIN", label: "Singapore" },
+  { code: "SYD", label: "Sydney" }
+];
+
+const PHASE6_REGION_SLOTS = [
+  { codes: ["CARIBBEAN", "BAHAMAS", "BERMUDA"], reason: "caribbean_bahamas_bermuda" },
+  { codes: ["ALASKA"], reason: "alaska" },
+  { codes: ["HAWAII"], reason: "hawaii" },
+  { codes: ["MEDITERRANEAN", "GREEK_ISLES"], reason: "mediterranean_greek" },
+  { codes: ["NORTHERN_EUROPE"], reason: "northern_europe" },
+  { codes: ["CANADA_NEW_ENGL"], reason: "canada_new_england" },
+  { codes: ["ASIA"], reason: "asia" },
+  { codes: ["SOUTH_AMERICA"], reason: "south_america" },
+  { codes: ["TRANSATLANTIC"], reason: "transatlantic" },
+  { codes: ["MEXICAN_RIVIERA"], reason: "mexican_riviera" },
+  { codes: ["PANAMA_CANAL"], reason: "panama_canal" },
+  { codes: ["AUSTRALIA", "AUSTRALIA_NEW_ZEALAND", "SOUTH_PACIFIC"], reason: "pacific" }
+];
+
+function productHasDestinationCode(product, codes = []) {
+  const dest = (product.raw?.destination_codes || []).map((code) => String(code).toUpperCase());
+  return codes.some((code) => dest.includes(String(code).toUpperCase()));
+}
+
 function selectControlledBatchProducts(normalisedProducts, { maxWrites = 25 } = {}) {
   const eligible = normalisedProducts
     .filter((p) => p.complete_eligible && p.itinerary_classification?.category === "ocean")
@@ -393,6 +481,108 @@ function selectControlledBatchProducts(normalisedProducts, { maxWrites = 25 } = 
     .sort((a, b) => String(a.official_sailing_id).localeCompare(String(b.official_sailing_id)));
 }
 
+function selectPhase6BatchProducts(normalisedProducts, { maxWrites = 50, excludeOfficialIds = new Set() } = {}) {
+  const eligible = normalisedProducts
+    .filter(
+      (p) =>
+        p.complete_eligible &&
+        p.itinerary_classification?.category === "ocean" &&
+        !excludeOfficialIds.has(p.official_sailing_id)
+    )
+    .sort((a, b) => String(a.official_sailing_id).localeCompare(String(b.official_sailing_id)));
+
+  const selected = [];
+  const selectedIds = new Set();
+  const shipCodes = new Set();
+  const usedRegions = new Set();
+
+  function pickFirst(matchFn, reason) {
+    if (selected.length >= maxWrites) return false;
+    for (const p of eligible) {
+      if (selectedIds.has(p.official_sailing_id)) continue;
+      if (matchFn(p)) {
+        selected.push({ ...p, selection_reason: reason });
+        selectedIds.add(p.official_sailing_id);
+        if (p.raw?.ship_code) shipCodes.add(String(p.raw.ship_code).toUpperCase());
+        return true;
+      }
+    }
+    return false;
+  }
+
+  for (const slot of [...PHASE3_EMBARK_SLOTS, ...PHASE6_EXTRA_EMBARK_SLOTS]) {
+    pickFirst((p) => String(p.raw?.port_of_departure_code || "").toUpperCase() === slot.code, `embark_${slot.code}`);
+  }
+
+  for (const slot of PHASE6_REGION_SLOTS) {
+    pickFirst((p) => {
+      if (usedRegions.has(slot.reason)) return false;
+      if (!productHasDestinationCode(p, slot.codes)) return false;
+      usedRegions.add(slot.reason);
+      return true;
+    }, slot.reason);
+  }
+
+  pickFirst((p) => Number(p.raw?.duration) <= 4, "short_cruise");
+  pickFirst((p) => Number(p.raw?.duration) === 7, "seven_night");
+  pickFirst((p) => Number(p.raw?.duration) >= 10 && Number(p.raw?.duration) <= 14, "ten_to_fourteen_night");
+  pickFirst((p) => Number(p.raw?.duration) >= 15, "long_cruise");
+  pickFirst((p) => String(p.raw?.ship_code || "").toUpperCase() === "PRIDE_AMER", "hawaii_pride_america");
+
+  for (const code of CONTROL_EMBARK_SLOTS) {
+    pickFirst((p) => String(p.raw?.port_of_departure_code || "").toUpperCase() === code, `control_${code}`);
+  }
+
+  const minDistinctShips = 15;
+  const remaining = eligible.filter((p) => !selectedIds.has(p.official_sailing_id));
+  const ordered = remaining
+    .map((p) => {
+      const ship = String(p.raw?.ship_code || "").toUpperCase();
+      const port = String(p.raw?.port_of_departure_code || "").toUpperCase();
+      const usedPorts = new Set(selected.map((s) => String(s.raw?.port_of_departure_code || "").toUpperCase()));
+      const needShips = shipCodes.size < minDistinctShips;
+      const score =
+        (needShips && !shipCodes.has(ship) ? 8 : shipCodes.has(ship) ? 0 : 4) + (usedPorts.has(port) ? 0 : 1);
+      return { p, score };
+    })
+    .sort(
+      (a, b) =>
+        b.score - a.score || String(a.p.official_sailing_id).localeCompare(String(b.p.official_sailing_id))
+    );
+
+  for (const { p } of ordered) {
+    if (selected.length >= maxWrites) break;
+    selected.push({ ...p, selection_reason: "diversity_fill" });
+    selectedIds.add(p.official_sailing_id);
+    if (p.raw?.ship_code) shipCodes.add(String(p.raw.ship_code).toUpperCase());
+  }
+
+  if (shipCodes.size < minDistinctShips) {
+    const swapCandidates = eligible.filter((p) => !selectedIds.has(p.official_sailing_id));
+    for (let index = selected.length - 1; index >= 0 && shipCodes.size < minDistinctShips; index -= 1) {
+      const current = selected[index];
+      if (current.selection_reason !== "diversity_fill") continue;
+      const replacement = swapCandidates.find((p) => {
+        const ship = String(p.raw?.ship_code || "").toUpperCase();
+        return ship && !shipCodes.has(ship);
+      });
+      if (!replacement) continue;
+      selectedIds.delete(current.official_sailing_id);
+      selected[index] = { ...replacement, selection_reason: "ship_diversity_swap" };
+      selectedIds.add(replacement.official_sailing_id);
+      shipCodes.add(String(replacement.raw.ship_code).toUpperCase());
+    }
+  }
+
+  return {
+    selected: selected
+      .slice(0, maxWrites)
+      .sort((a, b) => String(a.official_sailing_id).localeCompare(String(b.official_sailing_id))),
+    distinct_ships: shipCodes.size,
+    ship_codes: [...shipCodes].sort()
+  };
+}
+
 function revalidateManifestAgainstSource(manifest, sourceByOfficialId, today) {
   const invalid = [];
   for (const entry of manifest.entries || []) {
@@ -426,6 +616,8 @@ module.exports = {
   NCL_LINE_ID,
   PHASE3_EMBARK_SLOTS,
   CONTROL_EMBARK_SLOTS,
+  PHASE6_EXTRA_EMBARK_SLOTS,
+  PHASE6_REGION_SLOTS,
   computeReturnDate,
   buildNorwegianUpsertCandidate,
   buildManifestEntry,
@@ -436,5 +628,7 @@ module.exports = {
   revalidateManifestAgainstSource,
   indexExistingNorwegianRecords,
   selectControlledBatchProducts,
+  selectPhase6BatchProducts,
+  auditNorwegianDestinationCodes,
   isLegacyGenericRow
 };

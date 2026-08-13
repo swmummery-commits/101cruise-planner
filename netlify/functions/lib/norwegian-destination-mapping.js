@@ -7,9 +7,10 @@ const { precedenceRank } = require("./destination-classification");
 
 /** Geographic NCL browse codes → operational destination slug */
 const NCL_DESTINATION_CODE_SLUG = Object.freeze({
+  AUSTRALIA: "australia-new-zealand",
+  AUSTRALIA_NEW_ZEALAND: "australia-new-zealand",
   ALASKA: "alaska",
   ASIA: "asia",
-  AUSTRALIA_NEW_ZEALAND: "australia-new-zealand",
   BAHAMAS: "caribbean",
   BERMUDA: "caribbean",
   CANADA_NEW_ENGL: "canada-new-england",
@@ -21,6 +22,7 @@ const NCL_DESTINATION_CODE_SLUG = Object.freeze({
   MEXICAN_RIVIERA: "mexican-riviera",
   NORTHERN_EUROPE: "northern-europe",
   PANAMA_CANAL: "panama-canal",
+  PACIFIC_COASTAL: "pacific-coast",
   SOUTH_AMERICA: "south-america",
   SOUTH_PACIFIC: "south-pacific",
   TRANSATLANTIC: "transatlantic",
@@ -71,6 +73,11 @@ function resolveSlugFromCodes(codes = [], context = {}) {
 
   if (geo.includes("ASIA") && JAPAN_PORT_TOKENS.test(context.port_blob || "")) {
     return { slug: "japan", method: "ncl_asia_japan_port_evidence", source_code: "ASIA", confidence: "high" };
+  }
+
+  const medTokens = /ravenna|trieste|venice|barcelona|rome|civitavecchia|piraeus|athens|mediterranean|santorini|mykonos|dubrovnik|split|kotor|valletta|palma|marseille|nice|genoa|livorno|florence|naples|sicily|malta|tarragona|corfu|messina|argostoli|zadar|ancona|catania|palermo/i;
+  if (medTokens.test(context.port_blob || "")) {
+    return { slug: "mediterranean", method: "ncl_mediterranean_port_evidence", source_code: null, confidence: "medium" };
   }
 
   return null;

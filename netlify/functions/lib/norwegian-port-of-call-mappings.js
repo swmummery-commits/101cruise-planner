@@ -116,7 +116,78 @@ const NCL_PORT_OF_CALL_CODES = Object.freeze([
     country: "Falkland Islands",
     note: "Falkland Islands — disambiguated by country, not generic Stanley"
   },
-  { code: "NPI", source_name: "Great Stirrup Cay, Bahamas", canonical_name: "Great Stirrup Cay", classification: "EXISTING_ALIAS", country: "Bahamas" }
+  { code: "NPI", source_name: "Great Stirrup Cay, Bahamas", canonical_name: "Great Stirrup Cay", classification: "EXISTING_ALIAS", country: "Bahamas" },
+  { code: "ACA", source_name: "Acapulco, Mexico", canonical_name: "Acapulco", classification: "NEW_PORT_REQUIRED", country: "Mexico" },
+  { code: "PRQ", source_name: "Puerto Quetzal, Guatemala", canonical_name: "Puerto Quetzal", classification: "NEW_PORT_REQUIRED", country: "Guatemala" },
+  {
+    code: "PCL",
+    source_name: "Puntarenas (Puerto Caldera), Costa Rica",
+    canonical_name: "Puerto Caldera",
+    classification: "DISTINCT_PORT_REQUIRED",
+    country: "Costa Rica",
+    note: "Physical cruise port is Puerto Caldera; Puntarenas is the regional/marketing label"
+  },
+  { code: "HOR", source_name: "Horta, Azores", canonical_name: "Horta", classification: "NEW_PORT_REQUIRED", country: "Portugal" },
+  {
+    code: "LXO",
+    source_name: "Oporto, Portugal",
+    canonical_name: "Leixoes",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Portugal",
+    note: "NCL LXO is Leixões cruise port; Oporto/Porto are marketing city labels"
+  },
+  {
+    code: "AST",
+    source_name: "Astoria, Oregon",
+    canonical_name: "Astoria Oregon",
+    classification: "DISTINCT_PORT_REQUIRED",
+    country: "United States",
+    note: "US Pacific Northwest cruise port — not Astoria elsewhere"
+  },
+  { code: "BRI", source_name: "Bari, Italy", canonical_name: "Bari", classification: "NEW_PORT_REQUIRED", country: "Italy" },
+  {
+    code: "KCZ",
+    source_name: "Kochi, Japan",
+    canonical_name: "Kochi Japan",
+    classification: "DISTINCT_PORT_REQUIRED",
+    country: "Japan",
+    note: "Japanese Kochi (Shikoku) — distinct from Cochin, India"
+  },
+  { code: "NAH", source_name: "Naha (Okinawa), Japan", canonical_name: "Naha", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  { code: "NII", source_name: "Niigata, Japan", canonical_name: "Niigata", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  {
+    code: "CMY",
+    source_name: "Chan May, Vietnam",
+    canonical_name: "Chan May",
+    classification: "EXISTING_ALIAS",
+    country: "Vietnam",
+    note: "Physical cruise port near Hue/Da Nang — Chan May already in catalogue"
+  },
+  {
+    code: "HAN",
+    source_name: "Hanoi (Ha Long Bay), Vietnam",
+    canonical_name: "Halong Bay",
+    classification: "EXISTING_ALIAS",
+    country: "Vietnam",
+    note: "Marketing Hanoi label; ships berth in Ha Long Bay area"
+  },
+  {
+    code: "ESS",
+    source_name: "Phillip Island, Australia",
+    canonical_name: "Phillip Island",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Australia"
+  },
+  {
+    code: "DEN",
+    source_name: "Denarau, Fiji",
+    canonical_name: "Denarau",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Fiji",
+    note: "Port Denarau / Denarau Marina cruise gateway"
+  },
+  { code: "SVU", source_name: "Savusavu, Fiji", canonical_name: "Savusavu", classification: "NEW_PORT_REQUIRED", country: "Fiji" },
+  { code: "DRA", source_name: "Dravuni, Fiji", canonical_name: "Dravuni", classification: "NEW_PORT_REQUIRED", country: "Fiji" }
 ]);
 
 const POC_CODE_TO_MAPPING = Object.freeze(Object.fromEntries(NCL_PORT_OF_CALL_CODES.map((row) => [row.code, row])));
