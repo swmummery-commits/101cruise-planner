@@ -125,6 +125,7 @@ async function fetchCarnivalCatalogue(
   let apiCalls = 0;
   let malformedDocs = 0;
   let exactSolrDuplicates = 0;
+  let productKeySuppressed = 0;
   let zeroProgressPages = 0;
   let repeatedPageSignatures = 0;
   let previousPageSignature = null;
@@ -178,7 +179,13 @@ async function fetchCarnivalCatalogue(
       if (rowKey) bySolrId.set(rowKey, doc);
       if (typeof getProductKey === "function") {
         const productKey = getProductKey(doc);
-        if (productKey && !byProductKey.has(productKey)) byProductKey.set(productKey, doc);
+        if (productKey) {
+          if (byProductKey.has(productKey)) {
+            productKeySuppressed += 1;
+          } else {
+            byProductKey.set(productKey, doc);
+          }
+        }
       }
     }
 
@@ -186,13 +193,24 @@ async function fetchCarnivalCatalogue(
   }
 
   const uniqueDocs = getProductKey ? [...byProductKey.values()] : [...bySolrId.values()];
+  const validUniqueProducts = uniqueDocs.length;
+  const sourceRowAccounting = {
+    raw_source_rows: rawRows.length,
+    malformed_or_invalid_rows: malformedDocs,
+    exact_solr_duplicate_rows: exactSolrDuplicates,
+    product_key_suppressed_rows: productKeySuppressed,
+    valid_unique_source_products: validUniqueProducts,
+    reconciles:
+      malformedDocs + exactSolrDuplicates + productKeySuppressed + validUniqueProducts === rawRows.length
+  };
 
   return {
     numFound,
     raw_rows_fetched: rawRows.length,
     unique_solr_rows: bySolrId.size,
     exact_solr_duplicate_rows_removed: exactSolrDuplicates,
-    unique_products: uniqueDocs.length,
+    product_key_suppressed_rows: productKeySuppressed,
+    unique_products: validUniqueProducts,
     docs: uniqueDocs,
     raw_docs: rawRows,
     api_calls: apiCalls,
@@ -206,8 +224,11 @@ async function fetchCarnivalCatalogue(
     },
     ingestion_audit: {
       malformed_docs: malformedDocs,
-      exact_solr_duplicate_rows_removed: exactSolrDuplicates
-    }
+      exact_solr_duplicate_rows_removed: exactSolrDuplicates,
+      product_key_suppressed_rows: productKeySuppressed,
+      source_row_accounting: sourceRowAccounting
+    },
+    source_row_accounting: sourceRowAccounting
   };
 }
 

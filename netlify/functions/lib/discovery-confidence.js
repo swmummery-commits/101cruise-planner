@@ -6,6 +6,7 @@
 const { classifyNonSailingSource, evaluateSailingEvidence } = require("./discovery-non-sailing-filter");
 const { isExcludedCruiseLine } = require("./cruise-finder-departure-match");
 const { validateDepartureForCandidate } = require("./discovery-departure-port");
+const { evaluateCarnivalStructuredSourceTrust, TRUSTED_SHIP_METHODS } = require("./carnival-structured-source-trust");
 
 const CONFIDENCE_RESOLVER_VERSION = "2026-08-02.auto1";
 
@@ -84,6 +85,32 @@ function evaluateDiscoveryConfidence(input = {}) {
       score: 0,
       resolverVersion: CONFIDENCE_RESOLVER_VERSION
     };
+  }
+
+  const structuredTrust =
+    input.structuredSourceTrust ||
+    evaluateCarnivalStructuredSourceTrust({
+      structured_source: input.structured_source || input.raw_extract?.structured_source,
+      cruise_id: input.cruise_id || input.raw_extract?.seabourn_cruise_id,
+      itinerary_id: input.itinerary_id || input.raw_extract?.seabourn_itinerary_id,
+      departure_date: input.departure_date,
+      nights: input.nights,
+      departure_port_meta: input.departure_port_meta,
+      destination_id: input.destination_id,
+      shipResolution: input.shipResolution,
+      destinationResolution: input.destinationResolution,
+      raw_extract: input.raw_extract
+    });
+
+  if (structuredTrust.trusted) {
+    evidence.sourceType = {
+      classification: "official_structured_catalogue",
+      url,
+      title,
+      structured_source: structuredTrust.structured_source,
+      official_identity: structuredTrust.official_identity
+    };
+    score += 2;
   }
 
   const sailingEvidence = evaluateSailingEvidence({
@@ -192,23 +219,37 @@ function evaluateDiscoveryConfidence(input = {}) {
   if (hasConflict) reasons.push("field_conflict");
 
   let classification = "uncertain";
-  if (sailingEvidence.sufficient || (evidence.ship.matched && input.departure_date)) {
+  if (structuredTrust.trusted && structuredTrust.reference_resolution_ready) {
+    classification = "sailing";
+  } else if (sailingEvidence.sufficient || (evidence.ship.matched && input.departure_date)) {
     classification = "sailing";
   }
 
   const confidence = tierFromScore(score);
   let outcome = "review";
 
+  const shipConfidenceOk =
+    evidence.ship.matched &&
+    (evidence.ship.confidence >= 85 ||
+      TRUSTED_SHIP_METHODS.has(evidence.ship.method) ||
+      (structuredTrust.trusted && structuredTrust.criteria?.ship_trusted_method));
+
+  const publicationReasons = reasons.filter((r) => {
+    if (!structuredTrust.trusted) return true;
+    if (/insufficient_sailing_evidence/i.test(r)) return false;
+    return /missing|invalid|unmatched|unresolved/i.test(r);
+  });
+
   const canAutoPublish =
     classification === "sailing" &&
     confidence === "high" &&
-    evidence.ship.matched &&
-    evidence.ship.confidence >= 85 &&
+    shipConfidenceOk &&
     evidence.departureDate.value &&
     evidence.departurePort.canonical &&
     evidence.itinerary.destinationIds.length > 0 &&
     !hasConflict &&
-    !reasons.some((r) => /missing|invalid|unmatched|unresolved/i.test(r));
+    !publicationReasons.some((r) => /missing|invalid|unmatched|unresolved/i.test(r)) &&
+    (!structuredTrust.trusted || structuredTrust.reference_resolution_ready);
 
   if (canAutoPublish) outcome = "auto_publish";
   else if (classification === "non_sailing" || (!sailingEvidence.sufficient && score <= 2)) {
@@ -224,6 +265,7 @@ function evaluateDiscoveryConfidence(input = {}) {
     outcome,
     reasons: [...new Set(reasons)],
     score,
+    structured_source_trust: structuredTrust,
     resolverVersion: CONFIDENCE_RESOLVER_VERSION
   };
 }

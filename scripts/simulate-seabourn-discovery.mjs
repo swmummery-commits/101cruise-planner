@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Seabourn read-only inventory simulation (Prompt 2).
+ * Seabourn read-only inventory simulation (Prompt 2 / 2B).
  *
  *   npm run simulate:seabourn-discovery
  *   node scripts/simulate-seabourn-discovery.mjs --today=2026-08-13
@@ -47,7 +47,7 @@ async function main() {
   if (!line) throw new Error(`Cruise line not found: ${LINE_SLUG}`);
 
   const ships = await supabase(
-    `ci_cruise_ships?cruise_line_id=eq.${line.id}&select=id,name,cruise_line_id,active&order=name.asc`
+    `ci_cruise_ships?cruise_line_id=eq.${line.id}&select=id,name,cruise_line_id,official_line_ship_id,active&order=name.asc`
   );
   const destRows = await supabase("destinations?select=id,name,slug,status");
   const destinations = adapter.catalogueDestinations(destRows || []);
@@ -77,15 +77,30 @@ async function main() {
         source_code: row.raw?.ship_code,
         db_ship: row.ship_resolution?.ship?.name || null,
         method: row.ship_resolution?.method || row.ship_resolution?.reason || "unresolved",
-        resolved: row.ship_resolution?.resolved === true
+        resolution_tier: row.ship_resolution?.resolution_tier || row.ship_resolution?.method,
+        resolved: row.ship_resolution?.resolved === true,
+        fuzzy_dependent: row.ship_resolution?.method === "unique_fuzzy"
       });
       return acc;
     }, new Map());
+
+  const primaryExclusionCounts = simulation.products.reduce((acc, row) => {
+    const key = row.eligibility?.primary_exclusion_reason || (row.eligibility?.production_eligible ? "production_eligible" : "unknown");
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
+
+  const confidenceOutcomeCounts = simulation.products.reduce((acc, row) => {
+    const key = row.confidence?.outcome || "unknown";
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
 
   const report = {
     generated_at: startedAt,
     ended_at: new Date().toISOString(),
     mode: "seabourn_read_only_simulation",
+    prompt: "2B",
     writes_performed: 0,
     read_only: true,
     dry_run_guard: "NO_PRODUCTION_WRITES",
@@ -98,6 +113,8 @@ async function main() {
       num_found: simulation.num_found_official,
       raw_rows_fetched: simulation.raw_rows_fetched,
       exact_solr_duplicates_removed: simulation.exact_solr_duplicates_removed,
+      product_key_suppressed_rows: simulation.product_key_suppressed_rows,
+      source_row_accounting: simulation.source_row_accounting,
       unique_source_products: simulation.unique_source_products,
       api_calls: simulation.api_calls,
       pagination: simulation.pagination,
@@ -106,6 +123,9 @@ async function main() {
       source_ships: simulation.source_ships
     },
     eligibility: simulation.eligibility,
+    eligibility_by_product_type: simulation.eligibility_by_product_type,
+    eligibility_by_ship: simulation.eligibility_by_ship,
+    embarkation_ports: simulation.embarkation_ports,
     identity: simulation.identity,
     overlap: simulation.overlap,
     ports: simulation.ports,
@@ -114,15 +134,20 @@ async function main() {
     enrichment: simulation.enrichment,
     itinerary_info_probe: simulation.itinerary_info_probe,
     production_reconciliation: simulation.production_reconciliation,
-    failure_reason_counts: simulation.products.reduce((acc, row) => {
-      for (const reason of row.failure_reasons || []) acc[reason] = (acc[reason] || 0) + 1;
-      return acc;
-    }, {}),
-    confidence_outcome_counts: simulation.products.reduce((acc, row) => {
-      const key = row.confidence?.outcome || "unknown";
-      acc[key] = (acc[key] || 0) + 1;
-      return acc;
-    }, {})
+    primary_exclusion_counts: primaryExclusionCounts,
+    confidence_outcome_counts: confidenceOutcomeCounts,
+    blocking_vs_non_blocking: {
+      blocking: {
+        embark_port_unresolved: simulation.eligibility?.waterfall?.required_embark_port_unresolved || 0,
+        ship_unresolved: simulation.eligibility?.waterfall?.required_ship_unresolved || 0,
+        destination_unresolved: simulation.eligibility?.waterfall?.required_destination_unresolved || 0
+      },
+      non_blocking: {
+        unresolved_itinerary_ports: simulation.ports?.unresolved_probable_physical_ports?.length || 0,
+        scenic_or_transit: simulation.ports?.scenic_or_transit?.length || 0,
+        enrichment_gaps: "detail pages lack day-level times (see enrichment section)"
+      }
+    }
   };
 
   fs.mkdirSync(REPORT_DIR, { recursive: true });
@@ -135,10 +160,11 @@ async function main() {
     as_of: today,
     num_found: report.catalogue.num_found,
     unique_products: report.catalogue.unique_source_products,
+    source_row_reconciles: report.catalogue.source_row_accounting?.reconciles,
     eligible: report.eligibility.eligible_source_products,
     within_21_day: report.eligibility.within_21_day_exclusions,
     outstanding_inserts: report.production_reconciliation?.outstanding_eligible_inserts ?? null,
-    arithmetic_reconciles: report.eligibility.arithmetic.reconciles
+    waterfall_reconciles: report.eligibility.arithmetic?.reconciles
   };
 
   console.log(JSON.stringify(summary, null, 2));

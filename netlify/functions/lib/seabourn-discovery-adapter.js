@@ -15,6 +15,7 @@ const { provesIndividualSailing } = require("./discovery-non-sailing-filter");
 const { OPERATIONAL_DESTINATION_CATALOGUE } = require("./destination-classification");
 const carnivalSolr = require("./carnival-solr-discovery");
 const source = require("./seabourn-discovery-source");
+const { evaluateCarnivalStructuredSourceTrust } = require("./carnival-structured-source-trust");
 const {
   daysUntilDeparture,
   publicBookingCutoffDate,
@@ -51,6 +52,29 @@ const TRANSIT_PORT_RE = /^(transit |transiting |cruising )/i;
 const EXPEDITION_SIGNAL_RE =
   /expedition|kimberley|antarctica|arctic|northwest passage|zodiac|ventures by seabourn|polar/i;
 const GRAND_VOYAGE_RE = /grand voyage|world cruise/i;
+
+const SEABOURN_SHIP_CODE_TO_NAME = Object.freeze({
+  SE: "Encore",
+  SQ: "Quest",
+  SV: "Ovation",
+  PS: "Pursuit",
+  VN: "Venture"
+});
+
+/** Deterministic embarkation aliases — canonical names must exist in ports-catalogue.csv */
+const SEABOURN_EMBARK_PORT_ALIASES = Object.freeze({});
+
+const PRIMARY_EXCLUSION_ORDER = [
+  "source_invalid",
+  "policy_excluded_cruisetour",
+  "policy_excluded_product_type",
+  "past_departure",
+  "within_21_day_cutoff",
+  "required_ship_unresolved",
+  "required_embark_port_unresolved",
+  "required_destination_unresolved",
+  "confidence_gate_failure"
+];
 
 function parseSeabournDelimited(value) {
   return carnivalSolr.parseCarnivalDelimited(value);
@@ -226,13 +250,358 @@ function parseRawVoyageFromDoc(doc, localePrefix = "en_us") {
   };
 }
 
+function normaliseSeabournPortCandidate(value) {
+  const parsed = parseSeabournDelimited(value);
+  let name = parsed.name || String(value || "").trim();
+  if (!name) return { name: null, code: parsed.code || null };
+
+  name = name
+    .replace(/\bB\.C\.\b/gi, "British Columbia")
+    .replace(/\bU\.S\.\b/gi, "US")
+    .replace(/\bU\.K\.\b/gi, "UK")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const aliasKey = name.toLowerCase();
+  if (SEABOURN_EMBARK_PORT_ALIASES[aliasKey]) {
+    return { name: SEABOURN_EMBARK_PORT_ALIASES[aliasKey], code: parsed.code || null, alias_applied: aliasKey };
+  }
+
+  return { name, code: parsed.code || null, alias_applied: null };
+}
+
+function resolveSeabournShip(raw, context = {}) {
+  const { cruiseLine, ships = [], shipAliases = [] } = context;
+  const lineShips = ships.filter((s) => s.cruise_line_id === cruiseLine?.id);
+
+  const viaStructured = resolveShipForLine({
+    rawShipName: raw.ship_name,
+    rawShipCode: raw.ship_code,
+    cruiseLineId: cruiseLine?.id,
+    cruiseLineName: cruiseLine?.name || "Seabourn Cruise Line",
+    ships: lineShips,
+    aliases: shipAliases
+  });
+
+  if (viaStructured.resolved && viaStructured.method === "official_line_ship_id") {
+    return { ...viaStructured, resolution_tier: "official_line_ship_code" };
+  }
+  if (viaStructured.resolved && ["exact_name", "stored_alias"].includes(viaStructured.method)) {
+    return { ...viaStructured, resolution_tier: viaStructured.method };
+  }
+
+  const mappedName = SEABOURN_SHIP_CODE_TO_NAME[String(raw.ship_code || "").trim().toUpperCase()];
+  if (mappedName) {
+    const exact = resolveShipForLine({
+      rawShipName: mappedName,
+      cruiseLineId: cruiseLine?.id,
+      cruiseLineName: cruiseLine?.name || "Seabourn Cruise Line",
+      ships: lineShips,
+      aliases: shipAliases
+    });
+    if (exact.resolved) {
+      return {
+        ...exact,
+        method: "seabourn_ship_code_map",
+        confidence: 100,
+        resolution_tier: "seabourn_ship_code_map",
+        source_code: raw.ship_code
+      };
+    }
+  }
+
+  if (viaStructured.resolved) {
+    return { ...viaStructured, resolution_tier: viaStructured.method };
+  }
+
+  return { ...viaStructured, resolution_tier: "unresolved" };
+}
+
 function resolveSeabournDeparturePort(raw) {
-  const candidates = [raw.departure_port, raw.departure_port_code].filter(Boolean);
+  const embark = normaliseSeabournPortCandidate(raw.departure_port || "");
+  const candidates = [embark.name, raw.departure_port, raw.departure_port_code].filter(Boolean);
+
   for (const value of candidates) {
     const meta = resolveRawPortText(value, { sourceField: "sbncruisesearch_api" });
-    if (meta.status === "resolved") return meta;
+    if (meta.status === "resolved") {
+      return {
+        ...meta,
+        seabourn_alias_applied: embark.alias_applied || null,
+        resolution_method: meta.confidence === "alias" || embark.alias_applied ? "alias" : "exact_or_normalised"
+      };
+    }
   }
-  return resolveRawPortText(raw.departure_port, { sourceField: "sbncruisesearch_api" });
+
+  const fallback = resolveRawPortText(embark.name || raw.departure_port, { sourceField: "sbncruisesearch_api" });
+  return {
+    ...fallback,
+    seabourn_alias_applied: embark.alias_applied || null,
+    resolution_method: fallback.status === "resolved" ? "exact_or_normalised" : "unresolved"
+  };
+}
+
+function assessSourceValidity(raw) {
+  const issues = [];
+  if (!String(raw?.cruise_id || "").trim()) issues.push("missing_cruise_id");
+  if (!String(raw?.itinerary_id || "").trim()) issues.push("missing_itinerary_id");
+  if (!String(raw?.ship_name || "").trim()) issues.push("missing_ship");
+  if (!raw?.departure_date) issues.push("missing_departure_date");
+  if (!(Number(raw?.nights) > 0)) issues.push("missing_duration");
+  return { valid: issues.length === 0, issues };
+}
+
+function assessProductPolicy(productType) {
+  if (productType === "cruisetour") {
+    return { included: false, exclusion_reason: "policy_excluded_cruisetour" };
+  }
+  if (!isEligibleSeabournInventory(productType)) {
+    return { included: false, exclusion_reason: "policy_excluded_product_type" };
+  }
+  return { included: true, exclusion_reason: null };
+}
+
+function determinePrimaryExclusion(context) {
+  const {
+    sourceValidity,
+    productPolicy,
+    cutoff,
+    shipResolved,
+    embarkResolved,
+    destinationResolved,
+    publicationReady
+  } = context;
+
+  if (!sourceValidity.valid) return "source_invalid";
+  if (!productPolicy.included) return productPolicy.exclusion_reason;
+  if (cutoff.past) return "past_departure";
+  if (cutoff.within_21) return "within_21_day_cutoff";
+  if (!shipResolved) return "required_ship_unresolved";
+  if (!embarkResolved) return "required_embark_port_unresolved";
+  if (!destinationResolved) return "required_destination_unresolved";
+  if (!publicationReady) return "confidence_gate_failure";
+  return null;
+}
+
+function evaluateVoyageEligibility(row, today = perthCalendarDate()) {
+  const raw = row.raw || {};
+  const sourceValidity = assessSourceValidity(raw);
+  const productPolicy = assessProductPolicy(row.product_type);
+  const shipResolved = row.ship_resolution?.resolved === true;
+  const embarkResolved = row.candidate?.departure_port_meta?.status === "resolved";
+  const destinationResolved = row.destination_resolution?.status === "resolved";
+  const publicationReady =
+    row.confidence?.outcome === "auto_publish" || row.confidence?.outcome === "high_confidence";
+
+  const dep = row.candidate?.departure_date;
+  const days = dep ? daysUntilDeparture(dep, today) : null;
+  const cutoff = {
+    past: days != null && days < 0,
+    within_21: days != null && days >= 0 && days <= PUBLIC_BOOKING_CUTOFF_DAYS,
+    outside_cutoff: days != null && days > PUBLIC_BOOKING_CUTOFF_DAYS
+  };
+
+  const secondaryReasons = [...(row.failure_reasons || [])];
+  if (row.validation_reasons?.length) secondaryReasons.push(...row.validation_reasons);
+  if (row.confidence?.reasons?.length) secondaryReasons.push(...row.confidence.reasons);
+
+  const primary_exclusion_reason = determinePrimaryExclusion({
+    sourceValidity,
+    productPolicy,
+    cutoff,
+    shipResolved,
+    embarkResolved,
+    destinationResolved,
+    publicationReady
+  });
+
+  const production_eligible = primary_exclusion_reason === null;
+
+  return {
+    source_validity: sourceValidity,
+    product_policy: productPolicy,
+    reference_resolution: {
+      ship: shipResolved,
+      embark_port: embarkResolved,
+      destination: destinationResolved
+    },
+    publication: {
+      outcome: row.confidence?.outcome || "unknown",
+      ready: publicationReady,
+      structured_source_trusted: row.confidence?.structured_source_trust?.trusted === true
+    },
+    cutoff,
+    primary_exclusion_reason,
+    secondary_diagnostic_reasons: [...new Set(secondaryReasons)],
+    production_eligible
+  };
+}
+
+function buildEligibilityWaterfall(normalised, today = perthCalendarDate()) {
+  const evaluated = normalised.map((row) => ({
+    row,
+    eligibility: evaluateVoyageEligibility(row, today)
+  }));
+
+  const counts = Object.fromEntries(PRIMARY_EXCLUSION_ORDER.map((k) => [k, 0]));
+  counts.production_eligible = 0;
+
+  for (const { eligibility } of evaluated) {
+    if (eligibility.production_eligible) counts.production_eligible += 1;
+    else if (eligibility.primary_exclusion_reason) counts[eligibility.primary_exclusion_reason] += 1;
+  }
+
+  const uniqueProducts = normalised.length;
+  const arithmetic = {
+    valid_unique_source_products: uniqueProducts,
+    policy_excluded_cruisetours: counts.policy_excluded_cruisetour,
+    past_departures: counts.past_departure,
+    within_21_day_exclusions: counts.within_21_day_cutoff,
+    source_invalid_voyages: counts.source_invalid,
+    required_ship_unresolved: counts.required_ship_unresolved,
+    required_embark_port_unresolved: counts.required_embark_port_unresolved,
+    required_destination_unresolved: counts.required_destination_unresolved,
+    confidence_gate_failures: counts.confidence_gate_failure,
+    production_eligible_dry_run: counts.production_eligible,
+    reconciles:
+      counts.production_eligible +
+        PRIMARY_EXCLUSION_ORDER.reduce((sum, key) => sum + (counts[key] || 0), 0) ===
+      uniqueProducts
+  };
+
+  return {
+    as_of_date: today,
+    cutoff_date: publicBookingCutoffDate(today),
+    minimum_public_departure_date: publicBookingMinimumDepartureDate(today),
+    cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
+    waterfall: counts,
+    arithmetic,
+    evaluated
+  };
+}
+
+function buildEligibilityByProductType(normalised, today = perthCalendarDate()) {
+  const types = ["ocean", "expedition", "combination", "extended", "grand_voyage", "cruisetour", "unknown"];
+  const table = {};
+  for (const type of types) {
+    table[type] = {
+      source_valid: 0,
+      policy_excluded: 0,
+      cutoff_excluded: 0,
+      resolution_blocked: 0,
+      confidence_blocked: 0,
+      eligible: 0
+    };
+  }
+
+  for (const row of normalised) {
+    const type = row.product_type || "unknown";
+    if (!table[type]) table[type] = { source_valid: 0, policy_excluded: 0, cutoff_excluded: 0, resolution_blocked: 0, confidence_blocked: 0, eligible: 0 };
+    const ev = evaluateVoyageEligibility(row, today);
+    if (!ev.source_validity.valid) continue;
+    table[type].source_valid += 1;
+    if (ev.primary_exclusion_reason === "policy_excluded_cruisetour" || ev.primary_exclusion_reason === "policy_excluded_product_type") {
+      table[type].policy_excluded += 1;
+    } else if (ev.primary_exclusion_reason === "past_departure" || ev.primary_exclusion_reason === "within_21_day_cutoff") {
+      table[type].cutoff_excluded += 1;
+    } else if (
+      ["required_ship_unresolved", "required_embark_port_unresolved", "required_destination_unresolved"].includes(
+        ev.primary_exclusion_reason
+      )
+    ) {
+      table[type].resolution_blocked += 1;
+    } else if (ev.primary_exclusion_reason === "confidence_gate_failure") {
+      table[type].confidence_blocked += 1;
+    } else if (ev.production_eligible) {
+      table[type].eligible += 1;
+    }
+  }
+
+  return table;
+}
+
+function buildEligibilityByShip(normalised, today = perthCalendarDate()) {
+  const table = {};
+  for (const row of normalised) {
+    const ship = row.raw?.ship_name || "unknown";
+    if (!table[ship]) {
+      table[ship] = { valid_source_products: 0, excluded: 0, unresolved: 0, eligible: 0 };
+    }
+    const ev = evaluateVoyageEligibility(row, today);
+    if (ev.source_validity.valid) table[ship].valid_source_products += 1;
+    if (ev.production_eligible) {
+      table[ship].eligible += 1;
+    } else if (
+      ["required_ship_unresolved", "required_embark_port_unresolved", "required_destination_unresolved"].includes(
+        ev.primary_exclusion_reason
+      )
+    ) {
+      table[ship].unresolved += 1;
+    } else if (ev.primary_exclusion_reason) {
+      table[ship].excluded += 1;
+    }
+  }
+  return table;
+}
+
+function analyseEmbarkationPorts(normalised) {
+  const byEmbark = new Map();
+
+  for (const row of normalised) {
+    const raw = row.raw || {};
+    const name = raw.departure_port || null;
+    const code = raw.departure_port_code || null;
+    if (!name) continue;
+    const key = `${name}|${code || ""}`;
+    if (!byEmbark.has(key)) {
+      byEmbark.set(key, {
+        source_name: name,
+        source_code: code,
+        cruises_total: 0,
+        cruises_blocked: 0,
+        initially_resolved: null,
+        now_resolved: false,
+        canonical_port: null,
+        resolution_method: null,
+        alias_applied: null
+      });
+    }
+    const entry = byEmbark.get(key);
+    entry.cruises_total += 1;
+    const embarkResolved = row.candidate?.departure_port_meta?.status === "resolved";
+    if (!embarkResolved && row.product_type !== "cruisetour") entry.cruises_blocked += 1;
+    if (entry.initially_resolved == null) {
+      const direct = resolveRawPortText(name, { sourceField: "sbncruisesearch_api" });
+      entry.initially_resolved = direct.status === "resolved";
+    }
+    if (embarkResolved) {
+      entry.now_resolved = true;
+      entry.canonical_port = row.candidate.departure_port_meta?.canonicalPortName || row.candidate.departure_port;
+      entry.resolution_method = row.candidate.departure_port_meta?.resolution_method || row.candidate.departure_port_meta?.confidence;
+      entry.alias_applied = row.candidate.departure_port_meta?.seabourn_alias_applied || null;
+    }
+  }
+
+  const all = [...byEmbark.values()].sort((a, b) => b.cruises_blocked - a.cruises_blocked || b.cruises_total - a.cruises_total);
+  const unresolved = all.filter((e) => e.cruises_blocked > 0);
+
+  return {
+    unique_embarkation_values: all.length,
+    unique_embarkation_codes: new Set(all.map((e) => e.source_code).filter(Boolean)).size,
+    initially_resolved: all.filter((e) => e.initially_resolved).length,
+    now_resolved: all.filter((e) => e.now_resolved).length,
+    still_unresolved: unresolved.length,
+    cruises_blocked_by_embark: unresolved.reduce((sum, e) => sum + e.cruises_blocked, 0),
+    mappings_added: SEABOURN_EMBARK_PORT_ALIASES,
+    unresolved_sorted: unresolved.map((e) => ({
+      source_name: e.source_name,
+      source_code: e.source_code,
+      cruises_blocked: e.cruises_blocked,
+      cruises_total: e.cruises_total,
+      likely_canonical_port: e.canonical_port,
+      reason: e.now_resolved ? null : "Could not resolve to a canonical port in ports-catalogue.csv",
+      recommended_action: e.source_name?.includes("AIRPORT") ? "policy_review_air_embark" : "proposed_port_alias_or_catalogue_addition"
+    }))
+  };
 }
 
 function resolveSeabournDestinationHints(raw) {
@@ -281,13 +650,7 @@ function normaliseSeabournVoyage(raw, context = {}) {
   const product = productMeta || classifySeabournProductType(raw);
   const inventoryEligibleType = isEligibleSeabournInventory(product.productType);
 
-  const shipResolution = resolveShipForLine({
-    rawShipName: raw.ship_name,
-    cruiseLineId: cruiseLine?.id,
-    cruiseLineName: cruiseLine?.name || "Seabourn Cruise Line",
-    ships,
-    aliases: shipAliases
-  });
+  const shipResolution = resolveSeabournShip(raw, context);
 
   const portMeta = resolveSeabournDeparturePort(raw);
   const destHints = resolveSeabournDestinationHints(raw);
@@ -329,9 +692,26 @@ function normaliseSeabournVoyage(raw, context = {}) {
     preferredDestination: destHints.preferredSlug ? { slug: destHints.preferredSlug } : null
   });
 
+  const matchedDest = destinations.find((d) => d.slug === destResult.destinationKey);
+  candidate.destination_id = matchedDest?.id || null;
+  candidate.destination_key = destResult.destinationKey;
+
   const simDestinationId =
     candidate.destination_id ||
     (destResult.status === "resolved" && destResult.destinationKey ? `catalogue:${destResult.destinationKey}` : null);
+
+  const structuredSourceTrust = evaluateCarnivalStructuredSourceTrust({
+    structured_source: raw.structured_source,
+    cruise_id: raw.cruise_id,
+    itinerary_id: raw.itinerary_id,
+    departure_date: candidate.departure_date,
+    nights: candidate.nights,
+    departure_port_meta: portMeta,
+    destination_id: simDestinationId,
+    shipResolution,
+    destinationResolution: destResult,
+    raw_extract: candidate.raw_extract
+  });
 
   const validationReasons = validateCruise({
     ...candidate,
@@ -350,12 +730,16 @@ function normaliseSeabournVoyage(raw, context = {}) {
 
   const confidenceEval = evaluateDiscoveryConfidence({
     ...candidate,
+    cruise_id: raw.cruise_id,
+    itinerary_id: raw.itinerary_id,
+    structured_source: raw.structured_source,
+    structuredSourceTrust,
     cruiseLine,
     cruise_line_name: cruiseLine?.name,
     title: raw.title,
     shipResolution: shipResolution.resolved
-      ? { ship: shipResolution.ship, method: shipResolution.method, confidence: shipResolution.confidence }
-      : null,
+      ? { ship: shipResolution.ship, method: shipResolution.method, confidence: shipResolution.confidence, resolved: true }
+      : { resolved: false },
     destinationResolution: {
       resolved: destResult.status === "resolved",
       destination_id: simDestinationId,
@@ -366,23 +750,42 @@ function normaliseSeabournVoyage(raw, context = {}) {
   });
 
   const failureReasons = [];
-  if (product.productType === "cruisetour") failureReasons.push("cruisetour_excluded");
-  else if (!inventoryEligibleType) failureReasons.push("product_type_unknown");
-  if (!shipResolution.resolved) failureReasons.push("unknown_ship");
+  if (product.productType === "cruisetour") failureReasons.push("policy_excluded_cruisetour");
+  else if (!inventoryEligibleType) failureReasons.push("policy_excluded_product_type");
+  if (!shipResolution.resolved) failureReasons.push("required_ship_unresolved");
   if (!candidate.departure_date) failureReasons.push("missing_departure_date");
   else if (candidate.departure_date < today) failureReasons.push("past_departure");
   if (!candidate.departure_port && candidate.departure_port_meta?.status !== "resolved") {
-    failureReasons.push("missing_departure_port");
+    failureReasons.push("required_embark_port_unresolved");
   }
-  if (destResult.status === "unresolved") failureReasons.push("destination_unresolved");
-  if (destResult.status === "ambiguous") failureReasons.push("destination_ambiguous");
+  if (destResult.status === "unresolved") failureReasons.push("required_destination_unresolved");
+  if (destResult.status === "ambiguous") failureReasons.push("required_destination_ambiguous");
+  if (confidenceEval.outcome !== "auto_publish" && confidenceEval.outcome !== "high_confidence") {
+    failureReasons.push("confidence_gate_failure");
+  }
 
   const complete =
     inventoryEligibleType &&
     individual.proven &&
     destResult.status === "resolved" &&
     validationReasons.length === 0 &&
+    portMeta.status === "resolved" &&
+    shipResolution.resolved &&
     (confidenceEval.outcome === "auto_publish" || confidenceEval.outcome === "high_confidence");
+
+  const eligibility = evaluateVoyageEligibility(
+    {
+      raw,
+      candidate,
+      product_type: product.productType,
+      ship_resolution: shipResolution,
+      destination_resolution: destResult,
+      confidence: confidenceEval,
+      failure_reasons: failureReasons,
+      validation_reasons: validationReasons
+    },
+    today
+  );
 
   return {
     raw,
@@ -394,10 +797,12 @@ function normaliseSeabournVoyage(raw, context = {}) {
     destination_resolution: destResult,
     validation_reasons: validationReasons,
     confidence: confidenceEval,
+    structured_source_trust: structuredSourceTrust,
     individual_gate: individual,
     complete_high_confidence: complete,
     projected_activation: complete,
-    failure_reasons: [...new Set(failureReasons)]
+    failure_reasons: [...new Set(failureReasons)],
+    eligibility
   };
 }
 
@@ -550,54 +955,24 @@ function analyseDestinations(records) {
 }
 
 function buildEligibilitySummary(normalised, today = perthCalendarDate()) {
-  let pastCount = 0;
-  let within21 = 0;
-  let incompleteCount = 0;
-  let eligibleCount = 0;
-
-  for (const row of normalised) {
-    const dep = row.candidate?.departure_date;
-    const days = dep ? daysUntilDeparture(dep, today) : null;
-    if (days == null) {
-      incompleteCount += 1;
-      continue;
-    }
-    if (days < 0) {
-      pastCount += 1;
-      continue;
-    }
-    if (days <= PUBLIC_BOOKING_CUTOFF_DAYS) {
-      within21 += 1;
-      continue;
-    }
-    if (row.complete_high_confidence && isEligibleSeabournInventory(row.product_type)) {
-      eligibleCount += 1;
-      continue;
-    }
-    incompleteCount += 1;
-  }
-
-  const uniqueProducts = normalised.length;
-  const arithmetic = {
-    unique_source_products: uniqueProducts,
-    minus_past_departures: pastCount,
-    minus_within_21_day_exclusions: within21,
-    minus_incomplete_products: incompleteCount,
-    equals_eligible_source_products: eligibleCount,
-    reconciles: pastCount + within21 + incompleteCount + eligibleCount === uniqueProducts
-  };
-
+  const waterfallResult = buildEligibilityWaterfall(normalised, today);
   return {
-    as_of_date: today,
-    cutoff_date: publicBookingCutoffDate(today),
-    minimum_public_departure_date: publicBookingMinimumDepartureDate(today),
-    cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
-    unique_source_products: uniqueProducts,
-    past_departures: pastCount,
-    within_21_day_exclusions: within21,
-    incomplete_products: incompleteCount,
-    eligible_source_products: eligibleCount,
-    arithmetic
+    as_of_date: waterfallResult.as_of_date,
+    cutoff_date: waterfallResult.cutoff_date,
+    minimum_public_departure_date: waterfallResult.minimum_public_departure_date,
+    cutoff_days: waterfallResult.cutoff_days,
+    unique_source_products: waterfallResult.arithmetic.valid_unique_source_products,
+    past_departures: waterfallResult.waterfall.past_departure,
+    within_21_day_exclusions: waterfallResult.waterfall.within_21_day_cutoff,
+    incomplete_products: null,
+    eligible_source_products: waterfallResult.waterfall.production_eligible,
+    waterfall: waterfallResult.waterfall,
+    arithmetic: waterfallResult.arithmetic,
+    legacy_incomplete_products:
+      waterfallResult.arithmetic.valid_unique_source_products -
+      waterfallResult.waterfall.production_eligible -
+      waterfallResult.waterfall.past_departure -
+      waterfallResult.waterfall.within_21_day_cutoff
   };
 }
 
@@ -746,6 +1121,9 @@ async function simulateSeabournDiscovery(context = {}) {
   const ports = analysePorts(normalised);
   const destinations = analyseDestinations(normalised);
   const eligibility = buildEligibilitySummary(normalised, today);
+  const eligibilityByProductType = buildEligibilityByProductType(normalised, today);
+  const eligibilityByShip = buildEligibilityByShip(normalised, today);
+  const embarkationPorts = analyseEmbarkationPorts(normalised);
 
   const earliest = [...normalised]
     .map((n) => n.candidate.departure_date)
@@ -778,13 +1156,7 @@ async function simulateSeabournDiscovery(context = {}) {
 
   let productionReconciliation = null;
   if (typeof context.supabaseQuery === "function" && context.cruiseLine?.id) {
-    const eligible = normalised.filter(
-      (n) =>
-        n.complete_high_confidence &&
-        isEligibleSeabournInventory(n.product_type) &&
-        daysUntilDeparture(n.candidate.departure_date, today) != null &&
-        daysUntilDeparture(n.candidate.departure_date, today) > PUBLIC_BOOKING_CUTOFF_DAYS
-    );
+    const eligible = normalised.filter((n) => n.eligibility?.production_eligible === true);
     productionReconciliation = await reconcileProductionReadOnly({
       cruiseLineId: context.cruiseLine.id,
       eligibleProducts: eligible,
@@ -801,6 +1173,8 @@ async function simulateSeabournDiscovery(context = {}) {
     num_found_official: fetchResult.numFound,
     raw_rows_fetched: fetchResult.raw_rows_fetched,
     exact_solr_duplicates_removed: fetchResult.exact_solr_duplicate_rows_removed,
+    product_key_suppressed_rows: fetchResult.product_key_suppressed_rows,
+    source_row_accounting: fetchResult.source_row_accounting,
     unique_source_products: normalised.length,
     api_calls: fetchResult.api_calls,
     pagination: fetchResult.pagination,
@@ -812,6 +1186,9 @@ async function simulateSeabournDiscovery(context = {}) {
     ports,
     destinations,
     eligibility,
+    eligibility_by_product_type: eligibilityByProductType,
+    eligibility_by_ship: eligibilityByShip,
+    embarkation_ports: embarkationPorts,
     enrichment,
     itinerary_info_probe: itineraryInfoProbe,
     production_reconciliation: productionReconciliation,
@@ -863,12 +1240,23 @@ module.exports = {
   classifySeabournProductType,
   classifyPortEntry,
   isEligibleSeabournInventory,
+  normaliseSeabournPortCandidate,
+  resolveSeabournShip,
+  resolveSeabournDeparturePort,
+  assessSourceValidity,
+  evaluateVoyageEligibility,
+  buildEligibilityWaterfall,
+  buildEligibilityByProductType,
+  buildEligibilityByShip,
+  analyseEmbarkationPorts,
   normaliseSeabournVoyage,
   analyseIdentity,
   analyseOverlappingProducts,
   buildEligibilitySummary,
   buildDateDiagnostic,
   catalogueDestinations,
+  SEABOURN_SHIP_CODE_TO_NAME,
+  SEABOURN_EMBARK_PORT_ALIASES,
   simulateSeabournDiscovery,
   fetchItineraryJsonLd,
   probeItineraryInfo,
