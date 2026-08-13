@@ -67,7 +67,30 @@
   timeout = 900
 
 [functions."royal-caribbean-discovery-smoke"]
+  # Bounded connectivity smoke (probe + fleet). No authoritative enumeration.
+  timeout = 26
+
+[functions."royal-caribbean-runtime-proof-launcher"]
+  timeout = 26
+
+[functions."royal-caribbean-runtime-proof-result"]
+  timeout = 26
+
+[functions."royal-caribbean-weekly-maintenance-cron"]
+  # NOT scheduled until controlled weekly activation.
+  timeout = 26
+
+[functions."royal-caribbean-weekly-maintenance-launcher"]
+  timeout = 26
+
+[functions."royal-caribbean-weekly-maintenance-background"]
+  # Background worker for Royal Caribbean weekly maintenance / branch runtime proof.
   timeout = 900
+  included_files = [
+    "data/ports/ports-catalogue.csv",
+    "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv",
+    "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv"
+  ]
 
 [functions."cruise-daily-expiry-cron"]
   # Daily sailed-cruise expiration — 17:30 UTC (01:30 Australia/Perth).
@@ -215,3 +238,6 @@
   from = "/destination-experience/"
   to = "/destination-experience.html"
   status = 200
+
+[context."feat/royal-caribbean-final-catchup".environment]
+  ROYAL_CARIBBEAN_BRANCH_RUNTIME_PROOF_ENABLED = "true"

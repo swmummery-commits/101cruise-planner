@@ -74,6 +74,7 @@ const MAINTENANCE_SCHEDULES = {
     perth_display: "Monday 06:00 Australia/Perth",
     utc_display: "Sunday 22:00 UTC",
     function: "royal-caribbean-weekly-maintenance-cron",
+    background_function: "royal-caribbean-weekly-maintenance-background",
     schedule_registered: false
   },
   daily_expiry: {

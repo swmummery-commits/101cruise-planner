@@ -1,8 +1,10 @@
 /**
- * Read-only Royal Caribbean International source smoke (Netlify runtime).
+ * Bounded Royal Caribbean source smoke (Netlify runtime).
  *
  * POST /.netlify/functions/royal-caribbean-discovery-smoke
- * Header: x-discovery-cron-secret = DISCOVERY_CRON_SECRET
+ * Auth: x-discovery-cron-secret OR branch_runtime_proof body on the branch deploy host.
+ *
+ * Probe + fleet connectivity only — no authoritative multi-page enumeration.
  */
 
 const {
@@ -12,49 +14,41 @@ const {
   GRAPH_URL
 } = require("./lib/royal-caribbean-discovery-source");
 const {
-  enumerateMultiPageSizeUnion,
-  AUTHORITATIVE_PAGE_SIZES
-} = require("./lib/royal-caribbean-source-enumeration");
-
-function cronSecret() {
-  return String(process.env.DISCOVERY_CRON_SECRET || "").trim();
-}
-
-function assertCronAuth(event) {
-  const expected = cronSecret();
-  if (!expected) {
-    const err = new Error("DISCOVERY_CRON_SECRET is not configured");
-    err.statusCode = 503;
-    throw err;
-  }
-  const provided = String(
-    event.headers?.["x-discovery-cron-secret"] ||
-      event.headers?.["X-Discovery-Cron-Secret"] ||
-      ""
-  ).trim();
-  if (provided !== expected) {
-    const err = new Error("Unauthorized");
-    err.statusCode = 401;
-    throw err;
-  }
-}
+  assertSmokeAuth,
+  parseJsonBody,
+  parseBranchProofBody,
+  isBranchRuntimeProofRequest,
+  BRANCH_RUNTIME_PROOF_MODE,
+  redactSecrets
+} = require("./lib/royal-caribbean-runtime-proof");
 
 exports.handler = async (event) => {
   const started = Date.now();
   try {
-    assertCronAuth(event);
+    const body = parseJsonBody(event);
+    const branchProof = isBranchRuntimeProofRequest(event, body);
+    assertSmokeAuth(event, body);
+
     if (event.httpMethod && event.httpMethod !== "POST") {
       return { statusCode: 405, body: JSON.stringify({ ok: false, error: "method_not_allowed" }) };
     }
 
-    let body = {};
-    try {
-      body = JSON.parse(event.body || "{}");
-    } catch {
-      body = {};
-    }
-    if (body.mode && String(body.mode).trim() !== "production_read_only") {
+    if (branchProof) {
+      const proof = parseBranchProofBody(event);
+      body.mode = proof.mode;
+    } else if (body.mode && String(body.mode).trim() !== "production_read_only") {
       return { statusCode: 400, body: JSON.stringify({ ok: false, error: "smoke_read_only_only" }) };
+    }
+
+    if (body.authoritative_enumeration === true) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({
+          ok: false,
+          error: "authoritative_enumeration_forbidden_in_smoke",
+          authoritative_enumeration: false
+        })
+      };
     }
 
     for (const flag of [
@@ -64,24 +58,17 @@ exports.handler = async (event) => {
       if (String(process.env[flag] || "").toLowerCase() === "true") {
         return {
           statusCode: 409,
-          body: JSON.stringify({ ok: false, error: `${flag}_must_be_false`, writesPerformed: false })
+          body: JSON.stringify({ ok: false, error: `${flag}_must_be_false`, writes_performed: false })
         };
       }
     }
 
-    const authoritative = body.authoritative_enumeration === true;
     const probe = await probeRoyalCaribbeanSource({ maxPages: 1, pageSize: 5, includeFleet: true });
     const fleet = await fetchRoyalCaribbeanFleet();
-    const union = await enumerateMultiPageSizeUnion({
-      pageSizes: authoritative ? body.union_page_sizes || AUTHORITATIVE_PAGE_SIZES : [50],
-      requestDelayMs: 0,
-      stopAtTotal: !authoritative,
-      untilEmpty: authoritative
-    });
 
-    const payload = {
+    const payload = redactSecrets({
       ok: probe.ok === true && fleet.ok === true,
-      mode: "production_read_only",
+      mode: branchProof ? BRANCH_RUNTIME_PROOF_MODE : "production_read_only",
       runtime: "netlify",
       graph_url: GRAPH_URL,
       user_agent: USER_AGENT,
@@ -90,18 +77,15 @@ exports.handler = async (event) => {
       sample_group_count: probe.returned_groups || 0,
       official_group_total: probe.total_official_groups || null,
       fleet_count: fleet.ships?.length || 0,
-      authoritative_enumeration_requested: authoritative,
-      authoritative_union_page_sizes: union.page_sizes,
-      authoritative_requests: union.passes?.reduce((n, pass) => n + (pass.pages_requested || 0), 0) || 0,
-      authoritative_groups_union: union.unique_group_ids || 0,
-      authoritative_sailing_ids_union: union.unique_sailing_ids || 0,
+      authoritative_enumeration: false,
+      authoritative_enumeration_requested: false,
       writes_performed: false,
       inventory_writes: false,
       maintenance_writes: false,
       deployed_commit_ref: process.env.COMMIT_REF || process.env.DEPLOY_ID || null,
       deploy_url: process.env.URL || process.env.DEPLOY_PRIME_URL || null,
       duration_ms: Date.now() - started
-    };
+    });
 
     return {
       statusCode: payload.ok ? 200 : 500,
@@ -115,7 +99,7 @@ exports.handler = async (event) => {
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
       body: JSON.stringify({
         ok: false,
-        error: "smoke_failed",
+        error: error.code || "smoke_failed",
         writes_performed: false,
         duration_ms: Date.now() - started
       })

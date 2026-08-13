@@ -11,7 +11,8 @@
     "@ssroute/typescript": "^0.2.0",
     "jszip": "^3.10.1",
     "topojson-client": "^3.1.0",
-    "world-atlas": "^2.0.2"
+    "world-atlas": "^2.0.2",
+    "@netlify/blobs": "^8.2.0"
   },
   "optionalDependencies": {
     "@resvg/resvg-js-linux-x64-gnu": "2.6.2"
@@ -73,6 +74,8 @@
     "royal-caribbean:prompt8-validation": "node scripts/run-royal-caribbean-prompt8-validation.mjs",
     "test:royal-caribbean-source-enumeration": "node scripts/test-royal-caribbean-source-enumeration.mjs",
     "test:royal-caribbean-weekly-maintenance": "node scripts/test-royal-caribbean-weekly-maintenance.mjs",
+    "test:royal-caribbean-runtime-proof": "node scripts/test-royal-caribbean-runtime-proof.mjs",
+    "royal-caribbean:prompt9-proof": "node scripts/run-royal-caribbean-prompt9-proof.mjs",
     "smoke:royal-caribbean-discovery-production": "node scripts/smoke-royal-caribbean-discovery-production.mjs",
     "apply:norwegian-ship-code-seed": "node scripts/apply-norwegian-ship-code-seed.mjs",
     "apply:norwegian-port-reference-data": "node scripts/apply-norwegian-port-reference-data.mjs",
