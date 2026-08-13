@@ -147,6 +147,12 @@ const NCL_EMBARK_PORTS = Object.freeze([
 
 const CODE_TO_MAPPING = Object.freeze(Object.fromEntries(NCL_EMBARK_PORTS.map((row) => [row.code, row])));
 
+const pocMappings = require("./norwegian-port-of-call-mappings");
+const COMBINED_CODE_TO_MAPPING = Object.freeze({
+  ...pocMappings.POC_CODE_TO_MAPPING,
+  ...CODE_TO_MAPPING
+});
+
 const PORT_OF_CALL_SAMPLES = Object.freeze([
   {
     source_name: "Great Stirrup Cay, Bahamas",
@@ -164,7 +170,7 @@ const PORT_OF_CALL_SAMPLES = Object.freeze([
 
 function getEmbarkPortMapping(code) {
   const normalised = String(code || "").trim().toUpperCase();
-  return CODE_TO_MAPPING[normalised] || null;
+  return COMBINED_CODE_TO_MAPPING[normalised] || null;
 }
 
 function getEmbarkPortCanonicalName(code) {

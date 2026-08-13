@@ -64,6 +64,8 @@
     "apply:norwegian-port-reference-data": "node scripts/apply-norwegian-port-reference-data.mjs",
     "run:norwegian-phase4-controlled-batch": "node scripts/run-norwegian-phase4-controlled-batch.mjs",
     "run:norwegian-phase5b-enrichment-batch": "node scripts/run-norwegian-phase5b-enrichment-batch.mjs",
+    "run:norwegian-phase5c-data-quality": "node scripts/run-norwegian-phase5c-data-quality.mjs",
+    "apply:norwegian-phase5c-port-reference-data": "node scripts/apply-norwegian-phase5c-port-reference-data.mjs",
     "test:explora-weekly-maintenance": "node scripts/test-explora-weekly-maintenance.mjs",
     "test:explora-weekly-background-dispatch": "node scripts/test-explora-weekly-background-dispatch.mjs",
     "test:explora-runtime-modules": "node scripts/test-explora-runtime-modules.mjs",

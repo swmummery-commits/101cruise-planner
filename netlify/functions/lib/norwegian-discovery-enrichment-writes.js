@@ -166,14 +166,86 @@ function validateSchedulePageIdentity(dbRow, parsed, completeItinerary, itinerar
   if (expectedCode && pageCode && expectedCode !== pageCode) {
     return { ok: false, reason: "itinerary_code_mismatch", expected: expectedCode, page: pageCode };
   }
+  const pageDays = structuredDurationDays(parsed);
   const durationWarning =
-    parsed?.duration != null && dbRow.nights != null && Number(parsed.duration) !== Number(dbRow.nights)
+    pageDays != null && dbRow.nights != null && pageDays !== Number(dbRow.nights)
       ? {
           expected_nights: dbRow.nights,
-          page_duration: parsed.duration
+          page_duration_days: pageDays,
+          page_duration: parsed?.duration || null
         }
       : null;
-  return { ok: true, reason: null, duration_warning: durationWarning };
+  return { ok: true, reason: null, duration_warning: durationWarning, page_duration_days: pageDays };
+}
+
+function structuredDurationDays(parsed) {
+  if (!parsed?.duration) return null;
+  if (typeof parsed.duration === "object" && parsed.duration.days != null) {
+    return Number(parsed.duration.days);
+  }
+  const asNumber = Number(parsed.duration);
+  return Number.isFinite(asNumber) ? asNumber : null;
+}
+
+function extractTitleDayCount(title) {
+  const match = String(title || "").match(/(\d+)\s*[- ]?\s*day/i);
+  return match ? Number(match[1]) : null;
+}
+
+function normalizeItineraryTitle(title) {
+  return String(title || "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function validateSemanticEnrichment(dbRow, parsed, completeItinerary) {
+  const browseNights = Number(dbRow.nights);
+  const pageDays = structuredDurationDays(parsed);
+  const titleDays = extractTitleDayCount(parsed?.title);
+  const itineraryCode = String(dbRow.raw_extract?.ncl_itinerary_code || "").trim();
+  const codeDurationMatch = itineraryCode.match(/(\d+)[A-Z]/);
+  const codeDays = codeDurationMatch ? Number(codeDurationMatch[1]) : null;
+
+  const checks = {
+    itinerary_code: String(completeItinerary?.code || "").trim().toUpperCase() === itineraryCode.toUpperCase(),
+    structured_duration_matches_browse: pageDays == null || !Number.isFinite(browseNights) || pageDays === browseNights,
+    title_day_count_matches_browse:
+      titleDays == null || !Number.isFinite(browseNights) || titleDays === browseNights,
+    code_duration_matches_browse: codeDays == null || !Number.isFinite(browseNights) || codeDays === browseNights
+  };
+
+  let status = "VERIFIED";
+  let reason = null;
+  const conflicts = [];
+
+  if (!checks.itinerary_code) {
+    status = "IDENTITY_MISMATCH";
+    reason = "itinerary_code_mismatch";
+  } else if (pageDays != null && Number.isFinite(browseNights) && pageDays !== browseNights) {
+    status = "SOURCE_METADATA_CONFLICT";
+    reason = "structured_duration_conflicts_with_browse";
+    conflicts.push({ field: "duration", browse: browseNights, page: pageDays });
+  } else if (titleDays != null && Number.isFinite(browseNights) && titleDays !== browseNights) {
+    status = "VERIFIED_WITH_MARKETING_TITLE_DIFFERENCE";
+    reason = "marketing_title_day_count_differs_from_browse_duration";
+    conflicts.push({ field: "title_day_count", browse: browseNights, title: titleDays, structured: pageDays });
+  } else if (codeDays != null && Number.isFinite(browseNights) && codeDays !== browseNights) {
+    status = "SOURCE_METADATA_CONFLICT";
+    reason = "itinerary_code_duration_conflicts_with_browse";
+    conflicts.push({ field: "code_duration", browse: browseNights, code: codeDays });
+  }
+
+  return {
+    status,
+    reason,
+    checks,
+    conflicts,
+    browse_nights: browseNights,
+    page_duration_days: pageDays,
+    title_day_count: titleDays,
+    code_duration_days: codeDays,
+    trusted_for_core_identity: status !== "IDENTITY_MISMATCH" && status !== "SOURCE_METADATA_CONFLICT"
+  };
 }
 
 function canonicalEmbarkFromPage(completeItinerary) {
@@ -226,8 +298,10 @@ function looksLikeRawItineraryCode(value) {
   return /^[A-Z0-9_]{8,}$/.test(String(value || "").trim());
 }
 
-function classifyEnrichmentOutcome({ fetchOk, identityOk, parsed, portSummary, embarkValidation }) {
+function classifyEnrichmentOutcome({ fetchOk, identityOk, parsed, portSummary, embarkValidation, semanticValidation }) {
   if (!fetchOk) return "enrichment_unavailable";
+  if (semanticValidation?.status === "IDENTITY_MISMATCH") return "identity_mismatch";
+  if (semanticValidation?.status === "SOURCE_METADATA_CONFLICT") return "core_source_discrepancy";
   if (!identityOk) return "identity_mismatch";
   if (embarkValidation?.ok === false && embarkValidation.reason === "embark_canonical_mismatch") {
     return "core_source_discrepancy";
@@ -251,7 +325,8 @@ function buildEnrichmentPatch(dbRow, enrichment) {
   const portSummary = enrichment.port_summary || summarisePortResolution(resolvedPorts);
   const outcome = enrichment.outcome;
 
-  const title = parsed.title && !looksLikeRawItineraryCode(parsed.title) ? parsed.title : null;
+  const normalizedTitle = normalizeItineraryTitle(parsed.title);
+  const title = normalizedTitle && !looksLikeRawItineraryCode(normalizedTitle) ? normalizedTitle : null;
   const disembark = enrichment.disembark || canonicalDisembarkFromPage(enrichment.completeItinerary || {});
   const itineraryPorts = buildItineraryPortsDisplay(resolvedPorts);
 
@@ -261,11 +336,13 @@ function buildEnrichmentPatch(dbRow, enrichment) {
 
   const raw = {
     ...(dbRow.raw_extract || {}),
-    ncl_enrichment_phase: "phase5b_controlled_enrichment",
+    ncl_enrichment_phase: "phase5c_data_quality_completion",
     ncl_enrichment_at: enrichment.enriched_at || new Date().toISOString(),
     ncl_enrichment_status: outcome,
     ncl_enrichment_method: enrichment.extraction_method || null,
-    ncl_itinerary_title: parsed.title || null,
+    ncl_itinerary_title: normalizedTitle || null,
+    ncl_itinerary_title_raw: parsed.title || null,
+    ncl_semantic_validation: enrichment.semantic_validation || null,
     ncl_disembarkation_port: disembark.canonical || parsed.disembarkation_port || null,
     ncl_disembarkation_port_source: disembark.source || parsed.disembarkation_port || null,
     ncl_disembarkation_port_code: disembark.code || null,
@@ -353,13 +430,18 @@ async function fetchEnrichmentForVoyage(dbRow, options = {}) {
     itineraryCode
   );
   const embarkValidation = validateEmbarkAgainstDb(dbRow, extraction.completeItinerary || {});
-  const identityOk = identityValidation.ok && embarkValidation.ok !== false;
+  const semanticValidation = validateSemanticEnrichment(dbRow, parsed, extraction.completeItinerary || {});
+  const identityOk =
+    identityValidation.ok &&
+    embarkValidation.ok !== false &&
+    semanticValidation.trusted_for_core_identity !== false;
   const outcome = classifyEnrichmentOutcome({
     fetchOk: extraction.ok,
     identityOk,
     parsed,
     portSummary,
-    embarkValidation
+    embarkValidation,
+    semanticValidation
   });
 
   return {
@@ -374,6 +456,7 @@ async function fetchEnrichmentForVoyage(dbRow, options = {}) {
     port_summary: portSummary,
     identity_validation: identityValidation,
     embark_validation: embarkValidation,
+    semantic_validation: semanticValidation,
     disembark: canonicalDisembarkFromPage(extraction.completeItinerary || {}),
     outcome,
     enriched_at: new Date().toISOString()
@@ -399,6 +482,9 @@ function buildManifestEntry(manifestRow, dbRow) {
 function assessAdminQuality(dbRow, enrichment, proposal) {
   const issues = [];
   const title = proposal?.patch?.itinerary || dbRow.itinerary;
+  const destinationId = proposal?.patch?.destination_id ?? dbRow.destination_id;
+  const semantic = enrichment?.semantic_validation?.status || null;
+
   if (looksLikeRawItineraryCode(title)) issues.push("raw_itinerary_code_displayed_as_title");
   if (!dbRow.departure_port) issues.push("missing_departure_port");
   if (!proposal?.patch?.itinerary_ports?.length && !dbRow.itinerary_ports?.length) {
@@ -406,16 +492,24 @@ function assessAdminQuality(dbRow, enrichment, proposal) {
   }
   if (enrichment.outcome === "partial_enrichment") issues.push("partial_port_resolution");
   if (enrichment.outcome === "ambiguous_port") issues.push("ambiguous_port_resolution");
-  if (enrichment.outcome === "identity_mismatch") issues.push("identity_mismatch");
-  if (enrichment.outcome === "core_source_discrepancy") issues.push("core_source_discrepancy");
-  if (!dbRow.destination_id) issues.push("destination_unassigned");
+  if (enrichment.outcome === "identity_mismatch" || semantic === "IDENTITY_MISMATCH") {
+    issues.push("identity_mismatch");
+  }
+  if (enrichment.outcome === "core_source_discrepancy" || semantic === "SOURCE_METADATA_CONFLICT") {
+    issues.push("source_metadata_conflict");
+  }
+  if (!destinationId) issues.push("destination_unassigned");
   if (dbRow.status !== "match_required") issues.push("unexpected_status");
+  if (semantic === "INSUFFICIENT_EVIDENCE") issues.push("insufficient_semantic_evidence");
 
   let quality = "PASS";
-  if (issues.some((i) => /identity_mismatch|core_source_discrepancy|unexpected_status/.test(i))) quality = "FAIL";
-  else if (issues.length) quality = "REVIEW";
+  if (issues.some((i) => /identity_mismatch|source_metadata_conflict|unexpected_status/.test(i))) {
+    quality = "FAIL";
+  } else if (issues.length) {
+    quality = "REVIEW";
+  }
 
-  return { quality, issues };
+  return { quality, issues, semantic_status: semantic };
 }
 
 async function buildDryRunManifest(manifestEntries, dbRowsById, options = {}) {
@@ -634,7 +728,11 @@ module.exports = {
   resolveOrderedPorts,
   summarisePortResolution,
   validateSchedulePageIdentity,
+  validateSemanticEnrichment,
   validateEmbarkAgainstDb,
+  normalizeItineraryTitle,
+  structuredDurationDays,
+  extractTitleDayCount,
   classifyEnrichmentOutcome,
   buildEnrichmentPatch,
   buildItineraryPortsDisplay,

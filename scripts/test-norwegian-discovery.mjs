@@ -386,6 +386,41 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   );
   assert(Object.keys(fieldChanges).length === 0, "repeat enrichment does not duplicate itinerary relationships");
 
+  const poc = require(path.join(root, "netlify/functions/lib/norwegian-port-of-call-mappings"));
+  const nclDest = require(path.join(root, "netlify/functions/lib/norwegian-destination-mapping"));
+  assert(poc.getPortOfCallCanonicalName("PWM") === "Portland Maine", "Portland ME maps to Portland, Maine");
+  assert(poc.getPortOfCallCanonicalName("FMH") === "Falmouth Jamaica", "Falmouth JA maps to Falmouth, Jamaica");
+  assert(poc.getPortOfCallCanonicalName("SMZ") === "Shimizu", "Mount Fuji/Shimizu maps to Shimizu");
+  assert(poc.getPortOfCallCanonicalName("WRF") === "Royal Naval Dockyard", "Royal Naval Dockyard mapped");
+  assert(poc.getPortOfCallCanonicalName("BAR") === "Bar", "Bar ME disambiguated to Bar, Montenegro via code");
+  assert(poc.getPortOfCallCanonicalName("PSY") === "Stanley", "Stanley Falkland Islands mapped");
+  assert(poc.getPortOfCallCanonicalName("BPI") === "Harvest Caye", "Harvest Caye remains distinct");
+
+  const getawayRow = {
+    nights: 11,
+    raw_extract: { ncl_itinerary_code: "GETAWAY11SOULEHZEEMLYSKJAESAKUISAREY" },
+    departure_port: "Southampton"
+  };
+  const getawayParsed = {
+    ok: true,
+    title: "7-Day Europe From London To Reykjavik: France, Iceland & Belgium",
+    duration: { days: 11, text: "11-day Cruise" }
+  };
+  const getawayItinerary = { code: "GETAWAY11SOULEHZEEMLYSKJAESAKUISAREY" };
+  const getawaySemantic = enrichmentWrites.validateSemanticEnrichment(getawayRow, getawayParsed, getawayItinerary);
+  assert(
+    getawaySemantic.status === "VERIFIED_WITH_MARKETING_TITLE_DIFFERENCE",
+    "Getaway 11-night versus 7-Day title classified as marketing difference"
+  );
+
+  const prideTitle = enrichmentWrites.normalizeItineraryTitle(" 7-Day Hawaii Inter-Island from Honolulu ");
+  assert(prideTitle === "7-Day Hawaii Inter-Island from Honolulu", "Pride of America whitespace normalised");
+
+  const destPlan = nclDest.resolveSlugFromCodes(["CARIBBEAN", "EXTRAORDINARY_JOURNEYS"]);
+  assert(destPlan.slug === "caribbean", "marketing EXTRAORDINARY_JOURNEYS ignored for primary destination");
+  const transPlan = nclDest.resolveSlugFromCodes(["EXTRAORDINARY_JOURNEYS", "TRANSATLANTIC"]);
+  assert(transPlan.slug === "transatlantic", "TRANSATLANTIC chosen over marketing tag");
+
   const simulation = await ncl.simulateNorwegianDiscovery({
     cruiseLine: nclLine,
     ships: nclShips,
