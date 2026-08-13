@@ -2,8 +2,9 @@
  * Seabourn Discovery execution modes and write safeguards.
  */
 
-const SEABOURN_DISCOVERY_WRITE_ENABLED =
-  String(process.env.SEABOURN_DISCOVERY_WRITE_ENABLED || "").trim().toLowerCase() === "true";
+function isSeabournDiscoveryWriteEnabled() {
+  return String(process.env.SEABOURN_DISCOVERY_WRITE_ENABLED || "").trim().toLowerCase() === "true";
+}
 
 const VALID_MODES = new Set(["simulation", "production_read_only", "production_write", "weekly_maintenance"]);
 
@@ -34,7 +35,7 @@ function resolveSeabournDiscoveryMode(requestedMode) {
   }
 
   if (mode === "production_write") {
-    if (!SEABOURN_DISCOVERY_WRITE_ENABLED) {
+    if (!isSeabournDiscoveryWriteEnabled()) {
       return {
         mode,
         requested_mode: raw,
@@ -67,7 +68,10 @@ function assertSeabournWritesAllowed(modeGate) {
 }
 
 module.exports = {
-  SEABOURN_DISCOVERY_WRITE_ENABLED,
+  get SEABOURN_DISCOVERY_WRITE_ENABLED() {
+    return isSeabournDiscoveryWriteEnabled();
+  },
+  isSeabournDiscoveryWriteEnabled,
   VALID_MODES,
   resolveSeabournDiscoveryMode,
   assertSeabournWritesAllowed
