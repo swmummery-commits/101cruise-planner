@@ -103,6 +103,11 @@
       group: "specialty",
       paths: `<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>`
     },
+    dancing: {
+      label: "Dancing",
+      group: "specialty",
+      paths: `<circle cx="7.5" cy="5.5" r="1.6"/><path d="M7.5 7.1V12"/><path d="M7.5 8.5 5.5 6.5"/><path d="M7.5 8.5 10.5 9"/><path d="M7.5 12 5.5 17"/><path d="M7.5 12 8.5 17"/><circle cx="16.5" cy="5.5" r="1.6"/><path d="M16.5 7.1V12"/><path d="M16.5 8.5 13.5 9"/><path d="M16.5 8.5 18.5 6.5"/><path d="M16.5 12 15.5 17"/><path d="M16.5 12 18.5 17"/>`
+    },
     cinema: {
       label: "Cinema",
       group: "specialty",
@@ -117,6 +122,11 @@
       label: "Kids / youth",
       group: "specialty",
       paths: `<circle cx="12" cy="8" r="3"/><path d="M4 20a8 8 0 0 1 16 0"/>`
+    },
+    dog: {
+      label: "Dog / pet friendly",
+      group: "specialty",
+      paths: `<circle cx="8.5" cy="8" r="2.1"/><path d="M10.4 8.2h2.5"/><path d="M7.2 6.2 6 4.6"/><path d="M8.5 10.1c1.9.2 3.4 1.5 3.9 3.4.5 1.6-.3 3-1.6 3.7"/><path d="M6.1 14.1v3.2"/><path d="M10.7 14.7v2.6"/><path d="M13.7 13.1v3.2"/><path d="M5 11.9 3.4 9.5"/><path d="M12.8 8.4h.01"/>`
     },
     shopping: {
       label: "Shopping",
@@ -264,6 +274,7 @@
     "zip-line": ["zip line", "zipline"],
     "sports-court": ["sports court", "basketball", "tennis", "pickleball"],
     kids: ["kids", "children", "youth", "teen", "family club", "kids club"],
+    dog: ["dog", "dogs", "pet", "pets", "pet friendly", "dog friendly", "canine", "dog park", "bark park", "service dog"],
     library: ["library", "books", "reading room"],
     "art-gallery": ["art", "gallery", "exhibition"],
     science: ["science", "laboratory", "research centre", "research center"],
@@ -273,6 +284,7 @@
     expedition: ["expedition", "discovery centre", "discovery center", "submarine"],
     pool: ["pool", "main pool", "swimming pool"],
     theatre: ["theatre", "theater", "show lounge"],
+    dancing: ["dancing", "dance", "dance club", "dance floor", "ballroom", "nightclub", "disco", "dance studio", "latin dancing"],
     casino: ["casino"],
     shopping: ["shopping", "shops", "boutique"],
     games: ["arcade", "games room", "game room"],

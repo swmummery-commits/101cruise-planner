@@ -505,10 +505,20 @@ body.admin-loading-active {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  flex: 1 1 360px;
+  min-width: 0;
 }
 
-.ci-toolbar-controls input[type="search"],
+.ci-toolbar-controls input[type="search"] {
+  flex: 1 1 320px;
+  min-width: min(100%, 280px);
+  max-width: 640px;
+  padding: 10px 14px;
+  font-size: 15px;
+}
+
 .ci-toolbar-controls select {
+  flex: 0 1 auto;
   min-width: 160px;
 }
 
@@ -1255,6 +1265,16 @@ body.admin-loading-active {
   padding: 10px 0 12px;
   border-bottom: 1px solid #f0f0f0;
   box-sizing: border-box;
+  position: relative;
+  overflow: visible;
+}
+
+.ci-ship-feature-icon-picker.is-open {
+  z-index: 120;
+}
+
+.ci-ship-feature-icon-picker.is-open .ci-ship-feature-icon-menu {
+  z-index: 121;
 }
 
 .ci-ship-feature-row-layout {
