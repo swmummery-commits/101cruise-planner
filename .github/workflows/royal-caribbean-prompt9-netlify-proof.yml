@@ -20,6 +20,7 @@ jobs:
     env:
       BASE_URL: https://deploy-preview-1--admirable-tiramisu-d4da8a.netlify.app
       CONFIRMATION: RC_PROMPT9_PREVIEW_PROOF_2026
+      PROOF_VERSION: rc-prompt9-netlify-proof-v2
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +36,7 @@ jobs:
       - name: Verify runtime-proof unit tests
         run: npm run test:royal-caribbean-runtime-proof
 
-      - name: Wait for current Netlify Deploy Preview and run bounded smoke
+      - name: Wait for exact Netlify Deploy Preview and run bounded smoke
         shell: bash
         run: |
           set -euo pipefail
@@ -47,7 +48,7 @@ jobs:
               -H 'Content-Type: application/json' \
               --data "$payload" || true)
             echo "Smoke attempt $i: HTTP $status"
-            if [ "$status" = "200" ] && node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync("/tmp/rc-smoke.json","utf8"));process.exit(j.ok===true&&j.graphql_valid===true&&j.writes_performed===false?0:1)'; then
+            if [ "$status" = "200" ] && PROOF_VERSION="$PROOF_VERSION" node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync("/tmp/rc-smoke.json","utf8"));process.exit(j.ok===true&&j.proof_version===process.env.PROOF_VERSION&&j.graphql_valid===true&&j.writes_performed===false?0:1)'; then
               ok=1
               break
             fi
@@ -55,7 +56,7 @@ jobs:
           done
           cat /tmp/rc-smoke.json || true
           if [ "$ok" != "1" ]; then
-            echo "Netlify Deploy Preview smoke never became healthy"
+            echo "Exact Netlify Deploy Preview proof version never became healthy"
             exit 1
           fi
 
@@ -128,6 +129,7 @@ jobs:
           if ((result.result||{}).actual_writes !== 0) throw new Error('Background write safety failed');
           console.log(JSON.stringify({
             smoke: {
+              proof_version: smoke.proof_version,
               graphql_valid: smoke.graphql_valid,
               upstream_http_status: smoke.upstream_http_status,
               sample_group_count: smoke.sample_group_count,
