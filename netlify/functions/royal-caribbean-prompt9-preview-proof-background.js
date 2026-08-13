@@ -49,10 +49,11 @@ exports.handler = async (event) => {
       run_id: runId,
       actual_writes: 0,
       writes_performed: false
-    });
+    }, { event });
     const result = await runRoyalCaribbeanRuntimeProofBackground({
       runId,
-      triggerType: "prompt9_deploy_preview_proof"
+      triggerType: "prompt9_deploy_preview_proof",
+      event
     });
     return {
       statusCode: result.ok ? 200 : 500,
@@ -71,7 +72,7 @@ exports.handler = async (event) => {
           actual_writes: 0,
           writes_performed: false,
           royal_caribbean_netlify_background_runtime_ok: false
-        });
+        }, { event });
       } catch (persistError) {
         console.error("royal-caribbean-prompt9-preview-proof-background-result-save", persistError?.message || persistError);
       }

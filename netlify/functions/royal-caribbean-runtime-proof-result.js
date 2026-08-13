@@ -23,7 +23,7 @@ exports.handler = async (event) => {
       };
     }
 
-    const stored = await loadRuntimeProofResult(runId);
+    const stored = await loadRuntimeProofResult(runId, { event });
     if (!stored) {
       return {
         statusCode: 202,

@@ -12,7 +12,18 @@ function storeKey(runId) {
   return `results/${String(runId).trim()}.json`;
 }
 
-async function getBlobStore() {
+function initBlobsFromEvent(event) {
+  if (!event?.blobs) return;
+  try {
+    const { connectLambda } = require("@netlify/blobs");
+    connectLambda(event);
+  } catch (error) {
+    console.error("royal-caribbean-runtime-result-store:connectLambda", error?.message || error);
+  }
+}
+
+async function getBlobStore(event = null) {
+  initBlobsFromEvent(event);
   try {
     const { getStore } = require("@netlify/blobs");
     const siteID = String(process.env.SITE_ID || process.env.NETLIFY_SITE_ID || "").trim() || undefined;
@@ -27,10 +38,10 @@ async function getBlobStore() {
   }
 }
 
-async function saveRuntimeProofResult(runId, payload) {
+async function saveRuntimeProofResult(runId, payload, options = {}) {
   const key = storeKey(runId);
   const serialized = JSON.stringify({ saved_at: new Date().toISOString(), ...payload });
-  const store = await getBlobStore();
+  const store = await getBlobStore(options.event);
   if (store) {
     try {
       await store.set(key, serialized, { metadata: { run_id: String(runId) } });
@@ -45,9 +56,9 @@ async function saveRuntimeProofResult(runId, payload) {
   return { backend: "tmp", key: file };
 }
 
-async function loadRuntimeProofResult(runId) {
+async function loadRuntimeProofResult(runId, options = {}) {
   const key = storeKey(runId);
-  const store = await getBlobStore();
+  const store = await getBlobStore(options.event);
   if (store) {
     const raw = await store.get(key, { type: "text" });
     if (!raw) return null;
@@ -68,6 +79,7 @@ async function loadRuntimeProofResult(runId) {
 
 module.exports = {
   STORE_NAME,
+  initBlobsFromEvent,
   saveRuntimeProofResult,
   loadRuntimeProofResult
 };

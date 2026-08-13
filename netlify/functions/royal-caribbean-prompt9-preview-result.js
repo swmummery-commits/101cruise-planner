@@ -29,7 +29,7 @@ exports.handler = async (event) => {
   try {
     if (event.httpMethod !== "GET") return { statusCode: 405, body: JSON.stringify({ ok: false, error: "method_not_allowed" }) };
     const runId = assertPreviewProof(event);
-    const stored = await loadRuntimeProofResult(runId);
+    const stored = await loadRuntimeProofResult(runId, { event });
     if (!stored) {
       return { statusCode: 202, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify({ ok: true, status: "pending", run_id: runId }) };
     }

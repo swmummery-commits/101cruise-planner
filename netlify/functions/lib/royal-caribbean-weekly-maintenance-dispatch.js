@@ -214,7 +214,7 @@ async function runRoyalCaribbeanRuntimeProofBackground(context = {}) {
   });
 
   const compact = buildCompactRuntimeSummary(result, { run_id: runId });
-  await saveRuntimeProofResult(runId, compact);
+  await saveRuntimeProofResult(runId, compact, { event: context.event || null });
 
   return {
     ok: result.ok === true,
