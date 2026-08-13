@@ -13,6 +13,7 @@ const {
   isLegacyGenericDiscoveryRow
 } = require("./norwegian-discovery-adapter");
 const { resolveRawPortText } = require("./discovery-departure-port");
+const poc = require("./norwegian-port-of-call-mappings");
 const { resolveNorwegianDestinationAssignment } = require("./norwegian-destination-mapping");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
@@ -101,6 +102,24 @@ function resolvePortOfCall(sourcePort, portCode = null) {
         status: codeMeta.status,
         method: codeMeta.resolution_method || "ncl_embark_port_code_map"
       };
+    }
+
+    const pocCanonical = poc.getPortOfCallCanonicalName(portCode);
+    if (pocCanonical) {
+      const meta = resolveRawPortText(pocCanonical, {
+        sourceField: "ncl_port_of_call_code",
+        nclEmbarkPortCode: portCode
+      });
+      if (meta.status === "resolved" || meta.status === "alias") {
+        return {
+          source_port: cleaned,
+          port_code: portCode,
+          classification: "SAFE_EQUIVALENT",
+          canonical_port: meta.canonicalPortName || pocCanonical,
+          status: meta.status,
+          method: "ncl_port_of_call_code_map"
+        };
+      }
     }
   }
 

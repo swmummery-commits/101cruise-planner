@@ -9,6 +9,7 @@ const { precedenceRank } = require("./destination-classification");
 const NCL_DESTINATION_CODE_SLUG = Object.freeze({
   AUSTRALIA: "australia-new-zealand",
   AUSTRALIA_NEW_ZEALAND: "australia-new-zealand",
+  AFRICA: "africa",
   ALASKA: "alaska",
   ASIA: "asia",
   BAHAMAS: "caribbean",

@@ -424,6 +424,7 @@ const PHASE6_REGION_SLOTS = [
   { codes: ["NORTHERN_EUROPE"], reason: "northern_europe" },
   { codes: ["CANADA_NEW_ENGL"], reason: "canada_new_england" },
   { codes: ["ASIA"], reason: "asia" },
+  { codes: ["AFRICA"], reason: "africa" },
   { codes: ["SOUTH_AMERICA"], reason: "south_america" },
   { codes: ["TRANSATLANTIC"], reason: "transatlantic" },
   { codes: ["MEXICAN_RIVIERA"], reason: "mexican_riviera" },

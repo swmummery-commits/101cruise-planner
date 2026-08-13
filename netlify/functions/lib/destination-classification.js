@@ -329,6 +329,21 @@ const OPERATIONAL_DESTINATION_CATALOGUE = [
     living_destination_required: true
   },
   {
+    key: "africa",
+    name: "Africa",
+    slug: "africa",
+    classification_enabled: true,
+    public_status: "draft",
+    primary_region: "Africa",
+    parent_region: null,
+    aliases: ["african", "safari cruise"],
+    representative_ports: ["Cape Town", "Mombasa", "Durban", "Casablanca"],
+    route_signals: ["africa", "cape town", "mombasa", "safari"],
+    exclusions: ["mediterranean north africa only"],
+    cruise_finder_immediate: false,
+    living_destination_required: true
+  },
+  {
     key: "south-america",
     name: "South America",
     slug: "south-america",
@@ -355,6 +370,7 @@ const DESTINATION_PRECEDENCE = [
   "transatlantic",
   "panama-canal",
   "galapagos",
+  "africa",
   "south-america",
   "european-river-cruises",
   "antarctica",

@@ -266,6 +266,49 @@ const NCL_PORT_OF_CALL_CODES = Object.freeze([
     classification: "NEW_PORT_REQUIRED",
     country: "United States",
     note: "Scenic glacier cruising in Disenchantment Bay — not a pier port"
+  },
+  {
+    code: "OLD",
+    source_name: "Olden, Norway",
+    canonical_name: "Olden",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Norway",
+    note: "Nordfjord cruise port"
+  },
+  {
+    code: "RHO",
+    source_name: "Rhodes, Greece",
+    canonical_name: "Rhodes",
+    classification: "EXISTING_ALIAS",
+    country: "Greece"
+  },
+  {
+    code: "ALY",
+    source_name: "Alexandria, Egypt",
+    canonical_name: "Alexandria",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Egypt"
+  },
+  {
+    code: "PSD",
+    source_name: "Port Said, Egypt",
+    canonical_name: "Port Said",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Egypt"
+  },
+  {
+    code: "SSH",
+    source_name: "Sharm el Sheikh, Egypt",
+    canonical_name: "Sharm el Sheikh",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Egypt"
+  },
+  {
+    code: "AQB",
+    source_name: "Aqaba, Jordan",
+    canonical_name: "Aqaba",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Jordan"
   }
 ]);
 

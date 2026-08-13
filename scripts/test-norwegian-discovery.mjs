@@ -412,6 +412,12 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(poc.getPortOfCallCanonicalName("LPA") === "Las Palmas", "Las Palmas mapped");
   assert(poc.getPortOfCallCanonicalName("LVN") === "Le Verdon", "Le Verdon distinct from Bordeaux city");
   assert(poc.getPortOfCallCanonicalName("SCT") === "Santa Cruz de Tenerife", "Tenerife distinct from La Palma");
+  assert(poc.getPortOfCallCanonicalName("OLD") === "Olden", "Olden Norway mapped");
+  assert(poc.getPortOfCallCanonicalName("RHO") === "Rhodes", "Rhodes Greece mapped");
+  assert(poc.getPortOfCallCanonicalName("ALY") === "Alexandria", "Alexandria Egypt mapped");
+  assert(poc.getPortOfCallCanonicalName("PSD") === "Port Said", "Port Said Egypt mapped");
+  assert(poc.getPortOfCallCanonicalName("SSH") === "Sharm el Sheikh", "Sharm el Sheikh mapped");
+  assert(poc.getPortOfCallCanonicalName("AQB") === "Aqaba", "Aqaba Jordan mapped");
 
   const phase6aCodes = {
     ACA: "Acapulco",
@@ -474,6 +480,8 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(ausPlan.slug === "australia-new-zealand", "AUSTRALIA maps to australia-new-zealand");
   const pacificCoastalPlan = nclDest.resolveSlugFromCodes(["PACIFIC_COASTAL"]);
   assert(pacificCoastalPlan.slug === "pacific-coast", "PACIFIC_COASTAL maps to pacific-coast");
+  const africaPlan = nclDest.resolveSlugFromCodes(["AFRICA"]);
+  assert(africaPlan.slug === "africa", "AFRICA maps to africa");
 
   const simulation = await ncl.simulateNorwegianDiscovery({
     cruiseLine: nclLine,
