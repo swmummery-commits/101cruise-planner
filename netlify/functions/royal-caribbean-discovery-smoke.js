@@ -19,7 +19,7 @@ exports.handler = async (event) => {
   const started = Date.now();
   try {
     const body = parseJsonBody(event);
-    assertSmokeAuth(event, body);
+    assertSmokeAuth(event);
 
     if (event.httpMethod && event.httpMethod !== "POST") {
       return { statusCode: 405, body: JSON.stringify({ ok: false, error: "method_not_allowed" }) };
@@ -40,16 +40,15 @@ exports.handler = async (event) => {
       };
     }
 
-    for (const flag of [
-      "ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED",
-      "ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED"
-    ]) {
-      if (String(process.env[flag] || "").toLowerCase() === "true") {
-        return {
-          statusCode: 409,
-          body: JSON.stringify({ ok: false, error: `${flag}_must_be_false`, writes_performed: false })
-        };
-      }
+    if (String(process.env.ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED || "").toLowerCase() === "true") {
+      return {
+        statusCode: 409,
+        body: JSON.stringify({
+          ok: false,
+          error: "ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED_must_be_false",
+          writes_performed: false
+        })
+      };
     }
 
     const probe = await probeRoyalCaribbeanSource({ maxPages: 1, pageSize: 5, includeFleet: true });

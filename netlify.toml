@@ -75,8 +75,8 @@
   timeout = 26
 
 [functions."royal-caribbean-weekly-maintenance-cron"]
-  # Schedule prepared for post-activation; orchestrator enables via ACTIVATION_ENABLE_SCHEDULE.
-  # schedule = "0 22 * * 0"
+  # Royal Caribbean weekly launcher — Sunday 23:00 UTC / Monday 07:00 Perth (after Seabourn 22:00).
+  schedule = "0 23 * * 0"
   timeout = 26
 
 [functions."royal-caribbean-weekly-maintenance-launcher"]

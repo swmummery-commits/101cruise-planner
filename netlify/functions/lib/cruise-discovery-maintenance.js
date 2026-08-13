@@ -68,15 +68,16 @@ const MAINTENANCE_SCHEDULES = {
     schedule_registered: true
   },
   /**
-   * Royal Caribbean weekly maintenance — recommended slot only (NOT scheduled until activation).
+   * Royal Caribbean weekly maintenance — Sunday 23:00 UTC (Monday 07:00 Perth).
+   * One hour after Seabourn (22:00 UTC) to avoid launcher collision.
    */
   royal_caribbean_weekly: {
-    cron_utc: "0 22 * * 0",
-    perth_display: "Monday 06:00 Australia/Perth",
-    utc_display: "Sunday 22:00 UTC",
+    cron_utc: "0 23 * * 0",
+    perth_display: "Monday 07:00 Australia/Perth",
+    utc_display: "Sunday 23:00 UTC",
     function: "royal-caribbean-weekly-maintenance-cron",
     background_function: "royal-caribbean-weekly-maintenance-background",
-    schedule_registered: false
+    schedule_registered: true
   },
   daily_expiry: {
     cron_utc: "30 17 * * *",

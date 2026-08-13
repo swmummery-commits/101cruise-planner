@@ -135,19 +135,18 @@ test("CLI max writes capped at total ceiling", () => {
   }
 });
 
-test("cruise-discovery-maintenance RC schedule remains unregistered", () => {
+test("cruise-discovery-maintenance RC schedule registered at 23:00 UTC", () => {
   const schedule = maintenance.MAINTENANCE_SCHEDULES.royal_caribbean_weekly;
-  if (schedule.schedule_registered !== false) throw new Error("schedule_registered must be false until activation");
-  if (schedule.cron_utc !== "0 22 * * 0") throw new Error("expected Sunday 22:00 UTC cron");
+  if (schedule.schedule_registered !== true) throw new Error("schedule_registered must be true after activation");
+  if (schedule.cron_utc !== "0 23 * * 0") throw new Error("expected Sunday 23:00 UTC cron (after Seabourn 22:00)");
 });
 
-test("netlify.toml documents RC cron schedule for post-activation enablement", () => {
+test("netlify.toml enables RC cron schedule at 23:00 UTC", () => {
   const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
   const cronBlock =
     toml.match(/\[functions\."royal-caribbean-weekly-maintenance-cron"\][\s\S]*?(?=\n\[|$)/)?.[0] || "";
-  if (!/0 22 \* \* 0/.test(cronBlock)) throw new Error("cron schedule must be documented in netlify.toml");
-  if (/^\s*schedule\s*=\s*"0 22 \* \* 0"/m.test(cronBlock)) {
-    throw new Error("schedule must remain commented/disabled until ACTIVATION_ENABLE_SCHEDULE");
+  if (!/^\s*schedule\s*=\s*"0 23 \* \* 0"/m.test(cronBlock)) {
+    throw new Error("RC cron schedule must be enabled at 0 23 * * 0");
   }
 });
 

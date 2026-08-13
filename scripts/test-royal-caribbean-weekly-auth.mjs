@@ -56,9 +56,10 @@ test("3. cron launcher exports handler", () => {
   if (typeof cronLauncher.handler !== "function") throw new Error("cron launcher missing");
 });
 
-test("4. RC schedule uses launcher + background and remains unregistered", () => {
+test("4. RC schedule uses launcher + background at 23:00 UTC", () => {
   const schedule = maintenance.MAINTENANCE_SCHEDULES.royal_caribbean_weekly;
-  if (schedule.schedule_registered !== false) throw new Error("schedule must stay disabled");
+  if (schedule.schedule_registered !== true) throw new Error("schedule must be registered after activation");
+  if (schedule.cron_utc !== "0 23 * * 0") throw new Error("expected Sunday 23:00 UTC (after Seabourn 22:00)");
   if (schedule.function !== "royal-caribbean-weekly-maintenance-cron") throw new Error(schedule.function);
   if (schedule.background_function !== "royal-caribbean-weekly-maintenance-background") {
     throw new Error(schedule.background_function);
@@ -69,7 +70,9 @@ test("4. RC schedule uses launcher + background and remains unregistered", () =>
   if (/^\s*schedule\s*=/m.test(bgBlock)) throw new Error("background must not be scheduled");
   const cronBlock =
     toml.match(/\[functions\."royal-caribbean-weekly-maintenance-cron"\][\s\S]*?(?=\n\[|$)/)?.[0] || "";
-  if (!/0 22 \* \* 0/.test(cronBlock)) throw new Error("cron block must document Sunday 22:00 UTC schedule");
+  if (!/^\s*schedule\s*=\s*"0 23 \* \* 0"/m.test(cronBlock)) {
+    throw new Error("cron block must enable Sunday 23:00 UTC schedule");
+  }
 });
 
 test("5. cron auth required", () => {
@@ -86,6 +89,13 @@ test("6. smoke auth uses cron secret only", () => {
     { headers: { "x-discovery-cron-secret": "abc" } },
     { DISCOVERY_CRON_SECRET: "abc" }
   );
+});
+
+test("6b. smoke handler must not pass request body as auth env", () => {
+  const src = fs.readFileSync(path.join(root, "netlify/functions/royal-caribbean-discovery-smoke.js"), "utf8");
+  if (/assertSmokeAuth\(event,\s*body\)/.test(src)) {
+    throw new Error("smoke must call assertSmokeAuth(event) — body is not process.env");
+  }
 });
 
 test("7. dry-run default when weekly reconciliation disabled", () => {

@@ -56,7 +56,8 @@ const { perthCalendarDate } = require(path.join(
 
 const REPORT_DIR = path.join(root, "reports");
 const NETLIFY_TOML = path.join(root, "netlify.toml");
-const CRON_SCHEDULE = "0 22 * * 0";
+// Sunday 23:00 UTC — Monday 07:00 Perth. Seabourn occupies 22:00 UTC.
+const CRON_SCHEDULE = "0 23 * * 0";
 
 const RC_TESTS = [
   "test:royal-caribbean-discovery",
@@ -112,11 +113,13 @@ function runRcTests(skipTests) {
 
 function enableWeeklyCronSchedule() {
   const src = fs.readFileSync(NETLIFY_TOML, "utf8");
-  if (/^\s*schedule\s*=\s*"0 22 \* \* 0"/m.test(src)) {
-    return { already_enabled: true };
+  const cronBlock =
+    src.match(/\[functions\."royal-caribbean-weekly-maintenance-cron"\][\s\S]*?(?=\n\[|$)/)?.[0] || "";
+  if (new RegExp(`^\\s*schedule\\s*=\\s*"${CRON_SCHEDULE.replace(/\*/g, "\\*")}"`, "m").test(cronBlock)) {
+    return { already_enabled: true, schedule: CRON_SCHEDULE };
   }
   const updated = src.replace(
-    /(\[functions\."royal-caribbean-weekly-maintenance-cron"\][\s\S]*?)#\s*schedule\s*=\s*"0 22 \* \* 0"/,
+    /(\[functions\."royal-caribbean-weekly-maintenance-cron"\][\s\S]*?)(#\s*)?schedule\s*=\s*"0 \d+ \* \* 0"/,
     `$1schedule = "${CRON_SCHEDULE}"`
   );
   if (updated === src) {
@@ -323,20 +326,27 @@ async function main() {
   report.post_write = {
     verification: postWriteVerification,
     counts_before: countsBefore,
-    counts_after: countsAfter,
-    idempotency: {
-      ok: idempotencyDryRun.ok === true,
-      proposed_inserts: idempotencyDryRun.summary?.proposed_inserts ?? null,
-      proposed_updates: idempotencyDryRun.summary?.proposed_updates ?? null,
-      actual_writes: 0
-    }
+    counts_after: countsAfter
   };
 
-  const postOk =
-    postWriteVerification.ok === true &&
-    idempotencyDryRun.ok === true &&
+  const idempotencyHealthy =
+    idempotencyDryRun.summary?.weekly_maintenance_healthy === true &&
+    idempotencyDryRun.summary?.reconciliation_arithmetic_ok === true &&
     (idempotencyDryRun.summary?.proposed_inserts ?? 0) === 0 &&
-    (idempotencyDryRun.summary?.proposed_updates ?? 0) === 0;
+    (idempotencyDryRun.summary?.proposed_updates ?? 0) === 0 &&
+    (idempotencyDryRun.summary?.actual_writes ?? 0) === 0;
+
+  report.post_write.idempotency = {
+    ok: idempotencyHealthy,
+    proposed_inserts: idempotencyDryRun.summary?.proposed_inserts ?? null,
+    proposed_updates: idempotencyDryRun.summary?.proposed_updates ?? null,
+    weekly_maintenance_healthy: idempotencyDryRun.summary?.weekly_maintenance_healthy ?? null,
+    reconciliation_arithmetic_ok: idempotencyDryRun.summary?.reconciliation_arithmetic_ok ?? null,
+    actual_writes: idempotencyDryRun.summary?.actual_writes ?? 0,
+    reason: idempotencyDryRun.reason || null
+  };
+
+  const postOk = postWriteVerification.ok === true && idempotencyHealthy;
 
   if (!postOk) {
     report.status = "failed";

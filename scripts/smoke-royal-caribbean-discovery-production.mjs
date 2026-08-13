@@ -6,8 +6,10 @@
  */
 
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { createRequire } from "module";
+import { spawnSync } from "child_process";
 
 const require = createRequire(import.meta.url);
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -27,10 +29,25 @@ loadEnv();
 const siteUrl = String(
   process.env.NETLIFY_SITE_URL || process.env.URL || "https://admirable-tiramisu-d4da8a.netlify.app"
 ).replace(/\/$/, "");
-const secret = String(process.env.DISCOVERY_CRON_SECRET || "").trim();
+
+async function resolveSecret() {
+  const local = String(process.env.DISCOVERY_CRON_SECRET || "").trim();
+  if (local) return local;
+  const pull = spawnSync("npx", ["netlify", "env:get", "DISCOVERY_CRON_SECRET"], {
+    cwd: root,
+    encoding: "utf8",
+    env: process.env
+  });
+  if (pull.status === 0) {
+    const v = String(pull.stdout || "").trim();
+    if (v) return v;
+  }
+  return "";
+}
 
 async function main() {
   const authoritative = process.argv.includes("--authoritative");
+  const secret = await resolveSecret();
   if (!secret) {
     console.error("DISCOVERY_CRON_SECRET is required for production smoke test");
     process.exit(1);
