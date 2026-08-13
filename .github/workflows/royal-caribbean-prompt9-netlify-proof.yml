@@ -6,6 +6,10 @@ on:
       - feat/royal-caribbean-final-catchup
   workflow_dispatch:
 
+concurrency:
+  group: royal-caribbean-prompt9-netlify-proof
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -103,8 +107,7 @@ jobs:
               upstream_http_status: smoke.upstream_http_status,
               sample_group_count: smoke.sample_group_count,
               fleet_count: smoke.fleet_count,
-              duration_ms: smoke.duration_ms,
-              deployed_commit_ref: smoke.deployed_commit_ref
+              duration_ms: smoke.duration_ms
             },
             background: result.result
           }, null, 2));
