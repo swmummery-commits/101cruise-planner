@@ -49,7 +49,8 @@ async function executeWeeklyMaintenance({
   dryRun = false,
   maxWrites = 100,
   triggerType = "scheduled",
-  supabaseClient = null
+  supabaseClient = null,
+  statsEnricher = null
 }) {
   const started = Date.now();
   const runId = `${lineSlug}-weekly-${new Date().toISOString().replace(/[:.]/g, "-")}`;
@@ -80,15 +81,20 @@ async function executeWeeklyMaintenance({
     summary.duration_ms = Date.now() - started;
     summary.failure_reason = result.reason || null;
     summary.worker_state = result.worker_state || (result.blocked ? "already_running" : "idle");
+    summary.dry_run = dryRun === true;
 
-    const stats = buildMaintenanceRunStats(summary, {
+    const baseExtra = {
       run_type: runType,
       run_id: runId,
       trigger_type: triggerType,
       worker_state: summary.worker_state,
       blocked: result.blocked === true,
       rollback_manifest_id: summary.rollback_manifest_id || null
-    });
+    };
+    const stats = buildMaintenanceRunStats(
+      summary,
+      statsEnricher ? statsEnricher(summary, baseExtra) : baseExtra
+    );
 
     if (result.blocked && result.reason === "maintenance_lock_held") {
       await finalizeMaintenanceRun(sb, dbRun?.id, {

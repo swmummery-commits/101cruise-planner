@@ -98,8 +98,10 @@ test("6b. smoke handler must not pass request body as auth env", () => {
   }
 });
 
-test("7. dry-run default when weekly reconciliation disabled", () => {
-  if (dispatch.resolveDryRun({}, {}) !== true) throw new Error("expected dry-run");
+test("7. manual invocation defaults to dry-run when weekly reconciliation disabled", () => {
+  if (dispatch.resolveDryRun({}, null, { ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED: "false" }) !== true) {
+    throw new Error("expected dry-run");
+  }
 });
 
 test("8. discovery_cron_secret_present is boolean-only helper", () => {

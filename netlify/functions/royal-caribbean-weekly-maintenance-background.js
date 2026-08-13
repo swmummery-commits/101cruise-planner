@@ -5,8 +5,8 @@
 const {
   assertCronAuth,
   parseJsonBody,
-  resolveDryRun,
-  resolveMaxWrites,
+  resolveBackgroundExecution,
+  resolveTriggerType,
   runRoyalCaribbeanWeeklyBackgroundMaintenance,
   redactSecrets,
   BACKGROUND_FUNCTION_NAME
@@ -18,15 +18,34 @@ exports.handler = async (event) => {
     assertCronAuth(event);
 
     const body = parseJsonBody(event);
-    const dryRun = resolveDryRun(body);
-    const maxWrites = resolveMaxWrites(body);
-    const triggerType = String(body.trigger_type || body.triggerType || "background").trim();
+    const execution = resolveBackgroundExecution(body, event, process.env);
+    const triggerType = resolveTriggerType(event, body);
     const dispatchId = body.dispatch_id || body.dispatchId || null;
     const runId = body.run_id || body.runId || null;
 
+    if (execution.blocked) {
+      return {
+        statusCode: 403,
+        body: JSON.stringify(
+          redactSecrets({
+            success: false,
+            phase: "background_maintenance",
+            status: "blocked",
+            worker: BACKGROUND_FUNCTION_NAME,
+            dispatch_id: dispatchId,
+            dry_run: true,
+            max_writes: 0,
+            trigger_type: triggerType,
+            reason: execution.reason,
+            elapsed_ms: Date.now() - started
+          })
+        )
+      };
+    }
+
     const result = await runRoyalCaribbeanWeeklyBackgroundMaintenance({
-      dryRun,
-      maxWrites,
+      dryRun: execution.dryRun,
+      maxWrites: execution.maxWrites,
       triggerType,
       dispatchId,
       runId

@@ -69,7 +69,11 @@ function evaluateRoyalCaribbeanWeeklyHealth({
   };
 }
 
+/** Approved total production mutations cap for scheduled weekly apply. */
+const ROYAL_CARIBBEAN_MAX_WEEKLY_WRITES = ROYAL_CARIBBEAN_WEEKLY_WRITE_CEILING.max_total_proposed_changes;
+
 module.exports = {
   ROYAL_CARIBBEAN_WEEKLY_WRITE_CEILING,
+  ROYAL_CARIBBEAN_MAX_WEEKLY_WRITES,
   evaluateRoyalCaribbeanWeeklyHealth
 };

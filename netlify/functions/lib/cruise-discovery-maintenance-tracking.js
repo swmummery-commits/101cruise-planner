@@ -75,7 +75,7 @@ function buildMaintenanceRunStats(summary, extra = {}) {
     run_type: summary.run_type,
     run_id: summary.run_id,
     trigger_type: summary.trigger_type || "scheduled",
-    source_snapshot_id: summary.snapshot_id || null,
+    source_snapshot_id: summary.source_snapshot_id || summary.snapshot_id || null,
     official_source_total: summary.official_source_total ?? null,
     eligible_total: summary.eligible_total ?? null,
     active_production_total: summary.active_production_total ?? null,

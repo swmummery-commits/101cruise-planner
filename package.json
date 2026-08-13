@@ -80,6 +80,7 @@
     "test:royal-caribbean-weekly-maintenance": "node scripts/test-royal-caribbean-weekly-maintenance.mjs",
     "test:royal-caribbean-weekly-auth": "node scripts/test-royal-caribbean-weekly-auth.mjs",
     "test:royal-caribbean-prompt10-activation": "node scripts/test-royal-caribbean-prompt10-activation.mjs",
+    "test:royal-caribbean-prompt11a-scheduled-apply": "node scripts/test-royal-caribbean-prompt11a-scheduled-apply.mjs",
     "royal-caribbean:prompt10-activation": "node scripts/run-royal-caribbean-prompt10-activation.mjs",
     "smoke:royal-caribbean-discovery-production": "node scripts/smoke-royal-caribbean-discovery-production.mjs",
     "apply:norwegian-ship-code-seed": "node scripts/apply-norwegian-ship-code-seed.mjs",
