@@ -33,6 +33,9 @@ exports.handler = async (event) => {
     if (!stored) {
       return { statusCode: 202, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify({ ok: true, status: "pending", run_id: runId }) };
     }
+    if (stored.status === "running") {
+      return { statusCode: 202, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify({ ok: true, status: "running", run_id: runId }) };
+    }
     return { statusCode: 200, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify({ ok: true, status: "completed", run_id: runId, result: stored }) };
   } catch (error) {
     return { statusCode: error.statusCode || 500, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify({ ok: false, error: error.message || "preview_result_failed" }) };

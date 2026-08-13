@@ -40,10 +40,18 @@ function safeError(error) {
 
 exports.handler = async (event) => {
   const body = parseBody(event);
+  const runId = String(body.run_id || "").trim();
   try {
     assertPreviewProof(event, body);
+    await saveRuntimeProofResult(runId, {
+      ok: false,
+      status: "running",
+      run_id: runId,
+      actual_writes: 0,
+      writes_performed: false
+    });
     const result = await runRoyalCaribbeanRuntimeProofBackground({
-      runId: String(body.run_id),
+      runId,
       triggerType: "prompt9_deploy_preview_proof"
     });
     return {

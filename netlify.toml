@@ -92,6 +92,20 @@
     "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv"
   ]
 
+[functions."royal-caribbean-prompt9-preview-proof-background"]
+  timeout = 900
+  included_files = [
+    "data/ports/ports-catalogue.csv",
+    "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv",
+    "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv"
+  ]
+
+[functions."royal-caribbean-prompt9-preview-smoke"]
+  timeout = 26
+
+[functions."royal-caribbean-prompt9-preview-result"]
+  timeout = 26
+
 [functions."cruise-daily-expiry-cron"]
   # Daily sailed-cruise expiration — 17:30 UTC (01:30 Australia/Perth).
   schedule = "30 17 * * *"

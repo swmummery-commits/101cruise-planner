@@ -15,8 +15,14 @@ function storeKey(runId) {
 async function getBlobStore() {
   try {
     const { getStore } = require("@netlify/blobs");
-    return getStore({ name: STORE_NAME, consistency: "strong" });
-  } catch {
+    const siteID = String(process.env.SITE_ID || process.env.NETLIFY_SITE_ID || "").trim() || undefined;
+    return getStore({
+      name: STORE_NAME,
+      consistency: "strong",
+      ...(siteID ? { siteID } : {})
+    });
+  } catch (error) {
+    console.error("royal-caribbean-runtime-result-store:getBlobStore", error?.message || error);
     return null;
   }
 }
@@ -26,8 +32,12 @@ async function saveRuntimeProofResult(runId, payload) {
   const serialized = JSON.stringify({ saved_at: new Date().toISOString(), ...payload });
   const store = await getBlobStore();
   if (store) {
-    await store.set(key, serialized, { metadata: { run_id: String(runId) } });
-    return { backend: "netlify_blobs", key };
+    try {
+      await store.set(key, serialized, { metadata: { run_id: String(runId) } });
+      return { backend: "netlify_blobs", key };
+    } catch (error) {
+      console.error("royal-caribbean-runtime-result-store:save", error?.message || error);
+    }
   }
   await fs.mkdir(TMP_DIR, { recursive: true });
   const file = path.join(TMP_DIR, `${String(runId).trim()}.json`);

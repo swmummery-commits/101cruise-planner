@@ -224,6 +224,13 @@ await testAsync("16. runtime result store round-trip", async () => {
   if (!loaded || loaded.run_id !== runId) throw new Error("round-trip failed");
 });
 
+test("16b. runFromMaintenanceRunner is exported", () => {
+  const runner = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner"));
+  if (typeof runner.runFromMaintenanceRunner !== "function") {
+    throw new Error("runFromMaintenanceRunner missing");
+  }
+});
+
 await testAsync("17. smoke rejects write mode via branch guard", async () => {
   const event = {
     httpMethod: "POST",

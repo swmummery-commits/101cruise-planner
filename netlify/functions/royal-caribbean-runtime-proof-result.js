@@ -38,6 +38,20 @@ exports.handler = async (event) => {
       };
     }
 
+    if (stored.status === "running") {
+      return {
+        statusCode: 202,
+        body: JSON.stringify(
+          redactSecrets({
+            ok: true,
+            status: "running",
+            run_id: runId,
+            elapsed_ms: Date.now() - started
+          })
+        )
+      };
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify(
