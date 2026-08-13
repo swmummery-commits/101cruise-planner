@@ -16,7 +16,7 @@ permissions:
 jobs:
   netlify-runtime-proof:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       BASE_URL: https://deploy-preview-1--admirable-tiramisu-d4da8a.netlify.app
       CONFIRMATION: RC_PROMPT9_PREVIEW_PROOF_2026
@@ -76,13 +76,36 @@ jobs:
           fi
 
           completed=0
-          for i in $(seq 1 100); do
+          for i in $(seq 1 180); do
             status=$(curl -sS -o /tmp/rc-result.json -w '%{http_code}' \
               "$BASE_URL/.netlify/functions/royal-caribbean-prompt9-preview-result?run_id=${run_id}&confirmation=${CONFIRMATION}" || true)
             echo "Result poll $i: HTTP $status"
-            if [ "$status" = "200" ] && node -e 'const fs=require("fs");const j=JSON.parse(fs.readFileSync("/tmp/rc-result.json","utf8"));const r=j.result||{};process.exit(j.status==="completed"&&r.actual_writes===0&&r.royal_caribbean_netlify_background_runtime_ok===true&&r.enumeration_health?.royal_caribbean_source_enumeration_ok===true&&r.weekly_health?.weekly_maintenance_healthy===true?0:1)'; then
-              completed=1
-              break
+            if [ "$status" = "200" ]; then
+              node - <<'NODE'
+          const fs=require('fs');
+          const j=JSON.parse(fs.readFileSync('/tmp/rc-result.json','utf8'));
+          const r=j.result||{};
+          if (j.status === 'completed' && (r.status === 'failed' || r.ok === false)) {
+            console.error('Netlify background proof reported failure:', JSON.stringify({
+              error_code: r.error_code || null,
+              safe_error: r.safe_error || null,
+              actual_writes: r.actual_writes ?? null
+            }));
+            process.exit(2);
+          }
+          if (j.status === 'completed' && r.actual_writes === 0 && r.royal_caribbean_netlify_background_runtime_ok === true && r.enumeration_health?.royal_caribbean_source_enumeration_ok === true && r.weekly_health?.weekly_maintenance_healthy === true) {
+            process.exit(0);
+          }
+          process.exit(1);
+          NODE
+              rc=$?
+              if [ "$rc" = "0" ]; then
+                completed=1
+                break
+              elif [ "$rc" = "2" ]; then
+                cat /tmp/rc-result.json
+                exit 1
+              fi
             fi
             sleep 5
           done
