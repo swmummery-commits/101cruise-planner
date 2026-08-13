@@ -81,6 +81,7 @@ jobs:
               "$BASE_URL/.netlify/functions/royal-caribbean-prompt9-preview-result?run_id=${run_id}&confirmation=${CONFIRMATION}" || true)
             echo "Result poll $i: HTTP $status"
             if [ "$status" = "200" ]; then
+              set +e
               node - <<'NODE'
           const fs=require('fs');
           const j=JSON.parse(fs.readFileSync('/tmp/rc-result.json','utf8'));
@@ -99,6 +100,7 @@ jobs:
           process.exit(1);
           NODE
               rc=$?
+              set -e
               if [ "$rc" = "0" ]; then
                 completed=1
                 break
