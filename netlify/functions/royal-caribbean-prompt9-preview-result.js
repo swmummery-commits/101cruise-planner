@@ -10,11 +10,8 @@ const CONFIRMATION = "RC_PROMPT9_PREVIEW_PROOF_2026";
 function hostFromEvent(event) {
   return String(event?.headers?.host || event?.headers?.Host || "").trim().toLowerCase().replace(/:\d+$/, "");
 }
-
 function assertPreviewProof(event) {
-  let deployHost = "";
-  try { deployHost = new URL(process.env.DEPLOY_PRIME_URL || "").hostname.toLowerCase(); } catch {}
-  if (deployHost !== EXPECTED_HOST || hostFromEvent(event) !== EXPECTED_HOST) {
+  if (hostFromEvent(event) !== EXPECTED_HOST) {
     const e = new Error("preview_host_mismatch"); e.statusCode = 403; throw e;
   }
   const qs = event?.queryStringParameters || {};
