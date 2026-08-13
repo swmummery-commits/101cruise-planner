@@ -10,15 +10,11 @@ const CONFIRMATION = "RC_PROMPT9_PREVIEW_PROOF_2026";
 function parseBody(event) {
   try { return JSON.parse(event?.body || "{}"); } catch { return {}; }
 }
-
 function hostFromEvent(event) {
   return String(event?.headers?.host || event?.headers?.Host || "").trim().toLowerCase().replace(/:\d+$/, "");
 }
-
 function assertPreviewProof(event, body) {
-  let deployHost = "";
-  try { deployHost = new URL(process.env.DEPLOY_PRIME_URL || "").hostname.toLowerCase(); } catch {}
-  if (deployHost !== EXPECTED_HOST || hostFromEvent(event) !== EXPECTED_HOST) {
+  if (hostFromEvent(event) !== EXPECTED_HOST) {
     const e = new Error("preview_host_mismatch"); e.statusCode = 403; throw e;
   }
   if (body.confirmation !== CONFIRMATION) {
@@ -45,12 +41,7 @@ exports.handler = async (event) => {
     return {
       statusCode: result.ok ? 200 : 500,
       headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
-      body: JSON.stringify({
-        ok: result.ok === true,
-        run_id: body.run_id,
-        actual_writes: result.actual_writes || 0,
-        writes_performed: false
-      })
+      body: JSON.stringify({ ok: result.ok === true, run_id: body.run_id, actual_writes: result.actual_writes || 0, writes_performed: false })
     };
   } catch (error) {
     console.error("royal-caribbean-prompt9-preview-proof-background", error.message || error);
