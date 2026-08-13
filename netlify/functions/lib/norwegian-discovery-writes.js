@@ -155,7 +155,7 @@ function evaluateDryRunGate(manifest) {
 
 async function indexExistingNorwegianRecords(supabase, cruiseLineId) {
   const select =
-    "id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,status,official_url,external_key,identity_key,official_sailing_id,raw_extract";
+    "id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,itinerary_ports,status,official_url,source_url,external_key,identity_key,official_sailing_id,raw_extract";
   const rows = [];
   let offset = 0;
   const pageSize = 1000;

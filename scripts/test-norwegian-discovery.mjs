@@ -317,6 +317,75 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(ncl.isGenuineInventoryRow(reconciliationRows[1]), "match_required schedule row is genuine");
   assert(!ncl.isGenuineInventoryRow(reconciliationRows[3]), "legacy generic row is not genuine");
 
+  const enrichmentWrites = require(path.join(root, "netlify/functions/lib/norwegian-discovery-enrichment-writes"));
+  const htmlFixture = `<div data-recently-viewed-cruise='${JSON.stringify(completeFixture).replace(/'/g, "&#x27;")}'></div>`;
+  const extraction = ncl.extractCompleteItineraryFromHtml(htmlFixture);
+  assert(extraction.ok, "completeItinerary parser succeeds on fixture");
+  const parsedFixture = ncl.parseEnrichedItinerary(extraction.completeItinerary);
+  assert(parsedFixture.title.includes("Bahamas"), "title extraction");
+  assert(parsedFixture.disembarkation_port.includes("Miami"), "disembark extraction");
+  assert(parsedFixture.ordered_ports.length === 4, "ordered port extraction");
+  assert(parsedFixture.unsupported_fields.includes("per_port_dates"), "no fabricated dates");
+
+  const dbRow = {
+    itinerary: "GETAWAY2MIANPIMIA",
+    nights: 2,
+    departure_port: "Miami",
+    raw_extract: { ncl_itinerary_code: "GETAWAY2MIANPIMIA" },
+    status: "match_required"
+  };
+  const identityOk = enrichmentWrites.validateSchedulePageIdentity(
+    dbRow,
+    parsedFixture,
+    extraction.completeItinerary,
+    "GETAWAY2MIANPIMIA"
+  );
+  assert(identityOk.ok, "page identity matches fixture voyage");
+  const mismatch = enrichmentWrites.validateSchedulePageIdentity(
+    dbRow,
+    parsedFixture,
+    { code: "OTHERCODE" },
+    "GETAWAY2MIANPIMIA"
+  );
+  assert(!mismatch.ok, "page identity mismatch detected");
+
+  const resolved = enrichmentWrites.resolveOrderedPorts(extraction.completeItinerary.portsData.portsOfCall);
+  assert(resolved.some((p) => p.canonical_port === "Great Stirrup Cay"), "Great Stirrup Cay resolves distinctly");
+  const patch = enrichmentWrites.buildEnrichmentPatch(dbRow, {
+    parsed: parsedFixture,
+    completeItinerary: extraction.completeItinerary,
+    resolved_ports: resolved,
+    port_summary: enrichmentWrites.summarisePortResolution(resolved),
+    outcome: "enrichment_ready",
+    extraction_method: extraction.method,
+    schedule_url: "https://example.test/schedule"
+  });
+  assert(!patch.core_identity_changes.length, "enrichment patch does not alter core identity");
+  assert(Array.isArray(patch.patch.itinerary_ports), "itinerary_ports proposed");
+  assert((patch.patch.raw_extract.ncl_unsupported_fields || []).includes("arrival_times"), "unsupported timing documented");
+
+  const originalSummary = patch.patch.raw_extract.ncl_ordered_ports_summary;
+  const reorderedRaw = {
+    ...patch.patch.raw_extract,
+    ncl_ordered_ports_summary: {
+      safe_equivalent: originalSummary.safe_equivalent,
+      total: originalSummary.total,
+      exact: originalSummary.exact,
+      existing_alias: originalSummary.existing_alias,
+      unresolved: originalSummary.unresolved,
+      ambiguous: originalSummary.ambiguous
+    }
+  };
+  assert(
+    enrichmentWrites.enrichmentValuesEqual("raw_extract", patch.patch.raw_extract, reorderedRaw),
+    "raw_extract semantic compare ignores key order"
+  );
+  const fieldChanges = enrichmentWrites.diffPatchProposal(
+    { ...dbRow, ...patch.patch },
+    patch
+  );
+  assert(Object.keys(fieldChanges).length === 0, "repeat enrichment does not duplicate itinerary relationships");
+
   const simulation = await ncl.simulateNorwegianDiscovery({
     cruiseLine: nclLine,
     ships: nclShips,

@@ -5,7 +5,16 @@
 const NORWEGIAN_DISCOVERY_WRITE_ENABLED =
   String(process.env.NORWEGIAN_DISCOVERY_WRITE_ENABLED || "").trim().toLowerCase() === "true";
 
-const VALID_MODES = new Set(["simulation", "production_read_only", "production_write", "controlled_batch"]);
+const NORWEGIAN_ENRICHMENT_WRITE_ENABLED =
+  String(process.env.NORWEGIAN_ENRICHMENT_WRITE_ENABLED || "").trim().toLowerCase() === "true";
+
+const VALID_MODES = new Set([
+  "simulation",
+  "production_read_only",
+  "production_write",
+  "controlled_batch",
+  "controlled_enrichment"
+]);
 
 function resolveNorwegianDiscoveryMode(requestedMode) {
   const raw = String(requestedMode || "").trim().toLowerCase();
@@ -20,7 +29,18 @@ function resolveNorwegianDiscoveryMode(requestedMode) {
     };
   }
 
-  if (mode === "production_write" || mode === "controlled_batch") {
+  if (mode === "production_write" || mode === "controlled_batch" || mode === "controlled_enrichment") {
+    if (mode === "controlled_enrichment") {
+      if (!NORWEGIAN_ENRICHMENT_WRITE_ENABLED) {
+        return {
+          mode,
+          requested_mode: raw,
+          writes_allowed: false,
+          reason: "enrichment_write_flag_disabled"
+        };
+      }
+      return { mode, requested_mode: raw, writes_allowed: true, reason: null };
+    }
     if (!NORWEGIAN_DISCOVERY_WRITE_ENABLED) {
       return {
         mode,
@@ -55,6 +75,7 @@ function assertNorwegianWritesAllowed(modeGate) {
 
 module.exports = {
   NORWEGIAN_DISCOVERY_WRITE_ENABLED,
+  NORWEGIAN_ENRICHMENT_WRITE_ENABLED,
   VALID_MODES,
   resolveNorwegianDiscoveryMode,
   assertNorwegianWritesAllowed
