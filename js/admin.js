@@ -1227,6 +1227,7 @@ function renderAdmin() {
   if (window.CruiseLineFeaturesAdmin?.afterRender) {
     window.CruiseLineFeaturesAdmin.afterRender();
   }
+  bindCiShipFeatureEditorsAfterRender();
   restoreCiLineFormDraftToDom(ciLineDraft);
   syncCiLineDetailDomTabs();
   updateCiLineSaveButtonState();
@@ -7673,6 +7674,19 @@ function bindCiShipFeatureList(root, rebuildFn) {
   });
 }
 
+function bindCiShipFeatureEditorsAfterRender() {
+  const exclusiveRoot = document.getElementById("ciExclusiveAreasList");
+  const specialtyRoot = document.getElementById("ciSpecialtyFeaturesList");
+  if (exclusiveRoot) {
+    exclusiveRoot.dataset.featureBound = "";
+    bindCiShipFeatureList(exclusiveRoot, rebuildCiExclusiveAreasDom);
+  }
+  if (specialtyRoot) {
+    specialtyRoot.dataset.featureBound = "";
+    bindCiShipFeatureList(specialtyRoot, rebuildCiSpecialtyFeaturesDom);
+  }
+}
+
 function renderCiExclusiveAreaFieldStack(row, index, { readonly = false } = {}) {
   const admin = ciShipFeatureAdminApi();
   if (admin) {
@@ -7752,9 +7766,6 @@ function renderCiExclusiveAreasEditor(ship) {
   }
   const fragmented = api ? api.detectFragmentedLegacyExclusiveAreas(ship?.facilities?.exclusive_areas) : false;
   const canFacilitiesCopy = window.CiShipFacilitiesItemCopyAdmin?.canOpenCopy?.(ship);
-  setTimeout(function () {
-    bindCiShipFeatureList(document.getElementById("ciExclusiveAreasList"), rebuildCiExclusiveAreasDom);
-  }, 0);
   return `
     <div class="ci-facility-section">
       <div class="ci-section-heading">
@@ -7843,10 +7854,16 @@ function renderCiSpecialtyFeatureRow(row, index, total) {
 
 function renderCiSpecialtyFeaturesEditor(ship) {
   const api = ciFacilitiesApi();
-  const rows = api ? api.loadSpecialtyFeaturesForAdmin(ship?.facilities?.specialty_features) : [];
-  setTimeout(function () {
-    rebuildCiSpecialtyFeaturesDom(rows);
-  }, 0);
+  let rows = api ? api.loadSpecialtyFeaturesForAdmin(ship?.facilities?.specialty_features) : [];
+  if (!rows.length) {
+    rows = [{
+      name: "",
+      description: "",
+      icon_key: window.CiShipFeatureIcons?.FALLBACK_KEY || "sparkles",
+      showDescription: false,
+      needsDescription: false
+    }];
+  }
   return `
     <div class="ci-facility-section">
       <div class="ci-section-heading">
@@ -7854,7 +7871,7 @@ function renderCiSpecialtyFeaturesEditor(ship) {
       </div>
       <p class="admin-small">Each row supports an icon, name and description. Commas inside descriptions are preserved.</p>
       <div id="ciSpecialtyFeaturesList">
-        ${rows.length ? rows.map((row, index) => renderCiSpecialtyFeatureRow(row, index, rows.length)).join("") : ""}
+        ${rows.map((row, index) => renderCiSpecialtyFeatureRow(row, index, rows.length)).join("")}
       </div>
       <div class="admin-actions-row" style="margin-top:8px;">
         <button type="button" class="admin-button secondary small" onclick="addCiSpecialtyFeatureRow()">Add specialty feature</button>

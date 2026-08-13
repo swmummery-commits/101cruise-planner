@@ -47,8 +47,9 @@
 
   function populateIconMenu(menu, selectedKey) {
     const icons = iconsApi();
-    if (!icons || !menu || menu.dataset.populated === "1") return;
+    if (!icons || !menu) return;
     const iconKey = trim(selectedKey) || icons.FALLBACK_KEY;
+    if (menu.dataset.populated === "1" && menu.dataset.selectedKey === iconKey) return;
     menu.innerHTML = icons.listIconCatalog().map(function (item) {
       const selected = item.key === iconKey ? " selected" : "";
       return `<button type="button" class="ci-ship-feature-icon-option${selected}" data-icon-key="${esc(item.key)}" title="${esc(item.label)}" aria-label="${esc(item.label)}">
@@ -57,6 +58,44 @@
       </button>`;
     }).join("");
     menu.dataset.populated = "1";
+    menu.dataset.selectedKey = iconKey;
+  }
+
+  function setPickerOpen(picker, open) {
+    if (!picker) return;
+    picker.classList.toggle("is-open", Boolean(open));
+  }
+
+  function closeAllIconMenus() {
+    document.querySelectorAll(".ci-ship-feature-icon-menu").forEach(function (node) {
+      node.hidden = true;
+    });
+    document.querySelectorAll(".ci-ship-feature-icon-trigger").forEach(function (node) {
+      node.setAttribute("aria-expanded", "false");
+    });
+    document.querySelectorAll(".ci-ship-feature-icon-picker.is-open").forEach(function (node) {
+      node.classList.remove("is-open");
+    });
+  }
+
+  function applyIconSelection(picker, key, handlers) {
+    const hidden = picker?.querySelector(".ci-ship-feature-icon-key");
+    const triggerBtn = picker?.querySelector(".ci-ship-feature-icon-trigger");
+    const menu = picker?.querySelector(".ci-ship-feature-icon-menu");
+    if (hidden && key) hidden.value = key;
+    if (triggerBtn && iconsApi()) {
+      triggerBtn.innerHTML = `${iconsApi().renderIconSvg(key, "ci-ship-feature-picker-svg")}<span class="ci-ship-feature-icon-trigger-label">${esc(iconsApi().iconLabel(key))}</span>`;
+      triggerBtn.setAttribute("aria-expanded", "false");
+    }
+    if (menu) {
+      menu.hidden = true;
+      menu.dataset.selectedKey = key;
+    }
+    picker?.querySelectorAll(".ci-ship-feature-icon-option").forEach(function (btn) {
+      btn.classList.toggle("selected", btn.getAttribute("data-icon-key") === key);
+    });
+    setPickerOpen(picker, false);
+    if (handlers?.onChange) handlers.onChange();
   }
 
   function renderFeatureRow(row, index, total, options) {
@@ -150,44 +189,30 @@
     root.addEventListener("click", function (event) {
       const trigger = event.target.closest(".ci-ship-feature-icon-trigger");
       if (trigger) {
+        event.preventDefault();
+        event.stopPropagation();
         const picker = trigger.closest(".ci-ship-feature-icon-picker");
         const menu = picker?.querySelector(".ci-ship-feature-icon-menu");
         if (!menu) return;
         const hidden = picker?.querySelector(".ci-ship-feature-icon-key");
         populateIconMenu(menu, hidden?.value);
         const open = menu.hasAttribute("hidden");
-        root.querySelectorAll(".ci-ship-feature-icon-menu").forEach(function (node) {
-          node.hidden = true;
-        });
-        root.querySelectorAll(".ci-ship-feature-icon-trigger").forEach(function (node) {
-          node.setAttribute("aria-expanded", "false");
-        });
+        closeAllIconMenus();
         if (open) {
           menu.hidden = false;
           trigger.setAttribute("aria-expanded", "true");
+          setPickerOpen(picker, true);
         }
-        event.stopPropagation();
         return;
       }
 
       const option = event.target.closest(".ci-ship-feature-icon-option");
       if (option) {
-        const picker = option.closest(".ci-ship-feature-icon-picker");
-        const hidden = picker?.querySelector(".ci-ship-feature-icon-key");
-        const triggerBtn = picker?.querySelector(".ci-ship-feature-icon-trigger");
-        const menu = picker?.querySelector(".ci-ship-feature-icon-menu");
-        const key = option.getAttribute("data-icon-key");
-        if (hidden && key) hidden.value = key;
-        if (triggerBtn && iconsApi()) {
-          triggerBtn.innerHTML = `${iconsApi().renderIconSvg(key, "ci-ship-feature-picker-svg")}<span class="ci-ship-feature-icon-trigger-label">${esc(iconsApi().iconLabel(key))}</span>`;
-          triggerBtn.setAttribute("aria-expanded", "false");
-        }
-        if (menu) menu.hidden = true;
-        picker?.querySelectorAll(".ci-ship-feature-icon-option").forEach(function (btn) {
-          btn.classList.toggle("selected", btn.getAttribute("data-icon-key") === key);
-        });
-        if (h.onChange) h.onChange();
+        event.preventDefault();
         event.stopPropagation();
+        const picker = option.closest(".ci-ship-feature-icon-picker");
+        const key = option.getAttribute("data-icon-key");
+        if (picker && key) applyIconSelection(picker, key, h);
         return;
       }
 
@@ -207,12 +232,7 @@
       documentCloseBound = true;
       document.addEventListener("click", function (event) {
         if (event.target.closest(".ci-ship-feature-icon-picker")) return;
-        document.querySelectorAll(".ci-ship-feature-icon-menu").forEach(function (node) {
-          node.hidden = true;
-        });
-        document.querySelectorAll(".ci-ship-feature-icon-trigger").forEach(function (node) {
-          node.setAttribute("aria-expanded", "false");
-        });
+        closeAllIconMenus();
       });
     }
   }
@@ -222,6 +242,7 @@
     renderFeatureRow: renderFeatureRow,
     readFeatureRowsFromRoot: readFeatureRowsFromRoot,
     rebuildFeatureList: rebuildFeatureList,
-    bindFeatureList: bindFeatureList
+    bindFeatureList: bindFeatureList,
+    closeAllIconMenus: closeAllIconMenus
   };
 });

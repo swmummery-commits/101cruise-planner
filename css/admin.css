@@ -1255,6 +1255,16 @@ body.admin-loading-active {
   padding: 10px 0 12px;
   border-bottom: 1px solid #f0f0f0;
   box-sizing: border-box;
+  position: relative;
+  overflow: visible;
+}
+
+.ci-ship-feature-icon-picker.is-open {
+  z-index: 120;
+}
+
+.ci-ship-feature-icon-picker.is-open .ci-ship-feature-icon-menu {
+  z-index: 121;
 }
 
 .ci-ship-feature-row-layout {
