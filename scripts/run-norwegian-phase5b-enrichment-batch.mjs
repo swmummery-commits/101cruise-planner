@@ -268,7 +268,7 @@ async function main() {
   const summary = { run_id: runId, today, starting_sha: startingSha, production_voyage_inserts: 0, new_publicly_active: 0 };
 
   summary.tests_pre = runTests();
-  if (summary.tests_pre.ncl.passed < 78) throw new Error(`NCL tests regressed: ${summary.tests_pre.ncl.passed}`);
+  if (summary.tests_pre.ncl.passed < 88) throw new Error(`NCL tests regressed: ${summary.tests_pre.ncl.passed}`);
   if (!summary.tests_pre.shared.ok) throw new Error("Shared departure-port tests regressed");
 
   summary.population = await loadPopulation(sb);

@@ -89,7 +89,7 @@ New Orleans,"New Orleans, Louisiana",New Orleans,United States,US,Caribbean,29.9
 Galveston,"Galveston, Texas",Galveston,United States,US,Caribbean,29.307,-94.793,Houston
 San Juan,"San Juan, Puerto Rico",San Juan,Puerto Rico,PR,Caribbean,18.466,-66.112,
 Nassau,"Nassau, Bahamas",Nassau,Bahamas,BS,Bahamas,25.081,-77.343,
-Freeport,"Freeport, Grand Bahama",Freeport,Bahamas,BS,Bahamas,26.528,-78.695,Grand Bahama
+Freeport,"Freeport, Grand Bahama",Freeport,Bahamas,BS,Bahamas,26.528,-78.695,Grand Bahama|Grand Bahama Island|Grand Bahama Island, Bahamas
 Bimini,"Bimini, Bahamas",Alice Town,Bahamas,BS,Bahamas,25.727,-79.298,Alice Town
 Perfect Day at CocoCay,"Perfect Day at CocoCay, Bahamas",CocoCay,Bahamas,BS,Bahamas,25.82,-77.938,Coco Cay|Little Stirrup Cay
 Road Town,"Road Town, Tortola",Road Town,British Virgin Islands,VG,Caribbean,18.422,-64.615,Tortola
@@ -265,3 +265,31 @@ Philadelphia,"Philadelphia, Pennsylvania",Philadelphia,United States,US,North Am
 Dubrovnik,"Dubrovnik, Croatia",Dubrovnik,Croatia,HR,Adriatic,42.6403,18.1083,Dubrovnik Croatia|DBV
 Broome,"Broome, Western Australia",Broome,Australia,AU,Australia,-17.9614,122.2359,Broome Western Australia|Broome Australia|BME
 Greenwich,"Greenwich (London), England",Greenwich,United Kingdom,GB,Northern Europe,51.4826,0.0077,Greenwich London|Greenwich (London), England, United Kingdom|GRW
+Valletta,"Valletta, Malta",Valletta,Malta,MT,Mediterranean,35.899,14.514,Valletta Malta
+Eastport,"Eastport, Maine",Eastport,United States,US,Canada New England,44.906,-67.0,Eastport Maine
+Motril,"Motril, Spain",Motril,Spain,ES,Mediterranean,36.748,-3.518,Motril Spain
+Puerto Plata,"Puerto Plata, Dominican Republic",Puerto Plata,Dominican Republic,DO,Caribbean,19.793,-70.688,Puerto Plata Dominican Republic
+Portland Maine,"Portland, Maine",Portland,United States,US,Canada New England,43.659,-70.256,Portland Maine|Portland ME|PWM
+Kanazawa,"Kanazawa, Japan",Kanazawa,Japan,JP,Japan,36.561,136.656,Kanazawa Japan
+Akita,"Akita, Japan",Akita,Japan,JP,Japan,39.754,140.059,Akita Japan
+Hakodate,"Hakodate, Japan",Hakodate,Japan,JP,Japan,41.769,140.729,Hakodate Japan
+Shimizu,"Shimizu, Japan",Shimizu,Japan,JP,Japan,35.015,138.489,Mount Fuji (Shimizu)|Mount Fuji (Shimizu), Japan|Shimizu Japan
+Harvest Caye,"Harvest Caye, Belize",Harvest Caye,Belize,BZ,Caribbean,16.477,-88.186,NCL Harvest Caye|Harvest Caye Belize
+Falmouth Jamaica,"Falmouth, Jamaica",Falmouth,Jamaica,JM,Caribbean,18.493,-77.656,Falmouth Jamaica|Falmouth JA
+La Goulette,"La Goulette, Tunisia",La Goulette,Tunisia,TN,Mediterranean,36.818,10.305,La Goulette Tunisia|Tunis cruise port
+Samana,"Samana, Dominican Republic",Samana,Dominican Republic,DO,Caribbean,19.205,-69.336,Samana Dominican Republic
+Kotor,"Kotor, Montenegro",Kotor,Montenegro,ME,Adriatic,42.424,18.771,Kotor Montenegro
+Royal Naval Dockyard,"Royal Naval Dockyard, Bermuda",Sandys,Bermuda,BM,Atlantic Islands,32.329,-64.834,Kings Wharf|King's Wharf|Royal Naval Dockyard Bermuda|WRF
+Bar,"Bar, Montenegro",Bar,Montenegro,ME,Adriatic,42.094,19.088,Bar Montenegro|Bar ME Montenegro
+Le Havre,"Le Havre, France",Le Havre,France,FR,Northern Europe,49.494,0.108,Paris (Le Havre)|Paris (Le Havre), France|Le Havre France
+Zeebrugge,"Zeebrugge, Belgium",Zeebrugge,Belgium,BE,Northern Europe,51.334,3.207,Brussels / Bruges (Zeebrugge)|Brussels / Bruges (Zeebrugge), Belgium|Zeebrugge Belgium
+Maloy,"Måløy, Norway",Maloy,Norway,NO,Norwegian Fjords,61.935,5.113,Maloy Norway|MLY
+Skjolden,"Skjolden, Norway",Skjolden,Norway,NO,Norwegian Fjords,61.157,7.146,Skjolden Norway
+Sakaiminato,"Sakaiminato, Japan",Sakaiminato,Japan,JP,Japan,35.539,133.238,Sakaiminato Japan
+Aomori,"Aomori, Japan",Aomori,Japan,JP,Japan,40.822,140.747,Aomori Japan
+Nagoya,"Nagoya, Japan",Nagoya,Japan,JP,Japan,35.086,136.881,Nagoya Japan
+Sendai,"Sendai, Japan",Sendai,Japan,JP,Japan,38.268,141.022,Sendai (Ishinomaki)|Sendai (Ishinomaki), Japan|Ishinomaki
+Maizuru,"Maizuru, Japan",Maizuru,Japan,JP,Japan,35.474,135.386,Maizuru Japan
+Kona,"Kona, Hawaii",Kailua-Kona,United States,US,Hawaii,19.64,-155.996,Kona Hawaii|Kailua-Kona|Kailua Kona
+Melilla,"Melilla, Spain",Melilla,Spain,ES,Mediterranean,35.292,-2.938,Melillia Spain|Melillia
+Stanley,"Stanley, Falkland Islands",Stanley,Falkland Islands,FK,South America,-51.692,-57.859,Stanley Falkland Islands|Port Stanley|PSY

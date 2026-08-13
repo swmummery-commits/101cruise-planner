@@ -605,7 +605,7 @@ async function listCruises(body) {
   const destinationId = String(body.destination_id || "").trim();
   const cruiseLineId = String(body.cruise_line_id || "").trim();
   const parts = [
-    "select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,brochure_fare_display,currency,official_url,status,match_confidence,review_reason,raw_extract,discovered_at,last_seen_at,last_changed_at,ci_cruise_lines(name),ci_cruise_ships(name),destinations!discovered_cruises_destination_id_fkey(name,slug)&order=departure_date.asc.nullslast&limit=" +
+    "select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,itinerary_ports,official_url,source_url,status,match_confidence,review_reason,raw_extract,discovered_at,last_seen_at,last_changed_at,ci_cruise_lines(name),ci_cruise_ships(name),destinations!discovered_cruises_destination_id_fkey(name,slug)&order=departure_date.asc.nullslast&limit=" +
       limit
   ];
   if (status && status !== "all") {
@@ -617,6 +617,7 @@ async function listCruises(body) {
   const { describePublicAvailability } = require("./lib/public-discovered-cruise-inventory");
   const cruises = (rows || []).map((row) => {
     const departure_audit = compactDepartureAudit(row.raw_extract || {}, row);
+    const raw = row.raw_extract || {};
     return {
       id: row.id,
       cruise_line_id: row.cruise_line_id,
@@ -626,10 +627,21 @@ async function listCruises(body) {
       return_date: row.return_date,
       nights: row.nights,
       departure_port: row.departure_port,
+      disembarkation_port: raw.ncl_disembarkation_port || null,
       itinerary: row.itinerary,
+      itinerary_ports: Array.isArray(row.itinerary_ports) ? row.itinerary_ports : [],
+      enrichment_status: raw.ncl_enrichment_status || null,
+      enrichment_completeness:
+        raw.ncl_enrichment_status === "enrichment_ready"
+          ? "complete"
+          : raw.ncl_enrichment_status === "partial_enrichment"
+            ? "partial"
+            : raw.ncl_enrichment_status || null,
+      semantic_validation_status: raw.ncl_semantic_validation?.status || null,
       brochure_fare_display: row.brochure_fare_display,
       currency: row.currency,
       official_url: row.official_url,
+      source_url: row.source_url || row.official_url,
       status: row.status,
       match_confidence: row.match_confidence,
       review_reason: row.review_reason,

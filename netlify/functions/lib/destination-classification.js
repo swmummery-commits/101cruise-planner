@@ -327,6 +327,21 @@ const OPERATIONAL_DESTINATION_CATALOGUE = [
     exclusions: ["general south america"],
     cruise_finder_immediate: false,
     living_destination_required: true
+  },
+  {
+    key: "south-america",
+    name: "South America",
+    slug: "south-america",
+    classification_enabled: true,
+    public_status: "draft",
+    primary_region: "South America",
+    parent_region: null,
+    aliases: ["south american", "patagonia", "southern cone"],
+    representative_ports: ["Buenos Aires", "San Antonio", "Valparaiso", "Stanley"],
+    route_signals: ["south america", "argentina", "chile", "patagonia", "falkland"],
+    exclusions: ["galapagos only"],
+    cruise_finder_immediate: false,
+    living_destination_required: true
   }
 ];
 
@@ -340,6 +355,7 @@ const DESTINATION_PRECEDENCE = [
   "transatlantic",
   "panama-canal",
   "galapagos",
+  "south-america",
   "european-river-cruises",
   "antarctica",
   "norwegian-fjords",
