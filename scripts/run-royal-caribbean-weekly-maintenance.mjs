@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 /**
- * Royal Caribbean International weekly maintenance — Prompt 2 dry-run only.
+ * Royal Caribbean International weekly maintenance — dry-run by default (Prompt 10).
  *
  *   npm run royal-caribbean:weekly-maintenance
- *   node scripts/run-royal-caribbean-weekly-maintenance.mjs
  *
- * Production writes are refused. --apply is rejected.
- * Uses a GET-only Supabase wrapper and skips maintenance locks/run records.
+ * Apply requires ALL of:
+ *   --apply
+ *   --confirm=ROYAL-CARIBBEAN-WEEKLY-MAINTENANCE
+ *   ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED=true (process-scoped)
+ *   local or self-hosted Mac execution
+ *   --max-writes=<n> (hard-capped at 150)
  */
 
 import fs from "fs";
@@ -25,125 +28,168 @@ try {
   /* optional */
 }
 
-const { createMaintenanceSupabase, getSupabaseConfig } = require(path.join(root, "scripts/lib/supabase-rest.cjs"));
+const {
+  parseWeeklyMaintenanceArgs,
+  assertWeeklyApplyAllowed,
+  classifyExecutionEnvironment,
+  resolveEffectiveWeeklyMaxWrites,
+  buildWeeklyMaintenanceReport,
+  resolveWeeklyMaintenanceExitCode,
+  writeWeeklyMaintenanceReportFile,
+  formatWeeklyMaintenanceSummary,
+  verifyPostWriteManifestOperations,
+  ROYAL_CARIBBEAN_LINE_SLUG
+} = require(path.join(root, "netlify/functions/lib/royal-caribbean-weekly-maintenance-cli"));
+const { createMaintenanceSupabase, exactCountSupabase, getSupabaseConfig } = require(path.join(
+  root,
+  "scripts/lib/supabase-rest.cjs"
+));
 const { runRoyalCaribbeanWeeklyMaintenance } = require(path.join(
   root,
   "netlify/functions/lib/cruise-discovery-maintenance-runner"
 ));
-const { ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED } = require(path.join(
+const {
+  buildRoyalCaribbeanWeeklyManifestFromDryRun,
+  validateFrozenWeeklyManifest
+} = require(path.join(root, "netlify/functions/lib/royal-caribbean-weekly-manifest"));
+const { perthCalendarDate } = require(path.join(
   root,
-  "netlify/functions/lib/royal-caribbean-discovery-mode"
-));
-const { isRoyalCaribbeanWeeklyReconciliationEnabled } = require(path.join(
-  root,
-  "netlify/functions/lib/cruise-discovery-maintenance"
+  "netlify/functions/lib/public-discovered-cruise-inventory"
 ));
 
-function parseArgs(argv) {
-  const args = {
-    apply: false,
-    output: path.join(root, "reports/royal-caribbean-prompt3-dry-run.json")
-  };
-  for (const arg of argv.slice(2)) {
-    if (arg === "--apply") args.apply = true;
-    else if (arg.startsWith("--output=")) args.output = path.resolve(arg.slice("--output=".length));
-  }
-  return args;
-}
-
-function createReadOnlySupabase(rootDir) {
-  const inner = createMaintenanceSupabase(rootDir);
-  return async function supabase(restPath, options = {}) {
-    const method = String(options.method || "GET").toUpperCase();
-    if (["POST", "PATCH", "PUT", "DELETE"].includes(method)) {
-      const err = new Error(`Royal Caribbean dry-run blocked mutating ${method} ${restPath}`);
-      err.code = "royal_caribbean_readonly_supabase";
-      throw err;
-    }
-    return inner(restPath, options);
-  };
-}
-
-function slimManifest(manifest) {
-  const products = manifest?.products || [];
-  const byAction = {};
-  for (const p of products) {
-    const action = p.proposed_action || "unknown";
-    byAction[action] = (byAction[action] || 0) + 1;
-  }
-  return {
-    generated_at: manifest?.generated_at || null,
-    mode: manifest?.mode || null,
-    writes_performed: manifest?.writes_performed === true,
-    actual_writes: manifest?.actual_writes || 0,
-    product_count: products.length,
-    proposed_action_counts: byAction,
-    insert_sample: products.filter((p) => p.proposed_action === "insert_active").slice(0, 25),
-    update_sample: products.filter((p) => p.proposed_action === "update_exact_legacy_match").slice(0, 10),
-    legacy_html_discovery_artefacts: manifest?.legacy_html_discovery_artefacts || []
-  };
-}
+const REPORT_DIR = path.join(root, "reports");
 
 async function main() {
-  const args = parseArgs(process.argv);
-  if (args.apply) {
-    throw new Error("Royal Caribbean Prompt 2 refuses --apply. Production writes remain disabled.");
-  }
-  if (ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED) {
-    throw new Error("ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED must be false for this dry-run");
-  }
-  if (isRoyalCaribbeanWeeklyReconciliationEnabled()) {
-    throw new Error("ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED must be false for this dry-run");
-  }
-
   const startedAt = new Date().toISOString();
-  const { url } = getSupabaseConfig(root);
-  const sb = createReadOnlySupabase(root);
-  const result = await runRoyalCaribbeanWeeklyMaintenance({
+  const args = parseWeeklyMaintenanceArgs(process.argv);
+
+  getSupabaseConfig(root);
+  if (args.apply) assertWeeklyApplyAllowed(args, process.env);
+
+  const sb = createMaintenanceSupabase(root);
+  const line = (
+    await sb(`ci_cruise_lines?slug=eq.${ROYAL_CARIBBEAN_LINE_SLUG}&select=id,name,slug&limit=1`)
+  )?.[0];
+  if (!line) throw new Error(`Cruise line not found: ${ROYAL_CARIBBEAN_LINE_SLUG}`);
+
+  const activeCount = async () =>
+    (await exactCountSupabase(root, "discovered_cruises", `cruise_line_id=eq.${line.id}&status=eq.active`))
+      .count;
+
+  const countsBefore = { royal_caribbean: await activeCount() };
+  const environment = classifyExecutionEnvironment(process.env, { applyMode: args.apply });
+  const today = args.today || perthCalendarDate();
+  const runId = `royal-caribbean-weekly-${startedAt.replace(/[:.]/g, "-")}`;
+
+  const dryRunResult = await runRoyalCaribbeanWeeklyMaintenance({
     dryRun: true,
     performWrites: false,
     skipLock: true,
     supabase: sb,
-    triggerType: "prompt8_weekly_dry_run",
-    runId: `royal-caribbean-prompt8-${startedAt.replace(/[:.]/g, "-")}`
+    triggerType: args.apply ? "weekly_pre_apply_dry_run" : "weekly_dry_run",
+    runId,
+    today,
+    firstActivationCycle: args.firstActivationCycle
   });
 
-  const report = {
-    generated_at: new Date().toISOString(),
-    started_at: startedAt,
-    mode: "royal_caribbean_prompt8_dry_run",
-    read_only: true,
-    supabase_url: url,
-    write_flags: {
-      ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED: false,
-      ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED: false
-    },
-    ok: result.ok === true,
-    reason: result.reason || null,
-    summary: result.summary || null,
-    sample_stats: result.sample_stats || null,
-    page_log: result.page_log || [],
-    manifest: slimManifest(result.manifest),
-    actual_writes: 0
-  };
+  let weeklyManifest = args.manifestPath ? JSON.parse(fs.readFileSync(args.manifestPath, "utf8")) : null;
+  if (!weeklyManifest) {
+    weeklyManifest = buildRoyalCaribbeanWeeklyManifestFromDryRun({
+      dryRunResult,
+      today,
+      firstActivationCycle: args.firstActivationCycle
+    });
+    const manifestPath = path.join(
+      REPORT_DIR,
+      `royal-caribbean-weekly-manifest-${startedAt.replace(/[:.]/g, "-")}.json`
+    );
+    fs.mkdirSync(REPORT_DIR, { recursive: true });
+    fs.writeFileSync(manifestPath, `${JSON.stringify(weeklyManifest, null, 2)}\n`);
+    weeklyManifest._saved_path = manifestPath;
+  }
 
-  fs.mkdirSync(path.dirname(args.output), { recursive: true });
-  fs.writeFileSync(args.output, `${JSON.stringify(report, null, 2)}\n`);
-  console.log(JSON.stringify({
-    ok: report.ok,
-    output: args.output,
-    itinerary_groups: report.summary?.itinerary_groups,
-    unique_sailings: report.summary?.unique_sailing_ids,
-    proposed_inserts: report.summary?.proposed_inserts,
-    proposed_updates: report.summary?.proposed_updates,
-    actual_writes: 0,
-    reconciliation_arithmetic_ok: report.summary?.reconciliation_arithmetic_ok,
-    reason: report.reason
-  }, null, 2));
-  if (!report.ok) process.exitCode = 1;
+  let applyResult = null;
+  let result = dryRunResult;
+
+  if (args.apply) {
+    const maxWrites = resolveEffectiveWeeklyMaxWrites(args.maxWrites);
+    const validation = validateFrozenWeeklyManifest(weeklyManifest, {
+      firstActivationCycle: args.firstActivationCycle
+    });
+    if (!validation.passed) {
+      throw new Error(`Frozen manifest validation failed: ${validation.failures.join("; ")}`);
+    }
+    const totalOps =
+      weeklyManifest.inserts.length +
+      weeklyManifest.updates.length +
+      weeklyManifest.cutoff_hides.length +
+      weeklyManifest.source_absence_hides.length;
+    if (totalOps > maxWrites) {
+      throw new Error(`Manifest operations ${totalOps} exceed --max-writes=${maxWrites}`);
+    }
+
+    const prevReconciliation = process.env.ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED;
+    process.env.ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED = "true";
+    try {
+      result = await runRoyalCaribbeanWeeklyMaintenance({
+        dryRun: false,
+        performWrites: true,
+        skipLock: true,
+        supabase: sb,
+        triggerType: "weekly_manual_apply",
+        runId,
+        today,
+        frozenManifest: weeklyManifest,
+        firstActivationCycle: args.firstActivationCycle
+      });
+      applyResult = result.apply_result;
+    } finally {
+      if (prevReconciliation == null) delete process.env.ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED;
+      else process.env.ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED = prevReconciliation;
+    }
+  }
+
+  const countsAfter = { royal_caribbean: await activeCount() };
+  const postWriteVerification = args.apply
+    ? verifyPostWriteManifestOperations({ manifest: weeklyManifest, applyResult })
+    : null;
+
+  const report = buildWeeklyMaintenanceReport({
+    mode: args.apply ? "apply" : "dry_run",
+    startedAt,
+    endedAt: new Date().toISOString(),
+    environment,
+    result,
+    manifest: weeklyManifest,
+    applyResult,
+    countsBefore,
+    countsAfter,
+    postWriteVerification
+  });
+
+  const { filePath } = writeWeeklyMaintenanceReportFile(report, REPORT_DIR);
+  report.report_path = filePath;
+  if (weeklyManifest._saved_path) report.manifest_path = weeklyManifest._saved_path;
+
+  console.log(formatWeeklyMaintenanceSummary(report));
+  console.log("");
+  console.log(JSON.stringify(report, null, 2));
+
+  process.exit(resolveWeeklyMaintenanceExitCode(report));
 }
 
-main().catch((error) => {
-  console.error(error.stack || error.message || error);
+main().catch((err) => {
+  console.error(
+    JSON.stringify(
+      {
+        mode: process.argv.includes("--apply") ? "apply" : "dry_run",
+        status: "failed",
+        writes_performed: 0,
+        error: err.code || err.message || String(err)
+      },
+      null,
+      2
+    )
+  );
   process.exit(1);
 });

@@ -1,5 +1,5 @@
 /**
- * Royal Caribbean weekly maintenance — Netlify Background Function (read-only catalogue path).
+ * Royal Caribbean weekly maintenance — Netlify Background Function (dry-run catalogue path).
  */
 
 const {
@@ -8,11 +8,9 @@ const {
   resolveDryRun,
   resolveMaxWrites,
   runRoyalCaribbeanWeeklyBackgroundMaintenance,
-  runRoyalCaribbeanRuntimeProofBackground,
   redactSecrets,
   BACKGROUND_FUNCTION_NAME
 } = require("./lib/royal-caribbean-weekly-maintenance-dispatch");
-const { BRANCH_RUNTIME_PROOF_MODE } = require("./lib/royal-caribbean-runtime-proof");
 
 exports.handler = async (event) => {
   const started = Date.now();
@@ -26,22 +24,13 @@ exports.handler = async (event) => {
     const dispatchId = body.dispatch_id || body.dispatchId || null;
     const runId = body.run_id || body.runId || null;
 
-    const result =
-      triggerType === "branch_runtime_proof" || body.mode === BRANCH_RUNTIME_PROOF_MODE
-        ? await runRoyalCaribbeanRuntimeProofBackground({
-            dryRun: true,
-            triggerType: "branch_runtime_proof",
-            dispatchId,
-            runId,
-            body
-          })
-        : await runRoyalCaribbeanWeeklyBackgroundMaintenance({
-            dryRun,
-            maxWrites,
-            triggerType,
-            dispatchId,
-            runId
-          });
+    const result = await runRoyalCaribbeanWeeklyBackgroundMaintenance({
+      dryRun,
+      maxWrites,
+      triggerType,
+      dispatchId,
+      runId
+    });
 
     return {
       statusCode: result.ok === false && result.status === "failed" ? 500 : 200,

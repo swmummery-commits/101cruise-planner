@@ -2,7 +2,7 @@
  * Bounded Royal Caribbean source smoke (Netlify runtime).
  *
  * POST /.netlify/functions/royal-caribbean-discovery-smoke
- * Auth: x-discovery-cron-secret OR branch_runtime_proof body on the branch deploy host.
+ * Auth: x-discovery-cron-secret
  *
  * Probe + fleet connectivity only — no authoritative multi-page enumeration.
  */
@@ -13,30 +13,19 @@ const {
   USER_AGENT,
   GRAPH_URL
 } = require("./lib/royal-caribbean-discovery-source");
-const {
-  assertSmokeAuth,
-  parseJsonBody,
-  parseBranchProofBody,
-  isBranchRuntimeProofRequest,
-  BRANCH_RUNTIME_PROOF_MODE,
-  redactSecrets
-} = require("./lib/royal-caribbean-runtime-proof");
+const { assertSmokeAuth, parseJsonBody, redactSecrets } = require("./lib/royal-caribbean-weekly-auth");
 
 exports.handler = async (event) => {
   const started = Date.now();
   try {
     const body = parseJsonBody(event);
-    const branchProof = isBranchRuntimeProofRequest(event, body);
     assertSmokeAuth(event, body);
 
     if (event.httpMethod && event.httpMethod !== "POST") {
       return { statusCode: 405, body: JSON.stringify({ ok: false, error: "method_not_allowed" }) };
     }
 
-    if (branchProof) {
-      const proof = parseBranchProofBody(event);
-      body.mode = proof.mode;
-    } else if (body.mode && String(body.mode).trim() !== "production_read_only") {
+    if (body.mode && String(body.mode).trim() !== "production_read_only") {
       return { statusCode: 400, body: JSON.stringify({ ok: false, error: "smoke_read_only_only" }) };
     }
 
@@ -68,7 +57,7 @@ exports.handler = async (event) => {
 
     const payload = redactSecrets({
       ok: probe.ok === true && fleet.ok === true,
-      mode: branchProof ? BRANCH_RUNTIME_PROOF_MODE : "production_read_only",
+      mode: "production_read_only",
       runtime: "netlify",
       graph_url: GRAPH_URL,
       user_agent: USER_AGENT,

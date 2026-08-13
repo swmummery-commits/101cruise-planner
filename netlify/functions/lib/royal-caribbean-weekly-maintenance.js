@@ -9,7 +9,13 @@ const {
   LINE_SLUG: ROYAL_CARIBBEAN_LINE_SLUG
 } = require("./royal-caribbean-discovery-adapter");
 const { buildRoyalCaribbeanBatchManifest, indexExistingRoyalCaribbeanRecords } = require("./royal-caribbean-discovery-writes");
-const { resolveRoyalCaribbeanDiscoveryMode } = require("./royal-caribbean-discovery-mode");
+const { resolveRoyalCaribbeanDiscoveryMode, assertRoyalCaribbeanWritesAllowed } = require("./royal-caribbean-discovery-mode");
+const { isRoyalCaribbeanWeeklyReconciliationEnabled } = require("./cruise-discovery-maintenance");
+const {
+  buildRoyalCaribbeanWeeklyManifestFromDryRun,
+  validateFrozenWeeklyManifest
+} = require("./royal-caribbean-weekly-manifest");
+const { applyRoyalCaribbeanWeeklyManifest } = require("./royal-caribbean-weekly-apply");
 const {
   buildRoyalCaribbeanReconciliationArithmetic,
   evaluateRoyalCaribbeanDryRunHealth
@@ -53,18 +59,12 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
   const runType = ROYAL_CARIBBEAN_WEEKLY_MAINTENANCE_RUN_TYPE;
   const startedAt = Date.now();
 
-  if (performWrites) {
-    return {
-      ok: false,
-      blocked: true,
-      reason: "royal_caribbean_writes_disabled",
-      line_slug: lineSlug,
-      dry_run: true,
-      actual_writes: 0
-    };
-  }
+  const firstActivationCycle = Boolean(context.firstActivationCycle ?? context.first_activation_cycle);
+  const frozenManifestInput = context.frozenManifest || context.frozen_manifest || null;
 
-  const modeGate = resolveRoyalCaribbeanDiscoveryMode("production_read_only");
+  const modeGate = resolveRoyalCaribbeanDiscoveryMode(
+    performWrites ? "weekly_maintenance" : "production_read_only"
+  );
   const { loadLineContext, findSourceAbsentActive, findPreviousSuccessfulMaintenanceRun } = context._deps || {};
 
   const { line, destinations } = await loadLineContext(sb, lineSlug);
@@ -236,7 +236,7 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
     cutoffCandidateCount: productionCutoffCandidates.length,
     actualWrites: 0,
     sourceAbsencePolicy,
-    performWrites: false
+    performWrites
   });
 
   const incompleteByReason = {};
@@ -247,15 +247,15 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
   }
 
   const sourceSnapshotId = computeSourceSnapshotIdFromSailingIds([...unionSailingIds]);
-  const passed = health.passed && weeklyHealth.weekly_maintenance_healthy;
+  const dryRunPassed = health.passed && weeklyHealth.weekly_maintenance_healthy;
 
   const summary = {
     line_slug: lineSlug,
     cruise_line: line.name,
     run_id: runId,
     run_type: runType,
-    trigger_type: context.triggerType || context.trigger_type || "dry_run",
-    dry_run: true,
+    trigger_type: context.triggerType || context.trigger_type || (performWrites ? "weekly_apply" : "dry_run"),
+    dry_run: !performWrites,
     writes_allowed: modeGate.writes_allowed,
     authoritative_enumeration: true,
     union_page_sizes: AUTHORITATIVE_UNION_PAGE_SIZES,
@@ -342,13 +342,88 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
     inventory_changed: false
   };
 
+  let weeklyManifest = frozenManifestInput;
+  let applyResult = null;
+
+  if (performWrites) {
+    if (!isRoyalCaribbeanWeeklyReconciliationEnabled()) {
+      return {
+        ok: false,
+        blocked: true,
+        reason: "royal_caribbean_weekly_reconciliation_disabled",
+        line_slug: lineSlug,
+        dry_run: false,
+        actual_writes: 0,
+        summary
+      };
+    }
+    assertRoyalCaribbeanWritesAllowed(modeGate);
+
+    weeklyManifest =
+      weeklyManifest ||
+      buildRoyalCaribbeanWeeklyManifestFromDryRun({
+        dryRunResult: { summary, manifest },
+        today,
+        firstActivationCycle
+      });
+
+    const manifestValidation = validateFrozenWeeklyManifest(weeklyManifest, { firstActivationCycle });
+    if (!manifestValidation.passed || !dryRunPassed) {
+      return {
+        ok: false,
+        blocked: true,
+        reason: !dryRunPassed
+          ? [...health.failures, ...weeklyHealth.failures].join("; ")
+          : manifestValidation.failures.join("; "),
+        line_slug: lineSlug,
+        dry_run: false,
+        actual_writes: 0,
+        summary,
+        weekly_manifest: weeklyManifest,
+        manifest_validation: manifestValidation
+      };
+    }
+
+    applyResult = await applyRoyalCaribbeanWeeklyManifest({
+      manifest: weeklyManifest,
+      supabase: sb,
+      cruiseLine: line,
+      performWrites: true,
+      runId,
+      firstActivationCycle
+    });
+
+    summary.actual_writes = applyResult.stats.actual_writes;
+    summary.production_cruise_inserts = applyResult.stats.inserted;
+    summary.production_cruise_updates = applyResult.stats.updated;
+    summary.production_expiry_changes = applyResult.stats.expired;
+    summary.inventory_changed = applyResult.stats.actual_writes > 0;
+    summary.weekly_manifest_hash = weeklyManifest.manifest_hash;
+    summary.write_details = applyResult.stats.write_details;
+
+    weeklyHealth.actual_writes = applyResult.stats.actual_writes;
+    if (applyResult.stats.actual_writes > 0 && applyResult.ok !== true) {
+      weeklyHealth.failures = [...(weeklyHealth.failures || []), "apply_failed"];
+      weeklyHealth.weekly_maintenance_healthy = false;
+    }
+  }
+
+  const passed = performWrites ? applyResult?.ok === true && dryRunPassed : dryRunPassed;
+
   return {
     ok: passed,
-    dry_run: true,
+    dry_run: !performWrites,
     blocked: !passed,
-    reason: passed ? null : [...health.failures, ...weeklyHealth.failures].join("; "),
+    reason: passed
+      ? null
+      : performWrites
+        ? applyResult?.stats?.write_details?.find((row) => row.error)?.error ||
+          [...health.failures, ...weeklyHealth.failures].join("; ")
+        : [...health.failures, ...weeklyHealth.failures].join("; "),
     summary,
     manifest,
+    weekly_manifest: weeklyManifest,
+    apply_result: applyResult,
     simulation_ok: simulation.ok,
     sample_stats: simulation.sample_stats,
     page_log: simulation.page_log,
