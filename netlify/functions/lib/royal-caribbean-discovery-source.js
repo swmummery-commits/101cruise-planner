@@ -444,7 +444,27 @@ function assessRoyalCaribbeanPagination(fetchResult = {}) {
 async function fetchAllRoyalCaribbeanRawSailings(options = {}) {
   const today = options.today || new Date().toISOString().slice(0, 10);
   const futureOnly = options.futureOnly !== false;
-  const fetchResult = await fetchRoyalCaribbeanInventoryPages(options);
+  let fetchResult;
+  if (options.authoritativeEnumeration === true) {
+    const { enumerateMultiPageSizeUnion } = require("./royal-caribbean-source-enumeration");
+    const union = await enumerateMultiPageSizeUnion({
+      pageSizes: options.unionPageSizes || [25, 50, 100],
+      requestDelayMs: options.requestDelayMs ?? 100,
+      today,
+      stopAtTotal: true
+    });
+    fetchResult = {
+      ok: true,
+      total_official: union.results_total,
+      groups: union.groups,
+      page_log: union.passes.flatMap((pass) => pass.pages_requested ? [{ page_size: pass.page_size, ...pass }] : []),
+      pagination_requests: union.passes.reduce((n, pass) => n + (pass.pages_requested || 0), 0),
+      authoritative_union: true,
+      union_page_sizes: union.page_sizes
+    };
+  } else {
+    fetchResult = await fetchRoyalCaribbeanInventoryPages(options);
+  }
   const expanded = expandGraphGroupsToRawSailings(fetchResult.groups, { today, futureOnly });
   const pagination = assessRoyalCaribbeanPagination(fetchResult);
   return {

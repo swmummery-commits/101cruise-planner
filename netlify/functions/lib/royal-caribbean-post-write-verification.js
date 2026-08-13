@@ -13,7 +13,7 @@ const { isLegacyHtmlDiscoveryRow } = require("./royal-caribbean-discovery-writes
 const RC_ACTIVE_ROW_SELECT =
   "id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,official_url,official_sailing_id,external_key,identity_key,status,raw_extract,created_at";
 
-async function countGenuineRoyalCaribbeanSailings(supabase) {
+async function indexGenuineRoyalCaribbeanProduction(supabase) {
   const rows = [];
   let offset = 0;
   const pageSize = 1000;
@@ -21,20 +21,46 @@ async function countGenuineRoyalCaribbeanSailings(supabase) {
     const batch = await supabase(
       `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
         RC_LINE_ID
-      )}&select=id,official_sailing_id,status,official_url,raw_extract&order=id.asc&limit=${pageSize}&offset=${offset}`
+      )}&select=id,official_sailing_id,identity_key,status,official_url,raw_extract,departure_date,return_date,nights,ship_id,destination_id&order=id.asc&limit=${pageSize}&offset=${offset}`
     );
     if (!batch?.length) break;
     rows.push(...batch);
     if (batch.length < pageSize) break;
     offset += pageSize;
   }
+
   const genuine = rows.filter((r) => !isLegacyHtmlDiscoveryRow(r) && r.official_sailing_id);
   const legacy = rows.filter((r) => isLegacyHtmlDiscoveryRow(r));
+  const officialIds = genuine.map((r) => r.official_sailing_id);
+  const identityKeys = genuine.map((r) => r.identity_key).filter(Boolean);
+  const duplicateOfficial = officialIds.filter((id, i) => officialIds.indexOf(id) !== i);
+  const duplicateIdentity = identityKeys.filter((key, i) => identityKeys.indexOf(key) !== i);
+  const departures = genuine.map((r) => r.departure_date).filter(Boolean).sort();
+
   return {
     total_rows: rows.length,
     genuine_sailing_count: genuine.length,
     legacy_html_count: legacy.length,
-    genuine_ids: genuine.map((r) => r.id)
+    unique_official_sailing_ids: new Set(officialIds).size,
+    unique_identity_keys: new Set(identityKeys).size,
+    duplicate_official_sailing_ids: [...new Set(duplicateOfficial)],
+    duplicate_identity_keys: [...new Set(duplicateIdentity)],
+    earliest_departure: departures[0] || null,
+    latest_departure: departures[departures.length - 1] || null,
+    rows: genuine,
+    official_sailing_ids: new Set(officialIds),
+    identity_keys: new Set(identityKeys),
+    by_official_sailing_id: new Map(genuine.map((r) => [r.official_sailing_id, r]))
+  };
+}
+
+async function countGenuineRoyalCaribbeanSailings(supabase) {
+  const indexed = await indexGenuineRoyalCaribbeanProduction(supabase);
+  return {
+    total_rows: indexed.total_rows,
+    genuine_sailing_count: indexed.genuine_sailing_count,
+    legacy_html_count: indexed.legacy_html_count,
+    genuine_ids: indexed.rows.map((r) => r.id)
   };
 }
 
@@ -188,6 +214,7 @@ module.exports = {
   RC_LINE_ID,
   RC_ACTIVE_ROW_SELECT,
   countGenuineRoyalCaribbeanSailings,
+  indexGenuineRoyalCaribbeanProduction,
   fetchRoyalCaribbeanRowsByIds,
   fetchRoyalCaribbeanRowsBySailingIds,
   verifyManifestRowsAgainstProduction,

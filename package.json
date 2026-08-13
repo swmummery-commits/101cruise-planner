@@ -69,6 +69,8 @@
     "test:royal-caribbean-controlled-batch": "node scripts/test-royal-caribbean-controlled-batch.mjs",
     "royal-caribbean:final-catchup": "node scripts/run-royal-caribbean-final-catchup.mjs",
     "test:royal-caribbean-final-catchup": "node scripts/test-royal-caribbean-final-catchup.mjs",
+    "royal-caribbean:prompt7-audit": "node scripts/run-royal-caribbean-prompt7-audit.mjs",
+    "test:royal-caribbean-source-enumeration": "node scripts/test-royal-caribbean-source-enumeration.mjs",
     "apply:norwegian-ship-code-seed": "node scripts/apply-norwegian-ship-code-seed.mjs",
     "apply:norwegian-port-reference-data": "node scripts/apply-norwegian-port-reference-data.mjs",
     "run:norwegian-phase4-controlled-batch": "node scripts/run-norwegian-phase4-controlled-batch.mjs",

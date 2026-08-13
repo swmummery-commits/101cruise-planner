@@ -152,7 +152,7 @@ async function indexExistingRoyalCaribbeanRecords(supabase, cruiseLineId) {
   const pageSize = 1000;
   while (true) {
     const batch = await supabase(
-      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&select=${select}&limit=${pageSize}&offset=${offset}`
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&select=${select}&order=id.asc&limit=${pageSize}&offset=${offset}`
     );
     if (!batch?.length) break;
     rows.push(...batch);
