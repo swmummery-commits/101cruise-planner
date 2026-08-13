@@ -126,6 +126,9 @@ function buildManifestEntry(normalised, cruiseLine, existing, batchPosition, opt
     destination_id: destinationAssignment?.destination_id || null,
     controlledBatch: true
   });
+  if (destinationAssignment?.destination_id && candidate) {
+    candidate.destination_id = destinationAssignment.destination_id;
+  }
   const action = classifyProposedAction(normalised, existing);
 
   return {
@@ -172,6 +175,9 @@ function evaluateDryRunGate(manifest, options = {}) {
   if (writes.some((e) => !e.resolved_departure_port)) failures.push("unresolved_port");
   if (requireDestination && writes.some((e) => !e.resolved_destination_id)) {
     failures.push("unresolved_destination");
+  }
+  if (requireDestination && writes.some((e) => !e.candidate?.destination_id)) {
+    failures.push("null_candidate_destination_id");
   }
   if (writes.some((e) => (e.unknown_destination_codes || []).length)) {
     failures.push("unknown_ncl_destination_code");
@@ -263,7 +269,7 @@ async function buildManifestFromEntries({
   return manifest;
 }
 
-async function applyManifestWrites({ manifest, cruiseLine, supabase, maxWrites = 25, runId }) {
+async function applyManifestWrites({ manifest, cruiseLine, supabase, maxWrites = 25, runId, requireDestination = false }) {
   const stats = {
     attempted: 0,
     inserted: 0,
@@ -310,6 +316,17 @@ async function applyManifestWrites({ manifest, cruiseLine, supabase, maxWrites =
     }
     if (entry.resolved_destination_id) candidate.destination_id = entry.resolved_destination_id;
     candidate.status = "match_required";
+
+    if (requireDestination && !candidate.destination_id) {
+      stats.failed += 1;
+      stats.write_details.push({
+        official_sailing_id: entry.official_sailing_id,
+        result_action: "blocked_null_destination_id",
+        resolved_destination_id: entry.resolved_destination_id || null,
+        candidate_destination_id: entry.candidate?.destination_id || null
+      });
+      continue;
+    }
 
     const existing = findExistingRecord(indexes, { official_sailing_id: entry.official_sailing_id, external_key: entry.external_key });
     if (existing && !isLegacyGenericRow(existing)) {
