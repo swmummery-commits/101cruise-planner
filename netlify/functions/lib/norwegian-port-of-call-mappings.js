@@ -227,7 +227,46 @@ const NCL_PORT_OF_CALL_CODES = Object.freeze([
   { code: "GIJ", source_name: "Gijón, Spain", canonical_name: "Gijon", classification: "NEW_PORT_REQUIRED", country: "Spain" },
   { code: "LRH", source_name: "La Rochelle, France", canonical_name: "La Rochelle", classification: "NEW_PORT_REQUIRED", country: "France" },
   { code: "PDR", source_name: "Puerto del Rosario (Canary Islands), Spain", canonical_name: "Puerto del Rosario", classification: "NEW_PORT_REQUIRED", country: "Spain", note: "Fuerteventura" },
-  { code: "TKS", source_name: "Takamatsu, Japan", canonical_name: "Takamatsu", classification: "NEW_PORT_REQUIRED", country: "Japan" }
+  { code: "TKS", source_name: "Takamatsu, Japan", canonical_name: "Takamatsu", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  {
+    code: "VGO",
+    source_name: "Vigo, Spain",
+    canonical_name: "Vigo",
+    classification: "EXISTING_ALIAS",
+    country: "Spain",
+    note: "Galicia cruise port — canonical Vigo already in catalogue"
+  },
+  {
+    code: "MBJ",
+    source_name: "Montego Bay, Jamaica",
+    canonical_name: "Montego Bay",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Jamaica"
+  },
+  {
+    code: "LIO",
+    source_name: "Puerto Limon, Costa Rica",
+    canonical_name: "Puerto Limon",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Costa Rica",
+    note: "Limón cruise port on Caribbean coast"
+  },
+  {
+    code: "PCG",
+    source_name: "Panama Canal (Gatun Lake), Panama",
+    canonical_name: "Panama Canal Gatun Lake",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Panama",
+    note: "Panama Canal transit / Gatun Lake scenic segment — distinct from Colón pier"
+  },
+  {
+    code: "HGC",
+    source_name: "Hubbard Glacier, Alaska",
+    canonical_name: "Hubbard Glacier",
+    classification: "NEW_PORT_REQUIRED",
+    country: "United States",
+    note: "Scenic glacier cruising in Disenchantment Bay — not a pier port"
+  }
 ]);
 
 const POC_CODE_TO_MAPPING = Object.freeze(Object.fromEntries(NCL_PORT_OF_CALL_CODES.map((row) => [row.code, row])));
