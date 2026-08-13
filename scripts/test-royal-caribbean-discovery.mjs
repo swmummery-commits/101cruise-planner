@@ -336,7 +336,7 @@ test("28. official ship code resolution", () => {
   }
 });
 
-test("29. unresolved ship and no cross-line resolution", () => {
+test("29. unresolved ship when absent from fleet and no cross-line resolution", () => {
   const missing = resolveShipForLine({
     rawShipName: "Hero of the Seas",
     rawShipCode: "HE",
@@ -344,7 +344,7 @@ test("29. unresolved ship and no cross-line resolution", () => {
     cruiseLineName: RC_LINE.name,
     ships: RC_SHIPS
   });
-  if (missing.resolved) throw new Error("hero should be unresolved");
+  if (missing.resolved) throw new Error("hero should be unresolved without fleet record");
   const cross = resolveShipForLine({
     rawShipName: "Voyager of the Seas",
     rawShipCode: "VY",
@@ -353,6 +353,55 @@ test("29. unresolved ship and no cross-line resolution", () => {
     ships: OTHER_LINE_SHIPS
   });
   if (cross.resolved) throw new Error("cross-line resolved");
+});
+
+test("43. Hero of the Seas resolves via Royal Caribbean source code HE", () => {
+  const heroShip = {
+    id: "ship-he",
+    name: "Hero of the Seas",
+    cruise_line_id: RC_LINE.id,
+    official_line_ship_id: "HE"
+  };
+  const byCode = resolveShipForLine({
+    rawShipName: "Hero of the Seas",
+    rawShipCode: "HE",
+    cruiseLineId: RC_LINE.id,
+    cruiseLineName: RC_LINE.name,
+    ships: [...RC_SHIPS, heroShip]
+  });
+  if (!byCode.resolved || byCode.ship.id !== "ship-he" || byCode.method !== "official_line_ship_id") {
+    throw new Error(JSON.stringify(byCode));
+  }
+  const byName = resolveShipForLine({
+    rawShipName: "Hero of the Seas",
+    rawShipCode: null,
+    cruiseLineId: RC_LINE.id,
+    cruiseLineName: RC_LINE.name,
+    ships: [...RC_SHIPS, heroShip]
+  });
+  if (!byName.resolved || byName.ship.id !== "ship-he" || byName.method !== "exact_name") {
+    throw new Error(JSON.stringify(byName));
+  }
+  const wrongLine = resolveShipForLine({
+    rawShipName: "Hero of the Seas",
+    rawShipCode: "HE",
+    cruiseLineId: RC_LINE.id,
+    cruiseLineName: RC_LINE.name,
+    ships: [{ id: "other-he", name: "Hero of the Seas", cruise_line_id: "other-line", official_line_ship_id: "HE" }]
+  });
+  if (wrongLine.resolved) throw new Error("cross-line hero match");
+});
+
+test("44. Colón embarkation resolves via adapter alias and ONX code", () => {
+  const accented = adapter.classifyItineraryStop({ name: "Colón", code: "ONX" });
+  if (accented.classification !== "alias_resolved") throw new Error(JSON.stringify(accented));
+  if (accented.canonical_port_name !== "Colón") throw new Error(JSON.stringify(accented));
+  const ascii = adapter.classifyItineraryStop({ name: "Colon", code: "ONX" });
+  if (ascii.classification !== "alias_resolved") throw new Error(JSON.stringify(ascii));
+  if (ascii.canonical_port_name !== "Colón") throw new Error(JSON.stringify(ascii));
+  if (ascii.canonical_port_name !== accented.canonical_port_name) throw new Error("duplicate canonical ports");
+  const panamaCity = adapter.classifyItineraryStop({ name: "Panama City", code: "PTY" });
+  if (panamaCity.canonical_port_name === "Colón") throw new Error("false Panama City match");
 });
 
 test("30. ports: exact, alias, unresolved conventional, sea day, scenic", () => {
