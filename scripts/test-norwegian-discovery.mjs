@@ -504,6 +504,48 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(simulation.enrichment.length === 1, "controlled enrichment sample only");
   assert(simulation.enrichment[0].parsed.ordered_port_count === 4, "enrichment sample parsed");
 
+  const writes = require(path.join(root, "netlify/functions/lib/norwegian-discovery-writes"));
+  const destId = "835ad9b0-4e95-468e-b93b-cc9587dd713a";
+  const gateOk = writes.evaluateDryRunGate(
+    {
+      entries: [
+        {
+          proposed_action: "insert_match_required",
+          official_sailing_id: "TEST|2028-01-01",
+          external_key: "abc",
+          resolved_ship_id: "ship-1",
+          resolved_departure_port: "Sydney",
+          resolved_destination_id: destId,
+          unknown_destination_codes: [],
+          candidate: { destination_id: destId, status: "match_required" }
+        }
+      ]
+    },
+    { expectedCount: 1, requireDestination: true }
+  );
+  assert(gateOk.passed === true, "dry-run gate passes when destination_id resolved");
+
+  const gateFail = writes.evaluateDryRunGate(
+    {
+      entries: [
+        {
+          proposed_action: "insert_match_required",
+          official_sailing_id: "TEST|2028-01-01",
+          external_key: "abc",
+          resolved_ship_id: "ship-1",
+          resolved_departure_port: "Sydney",
+          resolved_destination_id: null,
+          unknown_destination_codes: ["AUSTRALIA"],
+          candidate: { destination_id: null, status: "match_required" }
+        }
+      ]
+    },
+    { expectedCount: 1, requireDestination: true }
+  );
+  assert(gateFail.passed === false, "dry-run gate fails on null destination_id");
+  assert(gateFail.failures.includes("unresolved_destination"), "unresolved_destination failure recorded");
+  assert(gateFail.failures.includes("null_candidate_destination_id"), "null candidate destination failure recorded");
+
   console.log(`Norwegian discovery tests passed (${passed})`);
 })().catch((err) => {
   console.error(err.stack || err.message || err);
