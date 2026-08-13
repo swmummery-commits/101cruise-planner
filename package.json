@@ -64,6 +64,8 @@
     "smoke:royal-caribbean-source-ci": "node scripts/royal-caribbean-source-smoke-ci.mjs",
     "probe:royal-caribbean-discovery": "node scripts/probe-royal-caribbean-discovery.mjs",
     "royal-caribbean:weekly-maintenance": "node scripts/run-royal-caribbean-weekly-maintenance.mjs",
+    "royal-caribbean:first-controlled-batch": "node scripts/run-royal-caribbean-first-controlled-batch.mjs",
+    "test:royal-caribbean-controlled-batch": "node scripts/test-royal-caribbean-controlled-batch.mjs",
     "apply:norwegian-ship-code-seed": "node scripts/apply-norwegian-ship-code-seed.mjs",
     "apply:norwegian-port-reference-data": "node scripts/apply-norwegian-port-reference-data.mjs",
     "run:norwegian-phase4-controlled-batch": "node scripts/run-norwegian-phase4-controlled-batch.mjs",

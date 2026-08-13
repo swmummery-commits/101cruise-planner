@@ -1,0 +1,36 @@
+{
+  "generated_at": "2026-08-13T02:23:17.965Z",
+  "summary": {
+    "recognised_existing_eligible": 20,
+    "outstanding_eligible_inserts": 2965,
+    "proposed_updates": 0,
+    "incomplete_skipped": 14,
+    "cutoff_skipped": 68,
+    "cruisetour_skipped": 195,
+    "reconciliation_arithmetic_ok": true,
+    "duplicate_skips": 20
+  },
+  "reconciliation_arithmetic": {
+    "source_unique_sailings": 3262,
+    "product_accounted": 3262,
+    "product_arithmetic_ok": true,
+    "ordinary_ocean": 3067,
+    "cruisetour_excluded": 195,
+    "unknown_products": 0,
+    "other_product_types": 0,
+    "ocean_incomplete": 14,
+    "ocean_eligible": 2985,
+    "ocean_within_cutoff": 68,
+    "ocean_past": 0,
+    "ocean_unfamiliar_status": 0,
+    "ocean_other_exclusions": 0,
+    "ocean_accounted": 3067,
+    "ocean_arithmetic_ok": true,
+    "recognised_existing_eligible": 20,
+    "outstanding_eligible_inserts": 2965,
+    "proposed_updates": 0,
+    "eligible_accounted": 2985,
+    "eligible_arithmetic_ok": true,
+    "reconciliation_arithmetic_ok": true
+  }
+}

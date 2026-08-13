@@ -1,0 +1,4899 @@
+{
+  "batch_id": "royal-caribbean-batch1-2026-08-13T02-22-18",
+  "generated_at": "2026-08-13T02:22:44.846Z",
+  "mode": "royal_caribbean_controlled_batch",
+  "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+  "cruise_line_slug": "royal-caribbean-international",
+  "expected_record_count": 20,
+  "max_batch_size": 20,
+  "first_batch_safety_buffer_days": 45,
+  "perth_today": "2026-08-13",
+  "source_snapshot_id": "5443e05f4fec1eb5",
+  "source_fetched_at": "2026-08-13T02:22:44.845Z",
+  "writes_performed": false,
+  "actual_writes": 0,
+  "entries": [
+    {
+      "official_sailing_id": "AL06W286_2026-09-27",
+      "official_group_id": "AL06FLL-2906128061",
+      "package_code": "AL06W286",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "AL",
+      "resolved_ship_db_id": "5a35e68f-a6ad-4264-a0da-eaa638af0b69",
+      "ship_name": "Allure of the Seas",
+      "departure_date": "2026-09-27",
+      "return_date": "2026-10-03",
+      "nights": 6,
+      "embarkation_source_value": "Fort Lauderdale",
+      "embarkation_source_code": "FLL",
+      "resolved_embarkation_port_id": "port-csv-84",
+      "resolved_embarkation_port_name": "Fort Lauderdale",
+      "destination_source_code": "CARIB",
+      "destination_source_name": "Caribbean",
+      "resolved_destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "resolved_destination_slug": "caribbean",
+      "itinerary": "Western Caribbean & Perfect Day",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/6-night-western-caribbean-perfect-day-from-fort-lauderdale-on-allure-AL06W286?sailDate=2026-09-27&packageCode=AL06W286&groupId=AL06FLL-2906128061&country=USA",
+      "external_key": "854dada6ace92093079012c76c1aee203f26735e",
+      "identity_key": "44b4a4be1c8db53bb15310a5f72d72597f118516",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "5a35e68f-a6ad-4264-a0da-eaa638af0b69",
+        "departure_date": "2026-09-27",
+        "return_date": "2026-10-03",
+        "nights": 6,
+        "departure_port": "Fort Lauderdale",
+        "departure_port_meta": {
+          "rawValue": "Fort Lauderdale",
+          "canonicalPortId": "port-csv-84",
+          "canonicalPortName": "Fort Lauderdale",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Western Caribbean & Perfect Day",
+        "official_url": "https://www.royalcaribbean.com/itinerary/6-night-western-caribbean-perfect-day-from-fort-lauderdale-on-allure-AL06W286?sailDate=2026-09-27&packageCode=AL06W286&groupId=AL06FLL-2906128061&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/6-night-western-caribbean-perfect-day-from-fort-lauderdale-on-allure-AL06W286?sailDate=2026-09-27&packageCode=AL06W286&groupId=AL06FLL-2906128061&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Western Caribbean & Perfect Day",
+          "group_id": "AL06FLL-2906128061",
+          "sailing_id": "AL06W286_2026-09-27",
+          "package_code": "AL06W286",
+          "destination_code": "CARIB",
+          "destination_name": "Caribbean",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "AL",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-09-27",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "FLL",
+                  "name": "Fort Lauderdale",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2026-09-28",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PCC",
+                  "name": "Perfect Day CocoCay",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "CRUISING",
+              "date": "2026-09-29",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-09-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "FMT",
+                  "name": "Falmouth",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "CRUISING",
+              "date": "2026-10-01",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "PORT",
+              "date": "2026-10-02",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "NAS",
+                  "name": "Nassau",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:30:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2026-10-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "FLL",
+                  "name": "Fort Lauderdale",
+                  "arrival_time": "06:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-09-27",
+              "code": "FLL",
+              "name": "Fort Lauderdale",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 2,
+              "date": "2026-09-28",
+              "code": "PCC",
+              "name": "Perfect Day CocoCay",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-09-30",
+              "code": "FMT",
+              "name": "Falmouth",
+              "arrival_time": "08:00:00",
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 6,
+              "date": "2026-10-02",
+              "code": "NAS",
+              "name": "Nassau",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:30:00"
+            },
+            {
+              "day": 7,
+              "date": "2026-10-03",
+              "code": "FLL",
+              "name": "Fort Lauderdale",
+              "arrival_time": "06:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "AL06W286_2026-09-27",
+          "royal_caribbean_group_id": "AL06FLL-2906128061",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "destination_key": "caribbean",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "854dada6ace92093079012c76c1aee203f26735e",
+        "identity_key": "44b4a4be1c8db53bb15310a5f72d72597f118516",
+        "official_sailing_id": "AL06W286_2026-09-27"
+      },
+      "selection_reason": "diversity_priority"
+    },
+    {
+      "official_sailing_id": "LE07M843_2026-09-27",
+      "official_group_id": "LE07BCN-1495935368",
+      "package_code": "LE07M870",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "LE",
+      "resolved_ship_db_id": "86ee7da8-9f03-4e75-b220-8b72945b4666",
+      "ship_name": "Legend of the Seas",
+      "departure_date": "2026-09-27",
+      "return_date": "2026-10-04",
+      "nights": 7,
+      "embarkation_source_value": "Barcelona",
+      "embarkation_source_code": "BCN",
+      "resolved_embarkation_port_id": "port-csv-1",
+      "resolved_embarkation_port_name": "Barcelona",
+      "destination_source_code": "EUROP",
+      "destination_source_name": "Europe",
+      "resolved_destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+      "resolved_destination_slug": "mediterranean",
+      "itinerary": "Western Mediterranean Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/7-night-western-mediterranean-cruise-from-barcelona-on-legend-LE07M870?sailDate=2026-09-27&packageCode=LE07M843&groupId=LE07BCN-1495935368&country=USA",
+      "external_key": "8dfe4b475789305acf5c81af5d512ae6ff5ff6ac",
+      "identity_key": "08f5ab84ec6ad19a058c584254ba5dd0d27361ff",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "86ee7da8-9f03-4e75-b220-8b72945b4666",
+        "departure_date": "2026-09-27",
+        "return_date": "2026-10-04",
+        "nights": 7,
+        "departure_port": "Barcelona",
+        "departure_port_meta": {
+          "rawValue": "Barcelona",
+          "canonicalPortId": "port-csv-1",
+          "canonicalPortName": "Barcelona",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Western Mediterranean Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-western-mediterranean-cruise-from-barcelona-on-legend-LE07M870?sailDate=2026-09-27&packageCode=LE07M843&groupId=LE07BCN-1495935368&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-western-mediterranean-cruise-from-barcelona-on-legend-LE07M870?sailDate=2026-09-27&packageCode=LE07M843&groupId=LE07BCN-1495935368&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Western Mediterranean Cruise",
+          "group_id": "LE07BCN-1495935368",
+          "sailing_id": "LE07M843_2026-09-27",
+          "package_code": "LE07M870",
+          "destination_code": "EUROP",
+          "destination_name": "Europe",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "LE",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-09-27",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BCN",
+                  "name": "Barcelona",
+                  "arrival_time": null,
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2026-09-28",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PMI",
+                  "name": "Palma De Mallorca",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2026-09-29",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "MRS",
+                  "name": "Provence (Marseille)",
+                  "arrival_time": "09:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-09-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "LSP",
+                  "name": "Florence / Pisa (La Spezia)",
+                  "arrival_time": "08:30:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-01",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ROM",
+                  "name": "Rome (Civitavecchia)",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "PORT",
+              "date": "2026-10-02",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "NAP",
+                  "name": "Naples / Capri",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "19:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "CRUISING",
+              "date": "2026-10-03",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2026-10-04",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BCN",
+                  "name": "Barcelona",
+                  "arrival_time": "05:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-09-27",
+              "code": "BCN",
+              "name": "Barcelona",
+              "arrival_time": null,
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 2,
+              "date": "2026-09-28",
+              "code": "PMI",
+              "name": "Palma De Mallorca",
+              "arrival_time": "08:00:00",
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2026-09-29",
+              "code": "MRS",
+              "name": "Provence (Marseille)",
+              "arrival_time": "09:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-09-30",
+              "code": "LSP",
+              "name": "Florence / Pisa (La Spezia)",
+              "arrival_time": "08:30:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-01",
+              "code": "ROM",
+              "name": "Rome (Civitavecchia)",
+              "arrival_time": "07:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 6,
+              "date": "2026-10-02",
+              "code": "NAP",
+              "name": "Naples / Capri",
+              "arrival_time": "07:00:00",
+              "departure_time": "19:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2026-10-04",
+              "code": "BCN",
+              "name": "Barcelona",
+              "arrival_time": "05:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 1,
+          "royal_caribbean_sailing_id": "LE07M843_2026-09-27",
+          "royal_caribbean_group_id": "LE07BCN-1495935368",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "destination_key": "mediterranean",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "8dfe4b475789305acf5c81af5d512ae6ff5ff6ac",
+        "identity_key": "08f5ab84ec6ad19a058c584254ba5dd0d27361ff",
+        "official_sailing_id": "LE07M843_2026-09-27"
+      },
+      "selection_reason": "diversity_priority"
+    },
+    {
+      "official_sailing_id": "SC04I858_2026-09-27",
+      "official_group_id": "SC04BAO-1753934525",
+      "package_code": "SC04I851",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "SC",
+      "resolved_ship_db_id": "65296346-d83b-4b4a-afbb-c1ae15a8f56b",
+      "ship_name": "Spectrum of the Seas",
+      "departure_date": "2026-09-27",
+      "return_date": "2026-10-01",
+      "nights": 4,
+      "embarkation_source_value": "Shanghai (Baoshan)",
+      "embarkation_source_code": "BAO",
+      "resolved_embarkation_port_id": "port-csv-194",
+      "resolved_embarkation_port_name": "Shanghai",
+      "destination_source_code": "FAR.E",
+      "destination_source_name": "Asia",
+      "resolved_destination_id": "32163e89-4e9b-4936-953f-e006077025c8",
+      "resolved_destination_slug": "asia",
+      "itinerary": "Jeju Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/4-night-jeju-cruise-from-shanghai-baoshan-on-spectrum-SC04I851?sailDate=2026-09-27&packageCode=SC04I858&groupId=SC04BAO-1753934525&country=USA",
+      "external_key": "d369b9405dacc17586028dca0385f952f8c798ae",
+      "identity_key": "b9a295f5897e4ced341fcaea217faaf9e71a26ea",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "65296346-d83b-4b4a-afbb-c1ae15a8f56b",
+        "departure_date": "2026-09-27",
+        "return_date": "2026-10-01",
+        "nights": 4,
+        "departure_port": "Shanghai",
+        "departure_port_meta": {
+          "rawValue": "Shanghai, China",
+          "canonicalPortId": "port-csv-194",
+          "canonicalPortName": "Shanghai",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": true,
+          "classification": "alias_resolved"
+        },
+        "itinerary": "Jeju Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/4-night-jeju-cruise-from-shanghai-baoshan-on-spectrum-SC04I851?sailDate=2026-09-27&packageCode=SC04I858&groupId=SC04BAO-1753934525&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/4-night-jeju-cruise-from-shanghai-baoshan-on-spectrum-SC04I851?sailDate=2026-09-27&packageCode=SC04I858&groupId=SC04BAO-1753934525&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Jeju Cruise",
+          "group_id": "SC04BAO-1753934525",
+          "sailing_id": "SC04I858_2026-09-27",
+          "package_code": "SC04I851",
+          "destination_code": "FAR.E",
+          "destination_name": "Asia",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "SC",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-09-27",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BAO",
+                  "name": "Shanghai (Baoshan)",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2026-09-28",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2026-09-29",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SPO",
+                  "name": "Jeju (Seogwipo)",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "CRUISING",
+              "date": "2026-09-30",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-01",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BAO",
+                  "name": "Shanghai (Baoshan)",
+                  "arrival_time": "06:30:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-09-27",
+              "code": "BAO",
+              "name": "Shanghai (Baoshan)",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2026-09-29",
+              "code": "SPO",
+              "name": "Jeju (Seogwipo)",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-01",
+              "code": "BAO",
+              "name": "Shanghai (Baoshan)",
+              "arrival_time": "06:30:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "SC04I858_2026-09-27",
+          "royal_caribbean_group_id": "SC04BAO-1753934525",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "32163e89-4e9b-4936-953f-e006077025c8",
+        "destination_key": "asia",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "d369b9405dacc17586028dca0385f952f8c798ae",
+        "identity_key": "b9a295f5897e4ced341fcaea217faaf9e71a26ea",
+        "official_sailing_id": "SC04I858_2026-09-27"
+      },
+      "selection_reason": "diversity_priority"
+    },
+    {
+      "official_sailing_id": "SR05R020_2026-09-27",
+      "official_group_id": "SR05YVR-3617171363",
+      "package_code": "SR05R020",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "SR",
+      "resolved_ship_db_id": "39c9ce64-267d-45f7-a9af-800ecaf18c21",
+      "ship_name": "Serenade of the Seas",
+      "departure_date": "2026-09-27",
+      "return_date": "2026-10-02",
+      "nights": 5,
+      "embarkation_source_value": "Vancouver",
+      "embarkation_source_code": "YVR",
+      "resolved_embarkation_port_id": "port-csv-113",
+      "resolved_embarkation_port_name": "Vancouver",
+      "destination_source_code": "PACIF",
+      "destination_source_name": "Pacific Northwest",
+      "resolved_destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+      "resolved_destination_slug": "pacific-coast",
+      "itinerary": "Pacific Coastal Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/5-night-pacific-coastal-cruise-from-vancouver-on-serenade-SR05R020?sailDate=2026-09-27&packageCode=SR05R020&groupId=SR05YVR-3617171363&country=USA",
+      "external_key": "d129d4f503e992331262e3bad64e310006e44ee7",
+      "identity_key": "a4770d3e7a827e9d282d5fb09d6b2d22114bdd31",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "39c9ce64-267d-45f7-a9af-800ecaf18c21",
+        "departure_date": "2026-09-27",
+        "return_date": "2026-10-02",
+        "nights": 5,
+        "departure_port": "Vancouver",
+        "departure_port_meta": {
+          "rawValue": "Vancouver",
+          "canonicalPortId": "port-csv-113",
+          "canonicalPortName": "Vancouver",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Pacific Coastal Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/5-night-pacific-coastal-cruise-from-vancouver-on-serenade-SR05R020?sailDate=2026-09-27&packageCode=SR05R020&groupId=SR05YVR-3617171363&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/5-night-pacific-coastal-cruise-from-vancouver-on-serenade-SR05R020?sailDate=2026-09-27&packageCode=SR05R020&groupId=SR05YVR-3617171363&country=USA",
+        "round_trip": false,
+        "raw_extract": {
+          "itinerary_name": "Pacific Coastal Cruise",
+          "group_id": "SR05YVR-3617171363",
+          "sailing_id": "SR05R020_2026-09-27",
+          "package_code": "SR05R020",
+          "destination_code": "PACIF",
+          "destination_name": "Pacific Northwest",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "SR",
+          "sailing_status": "OPEN",
+          "round_trip": false,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-09-27",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YVR",
+                  "name": "Vancouver",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2026-09-28",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "AST",
+                  "name": "Astoria",
+                  "arrival_time": "10:30:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "CRUISING",
+              "date": "2026-09-29",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-09-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SFO",
+                  "name": "San Francisco",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "CRUISING",
+              "date": "2026-10-01",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "PORT",
+              "date": "2026-10-02",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SAN",
+                  "name": "San Diego",
+                  "arrival_time": "07:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-09-27",
+              "code": "YVR",
+              "name": "Vancouver",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 2,
+              "date": "2026-09-28",
+              "code": "AST",
+              "name": "Astoria",
+              "arrival_time": "10:30:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-09-30",
+              "code": "SFO",
+              "name": "San Francisco",
+              "arrival_time": "08:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 6,
+              "date": "2026-10-02",
+              "code": "SAN",
+              "name": "San Diego",
+              "arrival_time": "07:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "SR05R020_2026-09-27",
+          "royal_caribbean_group_id": "SR05YVR-3617171363",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+        "destination_key": "pacific-coast",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "d129d4f503e992331262e3bad64e310006e44ee7",
+        "identity_key": "a4770d3e7a827e9d282d5fb09d6b2d22114bdd31",
+        "official_sailing_id": "SR05R020_2026-09-27"
+      },
+      "selection_reason": "diversity_priority"
+    },
+    {
+      "official_sailing_id": "OV03X039_2026-09-28",
+      "official_group_id": "OV03LAX-1965470999",
+      "package_code": "OV03X039",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "OV",
+      "resolved_ship_db_id": "841c8dc2-f60d-40bd-98c8-21226efa3a51",
+      "ship_name": "Ovation of the Seas",
+      "departure_date": "2026-09-28",
+      "return_date": "2026-10-01",
+      "nights": 3,
+      "embarkation_source_value": "Los Angeles",
+      "embarkation_source_code": "LAX",
+      "resolved_embarkation_port_id": "port-csv-117",
+      "resolved_embarkation_port_name": "Los Angeles",
+      "destination_source_code": "MEXCO",
+      "destination_source_name": "Mexico",
+      "resolved_destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+      "resolved_destination_slug": "mexican-riviera",
+      "itinerary": "Ensenada Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/3-night-ensenada-cruise-from-los-angeles-on-ovation-OV03X039?sailDate=2026-09-28&packageCode=OV03X039&groupId=OV03LAX-1965470999&country=USA",
+      "external_key": "0839e4b0cb26a5d910b1d89aa2e5945c78f22e41",
+      "identity_key": "58bf819718fbbffc8f66b6f4f439e066df1e98d9",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "841c8dc2-f60d-40bd-98c8-21226efa3a51",
+        "departure_date": "2026-09-28",
+        "return_date": "2026-10-01",
+        "nights": 3,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles",
+          "canonicalPortId": "port-csv-117",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Ensenada Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/3-night-ensenada-cruise-from-los-angeles-on-ovation-OV03X039?sailDate=2026-09-28&packageCode=OV03X039&groupId=OV03LAX-1965470999&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/3-night-ensenada-cruise-from-los-angeles-on-ovation-OV03X039?sailDate=2026-09-28&packageCode=OV03X039&groupId=OV03LAX-1965470999&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Ensenada Cruise",
+          "group_id": "OV03LAX-1965470999",
+          "sailing_id": "OV03X039_2026-09-28",
+          "package_code": "OV03X039",
+          "destination_code": "MEXCO",
+          "destination_name": "Mexico",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "OV",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-09-28",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "LAX",
+                  "name": "Los Angeles",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2026-09-29",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ESE",
+                  "name": "Ensenada",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "CRUISING",
+              "date": "2026-09-30",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-10-01",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "LAX",
+                  "name": "Los Angeles",
+                  "arrival_time": "07:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-09-28",
+              "code": "LAX",
+              "name": "Los Angeles",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 2,
+              "date": "2026-09-29",
+              "code": "ESE",
+              "name": "Ensenada",
+              "arrival_time": "08:00:00",
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-10-01",
+              "code": "LAX",
+              "name": "Los Angeles",
+              "arrival_time": "07:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 1,
+          "royal_caribbean_sailing_id": "OV03X039_2026-09-28",
+          "royal_caribbean_group_id": "OV03LAX-1965470999",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "destination_key": "mexican-riviera",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "0839e4b0cb26a5d910b1d89aa2e5945c78f22e41",
+        "identity_key": "58bf819718fbbffc8f66b6f4f439e066df1e98d9",
+        "official_sailing_id": "OV03X039_2026-09-28"
+      },
+      "selection_reason": "diversity_priority"
+    },
+    {
+      "official_sailing_id": "LB07U251_2026-10-03",
+      "official_group_id": "LB07STH-3967602409",
+      "package_code": "LB07U251",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "LB",
+      "resolved_ship_db_id": "1f45af9a-c4eb-4b2d-95b1-deb460466bc5",
+      "ship_name": "Liberty of the Seas",
+      "departure_date": "2026-10-03",
+      "return_date": "2026-10-10",
+      "nights": 7,
+      "embarkation_source_value": "Southampton",
+      "embarkation_source_code": "STH",
+      "resolved_embarkation_port_id": "port-csv-49",
+      "resolved_embarkation_port_name": "Southampton",
+      "destination_source_code": "EUROP",
+      "destination_source_name": "Europe",
+      "resolved_destination_id": "fd50d66c-3dab-4af2-abc6-fdc9b1b68cb6",
+      "resolved_destination_slug": "british-isles",
+      "itinerary": "Spain & France Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/7-night-spain-france-cruise-from-southampton-on-liberty-LB07U251?sailDate=2026-10-03&packageCode=LB07U251&groupId=LB07STH-3967602409&country=USA",
+      "external_key": "c68abf4069ada2171719a7135e6074cc08947bc5",
+      "identity_key": "992cc095bf1c77699ec17d8feb76bfead021827c",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "1f45af9a-c4eb-4b2d-95b1-deb460466bc5",
+        "departure_date": "2026-10-03",
+        "return_date": "2026-10-10",
+        "nights": 7,
+        "departure_port": "Southampton",
+        "departure_port_meta": {
+          "rawValue": "Southampton",
+          "canonicalPortId": "port-csv-49",
+          "canonicalPortName": "Southampton",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Spain & France Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-spain-france-cruise-from-southampton-on-liberty-LB07U251?sailDate=2026-10-03&packageCode=LB07U251&groupId=LB07STH-3967602409&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-spain-france-cruise-from-southampton-on-liberty-LB07U251?sailDate=2026-10-03&packageCode=LB07U251&groupId=LB07STH-3967602409&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Spain & France Cruise",
+          "group_id": "LB07STH-3967602409",
+          "sailing_id": "LB07U251_2026-10-03",
+          "package_code": "LB07U251",
+          "destination_code": "EUROP",
+          "destination_name": "Europe",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "LB",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-10-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "STH",
+                  "name": "Southampton",
+                  "arrival_time": null,
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2026-10-04",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "CER",
+                  "name": "Cherbourg",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "CRUISING",
+              "date": "2026-10-05",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-10-06",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "LCG",
+                  "name": "La Coruna",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-07",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BIL",
+                  "name": "Bilbao",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2026-10-08",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2026-10-09",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "LEH",
+                  "name": "Paris (Le Havre)",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "22:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2026-10-10",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "STH",
+                  "name": "Southampton",
+                  "arrival_time": "05:30:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-10-03",
+              "code": "STH",
+              "name": "Southampton",
+              "arrival_time": null,
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 2,
+              "date": "2026-10-04",
+              "code": "CER",
+              "name": "Cherbourg",
+              "arrival_time": "07:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-10-06",
+              "code": "LCG",
+              "name": "La Coruna",
+              "arrival_time": "07:00:00",
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-07",
+              "code": "BIL",
+              "name": "Bilbao",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2026-10-09",
+              "code": "LEH",
+              "name": "Paris (Le Havre)",
+              "arrival_time": "08:00:00",
+              "departure_time": "22:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2026-10-10",
+              "code": "STH",
+              "name": "Southampton",
+              "arrival_time": "05:30:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "LB07U251_2026-10-03",
+          "royal_caribbean_group_id": "LB07STH-3967602409",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "fd50d66c-3dab-4af2-abc6-fdc9b1b68cb6",
+        "destination_key": "british-isles",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "c68abf4069ada2171719a7135e6074cc08947bc5",
+        "identity_key": "992cc095bf1c77699ec17d8feb76bfead021827c",
+        "official_sailing_id": "LB07U251_2026-10-03"
+      },
+      "selection_reason": "diversity_priority"
+    },
+    {
+      "official_sailing_id": "AN18T049_2026-10-11",
+      "official_group_id": "AN18HNL-1660437472",
+      "package_code": "AN18T049",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "AN",
+      "resolved_ship_db_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+      "ship_name": "Anthem of the Seas",
+      "departure_date": "2026-10-11",
+      "return_date": "2026-10-30",
+      "nights": 18,
+      "embarkation_source_value": "Oahu (Honolulu)",
+      "embarkation_source_code": "HNL",
+      "resolved_embarkation_port_id": "port-csv-127",
+      "resolved_embarkation_port_name": "Honolulu",
+      "destination_source_code": "TPACI",
+      "destination_source_name": "Transpacific",
+      "resolved_destination_id": "f89a6b30-f5c3-4a70-bfc6-478955672cc2",
+      "resolved_destination_slug": "transpacific",
+      "itinerary": "Transpacific Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/18-night-transpacific-cruise-from-oahu-honolulu-on-anthem-AN18T049?sailDate=2026-10-11&packageCode=AN18T049&groupId=AN18HNL-1660437472&country=USA",
+      "external_key": "69dfc4546051411a407da8089acf468c63303358",
+      "identity_key": "850c08f46ff25eaf96bac093475a0e3c7531074c",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "e7466dfb-306d-498c-b6c7-999035f2f72c",
+        "departure_date": "2026-10-11",
+        "return_date": "2026-10-30",
+        "nights": 18,
+        "departure_port": "Honolulu",
+        "departure_port_meta": {
+          "rawValue": "Honolulu, Hawaii",
+          "canonicalPortId": "port-csv-127",
+          "canonicalPortName": "Honolulu",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": true,
+          "classification": "alias_resolved"
+        },
+        "itinerary": "Transpacific Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/18-night-transpacific-cruise-from-oahu-honolulu-on-anthem-AN18T049?sailDate=2026-10-11&packageCode=AN18T049&groupId=AN18HNL-1660437472&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/18-night-transpacific-cruise-from-oahu-honolulu-on-anthem-AN18T049?sailDate=2026-10-11&packageCode=AN18T049&groupId=AN18HNL-1660437472&country=USA",
+        "round_trip": false,
+        "raw_extract": {
+          "itinerary_name": "Transpacific Cruise",
+          "group_id": "AN18HNL-1660437472",
+          "sailing_id": "AN18T049_2026-10-11",
+          "package_code": "AN18T049",
+          "destination_code": "TPACI",
+          "destination_name": "Transpacific",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "AN",
+          "sailing_status": "OPEN",
+          "round_trip": false,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-10-11",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "HNL",
+                  "name": "Oahu (Honolulu)",
+                  "arrival_time": null,
+                  "departure_time": "19:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2026-10-12",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "CRUISING",
+              "date": "2026-10-13",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "CRUISING",
+              "date": "2026-10-14",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "CRUISING",
+              "date": "2026-10-15",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2026-10-16",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2026-10-17",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PPT",
+                  "name": "Papeete",
+                  "arrival_time": "09:30:00",
+                  "departure_time": "23:59:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2026-10-18",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "MOZ",
+                  "name": "Moorea",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 9,
+              "type": "PORT",
+              "date": "2026-10-19",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "RFP",
+                  "name": "Raiatea",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 10,
+              "type": "CRUISING",
+              "date": "2026-10-20",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 11,
+              "type": "CRUISING",
+              "date": "2026-10-21",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 12,
+              "type": "CRUISING",
+              "date": "2026-10-22",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 13,
+              "type": "CRUISING",
+              "date": "2026-10-23",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 14,
+              "type": "CRUISING_INTERNATIONAL_DATE_LINE",
+              "date": "2026-10-24",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "XID",
+                  "name": "International Dateline",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 15,
+              "type": "CRUISING",
+              "date": "2026-10-25",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 16,
+              "type": "PORT",
+              "date": "2026-10-26",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "TRG",
+                  "name": "Tauranga",
+                  "arrival_time": "08:45:00",
+                  "departure_time": "19:45:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 17,
+              "type": "CRUISING",
+              "date": "2026-10-27",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 18,
+              "type": "CRUISING",
+              "date": "2026-10-28",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 19,
+              "type": "CRUISING",
+              "date": "2026-10-29",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 20,
+              "type": "PORT",
+              "date": "2026-10-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SYD",
+                  "name": "Sydney",
+                  "arrival_time": "06:30:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-10-11",
+              "code": "HNL",
+              "name": "Oahu (Honolulu)",
+              "arrival_time": null,
+              "departure_time": "19:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2026-10-17",
+              "code": "PPT",
+              "name": "Papeete",
+              "arrival_time": "09:30:00",
+              "departure_time": "23:59:00"
+            },
+            {
+              "day": 8,
+              "date": "2026-10-18",
+              "code": "MOZ",
+              "name": "Moorea",
+              "arrival_time": "07:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 9,
+              "date": "2026-10-19",
+              "code": "RFP",
+              "name": "Raiatea",
+              "arrival_time": "07:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 14,
+              "date": "2026-10-24",
+              "code": "XID",
+              "name": "International Dateline",
+              "arrival_time": null,
+              "departure_time": null
+            },
+            {
+              "day": 16,
+              "date": "2026-10-26",
+              "code": "TRG",
+              "name": "Tauranga",
+              "arrival_time": "08:45:00",
+              "departure_time": "19:45:00"
+            },
+            {
+              "day": 20,
+              "date": "2026-10-30",
+              "code": "SYD",
+              "name": "Sydney",
+              "arrival_time": "06:30:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 13,
+          "royal_caribbean_sailing_id": "AN18T049_2026-10-11",
+          "royal_caribbean_group_id": "AN18HNL-1660437472",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "f89a6b30-f5c3-4a70-bfc6-478955672cc2",
+        "destination_key": "transpacific",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "69dfc4546051411a407da8089acf468c63303358",
+        "identity_key": "850c08f46ff25eaf96bac093475a0e3c7531074c",
+        "official_sailing_id": "AN18T049_2026-10-11"
+      },
+      "selection_reason": "diversity_priority"
+    },
+    {
+      "official_sailing_id": "NV11I018_2026-10-18",
+      "official_group_id": "NV11YOK-478781971",
+      "package_code": "NV11I018",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "NV",
+      "resolved_ship_db_id": "34ab9aaa-2ef7-42be-b749-62d569478cb1",
+      "ship_name": "Navigator of the Seas",
+      "departure_date": "2026-10-18",
+      "return_date": "2026-10-29",
+      "nights": 11,
+      "embarkation_source_value": "Tokyo (Yokohama)",
+      "embarkation_source_code": "YOK",
+      "resolved_embarkation_port_id": "port-csv-199",
+      "resolved_embarkation_port_name": "Yokohama",
+      "destination_source_code": "FAR.E",
+      "destination_source_name": "Asia",
+      "resolved_destination_id": "feb8a6e4-7d1e-4442-9f31-929263db8044",
+      "resolved_destination_slug": "japan",
+      "itinerary": "Tokyo To Singapore Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/11-night-tokyo-to-singapore-cruise-from-tokyo-yokohama-on-navigator-NV11I018?sailDate=2026-10-18&packageCode=NV11I018&groupId=NV11YOK-478781971&country=USA",
+      "external_key": "f4ea665691099004f914f58df9d1fa0dc02c8f8e",
+      "identity_key": "3301a79fa50b84e08bfa5c16b809c6870740f9d8",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "34ab9aaa-2ef7-42be-b749-62d569478cb1",
+        "departure_date": "2026-10-18",
+        "return_date": "2026-10-29",
+        "nights": 11,
+        "departure_port": "Yokohama",
+        "departure_port_meta": {
+          "rawValue": "Yokohama, Japan",
+          "canonicalPortId": "port-csv-199",
+          "canonicalPortName": "Yokohama",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": true,
+          "classification": "alias_resolved"
+        },
+        "itinerary": "Tokyo To Singapore Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/11-night-tokyo-to-singapore-cruise-from-tokyo-yokohama-on-navigator-NV11I018?sailDate=2026-10-18&packageCode=NV11I018&groupId=NV11YOK-478781971&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/11-night-tokyo-to-singapore-cruise-from-tokyo-yokohama-on-navigator-NV11I018?sailDate=2026-10-18&packageCode=NV11I018&groupId=NV11YOK-478781971&country=USA",
+        "round_trip": false,
+        "raw_extract": {
+          "itinerary_name": "Tokyo To Singapore Cruise",
+          "group_id": "NV11YOK-478781971",
+          "sailing_id": "NV11I018_2026-10-18",
+          "package_code": "NV11I018",
+          "destination_code": "FAR.E",
+          "destination_name": "Asia",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "NV",
+          "sailing_status": "OPEN",
+          "round_trip": false,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-10-18",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YOK",
+                  "name": "Tokyo (Yokohama)",
+                  "arrival_time": null,
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2026-10-19",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2026-10-20",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "NGS",
+                  "name": "Nagasaki",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "19:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-10-21",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SPO",
+                  "name": "Jeju (Seogwipo)",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "19:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "CRUISING",
+              "date": "2026-10-22",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2026-10-23",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2026-10-24",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "HKG",
+                  "name": "Hong Kong",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "23:59:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "CRUISING",
+              "date": "2026-10-25",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 9,
+              "type": "PORT",
+              "date": "2026-10-26",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "CHA",
+                  "name": "Hue / Danang (Chan May)",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "19:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 10,
+              "type": "CRUISING",
+              "date": "2026-10-27",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 11,
+              "type": "CRUISING",
+              "date": "2026-10-28",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 12,
+              "type": "PORT",
+              "date": "2026-10-29",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SIN",
+                  "name": "Singapore",
+                  "arrival_time": "07:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-10-18",
+              "code": "YOK",
+              "name": "Tokyo (Yokohama)",
+              "arrival_time": null,
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2026-10-20",
+              "code": "NGS",
+              "name": "Nagasaki",
+              "arrival_time": "08:00:00",
+              "departure_time": "19:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-10-21",
+              "code": "SPO",
+              "name": "Jeju (Seogwipo)",
+              "arrival_time": "07:00:00",
+              "departure_time": "19:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2026-10-24",
+              "code": "HKG",
+              "name": "Hong Kong",
+              "arrival_time": "07:00:00",
+              "departure_time": "23:59:00"
+            },
+            {
+              "day": 9,
+              "date": "2026-10-26",
+              "code": "CHA",
+              "name": "Hue / Danang (Chan May)",
+              "arrival_time": "07:00:00",
+              "departure_time": "19:00:00"
+            },
+            {
+              "day": 12,
+              "date": "2026-10-29",
+              "code": "SIN",
+              "name": "Singapore",
+              "arrival_time": "07:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 6,
+          "royal_caribbean_sailing_id": "NV11I018_2026-10-18",
+          "royal_caribbean_group_id": "NV11YOK-478781971",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "feb8a6e4-7d1e-4442-9f31-929263db8044",
+        "destination_key": "japan",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "f4ea665691099004f914f58df9d1fa0dc02c8f8e",
+        "identity_key": "3301a79fa50b84e08bfa5c16b809c6870740f9d8",
+        "official_sailing_id": "NV11I018_2026-10-18"
+      },
+      "selection_reason": "diversity_priority"
+    },
+    {
+      "official_sailing_id": "QN08K124_2026-10-22",
+      "official_group_id": "QN08BNE-1931446738",
+      "package_code": "QN08K125",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "QN",
+      "resolved_ship_db_id": "f1b1bb07-9cea-4636-8adf-cfa7aafd580e",
+      "ship_name": "Quantum of the Seas",
+      "departure_date": "2026-10-22",
+      "return_date": "2026-10-30",
+      "nights": 8,
+      "embarkation_source_value": "Brisbane",
+      "embarkation_source_code": "BNE",
+      "resolved_embarkation_port_id": "port-csv-167",
+      "resolved_embarkation_port_name": "Brisbane",
+      "destination_source_code": "SOPAC",
+      "destination_source_name": "South Pacific",
+      "resolved_destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+      "resolved_destination_slug": "south-pacific",
+      "itinerary": "South Pacific Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/8-night-south-pacific-cruise-from-brisbane-on-quantum-QN08K125?sailDate=2026-10-22&packageCode=QN08K124&groupId=QN08BNE-1931446738&country=USA",
+      "external_key": "d96ea1a35e9cf8d627b13d00a799dd1639fa2082",
+      "identity_key": "7db1274b4c2c3829e232469560f786bf4e1c6e90",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "f1b1bb07-9cea-4636-8adf-cfa7aafd580e",
+        "departure_date": "2026-10-22",
+        "return_date": "2026-10-30",
+        "nights": 8,
+        "departure_port": "Brisbane",
+        "departure_port_meta": {
+          "rawValue": "Brisbane",
+          "canonicalPortId": "port-csv-167",
+          "canonicalPortName": "Brisbane",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "South Pacific Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/8-night-south-pacific-cruise-from-brisbane-on-quantum-QN08K125?sailDate=2026-10-22&packageCode=QN08K124&groupId=QN08BNE-1931446738&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/8-night-south-pacific-cruise-from-brisbane-on-quantum-QN08K125?sailDate=2026-10-22&packageCode=QN08K124&groupId=QN08BNE-1931446738&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "South Pacific Cruise",
+          "group_id": "QN08BNE-1931446738",
+          "sailing_id": "QN08K124_2026-10-22",
+          "package_code": "QN08K125",
+          "destination_code": "SOPAC",
+          "destination_name": "South Pacific",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "QN",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-10-22",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BNE",
+                  "name": "Brisbane",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2026-10-23",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "CRUISING",
+              "date": "2026-10-24",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-10-25",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "NOU",
+                  "name": "Noumea",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "16:30:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-26",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "MYS",
+                  "name": "Mystery Island",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "PORT",
+              "date": "2026-10-27",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "VLI",
+                  "name": "Port Vila",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "CRUISING",
+              "date": "2026-10-28",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "CRUISING",
+              "date": "2026-10-29",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 9,
+              "type": "PORT",
+              "date": "2026-10-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BNE",
+                  "name": "Brisbane",
+                  "arrival_time": "06:30:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-10-22",
+              "code": "BNE",
+              "name": "Brisbane",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-10-25",
+              "code": "NOU",
+              "name": "Noumea",
+              "arrival_time": "07:00:00",
+              "departure_time": "16:30:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-26",
+              "code": "MYS",
+              "name": "Mystery Island",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 6,
+              "date": "2026-10-27",
+              "code": "VLI",
+              "name": "Port Vila",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 9,
+              "date": "2026-10-30",
+              "code": "BNE",
+              "name": "Brisbane",
+              "arrival_time": "06:30:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 4,
+          "royal_caribbean_sailing_id": "QN08K124_2026-10-22",
+          "royal_caribbean_group_id": "QN08BNE-1931446738",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination_key": "south-pacific",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "d96ea1a35e9cf8d627b13d00a799dd1639fa2082",
+        "identity_key": "7db1274b4c2c3829e232469560f786bf4e1c6e90",
+        "official_sailing_id": "QN08K124_2026-10-22"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "OY14T256_2026-10-25",
+      "official_group_id": "OY14ROM-3824825714",
+      "package_code": "OY14T256",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "OY",
+      "resolved_ship_db_id": "8a4ce0bc-1f5f-4749-8e5f-2d4db1fab451",
+      "ship_name": "Odyssey of the Seas",
+      "departure_date": "2026-10-25",
+      "return_date": "2026-11-08",
+      "nights": 14,
+      "embarkation_source_value": "Rome (Civitavecchia)",
+      "embarkation_source_code": "ROM",
+      "resolved_embarkation_port_id": "port-csv-19",
+      "resolved_embarkation_port_name": "Civitavecchia",
+      "destination_source_code": "T.ATL",
+      "destination_source_name": "Transatlantic",
+      "resolved_destination_id": "2573425f-e86b-4f0b-8a9f-57b28ca7672b",
+      "resolved_destination_slug": "transatlantic",
+      "itinerary": "Spain & Portugal Transatlantic",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/14-night-spain-portugal-transatlantic-from-rome-civitavecchia-on-odyssey-OY14T256?sailDate=2026-10-25&packageCode=OY14T256&groupId=OY14ROM-3824825714&country=USA",
+      "external_key": "6d187e421b061a011cb358e1d65ae3a61a3c373a",
+      "identity_key": "a1b948a3a291a542b34002897748d63eba6c2d65",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "8a4ce0bc-1f5f-4749-8e5f-2d4db1fab451",
+        "departure_date": "2026-10-25",
+        "return_date": "2026-11-08",
+        "nights": 14,
+        "departure_port": "Civitavecchia",
+        "departure_port_meta": {
+          "rawValue": "Civitavecchia (Rome), Italy",
+          "canonicalPortId": "port-csv-19",
+          "canonicalPortName": "Civitavecchia",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": true,
+          "classification": "alias_resolved"
+        },
+        "itinerary": "Spain & Portugal Transatlantic",
+        "official_url": "https://www.royalcaribbean.com/itinerary/14-night-spain-portugal-transatlantic-from-rome-civitavecchia-on-odyssey-OY14T256?sailDate=2026-10-25&packageCode=OY14T256&groupId=OY14ROM-3824825714&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/14-night-spain-portugal-transatlantic-from-rome-civitavecchia-on-odyssey-OY14T256?sailDate=2026-10-25&packageCode=OY14T256&groupId=OY14ROM-3824825714&country=USA",
+        "round_trip": false,
+        "raw_extract": {
+          "itinerary_name": "Spain & Portugal Transatlantic",
+          "group_id": "OY14ROM-3824825714",
+          "sailing_id": "OY14T256_2026-10-25",
+          "package_code": "OY14T256",
+          "destination_code": "T.ATL",
+          "destination_name": "Transatlantic",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "OY",
+          "sailing_status": "OPEN",
+          "round_trip": false,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-10-25",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ROM",
+                  "name": "Rome (Civitavecchia)",
+                  "arrival_time": null,
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2026-10-26",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "LSP",
+                  "name": "Florence / Pisa (La Spezia)",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "CRUISING",
+              "date": "2026-10-27",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-10-28",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BCN",
+                  "name": "Barcelona",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-29",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "CTS",
+                  "name": "Cartagena",
+                  "arrival_time": "11:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2026-10-30",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2026-10-31",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "LIS",
+                  "name": "Lisbon",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "CRUISING",
+              "date": "2026-11-01",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 9,
+              "type": "PORT",
+              "date": "2026-11-02",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PDL",
+                  "name": "Ponta Delgada",
+                  "arrival_time": "10:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 10,
+              "type": "CRUISING",
+              "date": "2026-11-03",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 11,
+              "type": "CRUISING",
+              "date": "2026-11-04",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 12,
+              "type": "CRUISING",
+              "date": "2026-11-05",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 13,
+              "type": "CRUISING",
+              "date": "2026-11-06",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 14,
+              "type": "CRUISING",
+              "date": "2026-11-07",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 15,
+              "type": "PORT",
+              "date": "2026-11-08",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BYE",
+                  "name": "Cape Liberty (New York)",
+                  "arrival_time": "05:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-10-25",
+              "code": "ROM",
+              "name": "Rome (Civitavecchia)",
+              "arrival_time": null,
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 2,
+              "date": "2026-10-26",
+              "code": "LSP",
+              "name": "Florence / Pisa (La Spezia)",
+              "arrival_time": "07:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-10-28",
+              "code": "BCN",
+              "name": "Barcelona",
+              "arrival_time": "07:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-29",
+              "code": "CTS",
+              "name": "Cartagena",
+              "arrival_time": "11:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2026-10-31",
+              "code": "LIS",
+              "name": "Lisbon",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 9,
+              "date": "2026-11-02",
+              "code": "PDL",
+              "name": "Ponta Delgada",
+              "arrival_time": "10:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 15,
+              "date": "2026-11-08",
+              "code": "BYE",
+              "name": "Cape Liberty (New York)",
+              "arrival_time": "05:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 8,
+          "royal_caribbean_sailing_id": "OY14T256_2026-10-25",
+          "royal_caribbean_group_id": "OY14ROM-3824825714",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "2573425f-e86b-4f0b-8a9f-57b28ca7672b",
+        "destination_key": "transatlantic",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "6d187e421b061a011cb358e1d65ae3a61a3c373a",
+        "identity_key": "a1b948a3a291a542b34002897748d63eba6c2d65",
+        "official_sailing_id": "OY14T256_2026-10-25"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "VY07A456_2027-05-07",
+      "official_group_id": "VY07SEA-2105097221",
+      "package_code": "VY07A426",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "VY",
+      "resolved_ship_db_id": "df64239d-412b-435d-a3b2-41a5ac041e1c",
+      "ship_name": "Voyager of the Seas",
+      "departure_date": "2027-05-07",
+      "return_date": "2027-05-14",
+      "nights": 7,
+      "embarkation_source_value": "Seattle",
+      "embarkation_source_code": "SEA",
+      "resolved_embarkation_port_id": "port-csv-115",
+      "resolved_embarkation_port_name": "Seattle",
+      "destination_source_code": "ALCAN",
+      "destination_source_name": "Alaska",
+      "resolved_destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "resolved_destination_slug": "alaska",
+      "itinerary": "Alaska Adventure Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-experience-cruise-from-seattle-on-voyager-VY07A426?sailDate=2027-05-07&packageCode=VY07A456&groupId=VY07SEA-2105097221&country=USA",
+      "external_key": "1a40b64fb0c3804feb46afbad4e75ae01314de08",
+      "identity_key": "edb32170d2429c44b45e960777549e35d89df8f8",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "df64239d-412b-435d-a3b2-41a5ac041e1c",
+        "departure_date": "2027-05-07",
+        "return_date": "2027-05-14",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "departure_port_meta": {
+          "rawValue": "Seattle",
+          "canonicalPortId": "port-csv-115",
+          "canonicalPortName": "Seattle",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Alaska Adventure Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-experience-cruise-from-seattle-on-voyager-VY07A426?sailDate=2027-05-07&packageCode=VY07A456&groupId=VY07SEA-2105097221&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-alaska-experience-cruise-from-seattle-on-voyager-VY07A426?sailDate=2027-05-07&packageCode=VY07A456&groupId=VY07SEA-2105097221&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Alaska Adventure Cruise",
+          "group_id": "VY07SEA-2105097221",
+          "sailing_id": "VY07A456_2027-05-07",
+          "package_code": "VY07A426",
+          "destination_code": "ALCAN",
+          "destination_name": "Alaska",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "VY",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2027-05-07",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SEA",
+                  "name": "Seattle",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2027-05-08",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2027-05-09",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "JNU",
+                  "name": "Juneau",
+                  "arrival_time": "13:00:00",
+                  "departure_time": "22:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2027-05-10",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SGY",
+                  "name": "Skagway",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2027-05-11",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SIT",
+                  "name": "Sitka",
+                  "arrival_time": "09:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2027-05-12",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2027-05-13",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YVJ",
+                  "name": "Victoria",
+                  "arrival_time": "15:00:00",
+                  "departure_time": "22:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2027-05-14",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SEA",
+                  "name": "Seattle",
+                  "arrival_time": "06:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2027-05-07",
+              "code": "SEA",
+              "name": "Seattle",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2027-05-09",
+              "code": "JNU",
+              "name": "Juneau",
+              "arrival_time": "13:00:00",
+              "departure_time": "22:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2027-05-10",
+              "code": "SGY",
+              "name": "Skagway",
+              "arrival_time": "08:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2027-05-11",
+              "code": "SIT",
+              "name": "Sitka",
+              "arrival_time": "09:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2027-05-13",
+              "code": "YVJ",
+              "name": "Victoria",
+              "arrival_time": "15:00:00",
+              "departure_time": "22:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2027-05-14",
+              "code": "SEA",
+              "name": "Seattle",
+              "arrival_time": "06:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "VY07A456_2027-05-07",
+          "royal_caribbean_group_id": "VY07SEA-2105097221",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination_key": "alaska",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "1a40b64fb0c3804feb46afbad4e75ae01314de08",
+        "identity_key": "edb32170d2429c44b45e960777549e35d89df8f8",
+        "official_sailing_id": "VY07A456_2027-05-07"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "ID04N011_2027-06-01",
+      "official_group_id": "ID04BYE-448751879",
+      "package_code": "ID04N011",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "ID",
+      "resolved_ship_db_id": "6586c133-6390-417d-b761-d78d05bf298b",
+      "ship_name": "Independence of the Seas",
+      "departure_date": "2027-06-01",
+      "return_date": "2027-06-05",
+      "nights": 4,
+      "embarkation_source_value": "Cape Liberty (New York)",
+      "embarkation_source_code": "BYE",
+      "resolved_embarkation_port_id": "port-csv-138",
+      "resolved_embarkation_port_name": "New York",
+      "destination_source_code": "ATLCO",
+      "destination_source_name": "Canada & New England",
+      "resolved_destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+      "resolved_destination_slug": "canada-new-england",
+      "itinerary": "Canada Getaway Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/4-night-canada-getaway-cruise-from-cape-liberty-new-york-on-independence-ID04N011?sailDate=2027-06-01&packageCode=ID04N011&groupId=ID04BYE-448751879&country=USA",
+      "external_key": "7028b64b460626b39edb5801960ae9c0b7792b23",
+      "identity_key": "b3806221c40bd1aead0cc1afcd33ebf21eb6f2ff",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "6586c133-6390-417d-b761-d78d05bf298b",
+        "departure_date": "2027-06-01",
+        "return_date": "2027-06-05",
+        "nights": 4,
+        "departure_port": "New York",
+        "departure_port_meta": {
+          "rawValue": "Cape Liberty (New York)",
+          "canonicalPortId": "port-csv-138",
+          "canonicalPortName": "New York",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Canada Getaway Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/4-night-canada-getaway-cruise-from-cape-liberty-new-york-on-independence-ID04N011?sailDate=2027-06-01&packageCode=ID04N011&groupId=ID04BYE-448751879&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/4-night-canada-getaway-cruise-from-cape-liberty-new-york-on-independence-ID04N011?sailDate=2027-06-01&packageCode=ID04N011&groupId=ID04BYE-448751879&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Canada Getaway Cruise",
+          "group_id": "ID04BYE-448751879",
+          "sailing_id": "ID04N011_2027-06-01",
+          "package_code": "ID04N011",
+          "destination_code": "ATLCO",
+          "destination_name": "Canada & New England",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "ID",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2027-06-01",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BYE",
+                  "name": "Cape Liberty (New York)",
+                  "arrival_time": null,
+                  "departure_time": "15:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2027-06-02",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2027-06-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "YHZ",
+                  "name": "Halifax",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "CRUISING",
+              "date": "2027-06-04",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2027-06-05",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BYE",
+                  "name": "Cape Liberty (New York)",
+                  "arrival_time": "07:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2027-06-01",
+              "code": "BYE",
+              "name": "Cape Liberty (New York)",
+              "arrival_time": null,
+              "departure_time": "15:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2027-06-03",
+              "code": "YHZ",
+              "name": "Halifax",
+              "arrival_time": "08:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2027-06-05",
+              "code": "BYE",
+              "name": "Cape Liberty (New York)",
+              "arrival_time": "07:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "ID04N011_2027-06-01",
+          "royal_caribbean_group_id": "ID04BYE-448751879",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+        "destination_key": "canada-new-england",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "7028b64b460626b39edb5801960ae9c0b7792b23",
+        "identity_key": "b3806221c40bd1aead0cc1afcd33ebf21eb6f2ff",
+        "official_sailing_id": "ID04N011_2027-06-01"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "FR07U278_2027-05-23",
+      "official_group_id": "FR07STH-845342634",
+      "package_code": "FR07U278",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "FR",
+      "resolved_ship_db_id": "ff043725-92b4-4304-a941-58af9ca4bebc",
+      "ship_name": "Freedom of the Seas",
+      "departure_date": "2027-05-23",
+      "return_date": "2027-05-30",
+      "nights": 7,
+      "embarkation_source_value": "Southampton",
+      "embarkation_source_code": "STH",
+      "resolved_embarkation_port_id": "port-csv-49",
+      "resolved_embarkation_port_name": "Southampton",
+      "destination_source_code": "EUROP",
+      "destination_source_name": "Europe",
+      "resolved_destination_id": "f8dbc013-9453-4ced-a081-11d428a5644f",
+      "resolved_destination_slug": "norwegian-fjords",
+      "itinerary": "Norwegian Fjords Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/7-night-norwegian-fjords-cruise-from-southampton-on-freedom-FR07U278?sailDate=2027-05-23&packageCode=FR07U278&groupId=FR07STH-845342634&country=USA",
+      "external_key": "542f85334701dca6b8a9aae92e3bfe89eb5c4c0a",
+      "identity_key": "6cf132bb9573e872c072131599904ea962deca22",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "ff043725-92b4-4304-a941-58af9ca4bebc",
+        "departure_date": "2027-05-23",
+        "return_date": "2027-05-30",
+        "nights": 7,
+        "departure_port": "Southampton",
+        "departure_port_meta": {
+          "rawValue": "Southampton",
+          "canonicalPortId": "port-csv-49",
+          "canonicalPortName": "Southampton",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Norwegian Fjords Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-norwegian-fjords-cruise-from-southampton-on-freedom-FR07U278?sailDate=2027-05-23&packageCode=FR07U278&groupId=FR07STH-845342634&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-norwegian-fjords-cruise-from-southampton-on-freedom-FR07U278?sailDate=2027-05-23&packageCode=FR07U278&groupId=FR07STH-845342634&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Norwegian Fjords Cruise",
+          "group_id": "FR07STH-845342634",
+          "sailing_id": "FR07U278_2027-05-23",
+          "package_code": "FR07U278",
+          "destination_code": "EUROP",
+          "destination_name": "Europe",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "FR",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2027-05-23",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "STH",
+                  "name": "Southampton",
+                  "arrival_time": null,
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2027-05-24",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2027-05-25",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SVG",
+                  "name": "Stavanger",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2027-05-26",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BGO",
+                  "name": "Bergen",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2027-05-27",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "KRS",
+                  "name": "Kristiansand",
+                  "arrival_time": "11:00:00",
+                  "departure_time": "19:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2027-05-28",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2027-05-29",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "LEH",
+                  "name": "Paris (Le Havre)",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "21:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2027-05-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "STH",
+                  "name": "Southampton",
+                  "arrival_time": "05:30:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2027-05-23",
+              "code": "STH",
+              "name": "Southampton",
+              "arrival_time": null,
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2027-05-25",
+              "code": "SVG",
+              "name": "Stavanger",
+              "arrival_time": "08:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2027-05-26",
+              "code": "BGO",
+              "name": "Bergen",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2027-05-27",
+              "code": "KRS",
+              "name": "Kristiansand",
+              "arrival_time": "11:00:00",
+              "departure_time": "19:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2027-05-29",
+              "code": "LEH",
+              "name": "Paris (Le Havre)",
+              "arrival_time": "07:00:00",
+              "departure_time": "21:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2027-05-30",
+              "code": "STH",
+              "name": "Southampton",
+              "arrival_time": "05:30:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "FR07U278_2027-05-23",
+          "royal_caribbean_group_id": "FR07STH-845342634",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "f8dbc013-9453-4ced-a081-11d428a5644f",
+        "destination_key": "norwegian-fjords",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "542f85334701dca6b8a9aae92e3bfe89eb5c4c0a",
+        "identity_key": "6cf132bb9573e872c072131599904ea962deca22",
+        "official_sailing_id": "FR07U278_2027-05-23"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "GR7IP220_2026-09-27",
+      "official_group_id": "GR07CTG-1478956324",
+      "package_code": "GR07I194",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "GR",
+      "resolved_ship_db_id": "51c02b72-fea3-47e6-95c9-7f6861ca9214",
+      "ship_name": "Grandeur of the Seas",
+      "departure_date": "2026-09-27",
+      "return_date": "2026-10-04",
+      "nights": 7,
+      "embarkation_source_value": "Cartagena",
+      "embarkation_source_code": "CTG",
+      "resolved_embarkation_port_id": "port-csv-5",
+      "resolved_embarkation_port_name": "Cartagena",
+      "destination_source_code": "CARIB",
+      "destination_source_name": "Caribbean",
+      "resolved_destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "resolved_destination_slug": "caribbean",
+      "itinerary": "Southern Caribbean  Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/7-night-southern-caribbean-cruise-from-cartagena-on-grandeur-GR07I194?sailDate=2026-09-27&packageCode=GR7IP220&groupId=GR07CTG-1478956324&country=USA",
+      "external_key": "e8c46109801a7c63bc0d49c8789a78fa1f4dc6c4",
+      "identity_key": "b18e8d853772051b3f6f823b94855a026d7dac71",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "51c02b72-fea3-47e6-95c9-7f6861ca9214",
+        "departure_date": "2026-09-27",
+        "return_date": "2026-10-04",
+        "nights": 7,
+        "departure_port": "Cartagena",
+        "departure_port_meta": {
+          "rawValue": "Cartagena",
+          "canonicalPortId": "port-csv-5",
+          "canonicalPortName": "Cartagena",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Southern Caribbean  Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-southern-caribbean-cruise-from-cartagena-on-grandeur-GR07I194?sailDate=2026-09-27&packageCode=GR7IP220&groupId=GR07CTG-1478956324&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-southern-caribbean-cruise-from-cartagena-on-grandeur-GR07I194?sailDate=2026-09-27&packageCode=GR7IP220&groupId=GR07CTG-1478956324&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Southern Caribbean  Cruise",
+          "group_id": "GR07CTG-1478956324",
+          "sailing_id": "GR7IP220_2026-09-27",
+          "package_code": "GR07I194",
+          "destination_code": "CARIB",
+          "destination_name": "Caribbean",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "GR",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-09-27",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "CTG",
+                  "name": "Cartagena",
+                  "arrival_time": null,
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2026-09-28",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2026-09-29",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "AUA",
+                  "name": "Oranjestad",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "23:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-09-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "CUR",
+                  "name": "Willemstad",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "CRUISING",
+              "date": "2026-10-01",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2026-10-02",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2026-10-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ONX",
+                  "name": "Colón",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2026-10-04",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "CTG",
+                  "name": "Cartagena",
+                  "arrival_time": "09:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-09-27",
+              "code": "CTG",
+              "name": "Cartagena",
+              "arrival_time": null,
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2026-09-29",
+              "code": "AUA",
+              "name": "Oranjestad",
+              "arrival_time": "08:00:00",
+              "departure_time": "23:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-09-30",
+              "code": "CUR",
+              "name": "Willemstad",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2026-10-03",
+              "code": "ONX",
+              "name": "Colón",
+              "arrival_time": "07:00:00",
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2026-10-04",
+              "code": "CTG",
+              "name": "Cartagena",
+              "arrival_time": "09:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 3,
+          "royal_caribbean_sailing_id": "GR7IP220_2026-09-27",
+          "royal_caribbean_group_id": "GR07CTG-1478956324",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "destination_key": "caribbean",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "e8c46109801a7c63bc0d49c8789a78fa1f4dc6c4",
+        "identity_key": "b18e8d853772051b3f6f823b94855a026d7dac71",
+        "official_sailing_id": "GR7IP220_2026-09-27"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "ST07E488_2026-09-27",
+      "official_group_id": "ST07PCN-3146499623",
+      "package_code": "ST07E488",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "ST",
+      "resolved_ship_db_id": "43ac6966-22ac-4b43-b901-27a3cf31ee58",
+      "ship_name": "Star of the Seas",
+      "departure_date": "2026-09-27",
+      "return_date": "2026-10-04",
+      "nights": 7,
+      "embarkation_source_value": "Orlando (Port Canaveral)",
+      "embarkation_source_code": "PCN",
+      "resolved_embarkation_port_id": "port-csv-85",
+      "resolved_embarkation_port_name": "Port Canaveral",
+      "destination_source_code": "CARIB",
+      "destination_source_name": "Caribbean",
+      "resolved_destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "resolved_destination_slug": "caribbean",
+      "itinerary": "Eastern Caribbean & Perfect Day",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/7-night-eastern-caribbean-perfect-day-from-orlando-port-canaveral-on-star-ST07E488?sailDate=2026-09-27&packageCode=ST07E488&groupId=ST07PCN-3146499623&country=USA",
+      "external_key": "4fc4d6eaec44aaa44fb9039787ed604c305c85b6",
+      "identity_key": "c155896a30904ce027f2134f2e499d8537be2453",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "43ac6966-22ac-4b43-b901-27a3cf31ee58",
+        "departure_date": "2026-09-27",
+        "return_date": "2026-10-04",
+        "nights": 7,
+        "departure_port": "Port Canaveral",
+        "departure_port_meta": {
+          "rawValue": "Port Canaveral (Orlando), Florida",
+          "canonicalPortId": "port-csv-85",
+          "canonicalPortName": "Port Canaveral",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": true,
+          "classification": "alias_resolved"
+        },
+        "itinerary": "Eastern Caribbean & Perfect Day",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-eastern-caribbean-perfect-day-from-orlando-port-canaveral-on-star-ST07E488?sailDate=2026-09-27&packageCode=ST07E488&groupId=ST07PCN-3146499623&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-eastern-caribbean-perfect-day-from-orlando-port-canaveral-on-star-ST07E488?sailDate=2026-09-27&packageCode=ST07E488&groupId=ST07PCN-3146499623&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Eastern Caribbean & Perfect Day",
+          "group_id": "ST07PCN-3146499623",
+          "sailing_id": "ST07E488_2026-09-27",
+          "package_code": "ST07E488",
+          "destination_code": "CARIB",
+          "destination_name": "Caribbean",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "ST",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-09-27",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PCN",
+                  "name": "Orlando (Port Canaveral)",
+                  "arrival_time": null,
+                  "departure_time": "16:30:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2026-09-28",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PCC",
+                  "name": "Perfect Day CocoCay",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "CRUISING",
+              "date": "2026-09-29",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-09-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "STT",
+                  "name": "Charlotte Amalie",
+                  "arrival_time": "12:30:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-01",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SKB",
+                  "name": "Basseterre",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2026-10-02",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "CRUISING",
+              "date": "2026-10-03",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2026-10-04",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PCN",
+                  "name": "Orlando (Port Canaveral)",
+                  "arrival_time": "06:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-09-27",
+              "code": "PCN",
+              "name": "Orlando (Port Canaveral)",
+              "arrival_time": null,
+              "departure_time": "16:30:00"
+            },
+            {
+              "day": 2,
+              "date": "2026-09-28",
+              "code": "PCC",
+              "name": "Perfect Day CocoCay",
+              "arrival_time": "07:00:00",
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-09-30",
+              "code": "STT",
+              "name": "Charlotte Amalie",
+              "arrival_time": "12:30:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-01",
+              "code": "SKB",
+              "name": "Basseterre",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2026-10-04",
+              "code": "PCN",
+              "name": "Orlando (Port Canaveral)",
+              "arrival_time": "06:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 3,
+          "royal_caribbean_sailing_id": "ST07E488_2026-09-27",
+          "royal_caribbean_group_id": "ST07PCN-3146499623",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "destination_key": "caribbean",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "4fc4d6eaec44aaa44fb9039787ed604c305c85b6",
+        "identity_key": "c155896a30904ce027f2134f2e499d8537be2453",
+        "official_sailing_id": "ST07E488_2026-09-27"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "MA05W678_2026-09-28",
+      "official_group_id": "MA05GAL-2956042404",
+      "package_code": "MA05W679",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "MA",
+      "resolved_ship_db_id": "d561a315-1fe9-4d74-ae25-05aa5616866c",
+      "ship_name": "Mariner of the Seas",
+      "departure_date": "2026-09-28",
+      "return_date": "2026-10-03",
+      "nights": 5,
+      "embarkation_source_value": "Galveston",
+      "embarkation_source_code": "GAL",
+      "resolved_embarkation_port_id": "port-csv-88",
+      "resolved_embarkation_port_name": "Galveston",
+      "destination_source_code": "CARIB",
+      "destination_source_name": "Caribbean",
+      "resolved_destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "resolved_destination_slug": "caribbean",
+      "itinerary": "Western Caribbean Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/5-night-western-caribbean-cruise-from-galveston-on-mariner-MA05W679?sailDate=2026-09-28&packageCode=MA05W678&groupId=MA05GAL-2956042404&country=USA",
+      "external_key": "f0ecb50cbf650562a85bddd7966fa2f35be7f862",
+      "identity_key": "39ae33d2f3762439c85088e20960dcec35000662",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "d561a315-1fe9-4d74-ae25-05aa5616866c",
+        "departure_date": "2026-09-28",
+        "return_date": "2026-10-03",
+        "nights": 5,
+        "departure_port": "Galveston",
+        "departure_port_meta": {
+          "rawValue": "Galveston",
+          "canonicalPortId": "port-csv-88",
+          "canonicalPortName": "Galveston",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Western Caribbean Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/5-night-western-caribbean-cruise-from-galveston-on-mariner-MA05W679?sailDate=2026-09-28&packageCode=MA05W678&groupId=MA05GAL-2956042404&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/5-night-western-caribbean-cruise-from-galveston-on-mariner-MA05W679?sailDate=2026-09-28&packageCode=MA05W678&groupId=MA05GAL-2956042404&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Western Caribbean Cruise",
+          "group_id": "MA05GAL-2956042404",
+          "sailing_id": "MA05W678_2026-09-28",
+          "package_code": "MA05W679",
+          "destination_code": "CARIB",
+          "destination_name": "Caribbean",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "MA",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-09-28",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "GAL",
+                  "name": "Galveston",
+                  "arrival_time": null,
+                  "departure_time": "15:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2026-09-29",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2026-09-30",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "CMM",
+                  "name": "Puerto Costa Maya",
+                  "arrival_time": "11:59:00",
+                  "departure_time": "19:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-10-01",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "CZM",
+                  "name": "Cozumel",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "CRUISING",
+              "date": "2026-10-02",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "PORT",
+              "date": "2026-10-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "GAL",
+                  "name": "Galveston",
+                  "arrival_time": "07:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-09-28",
+              "code": "GAL",
+              "name": "Galveston",
+              "arrival_time": null,
+              "departure_time": "15:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2026-09-30",
+              "code": "CMM",
+              "name": "Puerto Costa Maya",
+              "arrival_time": "11:59:00",
+              "departure_time": "19:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-10-01",
+              "code": "CZM",
+              "name": "Cozumel",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 6,
+              "date": "2026-10-03",
+              "code": "GAL",
+              "name": "Galveston",
+              "arrival_time": "07:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "MA05W678_2026-09-28",
+          "royal_caribbean_group_id": "MA05GAL-2956042404",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "destination_key": "caribbean",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "f0ecb50cbf650562a85bddd7966fa2f35be7f862",
+        "identity_key": "39ae33d2f3762439c85088e20960dcec35000662",
+        "official_sailing_id": "MA05W678_2026-09-28"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "WN4BH351_2026-09-28",
+      "official_group_id": "WN04MIA-1040267344",
+      "package_code": "WN4BH349",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "WN",
+      "resolved_ship_db_id": "6d8b4849-77af-4b7a-9e05-af96d136d529",
+      "ship_name": "Wonder of the Seas",
+      "departure_date": "2026-09-28",
+      "return_date": "2026-10-02",
+      "nights": 4,
+      "embarkation_source_value": "Miami",
+      "embarkation_source_code": "MIA",
+      "resolved_embarkation_port_id": "port-csv-83",
+      "resolved_embarkation_port_name": "Miami",
+      "destination_source_code": "BAHAM",
+      "destination_source_name": "Bahamas",
+      "resolved_destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "resolved_destination_slug": "caribbean",
+      "itinerary": "Perfect Day CocoCay & Bahamas",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/4-night-bahamas-perfect-day-cruise-from-miami-on-wonder-WN4BH349?sailDate=2026-09-28&packageCode=WN4BH351&groupId=WN04MIA-1040267344&country=USA",
+      "external_key": "7fef5d78bb7c1b57d4109f367f66a99360511cd2",
+      "identity_key": "2b707ab0b7ecca63e09e706da6c2408365fba15c",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "6d8b4849-77af-4b7a-9e05-af96d136d529",
+        "departure_date": "2026-09-28",
+        "return_date": "2026-10-02",
+        "nights": 4,
+        "departure_port": "Miami",
+        "departure_port_meta": {
+          "rawValue": "Miami",
+          "canonicalPortId": "port-csv-83",
+          "canonicalPortName": "Miami",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Perfect Day CocoCay & Bahamas",
+        "official_url": "https://www.royalcaribbean.com/itinerary/4-night-bahamas-perfect-day-cruise-from-miami-on-wonder-WN4BH349?sailDate=2026-09-28&packageCode=WN4BH351&groupId=WN04MIA-1040267344&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/4-night-bahamas-perfect-day-cruise-from-miami-on-wonder-WN4BH349?sailDate=2026-09-28&packageCode=WN4BH351&groupId=WN04MIA-1040267344&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Perfect Day CocoCay & Bahamas",
+          "group_id": "WN04MIA-1040267344",
+          "sailing_id": "WN4BH351_2026-09-28",
+          "package_code": "WN4BH349",
+          "destination_code": "BAHAM",
+          "destination_name": "Bahamas",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "WN",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-09-28",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "MIA",
+                  "name": "Miami",
+                  "arrival_time": null,
+                  "departure_time": "16:30:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2026-09-29",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "PCC",
+                  "name": "Perfect Day CocoCay",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "CRUISING",
+              "date": "2026-09-30",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-10-01",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "NAS",
+                  "name": "Nassau",
+                  "arrival_time": "07:30:00",
+                  "departure_time": "17:30:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-02",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "MIA",
+                  "name": "Miami",
+                  "arrival_time": "06:30:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-09-28",
+              "code": "MIA",
+              "name": "Miami",
+              "arrival_time": null,
+              "departure_time": "16:30:00"
+            },
+            {
+              "day": 2,
+              "date": "2026-09-29",
+              "code": "PCC",
+              "name": "Perfect Day CocoCay",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-10-01",
+              "code": "NAS",
+              "name": "Nassau",
+              "arrival_time": "07:30:00",
+              "departure_time": "17:30:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-02",
+              "code": "MIA",
+              "name": "Miami",
+              "arrival_time": "06:30:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 1,
+          "royal_caribbean_sailing_id": "WN4BH351_2026-09-28",
+          "royal_caribbean_group_id": "WN04MIA-1040267344",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "destination_key": "caribbean",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "7fef5d78bb7c1b57d4109f367f66a99360511cd2",
+        "identity_key": "2b707ab0b7ecca63e09e706da6c2408365fba15c",
+        "official_sailing_id": "WN4BH351_2026-09-28"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "RD04W214_2026-10-01",
+      "official_group_id": "RD04TPA-3250546435",
+      "package_code": "RD04W214",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "RD",
+      "resolved_ship_db_id": "136dd517-ff7f-4f5e-be56-d403371f04c8",
+      "ship_name": "Radiance of the Seas",
+      "departure_date": "2026-10-01",
+      "return_date": "2026-10-05",
+      "nights": 4,
+      "embarkation_source_value": "Tampa",
+      "embarkation_source_code": "TPA",
+      "resolved_embarkation_port_id": "port-csv-86",
+      "resolved_embarkation_port_name": "Tampa",
+      "destination_source_code": "CARIB",
+      "destination_source_name": "Caribbean",
+      "resolved_destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "resolved_destination_slug": "caribbean",
+      "itinerary": "Western Caribbean Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/4-night-western-caribbean-cruise-from-tampa-on-radiance-RD04W214?sailDate=2026-10-01&packageCode=RD04W214&groupId=RD04TPA-3250546435&country=USA",
+      "external_key": "fa657c86cdf98d172ec91b07ec1b9c8a73ca5044",
+      "identity_key": "f2da8edd3d6fba42269016d55e9ec61c0d757326",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "136dd517-ff7f-4f5e-be56-d403371f04c8",
+        "departure_date": "2026-10-01",
+        "return_date": "2026-10-05",
+        "nights": 4,
+        "departure_port": "Tampa",
+        "departure_port_meta": {
+          "rawValue": "Tampa",
+          "canonicalPortId": "port-csv-86",
+          "canonicalPortName": "Tampa",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Western Caribbean Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/4-night-western-caribbean-cruise-from-tampa-on-radiance-RD04W214?sailDate=2026-10-01&packageCode=RD04W214&groupId=RD04TPA-3250546435&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/4-night-western-caribbean-cruise-from-tampa-on-radiance-RD04W214?sailDate=2026-10-01&packageCode=RD04W214&groupId=RD04TPA-3250546435&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Western Caribbean Cruise",
+          "group_id": "RD04TPA-3250546435",
+          "sailing_id": "RD04W214_2026-10-01",
+          "package_code": "RD04W214",
+          "destination_code": "CARIB",
+          "destination_name": "Caribbean",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "RD",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-10-01",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "TPA",
+                  "name": "Tampa",
+                  "arrival_time": null,
+                  "departure_time": "16:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2026-10-02",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2026-10-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "CZM",
+                  "name": "Cozumel",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "CRUISING",
+              "date": "2026-10-04",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-05",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "TPA",
+                  "name": "Tampa",
+                  "arrival_time": "07:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-10-01",
+              "code": "TPA",
+              "name": "Tampa",
+              "arrival_time": null,
+              "departure_time": "16:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2026-10-03",
+              "code": "CZM",
+              "name": "Cozumel",
+              "arrival_time": "07:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-05",
+              "code": "TPA",
+              "name": "Tampa",
+              "arrival_time": "07:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "RD04W214_2026-10-01",
+          "royal_caribbean_group_id": "RD04TPA-3250546435",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "destination_key": "caribbean",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "fa657c86cdf98d172ec91b07ec1b9c8a73ca5044",
+        "identity_key": "f2da8edd3d6fba42269016d55e9ec61c0d757326",
+        "official_sailing_id": "RD04W214_2026-10-01"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "EX07M806_2026-10-03",
+      "official_group_id": "EX07BLQ-2504783051",
+      "package_code": "EX07M806",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "EX",
+      "resolved_ship_db_id": "a5d369bd-7667-4b47-963b-c9355f41ef3e",
+      "ship_name": "Explorer of the Seas",
+      "departure_date": "2026-10-03",
+      "return_date": "2026-10-10",
+      "nights": 7,
+      "embarkation_source_value": "Ravenna (Venice)",
+      "embarkation_source_code": "BLQ",
+      "resolved_embarkation_port_id": "port-csv-34",
+      "resolved_embarkation_port_name": "Ravenna",
+      "destination_source_code": "EUROP",
+      "destination_source_name": "Europe",
+      "resolved_destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+      "resolved_destination_slug": "mediterranean",
+      "itinerary": "Greek Isles Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/7-night-greek-isles-cruise-from-ravenna-venice-on-explorer-EX07M806?sailDate=2026-10-03&packageCode=EX07M806&groupId=EX07BLQ-2504783051&country=USA",
+      "external_key": "971951a6a0da176f3031467301fdf8092479e1b5",
+      "identity_key": "4be6c4778f6d44f7deda134fb2e2d5726f60c922",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "a5d369bd-7667-4b47-963b-c9355f41ef3e",
+        "departure_date": "2026-10-03",
+        "return_date": "2026-10-10",
+        "nights": 7,
+        "departure_port": "Ravenna",
+        "departure_port_meta": {
+          "rawValue": "Ravenna, Italy",
+          "canonicalPortId": "port-csv-34",
+          "canonicalPortName": "Ravenna",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": true,
+          "classification": "alias_resolved"
+        },
+        "itinerary": "Greek Isles Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-greek-isles-cruise-from-ravenna-venice-on-explorer-EX07M806?sailDate=2026-10-03&packageCode=EX07M806&groupId=EX07BLQ-2504783051&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-greek-isles-cruise-from-ravenna-venice-on-explorer-EX07M806?sailDate=2026-10-03&packageCode=EX07M806&groupId=EX07BLQ-2504783051&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Greek Isles Cruise",
+          "group_id": "EX07BLQ-2504783051",
+          "sailing_id": "EX07M806_2026-10-03",
+          "package_code": "EX07M806",
+          "destination_code": "EUROP",
+          "destination_name": "Europe",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "EX",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-10-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BLQ",
+                  "name": "Ravenna (Venice)",
+                  "arrival_time": null,
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "CRUISING",
+              "date": "2026-10-04",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2026-10-05",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "JTR",
+                  "name": "Santorini",
+                  "arrival_time": "13:30:00",
+                  "departure_time": "23:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-10-06",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ATH",
+                  "name": "Athens (Piraeus)",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "20:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-07",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "JMK",
+                  "name": "Mykonos",
+                  "arrival_time": "07:00:00",
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "CRUISING",
+              "date": "2026-10-08",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "PORT",
+              "date": "2026-10-09",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SPU",
+                  "name": "Split",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2026-10-10",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "BLQ",
+                  "name": "Ravenna (Venice)",
+                  "arrival_time": "06:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-10-03",
+              "code": "BLQ",
+              "name": "Ravenna (Venice)",
+              "arrival_time": null,
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2026-10-05",
+              "code": "JTR",
+              "name": "Santorini",
+              "arrival_time": "13:30:00",
+              "departure_time": "23:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-10-06",
+              "code": "ATH",
+              "name": "Athens (Piraeus)",
+              "arrival_time": "08:00:00",
+              "departure_time": "20:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-07",
+              "code": "JMK",
+              "name": "Mykonos",
+              "arrival_time": "07:00:00",
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 7,
+              "date": "2026-10-09",
+              "code": "SPU",
+              "name": "Split",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2026-10-10",
+              "code": "BLQ",
+              "name": "Ravenna (Venice)",
+              "arrival_time": "06:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 2,
+          "royal_caribbean_sailing_id": "EX07M806_2026-10-03",
+          "royal_caribbean_group_id": "EX07BLQ-2504783051",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "destination_key": "mediterranean",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "971951a6a0da176f3031467301fdf8092479e1b5",
+        "identity_key": "4be6c4778f6d44f7deda134fb2e2d5726f60c922",
+        "official_sailing_id": "EX07M806_2026-10-03"
+      },
+      "selection_reason": "deterministic_fill"
+    },
+    {
+      "official_sailing_id": "RH07D516_2026-10-03",
+      "official_group_id": "RH07SJU-1321850013",
+      "package_code": "RH07D525",
+      "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+      "source_ship_code": "RH",
+      "resolved_ship_db_id": "1ba66416-82c3-410c-8810-af379e226c8b",
+      "ship_name": "Rhapsody of the Seas",
+      "departure_date": "2026-10-03",
+      "return_date": "2026-10-10",
+      "nights": 7,
+      "embarkation_source_value": "San Juan",
+      "embarkation_source_code": "SJU",
+      "resolved_embarkation_port_id": "port-csv-89",
+      "resolved_embarkation_port_name": "San Juan",
+      "destination_source_code": "CARIB",
+      "destination_source_name": "Caribbean",
+      "resolved_destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "resolved_destination_slug": "caribbean",
+      "itinerary": "Southern Caribbean Cruise",
+      "source_status": "OPEN",
+      "booking_url": "https://www.royalcaribbean.com/itinerary/7-night-southern-caribbean-cruise-from-san-juan-on-rhapsody-RH07D525?sailDate=2026-10-03&packageCode=RH07D516&groupId=RH07SJU-1321850013&country=USA",
+      "external_key": "b57e55ff7b8b61cbe5181304131212284db88050",
+      "identity_key": "bc6fba3936b9ec9ae8bd1b86fd152afac54d5a7f",
+      "proposed_action": "insert_active",
+      "candidate": {
+        "cruise_line_id": "1cea3c83-5fd5-41d0-b5f7-4026fee00ab5",
+        "ship_id": "1ba66416-82c3-410c-8810-af379e226c8b",
+        "departure_date": "2026-10-03",
+        "return_date": "2026-10-10",
+        "nights": 7,
+        "departure_port": "San Juan",
+        "departure_port_meta": {
+          "rawValue": "San Juan",
+          "canonicalPortId": "port-csv-89",
+          "canonicalPortName": "San Juan",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "royal_caribbean_graphql",
+          "adapter_alias": false,
+          "classification": "exact_resolved"
+        },
+        "itinerary": "Southern Caribbean Cruise",
+        "official_url": "https://www.royalcaribbean.com/itinerary/7-night-southern-caribbean-cruise-from-san-juan-on-rhapsody-RH07D525?sailDate=2026-10-03&packageCode=RH07D516&groupId=RH07SJU-1321850013&country=USA",
+        "source_url": "https://www.royalcaribbean.com/itinerary/7-night-southern-caribbean-cruise-from-san-juan-on-rhapsody-RH07D525?sailDate=2026-10-03&packageCode=RH07D516&groupId=RH07SJU-1321850013&country=USA",
+        "round_trip": true,
+        "raw_extract": {
+          "itinerary_name": "Southern Caribbean Cruise",
+          "group_id": "RH07SJU-1321850013",
+          "sailing_id": "RH07D516_2026-10-03",
+          "package_code": "RH07D525",
+          "destination_code": "CARIB",
+          "destination_name": "Caribbean",
+          "structured_source": "royal_caribbean_graphql",
+          "voyage_type": "OCEAN",
+          "ship_code": "RH",
+          "sailing_status": "OPEN",
+          "round_trip": true,
+          "itinerary_days": [
+            {
+              "number": 1,
+              "type": "PORT",
+              "date": "2026-10-03",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SJU",
+                  "name": "San Juan",
+                  "arrival_time": null,
+                  "departure_time": "18:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 2,
+              "type": "PORT",
+              "date": "2026-10-04",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "STT",
+                  "name": "Charlotte Amalie",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 3,
+              "type": "PORT",
+              "date": "2026-10-05",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SXM",
+                  "name": "Philipsburg",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 4,
+              "type": "PORT",
+              "date": "2026-10-06",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "STX",
+                  "name": "St. Croix",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 5,
+              "type": "PORT",
+              "date": "2026-10-07",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ANU",
+                  "name": "St. John's",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 6,
+              "type": "PORT",
+              "date": "2026-10-08",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "ROS",
+                  "name": "Roseau",
+                  "arrival_time": "08:00:00",
+                  "departure_time": "17:00:00",
+                  "sea_day": false
+                }
+              ]
+            },
+            {
+              "number": 7,
+              "type": "CRUISING",
+              "date": "2026-10-09",
+              "sea_day": true,
+              "ports": [
+                {
+                  "code": "CRU",
+                  "name": "Cruising",
+                  "arrival_time": null,
+                  "departure_time": null,
+                  "sea_day": true
+                }
+              ]
+            },
+            {
+              "number": 8,
+              "type": "PORT",
+              "date": "2026-10-10",
+              "sea_day": false,
+              "ports": [
+                {
+                  "code": "SJU",
+                  "name": "San Juan",
+                  "arrival_time": "06:00:00",
+                  "departure_time": null,
+                  "sea_day": false
+                }
+              ]
+            }
+          ],
+          "itinerary_ports": [
+            {
+              "day": 1,
+              "date": "2026-10-03",
+              "code": "SJU",
+              "name": "San Juan",
+              "arrival_time": null,
+              "departure_time": "18:00:00"
+            },
+            {
+              "day": 2,
+              "date": "2026-10-04",
+              "code": "STT",
+              "name": "Charlotte Amalie",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 3,
+              "date": "2026-10-05",
+              "code": "SXM",
+              "name": "Philipsburg",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 4,
+              "date": "2026-10-06",
+              "code": "STX",
+              "name": "St. Croix",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 5,
+              "date": "2026-10-07",
+              "code": "ANU",
+              "name": "St. John's",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 6,
+              "date": "2026-10-08",
+              "code": "ROS",
+              "name": "Roseau",
+              "arrival_time": "08:00:00",
+              "departure_time": "17:00:00"
+            },
+            {
+              "day": 8,
+              "date": "2026-10-10",
+              "code": "SJU",
+              "name": "San Juan",
+              "arrival_time": "06:00:00",
+              "departure_time": null
+            }
+          ],
+          "overnight_stays": [],
+          "sea_day_count": 1,
+          "royal_caribbean_sailing_id": "RH07D516_2026-10-03",
+          "royal_caribbean_group_id": "RH07SJU-1321850013",
+          "royal_caribbean_product_type": "ocean_cruise",
+          "royal_caribbean_adapter_id": "royal-caribbean",
+          "royal_caribbean_adapter_version": "2026-08-13.royal2-dryrun"
+        },
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "destination_key": "caribbean",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "b57e55ff7b8b61cbe5181304131212284db88050",
+        "identity_key": "bc6fba3936b9ec9ae8bd1b86fd152afac54d5a7f",
+        "official_sailing_id": "RH07D516_2026-10-03"
+      },
+      "selection_reason": "deterministic_fill"
+    }
+  ],
+  "manifest_hash": "06038b5a3277eb13712929ee31ce7f8038303d06c6ea4a6bd75d7d2c6ca97cfb"
+}
