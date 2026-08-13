@@ -55,7 +55,8 @@
   ]
 
 [functions."seabourn-weekly-maintenance-cron"]
-  # Seabourn weekly launcher — dispatches to background worker (schedule after Prompt 7A).
+  # Seabourn weekly launcher — Sunday 22:00 UTC / Monday 06:00 Perth.
+  schedule = "0 22 * * 0"
   timeout = 26
 
 [functions."seabourn-weekly-maintenance-background"]

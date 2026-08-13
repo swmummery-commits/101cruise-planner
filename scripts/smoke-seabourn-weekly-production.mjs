@@ -48,18 +48,22 @@ async function resolveSecret() {
   return "";
 }
 
-async function pollMaintenanceRun({ dispatchId, timeoutMs = 900000 }) {
+async function pollMaintenanceRun({ dispatchId, startedAfter, timeoutMs = 900000 }) {
   const { createMaintenanceSupabase } = require("./lib/supabase-rest.cjs");
   const sb = createMaintenanceSupabase(root);
   const line = (await sb("ci_cruise_lines?slug=eq.seabourn-cruise-line&select=id&limit=1"))[0];
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     const runs = await sb(
-      `cruise_discovery_runs?cruise_line_id=eq.${line.id}&scope=eq.cruise_line&order=created_at.desc&limit=5&select=id,status,stats,finished_at,created_at`
+      `cruise_discovery_runs?cruise_line_id=eq.${line.id}&scope=eq.cruise_line&order=created_at.desc&limit=10&select=id,status,stats,finished_at,created_at`
     );
-    const match =
-      (runs || []).find((r) => r.stats?.dispatch_id === dispatchId) ||
-      (runs || []).find((r) => r.stats?.run_type === "seabourn_weekly_maintenance");
+    const match = (runs || []).find((r) => {
+      const created = new Date(r.created_at).getTime();
+      if (Number.isFinite(startedAfter) && created <= startedAfter) return false;
+      if (r.stats?.run_type !== "seabourn_weekly_maintenance") return false;
+      if (dispatchId && r.stats?.dispatch_id === dispatchId) return true;
+      return Number.isFinite(startedAfter) && created > startedAfter;
+    });
     if (match?.status === "completed" || match?.status === "failed") {
       return match;
     }
@@ -107,7 +111,10 @@ async function main() {
   let maintenanceRun = null;
   let summary = body.summary || {};
   if (response.status === 202 && body.dispatch_id) {
-    maintenanceRun = await pollMaintenanceRun({ dispatchId: body.dispatch_id });
+    maintenanceRun = await pollMaintenanceRun({
+      dispatchId: body.dispatch_id,
+      startedAfter: started - 5000
+    });
     summary = maintenanceRun?.stats || summary;
   }
 
@@ -129,9 +136,9 @@ async function main() {
     writes_performed: writesPerformed,
     num_found: summary.official_source_total ?? null,
     eligible_total: summary.eligible_total ?? null,
-    recognised_existing_eligible: summary.recognised_existing_eligible ?? null,
-    outstanding_eligible_inserts: summary.outstanding_eligible_inserts ?? null,
-    source_absent_observed: summary.source_absent_observed ?? null,
+    recognised_existing_eligible: summary.recognised_existing_eligible ?? summary.unchanged ?? null,
+    outstanding_eligible_inserts: summary.outstanding_eligible_inserts ?? summary.proposed_inserts ?? null,
+    source_absent_observed: summary.source_absent_observed ?? summary.source_absent_active ?? null,
     source_absent_actionable: summary.source_absent_actionable ?? null,
     proposed_updates: summary.proposed_updates ?? null,
     proposed_updates_identity_review: summary.proposed_updates_identity_review ?? null,

@@ -163,6 +163,7 @@ async function runSeabournWeeklyBackgroundMaintenance({
 
   return {
     ...result,
+    summary: { ...(result.summary || {}), dispatch_id: dispatchId },
     writes_performed: writesPerformed,
     dry_run: dryRun === true,
     dispatch_id: dispatchId,

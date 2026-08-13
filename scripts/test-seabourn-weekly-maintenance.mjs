@@ -428,14 +428,17 @@ test("31. ports catalogue contains new canonical entries", () => {
 
 /* -------------------------------------------------------- shared wiring */
 
-test("32. Seabourn schedule is registered but not cron-enabled", () => {
+test("32. Seabourn schedule is registered and cron-enabled", () => {
   const schedule = maintenance.MAINTENANCE_SCHEDULES.seabourn_weekly;
   if (!schedule) throw new Error("missing schedule entry");
-  if (schedule.schedule_registered !== false) throw new Error("Seabourn must not be scheduled yet");
+  if (schedule.schedule_registered !== true) throw new Error("Seabourn schedule must be registered after Prompt 7A");
   if (schedule.function !== "seabourn-weekly-maintenance-cron") throw new Error(schedule.function);
   if (schedule.background_function !== "seabourn-weekly-maintenance-background") {
     throw new Error("missing background function");
   }
+  const toml = fs.readFileSync(path.join(root, "netlify.toml"), "utf8");
+  if (!toml.includes('[functions."seabourn-weekly-maintenance-cron"]')) throw new Error("missing cron fn");
+  if (!toml.includes('schedule = "0 22 * * 0"')) throw new Error("missing seabourn schedule line");
 });
 
 test("33. Seabourn lock key wired", () => {
