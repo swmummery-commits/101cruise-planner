@@ -1,0 +1,202 @@
+{
+  "mode": "apply",
+  "generated_at": "2026-08-13T01:40:37.231Z",
+  "writes": [
+    {
+      "table": "ports",
+      "action": "insert",
+      "before": null,
+      "after": {
+        "id": "8fa74a5a-5f80-4f99-8870-5aabfd15c44b",
+        "canonical_name": "Great Stirrup Cay",
+        "display_name": "Great Stirrup Cay, Bahamas",
+        "city": "Great Stirrup Cay",
+        "country": "Bahamas",
+        "country_code": "BS",
+        "region": "Bahamas",
+        "latitude": 25.817,
+        "longitude": -77.913,
+        "aliases": [
+          "NCL Great Stirrup Cay",
+          "Great Stirrup Cay Bahamas"
+        ],
+        "status": "verified",
+        "match_key": "great stirrup cay|bahamas",
+        "source": "seed:norwegian_phase3",
+        "image_status": "NO_IMAGE"
+      },
+      "reason": "NCL embark/port-of-call reference data"
+    },
+    {
+      "table": "ports",
+      "action": "insert",
+      "before": null,
+      "after": {
+        "id": "72e53ecd-482e-4597-b5b0-b58f5a16ba46",
+        "canonical_name": "Incheon",
+        "display_name": "Incheon, South Korea",
+        "city": "Incheon",
+        "country": "South Korea",
+        "country_code": "KR",
+        "region": "East Asia",
+        "latitude": 37.456,
+        "longitude": 126.617,
+        "aliases": [
+          "Seoul (Incheon)",
+          "Seoul (Incheon), South Korea",
+          "Incheon Port"
+        ],
+        "status": "verified",
+        "match_key": "incheon|south korea",
+        "source": "seed:norwegian_phase3",
+        "image_status": "NO_IMAGE"
+      },
+      "reason": "NCL embark/port-of-call reference data"
+    },
+    {
+      "table": "ports",
+      "action": "insert",
+      "before": null,
+      "after": {
+        "id": "b9d3c653-1978-423e-9d5e-be0d6ee1e84b",
+        "canonical_name": "San Antonio",
+        "display_name": "San Antonio, Chile",
+        "city": "San Antonio",
+        "country": "Chile",
+        "country_code": "CL",
+        "region": "South America",
+        "latitude": -33.595,
+        "longitude": -71.619,
+        "aliases": [
+          "Santiago (San Antonio)",
+          "Santiago (San Antonio), Chile",
+          "San Antonio Chile"
+        ],
+        "status": "verified",
+        "match_key": "san antonio|chile",
+        "source": "seed:norwegian_phase3",
+        "image_status": "NO_IMAGE"
+      },
+      "reason": "NCL embark/port-of-call reference data"
+    },
+    {
+      "table": "ports",
+      "action": "insert",
+      "before": null,
+      "after": {
+        "id": "5aa8df59-8ffd-45d2-b395-f77f6f874976",
+        "canonical_name": "Jacksonville",
+        "display_name": "Jacksonville, Florida",
+        "city": "Jacksonville",
+        "country": "United States",
+        "country_code": "US",
+        "region": "Caribbean",
+        "latitude": 30.39,
+        "longitude": -81.54,
+        "aliases": [
+          "JAXPORT",
+          "Jacksonville Port"
+        ],
+        "status": "verified",
+        "match_key": "jacksonville|united states",
+        "source": "seed:norwegian_phase3",
+        "image_status": "NO_IMAGE"
+      },
+      "reason": "NCL embark/port-of-call reference data"
+    },
+    {
+      "table": "ports",
+      "action": "insert",
+      "before": null,
+      "after": {
+        "id": "ccc5c5a7-8c1a-4782-abe7-e0755eb99b5f",
+        "canonical_name": "Philadelphia",
+        "display_name": "Philadelphia, Pennsylvania",
+        "city": "Philadelphia",
+        "country": "United States",
+        "country_code": "US",
+        "region": "North America Atlantic",
+        "latitude": 39.93,
+        "longitude": -75.14,
+        "aliases": [
+          "Philadelphia Cruise Terminal",
+          "PhilaPort"
+        ],
+        "status": "verified",
+        "match_key": "philadelphia|united states",
+        "source": "seed:norwegian_phase3",
+        "image_status": "NO_IMAGE"
+      },
+      "reason": "NCL embark/port-of-call reference data"
+    },
+    {
+      "table": "ports",
+      "action": "update_aliases",
+      "record_id": "dda4942c-2590-427a-8a03-742720af0e99",
+      "canonical_name": "Tarragona",
+      "before": [],
+      "after": [
+        "Barcelona (Tarragona)",
+        "Barcelona (Tarragona), Spain"
+      ],
+      "reason": "NCL TAR code maps to Tarragona, not Barcelona"
+    },
+    {
+      "table": "ports",
+      "action": "update_aliases",
+      "record_id": "7c137c89-19d2-4c9b-9fb3-b058328ddacd",
+      "canonical_name": "Ravenna",
+      "before": [
+        "Porto Corsini"
+      ],
+      "after": [
+        "Porto Corsini",
+        "Venice (Ravenna)",
+        "Venice (Ravenna), Italy"
+      ],
+      "reason": "NCL RAV code maps to Ravenna, not Venice"
+    },
+    {
+      "table": "ports",
+      "action": "update_aliases",
+      "record_id": "608c9ff2-2fb9-4638-8fbe-41a62a537b4f",
+      "canonical_name": "Trieste",
+      "before": [],
+      "after": [
+        "Venice (Trieste)",
+        "Venice (Trieste), Italy"
+      ],
+      "reason": "NCL VCE code maps to Trieste, not Venice"
+    },
+    {
+      "table": "ports",
+      "action": "update_aliases",
+      "record_id": "8c201113-4365-43ca-bdf6-b78b1c2a1392",
+      "canonical_name": "Ketchikan",
+      "before": [],
+      "after": [
+        "Ketchikan (Ward Cove)",
+        "Ketchikan (Ward Cove), Alaska",
+        "Ward Cove"
+      ],
+      "reason": "Ward Cove is NCL's Ketchikan terminal context"
+    },
+    {
+      "table": "ports",
+      "action": "update_aliases",
+      "record_id": "9dce60a7-8618-4b0a-ac59-a4c836dd494e",
+      "canonical_name": "Valparaiso",
+      "before": [
+        "Santiago",
+        "Valparaiso"
+      ],
+      "after": [
+        "Santiago Valparaiso",
+        "Valparaiso Santiago"
+      ],
+      "reason": "Remove bare Santiago alias that could collide with San Antonio, Chile"
+    }
+  ],
+  "skipped": [],
+  "write_count": 10
+}

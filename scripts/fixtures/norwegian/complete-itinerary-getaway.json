@@ -1,0 +1,32 @@
+{
+  "completeItinerary": {
+    "code": "GETAWAY2MIANPIMIA",
+    "bundleType": "cruise",
+    "titleData": {
+      "title": "2-Day Bahamas Round-trip Miami: Great Stirrup Cay & Nassau"
+    },
+    "ship": {
+      "code": "GETAWAY",
+      "title": "Norwegian Getaway"
+    },
+    "duration": 2,
+    "portsData": {
+      "embarkationPort": { "code": "MIA", "title": "Miami, Florida" },
+      "disembarkationPort": { "code": "MIA", "title": "Miami, Florida" },
+      "portsOfCall": [
+        { "code": "MIA", "title": "Miami, Florida" },
+        { "code": "GSC", "title": "Great Stirrup Cay, Bahamas" },
+        { "code": "NAS", "title": "Nassau, Bahamas" },
+        { "code": "MIA", "title": "Miami, Florida" }
+      ]
+    },
+    "sailings": [
+      {
+        "packageId": "PKG123",
+        "sailId": "SAIL456",
+        "startDate": 1786233600000
+      }
+    ],
+    "url": "https://www.ncl.com/au/en/cruises/GETAWAY2MIANPIMIA/schedule?itineraryCode=GETAWAY2MIANPIMIA"
+  }
+}

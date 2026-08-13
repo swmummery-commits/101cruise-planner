@@ -1,6 +1,6 @@
 ﻿canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases
 Barcelona,"Barcelona, Spain",Barcelona,Spain,ES,Mediterranean,41.3584,2.1686,
-Tarragona,"Tarragona, Spain",Tarragona,Spain,ES,Mediterranean,41.1118,1.2536,
+Tarragona,"Tarragona, Spain",Tarragona,Spain,ES,Mediterranean,41.1118,1.2536,Barcelona (Tarragona)|Barcelona (Tarragona), Spain
 Valencia,"Valencia, Spain",Valencia,Spain,ES,Mediterranean,39.4481,-0.3167,
 Alicante,"Alicante, Spain",Alicante,Spain,ES,Mediterranean,38.3381,-0.4808,
 Cartagena,"Cartagena, Spain",Cartagena,Spain,ES,Mediterranean,37.5968,-0.9803,Cartagena Spain
@@ -31,8 +31,8 @@ Syracuse,"Syracuse, Sicily",Syracuse,Italy,IT,Mediterranean,37.063,15.29,Siracus
 Cagliari,"Cagliari, Sardinia",Cagliari,Italy,IT,Mediterranean,39.2109,9.1156,Sardinia
 Olbia,"Olbia, Sardinia",Olbia,Italy,IT,Mediterranean,40.9236,9.5016,Sardinia|Costa Smeralda
 Venice,"Venice, Italy",Venice,Italy,IT,Adriatic,45.432,12.3378,Venezia|Marghera
-Trieste,"Trieste, Italy",Trieste,Italy,IT,Adriatic,45.6495,13.7768,
-Ravenna,"Ravenna, Italy",Ravenna,Italy,IT,Adriatic,44.4938,12.2828,Porto Corsini
+Trieste,"Trieste, Italy",Trieste,Italy,IT,Adriatic,45.6495,13.7768,Venice (Trieste)|Venice (Trieste), Italy
+Ravenna,"Ravenna, Italy",Ravenna,Italy,IT,Adriatic,44.4938,12.2828,Porto Corsini|Venice (Ravenna)|Venice (Ravenna), Italy
 Koper,"Koper, Slovenia",Koper,Slovenia,SI,Adriatic,45.5481,13.7302,
 Zadar,"Zadar, Croatia",Zadar,Croatia,HR,Adriatic,44.1149,15.2247,
 Sarande,"Sarandë, Albania",Sarandë,Albania,AL,Mediterranean,39.873,20.005,Saranda|Butrint
@@ -129,7 +129,7 @@ Honolulu,"Honolulu, Hawaii",Honolulu,United States,US,Hawaii,21.306,-157.865,Oah
 Kahului,"Kahului, Maui",Kahului,United States,US,Hawaii,20.895,-156.472,Maui
 Nawiliwili,"Nawiliwili, Kauai",Lihue,United States,US,Hawaii,21.955,-159.356,Kauai|Lihue
 Hilo,"Hilo, Hawaii",Hilo,United States,US,Hawaii,19.73,-155.055,Big Island
-Ketchikan,"Ketchikan, Alaska",Ketchikan,United States,US,Alaska,55.342,-131.646,
+Ketchikan,"Ketchikan, Alaska",Ketchikan,United States,US,Alaska,55.342,-131.646,Ketchikan (Ward Cove)|Ketchikan (Ward Cove), Alaska|Ward Cove
 Sitka,"Sitka, Alaska",Sitka,United States,US,Alaska,57.053,-135.331,
 Juneau,"Juneau, Alaska",Juneau,United States,US,Alaska,58.298,-134.42,
 Skagway,"Skagway, Alaska",Skagway,United States,US,Alaska,59.45,-135.327,
@@ -160,7 +160,7 @@ Ushuaia,"Ushuaia, Argentina",Ushuaia,Argentina,AR,Antarctica Gateway,-54.807,-68
 Punta Arenas,"Punta Arenas, Chile",Punta Arenas,Chile,CL,Antarctica Gateway,-53.164,-70.907,Patagonia|Antarctica
 Puerto Chacabuco,"Puerto Chacabuco, Chile",Puerto Chacabuco,Chile,CL,South America,-45.464,-72.821,Aysen
 Puerto Montt,"Puerto Montt, Chile",Puerto Montt,Chile,CL,South America,-41.486,-72.958,
-Valparaiso,"Valparaíso (Santiago), Chile",Valparaíso,Chile,CL,South America,-33.037,-71.628,Santiago|Valparaiso
+Valparaiso,"Valparaíso (Santiago), Chile",Valparaíso,Chile,CL,South America,-33.037,-71.628,Santiago Valparaiso|Valparaiso Santiago
 Puerto Baquerizo Moreno,"San Cristóbal, Galápagos",Puerto Baquerizo Moreno,Ecuador,EC,Galapagos,-0.901,-89.613,San Cristobal|Galapagos
 Puerto Ayora,"Santa Cruz, Galápagos",Puerto Ayora,Ecuador,EC,Galapagos,-0.744,-90.313,Santa Cruz|Galapagos
 Baltra,"Baltra Island, Galápagos",Baltra,Ecuador,EC,Galapagos,-0.457,-90.266,Seymour Airport|Galapagos
@@ -256,3 +256,8 @@ Panama City,"Panama City, Panama",Panama City,Panama,PA,Central America,8.97,-79
 Antalya,"Antalya, Turkey",Antalya,Turkey,TR,Eastern Mediterranean,36.8841,30.7056,Antalya Turkey
 Safaga,"Safaga, Egypt",Safaga,Egypt,EG,Red Sea,26.749,33.936,Safaga Egypt
 Sokhna,"Sokhna (Ain Sokhna), Egypt",Ain Sokhna,Egypt,EG,Red Sea,29.65,32.34,Ain Sokhna|El Sokhna|Sokhna Port|Sokhna Egypt
+Great Stirrup Cay,"Great Stirrup Cay, Bahamas",Great Stirrup Cay,Bahamas,BS,Bahamas,25.817,-77.913,NCL Great Stirrup Cay|Great Stirrup Cay Bahamas
+Incheon,"Incheon, South Korea",Incheon,South Korea,KR,East Asia,37.456,126.617,Seoul (Incheon)|Seoul (Incheon), South Korea|Incheon Port
+San Antonio,"San Antonio, Chile",San Antonio,Chile,CL,South America,-33.595,-71.619,Santiago (San Antonio)|Santiago (San Antonio), Chile|San Antonio Chile
+Jacksonville,"Jacksonville, Florida",Jacksonville,United States,US,Caribbean,30.39,-81.54,JAXPORT|Jacksonville Port
+Philadelphia,"Philadelphia, Pennsylvania",Philadelphia,United States,US,North America Atlantic,39.93,-75.14,Philadelphia Cruise Terminal|PhilaPort

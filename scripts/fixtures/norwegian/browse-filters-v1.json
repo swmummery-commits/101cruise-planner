@@ -1,0 +1,17 @@
+{
+  "ships": {
+    "values": [
+      { "code": "GETAWAY", "title": "Norwegian Getaway" },
+      { "code": "SPIRIT", "title": "Norwegian Spirit" },
+      { "code": "PRIMA", "title": "Norwegian Prima" },
+      { "code": "PRIDE_AMER", "title": "Pride of America" },
+      { "code": "UNKNOWN", "title": "Mystery Ship" }
+    ]
+  },
+  "embarkPorts": {
+    "values": [{ "code": "MIA", "title": "Miami, Florida" }]
+  },
+  "destinations": {
+    "values": [{ "code": "BAHAMAS", "title": "Bahamas" }]
+  }
+}

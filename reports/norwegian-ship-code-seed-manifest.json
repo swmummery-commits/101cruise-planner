@@ -1,0 +1,31 @@
+{
+  "generated_at": "2026-08-13T00:00:00.000Z",
+  "phase": "norwegian_phase_3_ship_seed",
+  "cruise_line_id": "c5f5361f-ebe5-4ff4-babe-7eb07f609bae",
+  "cruise_line_slug": "norwegian-cruise-line",
+  "expected_updates": 22,
+  "ships": [
+    { "name": "Norwegian Aqua", "official_line_ship_id": "AQUA" },
+    { "name": "Norwegian Aura", "official_line_ship_id": "AURA" },
+    { "name": "Norwegian Bliss", "official_line_ship_id": "BLISS" },
+    { "name": "Norwegian Breakaway", "official_line_ship_id": "BREAKAWAY" },
+    { "name": "Norwegian Dawn", "official_line_ship_id": "DAWN" },
+    { "name": "Norwegian Encore", "official_line_ship_id": "ENCORE" },
+    { "name": "Norwegian Epic", "official_line_ship_id": "EPIC" },
+    { "name": "Norwegian Escape", "official_line_ship_id": "ESCAPE" },
+    { "name": "Norwegian Gem", "official_line_ship_id": "GEM" },
+    { "name": "Norwegian Getaway", "official_line_ship_id": "GETAWAY" },
+    { "name": "Norwegian Jade", "official_line_ship_id": "JADE" },
+    { "name": "Norwegian Jewel", "official_line_ship_id": "JEWEL" },
+    { "name": "Norwegian Joy", "official_line_ship_id": "JOY" },
+    { "name": "Norwegian Luna", "official_line_ship_id": "LUNA" },
+    { "name": "Norwegian Pearl", "official_line_ship_id": "PEARL" },
+    { "name": "Pride of America", "official_line_ship_id": "PRIDE_AMER" },
+    { "name": "Norwegian Prima", "official_line_ship_id": "PRIMA" },
+    { "name": "Norwegian Sky", "official_line_ship_id": "SKY" },
+    { "name": "Norwegian Spirit", "official_line_ship_id": "SPIRIT" },
+    { "name": "Norwegian Star", "official_line_ship_id": "STAR" },
+    { "name": "Norwegian Sun", "official_line_ship_id": "SUN" },
+    { "name": "Norwegian Viva", "official_line_ship_id": "VIVA" }
+  ]
+}

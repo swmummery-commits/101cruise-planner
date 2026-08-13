@@ -1,0 +1,64 @@
+[
+  {
+    "codes": ["GETAWAY2MIANPIMIA"],
+    "destinationCodes": ["BAHAMAS"],
+    "portOfDepartureCode": "MIA",
+    "duration": 2,
+    "shipCode": "GETAWAY",
+    "sailingDates": [1786233600000, 1788825600000],
+    "weight": 10
+  },
+  {
+    "codes": ["SPIRIT16VANKTNJNUICYSITOGGNWKKOAITOHNL"],
+    "destinationCodes": ["ALASKA", "HAWAII"],
+    "portOfDepartureCode": "VAN",
+    "duration": 16,
+    "shipCode": "SPIRIT",
+    "sailingDates": [1788235200000],
+    "weight": 70
+  },
+  {
+    "codes": ["PRIMA3PCVPOPSJU"],
+    "destinationCodes": ["CARIBBEAN"],
+    "portOfDepartureCode": "PCV",
+    "duration": 3,
+    "shipCode": "PRIMA",
+    "sailingDates": [1790817600000],
+    "weight": 20
+  },
+  {
+    "codes": ["PRIDE_AMER7HNLOGGITOKOANWKHNL"],
+    "destinationCodes": ["HAWAII"],
+    "portOfDepartureCode": "HNL",
+    "duration": 7,
+    "shipCode": "PRIDE_AMER",
+    "sailingDates": [1793409600000, 1796001600000],
+    "weight": 50
+  },
+  {
+    "codes": ["HNLCRUISETOUR15SPIRIT12VAN"],
+    "destinationCodes": ["ALASKA", "HAWAII"],
+    "portOfDepartureCode": "VAN",
+    "duration": 15,
+    "shipCode": "SPIRIT",
+    "sailingDates": [1788235200000],
+    "weight": 5
+  },
+  {
+    "codes": ["NBAUTHENTICJADEJADE7VAN"],
+    "destinationCodes": ["ALASKA"],
+    "portOfDepartureCode": "VAN",
+    "duration": 7,
+    "shipCode": "JADE",
+    "sailingDates": [1788235200000],
+    "weight": 1
+  },
+  {
+    "codes": ["MYSTERY7MIABPIMIA"],
+    "destinationCodes": ["CARIBBEAN"],
+    "portOfDepartureCode": "MIA",
+    "duration": 7,
+    "sailingDates": [1796001600000],
+    "weight": 1
+  }
+]
