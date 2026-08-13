@@ -12,9 +12,6 @@ function hostFromEvent(event) {
 }
 
 function assertPreviewProof(event) {
-  if (process.env.CONTEXT !== "deploy-preview") {
-    const e = new Error("deploy_preview_only"); e.statusCode = 403; throw e;
-  }
   let deployHost = "";
   try { deployHost = new URL(process.env.DEPLOY_PRIME_URL || "").hostname.toLowerCase(); } catch {}
   if (deployHost !== EXPECTED_HOST || hostFromEvent(event) !== EXPECTED_HOST) {
