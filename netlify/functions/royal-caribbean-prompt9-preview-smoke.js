@@ -11,6 +11,7 @@ const {
 
 const EXPECTED_HOST = "deploy-preview-1--admirable-tiramisu-d4da8a.netlify.app";
 const CONFIRMATION = "RC_PROMPT9_PREVIEW_PROOF_2026";
+const PROOF_VERSION = "rc-prompt9-netlify-proof-v2";
 
 function parseBody(event) {
   try { return JSON.parse(event?.body || "{}"); } catch { return {}; }
@@ -42,6 +43,7 @@ exports.handler = async (event) => {
     const fleet = await fetchRoyalCaribbeanFleet();
     const payload = {
       ok: probe.ok === true && fleet.ok === true,
+      proof_version: PROOF_VERSION,
       runtime: "netlify_deploy_preview",
       graph_url: GRAPH_URL,
       user_agent: USER_AGENT,
@@ -55,6 +57,6 @@ exports.handler = async (event) => {
     };
     return { statusCode: payload.ok ? 200 : 500, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify(payload) };
   } catch (error) {
-    return { statusCode: error.statusCode || 500, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify({ ok: false, error: error.message || "preview_smoke_failed", writes_performed: false, duration_ms: Date.now() - started }) };
+    return { statusCode: error.statusCode || 500, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify({ ok: false, proof_version: PROOF_VERSION, error: error.message || "preview_smoke_failed", writes_performed: false, duration_ms: Date.now() - started }) };
   }
 };
