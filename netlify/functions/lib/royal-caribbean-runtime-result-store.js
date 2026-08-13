@@ -29,7 +29,6 @@ async function getBlobStore(event = null) {
     const siteID = String(process.env.SITE_ID || process.env.NETLIFY_SITE_ID || "").trim() || undefined;
     return getStore({
       name: STORE_NAME,
-      consistency: "strong",
       ...(siteID ? { siteID } : {})
     });
   } catch (error) {
@@ -60,12 +59,16 @@ async function loadRuntimeProofResult(runId, options = {}) {
   const key = storeKey(runId);
   const store = await getBlobStore(options.event);
   if (store) {
-    const raw = await store.get(key, { type: "text" });
-    if (!raw) return null;
     try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
+      const raw = await store.get(key, { type: "text" });
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    } catch (error) {
+      console.error("royal-caribbean-runtime-result-store:load", error?.message || error);
     }
   }
   const file = path.join(TMP_DIR, `${String(runId).trim()}.json`);
