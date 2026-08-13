@@ -268,11 +268,7 @@ async function requireAdmin(event) {
     { headers: serviceHeaders() }
   );
   const profiles = await profileResponse.json().catch(() => []);
-  if (!profileResponse.ok || profiles?.[0]?.is_admin !== true) {
-    const error = new Error("This account does not have admin access");
-    error.statusCode = 403;
-    throw error;
-  }
+  const profileAdmin = profileResponse.ok && profiles?.[0]?.is_admin === true;
 
   // Optional allow-list: if an admin_users row exists for this user/email and is inactive, deny.
   const email = String(user.email || "").trim().toLowerCase();
@@ -280,24 +276,34 @@ async function requireAdmin(event) {
     ? `admin_users?or=(auth_user_id.eq.${encodeURIComponent(user.id)},email.eq.${encodeURIComponent(email)})&select=id,active,role,email,auth_user_id&limit=5`
     : `admin_users?auth_user_id=eq.${encodeURIComponent(user.id)}&select=id,active,role,email,auth_user_id&limit=5`;
 
+  let adminUsersRows = [];
   try {
     const adminResponse = await fetch(`${supabaseUrl}/rest/v1/${adminQuery}`, {
       headers: serviceHeaders()
     });
     if (adminResponse.ok) {
-      const rows = await adminResponse.json().catch(() => []);
-      if (Array.isArray(rows) && rows.length) {
-        const active = rows.some((row) => row.active === true);
-        if (!active) {
-          const error = new Error("This admin account has been deactivated");
-          error.statusCode = 403;
-          throw error;
-        }
-      }
+      adminUsersRows = await adminResponse.json().catch(() => []);
+      if (!Array.isArray(adminUsersRows)) adminUsersRows = [];
     }
   } catch (error) {
     if (error.statusCode) throw error;
     // Table may not exist yet before migration — fall back to profiles.is_admin only.
+  }
+
+  if (adminUsersRows.length) {
+    const active = adminUsersRows.some((row) => row.active === true);
+    if (!active) {
+      const error = new Error("This admin account has been deactivated");
+      error.statusCode = 403;
+      throw error;
+    }
+    return user;
+  }
+
+  if (!profileAdmin) {
+    const error = new Error("This account does not have admin access");
+    error.statusCode = 403;
+    throw error;
   }
 
   return user;

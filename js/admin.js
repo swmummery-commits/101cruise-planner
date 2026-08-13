@@ -368,13 +368,10 @@ async function adminRequestPasswordReset() {
 }
 
 async function assertAdminAccess() {
-  if (!currentProfile || currentProfile.is_admin !== true) {
-    return { ok: false, message: "This account does not have admin access." };
-  }
+  const email = String(currentUser?.email || "").trim().toLowerCase();
+  let adminUsersRows = [];
 
-  // Optional allow-list: if admin_users rows exist for this user/email and all are inactive, deny.
   try {
-    const email = String(currentUser?.email || "").trim().toLowerCase();
     let query = supabaseClient.from("admin_users").select("id,active,role,email").limit(5);
     if (email) {
       query = query.or(`auth_user_id.eq.${currentUser.id},email.eq.${email}`);
@@ -382,12 +379,19 @@ async function assertAdminAccess() {
       query = query.eq("auth_user_id", currentUser.id);
     }
     const { data, error } = await query;
-    if (!error && Array.isArray(data) && data.length) {
-      const active = data.some((row) => row.active === true);
-      if (!active) return { ok: false, message: "This admin account has been deactivated." };
-    }
+    if (!error && Array.isArray(data)) adminUsersRows = data;
   } catch (_error) {
     // Table may not exist until migration is applied — fall back to profiles.is_admin.
+  }
+
+  if (adminUsersRows.length) {
+    const active = adminUsersRows.some((row) => row.active === true);
+    if (!active) return { ok: false, message: "This admin account has been deactivated." };
+    if (active) return { ok: true };
+  }
+
+  if (!currentProfile || currentProfile.is_admin !== true) {
+    return { ok: false, message: "This account does not have admin access." };
   }
 
   return { ok: true };
@@ -478,6 +482,20 @@ async function adminAuthHeaders(extra = {}) {
     Authorization: `Bearer ${token}`,
     ...extra
   };
+}
+
+async function featuredCruisesAdminApi(body) {
+  const headers = await adminAuthHeaders();
+  const response = await fetch("/.netlify/functions/featured-cruises-admin", {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body)
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || `Featured cruise save failed (HTTP ${response.status})`);
+  }
+  return data;
 }
 
 /**
@@ -12661,41 +12679,29 @@ async function saveFeaturedCruise() {
       let working = { ...basePayload };
       const stripped = [];
       for (let attempt = 0; attempt < 10; attempt += 1) {
-        const selectCols = ["id"];
-        if (working.hero_media_id !== undefined) selectCols.push("hero_media_id");
-        if (working.route_map_media_id !== undefined) selectCols.push("route_map_media_id");
-
-        if (editingFeaturedCruiseId) {
-          const { data, error } = await supabaseClient
-            .from("featured_cruises")
-            .update(working)
-            .eq("id", editingFeaturedCruiseId)
-            .select(selectCols.join(","))
-            .single();
-          if (!error) return { cruiseId: editingFeaturedCruiseId, savedRow: data, stripped };
+        try {
+          const result = await featuredCruisesAdminApi({
+            action: "save_cruise",
+            id: editingFeaturedCruiseId || null,
+            cruise: working,
+            user_id: currentUser?.id || null
+          });
+          const savedRow = result.cruise || {};
+          const cruiseId = editingFeaturedCruiseId || savedRow.id;
+          if (!cruiseId) throw new Error("Featured cruise save returned no id.");
+          if (Array.isArray(result.stripped) && result.stripped.length) {
+            stripped.push(...result.stripped);
+          }
+          return { cruiseId, savedRow, stripped };
+        } catch (error) {
           const missing = missingColumnMatch(error.message);
           if (missing && Object.prototype.hasOwnProperty.call(working, missing)) {
             delete working[missing];
             stripped.push(missing);
             continue;
           }
-          throw new Error(error.message);
+          throw error;
         }
-
-        const insertPayload = { ...working, created_by: currentUser?.id || null };
-        const { data, error } = await supabaseClient
-          .from("featured_cruises")
-          .insert(insertPayload)
-          .select(selectCols.join(","))
-          .single();
-        if (!error) return { cruiseId: data.id, savedRow: data, stripped };
-        const missing = missingColumnMatch(error.message);
-        if (missing && Object.prototype.hasOwnProperty.call(working, missing)) {
-          delete working[missing];
-          stripped.push(missing);
-          continue;
-        }
-        throw new Error(error.message);
       }
       throw new Error("Could not save cruise because required database columns are missing.");
     };
@@ -12749,27 +12755,22 @@ async function saveFeaturedCruise() {
         route_map_media_id: payload.route_map_media_id,
         route_map_image_url: payload.route_map_image_url
       });
-      await supabaseClient
-        .from("featured_cruises")
-        .update({
+      await featuredCruisesAdminApi({
+        action: "patch_cruise",
+        id: cruiseId,
+        patch: {
           itinerary_summary: refreshedMap.itinerary_summary,
           route_map_status: refreshedMap.route_map_status,
           route_map_itinerary_signature: refreshedMap.route_map_itinerary_signature
-        })
-        .eq("id", cruiseId);
+        }
+      });
     }
 
-    const { error: deletePricingError } = await supabaseClient
-      .from("featured_cruise_pricing")
-      .delete()
-      .eq("featured_cruise_id", cruiseId);
-    if (deletePricingError) throw new Error(`Cruise saved, but pricing could not be updated: ${deletePricingError.message}`);
-
-    if (pricingPayload.length) {
-      const rows = pricingPayload.map(({ id, ...rest }) => ({ ...rest, featured_cruise_id: cruiseId }));
-      const { error: insertPricingError } = await supabaseClient.from("featured_cruise_pricing").insert(rows);
-      if (insertPricingError) throw new Error(`Cruise saved, but pricing could not be saved: ${insertPricingError.message}`);
-    }
+    await featuredCruisesAdminApi({
+      action: "replace_pricing",
+      featured_cruise_id: cruiseId,
+      pricing: pricingPayload.map(({ id, ...rest }) => rest)
+    });
 
     if (newsletterChanged) {
       const { error: defaultsError } = await supabaseClient.from("featured_cruise_newsletter_defaults").upsert({
