@@ -452,6 +452,181 @@ async function applyRoyalCaribbeanControlledManifest({
   return { stats, run_id: runId, upsert_stats: upsertStats };
 }
 
+const {
+  MAX_ROYAL_CARIBBEAN_CATCHUP_CHUNK,
+  CATCHUP_CONFIRM_TOKEN,
+  CATCHUP_CHUNK_MODE,
+  validateCatchupChunk
+} = require("./royal-caribbean-final-catchup");
+
+function assertCatchupChunkManifest(chunkManifest, masterManifest, options = {}) {
+  if (!chunkManifest || chunkManifest.mode !== CATCHUP_CHUNK_MODE) {
+    const err = new Error("Royal Caribbean catch-up apply requires a frozen chunk manifest");
+    err.code = "royal_caribbean_missing_catchup_chunk_manifest";
+    throw err;
+  }
+  if (options.confirmToken && options.confirmToken !== CATCHUP_CONFIRM_TOKEN) {
+    const err = new Error(
+      `Royal Caribbean confirmation token mismatch: expected ${CATCHUP_CONFIRM_TOKEN}`
+    );
+    err.code = "royal_caribbean_confirm_token_mismatch";
+    throw err;
+  }
+  const entries = chunkManifest.entries || [];
+  if (entries.length === 0 || entries.length > MAX_ROYAL_CARIBBEAN_CATCHUP_CHUNK) {
+    const err = new Error(
+      `Royal Caribbean catch-up chunk size invalid: ${entries.length} (max ${MAX_ROYAL_CARIBBEAN_CATCHUP_CHUNK})`
+    );
+    err.code = "royal_caribbean_catchup_chunk_size_invalid";
+    throw err;
+  }
+  if (options.expectedCount != null && entries.length !== options.expectedCount) {
+    const err = new Error(
+      `Royal Caribbean catch-up chunk count mismatch: expected ${options.expectedCount}, got ${entries.length}`
+    );
+    err.code = "royal_caribbean_manifest_count_mismatch";
+    throw err;
+  }
+  if (options.expectedHash && chunkManifest.manifest_hash !== options.expectedHash) {
+    const err = new Error("Royal Caribbean manifest hash mismatch");
+    err.code = "royal_caribbean_manifest_hash_mismatch";
+    throw err;
+  }
+  const validation = validateCatchupChunk(chunkManifest, masterManifest, {
+    expectedHash: options.expectedHash || null,
+    today: chunkManifest.perth_today || options.today || null
+  });
+  if (!validation.passed) {
+    const err = new Error(`Royal Caribbean catch-up chunk validation failed: ${validation.failures.join("; ")}`);
+    err.code = "royal_caribbean_manifest_validation_failed";
+    err.failures = validation.failures;
+    throw err;
+  }
+  return validation;
+}
+
+async function applyRoyalCaribbeanCatchupChunk({
+  chunkManifest,
+  masterManifest,
+  cruiseLine,
+  supabase,
+  runId,
+  expectedHash = null,
+  expectedCount = null,
+  confirmToken = null,
+  performWrites = true
+}) {
+  assertCatchupChunkManifest(chunkManifest, masterManifest, {
+    expectedHash,
+    expectedCount,
+    confirmToken,
+    today: chunkManifest.perth_today
+  });
+
+  const entries = chunkManifest.entries || [];
+  const stats = {
+    attempted: 0,
+    inserted: 0,
+    duplicate_skips: 0,
+    failed: 0,
+    stopped_early: false,
+    write_details: [],
+    inserted_ids: [],
+    manifest_hash: chunkManifest.manifest_hash,
+    expected_insert_count: entries.length
+  };
+
+  const indexes = supabase ? await indexExistingRoyalCaribbeanRecords(supabase, cruiseLine.id) : null;
+  const upsertStats = { new: 0, upserted_active: 0, cruises_inserted: 0, cruises_updated: 0 };
+
+  for (const entry of entries) {
+    if (entry.proposed_action !== "insert_active") {
+      stats.duplicate_skips += 1;
+      continue;
+    }
+
+    stats.attempted += 1;
+    const candidate = entry.candidate;
+    if (!candidate?.cruise_line_id || !candidate?.ship_id || !candidate?.destination_id) {
+      stats.failed += 1;
+      stats.stopped_early = true;
+      stats.write_details.push({
+        official_sailing_id: entry.official_sailing_id,
+        result_action: "failed",
+        error: "missing_write_candidate"
+      });
+      break;
+    }
+
+    const existing =
+      indexes?.byProductKey.get(entry.official_sailing_id) ||
+      indexes?.byIdentity.get(entry.identity_key) ||
+      indexes?.byExternal.get(entry.external_key) ||
+      null;
+
+    if (existing && !isLegacyHtmlDiscoveryRow(existing)) {
+      stats.duplicate_skips += 1;
+      stats.stopped_early = true;
+      stats.write_details.push({
+        official_sailing_id: entry.official_sailing_id,
+        discovered_cruise_id: existing.id,
+        result_action: "duplicate_abort",
+        error: "official_sailing_id_already_exists"
+      });
+      break;
+    }
+
+    if (!performWrites) continue;
+
+    try {
+      const result = await upsertCandidateRecord(candidate, upsertStats, {
+        prevRecord: null,
+        matchPolicy: "official_sailing_id_only",
+        syncDestinationLinks: false
+      });
+      if (!result.created || !result.row?.id) {
+        stats.failed += 1;
+        stats.stopped_early = true;
+        stats.write_details.push({
+          official_sailing_id: entry.official_sailing_id,
+          result_action: result.duplicate ? "duplicate_abort" : "failed",
+          discovered_cruise_id: result.row?.id || null,
+          error: result.duplicate ? "duplicate_during_insert" : "insert_not_created"
+        });
+        break;
+      }
+
+      stats.inserted += 1;
+      stats.inserted_ids.push(result.row.id);
+      if (indexes) {
+        indexes.byProductKey.set(entry.official_sailing_id, result.row);
+        if (result.row.identity_key) indexes.byIdentity.set(result.row.identity_key, result.row);
+        if (result.row.external_key) indexes.byExternal.set(result.row.external_key, result.row);
+      }
+      stats.write_details.push({
+        official_sailing_id: entry.official_sailing_id,
+        discovered_cruise_id: result.row.id,
+        external_key: candidate.external_key,
+        identity_key: candidate.identity_key,
+        result_action: "inserted",
+        created: true,
+        rollback_snapshot: snapshotRecordForRollback(result.row)
+      });
+    } catch (error) {
+      stats.failed += 1;
+      stats.stopped_early = true;
+      stats.write_details.push({
+        official_sailing_id: entry.official_sailing_id,
+        result_action: "failed",
+        error: error.message || String(error)
+      });
+      break;
+    }
+  }
+
+  return { stats, run_id: runId, upsert_stats: upsertStats };
+}
+
 async function applyRoyalCaribbeanBatchWrites(options = {}) {
   const modeGate = resolveRoyalCaribbeanDiscoveryMode(options.mode || "simulation");
   assertRoyalCaribbeanWritesAllowed(modeGate);
@@ -470,7 +645,23 @@ async function applyRoyalCaribbeanBatchWrites(options = {}) {
     });
   }
 
-  const err = new Error("Royal Caribbean production writes require controlled_batch mode with a frozen manifest");
+  if (modeGate.mode === "final_catchup" && options.chunkManifest && options.masterManifest) {
+    return applyRoyalCaribbeanCatchupChunk({
+      chunkManifest: options.chunkManifest,
+      masterManifest: options.masterManifest,
+      cruiseLine: options.cruiseLine,
+      supabase: options.supabase,
+      runId: options.runId,
+      expectedHash: options.expectedHash,
+      expectedCount: options.expectedCount,
+      confirmToken: options.confirmToken,
+      performWrites: options.performWrites !== false
+    });
+  }
+
+  const err = new Error(
+    "Royal Caribbean production writes require controlled_batch or final_catchup mode with a frozen manifest"
+  );
   err.code = "royal_caribbean_writes_disabled";
   throw err;
 }
@@ -484,6 +675,8 @@ module.exports = {
   indexExistingRoyalCaribbeanRecords,
   buildRoyalCaribbeanBatchManifest,
   assertControlledBatchManifest,
+  assertCatchupChunkManifest,
   applyRoyalCaribbeanControlledManifest,
+  applyRoyalCaribbeanCatchupChunk,
   applyRoyalCaribbeanBatchWrites
 };

@@ -12,6 +12,7 @@ const VALID_MODES = new Set([
   "production_read_only",
   "production_write",
   "controlled_batch",
+  "final_catchup",
   "weekly_maintenance"
 ]);
 
@@ -70,6 +71,26 @@ function resolveRoyalCaribbeanDiscoveryMode(requestedMode) {
       controlled_batch: true,
       max_writes: null,
       allowed_batch_sizes: [20, 100]
+    };
+  }
+
+  if (mode === "final_catchup") {
+    if (!ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED) {
+      return {
+        mode,
+        requested_mode: raw,
+        writes_allowed: false,
+        reason: "production_write_flag_disabled"
+      };
+    }
+    return {
+      mode,
+      requested_mode: raw,
+      writes_allowed: true,
+      reason: null,
+      final_catchup: true,
+      max_writes: 250,
+      confirm_token: "ROYAL-CARIBBEAN-FINAL-CATCHUP"
     };
   }
 

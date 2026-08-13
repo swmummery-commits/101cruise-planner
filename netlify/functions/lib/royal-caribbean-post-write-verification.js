@@ -21,7 +21,7 @@ async function countGenuineRoyalCaribbeanSailings(supabase) {
     const batch = await supabase(
       `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
         RC_LINE_ID
-      )}&select=id,official_sailing_id,status,official_url,raw_extract&limit=${pageSize}&offset=${offset}`
+      )}&select=id,official_sailing_id,status,official_url,raw_extract&order=id.asc&limit=${pageSize}&offset=${offset}`
     );
     if (!batch?.length) break;
     rows.push(...batch);
@@ -43,10 +43,23 @@ async function fetchRoyalCaribbeanRowsByIds(supabase, ids = []) {
   return supabase(`discovered_cruises?id=in.(${ids.join(",")})&select=${RC_ACTIVE_ROW_SELECT}`);
 }
 
-function verifyManifestRowsAgainstProduction(manifest, rows, today = perthCalendarDate()) {
+async function fetchRoyalCaribbeanRowsBySailingIds(supabase, sailingIds = []) {
+  const rows = [];
+  for (let i = 0; i < sailingIds.length; i += 50) {
+    const chunk = sailingIds.slice(i, i + 50);
+    const batch = await supabase(
+      `discovered_cruises?official_sailing_id=in.(${chunk.map((id) => `"${id}"`).join(",")})&select=${RC_ACTIVE_ROW_SELECT}`
+    );
+    rows.push(...(batch || []));
+  }
+  return rows;
+}
+
+function verifyManifestRowsAgainstProduction(manifest, rows, today = perthCalendarDate(), options = {}) {
   const issues = [];
   const bySailingId = new Map((rows || []).map((r) => [r.official_sailing_id, r]));
   const entries = manifest?.entries || [];
+  const skip45DayBuffer = options.skip45DayBuffer === true;
 
   if (rows.length !== entries.length) {
     issues.push({ issue: "row_count_mismatch", expected: entries.length, actual: rows.length });
@@ -113,7 +126,9 @@ function verifyManifestRowsAgainstProduction(manifest, rows, today = perthCalend
       });
     }
     const days = daysUntilDeparture(row.departure_date, today);
-    if (days != null && days < FIRST_BATCH_SAFETY_BUFFER_DAYS) {
+    if (days != null && days <= 21) {
+      issues.push({ official_sailing_id: entry.official_sailing_id, issue: "inside_21_day_cutoff", days });
+    } else if (!skip45DayBuffer && days != null && days < FIRST_BATCH_SAFETY_BUFFER_DAYS) {
       issues.push({ official_sailing_id: entry.official_sailing_id, issue: "inside_45_day_buffer", days });
     }
   }
@@ -174,6 +189,7 @@ module.exports = {
   RC_ACTIVE_ROW_SELECT,
   countGenuineRoyalCaribbeanSailings,
   fetchRoyalCaribbeanRowsByIds,
+  fetchRoyalCaribbeanRowsBySailingIds,
   verifyManifestRowsAgainstProduction,
   verifyBatch1ProductionRecords
 };
