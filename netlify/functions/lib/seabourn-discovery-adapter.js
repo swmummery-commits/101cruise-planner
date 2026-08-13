@@ -62,7 +62,9 @@ const SEABOURN_SHIP_CODE_TO_NAME = Object.freeze({
 });
 
 /** Deterministic embarkation aliases — canonical names must exist in ports-catalogue.csv */
-const SEABOURN_EMBARK_PORT_ALIASES = Object.freeze({});
+const SEABOURN_EMBARK_PORT_ALIASES = Object.freeze({
+  "st johns, newfoundland, canada": "St John's, Newfoundland"
+});
 
 const PRIMARY_EXCLUSION_ORDER = [
   "source_invalid",

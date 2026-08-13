@@ -14,6 +14,9 @@ const PRINCESS_WEEKLY_RECONCILIATION_ENABLED =
 const EXPLORA_WEEKLY_RECONCILIATION_ENABLED =
   String(process.env.EXPLORA_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
 
+const SEABOURN_WEEKLY_RECONCILIATION_ENABLED =
+  String(process.env.SEABOURN_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
+
 const CRUISE_DAILY_EXPIRY_ENABLED =
   String(process.env.CRUISE_DAILY_EXPIRY_ENABLED || "").trim().toLowerCase() === "true";
 
@@ -50,6 +53,16 @@ const MAINTENANCE_SCHEDULES = {
     background_function: "explora-weekly-maintenance-background",
     schedule_registered: true
   },
+  /**
+   * Seabourn weekly maintenance function exists but is NOT scheduled until after controlled import.
+   */
+  seabourn_weekly: {
+    cron_utc: null,
+    perth_display: "Manual / post-import scheduling only",
+    utc_display: null,
+    function: "seabourn-weekly-maintenance-cron",
+    schedule_registered: false
+  },
   daily_expiry: {
     cron_utc: "30 17 * * *",
     perth_display: "Daily 01:30 Australia/Perth",
@@ -62,6 +75,7 @@ const HAL_WEEKLY_MAINTENANCE_RUN_TYPE = "hal_weekly_maintenance";
 const CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE = "celebrity_weekly_maintenance";
 const PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE = "princess_weekly_maintenance";
 const EXPLORA_WEEKLY_MAINTENANCE_RUN_TYPE = "explora_weekly_maintenance";
+const SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE = "seabourn_weekly_maintenance";
 const DAILY_EXPIRY_RUN_TYPE = "daily_expiry_maintenance";
 
 function perthCalendarDate(reference = new Date()) {
@@ -82,6 +96,10 @@ function isPrincessWeeklyReconciliationEnabled() {
 
 function isExploraWeeklyReconciliationEnabled() {
   return EXPLORA_WEEKLY_RECONCILIATION_ENABLED;
+}
+
+function isSeabournWeeklyReconciliationEnabled() {
+  return SEABOURN_WEEKLY_RECONCILIATION_ENABLED;
 }
 
 function isCruiseDailyExpiryEnabled() {
@@ -126,6 +144,16 @@ function assertExploraWeeklyMaintenanceEnabled() {
   }
 }
 
+function assertSeabournWeeklyMaintenanceEnabled() {
+  if (!isSeabournWeeklyReconciliationEnabled()) {
+    const err = new Error(
+      "Seabourn weekly maintenance is disabled (SEABOURN_WEEKLY_RECONCILIATION_ENABLED=false)"
+    );
+    err.code = "seabourn_weekly_maintenance_disabled";
+    throw err;
+  }
+}
+
 function assertDailyExpiryEnabled() {
   if (!isCruiseDailyExpiryEnabled()) {
     const err = new Error("Daily expiry is disabled (CRUISE_DAILY_EXPIRY_ENABLED=false)");
@@ -160,11 +188,13 @@ function describeMaintenanceHold() {
     celebrity_weekly_reconciliation: resolveEnvFlag(process.env.CELEBRITY_WEEKLY_RECONCILIATION_ENABLED),
     princess_weekly_reconciliation: resolveEnvFlag(process.env.PRINCESS_WEEKLY_RECONCILIATION_ENABLED),
     explora_weekly_reconciliation: resolveEnvFlag(process.env.EXPLORA_WEEKLY_RECONCILIATION_ENABLED),
+    seabourn_weekly_reconciliation: resolveEnvFlag(process.env.SEABOURN_WEEKLY_RECONCILIATION_ENABLED),
     cruise_daily_expiry: resolveEnvFlag(process.env.CRUISE_DAILY_EXPIRY_ENABLED),
     hal_weekly_reconciliation_enabled: isHalWeeklyReconciliationEnabled(),
     celebrity_weekly_reconciliation_enabled: isCelebrityWeeklyReconciliationEnabled(),
     princess_weekly_reconciliation_enabled: isPrincessWeeklyReconciliationEnabled(),
     explora_weekly_reconciliation_enabled: isExploraWeeklyReconciliationEnabled(),
+    seabourn_weekly_reconciliation_enabled: isSeabournWeeklyReconciliationEnabled(),
     cruise_daily_expiry_enabled: isCruiseDailyExpiryEnabled(),
     operational_timezone: OPERATIONAL_TIMEZONE,
     schedules: MAINTENANCE_SCHEDULES,
@@ -175,7 +205,8 @@ function describeMaintenanceHold() {
       "CELEBRITY_DISCOVERY_WRITE_ENABLED",
       "CELEBRITY_AUTOMATIC_CONTINUATION_ENABLED",
       "PRINCESS_DISCOVERY_WRITE_ENABLED",
-      "EXPLORA_DISCOVERY_WRITE_ENABLED"
+      "EXPLORA_DISCOVERY_WRITE_ENABLED",
+      "SEABOURN_DISCOVERY_WRITE_ENABLED"
     ]
   };
 }
@@ -185,6 +216,7 @@ module.exports = {
   CELEBRITY_WEEKLY_RECONCILIATION_ENABLED,
   PRINCESS_WEEKLY_RECONCILIATION_ENABLED,
   EXPLORA_WEEKLY_RECONCILIATION_ENABLED,
+  SEABOURN_WEEKLY_RECONCILIATION_ENABLED,
   CRUISE_DAILY_EXPIRY_ENABLED,
   OPERATIONAL_TIMEZONE,
   MAINTENANCE_SCHEDULES,
@@ -192,17 +224,20 @@ module.exports = {
   CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
   PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
   EXPLORA_WEEKLY_MAINTENANCE_RUN_TYPE,
+  SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE,
   DAILY_EXPIRY_RUN_TYPE,
   perthCalendarDate,
   isHalWeeklyReconciliationEnabled,
   isCelebrityWeeklyReconciliationEnabled,
   isPrincessWeeklyReconciliationEnabled,
   isExploraWeeklyReconciliationEnabled,
+  isSeabournWeeklyReconciliationEnabled,
   isCruiseDailyExpiryEnabled,
   assertHalWeeklyMaintenanceEnabled,
   assertCelebrityWeeklyMaintenanceEnabled,
   assertPrincessWeeklyMaintenanceEnabled,
   assertExploraWeeklyMaintenanceEnabled,
+  assertSeabournWeeklyMaintenanceEnabled,
   assertDailyExpiryEnabled,
   computeFreshnessLabel,
   resolveEnvFlag,
