@@ -172,6 +172,27 @@ async function findPreviousSeabournMaintenanceRun(supabase, cruiseLineId, runTyp
   return (runs || []).find((r) => r.stats?.run_type === runType) || null;
 }
 
+/** Exclude rapid controlled catch-up runs — absence chaining needs separated observations. */
+const SEABOURN_ABSENCE_OBSERVATION_MIN_GAP_MS = 60 * 60 * 1000;
+
+async function findPreviousSeabournAbsenceObservationRun(supabase, cruiseLineId, runType) {
+  const now = Date.now();
+  const runs = await supabase(
+    `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.completed&select=id,stats,finished_at,created_at&order=finished_at.desc&limit=50`
+  );
+  return (
+    (runs || []).find((r) => {
+      if (r.stats?.run_type !== runType) return false;
+      if (r.stats?.catch_up_batch || r.stats?.controlled_batch) return false;
+      const finishedAt = new Date(r.finished_at || r.created_at).getTime();
+      if (Number.isFinite(finishedAt) && now - finishedAt < SEABOURN_ABSENCE_OBSERVATION_MIN_GAP_MS) {
+        return false;
+      }
+      return Array.isArray(r.stats?.source_absent_sailing_ids) && r.stats.source_absent_sailing_ids.length > 0;
+    }) || null
+  );
+}
+
 function computeHalResolutionRates(products) {
   const cruises = products.filter((p) => p.product_type === "cruise");
   const total = cruises.length || 1;
@@ -1356,6 +1377,7 @@ async function runSeabournWeeklyMaintenance(context = {}) {
     const eligibleKeys = new Set(productionEligible.map((p) => seabournOfficialProductKey(p.raw)).filter(Boolean));
     const metrics = computeSeabournResolutionRates(productionEligible);
     const previousRun = await findPreviousSeabournMaintenanceRun(sb, line.id, runType);
+    const previousAbsenceRun = await findPreviousSeabournAbsenceObservationRun(sb, line.id, runType);
     const waterfall = buildEligibilityWaterfall(normalised, today);
 
     const manifest = await buildSeabournBatchManifest({
@@ -1378,7 +1400,7 @@ async function runSeabournWeeklyMaintenance(context = {}) {
     });
     const sourceAbsencePolicy = classifySeabournSourceAbsence({
       currentAbsentRows: sourceAbsent,
-      previousAbsentSailingIds: extractPreviousAbsentSailingIds(previousRun),
+      previousAbsentSailingIds: extractPreviousAbsentSailingIds(previousAbsenceRun),
       enumerationHealthy: sourceQualityGate.passed === true
     });
 

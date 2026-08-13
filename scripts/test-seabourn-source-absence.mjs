@@ -37,6 +37,19 @@ test("single absence is observed not actionable", () => {
   if (policy.source_absent_retained !== 1) throw new Error("expected retained=1");
 });
 
+test("rapid catch-up runs do not chain into actionable absence", () => {
+  if (!runnerSrc.includes("findPreviousSeabournAbsenceObservationRun")) {
+    throw new Error("missing absence observation run selector");
+  }
+  if (!runnerSrc.includes("catch_up_batch")) throw new Error("missing catch_up_batch exclusion");
+  const policy = absence.classifySeabournSourceAbsence({
+    currentAbsentRows: [{ official_sailing_id: "C8S07J|8819" }],
+    previousAbsentSailingIds: [],
+    enumerationHealthy: true
+  });
+  if (policy.source_absent_actionable !== 0) throw new Error("expected actionable=0 without prior separated observation");
+});
+
 test("second consecutive absence becomes actionable but writes remain disabled", () => {
   const policy = absence.classifySeabournSourceAbsence({
     currentAbsentRows: [{ official_sailing_id: "C7S07K|8730" }],
