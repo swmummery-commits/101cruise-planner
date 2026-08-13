@@ -58,6 +58,10 @@ const { loadMaintenanceLockStatus, weeklyLockKey } = require(path.join(
   root,
   "netlify/functions/lib/cruise-discovery-maintenance-locks"
 ));
+const { assessSeabournCatchUpSafety } = require(path.join(
+  root,
+  "netlify/functions/lib/seabourn-source-absence"
+));
 
 export function parseArgs(argv = process.argv) {
   const args = { dryRun: false, apply: false, confirm: null, batchSize: null };
@@ -122,6 +126,21 @@ export function distributionFromBatch(selected) {
     productDist[pt] = (productDist[pt] || 0) + 1;
   }
   return { shipDist, productDist };
+}
+
+export function assessCatchUpPreflightGate(summary) {
+  return assessSeabournCatchUpSafety({
+    sourceAbsencePolicy: summary?.source_absence_policy || {
+      source_absent_observed: summary?.source_absent_observed ?? summary?.source_absent_active ?? 0,
+      source_absent_actionable: summary?.source_absent_actionable ?? 0
+    },
+    activeProductionTotal: summary?.active_production_total ?? 0,
+    sourceQualityGatePassed: summary?.source_quality_gate?.passed !== false,
+    reconciliationArithmeticOk:
+      summary?.reconciliation_arithmetic_ok !== false &&
+      summary?.active_production_arithmetic_ok !== false,
+    proposedUpdates: summary?.proposed_updates ?? 0
+  });
 }
 
 export function buildRunContext(activeCount, apply) {
@@ -212,13 +231,13 @@ export async function runControlledBatch(options = {}) {
   const proposedUpdates = (result.manifest?.products || []).filter(
     (p) => p.proposed_action === "update_exact_legacy_match"
   ).length;
-  const sourceAbsent = Number(result.summary?.source_absent_active || 0);
+  const catchUpGate = assessCatchUpPreflightGate(result.summary || {});
 
   if (args.apply && proposedUpdates > 0) {
     throw new Error(`Refusing apply: ${proposedUpdates} proposed updates (insert-only batch)`);
   }
-  if (args.apply && sourceAbsent > 0) {
-    throw new Error(`Refusing apply: ${sourceAbsent} source-absent active records`);
+  if (args.apply && !catchUpGate.ok) {
+    throw new Error(`Refusing apply: catch-up gate failed (${catchUpGate.failures.join(", ")})`);
   }
 
   if (dbRun?.id) {
@@ -259,7 +278,10 @@ export async function runControlledBatch(options = {}) {
     write_result: result.write_result || null,
     writes_performed: (result.summary?.inserts || 0) + (result.summary?.updates || 0),
     proposed_updates_at_preflight: proposedUpdates,
-    source_absent_at_preflight: sourceAbsent
+    catch_up_safety_gate: catchUpGate,
+    source_absent_observed: result.summary?.source_absent_observed ?? null,
+    source_absent_actionable: result.summary?.source_absent_actionable ?? null,
+    source_absence_policy: result.summary?.source_absence_policy ?? null
   };
 
   if (options.writeReport !== false) {

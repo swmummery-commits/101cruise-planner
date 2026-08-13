@@ -62,6 +62,7 @@
     "seabourn:first-production-batch": "node scripts/run-seabourn-first-production-batch.mjs",
     "test:seabourn-weekly-maintenance": "node scripts/test-seabourn-weekly-maintenance.mjs",
     "test:seabourn-controlled-catchup": "node scripts/test-seabourn-controlled-catchup.mjs",
+    "test:seabourn-source-absence": "node scripts/test-seabourn-source-absence.mjs",
     "test:norwegian-discovery": "node scripts/test-norwegian-discovery.mjs",
     "apply:norwegian-ship-code-seed": "node scripts/apply-norwegian-ship-code-seed.mjs",
     "apply:norwegian-port-reference-data": "node scripts/apply-norwegian-port-reference-data.mjs",

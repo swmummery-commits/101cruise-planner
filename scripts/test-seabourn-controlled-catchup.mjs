@@ -115,9 +115,13 @@ test("deterministic selection excludes non-inserts and sorts by identity", () =>
   if (selected[0].stable_identity_key !== "A|1") throw new Error("sort order");
 });
 
-test("insert-only apply rejects proposed updates in runner path", () => {
+test("insert-only apply rejects proposed updates; catch-up gate uses actionable absence", () => {
   if (!batchSrc.includes("proposed updates (insert-only batch)")) throw new Error("missing update guard");
-  if (!batchSrc.includes("source-absent active")) throw new Error("missing source-absent guard");
+  if (!batchSrc.includes("assessCatchUpPreflightGate")) throw new Error("missing catch-up gate");
+  if (!batchSrc.includes("catch-up gate failed")) throw new Error("missing catch-up gate failure");
+  if (batchSrc.includes("source-absent active records")) {
+    throw new Error("stale coarse source-absent apply blocker still present");
+  }
 });
 
 test("catch-up mode uses distinct trigger and report prefix when active>0", () => {

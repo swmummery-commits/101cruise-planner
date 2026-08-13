@@ -86,6 +86,10 @@ const {
 } = require("./public-discovered-cruise-inventory");
 const { buildPrincessReconciliationSummary } = require("./princess-reconciliation-summary");
 const { buildSeabournReconciliationSummary } = require("./seabourn-reconciliation-summary");
+const {
+  classifySeabournSourceAbsence,
+  extractPreviousAbsentSailingIds
+} = require("./seabourn-source-absence");
 
 const MAX_WRITES_PER_BATCH = 100;
 const MAX_WEEKLY_WRITES = 30;
@@ -159,6 +163,13 @@ async function findPreviousSuccessfulMaintenanceRun(supabase, cruiseLineId, runT
     `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.completed&select=id,stats,finished_at,created_at&order=finished_at.desc&limit=20`
   );
   return (runs || []).find((r) => r.stats?.run_type === runType && r.stats?.trigger_type === "scheduled") || null;
+}
+
+async function findPreviousSeabournMaintenanceRun(supabase, cruiseLineId, runType) {
+  const runs = await supabase(
+    `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.completed&select=id,stats,finished_at,created_at&order=finished_at.desc&limit=50`
+  );
+  return (runs || []).find((r) => r.stats?.run_type === runType) || null;
 }
 
 function computeHalResolutionRates(products) {
@@ -1344,7 +1355,7 @@ async function runSeabournWeeklyMaintenance(context = {}) {
     const manifestProducts = sbnPublic.filter((p) => p.eligibility?.product_policy?.included !== false);
     const eligibleKeys = new Set(productionEligible.map((p) => seabournOfficialProductKey(p.raw)).filter(Boolean));
     const metrics = computeSeabournResolutionRates(productionEligible);
-    const previousRun = await findPreviousSuccessfulMaintenanceRun(sb, line.id, runType);
+    const previousRun = await findPreviousSeabournMaintenanceRun(sb, line.id, runType);
     const waterfall = buildEligibilityWaterfall(normalised, today);
 
     const manifest = await buildSeabournBatchManifest({
@@ -1365,6 +1376,11 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       today,
       officialProductKeyFn: (raw) => seabournOfficialProductKey(raw)
     });
+    const sourceAbsencePolicy = classifySeabournSourceAbsence({
+      currentAbsentRows: sourceAbsent,
+      previousAbsentSailingIds: extractPreviousAbsentSailingIds(previousRun),
+      enumerationHealthy: sourceQualityGate.passed === true
+    });
 
     const qualityGate = evaluateMaintenanceQualityGate({
       lineSlug,
@@ -1383,6 +1399,8 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       outstandingEligibleInserts: proposedInserts.length,
       proposedUpdates: proposedUpdates.length,
       sourceAbsentActive: sourceAbsent.length,
+      sourceAbsentObserved: sourceAbsencePolicy.source_absent_observed,
+      sourceAbsentRetained: sourceAbsencePolicy.source_absent_retained,
       writesExecuted: 0
     });
 
@@ -1406,7 +1424,14 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       outstanding_eligible_inserts: reconciliation.outstanding_eligible_inserts,
       source_absent_active: sourceAbsent.length,
       source_absent_sailing_ids: sourceAbsent.map((r) => r.official_sailing_id),
+      source_absent_observed: sourceAbsencePolicy.source_absent_observed,
+      source_absent_actionable: sourceAbsencePolicy.source_absent_actionable,
+      source_absent_retained: sourceAbsencePolicy.source_absent_retained,
+      source_absence_policy: sourceAbsencePolicy,
+      source_absent_observed_records: sourceAbsencePolicy.source_absent_observed_records,
+      source_absent_actionable_records: sourceAbsencePolicy.source_absent_actionable_records,
       reconciliation_arithmetic_ok: reconciliation.reconciliation_arithmetic_ok,
+      active_production_arithmetic_ok: reconciliation.active_production_arithmetic_ok,
       all_active_recognised_in_eligible_source: reconciliation.all_active_recognised_in_eligible_source,
       policy_excluded_cruisetours: waterfall.waterfall?.policy_excluded_cruisetour || 0,
       within_public_cutoff_excluded: withinPublicCutoff.length,
@@ -1430,6 +1455,17 @@ async function runSeabournWeeklyMaintenance(context = {}) {
         blocked: false,
         failed: true,
         reason: "reconciliation_arithmetic_failed",
+        summary,
+        simulation
+      };
+    }
+
+    if (!reconciliation.active_production_arithmetic_ok) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: true,
+        reason: "active_production_arithmetic_failed",
         summary,
         simulation
       };

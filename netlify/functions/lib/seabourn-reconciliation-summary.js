@@ -9,13 +9,21 @@ function buildSeabournReconciliationSummary({
   outstandingEligibleInserts = 0,
   proposedUpdates = 0,
   sourceAbsentActive = 0,
+  sourceAbsentObserved = null,
+  sourceAbsentRetained = null,
   writesExecuted = 0
 } = {}) {
+  const retained =
+    sourceAbsentRetained != null ? Number(sourceAbsentRetained) : Number(sourceAbsentActive || 0);
+  const observed =
+    sourceAbsentObserved != null ? Number(sourceAbsentObserved) : Number(sourceAbsentActive || 0);
+
   const eligibleAccounted =
     recognisedExistingEligible + outstandingEligibleInserts + proposedUpdates;
   const reconciliationArithmeticOk = eligibleTotal === eligibleAccounted;
-  const allActiveRecognisedInEligibleSource =
-    sourceAbsentActive === 0 ? activeProductionTotal === recognisedExistingEligible : null;
+
+  const activeAccounted = recognisedExistingEligible + retained;
+  const activeProductionArithmeticOk = activeProductionTotal === activeAccounted;
 
   return {
     active_production_total: activeProductionTotal,
@@ -25,10 +33,14 @@ function buildSeabournReconciliationSummary({
     outstanding_eligible_inserts: outstandingEligibleInserts,
     proposed_inserts: outstandingEligibleInserts,
     proposed_updates: proposedUpdates,
-    source_absent_active: sourceAbsentActive,
+    source_absent_active: Number(sourceAbsentActive || 0),
+    source_absent_observed: observed,
+    source_absent_retained: retained,
     writes_executed: writesExecuted,
     reconciliation_arithmetic_ok: reconciliationArithmeticOk,
-    all_active_recognised_in_eligible_source: allActiveRecognisedInEligibleSource
+    active_production_arithmetic_ok: activeProductionArithmeticOk,
+    all_active_recognised_in_eligible_source:
+      retained === 0 ? activeProductionTotal === recognisedExistingEligible : null
   };
 }
 
