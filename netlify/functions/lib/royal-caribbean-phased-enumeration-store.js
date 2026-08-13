@@ -92,11 +92,15 @@ async function saveEnumerationPhase(runId, phaseId, phaseResult) {
   return manifest;
 }
 
+async function loadEnumerationPhaseManifest(runId, phaseId) {
+  const raw = await readText(manifestKey(runId, phaseId));
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
+
 async function loadEnumerationPhase(runId, phaseId) {
-  const rawManifest = await readText(manifestKey(runId, phaseId));
-  if (!rawManifest) return null;
-  let manifest;
-  try { manifest = JSON.parse(rawManifest); } catch { return null; }
+  const manifest = await loadEnumerationPhaseManifest(runId, phaseId);
+  if (!manifest) return null;
   const products = [];
   for (const shard of manifest.shards || []) {
     const raw = await readText(shard.key);
@@ -126,6 +130,7 @@ module.exports = {
   STORE_NAME,
   PRODUCT_SHARD_SIZE,
   saveEnumerationPhase,
+  loadEnumerationPhaseManifest,
   loadEnumerationPhase,
   savePhasedRunState,
   loadPhasedRunState
