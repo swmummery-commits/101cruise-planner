@@ -54,12 +54,12 @@ const MAINTENANCE_SCHEDULES = {
     schedule_registered: true
   },
   /**
-   * Seabourn weekly maintenance function exists but is NOT scheduled until after controlled import.
+   * Seabourn weekly maintenance — intended Sunday 22:00 UTC after Prompt 7 enablement.
    */
   seabourn_weekly: {
-    cron_utc: null,
-    perth_display: "Manual / post-import scheduling only",
-    utc_display: null,
+    cron_utc: "0 22 * * 0",
+    perth_display: "Monday 06:00 Australia/Perth (pending enablement)",
+    utc_display: "Sunday 22:00 UTC (pending enablement)",
     function: "seabourn-weekly-maintenance-cron",
     schedule_registered: false
   },

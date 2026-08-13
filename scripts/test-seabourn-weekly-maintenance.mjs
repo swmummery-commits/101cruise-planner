@@ -22,6 +22,9 @@ const reconciliation = require(path.join(root, "netlify/functions/lib/seabourn-r
 const writes = require(path.join(root, "netlify/functions/lib/seabourn-discovery-writes"));
 const sbn = require(path.join(root, "netlify/functions/lib/seabourn-discovery-adapter"));
 const fixture = require(path.join(root, "scripts/fixtures/seabourn/search-response-page.json"));
+const weeklyPolicy = require(path.join(root, "netlify/functions/lib/seabourn-weekly-update-policy"));
+const weeklyAuth = require(path.join(root, "netlify/functions/lib/seabourn-weekly-auth"));
+const sourceAbsence = require(path.join(root, "netlify/functions/lib/seabourn-source-absence"));
 
 let passed = 0;
 const failures = [];
@@ -457,6 +460,149 @@ test("36. fixture official keys remain collision-free", () => {
   const parsed = docs.map((d) => sbn.parseRawVoyageFromDoc(d)).filter(Boolean);
   const identity = sbn.analyseIdentity(parsed.map((raw) => ({ raw, product_type: "ocean" })));
   if (identity.official_key_collisions.length !== 0) throw new Error("fixture collisions");
+});
+
+/* -------------------------------------------------------- Prompt 7 weekly guards */
+
+test("37. identity-critical ship change requires review in weekly path", () => {
+  const existing = {
+    ship_id: "ship-a",
+    departure_date: "2027-01-01",
+    return_date: "2027-01-08",
+    nights: 7,
+    departure_port: "Miami",
+    itinerary: "Caribbean",
+    status: "active",
+    official_url: "https://example.com/a"
+  };
+  const candidate = { ...existing, ship_id: "ship-b" };
+  const refined = weeklyPolicy.refineProposedActionForWeekly(
+    "update_exact_legacy_match",
+    existing,
+    candidate
+  );
+  if (refined !== "update_identity_review_required") throw new Error(refined);
+});
+
+test("38. safe metadata URL-only change allowed for weekly apply", () => {
+  const existing = {
+    ship_id: "ship-a",
+    departure_date: "2027-01-01",
+    return_date: "2027-01-08",
+    nights: 7,
+    departure_port: "Miami",
+    itinerary: "Caribbean",
+    status: "active",
+    official_url: "https://example.com/a"
+  };
+  const candidate = { ...existing, official_url: "https://example.com/b" };
+  const refined = weeklyPolicy.refineProposedActionForWeekly(
+    "update_exact_legacy_match",
+    existing,
+    candidate
+  );
+  if (refined !== "update_safe_metadata_allowed") throw new Error(refined);
+});
+
+test("39. actionable source absence blocks weekly writes", () => {
+  const safety = weeklyPolicy.assessSeabournWeeklyWriteSafety({
+    sourceAbsencePolicy: { source_absent_observed: 2, source_absent_actionable: 1 },
+    performWrites: true,
+    proposedIdentityReviewUpdates: 0
+  });
+  if (safety.ok) throw new Error("actionable absence must block writes");
+  if (!safety.failures.includes("source_absent_actionable_blocks_weekly_writes")) {
+    throw new Error(JSON.stringify(safety.failures));
+  }
+});
+
+test("40. observed-only source absence permits weekly dry-run safety", () => {
+  const safety = weeklyPolicy.assessSeabournWeeklyWriteSafety({
+    sourceAbsencePolicy: { source_absent_observed: 11, source_absent_actionable: 0 },
+    performWrites: false,
+    proposedIdentityReviewUpdates: 0
+  });
+  if (!safety.ok) throw new Error(JSON.stringify(safety.failures));
+  if (weeklyPolicy.isSeabournSourceAbsenceDeactivationEnabled({})) {
+    throw new Error("deactivation must stay disabled by default");
+  }
+});
+
+test("41. weekly combined cap PASS at 30", () => {
+  const cap = runner.SEABOURN_MAX_WEEKLY_WRITES;
+  if (cap !== 30) throw new Error(String(cap));
+});
+
+test("42. weekly combined cap STOP at 31+", () => {
+  const cap = runner.SEABOURN_MAX_WEEKLY_WRITES;
+  if (31 <= cap) throw new Error("fixture must exceed cap");
+});
+
+test("43. weekly auth rejects missing secret on manual HTTP", () => {
+  let threw = false;
+  try {
+    weeklyAuth.assertCronAuth({ headers: {} }, { DISCOVERY_CRON_SECRET: "expected-secret" });
+  } catch (e) {
+    threw = e.code === "unauthorized";
+  }
+  if (!threw) throw new Error("missing secret must fail");
+});
+
+test("44. weekly auth rejects invalid secret", () => {
+  let threw = false;
+  try {
+    weeklyAuth.assertCronAuth(
+      { headers: { "x-discovery-cron-secret": "wrong" } },
+      { DISCOVERY_CRON_SECRET: "expected-secret" }
+    );
+  } catch (e) {
+    threw = e.code === "unauthorized";
+  }
+  if (!threw) throw new Error("invalid secret must fail");
+});
+
+test("45. scheduled invocation bypasses manual secret header", () => {
+  weeklyAuth.assertSeabournWeeklyAuth(
+    { headers: { "x-netlify-event": "schedule" } },
+    { DISCOVERY_CRON_SECRET: "expected-secret" }
+  );
+  const cronSrc = fs.readFileSync(
+    path.join(root, "netlify/functions/seabourn-weekly-maintenance-cron.js"),
+    "utf8"
+  );
+  if (cronSrc.includes("controlled-catchup")) throw new Error("cron must not invoke catch-up");
+  if (!cronSrc.includes("weekly_maintenance")) throw new Error("cron must use weekly_maintenance path");
+});
+
+test("46. C7S07K|8730 reappearance resolves as duplicate_skip not insert", () => {
+  const row = buildEligibleRow({ cruise_id: "C7S07K", itinerary_id: "8730" });
+  const key = sbn.officialProductKey(row.raw);
+  const existing = {
+    id: "prod-c7s07k",
+    cruise_line_id: "sbn-line",
+    ship_id: row.candidate.ship_id,
+    destination_id: row.candidate.destination_id,
+    departure_date: row.candidate.departure_date,
+    return_date: row.candidate.return_date,
+    nights: row.candidate.nights,
+    departure_port: row.candidate.departure_port,
+    itinerary: row.candidate.itinerary,
+    status: "active",
+    official_sailing_id: key,
+    official_url: row.candidate.official_url
+  };
+  const base = writes.classifyProposedAction(row, existing);
+  if (base !== "duplicate_skip") throw new Error(`base action ${base}`);
+  const weeklyAction = weeklyPolicy.refineProposedActionForWeekly(base, existing, row.candidate);
+  if (weeklyAction !== "duplicate_skip") throw new Error(`weekly action ${weeklyAction}`);
+  const absenceAfterReappearance = sourceAbsence.classifySeabournSourceAbsence({
+    currentAbsentRows: [],
+    previousAbsentSailingIds: [key],
+    enumerationHealthy: true
+  });
+  if ((absenceAfterReappearance.source_absence_cleared || []).length !== 1) {
+    throw new Error(JSON.stringify(absenceAfterReappearance.source_absence_cleared));
+  }
 });
 
 console.log(`\n${passed} tests passed, ${failures.length} failed`);

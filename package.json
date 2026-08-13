@@ -85,6 +85,7 @@
     "smoke:princess-source-ci": "node scripts/princess-source-smoke-ci.mjs",
     "smoke:explora-source-ci": "node scripts/explora-source-smoke-ci.mjs",
     "smoke:seabourn-source-ci": "node scripts/seabourn-source-smoke-ci.mjs",
+    "smoke:seabourn-weekly-production": "node scripts/smoke-seabourn-weekly-production.mjs",
     "verify:explora-preproduction": "node scripts/verify-explora-preproduction.mjs",
     "test:discovery-holland-america": "node scripts/test-discovery-holland-america.mjs",
     "test:hal-batch-automation": "node scripts/test-hal-batch-automation.mjs",

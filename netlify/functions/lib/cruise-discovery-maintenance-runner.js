@@ -90,6 +90,11 @@ const {
   classifySeabournSourceAbsence,
   extractPreviousAbsentSailingIds
 } = require("./seabourn-source-absence");
+const {
+  refineProposedActionForWeekly,
+  assessSeabournWeeklyWriteSafety,
+  isSeabournSourceAbsenceDeactivationEnabled
+} = require("./seabourn-weekly-update-policy");
 
 const MAX_WRITES_PER_BATCH = 100;
 const MAX_WEEKLY_WRITES = 30;
@@ -1388,8 +1393,32 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       runId
     });
 
+    const isWeeklyMaintenancePath =
+      (context.writeMode || context.write_mode || "") === "weekly_maintenance" ||
+      runType === SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE;
+
+    if (isWeeklyMaintenancePath) {
+      for (const entry of manifest.products || []) {
+        if (entry.proposed_action !== "update_exact_legacy_match") continue;
+        entry.proposed_action = refineProposedActionForWeekly(
+          entry.proposed_action,
+          entry.rollback,
+          entry.candidate
+        );
+        if (entry.proposed_action === "update_identity_review_required") {
+          entry.weekly_update_policy = "identity_critical_review_required";
+        }
+      }
+    }
+
     const proposedInserts = manifest.products.filter((p) => p.proposed_action === "insert_active");
     const proposedUpdates = manifest.products.filter((p) => p.proposed_action === "update_exact_legacy_match");
+    const proposedSafeUpdates = manifest.products.filter(
+      (p) => p.proposed_action === "update_safe_metadata_allowed"
+    );
+    const proposedIdentityReviewUpdates = manifest.products.filter(
+      (p) => p.proposed_action === "update_identity_review_required"
+    );
     const unchanged = manifest.products.filter((p) => p.proposed_action === "duplicate_skip");
     const sourceAbsent = await findSourceAbsentActive({
       supabase: sb,
@@ -1419,7 +1448,7 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       eligibleTotal: metrics.eligible_total,
       recognisedExistingEligible: unchanged.length,
       outstandingEligibleInserts: proposedInserts.length,
-      proposedUpdates: proposedUpdates.length,
+      proposedUpdates: proposedUpdates.length + proposedSafeUpdates.length,
       sourceAbsentActive: sourceAbsent.length,
       sourceAbsentObserved: sourceAbsencePolicy.source_absent_observed,
       sourceAbsentRetained: sourceAbsencePolicy.source_absent_retained,
@@ -1440,7 +1469,9 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       eligible_total: metrics.eligible_total,
       active_production_total: activeProductionTotal,
       proposed_inserts: proposedInserts.length,
-      proposed_updates: proposedUpdates.length,
+      proposed_updates: proposedUpdates.length + proposedSafeUpdates.length,
+      proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
+      proposed_updates_safe_metadata: proposedSafeUpdates.length,
       unchanged: unchanged.length,
       recognised_existing_eligible: reconciliation.recognised_existing_eligible,
       outstanding_eligible_inserts: reconciliation.outstanding_eligible_inserts,
@@ -1464,7 +1495,13 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       quality_gate: qualityGate,
       snapshot_id: snapshotId,
       inventory_changed: false,
-      writes_performed: 0
+      writes_performed: 0,
+      source_absence_deactivation_enabled: isSeabournSourceAbsenceDeactivationEnabled(),
+      weekly_write_safety: assessSeabournWeeklyWriteSafety({
+        sourceAbsencePolicy,
+        performWrites: false,
+        proposedIdentityReviewUpdates: proposedIdentityReviewUpdates.length
+      })
     };
 
     if (!qualityGate.passed) {
@@ -1497,9 +1534,28 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       return { ok: true, dry_run: true, summary, manifest, simulation };
     }
 
+    const weeklyWriteSafety = assessSeabournWeeklyWriteSafety({
+      sourceAbsencePolicy,
+      performWrites: true,
+      proposedIdentityReviewUpdates: proposedIdentityReviewUpdates.length
+    });
+    summary.weekly_write_safety = weeklyWriteSafety;
+    if (!weeklyWriteSafety.ok) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: true,
+        reason: weeklyWriteSafety.failures.join("; "),
+        summary,
+        manifest,
+        simulation
+      };
+    }
+
     const isWeeklyMaintenanceWrite =
       (context.writeMode || context.write_mode || "weekly_maintenance") === "weekly_maintenance";
-    const combinedProposed = proposedInserts.length + proposedUpdates.length;
+    const combinedProposed =
+      proposedInserts.length + proposedUpdates.length + proposedSafeUpdates.length;
     const effectiveMaxWrites = isWeeklyMaintenanceWrite
       ? Math.min(maxWrites, SEABOURN_MAX_WEEKLY_WRITES)
       : maxWrites;
@@ -1516,7 +1572,7 @@ async function runSeabournWeeklyMaintenance(context = {}) {
           weekly_write_cap: SEABOURN_MAX_WEEKLY_WRITES,
           combined_proposed_changes: combinedProposed,
           proposed_inserts: proposedInserts.length,
-          proposed_updates: proposedUpdates.length
+          proposed_updates: proposedUpdates.length + proposedSafeUpdates.length
         },
         simulation
       };
@@ -1551,7 +1607,12 @@ async function runSeabournWeeklyMaintenance(context = {}) {
         const entry = manifest.products.find(
           (p) => p.stable_identity_key === seabournOfficialProductKey(row.raw)
         );
-        return entry && ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
+        return (
+          entry &&
+          ["insert_active", "update_exact_legacy_match", "update_safe_metadata_allowed"].includes(
+            entry.proposed_action
+          )
+        );
       })
       .sort((a, b) => {
         const ka = seabournOfficialProductKey(a.raw) || "";
