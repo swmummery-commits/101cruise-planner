@@ -57,3 +57,21 @@ reports/celebrity-automatic-batch-rollback-*.json
 reports/celebrity-automatic-continuation-*.json
 reports/celebrity-legacy-audit-*.json
 reports/celebrity-pagination-reconciliation-*.json
+
+# Generated cruise-line maintenance operational reports (dry-run / apply / smoke).
+# Underscore-prefixed files are redirected CLI/smoke captures; never commit.
+reports/_*.stdout
+reports/_*.log
+# Norwegian/NCL phased onboarding outputs (phase 4+). Canonical tracked manifests
+# use distinct names: norwegian-ship-code-seed-manifest.json, norwegian-port-reference-data-phase3.json, etc.
+reports/norwegian-phase*.json
+# Seabourn maintenance/smoke outputs (no canonical tracked reports under this prefix).
+reports/seabourn-weekly-maintenance-*.json
+reports/seabourn-prompt*-*.json
+reports/seabourn-first-controlled-batch-*.json
+reports/seabourn-controlled-batch-*.json
+# Royal Caribbean Prompt 10+ weekly outputs (Prompt 4–8 closeout reports remain tracked intentionally).
+reports/royal-caribbean-prompt10-*.json
+reports/royal-caribbean-prompt10-manifest-*.json
+reports/royal-caribbean-weekly-maintenance-*.json
+reports/royal-caribbean-weekly-manifest-*.json
