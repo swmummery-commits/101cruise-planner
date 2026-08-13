@@ -15,6 +15,7 @@ const { validateCruise } = require("./cruise-discovery");
 const { evaluateDiscoveryConfidence } = require("./discovery-confidence");
 const { provesIndividualSailing } = require("./discovery-non-sailing-filter");
 const { OPERATIONAL_DESTINATION_CATALOGUE } = require("./destination-classification");
+const carnivalSolr = require("./carnival-solr-discovery");
 
 const ADAPTER_ID = "holland-america";
 const ADAPTER_VERSION = "2026-08-02.hal3";
@@ -134,35 +135,10 @@ const ASIA_PORT_TOKENS = [
 
 const fetchCache = new Map();
 
-function parseHalDelimited(value) {
-  const text = String(value || "").trim();
-  if (!text) return { name: null, code: null };
-  const [name, code] = text.split("#@#");
-  return { name: (name || text).trim(), code: code?.trim() || null };
-}
-
-function parseHalDate(iso) {
-  if (!iso) return null;
-  const d = String(iso).slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(d) ? d : null;
-}
-
-function parsePortList(values) {
-  return (values || [])
-    .map((v) => parseHalDelimited(v).name)
-    .filter(Boolean)
-    .filter((p) => !/^scenic cruising/i.test(p));
-}
-
-function pickLocaleField(doc, base, localePrefix = "en_us") {
-  const key = `${localePrefix}_${base}`;
-  if (Array.isArray(doc[key]) && doc[key].length) return doc[key];
-  if (Array.isArray(doc[base]) && doc[base].length) return doc[base];
-  const plain = String(base).replace(/_ss$/, "");
-  if (plain !== base && Array.isArray(doc[plain]) && doc[plain].length) return doc[plain];
-  if (doc[base] != null && !String(base).endsWith("_ss")) return doc[base];
-  return null;
-}
+const parseHalDelimited = carnivalSolr.parseCarnivalDelimited;
+const parseHalDate = carnivalSolr.parseCarnivalDate;
+const parsePortList = carnivalSolr.parsePortList;
+const pickLocaleField = carnivalSolr.pickLocaleField;
 
 function buildOfficialUrl(contentPath, localePath = DEFAULT_LOCALE_PATH) {
   const path = String(contentPath || "").trim();

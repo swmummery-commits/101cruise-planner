@@ -1,0 +1,102 @@
+{
+  "response": {
+    "numFound": 6,
+    "start": 0,
+    "docs": [
+      {
+        "id": "en_us!7655_A6S07G",
+        "entityId": "7655_A6S07G",
+        "type": "cruise",
+        "cruiseId": "7655",
+        "itineraryId": "A6S07G",
+        "tourId": "",
+        "name": "7-Day Alaska Fjords & Canadian Inside Passage",
+        "nightName": "7-Night Alaska Fjords & Canadian Inside Passage",
+        "shipName": "Seabourn Encore#@#SE",
+        "shipId": "SE",
+        "duration": 7,
+        "departDate": "2026-08-14T00:00:00Z",
+        "arrivalDate": "2026-08-21T00:00:00Z",
+        "embarkPortName": "Juneau, Alaska, US#@#JNU",
+        "embarkPortCode": "JNU",
+        "disembarkPortName": "Vancouver, B.C., CA",
+        "disembarkPortCode": "YVR",
+        "portOfCallIds": [
+          "Juneau, Alaska, US#@#JNU",
+          "Cruising Stephens Passage#@#496",
+          "Vancouver, B.C., CA#@#YVR"
+        ],
+        "destinationNames": ["ALASKA#@#A"],
+        "contentPath": "/find-a-cruise/a6s07g/7655",
+        "soldOut": false,
+        "language_country_code_s": "en_us"
+      },
+      {
+        "id": "en_us!6656A_E6M14J",
+        "type": "cruise",
+        "cruiseId": "6656A",
+        "itineraryId": "E6M14J",
+        "name": "14-Day Grecian Gems & Dalmatian Delights",
+        "shipName": "Seabourn Quest#@#SQ",
+        "duration": 14,
+        "departDate": "2026-08-16T00:00:00Z",
+        "arrivalDate": "2026-08-30T00:00:00Z",
+        "embarkPortName": "Piraeus (Athens), Greece#@#PIR",
+        "disembarkPortName": "Venice (Fusina), Italy",
+        "destinationNames": ["MEDITERRANEAN#@#E"],
+        "contentPath": "/find-a-cruise/e6m14j/6656a"
+      },
+      {
+        "id": "en_us!6656_E6M07J",
+        "type": "cruise",
+        "cruiseId": "6656",
+        "itineraryId": "E6M07J",
+        "name": "7-Day Greece & Dalmatian Delights",
+        "shipName": "Seabourn Quest#@#SQ",
+        "duration": 7,
+        "departDate": "2026-08-16T00:00:00Z",
+        "arrivalDate": "2026-08-23T00:00:00Z",
+        "embarkPortName": "Piraeus (Athens), Greece#@#PIR",
+        "disembarkPortName": "Venice (Fusina), Italy",
+        "destinationNames": ["MEDITERRANEAN#@#E"],
+        "contentPath": "/find-a-cruise/e6m07j/6656"
+      },
+      {
+        "id": "en_us!V649_NWP012R58",
+        "type": "cruise",
+        "cruiseId": "V649",
+        "itineraryId": "NWP012R58",
+        "tourId": "T6ER58",
+        "name": "24-Day Journey Across The Northwest Passage",
+        "shipName": "Seabourn Venture#@#VN",
+        "duration": 24,
+        "departDate": "2026-08-29T00:00:00Z",
+        "arrivalDate": "2026-09-22T00:00:00Z",
+        "embarkPortName": "Nome, Alaska, US#@#OME",
+        "disembarkPortName": "Reykjavik, Iceland",
+        "destinationNames": ["ARCTIC#@#S"],
+        "contentPath": "/find-a-cruise/nwp012r58/v649"
+      },
+      {
+        "id": "en_us!7655_A6S07G",
+        "type": "cruise",
+        "cruiseId": "7655",
+        "itineraryId": "A6S07G",
+        "name": "7-Day Alaska Fjords & Canadian Inside Passage",
+        "shipName": "Seabourn Encore#@#SE",
+        "duration": 7,
+        "departDate": "2026-08-14T00:00:00Z",
+        "arrivalDate": "2026-08-21T00:00:00Z",
+        "embarkPortName": "Juneau, Alaska, US#@#JNU",
+        "destinationNames": ["ALASKA#@#A"],
+        "contentPath": "/find-a-cruise/a6s07g/7655"
+      },
+      {
+        "type": "cruise",
+        "cruiseId": "",
+        "name": "",
+        "contentPath": "/globalcomponentpages/cruise-details-template"
+      }
+    ]
+  }
+}

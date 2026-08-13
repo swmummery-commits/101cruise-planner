@@ -1,0 +1,26 @@
+name: Seabourn Source Smoke (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seabourn-source-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run read-only Seabourn source smoke
+        env:
+          SEABOURN_DISCOVERY_WRITE_ENABLED: "false"
+          SEABOURN_WEEKLY_RECONCILIATION_ENABLED: "false"
+        run: node scripts/seabourn-source-smoke-ci.mjs
