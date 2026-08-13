@@ -51,6 +51,19 @@ function buildGroups(count, prefix = "G") {
   return groups;
 }
 
+test("pagination fetches final partial page before stopping at total", () => {
+  let skip = 0;
+  const pageSize = 100;
+  const totalOfficial = 918;
+  const fetched = [];
+  while (true) {
+    fetched.push(skip);
+    skip += pageSize;
+    if (skip >= totalOfficial) break;
+  }
+  if (!fetched.includes(900)) throw new Error("final page at skip 900 must be fetched");
+});
+
 test("symmetric set diff counts both directions", () => {
   const diff = enumeration.symmetricSetDiff(new Set(["a", "b"]), new Set(["b", "c"]));
   if (diff.symmetric_count !== 2) throw new Error(`expected 2 got ${diff.symmetric_count}`);

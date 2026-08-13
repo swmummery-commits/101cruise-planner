@@ -104,14 +104,14 @@ async function main() {
     performWrites: false,
     skipLock: true,
     supabase: sb,
-    triggerType: "prompt2_dry_run",
-    runId: `royal-caribbean-prompt2-${startedAt.replace(/[:.]/g, "-")}`
+    triggerType: "prompt8_weekly_dry_run",
+    runId: `royal-caribbean-prompt8-${startedAt.replace(/[:.]/g, "-")}`
   });
 
   const report = {
     generated_at: new Date().toISOString(),
     started_at: startedAt,
-    mode: "royal_caribbean_prompt2_dry_run",
+    mode: "royal_caribbean_prompt8_dry_run",
     read_only: true,
     supabase_url: url,
     write_flags: {

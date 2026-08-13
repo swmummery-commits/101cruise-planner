@@ -1,0 +1,17 @@
+{
+  "deploy_id": "6a7d42328fa87a72191f9b0e",
+  "deploy_url": "https://feat-royal-caribbean-final-catchup--admirable-tiramisu-d4da8a.netlify.app",
+  "function_endpoint": "/.netlify/functions/royal-caribbean-discovery-smoke",
+  "unauthenticated_probe": {
+    "http_status": 401,
+    "graphql_valid": null,
+    "writes_performed": false,
+    "note": "Function deployed and auth gate active"
+  },
+  "authenticated_smoke": {
+    "status": "NOT COMPLETED",
+    "reason": "DISCOVERY_CRON_SECRET not available in local execution environment for outbound authenticated invocation"
+  },
+  "royal_caribbean_netlify_runtime_ok": false,
+  "recommendation": "Invoke authenticated smoke from Netlify dashboard or environment with DISCOVERY_CRON_SECRET configured"
+}

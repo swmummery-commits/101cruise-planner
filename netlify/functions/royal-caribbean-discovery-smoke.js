@@ -3,8 +3,6 @@
  *
  * POST /.netlify/functions/royal-caribbean-discovery-smoke
  * Header: x-discovery-cron-secret = DISCOVERY_CRON_SECRET
- *
- * Zero database writes. Zero maintenance writes. No cron schedule.
  */
 
 const {
@@ -13,7 +11,10 @@ const {
   USER_AGENT,
   GRAPH_URL
 } = require("./lib/royal-caribbean-discovery-source");
-const { enumerateMultiPageSizeUnion } = require("./lib/royal-caribbean-source-enumeration");
+const {
+  enumerateMultiPageSizeUnion,
+  AUTHORITATIVE_PAGE_SIZES
+} = require("./lib/royal-caribbean-source-enumeration");
 
 function cronSecret() {
   return String(process.env.DISCOVERY_CRON_SECRET || "").trim();
@@ -68,12 +69,14 @@ exports.handler = async (event) => {
       }
     }
 
+    const authoritative = body.authoritative_enumeration === true;
     const probe = await probeRoyalCaribbeanSource({ maxPages: 1, pageSize: 5, includeFleet: true });
     const fleet = await fetchRoyalCaribbeanFleet();
-    const boundedUnion = await enumerateMultiPageSizeUnion({
-      pageSizes: [50],
+    const union = await enumerateMultiPageSizeUnion({
+      pageSizes: authoritative ? body.union_page_sizes || AUTHORITATIVE_PAGE_SIZES : [50],
       requestDelayMs: 0,
-      stopAtTotal: true
+      stopAtTotal: !authoritative,
+      untilEmpty: authoritative
     });
 
     const payload = {
@@ -87,11 +90,16 @@ exports.handler = async (event) => {
       sample_group_count: probe.returned_groups || 0,
       official_group_total: probe.total_official_groups || null,
       fleet_count: fleet.ships?.length || 0,
-      bounded_union_sailing_ids: boundedUnion.unique_sailing_ids || 0,
+      authoritative_enumeration_requested: authoritative,
+      authoritative_union_page_sizes: union.page_sizes,
+      authoritative_requests: union.passes?.reduce((n, pass) => n + (pass.pages_requested || 0), 0) || 0,
+      authoritative_groups_union: union.unique_group_ids || 0,
+      authoritative_sailing_ids_union: union.unique_sailing_ids || 0,
       writes_performed: false,
       inventory_writes: false,
       maintenance_writes: false,
       deployed_commit_ref: process.env.COMMIT_REF || process.env.DEPLOY_ID || null,
+      deploy_url: process.env.URL || process.env.DEPLOY_PRIME_URL || null,
       duration_ms: Date.now() - started
     };
 

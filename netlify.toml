@@ -67,7 +67,7 @@
   timeout = 900
 
 [functions."royal-caribbean-discovery-smoke"]
-  timeout = 120
+  timeout = 900
 
 [functions."cruise-daily-expiry-cron"]
   # Daily sailed-cruise expiration — 17:30 UTC (01:30 Australia/Perth).

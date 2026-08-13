@@ -58,11 +58,24 @@ function buildRoyalCaribbeanReconciliationArithmetic({
   };
 }
 
-function evaluateRoyalCaribbeanDryRunHealth({ simulation, arithmetic, manifest, actualWrites = 0 }) {
+function evaluateRoyalCaribbeanDryRunHealth({
+  simulation,
+  arithmetic,
+  manifest,
+  actualWrites = 0,
+  enumerationHealth = null
+}) {
   const failures = [];
-  if (!simulation?.ok) failures.push("source_fetch_failed");
-  if (simulation?.pagination?.incomplete_pagination) failures.push("incomplete_pagination");
+  if (!simulation?.ok && enumerationHealth?.royal_caribbean_source_enumeration_ok !== true) {
+    failures.push("source_fetch_failed");
+  }
+  if (simulation?.pagination?.incomplete_pagination && enumerationHealth?.royal_caribbean_source_enumeration_ok !== true) {
+    failures.push("incomplete_pagination");
+  }
   if ((simulation?.pagination?.pages_failed || 0) > 0) failures.push("failed_pages");
+  if (enumerationHealth && enumerationHealth.royal_caribbean_source_enumeration_ok !== true) {
+    failures.push("source_enumeration_unhealthy");
+  }
   if (!arithmetic?.reconciliation_arithmetic_ok) failures.push("reconciliation_arithmetic_failed");
   const products = simulation?.products || [];
   const withId = products.filter((p) => p.official_sailing_id);

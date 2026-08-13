@@ -1563,7 +1563,7 @@ module.exports = {
   runRoyalCaribbeanWeeklyMaintenance: (context = {}) =>
     runRoyalCaribbeanWeeklyMaintenance({
       ...context,
-      _deps: { loadLineContext, findSourceAbsentActive }
+      _deps: { loadLineContext, findSourceAbsentActive, findPreviousSuccessfulMaintenanceRun }
     }),
   acquireMaintenanceLock,
   releaseMaintenanceLock,

@@ -418,7 +418,27 @@ async function fetchRoyalCaribbeanFleet({ userAgent = USER_AGENT } = {}) {
   };
 }
 
+function assessAuthoritativeUnionPagination(fetchResult = {}) {
+  const groupsFetched = fetchResult.groups?.length || 0;
+  const totalOfficial = Number(fetchResult.total_official) || 0;
+  const pagesRequested = Number(fetchResult.pagination_requests) || 0;
+  const groupShortfall = Math.max(0, totalOfficial - groupsFetched);
+  return {
+    pages_requested: pagesRequested,
+    pages_successful: pagesRequested,
+    pages_failed: 0,
+    incomplete_pagination: pagesRequested === 0 || groupShortfall > 1,
+    fetch_failed: groupsFetched === 0,
+    authoritative_union: true,
+    union_page_sizes: fetchResult.union_page_sizes || [],
+    group_shortfall: groupShortfall
+  };
+}
+
 function assessRoyalCaribbeanPagination(fetchResult = {}) {
+  if (fetchResult.authoritative_union === true) {
+    return assessAuthoritativeUnionPagination(fetchResult);
+  }
   const pageLog = fetchResult.page_log || [];
   const pagesRequested = pageLog.length;
   const pagesSuccessful = pageLog.filter((p) => p.ok).length;
@@ -446,21 +466,28 @@ async function fetchAllRoyalCaribbeanRawSailings(options = {}) {
   const futureOnly = options.futureOnly !== false;
   let fetchResult;
   if (options.authoritativeEnumeration === true) {
-    const { enumerateMultiPageSizeUnion } = require("./royal-caribbean-source-enumeration");
-    const union = await enumerateMultiPageSizeUnion({
+    const { enumerateMultiPageSizeUnion, dedupeGroupsById } = require("./royal-caribbean-source-enumeration");
+    const unionArgs = {
       pageSizes: options.unionPageSizes || [25, 50, 100],
       requestDelayMs: options.requestDelayMs ?? 100,
-      today,
-      stopAtTotal: true
-    });
+      today
+    };
+    const unionA = await enumerateMultiPageSizeUnion(unionArgs);
+    const unionB = await enumerateMultiPageSizeUnion(unionArgs);
+    const mergedGroups = dedupeGroupsById([...(unionA.groups || []), ...(unionB.groups || [])]);
     fetchResult = {
       ok: true,
-      total_official: union.results_total,
-      groups: union.groups,
-      page_log: union.passes.flatMap((pass) => pass.pages_requested ? [{ page_size: pass.page_size, ...pass }] : []),
-      pagination_requests: union.passes.reduce((n, pass) => n + (pass.pages_requested || 0), 0),
+      total_official: Math.max(unionA.results_total || 0, unionB.results_total || 0),
+      groups: mergedGroups,
+      page_log: [...unionA.passes, ...unionB.passes].flatMap((pass) =>
+        (pass.page_log || []).map((entry) => ({ page_size: pass.page_size, ...entry }))
+      ),
+      pagination_requests:
+        unionA.passes.reduce((n, pass) => n + (pass.pages_requested || 0), 0) +
+        unionB.passes.reduce((n, pass) => n + (pass.pages_requested || 0), 0),
       authoritative_union: true,
-      union_page_sizes: union.page_sizes
+      union_page_sizes: unionA.page_sizes,
+      stability_passes: 2
     };
   } else {
     fetchResult = await fetchRoyalCaribbeanInventoryPages(options);

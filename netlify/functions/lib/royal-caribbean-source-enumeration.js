@@ -93,9 +93,9 @@ async function enumerateGlobalOffsetPass({
       groups.push(group);
     }
     pages += 1;
-    const reachedOfficialTotal = stopAtTotal && !untilEmpty && skip + pageSize >= totalOfficial;
-    if (reachedOfficialTotal) break;
     skip += pageSize;
+    const reachedOfficialTotal = stopAtTotal && !untilEmpty && skip >= totalOfficial;
+    if (reachedOfficialTotal) break;
     if (requestDelayMs > 0) await sleep(requestDelayMs);
   }
 
@@ -136,12 +136,14 @@ async function enumerateMultiPageSizeUnion({
 } = {}) {
   const startedAt = new Date().toISOString();
   const passes = [];
-  for (const pageSize of pageSizes) {
+  for (let i = 0; i < pageSizes.length; i += 1) {
+    const pageSize = pageSizes[i];
+    const isLast = i === pageSizes.length - 1;
     passes.push(
       await enumerateGlobalOffsetPass({
         pageSize,
-        stopAtTotal,
-        untilEmpty,
+        stopAtTotal: !isLast,
+        untilEmpty: isLast,
         requestDelayMs,
         today
       })
@@ -338,6 +340,74 @@ function computeSourceSnapshotIdFromSailingIds(sailingIds = []) {
   return crypto.createHash("sha256").update(sorted.join("|")).digest("hex").slice(0, 16);
 }
 
+async function auditProductionIdsViaDetailLookup({
+  missingSailingIds = [],
+  productionBySailingId = new Map(),
+  maxLookups = 25
+} = {}) {
+  const results = [];
+  for (const sailingId of missingSailingIds.slice(0, maxLookups)) {
+    const row = productionBySailingId.get(sailingId);
+    const groupId =
+      row?.raw_extract?.royal_caribbean_group_id ||
+      row?.raw_extract?.celebrity_group_id ||
+      null;
+    if (!groupId) {
+      results.push({ official_sailing_id: sailingId, detail_ok: false, reason: "missing_group_id" });
+      continue;
+    }
+    const detail = await fetchRoyalCaribbeanCruiseDetail(groupId);
+    const sailingPresent = (detail.cruise?.sailings || []).some((s) => String(s.id) === String(sailingId));
+    results.push({
+      official_sailing_id: sailingId,
+      group_id: groupId,
+      detail_ok: detail.ok === true,
+      sailing_present_in_detail: sailingPresent,
+      retrievable: detail.ok === true && sailingPresent
+    });
+  }
+  return results;
+}
+
+function evaluateWeeklyAuthoritativeEnumerationHealth({
+  simulationOk = false,
+  unionSailingIds = new Set(),
+  productionSailingIds = new Set(),
+  duplicateSailingIds = 0,
+  shipCoverage = null,
+  detailLookupResults = []
+} = {}) {
+  const failures = [];
+  if (!simulationOk) failures.push("weekly_source_fetch_failed");
+  if (duplicateSailingIds > 0) failures.push("duplicate_sailing_ids_after_dedupe");
+  if (shipCoverage?.missing_ship_codes?.length) {
+    failures.push(`fleet_ships_without_union_sailings_${shipCoverage.missing_ship_codes.length}`);
+  }
+  const absentFromUnion = [...productionSailingIds].filter((id) => !unionSailingIds.has(id));
+  const enumerationGaps = detailLookupResults.filter((row) => row.retrievable);
+  const confirmedSourceRemoved = detailLookupResults.filter(
+    (row) => row.detail_ok === true && row.sailing_present_in_detail === false
+  );
+  const unexplainedAbsent = absentFromUnion.filter((id) => {
+    if (enumerationGaps.some((row) => row.official_sailing_id === id)) return false;
+    if (confirmedSourceRemoved.some((row) => row.official_sailing_id === id)) return false;
+    return true;
+  });
+  if (unexplainedAbsent.length > 0) failures.push("production_ids_missing_from_union");
+  if (enumerationGaps.length > 0) failures.push("enumeration_gap_recovered_via_detail_lookup");
+  return {
+    royal_caribbean_source_enumeration_ok:
+      failures.filter((f) => f !== "enumeration_gap_recovered_via_detail_lookup").length === 0,
+    failures,
+    production_absent_from_union_count: absentFromUnion.length,
+    production_absent_from_union_ids: absentFromUnion.slice(0, 20),
+    detail_lookup_recoverable_count: enumerationGaps.length,
+    confirmed_source_removed_count: confirmedSourceRemoved.length,
+    unexplained_production_absent_count: unexplainedAbsent.length,
+    authoritative_union: true
+  };
+}
+
 function evaluateSourceEnumerationHealth({
   globalPass,
   unionPass,
@@ -403,12 +473,15 @@ module.exports = {
   DEFAULT_UNION_PAGE_SIZES,
   symmetricSetDiff,
   unionSets,
+  dedupeGroupsById,
   enumerateGlobalOffsetPass,
   enumerateMultiPageSizeUnion,
   enumerateUntilStableUnion,
   enumerateShipCoveragePartition,
   fetchRoyalCaribbeanCruiseDetail,
+  auditProductionIdsViaDetailLookup,
   computeSourceSnapshotIdFromSailingIds,
   evaluateSourceEnumerationHealth,
+  evaluateWeeklyAuthoritativeEnumerationHealth,
   sourceAbsenceActionAllowed
 };
