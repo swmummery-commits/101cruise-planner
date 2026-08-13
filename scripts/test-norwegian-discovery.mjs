@@ -418,6 +418,11 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(poc.getPortOfCallCanonicalName("PSD") === "Port Said", "Port Said Egypt mapped");
   assert(poc.getPortOfCallCanonicalName("SSH") === "Sharm el Sheikh", "Sharm el Sheikh mapped");
   assert(poc.getPortOfCallCanonicalName("AQB") === "Aqaba", "Aqaba Jordan mapped");
+  assert(poc.getPortOfCallCanonicalName("RAI") === "Raiatea", "Raiatea French Polynesia mapped");
+  assert(poc.getPortOfCallCanonicalName("IVG") === "Invergordon", "Invergordon Scotland mapped");
+  assert(poc.getPortOfCallCanonicalName("IPO") === "Portland England", "Portland England distinct from Maine");
+  assert(poc.getPortOfCallCanonicalName("NTL") === "Newcastle Australia", "Newcastle Australia distinct from Tyne");
+  assert(poc.getPortOfCallCanonicalName("KLL") === "Killybegs", "Killybegs Ireland mapped");
 
   const phase6aCodes = {
     ACA: "Acapulco",
@@ -482,6 +487,12 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(pacificCoastalPlan.slug === "pacific-coast", "PACIFIC_COASTAL maps to pacific-coast");
   const africaPlan = nclDest.resolveSlugFromCodes(["AFRICA"]);
   assert(africaPlan.slug === "africa", "AFRICA maps to africa");
+  const emptyCodesCarib = nclDest.resolveSlugFromCodes([], {
+    title: "VIVA3MIANPIMIA",
+    port_blob: "Miami VIVA3MIANPIMIA"
+  });
+  assert(emptyCodesCarib.slug === "caribbean", "empty browse codes with NPI itinerary token infer caribbean");
+  assert(emptyCodesCarib.method === "ncl_caribbean_port_evidence", "caribbean inferred from itinerary port evidence");
 
   const simulation = await ncl.simulateNorwegianDiscovery({
     cruiseLine: nclLine,

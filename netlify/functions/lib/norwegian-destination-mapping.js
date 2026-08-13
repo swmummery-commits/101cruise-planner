@@ -35,6 +35,10 @@ const NCL_NON_GEOGRAPHIC_CODES = Object.freeze(new Set(["EXTRAORDINARY_JOURNEYS"
 
 const JAPAN_PORT_TOKENS = /japan|tokyo|yokohama|osaka|kobe|hiroshima|nagasaki|kanazawa|akita|hakodate|shimizu|sakaiminato|aomori|nagoya|sendai|maizuru|incheon|seoul|busan/i;
 
+/** NCL itinerary/port tokens that deterministically indicate Caribbean/Bahamas when browse codes are absent */
+const CARIBBEAN_PORT_TOKENS =
+  /NPI|NAS|GSC|CZM|STT|STX|TOV|POP|GCM|BZE|RTB|OCJ|FPO|MBJ|BIM|MSC|HMC|GDT|RCY|CRU|BWI|KPF|LAB|EXM|SAN|BAHAMAS|CARIBBEAN|NASSAU|COZUMEL|GRAND_CAYMAN|GREAT_STIRRUP|ST_KITTS|ANTIGUA|BARBADOS|ARUBA|CURACAO|BONAIRE/i;
+
 function normaliseCodes(codes = []) {
   return (Array.isArray(codes) ? codes : [])
     .map((code) => String(code || "").trim().toUpperCase())
@@ -74,6 +78,11 @@ function resolveSlugFromCodes(codes = [], context = {}) {
 
   if (geo.includes("ASIA") && JAPAN_PORT_TOKENS.test(context.port_blob || "")) {
     return { slug: "japan", method: "ncl_asia_japan_port_evidence", source_code: "ASIA", confidence: "high" };
+  }
+
+  const evidenceBlob = [context.port_blob, context.title].filter(Boolean).join(" ");
+  if (CARIBBEAN_PORT_TOKENS.test(evidenceBlob)) {
+    return { slug: "caribbean", method: "ncl_caribbean_port_evidence", source_code: null, confidence: "high" };
   }
 
   const medTokens = /ravenna|trieste|venice|barcelona|rome|civitavecchia|piraeus|athens|mediterranean|santorini|mykonos|dubrovnik|split|kotor|valletta|palma|marseille|nice|genoa|livorno|florence|naples|sicily|malta|tarragona|corfu|messina|argostoli|zadar|ancona|catania|palermo/i;

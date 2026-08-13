@@ -309,6 +309,100 @@ const NCL_PORT_OF_CALL_CODES = Object.freeze([
     canonical_name: "Aqaba",
     classification: "NEW_PORT_REQUIRED",
     country: "Jordan"
+  },
+  { code: "RAI", source_name: "Raiatea, French Polynesia", canonical_name: "Raiatea", classification: "NEW_PORT_REQUIRED", country: "French Polynesia" },
+  {
+    code: "IVG",
+    source_name: "Inverness (Invergordon), Scotland",
+    canonical_name: "Invergordon",
+    classification: "NEW_PORT_REQUIRED",
+    country: "United Kingdom",
+    note: "NCL markets Inverness; physical cruise port is Invergordon"
+  },
+  { code: "APW", source_name: "Apia, Samoa Islands", canonical_name: "Apia", classification: "NEW_PORT_REQUIRED", country: "Samoa" },
+  { code: "RAR", source_name: "Rarotonga, Cook Islands", canonical_name: "Rarotonga", classification: "NEW_PORT_REQUIRED", country: "Cook Islands" },
+  {
+    code: "IPO",
+    source_name: "Portland, England",
+    canonical_name: "Portland England",
+    classification: "DISTINCT_PORT_REQUIRED",
+    country: "United Kingdom",
+    note: "Dorset cruise port — not Portland Maine"
+  },
+  { code: "PPG", source_name: "Pago Pago, American Samoa", canonical_name: "Pago Pago", classification: "NEW_PORT_REQUIRED", country: "American Samoa" },
+  { code: "PTR", source_name: "Portree, United Kingdom", canonical_name: "Portree", classification: "NEW_PORT_REQUIRED", country: "United Kingdom" },
+  {
+    code: "TYN",
+    source_name: "Newcastle (Tyne), England",
+    canonical_name: "Newcastle upon Tyne",
+    classification: "NEW_PORT_REQUIRED",
+    country: "United Kingdom"
+  },
+  { code: "TMU", source_name: "Timaru, New Zealand", canonical_name: "Timaru", classification: "NEW_PORT_REQUIRED", country: "New Zealand" },
+  { code: "THE", source_name: "Thessaloniki, Greece", canonical_name: "Thessaloniki", classification: "NEW_PORT_REQUIRED", country: "Greece" },
+  { code: "BYO", source_name: "Bay of Islands, New Zealand", canonical_name: "Bay of Islands", classification: "NEW_PORT_REQUIRED", country: "New Zealand" },
+  { code: "STW", source_name: "Stornoway, United Kingdom", canonical_name: "Stornoway", classification: "NEW_PORT_REQUIRED", country: "United Kingdom" },
+  {
+    code: "KWL",
+    source_name: "Kirkwall, Orkney Isles, Scotland",
+    canonical_name: "Kirkwall",
+    classification: "NEW_PORT_REQUIRED",
+    country: "United Kingdom"
+  },
+  { code: "KLL", source_name: "Killybegs, Ireland", canonical_name: "Killybegs", classification: "NEW_PORT_REQUIRED", country: "Ireland" },
+  { code: "BOR", source_name: "Boracay, Philippines", canonical_name: "Boracay", classification: "NEW_PORT_REQUIRED", country: "Philippines" },
+  {
+    code: "NTL",
+    source_name: "Newcastle, Australia",
+    canonical_name: "Newcastle Australia",
+    classification: "DISTINCT_PORT_REQUIRED",
+    country: "Australia",
+    note: "New South Wales cruise port — not Newcastle upon Tyne"
+  },
+  {
+    code: "DPS",
+    source_name: "Bali (Benoa), Indonesia",
+    canonical_name: "Benoa",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Indonesia",
+    note: "NCL markets Bali; physical cruise port is Benoa"
+  },
+  { code: "ABZ", source_name: "Aberdeen, Scotland", canonical_name: "Aberdeen", classification: "NEW_PORT_REQUIRED", country: "United Kingdom" },
+  { code: "ALT", source_name: "Alta, Norway", canonical_name: "Alta", classification: "NEW_PORT_REQUIRED", country: "Norway" },
+  { code: "KRD", source_name: "Kristiansund, Norway", canonical_name: "Kristiansund", classification: "NEW_PORT_REQUIRED", country: "Norway" },
+  { code: "HAU", source_name: "Haugesund, Norway", canonical_name: "Haugesund", classification: "NEW_PORT_REQUIRED", country: "Norway" },
+  { code: "CRH", source_name: "Cam Ranh, Vietnam", canonical_name: "Cam Ranh", classification: "NEW_PORT_REQUIRED", country: "Vietnam" },
+  { code: "SKT", source_name: "Sakata, Japan", canonical_name: "Sakata", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  { code: "ADQ", source_name: "Kodiak, Alaska", canonical_name: "Kodiak", classification: "NEW_PORT_REQUIRED", country: "United States" },
+  { code: "HSY", source_name: "Hellesylt, Norway", canonical_name: "Hellesylt", classification: "NEW_PORT_REQUIRED", country: "Norway" },
+  { code: "THO", source_name: "Torshavn, Faroe Islands", canonical_name: "Torshavn", classification: "NEW_PORT_REQUIRED", country: "Faroe Islands" },
+  { code: "AIT", source_name: "Aitutaki, Cook Islands", canonical_name: "Aitutaki", classification: "NEW_PORT_REQUIRED", country: "Cook Islands" },
+  { code: "SUB", source_name: "Surabaya, Indonesia", canonical_name: "Surabaya", classification: "NEW_PORT_REQUIRED", country: "Indonesia" },
+  { code: "BUS", source_name: "Busselton, Australia", canonical_name: "Busselton", classification: "NEW_PORT_REQUIRED", country: "Australia" },
+  { code: "ESP", source_name: "Esperance, Australia", canonical_name: "Esperance", classification: "NEW_PORT_REQUIRED", country: "Australia" },
+  {
+    code: "ALB",
+    source_name: "Albany, Australia",
+    canonical_name: "Albany Australia",
+    classification: "DISTINCT_PORT_REQUIRED",
+    country: "Australia",
+    note: "Western Australia cruise port — not Albany New York"
+  },
+  {
+    code: "LEM",
+    source_name: "Lembar (Lombok), Indonesia",
+    canonical_name: "Lembar",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Indonesia",
+    note: "Lombok cruise port"
+  },
+  {
+    code: "LRM",
+    source_name: "Punta Cana (La Romana), Dominican Republic",
+    canonical_name: "La Romana",
+    classification: "NEW_PORT_REQUIRED",
+    country: "Dominican Republic",
+    note: "NCL markets Punta Cana; physical cruise port is La Romana"
   }
 ]);
 

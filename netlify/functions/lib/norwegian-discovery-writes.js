@@ -499,6 +499,28 @@ function selectControlledBatchProducts(normalisedProducts, { maxWrites = 25 } = 
     .sort((a, b) => String(a.official_sailing_id).localeCompare(String(b.official_sailing_id)));
 }
 
+function selectAllOutstandingEligibleProducts(normalisedProducts, { excludeOfficialIds = new Set() } = {}) {
+  const selected = normalisedProducts
+    .filter(
+      (p) =>
+        p.complete_eligible &&
+        p.itinerary_classification?.category === "ocean" &&
+        !excludeOfficialIds.has(p.official_sailing_id)
+    )
+    .sort((a, b) => String(a.official_sailing_id).localeCompare(String(b.official_sailing_id)))
+    .map((p) => ({ ...p, selection_reason: "outstanding_eligible" }));
+
+  const shipCodes = new Set(
+    selected.map((p) => String(p.raw?.ship_code || "").toUpperCase()).filter(Boolean)
+  );
+
+  return {
+    selected,
+    distinct_ships: shipCodes.size,
+    ship_codes: [...shipCodes].sort()
+  };
+}
+
 function selectPhase6BatchProducts(normalisedProducts, { maxWrites = 50, excludeOfficialIds = new Set(), minDistinctShips = 15 } = {}) {
   const eligible = normalisedProducts
     .filter(
@@ -645,6 +667,7 @@ module.exports = {
   revalidateManifestAgainstSource,
   indexExistingNorwegianRecords,
   selectControlledBatchProducts,
+  selectAllOutstandingEligibleProducts,
   selectPhase6BatchProducts,
   auditNorwegianDestinationCodes,
   isLegacyGenericRow
