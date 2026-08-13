@@ -1,5 +1,5 @@
 /** TEMPORARY Prompt 9 phased proof state reader. */
-const { loadPhasedRunState, loadEnumerationPhase } = require("./lib/royal-caribbean-phased-enumeration-store");
+const { loadPhasedRunState, loadEnumerationPhaseManifest } = require("./lib/royal-caribbean-phased-enumeration-store");
 const { PHASE_SPECS } = require("./lib/royal-caribbean-phased-enumeration");
 const EXPECTED_HOST = "deploy-preview-1--admirable-tiramisu-d4da8a.netlify.app";
 const CONFIRMATION = "RC_PROMPT9_PHASED_PROOF_2026";
@@ -16,7 +16,7 @@ exports.handler = async (event) => {
     const state = await loadPhasedRunState(runId);
     const phaseSummaries = [];
     for (const spec of PHASE_SPECS) {
-      const phase = await loadEnumerationPhase(runId, spec.id);
+      const phase = await loadEnumerationPhaseManifest(runId, spec.id);
       if (phase) phaseSummaries.push({
         phase_id: spec.id,
         page_size: phase.page_size,
