@@ -252,20 +252,207 @@ async function buildRoyalCaribbeanBatchManifest({
   };
 }
 
+const { upsertCandidateRecord } = require("./cruise-discovery-ops");
+const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
+const {
+  MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
+  validateFrozenManifest
+} = require("./royal-caribbean-controlled-batch");
+
+function assertControlledBatchManifest(manifest, options = {}) {
+  if (!manifest || manifest.mode !== "royal_caribbean_controlled_batch") {
+    const err = new Error("Royal Caribbean controlled apply requires a frozen controlled_batch manifest");
+    err.code = "royal_caribbean_missing_frozen_manifest";
+    throw err;
+  }
+  const entries = manifest.entries || [];
+  if (entries.length > MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH) {
+    const err = new Error(
+      `Royal Caribbean controlled batch hard limit exceeded: ${entries.length} > ${MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH}`
+    );
+    err.code = "royal_caribbean_batch_limit_exceeded";
+    throw err;
+  }
+  if (options.expectedCount != null && entries.length !== options.expectedCount) {
+    const err = new Error(
+      `Royal Caribbean manifest count mismatch: expected ${options.expectedCount}, got ${entries.length}`
+    );
+    err.code = "royal_caribbean_manifest_count_mismatch";
+    throw err;
+  }
+  if (options.expectedHash && manifest.manifest_hash !== options.expectedHash) {
+    const err = new Error("Royal Caribbean manifest hash mismatch");
+    err.code = "royal_caribbean_manifest_hash_mismatch";
+    throw err;
+  }
+  const validation = validateFrozenManifest(manifest, {
+    expectedHash: options.expectedHash || null,
+    today: manifest.perth_today || options.today || null
+  });
+  if (!validation.passed) {
+    const err = new Error(`Royal Caribbean manifest validation failed: ${validation.failures.join("; ")}`);
+    err.code = "royal_caribbean_manifest_validation_failed";
+    err.failures = validation.failures;
+    throw err;
+  }
+  return validation;
+}
+
+async function applyRoyalCaribbeanControlledManifest({
+  manifest,
+  cruiseLine,
+  supabase,
+  runId,
+  expectedHash = null,
+  expectedCount = MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
+  maxWrites = MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
+  performWrites = true
+}) {
+  const hardMax = Math.min(maxWrites, MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH);
+  assertControlledBatchManifest(manifest, { expectedHash, expectedCount, today: manifest.perth_today });
+
+  const entries = manifest.entries || [];
+  if (entries.length > hardMax) {
+    const err = new Error(`Abort before write: manifest contains ${entries.length} records (max ${hardMax})`);
+    err.code = "royal_caribbean_batch_limit_exceeded";
+    throw err;
+  }
+
+  const stats = {
+    attempted: 0,
+    inserted: 0,
+    duplicate_skips: 0,
+    failed: 0,
+    stopped_early: false,
+    write_details: [],
+    inserted_ids: [],
+    manifest_hash: manifest.manifest_hash,
+    expected_insert_count: entries.length
+  };
+
+  const indexes = supabase ? await indexExistingRoyalCaribbeanRecords(supabase, cruiseLine.id) : null;
+  const upsertStats = { new: 0, upserted_active: 0, cruises_inserted: 0, cruises_updated: 0 };
+
+  for (const entry of entries) {
+    if (stats.inserted >= hardMax) break;
+    if (entry.proposed_action !== "insert_active") {
+      stats.duplicate_skips += 1;
+      continue;
+    }
+
+    stats.attempted += 1;
+    const candidate = entry.candidate;
+    if (!candidate?.cruise_line_id || !candidate?.ship_id || !candidate?.destination_id) {
+      stats.failed += 1;
+      stats.stopped_early = true;
+      stats.write_details.push({
+        official_sailing_id: entry.official_sailing_id,
+        result_action: "failed",
+        error: "missing_write_candidate"
+      });
+      break;
+    }
+
+    const existing =
+      indexes?.byProductKey.get(entry.official_sailing_id) ||
+      indexes?.byIdentity.get(entry.identity_key) ||
+      indexes?.byExternal.get(entry.external_key) ||
+      null;
+
+    if (existing && !isLegacyHtmlDiscoveryRow(existing)) {
+      stats.duplicate_skips += 1;
+      stats.stopped_early = true;
+      stats.write_details.push({
+        official_sailing_id: entry.official_sailing_id,
+        discovered_cruise_id: existing.id,
+        result_action: "duplicate_abort",
+        error: "official_sailing_id_already_exists"
+      });
+      break;
+    }
+
+    if (!performWrites) continue;
+
+    try {
+      const result = await upsertCandidateRecord(candidate, upsertStats, {
+        prevRecord: null,
+        matchPolicy: "official_sailing_id_only",
+        syncDestinationLinks: false
+      });
+      if (!result.created || !result.row?.id) {
+        stats.failed += 1;
+        stats.stopped_early = true;
+        stats.write_details.push({
+          official_sailing_id: entry.official_sailing_id,
+          result_action: result.duplicate ? "duplicate_abort" : "failed",
+          discovered_cruise_id: result.row?.id || null,
+          error: result.duplicate ? "duplicate_during_insert" : "insert_not_created"
+        });
+        break;
+      }
+
+      stats.inserted += 1;
+      stats.inserted_ids.push(result.row.id);
+      if (indexes) {
+        indexes.byProductKey.set(entry.official_sailing_id, result.row);
+        if (result.row.identity_key) indexes.byIdentity.set(result.row.identity_key, result.row);
+        if (result.row.external_key) indexes.byExternal.set(result.row.external_key, result.row);
+      }
+      stats.write_details.push({
+        official_sailing_id: entry.official_sailing_id,
+        discovered_cruise_id: result.row.id,
+        external_key: candidate.external_key,
+        identity_key: candidate.identity_key,
+        result_action: "inserted",
+        created: true,
+        rollback_snapshot: snapshotRecordForRollback(result.row)
+      });
+    } catch (error) {
+      stats.failed += 1;
+      stats.stopped_early = true;
+      stats.write_details.push({
+        official_sailing_id: entry.official_sailing_id,
+        result_action: "failed",
+        error: error.message || String(error)
+      });
+      break;
+    }
+  }
+
+  return { stats, run_id: runId, upsert_stats: upsertStats };
+}
+
 async function applyRoyalCaribbeanBatchWrites(options = {}) {
   const modeGate = resolveRoyalCaribbeanDiscoveryMode(options.mode || "simulation");
   assertRoyalCaribbeanWritesAllowed(modeGate);
-  const err = new Error("Royal Caribbean production writes are disabled");
+
+  if (modeGate.mode === "controlled_batch" && options.manifest) {
+    return applyRoyalCaribbeanControlledManifest({
+      manifest: options.manifest,
+      cruiseLine: options.cruiseLine,
+      supabase: options.supabase,
+      runId: options.runId,
+      expectedHash: options.expectedHash,
+      expectedCount: options.expectedCount,
+      maxWrites: options.maxWrites,
+      performWrites: options.performWrites !== false
+    });
+  }
+
+  const err = new Error("Royal Caribbean production writes require controlled_batch mode with a frozen manifest");
   err.code = "royal_caribbean_writes_disabled";
   throw err;
 }
 
 module.exports = {
+  MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
   royalCaribbeanExternalKey,
   isLegacyHtmlDiscoveryRow,
   buildRoyalCaribbeanUpsertCandidate,
   classifyProposedAction,
   indexExistingRoyalCaribbeanRecords,
   buildRoyalCaribbeanBatchManifest,
+  assertControlledBatchManifest,
+  applyRoyalCaribbeanControlledManifest,
   applyRoyalCaribbeanBatchWrites
 };
