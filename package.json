@@ -58,6 +58,7 @@
     "test:explora-discovery": "node scripts/test-explora-discovery.mjs",
     "test:seabourn-discovery": "node scripts/test-seabourn-discovery.mjs",
     "seabourn:weekly-maintenance": "node scripts/run-seabourn-weekly-maintenance.mjs",
+    "seabourn:first-production-batch": "node scripts/run-seabourn-first-production-batch.mjs",
     "test:seabourn-weekly-maintenance": "node scripts/test-seabourn-weekly-maintenance.mjs",
     "test:norwegian-discovery": "node scripts/test-norwegian-discovery.mjs",
     "apply:norwegian-ship-code-seed": "node scripts/apply-norwegian-ship-code-seed.mjs",
