@@ -1,0 +1,26 @@
+name: Royal Caribbean Source Smoke (read-only)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  royal-caribbean-source-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run read-only Royal Caribbean source smoke
+        env:
+          ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED: "false"
+          ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED: "false"
+        run: node scripts/royal-caribbean-source-smoke-ci.mjs

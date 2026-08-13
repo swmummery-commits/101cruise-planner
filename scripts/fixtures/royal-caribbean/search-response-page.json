@@ -1,0 +1,162 @@
+{
+  "data": {
+    "cruiseSearch": {
+      "results": {
+        "total": 2,
+        "cruises": [
+          {
+            "id": "VY03LAX-1965471073",
+            "productViewLink": "itinerary/3-night-ensenada-cruise-from-los-angeles-on-voyager-VY03X045?sailDate=2026-10-05&packageCode=VY03X045&groupId=VY03LAX-1965471073&country=USA",
+            "masterSailing": {
+              "itinerary": {
+                "name": "Ensenada Cruise",
+                "code": "VY03X045",
+                "description": "3 NIGHT ENSENADA CRUISE",
+                "voyageType": "OCEAN",
+                "sailingNights": 3,
+                "totalNights": 3,
+                "departurePort": { "code": "LAX", "name": "Los Angeles" },
+                "destination": { "code": "MEXCO", "name": "Mexico" },
+                "ship": { "code": "VY", "name": "Voyager of the Seas" },
+                "preTour": null,
+                "postTour": null,
+                "days": [
+                  {
+                    "number": 1,
+                    "type": "PORT",
+                    "ports": [
+                      {
+                        "arrivalTime": null,
+                        "departureTime": "16:00:00",
+                        "port": { "code": "LAX", "name": "Los Angeles" }
+                      }
+                    ]
+                  },
+                  {
+                    "number": 2,
+                    "type": "PORT",
+                    "ports": [
+                      {
+                        "arrivalTime": "08:00:00",
+                        "departureTime": "16:00:00",
+                        "port": { "code": "ESE", "name": "Ensenada" }
+                      }
+                    ]
+                  },
+                  {
+                    "number": 3,
+                    "type": "PORT",
+                    "ports": [
+                      {
+                        "arrivalTime": null,
+                        "departureTime": null,
+                        "port": { "code": "CRU", "name": "Cruising" }
+                      }
+                    ]
+                  },
+                  {
+                    "number": 4,
+                    "type": "PORT",
+                    "ports": [
+                      {
+                        "arrivalTime": "07:00:00",
+                        "departureTime": null,
+                        "port": { "code": "LAX", "name": "Los Angeles" }
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            "sailings": [
+              {
+                "id": "VY03X045_2026-10-05",
+                "sailDate": "2026-10-05",
+                "startDate": "2026-10-05",
+                "endDate": "2026-10-08",
+                "status": "OPEN"
+              },
+              {
+                "id": "VY03X046_2026-12-18",
+                "sailDate": "2026-12-18",
+                "startDate": "2026-12-18",
+                "endDate": "2026-12-21",
+                "status": "OPEN"
+              }
+            ]
+          },
+          {
+            "id": "IC07MIA-OVERNIGHT",
+            "productViewLink": "itinerary/7-night-eastern-caribbean-on-icon-IC07C001?sailDate=2026-11-01&packageCode=IC07C001&groupId=IC07MIA-OVERNIGHT&country=USA",
+            "masterSailing": {
+              "itinerary": {
+                "name": "Eastern Caribbean Cruise",
+                "code": "IC07C001",
+                "description": "7 NIGHT EASTERN CARIBBEAN CRUISE",
+                "voyageType": "OCEAN",
+                "sailingNights": 7,
+                "totalNights": 7,
+                "departurePort": { "code": "MIA", "name": "Miami" },
+                "destination": { "code": "CARIB", "name": "Caribbean" },
+                "ship": { "code": "IC", "name": "Icon of the Seas" },
+                "preTour": null,
+                "postTour": null,
+                "days": [
+                  {
+                    "number": 1,
+                    "type": "PORT",
+                    "ports": [{ "arrivalTime": null, "departureTime": "16:30:00", "port": { "code": "MIA", "name": "Miami" } }]
+                  },
+                  {
+                    "number": 2,
+                    "type": "PORT",
+                    "ports": [{ "arrivalTime": null, "departureTime": null, "port": { "code": "CRU", "name": "Cruising" } }]
+                  },
+                  {
+                    "number": 3,
+                    "type": "PORT",
+                    "ports": [{ "arrivalTime": "08:00:00", "departureTime": null, "port": { "code": "SJU", "name": "San Juan" } }]
+                  },
+                  {
+                    "number": 4,
+                    "type": "PORT",
+                    "ports": [{ "arrivalTime": null, "departureTime": "17:00:00", "port": { "code": "SJU", "name": "San Juan" } }]
+                  },
+                  {
+                    "number": 5,
+                    "type": "PORT",
+                    "ports": [{ "arrivalTime": "09:00:00", "departureTime": "18:00:00", "port": { "code": "STT", "name": "St. Thomas" } }]
+                  },
+                  {
+                    "number": 6,
+                    "type": "PORT",
+                    "ports": [{ "arrivalTime": null, "departureTime": null, "port": { "code": "CRU", "name": "Cruising" } }]
+                  },
+                  {
+                    "number": 7,
+                    "type": "PORT",
+                    "ports": [{ "arrivalTime": null, "departureTime": null, "port": { "code": "CRU", "name": "Cruising" } }]
+                  },
+                  {
+                    "number": 8,
+                    "type": "PORT",
+                    "ports": [{ "arrivalTime": "06:00:00", "departureTime": null, "port": { "code": "MIA", "name": "Miami" } }]
+                  }
+                ]
+              }
+            },
+            "sailings": [
+              {
+                "id": "IC07C001_2026-11-01",
+                "sailDate": "2026-11-01",
+                "startDate": "2026-11-01",
+                "endDate": "2026-11-08",
+                "status": "OPEN"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
