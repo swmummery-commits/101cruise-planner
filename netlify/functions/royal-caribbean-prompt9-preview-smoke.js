@@ -20,19 +20,36 @@ function hostFromEvent(event) {
   return String(event?.headers?.host || event?.headers?.Host || "").trim().toLowerCase().replace(/:\d+$/, "");
 }
 
-function assertPreviewProof(event) {
+function safeDiagnostics(event) {
+  let deployPrimeHost = "";
   let deployHost = "";
-  try { deployHost = new URL(process.env.DEPLOY_PRIME_URL || "").hostname.toLowerCase(); } catch {}
-  if (deployHost !== EXPECTED_HOST || hostFromEvent(event) !== EXPECTED_HOST) {
-    const e = new Error("preview_host_mismatch"); e.statusCode = 403; throw e;
+  let urlHost = "";
+  try { deployPrimeHost = new URL(process.env.DEPLOY_PRIME_URL || "").hostname.toLowerCase(); } catch {}
+  try { deployHost = new URL(process.env.DEPLOY_URL || "").hostname.toLowerCase(); } catch {}
+  try { urlHost = new URL(process.env.URL || "").hostname.toLowerCase(); } catch {}
+  return {
+    event_host: hostFromEvent(event),
+    deploy_prime_host: deployPrimeHost,
+    deploy_host: deployHost,
+    url_host: urlHost,
+    context: process.env.CONTEXT || null,
+    branch: process.env.BRANCH || null,
+    commit_ref: process.env.COMMIT_REF || null
+  };
+}
+
+function assertPreviewProof(event) {
+  const diag = safeDiagnostics(event);
+  if (diag.deploy_prime_host !== EXPECTED_HOST || diag.event_host !== EXPECTED_HOST) {
+    const e = new Error("preview_host_mismatch"); e.statusCode = 403; e.safeDiagnostics = diag; throw e;
   }
   const body = parseBody(event);
   if (body.confirmation !== CONFIRMATION) {
-    const e = new Error("invalid_confirmation"); e.statusCode = 403; throw e;
+    const e = new Error("invalid_confirmation"); e.statusCode = 403; e.safeDiagnostics = diag; throw e;
   }
   for (const flag of ["ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED", "ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED"]) {
     if (String(process.env[flag] || "").toLowerCase() === "true") {
-      const e = new Error(`${flag}_must_be_false`); e.statusCode = 409; throw e;
+      const e = new Error(`${flag}_must_be_false`); e.statusCode = 409; e.safeDiagnostics = diag; throw e;
     }
   }
 }
@@ -61,6 +78,6 @@ exports.handler = async (event) => {
     };
     return { statusCode: payload.ok ? 200 : 500, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify(payload) };
   } catch (error) {
-    return { statusCode: error.statusCode || 500, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify({ ok: false, error: error.message || "preview_smoke_failed", writes_performed: false, duration_ms: Date.now() - started }) };
+    return { statusCode: error.statusCode || 500, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }, body: JSON.stringify({ ok: false, error: error.message || "preview_smoke_failed", diagnostics: error.safeDiagnostics || safeDiagnostics(event), writes_performed: false, duration_ms: Date.now() - started }) };
   }
 };
