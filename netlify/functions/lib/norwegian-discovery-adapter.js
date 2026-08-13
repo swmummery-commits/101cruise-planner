@@ -561,25 +561,78 @@ function buildEligibilitySummary(normalised, today = perthCalendarDate()) {
   };
 }
 
+function decodeHtmlEntitiesForJson(value) {
+  return String(value || "")
+    .replace(/&quot;/g, '"')
+    .replace(/&#34;/g, '"')
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'");
+}
+
+/** Escape unescaped double quotes inside JSON string values (common NCL schedule-page defect). */
+function repairNclEmbeddedJson(raw) {
+  let out = "";
+  let inString = false;
+  let escaped = false;
+  for (let i = 0; i < raw.length; i += 1) {
+    const ch = raw[i];
+    if (!inString) {
+      out += ch;
+      if (ch === '"') inString = true;
+      continue;
+    }
+    if (escaped) {
+      out += ch;
+      escaped = false;
+      continue;
+    }
+    if (ch === "\\") {
+      out += ch;
+      escaped = true;
+      continue;
+    }
+    if (ch === '"') {
+      let j = i + 1;
+      while (j < raw.length && /\s/.test(raw[j])) j += 1;
+      const next = raw[j];
+      if (next === "," || next === "}" || next === "]" || next === ":") {
+        out += ch;
+        inString = false;
+      } else {
+        out += '\\"';
+      }
+      continue;
+    }
+    out += ch;
+  }
+  return out;
+}
+
+function parseEmbeddedCompleteItineraryPayload(rawJson) {
+  const attempts = [rawJson, repairNclEmbeddedJson(rawJson)];
+  for (const candidate of attempts) {
+    try {
+      const payload = JSON.parse(candidate);
+      if (payload?.completeItinerary) return payload;
+    } catch {
+      /* try repair path */
+    }
+  }
+  return null;
+}
+
 function extractCompleteItineraryFromHtml(html) {
   const text = String(html || "");
   if (!text) return { ok: false, reason: "empty_html", completeItinerary: null };
 
   const attrMatch = text.match(/data-recently-viewed-cruise=(["'])([\s\S]*?)\1/i);
   if (attrMatch?.[2]) {
-    try {
-      const decoded = attrMatch[2]
-        .replace(/&quot;/g, '"')
-        .replace(/&#34;/g, '"')
-        .replace(/&amp;/g, "&")
-        .replace(/&lt;/g, "<")
-        .replace(/&gt;/g, ">");
-      const payload = JSON.parse(decoded);
-      if (payload?.completeItinerary) {
-        return { ok: true, method: "data-recently-viewed-cruise", completeItinerary: payload.completeItinerary };
-      }
-    } catch {
-      /* fall through */
+    const payload = parseEmbeddedCompleteItineraryPayload(decodeHtmlEntitiesForJson(attrMatch[2]));
+    if (payload?.completeItinerary) {
+      return { ok: true, method: "data-recently-viewed-cruise", completeItinerary: payload.completeItinerary };
     }
   }
 
@@ -603,14 +656,11 @@ function extractCompleteItineraryFromHtml(html) {
         depth -= 1;
         if (depth === 0) {
           const snippet = text.slice(start, i + 1);
-          try {
-            const payload = JSON.parse(snippet);
-            if (payload?.completeItinerary) {
-              return { ok: true, method: "embedded_json_scan", completeItinerary: payload.completeItinerary };
-            }
-          } catch {
-            return { ok: false, reason: "json_parse_failed", completeItinerary: null };
+          const payload = parseEmbeddedCompleteItineraryPayload(snippet);
+          if (payload?.completeItinerary) {
+            return { ok: true, method: "embedded_json_scan", completeItinerary: payload.completeItinerary };
           }
+          return { ok: false, reason: "json_parse_failed", completeItinerary: null };
           break;
         }
       }

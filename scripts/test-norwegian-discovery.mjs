@@ -119,6 +119,16 @@ assert(parsed.sail_id === "SAIL456", "sailId captured as supporting metadata");
 const missingJson = ncl.extractCompleteItineraryFromHtml("<html><body>No data</body></html>");
 assert(missingJson.ok === false, "missing enrichment handled");
 
+const malformedQuoteFixture = `<div data-recently-viewed-cruise="${JSON.stringify({
+  completeItinerary: {
+    ...completeFixture.completeItinerary,
+    marketingCopy: 'Enjoy some "me" time in Mandara Spa®'
+  }
+})
+  .replace(/"/g, "&quot;")}"></div>`;
+const malformedExtract = ncl.extractCompleteItineraryFromHtml(malformedQuoteFixture);
+assert(malformedExtract.ok === true, "completeItinerary extracted when embedded JSON has unescaped quotes");
+
 resetPortsCache();
 
 const tarPort = ncl.resolveNorwegianDeparturePort({ port_of_departure_code: "TAR" });
@@ -399,6 +409,9 @@ assert(new Set(Object.keys(ncl.NCL_SHIP_CODE_TO_NAME)).size === 22, "all 22 NCL 
   assert(poc.getPortOfCallCanonicalName("VIS") === "Vik Norway", "Vik Norway distinct from Visby");
   assert(poc.getPortOfCallCanonicalName("VBY") === "Visby", "Visby Sweden mapped");
   assert(poc.getPortOfCallCanonicalName("RIX") === "Riga", "Riga Latvia mapped");
+  assert(poc.getPortOfCallCanonicalName("LPA") === "Las Palmas", "Las Palmas mapped");
+  assert(poc.getPortOfCallCanonicalName("LVN") === "Le Verdon", "Le Verdon distinct from Bordeaux city");
+  assert(poc.getPortOfCallCanonicalName("SCT") === "Santa Cruz de Tenerife", "Tenerife distinct from La Palma");
 
   const phase6aCodes = {
     ACA: "Acapulco",

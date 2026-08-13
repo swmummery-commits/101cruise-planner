@@ -211,7 +211,23 @@ const NCL_PORT_OF_CALL_CODES = Object.freeze([
   { code: "KKB", source_name: "Kota Kinabalu, Malaysia", canonical_name: "Kota Kinabalu", classification: "NEW_PORT_REQUIRED", country: "Malaysia" },
   { code: "PPS", source_name: "Puerto Princesa, Philippines", canonical_name: "Puerto Princesa", classification: "NEW_PORT_REQUIRED", country: "Philippines" },
   { code: "COR", source_name: "Coron, Philippines", canonical_name: "Coron", classification: "NEW_PORT_REQUIRED", country: "Philippines" },
-  { code: "VBY", source_name: "Visby, Sweden", canonical_name: "Visby", classification: "NEW_PORT_REQUIRED", country: "Sweden" }
+  { code: "VBY", source_name: "Visby, Sweden", canonical_name: "Visby", classification: "NEW_PORT_REQUIRED", country: "Sweden" },
+  { code: "LPA", source_name: "Las Palmas, Canary Islands", canonical_name: "Las Palmas", classification: "NEW_PORT_REQUIRED", country: "Spain" },
+  { code: "SPU", source_name: "Split, Croatia", canonical_name: "Split", classification: "NEW_PORT_REQUIRED", country: "Croatia" },
+  { code: "SCT", source_name: "Santa Cruz de Tenerife, Canary Islands", canonical_name: "Santa Cruz de Tenerife", classification: "NEW_PORT_REQUIRED", country: "Spain", note: "Distinct from Santa Cruz de la Palma (SCP)" },
+  { code: "PTG", source_name: "Porto Grande, Cape Verde", canonical_name: "Porto Grande", classification: "NEW_PORT_REQUIRED", country: "Cape Verde", note: "Mindelo cruise port" },
+  { code: "GOT", source_name: "Gothenburg, Sweden", canonical_name: "Gothenburg", classification: "NEW_PORT_REQUIRED", country: "Sweden" },
+  { code: "BBO", source_name: "Bilbao, Spain", canonical_name: "Bilbao", classification: "NEW_PORT_REQUIRED", country: "Spain" },
+  { code: "LVN", source_name: "Bordeaux (Le Verdon), France", canonical_name: "Le Verdon", classification: "NEW_PORT_REQUIRED", country: "France", note: "Physical cruise port for Bordeaux — not Bordeaux city centre" },
+  { code: "ACE", source_name: "Arrecife (Lanzarote), Canary Islands", canonical_name: "Arrecife", classification: "NEW_PORT_REQUIRED", country: "Spain" },
+  { code: "LCG", source_name: "La Coruña, Spain", canonical_name: "La Coruna", classification: "NEW_PORT_REQUIRED", country: "Spain" },
+  { code: "GRU", source_name: "Grundarfjordur, Iceland", canonical_name: "Grundarfjordur", classification: "NEW_PORT_REQUIRED", country: "Iceland" },
+  { code: "SHI", source_name: "Shimonoseki, Japan", canonical_name: "Shimonoseki", classification: "NEW_PORT_REQUIRED", country: "Japan" },
+  { code: "SCP", source_name: "Santa Cruz de la Palma, Spain", canonical_name: "Santa Cruz de La Palma", classification: "EXISTING_ALIAS", country: "Spain", note: "La Palma — distinct from Tenerife (SCT)" },
+  { code: "GIJ", source_name: "Gijón, Spain", canonical_name: "Gijon", classification: "NEW_PORT_REQUIRED", country: "Spain" },
+  { code: "LRH", source_name: "La Rochelle, France", canonical_name: "La Rochelle", classification: "NEW_PORT_REQUIRED", country: "France" },
+  { code: "PDR", source_name: "Puerto del Rosario (Canary Islands), Spain", canonical_name: "Puerto del Rosario", classification: "NEW_PORT_REQUIRED", country: "Spain", note: "Fuerteventura" },
+  { code: "TKS", source_name: "Takamatsu, Japan", canonical_name: "Takamatsu", classification: "NEW_PORT_REQUIRED", country: "Japan" }
 ]);
 
 const POC_CODE_TO_MAPPING = Object.freeze(Object.fromEntries(NCL_PORT_OF_CALL_CODES.map((row) => [row.code, row])));

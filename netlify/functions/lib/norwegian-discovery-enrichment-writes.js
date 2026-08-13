@@ -13,6 +13,7 @@ const {
   isLegacyGenericDiscoveryRow
 } = require("./norwegian-discovery-adapter");
 const { resolveRawPortText } = require("./discovery-departure-port");
+const { resolveNorwegianDestinationAssignment } = require("./norwegian-destination-mapping");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
 const NCL_LINE_ID = "c5f5361f-ebe5-4ff4-babe-7eb07f609bae";
@@ -319,7 +320,7 @@ function buildItineraryPortsDisplay(resolvedPorts = []) {
     .filter(Boolean);
 }
 
-function buildEnrichmentPatch(dbRow, enrichment) {
+function buildEnrichmentPatch(dbRow, enrichment, options = {}) {
   const parsed = enrichment.parsed || {};
   const resolvedPorts = enrichment.resolved_ports || [];
   const portSummary = enrichment.port_summary || summarisePortResolution(resolvedPorts);
@@ -361,6 +362,19 @@ function buildEnrichmentPatch(dbRow, enrichment) {
   if (enrichment.schedule_url) {
     patch.official_url = enrichment.schedule_url;
     patch.source_url = enrichment.schedule_url;
+  }
+
+  if (!dbRow.destination_id && options.destinations?.length) {
+    const assignment = resolveNorwegianDestinationAssignment({
+      destination_codes: dbRow.raw_extract?.ncl_destination_codes || [],
+      dbRow: {
+        ...dbRow,
+        itinerary: title || dbRow.itinerary,
+        itinerary_ports: itineraryPorts.length ? itineraryPorts : dbRow.itinerary_ports || []
+      },
+      destinations: options.destinations
+    });
+    if (assignment.destination_id) patch.destination_id = assignment.destination_id;
   }
 
   return {
@@ -513,6 +527,11 @@ function assessAdminQuality(dbRow, enrichment, proposal) {
 }
 
 async function buildDryRunManifest(manifestEntries, dbRowsById, options = {}) {
+  const destinations =
+    options.destinations ||
+    (options.supabase
+      ? await options.supabase("destinations?select=id,name,slug,status,classification_enabled&order=slug.asc")
+      : []);
   const entries = [];
   const pageStats = { attempted: 0, successful: 0, failed: 0, identity_mismatches: 0 };
   const portTotals = {
@@ -551,7 +570,7 @@ async function buildDryRunManifest(manifestEntries, dbRowsById, options = {}) {
     );
     const proposal =
       blocked ? { patch: {}, outcome: enrichment.outcome, proposed_fields: [], core_identity_changes: [] }
-        : buildEnrichmentPatch(dbRow, enrichment);
+        : buildEnrichmentPatch(dbRow, enrichment, { destinations });
     const fieldChanges = diffPatchProposal(dbRow, proposal);
     const admin = assessAdminQuality(dbRow, enrichment, proposal);
 

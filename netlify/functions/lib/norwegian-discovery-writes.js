@@ -481,7 +481,7 @@ function selectControlledBatchProducts(normalisedProducts, { maxWrites = 25 } = 
     .sort((a, b) => String(a.official_sailing_id).localeCompare(String(b.official_sailing_id)));
 }
 
-function selectPhase6BatchProducts(normalisedProducts, { maxWrites = 50, excludeOfficialIds = new Set() } = {}) {
+function selectPhase6BatchProducts(normalisedProducts, { maxWrites = 50, excludeOfficialIds = new Set(), minDistinctShips = 15 } = {}) {
   const eligible = normalisedProducts
     .filter(
       (p) =>
@@ -533,7 +533,6 @@ function selectPhase6BatchProducts(normalisedProducts, { maxWrites = 50, exclude
     pickFirst((p) => String(p.raw?.port_of_departure_code || "").toUpperCase() === code, `control_${code}`);
   }
 
-  const minDistinctShips = 15;
   const remaining = eligible.filter((p) => !selectedIds.has(p.official_sailing_id));
   const ordered = remaining
     .map((p) => {
