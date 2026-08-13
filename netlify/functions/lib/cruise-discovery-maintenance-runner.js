@@ -86,6 +86,7 @@ const {
 } = require("./public-discovered-cruise-inventory");
 const { buildPrincessReconciliationSummary } = require("./princess-reconciliation-summary");
 const { buildSeabournReconciliationSummary } = require("./seabourn-reconciliation-summary");
+const { runRoyalCaribbeanWeeklyMaintenance } = require("./royal-caribbean-weekly-maintenance");
 
 const MAX_WRITES_PER_BATCH = 100;
 const MAX_WEEKLY_WRITES = 30;
@@ -1559,6 +1560,11 @@ module.exports = {
   runPrincessWeeklyMaintenance,
   runExploraWeeklyMaintenance,
   runSeabournWeeklyMaintenance,
+  runRoyalCaribbeanWeeklyMaintenance: (context = {}) =>
+    runRoyalCaribbeanWeeklyMaintenance({
+      ...context,
+      _deps: { loadLineContext, findSourceAbsentActive }
+    }),
   acquireMaintenanceLock,
   releaseMaintenanceLock,
   evaluateMaintenanceQualityGate,
