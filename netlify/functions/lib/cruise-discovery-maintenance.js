@@ -61,6 +61,7 @@ const MAINTENANCE_SCHEDULES = {
     perth_display: "Monday 06:00 Australia/Perth (pending enablement)",
     utc_display: "Sunday 22:00 UTC (pending enablement)",
     function: "seabourn-weekly-maintenance-cron",
+    background_function: "seabourn-weekly-maintenance-background",
     schedule_registered: false
   },
   daily_expiry: {

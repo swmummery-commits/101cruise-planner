@@ -433,6 +433,9 @@ test("32. Seabourn schedule is registered but not cron-enabled", () => {
   if (!schedule) throw new Error("missing schedule entry");
   if (schedule.schedule_registered !== false) throw new Error("Seabourn must not be scheduled yet");
   if (schedule.function !== "seabourn-weekly-maintenance-cron") throw new Error(schedule.function);
+  if (schedule.background_function !== "seabourn-weekly-maintenance-background") {
+    throw new Error("missing background function");
+  }
 });
 
 test("33. Seabourn lock key wired", () => {
@@ -561,9 +564,22 @@ test("44. weekly auth rejects invalid secret", () => {
   if (!threw) throw new Error("invalid secret must fail");
 });
 
-test("45. scheduled invocation bypasses manual secret header", () => {
+test("45. forged schedule header without next_run is rejected", () => {
+  let threw = false;
+  try {
+    weeklyAuth.assertSeabournWeeklyAuth(
+      { headers: { "x-netlify-event": "schedule" }, body: "{}" },
+      { DISCOVERY_CRON_SECRET: "expected-secret" }
+    );
+  } catch (e) {
+    threw = e.code === "unauthorized";
+  }
+  if (!threw) throw new Error("header-only schedule spoof must fail");
   weeklyAuth.assertSeabournWeeklyAuth(
-    { headers: { "x-netlify-event": "schedule" } },
+    {
+      headers: { "x-netlify-event": "schedule" },
+      body: JSON.stringify({ next_run: "2026-08-17T22:00:00.000Z" })
+    },
     { DISCOVERY_CRON_SECRET: "expected-secret" }
   );
   const cronSrc = fs.readFileSync(
@@ -571,7 +587,16 @@ test("45. scheduled invocation bypasses manual secret header", () => {
     "utf8"
   );
   if (cronSrc.includes("controlled-catchup")) throw new Error("cron must not invoke catch-up");
-  if (!cronSrc.includes("weekly_maintenance")) throw new Error("cron must use weekly_maintenance path");
+  if (!cronSrc.includes("dispatchSeabournWeeklyBackground")) throw new Error("cron must dispatch background");
+});
+
+test("47. background worker always requires secret", () => {
+  const bgSrc = fs.readFileSync(
+    path.join(root, "netlify/functions/seabourn-weekly-maintenance-background.js"),
+    "utf8"
+  );
+  if (!bgSrc.includes("assertCronAuth")) throw new Error("background must require secret");
+  if (bgSrc.includes("isScheduledInvocation")) throw new Error("background must not bypass auth via schedule header");
 });
 
 test("46. C7S07K|8730 reappearance resolves as duplicate_skip not insert", () => {
