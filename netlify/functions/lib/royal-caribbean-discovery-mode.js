@@ -68,7 +68,8 @@ function resolveRoyalCaribbeanDiscoveryMode(requestedMode) {
       writes_allowed: true,
       reason: null,
       controlled_batch: true,
-      max_writes: 20
+      max_writes: null,
+      allowed_batch_sizes: [20, 100]
     };
   }
 

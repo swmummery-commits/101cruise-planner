@@ -256,19 +256,39 @@ const { upsertCandidateRecord } = require("./cruise-discovery-ops");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 const {
   MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
+  ALLOWED_CONTROLLED_BATCH_SIZES,
+  isAllowedControlledBatchMode,
+  resolveManifestBatchLimit,
+  resolveBatchProfile,
   validateFrozenManifest
 } = require("./royal-caribbean-controlled-batch");
 
 function assertControlledBatchManifest(manifest, options = {}) {
-  if (!manifest || manifest.mode !== "royal_caribbean_controlled_batch") {
+  if (!manifest || !isAllowedControlledBatchMode(manifest.mode)) {
     const err = new Error("Royal Caribbean controlled apply requires a frozen controlled_batch manifest");
     err.code = "royal_caribbean_missing_frozen_manifest";
     throw err;
   }
-  const entries = manifest.entries || [];
-  if (entries.length > MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH) {
+  const profile = resolveBatchProfile(manifest);
+  if (options.confirmToken && options.confirmToken !== profile.confirm_token) {
     const err = new Error(
-      `Royal Caribbean controlled batch hard limit exceeded: ${entries.length} > ${MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH}`
+      `Royal Caribbean confirmation token mismatch for ${manifest.mode}: expected ${profile.confirm_token}`
+    );
+    err.code = "royal_caribbean_confirm_token_mismatch";
+    throw err;
+  }
+  const hardMax = resolveManifestBatchLimit(manifest);
+  const entries = manifest.entries || [];
+  if (!ALLOWED_CONTROLLED_BATCH_SIZES.has(entries.length)) {
+    const err = new Error(
+      `Royal Caribbean controlled batch size not allowed: ${entries.length} (allowed: 20, 100)`
+    );
+    err.code = "royal_caribbean_batch_size_not_allowed";
+    throw err;
+  }
+  if (entries.length > hardMax) {
+    const err = new Error(
+      `Royal Caribbean controlled batch hard limit exceeded: ${entries.length} > ${hardMax}`
     );
     err.code = "royal_caribbean_batch_limit_exceeded";
     throw err;
@@ -287,7 +307,8 @@ function assertControlledBatchManifest(manifest, options = {}) {
   }
   const validation = validateFrozenManifest(manifest, {
     expectedHash: options.expectedHash || null,
-    today: manifest.perth_today || options.today || null
+    today: manifest.perth_today || options.today || null,
+    priorSailingIds: options.priorSailingIds || manifest.exclude_overlap_ids || []
   });
   if (!validation.passed) {
     const err = new Error(`Royal Caribbean manifest validation failed: ${validation.failures.join("; ")}`);
@@ -304,12 +325,21 @@ async function applyRoyalCaribbeanControlledManifest({
   supabase,
   runId,
   expectedHash = null,
-  expectedCount = MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
-  maxWrites = MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
+  expectedCount = null,
+  maxWrites = null,
+  confirmToken = null,
   performWrites = true
 }) {
-  const hardMax = Math.min(maxWrites, MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH);
-  assertControlledBatchManifest(manifest, { expectedHash, expectedCount, today: manifest.perth_today });
+  const manifestLimit = resolveManifestBatchLimit(manifest);
+  const hardMax = Math.min(maxWrites ?? manifestLimit, manifestLimit);
+  const count = expectedCount ?? manifestLimit;
+  assertControlledBatchManifest(manifest, {
+    expectedHash,
+    expectedCount: count,
+    confirmToken,
+    today: manifest.perth_today,
+    priorSailingIds: manifest.exclude_overlap_ids || []
+  });
 
   const entries = manifest.entries || [];
   if (entries.length > hardMax) {
@@ -435,6 +465,7 @@ async function applyRoyalCaribbeanBatchWrites(options = {}) {
       expectedHash: options.expectedHash,
       expectedCount: options.expectedCount,
       maxWrites: options.maxWrites,
+      confirmToken: options.confirmToken,
       performWrites: options.performWrites !== false
     });
   }

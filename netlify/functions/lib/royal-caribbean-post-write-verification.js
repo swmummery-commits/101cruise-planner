@@ -4,7 +4,8 @@
 
 const {
   RC_LINE_ID,
-  FIRST_BATCH_SAFETY_BUFFER_DAYS
+  FIRST_BATCH_SAFETY_BUFFER_DAYS,
+  BATCH1_OFFICIAL_SAILING_IDS
 } = require("./royal-caribbean-controlled-batch");
 const { daysUntilDeparture, perthCalendarDate } = require("./public-discovered-cruise-inventory");
 const { isLegacyHtmlDiscoveryRow } = require("./royal-caribbean-discovery-writes");
@@ -125,10 +126,54 @@ function verifyManifestRowsAgainstProduction(manifest, rows, today = perthCalend
   return { ok: issues.length === 0, issues, verified_count: entries.length - issues.filter((i) => i.issue === "missing_row").length };
 }
 
+async function verifyBatch1ProductionRecords(supabase, expectedIds = BATCH1_OFFICIAL_SAILING_IDS) {
+  const issues = [];
+  const ids = [...expectedIds];
+  const rows = [];
+  for (let i = 0; i < ids.length; i += 50) {
+    const chunk = ids.slice(i, i + 50);
+    const batch = await supabase(
+      `discovered_cruises?official_sailing_id=in.(${chunk.map((id) => `"${id}"`).join(",")})&cruise_line_id=eq.${encodeURIComponent(
+        RC_LINE_ID
+      )}&select=${RC_ACTIVE_ROW_SELECT}`
+    );
+    rows.push(...(batch || []));
+  }
+  const byId = new Map(rows.map((r) => [r.official_sailing_id, r]));
+  for (const id of ids) {
+    const matches = rows.filter((r) => r.official_sailing_id === id);
+    if (matches.length === 0) {
+      issues.push({ official_sailing_id: id, issue: "missing_batch1_record" });
+      continue;
+    }
+    if (matches.length > 1) {
+      issues.push({ official_sailing_id: id, issue: "duplicate_batch1_record", count: matches.length });
+    }
+    const row = byId.get(id);
+    if (row.cruise_line_id !== RC_LINE_ID) {
+      issues.push({ official_sailing_id: id, issue: "wrong_line", id: row.id });
+    }
+    if (row.status !== "active") {
+      issues.push({ official_sailing_id: id, issue: "not_active", status: row.status });
+    }
+    if (isLegacyHtmlDiscoveryRow(row)) {
+      issues.push({ official_sailing_id: id, issue: "legacy_html_artefact_not_genuine" });
+    }
+  }
+  return {
+    ok: issues.length === 0,
+    issues,
+    expected_count: ids.length,
+    found_count: byId.size,
+    duplicate_id_count: rows.length - byId.size
+  };
+}
+
 module.exports = {
   RC_LINE_ID,
   RC_ACTIVE_ROW_SELECT,
   countGenuineRoyalCaribbeanSailings,
   fetchRoyalCaribbeanRowsByIds,
-  verifyManifestRowsAgainstProduction
+  verifyManifestRowsAgainstProduction,
+  verifyBatch1ProductionRecords
 };

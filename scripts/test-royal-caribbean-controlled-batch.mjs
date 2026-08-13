@@ -19,7 +19,6 @@ const RC_LINE = { id: batch.RC_LINE_ID, name: "Royal Caribbean International" };
 let passed = 0;
 let failed = 0;
 const failures = [];
-
 const tests = [];
 
 function test(name, fn) {
@@ -74,12 +73,15 @@ function buildEntry(id, overrides = {}) {
   };
 }
 
-function buildManifest(entryCount, overrides = {}) {
+function buildManifest(entryCount, profile = batch.CONTROLLED_BATCH_PROFILES.batch1, overrides = {}) {
   const entries = Array.from({ length: entryCount }, (_, i) =>
-    buildEntry(`VY03X0${String(i).padStart(2, "0")}_2026-11-01`)
+    buildEntry(`VY03X0${String(i).padStart(3, "0")}_2026-11-01`)
   );
   const manifest = {
-    mode: "royal_caribbean_controlled_batch",
+    mode: profile.manifest_mode,
+    expected_record_count: profile.max_batch_size,
+    max_batch_size: profile.max_batch_size,
+    confirm_token: profile.confirm_token,
     perth_today: "2026-08-13",
     entries,
     ...overrides
@@ -120,37 +122,80 @@ test("apply without manifest rejects", async () => {
   if (!threw) throw new Error("expected reject");
 });
 
-test("21-record manifest rejected before mutation", () => {
-  const manifest = buildManifest(21);
+test("batch1: 21-record manifest rejected", () => {
+  const manifest = buildManifest(21, batch.CONTROLLED_BATCH_PROFILES.batch1);
   let threw = false;
   try {
     writes.assertControlledBatchManifest(manifest);
   } catch (error) {
-    threw = error.code === "royal_caribbean_batch_limit_exceeded" || error.code === "royal_caribbean_manifest_validation_failed";
+    threw =
+      error.code === "royal_caribbean_batch_limit_exceeded" ||
+      error.code === "royal_caribbean_manifest_validation_failed" ||
+      error.code === "royal_caribbean_batch_size_not_allowed";
   }
-  if (!threw) throw new Error("21 records should reject");
+  if (!threw) throw new Error("21 records should reject for batch1");
+});
+
+test("batch2: 100-record manifest validates", () => {
+  const manifest = buildManifest(100, batch.CONTROLLED_BATCH_PROFILES.batch2);
+  const result = batch.validateFrozenManifest(manifest, { expectedHash: manifest.manifest_hash, today: "2026-08-13" });
+  if (!result.passed) throw new Error(JSON.stringify(result.failures));
+});
+
+test("batch2: 101-record manifest rejected", () => {
+  const manifest = buildManifest(101, batch.CONTROLLED_BATCH_PROFILES.batch2);
+  let threw = false;
+  try {
+    writes.assertControlledBatchManifest(manifest);
+  } catch (error) {
+    threw =
+      error.code === "royal_caribbean_batch_limit_exceeded" ||
+      error.code === "royal_caribbean_manifest_validation_failed" ||
+      error.code === "royal_caribbean_batch_size_not_allowed";
+  }
+  if (!threw) throw new Error("101 records should reject for batch2");
+});
+
+test("batch2: 20-record batch1 manifest cannot pass as batch2 apply", () => {
+  const manifest = buildManifest(20, batch.CONTROLLED_BATCH_PROFILES.batch1);
+  let threw = false;
+  try {
+    writes.assertControlledBatchManifest(manifest, {
+      expectedCount: 100,
+      confirmToken: batch.CONTROLLED_BATCH_PROFILES.batch2.confirm_token
+    });
+  } catch (error) {
+    threw =
+      error.code === "royal_caribbean_manifest_count_mismatch" ||
+      error.code === "royal_caribbean_manifest_validation_failed" ||
+      error.code === "royal_caribbean_confirm_token_mismatch";
+  }
+  if (!threw) throw new Error("batch1 manifest must not authorise batch2");
+});
+
+test("arbitrary count (50) rejected", () => {
+  const manifest = buildManifest(50, batch.CONTROLLED_BATCH_PROFILES.batch1, {
+    expected_record_count: 50,
+    max_batch_size: 50
+  });
+  const result = batch.validateFrozenManifest(manifest);
+  if (result.passed) throw new Error("50-record manifest should fail");
 });
 
 test("empty manifest rejected", () => {
-  const manifest = buildManifest(0);
-  let threw = false;
-  try {
-    batch.validateFrozenManifest(manifest);
-  } catch {
-    threw = true;
-  }
+  const manifest = buildManifest(0, batch.CONTROLLED_BATCH_PROFILES.batch1);
   const result = batch.validateFrozenManifest(manifest);
   if (result.passed) throw new Error("empty should fail");
 });
 
-test("20-record manifest validates", () => {
-  const manifest = buildManifest(20);
+test("batch1: 20-record manifest validates", () => {
+  const manifest = buildManifest(20, batch.CONTROLLED_BATCH_PROFILES.batch1);
   const result = batch.validateFrozenManifest(manifest, { expectedHash: manifest.manifest_hash, today: "2026-08-13" });
   if (!result.passed) throw new Error(JSON.stringify(result.failures));
 });
 
 test("incorrect manifest hash rejects", () => {
-  const manifest = buildManifest(20);
+  const manifest = buildManifest(20, batch.CONTROLLED_BATCH_PROFILES.batch1);
   let threw = false;
   try {
     writes.assertControlledBatchManifest(manifest, { expectedHash: "deadbeef" });
@@ -161,62 +206,63 @@ test("incorrect manifest hash rejects", () => {
 });
 
 test("duplicate sailing IDs rejected", () => {
-  const manifest = buildManifest(20);
+  const manifest = buildManifest(20, batch.CONTROLLED_BATCH_PROFILES.batch1);
   manifest.entries[1].official_sailing_id = manifest.entries[0].official_sailing_id;
   manifest.manifest_hash = batch.computeManifestHash(manifest);
   const result = batch.validateFrozenManifest(manifest);
   if (result.passed) throw new Error("duplicate ids should fail");
 });
 
+test("batch overlap with batch1 rejected", () => {
+  const manifest = buildManifest(100, batch.CONTROLLED_BATCH_PROFILES.batch2);
+  manifest.entries[0].official_sailing_id = batch.BATCH1_OFFICIAL_SAILING_IDS[0];
+  const result = batch.validateFrozenManifest(manifest, { priorSailingIds: batch.BATCH1_OFFICIAL_SAILING_IDS });
+  if (result.passed) throw new Error("batch1 overlap should fail");
+});
+
 test("ISLAN candidate rejected", () => {
-  const manifest = buildManifest(20);
+  const manifest = buildManifest(20, batch.CONTROLLED_BATCH_PROFILES.batch1);
   manifest.entries[0].destination_source_code = "ISLAN";
   const result = batch.validateFrozenManifest(manifest);
   if (result.passed) throw new Error("ISLAN should fail");
 });
 
 test("within 45-day buffer rejected", () => {
-  const manifest = buildManifest(20);
+  const manifest = buildManifest(20, batch.CONTROLLED_BATCH_PROFILES.batch1);
   manifest.entries[0].departure_date = "2026-09-01";
   const result = batch.validateFrozenManifest(manifest, { today: "2026-08-13" });
   if (result.passed) throw new Error("45-day buffer should fail");
 });
 
 test("deterministic manifest hash", () => {
-  const a = buildManifest(20);
-  const b = buildManifest(20);
+  const a = buildManifest(20, batch.CONTROLLED_BATCH_PROFILES.batch1);
+  const b = buildManifest(20, batch.CONTROLLED_BATCH_PROFILES.batch1);
   if (a.manifest_hash !== b.manifest_hash) throw new Error("hash should be deterministic");
 });
 
-test("mid-batch duplicate abort stops remaining writes", async () => {
-  const manifest = buildManifest(20);
-  const inserted = new Set();
-  const supabase = async (path, options = {}) => {
-    if (path.includes("discovered_cruises?") && !options.method) return [];
-    if (options.method === "POST") {
-      const body = JSON.parse(options.body);
-      if (inserted.has(body.official_sailing_id)) {
-        return [{ ...body, id: `existing-${body.official_sailing_id}` }];
-      }
-      inserted.add(body.official_sailing_id);
-      return [{ ...body, id: `new-${body.official_sailing_id}` }];
-    }
-    return [];
-  };
-  process.env.ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED = "true";
-  // Mock upsertCandidateRecord path is complex — test assert path only for 21 limit
+test("batch2 confirm token mismatch rejects apply", () => {
+  const manifest = buildManifest(100, batch.CONTROLLED_BATCH_PROFILES.batch2);
   let threw = false;
   try {
-    writes.assertControlledBatchManifest(buildManifest(21));
-  } catch {
-    threw = true;
+    writes.assertControlledBatchManifest(manifest, {
+      confirmToken: batch.CONTROLLED_BATCH_PROFILES.batch1.confirm_token
+    });
+  } catch (error) {
+    threw = error.code === "royal_caribbean_confirm_token_mismatch";
   }
-  delete process.env.ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED;
-  if (!threw) throw new Error("21 limit assert");
+  if (!threw) throw new Error("wrong confirm token should reject");
 });
 
-test("MAX batch constant is 20", () => {
-  if (batch.MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH !== 20) throw new Error("max must be 20");
+test("allowed batch sizes are 20 and 100 only", () => {
+  if (!batch.ALLOWED_CONTROLLED_BATCH_SIZES.has(20) || !batch.ALLOWED_CONTROLLED_BATCH_SIZES.has(100)) {
+    throw new Error("allowed sizes must include 20 and 100");
+  }
+  if (batch.ALLOWED_CONTROLLED_BATCH_SIZES.has(101)) throw new Error("101 must not be allowed");
+});
+
+test("MAX batch constants", () => {
+  if (batch.MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_1 !== 20) throw new Error("batch1 max must be 20");
+  if (batch.MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH_2 !== 100) throw new Error("batch2 max must be 100");
 });
 
 await runTests();
