@@ -505,10 +505,20 @@ body.admin-loading-active {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  flex: 1 1 360px;
+  min-width: 0;
 }
 
-.ci-toolbar-controls input[type="search"],
+.ci-toolbar-controls input[type="search"] {
+  flex: 1 1 320px;
+  min-width: min(100%, 280px);
+  max-width: 640px;
+  padding: 10px 14px;
+  font-size: 15px;
+}
+
 .ci-toolbar-controls select {
+  flex: 0 1 auto;
   min-width: 160px;
 }
 
