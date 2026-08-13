@@ -123,6 +123,11 @@
       group: "specialty",
       paths: `<circle cx="12" cy="8" r="3"/><path d="M4 20a8 8 0 0 1 16 0"/>`
     },
+    dog: {
+      label: "Dog / pet friendly",
+      group: "specialty",
+      paths: `<circle cx="8.5" cy="8" r="2.1"/><path d="M10.4 8.2h2.5"/><path d="M7.2 6.2 6 4.6"/><path d="M8.5 10.1c1.9.2 3.4 1.5 3.9 3.4.5 1.6-.3 3-1.6 3.7"/><path d="M6.1 14.1v3.2"/><path d="M10.7 14.7v2.6"/><path d="M13.7 13.1v3.2"/><path d="M5 11.9 3.4 9.5"/><path d="M12.8 8.4h.01"/>`
+    },
     shopping: {
       label: "Shopping",
       group: "specialty",
@@ -269,6 +274,7 @@
     "zip-line": ["zip line", "zipline"],
     "sports-court": ["sports court", "basketball", "tennis", "pickleball"],
     kids: ["kids", "children", "youth", "teen", "family club", "kids club"],
+    dog: ["dog", "dogs", "pet", "pets", "pet friendly", "dog friendly", "canine", "dog park", "bark park", "service dog"],
     library: ["library", "books", "reading room"],
     "art-gallery": ["art", "gallery", "exhibition"],
     science: ["science", "laboratory", "research centre", "research center"],

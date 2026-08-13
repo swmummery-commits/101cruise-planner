@@ -73,6 +73,10 @@ assert.equal(Icons.resolveShipFeatureIconKey("Magic Carpet"), "outdoor-platform"
 assert.equal(Icons.resolveShipFeatureIconKey("Dance Club"), "dancing");
 assert.equal(Icons.resolveShipFeatureIconKey("Ballroom Dancing"), "dancing");
 assert.ok(Icons.isKnownIconKey("dancing"));
+assert.equal(Icons.resolveShipFeatureIconKey("Dog Park"), "dog");
+assert.equal(Icons.resolveShipFeatureIconKey("Pet Friendly"), "dog");
+assert.ok(Icons.isKnownIconKey("dog"));
+assert.match(Icons.renderIconSvg("dog"), /cx="8\.5" cy="8"/);
 assert.match(Icons.renderIconSvg("dancing"), /cx="7\.5" cy="5\.5"/);
 assert.match(Icons.renderIconSvg("dancing"), /cx="16\.5" cy="5\.5"/);
 assert.match(Icons.renderIconSvg("outdoor-platform"), /M6 7h14/);
