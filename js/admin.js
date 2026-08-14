@@ -12322,7 +12322,7 @@ function renderFeaturedCruiseForm() {
           <p class="admin-muted">${esc(newsletterLabel)} · ${esc(localBackupNote)}</p>
         </div>
         <div class="admin-actions-row">
-          <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
+          <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Close</button>
           <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
           <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${
             featuredCruiseSaving ? "Saving…" : "Save Cruise"
@@ -12464,7 +12464,7 @@ function renderFeaturedCruiseForm() {
       </section>
 
       <div class="admin-actions-row featured-form-actions">
-        <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Cancel</button>
+        <button class="admin-button secondary" onclick="cancelFeaturedCruiseForm()" ${featuredCruiseSaving ? "disabled" : ""}>Close</button>
         ${existing ? `<button class="admin-button secondary" onclick="deleteFeaturedCruise('${esc(existing.id)}')" ${featuredCruiseSaving ? "disabled" : ""}>Delete</button>` : ""}
         <button class="admin-button secondary" onclick="openFeaturedNewsletterPreview()" ${featuredCruiseSaving ? "disabled" : ""}>Preview Newsletter</button>
         <button class="admin-button black" onclick="saveFeaturedCruise()" ${featuredCruiseSaving ? "disabled" : ""}>${
