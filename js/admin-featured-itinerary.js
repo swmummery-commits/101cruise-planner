@@ -191,60 +191,75 @@
     routeMapStatus = cruise?.route_map_status || "missing";
     routeMapSignature = cruise?.route_map_itinerary_signature || "";
     legacySummary = String(cruise?.itinerary_summary || "").trim();
-    await ensurePortsLoaded();
-    const sb = client();
-    if (!sb || !cruise?.id) {
+    try {
+      await ensurePortsLoaded();
+      const sb = client();
+      if (!sb || !cruise?.id) {
+        if (legacySummary) {
+          const parsed = I().parseLegacyItinerarySummary(legacySummary);
+          stops = parsed.stops;
+          needsStructuring = false;
+          structuredLoaded = false;
+        } else {
+          stops = [I().blankStop(1, { stop_type: "embarkation" })];
+        }
+        return;
+      }
+
+      const { data, error } = await sb
+        .from("featured_cruise_itinerary_stops")
+        .select("*")
+        .eq("featured_cruise_id", cruise.id)
+        .order("display_order", { ascending: true });
+
+      if (error) {
+        // Table may not exist yet before migration — fall back to legacy.
+        console.warn("itinerary stops load skipped", error.message);
+        if (legacySummary) {
+          const parsed = I().parseLegacyItinerarySummary(legacySummary);
+          stops = parsed.stops;
+          needsStructuring = false;
+        } else {
+          stops = [I().blankStop(1, { stop_type: "embarkation" })];
+        }
+        return;
+      }
+
+      if (data?.length) {
+        const byId = portsByIdMap();
+        stops = I().applyKnownDayNumbers(
+          data.map((row) => I().mapStopFromDb(row, byId)),
+          cruise?.nights,
+          { forceClearMiddle: false }
+        );
+        structuredLoaded = true;
+        needsStructuring = false;
+        return;
+      }
+
       if (legacySummary) {
         const parsed = I().parseLegacyItinerarySummary(legacySummary);
-        stops = parsed.stops;
+        stops = I().applyKnownDayNumbers(parsed.stops, cruise?.nights, { forceClearMiddle: true });
+        needsStructuring = true;
+        structuredLoaded = false;
+        return;
+      }
+
+      stops = [I().blankStop(1, { stop_type: "embarkation" })];
+    } catch (error) {
+      console.warn("itinerary load left existing ports in place", error);
+      if (legacySummary) {
+        try {
+          stops = I().parseLegacyItinerarySummary(legacySummary).stops;
+        } catch (_parseError) {
+          /* keep whatever stops we already have */
+        }
         needsStructuring = false;
         structuredLoaded = false;
-      } else {
+      } else if (!stops.length) {
         stops = [I().blankStop(1, { stop_type: "embarkation" })];
       }
-      return;
     }
-
-    const { data, error } = await sb
-      .from("featured_cruise_itinerary_stops")
-      .select("*")
-      .eq("featured_cruise_id", cruise.id)
-      .order("display_order", { ascending: true });
-
-    if (error) {
-      // Table may not exist yet before migration — fall back to legacy.
-      console.warn("itinerary stops load skipped", error.message);
-      if (legacySummary) {
-        const parsed = I().parseLegacyItinerarySummary(legacySummary);
-        stops = parsed.stops;
-        needsStructuring = false;
-      } else {
-        stops = [I().blankStop(1, { stop_type: "embarkation" })];
-      }
-      return;
-    }
-
-    if (data?.length) {
-      const byId = portsByIdMap();
-      stops = I().applyKnownDayNumbers(
-        data.map((row) => I().mapStopFromDb(row, byId)),
-        cruise?.nights,
-        { forceClearMiddle: false }
-      );
-      structuredLoaded = true;
-      needsStructuring = false;
-      return;
-    }
-
-    if (legacySummary) {
-      const parsed = I().parseLegacyItinerarySummary(legacySummary);
-      stops = I().applyKnownDayNumbers(parsed.stops, cruise?.nights, { forceClearMiddle: true });
-      needsStructuring = true;
-      structuredLoaded = false;
-      return;
-    }
-
-    stops = [I().blankStop(1, { stop_type: "embarkation" })];
   }
 
   function initNewCruise() {
@@ -254,37 +269,42 @@
   }
 
   function captureFromDom() {
-    capturePortListPasteFromDom();
-    if (!document.getElementById("fcItineraryList")) return stops;
-    const next = [];
-    document.querySelectorAll("#fcItineraryList .fc-itin-row").forEach((row, index) => {
-      const localId = row.getAttribute("data-local-id") || `stop-${index + 1}`;
-      const prev = stops.find((s) => s.localId === localId) || {};
-      const stopType = row.querySelector("[data-fc-itin='stop_type']")?.value || "port_call";
-      const atSea = I().isAtSeaStopType(stopType);
-      next.push({
-        ...prev,
-        localId,
-        id: prev.id || null,
-        display_order: index + 1,
-        day_number: row.querySelector("[data-fc-itin='day_number']")?.value || "",
-        stop_date: row.querySelector("[data-fc-itin='stop_date']")?.value || "",
-        stop_type: stopType,
-        entered_port_text: atSea ? "" : row.querySelector("[data-fc-itin='port']")?.value || "",
-        entered_country_text: atSea ? "" : row.querySelector("[data-fc-itin='country']")?.value || "",
-        arrival_time: row.querySelector("[data-fc-itin='arrival']")?.value || "",
-        departure_time: row.querySelector("[data-fc-itin='departure']")?.value || "",
-        is_overnight:
-          Boolean(row.querySelector("[data-fc-itin='overnight']")?.checked) ||
-          stopType === "overnight_port",
-        notes: stop.notes || "",
-        port_id: atSea ? null : prev.port_id || null,
-        port: atSea ? null : prev.port || null,
-        matchDecision: prev.matchDecision || null
+    try {
+      capturePortListPasteFromDom();
+      if (typeof document === "undefined" || !document.getElementById("fcItineraryList")) return stops;
+      const next = [];
+      document.querySelectorAll("#fcItineraryList .fc-itin-row").forEach((row, index) => {
+        const localId = row.getAttribute("data-local-id") || `stop-${index + 1}`;
+        const prev = stops.find((s) => s.localId === localId) || {};
+        const stopType = row.querySelector("[data-fc-itin='stop_type']")?.value || "port_call";
+        const atSea = I().isAtSeaStopType(stopType);
+        next.push({
+          ...prev,
+          localId,
+          id: prev.id || null,
+          display_order: index + 1,
+          day_number: row.querySelector("[data-fc-itin='day_number']")?.value || "",
+          stop_date: row.querySelector("[data-fc-itin='stop_date']")?.value || "",
+          stop_type: stopType,
+          entered_port_text: atSea ? "" : row.querySelector("[data-fc-itin='port']")?.value || "",
+          entered_country_text: atSea ? "" : row.querySelector("[data-fc-itin='country']")?.value || "",
+          arrival_time: row.querySelector("[data-fc-itin='arrival']")?.value || "",
+          departure_time: row.querySelector("[data-fc-itin='departure']")?.value || "",
+          is_overnight:
+            Boolean(row.querySelector("[data-fc-itin='overnight']")?.checked) ||
+            stopType === "overnight_port",
+          notes: prev.notes || "",
+          port_id: atSea ? null : prev.port_id || null,
+          port: atSea ? null : prev.port || null,
+          matchDecision: prev.matchDecision || null
+        });
       });
-    });
-    stops = I().normalizeStopOrder(next);
-    return stops;
+      stops = I().normalizeStopOrder(next);
+      return stops;
+    } catch (error) {
+      console.warn("itinerary capture left existing ports in place", error);
+      return stops;
+    }
   }
 
   function syncSummaryIntoDraft(draft) {
@@ -569,6 +589,8 @@
           : null) || null;
 
       let next = built.stops.map((s) => ({ ...s }));
+      // Keep entered ports visible immediately. Matching/geocode can fail without wiping them.
+      stops = I().normalizeStopOrder(next);
       const linkWarnings = [];
       for (let i = 0; i < next.length; i += 1) {
         next[i] = await createOrLinkPortForStop(next[i], featuredCruiseId);
@@ -576,6 +598,7 @@
           linkWarnings.push(next[i]._portLinkWarning);
           delete next[i]._portLinkWarning;
         }
+        stops[i] = next[i];
       }
       const draft =
         typeof global.getFeaturedFormDraft === "function" ? global.getFeaturedFormDraft() : null;
@@ -630,7 +653,10 @@
         global.persistFeaturedLocalDraftSoon();
       }
     } catch (error) {
-      portListMessage = error.message || "Could not apply the port list.";
+      if (!I()?.buildPortsJoinedFromStops?.(stops) && built.stops.length) {
+        stops = I().normalizeStopOrder(built.stops);
+      }
+      portListMessage = `${error.message || "Could not finish matching the port list."} Entered ports were kept so you can continue.`;
       portListMessageTone = "error";
     } finally {
       portListBusy = false;
@@ -739,7 +765,13 @@
   } = {}) {
     captureFromDom();
     lastPrepareWarnings = [];
-    await ensurePortsLoaded({ force: true });
+    try {
+      await ensurePortsLoaded({ force: true });
+    } catch (error) {
+      lastPrepareWarnings.push(
+        `Ports catalogue could not be refreshed (${error.message}). Entered ports were kept.`
+      );
+    }
     const validation = I().validateStops(stops);
     if (!validation.ok) {
       if (allowIncomplete) {
@@ -918,14 +950,35 @@
     const sb = client();
     if (!sb) throw new Error("Database client is not available.");
     const rows = I().stopsToDbRows(stops, featuredCruiseId);
-    const { error: delError } = await sb
+    if (!rows.length) {
+      // Never delete stored ports because the editor had nothing to write.
+      return;
+    }
+
+    const { data: existing, error: loadError } = await sb
       .from("featured_cruise_itinerary_stops")
-      .delete()
+      .select("id")
       .eq("featured_cruise_id", featuredCruiseId);
-    if (delError) throw new Error(`Cruise saved, but itinerary could not be updated: ${delError.message}`);
-    if (rows.length) {
-      const { error: insError } = await sb.from("featured_cruise_itinerary_stops").insert(rows);
-      if (insError) throw new Error(`Cruise saved, but itinerary could not be saved: ${insError.message}`);
+    if (loadError) throw new Error(`Cruise saved, but itinerary could not be updated: ${loadError.message}`);
+
+    const { data: inserted, error: insError } = await sb
+      .from("featured_cruise_itinerary_stops")
+      .insert(rows)
+      .select("id");
+    if (insError) {
+      throw new Error(`Cruise saved, but itinerary could not be saved: ${insError.message}`);
+    }
+
+    const keepIds = new Set((inserted || []).map((row) => row.id).filter(Boolean));
+    const staleIds = (existing || []).map((row) => row.id).filter((id) => id && !keepIds.has(id));
+    if (staleIds.length) {
+      const { error: delError } = await sb
+        .from("featured_cruise_itinerary_stops")
+        .delete()
+        .in("id", staleIds);
+      if (delError) {
+        console.warn("itinerary old stops cleanup skipped; entered ports were kept", delError.message);
+      }
     }
     structuredLoaded = true;
     needsStructuring = false;
@@ -947,7 +1000,8 @@
     return {
       route_map_itinerary_signature: nextSignature,
       route_map_status: nextStatus,
-      itinerary_summary: I().buildPortsJoinedFromStops(stops) || legacySummary || null
+      itinerary_summary:
+        I().buildPortsJoinedFromStops(stops) || legacySummary || draft?.itinerary_summary || null
     };
   }
 
@@ -1086,6 +1140,8 @@
       rerender();
     }
   }
+
+  function renderAutocomplete(stop) {
     if (!autocomplete.open || autocomplete.localId !== stop.localId) return "";
     const results = I().searchPorts(autocomplete.query, portsCache, { limit: 8 });
     if (!results.length) {
@@ -1244,10 +1300,32 @@
     `;
   }
 
+  function renderPortsLeftInPlace(reason) {
+    const helper = I();
+    const joined =
+      (helper && helper.buildPortsJoinedFromStops(stops)) || legacySummary || "";
+    const items = String(joined)
+      .split("|")
+      .map((part) => part.trim())
+      .filter(Boolean);
+    return `
+      <section class="featured-form-section">
+        <h4>Itinerary</h4>
+        <p class="admin-error">${esc(reason)} Existing ports were left as entered so you can continue.</p>
+        ${
+          items.length
+            ? `<ul class="fc-itin-fallback-ports">${items.map((part) => `<li>${esc(part)}</li>`).join("")}</ul>`
+            : `<p class="admin-muted">No ports on file for this cruise.</p>`
+        }
+      </section>
+    `;
+  }
+
   function renderSection() {
+    try {
     const helper = I();
     if (!helper) {
-      return `<section class="featured-form-section"><h4>Itinerary</h4><p class="admin-error">Itinerary module failed to load.</p></section>`;
+      return renderPortsLeftInPlace("Itinerary module failed to load.");
     }
     const stopCount = stops.length;
     return `
@@ -1319,6 +1397,10 @@
         </div>
       </section>
     `;
+    } catch (error) {
+      console.warn("itinerary editor render left existing ports in place", error);
+      return renderPortsLeftInPlace("Structured itinerary editor failed to render.");
+    }
   }
 
   function renderRouteMapReadiness(draft) {

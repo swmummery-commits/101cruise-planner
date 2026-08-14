@@ -374,6 +374,45 @@ const greenOk = Export.generateFromModel(modelFromStops, {
 assert(greenOk.ok, `green export still works: ${(greenOk.errors || []).join("; ")}`);
 assert(/cr101-gpc-card/i.test(greenOk.html), "green cards unchanged structurally");
 
+/* ── Admin itinerary editor must load (newsletter ports stay visible) ── */
+
+const editorSrc = readFileSync(path.join(root, "js/admin-featured-itinerary.js"), "utf8");
+assert(/function renderAutocomplete\s*\(\s*stop\s*\)/.test(editorSrc), "autocomplete helper is declared");
+assert(!/notes:\s*stop\.notes/.test(editorSrc), "captureFromDom does not read an unbound stop");
+
+sandbox.document = {
+  getElementById() {
+    return null;
+  },
+  querySelectorAll() {
+    return [];
+  }
+};
+load("js/admin-featured-itinerary.js");
+assert(sandbox.FeaturedItineraryEditor, "FeaturedItineraryEditor attached after load");
+const emptySection = sandbox.FeaturedItineraryEditor.renderSection();
+assert(/Itinerary/.test(emptySection), "itinerary section renders");
+assert(/fcPortListPaste/.test(emptySection), "port list paste field present");
+
+sandbox.FeaturedItineraryEditor.setStops([
+  I.blankStop(1, {
+    stop_type: "embarkation",
+    entered_port_text: "Athens, Greece",
+    entered_country_text: "Greece"
+  }),
+  I.blankStop(2, {
+    stop_type: "disembarkation",
+    entered_port_text: "Rome, Italy",
+    entered_country_text: "Italy"
+  })
+]);
+const withPorts = sandbox.FeaturedItineraryEditor.renderSection();
+assert(/Athens, Greece/.test(withPorts), "entered embarkation port remains visible");
+assert(/Rome, Italy/.test(withPorts), "entered disembarkation port remains visible");
+const captured = sandbox.FeaturedItineraryEditor.captureFromDom();
+assert(captured.length === 2, "capture without DOM keeps existing ports");
+assert(captured[0].entered_port_text === "Athens, Greece", "capture does not wipe entered ports");
+
 console.log("featured-cruise-itinerary offline checks passed");
 console.log({
   signatureSample: sig1,

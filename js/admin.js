@@ -12227,6 +12227,34 @@ function renderFeaturedPricingBlock(row, index, nights) {
   `;
 }
 
+function renderFeaturedItinerarySectionSafe(draft) {
+  try {
+    const html = window.FeaturedItineraryEditor?.renderSection?.();
+    if (html) return html;
+  } catch (error) {
+    console.warn("itinerary editor render left existing ports in place", error);
+  }
+  const fromStops = window.FeaturedCruiseItinerary?.buildPortsJoinedFromStops?.(
+    window.FeaturedItineraryEditor?.getStops?.() || []
+  );
+  const joined = String(fromStops || draft?.itinerary_summary || "").trim();
+  const items = joined
+    .split("|")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return `
+      <section class="featured-form-section">
+        <h4>Itinerary</h4>
+        <p class="admin-error">Structured itinerary editor failed to load. Existing ports were left as entered so you can continue.</p>
+        ${
+          items.length
+            ? `<ul class="fc-itin-fallback-ports">${items.map((part) => `<li>${esc(part)}</li>`).join("")}</ul>`
+            : `<p class="admin-muted">No ports on file for this cruise.</p>`
+        }
+      </section>
+    `;
+}
+
 function renderFeaturedCruiseForm() {
   const draft = featuredFormDraft || {};
   const existing = editingFeaturedCruiseId ? findFeaturedCruise(editingFeaturedCruiseId) : null;
@@ -12363,7 +12391,7 @@ function renderFeaturedCruiseForm() {
 
       ${renderFeaturedHeroImageSection(draft)}
 
-      ${window.FeaturedItineraryEditor?.renderSection?.() || `<section class="featured-form-section"><h4>Itinerary</h4><p class="admin-error">Structured itinerary editor failed to load.</p></section>`}
+      ${renderFeaturedItinerarySectionSafe(draft)}
 
       ${renderFeaturedRouteMapSection(draft)}
 
@@ -12590,11 +12618,22 @@ async function saveFeaturedCruise() {
   try {
     // Resolve port matches / create provisional ports before writing the cruise row.
     // Port link failures no longer block save — cruise + entered port text are kept.
-    const prepared = await window.FeaturedItineraryEditor?.prepareStopsForSave?.({
-      featuredCruiseId: editingFeaturedCruiseId || null,
-      confirmCreateNew: true,
-      allowIncomplete: !isPublishing
-    });
+    let prepared = null;
+    try {
+      prepared = await window.FeaturedItineraryEditor?.prepareStopsForSave?.({
+        featuredCruiseId: editingFeaturedCruiseId || null,
+        confirmCreateNew: true,
+        allowIncomplete: !isPublishing
+      });
+    } catch (prepError) {
+      console.warn("itinerary prepare left existing ports in place", prepError);
+      prepared = {
+        ok: true,
+        warnings: [
+          `Itinerary matching did not finish (${prepError.message || "unknown error"}). Entered ports were kept.`
+        ]
+      };
+    }
     if (prepared && !prepared.ok) {
       if (isPublishing || prepared.needsMatchDecision) {
         featuredCruiseMessage = (prepared.errors || ["Resolve itinerary port matches before saving."]).join(" ");
@@ -12605,7 +12644,7 @@ async function saveFeaturedCruise() {
         return;
       }
     }
-    const portWarnings = Array.isArray(prepared?.warnings) ? prepared.warnings : [];
+    const portWarnings = Array.isArray(prepared?.warnings) ? prepared.warnings.slice() : [];
 
     const mapFields =
       window.FeaturedItineraryEditor?.computeMapFields?.(draft) || {
@@ -12613,7 +12652,10 @@ async function saveFeaturedCruise() {
         route_map_status: draft.route_map_status || "missing",
         route_map_itinerary_signature: draft.route_map_itinerary_signature || null
       };
-    const itinerarySummary = String(mapFields.itinerary_summary || "").trim() || null;
+    const itinerarySummary =
+      String(mapFields.itinerary_summary || "").trim() ||
+      String(draft.itinerary_summary || "").trim() ||
+      null;
 
     const payload = {
       headline,
@@ -12759,7 +12801,7 @@ async function saveFeaturedCruise() {
         action: "patch_cruise",
         id: cruiseId,
         patch: {
-          itinerary_summary: refreshedMap.itinerary_summary,
+          itinerary_summary: refreshedMap.itinerary_summary || itinerarySummary,
           route_map_status: refreshedMap.route_map_status,
           route_map_itinerary_signature: refreshedMap.route_map_itinerary_signature
         }
