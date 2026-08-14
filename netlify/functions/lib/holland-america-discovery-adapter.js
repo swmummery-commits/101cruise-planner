@@ -9,7 +9,7 @@
 
 const { canonicalUrl } = require("./cruise-discovery-structured");
 const { resolveShipForLine } = require("./discovery-ship-resolver");
-const { resolveOperationalDestination } = require("./discovery-destination-resolver");
+const { resolveOperationalDestination, hasAntarcticaRouteEvidence } = require("./discovery-destination-resolver");
 const { resolveRawPortText } = require("./discovery-departure-port");
 const { validateCruise } = require("./cruise-discovery");
 const { evaluateDiscoveryConfidence } = require("./discovery-confidence");
@@ -91,7 +91,7 @@ const HAL_REGION_CODE_SLUG = Object.freeze({
   WA: null,
   WS: "antarctica",
   SN: "antarctica",
-  SS: null,
+  SS: "south-america",
   GB1: "alaska",
   HUB: "alaska",
   TAC: "alaska",
@@ -433,6 +433,28 @@ function resolveHalDeparturePort(raw) {
   return resolveRawPortText(raw.departure_port, { sourceField: "halcruisesearch_api" });
 }
 
+function halAntarcticaEvidence(raw) {
+  return hasAntarcticaRouteEvidence({
+    title: raw.title,
+    description: raw.description,
+    itinerary: raw.itinerary_text,
+    itinerary_ports: raw.itinerary_ports,
+    departurePort: raw.departure_port,
+    arrivalPort: raw.arrival_port
+  });
+}
+
+function resolveHalSouthAmericaFamilyHint(raw) {
+  const blob = [raw.title, raw.itinerary_text, raw.description].filter(Boolean).join(" ");
+  if (/\bpanama canal\b/i.test(blob)) {
+    return { preferredSlug: "panama-canal", method: "hal_south_america_family_panama_canal" };
+  }
+  if (/\bamazon\b/i.test(blob)) {
+    return { preferredSlug: "south-america", method: "hal_south_america_family_amazon" };
+  }
+  return { preferredSlug: "south-america", method: "hal_south_america_family_default" };
+}
+
 function resolveHalDestinationHints(raw) {
   const codes = (raw.destination_codes || []).map((c) => String(c).toUpperCase());
   const regionCodes = (raw.region_codes || []).map((c) => String(c).toUpperCase());
@@ -443,12 +465,24 @@ function resolveHalDestinationHints(raw) {
     return { preferredSlug: crossing.slug, method: crossing.method, crossing: true };
   }
 
+  const routeBlob = [raw.title, raw.itinerary_text, raw.description].filter(Boolean).join(" ");
+  if (/\bpanama canal\b/i.test(routeBlob)) {
+    return { preferredSlug: "panama-canal", method: "hal_panama_canal_route" };
+  }
+
   for (const code of regionCodes) {
     const slug = HAL_REGION_CODE_SLUG[code];
+    if (slug === "antarctica" && !halAntarcticaEvidence(raw)) continue;
     if (slug) return { preferredSlug: slug, method: `hal_region_code_${code}` };
   }
 
   for (const [pattern, slug] of HAL_REGION_SLUG_HINTS) {
+    if (slug === "antarctica") {
+      if (pattern.test(labelBlob) && halAntarcticaEvidence(raw)) {
+        return { preferredSlug: slug, method: "hal_region_label" };
+      }
+      continue;
+    }
     if (pattern.test(labelBlob) || pattern.test(raw.itinerary_text || "") || pattern.test(raw.title || "")) {
       return { preferredSlug: slug, method: "hal_region_label" };
     }
@@ -458,9 +492,10 @@ function resolveHalDestinationHints(raw) {
     return { preferredSlug: "australia-new-zealand", method: "hal_destination_code_P" };
   }
   if (codes.includes("S")) {
-    if (/antarctica/i.test(labelBlob)) {
-      return { preferredSlug: "antarctica", method: "hal_destination_code_S" };
+    if (halAntarcticaEvidence(raw)) {
+      return { preferredSlug: "antarctica", method: "hal_destination_code_S_antarctica" };
     }
+    return resolveHalSouthAmericaFamilyHint(raw);
   }
   if (codes.includes("E")) {
     return {
@@ -540,6 +575,10 @@ function normaliseHalVoyage(raw, context = {}) {
       description: raw.description,
       hal_cruise_id: raw.cruise_id,
       hal_itinerary_id: raw.itinerary_id,
+      hal_destination_codes: raw.destination_codes,
+      hal_region_codes: raw.region_codes,
+      hal_destination_labels: raw.destination_labels,
+      hal_region_labels: raw.region_labels,
       structured_source: raw.structured_source,
       departure_port_raw: raw.departure_port
     }

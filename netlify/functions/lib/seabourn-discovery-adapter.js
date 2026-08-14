@@ -7,7 +7,7 @@
 
 const { canonicalUrl } = require("./cruise-discovery-structured");
 const { resolveShipForLine } = require("./discovery-ship-resolver");
-const { resolveOperationalDestination } = require("./discovery-destination-resolver");
+const { resolveOperationalDestination, hasAntarcticaRouteEvidence } = require("./discovery-destination-resolver");
 const { resolveRawPortText } = require("./discovery-departure-port");
 const { validateCruise } = require("./cruise-discovery");
 const { evaluateDiscoveryConfidence } = require("./discovery-confidence");
@@ -612,7 +612,19 @@ function resolveSeabournDestinationHints(raw) {
     .filter(Boolean)
     .join(" ");
 
-  if (/antarctica/i.test(labelBlob)) return { preferredSlug: "antarctica", method: "seabourn_label_antarctica" };
+  if (
+    /antarctica/i.test(labelBlob) &&
+    hasAntarcticaRouteEvidence({
+      title: raw.title,
+      description: raw.description,
+      itinerary: raw.itinerary_text,
+      itinerary_ports: raw.itinerary_ports,
+      departurePort: raw.departure_port,
+      arrivalPort: raw.arrival_port
+    })
+  ) {
+    return { preferredSlug: "antarctica", method: "seabourn_label_antarctica" };
+  }
   if (/kimberley/i.test(labelBlob)) return { preferredSlug: "australia-new-zealand", method: "seabourn_kimberley" };
   if (/mediterranean/i.test(labelBlob)) return { preferredSlug: "mediterranean", method: "seabourn_label_mediterranean" };
   if (/japan|yokohama|tokyo/i.test(labelBlob)) return { preferredSlug: "japan", method: "seabourn_label_japan" };

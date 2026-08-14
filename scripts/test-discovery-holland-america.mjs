@@ -194,4 +194,54 @@ assert(adapter.id === "holland-america", "adapter registered");
 assert(AUTO_ALIAS_WRITES_ENABLED === false, "auto alias disabled");
 assert(resolveAdapter({ name: "P&O Cruises Australia" }).id === "generic", "P&O excluded");
 
+const panamaAntarcticaLabelRaw = {
+  cruise_id: "O718",
+  itinerary_id: "S7S16A",
+  title: "16-DAY INCA & PANAMA CANAL DISCOVERY: LIMA OVERNIGHT",
+  itinerary_text:
+    "San Antonio (Santiago), Chile, Cruising Panama Canal, Days At Sea, General San Martin (Pisco), Peru, Manta, Ecuador, Enter Panama Canal Balboa, Fuerte Amador, Panama, Fort Lauderdale, Florida, US",
+  destination_codes: ["S"],
+  destination_labels: ["SOUTH AMERICA & ANTARCTICA"],
+  region_codes: ["SS"],
+  region_labels: ["South America"],
+  departure_port: "San Antonio (Santiago), Chile",
+  ship_name: "Oosterdam",
+  ship_code: "OS",
+  departure_date: "2027-03-24",
+  return_date: "2027-04-09",
+  nights: 16
+};
+const panamaHints = hal.resolveHalDestinationHints(panamaAntarcticaLabelRaw);
+assert(panamaHints.preferredSlug === "panama-canal", "HAL South America label without Antarctic route → Panama Canal");
+const panamaNorm = hal.normaliseHalVoyage(panamaAntarcticaLabelRaw, {
+  ...ctx,
+  ships: [{ id: "s-oosterdam", name: "ms Oosterdam", cruise_line_id: "hal-line" }]
+});
+assert(
+  panamaNorm.destination_resolution.destinationKey === "panama-canal",
+  "HAL Panama Canal sailing not tagged Antarctica"
+);
+
+const antarcticaRaw = {
+  cruise_id: "I810",
+  itinerary_id: "X810",
+  title: "22-DAY SOUTH AMERICA & ANTARCTICA",
+  itinerary_text:
+    "Cruising Chilean Fjords, Cape Horn and Drake Passage, Antarctic Experience, Buenos Aires, Argentina, Montevideo, Uruguay",
+  destination_codes: ["S"],
+  destination_labels: ["SOUTH AMERICA & ANTARCTICA"],
+  region_codes: ["SN"],
+  region_labels: ["South America/Antarctica"],
+  departure_port: "Buenos Aires, Argentina",
+  ship_name: "Westerdam",
+  ship_code: "WE",
+  departure_date: "2027-01-10",
+  return_date: "2027-02-01",
+  nights: 22
+};
+const antarcticaHints = hal.resolveHalDestinationHints(antarcticaRaw);
+assert(antarcticaHints.preferredSlug === "antarctica", "HAL Antarctic route keeps Antarctica");
+const antarcticaNorm = hal.normaliseHalVoyage(antarcticaRaw, ctx);
+assert(antarcticaNorm.destination_resolution.destinationKey === "antarctica", "HAL Antarctic sailing stays Antarctica");
+
 console.log(`test-discovery-holland-america: ${passed} passed`);

@@ -251,6 +251,49 @@ function normalisePortToken(text) {
     .trim();
 }
 
+const ANTARCTICA_ROUTE_SIGNAL_RES = [
+  /\bantarctic experience\b/i,
+  /\bdrake passage\b/i,
+  /\bantarctic peninsula\b/i,
+  /\bsouth shetland islands?\b/i,
+  /\belephant island\b/i,
+  /\bdeception island\b/i,
+  /\bross sea\b/i,
+  /\bweddell sea\b/i,
+  /\bamundsen sea\b/i,
+  /\bthe seabourn antarctic experience\b/i
+];
+
+/**
+ * True when title/itinerary/ports show Antarctica — not HAL's broad
+ * "South America & Antarctica" marketing category alone.
+ */
+function hasAntarcticaRouteEvidence({
+  title = "",
+  description = "",
+  itinerary = "",
+  itinerary_ports = [],
+  departurePort = null,
+  arrivalPort = null
+} = {}) {
+  const portList = Array.isArray(itinerary_ports) ? itinerary_ports.join("\n") : "";
+  const blob = [title, description, itinerary, portList, departurePort, arrivalPort].filter(Boolean).join("\n");
+
+  for (const re of ANTARCTICA_ROUTE_SIGNAL_RES) {
+    if (re.test(blob)) return true;
+  }
+
+  const panamaCanalOnly =
+    /\bpanama canal\b/i.test(blob) &&
+    !/\b(drake passage|antarctic experience|antarctic peninsula)\b/i.test(blob);
+
+  if (panamaCanalOnly) return false;
+
+  if (/\bantarctica\b/i.test(blob)) return true;
+
+  return false;
+}
+
 function resolveOperationalDestination({
   title = "",
   description = "",
@@ -266,12 +309,20 @@ function resolveOperationalDestination({
   const evidence = [];
 
   if (preferredDestination?.id || preferredDestination?.slug) {
-    const dest =
-      preferredDestination.id
-        ? classificationDestinations(destinations).find((d) => d.id === preferredDestination.id)
-        : destBySlugOrKey(destinations, preferredDestination.slug);
+    const dest = preferredDestination.id
+      ? classificationDestinations(destinations).find((d) => d.id === preferredDestination.id)
+      : destBySlugOrKey(destinations, preferredDestination.slug);
     if (dest && isClassifiable(dest)) {
-      return resultFromDest(dest, "high", ["preferred_scope"], evidence);
+      const hasAntarcticaEvidence = hasAntarcticaRouteEvidence({
+        title,
+        description,
+        itinerary,
+        departurePort,
+        arrivalPort
+      });
+      if (dest.slug !== "antarctica" || hasAntarcticaEvidence) {
+        return resultFromDest(dest, "high", ["preferred_scope"], evidence);
+      }
     }
   }
 
@@ -484,5 +535,6 @@ module.exports = {
   detectCrossingRoute,
   detectPacificCoastRoute,
   scoreTextSignals,
-  pickWinner
+  pickWinner,
+  hasAntarcticaRouteEvidence
 };
