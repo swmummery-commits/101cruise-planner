@@ -67,6 +67,7 @@
     "test:norwegian-discovery": "node scripts/test-norwegian-discovery.mjs",
     "test:norwegian-weekly-maintenance": "node scripts/test-norwegian-weekly-maintenance.mjs",
     "test:search-current-cruises": "node scripts/test-search-current-cruises.mjs",
+    "audit:princess-search-duplicates": "node scripts/audit-princess-search-duplicates.mjs",
     "run:norwegian-phase13-commissioning": "node scripts/run-norwegian-phase13-commissioning.mjs",
     "run:norwegian-phase13a-closure": "node scripts/run-norwegian-phase13a-closure.mjs",
     "test:royal-caribbean-discovery": "node scripts/test-royal-caribbean-discovery.mjs",
