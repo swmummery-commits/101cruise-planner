@@ -96,6 +96,7 @@ const {
   isSeabournSourceAbsenceDeactivationEnabled
 } = require("./seabourn-weekly-update-policy");
 const { runRoyalCaribbeanWeeklyMaintenance } = require("./royal-caribbean-weekly-maintenance");
+const { runNorwegianWeeklyMaintenance } = require("./norwegian-weekly-maintenance");
 
 const MAX_WRITES_PER_BATCH = 100;
 const MAX_WEEKLY_WRITES = 30;
@@ -1710,6 +1711,7 @@ module.exports = {
       ...context,
       _deps: { loadLineContext, findSourceAbsentActive, findPreviousSuccessfulMaintenanceRun }
     }),
+  runNorwegianWeeklyMaintenance: (context = {}) => runNorwegianWeeklyMaintenance(context),
   runFromMaintenanceRunner,
   acquireMaintenanceLock,
   releaseMaintenanceLock,

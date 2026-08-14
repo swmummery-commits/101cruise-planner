@@ -65,6 +65,8 @@
     "test:seabourn-controlled-catchup": "node scripts/test-seabourn-controlled-catchup.mjs",
     "test:seabourn-source-absence": "node scripts/test-seabourn-source-absence.mjs",
     "test:norwegian-discovery": "node scripts/test-norwegian-discovery.mjs",
+    "test:norwegian-weekly-maintenance": "node scripts/test-norwegian-weekly-maintenance.mjs",
+    "run:norwegian-phase13-commissioning": "node scripts/run-norwegian-phase13-commissioning.mjs",
     "test:royal-caribbean-discovery": "node scripts/test-royal-caribbean-discovery.mjs",
     "smoke:royal-caribbean-source-ci": "node scripts/royal-caribbean-source-smoke-ci.mjs",
     "probe:royal-caribbean-discovery": "node scripts/probe-royal-caribbean-discovery.mjs",
