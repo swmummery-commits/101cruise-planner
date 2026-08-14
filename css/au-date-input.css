@@ -19,9 +19,11 @@
   align-items: center;
   gap: 4px;
   max-width: 100%;
-  padding: 6px 8px;
+  height: var(--admin-control-height, 38px);
+  min-height: var(--admin-control-height, 38px);
+  padding: 0 10px;
   border: 1px solid var(--admin-border, #d0d7d4);
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fff;
   box-sizing: border-box;
 }
@@ -36,8 +38,11 @@
   background: transparent;
   text-align: center;
   font: inherit;
+  font-size: 13px;
+  line-height: 1.25;
   font-variant-numeric: tabular-nums;
-  padding: 2px 0;
+  padding: 0;
+  height: 1.25em;
   min-width: 0;
   outline: none;
   color: inherit;
@@ -66,11 +71,15 @@ label .au-date-input,
 td .au-date-input {
   width: 100%;
   display: flex;
+  align-items: center;
   justify-content: flex-start;
+  height: var(--admin-control-height, 38px);
+  min-height: var(--admin-control-height, 38px);
 }
 
 .calc-inline-input.calc-inline-date.au-date-native + .au-date-input,
 .calc-inline-date.au-date-native + .au-date-input {
+  height: 32px;
   min-height: 32px;
   padding: 4px 6px;
 }

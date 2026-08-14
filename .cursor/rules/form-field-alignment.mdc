@@ -1,0 +1,30 @@
+---
+description: Keep form fields in a row the same height and aligned
+alwaysApply: true
+---
+
+# Form field alignment
+
+When creating or editing pages, **every control in the same row must be the same height and sit on the same baseline**. Dropdowns, text inputs, number inputs, and date widgets must not mix native heights.
+
+## Required
+
+- Use `--admin-control-height` (`38px`) for single-line inputs and selects
+- Align row grids with `align-items: end` so labels can wrap without knocking controls off-line
+- Style `<select>` with `appearance: none` and a matching chevron — never leave Safari’s taller native dropdown
+- AU date widgets (`.au-date-input`) must match the same 38px height, padding, and radius as adjacent fields
+- Checkboxes, radios, and textareas are the exception (they are not single-line row controls)
+
+```css
+/* ❌ BAD — native select taller than date/number beside it */
+.featured-details-row { display: grid; }
+
+/* ✅ GOOD */
+.featured-details-row { display: grid; align-items: end; }
+.admin-field select,
+.admin-field input:not([type="checkbox"]):not([type="radio"]) {
+  height: var(--admin-control-height);
+  min-height: var(--admin-control-height);
+  box-sizing: border-box;
+}
+```

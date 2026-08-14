@@ -2723,6 +2723,7 @@ body.admin-loading-active {
   --admin-page: #f8f9fa;
   --admin-soft: #f5f6f7;
   --admin-accent: var(--brand-green);
+  --admin-control-height: 38px;
   color: var(--admin-text);
   font-size: 13px;
   line-height: 1.45;
@@ -2781,6 +2782,30 @@ body.admin-loading-active {
   padding: 9px 10px;
   color: var(--admin-text);
   background: #fff;
+}
+
+.admin-field input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]):not([type="range"]):not([type="color"]),
+.admin-field select {
+  height: var(--admin-control-height);
+  min-height: var(--admin-control-height);
+  line-height: 1.25;
+  box-sizing: border-box;
+}
+
+.admin-field select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%236b7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M1.5 1.5L6 6l4.5-4.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 28px;
+}
+
+.admin-field textarea {
+  height: auto;
+  min-height: 70px;
+  line-height: 1.45;
 }
 
 .admin-field input:focus,
@@ -5356,6 +5381,7 @@ body.admin-loading-active {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 12px;
+  align-items: end;
 }
 
 .featured-details-row {
@@ -5363,6 +5389,14 @@ body.admin-loading-active {
   grid-template-columns: minmax(140px, 1.4fr) minmax(140px, 1.4fr) minmax(120px, 1fr) minmax(72px, 0.55fr) minmax(120px, 1fr);
   gap: 10px 12px;
   margin-top: 12px;
+  align-items: end;
+}
+
+.featured-ports-row .admin-field,
+.featured-details-row .admin-field,
+.featured-newsletter-row .admin-field {
+  margin-bottom: 0;
+  min-width: 0;
 }
 
 .featured-readonly-date {
