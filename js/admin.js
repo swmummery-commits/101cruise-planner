@@ -11446,13 +11446,52 @@ function focusFeaturedRouteMapSection() {
     const status = document.getElementById("featured-route-map-status");
     const section = document.getElementById("featured-route-map-section");
     const target = status || section;
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (target && typeof target.getBoundingClientRect === "function") {
+      const rect = target.getBoundingClientRect();
+      const viewH = window.innerHeight || 0;
+      const fullyVisible = rect.top >= 8 && rect.bottom <= viewH - 8;
+      if (!fullyVisible) {
+        target.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
     }
     if (typeof BrandLoading !== "undefined" && BrandLoading.scan && status) {
       BrandLoading.scan(status);
     }
   }, 0);
+}
+
+function updateFeaturedRouteMapProgressInPlace() {
+  const title = document.querySelector("#featured-route-map-status .featured-route-map-status-title");
+  if (title) title.textContent = featuredRouteMapGenProgress || "Working on your route map…";
+}
+
+async function parseRouteMapGenerateResponse(response) {
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch (_err) {
+    if (response.status === 504 || response.status === 502 || /timeout|gateway/i.test(text)) {
+      return {
+        ok: false,
+        errors: [
+          {
+            code: "timeout",
+            message:
+              "Route map generation timed out on the server. Wait a moment and try Generate again — the first map in a region can take longer."
+          }
+        ]
+      };
+    }
+    return {
+      ok: false,
+      errors: [
+        {
+          code: "generate_failed",
+          message: `Route map generation failed (HTTP ${response.status || "unknown"}).`
+        }
+      ]
+    };
+  }
 }
 
 function renderFeaturedRouteMapStatusPanel() {
@@ -11607,7 +11646,7 @@ function formatFeaturedRouteMapBytes(n) {
 function renderFeaturedGeneratedRouteMapParts(draft) {
   const result = featuredRouteMapGenResult;
   const hasAssets = featuredCruiseHasGeneratedRouteMap(draft) || Boolean(result?.ok);
-  if (!hasAssets && !featuredRouteMapGenerating && !result) {
+  if (!hasAssets && !result) {
     return { hasPanel: false, metaHtml: "", previewHtml: "" };
   }
 
@@ -11767,85 +11806,126 @@ async function generateFeaturedRouteMap() {
     return;
   }
 
-  featuredRouteMapGenerating = true;
-  featuredRouteMapGenResult = null;
-  featuredRouteMapSectionMessage = "";
-  featuredRouteMapSectionMessageTone = "";
-  const progressSteps = [
-    "Loading Route Object…",
-    "Rendering SVG…",
-    "Rendering PNG…",
-    "Uploading to Storage…",
-    "Complete"
-  ];
-  let stepIndex = 0;
-  featuredRouteMapGenProgress = progressSteps[0];
-  renderAdmin();
-  focusFeaturedRouteMapSection();
-
-  const progressTimer = setInterval(() => {
-    if (!featuredRouteMapGenerating) return;
-    stepIndex = Math.min(stepIndex + 1, progressSteps.length - 2);
-    featuredRouteMapGenProgress = progressSteps[stepIndex];
-    renderAdmin();
-  }, 700);
-
-  try {
-    const headers = await adminAuthHeaders({ "Content-Type": "application/json" });
-    const response = await fetch("/.netlify/functions/route-map-generate", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        action: "generate",
-        featured_cruise_id: editingFeaturedCruiseId,
-        png_width: 2000,
-        force_reroute: featuredCruiseHasGeneratedRouteMap(featuredFormDraft)
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-
-    const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
-
-    if (response.ok && data.ok) {
-      applyFeaturedGeneratedRouteMapResult(
-        {
-          ...data,
-          ...(refreshed || {})
-        },
-        { recovered: false }
-      );
-    } else if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
-      applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
-    } else {
-      featuredRouteMapGenResult = data && typeof data === "object" ? data : { ok: false };
-      if (!featuredRouteMapGenResult.ok) {
-        featuredRouteMapGenResult.ok = false;
-        featuredRouteMapGenResult.errors = data.errors || [
-          { code: "generate_failed", message: "Route map generation failed." }
-        ];
-      }
-      featuredRouteMapSectionMessage = "";
-      featuredRouteMapSectionMessageTone = "";
-    }
-  } catch (error) {
-    const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
-    if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
-      applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
-    } else {
-      featuredRouteMapGenResult = {
-        ok: false,
-        errors: [{ code: "network_error", message: error.message || "Network error during generation." }]
-      };
-      featuredRouteMapSectionMessage = "";
-      featuredRouteMapSectionMessageTone = "";
-    }
-  } finally {
-    clearInterval(progressTimer);
-    featuredRouteMapGenerating = false;
-    if (featuredRouteMapGenResult?.ok) featuredRouteMapGenProgress = "Complete";
+  const run = async () => {
+    featuredRouteMapGenerating = true;
+    featuredRouteMapGenResult = null;
+    featuredRouteMapSectionMessage = "";
+    featuredRouteMapSectionMessageTone = "";
+    const progressSteps = [
+      "Saving itinerary…",
+      "Calculating sea route…",
+      "Rendering map…",
+      "Uploading PNG…"
+    ];
+    let stepIndex = 0;
+    featuredRouteMapGenProgress = progressSteps[0];
     renderAdmin();
     focusFeaturedRouteMapSection();
+
+    const progressTimer = setInterval(() => {
+      if (!featuredRouteMapGenerating) return;
+      stepIndex = Math.min(stepIndex + 1, progressSteps.length - 1);
+      featuredRouteMapGenProgress = progressSteps[stepIndex];
+      updateFeaturedRouteMapProgressInPlace();
+    }, 2500);
+
+    try {
+      window.FeaturedItineraryEditor?.captureFromDom?.();
+      const prepared = await window.FeaturedItineraryEditor?.prepareStopsForSave?.({
+        featuredCruiseId: editingFeaturedCruiseId,
+        confirmCreateNew: true,
+        allowIncomplete: true
+      });
+      if (window.FeaturedItineraryEditor?.persistStops) {
+        await window.FeaturedItineraryEditor.persistStops(editingFeaturedCruiseId);
+      }
+      if (prepared?.warnings?.length) {
+        console.warn("route map itinerary warnings", prepared.warnings);
+      }
+
+      featuredRouteMapGenProgress = progressSteps[1];
+      updateFeaturedRouteMapProgressInPlace();
+
+      const headers = await adminAuthHeaders({ "Content-Type": "application/json" });
+      const controller = new AbortController();
+      const abortTimer = setTimeout(() => controller.abort(), 110000);
+      let response;
+      try {
+        response = await fetch("/.netlify/functions/route-map-generate", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            action: "generate",
+            featured_cruise_id: editingFeaturedCruiseId,
+            png_width: 2000,
+            force_reroute: featuredCruiseHasGeneratedRouteMap(featuredFormDraft)
+          }),
+          signal: controller.signal
+        });
+      } finally {
+        clearTimeout(abortTimer);
+      }
+      const data = await parseRouteMapGenerateResponse(response);
+
+      const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
+
+      if (response.ok && data.ok) {
+        applyFeaturedGeneratedRouteMapResult(
+          {
+            ...data,
+            ...(refreshed || {})
+          },
+          { recovered: false }
+        );
+      } else if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
+        applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
+      } else {
+        featuredRouteMapGenResult = data && typeof data === "object" ? data : { ok: false };
+        if (!featuredRouteMapGenResult.ok) {
+          featuredRouteMapGenResult.ok = false;
+          featuredRouteMapGenResult.errors = data.errors || [
+            { code: "generate_failed", message: "Route map generation failed." }
+          ];
+        }
+        featuredRouteMapSectionMessage = "";
+        featuredRouteMapSectionMessageTone = "";
+      }
+    } catch (error) {
+      const refreshed = await refreshFeaturedGeneratedRouteMapDraft(editingFeaturedCruiseId);
+      if (refreshed?.route_map_svg_path && refreshed?.route_map_png_path) {
+        applyFeaturedGeneratedRouteMapResult(refreshed, { recovered: true });
+      } else {
+        const timedOut = error && (error.name === "AbortError" || /aborted/i.test(String(error.message || "")));
+        featuredRouteMapGenResult = {
+          ok: false,
+          errors: [
+            {
+              code: timedOut ? "timeout" : "network_error",
+              message: timedOut
+                ? "Route map generation took too long. Try Generate again — the itinerary was kept."
+                : error.message || "Network error during generation."
+            }
+          ]
+        };
+        featuredRouteMapSectionMessage = "";
+        featuredRouteMapSectionMessageTone = "";
+      }
+    } finally {
+      clearInterval(progressTimer);
+      featuredRouteMapGenerating = false;
+      if (featuredRouteMapGenResult?.ok) featuredRouteMapGenProgress = "Complete";
+      renderAdmin();
+      focusFeaturedRouteMapSection();
+    }
+  };
+
+  if (typeof window.AdminLoading?.withSaving === "function") {
+    return window.AdminLoading.withSaving(run, {
+      key: "featured-route-map-generate",
+      supportMessage: "Please wait while we calculate the sea route and create the map."
+    });
   }
+  return run();
 }
 
 async function deleteFeaturedGeneratedRouteMap() {

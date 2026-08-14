@@ -148,7 +148,7 @@
   # Route Object load/create + SVG + PNG rasterisation.
   # Prefer native @resvg/resvg-js; fall back to @resvg/resvg-wasm when the Linux
   # platform binary is missing from the Function bundle.
-  timeout = 60
+  timeout = 120
   external_node_modules = [
     "@resvg/resvg-js",
     "@resvg/resvg-js-linux-x64-gnu",

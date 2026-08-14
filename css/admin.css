@@ -5162,6 +5162,8 @@ body.admin-loading-active {
   gap: 12px;
   margin-top: 10px;
   padding: 14px 16px;
+  min-height: 76px;
+  box-sizing: border-box;
   border-radius: 12px;
   border: 1px solid var(--brand-green-border);
   background: var(--brand-green-soft);
