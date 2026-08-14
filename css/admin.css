@@ -5399,6 +5399,14 @@ body.admin-loading-active {
   min-width: 0;
 }
 
+.featured-cruise-form #fcShortEditorial {
+  min-height: calc(1.45em * 6 + 20px);
+}
+
+.featured-cruise-form #fcFullDescription {
+  min-height: calc(1.45em * 8 + 20px);
+}
+
 .featured-readonly-date {
   background: #f4f7f6;
   color: #111;

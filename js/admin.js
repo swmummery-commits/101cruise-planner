@@ -12380,12 +12380,12 @@ function renderFeaturedCruiseForm() {
         <h4>Editorial</h4>
         <div class="admin-field">
           <label for="fcShortEditorial">Short editorial</label>
-          <textarea id="fcShortEditorial" rows="3">${esc(draft.short_editorial || "")}</textarea>
+          <textarea id="fcShortEditorial" rows="6">${esc(draft.short_editorial || "")}</textarea>
           <div class="admin-helper">Intended for the newsletter.</div>
         </div>
         <div class="admin-field">
           <label for="fcFullDescription">Full description</label>
-          <textarea id="fcFullDescription" rows="5">${esc(draft.full_description || "")}</textarea>
+          <textarea id="fcFullDescription" rows="8">${esc(draft.full_description || "")}</textarea>
         </div>
       </section>
 
