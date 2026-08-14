@@ -832,17 +832,97 @@ function formatIsoDateAu(iso) {
   }
 }
 
-function parsePorts(itinerary, itineraryPorts) {
-  if (Array.isArray(itineraryPorts) && itineraryPorts.length) {
-    return itineraryPorts.map((p) => String(p).trim()).filter(Boolean).slice(0, 12);
+const ITINERARY_COUNTRY_SUFFIX_RE =
+  /\b(?:Chile|Argentina|Uruguay|Brazil|Panama|Ecuador|Peru|Colombia|Mexico|Barbados|Martinique|Trinidad and Tobago|French Guiana|Cayman Islands|United States|US|Florida|California|Alaska|Canada|New Zealand|Australia|Japan|China|Singapore|Thailand|Vietnam|Indonesia|Malaysia|Philippines|India|Sri Lanka|Maldives|UAE|Qatar|Oman|Jordan|Egypt|Morocco|Spain|Portugal|France|Italy|Greece|Turkey|Croatia|Montenegro|Malta|Monaco|Netherlands|Belgium|Germany|Denmark|Sweden|Norway|Finland|Iceland|Ireland|United Kingdom|UK|England|Scotland|Wales|South Africa|Kenya|Tanzania|Madagascar|Seychelles|Mauritius|Falkland Island|Islas Malvinas)\s*$/i;
+
+function classifyItineraryStop(label) {
+  const text = String(label || "").trim();
+  if (!text) return null;
+  if (/^days at sea$/i.test(text)) return { label: "Days at sea", kind: "sea" };
+  if (/^scenic cruising/i.test(text)) return { label: text, kind: "scenic" };
+  if (/^cruising /i.test(text)) return { label: text, kind: "scenic" };
+  if (/^enter panama canal|^exit panama canal|^cruising panama canal/i.test(text)) {
+    return { label: text, kind: "scenic" };
   }
-  const text = String(itinerary || "");
+  if (/^crossing the /i.test(text) || /^strait of /i.test(text)) return { label: text, kind: "scenic" };
+  if (/experience \(day \d+\)$/i.test(text) || /^antarctic experience$/i.test(text)) {
+    return { label: text, kind: "experience" };
+  }
+  if (/^the seabourn /i.test(text)) return { label: text, kind: "experience" };
+  return { label: text, kind: "port" };
+}
+
+function parseCommaItineraryStops(text) {
+  const raw = String(text || "").trim();
+  if (!raw) return [];
+
+  const parts = raw.split(/,\s*/);
+  const stops = [];
+  let buffer = [];
+
+  const flush = () => {
+    if (!buffer.length) return;
+    const stop = classifyItineraryStop(buffer.join(", "));
+    if (stop) stops.push(stop);
+    buffer = [];
+  };
+
+  for (const part of parts) {
+    if (!part) continue;
+    buffer.push(part);
+    if (
+      ITINERARY_COUNTRY_SUFFIX_RE.test(part) ||
+      /^Days At Sea$/i.test(part) ||
+      /^Scenic cruising/i.test(part) ||
+      /^Cruising /i.test(part) ||
+      /Experience \(Day \d+\)$/i.test(part) ||
+      /^Antarctic Experience$/i.test(part) ||
+      /^The Seabourn /i.test(part) ||
+      /^Enter Panama Canal/i.test(part) ||
+      /^Exit Panama Canal/i.test(part) ||
+      /^Crossing the /i.test(part) ||
+      /^Strait of /i.test(part)
+    ) {
+      flush();
+    }
+  }
+  flush();
+  return stops;
+}
+
+function parseItineraryStops(itinerary, itineraryPorts) {
+  if (Array.isArray(itineraryPorts) && itineraryPorts.length) {
+    return itineraryPorts
+      .map((port) => classifyItineraryStop(String(port || "").trim()))
+      .filter(Boolean)
+      .slice(0, 48);
+  }
+
+  const text = String(itinerary || "").trim();
   if (!text) return [];
+
+  const commaStops = parseCommaItineraryStops(text);
+  if (commaStops.length > 1) return commaStops.slice(0, 48);
+
   return text
-    .split(/\s*(?:→|->|–|-|to)\s*/i)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 1 && p.length < 60)
-    .slice(0, 12);
+    .split(/\s*(?:→|->|–|—|-|\/| to )\s*/i)
+    .map((part) => classifyItineraryStop(part.trim()))
+    .filter(Boolean)
+    .slice(0, 48);
+}
+
+function parsePorts(itinerary, itineraryPorts) {
+  return parseItineraryStops(itinerary, itineraryPorts)
+    .map((stop) => stop.label)
+    .slice(0, 48);
+}
+
+function itineraryDisplayTitle(row, ship, destinationName) {
+  const title = row?.raw_extract?.title;
+  if (title && String(title).trim()) return String(title).trim();
+  const itinerary = String(row?.itinerary || "").trim();
+  if (itinerary && itinerary.length <= 100) return itinerary;
+  return `${ship} — ${destinationName}`;
 }
 
 function matchesDuration(nights, durationId) {
@@ -928,7 +1008,7 @@ async function runDiscoveryCatalogue(input) {
     `discovered_cruises?destination_id=eq.${encodeURIComponent(destination.id)}` +
       `&status=eq.active` +
       `&departure_date=gte.${minDeparture}` +
-      `&select=id,cruise_line_id,ship_id,departure_date,return_date,nights,departure_port,itinerary,itinerary_ports,brochure_fare_display,currency,official_url,source_url,last_verified_at,last_seen_at` +
+      `&select=id,cruise_line_id,ship_id,departure_date,return_date,nights,departure_port,itinerary,itinerary_ports,raw_extract,brochure_fare_display,currency,official_url,source_url,last_verified_at,last_seen_at` +
       `&order=departure_date.asc&limit=100`
   );
 
@@ -976,10 +1056,12 @@ async function runDiscoveryCatalogue(input) {
       // but still allow other Discovery rows for that destination.
     }
 
+    const portStops = parseItineraryStops(row.itinerary, row.itinerary_ports);
+
     results.push({
       cruiseLine,
       ship,
-      itineraryTitle: row.itinerary || `${ship} — ${destination.name}`,
+      itineraryTitle: itineraryDisplayTitle(row, ship, destination.name),
       departureDate: formatIsoDateAu(row.departure_date),
       departureDateIso: row.departure_date,
       returnDate: row.return_date ? formatIsoDateAu(row.return_date) : null,
@@ -989,7 +1071,8 @@ async function runDiscoveryCatalogue(input) {
       destination: destination.name,
       destinationSlug: destination.slug,
       destinationPublicPage: destination.publicLivingPage === true,
-      portsOfCall: parsePorts(row.itinerary, row.itinerary_ports),
+      portsOfCall: portStops.map((stop) => stop.label),
+      portStops,
       sourceName: cruiseLine,
       sourceUrl: row.official_url || row.source_url,
       dateSearched: String(row.last_verified_at || row.last_seen_at || perthToday).slice(0, 10),
@@ -1162,6 +1245,10 @@ function publicResult(result) {
     statusLabel: "Currently listed online"
   };
 }
+
+exports.parseItineraryStops = parseItineraryStops;
+exports.parsePorts = parsePorts;
+exports.itineraryDisplayTitle = itineraryDisplayTitle;
 
 exports.handler = async function handler(event) {
   if (event.httpMethod === "OPTIONS") {

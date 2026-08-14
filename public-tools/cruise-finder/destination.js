@@ -454,11 +454,39 @@
     return `mailto:${PAUL_ENQUIRY_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
-  function resultCardHtml(result, dest, prefs) {
-    const ports =
-      Array.isArray(result.portsOfCall) && result.portsOfCall.length
-        ? `<div class="cf-sail-row"><span class="cf-sail-label">Ports</span><span class="cf-sail-value">${escapeHtml(result.portsOfCall.join(" · "))}</span></div>`
+  function portStopsHtml(result) {
+    const stops =
+      Array.isArray(result.portStops) && result.portStops.length
+        ? result.portStops
+        : (Array.isArray(result.portsOfCall)
+            ? result.portsOfCall.map((label) => ({ label, kind: "port" }))
+            : []);
+    if (!stops.length) return "";
+
+    const visibleCount = 8;
+    const listItems = stops
+      .map((stop, index) => {
+        const kind = stop.kind || "port";
+        const hiddenClass = index >= visibleCount ? " cf-sail-port--hidden" : "";
+        return `<li class="cf-sail-port cf-sail-port--${escapeHtml(kind)}${hiddenClass}">${escapeHtml(stop.label)}</li>`;
+      })
+      .join("");
+
+    const toggle =
+      stops.length > visibleCount
+        ? `<button type="button" class="cf-sail-port-toggle" data-port-toggle>Show all ${stops.length} stops</button>`
         : "";
+
+    return `
+      <div class="cf-sail-ports">
+        <p class="cf-sail-ports-title">Itinerary stops</p>
+        <ol class="cf-sail-port-list" data-port-list>${listItems}</ol>
+        ${toggle}
+        <p class="cf-sail-port-note">Day-by-day port dates are not confirmed in Cruise Finder yet. Ask Paul for the official schedule.</p>
+      </div>`;
+  }
+
+  function resultCardHtml(result, dest, prefs) {
     const departureNote = result.departureNote
       ? `<p class="cf-sail-departure-note">${escapeHtml(result.departureNote)}</p>`
       : "";
@@ -477,10 +505,10 @@
           <div class="cf-sail-row"><span class="cf-sail-label">Duration</span><span class="cf-sail-value">${escapeHtml(displayValue(result.durationLabel))}</span></div>
           <div class="cf-sail-row"><span class="cf-sail-label">From</span><span class="cf-sail-value">${escapeHtml(displayValue(result.departurePort))}</span></div>
           <div class="cf-sail-row"><span class="cf-sail-label">Region</span><span class="cf-sail-value">${escapeHtml(displayValue(result.destination || dest.name))}</span></div>
-          ${ports}
           <div class="cf-sail-row"><span class="cf-sail-label">Source</span><span class="cf-sail-value"><a class="cf-sail-source" href="${escapeHtml(result.sourceUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(displayValue(result.sourceName))}</a></span></div>
           <div class="cf-sail-row"><span class="cf-sail-label">Date searched</span><span class="cf-sail-value">${escapeHtml(displayValue(result.dateSearched))}</span></div>
         </div>
+        ${portStopsHtml(result)}
         <a class="cf-sail-ask" href="${escapeHtml(buildPaulMailto(result, dest, prefs))}">Ask Paul for current availability and best price</a>
       </article>`;
   }
@@ -786,6 +814,17 @@
         runSearch({ forceRefresh: !!(options && options.forceRefresh) });
       });
     }
+
+    mount.querySelectorAll("[data-port-toggle]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const list = button.closest(".cf-sail-ports")?.querySelector("[data-port-list]");
+        if (!list) return;
+        const expanded = list.getAttribute("data-expanded") === "1";
+        list.setAttribute("data-expanded", expanded ? "0" : "1");
+        const hiddenCount = list.querySelectorAll(".cf-sail-port--hidden").length;
+        button.textContent = expanded ? `Show all ${list.children.length} stops` : "Show fewer stops";
+      });
+    });
   }
 
   async function runSearch(options) {

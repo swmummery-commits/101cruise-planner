@@ -4,5 +4,5 @@
  */
 (function (root) {
   "use strict";
-  root.CruiseFinderAssetVersion = "dx-route-fix-1";
+  root.CruiseFinderAssetVersion = "cf-port-stops-1";
 })(typeof window !== "undefined" ? window : globalThis);

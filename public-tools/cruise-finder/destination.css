@@ -495,6 +495,75 @@
 .cf-sail-summary {
   margin: 0 0 14px;
   font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.cf-sail-ports {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #ececec;
+}
+
+.cf-sail-ports-title {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #888 !important;
+}
+
+.cf-sail-port-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cf-sail-port {
+  padding: 7px 0;
+  border-bottom: 1px solid #f0f0f0;
+  color: #111 !important;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.cf-sail-port:last-child {
+  border-bottom: 0;
+}
+
+.cf-sail-port--sea,
+.cf-sail-port--scenic,
+.cf-sail-port--experience {
+  color: #666 !important;
+  font-style: italic;
+}
+
+.cf-sail-port-list .cf-sail-port--hidden {
+  display: none;
+}
+
+.cf-sail-port-list[data-expanded="1"] .cf-sail-port--hidden {
+  display: list-item;
+}
+
+.cf-sail-port-toggle {
+  margin-top: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #245c4e !important;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.cf-sail-port-note {
+  margin: 10px 0 0;
+  color: #888 !important;
+  font-size: 0.82rem;
+  line-height: 1.4;
 }
 
 .cf-sail-departure-note {
