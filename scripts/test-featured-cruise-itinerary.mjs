@@ -343,6 +343,22 @@ const modelLegacy = Preview.buildModel({
 });
 assert(modelLegacy.portsJoined.includes("Istanbul"), "legacy summary fallback works");
 
+const modelParagraphs = Preview.buildModel({
+  headline: "Test",
+  itinerarySummary: "Barcelona, Spain | Istanbul, Turkey",
+  heroImageUrl: publicHero,
+  routeMapUrl: publicMap,
+  publicSlug: "test-cruise",
+  short_editorial: "First sentence.\nSecond sentence.",
+  full_description: "Para one.\n\nPara two.",
+  nights: 7,
+  departureDate: "2027-01-01",
+  returnDate: "2027-01-08"
+});
+assert(modelParagraphs.descriptionParagraphs.length === 2, "Enter in short editorial becomes paragraphs");
+assert(modelParagraphs.descriptionParagraphs[0] === "First sentence.", "first short paragraph");
+assert(modelParagraphs.fullDescriptionParagraphs.length === 2, "blank line in full description becomes paragraphs");
+
 const pricingRows = [
   {
     room_label: "Inside",

@@ -138,9 +138,16 @@
   }
 
   function splitParagraphs(text) {
-    return String(text || "")
+    const normalized = String(text || "")
       .replace(/\r\n/g, "\n")
+      .replace(/\r/g, "\n");
+    const blankLines = normalized
       .split(/\n{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    if (blankLines.length > 1) return blankLines;
+    return normalized
+      .split(/\n+/)
       .map((p) => p.trim())
       .filter(Boolean);
   }

@@ -5399,6 +5399,11 @@ body.admin-loading-active {
   min-width: 0;
 }
 
+.featured-cruise-form #fcShortEditorial,
+.featured-cruise-form #fcFullDescription {
+  white-space: pre-wrap;
+}
+
 .featured-cruise-form #fcShortEditorial {
   min-height: calc(1.45em * 6 + 20px);
 }

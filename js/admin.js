@@ -1246,6 +1246,7 @@ function renderAdmin() {
     window.CruiseLineFeaturesAdmin.afterRender();
   }
   bindCiShipFeatureEditorsAfterRender();
+  restoreFeaturedEditorialToDom();
   restoreCiLineFormDraftToDom(ciLineDraft);
   syncCiLineDetailDomTabs();
   updateCiLineSaveButtonState();
@@ -10898,6 +10899,31 @@ function getEditingFeaturedCruiseId() {
   return editingFeaturedCruiseId;
 }
 
+function onFeaturedEditorialKeydown(event) {
+  if (event.key !== "Enter" || event.shiftKey || event.altKey || event.metaKey || event.ctrlKey) return;
+  event.preventDefault();
+  const el = event.target;
+  if (!el || el.selectionStart == null) return;
+  const start = el.selectionStart;
+  const end = el.selectionEnd;
+  const value = String(el.value || "");
+  const before = value.slice(0, start);
+  const after = value.slice(end);
+  const insert = before.endsWith("\n") ? "\n" : "\n\n";
+  el.value = `${before}${insert}${after}`;
+  const pos = before.length + insert.length;
+  el.setSelectionRange(pos, pos);
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function restoreFeaturedEditorialToDom() {
+  if (!showFeaturedCruiseForm || !featuredFormDraft) return;
+  const shortEl = document.getElementById("fcShortEditorial");
+  const fullEl = document.getElementById("fcFullDescription");
+  if (shortEl) shortEl.value = featuredFormDraft.short_editorial || "";
+  if (fullEl) fullEl.value = featuredFormDraft.full_description || "";
+}
+
 function captureFeaturedDraftFromDom() {
   if (!featuredFormDraft) featuredFormDraft = {};
   const departure = document.getElementById("fcDepartureDate")?.value || "";
@@ -12380,12 +12406,13 @@ function renderFeaturedCruiseForm() {
         <h4>Editorial</h4>
         <div class="admin-field">
           <label for="fcShortEditorial">Short editorial</label>
-          <textarea id="fcShortEditorial" rows="6">${esc(draft.short_editorial || "")}</textarea>
-          <div class="admin-helper">Intended for the newsletter.</div>
+          <textarea id="fcShortEditorial" rows="6" onkeydown="onFeaturedEditorialKeydown(event)">${esc(draft.short_editorial || "")}</textarea>
+          <div class="admin-helper">Intended for the newsletter. Press Enter for a new paragraph. Shift+Enter for a single line.</div>
         </div>
         <div class="admin-field">
           <label for="fcFullDescription">Full description</label>
-          <textarea id="fcFullDescription" rows="8">${esc(draft.full_description || "")}</textarea>
+          <textarea id="fcFullDescription" rows="8" onkeydown="onFeaturedEditorialKeydown(event)">${esc(draft.full_description || "")}</textarea>
+          <div class="admin-helper">Press Enter for a new paragraph. Shift+Enter for a single line.</div>
         </div>
       </section>
 
