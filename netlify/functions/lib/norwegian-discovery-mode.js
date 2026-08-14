@@ -59,14 +59,6 @@ function resolveNorwegianDiscoveryMode(requestedMode) {
           reason: "weekly_reconciliation_disabled"
         };
       }
-      if (!NORWEGIAN_DISCOVERY_WRITE_ENABLED) {
-        return {
-          mode,
-          requested_mode: raw,
-          writes_allowed: false,
-          reason: "production_write_flag_disabled"
-        };
-      }
       return { mode, requested_mode: raw, writes_allowed: true, reason: null };
     }
     if (!NORWEGIAN_DISCOVERY_WRITE_ENABLED) {
