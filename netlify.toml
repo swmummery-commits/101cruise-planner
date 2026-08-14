@@ -4,6 +4,14 @@
 [build.environment]
   NODE_VERSION = "20"
 
+[functions."search-current-cruises"]
+  # Departure-port matching reads ports-catalogue.csv from disk at runtime.
+  included_files = [
+    "data/ports/ports-catalogue.csv",
+    "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv",
+    "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv"
+  ]
+
 [functions."research-content-generate"]
   # Research runs Brave + source fetches + OpenAI; allow longer than default.
   timeout = 60
