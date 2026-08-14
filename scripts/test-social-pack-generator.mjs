@@ -300,6 +300,10 @@ async function main() {
     assert(formatAuDepartingFull("2026-08-17") === "DEPARTING 17 AUGUST 2026", "full AU departing");
     assert(buildRouteHeadline("Barcelona, Spain", "Istanbul, Turkey") === "BARCELONA TO ISTANBUL", "route");
     assert(
+      buildRouteHeadline("Fort Lauderdale, Florida", "Fort Lauderdale, Florida") === "FORT LAUDERDALE RETURN",
+      "round-trip route uses RETURN"
+    );
+    assert(
       buildRouteHeadline("Rome, Italy", "Fort Lauderdale (Port Everglades), Florida") === "ROME TO FORT LAUDERDALE",
       "route strips parenthetical port qualifiers"
     );

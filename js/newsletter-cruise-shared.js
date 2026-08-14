@@ -151,7 +151,11 @@
     if (!cruise) return null;
     return {
       headline: cruise.headline || "",
-      destination_strip: cruise.destination_strip || "",
+      destination_strip: buildDestinationStrip(
+        cruise.departure_port,
+        cruise.arrival_port,
+        cruise.destination_strip
+      ),
       departure_port: cruise.departure_port || "",
       arrival_port: cruise.arrival_port || "",
       departure_date: cruise.departure_date || "",
@@ -200,6 +204,35 @@
     return `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
+  /**
+   * Newsletter / public destination strip.
+   * Round trips (same departure and arrival) use "LOCATION RETURN"
+   * instead of repeating "LOCATION TO LOCATION".
+   */
+  function normalizePortLabel(value) {
+    return String(value || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toUpperCase();
+  }
+
+  function rewriteRoundTripStrip(value) {
+    const stored = normalizePortLabel(value);
+    if (!stored) return "";
+    const match = stored.match(/^(.+?)\s+TO\s+\1$/);
+    if (match) return `${match[1]} RETURN`;
+    return stored;
+  }
+
+  function buildDestinationStrip(departurePort, arrivalPort, existing) {
+    const dep = normalizePortLabel(departurePort);
+    const arr = normalizePortLabel(arrivalPort);
+    if (dep && arr) return dep === arr ? `${dep} RETURN` : `${dep} TO ${arr}`;
+    if (dep) return dep;
+    if (arr) return arr;
+    return rewriteRoundTripStrip(existing);
+  }
+
   global.NewsletterCruiseShared = {
     OUTPUT_MODE,
     INCLUSION_LABELS,
@@ -211,6 +244,8 @@
     buildInclusionItems,
     sanitizePricingForPublic,
     sanitizeCruiseForPublic,
-    buildEnquiryMailto
+    buildEnquiryMailto,
+    rewriteRoundTripStrip,
+    buildDestinationStrip
   };
 })(typeof window !== "undefined" ? window : globalThis);

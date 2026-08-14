@@ -235,7 +235,14 @@ async function loadFeaturedCruisePackModel(featuredCruiseId, options = {}) {
     displayOrder: cruise.display_order,
     headline: cruise.headline || "",
     headlineShort: shortenHeadline(cruise.headline || ""),
-    destinationStrip: String(cruise.destination_strip || "").toUpperCase(),
+    destinationStrip: (() => {
+      const dep = String(cruise.departure_port || "").trim().replace(/\s+/g, " ").toUpperCase();
+      const arr = String(cruise.arrival_port || "").trim().replace(/\s+/g, " ").toUpperCase();
+      if (dep && arr) return dep === arr ? `${dep} RETURN` : `${dep} TO ${arr}`;
+      const stored = String(cruise.destination_strip || "").trim().replace(/\s+/g, " ").toUpperCase();
+      const match = stored.match(/^(.+?)\s+TO\s+\1$/);
+      return match ? `${match[1]} RETURN` : stored;
+    })(),
     routeHeadline: buildRouteHeadline(cruise.departure_port, cruise.arrival_port),
     aboardLine: buildAboardLine(cruise.ci_cruise_lines?.name, cruise.ci_cruise_ships?.name),
     departureDate: cruise.departure_date,

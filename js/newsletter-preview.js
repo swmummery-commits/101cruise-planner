@@ -180,9 +180,16 @@
    * Canonical content model from Featured Cruise form/DB/public payload.
    */
   function buildModel(input = {}) {
-    const destinationStrip = String(input.destinationStrip || input.destination_strip || "")
-      .trim()
-      .toUpperCase();
+    const destinationStrip = shared()?.buildDestinationStrip
+      ? shared().buildDestinationStrip(
+          input.departurePort || input.departure_port,
+          input.arrivalPort || input.arrival_port,
+          input.destinationStrip || input.destination_strip
+        )
+      : String(input.destinationStrip || input.destination_strip || "")
+          .trim()
+          .toUpperCase()
+          .replace(/^(.+?)\s+TO\s+\1$/, "$1 RETURN");
     const headline = String(input.headline || "").trim();
     const heroResolved = input.hero || null;
     const routeResolved = input.routeMap || input.route_map || null;

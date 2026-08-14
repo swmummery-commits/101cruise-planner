@@ -9438,13 +9438,20 @@ function addCalendarDays(dateStr, nights) {
   return `${yy}-${mm}-${dd}`;
 }
 
-function buildFeaturedDestinationStrip(departurePort, arrivalPort) {
-  const dep = String(departurePort || "").trim().toUpperCase();
-  const arr = String(arrivalPort || "").trim().toUpperCase();
-  if (dep && arr) return `${dep} TO ${arr}`;
+function buildFeaturedDestinationStrip(departurePort, arrivalPort, existing) {
+  const shared = window.NewsletterCruiseShared;
+  if (shared && typeof shared.buildDestinationStrip === "function") {
+    return shared.buildDestinationStrip(departurePort, arrivalPort, existing) || null;
+  }
+  const dep = String(departurePort || "").trim().replace(/\s+/g, " ").toUpperCase();
+  const arr = String(arrivalPort || "").trim().replace(/\s+/g, " ").toUpperCase();
+  if (dep && arr) return dep === arr ? `${dep} RETURN` : `${dep} TO ${arr}`;
   if (dep) return dep;
   if (arr) return arr;
-  return null;
+  const stored = String(existing || "").trim().replace(/\s+/g, " ").toUpperCase();
+  const match = stored.match(/^(.+?)\s+TO\s+\1$/);
+  if (match) return `${match[1]} RETURN`;
+  return stored || null;
 }
 
 function formatFeaturedMoney(value) {
@@ -9521,8 +9528,9 @@ function filteredFeaturedCruises() {
 }
 
 function displayDestinationStrip(row) {
-  if (row.destination_strip) return row.destination_strip;
-  return buildFeaturedDestinationStrip(row.departure_port, row.arrival_port) || "";
+  return (
+    buildFeaturedDestinationStrip(row.departure_port, row.arrival_port, row.destination_strip) || ""
+  );
 }
 
 async function ensureFeaturedCruisesLoaded() {
@@ -10527,6 +10535,8 @@ function buildFeaturedNewsletterPreviewModel(modeOverride) {
     modeOverride || featuredNewsletterPreviewMode || "general";
   return window.NewsletterPreview.buildModel({
     destinationStrip,
+    departurePort: draft.departure_port || "",
+    arrivalPort: draft.arrival_port || "",
     headline: draft.headline || "",
     hero: resolved.hero,
     heroImageUrl: resolved.hero?.url || "",

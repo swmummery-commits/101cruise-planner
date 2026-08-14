@@ -138,7 +138,7 @@ function stripPortLabel(value) {
 function buildRouteHeadline(departurePort, arrivalPort) {
   const dep = stripPortLabel(departurePort).toUpperCase();
   const arr = stripPortLabel(arrivalPort).toUpperCase();
-  if (dep && arr) return `${dep} TO ${arr}`;
+  if (dep && arr) return dep === arr ? `${dep} RETURN` : `${dep} TO ${arr}`;
   return dep || arr || "";
 }
 

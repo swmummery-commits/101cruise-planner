@@ -330,6 +330,45 @@ const modelFromStops = Preview.buildModel({
 assert(modelFromStops.portsJoined.includes("Barcelona"), "preview uses structured stops");
 assert(!modelFromStops.portsJoined.includes("LEGACY"), "structured stops preferred over legacy");
 
+const Shared = sandbox.NewsletterCruiseShared;
+assert(
+  Shared.buildDestinationStrip("Fort Lauderdale, Florida", "Fort Lauderdale, Florida") ===
+    "FORT LAUDERDALE, FLORIDA RETURN",
+  "same ports become LOCATION RETURN"
+);
+assert(
+  Shared.buildDestinationStrip("Barcelona, Spain", "Istanbul, Turkey") ===
+    "BARCELONA, SPAIN TO ISTANBUL, TURKEY",
+  "different ports keep TO"
+);
+assert(
+  Shared.buildDestinationStrip("", "", "FORT LAUDERDALE, FLORIDA TO FORT LAUDERDALE, FLORIDA") ===
+    "FORT LAUDERDALE, FLORIDA RETURN",
+  "stored round-trip strip rewrites without ports"
+);
+assert(
+  Shared.buildDestinationStrip("fort lauderdale,  florida", "FORT LAUDERDALE, FLORIDA") ===
+    "FORT LAUDERDALE, FLORIDA RETURN",
+  "round trip is case and whitespace insensitive"
+);
+const roundTripModel = Preview.buildModel({
+  headline: "Test",
+  destinationStrip: "FORT LAUDERDALE, FLORIDA TO FORT LAUDERDALE, FLORIDA",
+  departurePort: "Fort Lauderdale, Florida",
+  arrivalPort: "Fort Lauderdale, Florida",
+  heroImageUrl: publicHero,
+  routeMapUrl: publicMap,
+  publicSlug: "test-cruise",
+  short_editorial: "Hello",
+  nights: 7,
+  departureDate: "2027-01-01",
+  returnDate: "2027-01-08"
+});
+assert(
+  roundTripModel.destinationStrip === "FORT LAUDERDALE, FLORIDA RETURN",
+  "preview model uses RETURN for round trips"
+);
+
 const modelLegacy = Preview.buildModel({
   headline: "Test",
   itinerarySummary: "Barcelona, Spain | Istanbul, Turkey",

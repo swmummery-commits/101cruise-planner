@@ -75,11 +75,15 @@ async function supabaseGet(path) {
 }
 
 function buildDestinationStrip(departurePort, arrivalPort, existing) {
-  if (existing) return String(existing).trim().toUpperCase();
-  const dep = String(departurePort || "").trim().toUpperCase();
-  const arr = String(arrivalPort || "").trim().toUpperCase();
-  if (dep && arr) return `${dep} TO ${arr}`;
-  return dep || arr || "";
+  const dep = String(departurePort || "").trim().replace(/\s+/g, " ").toUpperCase();
+  const arr = String(arrivalPort || "").trim().replace(/\s+/g, " ").toUpperCase();
+  if (dep && arr) return dep === arr ? `${dep} RETURN` : `${dep} TO ${arr}`;
+  if (dep) return dep;
+  if (arr) return arr;
+  const stored = String(existing || "").trim().replace(/\s+/g, " ").toUpperCase();
+  const match = stored.match(/^(.+?)\s+TO\s+\1$/);
+  if (match) return `${match[1]} RETURN`;
+  return stored || "";
 }
 
 function toPublicMedia(resolved) {

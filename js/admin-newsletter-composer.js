@@ -773,8 +773,21 @@
 
   function destinationForCruise(cruise) {
     if (typeof global.buildFeaturedDestinationStrip === "function") {
-      const strip = global.buildFeaturedDestinationStrip(cruise.departure_port, cruise.arrival_port);
+      const strip = global.buildFeaturedDestinationStrip(
+        cruise.departure_port,
+        cruise.arrival_port,
+        cruise.destination_strip
+      );
       if (strip) return strip;
+    }
+    if (global.NewsletterCruiseShared?.buildDestinationStrip) {
+      return (
+        global.NewsletterCruiseShared.buildDestinationStrip(
+          cruise.departure_port,
+          cruise.arrival_port,
+          cruise.destination_strip
+        ) || "—"
+      );
     }
     return String(cruise.destination_strip || "").trim().toUpperCase() || "—";
   }
@@ -1052,8 +1065,16 @@
       "";
     const destinationStrip =
       (typeof global.buildFeaturedDestinationStrip === "function"
-        ? global.buildFeaturedDestinationStrip(cruise.departure_port, cruise.arrival_port)
-        : "") ||
+        ? global.buildFeaturedDestinationStrip(
+            cruise.departure_port,
+            cruise.arrival_port,
+            cruise.destination_strip
+          )
+        : global.NewsletterCruiseShared?.buildDestinationStrip?.(
+            cruise.departure_port,
+            cruise.arrival_port,
+            cruise.destination_strip
+          )) ||
       cruise.destination_strip ||
       "";
     const line =
@@ -1070,6 +1091,8 @@
 
     return global.NewsletterPreview.buildModel({
       destinationStrip,
+      departurePort: cruise.departure_port || "",
+      arrivalPort: cruise.arrival_port || "",
       headline: cruise.headline || "",
       hero: resolved.hero,
       heroImageUrl: resolved.hero?.url || cruise.hero_image_url || "",
