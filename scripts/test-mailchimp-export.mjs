@@ -557,7 +557,8 @@ const issueAirline = Export.composeIssueHtml([cruiseA, cruiseB], {
 });
 assert(issueAirline.ok, `issue airline should succeed: ${(issueAirline.errors || []).join("; ")}`);
 assert(issueAirline.cruiseCount === 2, "issue has two cruises");
-assert(/cr101-issue-spacer/i.test(issueAirline.html), "issue spacer between cruises");
+assert(!/cr101-issue-spacer/i.test(issueAirline.html), "no grey spacer between cruises");
+assert(!/#c4c4c4/i.test(issueAirline.html), "no grey dotted cruise separator");
 assert(
   issueAirline.html.includes('href="https://www.101cruise.com.au/cruise?slug=barcelona-istanbul"'),
   "first cruise CTA"

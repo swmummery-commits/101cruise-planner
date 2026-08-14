@@ -849,19 +849,6 @@
       `font-family:Helvetica,Arial,sans-serif;font-size:11px;color:${muted};text-align:center;padding:${disclaimerPadTop}px 12px 0;line-height:1.5;`
     );
 
-    // Grey dotted rule under each cruise so stacked issue previews/exports read as separate specials.
-    const cruiseSeparator = `
-      <tr>
-        <td align="center" style="padding:28px 16px 8px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;">
-            <tr>
-              <td style="border-top:2px dotted #c4c4c4;font-size:0;line-height:0;height:0;mso-line-height-rule:exactly;">&nbsp;</td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    `;
-
     const inner = `
       ${destination}
       ${headline}
@@ -876,7 +863,6 @@
       ${inclusions}
       ${otherInfo}
       ${disclaimer}
-      ${cruiseSeparator}
     `;
 
     const styleBlock = isGreen ? greenStyleBlock() : classicStyleBlock();
@@ -942,6 +928,8 @@ ${styleBlock}
   /**
    * Compose a multi-cruise newsletter issue fragment.
    * cruisePayloads: [{ model, pricingRows?, publicSlug?, name? }]
+   * Stack cruises flush — no spacer tables or dotted rules between them
+   * (those render as grey bars in Admin preview and Mailchimp).
    */
   function composeIssueHtml(cruisePayloads, options = {}) {
     const soft = Boolean(options.softValidation);
@@ -1021,14 +1009,11 @@ ${styleBlock}
       };
     }
 
-    const spacer = `
-<table role="presentation" class="cr101-issue-spacer" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
+    const html = `<table role="presentation" class="cr101-issue" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#ffffff;">
   <tr>
-    <td height="48" style="height:48px;line-height:48px;font-size:0;mso-line-height-rule:exactly;">&nbsp;</td>
+    <td align="center" valign="top" style="padding:0;background-color:#ffffff;">${fragments.join("")}</td>
   </tr>
-</table>`.trim();
-
-    const html = fragments.join(`\n${spacer}\n`);
+</table>`;
     const safety = assertFragmentSafe(html, outputMode);
     if (safety.length && !soft) {
       return {

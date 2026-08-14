@@ -17,6 +17,11 @@ Shared by newsletter preview and public cruise pages (`newsletter-preview.css`).
 - Icons + labels use dark green **`#245C4E`**
 - Items may wrap; do not truncate labels
 
+## Between cruises
+
+Never insert grey spacers, dotted rules, or empty tables between stacked cruises.
+They show up as grey bars in Admin preview and Mailchimp. Join cruise fragments flush.
+
 ## OTHER INFO
 
 - Soft mint bar **`#effaf6`**, pill radius (`999px`; stack to `16px` on small screens)
