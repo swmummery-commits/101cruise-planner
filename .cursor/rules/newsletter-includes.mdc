@@ -19,8 +19,9 @@ Shared by newsletter preview and public cruise pages (`newsletter-preview.css`).
 
 ## Between cruises
 
-Never insert grey spacers, dotted rules, or empty tables between stacked cruises.
-They show up as grey bars in Admin preview and Mailchimp. Join cruise fragments flush.
+Keep the dotted rule between stacked cruises. Never insert grey spacer tables
+or empty height rows between them — those show up as grey bars in Admin
+preview and Mailchimp.
 
 ## OTHER INFO
 
