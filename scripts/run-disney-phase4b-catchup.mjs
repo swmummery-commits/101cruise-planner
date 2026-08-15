@@ -131,7 +131,7 @@ async function loadContext(sb) {
     sb(
       `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
         line.id
-      )}&select=id,status,ship_id,destination_id,departure_date,return_date,nights,departure_port,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract,created_at,updated_at&order=created_at.asc`
+      )}&select=id,cruise_line_id,status,ship_id,destination_id,departure_date,return_date,nights,departure_port,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract,created_at,updated_at&order=created_at.asc`
     )
   ]);
 
