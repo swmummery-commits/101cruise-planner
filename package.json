@@ -56,6 +56,8 @@
     "simulate:explora-discovery": "node scripts/simulate-explora-discovery.mjs",
     "simulate:silversea-discovery": "node scripts/simulate-silversea-discovery.mjs",
     "test:silversea-discovery": "node scripts/test-silversea-discovery.mjs",
+    "test:silversea-controlled-batch": "node scripts/test-silversea-controlled-batch.mjs",
+    "silversea:first-controlled-batch": "node scripts/run-silversea-first-controlled-batch.mjs",
     "simulate:seabourn-discovery": "node scripts/simulate-seabourn-discovery.mjs",
     "simulate:norwegian-discovery": "node scripts/simulate-norwegian-discovery.mjs",
     "test:explora-discovery": "node scripts/test-explora-discovery.mjs",
