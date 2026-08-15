@@ -15,6 +15,7 @@ const { cruiseIdentityKey } = require("./cruise-discovery-ops");
 const { resolveDisneyDestinationHints } = require("./disney-destination-mapping");
 const source = require("./disney-discovery-source");
 const catalogue = require("./disney-discovery-catalogue");
+const legacyReconciliation = require("./disney-legacy-reconciliation");
 const {
   daysUntilDeparture,
   publicBookingCutoffDate,
@@ -24,7 +25,7 @@ const {
 } = require("./public-discovered-cruise-inventory");
 
 const ADAPTER_ID = source.ADAPTER_ID;
-const ADAPTER_VERSION = `${source.ADAPTER_VERSION}.2b`;
+const ADAPTER_VERSION = `${source.ADAPTER_VERSION}.2c`;
 const DISNEY_LINE_ID = "8f7aadcb-7843-4060-b0cb-a60631936b3a";
 const DISNEY_SEARCH_URL = "https://disneycruise.disney.go.com/cruises-destinations/list/";
 const PHASE2A_BASELINE_IDENTITIES = null;
@@ -42,7 +43,7 @@ const PRIMARY_EXCLUSION_ORDER = [
 ];
 
 const SCENIC_PORT_RE =
-  /^(glacier viewing|scenic|at sea|sea day|cruising|transit|sailing$)/i;
+  /^(glacier viewing|scenic|at sea|sea day|cruising|transit|sailing$|panama canal$)/i;
 const PRIVATE_ISLAND_RE = /castaway cay|lookout cay|lighthouse point|disney private island/i;
 
 const DISNEY_EMBARK_PRODUCT_ID_MAP = Object.freeze({
@@ -117,18 +118,45 @@ function extractEmbarkFromProductId(productId) {
   return null;
 }
 
-function extractEmbarkFromProductName(productName) {
+function parseDisneyProductTitleEndpoints(productName) {
   const text = String(productName || "").trim();
-  const m = text.match(/^\d+-Night(?:\s+Cruise)?\s+from\s+(.+)$/i);
-  if (!m) return null;
-  const fragment = m[1].trim();
+  if (!text) return null;
+
+  const themed = text.match(/\bCruise from\s+(.+?)(?:\s+ending in\s+(.+?))?(?:\s+with\b.*)?$/i);
+  if (themed) {
+    return {
+      embark: themed[1].trim(),
+      arrival: themed[2] ? themed[2].trim() : null,
+      method: "product_name_cruise_from_pattern",
+      tier: 3,
+      evidence: productName
+    };
+  }
+
+  const simple = text.match(/^\d+-Night(?:\s+Cruise)?\s+from\s+(.+)$/i);
+  if (simple) {
+    return {
+      embark: simple[1].trim(),
+      arrival: null,
+      method: "product_name_simple_from",
+      tier: 3,
+      evidence: productName
+    };
+  }
+  return null;
+}
+
+function extractEmbarkFromProductName(productName) {
+  const parsed = parseDisneyProductTitleEndpoints(productName);
+  if (!parsed) return null;
+  const fragment = parsed.embark;
   const aliasKey = fragment.toLowerCase();
   if (DISNEY_EMBARK_PORT_ALIASES[aliasKey]) {
     return {
       port: DISNEY_EMBARK_PORT_ALIASES[aliasKey],
-      method: "product_name_from_pattern",
-      tier: 3,
-      evidence: productName
+      method: parsed.method,
+      tier: parsed.tier,
+      evidence: parsed.evidence
     };
   }
   const resolved = resolveRawPortText(fragment, { sourceField: "disney_product_name" });
@@ -136,14 +164,25 @@ function extractEmbarkFromProductName(productName) {
     return {
       port: resolved.canonicalPortName,
       method: "product_name_port_catalogue",
-      tier: 3,
-      evidence: productName
+      tier: parsed.tier,
+      evidence: parsed.evidence
     };
   }
   if (/,/.test(fragment)) {
-    return { port: fragment, method: "product_name_literal", tier: 3, evidence: productName, ambiguous: true };
+    return { port: fragment, method: parsed.method, tier: parsed.tier, evidence: parsed.evidence, ambiguous: true };
   }
   return null;
+}
+
+function extractArrivalFromProductName(productName) {
+  const parsed = parseDisneyProductTitleEndpoints(productName);
+  if (!parsed?.arrival) return null;
+  return {
+    port: parsed.arrival,
+    method: "product_name_ending_in",
+    tier: 3,
+    evidence: parsed.evidence
+  };
 }
 
 function extractEmbarkFromCityFilters(filters = []) {
@@ -485,13 +524,43 @@ function buildItineraryText(raw = {}) {
   return ports.join(" • ");
 }
 
+function resolveDisneyItineraryPortText(value) {
+  const classified = classifyDisneyItineraryPort(value);
+  if (classified.kind === "scenic/non_port" || classified.kind === "empty") {
+    return { status: "non_port", kind: classified.kind, raw: value };
+  }
+  const resolved = resolveRawPortText(value, { sourceField: "disney_itinerary" });
+  return {
+    ...resolved,
+    kind: classified.kind,
+    raw: value
+  };
+}
+
 function resolveArrivalPort(raw = {}, embarkPortMeta = {}) {
+  const fromTitle = extractArrivalFromProductName(raw.product_name);
+  if (fromTitle) {
+    const resolved = resolveRawPortText(fromTitle.port, { sourceField: "disney_arrival_title" });
+    if (resolved.status === "resolved") {
+      return {
+        ...resolved,
+        round_trip: false,
+        method: fromTitle.method,
+        evidence_tier: fromTitle.tier,
+        embark_evidence: fromTitle.evidence
+      };
+    }
+  }
+
   if (raw.one_way_itinerary === true) {
     const ports = raw.ports_of_call_ordered || [];
-    const lastPhysical = [...ports].reverse().find((p) => classifyDisneyItineraryPort(p).kind === "physical_port");
+    const lastPhysical = [...ports].reverse().find((p) => {
+      const kind = classifyDisneyItineraryPort(p).kind;
+      return kind === "physical_port" || kind === "private_island_physical_port";
+    });
     if (lastPhysical) {
-      const resolved = resolveRawPortText(lastPhysical, { sourceField: "disney_arrival" });
-      if (resolved.status === "resolved") return { ...resolved, round_trip: false };
+      const resolved = resolveDisneyItineraryPortText(lastPhysical);
+      if (resolved.status === "resolved") return { ...resolved, round_trip: false, method: "itinerary_last_physical" };
     }
     return { status: "unresolved", round_trip: false };
   }
@@ -658,7 +727,7 @@ function buildDisneyUpsertCandidate(row, cruiseLine) {
   };
 }
 
-function classifyProposedAction(row, existing) {
+function classifyProposedAction(row, existing, legacyMatch = null) {
   if (!row.eligibility?.production_eligible) {
     const reason = row.eligibility?.primary_exclusion_reason || "not_production_eligible";
     if (reason === "within_21_day_cutoff" || reason === "past_departure") return "within_21_day_cutoff_excluded";
@@ -670,9 +739,12 @@ function classifyProposedAction(row, existing) {
     if (reason === "confidence_gate_failure") return "review_required";
     return "blocked_unresolved";
   }
+  const productKey = officialProductKey(row.raw);
+  if (!existing && legacyMatch?.existing_id) {
+    existing = legacyMatch.row;
+  }
   if (!existing) return "insert_active";
   const existingKey = existing.official_sailing_id || existing.raw_extract?.disney_official_product_key || null;
-  const productKey = officialProductKey(row.raw);
   if (existingKey && productKey && existingKey === productKey) {
     const candidate = buildDisneyUpsertCandidate(row, { id: existing.cruise_line_id });
     if (!candidate) return "review_required";
@@ -686,40 +758,82 @@ function classifyProposedAction(row, existing) {
       existing.status !== "active";
     return changed ? "update_exact_existing" : "duplicate_skip";
   }
+  if (legacyMatch?.match_status === "exact_legacy_match" || legacyMatch?.match_status === "exact_official_identity") {
+    return "update_exact_legacy_match";
+  }
   return "insert_active";
 }
 
-function buildProposedWriteManifest(normalised, existingRows = [], cruiseLine = {}) {
+function buildProposedWriteManifest(normalised, existingRows = [], cruiseLine = {}, legacyAudit = null) {
   const byOfficial = new Map();
+  const byExistingId = new Map();
   for (const row of existingRows) {
+    byExistingId.set(row.id, row);
     const key = row.official_sailing_id || row.raw_extract?.disney_official_product_key;
     if (key) byOfficial.set(key, row);
   }
+
+  const legacyByIdentity = legacyAudit?.legacy_match_by_identity || {};
+  const legacyByExisting = legacyAudit?.legacy_match_by_existing_id || {};
+
   const manifest = [];
   const summary = {
     insert_active: 0,
     update_exact_existing: 0,
+    update_exact_legacy_match: 0,
     duplicate_skip: 0,
     review_required: 0,
     blocked_unresolved: 0,
     within_21_day_cutoff_excluded: 0
   };
+  const usedLegacyExisting = new Set();
+
   for (const row of normalised) {
     const productKey = officialProductKey(row.raw);
-    const existing = byOfficial.get(productKey) || null;
-    const action = classifyProposedAction(row, existing);
+    let existing = byOfficial.get(productKey) || null;
+    let legacyMatch = null;
+
+    const legacyExistingId = legacyByIdentity[productKey];
+    if (!existing && legacyExistingId) {
+      existing = byExistingId.get(legacyExistingId) || null;
+      legacyMatch = {
+        existing_id: legacyExistingId,
+        match_status: legacyByExisting[legacyExistingId]?.match_status || "exact_legacy_match",
+        evidence: legacyByExisting[legacyExistingId]?.evidence || null,
+        row: existing
+      };
+      usedLegacyExisting.add(legacyExistingId);
+    }
+
+    const action = classifyProposedAction(row, existing, legacyMatch);
     summary[action] = (summary[action] || 0) + 1;
-    manifest.push({
+    const entry = {
       official_product_key: productKey,
       sailing_id: row.raw?.sailing_id,
       departure_date: row.raw?.departure_date,
       ship_name: row.raw?.ship_name,
       action,
       existing_id: existing?.id || null
-    });
+    };
+    if (action === "update_exact_legacy_match" && existing) {
+      entry.legacy_reconciliation = {
+        before_official_sailing_id: existing.official_sailing_id || null,
+        after_official_sailing_id: productKey,
+        matching_evidence: legacyMatch?.evidence || legacyByExisting[existing.id]?.evidence || null
+      };
+    }
+    manifest.push(entry);
   }
+
   manifest.sort((a, b) => a.official_product_key.localeCompare(b.official_product_key));
-  return { manifest, summary };
+  return {
+    manifest,
+    summary,
+    legacy_existing_matched: usedLegacyExisting.size,
+    legacy_existing_unmatched: existingRows.filter(
+      (r) => !usedLegacyExisting.has(r.id) && (legacyByExisting[r.id]?.match_status || "no_source_match") !== "exact_official_identity"
+    ).length
+  };
 }
 
 function analysePortResolution(normalised = []) {
@@ -757,8 +871,12 @@ function analysePortResolution(normalised = []) {
       }
       itineraryValues.get(key).sailing_count += 1;
       if (port.kind === "physical_port" || port.kind === "private_island_physical_port") {
-        const r = resolveRawPortText(key, { sourceField: "disney_itinerary" });
+        const r = resolveDisneyItineraryPortText(key);
         itineraryValues.get(key).resolved = r.status === "resolved";
+        itineraryValues.get(key).classification = r.kind;
+      } else if (port.kind === "scenic/non_port") {
+        itineraryValues.get(key).resolved = true;
+        itineraryValues.get(key).classification = "scenic/non_port";
       }
     }
   }
@@ -903,11 +1021,17 @@ async function simulateDisneyDiscovery(context = {}) {
   let dbRows = existingRows;
   if (!dbRows.length && supabaseQuery && cruiseLine?.id) {
     dbRows = await supabaseQuery(
-      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLine.id)}&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,status,official_sailing_id,identity_key,raw_extract`
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(cruiseLine.id)}&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,status,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract,created_at,updated_at`
     );
   }
 
-  const writeManifest = buildProposedWriteManifest(normalised, dbRows || [], cruiseLine);
+  const legacyAudit = legacyReconciliation.auditLegacyDisneyRows(dbRows || [], normalised, { ships });
+  const writeManifest = buildProposedWriteManifest(normalised, dbRows || [], cruiseLine, legacyAudit);
+  const duplicateSafety = legacyReconciliation.analyseDuplicateSafety(normalised, dbRows || [], writeManifest.manifest, legacyAudit, {
+    disneyExternalKey,
+    cruiseIdentityKey
+  });
+  const firstControlledBatch = legacyReconciliation.buildFirstControlledBatch(normalised, writeManifest.manifest);
 
   const shipResolved = normalised.filter((r) => r.ship_resolution?.resolved).length;
   const identityCollisions = source.countIdentityCollisions(
@@ -939,7 +1063,10 @@ async function simulateDisneyDiscovery(context = {}) {
     ready_for_first_controlled_import: false
   };
   qualityGate.ready_for_first_controlled_import =
-    qualityGate.passed && writeManifest.summary.insert_active + writeManifest.summary.update_exact_existing > 0;
+    qualityGate.passed &&
+    duplicateSafety.passed &&
+    legacyAudit.safe &&
+    writeManifest.summary.insert_active + writeManifest.summary.update_exact_existing + writeManifest.summary.update_exact_legacy_match > 0;
 
   return {
     adapter_id: ADAPTER_ID,
@@ -957,6 +1084,9 @@ async function simulateDisneyDiscovery(context = {}) {
     port_analysis: portAnalysis,
     destination_analysis: destAnalysis,
     write_manifest: writeManifest,
+    legacy_audit: legacyAudit,
+    duplicate_safety: duplicateSafety,
+    first_controlled_batch: firstControlledBatch,
     existing_rows: dbRows?.length || 0,
     quality_gate: qualityGate,
     metrics: {
@@ -996,7 +1126,11 @@ module.exports = {
   classifyDisneyItineraryPort,
   extractEmbarkFromProductId,
   extractEmbarkFromProductName,
+  parseDisneyProductTitleEndpoints,
+  extractArrivalFromProductName,
+  resolveDisneyItineraryPortText,
   resolveDisneyEmbarkation,
+  disneyExternalKey,
   resolveDisneyShip,
   validateDisneyDuration,
   mergeDisneyStructuralContexts,

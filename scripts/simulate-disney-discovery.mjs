@@ -83,14 +83,19 @@ async function main() {
     phase2aBaselineIdentities
   });
 
+  const existingRows = await supabase(
+    `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(line.id)}&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,status,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract,created_at,updated_at`
+  );
+
   const shipCodeRows = (ships || [])
     .filter((s) => s.official_line_ship_id)
     .map((s) => ({ name: s.name, official_line_ship_id: s.official_line_ship_id }));
   const disneyBelieve = (ships || []).find((s) => s.name === "Disney Believe");
 
-  const manifest2 = adapter.buildProposedWriteManifest(simulation.products, [], line);
+  const manifest2 = adapter.buildProposedWriteManifest(simulation.products, existingRows || [], line, simulation.legacy_audit);
   const deterministic =
     manifest2.summary.insert_active === simulation.write_manifest.summary.insert_active &&
+    manifest2.summary.update_exact_legacy_match === simulation.write_manifest.summary.update_exact_legacy_match &&
     manifest2.summary.duplicate_skip === simulation.write_manifest.summary.duplicate_skip;
 
   const portProposals = buildPortRemediationProposals(simulation.port_analysis?.itinerary_ports);

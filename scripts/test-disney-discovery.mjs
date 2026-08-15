@@ -261,6 +261,113 @@ assert(adapter.applyDisneyBatchWrites == null, "no write export on adapter");
 const destHint = destMapping.resolveDisneyDestinationHints({ destination_code: "BAHAMAS", product_id: "3_bahamian_port_canaveral" });
 assert(destHint.preferredSlug === "caribbean", "destination mapping bahamas");
 
+// --- Phase 2C: legacy reconciliation, themed titles, port remediation ---
+const legacy = require(path.join(root, "netlify/functions/lib/disney-legacy-reconciliation"));
+const { resetPortsCache } = require(path.join(root, "netlify/functions/lib/discovery-departure-port"));
+
+const halloweenTitle = "7-Night Halloween on the High Seas Mexican Riviera Cruise from San Diego";
+const halloweenEmbark = adapter.extractEmbarkFromProductName(halloweenTitle);
+assert(halloweenEmbark?.port === "San Diego, California", "Halloween themed title embark San Diego");
+
+const merryTitle = "7-Night Very Merrytime Bahamian Cruise from Fort Lauderdale with 2 stops at Castaway Cay";
+assert(adapter.extractEmbarkFromProductName(merryTitle)?.port.includes("Fort Lauderdale"), "Merrytime title embark");
+
+const oneWayTitle = "13-Night Westbound Transatlantic Cruise from Southampton ending in Fort Lauderdale";
+const oneWayEndpoints = adapter.parseDisneyProductTitleEndpoints(oneWayTitle);
+assert(oneWayEndpoints?.embark === "Southampton" && oneWayEndpoints?.arrival === "Fort Lauderdale", "ending in X title");
+
+assert(adapter.extractEmbarkFromProductName("Mystery Cruise to Nowhere") === null, "ambiguous title fails closed");
+
+assert(adapter.classifyDisneyItineraryPort("Panama Canal").kind === "scenic/non_port", "Panama Canal scenic");
+
+resetPortsCache();
+const { resolveRawPortText } = require(path.join(root, "netlify/functions/lib/discovery-departure-port"));
+assert(resolveRawPortText("Disney Castaway Cay").status === "resolved", "Castaway Cay alias");
+assert(resolveRawPortText("Disney Lookout Cay at Lighthouse Point").status === "resolved", "Lookout Cay alias");
+assert(resolveRawPortText("Progreso, Mexico").status === "resolved", "Progreso mapping");
+assert(resolveRawPortText("Catalina Island, California").status === "resolved", "Catalina mapping");
+assert(resolveRawPortText("Portland (Stonehenge), England").status === "resolved", "Portland Stonehenge mapping");
+assert(resolveRawPortText("Chania, Greece").status === "resolved", "Chania mapping");
+
+const mockProduct = adapter.buildDisneyRawVoyage(
+  {
+    official_product_key: "DM9999|2026-10-15",
+    sailing_id: "DM9999",
+    product_id: "7_mexican_riviera_halloween",
+    departure_date: "2026-10-15",
+    return_date: "2026-10-22",
+    nights: 7,
+    ship_name: "Disney Magic",
+    ship_code: "DM",
+    destination_code: "MEXICO"
+  },
+  [{ portsOfCall: ["San Diego, California"], oneWayItinerary: false }],
+  { productName: halloweenTitle }
+);
+const halloweenNorm = adapter.normaliseDisneyVoyage(mockProduct, {
+  cruiseLine: { id: adapter.DISNEY_LINE_ID, name: "Disney Cruise Line" },
+  ships: mockShips,
+  destinations: [{ id: "d2", slug: "mexico", name: "Mexico", status: "active" }],
+  today: perthToday
+});
+assert(halloweenNorm.candidate.departure_port_meta.status === "resolved", "halloween product resolves embark");
+
+const existingOfficial = [
+  {
+    id: "existing-1",
+    cruise_line_id: adapter.DISNEY_LINE_ID,
+    official_sailing_id: "DM1740|2026-10-01",
+    ship_id: "s1",
+    departure_date: "2026-10-01",
+    nights: 3,
+    status: "active",
+    raw_extract: {}
+  }
+];
+const legacyAuditExact = legacy.auditLegacyDisneyRows(existingOfficial, [outsideCutoff], { ships: mockShips });
+assert(legacyAuditExact.exact_official_matches === 1, "exact legacy official identity match");
+
+const legacyAuditAmbiguous = legacy.auditLegacyDisneyRows(
+  [{ id: "a", cruise_line_id: adapter.DISNEY_LINE_ID }, { id: "b", cruise_line_id: adapter.DISNEY_LINE_ID }],
+  [outsideCutoff, outsideCutoff],
+  { ships: mockShips }
+);
+assert(legacyAuditAmbiguous.ambiguous >= 0, "ambiguous legacy audit runs");
+
+const manifestWithExisting = adapter.buildProposedWriteManifest([outsideCutoff], existingOfficial, { id: adapter.DISNEY_LINE_ID }, legacyAuditExact);
+assert(manifestWithExisting.summary.update_exact_existing >= 0 || manifestWithExisting.summary.duplicate_skip >= 0, "manifest with existing rows");
+assert(manifestWithExisting.summary.insert_active === 0, "legacy match not proposed as insert");
+
+const manifestDeterminism = adapter.buildProposedWriteManifest([outsideCutoff], existingOfficial, { id: adapter.DISNEY_LINE_ID }, legacyAuditExact);
+assert(JSON.stringify(manifestDeterminism.summary) === JSON.stringify(manifestWithExisting.summary), "manifest determinism with existingRows");
+
+const marketingRow = {
+  id: "marketing-1",
+  cruise_line_id: adapter.DISNEY_LINE_ID,
+  official_url: "https://disneycruise.disney.go.com/en-au/cruise-destinations/alaska/",
+  raw_extract: { title: "Cruise to Alaska with Disney Cruise Line" }
+};
+const marketingAudit = legacy.auditLegacyDisneyRows([marketingRow], [outsideCutoff], { ships: mockShips });
+assert(marketingAudit.no_source_match === 1, "marketing page no source match");
+
+const batch = legacy.buildFirstControlledBatch([outsideCutoff, halloweenNorm], [
+  { action: "insert_active", official_product_key: outsideCutoff.official_sailing_id },
+  { action: "insert_active", official_product_key: halloweenNorm.official_sailing_id }
+]);
+assert(batch.size <= 20, "frozen first-batch maximum = 20");
+assert(batch.strategy === "insert_only", "insert-only first batch strategy");
+
+const dupSafety = legacy.analyseDuplicateSafety(
+  [outsideCutoff],
+  existingOfficial,
+  [{ action: "insert_active", official_product_key: "OTHER|2026-11-01" }],
+  { safe: true, legacy_match_by_identity: {} },
+  { disneyExternalKey: adapter.disneyExternalKey, cruiseIdentityKey: require(path.join(root, "netlify/functions/lib/cruise-discovery-ops")).cruiseIdentityKey }
+);
+assert(typeof dupSafety.passed === "boolean", "duplicate safety analysis");
+
+assert(adapter.applyDisneyBatchWrites == null, "zero discovered_cruises write path");
+
 (async () => {
   let productCalls = 0;
   const mockFetch = async (url, init = {}) => {

@@ -1,4 +1,4 @@
-﻿canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases
+canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases
 Barcelona,"Barcelona, Spain",Barcelona,Spain,ES,Mediterranean,41.3584,2.1686,
 Tarragona,"Tarragona, Spain",Tarragona,Spain,ES,Mediterranean,41.1118,1.2536,Barcelona (Tarragona)|Barcelona (Tarragona)
 Valencia,"Valencia, Spain",Valencia,Spain,ES,Mediterranean,39.4481,-0.3167,
@@ -86,7 +86,7 @@ Fort Lauderdale,"Fort Lauderdale (Port Everglades), Florida",Fort Lauderdale,Uni
 Port Canaveral,"Port Canaveral (Orlando), Florida",Cape Canaveral,United States,US,Caribbean,28.41,-80.618,Orlando|Cape Canaveral
 Tampa,"Tampa, Florida",Tampa,United States,US,Caribbean,27.944,-82.445,
 New Orleans,"New Orleans, Louisiana",New Orleans,United States,US,Caribbean,29.944,-90.063,
-Mobile,"Mobile, Alabama",Mobile,United States,US,North America Atlantic,30.695,-88.039,Mobile AL|Mobile, AL|MOB
+Mobile,"Mobile, Alabama",Mobile,United States,US,North America Atlantic,30.695,-88.039,Mobile AL|Mobile
 Galveston,"Galveston, Texas",Galveston,United States,US,Caribbean,29.307,-94.793,Houston
 San Juan,"San Juan, Puerto Rico",San Juan,Puerto Rico,PR,Caribbean,18.466,-66.112,
 Nassau,"Nassau, Bahamas",Nassau,Bahamas,BS,Bahamas,25.081,-77.343,
@@ -364,7 +364,7 @@ Raiatea,"Raiatea, French Polynesia",Raiatea,French Polynesia,PF,South Pacific,,,
 Invergordon,"Inverness (Invergordon), Scotland",Invergordon,United Kingdom,GB,Northern Europe,,,Inverness (Invergordon) Scotland|IVG
 Apia,"Apia, Samoa Islands",Apia,Samoa,WS,South Pacific,,,Apia Samoa Islands|APW
 Rarotonga,"Rarotonga, Cook Islands",Rarotonga,Cook Islands,CK,South Pacific,,,Rarotonga Cook Islands|RAR
-Portland England,"Portland, England",Portland,United Kingdom,GB,Northern Europe,,,Portland England|IPO
+Portland England,"Portland, England",Portland,United Kingdom,GB,Northern Europe,,,"Portland England|IPO|Portland (Stonehenge), England|Portland (Stonehenge) England"
 Pago Pago,"Pago Pago, American Samoa",Pago Pago,American Samoa,AS,South Pacific,,,Pago Pago American Samoa|PPG
 Portree,"Portree, United Kingdom",Portree,United Kingdom,GB,Northern Europe,,,Portree United Kingdom|PTR
 Newcastle upon Tyne,"Newcastle (Tyne), England",Newcastle upon Tyne,United Kingdom,GB,Northern Europe,,,Newcastle (Tyne) England|TYN
@@ -443,3 +443,8 @@ Sandakan,"Sandakan, Malaysia",Sandakan,Malaysia,MY,Southeast Asia,5.84,118.118,S
 Andalsnes,"Åndalsnes, Norway",Åndalsnes,Norway,NO,Northern Europe,62.567,7.687,Åndalsnes|Andalsnes Norway
 Saint Malo,"Saint-Malo, France",Saint-Malo,France,FR,Atlantic Europe,48.649,-2.026,Saint Malo (Brittany)|St Malo|Saint-Malo Brittany
 Trondheim,"Trondheim, Norway",Trondheim,Norway,NO,Northern Europe,63.431,10.392,Trondheim (Trondelag)|Trondheim Norway
+Castaway Cay,"Castaway Cay, Bahamas",Castaway Cay,Bahamas,BS,Bahamas,26.116,-77.539,Disney Castaway Cay|Castaway Cay Bahamas|Disney's Castaway Cay
+Lookout Cay at Lighthouse Point,"Lookout Cay at Lighthouse Point, Bahamas",Lookout Cay,Bahamas,BS,Bahamas,26.406,-78.017,Disney Lookout Cay at Lighthouse Point|Lookout Cay|Lighthouse Point|Disney Lookout Cay
+Progreso,"Progreso, Mexico",Progreso,Mexico,MX,Mexican Riviera,21.283,-89.665,"Progreso, Mexico|Progreso Yucatan|Puerto Progreso"
+Catalina Island,"Catalina Island, California",Avalon,United States,US,Pacific Coast,33.343,-118.328,"Catalina Island, California|Avalon Catalina Island|Avalon, Catalina Island"
+Chania,"Chania (Souda Bay), Greece",Chania,Greece,GR,Eastern Mediterranean,35.487,24.074,"Chania, Greece|Chania (Souda)|Souda Bay (Crete)|Souda Bay Crete"

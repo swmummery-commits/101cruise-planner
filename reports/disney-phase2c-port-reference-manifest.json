@@ -1,0 +1,298 @@
+{
+  "phase": "2C",
+  "mutations_performed": [
+    {
+      "action": "insert",
+      "canonical_name": "Castaway Cay",
+      "spec": {
+        "canonical_name": "Castaway Cay",
+        "display_name": "Castaway Cay, Bahamas",
+        "city": "Castaway Cay",
+        "country": "Bahamas",
+        "country_code": "BS",
+        "region": "Bahamas",
+        "latitude": 26.116,
+        "longitude": -77.539,
+        "aliases": [
+          "Disney Castaway Cay",
+          "Castaway Cay Bahamas",
+          "Disney's Castaway Cay"
+        ],
+        "disney_source_name": "Disney Castaway Cay",
+        "evidence": "Disney-owned private island; physical cruise call in portsOfCall.",
+        "classification": "private_island_physical_port"
+      }
+    },
+    {
+      "action": "insert",
+      "canonical_name": "Lookout Cay at Lighthouse Point",
+      "spec": {
+        "canonical_name": "Lookout Cay at Lighthouse Point",
+        "display_name": "Lookout Cay at Lighthouse Point, Bahamas",
+        "city": "Lookout Cay",
+        "country": "Bahamas",
+        "country_code": "BS",
+        "region": "Bahamas",
+        "latitude": 26.406,
+        "longitude": -78.017,
+        "aliases": [
+          "Disney Lookout Cay at Lighthouse Point",
+          "Lookout Cay",
+          "Lighthouse Point",
+          "Disney Lookout Cay"
+        ],
+        "disney_source_name": "Disney Lookout Cay at Lighthouse Point",
+        "evidence": "Disney-owned private island opened 2024; physical cruise call.",
+        "classification": "private_island_physical_port"
+      }
+    },
+    {
+      "action": "insert",
+      "canonical_name": "Progreso",
+      "spec": {
+        "canonical_name": "Progreso",
+        "display_name": "Progreso, Mexico",
+        "city": "Progreso",
+        "country": "Mexico",
+        "country_code": "MX",
+        "region": "Mexican Riviera",
+        "latitude": 21.283,
+        "longitude": -89.665,
+        "aliases": [
+          "Progreso, Mexico",
+          "Progreso Yucatan",
+          "Puerto Progreso"
+        ],
+        "disney_source_name": "Progreso, Mexico",
+        "evidence": "Yucatán cruise port serving Mérida excursions.",
+        "classification": "physical_port"
+      }
+    },
+    {
+      "action": "insert",
+      "canonical_name": "Catalina Island",
+      "spec": {
+        "canonical_name": "Catalina Island",
+        "display_name": "Catalina Island, California",
+        "city": "Avalon",
+        "country": "United States",
+        "country_code": "US",
+        "region": "Pacific Coast",
+        "latitude": 33.343,
+        "longitude": -118.328,
+        "aliases": [
+          "Catalina Island, California",
+          "Avalon Catalina Island",
+          "Avalon, Catalina Island"
+        ],
+        "disney_source_name": "Catalina Island, California",
+        "evidence": "Disney calls Avalon harbour on Catalina Island.",
+        "classification": "physical_port"
+      }
+    },
+    {
+      "action": "insert",
+      "canonical_name": "Chania",
+      "spec": {
+        "canonical_name": "Chania",
+        "display_name": "Chania (Souda Bay), Greece",
+        "city": "Chania",
+        "country": "Greece",
+        "country_code": "GR",
+        "region": "Eastern Mediterranean",
+        "latitude": 35.487,
+        "longitude": 24.074,
+        "aliases": [
+          "Chania, Greece",
+          "Chania (Souda)",
+          "Souda Bay (Crete)",
+          "Souda Bay Crete"
+        ],
+        "disney_source_name": "Chania, Greece",
+        "evidence": "Disney uses Chania label; physical call at Souda Bay cruise port.",
+        "classification": "physical_port"
+      }
+    },
+    {
+      "action": "alias_append",
+      "canonical_name": "Portland England",
+      "added": [
+        "Portland (Stonehenge), England",
+        "Portland (Stonehenge) England"
+      ]
+    }
+  ],
+  "precheck": {
+    "passed": true,
+    "failures": [],
+    "changes": [
+      {
+        "action": "insert",
+        "canonical_name": "Castaway Cay",
+        "spec": {
+          "canonical_name": "Castaway Cay",
+          "display_name": "Castaway Cay, Bahamas",
+          "city": "Castaway Cay",
+          "country": "Bahamas",
+          "country_code": "BS",
+          "region": "Bahamas",
+          "latitude": 26.116,
+          "longitude": -77.539,
+          "aliases": [
+            "Disney Castaway Cay",
+            "Castaway Cay Bahamas",
+            "Disney's Castaway Cay"
+          ],
+          "disney_source_name": "Disney Castaway Cay",
+          "evidence": "Disney-owned private island; physical cruise call in portsOfCall.",
+          "classification": "private_island_physical_port"
+        }
+      },
+      {
+        "action": "insert",
+        "canonical_name": "Lookout Cay at Lighthouse Point",
+        "spec": {
+          "canonical_name": "Lookout Cay at Lighthouse Point",
+          "display_name": "Lookout Cay at Lighthouse Point, Bahamas",
+          "city": "Lookout Cay",
+          "country": "Bahamas",
+          "country_code": "BS",
+          "region": "Bahamas",
+          "latitude": 26.406,
+          "longitude": -78.017,
+          "aliases": [
+            "Disney Lookout Cay at Lighthouse Point",
+            "Lookout Cay",
+            "Lighthouse Point",
+            "Disney Lookout Cay"
+          ],
+          "disney_source_name": "Disney Lookout Cay at Lighthouse Point",
+          "evidence": "Disney-owned private island opened 2024; physical cruise call.",
+          "classification": "private_island_physical_port"
+        }
+      },
+      {
+        "action": "insert",
+        "canonical_name": "Progreso",
+        "spec": {
+          "canonical_name": "Progreso",
+          "display_name": "Progreso, Mexico",
+          "city": "Progreso",
+          "country": "Mexico",
+          "country_code": "MX",
+          "region": "Mexican Riviera",
+          "latitude": 21.283,
+          "longitude": -89.665,
+          "aliases": [
+            "Progreso, Mexico",
+            "Progreso Yucatan",
+            "Puerto Progreso"
+          ],
+          "disney_source_name": "Progreso, Mexico",
+          "evidence": "Yucatán cruise port serving Mérida excursions.",
+          "classification": "physical_port"
+        }
+      },
+      {
+        "action": "insert",
+        "canonical_name": "Catalina Island",
+        "spec": {
+          "canonical_name": "Catalina Island",
+          "display_name": "Catalina Island, California",
+          "city": "Avalon",
+          "country": "United States",
+          "country_code": "US",
+          "region": "Pacific Coast",
+          "latitude": 33.343,
+          "longitude": -118.328,
+          "aliases": [
+            "Catalina Island, California",
+            "Avalon Catalina Island",
+            "Avalon, Catalina Island"
+          ],
+          "disney_source_name": "Catalina Island, California",
+          "evidence": "Disney calls Avalon harbour on Catalina Island.",
+          "classification": "physical_port"
+        }
+      },
+      {
+        "action": "insert",
+        "canonical_name": "Chania",
+        "spec": {
+          "canonical_name": "Chania",
+          "display_name": "Chania (Souda Bay), Greece",
+          "city": "Chania",
+          "country": "Greece",
+          "country_code": "GR",
+          "region": "Eastern Mediterranean",
+          "latitude": 35.487,
+          "longitude": 24.074,
+          "aliases": [
+            "Chania, Greece",
+            "Chania (Souda)",
+            "Souda Bay (Crete)",
+            "Souda Bay Crete"
+          ],
+          "disney_source_name": "Chania, Greece",
+          "evidence": "Disney uses Chania label; physical call at Souda Bay cruise port.",
+          "classification": "physical_port"
+        }
+      },
+      {
+        "action": "alias_append",
+        "canonical_name": "Portland England",
+        "added": [
+          "Portland (Stonehenge), England",
+          "Portland (Stonehenge) England"
+        ]
+      }
+    ]
+  },
+  "verify": {
+    "passed": true,
+    "results": [
+      {
+        "source": "Disney Castaway Cay",
+        "canonical_name": "Castaway Cay",
+        "resolved": true,
+        "matched": "Castaway Cay"
+      },
+      {
+        "source": "Disney Lookout Cay at Lighthouse Point",
+        "canonical_name": "Lookout Cay at Lighthouse Point",
+        "resolved": true,
+        "matched": "Lookout Cay at Lighthouse Point"
+      },
+      {
+        "source": "Progreso, Mexico",
+        "canonical_name": "Progreso",
+        "resolved": true,
+        "matched": "Progreso"
+      },
+      {
+        "source": "Catalina Island, California",
+        "canonical_name": "Catalina Island",
+        "resolved": true,
+        "matched": "Catalina Island"
+      },
+      {
+        "source": "Chania, Greece",
+        "canonical_name": "Chania",
+        "resolved": true,
+        "matched": "Chania"
+      },
+      {
+        "source": "Portland (Stonehenge), England",
+        "canonical_name": "Portland England",
+        "resolved": true,
+        "matched": "Portland England"
+      },
+      {
+        "source": "Portland (Stonehenge) England",
+        "canonical_name": "Portland England",
+        "resolved": true,
+        "matched": "Portland England"
+      }
+    ]
+  }
+}
