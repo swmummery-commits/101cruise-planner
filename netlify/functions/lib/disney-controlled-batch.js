@@ -393,7 +393,9 @@ function evaluateCatchupPreWriteGate(params = {}) {
   if ((params.identityKeyCollisions || 0) > 0) failures.push("identity_key_collisions");
   if (params.hashMismatch) failures.push("candidate_hash_mismatch");
   if (!params.lockSmokePassed) failures.push("lock_smoke_failed");
-  if (!params.phase3RollbackOk) failures.push("phase3_rollback_manifest_missing");
+  if (params.requirePhase3Rollback === true && params.phase3RollbackOk !== true) {
+    failures.push("phase3_rollback_manifest_missing");
+  }
   return { passed: failures.length === 0, failures, reason: failures[0] || null, expectedCount: expected };
 }
 

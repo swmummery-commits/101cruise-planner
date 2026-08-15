@@ -38,12 +38,23 @@ async function loadContext(sb) {
   const line = (
     await sb(`ci_cruise_lines?slug=eq.${controlled.DISNEY_LINE_SLUG}&select=id,name,slug&limit=1`)
   )?.[0];
-  const existingRows = await sb(
-    `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
-      line.id
-    )}&select=id,status,official_sailing_id,identity_key,external_key,raw_extract`
-  );
-  return { line, existingRows: existingRows || [] };
+  const [ships, destinations, existingRows] = await Promise.all([
+    sb(
+      `ci_cruise_ships?cruise_line_id=eq.${encodeURIComponent(line.id)}&select=id,name,cruise_line_id,official_line_ship_id,active&order=name.asc`
+    ),
+    sb("destinations?select=id,name,slug,status"),
+    sb(
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
+        line.id
+      )}&select=id,cruise_line_id,status,ship_id,destination_id,departure_date,return_date,nights,departure_port,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract`
+    )
+  ]);
+  return {
+    line,
+    ships: ships || [],
+    destinations: (destinations || []).filter((d) => d.status !== "archived"),
+    existingRows: existingRows || []
+  };
 }
 
 async function main() {
@@ -105,12 +116,12 @@ async function main() {
   const ctx = await loadContext(sb);
   const finalSim = await adapter.simulateDisneyDiscovery({
     cruiseLine: ctx.line,
-    ships: [],
-    destinations: [],
+    ships: ctx.ships,
+    destinations: ctx.destinations,
     today,
     existingRows: ctx.existingRows,
     supabaseQuery: sb
-  }).catch(() => null);
+  });
 
   const { official, legacy } = controlled.classifyDisneyProductionRows(ctx.existingRows);
   const duplicateAudit = controlled.auditOfficialDuplicateKeys(ctx.existingRows);

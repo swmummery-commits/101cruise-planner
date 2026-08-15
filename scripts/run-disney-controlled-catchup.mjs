@@ -439,6 +439,7 @@ export async function runDisneyControlledCatchup(options = {}) {
     identityKeyCollisions: collisionCheck.identity_key_collisions,
     hashMismatch: frozenReport ? !sourceRefresh.ok : false,
     lockSmokePassed: !args.apply || lockSmoke?.passed === true,
+    requirePhase3Rollback: true,
     phase3RollbackOk: phase3Rollback.existed || phase3Rollback.recovered === true
   });
 
