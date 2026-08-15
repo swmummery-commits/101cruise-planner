@@ -1,0 +1,187 @@
+{
+  "phase": "4B",
+  "repository": {
+    "starting_sha": "dd3944a044400b00ba85e7b85e55a5cd7888e7b9",
+    "tooling_sha": "dd3944a044400b00ba85e7b85e55a5cd7888e7b9",
+    "final_report_sha": "cfb9a02b6ab0ca5de2d17ece3b3e68449af144db"
+  },
+  "master_plan_hash": "8f3b73a8dceb5e5b0feb2d5254972e2ebc4bc320514d5964919cdde90b50f7a7",
+  "master_plan": {
+    "source_total": 651,
+    "production_eligible": 623,
+    "starting_existing_official": 120,
+    "planned_inserts": 503,
+    "batch_sizes": [
+      100,
+      100,
+      100,
+      100,
+      100,
+      3
+    ],
+    "planned_identities": 503
+  },
+  "batches": [
+    {
+      "batch_number": 2,
+      "batch_size": 100,
+      "freeze_hash": "361109b26ef4fde6125322aab1e043a4685548ad2951b47f2dbfd162573f16e0",
+      "attempted": 100,
+      "inserted": 100,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "5c035f47-a4b8-484a-a708-03f346f2e0fe",
+      "verification": 100,
+      "official_count_after": 220,
+      "cumulative_duplicate_skip": 220,
+      "remaining_master_plan_inserts": 403,
+      "global_lock_released": true,
+      "passed": true
+    },
+    {
+      "batch_number": 3,
+      "batch_size": 100,
+      "freeze_hash": "dca8d0c6b50162badecef24efedcee8042bf785f85c77d5aa289656b1cdf620d",
+      "attempted": 100,
+      "inserted": 100,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "fc6697e5-a097-4c0b-8ac1-3ea13d8c286a",
+      "verification": 100,
+      "official_count_after": 320,
+      "cumulative_duplicate_skip": 320,
+      "remaining_master_plan_inserts": 303,
+      "global_lock_released": true,
+      "passed": true
+    },
+    {
+      "batch_number": 4,
+      "batch_size": 100,
+      "freeze_hash": "309311f2dba3f1a79e3b7af2ecdeb35955a589364c84ecf44db97233831be522",
+      "attempted": 100,
+      "inserted": 100,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "c2d45cc9-37a5-4107-af23-0057db9658db",
+      "verification": 100,
+      "official_count_after": 420,
+      "cumulative_duplicate_skip": 420,
+      "remaining_master_plan_inserts": 203,
+      "global_lock_released": true,
+      "passed": true
+    },
+    {
+      "batch_number": 5,
+      "batch_size": 100,
+      "freeze_hash": "dc5aa2284109d1725d7526eadd3e31b33c6d839bfe92d3a837e0c84d8144c4f6",
+      "attempted": 100,
+      "inserted": 100,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "f0669f6d-b57b-4768-ac44-d5cc29daf920",
+      "verification": 100,
+      "official_count_after": 520,
+      "cumulative_duplicate_skip": 520,
+      "remaining_master_plan_inserts": 103,
+      "global_lock_released": true,
+      "passed": true
+    },
+    {
+      "batch_number": 6,
+      "batch_size": 100,
+      "freeze_hash": "c0c841708d9c5df8553759a26bbae6fe1ac2f9ea987d9dfe5ced4f03009f207f",
+      "attempted": 100,
+      "inserted": 100,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "17dfd368-7721-4070-aa2c-4c0c971dc971",
+      "verification": 100,
+      "official_count_after": 620,
+      "cumulative_duplicate_skip": 620,
+      "remaining_master_plan_inserts": 3,
+      "global_lock_released": true,
+      "passed": true
+    },
+    {
+      "batch_number": 7,
+      "batch_size": 3,
+      "freeze_hash": "2f86d2ef8e9f39b37659af1aa149a559c6dcbd0b295865d5fc66c985344c64eb",
+      "attempted": 3,
+      "inserted": 3,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "2e2543d0-2bc6-4d59-9f72-cb57898f2fea",
+      "verification": 3,
+      "official_count_after": 623,
+      "cumulative_duplicate_skip": 623,
+      "remaining_master_plan_inserts": 0,
+      "global_lock_released": true,
+      "passed": true
+    }
+  ],
+  "total_phase4b_inserts": 503,
+  "final": {
+    "official_production_count": 623,
+    "active_official_count": 623,
+    "legacy_count": 6,
+    "disney_total": 629,
+    "duplicate_skip_count": 623,
+    "remaining_master_plan_inserts": 0,
+    "new_source_inserts_since_master_plan": 0,
+    "duplicate_audit": {
+      "passed": true,
+      "duplicate_official_sailing_id_count": 0,
+      "duplicate_external_key_count": 0,
+      "duplicate_identity_key_count": 0,
+      "legacy_count": 6
+    },
+    "legacy_immutability": {
+      "passed": true,
+      "unchanged_count": 6,
+      "expected": 6,
+      "comparisons": [
+        {
+          "id": "88adb900-0aed-4a21-bdf6-fd5bc65b1348",
+          "unchanged": true,
+          "changed_fields": [],
+          "raw_extract_changed": false
+        },
+        {
+          "id": "ac4ff6fc-dae5-47fa-9708-62ea1ebd5542",
+          "unchanged": true,
+          "changed_fields": [],
+          "raw_extract_changed": false
+        },
+        {
+          "id": "5a2a9a59-ee1d-410d-bc47-4747757e08d0",
+          "unchanged": true,
+          "changed_fields": [],
+          "raw_extract_changed": false
+        },
+        {
+          "id": "d5fb2cfe-cc46-4138-a21a-04fd5777dc64",
+          "unchanged": true,
+          "changed_fields": [],
+          "raw_extract_changed": false
+        },
+        {
+          "id": "342e0a91-899b-457c-b9d7-4acd8e9e56ae",
+          "unchanged": true,
+          "changed_fields": [],
+          "raw_extract_changed": false
+        },
+        {
+          "id": "04a3bf11-7c10-462e-83b6-63f2a5d5044d",
+          "unchanged": true,
+          "changed_fields": [],
+          "raw_extract_changed": false
+        }
+      ]
+    }
+  },
+  "stopped": false,
+  "blocker": null,
+  "overall_passed": true,
+  "complete_current_disney_catchup": true,
+  "ready_for_weekly_maintenance": true
+}

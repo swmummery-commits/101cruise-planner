@@ -1,0 +1,4075 @@
+{
+  "phase": "4B",
+  "batch_number": 2,
+  "repository": {
+    "starting_sha": "dd3944a044400b00ba85e7b85e55a5cd7888e7b9",
+    "tooling_sha": "dd3944a044400b00ba85e7b85e55a5cd7888e7b9",
+    "apply_sha": "dd3944a044400b00ba85e7b85e55a5cd7888e7b9"
+  },
+  "production_baseline": {
+    "ok": true,
+    "disney_total": 126,
+    "legacy_count": 6,
+    "official_count": 120,
+    "active_official_count": 120,
+    "duplicate_official_ids": [],
+    "unexpected_rows": [],
+    "update_proposals": [],
+    "review_required": [],
+    "duplicate_skip_count": 120,
+    "official_actions": [
+      {
+        "official_sailing_id": "DA0076|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "621d41ae-40d4-4617-9f34-a9115e944853",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1514|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "cbb25f11-ce7c-443e-94f3-e9caaed5e3fc",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1515|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "a4c83b39-a248-4293-878a-39eeadf77883",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1568|2027-04-23",
+        "action": "duplicate_skip",
+        "id": "11203a97-743c-493d-825f-96a327de3aef",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0824|2026-09-06",
+        "action": "duplicate_skip",
+        "id": "36956278-62f0-46c8-94fd-caf5c94e2099",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0895|2027-07-11",
+        "action": "duplicate_skip",
+        "id": "30ff3aef-fa35-45d4-8f82-bb1924d08fb3",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1747|2026-09-17",
+        "action": "duplicate_skip",
+        "id": "e23991ae-5675-41c9-a80c-14e6a27f9afb",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1792|2027-04-25",
+        "action": "duplicate_skip",
+        "id": "aa8a89bd-8905-49a0-8189-4a9e3b5e05ae",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2210|2026-10-27",
+        "action": "duplicate_skip",
+        "id": "d5e57a78-285f-4e63-be9f-be29aa2cf1eb",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0064|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "f0b17d9c-567f-4181-a3cc-a9f00ab5f8f7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0091|2026-09-12",
+        "action": "duplicate_skip",
+        "id": "3e659f17-38b3-4968-aebe-cbe9a322381a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0092|2026-09-19",
+        "action": "duplicate_skip",
+        "id": "36931910-3b6e-46b0-b2b3-5fa2bf82dff8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0093|2026-09-26",
+        "action": "duplicate_skip",
+        "id": "f7e6bc57-29d4-4833-8f3a-0e3b551737ab",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0094|2026-10-03",
+        "action": "duplicate_skip",
+        "id": "74e77dd4-6171-4cca-a955-391c92b061bd",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0095|2026-10-10",
+        "action": "duplicate_skip",
+        "id": "2e38207f-b5ca-467d-99ac-f4b1dbff514e",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0096|2026-10-17",
+        "action": "duplicate_skip",
+        "id": "6f9e5ea3-bf33-4310-aa09-19b9ce4954d6",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0097|2026-10-24",
+        "action": "duplicate_skip",
+        "id": "ef386942-3bad-4edf-a0f0-10776519ae1d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0098|2026-10-31",
+        "action": "duplicate_skip",
+        "id": "76343ea4-73fb-4822-8fa1-8e4ffd82b144",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0578|2027-05-29",
+        "action": "duplicate_skip",
+        "id": "2d0ee75d-426c-4375-9463-dcbf227208e7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0579|2027-06-07",
+        "action": "duplicate_skip",
+        "id": "9d122cc1-58bb-49af-8803-2888943ee665",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2200|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "93b91d00-a883-40bb-84ad-a9837cf5fa30",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0509|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "0c2c090f-a837-408c-98b3-c87b5853d523",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0077|2026-09-10",
+        "action": "duplicate_skip",
+        "id": "bae04e4b-7920-49bd-a9e3-e3eb46adef8d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1743|2026-09-10",
+        "action": "duplicate_skip",
+        "id": "74b3ef51-77f9-442f-916f-28a5901be454",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0825|2026-09-11",
+        "action": "duplicate_skip",
+        "id": "e8875ae0-7d52-41e4-b4ee-740147252db8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0065|2026-09-11",
+        "action": "duplicate_skip",
+        "id": "370cdf3f-c770-453b-9db5-a1ca7cb20fe4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0510|2026-09-11",
+        "action": "duplicate_skip",
+        "id": "4e6d9607-01cd-4736-89a6-6195e774fe16",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0078|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "3ba4f705-eef4-44db-95b4-8a15479f1a93",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2201|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "8196d579-8c8c-490f-ba4d-eb2496ab2b35",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0066|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "d1faf684-b9b1-40ee-9744-506013654360",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0511|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "0345fa28-9ecb-489c-bf6e-72ade25e6ee5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0826|2026-09-16",
+        "action": "duplicate_skip",
+        "id": "d647926f-2850-45c4-ac2c-6d11467ebec7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0079|2026-09-17",
+        "action": "duplicate_skip",
+        "id": "7cdfd82a-b6af-4553-951b-21ad958c5e8e",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0067|2026-09-18",
+        "action": "duplicate_skip",
+        "id": "9ec4740a-7d66-47c0-af93-3384228a765c",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0512|2026-09-18",
+        "action": "duplicate_skip",
+        "id": "f4f6bf20-5051-4ba7-8f40-c58d6a659d2a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0827|2026-09-20",
+        "action": "duplicate_skip",
+        "id": "d5e99f8d-cf21-4c4f-a867-43f2400e1e06",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0080|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "365cb3fc-580c-42d7-8284-bdcdbda17555",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1748|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "e1aa44bd-20b5-497f-8dc4-9e277922c403",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2202|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "d13f4249-319a-4fed-a115-7fa2b53c4f2f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0068|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "d19a2331-6fd6-48fd-8204-6388fed6bc88",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0513|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "ca47cf4e-521b-4270-bbdb-c58a5ae90ae0",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0081|2026-09-24",
+        "action": "duplicate_skip",
+        "id": "5f28ed5a-6d43-4ec5-a938-1aa3ba3d1137",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0828|2026-09-25",
+        "action": "duplicate_skip",
+        "id": "fa162769-e12e-45c6-8ba9-319b76bc2577",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1749|2026-09-25",
+        "action": "duplicate_skip",
+        "id": "173507c9-9550-443a-b5a0-7fee2aa17591",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0514|2026-09-25",
+        "action": "duplicate_skip",
+        "id": "c33c9733-49c7-4145-a5a4-9954567b449f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0069|2026-09-26",
+        "action": "duplicate_skip",
+        "id": "e4d3710e-afee-4bfa-b085-5ebea9f46bf2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1516|2026-09-27",
+        "action": "duplicate_skip",
+        "id": "c8994b5c-2a4e-41a0-b47b-b620a28c01a8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0082|2026-09-28",
+        "action": "duplicate_skip",
+        "id": "2a7a47c4-d3c6-435e-8635-4844aabadd34",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1750|2026-09-28",
+        "action": "duplicate_skip",
+        "id": "4d8d9b34-6d37-417f-81ab-0f83574c240e",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2204|2026-09-28",
+        "action": "duplicate_skip",
+        "id": "98b7f075-6e14-4bbd-a297-fb6f72e7e1b2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0515|2026-09-28",
+        "action": "duplicate_skip",
+        "id": "a684fbfb-a97b-4b40-a6a8-f10b08c92dd5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0829|2026-09-30",
+        "action": "duplicate_skip",
+        "id": "ae1fb084-3ac4-4756-96f1-00deba92a11c",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0083|2026-10-01",
+        "action": "duplicate_skip",
+        "id": "26704ca7-4c5d-4d9d-88ec-bf9947e85ed1",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1751|2026-10-01",
+        "action": "duplicate_skip",
+        "id": "06ccd368-111c-4eda-819e-efa31bb9e474",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0070|2026-10-01",
+        "action": "duplicate_skip",
+        "id": "dbc4f7d4-bd75-4762-b054-fb313dd41a15",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1517|2026-10-02",
+        "action": "duplicate_skip",
+        "id": "341ed304-8eb2-4c3f-9259-5aff11dd3f65",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0516|2026-10-02",
+        "action": "duplicate_skip",
+        "id": "183addf8-4af5-4ab7-aaf1-6ba8802f20fa",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2205|2026-10-03",
+        "action": "duplicate_skip",
+        "id": "5994d7b2-e702-4c25-b364-3b17604014ee",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0831|2026-10-04",
+        "action": "duplicate_skip",
+        "id": "a16ab35e-73a2-4dca-9eaa-a7ced8b33495",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0084|2026-10-05",
+        "action": "duplicate_skip",
+        "id": "075863ba-04c4-4de4-a3fc-65f4201e85d0",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1752|2026-10-05",
+        "action": "duplicate_skip",
+        "id": "f89476e3-0f97-4904-a554-977aec01e3ae",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0071|2026-10-05",
+        "action": "duplicate_skip",
+        "id": "b985fd36-aa72-4064-8ed6-324117f1ee87",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0517|2026-10-05",
+        "action": "duplicate_skip",
+        "id": "3079f6e7-30ed-47af-b246-445bd9c137e7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0085|2026-10-08",
+        "action": "duplicate_skip",
+        "id": "84e5507e-44e6-41ab-9746-85c60a019e38",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1518|2026-10-09",
+        "action": "duplicate_skip",
+        "id": "32ff9b2f-0403-467e-a49e-f305d42304a2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0832|2026-10-09",
+        "action": "duplicate_skip",
+        "id": "122461c7-adfa-4121-92a7-efd69b62f75d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1753|2026-10-09",
+        "action": "duplicate_skip",
+        "id": "c46a72f3-9c91-4c83-b55b-6c6d77ad17d0",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0518|2026-10-09",
+        "action": "duplicate_skip",
+        "id": "9aed3f7c-2186-41cf-9677-d3150a173dcf",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2206|2026-10-10",
+        "action": "duplicate_skip",
+        "id": "977541cd-07e8-4648-a0f2-0427ba53bfe6",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0072|2026-10-10",
+        "action": "duplicate_skip",
+        "id": "a4df0be3-77f4-4c54-b856-5c881410ac4b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0086|2026-10-12",
+        "action": "duplicate_skip",
+        "id": "d06db3c7-6646-46b6-ae30-2d6b3a43da93",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1519|2026-10-12",
+        "action": "duplicate_skip",
+        "id": "a6c1c795-7379-4b07-ab72-605e61ed0ddc",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1754|2026-10-12",
+        "action": "duplicate_skip",
+        "id": "6451a355-ee78-4129-b1be-4674c74df099",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0519|2026-10-12",
+        "action": "duplicate_skip",
+        "id": "9d80f811-919f-4e69-ace4-6eae37095c51",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0833|2026-10-14",
+        "action": "duplicate_skip",
+        "id": "797a425b-1ff8-4365-b409-0662070a9e63",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0087|2026-10-15",
+        "action": "duplicate_skip",
+        "id": "67666f9e-5a95-4e84-aeac-0072d8b10b11",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1520|2026-10-16",
+        "action": "duplicate_skip",
+        "id": "d27ae377-89ee-4882-8ec8-133e55141ec1",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1755|2026-10-16",
+        "action": "duplicate_skip",
+        "id": "1ce72580-014a-4322-9dac-fbfe3f448896",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0520|2026-10-16",
+        "action": "duplicate_skip",
+        "id": "cfcaa37c-115f-47f3-9365-fd8c3b185a96",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0073|2026-10-17",
+        "action": "duplicate_skip",
+        "id": "4a6b6b51-ccd0-4c25-88a5-5d047086e91d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0834|2026-10-18",
+        "action": "duplicate_skip",
+        "id": "1b5fc7d4-a618-4e2d-92b2-a965d3018266",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2208|2026-10-18",
+        "action": "duplicate_skip",
+        "id": "88fe4a8f-24c4-4b4f-9ec8-2fa7fe552993",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0088|2026-10-19",
+        "action": "duplicate_skip",
+        "id": "6569bf38-4a76-410d-b1b3-41dd9455077b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1521|2026-10-19",
+        "action": "duplicate_skip",
+        "id": "0609233f-3951-4478-81fc-c4033d483526",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1756|2026-10-19",
+        "action": "duplicate_skip",
+        "id": "a6632c94-90da-4822-a502-426d5a72be87",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0521|2026-10-19",
+        "action": "duplicate_skip",
+        "id": "435c9e74-dd77-423f-a288-b1b0a9808eb4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0089|2026-10-22",
+        "action": "duplicate_skip",
+        "id": "1afc3961-957e-40a2-8c1e-adb5a98c531e",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2209|2026-10-22",
+        "action": "duplicate_skip",
+        "id": "6b78248d-bc4c-4e05-92c6-b688758c7c01",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1522|2026-10-23",
+        "action": "duplicate_skip",
+        "id": "9e0c2378-58a0-4a08-8251-08dbc919c1a7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0835|2026-10-23",
+        "action": "duplicate_skip",
+        "id": "0bc33608-b7a0-4fa6-9d6d-0cebc9416a04",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0522|2026-10-23",
+        "action": "duplicate_skip",
+        "id": "e6b41bfc-9d6b-488d-90fc-48127c058ff9",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1757|2026-10-24",
+        "action": "duplicate_skip",
+        "id": "8e32f44f-04c9-42ae-b49e-9be1a3f9bbee",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0074|2026-10-24",
+        "action": "duplicate_skip",
+        "id": "b4d01add-caa8-4e06-b4f2-df85b41381ea",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0090|2026-10-26",
+        "action": "duplicate_skip",
+        "id": "e6c04092-0b84-435a-8e9f-84fc22bdce39",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1523|2026-10-26",
+        "action": "duplicate_skip",
+        "id": "96dd772c-f4b9-4d75-a291-dfd18584f826",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0523|2026-10-26",
+        "action": "duplicate_skip",
+        "id": "40e84449-a8b1-4f7c-a9e3-5567fc45d991",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0836|2026-10-28",
+        "action": "duplicate_skip",
+        "id": "62f6a035-8d77-44ef-833f-3002a37bbb86",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0091|2026-10-29",
+        "action": "duplicate_skip",
+        "id": "d44cc78f-5e42-4f36-966d-1ca2766ab79c",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0075|2026-10-29",
+        "action": "duplicate_skip",
+        "id": "1b74fdff-5712-425d-875c-50f9142d4e2a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1524|2026-10-30",
+        "action": "duplicate_skip",
+        "id": "d9ce635f-514b-4310-8706-7481e8a80e0a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1758|2026-10-30",
+        "action": "duplicate_skip",
+        "id": "a14be6a7-6fc9-4d6d-bcbe-242c0bfea097",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0524|2026-10-30",
+        "action": "duplicate_skip",
+        "id": "c2f0d395-3583-4738-bc7b-70e831172318",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0837|2026-11-01",
+        "action": "duplicate_skip",
+        "id": "74ba31cd-81e0-4458-a981-04aeb2a0819a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0092|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "d749c1ce-055f-480b-940e-083a7bba3c78",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1525|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "ea0fa3e0-45b6-4aa5-97ba-c3c0737d5030",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2211|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "be27cdf4-d453-491f-b384-e3da83c4b1a5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0076|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "36903d4c-13ff-4a60-8393-d5b333f8c096",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0525|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "b4a9ac6b-6582-4c19-ba48-4aaf39d557ce",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0093|2026-11-05",
+        "action": "duplicate_skip",
+        "id": "f61bbc23-f8a4-46e2-a3c6-1352257e1556",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2212|2026-11-05",
+        "action": "duplicate_skip",
+        "id": "5f997ac6-ceea-4986-b894-a1333ec3de2f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1526|2026-11-06",
+        "action": "duplicate_skip",
+        "id": "a9a88661-e53f-4c9e-9268-ab4b0daab0ca",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0838|2026-11-06",
+        "action": "duplicate_skip",
+        "id": "61b68b6b-84d4-4be1-960b-af9ac3b5b255",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1759|2026-11-06",
+        "action": "duplicate_skip",
+        "id": "3b4029a7-c4f8-4330-9c72-aca36dd92f7d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0526|2026-11-06",
+        "action": "duplicate_skip",
+        "id": "131c121d-e50d-42ef-89d4-34638bcf19c3",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0077|2026-11-07",
+        "action": "duplicate_skip",
+        "id": "935d464f-ec1f-4203-962c-ace6fe99d2e2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0099|2026-11-07",
+        "action": "duplicate_skip",
+        "id": "21d83d21-5e86-4217-99c2-ad7d4ccb3316",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0094|2026-11-09",
+        "action": "duplicate_skip",
+        "id": "855ef624-417e-4b0c-b1eb-43e19ec86bd5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1527|2026-11-09",
+        "action": "duplicate_skip",
+        "id": "f947aba9-1626-429e-a75b-cceabc6670ad",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2213|2026-11-09",
+        "action": "duplicate_skip",
+        "id": "416508a1-102f-48f7-afdb-41690d3343e5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0527|2026-11-09",
+        "action": "duplicate_skip",
+        "id": "48d2b09d-ec72-4451-8653-317671c94195",
+        "status": "active"
+      }
+    ],
+    "legacy_ok": true
+  },
+  "master_plan_hash": "8f3b73a8dceb5e5b0feb2d5254972e2ebc4bc320514d5964919cdde90b50f7a7",
+  "frozen_catchup": {
+    "batch_number": 2,
+    "size": 100,
+    "identities": [
+      "DA0095|2026-11-12",
+      "DA0096|2026-11-16",
+      "DA0097|2026-11-19",
+      "DA0098|2026-11-23",
+      "DA0099|2026-11-26",
+      "DA0100|2026-11-30",
+      "DA0101|2026-12-03",
+      "DA0102|2026-12-07",
+      "DA0103|2026-12-10",
+      "DA0104|2026-12-14",
+      "DA0105|2026-12-17",
+      "DA0106|2026-12-21",
+      "DA0107|2026-12-24",
+      "DA0108|2026-12-28",
+      "DA0109|2026-12-31",
+      "DA0124|2027-01-04",
+      "DA0125|2027-01-07",
+      "DA0126|2027-01-11",
+      "DA0127|2027-01-14",
+      "DA0128|2027-01-18",
+      "DA0129|2027-01-21",
+      "DA0130|2027-01-25",
+      "DA0131|2027-01-28",
+      "DA0132|2027-02-01",
+      "DA0133|2027-02-04",
+      "DA0134|2027-02-08",
+      "DA0135|2027-02-11",
+      "DA0136|2027-02-15",
+      "DA0137|2027-02-18",
+      "DA0138|2027-02-22",
+      "DA0139|2027-02-25",
+      "DA0140|2027-03-01",
+      "DA0141|2027-03-04",
+      "DA0142|2027-03-08",
+      "DA0143|2027-03-11",
+      "DA0144|2027-03-15",
+      "DA0145|2027-03-18",
+      "DA0146|2027-03-22",
+      "DA0147|2027-03-25",
+      "DA0148|2027-03-29",
+      "DA0149|2027-04-01",
+      "DA0150|2027-04-05",
+      "DA0151|2027-04-08",
+      "DA0152|2027-04-12",
+      "DA0153|2027-04-15",
+      "DA0154|2027-04-19",
+      "DA0155|2027-04-22",
+      "DA0156|2027-04-26",
+      "DA0157|2027-04-29",
+      "DA0158|2027-05-03",
+      "DA0159|2027-05-06",
+      "DA0160|2027-05-10",
+      "DA0161|2027-05-13",
+      "DA0162|2027-05-17",
+      "DA0163|2027-05-20",
+      "DA0164|2027-05-24",
+      "DA0165|2027-05-27",
+      "DA0166|2027-05-31",
+      "DA0167|2027-06-03",
+      "DA0168|2027-06-07",
+      "DA0169|2027-06-10",
+      "DA0170|2027-06-14",
+      "DA0171|2027-06-17",
+      "DA0172|2027-06-21",
+      "DA0173|2027-06-24",
+      "DA0174|2027-06-28",
+      "DA0175|2027-07-01",
+      "DA0176|2027-07-05",
+      "DA0177|2027-07-08",
+      "DA0178|2027-07-12",
+      "DA0179|2027-07-15",
+      "DA0180|2027-07-19",
+      "DA0181|2027-07-22",
+      "DA0182|2027-07-26",
+      "DA0183|2027-07-29",
+      "DA0184|2027-08-02",
+      "DA0185|2027-08-05",
+      "DA0186|2027-08-09",
+      "DA0187|2027-08-12",
+      "DA0188|2027-08-16",
+      "DA0189|2027-08-19",
+      "DA0190|2027-08-23",
+      "DA0191|2027-08-26",
+      "DA0192|2027-08-30",
+      "DD1528|2026-11-13",
+      "DD1529|2026-11-20",
+      "DD1531|2026-11-27",
+      "DD1532|2026-11-30",
+      "DD1533|2026-12-04",
+      "DD1534|2026-12-07",
+      "DD1535|2026-12-11",
+      "DD1536|2026-12-14",
+      "DD1537|2026-12-18",
+      "DD1538|2026-12-21",
+      "DD1539|2026-12-27",
+      "DD1540|2027-01-03",
+      "DD1541|2027-01-08",
+      "DD1542|2027-01-11",
+      "DD1543|2027-01-15",
+      "DD1544|2027-01-18"
+    ],
+    "candidate_hash": "361109b26ef4fde6125322aab1e043a4685548ad2951b47f2dbfd162573f16e0"
+  },
+  "prewrite_collisions": {
+    "selected_existing_matches": 0,
+    "external_key_collisions": 0,
+    "identity_key_collisions": 0
+  },
+  "pre_write_gate": {
+    "passed": true,
+    "failures": [],
+    "reason": null,
+    "expectedCount": 100
+  },
+  "global_lock": {
+    "global_lock_required": true,
+    "global_lock_key": "controlled_production_import:global",
+    "global_lock_acquired": true,
+    "global_lock_owner": "disney-phase4b-catchup-2-2026-08-15T12-32-38-964Z",
+    "global_lock_run_id": "disney-phase4b-catchup-2-2026-08-15T12-32-38-964Z",
+    "global_lock_acquired_at": "2026-08-15T12:44:29.218Z",
+    "global_lock_expires_at": "2026-08-15T13:14:29.332738+00:00",
+    "global_lock_released": true,
+    "global_lock_denial_reason": null,
+    "global_lock_current_holder": "disney-phase4b-catchup-2-2026-08-15T12-32-38-964Z",
+    "global_lock_line_slug": "disney-cruise-line",
+    "global_lock_operation": "disney_phase4b_catchup_batch_2"
+  },
+  "lock_before": {
+    "held": false,
+    "worker_state": "idle"
+  },
+  "lock_smoke": {
+    "passed": true,
+    "owner_id": "disney-phase4b-lock-smoke-2026-08-15T12-32-38-964Z",
+    "run_id": "disney-phase4b-lock-smoke-2026-08-15T12-32-38-964Z",
+    "lock_key": "controlled_production_import:global",
+    "steps": [
+      {
+        "step": "available_before",
+        "held": false,
+        "owner_id": null
+      },
+      {
+        "step": "acquired",
+        "acquired": true,
+        "owner_id": "disney-phase4b-lock-smoke-2026-08-15T12-32-38-964Z",
+        "expires_at": "2026-08-15T12:46:03.641332+00:00"
+      },
+      {
+        "step": "assertion_1",
+        "ok": true,
+        "reason": null,
+        "expected_owner": "disney-phase4b-lock-smoke-2026-08-15T12-32-38-964Z",
+        "actual_owner": "disney-phase4b-lock-smoke-2026-08-15T12-32-38-964Z"
+      },
+      {
+        "step": "assertion_2",
+        "ok": true,
+        "reason": null,
+        "expected_owner": "disney-phase4b-lock-smoke-2026-08-15T12-32-38-964Z",
+        "actual_owner": "disney-phase4b-lock-smoke-2026-08-15T12-32-38-964Z"
+      },
+      {
+        "step": "released",
+        "released": true
+      },
+      {
+        "step": "absent_after_release",
+        "held": false,
+        "owner_id": null,
+        "expired": false
+      }
+    ],
+    "reason": null
+  },
+  "under_lock_recheck": {
+    "performed": true,
+    "passed": true
+  },
+  "write_result": {
+    "attempted": 100,
+    "inserted": 100,
+    "updated": 0,
+    "failed": 0,
+    "partial_write": false,
+    "inserted_record_ids": [
+      "214eec27-63f7-4138-8bc5-6a7628245a31",
+      "133034f1-68b2-4e73-9cf3-33d75436e583",
+      "17e56a5d-33e1-4234-8151-2431eecf95bc",
+      "19b96b58-3fec-41d3-9b69-7a6b3e019ab8",
+      "51efe703-859b-489e-ba3a-1cc07c885981",
+      "7490f347-69fe-474d-82e4-5cdb53707e93",
+      "1229ae2d-7ffa-420e-b30b-acac9c078287",
+      "535172f0-a55f-4217-b4ec-426bf2a2def9",
+      "f099403f-e841-4aa7-925a-8fd1db096741",
+      "7e76f1ff-c794-4510-b815-6e7db1e86571",
+      "9d7e2e8f-f681-4d2c-b13e-95861550fed9",
+      "16a9be19-76e1-41eb-b588-a8b0b5a36ee7",
+      "ea0a1ac2-49b0-4cf4-abd9-610061ab0b08",
+      "99af13d1-318b-4536-a64e-748d325aabce",
+      "0f7397c9-57a3-49a6-92db-6caf977fd2e3",
+      "82a46a4d-9aa1-4e07-b900-317933a38e5f",
+      "7e0894b0-8e9b-40bc-9dcd-f46ec5633035",
+      "9f88682e-ac8e-4162-9574-520e3dd40749",
+      "d3167576-28b3-4900-b4d7-60bd7cbb2536",
+      "67f7d7cf-cec7-44ba-9e27-84292eac2cbf",
+      "6fc012c0-714a-4a12-b673-7cbefbeac3ed",
+      "e7308103-d386-43fe-b650-58f229f990e4",
+      "0b4d6054-e923-4a53-979a-4d52a7a4593d",
+      "ab7c4345-e059-4ba8-b9ec-e0710cf2df43",
+      "f938690e-3840-405e-9e96-f21288114254",
+      "447554cb-4d20-47dd-9f9e-a306ed24b582",
+      "77d6ecda-bd07-474c-b6a7-b5d4c539d7c4",
+      "9a2be235-fd46-42c6-a0c4-7060e46c6bdd",
+      "da93f361-d017-48fe-88ee-2bb1c5054cb7",
+      "f936e658-8725-487d-908a-cbe562a57778",
+      "12f6d37a-441f-4635-840d-f2889f8ac05b",
+      "a142c0f4-9043-42a5-9a9c-ab84bc8d1202",
+      "568c1324-2976-476e-aea3-5498b2b10d6a",
+      "104fa6ab-863f-4bb6-8944-804cc8c2d6e1",
+      "e4abb7ba-dbde-4967-b0d6-562a92758afb",
+      "2f5e2918-796a-4b14-b69d-e145643b432f",
+      "de3a529c-95a7-497b-9cf0-73db51251906",
+      "443c1a77-0c0e-4b95-a6ad-f0bf1bec1110",
+      "5b8a1511-f984-4c67-97c4-e0252dc1b28b",
+      "3252d4bb-afb7-4420-ad9f-a9af49b113fe",
+      "90d9f806-fd5a-443c-a342-6cd93573eaf8",
+      "9ea89866-83ec-449e-876b-2e4aa87149e9",
+      "ab0469eb-0e99-4754-9a78-d8eb97e5577d",
+      "0d772340-17c7-463c-ad57-a90adb7b8c41",
+      "0f8194f7-4d18-4bce-acbe-fd793ff0974e",
+      "ce3b00e2-2d78-4fdc-856c-127a3cf8c476",
+      "7cb162be-a3c0-417e-a81b-d6451a523103",
+      "103e7be2-9613-4702-bf45-d29049cd88d4",
+      "23ee7a61-b9b5-4eb4-82ac-10b2d914f504",
+      "e49f2b73-199f-4dec-b849-de2b7c02cb8b",
+      "fcb23240-af80-4b09-a2ea-6bbc05209718",
+      "6a580aa1-a704-41f7-b2e5-92024a0fb6fa",
+      "0892984c-714b-4be0-95eb-a436aaea8183",
+      "b688b05d-0fd9-4032-9a13-a41e017d8e04",
+      "d6ed8b7d-ae00-43a8-aaca-2565c3e8c3a2",
+      "ae920696-54e2-4070-b0fb-53402d67d1e2",
+      "41f20497-6db7-4bfc-bc26-50b1a7dc50ea",
+      "0b0f9584-336f-48ad-ab57-7a08822b143b",
+      "24f2e549-11c5-4cfe-a3d6-83e085e2db56",
+      "45810a06-2e1e-4108-bba0-b6218a8f5f16",
+      "8d8fca1f-265c-4624-8fd4-e80a9b387d43",
+      "51d5fcac-5b7f-4528-9b37-ca85ab67c28b",
+      "dca0af1d-fe59-40be-aaf6-3480466dbb03",
+      "5ae7caab-29b7-4fd3-8aca-2353650088d3",
+      "da2a3438-d886-4833-9487-0a52087758ca",
+      "8b65d203-9979-424f-b8a2-a4ad323bc3b4",
+      "d27387cc-b4c2-4b1e-9b6a-6fb458db4a2f",
+      "a907672d-a364-469a-87da-18a89c1c4e94",
+      "1dc34518-e2d9-4003-a4c6-1f61509fbbe0",
+      "888f6f75-d3d9-4733-88b1-3dee5501a0b2",
+      "83d4efb2-f96a-4c17-9e84-38d5c5ef7bf1",
+      "6ece4840-ac25-42d2-a669-a1e36381744c",
+      "e97e74c1-1bf6-40fd-a2a9-f2a899106563",
+      "067761fb-d87d-4097-aa5e-f956a2c45fc8",
+      "6383ffe0-ab15-4e73-9967-e1558dc498a8",
+      "ce369d8a-c0da-4dff-a3d0-89cac1937a6b",
+      "79360e61-e1c9-4d48-8776-a5af6dcb1c63",
+      "60d88053-a4f4-4378-b4f8-703eee5be8fe",
+      "04818c8c-d276-403f-bc59-3c2bdc14ea70",
+      "157c8df7-9bb0-42fe-8a5c-46b2f87f9b84",
+      "53888142-a336-406d-b540-e55f3f2fdfba",
+      "a6452165-1320-47d0-b4f9-202e972ee760",
+      "9daa8d8a-5fd9-4278-9d22-07d9175dbbd7",
+      "142fb136-6736-426e-85bc-7c33d76f1f75",
+      "0114fa53-ccce-4206-b078-ed797bd100a8",
+      "239238b4-5f06-4fa3-b32e-b37097d86fb4",
+      "b321db0a-a25b-4499-9def-e66bc37c19d4",
+      "24c07024-f701-4f51-9cfe-9d6f4194377b",
+      "d0657a04-cb69-4c4b-a863-fd19bef86709",
+      "59fcc40e-2faa-4230-afb2-c226574a35ba",
+      "e068e035-4f3d-4c4e-86d0-af52501e70d0",
+      "7d2e94c4-8bcc-45b2-9483-6315ae08c3ce",
+      "afa594c2-5803-4ac9-94fd-3f3fb987e46f",
+      "5017927c-fe4f-4382-a476-2ae0d180ec7c",
+      "4dc1a483-e15b-44a0-beb6-41ed19dc5f99",
+      "7f03b750-ee3d-464c-b4bd-50d7c71fe610",
+      "09066ce5-cac8-4fe1-8cd9-dceb23a87fbe",
+      "f917b5c2-52fc-49db-81b5-0dc7bf2305ab",
+      "72bf4282-cca0-4997-b08b-1a63350a10c7",
+      "0457f05d-3f8f-4ff4-9023-d521c56cc075"
+    ]
+  },
+  "partial_recovery": null,
+  "rollback_manifest": {
+    "persisted": true,
+    "manifest_record_id": "5c035f47-a4b8-484a-a708-03f346f2e0fe",
+    "inserted_count": 100
+  },
+  "verification": {
+    "verified_count": 100,
+    "failed_count": 0,
+    "rows": [
+      {
+        "id": "0114fa53-ccce-4206-b078-ed797bd100a8",
+        "official_sailing_id": "DD1528|2026-11-13",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "0457f05d-3f8f-4ff4-9023-d521c56cc075",
+        "official_sailing_id": "DD1544|2027-01-18",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "04818c8c-d276-403f-bc59-3c2bdc14ea70",
+        "official_sailing_id": "DA0187|2027-08-12",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "067761fb-d87d-4097-aa5e-f956a2c45fc8",
+        "official_sailing_id": "DA0182|2027-07-26",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "0892984c-714b-4be0-95eb-a436aaea8183",
+        "official_sailing_id": "DA0161|2027-05-13",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "09066ce5-cac8-4fe1-8cd9-dceb23a87fbe",
+        "official_sailing_id": "DD1541|2027-01-08",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "0b0f9584-336f-48ad-ab57-7a08822b143b",
+        "official_sailing_id": "DA0166|2027-05-31",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "0b4d6054-e923-4a53-979a-4d52a7a4593d",
+        "official_sailing_id": "DA0131|2027-01-28",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "0d772340-17c7-463c-ad57-a90adb7b8c41",
+        "official_sailing_id": "DA0152|2027-04-12",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "0f7397c9-57a3-49a6-92db-6caf977fd2e3",
+        "official_sailing_id": "DA0109|2026-12-31",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "0f8194f7-4d18-4bce-acbe-fd793ff0974e",
+        "official_sailing_id": "DA0153|2027-04-15",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "103e7be2-9613-4702-bf45-d29049cd88d4",
+        "official_sailing_id": "DA0156|2027-04-26",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "104fa6ab-863f-4bb6-8944-804cc8c2d6e1",
+        "official_sailing_id": "DA0142|2027-03-08",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "1229ae2d-7ffa-420e-b30b-acac9c078287",
+        "official_sailing_id": "DA0101|2026-12-03",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "12f6d37a-441f-4635-840d-f2889f8ac05b",
+        "official_sailing_id": "DA0139|2027-02-25",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "133034f1-68b2-4e73-9cf3-33d75436e583",
+        "official_sailing_id": "DA0096|2026-11-16",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "142fb136-6736-426e-85bc-7c33d76f1f75",
+        "official_sailing_id": "DA0192|2027-08-30",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "157c8df7-9bb0-42fe-8a5c-46b2f87f9b84",
+        "official_sailing_id": "DA0188|2027-08-16",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "16a9be19-76e1-41eb-b588-a8b0b5a36ee7",
+        "official_sailing_id": "DA0106|2026-12-21",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "17e56a5d-33e1-4234-8151-2431eecf95bc",
+        "official_sailing_id": "DA0097|2026-11-19",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "19b96b58-3fec-41d3-9b69-7a6b3e019ab8",
+        "official_sailing_id": "DA0098|2026-11-23",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "1dc34518-e2d9-4003-a4c6-1f61509fbbe0",
+        "official_sailing_id": "DA0177|2027-07-08",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "214eec27-63f7-4138-8bc5-6a7628245a31",
+        "official_sailing_id": "DA0095|2026-11-12",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "239238b4-5f06-4fa3-b32e-b37097d86fb4",
+        "official_sailing_id": "DD1529|2026-11-20",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "23ee7a61-b9b5-4eb4-82ac-10b2d914f504",
+        "official_sailing_id": "DA0157|2027-04-29",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "24c07024-f701-4f51-9cfe-9d6f4194377b",
+        "official_sailing_id": "DD1532|2026-11-30",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "24f2e549-11c5-4cfe-a3d6-83e085e2db56",
+        "official_sailing_id": "DA0167|2027-06-03",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "2f5e2918-796a-4b14-b69d-e145643b432f",
+        "official_sailing_id": "DA0144|2027-03-15",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "3252d4bb-afb7-4420-ad9f-a9af49b113fe",
+        "official_sailing_id": "DA0148|2027-03-29",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "41f20497-6db7-4bfc-bc26-50b1a7dc50ea",
+        "official_sailing_id": "DA0165|2027-05-27",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "443c1a77-0c0e-4b95-a6ad-f0bf1bec1110",
+        "official_sailing_id": "DA0146|2027-03-22",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "447554cb-4d20-47dd-9f9e-a306ed24b582",
+        "official_sailing_id": "DA0134|2027-02-08",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "45810a06-2e1e-4108-bba0-b6218a8f5f16",
+        "official_sailing_id": "DA0168|2027-06-07",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "4dc1a483-e15b-44a0-beb6-41ed19dc5f99",
+        "official_sailing_id": "DD1539|2026-12-27",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "5017927c-fe4f-4382-a476-2ae0d180ec7c",
+        "official_sailing_id": "DD1538|2026-12-21",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "51d5fcac-5b7f-4528-9b37-ca85ab67c28b",
+        "official_sailing_id": "DA0170|2027-06-14",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "51efe703-859b-489e-ba3a-1cc07c885981",
+        "official_sailing_id": "DA0099|2026-11-26",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "535172f0-a55f-4217-b4ec-426bf2a2def9",
+        "official_sailing_id": "DA0102|2026-12-07",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "53888142-a336-406d-b540-e55f3f2fdfba",
+        "official_sailing_id": "DA0189|2027-08-19",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "568c1324-2976-476e-aea3-5498b2b10d6a",
+        "official_sailing_id": "DA0141|2027-03-04",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "59fcc40e-2faa-4230-afb2-c226574a35ba",
+        "official_sailing_id": "DD1534|2026-12-07",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "5ae7caab-29b7-4fd3-8aca-2353650088d3",
+        "official_sailing_id": "DA0172|2027-06-21",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "5b8a1511-f984-4c67-97c4-e0252dc1b28b",
+        "official_sailing_id": "DA0147|2027-03-25",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "60d88053-a4f4-4378-b4f8-703eee5be8fe",
+        "official_sailing_id": "DA0186|2027-08-09",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "6383ffe0-ab15-4e73-9967-e1558dc498a8",
+        "official_sailing_id": "DA0183|2027-07-29",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "67f7d7cf-cec7-44ba-9e27-84292eac2cbf",
+        "official_sailing_id": "DA0128|2027-01-18",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "6a580aa1-a704-41f7-b2e5-92024a0fb6fa",
+        "official_sailing_id": "DA0160|2027-05-10",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "6ece4840-ac25-42d2-a669-a1e36381744c",
+        "official_sailing_id": "DA0180|2027-07-19",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "6fc012c0-714a-4a12-b673-7cbefbeac3ed",
+        "official_sailing_id": "DA0129|2027-01-21",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "72bf4282-cca0-4997-b08b-1a63350a10c7",
+        "official_sailing_id": "DD1543|2027-01-15",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "7490f347-69fe-474d-82e4-5cdb53707e93",
+        "official_sailing_id": "DA0100|2026-11-30",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "77d6ecda-bd07-474c-b6a7-b5d4c539d7c4",
+        "official_sailing_id": "DA0135|2027-02-11",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "79360e61-e1c9-4d48-8776-a5af6dcb1c63",
+        "official_sailing_id": "DA0185|2027-08-05",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "7cb162be-a3c0-417e-a81b-d6451a523103",
+        "official_sailing_id": "DA0155|2027-04-22",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "7d2e94c4-8bcc-45b2-9483-6315ae08c3ce",
+        "official_sailing_id": "DD1536|2026-12-14",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "7e0894b0-8e9b-40bc-9dcd-f46ec5633035",
+        "official_sailing_id": "DA0125|2027-01-07",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "7e76f1ff-c794-4510-b815-6e7db1e86571",
+        "official_sailing_id": "DA0104|2026-12-14",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "7f03b750-ee3d-464c-b4bd-50d7c71fe610",
+        "official_sailing_id": "DD1540|2027-01-03",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "82a46a4d-9aa1-4e07-b900-317933a38e5f",
+        "official_sailing_id": "DA0124|2027-01-04",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "83d4efb2-f96a-4c17-9e84-38d5c5ef7bf1",
+        "official_sailing_id": "DA0179|2027-07-15",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "888f6f75-d3d9-4733-88b1-3dee5501a0b2",
+        "official_sailing_id": "DA0178|2027-07-12",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "8b65d203-9979-424f-b8a2-a4ad323bc3b4",
+        "official_sailing_id": "DA0174|2027-06-28",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "8d8fca1f-265c-4624-8fd4-e80a9b387d43",
+        "official_sailing_id": "DA0169|2027-06-10",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "90d9f806-fd5a-443c-a342-6cd93573eaf8",
+        "official_sailing_id": "DA0149|2027-04-01",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "99af13d1-318b-4536-a64e-748d325aabce",
+        "official_sailing_id": "DA0108|2026-12-28",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "9a2be235-fd46-42c6-a0c4-7060e46c6bdd",
+        "official_sailing_id": "DA0136|2027-02-15",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "9d7e2e8f-f681-4d2c-b13e-95861550fed9",
+        "official_sailing_id": "DA0105|2026-12-17",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "9daa8d8a-5fd9-4278-9d22-07d9175dbbd7",
+        "official_sailing_id": "DA0191|2027-08-26",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "9ea89866-83ec-449e-876b-2e4aa87149e9",
+        "official_sailing_id": "DA0150|2027-04-05",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "9f88682e-ac8e-4162-9574-520e3dd40749",
+        "official_sailing_id": "DA0126|2027-01-11",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "a142c0f4-9043-42a5-9a9c-ab84bc8d1202",
+        "official_sailing_id": "DA0140|2027-03-01",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "a6452165-1320-47d0-b4f9-202e972ee760",
+        "official_sailing_id": "DA0190|2027-08-23",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "a907672d-a364-469a-87da-18a89c1c4e94",
+        "official_sailing_id": "DA0176|2027-07-05",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "ab0469eb-0e99-4754-9a78-d8eb97e5577d",
+        "official_sailing_id": "DA0151|2027-04-08",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "ab7c4345-e059-4ba8-b9ec-e0710cf2df43",
+        "official_sailing_id": "DA0132|2027-02-01",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "ae920696-54e2-4070-b0fb-53402d67d1e2",
+        "official_sailing_id": "DA0164|2027-05-24",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "afa594c2-5803-4ac9-94fd-3f3fb987e46f",
+        "official_sailing_id": "DD1537|2026-12-18",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "b321db0a-a25b-4499-9def-e66bc37c19d4",
+        "official_sailing_id": "DD1531|2026-11-27",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "b688b05d-0fd9-4032-9a13-a41e017d8e04",
+        "official_sailing_id": "DA0162|2027-05-17",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "ce369d8a-c0da-4dff-a3d0-89cac1937a6b",
+        "official_sailing_id": "DA0184|2027-08-02",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "ce3b00e2-2d78-4fdc-856c-127a3cf8c476",
+        "official_sailing_id": "DA0154|2027-04-19",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "d0657a04-cb69-4c4b-a863-fd19bef86709",
+        "official_sailing_id": "DD1533|2026-12-04",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "d27387cc-b4c2-4b1e-9b6a-6fb458db4a2f",
+        "official_sailing_id": "DA0175|2027-07-01",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "d3167576-28b3-4900-b4d7-60bd7cbb2536",
+        "official_sailing_id": "DA0127|2027-01-14",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "d6ed8b7d-ae00-43a8-aaca-2565c3e8c3a2",
+        "official_sailing_id": "DA0163|2027-05-20",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "da2a3438-d886-4833-9487-0a52087758ca",
+        "official_sailing_id": "DA0173|2027-06-24",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "da93f361-d017-48fe-88ee-2bb1c5054cb7",
+        "official_sailing_id": "DA0137|2027-02-18",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "dca0af1d-fe59-40be-aaf6-3480466dbb03",
+        "official_sailing_id": "DA0171|2027-06-17",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "de3a529c-95a7-497b-9cf0-73db51251906",
+        "official_sailing_id": "DA0145|2027-03-18",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "e068e035-4f3d-4c4e-86d0-af52501e70d0",
+        "official_sailing_id": "DD1535|2026-12-11",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "e49f2b73-199f-4dec-b849-de2b7c02cb8b",
+        "official_sailing_id": "DA0158|2027-05-03",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "e4abb7ba-dbde-4967-b0d6-562a92758afb",
+        "official_sailing_id": "DA0143|2027-03-11",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "e7308103-d386-43fe-b650-58f229f990e4",
+        "official_sailing_id": "DA0130|2027-01-25",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "e97e74c1-1bf6-40fd-a2a9-f2a899106563",
+        "official_sailing_id": "DA0181|2027-07-22",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "ea0a1ac2-49b0-4cf4-abd9-610061ab0b08",
+        "official_sailing_id": "DA0107|2026-12-24",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "f099403f-e841-4aa7-925a-8fd1db096741",
+        "official_sailing_id": "DA0103|2026-12-10",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "f917b5c2-52fc-49db-81b5-0dc7bf2305ab",
+        "official_sailing_id": "DD1542|2027-01-11",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "f936e658-8725-487d-908a-cbe562a57778",
+        "official_sailing_id": "DA0138|2027-02-22",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "f938690e-3840-405e-9e96-f21288114254",
+        "official_sailing_id": "DA0133|2027-02-04",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      },
+      {
+        "id": "fcb23240-af80-4b09-a2ea-6bbc05209718",
+        "official_sailing_id": "DA0159|2027-05-06",
+        "verified": true,
+        "mismatches": [],
+        "raw_extract_ok": true
+      }
+    ],
+    "passed": true
+  },
+  "count_reconciliation": {
+    "passed": true,
+    "disney_total_delta": 100,
+    "disney_active_delta": 100,
+    "global_total_delta": 100,
+    "actual_inserted": 100,
+    "sentinel_unchanged": true,
+    "sentinel_external_change_detected": false
+  },
+  "legacy_immutability": {
+    "passed": true,
+    "unchanged_count": 6,
+    "expected": 6,
+    "comparisons": [
+      {
+        "id": "88adb900-0aed-4a21-bdf6-fd5bc65b1348",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "5a2a9a59-ee1d-410d-bc47-4747757e08d0",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d5fb2cfe-cc46-4138-a21a-04fd5777dc64",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "342e0a91-899b-457c-b9d7-4acd8e9e56ae",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "ac4ff6fc-dae5-47fa-9708-62ea1ebd5542",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "04a3bf11-7c10-462e-83b6-63f2a5d5044d",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      }
+    ]
+  },
+  "existing_official_immutability": {
+    "passed": true,
+    "unchanged_count": 120,
+    "expected": 120,
+    "comparisons": [
+      {
+        "id": "621d41ae-40d4-4617-9f34-a9115e944853",
+        "official_sailing_id": "DA0076|2026-09-07",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "cbb25f11-ce7c-443e-94f3-e9caaed5e3fc",
+        "official_sailing_id": "DD1514|2026-09-07",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "a4c83b39-a248-4293-878a-39eeadf77883",
+        "official_sailing_id": "DD1515|2026-09-14",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "11203a97-743c-493d-825f-96a327de3aef",
+        "official_sailing_id": "DD1568|2027-04-23",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "36956278-62f0-46c8-94fd-caf5c94e2099",
+        "official_sailing_id": "DF0824|2026-09-06",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "30ff3aef-fa35-45d4-8f82-bb1924d08fb3",
+        "official_sailing_id": "DF0895|2027-07-11",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "e23991ae-5675-41c9-a80c-14e6a27f9afb",
+        "official_sailing_id": "DM1747|2026-09-17",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "aa8a89bd-8905-49a0-8189-4a9e3b5e05ae",
+        "official_sailing_id": "DM1792|2027-04-25",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d5e57a78-285f-4e63-be9f-be29aa2cf1eb",
+        "official_sailing_id": "DW2210|2026-10-27",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "f0b17d9c-567f-4181-a3cc-a9f00ab5f8f7",
+        "official_sailing_id": "WD0064|2026-09-07",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "3e659f17-38b3-4968-aebe-cbe9a322381a",
+        "official_sailing_id": "WT0091|2026-09-12",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "36931910-3b6e-46b0-b2b3-5fa2bf82dff8",
+        "official_sailing_id": "WT0092|2026-09-19",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "f7e6bc57-29d4-4833-8f3a-0e3b551737ab",
+        "official_sailing_id": "WT0093|2026-09-26",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "74e77dd4-6171-4cca-a955-391c92b061bd",
+        "official_sailing_id": "WT0094|2026-10-03",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "2e38207f-b5ca-467d-99ac-f4b1dbff514e",
+        "official_sailing_id": "WT0095|2026-10-10",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "6f9e5ea3-bf33-4310-aa09-19b9ce4954d6",
+        "official_sailing_id": "WT0096|2026-10-17",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "ef386942-3bad-4edf-a0f0-10776519ae1d",
+        "official_sailing_id": "WT0097|2026-10-24",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "76343ea4-73fb-4822-8fa1-8e4ffd82b144",
+        "official_sailing_id": "WT0098|2026-10-31",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "2d0ee75d-426c-4375-9463-dcbf227208e7",
+        "official_sailing_id": "WW0578|2027-05-29",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "9d122cc1-58bb-49af-8803-2888943ee665",
+        "official_sailing_id": "WW0579|2027-06-07",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "93b91d00-a883-40bb-84ad-a9837cf5fa30",
+        "official_sailing_id": "DW2200|2026-09-07",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "0c2c090f-a837-408c-98b3-c87b5853d523",
+        "official_sailing_id": "WW0509|2026-09-07",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "bae04e4b-7920-49bd-a9e3-e3eb46adef8d",
+        "official_sailing_id": "DA0077|2026-09-10",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "74b3ef51-77f9-442f-916f-28a5901be454",
+        "official_sailing_id": "DM1743|2026-09-10",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "e8875ae0-7d52-41e4-b4ee-740147252db8",
+        "official_sailing_id": "DF0825|2026-09-11",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "370cdf3f-c770-453b-9db5-a1ca7cb20fe4",
+        "official_sailing_id": "WD0065|2026-09-11",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "4e6d9607-01cd-4736-89a6-6195e774fe16",
+        "official_sailing_id": "WW0510|2026-09-11",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "3ba4f705-eef4-44db-95b4-8a15479f1a93",
+        "official_sailing_id": "DA0078|2026-09-14",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "8196d579-8c8c-490f-ba4d-eb2496ab2b35",
+        "official_sailing_id": "DW2201|2026-09-14",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d1faf684-b9b1-40ee-9744-506013654360",
+        "official_sailing_id": "WD0066|2026-09-14",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "0345fa28-9ecb-489c-bf6e-72ade25e6ee5",
+        "official_sailing_id": "WW0511|2026-09-14",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d647926f-2850-45c4-ac2c-6d11467ebec7",
+        "official_sailing_id": "DF0826|2026-09-16",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "7cdfd82a-b6af-4553-951b-21ad958c5e8e",
+        "official_sailing_id": "DA0079|2026-09-17",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "9ec4740a-7d66-47c0-af93-3384228a765c",
+        "official_sailing_id": "WD0067|2026-09-18",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "f4f6bf20-5051-4ba7-8f40-c58d6a659d2a",
+        "official_sailing_id": "WW0512|2026-09-18",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d5e99f8d-cf21-4c4f-a867-43f2400e1e06",
+        "official_sailing_id": "DF0827|2026-09-20",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "365cb3fc-580c-42d7-8284-bdcdbda17555",
+        "official_sailing_id": "DA0080|2026-09-21",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "e1aa44bd-20b5-497f-8dc4-9e277922c403",
+        "official_sailing_id": "DM1748|2026-09-21",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d13f4249-319a-4fed-a115-7fa2b53c4f2f",
+        "official_sailing_id": "DW2202|2026-09-21",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d19a2331-6fd6-48fd-8204-6388fed6bc88",
+        "official_sailing_id": "WD0068|2026-09-21",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "ca47cf4e-521b-4270-bbdb-c58a5ae90ae0",
+        "official_sailing_id": "WW0513|2026-09-21",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "5f28ed5a-6d43-4ec5-a938-1aa3ba3d1137",
+        "official_sailing_id": "DA0081|2026-09-24",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "fa162769-e12e-45c6-8ba9-319b76bc2577",
+        "official_sailing_id": "DF0828|2026-09-25",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "173507c9-9550-443a-b5a0-7fee2aa17591",
+        "official_sailing_id": "DM1749|2026-09-25",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "c33c9733-49c7-4145-a5a4-9954567b449f",
+        "official_sailing_id": "WW0514|2026-09-25",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "e4d3710e-afee-4bfa-b085-5ebea9f46bf2",
+        "official_sailing_id": "WD0069|2026-09-26",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "c8994b5c-2a4e-41a0-b47b-b620a28c01a8",
+        "official_sailing_id": "DD1516|2026-09-27",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "2a7a47c4-d3c6-435e-8635-4844aabadd34",
+        "official_sailing_id": "DA0082|2026-09-28",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "4d8d9b34-6d37-417f-81ab-0f83574c240e",
+        "official_sailing_id": "DM1750|2026-09-28",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "98b7f075-6e14-4bbd-a297-fb6f72e7e1b2",
+        "official_sailing_id": "DW2204|2026-09-28",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "a684fbfb-a97b-4b40-a6a8-f10b08c92dd5",
+        "official_sailing_id": "WW0515|2026-09-28",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "ae1fb084-3ac4-4756-96f1-00deba92a11c",
+        "official_sailing_id": "DF0829|2026-09-30",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "26704ca7-4c5d-4d9d-88ec-bf9947e85ed1",
+        "official_sailing_id": "DA0083|2026-10-01",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "06ccd368-111c-4eda-819e-efa31bb9e474",
+        "official_sailing_id": "DM1751|2026-10-01",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "dbc4f7d4-bd75-4762-b054-fb313dd41a15",
+        "official_sailing_id": "WD0070|2026-10-01",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "341ed304-8eb2-4c3f-9259-5aff11dd3f65",
+        "official_sailing_id": "DD1517|2026-10-02",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "183addf8-4af5-4ab7-aaf1-6ba8802f20fa",
+        "official_sailing_id": "WW0516|2026-10-02",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "5994d7b2-e702-4c25-b364-3b17604014ee",
+        "official_sailing_id": "DW2205|2026-10-03",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "a16ab35e-73a2-4dca-9eaa-a7ced8b33495",
+        "official_sailing_id": "DF0831|2026-10-04",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "075863ba-04c4-4de4-a3fc-65f4201e85d0",
+        "official_sailing_id": "DA0084|2026-10-05",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "f89476e3-0f97-4904-a554-977aec01e3ae",
+        "official_sailing_id": "DM1752|2026-10-05",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "b985fd36-aa72-4064-8ed6-324117f1ee87",
+        "official_sailing_id": "WD0071|2026-10-05",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "3079f6e7-30ed-47af-b246-445bd9c137e7",
+        "official_sailing_id": "WW0517|2026-10-05",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "84e5507e-44e6-41ab-9746-85c60a019e38",
+        "official_sailing_id": "DA0085|2026-10-08",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "32ff9b2f-0403-467e-a49e-f305d42304a2",
+        "official_sailing_id": "DD1518|2026-10-09",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "122461c7-adfa-4121-92a7-efd69b62f75d",
+        "official_sailing_id": "DF0832|2026-10-09",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "c46a72f3-9c91-4c83-b55b-6c6d77ad17d0",
+        "official_sailing_id": "DM1753|2026-10-09",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "9aed3f7c-2186-41cf-9677-d3150a173dcf",
+        "official_sailing_id": "WW0518|2026-10-09",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "977541cd-07e8-4648-a0f2-0427ba53bfe6",
+        "official_sailing_id": "DW2206|2026-10-10",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "a4df0be3-77f4-4c54-b856-5c881410ac4b",
+        "official_sailing_id": "WD0072|2026-10-10",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d06db3c7-6646-46b6-ae30-2d6b3a43da93",
+        "official_sailing_id": "DA0086|2026-10-12",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "a6c1c795-7379-4b07-ab72-605e61ed0ddc",
+        "official_sailing_id": "DD1519|2026-10-12",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "6451a355-ee78-4129-b1be-4674c74df099",
+        "official_sailing_id": "DM1754|2026-10-12",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "9d80f811-919f-4e69-ace4-6eae37095c51",
+        "official_sailing_id": "WW0519|2026-10-12",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "797a425b-1ff8-4365-b409-0662070a9e63",
+        "official_sailing_id": "DF0833|2026-10-14",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "67666f9e-5a95-4e84-aeac-0072d8b10b11",
+        "official_sailing_id": "DA0087|2026-10-15",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d27ae377-89ee-4882-8ec8-133e55141ec1",
+        "official_sailing_id": "DD1520|2026-10-16",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "1ce72580-014a-4322-9dac-fbfe3f448896",
+        "official_sailing_id": "DM1755|2026-10-16",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "cfcaa37c-115f-47f3-9365-fd8c3b185a96",
+        "official_sailing_id": "WW0520|2026-10-16",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "4a6b6b51-ccd0-4c25-88a5-5d047086e91d",
+        "official_sailing_id": "WD0073|2026-10-17",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "1b5fc7d4-a618-4e2d-92b2-a965d3018266",
+        "official_sailing_id": "DF0834|2026-10-18",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "88fe4a8f-24c4-4b4f-9ec8-2fa7fe552993",
+        "official_sailing_id": "DW2208|2026-10-18",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "6569bf38-4a76-410d-b1b3-41dd9455077b",
+        "official_sailing_id": "DA0088|2026-10-19",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "0609233f-3951-4478-81fc-c4033d483526",
+        "official_sailing_id": "DD1521|2026-10-19",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "a6632c94-90da-4822-a502-426d5a72be87",
+        "official_sailing_id": "DM1756|2026-10-19",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "435c9e74-dd77-423f-a288-b1b0a9808eb4",
+        "official_sailing_id": "WW0521|2026-10-19",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "1afc3961-957e-40a2-8c1e-adb5a98c531e",
+        "official_sailing_id": "DA0089|2026-10-22",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "6b78248d-bc4c-4e05-92c6-b688758c7c01",
+        "official_sailing_id": "DW2209|2026-10-22",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "9e0c2378-58a0-4a08-8251-08dbc919c1a7",
+        "official_sailing_id": "DD1522|2026-10-23",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "0bc33608-b7a0-4fa6-9d6d-0cebc9416a04",
+        "official_sailing_id": "DF0835|2026-10-23",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "e6b41bfc-9d6b-488d-90fc-48127c058ff9",
+        "official_sailing_id": "WW0522|2026-10-23",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "8e32f44f-04c9-42ae-b49e-9be1a3f9bbee",
+        "official_sailing_id": "DM1757|2026-10-24",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "b4d01add-caa8-4e06-b4f2-df85b41381ea",
+        "official_sailing_id": "WD0074|2026-10-24",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "e6c04092-0b84-435a-8e9f-84fc22bdce39",
+        "official_sailing_id": "DA0090|2026-10-26",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "96dd772c-f4b9-4d75-a291-dfd18584f826",
+        "official_sailing_id": "DD1523|2026-10-26",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "40e84449-a8b1-4f7c-a9e3-5567fc45d991",
+        "official_sailing_id": "WW0523|2026-10-26",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "62f6a035-8d77-44ef-833f-3002a37bbb86",
+        "official_sailing_id": "DF0836|2026-10-28",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d44cc78f-5e42-4f36-966d-1ca2766ab79c",
+        "official_sailing_id": "DA0091|2026-10-29",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "1b74fdff-5712-425d-875c-50f9142d4e2a",
+        "official_sailing_id": "WD0075|2026-10-29",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d9ce635f-514b-4310-8706-7481e8a80e0a",
+        "official_sailing_id": "DD1524|2026-10-30",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "a14be6a7-6fc9-4d6d-bcbe-242c0bfea097",
+        "official_sailing_id": "DM1758|2026-10-30",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "c2f0d395-3583-4738-bc7b-70e831172318",
+        "official_sailing_id": "WW0524|2026-10-30",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "74ba31cd-81e0-4458-a981-04aeb2a0819a",
+        "official_sailing_id": "DF0837|2026-11-01",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "d749c1ce-055f-480b-940e-083a7bba3c78",
+        "official_sailing_id": "DA0092|2026-11-02",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "ea0fa3e0-45b6-4aa5-97ba-c3c0737d5030",
+        "official_sailing_id": "DD1525|2026-11-02",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "be27cdf4-d453-491f-b384-e3da83c4b1a5",
+        "official_sailing_id": "DW2211|2026-11-02",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "36903d4c-13ff-4a60-8393-d5b333f8c096",
+        "official_sailing_id": "WD0076|2026-11-02",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "b4a9ac6b-6582-4c19-ba48-4aaf39d557ce",
+        "official_sailing_id": "WW0525|2026-11-02",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "f61bbc23-f8a4-46e2-a3c6-1352257e1556",
+        "official_sailing_id": "DA0093|2026-11-05",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "5f997ac6-ceea-4986-b894-a1333ec3de2f",
+        "official_sailing_id": "DW2212|2026-11-05",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "a9a88661-e53f-4c9e-9268-ab4b0daab0ca",
+        "official_sailing_id": "DD1526|2026-11-06",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "61b68b6b-84d4-4be1-960b-af9ac3b5b255",
+        "official_sailing_id": "DF0838|2026-11-06",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "3b4029a7-c4f8-4330-9c72-aca36dd92f7d",
+        "official_sailing_id": "DM1759|2026-11-06",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "131c121d-e50d-42ef-89d4-34638bcf19c3",
+        "official_sailing_id": "WW0526|2026-11-06",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "935d464f-ec1f-4203-962c-ace6fe99d2e2",
+        "official_sailing_id": "WD0077|2026-11-07",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "21d83d21-5e86-4217-99c2-ad7d4ccb3316",
+        "official_sailing_id": "WT0099|2026-11-07",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "855ef624-417e-4b0c-b1eb-43e19ec86bd5",
+        "official_sailing_id": "DA0094|2026-11-09",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "f947aba9-1626-429e-a75b-cceabc6670ad",
+        "official_sailing_id": "DD1527|2026-11-09",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "416508a1-102f-48f7-afdb-41690d3343e5",
+        "official_sailing_id": "DW2213|2026-11-09",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      },
+      {
+        "id": "48d2b09d-ec72-4451-8653-317671c94195",
+        "official_sailing_id": "WW0527|2026-11-09",
+        "unchanged": true,
+        "changed_fields": [],
+        "raw_extract_changed": false
+      }
+    ]
+  },
+  "cumulative_reconciliation": {
+    "passed": true,
+    "duplicate_skip": 220,
+    "update_exact_existing": 0,
+    "review_required": 0,
+    "blocked": 0,
+    "official_count": 220,
+    "details": [
+      {
+        "official_sailing_id": "DF0824|2026-09-06",
+        "action": "duplicate_skip",
+        "id": "36956278-62f0-46c8-94fd-caf5c94e2099",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2200|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "93b91d00-a883-40bb-84ad-a9837cf5fa30",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0509|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "0c2c090f-a837-408c-98b3-c87b5853d523",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0076|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "621d41ae-40d4-4617-9f34-a9115e944853",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1514|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "cbb25f11-ce7c-443e-94f3-e9caaed5e3fc",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0064|2026-09-07",
+        "action": "duplicate_skip",
+        "id": "f0b17d9c-567f-4181-a3cc-a9f00ab5f8f7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0077|2026-09-10",
+        "action": "duplicate_skip",
+        "id": "bae04e4b-7920-49bd-a9e3-e3eb46adef8d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1743|2026-09-10",
+        "action": "duplicate_skip",
+        "id": "74b3ef51-77f9-442f-916f-28a5901be454",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0065|2026-09-11",
+        "action": "duplicate_skip",
+        "id": "370cdf3f-c770-453b-9db5-a1ca7cb20fe4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0825|2026-09-11",
+        "action": "duplicate_skip",
+        "id": "e8875ae0-7d52-41e4-b4ee-740147252db8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0510|2026-09-11",
+        "action": "duplicate_skip",
+        "id": "4e6d9607-01cd-4736-89a6-6195e774fe16",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0091|2026-09-12",
+        "action": "duplicate_skip",
+        "id": "3e659f17-38b3-4968-aebe-cbe9a322381a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0078|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "3ba4f705-eef4-44db-95b4-8a15479f1a93",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1515|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "a4c83b39-a248-4293-878a-39eeadf77883",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2201|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "8196d579-8c8c-490f-ba4d-eb2496ab2b35",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0066|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "d1faf684-b9b1-40ee-9744-506013654360",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0511|2026-09-14",
+        "action": "duplicate_skip",
+        "id": "0345fa28-9ecb-489c-bf6e-72ade25e6ee5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0826|2026-09-16",
+        "action": "duplicate_skip",
+        "id": "d647926f-2850-45c4-ac2c-6d11467ebec7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1747|2026-09-17",
+        "action": "duplicate_skip",
+        "id": "e23991ae-5675-41c9-a80c-14e6a27f9afb",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0079|2026-09-17",
+        "action": "duplicate_skip",
+        "id": "7cdfd82a-b6af-4553-951b-21ad958c5e8e",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0067|2026-09-18",
+        "action": "duplicate_skip",
+        "id": "9ec4740a-7d66-47c0-af93-3384228a765c",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0512|2026-09-18",
+        "action": "duplicate_skip",
+        "id": "f4f6bf20-5051-4ba7-8f40-c58d6a659d2a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0092|2026-09-19",
+        "action": "duplicate_skip",
+        "id": "36931910-3b6e-46b0-b2b3-5fa2bf82dff8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0827|2026-09-20",
+        "action": "duplicate_skip",
+        "id": "d5e99f8d-cf21-4c4f-a867-43f2400e1e06",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1748|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "e1aa44bd-20b5-497f-8dc4-9e277922c403",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0080|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "365cb3fc-580c-42d7-8284-bdcdbda17555",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0068|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "d19a2331-6fd6-48fd-8204-6388fed6bc88",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0513|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "ca47cf4e-521b-4270-bbdb-c58a5ae90ae0",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2202|2026-09-21",
+        "action": "duplicate_skip",
+        "id": "d13f4249-319a-4fed-a115-7fa2b53c4f2f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0081|2026-09-24",
+        "action": "duplicate_skip",
+        "id": "5f28ed5a-6d43-4ec5-a938-1aa3ba3d1137",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0514|2026-09-25",
+        "action": "duplicate_skip",
+        "id": "c33c9733-49c7-4145-a5a4-9954567b449f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1749|2026-09-25",
+        "action": "duplicate_skip",
+        "id": "173507c9-9550-443a-b5a0-7fee2aa17591",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0828|2026-09-25",
+        "action": "duplicate_skip",
+        "id": "fa162769-e12e-45c6-8ba9-319b76bc2577",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0093|2026-09-26",
+        "action": "duplicate_skip",
+        "id": "f7e6bc57-29d4-4833-8f3a-0e3b551737ab",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0069|2026-09-26",
+        "action": "duplicate_skip",
+        "id": "e4d3710e-afee-4bfa-b085-5ebea9f46bf2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1516|2026-09-27",
+        "action": "duplicate_skip",
+        "id": "c8994b5c-2a4e-41a0-b47b-b620a28c01a8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2204|2026-09-28",
+        "action": "duplicate_skip",
+        "id": "98b7f075-6e14-4bbd-a297-fb6f72e7e1b2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0515|2026-09-28",
+        "action": "duplicate_skip",
+        "id": "a684fbfb-a97b-4b40-a6a8-f10b08c92dd5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1750|2026-09-28",
+        "action": "duplicate_skip",
+        "id": "4d8d9b34-6d37-417f-81ab-0f83574c240e",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0082|2026-09-28",
+        "action": "duplicate_skip",
+        "id": "2a7a47c4-d3c6-435e-8635-4844aabadd34",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0829|2026-09-30",
+        "action": "duplicate_skip",
+        "id": "ae1fb084-3ac4-4756-96f1-00deba92a11c",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0070|2026-10-01",
+        "action": "duplicate_skip",
+        "id": "dbc4f7d4-bd75-4762-b054-fb313dd41a15",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1751|2026-10-01",
+        "action": "duplicate_skip",
+        "id": "06ccd368-111c-4eda-819e-efa31bb9e474",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0083|2026-10-01",
+        "action": "duplicate_skip",
+        "id": "26704ca7-4c5d-4d9d-88ec-bf9947e85ed1",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1517|2026-10-02",
+        "action": "duplicate_skip",
+        "id": "341ed304-8eb2-4c3f-9259-5aff11dd3f65",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0516|2026-10-02",
+        "action": "duplicate_skip",
+        "id": "183addf8-4af5-4ab7-aaf1-6ba8802f20fa",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0094|2026-10-03",
+        "action": "duplicate_skip",
+        "id": "74e77dd4-6171-4cca-a955-391c92b061bd",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2205|2026-10-03",
+        "action": "duplicate_skip",
+        "id": "5994d7b2-e702-4c25-b364-3b17604014ee",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0831|2026-10-04",
+        "action": "duplicate_skip",
+        "id": "a16ab35e-73a2-4dca-9eaa-a7ced8b33495",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0084|2026-10-05",
+        "action": "duplicate_skip",
+        "id": "075863ba-04c4-4de4-a3fc-65f4201e85d0",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0517|2026-10-05",
+        "action": "duplicate_skip",
+        "id": "3079f6e7-30ed-47af-b246-445bd9c137e7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0071|2026-10-05",
+        "action": "duplicate_skip",
+        "id": "b985fd36-aa72-4064-8ed6-324117f1ee87",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1752|2026-10-05",
+        "action": "duplicate_skip",
+        "id": "f89476e3-0f97-4904-a554-977aec01e3ae",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0085|2026-10-08",
+        "action": "duplicate_skip",
+        "id": "84e5507e-44e6-41ab-9746-85c60a019e38",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1518|2026-10-09",
+        "action": "duplicate_skip",
+        "id": "32ff9b2f-0403-467e-a49e-f305d42304a2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1753|2026-10-09",
+        "action": "duplicate_skip",
+        "id": "c46a72f3-9c91-4c83-b55b-6c6d77ad17d0",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0832|2026-10-09",
+        "action": "duplicate_skip",
+        "id": "122461c7-adfa-4121-92a7-efd69b62f75d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0518|2026-10-09",
+        "action": "duplicate_skip",
+        "id": "9aed3f7c-2186-41cf-9677-d3150a173dcf",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2206|2026-10-10",
+        "action": "duplicate_skip",
+        "id": "977541cd-07e8-4648-a0f2-0427ba53bfe6",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0095|2026-10-10",
+        "action": "duplicate_skip",
+        "id": "2e38207f-b5ca-467d-99ac-f4b1dbff514e",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0072|2026-10-10",
+        "action": "duplicate_skip",
+        "id": "a4df0be3-77f4-4c54-b856-5c881410ac4b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1519|2026-10-12",
+        "action": "duplicate_skip",
+        "id": "a6c1c795-7379-4b07-ab72-605e61ed0ddc",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0086|2026-10-12",
+        "action": "duplicate_skip",
+        "id": "d06db3c7-6646-46b6-ae30-2d6b3a43da93",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1754|2026-10-12",
+        "action": "duplicate_skip",
+        "id": "6451a355-ee78-4129-b1be-4674c74df099",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0519|2026-10-12",
+        "action": "duplicate_skip",
+        "id": "9d80f811-919f-4e69-ace4-6eae37095c51",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0833|2026-10-14",
+        "action": "duplicate_skip",
+        "id": "797a425b-1ff8-4365-b409-0662070a9e63",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0087|2026-10-15",
+        "action": "duplicate_skip",
+        "id": "67666f9e-5a95-4e84-aeac-0072d8b10b11",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1520|2026-10-16",
+        "action": "duplicate_skip",
+        "id": "d27ae377-89ee-4882-8ec8-133e55141ec1",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1755|2026-10-16",
+        "action": "duplicate_skip",
+        "id": "1ce72580-014a-4322-9dac-fbfe3f448896",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0520|2026-10-16",
+        "action": "duplicate_skip",
+        "id": "cfcaa37c-115f-47f3-9365-fd8c3b185a96",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0096|2026-10-17",
+        "action": "duplicate_skip",
+        "id": "6f9e5ea3-bf33-4310-aa09-19b9ce4954d6",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0073|2026-10-17",
+        "action": "duplicate_skip",
+        "id": "4a6b6b51-ccd0-4c25-88a5-5d047086e91d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0834|2026-10-18",
+        "action": "duplicate_skip",
+        "id": "1b5fc7d4-a618-4e2d-92b2-a965d3018266",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2208|2026-10-18",
+        "action": "duplicate_skip",
+        "id": "88fe4a8f-24c4-4b4f-9ec8-2fa7fe552993",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0088|2026-10-19",
+        "action": "duplicate_skip",
+        "id": "6569bf38-4a76-410d-b1b3-41dd9455077b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1756|2026-10-19",
+        "action": "duplicate_skip",
+        "id": "a6632c94-90da-4822-a502-426d5a72be87",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1521|2026-10-19",
+        "action": "duplicate_skip",
+        "id": "0609233f-3951-4478-81fc-c4033d483526",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0521|2026-10-19",
+        "action": "duplicate_skip",
+        "id": "435c9e74-dd77-423f-a288-b1b0a9808eb4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2209|2026-10-22",
+        "action": "duplicate_skip",
+        "id": "6b78248d-bc4c-4e05-92c6-b688758c7c01",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0089|2026-10-22",
+        "action": "duplicate_skip",
+        "id": "1afc3961-957e-40a2-8c1e-adb5a98c531e",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0522|2026-10-23",
+        "action": "duplicate_skip",
+        "id": "e6b41bfc-9d6b-488d-90fc-48127c058ff9",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1522|2026-10-23",
+        "action": "duplicate_skip",
+        "id": "9e0c2378-58a0-4a08-8251-08dbc919c1a7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0835|2026-10-23",
+        "action": "duplicate_skip",
+        "id": "0bc33608-b7a0-4fa6-9d6d-0cebc9416a04",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0097|2026-10-24",
+        "action": "duplicate_skip",
+        "id": "ef386942-3bad-4edf-a0f0-10776519ae1d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0074|2026-10-24",
+        "action": "duplicate_skip",
+        "id": "b4d01add-caa8-4e06-b4f2-df85b41381ea",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1757|2026-10-24",
+        "action": "duplicate_skip",
+        "id": "8e32f44f-04c9-42ae-b49e-9be1a3f9bbee",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0523|2026-10-26",
+        "action": "duplicate_skip",
+        "id": "40e84449-a8b1-4f7c-a9e3-5567fc45d991",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0090|2026-10-26",
+        "action": "duplicate_skip",
+        "id": "e6c04092-0b84-435a-8e9f-84fc22bdce39",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1523|2026-10-26",
+        "action": "duplicate_skip",
+        "id": "96dd772c-f4b9-4d75-a291-dfd18584f826",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2210|2026-10-27",
+        "action": "duplicate_skip",
+        "id": "d5e57a78-285f-4e63-be9f-be29aa2cf1eb",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0836|2026-10-28",
+        "action": "duplicate_skip",
+        "id": "62f6a035-8d77-44ef-833f-3002a37bbb86",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0075|2026-10-29",
+        "action": "duplicate_skip",
+        "id": "1b74fdff-5712-425d-875c-50f9142d4e2a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0091|2026-10-29",
+        "action": "duplicate_skip",
+        "id": "d44cc78f-5e42-4f36-966d-1ca2766ab79c",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1758|2026-10-30",
+        "action": "duplicate_skip",
+        "id": "a14be6a7-6fc9-4d6d-bcbe-242c0bfea097",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1524|2026-10-30",
+        "action": "duplicate_skip",
+        "id": "d9ce635f-514b-4310-8706-7481e8a80e0a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0524|2026-10-30",
+        "action": "duplicate_skip",
+        "id": "c2f0d395-3583-4738-bc7b-70e831172318",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0098|2026-10-31",
+        "action": "duplicate_skip",
+        "id": "76343ea4-73fb-4822-8fa1-8e4ffd82b144",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0837|2026-11-01",
+        "action": "duplicate_skip",
+        "id": "74ba31cd-81e0-4458-a981-04aeb2a0819a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2211|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "be27cdf4-d453-491f-b384-e3da83c4b1a5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0092|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "d749c1ce-055f-480b-940e-083a7bba3c78",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0525|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "b4a9ac6b-6582-4c19-ba48-4aaf39d557ce",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1525|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "ea0fa3e0-45b6-4aa5-97ba-c3c0737d5030",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0076|2026-11-02",
+        "action": "duplicate_skip",
+        "id": "36903d4c-13ff-4a60-8393-d5b333f8c096",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0093|2026-11-05",
+        "action": "duplicate_skip",
+        "id": "f61bbc23-f8a4-46e2-a3c6-1352257e1556",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2212|2026-11-05",
+        "action": "duplicate_skip",
+        "id": "5f997ac6-ceea-4986-b894-a1333ec3de2f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1526|2026-11-06",
+        "action": "duplicate_skip",
+        "id": "a9a88661-e53f-4c9e-9268-ab4b0daab0ca",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0838|2026-11-06",
+        "action": "duplicate_skip",
+        "id": "61b68b6b-84d4-4be1-960b-af9ac3b5b255",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1759|2026-11-06",
+        "action": "duplicate_skip",
+        "id": "3b4029a7-c4f8-4330-9c72-aca36dd92f7d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0526|2026-11-06",
+        "action": "duplicate_skip",
+        "id": "131c121d-e50d-42ef-89d4-34638bcf19c3",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WD0077|2026-11-07",
+        "action": "duplicate_skip",
+        "id": "935d464f-ec1f-4203-962c-ace6fe99d2e2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WT0099|2026-11-07",
+        "action": "duplicate_skip",
+        "id": "21d83d21-5e86-4217-99c2-ad7d4ccb3316",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0094|2026-11-09",
+        "action": "duplicate_skip",
+        "id": "855ef624-417e-4b0c-b1eb-43e19ec86bd5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1527|2026-11-09",
+        "action": "duplicate_skip",
+        "id": "f947aba9-1626-429e-a75b-cceabc6670ad",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DW2213|2026-11-09",
+        "action": "duplicate_skip",
+        "id": "416508a1-102f-48f7-afdb-41690d3343e5",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0527|2026-11-09",
+        "action": "duplicate_skip",
+        "id": "48d2b09d-ec72-4451-8653-317671c94195",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0095|2026-11-12",
+        "action": "duplicate_skip",
+        "id": "214eec27-63f7-4138-8bc5-6a7628245a31",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1528|2026-11-13",
+        "action": "duplicate_skip",
+        "id": "0114fa53-ccce-4206-b078-ed797bd100a8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0096|2026-11-16",
+        "action": "duplicate_skip",
+        "id": "133034f1-68b2-4e73-9cf3-33d75436e583",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0097|2026-11-19",
+        "action": "duplicate_skip",
+        "id": "17e56a5d-33e1-4234-8151-2431eecf95bc",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1529|2026-11-20",
+        "action": "duplicate_skip",
+        "id": "239238b4-5f06-4fa3-b32e-b37097d86fb4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0098|2026-11-23",
+        "action": "duplicate_skip",
+        "id": "19b96b58-3fec-41d3-9b69-7a6b3e019ab8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0099|2026-11-26",
+        "action": "duplicate_skip",
+        "id": "51efe703-859b-489e-ba3a-1cc07c885981",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1531|2026-11-27",
+        "action": "duplicate_skip",
+        "id": "b321db0a-a25b-4499-9def-e66bc37c19d4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0100|2026-11-30",
+        "action": "duplicate_skip",
+        "id": "7490f347-69fe-474d-82e4-5cdb53707e93",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1532|2026-11-30",
+        "action": "duplicate_skip",
+        "id": "24c07024-f701-4f51-9cfe-9d6f4194377b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0101|2026-12-03",
+        "action": "duplicate_skip",
+        "id": "1229ae2d-7ffa-420e-b30b-acac9c078287",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1533|2026-12-04",
+        "action": "duplicate_skip",
+        "id": "d0657a04-cb69-4c4b-a863-fd19bef86709",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0102|2026-12-07",
+        "action": "duplicate_skip",
+        "id": "535172f0-a55f-4217-b4ec-426bf2a2def9",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1534|2026-12-07",
+        "action": "duplicate_skip",
+        "id": "59fcc40e-2faa-4230-afb2-c226574a35ba",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0103|2026-12-10",
+        "action": "duplicate_skip",
+        "id": "f099403f-e841-4aa7-925a-8fd1db096741",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1535|2026-12-11",
+        "action": "duplicate_skip",
+        "id": "e068e035-4f3d-4c4e-86d0-af52501e70d0",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0104|2026-12-14",
+        "action": "duplicate_skip",
+        "id": "7e76f1ff-c794-4510-b815-6e7db1e86571",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1536|2026-12-14",
+        "action": "duplicate_skip",
+        "id": "7d2e94c4-8bcc-45b2-9483-6315ae08c3ce",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0105|2026-12-17",
+        "action": "duplicate_skip",
+        "id": "9d7e2e8f-f681-4d2c-b13e-95861550fed9",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1537|2026-12-18",
+        "action": "duplicate_skip",
+        "id": "afa594c2-5803-4ac9-94fd-3f3fb987e46f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0106|2026-12-21",
+        "action": "duplicate_skip",
+        "id": "16a9be19-76e1-41eb-b588-a8b0b5a36ee7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1538|2026-12-21",
+        "action": "duplicate_skip",
+        "id": "5017927c-fe4f-4382-a476-2ae0d180ec7c",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0107|2026-12-24",
+        "action": "duplicate_skip",
+        "id": "ea0a1ac2-49b0-4cf4-abd9-610061ab0b08",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1539|2026-12-27",
+        "action": "duplicate_skip",
+        "id": "4dc1a483-e15b-44a0-beb6-41ed19dc5f99",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0108|2026-12-28",
+        "action": "duplicate_skip",
+        "id": "99af13d1-318b-4536-a64e-748d325aabce",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0109|2026-12-31",
+        "action": "duplicate_skip",
+        "id": "0f7397c9-57a3-49a6-92db-6caf977fd2e3",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1540|2027-01-03",
+        "action": "duplicate_skip",
+        "id": "7f03b750-ee3d-464c-b4bd-50d7c71fe610",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0124|2027-01-04",
+        "action": "duplicate_skip",
+        "id": "82a46a4d-9aa1-4e07-b900-317933a38e5f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0125|2027-01-07",
+        "action": "duplicate_skip",
+        "id": "7e0894b0-8e9b-40bc-9dcd-f46ec5633035",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1541|2027-01-08",
+        "action": "duplicate_skip",
+        "id": "09066ce5-cac8-4fe1-8cd9-dceb23a87fbe",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0126|2027-01-11",
+        "action": "duplicate_skip",
+        "id": "9f88682e-ac8e-4162-9574-520e3dd40749",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1542|2027-01-11",
+        "action": "duplicate_skip",
+        "id": "f917b5c2-52fc-49db-81b5-0dc7bf2305ab",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0127|2027-01-14",
+        "action": "duplicate_skip",
+        "id": "d3167576-28b3-4900-b4d7-60bd7cbb2536",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1543|2027-01-15",
+        "action": "duplicate_skip",
+        "id": "72bf4282-cca0-4997-b08b-1a63350a10c7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0128|2027-01-18",
+        "action": "duplicate_skip",
+        "id": "67f7d7cf-cec7-44ba-9e27-84292eac2cbf",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1544|2027-01-18",
+        "action": "duplicate_skip",
+        "id": "0457f05d-3f8f-4ff4-9023-d521c56cc075",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0129|2027-01-21",
+        "action": "duplicate_skip",
+        "id": "6fc012c0-714a-4a12-b673-7cbefbeac3ed",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0130|2027-01-25",
+        "action": "duplicate_skip",
+        "id": "e7308103-d386-43fe-b650-58f229f990e4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0131|2027-01-28",
+        "action": "duplicate_skip",
+        "id": "0b4d6054-e923-4a53-979a-4d52a7a4593d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0132|2027-02-01",
+        "action": "duplicate_skip",
+        "id": "ab7c4345-e059-4ba8-b9ec-e0710cf2df43",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0133|2027-02-04",
+        "action": "duplicate_skip",
+        "id": "f938690e-3840-405e-9e96-f21288114254",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0134|2027-02-08",
+        "action": "duplicate_skip",
+        "id": "447554cb-4d20-47dd-9f9e-a306ed24b582",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0135|2027-02-11",
+        "action": "duplicate_skip",
+        "id": "77d6ecda-bd07-474c-b6a7-b5d4c539d7c4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0136|2027-02-15",
+        "action": "duplicate_skip",
+        "id": "9a2be235-fd46-42c6-a0c4-7060e46c6bdd",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0137|2027-02-18",
+        "action": "duplicate_skip",
+        "id": "da93f361-d017-48fe-88ee-2bb1c5054cb7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0138|2027-02-22",
+        "action": "duplicate_skip",
+        "id": "f936e658-8725-487d-908a-cbe562a57778",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0139|2027-02-25",
+        "action": "duplicate_skip",
+        "id": "12f6d37a-441f-4635-840d-f2889f8ac05b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0140|2027-03-01",
+        "action": "duplicate_skip",
+        "id": "a142c0f4-9043-42a5-9a9c-ab84bc8d1202",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0141|2027-03-04",
+        "action": "duplicate_skip",
+        "id": "568c1324-2976-476e-aea3-5498b2b10d6a",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0142|2027-03-08",
+        "action": "duplicate_skip",
+        "id": "104fa6ab-863f-4bb6-8944-804cc8c2d6e1",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0143|2027-03-11",
+        "action": "duplicate_skip",
+        "id": "e4abb7ba-dbde-4967-b0d6-562a92758afb",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0144|2027-03-15",
+        "action": "duplicate_skip",
+        "id": "2f5e2918-796a-4b14-b69d-e145643b432f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0145|2027-03-18",
+        "action": "duplicate_skip",
+        "id": "de3a529c-95a7-497b-9cf0-73db51251906",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0146|2027-03-22",
+        "action": "duplicate_skip",
+        "id": "443c1a77-0c0e-4b95-a6ad-f0bf1bec1110",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0147|2027-03-25",
+        "action": "duplicate_skip",
+        "id": "5b8a1511-f984-4c67-97c4-e0252dc1b28b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0148|2027-03-29",
+        "action": "duplicate_skip",
+        "id": "3252d4bb-afb7-4420-ad9f-a9af49b113fe",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0149|2027-04-01",
+        "action": "duplicate_skip",
+        "id": "90d9f806-fd5a-443c-a342-6cd93573eaf8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0150|2027-04-05",
+        "action": "duplicate_skip",
+        "id": "9ea89866-83ec-449e-876b-2e4aa87149e9",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0151|2027-04-08",
+        "action": "duplicate_skip",
+        "id": "ab0469eb-0e99-4754-9a78-d8eb97e5577d",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0152|2027-04-12",
+        "action": "duplicate_skip",
+        "id": "0d772340-17c7-463c-ad57-a90adb7b8c41",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0153|2027-04-15",
+        "action": "duplicate_skip",
+        "id": "0f8194f7-4d18-4bce-acbe-fd793ff0974e",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0154|2027-04-19",
+        "action": "duplicate_skip",
+        "id": "ce3b00e2-2d78-4fdc-856c-127a3cf8c476",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0155|2027-04-22",
+        "action": "duplicate_skip",
+        "id": "7cb162be-a3c0-417e-a81b-d6451a523103",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DD1568|2027-04-23",
+        "action": "duplicate_skip",
+        "id": "11203a97-743c-493d-825f-96a327de3aef",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DM1792|2027-04-25",
+        "action": "duplicate_skip",
+        "id": "aa8a89bd-8905-49a0-8189-4a9e3b5e05ae",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0156|2027-04-26",
+        "action": "duplicate_skip",
+        "id": "103e7be2-9613-4702-bf45-d29049cd88d4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0157|2027-04-29",
+        "action": "duplicate_skip",
+        "id": "23ee7a61-b9b5-4eb4-82ac-10b2d914f504",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0158|2027-05-03",
+        "action": "duplicate_skip",
+        "id": "e49f2b73-199f-4dec-b849-de2b7c02cb8b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0159|2027-05-06",
+        "action": "duplicate_skip",
+        "id": "fcb23240-af80-4b09-a2ea-6bbc05209718",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0160|2027-05-10",
+        "action": "duplicate_skip",
+        "id": "6a580aa1-a704-41f7-b2e5-92024a0fb6fa",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0161|2027-05-13",
+        "action": "duplicate_skip",
+        "id": "0892984c-714b-4be0-95eb-a436aaea8183",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0162|2027-05-17",
+        "action": "duplicate_skip",
+        "id": "b688b05d-0fd9-4032-9a13-a41e017d8e04",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0163|2027-05-20",
+        "action": "duplicate_skip",
+        "id": "d6ed8b7d-ae00-43a8-aaca-2565c3e8c3a2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0164|2027-05-24",
+        "action": "duplicate_skip",
+        "id": "ae920696-54e2-4070-b0fb-53402d67d1e2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0165|2027-05-27",
+        "action": "duplicate_skip",
+        "id": "41f20497-6db7-4bfc-bc26-50b1a7dc50ea",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0578|2027-05-29",
+        "action": "duplicate_skip",
+        "id": "2d0ee75d-426c-4375-9463-dcbf227208e7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0166|2027-05-31",
+        "action": "duplicate_skip",
+        "id": "0b0f9584-336f-48ad-ab57-7a08822b143b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0167|2027-06-03",
+        "action": "duplicate_skip",
+        "id": "24f2e549-11c5-4cfe-a3d6-83e085e2db56",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "WW0579|2027-06-07",
+        "action": "duplicate_skip",
+        "id": "9d122cc1-58bb-49af-8803-2888943ee665",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0168|2027-06-07",
+        "action": "duplicate_skip",
+        "id": "45810a06-2e1e-4108-bba0-b6218a8f5f16",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0169|2027-06-10",
+        "action": "duplicate_skip",
+        "id": "8d8fca1f-265c-4624-8fd4-e80a9b387d43",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0170|2027-06-14",
+        "action": "duplicate_skip",
+        "id": "51d5fcac-5b7f-4528-9b37-ca85ab67c28b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0171|2027-06-17",
+        "action": "duplicate_skip",
+        "id": "dca0af1d-fe59-40be-aaf6-3480466dbb03",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0172|2027-06-21",
+        "action": "duplicate_skip",
+        "id": "5ae7caab-29b7-4fd3-8aca-2353650088d3",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0173|2027-06-24",
+        "action": "duplicate_skip",
+        "id": "da2a3438-d886-4833-9487-0a52087758ca",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0174|2027-06-28",
+        "action": "duplicate_skip",
+        "id": "8b65d203-9979-424f-b8a2-a4ad323bc3b4",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0175|2027-07-01",
+        "action": "duplicate_skip",
+        "id": "d27387cc-b4c2-4b1e-9b6a-6fb458db4a2f",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0176|2027-07-05",
+        "action": "duplicate_skip",
+        "id": "a907672d-a364-469a-87da-18a89c1c4e94",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0177|2027-07-08",
+        "action": "duplicate_skip",
+        "id": "1dc34518-e2d9-4003-a4c6-1f61509fbbe0",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DF0895|2027-07-11",
+        "action": "duplicate_skip",
+        "id": "30ff3aef-fa35-45d4-8f82-bb1924d08fb3",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0178|2027-07-12",
+        "action": "duplicate_skip",
+        "id": "888f6f75-d3d9-4733-88b1-3dee5501a0b2",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0179|2027-07-15",
+        "action": "duplicate_skip",
+        "id": "83d4efb2-f96a-4c17-9e84-38d5c5ef7bf1",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0180|2027-07-19",
+        "action": "duplicate_skip",
+        "id": "6ece4840-ac25-42d2-a669-a1e36381744c",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0181|2027-07-22",
+        "action": "duplicate_skip",
+        "id": "e97e74c1-1bf6-40fd-a2a9-f2a899106563",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0182|2027-07-26",
+        "action": "duplicate_skip",
+        "id": "067761fb-d87d-4097-aa5e-f956a2c45fc8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0183|2027-07-29",
+        "action": "duplicate_skip",
+        "id": "6383ffe0-ab15-4e73-9967-e1558dc498a8",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0184|2027-08-02",
+        "action": "duplicate_skip",
+        "id": "ce369d8a-c0da-4dff-a3d0-89cac1937a6b",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0185|2027-08-05",
+        "action": "duplicate_skip",
+        "id": "79360e61-e1c9-4d48-8776-a5af6dcb1c63",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0186|2027-08-09",
+        "action": "duplicate_skip",
+        "id": "60d88053-a4f4-4378-b4f8-703eee5be8fe",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0187|2027-08-12",
+        "action": "duplicate_skip",
+        "id": "04818c8c-d276-403f-bc59-3c2bdc14ea70",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0188|2027-08-16",
+        "action": "duplicate_skip",
+        "id": "157c8df7-9bb0-42fe-8a5c-46b2f87f9b84",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0189|2027-08-19",
+        "action": "duplicate_skip",
+        "id": "53888142-a336-406d-b540-e55f3f2fdfba",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0190|2027-08-23",
+        "action": "duplicate_skip",
+        "id": "a6452165-1320-47d0-b4f9-202e972ee760",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0191|2027-08-26",
+        "action": "duplicate_skip",
+        "id": "9daa8d8a-5fd9-4278-9d22-07d9175dbbd7",
+        "status": "active"
+      },
+      {
+        "official_sailing_id": "DA0192|2027-08-30",
+        "action": "duplicate_skip",
+        "id": "142fb136-6736-426e-85bc-7c33d76f1f75",
+        "status": "active"
+      }
+    ]
+  },
+  "counts_before": {
+    "disney_total": 126,
+    "disney_active": 120,
+    "disney_official": 120,
+    "global_total": 13783,
+    "global_active": 13379,
+    "sentinel_active": [
+      {
+        "slug": "princess-cruises",
+        "active": 1485
+      },
+      {
+        "slug": "celebrity-cruises",
+        "active": 1167
+      },
+      {
+        "slug": "holland-america-line",
+        "active": 823
+      },
+      {
+        "slug": "seabourn-cruise-line",
+        "active": 682
+      },
+      {
+        "slug": "norwegian-cruise-line",
+        "active": 2011
+      },
+      {
+        "slug": "royal-caribbean-international",
+        "active": 2979
+      },
+      {
+        "slug": "carnival-cruise-line",
+        "active": 2744
+      },
+      {
+        "slug": "silversea-cruises",
+        "active": 601
+      }
+    ]
+  },
+  "counts_after": {
+    "disney_total": 226,
+    "disney_active": 220,
+    "disney_official": 220,
+    "global_total": 13883,
+    "global_active": 13479,
+    "sentinel_active": [
+      {
+        "slug": "princess-cruises",
+        "active": 1485
+      },
+      {
+        "slug": "celebrity-cruises",
+        "active": 1167
+      },
+      {
+        "slug": "holland-america-line",
+        "active": 823
+      },
+      {
+        "slug": "seabourn-cruise-line",
+        "active": 682
+      },
+      {
+        "slug": "norwegian-cruise-line",
+        "active": 2011
+      },
+      {
+        "slug": "royal-caribbean-international",
+        "active": 2979
+      },
+      {
+        "slug": "carnival-cruise-line",
+        "active": 2744
+      },
+      {
+        "slug": "silversea-cruises",
+        "active": 601
+      }
+    ]
+  },
+  "official_count_after": 220,
+  "remaining_master_plan_inserts": 403,
+  "quality_gate": {
+    "data_passed": true,
+    "lock_lifecycle_passed": true,
+    "rollback_audit_passed": true,
+    "overall_passed": true,
+    "ready_for_next_batch": true
+  },
+  "run_id": "disney-phase4b-catchup-2-2026-08-15T12-32-38-964Z",
+  "started_at": "2026-08-15T12:32:38.964Z",
+  "ended_at": "2026-08-15T12:56:54.063Z",
+  "writes": true
+}
