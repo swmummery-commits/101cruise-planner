@@ -868,8 +868,9 @@
   <meta charset="utf-8">
   <title>Newsletter ${esc(String(issueNumber))} — cruise record</title>
   <style>
-    @page { margin: 12mm; }
+    @page { size: A4 portrait; margin: 12mm; }
     * { box-sizing: border-box; }
+    html, body { width: 210mm; }
     body {
       margin: 0;
       padding: 0;
@@ -878,6 +879,8 @@
       font-family: Helvetica, Arial, sans-serif;
       font-size: 10px;
       line-height: 1.3;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     h1 {
       margin: 0 0 2px;
@@ -927,7 +930,7 @@
       border-collapse: collapse;
     }
     th, td {
-      border: 0.5px solid #bbb;
+      border: 1px solid #c8c8c8;
       padding: 3px 6px;
       text-align: left;
       vertical-align: top;
@@ -944,14 +947,14 @@
       margin: 0 0 12px;
       padding: 8px 0;
       background: #fff;
-      border-bottom: 0.5px solid #bbb;
+      border-bottom: 1px solid #c8c8c8;
     }
     .screen-toolbar button {
       font: inherit;
       font-size: 11px;
       font-weight: 700;
       padding: 6px 10px;
-      border: 0.5px solid #bbb;
+      border: 1px solid #c8c8c8;
       background: #fff;
       color: #000;
       cursor: pointer;
@@ -961,6 +964,7 @@
     }
     .doc-body { padding: 4px 2px 16px; }
     @media print {
+      @page { size: A4 portrait; margin: 12mm; }
       .screen-toolbar { display: none !important; }
       .doc-body { padding: 0; }
     }
