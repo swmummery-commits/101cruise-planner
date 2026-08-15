@@ -20,7 +20,11 @@ const APPLY_CONFIRMATION_TOKEN = "DISNEY-FIRST-CONTROLLED-BATCH";
 const CATCHUP_CONFIRMATION_TOKEN = "DISNEY-CONTROLLED-CATCHUP";
 const PHASE2D_OBSOLETE_HASH = "29eec188212e19502c910f02987d00b2be8b6478a9d12f9ea237aa347b6a548d";
 const MANIFEST_MODE = "disney_phase3_first_controlled_freeze";
-const CATCHUP_MANIFEST_MODE = "disney_phase4a_catchup_freeze";
+const CATCHUP_MANIFEST_MODE = "disney_phase4b_catchup_freeze";
+const CATCHUP_MANIFEST_MODE_LEGACY = "disney_phase4a_catchup_freeze";
+const CATCHUP_MASTER_PLAN_MODE = "disney_phase4b_catchup_master_plan";
+const MIN_PHASE4B_CATCHUP_BATCH = 2;
+const VALID_CATCHUP_MANIFEST_MODES = new Set([CATCHUP_MANIFEST_MODE, CATCHUP_MANIFEST_MODE_LEGACY]);
 
 const DISNEY_LEGACY_ROW_IDS = Object.freeze([
   "88adb900-0aed-4a21-bdf6-fd5bc65b1348",
@@ -379,7 +383,10 @@ function evaluateCatchupPreWriteGate(params = {}) {
   if (!params.eligibilityArithmeticPass) failures.push("eligibility_arithmetic");
   if (!params.oneWayNativeParsePass) failures.push("one_way_native_parse");
   if (!params.legacyBaselineOk) failures.push("legacy_baseline_changed");
-  if (!params.phase3TwentyVerified) failures.push("phase3_twenty_not_verified");
+  if (params.cumulativeBaselineOk === false) failures.push("cumulative_baseline_failed");
+  if (params.cumulativeBaselineOk == null && !params.phase3TwentyVerified) failures.push("phase3_twenty_not_verified");
+  if (expected <= 0) failures.push("zero_row_batch");
+  if (expected > MAX_CATCHUP_DISNEY_BATCH) failures.push("batch_exceeds_max");
   if ((params.selectedCount || 0) !== expected) failures.push(`selected_count_not_${expected}`);
   if ((params.existingSelectedOfficialIds || 0) > 0) failures.push("selected_already_in_production");
   if ((params.externalKeyCollisions || 0) > 0) failures.push("external_key_collisions");
@@ -521,7 +528,7 @@ function validateCatchupFrozenManifest(report, options = {}) {
   const expectedCount = options.expectedCount ?? MAX_CATCHUP_DISNEY_BATCH;
   const failures = [];
   const entries = report?.entries || [];
-  if (report?.mode !== CATCHUP_MANIFEST_MODE) failures.push("invalid_manifest_mode");
+  if (!VALID_CATCHUP_MANIFEST_MODES.has(report?.mode)) failures.push("invalid_manifest_mode");
   if (entries.length !== expectedCount) failures.push(`expected_${expectedCount}_entries:${entries.length}`);
   if (Number(report?.batch_size) !== expectedCount) failures.push("batch_size_mismatch");
   if (report?.strategy !== "insert_only") failures.push("strategy_not_insert_only");
@@ -740,6 +747,389 @@ function verifyLegacyImmutability(beforeSnapshot, afterRows) {
   };
 }
 
+function catchupBatchFreezePath(batchNumber) {
+  return `reports/disney-phase4b-catchup-batch-${batchNumber}-freeze.json`;
+}
+
+function catchupBatchReportPath(batchNumber) {
+  return `reports/disney-phase4b-catchup-batch-${batchNumber}.json`;
+}
+
+function catchupBatchRunId(batchNumber, timestamp = new Date().toISOString()) {
+  return `disney-phase4b-catchup-${batchNumber}-${timestamp.replace(/[:.]/g, "-")}`;
+}
+
+function catchupBatchOperation(batchNumber) {
+  return `disney_phase4b_catchup_batch_${batchNumber}`;
+}
+
+function classifyDisneyProductionRows(existingRows = []) {
+  const legacySet = new Set(DISNEY_LEGACY_ROW_IDS);
+  const legacy = [];
+  const official = [];
+  const unexpected = [];
+  for (const row of existingRows) {
+    if (legacySet.has(row.id)) legacy.push(row);
+    else if (row.official_sailing_id) official.push(row);
+    else unexpected.push(row);
+  }
+  return { legacy, official, unexpected };
+}
+
+function collectExistingOfficialIds(existingRows = []) {
+  return classifyDisneyProductionRows(existingRows)
+    .official.map((r) => r.official_sailing_id)
+    .filter(Boolean);
+}
+
+function reconcileOfficialRowActions(officialRows = [], manifest = []) {
+  return (officialRows || []).map((row) => {
+    const action = manifest.find((m) => m.official_product_key === row.official_sailing_id)?.action || null;
+    return { official_sailing_id: row.official_sailing_id, action, id: row.id, status: row.status };
+  });
+}
+
+function verifyCumulativeProductionBaseline(existingRows = [], simulation = null) {
+  const { legacy, official, unexpected } = classifyDisneyProductionRows(existingRows);
+  const legacyOk =
+    legacy.length === DISNEY_LEGACY_ROW_IDS.length &&
+    DISNEY_LEGACY_ROW_IDS.every((id) => legacy.some((r) => r.id === id));
+
+  const seenOfficial = new Set();
+  const duplicate_official_ids = [];
+  for (const row of official) {
+    const key = String(row.official_sailing_id).toUpperCase();
+    if (seenOfficial.has(key)) duplicate_official_ids.push(row.official_sailing_id);
+    seenOfficial.add(key);
+  }
+
+  const nonActiveOfficial = official.filter((r) => r.status !== "active");
+  const manifest = simulation?.write_manifest?.manifest || [];
+  const officialActions = reconcileOfficialRowActions(official, manifest);
+  const duplicate_skip_count = officialActions.filter((a) => a.action === "duplicate_skip").length;
+  const update_proposals = officialActions.filter((a) => a.action === "update_exact_existing");
+  const review_required = officialActions.filter((a) => a.action === "review_required");
+
+  const ok =
+    legacyOk &&
+    unexpected.length === 0 &&
+    duplicate_official_ids.length === 0 &&
+    nonActiveOfficial.length === 0 &&
+    (!simulation || (duplicate_skip_count === official.length && update_proposals.length === 0 && review_required.length === 0));
+
+  return {
+    ok,
+    disney_total: existingRows.length,
+    legacy_count: legacy.length,
+    official_count: official.length,
+    active_official_count: official.filter((r) => r.status === "active").length,
+    duplicate_official_ids,
+    unexpected_rows: unexpected,
+    update_proposals,
+    review_required,
+    duplicate_skip_count,
+    official_actions: officialActions,
+    legacy_ok: legacyOk
+  };
+}
+
+function snapshotExistingOfficialRows(rows = []) {
+  return classifyDisneyProductionRows(rows)
+    .official.map((r) => ({
+      id: r.id,
+      status: r.status,
+      ship_id: r.ship_id,
+      destination_id: r.destination_id,
+      departure_date: r.departure_date,
+      return_date: r.return_date,
+      nights: r.nights,
+      departure_port: r.departure_port,
+      official_sailing_id: r.official_sailing_id,
+      identity_key: r.identity_key,
+      external_key: r.external_key,
+      official_url: r.official_url,
+      source_url: r.source_url,
+      raw_extract: r.raw_extract
+    }));
+}
+
+function verifyExistingOfficialImmutability(beforeSnapshot = [], afterRows = []) {
+  const afterById = new Map((afterRows || []).map((r) => [r.id, r]));
+  const comparisons = [];
+  let unchanged = 0;
+
+  for (const before of beforeSnapshot || []) {
+    const after = afterById.get(before.id);
+    if (!after) {
+      comparisons.push({ id: before.id, official_sailing_id: before.official_sailing_id, unchanged: false, reason: "row_missing" });
+      continue;
+    }
+    const fields = [
+      "status",
+      "ship_id",
+      "destination_id",
+      "departure_date",
+      "return_date",
+      "nights",
+      "departure_port",
+      "official_sailing_id",
+      "identity_key",
+      "external_key",
+      "official_url",
+      "source_url"
+    ];
+    const diffs = fields.filter((f) => String(before[f] ?? "") !== String(after[f] ?? ""));
+    const rawSame = JSON.stringify(before.raw_extract || {}) === JSON.stringify(after.raw_extract || {});
+    const ok = diffs.length === 0 && rawSame;
+    if (ok) unchanged += 1;
+    comparisons.push({
+      id: before.id,
+      official_sailing_id: before.official_sailing_id,
+      unchanged: ok,
+      changed_fields: diffs,
+      raw_extract_changed: !rawSame
+    });
+  }
+
+  const expected = (beforeSnapshot || []).length;
+  return {
+    passed: unchanged === expected,
+    unchanged_count: unchanged,
+    expected,
+    comparisons
+  };
+}
+
+function sortPlannedIdentityKeys(identities = []) {
+  return [...(identities || [])].sort((a, b) => {
+    const [da, ia] = String(a).split("|");
+    const [db, ib] = String(b).split("|");
+    return `${da}|${ia}`.localeCompare(`${db}|${ib}`);
+  });
+}
+
+function hashMasterPlanIdentities(identities = [], adapterVersion = ADAPTER_VERSION) {
+  const crypto = require("crypto");
+  const payload = sortPlannedIdentityKeys(identities).join("\n") + `\n${adapterVersion}`;
+  return crypto.createHash("sha256").update(payload).digest("hex");
+}
+
+function partitionMasterPlanIdentities(identities = [], maxSize = MAX_CATCHUP_DISNEY_BATCH, startBatchNumber = MIN_PHASE4B_CATCHUP_BATCH) {
+  const sorted = sortPlannedIdentityKeys(identities);
+  const batches = [];
+  for (let i = 0; i < sorted.length; i += maxSize) {
+    const slice = sorted.slice(i, i + maxSize);
+    batches.push({
+      batch_number: startBatchNumber + batches.length,
+      batch_size: slice.length,
+      identities: slice
+    });
+  }
+  return batches;
+}
+
+function selectRemainingInsertIdentities(simulation, existingOfficialIds = new Set()) {
+  return sortPlannedIdentityKeys(
+    (simulation?.write_manifest?.manifest || [])
+      .filter((m) => m.action === "insert_active")
+      .map((m) => m.official_product_key)
+      .filter((id) => !existingOfficialIds.has(id))
+  );
+}
+
+function validateCatchupMasterPlanGate(simulation, existingRows = []) {
+  const baseline = verifyCumulativeProductionBaseline(existingRows, simulation);
+  const failures = [];
+  const qg = simulation?.quality_gate || {};
+  if (!qg.source_complete) failures.push("source_incomplete");
+  if ((simulation?.snapshot?.expansion?.identity_collisions || 0) > 0) failures.push("identity_collisions");
+  if ((simulation?.endpoint_audit?.unresolved_conflicts || 0) > 0) failures.push("endpoint_unresolved_conflicts");
+  if (!simulation?.eligibility?.arithmetic?.reconciles) failures.push("eligibility_arithmetic");
+  if (qg.ship_resolution_pct != null && qg.ship_resolution_pct < 100) failures.push("ship_resolution");
+  if (qg.destination_resolution_pct != null && qg.destination_resolution_pct < 100) failures.push("destination_resolution");
+  if (qg.duration_validation_pct != null && qg.duration_validation_pct < 100) failures.push("duration_integrity");
+  if (!baseline.ok) failures.push("cumulative_baseline_failed");
+  const remaining = selectRemainingInsertIdentities(
+    simulation,
+    new Set(collectExistingOfficialIds(existingRows))
+  );
+  if (remaining.length === 0) failures.push("no_remaining_inserts");
+  return {
+    passed: failures.length === 0,
+    failures,
+    baseline,
+    remaining_insert_total: remaining.length,
+    remaining_identities: remaining
+  };
+}
+
+function buildCatchupMasterPlan({ simulation, cruiseLine, today, existingRows = [] }) {
+  const gate = validateCatchupMasterPlanGate(simulation, existingRows);
+  if (!gate.passed) {
+    const err = new Error(`master_plan_gate_failed:${gate.failures.join(",")}`);
+    err.code = "master_plan_gate_failed";
+    err.failures = gate.failures;
+    throw err;
+  }
+
+  const existingOfficialIds = collectExistingOfficialIds(existingRows);
+  const ordered_planned_identities = gate.remaining_identities;
+  const batch_plan = partitionMasterPlanIdentities(ordered_planned_identities);
+  const overall_planned_identity_hash = hashMasterPlanIdentities(ordered_planned_identities, ADAPTER_VERSION);
+
+  return {
+    mode: CATCHUP_MASTER_PLAN_MODE,
+    phase: "4B",
+    plan_created_at: new Date().toISOString(),
+    current_perth_date: today,
+    source_snapshot_total: simulation.source_unique_sailings,
+    source_complete: simulation.quality_gate?.source_complete === true,
+    production_eligible: simulation.eligibility?.waterfall?.production_eligible,
+    existing_official_count: existingOfficialIds.length,
+    legacy_count: classifyDisneyProductionRows(existingRows).legacy.length,
+    planned_insert_total: ordered_planned_identities.length,
+    overall_planned_identity_hash,
+    ordered_planned_identities,
+    batch_plan,
+    adapter_id: ADAPTER_ID,
+    adapter_version: ADAPTER_VERSION,
+    production_reconciliation: simulation.write_manifest?.summary || null
+  };
+}
+
+function loadCatchupMasterPlan(report) {
+  if (!report || report.mode !== CATCHUP_MASTER_PLAN_MODE) throw new Error("invalid_catchup_master_plan");
+  return report;
+}
+
+function buildCatchupFreezeFromMasterPlan({ masterPlan, batchNumber, simulation, cruiseLine, today }) {
+  const batch = (masterPlan.batch_plan || []).find((b) => b.batch_number === batchNumber);
+  if (!batch) throw new Error(`batch_not_in_master_plan:${batchNumber}`);
+  if (batchNumber < MIN_PHASE4B_CATCHUP_BATCH) throw new Error("phase4b_batch_number_must_be_gte_2");
+
+  const entries = batch.identities.map((id) => {
+    const row = (simulation.products || []).find((p) => p.official_sailing_id === id);
+    if (!row) throw new Error(`missing_source_row:${id}`);
+    return { ...buildFreezeEntry(row, cruiseLine), catchup_batch_number: batchNumber };
+  });
+
+  const frozen_candidate_hash = hashFrozenBatchCandidates(
+    entries.map((e) => ({
+      official_product_key: e.official_sailing_id,
+      ship_id: e.ship_id,
+      departure_date: e.departure_date,
+      return_date: e.return_date,
+      nights: e.nights,
+      departure_port: e.departure_port,
+      arrival_port: e.arrival_port,
+      destination_id: e.destination_id,
+      identity_key: e.identity_key,
+      external_key: e.external_key
+    })),
+    ADAPTER_VERSION
+  );
+
+  return {
+    mode: CATCHUP_MANIFEST_MODE,
+    batch_number: batchNumber,
+    batch_size: batch.batch_size,
+    strategy: "insert_only",
+    generated_at: new Date().toISOString(),
+    current_perth_date: today,
+    source_snapshot_total: simulation.source_unique_sailings,
+    source_complete: simulation.quality_gate?.source_complete === true,
+    master_plan_hash: masterPlan.overall_planned_identity_hash,
+    adapter_id: ADAPTER_ID,
+    adapter_version: ADAPTER_VERSION,
+    frozen_candidate_hash,
+    frozen_identities: batch.identities,
+    entries
+  };
+}
+
+function verifyMasterPlanIdentityMembership(masterPlan, frozenReport) {
+  const planned = new Set(masterPlan.ordered_planned_identities || []);
+  const failures = [];
+  for (const id of frozenReport.frozen_identities || []) {
+    if (!planned.has(id)) failures.push(`identity_not_in_master_plan:${id}`);
+  }
+  if ((frozenReport.frozen_identities || []).length !== (frozenReport.entries || []).length) {
+    failures.push("identity_entry_count_mismatch");
+  }
+  if (frozenReport.master_plan_hash !== masterPlan.overall_planned_identity_hash) {
+    failures.push("master_plan_hash_mismatch");
+  }
+  return { ok: failures.length === 0, failures };
+}
+
+function verifyCumulativeDuplicateSkipReconciliation(simulation, existingRows = []) {
+  const { official } = classifyDisneyProductionRows(existingRows);
+  const manifest = simulation?.write_manifest?.manifest || [];
+  const actions = reconcileOfficialRowActions(official, manifest);
+  const duplicate_skip = actions.filter((a) => a.action === "duplicate_skip").length;
+  const update_exact_existing = actions.filter((a) => a.action === "update_exact_existing").length;
+  const review_required = actions.filter((a) => a.action === "review_required").length;
+  const blocked = actions.filter((a) => a.action === "blocked_unresolved").length;
+  return {
+    passed: duplicate_skip === official.length && update_exact_existing === 0 && review_required === 0 && blocked === 0,
+    duplicate_skip,
+    update_exact_existing,
+    review_required,
+    blocked,
+    official_count: official.length,
+    details: actions
+  };
+}
+
+function auditOfficialDuplicateKeys(existingRows = []) {
+  const { official, legacy } = classifyDisneyProductionRows(existingRows);
+  const officialIds = new Map();
+  const externalKeys = new Map();
+  const identityKeys = new Map();
+  const duplicate_official_sailing_id = [];
+  const duplicate_external_key = [];
+  const duplicate_identity_key = [];
+
+  for (const row of official) {
+    const oid = String(row.official_sailing_id || "").toUpperCase();
+    if (officialIds.has(oid)) duplicate_official_sailing_id.push(row.official_sailing_id);
+    officialIds.set(oid, row.id);
+    if (row.external_key) {
+      if (externalKeys.has(row.external_key)) duplicate_external_key.push(row.external_key);
+      externalKeys.set(row.external_key, row.id);
+    }
+    if (row.identity_key) {
+      if (identityKeys.has(row.identity_key)) duplicate_identity_key.push(row.identity_key);
+      identityKeys.set(row.identity_key, row.id);
+    }
+  }
+
+  return {
+    passed:
+      duplicate_official_sailing_id.length === 0 &&
+      duplicate_external_key.length === 0 &&
+      duplicate_identity_key.length === 0,
+    duplicate_official_sailing_id_count: duplicate_official_sailing_id.length,
+    duplicate_external_key_count: duplicate_external_key.length,
+    duplicate_identity_key_count: duplicate_identity_key.length,
+    legacy_count: legacy.length
+  };
+}
+
+function computeNewSourceInsertsSinceMasterPlan(simulation, masterPlan) {
+  const planned = new Set(masterPlan.ordered_planned_identities || []);
+  return sortPlannedIdentityKeys(
+    (simulation?.write_manifest?.manifest || [])
+      .filter((m) => m.action === "insert_active")
+      .map((m) => m.official_product_key)
+      .filter((id) => !planned.has(id))
+  );
+}
+
+function remainingMasterPlanIdentities(masterPlan, existingOfficialIds = new Set()) {
+  return (masterPlan.ordered_planned_identities || []).filter((id) => !existingOfficialIds.has(id));
+}
+
 module.exports = {
   DISNEY_LINE_ID,
   DISNEY_LINE_SLUG,
@@ -750,6 +1140,10 @@ module.exports = {
   PHASE2D_OBSOLETE_HASH,
   MANIFEST_MODE,
   CATCHUP_MANIFEST_MODE,
+  CATCHUP_MANIFEST_MODE_LEGACY,
+  CATCHUP_MASTER_PLAN_MODE,
+  MIN_PHASE4B_CATCHUP_BATCH,
+  VALID_CATCHUP_MANIFEST_MODES,
   DISNEY_LEGACY_ROW_IDS,
   SENTINEL_LINE_SLUGS,
   rejectObsoletePhase2dHash,
@@ -776,5 +1170,28 @@ module.exports = {
   buildPartialWriteRecoveryReport,
   analysePhase3LockAnomaly,
   findPhase3RollbackManifest,
-  recoverPhase3RollbackManifestIfMissing
+  recoverPhase3RollbackManifestIfMissing,
+  catchupBatchFreezePath,
+  catchupBatchReportPath,
+  catchupBatchRunId,
+  catchupBatchOperation,
+  classifyDisneyProductionRows,
+  collectExistingOfficialIds,
+  verifyCumulativeProductionBaseline,
+  snapshotExistingOfficialRows,
+  verifyExistingOfficialImmutability,
+  sortPlannedIdentityKeys,
+  hashMasterPlanIdentities,
+  partitionMasterPlanIdentities,
+  selectRemainingInsertIdentities,
+  validateCatchupMasterPlanGate,
+  buildCatchupMasterPlan,
+  loadCatchupMasterPlan,
+  buildCatchupFreezeFromMasterPlan,
+  verifyMasterPlanIdentityMembership,
+  verifyCumulativeDuplicateSkipReconciliation,
+  auditOfficialDuplicateKeys,
+  computeNewSourceInsertsSinceMasterPlan,
+  remainingMasterPlanIdentities,
+  reconcileOfficialRowActions
 };

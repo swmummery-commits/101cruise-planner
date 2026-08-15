@@ -30,13 +30,15 @@ function buildItineraryPorts(row) {
     .filter(Boolean);
 }
 
-function enhanceDisneyCandidate(normalised, cruiseLine) {
+function enhanceDisneyCandidate(normalised, cruiseLine, writeContext = {}) {
   const candidate = buildDisneyUpsertCandidate(normalised, cruiseLine);
   if (!candidate) return null;
 
   const depMeta = normalised.candidate?.departure_port_meta || {};
   const arrMeta = normalised.candidate?.arrival_port_meta || {};
   const itinerary_ports = buildItineraryPorts(normalised);
+  const mode = writeContext.mode || "first_controlled_batch";
+  const isCatchup = mode === "catchup";
 
   return {
     ...candidate,
@@ -46,8 +48,10 @@ function enhanceDisneyCandidate(normalised, cruiseLine) {
       ...(candidate.raw_extract || {}),
       disney_adapter_id: ADAPTER_ID,
       disney_adapter_version: ADAPTER_VERSION,
-      disney_controlled_first_batch: true,
       disney_batch_write: true,
+      disney_controlled_first_batch: !isCatchup,
+      disney_controlled_catchup: isCatchup,
+      disney_catchup_batch_number: isCatchup ? writeContext.batchNumber ?? null : null,
       embark_method: depMeta.embark_method || depMeta.evidence_method || null,
       arrival_method: arrMeta.method || null,
       embark_evidence_tier: depMeta.evidence_tier || null,
@@ -111,8 +115,8 @@ function buildManifestEntry(normalised, cruiseLine, existing, frozenEntry) {
   };
 }
 
-function candidateMatchesFrozen(normalised, cruiseLine, frozenEntry) {
-  const candidate = enhanceDisneyCandidate(normalised, cruiseLine);
+function candidateMatchesFrozen(normalised, cruiseLine, frozenEntry, writeContext = {}) {
+  const candidate = enhanceDisneyCandidate(normalised, cruiseLine, writeContext);
   if (!candidate) return { ok: false, reason: "candidate_build_failed" };
 
   const checks = [
@@ -165,7 +169,8 @@ async function applyDisneyBatchWritesBody({
   runId,
   supabase,
   performWrites = true,
-  maxWrites = MAX_CONTROLLED_DISNEY_BATCH
+  maxWrites = MAX_CONTROLLED_DISNEY_BATCH,
+  writeContext = {}
 }) {
   const stats = {
     attempted: 0,
@@ -203,7 +208,7 @@ async function applyDisneyBatchWritesBody({
       continue;
     }
 
-    const frozenMatch = candidateMatchesFrozen(normalised, cruiseLine, frozenEntry);
+    const frozenMatch = candidateMatchesFrozen(normalised, cruiseLine, frozenEntry, writeContext);
     if (!frozenMatch.ok) {
       stats.invalid_skips += 1;
       stats.write_details.push({
@@ -214,7 +219,7 @@ async function applyDisneyBatchWritesBody({
       continue;
     }
 
-    const candidate = enhanceDisneyCandidate(normalised, cruiseLine);
+    const candidate = enhanceDisneyCandidate(normalised, cruiseLine, writeContext);
     if (!candidate) {
       stats.invalid_skips += 1;
       continue;
@@ -338,7 +343,7 @@ async function applyDisneyBatchWrites(params = {}) {
   }, () => applyDisneyBatchWritesBody(params));
 }
 
-function verifyInsertedRecords(insertedRows, frozenEntriesById, cruiseLineId) {
+function verifyInsertedRecords(insertedRows, frozenEntriesById, cruiseLineId, options = {}) {
   const results = [];
   let verified = 0;
   let failed = 0;
@@ -366,15 +371,23 @@ function verifyInsertedRecords(insertedRows, frozenEntriesById, cruiseLineId) {
         raw.disney_adapter_id &&
         raw.disney_adapter_version
     );
+    const metadataIssues = [];
+    if (options.expectCatchupMetadata) {
+      if (!raw.disney_controlled_catchup) metadataIssues.push("disney_controlled_catchup");
+      if (raw.disney_controlled_first_batch === true) metadataIssues.push("disney_controlled_first_batch");
+      if (options.batchNumber != null && raw.disney_catchup_batch_number !== options.batchNumber) {
+        metadataIssues.push("disney_catchup_batch_number");
+      }
+    }
 
-    const ok = mismatches.length === 0 && rawOk;
+    const ok = mismatches.length === 0 && metadataIssues.length === 0 && rawOk;
     if (ok) verified += 1;
     else failed += 1;
     results.push({
       id: row.id,
       official_sailing_id: row.official_sailing_id,
       verified: ok,
-      mismatches: mismatches.map(([f]) => f),
+      mismatches: [...mismatches.map(([f]) => f), ...metadataIssues],
       raw_extract_ok: rawOk
     });
   }
