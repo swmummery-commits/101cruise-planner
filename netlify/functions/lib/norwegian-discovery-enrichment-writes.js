@@ -16,6 +16,10 @@ const { resolveRawPortText } = require("./discovery-departure-port");
 const poc = require("./norwegian-port-of-call-mappings");
 const { resolveNorwegianDestinationAssignment } = require("./norwegian-destination-mapping");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
+const {
+  ensureGlobalCruiseWriteLockForMutation,
+  assertGlobalCruiseWriteLockHeld
+} = require("./cruise-discovery-global-write-lock");
 
 const NCL_LINE_ID = "c5f5361f-ebe5-4ff4-babe-7eb07f609bae";
 const NCL_LINE_SLUG = "norwegian-cruise-line";
@@ -640,7 +644,7 @@ async function buildDryRunManifest(manifestEntries, dbRowsById, options = {}) {
   };
 }
 
-async function applyEnrichmentManifest({ dryRunManifest, supabase, runId }) {
+async function applyEnrichmentManifestBody({ dryRunManifest, supabase, runId }) {
   const stats = {
     attempted: 0,
     updated: 0,
@@ -684,6 +688,7 @@ async function applyEnrichmentManifest({ dryRunManifest, supabase, runId }) {
 
     const payload = { ...entry.proposal.patch, last_changed_at: new Date().toISOString() };
     try {
+      await assertGlobalCruiseWriteLockHeld({ requireGlobalWriteLock: true });
       const updated = await supabase(`discovered_cruises?id=eq.${encodeURIComponent(entry.discovered_cruise_id)}`, {
         method: "PATCH",
         headers: { Prefer: "return=representation" },
@@ -713,6 +718,15 @@ async function applyEnrichmentManifest({ dryRunManifest, supabase, runId }) {
   }
 
   return { run_id: runId, stats };
+}
+
+async function applyEnrichmentManifest(params) {
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: NCL_LINE_SLUG,
+    operation: "norwegian_enrichment_apply"
+  }, () => applyEnrichmentManifestBody(params));
 }
 
 async function rollbackEnrichmentSnapshots(supabase, snapshots = []) {
