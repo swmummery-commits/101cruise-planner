@@ -29,6 +29,12 @@ const {
 } = require("./discovery-non-sailing-filter");
 const { classificationDestinations } = require("./destination-classification");
 const {
+  isAzamaraCruiseLine,
+  azamaraPreBuildGate,
+  mergeAzamaraStructuredVoyage,
+  validateAzamaraOceanDuration
+} = require("./azamara-discovery-source");
+const {
   evaluateIngestionAutomation,
   ACTION: AUTOMATION_ACTION
 } = require("./discovery-auto-resolver");
@@ -1044,8 +1050,21 @@ function buildCandidateFromSource({
   preferredDestination,
   shipAliases = [],
   destinationAliases = [],
-  structuredVoyage = null
+  structuredVoyage = null,
+  html = null
 }) {
+  if (isAzamaraCruiseLine(cruiseLine)) {
+    structuredVoyage = mergeAzamaraStructuredVoyage(structuredVoyage, html, url);
+    const azamaraSkip = azamaraPreBuildGate({
+      cruiseLine,
+      url,
+      title,
+      description,
+      structuredVoyage
+    });
+    if (azamaraSkip) return azamaraSkip;
+  }
+
   const raw = extractRawSignals({ title, description, url, excerpt, cruiseLine, structuredVoyage });
   if (!raw) return null;
 
@@ -1166,6 +1185,9 @@ function buildCandidateFromSource({
   }
 
   const reasons = validateCruise(withDeparture);
+  if (isAzamaraCruiseLine(cruiseLine)) {
+    reasons.push(...validateAzamaraOceanDuration(withDeparture));
+  }
   const confidence =
     reasons.length === 0 ? "high" : reasons.length <= 2 && draft.ship_id ? "medium" : "low";
   const status = lifecycleFromValidation(reasons);
@@ -1686,6 +1708,13 @@ async function discoverForCruiseLine({
           if (fetched.html) {
             const structuredHint = structuredExcerptHint(fetched.html);
             if (structuredHint) excerpt = `${structuredHint}\n${excerpt}`.slice(0, 5000);
+            if (isAzamaraCruiseLine(cruiseLine)) {
+              hit.structured_voyage = mergeAzamaraStructuredVoyage(
+                hit.structured_voyage,
+                fetched.html,
+                hit.url
+              );
+            }
           }
           stats.pages_fetched += 1;
           stats.sailing_urls_fetched += 1;
@@ -1715,7 +1744,8 @@ async function discoverForCruiseLine({
         preferredDestination: dest,
         shipAliases,
         destinationAliases,
-        structuredVoyage: hit.structured_voyage || null
+        structuredVoyage: hit.structured_voyage || null,
+        html: null
       });
 
       if (!built) continue;
