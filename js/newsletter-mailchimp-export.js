@@ -582,27 +582,19 @@
 
   /* ─── Shared / template-specific info bars ─────────────────────────────── */
 
-  function inclusionIconSvg(key) {
-    const common =
-      'xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#245C4E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
-    switch (key) {
-      case "alcohol_package":
-        return `<svg ${common}><path d="M8 3h8l-1.2 7.2a4.8 4.8 0 1 1-5.6 0L8 3z"/><path d="M12 15v6"/><path d="M9.5 21h5"/></svg>`;
-      case "wifi":
-        return `<svg ${common}><path d="M4.5 10.5a10 10 0 0 1 15 0"/><path d="M7.5 14a6 6 0 0 1 9 0"/><path d="M10.2 17.2a2.4 2.4 0 0 1 3.6 0"/><circle cx="12" cy="20" r="1.1" fill="#245C4E" stroke="none"/></svg>`;
-      case "gratuities":
-        return `<svg ${common}><path d="M4 14h16"/><path d="M5 14a7 7 0 0 1 14 0"/><path d="M12 7V5"/><path d="M8 18h8"/></svg>`;
-      case "all_tours":
-        return `<svg ${common}><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.4"/></svg>`;
-      case "all_dining":
-        return `<svg ${common}><path d="M5 3v7a2 2 0 0 0 2 2v9"/><path d="M5 3v4"/><path d="M8 3v4"/><path d="M11 3v4"/><path d="M17 3c2 0 3 1.5 3 3.5S19 10 17 10v11"/><path d="M17 3v7"/></svg>`;
-      case "laundry":
-        return `<svg ${common}><path d="M8 4h8l2 3.5H6L8 4z"/><path d="M7 7.5v10.5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V7.5"/><circle cx="12" cy="14" r="2.5"/></svg>`;
-      case "onboard_credit":
-        return `<svg ${common}><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/><path d="M7 15h3"/></svg>`;
-      default:
-        return `<svg ${common}><circle cx="12" cy="12" r="8"/><path d="M9 12l2 2 4-4"/></svg>`;
-    }
+  const INCLUSION_ICON_FILES = {
+    alcohol_package: "alcohol_package.png",
+    wifi: "wifi.png",
+    gratuities: "gratuities.png",
+    all_tours: "all_tours.png",
+    all_dining: "all_dining.png",
+    laundry: "laundry.png",
+    onboard_credit: "onboard_credit.png"
+  };
+
+  function inclusionIconUrl(key) {
+    const file = INCLUSION_ICON_FILES[key] || "default.png";
+    return `${SITE_ORIGIN}/images/newsletter-includes/${file}`;
   }
 
   function renderInclusionIconCell(item) {
@@ -611,10 +603,19 @@
       typeof item === "string"
         ? String(item).toUpperCase()
         : item.shortLabel || String(item.label || "").toUpperCase();
+    const src = inclusionIconUrl(key);
     return `
-      <td class="cr101-includes-item" valign="top" align="center" style="padding:4px 6px;vertical-align:top;text-align:center;">
-        <div style="line-height:0;margin:0 auto 6px;">${inclusionIconSvg(key)}</div>
+      <td class="cr101-includes-item" valign="top" align="center" style="padding:4px 8px;vertical-align:top;text-align:center;">
+        <img src="${escapeHtml(src)}" alt="" width="22" height="22" border="0" style="display:block;width:22px;height:22px;margin:0 auto 6px;border:0;">
         <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.35px;line-height:1.25;text-transform:uppercase;color:#245C4E;max-width:88px;margin:0 auto;">${escapeHtml(label)}</div>
+      </td>
+    `;
+  }
+
+  function renderInclusionDivider() {
+    return `
+      <td class="cr101-includes-divider" width="8" valign="middle" align="center" style="width:8px;padding:4px 0;vertical-align:middle;background-color:#ffffff;">
+        <div style="width:1px;height:38px;background-color:#8DD9BF;margin:0 auto;font-size:0;line-height:0;">&nbsp;</div>
       </td>
     `;
   }
@@ -622,7 +623,12 @@
   function renderInclusions(items, { green = false } = {}) {
     if (!items?.length) return "";
     const padTop = green ? 12 : 28;
-    const cells = items.map((item) => renderInclusionIconCell(item)).join("");
+    const cells = items
+      .map((item, index) => {
+        const cell = renderInclusionIconCell(item);
+        return index < items.length - 1 ? `${cell}${renderInclusionDivider()}` : cell;
+      })
+      .join("");
     return `
       <tr>
         <td align="center" style="padding:${padTop}px 0 0;">

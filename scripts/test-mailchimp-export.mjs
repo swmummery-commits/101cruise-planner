@@ -289,7 +289,12 @@ const threeRoomRows = [
 ];
 const threeRoomGreen = Export.generateFromModel(
   baseModel("general", {
-    pricingModules: Shared.buildPricingModules(threeRoomRows, 7, { outputMode: "general" })
+    pricingModules: Shared.buildPricingModules(threeRoomRows, 7, { outputMode: "general" }),
+    inclusionItems: [
+      { key: "alcohol_package", shortLabel: "ALCOHOL PACKAGE", label: "Alcohol Package" },
+      { key: "wifi", shortLabel: "ALL WIFI", label: "Wi-Fi" },
+      { key: "gratuities", shortLabel: "GRATUITIES", label: "Gratuities" }
+    ]
   }),
   genOpts("general", "green-price-cards", threeRoomRows)
 );
@@ -367,7 +372,15 @@ assert(/background-color:#D9F2E8/i.test(threeRoomGreen.html), "Other Info soft m
 assert(/INCLUDES:/i.test(threeRoomGreen.html), "Includes title uses colon");
 assert(/color:#245C4E/i.test(threeRoomGreen.html), "Includes/Other Info use dark brand green text");
 assert(/cr101-includes-items/i.test(threeRoomGreen.html), "Includes uses icon item row");
-assert(/<svg[\s\S]*?stroke="#245C4E"/i.test(threeRoomGreen.html), "Includes icons are inline SVG");
+assert(
+  /images\/newsletter-includes\/wifi\.png/i.test(threeRoomGreen.html),
+  "Includes icons are hosted PNGs"
+);
+assert(/cr101-includes-divider/i.test(threeRoomGreen.html), "thin green divider between Includes items");
+assert(
+  /cr101-includes-divider[\s\S]*?background-color:#8DD9BF/i.test(threeRoomGreen.html),
+  "Includes divider uses brand green"
+);
 assert(!/ · /i.test(threeRoomGreen.html.match(/cr101-gpc-includes[\s\S]*?<\/table>/i)?.[0] || ""), "Includes is not a middot text line");
 
 /* Templates do not mutate each other */

@@ -13,8 +13,9 @@ Shared by newsletter preview and public cruise pages (`newsletter-preview.css`).
 - White box with **1px `#8DD9BF` border**, 12px radius
 - Title **`INCLUDES:`** centred above items (`flex-direction: column`)
 - Each item is a **column**: icon above label (not side-by-side)
-- No vertical dividers between items
+- Thin green vertical divider (**1px `#8DD9BF`**) between items
 - Icons + labels use dark green **`#245C4E`**
+- Mailchimp HTML uses hosted PNG icons (`/images/newsletter-includes/`), not inline SVG
 - Items may wrap; do not truncate labels
 
 ## Between cruises
@@ -34,7 +35,7 @@ preview and Mailchimp.
 
 ```css
 .nl-includes-bar { border-color: #b7d8cc; }
-.nl-includes-item { flex-direction: row; border-right: 1px solid #d5e3de; }
+.nl-includes-item { flex-direction: row; }
 .nl-other-info-bar { background: #f7f8f8; }
 ```
 
@@ -43,5 +44,6 @@ preview and Mailchimp.
 ```css
 .nl-includes-bar { border: 1px solid #8DD9BF; background: #fff; flex-direction: column; }
 .nl-includes-item { flex-direction: column; align-items: center; color: #245C4E; }
+.nl-includes-item:not(:last-child) { border-right: 1px solid #8DD9BF; }
 .nl-other-info-bar { background: #d9f2e8; border-radius: 999px; }
 ```
