@@ -17,6 +17,7 @@
   const MAX_ROOMS = 4;
   /** Brand green — website primary (#8DD9BF). */
   const BRAND_GREEN = "#8DD9BF";
+  const PAGE_BG = "#EBEBEB";
 
   const TEMPLATES = {
     CLASSIC_EDITORIAL: "classic-editorial",
@@ -746,7 +747,7 @@
     const includeAirline = outputMode === "airline_staff";
     const ctaUrl = validation.ctaUrl;
     const colors = typo().colors || {};
-    const white = colors.white || "#ffffff";
+    const pageBg = colors.pageBackground || PAGE_BG;
     const body = colors.body || "#111111";
     const muted = colors.muted || "#545454";
     const black = colors.black || "#000000";
@@ -851,10 +852,10 @@
 
     const cruiseSeparator = `
       <tr>
-        <td align="center" style="padding:28px 16px 0;background-color:${white};">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;background-color:${white};">
+        <td align="center" style="padding:28px 16px 0;background-color:${pageBg};">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;background-color:${pageBg};">
             <tr>
-              <td style="border-top:2px dotted #c4c4c4;font-size:0;line-height:0;height:0;mso-line-height-rule:exactly;background-color:${white};">&nbsp;</td>
+              <td style="border-top:2px dotted #c4c4c4;font-size:0;line-height:0;height:0;mso-line-height-rule:exactly;background-color:${pageBg};">&nbsp;</td>
             </tr>
           </table>
         </td>
@@ -883,12 +884,12 @@
 
     const html = `
 ${styleBlock}
-<table role="presentation" class="cr101-outer" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:${white};" data-cr101-template="${escapeHtml(templateKey)}">
+<table role="presentation" class="cr101-outer" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${pageBg}" style="width:100%;border-collapse:collapse;background-color:${pageBg};" data-cr101-template="${escapeHtml(templateKey)}">
   <tr>
-    <td align="center" style="padding:0;background-color:${white};">
-      <table role="presentation" class="${wrapperClass}" width="${MAX_WIDTH}" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;background-color:${white};">
+    <td align="center" bgcolor="${pageBg}" style="padding:0;background-color:${pageBg};">
+      <table role="presentation" class="${wrapperClass}" width="${MAX_WIDTH}" cellpadding="0" cellspacing="0" border="0" bgcolor="${pageBg}" style="width:100%;max-width:${MAX_WIDTH}px;border-collapse:collapse;background-color:${pageBg};">
         <tr>
-          <td align="center" style="padding:24px 16px;background-color:${white};">
+          <td align="center" bgcolor="${pageBg}" style="padding:24px 16px;background-color:${pageBg};">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
               ${inner}
             </table>
@@ -905,7 +906,7 @@ ${styleBlock}
       return { ...failMeta, errors: safety, outputMode };
     }
 
-    const previewHtml = `<div class="cr101-admin-preview" style="background:#f3f4f6;padding:16px;overflow:auto;">${html}</div>`;
+    const previewHtml = `<div class="cr101-admin-preview" style="background:${pageBg};padding:16px;overflow:auto;">${html}</div>`;
 
     return {
       ok: true,
@@ -1022,9 +1023,9 @@ ${styleBlock}
       };
     }
 
-    const html = `<table role="presentation" class="cr101-issue" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;background-color:#ffffff;">
+    const html = `<table role="presentation" class="cr101-issue" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${PAGE_BG}" style="width:100%;border-collapse:collapse;background-color:${PAGE_BG};">
   <tr>
-    <td align="center" valign="top" style="padding:0;background-color:#ffffff;">${fragments.join("")}</td>
+    <td align="center" valign="top" bgcolor="${PAGE_BG}" style="padding:0;background-color:${PAGE_BG};">${fragments.join("")}</td>
   </tr>
 </table>`;
     const safety = assertFragmentSafe(html, outputMode);
@@ -1047,7 +1048,7 @@ ${styleBlock}
       errors: [],
       warnings,
       html,
-      previewHtml: `<div class="cr101-admin-preview" style="background:#f3f4f6;padding:16px;overflow:auto;">${html}</div>`,
+      previewHtml: `<div class="cr101-admin-preview" style="background:${PAGE_BG};padding:16px;overflow:auto;">${html}</div>`,
       filename: issueFilename(options.newsletterNumber, outputMode, templateKey),
       label: `${labelFor(outputMode, templateKey)} · ${fragments.length} cruise${fragments.length === 1 ? "" : "s"}`,
       outputMode,
@@ -1070,6 +1071,7 @@ ${styleBlock}
     SITE_ORIGIN,
     MAX_WIDTH,
     BRAND_GREEN,
+    PAGE_BG,
     TEMPLATES,
     TEMPLATE_LABELS,
     FILENAMES,

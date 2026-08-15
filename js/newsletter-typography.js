@@ -16,6 +16,7 @@
       body: "#111111",
       muted: "#545454",
       white: "#ffffff",
+      pageBackground: "#EBEBEB",
       warning: "#c56a1a",
       brandGreen: "#8DD9BF"
     },
