@@ -6,7 +6,14 @@ function isCarnivalDiscoveryWriteEnabled() {
   return String(process.env.CARNIVAL_DISCOVERY_WRITE_ENABLED || "").trim().toLowerCase() === "true";
 }
 
-const VALID_MODES = new Set(["simulation", "production_read_only", "production_write", "controlled_batch"]);
+const VALID_MODES = new Set([
+  "simulation",
+  "production_read_only",
+  "production_write",
+  "controlled_batch",
+  "full_catchup",
+  "weekly_maintenance"
+]);
 
 function resolveCarnivalDiscoveryMode(requestedMode) {
   const raw = String(requestedMode || "").trim().toLowerCase();
@@ -21,7 +28,7 @@ function resolveCarnivalDiscoveryMode(requestedMode) {
     };
   }
 
-  if (mode === "production_write" || mode === "controlled_batch") {
+  if (mode === "production_write" || mode === "controlled_batch" || mode === "full_catchup" || mode === "weekly_maintenance") {
     if (!isCarnivalDiscoveryWriteEnabled()) {
       return {
         mode,

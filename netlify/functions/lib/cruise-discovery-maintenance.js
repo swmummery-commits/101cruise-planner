@@ -23,6 +23,9 @@ const ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED =
 const NORWEGIAN_WEEKLY_RECONCILIATION_ENABLED =
   String(process.env.NORWEGIAN_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
 
+const CARNIVAL_WEEKLY_RECONCILIATION_ENABLED =
+  String(process.env.CARNIVAL_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
+
 const CRUISE_DAILY_EXPIRY_ENABLED =
   String(process.env.CRUISE_DAILY_EXPIRY_ENABLED || "").trim().toLowerCase() === "true";
 
@@ -94,6 +97,18 @@ const MAINTENANCE_SCHEDULES = {
     background_function: "norwegian-weekly-maintenance-background",
     schedule_registered: true
   },
+  /**
+   * Carnival weekly maintenance — Monday 01:00 UTC (Monday 09:00 Perth).
+   * One hour after Norwegian (00:00 UTC) to avoid launcher collision.
+   */
+  carnival_weekly: {
+    cron_utc: "0 1 * * 1",
+    perth_display: "Monday 09:00 Australia/Perth",
+    utc_display: "Monday 01:00 UTC",
+    function: "carnival-weekly-maintenance-cron",
+    background_function: "carnival-weekly-maintenance-background",
+    schedule_registered: true
+  },
   daily_expiry: {
     cron_utc: "30 17 * * *",
     perth_display: "Daily 01:30 Australia/Perth",
@@ -109,6 +124,7 @@ const EXPLORA_WEEKLY_MAINTENANCE_RUN_TYPE = "explora_weekly_maintenance";
 const SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE = "seabourn_weekly_maintenance";
 const ROYAL_CARIBBEAN_WEEKLY_MAINTENANCE_RUN_TYPE = "royal_caribbean_weekly_maintenance";
 const NORWEGIAN_WEEKLY_MAINTENANCE_RUN_TYPE = "norwegian_weekly_maintenance";
+const CARNIVAL_WEEKLY_MAINTENANCE_RUN_TYPE = "carnival_weekly_maintenance";
 const DAILY_EXPIRY_RUN_TYPE = "daily_expiry_maintenance";
 
 function perthCalendarDate(reference = new Date()) {
@@ -141,6 +157,10 @@ function isRoyalCaribbeanWeeklyReconciliationEnabled() {
 
 function isNorwegianWeeklyReconciliationEnabled() {
   return NORWEGIAN_WEEKLY_RECONCILIATION_ENABLED;
+}
+
+function isCarnivalWeeklyReconciliationEnabled() {
+  return CARNIVAL_WEEKLY_RECONCILIATION_ENABLED;
 }
 
 function isCruiseDailyExpiryEnabled() {
@@ -215,6 +235,16 @@ function assertNorwegianWeeklyMaintenanceEnabled() {
   }
 }
 
+function assertCclWeeklyMaintenanceEnabled() {
+  if (!isCarnivalWeeklyReconciliationEnabled()) {
+    const err = new Error(
+      "Carnival weekly maintenance is disabled (CARNIVAL_WEEKLY_RECONCILIATION_ENABLED=false)"
+    );
+    err.code = "carnival_weekly_maintenance_disabled";
+    throw err;
+  }
+}
+
 function assertDailyExpiryEnabled() {
   if (!isCruiseDailyExpiryEnabled()) {
     const err = new Error("Daily expiry is disabled (CRUISE_DAILY_EXPIRY_ENABLED=false)");
@@ -252,6 +282,7 @@ function describeMaintenanceHold() {
     seabourn_weekly_reconciliation: resolveEnvFlag(process.env.SEABOURN_WEEKLY_RECONCILIATION_ENABLED),
     royal_caribbean_weekly_reconciliation: resolveEnvFlag(process.env.ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED),
     norwegian_weekly_reconciliation: resolveEnvFlag(process.env.NORWEGIAN_WEEKLY_RECONCILIATION_ENABLED),
+    carnival_weekly_reconciliation: resolveEnvFlag(process.env.CARNIVAL_WEEKLY_RECONCILIATION_ENABLED),
     cruise_daily_expiry: resolveEnvFlag(process.env.CRUISE_DAILY_EXPIRY_ENABLED),
     hal_weekly_reconciliation_enabled: isHalWeeklyReconciliationEnabled(),
     celebrity_weekly_reconciliation_enabled: isCelebrityWeeklyReconciliationEnabled(),
@@ -260,6 +291,7 @@ function describeMaintenanceHold() {
     seabourn_weekly_reconciliation_enabled: isSeabournWeeklyReconciliationEnabled(),
     royal_caribbean_weekly_reconciliation_enabled: isRoyalCaribbeanWeeklyReconciliationEnabled(),
     norwegian_weekly_reconciliation_enabled: isNorwegianWeeklyReconciliationEnabled(),
+    carnival_weekly_reconciliation_enabled: isCarnivalWeeklyReconciliationEnabled(),
     cruise_daily_expiry_enabled: isCruiseDailyExpiryEnabled(),
     operational_timezone: OPERATIONAL_TIMEZONE,
     schedules: MAINTENANCE_SCHEDULES,
@@ -273,7 +305,8 @@ function describeMaintenanceHold() {
       "EXPLORA_DISCOVERY_WRITE_ENABLED",
       "SEABOURN_DISCOVERY_WRITE_ENABLED",
       "ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED",
-      "NORWEGIAN_DISCOVERY_WRITE_ENABLED"
+      "NORWEGIAN_DISCOVERY_WRITE_ENABLED",
+      "CARNIVAL_DISCOVERY_WRITE_ENABLED"
     ]
   };
 }
@@ -286,6 +319,7 @@ module.exports = {
   SEABOURN_WEEKLY_RECONCILIATION_ENABLED,
   ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED,
   NORWEGIAN_WEEKLY_RECONCILIATION_ENABLED,
+  CARNIVAL_WEEKLY_RECONCILIATION_ENABLED,
   CRUISE_DAILY_EXPIRY_ENABLED,
   OPERATIONAL_TIMEZONE,
   MAINTENANCE_SCHEDULES,
@@ -296,6 +330,7 @@ module.exports = {
   SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE,
   ROYAL_CARIBBEAN_WEEKLY_MAINTENANCE_RUN_TYPE,
   NORWEGIAN_WEEKLY_MAINTENANCE_RUN_TYPE,
+  CARNIVAL_WEEKLY_MAINTENANCE_RUN_TYPE,
   DAILY_EXPIRY_RUN_TYPE,
   perthCalendarDate,
   isHalWeeklyReconciliationEnabled,
@@ -305,6 +340,7 @@ module.exports = {
   isSeabournWeeklyReconciliationEnabled,
   isRoyalCaribbeanWeeklyReconciliationEnabled,
   isNorwegianWeeklyReconciliationEnabled,
+  isCarnivalWeeklyReconciliationEnabled,
   isCruiseDailyExpiryEnabled,
   assertHalWeeklyMaintenanceEnabled,
   assertCelebrityWeeklyMaintenanceEnabled,
@@ -313,6 +349,7 @@ module.exports = {
   assertSeabournWeeklyMaintenanceEnabled,
   assertRoyalCaribbeanWeeklyMaintenanceEnabled,
   assertNorwegianWeeklyMaintenanceEnabled,
+  assertCclWeeklyMaintenanceEnabled,
   assertDailyExpiryEnabled,
   computeFreshnessLabel,
   resolveEnvFlag,
