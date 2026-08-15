@@ -9,7 +9,8 @@ const {
   ADAPTER_VERSION,
   isEligibleSeabournInventory
 } = require("./seabourn-discovery-adapter");
-const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
+const { cruiseIdentityKey, upsertCandidateRecord  } = require("./cruise-discovery-ops");
+const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
 function seabournExternalKey(cruiseLineId, productKey) {
@@ -223,7 +224,7 @@ function assertSeabournWriteCandidate(candidate, cruiseLine) {
   return candidate;
 }
 
-async function applySeabournBatchWrites({
+async function applySeabournBatchWritesBody({
   products,
   cruiseLine,
   maxWrites = 100,
@@ -319,6 +320,16 @@ async function applySeabournBatchWrites({
   }
 
   return { stats, upsertStats, performWrites: performWrites === true };
+}
+
+async function applySeabournBatchWrites(params = {}) {
+  if (params.performWrites === false) return applySeabournBatchWritesBody(params);
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: params.cruiseLine?.slug,
+    operation: params.mode || params.operation || "seabourn_batch_apply"
+  }, () => applySeabournBatchWritesBody(params));
 }
 
 module.exports = {

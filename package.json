@@ -58,6 +58,7 @@
     "simulate:silversea-discovery": "node scripts/simulate-silversea-discovery.mjs",
     "test:silversea-discovery": "node scripts/test-silversea-discovery.mjs",
     "test:silversea-controlled-batch": "node scripts/test-silversea-controlled-batch.mjs",
+    "test:global-cruise-write-lock": "node scripts/test-global-cruise-write-lock.mjs",
     "test:silversea-port-remediation": "node scripts/test-silversea-port-remediation.mjs",
     "test:silversea-canonical-ports": "node scripts/test-silversea-canonical-ports.mjs",
     "test:silversea-phase4b-ports": "node scripts/test-silversea-phase4b-ports.mjs",

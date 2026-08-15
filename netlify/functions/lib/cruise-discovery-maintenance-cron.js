@@ -13,6 +13,7 @@ const {
   releaseMaintenanceDbLock,
   dailyExpiryLockKey
 } = require("./cruise-discovery-maintenance-locks");
+const { withGlobalCruiseWriteLock } = require("./cruise-discovery-global-write-lock");
 const { persistMaintenanceManifest } = require("./cruise-discovery-maintenance-manifests");
 
 function cronSecret() {
@@ -237,7 +238,36 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
       return { success: true, dry_run: true, would_expire: (rows || []).length, rows: rows || [], stats };
     }
 
-    const expire = await expireSailedCruises({ runId, recordMetadata: true });
+    const expireWrap = await withGlobalCruiseWriteLock(supabase, {
+      ownerId: runId,
+      runId,
+      runRecordId: dbRun?.id || null,
+      operation: "daily_expiry"
+    }, async () => expireSailedCruises({ runId, recordMetadata: true }));
+
+    if (!expireWrap.acquired) {
+      await finalizeMaintenanceRun(supabase, dbRun?.id, {
+        status: "completed",
+        stats: {
+          run_type: DAILY_EXPIRY_RUN_TYPE,
+          run_id: runId,
+          trigger_type: triggerType,
+          inventory_changed: false,
+          blocked_by_global_lock: true,
+          global_lock: expireWrap.observability
+        },
+        errorMessage: null
+      });
+      return {
+        success: true,
+        blocked: true,
+        already_running: true,
+        reason: expireWrap.reason || "global_production_import_lock_unavailable",
+        global_lock: expireWrap.observability
+      };
+    }
+
+    const expire = expireWrap.result;
     const manifest = {
       run_id: runId,
       run_record_id: dbRun?.id,

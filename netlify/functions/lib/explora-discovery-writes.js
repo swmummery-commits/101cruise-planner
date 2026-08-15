@@ -11,7 +11,8 @@ const {
   isExploraNonCruise
 } = require("./explora-discovery-adapter");
 const { journeyIdFromUrl } = require("./explora-discovery-source");
-const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
+const { cruiseIdentityKey, upsertCandidateRecord  } = require("./cruise-discovery-ops");
+const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
 /**
@@ -252,7 +253,7 @@ async function recoverCommittedWriteAfterFetchFailure(supabase, cruiseLineId, of
   return row;
 }
 
-async function applyExploraBatchWrites({
+async function applyExploraBatchWritesBody({
   products,
   cruiseLine,
   maxWrites = 100,
@@ -408,6 +409,16 @@ async function applyExploraBatchWrites({
   }
 
   return { stats, run_id: runId };
+}
+
+async function applyExploraBatchWrites(params = {}) {
+  if (params.performWrites === false) return applyExploraBatchWritesBody(params);
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: params.cruiseLine?.slug,
+    operation: params.mode || params.operation || "explora_batch_apply"
+  }, () => applyExploraBatchWritesBody(params));
 }
 
 module.exports = {

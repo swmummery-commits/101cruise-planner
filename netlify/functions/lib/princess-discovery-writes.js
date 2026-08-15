@@ -11,7 +11,8 @@ const {
   isEligiblePrincessCruise,
   isPrincessCruisetour
 } = require("./princess-discovery-adapter");
-const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
+const { cruiseIdentityKey, upsertCandidateRecord  } = require("./cruise-discovery-ops");
+const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
 function princessExternalKey(cruiseLineId, productKey) {
@@ -242,7 +243,7 @@ async function recoverCommittedWriteAfterFetchFailure(
   return row;
 }
 
-async function applyPrincessBatchWrites({
+async function applyPrincessBatchWritesBody({
   products,
   cruiseLine,
   maxWrites = 100,
@@ -369,6 +370,16 @@ async function applyPrincessBatchWrites({
   }
 
   return { stats, run_id: runId };
+}
+
+async function applyPrincessBatchWrites(params = {}) {
+  if (params.performWrites === false) return applyPrincessBatchWritesBody(params);
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: params.cruiseLine?.slug,
+    operation: params.mode || params.operation || "princess_batch_apply"
+  }, () => applyPrincessBatchWritesBody(params));
 }
 
 module.exports = {

@@ -63,6 +63,7 @@ const {
   expirationMetadataForMaintenance,
   PUBLIC_BOOKING_CUTOFF_DAYS
 } = require("./public-discovered-cruise-inventory");
+const { assertGlobalCruiseWriteLockHeld } = require("./cruise-discovery-global-write-lock");
 
 function todayIsoDate() {
   return new Date().toISOString().slice(0, 10);
@@ -86,6 +87,7 @@ async function expireSailedCruises(options = {}) {
   const now = new Date().toISOString();
   let expiredCount = 0;
   const expiredIds = [];
+  let lockChecked = false;
 
   for (let pass = 0; pass < 50; pass += 1) {
     const rows = await supabase(
@@ -95,6 +97,10 @@ async function expireSailedCruises(options = {}) {
     if (!Array.isArray(rows) || !rows.length) break;
 
     for (const row of rows) {
+      if (!lockChecked) {
+        await assertGlobalCruiseWriteLockHeld(options);
+        lockChecked = true;
+      }
       const rawExtract = { ...(row.raw_extract || {}) };
       if (recordMetadata) {
         const meta = expirationMetadataForMaintenance({
@@ -391,18 +397,35 @@ async function discoverOneLine({
     }
     aggregate.url_diagnostics_sample = (urlDiagnostics || []).slice(0, 40);
 
-    for (const candidate of candidates) {
-      const result = await upsertCandidateRecord(candidate, aggregate);
-      if (result?.row && candidate.brochure_fare_display && result.changedFields?.includes("brochure_fare_display")) {
-        reviewItems.push({
-          item_type: "validation_failure",
-          title: `Price changed: ${candidate.ship_name || "cruise"} ${candidate.departure_date || ""}`,
-          detail: `Brochure fare updated to ${candidate.brochure_fare_display}`,
-          cruise_line_id: cruiseLine.id,
-          destination_id: candidate.destination_id,
-          cruise_id: result.row.id,
-          source_url: candidate.official_url,
-          payload: { external_key: candidate.external_key }
+    if (candidates.length) {
+      const { withGlobalCruiseWriteLock, GLOBAL_LOCK_DENIED_REASON } = require("./cruise-discovery-global-write-lock");
+      const lockWrap = await withGlobalCruiseWriteLock(supabase, {
+        ownerId: run.id,
+        runId: run.id,
+        lineSlug: cruiseLine.slug,
+        operation: "generic_line_discovery"
+      }, async () => {
+        for (const candidate of candidates) {
+          const result = await upsertCandidateRecord(candidate, aggregate);
+          if (result?.row && candidate.brochure_fare_display && result.changedFields?.includes("brochure_fare_display")) {
+            reviewItems.push({
+              item_type: "validation_failure",
+              title: `Price changed: ${candidate.ship_name || "cruise"} ${candidate.departure_date || ""}`,
+              detail: `Brochure fare updated to ${candidate.brochure_fare_display}`,
+              cruise_line_id: cruiseLine.id,
+              destination_id: candidate.destination_id,
+              cruise_id: result.row.id,
+              source_url: candidate.official_url,
+              payload: { external_key: candidate.external_key }
+            });
+          }
+        }
+        return { upserted: candidates.length };
+      });
+      if (!lockWrap.acquired) {
+        throw Object.assign(new Error(lockWrap.reason || GLOBAL_LOCK_DENIED_REASON), {
+          code: GLOBAL_LOCK_DENIED_REASON,
+          lock_status: lockWrap
         });
       }
     }

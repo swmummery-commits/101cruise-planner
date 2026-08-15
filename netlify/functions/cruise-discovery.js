@@ -1010,8 +1010,22 @@ exports.handler = async (event) => {
     if (action === "start_discovery") return jsonResponse(200, await startDiscovery(body, actor));
     if (action === "expire_sailed") {
       assertExpireSailedEnabled();
-      const result = await expireSailedCruises();
-      return jsonResponse(200, { success: true, ...result });
+      const { withGlobalCruiseWriteLock } = require("./lib/cruise-discovery-global-write-lock");
+      const runId = `admin-expire-sailed-${Date.now()}`;
+      const wrapped = await withGlobalCruiseWriteLock(supabase, {
+        ownerId: runId,
+        runId,
+        operation: "admin_expire_sailed"
+      }, async () => expireSailedCruises({ runId }));
+      if (!wrapped.acquired) {
+        return jsonResponse(409, {
+          success: false,
+          blocked: true,
+          reason: wrapped.reason || "global_production_import_lock_unavailable",
+          global_lock: wrapped.observability
+        });
+      }
+      return jsonResponse(200, { success: true, ...wrapped.result, global_lock: wrapped.observability });
     }
     if (action === "resolve_review") return jsonResponse(200, await resolveReview(body, actor));
     if (action === "ignore_review") return jsonResponse(200, await ignoreReview(body, actor));

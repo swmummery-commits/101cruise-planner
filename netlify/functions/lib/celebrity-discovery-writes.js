@@ -12,7 +12,8 @@ const {
   isEligibleCelebrityCruise,
   isCelebrityCruisetour
 } = require("./celebrity-discovery-adapter");
-const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
+const { cruiseIdentityKey, upsertCandidateRecord  } = require("./cruise-discovery-ops");
+const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { createCelebrityBatchTiming, mapWithConcurrency } = require("./celebrity-discovery-timing");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
@@ -418,7 +419,7 @@ async function bulkVerifyWrittenRecords(supabase, writeDetails) {
   return { verified, rows: rows || [] };
 }
 
-async function applyCelebrityBatchWrites({
+async function applyCelebrityBatchWritesBody({
   products,
   cruiseLine,
   maxWrites = 40,
@@ -586,6 +587,16 @@ async function applyCelebrityBatchWrites({
     verification,
     timing: localTiming.snapshot()
   };
+}
+
+async function applyCelebrityBatchWrites(params = {}) {
+  if (params.performWrites === false) return applyCelebrityBatchWritesBody(params);
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: params.cruiseLine?.slug,
+    operation: params.mode || params.operation || "celebrity_batch_apply"
+  }, () => applyCelebrityBatchWritesBody(params));
 }
 
 module.exports = {

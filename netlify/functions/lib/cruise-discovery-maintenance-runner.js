@@ -78,6 +78,7 @@ const {
   verifyMaintenanceLockOwnership,
   weeklyLockKey
 } = require("./cruise-discovery-maintenance-locks");
+const { runGlobalProtectedMaintenanceWrites } = require("./cruise-discovery-global-write-lock");
 const { persistMaintenanceRollbackManifest } = require("./cruise-discovery-maintenance-manifests");
 const {
   partitionByPublicBookingCutoff,
@@ -549,23 +550,51 @@ async function runHalWeeklyMaintenance(context = {}) {
       return entry && ["insert_active", "update_existing"].includes(entry.proposed_action);
     });
 
-    const writeResult = await applyHalBatchWrites({
-      products: writeProducts.slice(0, maxWrites),
-      cruiseLine: line,
-      maxWrites,
+    const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
       runId,
-      supabase: sb,
-      destinations,
-      performWrites: true,
-      mode: "weekly_maintenance",
-      maintenanceTrace: {
-        run_id: runId,
-        run_record_id: runRecordId,
-        cruise_line_id: line.id,
-        cruise_line_slug: lineSlug,
-        trigger_type: context.triggerType || context.trigger_type || "scheduled"
-      }
+      runRecordId,
+      lineSlug,
+      operation: "hal_weekly_maintenance",
+      underLockRecheck: async () => {
+        const activeNow = await loadActiveProductionTotal(sb, line.id, lineSlug);
+        if (activeNow !== summary.active_production_total) {
+          return { ok: false, reason: "under_lock_active_count_changed" };
+        }
+        return { ok: true };
+      },
+      writeFn: async () =>
+        applyHalBatchWrites({
+          products: writeProducts.slice(0, maxWrites),
+          cruiseLine: line,
+          maxWrites,
+          runId,
+          supabase: sb,
+          destinations,
+          performWrites: true,
+          mode: "weekly_maintenance",
+          maintenanceTrace: {
+            run_id: runId,
+            run_record_id: runRecordId,
+            cruise_line_id: line.id,
+            cruise_line_slug: lineSlug,
+            trigger_type: context.triggerType || context.trigger_type || "scheduled"
+          }
+        })
     });
+
+    if (protectedWrites.blocked) {
+      summary.global_lock = protectedWrites.global_lock;
+      return {
+        ok: false,
+        blocked: true,
+        reason: protectedWrites.reason,
+        summary,
+        manifest
+      };
+    }
+
+    const writeResult = protectedWrites.writeResult;
+    summary.global_lock = protectedWrites.global_lock;
 
     const rollback = await persistMaintenanceRollbackManifest(sb, {
       runId,
@@ -724,23 +753,45 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
       return entry && ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
     });
 
-    const writeResult = await applyCelebrityBatchWrites({
-      products: writeProducts.slice(0, maxWrites),
-      cruiseLine: line,
-      maxWrites,
+    const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
       runId,
-      supabase: sb,
-      destinations,
-      performWrites: true,
-      mode: "weekly_maintenance",
-      maintenanceTrace: {
-        run_id: runId,
-        run_record_id: runRecordId,
-        cruise_line_id: line.id,
-        cruise_line_slug: lineSlug,
-        trigger_type: context.triggerType || context.trigger_type || "scheduled"
-      }
+      runRecordId,
+      lineSlug,
+      operation: "celebrity_weekly_maintenance",
+      underLockRecheck: async () => {
+        const activeNow = await loadActiveProductionTotal(sb, line.id, lineSlug);
+        if (activeNow !== summary.active_production_total) {
+          return { ok: false, reason: "under_lock_active_count_changed" };
+        }
+        return { ok: true };
+      },
+      writeFn: async () =>
+        applyCelebrityBatchWrites({
+          products: writeProducts.slice(0, maxWrites),
+          cruiseLine: line,
+          maxWrites,
+          runId,
+          supabase: sb,
+          destinations,
+          performWrites: true,
+          mode: "weekly_maintenance",
+          maintenanceTrace: {
+            run_id: runId,
+            run_record_id: runRecordId,
+            cruise_line_id: line.id,
+            cruise_line_slug: lineSlug,
+            trigger_type: context.triggerType || context.trigger_type || "scheduled"
+          }
+        })
     });
+
+    if (protectedWrites.blocked) {
+      summary.global_lock = protectedWrites.global_lock;
+      return { ok: false, blocked: true, reason: protectedWrites.reason, summary, manifest };
+    }
+
+    const writeResult = protectedWrites.writeResult;
+    summary.global_lock = protectedWrites.global_lock;
 
     const rollback = await persistMaintenanceRollbackManifest(sb, {
       runId,
@@ -992,22 +1043,44 @@ async function runPrincessWeeklyMaintenance(context = {}) {
         return ka.localeCompare(kb);
       });
 
-    const writeResult = await applyPrincessBatchWrites({
-      products: writeProducts.slice(0, effectiveMaxWrites),
-      cruiseLine: line,
-      maxWrites: effectiveMaxWrites,
+    const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
       runId,
-      supabase: sb,
-      destinations,
-      performWrites: true,
-      maintenanceTrace: {
-        run_id: runId,
-        run_record_id: runRecordId,
-        cruise_line_id: line.id,
-        cruise_line_slug: lineSlug,
-        trigger_type: context.triggerType || context.trigger_type || "scheduled"
-      }
+      runRecordId,
+      lineSlug,
+      operation: "princess_weekly_maintenance",
+      underLockRecheck: async () => {
+        const activeNow = await loadActiveProductionTotal(sb, line.id, lineSlug);
+        if (activeNow !== summary.active_production_total) {
+          return { ok: false, reason: "under_lock_active_count_changed" };
+        }
+        return { ok: true };
+      },
+      writeFn: async () =>
+        applyPrincessBatchWrites({
+          products: writeProducts.slice(0, effectiveMaxWrites),
+          cruiseLine: line,
+          maxWrites: effectiveMaxWrites,
+          runId,
+          supabase: sb,
+          destinations,
+          performWrites: true,
+          maintenanceTrace: {
+            run_id: runId,
+            run_record_id: runRecordId,
+            cruise_line_id: line.id,
+            cruise_line_slug: lineSlug,
+            trigger_type: context.triggerType || context.trigger_type || "scheduled"
+          }
+        })
     });
+
+    if (protectedWrites.blocked) {
+      summary.global_lock = protectedWrites.global_lock;
+      return { ok: false, blocked: true, reason: protectedWrites.reason, summary, manifest };
+    }
+
+    const writeResult = protectedWrites.writeResult;
+    summary.global_lock = protectedWrites.global_lock;
 
     const rollback = await persistMaintenanceRollbackManifest(sb, {
       runId,
@@ -1263,22 +1336,44 @@ async function runExploraWeeklyMaintenance(context = {}) {
         return ka.localeCompare(kb);
       });
 
-    const writeResult = await applyExploraBatchWrites({
-      products: writeProducts.slice(0, effectiveMaxWrites),
-      cruiseLine: line,
-      maxWrites: effectiveMaxWrites,
+    const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
       runId,
-      supabase: sb,
-      destinations,
-      performWrites: true,
-      maintenanceTrace: {
-        run_id: runId,
-        run_record_id: runRecordId,
-        cruise_line_id: line.id,
-        cruise_line_slug: lineSlug,
-        trigger_type: context.triggerType || context.trigger_type || "scheduled"
-      }
+      runRecordId,
+      lineSlug,
+      operation: "explora_weekly_maintenance",
+      underLockRecheck: async () => {
+        const activeNow = await loadActiveProductionTotal(sb, line.id, lineSlug);
+        if (activeNow !== summary.active_production_total) {
+          return { ok: false, reason: "under_lock_active_count_changed" };
+        }
+        return { ok: true };
+      },
+      writeFn: async () =>
+        applyExploraBatchWrites({
+          products: writeProducts.slice(0, effectiveMaxWrites),
+          cruiseLine: line,
+          maxWrites: effectiveMaxWrites,
+          runId,
+          supabase: sb,
+          destinations,
+          performWrites: true,
+          maintenanceTrace: {
+            run_id: runId,
+            run_record_id: runRecordId,
+            cruise_line_id: line.id,
+            cruise_line_slug: lineSlug,
+            trigger_type: context.triggerType || context.trigger_type || "scheduled"
+          }
+        })
     });
+
+    if (protectedWrites.blocked) {
+      summary.global_lock = protectedWrites.global_lock;
+      return { ok: false, blocked: true, reason: protectedWrites.reason, summary, manifest };
+    }
+
+    const writeResult = protectedWrites.writeResult;
+    summary.global_lock = protectedWrites.global_lock;
 
     const rollback = await persistMaintenanceRollbackManifest(sb, {
       runId,
@@ -1622,22 +1717,44 @@ async function runSeabournWeeklyMaintenance(context = {}) {
         return ka.localeCompare(kb);
       });
 
-    const writeResult = await applySeabournBatchWrites({
-      products: writeProducts.slice(0, effectiveMaxWrites),
-      cruiseLine: line,
-      maxWrites: effectiveMaxWrites,
+    const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
       runId,
-      supabase: sb,
-      destinations,
-      performWrites: true,
-      maintenanceTrace: {
-        run_id: runId,
-        run_record_id: runRecordId,
-        cruise_line_id: line.id,
-        cruise_line_slug: lineSlug,
-        trigger_type: context.triggerType || context.trigger_type || "scheduled"
-      }
+      runRecordId,
+      lineSlug,
+      operation: "seabourn_weekly_maintenance",
+      underLockRecheck: async () => {
+        const activeNow = await loadActiveProductionTotal(sb, line.id, lineSlug);
+        if (activeNow !== summary.active_production_total) {
+          return { ok: false, reason: "under_lock_active_count_changed" };
+        }
+        return { ok: true };
+      },
+      writeFn: async () =>
+        applySeabournBatchWrites({
+          products: writeProducts.slice(0, effectiveMaxWrites),
+          cruiseLine: line,
+          maxWrites: effectiveMaxWrites,
+          runId,
+          supabase: sb,
+          destinations,
+          performWrites: true,
+          maintenanceTrace: {
+            run_id: runId,
+            run_record_id: runRecordId,
+            cruise_line_id: line.id,
+            cruise_line_slug: lineSlug,
+            trigger_type: context.triggerType || context.trigger_type || "scheduled"
+          }
+        })
     });
+
+    if (protectedWrites.blocked) {
+      summary.global_lock = protectedWrites.global_lock;
+      return { ok: false, blocked: true, reason: protectedWrites.reason, summary, manifest };
+    }
+
+    const writeResult = protectedWrites.writeResult;
+    summary.global_lock = protectedWrites.global_lock;
 
     const rollback = await persistMaintenanceRollbackManifest(sb, {
       runId,

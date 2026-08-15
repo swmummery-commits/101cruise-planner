@@ -14,6 +14,7 @@ const {
   classifyNorwegianItinerary
 } = require("./norwegian-discovery-adapter");
 const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
+const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 const { PUBLIC_BOOKING_CUTOFF_DAYS, daysUntilDeparture } = require("./public-discovered-cruise-inventory");
 const {
@@ -269,7 +270,7 @@ async function buildManifestFromEntries({
   return manifest;
 }
 
-async function applyManifestWrites({ manifest, cruiseLine, supabase, maxWrites = 25, runId, requireDestination = false }) {
+async function applyManifestWritesBody({ manifest, cruiseLine, supabase, maxWrites = 25, runId, requireDestination = false }) {
   const stats = {
     attempted: 0,
     inserted: 0,
@@ -380,6 +381,15 @@ async function applyManifestWrites({ manifest, cruiseLine, supabase, maxWrites =
     stats,
     upsert_stats: upsertStats
   };
+}
+
+async function applyManifestWrites(params) {
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: params.cruiseLine?.slug || "norwegian-cruise-line",
+    operation: "norwegian_manifest_apply"
+  }, () => applyManifestWritesBody(params));
 }
 
 async function rollbackInsertedRows(supabase, insertedIds = []) {
