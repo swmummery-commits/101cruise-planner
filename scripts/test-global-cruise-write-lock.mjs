@@ -255,4 +255,34 @@ await test("lock ownership verified under withGlobalCruiseWriteLock context", as
   if (!wrapped.acquired) throw new Error("lock should acquire");
 });
 
+await test("runGlobalLockSmokeTest acquire/assert/release lifecycle", async () => {
+  const { supabase } = createMockLockSupabase();
+  const smoke = await globalLock.runGlobalLockSmokeTest(supabase, {
+    ownerId: "smoke-owner",
+    runId: "smoke-owner"
+  });
+  if (!smoke.passed) throw new Error(JSON.stringify(smoke));
+  if (smoke.steps.length < 5) throw new Error("smoke steps incomplete");
+});
+
+await test("nested ensureGlobalCruiseWriteLockForMutation verifies existing ALS owner", async () => {
+  const { supabase } = createMockLockSupabase();
+  await globalLock.withGlobalCruiseWriteLock(
+    supabase,
+    { ownerId: "outer-run", runId: "outer-run", operation: "outer" },
+    async () =>
+      globalLock.ensureGlobalCruiseWriteLockForMutation(
+        supabase,
+        { ownerId: "wrong-owner", runId: "wrong-owner" },
+        async () => "ok"
+      )
+  );
+});
+
+await test("resolveGlobalLockOwnerId prefers explicit ownerId", () => {
+  if (globalLock.resolveGlobalLockOwnerId({ ownerId: "a", runId: "b" }) !== "a") {
+    throw new Error("ownerId resolution");
+  }
+});
+
 console.log(`\n${passed} global cruise write lock tests passed.`);

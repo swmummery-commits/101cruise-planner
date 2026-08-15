@@ -27,6 +27,10 @@ const DEFAULT_GLOBAL_LEASE_SECONDS = 1800;
 
 const globalWriteLockContext = new AsyncLocalStorage();
 
+function resolveGlobalLockOwnerId(params = {}) {
+  return String(params.ownerId || params.runId || "").trim();
+}
+
 function buildGlobalLockReportFields(lockState = {}, extras = {}) {
   return {
     global_lock_required: extras.global_lock_required !== false,
@@ -46,7 +50,7 @@ function buildGlobalLockReportFields(lockState = {}, extras = {}) {
 }
 
 async function acquireGlobalCruiseWriteLock(supabase, params = {}) {
-  const ownerId = String(params.ownerId || params.runId || "").trim();
+  const ownerId = resolveGlobalLockOwnerId(params);
   const runId = params.runId != null ? String(params.runId).trim() : ownerId;
   if (!ownerId) {
     return {
@@ -149,8 +153,9 @@ async function withGlobalCruiseWriteLock(supabase, params, fn) {
   }
 
   const observability = buildGlobalLockReportFields(lock, { global_lock_released: false });
+  const ownerId = resolveGlobalLockOwnerId(params);
   try {
-    const result = await globalWriteLockContext.run({ ownerId: params.ownerId, supabase }, async () => {
+    const result = await globalWriteLockContext.run({ ownerId, supabase }, async () => {
       return fn({ ...lock, observability });
     });
     return {
@@ -160,7 +165,7 @@ async function withGlobalCruiseWriteLock(supabase, params, fn) {
       observability: buildGlobalLockReportFields(lock, { global_lock_released: true })
     };
   } finally {
-    await releaseGlobalCruiseWriteLock(supabase, { ownerId: params.ownerId });
+    await releaseGlobalCruiseWriteLock(supabase, { ownerId: resolveGlobalLockOwnerId(params) });
   }
 }
 
@@ -285,11 +290,13 @@ async function runGlobalProtectedMaintenanceWrites(supabase, params) {
  */
 async function ensureGlobalCruiseWriteLockForMutation(supabase, params, fn) {
   const ctx = globalWriteLockContext.getStore();
+  const ownerId = resolveGlobalLockOwnerId(params);
   if (ctx?.ownerId) {
+    await assertGlobalCruiseWriteLockHeld({ globalWriteLockOwnerId: ctx.ownerId });
     return fn();
   }
 
-  const wrapped = await withGlobalCruiseWriteLock(supabase, params, fn);
+  const wrapped = await withGlobalCruiseWriteLock(supabase, { ...params, ownerId, runId: params.runId || ownerId }, fn);
   if (!wrapped.acquired) {
     const err = new Error(wrapped.reason || GLOBAL_LOCK_DENIED_REASON);
     err.code = GLOBAL_LOCK_DENIED_REASON;
@@ -297,6 +304,109 @@ async function ensureGlobalCruiseWriteLockForMutation(supabase, params, fn) {
     throw err;
   }
   return wrapped.result;
+}
+
+/**
+ * Lock-only lifecycle smoke (zero discovered_cruises mutations).
+ */
+async function runGlobalLockSmokeTest(supabase, params = {}) {
+  const ownerId = resolveGlobalLockOwnerId(params);
+  const runId = params.runId || ownerId;
+  if (!ownerId) {
+    return { passed: false, reason: "invalid_smoke_owner", steps: [] };
+  }
+
+  const steps = [];
+  const before = await loadMaintenanceLockStatus(supabase, GLOBAL_CRUISE_WRITE_LOCK_KEY).catch(() => ({
+    held: false
+  }));
+  steps.push({ step: "available_before", held: before.held, owner_id: before.owner_id || null });
+
+  if (before.held && !before.expired && before.owner_id !== ownerId) {
+    return {
+      passed: false,
+      reason: "lock_held_by_other_owner",
+      expected_owner: ownerId,
+      actual_owner: before.owner_id,
+      steps
+    };
+  }
+
+  const acquired = await acquireGlobalCruiseWriteLock(supabase, {
+    ownerId,
+    runId,
+    operation: params.operation || "global_lock_smoke",
+    leaseSeconds: params.leaseSeconds || 120
+  });
+  steps.push({
+    step: "acquired",
+    acquired: acquired.acquired === true,
+    owner_id: acquired.owner_id || null,
+    expires_at: acquired.expires_at || null
+  });
+  if (!acquired.acquired) {
+    return { passed: false, reason: acquired.reason || "acquire_failed", steps };
+  }
+
+  const assert1 = await verifyMaintenanceLockOwnership(supabase, {
+    lockKey: GLOBAL_CRUISE_WRITE_LOCK_KEY,
+    ownerId
+  });
+  steps.push({
+    step: "assertion_1",
+    ok: assert1.ok === true,
+    reason: assert1.reason || null,
+    expected_owner: ownerId,
+    actual_owner: assert1.status?.owner_id || null
+  });
+  if (!assert1.ok) {
+    await releaseGlobalCruiseWriteLock(supabase, { ownerId });
+    return { passed: false, reason: assert1.reason, steps };
+  }
+
+  const assert2 = await verifyMaintenanceLockOwnership(supabase, {
+    lockKey: GLOBAL_CRUISE_WRITE_LOCK_KEY,
+    ownerId
+  });
+  steps.push({
+    step: "assertion_2",
+    ok: assert2.ok === true,
+    reason: assert2.reason || null,
+    expected_owner: ownerId,
+    actual_owner: assert2.status?.owner_id || null
+  });
+  if (!assert2.ok) {
+    await releaseGlobalCruiseWriteLock(supabase, { ownerId });
+    return { passed: false, reason: assert2.reason, steps };
+  }
+
+  const released = await releaseGlobalCruiseWriteLock(supabase, { ownerId });
+  steps.push({ step: "released", released: released === true });
+
+  const after = await loadMaintenanceLockStatus(supabase, GLOBAL_CRUISE_WRITE_LOCK_KEY).catch(() => ({
+    held: false
+  }));
+  steps.push({
+    step: "absent_after_release",
+    held: after.held === true,
+    owner_id: after.owner_id || null,
+    expired: after.expired === true
+  });
+
+  const passed =
+    assert1.ok &&
+    assert2.ok &&
+    released === true &&
+    (!after.held || after.expired || after.owner_id !== ownerId);
+
+  return {
+    passed,
+    owner_id: ownerId,
+    run_id: runId,
+    lock_key: GLOBAL_CRUISE_WRITE_LOCK_KEY,
+    steps,
+    reason: passed ? null : "post_release_lock_still_held"
+  };
 }
 
 module.exports = {
@@ -312,6 +422,8 @@ module.exports = {
   executeControlledProductionApply,
   runGlobalProtectedMaintenanceWrites,
   ensureGlobalCruiseWriteLockForMutation,
+  resolveGlobalLockOwnerId,
+  runGlobalLockSmokeTest,
   loadGlobalCruiseWriteLockStatus: (supabase) =>
     loadMaintenanceLockStatus(supabase, GLOBAL_CRUISE_WRITE_LOCK_KEY)
 };

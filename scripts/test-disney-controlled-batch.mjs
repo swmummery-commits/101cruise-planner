@@ -242,5 +242,72 @@ test("21. adapter version bumped from Phase 2D", () => {
   if (adapter.ADAPTER_VERSION.endsWith(".2d")) throw new Error("still on 2d");
 });
 
+test("22. catch-up max = 100", () => {
+  if (controlled.MAX_CATCHUP_DISNEY_BATCH !== 100) throw new Error("max catchup");
+});
+
+test("23. catch-up confirmation token", () => {
+  if (controlled.CATCHUP_CONFIRMATION_TOKEN !== "DISNEY-CONTROLLED-CATCHUP") throw new Error("token");
+});
+
+test("24. Phase 3 lock anomaly documents mismatch", () => {
+  const a = controlled.analysePhase3LockAnomaly();
+  if (!a.exact_error.includes("maintenance_lock_owner_mismatch")) throw new Error("anomaly");
+  if (!Array.isArray(a.fix_applied) || !a.fix_applied.length) throw new Error("fixes");
+});
+
+test("25. partial write recovery shape", async () => {
+  const report = await controlled.buildPartialWriteRecoveryReport({
+    supabase: async () => [],
+    cruiseLineId: controlled.DISNEY_LINE_ID,
+    frozenOfficialIds: ["A|2026-09-01", "B|2026-09-08"],
+    existingBeforeIds: new Set(["existing-1"]),
+    writeStats: { attempted: 2, inserted: 1, failed: 1 },
+    error: new Error("simulated_failure")
+  });
+  if (!report.partial_write) throw new Error("partial flag");
+  if (report.per_identity.length !== 2) throw new Error("per identity");
+});
+
+test("26. catchup frozen manifest rejects 101 entries", () => {
+  const report = {
+    mode: controlled.CATCHUP_MANIFEST_MODE,
+    batch_size: 100,
+    strategy: "insert_only",
+    adapter_version: adapter.ADAPTER_VERSION,
+    frozen_candidate_hash: "x",
+    entries: Array.from({ length: 101 }, (_, i) => ({
+      official_sailing_id: `X${i}|2026-09-01`,
+      ship_id: "s",
+      departure_date: "2026-09-01",
+      return_date: "2026-09-04",
+      nights: 3,
+      departure_port: "Port Canaveral",
+      arrival_port: null,
+      destination_id: "d",
+      identity_key: `ik${i}`,
+      external_key: `ek${i}`
+    }))
+  };
+  const endpointEvidence = require(path.join(root, "netlify/functions/lib/disney-endpoint-evidence"));
+  report.frozen_candidate_hash = endpointEvidence.hashFrozenBatchCandidates(
+    report.entries.map((e) => ({
+      official_product_key: e.official_sailing_id,
+      ship_id: e.ship_id,
+      departure_date: e.departure_date,
+      return_date: e.return_date,
+      nights: e.nights,
+      departure_port: e.departure_port,
+      arrival_port: e.arrival_port,
+      destination_id: e.destination_id,
+      identity_key: e.identity_key,
+      external_key: e.external_key
+    })),
+    adapter.ADAPTER_VERSION
+  );
+  const v = controlled.validateCatchupFrozenManifest(report);
+  if (v.ok) throw new Error("101 should fail");
+});
+
 console.log(`\n${passed} disney-controlled-batch tests passed`);
 if (process.exitCode) process.exit(process.exitCode);

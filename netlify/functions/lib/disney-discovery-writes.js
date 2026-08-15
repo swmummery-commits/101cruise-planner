@@ -12,7 +12,7 @@ const {
 } = require("./disney-discovery-adapter");
 const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
 const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
-const { DISNEY_LEGACY_ROW_IDS, MAX_CONTROLLED_DISNEY_BATCH } = require("./disney-controlled-batch");
+const { DISNEY_LEGACY_ROW_IDS, MAX_CONTROLLED_DISNEY_BATCH, MAX_CATCHUP_DISNEY_BATCH } = require("./disney-controlled-batch");
 
 const REJECTED_ACTIONS = new Set([
   "update_exact_existing",
@@ -177,7 +177,8 @@ async function applyDisneyBatchWritesBody({
     write_details: []
   };
 
-  if (maxWrites > MAX_CONTROLLED_DISNEY_BATCH) {
+  const maxAllowed = Math.max(MAX_CONTROLLED_DISNEY_BATCH, MAX_CATCHUP_DISNEY_BATCH);
+  if (maxWrites > maxAllowed) {
     throw new Error("disney_controlled_batch_max_exceeded");
   }
 
