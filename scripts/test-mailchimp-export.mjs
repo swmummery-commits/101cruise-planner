@@ -212,8 +212,8 @@ assert(
   "green airline filename"
 );
 assert(/cr101-gpc-card/i.test(greenAirline.html), "green card structure");
-assert(/background-color:#EBEBEB/i.test(greenAirline.html), "page background #EBEBEB");
-assert(/class="cr101-outer"[^>]*background-color:#EBEBEB/i.test(greenAirline.html), "outer canvas uses page background");
+assert(/background-color:#F7F7F7/i.test(greenAirline.html), "page background #F7F7F7");
+assert(/class="cr101-outer"[^>]*background-color:#F7F7F7/i.test(greenAirline.html), "outer canvas uses page background");
 assert(/cr101-gpc-fare/i.test(greenAirline.html), "green fare boxes");
 assert(/background-color:#8DD9BF/i.test(greenAirline.html), "brand green boxes");
 assert(/cr101-gpc-fare[\s\S]*?background-color:#8DD9BF/i.test(greenAirline.html), "fare boxes use brand green");
@@ -561,7 +561,7 @@ assert(issueAirline.ok, `issue airline should succeed: ${(issueAirline.errors ||
 assert(issueAirline.cruiseCount === 2, "issue has two cruises");
 assert(!/cr101-issue-spacer/i.test(issueAirline.html), "no grey spacer between cruises");
 assert(/border-top:2px dotted #c4c4c4/i.test(issueAirline.html), "dotted rule between cruises");
-assert(/class="cr101-issue"[^>]*background-color:#EBEBEB/i.test(issueAirline.html), "issue canvas uses page background");
+assert(/class="cr101-issue"[^>]*background-color:#F7F7F7/i.test(issueAirline.html), "issue canvas uses page background");
 assert(
   issueAirline.html.includes('href="https://www.101cruise.com.au/cruise?slug=barcelona-istanbul"'),
   "first cruise CTA"

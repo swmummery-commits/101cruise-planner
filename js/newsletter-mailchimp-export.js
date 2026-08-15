@@ -17,7 +17,7 @@
   const MAX_ROOMS = 4;
   /** Brand green — website primary (#8DD9BF). */
   const BRAND_GREEN = "#8DD9BF";
-  const PAGE_BG = "#EBEBEB";
+  const PAGE_BG = "#F7F7F7";
 
   const TEMPLATES = {
     CLASSIC_EDITORIAL: "classic-editorial",
