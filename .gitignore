@@ -75,3 +75,5 @@ reports/royal-caribbean-prompt10-*.json
 reports/royal-caribbean-prompt10-manifest-*.json
 reports/royal-caribbean-weekly-maintenance-*.json
 reports/royal-caribbean-weekly-manifest-*.json
+# Silversea Phase 2+ generated dry-run reports.
+reports/silversea-phase2-dry-run-*.json

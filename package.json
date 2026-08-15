@@ -54,6 +54,8 @@
     "test:princess-weekly-maintenance": "node scripts/test-princess-weekly-maintenance.mjs",
     "princess:catch-up-session": "node scripts/run-princess-controlled-catch-up-session.mjs",
     "simulate:explora-discovery": "node scripts/simulate-explora-discovery.mjs",
+    "simulate:silversea-discovery": "node scripts/simulate-silversea-discovery.mjs",
+    "test:silversea-discovery": "node scripts/test-silversea-discovery.mjs",
     "simulate:seabourn-discovery": "node scripts/simulate-seabourn-discovery.mjs",
     "simulate:norwegian-discovery": "node scripts/simulate-norwegian-discovery.mjs",
     "test:explora-discovery": "node scripts/test-explora-discovery.mjs",

@@ -1,0 +1,112 @@
+{
+  "componentChunkName": "component---src-templates-cruise-catalog-cruise-catalog-tsx",
+  "path": "/cruise-catalog.html",
+  "result": {
+    "data": {
+      "cruises": {
+        "nodes": [
+          {
+            "cruiseCode": "RA260815009",
+            "fullPath": "/destinations/mediterranean-cruise/monte-carlo-to-barcelona-ra260815009.html",
+            "data": {
+              "ship": { "name": "Silver Ray" },
+              "departureDate": "2026-08-15",
+              "arrivalDate": "2026-08-24",
+              "days": 9,
+              "destination": { "name": { "localized": "MEDITERRANEAN" } },
+              "departurePort": { "name": { "localized": "Monte Carlo" } },
+              "arrivalPort": { "name": { "localized": "Barcelona" } }
+            }
+          },
+          {
+            "cruiseCode": "E4260820017",
+            "fullPath": "/destinations/kimberley-cruise/fremantle-perth-western-australia-to-darwin-e4260820017.html",
+            "data": {
+              "ship": { "name": "Silver Cloud " },
+              "departureDate": "2026-08-20",
+              "arrivalDate": "2026-09-06",
+              "days": 17,
+              "destination": { "name": { "localized": "KIMBERLEY" } },
+              "departurePort": { "name": { "localized": "Fremantle (Perth), Western Australia" } },
+              "arrivalPort": { "name": { "localized": "Darwin" } }
+            }
+          },
+          {
+            "cruiseCode": "MO271210C26",
+            "fullPath": "/destinations/australia-new-zealand-cruise/melbourne-to-auckland-mo271210c26.html",
+            "data": {
+              "ship": { "name": "Silver Moon" },
+              "departureDate": "2027-12-10",
+              "arrivalDate": "2028-01-05",
+              "days": 26,
+              "destination": { "name": { "localized": "AUSTRALIA & NEW ZEALAND" } },
+              "departurePort": { "name": { "localized": "Melbourne" } },
+              "arrivalPort": { "name": { "localized": "Auckland" } }
+            }
+          },
+          {
+            "cruiseCode": "SS260818S06",
+            "fullPath": "/destinations/mediterranean-cruise/nice-to-valletta-ss260818s06.html",
+            "data": {
+              "ship": { "name": "Silver Shadow" },
+              "departureDate": "2026-08-18",
+              "arrivalDate": "2026-08-24",
+              "days": 6,
+              "destination": { "name": { "localized": "MEDITERRANEAN" } },
+              "departurePort": { "name": { "localized": "Nice" } },
+              "arrivalPort": { "name": { "localized": "Valletta" } }
+            }
+          },
+          {
+            "cruiseCode": "SS260818012",
+            "fullPath": "/destinations/mediterranean-cruise/nice-to-nice-ss260818012.html",
+            "data": {
+              "ship": { "name": "Silver Shadow" },
+              "departureDate": "2026-08-18",
+              "arrivalDate": "2026-08-30",
+              "days": 12,
+              "destination": { "name": { "localized": "MEDITERRANEAN" } },
+              "departurePort": { "name": { "localized": "Nice" } },
+              "arrivalPort": { "name": { "localized": "Nice" } }
+            }
+          },
+          {
+            "cruiseCode": "MO260903015",
+            "fullPath": "/destinations/australia-new-zealand-cruise/melbourne-to-sydney-mo260903015.html",
+            "data": {
+              "ship": { "name": "Silver Moon" },
+              "departureDate": "2026-09-03",
+              "arrivalDate": "2026-09-19",
+              "days": 15,
+              "destination": { "name": { "localized": "AUSTRALIA & NEW ZEALAND" } },
+              "departurePort": { "name": { "localized": "Melbourne" } },
+              "arrivalPort": { "name": { "localized": "Sydney" } }
+            }
+          }
+        ]
+      },
+      "specialVoyages": {
+        "group": [
+          {
+            "fieldValue": "Grand",
+            "nodes": [
+              {
+                "cruiseCode": "SL260918050",
+                "fullPath": "/destinations/grand-voyages-cruise/grand-voyage-mediterranean-2026.html",
+                "data": {
+                  "ship": { "name": "Silver Spirit" },
+                  "comboType": "Grand",
+                  "departureDate": "2026-09-18",
+                  "arrivalDate": "2026-11-07",
+                  "days": 50,
+                  "departurePort": { "name": { "localized": "Lisbon" } },
+                  "arrivalPort": { "name": { "localized": "Athens (Piraeus)" } }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
