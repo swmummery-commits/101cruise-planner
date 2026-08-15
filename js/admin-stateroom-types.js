@@ -17,6 +17,8 @@
   let draft = emptyDraft();
   let draggedStateroomTypeId = null;
   let stateroomTypeDragFromHandle = false;
+  let stateroomDragPointerY = null;
+  let stateroomAutoScrollRaf = 0;
 
   function emptyDraft() {
     return {
@@ -222,6 +224,47 @@
     event.stopPropagation();
   }
 
+  function viewportScroll() {
+    return global.ViewportScroll || null;
+  }
+
+  function stopStateroomAutoScroll() {
+    if (stateroomAutoScrollRaf) {
+      global.cancelAnimationFrame?.(stateroomAutoScrollRaf);
+      stateroomAutoScrollRaf = 0;
+    }
+    stateroomDragPointerY = null;
+    document.removeEventListener("dragover", onStateroomDocumentDragOver, true);
+  }
+
+  function tickStateroomAutoScroll() {
+    stateroomAutoScrollRaf = 0;
+    if (!draggedStateroomTypeId || stateroomDragPointerY == null) return;
+    viewportScroll()?.autoScrollFromClientY?.(stateroomDragPointerY, {
+      edgePx: 88,
+      maxStep: 32
+    });
+    stateroomAutoScrollRaf = global.requestAnimationFrame(tickStateroomAutoScroll);
+  }
+
+  function startStateroomAutoScroll() {
+    if (stateroomAutoScrollRaf) {
+      global.cancelAnimationFrame?.(stateroomAutoScrollRaf);
+      stateroomAutoScrollRaf = 0;
+    }
+    document.removeEventListener("dragover", onStateroomDocumentDragOver, true);
+    viewportScroll()?.requestParentViewport?.();
+    document.addEventListener("dragover", onStateroomDocumentDragOver, true);
+    stateroomAutoScrollRaf = global.requestAnimationFrame(tickStateroomAutoScroll);
+  }
+
+  function onStateroomDocumentDragOver(event) {
+    if (!draggedStateroomTypeId) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    if (Number.isFinite(event.clientY)) stateroomDragPointerY = event.clientY;
+  }
+
   function onDragStart(event, id) {
     if (!stateroomTypeDragFromHandle || saving || reordering) {
       event.preventDefault();
@@ -232,12 +275,15 @@
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("text/plain", draggedStateroomTypeId);
     event.currentTarget.classList.add("is-dragging");
+    if (Number.isFinite(event.clientY)) stateroomDragPointerY = event.clientY;
+    startStateroomAutoScroll();
   }
 
   function onDragEnd(event) {
     stateroomTypeDragFromHandle = false;
     event.currentTarget?.classList.remove("is-dragging");
     const wasDragging = Boolean(draggedStateroomTypeId);
+    stopStateroomAutoScroll();
     draggedStateroomTypeId = null;
     if (wasDragging) {
       saveOrderFromDom();
@@ -248,6 +294,7 @@
     if (!draggedStateroomTypeId || saving || reordering) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
+    if (Number.isFinite(event.clientY)) stateroomDragPointerY = event.clientY;
 
     const list = event.currentTarget;
     const dragged = list.querySelector(

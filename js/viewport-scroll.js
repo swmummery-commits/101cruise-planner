@@ -10,7 +10,10 @@
   var PARENT_ORIGINS = ["https://www.101cruise.com.au", "https://101cruise.com.au"];
   var MSG_SCROLL_TOP = "101cruise-scroll-top";
   var MSG_SCROLL_TO = "101cruise-scroll-to";
+  var MSG_REQUEST_PARENT_VIEWPORT = "101cruise-request-parent-viewport";
+  var MSG_PARENT_VIEWPORT = "101cruise-parent-viewport";
   var DEFAULT_GAP_PX = 24;
+  var latestParentGeometry = null;
 
   function hasExplicitHashTarget() {
     var hash = String(root.location && root.location.hash ? root.location.hash : "").trim();
@@ -32,6 +35,93 @@
       extra
     ];
     return nodes.filter(Boolean);
+  }
+
+  function onParentViewportMessage(event) {
+    if (PARENT_ORIGINS.indexOf(String(event.origin || "")) === -1) return;
+    var data = event.data;
+    if (!data || data.type !== MSG_PARENT_VIEWPORT) return;
+    var visibleTop = Number(data.visibleTop);
+    var visibleHeight = Number(data.visibleHeight);
+    if (!Number.isFinite(visibleTop) || !Number.isFinite(visibleHeight)) return;
+    latestParentGeometry = {
+      visibleTop: visibleTop,
+      visibleHeight: visibleHeight,
+      iframeHeight: Number(data.iframeHeight) || 0,
+      parentViewportHeight: Number(data.parentViewportHeight) || 0
+    };
+  }
+
+  if (typeof root.addEventListener === "function") {
+    root.addEventListener("message", onParentViewportMessage);
+  }
+
+  function requestParentViewport() {
+    postToParents({ type: MSG_REQUEST_PARENT_VIEWPORT });
+  }
+
+  function getVisibleBounds() {
+    var g = latestParentGeometry;
+    if (g && Number(g.visibleHeight) > 0) {
+      return {
+        top: g.visibleTop,
+        bottom: g.visibleTop + g.visibleHeight,
+        height: g.visibleHeight,
+        mode: "parent"
+      };
+    }
+    var h = Math.max(1, Number(root.innerHeight) || 800);
+    return { top: 0, bottom: h, height: h, mode: "local" };
+  }
+
+  function scrollByDelta(deltaY) {
+    var dy = Number(deltaY) || 0;
+    if (!dy) return;
+    var bounds = getVisibleBounds();
+    if (bounds.mode === "parent") {
+      postToParents({
+        type: MSG_SCROLL_TO,
+        offsetTop: Math.max(0, bounds.top + dy),
+        gap: 0
+      });
+    }
+    try {
+      if (typeof root.scrollBy === "function") root.scrollBy(0, dy);
+      else if (typeof root.scrollTo === "function") root.scrollTo(0, (root.scrollY || 0) + dy);
+    } catch (_error) {
+      /* ignore */
+    }
+    var seen = new Set();
+    var nodes = collectScrollRoots();
+    for (var i = 0; i < nodes.length; i += 1) {
+      var node = nodes[i];
+      if (seen.has(node)) continue;
+      seen.add(node);
+      try {
+        if ("scrollTop" in node) node.scrollTop = (Number(node.scrollTop) || 0) + dy;
+      } catch (_inner) {
+        /* ignore */
+      }
+    }
+  }
+
+  function autoScrollFromClientY(clientY, options) {
+    var opts = options && typeof options === "object" ? options : {};
+    var edge = Number.isFinite(Number(opts.edgePx)) ? Number(opts.edgePx) : 80;
+    var maxStep = Number.isFinite(Number(opts.maxStep)) ? Number(opts.maxStep) : 28;
+    var y = Number(clientY);
+    if (!Number.isFinite(y) || edge <= 0) return 0;
+    var b = getVisibleBounds();
+    var dy = 0;
+    if (y < b.top + edge) {
+      var t = (b.top + edge - y) / edge;
+      dy = -Math.ceil(maxStep * Math.min(1, Math.max(0.2, t)));
+    } else if (y > b.bottom - edge) {
+      var t2 = (y - (b.bottom - edge)) / edge;
+      dy = Math.ceil(maxStep * Math.min(1, Math.max(0.2, t2)));
+    }
+    if (dy) scrollByDelta(dy);
+    return dy;
   }
 
   function postToParents(payload) {
@@ -174,6 +264,10 @@
     scrollToElement: scrollToElement,
     scheduleScrollToElement: scheduleScrollToElement,
     hasExplicitHashTarget: hasExplicitHashTarget,
+    requestParentViewport: requestParentViewport,
+    getVisibleBounds: getVisibleBounds,
+    scrollByDelta: scrollByDelta,
+    autoScrollFromClientY: autoScrollFromClientY,
     MSG_SCROLL_TOP: MSG_SCROLL_TOP,
     MSG_SCROLL_TO: MSG_SCROLL_TO,
     PARENT_ORIGINS: PARENT_ORIGINS

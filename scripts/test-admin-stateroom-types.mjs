@@ -26,6 +26,8 @@ assert(/function renderPanel/.test(uiSrc), "UI has renderPanel");
 assert(/saveStateroomType/.test(uiSrc), "UI save path");
 assert(/deleteStateroomType/.test(uiSrc), "UI delete path");
 assert(/onDragStart/.test(uiSrc), "UI drag start handler");
+assert(/startStateroomAutoScroll/.test(uiSrc), "UI auto-scrolls viewport while dragging");
+assert(/autoScrollFromClientY/.test(uiSrc), "UI uses ViewportScroll edge auto-scroll");
 assert(!/stateroomTypeDisplayOrder/.test(uiSrc), "UI no longer exposes display order field");
 
 assert(/admin-stateroom-types\.js/.test(adminHtml), "admin.html loads stateroom types module");
