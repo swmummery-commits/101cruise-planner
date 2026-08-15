@@ -10,12 +10,14 @@ const {
   daysUntilDeparture
 } = require("./public-discovered-cruise-inventory");
 
+const MAX_CONTROLLED_BATCH = 250;
 const MAX_FIRST_CONTROLLED_BATCH = 100;
 const DEFAULT_EXPECTED_BATCH_COUNT = 100;
 const APPLY_CONFIRMATION_TOKEN = "SILVERSEA-FIRST-CONTROLLED-BATCH";
 const FIRST_BATCH_MODE = "silversea_first_controlled_batch";
 const FIRST_BATCH_75_MODE = "silversea_first_controlled_batch_75";
 const SECOND_BATCH_25_MODE = "silversea_controlled_batch_25";
+const THIRD_BATCH_124_MODE = "silversea_controlled_batch_124";
 
 const EXCLUSIVE_BUCKETS = [
   "departed",
@@ -162,9 +164,9 @@ function loadFrozenOfficialSailingIds(report) {
   if (Array.isArray(table) && table.length && table[0]?.official_sailing_id) {
     return table.map((row) => String(row.official_sailing_id).trim().toUpperCase()).filter(Boolean);
   }
-  const ids = report?.selection?.selected_official_sailing_ids;
-  if (Array.isArray(ids) && ids.length) {
-    return ids.map((id) => String(id).trim().toUpperCase()).filter(Boolean);
+  const selectionIds = report?.selection?.selected_official_sailing_ids;
+  if (Array.isArray(selectionIds) && selectionIds.length) {
+    return selectionIds.map((id) => String(id).trim().toUpperCase()).filter(Boolean);
   }
   const err = new Error("frozen_selection_not_found_in_report");
   err.code = "frozen_selection_not_found_in_report";
@@ -302,7 +304,7 @@ function evaluatePreWriteGate({
   proposedUpdates,
   sourceHealthOk,
   sourceRefreshOk,
-  maxWrites = MAX_FIRST_CONTROLLED_BATCH,
+  maxWrites = MAX_CONTROLLED_BATCH,
   expectedCount = null,
   existingSelectedOfficialIds = 0
 }) {
@@ -331,7 +333,7 @@ function evaluatePreWriteGate({
   if (proposedInserts !== authorisedCount) {
     failures.push(`proposed_inserts_not_authorised_count:${proposedInserts}/${authorisedCount}`);
   }
-  if (proposedInserts > maxWrites) failures.push(`proposed_inserts_exceed_limit:${proposedInserts}`);
+  if (proposedInserts > maxWrites) failures.push(`proposed_inserts_exceed_limit:${proposedInserts}/${maxWrites}`);
   if (existingSelectedOfficialIds > 0) {
     failures.push(`selected_official_ids_already_present:${existingSelectedOfficialIds}`);
   }
@@ -340,12 +342,14 @@ function evaluatePreWriteGate({
 }
 
 module.exports = {
+  MAX_CONTROLLED_BATCH,
   MAX_FIRST_CONTROLLED_BATCH,
   DEFAULT_EXPECTED_BATCH_COUNT,
   APPLY_CONFIRMATION_TOKEN,
   FIRST_BATCH_MODE,
   FIRST_BATCH_75_MODE,
   SECOND_BATCH_25_MODE,
+  THIRD_BATCH_124_MODE,
   EXCLUSIVE_BUCKETS,
   isClassic,
   isExpedition,

@@ -251,6 +251,40 @@ test("second batch mode constant exists", () => {
   assert(controlled.SECOND_BATCH_25_MODE === "silversea_controlled_batch_25", "batch mode");
 });
 
+test("third batch 124 mode constant exists", () => {
+  assert(controlled.THIRD_BATCH_124_MODE === "silversea_controlled_batch_124", "batch mode");
+});
+
+test("load frozen official IDs from phase4a fixture shape", () => {
+  const fixturePath = path.join(root, "scripts/fixtures/silversea/phase4a-frozen-eligible.json");
+  const report = JSON.parse(fs.readFileSync(fixturePath, "utf8"));
+  const ids = controlled.loadFrozenOfficialSailingIds(report);
+  assert(ids.length === 124, `expected 124 ids, got ${ids.length}`);
+  assert(new Set(ids).size === 124, "expected unique ids");
+  assert(report.expected_count === 124, "fixture expected_count");
+});
+
+test("pre-write gate requires exact 124 for phase 6 frozen batch", () => {
+  const gate = controlled.evaluatePreWriteGate({
+    funnel: { reconciles: true },
+    selection: {
+      sufficient_for_batch: true,
+      frozen_selection: true,
+      exact_frozen_set_match: true,
+      frozen_unique_count: 124,
+      frozen_still_eligible: 124
+    },
+    proposedInserts: 124,
+    proposedUpdates: 0,
+    sourceHealthOk: true,
+    sourceRefreshOk: true,
+    expectedCount: 124,
+    maxWrites: 124,
+    existingSelectedOfficialIds: 0
+  });
+  assert(gate.passed, `expected pass, failures=${gate.failures?.join(",")}`);
+});
+
 console.log(`\ntest:silversea-controlled-batch: ${passed} passed${failures.length ? `, ${failures.length} failed` : ""}`);
 if (failures.length) {
   console.error(JSON.stringify(failures, null, 2));
