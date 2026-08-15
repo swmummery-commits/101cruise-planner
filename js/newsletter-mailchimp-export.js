@@ -13,6 +13,7 @@
   "use strict";
 
   const SITE_ORIGIN = "https://www.101cruise.com.au";
+  const ASSET_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
   const MAX_WIDTH = 600;
   const MAX_ROOMS = 4;
   /** Brand green — website primary (#8DD9BF). */
@@ -594,28 +595,21 @@
 
   function inclusionIconUrl(key) {
     const file = INCLUSION_ICON_FILES[key] || "default.png";
-    return `${SITE_ORIGIN}/images/newsletter-includes/${file}`;
+    return `${ASSET_ORIGIN}/images/newsletter-includes/${file}`;
   }
 
-  function renderInclusionIconCell(item) {
+  function renderInclusionIconCell(item, { showDivider = false } = {}) {
     const key = typeof item === "string" ? "" : item.key || "";
     const label =
       typeof item === "string"
         ? String(item).toUpperCase()
         : item.shortLabel || String(item.label || "").toUpperCase();
     const src = inclusionIconUrl(key);
+    const divider = showDivider ? "border-left:1px solid #8DD9BF;" : "border-left:0;";
     return `
-      <td class="cr101-includes-item" valign="top" align="center" style="padding:4px 8px;vertical-align:top;text-align:center;">
+      <td class="cr101-includes-item${showDivider ? " cr101-includes-divider" : ""}" valign="top" align="center" style="padding:4px 10px;vertical-align:top;text-align:center;${divider}">
         <img src="${escapeHtml(src)}" alt="" width="22" height="22" border="0" style="display:block;width:22px;height:22px;margin:0 auto 6px;border:0;">
         <div style="font-family:Helvetica,Arial,sans-serif;font-size:10px;font-weight:600;letter-spacing:0.35px;line-height:1.25;text-transform:uppercase;color:#245C4E;max-width:88px;margin:0 auto;">${escapeHtml(label)}</div>
-      </td>
-    `;
-  }
-
-  function renderInclusionDivider() {
-    return `
-      <td class="cr101-includes-divider" width="8" valign="middle" align="center" style="width:8px;padding:4px 0;vertical-align:middle;background-color:#ffffff;">
-        <div style="width:1px;height:38px;background-color:#8DD9BF;margin:0 auto;font-size:0;line-height:0;">&nbsp;</div>
       </td>
     `;
   }
@@ -624,10 +618,7 @@
     if (!items?.length) return "";
     const padTop = green ? 12 : 28;
     const cells = items
-      .map((item, index) => {
-        const cell = renderInclusionIconCell(item);
-        return index < items.length - 1 ? `${cell}${renderInclusionDivider()}` : cell;
-      })
+      .map((item, index) => renderInclusionIconCell(item, { showDivider: index > 0 }))
       .join("");
     return `
       <tr>

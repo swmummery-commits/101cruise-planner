@@ -378,8 +378,12 @@ assert(
 );
 assert(/cr101-includes-divider/i.test(threeRoomGreen.html), "thin green divider between Includes items");
 assert(
-  /cr101-includes-divider[\s\S]*?background-color:#8DD9BF/i.test(threeRoomGreen.html),
+  /border-left:1px solid #8DD9BF/i.test(threeRoomGreen.html),
   "Includes divider uses brand green"
+);
+assert(
+  /admirable-tiramisu-d4da8a\.netlify\.app\/images\/newsletter-includes/i.test(threeRoomGreen.html),
+  "Includes icons load from Netlify, not Squarespace"
 );
 assert(!/ · /i.test(threeRoomGreen.html.match(/cr101-gpc-includes[\s\S]*?<\/table>/i)?.[0] || ""), "Includes is not a middot text line");
 

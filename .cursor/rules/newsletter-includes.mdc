@@ -15,7 +15,9 @@ Shared by newsletter preview and public cruise pages (`newsletter-preview.css`).
 - Each item is a **column**: icon above label (not side-by-side)
 - Thin green vertical divider (**1px `#8DD9BF`**) between items
 - Icons + labels use dark green **`#245C4E`**
-- Mailchimp HTML uses hosted PNG icons (`/images/newsletter-includes/`), not inline SVG
+- Mailchimp HTML uses hosted PNG icons on the Netlify origin
+  (`https://admirable-tiramisu-d4da8a.netlify.app/images/newsletter-includes/`),
+  not `101cruise.com.au` (Squarespace 404s those files)
 - Items may wrap; do not truncate labels
 
 ## Between cruises
