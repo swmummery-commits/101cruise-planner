@@ -66,6 +66,7 @@ const LOGISTICS_PORT_CODES = Object.freeze({
   CLPUW: true,
   AQPWM: true,
   AQKGI: true,
+  AQKGG: true,
   ECPSJ: true,
   ECBAL: true,
   ECGPS: true
