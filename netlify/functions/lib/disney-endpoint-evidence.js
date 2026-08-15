@@ -57,15 +57,42 @@ function normalisePortLabel(value) {
     .trim();
 }
 
+function titleHasExplicitTwoEndpoints(productName) {
+  const text = String(productName || "");
+  return /\bCruise from\s+.+\s+(?:ending in|to)\s+/i.test(text);
+}
+
 function parseDisneyProductTitleEndpoints(productName) {
   const text = String(productName || "").trim();
   if (!text) return null;
 
-  const themed = text.match(/\bCruise from\s+(.+?)(?:\s+ending in\s+(.+?))?(?:\s+with\b.*)?$/i);
+  const fromTo = text.match(/\bCruise from\s+(.+?)\s+to\s+(.+?)(?:\s+with\b.*)?$/i);
+  if (fromTo) {
+    return {
+      embark: fromTo[1].trim(),
+      arrival: fromTo[2].trim(),
+      method: "product_name_cruise_from_to_pattern",
+      tier: ENDPOINT_TIER.PRODUCT_TITLE,
+      evidence: productName
+    };
+  }
+
+  const endingIn = text.match(/\bCruise from\s+(.+?)\s+ending in\s+(.+?)(?:\s+with\b.*)?$/i);
+  if (endingIn) {
+    return {
+      embark: endingIn[1].trim(),
+      arrival: endingIn[2].trim(),
+      method: "product_name_cruise_from_ending_in_pattern",
+      tier: ENDPOINT_TIER.PRODUCT_TITLE,
+      evidence: productName
+    };
+  }
+
+  const themed = text.match(/\bCruise from\s+(.+?)(?:\s+with\b.*)?$/i);
   if (themed) {
     return {
       embark: themed[1].trim(),
-      arrival: themed[2] ? themed[2].trim() : null,
+      arrival: null,
       method: "product_name_cruise_from_pattern",
       tier: ENDPOINT_TIER.PRODUCT_TITLE,
       evidence: productName
@@ -341,11 +368,18 @@ function extractArrivalFromProductName(productName) {
   if (!parsed?.arrival) return null;
   return {
     port: parsed.arrival,
-    method: "product_name_ending_in",
+    method: parsed.method || "product_name_ending_in",
     tier: ENDPOINT_TIER.PRODUCT_TITLE,
     evidence: parsed.evidence,
     source: "product_title"
   };
+}
+
+function isNativeTitleEndpointMethod(method) {
+  return (
+    typeof method === "string" &&
+    (method.startsWith("product_name_cruise_from") || method === "product_name_ending_in")
+  );
 }
 
 function resolveDisneyArrivalPort(raw = {}, embarkPortMeta = {}, classifyItineraryPort, resolveItineraryPortText) {
@@ -539,11 +573,20 @@ function auditOneWaySailings(normalised = []) {
         row.candidate?.departure_port_meta || {},
         row.candidate?.arrival_port_meta || {}
       );
+      const explicitTwoEndpoint = titleHasExplicitTwoEndpoints(row.raw?.product_name);
+      const nativeTitleParse =
+        !explicitTwoEndpoint ||
+        (evidence.title_embark &&
+          evidence.title_arrival &&
+          !/\sto\s/i.test(evidence.title_embark) &&
+          isNativeTitleEndpointMethod(evidence.embark_method) &&
+          isNativeTitleEndpointMethod(evidence.arrival_method));
       const passed =
         row.candidate?.departure_port_meta?.status === "resolved" &&
         row.candidate?.arrival_port_meta?.status === "resolved" &&
         !(row.candidate?.departure_port_meta?.unresolved_conflicts || []).length &&
-        !(row.candidate?.arrival_port_meta?.unresolved_conflicts || []).length;
+        !(row.candidate?.arrival_port_meta?.unresolved_conflicts || []).length &&
+        nativeTitleParse;
       return {
         official_identity: row.official_sailing_id,
         ship: row.raw?.ship_name,
@@ -552,6 +595,7 @@ function auditOneWaySailings(normalised = []) {
         return_date: row.raw?.return_date,
         nights: row.raw?.nights,
         oneWayItinerary: row.raw?.one_way_itinerary,
+        explicit_two_endpoint: explicitTwoEndpoint,
         title_embark: evidence.title_embark,
         title_arrival: evidence.title_arrival,
         product_id_port: evidence.product_id_embark,
@@ -561,6 +605,9 @@ function auditOneWaySailings(normalised = []) {
           .find((p) => p) || null,
         final_embark: row.candidate?.departure_port,
         final_arrival: row.candidate?.arrival_port,
+        endpoint_method_embark: evidence.embark_method,
+        endpoint_method_arrival: evidence.arrival_method,
+        native_title_parse: nativeTitleParse,
         conflicts: [...(evidence.embark_conflicts || []), ...(evidence.arrival_conflicts || [])],
         unresolved_conflicts: [
           ...(evidence.embark_unresolved_conflicts || []),
@@ -570,10 +617,14 @@ function auditOneWaySailings(normalised = []) {
       };
     });
 
+  const explicitRows = rows.filter((r) => r.explicit_two_endpoint);
   return {
     total: rows.length,
     passed: rows.filter((r) => r.pass).length,
     failed: rows.filter((r) => !r.pass).length,
+    explicit_two_endpoint_total: explicitRows.length,
+    explicit_two_endpoint_native_parse:
+      explicitRows.length === 0 || explicitRows.every((r) => r.native_title_parse),
     rows
   };
 }
@@ -689,8 +740,10 @@ function buildFrozenControlledBatch(normalised = [], manifest = [], context = {}
     max_size: maxSize,
     strategy: "insert_only",
     strategy_reason:
-      "Fresh frozen batch from Phase 2D corrected endpoint model. Phase 2C batch invalidated due to filter-provenance override bug.",
+      "Fresh frozen batch from Phase 3 corrected from-X-to-Y endpoint model. Phase 2D hash invalidated.",
     invalidates_phase2c_batch: true,
+    invalidates_phase2d_batch: true,
+    phase2d_batch_hash: "29eec188212e19502c910f02987d00b2be8b6478a9d12f9ea237aa347b6a548d",
     phase2c_batch_hash: null,
     action_mix: { insert_active: picked.length, update_exact_legacy_match: 0 },
     frozen_identities: picked.map((p) => p.official_product_key),
@@ -704,6 +757,8 @@ module.exports = {
   ENDPOINT_TIER,
   DISNEY_EMBARK_PRODUCT_ID_MAP,
   DISNEY_CITY_FILTER_EMBARK,
+  titleHasExplicitTwoEndpoints,
+  isNativeTitleEndpointMethod,
   parseDisneyProductTitleEndpoints,
   extractEmbarkFromProductId,
   extractEmbarkCandidatesFromCityFilters,

@@ -454,6 +454,35 @@ const hash1 = endpointEvidence.hashFrozenBatchCandidates(frozen.entries, adapter
 const hash2 = endpointEvidence.hashFrozenBatchCandidates(frozen.entries, adapter.ADAPTER_VERSION);
 assert(hash1 === hash2, "hash stable across regeneration");
 
+// --- Phase 3: from-X-to-Y endpoint parsing ---
+const dd1568Title = "4-Night Eastern Caribbean Cruise from San Juan to Port Canaveral";
+const dd1568Parsed = endpointEvidence.parseDisneyProductTitleEndpoints(dd1568Title);
+assert(dd1568Parsed?.embark === "San Juan", "DD1568 title embark San Juan");
+assert(dd1568Parsed?.arrival === "Port Canaveral", "DD1568 title arrival Port Canaveral");
+assert(dd1568Parsed?.method === "product_name_cruise_from_to_pattern", "DD1568 from-to method");
+
+const endingInParsed = endpointEvidence.parseDisneyProductTitleEndpoints(
+  "14-Night Transatlantic Cruise from Southampton ending in Fort Lauderdale"
+);
+assert(endingInParsed?.embark === "Southampton", "ending-in embark");
+assert(endingInParsed?.arrival === "Fort Lauderdale", "ending-in arrival");
+
+const roundTripParsed = endpointEvidence.parseDisneyProductTitleEndpoints(
+  "3-Night Bahamian Cruise from Port Canaveral with 2 stops at Castaway Cay"
+);
+assert(roundTripParsed?.embark === "Port Canaveral", "round-trip embark");
+assert(roundTripParsed?.arrival == null, "round-trip no arrival");
+
+const controlled = require(path.join(root, "netlify/functions/lib/disney-controlled-batch"));
+assert(controlled.rejectObsoletePhase2dHash(controlled.PHASE2D_OBSOLETE_HASH), "Phase 2D hash rejected");
+assert(!controlled.rejectObsoletePhase2dHash("abc123"), "non-phase2d hash not rejected");
+assert(controlled.MAX_CONTROLLED_DISNEY_BATCH === 20, "max batch 20");
+assert(controlled.APPLY_CONFIRMATION_TOKEN === "DISNEY-FIRST-CONTROLLED-BATCH", "confirmation token");
+
+const writes = require(path.join(root, "netlify/functions/lib/disney-discovery-writes"));
+assert(writes.REJECTED_ACTIONS.has("update_exact_existing"), "update path rejected");
+assert(writes.REJECTED_ACTIONS.has("update_exact_legacy_match"), "legacy update rejected");
+
 (async () => {
   let productCalls = 0;
   const mockFetch = async (url, init = {}) => {

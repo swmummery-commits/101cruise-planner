@@ -94,6 +94,8 @@
     "simulate:disney-discovery": "node scripts/simulate-disney-discovery.mjs",
     "simulate:disney-phase2c": "node scripts/simulate-disney-phase2c.mjs",
     "simulate:disney-phase2d": "node scripts/simulate-disney-phase2d.mjs",
+    "disney:first-controlled-batch": "node scripts/run-disney-first-controlled-batch.mjs",
+    "test:disney-controlled-batch": "node scripts/test-disney-controlled-batch.mjs",
     "apply:disney-ship-code-seed": "node scripts/apply-disney-ship-code-seed.mjs",
     "apply:disney-port-reference-data": "node scripts/apply-disney-port-reference-data.mjs --all",
     "test:norwegian-weekly-maintenance": "node scripts/test-norwegian-weekly-maintenance.mjs",

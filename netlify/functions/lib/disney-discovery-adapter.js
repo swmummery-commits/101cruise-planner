@@ -26,7 +26,7 @@ const {
 } = require("./public-discovered-cruise-inventory");
 
 const ADAPTER_ID = source.ADAPTER_ID;
-const ADAPTER_VERSION = `${source.ADAPTER_VERSION}.2d`;
+const ADAPTER_VERSION = `${source.ADAPTER_VERSION}.3`;
 const DISNEY_LINE_ID = "8f7aadcb-7843-4060-b0cb-a60631936b3a";
 const DISNEY_SEARCH_URL = "https://disneycruise.disney.go.com/cruises-destinations/list/";
 const PHASE2A_BASELINE_IDENTITIES = null;
