@@ -34,6 +34,8 @@ const {
   mergeAzamaraStructuredVoyage,
   validateAzamaraOceanDuration
 } = require("./azamara-discovery-source");
+const { resolveAzamaraDestination, isAzamaraNonGeographicGtm } = require("./azamara-destination-mapping");
+const { parseRoutePortPair } = require("./discovery-departure-port");
 const {
   evaluateIngestionAutomation,
   ACTION: AUTOMATION_ACTION
@@ -982,7 +984,7 @@ function matchEntities(normalised, { cruiseLine, ships, destinations, preferredD
   }
 
   // Prefer destination only when the source text actually mentions it (never force).
-  const destHits = matchDestination(
+  let destHits = matchDestination(
     normalised.blob,
     destinations || [],
     destinationAliases || []
@@ -998,6 +1000,33 @@ function matchEntities(normalised, { cruiseLine, ships, destinations, preferredD
   ) {
     destination = preferredDestination;
     destHits.push({ dest: preferredDestination, evidence: "preferred_mentioned" });
+  }
+
+  if (isAzamaraCruiseLine(cruiseLine)) {
+    const gtmDestination = structuredVoyage?.gtm_destination || null;
+    const routePair =
+      parseRoutePortPair(normalised.departure_port) ||
+      parseRoutePortPair(normalised.description) ||
+      parseRoutePortPair(normalised.title);
+    const needsAzamaraResolver = !destination || isAzamaraNonGeographicGtm(gtmDestination);
+    if (needsAzamaraResolver) {
+      const azResolved = resolveAzamaraDestination({
+        title: normalised.title,
+        description: normalised.description,
+        excerpt: null,
+        gtmDestination,
+        routeFrom: routePair?.from || null,
+        routeTo: routePair?.to || null,
+        destinations,
+        destinationAliases,
+        matchDestination,
+        pickDestinationFromHits
+      });
+      if (azResolved.destination) {
+        destination = azResolved.destination;
+        destHits = azResolved.destHits;
+      }
+    }
   }
 
   return {
@@ -1060,7 +1089,8 @@ function buildCandidateFromSource({
       url,
       title,
       description,
-      structuredVoyage
+      structuredVoyage,
+      html
     });
     if (azamaraSkip) return azamaraSkip;
   }
