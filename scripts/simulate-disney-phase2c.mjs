@@ -118,7 +118,11 @@ async function main() {
       destination_pct: simulation.destination_analysis?.destination_resolution_pct,
       duration_pct: simulation.quality_gate.duration_validation_pct
     },
-    eligibility_waterfall: simulation.eligibility,
+    eligibility_waterfall: {
+      as_of_date: simulation.eligibility.as_of_date,
+      waterfall: simulation.eligibility.waterfall,
+      arithmetic: simulation.eligibility.arithmetic
+    },
     production_manifest: {
       ...manifest1.summary,
       deterministic
