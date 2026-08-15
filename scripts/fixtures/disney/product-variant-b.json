@@ -1,0 +1,22 @@
+{
+  "productId": "3_bahamian_port_canaveral",
+  "productName": "3-Night Bahamian Cruise from Port Canaveral",
+  "itineraries": [
+    {
+      "itineraryId": "",
+      "numberOfSailings": 8,
+      "portsOfCall": ["Port Canaveral", "Castaway Cay", "Nassau"],
+      "oneWayItinerary": true,
+      "sailings": [
+        {
+          "sailingId": "DW0002",
+          "sailDateFrom": "2026-10-01",
+          "numberOfNights": 3,
+          "destination": "BAHAMAS",
+          "packageCode": "DW3B",
+          "ship": { "name": "Disney Wonder", "seawareId": "DW" }
+        }
+      ]
+    }
+  ]
+}

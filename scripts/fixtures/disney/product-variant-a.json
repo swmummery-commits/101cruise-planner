@@ -1,0 +1,22 @@
+{
+  "productId": "3_bahamian_port_canaveral",
+  "productName": "3-Night Bahamian Cruise from Port Canaveral",
+  "itineraries": [
+    {
+      "itineraryId": "",
+      "numberOfSailings": 12,
+      "portsOfCall": ["Port Canaveral", "Nassau", "Castaway Cay"],
+      "oneWayItinerary": false,
+      "sailings": [
+        {
+          "sailingId": "DM0001",
+          "sailDateFrom": "2026-09-01",
+          "numberOfNights": 3,
+          "destination": "BAHAMAS",
+          "packageCode": "DM3A",
+          "ship": { "name": "Disney Magic", "seawareId": "DM" }
+        }
+      ]
+    }
+  ]
+}

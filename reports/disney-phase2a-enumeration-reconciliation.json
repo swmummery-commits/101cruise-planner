@@ -1,0 +1,2682 @@
+{
+  "phase": "2A",
+  "repository_start_sha": "cb15047c2dc6ea20150f009084d92d126adf221d",
+  "repository_end_sha": "fe1739967ad075000104170058a347373cdbd10b",
+  "production_writes": 0,
+  "database_mutations": 0,
+  "phase1_baseline": {
+    "unique_sailings": 484,
+    "advertised_month_sum": 651,
+    "apparent_gap": 3
+  },
+  "product_variant_analysis": {
+    "unique_product_ids": 90,
+    "structural_product_variants": 254,
+    "multi_variant_product_ids": 52,
+    "duplicate_product_id_occurrences": 1126,
+    "itinerary_targets_before_fix": 90,
+    "itinerary_targets_after_fix": 254,
+    "lost_itineraries_recovered": 164,
+    "itineraries_lost_by_current_last_write_wins_logic": 164,
+    "sailing_capacity_lost_by_current_last_write_wins_logic": 470
+  },
+  "enumeration": {
+    "raw_sailing_rows": 2150,
+    "unique_sailings": 648,
+    "identity_collisions": 0,
+    "future_total": 648,
+    "within_21_day_cutoff": 25,
+    "publicly_eligible_total": 623,
+    "earliest_departure": "2026-08-19",
+    "latest_departure": "2027-09-25",
+    "ship_counts": {
+      "Disney Magic": 69,
+      "Disney Wonder": 72,
+      "Disney Dream": 94,
+      "Disney Wish": 87,
+      "Disney Fantasy": 82,
+      "Disney Treasure": 58,
+      "Disney Adventure": 107,
+      "Disney Destiny": 79
+    },
+    "itinerary_expansion_targets": 254,
+    "api_calls_total": 1260,
+    "api_calls_budget": 2500
+  },
+  "monthly_reconciliation": [
+    {
+      "month": "2026-08",
+      "advertised_total": 19,
+      "unique_dated_sailings": 19,
+      "raw_rows": 19,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "DM1740",
+        "DM1741",
+        "DW2203",
+        "DD1511",
+        "DF0820",
+        "WW0507",
+        "WW0505",
+        "DF0821",
+        "DF0822",
+        "WW0504",
+        "WW0506",
+        "WT0089",
+        "WT0088",
+        "DA0074",
+        "DA0071",
+        "DA0073",
+        "WD0061",
+        "WD0062",
+        "WD0059"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_fort_lauderdale",
+        "3_bahamian_port_canaveral",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "4_singapore",
+        "4_spain_southampton",
+        "5_bahamian_port_canaveral",
+        "7_alaskan_vancouver",
+        "7_eastern_caribbean_port_canaveral",
+        "7_western_caribbean_port_canaveral"
+      ],
+      "itinerary_targets": 19,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2026-09",
+      "advertised_total": 47,
+      "unique_dated_sailings": 47,
+      "raw_rows": 47,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "DM1742",
+        "DM1743",
+        "DW2200",
+        "DW2201",
+        "DW2202",
+        "DF0823",
+        "DF0824",
+        "WT0090",
+        "DA0076",
+        "DA0078",
+        "DA0080",
+        "DA0082",
+        "DA0075",
+        "DA0077",
+        "DA0079",
+        "DA0081",
+        "WD0063",
+        "DM1749",
+        "DM1750",
+        "DM1747",
+        "DM1748",
+        "DW2204",
+        "DD1516",
+        "DD1515",
+        "DD1514",
+        "WW0511",
+        "DF0826",
+        "WW0515",
+        "DF0829",
+        "WW0509",
+        "WW0513",
+        "DF0825",
+        "DF0827",
+        "DF0828",
+        "WW0508",
+        "WW0510",
+        "WW0512",
+        "WW0514",
+        "WT0091",
+        "WT0093",
+        "WT0092",
+        "WD0067",
+        "WD0065",
+        "WD0064",
+        "WD0066",
+        "WD0069",
+        "WD0068"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "13_westbound_transatlantic_southampton_fort_lauderdale",
+        "3_bahamian_fort_lauderdale",
+        "3_bahamian_fort_lauderdale_halloween",
+        "3_bahamian_port_canaveral_halloween",
+        "3_baja_san_diego_halloween",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale_halloween",
+        "4_bahamian_port_canaveral",
+        "4_bahamian_port_canaveral_halloween",
+        "4_baja_san_diego",
+        "4_pacific_coast_vancouver_san_diego",
+        "4_singapore",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_fort_lauderdale_halloween",
+        "5_bahamian_port_canaveral",
+        "5_bahamian_port_canaveral_halloween",
+        "5_pacific_vancouver_san_diego",
+        "5_western_caribbean_fort_lauderdale_halloween",
+        "7_alaskan_vancouver",
+        "7_british_isles_southhampton",
+        "7_eastern_caribbean_port_canaveral_halloween",
+        "7_western_caribbean_port_canaveral",
+        "7_western_caribbean_port_canaveral_halloween"
+      ],
+      "itinerary_targets": 47,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2026-10",
+      "advertised_total": 56,
+      "unique_dated_sailings": 56,
+      "raw_rows": 56,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "DA0084",
+        "DA0086",
+        "DA0088",
+        "DA0090",
+        "DA0083",
+        "DA0085",
+        "DA0087",
+        "DA0089",
+        "DA0091",
+        "DM1753",
+        "DW2206",
+        "DM1755",
+        "WW0519",
+        "DF0833",
+        "WW0523",
+        "DF0836",
+        "WW0517",
+        "WW0521",
+        "DF0831",
+        "DF0834",
+        "DF0835",
+        "WW0516",
+        "WW0518",
+        "WW0520",
+        "WW0522",
+        "WW0524",
+        "WT0095",
+        "WT0097",
+        "WT0094",
+        "WT0096",
+        "WT0098",
+        "DD1520",
+        "DD1522",
+        "DD1518",
+        "DD1524",
+        "WD0070",
+        "WD0075",
+        "DD1521",
+        "DD1519",
+        "DD1523",
+        "DM1754",
+        "DW2208",
+        "DM1751",
+        "DM1752",
+        "DM1756",
+        "DW2209",
+        "DM1757",
+        "DW2210",
+        "DW2205",
+        "DM1758",
+        "DD1517",
+        "WD0073",
+        "DF0832",
+        "WD0074",
+        "WD0071",
+        "WD0072"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_fort_lauderdale_halloween",
+        "3_bahamian_port_canaveral_halloween",
+        "3_baja_san_diego_halloween",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale_halloween",
+        "4_bahamian_port_canaveral_halloween",
+        "4_baja_san_diego_halloween",
+        "4_singapore",
+        "5_bahamian_fort_lauderdale_halloween",
+        "5_bahamian_port_canaveral_halloween",
+        "5_mexican_riviera_san_diego_halloween",
+        "5_western_caribbean_fort_lauderdale_halloween",
+        "5_western_caribbean_port_canaveral_halloween",
+        "6_mexican_riviera_san_diego_halloween",
+        "7_eastern_caribbean_fort_lauderdale_halloween",
+        "7_eastern_caribbean_port_canaveral_halloween",
+        "7_mexican_riviera_halloween",
+        "7_western_caribbean_fort_lauderdale_halloween",
+        "7_western_caribbean_port_canaveral_halloween"
+      ],
+      "itinerary_targets": 56,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2026-11",
+      "advertised_total": 55,
+      "unique_dated_sailings": 54,
+      "raw_rows": 54,
+      "difference": 1,
+      "unique_sailing_ids": [
+        "WW0525",
+        "DF0837",
+        "DF0838",
+        "WW0526",
+        "WT0099",
+        "DA0092",
+        "DA0094",
+        "DA0096",
+        "DA0098",
+        "DA0100",
+        "DA0093",
+        "DA0095",
+        "DA0097",
+        "DA0099",
+        "DD1526",
+        "DD1525",
+        "DD1527",
+        "DW2212",
+        "WD0076",
+        "DM1760",
+        "DM1762",
+        "DM1761",
+        "DM1759",
+        "DW2211",
+        "DW2214",
+        "DW2213",
+        "DW2215",
+        "DD1529",
+        "DD1531",
+        "WD0080",
+        "DD1532",
+        "WD0078",
+        "DF0840",
+        "DF0843",
+        "WW0527",
+        "DF0839",
+        "WW0531",
+        "DF0842",
+        "WW0529",
+        "WW0533",
+        "DF0841",
+        "WW0528",
+        "WW0530",
+        "WW0532",
+        "WT0100",
+        "WT0102",
+        "WT0101",
+        "WD0077",
+        "WD0079",
+        "WD0082",
+        "WD0081",
+        "DW2216",
+        "DD1528",
+        "DW2217"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "14_panama_canal_san_diego_galveston",
+        "3_bahamian_fort_lauderdale",
+        "3_bahamian_fort_lauderdale_merrytime",
+        "3_bahamian_port_canaveral",
+        "3_bahamian_port_canaveral_merrytime",
+        "3_baja_san_diego",
+        "3_baja_san_diego_merrytime",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_fort_lauderdale_merrytime",
+        "4_bahamian_port_canaveral",
+        "4_bahamian_port_canaveral_merrytime",
+        "4_baja_san_diego",
+        "4_baja_san_diego_merrytime",
+        "4_singapore",
+        "4_western_caribbean_galveston_merrytime",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_fort_lauderdale_merrytime",
+        "5_bahamian_port_canaveral",
+        "5_bahamian_port_canaveral_merrytime",
+        "5_mexican_riviera_san_diego_merrytime",
+        "5_western_caribbean_galveston_merrytime",
+        "5_western_caribbean_port_canaveral_merrytime",
+        "5_western_fort_lauderdale",
+        "6_mexican_riviera_san_diego_merrytime",
+        "7_eastern_caribbean_fort_lauderdale_merrytime",
+        "7_eastern_caribbean_port_canaveral",
+        "7_eastern_caribbean_port_canaveral_merrytime",
+        "7_mexican_riviera_san_diego_merrytime",
+        "7_western_caribbean_port_canaveral_merrytime"
+      ],
+      "itinerary_targets": 54,
+      "status": "under_enumerated_vs_advertised",
+      "reconciles": false
+    },
+    {
+      "month": "2026-12",
+      "advertised_total": 54,
+      "unique_dated_sailings": 53,
+      "raw_rows": 53,
+      "difference": 1,
+      "unique_sailing_ids": [
+        "DF0850",
+        "WW0542",
+        "WW0541",
+        "DF0849",
+        "WT0106",
+        "DA0102",
+        "DA0104",
+        "DA0106",
+        "DA0108",
+        "DA0101",
+        "DA0103",
+        "DA0105",
+        "DA0107",
+        "DA0109",
+        "WD0087",
+        "DM1763",
+        "DM1766",
+        "DM1767",
+        "DM1764",
+        "DM1765",
+        "DW2218",
+        "DW2221",
+        "DW2219",
+        "DW2220",
+        "DW2222",
+        "DD1533",
+        "DD1535",
+        "DD1537",
+        "DD1534",
+        "DD1536",
+        "WD0085",
+        "DF0846",
+        "WW0535",
+        "DF0845",
+        "DF0848",
+        "WW0537",
+        "DF0844",
+        "DF0847",
+        "WW0534",
+        "WW0536",
+        "WW0538",
+        "WW0539",
+        "WT0104",
+        "WT0103",
+        "WT0105",
+        "WD0086",
+        "DM1768",
+        "DW2224",
+        "DW2223",
+        "DD1538",
+        "DD1539",
+        "WD0083",
+        "WD0084"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_fort_lauderdale_merrytime",
+        "3_bahamian_port_canaveral",
+        "3_bahamian_port_canaveral_merrytime",
+        "3_baja_san_diego_merrytime",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale_merrytime",
+        "4_bahamian_port_canaveral",
+        "4_bahamian_port_canaveral_merrytime",
+        "4_baja_san_diego_merrytime",
+        "4_singapore",
+        "4_western_caribbean_galveston_merrytime",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_fort_lauderdale_merrytime",
+        "5_bahamian_port_canaveral_merrytime",
+        "5_baja_san_diego",
+        "5_western_caribbean_galveston_merrytime",
+        "5_western_caribbean_port_canaveral_merrytime",
+        "6_bahamian_fort_lauderdale_merrytime",
+        "7_bahamian_fort_lauderdale_dd_merrytime",
+        "7_bahamian_galveston",
+        "7_eastern_caribbean_fort_lauderdale",
+        "7_eastern_caribbean_fort_lauderdale_merrytime",
+        "7_eastern_caribbean_port_canaveral_merrytime",
+        "7_mexican_riviera_san_diego_merrytime",
+        "7_western_caribbean_port_canaveral",
+        "7_western_caribbean_port_canaveral_merrytime"
+      ],
+      "itinerary_targets": 53,
+      "status": "under_enumerated_vs_advertised",
+      "reconciles": false
+    },
+    {
+      "month": "2027-01",
+      "advertised_total": 57,
+      "unique_dated_sailings": 57,
+      "raw_rows": 57,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "WW0543",
+        "WW0547",
+        "WW0545",
+        "WW0549",
+        "DF0852",
+        "DF0855",
+        "DF0853",
+        "DF0851",
+        "WW0544",
+        "WW0546",
+        "WW0548",
+        "WW0550",
+        "WT0107",
+        "WT0111",
+        "WT0109",
+        "WT0108",
+        "WT0110",
+        "DA0124",
+        "DA0126",
+        "DA0128",
+        "DA0130",
+        "DA0125",
+        "DA0127",
+        "DA0129",
+        "DA0131",
+        "DD1541",
+        "DD1543",
+        "DD1546",
+        "DD1542",
+        "WD0089",
+        "WD0092",
+        "DD1544",
+        "DW2225",
+        "DW2231",
+        "DW2229",
+        "DD1540",
+        "WD0090",
+        "WD0093",
+        "DW2226",
+        "DW2230",
+        "DW2228",
+        "DW2232",
+        "WD0088",
+        "WD0091",
+        "DD1545",
+        "WD0094",
+        "DM1769",
+        "DM1770",
+        "DM1771",
+        "DM1773",
+        "DM1772",
+        "DM1774",
+        "DM1775",
+        "DW2227",
+        "DF0857",
+        "DF0856",
+        "DF0854"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_fort_lauderdale",
+        "3_bahamian_port_canaveral",
+        "3_baja_san_diego",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "4_baja_san_diego",
+        "4_singapore",
+        "4_western_caribbean_galveston",
+        "4_western_caribbean_galveston_marvel",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_port_canaveral",
+        "5_bahamian_port_canaveral_dd",
+        "5_bahamian_port_canaveral_pixar",
+        "5_mexican_riviera_san_diego",
+        "5_western_caribbean_galveston",
+        "5_western_caribbean_port_canaveral_pdas",
+        "5_western_fort_lauderdale",
+        "7_bahamian_galveston_mdas",
+        "7_eastern_caribbean_fort_lauderdale",
+        "7_eastern_caribbean_port_canaveral",
+        "7_western_caribbean_port_canaveral"
+      ],
+      "itinerary_targets": 57,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2027-02",
+      "advertised_total": 50,
+      "unique_dated_sailings": 50,
+      "raw_rows": 50,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "WW0551",
+        "WW0555",
+        "DF0861",
+        "WW0553",
+        "WW0557",
+        "DF0858",
+        "DF0863",
+        "WW0552",
+        "WW0554",
+        "WW0556",
+        "WW0558",
+        "WT0113",
+        "WT0115",
+        "WT0112",
+        "WT0114",
+        "DA0132",
+        "DA0134",
+        "DA0136",
+        "DA0138",
+        "DA0133",
+        "DA0135",
+        "DA0137",
+        "DA0139",
+        "DD1548",
+        "DD1550",
+        "DD1553",
+        "DD1547",
+        "DD1549",
+        "WD0097",
+        "DD1551",
+        "DW2238",
+        "DW2233",
+        "DW2236",
+        "WD0098",
+        "DW2235",
+        "DW2237",
+        "DW2239",
+        "WD0096",
+        "WD0099",
+        "DD1552",
+        "WD0095",
+        "DM1778",
+        "DF0859",
+        "DF0860",
+        "DF0862",
+        "DM1776",
+        "DM1777",
+        "DM1779",
+        "DM1780",
+        "DW2234"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_fort_lauderdale",
+        "3_bahamian_port_canaveral",
+        "3_baja_san_diego",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "4_baja_san_diego",
+        "4_singapore",
+        "4_western_caribbean_galveston_marvel",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_port_canaveral",
+        "5_bahamian_port_canaveral_pixar",
+        "5_western_caribbean_galveston_marvel",
+        "5_western_fort_lauderdale",
+        "7_eastern_caribbean_fort_lauderdale",
+        "7_eastern_caribbean_port_canaveral",
+        "7_mexican_riviera",
+        "7_western_caribbean_port_canaveral"
+      ],
+      "itinerary_targets": 50,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2027-03",
+      "advertised_total": 59,
+      "unique_dated_sailings": 59,
+      "raw_rows": 59,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "WW0559",
+        "DF0864",
+        "WW0563",
+        "DF0867",
+        "WW0567",
+        "DF0870",
+        "WW0561",
+        "WW0565",
+        "DF0865",
+        "DF0866",
+        "DF0868",
+        "WW0560",
+        "WW0562",
+        "WW0564",
+        "WW0566",
+        "WT0117",
+        "WT0119",
+        "WT0116",
+        "WT0118",
+        "DA0140",
+        "DA0142",
+        "DA0144",
+        "DA0146",
+        "DA0148",
+        "DA0141",
+        "DA0143",
+        "DA0145",
+        "DA0147",
+        "DD1555",
+        "DD1557",
+        "DD1559",
+        "DD1561",
+        "DD1556",
+        "DD1560",
+        "WD0100",
+        "WD0103",
+        "DD1554",
+        "DD1558",
+        "DD1562",
+        "DW2242",
+        "DW2245",
+        "DW2247",
+        "DW2240",
+        "WD0101",
+        "WD0104",
+        "DW2241",
+        "DW2244",
+        "DW2246",
+        "WD0102",
+        "WD0105",
+        "DM1784",
+        "DM1787",
+        "DM1781",
+        "DM1783",
+        "DM1785",
+        "DM1786",
+        "DM1782",
+        "DW2243",
+        "DF0869"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_fort_lauderdale",
+        "3_bahamian_port_canaveral",
+        "3_baja_san_diego",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "4_baja_san_diego",
+        "4_singapore",
+        "4_western_caribbean_galveston",
+        "4_western_caribbean_galveston_marvel",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_port_canaveral",
+        "5_bahamian_port_canaveral_dd",
+        "5_western_caribbean_galveston",
+        "5_western_caribbean_galveston_marvel",
+        "5_western_fort_lauderdale",
+        "7_eastern_caribbean_port_canaveral",
+        "7_mexican_riviera",
+        "7_western_caribbean_port_canaveral"
+      ],
+      "itinerary_targets": 59,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2027-04",
+      "advertised_total": 51,
+      "unique_dated_sailings": 51,
+      "raw_rows": 51,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "DF0873",
+        "DF0876",
+        "WW0569",
+        "WW0571",
+        "WW0568",
+        "WW0570",
+        "WW0572",
+        "WW0573",
+        "WW0574",
+        "DD1569",
+        "DD1570",
+        "WT0121",
+        "WT0123",
+        "WT0120",
+        "WT0122",
+        "DA0150",
+        "DA0152",
+        "DA0154",
+        "DA0156",
+        "DA0149",
+        "DA0151",
+        "DA0153",
+        "DA0155",
+        "DA0157",
+        "DD1563",
+        "DD1565",
+        "DD1564",
+        "WD0106",
+        "WD0109",
+        "WD0112",
+        "DW2252",
+        "WD0110",
+        "WD0107",
+        "WD0108",
+        "WD0111",
+        "DM1791",
+        "DW2257",
+        "DM1790",
+        "DM1788",
+        "DM1789",
+        "DW2248",
+        "DF0871",
+        "DF0872",
+        "DF0874",
+        "DF0875",
+        "DW2253",
+        "DM1792",
+        "DW2254",
+        "DD1566",
+        "DD1568",
+        "DD1567"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "14_westbound_panama_canal_galveston_san_diego",
+        "3_bahamian_fort_lauderdale",
+        "3_bahamian_port_canaveral",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "4_baja_san_diego",
+        "4_eastern_caribbean_fort_lauderdale_san_juan",
+        "4_san_juan_port_canaveral",
+        "4_singapore",
+        "4_western_caribbean_galveston",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_port_canaveral_pixar",
+        "5_baja_san_diego",
+        "5_mexican_riviera_san_diego",
+        "5_western_caribbean_galveston",
+        "5_western_fort_lauderdale",
+        "6_mexican_riviera_san_diego",
+        "7_bahamian_galveston",
+        "7_eastern_caribbean_port_canaveral",
+        "7_mexican_riviera",
+        "7_southern_caribbean_san_juan",
+        "7_western_caribbean_port_canaveral"
+      ],
+      "itinerary_targets": 51,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2027-05",
+      "advertised_total": 48,
+      "unique_dated_sailings": 48,
+      "raw_rows": 48,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "DM1794",
+        "DM1795",
+        "DM1796",
+        "DW2258",
+        "DW2259",
+        "DW2260",
+        "DW2261",
+        "DD1573",
+        "DD1577",
+        "DD1571",
+        "DD1575",
+        "DD1579",
+        "DF0879",
+        "DF0882",
+        "DF0877",
+        "DF0878",
+        "DF0880",
+        "DF0881",
+        "DF0883",
+        "DD1572",
+        "DD1574",
+        "DD1576",
+        "DD1578",
+        "WT0125",
+        "WT0127",
+        "WT0124",
+        "WT0126",
+        "WT0128",
+        "DA0158",
+        "DA0160",
+        "DA0162",
+        "DA0164",
+        "DA0166",
+        "DA0159",
+        "DA0161",
+        "DA0163",
+        "DA0165",
+        "WD0118",
+        "WD0115",
+        "WD0113",
+        "WD0116",
+        "WD0119",
+        "WD0114",
+        "WD0117",
+        "DW2255",
+        "DM1793",
+        "WW0577",
+        "WW0578"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_port_canaveral",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "4_pacific_coast_san_diego_vancouver",
+        "4_singapore",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_port_canaveral",
+        "5_western_fort_lauderdale",
+        "7_alaskan_vancouver",
+        "7_eastern_caribbean_port_canaveral",
+        "7_mediterranean_barcelona",
+        "7_western_caribbean_port_canaveral",
+        "9_mediterranean_greek_isles_barcelona_civitavecchia"
+      ],
+      "itinerary_targets": 48,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2027-06",
+      "advertised_total": 41,
+      "unique_dated_sailings": 41,
+      "raw_rows": 41,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "DM1797",
+        "DM1798",
+        "DM1799",
+        "DM1800",
+        "DW2262",
+        "DW2263",
+        "DW2264",
+        "DW2265",
+        "DD1581",
+        "DD1585",
+        "DD1583",
+        "DD1587",
+        "DF0888",
+        "DF0891",
+        "DF0887",
+        "DF0889",
+        "DD1580",
+        "DD1582",
+        "DD1584",
+        "DD1586",
+        "WT0129",
+        "WT0131",
+        "WT0130",
+        "WT0132",
+        "DA0168",
+        "DA0170",
+        "DA0172",
+        "DA0174",
+        "DA0167",
+        "DA0169",
+        "DA0171",
+        "DA0173",
+        "WD0121",
+        "WD0122",
+        "WD0120",
+        "WD0124",
+        "DF0892",
+        "DF0890",
+        "WW0580",
+        "WW0579",
+        "WD0123"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_port_canaveral",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "4_singapore",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_port_canaveral",
+        "5_bahamian_port_canaveral_dd",
+        "5_western_caribbean_port_canaveral",
+        "5_western_fort_lauderdale",
+        "7_alaskan_vancouver",
+        "7_eastern_caribbean_fort_lauderdale",
+        "7_eastern_caribbean_port_canaveral",
+        "7_western_caribbean_fort_lauderdale",
+        "7_western_caribbean_port_canaveral",
+        "8_adriatic_sea_greece_civitavecchia",
+        "8_mediterranean_greek_isles_civitavecchia"
+      ],
+      "itinerary_targets": 41,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2027-07",
+      "advertised_total": 48,
+      "unique_dated_sailings": 48,
+      "raw_rows": 48,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "DM1801",
+        "DM1802",
+        "DM1803",
+        "DW2266",
+        "DW2267",
+        "DW2268",
+        "DW2269",
+        "DD1589",
+        "DD1593",
+        "DD1591",
+        "DD1595",
+        "DF0894",
+        "DF0896",
+        "DF0893",
+        "DD1588",
+        "DD1590",
+        "DD1592",
+        "DD1594",
+        "DD1596",
+        "WT0133",
+        "WT0135",
+        "WT0137",
+        "WT0134",
+        "WT0136",
+        "DA0176",
+        "DA0178",
+        "DA0180",
+        "DA0182",
+        "DA0175",
+        "DA0177",
+        "DA0179",
+        "DA0181",
+        "DA0183",
+        "WD0126",
+        "WD0129",
+        "WD0127",
+        "WD0125",
+        "WD0128",
+        "WW0583",
+        "WW0582",
+        "DF0898",
+        "WD0131",
+        "DM1805",
+        "DM1804",
+        "DF0895",
+        "WW0584",
+        "WW0585",
+        "WW0586"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "10_southern_caribbean_port_canaveral",
+        "3_bahamian_port_canaveral",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "4_singapore",
+        "5_bahamian_fort_lauderdale",
+        "5_bahamian_port_canaveral",
+        "5_western_caribbean_port_canaveral",
+        "5_western_fort_lauderdale",
+        "6_alaskan_vancouver",
+        "6_western_europe_barcelona_southampton",
+        "7_alaskan_vancouver",
+        "7_eastern_caribbean_port_canaveral",
+        "7_mediterranean_barcelona",
+        "7_norwegian_fjords_southampton",
+        "7_western_caribbean_fort_lauderdale",
+        "7_western_caribbean_port_canaveral",
+        "8_alaska_vancouver"
+      ],
+      "itinerary_targets": 48,
+      "status": "reconciled",
+      "reconciles": true
+    },
+    {
+      "month": "2027-08",
+      "advertised_total": 50,
+      "unique_dated_sailings": 49,
+      "raw_rows": 49,
+      "difference": 1,
+      "unique_sailing_ids": [
+        "DM1806",
+        "DM1807",
+        "DM1808",
+        "DM1809",
+        "DW2270",
+        "DW2271",
+        "DW2272",
+        "DW2273",
+        "DW2274",
+        "WW0591",
+        "WW0593",
+        "WW0589",
+        "DD1597",
+        "DF0899",
+        "DD1601",
+        "DD1605",
+        "DD1599",
+        "DD1603",
+        "DF0902",
+        "DF0900",
+        "DF0903",
+        "DD1600",
+        "DD1602",
+        "DD1604",
+        "DD1598",
+        "WT0139",
+        "WT0141",
+        "WT0138",
+        "WT0140",
+        "DA0184",
+        "DA0186",
+        "DA0188",
+        "DA0190",
+        "DA0192",
+        "DA0185",
+        "DA0187",
+        "DA0189",
+        "DA0191",
+        "WD0136",
+        "WD0135",
+        "WD0137",
+        "WD0134",
+        "WD0133",
+        "WD0132",
+        "DF0901",
+        "DF0904",
+        "WW0592",
+        "WW0590",
+        "WW0588"
+      ],
+      "ships_seen": [
+        "Disney Adventure",
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_fort_lauderdale",
+        "3_bahamian_port_canaveral",
+        "3_belgium_southampton",
+        "3_northern_europe_southampton",
+        "3_singapore",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "4_singapore",
+        "4_spain_southampton",
+        "5_bahamian_port_canaveral",
+        "5_bahamian_port_canaveral_dd",
+        "5_spain_southampton",
+        "5_western_caribbean_port_canaveral",
+        "5_western_fort_lauderdale",
+        "7_alaskan_vancouver",
+        "7_eastern_caribbean_fort_lauderdale",
+        "7_eastern_caribbean_port_canaveral",
+        "7_western_caribbean_port_canaveral"
+      ],
+      "itinerary_targets": 49,
+      "status": "under_enumerated_vs_advertised",
+      "reconciles": false
+    },
+    {
+      "month": "2027-09",
+      "advertised_total": 16,
+      "unique_dated_sailings": 16,
+      "raw_rows": 16,
+      "difference": 0,
+      "unique_sailing_ids": [
+        "DM1810",
+        "DM1811",
+        "DW2275",
+        "DW2276",
+        "DD1607",
+        "DF0905",
+        "DF0906",
+        "DD1606",
+        "WT0143",
+        "WT0145",
+        "WT0142",
+        "WT0144",
+        "WD0138",
+        "WD0139",
+        "WW0594",
+        "WW0595"
+      ],
+      "ships_seen": [
+        "Disney Destiny",
+        "Disney Dream",
+        "Disney Fantasy",
+        "Disney Magic",
+        "Disney Treasure",
+        "Disney Wish",
+        "Disney Wonder"
+      ],
+      "product_ids": [
+        "3_bahamian_fort_lauderdale",
+        "3_bahamian_port_canaveral",
+        "4_bahamian_fort_lauderdale",
+        "4_bahamian_port_canaveral",
+        "5_bahamian_port_canaveral",
+        "7_alaskan_vancouver",
+        "7_british_isles_southhampton",
+        "7_eastern_caribbean_port_canaveral",
+        "7_northern_europe_southampton",
+        "7_western_caribbean_port_canaveral"
+      ],
+      "itinerary_targets": 16,
+      "status": "reconciled",
+      "reconciles": true
+    }
+  ],
+  "totalAvailableCruises_semantics": {
+    "conclusion": "totalAvailableCruises does not consistently equal unique sailingId|date or sailingId alone — likely counts filter-scoped bookable sailing slots including duplicates across product facets",
+    "is_unique_dated_sailing_count": false,
+    "total_advertised_sum": 651,
+    "total_unique_identities": 648,
+    "monthly_comparisons": [
+      {
+        "month": "2026-08",
+        "advertised_total": 19,
+        "unique_sailing_id": 19,
+        "unique_sailing_id_date": 19,
+        "unique_package_id": 19,
+        "unique_package_code_date": 19,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2026-09",
+        "advertised_total": 47,
+        "unique_sailing_id": 47,
+        "unique_sailing_id_date": 47,
+        "unique_package_id": 47,
+        "unique_package_code_date": 47,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2026-10",
+        "advertised_total": 56,
+        "unique_sailing_id": 56,
+        "unique_sailing_id_date": 56,
+        "unique_package_id": 56,
+        "unique_package_code_date": 56,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2026-11",
+        "advertised_total": 55,
+        "unique_sailing_id": 54,
+        "unique_sailing_id_date": 54,
+        "unique_package_id": 54,
+        "unique_package_code_date": 54,
+        "matches_sailing_id_date": false,
+        "matches_sailing_id": false,
+        "matches_package_id": false,
+        "difference_identity": 1
+      },
+      {
+        "month": "2026-12",
+        "advertised_total": 54,
+        "unique_sailing_id": 53,
+        "unique_sailing_id_date": 53,
+        "unique_package_id": 53,
+        "unique_package_code_date": 53,
+        "matches_sailing_id_date": false,
+        "matches_sailing_id": false,
+        "matches_package_id": false,
+        "difference_identity": 1
+      },
+      {
+        "month": "2027-01",
+        "advertised_total": 57,
+        "unique_sailing_id": 57,
+        "unique_sailing_id_date": 57,
+        "unique_package_id": 57,
+        "unique_package_code_date": 57,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2027-02",
+        "advertised_total": 50,
+        "unique_sailing_id": 50,
+        "unique_sailing_id_date": 50,
+        "unique_package_id": 50,
+        "unique_package_code_date": 50,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2027-03",
+        "advertised_total": 59,
+        "unique_sailing_id": 59,
+        "unique_sailing_id_date": 59,
+        "unique_package_id": 59,
+        "unique_package_code_date": 59,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2027-04",
+        "advertised_total": 51,
+        "unique_sailing_id": 51,
+        "unique_sailing_id_date": 51,
+        "unique_package_id": 51,
+        "unique_package_code_date": 51,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2027-05",
+        "advertised_total": 48,
+        "unique_sailing_id": 48,
+        "unique_sailing_id_date": 48,
+        "unique_package_id": 48,
+        "unique_package_code_date": 48,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2027-06",
+        "advertised_total": 41,
+        "unique_sailing_id": 41,
+        "unique_sailing_id_date": 41,
+        "unique_package_id": 41,
+        "unique_package_code_date": 41,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2027-07",
+        "advertised_total": 48,
+        "unique_sailing_id": 48,
+        "unique_sailing_id_date": 48,
+        "unique_package_id": 48,
+        "unique_package_code_date": 48,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      },
+      {
+        "month": "2027-08",
+        "advertised_total": 50,
+        "unique_sailing_id": 49,
+        "unique_sailing_id_date": 49,
+        "unique_package_id": 49,
+        "unique_package_code_date": 49,
+        "matches_sailing_id_date": false,
+        "matches_sailing_id": false,
+        "matches_package_id": false,
+        "difference_identity": 1
+      },
+      {
+        "month": "2027-09",
+        "advertised_total": 16,
+        "unique_sailing_id": 16,
+        "unique_sailing_id_date": 16,
+        "unique_package_id": 16,
+        "unique_package_code_date": 16,
+        "matches_sailing_id_date": true,
+        "matches_sailing_id": true,
+        "matches_package_id": true,
+        "difference_identity": 0
+      }
+    ],
+    "evidence": {
+      "all_months_match_identity": false,
+      "all_months_match_sailing_id": false
+    }
+  },
+  "filter_context_analysis": {
+    "samples_tested": 24,
+    "filter_context_matters": false,
+    "contexts_reveal_extra_sailings": 0,
+    "api_calls": 118,
+    "sample_comparisons": [
+      {
+        "productId": "7_alaskan_vancouver",
+        "itineraryId": "DAW,ISP,KTN,SGY",
+        "expansionKey": "7_alaskan_vancouver|{\"blockedFromBooking\":false,\"itineraryId\":\"DAW,ISP,KTN,SGY\",\"numberOfSailings\":2,\"oneWayItinerary\":false,\"portsOfCall\":[\"Glacier Viewing (Stikine Icecap), Alaska\",\"Icy Strait Point, Alaska\",\"Ketchikan, Alaska\",\"Skagway, Alaska\"],\"sampleDestination\":\"ALASKA\",\"sampleGeoArea\":\"ALASKA\",\"sampleNights\":7,\"samplePackageCode\":\"7VAN\",\"sampleShipCode\":\"DM\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 21,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DW2203|2026-08-31",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2026-08;filterType=date",
+              "DM;filterType=ship",
+              "2026-09;filterType=date",
+              "2027-09;filterType=date",
+              "7;filterType=night",
+              "VAN;filterType=city",
+              "ALASKA;filterType=destination"
+            ],
+            "sailing_count": 6,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2026-08;filterType=date",
+              "2026-09;filterType=date",
+              "2027-09;filterType=date"
+            ],
+            "sailing_count": 7,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DW2203|2026-08-31",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "DM;filterType=ship"
+            ],
+            "sailing_count": 20,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2026-08;filterType=date",
+              "2026-09;filterType=date",
+              "2027-09;filterType=date",
+              "DM;filterType=ship"
+            ],
+            "sailing_count": 6,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "7_alaskan_vancouver",
+        "itineraryId": "DAW,ISP,KTN,SGY",
+        "expansionKey": "7_alaskan_vancouver|{\"blockedFromBooking\":false,\"itineraryId\":\"DAW,ISP,KTN,SGY\",\"numberOfSailings\":1,\"oneWayItinerary\":false,\"portsOfCall\":[\"Glacier Viewing (Stikine Icecap), Alaska\",\"Icy Strait Point, Alaska\",\"Ketchikan, Alaska\",\"Skagway, Alaska\"],\"sampleDestination\":\"ALASKA\",\"sampleGeoArea\":\"ALASKA\",\"sampleNights\":7,\"samplePackageCode\":\"7VAN\",\"sampleShipCode\":\"DW\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 21,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DW2203|2026-08-31",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2026-08;filterType=date",
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "DW2203|2026-08-31"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2026-08;filterType=date"
+            ],
+            "sailing_count": 3,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DW2203|2026-08-31"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "DW2203|2026-08-31"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2026-08;filterType=date",
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "DW2203|2026-08-31"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "7_alaskan_vancouver",
+        "itineraryId": "DAW,JNU,KTN,SGY",
+        "expansionKey": "7_alaskan_vancouver|{\"blockedFromBooking\":false,\"itineraryId\":\"DAW,JNU,KTN,SGY\",\"numberOfSailings\":3,\"oneWayItinerary\":false,\"portsOfCall\":[\"Glacier Viewing (Stikine Icecap), Alaska\",\"Juneau, Alaska\",\"Ketchikan, Alaska\",\"Skagway, Alaska\"],\"sampleDestination\":\"ALASKA\",\"sampleGeoArea\":\"ALASKA\",\"sampleNights\":7,\"samplePackageCode\":\"7VAN\",\"sampleShipCode\":\"DW\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 22,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21",
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26",
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30",
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2026-09;filterType=date",
+              "DW;filterType=ship",
+              "7;filterType=night",
+              "VAN;filterType=city",
+              "ALASKA;filterType=destination"
+            ],
+            "sailing_count": 3,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2026-09;filterType=date"
+            ],
+            "sailing_count": 3,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 22,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21",
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26",
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30",
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2026-09;filterType=date",
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 3,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "7_alaskan_vancouver",
+        "itineraryId": "DAW,ISP,KTN,SGY",
+        "expansionKey": "7_alaskan_vancouver|{\"blockedFromBooking\":false,\"itineraryId\":\"DAW,ISP,KTN,SGY\",\"numberOfSailings\":3,\"oneWayItinerary\":false,\"portsOfCall\":[\"Glacier Viewing (Stikine Icecap), Alaska\",\"Icy Strait Point, Alaska\",\"Ketchikan, Alaska\",\"Skagway, Alaska\"],\"sampleDestination\":\"ALASKA\",\"sampleGeoArea\":\"ALASKA\",\"sampleNights\":7,\"samplePackageCode\":\"7VAN\",\"sampleShipCode\":\"DM\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 21,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DW2203|2026-08-31",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2027-05;filterType=date",
+              "DM;filterType=ship",
+              "2027-07;filterType=date",
+              "7;filterType=night",
+              "VAN;filterType=city",
+              "ALASKA;filterType=destination"
+            ],
+            "sailing_count": 6,
+            "identities": [
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2027-05;filterType=date",
+              "2027-07;filterType=date"
+            ],
+            "sailing_count": 6,
+            "identities": [
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "DM;filterType=ship"
+            ],
+            "sailing_count": 20,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2027-05;filterType=date",
+              "2027-07;filterType=date",
+              "DM;filterType=ship"
+            ],
+            "sailing_count": 6,
+            "identities": [
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "7_alaskan_vancouver",
+        "itineraryId": "DAW,JNU,KTN,SGY",
+        "expansionKey": "7_alaskan_vancouver|{\"blockedFromBooking\":false,\"itineraryId\":\"DAW,JNU,KTN,SGY\",\"numberOfSailings\":4,\"oneWayItinerary\":false,\"portsOfCall\":[\"Glacier Viewing (Stikine Icecap), Alaska\",\"Juneau, Alaska\",\"Ketchikan, Alaska\",\"Skagway, Alaska\"],\"sampleDestination\":\"ALASKA\",\"sampleGeoArea\":\"ALASKA\",\"sampleNights\":7,\"samplePackageCode\":\"7VAN\",\"sampleShipCode\":\"DW\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 22,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21",
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26",
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30",
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2027-05;filterType=date",
+              "DW;filterType=ship",
+              "2027-06;filterType=date",
+              "2027-07;filterType=date",
+              "7;filterType=night",
+              "VAN;filterType=city",
+              "ALASKA;filterType=destination"
+            ],
+            "sailing_count": 12,
+            "identities": [
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2027-05;filterType=date",
+              "2027-06;filterType=date",
+              "2027-07;filterType=date"
+            ],
+            "sailing_count": 12,
+            "identities": [
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 22,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21",
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26",
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30",
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2027-05;filterType=date",
+              "2027-06;filterType=date",
+              "2027-07;filterType=date",
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 12,
+            "identities": [
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "7_alaskan_vancouver",
+        "itineraryId": "DAW,ISP,KTN,SGY",
+        "expansionKey": "7_alaskan_vancouver|{\"blockedFromBooking\":false,\"itineraryId\":\"DAW,ISP,KTN,SGY\",\"numberOfSailings\":4,\"oneWayItinerary\":false,\"portsOfCall\":[\"Glacier Viewing (Stikine Icecap), Alaska\",\"Icy Strait Point, Alaska\",\"Ketchikan, Alaska\",\"Skagway, Alaska\"],\"sampleDestination\":\"ALASKA\",\"sampleGeoArea\":\"ALASKA\",\"sampleNights\":7,\"samplePackageCode\":\"7VAN\",\"sampleShipCode\":\"DM\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 21,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DW2203|2026-08-31",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2027-06;filterType=date",
+              "DM;filterType=ship",
+              "2027-08;filterType=date",
+              "7;filterType=night",
+              "VAN;filterType=city",
+              "ALASKA;filterType=destination"
+            ],
+            "sailing_count": 8,
+            "identities": [
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2027-06;filterType=date",
+              "2027-08;filterType=date"
+            ],
+            "sailing_count": 8,
+            "identities": [
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "DM;filterType=ship"
+            ],
+            "sailing_count": 20,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2027-06;filterType=date",
+              "2027-08;filterType=date",
+              "DM;filterType=ship"
+            ],
+            "sailing_count": 8,
+            "identities": [
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "7_alaskan_vancouver",
+        "itineraryId": "DAW,JNU,KTN,SGY",
+        "expansionKey": "7_alaskan_vancouver|{\"blockedFromBooking\":false,\"itineraryId\":\"DAW,JNU,KTN,SGY\",\"numberOfSailings\":5,\"oneWayItinerary\":false,\"portsOfCall\":[\"Glacier Viewing (Stikine Icecap), Alaska\",\"Juneau, Alaska\",\"Ketchikan, Alaska\",\"Skagway, Alaska\"],\"sampleDestination\":\"ALASKA\",\"sampleGeoArea\":\"ALASKA\",\"sampleNights\":7,\"samplePackageCode\":\"7VAN\",\"sampleShipCode\":\"DW\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 22,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21",
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26",
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30",
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2027-08;filterType=date",
+              "DW;filterType=ship",
+              "7;filterType=night",
+              "VAN;filterType=city",
+              "ALASKA;filterType=destination"
+            ],
+            "sailing_count": 5,
+            "identities": [
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2027-08;filterType=date"
+            ],
+            "sailing_count": 5,
+            "identities": [
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 22,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21",
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26",
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30",
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2027-08;filterType=date",
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 5,
+            "identities": [
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "7_alaskan_vancouver",
+        "itineraryId": "DAW,JNU,KTN,SGY",
+        "expansionKey": "7_alaskan_vancouver|{\"blockedFromBooking\":false,\"itineraryId\":\"DAW,JNU,KTN,SGY\",\"numberOfSailings\":2,\"oneWayItinerary\":false,\"portsOfCall\":[\"Glacier Viewing (Stikine Icecap), Alaska\",\"Juneau, Alaska\",\"Ketchikan, Alaska\",\"Skagway, Alaska\"],\"sampleDestination\":\"ALASKA\",\"sampleGeoArea\":\"ALASKA\",\"sampleNights\":7,\"samplePackageCode\":\"7VAN\",\"sampleShipCode\":\"DW\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 22,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21",
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26",
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30",
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2027-09;filterType=date",
+              "DW;filterType=ship",
+              "7;filterType=night",
+              "VAN;filterType=city",
+              "ALASKA;filterType=destination"
+            ],
+            "sailing_count": 2,
+            "identities": [
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2027-09;filterType=date"
+            ],
+            "sailing_count": 2,
+            "identities": [
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 22,
+            "identities": [
+              "DW2200|2026-09-07",
+              "DW2201|2026-09-14",
+              "DW2202|2026-09-21",
+              "DW2258|2027-05-10",
+              "DW2259|2027-05-17",
+              "DW2260|2027-05-24",
+              "DW2261|2027-05-31",
+              "DW2262|2027-06-07",
+              "DW2263|2027-06-14",
+              "DW2264|2027-06-21",
+              "DW2265|2027-06-28",
+              "DW2266|2027-07-05",
+              "DW2267|2027-07-12",
+              "DW2268|2027-07-19",
+              "DW2269|2027-07-26",
+              "DW2270|2027-08-02",
+              "DW2271|2027-08-09",
+              "DW2272|2027-08-16",
+              "DW2273|2027-08-23",
+              "DW2274|2027-08-30",
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2027-09;filterType=date",
+              "DW;filterType=ship"
+            ],
+            "sailing_count": 2,
+            "identities": [
+              "DW2275|2027-09-06",
+              "DW2276|2027-09-13"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "7_alaskan_vancouver",
+        "itineraryId": "DAW,ISP,KTN,SGY",
+        "expansionKey": "7_alaskan_vancouver|{\"blockedFromBooking\":false,\"itineraryId\":\"DAW,ISP,KTN,SGY\",\"numberOfSailings\":3,\"oneWayItinerary\":false,\"portsOfCall\":[\"Glacier Viewing (Stikine Icecap), Alaska\",\"Icy Strait Point, Alaska\",\"Ketchikan, Alaska\",\"Skagway, Alaska\"],\"sampleDestination\":\"ALASKA\",\"sampleGeoArea\":\"ALASKA\",\"sampleNights\":7,\"samplePackageCode\":\"7VAN\",\"sampleShipCode\":\"DW\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 21,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DW2203|2026-08-31",
+              "DM1742|2026-09-03",
+              "DM1743|2026-09-10",
+              "DM1794|2027-05-13",
+              "DM1795|2027-05-20",
+              "DM1796|2027-05-27",
+              "DM1797|2027-06-03",
+              "DM1798|2027-06-10",
+              "DM1799|2027-06-17",
+              "DM1800|2027-06-24",
+              "DM1801|2027-07-01",
+              "DM1802|2027-07-08",
+              "DM1803|2027-07-15",
+              "DM1806|2027-08-05",
+              "DM1807|2027-08-12",
+              "DM1808|2027-08-19",
+              "DM1809|2027-08-26",
+              "DM1810|2027-09-02",
+              "DM1811|2027-09-09"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2026-08;filterType=date",
+              "7;filterType=night",
+              "VAN;filterType=city",
+              "ALASKA;filterType=destination"
+            ],
+            "sailing_count": 3,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DW2203|2026-08-31"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2026-08;filterType=date"
+            ],
+            "sailing_count": 3,
+            "identities": [
+              "DM1740|2026-08-20",
+              "DM1741|2026-08-27",
+              "DW2203|2026-08-31"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "4_spain_southampton",
+        "itineraryId": "LCG",
+        "expansionKey": "4_spain_southampton|{\"blockedFromBooking\":false,\"itineraryId\":\"LCG\",\"numberOfSailings\":1,\"oneWayItinerary\":false,\"portsOfCall\":[\"La Coruña, Spain\"],\"sampleDestination\":\"EUROPE\",\"sampleGeoArea\":\"WEST EUROPE A\",\"sampleNights\":4,\"samplePackageCode\":\"4SOU\",\"sampleShipCode\":\"DD\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 3,
+            "identities": [
+              "DD1511|2026-08-24",
+              "WW0591|2027-08-23",
+              "WW0593|2027-08-30"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2026-08;filterType=date",
+              "DD;filterType=ship",
+              "SOU;filterType=city",
+              "EUROPE;filterType=destination"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "DD1511|2026-08-24"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2026-08;filterType=date"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "DD1511|2026-08-24"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "DD;filterType=ship"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "DD1511|2026-08-24"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2026-08;filterType=date",
+              "DD;filterType=ship"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "DD1511|2026-08-24"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "4_spain_southampton",
+        "itineraryId": "LCG",
+        "expansionKey": "4_spain_southampton|{\"blockedFromBooking\":false,\"itineraryId\":\"LCG\",\"numberOfSailings\":2,\"oneWayItinerary\":false,\"portsOfCall\":[\"La Coruña, Spain\"],\"sampleDestination\":\"EUROPE\",\"sampleGeoArea\":\"WEST EUROPE A\",\"sampleNights\":4,\"samplePackageCode\":\"4SOU\",\"sampleShipCode\":\"WW\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 3,
+            "identities": [
+              "DD1511|2026-08-24",
+              "WW0591|2027-08-23",
+              "WW0593|2027-08-30"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2027-08;filterType=date",
+              "WW;filterType=ship",
+              "SOU;filterType=city",
+              "EUROPE;filterType=destination"
+            ],
+            "sailing_count": 2,
+            "identities": [
+              "WW0591|2027-08-23",
+              "WW0593|2027-08-30"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2027-08;filterType=date"
+            ],
+            "sailing_count": 2,
+            "identities": [
+              "WW0591|2027-08-23",
+              "WW0593|2027-08-30"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "WW;filterType=ship"
+            ],
+            "sailing_count": 2,
+            "identities": [
+              "WW0591|2027-08-23",
+              "WW0593|2027-08-30"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2027-08;filterType=date",
+              "WW;filterType=ship"
+            ],
+            "sailing_count": 2,
+            "identities": [
+              "WW0591|2027-08-23",
+              "WW0593|2027-08-30"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      },
+      {
+        "productId": "4_spain_southampton",
+        "itineraryId": "BIO",
+        "expansionKey": "4_spain_southampton|{\"blockedFromBooking\":false,\"itineraryId\":\"BIO\",\"numberOfSailings\":1,\"oneWayItinerary\":false,\"portsOfCall\":[\"Bilbao, Spain\"],\"sampleDestination\":\"EUROPE\",\"sampleGeoArea\":\"WEST EUROPE A\",\"sampleNights\":4,\"samplePackageCode\":\"4SOU\",\"sampleShipCode\":\"WW\",\"themeId\":null,\"twoStopsItinerary\":false}",
+        "scenarios": {
+          "unfiltered": {
+            "filters": [],
+            "sailing_count": 1,
+            "identities": [
+              "WW0589|2027-08-16"
+            ]
+          },
+          "originating_filters": {
+            "filters": [
+              "2027-08;filterType=date",
+              "WW;filterType=ship",
+              "SOU;filterType=city",
+              "EUROPE;filterType=destination"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "WW0589|2027-08-16"
+            ]
+          },
+          "date_filter": {
+            "filters": [
+              "2027-08;filterType=date"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "WW0589|2027-08-16"
+            ]
+          },
+          "ship_filter": {
+            "filters": [
+              "WW;filterType=ship"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "WW0589|2027-08-16"
+            ]
+          },
+          "date_plus_ship": {
+            "filters": [
+              "2027-08;filterType=date",
+              "WW;filterType=ship"
+            ],
+            "sailing_count": 1,
+            "identities": [
+              "WW0589|2027-08-16"
+            ]
+          }
+        },
+        "filter_context_reveals_extra": false
+      }
+    ]
+  },
+  "pagination_accounting": {
+    "pages_fetched": 561,
+    "true_repeated_pages": 22,
+    "structurally_new_pages": 110,
+    "zero_structural_progress_pages": 234,
+    "zero_progress_pages": 0,
+    "unique_product_ids": 90,
+    "unique_product_variants": 254,
+    "unique_itinerary_targets": 254,
+    "harvest_plans": 539
+  },
+  "ship_coverage_vs_phase1": [
+    {
+      "ship": "Disney Adventure",
+      "phase1_count": 107,
+      "phase2a_count": 107,
+      "delta": 0
+    },
+    {
+      "ship": "Disney Destiny",
+      "phase1_count": 46,
+      "phase2a_count": 79,
+      "delta": 33
+    },
+    {
+      "ship": "Disney Dream",
+      "phase1_count": 56,
+      "phase2a_count": 94,
+      "delta": 38
+    },
+    {
+      "ship": "Disney Fantasy",
+      "phase1_count": 70,
+      "phase2a_count": 82,
+      "delta": 12
+    },
+    {
+      "ship": "Disney Magic",
+      "phase1_count": 44,
+      "phase2a_count": 69,
+      "delta": 25
+    },
+    {
+      "ship": "Disney Treasure",
+      "phase1_count": 55,
+      "phase2a_count": 58,
+      "delta": 3
+    },
+    {
+      "ship": "Disney Wish",
+      "phase1_count": 51,
+      "phase2a_count": 87,
+      "delta": 36
+    },
+    {
+      "ship": "Disney Wonder",
+      "phase1_count": 55,
+      "phase2a_count": 72,
+      "delta": 17
+    }
+  ],
+  "reproducibility_check": {
+    "only_first_run": [],
+    "only_second_run": [],
+    "common": 648,
+    "count_delta": 0,
+    "substantially_reproducible": true
+  },
+  "run2_enumeration_summary": {
+    "unique_sailings": 648,
+    "raw_sailing_rows": 2150,
+    "api_calls_total": 1142
+  },
+  "quality_gate": {
+    "source_complete": true,
+    "accounting_explained": true,
+    "identity_coverage_pct": 100,
+    "duplicate_official_identities": 0,
+    "expansion_errors": 0,
+    "ready_for_phase2b": true,
+    "reproducible": true
+  },
+  "blockers": [],
+  "recommendation": "Proceed to Phase 2B adapter mapping with lossless catalogue architecture",
+  "completed_at": "2026-08-15T03:55:38.628Z"
+}

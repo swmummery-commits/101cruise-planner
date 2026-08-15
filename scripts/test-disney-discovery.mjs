@@ -15,7 +15,10 @@ const filterFixture = require(path.join(root, "scripts/fixtures/disney/filter-op
 const productsPage0 = require(path.join(root, "scripts/fixtures/disney/available-products-page0.json"));
 const productsPage1Repeated = require(path.join(root, "scripts/fixtures/disney/available-products-page1-repeated.json"));
 const sailingsFixture = require(path.join(root, "scripts/fixtures/disney/available-sailings-sample.json"));
+const productVariantA = require(path.join(root, "scripts/fixtures/disney/product-variant-a.json"));
+const productVariantB = require(path.join(root, "scripts/fixtures/disney/product-variant-b.json"));
 const source = require(path.join(root, "netlify/functions/lib/disney-discovery-source"));
+const dclCatalogue = require(path.join(root, "netlify/functions/lib/disney-discovery-catalogue"));
 const {
   partitionByPublicBookingCutoff,
   PUBLIC_BOOKING_CUTOFF_DAYS,
@@ -105,8 +108,59 @@ assert(summary.within_21_day_cutoff === 1, "inventory summary cutoff");
 assert(summary.publicly_eligible_total === 1, "inventory summary eligible");
 
 assert(typeof source.probeDisneyInventory === "function", "probe entrypoint exists");
+assert(typeof source.probeDisneyEnumerationPhase2a === "function", "phase2a probe entrypoint exists");
+assert(typeof source.expandDisneySailingCatalogueLossless === "function", "lossless expansion exists");
+assert(typeof source.buildMonthlyReconciliationTable === "function", "monthly reconciliation helper exists");
+assert(typeof source.compareProbeIdentitySets === "function", "reproducibility helper exists");
+assert(source.PHASE2_MAX_API_CALLS >= 2000, "phase2 api budget configured");
 assert(typeof source.harvestDisneyProductCatalogue === "function", "harvest helper exists");
 assert(source.applyDisneyBatchWrites == null, "no write export on source");
+
+const cat = new dclCatalogue.LosslessProductCatalogue();
+cat.ingest(productVariantA, { filters: ["2026-09;filterType=date"], strategy: "date_x_ship" });
+cat.ingest(productVariantA, { filters: ["2026-09;filterType=date"], strategy: "date_x_ship" });
+assert(cat.uniqueItineraryTargets === 1, "same productId + same structure dedupes correctly");
+
+const cat2 = new dclCatalogue.LosslessProductCatalogue();
+cat2.ingest(productVariantA, { filters: ["2026-09;filterType=date"], strategy: "date_x_ship" });
+cat2.ingest(productVariantB, { filters: ["2026-10;filterType=date"], strategy: "date_x_night" });
+assert(cat2.uniqueItineraryTargets === 2, "same productId + different itinerary preserved");
+
+const lww = new Map();
+lww.set(productVariantA.productId, productVariantB);
+const variantAnalysis = dclCatalogue.analyzeProductVariantCollapse(cat2, [...lww.values()]);
+assert(variantAnalysis.itineraries_lost_by_current_last_write_wins_logic >= 1, "LWW loss quantified");
+
+const sigA = dclCatalogue.productPageStructuralSignature([productVariantA]);
+const sigB = dclCatalogue.productPageStructuralSignature([productVariantB]);
+assert(sigA !== sigB, "differing itinerary page is NOT same structural signature");
+
+assert(source.monthFromFilterValue("2026-09;filterType=date") === "2026-09", "month from filterValue");
+assert(dclCatalogue.departureMonth("2026-09-15") === "2026-09", "month assignment from sailDateFrom");
+
+const reconTable = source.buildMonthlyReconciliationTable(
+  { "2026-08": 2, "2026-09": 0 },
+  [
+    { official_product_key: "DA0071|2026-08-20", sailing_id: "DA0071", departure_date: "2026-08-20", ship_name: "Disney Adventure", product_id: "4_singapore" },
+    { official_product_key: "DA0072|2026-08-27", sailing_id: "DA0072", departure_date: "2026-08-27", ship_name: "Disney Adventure", product_id: "4_singapore" }
+  ]
+);
+assert(reconTable.find((r) => r.month === "2026-08").unique_dated_sailings === 2, "reconciliation arithmetic");
+
+const semantics = dclCatalogue.analyzeTotalAvailableCruisesSemantics({
+  advertisedByMonth: { "2026-08": 2 },
+  sailings: [
+    { official_product_key: "DA0071|2026-08-20", sailing_id: "DA0071", departure_date: "2026-08-20" },
+    { official_product_key: "DA0072|2026-08-27", sailing_id: "DA0072", departure_date: "2026-08-27" }
+  ]
+});
+assert(semantics.is_unique_dated_sailing_count === true, "totalAvailableCruises semantic analysis fixture");
+
+const repro = source.compareProbeIdentitySets(["A|2026-08-01"], ["A|2026-08-01"]);
+assert(repro.substantially_reproducible, "two identical identity sets reproducible");
+
+const phase2Plans = dclCatalogue.buildPhase2HarvestPlans(indexed);
+assert(phase2Plans.some((p) => p.strategy === "date_x_city"), "phase2 date x city plan");
 
 (async () => {
   let productCalls = 0;
@@ -169,15 +223,28 @@ assert(source.applyDisneyBatchWrites == null, "no write export on source");
   assert(paginated.repeated_pages === 1, "repeated page detected");
   assert(paginated.pages.length === 2, "pagination stopped after repeat");
 
+  const lossless = new dclCatalogue.LosslessProductCatalogue();
+  const structuralPaginated = await source.paginateDisneyProductsForFilters(["2026-09;filterType=date"], {
+    fetchImpl: mockFetch,
+    cookieJar: { __pa: "fixture-token" },
+    requestDelayMs: 0,
+    maxPages: 5,
+    losslessCatalogue: lossless
+  });
+  assert(structuralPaginated.structurally_new_pages >= 1, "structural page progress works");
+  assert(structuralPaginated.true_repeated_pages === 1, "genuinely repeated structural page detected");
+
   const harvest = await source.harvestDisneyProductCatalogue({
     fetchImpl: mockFetch,
     cookieJar: { __pa: "fixture-token" },
     requestDelayMs: 0,
     maxApiCalls: 5,
-    filterOptions: indexed
+    filterOptions: indexed,
+    useLosslessCatalogue: true
   });
   assert(harvest.products.length >= 1, "harvest returns products from mock");
   assert(harvest.api_calls <= 5, "harvest respects api cap");
+  assert(harvest.unique_itinerary_targets >= 1, "lossless harvest tracks itinerary targets");
 
   const expansion = await source.expandDisneySailingCatalogue(harvest.products, {
     fetchImpl: mockFetch,
@@ -187,6 +254,15 @@ assert(source.applyDisneyBatchWrites == null, "no write export on source");
   });
   assert(expansion.unique_sailings.length === 2, "sailing expansion dedupes fixture sailings");
   assert(expansion.identity_collisions === 0, "zero identity collisions in fixture expansion");
+
+  const losslessExpansion = await source.expandDisneySailingCatalogueLossless(harvest.products, {
+    fetchImpl: mockFetch,
+    cookieJar: { __pa: "fixture-token" },
+    requestDelayMs: 0,
+    maxApiCalls: 5,
+    losslessCatalogue: harvest.lossless_catalogue
+  });
+  assert(losslessExpansion.unique_sailings.length === 2, "lossless expansion dedupes fixture sailings");
 
   const accounting = source.buildSourceAccounting({
     harvest,
