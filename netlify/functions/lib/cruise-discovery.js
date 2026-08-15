@@ -715,6 +715,29 @@ function extractShipNameGuesses(text, url, cruiseLineName) {
   });
 }
 
+function destinationMentionedInText(dest, text) {
+  const hay = ` ${normaliseName(text)} `;
+  if (!hay.trim() || !dest) return false;
+  const name = normaliseName(dest.name);
+  const slug = normaliseName(dest.slug).replace(/-/g, " ");
+  if (name && name.length >= 3 && hay.includes(` ${name} `)) return true;
+  if (slug && slug.length >= 3 && hay.includes(` ${slug} `)) return true;
+  return false;
+}
+
+/**
+ * When several destinations match the blob, prefer a hit named in the title.
+ * A conflicting body/GTM region token must not beat stronger title evidence.
+ * If the title names none of the hits, keep the existing first-hit fallback.
+ */
+function pickDestinationFromHits(destHits, title) {
+  if (!destHits?.length) return null;
+  if (destHits.length === 1) return destHits[0].dest;
+  const titleHits = destHits.filter((h) => destinationMentionedInText(h.dest, title));
+  if (titleHits.length) return titleHits[0].dest;
+  return destHits[0].dest;
+}
+
 function matchDestination(text, destinations, aliases = []) {
   const hay = ` ${normaliseName(text)} `;
   if (!hay.trim()) return [];
@@ -958,7 +981,7 @@ function matchEntities(normalised, { cruiseLine, ships, destinations, preferredD
     destinations || [],
     destinationAliases || []
   );
-  let destination = destHits[0]?.dest || null;
+  let destination = pickDestinationFromHits(destHits, normalised.title);
   if (
     !destination &&
     preferredDestination &&
@@ -2020,6 +2043,8 @@ module.exports = {
   matchShipWithAliases,
   matchShip,
   matchDestination,
+  destinationMentionedInText,
+  pickDestinationFromHits,
   suggestShipMatch,
   suggestDestinationMatch,
   entityGroupKeyFromItem,

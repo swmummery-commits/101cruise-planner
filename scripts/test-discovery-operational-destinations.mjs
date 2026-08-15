@@ -23,9 +23,15 @@ const {
   detectCrossingRoute,
   detectPacificCoastRoute
 } = require(path.join(root, "netlify/functions/lib/discovery-destination-resolver"));
-const { validateCruise, buildCandidateFromSource } = require(
-  path.join(root, "netlify/functions/lib/cruise-discovery")
-);
+const {
+  validateCruise,
+  buildCandidateFromSource,
+  matchEntities,
+  extractRawSignals,
+  normaliseCandidate,
+  pickDestinationFromHits,
+  matchDestination
+} = require(path.join(root, "netlify/functions/lib/cruise-discovery"));
 const { resolveDiscoveryDestinationTargets } = require(
   path.join(root, "netlify/functions/lib/cruise-discovery")
 );
@@ -251,4 +257,128 @@ assert(AUTO_ALIAS_WRITES_ENABLED === false, "auto alias disabled");
 const scopeTest = require("fs").readFileSync(path.join(root, "scripts/test-discovery-destination-scope.mjs"), "utf8");
 assert(scopeTest.includes("resolveDiscoveryDestinationTargets"), "scope tests present");
 
-console.log("test-discovery-operational-destinations: 29 passed");
+function destFixture(id, name, slug, region) {
+  return {
+    id,
+    name,
+    slug,
+    primary_region: region,
+    classification_enabled: true,
+    status: "draft"
+  };
+}
+
+const matchDests = [
+  destFixture("africa-id", "Africa", "africa", "Africa"),
+  destFixture("japan-id", "Japan", "japan", "Asia"),
+  destFixture("asia-id", "Asia", "asia", "Asia"),
+  destFixture("med-id", "Mediterranean", "mediterranean", "Europe"),
+  destFixture("aunz-id", "Australia and New Zealand", "australia-new-zealand", "Oceania"),
+  destFixture("cne-id", "Canada and New England", "canada-new-england", "North America"),
+  destFixture("panama-id", "Panama Canal", "panama-canal", "Central America"),
+  destFixture("sa-id", "South America", "south-america", "South America"),
+  destFixture("carib-id", "Caribbean", "caribbean", "Caribbean"),
+  destFixture("alaska-id", "Alaska", "alaska", "North America"),
+  destFixture("sp-id", "South Pacific", "south-pacific", "Oceania"),
+  destFixture("ta-id", "Transatlantic", "transatlantic", "Atlantic")
+];
+
+function classifyFromSource({ title, description = "", excerpt = "" }) {
+  const raw = extractRawSignals({
+    title,
+    description,
+    excerpt,
+    url: "https://example.com/cruises/sample"
+  });
+  const normalised = normaliseCandidate(raw);
+  return matchEntities(normalised, {
+    cruiseLine: { id: "line-1", name: "Test Line" },
+    ships: [],
+    destinations: matchDests
+  });
+}
+
+const japanVsAfrica = classifyFromSource({
+  title: "JAPAN INTENSIVE CRUISE: TOKYO, KOBE & NAGASAKI",
+  description: "sailing from TOKYO to SEOUL (INCHEON) on Oct 2 2026",
+  excerpt: "Destination: AFRICA"
+});
+assert(japanVsAfrica.matched_destination?.name === "Japan", "title Japan beats conflicting Africa token");
+assert(japanVsAfrica.matched_destination?.name !== "Africa", "PR261002-equivalent must not resolve to Africa");
+
+const africaTitle = classifyFromSource({
+  title: "AFRICA CRUISE: CAPE TOWN & MOMBASA",
+  excerpt: "Destination: AFRICA"
+});
+assert(africaTitle.matched_destination?.name === "Africa", "known Africa title still resolves to Africa");
+
+const africaLabelOnly = classifyFromSource({
+  title: "Safari Voyage from Cape Town",
+  excerpt: "Destination: AFRICA"
+});
+assert(africaLabelOnly.matched_destination?.name === "Africa", "Africa label-only still resolves when title has no dest name");
+
+const medTitle = classifyFromSource({
+  title: "MEDITERRANEAN COMBINATION CRUISE: BARCELONA, VENICE & ATHENS"
+});
+assert(medTitle.matched_destination?.name === "Mediterranean", "Mediterranean title does not regress");
+
+const greeceGtm = classifyFromSource({
+  title: "GREECE INTENSIVE CRUISE: SANTORINI, RHODES & MYKONOS",
+  excerpt: "Destination: MEDITERRANEAN"
+});
+assert(greeceGtm.matched_destination?.name === "Mediterranean", "GTM-only Mediterranean still used when title has no dest name");
+
+const medNorthAfrica = classifyFromSource({
+  title: "MEDITERRANEAN & NORTH AFRICA COMBINATION CRUISE: LISBON, CASABLANCA & NICE"
+});
+assert(medNorthAfrica.matched_destination?.name === "Mediterranean", "Med + North Africa title stays Mediterranean");
+assert(medNorthAfrica.matched_destination?.name !== "Africa", "North Africa mention must not select Africa");
+
+const aunz = classifyFromSource({
+  title: "AUSTRALIA INTENSIVE CRUISE: DARWIN, CAIRNS & SYDNEY",
+  excerpt: "Destination: AUSTRALIA & NEW ZEALAND"
+});
+assert(aunz.matched_destination?.name === "Australia and New Zealand", "Australia and New Zealand does not regress");
+
+const cne = classifyFromSource({
+  title: "Canada & New England Cruise: Quebec, Halifax & Martha's Vineyard"
+});
+assert(cne.matched_destination?.name === "Canada and New England", "Canada and New England does not regress");
+
+const panama = classifyFromSource({
+  title: "Quest Debut Panama Canal Holiday & New Year's Eve Cruise"
+});
+assert(panama.matched_destination?.name === "Panama Canal", "Panama Canal does not regress");
+
+const southAmerica = classifyFromSource({
+  title: "CIRCLE SOUTH AMERICA GRAND VOYAGE"
+});
+assert(southAmerica.matched_destination?.name === "South America", "South America does not regress");
+
+const asia = classifyFromSource({
+  title: "EAST ASIA CRUISE: HONG KONG, SHANGHAI & BEIJING",
+  excerpt: "Destination: ASIA"
+});
+assert(asia.matched_destination?.name === "Asia", "Asia does not regress");
+
+const japanOnly = classifyFromSource({
+  title: "JAPAN INTENSIVE CRUISE: TOKYO, KOBE & NAGASAKI"
+});
+assert(japanOnly.matched_destination?.name === "Japan", "Japan title without GTM still resolves to Japan");
+
+const multiHits = matchDestination(
+  "JAPAN INTENSIVE CRUISE Destination: AFRICA Japan Tokyo",
+  matchDests
+);
+assert(multiHits.length >= 2, "conflicting blob yields multiple dest hits");
+assert(
+  pickDestinationFromHits(multiHits, "JAPAN INTENSIVE CRUISE: TOKYO, KOBE & NAGASAKI")?.name === "Japan",
+  "pickDestinationFromHits prefers title Japan"
+);
+assert(
+  pickDestinationFromHits(multiHits, "JAPAN INTENSIVE CRUISE: TOKYO, KOBE & NAGASAKI")?.name !== "Africa",
+  "pickDestinationFromHits rejects body-only Africa"
+);
+
+console.log("test-discovery-operational-destinations: 42 passed");
