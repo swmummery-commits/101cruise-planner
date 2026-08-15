@@ -1,0 +1,54 @@
+{
+  "sailings": [
+    {
+      "sailingId": "DA0071",
+      "packageId": "29772458",
+      "packageCode": "4SIN",
+      "productId": "4_singapore",
+      "itineraryId": "",
+      "sailDateFrom": "2026-08-20",
+      "sailDateTo": "2026-08-24",
+      "numberOfNights": 4,
+      "destination": "SINGAPORE",
+      "geoArea": "SINGAPORE",
+      "ship": {
+        "name": "Disney Adventure",
+        "seawareId": "DA",
+        "id": "412093034;entityType=ship;destination=dcl"
+      },
+      "package": {
+        "packageID": "29772458",
+        "packageCode": "4SIN"
+      },
+      "hasAvailability": true,
+      "blockedFromBooking": false,
+      "isEarlyBooking": false
+    },
+    {
+      "sailingId": "DA0072",
+      "packageId": "29772458",
+      "packageCode": "4SIN",
+      "productId": "4_singapore",
+      "itineraryId": "",
+      "sailDateFrom": "2026-08-27",
+      "sailDateTo": "2026-08-31",
+      "numberOfNights": 4,
+      "destination": "SINGAPORE",
+      "geoArea": "SINGAPORE",
+      "ship": {
+        "name": "Disney Adventure",
+        "seawareId": "DA",
+        "id": "412093034;entityType=ship;destination=dcl"
+      },
+      "package": {
+        "packageID": "29772458",
+        "packageCode": "4SIN"
+      },
+      "hasAvailability": true,
+      "blockedFromBooking": false,
+      "isEarlyBooking": false
+    }
+  ],
+  "productId": "4_singapore",
+  "itineraryId": ""
+}

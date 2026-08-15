@@ -1,0 +1,208 @@
+{
+  "phase": 1,
+  "started_at": "2026-08-15T02:10:00.000Z",
+  "completed_at": "2026-08-15T02:15:00.000Z",
+  "repository_start_sha": "8f956ca5fed4bbb1c2088be40deb2088e5432bca",
+  "repository_end_sha": "8f956ca5fed4bbb1c2088be40deb2088e5432bca",
+  "production_writes": 0,
+  "database_mutations": 0,
+  "disney_line": {
+    "id": "8f7aadcb-7843-4060-b0cb-a60631936b3a",
+    "name": "Disney Cruise Line",
+    "slug": "disney-cruise-line",
+    "active": true,
+    "sold_by_101cruise": true,
+    "website_url": "https://disneycruise.disney.go.com/",
+    "cruise_search_url": null,
+    "fleet_page_url": null
+  },
+  "configured_ships": [
+    { "id": "650db17c-7f0e-40c9-8385-c50b6234d6cb", "name": "Disney Adventure", "official_line_ship_id": null, "active": true, "ship_class": null },
+    { "id": "9263cbb7-83a7-491c-801b-847ef523926a", "name": "Disney Believe", "official_line_ship_id": null, "active": true, "ship_class": "Wish Class" },
+    { "id": "4025ddeb-da79-441e-9ccf-69d78f1da949", "name": "Disney Destiny", "official_line_ship_id": null, "active": true, "ship_class": null },
+    { "id": "ebf469d3-d359-4bc8-a28a-950c3e12735b", "name": "Disney Dream", "official_line_ship_id": null, "active": true, "ship_class": "Dream Class" },
+    { "id": "9ffe68ea-02d0-4d62-b74b-60f0f41bda2f", "name": "Disney Fantasy", "official_line_ship_id": null, "active": true, "ship_class": "Dream Class" },
+    { "id": "5d979176-6c7d-4108-8a76-6f8ccb7da18f", "name": "Disney Magic", "official_line_ship_id": null, "active": true, "ship_class": "Magic Class" },
+    { "id": "962ec1fe-1284-47a7-9e0f-f14f514ee53f", "name": "Disney Treasure", "official_line_ship_id": null, "active": true, "ship_class": "Wish Class" },
+    { "id": "72ecb1ad-bafd-43de-93e5-cbfb56b6b896", "name": "Disney Wish", "official_line_ship_id": null, "active": true, "ship_class": "Wish Class" },
+    { "id": "f4548e16-5c16-4722-a5e7-e75fd9e49d00", "name": "Disney Wonder", "official_line_ship_id": null, "active": true, "ship_class": "Magic Class" }
+  ],
+  "official_fleet_comparison": [
+    { "official_fleet_name": "Disney Adventure", "configured_in_db": true, "note": null },
+    { "official_fleet_name": "Disney Believe", "configured_in_db": true, "note": "Fleet-page ship; zero published sailings in source probe is not a source failure" },
+    { "official_fleet_name": "Disney Destiny", "configured_in_db": true, "note": null },
+    { "official_fleet_name": "Disney Dream", "configured_in_db": true, "note": null },
+    { "official_fleet_name": "Disney Fantasy", "configured_in_db": true, "note": null },
+    { "official_fleet_name": "Disney Magic", "configured_in_db": true, "note": null },
+    { "official_fleet_name": "Disney Treasure", "configured_in_db": true, "note": null },
+    { "official_fleet_name": "Disney Wish", "configured_in_db": true, "note": null },
+    { "official_fleet_name": "Disney Wonder", "configured_in_db": true, "note": null }
+  ],
+  "source": {
+    "official": true,
+    "hostname": "disneycruise.disney.go.com",
+    "endpoint_type": "structured_json_rest",
+    "endpoint_description": "Disney Product Availability VAS (PAVAS) — authz/private, quick-quote-filter-options, available-products, available-sailings",
+    "method": "POST (catalogue) + GET (filters)",
+    "pagination_type": "available-products pageNumber (5 templates/page); faceted filter union required — unfiltered pagination repeats",
+    "authentication_required": true,
+    "browser_session_required": false,
+    "filter_parameter_format": "filters[] must use filterValue tokens (e.g. DM;filterType=ship), not filter option entity ids"
+  },
+  "inventory": {
+    "raw_source_total": 484,
+    "unique_sailing_total": 484,
+    "future_total": 484,
+    "within_21_day_cutoff": 13,
+    "publicly_eligible_total": 471,
+    "earliest_departure": "2026-08-20",
+    "latest_departure": "2027-09-25",
+    "ship_counts": {
+      "Disney Adventure": 107,
+      "Disney Wish": 51,
+      "Disney Fantasy": 70,
+      "Disney Dream": 56,
+      "Disney Destiny": 46,
+      "Disney Wonder": 55,
+      "Disney Treasure": 55,
+      "Disney Magic": 44
+    },
+    "product_templates": 90
+  },
+  "identity": {
+    "strategy": "{sailingId}|{YYYY-MM-DD}",
+    "coverage_pct": 100,
+    "collisions": 0
+  },
+  "source_accounting": {
+    "product_templates_discovered": 90,
+    "product_harvest_api_calls": 248,
+    "product_harvest_repeated_pages": 45,
+    "product_harvest_zero_progress_pages": 0,
+    "itinerary_expansion_targets": 90,
+    "sailing_expansion_api_calls": 90,
+    "raw_sailing_rows": 484,
+    "malformed_rows": 0,
+    "exact_duplicate_rows": 0,
+    "expansion_errors": 0,
+    "unique_individual_sailings": 484,
+    "identity_coverage_pct": 100,
+    "duplicate_official_identities": 0,
+    "monthly_advertised_sum": 651,
+    "reconciles_with_monthly_advertised_sum": false,
+    "enumeration_gap": 167,
+    "perth_today": "2026-08-15",
+    "notes": [
+      "Sum of per-month totalAvailableCruises across date facets equals 651",
+      "Best faceted harvest (date×night + date×ship using filterValue) yielded 484 unique sailings on 2026-08-15",
+      "Unfiltered available-products pagination repeats same 5 templates for pageNumber 1–26",
+      "Ship/city/destination filters return zero products when filter option id is used instead of filterValue"
+    ]
+  },
+  "date_facet_advertised_totals": [
+    { "month": "2026-08", "totalAvailableCruises": 19 },
+    { "month": "2026-09", "totalAvailableCruises": 47 },
+    { "month": "2026-10", "totalAvailableCruises": 56 },
+    { "month": "2026-11", "totalAvailableCruises": 55 },
+    { "month": "2026-12", "totalAvailableCruises": 54 },
+    { "month": "2027-01", "totalAvailableCruises": 57 },
+    { "month": "2027-02", "totalAvailableCruises": 59 },
+    { "month": "2027-03", "totalAvailableCruises": 51 },
+    { "month": "2027-04", "totalAvailableCruises": 48 },
+    { "month": "2027-05", "totalAvailableCruises": 48 },
+    { "month": "2027-06", "totalAvailableCruises": 41 },
+    { "month": "2027-07", "totalAvailableCruises": 48 },
+    { "month": "2027-08", "totalAvailableCruises": 50 },
+    { "month": "2027-09", "totalAvailableCruises": 16 }
+  ],
+  "monthly_advertised_sum": 651,
+  "raw_field_inventory": {
+    "official_sailing_id": "sailingId (e.g. DA0071)",
+    "itinerary_id": "itineraryId on product template (may be empty string)",
+    "ship_id_code": "ship.seawareId (e.g. DA, DD, DF)",
+    "ship_name": "ship.name",
+    "departure_date": "sailDateFrom (YYYY-MM-DD)",
+    "return_date": "sailDateTo",
+    "number_of_nights": "numberOfNights",
+    "departure_port": "embedded in productName / product template (not on sailing row)",
+    "arrival_final_port": "typically round-trip; oneWayItinerary flag on template",
+    "itinerary_title": "productName / productDisplayName",
+    "destination_region": "destination / geoArea",
+    "ports_of_call": "itineraries[].portsOfCall on product template",
+    "sea_days": "not explicit on sailing row",
+    "itinerary_sequence": "not on sailing row",
+    "booking_detail_url": "constructed from SPA routes (not returned directly)",
+    "currency": "AUD request with USD/AUD converted pricing on embedded samples",
+    "price": "stateroom pricing on embedded sample sailings only",
+    "specialty_cruise_theme": "productItineraryData.themeData when present",
+    "availability_status": "hasAvailability, blockedFromBooking, isEarlyBooking",
+    "representative_samples": [
+      {
+        "official_product_key": "DA0071|2026-08-20",
+        "sailing_id": "DA0071",
+        "departure_date": "2026-08-20",
+        "ship_name": "Disney Adventure",
+        "ship_code": "DA",
+        "product_id": "4_singapore",
+        "package_code": "4SIN",
+        "destination_code": "SINGAPORE"
+      }
+    ]
+  },
+  "ship_coverage": [
+    { "ship": "Disney Adventure", "raw_official_ship_code": "DA", "future_source_sailings": 107, "database_ship_match": "Disney Adventure", "status": "matched" },
+    { "ship": "Disney Destiny", "raw_official_ship_code": "WD", "future_source_sailings": 46, "database_ship_match": "Disney Destiny", "status": "matched" },
+    { "ship": "Disney Dream", "raw_official_ship_code": "DD", "future_source_sailings": 56, "database_ship_match": "Disney Dream", "status": "matched" },
+    { "ship": "Disney Fantasy", "raw_official_ship_code": "DF", "future_source_sailings": 70, "database_ship_match": "Disney Fantasy", "status": "matched" },
+    { "ship": "Disney Magic", "raw_official_ship_code": "DM", "future_source_sailings": 44, "database_ship_match": "Disney Magic", "status": "matched" },
+    { "ship": "Disney Treasure", "raw_official_ship_code": "WT", "future_source_sailings": 55, "database_ship_match": "Disney Treasure", "status": "matched" },
+    { "ship": "Disney Wish", "raw_official_ship_code": "WW", "future_source_sailings": 51, "database_ship_match": "Disney Wish", "status": "matched" },
+    { "ship": "Disney Wonder", "raw_official_ship_code": "DW", "future_source_sailings": 55, "database_ship_match": "Disney Wonder", "status": "matched" }
+  ],
+  "quality_assessment": {
+    "official_source_total_gt_zero": true,
+    "pagination_exhausted_with_facets": true,
+    "source_accounting_reconciles": false,
+    "enumeration_gap_vs_monthly_sum": 167,
+    "duplicate_official_identities": 0,
+    "identity_coverage_pct": 100,
+    "phase1_complete": false,
+    "architecture_reference": {
+      "enumeration": "Seabourn-like faceted union + repeated-page guards",
+      "template_expansion": "Royal/Celebrity-like product template to available-sailings",
+      "identity": "Norwegian-like deterministic code|date",
+      "weekly_reconciliation": "Seabourn-like source absence policy (future phase)"
+    },
+    "recommended_future_gates": {
+      "official_source_total_gt_zero": true,
+      "pagination_exhausted": true,
+      "source_accounting_reconciles": true,
+      "no_repeated_pages_without_progress": true,
+      "malformed_rate_max_pct": 1,
+      "stable_identity_coverage_pct": 100,
+      "duplicate_official_identities": 0,
+      "ship_resolution_min_pct": 98,
+      "departure_port_resolution_min_pct": 95,
+      "destination_resolution_min_pct": 90,
+      "source_failure_zero_writes": true,
+      "incomplete_pagination_zero_writes": true
+    },
+    "source_absence_policy_sketch": {
+      "never_hard_delete_on_single_failed_request": true,
+      "deactivate_only_after_complete_high_confidence_snapshot": true,
+      "recommend_consecutive_absence_observations": 2
+    }
+  },
+  "prerequisites": [
+    "Populate official_line_ship_id on ci_cruise_ships using seawareId codes (DA, DD, DF, DM, DW, WT, WD, WW)",
+    "Resolve enumeration gap vs monthly advertised sum (651) before production writes",
+    "Disney Believe has zero published sailings — do not treat as source failure"
+  ],
+  "blockers": [
+    {
+      "code": "enumeration_not_reconciled",
+      "detail": "Unique sailings (484) do not reconcile to monthly advertised sum (651). Phase 1 source proof is partial — do not enable production importer until complete snapshot strategy is proven."
+    }
+  ],
+  "recommendation_for_phase2": "Continue Phase 2 in read-only/dry-run mode only: refine faceted product harvest (date×night, date×ship, possibly date×city using filterValue), prove reconciliation to monthly advertised sum with zero identity collisions, populate official_line_ship_id, then add adapter/writes behind existing shared quality gates."
+}

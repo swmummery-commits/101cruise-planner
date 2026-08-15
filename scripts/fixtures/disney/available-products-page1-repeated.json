@@ -1,0 +1,519 @@
+{
+  "products": [
+    {
+      "productId": "3_singapore",
+      "productName": "3-Night Cruise from Singapore",
+      "itineraries": [
+        {
+          "itineraryId": "",
+          "numberOfSailings": 53,
+          "sailings": [
+            {
+              "sailingId": "DA0138",
+              "packageId": "30468929",
+              "packageCode": "3SIN",
+              "ship": {
+                "id": "412093034;entityType=ship;destination=dcl",
+                "type": "ship",
+                "name": "Disney Adventure",
+                "seawareId": "DA",
+                "stateroomTypes": {
+                  "DA-SUITE;entityType=stateroom-type;destination=dcl": {
+                    "id": "DA-SUITE;entityType=stateroom-type;destination=dcl",
+                    "type": "stateroom-type",
+                    "name": "Concierge",
+                    "displayOrder": {
+                      "displayOrder": 4
+                    },
+                    "media": {
+                      "stateroomClassDesktop": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/280/118/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/1a/1A-Elsa-Main-Bedroom-2x1.jpg?2024-11-08T00:35:30+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/1a/1A-Elsa-Main-Bedroom-2x1.jpg?2024-11-08T00:35:30+00:00",
+                        "alt": ""
+                      },
+                      "finderDetailStateroomsFullWidthHero": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/900/360/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/1a/1A-Elsa-Main-Bedroom-5x2.jpg?2024-11-08T00:35:30+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/1a/1A-Elsa-Main-Bedroom-5x2.jpg?2024-11-08T00:35:30+00:00",
+                        "alt": ""
+                      },
+                      "stateroomClassMobile": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/375/157/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/1a/1A-Elsa-Main-Bedroom-5x2.jpg?2024-11-08T00:35:30+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/1a/1A-Elsa-Main-Bedroom-5x2.jpg?2024-11-08T00:35:30+00:00",
+                        "alt": ""
+                      }
+                    },
+                    "descriptions": {
+                      "stateroomClassDescription": {
+                        "id": "",
+                        "text": "",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "Our most luxurious accommodations with spectacular ocean views and premium amenities and services."
+                        },
+                        "media": {}
+                      },
+                      "shortDescription": {
+                        "id": "",
+                        "text": "Our most luxurious accommodations with spectacular ocean views and premium amenities and services. <br/>",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "Our most luxurious accommodations with spectacular ocean views and premium amenities and services."
+                        },
+                        "media": {}
+                      },
+                      "stateroomsShortDescription": {
+                        "id": "",
+                        "text": "Relax in your luxurious home on the high seas inspired by the adventures of <em>Frozen</em>, <em>Aladdin, Thor </em>and <em>The Little Mermaid</em>. <em>Moana </em>fans will love the special selection of staterooms overlooking the open oasis of Wayfinder Bay. For added comfort, choose a room with a private balcony or secondary bedroom. Concierge Guests also enjoy access to personalized services, benefits and exclusive spaces. Images shown on this page are artist renderings and may not reflect the final product.&nbsp; <br/>",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "Relax in your luxurious home on the high seas inspired by the adventures of <em>Frozen</em>, <em>Aladdin, Thor </em>and <em>The Little Mermaid</em>. <em>Moana </em>fans will love the special selection of staterooms overlooking the open oasis of Wayfinder Bay. For added comfort, choose a room with a private balcony or secondary bedroom. Concierge Guests also enjoy access to personalized services, benefits and exclusive spaces. Images shown on this page are artist renderings and may not reflect the final product.&nbsp;"
+                        },
+                        "media": {}
+                      },
+                      "ctaCard": {
+                        "id": "",
+                        "text": "Null",
+                        "type": "webDescription",
+                        "sections": {
+                          "buttonCardHeader": "View Cruises",
+                          "body": "Search for Cruises Aboard the Disney Adventure"
+                        },
+                        "media": {}
+                      }
+                    }
+                  },
+                  "DA-OUTSIDE;entityType=stateroom-type;destination=dcl": {
+                    "id": "DA-OUTSIDE;entityType=stateroom-type;destination=dcl",
+                    "type": "stateroom-type",
+                    "name": "Oceanview",
+                    "displayOrder": {
+                      "displayOrder": 2
+                    },
+                    "media": {
+                      "stateroomClassDesktop": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/280/118/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/8a/8A-Mermaid-BedView-2x1.jpg?2024-11-08T01:06:21+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/8a/8A-Mermaid-BedView-2x1.jpg?2024-11-08T01:06:21+00:00",
+                        "alt": ""
+                      },
+                      "finderDetailStateroomsFullWidthHero": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/900/360/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/8a/8A-Mermaid-BedView-5x2.jpg?2024-11-08T01:06:21+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/8a/8A-Mermaid-BedView-5x2.jpg?2024-11-08T01:06:21+00:00",
+                        "alt": ""
+                      },
+                      "stateroomClassMobile": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/375/157/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/8a/8A-Mermaid-BedView-5x2.jpg?2024-11-08T01:06:21+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/8a/8A-Mermaid-BedView-5x2.jpg?2024-11-08T01:06:21+00:00",
+                        "alt": ""
+                      }
+                    },
+                    "descriptions": {
+                      "stateroomClassDescription": {
+                        "id": "",
+                        "text": "",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "Enjoy the passing ocean vistas in an artfully themed stateroom that celebrates such iconic Disney, Marvel and Pixar stories. Each stateroom sleeps up to 4 Guests and provide the perfect place to rest and recharge. Images shown on this page are artist renderings and may not reflect the final product."
+                        },
+                        "media": {}
+                      },
+                      "shortDescription": {
+                        "id": "",
+                        "text": "Enjoy the passing ocean vistas in an artfully themed stateroom that celebrates such iconic Disney, Marvel and Pixar stories. Each stateroom sleeps up to 4 Guests and provide the perfect place to rest and recharge. Images shown on this page are artist renderings and may not reflect the final product. <br/>",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "Enjoy the passing ocean vistas in an artfully themed stateroom that celebrates such iconic Disney, Marvel and Pixar stories. Each stateroom sleeps up to 4 Guests and provide the perfect place to rest and recharge. Images shown on this page are artist renderings and may not reflect the final product."
+                        },
+                        "media": {}
+                      },
+                      "stateroomsShortDescription": {
+                        "id": "",
+                        "text": "Enjoy the passing ocean vistas in an artfully themed stateroom that celebrates such iconic Disney, Marvel and Pixar stories. Each stateroom sleeps up to 4 Guests and provide the perfect place to rest and recharge. Images shown on this page are artist renderings and may not reflect the final product. <br/>",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "Enjoy the passing ocean vistas in an artfully themed stateroom that celebrates such iconic Disney, Marvel and Pixar stories. Each stateroom sleeps up to 4 Guests and provide the perfect place to rest and recharge. Images shown on this page are artist renderings and may not reflect the final product."
+                        },
+                        "media": {}
+                      },
+                      "ctaCard": {
+                        "id": "",
+                        "text": "Null",
+                        "type": "webDescription",
+                        "sections": {
+                          "buttonCardHeader": "View Cruises",
+                          "body": "Search for Cruises Aboard the Disney Adventure"
+                        },
+                        "media": {}
+                      }
+                    }
+                  },
+                  "DA-INSIDE;entityType=stateroom-type;destination=dcl": {
+                    "id": "DA-INSIDE;entityType=stateroom-type;destination=dcl",
+                    "type": "stateroom-type",
+                    "name": "Inside",
+                    "displayOrder": {
+                      "displayOrder": 1
+                    },
+                    "media": {
+                      "stateroomClassDesktop": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/280/118/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/10b10c10d/10B10C10D-Mermaid-Deluxe-Inside-Stateroom-BedView-5x2.jpg?2024-11-08T01:12:55+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/10b10c10d/10B10C10D-Mermaid-Deluxe-Inside-Stateroom-BedView-5x2.jpg?2024-11-08T01:12:55+00:00",
+                        "alt": ""
+                      },
+                      "finderDetailStateroomsFullWidthHero": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/900/360/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/10b10c10d/10B10C10D-Mermaid-Deluxe-Inside-Stateroom-BedView-5x2.jpg?2024-11-08T01:12:55+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/10b10c10d/10B10C10D-Mermaid-Deluxe-Inside-Stateroom-BedView-5x2.jpg?2024-11-08T01:12:55+00:00",
+                        "alt": ""
+                      },
+                      "stateroomClassMobile": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/375/157/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/10b10c10d/10B10C10D-Mermaid-Deluxe-Inside-Stateroom-BedView-5x2.jpg?2024-11-08T01:12:55+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/staterooms/adventure/10b10c10d/10B10C10D-Mermaid-Deluxe-Inside-Stateroom-BedView-5x2.jpg?2024-11-08T01:12:55+00:00",
+                        "alt": ""
+                      }
+                    },
+                    "descriptions": {
+                      "stateroomClassDescription": {
+                        "id": "",
+                        "text": "",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "Our Inside Staterooms are conveniently close to entertainment, dining and shopping options, so you\u2019ll never be far from the action."
+                        },
+                        "media": {}
+                      },
+                      "stateroomsShortDescription": {
+                        "id": "",
+                        "text": "Be surrounded by character sketches and storybook landscapes inspired by Disney, Pixar or Marvel stories. For adventurous friends traveling together, Inside Staterooms feature 4 single beds. Ideal for families, our Deluxe Inside Staterooms offer a queen bed and sofa bed\u2014some even provide views of the enchanting Disney Discover Reef area. All sleep up to 4 Guests. Images shown on this page are artist renderings and may not reflect the final product. <br/>",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "Be surrounded by character sketches and storybook landscapes inspired by Disney, Pixar or Marvel stories. For adventurous friends traveling together, Inside Staterooms feature 4 single beds. Ideal for families, our Deluxe Inside Staterooms offer a queen bed and sofa bed\u2014some even provide views of the enchanting Disney Discover Reef area. All sleep up to 4 Guests. Images shown on this page are artist renderings and may not reflect the final product."
+                        },
+                        "media": {}
+                      },
+                      "ctaCard": {
+                        "id": "",
+                        "text": "Null",
+                        "type": "webDescription",
+                        "sections": {
+                          "buttonCardHeader": "View Cruises ",
+                          "body": "Search for Cruises Aboard the Disney Adventure"
+                        },
+                        "media": {}
+                      }
+                    }
+                  },
+                  "DA-VERANDAH;entityType=stateroom-type;destination=dcl": {
+                    "id": "DA-VERANDAH;entityType=stateroom-type;destination=dcl",
+                    "type": "stateroom-type",
+                    "name": "Verandah",
+                    "displayOrder": {
+                      "displayOrder": 3
+                    },
+                    "media": {
+                      "stateroomClassDesktop": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/280/118/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/ships/adventure/overview/Verandah_02-1-2x1.jpg?2024-10-11T17:47:36+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/ships/adventure/overview/Verandah_02-1-2x1.jpg?2024-10-11T17:47:36+00:00",
+                        "alt": ""
+                      },
+                      "finderDetailStateroomsFullWidthHero": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/900/360/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/ships/adventure/overview/Verandah_02-1-5x2.jpg?2024-10-11T17:47:36+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/ships/adventure/overview/Verandah_02-1-5x2.jpg?2024-10-11T17:47:36+00:00",
+                        "alt": ""
+                      },
+                      "stateroomClassMobile": {
+                        "url": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/375/157/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/ships/adventure/overview/Verandah_02-1-5x2.jpg?2024-10-11T17:47:36+00:00",
+                        "type": "jpg",
+                        "title": "",
+                        "transcodeTemplate": "https://cdn1.parksmedia.wdprapps.disney.com/resize/mwImage/1/{width}/{height}/75/vision-dam/digital/parks-platform/parks-global-assets/disney-cruise-line/ships/adventure/overview/Verandah_02-1-5x2.jpg?2024-10-11T17:47:36+00:00",
+                        "alt": ""
+                      }
+                    },
+                    "descriptions": {
+                      "stateroomClassDescription": {
+                        "id": "",
+                        "text": "",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "These are our most spacious non-Concierge staterooms, most with a private verandah."
+                        },
+                        "media": {}
+                      },
+                      "shortDescription": {
+                        "id": "",
+                        "text": "These are our most spacious non-Concierge staterooms, each with a private balcony. <br/>",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "These are our most spacious non-Concierge staterooms, each with a private balcony."
+                        },
+                        "media": {}
+                      },
+                      "stateroomsShortDescription": {
+                        "id": "",
+                        "text": "Take in spectacular views of the ocean, Disney Discovery Reef or Disney Imagination Garden from your own private balcony. Choose from a stateroom with 4 single beds or a more spacious room featuring a queen bed and a sofa bed. Most Verandah staterooms include our signature \u201csplit bathroom\u201d and amenities. Images shown on this page are artist renderings and may not reflect the final product. <br/>",
+                        "type": "webDescription",
+                        "sections": {
+                          "body": "Take in spectacular views of the ocean, Disney Discovery Reef or Disney Imagination Garden from your own private balcony. Choose from a stateroom with 4 single beds or a more spacious room featuring a queen bed and a sofa bed. Most Verandah staterooms include our signature \u201csplit bathroom\u201d and amenities. Images shown on this page are artist renderings and may not reflect the final product."
+                        },
+                        "media": {}
+                      },
+                      "ctaCard": {
+                        "id": "",
+                        "text": "Null",
+                        "type": "webDescription",
+                        "sections": {
+                          "buttonCardHeader": "View Cruises",
+                          "body": "Search for Cruises Aboard the Disney Adventure"
+                        },
+                        "media": {}
+                      }
+                    }
+                  }
+                }
+              },
+              "available": true,
+              "travelParties": {
+                "0": [
+                  {
+                    "accessible": false,
+                    "communicative": false,
+                    "available": true,
+                    "stateroomType": "DA-INSIDE",
+                    "stateroomSubType": "DA-INSIDE-STANDARD",
+                    "stateroomCategory": "11A",
+                    "stateroomCategoryContentId": "DA-11A",
+                    "stateroomSubTypeContentId": "DA-INSIDE-STANDARD",
+                    "price": {
+                      "rateType": "rack",
+                      "promoCode": "EBS",
+                      "summary": {
+                        "currency": "USD",
+                        "subtotal": 1009.8,
+                        "tax": 110.06,
+                        "taxIncluded": true,
+                        "total": 1119.86,
+                        "convertedCurrency": "AUD",
+                        "convertedSubtotal": 1427.68,
+                        "convertedTax": 155.61,
+                        "convertedTotal": 1583.29
+                      },
+                      "breakdownByGuest": {
+                        "1": {
+                          "ageGroup": "ADULT",
+                          "currency": "USD",
+                          "subtotal": 504.9,
+                          "tax": 55.03,
+                          "taxIncluded": true,
+                          "total": 559.93,
+                          "convertedCurrency": "AUD",
+                          "convertedSubtotal": 713.84,
+                          "convertedTax": 77.81,
+                          "convertedTotal": 791.65
+                        },
+                        "2": {
+                          "ageGroup": "ADULT",
+                          "currency": "USD",
+                          "subtotal": 504.9,
+                          "tax": 55.03,
+                          "taxIncluded": true,
+                          "total": 559.93,
+                          "convertedCurrency": "AUD",
+                          "convertedSubtotal": 713.84,
+                          "convertedTax": 77.81,
+                          "convertedTotal": 791.65
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "accessible": false,
+                    "communicative": false,
+                    "available": true,
+                    "stateroomType": "DA-OUTSIDE",
+                    "stateroomSubType": "DA-OUTSIDE-STANDARD",
+                    "stateroomCategory": "09A",
+                    "stateroomCategoryContentId": "DA-09A",
+                    "stateroomSubTypeContentId": "DA-OUTSIDE-STANDARD",
+                    "price": {
+                      "rateType": "rack",
+                      "promoCode": "EBS",
+                      "summary": {
+                        "currency": "USD",
+                        "subtotal": 1413.72,
+                        "tax": 110.06,
+                        "taxIncluded": true,
+                        "total": 1523.78,
+                        "convertedCurrency": "AUD",
+                        "convertedSubtotal": 1998.76,
+                        "convertedTax": 155.61,
+                        "convertedTotal": 2154.36
+                      },
+                      "breakdownByGuest": {
+                        "1": {
+                          "ageGroup": "ADULT",
+                          "currency": "USD",
+                          "subtotal": 706.86,
+                          "tax": 55.03,
+                          "taxIncluded": true,
+                          "total": 761.89,
+                          "convertedCurrency": "AUD",
+                          "convertedSubtotal": 999.38,
+                          "convertedTax": 77.81,
+                          "convertedTotal": 1077.18
+                        },
+                        "2": {
+                          "ageGroup": "ADULT",
+                          "currency": "USD",
+                          "subtotal": 706.86,
+                          "tax": 55.03,
+                          "taxIncluded": true,
+                          "total": 761.89,
+                          "convertedCurrency": "AUD",
+                          "convertedSubtotal": 999.38,
+                          "convertedTax": 77.81,
+                          "convertedTotal": 1077.18
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "accessible": false,
+                    "communicative": false,
+                    "available": true,
+                    "stateroomType": "DA-VERANDAH",
+                    "stateroomSubType": "DA-VERANDAH-STATEROOM",
+                    "stateroomCategory": "07A",
+                    "stateroomCategoryContentId": "DA-07A",
+                    "stateroomSubTypeContentId": "DA-VERANDAH-STATEROOM",
+                    "price": {
+                      "rateType": "rack",
+                      "promoCode": "EBS",
+                      "summary": {
+                        "currency": "USD",
+                        "subtotal": 1548.36,
+                        "tax": 110.06,
+                        "taxIncluded": true,
+                        "total": 1658.42,
+                        "convertedCurrency": "AUD",
+                        "convertedSubtotal": 2189.11,
+                        "convertedTax": 155.61,
+                        "convertedTotal": 2344.72
+                      },
+                      "breakdownByGuest": {
+                        "1": {
+                          "ageGroup": "ADULT",
+                          "currency": "USD",
+                          "subtotal": 774.18,
+                          "tax": 55.03,
+                          "taxIncluded": true,
+                          "total": 829.21,
+                          "convertedCurrency": "AUD",
+                          "convertedSubtotal": 1094.56,
+                          "convertedTax": 77.81,
+                          "convertedTotal": 1172.36
+                        },
+                        "2": {
+                          "ageGroup": "ADULT",
+                          "currency": "USD",
+                          "subtotal": 774.18,
+                          "tax": 55.03,
+                          "taxIncluded": true,
+                          "total": 829.21,
+                          "convertedCurrency": "AUD",
+                          "convertedSubtotal": 1094.56,
+                          "convertedTax": 77.81,
+                          "convertedTotal": 1172.36
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "accessible": false,
+                    "communicative": false,
+                    "available": true,
+                    "stateroomType": "DA-SUITE",
+                    "stateroomSubType": "DA-SUITE-CONCIERGE-FAMILY",
+                    "stateroomCategory": "04D",
+                    "stateroomCategoryContentId": "DA-04D",
+                    "stateroomSubTypeContentId": "DA-SUITE-CONCIERGE-FAMILY",
+                    "price": {
+                      "rateType": "rack",
+                      "promoCode": "EBS",
+                      "summary": {
+                        "currency": "USD",
+                        "subtotal": 3558.0,
+                        "tax": 110.06,
+                        "taxIncluded": true,
+                        "total": 3668.06,
+                        "convertedCurrency": "AUD",
+                        "convertedSubtotal": 5030.39,
+                        "convertedTax": 155.61,
+                        "convertedTotal": 5186.0
+                      },
+                      "breakdownByGuest": {
+                        "1": {
+                          "ageGroup": "ADULT",
+                          "currency": "USD",
+                          "subtotal": 1779.0,
+                          "tax": 55.03,
+                          "taxIncluded": true,
+                          "total": 1834.03,
+                          "convertedCurrency": "AUD",
+                          "convertedSubtotal": 2515.2,
+                          "convertedTax": 77.81,
+                          "convertedTotal": 2593.0
+                        },
+                        "2": {
+                          "ageGroup": "ADULT",
+                          "currency": "USD",
+                          "subtotal": 1779.0,
+                          "tax": 55.03,
+                          "taxIncluded": true,
+                          "total": 1834.03,
+                          "convertedCurrency": "AUD",
+                          "convertedSubtotal": 2515.2,
+                          "convertedTax": 77.81,
+                          "convertedTotal": 2593.0
+                        }
+                      }
+                    }
+                  }
+                ]
+              },
+              "hasAvailability": true,
+              "blockedFromBooking": false,
+              "numberOfNights": 3,
+              "gratuitiesRate": 48,
+              "conciergeGratuitiesRate": 81.75,
+              "destination": "SINGAPORE",
+              "geoArea": "SINGAPORE"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "totalAvailableCruises": 651,
+  "totalPages": 27,
+  "pageNumber": 1
+}
