@@ -72,12 +72,34 @@ function cleanPortFragment(value) {
 const ROUTE_PAIR_PROSE_RE =
   /\b(cruise|voyage|journey|expedition|itinerary|welcome|through|with|during|aboard|sailing|explore|discover|days|nights|from the|to the)\b/i;
 
+/** Trailing Azamara marketing suffixes on route endpoints (not part of port names). */
+const ROUTE_PAIR_MARKETING_SUFFIX_RE = /\s+(?:GRAND VOYAGE|COMBINATION CRUISE)\s*$/i;
+
+/** Normalise vendor port labels before catalogue lookup. */
+const DISCOVERY_PORT_SYNONYMS = Object.freeze({
+  "new york city": "New York",
+  "gran canaria": "Las Palmas",
+  "panama city fuerte amador": "Panama City",
+  "fuerte amador": "Panama City"
+});
+
+function stripRoutePairMarketingSuffix(value) {
+  return cleanPortFragment(String(value || "").replace(ROUTE_PAIR_MARKETING_SUFFIX_RE, ""));
+}
+
+function applyDiscoveryPortSynonym(value) {
+  const raw = cleanPortFragment(value);
+  if (!raw) return raw;
+  const norm = normaliseName(raw);
+  return DISCOVERY_PORT_SYNONYMS[norm] || raw;
+}
+
 /**
  * When source text is a structural route pair "X to Y", return embark port X.
  * Returns input unchanged when not a route pair (avoids splitting arbitrary prose).
  */
 function parseRouteEmbarkPort(rawValue) {
-  const raw = cleanPortFragment(rawValue);
+  const raw = stripRoutePairMarketingSuffix(rawValue);
   if (!raw) return raw;
   const route = raw.match(
     /^([A-Z0-9][A-Za-z0-9 .'()/&-]{1,70}?)\s+to\s+([A-Z0-9][A-Za-z0-9 .'()/&-]{1,70})$/i
@@ -92,7 +114,7 @@ function parseRouteEmbarkPort(rawValue) {
 }
 
 function parseRoutePortPair(rawValue) {
-  const raw = cleanPortFragment(rawValue);
+  const raw = stripRoutePairMarketingSuffix(rawValue);
   if (!raw) return null;
   const route = raw.match(
     /^([A-Z0-9][A-Za-z0-9 .'()/&-]{1,70}?)\s+to\s+([A-Z0-9][A-Za-z0-9 .'()/&-]{1,70})$/i
@@ -132,7 +154,7 @@ function isRejectedPortText(value, context = {}) {
 }
 
 function resolveRawPortText(rawValue, context = {}) {
-  const raw = parseRouteEmbarkPort(cleanPortFragment(rawValue));
+  const raw = applyDiscoveryPortSynonym(parseRouteEmbarkPort(cleanPortFragment(rawValue)));
   if (!raw) {
     return {
       rawValue: raw,
@@ -547,6 +569,9 @@ module.exports = {
   isRejectedPortText,
   parseRouteEmbarkPort,
   parseRoutePortPair,
+  stripRoutePairMarketingSuffix,
+  applyDiscoveryPortSynonym,
+  DISCOVERY_PORT_SYNONYMS,
   resolveRawPortText,
   extractDepartureCandidates,
   resolveDepartureFromSource,

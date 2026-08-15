@@ -32,7 +32,8 @@ const {
   isAzamaraNonGeographicGtm,
   inferAzamaraDestinationSlug,
   resolveAzamaraDestination,
-  sanitiseAzamaraDestinationBlob
+  sanitiseAzamaraDestinationBlob,
+  preferAzamaraDestinationHits
 } = require(path.join(root, "netlify/functions/lib/azamara-destination-mapping.js"));
 const { OPERATIONAL_DESTINATION_CATALOGUE } = require(path.join(
   root,
@@ -104,6 +105,28 @@ const depFromDesc = resolveDepartureFromSource({
 assert(depFromDesc.status === "resolved", "description route pair resolves");
 assert(depFromDesc.canonicalPortName === "Barcelona", depFromDesc.canonicalPortName);
 
+const {
+  stripRoutePairMarketingSuffix,
+  applyDiscoveryPortSynonym
+} = require(path.join(root, "netlify/functions/lib/discovery-departure-port.js"));
+
+assert(
+  parseRoutePortPair("SAN DIEGO TO LONDON GRAND VOYAGE")?.from === "SAN DIEGO" &&
+    parseRoutePortPair("SAN DIEGO TO LONDON GRAND VOYAGE")?.to === "LONDON",
+  "grand voyage suffix stripped from route pair"
+);
+assert(stripRoutePairMarketingSuffix("VALPARAISO TO MIAMI GRAND VOYAGE").includes("MIAMI"), "suffix strip");
+
+const resolvedNyc = resolveRawPortText("NEW YORK CITY");
+assert(resolvedNyc.status === "resolved", "NEW YORK CITY resolves");
+assert(resolvedNyc.canonicalPortName === "New York", resolvedNyc.canonicalPortName);
+
+const resolvedGranCanaria = resolveRawPortText("GRAN CANARIA");
+assert(resolvedGranCanaria.status === "resolved", "GRAN CANARIA resolves");
+assert(resolvedGranCanaria.canonicalPortName === "Las Palmas", resolvedGranCanaria.canonicalPortName);
+
+assert(applyDiscoveryPortSynonym("NEW YORK CITY") === "New York", "port synonym");
+
 // --- Non-geographic GTM ---
 assert(isAzamaraNonGeographicGtm("COMBO"), "COMBO non-geographic");
 assert(isAzamaraNonGeographicGtm("GRAND VOYAGE"), "GRAND VOYAGE non-geographic");
@@ -160,6 +183,52 @@ const cases = [
     title: "CANADA & NEW ENGLAND INTENSIVE CRUISE: NEWPORT, HALIFAX, CHARLOTTETOWN",
     gtm: "CANADA",
     expected: "canada-new-england"
+  },
+  {
+    package: "QS270524-035",
+    title: "SAN DIEGO TO LONDON GRAND VOYAGE",
+    gtm: "GRAND VOYAGE",
+    routeFrom: "SAN DIEGO",
+    routeTo: "LONDON",
+    expected: "transatlantic"
+  },
+  {
+    package: "JR271110-024",
+    title: "TURKEY, EGYPT & ITALY COMBINATION CRUISE: EPHESUS, ALEXANDRIA & AMALFI COAST",
+    gtm: "COMBO",
+    expected: "mediterranean"
+  },
+  {
+    package: "QS280114-010",
+    title: "PANAMA, ECUADAOR & PERU CRUISE: PANAMA CITY, MANTA & LIMA (CALLAO)",
+    gtm: "SOUTH AMERICA",
+    expected: "south-america"
+  },
+  {
+    package: "QS280124-023",
+    title: "CHILE, ANTARCTICA & FALKLAND ISLANDS COMBINATION CRUISE: CHILEAN FJORDS, USHUAIA",
+    gtm: "COMBO",
+    expected: "antarctica"
+  },
+  {
+    package: "ON280301-027",
+    title: "AUSTRALIA & ASIA COMBINATION CRUISE: CAIRNS, BALI & HONG KONG",
+    gtm: "COMBO",
+    expected: "south-pacific"
+  },
+  {
+    package: "QS271227-028",
+    title: "CARIBBEAN, CENTRAL AMERICA & PERU COMBINATION CRUISE: ARUBA, MIAMI & PANAMA",
+    gtm: "COMBO",
+    expected: "caribbean"
+  },
+  {
+    package: "PR270205-048",
+    title: "AUSTRALIA TO JAPAN GRAND VOYAGE",
+    gtm: "GRAND VOYAGE",
+    routeFrom: "AUSTRALIA",
+    routeTo: "JAPAN",
+    expected: "transpacific"
   }
 ];
 
@@ -226,6 +295,71 @@ assert(medBuilt.reasons?.length === 0 || medBuilt.status === "active", "Mediterr
 assert(medBuilt.candidate.departure_port_meta?.status === "resolved", "departure resolved");
 assert(medBuilt.candidate.departure_port === "Barcelona", medBuilt.candidate.departure_port);
 assert(medBuilt.candidate.matched_destination?.slug === "mediterranean", "med destination");
+
+const southAmericaBuilt = buildAzamara({
+  title: "PANAMA, ECUADAOR & PERU CRUISE: PANAMA CITY, MANTA & LIMA (CALLAO)",
+  description:
+    "Explore this Panama, Ecuadaor & Peru Cruise: Panama City, Manta & Lima (callao) sailing from PANAMA CITY (FUERTE AMADOR) to VALPARAISO",
+  url: "https://www.azamara.com/cruises/qs280114-010",
+  excerpt: "Destination: SOUTH AMERICA",
+  structuredVoyage: {
+    ship_name: "Azamara Quest",
+    departure_date: "2028-01-14",
+    nights: 10,
+    package_code: "QS280114-010",
+    gtm_destination: "SOUTH AMERICA",
+    source: "azamara_gtm"
+  },
+  html:
+    '<div data-gtm-duration="10-NIGHT CRUISE" data-gtm-package-code="QS280114-010" data-gtm-ship-name="Azamara Quest" data-gtm-destination="SOUTH AMERICA"></div>'
+});
+assert(!southAmericaBuilt.skip, "South America intensive builds");
+assert(southAmericaBuilt.candidate.matched_destination?.slug === "south-america", "South America destination");
+
+const saHits = matchDestination(
+  "panama ecuador peru panama city manta lima callao south america",
+  destinations,
+  []
+);
+const filteredSaHits = preferAzamaraDestinationHits(
+  saHits,
+  "PANAMA, ECUADAOR & PERU CRUISE: PANAMA CITY, MANTA & LIMA (CALLAO)",
+  "SOUTH AMERICA"
+);
+assert(
+  !filteredSaHits.some((h) => h.dest.slug === "galapagos"),
+  "Galapagos spurious hit filtered for South America intensive"
+);
+assert(
+  pickDestinationFromHits(filteredSaHits, southAmericaBuilt.candidate.title)?.slug === "south-america",
+  "picker agrees with South America after Galapagos filter"
+);
+
+assert(
+  !matchDestination(southAmericaBuilt.candidate.matched_destination?.name || "", destinations, []).some(
+    (h) => h.dest.slug === "galapagos"
+  ) || southAmericaBuilt.candidate.matched_destination?.slug === "south-america",
+  "South America not replaced by Galapagos"
+);
+
+const nycBuilt = buildAzamara({
+  title: "CANADA & NEW ENGLAND INTENSIVE CRUISE: NEWPORT, HALIFAX, CHARLOTTETOWN",
+  description: "Explore this cruise sailing from NEW YORK CITY on Oct 7 2026",
+  url: "https://www.azamara.com/cruises/jr261007-012",
+  excerpt: "Destination: CANADA",
+  structuredVoyage: {
+    ship_name: "Azamara Journey",
+    departure_date: "2026-10-07",
+    nights: 12,
+    package_code: "JR261007-012",
+    gtm_destination: "CANADA",
+    source: "azamara_gtm"
+  },
+  html:
+    '<div data-gtm-duration="12-NIGHT CRUISE" data-gtm-package-code="JR261007-012" data-gtm-ship-name="Azamara Journey" data-gtm-destination="CANADA"></div>'
+});
+assert(!nycBuilt.skip, "New York City embark builds");
+assert(nycBuilt.candidate.departure_port === "New York", nycBuilt.candidate.departure_port);
 
 // --- Stale source policy ---
 const stale = azamaraStaleSourceGate({

@@ -742,6 +742,36 @@ function pickDestinationFromHits(destHits, title) {
   if (!destHits?.length) return null;
   if (destHits.length === 1) return destHits[0].dest;
   const titleHits = destHits.filter((h) => destinationMentionedInText(h.dest, title));
+  if (titleHits.length === 1) return titleHits[0].dest;
+  const titleNorm = normaliseName(title);
+  if (/japan|tokyo|yokohama|kobe|nagasaki|osaka|hiroshima|seoul|incheon|beijing|shanghai/.test(titleNorm)) {
+    const jp = destHits.find((h) => h.dest.slug === "japan");
+    if (jp) return jp.dest;
+  }
+  if (/australia|new zealand|sydney|auckland|melbourne|brisbane|cairns|bali|darwin|perth|fremantle|adelaide|hobart/.test(titleNorm)) {
+    const sp = destHits.find((h) => h.dest.slug === "south-pacific");
+    if (sp) return sp.dest;
+  }
+  if (
+    /grand voyage|transpacific|transatlantic|japan to new zealand|australia to japan|san diego to london|valparaiso to miami/.test(
+      titleNorm
+    )
+  ) {
+    const tp = destHits.find((h) => h.dest.slug === "transpacific" || h.dest.slug === "transatlantic");
+    if (tp) return tp.dest;
+  }
+  if (/caribbean|bermuda|barbados|bridgetown|aruba|central america|peru|sint maarten|antigua|tobago|tortola|saint kitts/.test(titleNorm)) {
+    const car = destHits.find((h) => h.dest.slug === "caribbean");
+    if (car) return car.dest;
+  }
+  if (/panama canal|panama city|manta|lima|callao/.test(titleNorm)) {
+    const pc = destHits.find((h) => h.dest.slug === "panama-canal");
+    if (pc) return pc.dest;
+  }
+  if (/antarctica|falkland|chilean fjord|drake passage/.test(titleNorm)) {
+    const ant = destHits.find((h) => h.dest.slug === "antarctica");
+    if (ant) return ant.dest;
+  }
   if (titleHits.length) return titleHits[0].dest;
   return destHits[0].dest;
 }
@@ -1008,7 +1038,11 @@ function matchEntities(normalised, { cruiseLine, ships, destinations, preferredD
       parseRoutePortPair(normalised.departure_port) ||
       parseRoutePortPair(normalised.description) ||
       parseRoutePortPair(normalised.title);
-    const needsAzamaraResolver = !destination || isAzamaraNonGeographicGtm(gtmDestination);
+    const needsAzamaraResolver =
+      !destination ||
+      isAzamaraNonGeographicGtm(gtmDestination) ||
+      /combination cruise|grand voyage/i.test(String(normalised.title || "")) ||
+      /combination cruise|grand voyage/i.test(String(normalised.description || ""));
     if (needsAzamaraResolver) {
       const azResolved = resolveAzamaraDestination({
         title: normalised.title,
