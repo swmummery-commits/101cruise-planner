@@ -1,0 +1,248 @@
+{
+  "official_sailing_id": "E4261109015",
+  "destination": "ANTARCTICA",
+  "embark": "Puerto Williams",
+  "disembark": "Puerto Williams",
+  "itinerary": [
+    {
+      "port_name": "Puerto Williams",
+      "port_code": "CLWPU",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "21:00",
+      "semantic": {
+        "semantic": "EMBARK_DISEMBARK_LOGISTICS",
+        "confidence": "high",
+        "evidence": [
+          "logistics_name",
+          "CLWPU"
+        ]
+      }
+    },
+    {
+      "port_name": "Day at sea",
+      "port_code": "ZZC36",
+      "kind": "sea",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "AMBIGUOUS",
+        "confidence": "low",
+        "evidence": [
+          "no_deterministic_rule",
+          "ZZC36"
+        ]
+      }
+    },
+    {
+      "port_name": "Day at sea",
+      "port_code": "ZZC36",
+      "kind": "sea",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "AMBIGUOUS",
+        "confidence": "low",
+        "evidence": [
+          "no_deterministic_rule",
+          "ZZC36"
+        ]
+      }
+    },
+    {
+      "port_name": "Day at sea",
+      "port_code": "ZZC36",
+      "kind": "sea",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "AMBIGUOUS",
+        "confidence": "low",
+        "evidence": [
+          "no_deterministic_rule",
+          "ZZC36"
+        ]
+      }
+    },
+    {
+      "port_name": "South Georgia",
+      "port_code": "GSE28",
+      "kind": "port",
+      "arrival_time": "06:30",
+      "departure_time": "06:30",
+      "semantic": {
+        "semantic": "SCENIC_OR_GEOGRAPHIC_REGION",
+        "confidence": "high",
+        "evidence": [
+          "polar_region_code",
+          "GSE28"
+        ]
+      }
+    },
+    {
+      "port_name": "South Georgia",
+      "port_code": "GSE28",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "SCENIC_OR_GEOGRAPHIC_REGION",
+        "confidence": "high",
+        "evidence": [
+          "polar_region_code",
+          "GSE28"
+        ]
+      }
+    },
+    {
+      "port_name": "South Georgia",
+      "port_code": "GSE28",
+      "kind": "port",
+      "arrival_time": "18:30",
+      "departure_time": "18:30",
+      "semantic": {
+        "semantic": "SCENIC_OR_GEOGRAPHIC_REGION",
+        "confidence": "high",
+        "evidence": [
+          "polar_region_code",
+          "GSE28"
+        ]
+      }
+    },
+    {
+      "port_name": "Drake Passage",
+      "port_code": "ZZC39",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "PASSAGE_OR_TRANSIT",
+        "confidence": "high",
+        "evidence": [
+          "passage_name",
+          "ZZC39"
+        ]
+      }
+    },
+    {
+      "port_name": "Drake Passage",
+      "port_code": "ZZC39",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "PASSAGE_OR_TRANSIT",
+        "confidence": "high",
+        "evidence": [
+          "passage_name",
+          "ZZC39"
+        ]
+      }
+    },
+    {
+      "port_name": "Elephant Island",
+      "port_code": "AQC41",
+      "kind": "port",
+      "arrival_time": "06:30",
+      "departure_time": "06:30",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "medium",
+        "evidence": [
+          "aqe_site",
+          "AQC41"
+        ]
+      }
+    },
+    {
+      "port_name": "Antarctic Peninsula",
+      "port_code": "AQE43",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "SCENIC_OR_GEOGRAPHIC_REGION",
+        "confidence": "high",
+        "evidence": [
+          "aqe_region",
+          "AQE43"
+        ]
+      }
+    },
+    {
+      "port_name": "Antarctic Peninsula",
+      "port_code": "AQE43",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "SCENIC_OR_GEOGRAPHIC_REGION",
+        "confidence": "high",
+        "evidence": [
+          "aqe_region",
+          "AQE43"
+        ]
+      }
+    },
+    {
+      "port_name": "South Shetland Islands",
+      "port_code": "AQE44",
+      "kind": "port",
+      "arrival_time": "18:30",
+      "departure_time": "18:30",
+      "semantic": {
+        "semantic": "SCENIC_OR_GEOGRAPHIC_REGION",
+        "confidence": "high",
+        "evidence": [
+          "aqe_region",
+          "AQE44"
+        ]
+      }
+    },
+    {
+      "port_name": "Drake Passage",
+      "port_code": "ZZC39",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "PASSAGE_OR_TRANSIT",
+        "confidence": "high",
+        "evidence": [
+          "passage_name",
+          "ZZC39"
+        ]
+      }
+    },
+    {
+      "port_name": "Puerto Williams",
+      "port_code": "CLWPU",
+      "kind": "port",
+      "arrival_time": "22:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EMBARK_DISEMBARK_LOGISTICS",
+        "confidence": "high",
+        "evidence": [
+          "logistics_name",
+          "CLWPU"
+        ]
+      }
+    },
+    {
+      "port_name": "Puerto Williams",
+      "port_code": "CLWPU",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EMBARK_DISEMBARK_LOGISTICS",
+        "confidence": "high",
+        "evidence": [
+          "logistics_name",
+          "CLWPU"
+        ]
+      }
+    }
+  ]
+}

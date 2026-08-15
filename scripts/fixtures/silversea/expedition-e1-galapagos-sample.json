@@ -1,0 +1,282 @@
+{
+  "official_sailing_id": "OR260822007",
+  "destination": "GALÁPAGOS ISLANDS",
+  "embark": "San Cristóbal, Galapagos",
+  "disembark": "San Cristóbal, Galapagos",
+  "itinerary": [
+    {
+      "port_name": "San Cristóbal, Galapagos",
+      "port_code": "ECSCY",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "16:15",
+      "semantic": {
+        "semantic": "CONVENTIONAL_PORT",
+        "confidence": "high",
+        "evidence": [
+          "existing_canonical_resolver",
+          "Puerto Baquerizo Moreno"
+        ],
+        "canonical_port": "Puerto Baquerizo Moreno"
+      }
+    },
+    {
+      "port_name": "Kicker Rock",
+      "port_code": "ECG34",
+      "kind": "port",
+      "arrival_time": "17:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "ANCHORAGE_OR_ZODIAC_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_anchorage",
+          "ECG34"
+        ]
+      }
+    },
+    {
+      "port_name": "Isla Bartolome",
+      "port_code": "ECG02",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG02"
+        ]
+      }
+    },
+    {
+      "port_name": "Buccaneer Cove, Santiago",
+      "port_code": "ECG44",
+      "kind": "port",
+      "arrival_time": "12:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG44"
+        ]
+      }
+    },
+    {
+      "port_name": "Punta Vicente Roca (Isabela)",
+      "port_code": "ECG04",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG04"
+        ]
+      }
+    },
+    {
+      "port_name": "Bolivar Canal Cruising",
+      "port_code": "ECG46",
+      "kind": "scenic",
+      "arrival_time": "12:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG46"
+        ]
+      }
+    },
+    {
+      "port_name": "Punta Espinoza, Fernandina",
+      "port_code": "ECG05",
+      "kind": "port",
+      "arrival_time": "15:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG05"
+        ]
+      }
+    },
+    {
+      "port_name": "Tagus Cove (Isabela)",
+      "port_code": "ECG06",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG06"
+        ]
+      }
+    },
+    {
+      "port_name": "Elizabeth Bay (Isabela)",
+      "port_code": "ECG07",
+      "kind": "port",
+      "arrival_time": "12:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG07"
+        ]
+      }
+    },
+    {
+      "port_name": "Post Office Bay (Floreana)",
+      "port_code": "ECG08",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG08"
+        ]
+      }
+    },
+    {
+      "port_name": "Champion Islet (Floreana)",
+      "port_code": "ECG31",
+      "kind": "port",
+      "arrival_time": "12:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "ANCHORAGE_OR_ZODIAC_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_anchorage",
+          "ECG31"
+        ]
+      }
+    },
+    {
+      "port_name": "Punta Cormorant (Floreana)",
+      "port_code": "ECG09",
+      "kind": "port",
+      "arrival_time": "15:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG09"
+        ]
+      }
+    },
+    {
+      "port_name": "Santa Cruz Highlands",
+      "port_code": "ECG12",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "LAND_EXCURSION_OR_INLAND_SITE",
+        "confidence": "high",
+        "evidence": [
+          "inland_pattern",
+          "ECG12"
+        ]
+      }
+    },
+    {
+      "port_name": "Fausto Llerena Breeding Center, Puerto Ayora (Santa Cruz)",
+      "port_code": "ECG13",
+      "kind": "port",
+      "arrival_time": "12:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "CONVENTIONAL_PORT",
+        "confidence": "high",
+        "evidence": [
+          "existing_canonical_resolver",
+          "Puerto Ayora"
+        ],
+        "canonical_port": "Puerto Ayora"
+      }
+    },
+    {
+      "port_name": "Cerro Dragon (Santa Cruz)",
+      "port_code": "ECG15",
+      "kind": "port",
+      "arrival_time": "00:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "CONVENTIONAL_PORT",
+        "confidence": "high",
+        "evidence": [
+          "existing_canonical_resolver",
+          "Puerto Ayora"
+        ],
+        "canonical_port": "Puerto Ayora"
+      }
+    },
+    {
+      "port_name": "Isla Guy Fawkes",
+      "port_code": "ECG42",
+      "kind": "port",
+      "arrival_time": "12:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG42"
+        ]
+      }
+    },
+    {
+      "port_name": "Bahia Bowditch, Santa Cruz",
+      "port_code": "ECG45",
+      "kind": "port",
+      "arrival_time": "15:00",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "EXPEDITION_LANDING_SITE",
+        "confidence": "high",
+        "evidence": [
+          "ecg_landing",
+          "ECG45"
+        ]
+      }
+    },
+    {
+      "port_name": "San Cristóbal, Galapagos",
+      "port_code": "ECSCY",
+      "kind": "port",
+      "arrival_time": "06:30",
+      "departure_time": "00:00",
+      "semantic": {
+        "semantic": "CONVENTIONAL_PORT",
+        "confidence": "high",
+        "evidence": [
+          "existing_canonical_resolver",
+          "Puerto Baquerizo Moreno"
+        ],
+        "canonical_port": "Puerto Baquerizo Moreno"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1305 @@
+{
+  "generated_at": "2026-08-15T10:56:25.071Z",
+  "rules": [
+    {
+      "source_name": "Santa Cruz Highlands",
+      "source_code": "ECG12",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "LAND_EXCURSION_OR_INLAND_SITE",
+      "confidence": "high",
+      "affected_sailings": 166,
+      "occurrences": 206,
+      "evidence": [
+        "inland_pattern",
+        "ECG12"
+      ]
+    },
+    {
+      "source_name": "Kicker Rock",
+      "source_code": "ECG34",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "ANCHORAGE_OR_ZODIAC_SITE",
+      "confidence": "high",
+      "affected_sailings": 165,
+      "occurrences": 204,
+      "evidence": [
+        "ecg_anchorage",
+        "ECG34"
+      ]
+    },
+    {
+      "source_name": "Antarctic Peninsula",
+      "source_code": "AQE43",
+      "region": "ANTARCTICA",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 125,
+      "occurrences": 415,
+      "evidence": [
+        "aqe_region",
+        "AQE43"
+      ]
+    },
+    {
+      "source_name": "South Shetland Islands",
+      "source_code": "AQE44",
+      "region": "ANTARCTICA",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 121,
+      "occurrences": 157,
+      "evidence": [
+        "aqe_region",
+        "AQE44"
+      ]
+    },
+    {
+      "source_name": "Buccaneer Cove, Santiago",
+      "source_code": "ECG44",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG44"
+      ]
+    },
+    {
+      "source_name": "Cerro Brujo, San Cristóbal",
+      "source_code": "ECG41",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG41"
+      ]
+    },
+    {
+      "source_name": "Champion Islet (Floreana)",
+      "source_code": "ECG31",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "ANCHORAGE_OR_ZODIAC_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_anchorage",
+        "ECG31"
+      ]
+    },
+    {
+      "source_name": "Darwin Bay, Genovesa",
+      "source_code": "ECG17",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG17"
+      ]
+    },
+    {
+      "source_name": "Elizabeth Bay (Isabela)",
+      "source_code": "ECG07",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG07"
+      ]
+    },
+    {
+      "source_name": "Gardner Bay, Española",
+      "source_code": "ECG24",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG24"
+      ]
+    },
+    {
+      "source_name": "Isla Bartolome",
+      "source_code": "ECG02",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG02"
+      ]
+    },
+    {
+      "source_name": "Isla Guy Fawkes",
+      "source_code": "ECG42",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG42"
+      ]
+    },
+    {
+      "source_name": "North Seymour",
+      "source_code": "ECG18",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "ANCHORAGE_OR_ZODIAC_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_anchorage",
+        "ECG18"
+      ]
+    },
+    {
+      "source_name": "Post Office Bay (Floreana)",
+      "source_code": "ECG08",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG08"
+      ]
+    },
+    {
+      "source_name": "Prince Philips Step's, Genovesa",
+      "source_code": "ECG16",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG16"
+      ]
+    },
+    {
+      "source_name": "Punta Cormorant (Floreana)",
+      "source_code": "ECG09",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG09"
+      ]
+    },
+    {
+      "source_name": "Punta Espinoza, Fernandina",
+      "source_code": "ECG05",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG05"
+      ]
+    },
+    {
+      "source_name": "Punta Mangle, Fernandina",
+      "source_code": "ECG37",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG37"
+      ]
+    },
+    {
+      "source_name": "Punta Moreno, Isabela",
+      "source_code": "ECG38",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG38"
+      ]
+    },
+    {
+      "source_name": "Punta Suarez, Española",
+      "source_code": "ECG25",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG25"
+      ]
+    },
+    {
+      "source_name": "Punta Vicente Roca (Isabela)",
+      "source_code": "ECG04",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG04"
+      ]
+    },
+    {
+      "source_name": "Sullivan Bay (Santiago)",
+      "source_code": "ECG01",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG01"
+      ]
+    },
+    {
+      "source_name": "Tagus Cove (Isabela)",
+      "source_code": "ECG06",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 103,
+      "occurrences": 103,
+      "evidence": [
+        "ecg_landing",
+        "ECG06"
+      ]
+    },
+    {
+      "source_name": "Bahia Bowditch, Santa Cruz",
+      "source_code": "ECG45",
+      "region": "GALÁPAGOS ISLANDS",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "high",
+      "affected_sailings": 102,
+      "occurrences": 102,
+      "evidence": [
+        "ecg_landing",
+        "ECG45"
+      ]
+    },
+    {
+      "source_name": "Antarctic Sound",
+      "source_code": "AQE42",
+      "region": "ANTARCTICA",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 74,
+      "occurrences": 74,
+      "evidence": [
+        "aqe_site",
+        "AQE42"
+      ]
+    },
+    {
+      "source_name": "Drake Passage",
+      "source_code": "ZZC39",
+      "region": "ANTARCTICA",
+      "semantic_type": "PASSAGE_OR_TRANSIT",
+      "confidence": "high",
+      "affected_sailings": 73,
+      "occurrences": 144,
+      "evidence": [
+        "passage_name",
+        "ZZC39"
+      ]
+    },
+    {
+      "source_name": "South Georgia",
+      "source_code": "GSE28",
+      "region": "ANTARCTICA",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 17,
+      "occurrences": 52,
+      "evidence": [
+        "polar_region_code",
+        "GSE28"
+      ]
+    },
+    {
+      "source_name": "Elephant Island",
+      "source_code": "AQC41",
+      "region": "ANTARCTICA",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 17,
+      "occurrences": 17,
+      "evidence": [
+        "aqe_site",
+        "AQC41"
+      ]
+    },
+    {
+      "source_name": "Svalbard Northern Region",
+      "source_code": "NOE46",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 16,
+      "occurrences": 75,
+      "evidence": [
+        "polar_region_code",
+        "NOE46"
+      ]
+    },
+    {
+      "source_name": "Evighedsfjord",
+      "source_code": "GLEVF",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 16,
+      "occurrences": 16,
+      "evidence": [
+        "greenland_site_code",
+        "GLEVF"
+      ]
+    },
+    {
+      "source_name": "Buccaneer Archipelago Region",
+      "source_code": "AUK03",
+      "region": "KIMBERLEY",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 13,
+      "occurrences": 27,
+      "evidence": [
+        "kimberley_region_code",
+        "AUK03"
+      ]
+    },
+    {
+      "source_name": "Eqip Sermia Glacier",
+      "source_code": "GLESG",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 13,
+      "occurrences": 13,
+      "evidence": [
+        "greenland_scenic_code",
+        "GLESG"
+      ]
+    },
+    {
+      "source_name": "Hunter River Region (Western Australia)",
+      "source_code": "AUK02",
+      "region": "KIMBERLEY",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 12,
+      "occurrences": 15,
+      "evidence": [
+        "kimberley_region_code",
+        "AUK02"
+      ]
+    },
+    {
+      "source_name": "Ashmore Reef",
+      "source_code": "AUASM",
+      "region": "KIMBERLEY",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "medium",
+      "affected_sailings": 12,
+      "occurrences": 12,
+      "evidence": [
+        "scenic_region_name",
+        "AUASM"
+      ]
+    },
+    {
+      "source_name": "Iona",
+      "source_code": "GBION",
+      "region": "AFRICA & INDIAN OCEAN",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 12,
+      "occurrences": 12,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBION"
+      ]
+    },
+    {
+      "source_name": "Lunga",
+      "source_code": "GBLUN",
+      "region": "AFRICA & INDIAN OCEAN",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 12,
+      "occurrences": 12,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBLUN"
+      ]
+    },
+    {
+      "source_name": "Shiant Islands, Scotland",
+      "source_code": "GBSHH",
+      "region": "AFRICA & INDIAN OCEAN",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 12,
+      "occurrences": 12,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBSHH"
+      ]
+    },
+    {
+      "source_name": "St. Kilda",
+      "source_code": "GBE15",
+      "region": "AFRICA & INDIAN OCEAN",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 12,
+      "occurrences": 12,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBE15"
+      ]
+    },
+    {
+      "source_name": "Dynjandi Waterfalls",
+      "source_code": "ISDYJ",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "LAND_EXCURSION_OR_INLAND_SITE",
+      "confidence": "medium",
+      "affected_sailings": 11,
+      "occurrences": 11,
+      "evidence": [
+        "iceland_site_code",
+        "ISDYJ"
+      ]
+    },
+    {
+      "source_name": "Fair Isle, Scotland",
+      "source_code": "GBFAI",
+      "region": "NORTHERN EUROPE & BRITISH ISLES",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 11,
+      "occurrences": 11,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBFAI"
+      ]
+    },
+    {
+      "source_name": "Lady Franklin Island",
+      "source_code": "CALFR",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 11,
+      "occurrences": 11,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CALFR"
+      ]
+    },
+    {
+      "source_name": "Loch Ewe",
+      "source_code": "GBE16",
+      "region": "AFRICA & INDIAN OCEAN",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 11,
+      "occurrences": 11,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBE16"
+      ]
+    },
+    {
+      "source_name": "Lower Savage Islands",
+      "source_code": "CALSI",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 11,
+      "occurrences": 11,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CALSI"
+      ]
+    },
+    {
+      "source_name": "Svalbard Southern Region",
+      "source_code": "NOE45",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 10,
+      "occurrences": 20,
+      "evidence": [
+        "polar_region_code",
+        "NOE45"
+      ]
+    },
+    {
+      "source_name": "Isle of May",
+      "source_code": "GBIMY",
+      "region": "NORTHERN EUROPE & BRITISH ISLES",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 10,
+      "occurrences": 10,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBIMY"
+      ]
+    },
+    {
+      "source_name": "Monumental Island",
+      "source_code": "CAC62",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 10,
+      "occurrences": 10,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CAC62"
+      ]
+    },
+    {
+      "source_name": "Ambrym Island",
+      "source_code": "VUAMB",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 9,
+      "occurrences": 9,
+      "evidence": [
+        "landing_name_shape",
+        "VUAMB"
+      ]
+    },
+    {
+      "source_name": "Kronprinsen Ejland",
+      "source_code": "GLGL4",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 9,
+      "occurrences": 9,
+      "evidence": [
+        "greenland_site_code",
+        "GLGL4"
+      ]
+    },
+    {
+      "source_name": "Vansittart Bay (Jar Island)",
+      "source_code": "AUJAR",
+      "region": "KIMBERLEY",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 9,
+      "occurrences": 9,
+      "evidence": [
+        "landing_name_shape",
+        "AUJAR"
+      ]
+    },
+    {
+      "source_name": "West Point Island",
+      "source_code": "FKE00",
+      "region": "ANTARCTICA",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 9,
+      "occurrences": 9,
+      "evidence": [
+        "landing_name_shape",
+        "FKE00"
+      ]
+    },
+    {
+      "source_name": "Adamstown (Pitcairn Island)",
+      "source_code": "PNPCN",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 8,
+      "occurrences": 11,
+      "evidence": [
+        "landing_name_shape",
+        "PNPCN"
+      ]
+    },
+    {
+      "source_name": "Hanavave, Fatu Hiva",
+      "source_code": "PFFHH",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 8,
+      "occurrences": 8,
+      "evidence": [
+        "polynesia_site_code",
+        "PFFHH"
+      ]
+    },
+    {
+      "source_name": "Leleuvia Island",
+      "source_code": "FJLLA",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 8,
+      "occurrences": 8,
+      "evidence": [
+        "landing_name_shape",
+        "FJLLA"
+      ]
+    },
+    {
+      "source_name": "Lerwick, Shetland Islands, Scotland",
+      "source_code": "GBLER",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 8,
+      "occurrences": 8,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBLER"
+      ]
+    },
+    {
+      "source_name": "Qeqertarsuaq",
+      "source_code": "GLJGO",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 8,
+      "occurrences": 8,
+      "evidence": [
+        "greenland_site_code",
+        "GLJGO"
+      ]
+    },
+    {
+      "source_name": "Robinson Crusoe Island",
+      "source_code": "CLRBI",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 8,
+      "occurrences": 8,
+      "evidence": [
+        "landing_name_shape",
+        "CLRBI"
+      ]
+    },
+    {
+      "source_name": "Euaiki Island",
+      "source_code": "TOEKI",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 7,
+      "occurrences": 7,
+      "evidence": [
+        "landing_name_shape",
+        "TOEKI"
+      ]
+    },
+    {
+      "source_name": "Garove Island",
+      "source_code": "PGGRV",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 7,
+      "occurrences": 7,
+      "evidence": [
+        "landing_name_shape",
+        "PGGRV"
+      ]
+    },
+    {
+      "source_name": "Kennedy Island",
+      "source_code": "SBKNY",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 7,
+      "occurrences": 7,
+      "evidence": [
+        "landing_name_shape",
+        "SBKNY"
+      ]
+    },
+    {
+      "source_name": "King George River (Kimberley, Western Australia)",
+      "source_code": "AUK01",
+      "region": "KIMBERLEY",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 7,
+      "occurrences": 7,
+      "evidence": [
+        "kimberley_region_code",
+        "AUK01"
+      ]
+    },
+    {
+      "source_name": "New Island",
+      "source_code": "FKNIF",
+      "region": "ANTARCTICA",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 7,
+      "occurrences": 7,
+      "evidence": [
+        "landing_name_shape",
+        "FKNIF"
+      ]
+    },
+    {
+      "source_name": "Skarsvag (Nordkapp)",
+      "source_code": "NOE29",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 7,
+      "occurrences": 7,
+      "evidence": [
+        "polar_region_code",
+        "NOE29"
+      ]
+    },
+    {
+      "source_name": "Swift Bay",
+      "source_code": "AUSWB",
+      "region": "KIMBERLEY",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 7,
+      "occurrences": 7,
+      "evidence": [
+        "landing_name_shape",
+        "AUSWB"
+      ]
+    },
+    {
+      "source_name": "King Oscar Fjord",
+      "source_code": "GLKOF",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "medium",
+      "affected_sailings": 6,
+      "occurrences": 13,
+      "evidence": [
+        "scenic_region_name",
+        "GLKOF"
+      ]
+    },
+    {
+      "source_name": "Aguila Glacier",
+      "source_code": "CLAGG",
+      "region": "SOUTH AMERICA",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "medium",
+      "affected_sailings": 6,
+      "occurrences": 6,
+      "evidence": [
+        "scenic_region_name",
+        "CLAGG"
+      ]
+    },
+    {
+      "source_name": "Hvalsey",
+      "source_code": "GLE12",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 6,
+      "occurrences": 6,
+      "evidence": [
+        "greenland_site_code",
+        "GLE12"
+      ]
+    },
+    {
+      "source_name": "Koolama Bay",
+      "source_code": "AUKLB",
+      "region": "KIMBERLEY",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "high",
+      "affected_sailings": 6,
+      "occurrences": 6,
+      "evidence": [
+        "kimberley_region_code",
+        "AUKLB"
+      ]
+    },
+    {
+      "source_name": "Palmerston Island",
+      "source_code": "CKPMN",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 6,
+      "occurrences": 6,
+      "evidence": [
+        "landing_name_shape",
+        "CKPMN"
+      ]
+    },
+    {
+      "source_name": "Qaqortoq (Julianehåb)",
+      "source_code": "GLJJU",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 6,
+      "occurrences": 6,
+      "evidence": [
+        "greenland_site_code",
+        "GLJJU"
+      ]
+    },
+    {
+      "source_name": "Qikiqtarjuaq, nunavut",
+      "source_code": "CACA9",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 6,
+      "occurrences": 6,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CACA9"
+      ]
+    },
+    {
+      "source_name": "Apo Reef",
+      "source_code": "PHAPO",
+      "region": "ASIA",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 6,
+      "evidence": [
+        "scenic_region_name",
+        "PHAPO"
+      ]
+    },
+    {
+      "source_name": "Alexander Selkirk Island",
+      "source_code": "CLASK",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "landing_name_shape",
+        "CLASK"
+      ]
+    },
+    {
+      "source_name": "Ali Island",
+      "source_code": "PGALS",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "landing_name_shape",
+        "PGALS"
+      ]
+    },
+    {
+      "source_name": "Baie de la Tour, Anticosti Island",
+      "source_code": "CADLT",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CADLT"
+      ]
+    },
+    {
+      "source_name": "Cape Peron, Shark Bay",
+      "source_code": "AUPER",
+      "region": "KIMBERLEY",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "landing_name_shape",
+        "AUPER"
+      ]
+    },
+    {
+      "source_name": "Farne Islands",
+      "source_code": "GBFAR",
+      "region": "NORTHERN EUROPE & BRITISH ISLES",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBFAR"
+      ]
+    },
+    {
+      "source_name": "High Bluff Island",
+      "source_code": "CAHFI",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CAHFI"
+      ]
+    },
+    {
+      "source_name": "Hopedale",
+      "source_code": "CAHOP",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CAHOP"
+      ]
+    },
+    {
+      "source_name": "Kolo Hite Island",
+      "source_code": "SBS01",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "landing_name_shape",
+        "SBS01"
+      ]
+    },
+    {
+      "source_name": "North Muiron Island",
+      "source_code": "AUNMI",
+      "region": "KIMBERLEY",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "landing_name_shape",
+        "AUNMI"
+      ]
+    },
+    {
+      "source_name": "Port Menier, Anicosti Island",
+      "source_code": "CAPME",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CAPME"
+      ]
+    },
+    {
+      "source_name": "St Mary's (Isles of Scilly)",
+      "source_code": "GBSVZ",
+      "region": "AFRICA & INDIAN OCEAN",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBSVZ"
+      ]
+    },
+    {
+      "source_name": "Tresco, Isles of Scilly",
+      "source_code": "GBTSO",
+      "region": "AFRICA & INDIAN OCEAN",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "landing_name_shape",
+        "GBTSO"
+      ]
+    },
+    {
+      "source_name": "Uoleva Island",
+      "source_code": "TOUOL",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 5,
+      "occurrences": 5,
+      "evidence": [
+        "landing_name_shape",
+        "TOUOL"
+      ]
+    },
+    {
+      "source_name": "Atuona - Hiva Oa, Marquesas Island",
+      "source_code": "PFAUQ",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "landing_name_shape",
+        "PFAUQ"
+      ]
+    },
+    {
+      "source_name": "Battle Harbour",
+      "source_code": "CAC18",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CAC18"
+      ]
+    },
+    {
+      "source_name": "Cape Mercy, Nunavut",
+      "source_code": "CACRY",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CACRY"
+      ]
+    },
+    {
+      "source_name": "Djupavik",
+      "source_code": "ISDJK",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "LAND_EXCURSION_OR_INLAND_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "iceland_site_code",
+        "ISDJK"
+      ]
+    },
+    {
+      "source_name": "Kalanggaman private island",
+      "source_code": "PHKPH",
+      "region": "ASIA",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "landing_name_shape",
+        "PHKPH"
+      ]
+    },
+    {
+      "source_name": "Kenanga Village",
+      "source_code": "IDKNN",
+      "region": "ASIA",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "indonesia_site_code",
+        "IDKNN"
+      ]
+    },
+    {
+      "source_name": "Lindisfarne Island",
+      "source_code": "GBLFA",
+      "region": "MEDITERRANEAN",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "uk_expedition_site_code",
+        "GBLFA"
+      ]
+    },
+    {
+      "source_name": "Oro Island",
+      "source_code": "FIORI",
+      "region": "NORTHERN EUROPE & BRITISH ISLES",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "landing_name_shape",
+        "FIORI"
+      ]
+    },
+    {
+      "source_name": "Pentecost Island",
+      "source_code": "VUPCT",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "landing_name_shape",
+        "VUPCT"
+      ]
+    },
+    {
+      "source_name": "Pulau Satonda",
+      "source_code": "IDPLS",
+      "region": "ASIA",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "indonesia_site_code",
+        "IDPLS"
+      ]
+    },
+    {
+      "source_name": "Ulko Island",
+      "source_code": "FIULK",
+      "region": "NORTHERN EUROPE & BRITISH ISLES",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 4,
+      "occurrences": 4,
+      "evidence": [
+        "landing_name_shape",
+        "FIULK"
+      ]
+    },
+    {
+      "source_name": "Kejser Franz Joseph Fjord",
+      "source_code": "GLKEJ",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "SCENIC_OR_GEOGRAPHIC_REGION",
+      "confidence": "medium",
+      "affected_sailings": 3,
+      "occurrences": 10,
+      "evidence": [
+        "scenic_region_name",
+        "GLKEJ"
+      ]
+    },
+    {
+      "source_name": "Sohoton Bay",
+      "source_code": "PHSBP",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 3,
+      "occurrences": 4,
+      "evidence": [
+        "landing_name_shape",
+        "PHSBP"
+      ]
+    },
+    {
+      "source_name": "Aisandami Village",
+      "source_code": "IDID6",
+      "region": "FRENCH POLYNESIA & PACIFIC",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 3,
+      "occurrences": 3,
+      "evidence": [
+        "indonesia_site_code",
+        "IDID6"
+      ]
+    },
+    {
+      "source_name": "Hebron Fjord",
+      "source_code": "CAHBN",
+      "region": "ARCTIC & GREENLAND",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 3,
+      "occurrences": 3,
+      "evidence": [
+        "canada_arctic_site_code",
+        "CAHBN"
+      ]
+    },
+    {
+      "source_name": "Kalabahi (for Takpala)",
+      "source_code": "IDKBH",
+      "region": "ASIA",
+      "semantic_type": "EXPEDITION_LANDING_SITE",
+      "confidence": "medium",
+      "affected_sailings": 3,
+      "occurrences": 3,
+      "evidence": [
+        "indonesia_site_code",
+        "IDKBH"
+      ]
+    }
+  ]
+}
