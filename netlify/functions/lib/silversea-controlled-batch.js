@@ -11,8 +11,10 @@ const {
 } = require("./public-discovered-cruise-inventory");
 
 const MAX_FIRST_CONTROLLED_BATCH = 100;
+const DEFAULT_EXPECTED_BATCH_COUNT = 100;
 const APPLY_CONFIRMATION_TOKEN = "SILVERSEA-FIRST-CONTROLLED-BATCH";
 const FIRST_BATCH_MODE = "silversea_first_controlled_batch";
+const FIRST_BATCH_75_MODE = "silversea_first_controlled_batch_75";
 
 const EXCLUSIVE_BUCKETS = [
   "departed",
@@ -149,7 +151,87 @@ function selectFirstBatchProducts(normalisedRows, { maxWrites = MAX_FIRST_CONTRO
     eligible_count: eligible.length,
     selected,
     selected_ids: selected.map((r) => r.official_sailing_id),
-    sufficient_for_batch: eligible.length >= limit
+    sufficient_for_batch: eligible.length >= limit,
+    frozen_selection: false
+  };
+}
+
+function loadFrozenOfficialSailingIds(report) {
+  const table = report?.pre_write_report?.pre_write_table;
+  if (Array.isArray(table) && table.length && table[0]?.official_sailing_id) {
+    return table.map((row) => String(row.official_sailing_id).trim().toUpperCase()).filter(Boolean);
+  }
+  const ids = report?.selection?.selected_official_sailing_ids;
+  if (Array.isArray(ids) && ids.length) {
+    return ids.map((id) => String(id).trim().toUpperCase()).filter(Boolean);
+  }
+  const err = new Error("frozen_selection_not_found_in_report");
+  err.code = "frozen_selection_not_found_in_report";
+  throw err;
+}
+
+function selectFrozenBatchProducts(normalisedRows, frozenIds, { today, existingByOfficialId = new Map() } = {}) {
+  const byCode = new Map();
+  for (const row of normalisedRows || []) {
+    if (row.official_sailing_id) {
+      byCode.set(String(row.official_sailing_id).toUpperCase(), row);
+    }
+  }
+
+  const selected = [];
+  const missing = [];
+  const noLongerEligible = [];
+
+  for (const id of frozenIds || []) {
+    const key = String(id).toUpperCase();
+    const row = byCode.get(key);
+    if (!row) {
+      missing.push(id);
+      continue;
+    }
+    if (!isFirstBatchEligible(row, today, existingByOfficialId)) {
+      noLongerEligible.push({
+        official_sailing_id: id,
+        bucket: classifyExclusiveBucket(row, today, existingByOfficialId)
+      });
+      continue;
+    }
+    selected.push(row);
+  }
+
+  const frozenCount = (frozenIds || []).length;
+  const uniqueFrozen = new Set((frozenIds || []).map((id) => String(id).toUpperCase()));
+
+  return {
+    frozen_count: frozenCount,
+    frozen_unique_count: uniqueFrozen.size,
+    selected,
+    selected_ids: selected.map((r) => r.official_sailing_id),
+    eligible_count: (normalisedRows || []).filter((row) =>
+      isFirstBatchEligible(row, today, existingByOfficialId)
+    ).length,
+    missing,
+    no_longer_eligible: noLongerEligible,
+    frozen_still_eligible: selected.length,
+    exact_frozen_set_match:
+      selected.length === frozenCount &&
+      missing.length === 0 &&
+      noLongerEligible.length === 0 &&
+      uniqueFrozen.size === frozenCount,
+    sufficient_for_batch: selected.length === frozenCount,
+    frozen_selection: true
+  };
+}
+
+function summariseAdditionalEligibleIgnored(frozenIds, normalisedRows, today, existingByOfficialId = new Map()) {
+  const frozenSet = new Set((frozenIds || []).map((id) => String(id).toUpperCase()));
+  const additional = (normalisedRows || [])
+    .filter((row) => isFirstBatchEligible(row, today, existingByOfficialId))
+    .map((row) => row.official_sailing_id)
+    .filter((id) => id && !frozenSet.has(String(id).toUpperCase()));
+  return {
+    ignored_additional_eligible_count: additional.length,
+    ignored_additional_eligible_sample: additional.slice(0, 10)
   };
 }
 
@@ -219,26 +301,49 @@ function evaluatePreWriteGate({
   proposedUpdates,
   sourceHealthOk,
   sourceRefreshOk,
-  maxWrites = MAX_FIRST_CONTROLLED_BATCH
+  maxWrites = MAX_FIRST_CONTROLLED_BATCH,
+  expectedCount = null,
+  existingSelectedOfficialIds = 0
 }) {
   const failures = [];
+  const authorisedCount =
+    expectedCount != null ? Number(expectedCount) : DEFAULT_EXPECTED_BATCH_COUNT;
+
   if (!funnel?.reconciles) failures.push("exclusive_classification_does_not_reconcile");
   if (!sourceHealthOk) failures.push("source_health_failed");
   if (!sourceRefreshOk) failures.push("source_refresh_validation_failed");
-  if (!selection?.sufficient_for_batch) {
+
+  if (selection?.frozen_selection) {
+    if (selection.frozen_unique_count !== authorisedCount) {
+      failures.push(`frozen_selection_not_unique:${selection.frozen_unique_count}`);
+    }
+    if (!selection.exact_frozen_set_match) {
+      failures.push(
+        `frozen_selection_no_longer_eligible:${selection.frozen_still_eligible}/${authorisedCount}`
+      );
+    }
+  } else if (!selection?.sufficient_for_batch) {
     failures.push(`insufficient_eligible_classic:${selection?.eligible_count ?? 0}`);
   }
-  if (proposedUpdates > 0) failures.push(`proposed_updates:${proposedUpdates}`);
-  if (proposedInserts > maxWrites) failures.push(`proposed_inserts_exceed_limit:${proposedInserts}`);
-  if (proposedInserts < 1 && maxWrites > 0) failures.push("no_proposed_inserts");
 
-  return { passed: failures.length === 0, failures };
+  if (proposedUpdates > 0) failures.push(`proposed_updates:${proposedUpdates}`);
+  if (proposedInserts !== authorisedCount) {
+    failures.push(`proposed_inserts_not_authorised_count:${proposedInserts}/${authorisedCount}`);
+  }
+  if (proposedInserts > maxWrites) failures.push(`proposed_inserts_exceed_limit:${proposedInserts}`);
+  if (existingSelectedOfficialIds > 0) {
+    failures.push(`selected_official_ids_already_present:${existingSelectedOfficialIds}`);
+  }
+
+  return { passed: failures.length === 0, failures, authorised_count: authorisedCount };
 }
 
 module.exports = {
   MAX_FIRST_CONTROLLED_BATCH,
+  DEFAULT_EXPECTED_BATCH_COUNT,
   APPLY_CONFIRMATION_TOKEN,
   FIRST_BATCH_MODE,
+  FIRST_BATCH_75_MODE,
   EXCLUSIVE_BUCKETS,
   isClassic,
   isExpedition,
@@ -251,6 +356,9 @@ module.exports = {
   isFirstBatchEligible,
   candidateSortKey,
   selectFirstBatchProducts,
+  loadFrozenOfficialSailingIds,
+  selectFrozenBatchProducts,
+  summariseAdditionalEligibleIgnored,
   buildPreWriteTableRow,
   computeManifestHash,
   validateSelectedAgainstFreshSource,

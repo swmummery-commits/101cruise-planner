@@ -46,8 +46,12 @@ const {
   MAX_FIRST_CONTROLLED_BATCH,
   APPLY_CONFIRMATION_TOKEN,
   FIRST_BATCH_MODE,
+  FIRST_BATCH_75_MODE,
   buildExclusiveClassificationFunnel,
   selectFirstBatchProducts,
+  loadFrozenOfficialSailingIds,
+  selectFrozenBatchProducts,
+  summariseAdditionalEligibleIgnored,
   buildPreWriteTableRow,
   computeManifestHash,
   validateSelectedAgainstFreshSource,
@@ -77,7 +81,9 @@ export function parseArgs(argv = process.argv) {
     dryRun: false,
     manifest: false,
     apply: false,
-    confirm: null
+    confirm: null,
+    expectedCount: null,
+    frozenReport: null
   };
   for (const arg of argv.slice(2)) {
     if (arg === "--preflight") args.preflight = true;
@@ -85,6 +91,10 @@ export function parseArgs(argv = process.argv) {
     if (arg === "--manifest") args.manifest = true;
     if (arg === "--apply") args.apply = true;
     if (arg.startsWith("--confirm=")) args.confirm = String(arg.split("=")[1]).trim();
+    if (arg.startsWith("--expected-count=")) args.expectedCount = Number(arg.split("=")[1]);
+    if (arg.startsWith("--frozen-report=")) {
+      args.frozenReport = path.resolve(String(arg.split("=")[1]).trim());
+    }
     if (arg.startsWith("--limit=")) {
       throw new Error("Silversea controlled batch rejects --limit. Hard maximum is 100.");
     }
@@ -112,6 +122,32 @@ export function assertApplyAllowed(args) {
     err.code = "silversea_discovery_write_disabled";
     throw err;
   }
+}
+
+async function countExistingOfficialIds(sb, cruiseLineId, officialIds) {
+  if (!officialIds?.length) return { count: 0, rows: [] };
+  const chunkSize = 50;
+  const rows = [];
+  for (let i = 0; i < officialIds.length; i += chunkSize) {
+    const chunk = officialIds.slice(i, i + chunkSize);
+    const quoted = chunk.map((id) => `"${String(id).replace(/"/g, "")}"`).join(",");
+    const batch = await sb(
+      `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
+        cruiseLineId
+      )}&official_sailing_id=in.(${quoted})&select=id,official_sailing_id,status`
+    );
+    if (batch?.length) rows.push(...batch);
+  }
+  return { count: rows.length, rows };
+}
+
+function loadFrozenReport(reportPath) {
+  if (!reportPath || !fs.existsSync(reportPath)) {
+    const err = new Error(`frozen_report_not_found:${reportPath}`);
+    err.code = "frozen_report_not_found";
+    throw err;
+  }
+  return JSON.parse(fs.readFileSync(reportPath, "utf8"));
 }
 
 function git(cmd) {
@@ -269,6 +305,33 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
     review_reason: r.review_reason
   }));
 
+  const frozenReportEarly = args.frozenReport ? loadFrozenReport(args.frozenReport) : null;
+  const expectedCountEarly = args.expectedCount ?? (frozenReportEarly ? loadFrozenOfficialSailingIds(frozenReportEarly).length : null);
+  const legacyHiddenRows = legacyRowsBefore.filter((r) => !r.official_sailing_id);
+  if (expectedCountEarly === 75) {
+    if (countsBefore.silversea_total !== 8) {
+      throw new Error(
+        `Unexpected Silversea production total ${countsBefore.silversea_total} (expected 8) — STOP WITH ZERO WRITES`
+      );
+    }
+    if (countsBefore.silversea_active !== 0) {
+      throw new Error(
+        `Unexpected Silversea active count ${countsBefore.silversea_active} (expected 0) — STOP WITH ZERO WRITES`
+      );
+    }
+    if (legacyHiddenRows.length !== 8) {
+      throw new Error(
+        `Unexpected legacy hidden row count ${legacyHiddenRows.length} (expected 8) — STOP WITH ZERO WRITES`
+      );
+    }
+    const withOfficialId = ctx.existing.rows.filter((r) => r.official_sailing_id);
+    if (withOfficialId.length > 0) {
+      throw new Error(
+        `Unexpected existing official Silversea sailing IDs: ${withOfficialId.length} — STOP WITH ZERO WRITES`
+      );
+    }
+  }
+
   const simulation = await adapter.simulateSilverseaInventory({
     cruiseLine: ctx.line,
     ships: ctx.ships,
@@ -296,13 +359,41 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
     );
   }
 
-  const selection = selectFirstBatchProducts(normalised, {
-    maxWrites: MAX_FIRST_CONTROLLED_BATCH,
-    today,
-    existingByOfficialId: ctx.existingByOfficialId
-  });
+  const frozenReport = args.frozenReport ? loadFrozenReport(args.frozenReport) : null;
+  const frozenIds = frozenReport ? loadFrozenOfficialSailingIds(frozenReport) : null;
+  const expectedCount = args.expectedCount ?? (frozenIds ? frozenIds.length : null);
+  const batchMode = expectedCount === 75 ? FIRST_BATCH_75_MODE : FIRST_BATCH_MODE;
+  const maxWrites = expectedCount != null ? Math.min(expectedCount, MAX_FIRST_CONTROLLED_BATCH) : MAX_FIRST_CONTROLLED_BATCH;
 
-  const runId = options.runId || `silversea-first-batch-${startedAt.replace(/[:.]/g, "-")}`;
+  if (expectedCount != null && (!Number.isFinite(expectedCount) || expectedCount < 1 || expectedCount > MAX_FIRST_CONTROLLED_BATCH)) {
+    throw new Error(`expected-count must be between 1 and ${MAX_FIRST_CONTROLLED_BATCH}`);
+  }
+  if (frozenIds && expectedCount != null && frozenIds.length !== expectedCount) {
+    throw new Error(`frozen selection count ${frozenIds.length} != expected-count ${expectedCount}`);
+  }
+
+  const selection = frozenIds
+    ? selectFrozenBatchProducts(normalised, frozenIds, {
+        today,
+        existingByOfficialId: ctx.existingByOfficialId
+      })
+    : selectFirstBatchProducts(normalised, {
+        maxWrites,
+        today,
+        existingByOfficialId: ctx.existingByOfficialId
+      });
+
+  const ignoredAdditional = frozenIds
+    ? summariseAdditionalEligibleIgnored(frozenIds, normalised, today, ctx.existingByOfficialId)
+    : null;
+
+  const existingOfficialBefore = await countExistingOfficialIds(sb, ctx.line.id, selection.selected_ids);
+
+  const runId =
+    options.runId ||
+    (expectedCount === 75
+      ? `silversea-first-batch-75-${startedAt.replace(/[:.]/g, "-")}`
+      : `silversea-first-batch-${startedAt.replace(/[:.]/g, "-")}`);
   const manifest = await buildSilverseaBatchManifest({
     selectedProducts: selection.selected,
     cruiseLine: ctx.line,
@@ -330,14 +421,28 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
     proposedUpdates,
     sourceHealthOk: simulation.health?.ok === true,
     sourceRefreshOk: sourceRefresh.ok,
-    maxWrites: MAX_FIRST_CONTROLLED_BATCH
+    maxWrites,
+    expectedCount,
+    existingSelectedOfficialIds: existingOfficialBefore.count
   });
 
-  const preWriteTable = selection.selected.map((row, index) => buildPreWriteTableRow(index + 1, row));
+  const preWriteTable = selection.selected.map((row, index) => ({
+    ...buildPreWriteTableRow(index + 1, row),
+    pass: true
+  }));
   const preWriteReport = {
     silversea_production_total: countsBefore.silversea_total,
     silversea_active_total: countsBefore.silversea_active,
+    legacy_hidden_rows: legacyRowsBefore.filter((r) => !r.official_sailing_id).length,
     catalogue_total: simulation.summary?.catalogue_nodes,
+    source_health_ok: simulation.health?.ok === true,
+    frozen_selection_count: frozenIds?.length ?? null,
+    frozen_unique_official_ids: frozenIds ? new Set(frozenIds).size : null,
+    frozen_still_eligible: selection.frozen_still_eligible ?? null,
+    frozen_no_longer_eligible: selection.no_longer_eligible ?? [],
+    frozen_missing: selection.missing ?? [],
+    ignored_additional_eligible: ignoredAdditional,
+    selected_official_ids_already_present: existingOfficialBefore.count,
     classic_count: simulation.summary?.classic,
     expedition_deferred: simulation.summary?.expedition,
     special_voyages_deferred: simulation.summary?.deferred_special_voyages,
@@ -390,19 +495,22 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
       today,
       existingByOfficialId: ctx.existingByOfficialId,
       performWrites: true,
-      maxWrites: MAX_FIRST_CONTROLLED_BATCH
+      maxWrites
     });
 
     rollbackManifest = buildRollbackManifestFromWriteResult({
       runId,
       cruiseLineId: ctx.line.id,
       lineSlug: LINE_SLUG,
-      triggerType: FIRST_BATCH_MODE,
+      triggerType: batchMode,
       writeResult
     });
 
-    if (writeResult.stats.inserted > MAX_FIRST_CONTROLLED_BATCH) {
-      throw new Error(`Unexpected insert count ${writeResult.stats.inserted} > ${MAX_FIRST_CONTROLLED_BATCH}`);
+    if (expectedCount != null && writeResult.stats.inserted !== expectedCount) {
+      throw new Error(`Unexpected insert count ${writeResult.stats.inserted} != authorised ${expectedCount}`);
+    }
+    if (writeResult.stats.inserted > maxWrites) {
+      throw new Error(`Unexpected insert count ${writeResult.stats.inserted} > ${maxWrites}`);
     }
     if (writeResult.stats.updated > 0) {
       throw new Error(`Unexpected updates during insert-only batch: ${writeResult.stats.updated}`);
@@ -443,6 +551,9 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
   const report = {
     phase: args.apply ? "apply" : args.manifest ? "manifest" : "preflight",
     run_id: runId,
+    batch_mode: batchMode,
+    expected_count: expectedCount,
+    frozen_report_path: args.frozenReport || null,
     manifest_hash: manifest.manifest_hash,
     mode: modeGate.mode,
     writes: args.apply === true,
@@ -461,9 +572,12 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
     pre_write_report: preWriteReport,
     exclusive_funnel: funnel,
     selection: {
+      frozen_selection: Boolean(frozenIds),
       eligible_count: selection.eligible_count,
       selected_count: selection.selected.length,
-      selected_official_sailing_ids: selection.selected_ids
+      selected_official_sailing_ids: selection.selected_ids,
+      frozen_still_eligible: selection.frozen_still_eligible ?? null,
+      exact_frozen_set_match: selection.exact_frozen_set_match ?? null
     },
     manifest,
     write_result: writeResult,

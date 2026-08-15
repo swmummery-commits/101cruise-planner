@@ -194,16 +194,37 @@ test("pre-write gate stops when fewer than 100 eligible", () => {
   assert(!gate.passed, "must fail when insufficient eligible");
 });
 
-test("pre-write gate stops on proposed updates", () => {
+test("pre-write gate stops when proposed inserts != authorised count", () => {
   const gate = controlled.evaluatePreWriteGate({
     funnel: { reconciles: true },
-    selection: { sufficient_for_batch: true, eligible_count: 100 },
-    proposedInserts: 100,
-    proposedUpdates: 1,
+    selection: { sufficient_for_batch: true, frozen_selection: true, exact_frozen_set_match: true, frozen_unique_count: 75 },
+    proposedInserts: 74,
+    proposedUpdates: 0,
     sourceHealthOk: true,
-    sourceRefreshOk: true
+    sourceRefreshOk: true,
+    expectedCount: 75
   });
-  assert(!gate.passed, "must fail on updates");
+  assert(!gate.passed, "must fail when insert count != authorised");
+});
+
+test("frozen selection requires exact 75 still eligible", () => {
+  const rows = [
+    normalise(baseRaw()),
+    normalise(baseRaw({ cruise_code: "MO260903015", official_sailing_id: "MO260903015", duration_matches_dates: false }))
+  ];
+  const frozen = ["DA260907012", "MO260903015"];
+  const result = controlled.selectFrozenBatchProducts(rows, frozen, { today, existingByOfficialId: new Map() });
+  assert(result.frozen_still_eligible === 1, "only one still eligible");
+  assert(!result.exact_frozen_set_match, "must not exact match");
+});
+
+test("load frozen official IDs from report table", () => {
+  const ids = controlled.loadFrozenOfficialSailingIds({
+    pre_write_report: {
+      pre_write_table: [{ official_sailing_id: "DA260907012" }, { official_sailing_id: "SL260918010" }]
+    }
+  });
+  assert(ids.length === 2 && ids[0] === "DA260907012", "loaded ids");
 });
 
 console.log(`\ntest:silversea-controlled-batch: ${passed} passed${failures.length ? `, ${failures.length} failed` : ""}`);
