@@ -309,5 +309,33 @@ test("26. catchup frozen manifest rejects 101 entries", () => {
   if (v.ok) throw new Error("101 should fail");
 });
 
+test("27. Phase 3 twenty immutability uses phase3 snapshot count", () => {
+  const before = [
+    {
+      id: "p1",
+      status: "active",
+      ship_id: "s1",
+      destination_id: "d1",
+      departure_date: "2026-09-07",
+      return_date: "2026-09-11",
+      nights: 4,
+      departure_port: "Port Canaveral",
+      official_sailing_id: "DA0076|2026-09-07",
+      identity_key: "ik1",
+      external_key: "ek1",
+      official_url: "https://example.com/1",
+      source_url: "https://example.com/1",
+      raw_extract: { disney_sailing_id: "DA0076" }
+    }
+  ];
+  const after = [{ ...before[0] }];
+  const result = controlled.verifyPhase3TwentyImmutability(before, after);
+  if (!result.passed || result.expected !== 1 || result.unchanged_count !== 1) {
+    throw new Error(JSON.stringify(result));
+  }
+  const legacyResult = controlled.verifyLegacyImmutability(before, after);
+  if (legacyResult.expected === 1) throw new Error("legacy verifier should expect 6");
+});
+
 console.log(`\n${passed} disney-controlled-batch tests passed`);
 if (process.exitCode) process.exit(process.exitCode);

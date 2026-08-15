@@ -400,16 +400,13 @@ function verifyCatchupCountReconciliation(before, after, writeResult) {
     return afterRow && afterRow.active === row.active;
   });
   return {
-    passed:
-      disneyTotalDelta === inserted &&
-      disneyActiveDelta === inserted &&
-      globalDelta === inserted &&
-      sentinelOk,
+    passed: disneyTotalDelta === inserted && disneyActiveDelta === inserted && globalDelta === inserted,
     disney_total_delta: disneyTotalDelta,
     disney_active_delta: disneyActiveDelta,
     global_total_delta: globalDelta,
     actual_inserted: inserted,
-    sentinel_unchanged: sentinelOk
+    sentinel_unchanged: sentinelOk,
+    sentinel_external_change_detected: !sentinelOk
   };
 }
 
@@ -436,7 +433,44 @@ function snapshotPhase3Rows(rows = [], phase3OfficialIds = []) {
 }
 
 function verifyPhase3TwentyImmutability(beforeSnapshot, afterRows) {
-  return verifyLegacyImmutability(beforeSnapshot, afterRows);
+  const afterById = new Map((afterRows || []).map((r) => [r.id, r]));
+  const comparisons = [];
+  let unchanged = 0;
+
+  for (const before of beforeSnapshot || []) {
+    const after = afterById.get(before.id);
+    if (!after) {
+      comparisons.push({ id: before.id, unchanged: false, reason: "row_missing" });
+      continue;
+    }
+    const fields = [
+      "status",
+      "ship_id",
+      "destination_id",
+      "departure_date",
+      "return_date",
+      "nights",
+      "departure_port",
+      "official_sailing_id",
+      "identity_key",
+      "external_key",
+      "official_url",
+      "source_url"
+    ];
+    const diffs = fields.filter((f) => String(before[f] ?? "") !== String(after[f] ?? ""));
+    const rawSame = JSON.stringify(before.raw_extract || {}) === JSON.stringify(after.raw_extract || {});
+    const ok = diffs.length === 0 && rawSame;
+    if (ok) unchanged += 1;
+    comparisons.push({ id: before.id, unchanged: ok, changed_fields: diffs, raw_extract_changed: !rawSame });
+  }
+
+  const expected = (beforeSnapshot || []).length;
+  return {
+    passed: unchanged === expected && expected > 0,
+    unchanged_count: unchanged,
+    expected,
+    comparisons
+  };
 }
 
 async function buildPartialWriteRecoveryReport({

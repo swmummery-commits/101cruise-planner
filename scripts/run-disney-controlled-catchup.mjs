@@ -51,6 +51,7 @@ export function parseCatchupArgs(argv = process.argv) {
     lockSmoke: false,
     manifest: false,
     apply: false,
+    verifyApplied: false,
     confirm: null,
     frozenReport: null
   };
@@ -59,6 +60,7 @@ export function parseCatchupArgs(argv = process.argv) {
     if (arg === "--lock-smoke") args.lockSmoke = true;
     if (arg === "--manifest") args.manifest = true;
     if (arg === "--apply") args.apply = true;
+    if (arg === "--verify-applied") args.verifyApplied = true;
     if (arg.startsWith("--confirm=")) args.confirm = String(arg.split("=")[1]).trim();
     if (arg.startsWith("--frozen-report=")) args.frozenReport = path.resolve(String(arg.split("=")[1]).trim());
     if (arg.startsWith("--limit=") || arg.startsWith("--batch-size=")) {
@@ -69,9 +71,15 @@ export function parseCatchupArgs(argv = process.argv) {
     args.preflight = true;
     args.lockSmoke = true;
     args.manifest = true;
-  } else if (!Object.values(args).some((v) => v === true) && !args.confirm) {
+  } else if (!Object.values(args).some((v) => v === true) && !args.confirm && !args.verifyApplied) {
     args.preflight = true;
     args.lockSmoke = true;
+  }
+  if (args.verifyApplied) {
+    args.preflight = false;
+    args.lockSmoke = false;
+    args.manifest = false;
+    args.apply = false;
   }
   return args;
 }
@@ -145,15 +153,17 @@ function loadPhase3Identities() {
   return freeze.frozen_identities || [];
 }
 
-function verifyProductionBaseline(existingRows, phase3Ids) {
+function verifyProductionBaseline(existingRows, phase3Ids, options = {}) {
   const legacy = existingRows.filter((r) => controlled.DISNEY_LEGACY_ROW_IDS.includes(r.id));
   const official = existingRows.filter((r) => r.official_sailing_id);
   const phase3Present = phase3Ids.every((id) => official.some((r) => r.official_sailing_id === id));
   const phase3Active = phase3Ids.every((id) => official.some((r) => r.official_sailing_id === id && r.status === "active"));
+  const expectedTotal = options.expectedTotal ?? 26;
+  const expectedOfficial = options.expectedOfficial ?? 20;
   return {
     ok:
-      existingRows.length === 26 &&
-      official.length === 20 &&
+      existingRows.length === expectedTotal &&
+      official.length === expectedOfficial &&
       legacy.length === 6 &&
       phase3Present &&
       phase3Active,
@@ -164,6 +174,99 @@ function verifyProductionBaseline(existingRows, phase3Ids) {
     phase3_present: phase3Present,
     phase3_active: phase3Active
   };
+}
+
+async function verifyAppliedCatchupReport({ sb, startingSha, today, phase3Ids, ctx }) {
+  if (!fs.existsSync(PHASE4A_REPORT)) {
+    throw new Error("verify_applied_missing_report");
+  }
+  const prior = JSON.parse(fs.readFileSync(PHASE4A_REPORT, "utf8"));
+  if (!prior.writes || !prior.write_result?.inserted_record_ids?.length) {
+    throw new Error("verify_applied_no_prior_writes");
+  }
+
+  const frozenPath = prior.freeze_path || DEFAULT_CATCHUP_FREEZE;
+  const frozenReport = controlled.loadCatchupFrozenReport(JSON.parse(fs.readFileSync(frozenPath, "utf8")));
+  const legacySnapshotBefore = controlled.snapshotLegacyRows(
+    ctx.existingRows.filter((r) => controlled.DISNEY_LEGACY_ROW_IDS.includes(r.id))
+  );
+  const phase3SnapshotBefore = controlled.snapshotPhase3Rows(
+    ctx.existingRows.filter((r) => r.official_sailing_id),
+    phase3Ids
+  );
+
+  const allRowsAfter = await sb(
+    `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
+      ctx.line.id
+    )}&select=id,cruise_line_id,status,ship_id,destination_id,departure_date,return_date,nights,departure_port,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract`
+  );
+
+  const postSim = await adapter.simulateDisneyDiscovery({
+    cruiseLine: ctx.line,
+    ships: ctx.ships,
+    destinations: ctx.destinations,
+    today,
+    existingRows: allRowsAfter,
+    supabaseQuery: sb
+  });
+  const postManifest = adapter.buildProposedWriteManifest(postSim.products, allRowsAfter, ctx.line, postSim.legacy_audit);
+  const allOfficialIds = [...phase3Ids, ...(frozenReport.frozen_identities || [])];
+  const postReclass = allOfficialIds.map((id) => ({
+    official_sailing_id: id,
+    action: postManifest.manifest.find((m) => m.official_product_key === id)?.action
+  }));
+
+  const legacyImmut = controlled.verifyLegacyImmutability(legacySnapshotBefore, allRowsAfter);
+  const phase3Immut = controlled.verifyPhase3TwentyImmutability(phase3SnapshotBefore, allRowsAfter);
+  const postWriteReconciliationPassed =
+    postReclass.filter((r) => r.action === "duplicate_skip").length === allOfficialIds.length &&
+    postReclass.filter((r) => r.action === "update_exact_existing").length === 0;
+
+  const dataPassed =
+    prior.write_result?.inserted === controlled.MAX_CATCHUP_DISNEY_BATCH &&
+    prior.verification?.failed_count === 0 &&
+    prior.count_reconciliation?.passed === true &&
+    legacyImmut.passed &&
+    phase3Immut.passed &&
+    postWriteReconciliationPassed;
+
+  const lockLifecyclePassed = prior.lock_smoke?.passed === true && prior.global_lock?.global_lock_released === true;
+
+  const report = {
+    ...prior,
+    repository: {
+      ...prior.repository,
+      final_report_sha: startingSha
+    },
+    phase3_validation: {
+      disney_total: allRowsAfter.length,
+      disney_active: allRowsAfter.filter((r) => r.status === "active").length,
+      phase3_twenty_verified: phase3Ids.every((id) =>
+        allRowsAfter.some((r) => r.official_sailing_id === id && r.status === "active")
+      ),
+      legacy_six_verified: legacyImmut.passed
+    },
+    legacy_immutability: legacyImmut,
+    phase3_twenty_immutability: phase3Immut,
+    post_write_reconciliation: {
+      remaining_proposed_inserts: postSim.write_manifest?.summary?.insert_active,
+      official_duplicate_skip: postReclass.filter((r) => r.action === "duplicate_skip").length,
+      update_proposals: postReclass.filter((r) => r.action === "update_exact_existing").length,
+      details: postReclass
+    },
+    quality_gate: {
+      data_passed: dataPassed,
+      lock_lifecycle_passed: lockLifecyclePassed,
+      rollback_audit_passed: prior.phase3_rollback_manifest?.existed === true,
+      overall_passed: dataPassed && lockLifecyclePassed,
+      ready_for_additional_catchup: dataPassed && lockLifecyclePassed
+    },
+    verify_applied_at: new Date().toISOString()
+  };
+
+  fs.writeFileSync(PHASE4A_REPORT, JSON.stringify(report, null, 2));
+  report.report_path = PHASE4A_REPORT;
+  return report;
 }
 
 async function countCollisions(sb, lineId, entries) {
@@ -214,6 +317,11 @@ export async function runDisneyControlledCatchup(options = {}) {
 
   const phase3Ids = loadPhase3Identities();
   const ctx = await loadContext(sb);
+
+  if (args.verifyApplied) {
+    return verifyAppliedCatchupReport({ sb, startingSha, today, phase3Ids, ctx });
+  }
+
   const baseline = verifyProductionBaseline(ctx.existingRows, phase3Ids);
   const indexes = await writes.indexExistingDisneyRecords(sb, ctx.line.id);
   const existingBeforeIds = new Set(ctx.existingRows.map((r) => r.id));
@@ -483,7 +591,7 @@ export async function runDisneyControlledCatchup(options = {}) {
     ? await sb(
         `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
           ctx.line.id
-        )}&select=id,status,ship_id,destination_id,departure_date,return_date,nights,departure_port,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract`
+        )}&select=id,cruise_line_id,status,ship_id,destination_id,departure_date,return_date,nights,departure_port,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract`
       )
     : ctx.existingRows;
 
@@ -521,6 +629,12 @@ export async function runDisneyControlledCatchup(options = {}) {
       }))
     : null;
 
+  const postWriteReconciliationPassed =
+    !args.apply ||
+    ((postReclass?.filter((r) => r.action === "duplicate_skip").length || 0) ===
+      (phase3Ids.length + (frozenReport?.frozen_identities?.length || 0)) &&
+      (postReclass?.filter((r) => r.action === "update_exact_existing").length || 0) === 0);
+
   const dataPassed =
     baseline.ok &&
     preWriteGate.passed &&
@@ -529,7 +643,8 @@ export async function runDisneyControlledCatchup(options = {}) {
         postVerify?.passed &&
         countReconciliation?.passed &&
         legacyImmut?.passed &&
-        phase3Immut?.passed));
+        phase3Immut?.passed &&
+        postWriteReconciliationPassed));
 
   const lockLifecyclePassed =
     lockSmoke?.passed === true &&
