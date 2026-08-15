@@ -1,0 +1,74 @@
+{
+  "proposals": [
+    {
+      "source_value": "Disney Castaway Cay",
+      "kind": "private_island_physical_port",
+      "affected_sailing_count": 336,
+      "category": "private-island naming issue",
+      "recommended_action": "proposed_port_alias_or_catalogue_addition",
+      "confidence": "medium",
+      "required_for_embarkation": false,
+      "required_for_itinerary_completeness": true
+    },
+    {
+      "source_value": "Disney Lookout Cay at Lighthouse Point",
+      "kind": "private_island_physical_port",
+      "affected_sailing_count": 189,
+      "category": "private-island naming issue",
+      "recommended_action": "proposed_port_alias_or_catalogue_addition",
+      "confidence": "medium",
+      "required_for_embarkation": false,
+      "required_for_itinerary_completeness": true
+    },
+    {
+      "source_value": "Progreso, Mexico",
+      "kind": "physical_port",
+      "affected_sailing_count": 28,
+      "category": "genuine missing physical port",
+      "recommended_action": "proposed_port_alias_or_catalogue_addition",
+      "confidence": "medium",
+      "required_for_embarkation": false,
+      "required_for_itinerary_completeness": true
+    },
+    {
+      "source_value": "Catalina Island, California",
+      "kind": "physical_port",
+      "affected_sailing_count": 15,
+      "category": "genuine missing physical port",
+      "recommended_action": "proposed_port_alias_or_catalogue_addition",
+      "confidence": "medium",
+      "required_for_embarkation": false,
+      "required_for_itinerary_completeness": true
+    },
+    {
+      "source_value": "Portland (Stonehenge), England",
+      "kind": "physical_port",
+      "affected_sailing_count": 2,
+      "category": "genuine missing physical port",
+      "recommended_action": "proposed_port_alias_or_catalogue_addition",
+      "confidence": "medium",
+      "required_for_embarkation": false,
+      "required_for_itinerary_completeness": true
+    },
+    {
+      "source_value": "Panama Canal",
+      "kind": "physical_port",
+      "affected_sailing_count": 2,
+      "category": "genuine missing physical port",
+      "recommended_action": "proposed_port_alias_or_catalogue_addition",
+      "confidence": "medium",
+      "required_for_embarkation": false,
+      "required_for_itinerary_completeness": true
+    },
+    {
+      "source_value": "Chania, Greece",
+      "kind": "physical_port",
+      "affected_sailing_count": 2,
+      "category": "genuine missing physical port",
+      "recommended_action": "proposed_port_alias_or_catalogue_addition",
+      "confidence": "medium",
+      "required_for_embarkation": false,
+      "required_for_itinerary_completeness": true
+    }
+  ]
+}

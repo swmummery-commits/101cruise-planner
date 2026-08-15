@@ -1,0 +1,708 @@
+{
+  "phase": "2B",
+  "repository_start_sha": "b49ae9852a82b2cfa5639ba3feab4f1a7962e344",
+  "repository_end_sha": "fad7f735705b4c5172f0dcbed53f8ae8d1e92984",
+  "production_cruise_writes": 0,
+  "discovered_cruises_mutations": 0,
+  "source_snapshot": {
+    "unique_sailings": 651,
+    "phase2a_baseline": 648,
+    "common_with_phase2a": null,
+    "added_since_phase2a": 0,
+    "removed_since_phase2a": 0,
+    "identity_collisions": 0,
+    "source_complete": true,
+    "api_calls": 689
+  },
+  "ship_resolution": {
+    "resolution_pct": 100,
+    "by_ship": {
+      "Disney Magic": {
+        "resolved": 69,
+        "total": 69,
+        "method": "official_line_ship_id"
+      },
+      "Disney Wonder": {
+        "resolved": 72,
+        "total": 72,
+        "method": "official_line_ship_id"
+      },
+      "Disney Dream": {
+        "resolved": 95,
+        "total": 95,
+        "method": "official_line_ship_id"
+      },
+      "Disney Wish": {
+        "resolved": 87,
+        "total": 87,
+        "method": "official_line_ship_id"
+      },
+      "Disney Fantasy": {
+        "resolved": 82,
+        "total": 82,
+        "method": "official_line_ship_id"
+      },
+      "Disney Treasure": {
+        "resolved": 58,
+        "total": 58,
+        "method": "official_line_ship_id"
+      },
+      "Disney Adventure": {
+        "resolved": 108,
+        "total": 108,
+        "method": "official_line_ship_id"
+      },
+      "Disney Destiny": {
+        "resolved": 80,
+        "total": 80,
+        "method": "official_line_ship_id"
+      }
+    }
+  },
+  "embarkation_resolution": {
+    "unique_source_values": 90,
+    "resolved_values": 89,
+    "unresolved_values": 1,
+    "unresolved": [
+      {
+        "source_value": "7_mexican_riviera_halloween",
+        "resolved": false,
+        "method": null,
+        "tier": 4,
+        "sailing_count": 2
+      }
+    ],
+    "sailing_resolution_pct": 99.69,
+    "methods": [
+      "product_id_slug",
+      "city_filter_SOU",
+      "city_filter_SAN"
+    ],
+    "evidence_tiers": [
+      1,
+      2,
+      3,
+      4
+    ]
+  },
+  "arrival_resolution": {
+    "round_trip_count": 640,
+    "one_way_count": 11,
+    "arrival_resolved_count": 649,
+    "arrival_unresolved_count": 2
+  },
+  "itinerary_port_resolution": {
+    "unique_values": 73,
+    "physical_port_resolution_pct": 90.28,
+    "unresolved_high_impact": [
+      {
+        "raw": "Disney Castaway Cay",
+        "kind": "private_island_physical_port",
+        "sailing_count": 336,
+        "resolved": false
+      },
+      {
+        "raw": "Disney Lookout Cay at Lighthouse Point",
+        "kind": "private_island_physical_port",
+        "sailing_count": 189,
+        "resolved": false
+      },
+      {
+        "raw": "Progreso, Mexico",
+        "kind": "physical_port",
+        "sailing_count": 28,
+        "resolved": false
+      },
+      {
+        "raw": "Catalina Island, California",
+        "kind": "physical_port",
+        "sailing_count": 15,
+        "resolved": false
+      },
+      {
+        "raw": "Portland (Stonehenge), England",
+        "kind": "physical_port",
+        "sailing_count": 2,
+        "resolved": false
+      },
+      {
+        "raw": "Panama Canal",
+        "kind": "physical_port",
+        "sailing_count": 2,
+        "resolved": false
+      },
+      {
+        "raw": "Chania, Greece",
+        "kind": "physical_port",
+        "sailing_count": 2,
+        "resolved": false
+      }
+    ]
+  },
+  "private_island_resolution": [
+    {
+      "raw": "Disney Castaway Cay",
+      "kind": "private_island_physical_port",
+      "sailing_count": 336,
+      "resolved": false
+    },
+    {
+      "raw": "Disney Lookout Cay at Lighthouse Point",
+      "kind": "private_island_physical_port",
+      "sailing_count": 189,
+      "resolved": false
+    }
+  ],
+  "destination_resolution": {
+    "distinct_combinations": [
+      {
+        "destination_code": "ALASKA",
+        "geo_area": "ALASKA",
+        "sample_product_names": [
+          "7-Night Alaskan Cruise from Vancouver",
+          "7-Night Alaskan Cruise from Vancouver",
+          "7-Night Alaskan Cruise from Vancouver"
+        ],
+        "sample_ports": [
+          "Glacier Viewing (Stikine Icecap), Alaska",
+          "Glacier Viewing (Stikine Icecap), Alaska",
+          "Glacier Viewing (Stikine Icecap), Alaska",
+          "Glacier Viewing (Stikine Icecap), Alaska",
+          "Glacier Viewing (Stikine Icecap), Alaska"
+        ],
+        "sailing_count": 45,
+        "proposed_canonical": "alaska",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "EUROPE",
+        "geo_area": "WEST EUROPE A",
+        "sample_product_names": [
+          "4-Night Spain Cruise from Southampton",
+          "4-Night Spain Cruise from Southampton",
+          "4-Night Spain Cruise from Southampton"
+        ],
+        "sample_ports": [
+          "La Coruña, Spain",
+          "La Coruña, Spain",
+          "La Coruña, Spain",
+          "Bilbao, Spain"
+        ],
+        "sailing_count": 4,
+        "proposed_canonical": "northern-europe",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "EUROPE",
+        "geo_area": "WEST EUROPE",
+        "sample_product_names": [
+          "3-Night Belgium Cruise from Southampton",
+          "3-Night Belgium Cruise from Southampton",
+          "6-Night Western Europe Cruise from Barcelona ending in Southampton"
+        ],
+        "sample_ports": [
+          "Zeebrugge (Brussels), Belgium",
+          "Zeebrugge (Brussels), Belgium",
+          "Gibraltar",
+          "Vigo, Spain"
+        ],
+        "sailing_count": 4,
+        "proposed_canonical": "northern-europe",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "BAHAMAS",
+        "geo_area": "BAHAMAS",
+        "sample_product_names": [
+          "4-Night Bahamian Cruise from Port Canaveral",
+          "4-Night Bahamian Cruise from Port Canaveral",
+          "4-Night Bahamian Cruise from Port Canaveral"
+        ],
+        "sample_ports": [
+          "Disney Castaway Cay",
+          "Disney Castaway Cay",
+          "Disney Castaway Cay",
+          "Disney Castaway Cay",
+          "Disney Castaway Cay"
+        ],
+        "sailing_count": 279,
+        "proposed_canonical": "caribbean",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "CARIBBEAN",
+        "geo_area": "EASTERNTT",
+        "sample_product_names": [
+          "7-Night Eastern Caribbean Cruise from Port Canaveral",
+          "7-Night Eastern Caribbean Cruise from Port Canaveral",
+          "7-Night Eastern Caribbean Cruise from Port Canaveral"
+        ],
+        "sample_ports": [
+          "Tortola, British Virgin Islands",
+          "Tortola, British Virgin Islands",
+          "Tortola, British Virgin Islands",
+          "Tortola, British Virgin Islands",
+          "Tortola, British Virgin Islands"
+        ],
+        "sailing_count": 31,
+        "proposed_canonical": "caribbean",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "CARIBBEAN",
+        "geo_area": "WESTERN D",
+        "sample_product_names": [
+          "7-Night Western Caribbean Cruise from Port Canaveral",
+          "7-Night Western Caribbean Cruise from Port Canaveral",
+          "7-Night Western Caribbean Cruise from Port Canaveral"
+        ],
+        "sample_ports": [
+          "Cozumel, Mexico",
+          "Cozumel, Mexico",
+          "Cozumel, Mexico",
+          "Cozumel, Mexico",
+          "Cozumel, Mexico"
+        ],
+        "sailing_count": 29,
+        "proposed_canonical": "caribbean",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "SINGAPORE",
+        "geo_area": "SINGAPORE",
+        "sample_product_names": [
+          "3-Night Cruise from Singapore",
+          "3-Night Cruise from Singapore",
+          "3-Night Cruise from Singapore"
+        ],
+        "sample_ports": [],
+        "sailing_count": 108,
+        "proposed_canonical": "asia",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "MEXICAN RIVIERA",
+        "geo_area": "BAJA",
+        "sample_product_names": [
+          "3-Night Halloween on the High Seas Baja Cruise from San Diego",
+          "3-Night Halloween on the High Seas Baja Cruise from San Diego",
+          "3-Night Halloween on the High Seas Baja Cruise from San Diego"
+        ],
+        "sample_ports": [
+          "Ensenada, Mexico",
+          "Ensenada, Mexico",
+          "Ensenada, Mexico",
+          "Ensenada, Mexico",
+          "Ensenada, Mexico"
+        ],
+        "sailing_count": 56,
+        "proposed_canonical": "mexican-riviera",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "CALIFORNIA COAST",
+        "geo_area": "ALASKA S A",
+        "sample_product_names": [
+          "4-Night Pacific Coast Cruise from Vancouver ending in San Diego",
+          "5-Night Pacific Coast Cruise from Vancouver ending in San Diego"
+        ],
+        "sample_ports": [
+          "San Diego, California",
+          "Victoria (British Columbia), Canada"
+        ],
+        "sailing_count": 2,
+        "proposed_canonical": "alaska",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "TRANS ATLANTIC",
+        "geo_area": "TRANSATLNC WEST",
+        "sample_product_names": [
+          " 13-Night Westbound Transatlantic Cruise from Southampton ending in Fort Lauderdale"
+        ],
+        "sample_ports": [
+          "Vigo, Spain"
+        ],
+        "sailing_count": 1,
+        "proposed_canonical": "transatlantic",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "EUROPE",
+        "geo_area": "BRITISH ISLES",
+        "sample_product_names": [
+          "7-Night British Isles Cruise from Southampton",
+          "7-Night British Isles Cruise from Southampton"
+        ],
+        "sample_ports": [
+          "Liverpool, England",
+          "Greenock (Glasgow & Edinburgh), Scotland"
+        ],
+        "sailing_count": 2,
+        "proposed_canonical": "northern-europe",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "CARIBBEAN",
+        "geo_area": "EASTERN",
+        "sample_product_names": [
+          "7-Night Halloween on the High Seas Eastern Caribbean Cruise from Fort Lauderdale",
+          "7-Night Halloween on the High Seas Eastern Caribbean Cruise from Fort Lauderdale",
+          "7-Night Eastern Caribbean Cruise from Fort Lauderdale"
+        ],
+        "sample_ports": [
+          "Disney Lookout Cay at Lighthouse Point",
+          "Disney Lookout Cay at Lighthouse Point",
+          "Disney Lookout Cay at Lighthouse Point",
+          "Philipsburg, St. Maarten",
+          "Disney Lookout Cay at Lighthouse Point"
+        ],
+        "sailing_count": 11,
+        "proposed_canonical": "caribbean",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "CARIBBEAN",
+        "geo_area": "WESTERN",
+        "sample_product_names": [
+          "5-Night Halloween on the High Seas Western Caribbean Cruise from Port Canaveral",
+          "5-Night Halloween on the High Seas Western Caribbean Cruise from Fort Lauderdale",
+          "5-Night Halloween on the High Seas Western Caribbean Cruise from Fort Lauderdale"
+        ],
+        "sample_ports": [
+          "Disney Castaway Cay",
+          "Cozumel, Mexico",
+          "Cozumel, Mexico",
+          "Disney Lookout Cay at Lighthouse Point",
+          "Cozumel, Mexico"
+        ],
+        "sailing_count": 56,
+        "proposed_canonical": "caribbean",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "TRANS PANAMA CANAL",
+        "geo_area": "PANAMA CANAL E",
+        "sample_product_names": [
+          "14-Night Eastbound Panama Canal Cruise from San Diego ending in Galveston"
+        ],
+        "sample_ports": [
+          "Cabo San Lucas, Mexico"
+        ],
+        "sailing_count": 1,
+        "proposed_canonical": "panama-canal",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "MEXICAN RIVIERA",
+        "geo_area": "WEST COAST E",
+        "sample_product_names": [
+          "5-Night Baja Cruise from San Diego",
+          "5-Night Baja Cruise from San Diego"
+        ],
+        "sample_ports": [
+          "Catalina Island, California ",
+          "Catalina Island, California "
+        ],
+        "sailing_count": 2,
+        "proposed_canonical": "mexican-riviera",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "BAHAMAS",
+        "geo_area": "BAHAMAS2CC",
+        "sample_product_names": [
+          "7-Night Very Merrytime Bahamian Cruise from Fort Lauderdale with 2 stops at Castaway Cay",
+          "5-Night Bahamian Cruise from Port Canaveral with 2 Stops at Castaway Cay",
+          "5-Night Bahamian Cruise from Port Canaveral with 2 Stops at Castaway Cay"
+        ],
+        "sample_ports": [
+          "Disney Lookout Cay at Lighthouse Point",
+          "Disney Castaway Cay",
+          "Disney Castaway Cay",
+          "Disney Castaway Cay",
+          "Disney Castaway Cay"
+        ],
+        "sailing_count": 5,
+        "proposed_canonical": "caribbean",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "TRANS PANAMA CANAL",
+        "geo_area": "PANAMA CANAL W",
+        "sample_product_names": [
+          "14-Night Westbound Panama Canal Cruise from Galveston ending in San Diego"
+        ],
+        "sample_ports": [
+          "Cozumel, Mexico"
+        ],
+        "sailing_count": 1,
+        "proposed_canonical": "panama-canal",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "CALIFORNIA COAST",
+        "geo_area": "ALASKA N A",
+        "sample_product_names": [
+          " 4-Night Pacific Coast Cruise from San Diego ending in Vancouver",
+          " 4-Night Pacific Coast Cruise from San Diego ending in Vancouver"
+        ],
+        "sample_ports": [
+          "Vancouver (British Columbia), Canada",
+          "Vancouver (British Columbia), Canada"
+        ],
+        "sailing_count": 2,
+        "proposed_canonical": "alaska",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "EUROPE",
+        "geo_area": "MED",
+        "sample_product_names": [
+          "7-Night Mediterranean Cruise from Barcelona",
+          "7-Night Mediterranean Cruise from Barcelona",
+          "7-Night Mediterranean Cruise from Barcelona"
+        ],
+        "sample_ports": [
+          "Palma de Mallorca, Spain",
+          "Palma de Mallorca, Spain",
+          "Naples (Pompeii), Italy",
+          "Valletta, Malta",
+          "Chania, Greece"
+        ],
+        "sailing_count": 5,
+        "proposed_canonical": "mediterranean",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "EUROPE",
+        "geo_area": "MEDH",
+        "sample_product_names": [
+          "8-Night Adriatic Sea and Greece Cruise from Civitavecchia (Rome)"
+        ],
+        "sample_ports": [
+          "Corfu, Greece"
+        ],
+        "sailing_count": 1,
+        "proposed_canonical": "mediterranean",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "CARIBBEAN",
+        "geo_area": "SOUTHERN",
+        "sample_product_names": [
+          "10-Night Southern Caribbean Cruise from Port Canaveral",
+          "7-Night Southern Caribbean Cruise from San Juan"
+        ],
+        "sample_ports": [
+          "Philipsburg, St. Maarten",
+          "Willemstad, Curaçao"
+        ],
+        "sailing_count": 2,
+        "proposed_canonical": "caribbean",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "EUROPE",
+        "geo_area": "NOR FJORDS",
+        "sample_product_names": [
+          "7-Night Norwegian Fjords Cruise from Southampton ",
+          "7-Night Norwegian Fjords Cruise from Southampton "
+        ],
+        "sample_ports": [
+          "Kristiansand, Norway",
+          "Bergen, Norway"
+        ],
+        "sailing_count": 2,
+        "proposed_canonical": "northern-europe",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      },
+      {
+        "destination_code": "EUROPE",
+        "geo_area": "NORTH EUROPE",
+        "sample_product_names": [
+          "3-Night Northern Europe Cruise from Southampton",
+          "7-Night Northern Europe Cruise from Southampton"
+        ],
+        "sample_ports": [
+          "Rotterdam (Amsterdam), Netherlands ",
+          "Rotterdam (Amsterdam), Netherlands "
+        ],
+        "sailing_count": 2,
+        "proposed_canonical": "northern-europe",
+        "resolution_method": null,
+        "confidence": "high",
+        "resolved": true
+      }
+    ],
+    "destination_resolution_pct": 100,
+    "unresolved": []
+  },
+  "date_duration_validation": {
+    "duration_exact_match": 651,
+    "duration_mismatch": 0,
+    "missing_return_date": 0,
+    "missing_nights": 0
+  },
+  "product_policy": {
+    "theme_metadata_retained_not_duplicated": true,
+    "cruisetours_in_source": 0,
+    "blocked_from_booking_excluded_from_auto_publish_only": false,
+    "has_availability_not_auto_excluded": true
+  },
+  "confidence": {
+    "auto_publish_pct": 99.69,
+    "outcomes": {
+      "auto_publish": 649,
+      "review": 2
+    }
+  },
+  "eligibility_waterfall": {
+    "as_of_date": "2026-08-15",
+    "waterfall": {
+      "source_invalid": 0,
+      "past_departure": 0,
+      "within_21_day_cutoff": 28,
+      "required_ship_unresolved": 0,
+      "required_embark_port_unresolved": 2,
+      "required_destination_unresolved": 0,
+      "duration_validation_failed": 0,
+      "identity_conflict": 0,
+      "confidence_gate_failure": 0,
+      "production_eligible": 621
+    },
+    "arithmetic": {
+      "source_unique_sailings": 651,
+      "production_eligible": 621,
+      "reconciles": true
+    }
+  },
+  "ship_code_seed": {
+    "precheck": "passed",
+    "applied": true,
+    "changed_rows": 8,
+    "verified": true,
+    "disney_believe_unchanged": true,
+    "ship_codes": [
+      {
+        "name": "Disney Adventure",
+        "official_line_ship_id": "DA"
+      },
+      {
+        "name": "Disney Destiny",
+        "official_line_ship_id": "WD"
+      },
+      {
+        "name": "Disney Dream",
+        "official_line_ship_id": "DD"
+      },
+      {
+        "name": "Disney Fantasy",
+        "official_line_ship_id": "DF"
+      },
+      {
+        "name": "Disney Magic",
+        "official_line_ship_id": "DM"
+      },
+      {
+        "name": "Disney Treasure",
+        "official_line_ship_id": "WT"
+      },
+      {
+        "name": "Disney Wish",
+        "official_line_ship_id": "WW"
+      },
+      {
+        "name": "Disney Wonder",
+        "official_line_ship_id": "DW"
+      }
+    ]
+  },
+  "production_comparison": {
+    "existing_disney_rows": 6,
+    "proposed_inserts": 621,
+    "proposed_updates": 0,
+    "duplicate_skips": 0,
+    "review_required": 0,
+    "blocked_unresolved": 2,
+    "within_21_day_cutoff_excluded": 28
+  },
+  "proposed_write_manifest_summary": {
+    "insert_active": 621,
+    "update_exact_existing": 0,
+    "duplicate_skip": 0,
+    "review_required": 0,
+    "blocked_unresolved": 2,
+    "within_21_day_cutoff_excluded": 28
+  },
+  "reproducibility": {
+    "manifest_deterministic": true
+  },
+  "url_strategy": {
+    "individual_url_available": false,
+    "generic_search_url": "https://disneycruise.disney.go.com/cruises-destinations/list/",
+    "verification": "Disney PAVAS does not expose stable per-sailing customer URLs; generic Find a Cruise URL used"
+  },
+  "quality_gate": {
+    "identity_coverage_pct": 100,
+    "duplicate_official_identities": 0,
+    "ship_resolution_pct": 100,
+    "embarkation_resolution_pct": 99.69,
+    "destination_resolution_pct": 100,
+    "duration_validation_pct": 100,
+    "eligibility_arithmetic_pass": true,
+    "source_complete": true,
+    "passed": true,
+    "ready_for_first_controlled_import": true,
+    "failures": []
+  },
+  "reference_data_mutations": {
+    "ship_code_updates_only": "see apply-disney-ship-code-seed.mjs"
+  },
+  "blockers": [],
+  "recommendation": "Ready for first controlled Disney import batch"
+}

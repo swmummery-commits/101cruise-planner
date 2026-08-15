@@ -183,11 +183,33 @@ class LosslessProductCatalogue {
           discoveredViaStrategy: itinerary._discoveredViaStrategy || null,
           structuralFingerprint: itineraryStructuralFingerprint(itinerary, {
             productItineraryData: itinerary.productItineraryData
-          })
+          }),
+          itinerary
         });
       }
     }
     return targets;
+  }
+
+  lookupItineraryContexts(productId, itineraryId = "") {
+    const entry = this.products.get(String(productId || "").trim());
+    if (!entry) return [];
+    const want = String(itineraryId ?? "");
+    return [...entry.itineraries.values()].filter((it) => String(it.itineraryId ?? "") === want);
+  }
+
+  lookupByExpansionKey(expansionKey) {
+    for (const entry of this.products.values()) {
+      const it = entry.itineraries.get(expansionKey);
+      if (it) {
+        return {
+          productId: entry.productId,
+          productName: entry.productName,
+          itinerary: it
+        };
+      }
+    }
+    return null;
   }
 
   toProductsArray() {

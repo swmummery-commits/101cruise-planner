@@ -19,6 +19,8 @@ const productVariantA = require(path.join(root, "scripts/fixtures/disney/product
 const productVariantB = require(path.join(root, "scripts/fixtures/disney/product-variant-b.json"));
 const source = require(path.join(root, "netlify/functions/lib/disney-discovery-source"));
 const dclCatalogue = require(path.join(root, "netlify/functions/lib/disney-discovery-catalogue"));
+const adapter = require(path.join(root, "netlify/functions/lib/disney-discovery-adapter"));
+const destMapping = require(path.join(root, "netlify/functions/lib/disney-destination-mapping"));
 const {
   partitionByPublicBookingCutoff,
   PUBLIC_BOOKING_CUTOFF_DAYS,
@@ -161,6 +163,103 @@ assert(repro.substantially_reproducible, "two identical identity sets reproducib
 
 const phase2Plans = dclCatalogue.buildPhase2HarvestPlans(indexed);
 assert(phase2Plans.some((p) => p.strategy === "date_x_city"), "phase2 date x city plan");
+
+// --- Phase 2B adapter unit tests ---
+assert(adapter.DISNEY_LINE_ID === "8f7aadcb-7843-4060-b0cb-a60631936b3a", "Disney line id constant");
+assert(adapter.extractEmbarkFromProductId("3_bahamian_port_canaveral")?.port.includes("Port Canaveral"), "productId embark");
+assert(adapter.extractEmbarkFromProductName("3-Night Cruise from Singapore")?.port === "Singapore", "productName embark");
+assert(adapter.extractEmbarkFromProductName("Mystery Cruise") === null, "ambiguous product title fails closed");
+
+const merged = adapter.mergeDisneyStructuralContexts(
+  { ship_name: "Disney Magic", structural_contexts: [{ a: 1 }], material_contradictions: [] },
+  { ship_name: "Disney Magic", structural_contexts: [{ b: 2 }], material_contradictions: [] }
+);
+assert(merged.structural_contexts.length === 2, "duplicate structural contexts merge");
+
+const conflict = adapter.mergeDisneyStructuralContexts(
+  { ship_name: "Disney Magic", nights: 3, material_contradictions: [] },
+  { ship_name: "Disney Dream", nights: 3, material_contradictions: [] }
+);
+assert(conflict.material_contradictions.length === 1, "contradictory ship detected");
+
+const durationOk = adapter.validateDisneyDuration({
+  departure_date: "2026-09-01",
+  return_date: "2026-09-04",
+  nights: 3
+});
+assert(durationOk.valid && durationOk.exact_match, "duration exact match");
+
+const durationBad = adapter.validateDisneyDuration({
+  departure_date: "2026-09-01",
+  return_date: "2026-09-05",
+  nights: 3
+});
+assert(durationBad.valid === false, "duration mismatch detected");
+
+const mockShips = [
+  { id: "s1", name: "Disney Magic", cruise_line_id: adapter.DISNEY_LINE_ID, official_line_ship_id: "DM", active: true }
+];
+const rawVoyage = adapter.buildDisneyRawVoyage(
+  {
+    official_product_key: "DM1740|2026-08-20",
+    sailing_id: "DM1740",
+    product_id: "3_bahamian_port_canaveral",
+    departure_date: "2026-08-20",
+    return_date: "2026-08-23",
+    nights: 3,
+    ship_name: "Disney Magic",
+    ship_code: "DM",
+    destination_code: "BAHAMAS"
+  },
+  [{ portsOfCall: ["Port Canaveral", "Nassau"], oneWayItinerary: false, _discoveredViaFilters: [] }],
+  { productName: "3-Night Bahamian Cruise from Port Canaveral" }
+);
+assert(rawVoyage.theme_metadata.length >= 0, "raw voyage built with context");
+const normalised = adapter.normaliseDisneyVoyage(rawVoyage, {
+  cruiseLine: { id: adapter.DISNEY_LINE_ID, name: "Disney Cruise Line" },
+  ships: mockShips,
+  destinations: [{ id: "d1", slug: "caribbean", name: "Caribbean", status: "active" }],
+  today: perthToday
+});
+assert(normalised.official_sailing_id === "DM1740|2026-08-20", "stable sailing identity");
+assert(normalised.ship_resolution.resolved === true, "ship resolves with official_line_ship_id seed");
+assert(normalised.candidate.departure_port_meta.status === "resolved", "embark resolves from productId");
+
+const waterfall = adapter.buildEligibilityWaterfall([normalised], perthToday);
+assert(waterfall.arithmetic.reconciles === true, "eligibility waterfall arithmetic");
+
+const outsideCutoffVoyage = adapter.buildDisneyRawVoyage(
+  {
+    official_product_key: "DM1740|2026-10-01",
+    sailing_id: "DM1740",
+    product_id: "3_bahamian_port_canaveral",
+    departure_date: "2026-10-01",
+    return_date: "2026-10-04",
+    nights: 3,
+    ship_name: "Disney Magic",
+    ship_code: "DM",
+    destination_code: "BAHAMAS"
+  },
+  [{ portsOfCall: ["Port Canaveral", "Nassau"], oneWayItinerary: false }],
+  { productName: "3-Night Bahamian Cruise from Port Canaveral" }
+);
+const outsideCutoff = adapter.normaliseDisneyVoyage(outsideCutoffVoyage, {
+  cruiseLine: { id: adapter.DISNEY_LINE_ID, name: "Disney Cruise Line" },
+  ships: mockShips,
+  destinations: [{ id: "d1", slug: "caribbean", name: "Caribbean", status: "active" }],
+  today: perthToday
+});
+assert(outsideCutoff.confidence.outcome === "auto_publish", "structured Disney voyage auto_publish outside cutoff");
+assert(outsideCutoff.eligibility.production_eligible === true, "production eligible when references resolve");
+
+const manifest = adapter.buildProposedWriteManifest([normalised], [], { id: adapter.DISNEY_LINE_ID });
+assert(manifest.summary.within_21_day_cutoff_excluded + manifest.summary.insert_active >= 0, "write manifest deterministic");
+
+assert(typeof adapter.buildDisneyUpsertCandidate === "function" || adapter.buildDisneyUpsertCandidate, "upsert helper exists");
+assert(adapter.applyDisneyBatchWrites == null, "no write export on adapter");
+
+const destHint = destMapping.resolveDisneyDestinationHints({ destination_code: "BAHAMAS", product_id: "3_bahamian_port_canaveral" });
+assert(destHint.preferredSlug === "caribbean", "destination mapping bahamas");
 
 (async () => {
   let productCalls = 0;

@@ -1,0 +1,23 @@
+{
+  "cruise_line_id": "8f7aadcb-7843-4060-b0cb-a60631936b3a",
+  "cruise_line_slug": "disney-cruise-line",
+  "expected_updates": 8,
+  "phase": "2B",
+  "source_evidence": "Disney PAVAS ship.seawareId codes proven in Phase 2A enumeration",
+  "ships": [
+    { "name": "Disney Adventure", "official_line_ship_id": "DA" },
+    { "name": "Disney Destiny", "official_line_ship_id": "WD" },
+    { "name": "Disney Dream", "official_line_ship_id": "DD" },
+    { "name": "Disney Fantasy", "official_line_ship_id": "DF" },
+    { "name": "Disney Magic", "official_line_ship_id": "DM" },
+    { "name": "Disney Treasure", "official_line_ship_id": "WT" },
+    { "name": "Disney Wish", "official_line_ship_id": "WW" },
+    { "name": "Disney Wonder", "official_line_ship_id": "DW" }
+  ],
+  "excluded_ships": [
+    {
+      "name": "Disney Believe",
+      "reason": "No published source seawareId in PAVAS inventory; must remain null until observed"
+    }
+  ]
+}
