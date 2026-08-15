@@ -66,6 +66,23 @@ function jsonResponse(statusCode, body) {
   };
 }
 
+async function withAdminCruiseInventoryMutation(operation, fn) {
+  const { withGlobalCruiseWriteLock, GLOBAL_LOCK_DENIED_REASON } = require("./lib/cruise-discovery-global-write-lock");
+  const runId = `admin-${operation}-${Date.now()}`;
+  const wrapped = await withGlobalCruiseWriteLock(supabase, {
+    ownerId: runId,
+    runId,
+    operation: `admin_${operation}`
+  }, fn);
+  if (!wrapped.acquired) {
+    throw Object.assign(new Error(GLOBAL_LOCK_DENIED_REASON), {
+      statusCode: 409,
+      lock_status: wrapped
+    });
+  }
+  return wrapped.result;
+}
+
 async function dashboard() {
   const {
     perthCalendarDate,
@@ -1027,10 +1044,15 @@ exports.handler = async (event) => {
       }
       return jsonResponse(200, { success: true, ...wrapped.result, global_lock: wrapped.observability });
     }
-    if (action === "resolve_review") return jsonResponse(200, await resolveReview(body, actor));
+    if (action === "resolve_review") {
+      return jsonResponse(200, await withAdminCruiseInventoryMutation("resolve_review", () => resolveReview(body, actor)));
+    }
     if (action === "ignore_review") return jsonResponse(200, await ignoreReview(body, actor));
     if (action === "resolve_review_group") {
-      return jsonResponse(200, await resolveReviewGroup(body, actor));
+      return jsonResponse(
+        200,
+        await withAdminCruiseInventoryMutation("resolve_review_group", () => resolveReviewGroup(body, actor))
+      );
     }
     if (action === "ignore_review_group") {
       return jsonResponse(200, await ignoreReviewGroup(body, actor));
@@ -1039,33 +1061,48 @@ exports.handler = async (event) => {
       return jsonResponse(200, await collapseDuplicateReview(actor));
     }
     if (action === "manual_resolve_date") {
-      return jsonResponse(200, await manualResolveDate(body, actor));
+      return jsonResponse(
+        200,
+        await withAdminCruiseInventoryMutation("manual_resolve_date", () => manualResolveDate(body, actor))
+      );
     }
     if (action === "manual_resolve_departure_port") {
-      return jsonResponse(200, await manualResolveDeparturePort(body, actor));
+      return jsonResponse(
+        200,
+        await withAdminCruiseInventoryMutation("manual_resolve_departure_port", () =>
+          manualResolveDeparturePort(body, actor)
+        )
+      );
     }
     if (action === "list_departure_ports") {
       return jsonResponse(200, await listDeparturePorts());
     }
     if (action === "hide_discovered_cruise") {
-      return jsonResponse(200, await hideDiscoveredCruise(body, actor));
+      return jsonResponse(
+        200,
+        await withAdminCruiseInventoryMutation("hide_discovered_cruise", () => hideDiscoveredCruise(body, actor))
+      );
     }
     if (action === "reprocess_candidates") {
       const ids = Array.isArray(body.cruise_ids) ? body.cruise_ids : [];
-      const result = await reprocessCandidateIds(ids, {
-        actor,
-        context: { action: "reprocess_candidates" }
-      });
+      const result = await withAdminCruiseInventoryMutation("reprocess_candidates", () =>
+        reprocessCandidateIds(ids, {
+          actor,
+          context: { action: "reprocess_candidates" }
+        })
+      );
       return jsonResponse(200, { success: true, ...result });
     }
     if (action === "reprocess_group") {
       const groupId = String(body.group_id || "").trim();
       const items = await loadPendingByGroupId(groupId);
       const keys = items.map((i) => i.payload?.external_key).filter(Boolean);
-      const result = await reprocessByExternalKeys(keys, {
-        actor,
-        context: { action: "reprocess_group", group_id: groupId }
-      });
+      const result = await withAdminCruiseInventoryMutation("reprocess_group", () =>
+        reprocessByExternalKeys(keys, {
+          actor,
+          context: { action: "reprocess_group", group_id: groupId }
+        })
+      );
       return jsonResponse(200, { success: true, ...result });
     }
     if (action === "list_ship_aliases") return jsonResponse(200, await listShipAliases(body));
