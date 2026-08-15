@@ -15,6 +15,7 @@ const DEFAULT_EXPECTED_BATCH_COUNT = 100;
 const APPLY_CONFIRMATION_TOKEN = "SILVERSEA-FIRST-CONTROLLED-BATCH";
 const FIRST_BATCH_MODE = "silversea_first_controlled_batch";
 const FIRST_BATCH_75_MODE = "silversea_first_controlled_batch_75";
+const SECOND_BATCH_25_MODE = "silversea_controlled_batch_25";
 
 const EXCLUSIVE_BUCKETS = [
   "departed",
@@ -344,6 +345,7 @@ module.exports = {
   APPLY_CONFIRMATION_TOKEN,
   FIRST_BATCH_MODE,
   FIRST_BATCH_75_MODE,
+  SECOND_BATCH_25_MODE,
   EXCLUSIVE_BUCKETS,
   isClassic,
   isExpedition,

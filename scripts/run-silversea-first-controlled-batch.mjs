@@ -47,6 +47,7 @@ const {
   APPLY_CONFIRMATION_TOKEN,
   FIRST_BATCH_MODE,
   FIRST_BATCH_75_MODE,
+  SECOND_BATCH_25_MODE,
   buildExclusiveClassificationFunnel,
   selectFirstBatchProducts,
   loadFrozenOfficialSailingIds,
@@ -331,6 +332,29 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
       );
     }
   }
+  if (expectedCountEarly === 25) {
+    if (countsBefore.silversea_total !== 83) {
+      throw new Error(
+        `Unexpected Silversea production total ${countsBefore.silversea_total} (expected 83) — STOP WITH ZERO WRITES`
+      );
+    }
+    if (countsBefore.silversea_active !== 75) {
+      throw new Error(
+        `Unexpected Silversea active count ${countsBefore.silversea_active} (expected 75) — STOP WITH ZERO WRITES`
+      );
+    }
+    if (legacyHiddenRows.length !== 8) {
+      throw new Error(
+        `Unexpected legacy hidden row count ${legacyHiddenRows.length} (expected 8) — STOP WITH ZERO WRITES`
+      );
+    }
+    const withOfficialId = ctx.existing.rows.filter((r) => r.official_sailing_id);
+    if (withOfficialId.length !== 75) {
+      throw new Error(
+        `Unexpected existing official Silversea sailing IDs: ${withOfficialId.length} (expected 75) — STOP WITH ZERO WRITES`
+      );
+    }
+  }
 
   const simulation = await adapter.simulateSilverseaInventory({
     cruiseLine: ctx.line,
@@ -362,7 +386,12 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
   const frozenReport = args.frozenReport ? loadFrozenReport(args.frozenReport) : null;
   const frozenIds = frozenReport ? loadFrozenOfficialSailingIds(frozenReport) : null;
   const expectedCount = args.expectedCount ?? (frozenIds ? frozenIds.length : null);
-  const batchMode = expectedCount === 75 ? FIRST_BATCH_75_MODE : FIRST_BATCH_MODE;
+  const batchMode =
+    expectedCount === 75
+      ? FIRST_BATCH_75_MODE
+      : expectedCount === 25
+        ? SECOND_BATCH_25_MODE
+        : FIRST_BATCH_MODE;
   const maxWrites = expectedCount != null ? Math.min(expectedCount, MAX_FIRST_CONTROLLED_BATCH) : MAX_FIRST_CONTROLLED_BATCH;
 
   if (expectedCount != null && (!Number.isFinite(expectedCount) || expectedCount < 1 || expectedCount > MAX_FIRST_CONTROLLED_BATCH)) {
@@ -393,7 +422,9 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
     options.runId ||
     (expectedCount === 75
       ? `silversea-first-batch-75-${startedAt.replace(/[:.]/g, "-")}`
-      : `silversea-first-batch-${startedAt.replace(/[:.]/g, "-")}`);
+      : expectedCount === 25
+        ? `silversea-controlled-batch-25-${startedAt.replace(/[:.]/g, "-")}`
+        : `silversea-first-batch-${startedAt.replace(/[:.]/g, "-")}`);
   const manifest = await buildSilverseaBatchManifest({
     selectedProducts: selection.selected,
     cruiseLine: ctx.line,

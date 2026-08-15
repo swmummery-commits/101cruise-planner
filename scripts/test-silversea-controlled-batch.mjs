@@ -227,6 +227,30 @@ test("load frozen official IDs from report table", () => {
   assert(ids.length === 2 && ids[0] === "DA260907012", "loaded ids");
 });
 
+test("pre-write gate requires exact 25 for phase 5 frozen batch", () => {
+  const gate = controlled.evaluatePreWriteGate({
+    funnel: { reconciles: true },
+    selection: {
+      sufficient_for_batch: true,
+      frozen_selection: true,
+      exact_frozen_set_match: true,
+      frozen_unique_count: 25,
+      frozen_still_eligible: 25
+    },
+    proposedInserts: 25,
+    proposedUpdates: 0,
+    sourceHealthOk: true,
+    sourceRefreshOk: true,
+    expectedCount: 25,
+    existingSelectedOfficialIds: 0
+  });
+  assert(gate.passed, `expected pass, failures=${gate.failures?.join(",")}`);
+});
+
+test("second batch mode constant exists", () => {
+  assert(controlled.SECOND_BATCH_25_MODE === "silversea_controlled_batch_25", "batch mode");
+});
+
 console.log(`\ntest:silversea-controlled-batch: ${passed} passed${failures.length ? `, ${failures.length} failed` : ""}`);
 if (failures.length) {
   console.error(JSON.stringify(failures, null, 2));
