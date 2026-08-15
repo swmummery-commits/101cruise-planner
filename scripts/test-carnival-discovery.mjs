@@ -52,10 +52,37 @@ const deduped = ccl.dedupeExpandedSailings(expanded.products);
 assert(deduped.products.length === 7, "removes exact duplicate sailingId");
 assert(deduped.duplicate_rows_removed === 1, "one duplicate row removed");
 
-const nights = ccl.deriveNightsFromCclDuration({ dur: 3, roundtrip: true });
-assert(nights.nights === 2, "roundtrip dur 3 -> 2 nights");
+const nights = ccl.deriveCarnivalNights({
+  dur: 3,
+  departureDate: "2026-09-11",
+  arrivalDate: "2026-09-14"
+});
+assert(nights.nights === 3, "dur 3 with 2026-09-11 to 2026-09-14 -> 3 nights");
+assert(nights.duration_mismatch === false, "authoritative dur matches date difference");
 
-const nightsOneWay = ccl.deriveNightsFromCclDuration({ dur: 10, roundtrip: false });
+const sevenDay = ccl.deriveCarnivalNights({
+  dur: 7,
+  departureDate: "2026-10-10",
+  arrivalDate: "2026-10-17"
+});
+assert(sevenDay.nights === 7, "7-day product stores 7 nights");
+
+const longVoyage = ccl.deriveCarnivalNights({
+  dur: 14,
+  departureDate: "2026-11-01",
+  arrivalDate: "2026-11-15"
+});
+assert(longVoyage.nights === 14, "14-night voyage uses dur directly");
+
+const inconsistent = ccl.deriveCarnivalNights({
+  dur: 15,
+  departureDate: "2027-10-02",
+  arrivalDate: "2027-10-18"
+});
+assert(inconsistent.nights === 15, "authoritative dur retained on exception");
+assert(inconsistent.duration_mismatch === true, "date mismatch surfaced without changing dur");
+
+const nightsOneWay = ccl.deriveCarnivalNights({ dur: 10, departureDate: "2026-11-01", arrivalDate: "2026-11-11" });
 assert(nightsOneWay.nights === 10, "one-way dur 10 -> 10 nights");
 
 assert(ccl.officialProductKey({ itinerary_code: "BAW", ship_code: "CQ", departure_date: "2026-09-06" }) === "BAW|CQ|2026-09-06", "composite key");
@@ -98,7 +125,7 @@ const boundary21 = ccl.normaliseCclSailing(
     official_sailing_id: "cutoff21",
     departure_date: "2026-09-05",
     arrival_date: "2026-09-08",
-    nights: 2
+    nights: 3
   },
   ctx
 );
@@ -109,7 +136,7 @@ const boundary22 = ccl.normaliseCclSailing(
     official_sailing_id: "cutoff22",
     departure_date: "2026-09-06",
     arrival_date: "2026-09-09",
-    nights: 2
+    nights: 3
   },
   ctx
 );

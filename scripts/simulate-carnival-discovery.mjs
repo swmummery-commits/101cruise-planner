@@ -92,6 +92,10 @@ async function main() {
       simulation.integrity.identity_collisions === 0
         ? "PASS"
         : "FAIL",
+    validation_result:
+      (simulation.validation_failures?.reference_ready_not_discovery_ready || 0) === 0
+        ? "PASS"
+        : "FAIL",
     overall_passed: qualityGate.passed,
     failures: qualityGate.failures
   };
@@ -123,6 +127,8 @@ async function main() {
     ports: simulation.ports,
     destinations: simulation.destinations,
     candidate_integrity: simulation.integrity,
+    readiness_funnel: simulation.readiness_funnel,
+    validation_failures: simulation.validation_failures,
     overall: simulation.overall,
     quality_gate: qualityGateReport,
     quality_gate_metrics: simulation.quality_gate_metrics,
@@ -142,8 +148,10 @@ async function main() {
     groups: report.source.unique_groups,
     raw_expanded_sailings: report.sailing_expansion.raw_expanded_sailings,
     unique_sailing_ids: report.sailing_expansion.unique_sailing_ids,
-    eligible_22_plus: report.date_eligibility.waterfall?.outside_cutoff ?? null,
-    production_eligible: report.date_eligibility.eligible_source_products,
+    eligible_22_plus: report.readiness_funnel?.cutoff_eligible ?? null,
+    reference_ready: report.readiness_funnel?.all_required_references_resolved ?? null,
+    validation_ready: report.readiness_funnel?.validation_passed ?? null,
+    discovery_ready: report.readiness_funnel?.discovery_ready ?? null,
     within_21_day: report.date_eligibility.within_21_day_exclusions,
     ship_resolution_pct: Number(report.ships.resolution_percentage.toFixed(2)),
     port_resolution_pct: Number(report.ports.resolution_percentage.toFixed(2)),
