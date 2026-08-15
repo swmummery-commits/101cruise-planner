@@ -252,7 +252,8 @@ async function buildRoyalCaribbeanBatchManifest({
   };
 }
 
-const { upsertCandidateRecord } = require("./cruise-discovery-ops");
+const { upsertCandidateRecord  } = require("./cruise-discovery-ops");
+const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 const {
   MAX_CONTROLLED_ROYAL_CARIBBEAN_BATCH,
@@ -627,7 +628,7 @@ async function applyRoyalCaribbeanCatchupChunk({
   return { stats, run_id: runId, upsert_stats: upsertStats };
 }
 
-async function applyRoyalCaribbeanBatchWrites(options = {}) {
+async function applyRoyalCaribbeanBatchWritesBody(options = {}) {
   const modeGate = resolveRoyalCaribbeanDiscoveryMode(options.mode || "simulation");
   assertRoyalCaribbeanWritesAllowed(modeGate);
 
@@ -664,6 +665,16 @@ async function applyRoyalCaribbeanBatchWrites(options = {}) {
   );
   err.code = "royal_caribbean_writes_disabled";
   throw err;
+}
+
+async function applyRoyalCaribbeanBatchWrites(params = {}) {
+  if (params.performWrites === false) return applyRoyalCaribbeanBatchWritesBody(params);
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: "royal-caribbean-international",
+    operation: params.mode || params.operation || "royal_caribbean_batch_apply"
+  }, () => applyRoyalCaribbeanBatchWritesBody(params));
 }
 
 module.exports = {

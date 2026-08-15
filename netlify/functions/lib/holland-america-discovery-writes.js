@@ -5,7 +5,8 @@
 
 const crypto = require("crypto");
 const { officialProductKey, ADAPTER_ID, ADAPTER_VERSION } = require("./holland-america-discovery-adapter");
-const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
+const { cruiseIdentityKey, upsertCandidateRecord  } = require("./cruise-discovery-ops");
+const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { createHalBatchTiming, mapWithConcurrency } = require("./holland-america-discovery-timing");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
@@ -273,7 +274,7 @@ async function bulkVerifyWrittenRecords(supabase, writeDetails) {
   return { verified, rows: rows || [] };
 }
 
-async function applyHalBatchWrites({
+async function applyHalBatchWritesBody({
   products,
   cruiseLine,
   maxWrites = 40,
@@ -386,6 +387,15 @@ async function applyHalBatchWrites({
     verification,
     timing: localTiming.snapshot()
   };
+}
+
+async function applyHalBatchWrites(params = {}) {
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: params.cruiseLine?.slug || "holland-america-line",
+    operation: params.mode || params.operation || "hal_batch_apply"
+  }, () => applyHalBatchWritesBody(params));
 }
 
 module.exports = {

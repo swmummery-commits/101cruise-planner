@@ -16,6 +16,7 @@ const {
   validateFrozenWeeklyManifest
 } = require("./royal-caribbean-weekly-manifest");
 const { applyRoyalCaribbeanWeeklyManifest } = require("./royal-caribbean-weekly-apply");
+const { withGlobalCruiseWriteLock } = require("./cruise-discovery-global-write-lock");
 const {
   buildRoyalCaribbeanReconciliationArithmetic,
   evaluateRoyalCaribbeanDryRunHealth
@@ -384,14 +385,43 @@ async function runRoyalCaribbeanWeeklyMaintenance(context = {}) {
       };
     }
 
-    applyResult = await applyRoyalCaribbeanWeeklyManifest({
-      manifest: weeklyManifest,
-      supabase: sb,
-      cruiseLine: line,
-      performWrites: true,
+    applyResult = await withGlobalCruiseWriteLock(sb, {
+      ownerId: runId,
       runId,
-      firstActivationCycle
+      lineSlug,
+      operation: "royal_caribbean_weekly_maintenance"
+    }, async () =>
+      applyRoyalCaribbeanWeeklyManifest({
+        manifest: weeklyManifest,
+        supabase: sb,
+        cruiseLine: line,
+        performWrites: true,
+        runId,
+        firstActivationCycle
+      })).then((wrap) => {
+      if (!wrap.acquired) {
+        return {
+          blocked: true,
+          ok: false,
+          reason: wrap.reason || "global_production_import_lock_unavailable",
+          global_lock: wrap.observability
+        };
+      }
+      summary.global_lock = wrap.observability;
+      return wrap.result;
     });
+
+    if (applyResult?.blocked) {
+      return {
+        ok: false,
+        blocked: true,
+        reason: applyResult.reason,
+        line_slug: lineSlug,
+        dry_run: false,
+        actual_writes: 0,
+        summary: { ...summary, global_lock: applyResult.global_lock }
+      };
+    }
 
     summary.actual_writes = applyResult.stats.actual_writes;
     summary.production_cruise_inserts = applyResult.stats.inserted;

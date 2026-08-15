@@ -75,6 +75,10 @@ const { buildRollbackManifestFromWriteResult } = require(path.join(
   root,
   "netlify/functions/lib/cruise-discovery-maintenance-manifests"
 ));
+const { executeControlledProductionApply } = require(path.join(
+  root,
+  "netlify/functions/lib/cruise-discovery-global-write-lock"
+));
 
 export const LINE_SLUG = adapter.LINE_SLUG;
 
@@ -551,19 +555,75 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
 
   let writeResult = null;
   let rollbackManifest = null;
+  let globalLockReport = null;
 
   if (args.apply) {
     assertSilverseaWritesAllowed(modeGate);
-    writeResult = await applySilverseaBatchWrites({
-      selectedProducts: selection.selected,
-      cruiseLine: ctx.line,
-      runId,
-      supabase: sb,
-      today,
-      existingByOfficialId: ctx.existingByOfficialId,
-      performWrites: true,
-      maxWrites
-    });
+    const protectedApply = await executeControlledProductionApply(
+      sb,
+      {
+        runId,
+        lineSlug: LINE_SLUG,
+        operation: batchMode,
+        performWrites: true,
+        underLockRecheck: async () => {
+          const existingUnderLock = await countExistingOfficialIds(sb, ctx.line.id, selection.selected_ids);
+          const gate = evaluatePreWriteGate({
+            funnel,
+            selection,
+            proposedInserts,
+            proposedUpdates,
+            sourceHealthOk: simulation.health?.ok === true,
+            sourceRefreshOk: sourceRefresh.ok,
+            maxWrites,
+            expectedCount,
+            existingSelectedOfficialIds: existingUnderLock.count
+          });
+          if (!gate.passed) {
+            return { ok: false, reason: gate.reason || "under_lock_pre_write_gate_failed", gate };
+          }
+          if (existingUnderLock.count > 0) {
+            return { ok: false, reason: "under_lock_selected_official_ids_already_present" };
+          }
+          return { ok: true };
+        }
+      },
+      async () =>
+        applySilverseaBatchWrites({
+          selectedProducts: selection.selected,
+          cruiseLine: ctx.line,
+          runId,
+          supabase: sb,
+          today,
+          existingByOfficialId: ctx.existingByOfficialId,
+          performWrites: true,
+          maxWrites
+        })
+    );
+
+    globalLockReport = protectedApply.global_lock;
+
+    if (protectedApply.blocked) {
+      const report = {
+        phase: "apply_blocked",
+        run_id: runId,
+        batch_mode: batchMode,
+        writes: false,
+        blocked: true,
+        reason: protectedApply.reason,
+        global_lock: globalLockReport,
+        pre_write_report: preWriteReport,
+        started_at: startedAt,
+        ended_at: new Date().toISOString()
+      };
+      fs.mkdirSync(REPORT_DIR, { recursive: true });
+      const reportPath = path.join(REPORT_DIR, `silversea-first-controlled-batch-${runId}.json`);
+      fs.writeFileSync(reportPath, JSON.stringify(report, null, 2));
+      report.report_path = reportPath;
+      return report;
+    }
+
+    writeResult = protectedApply.writeResult;
 
     rollbackManifest = buildRollbackManifestFromWriteResult({
       runId,
@@ -637,6 +697,7 @@ export async function runSilverseaFirstControlledBatch(options = {}) {
     counts_before: countsBefore,
     counts_after: countsAfter,
     pre_write_report: preWriteReport,
+    global_lock: globalLockReport,
     exclusive_funnel: funnel,
     selection: {
       frozen_selection: Boolean(frozenIds),

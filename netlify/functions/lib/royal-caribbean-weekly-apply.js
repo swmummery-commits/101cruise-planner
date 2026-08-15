@@ -14,6 +14,7 @@ const {
   perthCalendarDate
 } = require("./public-discovered-cruise-inventory");
 const { validateFrozenWeeklyManifest } = require("./royal-caribbean-weekly-manifest");
+const { assertGlobalCruiseWriteLockHeld } = require("./cruise-discovery-global-write-lock");
 
 async function fetchRecordById(supabase, id) {
   const rows = await supabase(
@@ -105,6 +106,7 @@ async function hideFromPublicInventory({ supabase, row, runId, perthToday, reaso
   rawExtract.previous_status = row.status;
   rawExtract.maintenance_expired_at = now;
 
+  await assertGlobalCruiseWriteLockHeld(options);
   await supabase(`discovered_cruises?id=eq.${encodeURIComponent(row.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=representation" },

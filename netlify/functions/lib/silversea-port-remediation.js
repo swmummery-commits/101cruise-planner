@@ -8,7 +8,8 @@ const { resolveRawPortText } = require("./discovery-departure-port");
 
 /** Deterministic Silversea-only label overrides (after shared resolver fails). */
 const SILVERSEA_ADAPTER_PORT_ALIASES = Object.freeze({
-  "kochi": "Kochi Japan"
+  "kochi": "Kochi Japan",
+  "vik": "Vik Norway"
 });
 
 /**

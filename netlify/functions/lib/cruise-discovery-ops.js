@@ -17,6 +17,7 @@ const {
 } = require("./cruise-discovery");
 const { mergeDeparturePortForUpsert } = require("./discovery-departure-port");
 const { filterClassificationDestinations } = require("./destination-queries");
+const { assertGlobalCruiseWriteLockHeld } = require("./cruise-discovery-global-write-lock");
 
 // addDaysIso may not be exported — compute locally if needed
 function addDays(isoDate, days) {
@@ -424,6 +425,7 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
     payload.change_log = [{ field: "created", status, at: now }];
     let row = null;
     try {
+      await assertGlobalCruiseWriteLockHeld(options);
       const created = await supabase("discovered_cruises", {
         method: "POST",
         headers: { Prefer: "return=representation" },
@@ -455,6 +457,7 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
   }
 
   if (!changedFields.length) {
+    await assertGlobalCruiseWriteLockHeld(options);
     await supabase(`discovered_cruises?id=eq.${encodeURIComponent(prev.id)}`, {
       method: "PATCH",
       headers: { Prefer: "return=minimal" },
@@ -486,6 +489,7 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
   });
   payload.first_seen_at = prev.first_seen_at || prev.discovered_at || now;
 
+  await assertGlobalCruiseWriteLockHeld(options);
   await supabase(`discovered_cruises?id=eq.${encodeURIComponent(prev.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=minimal" },

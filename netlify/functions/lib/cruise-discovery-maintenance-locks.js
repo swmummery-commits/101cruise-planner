@@ -11,6 +11,7 @@ const DEFAULT_LEASE_SECONDS = {
   "explora-journeys:weekly": 900,
   "seabourn-cruise-line:weekly": 900,
   "royal-caribbean-international:weekly": 900,
+  "controlled_production_import:global": 1800,
   daily_expiry: 300
 };
 

@@ -91,6 +91,13 @@ test("Silversea adapter Kochi alias resolves to Kochi Japan", () => {
   assert(resolution.canonicalPortName === "Kochi Japan", resolution.canonicalPortName);
 });
 
+test("Silversea adapter Vik alias resolves to Vik Norway", () => {
+  resetPortsCache();
+  const resolution = adapter.resolveSilverseaPort("Vik", "silversea_gatsby_itinerary");
+  assert(resolution.status === "resolved", resolution.reason || resolution.status);
+  assert(resolution.canonicalPortName === "Vik Norway", resolution.canonicalPortName);
+});
+
 test("Hubbard Glacier resolves as catalogue port", () => {
   resetPortsCache();
   const resolution = resolveRawPortText("Hubbard Glacier");

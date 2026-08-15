@@ -10,7 +10,8 @@ const {
   isEligibleSilverseaCruise
 } = require("./silversea-discovery-adapter");
 const { isFirstBatchEligible } = require("./silversea-controlled-batch");
-const { cruiseIdentityKey, upsertCandidateRecord } = require("./cruise-discovery-ops");
+const { cruiseIdentityKey, upsertCandidateRecord  } = require("./cruise-discovery-ops");
+const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
 
 function silverseaExternalKey(cruiseLineId, productKey) {
@@ -194,7 +195,7 @@ async function buildSilverseaBatchManifest({
   };
 }
 
-async function applySilverseaBatchWrites({
+async function applySilverseaBatchWritesBody({
   selectedProducts,
   cruiseLine,
   runId,
@@ -303,6 +304,16 @@ async function applySilverseaBatchWrites({
   }
 
   return { stats, upsertStats, performWrites: performWrites === true, run_id: runId || null };
+}
+
+async function applySilverseaBatchWrites(params = {}) {
+  if (params.performWrites === false) return applySilverseaBatchWritesBody(params);
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: "silversea-cruises",
+    operation: params.mode || params.operation || "silversea_batch_apply"
+  }, () => applySilverseaBatchWritesBody(params));
 }
 
 module.exports = {

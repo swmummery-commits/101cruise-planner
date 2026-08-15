@@ -15,6 +15,7 @@ const {
 } = require("./norwegian-weekly-manifest");
 const { applyNorwegianWeeklyManifest } = require("./norwegian-weekly-apply");
 const { loadClassificationDestinations } = require("./destination-queries");
+const { withGlobalCruiseWriteLock } = require("./cruise-discovery-global-write-lock");
 
 const NCL_LINE_SLUG = "norwegian-cruise-line";
 const NCL_MAX_WEEKLY_WRITES = 200;
@@ -69,18 +70,44 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
   });
 
   let applyResult = null;
+  let globalLockReport = null;
   if (performWrites) {
-    applyResult = await applyNorwegianWeeklyManifest({
-      manifest,
-      supabase: sb,
-      cruiseLine: line,
-      performWrites: true,
+    const applyWrap = await withGlobalCruiseWriteLock(sb, {
+      ownerId: runId,
       runId,
-      maxWrites,
-      skipPromotions: insertOnly,
-      skipCutoffHides: insertOnly,
-      skipSourceAbsenceHides: insertOnly
-    });
+      lineSlug,
+      operation: "norwegian_weekly_maintenance"
+    }, async () =>
+      applyNorwegianWeeklyManifest({
+        manifest,
+        supabase: sb,
+        cruiseLine: line,
+        performWrites: true,
+        runId,
+        maxWrites,
+        skipPromotions: insertOnly,
+        skipCutoffHides: insertOnly,
+        skipSourceAbsenceHides: insertOnly
+      }));
+
+    if (!applyWrap.acquired) {
+      return {
+        success: false,
+        blocked: true,
+        reason: applyWrap.reason || "global_production_import_lock_unavailable",
+        run_id: runId,
+        manifest,
+        summary: {
+          run_id: runId,
+          line_slug: lineSlug,
+          blocked_by_global_lock: true,
+          global_lock: applyWrap.observability
+        },
+        global_lock: applyWrap.observability
+      };
+    }
+    applyResult = applyWrap.result;
+    globalLockReport = applyWrap.observability;
   }
 
   const summary = {
@@ -88,6 +115,7 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
     run_type: NORWEGIAN_WEEKLY_MAINTENANCE_RUN_TYPE,
     line_slug: lineSlug,
     dry_run: !performWrites,
+    global_lock: globalLockReport,
     perth_today: today,
     elapsed_ms: Date.now() - startedAt,
     source_counts: manifest.source_counts,

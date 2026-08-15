@@ -13,6 +13,7 @@ const {
   perthCalendarDate,
   isCruisePubliclyBookable
 } = require("./public-discovered-cruise-inventory");
+const { assertGlobalCruiseWriteLockHeld } = require("./cruise-discovery-global-write-lock");
 
 const NCL_LINE_SLUG = "norwegian-cruise-line";
 
@@ -73,6 +74,7 @@ async function hideNorwegianFromPublicInventory({
   rawExtract.maintenance_expired_at = now;
   rawExtract.ncl_maintenance_hide_reason = reason;
 
+  await assertGlobalCruiseWriteLockHeld(options);
   await supabase(`discovered_cruises?id=eq.${encodeURIComponent(row.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=representation" },
@@ -95,6 +97,7 @@ async function promoteNorwegianToActive({ supabase, row, runId, perthToday }) {
   rawExtract.previous_status = row.status;
   rawExtract.ncl_publication_perth_date = perthToday || perthCalendarDate();
 
+  await assertGlobalCruiseWriteLockHeld(options);
   const rows = await supabase(`discovered_cruises?id=eq.${encodeURIComponent(row.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=representation" },

@@ -1,6 +1,6 @@
 ﻿canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases
 Barcelona,"Barcelona, Spain",Barcelona,Spain,ES,Mediterranean,41.3584,2.1686,
-Tarragona,"Tarragona, Spain",Tarragona,Spain,ES,Mediterranean,41.1118,1.2536,Barcelona (Tarragona)|Barcelona (Tarragona), Spain
+Tarragona,"Tarragona, Spain",Tarragona,Spain,ES,Mediterranean,41.1118,1.2536,Barcelona (Tarragona)|Barcelona (Tarragona)
 Valencia,"Valencia, Spain",Valencia,Spain,ES,Mediterranean,39.4481,-0.3167,
 Alicante,"Alicante, Spain",Alicante,Spain,ES,Mediterranean,38.3381,-0.4808,
 Cartagena,"Cartagena, Spain",Cartagena,Spain,ES,Mediterranean,37.5968,-0.9803,Cartagena Spain
@@ -9,7 +9,7 @@ Cadiz,"Cádiz, Spain",Cádiz,Spain,ES,Atlantic Europe,36.5336,-6.2922,Cadiz|Sevi
 Gibraltar,Gibraltar,Gibraltar,Gibraltar,GI,Mediterranean,36.1408,-5.3536,
 Palma de Mallorca,"Palma de Mallorca, Spain",Palma,Spain,ES,Mediterranean,39.5546,2.6258,Palma|Mallorca
 Ibiza,"Ibiza, Spain",Ibiza Town,Spain,ES,Mediterranean,38.9067,1.4206,Eivissa
-Mahon,"Mahón, Spain",Mahón,Spain,ES,Mediterranean,39.8896,4.2658,Mahón|Menorca
+Mahon,"Mahón, Spain",Mahón,Spain,ES,Mediterranean,39.8896,4.2658,Mahón|Menorca|Porto Mahon
 Marseille,"Marseille, France",Marseille,France,FR,Mediterranean,43.3037,5.3654,
 Toulon,"Toulon, France",Toulon,France,FR,Mediterranean,43.1208,5.9286,
 Cannes,"Cannes, France",Cannes,France,FR,Mediterranean,43.5513,7.0128,
@@ -31,8 +31,8 @@ Syracuse,"Syracuse, Sicily",Syracuse,Italy,IT,Mediterranean,37.063,15.29,Siracus
 Cagliari,"Cagliari, Sardinia",Cagliari,Italy,IT,Mediterranean,39.2109,9.1156,Sardinia
 Olbia,"Olbia, Sardinia",Olbia,Italy,IT,Mediterranean,40.9236,9.5016,Sardinia|Costa Smeralda
 Venice,"Venice, Italy",Venice,Italy,IT,Adriatic,45.432,12.3378,Venezia|Marghera
-Trieste,"Trieste, Italy",Trieste,Italy,IT,Adriatic,45.6495,13.7768,Venice (Trieste)|Venice (Trieste), Italy
-Ravenna,"Ravenna, Italy",Ravenna,Italy,IT,Adriatic,44.4938,12.2828,Porto Corsini|Venice (Ravenna)|Venice (Ravenna), Italy
+Trieste,"Trieste, Italy",Trieste,Italy,IT,Adriatic,45.6495,13.7768,Venice (Trieste)|Venice (Trieste)
+Ravenna,"Ravenna, Italy",Ravenna,Italy,IT,Adriatic,44.4938,12.2828,Porto Corsini|Venice (Ravenna)|Venice (Ravenna)
 Koper,"Koper, Slovenia",Koper,Slovenia,SI,Adriatic,45.5481,13.7302,
 Zadar,"Zadar, Croatia",Zadar,Croatia,HR,Adriatic,44.1149,15.2247,
 Sarande,"Sarandë, Albania",Sarandë,Albania,AL,Mediterranean,39.873,20.005,Saranda|Butrint
@@ -89,7 +89,7 @@ New Orleans,"New Orleans, Louisiana",New Orleans,United States,US,Caribbean,29.9
 Galveston,"Galveston, Texas",Galveston,United States,US,Caribbean,29.307,-94.793,Houston
 San Juan,"San Juan, Puerto Rico",San Juan,Puerto Rico,PR,Caribbean,18.466,-66.112,
 Nassau,"Nassau, Bahamas",Nassau,Bahamas,BS,Bahamas,25.081,-77.343,
-Freeport,"Freeport, Grand Bahama",Freeport,Bahamas,BS,Bahamas,26.528,-78.695,Grand Bahama|Grand Bahama Island|Grand Bahama Island, Bahamas
+Freeport,"Freeport, Grand Bahama",Freeport,Bahamas,BS,Bahamas,26.528,-78.695,Grand Bahama|Grand Bahama Island|Grand Bahama Island
 Bimini,"Bimini, Bahamas",Alice Town,Bahamas,BS,Bahamas,25.727,-79.298,Alice Town
 Perfect Day at CocoCay,"Perfect Day at CocoCay, Bahamas",CocoCay,Bahamas,BS,Bahamas,25.82,-77.938,Coco Cay|Little Stirrup Cay
 Road Town,"Road Town, Tortola",Road Town,British Virgin Islands,VG,Caribbean,18.422,-64.615,Tortola
@@ -129,14 +129,14 @@ Honolulu,"Honolulu, Hawaii",Honolulu,United States,US,Hawaii,21.306,-157.865,Oah
 Kahului,"Kahului, Maui",Kahului,United States,US,Hawaii,20.895,-156.472,Maui
 Nawiliwili,"Nawiliwili, Kauai",Lihue,United States,US,Hawaii,21.955,-159.356,Kauai|Lihue
 Hilo,"Hilo, Hawaii",Hilo,United States,US,Hawaii,19.73,-155.055,Big Island
-Ketchikan,"Ketchikan, Alaska",Ketchikan,United States,US,Alaska,55.342,-131.646,Ketchikan (Ward Cove)|Ketchikan (Ward Cove), Alaska|Ward Cove
+Ketchikan,"Ketchikan, Alaska",Ketchikan,United States,US,Alaska,55.342,-131.646,Ketchikan (Ward Cove)|Ketchikan (Ward Cove)
 Sitka,"Sitka, Alaska",Sitka,United States,US,Alaska,57.053,-135.331,
 Juneau,"Juneau, Alaska",Juneau,United States,US,Alaska,58.298,-134.42,
 Skagway,"Skagway, Alaska",Skagway,United States,US,Alaska,59.45,-135.327,
 Icy Strait Point,"Icy Strait Point, Alaska",Hoonah,United States,US,Alaska,58.129,-135.461,Hoonah
 Haines,"Haines, Alaska",Haines,United States,US,Alaska,59.235,-135.445,
 Seward,"Seward, Alaska",Seward,United States,US,Alaska,60.119,-149.437,Anchorage
-New York,"New York, New York",New York,United States,US,North America Atlantic,40.768,-74.014,Manhattan|Brooklyn|Bayonne, New Jersey
+New York,"New York, New York",New York,United States,US,North America Atlantic,40.768,-74.014,Manhattan|Brooklyn|Bayonne
 Boston,"Boston, Massachusetts",Boston,United States,US,North America Atlantic,42.344,-71.029,
 Baltimore,"Baltimore, Maryland",Baltimore,United States,US,North America Atlantic,39.266,-76.584,Washington DC
 Norfolk,"Norfolk, Virginia",Norfolk,United States,US,North America Atlantic,36.85,-76.291,
@@ -204,7 +204,7 @@ Hiroshima,"Hiroshima, Japan",Hiroshima,Japan,JP,Japan,34.352,132.455,
 Nagasaki,"Nagasaki, Japan",Nagasaki,Japan,JP,Japan,32.744,129.872,
 Busan,"Busan, South Korea",Busan,South Korea,KR,East Asia,35.1028,129.0403,Pusan|Busan South Korea
 Kagoshima,"Kagoshima, Japan",Kagoshima,Japan,JP,Japan,31.5894,130.5611,
-Halong Bay,"Hạ Long Bay, Vietnam",Hạ Long,Vietnam,VN,Southeast Asia,20.951,107.07,Halong|Ha Long|Hanoi (Ha Long Bay)|HAN
+Halong Bay,"Hạ Long Bay, Vietnam",Hạ Long,Vietnam,VN,Southeast Asia,20.951,107.07,Halong|Ha Long|Hanoi (Ha Long Bay)|HAN|Ha Long Bay
 Da Nang,"Đà Nẵng, Vietnam",Đà Nẵng,Vietnam,VN,Southeast Asia,16.114,108.214,Hue|Hoi An|Danang
 Ho Chi Minh City,"Phu My (Ho Chi Minh City), Vietnam",Phu My,Vietnam,VN,Southeast Asia,10.59,107.01,Saigon|Ho Chi Minh City|Phu My
 Sihanoukville,"Sihanoukville, Cambodia",Sihanoukville,Cambodia,KH,Southeast Asia,10.625,103.523,
@@ -258,13 +258,13 @@ Antalya,"Antalya, Turkey",Antalya,Turkey,TR,Eastern Mediterranean,36.8841,30.705
 Safaga,"Safaga, Egypt",Safaga,Egypt,EG,Red Sea,26.749,33.936,Safaga Egypt
 Sokhna,"Sokhna (Ain Sokhna), Egypt",Ain Sokhna,Egypt,EG,Red Sea,29.65,32.34,Ain Sokhna|El Sokhna|Sokhna Port|Sokhna Egypt
 Great Stirrup Cay,"Great Stirrup Cay, Bahamas",Great Stirrup Cay,Bahamas,BS,Bahamas,25.817,-77.913,NCL Great Stirrup Cay|Great Stirrup Cay Bahamas
-Incheon,"Incheon, South Korea",Incheon,South Korea,KR,East Asia,37.456,126.617,Seoul (Incheon)|Seoul (Incheon), South Korea|Incheon Port
-San Antonio,"San Antonio, Chile",San Antonio,Chile,CL,South America,-33.595,-71.619,Santiago (San Antonio)|Santiago (San Antonio), Chile|San Antonio Chile
+Incheon,"Incheon, South Korea",Incheon,South Korea,KR,East Asia,37.456,126.617,Seoul (Incheon)|Seoul (Incheon)
+San Antonio,"San Antonio, Chile",San Antonio,Chile,CL,South America,-33.595,-71.619,Santiago (San Antonio)|Santiago (San Antonio)
 Jacksonville,"Jacksonville, Florida",Jacksonville,United States,US,Caribbean,30.39,-81.54,JAXPORT|Jacksonville Port
 Philadelphia,"Philadelphia, Pennsylvania",Philadelphia,United States,US,North America Atlantic,39.93,-75.14,Philadelphia Cruise Terminal|PhilaPort
 Dubrovnik,"Dubrovnik, Croatia",Dubrovnik,Croatia,HR,Adriatic,42.6403,18.1083,Dubrovnik Croatia|DBV
 Broome,"Broome, Western Australia",Broome,Australia,AU,Australia,-17.9614,122.2359,Broome Western Australia|Broome Australia|BME
-Greenwich,"Greenwich (London), England",Greenwich,United Kingdom,GB,Northern Europe,51.4826,0.0077,Greenwich London|Greenwich (London), England, United Kingdom|GRW
+Greenwich,"Greenwich (London), England",Greenwich,United Kingdom,GB,Northern Europe,51.4826,0.0077,Greenwich London|Greenwich (London)
 Valletta,"Valletta, Malta",Valletta,Malta,MT,Mediterranean,35.899,14.514,Valletta Malta
 Eastport,"Eastport, Maine",Eastport,United States,US,Canada New England,44.906,-67.0,Eastport Maine
 Motril,"Motril, Spain",Motril,Spain,ES,Mediterranean,36.748,-3.518,Motril Spain
@@ -273,7 +273,7 @@ Portland Maine,"Portland, Maine",Portland,United States,US,Canada New England,43
 Kanazawa,"Kanazawa, Japan",Kanazawa,Japan,JP,Japan,36.561,136.656,Kanazawa Japan
 Akita,"Akita, Japan",Akita,Japan,JP,Japan,39.754,140.059,Akita Japan
 Hakodate,"Hakodate, Japan",Hakodate,Japan,JP,Japan,41.769,140.729,Hakodate Japan
-Shimizu,"Shimizu, Japan",Shimizu,Japan,JP,Japan,35.015,138.489,Mount Fuji (Shimizu)|Mount Fuji (Shimizu), Japan|Shimizu Japan
+Shimizu,"Shimizu, Japan",Shimizu,Japan,JP,Japan,35.015,138.489,Mount Fuji (Shimizu)|Mount Fuji (Shimizu)
 Harvest Caye,"Harvest Caye, Belize",Harvest Caye,Belize,BZ,Caribbean,16.477,-88.186,NCL Harvest Caye|Harvest Caye Belize
 Falmouth Jamaica,"Falmouth, Jamaica",Falmouth,Jamaica,JM,Caribbean,18.493,-77.656,Falmouth Jamaica|Falmouth JA
 La Goulette,"La Goulette, Tunisia",La Goulette,Tunisia,TN,Mediterranean,36.818,10.305,La Goulette Tunisia|Tunis cruise port
@@ -281,14 +281,14 @@ Samana,"Samana, Dominican Republic",Samana,Dominican Republic,DO,Caribbean,19.20
 Kotor,"Kotor, Montenegro",Kotor,Montenegro,ME,Adriatic,42.424,18.771,Kotor Montenegro
 Royal Naval Dockyard,"Royal Naval Dockyard, Bermuda",Sandys,Bermuda,BM,Atlantic Islands,32.329,-64.834,Kings Wharf|King's Wharf|Royal Naval Dockyard Bermuda|WRF
 Bar,"Bar, Montenegro",Bar,Montenegro,ME,Adriatic,42.094,19.088,Bar Montenegro|Bar ME Montenegro
-Le Havre,"Le Havre, France",Le Havre,France,FR,Northern Europe,49.494,0.108,Paris (Le Havre)|Paris (Le Havre), France|Le Havre France
-Zeebrugge,"Zeebrugge, Belgium",Zeebrugge,Belgium,BE,Northern Europe,51.334,3.207,Brussels / Bruges (Zeebrugge)|Brussels / Bruges (Zeebrugge), Belgium|Zeebrugge Belgium
+Le Havre,"Le Havre, France",Le Havre,France,FR,Northern Europe,49.494,0.108,Paris (Le Havre)|Paris (Le Havre)
+Zeebrugge,"Zeebrugge, Belgium",Zeebrugge,Belgium,BE,Northern Europe,51.334,3.207,Brussels / Bruges (Zeebrugge)|Brussels / Bruges (Zeebrugge)
 Maloy,"Måløy, Norway",Maloy,Norway,NO,Norwegian Fjords,61.935,5.113,Maloy Norway|MLY
 Skjolden,"Skjolden, Norway",Skjolden,Norway,NO,Norwegian Fjords,61.157,7.146,Skjolden Norway
 Sakaiminato,"Sakaiminato, Japan",Sakaiminato,Japan,JP,Japan,35.539,133.238,Sakaiminato Japan
 Aomori,"Aomori, Japan",Aomori,Japan,JP,Japan,40.822,140.747,Aomori Japan
 Nagoya,"Nagoya, Japan",Nagoya,Japan,JP,Japan,35.086,136.881,Nagoya Japan
-Sendai,"Sendai, Japan",Sendai,Japan,JP,Japan,38.268,141.022,Sendai (Ishinomaki)|Sendai (Ishinomaki), Japan|Ishinomaki
+Sendai,"Sendai, Japan",Sendai,Japan,JP,Japan,38.268,141.022,Sendai (Ishinomaki)|Sendai (Ishinomaki)
 Maizuru,"Maizuru, Japan",Maizuru,Japan,JP,Japan,35.474,135.386,Maizuru Japan
 Kona,"Kona, Hawaii",Kailua-Kona,United States,US,Hawaii,19.64,-155.996,Kona Hawaii|Kailua-Kona|Kailua Kona
 Melilla,"Melilla, Spain",Melilla,Spain,ES,Mediterranean,35.292,-2.938,Melillia Spain|Melillia
@@ -417,3 +417,28 @@ Alghero,"Alghero, Sardinia",Alghero,Italy,IT,Mediterranean,40.558,8.319,"Alghero
 Bonifacio,"Bonifacio, Corsica",Bonifacio,France,FR,Mediterranean,41.387,9.159,Bonifacio (Corsica)|Bonifacio Corsica
 Sorrento,"Sorrento, Italy",Sorrento,Italy,IT,Campania,40.63,14.377,Sorrento Italy|Sorrento Peninsula
 Paros,"Paros, Greece",Paros,Greece,GR,Eastern Mediterranean,37.085,25.148,Parikia|Paros Greece
+Patmos,"Patmos, Greece",Patmos,Greece,GR,Eastern Mediterranean,37.321,26.547,Patmos Greece|Skala Patmos
+Saint Tropez,"Saint-Tropez, France",Saint-Tropez,France,FR,Mediterranean,43.273,6.639,St Tropez|Saint-Tropez|St. Tropez
+Agios Nikolaos,"Agios Nikolaos, Crete",Agios Nikolaos,Greece,GR,Eastern Mediterranean,35.191,25.715,"Aghios Nikolaos, Crete|Aghios Nikolaos|Agios Nikolaos Crete"
+Klawock,"Klawock, Alaska",Klawock,United States,US,Alaska,55.537,-133.096,"Klawock, Alaska|Klawock Alaska"
+Volos,"Volos, Greece",Volos,Greece,GR,Eastern Mediterranean,39.362,22.942,Volos Greece
+Miyako Iwate,"Miyako, Iwate, Japan",Miyako,Japan,JP,Japan,39.847,141.954,"Miyako, Iwate|Miyako Iwate Japan"
+Palamos,"Palamós, Spain",Palamós,Spain,ES,Mediterranean,41.847,3.129,Palamós|Palamos Spain
+Piran,"Piran, Slovenia",Piran,Slovenia,SI,Adriatic,45.528,13.568,Piran Slovenia
+Sete,"Sète, France",Sète,France,FR,Mediterranean,43.403,3.696,Sète|Sete France
+Brindisi,"Brindisi, Italy",Brindisi,Italy,IT,Mediterranean,40.638,17.946,Brindisi Italy
+Gallipoli,"Gallipoli, Italy",Gallipoli,Italy,IT,Mediterranean,40.056,18.005,Gallipoli Italy|Gallipoli Apulia
+Sibenik,"Sibenik, Croatia",Sibenik,Croatia,HR,Adriatic,43.735,15.895,Šibenik|Sibenik Croatia
+Agropoli,"Agropoli, Italy",Agropoli,Italy,IT,Mediterranean,40.351,14.999,Agropoli Italy
+Canouan,"Canouan, Saint Vincent and the Grenadines",Canouan,Saint Vincent and the Grenadines,VC,Caribbean,12.7,-61.333,Canouan Island|Canouan Grenadines
+Tahuata,"Tahuata, French Polynesia",Tahuata,French Polynesia,PF,South Pacific,-9.933,-139.083,"Tahuata, Marquesas Islands|Vaitahu"
+Skagen,"Skagen, Denmark",Skagen,Denmark,DK,Northern Europe,57.725,10.585,Skagen Denmark
+Syros,"Syros, Greece",Syros,Greece,GR,Eastern Mediterranean,37.444,24.917,Syros Greece|Ermoupoli
+Bordeaux,"Bordeaux, France",Bordeaux,France,FR,Atlantic Europe,44.837,-0.579,Bordeaux France|Pauillac (Bordeaux)
+Naxos,"Naxos, Greece",Naxos,Greece,GR,Eastern Mediterranean,37.103,25.376,Naxos Greece|Naxos Town
+Bodrum,"Bodrum, Turkey",Bodrum,Turkey,TR,Eastern Mediterranean,37.034,27.43,Bodrum Turkey
+Fatu Hiva,"Fatu Hiva, French Polynesia",Fatu Hiva,French Polynesia,PF,South Pacific,-10.483,-138.683,"Fatu Hiva, Marquesas Islands|Omoa"
+Sandakan,"Sandakan, Malaysia",Sandakan,Malaysia,MY,Southeast Asia,5.84,118.118,Sandakan (Sabah)|Sandakan Sabah
+Andalsnes,"Åndalsnes, Norway",Åndalsnes,Norway,NO,Northern Europe,62.567,7.687,Åndalsnes|Andalsnes Norway
+Saint Malo,"Saint-Malo, France",Saint-Malo,France,FR,Atlantic Europe,48.649,-2.026,Saint Malo (Brittany)|St Malo|Saint-Malo Brittany
+Trondheim,"Trondheim, Norway",Trondheim,Norway,NO,Northern Europe,63.431,10.392,Trondheim (Trondelag)|Trondheim Norway
