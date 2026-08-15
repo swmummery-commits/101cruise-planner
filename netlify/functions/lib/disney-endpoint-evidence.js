@@ -127,10 +127,11 @@ function fragmentToEmbarkCandidate(fragment, parsed) {
   if (resolved.status === "resolved") {
     return {
       port: resolved.canonicalPortName,
-      method: "product_name_port_catalogue",
+      method: parsed.method,
       tier: parsed.tier,
       evidence: parsed.evidence,
-      source: "product_title"
+      source: "product_title",
+      port_resolution: "port_catalogue"
     };
   }
   if (/,/.test(fragment)) {
@@ -378,7 +379,9 @@ function extractArrivalFromProductName(productName) {
 function isNativeTitleEndpointMethod(method) {
   return (
     typeof method === "string" &&
-    (method.startsWith("product_name_cruise_from") || method === "product_name_ending_in")
+    (method.startsWith("product_name_cruise_from") ||
+      method === "product_name_ending_in" ||
+      method === "product_name_simple_from")
   );
 }
 
