@@ -1,0 +1,189 @@
+{
+  "source": "ccl_fixture",
+  "results": {
+    "totalResults": 6,
+    "currentPage": 1,
+    "lastPage": 1,
+    "itineraries": [
+      {
+        "id": "BAW_MIA_CQ_3_Fri",
+        "code": "BAW",
+        "itineraryTitle": "3-Day Bahamas Cruise",
+        "dur": 3,
+        "roundtrip": true,
+        "shipCode": "CQ",
+        "shipName": "Carnival Conquest",
+        "departurePortName": "Miami, FL",
+        "departurePortCode": "MIA",
+        "regionCode": "BH",
+        "regionName": "The Bahamas",
+        "portsToDisplay": ["Miami", "Celebration Key"],
+        "itineraryURL": "/itinerary/3-day-the-bahamas-cruise/miami/conquest/3-days/baw",
+        "leadSailing": { "departureDate": "2026-09-28T00:00:00.000Z" },
+        "sailings": [
+          {
+            "sailingId": "22229",
+            "departureDate": "2026-09-06T00:00:00.000Z",
+            "arrivalDate": "2026-09-09T00:00:00.000Z",
+            "sailingURL": "/booking?sailingID=22229",
+            "rooms": { "interior": { "soldOut": false }, "suite": { "soldOut": true } }
+          },
+          {
+            "sailingId": "22233",
+            "departureDate": "2026-09-25T00:00:00.000Z",
+            "arrivalDate": "2026-09-28T00:00:00.000Z",
+            "sailingURL": "/booking?sailingID=22233",
+            "rooms": { "interior": { "soldOut": false } }
+          },
+          {
+            "sailingId": "22229",
+            "departureDate": "2026-09-06T00:00:00.000Z",
+            "arrivalDate": "2026-09-09T00:00:00.000Z",
+            "sailingURL": "/booking?sailingID=22229-dup",
+            "rooms": { "interior": { "soldOut": false } }
+          }
+        ]
+      },
+      {
+        "id": "BAV_MIA_CQ_3_Fri",
+        "code": "BAV",
+        "itineraryTitle": "3-Day Bahamas Alternate Code",
+        "dur": 3,
+        "roundtrip": true,
+        "shipCode": "CQ",
+        "shipName": "Carnival Conquest",
+        "departurePortName": "Miami, FL",
+        "departurePortCode": "MIA",
+        "regionCode": "BH",
+        "regionName": "The Bahamas",
+        "portsToDisplay": ["Miami", "Celebration Key"],
+        "itineraryURL": "/itinerary/alt",
+        "sailings": [
+          {
+            "sailingId": "99001",
+            "departureDate": "2026-09-06T00:00:00.000Z",
+            "arrivalDate": "2026-09-09T00:00:00.000Z",
+            "sailingURL": "/booking?sailingID=99001",
+            "rooms": { "interior": { "soldOut": false } }
+          }
+        ]
+      },
+      {
+        "id": "MDG_PCV_MD_7_Sat",
+        "code": "MDG",
+        "itineraryTitle": "7-Day Eastern Caribbean",
+        "dur": 7,
+        "roundtrip": true,
+        "shipCode": "MD",
+        "shipName": "Mardi Gras",
+        "departurePortName": "Port Canaveral (Orlando), FL",
+        "departurePortCode": "PCV",
+        "regionCode": "C",
+        "regionName": "Caribbean",
+        "portsToDisplay": ["Port Canaveral", "San Juan"],
+        "itineraryURL": "/itinerary/mardi-gras",
+        "sailings": [
+          {
+            "sailingId": "88001",
+            "departureDate": "2026-10-10T00:00:00.000Z",
+            "arrivalDate": "2026-10-17T00:00:00.000Z",
+            "sailingURL": "/booking?sailingID=88001",
+            "rooms": { "interior": { "soldOut": false } }
+          }
+        ]
+      },
+      {
+        "id": "SYD_SL_10",
+        "code": "SY1",
+        "itineraryTitle": "10-Day Australia Cruise",
+        "dur": 10,
+        "roundtrip": true,
+        "shipCode": "SL",
+        "shipName": "Carnival Splendor",
+        "departurePortName": "Sydney, Australia",
+        "departurePortCode": "SYD",
+        "regionCode": "U",
+        "regionName": "Australia",
+        "portsToDisplay": ["Sydney", "Brisbane"],
+        "itineraryURL": "/itinerary/splendor",
+        "sailings": [
+          {
+            "sailingId": "77001",
+            "departureDate": "2026-11-01T00:00:00.000Z",
+            "arrivalDate": "2026-11-11T00:00:00.000Z",
+            "sailingURL": "/booking?sailingID=77001",
+            "rooms": { "interior": { "soldOut": false } }
+          }
+        ]
+      },
+      {
+        "id": "BRZ_GAL_BR_5",
+        "code": "BRZ",
+        "itineraryTitle": "5-Day Western Caribbean",
+        "dur": 5,
+        "roundtrip": true,
+        "shipCode": "BR",
+        "shipName": "Carnival Breeze",
+        "departurePortName": "Galveston, TX",
+        "departurePortCode": "GAL",
+        "regionCode": "C",
+        "regionName": "Caribbean",
+        "portsToDisplay": ["Galveston", "Cozumel"],
+        "itineraryURL": "/itinerary/breeze",
+        "sailings": [
+          {
+            "sailingId": "66001",
+            "departureDate": "2026-12-01T00:00:00.000Z",
+            "arrivalDate": "2026-12-06T00:00:00.000Z",
+            "sailingURL": "/booking?sailingID=66001",
+            "rooms": { "interior": { "soldOut": false } }
+          }
+        ]
+      },
+      {
+        "id": "GET_SYD_AQ_3",
+        "code": "GET",
+        "itineraryTitle": "3-Day Getaway Cruise",
+        "dur": 3,
+        "roundtrip": true,
+        "shipCode": "AQ",
+        "shipName": "Carnival Adventure",
+        "departurePortName": "Hong Kong\n\n\n",
+        "departurePortCode": "HKG",
+        "regionCode": "GE",
+        "regionName": "Getaway",
+        "portsToDisplay": ["Hong Kong"],
+        "itineraryURL": "/itinerary/getaway",
+        "sailings": [
+          {
+            "sailingId": "55001",
+            "departureDate": "2026-09-06T00:00:00.000Z",
+            "arrivalDate": "2026-09-09T00:00:00.000Z",
+            "sailingURL": "/booking?sailingID=55001",
+            "rooms": { "interior": { "soldOut": true }, "oceanview": { "soldOut": true } }
+          }
+        ]
+      },
+      {
+        "id": "LEAD_ONLY_GROUP",
+        "code": "LED",
+        "itineraryTitle": "Lead Only Should Not Expand",
+        "dur": 3,
+        "roundtrip": true,
+        "shipCode": "CQ",
+        "shipName": "Carnival Conquest",
+        "departurePortName": "Miami, FL",
+        "departurePortCode": "MIA",
+        "regionCode": "BH",
+        "regionName": "The Bahamas",
+        "portsToDisplay": ["Miami"],
+        "itineraryURL": "/itinerary/lead-only",
+        "leadSailing": {
+          "departureDate": "2026-12-20T00:00:00.000Z",
+          "arrivalDate": "2026-12-23T00:00:00.000Z"
+        },
+        "sailings": []
+      }
+    ]
+  }
+}

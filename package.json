@@ -63,6 +63,8 @@
     "silversea:phase4-port-remediation": "node scripts/run-silversea-phase4-port-remediation.mjs",
     "silversea:phase4a-canonical-ports": "node scripts/run-silversea-phase4a-canonical-ports.mjs",
     "silversea:first-controlled-batch": "node scripts/run-silversea-first-controlled-batch.mjs",
+    "simulate:carnival-discovery": "node scripts/simulate-carnival-discovery.mjs",
+    "test:carnival-discovery": "node scripts/test-carnival-discovery.mjs",
     "simulate:seabourn-discovery": "node scripts/simulate-seabourn-discovery.mjs",
     "simulate:norwegian-discovery": "node scripts/simulate-norwegian-discovery.mjs",
     "test:explora-discovery": "node scripts/test-explora-discovery.mjs",
