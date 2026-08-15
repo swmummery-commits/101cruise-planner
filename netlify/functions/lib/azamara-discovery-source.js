@@ -110,6 +110,7 @@ function enrichStructuredVoyageFromHtml(structuredVoyage, html, url) {
   if (gtm.ship_name && !next.ship_name) next.ship_name = gtm.ship_name;
   if (gtm.cruise_name && !next.title) next.title = gtm.cruise_name;
   if (gtm.destination && !next.description) next.description = `Destination: ${gtm.destination}`;
+  if (gtm.destination) next.gtm_destination = gtm.destination;
   if (!next.url && url) next.url = url;
   return next;
 }
@@ -131,8 +132,35 @@ function validateAzamaraOceanDuration(candidate) {
   return reasons;
 }
 
-function azamaraPreBuildGate({ cruiseLine, url, title, description, structuredVoyage, officialSailingId }) {
+function azamaraStaleSourceGate({ html, title, structuredVoyage, url } = {}) {
+  if (!html) return null;
+  const gtm = extractAzamaraGtmFromHtml(html);
+  const pageTitle =
+    title ||
+    gtm.cruise_name ||
+    (html.match(/<title>([^<]+)/i) || [])[1] ||
+    "";
+  const genericHomepage = /Award-Winning Small Ship Cruise Line/i.test(pageTitle);
+  const missingSailingSignals = !gtm.package_code && !gtm.nights && !gtm.gtm_duration && !gtm.ship_name;
+  if (genericHomepage && missingSailingSignals) {
+    return {
+      skip: true,
+      reason: "source_stale_or_unavailable",
+      signalScore: 0,
+      diagnostics: {
+        azamara_source_status: "stale_sitemap_or_homepage",
+        url: url || null,
+        page_title: pageTitle.slice(0, 120)
+      }
+    };
+  }
+  return null;
+}
+
+function azamaraPreBuildGate({ cruiseLine, url, title, description, structuredVoyage, officialSailingId, html }) {
   if (!isAzamaraCruiseLine(cruiseLine)) return null;
+  const stale = azamaraStaleSourceGate({ html, title, structuredVoyage, url });
+  if (stale) return stale;
   const product = classifyAzamaraProduct({
     packageCode: structuredVoyage?.package_code || structuredVoyage?.voyage_id,
     url,
@@ -165,5 +193,6 @@ module.exports = {
   enrichStructuredVoyageFromHtml,
   mergeAzamaraStructuredVoyage,
   validateAzamaraOceanDuration,
-  azamaraPreBuildGate
+  azamaraPreBuildGate,
+  azamaraStaleSourceGate
 };

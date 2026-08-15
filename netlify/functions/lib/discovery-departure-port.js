@@ -68,6 +68,43 @@ function cleanPortFragment(value) {
     .slice(0, 120);
 }
 
+/** Prose tokens that indicate a string is not a structural port route pair. */
+const ROUTE_PAIR_PROSE_RE =
+  /\b(cruise|voyage|journey|expedition|itinerary|welcome|through|with|during|aboard|sailing|explore|discover|days|nights|from the|to the)\b/i;
+
+/**
+ * When source text is a structural route pair "X to Y", return embark port X.
+ * Returns input unchanged when not a route pair (avoids splitting arbitrary prose).
+ */
+function parseRouteEmbarkPort(rawValue) {
+  const raw = cleanPortFragment(rawValue);
+  if (!raw) return raw;
+  const route = raw.match(
+    /^([A-Z0-9][A-Za-z0-9 .'()/&-]{1,70}?)\s+to\s+([A-Z0-9][A-Za-z0-9 .'()/&-]{1,70})$/i
+  );
+  if (!route) return raw;
+  const from = cleanPortFragment(route[1]);
+  const to = cleanPortFragment(route[2]);
+  if (!from || !to) return raw;
+  if (ROUTE_PAIR_PROSE_RE.test(from) || ROUTE_PAIR_PROSE_RE.test(to)) return raw;
+  if (from.length < 3 || to.length < 3) return raw;
+  return from;
+}
+
+function parseRoutePortPair(rawValue) {
+  const raw = cleanPortFragment(rawValue);
+  if (!raw) return null;
+  const route = raw.match(
+    /^([A-Z0-9][A-Za-z0-9 .'()/&-]{1,70}?)\s+to\s+([A-Z0-9][A-Za-z0-9 .'()/&-]{1,70})$/i
+  );
+  if (!route) return null;
+  const from = cleanPortFragment(route[1]);
+  const to = cleanPortFragment(route[2]);
+  if (!from || !to) return null;
+  if (ROUTE_PAIR_PROSE_RE.test(from) || ROUTE_PAIR_PROSE_RE.test(to)) return null;
+  return { from, to };
+}
+
 function isRejectedPortText(value, context = {}) {
   const raw = cleanPortFragment(value);
   if (!raw) return { rejected: true, reason: "empty" };
@@ -95,7 +132,7 @@ function isRejectedPortText(value, context = {}) {
 }
 
 function resolveRawPortText(rawValue, context = {}) {
-  const raw = cleanPortFragment(rawValue);
+  const raw = parseRouteEmbarkPort(cleanPortFragment(rawValue));
   if (!raw) {
     return {
       rawValue: raw,
@@ -169,6 +206,23 @@ function extractFromTitleRoute(title) {
   return { value: from, sourceField: "title.route_from" };
 }
 
+function extractFromRoutePair(text, sourceFieldPrefix) {
+  const blob = String(text || "");
+  if (!blob.trim()) return null;
+  const patterns = [
+    /\bfrom\s+([A-Z0-9][A-Za-z0-9 .'()/&-]{2,70}?)\s+to\s+([A-Z0-9][A-Za-z0-9 .'()/&-]{2,70})(?:\s+on\b|[.,]|$)/i,
+    /\bFROM\s+([A-Z0-9][A-Za-z0-9 .'()/&-]{2,70}?)\s+TO\s+([A-Z0-9][A-Za-z0-9 .'()/&-]{2,70})(?:\s+ON\b|[.,]|$)/
+  ];
+  for (const re of patterns) {
+    const match = blob.match(re);
+    if (!match) continue;
+    const from = cleanPortFragment(match[1]);
+    if (!from) continue;
+    return { value: from, sourceField: `${sourceFieldPrefix}.route_pair`, routeTo: cleanPortFragment(match[2]) };
+  }
+  return null;
+}
+
 function extractFromStrongPhrases(text, sourceFieldPrefix) {
   const blob = String(text || "");
   if (!blob.trim()) return null;
@@ -182,7 +236,7 @@ function extractFromStrongPhrases(text, sourceFieldPrefix) {
       field: "description_cruise_from"
     },
     {
-      re: /\b(?:\d{1,2}[- ]?night(?:s)?\s+)?(?:cruise|voyage)\s+from\s+([A-Z0-9][^.\n]{2,80}?)(?:\s+via\b|\s+on\b|[.,]|$)/i,
+      re: /\b(?:\d{1,2}[- ]?night(?:s)?\s+)?(?:cruise|voyage)\s+from\s+([A-Z0-9][^.\n]{2,80}?)(?:\s+via\b|\s+on\b|\s+to\b|[.,]|$)/i,
       field: "cruise_from"
     }
   ];
@@ -234,6 +288,9 @@ function extractDepartureCandidates(source = {}) {
   };
 
   push(extractFromTitleRoute(source.title));
+  push(extractFromRoutePair(source.description, "description"));
+  push(extractFromRoutePair(source.excerpt, "excerpt"));
+  push(extractFromRoutePair(source.title, "title"));
   push(extractFromStrongPhrases(source.description, "description"));
   push(extractFromStrongPhrases(source.excerpt, "excerpt"));
   push(extractFromStrongPhrases(source.title, "title"));
@@ -488,6 +545,8 @@ module.exports = {
   loadPortsCatalogue,
   resetPortsCache,
   isRejectedPortText,
+  parseRouteEmbarkPort,
+  parseRoutePortPair,
   resolveRawPortText,
   extractDepartureCandidates,
   resolveDepartureFromSource,
