@@ -668,6 +668,24 @@
       `;
   }
 
+  function includesMobileCss() {
+    return `
+    .cr101-includes-items {
+      width: 100% !important;
+      text-align: center !important;
+    }
+    .cr101-includes-item,
+    .cr101-includes-divider {
+      display: inline-block !important;
+      width: 46% !important;
+      max-width: 140px !important;
+      border-left: 0 !important;
+      padding: 8px 6px !important;
+      vertical-align: top !important;
+    }
+`;
+  }
+
   function classicStyleBlock() {
     return `
 <style type="text/css">
@@ -680,10 +698,7 @@
       border-right: 0 !important;
       border-bottom: 1px solid #e5ebe8 !important;
     }
-    .cr101-includes-item {
-      display: inline-block !important;
-      width: 30% !important;
-    }
+    ${includesMobileCss()}
     .cr101-wrapper {
       width: 100% !important;
     }
@@ -708,10 +723,7 @@
     .cr101-gpc-card {
       width: 100% !important;
     }
-    .cr101-includes-item {
-      display: inline-block !important;
-      width: 30% !important;
-    }
+    ${includesMobileCss()}
     .cr101-wrapper {
       width: 100% !important;
     }

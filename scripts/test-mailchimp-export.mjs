@@ -372,6 +372,8 @@ assert(/background-color:#D9F2E8/i.test(threeRoomGreen.html), "Other Info soft m
 assert(/INCLUDES:/i.test(threeRoomGreen.html), "Includes title uses colon");
 assert(/color:#245C4E/i.test(threeRoomGreen.html), "Includes/Other Info use dark brand green text");
 assert(/cr101-includes-items/i.test(threeRoomGreen.html), "Includes uses icon item row");
+assert(/text-align: center !important/i.test(threeRoomGreen.html), "mobile Includes row is centred");
+assert(/border-left: 0 !important/i.test(threeRoomGreen.html), "mobile Includes hides vertical dividers");
 assert(
   /images\/newsletter-includes\/wifi\.png/i.test(threeRoomGreen.html),
   "Includes icons are hosted PNGs"

@@ -528,6 +528,10 @@
     max-width: 88px;
     padding: 2px 4px;
   }
+
+  .nl-includes-item:not(:last-child) {
+    border-right: none;
+  }
 }
 
 @media (max-width: 520px) {
