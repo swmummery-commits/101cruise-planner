@@ -287,7 +287,8 @@ async function applyDisneyBatchWritesBody({
       const result = await upsertCandidateRecord(candidate, upsertStats, {
         matchPolicy: "official_sailing_id_only",
         syncDestinationLinks: false,
-        prevRecord: null
+        prevRecord: null,
+        globalWriteLockOwnerId: runId
       });
 
       if (!result.created) {
@@ -358,11 +359,12 @@ function verifyInsertedRecords(insertedRows, frozenEntriesById, cruiseLineId) {
     ];
     const mismatches = checks.filter(([, live, expected]) => String(live ?? "") !== String(expected ?? ""));
     const raw = row.raw_extract || {};
-    const rawOk =
+    const rawOk = Boolean(
       raw.disney_sailing_id &&
-      raw.disney_official_product_key &&
-      raw.disney_adapter_id &&
-      raw.disney_adapter_version;
+        raw.disney_official_product_key &&
+        raw.disney_adapter_id &&
+        raw.disney_adapter_version
+    );
 
     const ok = mismatches.length === 0 && rawOk;
     if (ok) verified += 1;

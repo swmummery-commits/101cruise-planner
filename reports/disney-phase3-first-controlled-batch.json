@@ -1,0 +1,163 @@
+{
+  "phase": "3",
+  "starting_sha": "cc2a1ae490f4d99562d5ed29210a80892133e7ae",
+  "tooling_commit_sha": "9698e161025bf7d89aecffbaefb9f49128c98e04",
+  "apply_sha": "9698e161025bf7d89aecffbaefb9f49128c98e04",
+  "report_commit_sha": null,
+  "endpoint_hardening": {
+    "dd1568_title": "4-Night Eastern Caribbean Cruise from San Juan to Port Canaveral",
+    "parsed_embark": "San Juan",
+    "parsed_arrival": "Port Canaveral",
+    "all_one_way_native_endpoint_parse": true,
+    "unresolved_endpoint_conflicts": 0,
+    "one_way_audit_total": 11,
+    "one_way_audit_passed": 11
+  },
+  "source_snapshot": {
+    "unique_sailings": 651,
+    "complete": true,
+    "identity_collisions": 0,
+    "ship_resolution_pct": 100,
+    "embark_resolution_pct": 100,
+    "arrival_resolution_pct": 100,
+    "destination_resolution_pct": 100,
+    "duration_integrity_pct": 100
+  },
+  "frozen_batch": {
+    "size": 20,
+    "identities": [
+      "DA0076|2026-09-07",
+      "DD1514|2026-09-07",
+      "DD1515|2026-09-14",
+      "DD1568|2027-04-23",
+      "DF0824|2026-09-06",
+      "DF0895|2027-07-11",
+      "DM1747|2026-09-17",
+      "DM1792|2027-04-25",
+      "DW2210|2026-10-27",
+      "WD0064|2026-09-07",
+      "WT0091|2026-09-12",
+      "WT0092|2026-09-19",
+      "WT0093|2026-09-26",
+      "WT0094|2026-10-03",
+      "WT0095|2026-10-10",
+      "WT0096|2026-10-17",
+      "WT0097|2026-10-24",
+      "WT0098|2026-10-31",
+      "WW0578|2027-05-29",
+      "WW0579|2027-06-07"
+    ],
+    "candidate_hash": "eccdc4df2d6fa64d743da891a2387681e4fa3e56c6550ba7fea05a11e6c391fa",
+    "adapter_version": "2026-08-15.dcl2a.3",
+    "current_perth_date": "2026-08-15",
+    "phase2d_hash_rejected": true,
+    "phase2d_obsolete_hash": "29eec188212e19502c910f02987d00b2be8b6478a9d12f9ea237aa347b6a548d"
+  },
+  "prewrite_state": {
+    "disney_total": 6,
+    "disney_active": 0,
+    "disney_hidden": 1,
+    "disney_match_required": 5,
+    "disney_legacy_rows": 6,
+    "selected_existing_matches": 0,
+    "external_key_collisions": 0,
+    "identity_key_collisions": 0
+  },
+  "global_lock": {
+    "global_lock_required": true,
+    "global_lock_acquired": true,
+    "note": "First apply completed 20 inserts; script reported maintenance_lock_owner_mismatch after writes. Second apply correctly blocked with idempotency collisions."
+  },
+  "under_lock_recheck": {
+    "performed": true,
+    "passed_on_first_apply": true
+  },
+  "write_result": {
+    "attempted": 20,
+    "inserted": 20,
+    "updated": 0,
+    "duplicate_skips": 0,
+    "failed": 0,
+    "deletes": 0,
+    "deactivations": 0,
+    "inserted_record_ids": [
+      "36956278-62f0-46c8-94fd-caf5c94e2099",
+      "621d41ae-40d4-4617-9f34-a9115e944853",
+      "cbb25f11-ce7c-443e-94f3-e9caaed5e3fc",
+      "f0b17d9c-567f-4181-a3cc-a9f00ab5f8f7",
+      "3e659f17-38b3-4968-aebe-cbe9a322381a",
+      "a4c83b39-a248-4293-878a-39eeadf77883",
+      "e23991ae-5675-41c9-a80c-14e6a27f9afb",
+      "36931910-3b6e-46b0-b2b3-5fa2bf82dff8",
+      "f7e6bc57-29d4-4833-8f3a-0e3b551737ab",
+      "74e77dd4-6171-4cca-a955-391c92b061bd",
+      "2e38207f-b5ca-467d-99ac-f4b1dbff514e",
+      "6f9e5ea3-bf33-4310-aa09-19b9ce4954d6",
+      "ef386942-3bad-4edf-a0f0-10776519ae1d",
+      "d5e57a78-285f-4e63-be9f-be29aa2cf1eb",
+      "76343ea4-73fb-4822-8fa1-8e4ffd82b144",
+      "11203a97-743c-493d-825f-96a327de3aef",
+      "aa8a89bd-8905-49a0-8189-4a9e3b5e05ae",
+      "2d0ee75d-426c-4375-9463-dcbf227208e7",
+      "9d122cc1-58bb-49af-8803-2888943ee665",
+      "30ff3aef-fa35-45d4-8f82-bb1924d08fb3"
+    ]
+  },
+  "post_write_verification": {
+    "verified_count": 20,
+    "failed_count": 0,
+    "passed": true
+  },
+  "duplicate_verification": {
+    "passed": true,
+    "unique_official_sailing_id": true,
+    "unique_external_key": true,
+    "unique_identity_key": true,
+    "legacy_overlap_count": 0
+  },
+  "count_reconciliation": {
+    "passed": true,
+    "disney_total_before": 6,
+    "disney_total_after": 26,
+    "disney_active_before": 0,
+    "disney_active_after": 20,
+    "disney_total_delta": 20,
+    "disney_active_delta": 20,
+    "global_total_before": 13518,
+    "global_total_after": 13538,
+    "global_total_delta": 20,
+    "sentinel_unchanged": true
+  },
+  "legacy_row_immutability": {
+    "passed": true,
+    "unchanged_count": 6,
+    "expected": 6
+  },
+  "rollback_manifest": {
+    "run_id": "disney-phase3-first-2026-08-15",
+    "cruise_line_id": "8f7aadcb-7843-4060-b0cb-a60631936b3a",
+    "line_slug": "disney-cruise-line",
+    "inserted_count": 20,
+    "intent": "delete_exactly_inserted_ids_if_explicitly_approved"
+  },
+  "post_write_read_only_reconciliation": {
+    "remaining_proposed_inserts": 603,
+    "selected_twenty_classified_as": "duplicate_skip",
+    "update_proposals_for_selected_twenty": 0,
+    "note": "Full manifest reconciliation confirms inserted identities classify duplicate_skip against current production (verified DD1568 explicitly)."
+  },
+  "tests": {
+    "test_disney_discovery": "126 passed",
+    "test_disney_controlled_batch": "21 passed",
+    "test_public_booking_cutoff": "17 passed",
+    "test_discovery_inventory": "15 passed",
+    "test_discovery_non_sailing_filter": "16 passed",
+    "test_discovery_departure_port": "2 pre-existing unrelated failures documented"
+  },
+  "quality_gate": {
+    "passed": true,
+    "ready_for_catchup": true
+  },
+  "blockers": [],
+  "recommendation": "Phase 3 first controlled batch complete. Catch-up batches remain a separate authorised step."
+}

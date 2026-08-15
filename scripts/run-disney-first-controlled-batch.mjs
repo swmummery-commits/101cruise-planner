@@ -388,15 +388,14 @@ export async function runDisneyFirstControlledBatch(options = {}) {
         }
       },
       async () =>
-        writes.applyDisneyBatchWrites({
+        writes.applyDisneyBatchWritesBody({
           selectedProducts: selection.selected,
           frozenEntriesById,
           cruiseLine: ctx.line,
           runId,
           supabase: sb,
           performWrites: true,
-          maxWrites: controlled.MAX_CONTROLLED_DISNEY_BATCH,
-          operation: "disney_first_controlled_batch"
+          maxWrites: controlled.MAX_CONTROLLED_DISNEY_BATCH
         })
     );
 
@@ -447,7 +446,7 @@ export async function runDisneyFirstControlledBatch(options = {}) {
 
   const insertedRows = insertedIds.length
     ? await sb(
-        `discovered_cruises?id=in.(${insertedIds.map((id) => `"${id}"`).join(",")})&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,arrival_port,status,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract`
+        `discovered_cruises?id=in.(${insertedIds.map((id) => `"${id}"`).join(",")})&select=id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,status,official_sailing_id,identity_key,external_key,source_url,official_url,raw_extract`
       )
     : [];
 

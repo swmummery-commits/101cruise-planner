@@ -32,7 +32,7 @@ const SENTINEL_LINE_SLUGS = Object.freeze([
   "princess-cruises",
   "celebrity-cruises",
   "holland-america-line",
-  "seabourn",
+  "seabourn-cruise-line",
   "norwegian-cruise-line",
   "royal-caribbean-international",
   "carnival-cruise-line"
