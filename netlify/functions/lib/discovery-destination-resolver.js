@@ -14,7 +14,7 @@ const { portHintsForText, scoreDestinationsFromPortHints } = require("./destinat
 const DESTINATION_RESOLVER_VERSION = "2026-08-02.operational4";
 
 function slugForDestination(destinations, slugNeedle) {
-  const needle = normaliseName(slugNeedle).replace(/\s+/g, "-");
+  const needle = normaliseName(slugNeedle);
   return classificationDestinations(destinations).find((d) => normaliseName(d.slug) === needle) || null;
 }
 

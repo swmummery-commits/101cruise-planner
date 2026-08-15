@@ -68,6 +68,7 @@
     "silversea:first-controlled-batch": "node scripts/run-silversea-first-controlled-batch.mjs",
     "simulate:carnival-discovery": "node scripts/simulate-carnival-discovery.mjs",
     "test:carnival-discovery": "node scripts/test-carnival-discovery.mjs",
+    "remediate:carnival-reference-data": "node scripts/remediate-carnival-reference-data.mjs",
     "simulate:seabourn-discovery": "node scripts/simulate-seabourn-discovery.mjs",
     "simulate:norwegian-discovery": "node scripts/simulate-norwegian-discovery.mjs",
     "test:explora-discovery": "node scripts/test-explora-discovery.mjs",

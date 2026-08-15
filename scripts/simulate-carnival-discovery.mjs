@@ -134,7 +134,7 @@ async function main() {
     quality_gate_metrics: simulation.quality_gate_metrics,
     remediation_rankings: simulation.remediation_rankings,
     trust_decision:
-      "carnival-structured-source-trust.js unchanged — CCL API trust registration deferred to production-hardening phase; simulation resolves references without requiring structured trust."
+      "ccl_cruisesearch_api registered in carnival-structured-source-trust.js; simulation resolves references without requiring structured trust for read-only mode."
   };
 
   fs.mkdirSync(REPORT_DIR, { recursive: true });

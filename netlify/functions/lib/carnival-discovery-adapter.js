@@ -14,6 +14,10 @@ const { evaluateDiscoveryConfidence } = require("./discovery-confidence");
 const { provesIndividualSailing } = require("./discovery-non-sailing-filter");
 const { catalogueDestinations } = require("./holland-america-discovery-adapter");
 const {
+  CCL_REGION_CODE_SLUG,
+  resolveCclDestinationHints
+} = require("./carnival-destination-mapping");
+const {
   ADAPTER_ID,
   ADAPTER_VERSION,
   SOURCE_CONTRACT,
@@ -27,41 +31,6 @@ const {
   PUBLIC_BOOKING_CUTOFF_DAYS,
   perthCalendarDate
 } = require("./public-discovered-cruise-inventory");
-
-/** Official Carnival region codes from AU search API. */
-const CCL_REGION_CODE_SLUG = Object.freeze({
-  A: "alaska",
-  AJ: "transpacific",
-  BH: "caribbean",
-  BI: "british-isles",
-  BM: null,
-  C: "caribbean",
-  CE: "caribbean",
-  CP: "caribbean",
-  CS: "caribbean",
-  CW: "caribbean",
-  E: "mediterranean",
-  EN: "northern-europe",
-  ES: "northern-europe",
-  ET: "transatlantic",
-  H: "hawaii",
-  M: "mexican-riviera",
-  MB: "mexican-riviera",
-  ME: "mediterranean",
-  MR: "mexican-riviera",
-  NN: "canada-new-england",
-  NO: null,
-  NZ: "australia-new-zealand",
-  O: "south-pacific",
-  S: "south-america",
-  SA: "australia-new-zealand",
-  T: "panama-canal",
-  TH: "transpacific",
-  TP: "transpacific",
-  U: "australia-new-zealand",
-  X: "asia",
-  XS: "asia"
-});
 
 const PRIMARY_EXCLUSION_ORDER = [
   "source_invalid",
@@ -277,19 +246,40 @@ function dedupeExpandedSailings(products) {
   };
 }
 
-function resolveCclDestinationHints(raw) {
-  const code = String(raw?.region_code || raw?.regionCode || "").trim().toUpperCase();
-  const slug = code ? CCL_REGION_CODE_SLUG[code] : null;
-  if (slug) return { preferredSlug: slug, method: `ccl_region_code_${code}` };
-
-  const label = String(raw?.region_name || raw?.regionName || "").trim();
-  if (label) return { structuredDestination: label, method: "ccl_region_name" };
-  return {};
-}
-
 function resolveCclDeparturePort(raw) {
+  const code = String(raw?.departure_port_code || raw?.departurePortCode || "").trim().toUpperCase();
   const name = cleanPortText(raw?.departure_port_name || raw?.departurePortName);
-  return resolveRawPortText(name || raw?.departure_port_code, { sourceField: SOURCE_ID });
+  const portsToDisplay = Array.isArray(raw?.ports_to_display || raw?.portsToDisplay)
+    ? raw.ports_to_display || raw.portsToDisplay
+    : [];
+
+  if (code === "MOB" || /^mobile,\s*al$/i.test(name)) {
+    const mobile = resolveRawPortText("Mobile, Alabama", { sourceField: SOURCE_ID });
+    if (mobile.status === "resolved") {
+      return {
+        ...mobile,
+        resolution_method: "ccl_embark_port_code_MOB"
+      };
+    }
+  }
+
+  if (code === "LON" || /^london,\s*england$/i.test(name)) {
+    const firstPort = cleanPortText(portsToDisplay[0]);
+    const doverEvidence =
+      /^dover\b/i.test(firstPort) ||
+      portsToDisplay.some((port) => /^dover\s*\(london\)/i.test(cleanPortText(port)));
+    if (doverEvidence) {
+      const dover = resolveRawPortText("Dover, England", { sourceField: SOURCE_ID });
+      if (dover.status === "resolved") {
+        return {
+          ...dover,
+          resolution_method: "ccl_lon_dover_itinerary_evidence"
+        };
+      }
+    }
+  }
+
+  return resolveRawPortText(name || code, { sourceField: SOURCE_ID });
 }
 
 function assessSourceValidity(raw) {
