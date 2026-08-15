@@ -38,8 +38,7 @@ const REGION_BLOCKLIST = new Set(
     "glacier majesty",
     "japanese grace",
     "the virgin way",
-    "inside passage",
-    "hubbard glacier"
+    "inside passage"
   ].map(normaliseName)
 );
 

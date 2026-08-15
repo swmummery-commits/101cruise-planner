@@ -179,6 +179,15 @@ function classifyItineraryStopKind(portName) {
   if (!name) return "unknown";
   if (/^(day at sea|at sea|sea day)$/i.test(name)) return "sea";
   if (/^cruis(e|ing)\b/i.test(name) || /\bcruising\b/i.test(name)) return "scenic";
+  if (/^tracy arm\b/i.test(name)) return "scenic";
+  if (/^icy bay\b/i.test(name)) return "scenic";
+  if (/\bcanal transit\b/i.test(name)) return "scenic";
+  if (/\bstrait passage\b/i.test(name)) return "scenic";
+  if (/\bfjord\s*&\s*glacier\b/i.test(name)) return "scenic";
+  if (/^suez canal transit\b/i.test(name)) return "scenic";
+  if (/\binside passage\b/i.test(name)) return "scenic";
+  if (/\bscenic cruising\b/i.test(name)) return "scenic";
+  if (/\bfjord cruising\b/i.test(name)) return "scenic";
   return "port";
 }
 

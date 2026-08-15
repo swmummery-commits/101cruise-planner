@@ -24,7 +24,7 @@ Genoa,"Genoa, Italy",Genoa,Italy,IT,Mediterranean,44.4084,8.9322,Genova
 Savona,"Savona, Italy",Savona,Italy,IT,Mediterranean,44.3091,8.4772,
 Naples,"Naples, Italy",Naples,Italy,IT,Mediterranean,40.84,14.255,Napoli|Pompeii|Capri
 Salerno,"Salerno (Amalfi Coast), Italy",Salerno,Italy,IT,Mediterranean,40.672,14.7681,Amalfi Coast|Pompeii
-Messina,"Messina, Sicily",Messina,Italy,IT,Mediterranean,38.1938,15.556,Sicily|Taormina
+Messina,"Messina, Sicily",Messina,Italy,IT,Mediterranean,38.1938,15.556,Sicily|Taormina|Giardini Naxos (Sicily)|Giardini Naxos
 Palermo,"Palermo, Sicily",Palermo,Italy,IT,Mediterranean,38.126,13.3698,Sicily
 Catania,"Catania, Sicily",Catania,Italy,IT,Mediterranean,37.4996,15.0893,Sicily|Mount Etna
 Syracuse,"Syracuse, Sicily",Syracuse,Italy,IT,Mediterranean,37.063,15.29,Siracusa|Sicily
@@ -97,7 +97,7 @@ St Thomas,"Charlotte Amalie, St Thomas",Charlotte Amalie,U.S. Virgin Islands,VI,
 St Croix,"St Croix, U.S. Virgin Islands",Frederiksted,U.S. Virgin Islands,VI,Caribbean,17.712,-64.883,Frederiksted|Christiansted
 Philipsburg,"Philipsburg, St Maarten",Philipsburg,Sint Maarten,SX,Caribbean,18.013,-63.046,St Maarten|Saint Martin
 Basseterre,"Basseterre, St Kitts",Basseterre,Saint Kitts and Nevis,KN,Caribbean,17.295,-62.723,St Kitts
-St Johns Antigua,"St John’s, Antigua",St John’s,Antigua and Barbuda,AG,Caribbean,17.121,-61.844,Antigua|St Johns
+St Johns Antigua,"St John's, Antigua",St John's,Antigua and Barbuda,AG,Caribbean,17.121,-61.844,Antigua|St Johns|St. John's
 Pointe-a-Pitre,"Pointe-à-Pitre, Guadeloupe",Pointe-à-Pitre,Guadeloupe,GP,Caribbean,16.241,-61.534,Guadeloupe
 Roseau,"Roseau, Dominica",Roseau,Dominica,DM,Caribbean,15.296,-61.387,
 Fort-de-France,"Fort-de-France, Martinique",Fort-de-France,Martinique,MQ,Caribbean,14.6,-61.069,Martinique
@@ -105,7 +105,7 @@ Castries,"Castries, St Lucia",Castries,Saint Lucia,LC,Caribbean,14.011,-60.992,S
 Bridgetown,"Bridgetown, Barbados",Bridgetown,Barbados,BB,Caribbean,13.105,-59.629,
 George Town,"George Town, Grand Cayman",George Town,Cayman Islands,KY,Caribbean,19.2866,-81.3745,Grand Cayman|Grand Cayman Cayman Islands|Georgetown
 Kingstown,"Kingstown, St Vincent",Kingstown,Saint Vincent and the Grenadines,VC,Caribbean,13.148,-61.224,St Vincent
-St Georges Grenada,"St George’s, Grenada",St George’s,Grenada,GD,Caribbean,12.052,-61.752,Grenada|St Georges
+St Georges Grenada,"St George's, Grenada",St George's,Grenada,GD,Caribbean,12.052,-61.752,Grenada|St Georges|St George's
 Willemstad,"Willemstad, Curaçao",Willemstad,Curaçao,CW,Caribbean,12.109,-68.934,Curacao
 Oranjestad,"Oranjestad, Aruba",Oranjestad,Aruba,AW,Caribbean,12.518,-70.037,Aruba
 Kralendijk,"Kralendijk, Bonaire",Kralendijk,Caribbean Netherlands,BQ,Caribbean,12.151,-68.278,Bonaire
@@ -136,7 +136,7 @@ Skagway,"Skagway, Alaska",Skagway,United States,US,Alaska,59.45,-135.327,
 Icy Strait Point,"Icy Strait Point, Alaska",Hoonah,United States,US,Alaska,58.129,-135.461,Hoonah
 Haines,"Haines, Alaska",Haines,United States,US,Alaska,59.235,-135.445,
 Seward,"Seward, Alaska",Seward,United States,US,Alaska,60.119,-149.437,Anchorage
-New York,"New York, New York",New York,United States,US,North America Atlantic,40.768,-74.014,Manhattan|Brooklyn
+New York,"New York, New York",New York,United States,US,North America Atlantic,40.768,-74.014,Manhattan|Brooklyn|Bayonne, New Jersey
 Boston,"Boston, Massachusetts",Boston,United States,US,North America Atlantic,42.344,-71.029,
 Baltimore,"Baltimore, Maryland",Baltimore,United States,US,North America Atlantic,39.266,-76.584,Washington DC
 Norfolk,"Norfolk, Virginia",Norfolk,United States,US,North America Atlantic,36.85,-76.291,
@@ -188,7 +188,7 @@ Noumea,"Nouméa, New Caledonia",Nouméa,New Caledonia,NC,South Pacific,-22.273,1
 Lifou,"Lifou, New Caledonia",Wé,New Caledonia,NC,South Pacific,-20.916,167.264,Loyalty Islands
 Mystery Island,"Mystery Island, Vanuatu",Aneityum,Vanuatu,VU,South Pacific,-20.249,169.771,Aneityum
 Papeete,"Papeete, Tahiti",Papeete,French Polynesia,PF,South Pacific,-17.535,-149.569,Tahiti
-Moorea,"Moorea, French Polynesia",Papetoai,French Polynesia,PF,South Pacific,-17.49,-149.872,
+Moorea,"Moorea, French Polynesia",Papetoai,French Polynesia,PF,South Pacific,-17.49,-149.872,Moorea Island
 Bora Bora,"Bora Bora, French Polynesia",Vaitape,French Polynesia,PF,South Pacific,-16.507,-151.751,Vaitape
 Singapore,Singapore,Singapore,Singapore,SG,Southeast Asia,1.265,103.82,Marina Bay Cruise Centre
 Hong Kong,Hong Kong,Hong Kong,Hong Kong,HK,East Asia,22.293,114.169,Kai Tak|Ocean Terminal
@@ -351,7 +351,7 @@ Puerto del Rosario,"Puerto del Rosario (Canary Islands), Spain",Puerto del Rosar
 Takamatsu,"Takamatsu, Japan",Takamatsu,Japan,JP,Japan,34.342,134.043,Takamatsu Japan|TKS
 Montego Bay,"Montego Bay, Jamaica",Montego Bay,Jamaica,JM,Caribbean,18.476,-77.893,Montego Bay Jamaica|MBJ
 Puerto Limon,"Puerto Limon, Costa Rica",Puerto Limon,Costa Rica,CR,Central America,9.991,-83.035,Puerto Limon Costa Rica|Limon|LIO
-Panama Canal Gatun Lake,"Panama Canal (Gatun Lake), Panama",Panama Canal Gatun Lake,Panama,PA,Central America,9.266,-79.920,Panama Canal Gatun Lake|Gatun Lake|PCG
+Panama Canal Gatun Lake,"Panama Canal (Gatun Lake), Panama",Panama Canal Gatun Lake,Panama,PA,Central America,9.266,-79.920,Panama Canal Gatun Lake|Gatun Lake|PCG|Panama Canal (Transit)|Cruising Panama Canal|Panama Canal Transit
 Hubbard Glacier,"Hubbard Glacier, Alaska",Hubbard Glacier,United States,US,Alaska,59.012,-139.819,Hubbard Glacier Alaska|HGC
 Olden,"Olden, Norway",Olden,Norway,NO,Northern Europe,61.835,6.812,Olden Norway|OLD
 Rhodes,"Rhodes, Greece",Rhodes,Greece,GR,Mediterranean,36.434,28.217,Rhodes Greece|RHO
@@ -359,7 +359,7 @@ Alexandria,"Alexandria, Egypt",Alexandria,Egypt,EG,Middle East,31.200,29.900,Ale
 Port Said,"Port Said, Egypt",Port Said,Egypt,EG,Middle East,31.265,32.301,Port Said Egypt|PSD
 Sharm el Sheikh,"Sharm el Sheikh, Egypt",Sharm el Sheikh,Egypt,EG,Middle East,27.915,34.330,Sharm el Sheikh Egypt|SSH
 Aqaba,"Aqaba, Jordan",Aqaba,Jordan,JO,Middle East,29.532,35.006,Aqaba Jordan|AQB
-Raiatea,"Raiatea, French Polynesia",Raiatea,French Polynesia,PF,South Pacific,,,Raiatea French Polynesia|RAI
+Raiatea,"Raiatea, French Polynesia",Raiatea,French Polynesia,PF,South Pacific,,,Raiatea French Polynesia|RAI|Motu Taha'a
 Invergordon,"Inverness (Invergordon), Scotland",Invergordon,United Kingdom,GB,Northern Europe,,,Inverness (Invergordon) Scotland|IVG
 Apia,"Apia, Samoa Islands",Apia,Samoa,WS,South Pacific,,,Apia Samoa Islands|APW
 Rarotonga,"Rarotonga, Cook Islands",Rarotonga,Cook Islands,CK,South Pacific,,,Rarotonga Cook Islands|RAR

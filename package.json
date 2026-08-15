@@ -57,6 +57,8 @@
     "simulate:silversea-discovery": "node scripts/simulate-silversea-discovery.mjs",
     "test:silversea-discovery": "node scripts/test-silversea-discovery.mjs",
     "test:silversea-controlled-batch": "node scripts/test-silversea-controlled-batch.mjs",
+    "test:silversea-port-remediation": "node scripts/test-silversea-port-remediation.mjs",
+    "silversea:phase4-port-remediation": "node scripts/run-silversea-phase4-port-remediation.mjs",
     "silversea:first-controlled-batch": "node scripts/run-silversea-first-controlled-batch.mjs",
     "simulate:seabourn-discovery": "node scripts/simulate-seabourn-discovery.mjs",
     "simulate:norwegian-discovery": "node scripts/simulate-norwegian-discovery.mjs",

@@ -24,6 +24,7 @@ const {
   classifyItineraryStopKind,
   fetchAllSilverseaRawVoyages
 } = require("./silversea-discovery-source");
+const { SILVERSEA_ADAPTER_PORT_ALIASES } = require("./silversea-port-remediation");
 
 const LINE_NAME = "Silversea Cruises";
 const LINE_SLUG = "silversea-cruises";
@@ -52,6 +53,7 @@ const SILVERSEA_DESTINATION_SLUG = Object.freeze({
  * Used only after the shared resolver fails. Not written to the ports table.
  */
 const SILVERSEA_PORT_ALIASES = Object.freeze({
+  ...SILVERSEA_ADAPTER_PORT_ALIASES,
   "athens (piraeus)": "Piraeus",
   "civitavecchia (rome)": "Civitavecchia",
   "fusina (venice)": "Venice",
