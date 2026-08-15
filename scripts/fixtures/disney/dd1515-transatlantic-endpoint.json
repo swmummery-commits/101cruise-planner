@@ -1,0 +1,29 @@
+{
+  "official_product_key": "DD1515|2026-09-14",
+  "sailing_id": "DD1515",
+  "product_id": "13_westbound_transatlantic_fort_lauderdale",
+  "product_name": "13-Night Westbound Transatlantic Cruise from Southampton ending in Fort Lauderdale",
+  "ship_name": "Disney Dream",
+  "ship_code": "DD",
+  "departure_date": "2026-09-14",
+  "return_date": "2026-09-27",
+  "nights": 13,
+  "one_way_itinerary": true,
+  "discovered_via_filters": ["FLL;filterType=city", "SOU;filterType=city"],
+  "ports_of_call_ordered": [
+    "Southampton, England",
+    "At Sea",
+    "Vigo, Spain",
+    "Lisbon, Portugal",
+    "At Sea",
+    "Ponta Delgada, Azores",
+    "At Sea",
+    "At Sea",
+    "At Sea",
+    "At Sea",
+    "At Sea",
+    "Fort Lauderdale, Florida"
+  ],
+  "prior_incorrect_departure": "Fort Lauderdale",
+  "root_cause": "city_filter_FLL tier 2 beat product_title tier 3 under old lowest-tier selection"
+}

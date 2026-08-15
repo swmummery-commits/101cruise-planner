@@ -16,6 +16,7 @@ const { resolveDisneyDestinationHints } = require("./disney-destination-mapping"
 const source = require("./disney-discovery-source");
 const catalogue = require("./disney-discovery-catalogue");
 const legacyReconciliation = require("./disney-legacy-reconciliation");
+const endpointEvidence = require("./disney-endpoint-evidence");
 const {
   daysUntilDeparture,
   publicBookingCutoffDate,
@@ -25,7 +26,7 @@ const {
 } = require("./public-discovered-cruise-inventory");
 
 const ADAPTER_ID = source.ADAPTER_ID;
-const ADAPTER_VERSION = `${source.ADAPTER_VERSION}.2c`;
+const ADAPTER_VERSION = `${source.ADAPTER_VERSION}.2d`;
 const DISNEY_LINE_ID = "8f7aadcb-7843-4060-b0cb-a60631936b3a";
 const DISNEY_SEARCH_URL = "https://disneycruise.disney.go.com/cruises-destinations/list/";
 const PHASE2A_BASELINE_IDENTITIES = null;
@@ -39,6 +40,7 @@ const PRIMARY_EXCLUSION_ORDER = [
   "required_destination_unresolved",
   "duration_validation_failed",
   "identity_conflict",
+  "endpoint_unresolved_conflict",
   "confidence_gate_failure"
 ];
 
@@ -46,40 +48,52 @@ const SCENIC_PORT_RE =
   /^(glacier viewing|scenic|at sea|sea day|cruising|transit|sailing$|panama canal$)/i;
 const PRIVATE_ISLAND_RE = /castaway cay|lookout cay|lighthouse point|disney private island/i;
 
-const DISNEY_EMBARK_PRODUCT_ID_MAP = Object.freeze({
-  port_canaveral: "Port Canaveral (Orlando), Florida",
-  fort_lauderdale: "Fort Lauderdale (Port Everglades), Florida",
-  singapore: "Singapore",
-  vancouver: "Vancouver, Canada",
-  san_diego: "San Diego, California",
-  galveston: "Galveston, Texas",
-  southampton: "Southampton, England",
-  barcelona: "Barcelona, Spain",
-  civitavecchia: "Civitavecchia (Rome), Italy",
-  san_juan: "San Juan, Puerto Rico",
-  rome: "Civitavecchia (Rome), Italy",
-  benoa: "Benoa, Bali"
-});
+const DISNEY_EMBARK_PRODUCT_ID_MAP = endpointEvidence.DISNEY_EMBARK_PRODUCT_ID_MAP;
+const DISNEY_CITY_FILTER_EMBARK = endpointEvidence.DISNEY_CITY_FILTER_EMBARK;
 
-const DISNEY_EMBARK_PORT_ALIASES = Object.freeze({
-  "port canaveral": "Port Canaveral (Orlando), Florida",
-  "fort lauderdale": "Fort Lauderdale (Port Everglades), Florida",
-  "san diego": "San Diego, California",
-  "port everglades": "Fort Lauderdale (Port Everglades), Florida"
-});
+const parseDisneyProductTitleEndpoints = endpointEvidence.parseDisneyProductTitleEndpoints;
+const extractEmbarkFromProductId = endpointEvidence.extractEmbarkFromProductId;
+const extractArrivalFromProductName = endpointEvidence.extractArrivalFromProductName;
+const resolveDisneyEmbarkation = endpointEvidence.resolveDisneyEmbarkation;
 
-const DISNEY_CITY_FILTER_EMBARK = Object.freeze({
-  PCV: "Port Canaveral (Orlando), Florida",
-  FLL: "Fort Lauderdale (Port Everglades), Florida",
-  SIN: "Singapore",
-  VAN: "Vancouver, Canada",
-  SAN: "San Diego, California",
-  GAL: "Galveston, Texas",
-  SOU: "Southampton, England",
-  BCN: "Barcelona, Spain",
-  CVV: "Civitavecchia (Rome), Italy",
-  SJU: "San Juan, Puerto Rico"
-});
+function extractEmbarkFromProductName(productName) {
+  const parsed = parseDisneyProductTitleEndpoints(productName);
+  if (!parsed) return null;
+  const fragment = parsed.embark;
+  const aliasKey = fragment.toLowerCase();
+  const DISNEY_EMBARK_PORT_ALIASES = {
+    "port canaveral": "Port Canaveral (Orlando), Florida",
+    "fort lauderdale": "Fort Lauderdale (Port Everglades), Florida",
+    "san diego": "San Diego, California",
+    "port everglades": "Fort Lauderdale (Port Everglades), Florida",
+    southampton: "Southampton, England"
+  };
+  if (DISNEY_EMBARK_PORT_ALIASES[aliasKey]) {
+    return {
+      port: DISNEY_EMBARK_PORT_ALIASES[aliasKey],
+      method: parsed.method,
+      tier: parsed.tier,
+      evidence: parsed.evidence
+    };
+  }
+  const resolved = resolveRawPortText(fragment, { sourceField: "disney_product_name" });
+  if (resolved.status === "resolved") {
+    return {
+      port: resolved.canonicalPortName,
+      method: "product_name_port_catalogue",
+      tier: parsed.tier,
+      evidence: parsed.evidence
+    };
+  }
+  if (/,/.test(fragment)) {
+    return { port: fragment, method: parsed.method, tier: parsed.tier, evidence: parsed.evidence, ambiguous: true };
+  }
+  return null;
+}
+
+function extractEmbarkFromCityFilters(filters = []) {
+  return endpointEvidence.extractEmbarkCandidatesFromCityFilters(filters)[0] || null;
+}
 
 const THEME_SUFFIX_RE =
   /_(halloween|merrytime|marvel|pixar|mdas|pdas|dd)(?:_|$)/i;
@@ -108,147 +122,6 @@ function classifyDisneyItineraryPort(value) {
   if (PRIVATE_ISLAND_RE.test(name)) return { kind: "private_island_physical_port", raw: value, name };
   if (/^\d/.test(name) && !/,/.test(name)) return { kind: "ambiguous", raw: value, name };
   return { kind: "physical_port", raw: value, name };
-}
-
-function extractEmbarkFromProductId(productId) {
-  const slug = String(productId || "").toLowerCase();
-  for (const [key, port] of Object.entries(DISNEY_EMBARK_PRODUCT_ID_MAP)) {
-    if (slug.includes(key)) return { port, method: "product_id_slug", tier: 2, evidence: productId };
-  }
-  return null;
-}
-
-function parseDisneyProductTitleEndpoints(productName) {
-  const text = String(productName || "").trim();
-  if (!text) return null;
-
-  const themed = text.match(/\bCruise from\s+(.+?)(?:\s+ending in\s+(.+?))?(?:\s+with\b.*)?$/i);
-  if (themed) {
-    return {
-      embark: themed[1].trim(),
-      arrival: themed[2] ? themed[2].trim() : null,
-      method: "product_name_cruise_from_pattern",
-      tier: 3,
-      evidence: productName
-    };
-  }
-
-  const simple = text.match(/^\d+-Night(?:\s+Cruise)?\s+from\s+(.+)$/i);
-  if (simple) {
-    return {
-      embark: simple[1].trim(),
-      arrival: null,
-      method: "product_name_simple_from",
-      tier: 3,
-      evidence: productName
-    };
-  }
-  return null;
-}
-
-function extractEmbarkFromProductName(productName) {
-  const parsed = parseDisneyProductTitleEndpoints(productName);
-  if (!parsed) return null;
-  const fragment = parsed.embark;
-  const aliasKey = fragment.toLowerCase();
-  if (DISNEY_EMBARK_PORT_ALIASES[aliasKey]) {
-    return {
-      port: DISNEY_EMBARK_PORT_ALIASES[aliasKey],
-      method: parsed.method,
-      tier: parsed.tier,
-      evidence: parsed.evidence
-    };
-  }
-  const resolved = resolveRawPortText(fragment, { sourceField: "disney_product_name" });
-  if (resolved.status === "resolved") {
-    return {
-      port: resolved.canonicalPortName,
-      method: "product_name_port_catalogue",
-      tier: parsed.tier,
-      evidence: parsed.evidence
-    };
-  }
-  if (/,/.test(fragment)) {
-    return { port: fragment, method: parsed.method, tier: parsed.tier, evidence: parsed.evidence, ambiguous: true };
-  }
-  return null;
-}
-
-function extractArrivalFromProductName(productName) {
-  const parsed = parseDisneyProductTitleEndpoints(productName);
-  if (!parsed?.arrival) return null;
-  return {
-    port: parsed.arrival,
-    method: "product_name_ending_in",
-    tier: 3,
-    evidence: parsed.evidence
-  };
-}
-
-function extractEmbarkFromCityFilters(filters = []) {
-  for (const f of filters) {
-    const code = String(f).split(";")[0].trim().toUpperCase();
-    if (DISNEY_CITY_FILTER_EMBARK[code]) {
-      return {
-        port: DISNEY_CITY_FILTER_EMBARK[code],
-        method: `city_filter_${code}`,
-        tier: 2,
-        evidence: f
-      };
-    }
-  }
-  return null;
-}
-
-function resolveDisneyEmbarkation(raw = {}) {
-  const attempts = [];
-  const fromProductId = extractEmbarkFromProductId(raw.product_id);
-  if (fromProductId) attempts.push(fromProductId);
-  const fromFilters = extractEmbarkFromCityFilters(raw.discovered_via_filters || []);
-  if (fromFilters) attempts.push(fromFilters);
-  const fromName = extractEmbarkFromProductName(raw.product_name);
-  if (fromName) attempts.push(fromName);
-
-  const best = attempts.sort((a, b) => a.tier - b.tier)[0];
-  if (!best) {
-    return {
-      status: "unresolved",
-      canonicalPortName: null,
-      confidence: "low",
-      reason: "no_embarkation_evidence",
-      evidence_tier: 4,
-      attempts
-    };
-  }
-  if (best.ambiguous) {
-    return {
-      status: "ambiguous",
-      canonicalPortName: null,
-      confidence: "low",
-      reason: "ambiguous_product_title",
-      evidence_tier: best.tier,
-      attempts
-    };
-  }
-  const resolved = resolveRawPortText(best.port, { sourceField: "disney_embark" });
-  if (resolved.status === "resolved") {
-    return {
-      ...resolved,
-      evidence_tier: best.tier,
-      embark_method: best.method,
-      embark_evidence: best.evidence,
-      attempts
-    };
-  }
-  return {
-    status: "unresolved",
-    canonicalPortName: null,
-    confidence: "low",
-    reason: resolved.reason || "embark_not_in_catalogue",
-    evidence_tier: best.tier,
-    attempts,
-    proposed_port: best.port
-  };
 }
 
 function resolveDisneyShip(raw, context = {}) {
@@ -444,6 +317,7 @@ function determinePrimaryExclusion(ctx) {
   if (ctx.cutoff.past) return "past_departure";
   if (ctx.cutoff.within_21) return "within_21_day_cutoff";
   if (!ctx.shipResolved) return "required_ship_unresolved";
+  if (ctx.endpointUnresolved) return "endpoint_unresolved_conflict";
   if (!ctx.embarkResolved) return "required_embark_port_unresolved";
   if (!ctx.destinationResolved) return "required_destination_unresolved";
   if (!ctx.durationValid) return "duration_validation_failed";
@@ -451,10 +325,21 @@ function determinePrimaryExclusion(ctx) {
   return null;
 }
 
+function hasUnresolvedEndpointConflicts(row = {}) {
+  const depMeta = row.candidate?.departure_port_meta || {};
+  const arrMeta = row.candidate?.arrival_port_meta || {};
+  return (
+    depMeta.status === "conflict" ||
+    (depMeta.unresolved_conflicts || []).length > 0 ||
+    (arrMeta.unresolved_conflicts || []).length > 0
+  );
+}
+
 function evaluateVoyageEligibility(row, today = perthCalendarDate()) {
   const raw = row.raw || {};
   const sourceValidity = assessSourceValidity(raw);
   const shipResolved = row.ship_resolution?.resolved === true;
+  const endpointUnresolved = hasUnresolvedEndpointConflicts(row);
   const embarkResolved = row.candidate?.departure_port_meta?.status === "resolved";
   const destinationResolved = row.destination_resolution?.status === "resolved";
   const durationCheck = row.duration_validation || validateDisneyDuration(raw);
@@ -476,6 +361,7 @@ function evaluateVoyageEligibility(row, today = perthCalendarDate()) {
     identityConflict,
     cutoff,
     shipResolved,
+    endpointUnresolved,
     embarkResolved,
     destinationResolved,
     durationValid,
@@ -538,41 +424,12 @@ function resolveDisneyItineraryPortText(value) {
 }
 
 function resolveArrivalPort(raw = {}, embarkPortMeta = {}) {
-  const fromTitle = extractArrivalFromProductName(raw.product_name);
-  if (fromTitle) {
-    const resolved = resolveRawPortText(fromTitle.port, { sourceField: "disney_arrival_title" });
-    if (resolved.status === "resolved") {
-      return {
-        ...resolved,
-        round_trip: false,
-        method: fromTitle.method,
-        evidence_tier: fromTitle.tier,
-        embark_evidence: fromTitle.evidence
-      };
-    }
-  }
-
-  if (raw.one_way_itinerary === true) {
-    const ports = raw.ports_of_call_ordered || [];
-    const lastPhysical = [...ports].reverse().find((p) => {
-      const kind = classifyDisneyItineraryPort(p).kind;
-      return kind === "physical_port" || kind === "private_island_physical_port";
-    });
-    if (lastPhysical) {
-      const resolved = resolveDisneyItineraryPortText(lastPhysical);
-      if (resolved.status === "resolved") return { ...resolved, round_trip: false, method: "itinerary_last_physical" };
-    }
-    return { status: "unresolved", round_trip: false };
-  }
-  if (raw.one_way_itinerary === false && embarkPortMeta.status === "resolved") {
-    return {
-      status: "resolved",
-      canonicalPortName: embarkPortMeta.canonicalPortName,
-      round_trip: true,
-      method: "round_trip_embark_equals_disembark"
-    };
-  }
-  return { status: "unknown", round_trip: null };
+  return endpointEvidence.resolveDisneyArrivalPort(
+    raw,
+    embarkPortMeta,
+    classifyDisneyItineraryPort,
+    resolveDisneyItineraryPortText
+  );
 }
 
 function normaliseDisneyVoyage(raw, context = {}) {
@@ -736,6 +593,7 @@ function classifyProposedAction(row, existing, legacyMatch = null) {
     if (reason === "required_ship_unresolved") return "blocked_unresolved";
     if (reason === "duration_validation_failed") return "blocked_unresolved";
     if (reason === "identity_conflict") return "review_required";
+    if (reason === "endpoint_unresolved_conflict") return "blocked_unresolved";
     if (reason === "confidence_gate_failure") return "review_required";
     return "blocked_unresolved";
   }
@@ -1031,7 +889,15 @@ async function simulateDisneyDiscovery(context = {}) {
     disneyExternalKey,
     cruiseIdentityKey
   });
-  const firstControlledBatch = legacyReconciliation.buildFirstControlledBatch(normalised, writeManifest.manifest);
+  const endpointAudit = endpointEvidence.auditEndpointEvidence(normalised);
+  const oneWayAudit = endpointEvidence.auditOneWaySailings(normalised);
+  const firstControlledBatch = endpointEvidence.buildFrozenControlledBatch(normalised, writeManifest.manifest, {
+    maxSize: 20,
+    adapterVersion: ADAPTER_VERSION,
+    disneyExternalKey,
+    cruiseIdentityKey,
+    cruiseLineId: cruiseLine?.id || DISNEY_LINE_ID
+  });
 
   const shipResolved = normalised.filter((r) => r.ship_resolution?.resolved).length;
   const identityCollisions = source.countIdentityCollisions(
@@ -1052,6 +918,7 @@ async function simulateDisneyDiscovery(context = {}) {
     embarkation_resolution_pct: portAnalysis.embarkation.sailing_resolution_pct,
     destination_resolution_pct: destAnalysis.destination_resolution_pct,
     duration_validation_pct: normalised.length ? Math.round((durationExact / normalised.length) * 10000) / 100 : 0,
+    endpoint_unresolved_conflicts: endpointAudit.unresolved_conflicts,
     eligibility_arithmetic_pass: waterfall.arithmetic.reconciles,
     source_complete: snapshot.expansion.expansion_errors === 0,
     passed:
@@ -1059,14 +926,19 @@ async function simulateDisneyDiscovery(context = {}) {
       (normalised.length ? Math.round((shipResolved / normalised.length) * 10000) / 100 : 0) === 100 &&
       portAnalysis.embarkation.sailing_resolution_pct >= 95 &&
       destAnalysis.destination_resolution_pct >= 90 &&
-      waterfall.arithmetic.reconciles,
-    ready_for_first_controlled_import: false
+      waterfall.arithmetic.reconciles &&
+      endpointAudit.unresolved_conflicts === 0 &&
+      oneWayAudit.failed === 0,
+    ready_for_first_controlled_import: false,
+    ready_for_phase3_controlled_apply: false
   };
   qualityGate.ready_for_first_controlled_import =
     qualityGate.passed &&
     duplicateSafety.passed &&
     legacyAudit.safe &&
+    firstControlledBatch.size === 20 &&
     writeManifest.summary.insert_active + writeManifest.summary.update_exact_existing + writeManifest.summary.update_exact_legacy_match > 0;
+  qualityGate.ready_for_phase3_controlled_apply = qualityGate.ready_for_first_controlled_import;
 
   return {
     adapter_id: ADAPTER_ID,
@@ -1086,6 +958,8 @@ async function simulateDisneyDiscovery(context = {}) {
     write_manifest: writeManifest,
     legacy_audit: legacyAudit,
     duplicate_safety: duplicateSafety,
+    endpoint_audit: endpointAudit,
+    one_way_audit: oneWayAudit,
     first_controlled_batch: firstControlledBatch,
     existing_rows: dbRows?.length || 0,
     quality_gate: qualityGate,
@@ -1131,6 +1005,12 @@ module.exports = {
   resolveDisneyItineraryPortText,
   resolveDisneyEmbarkation,
   disneyExternalKey,
+  hasUnresolvedEndpointConflicts,
+  auditEndpointEvidence: endpointEvidence.auditEndpointEvidence,
+  auditOneWaySailings: endpointEvidence.auditOneWaySailings,
+  buildFrozenControlledBatch: endpointEvidence.buildFrozenControlledBatch,
+  hashFrozenBatchCandidates: endpointEvidence.hashFrozenBatchCandidates,
+  collectEndpointEvidence: endpointEvidence.collectEndpointEvidence,
   resolveDisneyShip,
   validateDisneyDuration,
   mergeDisneyStructuralContexts,

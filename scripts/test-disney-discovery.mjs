@@ -368,6 +368,92 @@ assert(typeof dupSafety.passed === "boolean", "duplicate safety analysis");
 
 assert(adapter.applyDisneyBatchWrites == null, "zero discovered_cruises write path");
 
+// --- Phase 2D: endpoint evidence precedence ---
+const endpointEvidence = require(path.join(root, "netlify/functions/lib/disney-endpoint-evidence"));
+const dd1515Fx = require(path.join(root, "scripts/fixtures/disney/dd1515-transatlantic-endpoint.json"));
+
+const filterOnlyRaw = adapter.buildDisneyRawVoyage(
+  {
+    official_product_key: "TEST|2026-11-01",
+    sailing_id: "TEST01",
+    product_id: "generic_product",
+    departure_date: "2026-11-01",
+    return_date: "2026-11-04",
+    nights: 3,
+    ship_name: "Disney Magic",
+    ship_code: "DM",
+    destination_code: "BAHAMAS"
+  },
+  [{ portsOfCall: ["Nassau"], oneWayItinerary: false, _discoveredViaFilters: ["PCV;filterType=city"] }],
+  { productName: "3-Night Sample Cruise" }
+);
+const filterOnly = adapter.normaliseDisneyVoyage(filterOnlyRaw, {
+  cruiseLine: { id: adapter.DISNEY_LINE_ID, name: "Disney Cruise Line" },
+  ships: mockShips,
+  destinations: [{ id: "d1", slug: "caribbean", name: "Caribbean", status: "active" }],
+  today: perthToday
+});
+assert(filterOnly.candidate.departure_port_meta.embark_method === "city_filter_PCV", "city filter fallback when no title");
+
+const titleBeatsFilterRaw = adapter.buildDisneyRawVoyage(
+  {
+    official_product_key: dd1515Fx.official_product_key,
+    sailing_id: dd1515Fx.sailing_id,
+    product_id: dd1515Fx.product_id,
+    departure_date: dd1515Fx.departure_date,
+    return_date: dd1515Fx.return_date,
+    nights: dd1515Fx.nights,
+    ship_name: dd1515Fx.ship_name,
+    ship_code: dd1515Fx.ship_code,
+    destination_code: "TRANSATLANTIC"
+  },
+  [{
+    portsOfCall: dd1515Fx.ports_of_call_ordered,
+    oneWayItinerary: dd1515Fx.one_way_itinerary,
+    _discoveredViaFilters: dd1515Fx.discovered_via_filters
+  }],
+  { productName: dd1515Fx.product_name }
+);
+const dd1515 = adapter.normaliseDisneyVoyage(titleBeatsFilterRaw, {
+  cruiseLine: { id: adapter.DISNEY_LINE_ID, name: "Disney Cruise Line" },
+  ships: [{ id: "s2", name: "Disney Dream", cruise_line_id: adapter.DISNEY_LINE_ID, official_line_ship_id: "DD", active: true }],
+  destinations: [{ id: "d3", slug: "transatlantic", name: "Transatlantic", status: "active" }],
+  today: perthToday
+});
+assert(dd1515.candidate.departure_port === "Southampton", "DD1515 regression embark Southampton");
+assert(dd1515.candidate.arrival_port === "Fort Lauderdale", "DD1515 regression arrival Fort Lauderdale");
+assert((dd1515.candidate.departure_port_meta.conflicts || []).some((c) => c.type === "title_vs_city_filter"), "title vs filter diagnostics");
+assert((dd1515.candidate.departure_port_meta.unresolved_conflicts || []).length === 0, "no unresolved endpoint conflicts");
+
+const multiFilterMeta = endpointEvidence.resolveDisneyEmbarkation({
+  product_id: "generic",
+  product_name: "Sample Cruise",
+  discovered_via_filters: ["PCV;filterType=city", "FLL;filterType=city"]
+});
+assert(multiFilterMeta.status === "conflict", "multiple city filters fail closed without title");
+
+const frozen = endpointEvidence.buildFrozenControlledBatch(
+  [outsideCutoff, dd1515],
+  [
+    { action: "insert_active", official_product_key: outsideCutoff.official_sailing_id },
+    { action: "insert_active", official_product_key: dd1515.official_sailing_id }
+  ],
+  {
+    maxSize: 20,
+    adapterVersion: adapter.ADAPTER_VERSION,
+    disneyExternalKey: adapter.disneyExternalKey,
+    cruiseIdentityKey: require(path.join(root, "netlify/functions/lib/cruise-discovery-ops")).cruiseIdentityKey,
+    cruiseLineId: adapter.DISNEY_LINE_ID
+  }
+);
+assert(frozen.size <= 20, "new frozen manifest max 20");
+assert(frozen.invalidates_phase2c_batch === true, "Phase 2C batch invalidated");
+assert(typeof frozen.frozen_candidate_hash === "string" && frozen.frozen_candidate_hash.length === 64, "deterministic candidate hash");
+
+const hash1 = endpointEvidence.hashFrozenBatchCandidates(frozen.entries, adapter.ADAPTER_VERSION);
+const hash2 = endpointEvidence.hashFrozenBatchCandidates(frozen.entries, adapter.ADAPTER_VERSION);
+assert(hash1 === hash2, "hash stable across regeneration");
+
 (async () => {
   let productCalls = 0;
   const mockFetch = async (url, init = {}) => {
