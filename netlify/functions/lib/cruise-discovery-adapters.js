@@ -189,6 +189,23 @@ function hollandAmericaAdapter() {
   };
 }
 
+function carnivalAdapter() {
+  const ccl = require("./carnival-discovery-adapter");
+  const { SOURCE_ID } = require("./carnival-discovery-source");
+  return {
+    ...genericAdapter(),
+    id: "carnival",
+    name: "Carnival Cruise Line",
+    sourceType: SOURCE_ID,
+    matchLine: /carnival/i,
+    acceptedUrlPatterns: [/\/cruise-search/i, /\/find-a-cruise/i, /\/cruises?\//i, /\/itinerar/i],
+    excludedUrlPatterns: [/\/ships?\//i, /\/fun-ships\//i, /\/about\//i, /\/news\//i],
+    maxFetches: 25,
+    discoveryModule: ccl,
+    sourceContract: { sourceId: SOURCE_ID, officialIdentityField: "sailing_id" }
+  };
+}
+
 function atlasAdapter() {
   return {
     ...genericAdapter(),
@@ -211,6 +228,7 @@ const ADAPTERS = [
   exploraAdapter(),
   cunardAdapter(),
   hollandAmericaAdapter(),
+  carnivalAdapter(),
   atlasAdapter()
 ];
 
