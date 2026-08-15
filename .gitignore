@@ -81,3 +81,7 @@ reports/silversea-first-controlled-batch-*.json
 reports/silversea-phase4-*.json
 reports/silversea-phase4a-*.json
 reports/silversea-phase4b-*.json
+reports/carnival-catchup-*.json
+reports/carnival-weekly-maintenance-*.json
+reports/carnival-full-reconciliation-*.json
+reports/carnival-maintenance-smoke-*.json

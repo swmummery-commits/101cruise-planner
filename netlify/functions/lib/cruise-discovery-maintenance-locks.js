@@ -11,6 +11,8 @@ const DEFAULT_LEASE_SECONDS = {
   "explora-journeys:weekly": 900,
   "seabourn-cruise-line:weekly": 900,
   "royal-caribbean-international:weekly": 900,
+  "norwegian-cruise-line:weekly": 900,
+  "carnival-cruise-line:weekly": 900,
   "controlled_production_import:global": 1800,
   daily_expiry: 300
 };
@@ -31,6 +33,8 @@ async function acquireLockViaRunningRun(supabase, params) {
     "explora-journeys:weekly": "explora_weekly_maintenance",
     "seabourn-cruise-line:weekly": "seabourn_weekly_maintenance",
     "royal-caribbean-international:weekly": "royal_caribbean_weekly_maintenance",
+    "norwegian-cruise-line:weekly": "norwegian_weekly_maintenance",
+    "carnival-cruise-line:weekly": "carnival_weekly_maintenance",
     daily_expiry: "daily_expiry_maintenance"
   };
   const runType = runTypeByLock[params.lockKey];
