@@ -1,4 +1,4 @@
-canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases
+﻿canonical_name,display_name,city,country,country_code,region,latitude,longitude,aliases
 Barcelona,"Barcelona, Spain",Barcelona,Spain,ES,Mediterranean,41.3584,2.1686,
 Tarragona,"Tarragona, Spain",Tarragona,Spain,ES,Mediterranean,41.1118,1.2536,Barcelona (Tarragona)|Barcelona (Tarragona)
 Valencia,"Valencia, Spain",Valencia,Spain,ES,Mediterranean,39.4481,-0.3167,
@@ -227,7 +227,7 @@ Durban,"Durban, South Africa",Durban,South Africa,ZA,Africa,-29.868,31.044,
 Port Elizabeth,"Gqeberha (Port Elizabeth), South Africa",Gqeberha,South Africa,ZA,Africa,-33.961,25.635,Port Elizabeth
 Walvis Bay,"Walvis Bay, Namibia",Walvis Bay,Namibia,NA,Africa,-22.948,14.507,
 Nosy Be,"Nosy Be, Madagascar",Hell-Ville,Madagascar,MG,Indian Ocean,-13.404,48.286,Hell-Ville
-Cozumel,"Cozumel, Mexico",Cozumel,Mexico,MX,Caribbean,20.508,-86.948,Isla Cozumel|Cozumel Mexico
+Cozumel,"Cozumel, Mexico",Cozumel,Mexico,MX,Caribbean,20.508,-86.948,Isla Cozumel|Cozumel Mexico|Cozumel Quintana Roo
 Roatan,"Roatán (Mahogany Bay), Honduras",Roatán,Honduras,HN,Caribbean,16.329,-86.446,Roatán|Mahogany Bay|Coxen Hole|Roatan Honduras
 Belize City,"Belize City, Belize",Belize City,Belize,BZ,Caribbean,17.494,-88.182,Belize|Fort Street Tourism Village|Belize City Belize
 Princess Cays,"Princess Cays, Bahamas",Princess Cays,Bahamas,BS,Bahamas,24.577,-76.18,Princess Cay|Princess Cays Bahamas
@@ -390,7 +390,7 @@ Aitutaki,"Aitutaki, Cook Islands",Aitutaki,Cook Islands,CK,South Pacific,,,Aitut
 Surabaya,"Surabaya, Indonesia",Surabaya,Indonesia,ID,Asia,,,Surabaya Indonesia|SUB
 Busselton,"Busselton, Australia",Busselton,Australia,AU,Australia & New Zealand,,,Busselton Australia|BUS
 Esperance,"Esperance, Australia",Esperance,Australia,AU,Australia & New Zealand,,,Esperance Australia|ESP
-Albany Australia,"Albany, Australia",Albany,Australia,AU,Australia & New Zealand,,,Albany Australia|ALB
+Albany Australia,"Albany, Australia",Albany,Australia,AU,Australia & New Zealand,,,Albany Australia|ALB|Albany (Western Australia)
 Lembar,"Lembar (Lombok), Indonesia",Lembar,Indonesia,ID,Asia,,,Lembar Lombok Indonesia|LEM
 La Romana,"Punta Cana (La Romana), Dominican Republic",La Romana,Dominican Republic,DO,Caribbean,,,Punta Cana La Romana|LRM
 Manila,"Manila, Philippines",Manila,Philippines,PH,Southeast Asia,14.583,120.967,Manila Philippines|Port of Manila
@@ -473,3 +473,28 @@ Ystad,"Ystad, Sweden",Ystad,Sweden,SE,Northern Europe,55.43,13.82,Ystad Sweden
 Collioure,"Collioure, France",Collioure,France,FR,Mediterranean,42.526,3.083,Collioure France
 Komodo Island,"Komodo Island, Indonesia",Loh Liang,Indonesia,ID,Southeast Asia,-8.556,119.489,Komodo|Komodo Island Indonesia
 Lysekil,"Lysekil, Sweden",Lysekil,Sweden,SE,Northern Europe,58.275,11.435,Lysekil Sweden
+St Peter Port,"St Peter Port, Guernsey",St Peter Port,Guernsey,GG,Northern Europe,49.456,-2.536,St Peter Port Guernsey|Guernsey
+Aalborg,"Aalborg, Denmark",Aalborg,Denmark,DK,Northern Europe,57.049,9.921,Aalborg Denmark
+Great Exuma,"Great Exuma, Bahamas",Georgetown,Bahamas,BS,Caribbean,23.518,-75.788,Exuma Island|Exuma Islands|Georgetown Exuma
+Fishguard,"Fishguard, Wales",Fishguard,United Kingdom,GB,Northern Europe,51.993,-4.975,"Fishguard, Wales|Fishguard Wales"
+Greencastle Londonderry,"Greencastle (Londonderry), Ireland",Greencastle,Ireland,IE,Northern Europe,55.198,-6.717,Greencastle (Londonderry)|Greencastle Londonderry
+Komatsushima,"Komatsushima, Japan",Komatsushima,Japan,JP,Japan,34,134.583,Komatsushima Japan
+Lipari,"Lipari, Italy",Lipari,Italy,IT,Mediterranean,38.467,14.957,Lipari Island|Lipari Aeolian
+Malacca,"Malacca, Malaysia",Malacca,Malaysia,MY,Southeast Asia,2.189,102.25,Melaka|Malacca Malaysia
+Amalfi,"Amalfi, Italy",Amalfi,Italy,IT,Mediterranean,40.634,14.602,Amalfi Italy
+Eidfjord,"Eidfjord, Norway",Eidfjord,Norway,NO,Northern Europe,60.467,6.837,Eidfjord Norway
+Holyhead,"Holyhead, Wales",Holyhead,United Kingdom,GB,Northern Europe,53.307,-4.631,Holyhead Wales|Holyhead UK
+Imperia,"Imperia, Italy",Imperia,Italy,IT,Mediterranean,43.889,8.039,Imperia Italy|Porto Maurizio
+Douglas Isle of Man,"Douglas, Isle of Man",Douglas,Isle of Man,IM,Northern Europe,54.15,-4.477,Isle of Man (Douglas)|Douglas Isle of Man|Douglas IOM
+Langkawi,"Langkawi, Malaysia",Langkawi,Malaysia,MY,Southeast Asia,6.35,99.783,Langkawi Malaysia|Kuah Langkawi
+Nordfjordeid,"Nordfjordeid, Norway",Nordfjordeid,Norway,NO,Northern Europe,61.906,5.991,Nordfjordeid Norway
+Otranto,"Otranto, Italy",Otranto,Italy,IT,Mediterranean,40.146,18.491,Otranto Italy|Otranto Puglia
+Port Lincoln,"Port Lincoln, Australia",Port Lincoln,Australia,AU,Australia New Zealand,-34.721,135.857,Port Lincoln SA|Port Lincoln South Australia
+Porto Santo Madeira,"Porto Santo, Madeira",Vila Baleira,Portugal,PT,Atlantic Europe,33.06,-16.344,"Porto Santo, Madeira|Porto Santo Island"
+Pula,"Pula, Croatia",Pula,Croatia,HR,Mediterranean,44.866,13.849,Pula Croatia|Pola
+Rosendal,"Rosendal, Norway",Rosendal,Norway,NO,Northern Europe,59.986,6.011,Rosendal Norway|Hardanger Rosendal
+Roses,"Roses, Spain",Roses,Spain,ES,Mediterranean,42.263,3.174,Roses Spain|Roses Catalonia
+Spanish Town Virgin Gorda,"Spanish Town, Virgin Gorda",Spanish Town,British Virgin Islands,VG,Caribbean,18.45,-64.43,Spanish Town|Spanish Town BVI|Virgin Gorda
+St Helier,"St Helier, Jersey",St Helier,Jersey,JE,Northern Europe,49.179,-2.107,St Helier Jersey|Jersey
+Arica,"Arica, Chile",Arica,Chile,CL,South America,-18.479,-70.319,Arica Chile
+KGari Fraser Island,"K'Gari (Fraser Island), Australia",Kingfisher Bay,Australia,AU,Australia New Zealand,-25.251,153.154,K'Gari (formerly Fraser Island)|Fraser Island|K'Gari

@@ -10,7 +10,8 @@ const { resolveRawPortText } = require("./discovery-departure-port");
 const SILVERSEA_ADAPTER_PORT_ALIASES = Object.freeze({
   "kochi": "Kochi Japan",
   "vik": "Vik Norway",
-  "st john": "St John USVI"
+  "st john": "St John USVI",
+  "newcastle": "Newcastle Australia"
 });
 
 /**
