@@ -80,6 +80,7 @@ const CONVENTIONAL_PORT_CODES = Object.freeze({
 });
 
 const EXACT_IDENTITY_RULES = Object.freeze({
+  AQC41: { semantic: EXPEDITION_SEMANTIC.LANDING_SITE, rule_id: "aqc41_elephant_island" },
   AQE43: { semantic: EXPEDITION_SEMANTIC.SCENIC_REGION, rule_id: "aqe43_antarctic_peninsula" },
   AQE44: { semantic: EXPEDITION_SEMANTIC.SCENIC_REGION, rule_id: "aqe44_south_shetland" },
   AQE42: { semantic: EXPEDITION_SEMANTIC.TRANSIT, rule_id: "aqe42_antarctic_sound" },
@@ -95,6 +96,11 @@ const EXACT_IDENTITY_RULES = Object.freeze({
 });
 
 const NAME_CONFLICT_CHECKS = Object.freeze([
+  {
+    code: "AQC41",
+    pattern: /^elephant island\b/i,
+    rule_id: "aqc41_name_guard"
+  },
   {
     code: "AQE43",
     pattern: /^antarctic peninsula\b/i,
@@ -188,8 +194,11 @@ function classifyAntarcticaFamily(code, name) {
   if (/^antarctic sound\b/i.test(name) || /\bdrake passage\b/i.test(name)) {
     return deterministic(EXPEDITION_SEMANTIC.TRANSIT, SEMANTIC_SOURCE.PORT_CODE_RULE, "aq_family_transit");
   }
-  if (code.startsWith("AQE") || code.startsWith("AQC") || code.startsWith("AQI")) {
-    return deterministic(EXPEDITION_SEMANTIC.LANDING_SITE, SEMANTIC_SOURCE.PORT_CODE_RULE, "aq_antarctica_landing_default");
+  if (code.startsWith("AQC") || code.startsWith("AQI")) {
+    return ambiguous("unknown_aq_subfamily", ["aqc_aqi_fail_closed_until_proven", code, name]);
+  }
+  if (code.startsWith("AQE")) {
+    return deterministic(EXPEDITION_SEMANTIC.LANDING_SITE, SEMANTIC_SOURCE.PORT_CODE_RULE, "aqe_antarctica_landing_default");
   }
   return ambiguous("unknown_aqe_identity", ["aq_prefix_unclassified", code, name]);
 }
@@ -209,6 +218,7 @@ function classifyGreenlandFamily(code, name) {
     /\bregion\b/i.test(name) ||
     /\bglacier\b/i.test(name) ||
     /\bfjord\b/i.test(name) ||
+    /\bsund\b/i.test(name) ||
     /\bwaterfalls\b/i.test(name) ||
     /\bbay\b/i.test(name) ||
     /\bbahia\b/i.test(name)
@@ -218,18 +228,61 @@ function classifyGreenlandFamily(code, name) {
   return deterministic(EXPEDITION_SEMANTIC.LANDING_SITE, SEMANTIC_SOURCE.PORT_CODE_RULE, "greenland_family_landing_default");
 }
 
+function isKimberleyDestination(destination) {
+  return String(destination || "")
+    .trim()
+    .toUpperCase() === "KIMBERLEY";
+}
+
+function classifyKimberleyRegionScoped(code, name, destination) {
+  if (!isKimberleyDestination(destination)) return null;
+  const upper = String(code || "").trim().toUpperCase();
+  if (!upper) return null;
+  if (upper.startsWith("AUK")) return classifyKimberleyFamily(upper, name);
+  if (upper.startsWith("AUJ") || upper.startsWith("AUW") || upper.startsWith("AUS")) {
+    if (/\bregion\b/i.test(name) || /\barchipelago\b/i.test(name) || /\bbay\b/i.test(name)) {
+      return deterministic(
+        EXPEDITION_SEMANTIC.SCENIC_REGION,
+        SEMANTIC_SOURCE.PORT_CODE_RULE,
+        "kimberley_au_region_scenic"
+      );
+    }
+    if (/\breef\b/i.test(name)) {
+      return deterministic(
+        EXPEDITION_SEMANTIC.ANCHORAGE,
+        SEMANTIC_SOURCE.PORT_CODE_RULE,
+        "kimberley_au_region_anchorage"
+      );
+    }
+    return deterministic(
+      EXPEDITION_SEMANTIC.LANDING_SITE,
+      SEMANTIC_SOURCE.PORT_CODE_RULE,
+      "kimberley_au_region_landing"
+    );
+  }
+  return null;
+}
+
+function classifyGreenlandByCountryCode(code, name) {
+  const upper = String(code || "").trim().toUpperCase();
+  if (!/^GL[A-Z0-9]{2,3}$/.test(upper)) return null;
+  if (CONVENTIONAL_PORT_CODES[upper]) return null;
+  return classifyGreenlandFamily(upper, name);
+}
+
 function classifyByPortCodeFamily(code, name) {
   const upper = String(code || "").trim().toUpperCase();
   if (!upper) return null;
   if (upper.startsWith("ECG")) return classifyGalapagosFamily(upper, name);
-  if (upper.startsWith("AQE")) return classifyAntarcticaFamily(upper, name);
+  if (upper.startsWith("AQE") || upper.startsWith("AQC") || upper.startsWith("AQI")) {
+    return classifyAntarcticaFamily(upper, name);
+  }
   if (upper.startsWith("AUK")) return classifyKimberleyFamily(upper, name);
   if (upper.startsWith("NOE") || upper.startsWith("GSE")) {
     return deterministic(EXPEDITION_SEMANTIC.SCENIC_REGION, SEMANTIC_SOURCE.PORT_CODE_RULE, "polar_region_prefix");
   }
-  if (upper.startsWith("GLE") || upper.startsWith("GLJ") || upper.startsWith("GLG")) {
-    return classifyGreenlandFamily(upper, name);
-  }
+  const greenland = classifyGreenlandByCountryCode(upper, name);
+  if (greenland) return greenland;
   if (/^GB[ELFSIM]/.test(upper) || upper.startsWith("GBP")) {
     return deterministic(EXPEDITION_SEMANTIC.LANDING_SITE, SEMANTIC_SOURCE.PORT_CODE_RULE, "uk_expedition_prefix");
   }
@@ -276,6 +329,7 @@ function classifyExpeditionStop(stop, context = {}) {
     .toUpperCase();
   const role = context.role || stop?.role || "itinerary";
   const portResolution = stop?.port_resolution || null;
+  const destination = context.destination || stop?.destination || null;
 
   if (!name && !code) {
     return ambiguous("insufficient_context", ["missing_name_and_code"]);
@@ -319,6 +373,9 @@ function classifyExpeditionStop(stop, context = {}) {
       { canonical_port: null }
     );
   }
+
+  const kimberleyScoped = classifyKimberleyRegionScoped(code, name, destination);
+  if (kimberleyScoped) return kimberleyScoped;
 
   const family = classifyByPortCodeFamily(code, name);
   if (family) return family;
