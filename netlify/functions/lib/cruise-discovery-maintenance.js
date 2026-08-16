@@ -26,6 +26,15 @@ const NORWEGIAN_WEEKLY_RECONCILIATION_ENABLED =
 const CARNIVAL_WEEKLY_RECONCILIATION_ENABLED =
   String(process.env.CARNIVAL_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
 
+const DISNEY_DISCOVERY_PRODUCTION_WRITES =
+  String(process.env.DISNEY_DISCOVERY_PRODUCTION_WRITES || "").trim().toLowerCase() === "true";
+
+const DISNEY_DISCOVERY_MAINTENANCE_SCHEDULED_ENABLED =
+  String(process.env.DISNEY_DISCOVERY_MAINTENANCE_SCHEDULED_ENABLED || "").trim().toLowerCase() === "true";
+
+const DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED =
+  String(process.env.DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED || "").trim().toLowerCase() === "true";
+
 const CRUISE_DAILY_EXPIRY_ENABLED =
   String(process.env.CRUISE_DAILY_EXPIRY_ENABLED || "").trim().toLowerCase() === "true";
 
@@ -109,6 +118,17 @@ const MAINTENANCE_SCHEDULES = {
     background_function: "carnival-weekly-maintenance-background",
     schedule_registered: true
   },
+  /**
+   * Disney weekly maintenance — Monday 02:00 UTC / Monday 10:00 Perth (after Carnival 01:00 UTC).
+   */
+  disney_weekly: {
+    cron_utc: "0 2 * * 1",
+    perth_display: "Monday 10:00 Australia/Perth",
+    utc_display: "Monday 02:00 UTC",
+    function: "disney-weekly-maintenance-cron",
+    background_function: "disney-weekly-maintenance-background",
+    schedule_registered: true
+  },
   daily_expiry: {
     cron_utc: "30 17 * * *",
     perth_display: "Daily 01:30 Australia/Perth",
@@ -125,6 +145,7 @@ const SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE = "seabourn_weekly_maintenance";
 const ROYAL_CARIBBEAN_WEEKLY_MAINTENANCE_RUN_TYPE = "royal_caribbean_weekly_maintenance";
 const NORWEGIAN_WEEKLY_MAINTENANCE_RUN_TYPE = "norwegian_weekly_maintenance";
 const CARNIVAL_WEEKLY_MAINTENANCE_RUN_TYPE = "carnival_weekly_maintenance";
+const DISNEY_WEEKLY_MAINTENANCE_RUN_TYPE = "disney_weekly_maintenance";
 const DAILY_EXPIRY_RUN_TYPE = "daily_expiry_maintenance";
 
 function perthCalendarDate(reference = new Date()) {
@@ -161,6 +182,18 @@ function isNorwegianWeeklyReconciliationEnabled() {
 
 function isCarnivalWeeklyReconciliationEnabled() {
   return CARNIVAL_WEEKLY_RECONCILIATION_ENABLED;
+}
+
+function isDisneyProductionWritesEnabled() {
+  return DISNEY_DISCOVERY_PRODUCTION_WRITES;
+}
+
+function isDisneyMaintenanceScheduledEnabled() {
+  return DISNEY_DISCOVERY_MAINTENANCE_SCHEDULED_ENABLED;
+}
+
+function isDisneySourceAbsenceDeactivationEnabled() {
+  return DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED;
 }
 
 function isCruiseDailyExpiryEnabled() {
@@ -245,6 +278,26 @@ function assertCclWeeklyMaintenanceEnabled() {
   }
 }
 
+function assertDisneyWeeklyMaintenanceScheduled() {
+  if (!isDisneyMaintenanceScheduledEnabled()) {
+    const err = new Error(
+      "Disney weekly maintenance schedule is disabled (DISNEY_DISCOVERY_MAINTENANCE_SCHEDULED_ENABLED=false)"
+    );
+    err.code = "disney_weekly_maintenance_scheduled_disabled";
+    throw err;
+  }
+}
+
+function assertDisneyWeeklyMaintenanceEnabled() {
+  if (!isDisneyProductionWritesEnabled()) {
+    const err = new Error(
+      "Disney weekly production writes are disabled (DISNEY_DISCOVERY_PRODUCTION_WRITES=false)"
+    );
+    err.code = "disney_weekly_production_writes_disabled";
+    throw err;
+  }
+}
+
 function assertDailyExpiryEnabled() {
   if (!isCruiseDailyExpiryEnabled()) {
     const err = new Error("Daily expiry is disabled (CRUISE_DAILY_EXPIRY_ENABLED=false)");
@@ -283,6 +336,13 @@ function describeMaintenanceHold() {
     royal_caribbean_weekly_reconciliation: resolveEnvFlag(process.env.ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED),
     norwegian_weekly_reconciliation: resolveEnvFlag(process.env.NORWEGIAN_WEEKLY_RECONCILIATION_ENABLED),
     carnival_weekly_reconciliation: resolveEnvFlag(process.env.CARNIVAL_WEEKLY_RECONCILIATION_ENABLED),
+    disney_discovery_production_writes: resolveEnvFlag(process.env.DISNEY_DISCOVERY_PRODUCTION_WRITES),
+    disney_discovery_maintenance_scheduled_enabled: resolveEnvFlag(
+      process.env.DISNEY_DISCOVERY_MAINTENANCE_SCHEDULED_ENABLED
+    ),
+    disney_discovery_source_absence_deactivation_enabled: resolveEnvFlag(
+      process.env.DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED
+    ),
     cruise_daily_expiry: resolveEnvFlag(process.env.CRUISE_DAILY_EXPIRY_ENABLED),
     hal_weekly_reconciliation_enabled: isHalWeeklyReconciliationEnabled(),
     celebrity_weekly_reconciliation_enabled: isCelebrityWeeklyReconciliationEnabled(),
@@ -292,6 +352,9 @@ function describeMaintenanceHold() {
     royal_caribbean_weekly_reconciliation_enabled: isRoyalCaribbeanWeeklyReconciliationEnabled(),
     norwegian_weekly_reconciliation_enabled: isNorwegianWeeklyReconciliationEnabled(),
     carnival_weekly_reconciliation_enabled: isCarnivalWeeklyReconciliationEnabled(),
+    disney_production_writes_enabled: isDisneyProductionWritesEnabled(),
+    disney_maintenance_scheduled_enabled: isDisneyMaintenanceScheduledEnabled(),
+    disney_source_absence_deactivation_enabled: isDisneySourceAbsenceDeactivationEnabled(),
     cruise_daily_expiry_enabled: isCruiseDailyExpiryEnabled(),
     operational_timezone: OPERATIONAL_TIMEZONE,
     schedules: MAINTENANCE_SCHEDULES,
@@ -306,7 +369,8 @@ function describeMaintenanceHold() {
       "SEABOURN_DISCOVERY_WRITE_ENABLED",
       "ROYAL_CARIBBEAN_DISCOVERY_WRITE_ENABLED",
       "NORWEGIAN_DISCOVERY_WRITE_ENABLED",
-      "CARNIVAL_DISCOVERY_WRITE_ENABLED"
+      "CARNIVAL_DISCOVERY_WRITE_ENABLED",
+      "DISNEY_DISCOVERY_WRITE_ENABLED"
     ]
   };
 }
@@ -320,6 +384,9 @@ module.exports = {
   ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED,
   NORWEGIAN_WEEKLY_RECONCILIATION_ENABLED,
   CARNIVAL_WEEKLY_RECONCILIATION_ENABLED,
+  DISNEY_DISCOVERY_PRODUCTION_WRITES,
+  DISNEY_DISCOVERY_MAINTENANCE_SCHEDULED_ENABLED,
+  DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED,
   CRUISE_DAILY_EXPIRY_ENABLED,
   OPERATIONAL_TIMEZONE,
   MAINTENANCE_SCHEDULES,
@@ -331,6 +398,7 @@ module.exports = {
   ROYAL_CARIBBEAN_WEEKLY_MAINTENANCE_RUN_TYPE,
   NORWEGIAN_WEEKLY_MAINTENANCE_RUN_TYPE,
   CARNIVAL_WEEKLY_MAINTENANCE_RUN_TYPE,
+  DISNEY_WEEKLY_MAINTENANCE_RUN_TYPE,
   DAILY_EXPIRY_RUN_TYPE,
   perthCalendarDate,
   isHalWeeklyReconciliationEnabled,
@@ -341,6 +409,9 @@ module.exports = {
   isRoyalCaribbeanWeeklyReconciliationEnabled,
   isNorwegianWeeklyReconciliationEnabled,
   isCarnivalWeeklyReconciliationEnabled,
+  isDisneyProductionWritesEnabled,
+  isDisneyMaintenanceScheduledEnabled,
+  isDisneySourceAbsenceDeactivationEnabled,
   isCruiseDailyExpiryEnabled,
   assertHalWeeklyMaintenanceEnabled,
   assertCelebrityWeeklyMaintenanceEnabled,
@@ -350,6 +421,8 @@ module.exports = {
   assertRoyalCaribbeanWeeklyMaintenanceEnabled,
   assertNorwegianWeeklyMaintenanceEnabled,
   assertCclWeeklyMaintenanceEnabled,
+  assertDisneyWeeklyMaintenanceScheduled,
+  assertDisneyWeeklyMaintenanceEnabled,
   assertDailyExpiryEnabled,
   computeFreshnessLabel,
   resolveEnvFlag,

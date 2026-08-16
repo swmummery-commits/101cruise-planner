@@ -1,0 +1,121 @@
+{
+  "generated_at": "2026-08-16T04:20:00.000Z",
+  "repository": {
+    "starting_sha": "470ca3941c871bc87fa8e5f6ea001c81a4ba4e8a",
+    "post_pull_sha": "470ca3941c871bc87fa8e5f6ea001c81a4ba4e8a",
+    "origin_main_sha": "470ca3941c871bc87fa8e5f6ea001c81a4ba4e8a",
+    "working_tree": "disney_weekly_tooling_uncommitted"
+  },
+  "production_baseline": {
+    "disney_total_rows": 629,
+    "legacy_rows": 6,
+    "official_rows": 623,
+    "active_official_rows": 622,
+    "non_active_official_explanation": "DF0824|2026-09-06 expired via shared 21-day public booking cutoff / daily expiry lifecycle",
+    "duplicate_official_sailing_id": 0,
+    "duplicate_external_key": 0,
+    "duplicate_identity_key": 0,
+    "duplicate_skip_official": 623,
+    "update_exact_existing": 0,
+    "review_required": 0,
+    "legacy_unchanged": true
+  },
+  "read_only_simulation": {
+    "run_id": "disney-weekly-2026-08-16T03-59-18-956Z",
+    "report_path": "reports/disney-weekly-maintenance-2026-08-16T03-59-18-956Z.json",
+    "source_total": 651,
+    "source_complete": true,
+    "expansion_errors": 0,
+    "production_eligible": 622,
+    "within_21_day_cutoff_excluded": 29,
+    "accepted_baseline_total": null,
+    "collapse_pct": 0,
+    "collapse_gate_passed": true,
+    "proposed_inserts": 0,
+    "proposed_updates": 0,
+    "proposed_identity_review": 0,
+    "source_absent_observed": 0,
+    "source_absent_confirmed": 0,
+    "source_absence_cleared": 0,
+    "material_actions_total": 0,
+    "material_actions_deferred": 0,
+    "legacy_rows_touched": 0,
+    "quality_gate_passed": true
+  },
+  "source_quality_policy": {
+    "requires_complete_pavas_snapshot": true,
+    "identity_coverage_pct": 100,
+    "ship_resolution_pct": 100,
+    "embark_resolution_pct": 100,
+    "destination_resolution_pct": 100,
+    "duration_integrity_pct": 100,
+    "endpoint_unresolved_conflicts": 0,
+    "eligibility_arithmetic_pass": true
+  },
+  "collapse_guard": {
+    "threshold_pct": 0.2,
+    "compares_raw_source_identities": true,
+    "blocks_material_writes_on_collapse": true
+  },
+  "weekly_update_policy": {
+    "max_material_writes_per_week": 30,
+    "identity_immutable_fields": [
+      "cruise_line_id",
+      "official_sailing_id",
+      "external_key",
+      "identity_key"
+    ],
+    "identity_critical_changes_require_review": true
+  },
+  "source_absence_policy": {
+    "consecutive_complete_absences_required": 2,
+    "confirmation_window_days": 14,
+    "hard_delete": false,
+    "cancellation_inferred_from_absence": false,
+    "legacy_rows_excluded": 6,
+    "deactivation_env_flag": "DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED"
+  },
+  "write_cap": 30,
+  "locks": {
+    "line_lock_key": "disney-cruise-line:weekly",
+    "line_lock_lease_seconds": 1800,
+    "global_lock_key": "controlled_production_import:global"
+  },
+  "cron_launcher": "disney-weekly-maintenance-cron",
+  "background_function": "disney-weekly-maintenance-background",
+  "schedule": {
+    "cron_expression": "0 2 * * 1",
+    "utc_schedule": "Monday 02:00 UTC",
+    "perth_schedule": "Monday 10:00 Australia/Perth"
+  },
+  "required_environment_flags": {
+    "DISNEY_DISCOVERY_PRODUCTION_WRITES": "general weekly production writes",
+    "DISNEY_DISCOVERY_MAINTENANCE_SCHEDULED_ENABLED": "scheduled launcher dispatch",
+    "DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED": "confirmed absence lifecycle action",
+    "DISCOVERY_CRON_SECRET": "cron/background auth (present/missing only)"
+  },
+  "netlify_env_verification": {
+    "authenticated": true,
+    "project_id": "ff34277c-6c91-4880-85b6-1240937c80eb",
+    "DISNEY_DISCOVERY_PRODUCTION_WRITES": "unset",
+    "DISNEY_DISCOVERY_MAINTENANCE_SCHEDULED_ENABLED": "unset",
+    "DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED": "unset",
+    "DISCOVERY_CRON_SECRET": "present"
+  },
+  "tests": {
+    "test_disney_weekly_maintenance": "47 passed",
+    "test_disney_discovery": "126 passed",
+    "test_disney_controlled_batch": "27 passed",
+    "test_disney_phase4b_cumulative": "20 passed",
+    "test_global_cruise_write_lock": "12 passed",
+    "test_public_booking_cutoff": "17 passed"
+  },
+  "planned_first_production_weekly_run": {
+    "trigger_type": "manual_commissioning",
+    "max_material_writes": 30,
+    "scheduled_enabled": false,
+    "production_writes": true,
+    "source_absence_deactivation": false
+  },
+  "ready_for_manual_commissioning": true
+}

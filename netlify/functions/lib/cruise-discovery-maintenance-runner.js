@@ -98,6 +98,10 @@ const {
 } = require("./seabourn-weekly-update-policy");
 const { runRoyalCaribbeanWeeklyMaintenance } = require("./royal-caribbean-weekly-maintenance");
 const { runNorwegianWeeklyMaintenance } = require("./norwegian-weekly-maintenance");
+const {
+  runDisneyWeeklyMaintenance,
+  DISNEY_MAX_WEEKLY_WRITES
+} = require("./disney-weekly-maintenance");
 
 const MAX_WRITES_PER_BATCH = 100;
 const MAX_WEEKLY_WRITES = 30;
@@ -406,6 +410,7 @@ async function findSourceAbsentActive({ supabase, cruiseLineId, eligibleKeys, to
       row.raw_extract?.princess_sailing_id ||
       row.raw_extract?.explora_sailing_id ||
       row.raw_extract?.hal_product_key ||
+      row.raw_extract?.disney_official_product_key ||
       null;
     const key = sid || (row.raw_extract ? officialProductKeyFn(row.raw_extract) : null);
     if (key && !eligibleKeys.has(key)) {
@@ -1829,6 +1834,7 @@ module.exports = {
       _deps: { loadLineContext, findSourceAbsentActive, findPreviousSuccessfulMaintenanceRun }
     }),
   runNorwegianWeeklyMaintenance: (context = {}) => runNorwegianWeeklyMaintenance(context),
+  runDisneyWeeklyMaintenance,
   runFromMaintenanceRunner,
   acquireMaintenanceLock,
   releaseMaintenanceLock,
@@ -1841,5 +1847,6 @@ module.exports = {
   MAX_WEEKLY_WRITES,
   EXPLORA_MAX_WEEKLY_WRITES,
   SEABOURN_MAX_WEEKLY_WRITES,
+  DISNEY_MAX_WEEKLY_WRITES,
   WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP
 };
