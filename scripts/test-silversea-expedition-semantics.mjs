@@ -104,7 +104,8 @@ test("Galápagos fixture sample loads if present", () => {
   if (!sample?.itinerary?.length) throw new Error("empty galapagos fixture");
   const landing = sample.itinerary.find((s) => s.port_code === "ECG02");
   if (!landing) throw new Error("ECG02 missing from fixture");
-  assertEqual(landing.semantic.semantic, SEMANTIC.EXPEDITION_LANDING_SITE);
+  const result = classifyExpeditionStopSemantic({ port_name: landing.port_name, port_code: landing.port_code });
+  assertEqual(result.semantic, SEMANTIC.EXPEDITION_LANDING_SITE);
 });
 
 test("resolveRawPortText still resolves Civitavecchia for Classic regression", () => {

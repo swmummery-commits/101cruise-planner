@@ -25,6 +25,7 @@ const {
   fetchAllSilverseaRawVoyages
 } = require("./silversea-discovery-source");
 const { SILVERSEA_ADAPTER_PORT_ALIASES } = require("./silversea-port-remediation");
+const { enrichExpeditionItineraryStop } = require("./silversea-expedition-semantics");
 
 const LINE_NAME = "Silversea Cruises";
 const LINE_SLUG = "silversea-cruises";
@@ -143,17 +144,22 @@ function destinationRowIdForSlug(destinations, slug) {
 }
 
 function mapItineraryStops(raw) {
+  const isExpedition = String(raw?.cruise_type || "").trim().toLowerCase() === "expedition";
   return (raw.itinerary || []).map((stop) => {
     const kind = stop.kind || classifyItineraryStopKind(stop.port_name);
     let port_resolution = null;
     if (kind === "port") {
       port_resolution = resolveSilverseaPort(stop.port_name, "silversea_gatsby_itinerary");
     }
-    return {
+    const base = {
       ...stop,
       kind,
       port_resolution
     };
+    if (isExpedition && kind === "port") {
+      return enrichExpeditionItineraryStop(base, { destination: raw.destination_name });
+    }
+    return base;
   });
 }
 
