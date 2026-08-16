@@ -10,6 +10,10 @@ const {
   isEligibleSilverseaCruise
 } = require("./silversea-discovery-adapter");
 const { isFirstBatchEligible } = require("./silversea-controlled-batch");
+const { isExpeditionProductionEligible } = require("./silversea-expedition-controlled-batch");
+const { EXPEDITION_FIRST_BATCH_MODE } = require("./silversea-expedition-controlled-batch");
+const { classifyExpeditionExclusiveBucket } = require("./silversea-expedition-eligibility");
+const { EXPEDITION_SEMANTIC } = require("./silversea-expedition-semantics");
 const { cruiseIdentityKey, upsertCandidateRecord  } = require("./cruise-discovery-ops");
 const { ensureGlobalCruiseWriteLockForMutation } = require("./cruise-discovery-global-write-lock");
 const { snapshotRecordForRollback } = require("./cruise-discovery-maintenance-manifests");
@@ -25,7 +29,8 @@ function buildItineraryPorts(normalised) {
       (stop) =>
         stop.kind === "port" &&
         stop.port_resolution?.status === "resolved" &&
-        !stop.port_resolution?.expedition_logistics_gateway
+        !stop.port_resolution?.expedition_logistics_gateway &&
+        (!stop.expedition_semantic || stop.expedition_semantic === EXPEDITION_SEMANTIC.CONVENTIONAL_PORT)
     )
     .map((stop) => stop.port_resolution.canonicalPortName)
     .filter(Boolean);
@@ -321,6 +326,151 @@ async function applySilverseaBatchWrites(params = {}) {
   }, () => applySilverseaBatchWritesBody(params));
 }
 
+function buildExpeditionUpsertCandidate(normalised, cruiseLine, today = new Date().toISOString().slice(0, 10)) {
+  if (classifyExpeditionExclusiveBucket(normalised, today) !== "expedition_e2_complete") return null;
+  if (!isEligibleSilverseaCruise(normalised.product_type)) return null;
+
+  const c = normalised.candidate || {};
+  const productKey = officialProductKey(normalised.raw);
+  if (!productKey || !cruiseLine?.id || !c.destination_id || !c.ship_id) return null;
+
+  const itinerary_ports = buildItineraryPorts(normalised);
+  const itinerary = buildItinerarySummary(normalised);
+  const external_key = silverseaExternalKey(cruiseLine.id, productKey);
+  const identity_key = cruiseIdentityKey({
+    cruiseLineId: cruiseLine.id,
+    shipId: c.ship_id,
+    departureDate: c.departure_date,
+    officialUrl: c.official_url,
+    nights: c.nights,
+    returnDate: c.return_date,
+    officialSailingId: productKey
+  });
+
+  return {
+    ...c,
+    cruise_line_id: cruiseLine.id,
+    status: "active",
+    match_confidence: "high",
+    external_key,
+    identity_key,
+    official_sailing_id: productKey,
+    itinerary,
+    itinerary_ports,
+    raw_extract: {
+      ...(c.raw_extract || {}),
+      silversea_cruise_code: productKey,
+      silversea_adapter_id: ADAPTER_ID,
+      silversea_adapter_version: ADAPTER_VERSION,
+      silversea_batch_write: true,
+      silversea_expedition_controlled_batch: true,
+      silversea_cruise_type: "Expedition",
+      destination_key: normalised.destination_resolution?.destinationKey || null,
+      ship_match_method: normalised.ship_resolution?.method || null,
+      duration_matches_dates: normalised.raw?.duration_matches_dates === true,
+      expedition_endpoint_embark: normalised.departure_port_resolution || null,
+      expedition_endpoint_disembark: normalised.arrival_port_resolution || null
+    }
+  };
+}
+
+function classifyExpeditionProposedAction(normalised, existing, today, existingByOfficialId) {
+  if (!isExpeditionProductionEligible(normalised, today, existingByOfficialId)) {
+    return "not_expedition_batch_eligible";
+  }
+  if (isLegacyHiddenRow(existing)) existing = null;
+  if (!existing) return "insert_active";
+  return "duplicate_skip";
+}
+
+function buildExpeditionManifestEntry(normalised, cruiseLine, destinations, existing, today, existingByOfficialId) {
+  const productKey = officialProductKey(normalised.raw);
+  const dest = destinations.find((d) => d.slug === normalised.destination_resolution?.destinationKey);
+  const action = classifyExpeditionProposedAction(normalised, existing, today, existingByOfficialId);
+  const candidate = buildExpeditionUpsertCandidate(normalised, cruiseLine, today);
+
+  return {
+    official_sailing_id: productKey,
+    stable_identity_key: productKey,
+    product_type: normalised.product_type,
+    cruise_type: normalised.raw?.cruise_type || "Expedition",
+    source_url: normalised.raw?.official_url || normalised.candidate?.official_url || null,
+    full_path: normalised.raw?.full_path || null,
+    canonical_ship_id: normalised.ship_resolution?.ship?.id || normalised.candidate?.ship_id || null,
+    canonical_ship_name: normalised.ship_resolution?.ship?.name || normalised.raw?.ship_name || null,
+    departure_date: normalised.candidate?.departure_date || null,
+    return_date: normalised.candidate?.return_date || null,
+    nights: normalised.candidate?.nights || null,
+    official_departure_port: normalised.raw?.departure_port || null,
+    canonical_departure_port: normalised.candidate?.departure_port || null,
+    official_arrival_port: normalised.raw?.arrival_port || null,
+    canonical_arrival_port: normalised.arrival_port_resolution?.canonicalPortName || null,
+    destination_id: dest?.id || normalised.candidate?.destination_id || null,
+    destination_name: dest?.name || normalised.destination_resolution?.destinationKey || null,
+    itinerary_port_call_count: buildItineraryPorts(normalised).length,
+    duration_exact_match: normalised.raw?.duration_matches_dates === true,
+    completeness: action === "insert_active" ? "expedition_production_eligible" : "not_eligible",
+    existing_record_match: existing && !isLegacyHiddenRow(existing) ? existing.id : null,
+    existing_record_status: existing?.status || null,
+    proposed_action: action,
+    rollback: action === "insert_active" ? { delete_on_rollback: true } : null,
+    official_url: normalised.raw?.official_url || normalised.candidate?.official_url || null,
+    candidate
+  };
+}
+
+async function buildExpeditionBatchManifest({
+  selectedProducts,
+  cruiseLine,
+  destinations,
+  supabase,
+  runId,
+  today,
+  existingByOfficialId
+}) {
+  const indexes = supabase
+    ? await indexExistingSilverseaRecords(supabase, cruiseLine.id)
+    : { byOfficialId: existingByOfficialId || new Map() };
+
+  const entries = (selectedProducts || []).map((normalised) => {
+    const existing = indexes.byOfficialId.get(String(normalised.official_sailing_id).toUpperCase()) || null;
+    return buildExpeditionManifestEntry(
+      normalised,
+      cruiseLine,
+      destinations,
+      existing,
+      today,
+      indexes.byOfficialId
+    );
+  });
+
+  return {
+    generated_at: new Date().toISOString(),
+    mode: EXPEDITION_FIRST_BATCH_MODE,
+    run_id: runId || null,
+    adapter_id: ADAPTER_ID,
+    adapter_version: ADAPTER_VERSION,
+    cruise_line_id: cruiseLine.id,
+    writes_performed: false,
+    selected_official_sailing_ids: entries.map((e) => e.official_sailing_id),
+    products: entries
+  };
+}
+
+function dryRunExpeditionBatchManifest(manifest) {
+  const products = manifest?.products || [];
+  return {
+    authorised: products.filter((p) => p.proposed_action === "insert_active").length,
+    eligible: products.filter((p) => p.candidate).length,
+    proposed_inserts: products.filter((p) => p.proposed_action === "insert_active").length,
+    proposed_updates: products.filter((p) => p.proposed_action === "update_existing").length,
+    proposed_deletes: 0,
+    dedupe_new: products.filter((p) => p.proposed_action === "insert_active" && !p.existing_record_match).length,
+    classic_proposed_updates: 0,
+    legacy_proposed_updates: 0
+  };
+}
+
 module.exports = {
   silverseaExternalKey,
   buildItineraryPorts,
@@ -330,5 +480,9 @@ module.exports = {
   indexExistingSilverseaRecords,
   buildSilverseaBatchManifest,
   applySilverseaBatchWrites,
-  isLegacyHiddenRow
+  isLegacyHiddenRow,
+  buildExpeditionUpsertCandidate,
+  buildExpeditionManifestEntry,
+  buildExpeditionBatchManifest,
+  dryRunExpeditionBatchManifest
 };
