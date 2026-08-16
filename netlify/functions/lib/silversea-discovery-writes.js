@@ -471,6 +471,139 @@ function dryRunExpeditionBatchManifest(manifest) {
   };
 }
 
+async function applyExpeditionBatchWritesBody({
+  selectedProducts,
+  cruiseLine,
+  runId,
+  supabase,
+  today,
+  existingByOfficialId,
+  performWrites = true,
+  maxWrites = 250
+}) {
+  const stats = {
+    attempted: 0,
+    inserted: 0,
+    updated: 0,
+    duplicate_skips: 0,
+    invalid_skips: 0,
+    failed: 0,
+    write_details: []
+  };
+
+  const indexes = supabase
+    ? await indexExistingSilverseaRecords(supabase, cruiseLine.id)
+    : { byOfficialId: existingByOfficialId || new Map() };
+
+  let writesRemaining = maxWrites;
+  const upsertStats = { new: 0, upserted_active: 0, cruises_inserted: 0, cruises_updated: 0 };
+
+  for (const normalised of selectedProducts || []) {
+    if (writesRemaining <= 0) break;
+
+    const productKey = officialProductKey(normalised.raw);
+    const existing = indexes.byOfficialId.get(String(productKey).toUpperCase()) || null;
+    const action = classifyExpeditionProposedAction(normalised, existing, today, indexes.byOfficialId);
+
+    if (action === "duplicate_skip") {
+      stats.duplicate_skips += 1;
+      stats.write_details.push({
+        official_sailing_id: productKey,
+        proposed_action: action,
+        duplicate: true
+      });
+      continue;
+    }
+    if (action !== "insert_active") {
+      stats.invalid_skips += 1;
+      stats.write_details.push({
+        official_sailing_id: productKey,
+        proposed_action: action,
+        skipped: true
+      });
+      continue;
+    }
+
+    const candidate = buildExpeditionUpsertCandidate(normalised, cruiseLine, today);
+    if (!candidate) {
+      stats.invalid_skips += 1;
+      stats.write_details.push({
+        official_sailing_id: productKey,
+        proposed_action: "invalid_candidate",
+        skipped: true
+      });
+      continue;
+    }
+
+    stats.attempted += 1;
+    if (!performWrites) continue;
+
+    try {
+      const freshExisting =
+        (
+          await supabase(
+            `discovered_cruises?cruise_line_id=eq.${encodeURIComponent(
+              cruiseLine.id
+            )}&official_sailing_id=eq.${encodeURIComponent(productKey)}&select=id,official_sailing_id,status&limit=1`
+          )
+        )?.[0] || null;
+
+      if (freshExisting?.official_sailing_id) {
+        stats.duplicate_skips += 1;
+        stats.write_details.push({
+          official_sailing_id: productKey,
+          proposed_action: "duplicate_skip",
+          duplicate: true,
+          discovered_cruise_id: freshExisting.id
+        });
+        continue;
+      }
+
+      const result = await upsertCandidateRecord(candidate, upsertStats, {
+        matchPolicy: "official_sailing_id_only",
+        syncDestinationLinks: false,
+        prevRecord: null
+      });
+
+      writesRemaining -= 1;
+      if (result.created) stats.inserted += 1;
+      else stats.updated += 1;
+
+      stats.write_details.push({
+        discovered_cruise_id: result.row?.id || null,
+        official_sailing_id: productKey,
+        proposed_action: action,
+        result_action: result.created ? "inserted" : "updated",
+        created: result.created === true,
+        rollback_before: null
+      });
+
+      if (result.row?.id && result.row?.official_sailing_id) {
+        indexes.byOfficialId.set(String(result.row.official_sailing_id).toUpperCase(), result.row);
+      }
+    } catch (error) {
+      stats.failed += 1;
+      stats.write_details.push({
+        official_sailing_id: productKey,
+        proposed_action: action,
+        error: error.message || String(error)
+      });
+    }
+  }
+
+  return { stats, upsertStats, performWrites: performWrites === true, run_id: runId || null };
+}
+
+async function applyExpeditionBatchWrites(params = {}) {
+  if (params.performWrites === false) return applyExpeditionBatchWritesBody(params);
+  return ensureGlobalCruiseWriteLockForMutation(params.supabase, {
+    ownerId: params.runId,
+    runId: params.runId,
+    lineSlug: "silversea-cruises",
+    operation: params.mode || params.operation || EXPEDITION_FIRST_BATCH_MODE
+  }, () => applyExpeditionBatchWritesBody(params));
+}
+
 module.exports = {
   silverseaExternalKey,
   buildItineraryPorts,
@@ -484,5 +617,6 @@ module.exports = {
   buildExpeditionUpsertCandidate,
   buildExpeditionManifestEntry,
   buildExpeditionBatchManifest,
-  dryRunExpeditionBatchManifest
+  dryRunExpeditionBatchManifest,
+  applyExpeditionBatchWrites
 };
