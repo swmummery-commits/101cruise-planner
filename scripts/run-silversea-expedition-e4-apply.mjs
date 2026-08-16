@@ -242,7 +242,7 @@ async function verifyInsertedExpeditionRecords(sb, lineId, writeDetails, manifes
   }
 
   const select =
-    "id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,arrival_port,itinerary,itinerary_ports,status,official_url,source_url,official_sailing_id,raw_extract";
+    "id,cruise_line_id,ship_id,destination_id,departure_date,return_date,nights,departure_port,itinerary,itinerary_ports,status,official_url,source_url,official_sailing_id,raw_extract";
   const rows = await sb(`discovered_cruises?id=in.(${insertedIds.join(",")})&select=${select}`);
   const byOfficial = new Map((rows || []).map((r) => [String(r.official_sailing_id).toUpperCase(), r]));
   const manifestById = new Map((manifestProducts || []).map((m) => [m.official_sailing_id, m]));
