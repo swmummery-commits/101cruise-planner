@@ -34,7 +34,7 @@ const {
 const { resolveRawPortText } = require("./discovery-departure-port");
 
 const HYPOTHETICAL_DESTINATION_SLUGS = Object.freeze({
-  "arctic & greenland": "arctic-greenland"
+  "arctic & greenland": "northern-europe"
 });
 
 function isExpeditionProduct(raw) {

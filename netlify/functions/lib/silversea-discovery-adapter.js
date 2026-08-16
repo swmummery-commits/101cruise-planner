@@ -31,6 +31,7 @@ const {
   isExpeditionCruiseType
 } = require("./silversea-expedition-endpoint-resolution");
 const { E2B_SILVERSEA_ADAPTER_ALIASES } = require("./silversea-expedition-e2b-port-batch");
+const { E2C_SILVERSEA_DESTINATION_SLUGS } = require("./silversea-expedition-e2c-destination-batch");
 
 const LINE_NAME = "Silversea Cruises";
 const LINE_SLUG = "silversea-cruises";
@@ -51,7 +52,8 @@ const SILVERSEA_DESTINATION_SLUG = Object.freeze({
   "australia & new zealand": "australia-new-zealand",
   "south america": "south-america",
   "french polynesia & pacific": "south-pacific",
-  kimberley: "australia-new-zealand"
+  kimberley: "australia-new-zealand",
+  ...E2C_SILVERSEA_DESTINATION_SLUGS
 });
 
 /**
