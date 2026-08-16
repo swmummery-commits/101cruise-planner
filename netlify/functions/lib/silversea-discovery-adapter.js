@@ -26,6 +26,11 @@ const {
 } = require("./silversea-discovery-source");
 const { SILVERSEA_ADAPTER_PORT_ALIASES } = require("./silversea-port-remediation");
 const { enrichExpeditionItineraryStop } = require("./silversea-expedition-semantics");
+const {
+  resolveExpeditionEndpointPort,
+  isExpeditionCruiseType
+} = require("./silversea-expedition-endpoint-resolution");
+const { E2B_SILVERSEA_ADAPTER_ALIASES } = require("./silversea-expedition-e2b-port-batch");
 
 const LINE_NAME = "Silversea Cruises";
 const LINE_SLUG = "silversea-cruises";
@@ -55,6 +60,7 @@ const SILVERSEA_DESTINATION_SLUG = Object.freeze({
  */
 const SILVERSEA_PORT_ALIASES = Object.freeze({
   ...SILVERSEA_ADAPTER_PORT_ALIASES,
+  ...Object.fromEntries(E2B_SILVERSEA_ADAPTER_ALIASES.map((row) => [row.source_label, row.target_canonical])),
   "athens (piraeus)": "Piraeus",
   "civitavecchia (rome)": "Civitavecchia",
   "fusina (venice)": "Venice",
@@ -98,12 +104,24 @@ function aliasPortName(value) {
   return SILVERSEA_PORT_ALIASES[raw.toLowerCase()] || raw;
 }
 
-function resolveSilverseaPort(value, sourceField) {
+function resolveSilverseaPort(value, sourceField, context = {}) {
   const aliased = aliasPortName(value);
-  if (!aliased) {
+  const lookupValue = aliased || value;
+  if (!lookupValue) {
     return resolveRawPortText(value, { sourceField });
   }
-  const direct = resolveRawPortText(aliased, { sourceField });
+
+  if (isExpeditionCruiseType(context.cruiseType)) {
+    const expedition = resolveExpeditionEndpointPort(lookupValue, sourceField, context);
+    if (expedition.status === "resolved") return expedition;
+    if (aliased && aliased !== value) {
+      const originalExpedition = resolveExpeditionEndpointPort(value, sourceField, context);
+      if (originalExpedition.status === "resolved") return originalExpedition;
+    }
+    return expedition;
+  }
+
+  const direct = resolveRawPortText(lookupValue, { sourceField });
   if (direct.status === "resolved") return direct;
   if (aliased !== value) {
     const original = resolveRawPortText(value, { sourceField });
@@ -145,11 +163,15 @@ function destinationRowIdForSlug(destinations, slug) {
 
 function mapItineraryStops(raw) {
   const isExpedition = String(raw?.cruise_type || "").trim().toLowerCase() === "expedition";
+  const portContext = { cruiseType: raw?.cruise_type };
   return (raw.itinerary || []).map((stop) => {
     const kind = stop.kind || classifyItineraryStopKind(stop.port_name);
     let port_resolution = null;
     if (kind === "port") {
-      port_resolution = resolveSilverseaPort(stop.port_name, "silversea_gatsby_itinerary");
+      port_resolution = resolveSilverseaPort(stop.port_name, "silversea_gatsby_itinerary", {
+        ...portContext,
+        portCode: stop.port_code
+      });
     }
     const base = {
       ...stop,
@@ -198,8 +220,14 @@ function normaliseSilverseaProduct(raw, context = {}) {
   const officialId = officialProductKey(raw);
   const nights = raw.source_duration;
   const shipResolution = resolveSilverseaShip(raw, context);
-  const embarkMeta = resolveSilverseaPort(raw.departure_port, "silversea_gatsby_catalogue");
-  const disembarkMeta = resolveSilverseaPort(raw.arrival_port, "silversea_gatsby_catalogue");
+  const embarkMeta = resolveSilverseaPort(raw.departure_port, "silversea_gatsby_catalogue", {
+    cruiseType: raw?.cruise_type,
+    portCode: raw?.departure_port_code
+  });
+  const disembarkMeta = resolveSilverseaPort(raw.arrival_port, "silversea_gatsby_catalogue", {
+    cruiseType: raw?.cruise_type,
+    portCode: raw?.arrival_port_code
+  });
   const itinerary = mapItineraryStops(raw);
   const reconcile = embarkDisembarkReconcile(raw, itinerary);
 

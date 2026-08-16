@@ -21,7 +21,12 @@ function silverseaExternalKey(cruiseLineId, productKey) {
 
 function buildItineraryPorts(normalised) {
   return (normalised.itinerary || [])
-    .filter((stop) => stop.kind === "port" && stop.port_resolution?.status === "resolved")
+    .filter(
+      (stop) =>
+        stop.kind === "port" &&
+        stop.port_resolution?.status === "resolved" &&
+        !stop.port_resolution?.expedition_logistics_gateway
+    )
     .map((stop) => stop.port_resolution.canonicalPortName)
     .filter(Boolean);
 }

@@ -27,11 +27,11 @@ const EXPEDITION_EXCLUSIVE_BUCKETS = Object.freeze([
   "expedition_e2_complete"
 ]);
 
-const HYPOTHETICAL_ENDPOINT_PORTS = Object.freeze({
-  "puerto williams": "Puerto Williams",
-  "king george island": "King George Island",
-  iqaluit: "Iqaluit"
-});
+const {
+  isExpeditionEndpointResolved,
+  resolveExpeditionLogisticsGateway
+} = require("./silversea-expedition-endpoint-resolution");
+const { resolveRawPortText } = require("./discovery-departure-port");
 
 const HYPOTHETICAL_DESTINATION_SLUGS = Object.freeze({
   "arctic & greenland": "arctic-greenland"
@@ -46,7 +46,7 @@ function hasDurationExactMatch(raw) {
 }
 
 function endpointCanonicallyResolved(portMeta) {
-  return portMeta?.status === "resolved" && Boolean(portMeta?.canonicalPortName);
+  return isExpeditionEndpointResolved(portMeta);
 }
 
 function analyseExpeditionItineraryStops(stops = []) {
@@ -178,14 +178,12 @@ function evaluateExpeditionEligibility(normalised, today = new Date().toISOStrin
   };
 }
 
-function applyHypotheticalEndpointResolution(portMeta, rawName) {
+function applyHypotheticalEndpointResolution(portMeta, rawName, portCode) {
   if (endpointCanonicallyResolved(portMeta)) return portMeta;
-  const key = String(rawName || "").trim().toLowerCase();
-  for (const [needle, canonical] of Object.entries(HYPOTHETICAL_ENDPOINT_PORTS)) {
-    if (key.includes(needle)) {
-      return { status: "resolved", canonicalPortName: canonical, method: "hypothetical_e2b_gateway" };
-    }
-  }
+  const gateway = resolveExpeditionLogisticsGateway({ sourceName: rawName, portCode });
+  if (gateway) return gateway;
+  const catalogue = resolveRawPortText(rawName);
+  if (catalogue.status === "resolved") return catalogue;
   return portMeta;
 }
 
@@ -205,11 +203,13 @@ function evaluateHypotheticalExpeditionEligibility(normalised, today = new Date(
   const hypotheticalDest = applyHypotheticalDestinationResolution(normalised);
   const hypotheticalEmbark = applyHypotheticalEndpointResolution(
     normalised.departure_port_resolution,
-    normalised.raw?.departure_port
+    normalised.raw?.departure_port,
+    normalised.raw?.departure_port_code
   );
   const hypotheticalDisembark = applyHypotheticalEndpointResolution(
     normalised.arrival_port_resolution,
-    normalised.raw?.arrival_port
+    normalised.raw?.arrival_port,
+    normalised.raw?.arrival_port_code
   );
   const hypothetical = {
     ...normalised,

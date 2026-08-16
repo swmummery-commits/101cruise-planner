@@ -71,7 +71,7 @@ Bergen,"Bergen, Norway",Bergen,Norway,NO,Norwegian Fjords,60.397,5.313,
 Flam,"Flåm, Norway",Flåm,Norway,NO,Norwegian Fjords,60.863,7.114,Flam
 Geiranger,"Geiranger, Norway",Geiranger,Norway,NO,Norwegian Fjords,62.101,7.207,
 Alesund,"Ålesund, Norway",Ålesund,Norway,NO,Norwegian Fjords,62.472,6.154,Alesund
-Tromso,"Tromsø, Norway",Tromsø,Norway,NO,Arctic,69.649,18.956,Tromso
+Tromso,"Tromsø, Norway",Tromsø,Norway,NO,Arctic,69.649,18.956,Tromso|Tromsø
 Honningsvag,"Honningsvåg (North Cape), Norway",Honningsvåg,Norway,NO,Arctic,70.982,25.97,North Cape|Honningsvag
 Longyearbyen,"Longyearbyen, Svalbard",Longyearbyen,Norway,NO,Arctic,78.246,15.627,Svalbard|Spitsbergen
 Stockholm,"Stockholm, Sweden",Stockholm,Sweden,SE,Baltic,59.329,18.068,Nynashamn
@@ -499,3 +499,12 @@ Spanish Town Virgin Gorda,"Spanish Town, Virgin Gorda",Spanish Town,British Virg
 St Helier,"St Helier, Jersey",St Helier,Jersey,JE,Northern Europe,49.179,-2.107,St Helier Jersey|Jersey
 Arica,"Arica, Chile",Arica,Chile,CL,South America,-18.479,-70.319,Arica Chile
 KGari Fraser Island,"K'Gari (Fraser Island), Australia",Kingfisher Bay,Australia,AU,Australia New Zealand,-25.251,153.154,K'Gari (formerly Fraser Island)|Fraser Island|K'Gari
+Puerto Williams,"Puerto Williams, Chile",Puerto Williams,Chile,CL,Antarctica Gateway,-54.935,-67.604,Puerto Williams Chile
+Sisimiut,"Sisimiut, Greenland",Sisimiut,Greenland,GL,Arctic,66.939,-53.669,Sisimiut Greenland
+Ilulissat,"Ilulissat, Greenland",Ilulissat,Greenland,GL,Arctic,69.219,-51.098,Ilulissat Greenland
+Rabaul,"Rabaul, Papua New Guinea",Rabaul,Papua New Guinea,PG,South Pacific,-4.199,152.163,Rabaul Papua New Guinea
+Santa Ana Island,"Santa Ana (Nendo), Solomon Islands",Santa Ana,Solomon Islands,SB,South Pacific,-10.848,162.457,Santa Ana|Santa Ana Solomon Islands|Nendo
+Iqaluit,"Iqaluit, Nunavut",Iqaluit,Canada,CA,Arctic,63.747,-68.526,Iqaluit (Nunavut)|Iqaluit Nunavut
+Apra Harbor,"Apra Harbor, Guam",Apra,Guam,GU,Pacific,13.443,144.654,Apra|Apra Guam
+Otaru,"Otaru, Japan",Otaru,Japan,JP,Japan,43.19,141.001,Otaru (Hokkaido)|Otaru Hokkaido
+Tema,"Tema (Accra), Ghana",Tema,Ghana,GH,Africa,5.669,-0.017,Tema (Accra)|Tema Accra|Tema Ghana
