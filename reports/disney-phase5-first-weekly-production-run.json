@@ -1,0 +1,74 @@
+{
+  "generated_at": "2026-08-16T04:40:00.000Z",
+  "trigger_type": "manual_commissioning",
+  "run_id": "disney-weekly-2026-08-16T04-19-23-098Z",
+  "report_path": "reports/disney-weekly-maintenance-2026-08-16T04-19-23-098Z.json",
+  "source": {
+    "total": 650,
+    "complete": true,
+    "accepted_baseline": null,
+    "collapse_pct": 0,
+    "quality_gate": "PASS",
+    "production_eligible": 622,
+    "within_21_day_cutoff_excluded": 28
+  },
+  "production_before": {
+    "active_official": 622,
+    "total_official": 623,
+    "legacy_rows": 6,
+    "disney_total": 629
+  },
+  "manifest": {
+    "current": 622,
+    "inserts": 0,
+    "safe_updates": 0,
+    "review": 0,
+    "absence_observed": 0,
+    "absence_confirmed": 0,
+    "reactivations": 0,
+    "deferred": 0
+  },
+  "write_result": {
+    "material_attempted": 0,
+    "inserted": 0,
+    "updated": 0,
+    "status_changed": 0,
+    "reactivated": 0,
+    "failed": 0,
+    "touches": 622
+  },
+  "locks": {
+    "line_lock": "acquired_and_released",
+    "global_lock": "not_required_zero_material_writes"
+  },
+  "rollback_manifest": null,
+  "production_after": {
+    "active_official": 622,
+    "total_official": 623,
+    "legacy_rows": 6,
+    "disney_total": 629
+  },
+  "duplicate_audit": {
+    "duplicate_official_sailing_id": 0,
+    "duplicate_external_key": 0,
+    "duplicate_identity_key": 0
+  },
+  "legacy_immutability": {
+    "legacy_rows_unchanged": true,
+    "legacy_ids": [
+      "04a3bf11-7c10-462e-83b6-63f2a5d5044d",
+      "342e0a91-899b-457c-b9d7-4acd8e9e56ae",
+      "5a2a9a59-ee1d-410d-bc47-4747757e08d0",
+      "88adb900-0aed-4a21-bdf6-fd5bc65b1348",
+      "ac4ff6fc-dae5-47fa-9708-62ea1ebd5542",
+      "d5fb2cfe-cc46-4138-a21a-04fd5777dc64"
+    ]
+  },
+  "post_run_reconciliation": {
+    "all_current_official_reconcile_duplicate_skip": true,
+    "one_official_expired_within_21_day_cutoff": "DF0824|2026-09-06",
+    "hard_deletes": 0
+  },
+  "quality_gate": "PASS",
+  "ready_to_enable_schedule": true
+}

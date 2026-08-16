@@ -1,0 +1,118 @@
+{
+  "generated_at": "2026-08-16T04:45:00.000Z",
+  "repository": {
+    "starting_sha": "470ca3941c871bc87fa8e5f6ea001c81a4ba4e8a",
+    "tooling_sha": "cc507406e55d93b9cef72a1d769eac3964bfba14",
+    "commissioning_sha": "cc507406e55d93b9cef72a1d769eac3964bfba14",
+    "final_report_sha": null
+  },
+  "production_baseline": {
+    "before_commissioning": {
+      "active_official": 622,
+      "total_official": 623,
+      "legacy_rows": 6,
+      "disney_total": 629,
+      "duplicate_audit_clean": true,
+      "explainable_delta_from_phase4b": "One official sailing (DF0824|2026-09-06) expired via shared 21-day public booking cutoff lifecycle"
+    },
+    "after_commissioning": {
+      "active_official": 622,
+      "total_official": 623,
+      "legacy_rows": 6,
+      "disney_total": 629,
+      "duplicate_audit_clean": true
+    }
+  },
+  "source_quality_policy": {
+    "complete_pavas_required": true,
+    "identity_coverage_100": true,
+    "ship_resolution_100": true,
+    "embark_resolution_100": true,
+    "destination_resolution_100": true,
+    "duration_integrity_100": true,
+    "endpoint_unresolved_conflicts_0": true,
+    "eligibility_arithmetic_pass": true
+  },
+  "collapse_guard": {
+    "threshold_pct": 0.2,
+    "raw_identity_baseline": true,
+    "manual_run_collapse_pct": 0
+  },
+  "weekly_update_policy": {
+    "max_material_writes": 30,
+    "identity_immutable": true,
+    "identity_critical_review_required": true
+  },
+  "source_absence_policy": {
+    "consecutive_required": 2,
+    "confirmation_window_days": 14,
+    "hard_delete": false,
+    "cancellation_inferred_from_absence": false,
+    "production_deactivation_enabled": true
+  },
+  "write_cap": 30,
+  "locks": {
+    "line_lock_key": "disney-cruise-line:weekly",
+    "line_lock_lease_seconds": 1800,
+    "global_lock_key": "controlled_production_import:global"
+  },
+  "first_manual_run": {
+    "trigger_type": "manual_commissioning",
+    "run_id": "disney-weekly-2026-08-16T04-19-23-098Z",
+    "source_total": 650,
+    "production_eligible": 622,
+    "material_writes": 0,
+    "inserts": 0,
+    "updates": 0,
+    "source_absence_actions": 0,
+    "touches": 622,
+    "legacy_rows_touched": 0,
+    "status": "completed"
+  },
+  "post_run_reconciliation": {
+    "duplicate_official_sailing_id": 0,
+    "duplicate_external_key": 0,
+    "duplicate_identity_key": 0,
+    "legacy_six_unchanged": true,
+    "hard_deletes": 0
+  },
+  "netlify": {
+    "authenticated": true,
+    "deployed": true,
+    "deploy_id": "6a813ed23cd211eb58070523",
+    "deployed_sha": "cc507406e55d93b9cef72a1d769eac3964bfba14",
+    "production_url": "https://admirable-tiramisu-d4da8a.netlify.app",
+    "cron_function": "disney-weekly-maintenance-cron",
+    "background_function": "disney-weekly-maintenance-background",
+    "cron_expression": "0 2 * * 1",
+    "utc_schedule": "Monday 02:00 UTC",
+    "perth_schedule": "Monday 10:00 Australia/Perth",
+    "scheduled_enabled": true,
+    "production_writes_enabled": true,
+    "absence_deactivation_enabled": true,
+    "cron_secret_present": true,
+    "cron_unauthorized_probe_http_status": 403,
+    "functions_listed_with_schedule": true
+  },
+  "tests": {
+    "test_disney_weekly_maintenance": "47 passed",
+    "test_disney_discovery": "126 passed",
+    "test_disney_controlled_batch": "27 passed",
+    "test_disney_phase4b_cumulative": "20 passed",
+    "test_global_cruise_write_lock": "12 passed",
+    "test_public_booking_cutoff": "17 passed"
+  },
+  "legacy_rows": {
+    "count": 6,
+    "unchanged": true
+  },
+  "quality_gate": {
+    "weekly_runner_passed": true,
+    "manual_commissioning_passed": true,
+    "production_deployment_verified": true,
+    "automation_enabled": true,
+    "overall_passed": true
+  },
+  "blockers": [],
+  "recommendation": "Disney Phase 5 weekly production maintenance is commissioned. Monitor first scheduled Monday 10:00 Perth run via cruise_discovery_runs and Netlify function logs."
+}
