@@ -283,6 +283,58 @@ async function writeResolutionAudit(entry) {
  * Upsert a candidate by identity_key (preferred) then external_key.
  * Never duplicates an active sailing during reprocessing.
  */
+function normalizeItineraryPortsForDb(candidate) {
+  const ports = candidate?.itinerary_ports;
+  if (ports == null) return [];
+  if (!Array.isArray(ports)) return [];
+  return ports.map((port) => String(port).trim()).filter(Boolean);
+}
+
+/**
+ * Build the discovered_cruises upsert payload fields shared by insert/update paths.
+ * itinerary_ports is included only for INSERT — updates are handled by dedicated repair flows.
+ */
+function buildDiscoveredCruiseUpsertPayload(candidate, mergedDeparture, { identity_key, status, reasons, now, includeItineraryPorts = false }) {
+  const payload = {
+    cruise_line_id: candidate.cruise_line_id,
+    ship_id: candidate.ship_id,
+    destination_id: candidate.destination_id || null,
+    departure_date: candidate.departure_date,
+    return_date: candidate.return_date,
+    nights: candidate.nights,
+    departure_port: mergedDeparture.departure_port,
+    itinerary: candidate.itinerary,
+    brochure_fare: candidate.brochure_fare,
+    currency: candidate.currency,
+    brochure_fare_display: candidate.brochure_fare_display,
+    official_url: candidate.official_url,
+    source_url: candidate.source_url || candidate.official_url,
+    external_key: candidate.external_key,
+    identity_key,
+    status,
+    match_confidence: candidate.match_confidence || (status === "active" ? "high" : "low"),
+    review_reason: reasons.length ? reasons.join("; ") : null,
+    raw_extract: {
+      ...(candidate.raw_extract || {}),
+      departure_port_meta: mergedDeparture.departure_port_meta || candidate.raw_extract?.departure_port_meta || null,
+      departure_port_merge: mergedDeparture.blocked
+        ? { blocked: true, reason: mergedDeparture.reason }
+        : { blocked: false, reason: mergedDeparture.reason }
+    },
+    departure_date_raw: candidate.departure_date_raw || null,
+    return_date_raw: candidate.return_date_raw || null,
+    departure_date_manual: Boolean(candidate.departure_date_manual),
+    official_sailing_id: candidate.official_sailing_id || null,
+    last_seen_at: now,
+    last_verified_at: status === "active" ? now : null,
+    last_changed_at: now
+  };
+  if (includeItineraryPorts) {
+    payload.itinerary_ports = normalizeItineraryPortsForDb(candidate);
+  }
+  return payload;
+}
+
 async function upsertCandidateRecord(candidate, stats, options = {}) {
   const identity_key =
     candidate.identity_key ||
@@ -378,40 +430,13 @@ async function upsertCandidateRecord(candidate, stats, options = {}) {
         ? "match_required"
         : lifecycleFromValidation(reasons);
 
-  const payload = {
-    cruise_line_id: candidate.cruise_line_id,
-    ship_id: candidate.ship_id,
-    destination_id: candidate.destination_id || null,
-    departure_date: candidate.departure_date,
-    return_date: candidate.return_date,
-    nights: candidate.nights,
-    departure_port: mergedDeparture.departure_port,
-    itinerary: candidate.itinerary,
-    brochure_fare: candidate.brochure_fare,
-    currency: candidate.currency,
-    brochure_fare_display: candidate.brochure_fare_display,
-    official_url: candidate.official_url,
-    source_url: candidate.source_url || candidate.official_url,
-    external_key: candidate.external_key,
+  const payload = buildDiscoveredCruiseUpsertPayload(candidate, mergedDeparture, {
     identity_key,
     status,
-    match_confidence: candidate.match_confidence || (status === "active" ? "high" : "low"),
-    review_reason: reasons.length ? reasons.join("; ") : null,
-    raw_extract: {
-      ...(candidate.raw_extract || {}),
-      departure_port_meta: mergedDeparture.departure_port_meta || candidate.raw_extract?.departure_port_meta || null,
-      departure_port_merge: mergedDeparture.blocked
-        ? { blocked: true, reason: mergedDeparture.reason }
-        : { blocked: false, reason: mergedDeparture.reason }
-    },
-    departure_date_raw: candidate.departure_date_raw || null,
-    return_date_raw: candidate.return_date_raw || null,
-    departure_date_manual: Boolean(candidate.departure_date_manual),
-    official_sailing_id: candidate.official_sailing_id || null,
-    last_seen_at: now,
-    last_verified_at: status === "active" ? now : null,
-    last_changed_at: now
-  };
+    reasons,
+    now,
+    includeItineraryPorts: !prev
+  });
 
   const destIds = [
     ...new Set(
@@ -747,6 +772,8 @@ module.exports = {
   officialSailingIdOfRecord,
   recordsShareOfficialSailingId,
   writeResolutionAudit,
+  normalizeItineraryPortsForDb,
+  buildDiscoveredCruiseUpsertPayload,
   upsertCandidateRecord,
   reprocessCandidateIds,
   reprocessByExternalKeys,
