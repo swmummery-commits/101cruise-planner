@@ -1,0 +1,122 @@
+{
+  "incident_id": "princess-weekly-maintenance-p2-first-remediation-batch",
+  "generated_at": "2026-08-17T01:59:40.000Z",
+  "repository": {
+    "starting_sha": "c08ceb8b503a6d7b17cb81a25c112a8085072861",
+    "tooling_sha": "d9f25d443177d6dcbce1fb986a38523ebda7cad8",
+    "production_report_sha": "pending_commit"
+  },
+  "p1_correction": {
+    "historical_identity_set_available": false,
+    "historical_new_identity_count": null,
+    "corrected_terminology": "old_rule_eligible_current_production_missing replaces unproven backlog label; A_genuinely_newly_published_source_sailing set to null not zero"
+  },
+  "production_baseline": {
+    "active_before": 1480,
+    "expired_before": 30,
+    "active_after": 1510,
+    "expired_after": 30,
+    "attributable_delta": 30
+  },
+  "exact_source_accounting": {
+    "raw_groups": 1007,
+    "expanded_dated_sailings": 2131,
+    "within_public_cutoff": 70,
+    "public_eligible_complete": 2061,
+    "public_incomplete": 0,
+    "other_excluded": 0,
+    "accounted_total": 2131,
+    "accounting_delta": 0,
+    "accounting_exact": true,
+    "definition": "expanded = within_public_cutoff + public_eligible_complete + public_incomplete + other_excluded (disjoint; Princess cruisetours=0)"
+  },
+  "source_reproducibility": {
+    "pass": true,
+    "eligible_hash_equal": true,
+    "run1_eligible": 2061,
+    "run2_eligible": 2061
+  },
+  "resolver_validation": {
+    "resolver_remediated_count": 396,
+    "distinct_mappings": 85,
+    "ambiguous_mappings": 0,
+    "low_confidence_mappings": 0,
+    "pass": true
+  },
+  "old_rule_eligible_current_production_missing": {
+    "count": 186,
+    "historically_proven_backlog": "UNKNOWN",
+    "historically_proven_new_since_2026_08_10": "UNKNOWN"
+  },
+  "scheduled_review_required_behaviour": {
+    "implemented": true,
+    "exit_code_on_review_required": 0,
+    "generic_failure_email_avoided": true,
+    "technical_failures_still_fail": true
+  },
+  "frozen_batch": {
+    "size": 30,
+    "resolver_remediated_selected": 15,
+    "old_rule_missing_selected": 15,
+    "freeze_hash": "370794e544b7b5329cbb3057b978c25dee443aa497e39dd616db3a4b123f0ccd",
+    "freeze_file": "reports/princess-incident-p2-batch-1-freeze.json"
+  },
+  "pre_write_collisions": {
+    "official": 0,
+    "external": 0,
+    "identity": 0
+  },
+  "global_lock": {
+    "pass": true,
+    "key": "controlled_production_import:global",
+    "owner_run_id": "princess-incident-p2-batch1-2026-08-17T01-52-05-839Z",
+    "acquired": true,
+    "released": true
+  },
+  "write_results": {
+    "attempted": 30,
+    "inserted": 30,
+    "updated": 0,
+    "failed": 0,
+    "deleted_deactivated": 0
+  },
+  "rollback_manifest": {
+    "persisted": true,
+    "record_id": "89fe3fee-8591-473a-95ae-c6edd0e2e568"
+  },
+  "post_write_verification": {
+    "result": "30/30 PASS",
+    "ok": true
+  },
+  "post_write_idempotency": {
+    "eligible": 2061,
+    "outstanding_inserts": 552,
+    "recognised": 1509,
+    "active_production": 1510,
+    "proposed_updates": 0,
+    "delta_from_p1_outstanding": -30
+  },
+  "collateral_lines": {
+    "hal_active_before": 823,
+    "hal_active_after": 823,
+    "celebrity_active_before": 1163,
+    "celebrity_active_after": 1163
+  },
+  "source_absence": {
+    "CSR07H|KP|2027-02-28": {
+      "status": "active",
+      "unchanged": true,
+      "deactivated": false
+    }
+  },
+  "tests": {
+    "test_princess_weekly_maintenance": "77 passed",
+    "test_princess_catch_up_batch": "not rerun (no batch lib changes)",
+    "test_global_cruise_write_lock": "12 passed (prior)"
+  },
+  "quality_gate": "PASS",
+  "remaining_outstanding_inserts": 552,
+  "p2_pass": true,
+  "ready_for_accelerated_serial_controlled_catch_up": false,
+  "note": "P2 authorizes exactly ONE batch of 30. Further catch-up requires separate approved P3+ sessions."
+}
