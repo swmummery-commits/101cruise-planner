@@ -1,0 +1,276 @@
+{
+  "incident_id": "princess-weekly-maintenance-p1-582-insert-spike",
+  "generated_at": "2026-08-17T01:30:00.000Z",
+  "phase": "read_only_forensics_complete",
+  "repository": {
+    "name": "swmummery-commits/101cruise-planner",
+    "starting_sha": "9c7c8c9ca2b75bdbb1e783be8a9eca337564e6f8",
+    "post_pull_sha": "9c7c8c9ca2b75bdbb1e783be8a9eca337564e6f8",
+    "origin_main_sha": "9c7c8c9ca2b75bdbb1e783be8a9eca337564e6f8",
+    "tooling_sha_after_hardening": "pending_commit",
+    "previous_successful_run_sha": "8f867a7f0d1879ed6df3dbddbecc363b8765c24e",
+    "failed_run_sha": "2e7b6de894c575a8386cc2555bc1bca14418d85c"
+  },
+  "failed_workflow_evidence": {
+    "workflow": "Princess Weekly Maintenance (APPLY)",
+    "run_id": 31969936947,
+    "job_id": 95220708035,
+    "sha": "2e7b6de894c575a8386cc2555bc1bca14418d85c",
+    "observed": {
+      "active_production_total": 1480,
+      "official_source_total": 1007,
+      "eligible_total": 2061,
+      "recognised_existing_eligible": 1479,
+      "outstanding_eligible_inserts": 582,
+      "proposed_updates": 0,
+      "source_absent_active": 1,
+      "within_public_cutoff_excluded": 70,
+      "incomplete_skipped": 0,
+      "expanded_sailings": null,
+      "previous_eligible_total": 1502,
+      "eligible_delta": 559,
+      "eligible_change_pct": 37.217,
+      "write_cap": 30,
+      "attempted_writes": 0,
+      "committed_writes": 0,
+      "failure_reason": "weekly_change_volume_exceeds_initial_cap",
+      "source_absent_identity": "CSR07H|KP|2027-02-28"
+    }
+  },
+  "previous_successful_workflow_evidence": {
+    "run_id": 31351823248,
+    "job_id": 93343982378,
+    "sha": "8f867a7f0d1879ed6df3dbddbecc363b8765c24e",
+    "observed": {
+      "active_production_total": 1502,
+      "official_source_total": 1000,
+      "expanded_sailings": 1954,
+      "eligible_total": 1502,
+      "recognised_existing_eligible": 1502,
+      "outstanding_eligible_inserts": 0,
+      "proposed_updates": 0,
+      "source_absent_active": 0,
+      "within_public_cutoff_excluded": 63,
+      "incomplete_skipped": 390,
+      "quality_gate": "PASS"
+    }
+  },
+  "production_safety_verification": {
+    "failed_run_mutations": 0,
+    "total_princess_rows": 1520,
+    "active": 1480,
+    "expired": 30,
+    "other_statuses": {
+      "hidden": 1,
+      "match_required": 1,
+      "validation_failed": 8
+    },
+    "duplicate_official_sailing_id": 0,
+    "duplicate_external_key": 0,
+    "duplicate_identity_key": 0,
+    "production_writes_performed": 0,
+    "note": "Daily 21-day expiry is separate from weekly maintenance; active dropped 1502→1480 (−22) via ordinary expiry since last successful run."
+  },
+  "weekly_write_cap": {
+    "value": 30,
+    "increased": false,
+    "cap_worked_correctly": true
+  },
+  "current_source_run_1": {
+    "official_source_total": 1007,
+    "raw_groups": 1007,
+    "expanded_dated_sailings": 2131,
+    "cruise_products": 2131,
+    "complete_high_confidence": 2131,
+    "incomplete": 0,
+    "within_cutoff": 70,
+    "public_eligible": 2061,
+    "cruisetours_excluded": 0,
+    "ship_resolution_pct": 100,
+    "departure_port_resolution_pct": 100,
+    "destination_resolution_pct": 100,
+    "identity_coverage_pct": 100,
+    "duplicate_identities": 0,
+    "insert_candidate_count": 582,
+    "eligible_ids_hash": "5161b08de272b733756aff82515bbf1a3faa2f112d4d2d2fe12f2b0bd86be817",
+    "source_accounting_arithmetic": "2131 = 2061 + 70 + 0 + 0 (eligible + within_cutoff + incomplete + cruisetours)"
+  },
+  "current_source_run_2": {
+    "public_eligible": 2061,
+    "expanded_dated_sailings": 2131,
+    "eligible_ids_hash": "5161b08de272b733756aff82515bbf1a3faa2f112d4d2d2fe12f2b0bd86be817",
+    "insert_candidate_count": 582
+  },
+  "source_reproducibility": {
+    "pass": true,
+    "run1_only": 0,
+    "run2_only": 0,
+    "common": 2061,
+    "eligible_delta": 0,
+    "hash_equal": true
+  },
+  "old_code_current_source": {
+    "sha": "8f867a7f0d1879ed6df3dbddbecc363b8765c24e",
+    "raw_groups": 1007,
+    "expanded_dated_sailings": 2131,
+    "public_eligible": 1665,
+    "incomplete": 401,
+    "within_cutoff": 70,
+    "insert_candidate_count": 186,
+    "failure_counts": {
+      "validation:Destination not matched": 401,
+      "confidence:review": 401
+    }
+  },
+  "current_code_current_source": {
+    "sha": "9c7c8c9ca2b75bdbb1e783be8a9eca337564e6f8",
+    "raw_groups": 1007,
+    "expanded_dated_sailings": 2131,
+    "public_eligible": 2061,
+    "incomplete": 0,
+    "within_cutoff": 70,
+    "insert_candidate_count": 582
+  },
+  "code_vs_code_eligible_comparison": {
+    "old_eligible": 1665,
+    "current_eligible": 2061,
+    "eligible_delta": 396,
+    "only_in_current": 396,
+    "only_in_old": 0,
+    "common": 1665,
+    "old_incomplete": 401,
+    "current_incomplete": 0,
+    "incomplete_delta": -401,
+    "conclusion": "SOURCE UNCHANGED at expanded level (2131 both). Eligible delta is entirely CODE/REFERENCE-DATA driven on the same live source."
+  },
+  "expanded_sailings_null_explanation": {
+    "cause": "report_plumbing",
+    "detail": "Cap-failure return path in executeWeeklyMaintenance omitted simulation from executeResult; CLI read simulation.raw_sailing_count → null. Actual expanded count is 2131. NOT evidence of missing source enumeration."
+  },
+  "code_reference_delta": {
+    "princess_discovery_source_materially_changed": false,
+    "princess_discovery_adapter_materially_changed": false,
+    "shared_resolver_reference_affected_princess": true,
+    "affected_eligible_count": 396,
+    "key_files_changed_between_success_and_failure": [
+      "data/ports/ports-catalogue.csv (+510/−251 lines between 8f867a7 and 2e7b6de)",
+      "netlify/functions/lib/discovery-departure-port.js",
+      "netlify/functions/lib/discovery-destination-resolver.js"
+    ],
+    "princess_specific_files_unchanged": [
+      "netlify/functions/lib/princess-discovery-source.js",
+      "netlify/functions/lib/princess-discovery-adapter.js"
+    ]
+  },
+  "historical_incomplete_analysis": {
+    "previous_run_incomplete_skipped": 390,
+    "old_code_current_source_incomplete": 401,
+    "current_incomplete": 0,
+    "exact_390_identities_persisted": false,
+    "reconstructed_failure_distribution": {
+      "validation:Destination not matched": 401,
+      "confidence:review": 401
+    },
+    "explanation": "All 401 incomplete sailings on current source under old code failed destination validation/review. Shared ports catalogue expansion and destination resolver improvements convert these to complete_high_confidence under current code. The 390→0 discontinuity in the failed weekly report reflects this resolver remediation, not Princess source adapter change."
+  },
+  "insert_candidate_classification": {
+    "total_proposed_inserts": 582,
+    "note": "Forensic audit script initially counted 622 by omitting public-booking-cutoff partition; incident-accurate count is 582.",
+    "by_category": {
+      "A_genuinely_newly_published_source_sailing": 0,
+      "B_previously_source_visible_incomplete": 396,
+      "C_shared_port_reference_remediation": 0,
+      "D_destination_resolution_change": 396,
+      "E_confidence_validation_change": 396,
+      "F_identity_representation_change": 0,
+      "G_previously_eligible_not_in_production_backlog": 186,
+      "H_source_expansion_semantics": 0,
+      "I_unable_to_establish_historical_cause": 0
+    },
+    "historical_cause_confidence": {
+      "B_D_E_combined_high": 396,
+      "G_medium": 186,
+      "A_low_not_used": 0
+    },
+    "reconciliation": "396 + 186 = 582. Zero identities in old eligible set were removed (only_in_old = 0)."
+  },
+  "identity_audit": {
+    "unique_official_sailing_id": 2131,
+    "duplicate_official_sailing_id": 0,
+    "duplicate_itinerary_ship_date_tuple": 0,
+    "duplicate_external_key_production": 0,
+    "duplicate_identity_key_production": 0,
+    "duplicate_identities_in_source": 0,
+    "stable_identity": "{itinerary_id}|{ship_code}|{departure_date}"
+  },
+  "production_reconciliation": {
+    "active_production": 1480,
+    "expired_production": 30,
+    "source_current_recognised_active": 1479,
+    "eligible_source_missing_from_production": 582,
+    "existing_records_proposed_for_update": 0,
+    "source_absent_active": 1,
+    "within_cutoff_source_identities": 70,
+    "duplicate_skips": 0,
+    "active_change_since_last_success": {
+      "from": 1502,
+      "to": 1480,
+      "delta": -22,
+      "explanation": "Ordinary shared 21-day expiry; not source absence."
+    }
+  },
+  "source_absence_audit": {
+    "identity": "CSR07H|KP|2027-02-28",
+    "production_status": "active",
+    "in_current_eligible": false,
+    "policy": "source_absent_retained_active",
+    "last_updated": "2026-08-08T04:31:10.820507+00:00",
+    "explanation": "Sailing no longer appears in current Princess source enumeration but remains active per retention policy. Not deactivated during this incident."
+  },
+  "eligible_delta_waterfall": {
+    "previous_eligible_baseline": 1502,
+    "components": {
+      "source_inventory_growth_at_old_code_rules": 163,
+      "shared_reference_resolver_remediation": 396,
+      "cutoff_boundary_adjustment_net": 0
+    },
+    "current_eligible": 2061,
+    "arithmetic": "1502 + 163 + 396 = 2061",
+    "eligible_delta": 559
+  },
+  "insert_proposal_waterfall": {
+    "outstanding_eligible_inserts": 582,
+    "components": {
+      "newly_eligible_due_reference_resolver_change": 396,
+      "pre_existing_backlog_old_code_eligible_not_in_production": 186
+    },
+    "arithmetic": "396 + 186 = 582"
+  },
+  "root_cause": "Shared discovery reference-data and resolver changes (ports catalogue + destination resolver + departure port resolver) deployed between the 2026-08-10 successful Princess weekly run and the 2026-08-17 failed run converted ~401 previously-incomplete Princess sailings (destination not matched) into complete_high_confidence eligible inventory on the unchanged expanded Princess source (2131 sailings). Combined with ~163 additional eligible sailings from source inventory growth at prior code rules, eligible inventory rose 1502→2061 (+37.2%), producing 582 insert proposals (396 newly eligible + 186 pre-existing backlog). Princess source/adapter code unchanged. The 30-write cap blocked unsafe bulk apply; expanded_sailings=null was report plumbing on the cap-failure path.",
+  "positive_spike_quality_gate": {
+    "added": true,
+    "module": "netlify/functions/lib/princess-weekly-quality.js",
+    "reason_code": "princess_eligible_inventory_expansion_requires_review",
+    "threshold_pct": 20,
+    "behaviour": "Blocks automatic scheduled APPLY when eligible increase >20% or outstanding inserts > weekly cap; dry-run records anomaly without blocking; does not treat source as bad."
+  },
+  "source_accounting_continuity_gate": {
+    "added": true,
+    "checks": [
+      "expanded_dated_sailings must be present",
+      "raw_groups must be present",
+      "eligible + within_cutoff + incomplete + cruisetours must reconcile to expanded"
+    ],
+    "report_plumbing_fix": "Cap-failure and quality-gate paths now retain simulation/manifest and source_accounting in summary; CLI falls back to summary.source_accounting.expanded_dated_sailings"
+  },
+  "tests": {
+    "test_princess_weekly_maintenance": "75 passed",
+    "test_discovery_inventory": "15 passed",
+    "test_discovery_non_sailing_filter": "16 passed",
+    "test_discovery_departure_port": "34 passed, 2 failed (unrelated pre-existing: public API raw_extract assertions)",
+    "test_global_cruise_write_lock": "12 passed"
+  },
+  "production_writes": 0,
+  "ready_for_controlled_remediation": true,
+  "recommendation": "Keep Princess weekly automatic APPLY disabled until controlled catch-up batches are approved. The 582 insert candidates are largely legitimate: 396 require validation as resolver-remediated inventory (not new source sailings), 186 are pre-existing backlog. Execute controlled batches of ≤30 writes after explicit approval, with expansion anomaly gate satisfied per batch. Do not bulk-insert all 582 in one run. CSR07H remains active per source_absent_retained_active policy."
+}

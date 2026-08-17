@@ -102,6 +102,10 @@ const {
   runDisneyWeeklyMaintenance,
   DISNEY_MAX_WEEKLY_WRITES
 } = require("./disney-weekly-maintenance");
+const {
+  evaluatePrincessWeeklyQualityGate,
+  extractPrincessSourceAccounting
+} = require("./princess-weekly-quality");
 
 const MAX_WRITES_PER_BATCH = 100;
 const MAX_WEEKLY_WRITES = 30;
@@ -918,13 +922,25 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       officialProductKeyFn: (raw) => princessOfficialProductKey(raw)
     });
 
-    const qualityGate = evaluateMaintenanceQualityGate({
-      lineSlug,
+    const princessAccountingInputs = {
+      official_source_total: simulation.num_found_official || simulation.raw_group_count || null,
+      eligible_total: metrics.eligible_total,
+      incomplete_skipped: normalised.filter((p) => !p.complete_high_confidence).length,
+      within_public_cutoff_excluded: withinPublicCutoff.length,
+      cruisetours_excluded: normalised.filter((p) => p.product_type === "cruisetour").length
+    };
+
+    const qualityGate = evaluatePrincessWeeklyQualityGate({
       metrics,
       previousEligible: previousRun,
       manifest,
-      dryRun
+      dryRun,
+      simulation,
+      summary: princessAccountingInputs,
+      performWrites
     });
+
+    const sourceAccounting = extractPrincessSourceAccounting(simulation, princessAccountingInputs);
 
     const snapshotId = snapshotChecksum(Array.from(eligibleKeys).sort());
     const activeProductionTotal = await loadActiveProductionTotal(sb, line.id, lineSlug);
@@ -962,12 +978,22 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       public_booking_cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
       resolution_rates: metrics,
       quality_gate: qualityGate,
+      source_accounting: sourceAccounting,
+      expansion_anomaly: qualityGate.expansion_anomaly || null,
       snapshot_id: snapshotId,
       inventory_changed: false
     };
 
     if (!qualityGate.passed) {
-      return { ok: false, blocked: true, failed: true, reason: qualityGate.failures.join("; "), summary, simulation };
+      return {
+        ok: false,
+        blocked: qualityGate.blocked === true,
+        failed: true,
+        reason: qualityGate.failures.join("; "),
+        summary,
+        simulation,
+        manifest
+      };
     }
 
     if (!reconciliation.reconciliation_arithmetic_ok) {
@@ -977,7 +1003,8 @@ async function runPrincessWeeklyMaintenance(context = {}) {
         failed: true,
         reason: "reconciliation_arithmetic_failed",
         summary,
-        simulation
+        simulation,
+        manifest
       };
     }
 
@@ -1006,7 +1033,8 @@ async function runPrincessWeeklyMaintenance(context = {}) {
           proposed_inserts: proposedInserts.length,
           proposed_updates: proposedUpdates.length
         },
-        simulation
+        simulation,
+        manifest
       };
     }
 

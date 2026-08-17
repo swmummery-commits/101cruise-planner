@@ -396,7 +396,9 @@ function buildWeeklyMaintenanceReport({
     source: {
       fetch_failed: sourceFetchFailed,
       official_source_total: summary.official_source_total ?? simulation.num_found_official ?? null,
-      expanded_sailings: simulation.raw_sailing_count ?? null,
+      expanded_sailings:
+        summary.source_accounting?.expanded_dated_sailings ?? simulation.raw_sailing_count ?? null,
+      source_accounting: summary.source_accounting ?? null,
       within_public_cutoff_excluded: summary.within_public_cutoff_excluded ?? null,
       incomplete_skipped: summary.incomplete_skipped ?? null,
       cruisetours_excluded: summary.cruisetours_excluded ?? null,

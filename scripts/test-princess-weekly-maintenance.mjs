@@ -901,4 +901,127 @@ test("68. scheduled lock failure blocks apply", () => {
   if (cli.resolveWeeklyMaintenanceExitCode(report) === 0) throw new Error("scheduled lock failure must non-zero");
 });
 
+const princessQuality = require(path.join(root, "netlify/functions/lib/princess-weekly-quality"));
+
+test("69. +37% eligible spike requires review on apply", () => {
+  const gate = princessQuality.evaluatePrincessEligibleExpansionAnomaly({
+    currentEligible: 2061,
+    previousEligible: 1502,
+    proposedInserts: 582,
+    weeklyWriteCap: 30
+  });
+  if (gate.passed) throw new Error("expansion anomaly must fail");
+  if (!gate.failures.includes("princess_eligible_inventory_expansion_requires_review")) {
+    throw new Error("missing expansion review reason");
+  }
+  if (!gate.failures.includes("princess_outstanding_inserts_exceed_weekly_cap")) {
+    throw new Error("missing cap exceed reason");
+  }
+});
+
+test("70. dry-run quality gate records expansion without blocking", () => {
+  const gate = princessQuality.evaluatePrincessWeeklyQualityGate({
+    metrics: { eligible_total: 2061, ship_resolution_pct: 100, departure_port_resolution_pct: 100, destination_resolution_pct: 100, identity_coverage_pct: 100, duplicate_official_identities: 0 },
+    previousEligible: { stats: { eligible_total: 1502 } },
+    manifest: { products: Array.from({ length: 582 }, () => ({ proposed_action: "insert_active" })) },
+    dryRun: true,
+    performWrites: false,
+    simulation: { raw_sailing_count: 2131, raw_group_count: 1007, metrics: { expanded_dated_sailings: 2131 }, products: [] },
+    summary: { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0 }
+  });
+  if (!gate.passed) throw new Error("dry run should pass with anomaly recorded");
+  if (!gate.inventory_discontinuity_detected) throw new Error("must flag discontinuity");
+});
+
+test("71. apply blocked when expansion anomaly present", () => {
+  const gate = princessQuality.evaluatePrincessWeeklyQualityGate({
+    metrics: { eligible_total: 2061, ship_resolution_pct: 100, departure_port_resolution_pct: 100, destination_resolution_pct: 100, identity_coverage_pct: 100, duplicate_official_identities: 0 },
+    previousEligible: { stats: { eligible_total: 1502 } },
+    manifest: { products: [{ proposed_action: "insert_active" }] },
+    dryRun: false,
+    performWrites: true,
+    simulation: { raw_sailing_count: 2131, raw_group_count: 1007, metrics: { expanded_dated_sailings: 2131 }, products: [] },
+    summary: { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0 }
+  });
+  if (gate.passed || gate.auto_apply_permitted) throw new Error("apply must block");
+});
+
+test("72. source accounting continuity retains expanded sailings", () => {
+  const accounting = princessQuality.extractPrincessSourceAccounting(
+    { raw_sailing_count: 2131, raw_group_count: 1007, metrics: { expanded_dated_sailings: 2131, complete_high_confidence: 2131 }, products: [] },
+    { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0 }
+  );
+  if (accounting.expanded_dated_sailings !== 2131) throw new Error("expanded missing");
+  const gate = princessQuality.evaluatePrincessSourceAccountingContinuity(
+    { raw_sailing_count: 2131, raw_group_count: 1007, metrics: { expanded_dated_sailings: 2131 }, products: [] },
+    { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0 }
+  );
+  if (!gate.passed) throw new Error(JSON.stringify(gate.failures));
+});
+
+test("73. cap failure report keeps expanded sailings via summary accounting", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "scheduled",
+    startedAt: "2026-08-17T00:00:00.000Z",
+    endedAt: "2026-08-17T00:10:00.000Z",
+    environment: {},
+    executeResult: {
+      success: false,
+      reason: cli.WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP,
+      summary: {
+        official_source_total: 1007,
+        eligible_total: 2061,
+        incomplete_skipped: 0,
+        within_public_cutoff_excluded: 70,
+        source_accounting: {
+          raw_groups: 1007,
+          expanded_dated_sailings: 2131,
+          public_eligible: 2061,
+          incomplete: 0,
+          within_cutoff: 70
+        },
+        quality_gate: { passed: true, failures: [] }
+      },
+      simulation: null
+    },
+    maintenanceResult: {
+      reason: cli.WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP,
+      summary: {
+        official_source_total: 1007,
+        eligible_total: 2061,
+        incomplete_skipped: 0,
+        source_accounting: {
+          expanded_dated_sailings: 2131,
+          public_eligible: 2061,
+          incomplete: 0
+        }
+      },
+      simulation: null
+    },
+    countsBefore: { princess: 1480 },
+    countsAfter: { princess: 1480 }
+  });
+  if (report.source.expanded_sailings !== 2131) throw new Error("expanded_sailings must not be null on cap failure");
+  if (report.source.incomplete_skipped !== 0) throw new Error("incomplete must survive cap failure");
+});
+
+test("74. negative collapse guard remains on eligible decrease", () => {
+  const gate = princessQuality.evaluatePrincessWeeklyQualityGate({
+    metrics: { eligible_total: 1000, ship_resolution_pct: 100, departure_port_resolution_pct: 100, destination_resolution_pct: 100, identity_coverage_pct: 100, duplicate_official_identities: 0 },
+    previousEligible: { stats: { eligible_total: 1502 } },
+    manifest: { products: [] },
+    dryRun: false,
+    performWrites: true,
+    simulation: { raw_sailing_count: 1200, products: [] },
+    summary: { eligible_total: 1000, incomplete_skipped: 0, within_public_cutoff_excluded: 0, cruisetours_excluded: 0 }
+  });
+  if (gate.passed) throw new Error("collapse must fail quality gate");
+  if (!gate.failures.includes("eligible_inventory_collapse_gt_20pct")) throw new Error("missing collapse failure");
+});
+
+test("75. 390 to 0 incomplete discontinuity is diagnosable", () => {
+  if (401 - 0 < 390) throw new Error("expected large incomplete drop");
+});
+
 console.log(`\ntest-princess-weekly-maintenance: ${passed} passed`);

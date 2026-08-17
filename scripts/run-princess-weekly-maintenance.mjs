@@ -134,7 +134,7 @@ async function runDryRun({ startedAt, environment, countsBefore, sb, previousEli
     endedAt,
     environment,
     executeResult,
-    maintenanceResult: { summary: executeResult.summary },
+    maintenanceResult: { summary: executeResult.summary, simulation: executeResult.simulation || null },
     countsBefore,
     countsAfter,
     previousEligibleTotal
@@ -166,7 +166,8 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
     write_result: executeResult.write_result || null,
     rollback_manifest: executeResult.rollback_manifest || null,
     ok: executeResult.success !== false,
-    simulation: executeResult.simulation || null
+    simulation: executeResult.simulation || null,
+    manifest: executeResult.manifest || null
   };
 
   const writeCapAssessment = cli.assessWeeklyChangeVolumeCap(

@@ -131,7 +131,9 @@ async function executeWeeklyMaintenance({
         run_record_id: dbRun?.id,
         reason: result.reason,
         blocked: result.blocked,
-        summary
+        summary,
+        simulation: result.simulation || null,
+        manifest: result.manifest || null
       };
     }
 
