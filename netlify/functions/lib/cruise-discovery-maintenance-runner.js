@@ -104,7 +104,9 @@ const {
 } = require("./disney-weekly-maintenance");
 const {
   evaluatePrincessWeeklyQualityGate,
-  extractPrincessSourceAccounting
+  extractPrincessSourceAccounting,
+  computePrincessDisjointSourceAccounting,
+  isPrincessReviewRequiredOnly
 } = require("./princess-weekly-quality");
 
 const MAX_WRITES_PER_BATCH = 100;
@@ -925,10 +927,24 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     const princessAccountingInputs = {
       official_source_total: simulation.num_found_official || simulation.raw_group_count || null,
       eligible_total: metrics.eligible_total,
-      incomplete_skipped: normalised.filter((p) => !p.complete_high_confidence).length,
       within_public_cutoff_excluded: withinPublicCutoff.length,
-      cruisetours_excluded: normalised.filter((p) => p.product_type === "cruisetour").length
+      cruisetours_excluded: normalised.filter((p) => p.product_type === "cruisetour").length,
+      perth_today: today,
+      disjoint_accounting: computePrincessDisjointSourceAccounting({
+        normalised,
+        today,
+        isEligibleProductType: isEligiblePrincessCruise
+      }),
+      incomplete_skipped: computePrincessDisjointSourceAccounting({
+        normalised,
+        today,
+        isEligibleProductType: isEligiblePrincessCruise
+      }).public_incomplete
     };
+
+    const isIncidentP2Write =
+      (context.writeMode || context.write_mode || "") === "incident_p2_controlled_batch" ||
+      context.incidentP2ControlledBatch === true;
 
     const qualityGate = evaluatePrincessWeeklyQualityGate({
       metrics,
@@ -937,7 +953,8 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       dryRun,
       simulation,
       summary: princessAccountingInputs,
-      performWrites
+      performWrites,
+      allowControlledRemediationApply: isIncidentP2Write
     });
 
     const sourceAccounting = extractPrincessSourceAccounting(simulation, princessAccountingInputs);
@@ -972,9 +989,9 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       source_absent_sailing_ids: sourceAbsent.map((r) => r.official_sailing_id),
       reconciliation_arithmetic_ok: reconciliation.reconciliation_arithmetic_ok,
       all_active_recognised_in_eligible_source: reconciliation.all_active_recognised_in_eligible_source,
-      cruisetours_excluded: normalised.filter((p) => p.product_type === "cruisetour").length,
-      incomplete_skipped: normalised.filter((p) => !p.complete_high_confidence).length,
-      within_public_cutoff_excluded: withinPublicCutoff.length,
+      cruisetours_excluded: princessAccountingInputs.disjoint_accounting.other_excluded,
+      incomplete_skipped: princessAccountingInputs.disjoint_accounting.public_incomplete,
+      within_public_cutoff_excluded: princessAccountingInputs.disjoint_accounting.within_public_cutoff,
       public_booking_cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
       resolution_rates: metrics,
       quality_gate: qualityGate,
@@ -985,10 +1002,15 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     };
 
     if (!qualityGate.passed) {
+      const reviewOnly =
+        performWrites &&
+        isPrincessReviewRequiredOnly({ qualityGateFailures: qualityGate.failures }) &&
+        qualityGate.source_accounting?.passed === true;
       return {
         ok: false,
         blocked: qualityGate.blocked === true,
-        failed: true,
+        failed: !reviewOnly,
+        review_required: reviewOnly,
         reason: qualityGate.failures.join("; "),
         summary,
         simulation,
@@ -1024,7 +1046,8 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       return {
         ok: false,
         blocked: false,
-        failed: true,
+        failed: false,
+        review_required: true,
         reason: WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP,
         summary: {
           ...summary,
@@ -1063,18 +1086,44 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       };
     }
 
-    const writeProducts = princessPublic
+    const frozenIds = new Set(
+      (context.frozenOfficialSailingIds || context.frozen_official_sailing_ids || []).map(String)
+    );
+    const insertOnly = Boolean(context.insertOnly || context.insert_only || isIncidentP2Write);
+
+    let writeProducts = princessPublic
       .filter((row) => {
         const entry = manifest.products.find(
           (p) => p.stable_identity_key === princessOfficialProductKey(row.raw)
         );
-        return entry && ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
+        if (!entry) return false;
+        if (insertOnly && entry.proposed_action !== "insert_active") return false;
+        return ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
       })
       .sort((a, b) => {
         const ka = princessOfficialProductKey(a.raw) || "";
         const kb = princessOfficialProductKey(b.raw) || "";
         return ka.localeCompare(kb);
       });
+
+    if (frozenIds.size) {
+      writeProducts = writeProducts.filter((row) => frozenIds.has(princessOfficialProductKey(row.raw)));
+      if (writeProducts.length !== frozenIds.size) {
+        return {
+          ok: false,
+          blocked: false,
+          failed: true,
+          reason: "frozen_manifest_identity_mismatch",
+          summary: {
+            ...summary,
+            frozen_expected: frozenIds.size,
+            frozen_matched: writeProducts.length
+          },
+          simulation,
+          manifest
+        };
+      }
+    }
 
     const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
       runId,

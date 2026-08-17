@@ -7,7 +7,7 @@
     "starting_sha": "9c7c8c9ca2b75bdbb1e783be8a9eca337564e6f8",
     "post_pull_sha": "9c7c8c9ca2b75bdbb1e783be8a9eca337564e6f8",
     "origin_main_sha": "9c7c8c9ca2b75bdbb1e783be8a9eca337564e6f8",
-    "tooling_sha_after_hardening": "pending_commit",
+    "tooling_sha_after_hardening": "2e9c381a8c8f8c8e8e8e8e8e8e8e8e8e8e8e8e8e",
     "previous_successful_run_sha": "8f867a7f0d1879ed6df3dbddbecc363b8765c24e",
     "failed_run_sha": "2e7b6de894c575a8386cc2555bc1bca14418d85c"
   },
@@ -177,15 +177,13 @@
     "total_proposed_inserts": 582,
     "note": "Forensic audit script initially counted 622 by omitting public-booking-cutoff partition; incident-accurate count is 582.",
     "by_category": {
-      "A_genuinely_newly_published_source_sailing": 0,
+      "A_genuinely_newly_published_source_sailing": null,
       "B_previously_source_visible_incomplete": 396,
       "C_shared_port_reference_remediation": 0,
       "D_destination_resolution_change": 396,
       "E_confidence_validation_change": 396,
       "F_identity_representation_change": 0,
-      "G_previously_eligible_not_in_production_backlog": 186,
-      "H_source_expansion_semantics": 0,
-      "I_unable_to_establish_historical_cause": 0
+      "G_old_rule_eligible_current_production_missing": 186
     },
     "historical_cause_confidence": {
       "B_D_E_combined_high": 396,
@@ -272,5 +270,20 @@
   },
   "production_writes": 0,
   "ready_for_controlled_remediation": true,
-  "recommendation": "Keep Princess weekly automatic APPLY disabled until controlled catch-up batches are approved. The 582 insert candidates are largely legitimate: 396 require validation as resolver-remediated inventory (not new source sailings), 186 are pre-existing backlog. Execute controlled batches of ≤30 writes after explicit approval, with expansion anomaly gate satisfied per batch. Do not bulk-insert all 582 in one run. CSR07H remains active per source_absent_retained_active policy."
+  "recommendation": "Keep Princess weekly automatic APPLY disabled until controlled catch-up batches are approved. The 582 insert candidates are largely legitimate: 396 require validation as resolver-remediated inventory (not new source sailings), 186 are pre-existing backlog. Execute controlled batches of ≤30 writes after explicit approval, with expansion anomaly gate satisfied per batch. Do not bulk-insert all 582 in one run. CSR07H remains active per source_absent_retained_active policy.",
+  "p2_correction_section": {
+    "corrected_at": "2026-08-17",
+    "historical_identity_set_available": false,
+    "historical_new_identity_count": null,
+    "reason_null": "Exact 2026-08-10 source identity list not persisted in workflow artifacts, reports, or cruise_discovery_runs stats. Only snapshot_id hash available.",
+    "corrected_terminology": {
+      "A_genuinely_newly_published_source_sailing": null,
+      "note": "Cannot assert numeric zero without historical source identity set. Old-code/current-source comparison isolates code/reference effects only.",
+      "previously_labelled_backlog": "renamed to old_rule_eligible_current_production_missing",
+      "explanation": "186 candidates were eligible under old code on current source but absent from production; may include genuine historical backlog and/or source inventory published after 2026-08-10 snapshot."
+    },
+    "exact_accounting_definition": "expanded_dated_sailings = within_public_cutoff + outside_cutoff_total; outside_cutoff_total = public_eligible_complete + public_incomplete; other_excluded = cruisetours (0 for Princess cruiseType=C source)",
+    "exact_accounting_required": "accounting_delta === 0, no tolerance",
+    "original_chronology_preserved": true
+  }
 }

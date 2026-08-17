@@ -2,12 +2,20 @@
  * Princess weekly maintenance — positive inventory expansion and source accounting gates.
  */
 
+const { partitionByPublicBookingCutoff } = require("./public-discovered-cruise-inventory");
+
 const PRINCESS_ELIGIBLE_EXPANSION_REVIEW_THRESHOLD = 0.2;
 const PRINCESS_WEEKLY_WRITE_CAP = 30;
 
 const PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW = "princess_eligible_inventory_expansion_requires_review";
 const PRINCESS_SOURCE_ACCOUNTING_INCOMPLETE = "princess_source_accounting_incomplete";
 const PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP = "princess_outstanding_inserts_exceed_weekly_cap";
+
+const REVIEW_REQUIRED_REASONS = new Set([
+  PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW,
+  PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP,
+  "weekly_change_volume_exceeds_initial_cap"
+]);
 
 function extractPreviousEligibleTotal(previousRun) {
   if (!previousRun) return null;
@@ -56,38 +64,120 @@ function evaluatePrincessEligibleExpansionAnomaly({
   };
 }
 
+/**
+ * Disjoint partition of Princess expanded cruise inventory.
+ * Each dated sailing appears in exactly one bucket.
+ *
+ * Princess source exposes cruiseType=C products only — cruisetours are absent (other_excluded = 0).
+ */
+function computePrincessDisjointSourceAccounting({
+  normalised = [],
+  today,
+  isEligibleProductType = () => true,
+  getDepartureDate = (p) => p.candidate?.departure_date || p.departure_date || p.raw?.departure_date
+} = {}) {
+  const cruises = (normalised || []).filter((p) => p.product_type === "cruise");
+  const cruisetours = (normalised || []).filter((p) => p.product_type === "cruisetour");
+  const expanded = cruises.length;
+
+  const { publiclyEligible: outsideCutoffPool, withinCutoff: withinPublicCutoffItems } =
+    partitionByPublicBookingCutoff(cruises, getDepartureDate, today);
+
+  let publicEligibleComplete = 0;
+  let publicIncomplete = 0;
+
+  for (const row of outsideCutoffPool) {
+    if (row.complete_high_confidence && isEligibleProductType(row.product_type)) {
+      publicEligibleComplete += 1;
+    } else {
+      publicIncomplete += 1;
+    }
+  }
+
+  const withinPublicCutoff = withinPublicCutoffItems.length;
+  const otherExcluded = cruisetours.length;
+  const outsideCutoffTotal = publicEligibleComplete + publicIncomplete;
+  const accountedTotal = withinPublicCutoff + outsideCutoffTotal + otherExcluded;
+  const accountingDelta = expanded - accountedTotal;
+
+  return {
+    raw_groups: null,
+    expanded_dated_sailings: expanded,
+    within_public_cutoff: withinPublicCutoff,
+    outside_cutoff_total: outsideCutoffTotal,
+    public_eligible_complete: publicEligibleComplete,
+    public_incomplete: publicIncomplete,
+    other_excluded: otherExcluded,
+    cruisetours_excluded: otherExcluded,
+    cruisetours_absent_in_princess_source: cruisetours.length === 0,
+    accounted_total: accountedTotal,
+    accounting_delta: accountingDelta,
+    accounting_exact: accountingDelta === 0,
+    public_eligible: publicEligibleComplete,
+    incomplete: publicIncomplete,
+    within_cutoff: withinPublicCutoff
+  };
+}
+
 function extractPrincessSourceAccounting(simulation = {}, summary = {}) {
   const fetch = simulation.fetch_result || {};
   const metrics = simulation.metrics || {};
   const normalised = simulation.products || [];
-  const cruises = normalised.filter((p) => p.product_type === "cruise");
-  const incomplete =
-    summary.incomplete_skipped ??
-    cruises.filter((p) => !p.complete_high_confidence).length;
-  const withinCutoff = summary.within_public_cutoff_excluded ?? simulation.within_public_cutoff?.length ?? null;
-  const cruisetours = summary.cruisetours_excluded ?? metrics.cruisetours_excluded ?? null;
-  const complete =
-    metrics.complete_high_confidence ??
-    cruises.filter((p) => p.complete_high_confidence).length;
-  const eligible = summary.eligible_total ?? metrics.complete_high_confidence ?? null;
+  const rawGroups =
+    simulation.raw_group_count ?? fetch.raw_group_count ?? summary.official_source_total ?? null;
+
+  const disjoint =
+    summary.disjoint_accounting ||
+    (normalised.length
+      ? computePrincessDisjointSourceAccounting({
+          normalised,
+          today: summary.perth_today || undefined,
+          isEligibleProductType: summary._isEligibleProductType || (() => true)
+        })
+      : null);
+
   const expanded =
     simulation.raw_sailing_count ??
     metrics.expanded_dated_sailings ??
+    disjoint?.expanded_dated_sailings ??
     fetch.products?.length ??
     fetch.audit?.expanded_sailings ??
     null;
-  const rawGroups = simulation.raw_group_count ?? fetch.raw_group_count ?? summary.official_source_total ?? null;
 
+  if (disjoint) {
+    return {
+      raw_groups: rawGroups,
+      expanded_dated_sailings: expanded ?? disjoint.expanded_dated_sailings,
+      within_public_cutoff: disjoint.within_public_cutoff,
+      outside_cutoff_total: disjoint.outside_cutoff_total,
+      public_eligible_complete: disjoint.public_eligible_complete,
+      public_incomplete: disjoint.public_incomplete,
+      other_excluded: disjoint.other_excluded,
+      cruisetours_excluded: disjoint.other_excluded,
+      cruisetours_absent_in_princess_source: disjoint.cruisetours_absent_in_princess_source,
+      accounted_total: disjoint.accounted_total,
+      accounting_delta: disjoint.accounting_delta,
+      accounting_exact: disjoint.accounting_exact,
+      public_eligible: summary.eligible_total ?? disjoint.public_eligible_complete,
+      incomplete: disjoint.public_incomplete,
+      within_cutoff: disjoint.within_public_cutoff,
+      official_source_total: summary.official_source_total ?? simulation.num_found_official ?? null,
+      legacy_complete_high_confidence: metrics.complete_high_confidence ?? null,
+      legacy_cruise_products: normalised.filter((p) => p.product_type === "cruise").length || null
+    };
+  }
+
+  const cruises = normalised.filter((p) => p.product_type === "cruise");
   return {
     raw_groups: rawGroups,
     expanded_dated_sailings: expanded,
-    cruise_products: cruises.length || null,
-    complete_high_confidence: complete,
-    incomplete,
-    within_cutoff: withinCutoff,
-    cruisetours_excluded: cruisetours,
-    public_eligible: eligible,
-    official_source_total: summary.official_source_total ?? simulation.num_found_official ?? null
+    public_eligible: summary.eligible_total ?? null,
+    incomplete: summary.incomplete_skipped ?? null,
+    within_cutoff: summary.within_public_cutoff_excluded ?? null,
+    official_source_total: summary.official_source_total ?? simulation.num_found_official ?? null,
+    accounting_exact: false,
+    accounting_delta: null,
+    accounted_total: null
   };
 }
 
@@ -98,24 +188,18 @@ function evaluatePrincessSourceAccountingContinuity(simulation = {}, summary = {
   if (accounting.expanded_dated_sailings == null) {
     failures.push("expanded_dated_sailings_missing");
   }
-  if (accounting.public_eligible == null) {
+  if (accounting.public_eligible == null && accounting.public_eligible_complete == null) {
     failures.push("public_eligible_missing");
   }
   if (accounting.raw_groups == null) {
     failures.push("raw_groups_missing");
   }
 
-  const expanded = Number(accounting.expanded_dated_sailings);
-  const eligible = Number(accounting.public_eligible) || 0;
-  const withinCutoff = Number(accounting.within_cutoff) || 0;
-  const incomplete = Number(accounting.incomplete) || 0;
-  const cruisetours = Number(accounting.cruisetours_excluded) || 0;
-
-  if (Number.isFinite(expanded) && expanded > 0) {
-    const accounted = eligible + withinCutoff + incomplete + cruisetours;
-    const cruiseProducts = Number(accounting.cruise_products) || expanded;
-    if (Math.abs(accounted - cruiseProducts) > Math.max(5, cruiseProducts * 0.02)) {
-      failures.push("eligible_arithmetic_mismatch");
+  if (accounting.accounting_exact !== true) {
+    if (accounting.accounting_delta !== 0) {
+      failures.push("accounting_delta_nonzero");
+    } else {
+      failures.push("disjoint_accounting_unavailable");
     }
   }
 
@@ -127,6 +211,27 @@ function evaluatePrincessSourceAccountingContinuity(simulation = {}, summary = {
   };
 }
 
+function isPrincessReviewRequiredOnly({
+  reason = "",
+  qualityGateFailures = [],
+  writeCapReason = null
+} = {}) {
+  const capReason = writeCapReason || reason;
+  if (capReason && REVIEW_REQUIRED_REASONS.has(capReason)) return true;
+
+  const failures = qualityGateFailures || [];
+  if (!failures.length) return false;
+
+  const expansionOnly = failures.every(
+    (f) =>
+      f === PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW ||
+      f === PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP ||
+      String(f).includes(PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW) ||
+      String(f).includes(PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP)
+  );
+  return expansionOnly;
+}
+
 function evaluatePrincessWeeklyQualityGate({
   metrics,
   previousEligible,
@@ -134,7 +239,8 @@ function evaluatePrincessWeeklyQualityGate({
   dryRun,
   simulation,
   summary,
-  performWrites = false
+  performWrites = false,
+  allowControlledRemediationApply = false
 } = {}) {
   const baseFailures = [];
   const eligible = metrics?.eligible_total || 0;
@@ -164,12 +270,18 @@ function evaluatePrincessWeeklyQualityGate({
   const accountingGate = evaluatePrincessSourceAccountingContinuity(simulation, summary);
 
   const failures = [...baseFailures];
-  if (performWrites && expansion.failures.length) failures.push(...expansion.failures);
+  const skipExpansionBlock = allowControlledRemediationApply === true;
+  if (performWrites && expansion.failures.length && !skipExpansionBlock) {
+    failures.push(...expansion.failures);
+  }
   if (!accountingGate.passed) {
     failures.push(...accountingGate.failures.map((f) => `${PRINCESS_SOURCE_ACCOUNTING_INCOMPLETE}:${f}`));
   }
 
-  const blockApply = performWrites && (expansion.failures.length > 0 || !accountingGate.passed);
+  const blockApply =
+    performWrites &&
+    !skipExpansionBlock &&
+    (expansion.failures.length > 0 || !accountingGate.passed);
 
   return {
     passed: failures.length === 0,
@@ -178,7 +290,8 @@ function evaluatePrincessWeeklyQualityGate({
     expansion_anomaly: expansion,
     source_accounting: accountingGate,
     auto_apply_permitted: !blockApply,
-    inventory_discontinuity_detected: expansion.failures.length > 0
+    inventory_discontinuity_detected: expansion.failures.length > 0,
+    review_required: performWrites && expansion.failures.length > 0 && baseFailures.length === 0 && accountingGate.passed
   };
 }
 
@@ -188,9 +301,12 @@ module.exports = {
   PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW,
   PRINCESS_SOURCE_ACCOUNTING_INCOMPLETE,
   PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP,
+  REVIEW_REQUIRED_REASONS,
   extractPreviousEligibleTotal,
   evaluatePrincessEligibleExpansionAnomaly,
+  computePrincessDisjointSourceAccounting,
   extractPrincessSourceAccounting,
   evaluatePrincessSourceAccountingContinuity,
+  isPrincessReviewRequiredOnly,
   evaluatePrincessWeeklyQualityGate
 };

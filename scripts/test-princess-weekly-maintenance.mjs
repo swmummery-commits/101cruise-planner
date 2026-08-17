@@ -920,6 +920,17 @@ test("69. +37% eligible spike requires review on apply", () => {
 });
 
 test("70. dry-run quality gate records expansion without blocking", () => {
+  const disjoint = {
+    expanded_dated_sailings: 2131,
+    within_public_cutoff: 70,
+    outside_cutoff_total: 2061,
+    public_eligible_complete: 2061,
+    public_incomplete: 0,
+    other_excluded: 0,
+    accounted_total: 2131,
+    accounting_delta: 0,
+    accounting_exact: true
+  };
   const gate = princessQuality.evaluatePrincessWeeklyQualityGate({
     metrics: { eligible_total: 2061, ship_resolution_pct: 100, departure_port_resolution_pct: 100, destination_resolution_pct: 100, identity_coverage_pct: 100, duplicate_official_identities: 0 },
     previousEligible: { stats: { eligible_total: 1502 } },
@@ -927,13 +938,23 @@ test("70. dry-run quality gate records expansion without blocking", () => {
     dryRun: true,
     performWrites: false,
     simulation: { raw_sailing_count: 2131, raw_group_count: 1007, metrics: { expanded_dated_sailings: 2131 }, products: [] },
-    summary: { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0 }
+    summary: { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0, disjoint_accounting: disjoint }
   });
   if (!gate.passed) throw new Error("dry run should pass with anomaly recorded");
   if (!gate.inventory_discontinuity_detected) throw new Error("must flag discontinuity");
 });
 
 test("71. apply blocked when expansion anomaly present", () => {
+  const disjoint = {
+    expanded_dated_sailings: 2131,
+    within_public_cutoff: 70,
+    public_eligible_complete: 2061,
+    public_incomplete: 0,
+    other_excluded: 0,
+    accounted_total: 2131,
+    accounting_delta: 0,
+    accounting_exact: true
+  };
   const gate = princessQuality.evaluatePrincessWeeklyQualityGate({
     metrics: { eligible_total: 2061, ship_resolution_pct: 100, departure_port_resolution_pct: 100, destination_resolution_pct: 100, identity_coverage_pct: 100, duplicate_official_identities: 0 },
     previousEligible: { stats: { eligible_total: 1502 } },
@@ -941,20 +962,30 @@ test("71. apply blocked when expansion anomaly present", () => {
     dryRun: false,
     performWrites: true,
     simulation: { raw_sailing_count: 2131, raw_group_count: 1007, metrics: { expanded_dated_sailings: 2131 }, products: [] },
-    summary: { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0 }
+    summary: { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0, disjoint_accounting: disjoint }
   });
   if (gate.passed || gate.auto_apply_permitted) throw new Error("apply must block");
 });
 
 test("72. source accounting continuity retains expanded sailings", () => {
+  const disjoint = {
+    expanded_dated_sailings: 2131,
+    within_public_cutoff: 70,
+    public_eligible_complete: 2061,
+    public_incomplete: 0,
+    other_excluded: 0,
+    accounted_total: 2131,
+    accounting_delta: 0,
+    accounting_exact: true
+  };
   const accounting = princessQuality.extractPrincessSourceAccounting(
-    { raw_sailing_count: 2131, raw_group_count: 1007, metrics: { expanded_dated_sailings: 2131, complete_high_confidence: 2131 }, products: [] },
-    { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0 }
+    { raw_sailing_count: 2131, raw_group_count: 1007, metrics: { expanded_dated_sailings: 2131 }, products: [] },
+    { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0, disjoint_accounting: disjoint }
   );
   if (accounting.expanded_dated_sailings !== 2131) throw new Error("expanded missing");
   const gate = princessQuality.evaluatePrincessSourceAccountingContinuity(
     { raw_sailing_count: 2131, raw_group_count: 1007, metrics: { expanded_dated_sailings: 2131 }, products: [] },
-    { eligible_total: 2061, official_source_total: 1007, incomplete_skipped: 0, within_public_cutoff_excluded: 70, cruisetours_excluded: 0 }
+    { eligible_total: 2061, official_source_total: 1007, disjoint_accounting: disjoint }
   );
   if (!gate.passed) throw new Error(JSON.stringify(gate.failures));
 });
@@ -1020,8 +1051,56 @@ test("74. negative collapse guard remains on eligible decrease", () => {
   if (!gate.failures.includes("eligible_inventory_collapse_gt_20pct")) throw new Error("missing collapse failure");
 });
 
-test("75. 390 to 0 incomplete discontinuity is diagnosable", () => {
-  if (401 - 0 < 390) throw new Error("expected large incomplete drop");
+test("76. disjoint accounting delta zero for Princess partition", () => {
+  const products = [
+    { product_type: "cruise", complete_high_confidence: true, candidate: { departure_date: "2027-06-01" } },
+    { product_type: "cruise", complete_high_confidence: false, candidate: { departure_date: "2027-07-01" } },
+    { product_type: "cruise", complete_high_confidence: true, candidate: { departure_date: "2026-08-20" } }
+  ];
+  const today = "2026-08-17";
+  const disjoint = princessQuality.computePrincessDisjointSourceAccounting({
+    normalised: products,
+    today,
+    isEligibleProductType: () => true
+  });
+  if (!disjoint.accounting_exact) throw new Error(JSON.stringify(disjoint));
+  if (disjoint.accounting_delta !== 0) throw new Error("delta must be zero");
+});
+
+test("77. scheduled review_required exits zero without writes", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "scheduled",
+    startedAt: "2026-08-17T00:00:00.000Z",
+    endedAt: "2026-08-17T00:10:00.000Z",
+    environment: {},
+    executeResult: {
+      success: true,
+      review_required: true,
+      reason: cli.WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP,
+      summary: { eligible_total: 2061, quality_gate: { passed: false, failures: ["princess_outstanding_inserts_exceed_weekly_cap"] } }
+    },
+    maintenanceResult: { review_required: true },
+    countsBefore: { princess: 1480 },
+    countsAfter: { princess: 1480 }
+  });
+  if (report.status !== "review_required") throw new Error(`expected review_required got ${report.status}`);
+  if (cli.resolveWeeklyMaintenanceExitCode(report) !== 0) throw new Error("review_required must exit 0");
+});
+
+test("78. technical source failure still fails", () => {
+  const report = cli.buildWeeklyMaintenanceReport({
+    mode: "apply",
+    triggerType: "scheduled",
+    startedAt: "2026-08-17T00:00:00.000Z",
+    endedAt: "2026-08-17T00:10:00.000Z",
+    environment: {},
+    executeResult: { success: false, reason: "official_source_unreachable" },
+    maintenanceResult: { ok: false, failed: true, reason: "official_source_unreachable" },
+    countsBefore: { princess: 1480 },
+    countsAfter: { princess: 1480 }
+  });
+  if (report.status !== "failed") throw new Error("source failure must fail");
 });
 
 console.log(`\ntest-princess-weekly-maintenance: ${passed} passed`);

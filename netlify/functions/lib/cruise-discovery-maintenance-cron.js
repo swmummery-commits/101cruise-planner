@@ -120,6 +120,29 @@ async function executeWeeklyMaintenance({
     }
 
     if (!result.ok) {
+      if (result.review_required === true) {
+        await finalizeMaintenanceRun(sb, dbRun?.id, {
+          status: "completed",
+          stats: {
+            ...stats,
+            inventory_changed: false,
+            review_required: true,
+            failure_reason: result.reason || null
+          },
+          errorMessage: null
+        });
+        return {
+          success: true,
+          review_required: true,
+          run_id: runId,
+          run_record_id: dbRun?.id,
+          reason: result.reason,
+          blocked: false,
+          summary,
+          simulation: result.simulation || null,
+          manifest: result.manifest || null
+        };
+      }
       await finalizeMaintenanceRun(sb, dbRun?.id, {
         status: "failed",
         stats: { ...stats, inventory_changed: false },

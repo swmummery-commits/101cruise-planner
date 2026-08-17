@@ -5,7 +5,13 @@
 const PRINCESS_DISCOVERY_WRITE_ENABLED =
   String(process.env.PRINCESS_DISCOVERY_WRITE_ENABLED || "").trim().toLowerCase() === "true";
 
-const VALID_MODES = new Set(["simulation", "production_read_only", "production_write", "weekly_maintenance"]);
+const VALID_MODES = new Set([
+  "simulation",
+  "production_read_only",
+  "production_write",
+  "weekly_maintenance",
+  "incident_p2_controlled_batch"
+]);
 
 function resolvePrincessDiscoveryMode(requestedMode) {
   const raw = String(requestedMode || "").trim().toLowerCase();
@@ -33,7 +39,7 @@ function resolvePrincessDiscoveryMode(requestedMode) {
     return { mode, requested_mode: raw, writes_allowed: true, reason: null };
   }
 
-  if (mode === "production_write") {
+  if (mode === "production_write" || mode === "incident_p2_controlled_batch") {
     if (!PRINCESS_DISCOVERY_WRITE_ENABLED) {
       return {
         mode,

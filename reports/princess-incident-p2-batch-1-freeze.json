@@ -1,0 +1,3009 @@
+{
+  "generated_at": "2026-08-17T01:45:49.522Z",
+  "repository_sha": "c08ceb8b503a6d7b17cb81a25c112a8085072861",
+  "freeze_hash": "370794e544b7b5329cbb3057b978c25dee443aa497e39dd616db3a4b123f0ccd",
+  "batch_size": 30,
+  "max_batches": 1,
+  "candidates": [
+    {
+      "official_sailing_id": "HHV12A|RP|2027-04-16",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "HHV12A",
+      "ship_code": "RP",
+      "ship_name": "Royal Princess",
+      "departure_date": "2027-04-16",
+      "return_date": "2027-04-28",
+      "nights": 12,
+      "departure_port": "Honolulu",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=hhv12a&shipcode=rp&saildate=20270416",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+            "name": "Royal Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-04-16",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Honolulu",
+            "canonical": "Honolulu",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 12,
+            "returnDate": "2027-04-28"
+          },
+          "itinerary": {
+            "text": "Pacific Crossing: Honolulu to British Columbia",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=hhv12a&shipcode=rp&saildate=20270416",
+            "title": "Pacific Crossing: Honolulu to British Columbia"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "HHV12A|RP|2027-04-16",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "ship_name": "Royal Princess",
+        "departure_date": "2027-04-16",
+        "return_date": "2027-04-28",
+        "nights": 12,
+        "departure_port": "Honolulu",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Pacific Crossing: Honolulu to British Columbia",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=hhv12a&shipcode=rp&saildate=20270416",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IAL20A|RP|2028-04-01",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IAL20A",
+      "ship_code": "RP",
+      "ship_name": "Royal Princess",
+      "departure_date": "2028-04-01",
+      "return_date": "2028-04-21",
+      "nights": 20,
+      "departure_port": "Auckland",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ial20a&shipcode=rp&saildate=20280401",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+            "name": "Royal Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-04-01",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Auckland",
+            "canonical": "Auckland",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 20,
+            "returnDate": "2028-04-21"
+          },
+          "itinerary": {
+            "text": "Tahiti, Hawaii & South Pacific Crossing",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ial20a&shipcode=rp&saildate=20280401",
+            "title": "Tahiti, Hawaii & South Pacific Crossing"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IAL20A|RP|2028-04-01",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "ship_name": "Royal Princess",
+        "departure_date": "2028-04-01",
+        "return_date": "2028-04-21",
+        "nights": 20,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Tahiti, Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ial20a&shipcode=rp&saildate=20280401",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IAL21C|RP|2027-04-02",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IAL21C",
+      "ship_code": "RP",
+      "ship_name": "Royal Princess",
+      "departure_date": "2027-04-02",
+      "return_date": "2027-04-23",
+      "nights": 21,
+      "departure_port": "Auckland",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ial21c&shipcode=rp&saildate=20270402",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+            "name": "Royal Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-04-02",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Auckland",
+            "canonical": "Auckland",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 21,
+            "returnDate": "2027-04-23"
+          },
+          "itinerary": {
+            "text": "Tahiti, Hawaii & South Pacific Crossing",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ial21c&shipcode=rp&saildate=20270402",
+            "title": "Tahiti, Hawaii & South Pacific Crossing"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IAL21C|RP|2027-04-02",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "ship_name": "Royal Princess",
+        "departure_date": "2027-04-02",
+        "return_date": "2027-04-23",
+        "nights": 21,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Tahiti, Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ial21c&shipcode=rp&saildate=20270402",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IAL25A|KP|2026-11-09",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IAL25A",
+      "ship_code": "KP",
+      "ship_name": "Crown Princess",
+      "departure_date": "2026-11-09",
+      "return_date": "2026-12-04",
+      "nights": 25,
+      "departure_port": "Auckland",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ial25a&shipcode=kp&saildate=20261109",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "bbde7c14-3ce4-4413-9a1d-ce96f627a254",
+            "name": "Crown Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2026-11-09",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Auckland",
+            "canonical": "Auckland",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 25,
+            "returnDate": "2026-12-04"
+          },
+          "itinerary": {
+            "text": "Tahiti, Hawaii & South Pacific Crossing",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ial25a&shipcode=kp&saildate=20261109",
+            "title": "Tahiti, Hawaii & South Pacific Crossing"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IAL25A|KP|2026-11-09",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "bbde7c14-3ce4-4413-9a1d-ce96f627a254",
+        "ship_name": "Crown Princess",
+        "departure_date": "2026-11-09",
+        "return_date": "2026-12-04",
+        "nights": 25,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Tahiti, Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ial25a&shipcode=kp&saildate=20261109",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IAS31B|AP|2027-09-08",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IAS31B",
+      "ship_code": "AP",
+      "ship_name": "Grand Princess",
+      "departure_date": "2027-09-08",
+      "return_date": "2027-10-09",
+      "nights": 31,
+      "departure_port": "Auckland",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ias31b&shipcode=ap&saildate=20270908",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+            "name": "Grand Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-09-08",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Auckland",
+            "canonical": "Auckland",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 31,
+            "returnDate": "2027-10-09"
+          },
+          "itinerary": {
+            "text": "Tahiti, Hawaii & South Pacific",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ias31b&shipcode=ap&saildate=20270908",
+            "title": "Tahiti, Hawaii & South Pacific"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IAS31B|AP|2027-09-08",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "ship_name": "Grand Princess",
+        "departure_date": "2027-09-08",
+        "return_date": "2027-10-09",
+        "nights": 31,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Tahiti, Hawaii & South Pacific",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ias31b&shipcode=ap&saildate=20270908",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IAY25A|RP|2028-04-01",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IAY25A",
+      "ship_code": "RP",
+      "ship_name": "Royal Princess",
+      "departure_date": "2028-04-01",
+      "return_date": "2028-04-26",
+      "nights": 25,
+      "departure_port": "Auckland",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=iay25a&shipcode=rp&saildate=20280401",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+            "name": "Royal Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-04-01",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Auckland",
+            "canonical": "Auckland",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 25,
+            "returnDate": "2028-04-26"
+          },
+          "itinerary": {
+            "text": "Tahiti, Hawaii & South Pacific Crossing",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=iay25a&shipcode=rp&saildate=20280401",
+            "title": "Tahiti, Hawaii & South Pacific Crossing"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IAY25A|RP|2028-04-01",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "ship_name": "Royal Princess",
+        "departure_date": "2028-04-01",
+        "return_date": "2028-04-26",
+        "nights": 25,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Tahiti, Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=iay25a&shipcode=rp&saildate=20280401",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IAY27D|RP|2027-04-02",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IAY27D",
+      "ship_code": "RP",
+      "ship_name": "Royal Princess",
+      "departure_date": "2027-04-02",
+      "return_date": "2027-04-29",
+      "nights": 27,
+      "departure_port": "Auckland",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=iay27d&shipcode=rp&saildate=20270402",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+            "name": "Royal Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-04-02",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Auckland",
+            "canonical": "Auckland",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 27,
+            "returnDate": "2027-04-29"
+          },
+          "itinerary": {
+            "text": "Tahiti, Hawaii & South Pacific Crossing",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=iay27d&shipcode=rp&saildate=20270402",
+            "title": "Tahiti, Hawaii & South Pacific Crossing"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IAY27D|RP|2027-04-02",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "ship_name": "Royal Princess",
+        "departure_date": "2027-04-02",
+        "return_date": "2027-04-29",
+        "nights": 27,
+        "departure_port": "Auckland",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Tahiti, Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=iay27d&shipcode=rp&saildate=20270402",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IBR14A|AP|2027-06-01",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IBR14A",
+      "ship_code": "AP",
+      "ship_name": "Grand Princess",
+      "departure_date": "2027-06-01",
+      "return_date": "2027-06-15",
+      "nights": 14,
+      "departure_port": "Brisbane",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ibr14a&shipcode=ap&saildate=20270601",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+            "name": "Grand Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-06-01",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Brisbane",
+            "canonical": "Brisbane",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 14,
+            "returnDate": "2027-06-15"
+          },
+          "itinerary": {
+            "text": "Papua New Guinea",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ibr14a&shipcode=ap&saildate=20270601",
+            "title": "Papua New Guinea"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IBR14A|AP|2027-06-01",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "ship_name": "Grand Princess",
+        "departure_date": "2027-06-01",
+        "return_date": "2027-06-15",
+        "nights": 14,
+        "departure_port": "Brisbane",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Papua New Guinea",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ibr14a&shipcode=ap&saildate=20270601",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IBR14C|AP|2027-01-06",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IBR14C",
+      "ship_code": "AP",
+      "ship_name": "Grand Princess",
+      "departure_date": "2027-01-06",
+      "return_date": "2027-01-20",
+      "nights": 14,
+      "departure_port": "Brisbane",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ibr14c&shipcode=ap&saildate=20270106",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+            "name": "Grand Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-01-06",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Brisbane",
+            "canonical": "Brisbane",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 14,
+            "returnDate": "2027-01-20"
+          },
+          "itinerary": {
+            "text": "Fiji & South Pacific",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ibr14c&shipcode=ap&saildate=20270106",
+            "title": "Fiji & South Pacific"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IBR14C|AP|2027-01-06",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "ship_name": "Grand Princess",
+        "departure_date": "2027-01-06",
+        "return_date": "2027-01-20",
+        "nights": 14,
+        "departure_port": "Brisbane",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Fiji & South Pacific",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ibr14c&shipcode=ap&saildate=20270106",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IBR14C|AP|2028-01-05",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IBR14C",
+      "ship_code": "AP",
+      "ship_name": "Grand Princess",
+      "departure_date": "2028-01-05",
+      "return_date": "2028-01-19",
+      "nights": 14,
+      "departure_port": "Brisbane",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ibr14c&shipcode=ap&saildate=20280105",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+            "name": "Grand Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-01-05",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Brisbane",
+            "canonical": "Brisbane",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 14,
+            "returnDate": "2028-01-19"
+          },
+          "itinerary": {
+            "text": "Fiji & South Pacific",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ibr14c&shipcode=ap&saildate=20280105",
+            "title": "Fiji & South Pacific"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IBR14C|AP|2028-01-05",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "ship_name": "Grand Princess",
+        "departure_date": "2028-01-05",
+        "return_date": "2028-01-19",
+        "nights": 14,
+        "departure_port": "Brisbane",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Fiji & South Pacific",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ibr14c&shipcode=ap&saildate=20280105",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IHA14A|RP|2027-10-01",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IHA14A",
+      "ship_code": "RP",
+      "ship_name": "Royal Princess",
+      "departure_date": "2027-10-01",
+      "return_date": "2027-10-15",
+      "nights": 14,
+      "departure_port": "Honolulu",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=iha14a&shipcode=rp&saildate=20271001",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+            "name": "Royal Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-10-01",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Honolulu",
+            "canonical": "Honolulu",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 14,
+            "returnDate": "2027-10-15"
+          },
+          "itinerary": {
+            "text": "Tahiti, Hawaii & South Pacific Crossing",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=iha14a&shipcode=rp&saildate=20271001",
+            "title": "Tahiti, Hawaii & South Pacific Crossing"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IHA14A|RP|2027-10-01",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "ship_name": "Royal Princess",
+        "departure_date": "2027-10-01",
+        "return_date": "2027-10-15",
+        "nights": 14,
+        "departure_port": "Honolulu",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Tahiti, Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=iha14a&shipcode=rp&saildate=20271001",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IHS21B|RP|2027-10-01",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IHS21B",
+      "ship_code": "RP",
+      "ship_name": "Royal Princess",
+      "departure_date": "2027-10-01",
+      "return_date": "2027-10-22",
+      "nights": 21,
+      "departure_port": "Honolulu",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ihs21b&shipcode=rp&saildate=20271001",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+            "name": "Royal Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-10-01",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Honolulu",
+            "canonical": "Honolulu",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 21,
+            "returnDate": "2027-10-22"
+          },
+          "itinerary": {
+            "text": "Tahiti, Hawaii & South Pacific Crossing",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ihs21b&shipcode=rp&saildate=20271001",
+            "title": "Tahiti, Hawaii & South Pacific Crossing"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IHS21B|RP|2027-10-01",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "ship_name": "Royal Princess",
+        "departure_date": "2027-10-01",
+        "return_date": "2027-10-22",
+        "nights": 21,
+        "departure_port": "Honolulu",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Tahiti, Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ihs21b&shipcode=rp&saildate=20271001",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IHS28A|CO|2027-01-29",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IHS28A",
+      "ship_code": "CO",
+      "ship_name": "Coral Princess",
+      "departure_date": "2027-01-29",
+      "return_date": "2027-02-26",
+      "nights": 28,
+      "departure_port": "Honolulu",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ihs28a&shipcode=co&saildate=20270129",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+            "name": "Coral Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-01-29",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Honolulu",
+            "canonical": "Honolulu",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 28,
+            "returnDate": "2027-02-26"
+          },
+          "itinerary": {
+            "text": "Hawaii & South Pacific Crossing",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ihs28a&shipcode=co&saildate=20270129",
+            "title": "Hawaii & South Pacific Crossing"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IHS28A|CO|2027-01-29",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "ship_name": "Coral Princess",
+        "departure_date": "2027-01-29",
+        "return_date": "2027-02-26",
+        "nights": 28,
+        "departure_port": "Honolulu",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ihs28a&shipcode=co&saildate=20270129",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "IHY13A|RP|2028-04-12",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "IHY13A",
+      "ship_code": "RP",
+      "ship_name": "Royal Princess",
+      "departure_date": "2028-04-12",
+      "return_date": "2028-04-25",
+      "nights": 13,
+      "departure_port": "Honolulu",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ihy13a&shipcode=rp&saildate=20280412",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+            "name": "Royal Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-04-12",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Honolulu",
+            "canonical": "Honolulu",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 13,
+            "returnDate": "2028-04-25"
+          },
+          "itinerary": {
+            "text": "Pacific Crossing: Honolulu to  British Columbia",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ihy13a&shipcode=rp&saildate=20280412",
+            "title": "Pacific Crossing: Honolulu to  British Columbia"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "IHY13A|RP|2028-04-12",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "ship_name": "Royal Princess",
+        "departure_date": "2028-04-12",
+        "return_date": "2028-04-25",
+        "nights": 13,
+        "departure_port": "Honolulu",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Pacific Crossing: Honolulu to  British Columbia",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ihy13a&shipcode=rp&saildate=20280412",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "ILA20A|RP|2027-09-25",
+      "current_source_present": true,
+      "old_code_current_source_eligible": false,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "itinerary_id": "ILA20A",
+      "ship_code": "RP",
+      "ship_name": "Royal Princess",
+      "departure_date": "2027-09-25",
+      "return_date": "2027-10-15",
+      "nights": 20,
+      "departure_port": "Los Angeles",
+      "destination": "australia-new-zealand",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ila20a&shipcode=rp&saildate=20270925",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+            "name": "Royal Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2027-09-25",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Los Angeles",
+            "canonical": "Los Angeles",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 20,
+            "returnDate": "2027-10-15"
+          },
+          "itinerary": {
+            "text": "Tahiti, Hawaii & South Pacific Crossing",
+            "destinationIds": [
+              "835ad9b0-4e95-468e-b93b-cc9587dd713a"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ila20a&shipcode=rp&saildate=20270925",
+            "title": "Tahiti, Hawaii & South Pacific Crossing"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "ILA20A|RP|2027-09-25",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "ship_name": "Royal Princess",
+        "departure_date": "2027-09-25",
+        "return_date": "2027-10-15",
+        "nights": 20,
+        "departure_port": "Los Angeles",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "destination": "australia-new-zealand",
+        "itinerary": "Tahiti, Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ila20a&shipcode=rp&saildate=20270925",
+        "batch_category": "resolver_remediated",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-04-30",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-04-30",
+      "return_date": "2028-05-10",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280430",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-04-30",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-05-10"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280430",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-04-30",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-04-30",
+        "return_date": "2028-05-10",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280430",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-05-10",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-05-10",
+      "return_date": "2028-05-20",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280510",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-05-10",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-05-20"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280510",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-05-10",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-05-10",
+        "return_date": "2028-05-20",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280510",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-05-20",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-05-20",
+      "return_date": "2028-05-30",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280520",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-05-20",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-05-30"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280520",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-05-20",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-05-20",
+        "return_date": "2028-05-30",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280520",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-05-30",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-05-30",
+      "return_date": "2028-06-09",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280530",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-05-30",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-06-09"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280530",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-05-30",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-05-30",
+        "return_date": "2028-06-09",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280530",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-06-09",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-06-09",
+      "return_date": "2028-06-19",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280609",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-06-09",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-06-19"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280609",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-06-09",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-06-09",
+        "return_date": "2028-06-19",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280609",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-06-19",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-06-19",
+      "return_date": "2028-06-29",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280619",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-06-19",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-06-29"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280619",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-06-19",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-06-19",
+        "return_date": "2028-06-29",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280619",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-06-29",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-06-29",
+      "return_date": "2028-07-09",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280629",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-06-29",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-07-09"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280629",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-06-29",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-06-29",
+        "return_date": "2028-07-09",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280629",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-07-09",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-07-09",
+      "return_date": "2028-07-19",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280709",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-07-09",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-07-19"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280709",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-07-09",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-07-09",
+        "return_date": "2028-07-19",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280709",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-07-19",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-07-19",
+      "return_date": "2028-07-29",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280719",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-07-19",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-07-29"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280719",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-07-19",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-07-19",
+        "return_date": "2028-07-29",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280719",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-07-29",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-07-29",
+      "return_date": "2028-08-08",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280729",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-07-29",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-08-08"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280729",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-07-29",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-07-29",
+        "return_date": "2028-08-08",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280729",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-08-08",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-08-08",
+      "return_date": "2028-08-18",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280808",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-08-08",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-08-18"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280808",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-08-08",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-08-08",
+        "return_date": "2028-08-18",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280808",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "AIT10A|RU|2028-08-18",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "AIT10A",
+      "ship_code": "RU",
+      "ship_name": "Ruby Princess",
+      "departure_date": "2028-08-18",
+      "return_date": "2028-08-28",
+      "nights": 10,
+      "departure_port": "San Francisco",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280818",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+            "name": "Ruby Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-08-18",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "San Francisco",
+            "canonical": "San Francisco",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 10,
+            "returnDate": "2028-08-28"
+          },
+          "itinerary": {
+            "text": "Inside Passage (Roundtrip San Francisco)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280818",
+            "title": "Inside Passage (Roundtrip San Francisco)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "AIT10A|RU|2028-08-18",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "78aee069-3f35-4c13-a911-7a949bf8fefc",
+        "ship_name": "Ruby Princess",
+        "departure_date": "2028-08-18",
+        "return_date": "2028-08-28",
+        "nights": 10,
+        "departure_port": "San Francisco",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (Roundtrip San Francisco)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ait10a&shipcode=ru&saildate=20280818",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "ALR16A|EP|2028-09-17",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "ALR16A",
+      "ship_code": "EP",
+      "ship_name": "Emerald Princess",
+      "departure_date": "2028-09-17",
+      "return_date": "2028-10-03",
+      "nights": 16,
+      "departure_port": "Los Angeles",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=alr16a&shipcode=ep&saildate=20280917",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "c77c1b3e-9979-42aa-9126-cba8595c967e",
+            "name": "Emerald Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-09-17",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Los Angeles",
+            "canonical": "Los Angeles",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 16,
+            "returnDate": "2028-10-03"
+          },
+          "itinerary": {
+            "text": "Inside Passage (with Glacier Bay National Park)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=alr16a&shipcode=ep&saildate=20280917",
+            "title": "Inside Passage (with Glacier Bay National Park)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "ALR16A|EP|2028-09-17",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "c77c1b3e-9979-42aa-9126-cba8595c967e",
+        "ship_name": "Emerald Princess",
+        "departure_date": "2028-09-17",
+        "return_date": "2028-10-03",
+        "nights": 16,
+        "departure_port": "Los Angeles",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Inside Passage (with Glacier Bay National Park)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=alr16a&shipcode=ep&saildate=20280917",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "ANG07A|CO|2028-05-17",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "ANG07A",
+      "ship_code": "CO",
+      "ship_name": "Coral Princess",
+      "departure_date": "2028-05-17",
+      "return_date": "2028-05-24",
+      "nights": 7,
+      "departure_port": "Vancouver",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ang07a&shipcode=co&saildate=20280517",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+            "name": "Coral Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-05-17",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Vancouver",
+            "canonical": "Vancouver",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 7,
+            "returnDate": "2028-05-24"
+          },
+          "itinerary": {
+            "text": "Voyage of the Glaciers (Northbound)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ang07a&shipcode=co&saildate=20280517",
+            "title": "Voyage of the Glaciers (Northbound)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "ANG07A|CO|2028-05-17",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "ship_name": "Coral Princess",
+        "departure_date": "2028-05-17",
+        "return_date": "2028-05-24",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Voyage of the Glaciers (Northbound)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ang07a&shipcode=co&saildate=20280517",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    },
+    {
+      "official_sailing_id": "ANG07A|CO|2028-05-31",
+      "current_source_present": true,
+      "old_code_current_source_eligible": true,
+      "current_code_current_source_eligible": true,
+      "current_production_present": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "historical_source_classification_confidence": "unknown",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "itinerary_id": "ANG07A",
+      "ship_code": "CO",
+      "ship_name": "Coral Princess",
+      "departure_date": "2028-05-31",
+      "return_date": "2028-06-07",
+      "nights": 7,
+      "departure_port": "Vancouver",
+      "destination": "alaska",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "destination_method": null,
+      "departure_port_method": null,
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ang07a&shipcode=co&saildate=20280531",
+      "failure_reasons": [],
+      "confidence": {
+        "classification": "sailing",
+        "confidence": "high",
+        "evidence": {
+          "cruiseLine": {
+            "matched": true,
+            "id": "c19f40a7-c160-4035-a845-14dada550e1f",
+            "name": "Princess Cruises"
+          },
+          "ship": {
+            "matched": true,
+            "id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+            "name": "Coral Princess",
+            "method": "official_line_ship_id",
+            "confidence": 100
+          },
+          "departureDate": {
+            "value": "2028-05-31",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "departurePort": {
+            "value": "Vancouver",
+            "canonical": "Vancouver",
+            "method": "extracted",
+            "confidence": 90
+          },
+          "duration": {
+            "nights": 7,
+            "returnDate": "2028-06-07"
+          },
+          "itinerary": {
+            "text": "Voyage of the Glaciers (Northbound)",
+            "destinationIds": [
+              "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c"
+            ]
+          },
+          "sourceType": {
+            "classification": "page",
+            "url": "https://www.princess.com/cruise-search/details?voyagecode=ang07a&shipcode=co&saildate=20280531",
+            "title": "Voyage of the Glaciers (Northbound)"
+          }
+        },
+        "outcome": "auto_publish",
+        "reasons": [],
+        "score": 10,
+        "structured_source_trust": {
+          "trusted": false,
+          "structured_source": "princess_resdb_products",
+          "reasons": [
+            "not_official_carnival_structured_source"
+          ]
+        },
+        "resolverVersion": "2026-08-02.auto1"
+      },
+      "write_payload": {
+        "official_sailing_id": "ANG07A|CO|2028-05-31",
+        "external_key": null,
+        "identity_key": null,
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "ship_name": "Coral Princess",
+        "departure_date": "2028-05-31",
+        "return_date": "2028-06-07",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "destination": "alaska",
+        "itinerary": "Voyage of the Glaciers (Northbound)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ang07a&shipcode=co&saildate=20280531",
+        "batch_category": "old_rule_eligible_current_production_missing",
+        "resolver_evidence": {
+          "destination_method": null,
+          "departure_port_method": null
+        }
+      }
+    }
+  ]
+}

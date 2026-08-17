@@ -475,12 +475,37 @@ function resolveWeeklyMaintenanceStatus({
   postWriteVerification,
   writesPerformed = 0
 }) {
-  if (executeResult?.success === false && !executeResult?.blocked) return "failed";
-  if (maintenanceResult?.ok === false && !maintenanceResult?.blocked) return "failed";
+  if (executeResult?.review_required === true) return "review_required";
+  if (maintenanceResult?.review_required === true) return "review_required";
+
+  if (executeResult?.success === false && !executeResult?.blocked && !executeResult?.review_required) {
+    return "failed";
+  }
+  if (maintenanceResult?.ok === false && !maintenanceResult?.blocked && !maintenanceResult?.review_required) {
+    return "failed";
+  }
   if (sourceFetchFailed) return "failed";
-  if (qualityGate?.passed === false) return "failed";
+  if (qualityGate?.passed === false) {
+    if (
+      mode === "apply" &&
+      writesPerformed === 0 &&
+      executeResult?.review_required !== false &&
+      (executeResult?.reason === WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP ||
+        qualityGate?.review_required === true ||
+        (qualityGate?.expansion_anomaly?.failures?.length &&
+          !qualityGate.failures?.some((f) => !String(f).includes("princess_eligible") && !String(f).includes("princess_outstanding"))))
+    ) {
+      return "review_required";
+    }
+    return "failed";
+  }
   if (reconciliation?.reconciliation_arithmetic_ok === false) return "failed";
-  if (mode === "apply" && writeCapAssessment && writeCapAssessment.ok === false) return "failed";
+  if (mode === "apply" && writeCapAssessment && writeCapAssessment.ok === false) {
+    if (writesPerformed === 0 && writeCapAssessment.reason === WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP) {
+      return "review_required";
+    }
+    return "failed";
+  }
   if (mode === "apply" && writeAccounting && writeAccounting.accounting_ok === false) return "failed";
   if (mode === "apply" && manifestValidation && manifestValidation.ok === false) return "failed";
   if (mode === "apply" && postWriteReconciliation && postWriteReconciliation.ok === false) return "failed";
@@ -502,7 +527,7 @@ function resolveWeeklyMaintenanceStatus({
 
 function resolveWeeklyMaintenanceExitCode(report) {
   if (!report) return 1;
-  if (report.status === "completed") return 0;
+  if (report.status === "completed" || report.status === "review_required") return 0;
   if (report.status === "blocked") return 2;
   return 1;
 }
@@ -633,10 +658,22 @@ function buildGitHubJobSummary(report) {
           : report.reconciliation?.reconciliation_arithmetic_ok === false
             ? "FAIL"
             : "—";
-  const statusLabel = report.status === "completed" ? "SUCCESS" : report.status === "blocked" ? "BLOCKED" : "FAILED";
+  const statusLabel =
+    report.status === "completed"
+      ? "SUCCESS"
+      : report.status === "review_required"
+        ? "REVIEW REQUIRED — NO WRITES"
+        : report.status === "blocked"
+          ? "BLOCKED"
+          : "FAILED";
+  const title =
+    report.status === "review_required"
+      ? "## Princess Weekly Maintenance — REVIEW REQUIRED"
+      : "## Princess Weekly Maintenance";
   return [
-    "## Princess Weekly Maintenance",
+    title,
     "",
+    report.status === "review_required" ? "**Scheduled review condition — zero production writes performed.**" : null,
     `**Trigger:** ${triggerLabel}`,
     `**Execution mode:** ${report.execution_mode || report.mode}`,
     "",
@@ -649,7 +686,9 @@ function buildGitHubJobSummary(report) {
     `**Writes performed:** ${report.writes_performed ?? 0}`,
     `**Reconciliation:** ${reconStatus}`,
     `**Status:** ${statusLabel}`
-  ].join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function countPrincessWeeklyCronSchedules(workflowSources = []) {
