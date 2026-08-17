@@ -36,7 +36,7 @@ const { executeWeeklyMaintenance } = require(path.join(
   root,
   "netlify/functions/lib/cruise-discovery-maintenance-cron"
 ));
-const { runPrincessWeeklyMaintenance } = require(path.join(
+const { runPrincessWeeklyMaintenance, resolvePrincessAcceptedEligibleBaseline } = require(path.join(
   root,
   "netlify/functions/lib/cruise-discovery-maintenance-runner"
 ));
@@ -49,6 +49,11 @@ const { loadWeeklyMaintenanceStatus } = require(path.join(
   "netlify/functions/lib/cruise-discovery-maintenance-tracking"
 ));
 const cli = require(path.join(root, "netlify/functions/lib/princess-weekly-maintenance-cli"));
+const {
+  evaluatePrincessBaselineAcceptance,
+  patchMaintenanceRunAcceptedBaseline,
+  PRINCESS_HEALTHY_SCHEDULED_BASELINE_REASON
+} = require(path.join(root, "netlify/functions/lib/princess-accepted-baseline-lifecycle"));
 const postWriteVerification = require(path.join(
   root,
   "netlify/functions/lib/princess-post-write-verification"
@@ -227,7 +232,7 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
   const countsAfter = { princess: await exactPrincessActive() };
   const endedAt = new Date().toISOString();
 
-  return cli.buildWeeklyMaintenanceReport({
+  const report = cli.buildWeeklyMaintenanceReport({
     mode: "apply",
     triggerType,
     startedAt,
@@ -244,6 +249,32 @@ async function runApply({ startedAt, environment, countsBefore, sb, previousElig
     postWriteReconciliation,
     postWriteVerification
   });
+
+  const baselineAcceptance = evaluatePrincessBaselineAcceptance({
+    triggerType: runnerTriggerType,
+    summary,
+    executeResult,
+    report,
+    maintenanceResult,
+    dryRun: false,
+    simulation: executeResult.simulation || maintenanceResult.simulation || null
+  });
+  report.baseline_acceptance = baselineAcceptance;
+
+  if (baselineAcceptance.accept && executeResult.run_record_id) {
+    const patched = await patchMaintenanceRunAcceptedBaseline(
+      sb,
+      executeResult.run_record_id,
+      summary,
+      { acceptedAt: endedAt, reason: PRINCESS_HEALTHY_SCHEDULED_BASELINE_REASON }
+    );
+    report.accepted_baseline_recorded = Boolean(patched);
+    report.accepted_baseline_run_id = executeResult.run_record_id;
+  } else {
+    report.accepted_baseline_recorded = false;
+  }
+
+  return report;
 }
 
 async function main() {

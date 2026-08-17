@@ -108,6 +108,10 @@ const {
   computePrincessDisjointSourceAccounting,
   isPrincessReviewRequiredOnly
 } = require("./princess-weekly-quality");
+const {
+  selectLatestPrincessAcceptedBaseline,
+  resolvePrincessAcceptedBaselineLookup
+} = require("./princess-accepted-baseline-lifecycle");
 
 const MAX_WRITES_PER_BATCH = 100;
 const MAX_WEEKLY_WRITES = 30;
@@ -180,18 +184,28 @@ async function findPreviousSuccessfulMaintenanceRun(supabase, cruiseLineId, runT
   const runs = await supabase(
     `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.completed&select=id,stats,finished_at,created_at&order=finished_at.desc&limit=20`
   );
-  return (runs || []).find((r) => r.stats?.run_type === runType && r.stats?.trigger_type === "scheduled") || null;
+  return findPreviousSuccessfulMaintenanceRunFromRows(runs, runType);
 }
 
 async function findPrincessAcceptedEligibleBaseline(supabase, cruiseLineId, runType) {
   const runs = await supabase(
     `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.completed&select=id,stats,finished_at,created_at&order=finished_at.desc&limit=100`
   );
-  const accepted = (runs || []).find(
-    (r) => r.stats?.run_type === runType && r.stats?.accepted_inventory_baseline === true
+  const legacy = findPreviousSuccessfulMaintenanceRunFromRows(runs, runType);
+  const lookup = resolvePrincessAcceptedBaselineLookup(runs, runType, legacy);
+  return lookup.baseline;
+}
+
+async function resolvePrincessAcceptedEligibleBaseline(supabase, cruiseLineId, runType) {
+  const runs = await supabase(
+    `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.completed&select=id,stats,finished_at,created_at&order=finished_at.desc&limit=100`
   );
-  if (accepted) return accepted;
-  return findPreviousSuccessfulMaintenanceRun(supabase, cruiseLineId, runType);
+  const legacy = findPreviousSuccessfulMaintenanceRunFromRows(runs, runType);
+  return resolvePrincessAcceptedBaselineLookup(runs, runType, legacy);
+}
+
+function findPreviousSuccessfulMaintenanceRunFromRows(runs, runType) {
+  return (runs || []).find((r) => r.stats?.run_type === runType && r.stats?.trigger_type === "scheduled") || null;
 }
 
 async function findPreviousSeabournMaintenanceRun(supabase, cruiseLineId, runType) {
@@ -852,7 +866,11 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
 async function runPrincessWeeklyMaintenance(context = {}) {
   const sb = context.supabase || defaultSupabase;
   const dryRun = Boolean(context.dryRun ?? context.dry_run);
+  const simulateApplyQualityGates = Boolean(
+    context.simulateApplyQualityGates ?? context.simulate_apply_quality_gates
+  );
   const performWrites = Boolean(context.performWrites ?? context.perform_writes) && !dryRun;
+  const qualityGatePerformWrites = performWrites || simulateApplyQualityGates;
   const maxWrites = Math.min(MAX_WRITES_PER_BATCH, Number(context.maxWrites ?? context.max_writes ?? 100) || 100);
   const runId = String(context.runId || context.run_id || `princess-weekly-${Date.now()}`).trim();
   const runRecordId = context.runRecordId || context.run_record_id || null;
@@ -968,7 +986,7 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       dryRun,
       simulation,
       summary: princessAccountingInputs,
-      performWrites,
+      performWrites: qualityGatePerformWrites,
       allowControlledRemediationApply: isControlledRemediationWrite
     });
 
@@ -1927,6 +1945,9 @@ module.exports = {
   runHalWeeklyMaintenance,
   runCelebrityWeeklyMaintenance,
   runPrincessWeeklyMaintenance,
+  findPrincessAcceptedEligibleBaseline,
+  resolvePrincessAcceptedEligibleBaseline,
+  selectLatestPrincessAcceptedBaseline: selectLatestPrincessAcceptedBaseline,
   runExploraWeeklyMaintenance,
   runSeabournWeeklyMaintenance,
   runRoyalCaribbeanWeeklyMaintenance: (context = {}) =>

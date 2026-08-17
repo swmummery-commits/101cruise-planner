@@ -1312,5 +1312,10 @@
     "proposed_updates": 0,
     "quality_gate_passed": true
   },
-  "p3_complete": true
+  "p3_complete": true,
+  "p3_original_readiness_check": {
+    "executed_before_baseline_acceptance": true,
+    "previous_eligible_total": null,
+    "note": "P3 weekly_readiness ran before incident_p3_baseline_acceptance was persisted; corrected in P4."
+  }
 }

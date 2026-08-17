@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-08-17T06:40:44.859Z",
+  "repository_sha": "f443169bf8c6ed9198f32334d42f0dbdc34ac5db",
+  "p3_report_sha": "056fc7a182e966581da0c386dcb0243a0b5a2ed1",
+  "production_verification": {
+    "active": 2062,
+    "expired": 30,
+    "p2_thirty_present": true,
+    "p3_552_present": true,
+    "duplicate_official": 0,
+    "duplicate_external": 0,
+    "duplicate_identity": 0,
+    "csr07h_active": true,
+    "source": {
+      "raw_groups": 1007,
+      "expanded": 2131,
+      "eligible": 2061,
+      "within_cutoff": 70,
+      "accounting_exact": true,
+      "reproducible": true,
+      "new_outstanding": 0
+    },
+    "reconciliation": {
+      "proposed_updates": 0,
+      "proposed_inserts": 0,
+      "eligible": 2061,
+      "recognised": 2061
+    }
+  },
+  "p3_accepted_baseline_record": {
+    "id": "9f6e644e-212c-4524-9f5c-d218ab855151",
+    "status": "completed",
+    "finished_at": "2026-08-17T03:16:46.626+00:00",
+    "accepted_total": 2061,
+    "accepted_hash": "5161b08de272b733756aff82515bbf1a3faa2f112d4d2d2fe12f2b0bd86be817",
+    "accepted_reason": "incident_p3_controlled_remediation_complete"
+  },
+  "baseline_lookup": {
+    "baseline": {
+      "id": "9f6e644e-212c-4524-9f5c-d218ab855151",
+      "stats": {
+        "run_type": "princess_weekly_maintenance",
+        "accepted_at": "2026-08-17T03:16:46.626Z",
+        "trigger_type": "incident_p3_baseline_acceptance",
+        "eligible_total": 2061,
+        "accepted_reason": "incident_p3_controlled_remediation_complete",
+        "incident_p3_complete": true,
+        "accepted_eligible_hash": "5161b08de272b733756aff82515bbf1a3faa2f112d4d2d2fe12f2b0bd86be817",
+        "accepted_eligible_total": 2061,
+        "accepted_inventory_baseline": true
+      },
+      "finished_at": "2026-08-17T03:16:46.626+00:00",
+      "created_at": "2026-08-17T03:16:46.735558+00:00"
+    },
+    "baseline_source": "accepted_baseline",
+    "baseline_run_id": "9f6e644e-212c-4524-9f5c-d218ab855151",
+    "baseline_eligible_total": 2061,
+    "baseline_eligible_hash": "5161b08de272b733756aff82515bbf1a3faa2f112d4d2d2fe12f2b0bd86be817",
+    "baseline_accepted_at": "2026-08-17T03:16:46.626Z",
+    "baseline_reason": "incident_p3_controlled_remediation_complete"
+  },
+  "baseline_selects_p3_record": true,
+  "rolling_baseline_policy": {
+    "implemented": true,
+    "healthy_scheduled_reason": "healthy_scheduled_princess_maintenance",
+    "acceptance_module": "netlify/functions/lib/princess-accepted-baseline-lifecycle.js"
+  },
+  "p3_original_readiness_check": {
+    "executed_before_baseline_acceptance": true,
+    "previous_eligible_total": null
+  },
+  "corrected_readiness_evaluation": {
+    "ok": true,
+    "baseline_loaded": true,
+    "baseline_run_id": "9f6e644e-212c-4524-9f5c-d218ab855151",
+    "previous_eligible_total": 2061,
+    "current_eligible_total": 2061,
+    "eligible_delta": 0,
+    "eligible_change_pct": 0,
+    "expansion_review": false,
+    "review_required": false,
+    "proposed_inserts": 0,
+    "proposed_updates": 0,
+    "source_accounting_exact": true,
+    "auto_apply_permitted": true,
+    "quality_gate_passed": true,
+    "production_writes": 0,
+    "raw_result": {
+      "ok": true,
+      "reason": null,
+      "blocked": false,
+      "failed": false
+    }
+  },
+  "schedule_verification": {
+    "cron": "0 20 * * 0",
+    "perth": "Monday 04:00 Australia/Perth (Sunday 20:00 UTC)",
+    "reconciliation_enabled": true,
+    "hard_cap_30": true
+  },
+  "production_writes": 0,
+  "tests_note": "Run npm run test:princess-accepted-baseline-lifecycle",
+  "overall_pass": true,
+  "princess_incident_closed": true,
+  "weekly_automatic_maintenance_ready": true
+}
