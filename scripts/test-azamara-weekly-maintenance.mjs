@@ -176,6 +176,115 @@ const identityReviewManifest = {
 const identityReviewValidation = weeklyManifest.validateAzamaraWeeklyManifest(identityReviewManifest);
 assert(identityReviewValidation.passed === true, "identity review pending does not fail dry-run manifest validation");
 
+/* H3. stale catch-up embark mismatch is not identity-critical when evidence agrees */
+const pr261002Existing = {
+  official_sailing_id: "PR261002-014",
+  departure_port: "Incheon",
+  departure_date: "2026-10-02",
+  return_date: "2026-10-16",
+  nights: 14,
+  ship_id: "ship-a",
+  itinerary: null,
+  status: "active",
+  raw_extract: {
+    title: "JAPAN INTENSIVE CRUISE: TOKYO, KOBE & NAGASAKI",
+    description:
+      "Explore this Japan Intensive Cruise: Tokyo, Kobe & Nagasaki sailing from TOKYO to SEOUL (INCHEON) on Oct 2 2026"
+  }
+};
+const pr261002Candidate = {
+  departure_port: "Tokyo",
+  departure_port_meta: { canonicalPortName: "Tokyo", canonicalPortId: "port-tokyo", status: "resolved", confidence: "exact" },
+  departure_date: "2026-10-02",
+  return_date: "2026-10-16",
+  nights: 14,
+  ship_id: "ship-a",
+  itinerary: null,
+  status: "active",
+  raw_extract: pr261002Existing.raw_extract
+};
+const pr261002Risk = weeklyPolicy.classifyAzamaraUpdateRisk(pr261002Existing, pr261002Candidate);
+assert(pr261002Risk.risk !== "identity_critical", "PR261002 stale Incheon field is not identity-critical");
+assert(
+  weeklyPolicy.refineProposedActionForWeekly("update_official_match", pr261002Existing, pr261002Candidate) ===
+    "duplicate_skip",
+  "PR261002 stale embark mismatch is recognised unchanged pending field refresh batch"
+);
+
+/* H4. package-code date mismatch treated as stale refresh not identity review */
+const qsExisting = {
+  official_sailing_id: "QS261031-007",
+  departure_port: "Piraeus",
+  departure_date: "2026-10-30",
+  return_date: "2026-11-14",
+  nights: 15,
+  ship_id: "ship-b",
+  itinerary: null,
+  status: "active",
+  raw_extract: {
+    description:
+      "Explore this Best Of The Mediterranean Cruise sailing from ATHENS (PIRAEUS) to ROME (CIVITAVECCHIA) on Oct 31 2026"
+  }
+};
+const qsCandidate = {
+  departure_port: "Piraeus",
+  departure_port_meta: {
+    canonicalPortName: "Piraeus",
+    canonicalPortId: "port-csv-240",
+    status: "resolved",
+    confidence: "exact"
+  },
+  departure_date: "2026-10-31",
+  return_date: "2026-11-15",
+  nights: 15,
+  ship_id: "ship-b",
+  itinerary: null,
+  status: "active",
+  raw_extract: qsExisting.raw_extract
+};
+const qsRisk = weeklyPolicy.classifyAzamaraUpdateRisk(qsExisting, qsCandidate);
+assert(!qsRisk.identity_critical_changes.includes("departure_date"), "QS261031 package date corroboration avoids date review");
+assert(
+  weeklyPolicy.refineProposedActionForWeekly("update_official_match", qsExisting, qsCandidate) ===
+    "duplicate_skip",
+  "QS261031 stale date mismatch is recognised unchanged pending field refresh batch"
+);
+
+/* H5. genuine live source change still requires review */
+const genuineExisting = {
+  official_sailing_id: "JR270707-013",
+  departure_port: "Portsmouth",
+  departure_date: "2027-07-07",
+  return_date: "2027-07-20",
+  nights: 13,
+  ship_id: "ship-c",
+  itinerary: "British Isles",
+  status: "active",
+  raw_extract: {
+    description: "Explore this British Isles Cruise sailing from PORTSMOUTH to DUBLIN on Jul 7 2027"
+  }
+};
+const genuineCandidate = {
+  departure_port: "Dublin",
+  departure_port_meta: { canonicalPortName: "Dublin", canonicalPortId: "port-dub", status: "resolved", confidence: "exact" },
+  departure_date: "2027-07-07",
+  return_date: "2027-07-20",
+  nights: 13,
+  ship_id: "ship-c",
+  itinerary: "British Isles",
+  status: "active",
+  raw_extract: {
+    description: "Explore this British Isles Cruise sailing from DUBLIN to EDINBURGH on Jul 7 2027"
+  }
+};
+const genuineRisk = weeklyPolicy.classifyAzamaraUpdateRisk(genuineExisting, genuineCandidate);
+assert(genuineRisk.risk === "identity_critical", "live source embark change remains identity-critical");
+assert(
+  weeklyPolicy.refineProposedActionForWeekly("update_official_match", genuineExisting, genuineCandidate) ===
+    "update_identity_review_required",
+  "genuine embark change stays in review"
+);
+
 /* I. actionable source absence blocks weekly writes (Seabourn policy) */
 const blockedSafety = weeklyPolicy.assessAzamaraWeeklyWriteSafety({
   sourceAbsencePolicy: { source_absent_observed: 2, source_absent_actionable: 1 },

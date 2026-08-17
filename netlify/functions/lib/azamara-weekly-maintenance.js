@@ -11,7 +11,7 @@ const { assessAzamaraWeeklyWriteSafety } = require("./azamara-weekly-update-poli
 const { indexExistingAzamaraRecords: loadIndexes } = require("./azamara-discovery-writes");
 const { loadClassificationDestinations } = require("./destination-queries");
 const { loadShipAliases, loadDestinationAliases } = require("./cruise-discovery-ops");
-const { withGlobalCruiseWriteLock } = require("./cruise-discovery-global-write-lock");
+const { withGlobalCruiseWriteLock, executeControlledProductionApply } = require("./cruise-discovery-global-write-lock");
 const { AZAMARA_LINE_ID } = require("./azamara-discovery-source");
 
 const AZAMARA_LINE_SLUG = "azamara";
@@ -118,13 +118,13 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
   let applyResult = null;
   let globalLockReport = null;
   if (performWrites) {
-    const applyWrap = await withGlobalCruiseWriteLock(
+    const applyWrap = await executeControlledProductionApply(
       sb,
       {
-        ownerId: runId,
         runId,
         lineSlug: AZAMARA_LINE_SLUG,
-        operation: "azamara_weekly_maintenance"
+        operation: "azamara_weekly_maintenance",
+        performWrites: true
       },
       async () =>
         applyAzamaraWeeklyManifest({
@@ -137,18 +137,18 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
         })
     );
 
-    if (!applyWrap.acquired) {
+    if (applyWrap.blocked) {
       return {
         success: false,
         blocked: true,
         reason: applyWrap.reason || "global_production_import_lock_unavailable",
         run_id: runId,
         manifest,
-        global_lock: applyWrap.observability
+        global_lock: applyWrap.global_lock
       };
     }
-    applyResult = applyWrap.result;
-    globalLockReport = applyWrap.observability;
+    applyResult = applyWrap.writeResult;
+    globalLockReport = applyWrap.global_lock;
   }
 
   const summary = {
