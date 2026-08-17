@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { P3_BATCH_MAX_WRITES } = require(path.join(__dirname, "../../netlify/functions/lib/princess-frozen-payload"));
 
 const PRINCESS_LINE_ID = "c19f40a7-c160-4035-a845-14dada550e1f";
 const OLD_SHA = "8f867a7f0d1879ed6df3dbddbecc363b8765c24e";
