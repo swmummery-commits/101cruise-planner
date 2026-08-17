@@ -59,6 +59,10 @@ const { buildDiscoveredCruiseUpsertPayload } = require(path.join(
   root,
   "netlify/functions/lib/cruise-discovery-ops"
 ));
+const { verifyStoredExpeditionRow } = require(path.join(
+  root,
+  "netlify/functions/lib/silversea-expedition-verification"
+));
 const {
   RUN_STATUS,
   buildApplyReportLifecycle,
