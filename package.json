@@ -43,6 +43,8 @@
     "test:discovery-destination-scope": "node scripts/test-discovery-destination-scope.mjs",
     "test:discovery-operational-destinations": "node scripts/test-discovery-operational-destinations.mjs",
     "test:azamara-discovery": "node scripts/test-azamara-discovery.mjs",
+    "test:azamara-weekly-maintenance": "node scripts/test-azamara-weekly-maintenance.mjs",
+    "run:azamara-weekly-maintenance": "node scripts/run-azamara-weekly-maintenance.mjs",
     "generate:destination-manifests": "node scripts/generate-destination-manifests.mjs",
     "simulate:operational-destinations": "node scripts/simulate-operational-destinations.mjs",
     "simulate:discovery-hal": "node scripts/simulate-discovery-hal.mjs",
