@@ -6,6 +6,8 @@
 const { buildSilverseaUpsertCandidate, buildItineraryPorts } = require("./silversea-discovery-writes");
 const { buildDiscoveredCruiseUpsertPayload, normalizeItineraryPortsForDb } = require("./cruise-discovery-ops");
 const { hasUnresolvedActualItineraryPort, isClassic, loadFrozenOfficialSailingIds } = require("./silversea-controlled-batch");
+const { partitionByPublicBookingCutoff } = require("./public-discovered-cruise-inventory");
+const crypto = require("crypto");
 const {
   isExpeditionOfficialId,
   portsArrayEqual,
@@ -23,6 +25,10 @@ const {
 } = require("./silversea-expedition-itinerary-ports-backfill");
 
 const M0C_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0c-itinerary-ports-backfill.json";
+const M0D1_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0d1-itinerary-ports-backfill.json";
+const M0D_BATCH_SIZES = Object.freeze([200, 200, 199]);
+const M0D1_OPERATION = "silversea_classic_m0d1_itinerary_ports_backfill";
+const M0D1_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D1-ITINERARY-PORTS-BACKFILL";
 const M0D_OPERATION = "silversea_classic_m0d_itinerary_ports_backfill";
 const M0D_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D-ITINERARY-PORTS-BACKFILL";
 
@@ -358,8 +364,188 @@ function countByKey(rows, keyFn) {
   return out;
 }
 
+function sortMasterClassicRows(rows) {
+  return rows.slice().sort((a, b) => String(a.official_sailing_id).localeCompare(String(b.official_sailing_id)));
+}
+
+function partitionMasterClassicFixture(masterFixture) {
+  const sorted = sortMasterClassicRows(masterFixture?.rows || []);
+  const total = sorted.length;
+  const [m0d1Size, m0d2Size, m0d3Size] = M0D_BATCH_SIZES;
+  if (total !== m0d1Size + m0d2Size + m0d3Size) {
+    return {
+      ok: false,
+      reason: `master_count_${total}_expected_${m0d1Size + m0d2Size + m0d3Size}`,
+      sorted,
+      batches: null
+    };
+  }
+  const m0d1 = sorted.slice(0, m0d1Size);
+  const m0d2 = sorted.slice(m0d1Size, m0d1Size + m0d2Size);
+  const m0d3 = sorted.slice(m0d1Size + m0d2Size);
+  const allIds = sorted.map((r) => String(r.official_sailing_id).toUpperCase());
+  const uniqueIds = new Set(allIds);
+  return {
+    ok: true,
+    partition_policy: "official_sailing_id ASC",
+    sorted,
+    batches: {
+      m0d1: { batch_index: 1, count: m0d1.length, rows: m0d1 },
+      m0d2: { batch_index: 2, count: m0d2.length, rows: m0d2 },
+      m0d3: { batch_index: 3, count: m0d3.length, rows: m0d3 }
+    },
+    coverage: {
+      master_count: total,
+      partition_total: m0d1.length + m0d2.length + m0d3.length,
+      duplicate_ids: allIds.length - uniqueIds.size,
+      missing_ids: 0
+    }
+  };
+}
+
+function validateClassicPartition(partition) {
+  const issues = [];
+  if (!partition?.ok) issues.push(partition?.reason || "partition_failed");
+  const ids1 = new Set((partition?.batches?.m0d1?.rows || []).map((r) => String(r.official_sailing_id).toUpperCase()));
+  const ids2 = new Set((partition?.batches?.m0d2?.rows || []).map((r) => String(r.official_sailing_id).toUpperCase()));
+  const ids3 = new Set((partition?.batches?.m0d3?.rows || []).map((r) => String(r.official_sailing_id).toUpperCase()));
+  if (ids1.size !== 200) issues.push(`m0d1_count:${ids1.size}`);
+  if (ids2.size !== 200) issues.push(`m0d2_count:${ids2.size}`);
+  if (ids3.size !== 199) issues.push(`m0d3_count:${ids3.size}`);
+  for (const id of ids1) {
+    if (ids2.has(id) || ids3.has(id)) issues.push(`overlap:${id}`);
+  }
+  for (const id of ids2) {
+    if (ids3.has(id)) issues.push(`overlap:${id}`);
+  }
+  return { ok: issues.length === 0, issues };
+}
+
+function hashFixtureContent(content) {
+  return crypto.createHash("sha256").update(content).digest("hex");
+}
+
+function buildM0d1BatchFixture(params) {
+  const partition = params.partition;
+  const rows = (partition?.batches?.m0d1?.rows || []).map((row, i) => ({
+    ...row,
+    sequence: i + 1,
+    proposed_action: "UPDATE itinerary_ports ONLY"
+  }));
+  return {
+    phase: "M0D1",
+    mode: M0D1_BACKFILL_FIXTURE,
+    generated_at: params.generatedAt || new Date().toISOString(),
+    git_sha: params.gitSha || null,
+    parent_fixture_path: params.parentFixturePath || M0C_BACKFILL_FIXTURE,
+    parent_fixture_sha256: params.parentFixtureSha256 || null,
+    batch_index: 1,
+    batch_count: 3,
+    batch_size: 200,
+    total_repair_population: 599,
+    partition_policy: partition?.partition_policy || "official_sailing_id ASC",
+    frozen_count: rows.length,
+    frozen_unique_uuid_count: new Set(rows.map((r) => r.production_uuid)).size,
+    frozen_unique_official_id_count: new Set(rows.map((r) => r.official_sailing_id)).size,
+    update_whitelist: UPDATE_WHITELIST.slice(),
+    rows
+  };
+}
+
+function computeClassicSourceCutoffCounts(simulation, today) {
+  const classicProducts = (simulation?.products || []).filter((p) => isClassic(p.raw || {}));
+  const { publiclyEligible, withinCutoff } = partitionByPublicBookingCutoff(
+    classicProducts,
+    (p) => p.candidate?.departure_date,
+    today
+  );
+  const within = withinCutoff.length;
+  const beyond = publiclyEligible.length;
+  const total = classicProducts.length;
+  return {
+    classic_source_total: total,
+    classic_within_cutoff: within,
+    classic_beyond_cutoff: beyond,
+    reconciles: within + beyond === total,
+    m0c_1098_count_actually_represented:
+      "simulation.summary.eligible_beyond_cutoff — entire catalogue publicly eligible beyond cutoff, not Classic-only",
+    m0c_33_count_actually_represented:
+      "simulation.summary.within_21_day_cutoff — entire catalogue within cutoff, not Classic-only",
+    m0c_classic_cutoff_count_discrepancy_explained: true
+  };
+}
+
+async function applyClassicItineraryPortsRepairBatch(supabase, fixtureRows, callbacks = {}) {
+  return applyItineraryPortsRepairBatch(supabase, fixtureRows, callbacks, {
+    verifyBeforeMatch: verifyClassicFrozenBeforeMatch
+  });
+}
+
+async function verifyClassicRepairBatchResults(supabase, fixtureRows) {
+  const checks = [];
+  let allOk = true;
+  for (const fixtureRow of fixtureRows) {
+    const rows = await supabase(
+      `discovered_cruises?id=eq.${encodeURIComponent(fixtureRow.production_uuid)}&select=id,official_sailing_id,itinerary_ports,ship_id,departure_date,return_date,nights,destination_id,status,raw_extract,cruise_line_id,departure_port,itinerary,official_url,source_url,external_key,identity_key,match_confidence,review_reason&limit=1`
+    );
+    const row = rows?.[0] || null;
+    const verify = verifyItineraryPortsRepairRow(row, fixtureRow, FINGERPRINT_FIELDS);
+    if (!verify.ok) allOk = false;
+    checks.push({
+      production_uuid: fixtureRow.production_uuid,
+      official_sailing_id: fixtureRow.official_sailing_id,
+      ...verify
+    });
+  }
+  return {
+    ok: allOk && checks.length === fixtureRows.length,
+    verified_count: checks.filter((c) => c.ok).length,
+    failed_count: checks.filter((c) => !c.ok).length,
+    records: checks
+  };
+}
+
+function auditClassicItineraryPortsPopulation(classicRows, sourceById, line) {
+  let exactMatch = 0;
+  let remainingRepair = 0;
+  let deferred = 0;
+  for (const prodRow of classicRows) {
+    const source = sourceById.get(String(prodRow.official_sailing_id).toUpperCase()) || null;
+    const stored = normalizeStoredPorts(prodRow.itinerary_ports);
+    let expected = [];
+    let expectedOk = false;
+    if (source) {
+      const built = buildExpectedClassicItineraryPorts(source, line);
+      expectedOk = built.ok;
+      expected = built.ok ? built.ports : [];
+    }
+    const category = classifyClassicItineraryPortsAudit({
+      storedPorts: stored,
+      expectedPorts: expected,
+      expectedOk,
+      sourceReconcileStatus: source
+        ? SOURCE_RECONCILE_STATUS.CURRENT_SOURCE_MATCH
+        : SOURCE_RECONCILE_STATUS.SOURCE_ABSENT,
+      rawExtractReconstructable: null
+    });
+    if (portsArrayEqual(stored, expected) && expectedOk) exactMatch += 1;
+    else if (isClassicDeterministicRepairCategory(category)) remainingRepair += 1;
+    else if (isClassicDeferredCategory(category)) deferred += 1;
+  }
+  return {
+    total: classicRows.length,
+    exact_match: exactMatch,
+    remaining_repair_candidates: remainingRepair,
+    deferred_unsafe: deferred
+  };
+}
+
 module.exports = {
   M0C_BACKFILL_FIXTURE,
+  M0D1_BACKFILL_FIXTURE,
+  M0D_BATCH_SIZES,
+  M0D1_OPERATION,
+  M0D1_APPLY_CONFIRMATION_TOKEN,
   M0D_OPERATION,
   M0D_APPLY_CONFIRMATION_TOKEN,
   CLASSIC_AUDIT_CATEGORY,
@@ -385,7 +571,15 @@ module.exports = {
   assertClassicInsertPayloadIncludesItineraryPorts,
   verifyClassicFrozenBeforeMatch,
   verifyItineraryPortsRepairRow,
-  applyItineraryPortsRepairBatch,
+  applyClassicItineraryPortsRepairBatch,
+  verifyClassicRepairBatchResults,
+  auditClassicItineraryPortsPopulation,
+  sortMasterClassicRows,
+  partitionMasterClassicFixture,
+  validateClassicPartition,
+  hashFixtureContent,
+  buildM0d1BatchFixture,
+  computeClassicSourceCutoffCounts,
   portsArrayEqual,
   normalizeStoredPorts,
   buildRowFingerprint,

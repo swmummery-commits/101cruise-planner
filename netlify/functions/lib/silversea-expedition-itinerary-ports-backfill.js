@@ -292,7 +292,7 @@ function buildM0bRollbackManifest(params) {
   };
 }
 
-async function applyItineraryPortsRepairBatch(supabase, fixtureRows, callbacks = {}) {
+async function applyItineraryPortsRepairBatch(supabase, fixtureRows, callbacks = {}, options = {}) {
   const stats = {
     attempted: 0,
     updated: 0,
@@ -312,7 +312,7 @@ async function applyItineraryPortsRepairBatch(supabase, fixtureRows, callbacks =
       );
       const current = currentRows?.[0] || null;
       const beforeSnap = current ? snapshotComparableFields(current) : null;
-      const beforeCheck = verifyFrozenBeforeMatch(current, fixtureRow);
+      const beforeCheck = (options.verifyBeforeMatch || verifyFrozenBeforeMatch)(current, fixtureRow);
       if (!beforeCheck.ok) {
         stats.failed += 1;
         stats.write_details.push({
