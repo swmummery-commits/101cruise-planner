@@ -296,6 +296,70 @@ assert(safePatch.raw_extract.title === "New", "safe patch updates raw_extract");
 assert(safePatch.raw_extract.azamara_weekly_safe_update === true, "safe patch marks weekly metadata update");
 assert(!("departure_port" in safePatch), "safe patch must not include identity fields");
 
+/* H7–H16. deterministic safe-metadata idempotency */
+const safeMeta = require(path.join(root, "netlify/functions/lib/azamara-weekly-safe-metadata"));
+const stableBase = {
+  title: "Japan Intensive",
+  description: "Explore this cruise sailing from TOKYO to SEOUL",
+  azamara_package_code: "PR261002-014",
+  azamara_product_type: "ocean",
+  structured_source: "azamara_official_sitemap",
+  departure_port_meta: {
+    rawValue: "TOKYO",
+    canonicalPortId: "port-csv-199",
+    canonicalPortName: "Tokyo",
+    confidence: "exact",
+    status: "resolved",
+    sourceField: "description.route_pair"
+  }
+};
+assert(
+  safeMeta.azamaraStableRawExtractEquivalent(stableBase, { ...stableBase }),
+  "exact same stable metadata is equivalent"
+);
+assert(
+  safeMeta.azamaraStableRawExtractEquivalent(stableBase, {
+    ...stableBase,
+    azamara_weekly_run_id: "run-a",
+    azamara_last_verified_at: "2026-08-17T01:00:00.000Z"
+  }),
+  "run id / verification timestamp volatility ignored"
+);
+assert(
+  safeMeta.azamaraStableRawExtractEquivalent(stableBase, {
+    ...stableBase,
+    fetched_at: "2026-08-17T02:00:00.000Z",
+    excerpt_chars: 999
+  }),
+  "fetch diagnostics ignored"
+);
+assert(
+  safeMeta.azamaraStableRawExtractEquivalent(
+    { b: 2, a: 1, title: "X" },
+    { a: 1, b: 2, title: "X" }
+  ),
+  "JSON key ordering ignored"
+);
+assert(
+  !safeMeta.azamaraStableRawExtractEquivalent(stableBase, {
+    ...stableBase,
+    description: "Different route text"
+  }),
+  "semantic description change detected"
+);
+const mergedRaw = safeMeta.mergeAzamaraStableRawExtract(
+  { title: "Old", azamara_catchup_batch: "batch-1" },
+  stableBase
+);
+const postApplyRisk = weeklyPolicy.classifyAzamaraUpdateRisk(
+  { official_url: "https://example", raw_extract: mergedRaw, departure_port: "Tokyo" },
+  { official_url: "https://example", raw_extract: { ...stableBase, azamara_weekly_run_id: "fresh-run" }, departure_port: "Tokyo" }
+);
+assert(
+  postApplyRisk.safe_metadata_changes.length === 0,
+  "successful safe metadata merge followed by identical source proposes no update"
+);
+
 /* I. actionable source absence blocks weekly writes (Seabourn policy) */
 const blockedSafety = weeklyPolicy.assessAzamaraWeeklyWriteSafety({
   sourceAbsencePolicy: { source_absent_observed: 2, source_absent_actionable: 1 },

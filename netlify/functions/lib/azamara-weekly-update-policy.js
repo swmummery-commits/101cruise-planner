@@ -4,6 +4,7 @@
  */
 
 const { resolveDepartureFromSource } = require("./discovery-departure-port");
+const { azamaraStableRawExtractEquivalent } = require("./azamara-weekly-safe-metadata");
 
 const IDENTITY_CRITICAL_FIELDS = [
   "ship_id",
@@ -163,7 +164,7 @@ function classifyAzamaraUpdateRisk(existing, candidate) {
   if (String(existing.official_url || "") !== String(candidate.official_url || "")) {
     safeMetadataChanges.push("official_url");
   }
-  if (JSON.stringify(existing.raw_extract || {}) !== JSON.stringify(candidate.raw_extract || {})) {
+  if (!azamaraStableRawExtractEquivalent(existing.raw_extract, candidate.raw_extract)) {
     safeMetadataChanges.push("raw_extract");
   }
 

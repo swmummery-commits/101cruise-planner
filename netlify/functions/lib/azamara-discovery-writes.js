@@ -12,6 +12,7 @@ const {
   candidateChanged
 } = require("./azamara-discovery-adapter");
 const { refineProposedActionForWeekly, ALLOWED_WEEKLY_UPDATE_FIELDS } = require("./azamara-weekly-update-policy");
+const { mergeAzamaraStableRawExtract } = require("./azamara-weekly-safe-metadata");
 
 const SAFE_METADATA_FIELD_SET = new Set(ALLOWED_WEEKLY_UPDATE_FIELDS);
 
@@ -23,11 +24,7 @@ function buildAzamaraSafeUpdatePatch(existing, candidate, safeFields = ALLOWED_W
       patch.official_url = candidate.official_url ?? existing.official_url;
     }
     if (field === "raw_extract") {
-      patch.raw_extract = {
-        ...(candidate.raw_extract || {}),
-        azamara_weekly_safe_update: true,
-        azamara_last_verified_at: new Date().toISOString()
-      };
+      patch.raw_extract = mergeAzamaraStableRawExtract(existing.raw_extract, candidate.raw_extract);
     }
   }
   patch.last_seen_at = new Date().toISOString();
@@ -66,11 +63,7 @@ async function applyAzamaraSafeMetadataUpdate({ supabase, entry, runId, stats })
 
   const candidate = {
     ...entry.candidate,
-    raw_extract: {
-      ...(entry.candidate.raw_extract || {}),
-      azamara_weekly_run_id: runId || null,
-      azamara_weekly_action: entry.proposed_action
-    }
+    raw_extract: mergeAzamaraStableRawExtract(existing.raw_extract, entry.candidate.raw_extract)
   };
   const patch = buildAzamaraSafeUpdatePatch(existing, candidate);
   const before = snapshotRecordForRollback(existing);
