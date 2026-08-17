@@ -1,0 +1,1090 @@
+{
+  "master_plan_hash": "7c9a77c305e279bbbfcdeaba655a83055adce51d93238c8b7953a582b9748284",
+  "batch_number": 19,
+  "batch_label": "P3-19",
+  "batch_size": 12,
+  "batch_hash": "0cfb9083073a3bd8cf3d5aab270a16194f04c4bec802c8b9d6ee8265ac0f7abe",
+  "max_writes": 30,
+  "candidates": [
+    {
+      "official_sailing_id": "AYR14A|CO|2028-09-06",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-06",
+        "return_date": "2028-09-20",
+        "nights": 14,
+        "departure_port": "Vancouver",
+        "itinerary": "Voyage of the Glaciers Grand Adventure",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ayr14a&shipcode=co&saildate=20280906",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ayr14a&shipcode=co&saildate=20280906",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "AYR14A|CO|2028-09-06",
+        "external_key": "a5bdaa6e0882be7eb66e7f480c0665a051ea1ac5",
+        "identity_key": "143f581dd7e43281c4c0c1d381ae2816b2f4fd84",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "AYR14A|CO|2028-09-06",
+          "princess_group_id": "AYR14A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "departure_date": "2028-09-06",
+        "return_date": "2028-09-20",
+        "nights": 14,
+        "departure_port": "Vancouver",
+        "departure_port_meta": {
+          "rawValue": "Vancouver, Canada",
+          "canonicalPortId": "port-csv-114",
+          "canonicalPortName": "Vancouver",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Voyage of the Glaciers Grand Adventure",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ayr14a&shipcode=co&saildate=20280906",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ayr14a&shipcode=co&saildate=20280906",
+        "raw_extract": {
+          "princess_itinerary_id": "AYR14A",
+          "princess_itinerary_name": "Voyage of the Glaciers Grand Adventure",
+          "princess_ship_code": "CO",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Vancouver, Canada",
+          "princess_sailing_id": "AYR14A|CO|2028-09-06",
+          "princess_group_id": "AYR14A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "a5bdaa6e0882be7eb66e7f480c0665a051ea1ac5",
+        "identity_key": "143f581dd7e43281c4c0c1d381ae2816b2f4fd84",
+        "official_sailing_id": "AYR14A|CO|2028-09-06"
+      },
+      "candidate_hash": "1f72e570db42ba0c45a2a0887032ddf99b7fa8d15920804664e0db37b687f8ad",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Vancouver",
+        "ship_code": "CO",
+        "itinerary_id": "AYR14A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    },
+    {
+      "official_sailing_id": "ASV07B|RP|2028-09-09",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-09",
+        "return_date": "2028-09-16",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "itinerary": "Inside Passage (with Glacier Bay National Park)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=asv07b&shipcode=rp&saildate=20280909",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=asv07b&shipcode=rp&saildate=20280909",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ASV07B|RP|2028-09-09",
+        "external_key": "ed497dd3dec8cad21d4fadd78a5c3d02752be160",
+        "identity_key": "dd458daadc4ed088d92f1064f1f0470e1a2de7a0",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ASV07B|RP|2028-09-09",
+          "princess_group_id": "ASV07B",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "departure_date": "2028-09-09",
+        "return_date": "2028-09-16",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "departure_port_meta": {
+          "rawValue": "Seattle, Washington",
+          "canonicalPortId": "port-csv-116",
+          "canonicalPortName": "Seattle",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Inside Passage (with Glacier Bay National Park)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=asv07b&shipcode=rp&saildate=20280909",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=asv07b&shipcode=rp&saildate=20280909",
+        "raw_extract": {
+          "princess_itinerary_id": "ASV07B",
+          "princess_itinerary_name": "Inside Passage (with Glacier Bay National Park)",
+          "princess_ship_code": "RP",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Seattle, Washington",
+          "princess_sailing_id": "ASV07B|RP|2028-09-09",
+          "princess_group_id": "ASV07B",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "ed497dd3dec8cad21d4fadd78a5c3d02752be160",
+        "identity_key": "dd458daadc4ed088d92f1064f1f0470e1a2de7a0",
+        "official_sailing_id": "ASV07B|RP|2028-09-09"
+      },
+      "candidate_hash": "c3a1a6ff5f2cdacfe2ca83ae789e6b163314c5b508928540f4ea146695eb01de",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Seattle",
+        "ship_code": "RP",
+        "itinerary_id": "ASV07B"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    },
+    {
+      "official_sailing_id": "AWG070|KP|2028-09-09",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "bbde7c14-3ce4-4413-9a1d-ce96f627a254",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-09",
+        "return_date": "2028-09-16",
+        "nights": 7,
+        "departure_port": "Whittier",
+        "itinerary": "Voyage of the Glaciers with Glacier Bay (Southbound)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=awg070&shipcode=kp&saildate=20280909",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=awg070&shipcode=kp&saildate=20280909",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "AWG070|KP|2028-09-09",
+        "external_key": "c9c2591ba561d05f43511f1a36d4ec641166eb1c",
+        "identity_key": "4ba00e24359c69f2c23d9d28e414b6a437b1eaef",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "AWG070|KP|2028-09-09",
+          "princess_group_id": "AWG070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "bbde7c14-3ce4-4413-9a1d-ce96f627a254",
+        "departure_date": "2028-09-09",
+        "return_date": "2028-09-16",
+        "nights": 7,
+        "departure_port": "Whittier",
+        "departure_port_meta": {
+          "rawValue": "Anchorage (Whittier), Alaska",
+          "canonicalPortId": "port-csv-246",
+          "canonicalPortName": "Whittier",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Voyage of the Glaciers with Glacier Bay (Southbound)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=awg070&shipcode=kp&saildate=20280909",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=awg070&shipcode=kp&saildate=20280909",
+        "raw_extract": {
+          "princess_itinerary_id": "AWG070",
+          "princess_itinerary_name": "Voyage of the Glaciers with Glacier Bay (Southbound)",
+          "princess_ship_code": "KP",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Anchorage (Whittier), Alaska",
+          "princess_sailing_id": "AWG070|KP|2028-09-09",
+          "princess_group_id": "AWG070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "c9c2591ba561d05f43511f1a36d4ec641166eb1c",
+        "identity_key": "4ba00e24359c69f2c23d9d28e414b6a437b1eaef",
+        "official_sailing_id": "AWG070|KP|2028-09-09"
+      },
+      "candidate_hash": "f9c00fc168170541ccce4169f3610599aaa4884f7fa2f49421b93a6fc8403dac",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Whittier",
+        "ship_code": "KP",
+        "itinerary_id": "AWG070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    },
+    {
+      "official_sailing_id": "AST070|ST|2028-09-10",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "53ad15de-49e0-4e13-a429-3fd6dc3ba3cc",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-10",
+        "return_date": "2028-09-17",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "itinerary": "Inside Passage (Roundtrip Seattle)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ast070&shipcode=st&saildate=20280910",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ast070&shipcode=st&saildate=20280910",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "AST070|ST|2028-09-10",
+        "external_key": "7bec2062910219f5dd486df6ee3cb3cf640d978a",
+        "identity_key": "3ccfa55474159ac8cfd35d062f1155799db41eca",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "AST070|ST|2028-09-10",
+          "princess_group_id": "AST070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "53ad15de-49e0-4e13-a429-3fd6dc3ba3cc",
+        "departure_date": "2028-09-10",
+        "return_date": "2028-09-17",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "departure_port_meta": {
+          "rawValue": "Seattle, Washington",
+          "canonicalPortId": "port-csv-116",
+          "canonicalPortName": "Seattle",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Inside Passage (Roundtrip Seattle)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ast070&shipcode=st&saildate=20280910",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ast070&shipcode=st&saildate=20280910",
+        "raw_extract": {
+          "princess_itinerary_id": "AST070",
+          "princess_itinerary_name": "Inside Passage (Roundtrip Seattle)",
+          "princess_ship_code": "ST",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Seattle, Washington",
+          "princess_sailing_id": "AST070|ST|2028-09-10",
+          "princess_group_id": "AST070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "7bec2062910219f5dd486df6ee3cb3cf640d978a",
+        "identity_key": "3ccfa55474159ac8cfd35d062f1155799db41eca",
+        "official_sailing_id": "AST070|ST|2028-09-10"
+      },
+      "candidate_hash": "6551933c5d2ffdb289b9126a00fbf8b266d227e7b3c63cdd64809887fc145746",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Seattle",
+        "ship_code": "ST",
+        "itinerary_id": "AST070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    },
+    {
+      "official_sailing_id": "LVL05C|EP|2028-09-12",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "c77c1b3e-9979-42aa-9126-cba8595c967e",
+        "destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+        "departure_date": "2028-09-12",
+        "return_date": "2028-09-17",
+        "nights": 5,
+        "departure_port": "Vancouver",
+        "itinerary": "Pacific Coastal",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=lvl05c&shipcode=ep&saildate=20280912",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=lvl05c&shipcode=ep&saildate=20280912",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "LVL05C|EP|2028-09-12",
+        "external_key": "d8a541738a5f7e6da9b719e65c22e816b61912a3",
+        "identity_key": "276889830b713dd7d9c201432abe2b78477acaf7",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "LVL05C|EP|2028-09-12",
+          "princess_group_id": "LVL05C",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "pacific-coast",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "c77c1b3e-9979-42aa-9126-cba8595c967e",
+        "departure_date": "2028-09-12",
+        "return_date": "2028-09-17",
+        "nights": 5,
+        "departure_port": "Vancouver",
+        "departure_port_meta": {
+          "rawValue": "Vancouver, Canada",
+          "canonicalPortId": "port-csv-114",
+          "canonicalPortName": "Vancouver",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Pacific Coastal",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=lvl05c&shipcode=ep&saildate=20280912",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=lvl05c&shipcode=ep&saildate=20280912",
+        "raw_extract": {
+          "princess_itinerary_id": "LVL05C",
+          "princess_itinerary_name": "Pacific Coastal",
+          "princess_ship_code": "EP",
+          "princess_trade_ids": [
+            "L"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Vancouver, Canada",
+          "princess_sailing_id": "LVL05C|EP|2028-09-12",
+          "princess_group_id": "LVL05C",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "pacific-coast",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "a4e7162a-4d6f-43ac-bb16-672feef8fa3d",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "d8a541738a5f7e6da9b719e65c22e816b61912a3",
+        "identity_key": "276889830b713dd7d9c201432abe2b78477acaf7",
+        "official_sailing_id": "LVL05C|EP|2028-09-12"
+      },
+      "candidate_hash": "85e6f1eae86dfd3f9a1312fd078467f01692f1b92c8b423e3987aae4b86d6ab1",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Vancouver",
+        "ship_code": "EP",
+        "itinerary_id": "LVL05C"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "pacific-coast"
+      }
+    },
+    {
+      "official_sailing_id": "AVE07A|IP|2028-09-13",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-13",
+        "return_date": "2028-09-20",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "itinerary": "Inside Passage (Roundtrip Vancouver)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=ip&saildate=20280913",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=ip&saildate=20280913",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "AVE07A|IP|2028-09-13",
+        "external_key": "fa934009c915378a7e2c4c46fc687a7cf24efb88",
+        "identity_key": "b6af1099a616314d92e35fa60ed29e7ba09775b3",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "AVE07A|IP|2028-09-13",
+          "princess_group_id": "AVE07A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "departure_date": "2028-09-13",
+        "return_date": "2028-09-20",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "departure_port_meta": {
+          "rawValue": "Vancouver, Canada",
+          "canonicalPortId": "port-csv-114",
+          "canonicalPortName": "Vancouver",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Inside Passage (Roundtrip Vancouver)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=ip&saildate=20280913",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=ip&saildate=20280913",
+        "raw_extract": {
+          "princess_itinerary_id": "AVE07A",
+          "princess_itinerary_name": "Inside Passage (Roundtrip Vancouver)",
+          "princess_ship_code": "IP",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Vancouver, Canada",
+          "princess_sailing_id": "AVE07A|IP|2028-09-13",
+          "princess_group_id": "AVE07A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "fa934009c915378a7e2c4c46fc687a7cf24efb88",
+        "identity_key": "b6af1099a616314d92e35fa60ed29e7ba09775b3",
+        "official_sailing_id": "AVE07A|IP|2028-09-13"
+      },
+      "candidate_hash": "b9460fe482d0fbf23cc87f747637110ab62897507b4fddb5be2b720adbe4b0cd",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Vancouver",
+        "ship_code": "IP",
+        "itinerary_id": "AVE07A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    },
+    {
+      "official_sailing_id": "AWG070|CO|2028-09-13",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-13",
+        "return_date": "2028-09-20",
+        "nights": 7,
+        "departure_port": "Whittier",
+        "itinerary": "Voyage of the Glaciers with Glacier Bay (Southbound)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=awg070&shipcode=co&saildate=20280913",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=awg070&shipcode=co&saildate=20280913",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "AWG070|CO|2028-09-13",
+        "external_key": "fe07f2a53c9676dbdc8880c5b4933671e1bcfb6e",
+        "identity_key": "78be54f84ee119c1e5bad52d922790674495f626",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "AWG070|CO|2028-09-13",
+          "princess_group_id": "AWG070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "departure_date": "2028-09-13",
+        "return_date": "2028-09-20",
+        "nights": 7,
+        "departure_port": "Whittier",
+        "departure_port_meta": {
+          "rawValue": "Anchorage (Whittier), Alaska",
+          "canonicalPortId": "port-csv-246",
+          "canonicalPortName": "Whittier",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Voyage of the Glaciers with Glacier Bay (Southbound)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=awg070&shipcode=co&saildate=20280913",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=awg070&shipcode=co&saildate=20280913",
+        "raw_extract": {
+          "princess_itinerary_id": "AWG070",
+          "princess_itinerary_name": "Voyage of the Glaciers with Glacier Bay (Southbound)",
+          "princess_ship_code": "CO",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Anchorage (Whittier), Alaska",
+          "princess_sailing_id": "AWG070|CO|2028-09-13",
+          "princess_group_id": "AWG070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "fe07f2a53c9676dbdc8880c5b4933671e1bcfb6e",
+        "identity_key": "78be54f84ee119c1e5bad52d922790674495f626",
+        "official_sailing_id": "AWG070|CO|2028-09-13"
+      },
+      "candidate_hash": "4d7210c49e5408111922290520aa4fc0d64d0c62ded54c306f9714041fcc6010",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Whittier",
+        "ship_code": "CO",
+        "itinerary_id": "AWG070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    },
+    {
+      "official_sailing_id": "AVE07A|KP|2028-09-16",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "bbde7c14-3ce4-4413-9a1d-ce96f627a254",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-16",
+        "return_date": "2028-09-23",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "itinerary": "Inside Passage (Roundtrip Vancouver)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=kp&saildate=20280916",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=kp&saildate=20280916",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "AVE07A|KP|2028-09-16",
+        "external_key": "2f8dfc551ff01e4c154a856f13cd4222a1f70c25",
+        "identity_key": "9ccfb1776e0c256953d6549ed97fc4d1d8215da9",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "AVE07A|KP|2028-09-16",
+          "princess_group_id": "AVE07A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "bbde7c14-3ce4-4413-9a1d-ce96f627a254",
+        "departure_date": "2028-09-16",
+        "return_date": "2028-09-23",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "departure_port_meta": {
+          "rawValue": "Vancouver, Canada",
+          "canonicalPortId": "port-csv-114",
+          "canonicalPortName": "Vancouver",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Inside Passage (Roundtrip Vancouver)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=kp&saildate=20280916",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=kp&saildate=20280916",
+        "raw_extract": {
+          "princess_itinerary_id": "AVE07A",
+          "princess_itinerary_name": "Inside Passage (Roundtrip Vancouver)",
+          "princess_ship_code": "KP",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Vancouver, Canada",
+          "princess_sailing_id": "AVE07A|KP|2028-09-16",
+          "princess_group_id": "AVE07A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "2f8dfc551ff01e4c154a856f13cd4222a1f70c25",
+        "identity_key": "9ccfb1776e0c256953d6549ed97fc4d1d8215da9",
+        "official_sailing_id": "AVE07A|KP|2028-09-16"
+      },
+      "candidate_hash": "38bc401b86e6893d9830c2837505129641cd52db157f9c2016df7777089be20c",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Vancouver",
+        "ship_code": "KP",
+        "itinerary_id": "AVE07A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    },
+    {
+      "official_sailing_id": "AST070|ST|2028-09-17",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "53ad15de-49e0-4e13-a429-3fd6dc3ba3cc",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-17",
+        "return_date": "2028-09-24",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "itinerary": "Inside Passage (Roundtrip Seattle)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ast070&shipcode=st&saildate=20280917",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ast070&shipcode=st&saildate=20280917",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "AST070|ST|2028-09-17",
+        "external_key": "94493e3a1f38e46d84ebcbe2c71b4708dfdf93cf",
+        "identity_key": "317dfcdd380a9ce6d1fef13ead97598d4d576ebc",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "AST070|ST|2028-09-17",
+          "princess_group_id": "AST070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "53ad15de-49e0-4e13-a429-3fd6dc3ba3cc",
+        "departure_date": "2028-09-17",
+        "return_date": "2028-09-24",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "departure_port_meta": {
+          "rawValue": "Seattle, Washington",
+          "canonicalPortId": "port-csv-116",
+          "canonicalPortName": "Seattle",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Inside Passage (Roundtrip Seattle)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ast070&shipcode=st&saildate=20280917",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ast070&shipcode=st&saildate=20280917",
+        "raw_extract": {
+          "princess_itinerary_id": "AST070",
+          "princess_itinerary_name": "Inside Passage (Roundtrip Seattle)",
+          "princess_ship_code": "ST",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Seattle, Washington",
+          "princess_sailing_id": "AST070|ST|2028-09-17",
+          "princess_group_id": "AST070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "94493e3a1f38e46d84ebcbe2c71b4708dfdf93cf",
+        "identity_key": "317dfcdd380a9ce6d1fef13ead97598d4d576ebc",
+        "official_sailing_id": "AST070|ST|2028-09-17"
+      },
+      "candidate_hash": "da20c8ec4561ce60976ce0e5697b6069e2198237cd6f8f0de8ea9bc3b26ba9d8",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Seattle",
+        "ship_code": "ST",
+        "itinerary_id": "AST070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    },
+    {
+      "official_sailing_id": "ZBS02A|AP|2028-09-17",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2028-09-17",
+        "return_date": "2028-09-19",
+        "nights": 2,
+        "departure_port": "Brisbane",
+        "itinerary": "Australia Seacation",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbs02a&shipcode=ap&saildate=20280917",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbs02a&shipcode=ap&saildate=20280917",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ZBS02A|AP|2028-09-17",
+        "external_key": "50398a9b5c3acc019c2b597b60612bbea34d39a2",
+        "identity_key": "d908877eea33c070b8b8731a0a469cd4c2d171cc",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ZBS02A|AP|2028-09-17",
+          "princess_group_id": "ZBS02A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "departure_date": "2028-09-17",
+        "return_date": "2028-09-19",
+        "nights": 2,
+        "departure_port": "Brisbane",
+        "departure_port_meta": {
+          "rawValue": "Brisbane, Australia",
+          "canonicalPortId": "port-csv-168",
+          "canonicalPortName": "Brisbane",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Australia Seacation",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbs02a&shipcode=ap&saildate=20280917",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbs02a&shipcode=ap&saildate=20280917",
+        "raw_extract": {
+          "princess_itinerary_id": "ZBS02A",
+          "princess_itinerary_name": "Australia Seacation",
+          "princess_ship_code": "AP",
+          "princess_trade_ids": [
+            "Z"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Brisbane, Australia",
+          "princess_sailing_id": "ZBS02A|AP|2028-09-17",
+          "princess_group_id": "ZBS02A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "50398a9b5c3acc019c2b597b60612bbea34d39a2",
+        "identity_key": "d908877eea33c070b8b8731a0a469cd4c2d171cc",
+        "official_sailing_id": "ZBS02A|AP|2028-09-17"
+      },
+      "candidate_hash": "127b55f0363cefd8dd5a73b9c83d5d82edffde4ad47121408f8870c7c0ce7af4",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Brisbane",
+        "ship_code": "AP",
+        "itinerary_id": "ZBS02A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "AVE07A|IP|2028-09-20",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-20",
+        "return_date": "2028-09-27",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "itinerary": "Inside Passage (Roundtrip Vancouver)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=ip&saildate=20280920",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=ip&saildate=20280920",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "AVE07A|IP|2028-09-20",
+        "external_key": "87cf2f70c1bc315d626a44c86bd758c64c2e63fb",
+        "identity_key": "53b9b6407d615babe14a4051e15f1705812d3616",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "AVE07A|IP|2028-09-20",
+          "princess_group_id": "AVE07A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "departure_date": "2028-09-20",
+        "return_date": "2028-09-27",
+        "nights": 7,
+        "departure_port": "Vancouver",
+        "departure_port_meta": {
+          "rawValue": "Vancouver, Canada",
+          "canonicalPortId": "port-csv-114",
+          "canonicalPortName": "Vancouver",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Inside Passage (Roundtrip Vancouver)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=ip&saildate=20280920",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ave07a&shipcode=ip&saildate=20280920",
+        "raw_extract": {
+          "princess_itinerary_id": "AVE07A",
+          "princess_itinerary_name": "Inside Passage (Roundtrip Vancouver)",
+          "princess_ship_code": "IP",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Vancouver, Canada",
+          "princess_sailing_id": "AVE07A|IP|2028-09-20",
+          "princess_group_id": "AVE07A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "87cf2f70c1bc315d626a44c86bd758c64c2e63fb",
+        "identity_key": "53b9b6407d615babe14a4051e15f1705812d3616",
+        "official_sailing_id": "AVE07A|IP|2028-09-20"
+      },
+      "candidate_hash": "f67d1a563237a19e9e619318ef237059bc66fa049b0a5016f51bd39362f49f89",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Vancouver",
+        "ship_code": "IP",
+        "itinerary_id": "AVE07A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    },
+    {
+      "official_sailing_id": "ASV07A|ST|2028-09-24",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "53ad15de-49e0-4e13-a429-3fd6dc3ba3cc",
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "departure_date": "2028-09-24",
+        "return_date": "2028-10-01",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "itinerary": "Inside Passage (Seattle to Vancouver)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=asv07a&shipcode=st&saildate=20280924",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=asv07a&shipcode=st&saildate=20280924",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ASV07A|ST|2028-09-24",
+        "external_key": "b7c71141c9c828e7e9784e5b7a223efba2028dff",
+        "identity_key": "956eeaba6801312cead1a361e9d9edc7c4a1da3a",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ASV07A|ST|2028-09-24",
+          "princess_group_id": "ASV07A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "53ad15de-49e0-4e13-a429-3fd6dc3ba3cc",
+        "departure_date": "2028-09-24",
+        "return_date": "2028-10-01",
+        "nights": 7,
+        "departure_port": "Seattle",
+        "departure_port_meta": {
+          "rawValue": "Seattle, Washington",
+          "canonicalPortId": "port-csv-116",
+          "canonicalPortName": "Seattle",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Inside Passage (Seattle to Vancouver)",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=asv07a&shipcode=st&saildate=20280924",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=asv07a&shipcode=st&saildate=20280924",
+        "raw_extract": {
+          "princess_itinerary_id": "ASV07A",
+          "princess_itinerary_name": "Inside Passage (Seattle to Vancouver)",
+          "princess_ship_code": "ST",
+          "princess_trade_ids": [
+            "A"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Seattle, Washington",
+          "princess_sailing_id": "ASV07A|ST|2028-09-24",
+          "princess_group_id": "ASV07A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "alaska",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "b7c71141c9c828e7e9784e5b7a223efba2028dff",
+        "identity_key": "956eeaba6801312cead1a361e9d9edc7c4a1da3a",
+        "official_sailing_id": "ASV07A|ST|2028-09-24"
+      },
+      "candidate_hash": "5b495435712f90e0607d94f079358fca0887e69d4487b1cd7e245a0b15f17e94",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Seattle",
+        "ship_code": "ST",
+        "itinerary_id": "ASV07A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "alaska"
+      }
+    }
+  ]
+}

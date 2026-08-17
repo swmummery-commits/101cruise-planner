@@ -300,7 +300,7 @@ async function runBatch({ batchNum, freeze, masterPlan, sb, preExistingSnap, app
     result.active_delta === freeze.batch_size &&
     result.rollback_manifest_id;
 
-  result.batch_pass = pass;
+  result.batch_pass = Boolean(pass);
   if (!pass) {
     result.stopped = true;
     result.reason = maintenance.reason || "batch_gate_failed";

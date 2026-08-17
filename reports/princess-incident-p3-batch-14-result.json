@@ -1,0 +1,67 @@
+{
+  "batch_number": 14,
+  "batch_label": "P3-14",
+  "batch_size": 30,
+  "batch_hash": "db7dcd24ab394c5587f8589d6e012d6868355a48df38a0e83e3fb1b66f89d5e7",
+  "resolver_remediated": 3,
+  "old_rule_missing": 27,
+  "live_hash_match": true,
+  "live_validation": {
+    "ok": true,
+    "mismatches": [],
+    "live_batch_hash": "db7dcd24ab394c5587f8589d6e012d6868355a48df38a0e83e3fb1b66f89d5e7",
+    "frozen_batch_hash": "db7dcd24ab394c5587f8589d6e012d6868355a48df38a0e83e3fb1b66f89d5e7"
+  },
+  "collisions": {
+    "official_collisions": 0,
+    "external_collisions": 0,
+    "identity_collisions": 0,
+    "pass": true
+  },
+  "global_lock": {
+    "global_lock_required": true,
+    "global_lock_key": "controlled_production_import:global",
+    "global_lock_acquired": true,
+    "global_lock_owner": "princess-incident-p3-P3-14-2026-08-17T03-09-20-062Z",
+    "global_lock_run_id": "princess-incident-p3-P3-14-2026-08-17T03-09-20-062Z",
+    "global_lock_acquired_at": "2026-08-17T03:09:38.333Z",
+    "global_lock_expires_at": "2026-08-17T03:39:38.430551+00:00",
+    "global_lock_released": true,
+    "global_lock_denial_reason": null,
+    "global_lock_current_holder": "princess-incident-p3-P3-14-2026-08-17T03-09-20-062Z",
+    "global_lock_line_slug": "princess-cruises",
+    "global_lock_operation": "princess_weekly_maintenance"
+  },
+  "attempted": 30,
+  "inserted": 30,
+  "updated": 0,
+  "failed": 0,
+  "rollback_manifest_id": "acfea11c-934d-4099-b9bb-1dfc9ec3704c",
+  "counts_before": {
+    "princess_active": 1900,
+    "hal_active": 823,
+    "celebrity_active": 1163,
+    "manifests": 93
+  },
+  "counts_after": {
+    "princess_active": 1930,
+    "hal_active": 823,
+    "celebrity_active": 1163,
+    "manifests": 94
+  },
+  "active_delta": 30,
+  "verification": {
+    "ok": true,
+    "issues": []
+  },
+  "immutability": {
+    "ok": true,
+    "changes": []
+  },
+  "idempotency": {
+    "ok": true,
+    "outstanding": 132,
+    "proposed_updates": 0
+  },
+  "batch_pass": "acfea11c-934d-4099-b9bb-1dfc9ec3704c"
+}

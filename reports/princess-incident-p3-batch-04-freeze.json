@@ -1,0 +1,2710 @@
+{
+  "master_plan_hash": "7c9a77c305e279bbbfcdeaba655a83055adce51d93238c8b7953a582b9748284",
+  "batch_number": 4,
+  "batch_label": "P3-04",
+  "batch_size": 30,
+  "batch_hash": "e8b090c6e855095468b551383d39923cf8b894c03d6e1efbaa84ea4f774dd68f",
+  "max_writes": 30,
+  "candidates": [
+    {
+      "official_sailing_id": "MLR070|XP|2027-01-09",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "departure_date": "2027-01-09",
+        "return_date": "2027-01-16",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270109",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270109",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "MLR070|XP|2027-01-09",
+        "external_key": "dd80cb47351256b6a1a7dc001ed5c1ddf885191b",
+        "identity_key": "894fc8fd032949ceb86775d4ae01ee9c158ada75",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "MLR070|XP|2027-01-09",
+          "princess_group_id": "MLR070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "departure_date": "2027-01-09",
+        "return_date": "2027-01-16",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270109",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270109",
+        "raw_extract": {
+          "princess_itinerary_id": "MLR070",
+          "princess_itinerary_name": "Mexican Riviera",
+          "princess_ship_code": "XP",
+          "princess_trade_ids": [
+            "M"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "MLR070|XP|2027-01-09",
+          "princess_group_id": "MLR070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "dd80cb47351256b6a1a7dc001ed5c1ddf885191b",
+        "identity_key": "894fc8fd032949ceb86775d4ae01ee9c158ada75",
+        "official_sailing_id": "MLR070|XP|2027-01-09"
+      },
+      "candidate_hash": "24a412938565464f574153dd423c7e0512adf80554fc23f94f2e45698c71b652",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "XP",
+        "itinerary_id": "MLR070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "mexican-riviera"
+      }
+    },
+    {
+      "official_sailing_id": "TFR12A|CB|2027-01-10",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "5a90db4a-6eea-4781-9050-52d5298f6422",
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "departure_date": "2027-01-10",
+        "return_date": "2027-01-22",
+        "nights": 12,
+        "departure_port": "Fort Lauderdale",
+        "itinerary": "Panama Canal with Costa Rica & Caribbean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12a&shipcode=cb&saildate=20270110",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12a&shipcode=cb&saildate=20270110",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "TFR12A|CB|2027-01-10",
+        "external_key": "9720165f3cfb407842088680dd2c6ca5eaedd563",
+        "identity_key": "44a30ef6a0cc46fa72d1b0cb3d4935e2410abdc7",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "TFR12A|CB|2027-01-10",
+          "princess_group_id": "TFR12A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "5a90db4a-6eea-4781-9050-52d5298f6422",
+        "departure_date": "2027-01-10",
+        "return_date": "2027-01-22",
+        "nights": 12,
+        "departure_port": "Fort Lauderdale",
+        "departure_port_meta": {
+          "rawValue": "Fort Lauderdale (Port Everglades), Florida",
+          "canonicalPortId": "port-csv-84",
+          "canonicalPortName": "Fort Lauderdale",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Panama Canal with Costa Rica & Caribbean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12a&shipcode=cb&saildate=20270110",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12a&shipcode=cb&saildate=20270110",
+        "raw_extract": {
+          "princess_itinerary_id": "TFR12A",
+          "princess_itinerary_name": "Panama Canal with Costa Rica & Caribbean",
+          "princess_ship_code": "CB",
+          "princess_trade_ids": [
+            "T"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Ft. Lauderdale, Florida",
+          "princess_sailing_id": "TFR12A|CB|2027-01-10",
+          "princess_group_id": "TFR12A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "9720165f3cfb407842088680dd2c6ca5eaedd563",
+        "identity_key": "44a30ef6a0cc46fa72d1b0cb3d4935e2410abdc7",
+        "official_sailing_id": "TFR12A|CB|2027-01-10"
+      },
+      "candidate_hash": "9f1d2637a11736f801fc11ebe11d233c61104fb8ae2ffbc242d25d96e1b6ce94",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Fort Lauderdale",
+        "ship_code": "CB",
+        "itinerary_id": "TFR12A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "panama-canal"
+      }
+    },
+    {
+      "official_sailing_id": "TSF16C|IP|2027-01-13",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "departure_date": "2027-01-13",
+        "return_date": "2027-01-29",
+        "nights": 16,
+        "departure_port": "Fort Lauderdale",
+        "itinerary": "Panama Canal - Ocean to Ocean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tsf16c&shipcode=ip&saildate=20270113",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tsf16c&shipcode=ip&saildate=20270113",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "TSF16C|IP|2027-01-13",
+        "external_key": "e1ed0395bd2903881fda39672ca817ab2c49b71f",
+        "identity_key": "f275e54dae52203386cb28435af8a89492aad9c2",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "TSF16C|IP|2027-01-13",
+          "princess_group_id": "TSF16C",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "departure_date": "2027-01-13",
+        "return_date": "2027-01-29",
+        "nights": 16,
+        "departure_port": "Fort Lauderdale",
+        "departure_port_meta": {
+          "rawValue": "Fort Lauderdale (Port Everglades), Florida",
+          "canonicalPortId": "port-csv-84",
+          "canonicalPortName": "Fort Lauderdale",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Panama Canal - Ocean to Ocean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tsf16c&shipcode=ip&saildate=20270113",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tsf16c&shipcode=ip&saildate=20270113",
+        "raw_extract": {
+          "princess_itinerary_id": "TSF16C",
+          "princess_itinerary_name": "Panama Canal - Ocean to Ocean",
+          "princess_ship_code": "IP",
+          "princess_trade_ids": [
+            "T"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Ft. Lauderdale, Florida",
+          "princess_sailing_id": "TSF16C|IP|2027-01-13",
+          "princess_group_id": "TSF16C",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "e1ed0395bd2903881fda39672ca817ab2c49b71f",
+        "identity_key": "f275e54dae52203386cb28435af8a89492aad9c2",
+        "official_sailing_id": "TSF16C|IP|2027-01-13"
+      },
+      "candidate_hash": "272446fc5907ebf53e4416a00404f690437412458981772b02cebb9bd3c9470c",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Fort Lauderdale",
+        "ship_code": "IP",
+        "itinerary_id": "TSF16C"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "panama-canal"
+      }
+    },
+    {
+      "official_sailing_id": "MLR070|XP|2027-01-16",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "departure_date": "2027-01-16",
+        "return_date": "2027-01-23",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270116",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270116",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "MLR070|XP|2027-01-16",
+        "external_key": "57f3851552fb2a74d0b5b1b7240268cc7100468c",
+        "identity_key": "0c48bd67baa1d1357435997d096a18f3389ca9ff",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "MLR070|XP|2027-01-16",
+          "princess_group_id": "MLR070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "departure_date": "2027-01-16",
+        "return_date": "2027-01-23",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270116",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270116",
+        "raw_extract": {
+          "princess_itinerary_id": "MLR070",
+          "princess_itinerary_name": "Mexican Riviera",
+          "princess_ship_code": "XP",
+          "princess_trade_ids": [
+            "M"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "MLR070|XP|2027-01-16",
+          "princess_group_id": "MLR070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "57f3851552fb2a74d0b5b1b7240268cc7100468c",
+        "identity_key": "0c48bd67baa1d1357435997d096a18f3389ca9ff",
+        "official_sailing_id": "MLR070|XP|2027-01-16"
+      },
+      "candidate_hash": "560523a92659a513b6d22f74e4ba24af4487008bb8b40a12ab905afa63ea0864",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "XP",
+        "itinerary_id": "MLR070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "mexican-riviera"
+      }
+    },
+    {
+      "official_sailing_id": "ZSR14B|RP|2027-01-16",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-01-16",
+        "return_date": "2027-01-30",
+        "nights": 14,
+        "departure_port": "Sydney",
+        "itinerary": "New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr14b&shipcode=rp&saildate=20270116",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr14b&shipcode=rp&saildate=20270116",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ZSR14B|RP|2027-01-16",
+        "external_key": "094b15cd2e0757af52ab975b22442ae95b677c08",
+        "identity_key": "a5d2472ebaeb30ff46f59e024398265ee744965a",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ZSR14B|RP|2027-01-16",
+          "princess_group_id": "ZSR14B",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "departure_date": "2027-01-16",
+        "return_date": "2027-01-30",
+        "nights": 14,
+        "departure_port": "Sydney",
+        "departure_port_meta": {
+          "rawValue": "Sydney, Australia",
+          "canonicalPortId": "port-csv-167",
+          "canonicalPortName": "Sydney",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr14b&shipcode=rp&saildate=20270116",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr14b&shipcode=rp&saildate=20270116",
+        "raw_extract": {
+          "princess_itinerary_id": "ZSR14B",
+          "princess_itinerary_name": "New Zealand",
+          "princess_ship_code": "RP",
+          "princess_trade_ids": [
+            "Z"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Sydney, Australia",
+          "princess_sailing_id": "ZSR14B|RP|2027-01-16",
+          "princess_group_id": "ZSR14B",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "094b15cd2e0757af52ab975b22442ae95b677c08",
+        "identity_key": "a5d2472ebaeb30ff46f59e024398265ee744965a",
+        "official_sailing_id": "ZSR14B|RP|2027-01-16"
+      },
+      "candidate_hash": "6a5067f7f608ca812fa27045429f7dc64872fc8feea871c79b9cc694e8b813f5",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Sydney",
+        "ship_code": "RP",
+        "itinerary_id": "ZSR14B"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "ZBR12C|AP|2027-01-20",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-01-20",
+        "return_date": "2027-02-01",
+        "nights": 12,
+        "departure_port": "Brisbane",
+        "itinerary": "Tasmania",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr12c&shipcode=ap&saildate=20270120",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr12c&shipcode=ap&saildate=20270120",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ZBR12C|AP|2027-01-20",
+        "external_key": "ecfa9f4ba9a4a255f137a48bf805f5ccacf59185",
+        "identity_key": "2028415854d8ddadd8b0fc21943ec2832436d448",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ZBR12C|AP|2027-01-20",
+          "princess_group_id": "ZBR12C",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "departure_date": "2027-01-20",
+        "return_date": "2027-02-01",
+        "nights": 12,
+        "departure_port": "Brisbane",
+        "departure_port_meta": {
+          "rawValue": "Brisbane, Australia",
+          "canonicalPortId": "port-csv-168",
+          "canonicalPortName": "Brisbane",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Tasmania",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr12c&shipcode=ap&saildate=20270120",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr12c&shipcode=ap&saildate=20270120",
+        "raw_extract": {
+          "princess_itinerary_id": "ZBR12C",
+          "princess_itinerary_name": "Tasmania",
+          "princess_ship_code": "AP",
+          "princess_trade_ids": [
+            "Z"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Brisbane, Australia",
+          "princess_sailing_id": "ZBR12C|AP|2027-01-20",
+          "princess_group_id": "ZBR12C",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "ecfa9f4ba9a4a255f137a48bf805f5ccacf59185",
+        "identity_key": "2028415854d8ddadd8b0fc21943ec2832436d448",
+        "official_sailing_id": "ZBR12C|AP|2027-01-20"
+      },
+      "candidate_hash": "ab1731f2b1be98ac1b2f74b7bbab9a643348a40e9430ca7d0f99d7d453dd3869",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Brisbane",
+        "ship_code": "AP",
+        "itinerary_id": "ZBR12C"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "ILA40A|CO|2027-01-21",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-03-02",
+        "nights": 40,
+        "departure_port": "Los Angeles",
+        "itinerary": "Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ila40a&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ila40a&shipcode=co&saildate=20270121",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ILA40A|CO|2027-01-21",
+        "external_key": "6cce156255922d4f2f36e8e1bdffcce2eb39e9ec",
+        "identity_key": "b1a51ef159d52dda2e78ab17224219087050450f",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ILA40A|CO|2027-01-21",
+          "princess_group_id": "ILA40A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-03-02",
+        "nights": 40,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ila40a&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ila40a&shipcode=co&saildate=20270121",
+        "raw_extract": {
+          "princess_itinerary_id": "ILA40A",
+          "princess_itinerary_name": "Hawaii & South Pacific Crossing",
+          "princess_ship_code": "CO",
+          "princess_trade_ids": [
+            "P"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "ILA40A|CO|2027-01-21",
+          "princess_group_id": "ILA40A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "6cce156255922d4f2f36e8e1bdffcce2eb39e9ec",
+        "identity_key": "b1a51ef159d52dda2e78ab17224219087050450f",
+        "official_sailing_id": "ILA40A|CO|2027-01-21"
+      },
+      "candidate_hash": "a7c182a7a863a5a72054efd9a045c3b91905e35c49080ca0f52109f655f6a62e",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "CO",
+        "itinerary_id": "ILA40A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "ILS36B|CO|2027-01-21",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-02-26",
+        "nights": 36,
+        "departure_port": "Los Angeles",
+        "itinerary": "Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ils36b&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ils36b&shipcode=co&saildate=20270121",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ILS36B|CO|2027-01-21",
+        "external_key": "34a39d24b2b16ba21abc92b600b0848f1efe3181",
+        "identity_key": "3af8045acc9483df5481c2ee9ccb2358e8182b15",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ILS36B|CO|2027-01-21",
+          "princess_group_id": "ILS36B",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-02-26",
+        "nights": 36,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Hawaii & South Pacific Crossing",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=ils36b&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=ils36b&shipcode=co&saildate=20270121",
+        "raw_extract": {
+          "princess_itinerary_id": "ILS36B",
+          "princess_itinerary_name": "Hawaii & South Pacific Crossing",
+          "princess_ship_code": "CO",
+          "princess_trade_ids": [
+            "P"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "ILS36B|CO|2027-01-21",
+          "princess_group_id": "ILS36B",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "34a39d24b2b16ba21abc92b600b0848f1efe3181",
+        "identity_key": "3af8045acc9483df5481c2ee9ccb2358e8182b15",
+        "official_sailing_id": "ILS36B|CO|2027-01-21"
+      },
+      "candidate_hash": "c07551cf9829c7ec8a808ccf5133c728e35bb7f88e14845614a5bc603ad43a02",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "CO",
+        "itinerary_id": "ILS36B"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "WL110A|CO|2027-01-21",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "destination_id": "d5461635-742c-4bc3-a4a1-fe234260fa62",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-05-11",
+        "nights": 110,
+        "departure_port": "Los Angeles",
+        "itinerary": "World Cruise Grand Circle Pacific - Los Angeles to Vancouver",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=wl110a&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=wl110a&shipcode=co&saildate=20270121",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "WL110A|CO|2027-01-21",
+        "external_key": "9a1cd25940adf06ed023d0a796acc8056fef1c82",
+        "identity_key": "cd206a728f9463fb92d89cc1422dd01ed0372e1c",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "WL110A|CO|2027-01-21",
+          "princess_group_id": "WL110A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "world-cruise",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-05-11",
+        "nights": 110,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "World Cruise Grand Circle Pacific - Los Angeles to Vancouver",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=wl110a&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=wl110a&shipcode=co&saildate=20270121",
+        "raw_extract": {
+          "princess_itinerary_id": "WL110A",
+          "princess_itinerary_name": "World Cruise Grand Circle Pacific - Los Angeles to Vancouver",
+          "princess_ship_code": "CO",
+          "princess_trade_ids": [
+            "W"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "WL110A|CO|2027-01-21",
+          "princess_group_id": "WL110A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "world-cruise",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "d5461635-742c-4bc3-a4a1-fe234260fa62",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "9a1cd25940adf06ed023d0a796acc8056fef1c82",
+        "identity_key": "cd206a728f9463fb92d89cc1422dd01ed0372e1c",
+        "official_sailing_id": "WL110A|CO|2027-01-21"
+      },
+      "candidate_hash": "e947749f3fb60680727c5f2014f407faf656e79bb90a7fc4beee046fd25ca023",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "CO",
+        "itinerary_id": "WL110A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "world-cruise"
+      }
+    },
+    {
+      "official_sailing_id": "WL114A|CO|2027-01-21",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "destination_id": "d5461635-742c-4bc3-a4a1-fe234260fa62",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-05-15",
+        "nights": 114,
+        "departure_port": "Los Angeles",
+        "itinerary": "World Cruise Grand Circle Pacific - Roundtrip Los Angeles",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=wl114a&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=wl114a&shipcode=co&saildate=20270121",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "WL114A|CO|2027-01-21",
+        "external_key": "f3e815e5d40151c4a6b106f72fa147d0653abca4",
+        "identity_key": "ef5955639cef4c45b928e495b52e87cbe29b419a",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "WL114A|CO|2027-01-21",
+          "princess_group_id": "WL114A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "world-cruise",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-05-15",
+        "nights": 114,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "World Cruise Grand Circle Pacific - Roundtrip Los Angeles",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=wl114a&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=wl114a&shipcode=co&saildate=20270121",
+        "raw_extract": {
+          "princess_itinerary_id": "WL114A",
+          "princess_itinerary_name": "World Cruise Grand Circle Pacific - Roundtrip Los Angeles",
+          "princess_ship_code": "CO",
+          "princess_trade_ids": [
+            "W"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "WL114A|CO|2027-01-21",
+          "princess_group_id": "WL114A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "world-cruise",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "d5461635-742c-4bc3-a4a1-fe234260fa62",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "f3e815e5d40151c4a6b106f72fa147d0653abca4",
+        "identity_key": "ef5955639cef4c45b928e495b52e87cbe29b419a",
+        "official_sailing_id": "WL114A|CO|2027-01-21"
+      },
+      "candidate_hash": "37e44791b3a6e279eaf9618b36573a92d5f1aa2d584cda1216c8a7e994659a46",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "CO",
+        "itinerary_id": "WL114A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "world-cruise"
+      }
+    },
+    {
+      "official_sailing_id": "WLS68A|CO|2027-01-21",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "destination_id": "d5461635-742c-4bc3-a4a1-fe234260fa62",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-03-30",
+        "nights": 68,
+        "departure_port": "Los Angeles",
+        "itinerary": "South Pacific - Los Angeles to Singapore",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=wls68a&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=wls68a&shipcode=co&saildate=20270121",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "WLS68A|CO|2027-01-21",
+        "external_key": "9ef871db753db1170d52e61c72015db577b9d5b3",
+        "identity_key": "ee731d7cb143c4283b21f2cda8ca48f9942e3526",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "WLS68A|CO|2027-01-21",
+          "princess_group_id": "WLS68A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "world-cruise",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "7be5d59a-80e6-45d9-a8a0-34c41d3769bd",
+        "departure_date": "2027-01-21",
+        "return_date": "2027-03-30",
+        "nights": 68,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "South Pacific - Los Angeles to Singapore",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=wls68a&shipcode=co&saildate=20270121",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=wls68a&shipcode=co&saildate=20270121",
+        "raw_extract": {
+          "princess_itinerary_id": "WLS68A",
+          "princess_itinerary_name": "South Pacific - Los Angeles to Singapore",
+          "princess_ship_code": "CO",
+          "princess_trade_ids": [
+            "W"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "WLS68A|CO|2027-01-21",
+          "princess_group_id": "WLS68A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "world-cruise",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "d5461635-742c-4bc3-a4a1-fe234260fa62",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "9ef871db753db1170d52e61c72015db577b9d5b3",
+        "identity_key": "ee731d7cb143c4283b21f2cda8ca48f9942e3526",
+        "official_sailing_id": "WLS68A|CO|2027-01-21"
+      },
+      "candidate_hash": "2249be6ac42113d0c0090b8c85ce74f57b68b10a085ba58fc7a051cc4d1faf8d",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "CO",
+        "itinerary_id": "WLS68A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "world-cruise"
+      }
+    },
+    {
+      "official_sailing_id": "TFR12A|CB|2027-01-22",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "5a90db4a-6eea-4781-9050-52d5298f6422",
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "departure_date": "2027-01-22",
+        "return_date": "2027-02-03",
+        "nights": 12,
+        "departure_port": "Fort Lauderdale",
+        "itinerary": "Panama Canal with Costa Rica & Caribbean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12a&shipcode=cb&saildate=20270122",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12a&shipcode=cb&saildate=20270122",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "TFR12A|CB|2027-01-22",
+        "external_key": "b729b276347d57f072720153c198d7073535e16d",
+        "identity_key": "987c3ebdd61b6d9a2d2668c2ccc7b9dc86a70e83",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "TFR12A|CB|2027-01-22",
+          "princess_group_id": "TFR12A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "5a90db4a-6eea-4781-9050-52d5298f6422",
+        "departure_date": "2027-01-22",
+        "return_date": "2027-02-03",
+        "nights": 12,
+        "departure_port": "Fort Lauderdale",
+        "departure_port_meta": {
+          "rawValue": "Fort Lauderdale (Port Everglades), Florida",
+          "canonicalPortId": "port-csv-84",
+          "canonicalPortName": "Fort Lauderdale",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Panama Canal with Costa Rica & Caribbean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12a&shipcode=cb&saildate=20270122",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12a&shipcode=cb&saildate=20270122",
+        "raw_extract": {
+          "princess_itinerary_id": "TFR12A",
+          "princess_itinerary_name": "Panama Canal with Costa Rica & Caribbean",
+          "princess_ship_code": "CB",
+          "princess_trade_ids": [
+            "T"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Ft. Lauderdale, Florida",
+          "princess_sailing_id": "TFR12A|CB|2027-01-22",
+          "princess_group_id": "TFR12A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "b729b276347d57f072720153c198d7073535e16d",
+        "identity_key": "987c3ebdd61b6d9a2d2668c2ccc7b9dc86a70e83",
+        "official_sailing_id": "TFR12A|CB|2027-01-22"
+      },
+      "candidate_hash": "38acc0cb82c0c50a978157274add4075812a8137bb3b095b9ae3111b0c6eb019",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Fort Lauderdale",
+        "ship_code": "CB",
+        "itinerary_id": "TFR12A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "panama-canal"
+      }
+    },
+    {
+      "official_sailing_id": "MLR070|XP|2027-01-23",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "departure_date": "2027-01-23",
+        "return_date": "2027-01-30",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270123",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270123",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "MLR070|XP|2027-01-23",
+        "external_key": "f9aec6a3850fe83ce8f3f78fd7543455a3fb0006",
+        "identity_key": "6f1b2ad7fa9abb3bea48891fdee9bc31a707d9e2",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "MLR070|XP|2027-01-23",
+          "princess_group_id": "MLR070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "departure_date": "2027-01-23",
+        "return_date": "2027-01-30",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270123",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270123",
+        "raw_extract": {
+          "princess_itinerary_id": "MLR070",
+          "princess_itinerary_name": "Mexican Riviera",
+          "princess_ship_code": "XP",
+          "princess_trade_ids": [
+            "M"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "MLR070|XP|2027-01-23",
+          "princess_group_id": "MLR070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "f9aec6a3850fe83ce8f3f78fd7543455a3fb0006",
+        "identity_key": "6f1b2ad7fa9abb3bea48891fdee9bc31a707d9e2",
+        "official_sailing_id": "MLR070|XP|2027-01-23"
+      },
+      "candidate_hash": "892fa5e0f16cbeed1d891d74b501bdcc28d8567965cfda876aed05da3926f323",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "XP",
+        "itinerary_id": "MLR070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "mexican-riviera"
+      }
+    },
+    {
+      "official_sailing_id": "SBR17A|MJ|2027-01-23",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "departure_date": "2027-01-23",
+        "return_date": "2027-02-09",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "itinerary": "Antarctica & South America",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270123",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270123",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "SBR17A|MJ|2027-01-23",
+        "external_key": "1d137f2935e6b5b28e9594f80389d429710bfd05",
+        "identity_key": "85ae44748fb76eb1026cb80c803d1cc66d03c1ee",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "SBR17A|MJ|2027-01-23",
+          "princess_group_id": "SBR17A",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "south-pacific",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "departure_date": "2027-01-23",
+        "return_date": "2027-02-09",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "departure_port_meta": {
+          "rawValue": "Buenos Aires, Argentina",
+          "canonicalPortId": "port-csv-155",
+          "canonicalPortName": "Buenos Aires",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Antarctica & South America",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270123",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270123",
+        "raw_extract": {
+          "princess_itinerary_id": "SBR17A",
+          "princess_itinerary_name": "Antarctica & South America",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_sailing_id": "SBR17A|MJ|2027-01-23",
+          "princess_group_id": "SBR17A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "south-pacific",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "1d137f2935e6b5b28e9594f80389d429710bfd05",
+        "identity_key": "85ae44748fb76eb1026cb80c803d1cc66d03c1ee",
+        "official_sailing_id": "SBR17A|MJ|2027-01-23"
+      },
+      "candidate_hash": "df792fc8c4df4536a384467ede7496d19b777043ddb8ed39ff8d5053732d633d",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Buenos Aires",
+        "ship_code": "MJ",
+        "itinerary_id": "SBR17A"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "south-pacific"
+      }
+    },
+    {
+      "official_sailing_id": "TSF16B|IP|2027-01-29",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "departure_date": "2027-01-29",
+        "return_date": "2027-02-14",
+        "nights": 16,
+        "departure_port": "San Diego",
+        "itinerary": "Panama Canal - Ocean to Ocean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tsf16b&shipcode=ip&saildate=20270129",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tsf16b&shipcode=ip&saildate=20270129",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "TSF16B|IP|2027-01-29",
+        "external_key": "70f5037683f4f633eda5e70d98f360eba49d54bb",
+        "identity_key": "3272a70f84bae9b395ea1309a43fdda871d2c7e8",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "TSF16B|IP|2027-01-29",
+          "princess_group_id": "TSF16B",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "departure_date": "2027-01-29",
+        "return_date": "2027-02-14",
+        "nights": 16,
+        "departure_port": "San Diego",
+        "departure_port_meta": {
+          "rawValue": "San Diego, California",
+          "canonicalPortId": "port-csv-251",
+          "canonicalPortName": "San Diego",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Panama Canal - Ocean to Ocean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tsf16b&shipcode=ip&saildate=20270129",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tsf16b&shipcode=ip&saildate=20270129",
+        "raw_extract": {
+          "princess_itinerary_id": "TSF16B",
+          "princess_itinerary_name": "Panama Canal - Ocean to Ocean",
+          "princess_ship_code": "IP",
+          "princess_trade_ids": [
+            "T"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "San Diego, California",
+          "princess_sailing_id": "TSF16B|IP|2027-01-29",
+          "princess_group_id": "TSF16B",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "70f5037683f4f633eda5e70d98f360eba49d54bb",
+        "identity_key": "3272a70f84bae9b395ea1309a43fdda871d2c7e8",
+        "official_sailing_id": "TSF16B|IP|2027-01-29"
+      },
+      "candidate_hash": "e9ee947c6ab079185ed8307e5c634d1e2ef641c1751628779f60d8eb4761e7cd",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "San Diego",
+        "ship_code": "IP",
+        "itinerary_id": "TSF16B"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "panama-canal"
+      }
+    },
+    {
+      "official_sailing_id": "MLR070|XP|2027-01-30",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "departure_date": "2027-01-30",
+        "return_date": "2027-02-06",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270130",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270130",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "MLR070|XP|2027-01-30",
+        "external_key": "b6a0804826a9ae1fa6b48b4199cf93ea8fd5bf53",
+        "identity_key": "8b80746b66e6db9cedd9b9e51bc53bd7acfaf2c6",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "MLR070|XP|2027-01-30",
+          "princess_group_id": "MLR070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "departure_date": "2027-01-30",
+        "return_date": "2027-02-06",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270130",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270130",
+        "raw_extract": {
+          "princess_itinerary_id": "MLR070",
+          "princess_itinerary_name": "Mexican Riviera",
+          "princess_ship_code": "XP",
+          "princess_trade_ids": [
+            "M"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "MLR070|XP|2027-01-30",
+          "princess_group_id": "MLR070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "b6a0804826a9ae1fa6b48b4199cf93ea8fd5bf53",
+        "identity_key": "8b80746b66e6db9cedd9b9e51bc53bd7acfaf2c6",
+        "official_sailing_id": "MLR070|XP|2027-01-30"
+      },
+      "candidate_hash": "10300f4c7eacfef5414a24f24a91b40064cffbd238bcf95af6871741dec60e4a",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "XP",
+        "itinerary_id": "MLR070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "mexican-riviera"
+      }
+    },
+    {
+      "official_sailing_id": "ZSR08C|RP|2027-01-30",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-01-30",
+        "return_date": "2027-02-07",
+        "nights": 8,
+        "departure_port": "Sydney",
+        "itinerary": "Tasmania",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr08c&shipcode=rp&saildate=20270130",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr08c&shipcode=rp&saildate=20270130",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ZSR08C|RP|2027-01-30",
+        "external_key": "f1277eb3549feac67d70d6ccfcdbc2ca348726e9",
+        "identity_key": "380e02b3d016eb9fee2950d74ab418a314de5349",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ZSR08C|RP|2027-01-30",
+          "princess_group_id": "ZSR08C",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "departure_date": "2027-01-30",
+        "return_date": "2027-02-07",
+        "nights": 8,
+        "departure_port": "Sydney",
+        "departure_port_meta": {
+          "rawValue": "Sydney, Australia",
+          "canonicalPortId": "port-csv-167",
+          "canonicalPortName": "Sydney",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Tasmania",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr08c&shipcode=rp&saildate=20270130",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr08c&shipcode=rp&saildate=20270130",
+        "raw_extract": {
+          "princess_itinerary_id": "ZSR08C",
+          "princess_itinerary_name": "Tasmania",
+          "princess_ship_code": "RP",
+          "princess_trade_ids": [
+            "Z"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Sydney, Australia",
+          "princess_sailing_id": "ZSR08C|RP|2027-01-30",
+          "princess_group_id": "ZSR08C",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "f1277eb3549feac67d70d6ccfcdbc2ca348726e9",
+        "identity_key": "380e02b3d016eb9fee2950d74ab418a314de5349",
+        "official_sailing_id": "ZSR08C|RP|2027-01-30"
+      },
+      "candidate_hash": "fd1dd7377db63eeeade6ac3bac1f7b72657dd0bc1148e73e6929130909296a36",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Sydney",
+        "ship_code": "RP",
+        "itinerary_id": "ZSR08C"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "ZBR14H|AP|2027-02-01",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-02-01",
+        "return_date": "2027-02-15",
+        "nights": 14,
+        "departure_port": "Brisbane",
+        "itinerary": "New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr14h&shipcode=ap&saildate=20270201",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr14h&shipcode=ap&saildate=20270201",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ZBR14H|AP|2027-02-01",
+        "external_key": "9182e48fbbc3024c6be45b7aa5cc33ed79cf1f97",
+        "identity_key": "5bf96f72230260119b2b19933e1e3798cfcf880d",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ZBR14H|AP|2027-02-01",
+          "princess_group_id": "ZBR14H",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "departure_date": "2027-02-01",
+        "return_date": "2027-02-15",
+        "nights": 14,
+        "departure_port": "Brisbane",
+        "departure_port_meta": {
+          "rawValue": "Brisbane, Australia",
+          "canonicalPortId": "port-csv-168",
+          "canonicalPortName": "Brisbane",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr14h&shipcode=ap&saildate=20270201",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr14h&shipcode=ap&saildate=20270201",
+        "raw_extract": {
+          "princess_itinerary_id": "ZBR14H",
+          "princess_itinerary_name": "New Zealand",
+          "princess_ship_code": "AP",
+          "princess_trade_ids": [
+            "Z"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Brisbane, Australia",
+          "princess_sailing_id": "ZBR14H|AP|2027-02-01",
+          "princess_group_id": "ZBR14H",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "9182e48fbbc3024c6be45b7aa5cc33ed79cf1f97",
+        "identity_key": "5bf96f72230260119b2b19933e1e3798cfcf880d",
+        "official_sailing_id": "ZBR14H|AP|2027-02-01"
+      },
+      "candidate_hash": "ef846259a73e4bdcbb488852c14dc02412e0c53b34d17008a51cfde13a08f960",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Brisbane",
+        "ship_code": "AP",
+        "itinerary_id": "ZBR14H"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "TFR12C|CB|2027-02-03",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "5a90db4a-6eea-4781-9050-52d5298f6422",
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "departure_date": "2027-02-03",
+        "return_date": "2027-02-15",
+        "nights": 12,
+        "departure_port": "Fort Lauderdale",
+        "itinerary": "Panama Canal with Costa Rica & Caribbean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12c&shipcode=cb&saildate=20270203",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12c&shipcode=cb&saildate=20270203",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "TFR12C|CB|2027-02-03",
+        "external_key": "ef313582969875642f344f4299ea48bc0fa54d5e",
+        "identity_key": "573cf3dbeab318003114f48dbd90669a70fbc171",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "TFR12C|CB|2027-02-03",
+          "princess_group_id": "TFR12C",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "5a90db4a-6eea-4781-9050-52d5298f6422",
+        "departure_date": "2027-02-03",
+        "return_date": "2027-02-15",
+        "nights": 12,
+        "departure_port": "Fort Lauderdale",
+        "departure_port_meta": {
+          "rawValue": "Fort Lauderdale (Port Everglades), Florida",
+          "canonicalPortId": "port-csv-84",
+          "canonicalPortName": "Fort Lauderdale",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Panama Canal with Costa Rica & Caribbean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12c&shipcode=cb&saildate=20270203",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12c&shipcode=cb&saildate=20270203",
+        "raw_extract": {
+          "princess_itinerary_id": "TFR12C",
+          "princess_itinerary_name": "Panama Canal with Costa Rica & Caribbean",
+          "princess_ship_code": "CB",
+          "princess_trade_ids": [
+            "T"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Ft. Lauderdale, Florida",
+          "princess_sailing_id": "TFR12C|CB|2027-02-03",
+          "princess_group_id": "TFR12C",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "ef313582969875642f344f4299ea48bc0fa54d5e",
+        "identity_key": "573cf3dbeab318003114f48dbd90669a70fbc171",
+        "official_sailing_id": "TFR12C|CB|2027-02-03"
+      },
+      "candidate_hash": "955f691c4aa47bbaf427cb8c75f51d9b6fb33be01de422cad7f65d849baa38fd",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Fort Lauderdale",
+        "ship_code": "CB",
+        "itinerary_id": "TFR12C"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "panama-canal"
+      }
+    },
+    {
+      "official_sailing_id": "MLR070|XP|2027-02-06",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "departure_date": "2027-02-06",
+        "return_date": "2027-02-13",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270206",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270206",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "MLR070|XP|2027-02-06",
+        "external_key": "c8f1feb2aa8038b1aaa1469825147b9b925547dd",
+        "identity_key": "ce94e522c24b2bd728beec988277d44e9ca1de14",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "MLR070|XP|2027-02-06",
+          "princess_group_id": "MLR070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "departure_date": "2027-02-06",
+        "return_date": "2027-02-13",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270206",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270206",
+        "raw_extract": {
+          "princess_itinerary_id": "MLR070",
+          "princess_itinerary_name": "Mexican Riviera",
+          "princess_ship_code": "XP",
+          "princess_trade_ids": [
+            "M"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "MLR070|XP|2027-02-06",
+          "princess_group_id": "MLR070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "c8f1feb2aa8038b1aaa1469825147b9b925547dd",
+        "identity_key": "ce94e522c24b2bd728beec988277d44e9ca1de14",
+        "official_sailing_id": "MLR070|XP|2027-02-06"
+      },
+      "candidate_hash": "bd008ced4398fad6df590981fbd47488df149f0643fed5c83f3ddca23eebc661",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "XP",
+        "itinerary_id": "MLR070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "mexican-riviera"
+      }
+    },
+    {
+      "official_sailing_id": "ZSR13D|RP|2027-02-07",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-02-07",
+        "return_date": "2027-02-20",
+        "nights": 13,
+        "departure_port": "Sydney",
+        "itinerary": "New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr13d&shipcode=rp&saildate=20270207",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr13d&shipcode=rp&saildate=20270207",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ZSR13D|RP|2027-02-07",
+        "external_key": "7f5bd5674497f59c8477c7ed0ca8e533016c5ff1",
+        "identity_key": "b804d98600f93d50d8d094d96e4f2e6afac559cd",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ZSR13D|RP|2027-02-07",
+          "princess_group_id": "ZSR13D",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "departure_date": "2027-02-07",
+        "return_date": "2027-02-20",
+        "nights": 13,
+        "departure_port": "Sydney",
+        "departure_port_meta": {
+          "rawValue": "Sydney, Australia",
+          "canonicalPortId": "port-csv-167",
+          "canonicalPortName": "Sydney",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr13d&shipcode=rp&saildate=20270207",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zsr13d&shipcode=rp&saildate=20270207",
+        "raw_extract": {
+          "princess_itinerary_id": "ZSR13D",
+          "princess_itinerary_name": "New Zealand",
+          "princess_ship_code": "RP",
+          "princess_trade_ids": [
+            "Z"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Sydney, Australia",
+          "princess_sailing_id": "ZSR13D|RP|2027-02-07",
+          "princess_group_id": "ZSR13D",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "7f5bd5674497f59c8477c7ed0ca8e533016c5ff1",
+        "identity_key": "b804d98600f93d50d8d094d96e4f2e6afac559cd",
+        "official_sailing_id": "ZSR13D|RP|2027-02-07"
+      },
+      "candidate_hash": "059bcaf5513c35fb6c81febb8d747086cd330c55a39d7060ec5de6bffd20c097",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Sydney",
+        "ship_code": "RP",
+        "itinerary_id": "ZSR13D"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "MLR070|XP|2027-02-13",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "departure_date": "2027-02-13",
+        "return_date": "2027-02-20",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270213",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270213",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "MLR070|XP|2027-02-13",
+        "external_key": "c25807eeec4a8636790d1e8235021306bea5eaea",
+        "identity_key": "2e21545c31cbe0afda2ad2cdf087e8b21a21fdd1",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "MLR070|XP|2027-02-13",
+          "princess_group_id": "MLR070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "departure_date": "2027-02-13",
+        "return_date": "2027-02-20",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270213",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270213",
+        "raw_extract": {
+          "princess_itinerary_id": "MLR070",
+          "princess_itinerary_name": "Mexican Riviera",
+          "princess_ship_code": "XP",
+          "princess_trade_ids": [
+            "M"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "MLR070|XP|2027-02-13",
+          "princess_group_id": "MLR070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "c25807eeec4a8636790d1e8235021306bea5eaea",
+        "identity_key": "2e21545c31cbe0afda2ad2cdf087e8b21a21fdd1",
+        "official_sailing_id": "MLR070|XP|2027-02-13"
+      },
+      "candidate_hash": "bc3b5fc324bcc38fd8bfc36ac2970b33d246e30d71dadfcec783ebe2f02a8ba9",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "XP",
+        "itinerary_id": "MLR070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "mexican-riviera"
+      }
+    },
+    {
+      "official_sailing_id": "TFL16E|IP|2027-02-14",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "departure_date": "2027-02-14",
+        "return_date": "2027-03-02",
+        "nights": 16,
+        "departure_port": "Fort Lauderdale",
+        "itinerary": "Panama Canal - Ocean to Ocean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfl16e&shipcode=ip&saildate=20270214",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfl16e&shipcode=ip&saildate=20270214",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "TFL16E|IP|2027-02-14",
+        "external_key": "804ff6f7d0cf2d6b1f5762cef34aac50269bfb9f",
+        "identity_key": "6bba5a2047f4950f8a56080796a84713408b0e30",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "TFL16E|IP|2027-02-14",
+          "princess_group_id": "TFL16E",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d6d9e3d2-4563-4010-a08b-b5160aed16e5",
+        "departure_date": "2027-02-14",
+        "return_date": "2027-03-02",
+        "nights": 16,
+        "departure_port": "Fort Lauderdale",
+        "departure_port_meta": {
+          "rawValue": "Fort Lauderdale (Port Everglades), Florida",
+          "canonicalPortId": "port-csv-84",
+          "canonicalPortName": "Fort Lauderdale",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Panama Canal - Ocean to Ocean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfl16e&shipcode=ip&saildate=20270214",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfl16e&shipcode=ip&saildate=20270214",
+        "raw_extract": {
+          "princess_itinerary_id": "TFL16E",
+          "princess_itinerary_name": "Panama Canal - Ocean to Ocean",
+          "princess_ship_code": "IP",
+          "princess_trade_ids": [
+            "T"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Ft. Lauderdale, Florida",
+          "princess_sailing_id": "TFL16E|IP|2027-02-14",
+          "princess_group_id": "TFL16E",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "804ff6f7d0cf2d6b1f5762cef34aac50269bfb9f",
+        "identity_key": "6bba5a2047f4950f8a56080796a84713408b0e30",
+        "official_sailing_id": "TFL16E|IP|2027-02-14"
+      },
+      "candidate_hash": "da3e39af0453584280c0e6e9db34021c68acccec0a9ab2441d072be04f7088b1",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Fort Lauderdale",
+        "ship_code": "IP",
+        "itinerary_id": "TFL16E"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "panama-canal"
+      }
+    },
+    {
+      "official_sailing_id": "TFR12C|CB|2027-02-15",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "5a90db4a-6eea-4781-9050-52d5298f6422",
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "departure_date": "2027-02-15",
+        "return_date": "2027-02-27",
+        "nights": 12,
+        "departure_port": "Fort Lauderdale",
+        "itinerary": "Panama Canal with Costa Rica & Caribbean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12c&shipcode=cb&saildate=20270215",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12c&shipcode=cb&saildate=20270215",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "TFR12C|CB|2027-02-15",
+        "external_key": "a39e6b385b5bf417953b2db0505569647671c5c9",
+        "identity_key": "f89e403657887ea738f9e4e215cbde879b9d07d8",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "TFR12C|CB|2027-02-15",
+          "princess_group_id": "TFR12C",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "5a90db4a-6eea-4781-9050-52d5298f6422",
+        "departure_date": "2027-02-15",
+        "return_date": "2027-02-27",
+        "nights": 12,
+        "departure_port": "Fort Lauderdale",
+        "departure_port_meta": {
+          "rawValue": "Fort Lauderdale (Port Everglades), Florida",
+          "canonicalPortId": "port-csv-84",
+          "canonicalPortName": "Fort Lauderdale",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Panama Canal with Costa Rica & Caribbean",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12c&shipcode=cb&saildate=20270215",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=tfr12c&shipcode=cb&saildate=20270215",
+        "raw_extract": {
+          "princess_itinerary_id": "TFR12C",
+          "princess_itinerary_name": "Panama Canal with Costa Rica & Caribbean",
+          "princess_ship_code": "CB",
+          "princess_trade_ids": [
+            "T"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Ft. Lauderdale, Florida",
+          "princess_sailing_id": "TFR12C|CB|2027-02-15",
+          "princess_group_id": "TFR12C",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "panama-canal",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "108d84e0-76af-4507-b834-584bb0d8ebc4",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "a39e6b385b5bf417953b2db0505569647671c5c9",
+        "identity_key": "f89e403657887ea738f9e4e215cbde879b9d07d8",
+        "official_sailing_id": "TFR12C|CB|2027-02-15"
+      },
+      "candidate_hash": "1ed963f82efbd71a9c6387af496411557012e1614a761a82c7bea450049fa933",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Fort Lauderdale",
+        "ship_code": "CB",
+        "itinerary_id": "TFR12C"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "panama-canal"
+      }
+    },
+    {
+      "official_sailing_id": "ZBR14H|AP|2027-02-15",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-02-15",
+        "return_date": "2027-03-01",
+        "nights": 14,
+        "departure_port": "Brisbane",
+        "itinerary": "New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr14h&shipcode=ap&saildate=20270215",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr14h&shipcode=ap&saildate=20270215",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ZBR14H|AP|2027-02-15",
+        "external_key": "9539a34cc59125a76af180abacc43a893e97a9e7",
+        "identity_key": "2234b5f69e4a4a14f4a24e5d7b83065e2396ade4",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ZBR14H|AP|2027-02-15",
+          "princess_group_id": "ZBR14H",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "departure_date": "2027-02-15",
+        "return_date": "2027-03-01",
+        "nights": 14,
+        "departure_port": "Brisbane",
+        "departure_port_meta": {
+          "rawValue": "Brisbane, Australia",
+          "canonicalPortId": "port-csv-168",
+          "canonicalPortName": "Brisbane",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr14h&shipcode=ap&saildate=20270215",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr14h&shipcode=ap&saildate=20270215",
+        "raw_extract": {
+          "princess_itinerary_id": "ZBR14H",
+          "princess_itinerary_name": "New Zealand",
+          "princess_ship_code": "AP",
+          "princess_trade_ids": [
+            "Z"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Brisbane, Australia",
+          "princess_sailing_id": "ZBR14H|AP|2027-02-15",
+          "princess_group_id": "ZBR14H",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "9539a34cc59125a76af180abacc43a893e97a9e7",
+        "identity_key": "2234b5f69e4a4a14f4a24e5d7b83065e2396ade4",
+        "official_sailing_id": "ZBR14H|AP|2027-02-15"
+      },
+      "candidate_hash": "6686423fedcb52b54bc11415fff06cee60ae689925d710a0bf8b09c1a09486fe",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Brisbane",
+        "ship_code": "AP",
+        "itinerary_id": "ZBR14H"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "MLR070|XP|2027-02-20",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "departure_date": "2027-02-20",
+        "return_date": "2027-02-27",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270220",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270220",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "MLR070|XP|2027-02-20",
+        "external_key": "54b7e7a9c9606ba11a0f5c1da4b4e78db536ff8c",
+        "identity_key": "324d360a7c2a7059c5f08c7483d81b84cced3e84",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "MLR070|XP|2027-02-20",
+          "princess_group_id": "MLR070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "departure_date": "2027-02-20",
+        "return_date": "2027-02-27",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270220",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270220",
+        "raw_extract": {
+          "princess_itinerary_id": "MLR070",
+          "princess_itinerary_name": "Mexican Riviera",
+          "princess_ship_code": "XP",
+          "princess_trade_ids": [
+            "M"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "MLR070|XP|2027-02-20",
+          "princess_group_id": "MLR070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "54b7e7a9c9606ba11a0f5c1da4b4e78db536ff8c",
+        "identity_key": "324d360a7c2a7059c5f08c7483d81b84cced3e84",
+        "official_sailing_id": "MLR070|XP|2027-02-20"
+      },
+      "candidate_hash": "393ecad73307b6ca541c2402ef29937611c1ded9b9197ccae950493e14637bac",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "XP",
+        "itinerary_id": "MLR070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "mexican-riviera"
+      }
+    },
+    {
+      "official_sailing_id": "ZSA14B|RP|2027-02-20",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-02-20",
+        "return_date": "2027-03-06",
+        "nights": 14,
+        "departure_port": "Sydney",
+        "itinerary": "Australia & New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zsa14b&shipcode=rp&saildate=20270220",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zsa14b&shipcode=rp&saildate=20270220",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ZSA14B|RP|2027-02-20",
+        "external_key": "2b994dea691c9099594821ca10defdb8649498b3",
+        "identity_key": "3de8074dec873573b328da5893df2fa10e853d8a",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ZSA14B|RP|2027-02-20",
+          "princess_group_id": "ZSA14B",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+        "departure_date": "2027-02-20",
+        "return_date": "2027-03-06",
+        "nights": 14,
+        "departure_port": "Sydney",
+        "departure_port_meta": {
+          "rawValue": "Sydney, Australia",
+          "canonicalPortId": "port-csv-167",
+          "canonicalPortName": "Sydney",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Australia & New Zealand",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zsa14b&shipcode=rp&saildate=20270220",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zsa14b&shipcode=rp&saildate=20270220",
+        "raw_extract": {
+          "princess_itinerary_id": "ZSA14B",
+          "princess_itinerary_name": "Australia & New Zealand",
+          "princess_ship_code": "RP",
+          "princess_trade_ids": [
+            "Z"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Sydney, Australia",
+          "princess_sailing_id": "ZSA14B|RP|2027-02-20",
+          "princess_group_id": "ZSA14B",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "2b994dea691c9099594821ca10defdb8649498b3",
+        "identity_key": "3de8074dec873573b328da5893df2fa10e853d8a",
+        "official_sailing_id": "ZSA14B|RP|2027-02-20"
+      },
+      "candidate_hash": "94a359e26cc973c36395477e7f22ae803f8d2e3c156ab4c1ea153a5e4065952f",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Sydney",
+        "ship_code": "RP",
+        "itinerary_id": "ZSA14B"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    },
+    {
+      "official_sailing_id": "MLR070|XP|2027-02-27",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "departure_date": "2027-02-27",
+        "return_date": "2027-03-06",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270227",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270227",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "MLR070|XP|2027-02-27",
+        "external_key": "03dcdc18452870869bdfd73815492a9eb28b7a28",
+        "identity_key": "f8b2d020161a0b089bc9323ffcffe6cbab69d013",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "MLR070|XP|2027-02-27",
+          "princess_group_id": "MLR070",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "4e08923e-5daa-4238-aec7-00278b00d249",
+        "departure_date": "2027-02-27",
+        "return_date": "2027-03-06",
+        "nights": 7,
+        "departure_port": "Los Angeles",
+        "departure_port_meta": {
+          "rawValue": "Los Angeles, California",
+          "canonicalPortId": "port-csv-118",
+          "canonicalPortName": "Los Angeles",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Mexican Riviera",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270227",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=mlr070&shipcode=xp&saildate=20270227",
+        "raw_extract": {
+          "princess_itinerary_id": "MLR070",
+          "princess_itinerary_name": "Mexican Riviera",
+          "princess_ship_code": "XP",
+          "princess_trade_ids": [
+            "M"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Los Angeles, California",
+          "princess_sailing_id": "MLR070|XP|2027-02-27",
+          "princess_group_id": "MLR070",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "mexican-riviera",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "994fd59a-cf58-4fc0-93ee-030bbdeeabbb",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "03dcdc18452870869bdfd73815492a9eb28b7a28",
+        "identity_key": "f8b2d020161a0b089bc9323ffcffe6cbab69d013",
+        "official_sailing_id": "MLR070|XP|2027-02-27"
+      },
+      "candidate_hash": "33d737c7294684518c2c1913004bb1b764dcadd215714564b1860cb40abf650a",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Los Angeles",
+        "ship_code": "XP",
+        "itinerary_id": "MLR070"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "mexican-riviera"
+      }
+    },
+    {
+      "official_sailing_id": "CSR14R|KP|2027-02-28",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "bbde7c14-3ce4-4413-9a1d-ce96f627a254",
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "departure_date": "2027-02-28",
+        "return_date": "2027-03-14",
+        "nights": 14,
+        "departure_port": "San Juan",
+        "itinerary": "Southern Caribbean Adventurer",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=csr14r&shipcode=kp&saildate=20270228",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=csr14r&shipcode=kp&saildate=20270228",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "CSR14R|KP|2027-02-28",
+        "external_key": "2ef6238e660ca122edc723a721c4c6b70d5b3998",
+        "identity_key": "83c56820a18f5b82eed11ef4f695ffbb5c272fe7",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "CSR14R|KP|2027-02-28",
+          "princess_group_id": "CSR14R",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "caribbean",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "bbde7c14-3ce4-4413-9a1d-ce96f627a254",
+        "departure_date": "2027-02-28",
+        "return_date": "2027-03-14",
+        "nights": 14,
+        "departure_port": "San Juan",
+        "departure_port_meta": {
+          "rawValue": "San Juan, Puerto Rico",
+          "canonicalPortId": "port-csv-90",
+          "canonicalPortName": "San Juan",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Southern Caribbean Adventurer",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=csr14r&shipcode=kp&saildate=20270228",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=csr14r&shipcode=kp&saildate=20270228",
+        "raw_extract": {
+          "princess_itinerary_id": "CSR14R",
+          "princess_itinerary_name": "Southern Caribbean Adventurer",
+          "princess_ship_code": "KP",
+          "princess_trade_ids": [
+            "C"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "San Juan, Puerto Rico",
+          "princess_sailing_id": "CSR14R|KP|2027-02-28",
+          "princess_group_id": "CSR14R",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "caribbean",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "2ef6238e660ca122edc723a721c4c6b70d5b3998",
+        "identity_key": "83c56820a18f5b82eed11ef4f695ffbb5c272fe7",
+        "official_sailing_id": "CSR14R|KP|2027-02-28"
+      },
+      "candidate_hash": "bd20ceb62c6412442920404f92d22ffd8e9013c5a9737708690fb1c5fbf8c8e4",
+      "resolver_remediated": false,
+      "old_rule_eligible_current_production_missing": true,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "San Juan",
+        "ship_code": "KP",
+        "itinerary_id": "CSR14R"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "caribbean"
+      }
+    },
+    {
+      "official_sailing_id": "ZBR07C|AP|2027-03-01",
+      "canonical_write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "departure_date": "2027-03-01",
+        "return_date": "2027-03-08",
+        "nights": 7,
+        "departure_port": "Brisbane",
+        "itinerary": "Queensland with Great Barrier  Reef",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr07c&shipcode=ap&saildate=20270301",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr07c&shipcode=ap&saildate=20270301",
+        "status": "active",
+        "match_confidence": "high",
+        "official_sailing_id": "ZBR07C|AP|2027-03-01",
+        "external_key": "ea74a405160d69cc91432d91785790ae1eb85b6a",
+        "identity_key": "8eede5bfcf071b24bb4da5b33405069adc1d242d",
+        "brochure_fare": null,
+        "currency": null,
+        "brochure_fare_display": null,
+        "raw_extract": {
+          "princess_sailing_id": "ZBR07C|AP|2027-03-01",
+          "princess_group_id": "ZBR07C",
+          "princess_product_type": "cruise",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        }
+      },
+      "write_payload": {
+        "cruise_line_id": "c19f40a7-c160-4035-a845-14dada550e1f",
+        "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+        "departure_date": "2027-03-01",
+        "return_date": "2027-03-08",
+        "nights": 7,
+        "departure_port": "Brisbane",
+        "departure_port_meta": {
+          "rawValue": "Brisbane, Australia",
+          "canonicalPortId": "port-csv-168",
+          "canonicalPortName": "Brisbane",
+          "confidence": "exact",
+          "status": "resolved",
+          "reason": null,
+          "sourceField": "princess_resdb"
+        },
+        "itinerary": "Queensland with Great Barrier  Reef",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr07c&shipcode=ap&saildate=20270301",
+        "source_url": "https://www.princess.com/cruise-search/details?voyagecode=zbr07c&shipcode=ap&saildate=20270301",
+        "raw_extract": {
+          "princess_itinerary_id": "ZBR07C",
+          "princess_itinerary_name": "Queensland with Great Barrier  Reef",
+          "princess_ship_code": "AP",
+          "princess_trade_ids": [
+            "Z"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Brisbane, Australia",
+          "princess_sailing_id": "ZBR07C|AP|2027-03-01",
+          "princess_group_id": "ZBR07C",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "australia-new-zealand",
+          "ship_match_method": "official_line_ship_id"
+        },
+        "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+        "status": "active",
+        "match_confidence": "high",
+        "external_key": "ea74a405160d69cc91432d91785790ae1eb85b6a",
+        "identity_key": "8eede5bfcf071b24bb4da5b33405069adc1d242d",
+        "official_sailing_id": "ZBR07C|AP|2027-03-01"
+      },
+      "candidate_hash": "a7dd4d6a32faecee7642d50e66c8a7b7330a0c263430e9f849736116cd8d0c33",
+      "resolver_remediated": true,
+      "old_rule_eligible_current_production_missing": false,
+      "historical_2026_08_10_source_present": "unknown",
+      "source_raw": {
+        "departure_port": "Brisbane",
+        "ship_code": "AP",
+        "itinerary_id": "ZBR07C"
+      },
+      "resolver_evidence": {
+        "destination_method": null,
+        "departure_port_method": null,
+        "destination_key": "australia-new-zealand"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1316 @@
+{
+  "generated_at": "2026-08-17T03:16:16.986Z",
+  "repository_sha": "67d9e1e70227611b784fdf142609029f47f89faf",
+  "master_plan_hash": "7c9a77c305e279bbbfcdeaba655a83055adce51d93238c8b7953a582b9748284",
+  "batches_completed": 19,
+  "batches_attempted": 19,
+  "total_inserted": 552,
+  "stopped": false,
+  "stop_reason": null,
+  "batch_results": [
+    {
+      "batch_number": 1,
+      "batch_label": "P3-01",
+      "batch_size": 30,
+      "batch_hash": "1b318e312370ad6eb9f496cefbd27b485b345a1acafd223157915eb612260cd2",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "1b318e312370ad6eb9f496cefbd27b485b345a1acafd223157915eb612260cd2",
+        "frozen_batch_hash": "1b318e312370ad6eb9f496cefbd27b485b345a1acafd223157915eb612260cd2"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-01-2026-08-17T02-55-26-374Z",
+        "global_lock_run_id": "princess-incident-p3-P3-01-2026-08-17T02-55-26-374Z",
+        "global_lock_acquired_at": "2026-08-17T02:55:44.865Z",
+        "global_lock_expires_at": "2026-08-17T03:25:44.929302+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-01-2026-08-17T02-55-26-374Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "3e60765d-2f17-4fa9-bdf5-6faac17c36cc",
+      "counts_before": {
+        "princess_active": 1510,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 80
+      },
+      "counts_after": {
+        "princess_active": 1540,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 81
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 522,
+        "proposed_updates": 0
+      },
+      "batch_pass": "3e60765d-2f17-4fa9-bdf5-6faac17c36cc"
+    },
+    {
+      "batch_number": 2,
+      "batch_label": "P3-02",
+      "batch_size": 30,
+      "batch_hash": "28549f57c3728b4c52a80f17c77224ea9a9bd74b7a8f074ba9034930f82540a4",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "28549f57c3728b4c52a80f17c77224ea9a9bd74b7a8f074ba9034930f82540a4",
+        "frozen_batch_hash": "28549f57c3728b4c52a80f17c77224ea9a9bd74b7a8f074ba9034930f82540a4"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-02-2026-08-17T02-56-31-448Z",
+        "global_lock_run_id": "princess-incident-p3-P3-02-2026-08-17T02-56-31-448Z",
+        "global_lock_acquired_at": "2026-08-17T02:57:16.686Z",
+        "global_lock_expires_at": "2026-08-17T03:27:16.754403+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-02-2026-08-17T02-56-31-448Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "cdbd26d1-4f16-41ef-8862-a36a6847fefc",
+      "counts_before": {
+        "princess_active": 1540,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 81
+      },
+      "counts_after": {
+        "princess_active": 1570,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 82
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 492,
+        "proposed_updates": 0
+      },
+      "batch_pass": "cdbd26d1-4f16-41ef-8862-a36a6847fefc"
+    },
+    {
+      "batch_number": 3,
+      "batch_label": "P3-03",
+      "batch_size": 30,
+      "batch_hash": "8b885ed6e759ada35ee4ff574faa303f8e10360c4e863cf852ec5cf31b0d42bd",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "8b885ed6e759ada35ee4ff574faa303f8e10360c4e863cf852ec5cf31b0d42bd",
+        "frozen_batch_hash": "8b885ed6e759ada35ee4ff574faa303f8e10360c4e863cf852ec5cf31b0d42bd"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-03-2026-08-17T02-58-20-850Z",
+        "global_lock_run_id": "princess-incident-p3-P3-03-2026-08-17T02-58-20-850Z",
+        "global_lock_acquired_at": "2026-08-17T02:58:39.954Z",
+        "global_lock_expires_at": "2026-08-17T03:28:40.009004+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-03-2026-08-17T02-58-20-850Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "0b13a474-f3b3-49d6-b73c-4223405e8e17",
+      "counts_before": {
+        "princess_active": 1570,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 82
+      },
+      "counts_after": {
+        "princess_active": 1600,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 83
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 462,
+        "proposed_updates": 0
+      },
+      "batch_pass": "0b13a474-f3b3-49d6-b73c-4223405e8e17"
+    },
+    {
+      "batch_number": 4,
+      "batch_label": "P3-04",
+      "batch_size": 30,
+      "batch_hash": "e8b090c6e855095468b551383d39923cf8b894c03d6e1efbaa84ea4f774dd68f",
+      "resolver_remediated": 29,
+      "old_rule_missing": 1,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "e8b090c6e855095468b551383d39923cf8b894c03d6e1efbaa84ea4f774dd68f",
+        "frozen_batch_hash": "e8b090c6e855095468b551383d39923cf8b894c03d6e1efbaa84ea4f774dd68f"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-04-2026-08-17T02-59-16-582Z",
+        "global_lock_run_id": "princess-incident-p3-P3-04-2026-08-17T02-59-16-582Z",
+        "global_lock_acquired_at": "2026-08-17T02:59:37.315Z",
+        "global_lock_expires_at": "2026-08-17T03:29:37.38457+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-04-2026-08-17T02-59-16-582Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "6183d8d1-6c45-4ed2-af9c-da64c8fd2d14",
+      "counts_before": {
+        "princess_active": 1600,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 83
+      },
+      "counts_after": {
+        "princess_active": 1630,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 84
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 432,
+        "proposed_updates": 0
+      },
+      "batch_pass": "6183d8d1-6c45-4ed2-af9c-da64c8fd2d14"
+    },
+    {
+      "batch_number": 5,
+      "batch_label": "P3-05",
+      "batch_size": 30,
+      "batch_hash": "5e07034490c30d1efa22235b3e9290dfaa5a75270eb6c12a44b82c666b70baf4",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "5e07034490c30d1efa22235b3e9290dfaa5a75270eb6c12a44b82c666b70baf4",
+        "frozen_batch_hash": "5e07034490c30d1efa22235b3e9290dfaa5a75270eb6c12a44b82c666b70baf4"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-05-2026-08-17T03-00-18-721Z",
+        "global_lock_run_id": "princess-incident-p3-P3-05-2026-08-17T03-00-18-721Z",
+        "global_lock_acquired_at": "2026-08-17T03:00:40.225Z",
+        "global_lock_expires_at": "2026-08-17T03:30:40.321878+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-05-2026-08-17T03-00-18-721Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "55210501-226d-4fc1-af8d-a557e17917b0",
+      "counts_before": {
+        "princess_active": 1630,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 84
+      },
+      "counts_after": {
+        "princess_active": 1660,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 85
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 402,
+        "proposed_updates": 0
+      },
+      "batch_pass": "55210501-226d-4fc1-af8d-a557e17917b0"
+    },
+    {
+      "batch_number": 6,
+      "batch_label": "P3-06",
+      "batch_size": 30,
+      "batch_hash": "afa6d88b60d41494f09a59177af2ce1db82d197741ee2f50dbcee8d2efc689ee",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "afa6d88b60d41494f09a59177af2ce1db82d197741ee2f50dbcee8d2efc689ee",
+        "frozen_batch_hash": "afa6d88b60d41494f09a59177af2ce1db82d197741ee2f50dbcee8d2efc689ee"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-06-2026-08-17T03-01-17-651Z",
+        "global_lock_run_id": "princess-incident-p3-P3-06-2026-08-17T03-01-17-651Z",
+        "global_lock_acquired_at": "2026-08-17T03:01:33.288Z",
+        "global_lock_expires_at": "2026-08-17T03:31:33.371316+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-06-2026-08-17T03-01-17-651Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "0cd22ff5-8eeb-4c97-b8be-46ee7873dc5d",
+      "counts_before": {
+        "princess_active": 1660,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 85
+      },
+      "counts_after": {
+        "princess_active": 1690,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 86
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 372,
+        "proposed_updates": 0
+      },
+      "batch_pass": "0cd22ff5-8eeb-4c97-b8be-46ee7873dc5d"
+    },
+    {
+      "batch_number": 7,
+      "batch_label": "P3-07",
+      "batch_size": 30,
+      "batch_hash": "bceb5c87c154fee858a9a112c39ea421ca382ac0ba8a0e9ffe60c03a03869772",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "bceb5c87c154fee858a9a112c39ea421ca382ac0ba8a0e9ffe60c03a03869772",
+        "frozen_batch_hash": "bceb5c87c154fee858a9a112c39ea421ca382ac0ba8a0e9ffe60c03a03869772"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-07-2026-08-17T03-02-08-922Z",
+        "global_lock_run_id": "princess-incident-p3-P3-07-2026-08-17T03-02-08-922Z",
+        "global_lock_acquired_at": "2026-08-17T03:02:27.682Z",
+        "global_lock_expires_at": "2026-08-17T03:32:27.644765+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-07-2026-08-17T03-02-08-922Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "676d2cd5-8dc8-4bcc-b7fb-64a7e49f63e0",
+      "counts_before": {
+        "princess_active": 1690,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 86
+      },
+      "counts_after": {
+        "princess_active": 1720,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 87
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 342,
+        "proposed_updates": 0
+      },
+      "batch_pass": "676d2cd5-8dc8-4bcc-b7fb-64a7e49f63e0"
+    },
+    {
+      "batch_number": 8,
+      "batch_label": "P3-08",
+      "batch_size": 30,
+      "batch_hash": "36f01856f2d7251e314ecb91581bdbc0b234221ea1d80ed20d12afdf183e2a8e",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "36f01856f2d7251e314ecb91581bdbc0b234221ea1d80ed20d12afdf183e2a8e",
+        "frozen_batch_hash": "36f01856f2d7251e314ecb91581bdbc0b234221ea1d80ed20d12afdf183e2a8e"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-08-2026-08-17T03-03-04-331Z",
+        "global_lock_run_id": "princess-incident-p3-P3-08-2026-08-17T03-03-04-331Z",
+        "global_lock_acquired_at": "2026-08-17T03:03:33.959Z",
+        "global_lock_expires_at": "2026-08-17T03:33:34.059195+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-08-2026-08-17T03-03-04-331Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "32955992-5f62-49dd-a957-a2a04f4f1e32",
+      "counts_before": {
+        "princess_active": 1720,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 87
+      },
+      "counts_after": {
+        "princess_active": 1750,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 88
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 312,
+        "proposed_updates": 0
+      },
+      "batch_pass": "32955992-5f62-49dd-a957-a2a04f4f1e32"
+    },
+    {
+      "batch_number": 9,
+      "batch_label": "P3-09",
+      "batch_size": 30,
+      "batch_hash": "13bfef989be30e0c02c4fba9f5b6d6b0788f977643b889b9f92917f97e555157",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "13bfef989be30e0c02c4fba9f5b6d6b0788f977643b889b9f92917f97e555157",
+        "frozen_batch_hash": "13bfef989be30e0c02c4fba9f5b6d6b0788f977643b889b9f92917f97e555157"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-09-2026-08-17T03-04-08-117Z",
+        "global_lock_run_id": "princess-incident-p3-P3-09-2026-08-17T03-04-08-117Z",
+        "global_lock_acquired_at": "2026-08-17T03:04:26.110Z",
+        "global_lock_expires_at": "2026-08-17T03:34:26.21478+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-09-2026-08-17T03-04-08-117Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "4a55f56b-2030-4bc9-81ff-62d6a4cfd9dd",
+      "counts_before": {
+        "princess_active": 1750,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 88
+      },
+      "counts_after": {
+        "princess_active": 1780,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 89
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 282,
+        "proposed_updates": 0
+      },
+      "batch_pass": "4a55f56b-2030-4bc9-81ff-62d6a4cfd9dd"
+    },
+    {
+      "batch_number": 10,
+      "batch_label": "P3-10",
+      "batch_size": 30,
+      "batch_hash": "f20b99432bbd0f0a56944165175b6f5a011fab60977a4cd29a8626fef2aa0dee",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "f20b99432bbd0f0a56944165175b6f5a011fab60977a4cd29a8626fef2aa0dee",
+        "frozen_batch_hash": "f20b99432bbd0f0a56944165175b6f5a011fab60977a4cd29a8626fef2aa0dee"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-10-2026-08-17T03-05-07-311Z",
+        "global_lock_run_id": "princess-incident-p3-P3-10-2026-08-17T03-05-07-311Z",
+        "global_lock_acquired_at": "2026-08-17T03:05:28.580Z",
+        "global_lock_expires_at": "2026-08-17T03:35:28.684608+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-10-2026-08-17T03-05-07-311Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "06f3044c-c0c6-4171-8c94-e9d154c7ba36",
+      "counts_before": {
+        "princess_active": 1780,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 89
+      },
+      "counts_after": {
+        "princess_active": 1810,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 90
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 252,
+        "proposed_updates": 0
+      },
+      "batch_pass": "06f3044c-c0c6-4171-8c94-e9d154c7ba36"
+    },
+    {
+      "batch_number": 11,
+      "batch_label": "P3-11",
+      "batch_size": 30,
+      "batch_hash": "83c841d36dd99078d25c68091977631a706bef07a529634914820ebdee7cc81b",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "83c841d36dd99078d25c68091977631a706bef07a529634914820ebdee7cc81b",
+        "frozen_batch_hash": "83c841d36dd99078d25c68091977631a706bef07a529634914820ebdee7cc81b"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-11-2026-08-17T03-06-14-335Z",
+        "global_lock_run_id": "princess-incident-p3-P3-11-2026-08-17T03-06-14-335Z",
+        "global_lock_acquired_at": "2026-08-17T03:06:38.816Z",
+        "global_lock_expires_at": "2026-08-17T03:36:38.924489+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-11-2026-08-17T03-06-14-335Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "88b61d2d-2125-4f10-b613-ce8c8e79935a",
+      "counts_before": {
+        "princess_active": 1810,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 90
+      },
+      "counts_after": {
+        "princess_active": 1840,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 91
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 222,
+        "proposed_updates": 0
+      },
+      "batch_pass": "88b61d2d-2125-4f10-b613-ce8c8e79935a"
+    },
+    {
+      "batch_number": 12,
+      "batch_label": "P3-12",
+      "batch_size": 30,
+      "batch_hash": "20c33c47eb914ab76a5b2b4d80ea8f547259c7ad2bd0cd165f76da0c270ac80b",
+      "resolver_remediated": 30,
+      "old_rule_missing": 0,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "20c33c47eb914ab76a5b2b4d80ea8f547259c7ad2bd0cd165f76da0c270ac80b",
+        "frozen_batch_hash": "20c33c47eb914ab76a5b2b4d80ea8f547259c7ad2bd0cd165f76da0c270ac80b"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-12-2026-08-17T03-07-18-956Z",
+        "global_lock_run_id": "princess-incident-p3-P3-12-2026-08-17T03-07-18-956Z",
+        "global_lock_acquired_at": "2026-08-17T03:07:39.623Z",
+        "global_lock_expires_at": "2026-08-17T03:37:39.694569+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-12-2026-08-17T03-07-18-956Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "bf603391-0952-436a-b3e2-d8d4f397c586",
+      "counts_before": {
+        "princess_active": 1840,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 91
+      },
+      "counts_after": {
+        "princess_active": 1870,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 92
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 192,
+        "proposed_updates": 0
+      },
+      "batch_pass": "bf603391-0952-436a-b3e2-d8d4f397c586"
+    },
+    {
+      "batch_number": 13,
+      "batch_label": "P3-13",
+      "batch_size": 30,
+      "batch_hash": "105585411fa495bb6b8b6ef4dc0081537930433589f8dc37e0d9f1a3c53d2b9a",
+      "resolver_remediated": 12,
+      "old_rule_missing": 18,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "105585411fa495bb6b8b6ef4dc0081537930433589f8dc37e0d9f1a3c53d2b9a",
+        "frozen_batch_hash": "105585411fa495bb6b8b6ef4dc0081537930433589f8dc37e0d9f1a3c53d2b9a"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-13-2026-08-17T03-08-23-847Z",
+        "global_lock_run_id": "princess-incident-p3-P3-13-2026-08-17T03-08-23-847Z",
+        "global_lock_acquired_at": "2026-08-17T03:08:41.787Z",
+        "global_lock_expires_at": "2026-08-17T03:38:41.875025+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-13-2026-08-17T03-08-23-847Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "5b06244e-9aff-418e-9825-6c39aed81bcc",
+      "counts_before": {
+        "princess_active": 1870,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 92
+      },
+      "counts_after": {
+        "princess_active": 1900,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 93
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 162,
+        "proposed_updates": 0
+      },
+      "batch_pass": "5b06244e-9aff-418e-9825-6c39aed81bcc"
+    },
+    {
+      "batch_number": 14,
+      "batch_label": "P3-14",
+      "batch_size": 30,
+      "batch_hash": "db7dcd24ab394c5587f8589d6e012d6868355a48df38a0e83e3fb1b66f89d5e7",
+      "resolver_remediated": 3,
+      "old_rule_missing": 27,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "db7dcd24ab394c5587f8589d6e012d6868355a48df38a0e83e3fb1b66f89d5e7",
+        "frozen_batch_hash": "db7dcd24ab394c5587f8589d6e012d6868355a48df38a0e83e3fb1b66f89d5e7"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-14-2026-08-17T03-09-20-062Z",
+        "global_lock_run_id": "princess-incident-p3-P3-14-2026-08-17T03-09-20-062Z",
+        "global_lock_acquired_at": "2026-08-17T03:09:38.333Z",
+        "global_lock_expires_at": "2026-08-17T03:39:38.430551+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-14-2026-08-17T03-09-20-062Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "acfea11c-934d-4099-b9bb-1dfc9ec3704c",
+      "counts_before": {
+        "princess_active": 1900,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 93
+      },
+      "counts_after": {
+        "princess_active": 1930,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 94
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 132,
+        "proposed_updates": 0
+      },
+      "batch_pass": "acfea11c-934d-4099-b9bb-1dfc9ec3704c"
+    },
+    {
+      "batch_number": 15,
+      "batch_label": "P3-15",
+      "batch_size": 30,
+      "batch_hash": "9160b13ce4b4089f0070c8f2a1f32e8ce4ab57a7fdd43054670695f0aa2635fb",
+      "resolver_remediated": 4,
+      "old_rule_missing": 26,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "9160b13ce4b4089f0070c8f2a1f32e8ce4ab57a7fdd43054670695f0aa2635fb",
+        "frozen_batch_hash": "9160b13ce4b4089f0070c8f2a1f32e8ce4ab57a7fdd43054670695f0aa2635fb"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-15-2026-08-17T03-10-17-382Z",
+        "global_lock_run_id": "princess-incident-p3-P3-15-2026-08-17T03-10-17-382Z",
+        "global_lock_acquired_at": "2026-08-17T03:10:36.210Z",
+        "global_lock_expires_at": "2026-08-17T03:40:36.305428+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-15-2026-08-17T03-10-17-382Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "171b0d80-5709-4865-9f16-434739531562",
+      "counts_before": {
+        "princess_active": 1930,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 94
+      },
+      "counts_after": {
+        "princess_active": 1960,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 95
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 102,
+        "proposed_updates": 0
+      },
+      "batch_pass": "171b0d80-5709-4865-9f16-434739531562"
+    },
+    {
+      "batch_number": 16,
+      "batch_label": "P3-16",
+      "batch_size": 30,
+      "batch_hash": "0f15d374d3c846a8a7dbe203d2f7dbbf307e3bedb2341297e79a19b6aac089ae",
+      "resolver_remediated": 0,
+      "old_rule_missing": 30,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "0f15d374d3c846a8a7dbe203d2f7dbbf307e3bedb2341297e79a19b6aac089ae",
+        "frozen_batch_hash": "0f15d374d3c846a8a7dbe203d2f7dbbf307e3bedb2341297e79a19b6aac089ae"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-16-2026-08-17T03-11-19-429Z",
+        "global_lock_run_id": "princess-incident-p3-P3-16-2026-08-17T03-11-19-429Z",
+        "global_lock_acquired_at": "2026-08-17T03:11:38.024Z",
+        "global_lock_expires_at": "2026-08-17T03:41:38.098029+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-16-2026-08-17T03-11-19-429Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "0ccc6b31-75b1-4b2a-b6eb-80f2d6e23333",
+      "counts_before": {
+        "princess_active": 1960,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 95
+      },
+      "counts_after": {
+        "princess_active": 1990,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 96
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 72,
+        "proposed_updates": 0
+      },
+      "batch_pass": "0ccc6b31-75b1-4b2a-b6eb-80f2d6e23333"
+    },
+    {
+      "batch_number": 17,
+      "batch_label": "P3-17",
+      "batch_size": 30,
+      "batch_hash": "0a4984abde7fd3b95e40b56e1a350ed56ff5e3e02976e64a80c92197d5a0b87b",
+      "resolver_remediated": 1,
+      "old_rule_missing": 29,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "0a4984abde7fd3b95e40b56e1a350ed56ff5e3e02976e64a80c92197d5a0b87b",
+        "frozen_batch_hash": "0a4984abde7fd3b95e40b56e1a350ed56ff5e3e02976e64a80c92197d5a0b87b"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-17-2026-08-17T03-12-26-839Z",
+        "global_lock_run_id": "princess-incident-p3-P3-17-2026-08-17T03-12-26-839Z",
+        "global_lock_acquired_at": "2026-08-17T03:12:58.718Z",
+        "global_lock_expires_at": "2026-08-17T03:42:58.768957+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-17-2026-08-17T03-12-26-839Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "72908839-32e1-4153-9777-c48ae6e5a3a1",
+      "counts_before": {
+        "princess_active": 1990,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 96
+      },
+      "counts_after": {
+        "princess_active": 2020,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 97
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 42,
+        "proposed_updates": 0
+      },
+      "batch_pass": "72908839-32e1-4153-9777-c48ae6e5a3a1"
+    },
+    {
+      "batch_number": 18,
+      "batch_label": "P3-18",
+      "batch_size": 30,
+      "batch_hash": "d0e59382c51f24032e4018b201fecd39175fc27a131680654902d60fc0d736ed",
+      "resolver_remediated": 0,
+      "old_rule_missing": 30,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "d0e59382c51f24032e4018b201fecd39175fc27a131680654902d60fc0d736ed",
+        "frozen_batch_hash": "d0e59382c51f24032e4018b201fecd39175fc27a131680654902d60fc0d736ed"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-18-2026-08-17T03-14-03-693Z",
+        "global_lock_run_id": "princess-incident-p3-P3-18-2026-08-17T03-14-03-693Z",
+        "global_lock_acquired_at": "2026-08-17T03:14:32.141Z",
+        "global_lock_expires_at": "2026-08-17T03:44:32.13495+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-18-2026-08-17T03-14-03-693Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 30,
+      "inserted": 30,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "98495e0c-debd-4ca0-9586-ce43daf1f6a0",
+      "counts_before": {
+        "princess_active": 2020,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 97
+      },
+      "counts_after": {
+        "princess_active": 2050,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 98
+      },
+      "active_delta": 30,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 12,
+        "proposed_updates": 0
+      },
+      "batch_pass": "98495e0c-debd-4ca0-9586-ce43daf1f6a0"
+    },
+    {
+      "batch_number": 19,
+      "batch_label": "P3-19",
+      "batch_size": 12,
+      "batch_hash": "0cfb9083073a3bd8cf3d5aab270a16194f04c4bec802c8b9d6ee8265ac0f7abe",
+      "resolver_remediated": 2,
+      "old_rule_missing": 10,
+      "live_hash_match": true,
+      "live_validation": {
+        "ok": true,
+        "mismatches": [],
+        "live_batch_hash": "0cfb9083073a3bd8cf3d5aab270a16194f04c4bec802c8b9d6ee8265ac0f7abe",
+        "frozen_batch_hash": "0cfb9083073a3bd8cf3d5aab270a16194f04c4bec802c8b9d6ee8265ac0f7abe"
+      },
+      "collisions": {
+        "official_collisions": 0,
+        "external_collisions": 0,
+        "identity_collisions": 0,
+        "pass": true
+      },
+      "global_lock": {
+        "global_lock_required": true,
+        "global_lock_key": "controlled_production_import:global",
+        "global_lock_acquired": true,
+        "global_lock_owner": "princess-incident-p3-P3-19-2026-08-17T03-15-21-357Z",
+        "global_lock_run_id": "princess-incident-p3-P3-19-2026-08-17T03-15-21-357Z",
+        "global_lock_acquired_at": "2026-08-17T03:15:43.045Z",
+        "global_lock_expires_at": "2026-08-17T03:45:43.12783+00:00",
+        "global_lock_released": true,
+        "global_lock_denial_reason": null,
+        "global_lock_current_holder": "princess-incident-p3-P3-19-2026-08-17T03-15-21-357Z",
+        "global_lock_line_slug": "princess-cruises",
+        "global_lock_operation": "princess_weekly_maintenance"
+      },
+      "attempted": 12,
+      "inserted": 12,
+      "updated": 0,
+      "failed": 0,
+      "rollback_manifest_id": "3e631934-77f5-421b-9852-83b9ca6e6e6e",
+      "counts_before": {
+        "princess_active": 2050,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 98
+      },
+      "counts_after": {
+        "princess_active": 2062,
+        "hal_active": 823,
+        "celebrity_active": 1163,
+        "manifests": 99
+      },
+      "active_delta": 12,
+      "verification": {
+        "ok": true,
+        "issues": []
+      },
+      "immutability": {
+        "ok": true,
+        "changes": []
+      },
+      "idempotency": {
+        "ok": true,
+        "outstanding": 0,
+        "proposed_updates": 0
+      },
+      "batch_pass": "3e631934-77f5-421b-9852-83b9ca6e6e6e"
+    }
+  ],
+  "accepted_baseline": {
+    "eligible_total": 2061,
+    "eligible_hash": "5161b08de272b733756aff82515bbf1a3faa2f112d4d2d2fe12f2b0bd86be817",
+    "recorded": true
+  },
+  "final_reconciliation": {
+    "outstanding": 0,
+    "proposed_updates": 0,
+    "eligible": 2061,
+    "active": 2062
+  },
+  "weekly_readiness": {
+    "review_required": false,
+    "expansion_anomaly": {
+      "passed": true,
+      "failures": [],
+      "warnings": [],
+      "previous_eligible_total": null,
+      "current_eligible_total": 2061,
+      "eligible_delta": null,
+      "eligible_change_pct": null,
+      "expansion_review_threshold_pct": 20,
+      "proposed_inserts": 0,
+      "weekly_write_cap": 30,
+      "requires_controlled_remediation": false
+    },
+    "proposed_inserts": 0,
+    "proposed_updates": 0,
+    "quality_gate_passed": true
+  },
+  "p3_complete": true
+}
