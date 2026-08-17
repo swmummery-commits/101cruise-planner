@@ -285,6 +285,17 @@ assert(
   "genuine embark change stays in review"
 );
 
+/* H6. safe metadata patch includes allowlisted fields only */
+const { buildAzamaraSafeUpdatePatch } = require(path.join(root, "netlify/functions/lib/azamara-discovery-writes"));
+const safePatch = buildAzamaraSafeUpdatePatch(
+  { official_url: "https://old", raw_extract: { title: "Old" }, departure_port: "Tokyo" },
+  { official_url: "https://new", raw_extract: { title: "New", description: "Updated" }, departure_port: "Osaka" }
+);
+assert(safePatch.official_url === "https://new", "safe patch updates official_url");
+assert(safePatch.raw_extract.title === "New", "safe patch updates raw_extract");
+assert(safePatch.raw_extract.azamara_weekly_safe_update === true, "safe patch marks weekly metadata update");
+assert(!("departure_port" in safePatch), "safe patch must not include identity fields");
+
 /* I. actionable source absence blocks weekly writes (Seabourn policy) */
 const blockedSafety = weeklyPolicy.assessAzamaraWeeklyWriteSafety({
   sourceAbsencePolicy: { source_absent_observed: 2, source_absent_actionable: 1 },

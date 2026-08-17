@@ -11,7 +11,82 @@ const {
   isLegacyGenericAzamaraRow,
   candidateChanged
 } = require("./azamara-discovery-adapter");
-const { refineProposedActionForWeekly } = require("./azamara-weekly-update-policy");
+const { refineProposedActionForWeekly, ALLOWED_WEEKLY_UPDATE_FIELDS } = require("./azamara-weekly-update-policy");
+
+const SAFE_METADATA_FIELD_SET = new Set(ALLOWED_WEEKLY_UPDATE_FIELDS);
+
+function buildAzamaraSafeUpdatePatch(existing, candidate, safeFields = ALLOWED_WEEKLY_UPDATE_FIELDS) {
+  const patch = {};
+  for (const field of safeFields) {
+    if (!SAFE_METADATA_FIELD_SET.has(field)) continue;
+    if (field === "official_url") {
+      patch.official_url = candidate.official_url ?? existing.official_url;
+    }
+    if (field === "raw_extract") {
+      patch.raw_extract = {
+        ...(candidate.raw_extract || {}),
+        azamara_weekly_safe_update: true,
+        azamara_last_verified_at: new Date().toISOString()
+      };
+    }
+  }
+  patch.last_seen_at = new Date().toISOString();
+  patch.last_verified_at = new Date().toISOString();
+  return patch;
+}
+
+async function applyAzamaraSafeMetadataUpdate({ supabase, entry, runId, stats }) {
+  const existingId = entry.existing_record_id;
+  if (!existingId) {
+    stats.skipped += 1;
+    return;
+  }
+  const rows = await supabase(
+    `discovered_cruises?id=eq.${encodeURIComponent(existingId)}&cruise_line_id=eq.${encodeURIComponent(entry.candidate.cruise_line_id)}&select=*&limit=1`
+  );
+  const existing = rows?.[0] || null;
+  if (!existing) {
+    stats.failed += 1;
+    stats.write_details.push({
+      official_sailing_id: entry.official_sailing_id,
+      result_action: "failed",
+      error: "existing_record_not_found"
+    });
+    return;
+  }
+  if (String(existing.official_sailing_id || "").toUpperCase() !== String(entry.official_sailing_id || "").toUpperCase()) {
+    stats.failed += 1;
+    stats.write_details.push({
+      official_sailing_id: entry.official_sailing_id,
+      result_action: "failed",
+      error: "official_sailing_id_mismatch"
+    });
+    return;
+  }
+
+  const candidate = {
+    ...entry.candidate,
+    raw_extract: {
+      ...(entry.candidate.raw_extract || {}),
+      azamara_weekly_run_id: runId || null,
+      azamara_weekly_action: entry.proposed_action
+    }
+  };
+  const patch = buildAzamaraSafeUpdatePatch(existing, candidate);
+  const before = snapshotRecordForRollback(existing);
+  await supabase(`discovered_cruises?id=eq.${encodeURIComponent(existing.id)}`, {
+    method: "PATCH",
+    headers: { Prefer: "return=representation" },
+    body: JSON.stringify(patch)
+  });
+  stats.updated += 1;
+  stats.write_details.push({
+    official_sailing_id: entry.official_sailing_id,
+    result_action: "updated",
+    id: existing.id,
+    rollback_snapshot: before
+  });
+}
 
 function computeManifestHash(manifest) {
   return crypto.createHash("sha256").update(JSON.stringify(manifest)).digest("hex").slice(0, 40);
@@ -129,6 +204,10 @@ async function applyAzamaraBatchWritesBody({
       continue;
     }
     try {
+      if (entry.proposed_action === "update_safe_metadata_allowed") {
+        await applyAzamaraSafeMetadataUpdate({ supabase, entry, runId, stats });
+        continue;
+      }
       const candidate = {
         ...entry.candidate,
         raw_extract: {
@@ -140,7 +219,7 @@ async function applyAzamaraBatchWritesBody({
       const out = await upsertCandidateRecord(candidate, writeStats, {
         matchPolicy: "official_sailing_id_only",
         requireGlobalWriteLock: true,
-        allowUpdate: entry.proposed_action === "update_safe_metadata_allowed"
+        allowUpdate: false
       });
       if (out.created) {
         stats.inserted += 1;
@@ -197,6 +276,8 @@ module.exports = {
   buildManifestEntry,
   buildAzamaraWeeklyEntries,
   applyAzamaraBatchWrites,
+  buildAzamaraSafeUpdatePatch,
+  applyAzamaraSafeMetadataUpdate,
   isOfficialAzamaraRecord,
   isLegacyGenericAzamaraRow
 };
