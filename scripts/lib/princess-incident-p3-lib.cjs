@@ -80,9 +80,9 @@ async function loadAllPrincessRows(sb) {
   return rows;
 }
 
-async function runPrincessSimulation(root) {
+async function runPrincessSimulation(root, { adapterRoot = root } = {}) {
   const deps = loadDeps(root);
-  const adapter = require(path.join(root, "netlify/functions/lib/princess-discovery-adapter"));
+  const adapter = require(path.join(adapterRoot, "netlify/functions/lib/princess-discovery-adapter"));
   const rest = deps.createSupabaseRest(root);
   const sb = async (q) => rest.get(q);
   const line = (await sb("ci_cruise_lines?slug=eq.princess-cruises&select=id,name,slug&limit=1"))[0];
@@ -150,7 +150,7 @@ async function buildMasterPlanCandidates(ctx, productionKeys) {
   const { line, adapter } = ctx;
   const summary = summariseSimulation({ ...ctx, root: ctx.root }, productionKeys);
   const oldWorktree = buildOldEligibleSet(ctx.root);
-  const oldCtx = await runPrincessSimulation(oldWorktree);
+  const oldCtx = await runPrincessSimulation(ctx.root, { adapterRoot: oldWorktree });
   const oldSummary = summariseSimulation({ ...oldCtx, root: ctx.root }, productionKeys);
   const oldEligible = new Set(oldSummary.eligibleIds);
 
