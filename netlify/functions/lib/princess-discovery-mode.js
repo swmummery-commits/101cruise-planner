@@ -10,7 +10,8 @@ const VALID_MODES = new Set([
   "production_read_only",
   "production_write",
   "weekly_maintenance",
-  "incident_p2_controlled_batch"
+  "incident_p2_controlled_batch",
+  "incident_p3_controlled_remediation"
 ]);
 
 function resolvePrincessDiscoveryMode(requestedMode) {
@@ -39,7 +40,7 @@ function resolvePrincessDiscoveryMode(requestedMode) {
     return { mode, requested_mode: raw, writes_allowed: true, reason: null };
   }
 
-  if (mode === "production_write" || mode === "incident_p2_controlled_batch") {
+  if (mode === "production_write" || mode === "incident_p2_controlled_batch" || mode === "incident_p3_controlled_remediation") {
     if (!PRINCESS_DISCOVERY_WRITE_ENABLED) {
       return {
         mode,

@@ -20,6 +20,9 @@ const REVIEW_REQUIRED_REASONS = new Set([
 function extractPreviousEligibleTotal(previousRun) {
   if (!previousRun) return null;
   const stats = previousRun.stats || previousRun;
+  if (stats.accepted_inventory_baseline === true && stats.accepted_eligible_total != null) {
+    return Number(stats.accepted_eligible_total);
+  }
   return stats.eligible_total ?? stats.official_eligible_total ?? null;
 }
 

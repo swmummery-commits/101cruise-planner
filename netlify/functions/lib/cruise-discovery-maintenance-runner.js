@@ -183,6 +183,17 @@ async function findPreviousSuccessfulMaintenanceRun(supabase, cruiseLineId, runT
   return (runs || []).find((r) => r.stats?.run_type === runType && r.stats?.trigger_type === "scheduled") || null;
 }
 
+async function findPrincessAcceptedEligibleBaseline(supabase, cruiseLineId, runType) {
+  const runs = await supabase(
+    `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.completed&select=id,stats,finished_at,created_at&order=finished_at.desc&limit=100`
+  );
+  const accepted = (runs || []).find(
+    (r) => r.stats?.run_type === runType && r.stats?.accepted_inventory_baseline === true
+  );
+  if (accepted) return accepted;
+  return findPreviousSuccessfulMaintenanceRun(supabase, cruiseLineId, runType);
+}
+
 async function findPreviousSeabournMaintenanceRun(supabase, cruiseLineId, runType) {
   const runs = await supabase(
     `cruise_discovery_runs?cruise_line_id=eq.${encodeURIComponent(cruiseLineId)}&scope=eq.cruise_line&status=eq.completed&select=id,stats,finished_at,created_at&order=finished_at.desc&limit=50`
@@ -903,7 +914,7 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     );
     const eligibleKeys = new Set(products.map((p) => princessOfficialProductKey(p.raw)).filter(Boolean));
     const metrics = computePrincessResolutionRates(princessPublic);
-    const previousRun = await findPreviousSuccessfulMaintenanceRun(sb, line.id, runType);
+    const previousRun = await findPrincessAcceptedEligibleBaseline(sb, line.id, runType);
 
     const manifest = await buildPrincessBatchManifest({
       products: princessPublic,
@@ -945,6 +956,10 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     const isIncidentP2Write =
       (context.writeMode || context.write_mode || "") === "incident_p2_controlled_batch" ||
       context.incidentP2ControlledBatch === true;
+    const isIncidentP3Write =
+      (context.writeMode || context.write_mode || "") === "incident_p3_controlled_remediation" ||
+      context.incidentP3ControlledRemediation === true;
+    const isControlledRemediationWrite = isIncidentP2Write || isIncidentP3Write;
 
     const qualityGate = evaluatePrincessWeeklyQualityGate({
       metrics,
@@ -954,7 +969,7 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       simulation,
       summary: princessAccountingInputs,
       performWrites,
-      allowControlledRemediationApply: isIncidentP2Write
+      allowControlledRemediationApply: isControlledRemediationWrite
     });
 
     const sourceAccounting = extractPrincessSourceAccounting(simulation, princessAccountingInputs);
@@ -1089,7 +1104,9 @@ async function runPrincessWeeklyMaintenance(context = {}) {
     const frozenIds = new Set(
       (context.frozenOfficialSailingIds || context.frozen_official_sailing_ids || []).map(String)
     );
-    const insertOnly = Boolean(context.insertOnly || context.insert_only || isIncidentP2Write);
+    const insertOnly = Boolean(
+      context.insertOnly || context.insert_only || isControlledRemediationWrite
+    );
 
     let writeProducts = princessPublic
       .filter((row) => {
@@ -1131,6 +1148,12 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       lineSlug,
       operation: "princess_weekly_maintenance",
       underLockRecheck: async () => {
+        if (typeof context.frozenBatchRecheck === "function") {
+          const frozenRecheck = await context.frozenBatchRecheck({ supabase: sb, line, manifest, writeProducts });
+          if (!frozenRecheck.ok) {
+            return { ok: false, reason: frozenRecheck.reason || "under_lock_frozen_payload_mismatch", ...frozenRecheck };
+          }
+        }
         const activeNow = await loadActiveProductionTotal(sb, line.id, lineSlug);
         if (activeNow !== summary.active_production_total) {
           return { ok: false, reason: "under_lock_active_count_changed" };
@@ -1146,6 +1169,7 @@ async function runPrincessWeeklyMaintenance(context = {}) {
           supabase: sb,
           destinations,
           performWrites: true,
+          stopOnFirstFailure: isControlledRemediationWrite,
           maintenanceTrace: {
             run_id: runId,
             run_record_id: runRecordId,

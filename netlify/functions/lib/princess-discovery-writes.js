@@ -307,6 +307,7 @@ async function applyPrincessBatchWritesBody({
         proposed_action: action,
         error: validationError.message || String(validationError)
       });
+      if (params.stopOnFirstFailure) break;
       continue;
     }
 
@@ -366,6 +367,9 @@ async function applyPrincessBatchWritesBody({
         proposed_action: action,
         error: msg
       });
+      if (params.stopOnFirstFailure) {
+        break;
+      }
     }
   }
 
