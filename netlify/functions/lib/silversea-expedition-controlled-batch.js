@@ -22,9 +22,13 @@ const { SEMANTIC_CONFIDENCE, EXPEDITION_SEMANTIC } = require("./silversea-expedi
 
 const EXPEDITION_FIRST_BATCH_MODE = "silversea_expedition_e3_first_250";
 const EXPEDITION_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-EXPEDITION-FIRST-CONTROLLED-BATCH";
+const EXPEDITION_SECOND_BATCH_MODE = "silversea_expedition_e5_next_batch";
+const EXPEDITION_E5_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-EXPEDITION-SECOND-CONTROLLED-BATCH";
 const EXPEDITION_BATCH_SIZE = 250;
 const E3_COMPLETE_POOL_FIXTURE = "scripts/fixtures/silversea/expedition-e3-complete-pool.json";
 const E3_FIRST_250_FIXTURE = "scripts/fixtures/silversea/expedition-e3-first-250.json";
+const E5_COMPLETE_REMAINDER_FIXTURE = "scripts/fixtures/silversea/expedition-e5-complete-remainder.json";
+const E5_NEXT_BATCH_FIXTURE = "scripts/fixtures/silversea/expedition-e5-next-batch.json";
 
 function isExpeditionProduct(raw) {
   return String(raw?.cruise_type || "").trim().toLowerCase() === "expedition";
@@ -77,6 +81,32 @@ function selectExpeditionCompletePool(expRows, { today, existingByOfficialId = n
     eligible_ids: ids,
     unique_count: unique.size,
     collision_free: unique.size === ids.length
+  };
+}
+
+function selectNewCompleteExpeditionPool(expRows, { today, existingByOfficialId = new Map() } = {}) {
+  return selectExpeditionCompletePool(expRows, { today, existingByOfficialId });
+}
+
+function selectNextExpeditionBatch(newCompletePool, limit = MAX_CONTROLLED_BATCH) {
+  const pool = newCompletePool?.eligible || newCompletePool || [];
+  const batchLimit = Math.min(limit, pool.length);
+  return selectFirstExpeditionBatch(pool, batchLimit);
+}
+
+function reconcileRemainderSets(previousIds, currentIds) {
+  const prev = new Set((previousIds || []).map((id) => String(id).toUpperCase()));
+  const curr = new Set((currentIds || []).map((id) => String(id).toUpperCase()));
+  const stillPresent = [...prev].filter((id) => curr.has(id));
+  const removed = [...prev].filter((id) => !curr.has(id));
+  const newlyAdded = [...curr].filter((id) => !prev.has(id));
+  return {
+    previous_count: prev.size,
+    current_count: curr.size,
+    still_present: stillPresent,
+    removed,
+    newly_added: newlyAdded,
+    delta: curr.size - prev.size
   };
 }
 
@@ -340,13 +370,20 @@ function buildE3RollbackTemplate({ fixturePath, officialIds, gitSha }) {
 module.exports = {
   EXPEDITION_FIRST_BATCH_MODE,
   EXPEDITION_APPLY_CONFIRMATION_TOKEN,
+  EXPEDITION_SECOND_BATCH_MODE,
+  EXPEDITION_E5_APPLY_CONFIRMATION_TOKEN,
   EXPEDITION_BATCH_SIZE,
   E3_COMPLETE_POOL_FIXTURE,
   E3_FIRST_250_FIXTURE,
+  E5_COMPLETE_REMAINDER_FIXTURE,
+  E5_NEXT_BATCH_FIXTURE,
   isExpeditionProductionEligible,
   buildExpeditionExclusiveFunnel,
   selectExpeditionCompletePool,
+  selectNewCompleteExpeditionPool,
   selectFirstExpeditionBatch,
+  selectNextExpeditionBatch,
+  reconcileRemainderSets,
   loadFrozenExpeditionIds,
   selectFrozenExpeditionBatch,
   expeditionCandidateSortKey,

@@ -326,7 +326,7 @@ async function applySilverseaBatchWrites(params = {}) {
   }, () => applySilverseaBatchWritesBody(params));
 }
 
-function buildExpeditionUpsertCandidate(normalised, cruiseLine, today = new Date().toISOString().slice(0, 10)) {
+function buildExpeditionUpsertCandidate(normalised, cruiseLine, today = new Date().toISOString().slice(0, 10), controlledBatch = null) {
   if (classifyExpeditionExclusiveBucket(normalised, today) !== "expedition_e2_complete") return null;
   if (!isEligibleSilverseaCruise(normalised.product_type)) return null;
 
@@ -369,7 +369,8 @@ function buildExpeditionUpsertCandidate(normalised, cruiseLine, today = new Date
       ship_match_method: normalised.ship_resolution?.method || null,
       duration_matches_dates: normalised.raw?.duration_matches_dates === true,
       expedition_endpoint_embark: normalised.departure_port_resolution || null,
-      expedition_endpoint_disembark: normalised.arrival_port_resolution || null
+      expedition_endpoint_disembark: normalised.arrival_port_resolution || null,
+      controlled_batch: controlledBatch || null
     }
   };
 }
@@ -479,7 +480,9 @@ async function applyExpeditionBatchWritesBody({
   today,
   existingByOfficialId,
   performWrites = true,
-  maxWrites = 250
+  maxWrites = 250,
+  controlledBatch = null,
+  onInsertSuccess = null
 }) {
   const stats = {
     attempted: 0,
@@ -524,7 +527,7 @@ async function applyExpeditionBatchWritesBody({
       continue;
     }
 
-    const candidate = buildExpeditionUpsertCandidate(normalised, cruiseLine, today);
+    const candidate = buildExpeditionUpsertCandidate(normalised, cruiseLine, today, controlledBatch);
     if (!candidate) {
       stats.invalid_skips += 1;
       stats.write_details.push({
@@ -577,6 +580,14 @@ async function applyExpeditionBatchWritesBody({
         created: result.created === true,
         rollback_before: null
       });
+
+      if (result.created && typeof onInsertSuccess === "function") {
+        await onInsertSuccess({
+          discovered_cruise_id: result.row?.id || null,
+          official_sailing_id: productKey,
+          row: result.row || null
+        });
+      }
 
       if (result.row?.id && result.row?.official_sailing_id) {
         indexes.byOfficialId.set(String(result.row.official_sailing_id).toUpperCase(), result.row);
