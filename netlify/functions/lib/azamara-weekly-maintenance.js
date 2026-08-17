@@ -63,6 +63,7 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
 
   if ((simulation.quality_gate_metrics?.duplicate_official_sailing_ids || 0) > 0) {
     return {
+      ok: false,
       success: false,
       blocked: true,
       reason: "duplicate_official_sailing_ids_in_source",
@@ -85,6 +86,7 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
   const manifestValidation = validateAzamaraWeeklyManifest(manifest);
   if (!manifestValidation.passed) {
     return {
+      ok: false,
       success: false,
       blocked: true,
       reason: "manifest_validation_failed",
@@ -103,6 +105,7 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
     });
     if (!writeSafety.ok) {
       return {
+        ok: false,
         success: false,
         blocked: true,
         reason: "weekly_write_safety_failed",
@@ -139,6 +142,7 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
 
     if (applyWrap.blocked) {
       return {
+        ok: false,
         success: false,
         blocked: true,
         reason: applyWrap.reason || "global_production_import_lock_unavailable",
@@ -180,6 +184,7 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
   };
 
   return {
+    ok: summary.success,
     success: summary.success,
     dry_run: !performWrites,
     run_id: runId,
