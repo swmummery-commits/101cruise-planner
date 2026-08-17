@@ -40,7 +40,9 @@ const {
   portsArrayEqual,
   normalizeStoredPorts,
   snapshotComparableFields,
-  compareNonWhitelistSnapshots
+  compareNonWhitelistSnapshots,
+  snapshotProtectionRows,
+  verifyProtectionSnapshots
 } = require(path.join(root, "netlify/functions/lib/silversea-expedition-itinerary-ports-backfill"));
 const { verifyStoredExpeditionRow } = require(path.join(
   root,
@@ -72,7 +74,8 @@ const {
   buildApplyReportLifecycle,
   updateReportLifecycle,
   ControlledProductionRunStore,
-  executeHardenedControlledProductionApply
+  executeHardenedControlledProductionApply,
+  buildAuthoritativeVerificationResult
 } = require(path.join(root, "netlify/functions/lib/cruise-discovery-controlled-production-run"));
 const { DEFAULT_GLOBAL_LEASE_SECONDS } = require(path.join(
   root,
@@ -136,43 +139,15 @@ export function assertPostWriteVerifierImportsResolved(deps = {}) {
     snapshotComparableFields: typeof (deps.snapshotComparableFields || snapshotComparableFields) === "function",
     verifyStoredExpeditionRow: typeof (deps.verifyStoredExpeditionRow || verifyStoredExpeditionRow) === "function",
     buildExpectedItineraryPorts: typeof (deps.buildExpectedItineraryPorts || buildExpectedItineraryPorts) === "function",
+    verifyProtectionSnapshots: typeof (deps.verifyProtectionSnapshots || verifyProtectionSnapshots) === "function",
+    buildAuthoritativeVerificationResult:
+      typeof (deps.buildAuthoritativeVerificationResult || buildAuthoritativeVerificationResult) === "function",
     executeHardenedControlledProductionApply:
       typeof (deps.executeHardenedControlledProductionApply || executeHardenedControlledProductionApply) === "function"
   };
   const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([k]) => k);
   if (failed.length) throw new Error(`unresolved_post_write_verifier_imports:${failed.join(",")}`);
   return { ok: true, checks };
-}
-
-function snapshotProtectionRows(rows, targetUuids) {
-  const out = new Map();
-  for (const row of rows) {
-    if (targetUuids.has(row.id)) continue;
-    out.set(row.id, {
-      itinerary_ports: normalizeStoredPorts(row.itinerary_ports),
-      comparable: snapshotComparableFields(row)
-    });
-  }
-  return out;
-}
-
-function verifyProtectionSnapshots(beforeMap, afterRows, targetUuids) {
-  const issues = [];
-  for (const row of afterRows) {
-    if (targetUuids.has(row.id)) continue;
-    const before = beforeMap.get(row.id);
-    if (!before) continue;
-    if (!portsArrayEqual(before.itinerary_ports, row.itinerary_ports)) {
-      issues.push({ id: row.id, field: "itinerary_ports" });
-    }
-    const afterComparable = snapshotComparableFields(row);
-    for (const field of Object.keys(before.comparable)) {
-      if (JSON.stringify(before.comparable[field]) !== JSON.stringify(afterComparable[field])) {
-        issues.push({ id: row.id, field });
-      }
-    }
-  }
-  return { ok: issues.length === 0, issues };
 }
 
 async function auditExpeditionMismatches(expeditionRows, sourceById, line, today) {
@@ -568,13 +543,14 @@ export async function runSilverseaClassicM0d1(options = {}) {
 
           timings.verification_ended_at = new Date().toISOString();
 
-          return {
-            ok: allOk,
-            ...verification,
+          return buildAuthoritativeVerificationResult({
+            aggregateOk: allOk,
+            verification,
             protection,
             classic_audit: classicAudit,
-            performance
-          };
+            performance,
+            lock_held_through_verification: true
+          });
         },
         finalizeUnderLock: async ({ verificationResult, verificationError, writeResult: wr }) => {
           const finalStatus =

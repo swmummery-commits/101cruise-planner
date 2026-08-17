@@ -53,7 +53,9 @@ const {
   dryRunItineraryPortsBackfill,
   buildM0bRollbackManifest,
   applyItineraryPortsRepairBatch,
-  verifyRepairBatchResults
+  verifyRepairBatchResults,
+  snapshotProtectionRows,
+  verifyProtectionSnapshots
 } = require(path.join(root, "netlify/functions/lib/silversea-expedition-itinerary-ports-backfill"));
 const { buildDiscoveredCruiseUpsertPayload } = require(path.join(
   root,
@@ -68,7 +70,8 @@ const {
   buildApplyReportLifecycle,
   updateReportLifecycle,
   ControlledProductionRunStore,
-  executeHardenedControlledProductionApply
+  executeHardenedControlledProductionApply,
+  buildAuthoritativeVerificationResult
 } = require(path.join(root, "netlify/functions/lib/cruise-discovery-controlled-production-run"));
 const { DEFAULT_GLOBAL_LEASE_SECONDS } = require(path.join(
   root,
@@ -150,37 +153,6 @@ function verifyInsertPathFix() {
 async function headLineCount(lineId) {
   const { count } = await exactCountSupabase(root, "discovered_cruises", `cruise_line_id=eq.${encodeURIComponent(lineId)}`);
   return count;
-}
-
-function snapshotProtectionRows(rows, targetUuids) {
-  const out = new Map();
-  for (const row of rows) {
-    if (targetUuids.has(row.id)) continue;
-    out.set(row.id, {
-      itinerary_ports: normalizeStoredPorts(row.itinerary_ports),
-      comparable: snapshotComparableFields(row)
-    });
-  }
-  return out;
-}
-
-function verifyProtectionSnapshots(beforeMap, afterRows, targetUuids) {
-  const issues = [];
-  for (const row of afterRows) {
-    if (targetUuids.has(row.id)) continue;
-    const before = beforeMap.get(row.id);
-    if (!before) continue;
-    if (!portsArrayEqual(before.itinerary_ports, row.itinerary_ports)) {
-      issues.push({ id: row.id, field: "itinerary_ports" });
-    }
-    const afterComparable = snapshotComparableFields(row);
-    for (const field of Object.keys(before.comparable)) {
-      if (JSON.stringify(before.comparable[field]) !== JSON.stringify(afterComparable[field])) {
-        issues.push({ id: row.id, field });
-      }
-    }
-  }
-  return { ok: issues.length === 0, issues };
 }
 
 async function auditAllExpeditionItineraryPorts(expeditionRows, sourceById, line, today) {
@@ -554,13 +526,13 @@ export async function runSilverseaExpeditionM0b(options = {}) {
             e6Verify.ok &&
             e6Verify.verified_count === 60;
 
-          return {
-            ok: allOk,
-            ...verification,
+          return buildAuthoritativeVerificationResult({
+            aggregateOk: allOk,
+            verification,
             protection,
             full_310_audit: full310Audit,
             e6_data_remediated: e6Verify.ok && e6Verify.verified_count === 60
-          };
+          });
         },
         finalizeUnderLock: async ({ verificationResult, verificationError, writeResult: wr }) => {
           const finalStatus =

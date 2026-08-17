@@ -17,6 +17,7 @@ const {
   buildControlledBatchMarker,
   appendInsertedRecord,
   ControlledProductionRunStore,
+  buildAuthoritativeVerificationResult,
   simulateCrashRecoveryScenarios,
   atomicWriteJson
 } = require(path.join(root, "netlify/functions/lib/cruise-discovery-controlled-production-run"));
@@ -68,6 +69,19 @@ test("appendInsertedRecord tracks UUIDs durably", () => {
   let m = buildPreWriteRollbackManifest({ runId: "r", officialSailingIds: ["A"], expectedInserts: 1 });
   m = appendInsertedRecord(m, { discoveredCruiseId: "id-1", officialSailingId: "A" });
   if (m.inserted_record_ids[0] !== "id-1") throw new Error("uuid");
+});
+
+test("authoritative verification result keeps aggregate ok last", () => {
+  const masked = buildAuthoritativeVerificationResult({
+    aggregateOk: false,
+    verification: { ok: true, verified_count: 1, failed_count: 0 }
+  });
+  if (masked.ok !== false) throw new Error("aggregate ok must not be overwritten");
+  const pass = buildAuthoritativeVerificationResult({
+    aggregateOk: true,
+    verification: { ok: false, verified_count: 0, failed_count: 1 }
+  });
+  if (pass.ok !== true) throw new Error("aggregate ok must win when true");
 });
 
 test("crash recovery by manifest and run_id match", () => {

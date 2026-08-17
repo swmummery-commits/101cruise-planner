@@ -249,6 +249,61 @@ function verifyFrozenBeforeMatch(prodRow, fixtureRow) {
   return { ok: issues.length === 0, issues };
 }
 
+function stableJsonStringify(value) {
+  if (value === undefined) return "undefined";
+  if (value === null || typeof value !== "object") return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((entry) => stableJsonStringify(entry)).join(",")}]`;
+  }
+  const keys = Object.keys(value).sort();
+  return `{${keys.map((key) => `${JSON.stringify(key)}:${stableJsonStringify(value[key])}`).join(",")}}`;
+}
+
+function semanticJsonEqual(a, b) {
+  return stableJsonStringify(a) === stableJsonStringify(b);
+}
+
+function hashRawExtractSemantic(rawExtract) {
+  const crypto = require("crypto");
+  return crypto.createHash("sha256").update(stableJsonStringify(rawExtract ?? null)).digest("hex");
+}
+
+function compareComparableFieldValues(field, beforeVal, afterVal) {
+  if (field === "raw_extract") {
+    return semanticJsonEqual(beforeVal, afterVal);
+  }
+  return JSON.stringify(beforeVal) === JSON.stringify(afterVal);
+}
+
+function diffJsonPaths(before, after, prefix = "") {
+  if (compareComparableFieldValues("raw_extract", before, after)) return [];
+  if (before === after) return [];
+  if (before === null || after === null || typeof before !== typeof after || typeof before !== "object") {
+    return [{ path: prefix || "$", before, after }];
+  }
+  if (Array.isArray(before) && Array.isArray(after)) {
+    const paths = [];
+    if (before.length !== after.length) {
+      paths.push({ path: `${prefix}.length`, before: before.length, after: after.length });
+    }
+    const len = Math.max(before.length, after.length);
+    for (let i = 0; i < len; i += 1) {
+      paths.push(...diffJsonPaths(before[i], after[i], `${prefix}[${i}]`));
+    }
+    return paths;
+  }
+  if (Array.isArray(before) || Array.isArray(after)) {
+    return [{ path: prefix || "$", before, after }];
+  }
+  const keys = new Set([...Object.keys(before || {}), ...Object.keys(after || {})]);
+  const paths = [];
+  for (const key of [...keys].sort()) {
+    const nextPrefix = prefix ? `${prefix}.${key}` : key;
+    paths.push(...diffJsonPaths(before?.[key], after?.[key], nextPrefix));
+  }
+  return paths;
+}
+
 function snapshotComparableFields(row) {
   const out = {};
   for (const field of NON_WHITELIST_COMPARE_FIELDS) {
@@ -258,10 +313,45 @@ function snapshotComparableFields(row) {
   return out;
 }
 
+function snapshotProtectionRow(row) {
+  return {
+    itinerary_ports: normalizeStoredPorts(row?.itinerary_ports),
+    comparable: snapshotComparableFields(row)
+  };
+}
+
+function snapshotProtectionRows(rows, targetUuids = new Set()) {
+  const out = new Map();
+  for (const row of rows || []) {
+    if (targetUuids.has(row.id)) continue;
+    out.set(row.id, snapshotProtectionRow(row));
+  }
+  return out;
+}
+
+function verifyProtectionSnapshots(beforeMap, afterRows, targetUuids = new Set()) {
+  const issues = [];
+  for (const row of afterRows || []) {
+    if (targetUuids.has(row.id)) continue;
+    const before = beforeMap.get(row.id);
+    if (!before) continue;
+    if (!portsArrayEqual(before.itinerary_ports, row.itinerary_ports)) {
+      issues.push({ id: row.id, field: "itinerary_ports" });
+    }
+    const afterComparable = snapshotComparableFields(row);
+    for (const field of Object.keys(before.comparable)) {
+      if (!compareComparableFieldValues(field, before.comparable[field], afterComparable[field])) {
+        issues.push({ id: row.id, field });
+      }
+    }
+  }
+  return { ok: issues.length === 0, issues };
+}
+
 function compareNonWhitelistSnapshots(beforeSnap, afterSnap) {
   const changed = [];
   for (const field of [...NON_WHITELIST_COMPARE_FIELDS, "raw_extract"]) {
-    if (JSON.stringify(beforeSnap[field]) !== JSON.stringify(afterSnap[field])) {
+    if (!compareComparableFieldValues(field, beforeSnap?.[field], afterSnap?.[field])) {
       changed.push(field);
     }
   }
@@ -483,7 +573,15 @@ module.exports = {
   verifyItineraryPortsRepairRow,
   validateRepairFixture,
   verifyFrozenBeforeMatch,
+  stableJsonStringify,
+  semanticJsonEqual,
+  hashRawExtractSemantic,
+  compareComparableFieldValues,
+  diffJsonPaths,
   snapshotComparableFields,
+  snapshotProtectionRow,
+  snapshotProtectionRows,
+  verifyProtectionSnapshots,
   compareNonWhitelistSnapshots,
   buildM0bRollbackManifest,
   applyItineraryPortsRepairBatch,

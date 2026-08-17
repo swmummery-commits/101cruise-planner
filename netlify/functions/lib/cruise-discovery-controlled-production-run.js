@@ -290,6 +290,19 @@ function simulateCrashRecoveryScenarios(manifest, rows) {
   };
 }
 
+/**
+ * Aggregate verification result where `ok` must reflect all protection gates.
+ * Spreads nested verifier payloads first, then sets authoritative `ok` last.
+ */
+function buildAuthoritativeVerificationResult({ aggregateOk, verification = {}, ...rest }) {
+  const { ok: _ignoredVerifierOk, ...verificationBody } = verification || {};
+  return {
+    ...verificationBody,
+    ...rest,
+    ok: aggregateOk === true
+  };
+}
+
 module.exports = {
   RUN_STATUS,
   atomicWriteJson,
@@ -300,6 +313,7 @@ module.exports = {
   updateReportLifecycle,
   ControlledProductionRunStore,
   executeHardenedControlledProductionApply,
+  buildAuthoritativeVerificationResult,
   recoverInsertedRowsByRunId,
   recoverInsertedRowsFromManifest,
   simulateCrashRecoveryScenarios

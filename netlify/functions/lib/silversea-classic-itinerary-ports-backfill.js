@@ -26,9 +26,12 @@ const {
 
 const M0C_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0c-itinerary-ports-backfill.json";
 const M0D1_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0d1-itinerary-ports-backfill.json";
+const M0D2_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0d2-itinerary-ports-backfill.json";
 const M0D_BATCH_SIZES = Object.freeze([200, 200, 199]);
 const M0D1_OPERATION = "silversea_classic_m0d1_itinerary_ports_backfill";
 const M0D1_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D1-ITINERARY-PORTS-BACKFILL";
+const M0D2_OPERATION = "silversea_classic_m0d2_itinerary_ports_backfill";
+const M0D2_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D2-ITINERARY-PORTS-BACKFILL";
 const M0D_OPERATION = "silversea_classic_m0d_itinerary_ports_backfill";
 const M0D_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D-ITINERARY-PORTS-BACKFILL";
 
@@ -425,31 +428,53 @@ function hashFixtureContent(content) {
   return crypto.createHash("sha256").update(content).digest("hex");
 }
 
-function buildM0d1BatchFixture(params) {
-  const partition = params.partition;
-  const rows = (partition?.batches?.m0d1?.rows || []).map((row, i) => ({
+function buildM0dBatchFixture(params) {
+  const batchKey = params.batchKey;
+  const batch = params.partition?.batches?.[batchKey];
+  if (!batch) throw new Error(`missing_partition_batch:${batchKey}`);
+  const rows = (batch.rows || []).map((row, i) => ({
     ...row,
     sequence: i + 1,
     proposed_action: "UPDATE itinerary_ports ONLY"
   }));
   return {
-    phase: "M0D1",
-    mode: M0D1_BACKFILL_FIXTURE,
+    phase: params.phase || batchKey.toUpperCase(),
+    mode: params.fixturePath || M0D1_BACKFILL_FIXTURE,
     generated_at: params.generatedAt || new Date().toISOString(),
     git_sha: params.gitSha || null,
     parent_fixture_path: params.parentFixturePath || M0C_BACKFILL_FIXTURE,
     parent_fixture_sha256: params.parentFixtureSha256 || null,
-    batch_index: 1,
+    batch_index: params.batchIndex ?? batch.batch_index,
     batch_count: 3,
-    batch_size: 200,
+    batch_size: batch.count,
     total_repair_population: 599,
-    partition_policy: partition?.partition_policy || "official_sailing_id ASC",
+    partition_policy: params.partition?.partition_policy || "official_sailing_id ASC",
     frozen_count: rows.length,
     frozen_unique_uuid_count: new Set(rows.map((r) => r.production_uuid)).size,
     frozen_unique_official_id_count: new Set(rows.map((r) => r.official_sailing_id)).size,
     update_whitelist: UPDATE_WHITELIST.slice(),
     rows
   };
+}
+
+function buildM0d1BatchFixture(params) {
+  return buildM0dBatchFixture({
+    ...params,
+    batchKey: "m0d1",
+    phase: "M0D1",
+    batchIndex: 1,
+    fixturePath: M0D1_BACKFILL_FIXTURE
+  });
+}
+
+function buildM0d2BatchFixture(params) {
+  return buildM0dBatchFixture({
+    ...params,
+    batchKey: "m0d2",
+    phase: "M0D2",
+    batchIndex: 2,
+    fixturePath: M0D2_BACKFILL_FIXTURE
+  });
 }
 
 function computeClassicSourceCutoffCounts(simulation, today) {
@@ -543,9 +568,12 @@ function auditClassicItineraryPortsPopulation(classicRows, sourceById, line) {
 module.exports = {
   M0C_BACKFILL_FIXTURE,
   M0D1_BACKFILL_FIXTURE,
+  M0D2_BACKFILL_FIXTURE,
   M0D_BATCH_SIZES,
   M0D1_OPERATION,
   M0D1_APPLY_CONFIRMATION_TOKEN,
+  M0D2_OPERATION,
+  M0D2_APPLY_CONFIRMATION_TOKEN,
   M0D_OPERATION,
   M0D_APPLY_CONFIRMATION_TOKEN,
   CLASSIC_AUDIT_CATEGORY,
@@ -578,7 +606,9 @@ module.exports = {
   partitionMasterClassicFixture,
   validateClassicPartition,
   hashFixtureContent,
+  buildM0dBatchFixture,
   buildM0d1BatchFixture,
+  buildM0d2BatchFixture,
   computeClassicSourceCutoffCounts,
   portsArrayEqual,
   normalizeStoredPorts,
