@@ -94,7 +94,7 @@ async function buildAzamaraWeeklyEntries({ products, cruiseLine, indexes }) {
   return entries;
 }
 
-async function applyAzamaraBatchWrites({
+async function applyAzamaraBatchWritesBody({
   manifest,
   cruiseLine,
   maxWrites = 50,
@@ -129,7 +129,6 @@ async function applyAzamaraBatchWrites({
       continue;
     }
     try {
-      ensureGlobalCruiseWriteLockForMutation({ lineSlug: "azamara", operation: "azamara_weekly_maintenance" });
       const candidate = {
         ...entry.candidate,
         raw_extract: {
@@ -175,6 +174,20 @@ async function applyAzamaraBatchWrites({
   }
 
   return { stats, writeStats };
+}
+
+async function applyAzamaraBatchWrites(params = {}) {
+  if (params.performWrites === false) return applyAzamaraBatchWritesBody(params);
+  return ensureGlobalCruiseWriteLockForMutation(
+    params.supabase,
+    {
+      ownerId: params.runId,
+      runId: params.runId,
+      lineSlug: params.cruiseLine?.slug || "azamara",
+      operation: "azamara_weekly_maintenance"
+    },
+    () => applyAzamaraBatchWritesBody(params)
+  );
 }
 
 module.exports = {
