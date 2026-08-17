@@ -75,6 +75,7 @@
     "silversea:expedition-e5-preparation": "node scripts/run-silversea-expedition-e5-preparation.mjs",
     "silversea:expedition-e3-preparation": "node scripts/run-silversea-expedition-e3-preparation.mjs",
     "silversea:expedition-e4-apply": "node scripts/run-silversea-expedition-e4-apply.mjs",
+    "silversea:expedition-e6-apply": "node scripts/run-silversea-expedition-e6-apply.mjs",
     "silversea:expedition-e1-analysis": "node scripts/run-silversea-expedition-e1-analysis.mjs --write-fixtures",
     "silversea:expedition-e2-simulation": "node scripts/run-silversea-expedition-e2-simulation.mjs",
     "silversea:expedition-e2a-analysis": "node scripts/run-silversea-expedition-e2a-analysis.mjs",
