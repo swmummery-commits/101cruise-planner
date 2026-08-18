@@ -61,6 +61,10 @@ const {
   M0D3_APPLY_CONFIRMATION_TOKEN,
   UPDATE_WHITELIST,
   isClassicProductionRow,
+  isClassicStoredOfficialRow,
+  isExpeditionStoredOfficialRow,
+  classifySilverseaOfficialInventory,
+  validateClassicMasterIdentitiesPresent,
   buildExpectedClassicItineraryPorts,
   validateClassicRepairFixture,
   verifyClassicFrozenBeforeMatch,
@@ -266,14 +270,21 @@ export async function runSilverseaClassicM0d3(options = {}) {
 
   const indexed = await indexExistingSilverseaRecords(sb, line.id);
   const allRows = indexed.rows;
+  const inventory = classifySilverseaOfficialInventory(allRows);
   const classicRows = allRows.filter(isClassicProductionRow);
+  const classicStoredOfficial = allRows.filter(isClassicStoredOfficialRow);
   const expeditionRows = allRows.filter(
     (r) => r.status === "active" && r.official_sailing_id && isExpeditionOfficialId(r.official_sailing_id)
   );
+  const expeditionStoredOfficial = allRows.filter(isExpeditionStoredOfficialRow);
   const legacyRows = allRows.filter((r) => !r.official_sailing_id);
 
-  if (classicRows.length !== 599) {
-    throw new Error(`classic_population_changed:${classicRows.length} — STOP WITH ZERO WRITES`);
+  const masterIdentity = validateClassicMasterIdentitiesPresent(allRows, masterFixture.rows);
+  if (!masterIdentity.ok || masterIdentity.present !== 599) {
+    throw new Error(`classic_master_identities_missing:${masterIdentity.missing?.slice(0, 3).join(",")} — STOP WITH ZERO WRITES`);
+  }
+  if (!inventory.reconciled) {
+    throw new Error("official_vs_active_inventory_unreconciled — STOP WITH ZERO WRITES");
   }
 
   const destinations = adapter.catalogueDestinations(
@@ -369,9 +380,13 @@ export async function runSilverseaClassicM0d3(options = {}) {
 
   const countsBefore = {
     silversea_total: await headLineCount(line.id),
-    classic: classicRows.length,
-    expedition: expeditionRows.length,
-    legacy: legacyRows.length
+    inventory,
+    classic_active: inventory.classic_active_official,
+    classic_stored_official: inventory.classic_stored_official_total,
+    expedition_active: inventory.expedition_active_official,
+    expedition_stored_official: inventory.expedition_stored_official_total,
+    legacy: legacyRows.length,
+    master_identities_present: masterIdentity.present
   };
 
   const m0d1Snapshot = snapshotProtectionRows(classicRows.filter((r) => m0d1Uuids.has(r.id)), new Set());
@@ -540,7 +555,12 @@ export async function runSilverseaClassicM0d3(options = {}) {
             (r) => r.status === "active" && r.official_sailing_id && isExpeditionOfficialId(r.official_sailing_id)
           );
 
-          classicAudit = auditClassicItineraryPortsPopulation(classicAfter, sourceById, line);
+          const masterUuids = new Set(masterFixture.rows.map((r) => r.production_uuid));
+          classicAudit = auditClassicItineraryPortsPopulation(
+            classicAfter.filter((r) => masterUuids.has(r.id)),
+            sourceById,
+            line
+          );
           const expeditionAudit = await auditExpeditionMismatches(expeditionAfter, sourceById, line, today);
 
           const m0d1Check = verifyProtectionSnapshots(

@@ -99,6 +99,8 @@
     "test:silversea-classic-m0d1r": "node scripts/test-silversea-classic-m0d1r.mjs",
     "test:silversea-classic-m0d2": "node scripts/test-silversea-classic-m0d2.mjs",
     "test:silversea-classic-m0d3": "node scripts/test-silversea-classic-m0d3.mjs",
+    "silversea:classic-m0d3r-reconciliation": "node scripts/run-silversea-classic-m0d3r-reconciliation.mjs",
+    "test:silversea-classic-m0d3r": "node scripts/test-silversea-classic-m0d3r.mjs",
     "test:silversea-classic-m0d1": "node scripts/test-silversea-classic-m0d1.mjs",
     "test:silversea-expedition-m0a": "node scripts/test-silversea-expedition-m0a.mjs",
     "test:silversea-expedition-m0b": "node scripts/test-silversea-expedition-m0b.mjs",

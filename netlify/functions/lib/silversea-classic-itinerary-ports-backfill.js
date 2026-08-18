@@ -85,6 +85,65 @@ function isClassicProductionRow(row) {
   return row?.status === "active" && row?.official_sailing_id && isClassicOfficialId(row.official_sailing_id);
 }
 
+function isClassicStoredOfficialRow(row) {
+  return Boolean(row?.official_sailing_id) && isClassicOfficialId(row.official_sailing_id);
+}
+
+function isExpeditionStoredOfficialRow(row) {
+  return Boolean(row?.official_sailing_id) && isExpeditionOfficialId(row.official_sailing_id);
+}
+
+function countByStatus(rows) {
+  const out = { active: 0, expired: 0, other: 0 };
+  for (const row of rows) {
+    const status = String(row?.status || "").trim();
+    if (status === "active") out.active += 1;
+    else if (status === "expired") out.expired += 1;
+    else out.other += 1;
+  }
+  return out;
+}
+
+function classifySilverseaOfficialInventory(rows) {
+  const classicStored = rows.filter(isClassicStoredOfficialRow);
+  const expeditionStored = rows.filter(isExpeditionStoredOfficialRow);
+  const legacy = rows.filter((r) => !r.official_sailing_id);
+  const classicCounts = countByStatus(classicStored);
+  const expeditionCounts = countByStatus(expeditionStored);
+  return {
+    total: rows.length,
+    classic_stored_official_total: classicStored.length,
+    classic_active_official: classicCounts.active,
+    classic_expired_official: classicCounts.expired,
+    classic_other_status_official: classicCounts.other,
+    expedition_stored_official_total: expeditionStored.length,
+    expedition_active_official: expeditionCounts.active,
+    expedition_expired_official: expeditionCounts.expired,
+    expedition_other_status_official: expeditionCounts.other,
+    legacy: legacy.length,
+    reconciled:
+      classicCounts.active + classicCounts.expired + classicCounts.other === classicStored.length &&
+      expeditionCounts.active + expeditionCounts.expired + expeditionCounts.other === expeditionStored.length
+  };
+}
+
+function validateClassicMasterIdentitiesPresent(allRows, masterFixtureRows) {
+  const byId = new Map(allRows.map((r) => [r.id, r]));
+  const missing = [];
+  for (const row of masterFixtureRows) {
+    const prod = byId.get(row.production_uuid);
+    if (!prod) missing.push(row.official_sailing_id);
+    else if (prod.official_sailing_id !== row.official_sailing_id) {
+      missing.push(`${row.official_sailing_id}:id_mismatch`);
+    }
+  }
+  return {
+    ok: missing.length === 0,
+    present: masterFixtureRows.length - missing.length,
+    missing
+  };
+}
+
 function buildExpectedClassicItineraryPorts(normalised, cruiseLine) {
   if (!normalised) return { ok: false, reason: "source_missing", ports: null };
   if (!isClassic(normalised.raw || {})) {
@@ -519,16 +578,18 @@ async function applyClassicItineraryPortsRepairBatch(supabase, fixtureRows, call
   });
 }
 
-async function verifyClassicRepairBatchResults(supabase, fixtureRows) {
+async function verifyClassicRepairBatchResults(supabase, fixtureRows, options = {}) {
   const checks = [];
   let allOk = true;
+  let expectedLifecycleTransitions = 0;
   for (const fixtureRow of fixtureRows) {
     const rows = await supabase(
-      `discovered_cruises?id=eq.${encodeURIComponent(fixtureRow.production_uuid)}&select=id,official_sailing_id,itinerary_ports,ship_id,departure_date,return_date,nights,destination_id,status,raw_extract,cruise_line_id,departure_port,itinerary,official_url,source_url,external_key,identity_key,match_confidence,review_reason&limit=1`
+      `discovered_cruises?id=eq.${encodeURIComponent(fixtureRow.production_uuid)}&select=id,official_sailing_id,itinerary_ports,ship_id,departure_date,return_date,nights,destination_id,status,raw_extract,cruise_line_id,departure_port,itinerary,official_url,source_url,external_key,identity_key,match_confidence,review_reason,last_changed_at&limit=1`
     );
     const row = rows?.[0] || null;
-    const verify = verifyItineraryPortsRepairRow(row, fixtureRow, FINGERPRINT_FIELDS);
+    const verify = verifyItineraryPortsRepairRow(row, fixtureRow, FINGERPRINT_FIELDS, options);
     if (!verify.ok) allOk = false;
+    if (verify.lifecycle_transition === "EXPECTED_LIFECYCLE_TRANSITION") expectedLifecycleTransitions += 1;
     checks.push({
       production_uuid: fixtureRow.production_uuid,
       official_sailing_id: fixtureRow.official_sailing_id,
@@ -539,6 +600,7 @@ async function verifyClassicRepairBatchResults(supabase, fixtureRows) {
     ok: allOk && checks.length === fixtureRows.length,
     verified_count: checks.filter((c) => c.ok).length,
     failed_count: checks.filter((c) => !c.ok).length,
+    expected_lifecycle_transitions: expectedLifecycleTransitions,
     records: checks
   };
 }
@@ -600,6 +662,10 @@ module.exports = {
   NON_WHITELIST_COMPARE_FIELDS,
   isClassicOfficialId,
   isClassicProductionRow,
+  isClassicStoredOfficialRow,
+  isExpeditionStoredOfficialRow,
+  classifySilverseaOfficialInventory,
+  validateClassicMasterIdentitiesPresent,
   buildExpectedClassicItineraryPorts,
   buildExpectedPortsFromRawExtract,
   reconcileClassicSourceStatus,

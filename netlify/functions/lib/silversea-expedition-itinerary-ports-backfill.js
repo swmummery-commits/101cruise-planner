@@ -47,6 +47,31 @@ const NON_WHITELIST_COMPARE_FIELDS = Object.freeze([
   "match_confidence",
   "review_reason"
 ]);
+const STRICT_REPAIR_FINGERPRINT_FIELDS = Object.freeze([
+  "id",
+  "official_sailing_id",
+  "ship_id",
+  "departure_date",
+  "return_date",
+  "nights",
+  "destination_id"
+]);
+const LIFECYCLE_MUTABLE_DB_FIELDS = Object.freeze(["status", "last_changed_at"]);
+const LIFECYCLE_RAW_EXTRACT_KEYS = Object.freeze([
+  "expired_at",
+  "expiration_reason",
+  "public_unavailability",
+  "expiration_run_id",
+  "previous_status",
+  "maintenance_expired_at"
+]);
+const LIFECYCLE_TRANSITION = Object.freeze({
+  NONE: "NONE",
+  EXPECTED: "EXPECTED_LIFECYCLE_TRANSITION",
+  UNEXPECTED: "UNEXPECTED_LIFECYCLE_TRANSITION"
+});
+
+const { shouldRemoveFromPublicInventory, perthCalendarDate } = require("./public-discovered-cruise-inventory");
 
 const REPAIR_CATEGORY = Object.freeze({
   EXACT_MATCH: "EXACT_MATCH",
@@ -186,7 +211,49 @@ function buildRollbackEntry(row) {
   };
 }
 
-function verifyItineraryPortsRepairRow(storedRow, fixtureRow, fingerprintFields = []) {
+function stripLifecycleRawExtract(rawExtract) {
+  const raw = { ...(rawExtract || {}) };
+  for (const key of LIFECYCLE_RAW_EXTRACT_KEYS) {
+    delete raw[key];
+  }
+  return raw;
+}
+
+function classifyAuthorisedLifecycleTransition({
+  beforeStatus,
+  afterStatus,
+  departureDate,
+  perthToday = perthCalendarDate()
+} = {}) {
+  const before = String(beforeStatus || "").trim();
+  const after = String(afterStatus || "").trim();
+  if (!before || !after || before === after) {
+    return { ok: true, lifecycle_transition: LIFECYCLE_TRANSITION.NONE };
+  }
+  if (
+    before === "active" &&
+    after === "expired" &&
+    shouldRemoveFromPublicInventory({ departureDate, status: "active", perthToday })
+  ) {
+    return { ok: true, lifecycle_transition: LIFECYCLE_TRANSITION.EXPECTED };
+  }
+  return { ok: false, lifecycle_transition: LIFECYCLE_TRANSITION.UNEXPECTED, reason: `${before}_to_${after}` };
+}
+
+function verifyStrictRepairFingerprint(storedRow, fixtureRow, fingerprintFields = STRICT_REPAIR_FINGERPRINT_FIELDS) {
+  const issues = [];
+  for (const field of fingerprintFields) {
+    if (String(storedRow?.[field] ?? "") !== String(fixtureRow.row_fingerprint?.[field] ?? "")) {
+      issues.push(`fingerprint_${field}_changed`);
+    }
+  }
+  return { ok: issues.length === 0, issues };
+}
+
+function verifyItineraryPortsRepairRow(storedRow, fixtureRow, fingerprintFields = [], options = {}) {
+  const lifecycleAware = options.lifecycleAware !== false;
+  const perthToday = options.perthToday || perthCalendarDate();
+
   const issues = [];
   if (!storedRow) issues.push("missing_row");
   if (storedRow?.official_sailing_id !== fixtureRow.official_sailing_id) {
@@ -194,19 +261,46 @@ function verifyItineraryPortsRepairRow(storedRow, fixtureRow, fingerprintFields 
   }
   const storedPorts = normalizeStoredPorts(storedRow?.itinerary_ports);
   const expectedAfter = normalizeStoredPorts(fixtureRow.after_itinerary_ports);
-  if (!portsArrayEqual(storedPorts, expectedAfter)) {
-    issues.push("itinerary_ports_mismatch");
-  }
-  const frozenBefore = normalizeStoredPorts(fixtureRow.before_itinerary_ports);
-  if (!portsArrayEqual(frozenBefore, normalizeStoredPorts(fixtureRow.before_itinerary_ports))) {
-    issues.push("frozen_before_drift");
-  }
-  for (const field of fingerprintFields) {
-    if (String(storedRow?.[field] ?? "") !== String(fixtureRow.row_fingerprint?.[field] ?? "")) {
-      issues.push(`fingerprint_${field}_changed`);
+  const itineraryPortsOk = portsArrayEqual(storedPorts, expectedAfter);
+  if (!itineraryPortsOk) issues.push("itinerary_ports_mismatch");
+
+  let strict = { ok: true, issues: [] };
+  if (lifecycleAware) {
+    strict = verifyStrictRepairFingerprint(storedRow, fixtureRow, STRICT_REPAIR_FINGERPRINT_FIELDS);
+  } else {
+    for (const field of fingerprintFields.length ? fingerprintFields : FINGERPRINT_FIELDS) {
+      if (String(storedRow?.[field] ?? "") !== String(fixtureRow.row_fingerprint?.[field] ?? "")) {
+        strict.issues.push(`fingerprint_${field}_changed`);
+      }
     }
+    strict.ok = strict.issues.length === 0;
   }
-  return { ok: issues.length === 0, issues };
+  if (!strict.ok) issues.push(...strict.issues);
+
+  let lifecycle = { ok: true, lifecycle_transition: LIFECYCLE_TRANSITION.NONE };
+  if (lifecycleAware && storedRow) {
+    lifecycle = classifyAuthorisedLifecycleTransition({
+      beforeStatus: fixtureRow.row_fingerprint?.status,
+      afterStatus: storedRow.status,
+      departureDate: storedRow.departure_date || fixtureRow.row_fingerprint?.departure_date,
+      perthToday
+    });
+    if (!lifecycle.ok) issues.push(`lifecycle_${lifecycle.reason || "invalid"}`);
+  }
+
+  const dataIntegrityOk =
+    Boolean(storedRow) &&
+    storedRow.official_sailing_id === fixtureRow.official_sailing_id &&
+    itineraryPortsOk &&
+    strict.ok;
+
+  return {
+    ok: dataIntegrityOk && lifecycle.ok,
+    issues,
+    data_integrity_ok: dataIntegrityOk,
+    lifecycle_transition: lifecycle.lifecycle_transition,
+    itinerary_ports_ok: itineraryPortsOk
+  };
 }
 
 function validateRepairFixture(fixture) {
@@ -329,8 +423,12 @@ function snapshotProtectionRows(rows, targetUuids = new Set()) {
   return out;
 }
 
-function verifyProtectionSnapshots(beforeMap, afterRows, targetUuids = new Set()) {
+function verifyProtectionSnapshots(beforeMap, afterRows, targetUuids = new Set(), options = {}) {
+  const lifecycleAware = options.lifecycleAware !== false;
+  const perthToday = options.perthToday || perthCalendarDate();
   const issues = [];
+  let expectedLifecycleTransitions = 0;
+
   for (const row of afterRows || []) {
     if (targetUuids.has(row.id)) continue;
     const before = beforeMap.get(row.id);
@@ -340,12 +438,40 @@ function verifyProtectionSnapshots(beforeMap, afterRows, targetUuids = new Set()
     }
     const afterComparable = snapshotComparableFields(row);
     for (const field of Object.keys(before.comparable)) {
+      if (LIFECYCLE_MUTABLE_DB_FIELDS.includes(field)) {
+        if (!lifecycleAware) {
+          if (!compareComparableFieldValues(field, before.comparable[field], afterComparable[field])) {
+            issues.push({ id: row.id, field });
+          }
+        } else if (field === "status") {
+          const lifecycle = classifyAuthorisedLifecycleTransition({
+            beforeStatus: before.comparable.status,
+            afterStatus: afterComparable.status,
+            departureDate: afterComparable.departure_date || before.comparable.departure_date,
+            perthToday
+          });
+          if (lifecycle.lifecycle_transition === LIFECYCLE_TRANSITION.EXPECTED) {
+            expectedLifecycleTransitions += 1;
+          } else if (!lifecycle.ok) {
+            issues.push({ id: row.id, field: "status", reason: lifecycle.reason });
+          }
+        }
+        continue;
+      }
+      if (field === "raw_extract") {
+        const beforeStrict = stripLifecycleRawExtract(before.comparable.raw_extract);
+        const afterStrict = stripLifecycleRawExtract(afterComparable.raw_extract);
+        if (!compareComparableFieldValues("raw_extract", beforeStrict, afterStrict)) {
+          issues.push({ id: row.id, field: "raw_extract" });
+        }
+        continue;
+      }
       if (!compareComparableFieldValues(field, before.comparable[field], afterComparable[field])) {
         issues.push({ id: row.id, field });
       }
     }
   }
-  return { ok: issues.length === 0, issues };
+  return { ok: issues.length === 0, issues, expected_lifecycle_transitions: expectedLifecycleTransitions };
 }
 
 function compareNonWhitelistSnapshots(beforeSnap, afterSnap) {
@@ -557,7 +683,14 @@ module.exports = {
   M0B_OPERATION,
   M0B_APPLY_CONFIRMATION_TOKEN,
   FINGERPRINT_FIELDS,
+  STRICT_REPAIR_FINGERPRINT_FIELDS,
+  LIFECYCLE_MUTABLE_DB_FIELDS,
+  LIFECYCLE_RAW_EXTRACT_KEYS,
+  LIFECYCLE_TRANSITION,
   NON_WHITELIST_COMPARE_FIELDS,
+  stripLifecycleRawExtract,
+  classifyAuthorisedLifecycleTransition,
+  verifyStrictRepairFingerprint,
   REPAIR_CATEGORY,
   isExpeditionOfficialId,
   portsArrayEqual,
