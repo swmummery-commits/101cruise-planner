@@ -1,0 +1,809 @@
+#!/usr/bin/env node
+/**
+ * Silversea Classic Phase M0D-NM — non-master controlled itinerary_ports repair (exactly 2 rows).
+ *
+ *   node scripts/run-silversea-classic-m0d-non-master-apply.mjs --preflight
+ *   SILVERSEA_DISCOVERY_WRITE_ENABLED=true node scripts/run-silversea-classic-m0d-non-master-apply.mjs \
+ *     --apply --confirm=SILVERSEA-CLASSIC-M0D-NON-MASTER-ITINERARY-PORTS-BACKFILL
+ */
+
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { createRequire } from "module";
+import { execSync } from "child_process";
+
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
+const require = createRequire(import.meta.url);
+
+try {
+  require("dotenv").config({ path: path.join(root, ".env") });
+  require("dotenv").config({ path: path.join(root, ".env.local") });
+} catch {}
+
+const REPORT_DIR = path.join(root, "reports");
+const FIXTURE_DIR = path.join(root, "scripts/fixtures/silversea");
+const MASTER_FIXTURE_PATH = path.join(root, "scripts/fixtures/silversea/classic-m0c-itinerary-ports-backfill.json");
+const NM_FIXTURE_PATH = path.join(root, "scripts/fixtures/silversea/classic-m0d-non-master-itinerary-ports-backfill.json");
+const M0D3_FIXTURE_PATH = path.join(root, "scripts/fixtures/silversea/classic-m0d3-itinerary-ports-backfill.json");
+const M0D2_FIXTURE_PATH = path.join(root, "scripts/fixtures/silversea/classic-m0d2-itinerary-ports-backfill.json");
+const M0D1_FIXTURE_PATH = path.join(root, "scripts/fixtures/silversea/classic-m0d1-itinerary-ports-backfill.json");
+
+const EXPECTED_BATCH_SIZE = 2;
+const EXPECTED_MASTER_CORRECT = 400;
+const EXPECTED_MASTER_REMAINING = 199;
+const EXPECTED_STORED_CORRECT_AFTER = 402;
+const EXPECTED_STORED_REMAINING_AFTER = 199;
+const EXPECTED_M0D1_SIZE = 200;
+const EXPECTED_M0D2_SIZE = 200;
+const EXPECTED_M0D3_SIZE = 199;
+
+const PRIOR_DETERMINISTIC_AUDIT = Object.freeze({
+  SM260907007: [
+    "Barcelona",
+    "Palma de Mallorca",
+    "Cagliari",
+    "La Goulette",
+    "Trapani",
+    "Amalfi",
+    "Civitavecchia"
+  ],
+  SN260906007: [
+    "Piraeus",
+    "Nafplion",
+    "Milos",
+    "Heraklion",
+    "Kusadasi",
+    "Rhodes",
+    "Mykonos",
+    "Piraeus"
+  ]
+});
+
+const adapter = require(path.join(root, "netlify/functions/lib/silversea-discovery-adapter"));
+const { indexExistingSilverseaRecords } = require(path.join(
+  root,
+  "netlify/functions/lib/silversea-discovery-writes"
+));
+const {
+  isExpeditionOfficialId,
+  buildExpectedItineraryPorts,
+  portsArrayEqual,
+  normalizeStoredPorts,
+  snapshotProtectionRows,
+  verifyProtectionSnapshots
+} = require(path.join(root, "netlify/functions/lib/silversea-expedition-itinerary-ports-backfill"));
+const { verifyStoredExpeditionRow } = require(path.join(
+  root,
+  "netlify/functions/lib/silversea-expedition-verification"
+));
+const {
+  M0C_BACKFILL_FIXTURE,
+  M0D1_BACKFILL_FIXTURE,
+  M0D2_BACKFILL_FIXTURE,
+  M0D3_BACKFILL_FIXTURE,
+  M0D_NM_BACKFILL_FIXTURE,
+  M0D_NM_OPERATION,
+  M0D_NM_APPLY_CONFIRMATION_TOKEN,
+  NON_MASTER_CLASSIC_OFFICIAL_IDS,
+  NON_MASTER_CLASSIC_TARGET_IDENTITIES,
+  UPDATE_WHITELIST,
+  isClassicStoredOfficialRow,
+  isExpeditionStoredOfficialRow,
+  classifySilverseaOfficialInventory,
+  validateClassicMasterIdentitiesPresent,
+  buildExpectedClassicItineraryPorts,
+  buildNonMasterClassicFixtureRow,
+  validateNonMasterClassicNoMasterOverlap,
+  validateClassicRepairFixture,
+  verifyClassicFrozenBeforeMatch,
+  dryRunClassicItineraryPortsBackfill,
+  buildM0dRollbackManifest,
+  computeClassicSourceCutoffCounts,
+  applyClassicItineraryPortsRepairBatch,
+  verifyClassicRepairBatchResults,
+  auditClassicItineraryPortsPopulation
+} = require(path.join(root, "netlify/functions/lib/silversea-classic-itinerary-ports-backfill"));
+const {
+  RUN_STATUS,
+  buildApplyReportLifecycle,
+  updateReportLifecycle,
+  ControlledProductionRunStore,
+  executeHardenedControlledProductionApply,
+  buildAuthoritativeVerificationResult
+} = require(path.join(root, "netlify/functions/lib/cruise-discovery-controlled-production-run"));
+const { DEFAULT_GLOBAL_LEASE_SECONDS } = require(path.join(
+  root,
+  "netlify/functions/lib/cruise-discovery-global-write-lock"
+));
+const {
+  resolveSilverseaDiscoveryMode,
+  assertSilverseaWritesAllowed
+} = require(path.join(root, "netlify/functions/lib/silversea-discovery-mode"));
+const { perthCalendarDate } = require(path.join(
+  root,
+  "netlify/functions/lib/public-discovered-cruise-inventory"
+));
+const { loadClassificationDestinations } = require(path.join(
+  root,
+  "netlify/functions/lib/destination-queries"
+));
+const { createMaintenanceSupabase, exactCountSupabase } = require(path.join(
+  root,
+  "scripts/lib/supabase-rest.cjs"
+));
+
+export const M0D_NM_RUNNER_PATH = "scripts/run-silversea-classic-m0d-non-master-apply.mjs";
+export const M0D_NM_USES_HARDENED_RUNNER = true;
+
+function git(cmd) {
+  return execSync(cmd, { cwd: root, encoding: "utf8" }).trim();
+}
+
+function parseArgs(argv = process.argv) {
+  const args = { preflight: false, apply: false, confirm: null };
+  for (const arg of argv.slice(2)) {
+    if (arg === "--preflight") args.preflight = true;
+    if (arg === "--apply") args.apply = true;
+    if (arg.startsWith("--confirm=")) args.confirm = String(arg.split("=")[1]).trim();
+  }
+  if (args.apply) args.preflight = true;
+  if (!args.preflight && !args.apply) args.preflight = true;
+  return args;
+}
+
+function assertApplyAllowed(args) {
+  if (!args.apply) return;
+  if (args.confirm !== M0D_NM_APPLY_CONFIRMATION_TOKEN) {
+    throw new Error("m0d_nm_apply_confirmation_required");
+  }
+  if (String(process.env.SILVERSEA_DISCOVERY_WRITE_ENABLED || "").toLowerCase() !== "true") {
+    throw new Error("SILVERSEA_DISCOVERY_WRITE_ENABLED must be true for apply");
+  }
+}
+
+export function assertPostWriteVerifierImportsResolved(deps = {}) {
+  const checks = {
+    verifyClassicRepairBatchResults: typeof (deps.verifyClassicRepairBatchResults || verifyClassicRepairBatchResults) === "function",
+    verifyClassicFrozenBeforeMatch: typeof (deps.verifyClassicFrozenBeforeMatch || verifyClassicFrozenBeforeMatch) === "function",
+    applyClassicItineraryPortsRepairBatch:
+      typeof (deps.applyClassicItineraryPortsRepairBatch || applyClassicItineraryPortsRepairBatch) === "function",
+    auditClassicItineraryPortsPopulation:
+      typeof (deps.auditClassicItineraryPortsPopulation || auditClassicItineraryPortsPopulation) === "function",
+    verifyProtectionSnapshots: typeof (deps.verifyProtectionSnapshots || verifyProtectionSnapshots) === "function",
+    buildAuthoritativeVerificationResult:
+      typeof (deps.buildAuthoritativeVerificationResult || buildAuthoritativeVerificationResult) === "function",
+    executeHardenedControlledProductionApply:
+      typeof (deps.executeHardenedControlledProductionApply || executeHardenedControlledProductionApply) === "function"
+  };
+  const failed = Object.entries(checks).filter(([, ok]) => !ok).map(([k]) => k);
+  if (failed.length) throw new Error(`unresolved_post_write_verifier_imports:${failed.join(",")}`);
+  return { ok: true, checks };
+}
+
+async function auditExpeditionMismatches(expeditionRows, sourceById, line, today) {
+  let mismatches = 0;
+  for (const prodRow of expeditionRows) {
+    const source = sourceById.get(String(prodRow.official_sailing_id).toUpperCase()) || null;
+    const stored = normalizeStoredPorts(prodRow.itinerary_ports);
+    let expected = [];
+    let expectedOk = false;
+    if (source) {
+      const built = buildExpectedItineraryPorts(source, line, today);
+      expectedOk = built.ok;
+      expected = built.ok ? built.ports : [];
+    }
+    if (!portsArrayEqual(stored, expected) && expectedOk) mismatches += 1;
+  }
+  return { ok: mismatches === 0, mismatches, total: expeditionRows.length };
+}
+
+function resolveMasterClassicRows(indexed, masterFixture) {
+  return masterFixture.rows
+    .map((row) => indexed.byOfficialId.get(String(row.official_sailing_id).toUpperCase()))
+    .filter(Boolean);
+}
+
+function buildNonMasterRepairRows(indexed, sourceById, line) {
+  const rows = [];
+  for (const target of NON_MASTER_CLASSIC_TARGET_IDENTITIES) {
+    const prod = indexed.byOfficialId.get(String(target.official_sailing_id).toUpperCase());
+    if (!prod || prod.id !== target.production_uuid) {
+      throw new Error(`exact_target_identity_failed:${target.official_sailing_id} — STOP WITH ZERO WRITES`);
+    }
+    if (!isClassicStoredOfficialRow(prod)) {
+      throw new Error(`target_not_classic:${target.official_sailing_id} — STOP WITH ZERO WRITES`);
+    }
+    const source = sourceById.get(String(target.official_sailing_id).toUpperCase());
+    if (!source) {
+      throw new Error(`target_source_missing:${target.official_sailing_id} — STOP WITH ZERO WRITES`);
+    }
+    const built = buildExpectedClassicItineraryPorts(source, line);
+    if (!built.ok || !Array.isArray(built.ports) || built.ports.length === 0) {
+      throw new Error(`target_reconstruction_unsafe:${target.official_sailing_id} — STOP WITH ZERO WRITES`);
+    }
+    const prior = PRIOR_DETERMINISTIC_AUDIT[target.official_sailing_id];
+    if (!prior || !portsArrayEqual(built.ports, prior)) {
+      throw new Error(`fresh_expected_differs_from_prior_audit:${target.official_sailing_id} — STOP WITH ZERO WRITES`);
+    }
+    rows.push(buildNonMasterClassicFixtureRow(rows.length + 1, prod, built));
+  }
+  rows.sort((a, b) => String(a.official_sailing_id).localeCompare(String(b.official_sailing_id)));
+  rows.forEach((row, i) => {
+    row.sequence = i + 1;
+  });
+  return rows;
+}
+
+function writeNonMasterFixture(repairRows, startedAt) {
+  const fixture = {
+    phase: "M0D-NM",
+    mode: M0D_NM_BACKFILL_FIXTURE,
+    generated_at: startedAt,
+    git_sha: git("git rev-parse HEAD"),
+    frozen_count: EXPECTED_BATCH_SIZE,
+    selection_method:
+      "exact non-master stored-official Classic rows outside 599-row M0C master with deterministic current-source reconstruction",
+    reconstruction_policy: {
+      current_source: "buildExpectedClassicItineraryPorts via buildSilverseaUpsertCandidate"
+    },
+    update_whitelist: UPDATE_WHITELIST.slice(),
+    rows: repairRows
+  };
+  fs.mkdirSync(FIXTURE_DIR, { recursive: true });
+  fs.writeFileSync(NM_FIXTURE_PATH, `${JSON.stringify(fixture, null, 2)}\n`);
+  return fixture;
+}
+
+async function verifyM0d3FrozenBefore(sb, m0d3Fixture) {
+  let matched = 0;
+  const failures = [];
+  for (const row of m0d3Fixture.rows) {
+    const prod = (await sb(`discovered_cruises?id=eq.${encodeURIComponent(row.production_uuid)}&select=*&limit=1`))?.[0];
+    const check = verifyClassicFrozenBeforeMatch(prod, row);
+    if (check.ok) matched += 1;
+    else failures.push({ official_sailing_id: row.official_sailing_id, issues: check.issues });
+  }
+  return { ok: matched === EXPECTED_M0D3_SIZE, matched, total: EXPECTED_M0D3_SIZE, failures };
+}
+
+async function headLineCount(lineId) {
+  const { count } = await exactCountSupabase(root, "discovered_cruises", `cruise_line_id=eq.${encodeURIComponent(lineId)}`);
+  return count;
+}
+
+export async function runSilverseaClassicM0dNonMaster(options = {}) {
+  const args = options.args || parseArgs();
+  assertApplyAllowed(args);
+  const importSmoke = assertPostWriteVerifierImportsResolved();
+  const startedAt = new Date().toISOString();
+  const today = perthCalendarDate();
+  const timings = { started_at: startedAt };
+
+  const masterFixture = JSON.parse(fs.readFileSync(MASTER_FIXTURE_PATH, "utf8"));
+  const masterValidation = validateClassicRepairFixture(masterFixture);
+  if (!masterValidation.ok || masterValidation.row_count !== 599) {
+    throw new Error(`master_fixture_invalid — STOP WITH ZERO WRITES`);
+  }
+
+  if (!fs.existsSync(M0D1_FIXTURE_PATH) || !fs.existsSync(M0D2_FIXTURE_PATH) || !fs.existsSync(M0D3_FIXTURE_PATH)) {
+    throw new Error("m0d_batch_fixtures_missing — STOP WITH ZERO WRITES");
+  }
+  const m0d1Fixture = JSON.parse(fs.readFileSync(M0D1_FIXTURE_PATH, "utf8"));
+  const m0d2Fixture = JSON.parse(fs.readFileSync(M0D2_FIXTURE_PATH, "utf8"));
+  const m0d3Fixture = JSON.parse(fs.readFileSync(M0D3_FIXTURE_PATH, "utf8"));
+
+  const sb = createMaintenanceSupabase(root);
+  const line = (await sb(`ci_cruise_lines?slug=eq.${adapter.LINE_SLUG}&select=id,name,slug&limit=1`))?.[0];
+  if (!line) throw new Error("Silversea line not found");
+
+  const indexed = await indexExistingSilverseaRecords(sb, line.id);
+  const allRows = indexed.rows;
+  const inventory = classifySilverseaOfficialInventory(allRows);
+  const classicStoredOfficial = allRows.filter(isClassicStoredOfficialRow);
+  const expeditionStoredOfficial = allRows.filter(isExpeditionStoredOfficialRow);
+  const legacyRows = allRows.filter((r) => !r.official_sailing_id);
+
+  const masterIdentity = validateClassicMasterIdentitiesPresent(allRows, masterFixture.rows);
+  if (!masterIdentity.ok || masterIdentity.present !== 599) {
+    throw new Error(`classic_master_identities_missing — STOP WITH ZERO WRITES`);
+  }
+  if (!inventory.reconciled) {
+    throw new Error("official_vs_active_inventory_unreconciled — STOP WITH ZERO WRITES");
+  }
+
+  const destinations = adapter.catalogueDestinations(
+    await loadClassificationDestinations(async (q) => sb(q))
+  );
+  const ships = await sb(
+    `ci_cruise_ships?cruise_line_id=eq.${line.id}&select=id,name,cruise_line_id,official_line_ship_id`
+  );
+  const simulation = await adapter.simulateSilverseaInventory({
+    cruiseLine: line,
+    ships,
+    destinations,
+    existingRows: allRows,
+    today,
+    concurrency: 6
+  });
+  if (!simulation.ok || !simulation.health?.ok) {
+    throw new Error("source_health_failed — STOP WITH ZERO WRITES");
+  }
+
+  const sourceCutoff = computeClassicSourceCutoffCounts(simulation, today);
+  const sourceById = new Map();
+  for (const row of simulation.products) {
+    if (row.official_sailing_id) {
+      sourceById.set(String(row.official_sailing_id).toUpperCase(), row);
+    }
+  }
+
+  const repairRows = buildNonMasterRepairRows(indexed, sourceById, line);
+  if (repairRows.length !== EXPECTED_BATCH_SIZE) {
+    throw new Error(`target_count_invalid:${repairRows.length} — STOP WITH ZERO WRITES`);
+  }
+
+  const nmFixture = writeNonMasterFixture(repairRows, startedAt);
+  const nmValidation = validateClassicRepairFixture(nmFixture);
+  if (!nmValidation.ok || nmValidation.row_count !== EXPECTED_BATCH_SIZE) {
+    throw new Error(`nm_fixture_invalid — STOP WITH ZERO WRITES`);
+  }
+
+  const overlap = validateNonMasterClassicNoMasterOverlap(nmFixture, masterFixture, {
+    m0d1: m0d1Fixture,
+    m0d2: m0d2Fixture,
+    m0d3: m0d3Fixture
+  });
+  if (!overlap.ok || overlap.master_overlap !== 0) {
+    throw new Error(`non_master_master_overlap — STOP WITH ZERO WRITES`);
+  }
+
+  const expeditionBefore = await auditExpeditionMismatches(expeditionStoredOfficial, sourceById, line, today);
+  if (!expeditionBefore.ok) {
+    throw new Error(`expedition_not_clean — STOP WITH ZERO WRITES`);
+  }
+
+  const m0d1BeforeApply = await verifyClassicRepairBatchResults(sb, m0d1Fixture.rows);
+  if (!m0d1BeforeApply.ok || m0d1BeforeApply.verified_count !== EXPECTED_M0D1_SIZE) {
+    throw new Error(`m0d1_repaired_rows_not_clean — STOP WITH ZERO WRITES`);
+  }
+
+  const m0d2BeforeApply = await verifyClassicRepairBatchResults(sb, m0d2Fixture.rows);
+  if (!m0d2BeforeApply.ok || m0d2BeforeApply.verified_count !== EXPECTED_M0D2_SIZE) {
+    throw new Error(`m0d2_repaired_rows_not_clean — STOP WITH ZERO WRITES`);
+  }
+
+  const m0d3FrozenBefore = await verifyM0d3FrozenBefore(sb, m0d3Fixture);
+  if (!m0d3FrozenBefore.ok) {
+    throw new Error(`m0d3_frozen_before_failed:${m0d3FrozenBefore.matched}/${EXPECTED_M0D3_SIZE} — STOP WITH ZERO WRITES`);
+  }
+
+  let preliminaryBeforeMatch = 0;
+  for (const row of repairRows) {
+    const prod = (await sb(`discovered_cruises?id=eq.${encodeURIComponent(row.production_uuid)}&select=*&limit=1`))?.[0];
+    if (verifyClassicFrozenBeforeMatch(prod, row).ok) preliminaryBeforeMatch += 1;
+  }
+  if (preliminaryBeforeMatch !== EXPECTED_BATCH_SIZE) {
+    throw new Error("preliminary_frozen_before_failed — STOP WITH ZERO WRITES");
+  }
+
+  const dryRun = dryRunClassicItineraryPortsBackfill(nmFixture);
+  if (
+    dryRun.proposed_itinerary_ports_updates !== EXPECTED_BATCH_SIZE ||
+    dryRun.proposed_inserts !== 0 ||
+    dryRun.proposed_deletes !== 0 ||
+    dryRun.other_column_updates !== 0
+  ) {
+    throw new Error("dry_run_counts_invalid — STOP WITH ZERO WRITES");
+  }
+
+  const countsBefore = {
+    silversea_total: await headLineCount(line.id),
+    inventory,
+    classic_stored_official: inventory.classic_stored_official_total,
+    expedition_stored_official: inventory.expedition_stored_official_total,
+    legacy: legacyRows.length,
+    master_identities_present: masterIdentity.present
+  };
+
+  const m0d1Uuids = new Set(m0d1Fixture.rows.map((r) => r.production_uuid));
+  const m0d2Uuids = new Set(m0d2Fixture.rows.map((r) => r.production_uuid));
+  const m0d3Uuids = new Set(m0d3Fixture.rows.map((r) => r.production_uuid));
+  const nmUuids = new Set(repairRows.map((r) => r.production_uuid));
+
+  const m0d1Snapshot = snapshotProtectionRows(classicStoredOfficial.filter((r) => m0d1Uuids.has(r.id)), new Set());
+  const m0d2Snapshot = snapshotProtectionRows(classicStoredOfficial.filter((r) => m0d2Uuids.has(r.id)), new Set());
+  const m0d3Snapshot = snapshotProtectionRows(classicStoredOfficial.filter((r) => m0d3Uuids.has(r.id)), new Set());
+  const expeditionSnapshot = snapshotProtectionRows(expeditionStoredOfficial, new Set());
+  const legacyBefore = legacyRows.map((r) => ({
+    id: r.id,
+    status: r.status,
+    official_sailing_id: r.official_sailing_id,
+    review_reason: r.review_reason
+  }));
+
+  const runId =
+    options.runId || `silversea-classic-m0d-non-master-itinerary-ports-${startedAt.replace(/[:.]/g, "-")}`;
+  const store = new ControlledProductionRunStore(REPORT_DIR, runId);
+
+  let rollbackManifest = buildM0dRollbackManifest({
+    runId,
+    fixturePath: M0D_NM_BACKFILL_FIXTURE,
+    lineSlug: adapter.LINE_SLUG,
+    cruiseLineId: line.id,
+    rows: repairRows,
+    expectedUpdates: EXPECTED_BATCH_SIZE,
+    productionBefore: countsBefore,
+    createdAt: startedAt
+  });
+  rollbackManifest.operation = M0D_NM_OPERATION;
+
+  let applyReport = buildApplyReportLifecycle({
+    runId,
+    createdAt: startedAt,
+    fixturePath: M0D_NM_BACKFILL_FIXTURE,
+    operation: M0D_NM_OPERATION,
+    lineSlug: adapter.LINE_SLUG,
+    expectedInserts: 0,
+    productionBefore: countsBefore
+  });
+  applyReport.phase = "M0D-NM";
+  applyReport.expected_updates = EXPECTED_BATCH_SIZE;
+  applyReport.update_whitelist = UPDATE_WHITELIST.slice();
+  applyReport.hardened_runner = true;
+  applyReport.m0d_nm_runner_path = M0D_NM_RUNNER_PATH;
+  applyReport.source_cutoff = sourceCutoff;
+  applyReport.non_master_targets = NON_MASTER_CLASSIC_TARGET_IDENTITIES.slice();
+
+  const rollbackPath = store.persistPreparedRollback(rollbackManifest);
+  const applyReportPath = store.persistPreparedReport(applyReport);
+  applyReport = updateReportLifecycle(applyReport, {
+    rollback_manifest_path: rollbackPath,
+    apply_report_path: applyReportPath
+  });
+  store.updateReport(applyReport);
+
+  const preparedRollback = store.readRollback();
+  const preparedReport = JSON.parse(fs.readFileSync(applyReportPath, "utf8"));
+  if (preparedRollback?.status !== RUN_STATUS.PREPARED || preparedReport.status !== RUN_STATUS.PREPARED) {
+    throw new Error("prepared_state_reread_failed — STOP WITH ZERO WRITES");
+  }
+
+  let writeResult = null;
+  let hardenedResult = null;
+  let verification = null;
+  let masterClassicAudit = null;
+  let storedClassicAudit = null;
+  let protection = null;
+  let performance = null;
+  let m0d3FrozenAfter = null;
+
+  if (args.apply) {
+    assertSilverseaWritesAllowed(resolveSilverseaDiscoveryMode("production_write"));
+    timings.mutation_started_at = new Date().toISOString();
+
+    hardenedResult = await executeHardenedControlledProductionApply(
+      sb,
+      {
+        runId,
+        lineSlug: adapter.LINE_SLUG,
+        operation: M0D_NM_OPERATION,
+        performWrites: true,
+        leaseSeconds: DEFAULT_GLOBAL_LEASE_SECONDS,
+        underLockRecheck: async () => {
+          let underLockMatch = 0;
+          for (const row of repairRows) {
+            const prod = (await sb(`discovered_cruises?id=eq.${encodeURIComponent(row.production_uuid)}&select=*&limit=1`))?.[0];
+            if (verifyClassicFrozenBeforeMatch(prod, row).ok) underLockMatch += 1;
+          }
+          if (underLockMatch !== EXPECTED_BATCH_SIZE) {
+            return { ok: false, reason: "under_lock_frozen_before_mismatch", matched: underLockMatch };
+          }
+          return { ok: true, matched: underLockMatch, proposed_updates: EXPECTED_BATCH_SIZE };
+        }
+      },
+      {
+        onLockAcquired: async (lockMeta) => {
+          rollbackManifest.status = RUN_STATUS.LOCK_ACQUIRED;
+          store.updateRollback(rollbackManifest);
+          applyReport = updateReportLifecycle(applyReport, {
+            status: RUN_STATUS.LOCK_ACQUIRED,
+            global_lock: lockMeta.observability || lockMeta
+          });
+          store.updateReport(applyReport);
+        },
+        mutate: async () => {
+          timings.mutate_phase_started_at = new Date().toISOString();
+          rollbackManifest.status = RUN_STATUS.MUTATING;
+          store.updateRollback(rollbackManifest);
+          applyReport = updateReportLifecycle(applyReport, { status: RUN_STATUS.MUTATING });
+          store.updateReport(applyReport);
+          const result = await applyClassicItineraryPortsRepairBatch(sb, repairRows, {
+            onUpdateSuccess: async ({ production_uuid }) => {
+              if (!rollbackManifest.updated_record_ids.includes(production_uuid)) {
+                rollbackManifest.updated_record_ids.push(production_uuid);
+                store.updateRollback(rollbackManifest);
+              }
+            }
+          });
+          timings.mutate_phase_ended_at = new Date().toISOString();
+          return result;
+        },
+        onWriteComplete: async ({ writeResult: wr }) => {
+          writeResult = wr;
+          rollbackManifest.status = RUN_STATUS.WRITE_COMPLETE;
+          rollbackManifest.updated_count = wr.stats.updated;
+          store.updateRollback(rollbackManifest);
+          applyReport = updateReportLifecycle(applyReport, {
+            status: RUN_STATUS.WRITE_COMPLETE,
+            write_result: wr.stats
+          });
+          store.updateReport(applyReport);
+        },
+        onVerificationStart: async () => {
+          timings.verification_started_at = new Date().toISOString();
+          rollbackManifest.status = RUN_STATUS.VERIFYING;
+          store.updateRollback(rollbackManifest);
+          applyReport = updateReportLifecycle(applyReport, { status: RUN_STATUS.VERIFYING });
+          store.updateReport(applyReport);
+        },
+        verifyUnderLock: async ({ writeResult: wr, lockMeta }) => {
+          if (wr.stats.updated !== EXPECTED_BATCH_SIZE || wr.stats.failed !== 0) {
+            return {
+              ok: false,
+              reason: `write_count_mismatch:updated=${wr.stats.updated},failed=${wr.stats.failed}`,
+              lock_held: true
+            };
+          }
+
+          verification = await verifyClassicRepairBatchResults(sb, repairRows);
+          verification.lock_held_through_verification = true;
+
+          const indexedAfter = await indexExistingSilverseaRecords(sb, line.id);
+          const classicStoredOfficialAfter = indexedAfter.rows.filter(isClassicStoredOfficialRow);
+          const expeditionStoredOfficialAfter = indexedAfter.rows.filter(isExpeditionStoredOfficialRow);
+          const masterClassicRowsAfter = resolveMasterClassicRows(indexedAfter, masterFixture);
+
+          masterClassicAudit = auditClassicItineraryPortsPopulation(masterClassicRowsAfter, sourceById, line);
+          storedClassicAudit = auditClassicItineraryPortsPopulation(classicStoredOfficialAfter, sourceById, line);
+          m0d3FrozenAfter = await verifyM0d3FrozenBefore(sb, m0d3Fixture);
+          const expeditionAudit = await auditExpeditionMismatches(expeditionStoredOfficialAfter, sourceById, line, today);
+
+          const m0d1Check = verifyProtectionSnapshots(
+            m0d1Snapshot,
+            classicStoredOfficialAfter.filter((r) => m0d1Uuids.has(r.id)),
+            new Set(),
+            { perthToday: today }
+          );
+          const m0d1AfterVerify = await verifyClassicRepairBatchResults(sb, m0d1Fixture.rows);
+          const m0d2Check = verifyProtectionSnapshots(
+            m0d2Snapshot,
+            classicStoredOfficialAfter.filter((r) => m0d2Uuids.has(r.id)),
+            new Set(),
+            { perthToday: today }
+          );
+          const m0d2AfterVerify = await verifyClassicRepairBatchResults(sb, m0d2Fixture.rows);
+          const m0d3Check = verifyProtectionSnapshots(
+            m0d3Snapshot,
+            classicStoredOfficialAfter.filter((r) => m0d3Uuids.has(r.id)),
+            new Set(),
+            { perthToday: today }
+          );
+          const expeditionCheck = verifyProtectionSnapshots(expeditionSnapshot, expeditionStoredOfficialAfter, new Set(), {
+            perthToday: today
+          });
+          const legacyAfter = indexedAfter.rows
+            .filter((r) => !r.official_sailing_id)
+            .map((r) => ({
+              id: r.id,
+              status: r.status,
+              official_sailing_id: r.official_sailing_id,
+              review_reason: r.review_reason
+            }));
+
+          protection = {
+            m0d1_unchanged: m0d1Check.ok && m0d1AfterVerify.ok,
+            m0d1_after_verify: m0d1AfterVerify,
+            m0d2_unchanged: m0d2Check.ok && m0d2AfterVerify.ok,
+            m0d2_after_verify: m0d2AfterVerify,
+            m0d3_frozen_before: m0d3FrozenAfter,
+            m0d3_unchanged: m0d3Check.ok && m0d3FrozenAfter.ok,
+            m0d3_rows_modified: m0d3Check.ok ? 0 : m0d3Check.issues.length,
+            expedition_unchanged: expeditionCheck.ok,
+            expedition_audit: expeditionAudit,
+            legacy_8_unchanged: JSON.stringify(legacyBefore) === JSON.stringify(legacyAfter),
+            master_classic_audit: masterClassicAudit,
+            stored_classic_audit: storedClassicAudit
+          };
+
+          const lockExpires = lockMeta?.observability?.global_lock_expires_at || lockMeta?.expires_at;
+          const leaseRemainingSec = lockExpires
+            ? Math.max(0, Math.floor((new Date(lockExpires).getTime() - Date.now()) / 1000))
+            : null;
+
+          performance = {
+            mutation_ms: timings.mutate_phase_ended_at
+              ? new Date(timings.mutate_phase_ended_at) - new Date(timings.mutation_started_at)
+              : null,
+            verification_started_at: timings.verification_started_at,
+            lease_remaining_seconds_at_verification: leaseRemainingSec,
+            global_lease_sufficient: leaseRemainingSec == null || leaseRemainingSec > 60
+          };
+
+          const allOk =
+            verification.ok &&
+            masterClassicAudit.exact_match === EXPECTED_MASTER_CORRECT &&
+            masterClassicAudit.remaining_repair_candidates === EXPECTED_MASTER_REMAINING &&
+            masterClassicAudit.deferred_unsafe === 0 &&
+            storedClassicAudit.exact_match === EXPECTED_STORED_CORRECT_AFTER &&
+            storedClassicAudit.remaining_repair_candidates === EXPECTED_STORED_REMAINING_AFTER &&
+            m0d3FrozenAfter.ok &&
+            m0d3Check.ok &&
+            m0d1Check.ok &&
+            m0d1AfterVerify.ok &&
+            m0d2Check.ok &&
+            m0d2AfterVerify.ok &&
+            expeditionCheck.ok &&
+            expeditionAudit.ok &&
+            protection.legacy_8_unchanged;
+
+          timings.verification_ended_at = new Date().toISOString();
+
+          return buildAuthoritativeVerificationResult({
+            aggregateOk: allOk,
+            verification,
+            protection,
+            classic_audit: masterClassicAudit,
+            stored_classic_audit: storedClassicAudit,
+            performance,
+            lock_held_through_verification: true
+          });
+        },
+        finalizeUnderLock: async ({ verificationResult, verificationError, writeResult: wr }) => {
+          const finalStatus =
+            verificationError || verificationResult?.ok === false
+              ? RUN_STATUS.WRITE_SUCCEEDED_VERIFICATION_FAILED
+              : RUN_STATUS.VERIFIED;
+
+          rollbackManifest.status = finalStatus;
+          rollbackManifest.verification_status = verificationResult;
+          rollbackManifest.verification_error = verificationError || null;
+          store.updateRollback(rollbackManifest);
+
+          applyReport = updateReportLifecycle(applyReport, {
+            status: finalStatus === RUN_STATUS.VERIFIED ? RUN_STATUS.COMPLETE : finalStatus,
+            verification: verificationResult,
+            verification_error: verificationError || null,
+            global_lock_held_through_verification: true,
+            performance
+          });
+          store.updateReport(applyReport);
+
+          if (wr.stats.updated !== EXPECTED_BATCH_SIZE) {
+            throw new Error(`update_count_mismatch:${wr.stats.updated}`);
+          }
+          if (finalStatus !== RUN_STATUS.VERIFIED) {
+            throw new Error("write_succeeded_verification_failed");
+          }
+
+          return { persisted: true, final_status: finalStatus };
+        }
+      }
+    );
+
+    writeResult = hardenedResult.writeResult;
+    timings.ended_at = new Date().toISOString();
+
+    if (hardenedResult.blocked) {
+      return { blocked: true, reason: hardenedResult.reason, run_id: runId };
+    }
+    if (hardenedResult.writeError) throw hardenedResult.writeError;
+    if (hardenedResult.run_status === RUN_STATUS.WRITE_SUCCEEDED_VERIFICATION_FAILED) {
+      throw new Error("write_succeeded_verification_failed");
+    }
+  }
+
+  const indexedFinal = args.apply ? await indexExistingSilverseaRecords(sb, line.id) : indexed;
+  const countsAfter = args.apply
+    ? {
+        silversea_total: await headLineCount(line.id),
+        inventory: classifySilverseaOfficialInventory(indexedFinal.rows),
+        master_identities_present: validateClassicMasterIdentitiesPresent(indexedFinal.rows, masterFixture.rows).present
+      }
+    : countsBefore;
+
+  const nonMasterComplete =
+    args.apply &&
+    verification?.ok &&
+    storedClassicAudit?.exact_match === EXPECTED_STORED_CORRECT_AFTER &&
+    masterClassicAudit?.remaining_repair_candidates === EXPECTED_MASTER_REMAINING;
+
+  const report = {
+    phase: args.apply ? "m0d_nm_apply" : "m0d_nm_preflight",
+    run_id: runId,
+    m0d_nm_runner_path: M0D_NM_RUNNER_PATH,
+    m0d_nm_uses_hardened_runner: true,
+    nm_fixture_path: M0D_NM_BACKFILL_FIXTURE,
+    master_fixture_path: M0C_BACKFILL_FIXTURE,
+    m0d1_preflight_verification: m0d1BeforeApply,
+    m0d2_preflight_verification: m0d2BeforeApply,
+    m0d3_frozen_before_preflight: m0d3FrozenBefore,
+    expedition_preflight: expeditionBefore,
+    source_cutoff: sourceCutoff,
+    master_overlap: overlap,
+    nm_validation: nmValidation,
+    import_smoke: importSmoke,
+    preliminary_frozen_before_match: preliminaryBeforeMatch,
+    dry_run: dryRun,
+    pre_write_table: repairRows.map((row) => ({
+      ...row,
+      action: "UPDATE itinerary_ports ONLY",
+      status_remains: "expired",
+      precondition: "PASS"
+    })),
+    production_before: countsBefore,
+    production_after: countsAfter,
+    row_delta: args.apply ? countsAfter.silversea_total - countsBefore.silversea_total : 0,
+    prepared_state: { rollback_path: rollbackPath, apply_report_path: applyReportPath },
+    write_result: writeResult?.stats || null,
+    verification,
+    master_classic_audit: masterClassicAudit,
+    stored_classic_audit: storedClassicAudit,
+    m0d3_frozen_after: m0d3FrozenAfter,
+    protection,
+    performance,
+    hardened_apply: hardenedResult,
+    non_master_classic_data_shape_remediation_complete: nonMasterComplete,
+    classic_master_data_shape_remediation_complete: false,
+    master_remaining_repairs: EXPECTED_MASTER_REMAINING,
+    expedition_data_shape_complete: protection?.expedition_audit?.ok ?? expeditionBefore.ok,
+    weekly_maintenance: "NOT ENABLED",
+    m1_authorised: false,
+    next_phase: nonMasterComplete ? "A. M0D3 — FINAL 199-ROW CLASSIC BACKFILL REAUTHORISED" : null,
+    production_writes: {
+      inserts: 0,
+      itinerary_ports_updates: writeResult?.stats?.updated || 0,
+      deletes: 0,
+      other_column_updates: 0
+    },
+    started_at: startedAt,
+    ended_at: new Date().toISOString(),
+    git: { branch: git("git rev-parse --abbrev-ref HEAD"), sha: git("git rev-parse HEAD") }
+  };
+
+  fs.mkdirSync(REPORT_DIR, { recursive: true });
+  const reportPath = path.join(REPORT_DIR, `silversea-classic-m0d-non-master-${runId}.json`);
+  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`);
+  report.report_path = reportPath;
+
+  return report;
+}
+
+async function main() {
+  try {
+    const report = await runSilverseaClassicM0dNonMaster();
+    console.log(
+      JSON.stringify(
+        {
+          ok: !report.blocked,
+          phase: report.phase,
+          updates: report.production_writes?.itinerary_ports_updates,
+          report: report.report_path
+        },
+        null,
+        2
+      )
+    );
+    if (report.blocked) process.exit(1);
+    if (report.phase === "m0d_nm_apply" && report.production_writes.itinerary_ports_updates !== EXPECTED_BATCH_SIZE) {
+      process.exit(1);
+    }
+  } catch (err) {
+    console.error(JSON.stringify({ status: "failed", error: err.message }, null, 2));
+    process.exit(1);
+  }
+}
+
+const isMain =
+  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+if (isMain) main();

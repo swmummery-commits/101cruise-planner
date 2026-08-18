@@ -1,0 +1,83 @@
+{
+  "phase": "M0D-NM",
+  "mode": "scripts/fixtures/silversea/classic-m0d-non-master-itinerary-ports-backfill.json",
+  "generated_at": "2026-08-18T08:24:12.685Z",
+  "git_sha": "870419adf089793b4e533c40b6a36826f5fce4a2",
+  "frozen_count": 2,
+  "selection_method": "exact non-master stored-official Classic rows outside 599-row M0C master with deterministic current-source reconstruction",
+  "reconstruction_policy": {
+    "current_source": "buildExpectedClassicItineraryPorts via buildSilverseaUpsertCandidate"
+  },
+  "update_whitelist": [
+    "itinerary_ports"
+  ],
+  "rows": [
+    {
+      "sequence": 1,
+      "production_uuid": "5e68affa-0d11-447a-8b32-8b7de5a69906",
+      "official_sailing_id": "SM260907007",
+      "ship": "65844000-94ba-40f2-8e21-7f0546131f40",
+      "departure": "2026-09-07",
+      "status": "expired",
+      "before_itinerary_ports": [],
+      "after_itinerary_ports": [
+        "Barcelona",
+        "Palma de Mallorca",
+        "Cagliari",
+        "La Goulette",
+        "Trapani",
+        "Amalfi",
+        "Civitavecchia"
+      ],
+      "source_evidence_type": "current_source",
+      "reconstruction_method": "source_itinerary_ports_direct",
+      "defect_reason": "insert_path_omitted_itinerary_ports",
+      "lifecycle_state": "expired",
+      "row_fingerprint": {
+        "id": "5e68affa-0d11-447a-8b32-8b7de5a69906",
+        "official_sailing_id": "SM260907007",
+        "ship_id": "65844000-94ba-40f2-8e21-7f0546131f40",
+        "departure_date": "2026-09-07",
+        "return_date": "2026-09-14",
+        "nights": 7,
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "status": "expired"
+      },
+      "proposed_action": "UPDATE itinerary_ports ONLY"
+    },
+    {
+      "sequence": 2,
+      "production_uuid": "56110646-4e0e-46f4-bcce-f8a276971925",
+      "official_sailing_id": "SN260906007",
+      "ship": "de800e43-9486-44bf-8853-826b5b878774",
+      "departure": "2026-09-06",
+      "status": "expired",
+      "before_itinerary_ports": [],
+      "after_itinerary_ports": [
+        "Piraeus",
+        "Nafplion",
+        "Milos",
+        "Heraklion",
+        "Kusadasi",
+        "Rhodes",
+        "Mykonos",
+        "Piraeus"
+      ],
+      "source_evidence_type": "current_source",
+      "reconstruction_method": "source_itinerary_ports_direct",
+      "defect_reason": "insert_path_omitted_itinerary_ports",
+      "lifecycle_state": "expired",
+      "row_fingerprint": {
+        "id": "56110646-4e0e-46f4-bcce-f8a276971925",
+        "official_sailing_id": "SN260906007",
+        "ship_id": "de800e43-9486-44bf-8853-826b5b878774",
+        "departure_date": "2026-09-06",
+        "return_date": "2026-09-13",
+        "nights": 7,
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "status": "expired"
+      },
+      "proposed_action": "UPDATE itinerary_ports ONLY"
+    }
+  ]
+}

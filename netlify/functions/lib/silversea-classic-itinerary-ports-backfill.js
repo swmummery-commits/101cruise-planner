@@ -28,13 +28,28 @@ const M0C_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0c-itinerary-p
 const M0D1_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0d1-itinerary-ports-backfill.json";
 const M0D2_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0d2-itinerary-ports-backfill.json";
 const M0D3_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0d3-itinerary-ports-backfill.json";
+const M0D_NM_BACKFILL_FIXTURE =
+  "scripts/fixtures/silversea/classic-m0d-non-master-itinerary-ports-backfill.json";
 const M0D_BATCH_SIZES = Object.freeze([200, 200, 199]);
+const NON_MASTER_CLASSIC_OFFICIAL_IDS = Object.freeze(["SM260907007", "SN260906007"]);
+const NON_MASTER_CLASSIC_TARGET_IDENTITIES = Object.freeze([
+  {
+    official_sailing_id: "SM260907007",
+    production_uuid: "5e68affa-0d11-447a-8b32-8b7de5a69906"
+  },
+  {
+    official_sailing_id: "SN260906007",
+    production_uuid: "56110646-4e0e-46f4-bcce-f8a276971925"
+  }
+]);
 const M0D1_OPERATION = "silversea_classic_m0d1_itinerary_ports_backfill";
 const M0D1_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D1-ITINERARY-PORTS-BACKFILL";
 const M0D2_OPERATION = "silversea_classic_m0d2_itinerary_ports_backfill";
 const M0D2_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D2-ITINERARY-PORTS-BACKFILL";
 const M0D3_OPERATION = "silversea_classic_m0d3_itinerary_ports_backfill";
 const M0D3_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D3-ITINERARY-PORTS-BACKFILL";
+const M0D_NM_OPERATION = "silversea_classic_m0d_non_master_itinerary_ports_backfill";
+const M0D_NM_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D-NON-MASTER-ITINERARY-PORTS-BACKFILL";
 const M0D_OPERATION = "silversea_classic_m0d_itinerary_ports_backfill";
 const M0D_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D-ITINERARY-PORTS-BACKFILL";
 
@@ -359,6 +374,50 @@ function buildClassicBackfillFixtureRow(sequence, auditRow) {
   };
 }
 
+function buildNonMasterClassicFixtureRow(sequence, prodRow, built, options = {}) {
+  return {
+    sequence,
+    production_uuid: prodRow.id,
+    official_sailing_id: prodRow.official_sailing_id,
+    ship: prodRow.ship_id,
+    departure: prodRow.departure_date,
+    status: prodRow.status,
+    before_itinerary_ports: normalizeStoredPorts(prodRow.itinerary_ports),
+    after_itinerary_ports: normalizeStoredPorts(built.ports),
+    source_evidence_type: options.source_evidence_type || "current_source",
+    reconstruction_method: built.reconstruction_method || null,
+    defect_reason: "insert_path_omitted_itinerary_ports",
+    lifecycle_state: prodRow.status,
+    row_fingerprint: {
+      id: prodRow.id,
+      official_sailing_id: prodRow.official_sailing_id,
+      ship_id: prodRow.ship_id,
+      departure_date: prodRow.departure_date,
+      return_date: prodRow.return_date,
+      nights: prodRow.nights,
+      destination_id: prodRow.destination_id,
+      status: prodRow.status
+    },
+    proposed_action: "UPDATE itinerary_ports ONLY"
+  };
+}
+
+function validateNonMasterClassicNoMasterOverlap(fixture, masterFixture, batchFixtures = {}) {
+  const targetIds = new Set((fixture?.rows || []).map((r) => String(r.official_sailing_id).toUpperCase()));
+  const issues = [];
+  const masterIds = new Set((masterFixture?.rows || []).map((r) => String(r.official_sailing_id).toUpperCase()));
+  for (const id of targetIds) {
+    if (masterIds.has(id)) issues.push(`master_overlap:${id}`);
+  }
+  for (const [label, batchFixture] of Object.entries(batchFixtures)) {
+    const batchIds = new Set((batchFixture?.rows || []).map((r) => String(r.official_sailing_id).toUpperCase()));
+    for (const id of targetIds) {
+      if (batchIds.has(id)) issues.push(`${label}_overlap:${id}`);
+    }
+  }
+  return { ok: issues.length === 0, issues, master_overlap: issues.filter((i) => i.startsWith("master_")).length };
+}
+
 function validateClassicRepairFixture(fixture) {
   const rows = fixture?.rows || [];
   const uuids = rows.map((r) => r.production_uuid);
@@ -645,13 +704,18 @@ module.exports = {
   M0D1_BACKFILL_FIXTURE,
   M0D2_BACKFILL_FIXTURE,
   M0D3_BACKFILL_FIXTURE,
+  M0D_NM_BACKFILL_FIXTURE,
   M0D_BATCH_SIZES,
+  NON_MASTER_CLASSIC_OFFICIAL_IDS,
+  NON_MASTER_CLASSIC_TARGET_IDENTITIES,
   M0D1_OPERATION,
   M0D1_APPLY_CONFIRMATION_TOKEN,
   M0D2_OPERATION,
   M0D2_APPLY_CONFIRMATION_TOKEN,
   M0D3_OPERATION,
   M0D3_APPLY_CONFIRMATION_TOKEN,
+  M0D_NM_OPERATION,
+  M0D_NM_APPLY_CONFIRMATION_TOKEN,
   M0D_OPERATION,
   M0D_APPLY_CONFIRMATION_TOKEN,
   CLASSIC_AUDIT_CATEGORY,
@@ -675,6 +739,8 @@ module.exports = {
   resolveClassicProvenance,
   loadClassicProvenanceSets,
   buildClassicBackfillFixtureRow,
+  buildNonMasterClassicFixtureRow,
+  validateNonMasterClassicNoMasterOverlap,
   validateClassicRepairFixture,
   dryRunClassicItineraryPortsBackfill,
   buildM0dRollbackManifest,
