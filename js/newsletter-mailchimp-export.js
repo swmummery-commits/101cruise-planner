@@ -7,7 +7,9 @@
  *   - green-price-cards  (Sprint 13B)
  *
  * Consumes the canonical NewsletterPreview model + shared pricing rules.
- * Not a full newsletter document. No Mailchimp API.
+ * Not a full newsletter document. Generated fragments may still contain
+ * Supabase Storage image URLs; Admin export rewrites those to Mailchimp
+ * File Manager URLs via newsletter-mailchimp-assets.js before copy/download.
  */
 (function (global) {
   "use strict";

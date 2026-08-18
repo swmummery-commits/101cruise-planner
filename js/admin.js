@@ -10598,53 +10598,92 @@ function setFeaturedNewsletterPreviewTemplate(value) {
   renderAdmin();
 }
 
-function generateMailchimpHtml(mode) {
-  if (!window.NewsletterMailchimpExport || !window.NewsletterPreview) {
-    mailchimpPoc.errors = ["Mailchimp export module failed to load."];
-    mailchimpPoc.message = "Mailchimp export module failed to load.";
+async function generateMailchimpHtml(mode) {
+  const fail = (errors, message) => {
+    mailchimpPoc.errors = Array.isArray(errors) ? errors : [errors || message];
+    mailchimpPoc.message = message || mailchimpPoc.errors[0];
     mailchimpPoc.messageTone = "error";
     mailchimpPoc.html = "";
     mailchimpPoc.previewHtml = "";
     renderAdmin();
+  };
+
+  if (!window.NewsletterMailchimpExport || !window.NewsletterPreview) {
+    fail(["Mailchimp export module failed to load."], "Mailchimp export module failed to load.");
     return;
   }
   captureFeaturedDraftFromDom();
   if (!featuredFormDraft) {
-    mailchimpPoc.errors = ["Open a cruise special first, then generate Mailchimp HTML."];
-    mailchimpPoc.message = mailchimpPoc.errors[0];
-    mailchimpPoc.messageTone = "error";
-    mailchimpPoc.html = "";
-    mailchimpPoc.previewHtml = "";
-    renderAdmin();
+    fail(["Open a cruise special first, then generate Mailchimp HTML."]);
     return;
   }
 
-  const outputMode = mode === "airline_staff" ? "airline_staff" : "general";
-  const templateKey =
-    mailchimpPocTemplate === "green-price-cards" ? "green-price-cards" : "classic-editorial";
-  const model = buildFeaturedNewsletterPreviewModel(outputMode);
-  const result = window.NewsletterMailchimpExport.generateFromModel(model, {
-    outputMode,
-    templateKey,
-    pricingRows: featuredFormPricing,
-    publicSlug: featuredFormDraft.public_slug || model.publicSlug || ""
-  });
+  const run = async () => {
+    try {
+      const outputMode = mode === "airline_staff" ? "airline_staff" : "general";
+      const templateKey =
+        mailchimpPocTemplate === "green-price-cards" ? "green-price-cards" : "classic-editorial";
+      const model = buildFeaturedNewsletterPreviewModel(outputMode);
+      const result = window.NewsletterMailchimpExport.generateFromModel(model, {
+        outputMode,
+        templateKey,
+        pricingRows: featuredFormPricing,
+        publicSlug: featuredFormDraft.public_slug || model.publicSlug || ""
+      });
 
-  mailchimpPoc.outputMode = outputMode;
-  mailchimpPoc.templateKey = templateKey;
-  mailchimpPoc.label = result.label || "";
-  mailchimpPoc.filename = result.filename || "";
-  mailchimpPoc.errors = result.errors || [];
-  if (result.ok) {
-    mailchimpPoc.html = result.html || "";
-    mailchimpPoc.previewHtml = result.previewHtml || "";
-    mailchimpPoc.message = `${result.label} ready to copy into a Mailchimp Code block.`;
-    mailchimpPoc.messageTone = "success";
+      mailchimpPoc.outputMode = outputMode;
+      mailchimpPoc.templateKey = templateKey;
+      mailchimpPoc.label = result.label || "";
+      mailchimpPoc.filename = result.filename || "";
+      mailchimpPoc.errors = result.errors || [];
+      if (!result.ok) {
+        mailchimpPoc.html = "";
+        mailchimpPoc.previewHtml = "";
+        mailchimpPoc.message = "Fix the issues below before exporting.";
+        mailchimpPoc.messageTone = "error";
+        return;
+      }
+      if (!window.NewsletterMailchimpAssets?.prepareExportedHtml) {
+        fail(
+          ["Mailchimp image upload module failed to load."],
+          "Mailchimp image upload module failed to load. Export stopped so Supabase image links would not be used."
+        );
+        return;
+      }
+      const composerIssue = window.NewsletterIssueComposer?.getSelectedIssue?.() || {};
+      const prepared = await window.NewsletterMailchimpAssets.prepareExportedHtml({
+        html: result.html,
+        newsletterId: featuredFormDraft.newsletter_id || composerIssue.id || null,
+        newsletterNumber: featuredFormDraft.newsletter_number || composerIssue.number || null,
+        cruises: [featuredFormDraft]
+      });
+      if (!prepared.ok) {
+        fail([prepared.error], prepared.error);
+        return;
+      }
+      mailchimpPoc.html = prepared.html || "";
+      mailchimpPoc.previewHtml = result.previewHtml
+        ? window.NewsletterMailchimpAssets.replaceImageUrls(result.previewHtml, prepared.mappings)
+        : prepared.html;
+      mailchimpPoc.message = `${result.label} ready to copy into a Mailchimp Code block. Images are hosted on Mailchimp.`;
+      mailchimpPoc.messageTone = "success";
+    } catch (error) {
+      fail(
+        [error.message || "Mailchimp image upload failed."],
+        error.message || "Mailchimp image upload failed. Export stopped so Supabase image links would not be used."
+      );
+    }
+  };
+
+  if (typeof window.AdminLoading?.withLoading === "function") {
+    await window.AdminLoading.withLoading(run, {
+      key: "mailchimp-poc-export",
+      delayMs: 0,
+      message: "Preparing Mailchimp HTML…",
+      supportMessage: "Optimising images and uploading them to Mailchimp File Manager."
+    });
   } else {
-    mailchimpPoc.html = "";
-    mailchimpPoc.previewHtml = "";
-    mailchimpPoc.message = "Fix the issues below before exporting.";
-    mailchimpPoc.messageTone = "error";
+    await run();
   }
   renderAdmin();
 }

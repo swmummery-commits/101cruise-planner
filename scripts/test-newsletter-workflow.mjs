@@ -62,7 +62,10 @@ const staticChecks = [
   ["startNewFeaturedCruise does not reassign existing featured_cruises rows", (() => {
     const fn = adminJs.match(/async function startNewFeaturedCruise\(\)[\s\S]*?^async function /m)?.[0] || "";
     return fn.length > 0 && !/\.from\(["']featured_cruises["']\)/.test(fn) && !/openAddPicker|confirmAddPicker/.test(fn);
-  })()]
+  })()],
+  ["exportHtml uploads images to Mailchimp before copy/download", /NewsletterMailchimpAssets\.prepareExportedHtml/.test(composerJs)],
+  ["exportHtml fails closed when Mailchimp upload fails", /if \(!prepared\.ok\)/.test(composerJs) && /clipboard\.writeText\(prepared\.html/.test(composerJs)],
+  ["exportHtml does not copy unhosted compose HTML", !/clipboard\.writeText\(result\.html/.test(composerJs)]
 ];
 
 let failed = 0;

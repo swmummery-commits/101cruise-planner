@@ -5,16 +5,19 @@
   "description": "101CRUISE planner — Netlify site with Base44 CRM integration",
   "dependencies": {
     "@base44/sdk": "^0.8.38",
+    "@netlify/blobs": "^8.2.0",
     "@resvg/resvg-js": "^2.6.2",
     "@resvg/resvg-wasm": "^2.6.2",
     "@ssroute/data-eurostat": "^0.2.1",
     "@ssroute/typescript": "^0.2.0",
     "jszip": "^3.10.1",
+    "sharp": "^0.34.3",
     "topojson-client": "^3.1.0",
-    "world-atlas": "^2.0.2",
-    "@netlify/blobs": "^8.2.0"
+    "world-atlas": "^2.0.2"
   },
   "optionalDependencies": {
+    "@img/sharp-libvips-linux-x64": "^1.2.0",
+    "@img/sharp-linux-x64": "^0.34.3",
     "@resvg/resvg-js-linux-x64-gnu": "2.6.2"
   },
   "engines": {
@@ -25,6 +28,7 @@
     "import:cruise-data:dry": "node scripts/import-base44-cruise-data.mjs --dry-run",
     "import:cruise-data": "node scripts/import-base44-cruise-data.mjs --apply",
     "test:mailchimp-export": "node scripts/test-mailchimp-export.mjs",
+    "test:newsletter-mailchimp-assets": "node scripts/test-newsletter-mailchimp-assets.mjs",
     "test:newsletter-workflow": "node scripts/test-newsletter-workflow.mjs",
     "test:featured-itinerary": "node scripts/test-featured-cruise-itinerary.mjs",
     "test:marine-route": "node scripts/test-marine-route.mjs",

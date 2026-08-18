@@ -1477,18 +1477,48 @@
         issueHtml.previewHtml = "";
         return;
       }
-      if (outputMode === "airline_staff") issueHtml.airline = result.html;
-      else issueHtml.general = result.html;
+      if (!global.NewsletterMailchimpAssets?.prepareExportedHtml) {
+        issueMessage =
+          "Mailchimp image upload module failed to load. Export stopped so Supabase image links would not be used.";
+        issueMessageTone = "error";
+        issueHtml.previewHtml = "";
+        return;
+      }
+      issueMessage = "Optimising images and uploading to Mailchimp…";
+      issueMessageTone = "running";
+      rerender();
+      const prepared = await global.NewsletterMailchimpAssets.prepareExportedHtml({
+        html: result.html,
+        newsletterId: getActiveNewsletter()?.id || null,
+        newsletterNumber: issueNumber,
+        cruises: cruisesForCurrentIssue()
+      });
+      if (!prepared.ok) {
+        issueMessage = prepared.error || "Mailchimp image upload failed. Export stopped.";
+        issueMessageTone = "error";
+        issueHtml.previewHtml = "";
+        return;
+      }
+      if (outputMode === "airline_staff") issueHtml.airline = prepared.html;
+      else issueHtml.general = prepared.html;
       issueHtml.label = result.label || "";
       issueHtml.filename = result.filename || "";
-      issueHtml.previewHtml = result.previewHtml || result.html || "";
+      issueHtml.previewHtml = result.previewHtml
+        ? global.NewsletterMailchimpAssets.replaceImageUrls(result.previewHtml, prepared.mappings)
+        : prepared.html;
       issueHtml.previewMode = outputMode;
+      const reusedNote =
+        prepared.uploaded === 0 && prepared.reused > 0
+          ? " Reused existing Mailchimp images."
+          : prepared.uploaded
+            ? ` Uploaded ${prepared.uploaded} email image${prepared.uploaded === 1 ? "" : "s"} to Mailchimp.`
+            : "";
       if (action === "copy") {
-        await navigator.clipboard.writeText(result.html || "");
-        issueMessage = "HTML copied to clipboard.";
+        await navigator.clipboard.writeText(prepared.html || "");
+        issueMessage = `HTML copied to clipboard.${reusedNote}`;
         issueMessageTone = "success";
       } else {
-        const blob = new Blob([result.html || ""], { type: "text/html;charset=utf-8" });
+        const blob = new Blob([prepared.html || ""], { type: "text/html;charset=utf-8" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -1497,7 +1527,7 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 30_000);
-        issueMessage = "HTML downloaded.";
+        issueMessage = `HTML downloaded.${reusedNote}`;
         issueMessageTone = "success";
       }
     } catch (error) {
@@ -1513,7 +1543,7 @@
         key: "newsletter-export",
         delayMs: 0,
         message: "Preparing newsletter HTML…",
-        supportMessage: "Please wait while we build the Mailchimp fragment."
+        supportMessage: "Optimising images and uploading them to Mailchimp File Manager."
       });
     } else {
       await run();
@@ -1901,7 +1931,7 @@
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('airline_staff','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download Airline HTML</button>
             <button type="button" class="admin-button secondary" onclick="NewsletterIssueComposer.exportHtml('general','download')" ${issueBusy || !cruises.length ? "disabled" : ""}>Download General HTML</button>
           </div>
-          <p class="admin-helper">Export includes every cruise in this newsletter, in list order. Each cruise needs a hero, route map, pricing, and public slug for Explore More to link to <code>https://www.101cruise.com.au/cruise?slug={slug}</code>. Cruises without a slug omit Explore More.</p>
+          <p class="admin-helper">Export includes every cruise in this newsletter, in list order. Images are resized for email and uploaded to Mailchimp File Manager folder <code>101cruise Newsletter Images</code> automatically — the HTML will not use Supabase image links. Each cruise needs a hero, route map, pricing, and public slug for Explore More to link to <code>https://www.101cruise.com.au/cruise?slug={slug}</code>. Cruises without a slug omit Explore More.</p>
         </section>
 
         ${

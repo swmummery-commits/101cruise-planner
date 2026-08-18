@@ -200,6 +200,15 @@
     "netlify/functions/fonts/**"
   ]
 
+[functions."newsletter-mailchimp-assets"]
+  # Download + resize + Mailchimp File Manager upload for newsletter HTML export.
+  timeout = 120
+  external_node_modules = ["sharp"]
+  included_files = [
+    "node_modules/sharp/**",
+    "node_modules/@img/**"
+  ]
+
 [functions."social-pack-generate"]
   # Weekly newsletter social pack: destination images + SVG → PNG + ZIP.
   timeout = 60
