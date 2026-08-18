@@ -274,16 +274,26 @@ export async function runSilverseaClassicM0d3(options = {}) {
     throw new Error(`partition_invalid — STOP WITH ZERO WRITES`);
   }
 
-  const m0d3Fixture = buildM0d3BatchFixture({
-    partition,
-    generatedAt: startedAt,
-    gitSha: git("git rev-parse HEAD"),
-    parentFixturePath: M0C_BACKFILL_FIXTURE,
-    parentFixtureSha256: hashFixtureContent(masterRaw)
-  });
+  if (!fs.existsSync(M0D3_FIXTURE_PATH)) {
+    throw new Error("m0d3_frozen_fixture_missing — STOP WITH ZERO WRITES");
+  }
+  const m0d3Fixture = JSON.parse(fs.readFileSync(M0D3_FIXTURE_PATH, "utf8"));
   const m0d3Validation = validateClassicRepairFixture(m0d3Fixture);
   if (!m0d3Validation.ok || m0d3Validation.row_count !== EXPECTED_BATCH_SIZE) {
     throw new Error(`m0d3_fixture_invalid — STOP WITH ZERO WRITES`);
+  }
+  const m0d3MasterUuids = new Set(partition.batches.m0d3.rows.map((r) => r.production_uuid));
+  const m0d3MasterIds = new Set(partition.batches.m0d3.rows.map((r) => String(r.official_sailing_id).toUpperCase()));
+  if (m0d3Fixture.rows.length !== partition.batches.m0d3.count) {
+    throw new Error("m0d3_fixture_partition_count_mismatch — STOP WITH ZERO WRITES");
+  }
+  for (const row of m0d3Fixture.rows) {
+    if (!m0d3MasterUuids.has(row.production_uuid)) {
+      throw new Error(`m0d3_fixture_not_partition_batch:${row.official_sailing_id} — STOP WITH ZERO WRITES`);
+    }
+    if (!m0d3MasterIds.has(String(row.official_sailing_id).toUpperCase())) {
+      throw new Error(`m0d3_fixture_official_id_not_partition_batch:${row.official_sailing_id} — STOP WITH ZERO WRITES`);
+    }
   }
 
   ensureFixtureFromPartition(M0D1_FIXTURE_PATH, buildM0d1BatchFixture);
@@ -300,9 +310,6 @@ export async function runSilverseaClassicM0d3(options = {}) {
   if (!m0d2Validation.ok || m0d2Validation.row_count !== EXPECTED_M0D2_SIZE) {
     throw new Error(`m0d2_fixture_invalid — STOP WITH ZERO WRITES`);
   }
-
-  fs.mkdirSync(FIXTURE_DIR, { recursive: true });
-  fs.writeFileSync(M0D3_FIXTURE_PATH, `${JSON.stringify(m0d3Fixture, null, 2)}\n`);
 
   const repairRows = m0d3Fixture.rows;
   const m0d1Uuids = new Set(m0d1Fixture.rows.map((r) => r.production_uuid));
