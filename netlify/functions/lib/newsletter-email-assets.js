@@ -339,10 +339,13 @@ async function processNewsletterEmailAssets(input = {}, deps = {}) {
         mimeType: optimised.mimeType
       });
     } catch (error) {
-      throw assetError(
+      const wrapped = assetError(
         `Mailchimp upload failed for ${generatedFilename}: ${error.message || "upload failed"}. Export stopped so the newsletter would not keep using Supabase image links.`,
         { code: error.code || "mailchimp_upload_failed", statusCode: error.statusCode || 502 }
       );
+      wrapped.generatedFilename = generatedFilename;
+      wrapped.httpStatus = error.httpStatus || error.statusCode || null;
+      throw wrapped;
     }
 
     const row = {

@@ -201,8 +201,8 @@
   ]
 
 [functions."newsletter-mailchimp-assets"]
-  # Download + resize + Mailchimp File Manager upload for newsletter HTML export.
-  timeout = 120
+  # One newsletter image per invocation: download + resize + Mailchimp File Manager upload.
+  timeout = 60
   external_node_modules = ["sharp"]
   included_files = [
     "node_modules/sharp/**",

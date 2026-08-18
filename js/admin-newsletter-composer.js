@@ -1484,14 +1484,19 @@
         issueHtml.previewHtml = "";
         return;
       }
-      issueMessage = "Optimising images and uploading to Mailchimp…";
+      issueMessage = "Preparing newsletter images…";
       issueMessageTone = "running";
       rerender();
       const prepared = await global.NewsletterMailchimpAssets.prepareExportedHtml({
         html: result.html,
         newsletterId: getActiveNewsletter()?.id || null,
         newsletterNumber: issueNumber,
-        cruises: cruisesForCurrentIssue()
+        cruises: cruisesForCurrentIssue(),
+        onProgress({ current, total, message }) {
+          issueMessage = message || `Preparing newsletter images ${current} of ${total}…`;
+          issueMessageTone = "running";
+          rerender();
+        }
       });
       if (!prepared.ok) {
         issueMessage = prepared.error || "Mailchimp image upload failed. Export stopped.";

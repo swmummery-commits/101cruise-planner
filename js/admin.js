@@ -10655,7 +10655,11 @@ async function generateMailchimpHtml(mode) {
         html: result.html,
         newsletterId: featuredFormDraft.newsletter_id || composerIssue.id || null,
         newsletterNumber: featuredFormDraft.newsletter_number || composerIssue.number || null,
-        cruises: [featuredFormDraft]
+        cruises: [featuredFormDraft],
+        onProgress({ current, total, message }) {
+          mailchimpPoc.message = message || `Preparing newsletter images ${current} of ${total}…`;
+          mailchimpPoc.messageTone = "running";
+        }
       });
       if (!prepared.ok) {
         fail([prepared.error], prepared.error);

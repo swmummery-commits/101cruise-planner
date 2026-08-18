@@ -4,12 +4,12 @@
  * POST /.netlify/functions/newsletter-mailchimp-assets
  * Body: {
  *   newsletter_id?, newsletter_number?,
+ *   asset_index?, asset_total?,
  *   assets: [{ source_url, asset_type: 'hero'|'route_map'|'other', label }]
  * }
  *
- * Downloads master images from Supabase, optimises them for email, uploads
- * them to Mailchimp File Manager folder "101cruise Newsletter Images",
- * and returns hosted URLs. Never returns Supabase URLs for use in export HTML.
+ * One unique asset per invocation (download → optimise → Mailchimp upload → mapping upsert).
+ * Existing checksum mappings are reused. Never returns Supabase URLs for export HTML.
  *
  * Required env: MAILCHIMP_API_KEY, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  * Optional: MAILCHIMP_SERVER_PREFIX, MAILCHIMP_NEWSLETTER_FOLDER_NAME
@@ -17,6 +17,8 @@
 
 const { requireAdmin } = require("./admin-auth");
 const { processNewsletterEmailAssets, isSupabaseStorageUrl } = require("./lib/newsletter-email-assets");
+
+const MAX_ASSETS_PER_INVOCATION = 1;
 
 function jsonResponse(statusCode, body) {
   return {
@@ -32,6 +34,13 @@ function jsonResponse(statusCode, body) {
   };
 }
 
+function publicHttpStatus(error, fallback) {
+  const status = Number(error?.httpStatus || error?.statusCode || fallback) || null;
+  if (!status) return null;
+  if (status >= 100 && status <= 599) return status;
+  return null;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") return jsonResponse(204, {});
   if (event.httpMethod !== "POST") {
@@ -42,6 +51,17 @@ exports.handler = async (event) => {
     await requireAdmin(event);
     const body = JSON.parse(event.body || "{}");
     const assets = Array.isArray(body.assets) ? body.assets : [];
+    const assetIndex = Number(body.asset_index) || 1;
+    const assetTotal = Number(body.asset_total) || assets.length || 1;
+    if (assets.length > MAX_ASSETS_PER_INVOCATION) {
+      return jsonResponse(400, {
+        success: false,
+        error: `Send one newsletter image per request (received ${assets.length}).`,
+        code: "too_many_assets",
+        asset_index: assetIndex,
+        asset_total: assetTotal
+      });
+    }
     const invalid = assets.filter((item) => {
       const url = String(item?.source_url || item?.url || "").trim();
       return url && !isSupabaseStorageUrl(url) && !/^https:\/\//i.test(url);
@@ -49,7 +69,9 @@ exports.handler = async (event) => {
     if (invalid.length) {
       return jsonResponse(400, {
         success: false,
-        error: "Every newsletter image must use an absolute https address so it can be copied to Mailchimp."
+        error: "Every newsletter image must use an absolute https address so it can be copied to Mailchimp.",
+        asset_index: assetIndex,
+        asset_total: assetTotal
       });
     }
 
@@ -59,12 +81,15 @@ exports.handler = async (event) => {
       assets
     });
 
-    const missingHosted = (result.mappings || []).filter((row) => !row.mailchimp_file_url);
-    if (missingHosted.length) {
+    const mapping = (result.mappings || [])[0] || null;
+    if (assets.length && !mapping?.mailchimp_file_url) {
       return jsonResponse(502, {
         success: false,
         error:
-          "Mailchimp did not return a hosted URL for every newsletter image. Export stopped so Supabase links would not be used."
+          "Mailchimp did not return a hosted URL for this newsletter image. Export stopped so Supabase links would not be used.",
+        generated_filename: mapping?.generated_filename || null,
+        asset_index: assetIndex,
+        asset_total: assetTotal
       });
     }
 
@@ -75,14 +100,32 @@ exports.handler = async (event) => {
       folder: result.folder,
       reused: result.reused,
       uploaded: result.uploaded,
+      generated_filename: mapping?.generated_filename || null,
+      asset_index: assetIndex,
+      asset_total: assetTotal,
       mappings: result.mappings
     });
   } catch (error) {
     const status = error.statusCode || 500;
+    let assetIndex = Number(error.assetIndex) || null;
+    let assetTotal = Number(error.assetTotal) || null;
+    try {
+      const body = JSON.parse(event.body || "{}");
+      assetIndex = assetIndex || Number(body.asset_index) || null;
+      assetTotal = assetTotal || Number(body.asset_total) || null;
+    } catch {
+      // Keep filename/status from the thrown error when the body is unreadable.
+    }
     return jsonResponse(status, {
       success: false,
       error: error.message || "Newsletter image upload to Mailchimp failed.",
-      code: error.code || "newsletter_assets_failed"
+      code: error.code || "newsletter_assets_failed",
+      generated_filename: error.generatedFilename || null,
+      http_status: publicHttpStatus(error),
+      asset_index: assetIndex,
+      asset_total: assetTotal
     });
   }
 };
+
+exports.MAX_ASSETS_PER_INVOCATION = MAX_ASSETS_PER_INVOCATION;

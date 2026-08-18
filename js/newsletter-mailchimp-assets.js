@@ -1,14 +1,15 @@
 /**
  * Client helper for newsletter Mailchimp export.
- * Collects Supabase image URLs from generated HTML, uploads email-optimised
- * copies via /.netlify/functions/newsletter-mailchimp-assets, then rewrites
+ * Collects unique Supabase image URLs from generated HTML, uploads
+ * email-optimised copies one asset per Netlify invocation, then rewrites
  * the HTML. Never returns HTML that still contains Supabase Storage URLs.
  */
 (function (global) {
   "use strict";
 
   const ENDPOINT = "/.netlify/functions/newsletter-mailchimp-assets";
-  const FETCH_MS = 150000;
+  const FETCH_MS = 75000;
+  const MAX_ASSETS_PER_REQUEST = 1;
 
   function unescapeHtml(value) {
     return String(value || "")
@@ -156,7 +157,24 @@
     };
   }
 
-  async function requestMappings({ newsletterId, newsletterNumber, assets }) {
+  function progressMessage({ current, total, reused }) {
+    const base = `Preparing newsletter images ${current} of ${total}…`;
+    return reused ? `${base} Reused an existing Mailchimp file.` : base;
+  }
+
+  function describeAssetFailure({ data, status, index, total, asset }) {
+    const filename = String(data?.generated_filename || asset?.label || "").trim();
+    const httpStatus = Number(data?.http_status || data?.httpStatus || status) || null;
+    const parts = [`Newsletter image ${index} of ${total} failed`];
+    if (filename) parts.push(`(${filename})`);
+    if (httpStatus) parts.push(`HTTP ${httpStatus}`);
+    const detail = String(data?.error || "").trim();
+    const head = parts.join(" ");
+    const body = detail && detail !== head ? `: ${detail}` : ".";
+    return `${head}${body} Export stopped so Supabase image links would not be used. Images already uploaded will be reused on retry.`;
+  }
+
+  async function requestOneAsset({ newsletterId, newsletterNumber, asset, index, total }) {
     const headers =
       typeof global.adminAuthHeaders === "function"
         ? await global.adminAuthHeaders({ "Content-Type": "application/json" })
@@ -170,7 +188,9 @@
         body: JSON.stringify({
           newsletter_id: newsletterId || null,
           newsletter_number: newsletterNumber || null,
-          assets
+          asset_index: index,
+          asset_total: total,
+          assets: [asset]
         }),
         signal: controller.signal
       });
@@ -178,25 +198,57 @@
       if (!response.ok || data.success === false) {
         return {
           ok: false,
-          error:
-            data.error ||
-            `Mailchimp image upload failed (HTTP ${response.status}). Export stopped so Supabase image links would not be used.`
+          error: describeAssetFailure({
+            data,
+            status: response.status,
+            index,
+            total,
+            asset
+          }),
+          generated_filename: data.generated_filename || null,
+          http_status: data.http_status || response.status,
+          asset_index: index,
+          asset_total: total
         };
       }
-      return { ok: true, data };
+      const mappings = Array.isArray(data.mappings) ? data.mappings : [];
+      const mapping = mappings[0];
+      if (!mapping?.mailchimp_file_url) {
+        return {
+          ok: false,
+          error: describeAssetFailure({
+            data: {
+              error: "Mailchimp did not return a hosted URL for this newsletter image.",
+              generated_filename: mapping?.generated_filename
+            },
+            status: response.status,
+            index,
+            total,
+            asset
+          }),
+          generated_filename: mapping?.generated_filename || null,
+          http_status: response.status,
+          asset_index: index,
+          asset_total: total
+        };
+      }
+      return { ok: true, data, mapping };
     } catch (error) {
       if (error.name === "AbortError") {
         return {
           ok: false,
-          error:
-            "Uploading newsletter images to Mailchimp timed out. Export stopped. Try again — images that already uploaded will be reused."
+          error: `Newsletter image ${index} of ${total} timed out. Export stopped. Try again — images that already uploaded will be reused.`,
+          asset_index: index,
+          asset_total: total
         };
       }
       return {
         ok: false,
         error:
           error.message ||
-          "Could not reach the Mailchimp image upload service. Export stopped so Supabase image links would not be used."
+          `Could not reach the Mailchimp image upload service for image ${index} of ${total}. Export stopped so Supabase image links would not be used.`,
+        asset_index: index,
+        asset_total: total
       };
     } finally {
       clearTimeout(timer);
@@ -205,9 +257,16 @@
 
   /**
    * Rewrite generated newsletter HTML to Mailchimp-hosted image URLs.
+   * Processes one unique asset per Netlify invocation.
    * @returns {{ ok: true, html, mappings, reused, uploaded } | { ok: false, error, html: "" }}
    */
-  async function prepareExportedHtml({ html, newsletterId, newsletterNumber, cruises } = {}) {
+  async function prepareExportedHtml({
+    html,
+    newsletterId,
+    newsletterNumber,
+    cruises,
+    onProgress
+  } = {}) {
     const sourceHtml = String(html || "");
     if (!sourceHtml.trim()) {
       return { ok: false, error: "Newsletter HTML was empty, so images could not be prepared.", html: "" };
@@ -222,12 +281,56 @@
       return { ok: true, html: sourceHtml, mappings: [], reused: 0, uploaded: 0 };
     }
 
-    const result = await requestMappings({ newsletterId, newsletterNumber, assets });
-    if (!result.ok) {
-      return { ok: false, error: result.error, html: "" };
+    const mappings = [];
+    let reused = 0;
+    let uploaded = 0;
+    let folder = null;
+    const total = assets.length;
+
+    for (let i = 0; i < assets.length; i += MAX_ASSETS_PER_REQUEST) {
+      const asset = assets[i];
+      const current = i + 1;
+      if (typeof onProgress === "function") {
+        onProgress({
+          current,
+          total,
+          label: asset.label,
+          message: progressMessage({ current, total, reused: false })
+        });
+      }
+      const result = await requestOneAsset({
+        newsletterId,
+        newsletterNumber,
+        asset,
+        index: current,
+        total
+      });
+      if (!result.ok) {
+        return {
+          ok: false,
+          error: result.error,
+          html: "",
+          generated_filename: result.generated_filename || null,
+          http_status: result.http_status || null,
+          asset_index: result.asset_index || current,
+          asset_total: total
+        };
+      }
+      mappings.push(result.mapping);
+      if (result.data?.folder) folder = result.data.folder;
+      if (result.mapping.reused || result.data?.reused > 0) reused += 1;
+      if (result.mapping.uploaded || result.data?.uploaded > 0) uploaded += 1;
+      if (typeof onProgress === "function" && (result.mapping.reused || result.data?.reused > 0)) {
+        onProgress({
+          current,
+          total,
+          label: asset.label,
+          reused: true,
+          message: progressMessage({ current, total, reused: true })
+        });
+      }
     }
 
-    const mappings = Array.isArray(result.data?.mappings) ? result.data.mappings : [];
     if (mappings.length < assets.length) {
       return {
         ok: false,
@@ -247,14 +350,16 @@
       ok: true,
       html: rewritten,
       mappings,
-      reused: Number(result.data?.reused) || 0,
-      uploaded: Number(result.data?.uploaded) || 0,
-      folder: result.data?.folder || null
+      reused,
+      uploaded,
+      folder
     };
   }
 
   const api = {
     ENDPOINT,
+    FETCH_MS,
+    MAX_ASSETS_PER_REQUEST,
     unescapeHtml,
     normalizeSourceUrl,
     isSupabaseStorageUrl,
@@ -266,6 +371,8 @@
     replaceImageUrls,
     remainingSupabaseStorageUrls,
     assertNoSupabaseStorageUrls,
+    progressMessage,
+    describeAssetFailure,
     prepareExportedHtml
   };
 

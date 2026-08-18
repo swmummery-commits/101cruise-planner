@@ -310,17 +310,28 @@ try {
   );
   throw new Error("expected upload failure to throw");
 } catch (error) {
-  assert(/Export stopped/.test(error.message), "upload failure mentions export stopped");
-  assert(/Mailchimp upload failed/.test(error.message), "upload failure names Mailchimp");
+  assert(error.generatedFilename, "upload failure includes generated filename");
+  assert(error.httpStatus === 502, "upload failure includes upstream HTTP status");
 }
 
 const handlerSrc = readFileSync(path.join(root, "netlify/functions/newsletter-mailchimp-assets.js"), "utf8");
 assert(/requireAdmin/.test(handlerSrc), "function requires admin");
 assert(/processNewsletterEmailAssets/.test(handlerSrc), "function uses pipeline");
+assert(/MAX_ASSETS_PER_INVOCATION = 1/.test(handlerSrc), "function accepts one asset per invocation");
+assert(/generated_filename/.test(handlerSrc), "function returns generated filename on errors");
+assert(/http_status/.test(handlerSrc), "function returns public HTTP status on errors");
+
+const netlifyToml = readFileSync(path.join(root, "netlify.toml"), "utf8");
+assert(
+  /\[functions\."newsletter-mailchimp-assets"\][\s\S]*?timeout = 60/.test(netlifyToml),
+  "function timeout is 60s for one-asset invocations"
+);
 
 const composerSrc = readFileSync(path.join(root, "js/admin-newsletter-composer.js"), "utf8");
 assert(composerSrc.includes("prepareExportedHtml"), "composer export uses asset pipeline");
 assert(composerSrc.includes("prepared.html"), "composer copies hosted HTML");
+assert(composerSrc.includes("onProgress"), "composer shows per-image progress");
+assert(composerSrc.includes("Preparing newsletter images"), "composer progress copy names images");
 assert(!/clipboard\.writeText\(result\.html/.test(composerSrc), "composer never copies unhosted HTML");
 
 const adminHtml = readFileSync(path.join(root, "admin.html"), "utf8");
@@ -432,5 +443,219 @@ const failClosed = await Client.prepareExportedHtml({
 assert(failClosed.ok === false, "prepareExportedHtml fails when fetch is unavailable");
 assert(failClosed.html === "", "failed prepare does not return supabase html");
 assert(/Mailchimp|not configured|could not reach|stopped/i.test(failClosed.error), "failure message is explicit");
+
+assert(Client.MAX_ASSETS_PER_REQUEST === 1, "client sends one asset per Netlify invocation");
+assert(
+  Client.progressMessage({ current: 3, total: 12 }) === "Preparing newsletter images 3 of 12…",
+  "progress copy matches composer"
+);
+const namedFailure = Client.describeAssetFailure({
+  data: {
+    error: "Mailchimp upload failed for newsletter-079-explora-ii-hero-3f8a2c1b.jpg: timeout",
+    generated_filename: "newsletter-079-explora-ii-hero-3f8a2c1b.jpg",
+    http_status: 504
+  },
+  status: 504,
+  index: 9,
+  total: 12,
+  asset: { label: "Explora II" }
+});
+assert(/9 of 12/.test(namedFailure), "failure names asset index");
+assert(/newsletter-079-explora-ii-hero-3f8a2c1b\.jpg/.test(namedFailure), "failure names generated filename");
+assert(/HTTP 504/.test(namedFailure), "failure includes public HTTP status");
+assert(/reused on retry/i.test(namedFailure), "failure says completed uploads are reused");
+assert(!/MAILCHIMP_API_KEY|eyJ/.test(namedFailure), "failure does not leak secrets");
+
+function twelveSourceUrls() {
+  return Array.from({ length: 12 }, (_, index) => {
+    const n = String(index + 1).padStart(2, "0");
+    const kind = index % 2 === 0 ? "hero" : "route-map";
+    const bucket = kind === "hero" ? "cruise-media/ships" : "featured-cruise-route-maps";
+    return `https://example.supabase.co/storage/v1/object/public/${bucket}/ship-${n}-${kind}.jpg`;
+  });
+}
+
+const twelveUrls = twelveSourceUrls();
+const twelveHtml = twelveUrls.map((url, index) => `<img src="${url}" alt="ship ${index + 1}">`).join("\n");
+assert(Client.collectSupabaseImageUrls(twelveHtml).length === 12, "collects 12 unique supabase images");
+
+const twelveAssets = twelveUrls.map((url, index) => ({
+  source_url: url,
+  asset_type: index % 2 === 0 ? "hero" : "route_map",
+  label: `Ship ${index + 1}`
+}));
+const twelveUploads = [];
+const twelveStore = [];
+const twelveFirst = await processNewsletterEmailAssets(
+  {
+    newsletterId: "nl-79",
+    newsletterNumber: 79,
+    assets: twelveAssets
+  },
+  {
+    ...deps,
+    downloadSourceBytes: async (url) => ({
+      buffer: Buffer.from(url),
+      sourcePath: url.replace("https://example.supabase.co/storage/v1/object/public/", "")
+    }),
+    uploadFile: async ({ name, folderId }) => {
+      twelveUploads.push(name);
+      return {
+        id: `file-12-${twelveUploads.length}`,
+        url: `https://mcusercontent.com/101cruise/${name}`,
+        name,
+        folderId
+      };
+    },
+    upsertMapping: async (row) => {
+      twelveStore.push(row);
+      return row;
+    }
+  }
+);
+assert(twelveFirst.uploaded === 12, `server processes 12 unique assets, got ${twelveFirst.uploaded}`);
+assert(twelveFirst.mappings.length === 12, "12 mappings returned");
+assert(
+  twelveFirst.mappings.every((row) => row.mailchimp_file_url.startsWith("https://mcusercontent.com/")),
+  "12 mappings are Mailchimp URLs"
+);
+
+function mockFetch({ failAt = null, known = new Map(), posts }) {
+  return async (_url, opts) => {
+    const body = JSON.parse(opts.body);
+    posts.push(body);
+    assert(Array.isArray(body.assets), "request includes assets array");
+    assert(body.assets.length === 1, `one asset per request, got ${body.assets.length}`);
+    if (body.assets.length > 1) {
+      return {
+        ok: false,
+        status: 400,
+        json: async () => ({
+          success: false,
+          error: `Send one newsletter image per request (received ${body.assets.length}).`,
+          code: "too_many_assets"
+        })
+      };
+    }
+    const asset = body.assets[0];
+    const index = Number(body.asset_index);
+    if (failAt && index === failAt) {
+      return {
+        ok: false,
+        status: 504,
+        json: async () => ({
+          success: false,
+          error: "Gateway timed out while uploading this newsletter image.",
+          generated_filename: `newsletter-079-ship-${String(index).padStart(2, "0")}-hero-abcdabcd.jpg`,
+          http_status: 504,
+          asset_index: index,
+          asset_total: body.asset_total
+        })
+      };
+    }
+    const existing = known.get(asset.source_url);
+    if (existing) {
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          success: true,
+          reused: 1,
+          uploaded: 0,
+          mappings: [{ ...existing, reused: true, uploaded: false }]
+        })
+      };
+    }
+    const mapping = {
+      source_url: asset.source_url,
+      mailchimp_file_url: `https://mcusercontent.com/101cruise/newsletter-079-asset-${index}.jpg`,
+      generated_filename: `newsletter-079-asset-${index}.jpg`,
+      reused: false,
+      uploaded: true
+    };
+    known.set(asset.source_url, mapping);
+    return {
+      ok: true,
+      status: 200,
+      json: async () => ({
+        success: true,
+        reused: 0,
+        uploaded: 1,
+        folder: { id: "folder-1", name: "101cruise Newsletter Images" },
+        mappings: [mapping]
+      })
+    };
+  };
+}
+
+const knownMappings = new Map();
+const firstPosts = [];
+sandbox.fetch = mockFetch({ failAt: 9, known: knownMappings, posts: firstPosts });
+const progress = [];
+const partial = await Client.prepareExportedHtml({
+  html: twelveHtml,
+  newsletterId: "nl-79",
+  newsletterNumber: 79,
+  onProgress(event) {
+    progress.push(event.message);
+  }
+});
+assert(partial.ok === false, "export stops when one image of 12 fails");
+assert(partial.html === "", "failed 12-asset export does not return HTML");
+assert(firstPosts.length === 9, `stopped after the failed image, got ${firstPosts.length} posts`);
+assert(firstPosts.every((body) => body.assets.length === 1), "every post is a single asset");
+assert(/9 of 12/.test(partial.error), "partial failure names 9 of 12");
+assert(/HTTP 504/.test(partial.error), "partial failure includes HTTP 504");
+assert(/newsletter-079-ship-09-hero-abcdabcd\.jpg/.test(partial.error), "partial failure includes generated filename");
+assert(progress.some((msg) => msg.includes("1 of 12")), "progress starts at 1 of 12");
+assert(progress.some((msg) => msg.includes("9 of 12")), "progress reaches the failed image");
+
+const retryPosts = [];
+sandbox.fetch = mockFetch({ known: knownMappings, posts: retryPosts });
+const retryProgress = [];
+const retry = await Client.prepareExportedHtml({
+  html: twelveHtml,
+  newsletterId: "nl-79",
+  newsletterNumber: 79,
+  onProgress(event) {
+    retryProgress.push(event);
+  }
+});
+assert(retry.ok === true, "retry after partial completion succeeds");
+assert(retry.mappings.length === 12, "retry returns 12 mappings");
+assert(retry.reused === 8, `retry reuses the 8 completed images, got ${retry.reused}`);
+assert(retry.uploaded === 4, `retry uploads the remaining 4 images, got ${retry.uploaded}`);
+assert(retryPosts.length === 12, "retry still visits every unique image so the server can reuse mappings");
+assert(Client.assertNoSupabaseStorageUrls(retry.html).ok, "successful 12-asset HTML has zero Supabase URLs");
+assert(!/supabase\.(co|in)\/storage/.test(retry.html), "successful HTML string has no supabase storage hosts");
+assert((retry.html.match(/mcusercontent\.com/g) || []).length >= 12, "successful HTML uses Mailchimp hosts");
+assert(
+  retryProgress.some((event) => /Reused an existing Mailchimp file/.test(event.message)),
+  "retry progress notes reused files"
+);
+
+const variantKnown = new Map();
+const variantPosts = [];
+sandbox.fetch = mockFetch({ known: variantKnown, posts: variantPosts });
+const airlineHosted = await Client.prepareExportedHtml({
+  html: airline.html,
+  newsletterId: "nl-79",
+  newsletterNumber: 79
+});
+const generalHosted = await Client.prepareExportedHtml({
+  html: general.html,
+  newsletterId: "nl-79",
+  newsletterNumber: 79
+});
+assert(airlineHosted.ok && generalHosted.ok, "both variants export after mappings exist");
+assert(airlineHosted.uploaded === 4 && airlineHosted.reused === 0, "airline variant uploads the shared image set once");
+assert(generalHosted.reused === 4 && generalHosted.uploaded === 0, "general variant reuses the same mappings");
+assert(Client.assertNoSupabaseStorageUrls(airlineHosted.html).ok, "airline success HTML is clean");
+assert(Client.assertNoSupabaseStorageUrls(generalHosted.html).ok, "general success HTML is clean");
+assert(variantPosts.every((body) => body.assets.length === 1), "variant exports also send one image per request");
+
+sandbox.fetch = async () => {
+  throw new Error("Could not reach the Mailchimp image upload service (network disabled in test)");
+};
 
 console.log("ok: newsletter mailchimp asset pipeline");
