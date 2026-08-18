@@ -32,6 +32,7 @@ const EXPECTED_CLASSIC_EXACT_MATCH = 599;
 const EXPECTED_REMAINING_REPAIRS = 0;
 const EXPECTED_M0D1_SIZE = 200;
 const EXPECTED_M0D2_SIZE = 200;
+const NON_MASTER_CLASSIC_OFFICIAL_IDS = Object.freeze(["SN260906007", "SM260907007"]);
 
 const adapter = require(path.join(root, "netlify/functions/lib/silversea-discovery-adapter"));
 const { indexExistingSilverseaRecords } = require(path.join(
@@ -179,6 +180,51 @@ async function auditExpeditionMismatches(expeditionRows, sourceById, line, today
   return { ok: mismatches === 0, mismatches, total: expeditionRows.length };
 }
 
+function resolveMasterClassicRows(indexed, masterFixture) {
+  return masterFixture.rows
+    .map((row) => indexed.byOfficialId.get(String(row.official_sailing_id).toUpperCase()))
+    .filter(Boolean);
+}
+
+function auditNonMasterClassicRows(allRows, masterFixture, sourceById, line) {
+  const masterIds = new Set(masterFixture.rows.map((r) => String(r.official_sailing_id).toUpperCase()));
+  const nonMaster = allRows.filter(
+    (row) => isClassicStoredOfficialRow(row) && !masterIds.has(String(row.official_sailing_id).toUpperCase())
+  );
+  const audits = [];
+  let matchCount = 0;
+  for (const prodRow of nonMaster) {
+    const source = sourceById.get(String(prodRow.official_sailing_id).toUpperCase()) || null;
+    const built = source ? buildExpectedClassicItineraryPorts(source, line) : { ok: false };
+    const stored = normalizeStoredPorts(prodRow.itinerary_ports);
+    const expected = built.ok ? built.ports : [];
+    const equal = built.ok && portsArrayEqual(stored, expected);
+    if (equal) matchCount += 1;
+    audits.push({
+      production_uuid: prodRow.id,
+      official_sailing_id: prodRow.official_sailing_id,
+      status: prodRow.status,
+      departure_date: prodRow.departure_date,
+      ship_id: prodRow.ship_id,
+      source_available: Boolean(source),
+      stored_itinerary_ports: stored,
+      expected_itinerary_ports: expected,
+      equal
+    });
+  }
+  const expectedIds = new Set(NON_MASTER_CLASSIC_OFFICIAL_IDS.map((id) => id.toUpperCase()));
+  const foundIds = new Set(nonMaster.map((row) => String(row.official_sailing_id).toUpperCase()));
+  return {
+    ok:
+      nonMaster.length === NON_MASTER_CLASSIC_OFFICIAL_IDS.length &&
+      matchCount === nonMaster.length &&
+      [...expectedIds].every((id) => foundIds.has(id)),
+    audited: nonMaster.length,
+    matches: matchCount,
+    rows: audits
+  };
+}
+
 async function headLineCount(lineId) {
   const { count } = await exactCountSupabase(root, "discovered_cruises", `cruise_line_id=eq.${encodeURIComponent(lineId)}`);
   return count;
@@ -317,9 +363,14 @@ export async function runSilverseaClassicM0d3(options = {}) {
     }
   }
 
-  const expeditionBefore = await auditExpeditionMismatches(expeditionRows, sourceById, line, today);
+  const expeditionBefore = await auditExpeditionMismatches(expeditionStoredOfficial, sourceById, line, today);
   if (!expeditionBefore.ok) {
     throw new Error(`expedition_not_clean:${expeditionBefore.mismatches} — STOP WITH ZERO WRITES`);
+  }
+
+  const nonMasterClassicBefore = auditNonMasterClassicRows(allRows, masterFixture, sourceById, line);
+  if (!nonMasterClassicBefore.ok || nonMasterClassicBefore.matches !== NON_MASTER_CLASSIC_OFFICIAL_IDS.length) {
+    throw new Error(`non_master_classic_not_clean:${nonMasterClassicBefore.matches}/${NON_MASTER_CLASSIC_OFFICIAL_IDS.length} — STOP WITH ZERO WRITES`);
   }
 
   for (const row of repairRows) {
@@ -389,9 +440,17 @@ export async function runSilverseaClassicM0d3(options = {}) {
     master_identities_present: masterIdentity.present
   };
 
-  const m0d1Snapshot = snapshotProtectionRows(classicRows.filter((r) => m0d1Uuids.has(r.id)), new Set());
-  const m0d2Snapshot = snapshotProtectionRows(classicRows.filter((r) => m0d2Uuids.has(r.id)), new Set());
-  const expeditionSnapshot = snapshotProtectionRows(expeditionRows, new Set());
+  const m0d1Snapshot = snapshotProtectionRows(classicStoredOfficial.filter((r) => m0d1Uuids.has(r.id)), new Set());
+  const m0d2Snapshot = snapshotProtectionRows(classicStoredOfficial.filter((r) => m0d2Uuids.has(r.id)), new Set());
+  const nonMasterSnapshot = snapshotProtectionRows(
+    classicStoredOfficial.filter((r) =>
+      NON_MASTER_CLASSIC_OFFICIAL_IDS.map((id) => id.toUpperCase()).includes(
+        String(r.official_sailing_id).toUpperCase()
+      )
+    ),
+    new Set()
+  );
+  const expeditionSnapshot = snapshotProtectionRows(expeditionStoredOfficial, new Set());
   const legacyBefore = legacyRows.map((r) => ({
     id: r.id,
     status: r.status,
@@ -465,6 +524,8 @@ export async function runSilverseaClassicM0d3(options = {}) {
   let hardenedResult = null;
   let verification = null;
   let classicAudit = null;
+  let storedClassicAudit = null;
+  let nonMasterClassicAudit = null;
   let protection = null;
   let performance = null;
 
@@ -550,32 +611,42 @@ export async function runSilverseaClassicM0d3(options = {}) {
           verification.lock_held_through_verification = true;
 
           const indexedAfter = await indexExistingSilverseaRecords(sb, line.id);
-          const classicAfter = indexedAfter.rows.filter(isClassicProductionRow);
-          const expeditionAfter = indexedAfter.rows.filter(
-            (r) => r.status === "active" && r.official_sailing_id && isExpeditionOfficialId(r.official_sailing_id)
-          );
+          const classicStoredOfficialAfter = indexedAfter.rows.filter(isClassicStoredOfficialRow);
+          const expeditionStoredOfficialAfter = indexedAfter.rows.filter(isExpeditionStoredOfficialRow);
+          const masterClassicRowsAfter = resolveMasterClassicRows(indexedAfter, masterFixture);
 
-          const masterUuids = new Set(masterFixture.rows.map((r) => r.production_uuid));
-          classicAudit = auditClassicItineraryPortsPopulation(
-            classicAfter.filter((r) => masterUuids.has(r.id)),
-            sourceById,
-            line
-          );
-          const expeditionAudit = await auditExpeditionMismatches(expeditionAfter, sourceById, line, today);
+          classicAudit = auditClassicItineraryPortsPopulation(masterClassicRowsAfter, sourceById, line);
+          storedClassicAudit = auditClassicItineraryPortsPopulation(classicStoredOfficialAfter, sourceById, line);
+          nonMasterClassicAudit = auditNonMasterClassicRows(indexedAfter.rows, masterFixture, sourceById, line);
+          const expeditionAudit = await auditExpeditionMismatches(expeditionStoredOfficialAfter, sourceById, line, today);
 
           const m0d1Check = verifyProtectionSnapshots(
             m0d1Snapshot,
-            classicAfter.filter((r) => m0d1Uuids.has(r.id)),
-            new Set()
+            classicStoredOfficialAfter.filter((r) => m0d1Uuids.has(r.id)),
+            new Set(),
+            { perthToday: today }
           );
           const m0d1AfterVerify = await verifyClassicRepairBatchResults(sb, m0d1Fixture.rows);
           const m0d2Check = verifyProtectionSnapshots(
             m0d2Snapshot,
-            classicAfter.filter((r) => m0d2Uuids.has(r.id)),
-            new Set()
+            classicStoredOfficialAfter.filter((r) => m0d2Uuids.has(r.id)),
+            new Set(),
+            { perthToday: today }
           );
           const m0d2AfterVerify = await verifyClassicRepairBatchResults(sb, m0d2Fixture.rows);
-          const expeditionCheck = verifyProtectionSnapshots(expeditionSnapshot, expeditionAfter, new Set());
+          const nonMasterCheck = verifyProtectionSnapshots(
+            nonMasterSnapshot,
+            classicStoredOfficialAfter.filter((r) =>
+              NON_MASTER_CLASSIC_OFFICIAL_IDS.map((id) => id.toUpperCase()).includes(
+                String(r.official_sailing_id).toUpperCase()
+              )
+            ),
+            new Set(),
+            { perthToday: today }
+          );
+          const expeditionCheck = verifyProtectionSnapshots(expeditionSnapshot, expeditionStoredOfficialAfter, new Set(), {
+            perthToday: today
+          });
           const legacyAfter = indexedAfter.rows
             .filter((r) => !r.official_sailing_id)
             .map((r) => ({
@@ -592,14 +663,21 @@ export async function runSilverseaClassicM0d3(options = {}) {
             m0d2_unchanged: m0d2Check.ok && m0d2AfterVerify.ok,
             m0d2_issues: [...m0d2Check.issues, ...(m0d2AfterVerify.failed_count ? [{ reason: "after_verify_failed" }] : [])].slice(0, 5),
             m0d2_after_verify: m0d2AfterVerify,
+            non_master_classic_unchanged: nonMasterCheck.ok && nonMasterClassicAudit.ok,
+            non_master_classic_audit: nonMasterClassicAudit,
+            non_master_classic_issues: nonMasterCheck.issues.slice(0, 5),
             expedition_unchanged: expeditionCheck.ok,
             expedition_issues: expeditionCheck.issues.slice(0, 5),
             expedition_audit: expeditionAudit,
             legacy_8_unchanged: JSON.stringify(legacyBefore) === JSON.stringify(legacyAfter),
-            full_classic_audit: classicAudit,
-            whole_silversea_official_rows_audited: classicAfter.length + expeditionAfter.length,
-            whole_silversea_itinerary_ports_mismatches:
-              (classicAudit.total - classicAudit.exact_match) + expeditionAudit.mismatches
+            master_classic_audit: classicAudit,
+            stored_classic_audit: storedClassicAudit,
+            whole_stored_official_rows_audited:
+              classicStoredOfficialAfter.length + expeditionStoredOfficialAfter.length,
+            whole_stored_official_itinerary_ports_mismatches:
+              storedClassicAudit.total -
+              storedClassicAudit.exact_match +
+              expeditionAudit.mismatches
           };
 
           const lockExpires = lockMeta?.observability?.global_lock_expires_at || lockMeta?.expires_at;
@@ -621,6 +699,9 @@ export async function runSilverseaClassicM0d3(options = {}) {
             classicAudit.exact_match === EXPECTED_CLASSIC_EXACT_MATCH &&
             classicAudit.remaining_repair_candidates === EXPECTED_REMAINING_REPAIRS &&
             classicAudit.deferred_unsafe === 0 &&
+            storedClassicAudit.exact_match === storedClassicAudit.total &&
+            nonMasterClassicAudit.ok &&
+            nonMasterCheck.ok &&
             m0d1Check.ok &&
             m0d1AfterVerify.ok &&
             m0d2Check.ok &&
@@ -694,16 +775,21 @@ export async function runSilverseaClassicM0d3(options = {}) {
   const countsAfter = args.apply
     ? {
         silversea_total: await headLineCount(line.id),
-        classic: classicFinal.length,
-        expedition: expeditionFinal.length,
-        legacy: legacyFinal.length
+        inventory: classifySilverseaOfficialInventory(indexedFinal.rows),
+        master_identities_present: validateClassicMasterIdentitiesPresent(indexedFinal.rows, masterFixture.rows).present
       }
     : countsBefore;
+
+  const storedClassicComplete =
+    args.apply &&
+    storedClassicAudit?.exact_match === storedClassicAudit?.total &&
+    nonMasterClassicAudit?.ok;
 
   const classicComplete =
     args.apply &&
     classicAudit?.exact_match === EXPECTED_CLASSIC_EXACT_MATCH &&
-    classicAudit?.remaining_repair_candidates === EXPECTED_REMAINING_REPAIRS;
+    classicAudit?.remaining_repair_candidates === EXPECTED_REMAINING_REPAIRS &&
+    storedClassicComplete;
 
   const report = {
     phase: args.apply ? "m0d3_apply" : "m0d3_preflight",
@@ -716,6 +802,8 @@ export async function runSilverseaClassicM0d3(options = {}) {
     m0d2_fixture_path: M0D2_BACKFILL_FIXTURE,
     m0d1_preflight_verification: m0d1BeforeApply,
     m0d2_preflight_verification: m0d2BeforeApply,
+    non_master_classic_preflight: nonMasterClassicBefore,
+    expedition_preflight: expeditionBefore,
     source_cutoff: sourceCutoff,
     m0c_classic_cutoff_count_discrepancy_explained: sourceCutoff.m0c_classic_cutoff_count_discrepancy_explained,
     partition: partition.coverage,
@@ -737,13 +825,17 @@ export async function runSilverseaClassicM0d3(options = {}) {
     write_result: writeResult?.stats || null,
     verification,
     classic_audit: classicAudit,
+    stored_classic_audit: storedClassicAudit,
+    non_master_classic_audit: nonMasterClassicAudit,
     protection,
     performance,
     hardened_apply: hardenedResult,
-    classic_data_shape_remediation_complete: classicComplete,
-    expedition_data_shape_complete: true,
-    silversea_official_inventory_data_shape_clean:
-      classicComplete && protection?.expedition_audit?.ok && protection?.legacy_8_unchanged,
+    classic_master_data_shape_remediation_complete: classicComplete,
+    current_stored_classic_official_data_shape_clean: storedClassicComplete,
+    expedition_data_shape_complete: protection?.expedition_audit?.ok ?? expeditionBefore.ok,
+    current_stored_expedition_official_data_shape_clean: protection?.expedition_audit?.ok ?? expeditionBefore.ok,
+    silversea_stored_official_inventory_data_shape_clean:
+      storedClassicComplete && (protection?.expedition_audit?.ok ?? expeditionBefore.ok),
     weekly_maintenance: "NOT ENABLED",
     m1_authorised: false,
     next_phase: classicComplete
