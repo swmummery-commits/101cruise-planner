@@ -27,11 +27,14 @@ const {
 const M0C_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0c-itinerary-ports-backfill.json";
 const M0D1_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0d1-itinerary-ports-backfill.json";
 const M0D2_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0d2-itinerary-ports-backfill.json";
+const M0D3_BACKFILL_FIXTURE = "scripts/fixtures/silversea/classic-m0d3-itinerary-ports-backfill.json";
 const M0D_BATCH_SIZES = Object.freeze([200, 200, 199]);
 const M0D1_OPERATION = "silversea_classic_m0d1_itinerary_ports_backfill";
 const M0D1_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D1-ITINERARY-PORTS-BACKFILL";
 const M0D2_OPERATION = "silversea_classic_m0d2_itinerary_ports_backfill";
 const M0D2_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D2-ITINERARY-PORTS-BACKFILL";
+const M0D3_OPERATION = "silversea_classic_m0d3_itinerary_ports_backfill";
+const M0D3_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D3-ITINERARY-PORTS-BACKFILL";
 const M0D_OPERATION = "silversea_classic_m0d_itinerary_ports_backfill";
 const M0D_APPLY_CONFIRMATION_TOKEN = "SILVERSEA-CLASSIC-M0D-ITINERARY-PORTS-BACKFILL";
 
@@ -477,6 +480,16 @@ function buildM0d2BatchFixture(params) {
   });
 }
 
+function buildM0d3BatchFixture(params) {
+  return buildM0dBatchFixture({
+    ...params,
+    batchKey: "m0d3",
+    phase: "M0D3",
+    batchIndex: 3,
+    fixturePath: M0D3_BACKFILL_FIXTURE
+  });
+}
+
 function computeClassicSourceCutoffCounts(simulation, today) {
   const classicProducts = (simulation?.products || []).filter((p) => isClassic(p.raw || {}));
   const { publiclyEligible, withinCutoff } = partitionByPublicBookingCutoff(
@@ -569,11 +582,14 @@ module.exports = {
   M0C_BACKFILL_FIXTURE,
   M0D1_BACKFILL_FIXTURE,
   M0D2_BACKFILL_FIXTURE,
+  M0D3_BACKFILL_FIXTURE,
   M0D_BATCH_SIZES,
   M0D1_OPERATION,
   M0D1_APPLY_CONFIRMATION_TOKEN,
   M0D2_OPERATION,
   M0D2_APPLY_CONFIRMATION_TOKEN,
+  M0D3_OPERATION,
+  M0D3_APPLY_CONFIRMATION_TOKEN,
   M0D_OPERATION,
   M0D_APPLY_CONFIRMATION_TOKEN,
   CLASSIC_AUDIT_CATEGORY,
@@ -609,6 +625,7 @@ module.exports = {
   buildM0dBatchFixture,
   buildM0d1BatchFixture,
   buildM0d2BatchFixture,
+  buildM0d3BatchFixture,
   computeClassicSourceCutoffCounts,
   portsArrayEqual,
   normalizeStoredPorts,
