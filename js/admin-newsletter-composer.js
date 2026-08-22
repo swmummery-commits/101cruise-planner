@@ -1489,17 +1489,16 @@
     setTimeout(() => URL.revokeObjectURL(url), 30_000);
   }
 
-  async function copyOrFallbackDownload(html, filename, reusedNote) {
+  async function copyPreparedHtml(html, reusedNote) {
     const copied = await global.NewsletterMailchimpAssets.copyHostedHtml(html);
     if (copied.ok) {
       issueMessage = `HTML copied to clipboard.${reusedNote || ""}`;
       issueMessageTone = "success";
       return true;
     }
-    downloadHtmlFile(html, filename);
     issueMessage =
       copied.error ||
-      "The browser blocked clipboard access after preparing the images. HTML was downloaded instead. Click Copy again if you want it on the clipboard.";
+      "The browser blocked clipboard access after preparing the images. Click Copy again, or use Download HTML.";
     issueMessageTone = "info";
     return false;
   }
@@ -1508,7 +1507,7 @@
     if (action === "copy") {
       const cached = hostedExportHtml(outputMode);
       if (cached) {
-        await copyOrFallbackDownload(cached, hostedExport.filename, " Reused prepared Mailchimp HTML.");
+        await copyPreparedHtml(cached, " Reused prepared Mailchimp HTML.");
         rerender();
         return;
       }
@@ -1571,7 +1570,7 @@
             ? ` Uploaded ${prepared.uploaded} email image${prepared.uploaded === 1 ? "" : "s"} to Mailchimp.`
             : "";
       if (action === "copy") {
-        await copyOrFallbackDownload(prepared.html, result.filename, reusedNote);
+        await copyPreparedHtml(prepared.html, reusedNote);
       } else {
         downloadHtmlFile(prepared.html, result.filename);
         issueMessage = `HTML downloaded.${reusedNote}`;

@@ -332,8 +332,9 @@ assert(composerSrc.includes("prepareExportedHtml"), "composer export uses asset 
 assert(composerSrc.includes("prepared.html"), "composer copies hosted HTML");
 assert(composerSrc.includes("onProgress"), "composer shows per-image progress");
 assert(composerSrc.includes("Preparing newsletter images"), "composer progress copy names images");
-assert(composerSrc.includes("copyHostedHtml") || composerSrc.includes("copyOrFallbackDownload"), "composer uses hosted clipboard helper");
+assert(composerSrc.includes("copyHostedHtml") || composerSrc.includes("copyPreparedHtml"), "composer uses hosted clipboard helper");
 assert(composerSrc.includes("hostedExportHtml"), "composer reuses prepared hosted HTML on a second Copy click");
+assert(!/HTML was downloaded instead/.test(composerSrc), "Copy buttons do not download HTML");
 assert(!/clipboard\.writeText\(result\.html/.test(composerSrc), "composer never copies unhosted HTML");
 
 const adminHtml = readFileSync(path.join(root, "admin.html"), "utf8");

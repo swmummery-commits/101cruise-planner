@@ -65,9 +65,18 @@ const staticChecks = [
   })()],
   ["exportHtml uploads images to Mailchimp before copy/download", /NewsletterMailchimpAssets\.prepareExportedHtml/.test(composerJs)],
   ["exportHtml shows per-image progress", /Preparing newsletter images \$\{current\} of \$\{total\}/.test(composerJs) && /onProgress/.test(composerJs)],
-  ["exportHtml fails closed when Mailchimp upload fails", /if \(!prepared\.ok\)/.test(composerJs) && /copyHostedHtml|copyOrFallbackDownload/.test(composerJs)],
+  ["exportHtml fails closed when Mailchimp upload fails", /if \(!prepared\.ok\)/.test(composerJs) && /copyHostedHtml|copyPreparedHtml/.test(composerJs)],
   ["exportHtml does not copy unhosted compose HTML", !/clipboard\.writeText\(result\.html/.test(composerJs)],
-  ["exportHtml recovers when the browser blocks clipboard after image prepare", /clipboard_blocked|blocked clipboard access/.test(composerJs)]
+  ["exportHtml recovers when the browser blocks clipboard after image prepare", /clipboard_blocked|blocked clipboard access/.test(composerJs)],
+  ["Copy buttons do not trigger a file download", (() => {
+    const copyFn = composerJs.match(/async function copyPreparedHtml[\s\S]*?^  }/m)?.[0] || "";
+    return (
+      copyFn.length > 0 &&
+      !/downloadHtmlFile/.test(copyFn) &&
+      !/HTML was downloaded instead/.test(composerJs) &&
+      !/copyOrFallbackDownload/.test(composerJs)
+    );
+  })()]
 ];
 
 let failed = 0;
