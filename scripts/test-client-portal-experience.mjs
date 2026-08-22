@@ -47,7 +47,7 @@ const loading = readFileSync(path.join(root, "js/portal-loading.js"), "utf8");
 assert(loading.includes("aria-live"), "a11y live");
 assert(loading.includes("delayMs"), "delayed show");
 assert(loading.includes("activeCount"), "refcount");
-assert(loading.includes("lockScroll"), "scroll lock");
+assert(!loading.includes("function lockScroll"), "does not lock document scroll");
 assert(loading.includes("101cruise-parent-viewport") || indexHtml.includes("portal-parent-viewport.js"), "parent viewport bridge");
 const loadingCode = loading.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*/g, "");
 assert(!/screen\.availHeight/.test(loadingCode), "no screen.availHeight heuristic");

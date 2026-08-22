@@ -5,7 +5,7 @@
  * Handles:
  * - 101cruise-my-cruise-height → resize iframe for natural parent scrolling
  * - parent-visible viewport geometry → 101cruise-parent-viewport
- * - 101cruise-portal-loading-state → parent scroll lock
+ * - 101cruise-portal-loading-state → unlock any leftover parent scroll lock
  */
 (function () {
   "use strict";
@@ -77,6 +77,13 @@
     });
   }
 
+  function allowIframeScroll(iframe) {
+    if (!iframe) return;
+    iframe.style.overflow = "auto";
+    iframe.style.overscrollBehavior = "auto";
+    iframe.removeAttribute("scrolling");
+  }
+
   function applyIframeHeight(px) {
     var iframe = findFrame();
     if (!iframe) return;
@@ -84,9 +91,7 @@
     if (next > MAX_HEIGHT) return;
     iframe.style.height = next + "px";
     iframe.setAttribute("height", String(next));
-    iframe.style.overflow = "hidden";
-    iframe.style.overscrollBehavior = "none";
-    iframe.setAttribute("scrolling", "no");
+    allowIframeScroll(iframe);
     scheduleViewport();
   }
 
@@ -136,8 +141,9 @@
     }
 
     if (data.type === MSG_LOADING) {
-      if (data.active === true) lockParentScroll();
-      else if (data.active === false) unlockParentScroll();
+      // Overlay is position:fixed. Do not lock the Squarespace page — leftover
+      // overflow:hidden left every My Cruise view unable to scroll.
+      if (data.active === false) unlockParentScroll();
       return;
     }
 
@@ -163,9 +169,7 @@
   function bindFrame() {
     var iframe = findFrame();
     if (!iframe) return;
-    iframe.style.overflow = "hidden";
-    iframe.style.overscrollBehavior = "none";
-    iframe.setAttribute("scrolling", "no");
+    allowIframeScroll(iframe);
     iframe.addEventListener("load", function () {
       scheduleViewport();
       try {

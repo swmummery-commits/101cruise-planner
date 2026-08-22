@@ -35,13 +35,6 @@
   let messageEl = null;
   let failTimer = null;
   let activeCount = 0;
-  let scrollLocked = false;
-  let savedScrollX = 0;
-  let savedScrollY = 0;
-  let savedHtmlOverflow = "";
-  let savedBodyOverflow = "";
-  let savedHtmlOverscroll = "";
-  let savedBodyOverscroll = "";
   let latestParentGeometry = null;
   let parentListenerBound = false;
   let parentLoadingNotified = false;
@@ -172,40 +165,6 @@
     overlayEl.style.position = "";
   }
 
-  function lockScroll() {
-    if (scrollLocked || typeof document === "undefined") return;
-    scrollLocked = true;
-    savedScrollX = window.scrollX || window.pageXOffset || 0;
-    savedScrollY = window.scrollY || window.pageYOffset || 0;
-    savedHtmlOverflow = document.documentElement.style.overflow;
-    savedBodyOverflow = document.body.style.overflow;
-    savedHtmlOverscroll = document.documentElement.style.overscrollBehavior;
-    savedBodyOverscroll = document.body.style.overscrollBehavior;
-    document.documentElement.classList.add(BODY_LOCK_CLASS);
-    document.body.classList.add(BODY_LOCK_CLASS);
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overscrollBehavior = "none";
-    document.body.style.overscrollBehavior = "none";
-    if (typeof window.scrollTo === "function") {
-      window.scrollTo(savedScrollX, savedScrollY);
-    }
-  }
-
-  function unlockScroll() {
-    if (!scrollLocked || typeof document === "undefined") return;
-    document.documentElement.classList.remove(BODY_LOCK_CLASS);
-    document.body.classList.remove(BODY_LOCK_CLASS);
-    document.documentElement.style.overflow = savedHtmlOverflow;
-    document.body.style.overflow = savedBodyOverflow;
-    document.documentElement.style.overscrollBehavior = savedHtmlOverscroll;
-    document.body.style.overscrollBehavior = savedBodyOverscroll;
-    scrollLocked = false;
-    if (typeof window.scrollTo === "function") {
-      window.scrollTo(savedScrollX, savedScrollY);
-    }
-  }
-
   function ensureOverlay() {
     if (overlayEl || typeof document === "undefined") return overlayEl;
 
@@ -279,15 +238,18 @@
     if (visible) {
       requestParentViewport();
       applyOverlayGeometry();
-      lockScroll();
       notifyParentLoading(true);
     } else {
       clearTimers();
       setMessage(INITIAL_MESSAGE);
       setSupportMessage("");
       clearOverlayGeometry();
-      unlockScroll();
       notifyParentLoading(false);
+    }
+
+    if (typeof document !== "undefined") {
+      if (document.documentElement) document.documentElement.classList.remove(BODY_LOCK_CLASS);
+      if (document.body) document.body.classList.remove(BODY_LOCK_CLASS);
     }
   }
 

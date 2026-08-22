@@ -9,19 +9,26 @@
   --brand-green-focus: rgba(141, 217, 191, 0.32);
 }
 
-/* Embedded in Squarespace iframe: parent page scrolls; child must not scroll internally. */
+/* Embedded in Squarespace iframe: grow with content so the parent page can scroll
+   when portal-squarespace-embed.js is installed. Keep overflow-y:auto as a fallback
+   so the iframe remains scrollable if height sync or the Code Block is stale. */
 html.is-embedded,
 html.is-embedded body {
   height: auto !important;
   min-height: 0 !important;
-  overflow: hidden !important;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: auto;
+  max-height: none !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: auto;
+  -webkit-overflow-scrolling: touch;
   background: #fafafa;
   touch-action: manipulation;
 }
 
 html.is-embedded #cruise-planner-app {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
   padding-top: 16px;
   padding-bottom: 16px;
 }
@@ -7647,10 +7654,11 @@ body {
   pointer-events: auto;
 }
 
+/* Do not lock document scroll — overlay is position:fixed and covers the viewport.
+   Locking body overflow caused My Cruise pages to appear cut off / non-scrollable. */
 html.portal-loading-active,
 html.portal-loading-active body {
-  overflow: hidden !important;
-  overscroll-behavior: none;
+  overflow: auto;
 }
 
 .portal-loading-panel {
@@ -8183,8 +8191,6 @@ html.is-embedded,
 html.is-embedded body {
   overflow-x: clip;
   max-width: 100%;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: auto;
 }
 
 html.is-embedded .dashboard-page,

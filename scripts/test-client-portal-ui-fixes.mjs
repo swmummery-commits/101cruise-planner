@@ -181,8 +181,8 @@ assert(
   "mobile countdown stays on one row"
 );
 assert(
-  /html\.is-embedded[\s\S]*overflow: hidden !important/.test(cssSrc),
-  "embedded iframe child document does not scroll internally"
+  /html\.is-embedded[\s\S]*overflow-y:\s*auto !important/.test(cssSrc),
+  "embedded iframe child document can scroll if parent height sync is stale"
 );
 assert(
   !/princess-controlled-catch-up-batch/.test(readFileSync(path.join(root, "index.html"), "utf8")),
@@ -207,8 +207,8 @@ assert(
   "packing quantity input narrowed for mobile"
 );
 assert(
-  /planner\.css\?v=20260809c/.test(readFileSync(path.join(root, "index.html"), "utf8")),
-  "index.html cache-busts planner.css for mobile nav/quantity fixes"
+  /planner\.css\?v=20260822a/.test(readFileSync(path.join(root, "index.html"), "utf8")),
+  "index.html cache-busts planner.css for embed scroll fallback"
 );
 
 /* Onboard at a Glance — 3 icons across on mobile (2026-08-09c) */

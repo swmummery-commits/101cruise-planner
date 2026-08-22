@@ -9,8 +9,8 @@
   This single paste includes:
   • the My Cruise iframe
   • automatic iframe-height handling (natural parent-page scrolling)
-  • parent-visible viewport geometry messaging
-  • parent scroll locking while the portal shows a blocking loader
+  • iframe remains scrollable if parent height sync is stale
+  • parent-visible viewport geometry for centred loading overlays
 
   Use a Squarespace section set to Full Bleed / full browser width.
 
@@ -29,7 +29,7 @@
   loading="eager"
   referrerpolicy="no-referrer-when-downgrade"
   allow="clipboard-write"
-  style="width:100%; max-width:100%; height:1400px; border:0; display:block; background:#fafafa; overflow:hidden; overscroll-behavior:none;"
+  style="width:100%; max-width:100%; height:1400px; border:0; display:block; background:#fafafa;"
 ></iframe>
-<script src="https://admirable-tiramisu-d4da8a.netlify.app/js/portal-squarespace-embed.js" defer></script>
+<script src="https://admirable-tiramisu-d4da8a.netlify.app/js/portal-squarespace-embed.js?v=20260822a" defer></script>
 <!-- ===== END: PASTE INTO SQUARESPACE /my-cruise CODE BLOCK ===== -->
