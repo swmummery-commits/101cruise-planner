@@ -356,6 +356,81 @@
     };
   }
 
+  function isClipboardDenied(error) {
+    const name = String(error?.name || "");
+    const message = String(error?.message || "");
+    return (
+      name === "NotAllowedError" ||
+      /not allowed by the user agent/i.test(message) ||
+      /denied permission/i.test(message) ||
+      /document is not focused/i.test(message)
+    );
+  }
+
+  function copyWithExecCommand(text) {
+    if (typeof document === "undefined" || !document.body) return false;
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.left = "-9999px";
+    document.body.appendChild(area);
+    area.focus();
+    area.select();
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    }
+    area.remove();
+    return Boolean(ok);
+  }
+
+  /**
+   * Copy hosted newsletter HTML. Refuses any payload that still has Supabase Storage URLs.
+   * After a long image upload the browser often blocks clipboard.writeText; callers should
+   * treat { code: "clipboard_blocked" } as "HTML is ready, click Copy again or Download".
+   */
+  async function copyHostedHtml(html) {
+    const text = String(html || "");
+    if (!text.trim()) {
+      return { ok: false, error: "There is no hosted newsletter HTML to copy.", html: "" };
+    }
+    const safety = assertNoSupabaseStorageUrls(text);
+    if (!safety.ok) {
+      return { ok: false, error: safety.error, html: "" };
+    }
+    try {
+      const nav = global.navigator || (typeof navigator !== "undefined" ? navigator : undefined);
+      if (nav?.clipboard?.writeText) {
+        await nav.clipboard.writeText(text);
+        return { ok: true, method: "clipboard", html: text };
+      }
+    } catch (error) {
+      if (copyWithExecCommand(text)) {
+        return { ok: true, method: "execCommand", html: text };
+      }
+      if (!isClipboardDenied(error)) {
+        return {
+          ok: false,
+          error: error.message || "Could not copy newsletter HTML.",
+          html: ""
+        };
+      }
+    }
+    if (copyWithExecCommand(text)) {
+      return { ok: true, method: "execCommand", html: text };
+    }
+    return {
+      ok: false,
+      code: "clipboard_blocked",
+      error:
+        "The browser blocked clipboard access after preparing the images. Click Copy again, or use Download HTML.",
+      html: ""
+    };
+  }
+
   const api = {
     ENDPOINT,
     FETCH_MS,
@@ -373,7 +448,9 @@
     assertNoSupabaseStorageUrls,
     progressMessage,
     describeAssetFailure,
-    prepareExportedHtml
+    prepareExportedHtml,
+    isClipboardDenied,
+    copyHostedHtml
   };
 
   global.NewsletterMailchimpAssets = api;

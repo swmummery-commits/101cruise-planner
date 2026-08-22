@@ -34,6 +34,7 @@
     filename: "",
     label: ""
   };
+  let hostedExport = { airline: "", general: "", filename: "", label: "" };
   let issueCache = { key: "", airline: null, general: null };
   let addPickerOpen = false;
   let addPickerSelected = new Set();
@@ -87,6 +88,7 @@
       filename: "",
       label: ""
     };
+    hostedExport = { airline: "", general: "", filename: "", label: "" };
   }
 
   function loadTemplateMap() {
@@ -1462,7 +1464,56 @@
     }
   }
 
+  function hostedExportHtml(outputMode) {
+    const html = outputMode === "airline_staff" ? hostedExport.airline : hostedExport.general;
+    if (!html || !global.NewsletterMailchimpAssets?.assertNoSupabaseStorageUrls) return "";
+    return global.NewsletterMailchimpAssets.assertNoSupabaseStorageUrls(html).ok ? html : "";
+  }
+
+  function rememberHostedExport(outputMode, html, result) {
+    if (outputMode === "airline_staff") hostedExport.airline = html;
+    else hostedExport.general = html;
+    hostedExport.label = result?.label || hostedExport.label || "";
+    hostedExport.filename = result?.filename || hostedExport.filename || "";
+  }
+
+  function downloadHtmlFile(html, filename) {
+    const blob = new Blob([html || ""], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "newsletter.html";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+  }
+
+  async function copyOrFallbackDownload(html, filename, reusedNote) {
+    const copied = await global.NewsletterMailchimpAssets.copyHostedHtml(html);
+    if (copied.ok) {
+      issueMessage = `HTML copied to clipboard.${reusedNote || ""}`;
+      issueMessageTone = "success";
+      return true;
+    }
+    downloadHtmlFile(html, filename);
+    issueMessage =
+      copied.error ||
+      "The browser blocked clipboard access after preparing the images. HTML was downloaded instead. Click Copy again if you want it on the clipboard.";
+    issueMessageTone = "info";
+    return false;
+  }
+
   async function exportHtml(outputMode, action) {
+    if (action === "copy") {
+      const cached = hostedExportHtml(outputMode);
+      if (cached) {
+        await copyOrFallbackDownload(cached, hostedExport.filename, " Reused prepared Mailchimp HTML.");
+        rerender();
+        return;
+      }
+    }
+
     const run = async () => {
     try {
       issueBusy = true;
@@ -1512,6 +1563,7 @@
         ? global.NewsletterMailchimpAssets.replaceImageUrls(result.previewHtml, prepared.mappings)
         : prepared.html;
       issueHtml.previewMode = outputMode;
+      rememberHostedExport(outputMode, prepared.html, result);
       const reusedNote =
         prepared.uploaded === 0 && prepared.reused > 0
           ? " Reused existing Mailchimp images."
@@ -1519,24 +1571,19 @@
             ? ` Uploaded ${prepared.uploaded} email image${prepared.uploaded === 1 ? "" : "s"} to Mailchimp.`
             : "";
       if (action === "copy") {
-        await navigator.clipboard.writeText(prepared.html || "");
-        issueMessage = `HTML copied to clipboard.${reusedNote}`;
-        issueMessageTone = "success";
+        await copyOrFallbackDownload(prepared.html, result.filename, reusedNote);
       } else {
-        const blob = new Blob([prepared.html || ""], { type: "text/html;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = result.filename || "newsletter.html";
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 30_000);
+        downloadHtmlFile(prepared.html, result.filename);
         issueMessage = `HTML downloaded.${reusedNote}`;
         issueMessageTone = "success";
       }
     } catch (error) {
-      issueMessage = error.message || "Export failed.";
+      const denied =
+        global.NewsletterMailchimpAssets?.isClipboardDenied?.(error) ||
+        /not allowed by the user agent/i.test(error.message || "");
+      issueMessage = denied
+        ? "The browser blocked clipboard access after preparing the images. Use Download HTML, or click Copy again."
+        : error.message || "Export failed.";
       issueMessageTone = "error";
     } finally {
       issueBusy = false;

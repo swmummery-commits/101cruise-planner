@@ -332,6 +332,8 @@ assert(composerSrc.includes("prepareExportedHtml"), "composer export uses asset 
 assert(composerSrc.includes("prepared.html"), "composer copies hosted HTML");
 assert(composerSrc.includes("onProgress"), "composer shows per-image progress");
 assert(composerSrc.includes("Preparing newsletter images"), "composer progress copy names images");
+assert(composerSrc.includes("copyHostedHtml") || composerSrc.includes("copyOrFallbackDownload"), "composer uses hosted clipboard helper");
+assert(composerSrc.includes("hostedExportHtml"), "composer reuses prepared hosted HTML on a second Copy click");
 assert(!/clipboard\.writeText\(result\.html/.test(composerSrc), "composer never copies unhosted HTML");
 
 const adminHtml = readFileSync(path.join(root, "admin.html"), "utf8");
@@ -434,6 +436,37 @@ assert(Client.assertNoSupabaseStorageUrls(hostedAirline).ok, "hosted airline htm
 assert(Client.assertNoSupabaseStorageUrls(hostedGeneral).ok, "hosted general html is clean");
 assert(/mcusercontent\.com/.test(hostedAirline), "airline uses mailchimp hosts");
 assert(/mcusercontent\.com/.test(hostedGeneral), "general uses mailchimp hosts");
+
+assert(
+  Client.isClipboardDenied({
+    name: "NotAllowedError",
+    message: "The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission."
+  }),
+  "recognises Safari clipboard permission error"
+);
+assert(!Client.isClipboardDenied({ message: "Mailchimp upload failed" }), "does not treat Mailchimp errors as clipboard blocks");
+
+const blockedCopy = await Client.copyHostedHtml(airline.html);
+assert(blockedCopy.ok === false, "copyHostedHtml refuses unhosted supabase HTML");
+assert(/Supabase Storage/.test(blockedCopy.error), "unhosted copy names Supabase");
+
+sandbox.navigator = {
+  clipboard: {
+    writeText: async () => {
+      const error = new Error(
+        "The request is not allowed by the user agent or the platform in the current context, possibly because the user denied permission."
+      );
+      error.name = "NotAllowedError";
+      throw error;
+    }
+  }
+};
+const deniedHosted = await Client.copyHostedHtml(hostedAirline);
+assert(deniedHosted.ok === false, "clipboard deny after hosted prepare does not throw");
+assert(deniedHosted.code === "clipboard_blocked", "clipboard deny uses clipboard_blocked");
+assert(/Click Copy again|Download HTML/.test(deniedHosted.error), "clipboard deny tells the user to retry or download");
+assert(!/user agent/.test(deniedHosted.error), "clipboard deny hides the raw Safari permission text");
+delete sandbox.navigator;
 
 const failClosed = await Client.prepareExportedHtml({
   html: airline.html,
