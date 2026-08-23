@@ -46,39 +46,45 @@ function projectRefFromUrl(rawUrl) {
   }
 }
 
+function isPostgresUrl(value) {
+  const v = String(value || "").trim().replace(/^["']|["']$/g, "");
+  return /^postgres(ql)?:\/\//i.test(v) && !/^\*+/.test(v);
+}
+
 function loadDatabaseUrl({ useNetlifyDb = false } = {}) {
-  const candidates = [
-    process.env.DATABASE_URL,
+  const envCandidates = [
+    process.env.DIRECT_URL,
     process.env.SUPABASE_DB_URL,
     process.env.POSTGRES_URL,
-    process.env.DIRECT_URL
-  ]
-    .map((v) => String(v || "").trim().replace(/^["']|["']$/g, ""))
-    .filter(Boolean);
-  for (const c of candidates) {
-    if (/^postgres(ql)?:\/\//i.test(c)) return c;
+    process.env.DATABASE_URL
+  ];
+  for (const c of envCandidates) {
+    if (isPostgresUrl(c)) return String(c).trim().replace(/^["']|["']$/g, "");
   }
   if (!useNetlifyDb) return "";
   const netlifyBin =
     process.env.NETLIFY_CLI_BIN ||
     "/Users/stevemummery/.npm/_npx/5897f426ba328dd1/node_modules/.bin/netlify";
-  try {
-    const raw = execSync(`${netlifyBin} env:get DATABASE_URL --context production`, {
-      cwd: root,
-      stdio: ["ignore", "pipe", "pipe"],
-      encoding: "utf8",
-      timeout: 240000
-    });
-    const lines = raw
-      .split("\n")
-      .map((line) => line.trim().replace(/^["']|["']$/g, ""))
-      .filter(Boolean)
-      .filter((line) => !line.startsWith("npm warn"));
-    for (let i = lines.length - 1; i >= 0; i -= 1) {
-      if (/^postgres(ql)?:\/\//i.test(lines[i])) return lines[i];
+  const netlifyKeys = ["DIRECT_URL", "SUPABASE_DB_URL", "POSTGRES_URL", "DATABASE_URL"];
+  for (const key of netlifyKeys) {
+    try {
+      const raw = execSync(`${netlifyBin} env:get ${key} --context production`, {
+        cwd: root,
+        stdio: ["ignore", "pipe", "pipe"],
+        encoding: "utf8",
+        timeout: 240000
+      });
+      const lines = raw
+        .split("\n")
+        .map((line) => line.trim().replace(/^["']|["']$/g, ""))
+        .filter(Boolean)
+        .filter((line) => !line.startsWith("npm warn"));
+      for (let i = lines.length - 1; i >= 0; i -= 1) {
+        if (isPostgresUrl(lines[i])) return lines[i];
+      }
+    } catch {
+      /* try next key */
     }
-  } catch {
-    /* ignore */
   }
   return "";
 }
