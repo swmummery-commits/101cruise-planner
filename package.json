@@ -64,6 +64,8 @@
     "princess:catch-up-session": "node scripts/run-princess-controlled-catch-up-session.mjs",
     "simulate:explora-discovery": "node scripts/simulate-explora-discovery.mjs",
     "simulate:silversea-discovery": "node scripts/simulate-silversea-discovery.mjs",
+    "silversea:m0e-audit": "node scripts/run-silversea-m0e-audit.mjs",
+    "test:silversea-m0e": "node scripts/test-silversea-m0e.mjs",
     "test:silversea-discovery": "node scripts/test-silversea-discovery.mjs",
     "test:silversea-controlled-batch": "node scripts/test-silversea-controlled-batch.mjs",
     "test:global-cruise-write-lock": "node scripts/test-global-cruise-write-lock.mjs",
