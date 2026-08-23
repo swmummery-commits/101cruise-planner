@@ -72,6 +72,8 @@
     "test:silversea-m2-insert-canary": "node scripts/test-silversea-m2-insert-canary.mjs",
     "silversea:m2r-recovery-attestation": "node scripts/run-silversea-m2r-recovery-attestation.mjs --read-only-lock",
     "test:silversea-m2r-recovery-attestation": "node scripts/test-silversea-m2r-recovery-attestation.mjs",
+    "silversea:m3-update-canary": "node scripts/run-silversea-m3-update-canary.mjs",
+    "test:silversea-m3-update-canary": "node scripts/test-silversea-m3-update-canary.mjs",
     "test:silversea-discovery": "node scripts/test-silversea-discovery.mjs",
     "test:silversea-controlled-batch": "node scripts/test-silversea-controlled-batch.mjs",
     "test:global-cruise-write-lock": "node scripts/test-global-cruise-write-lock.mjs",

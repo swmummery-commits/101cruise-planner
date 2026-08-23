@@ -1,0 +1,542 @@
+{
+  "phase": "M3",
+  "official_sailing_id": "SL270927009",
+  "production_uuid": "46e8e274-9f46-4529-9c6f-5bdac69bdedb",
+  "source_snapshot_fingerprint": "78c6bd8a9a6db4293ee4c81720b5ce628b46b24e66ba49e807a0345af1d9277b",
+  "source_snapshot_timestamp": "2026-08-23T05:23:56.386Z",
+  "source_health": "PASS",
+  "classification": "UPDATE_ELIGIBLE",
+  "eligibility_reasons": [
+    "deterministic_source_diff"
+  ],
+  "update_allowlist": [
+    "itinerary",
+    "itinerary_ports",
+    "raw_extract"
+  ],
+  "before": {
+    "itinerary": "Venice, Piran, Rovinj, Bari, Dubrovnik, Kotor, Split, Zadar, Venice",
+    "itinerary_ports": [
+      "Venice",
+      "Piran",
+      "Rovinj",
+      "Bari",
+      "Dubrovnik",
+      "Kotor",
+      "Split",
+      "Zadar",
+      "Venice"
+    ],
+    "raw_extract": {
+      "full_path": "/destinations/mediterranean-cruise/fusina-venice-to-fusina-venice-sl270927009.html",
+      "destination_key": "mediterranean",
+      "destination_raw": "MEDITERRANEAN",
+      "itinerary_stops": [
+        {
+          "date": "2027-09-27",
+          "kind": "port",
+          "sequence": 1,
+          "overnight": false,
+          "port_code": "ITFUS",
+          "port_name": "Fusina (Venice)",
+          "day_number": 1,
+          "arrival_time": "00:00",
+          "departure_time": "19:00",
+          "port_resolution": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Venice",
+            "confidence": "exact",
+            "sourceField": "silversea_gatsby_itinerary",
+            "canonicalPortId": "port-csv-32",
+            "canonicalPortName": "Venice"
+          }
+        },
+        {
+          "date": "2027-09-28",
+          "kind": "port",
+          "sequence": 2,
+          "overnight": false,
+          "port_code": "SIPRS",
+          "port_name": "Piran",
+          "day_number": 2,
+          "arrival_time": "08:00",
+          "departure_time": "18:00",
+          "port_resolution": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Piran",
+            "confidence": "exact",
+            "sourceField": "silversea_gatsby_itinerary",
+            "canonicalPortId": "port-csv-427",
+            "canonicalPortName": "Piran"
+          }
+        },
+        {
+          "date": "2027-09-29",
+          "kind": "port",
+          "sequence": 3,
+          "overnight": false,
+          "port_code": "HRROV",
+          "port_name": "Rovinj",
+          "day_number": 3,
+          "arrival_time": "08:00",
+          "departure_time": "18:30",
+          "port_resolution": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Rovinj",
+            "confidence": "exact",
+            "sourceField": "silversea_gatsby_itinerary",
+            "canonicalPortId": "port-csv-415",
+            "canonicalPortName": "Rovinj"
+          }
+        },
+        {
+          "date": "2027-09-30",
+          "kind": "sea",
+          "sequence": 4,
+          "overnight": false,
+          "port_code": "ZZC36",
+          "port_name": "Day at sea",
+          "day_number": 4,
+          "arrival_time": "00:00",
+          "departure_time": "00:00",
+          "port_resolution": null
+        },
+        {
+          "date": "2027-10-01",
+          "kind": "port",
+          "sequence": 5,
+          "overnight": false,
+          "port_code": "ITBRI",
+          "port_name": "Bari",
+          "day_number": 5,
+          "arrival_time": "08:00",
+          "departure_time": "22:00",
+          "port_resolution": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Bari",
+            "confidence": "exact",
+            "sourceField": "silversea_gatsby_itinerary",
+            "canonicalPortId": "port-csv-302",
+            "canonicalPortName": "Bari"
+          }
+        },
+        {
+          "date": "2027-10-02",
+          "kind": "port",
+          "sequence": 6,
+          "overnight": false,
+          "port_code": "HRDBV",
+          "port_name": "Dubrovnik",
+          "day_number": 6,
+          "arrival_time": "08:00",
+          "departure_time": "18:00",
+          "port_resolution": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Dubrovnik",
+            "confidence": "exact",
+            "sourceField": "silversea_gatsby_itinerary",
+            "canonicalPortId": "port-csv-265",
+            "canonicalPortName": "Dubrovnik"
+          }
+        },
+        {
+          "date": "2027-10-03",
+          "kind": "port",
+          "sequence": 7,
+          "overnight": false,
+          "port_code": "MEKOT",
+          "port_name": "Kotor",
+          "day_number": 7,
+          "arrival_time": "08:00",
+          "departure_time": "18:00",
+          "port_resolution": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Kotor",
+            "confidence": "exact",
+            "sourceField": "silversea_gatsby_itinerary",
+            "canonicalPortId": "port-csv-281",
+            "canonicalPortName": "Kotor"
+          }
+        },
+        {
+          "date": "2027-10-04",
+          "kind": "port",
+          "sequence": 8,
+          "overnight": false,
+          "port_code": "HRSPU",
+          "port_name": "Split",
+          "day_number": 8,
+          "arrival_time": "08:00",
+          "departure_time": "18:00",
+          "port_resolution": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Split",
+            "confidence": "exact",
+            "sourceField": "silversea_gatsby_itinerary",
+            "canonicalPortId": "port-csv-336",
+            "canonicalPortName": "Split"
+          }
+        },
+        {
+          "date": "2027-10-05",
+          "kind": "port",
+          "sequence": 9,
+          "overnight": false,
+          "port_code": "HRZAD",
+          "port_name": "Zadar",
+          "day_number": 9,
+          "arrival_time": "08:00",
+          "departure_time": "17:00",
+          "port_resolution": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Zadar",
+            "confidence": "exact",
+            "sourceField": "silversea_gatsby_itinerary",
+            "canonicalPortId": "port-csv-36",
+            "canonicalPortName": "Zadar"
+          }
+        },
+        {
+          "date": "2027-10-06",
+          "kind": "port",
+          "sequence": 10,
+          "overnight": false,
+          "port_code": "ITFUS",
+          "port_name": "Fusina (Venice)",
+          "day_number": 10,
+          "arrival_time": "07:00",
+          "departure_time": "00:00",
+          "port_resolution": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Venice",
+            "confidence": "exact",
+            "sourceField": "silversea_gatsby_itinerary",
+            "canonicalPortId": "port-csv-32",
+            "canonicalPortName": "Venice"
+          }
+        }
+      ],
+      "source_duration": 9,
+      "arrival_port_raw": "Fusina (Venice)",
+      "calculated_nights": 9,
+      "ship_match_method": "exact_name",
+      "structured_source": "silversea_gatsby_voyage",
+      "departure_port_raw": "Fusina (Venice)",
+      "departure_port_meta": {
+        "reason": null,
+        "status": "resolved",
+        "rawValue": "Venice",
+        "confidence": "exact",
+        "sourceField": "silversea_gatsby_catalogue",
+        "canonicalPortId": "port-csv-32",
+        "canonicalPortName": "Venice"
+      },
+      "silversea_code_kind": "numeric",
+      "departure_port_merge": {
+        "reason": "new_record",
+        "blocked": false
+      },
+      "destination_web_code": "destination-1",
+      "silversea_adapter_id": "silversea",
+      "destination_id_source": 1,
+      "silversea_batch_write": true,
+      "silversea_cruise_code": "SL270927009",
+      "silversea_cruise_type": "Classic",
+      "silversea_ship_prefix": "SL",
+      "duration_matches_dates": true,
+      "silversea_product_type": "ocean_cruise",
+      "silversea_adapter_version": "2026-08-15.silversea1",
+      "silversea_destination_method": "silversea_itinerary_evidence",
+      "silversea_controlled_first_batch": true
+    }
+  },
+  "after": {
+    "itinerary": "Venice, Piran, Rovinj, Bari, Kotor, Dubrovnik, Split, Zadar, Venice",
+    "itinerary_ports": [
+      "Venice",
+      "Piran",
+      "Rovinj",
+      "Bari",
+      "Kotor",
+      "Dubrovnik",
+      "Split",
+      "Zadar",
+      "Venice"
+    ],
+    "raw_extract": {
+      "silversea_cruise_code": "SL270927009",
+      "silversea_code_kind": "numeric",
+      "silversea_ship_prefix": "SL",
+      "silversea_cruise_type": "Classic",
+      "silversea_product_type": "ocean_cruise",
+      "source_duration": 9,
+      "calculated_nights": 9,
+      "duration_matches_dates": true,
+      "structured_source": "silversea_gatsby_voyage",
+      "departure_port_raw": "Fusina (Venice)",
+      "arrival_port_raw": "Fusina (Venice)",
+      "destination_raw": "MEDITERRANEAN",
+      "destination_id_source": 1,
+      "destination_web_code": "destination-1",
+      "itinerary_stops": [
+        {
+          "sequence": 1,
+          "day_number": 1,
+          "date": "2027-09-27",
+          "port_name": "Fusina (Venice)",
+          "port_code": "ITFUS",
+          "arrival_time": "00:00",
+          "departure_time": "19:00",
+          "overnight": false,
+          "kind": "port",
+          "port_resolution": {
+            "rawValue": "Venice",
+            "canonicalPortId": "port-csv-32",
+            "canonicalPortName": "Venice",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "silversea_gatsby_itinerary"
+          }
+        },
+        {
+          "sequence": 2,
+          "day_number": 2,
+          "date": "2027-09-28",
+          "port_name": "Piran",
+          "port_code": "SIPRS",
+          "arrival_time": "08:00",
+          "departure_time": "18:00",
+          "overnight": false,
+          "kind": "port",
+          "port_resolution": {
+            "rawValue": "Piran",
+            "canonicalPortId": "port-csv-428",
+            "canonicalPortName": "Piran",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "silversea_gatsby_itinerary"
+          }
+        },
+        {
+          "sequence": 3,
+          "day_number": 3,
+          "date": "2027-09-29",
+          "port_name": "Rovinj",
+          "port_code": "HRROV",
+          "arrival_time": "08:00",
+          "departure_time": "18:30",
+          "overnight": false,
+          "kind": "port",
+          "port_resolution": {
+            "rawValue": "Rovinj",
+            "canonicalPortId": "port-csv-416",
+            "canonicalPortName": "Rovinj",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "silversea_gatsby_itinerary"
+          }
+        },
+        {
+          "sequence": 4,
+          "day_number": 4,
+          "date": "2027-09-30",
+          "port_name": "Day at sea",
+          "port_code": "ZZC36",
+          "arrival_time": "00:00",
+          "departure_time": "00:00",
+          "overnight": false,
+          "kind": "sea",
+          "port_resolution": null
+        },
+        {
+          "sequence": 5,
+          "day_number": 5,
+          "date": "2027-10-01",
+          "port_name": "Bari",
+          "port_code": "ITBRI",
+          "arrival_time": "08:00",
+          "departure_time": "22:00",
+          "overnight": false,
+          "kind": "port",
+          "port_resolution": {
+            "rawValue": "Bari",
+            "canonicalPortId": "port-csv-303",
+            "canonicalPortName": "Bari",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "silversea_gatsby_itinerary"
+          }
+        },
+        {
+          "sequence": 6,
+          "day_number": 6,
+          "date": "2027-10-02",
+          "port_name": "Kotor",
+          "port_code": "MEKOT",
+          "arrival_time": "08:00",
+          "departure_time": "18:00",
+          "overnight": false,
+          "kind": "port",
+          "port_resolution": {
+            "rawValue": "Kotor",
+            "canonicalPortId": "port-csv-282",
+            "canonicalPortName": "Kotor",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "silversea_gatsby_itinerary"
+          }
+        },
+        {
+          "sequence": 7,
+          "day_number": 7,
+          "date": "2027-10-03",
+          "port_name": "Dubrovnik",
+          "port_code": "HRDBV",
+          "arrival_time": "08:00",
+          "departure_time": "18:00",
+          "overnight": false,
+          "kind": "port",
+          "port_resolution": {
+            "rawValue": "Dubrovnik",
+            "canonicalPortId": "port-csv-266",
+            "canonicalPortName": "Dubrovnik",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "silversea_gatsby_itinerary"
+          }
+        },
+        {
+          "sequence": 8,
+          "day_number": 8,
+          "date": "2027-10-04",
+          "port_name": "Split",
+          "port_code": "HRSPU",
+          "arrival_time": "08:00",
+          "departure_time": "18:00",
+          "overnight": false,
+          "kind": "port",
+          "port_resolution": {
+            "rawValue": "Split",
+            "canonicalPortId": "port-csv-337",
+            "canonicalPortName": "Split",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "silversea_gatsby_itinerary"
+          }
+        },
+        {
+          "sequence": 9,
+          "day_number": 9,
+          "date": "2027-10-05",
+          "port_name": "Zadar",
+          "port_code": "HRZAD",
+          "arrival_time": "08:00",
+          "departure_time": "17:00",
+          "overnight": false,
+          "kind": "port",
+          "port_resolution": {
+            "rawValue": "Zadar",
+            "canonicalPortId": "port-csv-36",
+            "canonicalPortName": "Zadar",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "silversea_gatsby_itinerary"
+          }
+        },
+        {
+          "sequence": 10,
+          "day_number": 10,
+          "date": "2027-10-06",
+          "port_name": "Fusina (Venice)",
+          "port_code": "ITFUS",
+          "arrival_time": "07:00",
+          "departure_time": "00:00",
+          "overnight": false,
+          "kind": "port",
+          "port_resolution": {
+            "rawValue": "Venice",
+            "canonicalPortId": "port-csv-32",
+            "canonicalPortName": "Venice",
+            "confidence": "exact",
+            "status": "resolved",
+            "reason": null,
+            "sourceField": "silversea_gatsby_itinerary"
+          }
+        }
+      ],
+      "full_path": "/destinations/mediterranean-cruise/fusina-venice-to-fusina-venice-sl270927009.html",
+      "silversea_destination_method": "silversea_itinerary_evidence",
+      "silversea_adapter_id": "silversea",
+      "silversea_adapter_version": "2026-08-15.silversea1",
+      "silversea_batch_write": true,
+      "silversea_controlled_first_batch": true,
+      "destination_key": "mediterranean",
+      "ship_match_method": "exact_name"
+    }
+  },
+  "immutable_fingerprint": {
+    "id": "46e8e274-9f46-4529-9c6f-5bdac69bdedb",
+    "official_sailing_id": "SL270927009",
+    "cruise_line_id": "3fd46f63-8291-4090-8edf-8d1c79bf2846",
+    "external_key": "92a56561e8f536eef39c291c883269d708a84f71",
+    "identity_key": "01316f7a23ec86dd80a30198c5160b844d8e2ed0"
+  },
+  "guards": {
+    "shrink": {
+      "pass": true,
+      "reason": "not_a_shrink",
+      "shrink_ratio": 0,
+      "disappeared": []
+    },
+    "reorder": {
+      "pass": true,
+      "reason": "multiset_reorder_source_authoritative",
+      "reorder_only": true
+    },
+    "ports_safety": {
+      "eligible": true,
+      "guard": "pass",
+      "shrink": {
+        "pass": true,
+        "reason": "not_a_shrink",
+        "shrink_ratio": 0,
+        "disappeared": []
+      },
+      "reorder": {
+        "pass": true,
+        "reason": "multiset_reorder_source_authoritative",
+        "reorder_only": true
+      }
+    }
+  },
+  "production_before": {
+    "total": 920,
+    "classic_stored_official": 602,
+    "classic_active": 597,
+    "classic_expired": 5,
+    "expedition_stored_official": 310,
+    "expedition_active": 308,
+    "expedition_expired": 2,
+    "legacy": 8,
+    "duplicate_official_ids": []
+  },
+  "lifecycle_status": "active",
+  "fixture_hash": "524e7654ccb1a0c0d30aa6b3fb953d021c6060e8a56249c0acd4dfa7d193ca0f"
+}
