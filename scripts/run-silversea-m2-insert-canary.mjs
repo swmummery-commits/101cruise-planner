@@ -368,6 +368,7 @@ export async function runSilverseaM2InsertCanary(options = {}) {
   let writeResult = null;
   let insertedRow = null;
   let verification = null;
+  let underLockBeforeRows = null;
 
   const hardenedResult = await executeHardenedControlledProductionApply(
     sb,
@@ -393,6 +394,7 @@ export async function runSilverseaM2InsertCanary(options = {}) {
     },
     {
       onLockAcquired: async (lockMeta) => {
+        underLockBeforeRows = (await indexExistingSilverseaRecords(sb, line.id)).rows;
         rollbackManifest.status = RUN_STATUS.LOCK_ACQUIRED;
         store.updateRollback(rollbackManifest);
         applyReport = updateReportLifecycle(applyReport, {
@@ -456,7 +458,10 @@ export async function runSilverseaM2InsertCanary(options = {}) {
         const protection = await verifyM2Protection({
           sb,
           lineId: line.id,
-          beforeSnapshot: { officialRows: productionIndex.rows.filter((r) => r.official_sailing_id), legacyRows: productionIndex.rows.filter((r) => !r.official_sailing_id) },
+          beforeSnapshot: {
+            officialRows: (underLockBeforeRows || productionIndex.rows).filter((r) => r.official_sailing_id),
+            legacyRows: (underLockBeforeRows || productionIndex.rows).filter((r) => !r.official_sailing_id)
+          },
           afterRows: indexedAfter.rows,
           today
         });
