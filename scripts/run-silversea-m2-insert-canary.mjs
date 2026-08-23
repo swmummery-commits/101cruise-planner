@@ -54,7 +54,9 @@ const {
   verifyM2Protection,
   proveRepeatInsertBlocked,
   buildM2RollbackManifest,
-  buildAuthoritativeVerificationResult
+  buildAuthoritativeVerificationResult,
+  assignPersistedFixtureHash,
+  hashFixtureContent
 } = require(path.join(root, "netlify/functions/lib/silversea-m2-maintenance-insert-canary"));
 const {
   RUN_STATUS,
@@ -257,6 +259,9 @@ export async function runSilverseaM2InsertCanary(options = {}) {
     });
     if (args.writeFixture) {
       fs.mkdirSync(path.dirname(FIXTURE_PATH), { recursive: true });
+      fs.writeFileSync(FIXTURE_PATH, `${JSON.stringify(fixture, null, 2)}\n`);
+      fixture = JSON.parse(fs.readFileSync(FIXTURE_PATH, "utf8"));
+      assignPersistedFixtureHash(fixture);
       fs.writeFileSync(FIXTURE_PATH, `${JSON.stringify(fixture, null, 2)}\n`);
     }
   }

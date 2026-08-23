@@ -68,7 +68,22 @@ function stableJson(value) {
 }
 
 function hashFixtureContent(obj) {
-  return crypto.createHash("sha256").update(JSON.stringify(stableJson(obj))).digest("hex");
+  const normalized = JSON.parse(JSON.stringify(stableJson(obj)));
+  return crypto.createHash("sha256").update(JSON.stringify(normalized)).digest("hex");
+}
+
+function assignPersistedFixtureHash(fixture) {
+  const persisted = JSON.parse(
+    JSON.stringify({
+      official_sailing_id: fixture.official_sailing_id,
+      candidate: fixture.candidate,
+      insert_payload: fixture.insert_payload,
+      itinerary_ports: fixture.itinerary_ports,
+      source_snapshot_fingerprint: fixture.source_snapshot_fingerprint
+    })
+  );
+  fixture.fixture_hash = hashFixtureContent(persisted);
+  return fixture;
 }
 
 function findNormalisedProduct(simulation, officialId = CANARY_OFFICIAL_ID) {
@@ -170,14 +185,7 @@ function buildM2CanaryFixture({
     controlled_batch: candidate.raw_extract.controlled_batch,
     fixture_hash: null
   };
-  fixture.fixture_hash = hashFixtureContent({
-    official_sailing_id: fixture.official_sailing_id,
-    candidate: fixture.candidate,
-    insert_payload: fixture.insert_payload,
-    itinerary_ports: fixture.itinerary_ports,
-    source_snapshot_fingerprint: fixture.source_snapshot_fingerprint
-  });
-  return fixture;
+  return assignPersistedFixtureHash(fixture);
 }
 
 async function validateM2Preflight({
@@ -454,6 +462,7 @@ module.exports = {
   EXPECTED_INSERTS,
   ADAPTER_ID,
   ADAPTER_VERSION,
+  assignPersistedFixtureHash,
   hashFixtureContent,
   findNormalisedProduct,
   buildM2ControlledBatchMarker,

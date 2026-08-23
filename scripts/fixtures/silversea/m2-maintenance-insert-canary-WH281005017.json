@@ -2,7 +2,7 @@
   "phase": "M2",
   "official_sailing_id": "WH281005017",
   "source_snapshot_fingerprint": "f08299aa81c1140fbed15dd82941523da6d55c0b2f063ca4a41ee412d3464811",
-  "source_snapshot_timestamp": "2026-08-23T01:23:30.261Z",
+  "source_snapshot_timestamp": "2026-08-23T01:31:49.249Z",
   "source_health": "PASS",
   "product_type": "classic",
   "special_product_deferred": false,
@@ -328,7 +328,7 @@
         "line": "silversea",
         "product_type": "classic",
         "phase": "M2",
-        "run_id": "silversea-m2-maintenance-insert-WH281005017-2026-08-23T01-21-52-545Z",
+        "run_id": "silversea-m2-maintenance-insert-WH281005017-2026-08-23T01-29-39-025Z",
         "fixture": "scripts/fixtures/silversea/m2-maintenance-insert-canary-WH281005017.json"
       }
     },
@@ -648,7 +648,7 @@
         "line": "silversea",
         "product_type": "classic",
         "phase": "M2",
-        "run_id": "silversea-m2-maintenance-insert-WH281005017-2026-08-23T01-21-52-545Z",
+        "run_id": "silversea-m2-maintenance-insert-WH281005017-2026-08-23T01-29-39-025Z",
         "fixture": "scripts/fixtures/silversea/m2-maintenance-insert-canary-WH281005017.json"
       },
       "departure_port_meta": {
@@ -669,9 +669,9 @@
     "return_date_raw": null,
     "departure_date_manual": false,
     "official_sailing_id": "WH281005017",
-    "last_seen_at": "2026-08-23T01:23:30.261Z",
-    "last_verified_at": "2026-08-23T01:23:30.261Z",
-    "last_changed_at": "2026-08-23T01:23:30.261Z",
+    "last_seen_at": "2026-08-23T01:31:49.249Z",
+    "last_verified_at": "2026-08-23T01:31:49.249Z",
+    "last_changed_at": "2026-08-23T01:31:49.249Z",
     "itinerary_ports": [
       "Tokyo",
       "Kobe",
@@ -692,8 +692,8 @@
     "line": "silversea",
     "product_type": "classic",
     "phase": "M2",
-    "run_id": "silversea-m2-maintenance-insert-WH281005017-2026-08-23T01-21-52-545Z",
+    "run_id": "silversea-m2-maintenance-insert-WH281005017-2026-08-23T01-29-39-025Z",
     "fixture": "scripts/fixtures/silversea/m2-maintenance-insert-canary-WH281005017.json"
   },
-  "fixture_hash": "2d990190ae67d0b2874ef7046bf4779cfd6a37ca485d3ee920682ed0c7e3593c"
+  "fixture_hash": "ce280c03113eb17f108f25d47eeda1d0329f1f0972f837ad736bd114e6e11a63"
 }
