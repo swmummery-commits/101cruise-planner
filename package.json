@@ -68,6 +68,8 @@
     "test:silversea-m0e": "node scripts/test-silversea-m0e.mjs",
     "silversea:weekly-maintenance": "node scripts/run-silversea-weekly-maintenance.mjs",
     "test:silversea-weekly-maintenance": "node scripts/test-silversea-weekly-maintenance.mjs",
+    "silversea:m2-insert-canary": "node scripts/run-silversea-m2-insert-canary.mjs",
+    "test:silversea-m2-insert-canary": "node scripts/test-silversea-m2-insert-canary.mjs",
     "test:silversea-discovery": "node scripts/test-silversea-discovery.mjs",
     "test:silversea-controlled-batch": "node scripts/test-silversea-controlled-batch.mjs",
     "test:global-cruise-write-lock": "node scripts/test-global-cruise-write-lock.mjs",
