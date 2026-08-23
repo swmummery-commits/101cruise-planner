@@ -1,0 +1,35 @@
+{
+  "phase": "M4",
+  "official_sailing_id": "SN280222C25",
+  "production_uuid": "e1cc4129-488b-442e-b45e-ccdfb5c55699",
+  "cruise_line_id": "3fd46f63-8291-4090-8edf-8d1c79bf2846",
+  "source_snapshot_fingerprint": "78c6bd8a9a6db4293ee4c81720b5ce628b46b24e66ba49e807a0345af1d9277b",
+  "source_snapshot_timestamp": "2026-08-23T06:18:48.961Z",
+  "source_health": "PASS",
+  "source_presence": "ABSENT",
+  "observation_type": "SOURCE_ABSENT",
+  "observation_period_key": "2026-W34",
+  "lifecycle_status": "active",
+  "cutoff": {
+    "within_cutoff": false,
+    "days_until_departure": 548,
+    "within_21_day_cutoff": false,
+    "lifecycle_status": "active"
+  },
+  "secondary_product_context": "historical_combination_metadata_present",
+  "prior_count": 0,
+  "expected_new_count": 1,
+  "expected_status": "OBSERVING",
+  "quarantine_eligible": false,
+  "quarantine_proposal": null,
+  "discovered_cruises_mutations_expected": 0,
+  "prior_observation_state": null,
+  "production_before": {
+    "total": 920,
+    "classic_stored_official": 602,
+    "expedition_stored_official": 310,
+    "legacy": 8
+  },
+  "run_id": "silversea-m4-source-absence-SN280222C25-2026-08-23T06-17-08-443Z",
+  "fixture_hash": "b3a753137e27a366e7e3046bf5d8b98b37b9f954b9589fa833d773967789de1f"
+}

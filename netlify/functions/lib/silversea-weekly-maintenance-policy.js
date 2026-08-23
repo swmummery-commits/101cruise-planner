@@ -124,22 +124,34 @@ const FUTURE_MAINTENANCE_LOCK_CONTRACT = Object.freeze({
   default_lease_seconds: 1800
 });
 
+const SOURCE_ABSENCE_FIXTURE_ID = "SN280222C25";
+
 const OBSERVATION_STATE_SCHEMA = Object.freeze({
-  table: "silversea_maintenance_observations (proposed M2+)",
+  table: "cruise_source_observation_state",
+  rpc_advance: "advance_cruise_source_absence_observation",
+  rpc_resolve: "resolve_cruise_source_absence_observation",
   fields: [
-    "official_sailing_id",
+    "id",
     "cruise_line_id",
+    "official_sailing_id",
     "observation_type",
-    "observed_at",
-    "source_snapshot_hash",
-    "source_health_ok",
-    "consecutive_count",
-    "first_seen_at",
-    "last_seen_at",
+    "status",
+    "production_cruise_uuid",
+    "consecutive_healthy_absence_count",
+    "first_observed_at",
+    "last_observed_at",
+    "last_observation_period_key",
+    "last_counted_snapshot_hash",
+    "last_source_health",
+    "last_run_id",
+    "reason_code",
+    "metadata",
     "resolved_at",
-    "status"
+    "created_at",
+    "updated_at"
   ],
-  m1_persistence: "deferred_to_m2"
+  m1_persistence: "deferred_to_m4",
+  m4_canary: SOURCE_ABSENCE_FIXTURE_ID
 });
 
 const M0E_DRIFT_CASE_IDS = Object.freeze([
@@ -150,8 +162,6 @@ const M0E_DRIFT_CASE_IDS = Object.freeze([
   "WH281126C27",
   "WH281126010"
 ]);
-
-const SOURCE_ABSENCE_FIXTURE_ID = "SN280222C25";
 
 function snapshotFingerprint(payload) {
   return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
