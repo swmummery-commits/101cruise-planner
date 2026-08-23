@@ -303,6 +303,71 @@ function buildAuthoritativeVerificationResult({ aggregateOk, verification = {}, 
   };
 }
 
+/**
+ * Durable under-lock finalisation shared by Silversea maintenance canary runners.
+ * Persists VERIFIED -> COMPLETE (or verification failure) before global lock release.
+ */
+function finalizeControlledProductionUnderLock({
+  store,
+  rollbackManifest,
+  applyReport,
+  verificationResult,
+  verificationError,
+  writeResult,
+  performance,
+  validateWrite
+}) {
+  const finalStatus =
+    verificationError || verificationResult?.ok === false
+      ? RUN_STATUS.WRITE_SUCCEEDED_VERIFICATION_FAILED
+      : RUN_STATUS.VERIFIED;
+
+  rollbackManifest.status = finalStatus;
+  rollbackManifest.verification_status = verificationResult || null;
+  rollbackManifest.verification_error = verificationError || null;
+  rollbackManifest.completion_status =
+    finalStatus === RUN_STATUS.VERIFIED ? RUN_STATUS.COMPLETE : finalStatus;
+  store.updateRollback(rollbackManifest);
+
+  applyReport = updateReportLifecycle(applyReport, {
+    status: finalStatus === RUN_STATUS.VERIFIED ? RUN_STATUS.COMPLETE : finalStatus,
+    verification: verificationResult,
+    verification_error: verificationError || null,
+    global_lock_held_through_verification: true,
+    performance: performance || null
+  });
+  store.updateReport(applyReport);
+
+  if (finalStatus === RUN_STATUS.VERIFIED) {
+    rollbackManifest.status = RUN_STATUS.COMPLETE;
+    store.updateRollback(rollbackManifest);
+  }
+
+  if (typeof validateWrite === "function") {
+    validateWrite({ finalStatus, writeResult });
+  }
+
+  return { applyReport, rollbackManifest, finalStatus };
+}
+
+/**
+ * After global lock release, persist accurate lock-release metadata on the apply report.
+ */
+function persistPostLockReleaseMetadata({ store, applyReport, globalLockObservability, timings }) {
+  applyReport = updateReportLifecycle(applyReport, {
+    global_lock: globalLockObservability || applyReport.global_lock,
+    lock_released_at: timings?.ended_at || new Date().toISOString()
+  });
+  store.updateReport(applyReport);
+  return applyReport;
+}
+
+function isSuccessfulControlledProductionRun(runStatus, verification) {
+  return (
+    (runStatus === RUN_STATUS.VERIFIED || runStatus === RUN_STATUS.COMPLETE) && verification?.ok === true
+  );
+}
+
 module.exports = {
   RUN_STATUS,
   atomicWriteJson,
@@ -314,6 +379,9 @@ module.exports = {
   ControlledProductionRunStore,
   executeHardenedControlledProductionApply,
   buildAuthoritativeVerificationResult,
+  finalizeControlledProductionUnderLock,
+  persistPostLockReleaseMetadata,
+  isSuccessfulControlledProductionRun,
   recoverInsertedRowsByRunId,
   recoverInsertedRowsFromManifest,
   simulateCrashRecoveryScenarios

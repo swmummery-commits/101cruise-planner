@@ -271,27 +271,10 @@ async function runTests() {
   });
 
   await test("16 global lock required for apply", () => {
-    const prev = process.env.SILVERSEA_DISCOVERY_WRITE_ENABLED;
-    delete process.env.SILVERSEA_DISCOVERY_WRITE_ENABLED;
-    try {
-      require(path.join(root, "scripts/run-silversea-m3-update-canary.mjs"));
-    } catch {
-      /* esm */
-    }
-    try {
-      const { assertM3ApplyAllowed } = require(path.join(
-        root,
-        "netlify/functions/lib/silversea-m3-maintenance-update-canary"
-      ));
-    } catch {}
-    try {
-      const mod = require(path.join(root, "scripts/run-silversea-m3-update-canary.mjs"));
-    } catch {}
-    const runnerPath = path.join(root, "scripts/run-silversea-m3-update-canary.mjs");
     if (!m3Runner.includes("executeHardenedControlledProductionApply")) {
       throw new Error("hardened lifecycle required");
     }
-    if (prev) process.env.SILVERSEA_DISCOVERY_WRITE_ENABLED = prev;
+    if (!/finalizeUnderLock:/.test(m3Runner)) throw new Error("finalizeUnderLock required");
   });
 
   await test("17 Expedition cannot be targeted", () => {

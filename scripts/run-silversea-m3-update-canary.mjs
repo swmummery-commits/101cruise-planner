@@ -64,7 +64,10 @@ const {
   updateReportLifecycle,
   ControlledProductionRunStore,
   executeHardenedControlledProductionApply,
-  buildAuthoritativeVerificationResult
+  buildAuthoritativeVerificationResult,
+  finalizeControlledProductionUnderLock,
+  persistPostLockReleaseMetadata,
+  isSuccessfulControlledProductionRun
 } = require(path.join(root, "netlify/functions/lib/cruise-discovery-controlled-production-run"));
 const { DEFAULT_GLOBAL_LEASE_SECONDS } = require(path.join(
   root,
@@ -427,11 +430,51 @@ export async function runSilverseaM3UpdateCanary(options = {}) {
 
         timings.verification_ended_at = new Date().toISOString();
         return verification;
+      },
+      finalizeUnderLock: async ({ verificationResult, verificationError, writeResult: wr }) => {
+        const finalized = finalizeControlledProductionUnderLock({
+          store,
+          rollbackManifest,
+          applyReport,
+          verificationResult,
+          verificationError,
+          writeResult: wr,
+          performance: {
+            mutation_duration_ms:
+              timings.mutation_started_at && timings.mutation_ended_at
+                ? new Date(timings.mutation_ended_at) - new Date(timings.mutation_started_at)
+                : null,
+            verification_duration_ms:
+              timings.verification_started_at && timings.verification_ended_at
+                ? new Date(timings.verification_ended_at) - new Date(timings.verification_started_at)
+                : null
+          },
+          validateWrite: ({ finalStatus, writeResult: writeCheck }) => {
+            if (writeCheck.stats.updated !== EXPECTED_UPDATES) {
+              throw new Error(`update_count_mismatch:${writeCheck.stats.updated}`);
+            }
+            if (finalStatus !== RUN_STATUS.VERIFIED) {
+              throw new Error("write_succeeded_verification_failed");
+            }
+          }
+        });
+        applyReport = finalized.applyReport;
+        rollbackManifest = finalized.rollbackManifest;
+        return { persisted: true, final_status: finalized.finalStatus };
       }
     }
   );
 
   timings.ended_at = new Date().toISOString();
+  if (!hardenedResult.blocked && applyReport) {
+    applyReport = persistPostLockReleaseMetadata({
+      store,
+      applyReport,
+      globalLockObservability: hardenedResult.global_lock,
+      timings
+    });
+  }
+
   const indexedPostLock = await indexExistingSilverseaRecords(sb, line.id);
   const postProposal = buildSilverseaWeeklyMaintenanceProposal({
     simulation,
@@ -444,7 +487,7 @@ export async function runSilverseaM3UpdateCanary(options = {}) {
 
   const finalReport = {
     ...report,
-    ok: hardenedResult.run_status === RUN_STATUS.COMPLETE && verification?.ok === true,
+    ok: isSuccessfulControlledProductionRun(hardenedResult.run_status, verification) && !hardenedResult.blocked,
     ended_at: timings.ended_at,
     hardened_result: hardenedResult,
     write_result: writeResult,

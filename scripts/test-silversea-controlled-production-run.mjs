@@ -18,9 +18,17 @@ const {
   appendInsertedRecord,
   ControlledProductionRunStore,
   buildAuthoritativeVerificationResult,
+  finalizeControlledProductionUnderLock,
+  persistPostLockReleaseMetadata,
+  isSuccessfulControlledProductionRun,
   simulateCrashRecoveryScenarios,
-  atomicWriteJson
+  atomicWriteJson,
+  buildApplyReportLifecycle
 } = require(path.join(root, "netlify/functions/lib/cruise-discovery-controlled-production-run"));
+const { buildGlobalLockReportFields } = require(path.join(
+  root,
+  "netlify/functions/lib/cruise-discovery-global-write-lock"
+));
 const {
   DISCOVERED_CRUISE_EXPEDITION_VERIFY_COLUMNS,
   assertExpeditionVerifyProjectionValid
@@ -113,6 +121,33 @@ test("WRITE_SUCCEEDED_VERIFICATION_FAILED is distinct failure state", () => {
   if (RUN_STATUS.WRITE_SUCCEEDED_VERIFICATION_FAILED === RUN_STATUS.COMPLETE) {
     throw new Error("same as complete");
   }
+});
+
+test("finalizeControlledProductionUnderLock persists COMPLETE on success", () => {
+  const tmp = path.join(root, "reports", `_test-finalize-${Date.now()}`);
+  fs.mkdirSync(tmp, { recursive: true });
+  const store = new ControlledProductionRunStore(tmp, "finalize-test");
+  let rollback = buildPreWriteRollbackManifest({ runId: "finalize-test", expectedInserts: 0, expectedUpdates: 1 });
+  let applyReport = buildApplyReportLifecycle({ runId: "finalize-test", expectedInserts: 0 });
+  store.persistPreparedRollback(rollback);
+  store.persistPreparedReport(applyReport);
+  const finalized = finalizeControlledProductionUnderLock({
+    store,
+    rollbackManifest: rollback,
+    applyReport,
+    verificationResult: { ok: true },
+    verificationError: null,
+    writeResult: { stats: { updated: 1 } }
+  });
+  const persisted = JSON.parse(fs.readFileSync(store.applyReportPath, "utf8"));
+  if (persisted.status !== RUN_STATUS.COMPLETE) throw new Error("expected COMPLETE");
+  if (!isSuccessfulControlledProductionRun(RUN_STATUS.VERIFIED, { ok: true })) {
+    throw new Error("success helper");
+  }
+  const lockObs = buildGlobalLockReportFields({ acquired: true, owner_id: "finalize-test" }, { global_lock_released: true });
+  persistPostLockReleaseMetadata({ store, applyReport: finalized.applyReport, globalLockObservability: lockObs });
+  const afterRelease = JSON.parse(fs.readFileSync(store.applyReportPath, "utf8"));
+  if (afterRelease.global_lock?.global_lock_released !== true) throw new Error("release metadata");
 });
 
 console.log(`\ncontrolled-production-run: ${passed} passed, ${failed} failed`);
