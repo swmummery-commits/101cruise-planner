@@ -165,10 +165,14 @@ async function loadObservationState(supabase, { cruiseLineId, officialSailingId,
   }
 }
 
+async function observationRpc(supabase, rpcName, body) {
+  return supabase(`rpc/${rpcName}`, { method: "POST", body });
+}
+
 async function verifyObservationSchemaReady(supabase) {
   try {
     await supabase(`${OBSERVATION_TABLE}?select=id&limit=0`);
-    const probe = await supabase("rpc/advance_cruise_source_absence_observation", {
+    const probe = await observationRpc(supabase, "advance_cruise_source_absence_observation", {
       p_cruise_line_id: "00000000-0000-0000-0000-000000000000",
       p_official_sailing_id: "__schema_probe__",
       p_source_health: "unhealthy"
@@ -180,7 +184,7 @@ async function verifyObservationSchemaReady(supabase) {
 }
 
 async function advanceSourceAbsenceObservation(supabase, params) {
-  const result = await supabase("rpc/advance_cruise_source_absence_observation", {
+  return observationRpc(supabase, "advance_cruise_source_absence_observation", {
     p_cruise_line_id: params.cruiseLineId,
     p_official_sailing_id: params.officialSailingId,
     p_production_cruise_uuid: params.productionUuid || null,
@@ -192,11 +196,10 @@ async function advanceSourceAbsenceObservation(supabase, params) {
     p_reason_code: params.reasonCode || "healthy_source_miss",
     p_metadata: params.metadata || {}
   });
-  return result;
 }
 
 async function resolveSourceAbsenceObservation(supabase, params) {
-  return supabase("rpc/resolve_cruise_source_absence_observation", {
+  return observationRpc(supabase, "resolve_cruise_source_absence_observation", {
     p_cruise_line_id: params.cruiseLineId,
     p_official_sailing_id: params.officialSailingId,
     p_observation_type: params.observationType || OBSERVATION_TYPE_SOURCE_ABSENT,

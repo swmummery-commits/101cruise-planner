@@ -149,7 +149,7 @@ export async function runSilverseaM4SourceAbsenceObservationCanary(options = {})
     productionIndex,
     cruiseLine: line,
     today,
-    fixture,
+    fixture: args.writeFixture ? null : fixture,
     existingState
   });
 
