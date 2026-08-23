@@ -151,6 +151,7 @@ const OBSERVATION_STATE_SCHEMA = Object.freeze({
     "updated_at"
   ],
   m1_persistence: "deferred_to_m4",
+  m7a_event_table: "cruise_source_observation_events",
   m4_canary: SOURCE_ABSENCE_FIXTURE_ID
 });
 

@@ -82,6 +82,8 @@
     "test:silversea-m5-threshold-simulation": "node scripts/test-silversea-m5-source-absence-threshold-simulation.mjs",
     "silversea:m6-weekly-maintenance": "node scripts/run-silversea-m6-weekly-maintenance-orchestration.mjs",
     "test:silversea-m6-weekly-maintenance": "node scripts/test-silversea-m6-weekly-maintenance-orchestration.mjs",
+    "silversea:apply-source-observation-events-migration": "node scripts/apply-cruise-source-observation-events-migration.mjs",
+    "test:silversea-m7a-observation-events": "node scripts/test-silversea-m7a-source-absence-observation-events.mjs",
     "silversea:apply-source-observation-migration": "node scripts/apply-cruise-source-observation-migration.mjs",
     "test:silversea-discovery": "node scripts/test-silversea-discovery.mjs",
     "test:silversea-controlled-batch": "node scripts/test-silversea-controlled-batch.mjs",

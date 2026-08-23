@@ -41,6 +41,14 @@ const {
   PROPOSED_EVENT_HISTORY_SCHEMA
 } = require("./silversea-source-absence-threshold-simulation");
 const {
+  buildEventStateReconciliation
+} = require("./silversea-source-absence-observation-events");
+const {
+  assessQuarantineReadiness,
+  evaluateObservationForensicChain,
+  FORENSIC_RESULT
+} = require("./silversea-source-absence-observation-forensic");
+const {
   classifySilverseaOfficialInventory,
   isClassicStoredOfficialRow,
   isExpeditionStoredOfficialRow
@@ -161,7 +169,8 @@ function deriveObservationOrchestrationProposal({
   durableState,
   simulation,
   today,
-  sourceHealthy
+  sourceHealthy,
+  observationEvents = null
 }) {
   const id = String(officialId || "").toUpperCase();
   const sourcePresent = isOfficialIdInSource(simulation, id);
@@ -233,13 +242,36 @@ function deriveObservationOrchestrationProposal({
     proposal = OBSERVATION_PROPOSAL.OBSERVATION_ADVANCE_DUE;
   }
 
-  const forensic = assessThreeObservationForensicAuditability();
-  const quarantineBase = deriveQuarantineProposal(advancement.new_count ?? priorCount);
+  const forensicLegacy = assessThreeObservationForensicAuditability();
+  const events = observationEvents === null ? undefined : observationEvents || [];
+  const eventForensic =
+    events !== undefined && durableState
+      ? evaluateObservationForensicChain({ stateRow: durableState, events })
+      : null;
+  const quarantineReadiness =
+    durableState && events !== undefined
+      ? assessQuarantineReadiness({
+          stateRow: durableState,
+          events,
+          sourceHealthy,
+          sourceStillAbsent: !sourcePresent
+        })
+      : null;
+
+  const quarantineBase = deriveQuarantineProposal(advancement?.new_count ?? priorCount);
   let quarantine_proposal = null;
   if (quarantineBase.eligible) {
-    quarantine_proposal = forensic.pass
-      ? "QUARANTINE_REVIEW_REQUIRED"
-      : "QUARANTINE_REVIEW_BLOCKED_FORENSIC_EVIDENCE";
+    if (quarantineReadiness) {
+      quarantine_proposal = quarantineReadiness.quarantine_action_ready
+        ? "QUARANTINE_REVIEW_REQUIRED"
+        : quarantineReadiness.forensic_chain_complete
+          ? "QUARANTINE_REVIEW_BLOCKED_ACTION_PRECONDITIONS"
+          : "QUARANTINE_REVIEW_BLOCKED_FORENSIC_EVIDENCE";
+    } else if (forensicLegacy.pass) {
+      quarantine_proposal = "QUARANTINE_REVIEW_REQUIRED";
+    } else {
+      quarantine_proposal = "QUARANTINE_REVIEW_BLOCKED_FORENSIC_EVIDENCE";
+    }
   }
 
   const cutoffGate = cutoffTakesPrecedenceOverAbsenceQuarantine({
@@ -256,7 +288,17 @@ function deriveObservationOrchestrationProposal({
     advancement,
     expected_new_count: advancement.new_count,
     quarantine_proposal,
-    quarantine_actionable: quarantine_proposal === "QUARANTINE_REVIEW_REQUIRED"
+    quarantine_actionable: quarantineReadiness
+      ? quarantineReadiness.quarantine_action_ready === true
+      : quarantine_proposal === "QUARANTINE_REVIEW_REQUIRED",
+    threshold_reached: quarantineReadiness?.threshold_reached ?? quarantineBase.eligible,
+    forensic_chain_complete: eventForensic?.forensic_chain_complete ?? false,
+    forensic_result: eventForensic?.result ?? (events === undefined ? "EVENT_TABLE_NOT_LOADED" : null),
+    event_reconciliation:
+      durableState && events !== undefined
+        ? buildEventStateReconciliation({ stateRow: durableState, events })
+        : null,
+    quarantine_readiness: quarantineReadiness
   };
 }
 
@@ -394,6 +436,7 @@ function buildM6OrchestrationReport(context) {
     today,
     observationStates,
     observationStatesById,
+    observationEventsByStateId = new Map(),
     startingProductionInventory,
     canarySnapshotsBefore
   } = context;
@@ -425,18 +468,21 @@ function buildM6OrchestrationReport(context) {
     const officialId = String(rec.official_sailing_id).toUpperCase();
     const productionRow = productionIndex.byOfficialId.get(officialId) || null;
     const durableState = observationStatesById.get(officialId) || null;
+    const events = durableState ? observationEventsByStateId.get(durableState.id) || [] : [];
     return deriveObservationOrchestrationProposal({
       officialId,
       productionRow,
       durableState,
       simulation,
       today,
-      sourceHealthy
+      sourceHealthy,
+      observationEvents: events
     });
   });
 
   for (const state of observationStates || []) {
     const officialId = String(state.official_sailing_id).toUpperCase();
+    const events = observationEventsByStateId.get(state.id) || [];
     if (isOfficialIdInSource(simulation, officialId)) {
       const productionRow = productionIndex.byOfficialId.get(officialId) || null;
       observationProposals.push(
@@ -446,11 +492,26 @@ function buildM6OrchestrationReport(context) {
           durableState: state,
           simulation,
           today,
-          sourceHealthy
+          sourceHealthy,
+          observationEvents: events
         })
       );
     }
   }
+
+  const forensicChainReports = (observationStates || []).map((state) => ({
+    official_sailing_id: state.official_sailing_id,
+    state_id: state.id,
+    events: observationEventsByStateId.get(state.id) || [],
+    forensic: evaluateObservationForensicChain({
+      stateRow: state,
+      events: observationEventsByStateId.get(state.id) || []
+    }),
+    reconciliation: buildEventStateReconciliation({
+      stateRow: state,
+      events: observationEventsByStateId.get(state.id) || []
+    })
+  }));
 
   const obsProposalCounts = countObservationProposals(observationProposals);
   const forensic = assessThreeObservationForensicAuditability();
@@ -532,6 +593,8 @@ function buildM6OrchestrationReport(context) {
     proposal: proposalA,
     action_summary: actionSummary,
     observation_proposals: observationProposals,
+    forensic_chain_reports: forensicChainReports,
+    event_history_table_available: observationEventsByStateId.size > 0 || context.eventHistoryTableAvailable === true,
     tables: {
       insert_eligible: proposalA.tables.insert_eligible,
       update_eligible: proposalA.tables.update_eligible,
@@ -551,6 +614,7 @@ function buildM6OrchestrationReport(context) {
     append_only_event_history_required: forensic.append_only_events_required,
     proposed_event_history_schema: PROPOSED_EVENT_HISTORY_SCHEMA,
     quarantine_hide_mutation_ready: false,
+    quarantine_hide_execution_authorised: false,
     delete_mutation_ready: false,
     hard_stop_tests: hardStops,
     idempotency: {
@@ -611,5 +675,8 @@ module.exports = {
   runSyntheticHardStopTests,
   orchestrationSemanticChecksum,
   buildM6OrchestrationReport,
+  evaluateObservationForensicChain,
+  assessQuarantineReadiness,
+  FORENSIC_RESULT,
   loadObservationState
 };

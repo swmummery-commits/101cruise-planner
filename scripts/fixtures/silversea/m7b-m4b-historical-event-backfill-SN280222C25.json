@@ -1,0 +1,51 @@
+{
+  "phase": "M7B",
+  "status": "PREPARED_NOT_EXECUTED",
+  "official_sailing_id": "SN280222C25",
+  "state_id": "c5abc742-fe7e-4846-94d2-973813de2478",
+  "production_uuid": "e1cc4129-488b-442e-b45e-ccdfb5c55699",
+  "cruise_line_id": "3fd46f63-8291-4090-8edf-8d1c79bf2846",
+  "observation_type": "SOURCE_ABSENT",
+  "proposed_event": {
+    "event_type": "ABSENCE_ADVANCED",
+    "record_origin": "HISTORICAL_BACKFILL",
+    "observed_at": "2026-08-23T08:14:47.92398+00:00",
+    "observation_period_key": "2026-W34",
+    "source_snapshot_hash": "9550e5128173d201211609428dae83790482c055037a7853a493090d444d39df",
+    "source_health": "healthy",
+    "source_present": false,
+    "run_id": "silversea-m4-source-absence-SN280222C25-2026-08-23T08-13-17-474Z",
+    "previous_count": 0,
+    "new_count": 1,
+    "reason_code": "healthy_source_miss",
+    "metadata": {
+      "phase": "M7B",
+      "backfill_of": "M4B",
+      "m4_fixture_path": "scripts/fixtures/silversea/m4-source-absence-observation-canary-SN280222C25.json",
+      "m4_fixture_hash": "292d6871eceac43b2f3321a75e570f1c5582e93a8d2e3088848c8c2953655cb9",
+      "m4_report_run_id": "silversea-m4-source-absence-SN280222C25-2026-08-23T08-13-17-474Z",
+      "state_row_created_at": "2026-08-23T08:14:47.92398+00:00",
+      "provenance": "exact_m4b_production_observation_insert"
+    }
+  },
+  "expected_post_backfill_forensic": {
+    "aggregate_count": 1,
+    "event_count": 1,
+    "forensic_result": "FORENSIC_CHAIN_COMPLETE"
+  },
+  "must_not": {
+    "change_state_count": true,
+    "advance_to_week_2_or_3": true,
+    "resolve_state": true,
+    "mutate_discovered_cruises": true,
+    "quarantine_or_hide": true,
+    "create_m5_synthetic_weeks": true
+  },
+  "defensibility_sources": [
+    "cruise_source_observation_state row c5abc742-fe7e-4846-94d2-973813de2478",
+    "scripts/fixtures/silversea/m4-source-absence-observation-canary-SN280222C25.json",
+    "reports/silversea-m4-source-absence-SN280222C25-2026-08-23T08-13-17-474Z.json",
+    "reports/silversea-m4-source-absence-SN280222C25-2026-08-23T08-13-17-474Z-prepared.json"
+  ],
+  "fixture_hash": null
+}

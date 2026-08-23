@@ -38,6 +38,10 @@ const {
   SOURCE_ABSENCE_FIXTURE_ID
 } = require(path.join(root, "netlify/functions/lib/silversea-m6-weekly-maintenance-orchestration"));
 const {
+  loadAllSilverseaObservationEvents,
+  loadObservationEventsForState
+} = require(path.join(root, "netlify/functions/lib/silversea-source-absence-observation-events"));
+const {
   snapshotProtectionRows,
   verifyProtectionSnapshots
 } = require(path.join(root, "netlify/functions/lib/silversea-expedition-itinerary-ports-backfill"));
@@ -92,6 +96,18 @@ export async function runSilverseaM6WeeklyMaintenanceOrchestration(options = {})
   const productionBefore = productionInventoryBreakdown(productionIndex.rows);
   const observationStatesBefore = await loadAllSilverseaObservationStates(sb, line.id);
   const obsByIdBefore = observationStatesByOfficialId(observationStatesBefore);
+  const allEvents = await loadAllSilverseaObservationEvents(sb, line.id);
+  const eventHistoryTableAvailable = allEvents !== null;
+  const observationEventsByStateId = new Map();
+  if (eventHistoryTableAvailable) {
+    for (const state of observationStatesBefore) {
+      const events =
+        allEvents.filter((e) => e.state_id === state.id) ||
+        (await loadObservationEventsForState(sb, state.id)) ||
+        [];
+      observationEventsByStateId.set(state.id, events);
+    }
+  }
 
   const canaryRowsBefore = [
     productionIndex.byOfficialId.get(M2_CANARY_ID),
@@ -121,6 +137,8 @@ export async function runSilverseaM6WeeklyMaintenanceOrchestration(options = {})
     today,
     observationStates: observationStatesBefore,
     observationStatesById: obsByIdBefore,
+    observationEventsByStateId,
+    eventHistoryTableAvailable,
     startingProductionInventory: productionBefore,
     canarySnapshotsBefore,
     baselineSourceSummary: options.baselineSourceSummary || null
