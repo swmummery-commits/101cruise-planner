@@ -224,6 +224,9 @@ async function runTests() {
     if (!/onLockAcquired:[\s\S]*underLockBeforeRows/.test(m3Runner)) {
       throw new Error("baseline not captured on lock");
     }
+    if (!/underLockRecheck:[\s\S]*select=\*&limit=1/.test(m3Runner)) {
+      throw new Error("under-lock recheck must fetch full row for frozen-before");
+    }
   });
 
   await test("12 pre-lock false-positive fix retained in M2 runner", () => {

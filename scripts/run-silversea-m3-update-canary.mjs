@@ -319,7 +319,7 @@ export async function runSilverseaM3UpdateCanary(options = {}) {
           await sb(
             `discovered_cruises?id=eq.${encodeURIComponent(fixture.production_uuid)}&official_sailing_id=eq.${encodeURIComponent(
               CANARY_OFFICIAL_ID
-            )}&select=id,official_sailing_id&limit=1`
+            )}&select=*&limit=1`
           )
         )?.[0];
         if (!row) return { ok: false, reason: "under_lock_target_missing" };
