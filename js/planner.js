@@ -2088,6 +2088,16 @@ function renderDashboardInclusionTags(cruise) {
   return `<div class="dashboard-snapshot-extras-tags">${inclusions.map(item => `<span class="dashboard-snapshot-extras-tag">${escapeHtml(String(item))}</span>`).join("")}</div>`;
 }
 
+function renderOnBoardCreditsSection(booking, options = {}) {
+  if (typeof Base44BookingFieldContract === "undefined" || !Base44BookingFieldContract.renderOnBoardCreditsSectionHtml) {
+    return "";
+  }
+  return Base44BookingFieldContract.renderOnBoardCreditsSectionHtml(booking || {}, {
+    ...options,
+    escapeHtml
+  });
+}
+
 function renderDashboardSnapshot(cruise) {
   const booking = getDashboardBookingSource(cruise);
   const embarkationPort = getBookingPayloadValue(booking, cruise, ["departing_port", "embarkation_port", "departure_port", "from_port", "departure_city"]) || "";
@@ -2131,6 +2141,7 @@ function renderDashboardSnapshot(cruise) {
         <h3 class="dashboard-snapshot-extras-title">Included extras</h3>
         ${renderDashboardInclusionTags(cruise)}
       </section>
+      ${renderOnBoardCreditsSection(booking)}
       <footer class="dashboard-snapshot-footer">
         <button class="dashboard-outline-action" onclick="navigateWithLoading('booking', () => renderBookingDetails(), event)">Open Booking →</button>
       </footer>
@@ -3591,6 +3602,7 @@ function renderBookingCruiseSection(cruise, booking) {
         <h4 class="dashboard-snapshot-extras-title">Included extras</h4>
         ${renderDashboardInclusionTags(cruise)}
       </section>
+      ${renderOnBoardCreditsSection(booking, { headingTag: "h4", extraClass: "booking-snapshot-extras" })}
     </section>
   `;
 }

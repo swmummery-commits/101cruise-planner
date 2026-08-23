@@ -311,9 +311,105 @@ function deriveBookingFinance(booking = {}) {
   };
 }
 
+const DEFAULT_OBC_CURRENCY = "USD";
+
+/**
+ * Currency for an OBC slot. Absent/blank → fallback (CRM default USD).
+ * Do not infer USD merely because the legacy amount field is named *_usd.
+ */
+function normalizeObcCurrency(value, fallback = DEFAULT_OBC_CURRENCY) {
+  if (value === null || value === undefined) return fallback;
+  const text = String(value).trim().toUpperCase();
+  if (!text) return fallback;
+  const cleaned = text.replace(/[^A-Z0-9]/g, "");
+  return cleaned || fallback;
+}
+
+function parsePositiveObcAmount(value) {
+  const n = parseMoney(value);
+  if (n == null || n <= MONEY_EPS) return null;
+  return roundMoney(n);
+}
+
+function normalizeObcEntry(amount, currency, fallbackCurrency) {
+  const parsed = parsePositiveObcAmount(amount);
+  if (parsed == null) return null;
+  return {
+    amount: parsed,
+    currency: normalizeObcCurrency(currency, fallbackCurrency)
+  };
+}
+
+function normalizeOnBoardCreditsFromArray(value) {
+  if (!Array.isArray(value)) return [];
+  const out = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const entry = normalizeObcEntry(item.amount, item.currency, DEFAULT_OBC_CURRENCY);
+    if (entry) out.push(entry);
+  }
+  return out;
+}
+
+function normalizeOnBoardCreditsFromRawFields(booking = {}) {
+  const credits = [];
+  const first = normalizeObcEntry(
+    booking.on_board_credit_usd,
+    booking.on_board_credit_1_currency,
+    DEFAULT_OBC_CURRENCY
+  );
+  if (first) credits.push(first);
+  const second = normalizeObcEntry(
+    booking.on_board_credit_2_amount,
+    booking.on_board_credit_2_currency,
+    DEFAULT_OBC_CURRENCY
+  );
+  if (second) credits.push(second);
+  return credits;
+}
+
+/**
+ * Canonical client-facing OBC list. Raw Base44 slots remain the source of
+ * truth when present. Prefer a longer pre-built array so future 3+ credits
+ * survive. Never sum or convert across currencies.
+ */
+function normalizeOnBoardCredits(booking = {}) {
+  try {
+    const fromRaw = normalizeOnBoardCreditsFromRawFields(booking);
+    const fromArray = normalizeOnBoardCreditsFromArray(booking.on_board_credits);
+    if (fromArray.length > fromRaw.length) return fromArray;
+    if (fromRaw.length) return fromRaw;
+    return fromArray;
+  } catch {
+    return [];
+  }
+}
+
+function formatOnBoardCreditLabel(credit) {
+  if (!credit) return "";
+  const amount = typeof credit.amount === "number" ? credit.amount : parseMoney(credit.amount);
+  if (amount == null) return "";
+  const currency = normalizeObcCurrency(credit.currency, "");
+  if (!currency) return "";
+  const formatted = amount.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+  return `${currency} ${formatted}`;
+}
+
+function buildOnBoardCreditPdfRows(booking = {}) {
+  const credits = normalizeOnBoardCredits(booking);
+  return credits.map((credit, index) => [
+    credits.length === 1 ? "On-board credit" : `On-board credit ${index + 1}`,
+    formatOnBoardCreditLabel(credit)
+  ]);
+}
+
 /**
  * Apply finance derivation onto a booking payload for integration responses.
  * Does not persist anything to CruiseBooking.
+ * Also normalises on_board_credits from the four raw OBC fields.
  */
 function applyBookingFinance(booking = {}) {
   const derived = deriveBookingFinance(booking);
@@ -329,7 +425,8 @@ function applyBookingFinance(booking = {}) {
       : booking.cruise_payment_3,
     cruise_payment_3_date: Object.prototype.hasOwnProperty.call(derived, "payment_3_due_date")
       ? derived.payment_3_due_date
-      : booking.cruise_payment_3_date
+      : booking.cruise_payment_3_date,
+    on_board_credits: normalizeOnBoardCredits(booking)
   };
 }
 
@@ -345,5 +442,10 @@ module.exports = {
   applyBookingFinance,
   derivePaymentStatus,
   isContradictoryFullyPaid,
-  scheduledInstalmentsHaveIndependentReceipt
+  scheduledInstalmentsHaveIndependentReceipt,
+  DEFAULT_OBC_CURRENCY,
+  normalizeObcCurrency,
+  normalizeOnBoardCredits,
+  formatOnBoardCreditLabel,
+  buildOnBoardCreditPdfRows
 };

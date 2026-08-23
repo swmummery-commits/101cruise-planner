@@ -207,7 +207,7 @@ assert(
   "packing quantity input narrowed for mobile"
 );
 assert(
-  /planner\.css\?v=20260822a/.test(readFileSync(path.join(root, "index.html"), "utf8")),
+  /planner\.css\?v=20260823a/.test(readFileSync(path.join(root, "index.html"), "utf8")),
   "index.html cache-busts planner.css for embed scroll fallback"
 );
 

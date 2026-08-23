@@ -6974,6 +6974,10 @@ input[type="radio"] {
   font-size: .8rem;
 }
 
+.dashboard-snapshot-extras + .dashboard-snapshot-obc {
+  margin-top: 16px;
+}
+
 .dashboard-snapshot-footer {
   flex: 0 0 auto;
   display: flex;

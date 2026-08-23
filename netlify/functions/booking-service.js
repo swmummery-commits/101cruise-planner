@@ -27,8 +27,9 @@ function canonicaliseBookingCruiseLine(booking) {
 }
 
 /**
- * Apply shared finance helper to a Base44 booking payload before cache/use.
- * Does not write back to CruiseBooking in Base44.
+ * Apply shared finance + OBC helpers to a Base44 booking payload before cache/use.
+ * Rebuilds on_board_credits from the four raw OBC fields when the array is
+ * missing (cached/legacy payloads). Does not write back to CruiseBooking.
  */
 function applySafeBookingFinance(booking) {
   if (!booking || typeof booking !== 'object') return booking;
