@@ -62,6 +62,8 @@
     "test:princess-incident-p3": "node scripts/test-princess-incident-p3.mjs",
     "test:princess-accepted-baseline-lifecycle": "node scripts/test-princess-accepted-baseline-lifecycle.mjs",
     "test:princess-source-failure": "node scripts/test-princess-source-failure.mjs",
+    "test:princess-monday-p1c": "node scripts/test-princess-monday-p1c-seven-change.mjs",
+    "princess:monday-p1c": "node scripts/run-princess-monday-p1c-seven-change.mjs",
     "princess:catch-up-session": "node scripts/run-princess-controlled-catch-up-session.mjs",
     "simulate:explora-discovery": "node scripts/simulate-explora-discovery.mjs",
     "simulate:silversea-discovery": "node scripts/simulate-silversea-discovery.mjs",
