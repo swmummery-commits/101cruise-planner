@@ -5,6 +5,14 @@ const { applyBookingFinance } = require('../../base44/bookingFinance');
 const BASE44_FETCH_TIMEOUT_MS = Number(process.env.BASE44_FETCH_TIMEOUT_MS || 8000);
 const CACHE_FRESH_MS = Number(process.env.BOOKING_CACHE_FRESH_MS || 24 * 60 * 60 * 1000);
 const CACHE_STALE_ACCEPTABLE_MS = Number(process.env.BOOKING_CACHE_STALE_MS || 7 * 24 * 60 * 60 * 1000);
+const BASE44_PREVIEW_FUNCTIONS_VERSION = 'preview';
+const OBC_CONTRACT_FIELDS = Object.freeze([
+  'on_board_credit_usd',
+  'on_board_credit_1_currency',
+  'on_board_credit_2_amount',
+  'on_board_credit_2_currency',
+  'on_board_credits'
+]);
 
 function normalise(value) {
   return String(value || '').trim();
@@ -24,6 +32,33 @@ function canonicaliseBookingCruiseLine(booking) {
   const line = canonicalCruiseLineDisplayName(next.cruise_line);
   if (line) next.cruise_line = line;
   return next;
+}
+
+/**
+ * Detect whether the Base44 response is using the OBC-aware booking contract.
+ * Presence matters, not value: a current response legitimately contains null
+ * OBC amounts for bookings with no credit, whereas the older published
+ * function omitted all of these keys entirely.
+ */
+function bookingHasObcContract(booking) {
+  if (!booking || typeof booking !== 'object') return false;
+  return OBC_CONTRACT_FIELDS.some((key) => Object.prototype.hasOwnProperty.call(booking, key));
+}
+
+/**
+ * Merge only the OBC transport contract from a supplemental booking response.
+ * Never allow preview/draft passenger, itinerary, document or finance fields
+ * to replace the published booking payload.
+ */
+function mergeObcContractFields(primaryBooking, supplementalBooking) {
+  const merged = { ...(primaryBooking || {}) };
+  if (!supplementalBooking || typeof supplementalBooking !== 'object') return merged;
+  for (const key of OBC_CONTRACT_FIELDS) {
+    if (Object.prototype.hasOwnProperty.call(supplementalBooking, key)) {
+      merged[key] = supplementalBooking[key];
+    }
+  }
+  return merged;
 }
 
 /**
@@ -86,13 +121,14 @@ async function supabaseRest(path, options = {}) {
   return data;
 }
 
-async function fetchBase44Booking({ booking_reference, booking_id, timeoutMs = 0, fetchImpl = fetch } = {}) {
-  const reference = normaliseRef(booking_reference);
-  const id = normalise(booking_id);
-  if (!reference && !id) throw new Error('Booking reference or booking ID is required');
-
-  const { base44Url, base44ApiKey } = getConfig();
-  const payload = id ? { booking_id: id } : { booking_reference: reference };
+async function requestBase44Booking({
+  base44Url,
+  base44ApiKey,
+  payload,
+  timeoutMs = 0,
+  fetchImpl = fetch,
+  functionsVersion = ''
+}) {
   const effectiveTimeout = timeoutMs > 0 ? timeoutMs : 0;
   const controller = effectiveTimeout ? new AbortController() : null;
   const timer =
@@ -102,12 +138,15 @@ async function fetchBase44Booking({ booking_reference, booking_id, timeoutMs = 0
     }, effectiveTimeout);
 
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': base44ApiKey
+    };
+    if (functionsVersion) headers['Base44-Functions-Version'] = functionsVersion;
+
     const response = await fetchImpl(base44Url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': base44ApiKey
-      },
+      headers,
       body: JSON.stringify(payload),
       signal: controller?.signal
     });
@@ -126,8 +165,7 @@ async function fetchBase44Booking({ booking_reference, booking_id, timeoutMs = 0
       throw error;
     }
 
-    const booking = applySafeBookingFinance(canonicaliseBookingCruiseLine(data.booking));
-    return { booking, source: { ...data, booking } };
+    return data;
   } catch (error) {
     if (error?.name === 'AbortError') {
       const timeoutError = new Error('Base44 booking request timed out');
@@ -138,6 +176,60 @@ async function fetchBase44Booking({ booking_reference, booking_id, timeoutMs = 0
   } finally {
     if (timer) clearTimeout(timer);
   }
+}
+
+async function fetchBase44Booking({ booking_reference, booking_id, timeoutMs = 0, fetchImpl = fetch } = {}) {
+  const reference = normaliseRef(booking_reference);
+  const id = normalise(booking_id);
+  if (!reference && !id) throw new Error('Booking reference or booking ID is required');
+
+  const { base44Url, base44ApiKey } = getConfig();
+  const payload = id ? { booking_id: id } : { booking_reference: reference };
+  const data = await requestBase44Booking({
+    base44Url,
+    base44ApiKey,
+    payload,
+    timeoutMs,
+    fetchImpl
+  });
+
+  let sourceBooking = data.booking;
+
+  // Temporary compatibility bridge: the Base44 editor/preview function has the
+  // OBC transport fields, while the older published function can omit them.
+  // Pull preview only when the published response lacks the OBC contract, then
+  // copy ONLY those five OBC fields. This prevents unrelated draft CRM changes
+  // from leaking into My Cruise. Once the published function includes the OBC
+  // keys (even as null/[]), this second request stops automatically.
+  if (!bookingHasObcContract(sourceBooking)) {
+    try {
+      const previewData = await requestBase44Booking({
+        base44Url,
+        base44ApiKey,
+        payload,
+        timeoutMs,
+        fetchImpl,
+        functionsVersion: BASE44_PREVIEW_FUNCTIONS_VERSION
+      });
+      if (bookingHasObcContract(previewData.booking)) {
+        sourceBooking = mergeObcContractFields(sourceBooking, previewData.booking);
+        console.log(
+          JSON.stringify({
+            event: 'base44_obc_preview_bridge',
+            booking_reference: reference || undefined,
+            booking_id: id || undefined,
+            outcome: 'merged'
+          })
+        );
+      }
+    } catch (previewError) {
+      // OBC enrichment must never block access to an otherwise valid booking.
+      console.warn('Base44 OBC preview bridge unavailable', previewError?.message || previewError);
+    }
+  }
+
+  const booking = applySafeBookingFinance(canonicaliseBookingCruiseLine(sourceBooking));
+  return { booking, source: { ...data, booking } };
 }
 
 async function readBookingCache({ booking_reference, booking_id, rest = supabaseRest } = {}) {
@@ -309,6 +401,8 @@ module.exports = {
   BASE44_FETCH_TIMEOUT_MS,
   CACHE_FRESH_MS,
   CACHE_STALE_ACCEPTABLE_MS,
+  BASE44_PREVIEW_FUNCTIONS_VERSION,
+  OBC_CONTRACT_FIELDS,
   fetchBase44Booking,
   readBookingCache,
   classifyBookingCache,
@@ -319,5 +413,7 @@ module.exports = {
   syncDocumentsForBooking,
   supabaseRest,
   canonicaliseBookingCruiseLine,
-  applySafeBookingFinance
+  applySafeBookingFinance,
+  bookingHasObcContract,
+  mergeObcContractFields
 };
