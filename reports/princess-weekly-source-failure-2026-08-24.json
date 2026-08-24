@@ -1,0 +1,141 @@
+{
+  "generated_at": "2026-08-24T01:15:00.000Z",
+  "incident": "princess_weekly_maintenance_monday_source_failure",
+  "failed_github_run": {
+    "run_id": "32663777702",
+    "job_id": "97253859801",
+    "head_sha": "70c1ff2e992ac162a8bc15357f29d44cd11a34c8",
+    "scheduled_perth": "2026-08-24 04:00 Australia/Perth",
+    "scheduled_utc": "2026-08-23 20:00 UTC",
+    "duration_seconds_approx": 8,
+    "error": "official_source_unreachable",
+    "source_fetch_failed": true,
+    "source_error": "Bad Request",
+    "source_error_stage": "catalogue",
+    "writes_performed": 0,
+    "production_before_active": 2042,
+    "production_after_active": 2042,
+    "accepted_previous_eligible_baseline": 2061,
+    "baseline_acceptance": false
+  },
+  "production_verification": {
+    "active": 2042,
+    "expired": 50,
+    "hidden": 1,
+    "match_required": 1,
+    "validation_failed": 8,
+    "total": 2102,
+    "duplicate_official": 0,
+    "duplicate_external": 0,
+    "duplicate_identity": 0,
+    "p2_p3_identities_present": true,
+    "csr07h_active": true,
+    "active_delta_since_p3_end": -20,
+    "active_delta_explanation": "Ordinary daily 21-day expiry: expired count increased 30→50 (+20), matching active 2062→2042 (-20). No Princess weekly writes occurred."
+  },
+  "source_reproduction": {
+    "attempt_1": {
+      "channel": "deployed_netlify_smoke_at_diagnosis_start",
+      "http_status": 400,
+      "stage": "catalogue",
+      "bootstrap_http_status": 200,
+      "body_excerpt": "{\"httpCode\":\"400\",\"httpMessage\":\"Bad Request\",\"moreInformation\":\"One or more required API parameters are missing in the API request.\"}"
+    },
+    "attempt_2": {
+      "channel": "local_fetchAllPrincessRawSailings",
+      "http_status": 200,
+      "raw_groups": 1005,
+      "expanded_sailings": 2111,
+      "eligible": 2042,
+      "accounting_exact": true
+    },
+    "attempt_3": {
+      "channel": "local_fetchAllPrincessRawSailings_repeat",
+      "http_status": 200,
+      "raw_groups": 1005,
+      "expanded_sailings": 2111
+    }
+  },
+  "exact_failed_request": {
+    "stage": "catalogue",
+    "endpoint": "https://gw.api.princess.com/pcl-web/internal/resdb/p1.0/products",
+    "method": "GET",
+    "query": "agencyCountry=AU&cruiseType=C&voyageStatus=A&webDisplay=Y&promoFilter=all&light=true",
+    "headers": {
+      "Accept": "application/json, text/plain, */*",
+      "User-Agent": "101cruise-discovery/1.0 (+https://101cruise.com.au)",
+      "Referer": "https://www.princess.com/cruise-search/cruises/",
+      "Origin": "https://www.princess.com",
+      "pcl-client-id": "<redacted>",
+      "productcompany": "PC",
+      "bookingcompany": "PA or PC depending on session variant"
+    },
+    "bootstrap_succeeded": true,
+    "bootstrap_booking_company": "PA",
+    "safe_response": "One or more required API parameters are missing in the API request."
+  },
+  "code_comparison": {
+    "last_good_sha": "70a77bc3698b44bd33098c4909cae165b6c88294",
+    "failed_run_sha": "70c1ff2e992ac162a8bc15357f29d44cd11a34c8",
+    "princess_source_code_changed": false,
+    "princess_adapter_changed": false,
+    "shared_request_runtime_changed": false,
+    "dependency_plausibly_relevant": false,
+    "note": "No Princess source/adapter diffs between P4 ending SHA and failed Monday SHA. Existing native HTTPS + session-variant logic already present at failure SHA."
+  },
+  "root_cause_classification": "B",
+  "root_cause_label": "transient_400_from_supplier_edge_or_session_rejection",
+  "root_cause_evidence": [
+    "Bootstrap UBE returned 200; catalogue resdb/products returned 400 with Akamai-style missing-parameter message on all four session variants during failed scheduled run and initial Netlify smoke.",
+    "Identical request contract succeeded repeatedly on local native-HTTPS probe minutes later (200, 1005 groups).",
+    "No Princess source code delta between last-good and failed SHAs.",
+    "Adding query-string productCompany/bookingCompany parameters did not fix failures and broke valid requests — contract unchanged."
+  ],
+  "changes_made": {
+    "code_fix_required": true,
+    "hardening_only": true,
+    "details": [
+      "Richer catalogue error diagnostics (stage, http status, moreInformation, path).",
+      "Header-only catalogue variant attempted before cookie-backed variant.",
+      "Bounded single retry after all variants return transient missing-parameter 400."
+    ]
+  },
+  "retry_policy": {
+    "changed": true,
+    "max_extra_attempts": 1,
+    "backoff_ms": 2500,
+    "scope": "catalogue stage only when all attempts are HTTP 400 with missing-parameter moreInformation"
+  },
+  "accepted_baseline": {
+    "still_2061": true,
+    "baseline_run_id": "9f6e644e-212c-4524-9f5c-d218ab855151",
+    "failed_run_advanced_baseline": false
+  },
+  "readiness_after_source_recovery": {
+    "previous_eligible_total": 2061,
+    "current_eligible_total": 2042,
+    "eligible_delta": -19,
+    "eligible_change_pct": -0.9219,
+    "raw_groups": 1005,
+    "expanded_sailings": 2111,
+    "within_cutoff": 70,
+    "accounting_exact": true,
+    "recognised_production": 2041,
+    "proposed_inserts": 1,
+    "proposed_updates": 6,
+    "review_required": false,
+    "auto_apply_permitted": true,
+    "production_writes": 0
+  },
+  "safety_gates_preserved": {
+    "official_source_unreachable_zero_writes": true,
+    "expansion_20pct_gate": true,
+    "weekly_30_write_cap": true,
+    "rolling_accepted_baseline": true,
+    "source_accounting_exactness": true
+  },
+  "production_writes": 0,
+  "safe_to_rerun_real_apply": false,
+  "safe_to_rerun_reason": "Source recovered locally, but readiness shows 6 proposed updates and 1 proposed insert requiring review before any real APPLY. Redeploy Netlify if relying on production smoke endpoint.",
+  "recommended_next_action": "Review the 6 proposed update candidates and 1 insert in a read-only reconciliation report, then rerun scheduled APPLY on the next window once updates are understood or confirmed benign."
+}
