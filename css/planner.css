@@ -5145,6 +5145,15 @@ html, body {
   font-weight: 400;
 }
 
+.packing-empty-bag-question {
+  margin: 16px 0 8px;
+  max-width: 36rem;
+  color: #1f2933;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
 .packing-baggage-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 142px));
@@ -5154,18 +5163,28 @@ html, body {
 }
 
 .packing-baggage-field {
+  display: grid;
+  gap: 6px;
   min-width: 0;
+}
+
+.packing-baggage-field > span {
+  color: #667085;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .packing-allowance-input {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
+  height: 44px;
   min-height: 44px;
   overflow: hidden;
   border: 1px solid #d9e0e4;
   border-radius: 11px;
   background: #fff;
+  box-sizing: border-box;
 }
 
 .packing-allowance-input:focus-within {
@@ -5173,17 +5192,21 @@ html, body {
   box-shadow: 0 0 0 3px rgba(141, 217, 191, .22);
 }
 
+.packing-allowance-input input,
 .packing-settings-grid .packing-allowance-input input {
   width: 100%;
   min-width: 0;
+  height: 42px;
   min-height: 42px;
   padding: 9px 6px 9px 12px;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  box-sizing: border-box;
 }
 
+.packing-allowance-input input:focus,
 .packing-settings-grid .packing-allowance-input input:focus {
   outline: none;
   box-shadow: none;
@@ -5285,12 +5308,15 @@ html, body {
 }
 
 /* Packing Assistant v2.1.1: prevent Safari number controls overlapping kg suffix */
+.packing-allowance-input input[type="number"],
 .packing-settings-grid .packing-allowance-input input[type="number"] {
   appearance: textfield;
   -webkit-appearance: textfield;
   padding-right: 8px;
 }
 
+.packing-allowance-input input[type="number"]::-webkit-inner-spin-button,
+.packing-allowance-input input[type="number"]::-webkit-outer-spin-button,
 .packing-settings-grid .packing-allowance-input input[type="number"]::-webkit-inner-spin-button,
 .packing-settings-grid .packing-allowance-input input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;

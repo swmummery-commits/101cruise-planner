@@ -75,12 +75,14 @@ const helperSrc = [
   extractFunction(plannerJs, "packingItemApplies"),
   extractFunction(plannerJs, "getClimateFromDestination"),
   extractFunction(plannerJs, "resolvePackingRecommendationContext"),
+  extractFunction(plannerJs, "getEmptyLuggageWeightKg"),
   extractFunction(plannerJs, "renderPackingControls"),
   extractFunction(plannerJs, "renderPackingRecommendationContext")
 ].join("\n");
 
 const sandbox = {
   packingRecommendationsOpen: false,
+  DEFAULT_EMPTY_LUGGAGE_WEIGHT_KG: 4.5,
   PACKING_DESTINATIONS: [
     "Caribbean / Bahamas",
     "Mediterranean / Greek Isles",
@@ -98,6 +100,7 @@ vm.runInContext(
   this.getClimateFromDestination = getClimateFromDestination;
   this.packingItemApplies = packingItemApplies;
   this.resolvePackingRecommendationContext = resolvePackingRecommendationContext;
+  this.getEmptyLuggageWeightKg = getEmptyLuggageWeightKg;
   this.renderPackingControls = renderPackingControls;
   this.renderPackingRecommendationContext = renderPackingRecommendationContext;`,
   sandbox
@@ -109,6 +112,7 @@ const {
   getClimateFromDestination,
   packingItemApplies,
   resolvePackingRecommendationContext,
+  getEmptyLuggageWeightKg,
   renderPackingControls,
   renderPackingRecommendationContext
 } = sandbox;
@@ -203,6 +207,9 @@ const stephenCard = renderPackingControls(null, bookingCruise, {
 assert.ok(stephenCard.includes("Stephen's baggage allowances"), "Stephen baggage heading");
 assert.ok(stephenCard.includes("packingCheckedBaggageAllowance"), "Stephen checked field");
 assert.ok(stephenCard.includes("packingCabinBaggageAllowance"), "Stephen cabin field");
+assert.ok(stephenCard.includes("How much does your luggage bag weigh when empty?"), "empty bag question");
+assert.ok(stephenCard.includes("packingEmptyLuggageWeight"), "empty bag field");
+assert.ok(stephenCard.includes('id="packingEmptyLuggageWeight"') && stephenCard.includes('value="4.5"'), "empty bag defaults to 4.5kg");
 assert.ok(!stephenCard.includes("Who is travelling?"), "no traveller type in Stephen card");
 assert.ok(!stephenCard.includes("packingDestination"), "no destination in Stephen card");
 assert.ok(!stephenCard.includes("packingDressCode"), "no dress in Stephen card");
@@ -212,11 +219,22 @@ const paulCard = renderPackingControls(null, bookingCruise, {
   profile_name: "Paul",
   profile_type: "traveller",
   checked_baggage_allowance_kg: 20,
-  cabin_baggage_allowance_kg: 5
+  cabin_baggage_allowance_kg: 5,
+  empty_luggage_weight_kg: 3.2
 });
 assert.ok(paulCard.includes("Paul's baggage allowances"), "Paul baggage heading");
 assert.ok(paulCard.includes('value="20"'), "Paul checked allowance isolated");
+assert.ok(paulCard.includes('value="3.2"'), "Paul empty bag weight isolated");
 assert.ok(stephenCard.includes('value="23"'), "Stephen checked allowance isolated");
+
+assert.equal(getEmptyLuggageWeightKg(null), 4.5, "null profile uses default empty bag");
+assert.equal(getEmptyLuggageWeightKg({}), 4.5, "missing empty bag uses default");
+assert.equal(getEmptyLuggageWeightKg({ empty_luggage_weight_kg: 3.2 }), 3.2, "saved empty bag is used");
+assert.equal(getEmptyLuggageWeightKg({ empty_luggage_weight_kg: 0 }), 0, "zero empty bag is allowed");
+assert.equal(getEmptyLuggageWeightKg({ empty_luggage_weight_kg: -1 }), 4.5, "invalid empty bag falls back");
+assert.ok(plannerJs.includes("empty_luggage_weight_kg: readEmptyLuggageWeightFromForm"), "empty bag is saved with allowances");
+assert.ok(/summary\.checked \+= getEmptyLuggageWeightKg/.test(plannerJs), "empty bag is included in traveller checked weight");
+assert.ok(plannerCss.includes(".packing-empty-bag-question"), "empty bag question CSS present");
 
 const cabinCard = renderPackingControls(null, bookingCruise, {
   profile_key: "cabin",

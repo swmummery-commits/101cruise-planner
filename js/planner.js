@@ -4191,6 +4191,8 @@ async function saveUserBookingDetails() {
 }
 
 
+const DEFAULT_EMPTY_LUGGAGE_WEIGHT_KG = 4.5;
+
 const PACKING_DESTINATIONS = [
   "Caribbean / Bahamas",
   "Mediterranean / Greek Isles",
@@ -4402,7 +4404,8 @@ function buildPackingProfiles(cruise, savedProfiles = []) {
       profile_type: "traveller",
       display_order: index,
       checked_baggage_allowance_kg: saved?.checked_baggage_allowance_kg ?? null,
-      cabin_baggage_allowance_kg: saved?.cabin_baggage_allowance_kg ?? null
+      cabin_baggage_allowance_kg: saved?.cabin_baggage_allowance_kg ?? null,
+      empty_luggage_weight_kg: getEmptyLuggageWeightKg(saved)
     };
   });
   const cabinSaved = savedProfiles.find(row => row.profile_key === "cabin");
@@ -4412,7 +4415,8 @@ function buildPackingProfiles(cruise, savedProfiles = []) {
     profile_type: "cabin",
     display_order: travellers.length,
     checked_baggage_allowance_kg: cabinSaved?.checked_baggage_allowance_kg ?? null,
-    cabin_baggage_allowance_kg: cabinSaved?.cabin_baggage_allowance_kg ?? null
+    cabin_baggage_allowance_kg: cabinSaved?.cabin_baggage_allowance_kg ?? null,
+    empty_luggage_weight_kg: null
   }];
 }
 
@@ -4431,7 +4435,14 @@ async function loadPackingV2Data(cruise) {
     packingV2Profiles = buildPackingProfiles(cruise, savedProfiles);
     packingV2State = data.state || [];
     const missingProfiles = packingV2Profiles.filter(profile => !savedProfiles.some(saved => saved.profile_key === profile.profile_key));
-    if (missingProfiles.length) await customerPackingRequest("save_profiles", { profiles: missingProfiles });
+    if (missingProfiles.length) {
+      try {
+        await customerPackingRequest("save_profiles", { profiles: missingProfiles });
+      } catch (error) {
+        if (!isUnknownEmptyLuggageColumnError(error)) throw error;
+        await customerPackingRequest("save_profiles", { profiles: withoutEmptyLuggageWeight(missingProfiles) });
+      }
+    }
     return;
   }
   const [profilesResult, stateResult] = await Promise.all([
@@ -4452,7 +4463,10 @@ async function loadPackingV2Data(cruise) {
       ...profile,
       updated_at: new Date().toISOString()
     }));
-    const { error } = await supabaseClient.from("user_packing_v2_profiles").upsert(payload, { onConflict: "user_id,cruise_key,profile_key" });
+    let { error } = await supabaseClient.from("user_packing_v2_profiles").upsert(payload, { onConflict: "user_id,cruise_key,profile_key" });
+    if (error && isUnknownEmptyLuggageColumnError(error)) {
+      ({ error } = await supabaseClient.from("user_packing_v2_profiles").upsert(withoutEmptyLuggageWeight(payload), { onConflict: "user_id,cruise_key,profile_key" }));
+    }
     if (error) console.warn("Packing v2 profile setup failed", error);
   }
 }
@@ -4560,6 +4574,22 @@ function getTravellerCheckedAllowance(profile) {
   return Number.isFinite(limit) && limit >= 0 ? limit : null;
 }
 
+function getEmptyLuggageWeightKg(profile) {
+  const value = profile?.empty_luggage_weight_kg;
+  if (value === null || value === undefined || value === "") return DEFAULT_EMPTY_LUGGAGE_WEIGHT_KG;
+  const weight = Number(value);
+  return Number.isFinite(weight) && weight >= 0 ? weight : DEFAULT_EMPTY_LUGGAGE_WEIGHT_KG;
+}
+
+function readEmptyLuggageWeightFromForm(profile) {
+  const input = document.getElementById("packingEmptyLuggageWeight");
+  if (!input) return getEmptyLuggageWeightKg(profile);
+  const raw = String(input.value || "").trim();
+  if (raw === "") return DEFAULT_EMPTY_LUGGAGE_WEIGHT_KG;
+  const weight = Number(raw);
+  return Number.isFinite(weight) && weight >= 0 ? weight : DEFAULT_EMPTY_LUGGAGE_WEIGHT_KG;
+}
+
 function getPackingAllowancePercent(used, limit) {
   if (limit === null || limit <= 0) return 0;
   return Math.max(0, Math.round((Number(used || 0) / limit) * 100));
@@ -4588,6 +4618,7 @@ function calculateTravellerPackingWeightBreakdown(travellerProfile) {
     else if (location === "wearing") summary.wearing += weight;
     else summary.checked += weight;
   });
+  summary.checked += getEmptyLuggageWeightKg(travellerProfile);
   return summary;
 }
 
@@ -5016,6 +5047,7 @@ function recalculatePackingSummary() {
     return;
   }
   summary.checked += packingCabinSharePerTraveller;
+  summary.checked += readEmptyLuggageWeightFromForm(profile);
   const percent = getProgressPercent(summary.packed, summary.selected);
   const progressValue = document.getElementById("packingProgressPercent");
   const progressDetail = document.getElementById("packingProgressDetail");
@@ -5067,6 +5099,18 @@ async function savePackingRecommendationPreferences({ clearDestinationOverride =
   if (rerender) await renderPackingPlanner();
 }
 
+function isUnknownEmptyLuggageColumnError(error) {
+  const message = String(error?.message || error || "");
+  return /empty_luggage_weight_kg/i.test(message) && /does not exist|schema cache|42703|PGRST204/i.test(message);
+}
+
+function withoutEmptyLuggageWeight(payload) {
+  if (Array.isArray(payload)) return payload.map(row => withoutEmptyLuggageWeight(row));
+  const next = { ...payload };
+  delete next.empty_luggage_weight_kg;
+  return next;
+}
+
 async function savePackingBaggageAllowances() {
   const cruise = await loadCurrentCruise();
   const profile = getActivePackingProfile();
@@ -5081,6 +5125,7 @@ async function savePackingBaggageAllowances() {
     display_order: profile.display_order,
     checked_baggage_allowance_kg: parseOptionalPackingNumber("packingCheckedBaggageAllowance"),
     cabin_baggage_allowance_kg: parseOptionalPackingNumber("packingCabinBaggageAllowance"),
+    empty_luggage_weight_kg: readEmptyLuggageWeightFromForm(profile),
     updated_at: new Date().toISOString()
   };
 
@@ -5088,17 +5133,28 @@ async function savePackingBaggageAllowances() {
     const profileForCustomer = { ...profilePayload };
     delete profileForCustomer.user_id;
     delete profileForCustomer.cruise_key;
-    const profileResult = await customerPackingRequest("save_profiles", { profiles: [profileForCustomer] });
+    let profileResult;
+    try {
+      profileResult = await customerPackingRequest("save_profiles", { profiles: [profileForCustomer] });
+    } catch (error) {
+      if (!isUnknownEmptyLuggageColumnError(error)) throw error;
+      profileResult = await customerPackingRequest("save_profiles", { profiles: [withoutEmptyLuggageWeight(profileForCustomer)] });
+    }
     const savedProfile = profileResult?.profiles?.[0] || profileForCustomer;
     const index = packingV2Profiles.findIndex(item => item.profile_key === profile.profile_key);
-    if (index >= 0) packingV2Profiles[index] = { ...packingV2Profiles[index], ...savedProfile };
+    if (index >= 0) packingV2Profiles[index] = { ...packingV2Profiles[index], ...savedProfile, empty_luggage_weight_kg: profilePayload.empty_luggage_weight_kg };
     return;
   }
 
   if (!currentUser?.id) return;
-  const { error } = await supabaseClient
+  let { error } = await supabaseClient
     .from("user_packing_v2_profiles")
     .upsert(profilePayload, { onConflict: "user_id,cruise_key,profile_key" });
+  if (error && isUnknownEmptyLuggageColumnError(error)) {
+    ({ error } = await supabaseClient
+      .from("user_packing_v2_profiles")
+      .upsert(withoutEmptyLuggageWeight(profilePayload), { onConflict: "user_id,cruise_key,profile_key" }));
+  }
   if (error) {
     console.error("Packing baggage save error", error);
     alert("Could not save baggage allowances. Please try again.");
@@ -5207,6 +5263,10 @@ function renderPackingControls(preferences, cruise, profile = getActivePackingPr
         <label class="packing-baggage-field"><span>Checked baggage</span><div class="packing-allowance-input"><input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.checked_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
         <label class="packing-baggage-field"><span>Cabin baggage</span><div class="packing-allowance-input"><input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.cabin_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
       </div>
+      <p class="packing-empty-bag-question" id="packingEmptyBagQuestion">How much does your luggage bag weigh when empty?</p>
+      <div class="packing-baggage-fields">
+        <label class="packing-baggage-field"><div class="packing-allowance-input"><input id="packingEmptyLuggageWeight" type="number" min="0" step="0.1" inputmode="decimal" value="${escapeHtml(getEmptyLuggageWeightKg(profile))}" aria-labelledby="packingEmptyBagQuestion" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
+      </div>
     </section>
   `;
 }
@@ -5223,6 +5283,7 @@ function getWeightStatus(totalWeight, baggageLimit) {
 function renderPackingWeightGauge(summary, profile) {
   const checkedLimit = profile?.checked_baggage_allowance_kg === null || profile?.checked_baggage_allowance_kg === undefined ? null : Number(profile.checked_baggage_allowance_kg);
   const cabinLimit = profile?.cabin_baggage_allowance_kg === null || profile?.cabin_baggage_allowance_kg === undefined ? null : Number(profile.cabin_baggage_allowance_kg);
+  const emptyBag = getEmptyLuggageWeightKg(profile);
   const rawPercent = checkedLimit && checkedLimit > 0 ? Math.max(0, Math.round((summary.checked / checkedLimit) * 100)) : 0;
   const remaining = checkedLimit === null ? null : checkedLimit - summary.checked;
   const isOver = checkedLimit !== null && summary.checked > checkedLimit;
@@ -5234,6 +5295,7 @@ function renderPackingWeightGauge(summary, profile) {
       <div class="packing-weight-details">
         <div class="packing-weight-metrics">
           <div><span>Checked</span><strong id="packingEstimatedWeight">${formatPackingWeight(summary.checked)}</strong></div>
+          <div><span>Empty bag</span><strong id="packingEmptyBagWeight">${formatPackingWeight(emptyBag)}</strong></div>
           <div><span>Carry-on</span><strong id="packingCarryOnWeight">${formatPackingWeight(summary.carryOn)}</strong></div>
           <div><span>Wearing</span><strong id="packingWearingWeight">${formatPackingWeight(summary.wearing)}</strong></div>
           <div><span>Checked allowance</span><strong id="packingCheckedAllowanceValue">${checkedLimit === null ? "Not entered" : `${checkedLimit.toFixed(1)} kg`}</strong></div>
@@ -5248,11 +5310,13 @@ function renderPackingWeightGauge(summary, profile) {
 function updatePackingWeightDisplay(summary) {
   const checkedLimit = parseOptionalPackingNumber("packingCheckedBaggageAllowance");
   const cabinLimit = parseOptionalPackingNumber("packingCabinBaggageAllowance");
+  const emptyBag = readEmptyLuggageWeightFromForm();
   const rawPercent = checkedLimit && checkedLimit > 0 ? Math.max(0, Math.round((summary.checked / checkedLimit) * 100)) : 0;
   const remaining = checkedLimit === null ? null : checkedLimit - summary.checked;
   const isOver = checkedLimit !== null && summary.checked > checkedLimit;
   const setText = (id, text) => { const node = document.getElementById(id); if (node) node.textContent = text; };
   setText("packingEstimatedWeight", formatPackingWeight(summary.checked));
+  setText("packingEmptyBagWeight", formatPackingWeight(emptyBag));
   setText("packingCarryOnWeight", formatPackingWeight(summary.carryOn));
   setText("packingWearingWeight", formatPackingWeight(summary.wearing));
   setText("packingCheckedAllowanceValue", checkedLimit === null ? "Not entered" : `${checkedLimit.toFixed(1)} kg`);
@@ -5450,7 +5514,10 @@ async function renderPackingPlanner() {
   const totalCabinEssentialsWeight = calculateTotalCabinEssentialsWeight(items, context, cabinProfile);
   const cabinSharePerTraveller = travellerProfiles.length ? totalCabinEssentialsWeight / travellerProfiles.length : 0;
   packingCabinSharePerTraveller = profile.profile_type === "traveller" ? cabinSharePerTraveller : 0;
-  if (profile.profile_type === "traveller") summary.checked += cabinSharePerTraveller;
+  if (profile.profile_type === "traveller") {
+    summary.checked += cabinSharePerTraveller;
+    summary.checked += getEmptyLuggageWeightKg(profile);
+  }
   const percent = profile.profile_type === "cabin" ? getProgressPercent(summary.checklistPacked, summary.checklistTotal) : getProgressPercent(summary.packed, summary.selected);
   const travellerNames = getPackingTravellerNames(cruise);
   const cabinEssentialsProgress = countCabinEssentialsProgress(allPackingItems, profile.profile_key, categoryNameById);

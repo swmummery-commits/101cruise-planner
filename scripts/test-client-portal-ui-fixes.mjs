@@ -74,6 +74,12 @@ assert(
 );
 
 assert(/\.packing-baggage-instruction\s*\{/.test(cssSrc), "baggage instruction CSS exists");
+assert(/\.packing-empty-bag-question\s*\{/.test(cssSrc), "empty bag question CSS exists");
+assert(
+  plannerSrc.includes("How much does your luggage bag weigh when empty?"),
+  "empty bag question present"
+);
+assert(plannerSrc.includes("packingEmptyLuggageWeight"), "empty bag weight field present");
 assert(/\.ship-deck-copy\s*\{[\s\S]*display:\s*grid/.test(shipCssSrc), "deck plans stack as column grid");
 
 /* Behavioural scroll helper test with DOM stubs */
