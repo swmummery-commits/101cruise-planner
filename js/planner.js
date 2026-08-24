@@ -5262,10 +5262,7 @@ function renderPackingControls(preferences, cruise, profile = getActivePackingPr
       <div class="packing-baggage-fields">
         <label class="packing-baggage-field"><span>Checked baggage</span><div class="packing-allowance-input"><input id="packingCheckedBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.checked_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
         <label class="packing-baggage-field"><span>Cabin baggage</span><div class="packing-allowance-input"><input id="packingCabinBaggageAllowance" type="number" min="0" step="0.5" inputmode="decimal" value="${escapeHtml(profile?.cabin_baggage_allowance_kg ?? "")}" placeholder="0" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
-      </div>
-      <p class="packing-empty-bag-question" id="packingEmptyBagQuestion">How much does your luggage bag weigh when empty?</p>
-      <div class="packing-baggage-fields">
-        <label class="packing-baggage-field"><div class="packing-allowance-input"><input id="packingEmptyLuggageWeight" type="number" min="0" step="0.1" inputmode="decimal" value="${escapeHtml(getEmptyLuggageWeightKg(profile))}" aria-labelledby="packingEmptyBagQuestion" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
+        <label class="packing-baggage-field packing-empty-bag-field"><span>How much does your luggage bag weigh when empty?</span><div class="packing-allowance-input"><input id="packingEmptyLuggageWeight" type="number" min="0" step="0.1" inputmode="decimal" value="${escapeHtml(getEmptyLuggageWeightKg(profile))}" oninput="recalculatePackingSummary(); schedulePackingPreferencesSave()" onblur="schedulePackingPreferencesSave(true)"><span>kg</span></div></label>
       </div>
     </section>
   `;

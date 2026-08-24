@@ -234,7 +234,8 @@ assert.equal(getEmptyLuggageWeightKg({ empty_luggage_weight_kg: 0 }), 0, "zero e
 assert.equal(getEmptyLuggageWeightKg({ empty_luggage_weight_kg: -1 }), 4.5, "invalid empty bag falls back");
 assert.ok(plannerJs.includes("empty_luggage_weight_kg: readEmptyLuggageWeightFromForm"), "empty bag is saved with allowances");
 assert.ok(/summary\.checked \+= getEmptyLuggageWeightKg/.test(plannerJs), "empty bag is included in traveller checked weight");
-assert.ok(plannerCss.includes(".packing-empty-bag-question"), "empty bag question CSS present");
+assert.ok(plannerCss.includes(".packing-empty-bag-field"), "empty bag field CSS present");
+assert.ok(stephenCard.includes("packing-empty-bag-field"), "empty bag sits beside allowance fields");
 
 const cabinCard = renderPackingControls(null, bookingCruise, {
   profile_key: "cabin",

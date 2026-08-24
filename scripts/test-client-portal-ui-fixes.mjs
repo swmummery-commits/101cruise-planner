@@ -74,12 +74,16 @@ assert(
 );
 
 assert(/\.packing-baggage-instruction\s*\{/.test(cssSrc), "baggage instruction CSS exists");
-assert(/\.packing-empty-bag-question\s*\{/.test(cssSrc), "empty bag question CSS exists");
+assert(/\.packing-empty-bag-field\s*\{/.test(cssSrc), "empty bag field CSS exists");
 assert(
   plannerSrc.includes("How much does your luggage bag weigh when empty?"),
   "empty bag question present"
 );
 assert(plannerSrc.includes("packingEmptyLuggageWeight"), "empty bag weight field present");
+assert(
+  /packing-baggage-fields[\s\S]*packingEmptyLuggageWeight/.test(plannerSrc),
+  "empty bag field sits in the same row as baggage allowances"
+);
 assert(/\.ship-deck-copy\s*\{[\s\S]*display:\s*grid/.test(shipCssSrc), "deck plans stack as column grid");
 
 /* Behavioural scroll helper test with DOM stubs */
