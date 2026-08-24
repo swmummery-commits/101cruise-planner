@@ -204,7 +204,8 @@ async function resolveSourceAbsenceObservation(supabase, params) {
     p_official_sailing_id: params.officialSailingId,
     p_observation_type: params.observationType || OBSERVATION_TYPE_SOURCE_ABSENT,
     p_run_id: params.runId || null,
-    p_metadata: params.metadata || {}
+    p_metadata: params.metadata || {},
+    p_source_present: params.sourcePresent !== false
   });
 }
 

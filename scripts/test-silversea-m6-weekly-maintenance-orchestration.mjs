@@ -452,11 +452,11 @@ test("31 M4B canary protected in runner", () => {
   if (!m6LibSrc.includes("SN280222C25")) throw new Error("m4b");
 });
 
-test("32 weekly cron absent", () => {
+test("32 weekly cron configured after closeout", () => {
   const silverseaCron =
-    /silversea.*weekly|weekly.*silversea|silversea-weekly-maintenance/i.test(netlifyToml) &&
-    /schedule|cron/i.test(netlifyToml);
-  if (silverseaCron) throw new Error("cron found");
+    /silversea-weekly-maintenance-cron/i.test(netlifyToml) &&
+    /schedule = "0 4 \* \* 1"/.test(netlifyToml);
+  if (!silverseaCron) throw new Error("silversea schedule missing");
 });
 
 console.log(`\nM6 tests: ${passed} passed, ${failed} failed`);
