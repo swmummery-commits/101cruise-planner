@@ -106,6 +106,10 @@ function buildManifestEntry(row, cruiseLine, destinations, existing) {
           itinerary: existing.itinerary,
           status: existing.status,
           official_url: existing.official_url,
+          external_key: existing.external_key,
+          identity_key: existing.identity_key,
+          official_sailing_id: existing.official_sailing_id,
+          match_confidence: existing.match_confidence,
           raw_extract: existing.raw_extract
         }
       : action === "insert_active"

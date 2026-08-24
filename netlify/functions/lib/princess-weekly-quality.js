@@ -263,6 +263,9 @@ function evaluatePrincessWeeklyQualityGate({
   if ((metrics?.duplicate_official_identities || 0) > 0) baseFailures.push("duplicate_official_identities");
 
   const proposedInserts = (manifest?.products || []).filter((p) => p.proposed_action === "insert_active").length;
+  const identityReviewUpdates = (manifest?.products || []).filter(
+    (p) => p.proposed_action === "update_identity_review_required"
+  ).length;
   const expansion = evaluatePrincessEligibleExpansionAnomaly({
     currentEligible: eligible,
     previousEligible: prev,
@@ -280,11 +283,14 @@ function evaluatePrincessWeeklyQualityGate({
   if (!accountingGate.passed) {
     failures.push(...accountingGate.failures.map((f) => `${PRINCESS_SOURCE_ACCOUNTING_INCOMPLETE}:${f}`));
   }
+  if (performWrites && identityReviewUpdates > 0) {
+    failures.push("identity_critical_updates_require_review");
+  }
 
   const blockApply =
     performWrites &&
     !skipExpansionBlock &&
-    (expansion.failures.length > 0 || !accountingGate.passed);
+    (expansion.failures.length > 0 || !accountingGate.passed || identityReviewUpdates > 0);
 
   return {
     passed: failures.length === 0,
@@ -294,7 +300,10 @@ function evaluatePrincessWeeklyQualityGate({
     source_accounting: accountingGate,
     auto_apply_permitted: !blockApply,
     inventory_discontinuity_detected: expansion.failures.length > 0,
-    review_required: performWrites && expansion.failures.length > 0 && baseFailures.length === 0 && accountingGate.passed
+    identity_review_updates: identityReviewUpdates,
+    review_required:
+      (performWrites && expansion.failures.length > 0 && baseFailures.length === 0 && accountingGate.passed) ||
+      identityReviewUpdates > 0
   };
 }
 

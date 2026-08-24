@@ -42,9 +42,17 @@ async function evaluatePrincessScheduledApplyReadiness({
   const summary = result.summary || {};
   const expansion = summary.quality_gate?.expansion_anomaly || {};
   const qualityGate = summary.quality_gate || {};
+  const identityReviewUpdates = summary.proposed_updates_identity_review ?? 0;
+  const highRiskUpdates = identityReviewUpdates;
+  const lowRiskUpdates = summary.proposed_updates_safe_metadata ?? 0;
+  const policySafeApply =
+    qualityGate.auto_apply_permitted === true &&
+    result.ok === true &&
+    highRiskUpdates === 0 &&
+    result.review_required !== true;
 
   return {
-    ok: result.ok === true && qualityGate.auto_apply_permitted !== false,
+    ok: result.ok === true && policySafeApply,
     baseline_loaded: Boolean(baseline),
     baseline_run_id: baseline?.id ?? null,
     previous_eligible_total: expansion.previous_eligible_total ?? previousEligible,
@@ -52,11 +60,22 @@ async function evaluatePrincessScheduledApplyReadiness({
     eligible_delta: expansion.eligible_delta ?? null,
     eligible_change_pct: expansion.eligible_change_pct ?? null,
     expansion_review: qualityGate.review_required === true || expansion.passed === false,
-    review_required: result.review_required === true || qualityGate.review_required === true,
+    review_required:
+      result.review_required === true ||
+      qualityGate.review_required === true ||
+      highRiskUpdates > 0,
     proposed_inserts: summary.proposed_inserts ?? summary.outstanding_eligible_inserts ?? null,
     proposed_updates: summary.proposed_updates ?? null,
+    proposed_updates_identity_review: identityReviewUpdates,
+    proposed_updates_safe_metadata: lowRiskUpdates,
+    update_risk: {
+      low_risk_count: lowRiskUpdates,
+      high_risk_count: highRiskUpdates,
+      unexplained_count: 0
+    },
     source_accounting_exact: qualityGate.source_accounting?.accounting?.accounting_exact ?? null,
     auto_apply_permitted: qualityGate.auto_apply_permitted === true && result.ok === true,
+    safe_to_run_real_apply: policySafeApply,
     quality_gate_passed: qualityGate.passed === true,
     production_writes: 0,
     raw_result: {

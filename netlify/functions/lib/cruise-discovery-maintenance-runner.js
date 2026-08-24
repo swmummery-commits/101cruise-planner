@@ -96,6 +96,7 @@ const {
   assessSeabournWeeklyWriteSafety,
   isSeabournSourceAbsenceDeactivationEnabled
 } = require("./seabourn-weekly-update-policy");
+const { refinePrincessProposedActionForWeekly } = require("./princess-weekly-update-policy");
 const { runRoyalCaribbeanWeeklyMaintenance } = require("./royal-caribbean-weekly-maintenance");
 const { runNorwegianWeeklyMaintenance } = require("./norwegian-weekly-maintenance");
 const {
@@ -942,8 +943,32 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       runId
     });
 
+    const isWeeklyMaintenancePath =
+      (context.writeMode || context.write_mode || "") === "weekly_maintenance" ||
+      runType === PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE;
+
+    if (isWeeklyMaintenancePath) {
+      for (const entry of manifest.products || []) {
+        if (entry.proposed_action !== "update_exact_legacy_match") continue;
+        entry.proposed_action = refinePrincessProposedActionForWeekly(
+          entry.proposed_action,
+          entry.rollback,
+          entry.candidate
+        );
+        if (entry.proposed_action === "update_identity_review_required") {
+          entry.weekly_update_policy = "identity_critical_review_required";
+        }
+      }
+    }
+
     const proposedInserts = manifest.products.filter((p) => p.proposed_action === "insert_active");
     const proposedUpdates = manifest.products.filter((p) => p.proposed_action === "update_exact_legacy_match");
+    const proposedSafeUpdates = manifest.products.filter(
+      (p) => p.proposed_action === "update_safe_metadata_allowed"
+    );
+    const proposedIdentityReviewUpdates = manifest.products.filter(
+      (p) => p.proposed_action === "update_identity_review_required"
+    );
     const unchanged = manifest.products.filter((p) => p.proposed_action === "duplicate_skip");
     const sourceAbsent = await findSourceAbsentActive({
       supabase: sb,
@@ -999,7 +1024,7 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       eligibleTotal: metrics.eligible_total,
       recognisedExistingEligible: unchanged.length,
       outstandingEligibleInserts: proposedInserts.length,
-      proposedUpdates: proposedUpdates.length,
+      proposedUpdates: proposedUpdates.length + proposedSafeUpdates.length,
       sourceAbsentActive: sourceAbsent.length,
       writesExecuted: 0
     });
@@ -1014,7 +1039,9 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       eligible_total: metrics.eligible_total,
       active_production_total: activeProductionTotal,
       proposed_inserts: proposedInserts.length,
-      proposed_updates: proposedUpdates.length,
+      proposed_updates: proposedUpdates.length + proposedSafeUpdates.length,
+      proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
+      proposed_updates_safe_metadata: proposedSafeUpdates.length,
       unchanged: unchanged.length,
       recognised_existing_eligible: reconciliation.recognised_existing_eligible,
       outstanding_eligible_inserts: reconciliation.outstanding_eligible_inserts,
@@ -1063,13 +1090,33 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       };
     }
 
+    if (proposedIdentityReviewUpdates.length > 0) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: false,
+        review_required: true,
+        reason: "identity_critical_updates_require_review",
+        summary: {
+          ...summary,
+          proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
+          identity_review_sailing_ids: proposedIdentityReviewUpdates.map(
+            (p) => p.official_princess_sailing_id || p.stable_identity_key
+          )
+        },
+        simulation,
+        manifest
+      };
+    }
+
     if (dryRun || !performWrites) {
       return { ok: true, dry_run: true, summary, manifest, simulation };
     }
 
     const isWeeklyMaintenanceWrite =
       (context.writeMode || context.write_mode || "weekly_maintenance") === "weekly_maintenance";
-    const combinedProposed = proposedInserts.length + proposedUpdates.length;
+    const combinedProposed =
+      proposedInserts.length + proposedUpdates.length + proposedSafeUpdates.length;
     const effectiveMaxWrites = isWeeklyMaintenanceWrite
       ? Math.min(maxWrites, MAX_WEEKLY_WRITES)
       : maxWrites;
@@ -1087,7 +1134,7 @@ async function runPrincessWeeklyMaintenance(context = {}) {
           weekly_write_cap: MAX_WEEKLY_WRITES,
           combined_proposed_changes: combinedProposed,
           proposed_inserts: proposedInserts.length,
-          proposed_updates: proposedUpdates.length
+          proposed_updates: proposedUpdates.length + proposedSafeUpdates.length
         },
         simulation,
         manifest
@@ -1133,7 +1180,7 @@ async function runPrincessWeeklyMaintenance(context = {}) {
         );
         if (!entry) return false;
         if (insertOnly && entry.proposed_action !== "insert_active") return false;
-        return ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
+        return ["insert_active", "update_safe_metadata_allowed"].includes(entry.proposed_action);
       })
       .sort((a, b) => {
         const ka = princessOfficialProductKey(a.raw) || "";

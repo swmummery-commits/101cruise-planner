@@ -23,6 +23,9 @@ const DEFAULT_AGENCY_COUNTRY = "AU";
 const DEFAULT_PRODUCT_COMPANY = "PC";
 const DEFAULT_BOOKING_COMPANY = "PC";
 
+/** @type {null | ((url: string, headers: object, opts: { timeoutMs?: number }) => Promise<object>)} */
+let transportGetOverride = null;
+
 const SOURCE_CONTRACT = {
   adapter_id: ADAPTER_ID,
   adapter_version: ADAPTER_VERSION,
@@ -190,6 +193,9 @@ function readNodeSetCookies(headers = {}) {
 }
 
 async function princessTransportGet(url, headers, { timeoutMs = 30000 } = {}) {
+  if (transportGetOverride) {
+    return transportGetOverride(url, headers, { timeoutMs });
+  }
   const parsed = new URL(url);
   return new Promise((resolve, reject) => {
     const req = https.request(
@@ -349,8 +355,17 @@ function formatPrincessHttpError(result, stage = "catalogue") {
 function isPrincessTransientMissingParamsError(errorDetail, attempts = []) {
   const msg = String(errorDetail?.more_information || errorDetail?.http_message || errorDetail?.message || "");
   if (!/missing in the API request/i.test(msg)) return false;
-  const httpStatuses = (attempts || []).map((a) => a.http_status).filter(Boolean);
+  const httpStatuses = (attempts || []).map((a) => a.http_status ?? a.status).filter(Boolean);
   return httpStatuses.length > 0 && httpStatuses.every((s) => Number(s) === 400);
+}
+
+function recordCatalogueControlAttempt(internalAttempts, variant, result, attemptIndex) {
+  internalAttempts.push({
+    http_status: result.status,
+    http_message: result.data?.httpMessage || null,
+    more_information: result.data?.moreInformation || null,
+    variant: describeCatalogueAttempt(variant, attemptIndex)
+  });
 }
 
 async function fetchPrincessResdbCatalogue({
@@ -373,11 +388,12 @@ async function fetchPrincessResdbCatalogue({
   ];
   let lastError = null;
   let lastErrorDetail = null;
+  const internalAttempts = [];
   const attempts = [];
 
-  async function runVariantLoop(startAttempt = 0) {
-    for (let attempt = startAttempt; attempt < sessionVariants.length; attempt += 1) {
-      if (attempt > startAttempt) await sleep(400 * attempt);
+  async function runVariantLoop() {
+    for (let attempt = 0; attempt < sessionVariants.length; attempt += 1) {
+      if (attempt > 0) await sleep(400 * attempt);
       const variant = sessionVariants[attempt];
       const result = await princessApiGet(query, {
         collectDiagnostics,
@@ -388,9 +404,10 @@ async function fetchPrincessResdbCatalogue({
           bookingCompany: variant.bookingCompany
         }
       });
+      recordCatalogueControlAttempt(internalAttempts, variant, result, internalAttempts.length);
       if (collectDiagnostics && result.diagnostics) {
         attempts.push({
-          ...describeCatalogueAttempt(variant, attempts.length),
+          ...internalAttempts[internalAttempts.length - 1].variant,
           ...result.diagnostics
         });
       }
@@ -409,10 +426,10 @@ async function fetchPrincessResdbCatalogue({
     return null;
   }
 
-  const firstPass = await runVariantLoop(0);
+  const firstPass = await runVariantLoop();
   if (firstPass?.ok) return firstPass;
 
-  if (isPrincessTransientMissingParamsError(lastErrorDetail, attempts)) {
+  if (isPrincessTransientMissingParamsError(lastErrorDetail, internalAttempts)) {
     await sleep(2500);
     const headerOnly = { ...session, cookie: null };
     const retryResult = await princessApiGet(query, {
@@ -424,9 +441,10 @@ async function fetchPrincessResdbCatalogue({
         bookingCompany: headerOnly.bookingCompany
       }
     });
+    recordCatalogueControlAttempt(internalAttempts, headerOnly, retryResult, internalAttempts.length);
     if (collectDiagnostics && retryResult.diagnostics) {
       attempts.push({
-        ...describeCatalogueAttempt(headerOnly, attempts.length),
+        ...internalAttempts[internalAttempts.length - 1].variant,
         retry_after_transient_400: true,
         ...retryResult.diagnostics
       });
@@ -437,7 +455,9 @@ async function fetchPrincessResdbCatalogue({
         ok: true,
         products,
         raw_count: products.length,
-        diagnostics: collectDiagnostics ? { stage: "catalogue", attempts, transient_retry: true } : null
+        diagnostics: collectDiagnostics
+          ? { stage: "catalogue", attempts, transient_retry: true }
+          : { stage: "catalogue", transient_retry: true, control_attempts: internalAttempts.length }
       };
     }
     lastErrorDetail = formatPrincessHttpError(retryResult, "catalogue");
@@ -612,6 +632,15 @@ async function fetchAllPrincessRawSailings(options = {}) {
     futureOnly: options.futureOnly !== false
   });
 
+  const minimalCatalogueDiag =
+    catalogue.diagnostics?.transient_retry === true
+      ? {
+          stage: "catalogue",
+          transient_retry: true,
+          control_attempts: catalogue.diagnostics.control_attempts ?? null
+        }
+      : null;
+
   return {
     ok: true,
     fetch_failed: false,
@@ -626,7 +655,9 @@ async function fetchAllPrincessRawSailings(options = {}) {
           bootstrap: session.diagnostics || null,
           catalogue: catalogue.diagnostics || null
         }
-      : null,
+      : minimalCatalogueDiag
+        ? { catalogue: minimalCatalogueDiag }
+        : null,
     ...expanded,
     source_contract: SOURCE_CONTRACT
   };
@@ -753,5 +784,12 @@ module.exports = {
   sanitizeResponseHeaders,
   sanitizeBodyExcerpt,
   formatPrincessHttpError,
-  isPrincessTransientMissingParamsError
+  isPrincessTransientMissingParamsError,
+  __setPrincessTransportGetForTests: (fn) => {
+    transportGetOverride = fn;
+  },
+  __resetPrincessTransportGetForTests: () => {
+    transportGetOverride = null;
+  },
+  __getPrincessTransportGetOverride: () => transportGetOverride
 };

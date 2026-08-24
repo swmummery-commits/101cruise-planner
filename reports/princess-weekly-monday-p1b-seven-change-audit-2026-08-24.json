@@ -1,0 +1,810 @@
+{
+  "generated_at": "2026-08-24T01:26:53.681Z",
+  "incident": "princess_weekly_maintenance_monday_p1b",
+  "repository": {
+    "starting_sha": "adfc0213ea131ba3712af8d4c7238e6bcc2e5027",
+    "ending_sha": "2a4930e4129b5dab6b3b9efcb77d7b19edb91bba",
+    "hardening_sha": "adfc0213ea131ba3712af8d4c7238e6bcc2e5027"
+  },
+  "retry_control_bug": {
+    "defect": "retry eligibility used diagnostic attempts[] only populated when collectDiagnostics=true",
+    "production_equivalent_reproduced": true,
+    "root_cause": "fetchPrincessResdbCatalogue recorded attempt state inside collectDiagnostics guard",
+    "correction": "internalAttempts always recorded; diagnostics output remains conditional",
+    "maximum_extra_retries": 1
+  },
+  "source_verification": {
+    "attempt_1": {
+      "label": "attempt_1",
+      "elapsed_ms": 12607,
+      "ok": true,
+      "fetch_failed": false,
+      "bootstrap_status": 200,
+      "catalogue_status": 200,
+      "transient_retry_needed": false,
+      "raw_groups": 1005,
+      "expanded_sailings": 2111,
+      "eligible": 2111,
+      "accounting": {
+        "source_groups": 1005,
+        "expanded_sailings": 2111,
+        "duplicate_sailing_ids": 0,
+        "past_sailings_skipped": 0,
+        "malformed": 0,
+        "cruisetour_groups": 0
+      },
+      "identity_hash": "286e0ab32b9ca098ee4c3c9de01ce6c04dc19b3a0faa0c7859e99ad0c6d37ea1"
+    },
+    "attempt_2": {
+      "label": "attempt_2",
+      "elapsed_ms": 13383,
+      "ok": true,
+      "fetch_failed": false,
+      "bootstrap_status": 200,
+      "catalogue_status": 200,
+      "transient_retry_needed": false,
+      "raw_groups": 1005,
+      "expanded_sailings": 2111,
+      "eligible": 2111,
+      "accounting": {
+        "source_groups": 1005,
+        "expanded_sailings": 2111,
+        "duplicate_sailing_ids": 0,
+        "past_sailings_skipped": 0,
+        "malformed": 0,
+        "cruisetour_groups": 0
+      },
+      "identity_hash": "286e0ab32b9ca098ee4c3c9de01ce6c04dc19b3a0faa0c7859e99ad0c6d37ea1"
+    },
+    "reproducible": true,
+    "accounting_exact": null
+  },
+  "insert_candidates": [
+    {
+      "official_sailing_id": "ZSA05F|AP|2028-06-17",
+      "external_key": "837c8a82594a7b82c7654f1936cbcaf13b9d9a98",
+      "identity_key": "d284f9f52111db0cf8951d8ce4d8fbb281d906a6",
+      "ship_id": "d2342775-c77a-418a-a9af-7dd957bcfe13",
+      "ship": "Grand Princess",
+      "departure_date": "2028-06-17",
+      "return_date": "2028-06-22",
+      "nights": 5,
+      "departure_port": "Sydney",
+      "destination_id": "835ad9b0-4e95-468e-b93b-cc9587dd713a",
+      "destination": "Australia and New Zealand",
+      "itinerary": "Australia Seacation",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=zsa05f&shipcode=ap&saildate=20280617",
+      "status": "active",
+      "match_confidence": "high",
+      "raw_extract": {
+        "princess_itinerary_id": "ZSA05F",
+        "princess_itinerary_name": "Australia Seacation",
+        "princess_ship_code": "AP",
+        "princess_trade_ids": [
+          "Z"
+        ],
+        "princess_product_type": "cruise",
+        "structured_source": "princess_resdb_products",
+        "departure_port_raw": "Sydney, Australia",
+        "princess_sailing_id": "ZSA05F|AP|2028-06-17",
+        "princess_group_id": "ZSA05F",
+        "princess_adapter_id": "princess",
+        "princess_adapter_version": "2026-08-07.princess2",
+        "princess_batch_write": true,
+        "destination_key": "australia-new-zealand",
+        "ship_match_method": "official_line_ship_id"
+      },
+      "collisions": {
+        "official_collision": 0,
+        "external_collision": 0,
+        "identity_collision": 0
+      },
+      "classification": "A",
+      "within_cutoff": false,
+      "complete_high_confidence": true,
+      "reconciliation_action": "insert_active"
+    }
+  ],
+  "update_candidates": [
+    {
+      "official_sailing_id": "SBR17A|MJ|2027-01-06",
+      "discovered_cruise_id": "b6480ee1-242b-4958-b9c3-0e507dc828a8",
+      "reconciliation_action": "update_identity_review_required",
+      "base_action": "update_exact_legacy_match",
+      "field_diffs": [
+        {
+          "field": "itinerary",
+          "before": "Antarctica & South America",
+          "after": "Antarctica & Patagonia",
+          "reason": "source canonical differs from production itinerary",
+          "evidence": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270106"
+        }
+      ],
+      "classification": "D",
+      "risk": "HIGH",
+      "high_risk_fields": [
+        "itinerary"
+      ],
+      "before": {
+        "discovered_cruise_id": "b6480ee1-242b-4958-b9c3-0e507dc828a8",
+        "official_sailing_id": "SBR17A|MJ|2027-01-06",
+        "external_key": "d524eacd5dc5944d271ce36594c081260675fd51",
+        "identity_key": "0a0c45b63aa99278bad8b99d57289ddd72c73cd3",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2027-01-06",
+        "return_date": "2027-01-23",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & South America",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270106",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "destination_key": "south-pacific",
+          "princess_group_id": "SBR17A",
+          "ship_match_method": "official_line_ship_id",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Buenos Aires, Argentina",
+            "confidence": "exact",
+            "sourceField": "princess_resdb",
+            "canonicalPortId": "port-csv-155",
+            "canonicalPortName": "Buenos Aires"
+          },
+          "princess_adapter_id": "princess",
+          "princess_sailing_id": "SBR17A|MJ|2027-01-06",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "princess_batch_write": true,
+          "princess_itinerary_id": "SBR17A",
+          "princess_product_type": "cruise",
+          "princess_itinerary_name": "Antarctica & South America",
+          "princess_adapter_version": "2026-08-07.princess2"
+        }
+      },
+      "proposed": {
+        "official_sailing_id": "SBR17A|MJ|2027-01-06",
+        "external_key": "d524eacd5dc5944d271ce36594c081260675fd51",
+        "identity_key": "0a0c45b63aa99278bad8b99d57289ddd72c73cd3",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2027-01-06",
+        "return_date": "2027-01-23",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & Patagonia",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270106",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "princess_itinerary_id": "SBR17A",
+          "princess_itinerary_name": "Antarctica & Patagonia",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_sailing_id": "SBR17A|MJ|2027-01-06",
+          "princess_group_id": "SBR17A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "south-pacific",
+          "ship_match_method": "official_line_ship_id"
+        }
+      }
+    },
+    {
+      "official_sailing_id": "SBR17A|MJ|2027-01-23",
+      "discovered_cruise_id": "74ec5844-0aa2-4d7b-82fa-cf2e475f61b6",
+      "reconciliation_action": "update_identity_review_required",
+      "base_action": "update_exact_legacy_match",
+      "field_diffs": [
+        {
+          "field": "itinerary",
+          "before": "Antarctica & South America",
+          "after": "Antarctica & Patagonia",
+          "reason": "source canonical differs from production itinerary",
+          "evidence": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270123"
+        }
+      ],
+      "classification": "D",
+      "risk": "HIGH",
+      "high_risk_fields": [
+        "itinerary"
+      ],
+      "before": {
+        "discovered_cruise_id": "74ec5844-0aa2-4d7b-82fa-cf2e475f61b6",
+        "official_sailing_id": "SBR17A|MJ|2027-01-23",
+        "external_key": "1d137f2935e6b5b28e9594f80389d429710bfd05",
+        "identity_key": "85ae44748fb76eb1026cb80c803d1cc66d03c1ee",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2027-01-23",
+        "return_date": "2027-02-09",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & South America",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270123",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "destination_key": "south-pacific",
+          "princess_group_id": "SBR17A",
+          "ship_match_method": "official_line_ship_id",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Buenos Aires, Argentina",
+            "confidence": "exact",
+            "sourceField": "princess_resdb",
+            "canonicalPortId": "port-csv-155",
+            "canonicalPortName": "Buenos Aires"
+          },
+          "princess_adapter_id": "princess",
+          "princess_sailing_id": "SBR17A|MJ|2027-01-23",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "princess_batch_write": true,
+          "princess_itinerary_id": "SBR17A",
+          "princess_product_type": "cruise",
+          "princess_itinerary_name": "Antarctica & South America",
+          "princess_adapter_version": "2026-08-07.princess2"
+        }
+      },
+      "proposed": {
+        "official_sailing_id": "SBR17A|MJ|2027-01-23",
+        "external_key": "1d137f2935e6b5b28e9594f80389d429710bfd05",
+        "identity_key": "85ae44748fb76eb1026cb80c803d1cc66d03c1ee",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2027-01-23",
+        "return_date": "2027-02-09",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & Patagonia",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20270123",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "princess_itinerary_id": "SBR17A",
+          "princess_itinerary_name": "Antarctica & Patagonia",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_sailing_id": "SBR17A|MJ|2027-01-23",
+          "princess_group_id": "SBR17A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "south-pacific",
+          "ship_match_method": "official_line_ship_id"
+        }
+      }
+    },
+    {
+      "official_sailing_id": "SBR17A|MJ|2027-12-21",
+      "discovered_cruise_id": "38c3985c-7d99-4f0a-a259-0cfc984b787d",
+      "reconciliation_action": "update_identity_review_required",
+      "base_action": "update_exact_legacy_match",
+      "field_diffs": [
+        {
+          "field": "itinerary",
+          "before": "Antarctica & South America",
+          "after": "Antarctica & Patagonia",
+          "reason": "source canonical differs from production itinerary",
+          "evidence": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20271221"
+        }
+      ],
+      "classification": "D",
+      "risk": "HIGH",
+      "high_risk_fields": [
+        "itinerary"
+      ],
+      "before": {
+        "discovered_cruise_id": "38c3985c-7d99-4f0a-a259-0cfc984b787d",
+        "official_sailing_id": "SBR17A|MJ|2027-12-21",
+        "external_key": "3f7e2678599271358b337186a16633a5d7b39f3a",
+        "identity_key": "ad62986aae983c875a528771848d57eb2faf6d0b",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2027-12-21",
+        "return_date": "2028-01-07",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & South America",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20271221",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "destination_key": "south-pacific",
+          "princess_group_id": "SBR17A",
+          "ship_match_method": "official_line_ship_id",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Buenos Aires, Argentina",
+            "confidence": "exact",
+            "sourceField": "princess_resdb",
+            "canonicalPortId": "port-csv-155",
+            "canonicalPortName": "Buenos Aires"
+          },
+          "princess_adapter_id": "princess",
+          "princess_sailing_id": "SBR17A|MJ|2027-12-21",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "princess_batch_write": true,
+          "princess_itinerary_id": "SBR17A",
+          "princess_product_type": "cruise",
+          "princess_itinerary_name": "Antarctica & South America",
+          "princess_adapter_version": "2026-08-07.princess2"
+        }
+      },
+      "proposed": {
+        "official_sailing_id": "SBR17A|MJ|2027-12-21",
+        "external_key": "3f7e2678599271358b337186a16633a5d7b39f3a",
+        "identity_key": "ad62986aae983c875a528771848d57eb2faf6d0b",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2027-12-21",
+        "return_date": "2028-01-07",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & Patagonia",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20271221",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "princess_itinerary_id": "SBR17A",
+          "princess_itinerary_name": "Antarctica & Patagonia",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_sailing_id": "SBR17A|MJ|2027-12-21",
+          "princess_group_id": "SBR17A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "south-pacific",
+          "ship_match_method": "official_line_ship_id"
+        }
+      }
+    },
+    {
+      "official_sailing_id": "SBR17A|MJ|2028-01-07",
+      "discovered_cruise_id": "83fa9011-5914-4106-a942-f5831b8596ee",
+      "reconciliation_action": "update_identity_review_required",
+      "base_action": "update_exact_legacy_match",
+      "field_diffs": [
+        {
+          "field": "itinerary",
+          "before": "Antarctica & South America",
+          "after": "Antarctica & Patagonia",
+          "reason": "source canonical differs from production itinerary",
+          "evidence": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20280107"
+        }
+      ],
+      "classification": "D",
+      "risk": "HIGH",
+      "high_risk_fields": [
+        "itinerary"
+      ],
+      "before": {
+        "discovered_cruise_id": "83fa9011-5914-4106-a942-f5831b8596ee",
+        "official_sailing_id": "SBR17A|MJ|2028-01-07",
+        "external_key": "cc9372d9a2b8543a247c45dd04bb3df1756764ff",
+        "identity_key": "f67ec2ddc694c8eb88805aba41074ff80f5d16a8",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2028-01-07",
+        "return_date": "2028-01-24",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & South America",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20280107",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "destination_key": "south-pacific",
+          "princess_group_id": "SBR17A",
+          "ship_match_method": "official_line_ship_id",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Buenos Aires, Argentina",
+            "confidence": "exact",
+            "sourceField": "princess_resdb",
+            "canonicalPortId": "port-csv-155",
+            "canonicalPortName": "Buenos Aires"
+          },
+          "princess_adapter_id": "princess",
+          "princess_sailing_id": "SBR17A|MJ|2028-01-07",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "princess_batch_write": true,
+          "princess_itinerary_id": "SBR17A",
+          "princess_product_type": "cruise",
+          "princess_itinerary_name": "Antarctica & South America",
+          "princess_adapter_version": "2026-08-07.princess2"
+        }
+      },
+      "proposed": {
+        "official_sailing_id": "SBR17A|MJ|2028-01-07",
+        "external_key": "cc9372d9a2b8543a247c45dd04bb3df1756764ff",
+        "identity_key": "f67ec2ddc694c8eb88805aba41074ff80f5d16a8",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2028-01-07",
+        "return_date": "2028-01-24",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & Patagonia",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20280107",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "princess_itinerary_id": "SBR17A",
+          "princess_itinerary_name": "Antarctica & Patagonia",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_sailing_id": "SBR17A|MJ|2028-01-07",
+          "princess_group_id": "SBR17A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "south-pacific",
+          "ship_match_method": "official_line_ship_id"
+        }
+      }
+    },
+    {
+      "official_sailing_id": "SBR17A|MJ|2028-01-24",
+      "discovered_cruise_id": "7a15d172-4620-4d84-a02b-ea7dd73a7835",
+      "reconciliation_action": "update_identity_review_required",
+      "base_action": "update_exact_legacy_match",
+      "field_diffs": [
+        {
+          "field": "itinerary",
+          "before": "Antarctica & South America",
+          "after": "Antarctica & Patagonia",
+          "reason": "source canonical differs from production itinerary",
+          "evidence": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20280124"
+        }
+      ],
+      "classification": "D",
+      "risk": "HIGH",
+      "high_risk_fields": [
+        "itinerary"
+      ],
+      "before": {
+        "discovered_cruise_id": "7a15d172-4620-4d84-a02b-ea7dd73a7835",
+        "official_sailing_id": "SBR17A|MJ|2028-01-24",
+        "external_key": "5df16e0b7484448c2d5d0b3a07d2ef40e5e061c5",
+        "identity_key": "0425f07f5a1821cde203f214edcab39460094584",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2028-01-24",
+        "return_date": "2028-02-10",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & South America",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20280124",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "destination_key": "south-pacific",
+          "princess_group_id": "SBR17A",
+          "ship_match_method": "official_line_ship_id",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Buenos Aires, Argentina",
+            "confidence": "exact",
+            "sourceField": "princess_resdb",
+            "canonicalPortId": "port-csv-155",
+            "canonicalPortName": "Buenos Aires"
+          },
+          "princess_adapter_id": "princess",
+          "princess_sailing_id": "SBR17A|MJ|2028-01-24",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "princess_batch_write": true,
+          "princess_itinerary_id": "SBR17A",
+          "princess_product_type": "cruise",
+          "princess_itinerary_name": "Antarctica & South America",
+          "princess_adapter_version": "2026-08-07.princess2"
+        }
+      },
+      "proposed": {
+        "official_sailing_id": "SBR17A|MJ|2028-01-24",
+        "external_key": "5df16e0b7484448c2d5d0b3a07d2ef40e5e061c5",
+        "identity_key": "0425f07f5a1821cde203f214edcab39460094584",
+        "ship_id": "3cb2865a-f645-49d3-a2bc-29307dc1d9c6",
+        "ship": "Majestic Princess",
+        "departure_date": "2028-01-24",
+        "return_date": "2028-02-10",
+        "nights": 17,
+        "departure_port": "Buenos Aires",
+        "destination_id": "18c9a53e-d8b0-4d8a-a7ba-d72644b351df",
+        "destination": "South Pacific",
+        "itinerary": "Antarctica & Patagonia",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=sbr17a&shipcode=mj&saildate=20280124",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "princess_itinerary_id": "SBR17A",
+          "princess_itinerary_name": "Antarctica & Patagonia",
+          "princess_ship_code": "MJ",
+          "princess_trade_ids": [
+            "S"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Buenos Aires, Argentina",
+          "princess_sailing_id": "SBR17A|MJ|2028-01-24",
+          "princess_group_id": "SBR17A",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "south-pacific",
+          "ship_match_method": "official_line_ship_id"
+        }
+      }
+    },
+    {
+      "official_sailing_id": "ENN14B|YP|2028-06-10",
+      "discovered_cruise_id": "3c3551d0-c5dd-4a91-8d9f-9bf0436a9ef8",
+      "reconciliation_action": "update_identity_review_required",
+      "base_action": "update_exact_legacy_match",
+      "field_diffs": [
+        {
+          "field": "itinerary",
+          "before": "Land of the Midnight Sun",
+          "after": "Land of the Midnight Sun & Summer Solstice",
+          "reason": "source canonical differs from production itinerary",
+          "evidence": "https://www.princess.com/cruise-search/details?voyagecode=enn14b&shipcode=yp&saildate=20280610"
+        }
+      ],
+      "classification": "D",
+      "risk": "HIGH",
+      "high_risk_fields": [
+        "itinerary"
+      ],
+      "before": {
+        "discovered_cruise_id": "3c3551d0-c5dd-4a91-8d9f-9bf0436a9ef8",
+        "official_sailing_id": "ENN14B|YP|2028-06-10",
+        "external_key": "c9bf9f54a9d06ea247146b99789046c6ea707de8",
+        "identity_key": "0d46a6f4fc0937b3699e0ff400a34abf8378d13c",
+        "ship_id": "f5417a2c-d17b-4130-a270-313f9225ebb5",
+        "ship": "Sky Princess",
+        "departure_date": "2028-06-10",
+        "return_date": "2028-06-24",
+        "nights": 14,
+        "departure_port": "Southampton",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "destination": "Mediterranean",
+        "itinerary": "Land of the Midnight Sun",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=enn14b&shipcode=yp&saildate=20280610",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "destination_key": "mediterranean",
+          "princess_group_id": "ENN14B",
+          "ship_match_method": "official_line_ship_id",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Southampton (for London), England",
+          "princess_ship_code": "YP",
+          "princess_trade_ids": [
+            "E"
+          ],
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "Southampton (for London), England",
+            "confidence": "exact",
+            "sourceField": "princess_resdb",
+            "canonicalPortId": "port-csv-49",
+            "canonicalPortName": "Southampton"
+          },
+          "princess_adapter_id": "princess",
+          "princess_sailing_id": "ENN14B|YP|2028-06-10",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "princess_batch_write": true,
+          "princess_itinerary_id": "ENN14B",
+          "princess_product_type": "cruise",
+          "princess_itinerary_name": "Land of the Midnight Sun",
+          "princess_adapter_version": "2026-08-07.princess2"
+        }
+      },
+      "proposed": {
+        "official_sailing_id": "ENN14B|YP|2028-06-10",
+        "external_key": "c9bf9f54a9d06ea247146b99789046c6ea707de8",
+        "identity_key": "0d46a6f4fc0937b3699e0ff400a34abf8378d13c",
+        "ship_id": "f5417a2c-d17b-4130-a270-313f9225ebb5",
+        "ship": "Sky Princess",
+        "departure_date": "2028-06-10",
+        "return_date": "2028-06-24",
+        "nights": 14,
+        "departure_port": "Southampton",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "destination": "Mediterranean",
+        "itinerary": "Land of the Midnight Sun & Summer Solstice",
+        "official_url": "https://www.princess.com/cruise-search/details?voyagecode=enn14b&shipcode=yp&saildate=20280610",
+        "status": "active",
+        "match_confidence": "high",
+        "raw_extract": {
+          "princess_itinerary_id": "ENN14B",
+          "princess_itinerary_name": "Land of the Midnight Sun & Summer Solstice",
+          "princess_ship_code": "YP",
+          "princess_trade_ids": [
+            "E"
+          ],
+          "princess_product_type": "cruise",
+          "structured_source": "princess_resdb_products",
+          "departure_port_raw": "Southampton (for London), England",
+          "princess_sailing_id": "ENN14B|YP|2028-06-10",
+          "princess_group_id": "ENN14B",
+          "princess_adapter_id": "princess",
+          "princess_adapter_version": "2026-08-07.princess2",
+          "princess_batch_write": true,
+          "destination_key": "mediterranean",
+          "ship_match_method": "official_line_ship_id"
+        }
+      }
+    }
+  ],
+  "update_totals": {
+    "low_risk": 0,
+    "high_risk": 6,
+    "unexplained": 0
+  },
+  "source_absence": {
+    "csr07h": {
+      "official_sailing_id": "CSR07H|KP|2027-02-28",
+      "active": true,
+      "unchanged": true,
+      "retained": true
+    },
+    "recognised_eligible": 2035,
+    "source_absent_active": 1,
+    "explanation": "Active production may include one source-absent retained sailing (CSR07H) while eligible source recognises 2041 matching keys."
+  },
+  "accepted_baseline": {
+    "run_id": "9f6e644e-212c-4524-9f5c-d218ab855151",
+    "eligible_total": 2061,
+    "advanced_by_this_audit": false
+  },
+  "readiness": {
+    "ok": false,
+    "baseline_loaded": true,
+    "baseline_run_id": "9f6e644e-212c-4524-9f5c-d218ab855151",
+    "previous_eligible_total": 2061,
+    "current_eligible_total": 2042,
+    "eligible_delta": -19,
+    "eligible_change_pct": -0.9219,
+    "expansion_review": true,
+    "review_required": true,
+    "proposed_inserts": 1,
+    "proposed_updates": 0,
+    "proposed_updates_identity_review": 6,
+    "proposed_updates_safe_metadata": 0,
+    "update_risk": {
+      "low_risk_count": 0,
+      "high_risk_count": 6,
+      "unexplained_count": 0
+    },
+    "source_accounting_exact": true,
+    "auto_apply_permitted": false,
+    "safe_to_run_real_apply": false,
+    "quality_gate_passed": false,
+    "production_writes": 0,
+    "raw_result": {
+      "ok": false,
+      "reason": "identity_critical_updates_require_review",
+      "blocked": true,
+      "failed": true
+    }
+  },
+  "netlify_architecture": {
+    "real_apply_runner": "self-hosted Mac GitHub runner via scripts/run-princess-weekly-maintenance.mjs",
+    "netlify_smoke": "diagnostic only — not the scheduled APPLY execution environment",
+    "netlify_prerequisite_for_scheduled_apply": false
+  },
+  "tests": {
+    "commands": [
+      "npm run test:princess-source-failure",
+      "npm run test:princess-weekly-maintenance",
+      "npm run test:princess-accepted-baseline-lifecycle",
+      "npm run test:global-cruise-write-lock",
+      "npm run test:discovery-inventory"
+    ],
+    "results": {
+      "test_princess_source_failure": "17 passed",
+      "test_princess_weekly_maintenance": "passed",
+      "test_princess_accepted_baseline_lifecycle": "30 passed",
+      "test_global_cruise_write_lock": "12 passed",
+      "test_discovery_inventory": "passed"
+    }
+  },
+  "production_writes": 0,
+  "safe_to_run_real_apply": false,
+  "recommended_next_action": "Forensic review of high-risk update candidates required before real APPLY. Retry fix may be deployed; do not auto-apply identity-critical updates."
+}
