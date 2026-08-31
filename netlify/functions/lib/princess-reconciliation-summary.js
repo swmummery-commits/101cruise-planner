@@ -15,14 +15,21 @@ function buildPrincessReconciliationSummary({
   recognisedExistingEligible = 0,
   outstandingEligibleInserts = 0,
   proposedUpdates = 0,
+  proposedIdentityReviewUpdates = 0,
   sourceAbsentActive = 0,
   writesExecuted = 0
 } = {}) {
+  const reviewUpdates = Number(proposedIdentityReviewUpdates || 0);
   const eligibleAccounted =
-    recognisedExistingEligible + outstandingEligibleInserts + proposedUpdates;
+    recognisedExistingEligible +
+    outstandingEligibleInserts +
+    proposedUpdates +
+    reviewUpdates;
   const reconciliationArithmeticOk = eligibleTotal === eligibleAccounted;
   const allActiveRecognisedInEligibleSource =
-    sourceAbsentActive === 0 ? activeProductionTotal === recognisedExistingEligible : null;
+    sourceAbsentActive === 0 && reviewUpdates === 0
+      ? activeProductionTotal === recognisedExistingEligible
+      : null;
 
   return {
     active_production_total: activeProductionTotal,
@@ -34,6 +41,7 @@ function buildPrincessReconciliationSummary({
     /** @deprecated Use outstanding_eligible_inserts */
     proposed_inserts: outstandingEligibleInserts,
     proposed_updates: proposedUpdates,
+    proposed_identity_review_updates: reviewUpdates,
     source_absent_active: sourceAbsentActive,
     writes_executed: writesExecuted,
     reconciliation_arithmetic_ok: reconciliationArithmeticOk,

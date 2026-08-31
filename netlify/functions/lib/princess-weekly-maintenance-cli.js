@@ -304,6 +304,8 @@ function buildWeeklyMaintenanceReport({
     recognisedExistingEligible: summary.recognised_existing_eligible ?? summary.unchanged ?? 0,
     outstandingEligibleInserts: summary.outstanding_eligible_inserts ?? summary.proposed_inserts ?? 0,
     proposedUpdates: summary.proposed_updates ?? 0,
+    proposedIdentityReviewUpdates:
+      summary.proposed_updates_identity_review ?? summary.proposed_identity_review_updates ?? 0,
     sourceAbsentActive: summary.source_absent_active ?? 0,
     writesExecuted: writeAccounting?.committed ?? (summary.inserts || 0) + (summary.updates || 0)
   });
@@ -320,6 +322,11 @@ function buildWeeklyMaintenanceReport({
       summary.proposed_inserts ??
       reconciliationSummary.outstanding_eligible_inserts,
     proposed_updates: summary.proposed_updates ?? reconciliationSummary.proposed_updates,
+    proposed_identity_review_updates:
+      summary.proposed_updates_identity_review ??
+      summary.proposed_identity_review_updates ??
+      reconciliationSummary.proposed_identity_review_updates,
+    identity_review_sailing_ids: summary.identity_review_sailing_ids || [],
     source_absent_active: summary.source_absent_active ?? reconciliationSummary.source_absent_active,
     reconciliation_arithmetic_ok:
       summary.reconciliation_arithmetic_ok ?? reconciliationSummary.reconciliation_arithmetic_ok,

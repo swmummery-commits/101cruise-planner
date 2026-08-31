@@ -105,7 +105,9 @@ async function executeWeeklyMaintenance({
     const summary = result.summary || {};
     summary.duration_ms = Date.now() - started;
     summary.failure_reason = result.reason || null;
-    summary.worker_state = result.worker_state || (result.blocked ? "already_running" : "idle");
+    summary.worker_state =
+      result.worker_state ||
+      (result.already_running ? "already_running" : result.blocked ? "blocked" : "idle");
     summary.dry_run = dryRun === true;
 
     const baseExtra = {

@@ -19,14 +19,18 @@ function buildSeabournReconciliationSummary({
   const observed =
     sourceAbsentObserved != null ? Number(sourceAbsentObserved) : Number(sourceAbsentActive || 0);
 
+  const reviewUpdates = Number(proposedIdentityReviewUpdates || 0);
+  const existingEligibleUpdates = Number(proposedUpdates || 0);
   const eligibleAccounted =
     recognisedExistingEligible +
     outstandingEligibleInserts +
-    proposedUpdates +
-    Number(proposedIdentityReviewUpdates || 0);
+    existingEligibleUpdates +
+    reviewUpdates;
   const reconciliationArithmeticOk = eligibleTotal === eligibleAccounted;
 
-  const activeAccounted = recognisedExistingEligible + retained;
+  // Existing production rows = unchanged + safe/exact updates + identity-review + retained absences.
+  // Inserts are not yet in production and must not be counted here.
+  const activeAccounted = recognisedExistingEligible + existingEligibleUpdates + reviewUpdates + retained;
   const activeProductionArithmeticOk = activeProductionTotal === activeAccounted;
 
   return {

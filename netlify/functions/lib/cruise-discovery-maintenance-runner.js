@@ -1025,6 +1025,7 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       recognisedExistingEligible: unchanged.length,
       outstandingEligibleInserts: proposedInserts.length,
       proposedUpdates: proposedUpdates.length + proposedSafeUpdates.length,
+      proposedIdentityReviewUpdates: proposedIdentityReviewUpdates.length,
       sourceAbsentActive: sourceAbsent.length,
       writesExecuted: 0
     });
@@ -1042,6 +1043,9 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       proposed_updates: proposedUpdates.length + proposedSafeUpdates.length,
       proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
       proposed_updates_safe_metadata: proposedSafeUpdates.length,
+      identity_review_sailing_ids: proposedIdentityReviewUpdates.map(
+        (p) => p.official_princess_sailing_id || p.stable_identity_key
+      ),
       unchanged: unchanged.length,
       recognised_existing_eligible: reconciliation.recognised_existing_eligible,
       outstanding_eligible_inserts: reconciliation.outstanding_eligible_inserts,
@@ -1741,6 +1745,9 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       proposed_updates: proposedUpdates.length + proposedSafeUpdates.length,
       proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
       proposed_updates_safe_metadata: proposedSafeUpdates.length,
+      identity_review_sailing_ids: proposedIdentityReviewUpdates.map(
+        (p) => p.official_sailing_id || p.stable_identity_key
+      ),
       unchanged: unchanged.length,
       recognised_existing_eligible: reconciliation.recognised_existing_eligible,
       outstanding_eligible_inserts: reconciliation.outstanding_eligible_inserts,

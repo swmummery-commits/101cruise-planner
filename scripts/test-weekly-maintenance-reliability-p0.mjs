@@ -22,6 +22,7 @@ const princessQuality = require(path.join(root, "netlify/functions/lib/princess-
 const princessPolicy = require(path.join(root, "netlify/functions/lib/princess-weekly-update-policy"));
 const princessCli = require(path.join(root, "netlify/functions/lib/princess-weekly-maintenance-cli"));
 const seabournRec = require(path.join(root, "netlify/functions/lib/seabourn-reconciliation-summary"));
+const princessRec = require(path.join(root, "netlify/functions/lib/princess-reconciliation-summary"));
 const ncl = require(path.join(root, "netlify/functions/lib/norwegian-weekly-maintenance"));
 const ccl = require(path.join(root, "netlify/functions/lib/carnival-weekly-maintenance"));
 const carnivalMode = require(path.join(root, "netlify/functions/lib/carnival-discovery-mode"));
@@ -392,7 +393,22 @@ test("Seabourn identity-review candidate included in reconciliation arithmetic",
     sourceAbsentRetained: 1
   });
   if (!rec.reconciliation_arithmetic_ok) throw new Error("687+1+1 must equal 689");
+  if (!rec.active_production_arithmetic_ok) throw new Error("687 recognised + 1 review + 1 retained must equal 689 active");
   if (rec.proposed_identity_review_updates !== 1) throw new Error("review bucket missing");
+});
+
+test("Princess identity-review candidate included in reconciliation arithmetic", () => {
+  const rec = princessRec.buildPrincessReconciliationSummary({
+    eligibleTotal: 2021,
+    recognisedExistingEligible: 2006,
+    outstandingEligibleInserts: 9,
+    proposedUpdates: 0,
+    proposedIdentityReviewUpdates: 6,
+    activeProductionTotal: 2022,
+    sourceAbsentActive: 10
+  });
+  if (!rec.reconciliation_arithmetic_ok) throw new Error("2006+9+6 must equal 2021");
+  if (rec.proposed_identity_review_updates !== 6) throw new Error("review bucket missing");
 });
 
 test("shared runner rejects malformed result contract", () => {
