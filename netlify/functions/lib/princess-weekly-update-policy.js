@@ -74,7 +74,7 @@ function princessItineraryNameProvenance(row) {
 function isPrincessItineraryLabelOnlyChange(fieldDiffs = [], existing = {}, candidate = {}) {
   const fields = new Set(fieldDiffs.map((d) => d.field));
   if (!fields.has("itinerary")) return false;
-  const extra = [...fields].filter((f) => f !== "itinerary" && f !== "raw_extract");
+  const extra = [...fields].filter((f) => !ALLOWED_WEEKLY_UPDATE_FIELDS.includes(f));
   if (extra.length) return false;
   for (const field of PROTECTED_IDENTITY_FIELDS) {
     if (normaliseComparable(existing?.[field]) !== normaliseComparable(candidate?.[field])) {

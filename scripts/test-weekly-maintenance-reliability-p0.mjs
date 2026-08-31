@@ -351,6 +351,7 @@ test("Princess itinerary-only rename safe ONLY after all protected fields match"
   const candidate = {
     ...princessBase,
     itinerary: "Antarctica & Patagonia",
+    match_confidence: "high",
     raw_extract: { princess_itinerary_name: "Antarctica & Patagonia" }
   };
   const action = princessPolicy.refinePrincessProposedActionForWeekly(

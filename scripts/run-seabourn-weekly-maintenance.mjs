@@ -174,6 +174,7 @@ export function buildWeeklyMaintenanceReport({
 
   let status = "completed";
   if (result?.blocked) status = "blocked";
+  else if (result?.review_required) status = "review_required";
   else if (!result?.ok || qg.passed === false || sourceQg.passed === false) status = "failed";
   else if (reconciliation.reconciliation_arithmetic_ok === false) status = "failed";
   else if (mode === "dry_run" && !inventoryUnchanged) status = "failed";
