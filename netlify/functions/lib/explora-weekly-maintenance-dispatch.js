@@ -13,6 +13,11 @@ const {
 } = require("./cruise-discovery-maintenance");
 const { runExploraWeeklyMaintenance, EXPLORA_MAX_WEEKLY_WRITES } = require("./cruise-discovery-maintenance-runner");
 const { executeWeeklyMaintenance, supabase } = require("./cruise-discovery-maintenance-cron");
+const {
+  claimScheduledDispatchLease,
+  releaseScheduledDispatchLease,
+  scheduledWeeklyDispatchKey
+} = require("./weekly-maintenance-schedule-control");
 
 const EXPLORA_LINE_SLUG = "explora-journeys";
 const BACKGROUND_FUNCTION_NAME = "explora-weekly-maintenance-background";
@@ -158,6 +163,27 @@ async function dispatchExploraWeeklyBackground({
     err.code = "discovery_cron_secret_missing";
     err.statusCode = 503;
     throw err;
+  }
+
+  const periodKey = scheduledWeeklyDispatchKey(EXPLORA_LINE_SLUG);
+  const claim = await claimScheduledDispatchLease(supabase, {
+    periodKey,
+    ownerId: dispatchId,
+    triggerType
+  });
+  if (claim.already_dispatched) {
+    return {
+      accepted: true,
+      already_dispatched: true,
+      status: 200,
+      url: null,
+      dispatch_id: dispatchId,
+      dry_run: dryRun === true,
+      max_writes: maxWrites,
+      trigger_type: triggerType,
+      period_key: periodKey,
+      body: { status: "already_dispatched" }
+    };
   }
 
   const url = `${base}/.netlify/functions/${BACKGROUND_FUNCTION_NAME}`;

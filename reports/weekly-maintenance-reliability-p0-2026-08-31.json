@@ -1,0 +1,142 @@
+{
+  "title": "Weekly maintenance reliability P0",
+  "date": "2026-08-31",
+  "timezone": "Australia/Perth",
+  "starting_sha": "39b06c45393dd1fcff55d5d804e4fbf6e5041815",
+  "ending_sha": null,
+  "deployed_production_sha": null,
+  "production_cruise_writes": 0,
+  "authoritative_netlify_site": {
+    "id": "ff34277c-6c91-4880-85b6-1240937c80eb",
+    "name": "admirable-tiramisu-d4da8a",
+    "url": "https://admirable-tiramisu-d4da8a.netlify.app",
+    "repo": "https://github.com/swmummery-commits/101cruise-planner",
+    "production_branch": "main",
+    "pre_deploy_published_sha": "39b06c45393dd1fcff55d5d804e4fbf6e5041815"
+  },
+  "duplicate_scheduler": {
+    "secondary_sites_dispatching_production_schedules": 0,
+    "root_cause": "At-least-once invocations on the single canonical Netlify site (one cron stanza per function). Princess also had a redundant Netlify Sunday 20:00 UTC cron plus GitHub self-hosted APPLY.",
+    "cleanup": "No Netlify sites deleted. Princess Netlify weekly schedule removed. Schedule-period dispatch leases added for weekly lines and daily expiry."
+  },
+  "initial_ledger_snapshot": "reports/_ledger-weekly-maintenance-p0-2026-08-31.json",
+  "hal_stale_run_reconciliation": {
+    "reconciled": true,
+    "abandoned_run_ids": [
+      "c07c7755-6563-4fe9-9f49-56bd94d8336a",
+      "aee541ec-4457-4cb9-9fb6-c24c08de2144",
+      "26380d13-3a7e-4dda-8fbb-585578416805"
+    ],
+    "reason": "maintenance_worker_terminated_or_lease_expired",
+    "expired_lock_removed": true
+  },
+  "daily_expiry": {
+    "latest_status": "completed",
+    "latest_expired_count": 23,
+    "as_of": "2026-08-31 Perth",
+    "duplicate_scheduling_fixed": true,
+    "cutoff_days_unchanged": 21
+  },
+  "lines": {
+    "holland-america-line": {
+      "root_cause": "Long-running scheduled function plus missing ports-catalogue bundle (ENOENT) and stale running rows after lock expiry.",
+      "fix": "Thin launcher + background worker with catalogue included_files; stale-run abandonment; week-scoped dispatch lease.",
+      "active": 819,
+      "recommended_state": "CONFIG_REPAIR_REQUIRED"
+    },
+    "celebrity-cruises": {
+      "root_cause": "Same ENOENT ports-catalogue packaging defect as HAL; last genuine apply 2026-08-09.",
+      "fix": "Thin launcher + background worker with catalogue included_files.",
+      "active": 1149,
+      "recommended_state": "CONFIG_REPAIR_REQUIRED"
+    },
+    "princess-cruises": {
+      "root_cause": "identity_critical_updates_require_review treated as GitHub failure; itinerary listed as IDENTITY_CRITICAL; redundant Netlify cron.",
+      "fix": "isPrincessReviewRequiredOnly recognises identity review; GitHub exits 0 with REVIEW REQUIRED — NO WRITES; itinerary-label-only + princess_itinerary_name provenance is safe metadata; Netlify cron unscheduled.",
+      "active": 2022,
+      "eligible": 2021,
+      "pending_inserts": 9,
+      "pending_review_updates": 6,
+      "source_absent": 10,
+      "recommended_state": "REVIEW_REQUIRED",
+      "today_six_official_ids": null,
+      "same_as_p1c_six": null,
+      "note": "Today's six IDs were not persisted on failed run fc7a4793; read-only source audit still required before treating them as the P1C six."
+    },
+    "explora-journeys": {
+      "root_cause": "Healthy source/reconciliation but three scheduled invocations in one slot.",
+      "fix": "Schedule-period dispatch lease.",
+      "active": 294,
+      "eligible": 294,
+      "recommended_state": "READY_FOR_NORMAL_APPLY"
+    },
+    "seabourn-cruise-line": {
+      "root_cause": "Reconciliation arithmetic omitted proposedIdentityReviewUpdates (687+1+1=689).",
+      "fix": "Identity-review bucket counted exactly once; review_required instead of arithmetic failure; no auto-write of review candidates.",
+      "active": 689,
+      "eligible": 689,
+      "recommended_state": "REVIEW_REQUIRED"
+    },
+    "royal-caribbean-international": {
+      "root_cause": "source_enumeration_unhealthy; scheduled path resolves dry_run unless ROYAL_CARIBBEAN_WEEKLY_RECONCILIATION_ENABLED + production CONTEXT + platform schedule.",
+      "fix": "No write enablement. Provenance + dispatch lease only.",
+      "active": 2905,
+      "pending_inserts": 109,
+      "recommended_state": "SOURCE_REPAIR_REQUIRED"
+    },
+    "norwegian-cruise-line": {
+      "root_cause": "runNorwegianWeeklyMaintenance returned success without ok; executeWeeklyMaintenance treated undefined ok as failure.",
+      "fix": "Explicit {ok,success} on every branch; shared runner rejects missing boolean ok.",
+      "active": 1965,
+      "pending_inserts": 40,
+      "recommended_state": "READY_FOR_CONTROLLED_CATCHUP"
+    },
+    "carnival-cruise-line": {
+      "root_cause": "Same missing-ok contract; CARNIVAL_DISCOVERY_WRITE_ENABLED remains false.",
+      "fix": "Explicit {ok,success}; write flag left disabled.",
+      "active": 2677,
+      "recommended_state": "NOT_YET_COMMISSIONED"
+    },
+    "disney-cruise-line": {
+      "root_cause": "destination_resolution_below_100; three scheduled attempts. Failed runs did not persist unresolved destination detail.",
+      "fix": "Dispatch lease; 100% destination gate unchanged. Unresolved destinations need a fresh read-only PAVAS simulation.",
+      "active": 595,
+      "recommended_state": "SOURCE_REPAIR_REQUIRED"
+    },
+    "azamara": {
+      "root_cause": "None for prior week. Today's 03:00 UTC run was in progress during P0 (f98f39f3) and was not disturbed.",
+      "fix": "Unified dashboard + dispatch lease only.",
+      "active": 444,
+      "recommended_state": "READY_FOR_NORMAL_APPLY"
+    },
+    "silversea-cruises": {
+      "root_cause": "Not registered in MAINTENANCE_SCHEDULES / cruise_discovery_runs; own report/lock workflow.",
+      "fix": "Central run type + schedule + executeWeeklyMaintenance lifecycle. Scheduled writes remain dry-run until SILVERSEA_WEEKLY_RECONCILIATION_ENABLED is explicit true.",
+      "active": 897,
+      "recommended_state": "NOT_YET_COMMISSIONED"
+    }
+  },
+  "tests": {
+    "test-weekly-maintenance-reliability-p0": "27 passed",
+    "test-scheduled-maintenance": "16 passed",
+    "test-explora-weekly-background-dispatch": "23 passed",
+    "test-princess-weekly-maintenance": "77 passed",
+    "test-princess-monday-p1c-seven-change": "22 passed",
+    "test-seabourn-weekly-maintenance": "47 passed",
+    "test-norwegian-weekly-maintenance": "16/16 PASS",
+    "test-carnival-weekly-maintenance": "15 passed",
+    "test-azamara-weekly-maintenance": "54 passed",
+    "test-disney-weekly-maintenance": "47 passed",
+    "test-silversea-weekly-maintenance": "16 passed",
+    "test-royal-caribbean-weekly-maintenance": "20 passed",
+    "test-royal-caribbean-weekly-auth": "10 passed",
+    "test-maintenance-hardening": "17 passed",
+    "test-global-cruise-write-lock": "12 passed",
+    "test-public-booking-cutoff": "17 passed",
+    "test-discovery-inventory": "15 passed",
+    "test-discovery-destination-scope": "22 passed",
+    "test-destination-correction-deterministic": "28 passed",
+    "test-destination-schema-compat": "16 passed",
+    "test-discovery-departure-port": "2 pre-existing public raw_extract exposure assertions failed; unrelated to this P0"
+  }
+}

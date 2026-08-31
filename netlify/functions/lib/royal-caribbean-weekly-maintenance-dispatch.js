@@ -9,6 +9,8 @@ const {
 } = require("./cruise-discovery-maintenance");
 const { runFromMaintenanceRunner } = require("./cruise-discovery-maintenance-runner");
 const { executeWeeklyMaintenance, supabase } = require("./cruise-discovery-maintenance-cron");
+const { claimOrSkipScheduledBackgroundDispatch, releaseScheduledDispatchLease } = require("./weekly-maintenance-schedule-control");
+
 const { parseJsonBody, redactSecrets, assertCronAuth } = require("./royal-caribbean-weekly-auth");
 const {
   ROYAL_CARIBBEAN_MAX_WEEKLY_WRITES,
@@ -213,6 +215,16 @@ async function dispatchRoyalCaribbeanWeeklyBackground({
     err.statusCode = 503;
     throw err;
   }
+
+
+  const scheduledClaim = await claimOrSkipScheduledBackgroundDispatch({
+    supabase,
+    lineSlug: "royal-caribbean-international",
+    triggerType,
+    dispatchId,
+    dryRun
+  });
+  if (scheduledClaim.already_dispatched) return scheduledClaim.response;
 
   const url = `${base}/.netlify/functions/${BACKGROUND_FUNCTION_NAME}`;
   const payload = buildBackgroundPayload({ dryRun, maxWrites, triggerType, dispatchId, runId });

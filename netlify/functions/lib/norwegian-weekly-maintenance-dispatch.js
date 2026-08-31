@@ -9,6 +9,8 @@ const {
 } = require("./cruise-discovery-maintenance");
 const { runNorwegianWeeklyMaintenance, NCL_MAX_WEEKLY_WRITES } = require("./norwegian-weekly-maintenance");
 const { executeWeeklyMaintenance, supabase } = require("./cruise-discovery-maintenance-cron");
+const { claimOrSkipScheduledBackgroundDispatch, releaseScheduledDispatchLease } = require("./weekly-maintenance-schedule-control");
+
 const {
   assertNorwegianWeeklyAuth,
   assertCronAuth,
@@ -82,6 +84,16 @@ async function dispatchNorwegianWeeklyBackground({
     err.statusCode = 503;
     throw err;
   }
+
+
+  const scheduledClaim = await claimOrSkipScheduledBackgroundDispatch({
+    supabase,
+    lineSlug: "norwegian-cruise-line",
+    triggerType,
+    dispatchId,
+    dryRun
+  });
+  if (scheduledClaim.already_dispatched) return scheduledClaim.response;
 
   const url = `${base}/.netlify/functions/${BACKGROUND_FUNCTION_NAME}`;
   const payload = buildBackgroundPayload({ dryRun, maxWrites, triggerType, dispatchId, nextRun, platformScheduled });

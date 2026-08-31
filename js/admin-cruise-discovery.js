@@ -191,16 +191,12 @@
 
   function renderMaintenancePanel(line) {
     if (!line) return "";
-    const title =
-      line.cruise_line_slug === "celebrity-cruises"
-        ? "Celebrity"
-        : line.cruise_line_slug === "princess-cruises"
-          ? "Princess"
-          : "Holland America";
+    const title = line.label || line.cruise_line_slug || "Weekly";
     const workerNote =
       line.worker_state === "already_running"
         ? `<p class="admin-helper">Another maintenance invocation holds the database lock — no action taken.</p>`
         : "";
+    const provenance = line.invocation_provenance || {};
     return `
       <section class="admin-panel admin-maintenance-line" aria-label="${esc(title)} weekly maintenance">
         <h3 class="admin-subheading">${esc(title)} weekly maintenance</h3>
@@ -211,13 +207,20 @@
           <li><strong>Freshness:</strong> ${esc(line.freshness_status || "—")}</li>
           <li><strong>Perth schedule:</strong> ${esc(line.perth_schedule || "—")}</li>
           <li><strong>UTC schedule:</strong> ${esc(line.utc_schedule || "—")}</li>
+          <li><strong>Last attempt:</strong> ${formatDate(line.last_attempted_refresh)}</li>
           <li><strong>Last successful refresh:</strong> ${formatDate(line.last_successful_refresh)}</li>
+          <li><strong>Last failure:</strong> ${esc(line.last_failure_reason || "—")}</li>
           <li><strong>Official eligible:</strong> ${esc(String(line.official_eligible_inventory ?? "—"))}</li>
           <li><strong>Active production:</strong> ${esc(String(line.active_production_inventory ?? "—"))}</li>
           <li><strong>Added last run:</strong> ${esc(String(line.newly_added_last_run ?? 0))}</li>
           <li><strong>Updated last run:</strong> ${esc(String(line.updated_last_run ?? 0))}</li>
-          <li><strong>Unchanged last run:</strong> ${esc(String(line.unchanged_last_run ?? 0))}</li>
+          <li><strong>Proposed inserts:</strong> ${esc(String(line.proposed_inserts_last_run ?? 0))}</li>
+          <li><strong>Review candidates:</strong> ${esc(String(line.review_candidates_last_run ?? 0))}</li>
           <li><strong>Source-absent active:</strong> ${esc(String(line.source_absent_active ?? 0))}</li>
+          <li><strong>Write failures:</strong> ${esc(String(line.failed_records ?? 0))}</li>
+          <li><strong>Duplicate scheduled:</strong> ${esc(line.duplicate_scheduled_invocation ? "yes" : "no")}</li>
+          <li><strong>Lock:</strong> ${esc(line.lock_held ? `held until ${line.lock_expires_at || "—"}` : "idle")}</li>
+          <li><strong>Site / deploy:</strong> ${esc(provenance.netlify_site_id || "—")} / ${esc(provenance.commit_ref || provenance.deploy_id || "—")}</li>
           <li><strong>Worker:</strong> ${esc(line.worker_state || "idle")}</li>
         </ul>
       </section>`;
@@ -235,18 +238,29 @@
           <li><strong>HAL weekly:</strong> ${esc(formatFlagState(hold.hal_weekly_reconciliation))}</li>
           <li><strong>Celebrity weekly:</strong> ${esc(formatFlagState(hold.celebrity_weekly_reconciliation))}</li>
           <li><strong>Princess weekly:</strong> ${esc(formatFlagState(hold.princess_weekly_reconciliation))}</li>
+          <li><strong>Explora weekly:</strong> ${esc(formatFlagState(hold.explora_weekly_reconciliation))}</li>
+          <li><strong>Seabourn weekly:</strong> ${esc(formatFlagState(hold.seabourn_weekly_reconciliation))}</li>
+          <li><strong>Royal Caribbean weekly:</strong> ${esc(formatFlagState(hold.royal_caribbean_weekly_reconciliation))}</li>
+          <li><strong>Norwegian weekly:</strong> ${esc(formatFlagState(hold.norwegian_weekly_reconciliation))}</li>
+          <li><strong>Carnival weekly:</strong> ${esc(formatFlagState(hold.carnival_weekly_reconciliation))}</li>
+          <li><strong>Disney scheduled:</strong> ${esc(formatFlagState(hold.disney_discovery_maintenance_scheduled_enabled))}</li>
+          <li><strong>Azamara weekly:</strong> ${esc(formatFlagState(hold.azamara_weekly_reconciliation))}</li>
+          <li><strong>Silversea weekly:</strong> ${esc(formatFlagState(hold.silversea_weekly_reconciliation))}</li>
           <li><strong>Daily expiry:</strong> ${esc(formatFlagState(hold.cruise_daily_expiry))}</li>
           ${bulkFlags.map((f) => `<li><strong>${esc(f)}:</strong> unset or false (bulk import hold)</li>`).join("")}
         </ul></section>`
       : "";
+    const linePanels = (m.lines && m.lines.length
+      ? m.lines
+      : [m.hal, m.celebrity, m.princess, m.explora, m.seabourn, m.royal_caribbean, m.norwegian, m.carnival, m.disney, m.azamara, m.silversea]
+    ).filter(Boolean);
     return `
       <section class="admin-panel admin-maintenance-dashboard" aria-label="Scheduled inventory maintenance">
         <h3 class="admin-subheading">Hands-off inventory maintenance</h3>
         <p class="admin-helper">Database row counts — not summed run insert totals. General Full Discovery remains on hold. Public customer inventory hides sailings within ${esc(String(21))} days of departure (Perth calendar).</p>
+        ${m.top_level_warning ? `<p class="admin-alert admin-alert-warn">${esc(m.top_level_warning)}</p>` : ""}
         ${holdFlags}
-        ${renderMaintenancePanel(m.hal)}
-        ${renderMaintenancePanel(m.celebrity)}
-        ${renderMaintenancePanel(m.princess)}
+        ${linePanels.map(renderMaintenancePanel).join("")}
         ${
           expiry
             ? `<section class="admin-panel"><h3 class="admin-subheading">Daily expiry</h3>

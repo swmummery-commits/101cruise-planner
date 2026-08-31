@@ -92,8 +92,10 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
 
     if (!applyWrap.acquired) {
       return {
+        ok: false,
         success: false,
         blocked: true,
+        review_required: false,
         reason: applyWrap.reason || "global_production_import_lock_unavailable",
         run_id: runId,
         manifest,
@@ -136,7 +138,11 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
   };
 
   return {
+    ok: summary.success,
     success: summary.success,
+    blocked: false,
+    review_required: false,
+    reason: summary.success ? null : "norwegian_weekly_writes_failed",
     dry_run: !performWrites,
     run_id: runId,
     manifest,

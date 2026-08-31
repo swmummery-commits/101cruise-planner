@@ -30,19 +30,37 @@
   timeout = 60
 
 [functions."hal-weekly-maintenance-cron"]
-  # HAL weekly official-source reconciliation — Sunday 18:00 UTC (Monday 02:00 Perth).
+  # Thin Scheduled Function launcher — Sunday 18:00 UTC (Monday 02:00 Perth).
   schedule = "0 18 * * 0"
+  timeout = 26
+
+[functions."hal-weekly-maintenance-background"]
+  # Background worker for HAL weekly maintenance. NOT scheduled.
   timeout = 900
+  included_files = [
+    "data/ports/ports-catalogue.csv",
+    "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv",
+    "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv"
+  ]
 
 [functions."celebrity-weekly-maintenance-cron"]
-  # Celebrity weekly official-source reconciliation — Sunday 19:00 UTC (Monday 03:00 Perth).
+  # Thin Scheduled Function launcher — Sunday 19:00 UTC (Monday 03:00 Perth).
   schedule = "0 19 * * 0"
+  timeout = 26
+
+[functions."celebrity-weekly-maintenance-background"]
+  # Background worker for Celebrity weekly maintenance. NOT scheduled.
   timeout = 900
+  included_files = [
+    "data/ports/ports-catalogue.csv",
+    "data/cruise-finder-v2/ci-cruise-lines-snapshot.csv",
+    "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv"
+  ]
 
 [functions."princess-weekly-maintenance-cron"]
-  # Princess weekly official-source reconciliation — Sunday 20:00 UTC (Monday 04:00 Perth).
-  schedule = "0 20 * * 0"
-  timeout = 900
+  # Unscheduled Netlify diagnostic only. Authoritative Princess APPLY is GitHub
+  # Actions on self-hosted princess-local-mac (Sunday 20:00 UTC / Monday 04:00 Perth).
+  timeout = 26
 
 [functions."explora-weekly-maintenance-cron"]
   # Thin Scheduled Function launcher — Sunday 21:00 UTC / Monday 05:00 Australia/Perth.

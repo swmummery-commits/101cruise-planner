@@ -324,8 +324,11 @@ test("26. the Explora cron launcher is registered with the approved schedule", (
   if (schedule.background_function !== "explora-weekly-maintenance-background") {
     throw new Error(schedule.background_function);
   }
-  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.schedule_registered === false) {
-    throw new Error("Princess schedule must remain registered");
+  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.authoritative_scheduler !== "github_actions_self_hosted_princess_local_mac") {
+    throw new Error("Princess authoritative scheduler must remain GitHub self-hosted");
+  }
+  if (maintenance.MAINTENANCE_SCHEDULES.princess_weekly.netlify_schedule_enabled !== false) {
+    throw new Error("Princess Netlify weekly cron must stay unscheduled");
   }
 });
 

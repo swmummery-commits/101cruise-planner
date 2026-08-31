@@ -9,6 +9,8 @@ const {
 } = require("./cruise-discovery-maintenance");
 const { runCclWeeklyMaintenance, CCL_MAX_WEEKLY_WRITES } = require("./carnival-weekly-maintenance");
 const { executeWeeklyMaintenance, supabase } = require("./cruise-discovery-maintenance-cron");
+const { claimOrSkipScheduledBackgroundDispatch, releaseScheduledDispatchLease } = require("./weekly-maintenance-schedule-control");
+
 const {
   assertCclWeeklyAuth,
   assertCronAuth,
@@ -82,6 +84,16 @@ async function dispatchCclWeeklyBackground({
     err.statusCode = 503;
     throw err;
   }
+
+
+  const scheduledClaim = await claimOrSkipScheduledBackgroundDispatch({
+    supabase,
+    lineSlug: "carnival-cruise-line",
+    triggerType,
+    dispatchId,
+    dryRun
+  });
+  if (scheduledClaim.already_dispatched) return scheduledClaim.response;
 
   const url = `${base}/.netlify/functions/${BACKGROUND_FUNCTION_NAME}`;
   const payload = buildBackgroundPayload({ dryRun, maxWrites, triggerType, dispatchId, nextRun, platformScheduled });

@@ -8,7 +8,14 @@ const {
   RUN_TYPE
 } = require("./silversea-weekly-maintenance");
 const { supabase } = require("./cruise-discovery-ops");
+const { claimOrSkipScheduledBackgroundDispatch, releaseScheduledDispatchLease } = require("./weekly-maintenance-schedule-control");
+
 const { RUN_STATUS } = require("./cruise-discovery-controlled-production-run");
+const {
+  assertSilverseaWeeklyMaintenanceEnabled,
+  SILVERSEA_WEEKLY_MAINTENANCE_RUN_TYPE
+} = require("./cruise-discovery-maintenance");
+const { executeWeeklyMaintenance } = require("./cruise-discovery-maintenance-cron");
 const {
   assertSilverseaWeeklyAuth,
   assertCronAuth,
@@ -30,6 +37,9 @@ function siteBaseUrl(env = process.env) {
 
 function resolveDryRun(body = {}, env = process.env) {
   if (body.dry_run === true || body.dryRun === true) return true;
+  const enabled =
+    String(env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
+  if (!enabled) return true;
   if (body.dry_run === false || body.dryRun === false) return false;
   return !isNetlifyPlatformScheduledInvocation({ body, headers: { "x-netlify-event": "schedule" } });
 }
@@ -61,6 +71,16 @@ async function dispatchSilverseaWeeklyBackground({
     err.statusCode = 503;
     throw err;
   }
+
+
+  const scheduledClaim = await claimOrSkipScheduledBackgroundDispatch({
+    supabase,
+    lineSlug: "silversea-cruises",
+    triggerType,
+    dispatchId,
+    dryRun
+  });
+  if (scheduledClaim.already_dispatched) return scheduledClaim.response;
 
   const url = `${base}/.netlify/functions/${BACKGROUND_FUNCTION_NAME}`;
   const payload = {
@@ -98,31 +118,80 @@ async function dispatchSilverseaWeeklyBackground({
   };
 }
 
+async function runSilverseaWeeklyForExecutor(context = {}) {
+  const report = await runSilverseaWeeklyMaintenance({
+    supabase: context.supabase,
+    dryRun: context.dryRun !== false,
+    performWrites: context.performWrites === true,
+    runId: context.runId
+  });
+  const blocked = report.status === RUN_STATUS.BLOCKED || report.status === "BLOCKED";
+  const ok =
+    report.status === "DRY_RUN_COMPLETE" ||
+    report.status === RUN_STATUS.COMPLETE ||
+    report.status === "COMPLETE";
+  return {
+    ok,
+    success: ok,
+    blocked,
+    review_required: false,
+    reason: report.block_reason || report.status || null,
+    summary: {
+      run_type: SILVERSEA_WEEKLY_MAINTENANCE_RUN_TYPE,
+      run_id: context.runId,
+      line_slug: LINE_SLUG,
+      dry_run: context.dryRun !== false,
+      eligible_total: report.source?.eligible_total ?? report.orchestration?.identity_reconciliation?.eligible ?? null,
+      official_source_total: report.source?.source_total ?? null,
+      active_production_total: report.production_inventory?.active ?? null,
+      proposed_inserts: report.plan?.action_summary?.insert ?? 0,
+      proposed_updates: report.plan?.action_summary?.update ?? 0,
+      source_absent_active: report.orchestration?.action_summary?.observation ?? 0,
+      inserts: report.writes?.inserts ?? 0,
+      updates: report.writes?.updates ?? 0,
+      inventory_changed: (report.writes?.inserts || 0) + (report.writes?.updates || 0) > 0,
+      silversea_report_status: report.status
+    },
+    report
+  };
+}
+
 async function runSilverseaWeeklyBackgroundMaintenance({
   dryRun = true,
   triggerType = "background",
   dispatchId = null,
   supabaseClient = supabase
 } = {}) {
-  const runId =
-    dispatchId || `silversea-weekly-maintenance-${new Date().toISOString().replace(/[:.]/g, "-")}`;
-  const report = await runSilverseaWeeklyMaintenance({
-    supabase: supabaseClient,
+  const sb = supabaseClient || supabase;
+  const lines = await sb(`ci_cruise_lines?slug=eq.${encodeURIComponent(LINE_SLUG)}&select=id,name,slug&limit=1`);
+  const line = lines?.[0];
+  if (!line) {
+    const err = new Error("Silversea line not found");
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const result = await executeWeeklyMaintenance({
+    lineSlug: LINE_SLUG,
+    cruiseLineId: line.id,
+    runType: SILVERSEA_WEEKLY_MAINTENANCE_RUN_TYPE || RUN_TYPE,
+    assertEnabled: assertSilverseaWeeklyMaintenanceEnabled,
+    runMaintenance: runSilverseaWeeklyForExecutor,
     dryRun: dryRun !== false,
-    performWrites: dryRun === false,
-    runId
+    maxWrites: 1,
+    triggerType,
+    supabaseClient: sb,
+    statsEnricher: (summary, extra) => ({ ...extra, dispatch_id: dispatchId })
   });
+
   return {
-    success:
-      report.status === "DRY_RUN_COMPLETE" ||
-      report.status === RUN_STATUS.COMPLETE ||
-      report.status === "COMPLETE",
+    ...result,
     line_slug: LINE_SLUG,
     run_type: RUN_TYPE,
     trigger_type: triggerType,
-    dispatch_id: runId,
+    dispatch_id: dispatchId,
     dry_run: dryRun !== false,
-    report
+    report: result.summary || null
   };
 }
 

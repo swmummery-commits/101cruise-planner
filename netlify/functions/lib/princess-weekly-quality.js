@@ -11,10 +11,13 @@ const PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW = "princess_eligible_inventory
 const PRINCESS_SOURCE_ACCOUNTING_INCOMPLETE = "princess_source_accounting_incomplete";
 const PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP = "princess_outstanding_inserts_exceed_weekly_cap";
 
+const IDENTITY_CRITICAL_UPDATES_REQUIRE_REVIEW = "identity_critical_updates_require_review";
+
 const REVIEW_REQUIRED_REASONS = new Set([
   PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW,
   PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP,
-  "weekly_change_volume_exceeds_initial_cap"
+  "weekly_change_volume_exceeds_initial_cap",
+  IDENTITY_CRITICAL_UPDATES_REQUIRE_REVIEW
 ]);
 
 function extractPreviousEligibleTotal(previousRun) {
@@ -225,14 +228,16 @@ function isPrincessReviewRequiredOnly({
   const failures = qualityGateFailures || [];
   if (!failures.length) return false;
 
-  const expansionOnly = failures.every(
+  const reviewOnlyFailures = failures.every(
     (f) =>
       f === PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW ||
       f === PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP ||
+      f === IDENTITY_CRITICAL_UPDATES_REQUIRE_REVIEW ||
       String(f).includes(PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW) ||
-      String(f).includes(PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP)
+      String(f).includes(PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP) ||
+      String(f).includes(IDENTITY_CRITICAL_UPDATES_REQUIRE_REVIEW)
   );
-  return expansionOnly;
+  return reviewOnlyFailures;
 }
 
 function evaluatePrincessWeeklyQualityGate({
@@ -284,7 +289,7 @@ function evaluatePrincessWeeklyQualityGate({
     failures.push(...accountingGate.failures.map((f) => `${PRINCESS_SOURCE_ACCOUNTING_INCOMPLETE}:${f}`));
   }
   if (performWrites && identityReviewUpdates > 0) {
-    failures.push("identity_critical_updates_require_review");
+    failures.push(IDENTITY_CRITICAL_UPDATES_REQUIRE_REVIEW);
   }
 
   const blockApply =
@@ -313,6 +318,7 @@ module.exports = {
   PRINCESS_ELIGIBLE_EXPANSION_REQUIRES_REVIEW,
   PRINCESS_SOURCE_ACCOUNTING_INCOMPLETE,
   PRINCESS_OUTSTANDING_INSERTS_EXCEED_WEEKLY_CAP,
+  IDENTITY_CRITICAL_UPDATES_REQUIRE_REVIEW,
   REVIEW_REQUIRED_REASONS,
   extractPreviousEligibleTotal,
   evaluatePrincessEligibleExpansionAnomaly,

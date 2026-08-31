@@ -13,11 +13,23 @@ const IDENTITY_CRITICAL_FIELDS = [
   "return_date",
   "nights",
   "departure_port",
-  "itinerary",
   "status"
 ];
 
-const ALLOWED_WEEKLY_UPDATE_FIELDS = ["official_url", "raw_extract", "match_confidence"];
+const PROTECTED_IDENTITY_FIELDS = [
+  "official_sailing_id",
+  "external_key",
+  "identity_key",
+  "ship_id",
+  "destination_id",
+  "departure_date",
+  "return_date",
+  "nights",
+  "departure_port",
+  "status"
+];
+
+const ALLOWED_WEEKLY_UPDATE_FIELDS = ["official_url", "raw_extract", "match_confidence", "itinerary"];
 
 const COMPARE_FIELDS = [
   "ship_id",
@@ -54,12 +66,42 @@ function diffPrincessUpdateCandidate(existing, candidate) {
   return fieldDiffs;
 }
 
-function classifyPrincessUpdateRisk(fieldDiffs = []) {
+function princessItineraryNameProvenance(row) {
+  const raw = row?.raw_extract && typeof row.raw_extract === "object" ? row.raw_extract : {};
+  return raw.princess_itinerary_name || raw.itinerary_name || null;
+}
+
+function isPrincessItineraryLabelOnlyChange(fieldDiffs = [], existing = {}, candidate = {}) {
+  const fields = new Set(fieldDiffs.map((d) => d.field));
+  if (!fields.has("itinerary")) return false;
+  const extra = [...fields].filter((f) => f !== "itinerary" && f !== "raw_extract");
+  if (extra.length) return false;
+  for (const field of PROTECTED_IDENTITY_FIELDS) {
+    if (normaliseComparable(existing?.[field]) !== normaliseComparable(candidate?.[field])) {
+      return false;
+    }
+  }
+  const afterName = String(candidate?.itinerary || "").trim();
+  const provenance = String(princessItineraryNameProvenance(candidate) || "").trim();
+  if (!afterName || !provenance || provenance !== afterName) return false;
+  return true;
+}
+
+function classifyPrincessUpdateRisk(fieldDiffs = [], existing = {}, candidate = {}) {
   if (!fieldDiffs.length) return { risk: "LOW", high_risk_fields: [], low_risk_fields: [] };
+  if (isPrincessItineraryLabelOnlyChange(fieldDiffs, existing, candidate)) {
+    return {
+      risk: "LOW",
+      high_risk_fields: [],
+      low_risk_fields: fieldDiffs.map((d) => d.field),
+      itinerary_label_only: true
+    };
+  }
   const high = [];
   const low = [];
   for (const diff of fieldDiffs) {
-    if (IDENTITY_CRITICAL_FIELDS.includes(diff.field)) high.push(diff.field);
+    if (diff.field === "itinerary") high.push(diff.field);
+    else if (IDENTITY_CRITICAL_FIELDS.includes(diff.field)) high.push(diff.field);
     else if (ALLOWED_WEEKLY_UPDATE_FIELDS.includes(diff.field)) low.push(diff.field);
     else high.push(diff.field);
   }
@@ -85,7 +127,7 @@ function classifyPrincessUpdateCategory(fieldDiffs = []) {
 function refinePrincessProposedActionForWeekly(baseAction, existing, candidate) {
   if (baseAction !== "update_exact_legacy_match") return baseAction;
   const fieldDiffs = diffPrincessUpdateCandidate(existing, candidate);
-  const risk = classifyPrincessUpdateRisk(fieldDiffs);
+  const risk = classifyPrincessUpdateRisk(fieldDiffs, existing, candidate);
   if (risk.risk === "LOW") return "update_safe_metadata_allowed";
   if (risk.risk === "HIGH" || risk.risk === "UNEXPLAINED") return "update_identity_review_required";
   return "update_identity_review_required";
@@ -93,8 +135,11 @@ function refinePrincessProposedActionForWeekly(baseAction, existing, candidate) 
 
 module.exports = {
   IDENTITY_CRITICAL_FIELDS,
+  PROTECTED_IDENTITY_FIELDS,
   ALLOWED_WEEKLY_UPDATE_FIELDS,
   COMPARE_FIELDS,
+  princessItineraryNameProvenance,
+  isPrincessItineraryLabelOnlyChange,
   diffPrincessUpdateCandidate,
   classifyPrincessUpdateRisk,
   classifyPrincessUpdateCategory,

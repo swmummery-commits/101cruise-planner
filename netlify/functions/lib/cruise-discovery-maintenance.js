@@ -38,6 +38,9 @@ const DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED =
 const AZAMARA_WEEKLY_RECONCILIATION_ENABLED =
   String(process.env.AZAMARA_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
 
+const SILVERSEA_WEEKLY_RECONCILIATION_ENABLED =
+  String(process.env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED || "").trim().toLowerCase() === "true";
+
 const CRUISE_DAILY_EXPIRY_ENABLED =
   String(process.env.CRUISE_DAILY_EXPIRY_ENABLED || "").trim().toLowerCase() === "true";
 
@@ -48,19 +51,26 @@ const MAINTENANCE_SCHEDULES = {
     cron_utc: "0 18 * * 0",
     perth_display: "Monday 02:00 Australia/Perth",
     utc_display: "Sunday 18:00 UTC",
-    function: "hal-weekly-maintenance-cron"
+    function: "hal-weekly-maintenance-cron",
+    background_function: "hal-weekly-maintenance-background",
+    schedule_registered: true
   },
   celebrity_weekly: {
     cron_utc: "0 19 * * 0",
     perth_display: "Monday 03:00 Australia/Perth",
     utc_display: "Sunday 19:00 UTC",
-    function: "celebrity-weekly-maintenance-cron"
+    function: "celebrity-weekly-maintenance-cron",
+    background_function: "celebrity-weekly-maintenance-background",
+    schedule_registered: true
   },
   princess_weekly: {
     cron_utc: "0 20 * * 0",
     perth_display: "Monday 04:00 Australia/Perth",
     utc_display: "Sunday 20:00 UTC",
-    function: "princess-weekly-maintenance-cron"
+    function: "princess-weekly-maintenance-cron",
+    schedule_registered: false,
+    netlify_schedule_enabled: false,
+    authoritative_scheduler: "github_actions_self_hosted_princess_local_mac"
   },
   /**
    * Explora weekly launcher is registered in netlify.toml.
@@ -144,6 +154,20 @@ const MAINTENANCE_SCHEDULES = {
     background_function: "azamara-weekly-maintenance-background",
     schedule_registered: true
   },
+  /**
+   * Silversea weekly launcher — Monday 04:00 UTC (Monday 12:00 Perth).
+   * Scheduled production writes stay disabled until unified cruise_discovery_runs
+   * tracking is proven (SILVERSEA_WEEKLY_RECONCILIATION_ENABLED).
+   */
+  silversea_weekly: {
+    cron_utc: "0 4 * * 1",
+    perth_display: "Monday 12:00 Australia/Perth",
+    utc_display: "Monday 04:00 UTC",
+    function: "silversea-weekly-maintenance-cron",
+    background_function: "silversea-weekly-maintenance-background",
+    schedule_registered: true,
+    scheduled_writes_require_flag: true
+  },
   daily_expiry: {
     cron_utc: "30 17 * * *",
     perth_display: "Daily 01:30 Australia/Perth",
@@ -162,6 +186,7 @@ const NORWEGIAN_WEEKLY_MAINTENANCE_RUN_TYPE = "norwegian_weekly_maintenance";
 const CARNIVAL_WEEKLY_MAINTENANCE_RUN_TYPE = "carnival_weekly_maintenance";
 const DISNEY_WEEKLY_MAINTENANCE_RUN_TYPE = "disney_weekly_maintenance";
 const AZAMARA_WEEKLY_MAINTENANCE_RUN_TYPE = "azamara_weekly_maintenance";
+const SILVERSEA_WEEKLY_MAINTENANCE_RUN_TYPE = "silversea_weekly_maintenance";
 const DAILY_EXPIRY_RUN_TYPE = "daily_expiry_maintenance";
 
 function perthCalendarDate(reference = new Date()) {
@@ -214,6 +239,10 @@ function isDisneySourceAbsenceDeactivationEnabled() {
 
 function isAzamaraWeeklyReconciliationEnabled() {
   return AZAMARA_WEEKLY_RECONCILIATION_ENABLED;
+}
+
+function isSilverseaWeeklyReconciliationEnabled() {
+  return SILVERSEA_WEEKLY_RECONCILIATION_ENABLED;
 }
 
 function isCruiseDailyExpiryEnabled() {
@@ -328,6 +357,16 @@ function assertAzamaraWeeklyMaintenanceEnabled() {
   }
 }
 
+function assertSilverseaWeeklyMaintenanceEnabled() {
+  if (!isSilverseaWeeklyReconciliationEnabled()) {
+    const err = new Error(
+      "Silversea weekly maintenance is disabled (SILVERSEA_WEEKLY_RECONCILIATION_ENABLED=false)"
+    );
+    err.code = "silversea_weekly_maintenance_disabled";
+    throw err;
+  }
+}
+
 function assertDailyExpiryEnabled() {
   if (!isCruiseDailyExpiryEnabled()) {
     const err = new Error("Daily expiry is disabled (CRUISE_DAILY_EXPIRY_ENABLED=false)");
@@ -374,6 +413,7 @@ function describeMaintenanceHold() {
       process.env.DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED
     ),
     azamara_weekly_reconciliation: resolveEnvFlag(process.env.AZAMARA_WEEKLY_RECONCILIATION_ENABLED),
+    silversea_weekly_reconciliation: resolveEnvFlag(process.env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED),
     cruise_daily_expiry: resolveEnvFlag(process.env.CRUISE_DAILY_EXPIRY_ENABLED),
     hal_weekly_reconciliation_enabled: isHalWeeklyReconciliationEnabled(),
     celebrity_weekly_reconciliation_enabled: isCelebrityWeeklyReconciliationEnabled(),
@@ -387,6 +427,7 @@ function describeMaintenanceHold() {
     disney_maintenance_scheduled_enabled: isDisneyMaintenanceScheduledEnabled(),
     disney_source_absence_deactivation_enabled: isDisneySourceAbsenceDeactivationEnabled(),
     azamara_weekly_reconciliation_enabled: isAzamaraWeeklyReconciliationEnabled(),
+    silversea_weekly_reconciliation_enabled: isSilverseaWeeklyReconciliationEnabled(),
     cruise_daily_expiry_enabled: isCruiseDailyExpiryEnabled(),
     operational_timezone: OPERATIONAL_TIMEZONE,
     schedules: MAINTENANCE_SCHEDULES,
@@ -421,6 +462,7 @@ module.exports = {
   DISNEY_DISCOVERY_MAINTENANCE_SCHEDULED_ENABLED,
   DISNEY_DISCOVERY_SOURCE_ABSENCE_DEACTIVATION_ENABLED,
   AZAMARA_WEEKLY_RECONCILIATION_ENABLED,
+  SILVERSEA_WEEKLY_RECONCILIATION_ENABLED,
   CRUISE_DAILY_EXPIRY_ENABLED,
   OPERATIONAL_TIMEZONE,
   MAINTENANCE_SCHEDULES,
@@ -434,6 +476,7 @@ module.exports = {
   CARNIVAL_WEEKLY_MAINTENANCE_RUN_TYPE,
   DISNEY_WEEKLY_MAINTENANCE_RUN_TYPE,
   AZAMARA_WEEKLY_MAINTENANCE_RUN_TYPE,
+  SILVERSEA_WEEKLY_MAINTENANCE_RUN_TYPE,
   DAILY_EXPIRY_RUN_TYPE,
   perthCalendarDate,
   isHalWeeklyReconciliationEnabled,
@@ -448,6 +491,7 @@ module.exports = {
   isDisneyMaintenanceScheduledEnabled,
   isDisneySourceAbsenceDeactivationEnabled,
   isAzamaraWeeklyReconciliationEnabled,
+  isSilverseaWeeklyReconciliationEnabled,
   isCruiseDailyExpiryEnabled,
   assertHalWeeklyMaintenanceEnabled,
   assertCelebrityWeeklyMaintenanceEnabled,
@@ -460,6 +504,7 @@ module.exports = {
   assertDisneyWeeklyMaintenanceScheduled,
   assertDisneyWeeklyMaintenanceEnabled,
   assertAzamaraWeeklyMaintenanceEnabled,
+  assertSilverseaWeeklyMaintenanceEnabled,
   assertDailyExpiryEnabled,
   computeFreshnessLabel,
   resolveEnvFlag,

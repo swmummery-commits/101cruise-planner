@@ -15,6 +15,7 @@ const DEFAULT_LEASE_SECONDS = {
   "carnival-cruise-line:weekly": 900,
   "disney-cruise-line:weekly": 1800,
   "azamara:weekly": 900,
+  "silversea-cruises:weekly": 1800,
   "controlled_production_import:global": 1800,
   daily_expiry: 300
 };
@@ -39,6 +40,7 @@ async function acquireLockViaRunningRun(supabase, params) {
     "carnival-cruise-line:weekly": "carnival_weekly_maintenance",
     "disney-cruise-line:weekly": "disney_weekly_maintenance",
     "azamara:weekly": "azamara_weekly_maintenance",
+    "silversea-cruises:weekly": "silversea_weekly_maintenance",
     daily_expiry: "daily_expiry_maintenance"
   };
   const runType = runTypeByLock[params.lockKey];

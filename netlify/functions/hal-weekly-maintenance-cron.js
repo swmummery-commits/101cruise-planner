@@ -1,56 +1,134 @@
 /**
- * Holland America weekly inventory maintenance (Netlify Scheduled Function).
- * Schedule: Sunday 18:00 UTC = Monday 02:00 Australia/Perth
+ * Holland America weekly maintenance — thin Scheduled Function launcher.
+ * Schedule: Sunday 18:00 UTC = Monday 02:00 Australia/Perth.
+ * Must stay under the Scheduled Function cap. Long work runs in
+ * hal-weekly-maintenance-background.
  */
 
+const { supabase } = require("./lib/cruise-discovery-maintenance-cron");
 const {
-  assertHalWeeklyMaintenanceEnabled,
-  HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
-  isHalWeeklyReconciliationEnabled
-} = require("./lib/cruise-discovery-maintenance");
-const { runHalWeeklyMaintenance } = require("./lib/cruise-discovery-maintenance-runner");
-const { executeWeeklyMaintenance, supabase } = require("./lib/cruise-discovery-maintenance-cron");
+  LAUNCHER_FUNCTION_NAME,
+  BACKGROUND_FUNCTION_NAME,
+  assertLauncherAuth,
+  parseJsonBody,
+  resolveDryRun,
+  resolveMaxWrites,
+  resolveTriggerType,
+  dispatchHalWeeklyBackground,
+  redactSecrets,
+  isScheduledInvocation
+} = require("./lib/hal-weekly-maintenance-dispatch");
+const {
+  withScheduledDispatchLease,
+  alreadyDispatchedHttpResponse,
+  collectInvocationProvenance
+} = require("./lib/weekly-maintenance-schedule-control");
 
 exports.handler = async (event) => {
   const started = Date.now();
   try {
-    let body = {};
-    try {
-      body = JSON.parse(event.body || "{}");
-    } catch {
-      body = {};
-    }
+    assertLauncherAuth(event);
 
-    const dryRun = body.dry_run === true || !isHalWeeklyReconciliationEnabled();
-
-    const lines = await supabase(
-      "ci_cruise_lines?slug=eq.holland-america-line&select=id,name,slug&limit=1"
-    );
-    const line = lines?.[0];
-    if (!line) {
-      return { statusCode: 404, body: JSON.stringify({ success: false, error: "HAL line not found" }) };
-    }
-
-    const result = await executeWeeklyMaintenance({
-      lineSlug: "holland-america-line",
-      cruiseLineId: line.id,
-      runType: HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
-      assertEnabled: assertHalWeeklyMaintenanceEnabled,
-      runMaintenance: runHalWeeklyMaintenance,
-      dryRun,
-      maxWrites: Number(body.max_writes || 100),
-      triggerType: body.trigger_type || "scheduled"
+    const body = parseJsonBody(event);
+    const dryRun = resolveDryRun(body);
+    const maxWrites = resolveMaxWrites(body);
+    const triggerType = resolveTriggerType(event, body);
+    const dispatchId = `hal-dispatch-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+    const provenance = collectInvocationProvenance(event, process.env, {
+      function_name: LAUNCHER_FUNCTION_NAME,
+      dispatch_id: dispatchId
     });
 
+    const leased = await withScheduledDispatchLease({
+      supabase,
+      lineSlug: "holland-america-line",
+      triggerType,
+      dispatchId,
+      dispatch: () =>
+        dispatchHalWeeklyBackground({
+          dryRun,
+          maxWrites,
+          triggerType,
+          dispatchId,
+          nextRun: body.next_run || null,
+          provenance
+        })
+    });
+
+    if (leased.already_dispatched) {
+      return alreadyDispatchedHttpResponse({
+        dispatchId,
+        periodKey: leased.period_key,
+        launcher: LAUNCHER_FUNCTION_NAME,
+        elapsedMs: Date.now() - started,
+        redactSecrets
+      });
+    }
+
+    const kick = leased.kick;
+    const elapsed_ms = Date.now() - started;
+    if (!kick?.accepted) {
+      return {
+        statusCode: 502,
+        body: JSON.stringify(
+          redactSecrets({
+            success: false,
+            phase: "dispatch",
+            status: "dispatch_failed",
+            launcher: LAUNCHER_FUNCTION_NAME,
+            background: BACKGROUND_FUNCTION_NAME,
+            dispatch_id: dispatchId,
+            dry_run: dryRun,
+            scheduled_invocation: isScheduledInvocation(event),
+            invocation_provenance: provenance,
+            background_http_status: kick?.status || null,
+            error: "background_dispatch_rejected",
+            detail: kick?.body,
+            elapsed_ms
+          })
+        )
+      };
+    }
+
     return {
-      statusCode: result.success ? 200 : 500,
-      body: JSON.stringify({ ...result, elapsed_ms: Date.now() - started })
+      statusCode: 202,
+      body: JSON.stringify(
+        redactSecrets({
+          success: true,
+          phase: "dispatch",
+          status: "dispatched",
+          maintenance_status: "pending_background",
+          launcher: LAUNCHER_FUNCTION_NAME,
+          background: BACKGROUND_FUNCTION_NAME,
+          dispatch_id: dispatchId,
+          dry_run: dryRun,
+          max_writes: maxWrites,
+          trigger_type: triggerType,
+          scheduled_invocation: isScheduledInvocation(event),
+          invocation_provenance: provenance,
+          background_http_status: kick.status,
+          elapsed_ms,
+          note: "Background worker owns run-record lifecycle; poll cruise_discovery_runs for completion."
+        })
+      )
     };
   } catch (error) {
-    console.error("hal-weekly-maintenance-cron failed", error);
+    console.error("hal-weekly-maintenance-cron dispatch failed", {
+      message: error.message,
+      code: error.code || null
+    });
     return {
       statusCode: error.statusCode || 500,
-      body: JSON.stringify({ success: false, error: error.message || "HAL weekly maintenance failed" })
+      body: JSON.stringify(
+        redactSecrets({
+          success: false,
+          phase: "dispatch",
+          status: "dispatch_failed",
+          error: error.message || "HAL weekly dispatch failed",
+          code: error.code || null,
+          elapsed_ms: Date.now() - started
+        })
+      )
     };
   }
 };

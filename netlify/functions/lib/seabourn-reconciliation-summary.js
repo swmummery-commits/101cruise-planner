@@ -8,6 +8,7 @@ function buildSeabournReconciliationSummary({
   recognisedExistingEligible = 0,
   outstandingEligibleInserts = 0,
   proposedUpdates = 0,
+  proposedIdentityReviewUpdates = 0,
   sourceAbsentActive = 0,
   sourceAbsentObserved = null,
   sourceAbsentRetained = null,
@@ -19,7 +20,10 @@ function buildSeabournReconciliationSummary({
     sourceAbsentObserved != null ? Number(sourceAbsentObserved) : Number(sourceAbsentActive || 0);
 
   const eligibleAccounted =
-    recognisedExistingEligible + outstandingEligibleInserts + proposedUpdates;
+    recognisedExistingEligible +
+    outstandingEligibleInserts +
+    proposedUpdates +
+    Number(proposedIdentityReviewUpdates || 0);
   const reconciliationArithmeticOk = eligibleTotal === eligibleAccounted;
 
   const activeAccounted = recognisedExistingEligible + retained;
@@ -33,6 +37,7 @@ function buildSeabournReconciliationSummary({
     outstanding_eligible_inserts: outstandingEligibleInserts,
     proposed_inserts: outstandingEligibleInserts,
     proposed_updates: proposedUpdates,
+    proposed_identity_review_updates: Number(proposedIdentityReviewUpdates || 0),
     source_absent_active: Number(sourceAbsentActive || 0),
     source_absent_observed: observed,
     source_absent_retained: retained,

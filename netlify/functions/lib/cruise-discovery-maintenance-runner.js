@@ -1717,6 +1717,7 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       recognisedExistingEligible: unchanged.length,
       outstandingEligibleInserts: proposedInserts.length,
       proposedUpdates: proposedUpdates.length + proposedSafeUpdates.length,
+      proposedIdentityReviewUpdates: proposedIdentityReviewUpdates.length,
       sourceAbsentActive: sourceAbsent.length,
       sourceAbsentObserved: sourceAbsencePolicy.source_absent_observed,
       sourceAbsentRetained: sourceAbsencePolicy.source_absent_retained,
@@ -1798,6 +1799,26 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       };
     }
 
+    if (proposedIdentityReviewUpdates.length > 0) {
+      return {
+        ok: false,
+        success: false,
+        blocked: false,
+        failed: false,
+        review_required: true,
+        reason: "identity_critical_updates_require_review",
+        summary: {
+          ...summary,
+          proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
+          identity_review_sailing_ids: proposedIdentityReviewUpdates.map(
+            (p) => p.official_sailing_id || p.stable_identity_key
+          )
+        },
+        manifest,
+        simulation
+      };
+    }
+
     if (explicitDryRun || !performWrites) {
       return { ok: true, dry_run: true, summary, manifest, simulation };
     }
@@ -1809,10 +1830,15 @@ async function runSeabournWeeklyMaintenance(context = {}) {
     });
     summary.weekly_write_safety = weeklyWriteSafety;
     if (!weeklyWriteSafety.ok) {
+      const reviewOnly = weeklyWriteSafety.failures.every(
+        (f) => f === "identity_critical_updates_require_review"
+      );
       return {
         ok: false,
+        success: false,
         blocked: false,
-        failed: true,
+        failed: !reviewOnly,
+        review_required: reviewOnly,
         reason: weeklyWriteSafety.failures.join("; "),
         summary,
         manifest,

@@ -491,9 +491,12 @@ function resolveWeeklyMaintenanceStatus({
       writesPerformed === 0 &&
       executeResult?.review_required !== false &&
       (executeResult?.reason === WEEKLY_CHANGE_VOLUME_EXCEEDS_CAP ||
+        executeResult?.reason === "identity_critical_updates_require_review" ||
+        String(executeResult?.reason || "").includes("identity_critical_updates_require_review") ||
         qualityGate?.review_required === true ||
+        qualityGate?.failures?.includes("identity_critical_updates_require_review") ||
         (qualityGate?.expansion_anomaly?.failures?.length &&
-          !qualityGate.failures?.some((f) => !String(f).includes("princess_eligible") && !String(f).includes("princess_outstanding"))))
+          !qualityGate.failures?.some((f) => !String(f).includes("princess_eligible") && !String(f).includes("princess_outstanding") && !String(f).includes("identity_critical"))))
     ) {
       return "review_required";
     }
