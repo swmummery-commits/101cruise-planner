@@ -1,0 +1,288 @@
+{
+  "date": "2026-09-01",
+  "sim1_snapshot": "46c0a121f4a339bb7e376be5be0bae2dd27bc31d786efc51ace4cb07f7b495dc",
+  "sim2_snapshot": "46c0a121f4a339bb7e376be5be0bae2dd27bc31d786efc51ace4cb07f7b495dc",
+  "hashes_match": true,
+  "eligible": 2018,
+  "active": 2020,
+  "arithmetic": true,
+  "rates": {
+    "eligible_total": 2018,
+    "ship_resolution_pct": 100,
+    "departure_port_resolution_pct": 100,
+    "destination_resolution_pct": 100,
+    "identity_coverage_pct": 100,
+    "duplicate_official_identities": 0
+  },
+  "insert_classifications": {
+    "OFFICIAL_ID_REMAP": 7,
+    "TRUE_NEW": 2
+  },
+  "inserts": [
+    {
+      "official_sailing_id": "CFF07J|GP|2026-09-26",
+      "proposed_action": "insert_active",
+      "ship_id": "cd701d1f-0a87-4242-8599-9d7950be7db8",
+      "departure_date": "2026-09-26",
+      "return_date": "2026-10-03",
+      "nights": 7,
+      "departure_port": "Fort Lauderdale",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with Puerto  Rico",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=cff07j&shipcode=gp&saildate=20260926",
+      "existing_id": null,
+      "classification": "OFFICIAL_ID_REMAP",
+      "matching_production": [
+        {
+          "id": "58c8ca14-8bbf-41e8-88b2-0e0b13284e7c",
+          "official_sailing_id": "CFR07V|GP|2026-09-26"
+        }
+      ]
+    },
+    {
+      "official_sailing_id": "CPR08C|YP|2026-11-29",
+      "proposed_action": "insert_active",
+      "ship_id": "f5417a2c-d17b-4130-a270-313f9225ebb5",
+      "departure_date": "2026-11-29",
+      "return_date": "2026-12-07",
+      "nights": 8,
+      "departure_port": "Port Canaveral",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with Puerto  Rico",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=cpr08c&shipcode=yp&saildate=20261129",
+      "existing_id": null,
+      "classification": "TRUE_NEW",
+      "matching_production": []
+    },
+    {
+      "official_sailing_id": "CFF07K|SU|2027-01-03",
+      "proposed_action": "insert_active",
+      "ship_id": "2db8c4ea-d43d-4316-b0eb-2648356b0b34",
+      "departure_date": "2027-01-03",
+      "return_date": "2027-01-10",
+      "nights": 7,
+      "departure_port": "Fort Lauderdale",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with Puerto  Rico Holiday",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=cff07k&shipcode=su&saildate=20270103",
+      "existing_id": null,
+      "classification": "OFFICIAL_ID_REMAP",
+      "matching_production": [
+        {
+          "id": "90bbe3f6-b181-4a6e-9ad7-5f119676fa19",
+          "official_sailing_id": "CFR07E|SU|2027-01-03"
+        }
+      ]
+    },
+    {
+      "official_sailing_id": "CPR08J|YP|2027-02-21",
+      "proposed_action": "insert_active",
+      "ship_id": "f5417a2c-d17b-4130-a270-313f9225ebb5",
+      "departure_date": "2027-02-21",
+      "return_date": "2027-03-01",
+      "nights": 8,
+      "departure_port": "Port Canaveral",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with Puerto  Rico",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=cpr08j&shipcode=yp&saildate=20270221",
+      "existing_id": null,
+      "classification": "TRUE_NEW",
+      "matching_production": []
+    },
+    {
+      "official_sailing_id": "CRF10A|EX|2027-03-17",
+      "proposed_action": "insert_active",
+      "ship_id": "354b0e60-707e-4a08-adbe-a0735727f6e2",
+      "departure_date": "2027-03-17",
+      "return_date": "2027-03-27",
+      "nights": 10,
+      "departure_port": "Fort Lauderdale",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with St. Kitts",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=crf10a&shipcode=ex&saildate=20270317",
+      "existing_id": null,
+      "classification": "OFFICIAL_ID_REMAP",
+      "matching_production": [
+        {
+          "id": "8c52eb5c-71c8-46db-897e-cb0dad85df52",
+          "official_sailing_id": "CRF10L|EX|2027-03-17"
+        }
+      ]
+    },
+    {
+      "official_sailing_id": "ERR07K|EX|2027-06-12",
+      "proposed_action": "insert_active",
+      "ship_id": "354b0e60-707e-4a08-adbe-a0735727f6e2",
+      "departure_date": "2027-06-12",
+      "return_date": "2027-06-19",
+      "nights": 7,
+      "departure_port": "Civitavecchia",
+      "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+      "itinerary": "Mediterranean & Aegean",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=err07k&shipcode=ex&saildate=20270612",
+      "existing_id": null,
+      "classification": "OFFICIAL_ID_REMAP",
+      "matching_production": [
+        {
+          "id": "013cf191-160d-4262-b11d-ec6f5e63e5a8",
+          "official_sailing_id": "ERR07F|EX|2027-06-12"
+        }
+      ]
+    },
+    {
+      "official_sailing_id": "ERR07K|EX|2027-06-26",
+      "proposed_action": "insert_active",
+      "ship_id": "354b0e60-707e-4a08-adbe-a0735727f6e2",
+      "departure_date": "2027-06-26",
+      "return_date": "2027-07-03",
+      "nights": 7,
+      "departure_port": "Civitavecchia",
+      "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+      "itinerary": "Mediterranean & Aegean",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=err07k&shipcode=ex&saildate=20270626",
+      "existing_id": null,
+      "classification": "OFFICIAL_ID_REMAP",
+      "matching_production": [
+        {
+          "id": "894cbb22-fcb5-4ed1-a035-e9e005c87bd1",
+          "official_sailing_id": "ERR07F|EX|2027-06-26"
+        }
+      ]
+    },
+    {
+      "official_sailing_id": "ERR07K|EX|2027-07-10",
+      "proposed_action": "insert_active",
+      "ship_id": "354b0e60-707e-4a08-adbe-a0735727f6e2",
+      "departure_date": "2027-07-10",
+      "return_date": "2027-07-17",
+      "nights": 7,
+      "departure_port": "Civitavecchia",
+      "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+      "itinerary": "Mediterranean & Aegean",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=err07k&shipcode=ex&saildate=20270710",
+      "existing_id": null,
+      "classification": "OFFICIAL_ID_REMAP",
+      "matching_production": [
+        {
+          "id": "e6347561-66a8-47f6-8325-cfd09bc286f5",
+          "official_sailing_id": "ERR07F|EX|2027-07-10"
+        }
+      ]
+    },
+    {
+      "official_sailing_id": "ERR07K|EX|2027-08-07",
+      "proposed_action": "insert_active",
+      "ship_id": "354b0e60-707e-4a08-adbe-a0735727f6e2",
+      "departure_date": "2027-08-07",
+      "return_date": "2027-08-14",
+      "nights": 7,
+      "departure_port": "Civitavecchia",
+      "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+      "itinerary": "Mediterranean & Aegean",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=err07k&shipcode=ex&saildate=20270807",
+      "existing_id": null,
+      "classification": "OFFICIAL_ID_REMAP",
+      "matching_production": [
+        {
+          "id": "fcfacc54-c51c-4d57-9a91-e891b9ffeb6d",
+          "official_sailing_id": "ERR07F|EX|2027-08-07"
+        }
+      ]
+    }
+  ],
+  "safe_updates": [
+    {
+      "official_sailing_id": "CPR06E|YP|2026-12-07",
+      "proposed_action": "update_safe_metadata_allowed",
+      "ship_id": "f5417a2c-d17b-4130-a270-313f9225ebb5",
+      "departure_date": "2026-12-07",
+      "return_date": "2026-12-13",
+      "nights": 6,
+      "departure_port": "Port Canaveral",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with Turks &  Caicos & Celebration Key",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=cpr06e&shipcode=yp&saildate=20261207",
+      "existing_id": null
+    },
+    {
+      "official_sailing_id": "CPR06E|YP|2027-01-04",
+      "proposed_action": "update_safe_metadata_allowed",
+      "ship_id": "f5417a2c-d17b-4130-a270-313f9225ebb5",
+      "departure_date": "2027-01-04",
+      "return_date": "2027-01-10",
+      "nights": 6,
+      "departure_port": "Port Canaveral",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with Turks &  Caicos & Celebration Key",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=cpr06e&shipcode=yp&saildate=20270104",
+      "existing_id": null
+    },
+    {
+      "official_sailing_id": "CPR06E|YP|2027-01-18",
+      "proposed_action": "update_safe_metadata_allowed",
+      "ship_id": "f5417a2c-d17b-4130-a270-313f9225ebb5",
+      "departure_date": "2027-01-18",
+      "return_date": "2027-01-24",
+      "nights": 6,
+      "departure_port": "Port Canaveral",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with Turks &  Caicos & Celebration Key",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=cpr06e&shipcode=yp&saildate=20270118",
+      "existing_id": null
+    },
+    {
+      "official_sailing_id": "CPR06E|YP|2027-02-01",
+      "proposed_action": "update_safe_metadata_allowed",
+      "ship_id": "f5417a2c-d17b-4130-a270-313f9225ebb5",
+      "departure_date": "2027-02-01",
+      "return_date": "2027-02-07",
+      "nights": 6,
+      "departure_port": "Port Canaveral",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with Turks &  Caicos & Celebration Key",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=cpr06e&shipcode=yp&saildate=20270201",
+      "existing_id": null
+    },
+    {
+      "official_sailing_id": "CPR06E|YP|2027-02-15",
+      "proposed_action": "update_safe_metadata_allowed",
+      "ship_id": "f5417a2c-d17b-4130-a270-313f9225ebb5",
+      "departure_date": "2027-02-15",
+      "return_date": "2027-02-21",
+      "nights": 6,
+      "departure_port": "Port Canaveral",
+      "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+      "itinerary": "Eastern Caribbean with Turks &  Caicos & Celebration Key",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=cpr06e&shipcode=yp&saildate=20270215",
+      "existing_id": null
+    },
+    {
+      "official_sailing_id": "ASV10A|RP|2027-09-11",
+      "proposed_action": "update_safe_metadata_allowed",
+      "ship_id": "e3924ab7-4c90-4eac-9b4a-72505d877580",
+      "departure_date": "2027-09-11",
+      "return_date": "2027-09-21",
+      "nights": 10,
+      "departure_port": "Seattle",
+      "destination_id": "c8eb51fa-aeca-4d93-9bd9-bfe8ce66a83c",
+      "itinerary": "Inside Passage (with Glacier Bay National Park)",
+      "official_url": "https://www.princess.com/cruise-search/details?voyagecode=asv10a&shipcode=rp&saildate=20270911",
+      "existing_id": null
+    }
+  ],
+  "review": [],
+  "source_absent": [
+    "CFR07V|GP|2026-09-26",
+    "CPR07C|YP|2026-11-29",
+    "CFR07E|SU|2027-01-03",
+    "CPR07C|YP|2027-02-21",
+    "CSR07H|KP|2027-02-28",
+    "CRF10L|EX|2027-03-17",
+    "ERR07F|EX|2027-06-12",
+    "ERR07F|EX|2027-06-26",
+    "ERR07F|EX|2027-07-10",
+    "ERR07F|EX|2027-08-07",
+    "MLR070|XP|2027-11-13"
+  ],
+  "writes": 0
+}

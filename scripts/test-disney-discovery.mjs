@@ -260,6 +260,28 @@ assert(adapter.applyDisneyBatchWrites == null, "no write export on adapter");
 
 const destHint = destMapping.resolveDisneyDestinationHints({ destination_code: "BAHAMAS", product_id: "3_bahamian_port_canaveral" });
 assert(destHint.preferredSlug === "caribbean", "destination mapping bahamas");
+const bermudaHint = destMapping.resolveDisneyDestinationHints({
+  destination_code: "BERMUDA",
+  geo_area: "BERMUDA",
+  product_name: "4-Night Bermuda Cruise from New York",
+  ports_of_call: ["King's Wharf, Bermuda"]
+});
+assert(bermudaHint.preferredSlug === "caribbean", "Bermuda official code maps to caribbean");
+const canadaHint = destMapping.resolveDisneyDestinationHints({
+  destination_code: "CANADA",
+  geo_area: "NEW YORK CA",
+  product_name: "7-Night Halloween on the High Seas Canada Cruise from New York"
+});
+assert(canadaHint.preferredSlug === "canada-new-england", "Canada official code maps to canada-new-england");
+const bermudaCanadaHint = destMapping.resolveDisneyDestinationHints({
+  destination_code: "CANADA",
+  geo_area: "NEW YORK CA",
+  product_name: "6-Night Halloween on the High Seas Bermuda & Canada Cruise from New York"
+});
+assert(
+  bermudaCanadaHint.preferredSlug === "canada-new-england",
+  "official CANADA code wins over Bermuda in a mixed itinerary"
+);
 
 // --- Phase 2C: legacy reconciliation, themed titles, port remediation ---
 const legacy = require(path.join(root, "netlify/functions/lib/disney-legacy-reconciliation"));

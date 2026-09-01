@@ -1,0 +1,389 @@
+{
+  "line": "seabourn",
+  "dry_run": true,
+  "writes": 0,
+  "run_id": "seabourn-cruise-line-weekly-2026-09-01T11-12-57-278Z",
+  "run_record_id": "7b5f041f-80e2-4256-8731-d34a879ea9a2",
+  "ok": true,
+  "summary": {
+    "line_slug": "seabourn-cruise-line",
+    "run_id": "seabourn-cruise-line-weekly-2026-09-01T11-12-57-278Z",
+    "run_type": "seabourn_weekly_maintenance",
+    "trigger_type": "p1_readonly",
+    "dry_run": true,
+    "write_authorisation": "dry_run",
+    "official_source_total": 881,
+    "source_row_accounting": {
+      "raw_source_rows": 881,
+      "malformed_or_invalid_rows": 5,
+      "exact_solr_duplicate_rows": 7,
+      "product_key_suppressed_rows": 0,
+      "valid_unique_source_products": 869,
+      "reconciles": true
+    },
+    "eligible_total": 684,
+    "active_production_total": 689,
+    "proposed_inserts": 1,
+    "proposed_insert_official_ids": [
+      "W9W46A|6910D"
+    ],
+    "proposed_inserts_detail": [
+      {
+        "official_sailing_id": "W9W46A|6910D",
+        "existing_uuid": null,
+        "ship_id": "2c5f6ac8-09e9-430c-9e07-299e2b20187b",
+        "ship_name": "Quest",
+        "departure_date": "2029-01-07",
+        "return_date": "2029-02-23",
+        "nights": 46,
+        "departure_port": "Miami",
+        "destination_id": "d5461635-742c-4bc3-a4a1-fe234260fa62",
+        "itinerary": "Bahia d Opunoha, Moorea, French Polynesia, Savusavu, Vanua Levi, Fiji, Avatoru, Rangiroa, French Polynesia, Papeete, French Polynesia, Cartagena, Colombia, Auckland, New Zealand, Cruising Panama Canal, Waitangi (Bay of Islands), New Zealand, Days At Sea, Crossing the Equator, General San Martin (Pisco), Peru, Miami, Florida, US, Guayaquil (Quito), Ecuador, Bora Bora, French Polynesia, Easter Island, Chile, Mystery Island, Vanuatu, Nuku Alofa, Tonga, Cross International Dateline, Easo, Lifou, New Caledonia, Callao (Lima), Peru, Taiohae, Nuku Hiva, French Polynesia",
+        "official_url": "https://www.seabourn.com/en/au/find-a-cruise/w9w46a/6910d"
+      }
+    ],
+    "proposed_updates": 0,
+    "proposed_updates_identity_review": 1,
+    "proposed_updates_safe_metadata": 0,
+    "identity_review_sailing_ids": [
+      "O8A26A|7811A"
+    ],
+    "identity_review_diffs": [
+      {
+        "official_sailing_id": "O8A26A|7811A",
+        "existing_uuid": "f055a83f-ce9a-4662-8cc9-102dff2c0563",
+        "ship_id": "bbb5e636-f739-4cd0-866e-3f1f9a92b608",
+        "ship_name": "Encore",
+        "departure_date": "2028-01-17",
+        "return_date": "2028-02-12",
+        "nights": 26,
+        "departure_port": "Singapore",
+        "destination_id": "feb8a6e4-7d1e-4442-9f31-929263db8044",
+        "itinerary": "Halong Bay, Vietnam, Ko Kood, Thailand, Hualien, Taiwan, Naha, Japan, Shanghai, China, Days At Sea, Laem Chabang (Bangkok), Thailand, Sihanoukville, Cambodia, Chan May (Hue), Vietnam, Miyakojima, Japan, Ho Chi Minh City (Saigon), Vietnam, Keelung (Taipei), Taiwan, Singapore, Hong Kong, China, Taichung, Taiwan",
+        "official_url": "https://www.seabourn.com/en/au/find-a-cruise/o8a26a/7811a",
+        "risk": "identity_critical",
+        "identity_critical_changes": [
+          "itinerary"
+        ],
+        "field_differences": {
+          "itinerary": {
+            "before": "Halong Bay, Vietnam, Ko Kood, Thailand, Hualien, Taiwan, Naha, Japan, Shanghai, China, Days At Sea, Laem Chabang (Bangkok), Thailand, Sihanoukville, Cambodia, Miyakojima, Japan, Ho Chi Minh City (Saigon), Vietnam, Keelung (Taipei), Taiwan, Singapore, Hong Kong, China, Taichung, Taiwan",
+            "after": "Halong Bay, Vietnam, Ko Kood, Thailand, Hualien, Taiwan, Naha, Japan, Shanghai, China, Days At Sea, Laem Chabang (Bangkok), Thailand, Sihanoukville, Cambodia, Chan May (Hue), Vietnam, Miyakojima, Japan, Ho Chi Minh City (Saigon), Vietnam, Keelung (Taipei), Taiwan, Singapore, Hong Kong, China, Taichung, Taiwan"
+          }
+        }
+      }
+    ],
+    "unchanged": 682,
+    "recognised_existing_eligible": 682,
+    "outstanding_eligible_inserts": 1,
+    "source_absent_active": 6,
+    "source_absent_sailing_ids": [
+      "E7M08C|8746",
+      "E7T35A|6755B",
+      "O7P34A|7763A",
+      "E8MD14|8864A",
+      "C8S14R|8895A",
+      "O9P14D|7923"
+    ],
+    "source_absent_observed": 6,
+    "source_absent_actionable": 0,
+    "source_absent_retained": 6,
+    "source_absence_policy": {
+      "policy": "consecutive_healthy_authoritative_absence",
+      "required_consecutive_healthy_absences": 2,
+      "enumeration_healthy": true,
+      "source_absence_actions_allowed": false,
+      "source_absent_observed": 6,
+      "source_absent_actionable": 0,
+      "source_absent_retained": 6,
+      "source_absence_cleared_count": 13,
+      "source_absent_observed_records": [
+        {
+          "discovered_cruise_id": "8df191a1-f115-423e-b010-c975c0de8c72",
+          "official_sailing_id": "E7M08C|8746",
+          "departure_date": "2027-06-05",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "3e7776ea-ef3d-45a1-ae43-229f12bfe99c",
+          "official_sailing_id": "E7T35A|6755B",
+          "departure_date": "2027-08-21",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "247d8b14-be85-48c4-819b-32ac0f4885b7",
+          "official_sailing_id": "O7P34A|7763A",
+          "departure_date": "2027-09-18",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "a970882b-1c4c-408d-bc43-0cddee8cc148",
+          "official_sailing_id": "E8MD14|8864A",
+          "departure_date": "2028-08-26",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "aefd725b-9ce8-420c-b7ed-1e70c60aefc5",
+          "official_sailing_id": "C8S14R|8895A",
+          "departure_date": "2028-12-30",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "15a7c01e-fa23-4879-82fb-a4697a0e6164",
+          "official_sailing_id": "O9P14D|7923",
+          "departure_date": "2029-04-07",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        }
+      ],
+      "source_absent_actionable_records": [],
+      "source_absent_retained_records": [
+        {
+          "discovered_cruise_id": "8df191a1-f115-423e-b010-c975c0de8c72",
+          "official_sailing_id": "E7M08C|8746",
+          "departure_date": "2027-06-05",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "3e7776ea-ef3d-45a1-ae43-229f12bfe99c",
+          "official_sailing_id": "E7T35A|6755B",
+          "departure_date": "2027-08-21",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "247d8b14-be85-48c4-819b-32ac0f4885b7",
+          "official_sailing_id": "O7P34A|7763A",
+          "departure_date": "2027-09-18",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "a970882b-1c4c-408d-bc43-0cddee8cc148",
+          "official_sailing_id": "E8MD14|8864A",
+          "departure_date": "2028-08-26",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "aefd725b-9ce8-420c-b7ed-1e70c60aefc5",
+          "official_sailing_id": "C8S14R|8895A",
+          "departure_date": "2028-12-30",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        },
+        {
+          "discovered_cruise_id": "15a7c01e-fa23-4879-82fb-a4697a0e6164",
+          "official_sailing_id": "O9P14D|7923",
+          "departure_date": "2029-04-07",
+          "consecutive_healthy_absences": 1,
+          "classification": "source_absent_observed",
+          "proposed_action": "retain_active",
+          "deactivation_allowed": false
+        }
+      ],
+      "source_absence_cleared": [
+        {
+          "official_sailing_id": "E6M14O|6665A",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E7M22E|8758B",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E7M21C|8761B",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "A7N07I|7759",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E7M07K|8771",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E7M14M|8771A",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "C8S07J|8819",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E8T21A|8829A",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E8N52B|P833C",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E8N40D|P833B",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E8R79A|V839D",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E8R87A|V839E",
+          "classification": "source_absence_cleared"
+        },
+        {
+          "official_sailing_id": "E8ML07|8877",
+          "classification": "source_absence_cleared"
+        }
+      ],
+      "note": "First healthy Solr absence is observed and retained active. Deactivation requires consecutive healthy authoritative absences and explicit maintenance policy."
+    },
+    "source_absent_observed_records": [
+      {
+        "discovered_cruise_id": "8df191a1-f115-423e-b010-c975c0de8c72",
+        "official_sailing_id": "E7M08C|8746",
+        "departure_date": "2027-06-05",
+        "consecutive_healthy_absences": 1,
+        "classification": "source_absent_observed",
+        "proposed_action": "retain_active",
+        "deactivation_allowed": false
+      },
+      {
+        "discovered_cruise_id": "3e7776ea-ef3d-45a1-ae43-229f12bfe99c",
+        "official_sailing_id": "E7T35A|6755B",
+        "departure_date": "2027-08-21",
+        "consecutive_healthy_absences": 1,
+        "classification": "source_absent_observed",
+        "proposed_action": "retain_active",
+        "deactivation_allowed": false
+      },
+      {
+        "discovered_cruise_id": "247d8b14-be85-48c4-819b-32ac0f4885b7",
+        "official_sailing_id": "O7P34A|7763A",
+        "departure_date": "2027-09-18",
+        "consecutive_healthy_absences": 1,
+        "classification": "source_absent_observed",
+        "proposed_action": "retain_active",
+        "deactivation_allowed": false
+      },
+      {
+        "discovered_cruise_id": "a970882b-1c4c-408d-bc43-0cddee8cc148",
+        "official_sailing_id": "E8MD14|8864A",
+        "departure_date": "2028-08-26",
+        "consecutive_healthy_absences": 1,
+        "classification": "source_absent_observed",
+        "proposed_action": "retain_active",
+        "deactivation_allowed": false
+      },
+      {
+        "discovered_cruise_id": "aefd725b-9ce8-420c-b7ed-1e70c60aefc5",
+        "official_sailing_id": "C8S14R|8895A",
+        "departure_date": "2028-12-30",
+        "consecutive_healthy_absences": 1,
+        "classification": "source_absent_observed",
+        "proposed_action": "retain_active",
+        "deactivation_allowed": false
+      },
+      {
+        "discovered_cruise_id": "15a7c01e-fa23-4879-82fb-a4697a0e6164",
+        "official_sailing_id": "O9P14D|7923",
+        "departure_date": "2029-04-07",
+        "consecutive_healthy_absences": 1,
+        "classification": "source_absent_observed",
+        "proposed_action": "retain_active",
+        "deactivation_allowed": false
+      }
+    ],
+    "source_absent_actionable_records": [],
+    "reconciliation_arithmetic_ok": true,
+    "active_production_arithmetic_ok": true,
+    "all_active_recognised_in_eligible_source": null,
+    "policy_excluded_cruisetours": 161,
+    "within_public_cutoff_excluded": 26,
+    "public_booking_cutoff_days": 21,
+    "eligibility_waterfall": {
+      "source_invalid": 0,
+      "policy_excluded_cruisetour": 161,
+      "policy_excluded_product_type": 0,
+      "past_departure": 0,
+      "within_21_day_cutoff": 22,
+      "required_ship_unresolved": 0,
+      "required_embark_port_unresolved": 2,
+      "required_destination_unresolved": 0,
+      "confidence_gate_failure": 0,
+      "production_eligible": 684
+    },
+    "resolution_rates": {
+      "eligible_total": 684,
+      "ship_resolution_pct": 100,
+      "departure_port_resolution_pct": 100,
+      "destination_resolution_pct": 100,
+      "identity_coverage_pct": 100,
+      "duplicate_official_identities": 0
+    },
+    "source_quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    },
+    "quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    },
+    "snapshot_id": "2ae52c94aa0022cee934a49dc81090b68cf5e0fddf9e4e8dcc89cb8ac319da2f",
+    "inventory_changed": false,
+    "writes_performed": 0,
+    "source_absence_deactivation_enabled": false,
+    "weekly_write_safety": {
+      "ok": true,
+      "failures": [],
+      "source_absent_observed": 6,
+      "source_absent_actionable": 0,
+      "source_absence_deactivation_allowed": false,
+      "weekly_writes_permitted_with_observed_absence": false
+    },
+    "inserts": 0,
+    "updates": 0,
+    "enriched": 0,
+    "promoted_active": 0,
+    "cutoff_hidden": 0,
+    "source_absence_hidden": 0,
+    "failed_writes": 0,
+    "write_attempts": 0,
+    "committed_material_writes": 0,
+    "rollback_manifest_id": null,
+    "duration_ms": 85557,
+    "failure_reason": "identity_critical_updates_require_review",
+    "worker_state": "idle",
+    "terminal_status": "review_required"
+  }
+}

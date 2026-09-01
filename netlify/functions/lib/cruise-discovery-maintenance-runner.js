@@ -94,7 +94,9 @@ const {
 const {
   refineProposedActionForWeekly,
   assessSeabournWeeklyWriteSafety,
-  isSeabournSourceAbsenceDeactivationEnabled
+  isSeabournSourceAbsenceDeactivationEnabled,
+  classifySeabournUpdateRisk,
+  IDENTITY_CRITICAL_FIELDS: SEABOURN_IDENTITY_CRITICAL_FIELDS
 } = require("./seabourn-weekly-update-policy");
 const { refinePrincessProposedActionForWeekly } = require("./princess-weekly-update-policy");
 const { runRoyalCaribbeanWeeklyMaintenance } = require("./royal-caribbean-weekly-maintenance");
@@ -1753,6 +1755,38 @@ async function runSeabournWeeklyMaintenance(context = {}) {
     const proposedIdentityReviewUpdates = manifest.products.filter(
       (p) => p.proposed_action === "update_identity_review_required"
     );
+    const seabournReviewFields = [...SEABOURN_IDENTITY_CRITICAL_FIELDS, "official_url"];
+    const compactSeabournInsert = (entry) => ({
+      official_sailing_id:
+        entry.official_sailing_id || entry.official_seabourn_sailing_id || entry.stable_identity_key || null,
+      existing_uuid: entry.existing_record_match || null,
+      ship_id: entry.candidate?.ship_id || entry.canonical_ship_id || null,
+      ship_name: entry.canonical_ship_name || null,
+      departure_date: entry.candidate?.departure_date || entry.departure_date || null,
+      return_date: entry.candidate?.return_date || entry.return_date || null,
+      nights: entry.candidate?.nights || entry.nights || null,
+      departure_port: entry.candidate?.departure_port || entry.canonical_departure_port || null,
+      destination_id: entry.candidate?.destination_id || entry.destination_id || null,
+      itinerary: entry.candidate?.itinerary || null,
+      official_url: entry.candidate?.official_url || entry.official_url || null
+    });
+    const compactSeabournReviewDiff = (entry) => {
+      const before = entry.rollback || {};
+      const after = entry.candidate || {};
+      const assessment = classifySeabournUpdateRisk(before, after);
+      const field_differences = {};
+      for (const field of seabournReviewFields) {
+        if (String(before[field] ?? "") !== String(after[field] ?? "")) {
+          field_differences[field] = { before: before[field] ?? null, after: after[field] ?? null };
+        }
+      }
+      return {
+        ...compactSeabournInsert(entry),
+        risk: assessment.risk,
+        identity_critical_changes: assessment.identity_critical_changes,
+        field_differences
+      };
+    };
     const unchanged = manifest.products.filter((p) => p.proposed_action === "duplicate_skip");
     const sourceAbsent = await findSourceAbsentActive({
       supabase: sb,
@@ -1804,12 +1838,17 @@ async function runSeabournWeeklyMaintenance(context = {}) {
       eligible_total: metrics.eligible_total,
       active_production_total: activeProductionTotal,
       proposed_inserts: proposedInserts.length,
+      proposed_insert_official_ids: proposedInserts.map(
+        (p) => p.official_sailing_id || p.official_seabourn_sailing_id || p.stable_identity_key
+      ),
+      proposed_inserts_detail: proposedInserts.map(compactSeabournInsert),
       proposed_updates: proposedUpdates.length + proposedSafeUpdates.length,
       proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
       proposed_updates_safe_metadata: proposedSafeUpdates.length,
       identity_review_sailing_ids: proposedIdentityReviewUpdates.map(
-        (p) => p.official_sailing_id || p.stable_identity_key
+        (p) => p.official_sailing_id || p.official_seabourn_sailing_id || p.stable_identity_key
       ),
+      identity_review_diffs: proposedIdentityReviewUpdates.map(compactSeabournReviewDiff),
       unchanged: unchanged.length,
       recognised_existing_eligible: reconciliation.recognised_existing_eligible,
       outstanding_eligible_inserts: reconciliation.outstanding_eligible_inserts,

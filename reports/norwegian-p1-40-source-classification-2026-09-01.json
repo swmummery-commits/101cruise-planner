@@ -1,0 +1,1856 @@
+{
+  "date": "2026-09-01",
+  "incident_run_id": "2d9cc3e4-927e-452f-bfd1-11ef8c70536f",
+  "eligible_sim1": 1975,
+  "eligible_sim2": 1975,
+  "source_hash_sim1": "7a826dba7b5f2b38ad5dd15570eb85ddd064af181675679aee0954902bb363ff",
+  "source_hash_sim2": "7a826dba7b5f2b38ad5dd15570eb85ddd064af181675679aee0954902bb363ff",
+  "hashes_match": true,
+  "identity_collisions": 0,
+  "classification_counts": {
+    "CURRENT_OFFICIAL_MATCH": 40
+  },
+  "all_reproducible": true,
+  "rows": [
+    {
+      "database_uuid": "43221ca0-cafb-4eb6-a5c9-bf2d9d9265d5",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-16",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-07-16",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-16",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-16",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-16",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-16",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "a7198796-874f-4f01-ae35-ba58b150446f",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-07",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-05-07",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-07",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-05-07",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-07",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-05-07",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "3324203f-d2d7-45e5-9961-c709ff698ffa",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-21",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-05-21",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-21",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-05-21",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-21",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-05-21",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "4e348a31-afd8-45f0-af46-cd37e650fdf4",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-20",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-08-20",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-20",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-20",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-20",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-20",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "fd88432a-a627-4a9c-abe0-c8745dfb88ec",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-28",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-05-28",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-28",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-05-28",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-28",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-05-28",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "8b242e12-ff5e-428b-a87b-4d7cfc525c2c",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-14",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-05-14",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-14",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-05-14",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-14",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-05-14",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "d9c72369-5803-4216-9949-8ffd3e0ea6af",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-02",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-07-02",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-02",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-02",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-02",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-02",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "a6e61f14-8d8a-4142-9812-01df7edb3ff0",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-30",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-07-30",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-30",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-30",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-30",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-30",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "7ca6e516-8506-464e-a60f-8fa7f7362e15",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-18",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-06-18",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-18",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-06-18",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-18",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-06-18",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "79935a61-1fa6-4bf4-bd3a-91eb529d1493",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-06",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-08-06",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-06",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-06",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-06",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-06",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "c3324271-672c-438d-a81f-ef183676d514",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-25",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-06-25",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-25",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-06-25",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-25",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-06-25",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "23b2a370-e5a4-4d8c-8f74-19870aec9ef3",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-11",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-06-11",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-11",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-06-11",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-11",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-06-11",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "fe53b417-0e6e-48bc-a12d-08f14d24a72e",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-04-30",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-04-30",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-04-30",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-04-30",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-04-30",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-04-30",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "6d25b035-279d-48ad-936f-8ef83d000b16",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-04",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-06-04",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-04",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-06-04",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-04",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-06-04",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "ed289b35-627a-4c78-8d6d-898dec9bb4ce",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-09",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-07-09",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-09",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-09",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-09",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-09",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "d554282c-8e56-4053-9583-475cafe47918",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-23",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-07-23",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-23",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-23",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-23",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-07-23",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "aacff2be-685b-474d-904d-0214f1b74486",
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-13",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-08-13",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Caribbean",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-13",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-13",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-13",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-13",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "1ab9dbef-c636-446f-a3cb-12fcd8ae9612",
+      "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-26",
+      "ship_name": "Norwegian Dawn",
+      "departure_date": "2028-09-26",
+      "nights": 11,
+      "departure_port": "Philadelphia",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-26",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-26",
+          "departure_port": "Philadelphia",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-26",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-26",
+          "departure_port": "Philadelphia",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "8bab5309-b3ef-4dcc-8bc3-1b2502c1765d",
+      "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-05",
+      "ship_name": "Norwegian Dawn",
+      "departure_date": "2028-09-05",
+      "nights": 11,
+      "departure_port": "Philadelphia",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-05",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-05",
+          "departure_port": "Philadelphia",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-05",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-05",
+          "departure_port": "Philadelphia",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "2e45c7d8-1a06-4735-8efe-705093aa49a7",
+      "official_sailing_id": "BREAKAWAY8QUECHASYNHALPWMNYC|2028-10-29",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-10-29",
+      "nights": 8,
+      "departure_port": "Quebec City",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY8QUECHASYNHALPWMNYC|2028-10-29",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-29",
+          "departure_port": "Quebec City",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY8QUECHASYNHALPWMNYC|2028-10-29",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-29",
+          "departure_port": "Quebec City",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "1471d617-7c61-432e-8767-ce99a5ab6084",
+      "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-10-08",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-10-08",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-10-08",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-08",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-10-08",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-08",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "70c25c5a-8e16-4a96-90c6-8272012a9be8",
+      "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-10",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-09-10",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-10",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-10",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-10",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-10",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "66d86bba-9446-48d2-9327-77dd591632b3",
+      "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-17",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-09-17",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-17",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-17",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-17",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-17",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "dea9e291-70a7-4114-9ca4-1e55120bc37b",
+      "official_sailing_id": "GEM9PHLPWMSJBHALSYNCHAQUE|2028-08-31",
+      "ship_name": "Norwegian Gem",
+      "departure_date": "2028-08-31",
+      "nights": 9,
+      "departure_port": "Philadelphia",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM9PHLPWMSJBHALSYNCHAQUE|2028-08-31",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-31",
+          "departure_port": "Philadelphia",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM9PHLPWMSJBHALSYNCHAQUE|2028-08-31",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-31",
+          "departure_port": "Philadelphia",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "1cd382b6-e115-4f08-ba70-3c0964b5e5e3",
+      "official_sailing_id": "DAWN10QUELBICHASYNHALEPMPWMBOSPHL|2028-09-16",
+      "ship_name": "Norwegian Dawn",
+      "departure_date": "2028-09-16",
+      "nights": 10,
+      "departure_port": "Quebec City",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN10QUELBICHASYNHALEPMPWMBOSPHL|2028-09-16",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-16",
+          "departure_port": "Quebec City",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN10QUELBICHASYNHALEPMPWMBOSPHL|2028-09-16",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-16",
+          "departure_port": "Quebec City",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "ad772519-595f-431d-bc28-5fa4c65fe437",
+      "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL|2028-10-17",
+      "ship_name": "Norwegian Dawn",
+      "departure_date": "2028-10-17",
+      "nights": 11,
+      "departure_port": "Philadelphia",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL|2028-10-17",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-17",
+          "departure_port": "Philadelphia",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL|2028-10-17",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-17",
+          "departure_port": "Philadelphia",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "d662f6ac-2b4f-4586-9acc-718b241cb029",
+      "official_sailing_id": "GEM7NYCBOSPWMHALSJBNYC|2028-10-01",
+      "ship_name": "Norwegian Gem",
+      "departure_date": "2028-10-01",
+      "nights": 7,
+      "departure_port": "New York",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM7NYCBOSPWMHALSJBNYC|2028-10-01",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-01",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM7NYCBOSPWMHALSJBNYC|2028-10-01",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-01",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "f27088fc-b9f4-48ed-88b7-4db5d6641de9",
+      "official_sailing_id": "BREAKAWAY7BOSHALSYNCHAQUE|2028-10-22",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-10-22",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSHALSYNCHAQUE|2028-10-22",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-22",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSHALSYNCHAQUE|2028-10-22",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-22",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "a5e06ff4-6eb8-4dc3-82ea-15fc07c7246c",
+      "official_sailing_id": "DAWN13BCNCADPDLWRFPHL|2028-08-23",
+      "ship_name": "Norwegian Dawn",
+      "departure_date": "2028-08-23",
+      "nights": 13,
+      "departure_port": "Barcelona",
+      "destination": "Transatlantic",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN13BCNCADPDLWRFPHL|2028-08-23",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-23",
+          "departure_port": "Barcelona",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN13BCNCADPDLWRFPHL|2028-08-23",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-23",
+          "departure_port": "Barcelona",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "36d25ddc-81d4-43f1-9fa7-5710b7032226",
+      "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-24",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-09-24",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-24",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-24",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-24",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-24",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "3231e404-8c40-4886-a87c-2c11dceb4e77",
+      "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-10-15",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-10-15",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-10-15",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-15",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-10-15",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-15",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "53823f1d-69b9-490b-a171-04cc600b1189",
+      "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-03",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-09-03",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-03",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-03",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-03",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-03",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "5d1913e4-94e1-4ef8-a867-3c9a2d294946",
+      "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-17",
+      "ship_name": "Norwegian Gem",
+      "departure_date": "2028-09-17",
+      "nights": 7,
+      "departure_port": "New York",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-17",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-17",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-17",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-17",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "edc0aa66-6d4e-4b32-9a37-946d8180a304",
+      "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-24",
+      "ship_name": "Norwegian Gem",
+      "departure_date": "2028-09-24",
+      "nights": 7,
+      "departure_port": "New York",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-24",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-24",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-24",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-24",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "eb7f8550-304d-4231-a7b4-74423392dac0",
+      "official_sailing_id": "BREAKAWAY7BOSPWMEPMSJBHALBOS|2028-08-27",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-08-27",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSPWMEPMSJBHALBOS|2028-08-27",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-27",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSPWMEPMSJBHALBOS|2028-08-27",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-08-27",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "01a5aaf3-d78e-48e7-a919-7a4ac643815c",
+      "official_sailing_id": "GEM8QUELBICHASYNHALSJBNYC|2028-09-09",
+      "ship_name": "Norwegian Gem",
+      "departure_date": "2028-09-09",
+      "nights": 8,
+      "departure_port": "Quebec City",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM8QUELBICHASYNHALSJBNYC|2028-09-09",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-09",
+          "departure_port": "Quebec City",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM8QUELBICHASYNHALSJBNYC|2028-09-09",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-09-09",
+          "departure_port": "Quebec City",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "879995f0-1308-4ca8-a766-912a99ddda72",
+      "official_sailing_id": "GEM7NYCBOSPWMSJBHALNYC|2028-10-08",
+      "ship_name": "Norwegian Gem",
+      "departure_date": "2028-10-08",
+      "nights": 7,
+      "departure_port": "New York",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM7NYCBOSPWMSJBHALNYC|2028-10-08",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-08",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM7NYCBOSPWMSJBHALNYC|2028-10-08",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-08",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "46621f7d-6544-4ad8-a262-2a6ea67bb420",
+      "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBSYNBOS|2028-10-01",
+      "ship_name": "Norwegian Breakaway",
+      "departure_date": "2028-10-01",
+      "nights": 7,
+      "departure_port": "Boston",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBSYNBOS|2028-10-01",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-01",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBSYNBOS|2028-10-01",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-01",
+          "departure_port": "Boston",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "97bbda3c-a866-42b6-82d7-db10620d9470",
+      "official_sailing_id": "DAWN10QUELBICHASYNHALPWMBOSPHL|2028-10-07",
+      "ship_name": "Norwegian Dawn",
+      "departure_date": "2028-10-07",
+      "nights": 10,
+      "departure_port": "Quebec City",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN10QUELBICHASYNHALPWMBOSPHL|2028-10-07",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-07",
+          "departure_port": "Quebec City",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "DAWN10QUELBICHASYNHALPWMBOSPHL|2028-10-07",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-07",
+          "departure_port": "Quebec City",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    },
+    {
+      "database_uuid": "8e11b60b-859b-493a-a9bb-917a351810e2",
+      "official_sailing_id": "GEM10NYCHALSYNCHASJBPWMBOSNYC|2028-10-15",
+      "ship_name": "Norwegian Gem",
+      "departure_date": "2028-10-15",
+      "nights": 10,
+      "departure_port": "New York",
+      "destination": "Canada and New England",
+      "sim1": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM10NYCHALSYNCHASJBPWMBOSNYC|2028-10-15",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-15",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "sim2": {
+        "classification": "CURRENT_OFFICIAL_MATCH",
+        "source": {
+          "official_sailing_id": "GEM10NYCHALSYNCHASJBPWMBOSNYC|2028-10-15",
+          "ship_id": null,
+          "ship_name": null,
+          "departure_date": "2028-10-15",
+          "departure_port": "New York",
+          "destination_code": null
+        },
+        "proof": {
+          "shipOk": true,
+          "dateOk": true,
+          "nightsOk": true,
+          "portOk": true,
+          "destOk": true
+        }
+      },
+      "reproducible": true
+    }
+  ]
+}

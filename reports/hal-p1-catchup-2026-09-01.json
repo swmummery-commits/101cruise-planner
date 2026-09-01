@@ -1,0 +1,194 @@
+{
+  "date": "2026-09-01",
+  "line": "holland-america-line",
+  "apply": true,
+  "cap": 100,
+  "batches": [
+    {
+      "batch": 1,
+      "freeze_hash": "70c5416bbcac5ece04e678e2b09fb51c0d8e0936e2084f0a0a6ce9007ab187ee",
+      "frozen_count": 100,
+      "run_id": "holland-america-line-weekly-2026-09-01T10-52-16-712Z",
+      "run_record_id": "75cf6ac1-e538-4536-ad7e-4d8a83009715",
+      "rollback_manifest_id": "e61bbef5-2e33-4f79-8f4b-4f3e6f2caece",
+      "inserted": 100,
+      "updated": 0,
+      "failed": 0,
+      "ok": true,
+      "recon": {
+        "run_id": "holland-america-line-weekly-2026-09-01T10-52-42-426Z",
+        "eligible_total": 1145,
+        "active_production_total": 919,
+        "proposed_inserts": 279,
+        "proposed_updates": 13,
+        "source_absent_active": 55,
+        "snapshot_id": "3ee9ee1a0f17a48b5c3b9452702f9d3956e52e0c101d767dabc758510ce766bf",
+        "quality_gate": {
+          "passed": true,
+          "failures": [],
+          "blocked": false
+        },
+        "inserts": 0,
+        "updates": 0,
+        "failed_writes": 0,
+        "rollback_manifest_id": null,
+        "resolution_rates": {
+          "eligible_total": 1145,
+          "ship_resolution_pct": 100,
+          "departure_port_resolution_pct": 100,
+          "destination_resolution_pct": 96.86971235194586,
+          "identity_coverage_pct": 100,
+          "duplicate_official_identities": 0
+        }
+      }
+    },
+    {
+      "batch": 2,
+      "freeze_hash": "b1e36e9d6969041bc51ab91f66aa5d12b2eced26031268cc6acffa08ef047c16",
+      "frozen_count": 100,
+      "run_id": "holland-america-line-weekly-2026-09-01T10-52-47-818Z",
+      "run_record_id": "bad323db-9a6e-4400-a6e3-955e6986b9b5",
+      "rollback_manifest_id": "420e680f-4043-41ba-9e27-2c38876c2aec",
+      "inserted": 100,
+      "updated": 0,
+      "failed": 0,
+      "ok": true,
+      "recon": {
+        "run_id": "holland-america-line-weekly-2026-09-01T10-53-13-129Z",
+        "eligible_total": 1145,
+        "active_production_total": 1019,
+        "proposed_inserts": 179,
+        "proposed_updates": 13,
+        "source_absent_active": 55,
+        "snapshot_id": "3ee9ee1a0f17a48b5c3b9452702f9d3956e52e0c101d767dabc758510ce766bf",
+        "quality_gate": {
+          "passed": true,
+          "failures": [],
+          "blocked": false
+        },
+        "inserts": 0,
+        "updates": 0,
+        "failed_writes": 0,
+        "rollback_manifest_id": null,
+        "resolution_rates": {
+          "eligible_total": 1145,
+          "ship_resolution_pct": 100,
+          "departure_port_resolution_pct": 100,
+          "destination_resolution_pct": 96.86971235194586,
+          "identity_coverage_pct": 100,
+          "duplicate_official_identities": 0
+        }
+      }
+    },
+    {
+      "batch": 3,
+      "freeze_hash": "8061671d792bc080529fa7fb826c5abc5746ddea4aabf1772efd86d361d508a7",
+      "frozen_count": 100,
+      "run_id": "holland-america-line-weekly-2026-09-01T10-53-19-788Z",
+      "run_record_id": "d2fc5564-8c93-4dde-ac3f-abb959df3e1e",
+      "rollback_manifest_id": "b16f699f-c588-4dbe-8133-4f28f02fc6da",
+      "inserted": 100,
+      "updated": 0,
+      "failed": 0,
+      "ok": true,
+      "recon": {
+        "run_id": "holland-america-line-weekly-2026-09-01T10-53-45-952Z",
+        "eligible_total": 1145,
+        "active_production_total": 1119,
+        "proposed_inserts": 79,
+        "proposed_updates": 13,
+        "source_absent_active": 55,
+        "snapshot_id": "3ee9ee1a0f17a48b5c3b9452702f9d3956e52e0c101d767dabc758510ce766bf",
+        "quality_gate": {
+          "passed": true,
+          "failures": [],
+          "blocked": false
+        },
+        "inserts": 0,
+        "updates": 0,
+        "failed_writes": 0,
+        "rollback_manifest_id": null,
+        "resolution_rates": {
+          "eligible_total": 1145,
+          "ship_resolution_pct": 100,
+          "departure_port_resolution_pct": 100,
+          "destination_resolution_pct": 96.86971235194586,
+          "identity_coverage_pct": 100,
+          "duplicate_official_identities": 0
+        }
+      }
+    },
+    {
+      "batch": 4,
+      "freeze_hash": "b03807094e80a85f444ba59e7a49ec5c07e77d842a9b970b5b494bcfe3343b81",
+      "frozen_count": 92,
+      "run_id": "holland-america-line-weekly-2026-09-01T10-53-53-650Z",
+      "run_record_id": "5e877622-bdc0-4445-966f-d26e948e354d",
+      "rollback_manifest_id": "48e02084-b923-404f-bdef-a6525ff09d12",
+      "inserted": 79,
+      "updated": 13,
+      "failed": 0,
+      "ok": true,
+      "recon": {
+        "run_id": "holland-america-line-weekly-2026-09-01T10-54-19-462Z",
+        "eligible_total": 1145,
+        "active_production_total": 1198,
+        "proposed_inserts": 0,
+        "proposed_updates": 0,
+        "source_absent_active": 55,
+        "snapshot_id": "3ee9ee1a0f17a48b5c3b9452702f9d3956e52e0c101d767dabc758510ce766bf",
+        "quality_gate": {
+          "passed": true,
+          "failures": [],
+          "blocked": false
+        },
+        "inserts": 0,
+        "updates": 0,
+        "failed_writes": 0,
+        "rollback_manifest_id": null,
+        "resolution_rates": {
+          "eligible_total": 1145,
+          "ship_resolution_pct": 100,
+          "departure_port_resolution_pct": 100,
+          "destination_resolution_pct": 96.86971235194586,
+          "identity_coverage_pct": 100,
+          "duplicate_official_identities": 0
+        }
+      }
+    }
+  ],
+  "ok": true,
+  "preflight": {
+    "run_id": "holland-america-line-weekly-2026-09-01T10-51-37-284Z",
+    "eligible_total": 1145,
+    "active_production_total": 819,
+    "proposed_inserts": 379,
+    "proposed_updates": 13,
+    "source_absent_active": 55,
+    "snapshot_id": "3ee9ee1a0f17a48b5c3b9452702f9d3956e52e0c101d767dabc758510ce766bf",
+    "quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    },
+    "inserts": 0,
+    "updates": 0,
+    "failed_writes": 0,
+    "rollback_manifest_id": null,
+    "resolution_rates": {
+      "eligible_total": 1145,
+      "ship_resolution_pct": 100,
+      "departure_port_resolution_pct": 100,
+      "destination_resolution_pct": 96.86971235194586,
+      "identity_coverage_pct": 100,
+      "duplicate_official_identities": 0
+    }
+  },
+  "counts_before": {
+    "active": 819
+  },
+  "counts_after": {
+    "active": 1198
+  },
+  "outstanding": 0
+}

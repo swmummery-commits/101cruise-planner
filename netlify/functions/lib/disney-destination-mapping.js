@@ -5,6 +5,7 @@
 const DISNEY_DESTINATION_CODE_SLUG = Object.freeze({
   BAHAMAS: "caribbean",
   CARIBBEAN: "caribbean",
+  BERMUDA: "caribbean",
   ALASKA: "alaska",
   EUROPE: "mediterranean",
   MEDITERRANEAN: "mediterranean",
@@ -14,13 +15,15 @@ const DISNEY_DESTINATION_CODE_SLUG = Object.freeze({
   AUSTRALIA: "australia-new-zealand",
   "SOUTH PACIFIC": "south-pacific",
   PANAMA: "panama-canal",
-  TRANSATLANTIC: "transatlantic"
+  TRANSATLANTIC: "transatlantic",
+  CANADA: "canada-new-england"
 });
 
 const DISNEY_GEO_AREA_SLUG = Object.freeze({
   ALASKA: "alaska",
   BAHAMAS: "caribbean",
   CARIBBEAN: "caribbean",
+  BERMUDA: "caribbean",
   "WEST CARIBBEAN": "caribbean",
   "EAST CARIBBEAN": "caribbean",
   "SOUTH CARIBBEAN": "caribbean",
@@ -37,7 +40,8 @@ const DISNEY_GEO_AREA_SLUG = Object.freeze({
   ASIA: "asia",
   "SOUTH PACIFIC": "south-pacific",
   PANAMA: "panama-canal",
-  "PANAMA CANAL": "panama-canal"
+  "PANAMA CANAL": "panama-canal",
+  "NEW YORK CA": "canada-new-england"
 });
 
 function resolveDisneyDestinationHints(raw = {}) {
@@ -49,6 +53,12 @@ function resolveDisneyDestinationHints(raw = {}) {
 
   if (/alaska|vancouver|juneau|ketchikan|skagway|icy strait/i.test(`${productId} ${productName} ${ports}`)) {
     return { preferredSlug: "alaska", method: "disney_route_alaska" };
+  }
+  if (/\bbermuda\b/i.test(`${productName} ${ports}`) && !/\bcanada\b/i.test(`${productId} ${productName}`)) {
+    return { preferredSlug: "caribbean", method: "disney_route_bermuda" };
+  }
+  if (/\bcanada\b/i.test(`${productId} ${productName}`)) {
+    return { preferredSlug: "canada-new-england", method: "disney_product_canada" };
   }
   if (/transatlantic|southampton.*fort lauderdale|fort lauderdale.*southampton/i.test(productId)) {
     return { preferredSlug: "transatlantic", method: "disney_product_transatlantic" };

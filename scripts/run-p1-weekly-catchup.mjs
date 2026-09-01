@@ -27,15 +27,15 @@ try {
 const { createMaintenanceSupabase, exactCountSupabase, getSupabaseConfig } = require(
   path.join(root, "scripts/lib/supabase-rest.cjs")
 );
-const { executeWeeklyMaintenance } = require(path.join(
-  root,
-  "netlify/functions/lib/cruise-discovery-maintenance-cron"
-));
 const {
   runHalWeeklyMaintenance,
   runCelebrityWeeklyMaintenance,
   MAX_WRITES_PER_BATCH
 } = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner"));
+const { executeWeeklyMaintenance } = require(path.join(
+  root,
+  "netlify/functions/lib/cruise-discovery-maintenance-cron"
+));
 const {
   assertHalWeeklyMaintenanceEnabled,
   assertCelebrityWeeklyMaintenanceEnabled,

@@ -1,0 +1,1731 @@
+{
+  "run_id": "ncl-p1-incident-remediation-1788258310442",
+  "run_record_id": "8dcbf81a-fba0-4643-a569-56d8c61fdb9d",
+  "before": {
+    "active": 1965,
+    "match_required": 78
+  },
+  "after": {
+    "active": 2005,
+    "match_required": 38
+  },
+  "stats": {
+    "run_type": "norwegian_weekly_maintenance",
+    "run_id": "ncl-p1-incident-remediation-1788258310442",
+    "trigger_type": "p1_incident_remediation",
+    "dry_run": false,
+    "inserts": 0,
+    "enriched": 40,
+    "promoted_active": 40,
+    "failed_writes": 0,
+    "inventory_changed": true,
+    "terminal_status": "completed",
+    "rollback_manifest_id": "d1da4f68-094d-46b6-becc-9214443dbf3a",
+    "counts_before": {
+      "active": 1965,
+      "match_required": 78
+    },
+    "counts_after": {
+      "active": 2005,
+      "match_required": 38
+    }
+  },
+  "stopped": false,
+  "reason": null,
+  "enrich": {
+    "attempted": 40,
+    "updated": 40,
+    "skipped": 0,
+    "failed": 0,
+    "rollback_snapshots": [
+      {
+        "discovered_cruise_id": "43221ca0-cafb-4eb6-a5c9-bf2d9d9265d5",
+        "before": {
+          "id": "43221ca0-cafb-4eb6-a5c9-bf2d9d9265d5",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-16",
+          "return_date": "2028-07-23",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-16",
+          "identity_key": "11b14f477225c62054b6afcee8d12dd6fce85a3e",
+          "external_key": "11a68a78b2c931c84d5860a6f570e1772a78d398"
+        },
+        "after": {
+          "id": "43221ca0-cafb-4eb6-a5c9-bf2d9d9265d5",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-16",
+          "return_date": "2028-07-23",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-16",
+          "identity_key": "11b14f477225c62054b6afcee8d12dd6fce85a3e",
+          "external_key": "11a68a78b2c931c84d5860a6f570e1772a78d398"
+        }
+      },
+      {
+        "discovered_cruise_id": "a7198796-874f-4f01-ae35-ba58b150446f",
+        "before": {
+          "id": "a7198796-874f-4f01-ae35-ba58b150446f",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-05-07",
+          "return_date": "2028-05-14",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-07",
+          "identity_key": "e8b743b9e6ab5e4d2ba9dff2d3ba1bfdaa9be352",
+          "external_key": "45e5ed578157b10d1ef23fa51943a3beb0b52919"
+        },
+        "after": {
+          "id": "a7198796-874f-4f01-ae35-ba58b150446f",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-05-07",
+          "return_date": "2028-05-14",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-07",
+          "identity_key": "e8b743b9e6ab5e4d2ba9dff2d3ba1bfdaa9be352",
+          "external_key": "45e5ed578157b10d1ef23fa51943a3beb0b52919"
+        }
+      },
+      {
+        "discovered_cruise_id": "3324203f-d2d7-45e5-9961-c709ff698ffa",
+        "before": {
+          "id": "3324203f-d2d7-45e5-9961-c709ff698ffa",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-05-21",
+          "return_date": "2028-05-28",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-21",
+          "identity_key": "6e162045d13303de8f1ed6ccb8ede7daceec492a",
+          "external_key": "8fbdd48cf872e835959b9f94c97c86afdcd137ca"
+        },
+        "after": {
+          "id": "3324203f-d2d7-45e5-9961-c709ff698ffa",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-05-21",
+          "return_date": "2028-05-28",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-21",
+          "identity_key": "6e162045d13303de8f1ed6ccb8ede7daceec492a",
+          "external_key": "8fbdd48cf872e835959b9f94c97c86afdcd137ca"
+        }
+      },
+      {
+        "discovered_cruise_id": "4e348a31-afd8-45f0-af46-cd37e650fdf4",
+        "before": {
+          "id": "4e348a31-afd8-45f0-af46-cd37e650fdf4",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-08-20",
+          "return_date": "2028-08-27",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-20",
+          "identity_key": "40f2c12ee18987462ed4416c00434d2a5bcbd15a",
+          "external_key": "9d71705b1dda109f4237e9f6c6cab276bb479824"
+        },
+        "after": {
+          "id": "4e348a31-afd8-45f0-af46-cd37e650fdf4",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-08-20",
+          "return_date": "2028-08-27",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-20",
+          "identity_key": "40f2c12ee18987462ed4416c00434d2a5bcbd15a",
+          "external_key": "9d71705b1dda109f4237e9f6c6cab276bb479824"
+        }
+      },
+      {
+        "discovered_cruise_id": "fd88432a-a627-4a9c-abe0-c8745dfb88ec",
+        "before": {
+          "id": "fd88432a-a627-4a9c-abe0-c8745dfb88ec",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-05-28",
+          "return_date": "2028-06-04",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-28",
+          "identity_key": "109e0e8215b3f2bd7a7e47582f7363c41b3420dd",
+          "external_key": "702cfa48b501beb0492d4c4baa84db2228de2f17"
+        },
+        "after": {
+          "id": "fd88432a-a627-4a9c-abe0-c8745dfb88ec",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-05-28",
+          "return_date": "2028-06-04",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-28",
+          "identity_key": "109e0e8215b3f2bd7a7e47582f7363c41b3420dd",
+          "external_key": "702cfa48b501beb0492d4c4baa84db2228de2f17"
+        }
+      },
+      {
+        "discovered_cruise_id": "8b242e12-ff5e-428b-a87b-4d7cfc525c2c",
+        "before": {
+          "id": "8b242e12-ff5e-428b-a87b-4d7cfc525c2c",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-05-14",
+          "return_date": "2028-05-21",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-14",
+          "identity_key": "3617592af55d3e61797815c2e243c1d3ff428313",
+          "external_key": "91bb071d09bb19f141d10c925918e2e5b5db909c"
+        },
+        "after": {
+          "id": "8b242e12-ff5e-428b-a87b-4d7cfc525c2c",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-05-14",
+          "return_date": "2028-05-21",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-14",
+          "identity_key": "3617592af55d3e61797815c2e243c1d3ff428313",
+          "external_key": "91bb071d09bb19f141d10c925918e2e5b5db909c"
+        }
+      },
+      {
+        "discovered_cruise_id": "d9c72369-5803-4216-9949-8ffd3e0ea6af",
+        "before": {
+          "id": "d9c72369-5803-4216-9949-8ffd3e0ea6af",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-02",
+          "return_date": "2028-07-09",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-02",
+          "identity_key": "9da99324c8b9c9d1a2703d5dac690ec22aaa7266",
+          "external_key": "e5b499152f10b99422f386371b30151ee6af9ff9"
+        },
+        "after": {
+          "id": "d9c72369-5803-4216-9949-8ffd3e0ea6af",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-02",
+          "return_date": "2028-07-09",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-02",
+          "identity_key": "9da99324c8b9c9d1a2703d5dac690ec22aaa7266",
+          "external_key": "e5b499152f10b99422f386371b30151ee6af9ff9"
+        }
+      },
+      {
+        "discovered_cruise_id": "a6e61f14-8d8a-4142-9812-01df7edb3ff0",
+        "before": {
+          "id": "a6e61f14-8d8a-4142-9812-01df7edb3ff0",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-30",
+          "return_date": "2028-08-06",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-30",
+          "identity_key": "bd297bc7a60f51c0e435080f876ef3fc7e3d6489",
+          "external_key": "e79f0ea444189c5b9ee1f50550de8a3152193994"
+        },
+        "after": {
+          "id": "a6e61f14-8d8a-4142-9812-01df7edb3ff0",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-30",
+          "return_date": "2028-08-06",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-30",
+          "identity_key": "bd297bc7a60f51c0e435080f876ef3fc7e3d6489",
+          "external_key": "e79f0ea444189c5b9ee1f50550de8a3152193994"
+        }
+      },
+      {
+        "discovered_cruise_id": "7ca6e516-8506-464e-a60f-8fa7f7362e15",
+        "before": {
+          "id": "7ca6e516-8506-464e-a60f-8fa7f7362e15",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-06-18",
+          "return_date": "2028-06-25",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-18",
+          "identity_key": "f907693d4914aa57ea4c48cd6e2046b12167c4d1",
+          "external_key": "cda84c4b526ad39838e394ba637aedc2bc1bc8f3"
+        },
+        "after": {
+          "id": "7ca6e516-8506-464e-a60f-8fa7f7362e15",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-06-18",
+          "return_date": "2028-06-25",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-18",
+          "identity_key": "f907693d4914aa57ea4c48cd6e2046b12167c4d1",
+          "external_key": "cda84c4b526ad39838e394ba637aedc2bc1bc8f3"
+        }
+      },
+      {
+        "discovered_cruise_id": "79935a61-1fa6-4bf4-bd3a-91eb529d1493",
+        "before": {
+          "id": "79935a61-1fa6-4bf4-bd3a-91eb529d1493",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-08-06",
+          "return_date": "2028-08-13",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-06",
+          "identity_key": "bcbe810ebd0e127f1ed6f79d42c656abff3756ba",
+          "external_key": "6ee29b42173977e57e8b47d0f8f567d0574b16de"
+        },
+        "after": {
+          "id": "79935a61-1fa6-4bf4-bd3a-91eb529d1493",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-08-06",
+          "return_date": "2028-08-13",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-06",
+          "identity_key": "bcbe810ebd0e127f1ed6f79d42c656abff3756ba",
+          "external_key": "6ee29b42173977e57e8b47d0f8f567d0574b16de"
+        }
+      },
+      {
+        "discovered_cruise_id": "c3324271-672c-438d-a81f-ef183676d514",
+        "before": {
+          "id": "c3324271-672c-438d-a81f-ef183676d514",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-06-25",
+          "return_date": "2028-07-02",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-25",
+          "identity_key": "151f0db98eb73f74f6f684c1816d45c30940be3e",
+          "external_key": "9caaba7919ac6ed25ec88fa5469547e8e0a89fff"
+        },
+        "after": {
+          "id": "c3324271-672c-438d-a81f-ef183676d514",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-06-25",
+          "return_date": "2028-07-02",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-25",
+          "identity_key": "151f0db98eb73f74f6f684c1816d45c30940be3e",
+          "external_key": "9caaba7919ac6ed25ec88fa5469547e8e0a89fff"
+        }
+      },
+      {
+        "discovered_cruise_id": "23b2a370-e5a4-4d8c-8f74-19870aec9ef3",
+        "before": {
+          "id": "23b2a370-e5a4-4d8c-8f74-19870aec9ef3",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-06-11",
+          "return_date": "2028-06-18",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-11",
+          "identity_key": "42cb5c21b3505a51b7e947e3f09fdd2573da50eb",
+          "external_key": "85a5216fc76158b802844c2cbeda537d74060454"
+        },
+        "after": {
+          "id": "23b2a370-e5a4-4d8c-8f74-19870aec9ef3",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-06-11",
+          "return_date": "2028-06-18",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-11",
+          "identity_key": "42cb5c21b3505a51b7e947e3f09fdd2573da50eb",
+          "external_key": "85a5216fc76158b802844c2cbeda537d74060454"
+        }
+      },
+      {
+        "discovered_cruise_id": "fe53b417-0e6e-48bc-a12d-08f14d24a72e",
+        "before": {
+          "id": "fe53b417-0e6e-48bc-a12d-08f14d24a72e",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-04-30",
+          "return_date": "2028-05-07",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-04-30",
+          "identity_key": "dfe1187cf37e791e6510e31cc2b8807aaed9a54d",
+          "external_key": "c57aff94c7dccc40e0228d5178ba125a4b6398d0"
+        },
+        "after": {
+          "id": "fe53b417-0e6e-48bc-a12d-08f14d24a72e",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-04-30",
+          "return_date": "2028-05-07",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-04-30",
+          "identity_key": "dfe1187cf37e791e6510e31cc2b8807aaed9a54d",
+          "external_key": "c57aff94c7dccc40e0228d5178ba125a4b6398d0"
+        }
+      },
+      {
+        "discovered_cruise_id": "6d25b035-279d-48ad-936f-8ef83d000b16",
+        "before": {
+          "id": "6d25b035-279d-48ad-936f-8ef83d000b16",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-06-04",
+          "return_date": "2028-06-11",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-04",
+          "identity_key": "59c81077eef875167ddb247c8d95c7308959cd83",
+          "external_key": "84949477eb411a874ec5133805131af59b0258ff"
+        },
+        "after": {
+          "id": "6d25b035-279d-48ad-936f-8ef83d000b16",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-06-04",
+          "return_date": "2028-06-11",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-04",
+          "identity_key": "59c81077eef875167ddb247c8d95c7308959cd83",
+          "external_key": "84949477eb411a874ec5133805131af59b0258ff"
+        }
+      },
+      {
+        "discovered_cruise_id": "ed289b35-627a-4c78-8d6d-898dec9bb4ce",
+        "before": {
+          "id": "ed289b35-627a-4c78-8d6d-898dec9bb4ce",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-09",
+          "return_date": "2028-07-16",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-09",
+          "identity_key": "de774c5f49ec0e208a54baf2f266130302ebea42",
+          "external_key": "99211a80e10b2027a6ba6c557384c3e0f00904f1"
+        },
+        "after": {
+          "id": "ed289b35-627a-4c78-8d6d-898dec9bb4ce",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-09",
+          "return_date": "2028-07-16",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-09",
+          "identity_key": "de774c5f49ec0e208a54baf2f266130302ebea42",
+          "external_key": "99211a80e10b2027a6ba6c557384c3e0f00904f1"
+        }
+      },
+      {
+        "discovered_cruise_id": "d554282c-8e56-4053-9583-475cafe47918",
+        "before": {
+          "id": "d554282c-8e56-4053-9583-475cafe47918",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-23",
+          "return_date": "2028-07-30",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-23",
+          "identity_key": "b667dcd63be862255f829c664786cac486abb6c2",
+          "external_key": "199c4b461af88cf0ed517b1dcddffd2109bb5c65"
+        },
+        "after": {
+          "id": "d554282c-8e56-4053-9583-475cafe47918",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-07-23",
+          "return_date": "2028-07-30",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-23",
+          "identity_key": "b667dcd63be862255f829c664786cac486abb6c2",
+          "external_key": "199c4b461af88cf0ed517b1dcddffd2109bb5c65"
+        }
+      },
+      {
+        "discovered_cruise_id": "aacff2be-685b-474d-904d-0214f1b74486",
+        "before": {
+          "id": "aacff2be-685b-474d-904d-0214f1b74486",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-08-13",
+          "return_date": "2028-08-20",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-13",
+          "identity_key": "64a63b8cafcf67da7281f4b8008ed98fbdc4fae2",
+          "external_key": "59789f0b624bf997a50249b01235c0f7d4f3e870"
+        },
+        "after": {
+          "id": "aacff2be-685b-474d-904d-0214f1b74486",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "ac4f0278-b8c3-4876-84b0-39be56e2f1de",
+          "departure_date": "2028-08-13",
+          "return_date": "2028-08-20",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSWRFBOS/schedule?itineraryCode=BREAKAWAY7BOSWRFBOS",
+          "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-13",
+          "identity_key": "64a63b8cafcf67da7281f4b8008ed98fbdc4fae2",
+          "external_key": "59789f0b624bf997a50249b01235c0f7d4f3e870"
+        }
+      },
+      {
+        "discovered_cruise_id": "1ab9dbef-c636-446f-a3cb-12fcd8ae9612",
+        "before": {
+          "id": "1ab9dbef-c636-446f-a3cb-12fcd8ae9612",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-26",
+          "return_date": "2028-10-07",
+          "nights": 11,
+          "departure_port": "Philadelphia",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE/schedule?itineraryCode=DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE",
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-26",
+          "identity_key": "ac2d64f08b6516aaf3b79f122ae87580abff8dc6",
+          "external_key": "d2dbb35eec6ce88272f8c5a60acfe214eaf52e76"
+        },
+        "after": {
+          "id": "1ab9dbef-c636-446f-a3cb-12fcd8ae9612",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-26",
+          "return_date": "2028-10-07",
+          "nights": 11,
+          "departure_port": "Philadelphia",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE/schedule?itineraryCode=DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE",
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-26",
+          "identity_key": "ac2d64f08b6516aaf3b79f122ae87580abff8dc6",
+          "external_key": "d2dbb35eec6ce88272f8c5a60acfe214eaf52e76"
+        }
+      },
+      {
+        "discovered_cruise_id": "8bab5309-b3ef-4dcc-8bc3-1b2502c1765d",
+        "before": {
+          "id": "8bab5309-b3ef-4dcc-8bc3-1b2502c1765d",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-05",
+          "return_date": "2028-09-16",
+          "nights": 11,
+          "departure_port": "Philadelphia",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE/schedule?itineraryCode=DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE",
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-05",
+          "identity_key": "5162629149cb0ec74003c203c6252630e0146d5d",
+          "external_key": "927618218149b9a3fe3be6c5fbdd646eafcf0979"
+        },
+        "after": {
+          "id": "8bab5309-b3ef-4dcc-8bc3-1b2502c1765d",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-05",
+          "return_date": "2028-09-16",
+          "nights": 11,
+          "departure_port": "Philadelphia",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE/schedule?itineraryCode=DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE",
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-05",
+          "identity_key": "5162629149cb0ec74003c203c6252630e0146d5d",
+          "external_key": "927618218149b9a3fe3be6c5fbdd646eafcf0979"
+        }
+      },
+      {
+        "discovered_cruise_id": "2e45c7d8-1a06-4735-8efe-705093aa49a7",
+        "before": {
+          "id": "2e45c7d8-1a06-4735-8efe-705093aa49a7",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-29",
+          "return_date": "2028-11-06",
+          "nights": 8,
+          "departure_port": "Quebec City",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY8QUECHASYNHALPWMNYC/schedule?itineraryCode=BREAKAWAY8QUECHASYNHALPWMNYC",
+          "official_sailing_id": "BREAKAWAY8QUECHASYNHALPWMNYC|2028-10-29",
+          "identity_key": "a17db5cbf92fef41931628c45af4b58fe56775ec",
+          "external_key": "7bdb202e1d2249e79858609ad3bcd29ec032df2e"
+        },
+        "after": {
+          "id": "2e45c7d8-1a06-4735-8efe-705093aa49a7",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-29",
+          "return_date": "2028-11-06",
+          "nights": 8,
+          "departure_port": "Quebec City",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY8QUECHASYNHALPWMNYC/schedule?itineraryCode=BREAKAWAY8QUECHASYNHALPWMNYC",
+          "official_sailing_id": "BREAKAWAY8QUECHASYNHALPWMNYC|2028-10-29",
+          "identity_key": "a17db5cbf92fef41931628c45af4b58fe56775ec",
+          "external_key": "7bdb202e1d2249e79858609ad3bcd29ec032df2e"
+        }
+      },
+      {
+        "discovered_cruise_id": "1471d617-7c61-432e-8767-ce99a5ab6084",
+        "before": {
+          "id": "1471d617-7c61-432e-8767-ce99a5ab6084",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-08",
+          "return_date": "2028-10-15",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMSJBHALPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMSJBHALPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-10-08",
+          "identity_key": "a7606d3c7d1b75097bae38e8a0ba7245e104fd37",
+          "external_key": "72c1a39ca52d382971ab53c90f4b0c173d445edb"
+        },
+        "after": {
+          "id": "1471d617-7c61-432e-8767-ce99a5ab6084",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-08",
+          "return_date": "2028-10-15",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMSJBHALPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMSJBHALPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-10-08",
+          "identity_key": "a7606d3c7d1b75097bae38e8a0ba7245e104fd37",
+          "external_key": "72c1a39ca52d382971ab53c90f4b0c173d445edb"
+        }
+      },
+      {
+        "discovered_cruise_id": "70c25c5a-8e16-4a96-90c6-8272012a9be8",
+        "before": {
+          "id": "70c25c5a-8e16-4a96-90c6-8272012a9be8",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-10",
+          "return_date": "2028-09-17",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMSJBHALPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMSJBHALPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-10",
+          "identity_key": "31a020fa364186ee4d457ba6ea876c989faa7c55",
+          "external_key": "d2df2eb5ac4e233745c1ac775f56f8e0fcbdfe4b"
+        },
+        "after": {
+          "id": "70c25c5a-8e16-4a96-90c6-8272012a9be8",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-10",
+          "return_date": "2028-09-17",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMSJBHALPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMSJBHALPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-10",
+          "identity_key": "31a020fa364186ee4d457ba6ea876c989faa7c55",
+          "external_key": "d2df2eb5ac4e233745c1ac775f56f8e0fcbdfe4b"
+        }
+      },
+      {
+        "discovered_cruise_id": "66d86bba-9446-48d2-9327-77dd591632b3",
+        "before": {
+          "id": "66d86bba-9446-48d2-9327-77dd591632b3",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-17",
+          "return_date": "2028-09-24",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMSJBHALPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMSJBHALPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-17",
+          "identity_key": "2320b464b499389035a1c3b5141508ac8bd87944",
+          "external_key": "8a8e5e9e8d8e87593a2bc00d179ff1899d953344"
+        },
+        "after": {
+          "id": "66d86bba-9446-48d2-9327-77dd591632b3",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-17",
+          "return_date": "2028-09-24",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMSJBHALPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMSJBHALPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-17",
+          "identity_key": "2320b464b499389035a1c3b5141508ac8bd87944",
+          "external_key": "8a8e5e9e8d8e87593a2bc00d179ff1899d953344"
+        }
+      },
+      {
+        "discovered_cruise_id": "dea9e291-70a7-4114-9ca4-1e55120bc37b",
+        "before": {
+          "id": "dea9e291-70a7-4114-9ca4-1e55120bc37b",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-08-31",
+          "return_date": "2028-09-09",
+          "nights": 9,
+          "departure_port": "Philadelphia",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM9PHLPWMSJBHALSYNCHAQUE/schedule?itineraryCode=GEM9PHLPWMSJBHALSYNCHAQUE",
+          "official_sailing_id": "GEM9PHLPWMSJBHALSYNCHAQUE|2028-08-31",
+          "identity_key": "a1bc801d054860319c086e6131c87954111e6b08",
+          "external_key": "ef4f161a57e877473b2afb3e7c754f0afa354af4"
+        },
+        "after": {
+          "id": "dea9e291-70a7-4114-9ca4-1e55120bc37b",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-08-31",
+          "return_date": "2028-09-09",
+          "nights": 9,
+          "departure_port": "Philadelphia",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM9PHLPWMSJBHALSYNCHAQUE/schedule?itineraryCode=GEM9PHLPWMSJBHALSYNCHAQUE",
+          "official_sailing_id": "GEM9PHLPWMSJBHALSYNCHAQUE|2028-08-31",
+          "identity_key": "a1bc801d054860319c086e6131c87954111e6b08",
+          "external_key": "ef4f161a57e877473b2afb3e7c754f0afa354af4"
+        }
+      },
+      {
+        "discovered_cruise_id": "1cd382b6-e115-4f08-ba70-3c0964b5e5e3",
+        "before": {
+          "id": "1cd382b6-e115-4f08-ba70-3c0964b5e5e3",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-16",
+          "return_date": "2028-09-26",
+          "nights": 10,
+          "departure_port": "Quebec City",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN10QUELBICHASYNHALEPMPWMBOSPHL/schedule?itineraryCode=DAWN10QUELBICHASYNHALEPMPWMBOSPHL",
+          "official_sailing_id": "DAWN10QUELBICHASYNHALEPMPWMBOSPHL|2028-09-16",
+          "identity_key": "1648452e6264173a6c13d38425e3e6e285487109",
+          "external_key": "a90de44861e379de10b204d826bdc38cebe585da"
+        },
+        "after": {
+          "id": "1cd382b6-e115-4f08-ba70-3c0964b5e5e3",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-16",
+          "return_date": "2028-09-26",
+          "nights": 10,
+          "departure_port": "Quebec City",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN10QUELBICHASYNHALEPMPWMBOSPHL/schedule?itineraryCode=DAWN10QUELBICHASYNHALEPMPWMBOSPHL",
+          "official_sailing_id": "DAWN10QUELBICHASYNHALEPMPWMBOSPHL|2028-09-16",
+          "identity_key": "1648452e6264173a6c13d38425e3e6e285487109",
+          "external_key": "a90de44861e379de10b204d826bdc38cebe585da"
+        }
+      },
+      {
+        "discovered_cruise_id": "ad772519-595f-431d-bc28-5fa4c65fe437",
+        "before": {
+          "id": "ad772519-595f-431d-bc28-5fa4c65fe437",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-17",
+          "return_date": "2028-10-28",
+          "nights": 11,
+          "departure_port": "Philadelphia",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL/schedule?itineraryCode=DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL",
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL|2028-10-17",
+          "identity_key": "f76ed6b26f09dc3098b18562f218a2b464a28a6f",
+          "external_key": "6da0ff345303096935d14b5756b15a18b0403159"
+        },
+        "after": {
+          "id": "ad772519-595f-431d-bc28-5fa4c65fe437",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-17",
+          "return_date": "2028-10-28",
+          "nights": 11,
+          "departure_port": "Philadelphia",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL/schedule?itineraryCode=DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL",
+          "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL|2028-10-17",
+          "identity_key": "f76ed6b26f09dc3098b18562f218a2b464a28a6f",
+          "external_key": "6da0ff345303096935d14b5756b15a18b0403159"
+        }
+      },
+      {
+        "discovered_cruise_id": "d662f6ac-2b4f-4586-9acc-718b241cb029",
+        "before": {
+          "id": "d662f6ac-2b4f-4586-9acc-718b241cb029",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-01",
+          "return_date": "2028-10-08",
+          "nights": 7,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM7NYCBOSPWMHALSJBNYC/schedule?itineraryCode=GEM7NYCBOSPWMHALSJBNYC",
+          "official_sailing_id": "GEM7NYCBOSPWMHALSJBNYC|2028-10-01",
+          "identity_key": "cc2d6ed6c6122ad3773e1cbd1c55d31d96182a18",
+          "external_key": "fe3a8baf0b93bd3791e3758c4c2820e2595704c2"
+        },
+        "after": {
+          "id": "d662f6ac-2b4f-4586-9acc-718b241cb029",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-01",
+          "return_date": "2028-10-08",
+          "nights": 7,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM7NYCBOSPWMHALSJBNYC/schedule?itineraryCode=GEM7NYCBOSPWMHALSJBNYC",
+          "official_sailing_id": "GEM7NYCBOSPWMHALSJBNYC|2028-10-01",
+          "identity_key": "cc2d6ed6c6122ad3773e1cbd1c55d31d96182a18",
+          "external_key": "fe3a8baf0b93bd3791e3758c4c2820e2595704c2"
+        }
+      },
+      {
+        "discovered_cruise_id": "f27088fc-b9f4-48ed-88b7-4db5d6641de9",
+        "before": {
+          "id": "f27088fc-b9f4-48ed-88b7-4db5d6641de9",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-22",
+          "return_date": "2028-10-29",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSHALSYNCHAQUE/schedule?itineraryCode=BREAKAWAY7BOSHALSYNCHAQUE",
+          "official_sailing_id": "BREAKAWAY7BOSHALSYNCHAQUE|2028-10-22",
+          "identity_key": "c33e024cf3fbfa9374e1f4767fb6e6ddde8e51e4",
+          "external_key": "71f41e12522cda1d1a55ee61b1aad62f447eae21"
+        },
+        "after": {
+          "id": "f27088fc-b9f4-48ed-88b7-4db5d6641de9",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-22",
+          "return_date": "2028-10-29",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSHALSYNCHAQUE/schedule?itineraryCode=BREAKAWAY7BOSHALSYNCHAQUE",
+          "official_sailing_id": "BREAKAWAY7BOSHALSYNCHAQUE|2028-10-22",
+          "identity_key": "c33e024cf3fbfa9374e1f4767fb6e6ddde8e51e4",
+          "external_key": "71f41e12522cda1d1a55ee61b1aad62f447eae21"
+        }
+      },
+      {
+        "discovered_cruise_id": "a5e06ff4-6eb8-4dc3-82ea-15fc07c7246c",
+        "before": {
+          "id": "a5e06ff4-6eb8-4dc3-82ea-15fc07c7246c",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "2573425f-e86b-4f0b-8a9f-57b28ca7672b",
+          "departure_date": "2028-08-23",
+          "return_date": "2028-09-05",
+          "nights": 13,
+          "departure_port": "Barcelona",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN13BCNCADPDLWRFPHL/schedule?itineraryCode=DAWN13BCNCADPDLWRFPHL",
+          "official_sailing_id": "DAWN13BCNCADPDLWRFPHL|2028-08-23",
+          "identity_key": "3d85cfc5d39e16569125f24c846f48eeb08c4bee",
+          "external_key": "09a657de8d76f3d09ec9ddd738e903bb8ae27309"
+        },
+        "after": {
+          "id": "a5e06ff4-6eb8-4dc3-82ea-15fc07c7246c",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "2573425f-e86b-4f0b-8a9f-57b28ca7672b",
+          "departure_date": "2028-08-23",
+          "return_date": "2028-09-05",
+          "nights": 13,
+          "departure_port": "Barcelona",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN13BCNCADPDLWRFPHL/schedule?itineraryCode=DAWN13BCNCADPDLWRFPHL",
+          "official_sailing_id": "DAWN13BCNCADPDLWRFPHL|2028-08-23",
+          "identity_key": "3d85cfc5d39e16569125f24c846f48eeb08c4bee",
+          "external_key": "09a657de8d76f3d09ec9ddd738e903bb8ae27309"
+        }
+      },
+      {
+        "discovered_cruise_id": "36d25ddc-81d4-43f1-9fa7-5710b7032226",
+        "before": {
+          "id": "36d25ddc-81d4-43f1-9fa7-5710b7032226",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-24",
+          "return_date": "2028-10-01",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMHALSJBPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMHALSJBPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-24",
+          "identity_key": "8f98c75e29f4676fe5e30f9cf1316debf9f7a681",
+          "external_key": "d2319cf499c466482fd4d5b5f41c610d8672db7d"
+        },
+        "after": {
+          "id": "36d25ddc-81d4-43f1-9fa7-5710b7032226",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-24",
+          "return_date": "2028-10-01",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMHALSJBPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMHALSJBPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-24",
+          "identity_key": "8f98c75e29f4676fe5e30f9cf1316debf9f7a681",
+          "external_key": "d2319cf499c466482fd4d5b5f41c610d8672db7d"
+        }
+      },
+      {
+        "discovered_cruise_id": "3231e404-8c40-4886-a87c-2c11dceb4e77",
+        "before": {
+          "id": "3231e404-8c40-4886-a87c-2c11dceb4e77",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-15",
+          "return_date": "2028-10-22",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMHALSJBPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMHALSJBPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-10-15",
+          "identity_key": "09b6821d0f8a1f7d32a267d3f073be37aa8e3582",
+          "external_key": "91a8ac9a999170c73dfd4a9b767664278c8f3afd"
+        },
+        "after": {
+          "id": "3231e404-8c40-4886-a87c-2c11dceb4e77",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-15",
+          "return_date": "2028-10-22",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMHALSJBPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMHALSJBPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-10-15",
+          "identity_key": "09b6821d0f8a1f7d32a267d3f073be37aa8e3582",
+          "external_key": "91a8ac9a999170c73dfd4a9b767664278c8f3afd"
+        }
+      },
+      {
+        "discovered_cruise_id": "53823f1d-69b9-490b-a171-04cc600b1189",
+        "before": {
+          "id": "53823f1d-69b9-490b-a171-04cc600b1189",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-03",
+          "return_date": "2028-09-10",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMHALSJBPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMHALSJBPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-03",
+          "identity_key": "caaf7366b7a27e0642e2cc6a25af8643cd0a78ee",
+          "external_key": "1fb5d39e8a00743ace2c5f570b1cdb343a6b8d99"
+        },
+        "after": {
+          "id": "53823f1d-69b9-490b-a171-04cc600b1189",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-03",
+          "return_date": "2028-09-10",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMHALSJBPWMBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMHALSJBPWMBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-03",
+          "identity_key": "caaf7366b7a27e0642e2cc6a25af8643cd0a78ee",
+          "external_key": "1fb5d39e8a00743ace2c5f570b1cdb343a6b8d99"
+        }
+      },
+      {
+        "discovered_cruise_id": "5d1913e4-94e1-4ef8-a867-3c9a2d294946",
+        "before": {
+          "id": "5d1913e4-94e1-4ef8-a867-3c9a2d294946",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-17",
+          "return_date": "2028-09-24",
+          "nights": 7,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM7NYCHALSJBPWMBOSNYC/schedule?itineraryCode=GEM7NYCHALSJBPWMBOSNYC",
+          "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-17",
+          "identity_key": "04a8aec93ecbf54d139d9a6389930f3ff656c137",
+          "external_key": "af0a96f65f8009ccf00d6455c40f59f94c93054c"
+        },
+        "after": {
+          "id": "5d1913e4-94e1-4ef8-a867-3c9a2d294946",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-17",
+          "return_date": "2028-09-24",
+          "nights": 7,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM7NYCHALSJBPWMBOSNYC/schedule?itineraryCode=GEM7NYCHALSJBPWMBOSNYC",
+          "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-17",
+          "identity_key": "04a8aec93ecbf54d139d9a6389930f3ff656c137",
+          "external_key": "af0a96f65f8009ccf00d6455c40f59f94c93054c"
+        }
+      },
+      {
+        "discovered_cruise_id": "edc0aa66-6d4e-4b32-9a37-946d8180a304",
+        "before": {
+          "id": "edc0aa66-6d4e-4b32-9a37-946d8180a304",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-24",
+          "return_date": "2028-10-01",
+          "nights": 7,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM7NYCHALSJBPWMBOSNYC/schedule?itineraryCode=GEM7NYCHALSJBPWMBOSNYC",
+          "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-24",
+          "identity_key": "6e5e22cd4f74ffef68e36201ee6e80523e43b09d",
+          "external_key": "b7e642ea34d4113235c15eb6ac655534bb5ac2ba"
+        },
+        "after": {
+          "id": "edc0aa66-6d4e-4b32-9a37-946d8180a304",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-24",
+          "return_date": "2028-10-01",
+          "nights": 7,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM7NYCHALSJBPWMBOSNYC/schedule?itineraryCode=GEM7NYCHALSJBPWMBOSNYC",
+          "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-24",
+          "identity_key": "6e5e22cd4f74ffef68e36201ee6e80523e43b09d",
+          "external_key": "b7e642ea34d4113235c15eb6ac655534bb5ac2ba"
+        }
+      },
+      {
+        "discovered_cruise_id": "eb7f8550-304d-4231-a7b4-74423392dac0",
+        "before": {
+          "id": "eb7f8550-304d-4231-a7b4-74423392dac0",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-08-27",
+          "return_date": "2028-09-03",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSPWMEPMSJBHALBOS/schedule?itineraryCode=BREAKAWAY7BOSPWMEPMSJBHALBOS",
+          "official_sailing_id": "BREAKAWAY7BOSPWMEPMSJBHALBOS|2028-08-27",
+          "identity_key": "5812433c627398bc183cb84127f987475c5cce83",
+          "external_key": "4d9c66ef2c0110eae66c3e5a598db1af68315f11"
+        },
+        "after": {
+          "id": "eb7f8550-304d-4231-a7b4-74423392dac0",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-08-27",
+          "return_date": "2028-09-03",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSPWMEPMSJBHALBOS/schedule?itineraryCode=BREAKAWAY7BOSPWMEPMSJBHALBOS",
+          "official_sailing_id": "BREAKAWAY7BOSPWMEPMSJBHALBOS|2028-08-27",
+          "identity_key": "5812433c627398bc183cb84127f987475c5cce83",
+          "external_key": "4d9c66ef2c0110eae66c3e5a598db1af68315f11"
+        }
+      },
+      {
+        "discovered_cruise_id": "01a5aaf3-d78e-48e7-a919-7a4ac643815c",
+        "before": {
+          "id": "01a5aaf3-d78e-48e7-a919-7a4ac643815c",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-09",
+          "return_date": "2028-09-17",
+          "nights": 8,
+          "departure_port": "Quebec City",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM8QUELBICHASYNHALSJBNYC/schedule?itineraryCode=GEM8QUELBICHASYNHALSJBNYC",
+          "official_sailing_id": "GEM8QUELBICHASYNHALSJBNYC|2028-09-09",
+          "identity_key": "f6ebb60a72e448f848baa3f4120449a7f379eb61",
+          "external_key": "4bacab1d9d1fb89e493735b71df03c7772f61e92"
+        },
+        "after": {
+          "id": "01a5aaf3-d78e-48e7-a919-7a4ac643815c",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-09-09",
+          "return_date": "2028-09-17",
+          "nights": 8,
+          "departure_port": "Quebec City",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM8QUELBICHASYNHALSJBNYC/schedule?itineraryCode=GEM8QUELBICHASYNHALSJBNYC",
+          "official_sailing_id": "GEM8QUELBICHASYNHALSJBNYC|2028-09-09",
+          "identity_key": "f6ebb60a72e448f848baa3f4120449a7f379eb61",
+          "external_key": "4bacab1d9d1fb89e493735b71df03c7772f61e92"
+        }
+      },
+      {
+        "discovered_cruise_id": "879995f0-1308-4ca8-a766-912a99ddda72",
+        "before": {
+          "id": "879995f0-1308-4ca8-a766-912a99ddda72",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-08",
+          "return_date": "2028-10-15",
+          "nights": 7,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM7NYCBOSPWMSJBHALNYC/schedule?itineraryCode=GEM7NYCBOSPWMSJBHALNYC",
+          "official_sailing_id": "GEM7NYCBOSPWMSJBHALNYC|2028-10-08",
+          "identity_key": "a451a815e83e1ad0b5d2c8b4e931a384607fede2",
+          "external_key": "1504b9c42644a6213de12ff9ed9391273e3f1108"
+        },
+        "after": {
+          "id": "879995f0-1308-4ca8-a766-912a99ddda72",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-08",
+          "return_date": "2028-10-15",
+          "nights": 7,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM7NYCBOSPWMSJBHALNYC/schedule?itineraryCode=GEM7NYCBOSPWMSJBHALNYC",
+          "official_sailing_id": "GEM7NYCBOSPWMSJBHALNYC|2028-10-08",
+          "identity_key": "a451a815e83e1ad0b5d2c8b4e931a384607fede2",
+          "external_key": "1504b9c42644a6213de12ff9ed9391273e3f1108"
+        }
+      },
+      {
+        "discovered_cruise_id": "46621f7d-6544-4ad8-a262-2a6ea67bb420",
+        "before": {
+          "id": "46621f7d-6544-4ad8-a262-2a6ea67bb420",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-01",
+          "return_date": "2028-10-08",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMHALSJBSYNBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMHALSJBSYNBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBSYNBOS|2028-10-01",
+          "identity_key": "1b1a5f830db1a93d96e4f79ebf66d43018ac50cb",
+          "external_key": "4b5aca8becec732132baebfb662a9601d6680d33"
+        },
+        "after": {
+          "id": "46621f7d-6544-4ad8-a262-2a6ea67bb420",
+          "status": "match_required",
+          "ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-01",
+          "return_date": "2028-10-08",
+          "nights": 7,
+          "departure_port": "Boston",
+          "official_url": "https://www.ncl.com/au/en/cruises/BREAKAWAY7BOSEPMHALSJBSYNBOS/schedule?itineraryCode=BREAKAWAY7BOSEPMHALSJBSYNBOS",
+          "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBSYNBOS|2028-10-01",
+          "identity_key": "1b1a5f830db1a93d96e4f79ebf66d43018ac50cb",
+          "external_key": "4b5aca8becec732132baebfb662a9601d6680d33"
+        }
+      },
+      {
+        "discovered_cruise_id": "97bbda3c-a866-42b6-82d7-db10620d9470",
+        "before": {
+          "id": "97bbda3c-a866-42b6-82d7-db10620d9470",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-07",
+          "return_date": "2028-10-17",
+          "nights": 10,
+          "departure_port": "Quebec City",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN10QUELBICHASYNHALPWMBOSPHL/schedule?itineraryCode=DAWN10QUELBICHASYNHALPWMBOSPHL",
+          "official_sailing_id": "DAWN10QUELBICHASYNHALPWMBOSPHL|2028-10-07",
+          "identity_key": "0fa1a498c3c3a3def9499734373525989339a1e7",
+          "external_key": "cb1ace6a906b16fa355a8dc514349e99997ab023"
+        },
+        "after": {
+          "id": "97bbda3c-a866-42b6-82d7-db10620d9470",
+          "status": "match_required",
+          "ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-07",
+          "return_date": "2028-10-17",
+          "nights": 10,
+          "departure_port": "Quebec City",
+          "official_url": "https://www.ncl.com/au/en/cruises/DAWN10QUELBICHASYNHALPWMBOSPHL/schedule?itineraryCode=DAWN10QUELBICHASYNHALPWMBOSPHL",
+          "official_sailing_id": "DAWN10QUELBICHASYNHALPWMBOSPHL|2028-10-07",
+          "identity_key": "0fa1a498c3c3a3def9499734373525989339a1e7",
+          "external_key": "cb1ace6a906b16fa355a8dc514349e99997ab023"
+        }
+      },
+      {
+        "discovered_cruise_id": "8e11b60b-859b-493a-a9bb-917a351810e2",
+        "before": {
+          "id": "8e11b60b-859b-493a-a9bb-917a351810e2",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-15",
+          "return_date": "2028-10-25",
+          "nights": 10,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM10NYCHALSYNCHASJBPWMBOSNYC/schedule?itineraryCode=GEM10NYCHALSYNCHASJBPWMBOSNYC",
+          "official_sailing_id": "GEM10NYCHALSYNCHASJBPWMBOSNYC|2028-10-15",
+          "identity_key": "6fa189a656f868fac3eacce3255344629fd272bf",
+          "external_key": "66102e3263afc1ed3d049909dea5276a39f403db"
+        },
+        "after": {
+          "id": "8e11b60b-859b-493a-a9bb-917a351810e2",
+          "status": "match_required",
+          "ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+          "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056",
+          "departure_date": "2028-10-15",
+          "return_date": "2028-10-25",
+          "nights": 10,
+          "departure_port": "New York",
+          "official_url": "https://www.ncl.com/au/en/cruises/GEM10NYCHALSYNCHASJBPWMBOSNYC/schedule?itineraryCode=GEM10NYCHALSYNCHASJBPWMBOSNYC",
+          "official_sailing_id": "GEM10NYCHALSYNCHASJBPWMBOSNYC|2028-10-15",
+          "identity_key": "6fa189a656f868fac3eacce3255344629fd272bf",
+          "external_key": "66102e3263afc1ed3d049909dea5276a39f403db"
+        }
+      }
+    ],
+    "write_details": [
+      {
+        "discovered_cruise_id": "43221ca0-cafb-4eb6-a5c9-bf2d9d9265d5",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-16",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "a7198796-874f-4f01-ae35-ba58b150446f",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-07",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "3324203f-d2d7-45e5-9961-c709ff698ffa",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-21",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "4e348a31-afd8-45f0-af46-cd37e650fdf4",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-20",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "fd88432a-a627-4a9c-abe0-c8745dfb88ec",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-28",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "8b242e12-ff5e-428b-a87b-4d7cfc525c2c",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-14",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "d9c72369-5803-4216-9949-8ffd3e0ea6af",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-02",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "a6e61f14-8d8a-4142-9812-01df7edb3ff0",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-30",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "7ca6e516-8506-464e-a60f-8fa7f7362e15",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-18",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "79935a61-1fa6-4bf4-bd3a-91eb529d1493",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-06",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "c3324271-672c-438d-a81f-ef183676d514",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-25",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "23b2a370-e5a4-4d8c-8f74-19870aec9ef3",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-11",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "fe53b417-0e6e-48bc-a12d-08f14d24a72e",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-04-30",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "6d25b035-279d-48ad-936f-8ef83d000b16",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-04",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "ed289b35-627a-4c78-8d6d-898dec9bb4ce",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-09",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "d554282c-8e56-4053-9583-475cafe47918",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-23",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "aacff2be-685b-474d-904d-0214f1b74486",
+        "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-13",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "1ab9dbef-c636-446f-a3cb-12fcd8ae9612",
+        "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-26",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "8bab5309-b3ef-4dcc-8bc3-1b2502c1765d",
+        "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-05",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "2e45c7d8-1a06-4735-8efe-705093aa49a7",
+        "official_sailing_id": "BREAKAWAY8QUECHASYNHALPWMNYC|2028-10-29",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "1471d617-7c61-432e-8767-ce99a5ab6084",
+        "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-10-08",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "70c25c5a-8e16-4a96-90c6-8272012a9be8",
+        "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-10",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "66d86bba-9446-48d2-9327-77dd591632b3",
+        "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-17",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "dea9e291-70a7-4114-9ca4-1e55120bc37b",
+        "official_sailing_id": "GEM9PHLPWMSJBHALSYNCHAQUE|2028-08-31",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "1cd382b6-e115-4f08-ba70-3c0964b5e5e3",
+        "official_sailing_id": "DAWN10QUELBICHASYNHALEPMPWMBOSPHL|2028-09-16",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "ad772519-595f-431d-bc28-5fa4c65fe437",
+        "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL|2028-10-17",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "d662f6ac-2b4f-4586-9acc-718b241cb029",
+        "official_sailing_id": "GEM7NYCBOSPWMHALSJBNYC|2028-10-01",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "f27088fc-b9f4-48ed-88b7-4db5d6641de9",
+        "official_sailing_id": "BREAKAWAY7BOSHALSYNCHAQUE|2028-10-22",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "a5e06ff4-6eb8-4dc3-82ea-15fc07c7246c",
+        "official_sailing_id": "DAWN13BCNCADPDLWRFPHL|2028-08-23",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "36d25ddc-81d4-43f1-9fa7-5710b7032226",
+        "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-24",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "3231e404-8c40-4886-a87c-2c11dceb4e77",
+        "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-10-15",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "53823f1d-69b9-490b-a171-04cc600b1189",
+        "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-03",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "5d1913e4-94e1-4ef8-a867-3c9a2d294946",
+        "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-17",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "edc0aa66-6d4e-4b32-9a37-946d8180a304",
+        "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-24",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "eb7f8550-304d-4231-a7b4-74423392dac0",
+        "official_sailing_id": "BREAKAWAY7BOSPWMEPMSJBHALBOS|2028-08-27",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "01a5aaf3-d78e-48e7-a919-7a4ac643815c",
+        "official_sailing_id": "GEM8QUELBICHASYNHALSJBNYC|2028-09-09",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "879995f0-1308-4ca8-a766-912a99ddda72",
+        "official_sailing_id": "GEM7NYCBOSPWMSJBHALNYC|2028-10-08",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "46621f7d-6544-4ad8-a262-2a6ea67bb420",
+        "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBSYNBOS|2028-10-01",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "97bbda3c-a866-42b6-82d7-db10620d9470",
+        "official_sailing_id": "DAWN10QUELBICHASYNHALPWMBOSPHL|2028-10-07",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      },
+      {
+        "discovered_cruise_id": "8e11b60b-859b-493a-a9bb-917a351810e2",
+        "official_sailing_id": "GEM10NYCHALSYNCHASJBPWMBOSNYC|2028-10-15",
+        "result_action": "updated",
+        "fields": [
+          "itinerary",
+          "itinerary_ports",
+          "raw_extract"
+        ]
+      }
+    ]
+  },
+  "promoted": 40,
+  "retained": [],
+  "failed": [],
+  "rollback_manifest_id": "d1da4f68-094d-46b6-becc-9214443dbf3a",
+  "promoted_ids": [
+    "43221ca0-cafb-4eb6-a5c9-bf2d9d9265d5",
+    "a7198796-874f-4f01-ae35-ba58b150446f",
+    "3324203f-d2d7-45e5-9961-c709ff698ffa",
+    "4e348a31-afd8-45f0-af46-cd37e650fdf4",
+    "fd88432a-a627-4a9c-abe0-c8745dfb88ec",
+    "8b242e12-ff5e-428b-a87b-4d7cfc525c2c",
+    "d9c72369-5803-4216-9949-8ffd3e0ea6af",
+    "a6e61f14-8d8a-4142-9812-01df7edb3ff0",
+    "7ca6e516-8506-464e-a60f-8fa7f7362e15",
+    "79935a61-1fa6-4bf4-bd3a-91eb529d1493",
+    "c3324271-672c-438d-a81f-ef183676d514",
+    "23b2a370-e5a4-4d8c-8f74-19870aec9ef3",
+    "fe53b417-0e6e-48bc-a12d-08f14d24a72e",
+    "6d25b035-279d-48ad-936f-8ef83d000b16",
+    "ed289b35-627a-4c78-8d6d-898dec9bb4ce",
+    "d554282c-8e56-4053-9583-475cafe47918",
+    "aacff2be-685b-474d-904d-0214f1b74486",
+    "1ab9dbef-c636-446f-a3cb-12fcd8ae9612",
+    "8bab5309-b3ef-4dcc-8bc3-1b2502c1765d",
+    "2e45c7d8-1a06-4735-8efe-705093aa49a7",
+    "1471d617-7c61-432e-8767-ce99a5ab6084",
+    "70c25c5a-8e16-4a96-90c6-8272012a9be8",
+    "66d86bba-9446-48d2-9327-77dd591632b3",
+    "dea9e291-70a7-4114-9ca4-1e55120bc37b",
+    "1cd382b6-e115-4f08-ba70-3c0964b5e5e3",
+    "ad772519-595f-431d-bc28-5fa4c65fe437",
+    "d662f6ac-2b4f-4586-9acc-718b241cb029",
+    "f27088fc-b9f4-48ed-88b7-4db5d6641de9",
+    "a5e06ff4-6eb8-4dc3-82ea-15fc07c7246c",
+    "36d25ddc-81d4-43f1-9fa7-5710b7032226",
+    "3231e404-8c40-4886-a87c-2c11dceb4e77",
+    "53823f1d-69b9-490b-a171-04cc600b1189",
+    "5d1913e4-94e1-4ef8-a867-3c9a2d294946",
+    "edc0aa66-6d4e-4b32-9a37-946d8180a304",
+    "eb7f8550-304d-4231-a7b4-74423392dac0",
+    "01a5aaf3-d78e-48e7-a919-7a4ac643815c",
+    "879995f0-1308-4ca8-a766-912a99ddda72",
+    "46621f7d-6544-4ad8-a262-2a6ea67bb420",
+    "97bbda3c-a866-42b6-82d7-db10620d9470",
+    "8e11b60b-859b-493a-a9bb-917a351810e2"
+  ]
+}

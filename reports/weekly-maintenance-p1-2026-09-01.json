@@ -1,0 +1,477 @@
+{
+  "title": "Weekly cruise inventory recovery P1",
+  "date": "2026-09-01",
+  "timezone": "Australia/Perth",
+  "starting_sha": "2da4779b3764ffc20a6ccd6c0f50a4494450043f",
+  "post_pull_sha": "c7531c920dbc348ac724afbb99231c083d2805fa",
+  "tooling_sha": "7817398894776137a8d520f5d686094abba4f4d7",
+  "final_sha": null,
+  "deployed_production_sha_at_remediation": "7817398894776137a8d520f5d686094abba4f4d7",
+  "deploy_note": "Canonical site admirable-tiramisu-d4da8a / ff34277c-6c91-4880-85b6-1240937c80eb published 7817398 at 2026-09-01T10:50:52Z (deploy 6a96adf18f881800083d6169, branch main). git merge-base --is-ancestor proves P0 SHAs a774394, 9da4f4c, 1ca2c2b and d58865a are ancestors. Main was never reset. SEG work on c7531c9 was preserved. Princess/HAL/Celebrity/NCL authorised applies used the local GitHub/self-hosted path, not Netlify cron.",
+  "p0_shas_deployed": [
+    "a7743941fa76e51332cd116a499c5b649635c297",
+    "9da4f4c2d678549224c8e00265ba560ef1d2c1c9",
+    "1ca2c2b818b6ae35eab09e6ff48dcfdf540090ac",
+    "d58865ab1964fe9eea5e5f59c6daa3e757858f76"
+  ],
+  "authoritative_netlify_site": {
+    "id": "ff34277c-6c91-4880-85b6-1240937c80eb",
+    "name": "admirable-tiramisu-d4da8a",
+    "production_branch": "main"
+  },
+  "critical_notes": [
+    "The Norwegian Monday run 2d9cc3e4-927e-452f-bfd1-11ef8c70536f COMMITTED 40 match_required inserts. It is not a zero-write failure.",
+    "Those 40 were not blindly promoted. Each was CURRENT_OFFICIAL_MATCH, enrichment-ready, then promoted under global lock.",
+    "Princess official-ID remaps updated existing UUIDs in place. They were not inserted as duplicates.",
+    "Write caps were not raised. Carnival, Royal Caribbean and Silversea writes stayed disabled. Disney 100% destination gate was not lowered. Daily expiry and the 21-day cutoff stayed enabled."
+  ],
+  "norwegian": {
+    "incident_run_id": "2d9cc3e4-927e-452f-bfd1-11ef8c70536f",
+    "original_incident_rows": 40,
+    "current_official_matches": 40,
+    "remaps": 0,
+    "duplicates": 0,
+    "invalid_unresolved": 0,
+    "classification_counts": { "CURRENT_OFFICIAL_MATCH": 40 },
+    "root_cause_missing_enrichment": "Weekly apply inserted 40 match_required rows, then keyed the enrichment lookup map by discovered_cruise UUID while buildDryRunManifest looked up by official_sailing_id. Enrichment therefore never ran (ncl_enrichment_status stayed null). A later exception aborted promotion. The central ledger then mapped summary.inserts instead of nested writes_performed.inserted, so the failed run showed inserts=0 even though 40 rows were already committed. Fixed: enrichment map keyed by official_sailing_id; flattenWeeklyWriteStats + resolveWeeklyTerminalStatus persist committed writes and mark partial_write_failure.",
+    "rows_promoted": 40,
+    "rows_retained_match_required": 0,
+    "leftover_match_required_not_incident": 38,
+    "leftover_note": "38 other match_required rows remain from 2026-08-24. They are not the Monday incident 40 and were not promoted.",
+    "active_before": 1965,
+    "active_after": 2005,
+    "match_required_before": 78,
+    "match_required_after": 38,
+    "recovery_manifest_ids": {
+      "historical_audit": "f4225790-7849-43df-b926-9ab6f611f71f",
+      "remediation_rollback": "d1da4f68-094d-46b6-becc-9214443dbf3a"
+    },
+    "ledger_reports_original_committed_writes": true,
+    "incident_ledger_after_patch": {
+      "status": "failed",
+      "error": "weekly_maintenance_failed",
+      "inserts": 40,
+      "inventory_changed": true,
+      "terminal_status": "partial_write_failure",
+      "proposed_inserts": 40
+    },
+    "post_remediation_readonly": {
+      "run_id": "norwegian-cruise-line-weekly-2026-09-01T11-01-44-808Z",
+      "run_record_id": "ef73c9e1-3c6f-44d7-9e00-d88c6a1ed05d",
+      "eligible_ocean": 1975,
+      "proposed_inserts": 0,
+      "writes": 0,
+      "terminal_status": "completed"
+    },
+    "final_classification": "READY_FOR_NORMAL_APPLY"
+  },
+  "silversea": {
+    "why_noon_run_produced_no_central_record": "Scheduled cron used dryRun: platformScheduled ? false : dryRun, then assertSilverseaWeeklyMaintenanceEnabled() threw before createMaintenanceRun because SILVERSEA_WEEKLY_RECONCILIATION_ENABLED is not strict true. Fixed in ffd0798 to always resolveDryRun(); flag still not strict true so scheduled stays dry-run and now creates a ledger row.",
+    "unified_dry_run_record_id": "f3683476-7c38-4e18-8eaf-fbaa1908505a",
+    "run_id": "silversea-cruises-weekly-2026-09-01T10-47-07-191Z",
+    "source_healthy": true,
+    "pending_inserts": 0,
+    "pending_updates": 17,
+    "writes": 0,
+    "dry_run": true,
+    "eligible_total": 1076,
+    "active_production_total": 897,
+    "final_classification": "NOT_YET_COMMISSIONED"
+  },
+  "princess": {
+    "fresh_eligible": 2018,
+    "source_snapshot": "46c0a121f4a339bb7e376be5be0bae2dd27bc31d786efc51ace4cb07f7b495dc",
+    "hashes_match": true,
+    "identity_coverage_pct": 100,
+    "proposed_inserts_before_remap_audit": 9,
+    "true_new": ["CPR08C|YP|2026-11-29", "CPR08J|YP|2027-02-21"],
+    "id_remaps": 7,
+    "ambiguous": 0,
+    "safe_metadata_updates": 6,
+    "actual_controlled_writes": {
+      "remap_updated": 7,
+      "inserted": 2,
+      "itinerary_only_updated": 6,
+      "failed": 0
+    },
+    "rollback_ids": [
+      "4e8de9da-a8ef-4d0a-99f2-2e8988569227",
+      "eabb9427-1da3-4854-bbad-a0504cdf6e08"
+    ],
+    "final_outstanding": {
+      "proposed_inserts": 0,
+      "proposed_updates": 0,
+      "source_absent_retained": 4
+    },
+    "active_before": 2020,
+    "active_after": 2022,
+    "final_classification": "READY_FOR_NORMAL_APPLY"
+  },
+  "celebrity": {
+    "fresh_eligible": 1371,
+    "source_snapshot": "b1d07c3b90dd8e1a6e75edcf6ee4ed39136da2afae4fdbe03b8340325220e7ef",
+    "hashes_match": true,
+    "resolution": {
+      "ship_pct": 100,
+      "port_pct": 100,
+      "destination_pct": 100,
+      "identity_pct": 100,
+      "duplicates": 0
+    },
+    "inserts_performed": 279,
+    "updates_performed": 3,
+    "batch_count": 3,
+    "failures": 0,
+    "outstanding": 0,
+    "active_before": 1148,
+    "active_after": 1427,
+    "source_absent_retained": 56,
+    "cap_unchanged": 100,
+    "final_classification": "READY_FOR_NORMAL_APPLY"
+  },
+  "holland_america": {
+    "fresh_eligible": 1145,
+    "source_snapshot": "3ee9ee1a0f17a48b5c3b9452702f9d3956e52e0c101d767dabc758510ce766bf",
+    "hashes_match": true,
+    "destination_resolution_pct": 96.87,
+    "identity_coverage_pct": 100,
+    "ports_catalogue_enoent_gone": true,
+    "inserts_performed": 379,
+    "updates_performed": 13,
+    "batch_count": 4,
+    "failures": 0,
+    "outstanding": 0,
+    "active_before": 819,
+    "active_after": 1198,
+    "source_absent_retained": 55,
+    "cap_unchanged": 100,
+    "final_classification": "READY_FOR_NORMAL_APPLY"
+  },
+  "explora": {
+    "eligible": 294,
+    "active": 294,
+    "pending_inserts": 0,
+    "writes": 0,
+    "quality_gate": "PASS",
+    "run_id": "explora-journeys-weekly-2026-09-01T10-54-41-967Z",
+    "run_record_id": "e34be1e4-d10a-4def-85af-2d5c50310001",
+    "final_classification": "READY_FOR_NORMAL_APPLY"
+  },
+  "seabourn": {
+    "run_id": "seabourn-cruise-line-weekly-2026-09-01T11-12-57-278Z",
+    "run_record_id": "7b5f041f-80e2-4256-8731-d34a879ea9a2",
+    "eligible": 684,
+    "active": 689,
+    "writes": 0,
+    "insert": {
+      "official_sailing_id": "W9W46A|6910D",
+      "ship_name": "Quest",
+      "departure_date": "2029-01-07",
+      "nights": 46,
+      "departure_port": "Miami"
+    },
+    "identity_review": {
+      "official_sailing_id": "O8A26A|7811A",
+      "existing_uuid": "f055a83f-ce9a-4662-8cc9-102dff2c0563",
+      "risk": "identity_critical",
+      "identity_critical_changes": ["itinerary"],
+      "field_differences": {
+        "itinerary": {
+          "before": "Halong Bay, Vietnam, Ko Kood, Thailand, Hualien, Taiwan, Naha, Japan, Shanghai, China, Days At Sea, Laem Chabang (Bangkok), Thailand, Sihanoukville, Cambodia, Miyakojima, Japan, Ho Chi Minh City (Saigon), Vietnam, Keelung (Taipei), Taiwan, Singapore, Hong Kong, China, Taichung, Taiwan",
+          "after": "Halong Bay, Vietnam, Ko Kood, Thailand, Hualien, Taiwan, Naha, Japan, Shanghai, China, Days At Sea, Laem Chabang (Bangkok), Thailand, Sihanoukville, Cambodia, Chan May (Hue), Vietnam, Miyakojima, Japan, Ho Chi Minh City (Saigon), Vietnam, Keelung (Taipei), Taiwan, Singapore, Hong Kong, China, Taichung, Taiwan"
+        }
+      }
+    },
+    "source_absent_retained": 6,
+    "review_result": "Neither the new Quest insert nor the O8A26A itinerary change is conclusively safe under existing Seabourn weekly policy (itinerary is identity-critical). No writes.",
+    "final_classification": "REVIEW_REQUIRED"
+  },
+  "azamara": {
+    "run_id": "azamara-weekly-20260901-1788260464918",
+    "writes": 0,
+    "proposed_inserts": 1,
+    "proposed_safe_updates": ["JR270207-010"],
+    "review_ids": ["JR280408-007", "QS280923-007", "QS280923-016"],
+    "review_diffs": [
+      {
+        "official_sailing_id": "JR280408-007",
+        "existing_uuid": "8022cf4a-9a62-4b58-b65e-6c565858d285",
+        "production_departure_port": "Barcelona",
+        "production_itinerary": null,
+        "source_description_from": "TARRAGONA",
+        "source_gtm_cruise_name": "SPAIN, FRANCE &AMP; ITALY CRUISE: PALAMOS, MARSEILLE &AMP; ROME",
+        "note": "Official page now says sailing from Tarragona; production stores Barcelona. Identity-critical. Not written."
+      },
+      {
+        "official_sailing_id": "QS280923-007",
+        "existing_uuid": "40e4a922-7273-4642-9947-dc025790db4f",
+        "production_departure_port": "Barcelona",
+        "source_description_from": "TARRAGONA",
+        "note": "Same Barcelona vs Tarragona embark wording. Identity-critical. Not written."
+      },
+      {
+        "official_sailing_id": "QS280923-016",
+        "existing_uuid": "fb66aafd-15d9-47a1-bfbc-4a4a1fd69cb4",
+        "production_departure_port": "Barcelona",
+        "source_description_from": "TARRAGONA",
+        "source_gtm_destination": "COMBO",
+        "note": "Combination cruise; Barcelona vs Tarragona embark wording. Identity-critical. Not written."
+      }
+    ],
+    "source_absent_this_run": ["QS270430-018", "QS280322-011", "QS280810-079", "QS281017-011"],
+    "source_absent_previous_retained_active": ["QS270430-018", "QS280216-026", "QS280322-011", "PR280629-014", "QS280810-034"],
+    "source_absent_hidden": false,
+    "result": "REVIEW_REQUIRED. No Azamara review-item or insert writes in this P1.",
+    "final_classification": "REVIEW_REQUIRED"
+  },
+  "disney": {
+    "before_resolver": {
+      "destination_resolution_pct": 99.4,
+      "unresolved_sailing_count": 6,
+      "unresolved_sailings": [
+        { "official_sailing_id": "WW0597|2027-09-29", "ship": "Disney Wish", "date": "2027-09-29", "itinerary": "4-Night Bermuda Cruise from New York", "destination_code": "BERMUDA", "geo_area": "BERMUDA" },
+        { "official_sailing_id": "WW0600|2027-10-14", "ship": "Disney Wish", "date": "2027-10-14", "itinerary": "5-Night Halloween on the High Seas Bermuda Cruise from New York", "destination_code": "BERMUDA", "geo_area": "BERMUDA" },
+        { "official_sailing_id": "WW0601|2027-10-19", "ship": "Disney Wish", "date": "2027-10-19", "itinerary": "5-Night Halloween on the High Seas Bermuda Cruise from New York", "destination_code": "BERMUDA", "geo_area": "BERMUDA" },
+        { "official_sailing_id": "WW0603|2027-10-31", "ship": "Disney Wish", "date": "2027-10-31", "itinerary": "5-Night Halloween on the High Seas Bermuda Cruise from New York ending in San Juan", "destination_code": "BERMUDA", "geo_area": "BERMUDA" },
+        { "official_sailing_id": "WW0599|2027-10-08", "ship": "Disney Wish", "date": "2027-10-08", "itinerary": "6-Night Halloween on the High Seas Bermuda & Canada Cruise from New York", "destination_code": "CANADA", "geo_area": "NEW YORK CA" },
+        { "official_sailing_id": "WW0602|2027-10-24", "ship": "Disney Wish", "date": "2027-10-24", "itinerary": "7-Night Halloween on the High Seas Canada Cruise from New York", "destination_code": "CANADA", "geo_area": "NEW YORK CA" }
+      ]
+    },
+    "resolver_fix": "Deterministic official-code maps: BERMUDA→caribbean (same convention as Celebrity/NCL Bermuda grouping; no bermuda operational slug exists), CANADA and NEW YORK CA→canada-new-england. 100% destination gate unchanged.",
+    "after_resolver_readonly": {
+      "run_id": "disney-weekly-2026-09-01T11-22-08-937Z",
+      "quality_gate": "PASS",
+      "destination_resolution_pct": 100,
+      "eligible": 972,
+      "recognised": 595,
+      "outstanding_inserts": 377,
+      "writes": 0,
+      "fetch_failed": false
+    },
+    "discovered_cruises_writes": 0,
+    "final_classification": "READY_FOR_CONTROLLED_CATCHUP"
+  },
+  "royal_caribbean": {
+    "pass1": {
+      "run_id": "royal-caribbean-weekly-2026-09-01T11-01-40-461Z",
+      "snapshot": "659f4f3e6569b98c",
+      "manifest_hash": "758e500ddc37462288d03ddba30812f41d3dfbe991087fdb39ff845f0c8bc9ed"
+    },
+    "pass2": {
+      "run_id": "royal-caribbean-weekly-2026-09-01T11-07-23-150Z",
+      "snapshot": "659f4f3e6569b98c",
+      "manifest_hash": "758e500ddc37462288d03ddba30812f41d3dfbe991087fdb39ff845f0c8bc9ed"
+    },
+    "hashes_match": true,
+    "union_identities": 3282,
+    "pages_requested": 136,
+    "pages_successful": 136,
+    "pages_failed": 0,
+    "production_genuine": 2993,
+    "recognised": 2891,
+    "pending_inserts": 109,
+    "source_absent_active": 13,
+    "production_absent_from_union": 36,
+    "unexplained_production_absent": 18,
+    "weekly_health": false,
+    "enumeration_gate": "FAIL",
+    "writes": 0,
+    "source_health": "SOURCE_REPAIR_REQUIRED",
+    "final_classification": "SOURCE_REPAIR_REQUIRED"
+  },
+  "carnival": {
+    "run_id": "ccl-weekly-20260901-1788260369473",
+    "eligible": 2806,
+    "recognised": 2650,
+    "pending_inserts": 153,
+    "safe_updates": 3,
+    "review_updates": 0,
+    "source_absence": 24,
+    "quality_gate": "PASS",
+    "writes": 0,
+    "CARNIVAL_DISCOVERY_WRITE_ENABLED": "disabled",
+    "final_classification": "NOT_YET_COMMISSIONED"
+  },
+  "daily_expiry": {
+    "enabled": true,
+    "latest_run_id": "7e6b8a73-2ceb-4cf7-bfb3-d1e669109613",
+    "latest_status": "completed",
+    "started_at": "2026-08-31T17:30:30Z",
+    "expired_count": 4,
+    "inventory_changed": true,
+    "cutoff_days_unchanged": 21,
+    "schedule_period_lease": "daily-expiry:2026-09-01:scheduled held until 2026-09-01T19:30:28Z"
+  },
+  "cross_line_write_ledger_invariant_fixed": true,
+  "production_writes": [
+    {
+      "cruise_line": "norwegian-cruise-line",
+      "run_id": "ncl-p1-incident-remediation-1788258310442",
+      "run_record_id": "8dcbf81a-fba0-4643-a569-56d8c61fdb9d",
+      "rollback_manifest_id": "d1da4f68-094d-46b6-becc-9214443dbf3a",
+      "before": { "active": 1965, "match_required": 78 },
+      "attempted": 40,
+      "inserted": 0,
+      "updated_or_promoted": 40,
+      "enriched": 40,
+      "failed": 0,
+      "after": { "active": 2005, "match_required": 38 },
+      "reconciliation": "PASS — incident 40 active; leftover 38 match_required are not the incident set"
+    },
+    {
+      "cruise_line": "princess-cruises",
+      "run_id": "princess-p1-official-id-remap-1788259326152",
+      "run_record_id": "2e2b7744-2591-4eef-bb06-0605260bbd1d",
+      "rollback_manifest_id": "4e8de9da-a8ef-4d0a-99f2-2e8988569227",
+      "before": { "active": 2020 },
+      "attempted": 7,
+      "inserted": 0,
+      "updated_or_promoted": 7,
+      "failed": 0,
+      "after": { "active": 2020 },
+      "reconciliation": "PASS — existing UUIDs kept; official identity remapped in place"
+    },
+    {
+      "cruise_line": "princess-cruises",
+      "run_id": "princess-cruises-weekly-2026-09-01T10-42-51-140Z",
+      "run_record_id": "44b00599-2f26-480f-beda-6357b59bca9f",
+      "rollback_manifest_id": "eabb9427-1da3-4854-bbad-a0504cdf6e08",
+      "before": { "active": 2020 },
+      "attempted": 8,
+      "inserted": 2,
+      "updated_or_promoted": 6,
+      "failed": 0,
+      "after": { "active": 2022 },
+      "reconciliation": "PASS — 0 pending inserts, 0 pending updates, 4 source-absent retained"
+    },
+    {
+      "cruise_line": "holland-america-line",
+      "run_id": "holland-america-line-weekly-2026-09-01T10-52-16-712Z",
+      "run_record_id": "75cf6ac1-e538-4536-ad7e-4d8a83009715",
+      "rollback_manifest_id": "e61bbef5-2e33-4f79-8f4b-4f3e6f2caece",
+      "batch": 1,
+      "attempted": 100,
+      "inserted": 100,
+      "updated_or_promoted": 0,
+      "failed": 0
+    },
+    {
+      "cruise_line": "holland-america-line",
+      "run_id": "holland-america-line-weekly-2026-09-01T10-52-47-818Z",
+      "run_record_id": "bad323db-9a6e-4400-a6e3-955e6986b9b5",
+      "rollback_manifest_id": "420e680f-4043-41ba-9e27-2c38876c2aec",
+      "batch": 2,
+      "attempted": 100,
+      "inserted": 100,
+      "updated_or_promoted": 0,
+      "failed": 0
+    },
+    {
+      "cruise_line": "holland-america-line",
+      "run_id": "holland-america-line-weekly-2026-09-01T10-53-19-788Z",
+      "run_record_id": "d2fc5564-8c93-4dde-ac3f-abb959df3e1e",
+      "rollback_manifest_id": "b16f699f-c588-4dbe-8133-4f28f02fc6da",
+      "batch": 3,
+      "attempted": 100,
+      "inserted": 100,
+      "updated_or_promoted": 0,
+      "failed": 0
+    },
+    {
+      "cruise_line": "holland-america-line",
+      "run_id": "holland-america-line-weekly-2026-09-01T10-53-53-650Z",
+      "run_record_id": "5e877622-bdc0-4445-966f-d26e948e354d",
+      "rollback_manifest_id": "48e02084-b923-404f-bdef-a6525ff09d12",
+      "batch": 4,
+      "attempted": 92,
+      "inserted": 79,
+      "updated_or_promoted": 13,
+      "failed": 0,
+      "after": { "active": 1198 },
+      "reconciliation": "PASS — outstanding 0"
+    },
+    {
+      "cruise_line": "celebrity-cruises",
+      "run_id": "celebrity-cruises-weekly-2026-09-01T10-55-12-016Z",
+      "run_record_id": "8f5da6f4-97d3-4bfb-a683-2e59f12ae4a5",
+      "rollback_manifest_id": "ecc9faa1-88bd-4a2f-b414-0080c0c14b98",
+      "batch": 1,
+      "attempted": 100,
+      "inserted": 100,
+      "updated_or_promoted": 0,
+      "failed": 0
+    },
+    {
+      "cruise_line": "celebrity-cruises",
+      "run_id": "celebrity-cruises-weekly-2026-09-01T10-56-53-962Z",
+      "run_record_id": "4ce10542-b7a4-4a49-b76b-c90540fb5da7",
+      "rollback_manifest_id": "c91542bd-4b1d-41dd-9d4d-b172989ce571",
+      "batch": 2,
+      "attempted": 100,
+      "inserted": 97,
+      "updated_or_promoted": 3,
+      "failed": 0
+    },
+    {
+      "cruise_line": "celebrity-cruises",
+      "run_id": "celebrity-cruises-weekly-2026-09-01T10-57-59-447Z",
+      "run_record_id": "b04830c5-9c83-4676-9ea5-b8782b855207",
+      "rollback_manifest_id": "5c5a3929-9677-442f-9483-9b5a943475c8",
+      "batch": 3,
+      "attempted": 82,
+      "inserted": 82,
+      "updated_or_promoted": 0,
+      "failed": 0,
+      "after": { "active": 1427 },
+      "reconciliation": "PASS — outstanding 0"
+    }
+  ],
+  "production_runs_that_committed_writes_but_did_not_finish_completed": [
+    {
+      "run_id": "2d9cc3e4-927e-452f-bfd1-11ef8c70536f",
+      "line": "norwegian-cruise-line",
+      "status": "failed",
+      "terminal_status": "partial_write_failure",
+      "committed_inserts": 40,
+      "note": "Historical Monday incident. Ledger patched to report inserts=40. Rows later remediated by ncl-p1-incident-remediation-1788258310442."
+    }
+  ],
+  "classifications": {
+    "READY_FOR_NORMAL_APPLY": [
+      "explora-journeys",
+      "norwegian-cruise-line",
+      "princess-cruises",
+      "celebrity-cruises",
+      "holland-america-line"
+    ],
+    "READY_FOR_CONTROLLED_CATCHUP": ["disney-cruise-line"],
+    "REVIEW_REQUIRED": ["seabourn-cruise-line", "azamara"],
+    "SOURCE_REPAIR_REQUIRED": ["royal-caribbean-international"],
+    "NOT_YET_COMMISSIONED": ["carnival-cruise-line", "silversea-cruises"]
+  },
+  "tests": {
+    "norwegian_weekly": "28/28 PASS",
+    "princess_official_id_remap": "8/8 PASS",
+    "princess_weekly": "77/77 PASS",
+    "princess_baseline": "30/30 PASS",
+    "weekly_reliability_p0": "30/30 PASS",
+    "azamara_weekly": "61 PASS",
+    "seabourn_weekly": "48/48 PASS",
+    "celebrity_discovery": "PASS",
+    "hal_discovery": "PASS",
+    "explora_weekly": "PASS",
+    "carnival_weekly": "PASS",
+    "disney_weekly": "48/48 PASS",
+    "disney_discovery": "129 PASS",
+    "royal_caribbean_weekly": "20/20 PASS",
+    "silversea_m1": "16/16 PASS",
+    "scheduled_maintenance": "16/16 PASS",
+    "global_write_lock": "12/12 PASS",
+    "public_booking_cutoff": "17/17 PASS",
+    "discovery_inventory": "15/15 PASS",
+    "destination_scope": "22/22 PASS",
+    "destination_correction": "28/28 PASS",
+    "maintenance_hardening": "17/17 PASS",
+    "discovery_departure_port": "2 pre-existing public raw_extract failures unchanged from P0; unrelated to this P1"
+  }
+}

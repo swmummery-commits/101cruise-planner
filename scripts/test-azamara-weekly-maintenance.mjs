@@ -423,6 +423,15 @@ assert(
   persistedSafetySummary.identity_review_sailing_ids.join(",") === "REV-1,REV-2,REV-3",
   "write-safety summary persists identity-review sailing IDs"
 );
+assert(
+  Array.isArray(persistedSafetySummary.identity_review_diffs) &&
+    persistedSafetySummary.identity_review_diffs.length === 3,
+  "identity-review diffs persist for each review ID"
+);
+assert(
+  persistedSafetySummary.identity_review_diffs[0].official_sailing_id === "REV-1",
+  "identity-review diff carries official sailing ID"
+);
 assert(persistedSafetySummary.safe_update_sailing_ids[0] === "SAFE-1", "safe update sailing ID persisted");
 assert(
   persistedSafetySummary.write_safety.failures.includes("identity_critical_updates_require_review"),

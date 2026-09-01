@@ -1,0 +1,86 @@
+{
+  "mode": "dry_run",
+  "line_slug": "azamara",
+  "started_at": "2026-09-01T11:01:04.908Z",
+  "ended_at": "2026-09-01T11:19:13.939Z",
+  "run_id": "azamara-weekly-20260901-1788260464918",
+  "success": true,
+  "blocked": false,
+  "reason": null,
+  "failures": null,
+  "dry_run": true,
+  "summary": {
+    "run_id": "azamara-weekly-20260901-1788260464918",
+    "run_type": "azamara_weekly_maintenance",
+    "line_slug": "azamara",
+    "dry_run": true,
+    "global_lock": null,
+    "perth_today": "2026-09-01",
+    "elapsed_ms": 1089020,
+    "source_counts": {
+      "sitemap_locs": 1632,
+      "eligible_urls": 470,
+      "urls_processed": 470,
+      "source_eligible": 441,
+      "recognised_existing_unchanged": 424,
+      "recognised_existing_changed": 16,
+      "new_candidate": 1,
+      "policy_excluded_cruisetour": 21,
+      "source_stale_or_unavailable": 2,
+      "http_source_failure": 4,
+      "validation_failed": 0,
+      "within_cutoff": 255,
+      "dest_quality_excluded": 2,
+      "matcher_picker_mismatch": 0
+    },
+    "production_official": 451,
+    "recognised_eligible": 436,
+    "outstanding_eligible": 1,
+    "proposed_inserts": 1,
+    "proposed_updates": 1,
+    "proposed_identity_review": 3,
+    "proposed_cutoff_hides": 0,
+    "proposed_source_absence_hides": 0,
+    "identity_review_sailing_ids": [
+      "JR280408-007",
+      "QS280923-007",
+      "QS280923-016"
+    ],
+    "safe_update_sailing_ids": [
+      "JR270207-010"
+    ],
+    "write_safety": {
+      "ok": true,
+      "failures": [],
+      "source_absent_observed": 4,
+      "source_absent_actionable": 0,
+      "source_absence_deactivation_allowed": false,
+      "weekly_writes_permitted_with_observed_absence": false
+    },
+    "weekly_write_safety": {
+      "ok": true,
+      "failures": [],
+      "source_absent_observed": 4,
+      "source_absent_actionable": 0,
+      "source_absence_deactivation_allowed": false,
+      "weekly_writes_permitted_with_observed_absence": false
+    },
+    "legacy_ignored": 5,
+    "would_insert": 1,
+    "would_update": 1,
+    "writes_performed": null,
+    "hard_deletes": 0,
+    "source_absent_sailing_ids": [
+      "QS270430-018",
+      "QS280322-011",
+      "QS280810-079",
+      "QS281017-011"
+    ],
+    "success": true
+  },
+  "quality_gate": {
+    "duplicate_official_sailing_ids": 0,
+    "duplicate_official_identities": 0
+  },
+  "apply": null
+}

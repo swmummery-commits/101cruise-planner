@@ -1,0 +1,1107 @@
+{
+  "generated_at": "2026-09-01T10:21:26.337Z",
+  "ended_at": "2026-09-01T10:21:32.622Z",
+  "mode": "norwegian_read_only_simulation",
+  "writes_performed": 0,
+  "read_only": true,
+  "dry_run_guard": "NO_PRODUCTION_WRITES",
+  "today": "2026-09-01",
+  "line": {
+    "id": "c5f5361f-ebe5-4ff4-babe-7eb07f609bae",
+    "slug": "norwegian-cruise-line",
+    "name": "Norwegian Cruise Line"
+  },
+  "source_contract": {
+    "adapter_id": "norwegian",
+    "adapter_version": "2026-08-13.ncl1",
+    "primary_endpoint": "https://www.ncl.com/au/en/api/browse/v1/itineraries",
+    "filters_endpoint": "https://www.ncl.com/au/en/api/browse/v1/filters",
+    "itinerary_schedule_url_formula": "https://www.ncl.com/au/en/cruises/{ITINERARY_CODE}/schedule?itineraryCode={ITINERARY_CODE}",
+    "method": "GET",
+    "locale": "au/en (pinned — do not rely on geo redirect alone)",
+    "authentication_required": false,
+    "cookies_required": false,
+    "response_format": "JSON array of itinerary records with sailingDates[]",
+    "official_identity_formula": "{itineraryCode}|{YYYY-MM-DD}",
+    "pagination": "None — full catalogue returned in one response",
+    "public_website_intended": true
+  },
+  "source_timestamp": "2026-09-01T10:21:26.704Z",
+  "catalogue": {
+    "browse_record_count": 785,
+    "raw_sailing_count": 2498,
+    "ocean_sailing_count": 2017,
+    "publicly_eligible_ocean_sailings_shared_cutoff": 1975,
+    "within_cutoff_ocean_sailings_shared_cutoff": 42,
+    "earliest_departure": "2026-09-02",
+    "latest_departure": "2028-10-29"
+  },
+  "classification": {
+    "counts": {
+      "total": 785,
+      "ocean": 669,
+      "cruisetour_package": 116,
+      "ambiguous": 0
+    },
+    "examples": {
+      "ocean": [
+        {
+          "itinerary_code": "GETAWAY4MIANASNPIMIA",
+          "ship_code": "GETAWAY",
+          "reason": "itinerary_code_starts_with_ship_code"
+        },
+        {
+          "itinerary_code": "AQUA6MIAPOPSJUNPIMIA",
+          "ship_code": "AQUA",
+          "reason": "itinerary_code_starts_with_ship_code"
+        },
+        {
+          "itinerary_code": "VIVA10ISTKUSJTRJMKPIRKAKMLACTASALLIVCIV",
+          "ship_code": "VIVA",
+          "reason": "itinerary_code_starts_with_ship_code"
+        },
+        {
+          "itinerary_code": "VIVA9BCNMRSLIVCIVSALMSNCFUBARZADRAV",
+          "ship_code": "VIVA",
+          "reason": "itinerary_code_starts_with_ship_code"
+        },
+        {
+          "itinerary_code": "JOY17LAXCSLACAPRQPCLPCTCTGOCJGECMIA",
+          "ship_code": "JOY",
+          "reason": "itinerary_code_starts_with_ship_code"
+        }
+      ],
+      "cruisetour_package": [
+        {
+          "itinerary_code": "BOSTONCRUISET03BREAKAWAY7BOSEPMHALSYNSJBBOS",
+          "ship_code": "BREAKAWAY",
+          "reason": "itinerary_code_missing_ship_prefix"
+        },
+        {
+          "itinerary_code": "BOSTONCRUISET03BREAKAWAY7BOSEPMSJBHALPWMBOS",
+          "ship_code": "BREAKAWAY",
+          "reason": "itinerary_code_missing_ship_prefix"
+        },
+        {
+          "itinerary_code": "TOKYOCRUISETO17JADE9YOKSMZOSAKCZHSMMIYKEEHKG",
+          "ship_code": "JADE",
+          "reason": "itinerary_code_missing_ship_prefix"
+        },
+        {
+          "itinerary_code": "SANCRUISETOUR1STAR7SANCSLMZTPVRSAN",
+          "ship_code": "STAR",
+          "reason": "explicit_cruisetour_token"
+        },
+        {
+          "itinerary_code": "NBAUTHENTICJADEJADE7VANKTNJNUSGYICYWQF",
+          "ship_code": "JADE",
+          "reason": "land_tour_prefix_nb_or_sb"
+        }
+      ],
+      "ambiguous": []
+    },
+    "validation": {
+      "ocean_without_ship_prefix": [],
+      "cruisetour_passing_proposed_rule": [],
+      "safe_to_apply_exclusion_rule": true,
+      "fail_closed": false
+    },
+    "final_rule": {
+      "ocean": "itinerary code starts with shipCode AND does not contain CRUISETOUR AND does not match NB/SB land-tour prefix",
+      "cruisetour_package": "contains CRUISETOUR OR itinerary code does not start with shipCode OR matches NB/SB land-tour prefix",
+      "ambiguous": "missing itinerary code or ship code prevents safe classification"
+    }
+  },
+  "eligibility": {
+    "as_of_date": "2026-09-01",
+    "cutoff_date": "2026-09-22",
+    "minimum_public_departure_date": "2026-09-23",
+    "cutoff_days": 21,
+    "unique_source_sailings": 2498,
+    "cruisetour_or_package_exclusions": 481,
+    "ambiguous_itineraries": 0,
+    "past_departures": 0,
+    "within_21_day_exclusions": 42,
+    "missing_departure_date": 0,
+    "incomplete_ocean_sailings": 0,
+    "incomplete_ocean_beyond_cutoff": 0,
+    "publicly_eligible_ocean_sailings": 1975,
+    "import_ready_ocean_sailings": 1975,
+    "eligible_ocean_sailings": 1975,
+    "arithmetic": {
+      "unique_source_sailings": 2498,
+      "minus_cruisetour_or_package": 481,
+      "minus_ambiguous": 0,
+      "minus_missing_departure_date": 0,
+      "minus_past_departures": 0,
+      "minus_within_21_day_exclusions": 42,
+      "minus_incomplete_ocean_beyond_cutoff": 0,
+      "equals_import_ready_ocean_sailings": 1975,
+      "equals_publicly_eligible_ocean_sailings": 1975,
+      "reconciles": true
+    }
+  },
+  "identity_all": {
+    "total_records": 2498,
+    "unique_official_product_key": 2498,
+    "unique_external_key": 2498,
+    "official_key_collisions": [],
+    "external_key_collisions": []
+  },
+  "identity_ocean": {
+    "total_records": 2017,
+    "unique_official_product_key": 2017,
+    "unique_external_key": 2017,
+    "official_key_collisions": [],
+    "external_key_collisions": []
+  },
+  "ship_mappings": {
+    "total_source_ships": 21,
+    "resolved_count": 21,
+    "unresolved_count": 0,
+    "mappings": [
+      {
+        "source_ship_code": "AQUA",
+        "source_ship_title": "Norwegian Aqua",
+        "expected_db_name": "Norwegian Aqua",
+        "db_ship_id": "ec043b2d-42f6-4067-842e-6e0511db3fe0",
+        "db_ship_name": "Norwegian Aqua",
+        "current_official_line_ship_id": "AQUA",
+        "proposed_official_line_ship_id": "AQUA",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "AURA",
+        "source_ship_title": "Norwegian Aura",
+        "expected_db_name": "Norwegian Aura",
+        "db_ship_id": "12c40f77-51d6-4a95-9cf5-11ae8f326444",
+        "db_ship_name": "Norwegian Aura",
+        "current_official_line_ship_id": "AURA",
+        "proposed_official_line_ship_id": "AURA",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "BLISS",
+        "source_ship_title": "Norwegian Bliss",
+        "expected_db_name": "Norwegian Bliss",
+        "db_ship_id": "a16b2744-8af7-4040-9964-b8343af6ddaf",
+        "db_ship_name": "Norwegian Bliss",
+        "current_official_line_ship_id": "BLISS",
+        "proposed_official_line_ship_id": "BLISS",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "BREAKAWAY",
+        "source_ship_title": "Norwegian Breakaway",
+        "expected_db_name": "Norwegian Breakaway",
+        "db_ship_id": "c60e377f-a46e-48d6-a640-e4f53e3647d9",
+        "db_ship_name": "Norwegian Breakaway",
+        "current_official_line_ship_id": "BREAKAWAY",
+        "proposed_official_line_ship_id": "BREAKAWAY",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "DAWN",
+        "source_ship_title": "Norwegian Dawn",
+        "expected_db_name": "Norwegian Dawn",
+        "db_ship_id": "93825bb9-b932-4f4e-95cc-cfd2e7ebc1a5",
+        "db_ship_name": "Norwegian Dawn",
+        "current_official_line_ship_id": "DAWN",
+        "proposed_official_line_ship_id": "DAWN",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "ENCORE",
+        "source_ship_title": "Norwegian Encore",
+        "expected_db_name": "Norwegian Encore",
+        "db_ship_id": "51a0ef64-8e95-400f-ba1f-d07a8a58e0bc",
+        "db_ship_name": "Norwegian Encore",
+        "current_official_line_ship_id": "ENCORE",
+        "proposed_official_line_ship_id": "ENCORE",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "EPIC",
+        "source_ship_title": "Norwegian Epic",
+        "expected_db_name": "Norwegian Epic",
+        "db_ship_id": "a350e55d-6a4a-4a7c-ae1f-8f849be9e81d",
+        "db_ship_name": "Norwegian Epic",
+        "current_official_line_ship_id": "EPIC",
+        "proposed_official_line_ship_id": "EPIC",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "ESCAPE",
+        "source_ship_title": "Norwegian Escape",
+        "expected_db_name": "Norwegian Escape",
+        "db_ship_id": "a7ba652c-9765-4431-b645-77ea7890db07",
+        "db_ship_name": "Norwegian Escape",
+        "current_official_line_ship_id": "ESCAPE",
+        "proposed_official_line_ship_id": "ESCAPE",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "GEM",
+        "source_ship_title": "Norwegian Gem",
+        "expected_db_name": "Norwegian Gem",
+        "db_ship_id": "95de3c9c-d06a-4cd3-ada9-6763700b6e8b",
+        "db_ship_name": "Norwegian Gem",
+        "current_official_line_ship_id": "GEM",
+        "proposed_official_line_ship_id": "GEM",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "GETAWAY",
+        "source_ship_title": "Norwegian Getaway",
+        "expected_db_name": "Norwegian Getaway",
+        "db_ship_id": "659c34b9-634c-414c-87fb-66e4633f9c43",
+        "db_ship_name": "Norwegian Getaway",
+        "current_official_line_ship_id": "GETAWAY",
+        "proposed_official_line_ship_id": "GETAWAY",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "JADE",
+        "source_ship_title": "Norwegian Jade",
+        "expected_db_name": "Norwegian Jade",
+        "db_ship_id": "3cd61e5e-935b-49cc-87d9-deca56e31fe0",
+        "db_ship_name": "Norwegian Jade",
+        "current_official_line_ship_id": "JADE",
+        "proposed_official_line_ship_id": "JADE",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "JEWEL",
+        "source_ship_title": "Norwegian Jewel",
+        "expected_db_name": "Norwegian Jewel",
+        "db_ship_id": "b403fe8e-3659-428a-b7b6-da18630ac287",
+        "db_ship_name": "Norwegian Jewel",
+        "current_official_line_ship_id": "JEWEL",
+        "proposed_official_line_ship_id": "JEWEL",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "JOY",
+        "source_ship_title": "Norwegian Joy",
+        "expected_db_name": "Norwegian Joy",
+        "db_ship_id": "514ad6fa-a318-4d06-a50f-db5e40de8e3b",
+        "db_ship_name": "Norwegian Joy",
+        "current_official_line_ship_id": "JOY",
+        "proposed_official_line_ship_id": "JOY",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "LUNA",
+        "source_ship_title": "Norwegian Luna",
+        "expected_db_name": "Norwegian Luna",
+        "db_ship_id": "2bedcd38-48fc-4c64-aafc-bae54f9b1167",
+        "db_ship_name": "Norwegian Luna",
+        "current_official_line_ship_id": "LUNA",
+        "proposed_official_line_ship_id": "LUNA",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "PEARL",
+        "source_ship_title": "Norwegian Pearl",
+        "expected_db_name": "Norwegian Pearl",
+        "db_ship_id": "30518b4b-39a4-4b91-b4eb-1aacdabbcf98",
+        "db_ship_name": "Norwegian Pearl",
+        "current_official_line_ship_id": "PEARL",
+        "proposed_official_line_ship_id": "PEARL",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "PRIDE_AMER",
+        "source_ship_title": "Pride of America",
+        "expected_db_name": "Pride of America",
+        "db_ship_id": "f0b6f80a-6513-4b91-bc32-68dc8f8556e9",
+        "db_ship_name": "Pride of America",
+        "current_official_line_ship_id": "PRIDE_AMER",
+        "proposed_official_line_ship_id": "PRIDE_AMER",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "PRIMA",
+        "source_ship_title": "Norwegian Prima",
+        "expected_db_name": "Norwegian Prima",
+        "db_ship_id": "8f81fee3-8338-4c27-be32-2114f7754391",
+        "db_ship_name": "Norwegian Prima",
+        "current_official_line_ship_id": "PRIMA",
+        "proposed_official_line_ship_id": "PRIMA",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "SPIRIT",
+        "source_ship_title": "Norwegian Spirit",
+        "expected_db_name": "Norwegian Spirit",
+        "db_ship_id": "093f9cbd-e05d-4c78-9f8c-e5091850bea9",
+        "db_ship_name": "Norwegian Spirit",
+        "current_official_line_ship_id": "SPIRIT",
+        "proposed_official_line_ship_id": "SPIRIT",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "STAR",
+        "source_ship_title": "Norwegian Star",
+        "expected_db_name": "Norwegian Star",
+        "db_ship_id": "d3cb3861-27eb-454e-af79-c6f9faf11209",
+        "db_ship_name": "Norwegian Star",
+        "current_official_line_ship_id": "STAR",
+        "proposed_official_line_ship_id": "STAR",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "SUN",
+        "source_ship_title": "Norwegian Sun",
+        "expected_db_name": "Norwegian Sun",
+        "db_ship_id": "81b8a990-af09-4df4-a2ee-818c6e616f44",
+        "db_ship_name": "Norwegian Sun",
+        "current_official_line_ship_id": "SUN",
+        "proposed_official_line_ship_id": "SUN",
+        "resolved": true,
+        "method": "exact_name_match"
+      },
+      {
+        "source_ship_code": "VIVA",
+        "source_ship_title": "Norwegian Viva",
+        "expected_db_name": "Norwegian Viva",
+        "db_ship_id": "ca2b823d-3c9c-4219-b265-e1d9445f4333",
+        "db_ship_name": "Norwegian Viva",
+        "current_official_line_ship_id": "VIVA",
+        "proposed_official_line_ship_id": "VIVA",
+        "resolved": true,
+        "method": "exact_name_match"
+      }
+    ],
+    "unresolved": [],
+    "proposed_db_updates": []
+  },
+  "port_analysis": {
+    "summary": {
+      "exact_match": 0,
+      "existing_alias": 0,
+      "safely_resolvable": 17,
+      "unresolved": 0,
+      "ambiguous": 0
+    },
+    "results": [
+      {
+        "source_port": "Great Stirrup Cay, Bahamas",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Great Stirrup Cay",
+        "canonical_port_id": "port-csv-261"
+      },
+      {
+        "source_port": "Orlando (Port Canaveral), Florida",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Port Canaveral",
+        "canonical_port_id": "port-csv-85"
+      },
+      {
+        "source_port": "London (Southampton), United Kingdom",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Southampton",
+        "canonical_port_id": "port-csv-49"
+      },
+      {
+        "source_port": "Rome (Civitavecchia), Italy",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Civitavecchia",
+        "canonical_port_id": "port-csv-19"
+      },
+      {
+        "source_port": "Athens (Piraeus), Greece",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Piraeus",
+        "canonical_port_id": "port-csv-240"
+      },
+      {
+        "source_port": "Barcelona, Spain",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Barcelona",
+        "canonical_port_id": "port-csv-1"
+      },
+      {
+        "source_port": "Barcelona (Tarragona), Spain",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Tarragona",
+        "canonical_port_id": "port-csv-2"
+      },
+      {
+        "source_port": "Venice (Ravenna)",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Venice",
+        "canonical_port_id": "port-csv-32"
+      },
+      {
+        "source_port": "Venice (Trieste)",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Venice",
+        "canonical_port_id": "port-csv-32"
+      },
+      {
+        "source_port": "Ketchikan (Ward Cove), Alaska",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Ketchikan",
+        "canonical_port_id": "port-csv-132"
+      },
+      {
+        "source_port": "Honolulu, Oahu",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Honolulu",
+        "canonical_port_id": "port-csv-128"
+      },
+      {
+        "source_port": "Nāwiliwili, Kaua'i",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Nawiliwili",
+        "canonical_port_id": "port-csv-130"
+      },
+      {
+        "source_port": "Québec City, Canada",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Quebec City",
+        "canonical_port_id": "port-csv-143"
+      },
+      {
+        "source_port": "Santiago (San Antonio), Chile",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "San Antonio",
+        "canonical_port_id": "port-csv-263"
+      },
+      {
+        "source_port": "Seoul (Incheon)",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Incheon",
+        "canonical_port_id": "port-csv-262"
+      },
+      {
+        "source_port": "Tokyo",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Tokyo",
+        "canonical_port_id": "port-csv-199"
+      },
+      {
+        "source_port": "Tokyo (Yokohama)",
+        "classification": "safely_resolvable",
+        "status": "resolved",
+        "method": null,
+        "reason": null,
+        "canonical_port_name": "Tokyo",
+        "canonical_port_id": "port-csv-199"
+      }
+    ],
+    "unresolved_or_ambiguous": []
+  },
+  "embark_port_audit": [
+    {
+      "ncl_code": "AKL",
+      "ncl_source_name": "Auckland, New Zealand",
+      "mapped_canonical_name": "Auckland",
+      "resolver_canonical_name": "Auckland",
+      "code_resolution_canonical_name": "Auckland",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "BCN",
+      "ncl_source_name": "Barcelona, Spain",
+      "mapped_canonical_name": "Barcelona",
+      "resolver_canonical_name": "Barcelona",
+      "code_resolution_canonical_name": "Barcelona",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "BOS",
+      "ncl_source_name": "Boston, Massachusetts",
+      "mapped_canonical_name": "Boston",
+      "resolver_canonical_name": "Boston",
+      "code_resolution_canonical_name": "Boston",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "BUE",
+      "ncl_source_name": "Buenos Aires, Argentina",
+      "mapped_canonical_name": "Buenos Aires",
+      "resolver_canonical_name": "Buenos Aires",
+      "code_resolution_canonical_name": "Buenos Aires",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "CIV",
+      "ncl_source_name": "Rome (Civitavecchia), Italy",
+      "mapped_canonical_name": "Civitavecchia",
+      "resolver_canonical_name": "Civitavecchia",
+      "code_resolution_canonical_name": "Civitavecchia",
+      "classification": "EXISTING_ALIAS",
+      "proposed_action": "ready",
+      "note": "Marketing city Rome; physical port Civitavecchia"
+    },
+    {
+      "ncl_code": "CPH",
+      "ncl_source_name": "Copenhagen, Denmark",
+      "mapped_canonical_name": "Copenhagen",
+      "resolver_canonical_name": "Copenhagen",
+      "code_resolution_canonical_name": "Copenhagen",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "GAL",
+      "ncl_source_name": "Galveston, Texas",
+      "mapped_canonical_name": "Galveston",
+      "resolver_canonical_name": "Galveston",
+      "code_resolution_canonical_name": "Galveston",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "HEL",
+      "ncl_source_name": "Helsinki, Finland",
+      "mapped_canonical_name": "Helsinki",
+      "resolver_canonical_name": "Helsinki",
+      "code_resolution_canonical_name": "Helsinki",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "HKG",
+      "ncl_source_name": "Hong Kong, China",
+      "mapped_canonical_name": "Hong Kong",
+      "resolver_canonical_name": "Hong Kong",
+      "code_resolution_canonical_name": "Hong Kong",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "HNL",
+      "ncl_source_name": "Honolulu, Oahu",
+      "mapped_canonical_name": "Honolulu",
+      "resolver_canonical_name": "Honolulu",
+      "code_resolution_canonical_name": "Honolulu",
+      "classification": "EXISTING_ALIAS",
+      "proposed_action": "ready",
+      "note": "Oahu is island context on Honolulu record"
+    },
+    {
+      "ncl_code": "INC",
+      "ncl_source_name": "Seoul (Incheon), South Korea",
+      "mapped_canonical_name": "Incheon",
+      "resolver_canonical_name": "Incheon",
+      "code_resolution_canonical_name": "Incheon",
+      "classification": "NEW_PORT_REQUIRED",
+      "proposed_action": "add_canonical_port",
+      "note": "Physical cruise port is Incheon, not central Seoul"
+    },
+    {
+      "ncl_code": "IST",
+      "ncl_source_name": "Istanbul, Turkey",
+      "mapped_canonical_name": "Istanbul",
+      "resolver_canonical_name": "Istanbul",
+      "code_resolution_canonical_name": "Istanbul",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "JAX",
+      "ncl_source_name": "Jacksonville, Florida",
+      "mapped_canonical_name": "Jacksonville",
+      "resolver_canonical_name": "Jacksonville",
+      "code_resolution_canonical_name": "Jacksonville",
+      "classification": "NEW_PORT_REQUIRED",
+      "proposed_action": "add_canonical_port",
+      "note": null
+    },
+    {
+      "ncl_code": "LAX",
+      "ncl_source_name": "Los Angeles, California",
+      "mapped_canonical_name": "Los Angeles",
+      "resolver_canonical_name": "Los Angeles",
+      "code_resolution_canonical_name": "Los Angeles",
+      "classification": "SAFE_EQUIVALENT",
+      "proposed_action": "ready",
+      "note": "Catalogue canonical Los Angeles maps to San Pedro cruise terminal"
+    },
+    {
+      "ncl_code": "LIS",
+      "ncl_source_name": "Lisbon, Portugal",
+      "mapped_canonical_name": "Lisbon",
+      "resolver_canonical_name": "Lisbon",
+      "code_resolution_canonical_name": "Lisbon",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "LTK",
+      "ncl_source_name": "Lautoka, Fiji",
+      "mapped_canonical_name": "Lautoka",
+      "resolver_canonical_name": "Lautoka",
+      "code_resolution_canonical_name": "Lautoka",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "MIA",
+      "ncl_source_name": "Miami, Florida",
+      "mapped_canonical_name": "Miami",
+      "resolver_canonical_name": "Miami",
+      "code_resolution_canonical_name": "Miami",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "MSY",
+      "ncl_source_name": "New Orleans, Louisiana",
+      "mapped_canonical_name": "New Orleans",
+      "resolver_canonical_name": "New Orleans",
+      "code_resolution_canonical_name": "New Orleans",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "NYC",
+      "ncl_source_name": "New York, New York",
+      "mapped_canonical_name": "New York",
+      "resolver_canonical_name": "New York",
+      "code_resolution_canonical_name": "New York",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "PCV",
+      "ncl_source_name": "Orlando (Port Canaveral), Florida",
+      "mapped_canonical_name": "Port Canaveral",
+      "resolver_canonical_name": "Port Canaveral",
+      "code_resolution_canonical_name": "Port Canaveral",
+      "classification": "EXISTING_ALIAS",
+      "proposed_action": "ready",
+      "note": "Marketing city Orlando; physical port Port Canaveral"
+    },
+    {
+      "ncl_code": "PHL",
+      "ncl_source_name": "Philadelphia, Pennsylvania",
+      "mapped_canonical_name": "Philadelphia",
+      "resolver_canonical_name": "Philadelphia",
+      "code_resolution_canonical_name": "Philadelphia",
+      "classification": "NEW_PORT_REQUIRED",
+      "proposed_action": "add_canonical_port",
+      "note": null
+    },
+    {
+      "ncl_code": "PIR",
+      "ncl_source_name": "Athens (Piraeus), Greece",
+      "mapped_canonical_name": "Piraeus",
+      "resolver_canonical_name": "Piraeus",
+      "code_resolution_canonical_name": "Piraeus",
+      "classification": "EXISTING_ALIAS",
+      "proposed_action": "ready",
+      "note": "Marketing city Athens; physical port Piraeus"
+    },
+    {
+      "ncl_code": "PPT",
+      "ncl_source_name": "Papeete (Tahiti), French Polynesia",
+      "mapped_canonical_name": "Papeete",
+      "resolver_canonical_name": "Papeete",
+      "code_resolution_canonical_name": "Papeete",
+      "classification": "EXISTING_ALIAS",
+      "proposed_action": "ready",
+      "note": "Tahiti island context on Papeete record"
+    },
+    {
+      "ncl_code": "QUE",
+      "ncl_source_name": "Québec City, Canada",
+      "mapped_canonical_name": "Quebec City",
+      "resolver_canonical_name": "Quebec City",
+      "code_resolution_canonical_name": "Quebec City",
+      "classification": "EXISTING_ALIAS",
+      "proposed_action": "ready",
+      "note": "Diacritic variant on Quebec City record"
+    },
+    {
+      "ncl_code": "RAV",
+      "ncl_source_name": "Venice (Ravenna), Italy",
+      "mapped_canonical_name": "Ravenna",
+      "resolver_canonical_name": "Ravenna",
+      "code_resolution_canonical_name": "Ravenna",
+      "classification": "DISTINCT_PORT_REQUIRED",
+      "proposed_action": "use_ncl_code_map_and_alias",
+      "note": "Must not resolve to Venice — Ravenna is a separate Adriatic port"
+    },
+    {
+      "ncl_code": "REY",
+      "ncl_source_name": "Reykjavik, Iceland",
+      "mapped_canonical_name": "Reykjavik",
+      "resolver_canonical_name": "Reykjavik",
+      "code_resolution_canonical_name": "Reykjavik",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "SAI",
+      "ncl_source_name": "Santiago (San Antonio), Chile",
+      "mapped_canonical_name": "San Antonio",
+      "resolver_canonical_name": "San Antonio",
+      "code_resolution_canonical_name": "San Antonio",
+      "classification": "DISTINCT_PORT_REQUIRED",
+      "proposed_action": "use_ncl_code_map_and_alias",
+      "note": "Must not resolve to Valparaiso — San Antonio is a separate Chilean port"
+    },
+    {
+      "ncl_code": "SAN",
+      "ncl_source_name": "San Diego, California",
+      "mapped_canonical_name": "San Diego",
+      "resolver_canonical_name": "San Diego",
+      "code_resolution_canonical_name": "San Diego",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "SEA",
+      "ncl_source_name": "Seattle, Washington",
+      "mapped_canonical_name": "Seattle",
+      "resolver_canonical_name": "Seattle",
+      "code_resolution_canonical_name": "Seattle",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "SIN",
+      "ncl_source_name": "Singapore, Singapore",
+      "mapped_canonical_name": "Singapore",
+      "resolver_canonical_name": "Singapore",
+      "code_resolution_canonical_name": "Singapore",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "SJU",
+      "ncl_source_name": "San Juan, Puerto Rico",
+      "mapped_canonical_name": "San Juan",
+      "resolver_canonical_name": "San Juan",
+      "code_resolution_canonical_name": "San Juan",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "SOU",
+      "ncl_source_name": "London (Southampton), United Kingdom",
+      "mapped_canonical_name": "Southampton",
+      "resolver_canonical_name": "Southampton",
+      "code_resolution_canonical_name": "Southampton",
+      "classification": "EXISTING_ALIAS",
+      "proposed_action": "ready",
+      "note": "Marketing city London; physical port Southampton"
+    },
+    {
+      "ncl_code": "SYD",
+      "ncl_source_name": "Sydney, Australia",
+      "mapped_canonical_name": "Sydney",
+      "resolver_canonical_name": "Sydney",
+      "code_resolution_canonical_name": "Sydney",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "TAR",
+      "ncl_source_name": "Barcelona (Tarragona), Spain",
+      "mapped_canonical_name": "Tarragona",
+      "resolver_canonical_name": "Tarragona",
+      "code_resolution_canonical_name": "Tarragona",
+      "classification": "DISTINCT_PORT_REQUIRED",
+      "proposed_action": "use_ncl_code_map_and_alias",
+      "note": "Must not resolve to Barcelona — Tarragona is a separate Mediterranean port"
+    },
+    {
+      "ncl_code": "TOK",
+      "ncl_source_name": "Tokyo, Japan",
+      "mapped_canonical_name": "Tokyo",
+      "resolver_canonical_name": "Tokyo",
+      "code_resolution_canonical_name": "Tokyo",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "TPA",
+      "ncl_source_name": "Tampa, Florida",
+      "mapped_canonical_name": "Tampa",
+      "resolver_canonical_name": "Tampa",
+      "code_resolution_canonical_name": "Tampa",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "VAN",
+      "ncl_source_name": "Vancouver, British Columbia",
+      "mapped_canonical_name": "Vancouver",
+      "resolver_canonical_name": "Vancouver",
+      "code_resolution_canonical_name": "Vancouver",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "VCE",
+      "ncl_source_name": "Venice (Trieste), Italy",
+      "mapped_canonical_name": "Trieste",
+      "resolver_canonical_name": "Trieste",
+      "code_resolution_canonical_name": "Trieste",
+      "classification": "DISTINCT_PORT_REQUIRED",
+      "proposed_action": "use_ncl_code_map_and_alias",
+      "note": "NCL reuses VCE code for Trieste sailings — must not resolve to Venice"
+    },
+    {
+      "ncl_code": "WQF",
+      "ncl_source_name": "Whittier, Alaska",
+      "mapped_canonical_name": "Whittier",
+      "resolver_canonical_name": "Whittier",
+      "code_resolution_canonical_name": "Whittier",
+      "classification": "EXACT",
+      "proposed_action": "ready",
+      "note": null
+    },
+    {
+      "ncl_code": "YOK",
+      "ncl_source_name": "Tokyo (Yokohama), Japan",
+      "mapped_canonical_name": "Yokohama",
+      "resolver_canonical_name": "Yokohama",
+      "code_resolution_canonical_name": "Yokohama",
+      "classification": "DISTINCT_PORT_REQUIRED",
+      "proposed_action": "use_ncl_code_map_and_alias",
+      "note": "Tokyo metro marketing; physical port Yokohama"
+    }
+  ],
+  "blocked_voyage_analysis": {
+    "total_blocked": 523,
+    "publicly_eligible_blocked": 0,
+    "by_reason": {
+      "cruisetour_excluded": 481,
+      "within_21_day_exclusion": 42
+    },
+    "by_embark_port_code": [],
+    "examples": {
+      "cruisetour_excluded": [
+        {
+          "official_sailing_id": "BOSTONCRUISET03BREAKAWAY7BOSEPMHALSYNSJBBOS|2027-10-01",
+          "itinerary_code": "BOSTONCRUISET03BREAKAWAY7BOSEPMHALSYNSJBBOS",
+          "ship_code": "BREAKAWAY",
+          "departure_date": "2027-10-01",
+          "embark_port_code": "BOS",
+          "embark_port_meta": "Boston"
+        },
+        {
+          "official_sailing_id": "BOSTONCRUISET03BREAKAWAY7BOSEPMSJBHALPWMBOS|2027-09-24",
+          "itinerary_code": "BOSTONCRUISET03BREAKAWAY7BOSEPMSJBHALPWMBOS",
+          "ship_code": "BREAKAWAY",
+          "departure_date": "2027-09-24",
+          "embark_port_code": "BOS",
+          "embark_port_meta": "Boston"
+        },
+        {
+          "official_sailing_id": "BOSTONCRUISET03BREAKAWAY7BOSEPMSJBHALPWMBOS|2027-10-15",
+          "itinerary_code": "BOSTONCRUISET03BREAKAWAY7BOSEPMSJBHALPWMBOS",
+          "ship_code": "BREAKAWAY",
+          "departure_date": "2027-10-15",
+          "embark_port_code": "BOS",
+          "embark_port_meta": "Boston"
+        }
+      ],
+      "within_21_day_exclusion": [
+        {
+          "official_sailing_id": "EPIC7CIVSALCTALIVVLFMRSBCN|2026-09-13",
+          "itinerary_code": "EPIC7CIVSALCTALIVVLFMRSBCN",
+          "ship_code": "EPIC",
+          "departure_date": "2026-09-13",
+          "embark_port_code": "CIV",
+          "embark_port_meta": "Civitavecchia"
+        },
+        {
+          "official_sailing_id": "STAR10REYISAAKUAESMLYIVGSOQSOU|2026-09-03",
+          "itinerary_code": "STAR10REYISAAKUAESMLYIVGSOQSOU",
+          "ship_code": "STAR",
+          "departure_date": "2026-09-03",
+          "embark_port_code": "REY",
+          "embark_port_meta": "Reykjavik"
+        },
+        {
+          "official_sailing_id": "VIVA9ISTKUSJTRJMKPIRKAKMLACTASALCIV|2026-09-07",
+          "itinerary_code": "VIVA9ISTKUSJTRJMKPIRKAKMLACTASALCIV",
+          "ship_code": "VIVA",
+          "departure_date": "2026-09-07",
+          "embark_port_code": "IST",
+          "embark_port_meta": "Istanbul"
+        }
+      ]
+    }
+  },
+  "port_of_call_enrichment": {
+    "unique_ports_of_call": 0,
+    "resolved": 0,
+    "unresolved_or_ambiguous": [],
+    "recommendation": "Option B — allow voyage insertion once ship, embarkation port and core voyage identity resolve; enrich itinerary ports of call in a follow-up pass. NCL structured data lacks per-port dates anyway, so blocking import on every port-of-call alias would delay inventory unnecessarily.",
+    "rationale": [
+      "Embark ports are now code-mapped and catalogue-backed.",
+      "Port-of-call vocabulary largely overlaps embark naming patterns.",
+      "Private destinations (Great Stirrup Cay) and terminal variants (Ward Cove) can be enriched post-insert without changing voyage identity.",
+      "Cruise Finder can show voyage-level inventory before every itinerary stop is canonicalised."
+    ]
+  },
+  "enrichment": [],
+  "production_reconciliation": {
+    "status_counts": {
+      "active": 1000
+    },
+    "total_rows": 1000,
+    "active_count": 1000,
+    "genuine_inventory_rows": 1000,
+    "genuine_active_count": 1000,
+    "legacy_generic_rows": 0,
+    "legacy_generic_samples": [],
+    "publication_state": {
+      "active_public": 1000,
+      "match_required_review": 0,
+      "hidden_genuine": 0,
+      "other_genuine_statuses": 0
+    },
+    "source_recognition": {
+      "recognised_existing_eligible": 979,
+      "recognised_active": 979,
+      "recognised_match_required": 0,
+      "recognised_other_statuses": 0,
+      "outstanding_eligible_inserts": 996,
+      "proposed_updates": 0,
+      "source_absent_existing": 21,
+      "source_absent_active": 21,
+      "legacy_generic_ignored": 0
+    },
+    "recognised_existing_eligible": 979,
+    "outstanding_eligible_inserts": 996,
+    "proposed_updates": 0,
+    "source_absent_existing": 21,
+    "source_absent_active": 21,
+    "within_21_day_exclusions_count": 42,
+    "non_ocean_exclusions_count": 481,
+    "duplicate_diagnostics": {
+      "duplicate_official_sailing_ids": [],
+      "duplicate_external_keys": [],
+      "duplicate_itinerary_date": [],
+      "duplicate_identity_keys": [],
+      "duplicate_count": 0
+    },
+    "classification_counts": {
+      "genuine_inventory": 1000,
+      "legacy_generic": 0,
+      "active_public": 1000,
+      "match_required_review": 0,
+      "hidden_genuine": 0,
+      "other_genuine_statuses": 0
+    },
+    "reconciliation_arithmetic": {
+      "eligible_source_ocean_sailings": 1975,
+      "recognised_existing_eligible": 979,
+      "outstanding_eligible_inserts": 996,
+      "proposed_updates": 0,
+      "source_absent_existing": 21,
+      "source_absent_active": 21,
+      "legacy_generic_ignored": 0,
+      "duplicate_identity_groups": 0,
+      "reconciles": true
+    },
+    "as_of_date": "2026-09-01"
+  },
+  "failure_reason_counts": {
+    "cruisetour_excluded": 481,
+    "within_21_day_exclusion": 42
+  }
+}

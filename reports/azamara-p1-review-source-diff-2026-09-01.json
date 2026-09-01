@@ -1,0 +1,177 @@
+{
+  "diffs": [
+    {
+      "official_sailing_id": "JR280408-007",
+      "existing_uuid": "8022cf4a-9a62-4b58-b65e-6c565858d285",
+      "http_status": 200,
+      "gtm": {
+        "gtm_duration": "7-NIGHT CRUISE",
+        "package_code": "JR280408-007",
+        "nights": 7,
+        "ship_name": "Azamara Journey",
+        "cruise_name": "SPAIN, FRANCE &AMP; ITALY CRUISE: PALAMOS, MARSEILLE &AMP; ROME",
+        "destination": "MEDITERRANEAN"
+      },
+      "title": "SPAIN, FRANCE &amp; ITALY CRUISE: PALAMOS, MARSEILLE &amp; ROME",
+      "description": "Explore this Spain, France &amp; Italy Cruise: Palamos, Marseille &amp; Rome sailing from TARRAGONA to ROME (CIVITAVECCHIA) on Apr 8 2028",
+      "assessment": {
+        "risk": "identity_critical",
+        "identity_critical_changes": [
+          "itinerary"
+        ],
+        "safe_metadata_changes": [
+          "raw_extract"
+        ],
+        "stale_field_refresh": []
+      },
+      "production": {
+        "nights": 7,
+        "departure_date": "2028-04-08",
+        "return_date": "2028-04-15",
+        "departure_port": "Barcelona",
+        "itinerary": null,
+        "official_url": "https://www.azamara.com/cruises/jr280408-007-spain-france-italy-cruise-palamos-marseille-rome",
+        "raw_title": "SPAIN, FRANCE &AMP; ITALY CRUISE: PALAMOS, MARSEILLE &AMP; ROME",
+        "gtm_duration": "7-NIGHT CRUISE"
+      },
+      "source": {
+        "nights": 7,
+        "cruise_name": "SPAIN, FRANCE &AMP; ITALY CRUISE: PALAMOS, MARSEILLE &AMP; ROME",
+        "ship_name": "Azamara Journey",
+        "destination": "MEDITERRANEAN",
+        "gtm_duration": "7-NIGHT CRUISE",
+        "official_url": "https://www.azamara.com/cruises/jr280408-007-spain-france-italy-cruise-palamos-marseille-rome"
+      }
+    },
+    {
+      "official_sailing_id": "QS280923-007",
+      "existing_uuid": "40e4a922-7273-4642-9947-dc025790db4f",
+      "http_status": 200,
+      "gtm": {
+        "gtm_duration": "7-NIGHT CRUISE",
+        "package_code": "QS280923-007",
+        "nights": 7,
+        "ship_name": "Azamara Quest",
+        "cruise_name": "FRANCE INTENSIVE CRUISE: MARSEILLE, NICE &AMP; AJACCIO",
+        "destination": "MEDITERRANEAN"
+      },
+      "title": "FRANCE INTENSIVE CRUISE: MARSEILLE, NICE &amp; AJACCIO",
+      "description": "Explore this France Intensive Cruise: Marseille, Nice &amp; Ajaccio sailing from TARRAGONA to NICE on Sep 23 2028",
+      "assessment": {
+        "risk": "identity_critical",
+        "identity_critical_changes": [
+          "itinerary"
+        ],
+        "safe_metadata_changes": [
+          "raw_extract"
+        ],
+        "stale_field_refresh": []
+      },
+      "production": {
+        "nights": 7,
+        "departure_date": "2028-09-23",
+        "return_date": "2028-09-30",
+        "departure_port": "Barcelona",
+        "itinerary": null,
+        "official_url": "https://www.azamara.com/cruises/qs280923-007-france-intensive-cruise-marseille-nice-ajaccio",
+        "raw_title": "FRANCE INTENSIVE CRUISE: MARSEILLE, NICE &AMP; AJACCIO",
+        "gtm_duration": "7-NIGHT CRUISE"
+      },
+      "source": {
+        "nights": 7,
+        "cruise_name": "FRANCE INTENSIVE CRUISE: MARSEILLE, NICE &AMP; AJACCIO",
+        "ship_name": "Azamara Quest",
+        "destination": "MEDITERRANEAN",
+        "gtm_duration": "7-NIGHT CRUISE",
+        "official_url": "https://www.azamara.com/cruises/qs280923-007-france-intensive-cruise-marseille-nice-ajaccio"
+      }
+    },
+    {
+      "official_sailing_id": "QS280923-016",
+      "existing_uuid": "fb66aafd-15d9-47a1-bfbc-4a4a1fd69cb4",
+      "http_status": 200,
+      "gtm": {
+        "gtm_duration": "16-NIGHT CRUISE",
+        "package_code": "QS280923-016",
+        "nights": 16,
+        "ship_name": "Azamara Quest",
+        "cruise_name": "FRANCE &AMP; ITALY COMBINATION CRUISE: SAINT-TROPEZ, PORTOFINO &AMP; FLORENCE",
+        "destination": "COMBO"
+      },
+      "title": "FRANCE &amp; ITALY COMBINATION CRUISE: SAINT-TROPEZ, PORTOFINO &amp; FLORENCE",
+      "description": "Explore this France &amp; Italy Combination Cruise: Saint-tropez, Portofino &amp; Florence sailing from TARRAGONA to ROME (CIVITAVECCHIA) on Sep 23 2028",
+      "assessment": {
+        "risk": "identity_critical",
+        "identity_critical_changes": [
+          "itinerary"
+        ],
+        "safe_metadata_changes": [
+          "raw_extract"
+        ],
+        "stale_field_refresh": []
+      },
+      "production": {
+        "nights": 16,
+        "departure_date": "2028-09-23",
+        "return_date": "2028-10-09",
+        "departure_port": "Barcelona",
+        "itinerary": null,
+        "official_url": "https://www.azamara.com/cruises/qs280923-016-france-italy-combination-cruise-saint-tropez-portofino-florence",
+        "raw_title": "FRANCE &AMP; ITALY COMBINATION CRUISE: SAINT-TROPEZ, PORTOFINO &AMP; FLORENCE",
+        "gtm_duration": "16-NIGHT CRUISE"
+      },
+      "source": {
+        "nights": 16,
+        "cruise_name": "FRANCE &AMP; ITALY COMBINATION CRUISE: SAINT-TROPEZ, PORTOFINO &AMP; FLORENCE",
+        "ship_name": "Azamara Quest",
+        "destination": "COMBO",
+        "gtm_duration": "16-NIGHT CRUISE",
+        "official_url": "https://www.azamara.com/cruises/qs280923-016-france-italy-combination-cruise-saint-tropez-portofino-florence"
+      }
+    },
+    {
+      "official_sailing_id": "JR270207-010",
+      "existing_uuid": "094211ac-e248-4086-846a-a3707b332a04",
+      "http_status": 200,
+      "gtm": {
+        "gtm_duration": "10-NIGHT CRUISE",
+        "package_code": "JR270207-010",
+        "nights": 10,
+        "ship_name": "Azamara Journey",
+        "cruise_name": "2027 RIO CARNAVAL CRUISE: RIO DE JANEIRO, PARATY &AMP; SAO PAULO",
+        "destination": "SOUTH AMERICA"
+      },
+      "title": "2027 RIO CARNAVAL CRUISE: RIO DE JANEIRO, PARATY &amp; SAO PAULO",
+      "description": "Explore this 2027 Rio Carnaval Cruise: Rio De Janeiro, Paraty &amp; Sao Paulo sailing from RIO DE JANEIRO to BUENOS AIRES on Feb 7 2027",
+      "assessment": {
+        "risk": "identity_critical",
+        "identity_critical_changes": [
+          "itinerary"
+        ],
+        "safe_metadata_changes": [
+          "official_url",
+          "raw_extract"
+        ],
+        "stale_field_refresh": []
+      },
+      "production": {
+        "nights": 10,
+        "departure_date": "2027-02-07",
+        "return_date": "2027-02-17",
+        "departure_port": "Rio de Janeiro",
+        "itinerary": null,
+        "official_url": "https://www.azamara.com/cruises/jr270207-010-brazil-intensive-cruise-rio-de-janeiro-paraty-sao-paulo",
+        "raw_title": "BRAZIL INTENSIVE CRUISE: RIO DE JANEIRO, PARATY &AMP; SAO PAULO",
+        "gtm_duration": "10-NIGHT CRUISE"
+      },
+      "source": {
+        "nights": 10,
+        "cruise_name": "2027 RIO CARNAVAL CRUISE: RIO DE JANEIRO, PARATY &AMP; SAO PAULO",
+        "ship_name": "Azamara Journey",
+        "destination": "SOUTH AMERICA",
+        "gtm_duration": "10-NIGHT CRUISE",
+        "official_url": "https://www.azamara.com/cruises/jr270207-010-2027-rio-carnaval-cruise-rio-de-janeiro-paraty-sao-paulo"
+      }
+    }
+  ]
+}

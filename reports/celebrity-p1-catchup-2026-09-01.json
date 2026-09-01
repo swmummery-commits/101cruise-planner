@@ -1,0 +1,168 @@
+{
+  "date": "2026-09-01",
+  "line": "celebrity-cruises",
+  "apply": true,
+  "cap": 100,
+  "batches": [
+    {
+      "batch": 1,
+      "freeze_hash": "5ded826b199ebae7cb88c958ed8eba8e3b2d6b2de6cd3c848c92eb349e88b66d",
+      "frozen_count": 100,
+      "run_id": "celebrity-cruises-weekly-2026-09-01T10-55-12-016Z",
+      "run_record_id": "8f5da6f4-97d3-4bfb-a683-2e59f12ae4a5",
+      "rollback_manifest_id": "ecc9faa1-88bd-4a2f-b414-0080c0c14b98",
+      "inserted": 100,
+      "updated": 0,
+      "failed": 0,
+      "ok": true,
+      "recon": {
+        "run_id": "celebrity-cruises-weekly-2026-09-01T10-56-15-305Z",
+        "eligible_total": 1371,
+        "active_production_total": 1248,
+        "proposed_inserts": 179,
+        "proposed_updates": 3,
+        "source_absent_active": 56,
+        "snapshot_id": "b1d07c3b90dd8e1a6e75edcf6ee4ed39136da2afae4fdbe03b8340325220e7ef",
+        "quality_gate": {
+          "passed": true,
+          "failures": [],
+          "blocked": false
+        },
+        "inserts": 0,
+        "updates": 0,
+        "failed_writes": 0,
+        "rollback_manifest_id": null,
+        "resolution_rates": {
+          "eligible_total": 1371,
+          "ship_resolution_pct": 100,
+          "departure_port_resolution_pct": 100,
+          "destination_resolution_pct": 100,
+          "river_ship_resolution_pct": 100,
+          "river_departure_port_resolution_pct": 100,
+          "river_destination_resolution_pct": 100,
+          "identity_coverage_pct": 100,
+          "duplicate_official_identities": 0
+        }
+      }
+    },
+    {
+      "batch": 2,
+      "freeze_hash": "02b5f9f49ca1914e69074418ce84d31f0502d9ce5af1ba14b53613d95813d6a7",
+      "frozen_count": 100,
+      "run_id": "celebrity-cruises-weekly-2026-09-01T10-56-53-962Z",
+      "run_record_id": "4ce10542-b7a4-4a49-b76b-c90540fb5da7",
+      "rollback_manifest_id": "c91542bd-4b1d-41dd-9d4d-b172989ce571",
+      "inserted": 97,
+      "updated": 3,
+      "failed": 0,
+      "ok": true,
+      "recon": {
+        "run_id": "celebrity-cruises-weekly-2026-09-01T10-57-34-564Z",
+        "eligible_total": 1371,
+        "active_production_total": 1345,
+        "proposed_inserts": 82,
+        "proposed_updates": 0,
+        "source_absent_active": 56,
+        "snapshot_id": "b1d07c3b90dd8e1a6e75edcf6ee4ed39136da2afae4fdbe03b8340325220e7ef",
+        "quality_gate": {
+          "passed": true,
+          "failures": [],
+          "blocked": false
+        },
+        "inserts": 0,
+        "updates": 0,
+        "failed_writes": 0,
+        "rollback_manifest_id": null,
+        "resolution_rates": {
+          "eligible_total": 1371,
+          "ship_resolution_pct": 100,
+          "departure_port_resolution_pct": 100,
+          "destination_resolution_pct": 100,
+          "river_ship_resolution_pct": 100,
+          "river_departure_port_resolution_pct": 100,
+          "river_destination_resolution_pct": 100,
+          "identity_coverage_pct": 100,
+          "duplicate_official_identities": 0
+        }
+      }
+    },
+    {
+      "batch": 3,
+      "freeze_hash": "e0ff57690dbec1016e2dc6f495b4e03a16ecea8cbe7bfb7348d6c7ae2b440ee5",
+      "frozen_count": 82,
+      "run_id": "celebrity-cruises-weekly-2026-09-01T10-57-59-447Z",
+      "run_record_id": "b04830c5-9c83-4676-9ea5-b8782b855207",
+      "rollback_manifest_id": "5c5a3929-9677-442f-9483-9b5a943475c8",
+      "inserted": 82,
+      "updated": 0,
+      "failed": 0,
+      "ok": true,
+      "recon": {
+        "run_id": "celebrity-cruises-weekly-2026-09-01T10-58-42-969Z",
+        "eligible_total": 1371,
+        "active_production_total": 1427,
+        "proposed_inserts": 0,
+        "proposed_updates": 0,
+        "source_absent_active": 56,
+        "snapshot_id": "b1d07c3b90dd8e1a6e75edcf6ee4ed39136da2afae4fdbe03b8340325220e7ef",
+        "quality_gate": {
+          "passed": true,
+          "failures": [],
+          "blocked": false
+        },
+        "inserts": 0,
+        "updates": 0,
+        "failed_writes": 0,
+        "rollback_manifest_id": null,
+        "resolution_rates": {
+          "eligible_total": 1371,
+          "ship_resolution_pct": 100,
+          "departure_port_resolution_pct": 100,
+          "destination_resolution_pct": 100,
+          "river_ship_resolution_pct": 100,
+          "river_departure_port_resolution_pct": 100,
+          "river_destination_resolution_pct": 100,
+          "identity_coverage_pct": 100,
+          "duplicate_official_identities": 0
+        }
+      }
+    }
+  ],
+  "ok": true,
+  "preflight": {
+    "run_id": "celebrity-cruises-weekly-2026-09-01T10-54-35-927Z",
+    "eligible_total": 1371,
+    "active_production_total": 1148,
+    "proposed_inserts": 279,
+    "proposed_updates": 3,
+    "source_absent_active": 56,
+    "snapshot_id": "b1d07c3b90dd8e1a6e75edcf6ee4ed39136da2afae4fdbe03b8340325220e7ef",
+    "quality_gate": {
+      "passed": true,
+      "failures": [],
+      "blocked": false
+    },
+    "inserts": 0,
+    "updates": 0,
+    "failed_writes": 0,
+    "rollback_manifest_id": null,
+    "resolution_rates": {
+      "eligible_total": 1371,
+      "ship_resolution_pct": 100,
+      "departure_port_resolution_pct": 100,
+      "destination_resolution_pct": 100,
+      "river_ship_resolution_pct": 100,
+      "river_departure_port_resolution_pct": 100,
+      "river_destination_resolution_pct": 100,
+      "identity_coverage_pct": 100,
+      "duplicate_official_identities": 0
+    }
+  },
+  "counts_before": {
+    "active": 1148
+  },
+  "counts_after": {
+    "active": 1427
+  },
+  "outstanding": 0
+}

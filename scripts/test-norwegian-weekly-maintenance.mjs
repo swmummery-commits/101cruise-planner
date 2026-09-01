@@ -134,6 +134,12 @@ assert(
   applySrc.includes("new Map(newRows.map((r) => [r.official_sailing_id, r]))"),
   "weekly enrichment looks up DB rows by official_sailing_id"
 );
+const weeklySrc = fs.readFileSync(path.join(root, "netlify/functions/lib/norwegian-weekly-maintenance.js"), "utf8");
+assert(
+  weeklySrc.includes("persistMaintenanceRollbackManifest"),
+  "NCL weekly apply persists a rollback/recovery manifest"
+);
+assert(weeklySrc.includes("rollback_manifest_id"), "NCL summary exposes rollback_manifest_id");
 assert(!applySrc.includes("[r.id, r]"), "weekly enrichment must not key enrichment map by UUID");
 const sharedSrc = fs.readFileSync(path.join(root, "netlify/functions/lib/norwegian-maintenance-shared.js"), "utf8");
 assert(!/assertGlobalCruiseWriteLockHeld\(options\)/.test(sharedSrc), "promote/hide must not reference undefined options");

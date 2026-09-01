@@ -1,0 +1,364 @@
+{
+  "review_and_safe_update": [
+    {
+      "official_sailing_id": "JR280408-007",
+      "production": {
+        "id": "8022cf4a-9a62-4b58-b65e-6c565858d285",
+        "official_sailing_id": "JR280408-007",
+        "external_key": "20197e70baed1bbafa8bc5d04dd41e2a7e1548b3",
+        "identity_key": "7dbf678b832a96e0c257aacf2bdeca8eaeedf193",
+        "ship_id": "c6e544ad-3282-4c40-8a4c-5c663ec08dec",
+        "departure_date": "2028-04-08",
+        "return_date": "2028-04-15",
+        "nights": 7,
+        "departure_port": "Barcelona",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "itinerary": null,
+        "official_url": "https://www.azamara.com/cruises/jr280408-007-spain-france-italy-cruise-palamos-marseille-rome",
+        "status": "active",
+        "match_confidence": "high",
+        "updated_at": "2026-08-15T03:36:36.028997+00:00",
+        "last_seen_at": "2026-08-15T03:36:35.28+00:00",
+        "raw_extract": {
+          "title": "SPAIN, FRANCE &AMP; ITALY CRUISE: PALAMOS, MARSEILLE &AMP; ROME",
+          "description": "Explore this Spain, France &amp; Italy Cruise: Palamos, Marseille &amp; Rome sailing from BARCELONA (TARRAGONA) to ROME (CIVITAVECCHIA) on Apr 8 2028",
+          "signal_score": 5,
+          "canonical_url": "https://www.azamara.com/cruises/jr280408-007-spain-france-italy-cruise-palamos-marseille-rome",
+          "excerpt_chars": 26,
+          "discovery_11d2": {
+            "adapter": "generic",
+            "sailing_score": 100,
+            "source_method": "official_sitemap",
+            "positive_signals": [
+              "official_sitemap",
+              "official_gtm"
+            ]
+          },
+          "ship_match_via": "alias",
+          "ship_name_guesses": [
+            "Azamara Journey"
+          ],
+          "departure_port_raw": "BARCELONA (TARRAGONA) to ROME (CIVITAVECCHIA)",
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "BARCELONA (TARRAGONA) to ROME (CIVITAVECCHIA)",
+            "attempted": [
+              {
+                "reason": null,
+                "status": "resolved",
+                "rawValue": "BARCELONA (TARRAGONA) to ROME (CIVITAVECCHIA)",
+                "confidence": "exact",
+                "sourceField": "description.sailing_from",
+                "canonicalPortId": "port-csv-1",
+                "canonicalPortName": "Barcelona"
+              }
+            ],
+            "confidence": "exact",
+            "sourceField": "description.sailing_from",
+            "canonicalPortId": "port-csv-1",
+            "canonicalPortName": "Barcelona"
+          },
+          "azamara_gtm_duration": "7-NIGHT CRUISE",
+          "azamara_package_code": "JR280408-007",
+          "azamara_product_type": "ocean_cruise",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "azamara_catchup_batch": "2026-08-15-batch3"
+        }
+      }
+    },
+    {
+      "official_sailing_id": "QS280923-007",
+      "production": {
+        "id": "40e4a922-7273-4642-9947-dc025790db4f",
+        "official_sailing_id": "QS280923-007",
+        "external_key": "e06c339ae5a82d57ed7f38993db4f7bac3de9478",
+        "identity_key": "2ec08fb84be630e8cb0721070f4a48ca94fe4d8d",
+        "ship_id": "9b086346-2c6e-4490-af21-53ae98b6129d",
+        "departure_date": "2028-09-23",
+        "return_date": "2028-09-30",
+        "nights": 7,
+        "departure_port": "Barcelona",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "itinerary": null,
+        "official_url": "https://www.azamara.com/cruises/qs280923-007-france-intensive-cruise-marseille-nice-ajaccio",
+        "status": "active",
+        "match_confidence": "high",
+        "updated_at": "2026-08-15T09:45:12.588843+00:00",
+        "last_seen_at": "2026-08-15T09:45:12.057+00:00",
+        "raw_extract": {
+          "title": "FRANCE INTENSIVE CRUISE: MARSEILLE, NICE &AMP; AJACCIO",
+          "description": "Explore this France Intensive Cruise: Marseille, Nice &amp; Ajaccio sailing from BARCELONA (TARRAGONA) to NICE on Sep 23 2028",
+          "signal_score": 5,
+          "canonical_url": "https://www.azamara.com/cruises/qs280923-007-france-intensive-cruise-marseille-nice-ajaccio",
+          "excerpt_chars": 26,
+          "discovery_11d2": {
+            "adapter": "generic",
+            "sailing_score": 100,
+            "source_method": "official_sitemap",
+            "positive_signals": [
+              "official_sitemap",
+              "official_gtm"
+            ]
+          },
+          "ship_match_via": "alias",
+          "ship_name_guesses": [
+            "Azamara Quest",
+            "qs280923 007 france intensive cruise marseille nice ajaccio"
+          ],
+          "departure_port_raw": "BARCELONA (TARRAGONA)",
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "BARCELONA (TARRAGONA)",
+            "attempted": [
+              {
+                "reason": null,
+                "status": "resolved",
+                "rawValue": "BARCELONA (TARRAGONA)",
+                "confidence": "exact",
+                "sourceField": "description.route_pair",
+                "canonicalPortId": "port-csv-1",
+                "canonicalPortName": "Barcelona"
+              }
+            ],
+            "confidence": "exact",
+            "sourceField": "description.route_pair",
+            "canonicalPortId": "port-csv-1",
+            "canonicalPortName": "Barcelona"
+          },
+          "azamara_gtm_duration": "7-NIGHT CRUISE",
+          "azamara_package_code": "QS280923-007",
+          "azamara_product_type": "ocean_cruise",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "azamara_catchup_batch": "2026-08-15-batch7"
+        }
+      }
+    },
+    {
+      "official_sailing_id": "QS280923-016",
+      "production": {
+        "id": "fb66aafd-15d9-47a1-bfbc-4a4a1fd69cb4",
+        "official_sailing_id": "QS280923-016",
+        "external_key": "886783dcc1f952c713144979bc2f64e16d4751d0",
+        "identity_key": "a4bc8cef5cc783fd5c2a9e0fd0683ddc5d1af43e",
+        "ship_id": "9b086346-2c6e-4490-af21-53ae98b6129d",
+        "departure_date": "2028-09-23",
+        "return_date": "2028-10-09",
+        "nights": 16,
+        "departure_port": "Barcelona",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69",
+        "itinerary": null,
+        "official_url": "https://www.azamara.com/cruises/qs280923-016-france-italy-combination-cruise-saint-tropez-portofino-florence",
+        "status": "active",
+        "match_confidence": "high",
+        "updated_at": "2026-08-15T11:00:58.852989+00:00",
+        "last_seen_at": "2026-08-15T11:00:58.321+00:00",
+        "raw_extract": {
+          "title": "FRANCE &AMP; ITALY COMBINATION CRUISE: SAINT-TROPEZ, PORTOFINO &AMP; FLORENCE",
+          "description": "Explore this France &amp; Italy Combination Cruise: Saint-tropez, Portofino &amp; Florence sailing from BARCELONA (TARRAGONA) to ROME (CIVITAVECCHIA) on Sep 23 2028",
+          "signal_score": 5,
+          "canonical_url": "https://www.azamara.com/cruises/qs280923-016-france-italy-combination-cruise-saint-tropez-portofino-florence",
+          "excerpt_chars": 18,
+          "discovery_11d2": {
+            "adapter": "generic",
+            "sailing_score": 100,
+            "source_method": "official_sitemap",
+            "positive_signals": [
+              "official_sitemap",
+              "official_gtm"
+            ]
+          },
+          "ship_match_via": "alias",
+          "ship_name_guesses": [
+            "Azamara Quest"
+          ],
+          "departure_port_raw": "BARCELONA (TARRAGONA)",
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "BARCELONA (TARRAGONA)",
+            "attempted": [
+              {
+                "reason": null,
+                "status": "resolved",
+                "rawValue": "BARCELONA (TARRAGONA)",
+                "confidence": "exact",
+                "sourceField": "description.route_pair",
+                "canonicalPortId": "port-csv-1",
+                "canonicalPortName": "Barcelona"
+              }
+            ],
+            "confidence": "exact",
+            "sourceField": "description.route_pair",
+            "canonicalPortId": "port-csv-1",
+            "canonicalPortName": "Barcelona"
+          },
+          "azamara_gtm_duration": "16-NIGHT CRUISE",
+          "azamara_package_code": "QS280923-016",
+          "azamara_product_type": "ocean_combination",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "azamara_catchup_batch": "2026-08-15-final"
+        }
+      }
+    },
+    {
+      "official_sailing_id": "JR270207-010",
+      "production": {
+        "id": "094211ac-e248-4086-846a-a3707b332a04",
+        "official_sailing_id": "JR270207-010",
+        "external_key": "3bb0b2bc00d0242f6273bd6e1ea8fbdce3b25948",
+        "identity_key": "92015512eb4440f23af265aba088c447c35c7f6f",
+        "ship_id": "c6e544ad-3282-4c40-8a4c-5c663ec08dec",
+        "departure_date": "2027-02-07",
+        "return_date": "2027-02-17",
+        "nights": 10,
+        "departure_port": "Rio de Janeiro",
+        "destination_id": "e2434312-f0d1-494f-8e50-d39de3e923ca",
+        "itinerary": null,
+        "official_url": "https://www.azamara.com/cruises/jr270207-010-brazil-intensive-cruise-rio-de-janeiro-paraty-sao-paulo",
+        "status": "active",
+        "match_confidence": "high",
+        "updated_at": "2026-08-15T06:43:36.570388+00:00",
+        "last_seen_at": "2026-08-15T06:43:36.009+00:00",
+        "raw_extract": {
+          "title": "BRAZIL INTENSIVE CRUISE: RIO DE JANEIRO, PARATY &AMP; SAO PAULO",
+          "description": "Explore this Brazil Intensive Cruise: Rio De Janeiro, Paraty &amp; Sao Paulo sailing from RIO DE JANEIRO to BUENOS AIRES on Feb 7 2027",
+          "signal_score": 6,
+          "canonical_url": "https://www.azamara.com/cruises/jr270207-010-brazil-intensive-cruise-rio-de-janeiro-paraty-sao-paulo",
+          "excerpt_chars": 26,
+          "discovery_11d2": {
+            "adapter": "generic",
+            "sailing_score": 100,
+            "source_method": "official_sitemap",
+            "positive_signals": [
+              "official_sitemap",
+              "official_gtm"
+            ]
+          },
+          "ship_match_via": "alias",
+          "ship_name_guesses": [
+            "Azamara Journey"
+          ],
+          "departure_port_raw": "RIO DE JANEIRO",
+          "departure_port_meta": {
+            "reason": null,
+            "status": "resolved",
+            "rawValue": "RIO DE JANEIRO",
+            "attempted": [
+              {
+                "reason": null,
+                "status": "resolved",
+                "rawValue": "RIO DE JANEIRO",
+                "confidence": "exact",
+                "sourceField": "description.route_pair",
+                "canonicalPortId": "port-csv-150",
+                "canonicalPortName": "Rio de Janeiro"
+              }
+            ],
+            "confidence": "exact",
+            "sourceField": "description.route_pair",
+            "canonicalPortId": "port-csv-150",
+            "canonicalPortName": "Rio de Janeiro"
+          },
+          "azamara_gtm_duration": "10-NIGHT CRUISE",
+          "azamara_package_code": "JR270207-010",
+          "azamara_product_type": "ocean_cruise",
+          "departure_port_merge": {
+            "reason": "new_record",
+            "blocked": false
+          },
+          "azamara_catchup_batch": "2026-08-15-batch5"
+        }
+      }
+    }
+  ],
+  "source_absent": [
+    {
+      "official_sailing_id": "QS270430-018",
+      "production": {
+        "id": "77ab62e6-2fc8-4cf7-b077-4691ad284014",
+        "official_sailing_id": "QS270430-018",
+        "status": "active",
+        "departure_date": "2027-04-30",
+        "ship_id": "9b086346-2c6e-4490-af21-53ae98b6129d",
+        "destination_id": "f89a6b30-f5c3-4a70-bfc6-478955672cc2"
+      }
+    },
+    {
+      "official_sailing_id": "QS280216-026",
+      "production": {
+        "id": "2a4536bf-9a19-4d95-885f-f2572a4ac6bb",
+        "official_sailing_id": "QS280216-026",
+        "status": "active",
+        "departure_date": "2028-02-16",
+        "ship_id": "9b086346-2c6e-4490-af21-53ae98b6129d",
+        "destination_id": "e2434312-f0d1-494f-8e50-d39de3e923ca"
+      }
+    },
+    {
+      "official_sailing_id": "QS280322-011",
+      "production": {
+        "id": "99eec0e9-34e6-4163-a0eb-e10c3db6ddde",
+        "official_sailing_id": "QS280322-011",
+        "status": "active",
+        "departure_date": "2028-03-22",
+        "ship_id": "9b086346-2c6e-4490-af21-53ae98b6129d",
+        "destination_id": "8f7f5b1d-cb12-480e-8b5f-448caf8c3056"
+      }
+    },
+    {
+      "official_sailing_id": "PR280629-014",
+      "production": {
+        "id": "9191c76a-1d68-4198-825d-d2f3e8847a67",
+        "official_sailing_id": "PR280629-014",
+        "status": "active",
+        "departure_date": "2028-06-29",
+        "ship_id": "da80796b-db58-49a6-b763-502970b61d30",
+        "destination_id": "feb8a6e4-7d1e-4442-9f31-929263db8044"
+      }
+    },
+    {
+      "official_sailing_id": "QS280810-034",
+      "production": {
+        "id": "32c26dcb-3aa2-4f48-bc5b-9ec9fe1e6475",
+        "official_sailing_id": "QS280810-034",
+        "status": "active",
+        "departure_date": "2028-08-10",
+        "ship_id": "9b086346-2c6e-4490-af21-53ae98b6129d",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69"
+      }
+    },
+    {
+      "official_sailing_id": "QS280810-079",
+      "production": {
+        "id": "686e3468-49a1-4f5c-9e39-440d94e364aa",
+        "official_sailing_id": "QS280810-079",
+        "status": "active",
+        "departure_date": "2028-08-10",
+        "ship_id": "9b086346-2c6e-4490-af21-53ae98b6129d",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69"
+      }
+    },
+    {
+      "official_sailing_id": "QS281017-011",
+      "production": {
+        "id": "4ec00062-ae04-491f-8625-a1ee77e30feb",
+        "official_sailing_id": "QS281017-011",
+        "status": "active",
+        "departure_date": "2028-10-17",
+        "ship_id": "9b086346-2c6e-4490-af21-53ae98b6129d",
+        "destination_id": "0b910645-9484-4837-a3ed-9b5bea817e69"
+      }
+    }
+  ]
+}

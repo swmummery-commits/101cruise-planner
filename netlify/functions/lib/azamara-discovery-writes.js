@@ -145,6 +145,19 @@ function buildManifestEntry(product, cruiseLine, existingOfficial, batchPosition
     proposed_action: weeklyAction,
     base_action: baseAction,
     existing_record_id: existingOfficial?.id || null,
+    existing_snapshot: existingOfficial
+      ? {
+          ship_id: existingOfficial.ship_id ?? null,
+          departure_date: existingOfficial.departure_date ?? null,
+          return_date: existingOfficial.return_date ?? null,
+          nights: existingOfficial.nights ?? null,
+          departure_port: existingOfficial.departure_port ?? null,
+          itinerary: existingOfficial.itinerary ?? null,
+          status: existingOfficial.status ?? null,
+          official_url: existingOfficial.official_url ?? null,
+          destination_id: existingOfficial.destination_id ?? null
+        }
+      : null,
     candidate: product.candidate,
     source_url: product.url
   };

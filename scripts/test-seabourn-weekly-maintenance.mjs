@@ -633,6 +633,16 @@ test("46. C7S07K|8730 reappearance resolves as duplicate_skip not insert", () =>
   }
 });
 
+test("weekly summary persists insert IDs and identity-review diffs", () => {
+  const runnerSrc = fs.readFileSync(
+    path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner.js"),
+    "utf8"
+  );
+  if (!runnerSrc.includes("identity_review_diffs")) throw new Error("missing identity_review_diffs");
+  if (!runnerSrc.includes("proposed_insert_official_ids")) throw new Error("missing proposed_insert_official_ids");
+  if (!runnerSrc.includes("proposed_inserts_detail")) throw new Error("missing proposed_inserts_detail");
+});
+
 console.log(`\n${passed} tests passed, ${failures.length} failed`);
 if (failures.length) {
   console.error(JSON.stringify(failures, null, 2));

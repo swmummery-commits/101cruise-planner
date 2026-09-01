@@ -1,0 +1,49 @@
+{
+  "line": "silversea",
+  "dry_run": true,
+  "writes": 0,
+  "run_id": "silversea-cruises-weekly-2026-09-01T10-47-07-191Z",
+  "run_record_id": "f3683476-7c38-4e18-8eaf-fbaa1908505a",
+  "ok": true,
+  "summary": {
+    "run_type": "silversea_weekly_maintenance",
+    "run_id": "silversea-cruises-weekly-2026-09-01T10-47-07-191Z",
+    "line_slug": "silversea-cruises",
+    "dry_run": true,
+    "eligible_total": 1076,
+    "official_source_total": 1100,
+    "active_production_total": 897,
+    "proposed_inserts": 0,
+    "proposed_updates": 17,
+    "source_absent_active": 7,
+    "inserts": 0,
+    "updates": 0,
+    "inventory_changed": false,
+    "silversea_report_status": "DRY_RUN_COMPLETE",
+    "source_healthy": true,
+    "quality_gate": {
+      "passed": true,
+      "source_healthy": true,
+      "identity_complete": true,
+      "source_health": "PASS"
+    },
+    "bounded_plan_counts": {
+      "resolve": 0,
+      "observation": 1,
+      "update": 1,
+      "insert": 0
+    },
+    "enriched": 0,
+    "promoted_active": 0,
+    "cutoff_hidden": 0,
+    "source_absence_hidden": 0,
+    "failed_writes": 0,
+    "write_attempts": 0,
+    "committed_material_writes": 0,
+    "rollback_manifest_id": null,
+    "duration_ms": 126942,
+    "failure_reason": "DRY_RUN_COMPLETE",
+    "worker_state": "idle",
+    "terminal_status": "completed"
+  }
+}

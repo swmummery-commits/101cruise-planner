@@ -1,0 +1,242 @@
+{
+  "date": "2026-09-01",
+  "apply": true,
+  "hashes_match": true,
+  "source_snapshot": "46c0a121f4a339bb7e376be5be0bae2dd27bc31d786efc51ace4cb07f7b495dc",
+  "classifications": {
+    "TRUE_NEW": [
+      "CPR08C|YP|2026-11-29",
+      "CPR08J|YP|2027-02-21"
+    ],
+    "OFFICIAL_ID_REMAP": [
+      {
+        "uuid": "58c8ca14-8bbf-41e8-88b2-0e0b13284e7c",
+        "from": "CFR07V|GP|2026-09-26",
+        "to": "CFF07J|GP|2026-09-26"
+      },
+      {
+        "uuid": "90bbe3f6-b181-4a6e-9ad7-5f119676fa19",
+        "from": "CFR07E|SU|2027-01-03",
+        "to": "CFF07K|SU|2027-01-03"
+      },
+      {
+        "uuid": "8c52eb5c-71c8-46db-897e-cb0dad85df52",
+        "from": "CRF10L|EX|2027-03-17",
+        "to": "CRF10A|EX|2027-03-17"
+      },
+      {
+        "uuid": "013cf191-160d-4262-b11d-ec6f5e63e5a8",
+        "from": "ERR07F|EX|2027-06-12",
+        "to": "ERR07K|EX|2027-06-12"
+      },
+      {
+        "uuid": "894cbb22-fcb5-4ed1-a035-e9e005c87bd1",
+        "from": "ERR07F|EX|2027-06-26",
+        "to": "ERR07K|EX|2027-06-26"
+      },
+      {
+        "uuid": "e6347561-66a8-47f6-8325-cfd09bc286f5",
+        "from": "ERR07F|EX|2027-07-10",
+        "to": "ERR07K|EX|2027-07-10"
+      },
+      {
+        "uuid": "fcfacc54-c51c-4d57-9a91-e891b9ffeb6d",
+        "from": "ERR07F|EX|2027-08-07",
+        "to": "ERR07K|EX|2027-08-07"
+      }
+    ],
+    "AMBIGUOUS": []
+  },
+  "frozen_ids": [
+    "ASV10A|RP|2027-09-11",
+    "CPR06E|YP|2026-12-07",
+    "CPR06E|YP|2027-01-04",
+    "CPR06E|YP|2027-01-18",
+    "CPR06E|YP|2027-02-01",
+    "CPR06E|YP|2027-02-15",
+    "CPR08C|YP|2026-11-29",
+    "CPR08J|YP|2027-02-21"
+  ],
+  "counts_before": {
+    "active": 2020
+  },
+  "remap": {
+    "ok": true,
+    "run_id": "princess-p1-official-id-remap-1788259326152",
+    "run_record_id": "2e2b7744-2591-4eef-bb06-0605260bbd1d",
+    "rollback_manifest_id": "4e8de9da-a8ef-4d0a-99f2-2e8988569227",
+    "updated": 7,
+    "failed": 0,
+    "uuids": [
+      "58c8ca14-8bbf-41e8-88b2-0e0b13284e7c",
+      "90bbe3f6-b181-4a6e-9ad7-5f119676fa19",
+      "8c52eb5c-71c8-46db-897e-cb0dad85df52",
+      "013cf191-160d-4262-b11d-ec6f5e63e5a8",
+      "894cbb22-fcb5-4ed1-a035-e9e005c87bd1",
+      "e6347561-66a8-47f6-8325-cfd09bc286f5",
+      "fcfacc54-c51c-4d57-9a91-e891b9ffeb6d"
+    ]
+  },
+  "frozen_apply": {
+    "ok": true,
+    "run_id": "princess-cruises-weekly-2026-09-01T10-42-51-140Z",
+    "run_record_id": "44b00599-2f26-480f-beda-6357b59bca9f",
+    "reason": null,
+    "summary": {
+      "run_id": "princess-cruises-weekly-2026-09-01T10-42-51-140Z",
+      "dry_run": false,
+      "eligible_total": 2018,
+      "active_production_total": 2020,
+      "proposed_inserts": 2,
+      "proposed_updates": 6,
+      "source_absent_active": 4,
+      "source_absent_sailing_ids": [
+        "CPR07C|YP|2026-11-29",
+        "CPR07C|YP|2027-02-21",
+        "CSR07H|KP|2027-02-28",
+        "MLR070|XP|2027-11-13"
+      ],
+      "snapshot_id": "46c0a121f4a339bb7e376be5be0bae2dd27bc31d786efc51ace4cb07f7b495dc",
+      "quality_gate": {
+        "passed": true,
+        "failures": [],
+        "blocked": false,
+        "expansion_anomaly": {
+          "passed": true,
+          "failures": [],
+          "warnings": [],
+          "previous_eligible_total": 2061,
+          "current_eligible_total": 2018,
+          "eligible_delta": -43,
+          "eligible_change_pct": -2.0864,
+          "expansion_review_threshold_pct": 20,
+          "proposed_inserts": 2,
+          "weekly_write_cap": 30,
+          "requires_controlled_remediation": false
+        },
+        "source_accounting": {
+          "passed": true,
+          "failures": [],
+          "blocked": false,
+          "accounting": {
+            "raw_groups": 1004,
+            "expanded_dated_sailings": 2082,
+            "within_public_cutoff": 64,
+            "outside_cutoff_total": 2018,
+            "public_eligible_complete": 2018,
+            "public_incomplete": 0,
+            "other_excluded": 0,
+            "cruisetours_excluded": 0,
+            "cruisetours_absent_in_princess_source": true,
+            "accounted_total": 2082,
+            "accounting_delta": 0,
+            "accounting_exact": true,
+            "public_eligible": 2018,
+            "incomplete": 0,
+            "within_cutoff": 64,
+            "official_source_total": 1004,
+            "legacy_complete_high_confidence": 2082,
+            "legacy_cruise_products": 2082
+          }
+        },
+        "auto_apply_permitted": true,
+        "inventory_discontinuity_detected": false,
+        "identity_review_updates": 0,
+        "review_required": false
+      },
+      "inserts": 2,
+      "updates": 6,
+      "failed_writes": 0,
+      "rollback_manifest_id": "eabb9427-1da3-4854-bbad-a0504cdf6e08",
+      "identity_review_sailing_ids": []
+    }
+  },
+  "recon": {
+    "ok": true,
+    "run_id": "princess-cruises-weekly-2026-09-01T10-43-24-964Z",
+    "run_record_id": "5f7a4acf-8bb2-4663-a442-a31ac23976bb",
+    "summary": {
+      "run_id": "princess-cruises-weekly-2026-09-01T10-43-24-964Z",
+      "dry_run": true,
+      "eligible_total": 2018,
+      "active_production_total": 2022,
+      "proposed_inserts": 0,
+      "proposed_updates": 0,
+      "source_absent_active": 4,
+      "source_absent_sailing_ids": [
+        "CPR07C|YP|2026-11-29",
+        "CPR07C|YP|2027-02-21",
+        "CSR07H|KP|2027-02-28",
+        "MLR070|XP|2027-11-13"
+      ],
+      "snapshot_id": "46c0a121f4a339bb7e376be5be0bae2dd27bc31d786efc51ace4cb07f7b495dc",
+      "quality_gate": {
+        "passed": true,
+        "failures": [],
+        "blocked": false,
+        "expansion_anomaly": {
+          "passed": true,
+          "failures": [],
+          "warnings": [],
+          "previous_eligible_total": 2061,
+          "current_eligible_total": 2018,
+          "eligible_delta": -43,
+          "eligible_change_pct": -2.0864,
+          "expansion_review_threshold_pct": 20,
+          "proposed_inserts": 0,
+          "weekly_write_cap": 30,
+          "requires_controlled_remediation": false
+        },
+        "source_accounting": {
+          "passed": true,
+          "failures": [],
+          "blocked": false,
+          "accounting": {
+            "raw_groups": 1004,
+            "expanded_dated_sailings": 2082,
+            "within_public_cutoff": 64,
+            "outside_cutoff_total": 2018,
+            "public_eligible_complete": 2018,
+            "public_incomplete": 0,
+            "other_excluded": 0,
+            "cruisetours_excluded": 0,
+            "cruisetours_absent_in_princess_source": true,
+            "accounted_total": 2082,
+            "accounting_delta": 0,
+            "accounting_exact": true,
+            "public_eligible": 2018,
+            "incomplete": 0,
+            "within_cutoff": 64,
+            "official_source_total": 1004,
+            "legacy_complete_high_confidence": 2082,
+            "legacy_cruise_products": 2082
+          }
+        },
+        "auto_apply_permitted": true,
+        "inventory_discontinuity_detected": false,
+        "identity_review_updates": 0,
+        "review_required": false
+      },
+      "inserts": 0,
+      "updates": 0,
+      "failed_writes": 0,
+      "rollback_manifest_id": null,
+      "identity_review_sailing_ids": []
+    }
+  },
+  "ok": true,
+  "counts_after": {
+    "active": 2022
+  },
+  "outstanding": {
+    "proposed_inserts": 0,
+    "proposed_updates": 0,
+    "source_absent_active": 4,
+    "source_absent_sailing_ids": [
+      "CPR07C|YP|2026-11-29",
+      "CPR07C|YP|2027-02-21",
+      "CSR07H|KP|2027-02-28",
+      "MLR070|XP|2027-11-13"
+    ]
+  }
+}

@@ -7,7 +7,11 @@ const { resolveAzamaraDiscoveryMode, assertAzamaraWritesAllowed } = require("./a
 const { AZAMARA_WEEKLY_MAINTENANCE_RUN_TYPE, perthCalendarDate } = require("./cruise-discovery-maintenance");
 const { buildAzamaraWeeklyManifest, validateAzamaraWeeklyManifest, AZAMARA_MAX_WEEKLY_WRITES } = require("./azamara-weekly-manifest");
 const { applyAzamaraWeeklyManifest } = require("./azamara-weekly-apply");
-const { assessAzamaraWeeklyWriteSafety } = require("./azamara-weekly-update-policy");
+const {
+  assessAzamaraWeeklyWriteSafety,
+  classifyAzamaraUpdateRisk,
+  IDENTITY_CRITICAL_FIELDS: AZAMARA_IDENTITY_CRITICAL_FIELDS
+} = require("./azamara-weekly-update-policy");
 const { indexExistingAzamaraRecords: loadIndexes } = require("./azamara-discovery-writes");
 const { loadClassificationDestinations } = require("./destination-queries");
 const { loadShipAliases, loadDestinationAliases } = require("./cruise-discovery-ops");
@@ -18,6 +22,37 @@ const AZAMARA_LINE_SLUG = "azamara";
 
 function sailingIds(entries = []) {
   return entries.map((entry) => entry.official_sailing_id).filter(Boolean);
+}
+
+function compactAzamaraReviewDiff(entry) {
+  const before = entry.existing_snapshot || {};
+  const after = entry.candidate || {};
+  const assessment = classifyAzamaraUpdateRisk(before, after);
+  const field_differences = {};
+  for (const field of [...AZAMARA_IDENTITY_CRITICAL_FIELDS, "official_url", "destination_id"]) {
+    if (String(before[field] ?? "") !== String(after[field] ?? "")) {
+      field_differences[field] = { before: before[field] ?? null, after: after[field] ?? null };
+    }
+  }
+  return {
+    official_sailing_id: entry.official_sailing_id || null,
+    existing_uuid: entry.existing_record_id || null,
+    risk: assessment.risk,
+    identity_critical_changes: assessment.identity_critical_changes,
+    field_differences,
+    before,
+    after: {
+      ship_id: after.ship_id ?? null,
+      departure_date: after.departure_date ?? null,
+      return_date: after.return_date ?? null,
+      nights: after.nights ?? null,
+      departure_port: after.departure_port ?? after.departure_port_meta?.canonicalPortName ?? null,
+      itinerary: after.itinerary ?? null,
+      status: after.status ?? null,
+      official_url: after.official_url ?? null,
+      destination_id: after.destination_id ?? null
+    }
+  };
 }
 
 function buildAzamaraWeeklySummary({
@@ -48,6 +83,8 @@ function buildAzamaraWeeklySummary({
     proposed_cutoff_hides: (manifest.cutoff_hides || []).length,
     proposed_source_absence_hides: (manifest.source_absence_hides || []).length,
     identity_review_sailing_ids: sailingIds(manifest.identity_review),
+    identity_review_diffs: (manifest.identity_review || []).map(compactAzamaraReviewDiff),
+    proposed_insert_official_ids: sailingIds(manifest.inserts),
     safe_update_sailing_ids: sailingIds(manifest.updates),
     write_safety: writeSafety || manifest.write_safety || null,
     weekly_write_safety: writeSafety || manifest.write_safety || null,

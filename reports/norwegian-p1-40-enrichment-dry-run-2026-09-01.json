@@ -1,0 +1,345 @@
+{
+  "run_id": "ncl-p1-enrichment-dry-run",
+  "count": 40,
+  "missing_db": [],
+  "outcome_counts": {
+    "enrichment_ready": 40
+  },
+  "page_stats": {
+    "attempted": 40,
+    "successful": 40,
+    "failed": 0,
+    "identity_mismatches": 0
+  },
+  "dry_run_gate": {
+    "passed": true,
+    "voyage_inserts": 0,
+    "voyage_deletes": 0,
+    "activations": 0,
+    "core_identity_changes": 0,
+    "legacy_rows_touched": 0
+  },
+  "ready_count": 40,
+  "entries": [
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-16",
+      "discovered_cruise_id": "43221ca0-cafb-4eb6-a5c9-bf2d9d9265d5",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-07",
+      "discovered_cruise_id": "a7198796-874f-4f01-ae35-ba58b150446f",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-21",
+      "discovered_cruise_id": "3324203f-d2d7-45e5-9961-c709ff698ffa",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-20",
+      "discovered_cruise_id": "4e348a31-afd8-45f0-af46-cd37e650fdf4",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-28",
+      "discovered_cruise_id": "fd88432a-a627-4a9c-abe0-c8745dfb88ec",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-05-14",
+      "discovered_cruise_id": "8b242e12-ff5e-428b-a87b-4d7cfc525c2c",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-02",
+      "discovered_cruise_id": "d9c72369-5803-4216-9949-8ffd3e0ea6af",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-30",
+      "discovered_cruise_id": "a6e61f14-8d8a-4142-9812-01df7edb3ff0",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-18",
+      "discovered_cruise_id": "7ca6e516-8506-464e-a60f-8fa7f7362e15",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-06",
+      "discovered_cruise_id": "79935a61-1fa6-4bf4-bd3a-91eb529d1493",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-25",
+      "discovered_cruise_id": "c3324271-672c-438d-a81f-ef183676d514",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-11",
+      "discovered_cruise_id": "23b2a370-e5a4-4d8c-8f74-19870aec9ef3",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-04-30",
+      "discovered_cruise_id": "fe53b417-0e6e-48bc-a12d-08f14d24a72e",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-06-04",
+      "discovered_cruise_id": "6d25b035-279d-48ad-936f-8ef83d000b16",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-09",
+      "discovered_cruise_id": "ed289b35-627a-4c78-8d6d-898dec9bb4ce",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-07-23",
+      "discovered_cruise_id": "d554282c-8e56-4053-9583-475cafe47918",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSWRFBOS|2028-08-13",
+      "discovered_cruise_id": "aacff2be-685b-474d-904d-0214f1b74486",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-26",
+      "discovered_cruise_id": "1ab9dbef-c636-446f-a3cb-12fcd8ae9612",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHALBIQUE|2028-09-05",
+      "discovered_cruise_id": "8bab5309-b3ef-4dcc-8bc3-1b2502c1765d",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY8QUECHASYNHALPWMNYC|2028-10-29",
+      "discovered_cruise_id": "2e45c7d8-1a06-4735-8efe-705093aa49a7",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-10-08",
+      "discovered_cruise_id": "1471d617-7c61-432e-8767-ce99a5ab6084",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-10",
+      "discovered_cruise_id": "70c25c5a-8e16-4a96-90c6-8272012a9be8",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSEPMSJBHALPWMBOS|2028-09-17",
+      "discovered_cruise_id": "66d86bba-9446-48d2-9327-77dd591632b3",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "GEM9PHLPWMSJBHALSYNCHAQUE|2028-08-31",
+      "discovered_cruise_id": "dea9e291-70a7-4114-9ca4-1e55120bc37b",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "DAWN10QUELBICHASYNHALEPMPWMBOSPHL|2028-09-16",
+      "discovered_cruise_id": "1cd382b6-e115-4f08-ba70-3c0964b5e5e3",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "DAWN11PHLBOSEPMSJBHALSYNCHAPWMPHL|2028-10-17",
+      "discovered_cruise_id": "ad772519-595f-431d-bc28-5fa4c65fe437",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "GEM7NYCBOSPWMHALSJBNYC|2028-10-01",
+      "discovered_cruise_id": "d662f6ac-2b4f-4586-9acc-718b241cb029",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSHALSYNCHAQUE|2028-10-22",
+      "discovered_cruise_id": "f27088fc-b9f4-48ed-88b7-4db5d6641de9",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "DAWN13BCNCADPDLWRFPHL|2028-08-23",
+      "discovered_cruise_id": "a5e06ff4-6eb8-4dc3-82ea-15fc07c7246c",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-24",
+      "discovered_cruise_id": "36d25ddc-81d4-43f1-9fa7-5710b7032226",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-10-15",
+      "discovered_cruise_id": "3231e404-8c40-4886-a87c-2c11dceb4e77",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBPWMBOS|2028-09-03",
+      "discovered_cruise_id": "53823f1d-69b9-490b-a171-04cc600b1189",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-17",
+      "discovered_cruise_id": "5d1913e4-94e1-4ef8-a867-3c9a2d294946",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "GEM7NYCHALSJBPWMBOSNYC|2028-09-24",
+      "discovered_cruise_id": "edc0aa66-6d4e-4b32-9a37-946d8180a304",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSPWMEPMSJBHALBOS|2028-08-27",
+      "discovered_cruise_id": "eb7f8550-304d-4231-a7b4-74423392dac0",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "GEM8QUELBICHASYNHALSJBNYC|2028-09-09",
+      "discovered_cruise_id": "01a5aaf3-d78e-48e7-a919-7a4ac643815c",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "GEM7NYCBOSPWMSJBHALNYC|2028-10-08",
+      "discovered_cruise_id": "879995f0-1308-4ca8-a766-912a99ddda72",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "BREAKAWAY7BOSEPMHALSJBSYNBOS|2028-10-01",
+      "discovered_cruise_id": "46621f7d-6544-4ad8-a262-2a6ea67bb420",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "DAWN10QUELBICHASYNHALPWMBOSPHL|2028-10-07",
+      "discovered_cruise_id": "97bbda3c-a866-42b6-82d7-db10620d9470",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    },
+    {
+      "official_sailing_id": "GEM10NYCHALSYNCHASJBPWMBOSNYC|2028-10-15",
+      "discovered_cruise_id": "8e11b60b-859b-493a-a9bb-917a351810e2",
+      "outcome": "enrichment_ready",
+      "blocked": false,
+      "admin_quality": "PASS",
+      "admin_issues": []
+    }
+  ]
+}
