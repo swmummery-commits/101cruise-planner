@@ -183,8 +183,8 @@
   ]
 
 [functions."seg-ship-sync"]
-  # Refresh SEG Ship IDs from the live SEG Google Sheet every Tuesday at 15:00 Perth.
-  schedule = "0 7 * * 2"
+  # TEMP verification cadence. Revert to Tuesday 15:00 Perth after one successful run.
+  schedule = "* * * * *"
   timeout = 26
 
 [functions."cruise-daily-expiry-cron"]
