@@ -243,6 +243,7 @@ async function executeWeeklyMaintenance({
       rollback_manifest: result.rollback_manifest || null,
       rollback_result: result.rollback_result || null,
       simulation: result.simulation || null,
+      manifest: result.manifest || null,
       zero_change_apply: result.zero_change_apply === true,
       elapsed_ms: Date.now() - started
     };

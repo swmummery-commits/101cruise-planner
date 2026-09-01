@@ -391,6 +391,7 @@ async function applyPrincessBatchWrites(params = {}) {
 }
 
 module.exports = {
+  princessExternalKey,
   buildPrincessUpsertCandidate,
   buildPrincessBatchManifest,
   applyPrincessBatchWrites,

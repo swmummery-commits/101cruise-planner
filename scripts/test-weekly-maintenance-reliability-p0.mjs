@@ -499,6 +499,9 @@ test("Silversea central run lifecycle persisted", () => {
     "utf8"
   );
   if (!dispatch.includes("executeWeeklyMaintenance")) throw new Error("Silversea must persist via shared lifecycle");
+  if (!dispatch.includes("dryRun: dryRun !== false")) {
+    throw new Error("Silversea background maintenance must remain dry-run unless explicitly applying");
+  }
   const cronSrc = fs.readFileSync(
     path.join(root, "netlify/functions/silversea-weekly-maintenance-cron.js"),
     "utf8"
@@ -516,6 +519,52 @@ test("Silversea central run lifecycle persisted", () => {
   } finally {
     if (prev == null) delete process.env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED;
     else process.env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED = prev;
+  }
+});
+
+test("Celebrity/HAL frozen write sets fail closed on identity mismatch", () => {
+  const runner = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner"));
+  const ok = runner.freezeWriteProducts({
+    writeProducts: [{ raw: { k: "A" } }, { raw: { k: "B" } }],
+    frozenIds: new Set(["A", "B"]),
+    keyFn: (raw) => raw.k
+  });
+  if (!ok.ok || ok.writeProducts.map((r) => r.raw.k).join() !== "A,B") throw new Error("sorted freeze");
+  const bad = runner.freezeWriteProducts({
+    writeProducts: [{ raw: { k: "A" } }],
+    frozenIds: new Set(["A", "MISSING"]),
+    keyFn: (raw) => raw.k
+  });
+  if (bad.ok || bad.reason !== "frozen_manifest_identity_mismatch") throw new Error("mismatch");
+});
+
+test("Princess remap classifier never treats operational matches as true inserts", () => {
+  const remap = require(path.join(root, "netlify/functions/lib/princess-official-id-remap"));
+  const result = remap.classifyPrincessProposedInsert(
+    {
+      official_sailing_id: "NEW|GP|2026-09-26",
+      ship_id: "s",
+      departure_date: "2026-09-26",
+      return_date: "2026-10-03",
+      nights: 7,
+      departure_port: "Fort Lauderdale",
+      destination_id: "d"
+    },
+    [
+      {
+        id: "uuid-1",
+        official_sailing_id: "OLD|GP|2026-09-26",
+        ship_id: "s",
+        departure_date: "2026-09-26",
+        return_date: "2026-10-03",
+        nights: 7,
+        departure_port: "Fort Lauderdale",
+        destination_id: "d"
+      }
+    ]
+  );
+  if (result.classification !== "OFFICIAL_ID_REMAP" || result.existing_uuid !== "uuid-1") {
+    throw new Error("remap must preserve UUID");
   }
 });
 

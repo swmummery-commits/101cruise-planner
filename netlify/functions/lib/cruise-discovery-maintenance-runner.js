@@ -143,6 +143,24 @@ function snapshotChecksum(payload) {
   return crypto.createHash("sha256").update(JSON.stringify(payload)).digest("hex");
 }
 
+function freezeWriteProducts({ writeProducts, frozenIds, keyFn }) {
+  const sorted = [...(writeProducts || [])].sort((a, b) =>
+    String(keyFn(a.raw) || "").localeCompare(String(keyFn(b.raw) || ""))
+  );
+  if (!frozenIds?.size) return { ok: true, writeProducts: sorted };
+  const matched = sorted.filter((row) => frozenIds.has(String(keyFn(row.raw))));
+  if (matched.length !== frozenIds.size) {
+    return {
+      ok: false,
+      reason: "frozen_manifest_identity_mismatch",
+      frozen_expected: frozenIds.size,
+      frozen_matched: matched.length,
+      writeProducts: matched
+    };
+  }
+  return { ok: true, writeProducts: matched };
+}
+
 async function acquireMaintenanceLock(supabase, lineSlug, runId, runRecordId = null) {
   return acquireMaintenanceDbLock(supabase, {
     lockKey: weeklyLockKey(lineSlug),
@@ -580,12 +598,34 @@ async function runHalWeeklyMaintenance(context = {}) {
       return { ok: true, dry_run: true, summary, manifest };
     }
 
-    const writeProducts = normalisedPublic.filter((row) => {
-      const entry = manifest.products.find(
-        (p) => p.stable_product_identity_key === halOfficialProductKey(row.raw)
-      );
-      return entry && ["insert_active", "update_existing"].includes(entry.proposed_action);
+    const frozenIds = new Set(
+      (context.frozenOfficialSailingIds || context.frozen_official_sailing_ids || []).map(String)
+    );
+    const selectedWrites = freezeWriteProducts({
+      writeProducts: normalisedPublic.filter((row) => {
+        const entry = manifest.products.find(
+          (p) => p.stable_product_identity_key === halOfficialProductKey(row.raw)
+        );
+        return entry && ["insert_active", "update_existing"].includes(entry.proposed_action);
+      }),
+      frozenIds,
+      keyFn: (raw) => halOfficialProductKey(raw)
     });
+    if (!selectedWrites.ok) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: true,
+        reason: selectedWrites.reason,
+        summary: {
+          ...summary,
+          frozen_expected: selectedWrites.frozen_expected,
+          frozen_matched: selectedWrites.frozen_matched
+        },
+        manifest
+      };
+    }
+    const writeProducts = selectedWrites.writeProducts;
 
     const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
       runId,
@@ -783,12 +823,34 @@ async function runCelebrityWeeklyMaintenance(context = {}) {
       return { ok: true, dry_run: true, summary, manifest };
     }
 
-    const writeProducts = celebrityPublic.filter((row) => {
-      const entry = manifest.products.find(
-        (p) => p.stable_identity_key === celebrityOfficialProductKey(row.raw)
-      );
-      return entry && ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
+    const frozenIds = new Set(
+      (context.frozenOfficialSailingIds || context.frozen_official_sailing_ids || []).map(String)
+    );
+    const selectedWrites = freezeWriteProducts({
+      writeProducts: celebrityPublic.filter((row) => {
+        const entry = manifest.products.find(
+          (p) => p.stable_identity_key === celebrityOfficialProductKey(row.raw)
+        );
+        return entry && ["insert_active", "update_exact_legacy_match"].includes(entry.proposed_action);
+      }),
+      frozenIds,
+      keyFn: (raw) => celebrityOfficialProductKey(raw)
     });
+    if (!selectedWrites.ok) {
+      return {
+        ok: false,
+        blocked: false,
+        failed: true,
+        reason: selectedWrites.reason,
+        summary: {
+          ...summary,
+          frozen_expected: selectedWrites.frozen_expected,
+          frozen_matched: selectedWrites.frozen_matched
+        },
+        manifest
+      };
+    }
+    const writeProducts = selectedWrites.writeProducts;
 
     const protectedWrites = await runGlobalProtectedMaintenanceWrites(sb, {
       runId,
@@ -2045,6 +2107,7 @@ module.exports = {
   computeExploraResolutionRates,
   computeSeabournResolutionRates,
   findSourceAbsentActive,
+  freezeWriteProducts,
   MAX_WRITES_PER_BATCH,
   MAX_WEEKLY_WRITES,
   EXPLORA_MAX_WEEKLY_WRITES,
