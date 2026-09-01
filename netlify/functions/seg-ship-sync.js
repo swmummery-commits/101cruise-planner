@@ -6,6 +6,7 @@
  *
  * Writes are conservative:
  * - confident existing Cruise Intelligence ship matches are refreshed;
+ * - reviewed existing SEG-ID assignments are preserved when SEG source metadata is unchanged;
  * - ambiguous/unmatched rows are logged for review;
  * - a changed SEG ID on an already-mapped ship is never overwritten automatically;
  * - ships removed from SEG's sheet are marked missing_from_source, never deleted.
@@ -193,6 +194,10 @@ function compactSourceRow(row) {
   };
 }
 
+function normaliseSourceValue(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function buildMappings(sourceRows, ships, aliases) {
   const mappings = [];
   const unmatched = [];
@@ -204,6 +209,39 @@ function buildMappings(sourceRows, ships, aliases) {
   );
 
   for (const row of sourceRows) {
+    const existingOwner = existingBySegId.get(row.segShipId);
+    if (existingOwner) {
+      const storedName = normaliseSourceValue(existingOwner.seg_ship_name);
+      const storedLine = normaliseSourceValue(existingOwner.seg_cruise_line);
+      const sourceName = normaliseSourceValue(row.shipName);
+      const sourceLine = normaliseSourceValue(row.cruiseLine);
+      const sourceChanged =
+        (storedName && sourceName && storedName !== sourceName) ||
+        (storedLine && sourceLine && storedLine !== sourceLine);
+
+      if (sourceChanged) {
+        conflicts.push({
+          type: "existing_seg_id_source_changed",
+          ...compactSourceRow(row),
+          ci_ship_id: existingOwner.id,
+          ci_ship_name: existingOwner.name,
+          previous_seg_ship_name: existingOwner.seg_ship_name || null,
+          previous_seg_cruise_line: existingOwner.seg_cruise_line || null
+        });
+        continue;
+      }
+
+      const mapping = {
+        id: existingOwner.id,
+        seg_ship_id: row.segShipId,
+        seg_ship_name: row.shipName,
+        seg_cruise_line: row.cruiseLine || null
+      };
+      proposedByShipId.set(String(existingOwner.id), mapping);
+      mappings.push(mapping);
+      continue;
+    }
+
     const resolution = resolveCruiseShip(ships, row.shipName, row.cruiseLine, aliases);
     if (resolution.status === "ambiguous") {
       ambiguous.push(compactSourceRow(row));
@@ -223,19 +261,6 @@ function buildMappings(sourceRows, ships, aliases) {
         ci_ship_id: ship.id,
         ci_ship_name: ship.name,
         current_seg_ship_id: currentSegId
-      });
-      continue;
-    }
-
-    const existingOwner = existingBySegId.get(row.segShipId);
-    if (existingOwner && String(existingOwner.id) !== String(ship.id)) {
-      conflicts.push({
-        type: "seg_id_already_assigned",
-        ...compactSourceRow(row),
-        ci_ship_id: ship.id,
-        ci_ship_name: ship.name,
-        assigned_ci_ship_id: existingOwner.id,
-        assigned_ci_ship_name: existingOwner.name
       });
       continue;
     }
@@ -322,6 +347,7 @@ exports.handler = async function handler(event) {
       fetched_url: fetchedUrl,
       header_row_number: extracted.headerRowNumber,
       headers: extracted.headers,
+      detection_method: extracted.detectionMethod || "header",
       invalid_rows: extracted.invalidRows.slice(0, MAX_DETAIL_ROWS),
       duplicate_rows_ignored: deduped.duplicateRows.slice(0, MAX_DETAIL_ROWS).map(compactSourceRow),
       unmatched: reconciliation.unmatched.slice(0, MAX_DETAIL_ROWS),
