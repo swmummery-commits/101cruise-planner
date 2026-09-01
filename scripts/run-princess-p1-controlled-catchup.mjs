@@ -335,10 +335,9 @@ async function main() {
   report.ok =
     report.remap.ok === true &&
     report.frozen_apply.ok === true &&
-    Number(report.frozen_apply.summary.failed_writes || 0) === 0 &&
-    Number(report.recon.summary.proposed_inserts || -1) === 0 &&
-    (Number(report.recon.summary.proposed_updates || 0) === 0 ||
-      (report.recon.summary.identity_review_sailing_ids || []).length === 0);
+    Number(report.frozen_apply.summary.failed_writes ?? 0) === 0 &&
+    Number(report.recon.summary.proposed_inserts ?? -1) === 0 &&
+    Number(report.recon.summary.proposed_updates ?? -1) === 0;
   report.outstanding = {
     proposed_inserts: report.recon.summary.proposed_inserts,
     proposed_updates: report.recon.summary.proposed_updates,

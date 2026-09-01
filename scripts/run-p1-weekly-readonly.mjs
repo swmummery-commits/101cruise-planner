@@ -27,65 +27,76 @@ const { createMaintenanceSupabase, getSupabaseConfig } = require(path.join(
   root,
   "scripts/lib/supabase-rest.cjs"
 ));
-const { executeWeeklyMaintenance } = require(path.join(
-  root,
-  "netlify/functions/lib/cruise-discovery-maintenance-cron"
-));
-const {
-  runHalWeeklyMaintenance,
-  runCelebrityWeeklyMaintenance,
-  runPrincessWeeklyMaintenance,
-  runExploraWeeklyMaintenance,
-  runSeabournWeeklyMaintenance
-} = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner"));
-const { runSilverseaWeeklyBackgroundMaintenance } = require(path.join(
-  root,
-  "netlify/functions/lib/silversea-weekly-maintenance-dispatch"
-));
-const {
-  HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
-  CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
-  PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
-  EXPLORA_WEEKLY_MAINTENANCE_RUN_TYPE,
-  SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE
-} = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance"));
 
-const LINES = {
-  silversea: { slug: "silversea-cruises", kind: "silversea" },
-  celebrity: {
-    slug: "celebrity-cruises",
-    runType: CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
-    runMaintenance: runCelebrityWeeklyMaintenance
-  },
-  hal: {
-    slug: "holland-america-line",
-    runType: HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
-    runMaintenance: runHalWeeklyMaintenance
-  },
-  princess: {
-    slug: "princess-cruises",
-    runType: PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
-    runMaintenance: runPrincessWeeklyMaintenance
-  },
-  explora: {
-    slug: "explora-journeys",
-    runType: EXPLORA_WEEKLY_MAINTENANCE_RUN_TYPE,
-    runMaintenance: runExploraWeeklyMaintenance
-  },
-  seabourn: {
-    slug: "seabourn-cruise-line",
-    runType: SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE,
-    runMaintenance: runSeabournWeeklyMaintenance
+function loadLineSpec(line) {
+  if (line === "silversea") {
+    const { runSilverseaWeeklyBackgroundMaintenance } = require(path.join(
+      root,
+      "netlify/functions/lib/silversea-weekly-maintenance-dispatch"
+    ));
+    return { kind: "silversea", runSilverseaWeeklyBackgroundMaintenance };
   }
-};
+  const {
+    runHalWeeklyMaintenance,
+    runCelebrityWeeklyMaintenance,
+    runPrincessWeeklyMaintenance,
+    runExploraWeeklyMaintenance,
+    runSeabournWeeklyMaintenance
+  } = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-runner"));
+  const {
+    HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
+    CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
+    PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
+    EXPLORA_WEEKLY_MAINTENANCE_RUN_TYPE,
+    SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE
+  } = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance"));
+  const { executeWeeklyMaintenance } = require(path.join(
+    root,
+    "netlify/functions/lib/cruise-discovery-maintenance-cron"
+  ));
+  const table = {
+    celebrity: {
+      slug: "celebrity-cruises",
+      runType: CELEBRITY_WEEKLY_MAINTENANCE_RUN_TYPE,
+      runMaintenance: runCelebrityWeeklyMaintenance,
+      executeWeeklyMaintenance
+    },
+    hal: {
+      slug: "holland-america-line",
+      runType: HAL_WEEKLY_MAINTENANCE_RUN_TYPE,
+      runMaintenance: runHalWeeklyMaintenance,
+      executeWeeklyMaintenance
+    },
+    princess: {
+      slug: "princess-cruises",
+      runType: PRINCESS_WEEKLY_MAINTENANCE_RUN_TYPE,
+      runMaintenance: runPrincessWeeklyMaintenance,
+      executeWeeklyMaintenance
+    },
+    explora: {
+      slug: "explora-journeys",
+      runType: EXPLORA_WEEKLY_MAINTENANCE_RUN_TYPE,
+      runMaintenance: runExploraWeeklyMaintenance,
+      executeWeeklyMaintenance
+    },
+    seabourn: {
+      slug: "seabourn-cruise-line",
+      runType: SEABOURN_WEEKLY_MAINTENANCE_RUN_TYPE,
+      runMaintenance: runSeabournWeeklyMaintenance,
+      executeWeeklyMaintenance
+    }
+  };
+  if (!table[line]) throw new Error(`unknown line ${line}`);
+  return table[line];
+}
 
 function parseArgs(argv) {
   const lineArg = argv.find((arg) => arg.startsWith("--line="));
   const line = String(lineArg?.slice("--line=".length) || "")
     .trim()
     .toLowerCase();
-  if (!LINES[line]) {
-    throw new Error(`--line must be one of ${Object.keys(LINES).join(", ")}`);
+  if (!["silversea", "celebrity", "hal", "princess", "explora", "seabourn"].includes(line)) {
+    throw new Error("--line must be silversea, celebrity, hal, princess, explora, or seabourn");
   }
   return { line };
 }
@@ -93,13 +104,13 @@ function parseArgs(argv) {
 async function main() {
   getSupabaseConfig(root);
   const { line } = parseArgs(process.argv.slice(2));
-  const spec = LINES[line];
+  const spec = loadLineSpec(line);
   const sb = createMaintenanceSupabase(root);
   const triggerType = "p1_readonly";
 
   let result;
   if (spec.kind === "silversea") {
-    result = await runSilverseaWeeklyBackgroundMaintenance({
+    result = await spec.runSilverseaWeeklyBackgroundMaintenance({
       dryRun: true,
       triggerType,
       dispatchId: `p1-silversea-readonly-${Date.now()}`,
@@ -108,7 +119,7 @@ async function main() {
   } else {
     const row = (await sb(`ci_cruise_lines?slug=eq.${spec.slug}&select=id,slug&limit=1`))?.[0];
     if (!row) throw new Error(`line not found: ${spec.slug}`);
-    result = await executeWeeklyMaintenance({
+    result = await spec.executeWeeklyMaintenance({
       lineSlug: spec.slug,
       cruiseLineId: row.id,
       runType: spec.runType,
@@ -159,7 +170,7 @@ function compact(summary = {}) {
     updates: summary.updates || 0,
     inventory_changed: summary.inventory_changed,
     silversea_report_status: summary.silversea_report_status || null,
-    source_healthy: summary.source?.healthy ?? summary.orchestration?.gates?.source_healthy ?? null
+    source_healthy: summary.source_healthy ?? summary.quality_gate?.source_healthy ?? null
   };
 }
 

@@ -130,6 +130,12 @@ async function runSilverseaWeeklyForExecutor(context = {}) {
     report.status === "DRY_RUN_COMPLETE" ||
     report.status === RUN_STATUS.COMPLETE ||
     report.status === "COMPLETE";
+  const identity = report.orchestration?.identity_reconciliation || {};
+  const actions = report.orchestration?.action_summary || {};
+  const source = report.source || {};
+  const inventory = report.production_inventory || {};
+  const gates = report.orchestration?.gates || {};
+  const sourceHealthy = gates.source_healthy === true || source.health === "PASS";
   return {
     ok,
     success: ok,
@@ -141,16 +147,28 @@ async function runSilverseaWeeklyForExecutor(context = {}) {
       run_id: context.runId,
       line_slug: LINE_SLUG,
       dry_run: context.dryRun !== false,
-      eligible_total: report.source?.eligible_total ?? report.orchestration?.identity_reconciliation?.eligible ?? null,
-      official_source_total: report.source?.source_total ?? null,
-      active_production_total: report.production_inventory?.active ?? null,
-      proposed_inserts: report.plan?.action_summary?.insert ?? 0,
-      proposed_updates: report.plan?.action_summary?.update ?? 0,
-      source_absent_active: report.orchestration?.action_summary?.observation ?? 0,
+      eligible_total:
+        source.summary?.eligible_beyond_cutoff ??
+        (Number(identity.source_and_production || 0) + Number(identity.source_only || 0) || null),
+      official_source_total: source.summary?.catalogue_nodes ?? source.summary?.unique_cruise_codes ?? null,
+      active_production_total:
+        inventory.active ??
+        (Number(inventory.classic_active || 0) + Number(inventory.expedition_active || 0) || null),
+      proposed_inserts: actions.INSERT_ELIGIBLE_PROPOSALS ?? report.plan?.counts?.insert ?? 0,
+      proposed_updates: actions.UPDATE_ELIGIBLE_PROPOSALS ?? report.plan?.counts?.update ?? 0,
+      source_absent_active: actions.SOURCE_ABSENT ?? 0,
       inserts: report.writes?.inserts ?? 0,
       updates: report.writes?.updates ?? 0,
       inventory_changed: (report.writes?.inserts || 0) + (report.writes?.updates || 0) > 0,
-      silversea_report_status: report.status
+      silversea_report_status: report.status,
+      source_healthy: sourceHealthy,
+      quality_gate: {
+        passed: sourceHealthy && gates.identity_complete !== false,
+        source_healthy: sourceHealthy,
+        identity_complete: gates.identity_complete === true,
+        source_health: source.health || null
+      },
+      bounded_plan_counts: report.plan?.counts || null
     },
     report
   };
