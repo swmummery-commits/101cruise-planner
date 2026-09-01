@@ -182,6 +182,11 @@
     "data/cruise-finder-v2/ci-cruise-ships-snapshot.csv"
   ]
 
+[functions."seg-ship-sync"]
+  # Refresh SEG Ship IDs from the live SEG Google Sheet every Tuesday at 15:00 Perth.
+  schedule = "0 7 * * 2"
+  timeout = 26
+
 [functions."cruise-daily-expiry-cron"]
   # Daily sailed-cruise expiration — 17:30 UTC (01:30 Australia/Perth).
   schedule = "30 17 * * *"
