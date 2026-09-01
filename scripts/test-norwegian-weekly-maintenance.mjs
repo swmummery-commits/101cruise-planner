@@ -97,4 +97,45 @@ const absence = classifyNorwegianSourceAbsence({
 assert(absence.hard_deletes_voyages === false, "source absence no hard delete");
 assert(absence.source_absent_observed === 1, "first absence observed only");
 
+const fs = require("fs");
+const accounting = require(path.join(root, "netlify/functions/lib/weekly-maintenance-write-accounting"));
+const tracking = require(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-tracking"));
+
+const nested = accounting.mergeFlattenedWriteStats({
+  line_slug: "norwegian-cruise-line",
+  proposed_inserts: 40,
+  writes_performed: { inserted: 40, enriched: 0, promoted_active: 0, failed: 1, cutoff_hidden: 0, source_absence_hidden: 0 },
+  staged_match_required_inserts: 40
+});
+assert(nested.inserts === 40, "nested apply inserts flatten onto summary.inserts");
+assert(nested.inventory_changed === true, "committed inserts mark inventory_changed");
+const failedStats = tracking.buildMaintenanceRunStats(nested, { inventory_changed: false });
+assert(failedStats.inserts === 40, "later failure extra must not erase committed inserts");
+assert(failedStats.inventory_changed === true, "committed writes keep inventory_changed");
+assert(
+  accounting.resolveWeeklyTerminalStatus({ ok: false, summary: nested }) === "partial_write_failure",
+  "partial NCL run is partial_write_failure not zero-write"
+);
+
+assert(
+  isCruisePubliclyBookable({ departureDate: "2028-07-16", status: "match_required", perthToday: "2026-09-01" }) === false,
+  "staged NCL match_required remains non-public"
+);
+assert(
+  assessPublicationEligibility(
+    { ...eligibleRow, raw_extract: {} },
+    { today, sourceEligibleOfficialIds: new Set([eligibleRow.official_sailing_id]) }
+  ).eligible === false,
+  "promotion requires enrichment_ready"
+);
+
+const applySrc = fs.readFileSync(path.join(root, "netlify/functions/lib/norwegian-weekly-apply.js"), "utf8");
+assert(
+  applySrc.includes("new Map(newRows.map((r) => [r.official_sailing_id, r]))"),
+  "weekly enrichment looks up DB rows by official_sailing_id"
+);
+assert(!applySrc.includes("[r.id, r]"), "weekly enrichment must not key enrichment map by UUID");
+const sharedSrc = fs.readFileSync(path.join(root, "netlify/functions/lib/norwegian-maintenance-shared.js"), "utf8");
+assert(!/assertGlobalCruiseWriteLockHeld\(options\)/.test(sharedSrc), "promote/hide must not reference undefined options");
+
 console.log(`Norwegian weekly maintenance tests: ${passed}/${passed} PASS`);

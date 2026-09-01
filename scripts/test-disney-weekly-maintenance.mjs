@@ -202,6 +202,73 @@ test("SOURCE 7. endpoint unresolved conflicts block quality gate", () => {
   }
 });
 
+test("SOURCE 7b. dest fail persists official sailing evidence", () => {
+  const gate = quality.evaluateDisneyWeeklySourceQualityGate(
+    healthySimulation({
+      quality_gate: { ...healthySimulation().quality_gate, destination_resolution_pct: 99.5 },
+      destination_analysis: {
+        destination_resolution_pct: 99.5,
+        unresolved: [
+          {
+            destination_code: "BAH",
+            geo_area: "Bahamas",
+            sailing_count: 1,
+            sample_product_names: ["Bahamas from Port Canaveral"],
+            sample_ports: ["Port Canaveral"],
+            proposed_canonical: null,
+            resolution_method: null,
+            confidence: null
+          }
+        ]
+      },
+      products: [
+        {
+          official_sailing_id: "DA0099|2027-03-01",
+          destination_resolution: { status: "unresolved" },
+          raw: {
+            official_product_key: "DA0099|2027-03-01",
+            product_name: "Bahamas from Port Canaveral",
+            ship_name: "Disney Dream",
+            departure_date: "2027-03-01",
+            destination_code: "BAH",
+            geo_area: "Bahamas"
+          },
+          candidate: { departure_date: "2027-03-01" }
+        }
+      ]
+    })
+  );
+  if (gate.passed) throw new Error("dest <100 must fail");
+  if (!gate.failures.includes("destination_resolution_below_100")) {
+    throw new Error(JSON.stringify(gate.failures));
+  }
+  if (gate.unresolved_destinations?.unresolved_sailings?.[0]?.official_sailing_id !== "DA0099|2027-03-01") {
+    throw new Error(JSON.stringify(gate.unresolved_destinations));
+  }
+  const report = weekly.buildWeeklyMaintenanceReport({
+    mode: "dry_run",
+    startedAt: "2026-08-31T00:00:00.000Z",
+    endedAt: "2026-08-31T00:00:01.000Z",
+    environment: { source_environment: "local_mac" },
+    result: {
+      ok: false,
+      blocked: true,
+      reason: "destination_resolution_below_100",
+      source_quality_gate: gate,
+      summary: {
+        source_quality_gate: gate,
+        resolution_rates: { destination_resolution_pct: 99.5 },
+        unresolved_destinations: gate.unresolved_destinations
+      }
+    },
+    countsBefore: { disney: 595 },
+    countsAfter: { disney: 595 }
+  });
+  if (report.unresolved_destinations?.unresolved_sailings?.[0]?.official_sailing_id !== "DA0099|2027-03-01") {
+    throw new Error("CLI report must keep dest evidence");
+  }
+});
+
 /* ----------------------------------------------------------------- INSERTS */
 
 test("INSERTS 8. new eligible voyage proposes insert_active", () => {

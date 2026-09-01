@@ -74,7 +74,7 @@ async function hideNorwegianFromPublicInventory({
   rawExtract.maintenance_expired_at = now;
   rawExtract.ncl_maintenance_hide_reason = reason;
 
-  await assertGlobalCruiseWriteLockHeld(options);
+  await assertGlobalCruiseWriteLockHeld();
   await supabase(`discovered_cruises?id=eq.${encodeURIComponent(row.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=representation" },
@@ -97,7 +97,7 @@ async function promoteNorwegianToActive({ supabase, row, runId, perthToday }) {
   rawExtract.previous_status = row.status;
   rawExtract.ncl_publication_perth_date = perthToday || perthCalendarDate();
 
-  await assertGlobalCruiseWriteLockHeld(options);
+  await assertGlobalCruiseWriteLockHeld();
   const rows = await supabase(`discovered_cruises?id=eq.${encodeURIComponent(row.id)}`, {
     method: "PATCH",
     headers: { Prefer: "return=representation" },

@@ -16,6 +16,53 @@ const { AZAMARA_LINE_ID } = require("./azamara-discovery-source");
 
 const AZAMARA_LINE_SLUG = "azamara";
 
+function sailingIds(entries = []) {
+  return entries.map((entry) => entry.official_sailing_id).filter(Boolean);
+}
+
+function buildAzamaraWeeklySummary({
+  runId,
+  today,
+  startedAt,
+  performWrites,
+  manifest,
+  applyResult = null,
+  globalLockReport = null,
+  writeSafety = null
+}) {
+  return {
+    run_id: runId,
+    run_type: AZAMARA_WEEKLY_MAINTENANCE_RUN_TYPE,
+    line_slug: AZAMARA_LINE_SLUG,
+    dry_run: !performWrites,
+    global_lock: globalLockReport,
+    perth_today: today,
+    elapsed_ms: Date.now() - startedAt,
+    source_counts: manifest.source_counts,
+    production_official: manifest.production_official,
+    recognised_eligible: manifest.recognised_eligible,
+    outstanding_eligible: manifest.outstanding_eligible,
+    proposed_inserts: (manifest.inserts || []).length,
+    proposed_updates: (manifest.updates || []).length,
+    proposed_identity_review: (manifest.identity_review || []).length,
+    proposed_cutoff_hides: (manifest.cutoff_hides || []).length,
+    proposed_source_absence_hides: (manifest.source_absence_hides || []).length,
+    identity_review_sailing_ids: sailingIds(manifest.identity_review),
+    safe_update_sailing_ids: sailingIds(manifest.updates),
+    write_safety: writeSafety || manifest.write_safety || null,
+    weekly_write_safety: writeSafety || manifest.write_safety || null,
+    legacy_ignored: manifest.legacy_ignored,
+    would_insert: (manifest.inserts || []).length,
+    would_update: (manifest.updates || []).length,
+    writes_performed: applyResult?.stats || null,
+    hard_deletes: 0,
+    source_absent_sailing_ids: (manifest.source_absence_policy?.source_absent_observed_records || [])
+      .map((r) => r.official_sailing_id)
+      .concat((manifest.source_absence_policy?.source_absent_actionable_records || []).map((r) => r.official_sailing_id)),
+    success: performWrites ? (applyResult?.stats?.failed || 0) === 0 : true
+  };
+}
+
 async function runAzamaraWeeklyMaintenance(context = {}) {
   const sb = context.supabase;
   if (!sb) throw new Error("Azamara weekly maintenance requires an explicit supabase client");
@@ -113,7 +160,17 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
         run_id: runId,
         dry_run: false,
         manifest,
-        write_safety: writeSafety
+        write_safety: writeSafety,
+        summary: buildAzamaraWeeklySummary({
+          runId,
+          today,
+          startedAt,
+          performWrites: false,
+          manifest,
+          applyResult: null,
+          globalLockReport: null,
+          writeSafety
+        })
       };
     }
   }
@@ -155,33 +212,23 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
     globalLockReport = applyWrap.global_lock;
   }
 
-  const summary = {
-    run_id: runId,
-    run_type: AZAMARA_WEEKLY_MAINTENANCE_RUN_TYPE,
-    line_slug: AZAMARA_LINE_SLUG,
-    dry_run: !performWrites,
-    global_lock: globalLockReport,
-    perth_today: today,
-    elapsed_ms: Date.now() - startedAt,
-    source_counts: manifest.source_counts,
-    production_official: manifest.production_official,
-    recognised_eligible: manifest.recognised_eligible,
-    outstanding_eligible: manifest.outstanding_eligible,
-    proposed_inserts: (manifest.inserts || []).length,
-    proposed_updates: (manifest.updates || []).length,
-    proposed_identity_review: (manifest.identity_review || []).length,
-    proposed_cutoff_hides: (manifest.cutoff_hides || []).length,
-    proposed_source_absence_hides: (manifest.source_absence_hides || []).length,
-    legacy_ignored: manifest.legacy_ignored,
-    would_insert: (manifest.inserts || []).length,
-    would_update: (manifest.updates || []).length,
-    writes_performed: applyResult?.stats || null,
-    hard_deletes: 0,
-    source_absent_sailing_ids: (manifest.source_absence_policy?.source_absent_observed_records || [])
-      .map((r) => r.official_sailing_id)
-      .concat((manifest.source_absence_policy?.source_absent_actionable_records || []).map((r) => r.official_sailing_id)),
-    success: performWrites ? (applyResult?.stats?.failed || 0) === 0 : true
-  };
+  const writeSafety =
+    manifest.write_safety ||
+    assessAzamaraWeeklyWriteSafety({
+      sourceAbsencePolicy: manifest.source_absence_policy,
+      performWrites,
+      proposedIdentityReviewUpdates: (manifest.identity_review || []).length
+    });
+  const summary = buildAzamaraWeeklySummary({
+    runId,
+    today,
+    startedAt,
+    performWrites,
+    manifest,
+    applyResult,
+    globalLockReport,
+    writeSafety
+  });
 
   return {
     ok: summary.success,
@@ -198,5 +245,6 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
 module.exports = {
   AZAMARA_LINE_SLUG,
   AZAMARA_MAX_WEEKLY_WRITES,
+  buildAzamaraWeeklySummary,
   runAzamaraWeeklyMaintenance
 };

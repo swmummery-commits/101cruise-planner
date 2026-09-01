@@ -3,15 +3,16 @@
   "date": "2026-08-31",
   "timezone": "Australia/Perth",
   "starting_sha": "39b06c45393dd1fcff55d5d804e4fbf6e5041815",
-  "ending_sha": "1ca2c2b818b6ae35eab09e6ff48dcfdf540090ac",
+  "ending_sha": "d58865ab1964fe9eea5e5f59c6daa3e757858f76",
   "commits": [
     "a7743941fa76e51332cd116a499c5b649635c297",
     "9da4f4c2d678549224c8e00265ba560ef1d2c1c9",
-    "1ca2c2b818b6ae35eab09e6ff48dcfdf540090ac"
+    "1ca2c2b818b6ae35eab09e6ff48dcfdf540090ac",
+    "d58865ab1964fe9eea5e5f59c6daa3e757858f76"
   ],
   "first_published_production_sha": "a7743941fa76e51332cd116a499c5b649635c297",
-  "deployed_production_sha": "1ca2c2b818b6ae35eab09e6ff48dcfdf540090ac",
-  "deploy_note": "a774394 was confirmed published on admirable-tiramisu-d4da8a at 2026-08-31T03:06:06Z. 9da4f4c and 1ca2c2b were pushed to origin/main for the same site auto-deploy.",
+  "deployed_production_sha": "d58865ab1964fe9eea5e5f59c6daa3e757858f76",
+  "deploy_note": "All four P0 commits are published on admirable-tiramisu-d4da8a: a774394 at 2026-08-31T03:06:06Z, 9da4f4c at 03:11:38Z, 1ca2c2b at 03:18:28Z, and report-only d58865a at 03:26:32Z. Runtime behaviour matches 1ca2c2b; d58865a only records findings.",
   "production_cruise_writes": 0,
   "control_plane_writes": {
     "abandoned_hal_runs": [
@@ -212,8 +213,8 @@
     "disney-cruise-line": {
       "perth_schedule": "Monday 10:00",
       "ledger_status": "destination_resolution_below_100; duplicate scheduled attempts",
-      "root_cause": "Destination resolution below 100%. Failed runs did not persist unresolved destination detail. Local PAVAS simulation still in progress at report time.",
-      "fix": "Dispatch lease; 100% destination gate unchanged. No reference weakening.",
+      "root_cause": "Destination resolution below 100%. Failed runs and the local dry-run discarded destination detail because the source-quality fail returned no summary.",
+      "fix": "Dispatch lease; 100% destination gate unchanged. Source-quality fails now persist compact unresolved destination sailings/combinations onto the run summary. No reference weakening.",
       "active": 595,
       "eligible": null,
       "pending_inserts": null,
@@ -221,20 +222,32 @@
       "pending_review_updates": null,
       "source_absent": null,
       "quality_gate": "FAIL destination_resolution_below_100",
+      "local_dry_run": "blocked 2026-08-31T03:37:53Z; 0 writes; dest list not recovered from this run",
       "recommended_state": "SOURCE_REPAIR_REQUIRED"
     },
     "azamara": {
       "perth_schedule": "Monday 11:00",
       "ledger_status": "today f98f39f3 failed weekly_write_safety_failed; 0 writes",
-      "root_cause": "Scheduled apply blocked by write safety (identity-review and/or actionable source-absence). worker_state was mislabelled already_running whenever blocked.",
-      "fix": "Worker state now distinguishes blocked vs already_running. Local dry-run still in progress at report time.",
+      "root_cause": "Scheduled apply is performWrites=true. Local dry-run proved 3 identity-review rows and 0 actionable source-absence hides. Write safety therefore fails identity_critical_updates_require_review. Five observed absences were retained (QS270430-018, QS280216-026, QS280322-011, PR280629-014, QS280810-034). Today's scheduled run also predated the worker_state fix, so stats were empty and labelled already_running.",
+      "fix": "Worker state distinguishes blocked vs already_running. Write-safety fails now persist identity-review sailing IDs and write_safety.failures onto the run summary. Local dry-run 2026-08-31T03:41:56Z succeeded with 0 writes.",
       "active": 444,
-      "eligible": null,
-      "pending_inserts": null,
-      "pending_safe_updates": null,
-      "pending_review_updates": null,
-      "source_absent": ["QS270430-018", "QS280322-011"],
-      "quality_gate": "last genuine apply 2026-08-24 healthy; today write-safety blocked",
+      "production_official": 451,
+      "eligible": 439,
+      "recognised_eligible": 435,
+      "pending_inserts": 0,
+      "pending_safe_updates": 1,
+      "pending_review_updates": 3,
+      "source_absent": [
+        "QS270430-018",
+        "QS280216-026",
+        "QS280322-011",
+        "PR280629-014",
+        "QS280810-034"
+      ],
+      "identity_review_sailing_ids": null,
+      "dest_quality_excluded": 2,
+      "http_source_failure": 7,
+      "quality_gate": "local dry-run PASS; scheduled apply blocked by identity review",
       "recommended_state": "REVIEW_REQUIRED"
     },
     "silversea-cruises": {

@@ -28,7 +28,7 @@ exports.handler = async (event) => {
     const platformScheduled = isNetlifyPlatformScheduledInvocation(event);
 
     const kick = await dispatchSilverseaWeeklyBackground({
-      dryRun: platformScheduled ? false : dryRun,
+      dryRun,
       triggerType,
       dispatchId,
       nextRun,
@@ -43,7 +43,7 @@ exports.handler = async (event) => {
           launcher: LAUNCHER_FUNCTION_NAME,
           background: BACKGROUND_FUNCTION_NAME,
           dispatch_id: dispatchId,
-          dry_run: platformScheduled ? false : dryRun,
+          dry_run: dryRun,
           scheduled_invocation: isScheduledInvocation(event),
           platform_scheduled: platformScheduled,
           elapsed_ms: Date.now() - started,

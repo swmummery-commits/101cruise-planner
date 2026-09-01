@@ -17,6 +17,11 @@ const { withGlobalCruiseWriteLock } = require("./cruise-discovery-global-write-l
 const { persistMaintenanceManifest } = require("./cruise-discovery-maintenance-manifests");
 const { assertWeeklyRunnerResult } = require("./weekly-maintenance-result-contract");
 const {
+  mergeFlattenedWriteStats,
+  resolveWeeklyTerminalStatus,
+  resolveLedgerRunStatus
+} = require("./weekly-maintenance-write-accounting");
+const {
   collectInvocationProvenance,
   withScheduledDispatchLease,
   scheduledDailyExpiryDispatchKey
@@ -102,13 +107,22 @@ async function executeWeeklyMaintenance({
       lineSlug
     );
 
-    const summary = result.summary || {};
+    const summary = mergeFlattenedWriteStats(result.summary || {});
     summary.duration_ms = Date.now() - started;
     summary.failure_reason = result.reason || null;
     summary.worker_state =
       result.worker_state ||
       (result.already_running ? "already_running" : result.blocked ? "blocked" : "idle");
     summary.dry_run = dryRun === true;
+    const terminalStatus = resolveWeeklyTerminalStatus({
+      ok: result.ok,
+      blocked: result.blocked === true,
+      review_required: result.review_required === true,
+      already_running: result.already_running === true,
+      reason: result.reason,
+      summary
+    });
+    summary.terminal_status = terminalStatus;
 
     const baseExtra = {
       run_type: runType,
@@ -123,7 +137,8 @@ async function executeWeeklyMaintenance({
       commit_ref: provenance.commit_ref,
       context: provenance.context,
       function_name: provenance.function_name,
-      dispatch_id: provenance.dispatch_id
+      dispatch_id: provenance.dispatch_id,
+      terminal_status: terminalStatus
     };
     const stats = buildMaintenanceRunStats(
       summary,
@@ -158,8 +173,9 @@ async function executeWeeklyMaintenance({
           status: "completed",
           stats: {
             ...stats,
-            inventory_changed: false,
+            inventory_changed: stats.inventory_changed === true,
             review_required: true,
+            terminal_status: "review_required",
             failure_reason: result.reason || null
           },
           errorMessage: null
@@ -177,8 +193,13 @@ async function executeWeeklyMaintenance({
         };
       }
       await finalizeMaintenanceRun(sb, dbRun?.id, {
-        status: "failed",
-        stats: { ...stats, inventory_changed: false },
+        status: resolveLedgerRunStatus(terminalStatus),
+        stats: {
+          ...stats,
+          inventory_changed: stats.inventory_changed === true,
+          terminal_status: terminalStatus,
+          failure_reason: result.reason || "weekly_maintenance_failed"
+        },
         errorMessage: result.reason || "weekly_maintenance_failed"
       });
       return {

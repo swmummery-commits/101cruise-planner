@@ -380,6 +380,55 @@ const observedSafety = weeklyPolicy.assessAzamaraWeeklyWriteSafety({
 });
 assert(observedSafety.ok, "observed-only absence ok for dry-run");
 
+const identityWriteSafety = weeklyPolicy.assessAzamaraWeeklyWriteSafety({
+  sourceAbsencePolicy: { source_absent_observed: 5, source_absent_actionable: 0 },
+  performWrites: true,
+  proposedIdentityReviewUpdates: 3
+});
+assert(!identityWriteSafety.ok, "identity-review blocks scheduled apply");
+assert(
+  identityWriteSafety.failures.includes("identity_critical_updates_require_review"),
+  "identity review failure recorded"
+);
+
+const azamaraWeekly = require(path.join(root, "netlify/functions/lib/azamara-weekly-maintenance"));
+const persistedSafetySummary = azamaraWeekly.buildAzamaraWeeklySummary({
+  runId: "azamara-test",
+  today: TODAY,
+  startedAt: Date.now(),
+  performWrites: false,
+  manifest: {
+    source_counts: {},
+    production_official: 451,
+    recognised_eligible: 435,
+    outstanding_eligible: 0,
+    inserts: [],
+    updates: [{ official_sailing_id: "SAFE-1" }],
+    identity_review: [
+      { official_sailing_id: "REV-1" },
+      { official_sailing_id: "REV-2" },
+      { official_sailing_id: "REV-3" }
+    ],
+    cutoff_hides: [],
+    source_absence_hides: [],
+    legacy_ignored: 5,
+    source_absence_policy: {
+      source_absent_observed_records: [{ official_sailing_id: "QS270430-018" }],
+      source_absent_actionable_records: []
+    }
+  },
+  writeSafety: identityWriteSafety
+});
+assert(
+  persistedSafetySummary.identity_review_sailing_ids.join(",") === "REV-1,REV-2,REV-3",
+  "write-safety summary persists identity-review sailing IDs"
+);
+assert(persistedSafetySummary.safe_update_sailing_ids[0] === "SAFE-1", "safe update sailing ID persisted");
+assert(
+  persistedSafetySummary.write_safety.failures.includes("identity_critical_updates_require_review"),
+  "write-safety failures persist on summary"
+);
+
 /* K. consecutive absence classification */
 const firstAbsence = sourceAbsence.classifyAzamaraSourceAbsence({
   currentAbsentRows: [{ id: "dc-1", official_sailing_id: "PR270705-014", departure_date: "2027-02-01" }],

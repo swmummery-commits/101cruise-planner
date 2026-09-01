@@ -197,7 +197,22 @@ async function runDisneyWeeklyMaintenance(context = {}) {
         reason: sourceQualityGate.failures.join("; "),
         line_slug: lineSlug,
         source_quality_gate: sourceQualityGate,
-        simulation
+        summary: {
+          line_slug: lineSlug,
+          run_id: runId,
+          run_type: runType,
+          trigger_type: context.triggerType || context.trigger_type || "scheduled",
+          dry_run: explicitDryRun,
+          write_authorisation: "dry_run",
+          official_source_total: sourceQualityGate.source_total,
+          source_quality_gate: sourceQualityGate,
+          resolution_rates: {
+            destination_resolution_pct: sourceQualityGate.destination_resolution_pct
+          },
+          unresolved_destinations: sourceQualityGate.unresolved_destinations,
+          inventory_changed: false,
+          writes_performed: 0
+        }
       };
     }
 

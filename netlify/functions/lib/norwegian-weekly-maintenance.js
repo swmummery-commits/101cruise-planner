@@ -16,6 +16,8 @@ const {
 const { applyNorwegianWeeklyManifest } = require("./norwegian-weekly-apply");
 const { loadClassificationDestinations } = require("./destination-queries");
 const { withGlobalCruiseWriteLock } = require("./cruise-discovery-global-write-lock");
+const { persistMaintenanceRollbackManifest } = require("./cruise-discovery-maintenance-manifests");
+const { mergeFlattenedWriteStats } = require("./weekly-maintenance-write-accounting");
 
 const NCL_LINE_SLUG = "norwegian-cruise-line";
 const NCL_MAX_WEEKLY_WRITES = 200;
@@ -110,9 +112,23 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
     }
     applyResult = applyWrap.result;
     globalLockReport = applyWrap.observability;
+    if (applyResult?.stats?.inserted > 0 || applyResult?.stats?.promoted_active > 0) {
+      const rollback = await persistMaintenanceRollbackManifest(sb, {
+        runId,
+        runRecordId: context.runRecordId || context.run_record_id || null,
+        cruiseLineId: line.id,
+        lineSlug,
+        triggerType: context.triggerType || context.trigger_type || "scheduled",
+        writeResult: applyResult
+      }).catch(() => null);
+      if (rollback?.manifest_record_id) {
+        applyResult.stats = applyResult.stats || {};
+        applyResult.stats.rollback_manifest_id = rollback.manifest_record_id;
+      }
+    }
   }
 
-  const summary = {
+  const summary = mergeFlattenedWriteStats({
     run_id: runId,
     run_type: NORWEGIAN_WEEKLY_MAINTENANCE_RUN_TYPE,
     line_slug: lineSlug,
@@ -130,12 +146,13 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
     proposed_source_absence_hides: (manifest.source_absence_hides || []).length,
     legacy_ignored: manifest.legacy_ignored,
     writes_performed: applyResult?.stats || null,
+    staged_match_required_inserts: applyResult?.stats?.inserted || 0,
     hard_deletes: 0,
     source_absent_sailing_ids: (manifest.source_absence_policy?.source_absent_observed_records || [])
       .map((r) => r.official_sailing_id)
       .concat((manifest.source_absence_policy?.source_absent_actionable_records || []).map((r) => r.official_sailing_id)),
     success: performWrites ? (applyResult?.stats?.failed || 0) === 0 : true
-  };
+  });
 
   return {
     ok: summary.success,

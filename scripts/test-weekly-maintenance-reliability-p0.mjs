@@ -427,13 +427,21 @@ test("NCL valid result exposes ok=true and success=true", () => {
   if (result.ok !== true || result.success !== true) throw new Error(JSON.stringify(result));
 });
 
-test("NCL failed result exposes ok=false and success=false", () => {
-  const result = contract.buildWeeklyRunnerResult({
-    ok: false,
-    success: false,
-    reason: "weekly_maintenance_failed"
-  });
-  if (result.ok !== false || result.success !== false) throw new Error(JSON.stringify(result));
+test("NCL committed staging rows are counted even when the run later fails", () => {
+  const accounting = require(path.join(root, "netlify/functions/lib/weekly-maintenance-write-accounting"));
+  const stats = tracking.buildMaintenanceRunStats(
+    accounting.mergeFlattenedWriteStats({
+      line_slug: "norwegian-cruise-line",
+      proposed_inserts: 40,
+      writes_performed: { inserted: 40, enriched: 0, promoted_active: 0, failed: 2 }
+    }),
+    { inventory_changed: false }
+  );
+  if (stats.inserts !== 40) throw new Error(`expected inserts=40, got ${stats.inserts}`);
+  if (stats.inventory_changed !== true) throw new Error("inventory_changed must stay true");
+  if (accounting.resolveWeeklyTerminalStatus({ ok: false, summary: stats }) !== "partial_write_failure") {
+    throw new Error("partial write must not look like failed_before_writes");
+  }
 });
 
 test("Carnival same contract builder", () => {
@@ -472,8 +480,13 @@ test("Royal source unhealthy always zero writes documented in runner health", ()
 });
 
 test("Disney destination unresolved always zero writes / 100% gate remains", () => {
-  const src = fs.readFileSync(path.join(root, "netlify/functions/lib/disney-weekly-quality.js"), "utf8");
+  const src = [
+    fs.readFileSync(path.join(root, "netlify/functions/lib/disney-weekly-quality.js"), "utf8"),
+    fs.readFileSync(path.join(root, "netlify/functions/lib/disney-weekly-maintenance.js"), "utf8"),
+    fs.readFileSync(path.join(root, "netlify/functions/lib/cruise-discovery-maintenance-tracking.js"), "utf8")
+  ].join("\n");
   if (!/destination_resolution_below_100/.test(src)) throw new Error("Disney 100% destination gate missing");
+  if (!/unresolved_destinations/.test(src)) throw new Error("Disney dest fail must persist unresolved destinations");
 });
 
 test("Silversea central run lifecycle persisted", () => {
@@ -486,6 +499,24 @@ test("Silversea central run lifecycle persisted", () => {
     "utf8"
   );
   if (!dispatch.includes("executeWeeklyMaintenance")) throw new Error("Silversea must persist via shared lifecycle");
+  const cronSrc = fs.readFileSync(
+    path.join(root, "netlify/functions/silversea-weekly-maintenance-cron.js"),
+    "utf8"
+  );
+  if (cronSrc.includes("platformScheduled ? false : dryRun")) {
+    throw new Error("Silversea scheduled cron must not force apply when the write flag is off");
+  }
+  const prev = process.env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED;
+  delete process.env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED;
+  try {
+    const dispatchMod = require(path.join(root, "netlify/functions/lib/silversea-weekly-maintenance-dispatch.js"));
+    if (dispatchMod.resolveDryRun({}, process.env) !== true) {
+      throw new Error("Silversea must stay dry-run unless SILVERSEA_WEEKLY_RECONCILIATION_ENABLED=true");
+    }
+  } finally {
+    if (prev == null) delete process.env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED;
+    else process.env.SILVERSEA_WEEKLY_RECONCILIATION_ENABLED = prev;
+  }
 });
 
 test("Admin dashboard includes every commissioned line", () => {

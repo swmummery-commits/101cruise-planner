@@ -33,6 +33,7 @@ const {
   isCruiseDailyExpiryEnabled
 } = require("./cruise-discovery-maintenance");
 const { loadCelebrityDatabaseInventoryCounts, headCountSupabase } = require("./celebrity-inventory-counts");
+const { mergeFlattenedWriteStats } = require("./weekly-maintenance-write-accounting");
 const {
   loadMaintenanceLockStatus,
   weeklyLockKey,
@@ -150,6 +151,9 @@ function isGenuineSuccessfulRefresh(run) {
   if (s.review_required === true) return false;
   if (s.blocked_by_global_lock === true) return false;
   if (s.already_dispatched === true) return false;
+  if (s.terminal_status === "completed_with_staged_rows") return false;
+  if (s.terminal_status === "partial_write_failure") return false;
+  if (s.terminal_status === "failed_before_writes") return false;
   return true;
 }
 
@@ -212,33 +216,58 @@ function resolveMaintenanceRunStatus({ ok, summary = {} }) {
 }
 
 function buildMaintenanceRunStats(summary, extra = {}) {
-  return {
-    run_type: summary.run_type,
+  const accounted = mergeFlattenedWriteStats(summary || {});
+  const stats = {
+    run_type: accounted.run_type || summary.run_type,
     run_id: summary.run_id,
     trigger_type: summary.trigger_type || "scheduled",
     source_snapshot_id: summary.source_snapshot_id || summary.snapshot_id || null,
     official_source_total: summary.official_source_total ?? null,
     eligible_total: summary.eligible_total ?? null,
     active_production_total: summary.active_production_total ?? null,
-    inserts: summary.inserts ?? 0,
-    updates: summary.updates ?? 0,
+    inserts: accounted.inserts,
+    updates: accounted.updates,
     unchanged: summary.unchanged ?? 0,
     duplicate_skips: summary.duplicate_skips ?? 0,
     source_absent_active: summary.source_absent_active ?? 0,
     source_absent_sailing_ids: summary.source_absent_sailing_ids || [],
     cruisetours_skipped: summary.cruisetours_excluded ?? 0,
     incomplete_skipped: summary.incomplete_skipped ?? 0,
-    failed_writes: summary.failed_writes ?? 0,
+    failed_writes: accounted.failed_writes,
     recovered_after_fetch_failure: summary.recovered_after_fetch_failure ?? 0,
-    write_attempts: summary.write_attempts ?? null,
+    write_attempts: accounted.write_attempts,
     proposed_inserts: summary.proposed_inserts ?? 0,
     proposed_updates: summary.proposed_updates ?? 0,
+    proposed_identity_review: summary.proposed_identity_review ?? null,
+    identity_review_sailing_ids: summary.identity_review_sailing_ids || null,
+    write_safety: summary.write_safety || summary.weekly_write_safety || null,
     quality_gate: summary.quality_gate || null,
+    source_quality_gate: summary.source_quality_gate || null,
+    unresolved_destinations: summary.unresolved_destinations || null,
     dry_run: summary.dry_run === true,
-    inventory_changed: summary.inventory_changed === true,
+    inventory_changed: accounted.inventory_changed,
+    enriched: accounted.enriched,
+    promoted_active: accounted.promoted_active,
+    cutoff_hidden: accounted.cutoff_hidden,
+    source_absence_hidden: accounted.source_absence_hidden,
+    committed_material_writes: accounted.committed_material_writes,
+    terminal_status: summary.terminal_status || extra.terminal_status || null,
+    rollback_manifest_id: accounted.rollback_manifest_id || extra.rollback_manifest_id || null,
     resolution_rates: summary.resolution_rates || null,
     ...extra
   };
+  if (accounted.committed_material_writes > 0) {
+    stats.inserts = accounted.inserts;
+    stats.updates = accounted.updates;
+    stats.enriched = accounted.enriched;
+    stats.promoted_active = accounted.promoted_active;
+    stats.cutoff_hidden = accounted.cutoff_hidden;
+    stats.source_absence_hidden = accounted.source_absence_hidden;
+    stats.failed_writes = accounted.failed_writes;
+    stats.inventory_changed = true;
+    stats.committed_material_writes = accounted.committed_material_writes;
+  }
+  return stats;
 }
 
 async function loadLineActiveInventory(supabase, cruiseLineId, lineSlug) {

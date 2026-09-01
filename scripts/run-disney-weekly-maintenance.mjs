@@ -221,8 +221,12 @@ export function buildWeeklyMaintenanceReport({
       write_authorisation: mode === "dry_run" ? "DRY_RUN" : "APPLY_REQUESTED"
     },
     quality_gate: qg,
-    source_quality_gate: sourceQg,
-    resolution_rates: rates,
+    source_quality_gate: result?.source_quality_gate || sourceQg,
+    resolution_rates: Object.keys(rates).length ? rates : summary.resolution_rates || {},
+    unresolved_destinations:
+      summary.unresolved_destinations ||
+      result?.source_quality_gate?.unresolved_destinations ||
+      null,
     write_cap: writeCap,
     write_authorisation: summary.write_authorisation || (mode === "dry_run" ? "dry_run" : "apply_requested"),
     writes_performed: writesPerformed,

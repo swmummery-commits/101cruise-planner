@@ -81,17 +81,26 @@ async function applyNorwegianWeeklyManifest({
             r.status === "match_required" &&
             insertManifest.entries.some((e) => e.official_sailing_id === r.official_sailing_id)
         );
-        const dryRunManifest = await buildDryRunManifest(
-          insertManifest.entries.map((e) => ({
-            discovered_cruise_id: newRows.find((r) => r.official_sailing_id === e.official_sailing_id)?.id,
-            official_sailing_id: e.official_sailing_id
-          })).filter((e) => e.discovered_cruise_id),
-          new Map(newRows.map((r) => [r.id, r])),
-          { runId }
-        );
-        const enrichResult = await applyEnrichmentManifest({ dryRunManifest, supabase, runId });
-        stats.enriched += enrichResult.updated;
-        stats.failed += enrichResult.failed;
+        try {
+          const dryRunManifest = await buildDryRunManifest(
+            insertManifest.entries.map((e) => ({
+              discovered_cruise_id: newRows.find((r) => r.official_sailing_id === e.official_sailing_id)?.id,
+              official_sailing_id: e.official_sailing_id
+            })).filter((e) => e.discovered_cruise_id),
+            new Map(newRows.map((r) => [r.official_sailing_id, r])),
+            { runId, supabase }
+          );
+          const enrichResult = await applyEnrichmentManifest({ dryRunManifest, supabase, runId });
+          stats.enriched += enrichResult.updated;
+          stats.failed += enrichResult.failed;
+        } catch (error) {
+          stats.failed += 1;
+          stats.write_details.push({
+            result_action: "enrichment_failed",
+            error: error.message,
+            inserted_ids: newRows.map((r) => r.id)
+          });
+        }
       }
     }
   }
