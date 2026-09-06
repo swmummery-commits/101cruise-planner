@@ -139,4 +139,66 @@ test("16. resolveEnvFlag reports unset as unset_default_false", () => {
   });
 });
 
+const ops = require(path.join(root, "netlify/functions/lib/maintenance-operational-status"));
+
+test("17. Daily expiry 2026-09-03 Perth slot is 2026-09-02T17:30Z", () => {
+  if (ops.perthDateToDailyExpiryUtc("2026-09-03") !== "2026-09-02T17:30:00.000Z") {
+    throw new Error(ops.perthDateToDailyExpiryUtc("2026-09-03"));
+  }
+});
+
+test("18. Missing daily expiry slot is MISSED not silently absent", () => {
+  const runs = [
+    { id: "a", started_at: "2026-09-01T17:30:33Z", stats: { run_type: "daily_expiry_maintenance" } },
+    { id: "b", started_at: "2026-09-03T17:30:17Z", stats: { run_type: "daily_expiry_maintenance" } }
+  ];
+  const detected = ops.detectMissedDailyExpirySlots(runs, {
+    now: new Date("2026-09-06T11:00:00Z"),
+    lookbackDays: 5,
+    perthDateFn: () => "2026-09-06"
+  });
+  if (!detected.missed.some((s) => s.perth_date === "2026-09-03")) {
+    throw new Error(`expected 2026-09-03 missed, got ${JSON.stringify(detected.missed)}`);
+  }
+  if (detected.missed.some((s) => s.perth_date === "2026-09-02")) {
+    throw new Error("2026-09-02 should be present");
+  }
+});
+
+test("19. Review-required zero-write is not a technical HTTP failure", () => {
+  if (ops.weeklyBackgroundHttpStatus({ success: true, review_required: true }) !== 200) {
+    throw new Error("review_required must be HTTP 200");
+  }
+  if (ops.weeklyBackgroundHttpStatus({ success: false, review_required: true }) !== 200) {
+    throw new Error("review_required success=false must still be HTTP 200");
+  }
+  if (ops.weeklyBackgroundHttpStatus({ success: false, reason: "source_fetch_failed" }) !== 500) {
+    throw new Error("true source failure must remain HTTP 500");
+  }
+  if (!ops.isReviewRequiredZeroWrite({ review_required: true, summary: { inserts: 0, updates: 0 } })) {
+    throw new Error("zero-write review must be recognised");
+  }
+});
+
+test("20. Operational status distinguishes review, miss, and healthy", () => {
+  if (ops.classifyOperationalStatus({ reviewRequired: true }) !== "REVIEW_REQUIRED") {
+    throw new Error("review");
+  }
+  if (ops.classifyOperationalStatus({ missedSchedule: true }) !== "MISSED_SCHEDULE") {
+    throw new Error("missed");
+  }
+  if (ops.classifyOperationalStatus({ sourceFailure: true }) !== "SOURCE_FAILURE") {
+    throw new Error("source");
+  }
+  if (ops.classifyOperationalStatus({ writeFailure: true }) !== "WRITE_FAILURE") {
+    throw new Error("write");
+  }
+  if (ops.classifyOperationalStatus({ enabled: false }) !== "DISABLED") {
+    throw new Error("disabled");
+  }
+  if (ops.classifyOperationalStatus({}) !== "HEALTHY") {
+    throw new Error("healthy");
+  }
+});
+
 console.log(`\ntest-scheduled-maintenance: ${passed} passed`);

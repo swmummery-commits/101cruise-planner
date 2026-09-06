@@ -517,4 +517,30 @@ assert(
   "AZAMARA_DISCOVERY_WRITE_ENABLED listed in bulk import hold"
 );
 
+/* T. departure-port correction requires structured embark evidence */
+const embarkItineraryOnly = weeklyPolicy.classifyAzamaraEmbarkCorrectionEvidence({
+  production: { departure_port: "Barcelona" },
+  source: {
+    departure_port: "Tarragona",
+    itinerary: "Barcelona, Tarragona, Marseille, Rome",
+    raw_extract: { itinerary: "Barcelona, Tarragona, Marseille, Rome" }
+  }
+});
+assert(embarkItineraryOnly.authorised_departure_port_change === false, "itinerary mention cannot change departure port");
+assert(embarkItineraryOnly.classification === "ITINERARY_CALL_ONLY", "itinerary-only Tarragona is not embark evidence");
+
+const embarkStructured = weeklyPolicy.classifyAzamaraEmbarkCorrectionEvidence({
+  production: { departure_port: "Barcelona" },
+  source: {
+    departure_port: "Tarragona",
+    departure_port_meta: {
+      canonicalPortName: "Tarragona",
+      sourceField: "sailing_from"
+    },
+    raw_extract: { description_from: "TARRAGONA" }
+  }
+});
+assert(embarkStructured.authorised_departure_port_change === true, "structured sailing-from may correct embark");
+assert(embarkStructured.classification === "GENUINE_CORRECTED_EMBARKATION", "structured embark classification");
+
 console.log(`azamara-weekly-maintenance tests passed: ${passed}`);

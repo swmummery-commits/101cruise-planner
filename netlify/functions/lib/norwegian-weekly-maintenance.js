@@ -71,8 +71,41 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
     maxNewInserts: maxWrites
   });
 
+  const outstanding = Number(manifest.outstanding_eligible || 0);
+  const backlogExceedsWeeklyCap = outstanding > Number(maxWrites || NCL_MAX_WEEKLY_WRITES);
+
   let applyResult = null;
   let globalLockReport = null;
+  if (performWrites && backlogExceedsWeeklyCap) {
+    const summary = mergeFlattenedWriteStats({
+      run_id: runId,
+      run_type: NORWEGIAN_WEEKLY_MAINTENANCE_RUN_TYPE,
+      line_slug: lineSlug,
+      dry_run: true,
+      perth_today: today,
+      elapsed_ms: Date.now() - startedAt,
+      source_counts: manifest.source_counts,
+      production_genuine: manifest.production_genuine,
+      recognised_eligible: manifest.recognised_eligible,
+      outstanding_eligible: outstanding,
+      proposed_inserts: (manifest.inserts || []).length,
+      review_required: true,
+      terminal_status: "review_required",
+      hard_deletes: 0,
+      success: true
+    });
+    return {
+      ok: false,
+      success: true,
+      blocked: false,
+      review_required: true,
+      reason: "REVIEW REQUIRED — NO WRITES",
+      dry_run: true,
+      run_id: runId,
+      manifest,
+      summary
+    };
+  }
   if (performWrites) {
     const applyWrap = await withGlobalCruiseWriteLock(sb, {
       ownerId: runId,
@@ -158,8 +191,12 @@ async function runNorwegianWeeklyMaintenance(context = {}) {
     ok: summary.success,
     success: summary.success,
     blocked: false,
-    review_required: false,
-    reason: summary.success ? null : "norwegian_weekly_writes_failed",
+    review_required: backlogExceedsWeeklyCap,
+    reason: backlogExceedsWeeklyCap
+      ? "REVIEW REQUIRED — NO WRITES"
+      : summary.success
+        ? null
+        : "norwegian_weekly_writes_failed",
     dry_run: !performWrites,
     run_id: runId,
     manifest,

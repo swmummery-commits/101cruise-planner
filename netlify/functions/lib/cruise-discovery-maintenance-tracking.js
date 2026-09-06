@@ -40,6 +40,10 @@ const {
   dailyExpiryLockKey
 } = require("./cruise-discovery-maintenance-locks");
 const { reconcileAbandonedMaintenanceRuns } = require("./weekly-maintenance-stale-runs");
+const {
+  classifyOperationalStatus,
+  detectMissedDailyExpirySlots
+} = require("./maintenance-operational-status");
 
 const COMMISSIONED_WEEKLY_LINES = [
   {
@@ -338,6 +342,23 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
   };
 
   const overdue = enabled && !["Healthy", "Running", "Review Required"].includes(freshness);
+  const sourceFailure =
+    lastFailed &&
+    (!lastSuccess || new Date(lastFailed.finished_at || lastFailed.started_at) > new Date(lastSuccess.finished_at || 0)) &&
+    /source|enumerat|fetch|health/i.test(String(lastFailed.error_message || lastFailed.stats?.failure_reason || ""));
+  const writeFailure =
+    lastFailed &&
+    (!lastSuccess || new Date(lastFailed.finished_at || lastFailed.started_at) > new Date(lastSuccess.finished_at || 0)) &&
+    !sourceFailure;
+  const operational_status = classifyOperationalStatus({
+    enabled,
+    running: freshness === "Running",
+    reviewRequired: freshness === "Review Required",
+    sourceFailure,
+    writeFailure,
+    missedSchedule: freshness === "Stale" && enabled && !lastAttempt,
+    blockedDuplicate: duplicateScheduled
+  });
 
   return {
     cruise_line_slug: lineSlug,
@@ -354,6 +375,7 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     last_failure: lastFailed?.finished_at || lastFailed?.started_at || null,
     last_failure_reason: lastFailed?.error_message || lastAttempt?.stats?.failure_reason || null,
     freshness_status: freshness,
+    operational_status,
     source_status: lastSuccess ? "ok" : lastFailed ? "failed" : lastReview ? "review_required" : "unknown",
     official_eligible_inventory: latest.eligible_total ?? lastSuccess?.stats?.eligible_total ?? null,
     active_production_inventory: inventory?.active ?? null,
@@ -410,8 +432,21 @@ async function loadDailyExpiryStatus(supabase) {
   if (lockStatus.held) workerState = "already_running";
   else if (lastAttempt?.status === "running") workerState = "running";
 
+  const missed = detectMissedDailyExpirySlots(expiryRuns, { now: new Date(), lookbackDays: 14 });
+  const latestMissed = missed.latest_missed;
+  const enabled = isCruiseDailyExpiryEnabled();
+  const operational_status = classifyOperationalStatus({
+    enabled,
+    running: workerState === "running" || workerState === "already_running",
+    writeFailure: Boolean(
+      lastFailed && (!lastSuccess || new Date(lastFailed.finished_at) > new Date(lastSuccess.finished_at))
+    ),
+    missedSchedule: Boolean(latestMissed),
+    blockedDuplicate: countSameSlotDuplicates(expiryRuns.slice(0, 8))
+  });
+
   return {
-    automation_status: isCruiseDailyExpiryEnabled() ? "enabled" : "disabled",
+    automation_status: enabled ? "enabled" : "disabled",
     automation_flag: resolveEnvFlag(process.env.CRUISE_DAILY_EXPIRY_ENABLED),
     perth_schedule: schedule.perth_display,
     utc_schedule: schedule.utc_display,
@@ -424,10 +459,15 @@ async function loadDailyExpiryStatus(supabase) {
     lock_held: lockStatus.held === true,
     lock_expires_at: lockStatus.expires_at || null,
     duplicate_scheduled_invocation: countSameSlotDuplicates(expiryRuns.slice(0, 8)),
+    operational_status,
+    missed_slots: missed.missed,
+    latest_missed_slot: latestMissed,
     warning:
       lastFailed && (!lastSuccess || new Date(lastFailed.finished_at) > new Date(lastSuccess.finished_at))
         ? `Daily expiry failed on ${new Date(lastFailed.finished_at || lastFailed.started_at).toLocaleDateString("en-AU", { timeZone: "Australia/Perth" })}. Existing inventory remains unchanged.`
-        : null
+        : latestMissed
+          ? `Daily expiry slot ${latestMissed.perth_date} Australia/Perth (${latestMissed.utc_start}) is MISSED — no ledger row.`
+          : null
   };
 }
 

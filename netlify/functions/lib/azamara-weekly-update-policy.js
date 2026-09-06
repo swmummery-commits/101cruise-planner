@@ -221,6 +221,74 @@ function assessAzamaraWeeklyWriteSafety({
   };
 }
 
+const STRUCTURED_EMBARK_SOURCE_FIELDS = new Set([
+  "sailing_from",
+  "description_from",
+  "embarkation",
+  "embarkation_port",
+  "from_port",
+  "departure_port"
+]);
+
+function itineraryMentionsPort(itinerary, portName) {
+  const needle = normalisePortName(portName);
+  if (!needle) return false;
+  return normalisePortName(itinerary).includes(needle);
+}
+
+function classifyAzamaraEmbarkCorrectionEvidence({ production = {}, source = {} } = {}) {
+  const productionPort = production.departure_port || null;
+  const structuredPort =
+    source.departure_port_meta?.canonicalPortName ||
+    source.raw_extract?.description_from ||
+    source.raw_extract?.sailing_from ||
+    source.raw_extract?.embarkation_port ||
+    null;
+  const structuredField =
+    source.departure_port_meta?.sourceField ||
+    (source.raw_extract?.description_from ? "description_from" : null) ||
+    (source.raw_extract?.sailing_from ? "sailing_from" : null);
+  const candidatePort = candidatePortName(source);
+  const itineraryHit = itineraryMentionsPort(source.itinerary || source.raw_extract?.itinerary, candidatePort);
+  const structuredIsEmbark = STRUCTURED_EMBARK_SOURCE_FIELDS.has(String(structuredField || "").toLowerCase());
+
+  if (itineraryHit && !structuredIsEmbark && !source.raw_extract?.description_from && !source.raw_extract?.sailing_from) {
+    return {
+      classification: "ITINERARY_CALL_ONLY",
+      authorised_departure_port_change: false,
+      production_port: productionPort,
+      source_structured_port: structuredPort,
+      reason: "port appears in itinerary text only; cannot change departure_port"
+    };
+  }
+  if (!structuredPort && candidatePort && itineraryHit) {
+    return {
+      classification: "PARSER_OR_SOURCE_INTERPRETATION_DEFECT",
+      authorised_departure_port_change: false,
+      production_port: productionPort,
+      source_structured_port: null,
+      reason: "parser set departure_port without structured embark evidence"
+    };
+  }
+  if (structuredIsEmbark && structuredPort && normalisePortName(structuredPort) !== normalisePortName(productionPort)) {
+    return {
+      classification: "GENUINE_CORRECTED_EMBARKATION",
+      authorised_departure_port_change: true,
+      production_port: productionPort,
+      source_structured_port: structuredPort,
+      structured_field: structuredField,
+      reason: "official structured sailing-from/embark field differs from production"
+    };
+  }
+  return {
+    classification: "SUPPLIER_PAGE_AMBIGUITY",
+    authorised_departure_port_change: false,
+    production_port: productionPort,
+    source_structured_port: structuredPort,
+    reason: "structured embark evidence is missing or conflicting"
+  };
+}
+
 module.exports = {
   IDENTITY_CRITICAL_FIELDS,
   ALLOWED_WEEKLY_UPDATE_FIELDS,
@@ -234,5 +302,6 @@ module.exports = {
   staleFieldsNeedingRefresh,
   classifyAzamaraUpdateRisk,
   refineProposedActionForWeekly,
-  assessAzamaraWeeklyWriteSafety
+  assessAzamaraWeeklyWriteSafety,
+  classifyAzamaraEmbarkCorrectionEvidence
 };

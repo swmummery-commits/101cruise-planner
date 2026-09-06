@@ -285,13 +285,42 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
       dispatch: async () => ({ accepted: true, period_key: periodKey })
     });
     if (leased.already_dispatched) {
+      const skipRun = await createMaintenanceRun(supabase, {
+        cruiseLineId: null,
+        runId,
+        runType: DAILY_EXPIRY_RUN_TYPE,
+        triggerType,
+        stats: {
+          run_type: DAILY_EXPIRY_RUN_TYPE,
+          already_dispatched: true,
+          period_key: leased.period_key,
+          invocation_provenance: provenance
+        }
+      }).catch(() => null);
+      if (skipRun?.id) {
+        await finalizeMaintenanceRun(supabase, skipRun.id, {
+          status: "completed",
+          stats: {
+            run_type: DAILY_EXPIRY_RUN_TYPE,
+            run_id: runId,
+            trigger_type: triggerType,
+            already_dispatched: true,
+            period_key: leased.period_key,
+            expired_count: 0,
+            inventory_changed: false,
+            invocation_provenance: provenance
+          },
+          errorMessage: null
+        }).catch(() => null);
+      }
       return {
         success: true,
         already_dispatched: true,
         blocked: false,
         reason: "already_dispatched",
         period_key: leased.period_key,
-        worker_state: "idle"
+        worker_state: "idle",
+        run_record_id: skipRun?.id || null
       };
     }
   }

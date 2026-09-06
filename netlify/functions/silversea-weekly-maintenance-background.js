@@ -12,6 +12,7 @@ const {
   BACKGROUND_FUNCTION_NAME,
   resolveDryRun
 } = require("./lib/silversea-weekly-maintenance-dispatch");
+const { weeklyBackgroundHttpStatus } = require("./lib/maintenance-operational-status");
 
 exports.handler = async (event) => {
   const started = Date.now();
@@ -30,7 +31,7 @@ exports.handler = async (event) => {
     });
 
     return {
-      statusCode: result.success ? 200 : 500,
+      statusCode: weeklyBackgroundHttpStatus(result),
       body: JSON.stringify(
         redactSecrets({
           ...result,

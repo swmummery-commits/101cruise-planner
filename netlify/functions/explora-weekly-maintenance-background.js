@@ -25,6 +25,7 @@ const {
   redactSecrets,
   BACKGROUND_FUNCTION_NAME
 } = require("./lib/explora-weekly-maintenance-dispatch");
+const { weeklyBackgroundHttpStatus } = require("./lib/maintenance-operational-status");
 
 exports.handler = async (event) => {
   const started = Date.now();
@@ -51,7 +52,7 @@ exports.handler = async (event) => {
     // Background return body is not delivered to the HTTP client (202 already sent),
     // but Netlify logs capture it for operations.
     return {
-      statusCode: result.success ? 200 : 500,
+      statusCode: weeklyBackgroundHttpStatus(result),
       body: JSON.stringify(
         redactSecrets({
           ...result,

@@ -337,5 +337,24 @@ test("27. Phase 3 twenty immutability uses phase3 snapshot count", () => {
   if (legacyResult.expected === 1) throw new Error("legacy verifier should expect 6");
 });
 
+test("P2. serial catch-up batches are <=30 and start at 1", () => {
+  const identities = Array.from({ length: 67 }, (_, i) => `WW${String(i).padStart(4, "0")}|2027-01-01`);
+  const batches = controlled.partitionMasterPlanIdentities(identities, controlled.P2_CATCHUP_DISNEY_BATCH, 1);
+  if (controlled.P2_CATCHUP_DISNEY_BATCH !== 30) throw new Error("P2 batch cap must stay 30");
+  if (batches[0].batch_number !== 1) throw new Error("P2 must start at batch 1");
+  if (batches.some((b) => b.batch_size > 30)) throw new Error("P2 batch exceeded 30");
+  if (batches.length !== 3) throw new Error(`expected 3 batches got ${batches.length}`);
+  if (batches[2].batch_size !== 7) throw new Error("remainder batch size");
+});
+
+test("P2. master-plan identity hash is immutable for the same ordered set", () => {
+  const ids = ["AA|1", "BB|2", "CC|3"];
+  const a = controlled.hashMasterPlanIdentities(ids);
+  const b = controlled.hashMasterPlanIdentities(["CC|3", "AA|1", "BB|2"]);
+  if (a !== b) throw new Error("hash must be order-independent via sort");
+  const c = controlled.hashMasterPlanIdentities(["AA|1", "BB|2", "DD|4"]);
+  if (a === c) throw new Error("hash must change when identities change");
+});
+
 console.log(`\n${passed} disney-controlled-batch tests passed`);
 if (process.exitCode) process.exit(process.exitCode);

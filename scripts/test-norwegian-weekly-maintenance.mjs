@@ -143,5 +143,13 @@ assert(weeklySrc.includes("rollback_manifest_id"), "NCL summary exposes rollback
 assert(!applySrc.includes("[r.id, r]"), "weekly enrichment must not key enrichment map by UUID");
 const sharedSrc = fs.readFileSync(path.join(root, "netlify/functions/lib/norwegian-maintenance-shared.js"), "utf8");
 assert(!/assertGlobalCruiseWriteLockHeld\(options\)/.test(sharedSrc), "promote/hide must not reference undefined options");
+assert(
+  weeklySrc.includes("backlogExceedsWeeklyCap"),
+  "NCL blocks scheduled writes when outstanding exceeds the weekly cap"
+);
+assert(
+  weeklySrc.includes("REVIEW REQUIRED — NO WRITES"),
+  "NCL over-cap backlog is review-required not a generic failure"
+);
 
 console.log(`Norwegian weekly maintenance tests: ${passed}/${passed} PASS`);

@@ -188,11 +188,15 @@ async function runAzamaraWeeklyMaintenance(context = {}) {
       proposedIdentityReviewUpdates: (manifest.identity_review || []).length
     });
     if (!writeSafety.ok) {
+      const reviewOnly =
+        writeSafety.failures.length === 1 &&
+        writeSafety.failures[0] === "identity_critical_updates_require_review";
       return {
         ok: false,
-        success: false,
-        blocked: true,
-        reason: "weekly_write_safety_failed",
+        success: reviewOnly,
+        review_required: reviewOnly,
+        blocked: !reviewOnly,
+        reason: reviewOnly ? "REVIEW REQUIRED — NO WRITES" : "weekly_write_safety_failed",
         failures: writeSafety.failures,
         run_id: runId,
         dry_run: false,

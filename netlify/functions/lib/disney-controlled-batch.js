@@ -16,6 +16,8 @@ const { daysUntilDeparture, PUBLIC_BOOKING_CUTOFF_DAYS } = require("./public-dis
 const DISNEY_LINE_SLUG = "disney-cruise-line";
 const MAX_CONTROLLED_DISNEY_BATCH = 20;
 const MAX_CATCHUP_DISNEY_BATCH = 100;
+const P2_CATCHUP_DISNEY_BATCH = 30;
+const P2_CATCHUP_MASTER_PLAN_MODE = "disney_p2_catchup_master_plan";
 const APPLY_CONFIRMATION_TOKEN = "DISNEY-FIRST-CONTROLLED-BATCH";
 const CATCHUP_CONFIRMATION_TOKEN = "DISNEY-CONTROLLED-CATCHUP";
 const PHASE2D_OBSOLETE_HASH = "29eec188212e19502c910f02987d00b2be8b6478a9d12f9ea237aa347b6a548d";
@@ -965,7 +967,16 @@ function validateCatchupMasterPlanGate(simulation, existingRows = []) {
   };
 }
 
-function buildCatchupMasterPlan({ simulation, cruiseLine, today, existingRows = [] }) {
+function buildCatchupMasterPlan({
+  simulation,
+  cruiseLine,
+  today,
+  existingRows = [],
+  maxBatchSize = MAX_CATCHUP_DISNEY_BATCH,
+  startBatchNumber = MIN_PHASE4B_CATCHUP_BATCH,
+  mode = CATCHUP_MASTER_PLAN_MODE,
+  phase = "4B"
+} = {}) {
   const gate = validateCatchupMasterPlanGate(simulation, existingRows);
   if (!gate.passed) {
     const err = new Error(`master_plan_gate_failed:${gate.failures.join(",")}`);
@@ -976,12 +987,17 @@ function buildCatchupMasterPlan({ simulation, cruiseLine, today, existingRows = 
 
   const existingOfficialIds = collectExistingOfficialIds(existingRows);
   const ordered_planned_identities = gate.remaining_identities;
-  const batch_plan = partitionMasterPlanIdentities(ordered_planned_identities);
+  const batch_plan = partitionMasterPlanIdentities(
+    ordered_planned_identities,
+    maxBatchSize,
+    startBatchNumber
+  );
   const overall_planned_identity_hash = hashMasterPlanIdentities(ordered_planned_identities, ADAPTER_VERSION);
 
   return {
-    mode: CATCHUP_MASTER_PLAN_MODE,
-    phase: "4B",
+    mode,
+    phase,
+    max_batch_size: maxBatchSize,
     plan_created_at: new Date().toISOString(),
     current_perth_date: today,
     source_snapshot_total: simulation.source_unique_sailings,
@@ -999,15 +1015,31 @@ function buildCatchupMasterPlan({ simulation, cruiseLine, today, existingRows = 
   };
 }
 
+function buildP2CatchupMasterPlan(params) {
+  return buildCatchupMasterPlan({
+    ...params,
+    maxBatchSize: P2_CATCHUP_DISNEY_BATCH,
+    startBatchNumber: 1,
+    mode: P2_CATCHUP_MASTER_PLAN_MODE,
+    phase: "P2"
+  });
+}
+
 function loadCatchupMasterPlan(report) {
-  if (!report || report.mode !== CATCHUP_MASTER_PLAN_MODE) throw new Error("invalid_catchup_master_plan");
+  if (
+    !report ||
+    (report.mode !== CATCHUP_MASTER_PLAN_MODE && report.mode !== P2_CATCHUP_MASTER_PLAN_MODE)
+  ) {
+    throw new Error("invalid_catchup_master_plan");
+  }
   return report;
 }
 
 function buildCatchupFreezeFromMasterPlan({ masterPlan, batchNumber, simulation, cruiseLine, today }) {
   const batch = (masterPlan.batch_plan || []).find((b) => b.batch_number === batchNumber);
   if (!batch) throw new Error(`batch_not_in_master_plan:${batchNumber}`);
-  if (batchNumber < MIN_PHASE4B_CATCHUP_BATCH) throw new Error("phase4b_batch_number_must_be_gte_2");
+  const minBatch = masterPlan.mode === P2_CATCHUP_MASTER_PLAN_MODE ? 1 : MIN_PHASE4B_CATCHUP_BATCH;
+  if (batchNumber < minBatch) throw new Error(`catchup_batch_number_must_be_gte_${minBatch}`);
 
   const entries = batch.identities.map((id) => {
     const row = (simulation.products || []).find((p) => p.official_sailing_id === id);
@@ -1137,6 +1169,8 @@ module.exports = {
   DISNEY_LINE_SLUG,
   MAX_CONTROLLED_DISNEY_BATCH,
   MAX_CATCHUP_DISNEY_BATCH,
+  P2_CATCHUP_DISNEY_BATCH,
+  P2_CATCHUP_MASTER_PLAN_MODE,
   APPLY_CONFIRMATION_TOKEN,
   CATCHUP_CONFIRMATION_TOKEN,
   PHASE2D_OBSOLETE_HASH,
@@ -1188,6 +1222,7 @@ module.exports = {
   selectRemainingInsertIdentities,
   validateCatchupMasterPlanGate,
   buildCatchupMasterPlan,
+  buildP2CatchupMasterPlan,
   loadCatchupMasterPlan,
   buildCatchupFreezeFromMasterPlan,
   verifyMasterPlanIdentityMembership,
