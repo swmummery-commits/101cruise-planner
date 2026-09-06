@@ -1,6 +1,7 @@
 const {
   resolveCustomerBooking,
   cacheBookingInSupabase,
+  syncDocumentsForBooking,
   BASE44_FETCH_TIMEOUT_MS
 } = require('./booking-service');
 const { createSessionToken, jsonResponse: authJsonResponse } = require('./lib/customer-session-auth');
@@ -80,12 +81,23 @@ exports.handler = async function (event) {
     }
 
     timer.mark('booking_resolved');
-    const { booking, bookingSource, cacheFallback } = resolved;
+    const { booking, source, bookingSource, cacheFallback } = resolved;
 
     let cached = null;
     if (bookingSource === 'live') {
       cached = await cacheBookingInSupabase(booking);
       timer.mark('cache_updated');
+
+      // Keep the My Cruise document mirror current as part of login. This makes a
+      // CRM upload visible on the very next client login instead of waiting for a
+      // later refresh/sync cycle. Failure here must never block access to My Cruise.
+      try {
+        await syncDocumentsForBooking(booking, source);
+        timer.mark('documents_synced');
+      } catch (syncError) {
+        console.warn('Customer access document sync failed', syncError?.message || syncError);
+        timer.mark('documents_sync_failed');
+      }
     } else {
       timer.mark('cache_reused');
     }
