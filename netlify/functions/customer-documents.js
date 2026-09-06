@@ -3,6 +3,10 @@ const {
   createDefaultStorageClient,
   normaliseDocumentType
 } = require('./lib/booking-document-sync');
+const {
+  fetchBase44Booking,
+  syncDocumentsForBooking
+} = require('./booking-service');
 
 const BUCKET = 'customer-documents';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -155,6 +159,28 @@ function mapCustomerDocument(row) {
   };
 }
 
+async function syncLatestCrmDocuments(session) {
+  const bookingReference = String(session.booking_reference || '').trim().toUpperCase();
+  const bookingId = String(session.booking_id || '').trim();
+  if (!bookingReference && !bookingId) return;
+
+  try {
+    const { booking, source } = await fetchBase44Booking({
+      booking_reference: bookingReference,
+      booking_id: bookingId
+    });
+    await syncDocumentsForBooking(booking, source);
+  } catch (error) {
+    // My Cruise should still show the last known document set if Base44 is
+    // temporarily unavailable. The next Documents load will self-heal.
+    console.warn('Customer document live sync failed', {
+      bookingReference,
+      bookingId,
+      message: error?.message || error
+    });
+  }
+}
+
 async function listUnifiedDocuments(session) {
   const { bookingId, filters } = bookingFilters(session);
   const crmRows = filters.length
@@ -168,7 +194,9 @@ async function listUnifiedDocuments(session) {
     `customer_documents?booking_id=eq.${encodeURIComponent(bookingId)}&order=uploaded_at.desc`,
     { method: 'GET' }
   );
-  const crmDocuments = (crmRows || []).map(mapCrmDocument);
+  const crmDocuments = (crmRows || [])
+    .filter((row) => row.document_visible_to_customer !== false)
+    .map(mapCrmDocument);
   const customerDocuments = (customerRows || []).map(mapCustomerDocument);
   return {
     documents: [...crmDocuments, ...customerDocuments],
@@ -192,6 +220,9 @@ exports.handler = async function(event) {
     const action = body.action;
 
     if (action === 'list_all') {
+      // Pull the latest CRM state before reading the mirror so a newly uploaded,
+      // changed or removed CRM document is reflected on this very request.
+      await syncLatestCrmDocuments(session);
       const unified = await listUnifiedDocuments(session);
       return jsonResponse(200, { success: true, ...unified });
     }
@@ -222,7 +253,7 @@ exports.handler = async function(event) {
           { method: 'GET' }
         );
         const row = rows?.[0];
-        if (!row) {
+        if (!row || row.document_visible_to_customer === false) {
           return jsonResponse(404, { success: false, error: 'Document not found.' });
         }
         if (!row.storage_path) {
