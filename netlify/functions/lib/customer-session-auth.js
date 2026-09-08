@@ -45,7 +45,7 @@ function verifyToken(token, secret) {
   } catch {
     return null;
   }
-  if (!payload || payload.v !== CUSTOMER_SESSION_VERSION || !payload.exp || Date.now() > payload.exp) return null;
+  if (!payload || !payload.exp || Date.now() > payload.exp) return null;
   return payload;
 }
 
@@ -58,7 +58,7 @@ function extractBearer(event) {
 function requireCustomerSession(event, secret) {
   const token = extractBearer(event);
   const session = verifyToken(token, secret || process.env.CUSTOMER_SESSION_SECRET || "");
-  if (!session?.booking_id) return null;
+  if (!session?.booking_id || session.v !== CUSTOMER_SESSION_VERSION) return null;
   return session;
 }
 
