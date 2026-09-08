@@ -5,7 +5,7 @@
  * 1. Explicit portal-account links — not used for surname-login customers
  * 2. Shared CRM contact id — not present on Base44 safe payloads
  * 3. Verified booking-access / invitation rows — planner path only
- * 4. Compound identity: normalised passenger1_email AND passenger1_mobile
+ * 4. Compound identity: normalised traveller email AND traveller mobile
  *
  * Surname alone is never sufficient and is never queried.
  */
@@ -46,25 +46,56 @@ function normaliseEmail(value) {
 }
 
 function normaliseMobile(value) {
-  return String(value || "").replace(/\D+/g, "");
+  let digits = String(value || "").replace(/\D+/g, "");
+  if (!digits) return "";
+
+  // Treat the common Australian forms +61 4xx xxx xxx and 04xx xxx xxx as
+  // the same identity. Do not rewrite non-Australian numbers.
+  const intlAu = digits.match(/^61(4\d{8})$/);
+  if (intlAu) return `0${intlAu[1]}`;
+
+  const intlAuWithTrunk = digits.match(/^610(4\d{8})$/);
+  if (intlAuWithTrunk) return `0${intlAuWithTrunk[1]}`;
+
+  const dialledIntlAu = digits.match(/^001161(4\d{8})$/);
+  if (dialledIntlAu) return `0${dialledIntlAu[1]}`;
+
+  return digits;
 }
 
-function bookingIdentityKey(row) {
-  const email = normaliseEmail(row?.passenger1_email);
-  const mobile = normaliseMobile(row?.passenger1_mobile);
+function travellerIdentityKey(emailValue, mobileValue) {
+  const email = normaliseEmail(emailValue);
+  const mobile = normaliseMobile(mobileValue);
   if (!email || !mobile || mobile.length < 6) return null;
   return `${email}|${mobile}`;
 }
 
+function bookingIdentityKeys(row) {
+  const raw = row?.raw_payload && typeof row.raw_payload === "object" ? row.raw_payload : null;
+  const candidates = [
+    travellerIdentityKey(row?.passenger1_email, row?.passenger1_mobile),
+    travellerIdentityKey(row?.passenger2_email, row?.passenger2_mobile),
+    travellerIdentityKey(raw?.passenger1_email, raw?.passenger1_mobile),
+    travellerIdentityKey(raw?.passenger2_email, raw?.passenger2_mobile)
+  ].filter(Boolean);
+  return [...new Set(candidates)];
+}
+
+// Backward-compatible helper used by existing tests/callers. The first secure
+// traveller identity is returned, regardless of whether that traveller is pax 1 or 2.
+function bookingIdentityKey(row) {
+  return bookingIdentityKeys(row)[0] || null;
+}
+
 /**
- * Returns true only when both bookings share a compound email+mobile identity.
- * Surname is ignored even if present on either row.
+ * Returns true only when both bookings share at least one compound email+mobile
+ * traveller identity. Passenger order may differ between bookings. Surname is ignored.
  */
 function bookingsShareSecureIdentity(a, b) {
-  const keyA = bookingIdentityKey(a);
-  const keyB = bookingIdentityKey(b);
-  if (!keyA || !keyB) return false;
-  return keyA === keyB;
+  const keysA = bookingIdentityKeys(a);
+  const keysB = new Set(bookingIdentityKeys(b));
+  if (!keysA.length || !keysB.size) return false;
+  return keysA.some((key) => keysB.has(key));
 }
 
 function sameBookingId(a, b) {
@@ -206,8 +237,8 @@ function filterSecurelyLinkedBookings(sessionBooking, candidates) {
         String(row.booking_reference || "").trim().toUpperCase() === currentRef
     ) || sessionBooking;
 
-  const identity = bookingIdentityKey(currentRow);
-  if (!identity) {
+  const identities = bookingIdentityKeys(currentRow);
+  if (!identities.length) {
     return list.filter(
       (row) =>
         String(row.base44_booking_id || "") === currentId ||
@@ -265,6 +296,8 @@ module.exports = {
   FORBIDDEN_CARD_KEYS,
   normaliseEmail,
   normaliseMobile,
+  travellerIdentityKey,
+  bookingIdentityKeys,
   bookingIdentityKey,
   bookingsShareSecureIdentity,
   sameBookingId,
