@@ -1,10 +1,11 @@
-const { resolveCustomerBooking } = require('./customer-booking-access-service');
 const {
+  resolveCustomerBooking,
   cacheBookingInSupabase,
-  syncDocumentsForBooking,
   BASE44_FETCH_TIMEOUT_MS
 } = require('./booking-service');
 const { mintBookingSessionToken, jsonResponse: authJsonResponse } = require('./lib/customer-session-auth');
+
+const CACHE_WRITE_BUDGET_MS = 1200;
 
 function jsonResponse(statusCode, body) {
   return authJsonResponse(statusCode, body, 'POST, OPTIONS');
@@ -32,6 +33,18 @@ function createTimer() {
       );
     }
   };
+}
+
+function withTimeout(promise, timeoutMs, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(`${label || 'Operation'} timed out`);
+      error.code = 'operation_timeout';
+      reject(error);
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 exports.handler = async function (event) {
@@ -81,35 +94,27 @@ exports.handler = async function (event) {
     }
 
     timer.mark('booking_resolved');
-    const { booking, source, bookingSource, cacheFallback } = resolved;
+    const { booking, bookingSource, cacheFallback } = resolved;
 
-    let cached = null;
+    // Authentication is the critical path. Do not download documents, parse PDFs,
+    // call OpenAI, or perform any other heavy work before returning the session.
+    // Document mirroring is handled by the Documents flow instead.
+    const token = mintBookingSessionToken(booking, sessionSecret);
+    timer.mark('session_created');
+
+    // The cache improves resilience but must never prevent a valid customer from
+    // opening My Cruise. Keep the write on a short budget and continue on failure.
     if (bookingSource === 'live') {
-      cached = await cacheBookingInSupabase(booking);
-      timer.mark('cache_updated');
-
-      // Keep the My Cruise document mirror current as part of login. This makes a
-      // CRM upload visible on the very next client login instead of waiting for a
-      // later refresh/sync cycle. Failure here must never block access to My Cruise.
       try {
-        await syncDocumentsForBooking(booking, source);
-        timer.mark('documents_synced');
-      } catch (syncError) {
-        console.warn('Customer access document sync failed', syncError?.message || syncError);
-        timer.mark('documents_sync_failed');
+        await withTimeout(cacheBookingInSupabase(booking), CACHE_WRITE_BUDGET_MS, 'Booking cache update');
+        timer.mark('cache_updated');
+      } catch (cacheError) {
+        console.warn('Customer access cache update skipped', cacheError?.message || cacheError);
+        timer.mark('cache_update_skipped');
       }
     } else {
       timer.mark('cache_reused');
     }
-
-    const token = mintBookingSessionToken(
-      {
-        ...booking,
-        base44_booking_id: booking.base44_booking_id || cached?.base44_booking_id || null
-      },
-      sessionSecret
-    );
-    timer.mark('session_created');
 
     timer.finish({
       booking_reference: bookingReference,
