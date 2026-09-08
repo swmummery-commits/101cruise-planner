@@ -46,7 +46,10 @@ assert.match(resolver, /booking\.passenger2_last_name/);
 assert.match(resolver, /raw\?\.passenger1_last_name/);
 assert.match(resolver, /raw\?\.passenger2_last_name/);
 assert.match(resolver, /normalize\("NFKD"\)/);
-assert.match(resolver, /replace\(\/\[\^A-Z0-9\]\+\/g, ""\)/);
+assert.ok(
+  resolver.includes('.replace(/[^A-Z0-9]/g, "")'),
+  'surname normalisation must strip punctuation and spacing'
+);
 
 // Old customer sessions must not silently survive authentication changes.
 assert.match(sessionAuth, /CUSTOMER_SESSION_VERSION\s*=\s*2/);
