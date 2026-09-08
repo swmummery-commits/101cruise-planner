@@ -1,0 +1,20 @@
+/
+  Cache-Control: no-store, max-age=0
+
+/index.html
+  Cache-Control: no-store, max-age=0
+
+/planner
+  Cache-Control: no-store, max-age=0
+
+/welcome
+  Cache-Control: no-store, max-age=0
+
+/js/customer-session-preflight.js
+  Cache-Control: no-cache, max-age=0, must-revalidate
+
+/js/planner.js
+  Cache-Control: no-cache, max-age=0, must-revalidate
+
+/css/planner.css
+  Cache-Control: no-cache, max-age=0, must-revalidate
