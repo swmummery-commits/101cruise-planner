@@ -5,6 +5,9 @@
 
 const crypto = require("crypto");
 
+const CUSTOMER_SESSION_VERSION = 2;
+const DEFAULT_CUSTOMER_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
 function jsonResponse(statusCode, body, methods = "GET, POST, OPTIONS") {
   return {
     statusCode,
@@ -42,7 +45,7 @@ function verifyToken(token, secret) {
   } catch {
     return null;
   }
-  if (!payload || !payload.exp || Date.now() > payload.exp) return null;
+  if (!payload || payload.v !== CUSTOMER_SESSION_VERSION || !payload.exp || Date.now() > payload.exp) return null;
   return payload;
 }
 
@@ -59,11 +62,12 @@ function requireCustomerSession(event, secret) {
   return session;
 }
 
-function mintBookingSessionToken(booking, secret, ttlMs = 12 * 60 * 60 * 1000) {
+function mintBookingSessionToken(booking, secret, ttlMs = DEFAULT_CUSTOMER_SESSION_TTL_MS) {
   const bookingId = String(booking.base44_booking_id || booking.booking_id || booking.booking_reference || "");
   const bookingReference = String(booking.booking_reference || "");
   return createSessionToken(
     {
+      v: CUSTOMER_SESSION_VERSION,
       booking_id: bookingId,
       booking_reference: bookingReference,
       exp: Date.now() + ttlMs
@@ -73,6 +77,8 @@ function mintBookingSessionToken(booking, secret, ttlMs = 12 * 60 * 60 * 1000) {
 }
 
 module.exports = {
+  CUSTOMER_SESSION_VERSION,
+  DEFAULT_CUSTOMER_SESSION_TTL_MS,
   jsonResponse,
   createSessionToken,
   verifyToken,
