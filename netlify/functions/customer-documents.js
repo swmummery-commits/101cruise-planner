@@ -10,6 +10,8 @@ const {
 
 const BUCKET = 'customer-documents';
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const DOCUMENT_SYNC_BUDGET_MS = Number(process.env.CUSTOMER_DOCUMENT_SYNC_BUDGET_MS || 8000);
+const DOCUMENT_FETCH_TIMEOUT_MS = Math.max(1000, Math.min(5000, DOCUMENT_SYNC_BUDGET_MS - 1500));
 const ALLOWED_TYPES = new Set([
   'application/pdf',
   'image/jpeg',
@@ -159,25 +161,59 @@ function mapCustomerDocument(row) {
   };
 }
 
+function withTimeout(promise, timeoutMs, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(`${label || 'Operation'} timed out`);
+      error.code = 'operation_timeout';
+      reject(error);
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
+async function deferItineraryProcessing() {
+  // Opening Documents must never launch PDF/OpenAI itinerary extraction. That is
+  // separate background work and must not block the customer document list.
+  return { ok: true, reason: 'deferred_from_customer_documents' };
+}
+
 async function syncLatestCrmDocuments(session) {
   const bookingReference = String(session.booking_reference || '').trim().toUpperCase();
   const bookingId = String(session.booking_id || '').trim();
-  if (!bookingReference && !bookingId) return;
+  if (!bookingReference && !bookingId) {
+    return { ok: false, reason: 'missing_booking_identity' };
+  }
 
   try {
-    const { booking, source } = await fetchBase44Booking({
-      booking_reference: bookingReference,
-      booking_id: bookingId
-    });
-    await syncDocumentsForBooking(booking, source);
+    const syncWork = async () => {
+      const { booking, source } = await fetchBase44Booking({
+        booking_reference: bookingReference,
+        booking_id: bookingId,
+        timeoutMs: DOCUMENT_FETCH_TIMEOUT_MS
+      });
+      return syncDocumentsForBooking(booking, source, {
+        processTextItinerary: deferItineraryProcessing
+      });
+    };
+
+    const summary = await withTimeout(
+      syncWork(),
+      DOCUMENT_SYNC_BUDGET_MS,
+      'Customer document sync'
+    );
+    return { ok: true, summary };
   } catch (error) {
-    // My Cruise should still show the last known document set if Base44 is
-    // temporarily unavailable. The next Documents load will self-heal.
-    console.warn('Customer document live sync failed', {
+    // A CRM refresh is useful but never more important than showing documents
+    // that are already securely mirrored. The next load can self-heal again.
+    console.warn('Customer document live sync deferred', {
       bookingReference,
       bookingId,
+      code: error?.code || 'sync_failed',
       message: error?.message || error
     });
+    return { ok: false, reason: error?.code || 'sync_failed' };
   }
 }
 
@@ -220,11 +256,35 @@ exports.handler = async function(event) {
     const action = body.action;
 
     if (action === 'list_all') {
-      // Pull the latest CRM state before reading the mirror so a newly uploaded,
-      // changed or removed CRM document is reflected on this very request.
-      await syncLatestCrmDocuments(session);
+      // Always capture the last known secure mirror first. A slow CRM/file sync
+      // can no longer turn a valid document library into a 504/blank screen.
+      const existing = await listUnifiedDocuments(session);
+      const syncResult = await syncLatestCrmDocuments(session);
+
+      if (!syncResult.ok) {
+        return jsonResponse(200, {
+          success: true,
+          ...existing,
+          sync_status: 'deferred',
+          sync_reason: syncResult.reason
+        });
+      }
+
+      // Re-read after a successful lightweight sync so newly added/removed CRM
+      // documents are reflected immediately.
       const unified = await listUnifiedDocuments(session);
-      return jsonResponse(200, { success: true, ...unified });
+      return jsonResponse(200, {
+        success: true,
+        ...unified,
+        sync_status: 'fresh',
+        sync_summary: {
+          discovered: Number(syncResult.summary?.discovered || 0),
+          inserted: Number(syncResult.summary?.inserted || 0),
+          updated: Number(syncResult.summary?.updated || 0),
+          archived: Number(syncResult.summary?.archived || 0),
+          failed: Number(syncResult.summary?.failed || 0)
+        }
+      });
     }
 
     if (action === 'get_download_url') {
