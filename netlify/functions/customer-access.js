@@ -1,10 +1,10 @@
+const { resolveCustomerBooking } = require('./customer-booking-access-service');
 const {
-  resolveCustomerBooking,
   cacheBookingInSupabase,
   syncDocumentsForBooking,
   BASE44_FETCH_TIMEOUT_MS
 } = require('./booking-service');
-const { createSessionToken, jsonResponse: authJsonResponse } = require('./lib/customer-session-auth');
+const { mintBookingSessionToken, jsonResponse: authJsonResponse } = require('./lib/customer-session-auth');
 
 function jsonResponse(statusCode, body) {
   return authJsonResponse(statusCode, body, 'POST, OPTIONS');
@@ -48,7 +48,7 @@ exports.handler = async function (event) {
     timer.mark('request_validated');
 
     if (!bookingReference || !surname) {
-      return jsonResponse(400, { success: false, error: 'Booking number and lead traveller surname are required.' });
+      return jsonResponse(400, { success: false, error: 'Booking number and traveller surname are required.' });
     }
 
     const sessionSecret = process.env.CUSTOMER_SESSION_SECRET;
@@ -102,9 +102,11 @@ exports.handler = async function (event) {
       timer.mark('cache_reused');
     }
 
-    const bookingId = String(booking.base44_booking_id || cached?.base44_booking_id || booking.booking_reference);
-    const token = createSessionToken(
-      { booking_id: bookingId, booking_reference: booking.booking_reference, exp: Date.now() + 12 * 60 * 60 * 1000 },
+    const token = mintBookingSessionToken(
+      {
+        ...booking,
+        base44_booking_id: booking.base44_booking_id || cached?.base44_booking_id || null
+      },
       sessionSecret
     );
     timer.mark('session_created');
