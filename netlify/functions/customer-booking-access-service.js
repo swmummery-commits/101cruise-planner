@@ -22,15 +22,13 @@ function normaliseSurname(value) {
     .replace(/[^A-Z0-9]/g, "");
 }
 
-function bookingSurnameMatches(booking, surname) {
-  const wanted = normaliseSurname(surname);
-  if (!wanted || !booking || typeof booking !== "object") return false;
-
+function bookingSurnameCandidates(booking) {
+  if (!booking || typeof booking !== "object") return [];
   const raw = booking.raw_payload && typeof booking.raw_payload === "object"
     ? booking.raw_payload
     : null;
 
-  const candidates = [
+  return [
     booking.passenger1_last_name,
     booking.passenger2_last_name,
     raw?.passenger1_last_name,
@@ -38,8 +36,12 @@ function bookingSurnameMatches(booking, surname) {
   ]
     .map(normaliseSurname)
     .filter(Boolean);
+}
 
-  return candidates.includes(wanted);
+function bookingSurnameMatches(booking, surname) {
+  const wanted = normaliseSurname(surname);
+  if (!wanted) return false;
+  return bookingSurnameCandidates(booking).includes(wanted);
 }
 
 function cacheCanBeUsed(cacheInfo) {
@@ -130,6 +132,7 @@ async function resolveCustomerBooking(
 module.exports = {
   normaliseReference,
   normaliseSurname,
+  bookingSurnameCandidates,
   bookingSurnameMatches,
   cacheCanBeUsed,
   resolveCustomerBooking
