@@ -4,8 +4,22 @@
  */
 "use strict";
 
-const { fetchBase44Booking, cacheBookingInSupabase, syncDocumentsForBooking } = require("./booking-service");
+const { fetchBase44Booking, cacheBookingInSupabase } = require("./booking-service");
 const { jsonResponse, requireCustomerSession } = require("./lib/customer-session-auth");
+
+const CACHE_WRITE_BUDGET_MS = 1200;
+
+function withTimeout(promise, timeoutMs, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const error = new Error(`${label || "Operation"} timed out`);
+      error.code = "operation_timeout";
+      reject(error);
+    }, timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
 
 exports.handler = async function (event) {
   if (event.httpMethod === "OPTIONS") return jsonResponse(200, {});
@@ -34,9 +48,8 @@ exports.handler = async function (event) {
     }
 
     let booking;
-    let source;
     try {
-      ({ booking, source } = await fetchBase44Booking({
+      ({ booking } = await fetchBase44Booking({
         booking_reference: bookingReference,
         booking_id: bookingId
       }));
@@ -48,11 +61,13 @@ exports.handler = async function (event) {
       return jsonResponse(502, { success: false, error: "We could not refresh your booking just now." });
     }
 
-    await cacheBookingInSupabase(booking);
+    // Session restore is part of the customer's critical path. Document downloads,
+    // PDF processing and itinerary extraction belong to the Documents workflow,
+    // not page startup. Cache refresh is useful but must not block the dashboard.
     try {
-      await syncDocumentsForBooking(booking, source);
-    } catch (syncError) {
-      console.warn("Customer refresh document sync failed", syncError);
+      await withTimeout(cacheBookingInSupabase(booking), CACHE_WRITE_BUDGET_MS, "Booking cache update");
+    } catch (cacheError) {
+      console.warn("Customer booking refresh cache update skipped", cacheError?.message || cacheError);
     }
 
     return jsonResponse(200, { success: true, booking });
