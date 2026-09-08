@@ -1,5 +1,5 @@
+const { resolveCustomerBooking } = require('./customer-booking-access-service');
 const {
-  resolveCustomerBooking,
   cacheBookingInSupabase,
   BASE44_FETCH_TIMEOUT_MS
 } = require('./booking-service');
