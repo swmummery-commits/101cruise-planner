@@ -158,6 +158,7 @@ async function runAzamaraWeeklyBackgroundMaintenance({
     dryRun,
     maxWrites,
     triggerType,
+    dispatchId,
     supabaseClient: sb
   });
 

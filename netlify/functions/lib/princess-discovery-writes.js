@@ -189,7 +189,8 @@ async function buildPrincessBatchManifest({ products, cruiseLine, destinations, 
     adapter_version: ADAPTER_VERSION,
     cruise_line_id: cruiseLine.id,
     writes_performed: false,
-    products: entries
+    products: entries,
+    existing_records: indexes.rows || []
   };
 }
 

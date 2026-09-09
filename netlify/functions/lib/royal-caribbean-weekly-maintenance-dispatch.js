@@ -322,6 +322,7 @@ async function runRoyalCaribbeanWeeklyBackgroundMaintenance({
     dryRun,
     maxWrites,
     triggerType,
+    dispatchId,
     supabaseClient: sb,
     statsEnricher: (summary, extra) => enrichRoyalCaribbeanMaintenanceStats(summary, extra)
   });

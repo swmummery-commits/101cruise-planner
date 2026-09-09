@@ -198,6 +198,7 @@ async function runSilverseaWeeklyBackgroundMaintenance({
     dryRun: dryRun !== false,
     maxWrites: 1,
     triggerType,
+    dispatchId,
     supabaseClient: sb,
     statsEnricher: (summary, extra) => ({ ...extra, dispatch_id: dispatchId })
   });

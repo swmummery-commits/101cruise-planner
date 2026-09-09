@@ -13,6 +13,7 @@ const OPERATIONAL_STATUSES = Object.freeze([
   "MISSED_SCHEDULE",
   "DISABLED",
   "RUNNING",
+  "STALE_ABANDONED",
   "BLOCKED_DUPLICATE"
 ]);
 
@@ -77,6 +78,7 @@ function detectMissedDailyExpirySlots(runs = [], { now = new Date(), lookbackDay
 function classifyOperationalStatus({
   enabled = true,
   running = false,
+  abandoned = false,
   reviewRequired = false,
   sourceFailure = false,
   writeFailure = false,
@@ -85,6 +87,7 @@ function classifyOperationalStatus({
 } = {}) {
   if (!enabled) return "DISABLED";
   if (running) return "RUNNING";
+  if (abandoned) return "STALE_ABANDONED";
   if (blockedDuplicate) return "BLOCKED_DUPLICATE";
   if (reviewRequired) return "REVIEW_REQUIRED";
   if (sourceFailure) return "SOURCE_FAILURE";
@@ -98,6 +101,7 @@ function weeklyBackgroundHttpStatus(result = {}) {
     result.success === true ||
     result.review_required === true ||
     result.already_dispatched === true ||
+    result.duplicate_background_invocation === true ||
     result.blocked === true
   ) {
     return 200;

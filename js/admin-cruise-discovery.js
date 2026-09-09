@@ -205,6 +205,7 @@
         <ul class="admin-kv-list">
           <li><strong>Automation:</strong> ${esc(line.automation_status || "—")}${line.automation_flag ? ` (${esc(formatFlagState(line.automation_flag))})` : ""}</li>
           <li><strong>Freshness:</strong> ${esc(line.freshness_status || "—")}</li>
+          <li><strong>Operational status:</strong> ${esc(line.operational_status || "—")}</li>
           <li><strong>Perth schedule:</strong> ${esc(line.perth_schedule || "—")}</li>
           <li><strong>UTC schedule:</strong> ${esc(line.utc_schedule || "—")}</li>
           <li><strong>Last attempt:</strong> ${formatDate(line.last_attempted_refresh)}</li>
@@ -215,6 +216,8 @@
           <li><strong>Added last run:</strong> ${esc(String(line.newly_added_last_run ?? 0))}</li>
           <li><strong>Updated last run:</strong> ${esc(String(line.updated_last_run ?? 0))}</li>
           <li><strong>Proposed inserts:</strong> ${esc(String(line.proposed_inserts_last_run ?? 0))}</li>
+          <li><strong>Total outstanding inserts:</strong> ${esc(String(line.total_outstanding_inserts_last_run ?? line.proposed_inserts_last_run ?? 0))}</li>
+          <li><strong>Planned this run:</strong> ${esc(String(line.planned_this_run_last_run ?? "—"))}</li>
           <li><strong>Review candidates:</strong> ${esc(String(line.review_candidates_last_run ?? 0))}</li>
           <li><strong>Source-absent active:</strong> ${esc(String(line.source_absent_active ?? 0))}</li>
           <li><strong>Write failures:</strong> ${esc(String(line.failed_records ?? 0))}</li>

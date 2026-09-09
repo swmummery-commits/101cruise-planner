@@ -764,6 +764,11 @@ test("RUNNER 47. catastrophic collapse blocks weekly write safety", () => {
   }
 });
 
+test("Disney scheduled launcher uses shared weekly schedule lease", () => {
+  const src = fs.readFileSync(path.join(root, "netlify/functions/disney-weekly-maintenance-cron.js"), "utf8");
+  if (!src.includes("handleLeasedWeeklyCron")) throw new Error("Disney must claim the weekly schedule lease");
+});
+
 console.log(`\n${passed} tests passed, ${failures.length} failed`);
 if (failures.length) {
   console.error(JSON.stringify(failures, null, 2));

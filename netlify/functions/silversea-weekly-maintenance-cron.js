@@ -3,6 +3,7 @@
  * Dispatches to silversea-weekly-maintenance-background.
  */
 
+const { supabase } = require("./lib/cruise-discovery-maintenance-cron");
 const {
   LAUNCHER_FUNCTION_NAME,
   BACKGROUND_FUNCTION_NAME,
@@ -12,45 +13,29 @@ const {
   resolveTriggerType,
   dispatchSilverseaWeeklyBackground,
   redactSecrets,
-  isScheduledInvocation,
   isNetlifyPlatformScheduledInvocation
 } = require("./lib/silversea-weekly-maintenance-dispatch");
+const { handleLeasedWeeklyCron } = require("./lib/weekly-maintenance-schedule-control");
 
 exports.handler = async (event) => {
   const started = Date.now();
   try {
-    assertSilverseaWeeklyAuth(event);
-    const body = parseJsonBody(event);
-    const dryRun = resolveDryRun(body, process.env);
-    const triggerType = resolveTriggerType(event, body);
-    const dispatchId = `silversea-dispatch-${new Date().toISOString().replace(/[:.]/g, "-")}`;
-    const nextRun = body.next_run || null;
-    const platformScheduled = isNetlifyPlatformScheduledInvocation(event);
-
-    const kick = await dispatchSilverseaWeeklyBackground({
-      dryRun,
-      triggerType,
-      dispatchId,
-      nextRun,
-      platformScheduled
-    });
-
-    return {
-      statusCode: kick.accepted ? 202 : 502,
-      body: JSON.stringify(
-        redactSecrets({
-          success: kick.accepted,
-          launcher: LAUNCHER_FUNCTION_NAME,
-          background: BACKGROUND_FUNCTION_NAME,
-          dispatch_id: dispatchId,
-          dry_run: dryRun,
-          scheduled_invocation: isScheduledInvocation(event),
-          platform_scheduled: platformScheduled,
-          elapsed_ms: Date.now() - started,
-          detail: kick.body
+    return await handleLeasedWeeklyCron(event, {
+      supabase,
+      lineSlug: "silversea-cruises",
+      launcherFunctionName: LAUNCHER_FUNCTION_NAME,
+      backgroundFunctionName: BACKGROUND_FUNCTION_NAME,
+      redactSecrets,
+      assertAuth: assertSilverseaWeeklyAuth,
+      parseJsonBody,
+      resolveDryRun: (body) => resolveDryRun(body, process.env),
+      resolveTriggerType,
+      dispatchBackground: (args) =>
+        dispatchSilverseaWeeklyBackground({
+          ...args,
+          platformScheduled: isNetlifyPlatformScheduledInvocation(event)
         })
-      )
-    };
+    });
   } catch (error) {
     return {
       statusCode: error.statusCode || 500,

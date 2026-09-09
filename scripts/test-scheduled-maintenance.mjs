@@ -199,6 +199,9 @@ test("20. Operational status distinguishes review, miss, and healthy", () => {
   if (ops.classifyOperationalStatus({}) !== "HEALTHY") {
     throw new Error("healthy");
   }
+  if (ops.classifyOperationalStatus({ abandoned: true }) !== "STALE_ABANDONED") {
+    throw new Error("abandoned");
+  }
 });
 
 console.log(`\ntest-scheduled-maintenance: ${passed} passed`);

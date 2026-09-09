@@ -158,6 +158,7 @@ async function runCclWeeklyBackgroundMaintenance({
     dryRun,
     maxWrites,
     triggerType,
+    dispatchId,
     supabaseClient: sb
   });
 

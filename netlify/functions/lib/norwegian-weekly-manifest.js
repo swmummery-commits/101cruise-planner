@@ -21,6 +21,7 @@ const {
   extractPreviousAbsentSailingIds
 } = require("./norwegian-source-absence");
 const { shouldRemoveFromPublicInventory } = require("./public-discovered-cruise-inventory");
+const { classifyNorwegianVoyageInsertSet } = require("./norwegian-voyage-identity-classifier");
 
 async function buildNorwegianWeeklyManifest({
   simulation,
@@ -44,6 +45,7 @@ async function buildNorwegianWeeklyManifest({
   );
 
   const newProducts = eligibleProducts.filter((p) => !productionByOfficial.has(p.official_sailing_id));
+  const insertClassification = classifyNorwegianVoyageInsertSet(newProducts, genuineRows);
   const limitedNew =
     maxNewInserts == null ? newProducts : newProducts.slice(0, Math.max(0, maxNewInserts));
 
@@ -134,6 +136,9 @@ async function buildNorwegianWeeklyManifest({
     production_genuine: genuineRows.length,
     recognised_eligible: eligibleProducts.filter((p) => productionByOfficial.has(p.official_sailing_id)).length,
     outstanding_eligible: newProducts.length,
+    total_outstanding_inserts: newProducts.length,
+    planned_this_run: limitedNew.length,
+    insert_classification_counts: insertClassification.counts,
     inserts: insertManifest.entries || [],
     insert_manifest: insertManifest,
     promotions,

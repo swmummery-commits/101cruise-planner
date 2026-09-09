@@ -180,6 +180,7 @@ async function runDisneyWeeklyBackgroundMaintenance({
     dryRun,
     maxWrites,
     triggerType,
+    dispatchId,
     supabaseClient: sb
   });
 

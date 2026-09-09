@@ -165,6 +165,7 @@ async function runSeabournWeeklyBackgroundMaintenance({
     dryRun,
     maxWrites,
     triggerType,
+    dispatchId,
     supabaseClient: sb
   });
 

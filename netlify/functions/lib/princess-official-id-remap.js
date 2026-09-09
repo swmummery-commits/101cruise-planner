@@ -137,6 +137,15 @@ async function loadCollidingPrincessRows(sb, { cruiseLineId, officialSailingId, 
 }
 
 async function applyPrincessOfficialIdRemap(sb, { existingRow, insert, cruiseLineId, runId }) {
+  const classified = classifyPrincessProposedInsert(insert, [existingRow]);
+  if (classified.classification !== "OFFICIAL_ID_REMAP") {
+    return {
+      ok: false,
+      reason: "remap_would_duplicate_or_not_voyage_equivalent",
+      classification: classified.classification,
+      discovered_cruise_id: existingRow?.id || null
+    };
+  }
   const patch = buildPrincessRemapPatch({
     existingRow,
     nextOfficialSailingId: insert.official_sailing_id,

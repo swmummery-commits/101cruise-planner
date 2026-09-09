@@ -3,6 +3,7 @@
  * Silversea M1 weekly maintenance proposal tests — offline, no production writes.
  */
 
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createRequire } from "module";
@@ -356,6 +357,11 @@ test("WH drift case classified UPDATE_UNSAFE when truncated", () => {
     productionRow: prod
   });
   if (safety.eligible) throw new Error("truncation must be unsafe");
+});
+
+test("Silversea scheduled launcher uses shared weekly schedule lease", () => {
+  const src = fs.readFileSync(path.join(root, "netlify/functions/silversea-weekly-maintenance-cron.js"), "utf8");
+  if (!src.includes("handleLeasedWeeklyCron")) throw new Error("Silversea must claim the weekly schedule lease");
 });
 
 console.log(`\nM1 tests: ${passed} passed, ${failed} failed`);

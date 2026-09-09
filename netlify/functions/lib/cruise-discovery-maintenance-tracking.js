@@ -39,7 +39,7 @@ const {
   weeklyLockKey,
   dailyExpiryLockKey
 } = require("./cruise-discovery-maintenance-locks");
-const { reconcileAbandonedMaintenanceRuns } = require("./weekly-maintenance-stale-runs");
+const { reconcileAbandonedMaintenanceRuns, reconcileAllAbandonedMaintenanceRuns } = require("./weekly-maintenance-stale-runs");
 const {
   classifyOperationalStatus,
   detectMissedDailyExpirySlots
@@ -321,6 +321,7 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
 
   let freshness = "Stale";
   if (!enabled) freshness = "Disabled";
+  else if (lastAttempt?.stats?.abandoned && lastAttempt?.status === "failed") freshness = "Stale / Abandoned";
   else if (lastAttempt?.status === "running" || lockStatus.held) freshness = "Running";
   else if (lastReview && (!lastSuccess || new Date(lastReview.finished_at) > new Date(lastSuccess.finished_at))) {
     freshness = "Review Required";
@@ -353,6 +354,7 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
   const operational_status = classifyOperationalStatus({
     enabled,
     running: freshness === "Running",
+    abandoned: freshness === "Stale / Abandoned",
     reviewRequired: freshness === "Review Required",
     sourceFailure,
     writeFailure,
@@ -384,6 +386,8 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     newly_added_last_run: lastSuccess?.stats?.inserts ?? latest.inserts ?? 0,
     updated_last_run: lastSuccess?.stats?.updates ?? latest.updates ?? 0,
     proposed_inserts_last_run: latest.proposed_inserts ?? 0,
+    total_outstanding_inserts_last_run: latest.total_outstanding_inserts ?? latest.proposed_inserts ?? 0,
+    planned_this_run_last_run: latest.planned_this_run ?? null,
     proposed_updates_last_run: latest.proposed_updates ?? 0,
     review_candidates_last_run:
       latest.proposed_updates_identity_review ?? latest.review_candidates ?? (latest.review_required ? 1 : 0),
@@ -406,7 +410,9 @@ async function loadWeeklyMaintenanceStatus(supabase, cruiseLineId, lineSlug, run
     warning:
       freshness === "Failed" && lastFailed
         ? `${spec?.label || lineSlug} weekly refresh failed on ${new Date(lastFailed.finished_at || lastFailed.started_at).toLocaleDateString("en-AU", { timeZone: "Australia/Perth" })}. Existing inventory remains unchanged. Review the source error before the next scheduled run.`
-        : freshness === "Review Required"
+        : freshness === "Stale / Abandoned"
+          ? `${spec?.label || lineSlug} weekly worker was abandoned after the execution lock expired. The run is no longer RUNNING.`
+          : freshness === "Review Required"
           ? `${spec?.label || lineSlug} requires review — no production writes were performed.`
           : duplicateScheduled
             ? `${spec?.label || lineSlug} has duplicate scheduled invocations in the same slot.`
@@ -472,6 +478,12 @@ async function loadDailyExpiryStatus(supabase) {
 }
 
 async function loadMaintenanceDashboard(supabase, lines = []) {
+  await reconcileAllAbandonedMaintenanceRuns(supabase, {
+    lines: COMMISSIONED_WEEKLY_LINES.map((spec) => {
+      const line = lines.find((l) => l.slug === spec.slug);
+      return { slug: spec.slug, runType: spec.runType, cruiseLineId: line?.id || null };
+    })
+  }).catch(() => null);
   const dashboard = {};
   const overdue = [];
   for (const spec of COMMISSIONED_WEEKLY_LINES) {

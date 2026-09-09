@@ -1,0 +1,192 @@
+{
+  "report": "weekly-maintenance-p3-monday-w37-repair-2026-09-09",
+  "timezone": "Australia/Perth",
+  "date": "2026-09-09",
+  "starting_sha": "5577126290163461d55424ec80dc2bf75ecec015",
+  "maintenance_commissioning_sha_ancestor": "fe3b9274bf5aa94c3a74fb4da268dc5646db9ce9",
+  "tooling_sha": null,
+  "final_sha": null,
+  "deployed_sha": null,
+  "reset_main": false,
+  "write_caps_unchanged": true,
+  "public_booking_cutoff_days": 21,
+  "daily_expiry_preserved": true,
+  "duplicate_background_root_cause": "Netlify background redelivery reuses the same dispatch_id. Launcher-level weekly schedule leases only prevent a second launcher kick; they do not stop a already-claimed background worker from being invoked again. Same-owner lock re-acquire treated a retry as a fresh execution, so createMaintenanceRun() ran twice.",
+  "worker_level_dispatch_idempotency": true,
+  "disney_launcher_schedule_lease": true,
+  "silversea_launcher_schedule_lease": true,
+  "schedule_lease_db_failure_fail_closed": true,
+  "weekly_lease_duration_decision": {
+    "current_seconds": 691200,
+    "period_key": "line:ISO-week:scheduled",
+    "adjacent_weeks_distinct": true,
+    "overlap_harmless": true,
+    "changed": false
+  },
+  "disney_stale_run": {
+    "run_record_id": "8cdd7966-dd64-4250-b3dd-fab83d91108c",
+    "started_at": "2026-09-07T02:00:38.073Z",
+    "weekly_lock_expired_at": "2026-09-07T02:30:39.317146Z",
+    "global_write_lock_held_by_run": false,
+    "discovered_cruises_writes_during_window": 0,
+    "second_invocation": {
+      "run_record_id": "53e3383e-426e-41d2-a3de-b23c65c4934b",
+      "status": "completed",
+      "blocked_by_lock": true,
+      "worker_state": "already_running"
+    },
+    "final_status": "failed",
+    "abandoned": true,
+    "reason": "maintenance_worker_terminated_or_lease_expired",
+    "finished_at": "2026-09-09T06:54:04.692Z",
+    "expired_weekly_execution_lock_removed": true,
+    "dispatch_period_lease_not_deleted_as_incidental_cleanup": true
+  },
+  "princess_432": {
+    "monday_run": "dfa1a46b-a11e-4e0d-ae30-f4c070fc8cdf",
+    "eligible": 1999,
+    "accepted_prior_eligible": 2061,
+    "eligible_delta": -62,
+    "raw_groups": 999,
+    "expanded_dated_sailings": 2060,
+    "within_cutoff": 61,
+    "source_accounting_exact": true,
+    "proposed_inserts_before_classification": 432,
+    "recognised_by_official_sailing_id": 1567,
+    "active_production_monday": 2006,
+    "source_absent": 8,
+    "unmatched_active_approx": 431,
+    "insert_vs_unmatched_active_delta": 1,
+    "production_voyage_duplicate_groups_2026_09_09": 447,
+    "true_new": "not_written_pending_source_identity_set",
+    "official_id_remaps": "majority_indicated_by_431_unmatched_active_vs_432_inserts",
+    "identity_format_or_recognition_regression": true,
+    "ambiguous": "duplicate_voyage_groups_make_blind_remap_unsafe",
+    "controlled_writes": 0,
+    "remaining_backlog": 432,
+    "accepted_baseline_after": 2061,
+    "classification": "REVIEW_REQUIRED",
+    "writes_authorised": false,
+    "note": "Do not treat 432 as genuine new cruises. Matching is official_sailing_id_only. Eligible inventory decreased while 432 existing voyages looked new. UUID-preserving remap only after per-row unique voyage match; never duplicate. Cap remains 30."
+  },
+  "norwegian_200": {
+    "monday_run": "62dd686e-ae48-4936-9a52-d3d9d10e64f0",
+    "monday_proposed_inserts": 200,
+    "p2_2026_09_06_eligible_ocean": 1966,
+    "p2_recognised_eligible": 1465,
+    "p2_true_total_outstanding": 501,
+    "p2_manifest_planned_this_run": 200,
+    "why_monday_displayed_exactly_200": "buildNorwegianWeeklyManifest sliced outstanding inserts to maxNewInserts (200) and reported proposed_inserts as the capped list. Quality review_required fired because outstanding > cap, so Monday showed the ceiling rather than 501.",
+    "production_voyage_duplicate_groups_2026_09_09": 550,
+    "true_new": "unknown_until_fresh_source_freeze_classified",
+    "identity_remap_duplicates": "substantial_voyage_duplicate_groups_exist",
+    "controlled_writes": 0,
+    "remaining_backlog": 501,
+    "classification": "REVIEW_REQUIRED",
+    "observability_fix": {
+      "total_outstanding_inserts": true,
+      "planned_this_run": true,
+      "proposed_inserts_now_equals_total_outstanding": true,
+      "quality_gate_uses_total_outstanding": true
+    }
+  },
+  "disney_current": {
+    "stale_run_committed_writes": 0,
+    "stale_run_final_status": "failed/abandoned",
+    "p2_pavas_not_reused": true,
+    "current_source_eligible": null,
+    "current_backlog": null,
+    "catch_up_writes": 0,
+    "remaining_backlog": null,
+    "classification": "STALE_ABANDONED_CLEANED_SOURCE_FREEZE_PENDING",
+    "note": "Fresh PAVAS twice required after deploy. Do not continue stale P2 master plan."
+  },
+  "silversea": {
+    "monday_scheduled_ledger_rows": 0,
+    "netlify_toml_schedule": "0 4 * * 1",
+    "why_scheduled_monday_run_was_absent": "No silversea_weekly_maintenance cruise_discovery_runs row exists for 2026-09-07. The launcher previously bypassed withScheduledDispatchLease(). Absence of any ledger row means the background worker never reached createMaintenanceRun — schedule invocation, auth, or dispatch failed before a run was persisted. Writes remain dry-run unless SILVERSEA_WEEKLY_RECONCILIATION_ENABLED.",
+    "scheduled_test_ledger_id": null,
+    "dry_run": true,
+    "writes": 0,
+    "classification": "SCHEDULE_REPAIR_REQUIRED_THEN_READONLY_LEDGER"
+  },
+  "royal_caribbean": {
+    "monday_latest_run": "174ac4d3-3231-4305-93e7-9b1ccd2eac91",
+    "failures": ["source_enumeration_unhealthy", "source_runtime_not_ok"],
+    "proposed_inserts": 108,
+    "source_absent": 17,
+    "writes": 0,
+    "p2_union_count": 3256,
+    "p2_missing_production_count": 55,
+    "root_cause": "Health predicate requires royal_caribbean_source_enumeration_ok; production IDs missing from authoritative union and/or unstable union still fail closed even when all pages return. source_runtime_not_ok is coupled to enumeration health. Not weakened.",
+    "enumeration_health": "unhealthy",
+    "classification": "SOURCE_REPAIR_REQUIRED"
+  },
+  "seabourn": {
+    "monday_latest_run": "2447d3de-28de-46ef-8816-5156e6949f9a",
+    "insert_candidate": "W9W46A|6910D",
+    "insert_disposition": "REVIEW_REQUIRED — not collision-free (Quest/Miami/2029-01-07 already has other 6910* rows)",
+    "review_disposition": "itinerary identity-critical reviews retained; not auto-safe",
+    "writes": 0,
+    "classification": "REVIEW_REQUIRED"
+  },
+  "carnival": {
+    "monday_run": "548cdbf3-287d-42fa-9498-7d0f96c04f5e",
+    "write_flag_disabled": true,
+    "writes": 0,
+    "classification": "NOT_YET_COMMISSIONED"
+  },
+  "healthy_lines": {
+    "holland_america": "HEALTHY — Monday 8 inserts + 1 update, 0 failures. No P3 writes authorised.",
+    "celebrity": "HEALTHY — Monday first run 5 inserts + 1 update; duplicate worker was a control-plane defect now repaired. No P3 writes authorised.",
+    "explora": "HEALTHY — Monday three duplicate 0-change executions. Idempotency repaired. No P3 writes authorised.",
+    "azamara": "HEALTHY — Monday 2 inserts + 8 updates then duplicate no-ops. Idempotency repaired. No P3 writes authorised."
+  },
+  "daily_expiry_execution_ledger": {
+    "duplicate_launcher_no_second_run_record": true,
+    "missed_slot_detection_preserved": true,
+    "stable_period_owner": "daily-expiry:{perthDate}:scheduled"
+  },
+  "production_writes": [],
+  "rollback_manifests": [],
+  "post_write_reconciliation": null,
+  "discovered_cruises_writes_in_p3": [],
+  "partial_write_runs": [],
+  "lines_READY_FOR_NORMAL_APPLY": [
+    "holland-america-line",
+    "celebrity-cruises",
+    "explora-journeys",
+    "azamara"
+  ],
+  "lines_REVIEW_REQUIRED": [
+    "princess-cruises",
+    "norwegian-cruise-line",
+    "seabourn-cruise-line",
+    "disney-cruise-line"
+  ],
+  "lines_SOURCE_REPAIR_REQUIRED": [
+    "royal-caribbean-international"
+  ],
+  "lines_NOT_YET_COMMISSIONED": [
+    "carnival-cruise-line",
+    "silversea-cruises"
+  ],
+  "tests": {
+    "test-weekly-maintenance-reliability-p0": "50 passed",
+    "test-scheduled-maintenance": "20 passed",
+    "test-disney-weekly-maintenance": "49 passed",
+    "test-norwegian-weekly-maintenance": "30 passed",
+    "test-silversea-weekly-maintenance": "17 passed",
+    "test-public-booking-cutoff": "17 passed",
+    "test-princess-weekly-maintenance": "77 passed",
+    "test-global-cruise-write-lock": "12 passed",
+    "test-azamara-weekly-maintenance": "65 passed",
+    "test-explora-weekly-maintenance": "29 passed",
+    "test-explora-weekly-background-dispatch": "23 passed",
+    "test-carnival-weekly-maintenance": "15 passed",
+    "test-royal-caribbean-weekly-maintenance": "20 passed",
+    "test-royal-caribbean-weekly-auth": "10 passed",
+    "test-discovery-inventory": "15 passed",
+    "test-seabourn-weekly-maintenance": "44 passed, 4 pre-existing confidence_blocked failures (not P3 regressions)"
+  }
+}

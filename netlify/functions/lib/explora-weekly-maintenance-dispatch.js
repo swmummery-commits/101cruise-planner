@@ -253,6 +253,7 @@ async function runExploraWeeklyBackgroundMaintenance({
     dryRun,
     maxWrites,
     triggerType,
+    dispatchId,
     supabaseClient: sb
   });
 

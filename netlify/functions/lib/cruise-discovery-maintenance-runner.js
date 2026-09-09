@@ -48,6 +48,7 @@ const {
   buildPrincessBatchManifest,
   applyPrincessBatchWrites
 } = require("./princess-discovery-writes");
+const { classifyPrincessVoyageInsertSet } = require("./princess-voyage-identity-classifier");
 const {
   buildExploraBatchManifest,
   applyExploraBatchWrites
@@ -1034,6 +1035,21 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       (p) => p.proposed_action === "update_identity_review_required"
     );
     const unchanged = manifest.products.filter((p) => p.proposed_action === "duplicate_skip");
+    const princessInsertClassification = classifyPrincessVoyageInsertSet(
+      proposedInserts.map((entry) => ({
+        official_sailing_id: entry.official_princess_sailing_id || entry.candidate?.official_sailing_id,
+        external_key: entry.candidate?.external_key,
+        identity_key: entry.candidate?.identity_key,
+        ship_id: entry.canonical_ship_id || entry.candidate?.ship_id,
+        departure_date: entry.departure_date || entry.candidate?.departure_date,
+        return_date: entry.return_date || entry.candidate?.return_date,
+        nights: entry.nights ?? entry.candidate?.nights,
+        departure_port: entry.canonical_departure_port || entry.candidate?.departure_port,
+        destination_id: entry.destination_id || entry.candidate?.destination_id
+      })),
+      manifest.existing_records || []
+    );
+    delete manifest.existing_records;
     const sourceAbsent = await findSourceAbsentActive({
       supabase: sb,
       cruiseLineId: line.id,
@@ -1104,6 +1120,8 @@ async function runPrincessWeeklyMaintenance(context = {}) {
       eligible_total: metrics.eligible_total,
       active_production_total: activeProductionTotal,
       proposed_inserts: proposedInserts.length,
+      insert_classification_counts: princessInsertClassification.counts,
+      insert_classification_total: princessInsertClassification.total,
       proposed_updates: proposedUpdates.length + proposedSafeUpdates.length,
       proposed_updates_identity_review: proposedIdentityReviewUpdates.length,
       proposed_updates_safe_metadata: proposedSafeUpdates.length,

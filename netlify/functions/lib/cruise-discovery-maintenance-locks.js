@@ -272,6 +272,7 @@ async function loadMaintenanceLockStatus(supabase, lockKey) {
     worker_state: expired ? "idle" : "running",
     owner_id: row.owner_id,
     run_id: row.run_id,
+    run_record_id: row.run_record_id || null,
     expires_at: row.expires_at
   };
 }

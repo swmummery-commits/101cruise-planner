@@ -223,6 +223,7 @@ function createThinWeeklyDispatch({
       dryRun,
       maxWrites: writes,
       triggerType,
+      dispatchId,
       supabaseClient: sb,
       statsEnricher: (summary, extra) => ({
         ...extra,
@@ -239,13 +240,15 @@ function createThinWeeklyDispatch({
       dispatch_id: dispatchId,
       phase: "background_maintenance",
       status:
-        result.blocked && result.already_running
-          ? "already_running"
-          : result.review_required
-            ? "review_required"
-            : result.success
-              ? "completed"
-              : "failed"
+        result.duplicate_background_invocation
+          ? "duplicate_background_invocation"
+          : result.blocked && result.already_running
+            ? "already_running"
+            : result.review_required
+              ? "review_required"
+              : result.success
+                ? "completed"
+                : "failed"
     };
   }
 

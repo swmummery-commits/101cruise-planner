@@ -24,7 +24,9 @@ const {
 const {
   collectInvocationProvenance,
   withScheduledDispatchLease,
-  scheduledDailyExpiryDispatchKey
+  scheduledDailyExpiryDispatchKey,
+  claimBackgroundDispatchExecutionLease,
+  duplicateBackgroundInvocationResult
 } = require("./weekly-maintenance-schedule-control");
 const { reconcileAbandonedMaintenanceRuns } = require("./weekly-maintenance-stale-runs");
 
@@ -64,14 +66,44 @@ async function executeWeeklyMaintenance({
   triggerType = "scheduled",
   supabaseClient = null,
   statsEnricher = null,
-  invocationProvenance = null
+  invocationProvenance = null,
+  dispatchId = null
 }) {
   const started = Date.now();
   const runId = `${lineSlug}-weekly-${new Date().toISOString().replace(/[:.]/g, "-")}`;
   const sb = supabaseClient || supabase;
   const provenance =
     invocationProvenance ||
-    collectInvocationProvenance({}, process.env, { dispatch_id: runId });
+    collectInvocationProvenance({}, process.env, { dispatch_id: dispatchId || runId });
+
+  const executionClaim = await claimBackgroundDispatchExecutionLease(sb, {
+    dispatchId,
+    ownerId: dispatchId
+  });
+  if (executionClaim.already_executed) {
+    return duplicateBackgroundInvocationResult({
+      dispatchId,
+      periodKey: executionClaim.period_key
+    });
+  }
+  if (dispatchId && executionClaim.claimed !== true && executionClaim.reason === "dispatch_lease_unavailable") {
+    return {
+      ok: false,
+      success: false,
+      blocked: true,
+      review_required: false,
+      reason: "dispatch_lease_unavailable",
+      run_id: null,
+      run_record_id: null,
+      summary: {
+        terminal_status: "dispatch_lease_unavailable",
+        dispatch_id: dispatchId,
+        inserts: 0,
+        updates: 0,
+        inventory_changed: false
+      }
+    };
+  }
 
   if (!dryRun) assertEnabled();
 
@@ -257,8 +289,9 @@ async function executeWeeklyMaintenance({
   }
 }
 
-async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" }) {
+async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled", supabaseClient = null }) {
   const started = Date.now();
+  const sb = supabaseClient || supabase;
   const { expireSailedCruises } = require("./cruise-discovery-runner");
   const {
     assertDailyExpiryEnabled,
@@ -268,7 +301,7 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
 
   if (!dryRun) assertDailyExpiryEnabled();
 
-  const runId = `daily-expiry-${new Date().toISOString().replace(/[:.]/g, "-")}`;
+  const runId = `daily-expiry-${new Date().toISOString().replace(/[:.]/g, "-")}-${Math.random().toString(16).slice(2, 8)}`;
   const provenance = collectInvocationProvenance({}, process.env, {
     function_name: "cruise-daily-expiry-cron",
     dispatch_id: runId
@@ -277,42 +310,14 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
   if (triggerType === "scheduled") {
     const periodKey = scheduledDailyExpiryDispatchKey();
     const leased = await withScheduledDispatchLease({
-      supabase,
+      supabase: sb,
       lineSlug: "daily-expiry",
       triggerType,
-      dispatchId: runId,
+      dispatchId: periodKey,
       dailyExpiry: true,
       dispatch: async () => ({ accepted: true, period_key: periodKey })
     });
     if (leased.already_dispatched) {
-      const skipRun = await createMaintenanceRun(supabase, {
-        cruiseLineId: null,
-        runId,
-        runType: DAILY_EXPIRY_RUN_TYPE,
-        triggerType,
-        stats: {
-          run_type: DAILY_EXPIRY_RUN_TYPE,
-          already_dispatched: true,
-          period_key: leased.period_key,
-          invocation_provenance: provenance
-        }
-      }).catch(() => null);
-      if (skipRun?.id) {
-        await finalizeMaintenanceRun(supabase, skipRun.id, {
-          status: "completed",
-          stats: {
-            run_type: DAILY_EXPIRY_RUN_TYPE,
-            run_id: runId,
-            trigger_type: triggerType,
-            already_dispatched: true,
-            period_key: leased.period_key,
-            expired_count: 0,
-            inventory_changed: false,
-            invocation_provenance: provenance
-          },
-          errorMessage: null
-        }).catch(() => null);
-      }
       return {
         success: true,
         already_dispatched: true,
@@ -320,19 +325,35 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
         reason: "already_dispatched",
         period_key: leased.period_key,
         worker_state: "idle",
-        run_record_id: skipRun?.id || null
+        run_record_id: null,
+        dispatch_telemetry: {
+          already_dispatched: true,
+          period_key: leased.period_key,
+          invocation_provenance: provenance
+        }
+      };
+    }
+    if (leased.claimed !== true) {
+      return {
+        success: false,
+        already_dispatched: false,
+        blocked: true,
+        reason: leased.claim?.reason || "dispatch_lease_unavailable",
+        period_key: leased.period_key,
+        worker_state: "idle",
+        run_record_id: null
       };
     }
   }
 
-  await reconcileAbandonedMaintenanceRuns(supabase, {
+  await reconcileAbandonedMaintenanceRuns(sb, {
     lineSlug: null,
     runType: DAILY_EXPIRY_RUN_TYPE,
     cruiseLineId: null
   }).catch(() => null);
 
   const lockKey = dailyExpiryLockKey();
-  const lock = await acquireMaintenanceDbLock(supabase, {
+  const lock = await acquireMaintenanceDbLock(sb, {
     lockKey,
     ownerId: runId,
     runId,
@@ -349,7 +370,7 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
     };
   }
 
-  const dbRun = await createMaintenanceRun(supabase, {
+  const dbRun = await createMaintenanceRun(sb, {
     cruiseLineId: null,
     runId,
     runType: DAILY_EXPIRY_RUN_TYPE,
@@ -362,7 +383,7 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
       const today = perthCalendarDate();
       const { publicBookingCutoffDate, PUBLIC_BOOKING_CUTOFF_DAYS } = require("./public-discovered-cruise-inventory");
       const cutoffDate = publicBookingCutoffDate(today);
-      const rows = await supabase(
+      const rows = await sb(
         `discovered_cruises?status=in.(active,review_required,match_required,validation_failed,ready,discovered)&departure_date=lte.${cutoffDate}&select=id,cruise_line_id,departure_date,status&limit=500`
       );
       const stats = {
@@ -376,11 +397,11 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
         cutoff_days: PUBLIC_BOOKING_CUTOFF_DAYS,
         timezone: "Australia/Perth"
       };
-      await finalizeMaintenanceRun(supabase, dbRun?.id, { status: "completed", stats });
+      await finalizeMaintenanceRun(sb, dbRun?.id, { status: "completed", stats });
       return { success: true, dry_run: true, would_expire: (rows || []).length, rows: rows || [], stats };
     }
 
-    const expireWrap = await withGlobalCruiseWriteLock(supabase, {
+    const expireWrap = await withGlobalCruiseWriteLock(sb, {
       ownerId: runId,
       runId,
       runRecordId: dbRun?.id || null,
@@ -388,7 +409,7 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
     }, async () => expireSailedCruises({ runId, recordMetadata: true }));
 
     if (!expireWrap.acquired) {
-      await finalizeMaintenanceRun(supabase, dbRun?.id, {
+      await finalizeMaintenanceRun(sb, dbRun?.id, {
         status: "completed",
         stats: {
           run_type: DAILY_EXPIRY_RUN_TYPE,
@@ -419,7 +440,7 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
       expired_record_ids: expire.expired_ids || [],
       expired_count: expire.expired_count
     };
-    await persistMaintenanceManifest(supabase, {
+    await persistMaintenanceManifest(sb, {
       manifestType: "rollback",
       manifest
     }).catch(() => null);
@@ -435,17 +456,17 @@ async function executeDailyExpiry({ dryRun = false, triggerType = "scheduled" })
       inventory_changed: expire.expired_count > 0,
       expired_record_ids: expire.expired_ids || []
     };
-    await finalizeMaintenanceRun(supabase, dbRun?.id, { status: "completed", stats });
+    await finalizeMaintenanceRun(sb, dbRun?.id, { status: "completed", stats });
     return { success: true, expire, stats, elapsed_ms: Date.now() - started };
   } catch (error) {
-    await finalizeMaintenanceRun(supabase, dbRun?.id, {
+    await finalizeMaintenanceRun(sb, dbRun?.id, {
       status: "failed",
       stats: { run_type: DAILY_EXPIRY_RUN_TYPE, run_id: runId },
       errorMessage: error.message
     });
     throw error;
   } finally {
-    await releaseMaintenanceDbLock(supabase, { lockKey, ownerId: runId });
+    await releaseMaintenanceDbLock(sb, { lockKey, ownerId: runId });
   }
 }
 

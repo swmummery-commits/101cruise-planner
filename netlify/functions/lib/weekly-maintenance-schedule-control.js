@@ -12,11 +12,13 @@ const {
 } = require("./cruise-discovery-maintenance");
 const {
   acquireMaintenanceDbLock,
-  releaseMaintenanceDbLock
+  releaseMaintenanceDbLock,
+  loadMaintenanceLockStatus
 } = require("./cruise-discovery-maintenance-locks");
 
 const WEEKLY_DISPATCH_LEASE_SECONDS = 8 * 24 * 60 * 60;
 const DAILY_DISPATCH_LEASE_SECONDS = 26 * 60 * 60;
+const BACKGROUND_DISPATCH_LEASE_SECONDS = 2 * 60 * 60;
 
 function perthIsoWeek(reference = new Date()) {
   const calendar = perthCalendarDate(reference);
@@ -36,6 +38,10 @@ function scheduledWeeklyDispatchKey(lineSlug, reference = new Date()) {
 
 function scheduledDailyExpiryDispatchKey(reference = new Date()) {
   return `daily-expiry:${perthCalendarDate(reference)}:scheduled`;
+}
+
+function backgroundDispatchExecutionKey(dispatchId) {
+  return `background-dispatch:${String(dispatchId || "").trim()}`;
 }
 
 function headerValue(event, name) {
@@ -83,11 +89,22 @@ async function claimScheduledDispatchLease(supabase, {
   }
   if (!supabase || !periodKey || !ownerId) {
     return {
-      claimed: true,
+      claimed: false,
       already_dispatched: false,
       skipped: true,
       reason: "invalid_dispatch_lease_parameters",
       period_key: periodKey || null
+    };
+  }
+
+  const existing = await loadMaintenanceLockStatus(supabase, periodKey).catch(() => ({ held: false }));
+  if (existing.held) {
+    return {
+      claimed: false,
+      already_dispatched: true,
+      reason: "already_dispatched",
+      period_key: periodKey,
+      lock: existing
     };
   }
 
@@ -101,7 +118,7 @@ async function claimScheduledDispatchLease(supabase, {
     });
   } catch (error) {
     return {
-      claimed: true,
+      claimed: false,
       already_dispatched: false,
       skipped: true,
       reason: "dispatch_lease_unavailable",
@@ -166,6 +183,12 @@ async function claimOrSkipScheduledBackgroundDispatch({
         ...extra
       }
     };
+  }
+  if (triggerType === "scheduled" && claim.claimed !== true) {
+    const err = new Error(claim.reason || "dispatch_lease_unavailable");
+    err.code = "dispatch_lease_unavailable";
+    err.statusCode = 503;
+    throw err;
   }
   return { already_dispatched: false, period_key: periodKey, claim };
 }
@@ -255,17 +278,263 @@ function alreadyDispatchedHttpResponse({
   };
 }
 
+function dispatchLeaseUnavailableHttpResponse({
+  dispatchId,
+  periodKey,
+  launcher,
+  elapsedMs,
+  claim = {},
+  redactSecrets = (v) => v
+}) {
+  return {
+    statusCode: 503,
+    body: JSON.stringify(
+      redactSecrets({
+        success: false,
+        phase: "dispatch",
+        status: "dispatch_lease_unavailable",
+        already_dispatched: false,
+        claimed: false,
+        launcher,
+        dispatch_id: dispatchId,
+        period_key: periodKey,
+        reason: claim.reason || "dispatch_lease_unavailable",
+        elapsed_ms: elapsedMs,
+        note: "Schedule-dedupe control plane failed closed; background worker was not started."
+      })
+    )
+  };
+}
+
+async function claimBackgroundDispatchExecutionLease(supabase, {
+  dispatchId,
+  ownerId = null,
+  leaseSeconds = BACKGROUND_DISPATCH_LEASE_SECONDS
+} = {}) {
+  const id = String(dispatchId || "").trim();
+  if (!id) {
+    return {
+      claimed: true,
+      already_executed: false,
+      skipped: true,
+      reason: "no_dispatch_id",
+      period_key: null
+    };
+  }
+  if (!supabase) {
+    return {
+      claimed: false,
+      already_executed: false,
+      skipped: true,
+      reason: "dispatch_lease_unavailable",
+      period_key: backgroundDispatchExecutionKey(id)
+    };
+  }
+  const periodKey = backgroundDispatchExecutionKey(id);
+  const owner = String(ownerId || id).trim();
+  const existing = await loadMaintenanceLockStatus(supabase, periodKey).catch(() => ({ held: false }));
+  if (existing.held) {
+    return {
+      claimed: false,
+      already_executed: true,
+      reason: "duplicate_background_invocation",
+      period_key: periodKey,
+      lock: existing
+    };
+  }
+  try {
+    const lock = await acquireMaintenanceDbLock(supabase, {
+      lockKey: periodKey,
+      ownerId: owner,
+      runId: owner,
+      leaseSeconds
+    });
+    if (!lock.acquired) {
+      return {
+        claimed: false,
+        already_executed: true,
+        reason: "duplicate_background_invocation",
+        period_key: periodKey,
+        lock
+      };
+    }
+    return {
+      claimed: true,
+      already_executed: false,
+      reason: null,
+      period_key: periodKey,
+      lock
+    };
+  } catch (error) {
+    return {
+      claimed: false,
+      already_executed: false,
+      skipped: true,
+      reason: "dispatch_lease_unavailable",
+      period_key: periodKey,
+      error: error.message || String(error)
+    };
+  }
+}
+
+function duplicateBackgroundInvocationResult({ dispatchId, periodKey = null } = {}) {
+  return {
+    ok: true,
+    success: true,
+    blocked: false,
+    review_required: false,
+    duplicate_background_invocation: true,
+    already_running: false,
+    reason: "duplicate_background_invocation",
+    run_id: null,
+    run_record_id: null,
+    summary: {
+      terminal_status: "duplicate_background_invocation",
+      dispatch_id: dispatchId || null,
+      period_key: periodKey,
+      inserts: 0,
+      updates: 0,
+      inventory_changed: false,
+      writes_performed: 0
+    }
+  };
+}
+
+async function handleLeasedWeeklyCron(event, {
+  supabase,
+  lineSlug,
+  launcherFunctionName,
+  backgroundFunctionName = null,
+  redactSecrets,
+  assertAuth,
+  parseJsonBody,
+  resolveDryRun,
+  resolveMaxWrites = null,
+  resolveTriggerType,
+  dispatchBackground,
+  extraDispatchArgs = {},
+  earlyResponse = null
+} = {}) {
+  const started = Date.now();
+  if (earlyResponse) return earlyResponse;
+  assertAuth(event);
+  const body = parseJsonBody(event);
+  const dryRun = resolveDryRun(body);
+  const maxWrites = resolveMaxWrites ? resolveMaxWrites(body) : undefined;
+  const triggerType = resolveTriggerType(event, body);
+  const dispatchId =
+    extraDispatchArgs.dispatchId ||
+    `${String(lineSlug || "weekly").replace(/[^a-z0-9]+/gi, "-")}-dispatch-${new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")}`;
+  const provenance = collectInvocationProvenance(event, process.env, {
+    function_name: launcherFunctionName,
+    dispatch_id: dispatchId
+  });
+
+  const leased = await withScheduledDispatchLease({
+    supabase,
+    lineSlug,
+    triggerType,
+    dispatchId,
+    dispatch: () =>
+      dispatchBackground({
+        dryRun,
+        maxWrites,
+        triggerType,
+        dispatchId,
+        nextRun: body.next_run || null,
+        provenance,
+        ...extraDispatchArgs
+      })
+  });
+
+  if (leased.already_dispatched) {
+    return alreadyDispatchedHttpResponse({
+      dispatchId,
+      periodKey: leased.period_key,
+      launcher: launcherFunctionName,
+      elapsedMs: Date.now() - started,
+      redactSecrets
+    });
+  }
+
+  if (triggerType === "scheduled" && leased.claimed !== true) {
+    return dispatchLeaseUnavailableHttpResponse({
+      dispatchId,
+      periodKey: leased.period_key,
+      launcher: launcherFunctionName,
+      elapsedMs: Date.now() - started,
+      claim: leased.claim || {},
+      redactSecrets
+    });
+  }
+
+  const kick = leased.kick;
+  const elapsed_ms = Date.now() - started;
+  if (!kick?.accepted) {
+    return {
+      statusCode: 502,
+      body: JSON.stringify(
+        redactSecrets({
+          success: false,
+          phase: "dispatch",
+          status: "dispatch_failed",
+          launcher: launcherFunctionName,
+          background: backgroundFunctionName,
+          dispatch_id: dispatchId,
+          dry_run: dryRun,
+          trigger_type: triggerType,
+          invocation_provenance: provenance,
+          background_http_status: kick?.status || null,
+          error: "background_dispatch_rejected",
+          detail: kick?.body,
+          elapsed_ms
+        })
+      )
+    };
+  }
+
+  return {
+    statusCode: 202,
+    body: JSON.stringify(
+      redactSecrets({
+        success: true,
+        phase: "dispatch",
+        status: "dispatched",
+        maintenance_status: "pending_background",
+        launcher: launcherFunctionName,
+        background: backgroundFunctionName,
+        dispatch_id: dispatchId,
+        dry_run: dryRun,
+        max_writes: maxWrites,
+        trigger_type: triggerType,
+        invocation_provenance: provenance,
+        background_http_status: kick.status,
+        elapsed_ms,
+        note: "Background worker owns run-record lifecycle; poll cruise_discovery_runs for completion."
+      })
+    )
+  };
+}
+
 module.exports = {
   OPERATIONAL_TIMEZONE,
   WEEKLY_DISPATCH_LEASE_SECONDS,
   DAILY_DISPATCH_LEASE_SECONDS,
+  BACKGROUND_DISPATCH_LEASE_SECONDS,
   perthIsoWeek,
   scheduledWeeklyDispatchKey,
   scheduledDailyExpiryDispatchKey,
+  backgroundDispatchExecutionKey,
   collectInvocationProvenance,
   claimScheduledDispatchLease,
   releaseScheduledDispatchLease,
   withScheduledDispatchLease,
   claimOrSkipScheduledBackgroundDispatch,
-  alreadyDispatchedHttpResponse
+  claimBackgroundDispatchExecutionLease,
+  alreadyDispatchedHttpResponse,
+  dispatchLeaseUnavailableHttpResponse,
+  duplicateBackgroundInvocationResult,
+  handleLeasedWeeklyCron
 };
