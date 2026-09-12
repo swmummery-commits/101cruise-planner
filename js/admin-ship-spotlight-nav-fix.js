@@ -5,11 +5,13 @@
     const menu = document.getElementById("admin-nav-menu-marketing");
     if (!menu) return;
 
-    document.querySelectorAll('[data-ship-spotlight-nav]').forEach((node) => {
-      if (node.parentElement !== menu) node.remove();
+    const allSpotlightButtons = Array.from(document.querySelectorAll('[data-ship-spotlight-nav]'));
+    let button = allSpotlightButtons.find((node) => node.parentElement === menu) || null;
+
+    allSpotlightButtons.forEach((node) => {
+      if (node !== button) node.remove();
     });
 
-    let button = menu.querySelector('[data-ship-spotlight-nav]');
     if (!button) {
       button = document.createElement("button");
       button.type = "button";
@@ -21,17 +23,18 @@
         event.stopPropagation();
         if (global.ShipSpotlightAdmin?.open) global.ShipSpotlightAdmin.open();
       });
-    } else {
-      button.className = "admin-nav-leaf";
-      button.setAttribute("role", "menuitem");
-      button.innerHTML = "<span>Ship Spotlight</span>";
     }
 
-    const newsletter = menu.querySelector(".admin-nav-leaf");
-    if (newsletter && newsletter !== button) {
+    const newsletter = Array.from(menu.querySelectorAll(".admin-nav-leaf"))
+      .find((node) => node !== button) || null;
+
+    if (!newsletter) {
+      if (button.parentElement !== menu) menu.appendChild(button);
+      return;
+    }
+
+    if (button.parentElement !== menu || button.previousElementSibling !== newsletter) {
       newsletter.insertAdjacentElement("afterend", button);
-    } else if (button.parentElement !== menu) {
-      menu.appendChild(button);
     }
   }
 
