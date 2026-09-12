@@ -181,12 +181,27 @@
     else workspaceToolbar.prepend(compact);
   }
 
+  function enableNewsletterNumberEditing(root) {
+    const numberInput = root.querySelector("#newsletterCreateNumber");
+    if (!numberInput) return;
+
+    numberInput.removeAttribute("readonly");
+    numberInput.removeAttribute("aria-readonly");
+    numberInput.setAttribute("title", "The next newsletter number is suggested automatically, but you can change it.");
+
+    const helper = numberInput.nextElementSibling;
+    if (helper?.classList.contains("admin-helper")) {
+      helper.textContent = "Next number suggested automatically. Change it if you need to recreate an earlier newsletter.";
+    }
+  }
+
   function enhancedRender() {
     installSpecialsOnlyExport();
     ensureStyles();
     const html = originalRender();
     const template = document.createElement("template");
     template.innerHTML = html;
+    enableNewsletterNumberEditing(template.content);
     buildCompactToolbar(template.content);
     return template.innerHTML;
   }
