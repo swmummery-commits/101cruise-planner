@@ -32,6 +32,12 @@
     return Number.isFinite(num) && num >= 0 ? num : null;
   }
 
+  /** A customer-facing selling fare must be a positive amount. */
+  function parseSellingPrice(value) {
+    const price = parsePrice(value);
+    return price != null && price > 0 ? price : null;
+  }
+
   /**
    * Newsletter / public pricing display metrics.
    * - Percentage off only when >= 75%
@@ -83,6 +89,12 @@
    * Build public-safe pricing modules.
    * Category codes are never included.
    * Airline price only when outputMode === airline_staff.
+   *
+   * Audience availability rules:
+   * - General newsletters require a valid 101CRUISE selling price.
+   * - Airline Staff newsletters may show a room with either a valid 101CRUISE
+   *   price or a valid Airline Staff price.
+   * - A brochure/reference price never makes a room eligible on its own.
    */
   function buildPricingModules(rows, nights, options = {}) {
     const includeAirline = options.outputMode === OUTPUT_MODE.AIRLINE_STAFF;
@@ -94,12 +106,13 @@
       if (!roomLabel) continue;
 
       const brochure = parsePrice(row.brochure_price);
-      const cruise101 = parsePrice(row.cruise_101_price);
-      const airline = includeAirline ? parsePrice(row.airline_price) : null;
+      const cruise101 = parseSellingPrice(row.cruise_101_price);
+      const airline = includeAirline ? parseSellingPrice(row.airline_price) : null;
 
-      if (cruise101 == null && airline == null && brochure == null) continue;
-      if (!includeAirline && cruise101 == null && brochure == null) continue;
-      if (includeAirline && airline == null && cruise101 == null && brochure == null) continue;
+      // Never render a brochure-only room card. Newsletter availability is
+      // determined by whether this audience has a genuine selling fare.
+      if (!includeAirline && cruise101 == null) continue;
+      if (includeAirline && cruise101 == null && airline == null) continue;
 
       modules.push({
         roomLabel,
