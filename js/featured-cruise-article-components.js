@@ -67,31 +67,17 @@
   }
 
   function renderEditorial(model) {
-    var editorial = model.editorial || {};
-    if (!editorial.excerpt && !(editorial.paragraphs || []).length) return "";
-    var body = editorial.isLong
-      ? `
-        <div class="fca-editorial-excerpt">
-          <p>${esc(editorial.excerpt)}</p>
-        </div>
-        <details class="fca-read-more">
-          <summary>Read more</summary>
-          <div class="fca-editorial-full">
-            ${(editorial.paragraphs || [])
-              .map(function (paragraph) {
-                return `<p>${esc(paragraph)}</p>`;
-              })
-              .join("")}
-          </div>
-        </details>`
-      : (editorial.paragraphs || [])
-          .map(function (paragraph) {
-            return `<p>${esc(paragraph)}</p>`;
-          })
-          .join("");
+    var paragraphs = (model.editorial && model.editorial.paragraphs) || [];
+    if (!paragraphs.length) return "";
+
+    var body = paragraphs
+      .map(function (paragraph) {
+        return `<p>${esc(paragraph)}</p>`;
+      })
+      .join("");
+
     return `
-      <section class="fca-section fca-editorial" aria-labelledby="fca-editorial-heading">
-        <h2 id="fca-editorial-heading" class="fca-section-title">Overview</h2>
+      <section class="fca-section fca-editorial" aria-label="About this sailing">
         <div class="fca-editorial-body">${body}</div>
       </section>`;
   }
@@ -250,8 +236,8 @@
     return `
       <article class="fca-article" data-fca-article="v2">
         ${renderHero(model)}
-        ${renderSnapshot(model)}
         ${renderEditorial(model)}
+        ${renderSnapshot(model)}
         ${renderReasons(model)}
         ${renderRouteMap(model)}
         ${renderItinerary(model)}
