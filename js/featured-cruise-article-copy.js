@@ -61,30 +61,29 @@
     var summary = normalizeSpace(cruise.short_summary || cruise.cruise_summary || "");
     if (summary) return capCompleteText(summary, HERO_INTRO_MAX);
 
-    var editorial = normalizeSpace(cruise.short_editorial || cruise.full_description || "");
-    if (editorial) return firstCompleteSentence(editorial, HERO_INTRO_MAX);
-
+    // Do not reuse the newsletter editorial or full description in the hero.
+    // The Explore page should only show the optional full description below the hero.
     return "";
   }
 
   function buildEditorialBlocks(cruise) {
-    var source = normalizeSpace(cruise.full_description || cruise.short_editorial || "");
+    var source = String(cruise.full_description || "").trim();
     if (!source) return { paragraphs: [], excerpt: "", remainder: "", isLong: false };
 
-    var paragraphs = source.split(/\n{2,}/).map(normalizeSpace).filter(Boolean);
-    if (!paragraphs.length) paragraphs = splitSentences(source);
+    var paragraphs = source
+      .split(/\n{2,}/)
+      .map(function (paragraph) {
+        return normalizeSpace(paragraph);
+      })
+      .filter(Boolean);
+
+    if (!paragraphs.length) {
+      var normalized = normalizeSpace(source);
+      if (normalized) paragraphs = [normalized];
+    }
 
     var joined = paragraphs.join("\n\n");
-    if (joined.length <= EDITORIAL_EXCERPT_MAX) {
-      return { paragraphs: paragraphs, excerpt: joined, remainder: "", isLong: false };
-    }
-
-    var excerpt = capCompleteText(joined, EDITORIAL_EXCERPT_MAX);
-    var remainder = normalizeSpace(joined.slice(excerpt.length));
-    if (!remainder) {
-      return { paragraphs: paragraphs, excerpt: joined, remainder: "", isLong: false };
-    }
-    return { paragraphs: paragraphs, excerpt: excerpt, remainder: remainder, isLong: true };
+    return { paragraphs: paragraphs, excerpt: joined, remainder: "", isLong: false };
   }
 
   function reasonsHeading(count) {
