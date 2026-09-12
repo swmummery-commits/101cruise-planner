@@ -63,8 +63,9 @@
   function formatStat(value, type) {
     if (value === null || value === undefined || value === "") return "";
     const num = Number(value);
-    if (type === "year") return Number.isFinite(num) ? String(Math.round(num)) : String(value);
+    if (type === "year") return Number.isFinite(num) && num > 0 ? String(Math.round(num)) : "";
     if (!Number.isFinite(num)) return String(value);
+    if (num <= 0) return "";
     if (type === "metres") return `${new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 }).format(num)}m`;
     if (type === "knots") return `${new Intl.NumberFormat("en-AU", { maximumFractionDigits: 1 }).format(num)} kn`;
     if (type === "tonnage") return `${formatNumber(num)} GT`;
