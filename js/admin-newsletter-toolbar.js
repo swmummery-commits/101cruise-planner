@@ -1,9 +1,13 @@
 /*
- * Newsletter toolbar visual priority.
+ * Newsletter toolbar visual priority and specials-only export guard.
  *
  * Keeps the existing newsletter composer behaviour intact while making
  * "New Newsletter" the obvious primary action and moving the existing
  * newsletter selector behind a compact secondary control.
+ *
+ * The Tease, Headline, Intro and Airline Intro fields are admin-only for now.
+ * They remain saved/editable, but are deliberately excluded from generated
+ * newsletter HTML, preview HTML and Mailchimp export code.
  */
 (function (global) {
   "use strict";
@@ -13,6 +17,38 @@
 
   const originalRender = composer.render.bind(composer);
   let existingPickerOpen = false;
+
+  function stripOpeningCopy(markup) {
+    const html = String(markup || "");
+    if (!html.includes("cr101-issue-opening")) return html;
+
+    const template = document.createElement("template");
+    template.innerHTML = html;
+    template.content.querySelectorAll(".cr101-issue-opening").forEach((node) => node.remove());
+    return template.innerHTML;
+  }
+
+  function installSpecialsOnlyExport() {
+    const api = global.NewsletterMailchimpExport;
+    if (!api?.composeIssueHtml || api.composeIssueHtml.__specialsOnlyExport) return;
+
+    const composeWithLegacyOpeningCopy = api.composeIssueHtml.bind(api);
+    const wrapped = function (payloads, options = {}) {
+      const result = composeWithLegacyOpeningCopy(payloads, options);
+      if (!result) return result;
+      return {
+        ...result,
+        html: stripOpeningCopy(result.html),
+        previewHtml: stripOpeningCopy(result.previewHtml)
+      };
+    };
+
+    // The setup enhancement checks this flag before attempting to install its
+    // opening-copy wrapper again. Keep it true so editorial fields stay out.
+    wrapped.__newsletterSetupWrapped = true;
+    wrapped.__specialsOnlyExport = true;
+    api.composeIssueHtml = wrapped;
+  }
 
   function ensureStyles() {
     if (document.getElementById("newsletterCompactToolbarStyles")) return;
@@ -146,6 +182,7 @@
   }
 
   function enhancedRender() {
+    installSpecialsOnlyExport();
     ensureStyles();
     const html = originalRender();
     const template = document.createElement("template");
@@ -169,6 +206,7 @@
     }
   }
 
+  installSpecialsOnlyExport();
   composer.render = enhancedRender;
   composer.__compactToolbarApplied = true;
 
