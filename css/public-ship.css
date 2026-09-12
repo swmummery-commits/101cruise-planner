@@ -1,0 +1,126 @@
+.public-ship-shell {
+  width: 100%;
+  min-height: 100vh;
+  background: #fff;
+}
+.public-ship-page {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 22px 64px;
+  box-sizing: border-box;
+}
+.public-ship-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 24px 0 30px;
+}
+.public-ship-logo {
+  display: block;
+  width: 92px;
+  height: auto;
+}
+.public-ship-contact-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  justify-content: flex-end;
+}
+.public-ship-nav-link {
+  color: #111;
+  font: 700 12px/1.2 Helvetica, Arial, sans-serif;
+  letter-spacing: .04em;
+  text-decoration: none;
+}
+.public-ship-body {
+  width: 100%;
+}
+.public-ship-message {
+  max-width: 720px;
+  margin: 80px auto;
+  text-align: center;
+  font-family: Helvetica, Arial, sans-serif;
+}
+.ship-spotlight-editorial {
+  margin: 26px 0 8px;
+  border-radius: 24px;
+  background: #f4faf7;
+  border: 1px solid #e1eee8;
+}
+.ship-spotlight-editorial-inner {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 34px 42px;
+}
+.ship-spotlight-eyebrow {
+  margin: 0 0 10px;
+  color: #245c4e;
+  font: 700 11px/1.2 Helvetica, Arial, sans-serif;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.ship-spotlight-intro {
+  margin: 0;
+  color: #202624;
+  font: 400 19px/1.6 Helvetica, Arial, sans-serif;
+}
+.ship-spotlight-highlights {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 26px;
+  margin-top: 24px;
+}
+.ship-spotlight-highlight {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 4px;
+  align-items: start;
+  color: #245c4e;
+}
+.ship-spotlight-highlight p {
+  margin: 0;
+  color: #333b38;
+  font: 400 15px/1.5 Helvetica, Arial, sans-serif;
+}
+.ship-spotlight-gallery {
+  margin-top: 34px;
+}
+.ship-spotlight-section-head {
+  margin-bottom: 18px;
+}
+.ship-spotlight-section-head h2 {
+  margin: 0;
+  color: #111;
+  font: 700 30px/1.15 Helvetica, Arial, sans-serif;
+}
+.ship-spotlight-gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.ship-spotlight-gallery-grid figure {
+  margin: 0;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #f1f1f1;
+  aspect-ratio: 16 / 10;
+}
+.ship-spotlight-gallery-grid img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+@media (max-width: 760px) {
+  .public-ship-page { padding: 0 14px 42px; }
+  .public-ship-header { padding: 18px 0 24px; }
+  .public-ship-logo { width: 72px; }
+  .public-ship-contact-nav { gap: 10px; }
+  .public-ship-nav-link { font-size: 10px; }
+  .ship-spotlight-editorial-inner { padding: 26px 22px; }
+  .ship-spotlight-intro { font-size: 17px; }
+  .ship-spotlight-highlights { grid-template-columns: 1fr; }
+  .ship-spotlight-gallery-grid { grid-template-columns: 1fr; }
+}
