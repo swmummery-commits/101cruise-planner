@@ -1,0 +1,124 @@
+<!--
+  Squarespace /ship page Code Block
+  Production public URL:
+    https://www.101cruise.com.au/ship?slug={ship-slug}
+
+  SETUP
+  1. Squarespace → Pages → create /ship → add a Code Block (full width).
+  2. Paste EVERYTHING below this comment.
+  3. Publish the page.
+
+  The iframe uses the Netlify Ship Spotlight renderer and auto-resizes.
+-->
+
+<link rel="stylesheet" href="https://admirable-tiramisu-d4da8a.netlify.app/css/brand-loading.css">
+
+<style>
+  #cr101-ship-embed-wrap {
+    width: 100%;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0;
+  }
+  #cr101-ship-embed-frame {
+    display: block;
+    width: 100%;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: #ffffff;
+    overflow: hidden;
+    min-height: 420px;
+  }
+  #cr101-ship-embed-msg {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    color: #111111;
+    text-align: center;
+    padding: 32px 16px;
+  }
+</style>
+
+<div id="cr101-ship-embed-wrap">
+  <div id="cr101-ship-embed-msg">
+    <div class="brand-loading-panel" role="status" aria-live="polite">
+      <span class="brand-loading-boxes brand-loading-boxes--large brand-loading-spinner" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+      <p class="brand-loading-message">Hang tight! Just getting your info.</p>
+    </div>
+  </div>
+  <iframe
+    id="cr101-ship-embed-frame"
+    title="101cruise ship details"
+    loading="lazy"
+    scrolling="no"
+    allowfullscreen
+    style="display:none;height:420px;"
+  ></iframe>
+</div>
+
+<script>
+(function () {
+  var NETLIFY_ORIGIN = "https://admirable-tiramisu-d4da8a.netlify.app";
+  var HEIGHT_TYPE = "101cruise-public-ship-height";
+  var frame = document.getElementById("cr101-ship-embed-frame");
+  var msg = document.getElementById("cr101-ship-embed-msg");
+  if (!frame || !msg) return;
+
+  function slugify(value) {
+    return String(value || "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 80);
+  }
+
+  function readSlug() {
+    var params = new URLSearchParams(window.location.search || "");
+    return slugify(params.get("slug") || "");
+  }
+
+  function showMessage(text) {
+    msg.style.display = "block";
+    msg.textContent = text;
+    frame.style.display = "none";
+  }
+
+  function setFrameHeight(px) {
+    var height = Math.max(360, Math.ceil(Number(px) || 0));
+    frame.style.height = height + "px";
+  }
+
+  window.addEventListener("message", function (event) {
+    if (!event || event.origin !== NETLIFY_ORIGIN) return;
+    var data = event.data || {};
+    if (data.type !== HEIGHT_TYPE) return;
+    if (data.height) setFrameHeight(data.height);
+  });
+
+  var slug = readSlug();
+  if (!slug) {
+    showMessage("This ship is not currently available.");
+    return;
+  }
+
+  frame.src = NETLIFY_ORIGIN + "/ship?slug=" + encodeURIComponent(slug) + "&embed=1";
+  frame.style.display = "block";
+  msg.style.display = "none";
+
+  frame.addEventListener("load", function () {
+    try {
+      frame.contentWindow.postMessage(
+        { source: "101cruise-squarespace-embed", type: "101cruise-request-height" },
+        NETLIFY_ORIGIN
+      );
+    } catch (err) {
+      /* ignore */
+    }
+  });
+})();
+</script>
