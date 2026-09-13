@@ -30,6 +30,12 @@
     return `${Number.isFinite(n) ? n.toLocaleString("en-AU", { maximumFractionDigits: 1 }) : value}${suffix}`;
   }
 
+  function year(value) {
+    if (value == null || value === "") return "";
+    const n = Number(value);
+    return Number.isFinite(n) && n > 0 ? String(Math.trunc(n)) : String(value);
+  }
+
   function stat(label, value) {
     if (!value) return "";
     return `<div class="stat"><div class="stat-label">${esc(label)}</div><div class="stat-value">${esc(value)}</div></div>`;
@@ -52,6 +58,63 @@
     return out;
   }
 
+  function fallbackFeatureList(raw) {
+    const source = Array.isArray(raw) ? raw : [];
+    return source.map((entry) => {
+      if (entry && typeof entry === "object") {
+        const name = String(entry.name || entry.label || "").trim();
+        const description = String(entry.description || "").trim();
+        return name ? { name, description } : null;
+      }
+      const name = String(entry || "").trim();
+      return name ? { name, description: "" } : null;
+    }).filter(Boolean);
+  }
+
+  function featureList(ship, type) {
+    const facilities = ship?.facilities && typeof ship.facilities === "object" ? ship.facilities : {};
+    const raw = type === "exclusive"
+      ? (facilities.exclusive_areas || facilities.exclusiveAreas || facilities.exclusive || [])
+      : (facilities.specialty_features || facilities.specialtyFeatures || facilities.signature_features || []);
+    const api = window.CiShipFacilities;
+    if (type === "exclusive" && api?.normalizeExclusiveAreasForDisplay) return api.normalizeExclusiveAreasForDisplay(raw);
+    if (type === "specialty" && api?.normalizeSpecialtyFeaturesForDisplay) return api.normalizeSpecialtyFeaturesForDisplay(raw);
+    return fallbackFeatureList(raw);
+  }
+
+  function descriptionParagraphs(value) {
+    const text = String(value || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+    if (!text) return "";
+    return text
+      .split(/\n+/)
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean)
+      .map((paragraph) => `<p>${esc(paragraph)}</p>`)
+      .join("");
+  }
+
+  function renderFeatureCard(title, items) {
+    const valid = (items || []).filter((item) => String(item?.name || item?.label || "").trim());
+    if (!valid.length) return "";
+    const rows = valid.map((item) => {
+      const name = String(item.name || item.label || "").trim();
+      const description = descriptionParagraphs(item.description);
+      return `<article class="feature-item"><h3>${esc(name)}</h3>${description ? `<div class="feature-description">${description}</div>` : ""}</article>`;
+    }).join("");
+    return `<section class="feature-card"><div class="eyebrow" style="color:var(--green)">${esc(title)}</div><div class="feature-items">${rows}</div></section>`;
+  }
+
+  function renderFeatureDetails(ship) {
+    const exclusive = featureList(ship, "exclusive");
+    const specialty = featureList(ship, "specialty");
+    const cards = [
+      renderFeatureCard("EXCLUSIVE AREAS", exclusive),
+      renderFeatureCard("SPECIALTY FEATURES", specialty)
+    ].filter(Boolean);
+    if (!cards.length) return "";
+    return `<section class="feature-section"><div class="feature-grid ${cards.length === 1 ? "single" : ""}">${cards.join("")}</div></section>`;
+  }
+
   function render(data) {
     const s = data.spotlight || {};
     const ship = data.ship || {};
@@ -65,8 +128,8 @@
     if (meta) meta.content = editorial.meta_description || s.intro || `Explore ${ship.name} with 101cruise.`;
 
     const stats = [
-      stat("Launched", number(ship.year_built)),
-      stat("Refurbished", number(ship.year_refurbished)),
+      stat("Launched", year(ship.year_built)),
+      stat("Refurbished", year(ship.year_refurbished)),
       stat("Guests", number(ship.passenger_capacity)),
       stat("Crew", number(ship.crew_count)),
       stat("Tonnage", number(ship.gross_tonnage, " GT")),
@@ -107,6 +170,7 @@
         <article class="card"><h2>About ${esc(ship.name)}</h2>${descriptive}${highlights.length ? `<div class="highlights">${highlights.map((text) => `<div class="highlight">${esc(text)}</div>`).join("")}</div>` : ""}</article>
         <aside class="card"><h2>At a glance</h2>${line.description ? `<p>${esc(line.description)}</p>` : `<p>${esc(line.name || "Cruise line")}</p>`}${editorial.pauls_tip ? `<div class="tip"><strong>Paul's tip</strong><p>${esc(editorial.pauls_tip)}</p></div>` : ""}<div class="actions">${ship.deck_plan_url ? `<a class="button secondary" href="${esc(ship.deck_plan_url)}" target="_blank" rel="noopener">View deck plan</a>` : ""}<a class="button" href="/cruise-finder">Find a cruise</a></div></aside>
       </section>
+      ${renderFeatureDetails(ship)}
       ${galleryHtml ? `<section><div class="gallery-head"><div><div class="eyebrow" style="color:var(--green)">ON BOARD</div><h2>Explore ${esc(ship.name)}</h2></div></div><div class="gallery">${galleryHtml}</div></section>` : ""}
       <section><div class="sailings-head"><div><div class="eyebrow" style="color:var(--green)">CURRENT CRUISES</div><h2>Sail aboard ${esc(ship.name)}</h2></div></div>${sailingsHtml ? `<div class="sailings">${sailingsHtml}</div>` : `<div class="empty">There are no current validated sailings to show for this ship right now. <a href="/cruise-finder">Search Cruise Finder</a>.</div>`}</section>`;
 
