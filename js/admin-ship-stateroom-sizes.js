@@ -5,6 +5,8 @@
 (function (global) {
   "use strict";
 
+  let classDefaultsLoadKey = "";
+
   function esc(value) {
     if (typeof global.esc === "function") return global.esc(value);
     return String(value ?? "")
@@ -239,6 +241,66 @@
     return String(result?.data?.session?.access_token || "");
   }
 
+  function clearInheritedDomValues() {
+    document.querySelectorAll(".ci-stateroom-sqm, .ci-stateroom-balcony-sqm").forEach((input) => {
+      if (input.dataset.sizeSource !== "class") return;
+      input.value = "";
+      input.dataset.sizeSource = "";
+    });
+  }
+
+  function applyDefaultsToDom(defaultRows) {
+    const defaults = new Map((Array.isArray(defaultRows) ? defaultRows : []).map((row) => [normalizeLabel(row && row.label), row]));
+    document.querySelectorAll(".ci-stateroom-row").forEach((row) => {
+      const label = String(row.querySelector(".ci-stateroom-label")?.value || "").trim();
+      const classRow = defaults.get(normalizeLabel(label));
+      if (!classRow) return;
+
+      [
+        { selector: ".ci-stateroom-sqm", value: classRow.sqm },
+        { selector: ".ci-stateroom-balcony-sqm", value: classRow.balcony_sqm }
+      ].forEach((config) => {
+        const input = row.querySelector(config.selector);
+        if (!input) return;
+        const source = String(input.dataset.sizeSource || "");
+        const current = String(input.value || "").trim();
+        const classValue = sizeValue(config.value);
+
+        if (source === "ship") return;
+        if (!source && current && classValue && sizeValue(current) !== classValue) {
+          input.dataset.sizeSource = "ship";
+          return;
+        }
+        if (classValue) input.value = classValue;
+        else if (source === "class") input.value = "";
+        input.dataset.sizeSource = "class";
+      });
+    });
+  }
+
+  async function loadClassDefaultsIntoEditor() {
+    const cruiseLineId = currentLineId();
+    const className = currentShipClass();
+    if (!cruiseLineId || !className || !document.querySelector(".ci-stateroom-row")) return;
+
+    const requestKey = `${cruiseLineId}::${className.toLowerCase()}`;
+    classDefaultsLoadKey = requestKey;
+    try {
+      const token = await adminAccessToken();
+      if (!token) return;
+      const query = new URLSearchParams({ cruise_line_id: cruiseLineId, class_name: className });
+      const response = await fetch(`/.netlify/functions/ci-ship-class-stateroom-sizes?${query.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (classDefaultsLoadKey !== requestKey) return;
+      if (!response.ok || !data.success) return;
+      applyDefaultsToDom(data.stateroom_sizes || []);
+    } catch (_error) {
+      // Existing ship-level values remain usable if class defaults cannot be loaded.
+    }
+  }
+
   global.saveCiShipClassStateroomSizes = async function () {
     if (!validateSizeInputs()) return;
     const cruiseLineId = currentLineId();
@@ -308,15 +370,23 @@
     renderCiStateroomEditor = function renderCiStateroomEditorWithClassSizes(ship) {
       const html = originalRenderEditor(ship);
       const className = String(ship && ship.ship_class || "").trim();
+      setTimeout(() => loadClassDefaultsIntoEditor(), 0);
       if (!className) return `${html}<p class="admin-small" style="margin-top:8px;">Add a ship class to use class-level room and balcony size defaults.</p>`;
       return `${html}
         <div class="ci-stateroom-class-size-tools" style="margin-top:12px;padding-top:12px;border-top:1px solid #eee;">
           <button type="button" class="admin-button secondary small" onclick="saveCiShipClassStateroomSizes()">Save sizes as ${esc(className)} class defaults</button>
-          <div class="admin-small" style="margin-top:5px;">Room Size and Balcony Size will apply to other ships in this class unless that ship has its own size entered.</div>
+          <div class="admin-small" style="margin-top:5px;">Room Size and Balcony Size apply to other ships in this class unless that ship has its own size entered.</div>
           <div id="ciShipClassSizeMessage" class="admin-message"></div>
         </div>`;
     };
   }
+
+  document.addEventListener("change", function (event) {
+    if (!event.target || (event.target.id !== "ciShipClass" && event.target.id !== "ciShipLineId")) return;
+    classDefaultsLoadKey = "";
+    clearInheritedDomValues();
+    setTimeout(() => loadClassDefaultsIntoEditor(), 0);
+  }, true);
 
   const style = document.createElement("style");
   style.textContent = `
