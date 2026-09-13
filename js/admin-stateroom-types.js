@@ -1,31 +1,22 @@
 /**
- * Admin Stateroom Types reference page.
- * Browser global: StateroomTypesAdmin
+ * Administration → Stateroom Types.
+ * Canonical room-type catalogue plus explicit cruise-line allocations.
  */
 (function (global) {
   "use strict";
 
   let stateroomTypes = [];
+  let cruiseLines = [];
+  let allocations = {};
+  let loaded = false;
   let loading = false;
   let loadError = "";
-  let saving = false;
-  let reordering = false;
+  let savingKey = "";
+  let creating = false;
+  let editingId = null;
+  let draftName = "";
   let message = "";
   let messageTone = "";
-  let editingId = null;
-  let creating = false;
-  let draft = emptyDraft();
-  let draggedStateroomTypeId = null;
-  let stateroomTypeDragFromHandle = false;
-  let stateroomDragPointerY = null;
-  let stateroomAutoScrollRaf = 0;
-
-  function emptyDraft() {
-    return {
-      name: "",
-      is_active: true
-    };
-  }
 
   function esc(value) {
     return typeof global.esc === "function"
@@ -38,63 +29,22 @@
           .replaceAll("'", "&#039;");
   }
 
-  function service() {
-    return global.StateroomTypesService || null;
+  function svc() { return global.StateroomTypesService || null; }
+  function client() { return global.supabaseClient || global.getAdminSupabaseClient?.() || null; }
+  function rerender() { if (typeof global.renderAdmin === "function") global.renderAdmin(); }
+  function alphaTypes() { return svc()?.sortStateroomTypes(stateroomTypes) || stateroomTypes.slice(); }
+  function alphaLines() {
+    return cruiseLines.slice().sort((a, b) => String(a?.name || "").localeCompare(String(b?.name || ""), "en", { sensitivity: "base", numeric: true }));
   }
-
-  function rerender() {
-    if (typeof global.renderAdmin === "function") global.renderAdmin();
-  }
-
-  function setMessage(text, tone) {
-    message = text || "";
-    messageTone = tone || "";
-  }
-
-  function withSavingOverlay(fn, supportMessage) {
-    const loading = global.AdminLoading;
-    if (loading?.withSaving) {
-      return loading.withSaving(fn, {
-        key: "stateroom-types",
-        supportMessage: supportMessage || ""
-      });
-    }
-    return fn();
-  }
-
-  function sortedTypes() {
-    const svc = service();
-    return svc ? svc.sortStateroomTypes(stateroomTypes) : stateroomTypes.slice();
-  }
-
-  function typeToDraft(row) {
-    return {
-      name: row?.name || "",
-      is_active: row?.is_active !== false
-    };
-  }
-
-  function readDraftFromDom() {
-    const get = (id) => document.getElementById(id)?.value;
-    draft = {
-      name: String(get("stateroomTypeName") || "").trim(),
-      is_active: String(get("stateroomTypeActive") || "true") !== "false"
-    };
-    return draft;
-  }
-
-  async function refreshPricingTypes() {
-    if (typeof global.loadStateroomTypesForPricing === "function") {
-      await global.loadStateroomTypesForPricing();
-    }
-  }
+  function setMessage(text, tone = "") { message = text || ""; messageTone = tone || ""; }
 
   async function ensureLoaded({ force = false, quiet = false } = {}) {
     if (loading) return;
-    if (stateroomTypes.length && !force && !loadError) return;
-    const svc = service();
-    if (!svc) {
-      loadError = "Stateroom types service failed to load.";
+    if (loaded && !force) return;
+    const service = svc();
+    const supabase = client();
+    if (!service || !supabase) {
+      loadError = "Stateroom type services are not available.";
       if (!quiet) rerender();
       return;
     }
@@ -102,412 +52,173 @@
     loadError = "";
     if (!quiet) rerender();
     try {
-      stateroomTypes = await svc.listAllStateroomTypes();
+      const [types, allocationMap, lineResult] = await Promise.all([
+        service.listAllStateroomTypes(),
+        service.loadCruiseLineStateroomAllocations(),
+        supabase.from("ci_cruise_lines").select("id,name").order("name", { ascending: true })
+      ]);
+      if (lineResult.error) throw new Error(lineResult.error.message || "Could not load cruise lines.");
+      stateroomTypes = types || [];
+      allocations = allocationMap || {};
+      cruiseLines = lineResult.data || [];
+      loaded = true;
     } catch (error) {
-      loadError = error.message || "Could not load stateroom types.";
-      stateroomTypes = [];
+      loadError = error?.message || "Could not load stateroom types.";
     } finally {
       loading = false;
       rerender();
     }
   }
 
-  function retryLoad() {
-    return ensureLoaded({ force: true });
-  }
-
+  function retryLoad() { return ensureLoaded({ force: true }); }
   function startCreate() {
-    creating = true;
-    editingId = null;
-    draft = emptyDraft();
-    setMessage("", "");
-    rerender();
+    creating = true; editingId = null; draftName = ""; setMessage(""); rerender();
+    setTimeout(() => document.getElementById("stateroomTypeName")?.focus(), 0);
   }
-
   function startEdit(id) {
-    const row = stateroomTypes.find((item) => item.id === id);
+    const row = stateroomTypes.find((item) => String(item.id) === String(id));
     if (!row) return;
-    creating = false;
-    editingId = id;
-    draft = typeToDraft(row);
-    setMessage("", "");
-    rerender();
+    creating = false; editingId = row.id; draftName = row.name || ""; setMessage(""); rerender();
+    setTimeout(() => document.getElementById("stateroomTypeName")?.focus(), 0);
   }
-
-  function cancelEdit() {
-    creating = false;
-    editingId = null;
-    draft = emptyDraft();
-    setMessage("", "");
-    rerender();
-  }
+  function cancelEdit() { creating = false; editingId = null; draftName = ""; setMessage(""); rerender(); }
 
   async function saveStateroomType() {
-    const svc = service();
-    if (!svc || saving) return;
-    readDraftFromDom();
-
-    return withSavingOverlay(async function () {
-      saving = true;
-      setMessage("Saving stateroom type…", "running");
-      rerender();
-      try {
-        if (editingId) {
-          const validation = svc.validateStateroomTypeInput({
-            name: draft.name,
-            is_active: draft.is_active,
-            existingRows: stateroomTypes,
-            editingId
-          });
-          if (!validation.ok) {
-            setMessage(validation.error, "error");
-            return;
-          }
-          await svc.updateStateroomType(editingId, validation.payload);
-          setMessage("Stateroom type saved.", "success");
-        } else {
-          const validation = svc.buildCreatePayload({
-            name: draft.name,
-            is_active: draft.is_active,
-            existingRows: stateroomTypes
-          });
-          if (!validation.ok) {
-            setMessage(validation.error, "error");
-            return;
-          }
-          await svc.createStateroomType(validation.payload);
-          setMessage("Stateroom type created.", "success");
-        }
-        await ensureLoaded({ force: true, quiet: true });
-        await refreshPricingTypes();
-        creating = false;
-        editingId = null;
-        draft = emptyDraft();
-      } catch (error) {
-        setMessage(error.message || "Could not save stateroom type.", "error");
-      } finally {
-        saving = false;
-        rerender();
-      }
-    }, "Saving stateroom type…");
+    const service = svc();
+    if (!service || savingKey) return;
+    const name = service.trimName(document.getElementById("stateroomTypeName")?.value ?? draftName);
+    const validation = editingId
+      ? service.validateStateroomTypeInput({ name, existingRows: stateroomTypes, editingId })
+      : service.buildCreatePayload({ name, existingRows: stateroomTypes });
+    if (!validation.ok) { setMessage(validation.error, "error"); rerender(); return; }
+    savingKey = "type"; setMessage("Saving stateroom type…", "running"); rerender();
+    try {
+      if (editingId) await service.updateStateroomType(editingId, validation.payload);
+      else await service.createStateroomType(validation.payload);
+      creating = false; editingId = null; draftName = "";
+      await ensureLoaded({ force: true, quiet: true });
+      if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
+      setMessage("Stateroom type saved.", "success");
+    } catch (error) {
+      setMessage(error?.message || "Could not save stateroom type.", "error");
+    } finally {
+      savingKey = ""; rerender();
+    }
   }
 
   async function deleteStateroomType(id) {
-    const svc = service();
-    if (!svc || saving) return;
-    const row = stateroomTypes.find((item) => item.id === id);
+    const service = svc();
+    if (!service || savingKey) return;
+    const row = stateroomTypes.find((item) => String(item.id) === String(id));
     if (!row) return;
-    const label = row.name || "this stateroom type";
-    if (!global.confirm(`Delete stateroom type “${label}”? This cannot be undone.`)) return;
-
-    return withSavingOverlay(async function () {
-      saving = true;
-      setMessage("Checking usage…", "running");
-      rerender();
-      try {
-        await svc.deleteStateroomType(id);
-        setMessage(`Deleted “${label}”.`, "success");
-        if (editingId === id) cancelEdit();
-        await ensureLoaded({ force: true, quiet: true });
-        await refreshPricingTypes();
-      } catch (error) {
-        setMessage(error.message || "Could not delete stateroom type.", "error");
-      } finally {
-        saving = false;
-        rerender();
-      }
-    }, "Deleting stateroom type…");
-  }
-
-  function onDragHandlePointerDown(event) {
-    stateroomTypeDragFromHandle = true;
-    event.stopPropagation();
-  }
-
-  function viewportScroll() {
-    return global.ViewportScroll || null;
-  }
-
-  function stopStateroomAutoScroll() {
-    if (stateroomAutoScrollRaf) {
-      global.cancelAnimationFrame?.(stateroomAutoScrollRaf);
-      stateroomAutoScrollRaf = 0;
-    }
-    stateroomDragPointerY = null;
-    document.removeEventListener("dragover", onStateroomDocumentDragOver, true);
-  }
-
-  function tickStateroomAutoScroll() {
-    stateroomAutoScrollRaf = 0;
-    if (!draggedStateroomTypeId || stateroomDragPointerY == null) return;
-    viewportScroll()?.autoScrollFromClientY?.(stateroomDragPointerY, {
-      edgePx: 88,
-      maxStep: 32
-    });
-    stateroomAutoScrollRaf = global.requestAnimationFrame(tickStateroomAutoScroll);
-  }
-
-  function startStateroomAutoScroll() {
-    if (stateroomAutoScrollRaf) {
-      global.cancelAnimationFrame?.(stateroomAutoScrollRaf);
-      stateroomAutoScrollRaf = 0;
-    }
-    document.removeEventListener("dragover", onStateroomDocumentDragOver, true);
-    viewportScroll()?.requestParentViewport?.();
-    document.addEventListener("dragover", onStateroomDocumentDragOver, true);
-    stateroomAutoScrollRaf = global.requestAnimationFrame(tickStateroomAutoScroll);
-  }
-
-  function onStateroomDocumentDragOver(event) {
-    if (!draggedStateroomTypeId) return;
-    event.preventDefault();
-    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
-    if (Number.isFinite(event.clientY)) stateroomDragPointerY = event.clientY;
-  }
-
-  function onDragStart(event, id) {
-    if (!stateroomTypeDragFromHandle || saving || reordering) {
-      event.preventDefault();
-      return;
-    }
-    stateroomTypeDragFromHandle = false;
-    draggedStateroomTypeId = String(id || "");
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("text/plain", draggedStateroomTypeId);
-    event.currentTarget.classList.add("is-dragging");
-    if (Number.isFinite(event.clientY)) stateroomDragPointerY = event.clientY;
-    startStateroomAutoScroll();
-  }
-
-  function onDragEnd(event) {
-    stateroomTypeDragFromHandle = false;
-    event.currentTarget?.classList.remove("is-dragging");
-    const wasDragging = Boolean(draggedStateroomTypeId);
-    stopStateroomAutoScroll();
-    draggedStateroomTypeId = null;
-    if (wasDragging) {
-      saveOrderFromDom();
+    if (!global.confirm(`Delete stateroom type “${row.name}”? Only unused types can be deleted.`)) return;
+    savingKey = `delete:${id}`; setMessage("Checking and deleting…", "running"); rerender();
+    try {
+      await service.deleteStateroomType(id);
+      await ensureLoaded({ force: true, quiet: true });
+      if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
+      setMessage(`Deleted “${row.name}”.`, "success");
+    } catch (error) {
+      setMessage(error?.message || "Could not delete stateroom type.", "error");
+    } finally {
+      savingKey = ""; rerender();
     }
   }
 
-  function allowDrop(event) {
-    if (!draggedStateroomTypeId || saving || reordering) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
-    if (Number.isFinite(event.clientY)) stateroomDragPointerY = event.clientY;
-
-    const list = event.currentTarget;
-    const dragged = list.querySelector(
-      `.stateroom-type-row[data-stateroom-type-id="${CSS.escape(String(draggedStateroomTypeId))}"]`
-    );
-    if (!dragged || dragged.parentElement !== list) return;
-
-    const cards = Array.from(list.querySelectorAll(".stateroom-type-row:not(.is-dragging)"));
-    const afterElement = cards.find((card) => {
-      const rect = card.getBoundingClientRect();
-      return event.clientY < rect.top + rect.height / 2;
-    });
-
-    if (afterElement) {
-      if (dragged.nextSibling !== afterElement) list.insertBefore(dragged, afterElement);
-    } else if (list.lastElementChild !== dragged) {
-      list.appendChild(dragged);
+  async function toggleAllocation(lineId, typeId, checked) {
+    const service = svc();
+    if (!service || !lineId || !typeId || savingKey) return;
+    const current = new Set((allocations[lineId] || []).map(String));
+    if (checked) current.add(String(typeId)); else current.delete(String(typeId));
+    allocations[lineId] = [...current];
+    savingKey = `allocation:${lineId}`; setMessage("Saving cruise-line allocation…", "running"); rerender();
+    try {
+      allocations = await service.saveCruiseLineStateroomTypes(lineId, [...current]);
+      if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
+      setMessage("Cruise-line allocation saved.", "success");
+    } catch (error) {
+      setMessage(error?.message || "Could not save cruise-line allocation.", "error");
+      try { allocations = await service.loadCruiseLineStateroomAllocations(); } catch (_) {}
+    } finally {
+      savingKey = ""; rerender();
     }
   }
 
-  function onDrop(event) {
-    if (!draggedStateroomTypeId) return;
-    event.preventDefault();
-  }
-
-  function readOrderedIdsFromDom() {
-    const list = document.getElementById("stateroomTypesSortList");
-    if (!list) return [];
-    return Array.from(list.querySelectorAll("[data-stateroom-type-id]"))
-      .map((el) => el.getAttribute("data-stateroom-type-id"))
-      .filter(Boolean);
-  }
-
-  async function saveOrderFromDom() {
-    const svc = service();
-    if (!svc || saving || reordering) return;
-    const orderedIds = readOrderedIdsFromDom();
-    const reorder = svc.buildReorderPayload(orderedIds);
-    if (!reorder.ok) {
-      setMessage(reorder.error, "error");
-      rerender();
-      return;
-    }
-
-    return withSavingOverlay(async function () {
-      reordering = true;
-      setMessage("Saving order…", "running");
-      rerender();
-      try {
-        stateroomTypes = await svc.reorderStateroomTypes(orderedIds);
-        await refreshPricingTypes();
-        setMessage("Order saved.", "success");
-      } catch (error) {
-        setMessage(error.message || "Could not save stateroom type order.", "error");
-        await ensureLoaded({ force: true, quiet: true });
-      } finally {
-        reordering = false;
-        rerender();
-      }
-    }, "Saving stateroom type order…");
+  function messageHtml() {
+    if (!message) return "";
+    const klass = messageTone === "error" ? "admin-error" : messageTone === "success" ? "admin-success" : messageTone === "running" ? "admin-running" : "";
+    return `<div class="admin-message ${klass}">${esc(message)}</div>`;
   }
 
   function renderForm() {
-    const showForm = creating || editingId;
-    if (!showForm) return "";
-
-    const title = editingId ? "Edit Stateroom Type" : "Add Stateroom Type";
-    const msgClass =
-      messageTone === "error"
-        ? "admin-error"
-        : messageTone === "success"
-          ? "admin-success"
-          : messageTone === "running"
-            ? "admin-running"
-            : "";
-
+    if (!creating && !editingId) return "";
     return `
       <div class="admin-card">
-        <h3>${esc(title)}</h3>
+        <h3>${editingId ? "Edit Stateroom Type" : "Add Stateroom Type"}</h3>
         <div class="admin-field">
           <label for="stateroomTypeName">Stateroom Type Name</label>
-          <input id="stateroomTypeName" type="text" value="${esc(draft.name)}" placeholder="e.g. Balcony" maxlength="120">
+          <input id="stateroomTypeName" type="text" maxlength="120" value="${esc(draftName)}" placeholder="e.g. Balcony" onkeydown="if(event.key==='Enter'){event.preventDefault();StateroomTypesAdmin.saveStateroomType();}">
         </div>
-        <div class="admin-field">
-          <label for="stateroomTypeActive">Active</label>
-          <select id="stateroomTypeActive">
-            <option value="true" ${draft.is_active ? "selected" : ""}>Active</option>
-            <option value="false" ${!draft.is_active ? "selected" : ""}>Inactive</option>
-          </select>
-        </div>
+        <p class="admin-small">Every type added here is available for allocation. Cruise-line availability is controlled by the checkboxes below.</p>
         <div class="admin-form-actions">
-          <button type="button" class="admin-button" onclick="StateroomTypesAdmin.saveStateroomType()" ${saving ? "disabled" : ""}>Save</button>
-          <button type="button" class="admin-button secondary" onclick="StateroomTypesAdmin.cancelEdit()" ${saving ? "disabled" : ""}>Cancel</button>
+          <button type="button" class="admin-button" onclick="StateroomTypesAdmin.saveStateroomType()" ${savingKey ? "disabled" : ""}>Save</button>
+          <button type="button" class="admin-button secondary" onclick="StateroomTypesAdmin.cancelEdit()" ${savingKey ? "disabled" : ""}>Cancel</button>
         </div>
-        ${message && (creating || editingId) ? `<div class="admin-message ${msgClass}">${esc(message)}</div>` : ""}
-      </div>
-    `;
+      </div>`;
   }
 
-  function renderList() {
-    const rows = sortedTypes();
-    if (loading) {
-      return `<p class="admin-muted admin-running-status" role="status">Loading stateroom types…</p>`;
-    }
-    if (loadError) {
+  function renderTypeCard(type, lines) {
+    const boxes = lines.map((line) => {
+      const selected = new Set((allocations[line.id] || []).map(String));
+      const checked = selected.has(String(type.id));
       return `
-        <div class="admin-message admin-error">${esc(loadError)}</div>
-        <button type="button" class="admin-button secondary" onclick="StateroomTypesAdmin.retryLoad()">Retry</button>
-      `;
-    }
-    if (!rows.length) {
-      return `
-        <p class="admin-muted">No stateroom types have been created yet.</p>
-        <button type="button" class="admin-button" onclick="StateroomTypesAdmin.startCreate()">Add Stateroom Type</button>
-      `;
-    }
-
+        <label class="ci-check-control" title="${esc(line.name)}">
+          <input type="checkbox" ${checked ? "checked" : ""} ${savingKey ? "disabled" : ""}
+            onchange="StateroomTypesAdmin.toggleAllocation('${esc(line.id)}','${esc(type.id)}',this.checked)">
+          ${esc(line.name)}
+        </label>`;
+    }).join("");
     return `
-      <p class="admin-muted">Drag rows to set the order used in pricing dropdowns.</p>
-      <div
-        class="admin-reference-list stateroom-types-sort-list"
-        id="stateroomTypesSortList"
-        ondragover="StateroomTypesAdmin.allowDrop(event)"
-        ondrop="StateroomTypesAdmin.onDrop(event)"
-      >
-        ${rows
-          .map(
-            (row) => `
-          <div
-            class="admin-list-item compact-item stateroom-type-row"
-            data-stateroom-type-id="${esc(row.id)}"
-            draggable="true"
-            ondragstart="StateroomTypesAdmin.onDragStart(event, '${esc(row.id)}')"
-            ondragend="StateroomTypesAdmin.onDragEnd(event)"
-          >
-            <div class="admin-list-top">
-              <div class="stateroom-type-row-main">
-                <span
-                  class="stateroom-type-drag-handle"
-                  role="button"
-                  tabindex="0"
-                  aria-label="Drag to reorder stateroom type"
-                  title="Drag to reorder"
-                  onpointerdown="StateroomTypesAdmin.onDragHandlePointerDown(event)"
-                >☰</span>
-                <div>
-                  <strong>${esc(row.name)}</strong>
-                  ${
-                    row.is_active !== false
-                      ? `<span class="admin-pill">Active</span>`
-                      : `<span class="admin-pill inactive">Inactive</span>`
-                  }
-                </div>
-              </div>
-              <div class="admin-inline-actions">
-                <button type="button" class="admin-button secondary small" onclick="StateroomTypesAdmin.startEdit('${esc(row.id)}')">Edit</button>
-                <button type="button" class="admin-button secondary small" onclick="StateroomTypesAdmin.deleteStateroomType('${esc(row.id)}')" ${saving ? "disabled" : ""}>Delete</button>
-              </div>
-            </div>
+      <div class="admin-list-item compact-item stateroom-type-row" data-stateroom-type-id="${esc(type.id)}">
+        <div class="admin-list-top" style="align-items:flex-start; gap:16px;">
+          <div style="min-width:180px; padding-top:4px;"><strong>${esc(type.name)}</strong></div>
+          <div class="admin-inline-actions">
+            <button type="button" class="admin-button secondary small" onclick="StateroomTypesAdmin.startEdit('${esc(type.id)}')" ${savingKey ? "disabled" : ""}>Edit</button>
+            <button type="button" class="admin-button secondary small" onclick="StateroomTypesAdmin.deleteStateroomType('${esc(type.id)}')" ${savingKey ? "disabled" : ""}>Delete</button>
           </div>
-        `
-          )
-          .join("")}
-      </div>
-    `;
+        </div>
+        <div style="margin-top:10px;">
+          <div class="admin-small" style="font-weight:600; margin-bottom:6px;">Cruise lines using this room type</div>
+          <div class="ci-checkbox-row ci-stateroom-type-grid">${boxes || `<span class="admin-small">No cruise lines found.</span>`}</div>
+        </div>
+      </div>`;
   }
 
   function renderPanel() {
-    const msgClass =
-      messageTone === "error"
-        ? "admin-error"
-        : messageTone === "success"
-          ? "admin-success"
-          : messageTone === "running"
-            ? "admin-running"
-            : "";
-    const showTopMessage = message && !creating && !editingId;
-
+    if (!loaded && !loading && !loadError) setTimeout(() => ensureLoaded({ quiet: true }), 0);
+    const rows = alphaTypes();
+    const lines = alphaLines();
     return `
       <div class="admin-card">
         <div class="admin-list-top">
           <div>
             <p class="admin-nav-eyebrow">Administration</p>
             <h3>Stateroom Types</h3>
-            <p class="admin-muted">Manage the room type labels used across 101cruise. Assign types to cruise lines under Cruise Database → Cruise Lines.</p>
+            <p class="admin-muted">This is the single master list used by cruise lines, ships and pricing. Types and cruise lines are shown A–Z. Tick the cruise lines that use each type.</p>
           </div>
-          <div>
-            <button type="button" class="admin-button" onclick="StateroomTypesAdmin.startCreate()" ${loading || saving || reordering ? "disabled" : ""}>Add Stateroom Type</button>
-          </div>
+          <button type="button" class="admin-button" onclick="StateroomTypesAdmin.startCreate()" ${loading || savingKey ? "disabled" : ""}>Add Stateroom Type</button>
         </div>
-        ${showTopMessage ? `<div class="admin-message ${msgClass}">${esc(message)}</div>` : ""}
+        ${messageHtml()}
       </div>
       ${renderForm()}
       <div class="admin-card">
         <h3>Stateroom Types</h3>
-        ${renderList()}
-      </div>
-    `;
+        ${loading ? `<p class="admin-muted admin-running-status">Loading stateroom types…</p>` : ""}
+        ${loadError ? `<div class="admin-message admin-error">${esc(loadError)}</div><button type="button" class="admin-button secondary" onclick="StateroomTypesAdmin.retryLoad()">Retry</button>` : ""}
+        ${!loading && !loadError && !rows.length ? `<p class="admin-muted">No stateroom types have been created yet.</p>` : ""}
+        ${!loading && !loadError ? `<div class="admin-reference-list">${rows.map((type) => renderTypeCard(type, lines)).join("")}</div>` : ""}
+      </div>`;
   }
 
-  global.StateroomTypesAdmin = {
-    renderPanel,
-    ensureLoaded,
-    retryLoad,
-    startCreate,
-    startEdit,
-    cancelEdit,
-    saveStateroomType,
-    deleteStateroomType,
-    onDragHandlePointerDown,
-    onDragStart,
-    onDragEnd,
-    allowDrop,
-    onDrop
-  };
+  global.StateroomTypesAdmin = { renderPanel, ensureLoaded, retryLoad, startCreate, startEdit, cancelEdit, saveStateroomType, deleteStateroomType, toggleAllocation };
 })(typeof window !== "undefined" ? window : globalThis);
