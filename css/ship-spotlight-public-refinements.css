@@ -1,0 +1,33 @@
+/* Final public Ship Spotlight refinements layered over the shared My Ship presentation. */
+.public-ship-page[data-ci-ship-mode="public"] .ship-hero-line-logo {
+  height: 118px;
+  max-width: 380px;
+  margin-bottom: 16px;
+}
+
+.public-ship-page[data-ci-ship-mode="public"] .ship-info-card:nth-child(2) {
+  text-align: center;
+}
+
+.public-ship-page[data-ci-ship-mode="public"] .ship-info-card:nth-child(2) .ship-accommodation-layout {
+  justify-items: center;
+}
+
+.public-ship-page[data-ci-ship-mode="public"] .ship-info-card:nth-child(2) .ship-donut-wrap {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.public-ship-page[data-ci-ship-mode="public"] .ship-info-card:nth-child(2) .ship-room-legend {
+  width: min(100%, 360px);
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+}
+
+@media (max-width: 760px) {
+  .public-ship-page[data-ci-ship-mode="public"] .ship-hero-line-logo {
+    height: 90px;
+    max-width: 290px;
+  }
+}
