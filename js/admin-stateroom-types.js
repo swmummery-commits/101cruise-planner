@@ -62,6 +62,7 @@
       allocations = allocationMap || {};
       cruiseLines = lineResult.data || [];
       loaded = true;
+      if (messageTone === "error" && /session|authentication|refresh token/i.test(message)) setMessage("");
     } catch (error) {
       loadError = error?.message || "Could not load stateroom types.";
     } finally {
@@ -97,7 +98,11 @@
       else await service.createStateroomType(validation.payload);
       creating = false; editingId = null; draftName = "";
       await ensureLoaded({ force: true, quiet: true });
-      if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
+      try {
+        if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
+      } catch (refreshError) {
+        console.warn("Stateroom pricing refresh skipped after successful save", refreshError);
+      }
       setMessage("Stateroom type saved.", "success");
     } catch (error) {
       setMessage(error?.message || "Could not save stateroom type.", "error");
@@ -116,7 +121,11 @@
     try {
       await service.deleteStateroomType(id);
       await ensureLoaded({ force: true, quiet: true });
-      if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
+      try {
+        if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
+      } catch (refreshError) {
+        console.warn("Stateroom pricing refresh skipped after successful delete", refreshError);
+      }
       setMessage(`Deleted “${row.name}”.`, "success");
     } catch (error) {
       setMessage(error?.message || "Could not delete stateroom type.", "error");
@@ -128,17 +137,36 @@
   async function toggleAllocation(lineId, typeId, checked) {
     const service = svc();
     if (!service || !lineId || !typeId || savingKey) return;
-    const current = new Set((allocations[lineId] || []).map(String));
+
+    const previousIds = [...(allocations[lineId] || []).map(String)];
+    const current = new Set(previousIds);
     if (checked) current.add(String(typeId)); else current.delete(String(typeId));
     allocations[lineId] = [...current];
     savingKey = `allocation:${lineId}`; setMessage("Saving cruise-line allocation…", "running"); rerender();
+
     try {
       allocations = await service.saveCruiseLineStateroomTypes(lineId, [...current]);
-      if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
       setMessage("Cruise-line allocation saved.", "success");
+
+      // This refresh is helpful to other screens but is not part of the save itself.
+      // Never turn a successful save into an error just because the secondary refresh failed.
+      try {
+        if (typeof global.loadStateroomTypesForPricing === "function") await global.loadStateroomTypesForPricing({ rerender: false });
+      } catch (refreshError) {
+        console.warn("Stateroom pricing refresh skipped after successful allocation save", refreshError);
+      }
     } catch (error) {
       setMessage(error?.message || "Could not save cruise-line allocation.", "error");
-      try { allocations = await service.loadCruiseLineStateroomAllocations(); } catch (_) {}
+
+      // The checkbox is optimistic. If the save fails, always restore authoritative state.
+      // If a fresh allocation load also fails (for example because the session has expired),
+      // fall back to the exact pre-click snapshot so the UI never claims an unsaved change.
+      let restored = false;
+      try {
+        allocations = await service.loadCruiseLineStateroomAllocations();
+        restored = true;
+      } catch (_) {}
+      if (!restored) allocations[lineId] = previousIds;
     } finally {
       savingKey = ""; rerender();
     }
