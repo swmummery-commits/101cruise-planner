@@ -254,14 +254,54 @@ async function listLineAllocations() {
   return allocations;
 }
 
+async function shipBlockersForRemovedTypes(lineId, removedTypeIds) {
+  if (!removedTypeIds.length) return [];
+  const encodedIds = removedTypeIds.map(encodeURIComponent).join(",");
+  const links = await supabase(
+    `ship_stateroom_types?select=ship_id,stateroom_type_id&stateroom_type_id=in.(${encodedIds})&limit=5000`
+  );
+  const linkRows = Array.isArray(links) ? links : [];
+  if (!linkRows.length) return [];
+
+  const shipIds = [...new Set(linkRows.map((row) => String(row.ship_id || "")).filter(Boolean))];
+  if (!shipIds.length) return [];
+  const ships = await supabase(
+    `ci_cruise_ships?select=id,name,cruise_line_id&id=in.(${shipIds.map(encodeURIComponent).join(",")})&cruise_line_id=eq.${encodeURIComponent(lineId)}&limit=5000`
+  );
+  const lineShips = Array.isArray(ships) ? ships : [];
+  if (!lineShips.length) return [];
+
+  const shipById = new Map(lineShips.map((ship) => [String(ship.id), ship]));
+  const typeRows = await supabase(
+    `stateroom_types?select=id,name&id=in.(${encodedIds})&limit=500`
+  );
+  const typeById = new Map((Array.isArray(typeRows) ? typeRows : []).map((row) => [String(row.id), row]));
+  const grouped = new Map();
+
+  for (const link of linkRows) {
+    const ship = shipById.get(String(link.ship_id));
+    if (!ship) continue;
+    const typeId = String(link.stateroom_type_id || "");
+    if (!grouped.has(typeId)) grouped.set(typeId, []);
+    grouped.get(typeId).push(String(ship.name || "Unnamed ship"));
+  }
+
+  return [...grouped.entries()].map(([typeId, shipNames]) => ({
+    typeId,
+    typeName: String(typeById.get(typeId)?.name || "Room type"),
+    shipNames: [...new Set(shipNames)].sort((a, b) => a.localeCompare(b, "en", { sensitivity: "base" }))
+  }));
+}
+
 async function saveLineAllocations(cruiseLineId, stateroomTypeIds) {
   const lineId = String(cruiseLineId || "").trim();
   if (!lineId) badRequest("Cruise line id is required.");
 
   const lineRows = await supabase(
-    `ci_cruise_lines?select=id&id=eq.${encodeURIComponent(lineId)}&limit=1`
+    `ci_cruise_lines?select=id,name&id=eq.${encodeURIComponent(lineId)}&limit=1`
   );
   if (!Array.isArray(lineRows) || !lineRows[0]) badRequest("Cruise line not found.");
+  const lineName = String(lineRows[0].name || "this cruise line");
 
   const ids = Array.isArray(stateroomTypeIds)
     ? [...new Set(stateroomTypeIds.map((id) => String(id || "").trim()).filter(Boolean))]
@@ -277,16 +317,36 @@ async function saveLineAllocations(cruiseLineId, stateroomTypeIds) {
     }
   }
 
-  await supabase(`cruise_line_stateroom_types?cruise_line_id=eq.${encodeURIComponent(lineId)}`, {
-    method: "DELETE",
-    prefer: "return=minimal"
-  });
+  const currentRows = await supabase(
+    `cruise_line_stateroom_types?select=stateroom_type_id&cruise_line_id=eq.${encodeURIComponent(lineId)}&limit=5000`
+  );
+  const current = new Set((Array.isArray(currentRows) ? currentRows : []).map((row) => String(row.stateroom_type_id || "")).filter(Boolean));
+  const requested = new Set(ids);
+  const removed = [...current].filter((id) => !requested.has(id));
+  const added = [...requested].filter((id) => !current.has(id));
 
-  if (ids.length) {
+  if (removed.length) {
+    const blockers = await shipBlockersForRemovedTypes(lineId, removed);
+    if (blockers.length) {
+      const details = blockers.map((blocker) =>
+        `“${blocker.typeName}” is still used by ${blocker.shipNames.join(", ")}`
+      ).join("; ");
+      badRequest(`Cannot remove this room type from ${lineName}: ${details}. Remove it from those ship(s) first, then untick it here.`);
+    }
+  }
+
+  if (removed.length) {
+    await supabase(
+      `cruise_line_stateroom_types?cruise_line_id=eq.${encodeURIComponent(lineId)}&stateroom_type_id=in.(${removed.map(encodeURIComponent).join(",")})`,
+      { method: "DELETE", prefer: "return=minimal" }
+    );
+  }
+
+  if (added.length) {
     await supabase("cruise_line_stateroom_types", {
       method: "POST",
       prefer: "return=minimal",
-      body: ids.map((stateroom_type_id) => ({ cruise_line_id: lineId, stateroom_type_id }))
+      body: added.map((stateroom_type_id) => ({ cruise_line_id: lineId, stateroom_type_id }))
     });
   }
 
@@ -350,5 +410,6 @@ exports.__test__ = {
   trimName,
   normalizeName,
   sanitizeNameFields,
-  isStateroomTypeInUse
+  isStateroomTypeInUse,
+  shipBlockersForRemovedTypes
 };
