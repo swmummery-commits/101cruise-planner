@@ -1,0 +1,46 @@
+/*
+ * My Cruise desktop width restoration (2026-09-13)
+ *
+ * An August Squarespace iframe overflow fix forced all embedded customer
+ * page shells to width:100% !important at every breakpoint. That removed
+ * the approved centred desktop content container. Restore the shared
+ * 1180px desktop composition while leaving the iframe itself full-width
+ * and preserving the existing mobile rules at 820px and below.
+ */
+
+@media (min-width: 821px) {
+  html.is-embedded .dashboard-content-wrap,
+  html.is-embedded .planner-shell,
+  html.is-embedded .checklist-page,
+  html.is-embedded .packing-page,
+  html.is-embedded .budget-page,
+  html.is-embedded .ship-page {
+    width: min(1180px, calc(100% - 48px)) !important;
+    max-width: 1180px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box;
+  }
+
+  /* Dashboard navigation can be a top-level content section. */
+  html.is-embedded .planner-module-nav {
+    width: min(1180px, calc(100% - 48px)) !important;
+    max-width: 1180px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box;
+  }
+
+  /* When navigation already sits inside a centred page shell, do not add
+     a second 24px inset on each side. */
+  html.is-embedded .planner-shell > .planner-module-nav,
+  html.is-embedded .checklist-page > .planner-module-nav,
+  html.is-embedded .packing-page > .planner-module-nav,
+  html.is-embedded .budget-page > .planner-module-nav,
+  html.is-embedded .ship-page > .planner-module-nav {
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}
